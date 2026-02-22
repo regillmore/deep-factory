@@ -1,0 +1,130 @@
+import { Camera2D } from '../core/camera2d';
+import { createStaticVertexBuffer, createVertexArray } from './buffer';
+import { createProgram } from './shader';
+import { buildPlaceholderAtlas, loadTexture } from './texture';
+import { CHUNK_SIZE, TILE_SIZE } from '../world/constants';
+import { chunkCoordBounds, chunkKey } from '../world/chunkMath';
+import { buildChunkMesh } from '../world/mesher';
+import { TileWorld } from '../world/world';
+
+interface ChunkGpuMesh {
+  vao: WebGLVertexArrayObject;
+  vertexCount: number;
+}
+
+export class Renderer {
+  private gl: WebGL2RenderingContext;
+  private program: WebGLProgram;
+  private world = new TileWorld();
+  private meshes = new Map<string, ChunkGpuMesh>();
+  private uMatrix: WebGLUniformLocation;
+  private texture: WebGLTexture | null = null;
+
+  renderedChunks = 0;
+
+  constructor(private canvas: HTMLCanvasElement) {
+    const gl = canvas.getContext('webgl2');
+    if (!gl) throw new Error('WebGL2 unavailable');
+    this.gl = gl;
+
+    this.program = createProgram(
+      gl,
+      `#version 300 es
+      precision mediump float;
+      layout(location = 0) in vec2 a_position;
+      layout(location = 1) in vec2 a_uv;
+      uniform mat4 u_matrix;
+      out vec2 v_uv;
+      void main() {
+        v_uv = a_uv;
+        gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);
+      }`,
+      `#version 300 es
+      precision mediump float;
+      in vec2 v_uv;
+      uniform sampler2D u_atlas;
+      out vec4 outColor;
+      void main() {
+        outColor = texture(u_atlas, v_uv);
+      }`
+    );
+
+    const matrix = gl.getUniformLocation(this.program, 'u_matrix');
+    if (!matrix) throw new Error('Missing uniform u_matrix');
+    this.uMatrix = matrix;
+
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  }
+
+  async initialize(): Promise<void> {
+    const atlasDataUrl = buildPlaceholderAtlas();
+    this.texture = await loadTexture(this.gl, atlasDataUrl);
+    for (const chunk of this.world.getChunks()) {
+      this.uploadChunkMesh(chunk.coord.x, chunk.coord.y);
+    }
+  }
+
+  resize(): void {
+    const dpr = window.devicePixelRatio || 1;
+    const width = Math.floor(this.canvas.clientWidth * dpr);
+    const height = Math.floor(this.canvas.clientHeight * dpr);
+    if (this.canvas.width !== width || this.canvas.height !== height) {
+      this.canvas.width = width;
+      this.canvas.height = height;
+      this.gl.viewport(0, 0, width, height);
+    }
+  }
+
+  render(camera: Camera2D): void {
+    if (!this.texture) return;
+
+    const gl = this.gl;
+    this.renderedChunks = 0;
+    gl.clearColor(0.12, 0.15, 0.2, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.useProgram(this.program);
+    gl.uniformMatrix4fv(this.uMatrix, false, camera.worldToClipMatrix(this.canvas.width, this.canvas.height));
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+
+    const worldHalfWidth = this.canvas.width / (2 * camera.zoom);
+    const worldHalfHeight = this.canvas.height / (2 * camera.zoom);
+    const minTileX = Math.floor((camera.x - worldHalfWidth) / TILE_SIZE) - CHUNK_SIZE;
+    const minTileY = Math.floor((camera.y - worldHalfHeight) / TILE_SIZE) - CHUNK_SIZE;
+    const maxTileX = Math.ceil((camera.x + worldHalfWidth) / TILE_SIZE) + CHUNK_SIZE;
+    const maxTileY = Math.ceil((camera.y + worldHalfHeight) / TILE_SIZE) + CHUNK_SIZE;
+
+    const bounds = chunkCoordBounds(minTileX, minTileY, maxTileX, maxTileY);
+
+    for (let y = bounds.minChunkY; y <= bounds.maxChunkY; y += 1) {
+      for (let x = bounds.minChunkX; x <= bounds.maxChunkX; x += 1) {
+        const mesh = this.uploadChunkMesh(x, y);
+        if (!mesh) continue;
+        gl.bindVertexArray(mesh.vao);
+        gl.drawArrays(gl.TRIANGLES, 0, mesh.vertexCount);
+        this.renderedChunks += 1;
+      }
+    }
+
+    gl.bindVertexArray(null);
+  }
+
+  private uploadChunkMesh(chunkX: number, chunkY: number): ChunkGpuMesh | null {
+    const key = chunkKey(chunkX, chunkY);
+    const cached = this.meshes.get(key);
+    if (cached) return cached;
+
+    const chunk = this.world.ensureChunk(chunkX, chunkY);
+    const meshData = buildChunkMesh(chunk);
+    if (meshData.vertexCount === 0) return null;
+
+    const buffer = createStaticVertexBuffer(this.gl, meshData.vertices);
+    const vao = createVertexArray(this.gl, buffer, 4);
+    const mesh = { vao, vertexCount: meshData.vertexCount };
+    this.meshes.set(key, mesh);
+    return mesh;
+  }
+}

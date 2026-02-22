@@ -1,0 +1,28 @@
+{
+  "name": "deep-factory",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "@types/node": "^22.13.1",
+    "@typescript-eslint/eslint-plugin": "^8.24.0",
+    "@typescript-eslint/parser": "^8.24.0",
+    "eslint": "^9.20.0",
+    "eslint-config-prettier": "^10.0.1",
+    "globals": "^15.14.0",
+    "prettier": "^3.5.0",
+    "typescript": "~5.7.2",
+    "vite": "^6.1.0",
+    "vitest": "^3.0.5"
+  }
+}
