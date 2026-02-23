@@ -95,10 +95,12 @@ export class InputController {
 
   private zoomAtScreenPoint(factor: number, clientX: number, clientY: number): void {
     const rect = this.canvas.getBoundingClientRect();
-    const screenX = clientX - rect.left;
-    const screenY = clientY - rect.top;
-    const worldX = this.camera.x + (screenX - rect.width * 0.5) / this.camera.zoom;
-    const worldY = this.camera.y + (screenY - rect.height * 0.5) / this.camera.zoom;
+    const dprScaleX = rect.width > 0 ? this.canvas.width / rect.width : 1;
+    const dprScaleY = rect.height > 0 ? this.canvas.height / rect.height : 1;
+    const screenX = (clientX - rect.left) * dprScaleX;
+    const screenY = (clientY - rect.top) * dprScaleY;
+    const worldX = this.camera.x + (screenX - this.canvas.width * 0.5) / this.camera.zoom;
+    const worldY = this.camera.y + (screenY - this.canvas.height * 0.5) / this.camera.zoom;
     this.camera.zoomAt(factor, worldX, worldY);
   }
 }
