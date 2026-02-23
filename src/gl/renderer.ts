@@ -4,6 +4,7 @@ import { createProgram } from './shader';
 import { buildPlaceholderAtlas, loadTexture } from './texture';
 import { TILE_SIZE } from '../world/constants';
 import {
+  affectedChunkCoordsForLocalTileEdit,
   chunkBoundsContains,
   chunkCoordBounds,
   chunkKey,
@@ -109,8 +110,10 @@ export class Renderer {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-    this.world.onTileEdited(({ chunkX, chunkY }) => {
-      this.invalidateChunkMesh(chunkX, chunkY);
+    this.world.onTileEdited(({ chunkX, chunkY, localX, localY }) => {
+      for (const coord of affectedChunkCoordsForLocalTileEdit(chunkX, chunkY, localX, localY)) {
+        this.invalidateChunkMesh(coord.x, coord.y);
+      }
     });
   }
 

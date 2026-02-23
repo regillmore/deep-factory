@@ -1,4 +1,5 @@
 import { CHUNK_SIZE } from './constants';
+import type { ChunkCoord } from './types';
 
 export interface ChunkBounds {
   minChunkX: number;
@@ -44,3 +45,27 @@ export const chunkBoundsContains = (bounds: ChunkBounds, chunkX: number, chunkY:
   chunkX <= bounds.maxChunkX &&
   chunkY >= bounds.minChunkY &&
   chunkY <= bounds.maxChunkY;
+
+export const affectedChunkCoordsForLocalTileEdit = (
+  chunkX: number,
+  chunkY: number,
+  localX: number,
+  localY: number
+): ChunkCoord[] => {
+  const xOffsets = [0];
+  const yOffsets = [0];
+
+  if (localX === 0) xOffsets.push(-1);
+  if (localX === CHUNK_SIZE - 1) xOffsets.push(1);
+  if (localY === 0) yOffsets.push(-1);
+  if (localY === CHUNK_SIZE - 1) yOffsets.push(1);
+
+  const coords: ChunkCoord[] = [];
+  for (const yOffset of yOffsets) {
+    for (const xOffset of xOffsets) {
+      coords.push({ x: chunkX + xOffset, y: chunkY + yOffset });
+    }
+  }
+
+  return coords;
+};

@@ -29,6 +29,18 @@ export interface TileEditEvent {
   tileId: number;
 }
 
+export interface TileNeighborhood {
+  center: number;
+  north: number;
+  northEast: number;
+  east: number;
+  southEast: number;
+  south: number;
+  southWest: number;
+  west: number;
+  northWest: number;
+}
+
 type TileEditListener = (event: TileEditEvent) => void;
 
 export class TileWorld {
@@ -95,6 +107,31 @@ export class TileWorld {
     }
 
     return true;
+  }
+
+  sampleTileNeighborhood(worldTileX: number, worldTileY: number): TileNeighborhood {
+    return {
+      center: this.getTile(worldTileX, worldTileY),
+      north: this.getTile(worldTileX, worldTileY - 1),
+      northEast: this.getTile(worldTileX + 1, worldTileY - 1),
+      east: this.getTile(worldTileX + 1, worldTileY),
+      southEast: this.getTile(worldTileX + 1, worldTileY + 1),
+      south: this.getTile(worldTileX, worldTileY + 1),
+      southWest: this.getTile(worldTileX - 1, worldTileY + 1),
+      west: this.getTile(worldTileX - 1, worldTileY),
+      northWest: this.getTile(worldTileX - 1, worldTileY - 1)
+    };
+  }
+
+  sampleLocalTileNeighborhood(
+    chunkX: number,
+    chunkY: number,
+    localX: number,
+    localY: number
+  ): TileNeighborhood {
+    const worldTileX = chunkX * CHUNK_SIZE + localX;
+    const worldTileY = chunkY * CHUNK_SIZE + localY;
+    return this.sampleTileNeighborhood(worldTileX, worldTileY);
   }
 
   onTileEdited(listener: TileEditListener): () => void {

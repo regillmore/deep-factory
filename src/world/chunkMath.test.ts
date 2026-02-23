@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CHUNK_SIZE } from './constants';
 import {
+  affectedChunkCoordsForLocalTileEdit,
   chunkBoundsContains,
   chunkCoordBounds,
   expandChunkBounds,
@@ -31,5 +32,21 @@ describe('chunkMath', () => {
     expect(paddedBounds).toEqual({ minChunkX: -2, minChunkY: -2, maxChunkX: 2, maxChunkY: 2 });
     expect(chunkBoundsContains(paddedBounds, 2, -2)).toBe(true);
     expect(chunkBoundsContains(paddedBounds, 3, 0)).toBe(false);
+  });
+
+  it('returns affected chunks for interior, edge, and corner tile edits', () => {
+    expect(affectedChunkCoordsForLocalTileEdit(5, -2, 4, 7)).toEqual([{ x: 5, y: -2 }]);
+
+    expect(affectedChunkCoordsForLocalTileEdit(5, -2, 0, 7)).toEqual([
+      { x: 5, y: -2 },
+      { x: 4, y: -2 }
+    ]);
+
+    expect(affectedChunkCoordsForLocalTileEdit(5, -2, CHUNK_SIZE - 1, 0)).toEqual([
+      { x: 5, y: -2 },
+      { x: 6, y: -2 },
+      { x: 5, y: -3 },
+      { x: 6, y: -3 }
+    ]);
   });
 });

@@ -58,4 +58,34 @@ describe('TileWorld', () => {
     expect(changed).toBe(false);
     expect(editCount).toBe(0);
   });
+
+  it('samples cardinal and diagonal neighbors across chunk boundaries', () => {
+    const world = new TileWorld(0);
+
+    world.setTile(0, 0, 11);
+    world.setTile(0, -1, 12);
+    world.setTile(1, -1, 13);
+    world.setTile(1, 0, 14);
+    world.setTile(1, 1, 15);
+    world.setTile(0, 1, 16);
+    world.setTile(-1, 1, 17);
+    world.setTile(-1, 0, 18);
+    world.setTile(-1, -1, 19);
+
+    const sampled = world.sampleTileNeighborhood(0, 0);
+
+    expect(sampled).toEqual({
+      center: 11,
+      north: 12,
+      northEast: 13,
+      east: 14,
+      southEast: 15,
+      south: 16,
+      southWest: 17,
+      west: 18,
+      northWest: 19
+    });
+
+    expect(world.sampleLocalTileNeighborhood(0, 0, 0, 0)).toEqual(sampled);
+  });
 });
