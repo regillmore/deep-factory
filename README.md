@@ -42,6 +42,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Tile edit events with edge/corner neighbor-chunk mesh invalidation (prep for adjacency-aware meshing).
 - Cross-chunk 8-neighbor tile sampling plus autotile adjacency/normalization utilities and a placeholder terrain variant resolver wired into chunk meshing (with tests).
 - Mesher UV-selection tests now cover terrain autotile variant resolution, including chunk-edge neighborhood sampling; placeholder `4x4` variant layout is documented in `docs/ARCHITECTURE.md`.
+- Placeholder terrain autotile atlas mapping is now defined in validated JSON tile metadata (`src/world/tileMetadata.json`) with loader validation tests.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.

@@ -7,6 +7,7 @@
 - `src/input/`: input abstraction for keyboard, mouse, and touch/pinch.
 - `src/gl/`: low-level WebGL2 utilities and renderer orchestration.
 - `src/world/`: world data model, chunk math, procedural generation, mesh construction.
+- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (placeholder terrain autotile mappings today, authored atlas pipeline hook later).
 - `src/ui/`: debug DOM overlay.
 
 ## Update loop
@@ -45,7 +46,8 @@ This is intentionally simple and easy to evolve (greedy meshing, layered tiles, 
 Terrain autotile placeholder variants currently occupy the full `4x4` atlas and are addressed by a row-major
 variant index derived from the normalized cardinal adjacency mask (`N/E/S/W` bits mapped to `1/2/4/8`).
 Diagonal neighbors are sampled and normalized for corner-gating, but placeholder UV selection collapses to the
-16 cardinal combinations for now.
+16 cardinal combinations for now. The current mapping is defined in `src/world/tileMetadata.json` and validated at
+startup by `src/world/tileMetadata.ts`.
 
 | Atlas row | Variant indices | Cardinal mask combinations |
 | --- | --- | --- |

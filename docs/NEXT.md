@@ -9,4 +9,4 @@
 7. Add save/load format for chunk snapshots.
 8. Prepare networking scaffolding (state diff messages, interest management).
 9. Add a main menu shell and move debug overlay to a UI toggle.
-10. Extract terrain autotile variant mapping into data-driven tile metadata (JSON) with loader validation tests to prepare the authored atlas pipeline.
+10. Expand tile metadata to include explicit atlas indices/UV metadata for non-autotile tiles and route all mesher UV selection through metadata (remove raw `tileId -> atlas slot` fallback).

@@ -5,6 +5,7 @@ import {
 } from './autotile';
 import { CHUNK_SIZE, TILE_ATLAS_COLUMNS, TILE_ATLAS_ROWS, TILE_SIZE } from './constants';
 import { toTileIndex } from './chunkMath';
+import { hasTerrainAutotileMetadata, resolveTerrainAutotileVariantAtlasIndex } from './tileMetadata';
 import type { Chunk } from './types';
 import type { TileNeighborhood } from './world';
 
@@ -33,7 +34,7 @@ const tileUvRect = (tileId: number): { u0: number; v0: number; u1: number; v1: n
   return { u0, v0, u1, v1 };
 };
 
-const usesTerrainAutotile = (tileId: number): boolean => tileId === 1 || tileId === 2;
+const usesTerrainAutotile = (tileId: number): boolean => hasTerrainAutotileMetadata(tileId);
 
 const resolveChunkTileAtlasIndex = (
   chunk: Chunk,
@@ -49,7 +50,8 @@ const resolveChunkTileAtlasIndex = (
   const neighborhood = sampleNeighborhood(chunk.coord.x, chunk.coord.y, localX, localY);
   const rawMask = buildAutotileAdjacencyMask(neighborhood);
   const normalizedMask = normalizeAutotileAdjacencyMask(rawMask);
-  return resolveTerrainAutotileVariantIndex(normalizedMask);
+  const cardinalVariantIndex = resolveTerrainAutotileVariantIndex(normalizedMask);
+  return resolveTerrainAutotileVariantAtlasIndex(tileId, cardinalVariantIndex) ?? tileId;
 };
 
 export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}): ChunkMeshData => {
