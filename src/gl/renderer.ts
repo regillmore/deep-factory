@@ -12,15 +12,31 @@ interface ChunkGpuMesh {
   vertexCount: number;
 }
 
+export interface RenderTelemetry {
+  renderedChunks: number;
+  drawCalls: number;
+  drawCallBudget: number;
+  meshBuilds: number;
+  meshBuildTimeMs: number;
+}
+
+const DRAW_CALL_BUDGET = 256;
+
 export class Renderer {
   private gl: WebGL2RenderingContext;
   private program: WebGLProgram;
   private world = new TileWorld();
-  private meshes = new Map<string, ChunkGpuMesh>();
+  private meshes = new Map<string, ChunkGpuMesh | null>();
   private uMatrix: WebGLUniformLocation;
   private texture: WebGLTexture | null = null;
 
-  renderedChunks = 0;
+  readonly telemetry: RenderTelemetry = {
+    renderedChunks: 0,
+    drawCalls: 0,
+    drawCallBudget: DRAW_CALL_BUDGET,
+    meshBuilds: 0,
+    meshBuildTimeMs: 0
+  };
 
   constructor(private canvas: HTMLCanvasElement) {
     const gl = canvas.getContext('webgl2');
@@ -80,7 +96,10 @@ export class Renderer {
     if (!this.texture) return;
 
     const gl = this.gl;
-    this.renderedChunks = 0;
+    this.telemetry.renderedChunks = 0;
+    this.telemetry.drawCalls = 0;
+    this.telemetry.meshBuilds = 0;
+    this.telemetry.meshBuildTimeMs = 0;
     gl.clearColor(0.12, 0.15, 0.2, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -105,7 +124,8 @@ export class Renderer {
         if (!mesh) continue;
         gl.bindVertexArray(mesh.vao);
         gl.drawArrays(gl.TRIANGLES, 0, mesh.vertexCount);
-        this.renderedChunks += 1;
+        this.telemetry.renderedChunks += 1;
+        this.telemetry.drawCalls += 1;
       }
     }
 
@@ -115,11 +135,17 @@ export class Renderer {
   private uploadChunkMesh(chunkX: number, chunkY: number): ChunkGpuMesh | null {
     const key = chunkKey(chunkX, chunkY);
     const cached = this.meshes.get(key);
-    if (cached) return cached;
+    if (cached !== undefined) return cached;
 
     const chunk = this.world.ensureChunk(chunkX, chunkY);
+    const meshBuildStart = performance.now();
     const meshData = buildChunkMesh(chunk);
-    if (meshData.vertexCount === 0) return null;
+    this.telemetry.meshBuildTimeMs += performance.now() - meshBuildStart;
+    this.telemetry.meshBuilds += 1;
+    if (meshData.vertexCount === 0) {
+      this.meshes.set(key, null);
+      return null;
+    }
 
     const buffer = createStaticVertexBuffer(this.gl, meshData.vertices);
     const vao = createVertexArray(this.gl, buffer, 4);

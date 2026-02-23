@@ -42,7 +42,7 @@ const bootstrap = async (): Promise<void> => {
     (_alpha, frameDtMs) => {
       renderer.resize();
       renderer.render(camera);
-      debug.update(frameDtMs, renderer.renderedChunks);
+      debug.update(frameDtMs, renderer.telemetry);
     }
   );
 

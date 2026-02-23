@@ -1,3 +1,11 @@
+export interface DebugOverlayStats {
+  renderedChunks: number;
+  drawCalls: number;
+  drawCallBudget: number;
+  meshBuilds: number;
+  meshBuildTimeMs: number;
+}
+
 export class DebugOverlay {
   private root: HTMLDivElement;
   private fps = 0;
@@ -17,9 +25,14 @@ export class DebugOverlay {
     document.body.append(this.root);
   }
 
-  update(deltaMs: number, renderedChunks: number): void {
+  update(deltaMs: number, stats: DebugOverlayStats): void {
     this.smoothDelta = this.smoothDelta * 0.9 + deltaMs * 0.1;
     this.fps = 1000 / this.smoothDelta;
-    this.root.textContent = `FPS: ${this.fps.toFixed(1)} | Rendered chunks: ${renderedChunks}`;
+    const budgetState = stats.drawCalls > stats.drawCallBudget ? 'OVER' : 'OK';
+    this.root.textContent =
+      `FPS: ${this.fps.toFixed(1)} | ` +
+      `Chunks: ${stats.renderedChunks} | ` +
+      `Draws: ${stats.drawCalls}/${stats.drawCallBudget} (${budgetState}) | ` +
+      `Mesh builds: ${stats.meshBuilds} (${stats.meshBuildTimeMs.toFixed(2)} ms)`;
   }
 }

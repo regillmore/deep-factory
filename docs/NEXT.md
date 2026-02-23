@@ -9,4 +9,4 @@
 7. Add entity layer and interpolation between fixed updates.
 8. Add save/load format for chunk snapshots.
 9. Prepare networking scaffolding (state diff messages, interest management).
-10. Add performance telemetry (mesh generation time, draw call budget).
+10. Add a main menu shell and move debug overlay to a UI toggle.
