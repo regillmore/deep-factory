@@ -1,5 +1,11 @@
 import { CHUNK_SIZE } from './constants';
-import { chunkBoundsContains, chunkKey, toTileIndex, worldToLocalTile } from './chunkMath';
+import {
+  chunkBoundsContains,
+  chunkKey,
+  toTileIndex,
+  worldToChunkCoord,
+  worldToLocalTile
+} from './chunkMath';
 import type { ChunkBounds } from './chunkMath';
 import type { Chunk } from './types';
 
@@ -12,8 +18,22 @@ const proceduralTile = (worldX: number, worldY: number): number => {
   return solidTileId;
 };
 
+export interface TileEditEvent {
+  worldTileX: number;
+  worldTileY: number;
+  chunkX: number;
+  chunkY: number;
+  localX: number;
+  localY: number;
+  previousTileId: number;
+  tileId: number;
+}
+
+type TileEditListener = (event: TileEditEvent) => void;
+
 export class TileWorld {
   private chunks = new Map<string, Chunk>();
+  private tileEditListeners = new Set<TileEditListener>();
 
   constructor(radius = 3) {
     for (let y = -radius; y <= radius; y += 1) {
@@ -43,11 +63,45 @@ export class TileWorld {
   }
 
   getTile(worldTileX: number, worldTileY: number): number {
-    const chunkX = Math.floor(worldTileX / CHUNK_SIZE);
-    const chunkY = Math.floor(worldTileY / CHUNK_SIZE);
+    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
     const chunk = this.ensureChunk(chunkX, chunkY);
     const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
     return chunk.tiles[toTileIndex(localX, localY)];
+  }
+
+  setTile(worldTileX: number, worldTileY: number, tileId: number): boolean {
+    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+    const chunk = this.ensureChunk(chunkX, chunkY);
+    const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
+    const tileIndex = toTileIndex(localX, localY);
+    const previousTileId = chunk.tiles[tileIndex];
+    if (previousTileId === tileId) return false;
+
+    chunk.tiles[tileIndex] = tileId;
+
+    const event: TileEditEvent = {
+      worldTileX,
+      worldTileY,
+      chunkX,
+      chunkY,
+      localX,
+      localY,
+      previousTileId,
+      tileId
+    };
+
+    for (const listener of this.tileEditListeners) {
+      listener(event);
+    }
+
+    return true;
+  }
+
+  onTileEdited(listener: TileEditListener): () => void {
+    this.tileEditListeners.add(listener);
+    return () => {
+      this.tileEditListeners.delete(listener);
+    };
   }
 
   getChunks(): IterableIterator<Chunk> {

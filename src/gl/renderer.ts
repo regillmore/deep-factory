@@ -108,6 +108,10 @@ export class Renderer {
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    this.world.onTileEdited(({ chunkX, chunkY }) => {
+      this.invalidateChunkMesh(chunkX, chunkY);
+    });
   }
 
   async initialize(): Promise<void> {
@@ -178,11 +182,38 @@ export class Renderer {
     this.telemetry.meshBuildQueueLength = this.meshBuildQueue.length;
   }
 
+  setTile(worldTileX: number, worldTileY: number, tileId: number): boolean {
+    return this.world.setTile(worldTileX, worldTileY, tileId);
+  }
+
   private getReadyChunkMesh(chunkX: number, chunkY: number): ChunkGpuMesh | null {
     const key = chunkKey(chunkX, chunkY);
     const cached = this.meshes.get(key);
     if (!cached) return null;
     return cached.state === 'ready' ? cached.mesh : null;
+  }
+
+  private invalidateChunkMesh(chunkX: number, chunkY: number): void {
+    const key = chunkKey(chunkX, chunkY);
+    const cached = this.meshes.get(key);
+    if (!cached) return;
+
+    if (cached.state === 'queued') {
+      this.promoteQueuedMeshBuild(key);
+      if (!this.meshBuildQueue.some((request) => request.key === key)) {
+        this.meshBuildQueue.unshift({ key, chunkX, chunkY });
+      }
+      return;
+    }
+
+    if (cached.state === 'ready' && cached.mesh) {
+      this.gl.deleteVertexArray(cached.mesh.vao);
+      this.gl.deleteBuffer(cached.mesh.buffer);
+    }
+
+    cached.state = 'queued';
+    cached.mesh = null;
+    this.meshBuildQueue.unshift({ key, chunkX, chunkY });
   }
 
   private scheduleMeshBuilds(drawBounds: ChunkBounds, retainBounds: ChunkBounds): void {
