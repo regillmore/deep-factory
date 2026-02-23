@@ -14,8 +14,8 @@ export class Camera2D {
   zoomAt(factor: number, anchorX: number, anchorY: number): void {
     const nextZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom * factor));
     const appliedFactor = nextZoom / this.zoom;
-    this.x = anchorX - (anchorX - this.x) * appliedFactor;
-    this.y = anchorY - (anchorY - this.y) * appliedFactor;
+    this.x = anchorX - (anchorX - this.x) / appliedFactor;
+    this.y = anchorY - (anchorY - this.y) / appliedFactor;
     this.zoom = nextZoom;
   }
 
