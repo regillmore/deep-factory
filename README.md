@@ -41,6 +41,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Budgeted per-frame mesh build queue (visible-first, prefetch around the camera).
 - Tile edit events with edge/corner neighbor-chunk mesh invalidation (prep for adjacency-aware meshing).
 - Cross-chunk 8-neighbor tile sampling plus autotile adjacency/normalization utilities and a placeholder terrain variant resolver wired into chunk meshing (with tests).
+- Mesher UV-selection tests now cover terrain autotile variant resolution, including chunk-edge neighborhood sampling; placeholder `4x4` variant layout is documented in `docs/ARCHITECTURE.md`.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.

@@ -9,4 +9,4 @@
 7. Add save/load format for chunk snapshots.
 8. Prepare networking scaffolding (state diff messages, interest management).
 9. Add a main menu shell and move debug overlay to a UI toggle.
-10. Add mesher unit tests for terrain autotile UV selection (including chunk-edge neighborhood cases) and document placeholder variant layout.
+10. Extract terrain autotile variant mapping into data-driven tile metadata (JSON) with loader validation tests to prepare the authored atlas pipeline.

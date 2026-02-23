@@ -39,3 +39,17 @@ Current update phase applies input-driven camera movement.
 - Output is uploaded once per chunk as static vertex data.
 
 This is intentionally simple and easy to evolve (greedy meshing, layered tiles, occlusion rules can be added later).
+
+### Placeholder terrain autotile layout
+
+Terrain autotile placeholder variants currently occupy the full `4x4` atlas and are addressed by a row-major
+variant index derived from the normalized cardinal adjacency mask (`N/E/S/W` bits mapped to `1/2/4/8`).
+Diagonal neighbors are sampled and normalized for corner-gating, but placeholder UV selection collapses to the
+16 cardinal combinations for now.
+
+| Atlas row | Variant indices | Cardinal mask combinations |
+| --- | --- | --- |
+| 0 | `0 1 2 3` | `----`, `N---`, `-E--`, `NE--` |
+| 1 | `4 5 6 7` | `--S-`, `N-S-`, `-ES-`, `NES-` |
+| 2 | `8 9 10 11` | `---W`, `N--W`, `-E-W`, `NE-W` |
+| 3 | `12 13 14 15` | `--SW`, `N-SW`, `-ESW`, `NESW` |
