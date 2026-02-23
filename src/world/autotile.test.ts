@@ -4,7 +4,9 @@ import { CHUNK_SIZE } from './constants';
 import {
   AUTOTILE_DIRECTION_BITS,
   buildAutotileAdjacencyMask,
-  normalizeAutotileAdjacencyMask
+  normalizeAutotileAdjacencyMask,
+  resolveTerrainAutotileVariantIndex,
+  TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
 } from './autotile';
 import { TileWorld } from './world';
 import type { TileNeighborhood } from './world';
@@ -163,5 +165,44 @@ describe('autotile adjacency mask', () => {
         AUTOTILE_DIRECTION_BITS.northWest
     );
     expect(normalizedMask).toBe(AUTOTILE_DIRECTION_BITS.east | AUTOTILE_DIRECTION_BITS.west);
+  });
+
+  it('resolves normalized masks into 16 placeholder atlas variants using NESW cardinal bits', () => {
+    const { north, east, south, west } = AUTOTILE_DIRECTION_BITS;
+
+    const cases: Array<{ label: string; mask: number; expectedVariant: number }> = [
+      { label: 'isolated', mask: 0, expectedVariant: 0 },
+      { label: 'north', mask: north, expectedVariant: 1 },
+      { label: 'east', mask: east, expectedVariant: 2 },
+      { label: 'south', mask: south, expectedVariant: 4 },
+      { label: 'west', mask: west, expectedVariant: 8 },
+      { label: 'north+east', mask: north | east, expectedVariant: 3 },
+      { label: 'south+west', mask: south | west, expectedVariant: 12 },
+      { label: 'all cardinals', mask: north | east | south | west, expectedVariant: 15 }
+    ];
+
+    for (const testCase of cases) {
+      expect(resolveTerrainAutotileVariantIndex(testCase.mask), testCase.label).toBe(
+        testCase.expectedVariant
+      );
+    }
+  });
+
+  it('collapses diagonal corner differences into the same placeholder variant bucket', () => {
+    const { north, northEast, east, southEast, south, west, northWest } = AUTOTILE_DIRECTION_BITS;
+
+    const withoutCorners = resolveTerrainAutotileVariantIndex(north | east);
+    const withValidCorner = resolveTerrainAutotileVariantIndex(north | east | northEast);
+    const withMultipleCorners = resolveTerrainAutotileVariantIndex(
+      north | east | south | west | northEast | southEast | northWest
+    );
+
+    expect(withoutCorners).toBe(3);
+    expect(withValidCorner).toBe(withoutCorners);
+    expect(withMultipleCorners).toBe(15);
+  });
+
+  it('matches the 4x4 placeholder atlas capacity', () => {
+    expect(TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT).toBe(16);
   });
 });

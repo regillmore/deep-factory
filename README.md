@@ -40,7 +40,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Chunk visibility culling with padded chunk streaming retention.
 - Budgeted per-frame mesh build queue (visible-first, prefetch around the camera).
 - Tile edit events with edge/corner neighbor-chunk mesh invalidation (prep for adjacency-aware meshing).
-- Cross-chunk 8-neighbor tile sampling plus autotile adjacency/normalization mask utilities with tests.
+- Cross-chunk 8-neighbor tile sampling plus autotile adjacency/normalization utilities and a placeholder terrain variant resolver wired into chunk meshing (with tests).
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.

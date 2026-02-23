@@ -1,10 +1,25 @@
-import { TILE_ATLAS_COLUMNS, TILE_ATLAS_ROWS, TILE_SIZE } from './constants';
+import {
+  buildAutotileAdjacencyMask,
+  normalizeAutotileAdjacencyMask,
+  resolveTerrainAutotileVariantIndex
+} from './autotile';
+import { CHUNK_SIZE, TILE_ATLAS_COLUMNS, TILE_ATLAS_ROWS, TILE_SIZE } from './constants';
 import { toTileIndex } from './chunkMath';
 import type { Chunk } from './types';
+import type { TileNeighborhood } from './world';
 
 export interface ChunkMeshData {
   vertices: Float32Array;
   vertexCount: number;
+}
+
+export interface ChunkMeshBuildOptions {
+  sampleNeighborhood?: (
+    chunkX: number,
+    chunkY: number,
+    localX: number,
+    localY: number
+  ) => TileNeighborhood;
 }
 
 const tileUvRect = (tileId: number): { u0: number; v0: number; u1: number; v1: number } => {
@@ -18,20 +33,41 @@ const tileUvRect = (tileId: number): { u0: number; v0: number; u1: number; v1: n
   return { u0, v0, u1, v1 };
 };
 
-export const buildChunkMesh = (chunk: Chunk): ChunkMeshData => {
-  const chunkOriginX = chunk.coord.x * 32 * TILE_SIZE;
-  const chunkOriginY = chunk.coord.y * 32 * TILE_SIZE;
+const usesTerrainAutotile = (tileId: number): boolean => tileId === 1 || tileId === 2;
+
+const resolveChunkTileAtlasIndex = (
+  chunk: Chunk,
+  localX: number,
+  localY: number,
+  tileId: number,
+  sampleNeighborhood?: ChunkMeshBuildOptions['sampleNeighborhood']
+): number => {
+  if (!sampleNeighborhood || !usesTerrainAutotile(tileId)) {
+    return tileId;
+  }
+
+  const neighborhood = sampleNeighborhood(chunk.coord.x, chunk.coord.y, localX, localY);
+  const rawMask = buildAutotileAdjacencyMask(neighborhood);
+  const normalizedMask = normalizeAutotileAdjacencyMask(rawMask);
+  return resolveTerrainAutotileVariantIndex(normalizedMask);
+};
+
+export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}): ChunkMeshData => {
+  const chunkOriginX = chunk.coord.x * CHUNK_SIZE * TILE_SIZE;
+  const chunkOriginY = chunk.coord.y * CHUNK_SIZE * TILE_SIZE;
+  const { sampleNeighborhood } = options;
 
   const floats: number[] = [];
 
-  for (let y = 0; y < 32; y += 1) {
-    for (let x = 0; x < 32; x += 1) {
+  for (let y = 0; y < CHUNK_SIZE; y += 1) {
+    for (let x = 0; x < CHUNK_SIZE; x += 1) {
       const tileId = chunk.tiles[toTileIndex(x, y)];
       if (tileId === 0) continue;
 
       const px = chunkOriginX + x * TILE_SIZE;
       const py = chunkOriginY + y * TILE_SIZE;
-      const { u0, v0, u1, v1 } = tileUvRect(tileId);
+      const atlasTileIndex = resolveChunkTileAtlasIndex(chunk, x, y, tileId, sampleNeighborhood);
+      const { u0, v0, u1, v1 } = tileUvRect(atlasTileIndex);
 
       floats.push(
         px,
