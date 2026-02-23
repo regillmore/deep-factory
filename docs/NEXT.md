@@ -9,4 +9,4 @@
 7. Add save/load format for chunk snapshots.
 8. Prepare networking scaffolding (state diff messages, interest management).
 9. Add a main menu shell and move debug overlay to a UI toggle.
-10. Add autotile adjacency mask helper (8-neighbor bitmask) built on neighborhood sampling, with unit tests.
+10. Add terrain autotile variant resolver (normalized mask -> atlas variant index) with unit tests and placeholder atlas mapping.
