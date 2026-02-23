@@ -3,7 +3,9 @@ export interface DebugOverlayStats {
   drawCalls: number;
   drawCallBudget: number;
   meshBuilds: number;
+  meshBuildBudget: number;
   meshBuildTimeMs: number;
+  meshBuildQueueLength: number;
   residentWorldChunks: number;
   cachedChunkMeshes: number;
   evictedWorldChunks: number;
@@ -37,7 +39,8 @@ export class DebugOverlay {
       `FPS: ${this.fps.toFixed(1)} | ` +
       `Chunks: ${stats.renderedChunks} | ` +
       `Draws: ${stats.drawCalls}/${stats.drawCallBudget} (${budgetState}) | ` +
-      `Mesh builds: ${stats.meshBuilds} (${stats.meshBuildTimeMs.toFixed(2)} ms) | ` +
+      `Mesh builds: ${stats.meshBuilds}/${stats.meshBuildBudget} (${stats.meshBuildTimeMs.toFixed(2)} ms) | ` +
+      `MeshQ: ${stats.meshBuildQueueLength} | ` +
       `Cache W/M: ${stats.residentWorldChunks}/${stats.cachedChunkMeshes} | ` +
       `Evict W/M: ${stats.evictedWorldChunks}/${stats.evictedMeshEntries}`;
   }

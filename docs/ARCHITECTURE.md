@@ -23,9 +23,10 @@ Current update phase applies input-driven camera movement.
 1. Ensure canvas backbuffer matches CSS size × `devicePixelRatio`.
 2. Build camera matrix (`world -> clip`) for orthographic projection.
 3. Compute visible chunk bounds from camera viewport and tile scale.
-4. Ensure each visible chunk has a GPU mesh cached.
-5. Draw chunk VAOs with a shared shader + atlas texture.
-6. Update debug overlay with frame timing and rendered chunk count.
+4. Queue visible (and nearby prefetch) chunk mesh builds, then process a small per-frame build budget.
+5. Draw ready chunk VAOs with a shared shader + atlas texture.
+6. Prune far chunk/world caches outside the retain ring.
+7. Update debug overlay with frame timing and renderer telemetry.
 
 ## Chunk meshing
 

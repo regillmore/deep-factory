@@ -22,7 +22,14 @@ interface ChunkGpuMesh {
 interface CachedChunkMesh {
   chunkX: number;
   chunkY: number;
+  state: 'queued' | 'ready' | 'empty';
   mesh: ChunkGpuMesh | null;
+}
+
+interface MeshBuildRequest {
+  key: string;
+  chunkX: number;
+  chunkY: number;
 }
 
 export interface RenderTelemetry {
@@ -30,7 +37,9 @@ export interface RenderTelemetry {
   drawCalls: number;
   drawCallBudget: number;
   meshBuilds: number;
+  meshBuildBudget: number;
   meshBuildTimeMs: number;
+  meshBuildQueueLength: number;
   residentWorldChunks: number;
   cachedChunkMeshes: number;
   evictedWorldChunks: number;
@@ -38,6 +47,8 @@ export interface RenderTelemetry {
 }
 
 const DRAW_CALL_BUDGET = 256;
+const MESH_BUILD_QUEUE_CHUNK_BUDGET = 4;
+const MESH_BUILD_QUEUE_TIME_BUDGET_MS = 3;
 const FRUSTUM_PADDING_CHUNKS = 1;
 const STREAM_RETAIN_PADDING_CHUNKS = 3;
 
@@ -46,6 +57,7 @@ export class Renderer {
   private program: WebGLProgram;
   private world = new TileWorld();
   private meshes = new Map<string, CachedChunkMesh>();
+  private meshBuildQueue: MeshBuildRequest[] = [];
   private uMatrix: WebGLUniformLocation;
   private texture: WebGLTexture | null = null;
 
@@ -54,7 +66,9 @@ export class Renderer {
     drawCalls: 0,
     drawCallBudget: DRAW_CALL_BUDGET,
     meshBuilds: 0,
+    meshBuildBudget: MESH_BUILD_QUEUE_CHUNK_BUDGET,
     meshBuildTimeMs: 0,
+    meshBuildQueueLength: 0,
     residentWorldChunks: 0,
     cachedChunkMeshes: 0,
     evictedWorldChunks: 0,
@@ -99,9 +113,6 @@ export class Renderer {
   async initialize(): Promise<void> {
     const atlasDataUrl = buildPlaceholderAtlas();
     this.texture = await loadTexture(this.gl, atlasDataUrl);
-    for (const chunk of this.world.getChunks()) {
-      this.uploadChunkMesh(chunk.coord.x, chunk.coord.y);
-    }
   }
 
   resize(): void {
@@ -123,6 +134,7 @@ export class Renderer {
     this.telemetry.drawCalls = 0;
     this.telemetry.meshBuilds = 0;
     this.telemetry.meshBuildTimeMs = 0;
+    this.telemetry.meshBuildQueueLength = this.meshBuildQueue.length;
     this.telemetry.evictedWorldChunks = 0;
     this.telemetry.evictedMeshEntries = 0;
     gl.clearColor(0.12, 0.15, 0.2, 1);
@@ -145,9 +157,12 @@ export class Renderer {
     const drawBounds = expandChunkBounds(visibleBounds, FRUSTUM_PADDING_CHUNKS);
     const retainBounds = expandChunkBounds(drawBounds, STREAM_RETAIN_PADDING_CHUNKS);
 
+    this.scheduleMeshBuilds(drawBounds, retainBounds);
+    this.processMeshBuildQueue();
+
     for (let y = drawBounds.minChunkY; y <= drawBounds.maxChunkY; y += 1) {
       for (let x = drawBounds.minChunkX; x <= drawBounds.maxChunkX; x += 1) {
-        const mesh = this.uploadChunkMesh(x, y);
+        const mesh = this.getReadyChunkMesh(x, y);
         if (!mesh) continue;
         gl.bindVertexArray(mesh.vao);
         gl.drawArrays(gl.TRIANGLES, 0, mesh.vertexCount);
@@ -160,40 +175,117 @@ export class Renderer {
     this.pruneStreamingCaches(retainBounds);
     this.telemetry.residentWorldChunks = this.world.getChunkCount();
     this.telemetry.cachedChunkMeshes = this.meshes.size;
+    this.telemetry.meshBuildQueueLength = this.meshBuildQueue.length;
   }
 
-  private uploadChunkMesh(chunkX: number, chunkY: number): ChunkGpuMesh | null {
+  private getReadyChunkMesh(chunkX: number, chunkY: number): ChunkGpuMesh | null {
     const key = chunkKey(chunkX, chunkY);
     const cached = this.meshes.get(key);
-    if (cached) return cached.mesh;
+    if (!cached) return null;
+    return cached.state === 'ready' ? cached.mesh : null;
+  }
 
-    const chunk = this.world.ensureChunk(chunkX, chunkY);
+  private scheduleMeshBuilds(drawBounds: ChunkBounds, retainBounds: ChunkBounds): void {
+    for (let y = drawBounds.minChunkY; y <= drawBounds.maxChunkY; y += 1) {
+      for (let x = drawBounds.minChunkX; x <= drawBounds.maxChunkX; x += 1) {
+        this.enqueueMeshBuild(x, y, 'visible');
+      }
+    }
+
+    for (let y = retainBounds.minChunkY; y <= retainBounds.maxChunkY; y += 1) {
+      for (let x = retainBounds.minChunkX; x <= retainBounds.maxChunkX; x += 1) {
+        if (chunkBoundsContains(drawBounds, x, y)) continue;
+        this.enqueueMeshBuild(x, y, 'prefetch');
+      }
+    }
+  }
+
+  private enqueueMeshBuild(chunkX: number, chunkY: number, priority: 'visible' | 'prefetch'): void {
+    const key = chunkKey(chunkX, chunkY);
+    const cached = this.meshes.get(key);
+    if (cached) {
+      if (cached.state === 'queued' && priority === 'visible') {
+        this.promoteQueuedMeshBuild(key);
+      }
+      return;
+    }
+
+    this.meshes.set(key, { chunkX, chunkY, state: 'queued', mesh: null });
+    const request = { key, chunkX, chunkY };
+    if (priority === 'visible') {
+      this.meshBuildQueue.unshift(request);
+      return;
+    }
+    this.meshBuildQueue.push(request);
+  }
+
+  private promoteQueuedMeshBuild(key: string): void {
+    const requestIndex = this.meshBuildQueue.findIndex((request) => request.key === key);
+    if (requestIndex <= 0) return;
+    const [request] = this.meshBuildQueue.splice(requestIndex, 1);
+    if (!request) return;
+    this.meshBuildQueue.unshift(request);
+  }
+
+  private processMeshBuildQueue(): void {
+    if (this.meshBuildQueue.length === 0) return;
+
+    const frameStart = performance.now();
+    let builtThisFrame = 0;
+
+    while (builtThisFrame < MESH_BUILD_QUEUE_CHUNK_BUDGET && this.meshBuildQueue.length > 0) {
+      if (builtThisFrame > 0 && performance.now() - frameStart >= MESH_BUILD_QUEUE_TIME_BUDGET_MS) {
+        break;
+      }
+
+      const nextRequest = this.meshBuildQueue.shift();
+      if (!nextRequest) break;
+
+      const cached = this.meshes.get(nextRequest.key);
+      if (!cached || cached.state !== 'queued') continue;
+
+      this.buildQueuedChunkMesh(nextRequest, cached);
+      builtThisFrame += 1;
+    }
+  }
+
+  private buildQueuedChunkMesh(request: MeshBuildRequest, cached: CachedChunkMesh): void {
+    const chunk = this.world.ensureChunk(request.chunkX, request.chunkY);
     const meshBuildStart = performance.now();
     const meshData = buildChunkMesh(chunk);
     this.telemetry.meshBuildTimeMs += performance.now() - meshBuildStart;
     this.telemetry.meshBuilds += 1;
+
     if (meshData.vertexCount === 0) {
-      this.meshes.set(key, { chunkX, chunkY, mesh: null });
-      return null;
+      cached.state = 'empty';
+      cached.mesh = null;
+      return;
     }
 
     const buffer = createStaticVertexBuffer(this.gl, meshData.vertices);
     const vao = createVertexArray(this.gl, buffer, 4);
-    const mesh = { buffer, vao, vertexCount: meshData.vertexCount };
-    this.meshes.set(key, { chunkX, chunkY, mesh });
-    return mesh;
+    cached.state = 'ready';
+    cached.mesh = { buffer, vao, vertexCount: meshData.vertexCount };
   }
 
   private pruneStreamingCaches(retainBounds: ChunkBounds): void {
     let evictedMeshEntries = 0;
     for (const [key, cached] of this.meshes) {
       if (chunkBoundsContains(retainBounds, cached.chunkX, cached.chunkY)) continue;
-      if (cached.mesh) {
+      if (cached.state === 'ready' && cached.mesh) {
         this.gl.deleteVertexArray(cached.mesh.vao);
         this.gl.deleteBuffer(cached.mesh.buffer);
       }
       this.meshes.delete(key);
       evictedMeshEntries += 1;
+    }
+
+    if (this.meshBuildQueue.length > 0) {
+      this.meshBuildQueue = this.meshBuildQueue.filter((request) => {
+        if (!chunkBoundsContains(retainBounds, request.chunkX, request.chunkY)) return false;
+        const cached = this.meshes.get(request.key);
+        return cached?.state === 'queued';
+      });
     }
 
     this.telemetry.evictedMeshEntries = evictedMeshEntries;

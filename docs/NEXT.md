@@ -2,7 +2,7 @@
 
 1. Add chunk remeshing invalidation when tiles are edited.
 2. Replace placeholder atlas with authored asset pipeline and tile metadata.
-3. [Done] Add frustum padding and chunk streaming policy for larger worlds.
+3. Add debug tile edit brush (place/break) with hovered-tile cursor highlight.
 4. Implement collision grid + simple player controller.
 5. Add water/lava tile animation and autotiling rules.
 6. Introduce basic lighting (sunlight + torch flood fill).

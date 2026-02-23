@@ -37,7 +37,8 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Orthographic camera with anchored zoom and pan controls for mouse + touch.
 - Chunked world model with `32x32` tiles per chunk and `16px` tiles.
 - Procedural terrain fill stub and per-chunk mesh generation (quad per non-empty tile).
-- Chunk visibility culling from camera bounds.
+- Chunk visibility culling with padded chunk streaming retention.
+- Budgeted per-frame mesh build queue (visible-first, prefetch around the camera).
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.
