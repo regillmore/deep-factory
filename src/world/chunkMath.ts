@@ -1,5 +1,12 @@
 import { CHUNK_SIZE } from './constants';
 
+export interface ChunkBounds {
+  minChunkX: number;
+  minChunkY: number;
+  maxChunkX: number;
+  maxChunkY: number;
+}
+
 export const chunkKey = (x: number, y: number): string => `${x},${y}`;
 
 export const toTileIndex = (x: number, y: number): number => y * CHUNK_SIZE + x;
@@ -19,8 +26,21 @@ export const chunkCoordBounds = (
   minTileY: number,
   maxTileX: number,
   maxTileY: number
-): { minChunkX: number; minChunkY: number; maxChunkX: number; maxChunkY: number } => {
+): ChunkBounds => {
   const { chunkX: minChunkX, chunkY: minChunkY } = worldToChunkCoord(minTileX, minTileY);
   const { chunkX: maxChunkX, chunkY: maxChunkY } = worldToChunkCoord(maxTileX, maxTileY);
   return { minChunkX, minChunkY, maxChunkX, maxChunkY };
 };
+
+export const expandChunkBounds = (bounds: ChunkBounds, paddingChunks: number): ChunkBounds => ({
+  minChunkX: bounds.minChunkX - paddingChunks,
+  minChunkY: bounds.minChunkY - paddingChunks,
+  maxChunkX: bounds.maxChunkX + paddingChunks,
+  maxChunkY: bounds.maxChunkY + paddingChunks
+});
+
+export const chunkBoundsContains = (bounds: ChunkBounds, chunkX: number, chunkY: number): boolean =>
+  chunkX >= bounds.minChunkX &&
+  chunkX <= bounds.maxChunkX &&
+  chunkY >= bounds.minChunkY &&
+  chunkY <= bounds.maxChunkY;

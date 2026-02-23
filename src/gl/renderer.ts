@@ -2,14 +2,27 @@ import { Camera2D } from '../core/camera2d';
 import { createStaticVertexBuffer, createVertexArray } from './buffer';
 import { createProgram } from './shader';
 import { buildPlaceholderAtlas, loadTexture } from './texture';
-import { CHUNK_SIZE, TILE_SIZE } from '../world/constants';
-import { chunkCoordBounds, chunkKey } from '../world/chunkMath';
+import { TILE_SIZE } from '../world/constants';
+import {
+  chunkBoundsContains,
+  chunkCoordBounds,
+  chunkKey,
+  expandChunkBounds
+} from '../world/chunkMath';
+import type { ChunkBounds } from '../world/chunkMath';
 import { buildChunkMesh } from '../world/mesher';
 import { TileWorld } from '../world/world';
 
 interface ChunkGpuMesh {
+  buffer: WebGLBuffer;
   vao: WebGLVertexArrayObject;
   vertexCount: number;
+}
+
+interface CachedChunkMesh {
+  chunkX: number;
+  chunkY: number;
+  mesh: ChunkGpuMesh | null;
 }
 
 export interface RenderTelemetry {
@@ -18,15 +31,21 @@ export interface RenderTelemetry {
   drawCallBudget: number;
   meshBuilds: number;
   meshBuildTimeMs: number;
+  residentWorldChunks: number;
+  cachedChunkMeshes: number;
+  evictedWorldChunks: number;
+  evictedMeshEntries: number;
 }
 
 const DRAW_CALL_BUDGET = 256;
+const FRUSTUM_PADDING_CHUNKS = 1;
+const STREAM_RETAIN_PADDING_CHUNKS = 3;
 
 export class Renderer {
   private gl: WebGL2RenderingContext;
   private program: WebGLProgram;
   private world = new TileWorld();
-  private meshes = new Map<string, ChunkGpuMesh | null>();
+  private meshes = new Map<string, CachedChunkMesh>();
   private uMatrix: WebGLUniformLocation;
   private texture: WebGLTexture | null = null;
 
@@ -35,7 +54,11 @@ export class Renderer {
     drawCalls: 0,
     drawCallBudget: DRAW_CALL_BUDGET,
     meshBuilds: 0,
-    meshBuildTimeMs: 0
+    meshBuildTimeMs: 0,
+    residentWorldChunks: 0,
+    cachedChunkMeshes: 0,
+    evictedWorldChunks: 0,
+    evictedMeshEntries: 0
   };
 
   constructor(private canvas: HTMLCanvasElement) {
@@ -100,6 +123,8 @@ export class Renderer {
     this.telemetry.drawCalls = 0;
     this.telemetry.meshBuilds = 0;
     this.telemetry.meshBuildTimeMs = 0;
+    this.telemetry.evictedWorldChunks = 0;
+    this.telemetry.evictedMeshEntries = 0;
     gl.clearColor(0.12, 0.15, 0.2, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -111,15 +136,17 @@ export class Renderer {
 
     const worldHalfWidth = this.canvas.width / (2 * camera.zoom);
     const worldHalfHeight = this.canvas.height / (2 * camera.zoom);
-    const minTileX = Math.floor((camera.x - worldHalfWidth) / TILE_SIZE) - CHUNK_SIZE;
-    const minTileY = Math.floor((camera.y - worldHalfHeight) / TILE_SIZE) - CHUNK_SIZE;
-    const maxTileX = Math.ceil((camera.x + worldHalfWidth) / TILE_SIZE) + CHUNK_SIZE;
-    const maxTileY = Math.ceil((camera.y + worldHalfHeight) / TILE_SIZE) + CHUNK_SIZE;
+    const minTileX = Math.floor((camera.x - worldHalfWidth) / TILE_SIZE);
+    const minTileY = Math.floor((camera.y - worldHalfHeight) / TILE_SIZE);
+    const maxTileX = Math.ceil((camera.x + worldHalfWidth) / TILE_SIZE);
+    const maxTileY = Math.ceil((camera.y + worldHalfHeight) / TILE_SIZE);
 
-    const bounds = chunkCoordBounds(minTileX, minTileY, maxTileX, maxTileY);
+    const visibleBounds = chunkCoordBounds(minTileX, minTileY, maxTileX, maxTileY);
+    const drawBounds = expandChunkBounds(visibleBounds, FRUSTUM_PADDING_CHUNKS);
+    const retainBounds = expandChunkBounds(drawBounds, STREAM_RETAIN_PADDING_CHUNKS);
 
-    for (let y = bounds.minChunkY; y <= bounds.maxChunkY; y += 1) {
-      for (let x = bounds.minChunkX; x <= bounds.maxChunkX; x += 1) {
+    for (let y = drawBounds.minChunkY; y <= drawBounds.maxChunkY; y += 1) {
+      for (let x = drawBounds.minChunkX; x <= drawBounds.maxChunkX; x += 1) {
         const mesh = this.uploadChunkMesh(x, y);
         if (!mesh) continue;
         gl.bindVertexArray(mesh.vao);
@@ -130,12 +157,15 @@ export class Renderer {
     }
 
     gl.bindVertexArray(null);
+    this.pruneStreamingCaches(retainBounds);
+    this.telemetry.residentWorldChunks = this.world.getChunkCount();
+    this.telemetry.cachedChunkMeshes = this.meshes.size;
   }
 
   private uploadChunkMesh(chunkX: number, chunkY: number): ChunkGpuMesh | null {
     const key = chunkKey(chunkX, chunkY);
     const cached = this.meshes.get(key);
-    if (cached !== undefined) return cached;
+    if (cached) return cached.mesh;
 
     const chunk = this.world.ensureChunk(chunkX, chunkY);
     const meshBuildStart = performance.now();
@@ -143,14 +173,30 @@ export class Renderer {
     this.telemetry.meshBuildTimeMs += performance.now() - meshBuildStart;
     this.telemetry.meshBuilds += 1;
     if (meshData.vertexCount === 0) {
-      this.meshes.set(key, null);
+      this.meshes.set(key, { chunkX, chunkY, mesh: null });
       return null;
     }
 
     const buffer = createStaticVertexBuffer(this.gl, meshData.vertices);
     const vao = createVertexArray(this.gl, buffer, 4);
-    const mesh = { vao, vertexCount: meshData.vertexCount };
-    this.meshes.set(key, mesh);
+    const mesh = { buffer, vao, vertexCount: meshData.vertexCount };
+    this.meshes.set(key, { chunkX, chunkY, mesh });
     return mesh;
+  }
+
+  private pruneStreamingCaches(retainBounds: ChunkBounds): void {
+    let evictedMeshEntries = 0;
+    for (const [key, cached] of this.meshes) {
+      if (chunkBoundsContains(retainBounds, cached.chunkX, cached.chunkY)) continue;
+      if (cached.mesh) {
+        this.gl.deleteVertexArray(cached.mesh.vao);
+        this.gl.deleteBuffer(cached.mesh.buffer);
+      }
+      this.meshes.delete(key);
+      evictedMeshEntries += 1;
+    }
+
+    this.telemetry.evictedMeshEntries = evictedMeshEntries;
+    this.telemetry.evictedWorldChunks = this.world.pruneChunksOutside(retainBounds);
   }
 }

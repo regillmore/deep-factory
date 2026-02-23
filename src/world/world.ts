@@ -1,5 +1,6 @@
 import { CHUNK_SIZE } from './constants';
-import { chunkKey, toTileIndex, worldToLocalTile } from './chunkMath';
+import { chunkBoundsContains, chunkKey, toTileIndex, worldToLocalTile } from './chunkMath';
+import type { ChunkBounds } from './chunkMath';
 import type { Chunk } from './types';
 
 const solidTileId = 1;
@@ -51,5 +52,19 @@ export class TileWorld {
 
   getChunks(): IterableIterator<Chunk> {
     return this.chunks.values();
+  }
+
+  getChunkCount(): number {
+    return this.chunks.size;
+  }
+
+  pruneChunksOutside(bounds: ChunkBounds): number {
+    let removed = 0;
+    for (const [key, chunk] of this.chunks) {
+      if (chunkBoundsContains(bounds, chunk.coord.x, chunk.coord.y)) continue;
+      this.chunks.delete(key);
+      removed += 1;
+    }
+    return removed;
   }
 }
