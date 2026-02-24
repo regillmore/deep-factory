@@ -17,6 +17,25 @@
       "terrainAutotile": {
         "placeholderVariantAtlasByCardinalMask": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
       }
+    },
+    {
+      "id": 3,
+      "name": "debug_brick",
+      "render": {
+        "atlasIndex": 14
+      }
+    },
+    {
+      "id": 4,
+      "name": "debug_panel",
+      "render": {
+        "uvRect": {
+          "u0": 0.25,
+          "v0": 0.25,
+          "u1": 0.5,
+          "v1": 0.5
+        }
+      }
     }
   ]
 }

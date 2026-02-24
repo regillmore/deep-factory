@@ -6,9 +6,22 @@ export interface TerrainAutotileTileMetadata {
   placeholderVariantAtlasByCardinalMask: readonly number[];
 }
 
+export interface TileUvRect {
+  u0: number;
+  v0: number;
+  u1: number;
+  v1: number;
+}
+
+export interface TileRenderMetadata {
+  atlasIndex?: number;
+  uvRect?: TileUvRect;
+}
+
 export interface TileMetadataEntry {
   id: number;
   name: string;
+  render?: TileRenderMetadata;
   terrainAutotile?: TerrainAutotileTileMetadata;
 }
 
@@ -25,6 +38,65 @@ const expectInteger = (value: unknown, label: string): number => {
     throw new Error(`${label} must be an integer`);
   }
   return value;
+};
+
+const expectFiniteNumber = (value: unknown, label: string): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`${label} must be a finite number`);
+  }
+  return value;
+};
+
+const ATLAS_TILE_CAPACITY = TILE_ATLAS_COLUMNS * TILE_ATLAS_ROWS;
+
+const expectAtlasIndex = (value: unknown, label: string): number => {
+  const atlasIndex = expectInteger(value, label);
+  if (atlasIndex < 0 || atlasIndex >= ATLAS_TILE_CAPACITY) {
+    throw new Error(`${label} must be between 0 and ${ATLAS_TILE_CAPACITY - 1}`);
+  }
+  return atlasIndex;
+};
+
+const parseTileUvRect = (value: unknown, label: string): TileUvRect => {
+  if (!isRecord(value)) {
+    throw new Error(`${label} must be an object`);
+  }
+
+  const u0 = expectFiniteNumber(value.u0, `${label}.u0`);
+  const v0 = expectFiniteNumber(value.v0, `${label}.v0`);
+  const u1 = expectFiniteNumber(value.u1, `${label}.u1`);
+  const v1 = expectFiniteNumber(value.v1, `${label}.v1`);
+
+  if (u0 < 0 || u0 > 1 || v0 < 0 || v0 > 1 || u1 < 0 || u1 > 1 || v1 < 0 || v1 > 1) {
+    throw new Error(`${label} coordinates must be normalized between 0 and 1`);
+  }
+  if (u1 <= u0 || v1 <= v0) {
+    throw new Error(`${label} must satisfy u0 < u1 and v0 < v1`);
+  }
+
+  return { u0, v0, u1, v1 };
+};
+
+const parseTileRenderMetadata = (value: unknown, tileId: number): TileRenderMetadata => {
+  if (!isRecord(value)) {
+    throw new Error(`tiles[${tileId}].render must be an object`);
+  }
+
+  const hasAtlasIndex = value.atlasIndex !== undefined;
+  const hasUvRect = value.uvRect !== undefined;
+  if (hasAtlasIndex === hasUvRect) {
+    throw new Error(`tiles[${tileId}].render must define exactly one of atlasIndex or uvRect`);
+  }
+
+  if (hasAtlasIndex) {
+    return {
+      atlasIndex: expectAtlasIndex(value.atlasIndex, `tiles[${tileId}].render.atlasIndex`)
+    };
+  }
+
+  return {
+    uvRect: parseTileUvRect(value.uvRect, `tiles[${tileId}].render.uvRect`)
+  };
 };
 
 const parseTerrainAutotileMetadata = (
@@ -48,22 +120,11 @@ const parseTerrainAutotileMetadata = (
     );
   }
 
-  const atlasTileCapacity = TILE_ATLAS_COLUMNS * TILE_ATLAS_ROWS;
   const parsedVariantMap = variantMap.map((entry, cardinalMask) => {
-    const atlasIndex = expectInteger(
+    return expectAtlasIndex(
       entry,
       `tiles[${tileId}] terrain variant map entry ${cardinalMask} atlas index`
     );
-
-    if (atlasIndex < 0 || atlasIndex >= atlasTileCapacity) {
-      throw new Error(
-        `tiles[${tileId}] terrain variant map entry ${cardinalMask} atlas index must be between 0 and ${
-          atlasTileCapacity - 1
-        }`
-      );
-    }
-
-    return atlasIndex;
   });
 
   return { placeholderVariantAtlasByCardinalMask: parsedVariantMap };
@@ -101,15 +162,21 @@ export const parseTileMetadataRegistry = (value: unknown): TileMetadataRegistry 
       throw new Error(`tiles[${index}].name must be a non-empty string`);
     }
 
+    const renderValue = rawTile.render;
     const terrainAutotileValue = rawTile.terrainAutotile;
     const parsedTile: TileMetadataEntry = {
       id: tileId,
       name,
+      render: renderValue === undefined ? undefined : parseTileRenderMetadata(renderValue, tileId),
       terrainAutotile:
         terrainAutotileValue === undefined
           ? undefined
           : parseTerrainAutotileMetadata(terrainAutotileValue, tileId)
     };
+
+    if (tileId !== 0 && !parsedTile.render && !parsedTile.terrainAutotile) {
+      throw new Error(`tiles[${index}] (id ${tileId}) must define render or terrainAutotile metadata`);
+    }
 
     tiles.push(parsedTile);
     tilesById.set(tileId, parsedTile);
@@ -149,4 +216,34 @@ export const resolveTerrainAutotileVariantAtlasIndex = (
   }
 
   return terrainAutotile.placeholderVariantAtlasByCardinalMask[cardinalVariantIndex] ?? null;
+};
+
+export const atlasIndexToUvRect = (atlasIndex: number): TileUvRect => {
+  const col = atlasIndex % TILE_ATLAS_COLUMNS;
+  const row = Math.floor(atlasIndex / TILE_ATLAS_COLUMNS);
+  return {
+    u0: col / TILE_ATLAS_COLUMNS,
+    v0: row / TILE_ATLAS_ROWS,
+    u1: (col + 1) / TILE_ATLAS_COLUMNS,
+    v1: (row + 1) / TILE_ATLAS_ROWS
+  };
+};
+
+export const resolveTileRenderUvRect = (
+  tileId: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): TileUvRect | null => {
+  const render = getTileMetadata(tileId, registry)?.render;
+  if (!render) return null;
+  if (render.atlasIndex !== undefined) return atlasIndexToUvRect(render.atlasIndex);
+  return render.uvRect ?? null;
+};
+
+export const resolveTerrainAutotileVariantUvRect = (
+  tileId: number,
+  cardinalVariantIndex: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): TileUvRect | null => {
+  const atlasIndex = resolveTerrainAutotileVariantAtlasIndex(tileId, cardinalVariantIndex, registry);
+  return atlasIndex === null ? null : atlasIndexToUvRect(atlasIndex);
 };

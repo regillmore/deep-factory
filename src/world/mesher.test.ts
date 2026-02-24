@@ -28,6 +28,14 @@ const atlasUvRect = (atlasTileIndex: number) => {
 
 const expectSingleQuadUvRect = (vertices: Float32Array, atlasTileIndex: number): void => {
   const { u0, v0, u1, v1 } = atlasUvRect(atlasTileIndex);
+  expectSingleQuadUv(vertices, { u0, v0, u1, v1 });
+};
+
+const expectSingleQuadUv = (
+  vertices: Float32Array,
+  uvRect: { u0: number; v0: number; u1: number; v1: number }
+): void => {
+  const { u0, v0, u1, v1 } = uvRect;
 
   expect(Array.from(vertices)).toEqual([
     expect.any(Number),
@@ -111,5 +119,32 @@ describe('buildChunkMesh autotile UV selection', () => {
 
     expect(mesh.vertexCount).toBe(6);
     expectSingleQuadUvRect(mesh.vertices, 6);
+  });
+
+  it('uses metadata atlasIndex for non-autotile tiles', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 3);
+
+    const mesh = buildChunkMesh(chunk);
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 14);
+  });
+
+  it('uses metadata uvRect for non-autotile tiles', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 4);
+
+    const mesh = buildChunkMesh(chunk);
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUv(mesh.vertices, { u0: 0.25, v0: 0.25, u1: 0.5, v1: 0.5 });
+  });
+
+  it('throws for non-empty tiles without render metadata instead of using raw tile id fallback', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 99);
+
+    expect(() => buildChunkMesh(chunk)).toThrowError(/Missing tile render metadata for tile 99/);
   });
 });

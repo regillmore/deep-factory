@@ -9,4 +9,4 @@
 7. Add save/load format for chunk snapshots.
 8. Prepare networking scaffolding (state diff messages, interest management).
 9. Add a main menu shell and move debug overlay to a UI toggle.
-10. Expand tile metadata to include explicit atlas indices/UV metadata for non-autotile tiles and route all mesher UV selection through metadata (remove raw `tileId -> atlas slot` fallback).
+10. Add metadata-driven autotile connectivity groups/material tags and use them in adjacency sampling predicates (so related terrain tiles can share autotile seams) with unit tests.

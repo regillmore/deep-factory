@@ -3,8 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT } from './autotile';
 import {
   TILE_METADATA,
+  atlasIndexToUvRect,
   hasTerrainAutotileMetadata,
   parseTileMetadataRegistry,
+  resolveTerrainAutotileVariantUvRect,
+  resolveTileRenderUvRect,
   resolveTerrainAutotileVariantAtlasIndex
 } from './tileMetadata';
 
@@ -18,6 +21,9 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileVariantAtlasIndex(1, 0)).toBe(0);
     expect(resolveTerrainAutotileVariantAtlasIndex(1, 15)).toBe(15);
     expect(resolveTerrainAutotileVariantAtlasIndex(2, 6)).toBe(6);
+    expect(resolveTileRenderUvRect(3)).toEqual(atlasIndexToUvRect(14));
+    expect(resolveTileRenderUvRect(4)).toEqual({ u0: 0.25, v0: 0.25, u1: 0.5, v1: 0.5 });
+    expect(resolveTerrainAutotileVariantUvRect(2, 6)).toEqual(atlasIndexToUvRect(6));
     expect(resolveTerrainAutotileVariantAtlasIndex(1, TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT)).toBe(
       null
     );
@@ -27,8 +33,8 @@ describe('tile metadata loader', () => {
     expect(() =>
       parseTileMetadataRegistry({
         tiles: [
-          { id: 1, name: 'stone' },
-          { id: 1, name: 'grass_surface' }
+          { id: 1, name: 'stone', render: { atlasIndex: 0 } },
+          { id: 1, name: 'grass_surface', render: { atlasIndex: 1 } }
         ]
       })
     ).toThrowError(/duplicate tile metadata id 1/);
@@ -70,5 +76,30 @@ describe('tile metadata loader', () => {
         ]
       })
     ).toThrowError(/atlas index must be between 0 and 15/);
+  });
+
+  it('rejects non-empty tiles without render or terrain metadata', () => {
+    expect(() =>
+      parseTileMetadataRegistry({
+        tiles: [{ id: 7, name: 'missing_render' }]
+      })
+    ).toThrowError(/must define render or terrainAutotile metadata/);
+  });
+
+  it('rejects render metadata that defines both atlasIndex and uvRect', () => {
+    expect(() =>
+      parseTileMetadataRegistry({
+        tiles: [
+          {
+            id: 7,
+            name: 'bad_render',
+            render: {
+              atlasIndex: 1,
+              uvRect: { u0: 0, v0: 0, u1: 0.25, v1: 0.25 }
+            }
+          }
+        ]
+      })
+    ).toThrowError(/exactly one of atlasIndex or uvRect/);
   });
 });

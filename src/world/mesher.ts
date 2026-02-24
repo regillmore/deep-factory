@@ -3,9 +3,14 @@ import {
   normalizeAutotileAdjacencyMask,
   resolveTerrainAutotileVariantIndex
 } from './autotile';
-import { CHUNK_SIZE, TILE_ATLAS_COLUMNS, TILE_ATLAS_ROWS, TILE_SIZE } from './constants';
+import { CHUNK_SIZE, TILE_SIZE } from './constants';
 import { toTileIndex } from './chunkMath';
-import { hasTerrainAutotileMetadata, resolveTerrainAutotileVariantAtlasIndex } from './tileMetadata';
+import {
+  hasTerrainAutotileMetadata,
+  resolveTerrainAutotileVariantUvRect,
+  resolveTileRenderUvRect
+} from './tileMetadata';
+import type { TileUvRect } from './tileMetadata';
 import type { Chunk } from './types';
 import type { TileNeighborhood } from './world';
 
@@ -23,35 +28,34 @@ export interface ChunkMeshBuildOptions {
   ) => TileNeighborhood;
 }
 
-const tileUvRect = (tileId: number): { u0: number; v0: number; u1: number; v1: number } => {
-  const index = tileId % (TILE_ATLAS_COLUMNS * TILE_ATLAS_ROWS);
-  const col = index % TILE_ATLAS_COLUMNS;
-  const row = Math.floor(index / TILE_ATLAS_COLUMNS);
-  const u0 = col / TILE_ATLAS_COLUMNS;
-  const v0 = row / TILE_ATLAS_ROWS;
-  const u1 = (col + 1) / TILE_ATLAS_COLUMNS;
-  const v1 = (row + 1) / TILE_ATLAS_ROWS;
-  return { u0, v0, u1, v1 };
-};
-
 const usesTerrainAutotile = (tileId: number): boolean => hasTerrainAutotileMetadata(tileId);
 
-const resolveChunkTileAtlasIndex = (
+const resolveChunkTileUvRect = (
   chunk: Chunk,
   localX: number,
   localY: number,
   tileId: number,
   sampleNeighborhood?: ChunkMeshBuildOptions['sampleNeighborhood']
-): number => {
-  if (!sampleNeighborhood || !usesTerrainAutotile(tileId)) {
-    return tileId;
+): TileUvRect => {
+  if (usesTerrainAutotile(tileId)) {
+    if (!sampleNeighborhood) {
+      const isolatedTerrainUvRect = resolveTerrainAutotileVariantUvRect(tileId, 0);
+      if (isolatedTerrainUvRect) return isolatedTerrainUvRect;
+      throw new Error(`Missing terrain autotile metadata for tile ${tileId}`);
+    }
+
+    const neighborhood = sampleNeighborhood(chunk.coord.x, chunk.coord.y, localX, localY);
+    const rawMask = buildAutotileAdjacencyMask(neighborhood);
+    const normalizedMask = normalizeAutotileAdjacencyMask(rawMask);
+    const cardinalVariantIndex = resolveTerrainAutotileVariantIndex(normalizedMask);
+    const terrainUvRect = resolveTerrainAutotileVariantUvRect(tileId, cardinalVariantIndex);
+    if (terrainUvRect) return terrainUvRect;
+    throw new Error(`Missing terrain autotile variant metadata for tile ${tileId}`);
   }
 
-  const neighborhood = sampleNeighborhood(chunk.coord.x, chunk.coord.y, localX, localY);
-  const rawMask = buildAutotileAdjacencyMask(neighborhood);
-  const normalizedMask = normalizeAutotileAdjacencyMask(rawMask);
-  const cardinalVariantIndex = resolveTerrainAutotileVariantIndex(normalizedMask);
-  return resolveTerrainAutotileVariantAtlasIndex(tileId, cardinalVariantIndex) ?? tileId;
+  const staticUvRect = resolveTileRenderUvRect(tileId);
+  if (staticUvRect) return staticUvRect;
+  throw new Error(`Missing tile render metadata for tile ${tileId}`);
 };
 
 export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}): ChunkMeshData => {
@@ -68,8 +72,7 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
 
       const px = chunkOriginX + x * TILE_SIZE;
       const py = chunkOriginY + y * TILE_SIZE;
-      const atlasTileIndex = resolveChunkTileAtlasIndex(chunk, x, y, tileId, sampleNeighborhood);
-      const { u0, v0, u1, v1 } = tileUvRect(atlasTileIndex);
+      const { u0, v0, u1, v1 } = resolveChunkTileUvRect(chunk, x, y, tileId, sampleNeighborhood);
 
       floats.push(
         px,

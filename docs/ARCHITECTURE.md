@@ -7,7 +7,7 @@
 - `src/input/`: input abstraction for keyboard, mouse, and touch/pinch.
 - `src/gl/`: low-level WebGL2 utilities and renderer orchestration.
 - `src/world/`: world data model, chunk math, procedural generation, mesh construction.
-- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (placeholder terrain autotile mappings today, authored atlas pipeline hook later).
+- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps plus non-autotile render `atlasIndex` / `uvRect` metadata; authored atlas pipeline hook later).
 - `src/ui/`: debug DOM overlay.
 
 ## Update loop
@@ -36,7 +36,7 @@ Current update phase applies input-driven camera movement.
 - For each non-zero tile:
   - emits two triangles (6 vertices) for one quad,
   - writes per-vertex world position and UV.
-- UVs map into a fixed tile atlas grid (`4x4` currently).
+- UVs are resolved through tile metadata (terrain autotile variant maps or non-autotile render metadata), then mapped into the fixed placeholder atlas grid (`4x4` currently).
 - Output is uploaded once per chunk as static vertex data.
 
 This is intentionally simple and easy to evolve (greedy meshing, layered tiles, occlusion rules can be added later).
@@ -48,6 +48,10 @@ variant index derived from the normalized cardinal adjacency mask (`N/E/S/W` bit
 Diagonal neighbors are sampled and normalized for corner-gating, but placeholder UV selection collapses to the
 16 cardinal combinations for now. The current mapping is defined in `src/world/tileMetadata.json` and validated at
 startup by `src/world/tileMetadata.ts`.
+
+Non-autotile tiles also resolve UVs through the same metadata registry via explicit render metadata:
+- `render.atlasIndex`: atlas slot index in the placeholder `4x4` grid.
+- `render.uvRect`: normalized UV rectangle (`u0/v0/u1/v1`) for direct sub-rect mapping.
 
 | Atlas row | Variant indices | Cardinal mask combinations |
 | --- | --- | --- |
