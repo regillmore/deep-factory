@@ -300,6 +300,60 @@ describe('tile metadata loader', () => {
     expect(isTileSolid(-1, registry)).toBe(false);
   });
 
+  it('builds dense render lookup tables for static UVs and terrain variants', () => {
+    const variantMap = Array.from(
+      { length: TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT },
+      (_, index) => (index + 1) % TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
+    );
+    const registry = parseTileMetadataRegistry({
+      tiles: [
+        {
+          id: 0,
+          name: 'empty',
+          gameplay: { solid: false, blocksLight: false }
+        },
+        {
+          id: 5,
+          name: 'panel',
+          render: { uvRect: { u0: 0.25, v0: 0.25, u1: 0.5, v1: 0.5 } }
+        },
+        {
+          id: 12,
+          name: 'brick',
+          render: { atlasIndex: 14 }
+        },
+        {
+          id: 18,
+          name: 'ground',
+          terrainAutotile: {
+            placeholderVariantAtlasByCardinalMask: variantMap
+          }
+        }
+      ]
+    });
+
+    expect(registry.renderLookup.staticUvRectByTileId.length).toBe(19);
+    expect(registry.renderLookup.terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask).toBeInstanceOf(
+      Int32Array
+    );
+    expect(registry.renderLookup.terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask.length).toBe(
+      19 * TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
+    );
+
+    expect(resolveTileRenderUvRect(5, registry)).toEqual({ u0: 0.25, v0: 0.25, u1: 0.5, v1: 0.5 });
+    expect(resolveTileRenderUvRect(12, registry)).toEqual(atlasIndexToUvRect(14));
+    expect(resolveTileRenderUvRect(18, registry)).toBe(null);
+    expect(resolveTileRenderUvRect(999, registry)).toBe(null);
+
+    expect(resolveTerrainAutotileVariantAtlasIndex(18, 0, registry)).toBe(1);
+    expect(resolveTerrainAutotileVariantAtlasIndex(18, 15, registry)).toBe(0);
+    expect(resolveTerrainAutotileVariantAtlasIndex(12, 0, registry)).toBe(null);
+    expect(resolveTerrainAutotileVariantAtlasIndex(18, -1, registry)).toBe(null);
+    expect(resolveTerrainAutotileVariantAtlasIndex(18, TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT, registry)).toBe(
+      null
+    );
+  });
+
   it('rejects duplicate material tags', () => {
     expect(() =>
       parseTileMetadataRegistry({

@@ -41,6 +41,7 @@ export interface TileMetadataRegistry {
   tilesById: ReadonlyMap<number, TileMetadataEntry>;
   gameplayPropertyLookup: TileGameplayPropertyLookup;
   terrainConnectivityLookup: TileTerrainConnectivityLookup;
+  renderLookup: TileRenderLookup;
 }
 
 export interface TileGameplayPropertyLookup {
@@ -51,6 +52,11 @@ export interface TileGameplayPropertyLookup {
 export interface TileTerrainConnectivityLookup {
   connectivityGroupIdByTileId: Int32Array;
   materialTagMaskByTileId: readonly bigint[];
+}
+
+export interface TileRenderLookup {
+  staticUvRectByTileId: readonly (TileUvRect | null)[];
+  terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask: Int32Array;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -225,6 +231,7 @@ const TILE_GAMEPLAY_PROPERTY_FLAG_BLOCKS_LIGHT = 1 << 1;
 const TILE_LIQUID_KIND_CODE_NONE = -1;
 const TILE_LIQUID_KIND_CODE_WATER = 0;
 const TILE_LIQUID_KIND_CODE_LAVA = 1;
+const TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX = -1;
 
 const TERRAIN_CONNECTIVITY_GROUP_ID_NON_TERRAIN = -1;
 const TERRAIN_CONNECTIVITY_GROUP_ID_UNGROUPED_TERRAIN = -2;
@@ -343,6 +350,52 @@ const buildTileTerrainConnectivityLookup = (
   };
 };
 
+const buildTileRenderLookup = (tiles: readonly TileMetadataEntry[]): TileRenderLookup => {
+  let maxTileId = 0;
+  for (const tile of tiles) {
+    if (tile.id > maxTileId) {
+      maxTileId = tile.id;
+    }
+  }
+
+  const staticUvRectByTileId = Array<TileUvRect | null>(maxTileId + 1).fill(null);
+  const terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask = new Int32Array(
+    (maxTileId + 1) * TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
+  );
+  terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask.fill(TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX);
+
+  for (const tile of tiles) {
+    if (tile.render) {
+      if (tile.render.atlasIndex !== undefined) {
+        const col = tile.render.atlasIndex % TILE_ATLAS_COLUMNS;
+        const row = Math.floor(tile.render.atlasIndex / TILE_ATLAS_COLUMNS);
+        staticUvRectByTileId[tile.id] = {
+          u0: col / TILE_ATLAS_COLUMNS,
+          v0: row / TILE_ATLAS_ROWS,
+          u1: (col + 1) / TILE_ATLAS_COLUMNS,
+          v1: (row + 1) / TILE_ATLAS_ROWS
+        };
+      } else {
+        staticUvRectByTileId[tile.id] = tile.render.uvRect ?? null;
+      }
+    }
+
+    const variantMap = tile.terrainAutotile?.placeholderVariantAtlasByCardinalMask;
+    if (!variantMap) continue;
+
+    const tableOffset = tile.id * TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT;
+    for (let cardinalMask = 0; cardinalMask < variantMap.length; cardinalMask += 1) {
+      terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask[tableOffset + cardinalMask] =
+        variantMap[cardinalMask] ?? TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX;
+    }
+  }
+
+  return {
+    staticUvRectByTileId,
+    terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask
+  };
+};
+
 const isDenseLookupTileIdInRange = (tileId: number, length: number): boolean =>
   Number.isInteger(tileId) && tileId >= 0 && tileId < length;
 
@@ -383,6 +436,44 @@ const getTerrainMaterialTagMask = (tileId: number, registry: TileMetadataRegistr
   }
 
   return materialTagMaskByTileId[tileId] ?? 0n;
+};
+
+const getStaticTileRenderUvRect = (
+  tileId: number,
+  registry: TileMetadataRegistry
+): TileUvRect | null => {
+  const { staticUvRectByTileId } = registry.renderLookup;
+  if (!isDenseLookupTileIdInRange(tileId, staticUvRectByTileId.length)) {
+    return null;
+  }
+
+  return staticUvRectByTileId[tileId] ?? null;
+};
+
+const getTerrainAutotileVariantAtlasIndexFromLookup = (
+  tileId: number,
+  cardinalVariantIndex: number,
+  registry: TileMetadataRegistry
+): number | null => {
+  if (!Number.isInteger(cardinalVariantIndex)) return null;
+  if (
+    cardinalVariantIndex < 0 ||
+    cardinalVariantIndex >= TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
+  ) {
+    return null;
+  }
+
+  const { staticUvRectByTileId, terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask } = registry.renderLookup;
+  if (!isDenseLookupTileIdInRange(tileId, staticUvRectByTileId.length)) {
+    return null;
+  }
+
+  const atlasIndex =
+    terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask[
+      tileId * TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT + cardinalVariantIndex
+    ] ?? TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX;
+
+  return atlasIndex === TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX ? null : atlasIndex;
 };
 
 export const parseTileMetadataRegistry = (value: unknown): TileMetadataRegistry => {
@@ -446,7 +537,8 @@ export const parseTileMetadataRegistry = (value: unknown): TileMetadataRegistry 
     tiles,
     tilesById,
     gameplayPropertyLookup: buildTileGameplayPropertyLookup(tiles),
-    terrainConnectivityLookup: buildTileTerrainConnectivityLookup(tiles)
+    terrainConnectivityLookup: buildTileTerrainConnectivityLookup(tiles),
+    renderLookup: buildTileRenderLookup(tiles)
   };
 };
 
@@ -533,19 +625,8 @@ export const resolveTerrainAutotileVariantAtlasIndex = (
   tileId: number,
   cardinalVariantIndex: number,
   registry: TileMetadataRegistry = TILE_METADATA
-): number | null => {
-  const terrainAutotile = getTileMetadata(tileId, registry)?.terrainAutotile;
-  if (!terrainAutotile) return null;
-  if (!Number.isInteger(cardinalVariantIndex)) return null;
-  if (
-    cardinalVariantIndex < 0 ||
-    cardinalVariantIndex >= terrainAutotile.placeholderVariantAtlasByCardinalMask.length
-  ) {
-    return null;
-  }
-
-  return terrainAutotile.placeholderVariantAtlasByCardinalMask[cardinalVariantIndex] ?? null;
-};
+): number | null =>
+  getTerrainAutotileVariantAtlasIndexFromLookup(tileId, cardinalVariantIndex, registry);
 
 export const atlasIndexToUvRect = (atlasIndex: number): TileUvRect => {
   const col = atlasIndex % TILE_ATLAS_COLUMNS;
@@ -561,12 +642,7 @@ export const atlasIndexToUvRect = (atlasIndex: number): TileUvRect => {
 export const resolveTileRenderUvRect = (
   tileId: number,
   registry: TileMetadataRegistry = TILE_METADATA
-): TileUvRect | null => {
-  const render = getTileMetadata(tileId, registry)?.render;
-  if (!render) return null;
-  if (render.atlasIndex !== undefined) return atlasIndexToUvRect(render.atlasIndex);
-  return render.uvRect ?? null;
-};
+): TileUvRect | null => getStaticTileRenderUvRect(tileId, registry);
 
 export const resolveTerrainAutotileVariantUvRect = (
   tileId: number,
