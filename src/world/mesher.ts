@@ -6,6 +6,7 @@ import {
 import { CHUNK_SIZE, TILE_SIZE } from './constants';
 import { toTileIndex } from './chunkMath';
 import {
+  areTerrainAutotileNeighborsConnected,
   hasTerrainAutotileMetadata,
   resolveTerrainAutotileVariantUvRect,
   resolveTileRenderUvRect
@@ -45,7 +46,9 @@ const resolveChunkTileUvRect = (
     }
 
     const neighborhood = sampleNeighborhood(chunk.coord.x, chunk.coord.y, localX, localY);
-    const rawMask = buildAutotileAdjacencyMask(neighborhood);
+    const rawMask = buildAutotileAdjacencyMask(neighborhood, (centerTileId, neighborTileId) =>
+      areTerrainAutotileNeighborsConnected(centerTileId, neighborTileId)
+    );
     const normalizedMask = normalizeAutotileAdjacencyMask(rawMask);
     const cardinalVariantIndex = resolveTerrainAutotileVariantIndex(normalizedMask);
     const terrainUvRect = resolveTerrainAutotileVariantUvRect(tileId, cardinalVariantIndex);

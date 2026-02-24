@@ -4,6 +4,7 @@ import rawTileMetadata from './tileMetadata.json';
 
 export interface TerrainAutotileTileMetadata {
   placeholderVariantAtlasByCardinalMask: readonly number[];
+  connectivityGroup?: string;
 }
 
 export interface TileUvRect {
@@ -21,6 +22,7 @@ export interface TileRenderMetadata {
 export interface TileMetadataEntry {
   id: number;
   name: string;
+  materialTags?: readonly string[];
   render?: TileRenderMetadata;
   terrainAutotile?: TerrainAutotileTileMetadata;
 }
@@ -38,6 +40,14 @@ const expectInteger = (value: unknown, label: string): number => {
     throw new Error(`${label} must be an integer`);
   }
   return value;
+};
+
+const expectNonEmptyString = (value: unknown, label: string): string => {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`${label} must be a non-empty string`);
+  }
+
+  return value.trim();
 };
 
 const expectFiniteNumber = (value: unknown, label: string): number => {
@@ -75,6 +85,25 @@ const parseTileUvRect = (value: unknown, label: string): TileUvRect => {
   }
 
   return { u0, v0, u1, v1 };
+};
+
+const parseMaterialTags = (value: unknown, tileId: number): readonly string[] => {
+  if (!Array.isArray(value)) {
+    throw new Error(`tiles[${tileId}].materialTags must be an array`);
+  }
+
+  const tags: string[] = [];
+  const seen = new Set<string>();
+  for (let index = 0; index < value.length; index += 1) {
+    const tag = expectNonEmptyString(value[index], `tiles[${tileId}].materialTags[${index}]`);
+    if (seen.has(tag)) {
+      throw new Error(`tiles[${tileId}].materialTags contains duplicate tag "${tag}"`);
+    }
+    seen.add(tag);
+    tags.push(tag);
+  }
+
+  return tags;
 };
 
 const parseTileRenderMetadata = (value: unknown, tileId: number): TileRenderMetadata => {
@@ -127,7 +156,16 @@ const parseTerrainAutotileMetadata = (
     );
   });
 
-  return { placeholderVariantAtlasByCardinalMask: parsedVariantMap };
+  return {
+    placeholderVariantAtlasByCardinalMask: parsedVariantMap,
+    connectivityGroup:
+      value.connectivityGroup === undefined
+        ? undefined
+        : expectNonEmptyString(
+            value.connectivityGroup,
+            `tiles[${tileId}].terrainAutotile.connectivityGroup`
+          )
+  };
 };
 
 export const parseTileMetadataRegistry = (value: unknown): TileMetadataRegistry => {
@@ -162,11 +200,14 @@ export const parseTileMetadataRegistry = (value: unknown): TileMetadataRegistry 
       throw new Error(`tiles[${index}].name must be a non-empty string`);
     }
 
+    const materialTagsValue = rawTile.materialTags;
     const renderValue = rawTile.render;
     const terrainAutotileValue = rawTile.terrainAutotile;
     const parsedTile: TileMetadataEntry = {
       id: tileId,
       name,
+      materialTags:
+        materialTagsValue === undefined ? undefined : parseMaterialTags(materialTagsValue, tileId),
       render: renderValue === undefined ? undefined : parseTileRenderMetadata(renderValue, tileId),
       terrainAutotile:
         terrainAutotileValue === undefined
@@ -199,6 +240,41 @@ export const hasTerrainAutotileMetadata = (
   tileId: number,
   registry: TileMetadataRegistry = TILE_METADATA
 ): boolean => getTileMetadata(tileId, registry)?.terrainAutotile !== undefined;
+
+const sharesAnyMaterialTag = (
+  a: readonly string[] | undefined,
+  b: readonly string[] | undefined
+): boolean => {
+  if (!a?.length || !b?.length) return false;
+
+  const aTags = new Set(a);
+  for (const tag of b) {
+    if (aTags.has(tag)) return true;
+  }
+
+  return false;
+};
+
+export const areTerrainAutotileNeighborsConnected = (
+  centerTileId: number,
+  neighborTileId: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): boolean => {
+  if (centerTileId === 0 || neighborTileId === 0) return false;
+
+  const center = getTileMetadata(centerTileId, registry);
+  const neighbor = getTileMetadata(neighborTileId, registry);
+  if (!center?.terrainAutotile || !neighbor?.terrainAutotile) return false;
+  if (centerTileId === neighborTileId) return true;
+
+  const centerGroup = center.terrainAutotile.connectivityGroup;
+  const neighborGroup = neighbor.terrainAutotile.connectivityGroup;
+  if (centerGroup !== undefined && neighborGroup !== undefined) {
+    return centerGroup === neighborGroup;
+  }
+
+  return sharesAnyMaterialTag(center.materialTags, neighbor.materialTags);
+};
 
 export const resolveTerrainAutotileVariantAtlasIndex = (
   tileId: number,

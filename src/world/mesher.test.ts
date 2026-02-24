@@ -95,6 +95,28 @@ describe('buildChunkMesh autotile UV selection', () => {
     expectSingleQuadUvRect(mesh.vertices, 3);
   });
 
+  it('treats related terrain tile ids as connected when metadata groups match', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 2);
+
+    const mesh = buildChunkMesh(chunk, {
+      sampleNeighborhood: () => ({
+        center: 2,
+        north: 1,
+        northEast: 1,
+        east: 1,
+        southEast: 0,
+        south: 0,
+        southWest: 0,
+        west: 0,
+        northWest: 0
+      })
+    });
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 3);
+  });
+
   it('uses chunk-edge neighborhood sampling to resolve UVs across adjacent chunks', () => {
     const chunkX = 0;
     const chunkY = 10;

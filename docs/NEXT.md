@@ -9,4 +9,4 @@
 7. Add save/load format for chunk snapshots.
 8. Prepare networking scaffolding (state diff messages, interest management).
 9. Add a main menu shell and move debug overlay to a UI toggle.
-10. Add metadata-driven autotile connectivity groups/material tags and use them in adjacency sampling predicates (so related terrain tiles can share autotile seams) with unit tests.
+10. Extend tile metadata with gameplay flags (`solid`, `blocksLight`, `liquidKind`) plus validation tests to prepare for collision and lighting tasks.

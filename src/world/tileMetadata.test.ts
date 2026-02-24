@@ -3,12 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT } from './autotile';
 import {
   TILE_METADATA,
+  areTerrainAutotileNeighborsConnected,
   atlasIndexToUvRect,
   hasTerrainAutotileMetadata,
   parseTileMetadataRegistry,
+  resolveTerrainAutotileVariantAtlasIndex,
   resolveTerrainAutotileVariantUvRect,
-  resolveTileRenderUvRect,
-  resolveTerrainAutotileVariantAtlasIndex
+  resolveTileRenderUvRect
 } from './tileMetadata';
 
 describe('tile metadata loader', () => {
@@ -17,6 +18,8 @@ describe('tile metadata loader', () => {
     expect(hasTerrainAutotileMetadata(1)).toBe(true);
     expect(hasTerrainAutotileMetadata(2)).toBe(true);
     expect(hasTerrainAutotileMetadata(3)).toBe(false);
+    expect(areTerrainAutotileNeighborsConnected(1, 2)).toBe(true);
+    expect(areTerrainAutotileNeighborsConnected(1, 3)).toBe(false);
 
     expect(resolveTerrainAutotileVariantAtlasIndex(1, 0)).toBe(0);
     expect(resolveTerrainAutotileVariantAtlasIndex(1, 15)).toBe(15);
@@ -76,6 +79,86 @@ describe('tile metadata loader', () => {
         ]
       })
     ).toThrowError(/atlas index must be between 0 and 15/);
+  });
+
+  it('uses connectivity groups first and falls back to shared material tags for terrain adjacency', () => {
+    const variantMap = Array.from(
+      { length: TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT },
+      (_, index) => index
+    );
+    const registry = parseTileMetadataRegistry({
+      tiles: [
+        {
+          id: 1,
+          name: 'ground_a',
+          materialTags: ['terrain', 'solid'],
+          terrainAutotile: {
+            connectivityGroup: 'ground',
+            placeholderVariantAtlasByCardinalMask: variantMap
+          }
+        },
+        {
+          id: 2,
+          name: 'ground_b',
+          materialTags: ['terrain', 'solid'],
+          terrainAutotile: {
+            connectivityGroup: 'ground',
+            placeholderVariantAtlasByCardinalMask: variantMap
+          }
+        },
+        {
+          id: 3,
+          name: 'sand',
+          materialTags: ['terrain', 'solid'],
+          terrainAutotile: {
+            connectivityGroup: 'sand',
+            placeholderVariantAtlasByCardinalMask: variantMap
+          }
+        },
+        {
+          id: 4,
+          name: 'mud',
+          materialTags: ['soft', 'terrain'],
+          terrainAutotile: {
+            placeholderVariantAtlasByCardinalMask: variantMap
+          }
+        },
+        {
+          id: 5,
+          name: 'clay',
+          materialTags: ['soft', 'clay'],
+          terrainAutotile: {
+            placeholderVariantAtlasByCardinalMask: variantMap
+          }
+        },
+        {
+          id: 6,
+          name: 'soft_decor',
+          materialTags: ['soft'],
+          render: { atlasIndex: 0 }
+        }
+      ]
+    });
+
+    expect(areTerrainAutotileNeighborsConnected(1, 2, registry)).toBe(true);
+    expect(areTerrainAutotileNeighborsConnected(1, 3, registry)).toBe(false);
+    expect(areTerrainAutotileNeighborsConnected(4, 5, registry)).toBe(true);
+    expect(areTerrainAutotileNeighborsConnected(4, 6, registry)).toBe(false);
+  });
+
+  it('rejects duplicate material tags', () => {
+    expect(() =>
+      parseTileMetadataRegistry({
+        tiles: [
+          {
+            id: 7,
+            name: 'duplicate_tags',
+            materialTags: ['solid', 'solid'],
+            render: { atlasIndex: 1 }
+          }
+        ]
+      })
+    ).toThrowError(/materialTags contains duplicate tag "solid"/);
   });
 
   it('rejects non-empty tiles without render or terrain metadata', () => {
