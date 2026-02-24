@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { toTileIndex } from './chunkMath';
-import { TILE_ATLAS_COLUMNS, TILE_ATLAS_ROWS, CHUNK_SIZE } from './constants';
+import { TILE_ATLAS_COLUMNS, TILE_ATLAS_ROWS, CHUNK_SIZE, TILE_SIZE } from './constants';
 import { buildChunkMesh } from './mesher';
 import type { Chunk } from './types';
 import { TileWorld } from './world';
@@ -161,6 +161,22 @@ describe('buildChunkMesh autotile UV selection', () => {
 
     expect(mesh.vertexCount).toBe(6);
     expectSingleQuadUv(mesh.vertices, { u0: 0.25, v0: 0.25, u1: 0.5, v1: 0.5 });
+  });
+
+  it('packs multiple tile quads contiguously into a tightly sized Float32Array', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 3);
+    setChunkTile(chunk, 1, 0, 4);
+
+    const mesh = buildChunkMesh(chunk);
+
+    expect(mesh.vertexCount).toBe(12);
+    expect(mesh.vertices.length).toBe(12 * 4);
+
+    expect(mesh.vertices[0]).toBe(0);
+    expect(mesh.vertices[1]).toBe(0);
+    expect(mesh.vertices[24]).toBe(TILE_SIZE);
+    expect(mesh.vertices[25]).toBe(0);
   });
 
   it('throws for non-empty tiles without render metadata instead of using raw tile id fallback', () => {

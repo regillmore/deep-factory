@@ -49,6 +49,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Gameplay metadata now compiles into a dense property lookup (`Uint8Array` bitflags + `Int8Array` liquid-kind codes), and gameplay helpers use it for hot-path collision/lighting queries.
 - Tile render metadata now compiles into a dense render lookup (per-tile static UV rect table + flattened terrain variant atlas-index table), and render/variant resolvers use it for mesher UV selection hot paths.
 - Atlas-slot UV rect objects are now precomputed and reused by atlas-index and terrain-autotile UV resolution, avoiding per-call allocations in mesher hot paths.
+- `buildChunkMesh` now pre-counts non-empty tiles and writes directly into an exact-sized `Float32Array`, removing the intermediate `number[]`/`push` allocation path.
 - Non-autotile tiles now use explicit metadata-driven render UVs (`atlasIndex` or normalized `uvRect`), and the mesher no longer falls back to raw `tileId -> atlas slot`.
 - Debug overlay showing FPS + rendered chunk count.
 
