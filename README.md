@@ -44,6 +44,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Mesher UV-selection tests now cover terrain autotile variant resolution, including chunk-edge neighborhood sampling; placeholder `4x4` variant layout is documented in `docs/ARCHITECTURE.md`.
 - Placeholder terrain autotile atlas mapping is now defined in validated JSON tile metadata (`src/world/tileMetadata.json`) with loader validation tests.
 - Terrain autotile adjacency now uses metadata-driven connectivity groups/material tags, so related terrain tile IDs (for example surface grass and stone) can share seams.
+- Terrain autotile adjacency now also compiles into a dense connectivity lookup (`Int32Array` group IDs + material-tag bitmasks), and mesher adjacency checks use it in the hot path.
 - Tile metadata now also carries validated gameplay flags (`solid`, `blocksLight`, `liquidKind`) with helper accessors to prepare collision, lighting, and liquid systems.
 - Gameplay metadata now compiles into a dense property lookup (`Uint8Array` bitflags + `Int8Array` liquid-kind codes), and gameplay helpers use it for hot-path collision/lighting queries.
 - Non-autotile tiles now use explicit metadata-driven render UVs (`atlasIndex` or normalized `uvRect`), and the mesher no longer falls back to raw `tileId -> atlas slot`.

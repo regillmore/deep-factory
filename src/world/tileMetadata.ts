@@ -40,11 +40,17 @@ export interface TileMetadataRegistry {
   tiles: readonly TileMetadataEntry[];
   tilesById: ReadonlyMap<number, TileMetadataEntry>;
   gameplayPropertyLookup: TileGameplayPropertyLookup;
+  terrainConnectivityLookup: TileTerrainConnectivityLookup;
 }
 
 export interface TileGameplayPropertyLookup {
   propertyFlagsByTileId: Uint8Array;
   liquidKindCodeByTileId: Int8Array;
+}
+
+export interface TileTerrainConnectivityLookup {
+  connectivityGroupIdByTileId: Int32Array;
+  materialTagMaskByTileId: readonly bigint[];
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -220,6 +226,9 @@ const TILE_LIQUID_KIND_CODE_NONE = -1;
 const TILE_LIQUID_KIND_CODE_WATER = 0;
 const TILE_LIQUID_KIND_CODE_LAVA = 1;
 
+const TERRAIN_CONNECTIVITY_GROUP_ID_NON_TERRAIN = -1;
+const TERRAIN_CONNECTIVITY_GROUP_ID_UNGROUPED_TERRAIN = -2;
+
 const encodeTileLiquidKindCode = (liquidKind: TileLiquidKind | undefined): number => {
   switch (liquidKind) {
     case 'water':
@@ -273,6 +282,67 @@ const buildTileGameplayPropertyLookup = (
   };
 };
 
+const buildTileTerrainConnectivityLookup = (
+  tiles: readonly TileMetadataEntry[]
+): TileTerrainConnectivityLookup => {
+  let maxTileId = 0;
+  for (const tile of tiles) {
+    if (tile.id > maxTileId) {
+      maxTileId = tile.id;
+    }
+  }
+
+  const connectivityGroupIdByName = new Map<string, number>();
+  const materialTagBitMaskByName = new Map<string, bigint>();
+  let nextConnectivityGroupId = 0;
+  let nextMaterialTagBitIndex = 0n;
+
+  for (const tile of tiles) {
+    const terrainAutotile = tile.terrainAutotile;
+    if (!terrainAutotile) continue;
+
+    const connectivityGroup = terrainAutotile.connectivityGroup;
+    if (connectivityGroup !== undefined && !connectivityGroupIdByName.has(connectivityGroup)) {
+      connectivityGroupIdByName.set(connectivityGroup, nextConnectivityGroupId);
+      nextConnectivityGroupId += 1;
+    }
+
+    for (const materialTag of tile.materialTags ?? []) {
+      if (!materialTagBitMaskByName.has(materialTag)) {
+        materialTagBitMaskByName.set(materialTag, 1n << nextMaterialTagBitIndex);
+        nextMaterialTagBitIndex += 1n;
+      }
+    }
+  }
+
+  const connectivityGroupIdByTileId = new Int32Array(maxTileId + 1);
+  connectivityGroupIdByTileId.fill(TERRAIN_CONNECTIVITY_GROUP_ID_NON_TERRAIN);
+  const materialTagMaskByTileId = Array<bigint>(maxTileId + 1).fill(0n);
+
+  for (const tile of tiles) {
+    const terrainAutotile = tile.terrainAutotile;
+    if (!terrainAutotile) continue;
+
+    const connectivityGroup = terrainAutotile.connectivityGroup;
+    if (connectivityGroup === undefined) {
+      connectivityGroupIdByTileId[tile.id] = TERRAIN_CONNECTIVITY_GROUP_ID_UNGROUPED_TERRAIN;
+    } else {
+      connectivityGroupIdByTileId[tile.id] = connectivityGroupIdByName.get(connectivityGroup)!;
+    }
+
+    let materialTagMask = 0n;
+    for (const materialTag of tile.materialTags ?? []) {
+      materialTagMask |= materialTagBitMaskByName.get(materialTag) ?? 0n;
+    }
+    materialTagMaskByTileId[tile.id] = materialTagMask;
+  }
+
+  return {
+    connectivityGroupIdByTileId,
+    materialTagMaskByTileId
+  };
+};
+
 const isDenseLookupTileIdInRange = (tileId: number, length: number): boolean =>
   Number.isInteger(tileId) && tileId >= 0 && tileId < length;
 
@@ -295,6 +365,24 @@ const getTileLiquidKindCode = (tileId: number, registry: TileMetadataRegistry): 
   }
 
   return liquidKindCodeByTileId[tileId];
+};
+
+const getTerrainConnectivityGroupId = (tileId: number, registry: TileMetadataRegistry): number => {
+  const { connectivityGroupIdByTileId } = registry.terrainConnectivityLookup;
+  if (!isDenseLookupTileIdInRange(tileId, connectivityGroupIdByTileId.length)) {
+    return TERRAIN_CONNECTIVITY_GROUP_ID_NON_TERRAIN;
+  }
+
+  return connectivityGroupIdByTileId[tileId];
+};
+
+const getTerrainMaterialTagMask = (tileId: number, registry: TileMetadataRegistry): bigint => {
+  const { materialTagMaskByTileId } = registry.terrainConnectivityLookup;
+  if (!isDenseLookupTileIdInRange(tileId, materialTagMaskByTileId.length)) {
+    return 0n;
+  }
+
+  return materialTagMaskByTileId[tileId] ?? 0n;
 };
 
 export const parseTileMetadataRegistry = (value: unknown): TileMetadataRegistry => {
@@ -357,7 +445,8 @@ export const parseTileMetadataRegistry = (value: unknown): TileMetadataRegistry 
   return {
     tiles,
     tilesById,
-    gameplayPropertyLookup: buildTileGameplayPropertyLookup(tiles)
+    gameplayPropertyLookup: buildTileGameplayPropertyLookup(tiles),
+    terrainConnectivityLookup: buildTileTerrainConnectivityLookup(tiles)
   };
 };
 
@@ -409,21 +498,8 @@ export const getTileLiquidKind = (
 export const hasTerrainAutotileMetadata = (
   tileId: number,
   registry: TileMetadataRegistry = TILE_METADATA
-): boolean => getTileMetadata(tileId, registry)?.terrainAutotile !== undefined;
-
-const sharesAnyMaterialTag = (
-  a: readonly string[] | undefined,
-  b: readonly string[] | undefined
-): boolean => {
-  if (!a?.length || !b?.length) return false;
-
-  const aTags = new Set(a);
-  for (const tag of b) {
-    if (aTags.has(tag)) return true;
-  }
-
-  return false;
-};
+): boolean =>
+  getTerrainConnectivityGroupId(tileId, registry) !== TERRAIN_CONNECTIVITY_GROUP_ID_NON_TERRAIN;
 
 export const areTerrainAutotileNeighborsConnected = (
   centerTileId: number,
@@ -431,19 +507,26 @@ export const areTerrainAutotileNeighborsConnected = (
   registry: TileMetadataRegistry = TILE_METADATA
 ): boolean => {
   if (centerTileId === 0 || neighborTileId === 0) return false;
-
-  const center = getTileMetadata(centerTileId, registry);
-  const neighbor = getTileMetadata(neighborTileId, registry);
-  if (!center?.terrainAutotile || !neighbor?.terrainAutotile) return false;
+  const centerConnectivityGroupId = getTerrainConnectivityGroupId(centerTileId, registry);
+  const neighborConnectivityGroupId = getTerrainConnectivityGroupId(neighborTileId, registry);
+  if (
+    centerConnectivityGroupId === TERRAIN_CONNECTIVITY_GROUP_ID_NON_TERRAIN ||
+    neighborConnectivityGroupId === TERRAIN_CONNECTIVITY_GROUP_ID_NON_TERRAIN
+  ) {
+    return false;
+  }
   if (centerTileId === neighborTileId) return true;
 
-  const centerGroup = center.terrainAutotile.connectivityGroup;
-  const neighborGroup = neighbor.terrainAutotile.connectivityGroup;
-  if (centerGroup !== undefined && neighborGroup !== undefined) {
-    return centerGroup === neighborGroup;
+  const centerHasConnectivityGroup = centerConnectivityGroupId >= 0;
+  const neighborHasConnectivityGroup = neighborConnectivityGroupId >= 0;
+  if (centerHasConnectivityGroup && neighborHasConnectivityGroup) {
+    return centerConnectivityGroupId === neighborConnectivityGroupId;
   }
 
-  return sharesAnyMaterialTag(center.materialTags, neighbor.materialTags);
+  return (
+    (getTerrainMaterialTagMask(centerTileId, registry) & getTerrainMaterialTagMask(neighborTileId, registry)) !==
+    0n
+  );
 };
 
 export const resolveTerrainAutotileVariantAtlasIndex = (

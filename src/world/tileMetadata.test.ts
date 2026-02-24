@@ -157,6 +157,84 @@ describe('tile metadata loader', () => {
     expect(areTerrainAutotileNeighborsConnected(4, 6, registry)).toBe(false);
   });
 
+  it('builds a dense terrain connectivity lookup and preserves adjacency semantics', () => {
+    const variantMap = Array.from(
+      { length: TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT },
+      (_, index) => index
+    );
+    const registry = parseTileMetadataRegistry({
+      tiles: [
+        {
+          id: 0,
+          name: 'empty',
+          gameplay: { solid: false, blocksLight: false }
+        },
+        {
+          id: 12,
+          name: 'mud_a',
+          materialTags: ['soft'],
+          terrainAutotile: {
+            placeholderVariantAtlasByCardinalMask: variantMap
+          }
+        },
+        {
+          id: 20,
+          name: 'mud_b',
+          materialTags: ['soft'],
+          terrainAutotile: {
+            placeholderVariantAtlasByCardinalMask: variantMap
+          }
+        },
+        {
+          id: 25,
+          name: 'ground_a',
+          materialTags: ['soft', 'terrain'],
+          terrainAutotile: {
+            connectivityGroup: 'ground',
+            placeholderVariantAtlasByCardinalMask: variantMap
+          }
+        },
+        {
+          id: 26,
+          name: 'sand_a',
+          materialTags: ['soft', 'terrain'],
+          terrainAutotile: {
+            connectivityGroup: 'sand',
+            placeholderVariantAtlasByCardinalMask: variantMap
+          }
+        },
+        {
+          id: 30,
+          name: 'terrain_no_tags',
+          terrainAutotile: {
+            placeholderVariantAtlasByCardinalMask: variantMap
+          }
+        },
+        {
+          id: 40,
+          name: 'soft_decor',
+          materialTags: ['soft'],
+          render: { atlasIndex: 0 }
+        }
+      ]
+    });
+
+    expect(registry.terrainConnectivityLookup.connectivityGroupIdByTileId).toBeInstanceOf(Int32Array);
+    expect(registry.terrainConnectivityLookup.connectivityGroupIdByTileId.length).toBe(41);
+    expect(registry.terrainConnectivityLookup.materialTagMaskByTileId.length).toBe(41);
+    expect(typeof registry.terrainConnectivityLookup.materialTagMaskByTileId[12]).toBe('bigint');
+    expect(registry.terrainConnectivityLookup.materialTagMaskByTileId[12]).toBe(
+      registry.terrainConnectivityLookup.materialTagMaskByTileId[20]
+    );
+
+    expect(areTerrainAutotileNeighborsConnected(12, 20, registry)).toBe(true);
+    expect(areTerrainAutotileNeighborsConnected(25, 26, registry)).toBe(false);
+    expect(areTerrainAutotileNeighborsConnected(12, 40, registry)).toBe(false);
+    expect(areTerrainAutotileNeighborsConnected(30, 30, registry)).toBe(true);
+    expect(areTerrainAutotileNeighborsConnected(999, 12, registry)).toBe(false);
+    expect(hasTerrainAutotileMetadata(30, registry)).toBe(true);
+  });
+
   it('parses gameplay flags and liquid kind metadata', () => {
     const registry = parseTileMetadataRegistry({
       tiles: [
