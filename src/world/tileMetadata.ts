@@ -39,6 +39,12 @@ export interface TileMetadataEntry {
 export interface TileMetadataRegistry {
   tiles: readonly TileMetadataEntry[];
   tilesById: ReadonlyMap<number, TileMetadataEntry>;
+  gameplayPropertyLookup: TileGameplayPropertyLookup;
+}
+
+export interface TileGameplayPropertyLookup {
+  propertyFlagsByTileId: Uint8Array;
+  liquidKindCodeByTileId: Int8Array;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -207,6 +213,90 @@ const parseTerrainAutotileMetadata = (
   };
 };
 
+const TILE_GAMEPLAY_PROPERTY_FLAG_SOLID = 1 << 0;
+const TILE_GAMEPLAY_PROPERTY_FLAG_BLOCKS_LIGHT = 1 << 1;
+
+const TILE_LIQUID_KIND_CODE_NONE = -1;
+const TILE_LIQUID_KIND_CODE_WATER = 0;
+const TILE_LIQUID_KIND_CODE_LAVA = 1;
+
+const encodeTileLiquidKindCode = (liquidKind: TileLiquidKind | undefined): number => {
+  switch (liquidKind) {
+    case 'water':
+      return TILE_LIQUID_KIND_CODE_WATER;
+    case 'lava':
+      return TILE_LIQUID_KIND_CODE_LAVA;
+    default:
+      return TILE_LIQUID_KIND_CODE_NONE;
+  }
+};
+
+const decodeTileLiquidKindCode = (liquidKindCode: number): TileLiquidKind | null => {
+  if (liquidKindCode === TILE_LIQUID_KIND_CODE_WATER) return 'water';
+  if (liquidKindCode === TILE_LIQUID_KIND_CODE_LAVA) return 'lava';
+  return null;
+};
+
+const buildTileGameplayPropertyLookup = (
+  tiles: readonly TileMetadataEntry[]
+): TileGameplayPropertyLookup => {
+  let maxTileId = 0;
+  for (const tile of tiles) {
+    if (tile.id > maxTileId) {
+      maxTileId = tile.id;
+    }
+  }
+
+  const propertyFlagsByTileId = new Uint8Array(maxTileId + 1);
+  const liquidKindCodeByTileId = new Int8Array(maxTileId + 1);
+  liquidKindCodeByTileId.fill(TILE_LIQUID_KIND_CODE_NONE);
+
+  for (const tile of tiles) {
+    const gameplay = tile.gameplay;
+    if (!gameplay) continue;
+
+    let flags = 0;
+    if (gameplay.solid) {
+      flags |= TILE_GAMEPLAY_PROPERTY_FLAG_SOLID;
+    }
+    if (gameplay.blocksLight) {
+      flags |= TILE_GAMEPLAY_PROPERTY_FLAG_BLOCKS_LIGHT;
+    }
+
+    propertyFlagsByTileId[tile.id] = flags;
+    liquidKindCodeByTileId[tile.id] = encodeTileLiquidKindCode(gameplay.liquidKind);
+  }
+
+  return {
+    propertyFlagsByTileId,
+    liquidKindCodeByTileId
+  };
+};
+
+const isDenseLookupTileIdInRange = (tileId: number, length: number): boolean =>
+  Number.isInteger(tileId) && tileId >= 0 && tileId < length;
+
+const getTileGameplayPropertyFlags = (
+  tileId: number,
+  registry: TileMetadataRegistry
+): number => {
+  const { propertyFlagsByTileId } = registry.gameplayPropertyLookup;
+  if (!isDenseLookupTileIdInRange(tileId, propertyFlagsByTileId.length)) {
+    return 0;
+  }
+
+  return propertyFlagsByTileId[tileId];
+};
+
+const getTileLiquidKindCode = (tileId: number, registry: TileMetadataRegistry): number => {
+  const { liquidKindCodeByTileId } = registry.gameplayPropertyLookup;
+  if (!isDenseLookupTileIdInRange(tileId, liquidKindCodeByTileId.length)) {
+    return TILE_LIQUID_KIND_CODE_NONE;
+  }
+
+  return liquidKindCodeByTileId[tileId];
+};
+
 export const parseTileMetadataRegistry = (value: unknown): TileMetadataRegistry => {
   if (!isRecord(value)) {
     throw new Error('tile metadata root must be an object');
@@ -266,7 +356,8 @@ export const parseTileMetadataRegistry = (value: unknown): TileMetadataRegistry 
 
   return {
     tiles,
-    tilesById
+    tilesById,
+    gameplayPropertyLookup: buildTileGameplayPropertyLookup(tiles)
   };
 };
 
@@ -285,22 +376,35 @@ const DEFAULT_TILE_GAMEPLAY_METADATA: TileGameplayMetadata = {
 export const resolveTileGameplayMetadata = (
   tileId: number,
   registry: TileMetadataRegistry = TILE_METADATA
-): TileGameplayMetadata => getTileMetadata(tileId, registry)?.gameplay ?? DEFAULT_TILE_GAMEPLAY_METADATA;
+): TileGameplayMetadata => {
+  const flags = getTileGameplayPropertyFlags(tileId, registry);
+  const liquidKind = decodeTileLiquidKindCode(getTileLiquidKindCode(tileId, registry));
+  const solid = (flags & TILE_GAMEPLAY_PROPERTY_FLAG_SOLID) !== 0;
+  const blocksLight = (flags & TILE_GAMEPLAY_PROPERTY_FLAG_BLOCKS_LIGHT) !== 0;
+
+  if (!solid && !blocksLight && liquidKind === null) {
+    return DEFAULT_TILE_GAMEPLAY_METADATA;
+  }
+
+  return liquidKind === null ? { solid, blocksLight } : { solid, blocksLight, liquidKind };
+};
 
 export const isTileSolid = (
   tileId: number,
   registry: TileMetadataRegistry = TILE_METADATA
-): boolean => resolveTileGameplayMetadata(tileId, registry).solid;
+): boolean =>
+  (getTileGameplayPropertyFlags(tileId, registry) & TILE_GAMEPLAY_PROPERTY_FLAG_SOLID) !== 0;
 
 export const doesTileBlockLight = (
   tileId: number,
   registry: TileMetadataRegistry = TILE_METADATA
-): boolean => resolveTileGameplayMetadata(tileId, registry).blocksLight;
+): boolean =>
+  (getTileGameplayPropertyFlags(tileId, registry) & TILE_GAMEPLAY_PROPERTY_FLAG_BLOCKS_LIGHT) !== 0;
 
 export const getTileLiquidKind = (
   tileId: number,
   registry: TileMetadataRegistry = TILE_METADATA
-): TileLiquidKind | null => resolveTileGameplayMetadata(tileId, registry).liquidKind ?? null;
+): TileLiquidKind | null => decodeTileLiquidKindCode(getTileLiquidKindCode(tileId, registry));
 
 export const hasTerrainAutotileMetadata = (
   tileId: number,

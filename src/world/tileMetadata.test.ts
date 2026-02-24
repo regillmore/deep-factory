@@ -191,6 +191,37 @@ describe('tile metadata loader', () => {
     expect(doesTileBlockLight(9, registry)).toBe(true);
   });
 
+  it('builds dense gameplay property lookup arrays for sparse tile ids', () => {
+    const registry = parseTileMetadataRegistry({
+      tiles: [
+        {
+          id: 0,
+          name: 'empty',
+          gameplay: { solid: false, blocksLight: false }
+        },
+        {
+          id: 12,
+          name: 'torch_lava',
+          gameplay: { solid: false, blocksLight: true, liquidKind: 'lava' },
+          render: { atlasIndex: 1 }
+        }
+      ]
+    });
+
+    expect(registry.gameplayPropertyLookup.propertyFlagsByTileId).toBeInstanceOf(Uint8Array);
+    expect(registry.gameplayPropertyLookup.liquidKindCodeByTileId).toBeInstanceOf(Int8Array);
+    expect(registry.gameplayPropertyLookup.propertyFlagsByTileId.length).toBe(13);
+    expect(registry.gameplayPropertyLookup.liquidKindCodeByTileId.length).toBe(13);
+
+    expect(resolveTileGameplayMetadata(7, registry)).toEqual({ solid: false, blocksLight: false });
+    expect(resolveTileGameplayMetadata(999, registry)).toEqual({ solid: false, blocksLight: false });
+    expect(isTileSolid(12, registry)).toBe(false);
+    expect(doesTileBlockLight(12, registry)).toBe(true);
+    expect(getTileLiquidKind(12, registry)).toBe('lava');
+    expect(getTileLiquidKind(7, registry)).toBe(null);
+    expect(isTileSolid(-1, registry)).toBe(false);
+  });
+
   it('rejects duplicate material tags', () => {
     expect(() =>
       parseTileMetadataRegistry({

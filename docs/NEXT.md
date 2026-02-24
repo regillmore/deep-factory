@@ -9,4 +9,4 @@
 7. Add save/load format for chunk snapshots.
 8. Prepare networking scaffolding (state diff messages, interest management).
 9. Add a main menu shell and move debug overlay to a UI toggle.
-10. Build a dense metadata-derived tile property lookup (bitflags + liquid kind table) and switch `tileMetadata` helper accessors to it for hot-path collision/lighting queries, with unit tests.
+10. Build a dense metadata-derived terrain connectivity lookup (connectivity-group IDs + material-tag bitmasks) and switch `areTerrainAutotileNeighborsConnected` to it for mesher hot-path adjacency checks, with unit tests.
