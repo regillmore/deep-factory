@@ -43,6 +43,14 @@ describe('tile metadata loader', () => {
     );
   });
 
+  it('reuses cached atlas UV rect objects for atlas-index and terrain variant lookups', () => {
+    const atlasUvRect = atlasIndexToUvRect(6);
+
+    expect(atlasIndexToUvRect(6)).toBe(atlasUvRect);
+    expect(resolveTerrainAutotileVariantUvRect(2, 6)).toBe(atlasUvRect);
+    expect(resolveTerrainAutotileVariantUvRect(2, 6)).toBe(resolveTerrainAutotileVariantUvRect(2, 6));
+  });
+
   it('rejects duplicate tile ids', () => {
     expect(() =>
       parseTileMetadataRegistry({
@@ -342,11 +350,13 @@ describe('tile metadata loader', () => {
 
     expect(resolveTileRenderUvRect(5, registry)).toEqual({ u0: 0.25, v0: 0.25, u1: 0.5, v1: 0.5 });
     expect(resolveTileRenderUvRect(12, registry)).toEqual(atlasIndexToUvRect(14));
+    expect(resolveTileRenderUvRect(12, registry)).toBe(atlasIndexToUvRect(14));
     expect(resolveTileRenderUvRect(18, registry)).toBe(null);
     expect(resolveTileRenderUvRect(999, registry)).toBe(null);
 
     expect(resolveTerrainAutotileVariantAtlasIndex(18, 0, registry)).toBe(1);
     expect(resolveTerrainAutotileVariantAtlasIndex(18, 15, registry)).toBe(0);
+    expect(resolveTerrainAutotileVariantUvRect(18, 0, registry)).toBe(atlasIndexToUvRect(1));
     expect(resolveTerrainAutotileVariantAtlasIndex(12, 0, registry)).toBe(null);
     expect(resolveTerrainAutotileVariantAtlasIndex(18, -1, registry)).toBe(null);
     expect(resolveTerrainAutotileVariantAtlasIndex(18, TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT, registry)).toBe(

@@ -93,6 +93,19 @@ const expectFiniteNumber = (value: unknown, label: string): number => {
 };
 
 const ATLAS_TILE_CAPACITY = TILE_ATLAS_COLUMNS * TILE_ATLAS_ROWS;
+const ATLAS_INDEX_UV_RECT_CACHE: readonly TileUvRect[] = Array.from(
+  { length: ATLAS_TILE_CAPACITY },
+  (_, atlasIndex) => {
+    const col = atlasIndex % TILE_ATLAS_COLUMNS;
+    const row = Math.floor(atlasIndex / TILE_ATLAS_COLUMNS);
+    return {
+      u0: col / TILE_ATLAS_COLUMNS,
+      v0: row / TILE_ATLAS_ROWS,
+      u1: (col + 1) / TILE_ATLAS_COLUMNS,
+      v1: (row + 1) / TILE_ATLAS_ROWS
+    };
+  }
+);
 
 const expectAtlasIndex = (value: unknown, label: string): number => {
   const atlasIndex = expectInteger(value, label);
@@ -367,14 +380,7 @@ const buildTileRenderLookup = (tiles: readonly TileMetadataEntry[]): TileRenderL
   for (const tile of tiles) {
     if (tile.render) {
       if (tile.render.atlasIndex !== undefined) {
-        const col = tile.render.atlasIndex % TILE_ATLAS_COLUMNS;
-        const row = Math.floor(tile.render.atlasIndex / TILE_ATLAS_COLUMNS);
-        staticUvRectByTileId[tile.id] = {
-          u0: col / TILE_ATLAS_COLUMNS,
-          v0: row / TILE_ATLAS_ROWS,
-          u1: (col + 1) / TILE_ATLAS_COLUMNS,
-          v1: (row + 1) / TILE_ATLAS_ROWS
-        };
+        staticUvRectByTileId[tile.id] = ATLAS_INDEX_UV_RECT_CACHE[tile.render.atlasIndex] ?? null;
       } else {
         staticUvRectByTileId[tile.id] = tile.render.uvRect ?? null;
       }
@@ -629,14 +635,7 @@ export const resolveTerrainAutotileVariantAtlasIndex = (
   getTerrainAutotileVariantAtlasIndexFromLookup(tileId, cardinalVariantIndex, registry);
 
 export const atlasIndexToUvRect = (atlasIndex: number): TileUvRect => {
-  const col = atlasIndex % TILE_ATLAS_COLUMNS;
-  const row = Math.floor(atlasIndex / TILE_ATLAS_COLUMNS);
-  return {
-    u0: col / TILE_ATLAS_COLUMNS,
-    v0: row / TILE_ATLAS_ROWS,
-    u1: (col + 1) / TILE_ATLAS_COLUMNS,
-    v1: (row + 1) / TILE_ATLAS_ROWS
-  };
+  return ATLAS_INDEX_UV_RECT_CACHE[atlasIndex]!;
 };
 
 export const resolveTileRenderUvRect = (
