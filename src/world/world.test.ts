@@ -87,5 +87,19 @@ describe('TileWorld', () => {
     });
 
     expect(world.sampleLocalTileNeighborhood(0, 0, 0, 0)).toEqual(sampled);
+
+    const scratch = {
+      center: -1,
+      north: -1,
+      northEast: -1,
+      east: -1,
+      southEast: -1,
+      south: -1,
+      southWest: -1,
+      west: -1,
+      northWest: -1
+    };
+    expect(world.sampleLocalTileNeighborhoodInto(0, 0, 0, 0, scratch)).toBe(scratch);
+    expect(scratch).toEqual(sampled);
   });
 });

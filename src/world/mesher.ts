@@ -27,6 +27,13 @@ export interface ChunkMeshBuildOptions {
     localX: number,
     localY: number
   ) => TileNeighborhood;
+  sampleNeighborhoodInto?: (
+    chunkX: number,
+    chunkY: number,
+    localX: number,
+    localY: number,
+    target: TileNeighborhood
+  ) => void;
 }
 
 const FLOATS_PER_VERTEX = 4;
@@ -46,21 +53,41 @@ const countNonEmptyTiles = (chunk: Chunk): number => {
   return count;
 };
 
+const createTileNeighborhoodScratch = (): TileNeighborhood => ({
+  center: 0,
+  north: 0,
+  northEast: 0,
+  east: 0,
+  southEast: 0,
+  south: 0,
+  southWest: 0,
+  west: 0,
+  northWest: 0
+});
+
 const resolveChunkTileUvRect = (
   chunk: Chunk,
   localX: number,
   localY: number,
   tileId: number,
-  sampleNeighborhood?: ChunkMeshBuildOptions['sampleNeighborhood']
+  sampleNeighborhood?: ChunkMeshBuildOptions['sampleNeighborhood'],
+  sampleNeighborhoodInto?: ChunkMeshBuildOptions['sampleNeighborhoodInto'],
+  neighborhoodScratch?: TileNeighborhood
 ): TileUvRect => {
   if (usesTerrainAutotile(tileId)) {
-    if (!sampleNeighborhood) {
+    if (!sampleNeighborhood && !(sampleNeighborhoodInto && neighborhoodScratch)) {
       const isolatedTerrainUvRect = resolveTerrainAutotileVariantUvRect(tileId, 0);
       if (isolatedTerrainUvRect) return isolatedTerrainUvRect;
       throw new Error(`Missing terrain autotile metadata for tile ${tileId}`);
     }
 
-    const neighborhood = sampleNeighborhood(chunk.coord.x, chunk.coord.y, localX, localY);
+    let neighborhood: TileNeighborhood;
+    if (sampleNeighborhoodInto && neighborhoodScratch) {
+      sampleNeighborhoodInto(chunk.coord.x, chunk.coord.y, localX, localY, neighborhoodScratch);
+      neighborhood = neighborhoodScratch;
+    } else {
+      neighborhood = sampleNeighborhood!(chunk.coord.x, chunk.coord.y, localX, localY);
+    }
     const rawMask = buildAutotileAdjacencyMask(neighborhood, (centerTileId, neighborTileId) =>
       areTerrainAutotileNeighborsConnected(centerTileId, neighborTileId)
     );
@@ -79,7 +106,7 @@ const resolveChunkTileUvRect = (
 export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}): ChunkMeshData => {
   const chunkOriginX = chunk.coord.x * CHUNK_SIZE * TILE_SIZE;
   const chunkOriginY = chunk.coord.y * CHUNK_SIZE * TILE_SIZE;
-  const { sampleNeighborhood } = options;
+  const { sampleNeighborhood, sampleNeighborhoodInto } = options;
   const nonEmptyTileCount = countNonEmptyTiles(chunk);
   if (nonEmptyTileCount === 0) {
     return { vertices: new Float32Array(0), vertexCount: 0 };
@@ -87,6 +114,7 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
 
   const vertices = new Float32Array(nonEmptyTileCount * FLOATS_PER_TILE_QUAD);
   let writeIndex = 0;
+  const neighborhoodScratch = sampleNeighborhoodInto ? createTileNeighborhoodScratch() : undefined;
 
   for (let y = 0; y < CHUNK_SIZE; y += 1) {
     for (let x = 0; x < CHUNK_SIZE; x += 1) {
@@ -97,7 +125,15 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
       const py = chunkOriginY + y * TILE_SIZE;
       const px1 = px + TILE_SIZE;
       const py1 = py + TILE_SIZE;
-      const { u0, v0, u1, v1 } = resolveChunkTileUvRect(chunk, x, y, tileId, sampleNeighborhood);
+      const { u0, v0, u1, v1 } = resolveChunkTileUvRect(
+        chunk,
+        x,
+        y,
+        tileId,
+        sampleNeighborhood,
+        sampleNeighborhoodInto,
+        neighborhoodScratch
+      );
 
       vertices[writeIndex] = px;
       vertices[writeIndex + 1] = py;

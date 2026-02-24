@@ -9,4 +9,4 @@
 7. Add save/load format for chunk snapshots.
 8. Prepare networking scaffolding (state diff messages, interest management).
 9. Add a main menu shell and move debug overlay to a UI toggle.
-10. Add a zero-allocation autotile sampling path for meshing (avoid per-tile `TileNeighborhood` object creation by sampling/returning a mask or writing into a reusable scratch structure), with cross-chunk mesher tests preserved.
+10. Precompute a `normalizedAdjacencyMask -> placeholder terrain variant` lookup table (256 entries) and switch terrain meshing to use it, with autotile/mesher tests covering parity with the current bitwise path.

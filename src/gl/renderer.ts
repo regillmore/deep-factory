@@ -287,8 +287,8 @@ export class Renderer {
     const chunk = this.world.ensureChunk(request.chunkX, request.chunkY);
     const meshBuildStart = performance.now();
     const meshData = buildChunkMesh(chunk, {
-      sampleNeighborhood: (chunkX, chunkY, localX, localY) =>
-        this.world.sampleLocalTileNeighborhood(chunkX, chunkY, localX, localY)
+      sampleNeighborhoodInto: (chunkX, chunkY, localX, localY, target) =>
+        void this.world.sampleLocalTileNeighborhoodInto(chunkX, chunkY, localX, localY, target)
     });
     this.telemetry.meshBuildTimeMs += performance.now() - meshBuildStart;
     this.telemetry.meshBuilds += 1;

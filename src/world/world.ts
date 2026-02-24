@@ -43,6 +43,18 @@ export interface TileNeighborhood {
 
 type TileEditListener = (event: TileEditEvent) => void;
 
+const createTileNeighborhood = (): TileNeighborhood => ({
+  center: 0,
+  north: 0,
+  northEast: 0,
+  east: 0,
+  southEast: 0,
+  south: 0,
+  southWest: 0,
+  west: 0,
+  northWest: 0
+});
+
 export class TileWorld {
   private chunks = new Map<string, Chunk>();
   private tileEditListeners = new Set<TileEditListener>();
@@ -110,17 +122,24 @@ export class TileWorld {
   }
 
   sampleTileNeighborhood(worldTileX: number, worldTileY: number): TileNeighborhood {
-    return {
-      center: this.getTile(worldTileX, worldTileY),
-      north: this.getTile(worldTileX, worldTileY - 1),
-      northEast: this.getTile(worldTileX + 1, worldTileY - 1),
-      east: this.getTile(worldTileX + 1, worldTileY),
-      southEast: this.getTile(worldTileX + 1, worldTileY + 1),
-      south: this.getTile(worldTileX, worldTileY + 1),
-      southWest: this.getTile(worldTileX - 1, worldTileY + 1),
-      west: this.getTile(worldTileX - 1, worldTileY),
-      northWest: this.getTile(worldTileX - 1, worldTileY - 1)
-    };
+    return this.sampleTileNeighborhoodInto(worldTileX, worldTileY, createTileNeighborhood());
+  }
+
+  sampleTileNeighborhoodInto(
+    worldTileX: number,
+    worldTileY: number,
+    target: TileNeighborhood
+  ): TileNeighborhood {
+    target.center = this.getTile(worldTileX, worldTileY);
+    target.north = this.getTile(worldTileX, worldTileY - 1);
+    target.northEast = this.getTile(worldTileX + 1, worldTileY - 1);
+    target.east = this.getTile(worldTileX + 1, worldTileY);
+    target.southEast = this.getTile(worldTileX + 1, worldTileY + 1);
+    target.south = this.getTile(worldTileX, worldTileY + 1);
+    target.southWest = this.getTile(worldTileX - 1, worldTileY + 1);
+    target.west = this.getTile(worldTileX - 1, worldTileY);
+    target.northWest = this.getTile(worldTileX - 1, worldTileY - 1);
+    return target;
   }
 
   sampleLocalTileNeighborhood(
@@ -129,9 +148,19 @@ export class TileWorld {
     localX: number,
     localY: number
   ): TileNeighborhood {
+    return this.sampleLocalTileNeighborhoodInto(chunkX, chunkY, localX, localY, createTileNeighborhood());
+  }
+
+  sampleLocalTileNeighborhoodInto(
+    chunkX: number,
+    chunkY: number,
+    localX: number,
+    localY: number,
+    target: TileNeighborhood
+  ): TileNeighborhood {
     const worldTileX = chunkX * CHUNK_SIZE + localX;
     const worldTileY = chunkY * CHUNK_SIZE + localY;
-    return this.sampleTileNeighborhood(worldTileX, worldTileY);
+    return this.sampleTileNeighborhoodInto(worldTileX, worldTileY, target);
   }
 
   onTileEdited(listener: TileEditListener): () => void {

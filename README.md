@@ -45,6 +45,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Placeholder terrain autotile atlas mapping is now defined in validated JSON tile metadata (`src/world/tileMetadata.json`) with loader validation tests.
 - Terrain autotile adjacency now uses metadata-driven connectivity groups/material tags, so related terrain tile IDs (for example surface grass and stone) can share seams.
 - Terrain autotile adjacency now also compiles into a dense connectivity lookup (`Int32Array` group IDs + material-tag bitmasks), and mesher adjacency checks use it in the hot path.
+- Chunk meshing now supports a reusable `TileNeighborhood` scratch sampling path (`sampleNeighborhoodInto`), and the renderer uses it to avoid per-terrain-tile neighborhood object allocations.
 - Tile metadata now also carries validated gameplay flags (`solid`, `blocksLight`, `liquidKind`) with helper accessors to prepare collision, lighting, and liquid systems.
 - Gameplay metadata now compiles into a dense property lookup (`Uint8Array` bitflags + `Int8Array` liquid-kind codes), and gameplay helpers use it for hot-path collision/lighting queries.
 - Tile render metadata now compiles into a dense render lookup (per-tile static UV rect table + flattened terrain variant atlas-index table), and render/variant resolvers use it for mesher UV selection hot paths.

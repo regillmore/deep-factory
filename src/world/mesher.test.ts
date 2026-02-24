@@ -134,13 +134,23 @@ describe('buildChunkMesh autotile UV selection', () => {
     world.setTile(worldTileX + 1, worldTileY + 1, tileId);
 
     const chunk = world.ensureChunk(chunkX, chunkY);
+    const scratchRefs: object[] = [];
     const mesh = buildChunkMesh(chunk, {
-      sampleNeighborhood: (sampleChunkX, sampleChunkY, sampleLocalX, sampleLocalY) =>
-        world.sampleLocalTileNeighborhood(sampleChunkX, sampleChunkY, sampleLocalX, sampleLocalY)
+      sampleNeighborhoodInto: (sampleChunkX, sampleChunkY, sampleLocalX, sampleLocalY, target) => {
+        scratchRefs.push(target);
+        world.sampleLocalTileNeighborhoodInto(
+          sampleChunkX,
+          sampleChunkY,
+          sampleLocalX,
+          sampleLocalY,
+          target
+        );
+      }
     });
 
     expect(mesh.vertexCount).toBe(6);
     expectSingleQuadUvRect(mesh.vertices, 6);
+    expect(scratchRefs).toHaveLength(1);
   });
 
   it('uses metadata atlasIndex for non-autotile tiles', () => {
@@ -177,6 +187,32 @@ describe('buildChunkMesh autotile UV selection', () => {
     expect(mesh.vertices[1]).toBe(0);
     expect(mesh.vertices[24]).toBe(TILE_SIZE);
     expect(mesh.vertices[25]).toBe(0);
+  });
+
+  it('reuses one neighborhood scratch object across terrain tiles with sampleNeighborhoodInto', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 1);
+    setChunkTile(chunk, 1, 0, 1);
+
+    const scratchRefs: object[] = [];
+    const mesh = buildChunkMesh(chunk, {
+      sampleNeighborhoodInto: (_chunkX, _chunkY, localX, localY, target) => {
+        scratchRefs.push(target);
+        target.center = chunk.tiles[toTileIndex(localX, localY)];
+        target.north = 0;
+        target.northEast = 0;
+        target.east = 0;
+        target.southEast = 0;
+        target.south = 0;
+        target.southWest = 0;
+        target.west = 0;
+        target.northWest = 0;
+      }
+    });
+
+    expect(mesh.vertexCount).toBe(12);
+    expect(scratchRefs).toHaveLength(2);
+    expect(scratchRefs[0]).toBe(scratchRefs[1]);
   });
 
   it('throws for non-empty tiles without render metadata instead of using raw tile id fallback', () => {
