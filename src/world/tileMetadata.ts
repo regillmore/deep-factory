@@ -19,10 +19,19 @@ export interface TileRenderMetadata {
   uvRect?: TileUvRect;
 }
 
+export type TileLiquidKind = 'water' | 'lava';
+
+export interface TileGameplayMetadata {
+  solid: boolean;
+  blocksLight: boolean;
+  liquidKind?: TileLiquidKind;
+}
+
 export interface TileMetadataEntry {
   id: number;
   name: string;
   materialTags?: readonly string[];
+  gameplay?: TileGameplayMetadata;
   render?: TileRenderMetadata;
   terrainAutotile?: TerrainAutotileTileMetadata;
 }
@@ -48,6 +57,14 @@ const expectNonEmptyString = (value: unknown, label: string): string => {
   }
 
   return value.trim();
+};
+
+const expectBoolean = (value: unknown, label: string): boolean => {
+  if (typeof value !== 'boolean') {
+    throw new Error(`${label} must be a boolean`);
+  }
+
+  return value;
 };
 
 const expectFiniteNumber = (value: unknown, label: string): number => {
@@ -104,6 +121,28 @@ const parseMaterialTags = (value: unknown, tileId: number): readonly string[] =>
   }
 
   return tags;
+};
+
+const parseTileGameplayMetadata = (value: unknown, tileId: number): TileGameplayMetadata => {
+  if (!isRecord(value)) {
+    throw new Error(`tiles[${tileId}].gameplay must be an object`);
+  }
+
+  const solid = expectBoolean(value.solid, `tiles[${tileId}].gameplay.solid`);
+  const blocksLight = expectBoolean(value.blocksLight, `tiles[${tileId}].gameplay.blocksLight`);
+
+  let liquidKind: TileLiquidKind | undefined;
+  if (value.liquidKind !== undefined) {
+    if (value.liquidKind !== 'water' && value.liquidKind !== 'lava') {
+      throw new Error(`tiles[${tileId}].gameplay.liquidKind must be "water" or "lava"`);
+    }
+    if (solid) {
+      throw new Error(`tiles[${tileId}].gameplay.liquidKind cannot be set when solid is true`);
+    }
+    liquidKind = value.liquidKind;
+  }
+
+  return liquidKind === undefined ? { solid, blocksLight } : { solid, blocksLight, liquidKind };
 };
 
 const parseTileRenderMetadata = (value: unknown, tileId: number): TileRenderMetadata => {
@@ -201,6 +240,7 @@ export const parseTileMetadataRegistry = (value: unknown): TileMetadataRegistry 
     }
 
     const materialTagsValue = rawTile.materialTags;
+    const gameplayValue = rawTile.gameplay;
     const renderValue = rawTile.render;
     const terrainAutotileValue = rawTile.terrainAutotile;
     const parsedTile: TileMetadataEntry = {
@@ -208,6 +248,7 @@ export const parseTileMetadataRegistry = (value: unknown): TileMetadataRegistry 
       name,
       materialTags:
         materialTagsValue === undefined ? undefined : parseMaterialTags(materialTagsValue, tileId),
+      gameplay: gameplayValue === undefined ? undefined : parseTileGameplayMetadata(gameplayValue, tileId),
       render: renderValue === undefined ? undefined : parseTileRenderMetadata(renderValue, tileId),
       terrainAutotile:
         terrainAutotileValue === undefined
@@ -235,6 +276,31 @@ export const getTileMetadata = (
   tileId: number,
   registry: TileMetadataRegistry = TILE_METADATA
 ): TileMetadataEntry | undefined => registry.tilesById.get(tileId);
+
+const DEFAULT_TILE_GAMEPLAY_METADATA: TileGameplayMetadata = {
+  solid: false,
+  blocksLight: false
+};
+
+export const resolveTileGameplayMetadata = (
+  tileId: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): TileGameplayMetadata => getTileMetadata(tileId, registry)?.gameplay ?? DEFAULT_TILE_GAMEPLAY_METADATA;
+
+export const isTileSolid = (
+  tileId: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): boolean => resolveTileGameplayMetadata(tileId, registry).solid;
+
+export const doesTileBlockLight = (
+  tileId: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): boolean => resolveTileGameplayMetadata(tileId, registry).blocksLight;
+
+export const getTileLiquidKind = (
+  tileId: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): TileLiquidKind | null => resolveTileGameplayMetadata(tileId, registry).liquidKind ?? null;
 
 export const hasTerrainAutotileMetadata = (
   tileId: number,

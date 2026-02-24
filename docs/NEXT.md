@@ -9,4 +9,4 @@
 7. Add save/load format for chunk snapshots.
 8. Prepare networking scaffolding (state diff messages, interest management).
 9. Add a main menu shell and move debug overlay to a UI toggle.
-10. Extend tile metadata with gameplay flags (`solid`, `blocksLight`, `liquidKind`) plus validation tests to prepare for collision and lighting tasks.
+10. Build a dense metadata-derived tile property lookup (bitflags + liquid kind table) and switch `tileMetadata` helper accessors to it for hot-path collision/lighting queries, with unit tests.

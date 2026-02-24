@@ -2,12 +2,20 @@
   "tiles": [
     {
       "id": 0,
-      "name": "empty"
+      "name": "empty",
+      "gameplay": {
+        "solid": false,
+        "blocksLight": false
+      }
     },
     {
       "id": 1,
       "name": "stone",
       "materialTags": ["terrain", "solid"],
+      "gameplay": {
+        "solid": true,
+        "blocksLight": true
+      },
       "terrainAutotile": {
         "connectivityGroup": "ground",
         "placeholderVariantAtlasByCardinalMask": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
@@ -17,6 +25,10 @@
       "id": 2,
       "name": "grass_surface",
       "materialTags": ["terrain", "solid"],
+      "gameplay": {
+        "solid": true,
+        "blocksLight": true
+      },
       "terrainAutotile": {
         "connectivityGroup": "ground",
         "placeholderVariantAtlasByCardinalMask": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
@@ -25,6 +37,10 @@
     {
       "id": 3,
       "name": "debug_brick",
+      "gameplay": {
+        "solid": true,
+        "blocksLight": true
+      },
       "render": {
         "atlasIndex": 14
       }
@@ -32,6 +48,10 @@
     {
       "id": 4,
       "name": "debug_panel",
+      "gameplay": {
+        "solid": false,
+        "blocksLight": false
+      },
       "render": {
         "uvRect": {
           "u0": 0.25,
