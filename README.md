@@ -55,6 +55,8 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Tile render metadata now also precomputes a dense `tileId x rawAdjacencyMask -> terrain atlasIndex` lookup (corner normalization baked in), and terrain chunk meshing uses it to skip per-tile normalized-mask work.
 - `buildChunkMesh` now pre-counts non-empty tiles and writes directly into an exact-sized `Float32Array`, removing the intermediate `number[]`/`push` allocation path.
 - Non-autotile tiles now use explicit metadata-driven render UVs (`atlasIndex` or normalized `uvRect`), and the mesher no longer falls back to raw `tileId -> atlas slot`.
+- Shared DPR-aware screen/canvas/world/tile picking utilities now centralize pointer coordinate conversion, and `InputController` zoom anchoring reuses them instead of inlining duplicate math.
+- Camera and picking tests now cover viewport coordinate round-tripping and DPR-aware client-to-tile selection (including negative-world tile flooring).
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.

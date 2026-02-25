@@ -42,6 +42,30 @@ export class Camera2D {
     ]);
   }
 
+  screenToWorld(
+    screenX: number,
+    screenY: number,
+    viewportWidth: number,
+    viewportHeight: number
+  ): { x: number; y: number } {
+    return {
+      x: this.x + (screenX - viewportWidth * 0.5) / this.zoom,
+      y: this.y + (screenY - viewportHeight * 0.5) / this.zoom
+    };
+  }
+
+  worldToScreen(
+    worldX: number,
+    worldY: number,
+    viewportWidth: number,
+    viewportHeight: number
+  ): { x: number; y: number } {
+    return {
+      x: (worldX - this.x) * this.zoom + viewportWidth * 0.5,
+      y: (worldY - this.y) * this.zoom + viewportHeight * 0.5
+    };
+  }
+
   screenDeltaToWorld(dx: number, dy: number): { x: number; y: number } {
     return {
       x: dx / this.zoom,

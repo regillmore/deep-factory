@@ -9,4 +9,4 @@
 7. Add save/load format for chunk snapshots.
 8. Prepare networking scaffolding (state diff messages, interest management).
 9. Add a main menu shell and move debug overlay to a UI toggle.
-10. Add a shared DPR-aware `screen -> world -> tile` picking utility (with camera/canvas tests) to unblock the debug edit brush and hovered-tile cursor highlight work.
+10. Add a debug pointer inspect readout (client/canvas/world/tile) to the overlay, powered by the shared picking utility, to validate mixed-DPR input before the edit brush lands.
