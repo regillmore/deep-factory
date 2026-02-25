@@ -1,5 +1,13 @@
 import { Camera2D } from '../core/camera2d';
-import { clientToWorldPoint } from './picking';
+import { clientToWorldPoint, pickScreenWorldTileFromCanvas } from './picking';
+
+export interface PointerInspectSnapshot {
+  client: { x: number; y: number };
+  canvas: { x: number; y: number };
+  world: { x: number; y: number };
+  tile: { x: number; y: number };
+  pointerType: string;
+}
 
 export class InputController {
   private keys = new Set<string>();
@@ -9,6 +17,7 @@ export class InputController {
   private lastY = 0;
   private pinchDistance = 0;
   private pointers = new Map<number, PointerEvent>();
+  private pointerInspect: PointerInspectSnapshot | null = null;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -25,6 +34,10 @@ export class InputController {
     if (this.keys.has('d') || this.keys.has('arrowright')) this.camera.pan(speed, 0);
   }
 
+  getPointerInspect(): PointerInspectSnapshot | null {
+    return this.pointerInspect;
+  }
+
   private bind(): void {
     window.addEventListener('keydown', (event) => this.keys.add(event.key.toLowerCase()));
     window.addEventListener('keyup', (event) => this.keys.delete(event.key.toLowerCase()));
@@ -33,11 +46,13 @@ export class InputController {
       event.preventDefault();
       const factor = event.deltaY > 0 ? 0.9 : 1.1;
       this.zoomAtScreenPoint(factor, event.clientX, event.clientY);
+      this.updatePointerInspect(event.clientX, event.clientY, 'mouse');
     });
 
     this.canvas.addEventListener('pointerdown', (event) => {
       this.canvas.setPointerCapture(event.pointerId);
       this.pointers.set(event.pointerId, event);
+      this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
       if (this.pointers.size === 1) {
         this.pointerActive = true;
         this.pointerId = event.pointerId;
@@ -49,7 +64,12 @@ export class InputController {
     });
 
     this.canvas.addEventListener('pointermove', (event) => {
-      if (!this.pointers.has(event.pointerId)) return;
+      const isTrackedPointer = this.pointers.has(event.pointerId);
+      if (!isTrackedPointer) {
+        this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
+        return;
+      }
+
       this.pointers.set(event.pointerId, event);
 
       if (this.pointers.size === 1 && this.pointerActive && this.pointerId === event.pointerId) {
@@ -68,6 +88,8 @@ export class InputController {
         }
         this.pinchDistance = distance;
       }
+
+      this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
     });
 
     const release = (event: PointerEvent): void => {
@@ -79,10 +101,18 @@ export class InputController {
       if (this.pointers.size < 2) {
         this.pinchDistance = 0;
       }
+      if (this.pointers.size === 0 && event.pointerType !== 'mouse') {
+        this.pointerInspect = null;
+      }
     };
 
     this.canvas.addEventListener('pointerup', release);
     this.canvas.addEventListener('pointercancel', release);
+    this.canvas.addEventListener('pointerleave', (event) => {
+      if (event.pointerType === 'mouse' && this.pointers.size === 0) {
+        this.pointerInspect = null;
+      }
+    });
     this.canvas.style.touchAction = 'none';
   }
 
@@ -98,5 +128,16 @@ export class InputController {
     const rect = this.canvas.getBoundingClientRect();
     const world = clientToWorldPoint(clientX, clientY, this.canvas, rect, this.camera);
     this.camera.zoomAt(factor, world.x, world.y);
+  }
+
+  private updatePointerInspect(clientX: number, clientY: number, pointerType: string): void {
+    const pick = pickScreenWorldTileFromCanvas(clientX, clientY, this.canvas, this.camera);
+    this.pointerInspect = {
+      client: { x: clientX, y: clientY },
+      canvas: pick.canvas,
+      world: pick.world,
+      tile: pick.tile,
+      pointerType
+    };
   }
 }

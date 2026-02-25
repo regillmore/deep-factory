@@ -12,6 +12,46 @@ export interface DebugOverlayStats {
   evictedMeshEntries: number;
 }
 
+export interface DebugOverlayPointerInspect {
+  client: { x: number; y: number };
+  canvas: { x: number; y: number };
+  world: { x: number; y: number };
+  tile: { x: number; y: number };
+  pointerType: string;
+}
+
+const formatFloat = (value: number, digits: number): string => value.toFixed(digits);
+const formatInt = (value: number): string => Math.round(value).toString();
+
+export const formatDebugOverlayText = (
+  fps: number,
+  stats: DebugOverlayStats,
+  pointerInspect: DebugOverlayPointerInspect | null
+): string => {
+  const budgetState = stats.drawCalls > stats.drawCallBudget ? 'OVER' : 'OK';
+  const summaryLine =
+    `FPS: ${fps.toFixed(1)} | ` +
+    `Chunks: ${stats.renderedChunks} | ` +
+    `Draws: ${stats.drawCalls}/${stats.drawCallBudget} (${budgetState}) | ` +
+    `Mesh builds: ${stats.meshBuilds}/${stats.meshBuildBudget} (${stats.meshBuildTimeMs.toFixed(2)} ms) | ` +
+    `MeshQ: ${stats.meshBuildQueueLength} | ` +
+    `Cache W/M: ${stats.residentWorldChunks}/${stats.cachedChunkMeshes} | ` +
+    `Evict W/M: ${stats.evictedWorldChunks}/${stats.evictedMeshEntries}`;
+
+  if (!pointerInspect) {
+    return `${summaryLine}\nPtr: n/a`;
+  }
+
+  const pointerLine =
+    `Ptr(${pointerInspect.pointerType}) ` +
+    `C:${formatInt(pointerInspect.client.x)},${formatInt(pointerInspect.client.y)} | ` +
+    `Cv:${formatInt(pointerInspect.canvas.x)},${formatInt(pointerInspect.canvas.y)} | ` +
+    `W:${formatFloat(pointerInspect.world.x, 2)},${formatFloat(pointerInspect.world.y, 2)} | ` +
+    `T:${pointerInspect.tile.x},${pointerInspect.tile.y}`;
+
+  return `${summaryLine}\n${pointerLine}`;
+};
+
 export class DebugOverlay {
   private root: HTMLDivElement;
   private fps = 0;
@@ -27,21 +67,20 @@ export class DebugOverlay {
     this.root.style.color = '#fff';
     this.root.style.fontFamily = 'monospace';
     this.root.style.fontSize = '12px';
+    this.root.style.whiteSpace = 'pre';
+    this.root.style.lineHeight = '1.35';
+    this.root.style.pointerEvents = 'none';
     this.root.style.borderRadius = '8px';
     document.body.append(this.root);
   }
 
-  update(deltaMs: number, stats: DebugOverlayStats): void {
+  update(
+    deltaMs: number,
+    stats: DebugOverlayStats,
+    pointerInspect: DebugOverlayPointerInspect | null = null
+  ): void {
     this.smoothDelta = this.smoothDelta * 0.9 + deltaMs * 0.1;
     this.fps = 1000 / this.smoothDelta;
-    const budgetState = stats.drawCalls > stats.drawCallBudget ? 'OVER' : 'OK';
-    this.root.textContent =
-      `FPS: ${this.fps.toFixed(1)} | ` +
-      `Chunks: ${stats.renderedChunks} | ` +
-      `Draws: ${stats.drawCalls}/${stats.drawCallBudget} (${budgetState}) | ` +
-      `Mesh builds: ${stats.meshBuilds}/${stats.meshBuildBudget} (${stats.meshBuildTimeMs.toFixed(2)} ms) | ` +
-      `MeshQ: ${stats.meshBuildQueueLength} | ` +
-      `Cache W/M: ${stats.residentWorldChunks}/${stats.cachedChunkMeshes} | ` +
-      `Evict W/M: ${stats.evictedWorldChunks}/${stats.evictedMeshEntries}`;
+    this.root.textContent = formatDebugOverlayText(this.fps, stats, pointerInspect);
   }
 }

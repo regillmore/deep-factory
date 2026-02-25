@@ -57,6 +57,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Non-autotile tiles now use explicit metadata-driven render UVs (`atlasIndex` or normalized `uvRect`), and the mesher no longer falls back to raw `tileId -> atlas slot`.
 - Shared DPR-aware screen/canvas/world/tile picking utilities now centralize pointer coordinate conversion, and `InputController` zoom anchoring reuses them instead of inlining duplicate math.
 - Camera and picking tests now cover viewport coordinate round-tripping and DPR-aware client-to-tile selection (including negative-world tile flooring).
+- Debug overlay now includes a pointer inspect readout (`client`, `canvas`, `world`, `tile`) powered by the shared picking utility, making mixed-DPR input validation visible before edit-brush work.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.
