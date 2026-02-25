@@ -35,6 +35,13 @@ export class InputController {
   }
 
   getPointerInspect(): PointerInspectSnapshot | null {
+    if (this.pointerInspect) {
+      this.updatePointerInspect(
+        this.pointerInspect.client.x,
+        this.pointerInspect.client.y,
+        this.pointerInspect.pointerType
+      );
+    }
     return this.pointerInspect;
   }
 

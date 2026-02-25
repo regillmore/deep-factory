@@ -58,6 +58,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Shared DPR-aware screen/canvas/world/tile picking utilities now centralize pointer coordinate conversion, and `InputController` zoom anchoring reuses them instead of inlining duplicate math.
 - Camera and picking tests now cover viewport coordinate round-tripping and DPR-aware client-to-tile selection (including negative-world tile flooring).
 - Debug overlay now includes a pointer inspect readout (`client`, `canvas`, `world`, `tile`) powered by the shared picking utility, making mixed-DPR input validation visible before edit-brush work.
+- A hovered-tile cursor highlight overlay now renders in client space from world tile coordinates (camera + DPR aware), de-risking world-space cursor visuals before tile editing.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.

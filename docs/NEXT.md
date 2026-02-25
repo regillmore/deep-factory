@@ -9,4 +9,4 @@
 7. Add save/load format for chunk snapshots.
 8. Prepare networking scaffolding (state diff messages, interest management).
 9. Add a main menu shell and move debug overlay to a UI toggle.
-10. Render a hovered-tile cursor highlight overlay using the shared picking utility (no editing yet) to de-risk world-space cursor visuals before the debug edit brush.
+10. Add a desktop debug tile edit click action (left place / right break) targeting the hovered tile cursor highlight, with context-menu suppression and no drag painting yet.

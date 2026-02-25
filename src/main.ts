@@ -5,6 +5,7 @@ import { GameLoop } from './core/gameLoop';
 import { Renderer } from './gl/renderer';
 import { InputController } from './input/controller';
 import { DebugOverlay } from './ui/debugOverlay';
+import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing #app root element');
@@ -28,6 +29,7 @@ const bootstrap = async (): Promise<void> => {
   const camera = new Camera2D();
   const input = new InputController(canvas, camera);
   const debug = new DebugOverlay();
+  const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
 
   await renderer.initialize();
   renderer.resize();
@@ -40,9 +42,11 @@ const bootstrap = async (): Promise<void> => {
       input.update(fixedDt);
     },
     (_alpha, frameDtMs) => {
+      const pointerInspect = input.getPointerInspect();
       renderer.resize();
       renderer.render(camera);
-      debug.update(frameDtMs, renderer.telemetry, input.getPointerInspect());
+      hoveredTileCursor.update(camera, pointerInspect);
+      debug.update(frameDtMs, renderer.telemetry, pointerInspect);
     }
   );
 
