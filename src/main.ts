@@ -7,6 +7,9 @@ import { InputController } from './input/controller';
 import { DebugOverlay } from './ui/debugOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 
+const DEBUG_TILE_BREAK_ID = 0;
+const DEBUG_TILE_PLACE_ID = 3;
+
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing #app root element');
 
@@ -40,6 +43,10 @@ const bootstrap = async (): Promise<void> => {
     1000 / 60,
     (fixedDt) => {
       input.update(fixedDt);
+      for (const edit of input.consumeDebugTileEdits()) {
+        const tileId = edit.kind === 'place' ? DEBUG_TILE_PLACE_ID : DEBUG_TILE_BREAK_ID;
+        renderer.setTile(edit.worldTileX, edit.worldTileY, tileId);
+      }
     },
     (_alpha, frameDtMs) => {
       const pointerInspect = input.getPointerInspect();

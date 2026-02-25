@@ -9,6 +9,26 @@ export interface PointerInspectSnapshot {
   pointerType: string;
 }
 
+export type DebugTileEditKind = 'place' | 'break';
+
+export interface DebugTileEditRequest {
+  worldTileX: number;
+  worldTileY: number;
+  kind: DebugTileEditKind;
+}
+
+export const buildDebugTileEditRequest = (
+  pointerInspect: PointerInspectSnapshot | null,
+  kind: DebugTileEditKind
+): DebugTileEditRequest | null => {
+  if (!pointerInspect || pointerInspect.pointerType !== 'mouse') return null;
+  return {
+    worldTileX: pointerInspect.tile.x,
+    worldTileY: pointerInspect.tile.y,
+    kind
+  };
+};
+
 export class InputController {
   private keys = new Set<string>();
   private pointerActive = false;
@@ -18,6 +38,7 @@ export class InputController {
   private pinchDistance = 0;
   private pointers = new Map<number, PointerEvent>();
   private pointerInspect: PointerInspectSnapshot | null = null;
+  private debugTileEditQueue: DebugTileEditRequest[] = [];
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -45,6 +66,13 @@ export class InputController {
     return this.pointerInspect;
   }
 
+  consumeDebugTileEdits(): DebugTileEditRequest[] {
+    if (this.debugTileEditQueue.length === 0) return [];
+    const edits = this.debugTileEditQueue;
+    this.debugTileEditQueue = [];
+    return edits;
+  }
+
   private bind(): void {
     window.addEventListener('keydown', (event) => this.keys.add(event.key.toLowerCase()));
     window.addEventListener('keyup', (event) => this.keys.delete(event.key.toLowerCase()));
@@ -54,6 +82,17 @@ export class InputController {
       const factor = event.deltaY > 0 ? 0.9 : 1.1;
       this.zoomAtScreenPoint(factor, event.clientX, event.clientY);
       this.updatePointerInspect(event.clientX, event.clientY, 'mouse');
+    });
+
+    this.canvas.addEventListener('click', (event) => {
+      if (event.button !== 0) return;
+      this.queueDesktopDebugTileEdit(event, 'place');
+    });
+
+    this.canvas.addEventListener('contextmenu', (event) => {
+      event.preventDefault();
+      if (event.button !== 2) return;
+      this.queueDesktopDebugTileEdit(event, 'break');
     });
 
     this.canvas.addEventListener('pointerdown', (event) => {
@@ -146,5 +185,13 @@ export class InputController {
       tile: pick.tile,
       pointerType
     };
+  }
+
+  private queueDesktopDebugTileEdit(event: MouseEvent, kind: DebugTileEditKind): void {
+    if (!this.pointerInspect || this.pointerInspect.pointerType !== 'mouse') return;
+    this.updatePointerInspect(event.clientX, event.clientY, 'mouse');
+    const request = buildDebugTileEditRequest(this.pointerInspect, kind);
+    if (!request) return;
+    this.debugTileEditQueue.push(request);
   }
 }
