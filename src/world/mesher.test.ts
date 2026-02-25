@@ -150,7 +150,7 @@ describe('buildChunkMesh autotile UV selection', () => {
 
   it('uses chunk-edge neighborhood sampling to resolve UVs across adjacent chunks', () => {
     const chunkX = 0;
-    const chunkY = 10;
+    const chunkY = -10;
     const localX = CHUNK_SIZE - 1;
     const localY = CHUNK_SIZE - 1;
     const tileId = 2;

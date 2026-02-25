@@ -13,7 +13,8 @@ const solidTileId = 1;
 
 const proceduralTile = (worldX: number, worldY: number): number => {
   const height = Math.floor(Math.sin(worldX * 0.2) * 3) - 2;
-  if (worldY > height) return 0;
+  // World +Y points downward, so tiles with smaller Y are above the surface (sky).
+  if (worldY < height) return 0;
   if (worldY === height) return 2;
   return solidTileId;
 };

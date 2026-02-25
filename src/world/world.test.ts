@@ -44,6 +44,16 @@ describe('TileWorld', () => {
     ]);
   });
 
+  it('generates procedural terrain with sky above and ground below in +Y-down world space', () => {
+    const world = new TileWorld(0);
+    const worldX = 0;
+    const heightAtX = -2; // floor(sin(0 * 0.2) * 3) - 2
+
+    expect(world.getTile(worldX, heightAtX - 1)).toBe(0);
+    expect(world.getTile(worldX, heightAtX)).toBe(2);
+    expect(world.getTile(worldX, heightAtX + 1)).toBe(1);
+  });
+
   it('does not emit or change when setting the same tile value', () => {
     const world = new TileWorld(0);
     const tileId = world.getTile(0, 0);
