@@ -4,6 +4,7 @@ import { AUTOTILE_DIRECTION_BITS, normalizeAutotileAdjacencyMask } from './autot
 import { toTileIndex } from './chunkMath';
 import { TILE_ATLAS_COLUMNS, TILE_ATLAS_ROWS, CHUNK_SIZE, TILE_SIZE } from './constants';
 import { buildChunkMesh } from './mesher';
+import { resolveTerrainAutotileUvRectByNormalizedAdjacencyMask } from './tileMetadata';
 import type { Chunk } from './types';
 import { TileWorld } from './world';
 import type { TileNeighborhood } from './world';
@@ -194,9 +195,11 @@ describe('buildChunkMesh autotile UV selection', () => {
 
       const normalizedMask = normalizeAutotileAdjacencyMask(rawMask);
       const expectedVariant = resolveTerrainAutotileVariantIndexBitwiseBaseline(normalizedMask);
+      const expectedUvRect = resolveTerrainAutotileUvRectByNormalizedAdjacencyMask(1, normalizedMask);
 
       expect(mesh.vertexCount, `raw mask ${rawMask}`).toBe(6);
-      expectSingleQuadUvRect(mesh.vertices, expectedVariant);
+      expect(expectedUvRect, `raw mask ${rawMask} expected uv`).toEqual(atlasUvRect(expectedVariant));
+      expectSingleQuadUv(mesh.vertices, expectedUvRect!);
     }
   });
 

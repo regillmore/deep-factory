@@ -9,4 +9,4 @@
 7. Add save/load format for chunk snapshots.
 8. Prepare networking scaffolding (state diff messages, interest management).
 9. Add a main menu shell and move debug overlay to a UI toggle.
-10. Precompute a dense `tileId x normalizedAdjacencyMask -> terrain atlasIndex` lookup (256 entries per terrain tile) in the render metadata hot path, and route terrain UV resolution/mesher tests through it.
+10. Precompute a dense `tileId x rawAdjacencyMask -> terrain atlasIndex` lookup (corner normalization baked in) and switch terrain meshing to skip the per-tile normalized-mask step, with parity tests against the normalized-mask path.

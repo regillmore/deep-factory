@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT } from './autotile';
+import {
+  TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK,
+  TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
+} from './autotile';
 import {
   TILE_METADATA,
   areTerrainAutotileNeighborsConnected,
@@ -11,7 +14,9 @@ import {
   isTileSolid,
   parseTileMetadataRegistry,
   resolveTileGameplayMetadata,
+  resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask,
   resolveTerrainAutotileVariantAtlasIndex,
+  resolveTerrainAutotileUvRectByNormalizedAdjacencyMask,
   resolveTerrainAutotileVariantUvRect,
   resolveTileRenderUvRect
 } from './tileMetadata';
@@ -35,9 +40,11 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileVariantAtlasIndex(1, 0)).toBe(0);
     expect(resolveTerrainAutotileVariantAtlasIndex(1, 15)).toBe(15);
     expect(resolveTerrainAutotileVariantAtlasIndex(2, 6)).toBe(6);
+    expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(1, 0)).toBe(0);
     expect(resolveTileRenderUvRect(3)).toEqual(atlasIndexToUvRect(14));
     expect(resolveTileRenderUvRect(4)).toEqual({ u0: 0.25, v0: 0.25, u1: 0.5, v1: 0.5 });
     expect(resolveTerrainAutotileVariantUvRect(2, 6)).toEqual(atlasIndexToUvRect(6));
+    expect(resolveTerrainAutotileUvRectByNormalizedAdjacencyMask(2, 0)).toEqual(atlasIndexToUvRect(0));
     expect(resolveTerrainAutotileVariantAtlasIndex(1, TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT)).toBe(
       null
     );
@@ -49,6 +56,10 @@ describe('tile metadata loader', () => {
     expect(atlasIndexToUvRect(6)).toBe(atlasUvRect);
     expect(resolveTerrainAutotileVariantUvRect(2, 6)).toBe(atlasUvRect);
     expect(resolveTerrainAutotileVariantUvRect(2, 6)).toBe(resolveTerrainAutotileVariantUvRect(2, 6));
+    expect(resolveTerrainAutotileUvRectByNormalizedAdjacencyMask(2, 20)).toBe(atlasUvRect);
+    expect(resolveTerrainAutotileUvRectByNormalizedAdjacencyMask(2, 20)).toBe(
+      resolveTerrainAutotileUvRectByNormalizedAdjacencyMask(2, 20)
+    );
   });
 
   it('rejects duplicate tile ids', () => {
@@ -344,9 +355,15 @@ describe('tile metadata loader', () => {
     expect(registry.renderLookup.terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask).toBeInstanceOf(
       Int32Array
     );
+    expect(
+      registry.renderLookup.terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask
+    ).toBeInstanceOf(Int32Array);
     expect(registry.renderLookup.terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask.length).toBe(
       19 * TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
     );
+    expect(
+      registry.renderLookup.terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask.length
+    ).toBe(19 * 256);
 
     expect(resolveTileRenderUvRect(5, registry)).toEqual({ u0: 0.25, v0: 0.25, u1: 0.5, v1: 0.5 });
     expect(resolveTileRenderUvRect(12, registry)).toEqual(atlasIndexToUvRect(14));
@@ -357,11 +374,56 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileVariantAtlasIndex(18, 0, registry)).toBe(1);
     expect(resolveTerrainAutotileVariantAtlasIndex(18, 15, registry)).toBe(0);
     expect(resolveTerrainAutotileVariantUvRect(18, 0, registry)).toBe(atlasIndexToUvRect(1));
+    expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(18, 0, registry)).toBe(1);
+    expect(resolveTerrainAutotileUvRectByNormalizedAdjacencyMask(18, 0, registry)).toBe(
+      atlasIndexToUvRect(1)
+    );
     expect(resolveTerrainAutotileVariantAtlasIndex(12, 0, registry)).toBe(null);
     expect(resolveTerrainAutotileVariantAtlasIndex(18, -1, registry)).toBe(null);
     expect(resolveTerrainAutotileVariantAtlasIndex(18, TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT, registry)).toBe(
       null
     );
+    expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(12, 0, registry)).toBe(null);
+    expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(18, -1, registry)).toBe(null);
+    expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(18, 256, registry)).toBe(null);
+  });
+
+  it('precomputes normalized-adjacency terrain atlas lookup entries with parity to placeholder variant mapping', () => {
+    const variantMap = Array.from(
+      { length: TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT },
+      (_, index) => (index + 5) % TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
+    );
+    const registry = parseTileMetadataRegistry({
+      tiles: [
+        {
+          id: 0,
+          name: 'empty',
+          gameplay: { solid: false, blocksLight: false }
+        },
+        {
+          id: 18,
+          name: 'ground',
+          terrainAutotile: {
+            placeholderVariantAtlasByCardinalMask: variantMap
+          }
+        }
+      ]
+    });
+
+    for (let normalizedMask = 0; normalizedMask < 256; normalizedMask += 1) {
+      const expectedVariant =
+        TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK[normalizedMask] ?? 0;
+      const expectedAtlasIndex = variantMap[expectedVariant] ?? 0;
+
+      expect(
+        resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(18, normalizedMask, registry),
+        `normalized mask ${normalizedMask}`
+      ).toBe(expectedAtlasIndex);
+      expect(
+        resolveTerrainAutotileUvRectByNormalizedAdjacencyMask(18, normalizedMask, registry),
+        `normalized mask uv ${normalizedMask}`
+      ).toBe(atlasIndexToUvRect(expectedAtlasIndex));
+    }
   });
 
   it('rejects duplicate material tags', () => {
