@@ -52,6 +52,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Atlas-slot UV rect objects are now precomputed and reused by atlas-index and terrain-autotile UV resolution, avoiding per-call allocations in mesher hot paths.
 - Placeholder terrain autotile variant selection now uses a precomputed `normalizedAdjacencyMask -> cardinal placeholder variant` lookup table (256 entries), and chunk meshing indexes it directly in the terrain UV hot path.
 - Tile render metadata now also precomputes a dense `tileId x normalizedAdjacencyMask -> terrain atlasIndex` lookup (256 entries per tile), and terrain UV resolution / chunk meshing use it directly.
+- Tile render metadata now also precomputes a dense `tileId x rawAdjacencyMask -> terrain atlasIndex` lookup (corner normalization baked in), and terrain chunk meshing uses it to skip per-tile normalized-mask work.
 - `buildChunkMesh` now pre-counts non-empty tiles and writes directly into an exact-sized `Float32Array`, removing the intermediate `number[]`/`push` allocation path.
 - Non-autotile tiles now use explicit metadata-driven render UVs (`atlasIndex` or normalized `uvRect`), and the mesher no longer falls back to raw `tileId -> atlas slot`.
 - Debug overlay showing FPS + rendered chunk count.

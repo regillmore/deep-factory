@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  normalizeAutotileAdjacencyMask,
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK,
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
 } from './autotile';
@@ -14,7 +15,9 @@ import {
   isTileSolid,
   parseTileMetadataRegistry,
   resolveTileGameplayMetadata,
+  resolveTerrainAutotileAtlasIndexByRawAdjacencyMask,
   resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask,
+  resolveTerrainAutotileUvRectByRawAdjacencyMask,
   resolveTerrainAutotileVariantAtlasIndex,
   resolveTerrainAutotileUvRectByNormalizedAdjacencyMask,
   resolveTerrainAutotileVariantUvRect,
@@ -358,12 +361,18 @@ describe('tile metadata loader', () => {
     expect(
       registry.renderLookup.terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask
     ).toBeInstanceOf(Int32Array);
+    expect(registry.renderLookup.terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask).toBeInstanceOf(
+      Int32Array
+    );
     expect(registry.renderLookup.terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask.length).toBe(
       19 * TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
     );
     expect(
       registry.renderLookup.terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask.length
     ).toBe(19 * 256);
+    expect(registry.renderLookup.terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask.length).toBe(
+      19 * 256
+    );
 
     expect(resolveTileRenderUvRect(5, registry)).toEqual({ u0: 0.25, v0: 0.25, u1: 0.5, v1: 0.5 });
     expect(resolveTileRenderUvRect(12, registry)).toEqual(atlasIndexToUvRect(14));
@@ -386,6 +395,9 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(12, 0, registry)).toBe(null);
     expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(18, -1, registry)).toBe(null);
     expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(18, 256, registry)).toBe(null);
+    expect(resolveTerrainAutotileAtlasIndexByRawAdjacencyMask(12, 0, registry)).toBe(null);
+    expect(resolveTerrainAutotileAtlasIndexByRawAdjacencyMask(18, -1, registry)).toBe(null);
+    expect(resolveTerrainAutotileAtlasIndexByRawAdjacencyMask(18, 256, registry)).toBe(null);
   });
 
   it('precomputes normalized-adjacency terrain atlas lookup entries with parity to placeholder variant mapping', () => {
@@ -423,6 +435,48 @@ describe('tile metadata loader', () => {
         resolveTerrainAutotileUvRectByNormalizedAdjacencyMask(18, normalizedMask, registry),
         `normalized mask uv ${normalizedMask}`
       ).toBe(atlasIndexToUvRect(expectedAtlasIndex));
+    }
+  });
+
+  it('precomputes raw-adjacency terrain atlas lookup entries with parity to the normalized lookup path', () => {
+    const variantMap = Array.from(
+      { length: TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT },
+      (_, index) => (index + 9) % TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
+    );
+    const registry = parseTileMetadataRegistry({
+      tiles: [
+        {
+          id: 0,
+          name: 'empty',
+          gameplay: { solid: false, blocksLight: false }
+        },
+        {
+          id: 18,
+          name: 'ground',
+          terrainAutotile: {
+            placeholderVariantAtlasByCardinalMask: variantMap
+          }
+        }
+      ]
+    });
+
+    for (let rawMask = 0; rawMask < 256; rawMask += 1) {
+      const normalizedMask = normalizeAutotileAdjacencyMask(rawMask);
+      const expectedAtlasIndex = resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(
+        18,
+        normalizedMask,
+        registry
+      );
+      const expectedUvRect = resolveTerrainAutotileUvRectByNormalizedAdjacencyMask(18, normalizedMask, registry);
+
+      expect(
+        resolveTerrainAutotileAtlasIndexByRawAdjacencyMask(18, rawMask, registry),
+        `raw mask atlas ${rawMask}`
+      ).toBe(expectedAtlasIndex);
+      expect(
+        resolveTerrainAutotileUvRectByRawAdjacencyMask(18, rawMask, registry),
+        `raw mask uv ${rawMask}`
+      ).toBe(expectedUvRect);
     }
   });
 

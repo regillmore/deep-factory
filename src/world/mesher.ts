@@ -1,13 +1,10 @@
-import {
-  buildAutotileAdjacencyMask,
-  normalizeAutotileAdjacencyMask
-} from './autotile';
+import { buildAutotileAdjacencyMask } from './autotile';
 import { CHUNK_SIZE, TILE_SIZE } from './constants';
 import { toTileIndex } from './chunkMath';
 import {
   areTerrainAutotileNeighborsConnected,
   hasTerrainAutotileMetadata,
-  resolveTerrainAutotileUvRectByNormalizedAdjacencyMask,
+  resolveTerrainAutotileUvRectByRawAdjacencyMask,
   resolveTileRenderUvRect
 } from './tileMetadata';
 import type { TileUvRect } from './tileMetadata';
@@ -75,7 +72,7 @@ const resolveChunkTileUvRect = (
 ): TileUvRect => {
   if (usesTerrainAutotile(tileId)) {
     if (!sampleNeighborhood && !(sampleNeighborhoodInto && neighborhoodScratch)) {
-      const isolatedTerrainUvRect = resolveTerrainAutotileUvRectByNormalizedAdjacencyMask(tileId, 0);
+      const isolatedTerrainUvRect = resolveTerrainAutotileUvRectByRawAdjacencyMask(tileId, 0);
       if (isolatedTerrainUvRect) return isolatedTerrainUvRect;
       throw new Error(`Missing terrain autotile metadata for tile ${tileId}`);
     }
@@ -90,8 +87,7 @@ const resolveChunkTileUvRect = (
     const rawMask = buildAutotileAdjacencyMask(neighborhood, (centerTileId, neighborTileId) =>
       areTerrainAutotileNeighborsConnected(centerTileId, neighborTileId)
     );
-    const normalizedMask = normalizeAutotileAdjacencyMask(rawMask);
-    const terrainUvRect = resolveTerrainAutotileUvRectByNormalizedAdjacencyMask(tileId, normalizedMask);
+    const terrainUvRect = resolveTerrainAutotileUvRectByRawAdjacencyMask(tileId, rawMask);
     if (terrainUvRect) return terrainUvRect;
     throw new Error(`Missing terrain autotile variant metadata for tile ${tileId}`);
   }

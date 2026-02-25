@@ -1,4 +1,5 @@
 import {
+  normalizeAutotileAdjacencyMask,
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK,
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
 } from './autotile';
@@ -61,6 +62,7 @@ export interface TileRenderLookup {
   staticUvRectByTileId: readonly (TileUvRect | null)[];
   terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask: Int32Array;
   terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask: Int32Array;
+  terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask: Int32Array;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -250,6 +252,7 @@ const TILE_LIQUID_KIND_CODE_WATER = 0;
 const TILE_LIQUID_KIND_CODE_LAVA = 1;
 const TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX = -1;
 const TERRAIN_AUTOTILE_NORMALIZED_ADJACENCY_MASK_COUNT = 256;
+const TERRAIN_AUTOTILE_RAW_ADJACENCY_MASK_COUNT = 256;
 
 const TERRAIN_CONNECTIVITY_GROUP_ID_NON_TERRAIN = -1;
 const TERRAIN_CONNECTIVITY_GROUP_ID_UNGROUPED_TERRAIN = -2;
@@ -383,10 +386,14 @@ const buildTileRenderLookup = (tiles: readonly TileMetadataEntry[]): TileRenderL
   const terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask = new Int32Array(
     (maxTileId + 1) * TERRAIN_AUTOTILE_NORMALIZED_ADJACENCY_MASK_COUNT
   );
+  const terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask = new Int32Array(
+    (maxTileId + 1) * TERRAIN_AUTOTILE_RAW_ADJACENCY_MASK_COUNT
+  );
   terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask.fill(TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX);
   terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask.fill(
     TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX
   );
+  terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask.fill(TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX);
 
   for (const tile of tiles) {
     if (tile.render) {
@@ -419,12 +426,26 @@ const buildTileRenderLookup = (tiles: readonly TileMetadataEntry[]): TileRenderL
         normalizedTableOffset + normalizedAdjacencyMask
       ] = variantMap[cardinalMask] ?? TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX;
     }
+
+    const rawTableOffset = tile.id * TERRAIN_AUTOTILE_RAW_ADJACENCY_MASK_COUNT;
+    for (
+      let rawAdjacencyMask = 0;
+      rawAdjacencyMask < TERRAIN_AUTOTILE_RAW_ADJACENCY_MASK_COUNT;
+      rawAdjacencyMask += 1
+    ) {
+      const normalizedAdjacencyMask = normalizeAutotileAdjacencyMask(rawAdjacencyMask);
+      terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask[rawTableOffset + rawAdjacencyMask] =
+        terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask[
+          normalizedTableOffset + normalizedAdjacencyMask
+        ] ?? TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX;
+    }
   }
 
   return {
     staticUvRectByTileId,
     terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask,
-    terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask
+    terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask,
+    terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask
   };
 };
 
@@ -530,6 +551,30 @@ const getTerrainAutotileVariantAtlasIndexFromNormalizedAdjacencyLookup = (
   const atlasIndex =
     terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask[
       tileId * TERRAIN_AUTOTILE_NORMALIZED_ADJACENCY_MASK_COUNT + normalizedAdjacencyMask
+    ] ?? TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX;
+
+  return atlasIndex === TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX ? null : atlasIndex;
+};
+
+const getTerrainAutotileVariantAtlasIndexFromRawAdjacencyLookup = (
+  tileId: number,
+  rawAdjacencyMask: number,
+  registry: TileMetadataRegistry
+): number | null => {
+  if (!Number.isInteger(rawAdjacencyMask)) return null;
+  if (rawAdjacencyMask < 0 || rawAdjacencyMask >= TERRAIN_AUTOTILE_RAW_ADJACENCY_MASK_COUNT) {
+    return null;
+  }
+
+  const { staticUvRectByTileId, terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask } =
+    registry.renderLookup;
+  if (!isDenseLookupTileIdInRange(tileId, staticUvRectByTileId.length)) {
+    return null;
+  }
+
+  const atlasIndex =
+    terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask[
+      tileId * TERRAIN_AUTOTILE_RAW_ADJACENCY_MASK_COUNT + rawAdjacencyMask
     ] ?? TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX;
 
   return atlasIndex === TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX ? null : atlasIndex;
@@ -698,6 +743,12 @@ export const resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask = (
     registry
   );
 
+export const resolveTerrainAutotileAtlasIndexByRawAdjacencyMask = (
+  tileId: number,
+  rawAdjacencyMask: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): number | null => getTerrainAutotileVariantAtlasIndexFromRawAdjacencyLookup(tileId, rawAdjacencyMask, registry);
+
 export const atlasIndexToUvRect = (atlasIndex: number): TileUvRect => {
   return ATLAS_INDEX_UV_RECT_CACHE[atlasIndex]!;
 };
@@ -726,5 +777,14 @@ export const resolveTerrainAutotileUvRectByNormalizedAdjacencyMask = (
     normalizedAdjacencyMask,
     registry
   );
+  return atlasIndex === null ? null : atlasIndexToUvRect(atlasIndex);
+};
+
+export const resolveTerrainAutotileUvRectByRawAdjacencyMask = (
+  tileId: number,
+  rawAdjacencyMask: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): TileUvRect | null => {
+  const atlasIndex = resolveTerrainAutotileAtlasIndexByRawAdjacencyMask(tileId, rawAdjacencyMask, registry);
   return atlasIndex === null ? null : atlasIndexToUvRect(atlasIndex);
 };
