@@ -1,7 +1,7 @@
 import {
   buildAutotileAdjacencyMask,
   normalizeAutotileAdjacencyMask,
-  resolveTerrainAutotileVariantIndex
+  TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK
 } from './autotile';
 import { CHUNK_SIZE, TILE_SIZE } from './constants';
 import { toTileIndex } from './chunkMath';
@@ -92,7 +92,8 @@ const resolveChunkTileUvRect = (
       areTerrainAutotileNeighborsConnected(centerTileId, neighborTileId)
     );
     const normalizedMask = normalizeAutotileAdjacencyMask(rawMask);
-    const cardinalVariantIndex = resolveTerrainAutotileVariantIndex(normalizedMask);
+    const cardinalVariantIndex =
+      TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK[normalizedMask];
     const terrainUvRect = resolveTerrainAutotileVariantUvRect(tileId, cardinalVariantIndex);
     if (terrainUvRect) return terrainUvRect;
     throw new Error(`Missing terrain autotile variant metadata for tile ${tileId}`);

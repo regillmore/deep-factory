@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+import { AUTOTILE_DIRECTION_BITS, normalizeAutotileAdjacencyMask } from './autotile';
 import { toTileIndex } from './chunkMath';
 import { TILE_ATLAS_COLUMNS, TILE_ATLAS_ROWS, CHUNK_SIZE, TILE_SIZE } from './constants';
 import { buildChunkMesh } from './mesher';
 import type { Chunk } from './types';
 import { TileWorld } from './world';
+import type { TileNeighborhood } from './world';
 
 const createEmptyChunk = (chunkX = 0, chunkY = 0): Chunk => ({
   coord: { x: chunkX, y: chunkY },
@@ -23,6 +25,34 @@ const atlasUvRect = (atlasTileIndex: number) => {
     v0: row / TILE_ATLAS_ROWS,
     u1: (col + 1) / TILE_ATLAS_COLUMNS,
     v1: (row + 1) / TILE_ATLAS_ROWS
+  };
+};
+
+const resolveTerrainAutotileVariantIndexBitwiseBaseline = (normalizedMask: number): number => {
+  let cardinalMask = 0;
+  const mask = normalizedMask & 0xff;
+
+  if (mask & AUTOTILE_DIRECTION_BITS.north) cardinalMask |= 1 << 0;
+  if (mask & AUTOTILE_DIRECTION_BITS.east) cardinalMask |= 1 << 1;
+  if (mask & AUTOTILE_DIRECTION_BITS.south) cardinalMask |= 1 << 2;
+  if (mask & AUTOTILE_DIRECTION_BITS.west) cardinalMask |= 1 << 3;
+
+  return cardinalMask;
+};
+
+const createTerrainNeighborhoodFromMask = (rawMask: number, centerTileId = 1): TileNeighborhood => {
+  const connectedTile = (bit: number): number => ((rawMask & bit) !== 0 ? centerTileId : 0);
+
+  return {
+    center: centerTileId,
+    north: connectedTile(AUTOTILE_DIRECTION_BITS.north),
+    northEast: connectedTile(AUTOTILE_DIRECTION_BITS.northEast),
+    east: connectedTile(AUTOTILE_DIRECTION_BITS.east),
+    southEast: connectedTile(AUTOTILE_DIRECTION_BITS.southEast),
+    south: connectedTile(AUTOTILE_DIRECTION_BITS.south),
+    southWest: connectedTile(AUTOTILE_DIRECTION_BITS.southWest),
+    west: connectedTile(AUTOTILE_DIRECTION_BITS.west),
+    northWest: connectedTile(AUTOTILE_DIRECTION_BITS.northWest)
   };
 };
 
@@ -151,6 +181,23 @@ describe('buildChunkMesh autotile UV selection', () => {
     expect(mesh.vertexCount).toBe(6);
     expectSingleQuadUvRect(mesh.vertices, 6);
     expect(scratchRefs).toHaveLength(1);
+  });
+
+  it('matches legacy bitwise placeholder variant UV selection across all raw adjacency masks', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 1);
+
+    for (let rawMask = 0; rawMask < 256; rawMask += 1) {
+      const mesh = buildChunkMesh(chunk, {
+        sampleNeighborhood: () => createTerrainNeighborhoodFromMask(rawMask, 1)
+      });
+
+      const normalizedMask = normalizeAutotileAdjacencyMask(rawMask);
+      const expectedVariant = resolveTerrainAutotileVariantIndexBitwiseBaseline(normalizedMask);
+
+      expect(mesh.vertexCount, `raw mask ${rawMask}`).toBe(6);
+      expectSingleQuadUvRect(mesh.vertices, expectedVariant);
+    }
   });
 
   it('uses metadata atlasIndex for non-autotile tiles', () => {

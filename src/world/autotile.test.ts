@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { CHUNK_SIZE } from './constants';
 import {
   AUTOTILE_DIRECTION_BITS,
+  TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK,
   buildAutotileAdjacencyMask,
   normalizeAutotileAdjacencyMask,
   resolveTerrainAutotileVariantIndex,
@@ -10,6 +11,18 @@ import {
 } from './autotile';
 import { TileWorld } from './world';
 import type { TileNeighborhood } from './world';
+
+const resolveTerrainAutotileVariantIndexBitwiseBaseline = (normalizedMask: number): number => {
+  let cardinalMask = 0;
+  const mask = normalizedMask & 0xff;
+
+  if (mask & AUTOTILE_DIRECTION_BITS.north) cardinalMask |= 1 << 0;
+  if (mask & AUTOTILE_DIRECTION_BITS.east) cardinalMask |= 1 << 1;
+  if (mask & AUTOTILE_DIRECTION_BITS.south) cardinalMask |= 1 << 2;
+  if (mask & AUTOTILE_DIRECTION_BITS.west) cardinalMask |= 1 << 3;
+
+  return cardinalMask;
+};
 
 describe('autotile adjacency mask', () => {
   it('uses a clockwise bit layout starting at north', () => {
@@ -200,6 +213,22 @@ describe('autotile adjacency mask', () => {
     expect(withoutCorners).toBe(3);
     expect(withValidCorner).toBe(withoutCorners);
     expect(withMultipleCorners).toBe(15);
+  });
+
+  it('precomputes a 256-entry normalized-mask lookup matching the legacy bitwise placeholder mapping', () => {
+    expect(TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK).toHaveLength(256);
+
+    for (let normalizedMask = 0; normalizedMask < 256; normalizedMask += 1) {
+      const expectedVariant = resolveTerrainAutotileVariantIndexBitwiseBaseline(normalizedMask);
+
+      expect(
+        TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK[normalizedMask],
+        `lookup entry ${normalizedMask}`
+      ).toBe(expectedVariant);
+      expect(resolveTerrainAutotileVariantIndex(normalizedMask), `resolver entry ${normalizedMask}`).toBe(
+        expectedVariant
+      );
+    }
   });
 
   it('matches the 4x4 placeholder atlas capacity', () => {

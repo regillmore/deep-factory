@@ -69,7 +69,7 @@ export const TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT = 16;
 
 // Placeholder atlas is a 4x4 sheet, so we currently compress the normalized
 // 8-neighbor mask into a 4-bit cardinal mask (N/E/S/W) for variant selection.
-export const resolveTerrainAutotileVariantIndex = (normalizedMask: number): number => {
+const resolveTerrainAutotileVariantIndexBitwise = (normalizedMask: number): number => {
   let cardinalMask = 0;
   const mask = normalizedMask & 0xff;
 
@@ -80,3 +80,18 @@ export const resolveTerrainAutotileVariantIndex = (normalizedMask: number): numb
 
   return cardinalMask;
 };
+
+const buildTerrainAutotilePlaceholderVariantLookup = (): Uint8Array => {
+  const lookup = new Uint8Array(256);
+  for (let normalizedAdjacencyMask = 0; normalizedAdjacencyMask < lookup.length; normalizedAdjacencyMask += 1) {
+    lookup[normalizedAdjacencyMask] =
+      resolveTerrainAutotileVariantIndexBitwise(normalizedAdjacencyMask);
+  }
+  return lookup;
+};
+
+export const TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK =
+  buildTerrainAutotilePlaceholderVariantLookup();
+
+export const resolveTerrainAutotileVariantIndex = (normalizedMask: number): number =>
+  TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK[normalizedMask & 0xff] ?? 0;
