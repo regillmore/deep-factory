@@ -4,6 +4,10 @@ import { Camera2D } from './core/camera2d';
 import { GameLoop } from './core/gameLoop';
 import { Renderer } from './gl/renderer';
 import { InputController } from './input/controller';
+import {
+  loadDebugEditControlState,
+  saveDebugEditControlState
+} from './input/debugEditControlStatePersistence';
 import { DebugTileEditHistory } from './input/debugTileEditHistory';
 import {
   cycleDebugBrushTileId,
@@ -33,6 +37,7 @@ const DEBUG_BRUSH_TILE_OPTIONS: readonly DebugBrushOption[] = TILE_METADATA.tile
     tileId: tile.id,
     label: formatDebugBrushLabel(tile.name)
   }));
+const DEBUG_BRUSH_TILE_IDS = DEBUG_BRUSH_TILE_OPTIONS.map((option) => option.tileId);
 
 if (DEBUG_BRUSH_TILE_OPTIONS.length === 0) {
   throw new Error('Tile metadata must provide at least one non-empty tile for debug editing');
@@ -67,8 +72,31 @@ const bootstrap = async (): Promise<void> => {
   const debug = new DebugOverlay();
   const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
   const debugTileEditHistory = new DebugTileEditHistory();
-  let activeDebugBrushTileId = INITIAL_DEBUG_BRUSH_TILE_ID;
+  const debugEditControlStorage = (() => {
+    try {
+      return window.localStorage;
+    } catch {
+      return null;
+    }
+  })();
+  const initialDebugEditControlState = loadDebugEditControlState(
+    debugEditControlStorage,
+    DEBUG_BRUSH_TILE_IDS,
+    {
+      touchMode: input.getTouchDebugEditMode(),
+      brushTileId: INITIAL_DEBUG_BRUSH_TILE_ID
+    }
+  );
+  input.setTouchDebugEditMode(initialDebugEditControlState.touchMode);
+  let activeDebugBrushTileId = initialDebugEditControlState.brushTileId;
   let debugEditControls: TouchDebugEditControls | null = null;
+
+  const persistDebugEditControlsState = (): void => {
+    saveDebugEditControlState(debugEditControlStorage, {
+      touchMode: input.getTouchDebugEditMode(),
+      brushTileId: activeDebugBrushTileId
+    });
+  };
 
   const syncDebugEditHistoryControls = (): void => {
     if (!debugEditControls) return;
@@ -97,20 +125,30 @@ const bootstrap = async (): Promise<void> => {
 
   debugEditControls = new TouchDebugEditControls({
     initialMode: input.getTouchDebugEditMode(),
-    onModeChange: (mode) => input.setTouchDebugEditMode(mode),
+    onModeChange: (mode) => {
+      input.setTouchDebugEditMode(mode);
+      persistDebugEditControlsState();
+    },
     brushOptions: DEBUG_BRUSH_TILE_OPTIONS,
     initialBrushTileId: activeDebugBrushTileId,
     onBrushTileIdChange: (tileId) => {
       activeDebugBrushTileId = tileId;
+      persistDebugEditControlsState();
     },
     onUndo: undoDebugTileStroke,
     onRedo: redoDebugTileStroke
   });
   syncDebugEditHistoryControls();
+  persistDebugEditControlsState();
 
   const applyDebugBrushShortcutTileId = (tileId: number): boolean => {
     const previousBrushTileId = activeDebugBrushTileId;
-    debugEditControls?.setBrushTileId(tileId);
+    if (debugEditControls) {
+      debugEditControls.setBrushTileId(tileId);
+    } else {
+      activeDebugBrushTileId = tileId;
+      persistDebugEditControlsState();
+    }
     return activeDebugBrushTileId !== previousBrushTileId;
   };
 
@@ -135,6 +173,9 @@ const bootstrap = async (): Promise<void> => {
         input.setTouchDebugEditMode(action.mode);
       }
       handled = input.getTouchDebugEditMode() !== previousMode;
+      if (handled && !debugEditControls) {
+        persistDebugEditControlsState();
+      }
     } else if (action.type === 'select-brush-slot') {
       const tileId = getDebugBrushTileIdForShortcutSlot(DEBUG_BRUSH_TILE_OPTIONS, action.slotIndex);
       handled = tileId !== null ? applyDebugBrushShortcutTileId(tileId) : false;

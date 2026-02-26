@@ -23,6 +23,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 ## Controls
 
 ### Desktop
+- Debug edit control state (shared touch mode + active brush) persists across reloads with a metadata-safe brush fallback
 - Move camera: `WASD` or arrow keys
 - On-screen debug edit controls: click a brush tile to set the active place brush (shared with touch)
 - On-screen debug edit controls: click `Undo` / `Redo` to revert or reapply the last debug paint stroke
@@ -76,6 +77,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Shared debug edit controls now expose keyboard shortcut bindings (`1`-`0`, `[` / `]`, undo/redo combos), and desktop shortcuts trigger the same brush/history actions as the on-screen UI.
 - Touch debug history shortcuts now support `two-finger tap` undo / `three-finger tap` redo in `Pan` mode with tap debounce and pinch-distance conflict guards to avoid accidental undos during pinch zoom.
 - Shared debug edit controls now also surface keyboard touch-mode bindings (`P` pan / `L` place / `B` break), and desktop shortcuts toggle the same `Pan` / `Place` / `Break` state as the on-screen UI.
+- Shared debug edit control state (`touch mode` + active brush tile) now persists across reloads via local storage, with a safe brush fallback when tile metadata no longer contains the saved tile ID.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.
