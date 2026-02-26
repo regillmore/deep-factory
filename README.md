@@ -26,6 +26,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Move camera: `WASD` or arrow keys
 - On-screen debug edit controls: click a brush tile to set the active place brush (shared with touch)
 - On-screen debug edit controls: click `Undo` / `Redo` to revert or reapply the last debug paint stroke
+- Debug touch mode shortcuts (shared `Pan` / `Place` / `Break` state): `P` pan, `L` place, `B` break
 - Debug edit brush shortcuts: `1`-`0` select visible brush slots, `[` / `]` cycle active brush
 - Debug edit history shortcuts: `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` redo
 - Mouse drag: debug paint on hovered tile cursor (`left` place active brush / `right` break, line-stepped + per-tile deduped)
@@ -74,6 +75,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Debug tile editing now records per-stroke tile deltas (desktop mouse and touch paint strokes) with shared on-screen `Undo` / `Redo` controls for fast iteration while testing world systems.
 - Shared debug edit controls now expose keyboard shortcut bindings (`1`-`0`, `[` / `]`, undo/redo combos), and desktop shortcuts trigger the same brush/history actions as the on-screen UI.
 - Touch debug history shortcuts now support `two-finger tap` undo / `three-finger tap` redo in `Pan` mode with tap debounce and pinch-distance conflict guards to avoid accidental undos during pinch zoom.
+- Shared debug edit controls now also surface keyboard touch-mode bindings (`P` pan / `L` place / `B` break), and desktop shortcuts toggle the same `Pan` / `Place` / `Break` state as the on-screen UI.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.

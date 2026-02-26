@@ -1,5 +1,5 @@
 import type { TouchDebugEditMode } from '../input/controller';
-import { getDebugBrushSlotHotkeyLabel } from '../input/debugEditShortcuts';
+import { getDebugBrushSlotHotkeyLabel, getTouchDebugEditModeHotkeyLabel } from '../input/debugEditShortcuts';
 
 export interface DebugBrushOption {
   tileId: number;
@@ -98,9 +98,12 @@ export class TouchDebugEditControls {
     this.root.append(row);
 
     for (const mode of TOUCH_DEBUG_BUTTON_ORDER) {
+      const modeLabel = buttonLabelForMode(mode);
+      const modeHotkeyLabel = getTouchDebugEditModeHotkeyLabel(mode);
       const button = document.createElement('button');
       button.type = 'button';
-      button.textContent = buttonLabelForMode(mode);
+      button.textContent = modeLabel;
+      button.title = `Touch mode: ${modeLabel} (${modeHotkeyLabel})`;
       button.addEventListener('click', () => this.setMode(mode));
       button.style.minWidth = '56px';
       button.style.padding = '6px 8px';
@@ -182,6 +185,13 @@ export class TouchDebugEditControls {
     shortcutTitle.style.color = '#aab7c7';
     shortcutTitle.style.fontSize = '11px';
     shortcutSection.append(shortcutTitle);
+
+    const modeShortcutLine = document.createElement('div');
+    modeShortcutLine.textContent = `Modes: ${getTouchDebugEditModeHotkeyLabel('pan')} pan, ${getTouchDebugEditModeHotkeyLabel('place')} place, ${getTouchDebugEditModeHotkeyLabel('break')} break`;
+    modeShortcutLine.style.color = '#d6dde8';
+    modeShortcutLine.style.fontSize = '11px';
+    modeShortcutLine.style.lineHeight = '1.35';
+    shortcutSection.append(modeShortcutLine);
 
     const brushShortcutLine = document.createElement('div');
     brushShortcutLine.textContent = 'Brush: [ / ] cycle, 1-0 slots';

@@ -127,6 +127,14 @@ const bootstrap = async (): Promise<void> => {
       handled = undoDebugTileStroke();
     } else if (action.type === 'redo') {
       handled = redoDebugTileStroke();
+    } else if (action.type === 'set-touch-mode') {
+      const previousMode = input.getTouchDebugEditMode();
+      if (debugEditControls) {
+        debugEditControls.setMode(action.mode);
+      } else {
+        input.setTouchDebugEditMode(action.mode);
+      }
+      handled = input.getTouchDebugEditMode() !== previousMode;
     } else if (action.type === 'select-brush-slot') {
       const tileId = getDebugBrushTileIdForShortcutSlot(DEBUG_BRUSH_TILE_OPTIONS, action.slotIndex);
       handled = tileId !== null ? applyDebugBrushShortcutTileId(tileId) : false;

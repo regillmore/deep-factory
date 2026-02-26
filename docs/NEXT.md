@@ -8,5 +8,5 @@
 6. Add save/load format for chunk snapshots.
 7. Prepare networking scaffolding (state diff messages, interest management).
 8. Add a main menu shell and move debug overlay to a UI toggle.
-9. Add keyboard shortcuts for debug touch mode toggles (`Pan` / `Place` / `Break`) and surface the bindings in the debug edit UI.
-10. Persist debug edit control state (`touch mode` + active `brush` tile) across reloads with safe fallback when tile metadata changes.
+9. Persist debug edit control state (`touch mode` + active `brush` tile) across reloads with safe fallback when tile metadata changes.
+10. Add a debug-edit eyedropper (desktop shortcut + touch long-press) to set the active brush from the hovered tile.

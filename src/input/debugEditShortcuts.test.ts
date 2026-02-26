@@ -4,6 +4,7 @@ import {
   cycleDebugBrushTileId,
   getDebugBrushSlotHotkeyLabel,
   getDebugBrushTileIdForShortcutSlot,
+  getTouchDebugEditModeHotkeyLabel,
   resolveDebugEditShortcutAction,
   type DebugEditShortcutKeyEventLike
 } from './debugEditShortcuts';
@@ -48,6 +49,23 @@ describe('resolveDebugEditShortcutAction', () => {
     ).toEqual({ type: 'cycle-brush', delta: 1 });
   });
 
+  it('maps P/L/B to touch debug mode toggles', () => {
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'p' }))).toEqual({
+      type: 'set-touch-mode',
+      mode: 'pan'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'L' }))).toEqual({
+      type: 'set-touch-mode',
+      mode: 'place'
+    });
+    expect(
+      resolveDebugEditShortcutAction(keyboardEventLike({ key: 'B', shiftKey: true }))
+    ).toEqual({
+      type: 'set-touch-mode',
+      mode: 'break'
+    });
+  });
+
   it('maps digit and numpad keys to brush slots', () => {
     expect(
       resolveDebugEditShortcutAction(keyboardEventLike({ key: '1', code: 'Digit1' }))
@@ -67,7 +85,7 @@ describe('resolveDebugEditShortcutAction', () => {
   });
 
   it('ignores unsupported or alt-modified shortcuts', () => {
-    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'p' }))).toBeNull();
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'x' }))).toBeNull();
     expect(
       resolveDebugEditShortcutAction(keyboardEventLike({ key: 'z', ctrlKey: true, altKey: true }))
     ).toBeNull();
@@ -82,6 +100,12 @@ describe('brush shortcut helpers', () => {
     expect(getDebugBrushSlotHotkeyLabel(8)).toBe('9');
     expect(getDebugBrushSlotHotkeyLabel(9)).toBe('0');
     expect(getDebugBrushSlotHotkeyLabel(10)).toBeNull();
+  });
+
+  it('returns touch-mode hotkey labels', () => {
+    expect(getTouchDebugEditModeHotkeyLabel('pan')).toBe('P');
+    expect(getTouchDebugEditModeHotkeyLabel('place')).toBe('L');
+    expect(getTouchDebugEditModeHotkeyLabel('break')).toBe('B');
   });
 
   it('maps slot indexes to brush tile IDs', () => {

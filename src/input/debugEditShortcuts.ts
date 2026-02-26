@@ -14,6 +14,7 @@ export interface DebugEditShortcutKeyEventLike {
 export type DebugEditShortcutAction =
   | { type: 'undo' }
   | { type: 'redo' }
+  | { type: 'set-touch-mode'; mode: 'pan' | 'place' | 'break' }
   | { type: 'select-brush-slot'; slotIndex: number }
   | { type: 'cycle-brush'; delta: -1 | 1 };
 
@@ -42,6 +43,12 @@ const parseBrushSlotIndexFromCode = (code: string | undefined): number | null =>
 
 export const getDebugBrushSlotHotkeyLabel = (slotIndex: number): string | null =>
   DEBUG_BRUSH_SLOT_HOTKEY_LABELS[slotIndex] ?? null;
+
+export const getTouchDebugEditModeHotkeyLabel = (mode: 'pan' | 'place' | 'break'): string => {
+  if (mode === 'pan') return 'P';
+  if (mode === 'place') return 'L';
+  return 'B';
+};
 
 export const getDebugBrushTileIdForShortcutSlot = (
   brushOptions: readonly DebugBrushShortcutOption[],
@@ -85,6 +92,16 @@ export const resolveDebugEditShortcutAction = (
   }
 
   if (event.altKey) return null;
+
+  if (normalizedKey === 'p') {
+    return { type: 'set-touch-mode', mode: 'pan' };
+  }
+  if (normalizedKey === 'l') {
+    return { type: 'set-touch-mode', mode: 'place' };
+  }
+  if (normalizedKey === 'b') {
+    return { type: 'set-touch-mode', mode: 'break' };
+  }
 
   const code = event.code ?? '';
   if (code === 'BracketLeft' || (!code && event.key === '[')) {
