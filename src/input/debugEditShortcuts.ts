@@ -14,6 +14,7 @@ export interface DebugEditShortcutKeyEventLike {
 export type DebugEditShortcutAction =
   | { type: 'undo' }
   | { type: 'redo' }
+  | { type: 'toggle-panel-collapsed' }
   | { type: 'set-touch-mode'; mode: 'pan' | 'place' | 'break' }
   | { type: 'eyedropper' }
   | { type: 'select-brush-slot'; slotIndex: number }
@@ -50,6 +51,8 @@ export const getTouchDebugEditModeHotkeyLabel = (mode: 'pan' | 'place' | 'break'
   if (mode === 'place') return 'L';
   return 'B';
 };
+
+export const getDebugEditPanelToggleHotkeyLabel = (): string => '\\';
 
 export const getDebugBrushTileIdForShortcutSlot = (
   brushOptions: readonly DebugBrushShortcutOption[],
@@ -94,6 +97,11 @@ export const resolveDebugEditShortcutAction = (
 
   if (event.altKey) return null;
 
+  const code = event.code ?? '';
+  if (code === 'Backslash' || (!code && event.key === getDebugEditPanelToggleHotkeyLabel())) {
+    return { type: 'toggle-panel-collapsed' };
+  }
+
   if (normalizedKey === 'p') {
     return { type: 'set-touch-mode', mode: 'pan' };
   }
@@ -107,7 +115,6 @@ export const resolveDebugEditShortcutAction = (
     return { type: 'eyedropper' };
   }
 
-  const code = event.code ?? '';
   if (code === 'BracketLeft' || (!code && event.key === '[')) {
     return { type: 'cycle-brush', delta: -1 };
   }

@@ -1,5 +1,9 @@
 import type { TouchDebugEditMode } from '../input/controller';
-import { getDebugBrushSlotHotkeyLabel, getTouchDebugEditModeHotkeyLabel } from '../input/debugEditShortcuts';
+import {
+  getDebugBrushSlotHotkeyLabel,
+  getDebugEditPanelToggleHotkeyLabel,
+  getTouchDebugEditModeHotkeyLabel
+} from '../input/debugEditShortcuts';
 
 export interface DebugBrushOption {
   tileId: number;
@@ -35,6 +39,7 @@ const buttonLabelForMode = (mode: TouchDebugEditMode): string => {
 
 export class TouchDebugEditControls {
   private root: HTMLDivElement;
+  private collapsedSummary: HTMLDivElement;
   private content: HTMLDivElement;
   private collapseToggleButton: HTMLButtonElement;
   private buttons = new Map<TouchDebugEditMode, HTMLButtonElement>();
@@ -103,6 +108,7 @@ export class TouchDebugEditControls {
     title.style.textTransform = 'uppercase';
     headerRow.append(title);
 
+    const panelToggleHotkeyLabel = getDebugEditPanelToggleHotkeyLabel();
     this.collapseToggleButton = document.createElement('button');
     this.collapseToggleButton.type = 'button';
     this.collapseToggleButton.style.padding = '4px 8px';
@@ -116,6 +122,16 @@ export class TouchDebugEditControls {
     this.collapseToggleButton.style.touchAction = 'manipulation';
     this.collapseToggleButton.addEventListener('click', () => this.setCollapsed(!this.collapsed));
     headerRow.append(this.collapseToggleButton);
+
+    this.collapsedSummary = document.createElement('div');
+    this.collapsedSummary.style.display = 'none';
+    this.collapsedSummary.style.color = '#d6dde8';
+    this.collapsedSummary.style.fontSize = '11px';
+    this.collapsedSummary.style.lineHeight = '1.35';
+    this.collapsedSummary.style.whiteSpace = 'nowrap';
+    this.collapsedSummary.style.overflow = 'hidden';
+    this.collapsedSummary.style.textOverflow = 'ellipsis';
+    this.root.append(this.collapsedSummary);
 
     this.content = document.createElement('div');
     this.content.style.display = 'flex';
@@ -274,6 +290,13 @@ export class TouchDebugEditControls {
     historyShortcutLine.style.lineHeight = '1.35';
     shortcutSection.append(historyShortcutLine);
 
+    const panelShortcutLine = document.createElement('div');
+    panelShortcutLine.textContent = `Panel: ${panelToggleHotkeyLabel} collapse/expand`;
+    panelShortcutLine.style.color = '#d6dde8';
+    panelShortcutLine.style.fontSize = '11px';
+    panelShortcutLine.style.lineHeight = '1.35';
+    shortcutSection.append(panelShortcutLine);
+
     const eyedropperShortcutLine = document.createElement('div');
     eyedropperShortcutLine.textContent = 'Eyedropper: press I to pick hovered tile; touch long-press in Pan mode';
     eyedropperShortcutLine.style.color = '#d6dde8';
@@ -397,6 +420,7 @@ export class TouchDebugEditControls {
       button.style.borderColor = active ? 'rgba(130, 200, 255, 0.7)' : 'rgba(255, 255, 255, 0.16)';
       button.style.color = active ? '#ffffff' : '#f3f7fb';
     }
+    this.syncCollapsedSummary();
   }
 
   private syncHistoryState(): void {
@@ -412,15 +436,19 @@ export class TouchDebugEditControls {
     this.redoButton.disabled = !canRedo;
     this.redoButton.style.opacity = canRedo ? '1' : '0.5';
     this.redoButton.style.cursor = canRedo ? 'pointer' : 'default';
+    this.syncCollapsedSummary();
   }
 
   private syncCollapsedState(): void {
     this.content.style.display = this.collapsed ? 'none' : 'flex';
+    this.collapsedSummary.style.display = this.collapsed ? 'block' : 'none';
     this.collapseToggleButton.textContent = this.collapsed ? 'Expand' : 'Collapse';
+    const panelToggleHotkeyLabel = getDebugEditPanelToggleHotkeyLabel();
     this.collapseToggleButton.title = this.collapsed
-      ? 'Expand debug edit controls'
-      : 'Collapse debug edit controls';
+      ? `Expand debug edit controls (${panelToggleHotkeyLabel})`
+      : `Collapse debug edit controls (${panelToggleHotkeyLabel})`;
     this.collapseToggleButton.setAttribute('aria-expanded', this.collapsed ? 'false' : 'true');
+    this.syncCollapsedSummary();
   }
 
   private syncBrushState(): void {
@@ -436,5 +464,15 @@ export class TouchDebugEditControls {
       button.style.borderColor = active ? 'rgba(150, 255, 205, 0.7)' : 'rgba(255, 255, 255, 0.16)';
       button.style.color = active ? '#ffffff' : '#f3f7fb';
     }
+    this.syncCollapsedSummary();
+  }
+
+  private syncCollapsedSummary(): void {
+    const modeLabel = buttonLabelForMode(this.mode);
+    const activeBrushOption = this.brushOptions.find((option) => option.tileId === this.brushTileId) ?? null;
+    const brushSummary = activeBrushOption
+      ? `${activeBrushOption.label} (#${activeBrushOption.tileId})`
+      : `#${this.brushTileId}`;
+    this.collapsedSummary.textContent = `${modeLabel} | Brush: ${brushSummary} | U:${this.undoStrokeCount} R:${this.redoStrokeCount}`;
   }
 }

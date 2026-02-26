@@ -26,11 +26,12 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Debug edit control state (shared touch mode + active brush + panel visibility) persists across reloads with a metadata-safe brush fallback
 - Move camera: `WASD` or arrow keys
 - On-screen debug edit controls: click a brush tile to set the active place brush (shared with touch)
-- On-screen debug edit controls: click `Collapse` / `Expand` to hide or show the panel body
+- On-screen debug edit controls: click `Collapse` / `Expand` to hide or show the panel body (collapsed header shows mode, brush, and undo/redo counts)
 - On-screen debug edit controls: click `Reset Prefs` to restore default touch mode/brush/panel visibility and clear saved debug edit prefs
 - On-screen debug edit controls: click `Undo` / `Redo` to revert or reapply the last debug paint stroke
 - Debug touch mode shortcuts (shared `Pan` / `Place` / `Break` state): `P` pan, `L` place, `B` break
 - Debug edit brush shortcuts: `1`-`0` select visible brush slots, `[` / `]` cycle active brush
+- Debug edit panel shortcut: `\` collapse / expand the shared debug-edit controls panel
 - Debug eyedropper shortcut: `I` sets the active brush from the hovered tile (non-empty tiles)
 - Debug edit history shortcuts: `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` redo
 - Mouse drag: debug paint on hovered tile cursor (`left` place active brush / `right` break, line-stepped + per-tile deduped)
@@ -40,7 +41,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 
 ### Mobile / touch
 - On-screen debug edit controls: touch mode buttons (`Pan` / `Place` / `Break`) + shared brush palette
-- On-screen debug edit controls: tap `Collapse` / `Expand` to hide or show the panel body
+- On-screen debug edit controls: tap `Collapse` / `Expand` to hide or show the panel body (collapsed header shows mode, brush, and undo/redo counts)
 - On-screen debug edit controls: tap `Reset Prefs` to restore default touch mode/brush/panel visibility and clear saved debug edit prefs
 - On-screen debug edit controls: touch `Undo` / `Redo` buttons revert or reapply the last debug paint stroke
 - Touch history gestures (`Pan` mode): `two-finger tap` undo / `three-finger tap` redo (debounced; stationary taps avoid pinch conflicts)
@@ -87,6 +88,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Shared debug edit control state (`touch mode`, active brush tile, and panel visibility) now persists across reloads via local storage, with a safe brush fallback when tile metadata no longer contains the saved tile ID.
 - Shared debug edit controls now include a `Reset Prefs` action that restores the default touch mode/brush/panel visibility and clears persisted debug edit control state.
 - Debug eyedropper now supports keyboard `I` (desktop hovered tile) and touch long-press in `Pan` mode to set the active brush from world tiles.
+- Shared debug edit controls now support keyboard `\` collapse/expand and show a compact collapsed summary (mode, active brush, undo/redo counts).
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.

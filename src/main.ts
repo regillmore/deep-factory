@@ -204,6 +204,18 @@ const bootstrap = async (): Promise<void> => {
       handled = undoDebugTileStroke();
     } else if (action.type === 'redo') {
       handled = redoDebugTileStroke();
+    } else if (action.type === 'toggle-panel-collapsed') {
+      const previousCollapsed = debugEditControls ? debugEditControls.isCollapsed() : debugEditPanelCollapsed;
+      if (debugEditControls) {
+        debugEditControls.setCollapsed(!previousCollapsed);
+        handled = debugEditControls.isCollapsed() !== previousCollapsed;
+      } else {
+        debugEditPanelCollapsed = !previousCollapsed;
+        handled = debugEditPanelCollapsed !== previousCollapsed;
+        if (handled) {
+          persistDebugEditControlsState();
+        }
+      }
     } else if (action.type === 'set-touch-mode') {
       const previousMode = input.getTouchDebugEditMode();
       if (debugEditControls) {

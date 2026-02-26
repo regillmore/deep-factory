@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   cycleDebugBrushTileId,
+  getDebugEditPanelToggleHotkeyLabel,
   getDebugBrushSlotHotkeyLabel,
   getDebugBrushTileIdForShortcutSlot,
   getTouchDebugEditModeHotkeyLabel,
@@ -47,6 +48,15 @@ describe('resolveDebugEditShortcutAction', () => {
     expect(
       resolveDebugEditShortcutAction(keyboardEventLike({ key: ']', code: 'BracketRight' }))
     ).toEqual({ type: 'cycle-brush', delta: 1 });
+  });
+
+  it('maps backslash to the debug-edit panel collapse toggle', () => {
+    expect(
+      resolveDebugEditShortcutAction(keyboardEventLike({ key: '\\', code: 'Backslash' }))
+    ).toEqual({ type: 'toggle-panel-collapsed' });
+    expect(
+      resolveDebugEditShortcutAction(keyboardEventLike({ key: '|', code: 'Backslash', shiftKey: true }))
+    ).toEqual({ type: 'toggle-panel-collapsed' });
   });
 
   it('maps P/L/B to touch debug mode toggles', () => {
@@ -117,6 +127,10 @@ describe('brush shortcut helpers', () => {
     expect(getTouchDebugEditModeHotkeyLabel('pan')).toBe('P');
     expect(getTouchDebugEditModeHotkeyLabel('place')).toBe('L');
     expect(getTouchDebugEditModeHotkeyLabel('break')).toBe('B');
+  });
+
+  it('returns the panel toggle hotkey label', () => {
+    expect(getDebugEditPanelToggleHotkeyLabel()).toBe('\\');
   });
 
   it('maps slot indexes to brush tile IDs', () => {
