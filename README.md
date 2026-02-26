@@ -24,15 +24,16 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 
 ### Desktop
 - Move camera: `WASD` or arrow keys
-- Mouse drag: debug paint on hovered tile cursor (`left` place / `right` break, line-stepped + per-tile deduped)
+- On-screen debug edit controls: click a brush tile to set the active place brush (shared with touch)
+- Mouse drag: debug paint on hovered tile cursor (`left` place active brush / `right` break, line-stepped + per-tile deduped)
 - `Shift` + mouse drag: pan
 - Mouse wheel: zoom in/out
-- Debug tile edit (temporary): drag-paint `debug_brick` / break tiles (canvas context menu suppressed)
+- Debug tile edit: drag-paint active brush / break tiles (canvas context menu suppressed)
 
 ### Mobile / touch
-- On-screen touch debug toolbar: `Pan` / `Place` / `Break`
+- On-screen debug edit controls: touch mode buttons (`Pan` / `Place` / `Break`) + shared brush palette
 - One-finger drag: pan (`Pan` mode)
-- One-finger drag: debug paint / break hovered tile (`Place` / `Break` mode, line-stepped + per-tile deduped)
+- One-finger drag: debug paint active brush / break hovered tile (`Place` / `Break` mode, line-stepped + per-tile deduped)
 - Two-finger pinch: zoom (works while touch debug edit modes are active)
 
 ## What exists so far
@@ -64,7 +65,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Debug overlay now includes a pointer inspect readout (`client`, `canvas`, `world`, `tile`) powered by the shared picking utility, making mixed-DPR input validation visible before edit-brush work.
 - A hovered-tile cursor highlight overlay now renders in client space from world tile coordinates (camera + DPR aware), de-risking world-space cursor visuals before tile editing.
 - Desktop debug tile editing now supports hovered-tile drag painting (`left` place / `right` break) with per-stroke line-stepped interpolation, per-tile dedupe, and a `Shift`-drag pan override, wired through the shared picking path.
-- Touch debug tile editing now supports an on-screen `Pan` / `Place` / `Break` mode toolbar with one-finger drag painting in place/break modes, per-stroke line-stepped interpolation, and preserved two-finger pinch zoom.
+- Shared on-screen debug edit controls now support touch `Pan` / `Place` / `Break` mode switching plus a metadata-driven brush palette with an active brush indicator used by both desktop and touch place edits.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.
