@@ -1,4 +1,5 @@
 import type { TouchDebugEditMode } from '../input/controller';
+import { getDebugBrushSlotHotkeyLabel } from '../input/debugEditShortcuts';
 
 export interface DebugBrushOption {
   tileId: number;
@@ -144,6 +145,7 @@ export class TouchDebugEditControls {
     this.undoButton.style.fontSize = '12px';
     this.undoButton.style.cursor = 'pointer';
     this.undoButton.style.touchAction = 'manipulation';
+    this.undoButton.title = 'Undo last debug paint stroke (Ctrl/Cmd+Z)';
     historyRow.append(this.undoButton);
 
     this.redoButton = document.createElement('button');
@@ -158,7 +160,34 @@ export class TouchDebugEditControls {
     this.redoButton.style.fontSize = '12px';
     this.redoButton.style.cursor = 'pointer';
     this.redoButton.style.touchAction = 'manipulation';
+    this.redoButton.title = 'Redo debug paint stroke (Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y)';
     historyRow.append(this.redoButton);
+
+    const shortcutSection = document.createElement('div');
+    shortcutSection.style.display = 'flex';
+    shortcutSection.style.flexDirection = 'column';
+    shortcutSection.style.gap = '4px';
+    this.root.append(shortcutSection);
+
+    const shortcutTitle = document.createElement('div');
+    shortcutTitle.textContent = 'Keyboard';
+    shortcutTitle.style.color = '#aab7c7';
+    shortcutTitle.style.fontSize = '11px';
+    shortcutSection.append(shortcutTitle);
+
+    const brushShortcutLine = document.createElement('div');
+    brushShortcutLine.textContent = 'Brush: [ / ] cycle, 1-0 slots';
+    brushShortcutLine.style.color = '#d6dde8';
+    brushShortcutLine.style.fontSize = '11px';
+    brushShortcutLine.style.lineHeight = '1.35';
+    shortcutSection.append(brushShortcutLine);
+
+    const historyShortcutLine = document.createElement('div');
+    historyShortcutLine.textContent = 'History: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo';
+    historyShortcutLine.style.color = '#d6dde8';
+    historyShortcutLine.style.fontSize = '11px';
+    historyShortcutLine.style.lineHeight = '1.35';
+    shortcutSection.append(historyShortcutLine);
 
     const brushSection = document.createElement('div');
     brushSection.style.display = 'flex';
@@ -194,11 +223,14 @@ export class TouchDebugEditControls {
         this.brushTileId = this.brushOptions[0]!.tileId;
       }
 
-      for (const option of this.brushOptions) {
+      for (const [index, option] of this.brushOptions.entries()) {
+        const slotHotkeyLabel = getDebugBrushSlotHotkeyLabel(index);
         const button = document.createElement('button');
         button.type = 'button';
-        button.textContent = option.label;
-        button.title = `Tile ${option.tileId}: ${option.label}`;
+        button.textContent = slotHotkeyLabel ? `[${slotHotkeyLabel}] ${option.label}` : option.label;
+        button.title = slotHotkeyLabel
+          ? `Brush slot ${slotHotkeyLabel}: Tile ${option.tileId} (${option.label})`
+          : `Tile ${option.tileId}: ${option.label}`;
         button.addEventListener('click', () => this.setBrushTileId(option.tileId));
         button.style.padding = '6px 8px';
         button.style.borderRadius = '8px';

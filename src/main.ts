@@ -5,6 +5,11 @@ import { GameLoop } from './core/gameLoop';
 import { Renderer } from './gl/renderer';
 import { InputController } from './input/controller';
 import { DebugTileEditHistory } from './input/debugTileEditHistory';
+import {
+  cycleDebugBrushTileId,
+  getDebugBrushTileIdForShortcutSlot,
+  resolveDebugEditShortcutAction
+} from './input/debugEditShortcuts';
 import { DebugOverlay } from './ui/debugOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import { TouchDebugEditControls, type DebugBrushOption } from './ui/touchDebugEditControls';
@@ -14,6 +19,13 @@ const DEBUG_TILE_BREAK_ID = 0;
 const PREFERRED_INITIAL_DEBUG_BRUSH_TILE_NAME = 'debug_brick';
 
 const formatDebugBrushLabel = (tileName: string): string => tileName.replace(/_/g, ' ');
+const isEditableKeyboardShortcutTarget = (target: EventTarget | null): boolean => {
+  if (!(target instanceof HTMLElement)) return false;
+  const tagName = target.tagName;
+  return (
+    target.isContentEditable || tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT'
+  );
+};
 
 const DEBUG_BRUSH_TILE_OPTIONS: readonly DebugBrushOption[] = TILE_METADATA.tiles
   .filter((tile) => tile.id !== DEBUG_TILE_BREAK_ID)
@@ -71,14 +83,16 @@ const bootstrap = async (): Promise<void> => {
     renderer.setTile(worldTileX, worldTileY, tileId);
   };
 
-  const undoDebugTileStroke = (): void => {
-    if (!debugTileEditHistory.undo(applyDebugHistoryTile)) return;
+  const undoDebugTileStroke = (): boolean => {
+    if (!debugTileEditHistory.undo(applyDebugHistoryTile)) return false;
     syncDebugEditHistoryControls();
+    return true;
   };
 
-  const redoDebugTileStroke = (): void => {
-    if (!debugTileEditHistory.redo(applyDebugHistoryTile)) return;
+  const redoDebugTileStroke = (): boolean => {
+    if (!debugTileEditHistory.redo(applyDebugHistoryTile)) return false;
     syncDebugEditHistoryControls();
+    return true;
   };
 
   debugEditControls = new TouchDebugEditControls({
@@ -93,6 +107,36 @@ const bootstrap = async (): Promise<void> => {
     onRedo: redoDebugTileStroke
   });
   syncDebugEditHistoryControls();
+
+  const applyDebugBrushShortcutTileId = (tileId: number): boolean => {
+    const previousBrushTileId = activeDebugBrushTileId;
+    debugEditControls?.setBrushTileId(tileId);
+    return activeDebugBrushTileId !== previousBrushTileId;
+  };
+
+  window.addEventListener('keydown', (event) => {
+    if (event.defaultPrevented) return;
+    if (isEditableKeyboardShortcutTarget(event.target)) return;
+
+    const action = resolveDebugEditShortcutAction(event);
+    if (!action) return;
+    event.preventDefault();
+
+    let handled = false;
+    if (action.type === 'undo') {
+      handled = undoDebugTileStroke();
+    } else if (action.type === 'redo') {
+      handled = redoDebugTileStroke();
+    } else if (action.type === 'select-brush-slot') {
+      const tileId = getDebugBrushTileIdForShortcutSlot(DEBUG_BRUSH_TILE_OPTIONS, action.slotIndex);
+      handled = tileId !== null ? applyDebugBrushShortcutTileId(tileId) : false;
+    } else {
+      const tileId = cycleDebugBrushTileId(DEBUG_BRUSH_TILE_OPTIONS, activeDebugBrushTileId, action.delta);
+      handled = tileId !== null ? applyDebugBrushShortcutTileId(tileId) : false;
+    }
+
+    if (!handled) return;
+  });
 
   await renderer.initialize();
   renderer.resize();
