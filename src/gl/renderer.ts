@@ -193,6 +193,27 @@ export class Renderer {
     return this.world.getTile(worldTileX, worldTileY);
   }
 
+  getResidentChunkBounds(): ChunkBounds | null {
+    let bounds: ChunkBounds | null = null;
+    for (const chunk of this.world.getChunks()) {
+      if (!bounds) {
+        bounds = {
+          minChunkX: chunk.coord.x,
+          minChunkY: chunk.coord.y,
+          maxChunkX: chunk.coord.x,
+          maxChunkY: chunk.coord.y
+        };
+        continue;
+      }
+
+      if (chunk.coord.x < bounds.minChunkX) bounds.minChunkX = chunk.coord.x;
+      if (chunk.coord.y < bounds.minChunkY) bounds.minChunkY = chunk.coord.y;
+      if (chunk.coord.x > bounds.maxChunkX) bounds.maxChunkX = chunk.coord.x;
+      if (chunk.coord.y > bounds.maxChunkY) bounds.maxChunkY = chunk.coord.y;
+    }
+    return bounds;
+  }
+
   private getReadyChunkMesh(chunkX: number, chunkY: number): ChunkGpuMesh | null {
     const key = chunkKey(chunkX, chunkY);
     const cached = this.meshes.get(key);

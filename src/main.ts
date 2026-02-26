@@ -3,12 +3,13 @@ import './style.css';
 import { Camera2D } from './core/camera2d';
 import { GameLoop } from './core/gameLoop';
 import { Renderer } from './gl/renderer';
-import { InputController } from './input/controller';
+import { InputController, type DebugTileEditKind } from './input/controller';
 import {
   clearDebugEditControlState,
   loadDebugEditControlState,
   saveDebugEditControlState
 } from './input/debugEditControlStatePersistence';
+import { runDebugFloodFill } from './input/debugFloodFill';
 import { DebugTileEditHistory } from './input/debugTileEditHistory';
 import {
   cycleDebugBrushTileId,
@@ -18,6 +19,7 @@ import {
 import { DebugOverlay } from './ui/debugOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import { TouchDebugEditControls, type DebugBrushOption } from './ui/touchDebugEditControls';
+import { CHUNK_SIZE } from './world/constants';
 import { TILE_METADATA } from './world/tileMetadata';
 
 const DEBUG_TILE_BREAK_ID = 0;
@@ -134,8 +136,62 @@ const bootstrap = async (): Promise<void> => {
     });
   };
 
+  const syncArmedFloodFillControls = (): void => {
+    if (!debugEditControls) return;
+    debugEditControls.setArmedFloodFillKind(input.getArmedDebugFloodFillKind());
+  };
+
+  const setArmedDebugFloodFillKind = (kind: DebugTileEditKind | null): boolean => {
+    const previousKind = input.getArmedDebugFloodFillKind();
+    if (previousKind === kind) return false;
+    input.setArmedDebugFloodFillKind(kind);
+    syncArmedFloodFillControls();
+    return true;
+  };
+
+  const toggleArmedDebugFloodFillKind = (kind: DebugTileEditKind): boolean => {
+    const currentKind = input.getArmedDebugFloodFillKind();
+    return setArmedDebugFloodFillKind(currentKind === kind ? null : kind);
+  };
+
   const applyDebugHistoryTile = (worldTileX: number, worldTileY: number, tileId: number): void => {
     renderer.setTile(worldTileX, worldTileY, tileId);
+  };
+
+  const applyDebugFloodFill = (
+    worldTileX: number,
+    worldTileY: number,
+    kind: DebugTileEditKind,
+    strokeId: number
+  ): number => {
+    const replacementTileId = kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
+    const residentChunkBounds = renderer.getResidentChunkBounds();
+    if (!residentChunkBounds) return 0;
+
+    const result = runDebugFloodFill({
+      startTileX: worldTileX,
+      startTileY: worldTileY,
+      replacementTileId,
+      bounds: {
+        minTileX: residentChunkBounds.minChunkX * CHUNK_SIZE,
+        minTileY: residentChunkBounds.minChunkY * CHUNK_SIZE,
+        maxTileX: (residentChunkBounds.maxChunkX + 1) * CHUNK_SIZE - 1,
+        maxTileY: (residentChunkBounds.maxChunkY + 1) * CHUNK_SIZE - 1
+      },
+      readTile: (fillTileX, fillTileY) => renderer.getTile(fillTileX, fillTileY),
+      visitFilledTile: (fillTileX, fillTileY, previousTileId) => {
+        if (!renderer.setTile(fillTileX, fillTileY, replacementTileId)) return;
+        debugTileEditHistory.recordAppliedEdit(
+          strokeId,
+          fillTileX,
+          fillTileY,
+          previousTileId,
+          replacementTileId
+        );
+      }
+    });
+
+    return result.filledTileCount;
   };
 
   const undoDebugTileStroke = (): boolean => {
@@ -167,11 +223,16 @@ const bootstrap = async (): Promise<void> => {
       debugEditPanelCollapsed = collapsed;
       persistDebugEditControlsState();
     },
+    initialArmedFloodFillKind: input.getArmedDebugFloodFillKind(),
+    onArmFloodFill: (kind) => {
+      toggleArmedDebugFloodFillKind(kind);
+    },
     onUndo: undoDebugTileStroke,
     onRedo: redoDebugTileStroke,
     onResetPrefs: resetDebugEditControlPrefs
   });
   syncDebugEditHistoryControls();
+  syncArmedFloodFillControls();
   persistDebugEditControlsState();
 
   const applyDebugBrushShortcutTileId = (tileId: number): boolean => {
@@ -204,6 +265,8 @@ const bootstrap = async (): Promise<void> => {
       handled = undoDebugTileStroke();
     } else if (action.type === 'redo') {
       handled = redoDebugTileStroke();
+    } else if (action.type === 'arm-flood-fill') {
+      handled = toggleArmedDebugFloodFillKind(action.kind);
     } else if (action.type === 'toggle-panel-collapsed') {
       const previousCollapsed = debugEditControls ? debugEditControls.isCollapsed() : debugEditPanelCollapsed;
       if (debugEditControls) {
@@ -267,6 +330,16 @@ const bootstrap = async (): Promise<void> => {
           tileId
         );
       }
+
+      for (const floodFillRequest of input.consumeDebugFloodFillRequests()) {
+        applyDebugFloodFill(
+          floodFillRequest.worldTileX,
+          floodFillRequest.worldTileY,
+          floodFillRequest.kind,
+          floodFillRequest.strokeId
+        );
+      }
+      syncArmedFloodFillControls();
 
       for (const eyedropperRequest of input.consumeDebugBrushEyedropperRequests()) {
         applyDebugBrushEyedropperAtTile(eyedropperRequest.worldTileX, eyedropperRequest.worldTileY);

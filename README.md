@@ -33,6 +33,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Debug edit brush shortcuts: `1`-`0` select visible brush slots, `[` / `]` cycle active brush
 - Debug edit panel shortcut: `\` collapse / expand the shared debug-edit controls panel
 - Debug eyedropper shortcut: `I` sets the active brush from the hovered tile (non-empty tiles)
+- Debug flood fill shortcuts: `F` arms a one-shot brush flood fill, `Shift+F` arms a one-shot break flood fill; next canvas click applies (resident chunk bounds only)
 - Debug edit history shortcuts: `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` redo
 - Mouse drag: debug paint on hovered tile cursor (`left` place active brush / `right` break, line-stepped + per-tile deduped)
 - `Shift` + mouse drag: pan
@@ -46,6 +47,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - On-screen debug edit controls: touch `Undo` / `Redo` buttons revert or reapply the last debug paint stroke
 - Touch history gestures (`Pan` mode): `two-finger tap` undo / `three-finger tap` redo (debounced; stationary taps avoid pinch conflicts)
 - Touch eyedropper gesture (`Pan` mode): `long-press` a tile to set the active brush from that tile (non-empty tiles)
+- On-screen debug edit controls: tap `Fill Brush` / `Fill Break` to arm a one-shot flood fill, then tap a world tile (resident chunk bounds only)
 - One-finger drag: pan (`Pan` mode)
 - One-finger drag: debug paint active brush / break hovered tile (`Place` / `Break` mode, line-stepped + per-tile deduped)
 - Two-finger pinch: zoom (works while touch debug edit modes are active)
@@ -88,6 +90,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Shared debug edit control state (`touch mode`, active brush tile, and panel visibility) now persists across reloads via local storage, with a safe brush fallback when tile metadata no longer contains the saved tile ID.
 - Shared debug edit controls now include a `Reset Prefs` action that restores the default touch mode/brush/panel visibility and clears persisted debug edit control state.
 - Debug eyedropper now supports keyboard `I` (desktop hovered tile) and touch long-press in `Pan` mode to set the active brush from world tiles.
+- Shared debug edit controls now include one-shot flood-fill tools (`Fill Brush` / `Fill Break`) plus `F` / `Shift+F` desktop shortcuts; the next canvas click/tap applies a resident-chunk-bounded fill as a single undoable stroke.
 - Shared debug edit controls now support keyboard `\` collapse/expand and show a compact collapsed summary (mode, active brush, undo/redo counts).
 - Debug overlay showing FPS + rendered chunk count.
 

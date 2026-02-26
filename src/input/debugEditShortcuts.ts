@@ -16,6 +16,7 @@ export type DebugEditShortcutAction =
   | { type: 'redo' }
   | { type: 'toggle-panel-collapsed' }
   | { type: 'set-touch-mode'; mode: 'pan' | 'place' | 'break' }
+  | { type: 'arm-flood-fill'; kind: 'place' | 'break' }
   | { type: 'eyedropper' }
   | { type: 'select-brush-slot'; slotIndex: number }
   | { type: 'cycle-brush'; delta: -1 | 1 };
@@ -113,6 +114,9 @@ export const resolveDebugEditShortcutAction = (
   }
   if (normalizedKey === 'i') {
     return { type: 'eyedropper' };
+  }
+  if (normalizedKey === 'f') {
+    return { type: 'arm-flood-fill', kind: event.shiftKey ? 'break' : 'place' };
   }
 
   if (code === 'BracketLeft' || (!code && event.key === '[')) {

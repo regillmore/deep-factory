@@ -21,6 +21,8 @@ interface TouchDebugEditControlsOptions {
   brushOptions?: readonly DebugBrushOption[];
   initialBrushTileId?: number;
   onBrushTileIdChange?: (tileId: number) => void;
+  initialArmedFloodFillKind?: 'place' | 'break' | null;
+  onArmFloodFill?: (kind: 'place' | 'break') => void;
   initialCollapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
   onUndo?: () => void;
@@ -51,10 +53,14 @@ export class TouchDebugEditControls {
   private activeBrushIndicator: HTMLDivElement;
   private undoButton: HTMLButtonElement;
   private redoButton: HTMLButtonElement;
+  private fillPlaceButton: HTMLButtonElement;
+  private fillBreakButton: HTMLButtonElement;
   private undoStrokeCount = 0;
   private redoStrokeCount = 0;
+  private armedFloodFillKind: 'place' | 'break' | null;
   private onModeChange: (mode: TouchDebugEditMode) => void;
   private onBrushTileIdChange: (tileId: number) => void;
+  private onArmFloodFill: (kind: 'place' | 'break') => void;
   private onCollapsedChange: (collapsed: boolean) => void;
   private onUndo: () => void;
   private onRedo: () => void;
@@ -67,6 +73,8 @@ export class TouchDebugEditControls {
     const fallbackBrushTileId = this.brushOptions[0]?.tileId ?? 0;
     this.brushTileId = options.initialBrushTileId ?? fallbackBrushTileId;
     this.onBrushTileIdChange = options.onBrushTileIdChange ?? (() => {});
+    this.armedFloodFillKind = options.initialArmedFloodFillKind ?? null;
+    this.onArmFloodFill = options.onArmFloodFill ?? (() => {});
     this.collapsed = options.initialCollapsed ?? false;
     this.onCollapsedChange = options.onCollapsedChange ?? (() => {});
     this.onUndo = options.onUndo ?? (() => {});
@@ -228,6 +236,64 @@ export class TouchDebugEditControls {
     touchHistoryShortcutLine.style.lineHeight = '1.35';
     historySection.append(touchHistoryShortcutLine);
 
+    const floodFillSection = document.createElement('div');
+    floodFillSection.style.display = 'flex';
+    floodFillSection.style.flexDirection = 'column';
+    floodFillSection.style.gap = '6px';
+    this.content.append(floodFillSection);
+
+    const floodFillTitle = document.createElement('div');
+    floodFillTitle.textContent = 'Flood Fill';
+    floodFillTitle.style.color = '#aab7c7';
+    floodFillTitle.style.fontSize = '11px';
+    floodFillSection.append(floodFillTitle);
+
+    const floodFillRow = document.createElement('div');
+    floodFillRow.style.display = 'flex';
+    floodFillRow.style.flexWrap = 'wrap';
+    floodFillRow.style.gap = '6px';
+    floodFillSection.append(floodFillRow);
+
+    this.fillPlaceButton = document.createElement('button');
+    this.fillPlaceButton.type = 'button';
+    this.fillPlaceButton.textContent = 'Fill Brush';
+    this.fillPlaceButton.title = 'Arm one flood fill with the active brush (keyboard: F)';
+    this.fillPlaceButton.addEventListener('click', () => this.onArmFloodFill('place'));
+    this.fillPlaceButton.style.padding = '6px 8px';
+    this.fillPlaceButton.style.borderRadius = '8px';
+    this.fillPlaceButton.style.border = '1px solid rgba(255, 255, 255, 0.16)';
+    this.fillPlaceButton.style.background = 'rgba(255, 255, 255, 0.06)';
+    this.fillPlaceButton.style.color = '#f3f7fb';
+    this.fillPlaceButton.style.fontFamily = 'inherit';
+    this.fillPlaceButton.style.fontSize = '12px';
+    this.fillPlaceButton.style.cursor = 'pointer';
+    this.fillPlaceButton.style.touchAction = 'manipulation';
+    floodFillRow.append(this.fillPlaceButton);
+
+    this.fillBreakButton = document.createElement('button');
+    this.fillBreakButton.type = 'button';
+    this.fillBreakButton.textContent = 'Fill Break';
+    this.fillBreakButton.title = 'Arm one flood fill that clears matching tiles (keyboard: Shift+F)';
+    this.fillBreakButton.addEventListener('click', () => this.onArmFloodFill('break'));
+    this.fillBreakButton.style.padding = '6px 8px';
+    this.fillBreakButton.style.borderRadius = '8px';
+    this.fillBreakButton.style.border = '1px solid rgba(255, 255, 255, 0.16)';
+    this.fillBreakButton.style.background = 'rgba(255, 255, 255, 0.06)';
+    this.fillBreakButton.style.color = '#f3f7fb';
+    this.fillBreakButton.style.fontFamily = 'inherit';
+    this.fillBreakButton.style.fontSize = '12px';
+    this.fillBreakButton.style.cursor = 'pointer';
+    this.fillBreakButton.style.touchAction = 'manipulation';
+    floodFillRow.append(this.fillBreakButton);
+
+    const floodFillHintLine = document.createElement('div');
+    floodFillHintLine.textContent =
+      'Arm Fill Brush/Break, then click or tap a world tile (one-shot; resident chunk bounds only)';
+    floodFillHintLine.style.color = '#d6dde8';
+    floodFillHintLine.style.fontSize = '11px';
+    floodFillHintLine.style.lineHeight = '1.35';
+    floodFillSection.append(floodFillHintLine);
+
     const prefsSection = document.createElement('div');
     prefsSection.style.display = 'flex';
     prefsSection.style.flexDirection = 'column';
@@ -304,6 +370,13 @@ export class TouchDebugEditControls {
     eyedropperShortcutLine.style.lineHeight = '1.35';
     shortcutSection.append(eyedropperShortcutLine);
 
+    const floodFillShortcutLine = document.createElement('div');
+    floodFillShortcutLine.textContent = 'Flood fill: F arm brush fill, Shift+F arm break fill; next canvas tap/click applies';
+    floodFillShortcutLine.style.color = '#d6dde8';
+    floodFillShortcutLine.style.fontSize = '11px';
+    floodFillShortcutLine.style.lineHeight = '1.35';
+    shortcutSection.append(floodFillShortcutLine);
+
     const brushSection = document.createElement('div');
     brushSection.style.display = 'flex';
     brushSection.style.flexDirection = 'column';
@@ -371,6 +444,7 @@ export class TouchDebugEditControls {
 
     this.syncButtonState();
     this.syncHistoryState();
+    this.syncFloodFillState();
     this.syncBrushState();
     this.syncCollapsedState();
     document.body.append(this.root);
@@ -412,6 +486,12 @@ export class TouchDebugEditControls {
     this.syncHistoryState();
   }
 
+  setArmedFloodFillKind(kind: 'place' | 'break' | null): void {
+    if (this.armedFloodFillKind === kind) return;
+    this.armedFloodFillKind = kind;
+    this.syncFloodFillState();
+  }
+
   private syncButtonState(): void {
     for (const [mode, button] of this.buttons) {
       const active = this.mode === mode;
@@ -436,6 +516,19 @@ export class TouchDebugEditControls {
     this.redoButton.disabled = !canRedo;
     this.redoButton.style.opacity = canRedo ? '1' : '0.5';
     this.redoButton.style.cursor = canRedo ? 'pointer' : 'default';
+    this.syncCollapsedSummary();
+  }
+
+  private syncFloodFillState(): void {
+    const syncButton = (button: HTMLButtonElement, active: boolean, activeColor: string): void => {
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      button.style.background = active ? activeColor : 'rgba(255, 255, 255, 0.06)';
+      button.style.borderColor = active ? 'rgba(255, 255, 255, 0.58)' : 'rgba(255, 255, 255, 0.16)';
+      button.style.color = active ? '#ffffff' : '#f3f7fb';
+    };
+
+    syncButton(this.fillPlaceButton, this.armedFloodFillKind === 'place', 'rgba(120, 255, 180, 0.22)');
+    syncButton(this.fillBreakButton, this.armedFloodFillKind === 'break', 'rgba(255, 130, 130, 0.24)');
     this.syncCollapsedSummary();
   }
 
@@ -473,6 +566,12 @@ export class TouchDebugEditControls {
     const brushSummary = activeBrushOption
       ? `${activeBrushOption.label} (#${activeBrushOption.tileId})`
       : `#${this.brushTileId}`;
-    this.collapsedSummary.textContent = `${modeLabel} | Brush: ${brushSummary} | U:${this.undoStrokeCount} R:${this.redoStrokeCount}`;
+    const armedFillSummary =
+      this.armedFloodFillKind === null
+        ? ''
+        : this.armedFloodFillKind === 'place'
+          ? ' | Fill:Brush'
+          : ' | Fill:Break';
+    this.collapsedSummary.textContent = `${modeLabel} | Brush: ${brushSummary}${armedFillSummary} | U:${this.undoStrokeCount} R:${this.redoStrokeCount}`;
   }
 }

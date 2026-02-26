@@ -87,6 +87,19 @@ describe('resolveDebugEditShortcutAction', () => {
     });
   });
 
+  it('maps F and Shift+F to armed flood-fill actions', () => {
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'f' }))).toEqual({
+      type: 'arm-flood-fill',
+      kind: 'place'
+    });
+    expect(
+      resolveDebugEditShortcutAction(keyboardEventLike({ key: 'F', shiftKey: true }))
+    ).toEqual({
+      type: 'arm-flood-fill',
+      kind: 'break'
+    });
+  });
+
   it('maps digit and numpad keys to brush slots', () => {
     expect(
       resolveDebugEditShortcutAction(keyboardEventLike({ key: '1', code: 'Digit1' }))

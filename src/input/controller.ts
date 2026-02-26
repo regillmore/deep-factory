@@ -36,6 +36,11 @@ export interface DebugTileStrokeEditRequest extends DebugTileEditRequest {
   strokeId: number;
 }
 
+export interface DebugFloodFillRequest extends DebugTileEditRequest {
+  strokeId: number;
+  pointerType: 'mouse' | 'touch';
+}
+
 export interface CompletedDebugTileEditStroke {
   strokeId: number;
   kind: DebugTileEditKind;
@@ -154,6 +159,7 @@ export class InputController {
   private pointers = new Map<number, PointerEvent>();
   private pointerInspect: PointerInspectSnapshot | null = null;
   private debugTileEditQueue: DebugTileStrokeEditRequest[] = [];
+  private debugFloodFillQueue: DebugFloodFillRequest[] = [];
   private debugBrushEyedropperQueue: DebugBrushEyedropperRequest[] = [];
   private completedDebugTileStrokeQueue: CompletedDebugTileEditStroke[] = [];
   private debugEditHistoryShortcutQueue: DebugEditHistoryShortcutAction[] = [];
@@ -163,6 +169,7 @@ export class InputController {
   private activeTouchEyedropperLongPressCandidate: ActiveTouchEyedropperLongPressCandidate | null = null;
   private lastTouchHistoryTapGestureTimeMs = Number.NEGATIVE_INFINITY;
   private touchDebugEditMode: TouchDebugEditMode = 'pan';
+  private armedDebugFloodFillKind: DebugTileEditKind | null = null;
   private nextDebugPaintStrokeId = 1;
 
   constructor(
@@ -200,6 +207,13 @@ export class InputController {
     return edits;
   }
 
+  consumeDebugFloodFillRequests(): DebugFloodFillRequest[] {
+    if (this.debugFloodFillQueue.length === 0) return [];
+    const requests = this.debugFloodFillQueue;
+    this.debugFloodFillQueue = [];
+    return requests;
+  }
+
   consumeDebugBrushEyedropperRequests(): DebugBrushEyedropperRequest[] {
     if (this.debugBrushEyedropperQueue.length === 0) return [];
     const requests = this.debugBrushEyedropperQueue;
@@ -234,6 +248,14 @@ export class InputController {
     this.activeTouchDebugPaintStroke = null;
   }
 
+  getArmedDebugFloodFillKind(): DebugTileEditKind | null {
+    return this.armedDebugFloodFillKind;
+  }
+
+  setArmedDebugFloodFillKind(kind: DebugTileEditKind | null): void {
+    this.armedDebugFloodFillKind = kind;
+  }
+
   private bind(): void {
     window.addEventListener('keydown', (event) => this.keys.add(event.key.toLowerCase()));
     window.addEventListener('keyup', (event) => this.keys.delete(event.key.toLowerCase()));
@@ -253,12 +275,22 @@ export class InputController {
       this.canvas.setPointerCapture(event.pointerId);
       this.pointers.set(event.pointerId, event);
       this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
-      this.refreshTouchHistoryTapGestureCandidateOnPointerDown(event);
-      this.refreshTouchEyedropperLongPressCandidateOnPointerDown(event);
-      const startedMouseDebugPaint = this.tryStartMouseDebugPaintStroke(event);
-      const startedTouchDebugPaint = this.tryStartTouchDebugPaintStroke(event);
+      const queuedArmedDebugFloodFill = this.tryQueueArmedDebugFloodFill(event);
+      if (queuedArmedDebugFloodFill) {
+        this.activeTouchHistoryTapGestureCandidate = null;
+        this.activeTouchEyedropperLongPressCandidate = null;
+      } else {
+        this.refreshTouchHistoryTapGestureCandidateOnPointerDown(event);
+        this.refreshTouchEyedropperLongPressCandidateOnPointerDown(event);
+      }
+      const startedMouseDebugPaint = queuedArmedDebugFloodFill
+        ? false
+        : this.tryStartMouseDebugPaintStroke(event);
+      const startedTouchDebugPaint = queuedArmedDebugFloodFill
+        ? false
+        : this.tryStartTouchDebugPaintStroke(event);
       if (this.pointers.size === 1) {
-        if (startedMouseDebugPaint || startedTouchDebugPaint) {
+        if (queuedArmedDebugFloodFill || startedMouseDebugPaint || startedTouchDebugPaint) {
           this.pointerActive = false;
           this.pointerId = null;
         } else {
@@ -671,6 +703,32 @@ export class InputController {
       worldTileY,
       pointerType
     });
+  }
+
+  private tryQueueArmedDebugFloodFill(event: PointerEvent): boolean {
+    const kind = this.armedDebugFloodFillKind;
+    if (!kind || this.pointers.size !== 1) return false;
+    if (event.pointerType !== 'mouse' && event.pointerType !== 'touch') return false;
+
+    this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
+    const pointerInspect = this.pointerInspect;
+    if (!pointerInspect) return false;
+
+    const strokeId = this.nextDebugPaintStrokeId++;
+    this.debugFloodFillQueue.push({
+      worldTileX: pointerInspect.tile.x,
+      worldTileY: pointerInspect.tile.y,
+      kind,
+      strokeId,
+      pointerType: pointerInspect.pointerType === 'touch' ? 'touch' : 'mouse'
+    });
+    this.completedDebugTileStrokeQueue.push({
+      strokeId,
+      kind,
+      pointerType: pointerInspect.pointerType === 'touch' ? 'touch' : 'mouse'
+    });
+    this.armedDebugFloodFillKind = null;
+    return true;
   }
 
   private completeDebugPaintStroke(stroke: ActiveDebugPaintStroke | null): void {
