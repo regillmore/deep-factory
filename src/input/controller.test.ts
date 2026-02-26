@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildDebugTileEditRequest,
   getDesktopDebugPaintKindForPointerDown,
+  getTouchDebugPaintKindForPointerDown,
   markDebugPaintTileSeen,
   type PointerInspectSnapshot
 } from './controller';
@@ -57,6 +58,24 @@ describe('getDesktopDebugPaintKindForPointerDown', () => {
 
   it('ignores non-mouse pointerdown events', () => {
     expect(getDesktopDebugPaintKindForPointerDown('touch', 0, false)).toBeNull();
+  });
+});
+
+describe('getTouchDebugPaintKindForPointerDown', () => {
+  it('uses touch pointerdown with place mode for place edits', () => {
+    expect(getTouchDebugPaintKindForPointerDown('touch', 'place')).toBe('place');
+  });
+
+  it('uses touch pointerdown with break mode for break edits', () => {
+    expect(getTouchDebugPaintKindForPointerDown('touch', 'break')).toBe('break');
+  });
+
+  it('keeps touch panning active when touch debug mode is pan', () => {
+    expect(getTouchDebugPaintKindForPointerDown('touch', 'pan')).toBeNull();
+  });
+
+  it('ignores non-touch pointerdown events', () => {
+    expect(getTouchDebugPaintKindForPointerDown('mouse', 'place')).toBeNull();
   });
 });
 

@@ -6,6 +6,7 @@ import { Renderer } from './gl/renderer';
 import { InputController } from './input/controller';
 import { DebugOverlay } from './ui/debugOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
+import { TouchDebugEditControls } from './ui/touchDebugEditControls';
 
 const DEBUG_TILE_BREAK_ID = 0;
 const DEBUG_TILE_PLACE_ID = 3;
@@ -33,6 +34,10 @@ const bootstrap = async (): Promise<void> => {
   const input = new InputController(canvas, camera);
   const debug = new DebugOverlay();
   const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
+  new TouchDebugEditControls({
+    initialMode: input.getTouchDebugEditMode(),
+    onModeChange: (mode) => input.setTouchDebugEditMode(mode)
+  });
 
   await renderer.initialize();
   renderer.resize();

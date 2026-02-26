@@ -30,8 +30,10 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Debug tile edit (temporary): drag-paint `debug_brick` / break tiles (canvas context menu suppressed)
 
 ### Mobile / touch
-- One-finger drag: pan
-- Two-finger pinch: zoom
+- On-screen touch debug toolbar: `Pan` / `Place` / `Break`
+- One-finger drag: pan (`Pan` mode)
+- One-finger drag: debug paint / break hovered tile (`Place` / `Break` mode, per-tile deduped)
+- Two-finger pinch: zoom (works while touch debug edit modes are active)
 
 ## What exists so far
 
@@ -62,6 +64,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Debug overlay now includes a pointer inspect readout (`client`, `canvas`, `world`, `tile`) powered by the shared picking utility, making mixed-DPR input validation visible before edit-brush work.
 - A hovered-tile cursor highlight overlay now renders in client space from world tile coordinates (camera + DPR aware), de-risking world-space cursor visuals before tile editing.
 - Desktop debug tile editing now supports hovered-tile drag painting (`left` place / `right` break) with per-stroke per-tile dedupe and a `Shift`-drag pan override, wired through the shared picking path.
+- Touch debug tile editing now supports an on-screen `Pan` / `Place` / `Break` mode toolbar with one-finger drag painting in place/break modes and preserved two-finger pinch zoom.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.

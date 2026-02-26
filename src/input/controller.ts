@@ -13,6 +13,7 @@ export interface PointerInspectSnapshot {
 }
 
 export type DebugTileEditKind = 'place' | 'break';
+export type TouchDebugEditMode = 'pan' | DebugTileEditKind;
 
 export interface DebugTileEditRequest {
   worldTileX: number;
@@ -20,7 +21,7 @@ export interface DebugTileEditRequest {
   kind: DebugTileEditKind;
 }
 
-interface ActiveMouseDebugPaintStroke {
+interface ActiveDebugPaintStroke {
   pointerId: number;
   kind: DebugTileEditKind;
   paintedTileKeys: Set<string>;
@@ -49,6 +50,14 @@ export const getDesktopDebugPaintKindForPointerDown = (
   return null;
 };
 
+export const getTouchDebugPaintKindForPointerDown = (
+  pointerType: string,
+  touchDebugEditMode: TouchDebugEditMode
+): DebugTileEditKind | null => {
+  if (pointerType !== 'touch' || touchDebugEditMode === 'pan') return null;
+  return touchDebugEditMode;
+};
+
 export const markDebugPaintTileSeen = (
   worldTileX: number,
   worldTileY: number,
@@ -70,7 +79,9 @@ export class InputController {
   private pointers = new Map<number, PointerEvent>();
   private pointerInspect: PointerInspectSnapshot | null = null;
   private debugTileEditQueue: DebugTileEditRequest[] = [];
-  private activeMouseDebugPaintStroke: ActiveMouseDebugPaintStroke | null = null;
+  private activeMouseDebugPaintStroke: ActiveDebugPaintStroke | null = null;
+  private activeTouchDebugPaintStroke: ActiveDebugPaintStroke | null = null;
+  private touchDebugEditMode: TouchDebugEditMode = 'pan';
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -105,6 +116,16 @@ export class InputController {
     return edits;
   }
 
+  getTouchDebugEditMode(): TouchDebugEditMode {
+    return this.touchDebugEditMode;
+  }
+
+  setTouchDebugEditMode(mode: TouchDebugEditMode): void {
+    if (this.touchDebugEditMode === mode) return;
+    this.touchDebugEditMode = mode;
+    this.activeTouchDebugPaintStroke = null;
+  }
+
   private bind(): void {
     window.addEventListener('keydown', (event) => this.keys.add(event.key.toLowerCase()));
     window.addEventListener('keyup', (event) => this.keys.delete(event.key.toLowerCase()));
@@ -125,8 +146,9 @@ export class InputController {
       this.pointers.set(event.pointerId, event);
       this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
       const startedMouseDebugPaint = this.tryStartMouseDebugPaintStroke(event);
+      const startedTouchDebugPaint = this.tryStartTouchDebugPaintStroke(event);
       if (this.pointers.size === 1) {
-        if (startedMouseDebugPaint) {
+        if (startedMouseDebugPaint || startedTouchDebugPaint) {
           this.pointerActive = false;
           this.pointerId = null;
         } else {
@@ -150,15 +172,26 @@ export class InputController {
       this.pointers.set(event.pointerId, event);
 
       const activeMouseDebugPaintStroke = this.activeMouseDebugPaintStroke;
+      const activeTouchDebugPaintStroke = this.activeTouchDebugPaintStroke;
       if (
         this.pointers.size === 1 &&
         activeMouseDebugPaintStroke &&
         activeMouseDebugPaintStroke.pointerId === event.pointerId
       ) {
-        this.queueDesktopDebugTileEdit(
+        this.queuePointerDebugTileEdit(
           event,
           activeMouseDebugPaintStroke.kind,
           activeMouseDebugPaintStroke.paintedTileKeys
+        );
+      } else if (
+        this.pointers.size === 1 &&
+        activeTouchDebugPaintStroke &&
+        activeTouchDebugPaintStroke.pointerId === event.pointerId
+      ) {
+        this.queuePointerDebugTileEdit(
+          event,
+          activeTouchDebugPaintStroke.kind,
+          activeTouchDebugPaintStroke.paintedTileKeys
         );
       } else if (this.pointers.size === 1 && this.pointerActive && this.pointerId === event.pointerId) {
         const dx = event.clientX - this.lastX;
@@ -185,6 +218,9 @@ export class InputController {
       if (this.activeMouseDebugPaintStroke?.pointerId === event.pointerId) {
         this.activeMouseDebugPaintStroke = null;
       }
+      if (this.activeTouchDebugPaintStroke?.pointerId === event.pointerId) {
+        this.activeTouchDebugPaintStroke = null;
+      }
       if (this.pointerId === event.pointerId) {
         this.pointerActive = false;
         this.pointerId = null;
@@ -203,6 +239,8 @@ export class InputController {
       if (event.pointerType === 'mouse' && this.pointers.size === 0) {
         this.activeMouseDebugPaintStroke = null;
         this.pointerInspect = null;
+      } else if (event.pointerType === 'touch' && this.pointers.size === 0) {
+        this.activeTouchDebugPaintStroke = null;
       }
     });
     this.canvas.style.touchAction = 'none';
@@ -212,13 +250,27 @@ export class InputController {
     const kind = getDesktopDebugPaintKindForPointerDown(event.pointerType, event.button, event.shiftKey);
     if (!kind || this.pointers.size !== 1) return false;
 
-    const stroke: ActiveMouseDebugPaintStroke = {
+    const stroke: ActiveDebugPaintStroke = {
       pointerId: event.pointerId,
       kind,
       paintedTileKeys: new Set<string>()
     };
     this.activeMouseDebugPaintStroke = stroke;
-    this.queueDesktopDebugTileEdit(event, kind, stroke.paintedTileKeys);
+    this.queuePointerDebugTileEdit(event, kind, stroke.paintedTileKeys);
+    return true;
+  }
+
+  private tryStartTouchDebugPaintStroke(event: PointerEvent): boolean {
+    const kind = getTouchDebugPaintKindForPointerDown(event.pointerType, this.touchDebugEditMode);
+    if (!kind || this.pointers.size !== 1) return false;
+
+    const stroke: ActiveDebugPaintStroke = {
+      pointerId: event.pointerId,
+      kind,
+      paintedTileKeys: new Set<string>()
+    };
+    this.activeTouchDebugPaintStroke = stroke;
+    this.queuePointerDebugTileEdit(event, kind, stroke.paintedTileKeys);
     return true;
   }
 
@@ -247,15 +299,18 @@ export class InputController {
     };
   }
 
-  private queueDesktopDebugTileEdit(
-    event: MouseEvent,
+  private queuePointerDebugTileEdit(
+    event: PointerEvent,
     kind: DebugTileEditKind,
     seenTiles?: Set<string>
   ): void {
-    if (!this.pointerInspect || this.pointerInspect.pointerType !== 'mouse') return;
-    this.updatePointerInspect(event.clientX, event.clientY, 'mouse');
-    const request = buildDebugTileEditRequest(this.pointerInspect, kind);
-    if (!request) return;
+    this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
+    if (!this.pointerInspect) return;
+    const request: DebugTileEditRequest = {
+      worldTileX: this.pointerInspect.tile.x,
+      worldTileY: this.pointerInspect.tile.y,
+      kind
+    };
     if (seenTiles && !markDebugPaintTileSeen(request.worldTileX, request.worldTileY, seenTiles)) return;
     this.debugTileEditQueue.push(request);
   }
