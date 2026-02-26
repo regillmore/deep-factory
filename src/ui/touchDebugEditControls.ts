@@ -23,6 +23,8 @@ interface TouchDebugEditControlsOptions {
   onBrushTileIdChange?: (tileId: number) => void;
   initialArmedFloodFillKind?: 'place' | 'break' | null;
   onArmFloodFill?: (kind: 'place' | 'break') => void;
+  initialArmedLineKind?: 'place' | 'break' | null;
+  onArmLine?: (kind: 'place' | 'break') => void;
   initialCollapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
   onUndo?: () => void;
@@ -55,12 +57,16 @@ export class TouchDebugEditControls {
   private redoButton: HTMLButtonElement;
   private fillPlaceButton: HTMLButtonElement;
   private fillBreakButton: HTMLButtonElement;
+  private linePlaceButton: HTMLButtonElement;
+  private lineBreakButton: HTMLButtonElement;
   private undoStrokeCount = 0;
   private redoStrokeCount = 0;
   private armedFloodFillKind: 'place' | 'break' | null;
+  private armedLineKind: 'place' | 'break' | null;
   private onModeChange: (mode: TouchDebugEditMode) => void;
   private onBrushTileIdChange: (tileId: number) => void;
   private onArmFloodFill: (kind: 'place' | 'break') => void;
+  private onArmLine: (kind: 'place' | 'break') => void;
   private onCollapsedChange: (collapsed: boolean) => void;
   private onUndo: () => void;
   private onRedo: () => void;
@@ -75,6 +81,8 @@ export class TouchDebugEditControls {
     this.onBrushTileIdChange = options.onBrushTileIdChange ?? (() => {});
     this.armedFloodFillKind = options.initialArmedFloodFillKind ?? null;
     this.onArmFloodFill = options.onArmFloodFill ?? (() => {});
+    this.armedLineKind = options.initialArmedLineKind ?? null;
+    this.onArmLine = options.onArmLine ?? (() => {});
     this.collapsed = options.initialCollapsed ?? false;
     this.onCollapsedChange = options.onCollapsedChange ?? (() => {});
     this.onUndo = options.onUndo ?? (() => {});
@@ -294,6 +302,64 @@ export class TouchDebugEditControls {
     floodFillHintLine.style.lineHeight = '1.35';
     floodFillSection.append(floodFillHintLine);
 
+    const lineToolSection = document.createElement('div');
+    lineToolSection.style.display = 'flex';
+    lineToolSection.style.flexDirection = 'column';
+    lineToolSection.style.gap = '6px';
+    this.content.append(lineToolSection);
+
+    const lineToolTitle = document.createElement('div');
+    lineToolTitle.textContent = 'Line Tool';
+    lineToolTitle.style.color = '#aab7c7';
+    lineToolTitle.style.fontSize = '11px';
+    lineToolSection.append(lineToolTitle);
+
+    const lineToolRow = document.createElement('div');
+    lineToolRow.style.display = 'flex';
+    lineToolRow.style.flexWrap = 'wrap';
+    lineToolRow.style.gap = '6px';
+    lineToolSection.append(lineToolRow);
+
+    this.linePlaceButton = document.createElement('button');
+    this.linePlaceButton.type = 'button';
+    this.linePlaceButton.textContent = 'Line Brush';
+    this.linePlaceButton.title = 'Arm one line draw with the active brush (desktop drag or touch two-point)';
+    this.linePlaceButton.addEventListener('click', () => this.onArmLine('place'));
+    this.linePlaceButton.style.padding = '6px 8px';
+    this.linePlaceButton.style.borderRadius = '8px';
+    this.linePlaceButton.style.border = '1px solid rgba(255, 255, 255, 0.16)';
+    this.linePlaceButton.style.background = 'rgba(255, 255, 255, 0.06)';
+    this.linePlaceButton.style.color = '#f3f7fb';
+    this.linePlaceButton.style.fontFamily = 'inherit';
+    this.linePlaceButton.style.fontSize = '12px';
+    this.linePlaceButton.style.cursor = 'pointer';
+    this.linePlaceButton.style.touchAction = 'manipulation';
+    lineToolRow.append(this.linePlaceButton);
+
+    this.lineBreakButton = document.createElement('button');
+    this.lineBreakButton.type = 'button';
+    this.lineBreakButton.textContent = 'Line Break';
+    this.lineBreakButton.title = 'Arm one line draw that clears tiles (desktop drag or touch two-point)';
+    this.lineBreakButton.addEventListener('click', () => this.onArmLine('break'));
+    this.lineBreakButton.style.padding = '6px 8px';
+    this.lineBreakButton.style.borderRadius = '8px';
+    this.lineBreakButton.style.border = '1px solid rgba(255, 255, 255, 0.16)';
+    this.lineBreakButton.style.background = 'rgba(255, 255, 255, 0.06)';
+    this.lineBreakButton.style.color = '#f3f7fb';
+    this.lineBreakButton.style.fontFamily = 'inherit';
+    this.lineBreakButton.style.fontSize = '12px';
+    this.lineBreakButton.style.cursor = 'pointer';
+    this.lineBreakButton.style.touchAction = 'manipulation';
+    lineToolRow.append(this.lineBreakButton);
+
+    const lineToolHintLine = document.createElement('div');
+    lineToolHintLine.textContent =
+      'Desktop: arm Line Brush/Break, then drag on the canvas. Touch: tap start tile, then tap end tile.';
+    lineToolHintLine.style.color = '#d6dde8';
+    lineToolHintLine.style.fontSize = '11px';
+    lineToolHintLine.style.lineHeight = '1.35';
+    lineToolSection.append(lineToolHintLine);
+
     const prefsSection = document.createElement('div');
     prefsSection.style.display = 'flex';
     prefsSection.style.flexDirection = 'column';
@@ -445,6 +511,7 @@ export class TouchDebugEditControls {
     this.syncButtonState();
     this.syncHistoryState();
     this.syncFloodFillState();
+    this.syncLineToolState();
     this.syncBrushState();
     this.syncCollapsedState();
     document.body.append(this.root);
@@ -492,6 +559,12 @@ export class TouchDebugEditControls {
     this.syncFloodFillState();
   }
 
+  setArmedLineKind(kind: 'place' | 'break' | null): void {
+    if (this.armedLineKind === kind) return;
+    this.armedLineKind = kind;
+    this.syncLineToolState();
+  }
+
   private syncButtonState(): void {
     for (const [mode, button] of this.buttons) {
       const active = this.mode === mode;
@@ -529,6 +602,19 @@ export class TouchDebugEditControls {
 
     syncButton(this.fillPlaceButton, this.armedFloodFillKind === 'place', 'rgba(120, 255, 180, 0.22)');
     syncButton(this.fillBreakButton, this.armedFloodFillKind === 'break', 'rgba(255, 130, 130, 0.24)');
+    this.syncCollapsedSummary();
+  }
+
+  private syncLineToolState(): void {
+    const syncButton = (button: HTMLButtonElement, active: boolean, activeColor: string): void => {
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      button.style.background = active ? activeColor : 'rgba(255, 255, 255, 0.06)';
+      button.style.borderColor = active ? 'rgba(255, 255, 255, 0.58)' : 'rgba(255, 255, 255, 0.16)';
+      button.style.color = active ? '#ffffff' : '#f3f7fb';
+    };
+
+    syncButton(this.linePlaceButton, this.armedLineKind === 'place', 'rgba(120, 210, 255, 0.24)');
+    syncButton(this.lineBreakButton, this.armedLineKind === 'break', 'rgba(255, 180, 120, 0.24)');
     this.syncCollapsedSummary();
   }
 
@@ -572,6 +658,12 @@ export class TouchDebugEditControls {
         : this.armedFloodFillKind === 'place'
           ? ' | Fill:Brush'
           : ' | Fill:Break';
-    this.collapsedSummary.textContent = `${modeLabel} | Brush: ${brushSummary}${armedFillSummary} | U:${this.undoStrokeCount} R:${this.redoStrokeCount}`;
+    const armedLineSummary =
+      this.armedLineKind === null
+        ? ''
+        : this.armedLineKind === 'place'
+          ? ' | Line:Brush'
+          : ' | Line:Break';
+    this.collapsedSummary.textContent = `${modeLabel} | Brush: ${brushSummary}${armedFillSummary}${armedLineSummary} | U:${this.undoStrokeCount} R:${this.redoStrokeCount}`;
   }
 }

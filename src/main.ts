@@ -3,7 +3,7 @@ import './style.css';
 import { Camera2D } from './core/camera2d';
 import { GameLoop } from './core/gameLoop';
 import { Renderer } from './gl/renderer';
-import { InputController, type DebugTileEditKind } from './input/controller';
+import { InputController, walkLineSteppedTilePath, type DebugTileEditKind } from './input/controller';
 import {
   clearDebugEditControlState,
   loadDebugEditControlState,
@@ -141,17 +141,48 @@ const bootstrap = async (): Promise<void> => {
     debugEditControls.setArmedFloodFillKind(input.getArmedDebugFloodFillKind());
   };
 
+  const syncArmedLineControls = (): void => {
+    if (!debugEditControls) return;
+    debugEditControls.setArmedLineKind(input.getArmedDebugLineKind());
+  };
+
+  const syncArmedDebugToolControls = (): void => {
+    syncArmedFloodFillControls();
+    syncArmedLineControls();
+  };
+
   const setArmedDebugFloodFillKind = (kind: DebugTileEditKind | null): boolean => {
     const previousKind = input.getArmedDebugFloodFillKind();
-    if (previousKind === kind) return false;
+    const previousLineKind = input.getArmedDebugLineKind();
+    if (previousKind === kind && (kind === null || previousLineKind === null)) return false;
+    if (kind !== null && previousLineKind !== null) {
+      input.setArmedDebugLineKind(null);
+    }
     input.setArmedDebugFloodFillKind(kind);
-    syncArmedFloodFillControls();
+    syncArmedDebugToolControls();
     return true;
   };
 
   const toggleArmedDebugFloodFillKind = (kind: DebugTileEditKind): boolean => {
     const currentKind = input.getArmedDebugFloodFillKind();
     return setArmedDebugFloodFillKind(currentKind === kind ? null : kind);
+  };
+
+  const setArmedDebugLineKind = (kind: DebugTileEditKind | null): boolean => {
+    const previousKind = input.getArmedDebugLineKind();
+    const previousFloodFillKind = input.getArmedDebugFloodFillKind();
+    if (previousKind === kind && (kind === null || previousFloodFillKind === null)) return false;
+    if (kind !== null && previousFloodFillKind !== null) {
+      input.setArmedDebugFloodFillKind(null);
+    }
+    input.setArmedDebugLineKind(kind);
+    syncArmedDebugToolControls();
+    return true;
+  };
+
+  const toggleArmedDebugLineKind = (kind: DebugTileEditKind): boolean => {
+    const currentKind = input.getArmedDebugLineKind();
+    return setArmedDebugLineKind(currentKind === kind ? null : kind);
   };
 
   const applyDebugHistoryTile = (worldTileX: number, worldTileY: number, tileId: number): void => {
@@ -194,6 +225,25 @@ const bootstrap = async (): Promise<void> => {
     return result.filledTileCount;
   };
 
+  const applyDebugLine = (
+    startTileX: number,
+    startTileY: number,
+    endTileX: number,
+    endTileY: number,
+    kind: DebugTileEditKind,
+    strokeId: number
+  ): number => {
+    const tileId = kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
+    let changedTileCount = 0;
+    walkLineSteppedTilePath(startTileX, startTileY, endTileX, endTileY, (worldTileX, worldTileY) => {
+      const previousTileId = renderer.getTile(worldTileX, worldTileY);
+      if (!renderer.setTile(worldTileX, worldTileY, tileId)) return;
+      debugTileEditHistory.recordAppliedEdit(strokeId, worldTileX, worldTileY, previousTileId, tileId);
+      changedTileCount += 1;
+    });
+    return changedTileCount;
+  };
+
   const undoDebugTileStroke = (): boolean => {
     if (!debugTileEditHistory.undo(applyDebugHistoryTile)) return false;
     syncDebugEditHistoryControls();
@@ -224,15 +274,19 @@ const bootstrap = async (): Promise<void> => {
       persistDebugEditControlsState();
     },
     initialArmedFloodFillKind: input.getArmedDebugFloodFillKind(),
+    initialArmedLineKind: input.getArmedDebugLineKind(),
     onArmFloodFill: (kind) => {
       toggleArmedDebugFloodFillKind(kind);
+    },
+    onArmLine: (kind) => {
+      toggleArmedDebugLineKind(kind);
     },
     onUndo: undoDebugTileStroke,
     onRedo: redoDebugTileStroke,
     onResetPrefs: resetDebugEditControlPrefs
   });
   syncDebugEditHistoryControls();
-  syncArmedFloodFillControls();
+  syncArmedDebugToolControls();
   persistDebugEditControlsState();
 
   const applyDebugBrushShortcutTileId = (tileId: number): boolean => {
@@ -339,7 +393,18 @@ const bootstrap = async (): Promise<void> => {
           floodFillRequest.strokeId
         );
       }
-      syncArmedFloodFillControls();
+
+      for (const lineRequest of input.consumeDebugLineRequests()) {
+        applyDebugLine(
+          lineRequest.startTileX,
+          lineRequest.startTileY,
+          lineRequest.endTileX,
+          lineRequest.endTileY,
+          lineRequest.kind,
+          lineRequest.strokeId
+        );
+      }
+      syncArmedDebugToolControls();
 
       for (const eyedropperRequest of input.consumeDebugBrushEyedropperRequests()) {
         applyDebugBrushEyedropperAtTile(eyedropperRequest.worldTileX, eyedropperRequest.worldTileY);
