@@ -6,6 +6,7 @@ import { Renderer } from './gl/renderer';
 import {
   InputController,
   walkFilledRectangleTileArea,
+  walkRectangleOutlineTileArea,
   walkLineSteppedTilePath,
   type DebugTileEditKind
 } from './input/controller';
@@ -158,19 +159,29 @@ const bootstrap = async (): Promise<void> => {
     debugEditControls.setArmedRectKind(input.getArmedDebugRectKind());
   };
 
+  const syncArmedRectOutlineControls = (): void => {
+    if (!debugEditControls) return;
+    debugEditControls.setArmedRectOutlineKind(input.getArmedDebugRectOutlineKind());
+  };
+
   const syncArmedDebugToolControls = (): void => {
     syncArmedFloodFillControls();
     syncArmedLineControls();
     syncArmedRectControls();
+    syncArmedRectOutlineControls();
   };
 
   const setArmedDebugFloodFillKind = (kind: DebugTileEditKind | null): boolean => {
     const previousKind = input.getArmedDebugFloodFillKind();
     const previousLineKind = input.getArmedDebugLineKind();
     const previousRectKind = input.getArmedDebugRectKind();
+    const previousRectOutlineKind = input.getArmedDebugRectOutlineKind();
     if (
       previousKind === kind &&
-      (kind === null || (previousLineKind === null && previousRectKind === null))
+      (kind === null ||
+        (previousLineKind === null &&
+          previousRectKind === null &&
+          previousRectOutlineKind === null))
     ) {
       return false;
     }
@@ -179,6 +190,9 @@ const bootstrap = async (): Promise<void> => {
     }
     if (kind !== null && previousRectKind !== null) {
       input.setArmedDebugRectKind(null);
+    }
+    if (kind !== null && previousRectOutlineKind !== null) {
+      input.setArmedDebugRectOutlineKind(null);
     }
     input.setArmedDebugFloodFillKind(kind);
     syncArmedDebugToolControls();
@@ -194,9 +208,13 @@ const bootstrap = async (): Promise<void> => {
     const previousKind = input.getArmedDebugLineKind();
     const previousFloodFillKind = input.getArmedDebugFloodFillKind();
     const previousRectKind = input.getArmedDebugRectKind();
+    const previousRectOutlineKind = input.getArmedDebugRectOutlineKind();
     if (
       previousKind === kind &&
-      (kind === null || (previousFloodFillKind === null && previousRectKind === null))
+      (kind === null ||
+        (previousFloodFillKind === null &&
+          previousRectKind === null &&
+          previousRectOutlineKind === null))
     ) {
       return false;
     }
@@ -205,6 +223,9 @@ const bootstrap = async (): Promise<void> => {
     }
     if (kind !== null && previousRectKind !== null) {
       input.setArmedDebugRectKind(null);
+    }
+    if (kind !== null && previousRectOutlineKind !== null) {
+      input.setArmedDebugRectOutlineKind(null);
     }
     input.setArmedDebugLineKind(kind);
     syncArmedDebugToolControls();
@@ -220,9 +241,13 @@ const bootstrap = async (): Promise<void> => {
     const previousKind = input.getArmedDebugRectKind();
     const previousFloodFillKind = input.getArmedDebugFloodFillKind();
     const previousLineKind = input.getArmedDebugLineKind();
+    const previousRectOutlineKind = input.getArmedDebugRectOutlineKind();
     if (
       previousKind === kind &&
-      (kind === null || (previousFloodFillKind === null && previousLineKind === null))
+      (kind === null ||
+        (previousFloodFillKind === null &&
+          previousLineKind === null &&
+          previousRectOutlineKind === null))
     ) {
       return false;
     }
@@ -232,6 +257,9 @@ const bootstrap = async (): Promise<void> => {
     if (kind !== null && previousLineKind !== null) {
       input.setArmedDebugLineKind(null);
     }
+    if (kind !== null && previousRectOutlineKind !== null) {
+      input.setArmedDebugRectOutlineKind(null);
+    }
     input.setArmedDebugRectKind(kind);
     syncArmedDebugToolControls();
     return true;
@@ -240,6 +268,37 @@ const bootstrap = async (): Promise<void> => {
   const toggleArmedDebugRectKind = (kind: DebugTileEditKind): boolean => {
     const currentKind = input.getArmedDebugRectKind();
     return setArmedDebugRectKind(currentKind === kind ? null : kind);
+  };
+
+  const setArmedDebugRectOutlineKind = (kind: DebugTileEditKind | null): boolean => {
+    const previousKind = input.getArmedDebugRectOutlineKind();
+    const previousFloodFillKind = input.getArmedDebugFloodFillKind();
+    const previousLineKind = input.getArmedDebugLineKind();
+    const previousRectKind = input.getArmedDebugRectKind();
+    if (
+      previousKind === kind &&
+      (kind === null ||
+        (previousFloodFillKind === null && previousLineKind === null && previousRectKind === null))
+    ) {
+      return false;
+    }
+    if (kind !== null && previousFloodFillKind !== null) {
+      input.setArmedDebugFloodFillKind(null);
+    }
+    if (kind !== null && previousLineKind !== null) {
+      input.setArmedDebugLineKind(null);
+    }
+    if (kind !== null && previousRectKind !== null) {
+      input.setArmedDebugRectKind(null);
+    }
+    input.setArmedDebugRectOutlineKind(kind);
+    syncArmedDebugToolControls();
+    return true;
+  };
+
+  const toggleArmedDebugRectOutlineKind = (kind: DebugTileEditKind): boolean => {
+    const currentKind = input.getArmedDebugRectOutlineKind();
+    return setArmedDebugRectOutlineKind(currentKind === kind ? null : kind);
   };
 
   const applyDebugHistoryTile = (worldTileX: number, worldTileY: number, tileId: number): void => {
@@ -320,6 +379,25 @@ const bootstrap = async (): Promise<void> => {
     return changedTileCount;
   };
 
+  const applyDebugRectOutline = (
+    startTileX: number,
+    startTileY: number,
+    endTileX: number,
+    endTileY: number,
+    kind: DebugTileEditKind,
+    strokeId: number
+  ): number => {
+    const tileId = kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
+    let changedTileCount = 0;
+    walkRectangleOutlineTileArea(startTileX, startTileY, endTileX, endTileY, (worldTileX, worldTileY) => {
+      const previousTileId = renderer.getTile(worldTileX, worldTileY);
+      if (!renderer.setTile(worldTileX, worldTileY, tileId)) return;
+      debugTileEditHistory.recordAppliedEdit(strokeId, worldTileX, worldTileY, previousTileId, tileId);
+      changedTileCount += 1;
+    });
+    return changedTileCount;
+  };
+
   const undoDebugTileStroke = (): boolean => {
     if (!debugTileEditHistory.undo(applyDebugHistoryTile)) return false;
     syncDebugEditHistoryControls();
@@ -352,6 +430,7 @@ const bootstrap = async (): Promise<void> => {
     initialArmedFloodFillKind: input.getArmedDebugFloodFillKind(),
     initialArmedLineKind: input.getArmedDebugLineKind(),
     initialArmedRectKind: input.getArmedDebugRectKind(),
+    initialArmedRectOutlineKind: input.getArmedDebugRectOutlineKind(),
     onArmFloodFill: (kind) => {
       toggleArmedDebugFloodFillKind(kind);
     },
@@ -360,6 +439,9 @@ const bootstrap = async (): Promise<void> => {
     },
     onArmRect: (kind) => {
       toggleArmedDebugRectKind(kind);
+    },
+    onArmRectOutline: (kind) => {
+      toggleArmedDebugRectOutlineKind(kind);
     },
     onUndo: undoDebugTileStroke,
     onRedo: redoDebugTileStroke,
@@ -498,6 +580,17 @@ const bootstrap = async (): Promise<void> => {
           rectFillRequest.endTileY,
           rectFillRequest.kind,
           rectFillRequest.strokeId
+        );
+      }
+
+      for (const rectOutlineRequest of input.consumeDebugRectOutlineRequests()) {
+        applyDebugRectOutline(
+          rectOutlineRequest.startTileX,
+          rectOutlineRequest.startTileY,
+          rectOutlineRequest.endTileX,
+          rectOutlineRequest.endTileY,
+          rectOutlineRequest.kind,
+          rectOutlineRequest.strokeId
         );
       }
       syncArmedDebugToolControls();

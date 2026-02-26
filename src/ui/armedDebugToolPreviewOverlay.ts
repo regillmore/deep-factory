@@ -15,7 +15,10 @@ const fillAccentForKind = (kind: DebugTileEditKind): string =>
 const rectAccentForKind = (kind: DebugTileEditKind): string =>
   kind === 'place' ? 'rgba(120, 255, 180, 0.95)' : 'rgba(255, 130, 130, 0.95)';
 
-const toolActionLabel = (tool: 'Fill' | 'Line' | 'Rect', kind: DebugTileEditKind): string =>
+const rectOutlineAccentForKind = (kind: DebugTileEditKind): string =>
+  kind === 'place' ? 'rgba(120, 210, 255, 0.95)' : 'rgba(255, 180, 120, 0.95)';
+
+const toolActionLabel = (tool: string, kind: DebugTileEditKind): string =>
   `${tool} ${kind === 'place' ? 'Brush' : 'Break'}`;
 
 const hideElement = (element: HTMLElement): void => {
@@ -167,16 +170,21 @@ export class ArmedDebugToolPreviewOverlay {
     const activeMouseLineDrag = preview.activeMouseLineDrag;
     const pendingTouchLineStart = preview.pendingTouchLineStart;
     const activeMouseRectDrag = preview.activeMouseRectDrag;
+    const activeMouseRectOutlineDrag = preview.activeMouseRectOutlineDrag;
     const pendingTouchRectStart = preview.pendingTouchRectStart;
+    const pendingTouchRectOutlineStart = preview.pendingTouchRectOutlineStart;
 
     if (
       preview.armedFloodFillKind === null &&
       preview.armedLineKind === null &&
       preview.armedRectKind === null &&
+      preview.armedRectOutlineKind === null &&
       activeMouseLineDrag === null &&
       pendingTouchLineStart === null &&
       activeMouseRectDrag === null &&
-      pendingTouchRectStart === null
+      activeMouseRectOutlineDrag === null &&
+      pendingTouchRectStart === null &&
+      pendingTouchRectOutlineStart === null
     ) {
       hideElement(this.statusBadge);
       return;
@@ -190,19 +198,29 @@ export class ArmedDebugToolPreviewOverlay {
       text = `${toolActionLabel('Line', activeMouseLineDrag.kind)} armed - drag endpoint, release to apply - Esc cancel`;
     } else if (activeMouseRectDrag) {
       accent = rectAccentForKind(activeMouseRectDrag.kind);
-      text = `${toolActionLabel('Rect', activeMouseRectDrag.kind)} armed - drag box, release to apply - Esc cancel`;
+      text = `${toolActionLabel('Rect Fill', activeMouseRectDrag.kind)} armed - drag box, release to apply - Esc cancel`;
+    } else if (activeMouseRectOutlineDrag) {
+      accent = rectOutlineAccentForKind(activeMouseRectOutlineDrag.kind);
+      text = `${toolActionLabel('Rect Outline', activeMouseRectOutlineDrag.kind)} armed - drag box, release to apply - Esc cancel`;
     } else if (pendingTouchLineStart) {
       accent = lineAccentForKind(pendingTouchLineStart.kind);
       text = `${toolActionLabel('Line', pendingTouchLineStart.kind)} armed - start set, tap end tile - Esc cancel`;
     } else if (pendingTouchRectStart) {
       accent = rectAccentForKind(pendingTouchRectStart.kind);
-      text = `${toolActionLabel('Rect', pendingTouchRectStart.kind)} armed - corner set, tap opposite corner - Esc cancel`;
+      text = `${toolActionLabel('Rect Fill', pendingTouchRectStart.kind)} armed - corner set, tap opposite corner - Esc cancel`;
+    } else if (pendingTouchRectOutlineStart) {
+      accent = rectOutlineAccentForKind(pendingTouchRectOutlineStart.kind);
+      text = `${toolActionLabel('Rect Outline', pendingTouchRectOutlineStart.kind)} armed - corner set, tap opposite corner - Esc cancel`;
     } else if (preview.armedLineKind) {
       accent = lineAccentForKind(preview.armedLineKind);
       text = `${toolActionLabel('Line', preview.armedLineKind)} armed - drag (desktop) or tap start/end (touch) - Esc cancel`;
     } else if (preview.armedRectKind) {
       accent = rectAccentForKind(preview.armedRectKind);
-      text = `${toolActionLabel('Rect', preview.armedRectKind)} armed - drag box (desktop) or tap two corners (touch) - Esc cancel`;
+      text = `${toolActionLabel('Rect Fill', preview.armedRectKind)} armed - drag box (desktop) or tap two corners (touch) - Esc cancel`;
+    } else if (preview.armedRectOutlineKind) {
+      accent = rectOutlineAccentForKind(preview.armedRectOutlineKind);
+      text =
+        `${toolActionLabel('Rect Outline', preview.armedRectOutlineKind)} armed - drag box (desktop) or tap two corners (touch) - Esc cancel`;
     } else if (preview.armedFloodFillKind) {
       accent = fillAccentForKind(preview.armedFloodFillKind);
       text = `${toolActionLabel('Fill', preview.armedFloodFillKind)} armed - click/tap target tile - Esc cancel`;
@@ -288,7 +306,9 @@ export class ArmedDebugToolPreviewOverlay {
     pointerInspect: PointerInspectSnapshot | null,
     preview: ArmedDebugToolPreviewState
   ): void {
-    const drag = preview.activeMouseRectDrag;
+    const fillDrag = preview.activeMouseRectDrag;
+    const outlineDrag = preview.activeMouseRectOutlineDrag;
+    const drag = fillDrag ?? outlineDrag;
     if (!drag || pointerInspect?.pointerType !== 'mouse') {
       hideElement(this.rectPreviewBox);
       return;
@@ -324,14 +344,16 @@ export class ArmedDebugToolPreviewOverlay {
       return;
     }
 
-    const accent = rectAccentForKind(drag.kind);
+    const isOutlineDrag = outlineDrag !== null && drag === outlineDrag;
+    const accent = isOutlineDrag ? rectOutlineAccentForKind(drag.kind) : rectAccentForKind(drag.kind);
     this.rectPreviewBox.style.display = 'block';
     this.rectPreviewBox.style.left = `${left}px`;
     this.rectPreviewBox.style.top = `${top}px`;
     this.rectPreviewBox.style.width = `${width}px`;
     this.rectPreviewBox.style.height = `${height}px`;
     this.rectPreviewBox.style.borderColor = accent;
-    this.rectPreviewBox.style.background = accent.replace('0.95', '0.14');
+    this.rectPreviewBox.style.borderStyle = isOutlineDrag ? 'solid' : 'dashed';
+    this.rectPreviewBox.style.background = accent.replace('0.95', isOutlineDrag ? '0.06' : '0.14');
     this.rectPreviewBox.style.boxShadow =
       `0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 0 0 1px ${accent.replace('0.95', '0.16')}`;
   }
@@ -342,8 +364,9 @@ export class ArmedDebugToolPreviewOverlay {
     preview: ArmedDebugToolPreviewState
   ): void {
     const lineAnchor = preview.pendingTouchLineStart;
-    const rectAnchor = preview.pendingTouchRectStart;
-    const anchor = lineAnchor ?? rectAnchor;
+    const rectFillAnchor = preview.pendingTouchRectStart;
+    const rectOutlineAnchor = preview.pendingTouchRectOutlineStart;
+    const anchor = lineAnchor ?? rectFillAnchor ?? rectOutlineAnchor;
     if (!anchor) {
       hideElement(this.touchAnchorMarker);
       hideElement(this.touchAnchorLabel);
@@ -357,8 +380,13 @@ export class ArmedDebugToolPreviewOverlay {
       return;
     }
 
-    const isRectAnchor = rectAnchor !== null && anchor === rectAnchor;
-    const accent = isRectAnchor ? rectAccentForKind(anchor.kind) : lineAccentForKind(anchor.kind);
+    const isRectFillAnchor = rectFillAnchor !== null && anchor === rectFillAnchor;
+    const isRectOutlineAnchor = rectOutlineAnchor !== null && anchor === rectOutlineAnchor;
+    const accent = isRectFillAnchor
+      ? rectAccentForKind(anchor.kind)
+      : isRectOutlineAnchor
+        ? rectOutlineAccentForKind(anchor.kind)
+        : lineAccentForKind(anchor.kind);
     showTileMarker(
       this.touchAnchorMarker,
       anchorRect.left,
@@ -372,7 +400,11 @@ export class ArmedDebugToolPreviewOverlay {
       `radial-gradient(circle at 50% 50%, ${accent.replace('0.95', '0.22')}, rgba(255,255,255,0.04) 62%, rgba(255,255,255,0) 72%)`;
 
     this.touchAnchorLabel.style.display = 'block';
-    this.touchAnchorLabel.textContent = isRectAnchor ? 'Rect corner' : 'Line start';
+    this.touchAnchorLabel.textContent = isRectFillAnchor
+      ? 'Rect fill corner'
+      : isRectOutlineAnchor
+        ? 'Rect outline corner'
+        : 'Line start';
     this.touchAnchorLabel.style.left = `${anchorRect.left}px`;
     this.touchAnchorLabel.style.top = `${Math.max(4, anchorRect.top - 24)}px`;
     this.touchAnchorLabel.style.borderColor = accent.replace('0.95', '0.34');

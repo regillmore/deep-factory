@@ -6,6 +6,7 @@ import {
   getTouchDebugPaintKindForPointerDown,
   markDebugPaintTileSeen,
   walkFilledRectangleTileArea,
+  walkRectangleOutlineTileArea,
   walkLineSteppedTilePath,
   type PointerInspectSnapshot
 } from './controller';
@@ -39,6 +40,19 @@ const collectFilledRectangleTiles = (
 ): Array<[number, number]> => {
   const tiles: Array<[number, number]> = [];
   walkFilledRectangleTileArea(startTileX, startTileY, endTileX, endTileY, (tileX, tileY) => {
+    tiles.push([tileX, tileY]);
+  });
+  return tiles;
+};
+
+const collectRectangleOutlineTiles = (
+  startTileX: number,
+  startTileY: number,
+  endTileX: number,
+  endTileY: number
+): Array<[number, number]> => {
+  const tiles: Array<[number, number]> = [];
+  walkRectangleOutlineTileArea(startTileX, startTileY, endTileX, endTileY, (tileX, tileY) => {
     tiles.push([tileX, tileY]);
   });
   return tiles;
@@ -182,6 +196,51 @@ describe('walkFilledRectangleTileArea', () => {
       [0, 1],
       [1, 1],
       [2, 1]
+    ]);
+  });
+});
+
+describe('walkRectangleOutlineTileArea', () => {
+  it('visits a single tile when both corners are the same', () => {
+    expect(collectRectangleOutlineTiles(4, -2, 4, -2)).toEqual([[4, -2]]);
+  });
+
+  it('visits an inclusive rectangle perimeter without interior tiles', () => {
+    expect(collectRectangleOutlineTiles(1, 2, 3, 4)).toEqual([
+      [1, 2],
+      [2, 2],
+      [3, 2],
+      [1, 4],
+      [2, 4],
+      [3, 4],
+      [1, 3],
+      [3, 3]
+    ]);
+  });
+
+  it('supports reverse corner ordering', () => {
+    expect(collectRectangleOutlineTiles(3, 4, 1, 2)).toEqual([
+      [1, 2],
+      [2, 2],
+      [3, 2],
+      [1, 4],
+      [2, 4],
+      [3, 4],
+      [1, 3],
+      [3, 3]
+    ]);
+  });
+
+  it('does not double-visit tiles for single-row or single-column outlines', () => {
+    expect(collectRectangleOutlineTiles(1, 2, 3, 2)).toEqual([
+      [1, 2],
+      [2, 2],
+      [3, 2]
+    ]);
+    expect(collectRectangleOutlineTiles(5, 1, 5, 3)).toEqual([
+      [5, 1],
+      [5, 3],
+      [5, 2]
     ]);
   });
 });

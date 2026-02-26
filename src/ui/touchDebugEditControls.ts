@@ -27,6 +27,8 @@ interface TouchDebugEditControlsOptions {
   onArmLine?: (kind: 'place' | 'break') => void;
   initialArmedRectKind?: 'place' | 'break' | null;
   onArmRect?: (kind: 'place' | 'break') => void;
+  initialArmedRectOutlineKind?: 'place' | 'break' | null;
+  onArmRectOutline?: (kind: 'place' | 'break') => void;
   initialCollapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
   onUndo?: () => void;
@@ -63,16 +65,20 @@ export class TouchDebugEditControls {
   private lineBreakButton: HTMLButtonElement;
   private rectPlaceButton: HTMLButtonElement;
   private rectBreakButton: HTMLButtonElement;
+  private rectOutlinePlaceButton: HTMLButtonElement;
+  private rectOutlineBreakButton: HTMLButtonElement;
   private undoStrokeCount = 0;
   private redoStrokeCount = 0;
   private armedFloodFillKind: 'place' | 'break' | null;
   private armedLineKind: 'place' | 'break' | null;
   private armedRectKind: 'place' | 'break' | null;
+  private armedRectOutlineKind: 'place' | 'break' | null;
   private onModeChange: (mode: TouchDebugEditMode) => void;
   private onBrushTileIdChange: (tileId: number) => void;
   private onArmFloodFill: (kind: 'place' | 'break') => void;
   private onArmLine: (kind: 'place' | 'break') => void;
   private onArmRect: (kind: 'place' | 'break') => void;
+  private onArmRectOutline: (kind: 'place' | 'break') => void;
   private onCollapsedChange: (collapsed: boolean) => void;
   private onUndo: () => void;
   private onRedo: () => void;
@@ -91,6 +97,8 @@ export class TouchDebugEditControls {
     this.onArmLine = options.onArmLine ?? (() => {});
     this.armedRectKind = options.initialArmedRectKind ?? null;
     this.onArmRect = options.onArmRect ?? (() => {});
+    this.armedRectOutlineKind = options.initialArmedRectOutlineKind ?? null;
+    this.onArmRectOutline = options.onArmRectOutline ?? (() => {});
     this.collapsed = options.initialCollapsed ?? false;
     this.onCollapsedChange = options.onCollapsedChange ?? (() => {});
     this.onUndo = options.onUndo ?? (() => {});
@@ -428,6 +436,66 @@ export class TouchDebugEditControls {
     rectToolHintLine.style.lineHeight = '1.35';
     rectToolSection.append(rectToolHintLine);
 
+    const rectOutlineToolSection = document.createElement('div');
+    rectOutlineToolSection.style.display = 'flex';
+    rectOutlineToolSection.style.flexDirection = 'column';
+    rectOutlineToolSection.style.gap = '6px';
+    this.content.append(rectOutlineToolSection);
+
+    const rectOutlineToolTitle = document.createElement('div');
+    rectOutlineToolTitle.textContent = 'Rect Outline Tool';
+    rectOutlineToolTitle.style.color = '#aab7c7';
+    rectOutlineToolTitle.style.fontSize = '11px';
+    rectOutlineToolSection.append(rectOutlineToolTitle);
+
+    const rectOutlineToolRow = document.createElement('div');
+    rectOutlineToolRow.style.display = 'flex';
+    rectOutlineToolRow.style.flexWrap = 'wrap';
+    rectOutlineToolRow.style.gap = '6px';
+    rectOutlineToolSection.append(rectOutlineToolRow);
+
+    this.rectOutlinePlaceButton = document.createElement('button');
+    this.rectOutlinePlaceButton.type = 'button';
+    this.rectOutlinePlaceButton.textContent = 'Rect Outline Brush';
+    this.rectOutlinePlaceButton.title =
+      'Arm one rectangle outline with the active brush (desktop drag box or touch two-corner)';
+    this.rectOutlinePlaceButton.addEventListener('click', () => this.onArmRectOutline('place'));
+    this.rectOutlinePlaceButton.style.padding = '6px 8px';
+    this.rectOutlinePlaceButton.style.borderRadius = '8px';
+    this.rectOutlinePlaceButton.style.border = '1px solid rgba(255, 255, 255, 0.16)';
+    this.rectOutlinePlaceButton.style.background = 'rgba(255, 255, 255, 0.06)';
+    this.rectOutlinePlaceButton.style.color = '#f3f7fb';
+    this.rectOutlinePlaceButton.style.fontFamily = 'inherit';
+    this.rectOutlinePlaceButton.style.fontSize = '12px';
+    this.rectOutlinePlaceButton.style.cursor = 'pointer';
+    this.rectOutlinePlaceButton.style.touchAction = 'manipulation';
+    rectOutlineToolRow.append(this.rectOutlinePlaceButton);
+
+    this.rectOutlineBreakButton = document.createElement('button');
+    this.rectOutlineBreakButton.type = 'button';
+    this.rectOutlineBreakButton.textContent = 'Rect Outline Break';
+    this.rectOutlineBreakButton.title =
+      'Arm one rectangle outline that clears tiles (desktop drag box or touch two-corner)';
+    this.rectOutlineBreakButton.addEventListener('click', () => this.onArmRectOutline('break'));
+    this.rectOutlineBreakButton.style.padding = '6px 8px';
+    this.rectOutlineBreakButton.style.borderRadius = '8px';
+    this.rectOutlineBreakButton.style.border = '1px solid rgba(255, 255, 255, 0.16)';
+    this.rectOutlineBreakButton.style.background = 'rgba(255, 255, 255, 0.06)';
+    this.rectOutlineBreakButton.style.color = '#f3f7fb';
+    this.rectOutlineBreakButton.style.fontFamily = 'inherit';
+    this.rectOutlineBreakButton.style.fontSize = '12px';
+    this.rectOutlineBreakButton.style.cursor = 'pointer';
+    this.rectOutlineBreakButton.style.touchAction = 'manipulation';
+    rectOutlineToolRow.append(this.rectOutlineBreakButton);
+
+    const rectOutlineToolHintLine = document.createElement('div');
+    rectOutlineToolHintLine.textContent =
+      'Desktop: arm Rect Outline Brush/Break, then drag a box. Touch: tap first corner, then tap opposite corner.';
+    rectOutlineToolHintLine.style.color = '#d6dde8';
+    rectOutlineToolHintLine.style.fontSize = '11px';
+    rectOutlineToolHintLine.style.lineHeight = '1.35';
+    rectOutlineToolSection.append(rectOutlineToolHintLine);
+
     const prefsSection = document.createElement('div');
     prefsSection.style.display = 'flex';
     prefsSection.style.flexDirection = 'column';
@@ -512,7 +580,7 @@ export class TouchDebugEditControls {
     shortcutSection.append(floodFillShortcutLine);
 
     const cancelShortcutLine = document.createElement('div');
-    cancelShortcutLine.textContent = 'Cancel armed fill/line/rect tools: Esc';
+    cancelShortcutLine.textContent = 'Cancel armed one-shot tools: Esc';
     cancelShortcutLine.style.color = '#d6dde8';
     cancelShortcutLine.style.fontSize = '11px';
     cancelShortcutLine.style.lineHeight = '1.35';
@@ -588,6 +656,7 @@ export class TouchDebugEditControls {
     this.syncFloodFillState();
     this.syncLineToolState();
     this.syncRectToolState();
+    this.syncRectOutlineToolState();
     this.syncBrushState();
     this.syncCollapsedState();
     document.body.append(this.root);
@@ -645,6 +714,12 @@ export class TouchDebugEditControls {
     if (this.armedRectKind === kind) return;
     this.armedRectKind = kind;
     this.syncRectToolState();
+  }
+
+  setArmedRectOutlineKind(kind: 'place' | 'break' | null): void {
+    if (this.armedRectOutlineKind === kind) return;
+    this.armedRectOutlineKind = kind;
+    this.syncRectOutlineToolState();
   }
 
   private syncButtonState(): void {
@@ -713,6 +788,19 @@ export class TouchDebugEditControls {
     this.syncCollapsedSummary();
   }
 
+  private syncRectOutlineToolState(): void {
+    const syncButton = (button: HTMLButtonElement, active: boolean, activeColor: string): void => {
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      button.style.background = active ? activeColor : 'rgba(255, 255, 255, 0.06)';
+      button.style.borderColor = active ? 'rgba(255, 255, 255, 0.58)' : 'rgba(255, 255, 255, 0.16)';
+      button.style.color = active ? '#ffffff' : '#f3f7fb';
+    };
+
+    syncButton(this.rectOutlinePlaceButton, this.armedRectOutlineKind === 'place', 'rgba(120, 210, 255, 0.22)');
+    syncButton(this.rectOutlineBreakButton, this.armedRectOutlineKind === 'break', 'rgba(255, 180, 120, 0.22)');
+    this.syncCollapsedSummary();
+  }
+
   private syncCollapsedState(): void {
     this.content.style.display = this.collapsed ? 'none' : 'flex';
     this.collapsedSummary.style.display = this.collapsed ? 'block' : 'none';
@@ -759,12 +847,18 @@ export class TouchDebugEditControls {
         : this.armedLineKind === 'place'
           ? ' | Line:Brush'
           : ' | Line:Break';
-    const armedRectSummary =
+    const armedRectFillSummary =
       this.armedRectKind === null
         ? ''
         : this.armedRectKind === 'place'
-          ? ' | Rect:Brush'
-          : ' | Rect:Break';
-    this.collapsedSummary.textContent = `${modeLabel} | Brush: ${brushSummary}${armedFillSummary}${armedLineSummary}${armedRectSummary} | U:${this.undoStrokeCount} R:${this.redoStrokeCount}`;
+          ? ' | RectF:Brush'
+          : ' | RectF:Break';
+    const armedRectOutlineSummary =
+      this.armedRectOutlineKind === null
+        ? ''
+        : this.armedRectOutlineKind === 'place'
+          ? ' | RectO:Brush'
+          : ' | RectO:Break';
+    this.collapsedSummary.textContent = `${modeLabel} | Brush: ${brushSummary}${armedFillSummary}${armedLineSummary}${armedRectFillSummary}${armedRectOutlineSummary} | U:${this.undoStrokeCount} R:${this.redoStrokeCount}`;
   }
 }
