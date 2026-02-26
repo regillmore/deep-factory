@@ -5,6 +5,7 @@ import {
   getDesktopDebugPaintKindForPointerDown,
   getTouchDebugPaintKindForPointerDown,
   markDebugPaintTileSeen,
+  walkFilledRectangleTileArea,
   walkLineSteppedTilePath,
   type PointerInspectSnapshot
 } from './controller';
@@ -25,6 +26,19 @@ const collectLineSteppedTilePath = (
 ): Array<[number, number]> => {
   const tiles: Array<[number, number]> = [];
   walkLineSteppedTilePath(startTileX, startTileY, endTileX, endTileY, (tileX, tileY) => {
+    tiles.push([tileX, tileY]);
+  });
+  return tiles;
+};
+
+const collectFilledRectangleTiles = (
+  startTileX: number,
+  startTileY: number,
+  endTileX: number,
+  endTileY: number
+): Array<[number, number]> => {
+  const tiles: Array<[number, number]> = [];
+  walkFilledRectangleTileArea(startTileX, startTileY, endTileX, endTileY, (tileX, tileY) => {
     tiles.push([tileX, tileY]);
   });
   return tiles;
@@ -140,6 +154,34 @@ describe('walkLineSteppedTilePath', () => {
       [2, 1],
       [1, 0],
       [0, 0]
+    ]);
+  });
+});
+
+describe('walkFilledRectangleTileArea', () => {
+  it('visits a single tile when both corners are the same', () => {
+    expect(collectFilledRectangleTiles(4, -2, 4, -2)).toEqual([[4, -2]]);
+  });
+
+  it('fills an inclusive axis-aligned rectangle', () => {
+    expect(collectFilledRectangleTiles(1, 2, 3, 3)).toEqual([
+      [1, 2],
+      [2, 2],
+      [3, 2],
+      [1, 3],
+      [2, 3],
+      [3, 3]
+    ]);
+  });
+
+  it('supports reverse corner ordering', () => {
+    expect(collectFilledRectangleTiles(2, 1, 0, 0)).toEqual([
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [0, 1],
+      [1, 1],
+      [2, 1]
     ]);
   });
 });

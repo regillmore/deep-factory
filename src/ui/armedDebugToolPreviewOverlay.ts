@@ -12,7 +12,10 @@ const lineAccentForKind = (kind: DebugTileEditKind): string =>
 const fillAccentForKind = (kind: DebugTileEditKind): string =>
   kind === 'place' ? 'rgba(120, 255, 180, 0.95)' : 'rgba(255, 130, 130, 0.95)';
 
-const toolActionLabel = (tool: 'Fill' | 'Line', kind: DebugTileEditKind): string =>
+const rectAccentForKind = (kind: DebugTileEditKind): string =>
+  kind === 'place' ? 'rgba(120, 255, 180, 0.95)' : 'rgba(255, 130, 130, 0.95)';
+
+const toolActionLabel = (tool: 'Fill' | 'Line' | 'Rect', kind: DebugTileEditKind): string =>
   `${tool} ${kind === 'place' ? 'Brush' : 'Break'}`;
 
 const hideElement = (element: HTMLElement): void => {
@@ -51,6 +54,7 @@ export class ArmedDebugToolPreviewOverlay {
   private lineSegment: HTMLDivElement;
   private lineStartMarker: HTMLDivElement;
   private lineEndMarker: HTMLDivElement;
+  private rectPreviewBox: HTMLDivElement;
   private touchAnchorMarker: HTMLDivElement;
   private touchAnchorLabel: HTMLDivElement;
 
@@ -104,6 +108,15 @@ export class ArmedDebugToolPreviewOverlay {
     this.lineEndMarker.style.border = '2px solid rgba(255, 255, 255, 0.95)';
     this.lineEndMarker.style.boxShadow = '0 0 0 1px rgba(0, 0, 0, 0.35)';
 
+    this.rectPreviewBox = document.createElement('div');
+    this.rectPreviewBox.style.position = 'fixed';
+    this.rectPreviewBox.style.display = 'none';
+    this.rectPreviewBox.style.boxSizing = 'border-box';
+    this.rectPreviewBox.style.borderRadius = '5px';
+    this.rectPreviewBox.style.border = '2px dashed rgba(255, 255, 255, 0.95)';
+    this.rectPreviewBox.style.background = 'rgba(255, 255, 255, 0.05)';
+    this.rectPreviewBox.style.boxShadow = '0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.08)';
+
     this.touchAnchorMarker = document.createElement('div');
     this.touchAnchorMarker.style.position = 'fixed';
     this.touchAnchorMarker.style.display = 'none';
@@ -130,6 +143,7 @@ export class ArmedDebugToolPreviewOverlay {
       this.lineSegment,
       this.lineStartMarker,
       this.lineEndMarker,
+      this.rectPreviewBox,
       this.touchAnchorMarker,
       this.touchAnchorLabel,
       this.statusBadge
@@ -145,18 +159,24 @@ export class ArmedDebugToolPreviewOverlay {
     const canvasRect = this.canvas.getBoundingClientRect();
     this.updateStatusBadge(canvasRect, preview);
     this.updateMouseLinePreview(camera, canvasRect, pointerInspect, preview);
+    this.updateMouseRectPreview(camera, canvasRect, pointerInspect, preview);
     this.updateTouchAnchorPreview(camera, canvasRect, preview);
   }
 
   private updateStatusBadge(canvasRect: DOMRect, preview: ArmedDebugToolPreviewState): void {
     const activeMouseLineDrag = preview.activeMouseLineDrag;
     const pendingTouchLineStart = preview.pendingTouchLineStart;
+    const activeMouseRectDrag = preview.activeMouseRectDrag;
+    const pendingTouchRectStart = preview.pendingTouchRectStart;
 
     if (
       preview.armedFloodFillKind === null &&
       preview.armedLineKind === null &&
+      preview.armedRectKind === null &&
       activeMouseLineDrag === null &&
-      pendingTouchLineStart === null
+      pendingTouchLineStart === null &&
+      activeMouseRectDrag === null &&
+      pendingTouchRectStart === null
     ) {
       hideElement(this.statusBadge);
       return;
@@ -168,12 +188,21 @@ export class ArmedDebugToolPreviewOverlay {
     if (activeMouseLineDrag) {
       accent = lineAccentForKind(activeMouseLineDrag.kind);
       text = `${toolActionLabel('Line', activeMouseLineDrag.kind)} armed - drag endpoint, release to apply - Esc cancel`;
+    } else if (activeMouseRectDrag) {
+      accent = rectAccentForKind(activeMouseRectDrag.kind);
+      text = `${toolActionLabel('Rect', activeMouseRectDrag.kind)} armed - drag box, release to apply - Esc cancel`;
     } else if (pendingTouchLineStart) {
       accent = lineAccentForKind(pendingTouchLineStart.kind);
       text = `${toolActionLabel('Line', pendingTouchLineStart.kind)} armed - start set, tap end tile - Esc cancel`;
+    } else if (pendingTouchRectStart) {
+      accent = rectAccentForKind(pendingTouchRectStart.kind);
+      text = `${toolActionLabel('Rect', pendingTouchRectStart.kind)} armed - corner set, tap opposite corner - Esc cancel`;
     } else if (preview.armedLineKind) {
       accent = lineAccentForKind(preview.armedLineKind);
       text = `${toolActionLabel('Line', preview.armedLineKind)} armed - drag (desktop) or tap start/end (touch) - Esc cancel`;
+    } else if (preview.armedRectKind) {
+      accent = rectAccentForKind(preview.armedRectKind);
+      text = `${toolActionLabel('Rect', preview.armedRectKind)} armed - drag box (desktop) or tap two corners (touch) - Esc cancel`;
     } else if (preview.armedFloodFillKind) {
       accent = fillAccentForKind(preview.armedFloodFillKind);
       text = `${toolActionLabel('Fill', preview.armedFloodFillKind)} armed - click/tap target tile - Esc cancel`;
@@ -253,12 +282,68 @@ export class ArmedDebugToolPreviewOverlay {
     this.lineSegment.style.transform = `translateY(-50%) rotate(${Math.atan2(dy, dx)}rad)`;
   }
 
+  private updateMouseRectPreview(
+    camera: Camera2D,
+    canvasRect: DOMRect,
+    pointerInspect: PointerInspectSnapshot | null,
+    preview: ArmedDebugToolPreviewState
+  ): void {
+    const drag = preview.activeMouseRectDrag;
+    if (!drag || pointerInspect?.pointerType !== 'mouse') {
+      hideElement(this.rectPreviewBox);
+      return;
+    }
+
+    const startRect = computeTileClientRectOrNull(
+      drag.startTileX,
+      drag.startTileY,
+      camera,
+      this.canvas,
+      canvasRect
+    );
+    const endRect = computeTileClientRectOrNull(
+      pointerInspect.tile.x,
+      pointerInspect.tile.y,
+      camera,
+      this.canvas,
+      canvasRect
+    );
+    if (!startRect || !endRect) {
+      hideElement(this.rectPreviewBox);
+      return;
+    }
+
+    const left = Math.min(startRect.left, endRect.left);
+    const top = Math.min(startRect.top, endRect.top);
+    const right = Math.max(startRect.left + startRect.width, endRect.left + endRect.width);
+    const bottom = Math.max(startRect.top + startRect.height, endRect.top + endRect.height);
+    const width = Math.max(0, right - left);
+    const height = Math.max(0, bottom - top);
+    if (width <= 0 || height <= 0) {
+      hideElement(this.rectPreviewBox);
+      return;
+    }
+
+    const accent = rectAccentForKind(drag.kind);
+    this.rectPreviewBox.style.display = 'block';
+    this.rectPreviewBox.style.left = `${left}px`;
+    this.rectPreviewBox.style.top = `${top}px`;
+    this.rectPreviewBox.style.width = `${width}px`;
+    this.rectPreviewBox.style.height = `${height}px`;
+    this.rectPreviewBox.style.borderColor = accent;
+    this.rectPreviewBox.style.background = accent.replace('0.95', '0.14');
+    this.rectPreviewBox.style.boxShadow =
+      `0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 0 0 1px ${accent.replace('0.95', '0.16')}`;
+  }
+
   private updateTouchAnchorPreview(
     camera: Camera2D,
     canvasRect: DOMRect,
     preview: ArmedDebugToolPreviewState
   ): void {
-    const anchor = preview.pendingTouchLineStart;
+    const lineAnchor = preview.pendingTouchLineStart;
+    const rectAnchor = preview.pendingTouchRectStart;
+    const anchor = lineAnchor ?? rectAnchor;
     if (!anchor) {
       hideElement(this.touchAnchorMarker);
       hideElement(this.touchAnchorLabel);
@@ -272,7 +357,8 @@ export class ArmedDebugToolPreviewOverlay {
       return;
     }
 
-    const accent = lineAccentForKind(anchor.kind);
+    const isRectAnchor = rectAnchor !== null && anchor === rectAnchor;
+    const accent = isRectAnchor ? rectAccentForKind(anchor.kind) : lineAccentForKind(anchor.kind);
     showTileMarker(
       this.touchAnchorMarker,
       anchorRect.left,
@@ -286,6 +372,7 @@ export class ArmedDebugToolPreviewOverlay {
       `radial-gradient(circle at 50% 50%, ${accent.replace('0.95', '0.22')}, rgba(255,255,255,0.04) 62%, rgba(255,255,255,0) 72%)`;
 
     this.touchAnchorLabel.style.display = 'block';
+    this.touchAnchorLabel.textContent = isRectAnchor ? 'Rect corner' : 'Line start';
     this.touchAnchorLabel.style.left = `${anchorRect.left}px`;
     this.touchAnchorLabel.style.top = `${Math.max(4, anchorRect.top - 24)}px`;
     this.touchAnchorLabel.style.borderColor = accent.replace('0.95', '0.34');

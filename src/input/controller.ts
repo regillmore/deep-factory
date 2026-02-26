@@ -51,6 +51,16 @@ export interface DebugLineRequest {
   pointerType: 'mouse' | 'touch';
 }
 
+export interface DebugRectFillRequest {
+  startTileX: number;
+  startTileY: number;
+  endTileX: number;
+  endTileY: number;
+  kind: DebugTileEditKind;
+  strokeId: number;
+  pointerType: 'mouse' | 'touch';
+}
+
 export interface CompletedDebugTileEditStroke {
   strokeId: number;
   kind: DebugTileEditKind;
@@ -81,15 +91,39 @@ interface PendingTouchDebugLineStart {
   tileY: number;
 }
 
+interface ActiveMouseDebugRectDrag {
+  pointerId: number;
+  kind: DebugTileEditKind;
+  startTileX: number;
+  startTileY: number;
+}
+
+interface PendingTouchDebugRectStart {
+  kind: DebugTileEditKind;
+  tileX: number;
+  tileY: number;
+}
+
 export interface ArmedDebugToolPreviewState {
   armedFloodFillKind: DebugTileEditKind | null;
   armedLineKind: DebugTileEditKind | null;
+  armedRectKind: DebugTileEditKind | null;
   activeMouseLineDrag: {
     kind: DebugTileEditKind;
     startTileX: number;
     startTileY: number;
   } | null;
   pendingTouchLineStart: {
+    kind: DebugTileEditKind;
+    tileX: number;
+    tileY: number;
+  } | null;
+  activeMouseRectDrag: {
+    kind: DebugTileEditKind;
+    startTileX: number;
+    startTileY: number;
+  } | null;
+  pendingTouchRectStart: {
     kind: DebugTileEditKind;
     tileX: number;
     tileY: number;
@@ -187,6 +221,24 @@ export const walkLineSteppedTilePath = (
   }
 };
 
+export const walkFilledRectangleTileArea = (
+  startTileX: number,
+  startTileY: number,
+  endTileX: number,
+  endTileY: number,
+  visit: (tileX: number, tileY: number) => void
+): void => {
+  const minTileX = Math.min(startTileX, endTileX);
+  const maxTileX = Math.max(startTileX, endTileX);
+  const minTileY = Math.min(startTileY, endTileY);
+  const maxTileY = Math.max(startTileY, endTileY);
+  for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
+    for (let tileX = minTileX; tileX <= maxTileX; tileX += 1) {
+      visit(tileX, tileY);
+    }
+  }
+};
+
 export class InputController {
   private keys = new Set<string>();
   private pointerActive = false;
@@ -199,6 +251,7 @@ export class InputController {
   private debugTileEditQueue: DebugTileStrokeEditRequest[] = [];
   private debugFloodFillQueue: DebugFloodFillRequest[] = [];
   private debugLineQueue: DebugLineRequest[] = [];
+  private debugRectFillQueue: DebugRectFillRequest[] = [];
   private debugBrushEyedropperQueue: DebugBrushEyedropperRequest[] = [];
   private completedDebugTileStrokeQueue: CompletedDebugTileEditStroke[] = [];
   private debugEditHistoryShortcutQueue: DebugEditHistoryShortcutAction[] = [];
@@ -206,12 +259,15 @@ export class InputController {
   private activeTouchDebugPaintStroke: ActiveDebugPaintStroke | null = null;
   private activeMouseDebugLineDrag: ActiveMouseDebugLineDrag | null = null;
   private pendingTouchDebugLineStart: PendingTouchDebugLineStart | null = null;
+  private activeMouseDebugRectDrag: ActiveMouseDebugRectDrag | null = null;
+  private pendingTouchDebugRectStart: PendingTouchDebugRectStart | null = null;
   private activeTouchHistoryTapGestureCandidate: ActiveTouchHistoryTapGestureCandidate | null = null;
   private activeTouchEyedropperLongPressCandidate: ActiveTouchEyedropperLongPressCandidate | null = null;
   private lastTouchHistoryTapGestureTimeMs = Number.NEGATIVE_INFINITY;
   private touchDebugEditMode: TouchDebugEditMode = 'pan';
   private armedDebugFloodFillKind: DebugTileEditKind | null = null;
   private armedDebugLineKind: DebugTileEditKind | null = null;
+  private armedDebugRectKind: DebugTileEditKind | null = null;
   private nextDebugPaintStrokeId = 1;
 
   constructor(
@@ -263,6 +319,13 @@ export class InputController {
     return requests;
   }
 
+  consumeDebugRectFillRequests(): DebugRectFillRequest[] {
+    if (this.debugRectFillQueue.length === 0) return [];
+    const requests = this.debugRectFillQueue;
+    this.debugRectFillQueue = [];
+    return requests;
+  }
+
   consumeDebugBrushEyedropperRequests(): DebugBrushEyedropperRequest[] {
     if (this.debugBrushEyedropperQueue.length === 0) return [];
     const requests = this.debugBrushEyedropperQueue;
@@ -294,6 +357,7 @@ export class InputController {
     this.activeTouchHistoryTapGestureCandidate = null;
     this.activeTouchEyedropperLongPressCandidate = null;
     this.pendingTouchDebugLineStart = null;
+    this.pendingTouchDebugRectStart = null;
     this.completeDebugPaintStroke(this.activeTouchDebugPaintStroke);
     this.activeTouchDebugPaintStroke = null;
   }
@@ -323,27 +387,53 @@ export class InputController {
     }
   }
 
+  getArmedDebugRectKind(): DebugTileEditKind | null {
+    return this.armedDebugRectKind;
+  }
+
+  setArmedDebugRectKind(kind: DebugTileEditKind | null): void {
+    if (this.armedDebugRectKind === kind && (kind !== null || this.pendingTouchDebugRectStart === null)) {
+      return;
+    }
+    this.armedDebugRectKind = kind;
+    if (kind === null || this.pendingTouchDebugRectStart?.kind !== kind) {
+      this.pendingTouchDebugRectStart = null;
+    }
+    if (kind === null) {
+      this.activeMouseDebugRectDrag = null;
+    }
+  }
+
   cancelArmedDebugTools(): boolean {
     const hadArmedTools =
       this.armedDebugFloodFillKind !== null ||
       this.armedDebugLineKind !== null ||
+      this.armedDebugRectKind !== null ||
       this.activeMouseDebugLineDrag !== null ||
-      this.pendingTouchDebugLineStart !== null;
+      this.pendingTouchDebugLineStart !== null ||
+      this.activeMouseDebugRectDrag !== null ||
+      this.pendingTouchDebugRectStart !== null;
     if (!hadArmedTools) return false;
 
     this.armedDebugFloodFillKind = null;
     this.armedDebugLineKind = null;
+    this.armedDebugRectKind = null;
     this.activeMouseDebugLineDrag = null;
     this.pendingTouchDebugLineStart = null;
+    this.activeMouseDebugRectDrag = null;
+    this.pendingTouchDebugRectStart = null;
     return true;
   }
 
   getArmedDebugToolPreviewState(): ArmedDebugToolPreviewState {
     const activeMouseLineDrag = this.activeMouseDebugLineDrag;
     const pendingTouchLineStart = this.pendingTouchDebugLineStart;
+    const activeMouseRectDrag = this.activeMouseDebugRectDrag;
+    const pendingTouchRectStart = this.pendingTouchDebugRectStart;
     return {
       armedFloodFillKind: this.armedDebugFloodFillKind,
       armedLineKind: this.armedDebugLineKind,
+      armedRectKind: this.armedDebugRectKind,
       activeMouseLineDrag: activeMouseLineDrag
         ? {
             kind: activeMouseLineDrag.kind,
@@ -356,6 +446,20 @@ export class InputController {
             kind: pendingTouchLineStart.kind,
             tileX: pendingTouchLineStart.tileX,
             tileY: pendingTouchLineStart.tileY
+          }
+        : null,
+      activeMouseRectDrag: activeMouseRectDrag
+        ? {
+            kind: activeMouseRectDrag.kind,
+            startTileX: activeMouseRectDrag.startTileX,
+            startTileY: activeMouseRectDrag.startTileY
+          }
+        : null,
+      pendingTouchRectStart: pendingTouchRectStart
+        ? {
+            kind: pendingTouchRectStart.kind,
+            tileX: pendingTouchRectStart.tileX,
+            tileY: pendingTouchRectStart.tileY
           }
         : null
     };
@@ -382,21 +486,31 @@ export class InputController {
       this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
       const queuedArmedDebugFloodFill = this.tryQueueArmedDebugFloodFill(event);
       const handledArmedDebugLine = queuedArmedDebugFloodFill ? false : this.tryHandleArmedDebugLinePointerDown(event);
-      if (queuedArmedDebugFloodFill || handledArmedDebugLine) {
+      const handledArmedDebugRect =
+        queuedArmedDebugFloodFill || handledArmedDebugLine
+          ? false
+          : this.tryHandleArmedDebugRectPointerDown(event);
+      if (queuedArmedDebugFloodFill || handledArmedDebugLine || handledArmedDebugRect) {
         this.activeTouchHistoryTapGestureCandidate = null;
         this.activeTouchEyedropperLongPressCandidate = null;
       } else {
         this.refreshTouchHistoryTapGestureCandidateOnPointerDown(event);
         this.refreshTouchEyedropperLongPressCandidateOnPointerDown(event);
       }
-      const startedMouseDebugPaint = queuedArmedDebugFloodFill || handledArmedDebugLine
+      const startedMouseDebugPaint = queuedArmedDebugFloodFill || handledArmedDebugLine || handledArmedDebugRect
         ? false
         : this.tryStartMouseDebugPaintStroke(event);
-      const startedTouchDebugPaint = queuedArmedDebugFloodFill || handledArmedDebugLine
+      const startedTouchDebugPaint = queuedArmedDebugFloodFill || handledArmedDebugLine || handledArmedDebugRect
         ? false
         : this.tryStartTouchDebugPaintStroke(event);
       if (this.pointers.size === 1) {
-        if (queuedArmedDebugFloodFill || handledArmedDebugLine || startedMouseDebugPaint || startedTouchDebugPaint) {
+        if (
+          queuedArmedDebugFloodFill ||
+          handledArmedDebugLine ||
+          handledArmedDebugRect ||
+          startedMouseDebugPaint ||
+          startedTouchDebugPaint
+        ) {
           this.pointerActive = false;
           this.pointerId = null;
         } else {
@@ -424,6 +538,7 @@ export class InputController {
       const activeMouseDebugPaintStroke = this.activeMouseDebugPaintStroke;
       const activeTouchDebugPaintStroke = this.activeTouchDebugPaintStroke;
       const activeMouseDebugLineDrag = this.activeMouseDebugLineDrag;
+      const activeMouseDebugRectDrag = this.activeMouseDebugRectDrag;
       if (
         this.pointers.size === 1 &&
         activeMouseDebugPaintStroke &&
@@ -442,6 +557,12 @@ export class InputController {
         activeMouseDebugLineDrag.pointerId === event.pointerId
       ) {
         // Reserved for one-shot line drag endpoint capture on pointerup.
+      } else if (
+        this.pointers.size === 1 &&
+        activeMouseDebugRectDrag &&
+        activeMouseDebugRectDrag.pointerId === event.pointerId
+      ) {
+        // Reserved for one-shot rectangle drag endpoint capture on pointerup.
       } else if (this.pointers.size === 1 && this.pointerActive && this.pointerId === event.pointerId) {
         const dx = event.clientX - this.lastX;
         const dy = event.clientY - this.lastY;
@@ -474,6 +595,12 @@ export class InputController {
         }
         this.activeMouseDebugLineDrag = null;
       }
+      if (this.activeMouseDebugRectDrag?.pointerId === event.pointerId) {
+        if (!canceled) {
+          this.commitMouseDebugRectDrag(event, this.activeMouseDebugRectDrag);
+        }
+        this.activeMouseDebugRectDrag = null;
+      }
       this.pointers.delete(event.pointerId);
       this.clearTouchEyedropperLongPressCandidateForPointer(event.pointerId);
       if (this.activeMouseDebugPaintStroke?.pointerId === event.pointerId) {
@@ -505,6 +632,7 @@ export class InputController {
         this.completeDebugPaintStroke(this.activeMouseDebugPaintStroke);
         this.activeMouseDebugPaintStroke = null;
         this.activeMouseDebugLineDrag = null;
+        this.activeMouseDebugRectDrag = null;
         this.pointerInspect = null;
       } else if (event.pointerType === 'touch' && this.pointers.size === 0) {
         this.completeDebugPaintStroke(this.activeTouchDebugPaintStroke);
@@ -870,6 +998,51 @@ export class InputController {
     return true;
   }
 
+  private tryHandleArmedDebugRectPointerDown(event: PointerEvent): boolean {
+    const kind = this.armedDebugRectKind;
+    if (!kind || this.pointers.size !== 1) return false;
+    if (event.pointerType !== 'mouse' && event.pointerType !== 'touch') return false;
+
+    this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
+    const pointerInspect = this.pointerInspect;
+    if (!pointerInspect) return false;
+
+    if (pointerInspect.pointerType === 'mouse') {
+      if (event.button !== DEBUG_TILE_PLACE_MOUSE_BUTTON && event.button !== DEBUG_TILE_BREAK_MOUSE_BUTTON) {
+        return false;
+      }
+      this.activeMouseDebugRectDrag = {
+        pointerId: event.pointerId,
+        kind,
+        startTileX: pointerInspect.tile.x,
+        startTileY: pointerInspect.tile.y
+      };
+      return true;
+    }
+
+    const pendingStart = this.pendingTouchDebugRectStart;
+    if (!pendingStart || pendingStart.kind !== kind) {
+      this.pendingTouchDebugRectStart = {
+        kind,
+        tileX: pointerInspect.tile.x,
+        tileY: pointerInspect.tile.y
+      };
+      return true;
+    }
+
+    this.queueDebugRectFillRequest(
+      pendingStart.tileX,
+      pendingStart.tileY,
+      pointerInspect.tile.x,
+      pointerInspect.tile.y,
+      kind,
+      'touch'
+    );
+    this.pendingTouchDebugRectStart = null;
+    this.armedDebugRectKind = null;
+    return true;
+  }
+
   private tryQueueArmedDebugFloodFill(event: PointerEvent): boolean {
     const kind = this.armedDebugFloodFillKind;
     if (!kind || this.pointers.size !== 1) return false;
@@ -913,6 +1086,23 @@ export class InputController {
     this.pendingTouchDebugLineStart = null;
   }
 
+  private commitMouseDebugRectDrag(event: PointerEvent, drag: ActiveMouseDebugRectDrag): void {
+    this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
+    const pointerInspect = this.pointerInspect;
+    if (!pointerInspect || pointerInspect.pointerType !== 'mouse') return;
+
+    this.queueDebugRectFillRequest(
+      drag.startTileX,
+      drag.startTileY,
+      pointerInspect.tile.x,
+      pointerInspect.tile.y,
+      drag.kind,
+      'mouse'
+    );
+    this.armedDebugRectKind = null;
+    this.pendingTouchDebugRectStart = null;
+  }
+
   private queueDebugLineRequest(
     startTileX: number,
     startTileY: number,
@@ -923,6 +1113,31 @@ export class InputController {
   ): void {
     const strokeId = this.nextDebugPaintStrokeId++;
     this.debugLineQueue.push({
+      startTileX,
+      startTileY,
+      endTileX,
+      endTileY,
+      kind,
+      strokeId,
+      pointerType
+    });
+    this.completedDebugTileStrokeQueue.push({
+      strokeId,
+      kind,
+      pointerType
+    });
+  }
+
+  private queueDebugRectFillRequest(
+    startTileX: number,
+    startTileY: number,
+    endTileX: number,
+    endTileY: number,
+    kind: DebugTileEditKind,
+    pointerType: 'mouse' | 'touch'
+  ): void {
+    const strokeId = this.nextDebugPaintStrokeId++;
+    this.debugRectFillQueue.push({
       startTileX,
       startTileY,
       endTileX,

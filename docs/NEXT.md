@@ -8,5 +8,5 @@
 6. Add save/load format for chunk snapshots.
 7. Prepare networking scaffolding (state diff messages, interest management).
 8. Add a main menu shell and move debug overlay to a UI toggle.
-9. Add a debug-edit rectangle fill tool (desktop drag box + touch two-corner workflow) with stroke history integration.
+9. Add a one-shot debug-edit ellipse fill tool (desktop drag bounds + touch two-corner workflow) with stroke history integration.
 10. Add a one-shot debug-edit rectangle outline tool (desktop drag + touch two-corner workflow) with stroke history integration.
