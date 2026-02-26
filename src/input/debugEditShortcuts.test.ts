@@ -66,6 +66,17 @@ describe('resolveDebugEditShortcutAction', () => {
     });
   });
 
+  it('maps I to the eyedropper action', () => {
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'i' }))).toEqual({
+      type: 'eyedropper'
+    });
+    expect(
+      resolveDebugEditShortcutAction(keyboardEventLike({ key: 'I', shiftKey: true }))
+    ).toEqual({
+      type: 'eyedropper'
+    });
+  });
+
   it('maps digit and numpad keys to brush slots', () => {
     expect(
       resolveDebugEditShortcutAction(keyboardEventLike({ key: '1', code: 'Digit1' }))

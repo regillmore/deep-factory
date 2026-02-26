@@ -15,6 +15,7 @@ export type DebugEditShortcutAction =
   | { type: 'undo' }
   | { type: 'redo' }
   | { type: 'set-touch-mode'; mode: 'pan' | 'place' | 'break' }
+  | { type: 'eyedropper' }
   | { type: 'select-brush-slot'; slotIndex: number }
   | { type: 'cycle-brush'; delta: -1 | 1 };
 
@@ -101,6 +102,9 @@ export const resolveDebugEditShortcutAction = (
   }
   if (normalizedKey === 'b') {
     return { type: 'set-touch-mode', mode: 'break' };
+  }
+  if (normalizedKey === 'i') {
+    return { type: 'eyedropper' };
   }
 
   const code = event.code ?? '';

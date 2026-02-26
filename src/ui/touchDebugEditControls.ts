@@ -238,6 +238,13 @@ export class TouchDebugEditControls {
     historyShortcutLine.style.lineHeight = '1.35';
     shortcutSection.append(historyShortcutLine);
 
+    const eyedropperShortcutLine = document.createElement('div');
+    eyedropperShortcutLine.textContent = 'Eyedropper: press I to pick hovered tile; touch long-press in Pan mode';
+    eyedropperShortcutLine.style.color = '#d6dde8';
+    eyedropperShortcutLine.style.fontSize = '11px';
+    eyedropperShortcutLine.style.lineHeight = '1.35';
+    shortcutSection.append(eyedropperShortcutLine);
+
     const brushSection = document.createElement('div');
     brushSection.style.display = 'flex';
     brushSection.style.flexDirection = 'column';
@@ -249,6 +256,13 @@ export class TouchDebugEditControls {
     brushTitle.style.color = '#aab7c7';
     brushTitle.style.fontSize = '11px';
     brushSection.append(brushTitle);
+
+    const brushTouchHint = document.createElement('div');
+    brushTouchHint.textContent = 'Touch shortcut: long-press a tile in Pan mode to pick that brush';
+    brushTouchHint.style.color = '#d6dde8';
+    brushTouchHint.style.fontSize = '11px';
+    brushTouchHint.style.lineHeight = '1.35';
+    brushSection.append(brushTouchHint);
 
     this.activeBrushIndicator = document.createElement('div');
     this.activeBrushIndicator.style.color = '#f3f7fb';

@@ -3,6 +3,7 @@ import {
   resolveTouchDebugHistoryShortcutActionForTap,
   type DebugTouchHistoryShortcutAction
 } from './debugTouchHistoryShortcuts';
+import { resolveTouchDebugEyedropperShortcutActionForLongPress } from './debugTouchEyedropperShortcuts';
 import { clientToWorldPoint, pickScreenWorldTileFromCanvas } from './picking';
 
 const DEBUG_TILE_PLACE_MOUSE_BUTTON = 0;
@@ -23,6 +24,12 @@ export interface DebugTileEditRequest {
   worldTileX: number;
   worldTileY: number;
   kind: DebugTileEditKind;
+}
+
+export interface DebugBrushEyedropperRequest {
+  worldTileX: number;
+  worldTileY: number;
+  pointerType: 'touch';
 }
 
 export interface DebugTileStrokeEditRequest extends DebugTileEditRequest {
@@ -54,6 +61,14 @@ interface ActiveTouchHistoryTapGestureCandidate {
   initialPinchDistancePx: number | null;
   maxPointerTravelPx: number;
   maxPinchDistanceDeltaPx: number;
+}
+
+interface ActiveTouchEyedropperLongPressCandidate {
+  pointerId: number;
+  startedAtMs: number;
+  startClientX: number;
+  startClientY: number;
+  maxPointerTravelPx: number;
 }
 
 export const buildDebugTileEditRequest = (
@@ -139,11 +154,13 @@ export class InputController {
   private pointers = new Map<number, PointerEvent>();
   private pointerInspect: PointerInspectSnapshot | null = null;
   private debugTileEditQueue: DebugTileStrokeEditRequest[] = [];
+  private debugBrushEyedropperQueue: DebugBrushEyedropperRequest[] = [];
   private completedDebugTileStrokeQueue: CompletedDebugTileEditStroke[] = [];
   private debugEditHistoryShortcutQueue: DebugEditHistoryShortcutAction[] = [];
   private activeMouseDebugPaintStroke: ActiveDebugPaintStroke | null = null;
   private activeTouchDebugPaintStroke: ActiveDebugPaintStroke | null = null;
   private activeTouchHistoryTapGestureCandidate: ActiveTouchHistoryTapGestureCandidate | null = null;
+  private activeTouchEyedropperLongPressCandidate: ActiveTouchEyedropperLongPressCandidate | null = null;
   private lastTouchHistoryTapGestureTimeMs = Number.NEGATIVE_INFINITY;
   private touchDebugEditMode: TouchDebugEditMode = 'pan';
   private nextDebugPaintStrokeId = 1;
@@ -156,6 +173,8 @@ export class InputController {
   }
 
   update(dtSeconds: number): void {
+    this.maybeQueueTouchEyedropperLongPressShortcut(performance.now());
+
     const speed = 450 * dtSeconds / this.camera.zoom;
     if (this.keys.has('w') || this.keys.has('arrowup')) this.camera.pan(0, -speed);
     if (this.keys.has('s') || this.keys.has('arrowdown')) this.camera.pan(0, speed);
@@ -181,6 +200,13 @@ export class InputController {
     return edits;
   }
 
+  consumeDebugBrushEyedropperRequests(): DebugBrushEyedropperRequest[] {
+    if (this.debugBrushEyedropperQueue.length === 0) return [];
+    const requests = this.debugBrushEyedropperQueue;
+    this.debugBrushEyedropperQueue = [];
+    return requests;
+  }
+
   consumeCompletedDebugTileStrokes(): CompletedDebugTileEditStroke[] {
     if (this.completedDebugTileStrokeQueue.length === 0) return [];
     const completedStrokes = this.completedDebugTileStrokeQueue;
@@ -203,6 +229,7 @@ export class InputController {
     if (this.touchDebugEditMode === mode) return;
     this.touchDebugEditMode = mode;
     this.activeTouchHistoryTapGestureCandidate = null;
+    this.activeTouchEyedropperLongPressCandidate = null;
     this.completeDebugPaintStroke(this.activeTouchDebugPaintStroke);
     this.activeTouchDebugPaintStroke = null;
   }
@@ -227,6 +254,7 @@ export class InputController {
       this.pointers.set(event.pointerId, event);
       this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
       this.refreshTouchHistoryTapGestureCandidateOnPointerDown(event);
+      this.refreshTouchEyedropperLongPressCandidateOnPointerDown(event);
       const startedMouseDebugPaint = this.tryStartMouseDebugPaintStroke(event);
       const startedTouchDebugPaint = this.tryStartTouchDebugPaintStroke(event);
       if (this.pointers.size === 1) {
@@ -253,6 +281,7 @@ export class InputController {
 
       this.pointers.set(event.pointerId, event);
       this.updateTouchHistoryTapGestureCandidateMetrics(event);
+      this.updateTouchEyedropperLongPressCandidateMetrics(event);
 
       const activeMouseDebugPaintStroke = this.activeMouseDebugPaintStroke;
       const activeTouchDebugPaintStroke = this.activeTouchDebugPaintStroke;
@@ -293,7 +322,9 @@ export class InputController {
         this.pointers.set(event.pointerId, event);
       }
       this.updateTouchHistoryTapGestureCandidateMetrics(event);
+      this.updateTouchEyedropperLongPressCandidateMetrics(event);
       this.pointers.delete(event.pointerId);
+      this.clearTouchEyedropperLongPressCandidateForPointer(event.pointerId);
       if (this.activeMouseDebugPaintStroke?.pointerId === event.pointerId) {
         this.completeDebugPaintStroke(this.activeMouseDebugPaintStroke);
         this.activeMouseDebugPaintStroke = null;
@@ -445,6 +476,79 @@ export class InputController {
     }
   }
 
+  private refreshTouchEyedropperLongPressCandidateOnPointerDown(event: PointerEvent): void {
+    if (event.pointerType !== 'touch') return;
+
+    if (this.touchDebugEditMode !== 'pan' || this.pointers.size !== 1) {
+      this.activeTouchEyedropperLongPressCandidate = null;
+      return;
+    }
+
+    this.activeTouchEyedropperLongPressCandidate = {
+      pointerId: event.pointerId,
+      startedAtMs: performance.now(),
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      maxPointerTravelPx: 0
+    };
+  }
+
+  private updateTouchEyedropperLongPressCandidateMetrics(event: PointerEvent): void {
+    if (event.pointerType !== 'touch') return;
+
+    const candidate = this.activeTouchEyedropperLongPressCandidate;
+    if (!candidate || candidate.pointerId !== event.pointerId) return;
+
+    if (this.touchDebugEditMode !== 'pan' || this.pointers.size !== 1) {
+      this.activeTouchEyedropperLongPressCandidate = null;
+      return;
+    }
+
+    const pointerTravelPx = Math.hypot(
+      event.clientX - candidate.startClientX,
+      event.clientY - candidate.startClientY
+    );
+    if (pointerTravelPx > candidate.maxPointerTravelPx) {
+      candidate.maxPointerTravelPx = pointerTravelPx;
+    }
+  }
+
+  private clearTouchEyedropperLongPressCandidateForPointer(pointerId: number): void {
+    if (this.activeTouchEyedropperLongPressCandidate?.pointerId !== pointerId) return;
+    this.activeTouchEyedropperLongPressCandidate = null;
+  }
+
+  private maybeQueueTouchEyedropperLongPressShortcut(nowMs: number): void {
+    const candidate = this.activeTouchEyedropperLongPressCandidate;
+    if (!candidate) return;
+
+    const action = resolveTouchDebugEyedropperShortcutActionForLongPress({
+      durationMs: Math.max(0, nowMs - candidate.startedAtMs),
+      maxPointerTravelPx: candidate.maxPointerTravelPx,
+      gesturesEnabled: this.touchDebugEditMode === 'pan' && this.pointers.size === 1
+    });
+    if (action !== 'pick-brush') return;
+
+    const pointer = this.pointers.get(candidate.pointerId);
+    if (!pointer || pointer.pointerType !== 'touch') {
+      this.activeTouchEyedropperLongPressCandidate = null;
+      return;
+    }
+
+    this.updatePointerInspect(pointer.clientX, pointer.clientY, pointer.pointerType);
+    const pointerInspect = this.pointerInspect;
+    if (pointerInspect?.pointerType === 'touch') {
+      this.queueDebugBrushEyedropperRequest(pointerInspect.tile.x, pointerInspect.tile.y, 'touch');
+    }
+
+    if (this.pointerId === candidate.pointerId) {
+      this.pointerActive = false;
+      this.pointerId = null;
+    }
+
+    this.activeTouchEyedropperLongPressCandidate = null;
+  }
+
   private maybeQueueTouchHistoryTapGestureShortcutOnPointerRelease(
     event: PointerEvent,
     canceled: boolean
@@ -554,6 +658,18 @@ export class InputController {
       worldTileY,
       kind,
       strokeId
+    });
+  }
+
+  private queueDebugBrushEyedropperRequest(
+    worldTileX: number,
+    worldTileY: number,
+    pointerType: 'touch'
+  ): void {
+    this.debugBrushEyedropperQueue.push({
+      worldTileX,
+      worldTileY,
+      pointerType
     });
   }
 

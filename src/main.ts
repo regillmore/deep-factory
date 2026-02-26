@@ -39,6 +39,7 @@ const DEBUG_BRUSH_TILE_OPTIONS: readonly DebugBrushOption[] = TILE_METADATA.tile
     label: formatDebugBrushLabel(tile.name)
   }));
 const DEBUG_BRUSH_TILE_IDS = DEBUG_BRUSH_TILE_OPTIONS.map((option) => option.tileId);
+const DEBUG_BRUSH_TILE_ID_SET = new Set(DEBUG_BRUSH_TILE_IDS);
 
 if (DEBUG_BRUSH_TILE_OPTIONS.length === 0) {
   throw new Error('Tile metadata must provide at least one non-empty tile for debug editing');
@@ -174,6 +175,12 @@ const bootstrap = async (): Promise<void> => {
     return activeDebugBrushTileId !== previousBrushTileId;
   };
 
+  const applyDebugBrushEyedropperAtTile = (worldTileX: number, worldTileY: number): boolean => {
+    const tileId = renderer.getTile(worldTileX, worldTileY);
+    if (!DEBUG_BRUSH_TILE_ID_SET.has(tileId)) return false;
+    return applyDebugBrushShortcutTileId(tileId);
+  };
+
   window.addEventListener('keydown', (event) => {
     if (event.defaultPrevented) return;
     if (isEditableKeyboardShortcutTarget(event.target)) return;
@@ -201,6 +208,12 @@ const bootstrap = async (): Promise<void> => {
     } else if (action.type === 'select-brush-slot') {
       const tileId = getDebugBrushTileIdForShortcutSlot(DEBUG_BRUSH_TILE_OPTIONS, action.slotIndex);
       handled = tileId !== null ? applyDebugBrushShortcutTileId(tileId) : false;
+    } else if (action.type === 'eyedropper') {
+      const pointerInspect = input.getPointerInspect();
+      handled =
+        pointerInspect?.pointerType === 'mouse'
+          ? applyDebugBrushEyedropperAtTile(pointerInspect.tile.x, pointerInspect.tile.y)
+          : false;
     } else {
       const tileId = cycleDebugBrushTileId(DEBUG_BRUSH_TILE_OPTIONS, activeDebugBrushTileId, action.delta);
       handled = tileId !== null ? applyDebugBrushShortcutTileId(tileId) : false;
@@ -231,6 +244,10 @@ const bootstrap = async (): Promise<void> => {
           previousTileId,
           tileId
         );
+      }
+
+      for (const eyedropperRequest of input.consumeDebugBrushEyedropperRequests()) {
+        applyDebugBrushEyedropperAtTile(eyedropperRequest.worldTileX, eyedropperRequest.worldTileY);
       }
 
       let historyChanged = false;

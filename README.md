@@ -30,6 +30,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - On-screen debug edit controls: click `Undo` / `Redo` to revert or reapply the last debug paint stroke
 - Debug touch mode shortcuts (shared `Pan` / `Place` / `Break` state): `P` pan, `L` place, `B` break
 - Debug edit brush shortcuts: `1`-`0` select visible brush slots, `[` / `]` cycle active brush
+- Debug eyedropper shortcut: `I` sets the active brush from the hovered tile (non-empty tiles)
 - Debug edit history shortcuts: `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` redo
 - Mouse drag: debug paint on hovered tile cursor (`left` place active brush / `right` break, line-stepped + per-tile deduped)
 - `Shift` + mouse drag: pan
@@ -41,6 +42,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - On-screen debug edit controls: tap `Reset Prefs` to restore default touch mode/brush and clear saved debug edit prefs
 - On-screen debug edit controls: touch `Undo` / `Redo` buttons revert or reapply the last debug paint stroke
 - Touch history gestures (`Pan` mode): `two-finger tap` undo / `three-finger tap` redo (debounced; stationary taps avoid pinch conflicts)
+- Touch eyedropper gesture (`Pan` mode): `long-press` a tile to set the active brush from that tile (non-empty tiles)
 - One-finger drag: pan (`Pan` mode)
 - One-finger drag: debug paint active brush / break hovered tile (`Place` / `Break` mode, line-stepped + per-tile deduped)
 - Two-finger pinch: zoom (works while touch debug edit modes are active)
@@ -81,6 +83,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Shared debug edit controls now also surface keyboard touch-mode bindings (`P` pan / `L` place / `B` break), and desktop shortcuts toggle the same `Pan` / `Place` / `Break` state as the on-screen UI.
 - Shared debug edit control state (`touch mode` + active brush tile) now persists across reloads via local storage, with a safe brush fallback when tile metadata no longer contains the saved tile ID.
 - Shared debug edit controls now include a `Reset Prefs` action that restores the default touch mode/brush and clears persisted debug edit control state.
+- Debug eyedropper now supports keyboard `I` (desktop hovered tile) and touch long-press in `Pan` mode to set the active brush from world tiles.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.
