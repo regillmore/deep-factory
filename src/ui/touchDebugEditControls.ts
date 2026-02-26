@@ -5,12 +5,20 @@ export interface DebugBrushOption {
   label: string;
 }
 
+export interface DebugEditHistoryControlState {
+  undoStrokeCount: number;
+  redoStrokeCount: number;
+}
+
 interface TouchDebugEditControlsOptions {
   initialMode?: TouchDebugEditMode;
   onModeChange?: (mode: TouchDebugEditMode) => void;
   brushOptions?: readonly DebugBrushOption[];
   initialBrushTileId?: number;
   onBrushTileIdChange?: (tileId: number) => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  initialHistoryState?: DebugEditHistoryControlState;
 }
 
 const TOUCH_DEBUG_BUTTON_ORDER: readonly TouchDebugEditMode[] = ['pan', 'place', 'break'];
@@ -29,8 +37,14 @@ export class TouchDebugEditControls {
   private brushTileId: number;
   private brushOptions: readonly DebugBrushOption[];
   private activeBrushIndicator: HTMLDivElement;
+  private undoButton: HTMLButtonElement;
+  private redoButton: HTMLButtonElement;
+  private undoStrokeCount = 0;
+  private redoStrokeCount = 0;
   private onModeChange: (mode: TouchDebugEditMode) => void;
   private onBrushTileIdChange: (tileId: number) => void;
+  private onUndo: () => void;
+  private onRedo: () => void;
 
   constructor(options: TouchDebugEditControlsOptions = {}) {
     this.mode = options.initialMode ?? 'pan';
@@ -39,6 +53,10 @@ export class TouchDebugEditControls {
     const fallbackBrushTileId = this.brushOptions[0]?.tileId ?? 0;
     this.brushTileId = options.initialBrushTileId ?? fallbackBrushTileId;
     this.onBrushTileIdChange = options.onBrushTileIdChange ?? (() => {});
+    this.onUndo = options.onUndo ?? (() => {});
+    this.onRedo = options.onRedo ?? (() => {});
+    this.undoStrokeCount = Math.max(0, options.initialHistoryState?.undoStrokeCount ?? 0);
+    this.redoStrokeCount = Math.max(0, options.initialHistoryState?.redoStrokeCount ?? 0);
 
     this.root = document.createElement('div');
     this.root.style.position = 'fixed';
@@ -97,6 +115,51 @@ export class TouchDebugEditControls {
       this.buttons.set(mode, button);
     }
 
+    const historySection = document.createElement('div');
+    historySection.style.display = 'flex';
+    historySection.style.flexDirection = 'column';
+    historySection.style.gap = '6px';
+    this.root.append(historySection);
+
+    const historyTitle = document.createElement('div');
+    historyTitle.textContent = 'History';
+    historyTitle.style.color = '#aab7c7';
+    historyTitle.style.fontSize = '11px';
+    historySection.append(historyTitle);
+
+    const historyRow = document.createElement('div');
+    historyRow.style.display = 'flex';
+    historyRow.style.gap = '6px';
+    historySection.append(historyRow);
+
+    this.undoButton = document.createElement('button');
+    this.undoButton.type = 'button';
+    this.undoButton.addEventListener('click', () => this.onUndo());
+    this.undoButton.style.padding = '6px 8px';
+    this.undoButton.style.borderRadius = '8px';
+    this.undoButton.style.border = '1px solid rgba(255, 255, 255, 0.16)';
+    this.undoButton.style.background = 'rgba(255, 255, 255, 0.06)';
+    this.undoButton.style.color = '#f3f7fb';
+    this.undoButton.style.fontFamily = 'inherit';
+    this.undoButton.style.fontSize = '12px';
+    this.undoButton.style.cursor = 'pointer';
+    this.undoButton.style.touchAction = 'manipulation';
+    historyRow.append(this.undoButton);
+
+    this.redoButton = document.createElement('button');
+    this.redoButton.type = 'button';
+    this.redoButton.addEventListener('click', () => this.onRedo());
+    this.redoButton.style.padding = '6px 8px';
+    this.redoButton.style.borderRadius = '8px';
+    this.redoButton.style.border = '1px solid rgba(255, 255, 255, 0.16)';
+    this.redoButton.style.background = 'rgba(255, 255, 255, 0.06)';
+    this.redoButton.style.color = '#f3f7fb';
+    this.redoButton.style.fontFamily = 'inherit';
+    this.redoButton.style.fontSize = '12px';
+    this.redoButton.style.cursor = 'pointer';
+    this.redoButton.style.touchAction = 'manipulation';
+    historyRow.append(this.redoButton);
+
     const brushSection = document.createElement('div');
     brushSection.style.display = 'flex';
     brushSection.style.flexDirection = 'column';
@@ -153,6 +216,7 @@ export class TouchDebugEditControls {
     }
 
     this.syncButtonState();
+    this.syncHistoryState();
     this.syncBrushState();
     document.body.append(this.root);
   }
@@ -176,6 +240,12 @@ export class TouchDebugEditControls {
     return this.brushTileId;
   }
 
+  setHistoryState(historyState: DebugEditHistoryControlState): void {
+    this.undoStrokeCount = Math.max(0, historyState.undoStrokeCount);
+    this.redoStrokeCount = Math.max(0, historyState.redoStrokeCount);
+    this.syncHistoryState();
+  }
+
   private syncButtonState(): void {
     for (const [mode, button] of this.buttons) {
       const active = this.mode === mode;
@@ -184,6 +254,21 @@ export class TouchDebugEditControls {
       button.style.borderColor = active ? 'rgba(130, 200, 255, 0.7)' : 'rgba(255, 255, 255, 0.16)';
       button.style.color = active ? '#ffffff' : '#f3f7fb';
     }
+  }
+
+  private syncHistoryState(): void {
+    const canUndo = this.undoStrokeCount > 0;
+    const canRedo = this.redoStrokeCount > 0;
+
+    this.undoButton.textContent = `Undo (${this.undoStrokeCount})`;
+    this.undoButton.disabled = !canUndo;
+    this.undoButton.style.opacity = canUndo ? '1' : '0.5';
+    this.undoButton.style.cursor = canUndo ? 'pointer' : 'default';
+
+    this.redoButton.textContent = `Redo (${this.redoStrokeCount})`;
+    this.redoButton.disabled = !canRedo;
+    this.redoButton.style.opacity = canRedo ? '1' : '0.5';
+    this.redoButton.style.cursor = canRedo ? 'pointer' : 'default';
   }
 
   private syncBrushState(): void {

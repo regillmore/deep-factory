@@ -21,8 +21,20 @@ export interface DebugTileEditRequest {
   kind: DebugTileEditKind;
 }
 
+export interface DebugTileStrokeEditRequest extends DebugTileEditRequest {
+  strokeId: number;
+}
+
+export interface CompletedDebugTileEditStroke {
+  strokeId: number;
+  kind: DebugTileEditKind;
+  pointerType: 'mouse' | 'touch';
+}
+
 interface ActiveDebugPaintStroke {
+  id: number;
   pointerId: number;
+  pointerType: 'mouse' | 'touch';
   kind: DebugTileEditKind;
   paintedTileKeys: Set<string>;
   lastPaintedTile: { x: number; y: number } | null;
@@ -110,10 +122,12 @@ export class InputController {
   private pinchDistance = 0;
   private pointers = new Map<number, PointerEvent>();
   private pointerInspect: PointerInspectSnapshot | null = null;
-  private debugTileEditQueue: DebugTileEditRequest[] = [];
+  private debugTileEditQueue: DebugTileStrokeEditRequest[] = [];
+  private completedDebugTileStrokeQueue: CompletedDebugTileEditStroke[] = [];
   private activeMouseDebugPaintStroke: ActiveDebugPaintStroke | null = null;
   private activeTouchDebugPaintStroke: ActiveDebugPaintStroke | null = null;
   private touchDebugEditMode: TouchDebugEditMode = 'pan';
+  private nextDebugPaintStrokeId = 1;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -141,11 +155,18 @@ export class InputController {
     return this.pointerInspect;
   }
 
-  consumeDebugTileEdits(): DebugTileEditRequest[] {
+  consumeDebugTileEdits(): DebugTileStrokeEditRequest[] {
     if (this.debugTileEditQueue.length === 0) return [];
     const edits = this.debugTileEditQueue;
     this.debugTileEditQueue = [];
     return edits;
+  }
+
+  consumeCompletedDebugTileStrokes(): CompletedDebugTileEditStroke[] {
+    if (this.completedDebugTileStrokeQueue.length === 0) return [];
+    const completedStrokes = this.completedDebugTileStrokeQueue;
+    this.completedDebugTileStrokeQueue = [];
+    return completedStrokes;
   }
 
   getTouchDebugEditMode(): TouchDebugEditMode {
@@ -155,6 +176,7 @@ export class InputController {
   setTouchDebugEditMode(mode: TouchDebugEditMode): void {
     if (this.touchDebugEditMode === mode) return;
     this.touchDebugEditMode = mode;
+    this.completeDebugPaintStroke(this.activeTouchDebugPaintStroke);
     this.activeTouchDebugPaintStroke = null;
   }
 
@@ -240,9 +262,11 @@ export class InputController {
     const release = (event: PointerEvent): void => {
       this.pointers.delete(event.pointerId);
       if (this.activeMouseDebugPaintStroke?.pointerId === event.pointerId) {
+        this.completeDebugPaintStroke(this.activeMouseDebugPaintStroke);
         this.activeMouseDebugPaintStroke = null;
       }
       if (this.activeTouchDebugPaintStroke?.pointerId === event.pointerId) {
+        this.completeDebugPaintStroke(this.activeTouchDebugPaintStroke);
         this.activeTouchDebugPaintStroke = null;
       }
       if (this.pointerId === event.pointerId) {
@@ -261,9 +285,11 @@ export class InputController {
     this.canvas.addEventListener('pointercancel', release);
     this.canvas.addEventListener('pointerleave', (event) => {
       if (event.pointerType === 'mouse' && this.pointers.size === 0) {
+        this.completeDebugPaintStroke(this.activeMouseDebugPaintStroke);
         this.activeMouseDebugPaintStroke = null;
         this.pointerInspect = null;
       } else if (event.pointerType === 'touch' && this.pointers.size === 0) {
+        this.completeDebugPaintStroke(this.activeTouchDebugPaintStroke);
         this.activeTouchDebugPaintStroke = null;
       }
     });
@@ -275,7 +301,9 @@ export class InputController {
     if (!kind || this.pointers.size !== 1) return false;
 
     const stroke: ActiveDebugPaintStroke = {
+      id: this.nextDebugPaintStrokeId++,
       pointerId: event.pointerId,
+      pointerType: 'mouse',
       kind,
       paintedTileKeys: new Set<string>(),
       lastPaintedTile: null
@@ -290,7 +318,9 @@ export class InputController {
     if (!kind || this.pointers.size !== 1) return false;
 
     const stroke: ActiveDebugPaintStroke = {
+      id: this.nextDebugPaintStrokeId++,
       pointerId: event.pointerId,
+      pointerType: 'touch',
       kind,
       paintedTileKeys: new Set<string>(),
       lastPaintedTile: null
@@ -344,11 +374,11 @@ export class InputController {
         currentTileX,
         currentTileY,
         (tileX, tileY) => {
-          this.queueDebugTileEdit(tileX, tileY, stroke.kind, stroke.paintedTileKeys);
+          this.queueDebugTileEdit(tileX, tileY, stroke.kind, stroke.id, stroke.paintedTileKeys);
         }
       );
     } else {
-      this.queueDebugTileEdit(currentTileX, currentTileY, stroke.kind, stroke.paintedTileKeys);
+      this.queueDebugTileEdit(currentTileX, currentTileY, stroke.kind, stroke.id, stroke.paintedTileKeys);
     }
 
     stroke.lastPaintedTile = { x: currentTileX, y: currentTileY };
@@ -358,13 +388,24 @@ export class InputController {
     worldTileX: number,
     worldTileY: number,
     kind: DebugTileEditKind,
+    strokeId: number,
     seenTiles?: Set<string>
   ): void {
     if (seenTiles && !markDebugPaintTileSeen(worldTileX, worldTileY, seenTiles)) return;
     this.debugTileEditQueue.push({
       worldTileX,
       worldTileY,
-      kind
+      kind,
+      strokeId
+    });
+  }
+
+  private completeDebugPaintStroke(stroke: ActiveDebugPaintStroke | null): void {
+    if (!stroke) return;
+    this.completedDebugTileStrokeQueue.push({
+      strokeId: stroke.id,
+      kind: stroke.kind,
+      pointerType: stroke.pointerType
     });
   }
 }

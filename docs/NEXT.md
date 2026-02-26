@@ -8,5 +8,5 @@
 6. Add save/load format for chunk snapshots.
 7. Prepare networking scaffolding (state diff messages, interest management).
 8. Add a main menu shell and move debug overlay to a UI toggle.
-9. Add stroke-level undo/redo for debug tile edits (desktop mouse + touch paint strokes) to speed iteration while testing world systems.
-10. Add keyboard shortcuts for shared debug edit controls (brush slot hotkeys/cycle + undo/redo bindings) and surface the bindings in the debug UI.
+9. Add keyboard shortcuts for shared debug edit controls (brush slot hotkeys/cycle + undo/redo bindings) and surface the bindings in the debug UI.
+10. Add touch gesture shortcuts for debug edit history (`two-finger tap` undo / `three-finger tap` redo) with debounce/conflict guards so they do not fight pinch zoom.

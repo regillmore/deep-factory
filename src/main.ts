@@ -4,6 +4,7 @@ import { Camera2D } from './core/camera2d';
 import { GameLoop } from './core/gameLoop';
 import { Renderer } from './gl/renderer';
 import { InputController } from './input/controller';
+import { DebugTileEditHistory } from './input/debugTileEditHistory';
 import { DebugOverlay } from './ui/debugOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import { TouchDebugEditControls, type DebugBrushOption } from './ui/touchDebugEditControls';
@@ -53,16 +54,45 @@ const bootstrap = async (): Promise<void> => {
   const input = new InputController(canvas, camera);
   const debug = new DebugOverlay();
   const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
+  const debugTileEditHistory = new DebugTileEditHistory();
   let activeDebugBrushTileId = INITIAL_DEBUG_BRUSH_TILE_ID;
-  new TouchDebugEditControls({
+  let debugEditControls: TouchDebugEditControls | null = null;
+
+  const syncDebugEditHistoryControls = (): void => {
+    if (!debugEditControls) return;
+    const historyStatus = debugTileEditHistory.getStatus();
+    debugEditControls.setHistoryState({
+      undoStrokeCount: historyStatus.undoStrokeCount,
+      redoStrokeCount: historyStatus.redoStrokeCount
+    });
+  };
+
+  const applyDebugHistoryTile = (worldTileX: number, worldTileY: number, tileId: number): void => {
+    renderer.setTile(worldTileX, worldTileY, tileId);
+  };
+
+  const undoDebugTileStroke = (): void => {
+    if (!debugTileEditHistory.undo(applyDebugHistoryTile)) return;
+    syncDebugEditHistoryControls();
+  };
+
+  const redoDebugTileStroke = (): void => {
+    if (!debugTileEditHistory.redo(applyDebugHistoryTile)) return;
+    syncDebugEditHistoryControls();
+  };
+
+  debugEditControls = new TouchDebugEditControls({
     initialMode: input.getTouchDebugEditMode(),
     onModeChange: (mode) => input.setTouchDebugEditMode(mode),
     brushOptions: DEBUG_BRUSH_TILE_OPTIONS,
     initialBrushTileId: activeDebugBrushTileId,
     onBrushTileIdChange: (tileId) => {
       activeDebugBrushTileId = tileId;
-    }
+    },
+    onUndo: undoDebugTileStroke,
+    onRedo: redoDebugTileStroke
   });
+  syncDebugEditHistoryControls();
 
   await renderer.initialize();
   renderer.resize();
@@ -75,7 +105,25 @@ const bootstrap = async (): Promise<void> => {
       input.update(fixedDt);
       for (const edit of input.consumeDebugTileEdits()) {
         const tileId = edit.kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
-        renderer.setTile(edit.worldTileX, edit.worldTileY, tileId);
+        const previousTileId = renderer.getTile(edit.worldTileX, edit.worldTileY);
+        const changed = renderer.setTile(edit.worldTileX, edit.worldTileY, tileId);
+        if (!changed) continue;
+
+        debugTileEditHistory.recordAppliedEdit(
+          edit.strokeId,
+          edit.worldTileX,
+          edit.worldTileY,
+          previousTileId,
+          tileId
+        );
+      }
+
+      let historyChanged = false;
+      for (const completedStroke of input.consumeCompletedDebugTileStrokes()) {
+        historyChanged = debugTileEditHistory.completeStroke(completedStroke.strokeId) || historyChanged;
+      }
+      if (historyChanged) {
+        syncDebugEditHistoryControls();
       }
     },
     (_alpha, frameDtMs) => {

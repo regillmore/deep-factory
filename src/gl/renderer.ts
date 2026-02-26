@@ -189,6 +189,10 @@ export class Renderer {
     return this.world.setTile(worldTileX, worldTileY, tileId);
   }
 
+  getTile(worldTileX: number, worldTileY: number): number {
+    return this.world.getTile(worldTileX, worldTileY);
+  }
+
   private getReadyChunkMesh(chunkX: number, chunkY: number): ChunkGpuMesh | null {
     const key = chunkKey(chunkX, chunkY);
     const cached = this.meshes.get(key);

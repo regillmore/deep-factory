@@ -25,6 +25,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 ### Desktop
 - Move camera: `WASD` or arrow keys
 - On-screen debug edit controls: click a brush tile to set the active place brush (shared with touch)
+- On-screen debug edit controls: click `Undo` / `Redo` to revert or reapply the last debug paint stroke
 - Mouse drag: debug paint on hovered tile cursor (`left` place active brush / `right` break, line-stepped + per-tile deduped)
 - `Shift` + mouse drag: pan
 - Mouse wheel: zoom in/out
@@ -32,6 +33,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 
 ### Mobile / touch
 - On-screen debug edit controls: touch mode buttons (`Pan` / `Place` / `Break`) + shared brush palette
+- On-screen debug edit controls: touch `Undo` / `Redo` buttons revert or reapply the last debug paint stroke
 - One-finger drag: pan (`Pan` mode)
 - One-finger drag: debug paint active brush / break hovered tile (`Place` / `Break` mode, line-stepped + per-tile deduped)
 - Two-finger pinch: zoom (works while touch debug edit modes are active)
@@ -66,6 +68,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - A hovered-tile cursor highlight overlay now renders in client space from world tile coordinates (camera + DPR aware), de-risking world-space cursor visuals before tile editing.
 - Desktop debug tile editing now supports hovered-tile drag painting (`left` place / `right` break) with per-stroke line-stepped interpolation, per-tile dedupe, and a `Shift`-drag pan override, wired through the shared picking path.
 - Shared on-screen debug edit controls now support touch `Pan` / `Place` / `Break` mode switching plus a metadata-driven brush palette with an active brush indicator used by both desktop and touch place edits.
+- Debug tile editing now records per-stroke tile deltas (desktop mouse and touch paint strokes) with shared on-screen `Undo` / `Redo` controls for fast iteration while testing world systems.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.
