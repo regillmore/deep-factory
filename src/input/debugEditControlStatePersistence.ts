@@ -3,6 +3,7 @@ import type { TouchDebugEditMode } from './controller';
 export interface DebugEditControlState {
   touchMode: TouchDebugEditMode;
   brushTileId: number;
+  panelCollapsed: boolean;
 }
 
 interface StorageLike {
@@ -18,6 +19,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const isTouchDebugEditMode = (value: unknown): value is TouchDebugEditMode =>
   value === 'pan' || value === 'place' || value === 'break';
+
+const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
 
 const isValidBrushTileId = (value: unknown, validBrushTileIds: ReadonlySet<number>): value is number =>
   typeof value === 'number' && Number.isInteger(value) && validBrushTileIds.has(value);
@@ -54,10 +57,14 @@ export const loadDebugEditControlState = (
   const brushTileId = isValidBrushTileId(parsed.brushTileId, validBrushTileIdSet)
     ? parsed.brushTileId
     : fallbackState.brushTileId;
+  const panelCollapsed = isBoolean(parsed.panelCollapsed)
+    ? parsed.panelCollapsed
+    : fallbackState.panelCollapsed;
 
   return {
     touchMode,
-    brushTileId
+    brushTileId,
+    panelCollapsed
   };
 };
 

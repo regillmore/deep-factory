@@ -17,6 +17,8 @@ interface TouchDebugEditControlsOptions {
   brushOptions?: readonly DebugBrushOption[];
   initialBrushTileId?: number;
   onBrushTileIdChange?: (tileId: number) => void;
+  initialCollapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
   onUndo?: () => void;
   onRedo?: () => void;
   onResetPrefs?: () => void;
@@ -33,10 +35,13 @@ const buttonLabelForMode = (mode: TouchDebugEditMode): string => {
 
 export class TouchDebugEditControls {
   private root: HTMLDivElement;
+  private content: HTMLDivElement;
+  private collapseToggleButton: HTMLButtonElement;
   private buttons = new Map<TouchDebugEditMode, HTMLButtonElement>();
   private brushButtons = new Map<number, HTMLButtonElement>();
   private mode: TouchDebugEditMode;
   private brushTileId: number;
+  private collapsed: boolean;
   private brushOptions: readonly DebugBrushOption[];
   private activeBrushIndicator: HTMLDivElement;
   private undoButton: HTMLButtonElement;
@@ -45,6 +50,7 @@ export class TouchDebugEditControls {
   private redoStrokeCount = 0;
   private onModeChange: (mode: TouchDebugEditMode) => void;
   private onBrushTileIdChange: (tileId: number) => void;
+  private onCollapsedChange: (collapsed: boolean) => void;
   private onUndo: () => void;
   private onRedo: () => void;
   private onResetPrefs: () => void;
@@ -56,6 +62,8 @@ export class TouchDebugEditControls {
     const fallbackBrushTileId = this.brushOptions[0]?.tileId ?? 0;
     this.brushTileId = options.initialBrushTileId ?? fallbackBrushTileId;
     this.onBrushTileIdChange = options.onBrushTileIdChange ?? (() => {});
+    this.collapsed = options.initialCollapsed ?? false;
+    this.onCollapsedChange = options.onCollapsedChange ?? (() => {});
     this.onUndo = options.onUndo ?? (() => {});
     this.onRedo = options.onRedo ?? (() => {});
     this.onResetPrefs = options.onResetPrefs ?? (() => {});
@@ -80,25 +88,52 @@ export class TouchDebugEditControls {
     this.root.style.userSelect = 'none';
     this.root.style.maxWidth = 'min(360px, calc(100vw - 24px))';
 
+    const headerRow = document.createElement('div');
+    headerRow.style.display = 'flex';
+    headerRow.style.alignItems = 'center';
+    headerRow.style.justifyContent = 'space-between';
+    headerRow.style.gap = '8px';
+    this.root.append(headerRow);
+
     const title = document.createElement('div');
     title.textContent = 'Debug Edit';
     title.style.color = '#d6dde8';
     title.style.fontSize = '11px';
     title.style.letterSpacing = '0.04em';
     title.style.textTransform = 'uppercase';
-    this.root.append(title);
+    headerRow.append(title);
+
+    this.collapseToggleButton = document.createElement('button');
+    this.collapseToggleButton.type = 'button';
+    this.collapseToggleButton.style.padding = '4px 8px';
+    this.collapseToggleButton.style.borderRadius = '8px';
+    this.collapseToggleButton.style.border = '1px solid rgba(255, 255, 255, 0.16)';
+    this.collapseToggleButton.style.background = 'rgba(255, 255, 255, 0.06)';
+    this.collapseToggleButton.style.color = '#f3f7fb';
+    this.collapseToggleButton.style.fontFamily = 'inherit';
+    this.collapseToggleButton.style.fontSize = '11px';
+    this.collapseToggleButton.style.cursor = 'pointer';
+    this.collapseToggleButton.style.touchAction = 'manipulation';
+    this.collapseToggleButton.addEventListener('click', () => this.setCollapsed(!this.collapsed));
+    headerRow.append(this.collapseToggleButton);
+
+    this.content = document.createElement('div');
+    this.content.style.display = 'flex';
+    this.content.style.flexDirection = 'column';
+    this.content.style.gap = '6px';
+    this.root.append(this.content);
 
     const modeLabel = document.createElement('div');
     modeLabel.textContent = 'Touch Mode';
     modeLabel.style.color = '#aab7c7';
     modeLabel.style.fontSize = '11px';
-    this.root.append(modeLabel);
+    this.content.append(modeLabel);
 
     const row = document.createElement('div');
     row.style.display = 'flex';
     row.style.flexWrap = 'wrap';
     row.style.gap = '6px';
-    this.root.append(row);
+    this.content.append(row);
 
     for (const mode of TOUCH_DEBUG_BUTTON_ORDER) {
       const modeLabel = buttonLabelForMode(mode);
@@ -126,7 +161,7 @@ export class TouchDebugEditControls {
     historySection.style.display = 'flex';
     historySection.style.flexDirection = 'column';
     historySection.style.gap = '6px';
-    this.root.append(historySection);
+    this.content.append(historySection);
 
     const historyTitle = document.createElement('div');
     historyTitle.textContent = 'History';
@@ -181,7 +216,7 @@ export class TouchDebugEditControls {
     prefsSection.style.display = 'flex';
     prefsSection.style.flexDirection = 'column';
     prefsSection.style.gap = '6px';
-    this.root.append(prefsSection);
+    this.content.append(prefsSection);
 
     const prefsTitle = document.createElement('div');
     prefsTitle.textContent = 'Prefs';
@@ -192,7 +227,8 @@ export class TouchDebugEditControls {
     const resetPrefsButton = document.createElement('button');
     resetPrefsButton.type = 'button';
     resetPrefsButton.textContent = 'Reset Prefs';
-    resetPrefsButton.title = 'Restore default touch mode + brush and clear saved debug edit control prefs';
+    resetPrefsButton.title =
+      'Restore default touch mode, brush, and panel visibility; clear saved debug edit control prefs';
     resetPrefsButton.addEventListener('click', () => this.onResetPrefs());
     resetPrefsButton.style.padding = '6px 8px';
     resetPrefsButton.style.borderRadius = '8px';
@@ -209,7 +245,7 @@ export class TouchDebugEditControls {
     shortcutSection.style.display = 'flex';
     shortcutSection.style.flexDirection = 'column';
     shortcutSection.style.gap = '4px';
-    this.root.append(shortcutSection);
+    this.content.append(shortcutSection);
 
     const shortcutTitle = document.createElement('div');
     shortcutTitle.textContent = 'Keyboard';
@@ -249,7 +285,7 @@ export class TouchDebugEditControls {
     brushSection.style.display = 'flex';
     brushSection.style.flexDirection = 'column';
     brushSection.style.gap = '6px';
-    this.root.append(brushSection);
+    this.content.append(brushSection);
 
     const brushTitle = document.createElement('div');
     brushTitle.textContent = 'Brush Palette';
@@ -313,6 +349,7 @@ export class TouchDebugEditControls {
     this.syncButtonState();
     this.syncHistoryState();
     this.syncBrushState();
+    this.syncCollapsedState();
     document.body.append(this.root);
   }
 
@@ -333,6 +370,17 @@ export class TouchDebugEditControls {
 
   getBrushTileId(): number {
     return this.brushTileId;
+  }
+
+  isCollapsed(): boolean {
+    return this.collapsed;
+  }
+
+  setCollapsed(collapsed: boolean): void {
+    if (this.collapsed === collapsed) return;
+    this.collapsed = collapsed;
+    this.syncCollapsedState();
+    this.onCollapsedChange(collapsed);
   }
 
   setHistoryState(historyState: DebugEditHistoryControlState): void {
@@ -364,6 +412,15 @@ export class TouchDebugEditControls {
     this.redoButton.disabled = !canRedo;
     this.redoButton.style.opacity = canRedo ? '1' : '0.5';
     this.redoButton.style.cursor = canRedo ? 'pointer' : 'default';
+  }
+
+  private syncCollapsedState(): void {
+    this.content.style.display = this.collapsed ? 'none' : 'flex';
+    this.collapseToggleButton.textContent = this.collapsed ? 'Expand' : 'Collapse';
+    this.collapseToggleButton.title = this.collapsed
+      ? 'Expand debug edit controls'
+      : 'Collapse debug edit controls';
+    this.collapseToggleButton.setAttribute('aria-expanded', this.collapsed ? 'false' : 'true');
   }
 
   private syncBrushState(): void {

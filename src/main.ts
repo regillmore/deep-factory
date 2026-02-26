@@ -83,7 +83,8 @@ const bootstrap = async (): Promise<void> => {
   })();
   const defaultDebugEditControlState = {
     touchMode: input.getTouchDebugEditMode(),
-    brushTileId: INITIAL_DEBUG_BRUSH_TILE_ID
+    brushTileId: INITIAL_DEBUG_BRUSH_TILE_ID,
+    panelCollapsed: false
   } as const;
   const initialDebugEditControlState = loadDebugEditControlState(
     debugEditControlStorage,
@@ -92,6 +93,7 @@ const bootstrap = async (): Promise<void> => {
   );
   input.setTouchDebugEditMode(initialDebugEditControlState.touchMode);
   let activeDebugBrushTileId = initialDebugEditControlState.brushTileId;
+  let debugEditPanelCollapsed = initialDebugEditControlState.panelCollapsed;
   let debugEditControls: TouchDebugEditControls | null = null;
   let suppressDebugEditControlPersistence = false;
 
@@ -99,7 +101,8 @@ const bootstrap = async (): Promise<void> => {
     if (suppressDebugEditControlPersistence) return;
     saveDebugEditControlState(debugEditControlStorage, {
       touchMode: input.getTouchDebugEditMode(),
-      brushTileId: activeDebugBrushTileId
+      brushTileId: activeDebugBrushTileId,
+      panelCollapsed: debugEditPanelCollapsed
     });
   };
 
@@ -109,9 +112,11 @@ const bootstrap = async (): Promise<void> => {
       if (debugEditControls) {
         debugEditControls.setMode(defaultDebugEditControlState.touchMode);
         debugEditControls.setBrushTileId(defaultDebugEditControlState.brushTileId);
+        debugEditControls.setCollapsed(defaultDebugEditControlState.panelCollapsed);
       } else {
         input.setTouchDebugEditMode(defaultDebugEditControlState.touchMode);
         activeDebugBrushTileId = defaultDebugEditControlState.brushTileId;
+        debugEditPanelCollapsed = defaultDebugEditControlState.panelCollapsed;
       }
     } finally {
       suppressDebugEditControlPersistence = false;
@@ -155,6 +160,11 @@ const bootstrap = async (): Promise<void> => {
     initialBrushTileId: activeDebugBrushTileId,
     onBrushTileIdChange: (tileId) => {
       activeDebugBrushTileId = tileId;
+      persistDebugEditControlsState();
+    },
+    initialCollapsed: debugEditPanelCollapsed,
+    onCollapsedChange: (collapsed) => {
+      debugEditPanelCollapsed = collapsed;
       persistDebugEditControlsState();
     },
     onUndo: undoDebugTileStroke,
