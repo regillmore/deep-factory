@@ -145,7 +145,7 @@ export class TouchDebugEditControls {
     this.undoButton.style.fontSize = '12px';
     this.undoButton.style.cursor = 'pointer';
     this.undoButton.style.touchAction = 'manipulation';
-    this.undoButton.title = 'Undo last debug paint stroke (Ctrl/Cmd+Z)';
+    this.undoButton.title = 'Undo last debug paint stroke (Ctrl/Cmd+Z or two-finger tap in Pan mode)';
     historyRow.append(this.undoButton);
 
     this.redoButton = document.createElement('button');
@@ -160,8 +160,16 @@ export class TouchDebugEditControls {
     this.redoButton.style.fontSize = '12px';
     this.redoButton.style.cursor = 'pointer';
     this.redoButton.style.touchAction = 'manipulation';
-    this.redoButton.title = 'Redo debug paint stroke (Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y)';
+    this.redoButton.title =
+      'Redo debug paint stroke (Ctrl/Cmd+Shift+Z / Ctrl/Cmd+Y or three-finger tap in Pan mode)';
     historyRow.append(this.redoButton);
+
+    const touchHistoryShortcutLine = document.createElement('div');
+    touchHistoryShortcutLine.textContent = 'Touch: two-finger tap undo, three-finger tap redo (Pan mode)';
+    touchHistoryShortcutLine.style.color = '#d6dde8';
+    touchHistoryShortcutLine.style.fontSize = '11px';
+    touchHistoryShortcutLine.style.lineHeight = '1.35';
+    historySection.append(touchHistoryShortcutLine);
 
     const shortcutSection = document.createElement('div');
     shortcutSection.style.display = 'flex';

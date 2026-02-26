@@ -1,4 +1,8 @@
 import { Camera2D } from '../core/camera2d';
+import {
+  resolveTouchDebugHistoryShortcutActionForTap,
+  type DebugTouchHistoryShortcutAction
+} from './debugTouchHistoryShortcuts';
 import { clientToWorldPoint, pickScreenWorldTileFromCanvas } from './picking';
 
 const DEBUG_TILE_PLACE_MOUSE_BUTTON = 0;
@@ -31,6 +35,8 @@ export interface CompletedDebugTileEditStroke {
   pointerType: 'mouse' | 'touch';
 }
 
+export type DebugEditHistoryShortcutAction = DebugTouchHistoryShortcutAction;
+
 interface ActiveDebugPaintStroke {
   id: number;
   pointerId: number;
@@ -38,6 +44,16 @@ interface ActiveDebugPaintStroke {
   kind: DebugTileEditKind;
   paintedTileKeys: Set<string>;
   lastPaintedTile: { x: number; y: number } | null;
+}
+
+interface ActiveTouchHistoryTapGestureCandidate {
+  pointerCount: 2 | 3;
+  startedAtMs: number;
+  pointerIds: Set<number>;
+  startPositionsByPointerId: Map<number, { x: number; y: number }>;
+  initialPinchDistancePx: number | null;
+  maxPointerTravelPx: number;
+  maxPinchDistanceDeltaPx: number;
 }
 
 export const buildDebugTileEditRequest = (
@@ -124,8 +140,11 @@ export class InputController {
   private pointerInspect: PointerInspectSnapshot | null = null;
   private debugTileEditQueue: DebugTileStrokeEditRequest[] = [];
   private completedDebugTileStrokeQueue: CompletedDebugTileEditStroke[] = [];
+  private debugEditHistoryShortcutQueue: DebugEditHistoryShortcutAction[] = [];
   private activeMouseDebugPaintStroke: ActiveDebugPaintStroke | null = null;
   private activeTouchDebugPaintStroke: ActiveDebugPaintStroke | null = null;
+  private activeTouchHistoryTapGestureCandidate: ActiveTouchHistoryTapGestureCandidate | null = null;
+  private lastTouchHistoryTapGestureTimeMs = Number.NEGATIVE_INFINITY;
   private touchDebugEditMode: TouchDebugEditMode = 'pan';
   private nextDebugPaintStrokeId = 1;
 
@@ -169,6 +188,13 @@ export class InputController {
     return completedStrokes;
   }
 
+  consumeDebugEditHistoryShortcutActions(): DebugEditHistoryShortcutAction[] {
+    if (this.debugEditHistoryShortcutQueue.length === 0) return [];
+    const actions = this.debugEditHistoryShortcutQueue;
+    this.debugEditHistoryShortcutQueue = [];
+    return actions;
+  }
+
   getTouchDebugEditMode(): TouchDebugEditMode {
     return this.touchDebugEditMode;
   }
@@ -176,6 +202,7 @@ export class InputController {
   setTouchDebugEditMode(mode: TouchDebugEditMode): void {
     if (this.touchDebugEditMode === mode) return;
     this.touchDebugEditMode = mode;
+    this.activeTouchHistoryTapGestureCandidate = null;
     this.completeDebugPaintStroke(this.activeTouchDebugPaintStroke);
     this.activeTouchDebugPaintStroke = null;
   }
@@ -199,6 +226,7 @@ export class InputController {
       this.canvas.setPointerCapture(event.pointerId);
       this.pointers.set(event.pointerId, event);
       this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
+      this.refreshTouchHistoryTapGestureCandidateOnPointerDown(event);
       const startedMouseDebugPaint = this.tryStartMouseDebugPaintStroke(event);
       const startedTouchDebugPaint = this.tryStartTouchDebugPaintStroke(event);
       if (this.pointers.size === 1) {
@@ -224,6 +252,7 @@ export class InputController {
       }
 
       this.pointers.set(event.pointerId, event);
+      this.updateTouchHistoryTapGestureCandidateMetrics(event);
 
       const activeMouseDebugPaintStroke = this.activeMouseDebugPaintStroke;
       const activeTouchDebugPaintStroke = this.activeTouchDebugPaintStroke;
@@ -259,7 +288,11 @@ export class InputController {
       this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
     });
 
-    const release = (event: PointerEvent): void => {
+    const release = (event: PointerEvent, canceled = false): void => {
+      if (this.pointers.has(event.pointerId)) {
+        this.pointers.set(event.pointerId, event);
+      }
+      this.updateTouchHistoryTapGestureCandidateMetrics(event);
       this.pointers.delete(event.pointerId);
       if (this.activeMouseDebugPaintStroke?.pointerId === event.pointerId) {
         this.completeDebugPaintStroke(this.activeMouseDebugPaintStroke);
@@ -279,10 +312,12 @@ export class InputController {
       if (this.pointers.size === 0 && event.pointerType !== 'mouse') {
         this.pointerInspect = null;
       }
+
+      this.maybeQueueTouchHistoryTapGestureShortcutOnPointerRelease(event, canceled);
     };
 
-    this.canvas.addEventListener('pointerup', release);
-    this.canvas.addEventListener('pointercancel', release);
+    this.canvas.addEventListener('pointerup', (event) => release(event, false));
+    this.canvas.addEventListener('pointercancel', (event) => release(event, true));
     this.canvas.addEventListener('pointerleave', (event) => {
       if (event.pointerType === 'mouse' && this.pointers.size === 0) {
         this.completeDebugPaintStroke(this.activeMouseDebugPaintStroke);
@@ -328,6 +363,128 @@ export class InputController {
     this.activeTouchDebugPaintStroke = stroke;
     this.queuePointerDebugTileStrokeEdits(event, stroke);
     return true;
+  }
+
+  private refreshTouchHistoryTapGestureCandidateOnPointerDown(event: PointerEvent): void {
+    if (event.pointerType !== 'touch') return;
+
+    const touchPointers = this.getTrackedTouchPointers();
+    if (touchPointers.length > 3) {
+      this.activeTouchHistoryTapGestureCandidate = null;
+      return;
+    }
+
+    if (this.touchDebugEditMode !== 'pan') {
+      this.activeTouchHistoryTapGestureCandidate = null;
+      return;
+    }
+
+    if (touchPointers.length !== 2 && touchPointers.length !== 3) return;
+
+    const pointerCount = touchPointers.length;
+    const pointerIds = new Set<number>();
+    const startPositionsByPointerId = new Map<number, { x: number; y: number }>();
+    for (const touchPointer of touchPointers) {
+      pointerIds.add(touchPointer.pointerId);
+      startPositionsByPointerId.set(touchPointer.pointerId, {
+        x: touchPointer.clientX,
+        y: touchPointer.clientY
+      });
+    }
+
+    let initialPinchDistancePx: number | null = null;
+    if (pointerCount === 2) {
+      const [a, b] = touchPointers;
+      if (a && b) {
+        initialPinchDistancePx = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      }
+    }
+
+    this.activeTouchHistoryTapGestureCandidate = {
+      pointerCount,
+      startedAtMs: event.timeStamp,
+      pointerIds,
+      startPositionsByPointerId,
+      initialPinchDistancePx,
+      maxPointerTravelPx: 0,
+      maxPinchDistanceDeltaPx: 0
+    };
+  }
+
+  private updateTouchHistoryTapGestureCandidateMetrics(event: PointerEvent): void {
+    if (event.pointerType !== 'touch') return;
+    const candidate = this.activeTouchHistoryTapGestureCandidate;
+    if (!candidate || !candidate.pointerIds.has(event.pointerId)) return;
+
+    const startPosition = candidate.startPositionsByPointerId.get(event.pointerId);
+    if (startPosition) {
+      const pointerTravelPx = Math.hypot(event.clientX - startPosition.x, event.clientY - startPosition.y);
+      if (pointerTravelPx > candidate.maxPointerTravelPx) {
+        candidate.maxPointerTravelPx = pointerTravelPx;
+      }
+    }
+
+    if (candidate.pointerCount !== 2 || candidate.initialPinchDistancePx === null) return;
+
+    const [firstPointerId, secondPointerId] = Array.from(candidate.pointerIds.values());
+    if (firstPointerId === undefined || secondPointerId === undefined) return;
+
+    const firstPointer =
+      firstPointerId === event.pointerId ? event : (this.pointers.get(firstPointerId) ?? null);
+    const secondPointer =
+      secondPointerId === event.pointerId ? event : (this.pointers.get(secondPointerId) ?? null);
+    if (!firstPointer || !secondPointer) return;
+
+    const pinchDistancePx = Math.hypot(
+      firstPointer.clientX - secondPointer.clientX,
+      firstPointer.clientY - secondPointer.clientY
+    );
+    const pinchDistanceDeltaPx = Math.abs(pinchDistancePx - candidate.initialPinchDistancePx);
+    if (pinchDistanceDeltaPx > candidate.maxPinchDistanceDeltaPx) {
+      candidate.maxPinchDistanceDeltaPx = pinchDistanceDeltaPx;
+    }
+  }
+
+  private maybeQueueTouchHistoryTapGestureShortcutOnPointerRelease(
+    event: PointerEvent,
+    canceled: boolean
+  ): void {
+    if (event.pointerType !== 'touch') return;
+
+    const candidate = this.activeTouchHistoryTapGestureCandidate;
+    if (!candidate || !candidate.pointerIds.has(event.pointerId)) return;
+
+    if (canceled) {
+      this.activeTouchHistoryTapGestureCandidate = null;
+      return;
+    }
+
+    candidate.pointerIds.delete(event.pointerId);
+    if (candidate.pointerIds.size > 0) return;
+
+    this.activeTouchHistoryTapGestureCandidate = null;
+    const action = resolveTouchDebugHistoryShortcutActionForTap({
+      pointerCount: candidate.pointerCount,
+      durationMs: Math.max(0, event.timeStamp - candidate.startedAtMs),
+      maxPointerTravelPx: candidate.maxPointerTravelPx,
+      maxPinchDistanceDeltaPx: candidate.maxPinchDistanceDeltaPx,
+      timeSinceLastGestureMs: event.timeStamp - this.lastTouchHistoryTapGestureTimeMs,
+      gesturesEnabled: this.touchDebugEditMode === 'pan'
+    });
+    if (!action) return;
+
+    this.lastTouchHistoryTapGestureTimeMs = event.timeStamp;
+    this.debugEditHistoryShortcutQueue.push(action);
+  }
+
+  private getTrackedTouchPointers(): PointerEvent[] {
+    const touchPointers: PointerEvent[] = [];
+    for (const pointer of this.pointers.values()) {
+      if (pointer.pointerType === 'touch') {
+        touchPointers.push(pointer);
+      }
+    }
+    return touchPointers;
   }
 
   private currentPinchDistance(): number {

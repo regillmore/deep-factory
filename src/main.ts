@@ -166,6 +166,12 @@ const bootstrap = async (): Promise<void> => {
       for (const completedStroke of input.consumeCompletedDebugTileStrokes()) {
         historyChanged = debugTileEditHistory.completeStroke(completedStroke.strokeId) || historyChanged;
       }
+
+      for (const action of input.consumeDebugEditHistoryShortcutActions()) {
+        historyChanged =
+          (action === 'undo' ? undoDebugTileStroke() : redoDebugTileStroke()) || historyChanged;
+      }
+
       if (historyChanged) {
         syncDebugEditHistoryControls();
       }

@@ -36,6 +36,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 ### Mobile / touch
 - On-screen debug edit controls: touch mode buttons (`Pan` / `Place` / `Break`) + shared brush palette
 - On-screen debug edit controls: touch `Undo` / `Redo` buttons revert or reapply the last debug paint stroke
+- Touch history gestures (`Pan` mode): `two-finger tap` undo / `three-finger tap` redo (debounced; stationary taps avoid pinch conflicts)
 - One-finger drag: pan (`Pan` mode)
 - One-finger drag: debug paint active brush / break hovered tile (`Place` / `Break` mode, line-stepped + per-tile deduped)
 - Two-finger pinch: zoom (works while touch debug edit modes are active)
@@ -72,6 +73,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Shared on-screen debug edit controls now support touch `Pan` / `Place` / `Break` mode switching plus a metadata-driven brush palette with an active brush indicator used by both desktop and touch place edits.
 - Debug tile editing now records per-stroke tile deltas (desktop mouse and touch paint strokes) with shared on-screen `Undo` / `Redo` controls for fast iteration while testing world systems.
 - Shared debug edit controls now expose keyboard shortcut bindings (`1`-`0`, `[` / `]`, undo/redo combos), and desktop shortcuts trigger the same brush/history actions as the on-screen UI.
+- Touch debug history shortcuts now support `two-finger tap` undo / `three-finger tap` redo in `Pan` mode with tap debounce and pinch-distance conflict guards to avoid accidental undos during pinch zoom.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.
