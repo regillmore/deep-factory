@@ -25,6 +25,7 @@ interface ActiveDebugPaintStroke {
   pointerId: number;
   kind: DebugTileEditKind;
   paintedTileKeys: Set<string>;
+  lastPaintedTile: { x: number; y: number } | null;
 }
 
 export const buildDebugTileEditRequest = (
@@ -67,6 +68,37 @@ export const markDebugPaintTileSeen = (
   if (seenTiles.has(key)) return false;
   seenTiles.add(key);
   return true;
+};
+
+export const walkLineSteppedTilePath = (
+  startTileX: number,
+  startTileY: number,
+  endTileX: number,
+  endTileY: number,
+  visit: (tileX: number, tileY: number) => void
+): void => {
+  let x = startTileX;
+  let y = startTileY;
+  const dx = Math.abs(endTileX - x);
+  const dy = -Math.abs(endTileY - y);
+  const stepX = x < endTileX ? 1 : -1;
+  const stepY = y < endTileY ? 1 : -1;
+  let error = dx + dy;
+
+  while (true) {
+    visit(x, y);
+    if (x === endTileX && y === endTileY) return;
+
+    const doubledError = error * 2;
+    if (doubledError >= dy) {
+      error += dy;
+      x += stepX;
+    }
+    if (doubledError <= dx) {
+      error += dx;
+      y += stepY;
+    }
+  }
 };
 
 export class InputController {
@@ -178,21 +210,13 @@ export class InputController {
         activeMouseDebugPaintStroke &&
         activeMouseDebugPaintStroke.pointerId === event.pointerId
       ) {
-        this.queuePointerDebugTileEdit(
-          event,
-          activeMouseDebugPaintStroke.kind,
-          activeMouseDebugPaintStroke.paintedTileKeys
-        );
+        this.queuePointerDebugTileStrokeEdits(event, activeMouseDebugPaintStroke);
       } else if (
         this.pointers.size === 1 &&
         activeTouchDebugPaintStroke &&
         activeTouchDebugPaintStroke.pointerId === event.pointerId
       ) {
-        this.queuePointerDebugTileEdit(
-          event,
-          activeTouchDebugPaintStroke.kind,
-          activeTouchDebugPaintStroke.paintedTileKeys
-        );
+        this.queuePointerDebugTileStrokeEdits(event, activeTouchDebugPaintStroke);
       } else if (this.pointers.size === 1 && this.pointerActive && this.pointerId === event.pointerId) {
         const dx = event.clientX - this.lastX;
         const dy = event.clientY - this.lastY;
@@ -253,10 +277,11 @@ export class InputController {
     const stroke: ActiveDebugPaintStroke = {
       pointerId: event.pointerId,
       kind,
-      paintedTileKeys: new Set<string>()
+      paintedTileKeys: new Set<string>(),
+      lastPaintedTile: null
     };
     this.activeMouseDebugPaintStroke = stroke;
-    this.queuePointerDebugTileEdit(event, kind, stroke.paintedTileKeys);
+    this.queuePointerDebugTileStrokeEdits(event, stroke);
     return true;
   }
 
@@ -267,10 +292,11 @@ export class InputController {
     const stroke: ActiveDebugPaintStroke = {
       pointerId: event.pointerId,
       kind,
-      paintedTileKeys: new Set<string>()
+      paintedTileKeys: new Set<string>(),
+      lastPaintedTile: null
     };
     this.activeTouchDebugPaintStroke = stroke;
-    this.queuePointerDebugTileEdit(event, kind, stroke.paintedTileKeys);
+    this.queuePointerDebugTileStrokeEdits(event, stroke);
     return true;
   }
 
@@ -299,19 +325,46 @@ export class InputController {
     };
   }
 
-  private queuePointerDebugTileEdit(
+  private queuePointerDebugTileStrokeEdits(
     event: PointerEvent,
+    stroke: ActiveDebugPaintStroke
+  ): void {
+    this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
+    const pointerInspect = this.pointerInspect;
+    if (!pointerInspect) return;
+
+    const currentTileX = pointerInspect.tile.x;
+    const currentTileY = pointerInspect.tile.y;
+    const lastPaintedTile = stroke.lastPaintedTile;
+
+    if (lastPaintedTile) {
+      walkLineSteppedTilePath(
+        lastPaintedTile.x,
+        lastPaintedTile.y,
+        currentTileX,
+        currentTileY,
+        (tileX, tileY) => {
+          this.queueDebugTileEdit(tileX, tileY, stroke.kind, stroke.paintedTileKeys);
+        }
+      );
+    } else {
+      this.queueDebugTileEdit(currentTileX, currentTileY, stroke.kind, stroke.paintedTileKeys);
+    }
+
+    stroke.lastPaintedTile = { x: currentTileX, y: currentTileY };
+  }
+
+  private queueDebugTileEdit(
+    worldTileX: number,
+    worldTileY: number,
     kind: DebugTileEditKind,
     seenTiles?: Set<string>
   ): void {
-    this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
-    if (!this.pointerInspect) return;
-    const request: DebugTileEditRequest = {
-      worldTileX: this.pointerInspect.tile.x,
-      worldTileY: this.pointerInspect.tile.y,
+    if (seenTiles && !markDebugPaintTileSeen(worldTileX, worldTileY, seenTiles)) return;
+    this.debugTileEditQueue.push({
+      worldTileX,
+      worldTileY,
       kind
-    };
-    if (seenTiles && !markDebugPaintTileSeen(request.worldTileX, request.worldTileY, seenTiles)) return;
-    this.debugTileEditQueue.push(request);
+    });
   }
 }

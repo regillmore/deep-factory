@@ -5,6 +5,7 @@ import {
   getDesktopDebugPaintKindForPointerDown,
   getTouchDebugPaintKindForPointerDown,
   markDebugPaintTileSeen,
+  walkLineSteppedTilePath,
   type PointerInspectSnapshot
 } from './controller';
 
@@ -15,6 +16,19 @@ const mousePointerInspect = (tileX: number, tileY: number): PointerInspectSnapsh
   tile: { x: tileX, y: tileY },
   pointerType: 'mouse'
 });
+
+const collectLineSteppedTilePath = (
+  startTileX: number,
+  startTileY: number,
+  endTileX: number,
+  endTileY: number
+): Array<[number, number]> => {
+  const tiles: Array<[number, number]> = [];
+  walkLineSteppedTilePath(startTileX, startTileY, endTileX, endTileY, (tileX, tileY) => {
+    tiles.push([tileX, tileY]);
+  });
+  return tiles;
+};
 
 describe('buildDebugTileEditRequest', () => {
   it('builds a place request from a mouse pointer snapshot tile', () => {
@@ -90,5 +104,42 @@ describe('markDebugPaintTileSeen', () => {
     const seenTiles = new Set<string>();
     expect(markDebugPaintTileSeen(1, 2, seenTiles)).toBe(true);
     expect(markDebugPaintTileSeen(1, 3, seenTiles)).toBe(true);
+  });
+});
+
+describe('walkLineSteppedTilePath', () => {
+  it('returns a single tile when the pointer stays within one tile', () => {
+    expect(collectLineSteppedTilePath(4, -2, 4, -2)).toEqual([[4, -2]]);
+  });
+
+  it('fills horizontal gaps between sampled tiles', () => {
+    expect(collectLineSteppedTilePath(2, 3, 5, 3)).toEqual([
+      [2, 3],
+      [3, 3],
+      [4, 3],
+      [5, 3]
+    ]);
+  });
+
+  it('fills steep diagonal movement with contiguous tile steps', () => {
+    expect(collectLineSteppedTilePath(0, 0, 2, 5)).toEqual([
+      [0, 0],
+      [0, 1],
+      [1, 2],
+      [1, 3],
+      [2, 4],
+      [2, 5]
+    ]);
+  });
+
+  it('supports reverse-direction swipes', () => {
+    expect(collectLineSteppedTilePath(5, 2, 0, 0)).toEqual([
+      [5, 2],
+      [4, 2],
+      [3, 1],
+      [2, 1],
+      [1, 0],
+      [0, 0]
+    ]);
   });
 });
