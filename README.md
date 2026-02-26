@@ -33,8 +33,9 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Debug edit brush shortcuts: `1`-`0` select visible brush slots, `[` / `]` cycle active brush
 - Debug edit panel shortcut: `\` collapse / expand the shared debug-edit controls panel
 - Debug eyedropper shortcut: `I` sets the active brush from the hovered tile (non-empty tiles)
-- Debug flood fill shortcuts: `F` arms a one-shot brush flood fill, `Shift+F` arms a one-shot break flood fill; next canvas click applies (resident chunk bounds only)
-- On-screen debug edit controls: click `Line Brush` / `Line Break` to arm a one-shot line tool, then drag on the canvas to apply a single undoable line stroke
+- Debug flood fill shortcuts: `F` arms a one-shot brush flood fill, `Shift+F` arms a one-shot break flood fill; next canvas click applies (resident chunk bounds only, `Esc` cancels while armed)
+- One-shot armed fill/line tools show an on-canvas status badge with the current armed action and cancel hint (`Esc`)
+- On-screen debug edit controls: click `Line Brush` / `Line Break` to arm a one-shot line tool, then drag on the canvas to apply a single undoable line stroke (with on-canvas endpoint preview)
 - Debug edit history shortcuts: `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` redo
 - Mouse drag: debug paint on hovered tile cursor (`left` place active brush / `right` break, line-stepped + per-tile deduped)
 - `Shift` + mouse drag: pan
@@ -49,7 +50,8 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Touch history gestures (`Pan` mode): `two-finger tap` undo / `three-finger tap` redo (debounced; stationary taps avoid pinch conflicts)
 - Touch eyedropper gesture (`Pan` mode): `long-press` a tile to set the active brush from that tile (non-empty tiles)
 - On-screen debug edit controls: tap `Fill Brush` / `Fill Break` to arm a one-shot flood fill, then tap a world tile (resident chunk bounds only)
-- On-screen debug edit controls: tap `Line Brush` / `Line Break`, then tap a start tile and tap an end tile to apply a single undoable line stroke
+- One-shot armed fill/line tools show an on-canvas status badge while armed
+- On-screen debug edit controls: tap `Line Brush` / `Line Break`, then tap a start tile and tap an end tile to apply a single undoable line stroke (with a persistent on-canvas start-anchor indicator between taps)
 - One-finger drag: pan (`Pan` mode)
 - One-finger drag: debug paint active brush / break hovered tile (`Place` / `Break` mode, line-stepped + per-tile deduped)
 - Two-finger pinch: zoom (works while touch debug edit modes are active)
@@ -95,6 +97,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Shared debug edit controls now include one-shot flood-fill tools (`Fill Brush` / `Fill Break`) plus `F` / `Shift+F` desktop shortcuts; the next canvas click/tap applies a resident-chunk-bounded fill as a single undoable stroke.
 - Shared debug edit controls now support keyboard `\` collapse/expand and show a compact collapsed summary (mode, active brush, undo/redo counts).
 - Shared debug edit controls now also include one-shot line tools (`Line Brush` / `Line Break`) with desktop drag and touch two-point workflows, and each line applies as a single undoable stroke.
+- Armed one-shot debug fill/line tools now show an on-canvas preview/status overlay (desktop line endpoint preview + touch line-start anchor) and support `Esc` cancellation.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.

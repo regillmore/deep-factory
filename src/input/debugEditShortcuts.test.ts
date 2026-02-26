@@ -100,6 +100,15 @@ describe('resolveDebugEditShortcutAction', () => {
     });
   });
 
+  it('maps Escape to armed-tool cancel', () => {
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'Escape' }))).toEqual({
+      type: 'cancel-armed-tools'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'Esc' }))).toEqual({
+      type: 'cancel-armed-tools'
+    });
+  });
+
   it('maps digit and numpad keys to brush slots', () => {
     expect(
       resolveDebugEditShortcutAction(keyboardEventLike({ key: '1', code: 'Digit1' }))

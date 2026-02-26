@@ -81,6 +81,21 @@ interface PendingTouchDebugLineStart {
   tileY: number;
 }
 
+export interface ArmedDebugToolPreviewState {
+  armedFloodFillKind: DebugTileEditKind | null;
+  armedLineKind: DebugTileEditKind | null;
+  activeMouseLineDrag: {
+    kind: DebugTileEditKind;
+    startTileX: number;
+    startTileY: number;
+  } | null;
+  pendingTouchLineStart: {
+    kind: DebugTileEditKind;
+    tileX: number;
+    tileY: number;
+  } | null;
+}
+
 interface ActiveTouchHistoryTapGestureCandidate {
   pointerCount: 2 | 3;
   startedAtMs: number;
@@ -306,6 +321,44 @@ export class InputController {
     if (kind === null) {
       this.activeMouseDebugLineDrag = null;
     }
+  }
+
+  cancelArmedDebugTools(): boolean {
+    const hadArmedTools =
+      this.armedDebugFloodFillKind !== null ||
+      this.armedDebugLineKind !== null ||
+      this.activeMouseDebugLineDrag !== null ||
+      this.pendingTouchDebugLineStart !== null;
+    if (!hadArmedTools) return false;
+
+    this.armedDebugFloodFillKind = null;
+    this.armedDebugLineKind = null;
+    this.activeMouseDebugLineDrag = null;
+    this.pendingTouchDebugLineStart = null;
+    return true;
+  }
+
+  getArmedDebugToolPreviewState(): ArmedDebugToolPreviewState {
+    const activeMouseLineDrag = this.activeMouseDebugLineDrag;
+    const pendingTouchLineStart = this.pendingTouchDebugLineStart;
+    return {
+      armedFloodFillKind: this.armedDebugFloodFillKind,
+      armedLineKind: this.armedDebugLineKind,
+      activeMouseLineDrag: activeMouseLineDrag
+        ? {
+            kind: activeMouseLineDrag.kind,
+            startTileX: activeMouseLineDrag.startTileX,
+            startTileY: activeMouseLineDrag.startTileY
+          }
+        : null,
+      pendingTouchLineStart: pendingTouchLineStart
+        ? {
+            kind: pendingTouchLineStart.kind,
+            tileX: pendingTouchLineStart.tileX,
+            tileY: pendingTouchLineStart.tileY
+          }
+        : null
+    };
   }
 
   private bind(): void {

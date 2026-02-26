@@ -14,6 +14,7 @@ export interface DebugEditShortcutKeyEventLike {
 export type DebugEditShortcutAction =
   | { type: 'undo' }
   | { type: 'redo' }
+  | { type: 'cancel-armed-tools' }
   | { type: 'toggle-panel-collapsed' }
   | { type: 'set-touch-mode'; mode: 'pan' | 'place' | 'break' }
   | { type: 'arm-flood-fill'; kind: 'place' | 'break' }
@@ -97,6 +98,10 @@ export const resolveDebugEditShortcutAction = (
   }
 
   if (event.altKey) return null;
+
+  if (normalizedKey === 'escape' || normalizedKey === 'esc') {
+    return { type: 'cancel-armed-tools' };
+  }
 
   const code = event.code ?? '';
   if (code === 'Backslash' || (!code && event.key === getDebugEditPanelToggleHotkeyLabel())) {

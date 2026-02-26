@@ -9,4 +9,4 @@
 7. Prepare networking scaffolding (state diff messages, interest management).
 8. Add a main menu shell and move debug overlay to a UI toggle.
 9. Add a debug-edit rectangle fill tool (desktop drag box + touch two-corner workflow) with stroke history integration.
-10. Add on-canvas armed-tool preview/cancel UX (line endpoint preview, touch anchor indicator, `Esc` cancel) for one-shot debug tools.
+10. Add a one-shot debug-edit rectangle outline tool (desktop drag + touch two-corner workflow) with stroke history integration.

@@ -17,6 +17,7 @@ import {
   resolveDebugEditShortcutAction
 } from './input/debugEditShortcuts';
 import { DebugOverlay } from './ui/debugOverlay';
+import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import { TouchDebugEditControls, type DebugBrushOption } from './ui/touchDebugEditControls';
 import { CHUNK_SIZE } from './world/constants';
@@ -75,6 +76,7 @@ const bootstrap = async (): Promise<void> => {
   const input = new InputController(canvas, camera);
   const debug = new DebugOverlay();
   const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
+  const armedDebugToolPreview = new ArmedDebugToolPreviewOverlay(canvas);
   const debugTileEditHistory = new DebugTileEditHistory();
   const debugEditControlStorage = (() => {
     try {
@@ -319,6 +321,11 @@ const bootstrap = async (): Promise<void> => {
       handled = undoDebugTileStroke();
     } else if (action.type === 'redo') {
       handled = redoDebugTileStroke();
+    } else if (action.type === 'cancel-armed-tools') {
+      handled = input.cancelArmedDebugTools();
+      if (handled) {
+        syncArmedDebugToolControls();
+      }
     } else if (action.type === 'arm-flood-fill') {
       handled = toggleArmedDebugFloodFillKind(action.kind);
     } else if (action.type === 'toggle-panel-collapsed') {
@@ -426,9 +433,11 @@ const bootstrap = async (): Promise<void> => {
     },
     (_alpha, frameDtMs) => {
       const pointerInspect = input.getPointerInspect();
+      const armedDebugToolPreviewState = input.getArmedDebugToolPreviewState();
       renderer.resize();
       renderer.render(camera);
       hoveredTileCursor.update(camera, pointerInspect);
+      armedDebugToolPreview.update(camera, pointerInspect, armedDebugToolPreviewState);
       debug.update(frameDtMs, renderer.telemetry, pointerInspect);
     }
   );
