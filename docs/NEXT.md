@@ -9,4 +9,4 @@
 7. Prepare networking scaffolding (state diff messages, interest management).
 8. Add a main menu shell and move debug overlay to a UI toggle.
 9. Add a debug-edit eyedropper (desktop shortcut + touch long-press) to set the active brush from the hovered tile.
-10. Add a debug-edit control "reset prefs" action to clear persisted touch mode / brush state and restore defaults.
+10. Add a debug-edit control collapse/expand toggle and persist panel visibility state.

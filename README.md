@@ -26,6 +26,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Debug edit control state (shared touch mode + active brush) persists across reloads with a metadata-safe brush fallback
 - Move camera: `WASD` or arrow keys
 - On-screen debug edit controls: click a brush tile to set the active place brush (shared with touch)
+- On-screen debug edit controls: click `Reset Prefs` to restore default touch mode/brush and clear saved debug edit prefs
 - On-screen debug edit controls: click `Undo` / `Redo` to revert or reapply the last debug paint stroke
 - Debug touch mode shortcuts (shared `Pan` / `Place` / `Break` state): `P` pan, `L` place, `B` break
 - Debug edit brush shortcuts: `1`-`0` select visible brush slots, `[` / `]` cycle active brush
@@ -37,6 +38,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 
 ### Mobile / touch
 - On-screen debug edit controls: touch mode buttons (`Pan` / `Place` / `Break`) + shared brush palette
+- On-screen debug edit controls: tap `Reset Prefs` to restore default touch mode/brush and clear saved debug edit prefs
 - On-screen debug edit controls: touch `Undo` / `Redo` buttons revert or reapply the last debug paint stroke
 - Touch history gestures (`Pan` mode): `two-finger tap` undo / `three-finger tap` redo (debounced; stationary taps avoid pinch conflicts)
 - One-finger drag: pan (`Pan` mode)
@@ -78,6 +80,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Touch debug history shortcuts now support `two-finger tap` undo / `three-finger tap` redo in `Pan` mode with tap debounce and pinch-distance conflict guards to avoid accidental undos during pinch zoom.
 - Shared debug edit controls now also surface keyboard touch-mode bindings (`P` pan / `L` place / `B` break), and desktop shortcuts toggle the same `Pan` / `Place` / `Break` state as the on-screen UI.
 - Shared debug edit control state (`touch mode` + active brush tile) now persists across reloads via local storage, with a safe brush fallback when tile metadata no longer contains the saved tile ID.
+- Shared debug edit controls now include a `Reset Prefs` action that restores the default touch mode/brush and clears persisted debug edit control state.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.

@@ -5,6 +5,7 @@ import { GameLoop } from './core/gameLoop';
 import { Renderer } from './gl/renderer';
 import { InputController } from './input/controller';
 import {
+  clearDebugEditControlState,
   loadDebugEditControlState,
   saveDebugEditControlState
 } from './input/debugEditControlStatePersistence';
@@ -79,23 +80,43 @@ const bootstrap = async (): Promise<void> => {
       return null;
     }
   })();
+  const defaultDebugEditControlState = {
+    touchMode: input.getTouchDebugEditMode(),
+    brushTileId: INITIAL_DEBUG_BRUSH_TILE_ID
+  } as const;
   const initialDebugEditControlState = loadDebugEditControlState(
     debugEditControlStorage,
     DEBUG_BRUSH_TILE_IDS,
-    {
-      touchMode: input.getTouchDebugEditMode(),
-      brushTileId: INITIAL_DEBUG_BRUSH_TILE_ID
-    }
+    defaultDebugEditControlState
   );
   input.setTouchDebugEditMode(initialDebugEditControlState.touchMode);
   let activeDebugBrushTileId = initialDebugEditControlState.brushTileId;
   let debugEditControls: TouchDebugEditControls | null = null;
+  let suppressDebugEditControlPersistence = false;
 
   const persistDebugEditControlsState = (): void => {
+    if (suppressDebugEditControlPersistence) return;
     saveDebugEditControlState(debugEditControlStorage, {
       touchMode: input.getTouchDebugEditMode(),
       brushTileId: activeDebugBrushTileId
     });
+  };
+
+  const resetDebugEditControlPrefs = (): void => {
+    suppressDebugEditControlPersistence = true;
+    try {
+      if (debugEditControls) {
+        debugEditControls.setMode(defaultDebugEditControlState.touchMode);
+        debugEditControls.setBrushTileId(defaultDebugEditControlState.brushTileId);
+      } else {
+        input.setTouchDebugEditMode(defaultDebugEditControlState.touchMode);
+        activeDebugBrushTileId = defaultDebugEditControlState.brushTileId;
+      }
+    } finally {
+      suppressDebugEditControlPersistence = false;
+    }
+
+    clearDebugEditControlState(debugEditControlStorage);
   };
 
   const syncDebugEditHistoryControls = (): void => {
@@ -136,7 +157,8 @@ const bootstrap = async (): Promise<void> => {
       persistDebugEditControlsState();
     },
     onUndo: undoDebugTileStroke,
-    onRedo: redoDebugTileStroke
+    onRedo: redoDebugTileStroke,
+    onResetPrefs: resetDebugEditControlPrefs
   });
   syncDebugEditHistoryControls();
   persistDebugEditControlsState();

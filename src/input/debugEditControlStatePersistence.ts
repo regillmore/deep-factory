@@ -8,6 +8,7 @@ export interface DebugEditControlState {
 interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+  removeItem?(key: string): void;
 }
 
 const STORAGE_KEY = 'deep-factory.debugEditControlState.v1';
@@ -67,6 +68,16 @@ export const saveDebugEditControlState = (
   if (!storage) return false;
   try {
     storage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const clearDebugEditControlState = (storage: StorageLike | null | undefined): boolean => {
+  if (!storage || typeof storage.removeItem !== 'function') return false;
+  try {
+    storage.removeItem(STORAGE_KEY);
     return true;
   } catch {
     return false;

@@ -19,6 +19,7 @@ interface TouchDebugEditControlsOptions {
   onBrushTileIdChange?: (tileId: number) => void;
   onUndo?: () => void;
   onRedo?: () => void;
+  onResetPrefs?: () => void;
   initialHistoryState?: DebugEditHistoryControlState;
 }
 
@@ -46,6 +47,7 @@ export class TouchDebugEditControls {
   private onBrushTileIdChange: (tileId: number) => void;
   private onUndo: () => void;
   private onRedo: () => void;
+  private onResetPrefs: () => void;
 
   constructor(options: TouchDebugEditControlsOptions = {}) {
     this.mode = options.initialMode ?? 'pan';
@@ -56,6 +58,7 @@ export class TouchDebugEditControls {
     this.onBrushTileIdChange = options.onBrushTileIdChange ?? (() => {});
     this.onUndo = options.onUndo ?? (() => {});
     this.onRedo = options.onRedo ?? (() => {});
+    this.onResetPrefs = options.onResetPrefs ?? (() => {});
     this.undoStrokeCount = Math.max(0, options.initialHistoryState?.undoStrokeCount ?? 0);
     this.redoStrokeCount = Math.max(0, options.initialHistoryState?.redoStrokeCount ?? 0);
 
@@ -173,6 +176,34 @@ export class TouchDebugEditControls {
     touchHistoryShortcutLine.style.fontSize = '11px';
     touchHistoryShortcutLine.style.lineHeight = '1.35';
     historySection.append(touchHistoryShortcutLine);
+
+    const prefsSection = document.createElement('div');
+    prefsSection.style.display = 'flex';
+    prefsSection.style.flexDirection = 'column';
+    prefsSection.style.gap = '6px';
+    this.root.append(prefsSection);
+
+    const prefsTitle = document.createElement('div');
+    prefsTitle.textContent = 'Prefs';
+    prefsTitle.style.color = '#aab7c7';
+    prefsTitle.style.fontSize = '11px';
+    prefsSection.append(prefsTitle);
+
+    const resetPrefsButton = document.createElement('button');
+    resetPrefsButton.type = 'button';
+    resetPrefsButton.textContent = 'Reset Prefs';
+    resetPrefsButton.title = 'Restore default touch mode + brush and clear saved debug edit control prefs';
+    resetPrefsButton.addEventListener('click', () => this.onResetPrefs());
+    resetPrefsButton.style.padding = '6px 8px';
+    resetPrefsButton.style.borderRadius = '8px';
+    resetPrefsButton.style.border = '1px solid rgba(255, 255, 255, 0.16)';
+    resetPrefsButton.style.background = 'rgba(255, 255, 255, 0.06)';
+    resetPrefsButton.style.color = '#f3f7fb';
+    resetPrefsButton.style.fontFamily = 'inherit';
+    resetPrefsButton.style.fontSize = '12px';
+    resetPrefsButton.style.cursor = 'pointer';
+    resetPrefsButton.style.touchAction = 'manipulation';
+    prefsSection.append(resetPrefsButton);
 
     const shortcutSection = document.createElement('div');
     shortcutSection.style.display = 'flex';

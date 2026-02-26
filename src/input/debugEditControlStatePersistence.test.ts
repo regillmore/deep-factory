@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  clearDebugEditControlState,
   DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY,
   loadDebugEditControlState,
   saveDebugEditControlState,
@@ -10,6 +11,7 @@ import {
 interface FakeStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+  removeItem?(key: string): void;
 }
 
 const FALLBACK_STATE: DebugEditControlState = {
@@ -28,6 +30,9 @@ const createMemoryStorage = (initialState?: string): FakeStorage & { values: Map
     getItem: (key) => values.get(key) ?? null,
     setItem: (key, value) => {
       values.set(key, value);
+    },
+    removeItem: (key) => {
+      values.delete(key);
     }
   };
 };
@@ -109,5 +114,33 @@ describe('saveDebugEditControlState', () => {
       }
     };
     expect(saveDebugEditControlState(throwingStorage, FALLBACK_STATE)).toBe(false);
+  });
+});
+
+describe('clearDebugEditControlState', () => {
+  it('removes the persisted state key', () => {
+    const storage = createMemoryStorage(JSON.stringify({ touchMode: 'break', brushTileId: 4 }));
+
+    expect(clearDebugEditControlState(storage)).toBe(true);
+    expect(storage.values.has(DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY)).toBe(false);
+  });
+
+  it('returns false when storage is unavailable, unsupported, or throws', () => {
+    expect(clearDebugEditControlState(null)).toBe(false);
+    expect(
+      clearDebugEditControlState({
+        getItem: () => null,
+        setItem: () => {}
+      })
+    ).toBe(false);
+
+    const throwingStorage: FakeStorage = {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {
+        throw new Error('remove blocked');
+      }
+    };
+    expect(clearDebugEditControlState(throwingStorage)).toBe(false);
   });
 });
