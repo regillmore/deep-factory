@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildDebugTileEditRequest, type PointerInspectSnapshot } from './controller';
+import {
+  buildDebugTileEditRequest,
+  getDesktopDebugPaintKindForPointerDown,
+  markDebugPaintTileSeen,
+  type PointerInspectSnapshot
+} from './controller';
 
 const mousePointerInspect = (tileX: number, tileY: number): PointerInspectSnapshot => ({
   client: { x: 100, y: 50 },
@@ -33,5 +38,38 @@ describe('buildDebugTileEditRequest', () => {
         'break'
       )
     ).toBeNull();
+  });
+});
+
+describe('getDesktopDebugPaintKindForPointerDown', () => {
+  it('uses left mouse pointerdown for place edits', () => {
+    expect(getDesktopDebugPaintKindForPointerDown('mouse', 0, false)).toBe('place');
+  });
+
+  it('uses right mouse pointerdown for break edits', () => {
+    expect(getDesktopDebugPaintKindForPointerDown('mouse', 2, false)).toBe('break');
+  });
+
+  it('disables debug paint when the pan modifier is held', () => {
+    expect(getDesktopDebugPaintKindForPointerDown('mouse', 0, true)).toBeNull();
+    expect(getDesktopDebugPaintKindForPointerDown('mouse', 2, true)).toBeNull();
+  });
+
+  it('ignores non-mouse pointerdown events', () => {
+    expect(getDesktopDebugPaintKindForPointerDown('touch', 0, false)).toBeNull();
+  });
+});
+
+describe('markDebugPaintTileSeen', () => {
+  it('dedupes repeated tiles within the same stroke', () => {
+    const seenTiles = new Set<string>();
+    expect(markDebugPaintTileSeen(10, -4, seenTiles)).toBe(true);
+    expect(markDebugPaintTileSeen(10, -4, seenTiles)).toBe(false);
+  });
+
+  it('allows distinct tiles in the same stroke', () => {
+    const seenTiles = new Set<string>();
+    expect(markDebugPaintTileSeen(1, 2, seenTiles)).toBe(true);
+    expect(markDebugPaintTileSeen(1, 3, seenTiles)).toBe(true);
   });
 });

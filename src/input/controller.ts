@@ -1,6 +1,9 @@
 import { Camera2D } from '../core/camera2d';
 import { clientToWorldPoint, pickScreenWorldTileFromCanvas } from './picking';
 
+const DEBUG_TILE_PLACE_MOUSE_BUTTON = 0;
+const DEBUG_TILE_BREAK_MOUSE_BUTTON = 2;
+
 export interface PointerInspectSnapshot {
   client: { x: number; y: number };
   canvas: { x: number; y: number };
@@ -17,6 +20,12 @@ export interface DebugTileEditRequest {
   kind: DebugTileEditKind;
 }
 
+interface ActiveMouseDebugPaintStroke {
+  pointerId: number;
+  kind: DebugTileEditKind;
+  paintedTileKeys: Set<string>;
+}
+
 export const buildDebugTileEditRequest = (
   pointerInspect: PointerInspectSnapshot | null,
   kind: DebugTileEditKind
@@ -29,6 +38,28 @@ export const buildDebugTileEditRequest = (
   };
 };
 
+export const getDesktopDebugPaintKindForPointerDown = (
+  pointerType: string,
+  button: number,
+  shiftKey: boolean
+): DebugTileEditKind | null => {
+  if (pointerType !== 'mouse' || shiftKey) return null;
+  if (button === DEBUG_TILE_PLACE_MOUSE_BUTTON) return 'place';
+  if (button === DEBUG_TILE_BREAK_MOUSE_BUTTON) return 'break';
+  return null;
+};
+
+export const markDebugPaintTileSeen = (
+  worldTileX: number,
+  worldTileY: number,
+  seenTiles: Set<string>
+): boolean => {
+  const key = `${worldTileX},${worldTileY}`;
+  if (seenTiles.has(key)) return false;
+  seenTiles.add(key);
+  return true;
+};
+
 export class InputController {
   private keys = new Set<string>();
   private pointerActive = false;
@@ -39,6 +70,7 @@ export class InputController {
   private pointers = new Map<number, PointerEvent>();
   private pointerInspect: PointerInspectSnapshot | null = null;
   private debugTileEditQueue: DebugTileEditRequest[] = [];
+  private activeMouseDebugPaintStroke: ActiveMouseDebugPaintStroke | null = null;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -84,26 +116,25 @@ export class InputController {
       this.updatePointerInspect(event.clientX, event.clientY, 'mouse');
     });
 
-    this.canvas.addEventListener('click', (event) => {
-      if (event.button !== 0) return;
-      this.queueDesktopDebugTileEdit(event, 'place');
-    });
-
     this.canvas.addEventListener('contextmenu', (event) => {
       event.preventDefault();
-      if (event.button !== 2) return;
-      this.queueDesktopDebugTileEdit(event, 'break');
     });
 
     this.canvas.addEventListener('pointerdown', (event) => {
       this.canvas.setPointerCapture(event.pointerId);
       this.pointers.set(event.pointerId, event);
       this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
+      const startedMouseDebugPaint = this.tryStartMouseDebugPaintStroke(event);
       if (this.pointers.size === 1) {
-        this.pointerActive = true;
-        this.pointerId = event.pointerId;
-        this.lastX = event.clientX;
-        this.lastY = event.clientY;
+        if (startedMouseDebugPaint) {
+          this.pointerActive = false;
+          this.pointerId = null;
+        } else {
+          this.pointerActive = true;
+          this.pointerId = event.pointerId;
+          this.lastX = event.clientX;
+          this.lastY = event.clientY;
+        }
       } else if (this.pointers.size === 2) {
         this.pinchDistance = this.currentPinchDistance();
       }
@@ -118,7 +149,18 @@ export class InputController {
 
       this.pointers.set(event.pointerId, event);
 
-      if (this.pointers.size === 1 && this.pointerActive && this.pointerId === event.pointerId) {
+      const activeMouseDebugPaintStroke = this.activeMouseDebugPaintStroke;
+      if (
+        this.pointers.size === 1 &&
+        activeMouseDebugPaintStroke &&
+        activeMouseDebugPaintStroke.pointerId === event.pointerId
+      ) {
+        this.queueDesktopDebugTileEdit(
+          event,
+          activeMouseDebugPaintStroke.kind,
+          activeMouseDebugPaintStroke.paintedTileKeys
+        );
+      } else if (this.pointers.size === 1 && this.pointerActive && this.pointerId === event.pointerId) {
         const dx = event.clientX - this.lastX;
         const dy = event.clientY - this.lastY;
         const worldDelta = this.camera.screenDeltaToWorld(dx, dy);
@@ -140,6 +182,9 @@ export class InputController {
 
     const release = (event: PointerEvent): void => {
       this.pointers.delete(event.pointerId);
+      if (this.activeMouseDebugPaintStroke?.pointerId === event.pointerId) {
+        this.activeMouseDebugPaintStroke = null;
+      }
       if (this.pointerId === event.pointerId) {
         this.pointerActive = false;
         this.pointerId = null;
@@ -156,10 +201,25 @@ export class InputController {
     this.canvas.addEventListener('pointercancel', release);
     this.canvas.addEventListener('pointerleave', (event) => {
       if (event.pointerType === 'mouse' && this.pointers.size === 0) {
+        this.activeMouseDebugPaintStroke = null;
         this.pointerInspect = null;
       }
     });
     this.canvas.style.touchAction = 'none';
+  }
+
+  private tryStartMouseDebugPaintStroke(event: PointerEvent): boolean {
+    const kind = getDesktopDebugPaintKindForPointerDown(event.pointerType, event.button, event.shiftKey);
+    if (!kind || this.pointers.size !== 1) return false;
+
+    const stroke: ActiveMouseDebugPaintStroke = {
+      pointerId: event.pointerId,
+      kind,
+      paintedTileKeys: new Set<string>()
+    };
+    this.activeMouseDebugPaintStroke = stroke;
+    this.queueDesktopDebugTileEdit(event, kind, stroke.paintedTileKeys);
+    return true;
   }
 
   private currentPinchDistance(): number {
@@ -187,11 +247,16 @@ export class InputController {
     };
   }
 
-  private queueDesktopDebugTileEdit(event: MouseEvent, kind: DebugTileEditKind): void {
+  private queueDesktopDebugTileEdit(
+    event: MouseEvent,
+    kind: DebugTileEditKind,
+    seenTiles?: Set<string>
+  ): void {
     if (!this.pointerInspect || this.pointerInspect.pointerType !== 'mouse') return;
     this.updatePointerInspect(event.clientX, event.clientY, 'mouse');
     const request = buildDebugTileEditRequest(this.pointerInspect, kind);
     if (!request) return;
+    if (seenTiles && !markDebugPaintTileSeen(request.worldTileX, request.worldTileY, seenTiles)) return;
     this.debugTileEditQueue.push(request);
   }
 }

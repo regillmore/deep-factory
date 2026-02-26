@@ -24,9 +24,10 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 
 ### Desktop
 - Move camera: `WASD` or arrow keys
-- Mouse drag: pan
+- Mouse drag: debug paint on hovered tile cursor (`left` place / `right` break, per-tile deduped)
+- `Shift` + mouse drag: pan
 - Mouse wheel: zoom in/out
-- Debug tile edit (temporary): left click places `debug_brick`, right click breaks hovered tile (canvas context menu suppressed)
+- Debug tile edit (temporary): drag-paint `debug_brick` / break tiles (canvas context menu suppressed)
 
 ### Mobile / touch
 - One-finger drag: pan
@@ -60,7 +61,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Camera and picking tests now cover viewport coordinate round-tripping and DPR-aware client-to-tile selection (including negative-world tile flooring).
 - Debug overlay now includes a pointer inspect readout (`client`, `canvas`, `world`, `tile`) powered by the shared picking utility, making mixed-DPR input validation visible before edit-brush work.
 - A hovered-tile cursor highlight overlay now renders in client space from world tile coordinates (camera + DPR aware), de-risking world-space cursor visuals before tile editing.
-- Desktop debug tile editing now supports one-shot click actions on the hovered tile (`left` place / `right` break, no drag painting yet), wired through the shared picking path.
+- Desktop debug tile editing now supports hovered-tile drag painting (`left` place / `right` break) with per-stroke per-tile dedupe and a `Shift`-drag pan override, wired through the shared picking path.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.
