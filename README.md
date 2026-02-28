@@ -22,7 +22,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 
 ## Controls
 
-- Compact debug-edit status strip near the canvas mirrors the shared mode, active brush, armed one-shot tool, and mixed-device hints even while the debug panel is collapsed.
+- Compact debug-edit status strip near the canvas mirrors the shared mode, active brush, armed one-shot tool, hovered tile metadata (name/id plus solid/light/liquid flags), and mixed-device hints even while the debug panel is collapsed.
 
 ### Desktop
 - Debug edit control state (shared touch mode + active brush + panel visibility) persists across reloads with a metadata-safe brush fallback
@@ -34,6 +34,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Debug touch mode shortcuts (shared `Pan` / `Place` / `Break` state): `P` pan, `L` place, `B` break
 - Debug edit brush shortcuts: `1`-`0` select visible brush slots, `[` / `]` cycle active brush
 - Debug edit panel shortcut: `\` collapse / expand the shared debug-edit controls panel
+- Hovering a world tile updates the compact status strip with tile name/id plus solid/light/liquid flags for quick gameplay-tag inspection
 - Debug eyedropper shortcut: `I` sets the active brush from the hovered tile (non-empty tiles)
 - Debug flood fill shortcuts: `F` arms a one-shot brush flood fill, `Shift+F` arms a one-shot break flood fill; next canvas click applies (resident chunk bounds only, `Esc` cancels while armed)
 - One-shot armed fill/line/rect fill/rect outline/ellipse fill/ellipse outline tools show an on-canvas status badge with the current armed action and cancel hint (`Esc`)
@@ -53,6 +54,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - On-screen debug edit controls: tap `Collapse` / `Expand` to hide or show the panel body (collapsed header shows mode, brush, and undo/redo counts)
 - On-screen debug edit controls: tap `Reset Prefs` to restore default touch mode/brush/panel visibility and clear saved debug edit prefs
 - On-screen debug edit controls: touch `Undo` / `Redo` buttons revert or reapply the last debug paint stroke
+- While a touch pointer is active over the canvas, the compact status strip reports the touched tile name/id plus solid/light/liquid flags for quick gameplay-tag inspection
 - Touch history gestures (`Pan` mode): `two-finger tap` undo / `three-finger tap` redo (debounced; stationary taps avoid pinch conflicts)
 - Touch eyedropper gesture (`Pan` mode): `long-press` a tile to set the active brush from that tile (non-empty tiles)
 - On-screen debug edit controls: tap `Fill Brush` / `Fill Break` to arm a one-shot flood fill, then tap a world tile (resident chunk bounds only)
@@ -113,6 +115,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Shared debug edit controls now also include one-shot ellipse outline tools (`Ellipse Outline Brush` / `Ellipse Outline Break`) with desktop drag-bounds and touch two-corner workflows, and each ellipse outline applies as a single undoable stroke.
 - Armed one-shot debug fill/line/rect fill/rect outline/ellipse fill/ellipse outline tools now show an on-canvas preview/status overlay (desktop line endpoint + rectangle/ellipse bounds previews; touch line-start + rectangle/ellipse corner anchors) and support `Esc` cancellation.
 - A compact debug-edit status strip now sits near the canvas, mirroring the shared mode, active brush, armed one-shot tool state, and mixed-device gesture/shortcut hints while the larger panel is collapsed or out of the way.
+- The compact debug-edit status strip now also shows the hovered/touched tile name/id, world coordinates, and solid/light/liquid gameplay flags for faster gameplay-tag validation.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.

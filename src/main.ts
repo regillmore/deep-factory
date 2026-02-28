@@ -10,7 +10,8 @@ import {
   walkFilledRectangleTileArea,
   walkRectangleOutlineTileArea,
   walkLineSteppedTilePath,
-  type DebugTileEditKind
+  type DebugTileEditKind,
+  type PointerInspectSnapshot
 } from './input/controller';
 import {
   clearDebugEditControlState,
@@ -30,7 +31,7 @@ import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay'
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import { TouchDebugEditControls, type DebugBrushOption } from './ui/touchDebugEditControls';
 import { CHUNK_SIZE } from './world/constants';
-import { TILE_METADATA } from './world/tileMetadata';
+import { getTileMetadata, resolveTileGameplayMetadata, TILE_METADATA } from './world/tileMetadata';
 
 const DEBUG_TILE_BREAK_ID = 0;
 const PREFERRED_INITIAL_DEBUG_BRUSH_TILE_NAME = 'debug_brick';
@@ -661,6 +662,26 @@ const bootstrap = async (): Promise<void> => {
 
   const getActiveDebugBrushLabel = (): string => DEBUG_BRUSH_TILE_LABELS.get(activeDebugBrushTileId) ?? `tile ${activeDebugBrushTileId}`;
 
+  const getHoveredDebugTileStatus = (pointerInspect: PointerInspectSnapshot | null) => {
+    if (!pointerInspect) return null;
+
+    const tileX = pointerInspect.tile.x;
+    const tileY = pointerInspect.tile.y;
+    const tileId = renderer.getTile(tileX, tileY);
+    const tileMetadata = getTileMetadata(tileId);
+    const gameplay = resolveTileGameplayMetadata(tileId);
+
+    return {
+      tileX,
+      tileY,
+      tileId,
+      tileLabel: tileMetadata ? formatDebugBrushLabel(tileMetadata.name) : `tile ${tileId}`,
+      solid: gameplay.solid,
+      blocksLight: gameplay.blocksLight,
+      liquidKind: gameplay.liquidKind ?? null
+    };
+  };
+
   window.addEventListener('keydown', (event) => {
     if (event.defaultPrevented) return;
     if (isEditableKeyboardShortcutTarget(event.target)) return;
@@ -831,6 +852,7 @@ const bootstrap = async (): Promise<void> => {
     (_alpha, frameDtMs) => {
       const pointerInspect = input.getPointerInspect();
       const armedDebugToolPreviewState = input.getArmedDebugToolPreviewState();
+      const hoveredDebugTileStatus = getHoveredDebugTileStatus(pointerInspect);
       renderer.resize();
       renderer.render(camera);
       hoveredTileCursor.update(camera, pointerInspect);
@@ -839,7 +861,8 @@ const bootstrap = async (): Promise<void> => {
         mode: input.getTouchDebugEditMode(),
         brushLabel: getActiveDebugBrushLabel(),
         brushTileId: activeDebugBrushTileId,
-        preview: armedDebugToolPreviewState
+        preview: armedDebugToolPreviewState,
+        hoveredTile: hoveredDebugTileStatus
       });
       debug.update(frameDtMs, renderer.telemetry, pointerInspect);
     }

@@ -9,4 +9,4 @@
 7. Prepare networking scaffolding (state diff messages, interest management).
 8. Add a main menu shell and move debug overlay to a UI toggle.
 9. Add desktop keyboard shortcuts to arm one-shot line/rect/rect-outline/ellipse fill/ellipse outline debug-edit tools with discoverable control hints.
-10. Extend the compact debug-edit status strip with hovered tile metadata (tile name/id plus solid/light/liquid flags) for faster gameplay-tag validation.
+10. Add a tap-to-pin tile inspect mode so touch users can keep tile metadata visible after release.

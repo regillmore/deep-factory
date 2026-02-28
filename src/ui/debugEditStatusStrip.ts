@@ -25,6 +25,7 @@ export class DebugEditStatusStrip {
   private modeChip: HTMLDivElement;
   private brushChip: HTMLDivElement;
   private toolChip: HTMLDivElement;
+  private hoverLine: HTMLDivElement;
   private hintLine: HTMLDivElement;
 
   constructor(private canvas: HTMLCanvasElement) {
@@ -65,6 +66,12 @@ export class DebugEditStatusStrip {
 
     this.summaryRow.append(this.modeChip, this.brushChip, this.toolChip);
 
+    this.hoverLine = document.createElement('div');
+    this.hoverLine.style.color = 'rgba(236, 242, 248, 0.96)';
+    this.hoverLine.style.whiteSpace = 'normal';
+    this.hoverLine.style.maxWidth = '100%';
+    this.root.append(this.hoverLine);
+
     this.hintLine = document.createElement('div');
     this.hintLine.style.color = 'rgba(222, 231, 240, 0.96)';
     this.hintLine.style.paddingTop = '2px';
@@ -96,6 +103,7 @@ export class DebugEditStatusStrip {
     this.toolChip.style.borderColor = withAlpha(model.toolAccent, '0.34');
     this.toolChip.style.background = withAlpha(model.toolAccent, '0.16');
 
+    this.hoverLine.textContent = model.hoverText;
     this.hintLine.textContent = model.hintText;
     this.hintLine.style.borderTopColor = withAlpha(model.toolAccent, '0.16');
   }

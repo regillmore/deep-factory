@@ -1,4 +1,5 @@
 import type { ArmedDebugToolPreviewState, DebugTileEditKind, TouchDebugEditMode } from '../input/controller';
+import type { TileLiquidKind } from '../world/tileMetadata';
 
 export interface ActiveDebugToolStatus {
   title: string;
@@ -11,14 +12,26 @@ export interface DebugEditStatusStripState {
   brushLabel: string;
   brushTileId: number;
   preview: ArmedDebugToolPreviewState;
+  hoveredTile: DebugEditHoveredTileState | null;
 }
 
 export interface DebugEditStatusStripModel {
   modeText: string;
   brushText: string;
   toolText: string;
+  hoverText: string;
   hintText: string;
   toolAccent: string;
+}
+
+export interface DebugEditHoveredTileState {
+  tileX: number;
+  tileY: number;
+  tileId: number;
+  tileLabel: string;
+  solid: boolean;
+  blocksLight: boolean;
+  liquidKind: TileLiquidKind | null;
 }
 
 const NEUTRAL_TOOL_ACCENT = 'rgba(176, 190, 208, 0.9)';
@@ -194,6 +207,21 @@ const buildIdleHintText = (mode: TouchDebugEditMode): string => {
   return 'Touch: drag to break, pinch zoom. Desktop: left paint, right break, Shift-drag pan, wheel zoom, Esc cancels one-shot tools.';
 };
 
+const formatHoveredTileFlag = (value: boolean): string => (value ? 'on' : 'off');
+
+const buildHoveredTileText = (hoveredTile: DebugEditHoveredTileState | null): string => {
+  if (!hoveredTile) {
+    return 'Hover: move cursor or touch a world tile to inspect gameplay flags.';
+  }
+
+  return (
+    `Hover: ${hoveredTile.tileLabel} (#${hoveredTile.tileId}) @ ${hoveredTile.tileX},${hoveredTile.tileY}` +
+    ` | solid:${formatHoveredTileFlag(hoveredTile.solid)}` +
+    ` | light:${formatHoveredTileFlag(hoveredTile.blocksLight)}` +
+    ` | liquid:${hoveredTile.liquidKind ?? 'none'}`
+  );
+};
+
 export const buildDebugEditStatusStripModel = (
   state: DebugEditStatusStripState
 ): DebugEditStatusStripModel => {
@@ -203,6 +231,7 @@ export const buildDebugEditStatusStripModel = (
     modeText: `Mode: ${formatTouchDebugEditModeLabel(state.mode)}`,
     brushText: `Brush: ${state.brushLabel} (#${state.brushTileId})`,
     toolText: activeToolStatus ? `Tool: ${activeToolStatus.title}` : 'Tool: No one-shot armed',
+    hoverText: buildHoveredTileText(state.hoveredTile),
     hintText: activeToolStatus ? activeToolStatus.detail : buildIdleHintText(state.mode),
     toolAccent: activeToolStatus?.accent ?? NEUTRAL_TOOL_ACCENT
   };

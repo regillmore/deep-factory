@@ -65,12 +65,14 @@ describe('buildDebugEditStatusStripModel', () => {
       mode: 'place',
       brushLabel: 'debug brick',
       brushTileId: 3,
-      preview: createEmptyPreviewState()
+      preview: createEmptyPreviewState(),
+      hoveredTile: null
     });
 
     expect(model.modeText).toBe('Mode: Place');
     expect(model.brushText).toBe('Brush: debug brick (#3)');
     expect(model.toolText).toBe('Tool: No one-shot armed');
+    expect(model.hoverText).toBe('Hover: move cursor or touch a world tile to inspect gameplay flags.');
     expect(model.hintText).toContain('Touch: drag to paint');
     expect(model.hintText).toContain('Esc cancels one-shot tools');
   });
@@ -80,6 +82,7 @@ describe('buildDebugEditStatusStripModel', () => {
       mode: 'pan',
       brushLabel: 'debug brick',
       brushTileId: 3,
+      hoveredTile: null,
       preview: {
         ...createEmptyPreviewState(),
         armedFloodFillKind: 'place'
@@ -89,5 +92,27 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.toolText).toBe('Tool: Fill Brush armed');
     expect(model.hintText).toBe('click/tap target tile - Esc cancel');
     expect(model.toolAccent).toBe('rgba(120, 255, 180, 0.95)');
+  });
+
+  it('formats hovered tile metadata with compact gameplay flag readouts', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      preview: createEmptyPreviewState(),
+      hoveredTile: {
+        tileX: 12,
+        tileY: -4,
+        tileId: 9,
+        tileLabel: 'lava pool',
+        solid: false,
+        blocksLight: true,
+        liquidKind: 'lava'
+      }
+    });
+
+    expect(model.hoverText).toBe(
+      'Hover: lava pool (#9) @ 12,-4 | solid:off | light:on | liquid:lava'
+    );
   });
 });
