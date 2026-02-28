@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Show the hovered-to-pinned tile offset in the compact status strip when both inspect targets are visible and different.
+1. Show chunk coordinates alongside tile coordinates in the compact status strip inspect metadata.
 
 ## Authored asset pipeline
 

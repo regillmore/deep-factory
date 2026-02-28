@@ -188,7 +188,8 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.hoverText).toBe(
       'Pinned: lava pool (#9) @ 12,-4 | solid:off | light:on | liquid:lava\n' +
-        'Hover: dirt (#2) @ 4,7 | solid:on | light:on | liquid:none'
+        'Hover: dirt (#2) @ 4,7 | solid:on | light:on | liquid:none\n' +
+        'Offset: Hover->Pinned x:+8 y:-11'
     );
   });
 

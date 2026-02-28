@@ -246,12 +246,25 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
   ` | light:${formatHoveredTileFlag(tile.blocksLight)}` +
   ` | liquid:${tile.liquidKind ?? 'none'}`;
 
+const formatSignedOffset = (value: number): string => (value >= 0 ? `+${value}` : `${value}`);
+
+const formatInspectOffsetLine = (
+  hoveredTile: DebugEditHoveredTileState,
+  pinnedTile: DebugEditHoveredTileState
+): string =>
+  `Offset: Hover->Pinned x:${formatSignedOffset(pinnedTile.tileX - hoveredTile.tileX)}` +
+  ` y:${formatSignedOffset(pinnedTile.tileY - hoveredTile.tileY)}`;
+
 const buildHoveredTileText = (
   hoveredTile: DebugEditHoveredTileState | null,
   pinnedTile: DebugEditHoveredTileState | null
 ): string => {
   if (pinnedTile && hoveredTile && !hasSameInspectTarget(hoveredTile, pinnedTile)) {
-    return [formatInspectTileLine('Pinned', pinnedTile), formatInspectTileLine('Hover', hoveredTile)].join('\n');
+    return [
+      formatInspectTileLine('Pinned', pinnedTile),
+      formatInspectTileLine('Hover', hoveredTile),
+      formatInspectOffsetLine(hoveredTile, pinnedTile)
+    ].join('\n');
   }
 
   if (pinnedTile && hoveredTile) {
