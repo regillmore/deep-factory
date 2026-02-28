@@ -13,6 +13,7 @@ export interface DebugEditStatusStripState {
   brushTileId: number;
   preview: ArmedDebugToolPreviewState;
   hoveredTile: DebugEditHoveredTileState | null;
+  pinnedTile: DebugEditHoveredTileState | null;
 }
 
 export interface DebugEditStatusStripModel {
@@ -201,7 +202,7 @@ export const resolveActiveDebugToolStatus = (
 
 const buildIdleHintText = (mode: TouchDebugEditMode): string => {
   if (mode === 'pan') {
-    return `Touch: pan/pinch, long-press eyedropper, two-finger tap undo, three-finger tap redo. Desktop: P/L/B modes, 1-0 or [ ] brush, I pick. ${DESKTOP_ONE_SHOT_HINT}`;
+    return `Touch: tap tile to pin inspect, pan/pinch, long-press eyedropper, two-finger tap undo, three-finger tap redo. Desktop: P/L/B modes, 1-0 or [ ] brush, I pick. ${DESKTOP_ONE_SHOT_HINT}`;
   }
   if (mode === 'place') {
     return `Touch: drag to paint, pinch zoom. Desktop: left paint, right break, Shift-drag pan, wheel zoom. ${DESKTOP_ONE_SHOT_HINT} Esc cancels one-shot tools.`;
@@ -209,11 +210,30 @@ const buildIdleHintText = (mode: TouchDebugEditMode): string => {
   return `Touch: drag to break, pinch zoom. Desktop: left paint, right break, Shift-drag pan, wheel zoom. ${DESKTOP_ONE_SHOT_HINT} Esc cancels one-shot tools.`;
 };
 
+const buildPinnedInspectHintText = (mode: TouchDebugEditMode): string => {
+  if (mode === 'pan') {
+    return 'Pinned inspect active: tap another tile to repin, or tap the same tile again to clear.';
+  }
+  return 'Pinned inspect stays visible in edit modes; switch to Pan and tap another tile to repin or clear.';
+};
+
 const formatHoveredTileFlag = (value: boolean): string => (value ? 'on' : 'off');
 
-const buildHoveredTileText = (hoveredTile: DebugEditHoveredTileState | null): string => {
+const buildHoveredTileText = (
+  hoveredTile: DebugEditHoveredTileState | null,
+  pinnedTile: DebugEditHoveredTileState | null
+): string => {
+  if (pinnedTile) {
+    return (
+      `Pinned: ${pinnedTile.tileLabel} (#${pinnedTile.tileId}) @ ${pinnedTile.tileX},${pinnedTile.tileY}` +
+      ` | solid:${formatHoveredTileFlag(pinnedTile.solid)}` +
+      ` | light:${formatHoveredTileFlag(pinnedTile.blocksLight)}` +
+      ` | liquid:${pinnedTile.liquidKind ?? 'none'}`
+    );
+  }
+
   if (!hoveredTile) {
-    return 'Hover: move cursor or touch a world tile to inspect gameplay flags.';
+    return 'Hover: move cursor or touch a world tile to inspect gameplay flags. Touch Pan mode taps can pin.';
   }
 
   return (
@@ -233,8 +253,12 @@ export const buildDebugEditStatusStripModel = (
     modeText: `Mode: ${formatTouchDebugEditModeLabel(state.mode)}`,
     brushText: `Brush: ${state.brushLabel} (#${state.brushTileId})`,
     toolText: activeToolStatus ? `Tool: ${activeToolStatus.title}` : 'Tool: No one-shot armed',
-    hoverText: buildHoveredTileText(state.hoveredTile),
-    hintText: activeToolStatus ? activeToolStatus.detail : buildIdleHintText(state.mode),
+    hoverText: buildHoveredTileText(state.hoveredTile, state.pinnedTile),
+    hintText: activeToolStatus
+      ? activeToolStatus.detail
+      : state.pinnedTile
+        ? buildPinnedInspectHintText(state.mode)
+        : buildIdleHintText(state.mode),
     toolAccent: activeToolStatus?.accent ?? NEUTRAL_TOOL_ACCENT
   };
 };

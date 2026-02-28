@@ -1,5 +1,4 @@
 import { Camera2D } from '../core/camera2d';
-import type { PointerInspectSnapshot } from '../input/controller';
 import type { CanvasSizeLike, ClientRectLike } from '../input/picking';
 import { TILE_SIZE } from '../world/constants';
 
@@ -8,6 +7,12 @@ export interface HoveredTileCursorClientRect {
   top: number;
   width: number;
   height: number;
+}
+
+export interface HoveredTileCursorTarget {
+  tileX: number;
+  tileY: number;
+  pinned: boolean;
 }
 
 export const computeHoveredTileCursorClientRect = (
@@ -61,15 +66,15 @@ export class HoveredTileCursorOverlay {
     document.body.append(this.root);
   }
 
-  update(camera: Camera2D, pointerInspect: PointerInspectSnapshot | null): void {
-    if (!pointerInspect) {
+  update(camera: Camera2D, target: HoveredTileCursorTarget | null): void {
+    if (!target) {
       this.root.style.display = 'none';
       return;
     }
 
     const clientRect = computeHoveredTileCursorClientRect(
-      pointerInspect.tile.x,
-      pointerInspect.tile.y,
+      target.tileX,
+      target.tileY,
       camera,
       this.canvas,
       this.canvas.getBoundingClientRect()
@@ -81,6 +86,8 @@ export class HoveredTileCursorOverlay {
     }
 
     this.root.style.display = 'block';
+    this.root.style.borderColor = target.pinned ? 'rgba(120, 210, 255, 0.95)' : 'rgba(255, 232, 122, 0.95)';
+    this.root.style.background = target.pinned ? 'rgba(120, 210, 255, 0.12)' : 'rgba(255, 232, 122, 0.14)';
     this.root.style.left = `${clientRect.left}px`;
     this.root.style.top = `${clientRect.top}px`;
     this.root.style.width = `${clientRect.width}px`;

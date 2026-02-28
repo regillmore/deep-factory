@@ -29,6 +29,7 @@ import { DebugOverlay } from './ui/debugOverlay';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
+import type { DebugEditHoveredTileState } from './ui/debugEditStatusHelpers';
 import { TouchDebugEditControls, type DebugBrushOption } from './ui/touchDebugEditControls';
 import { CHUNK_SIZE } from './world/constants';
 import { getTileMetadata, resolveTileGameplayMetadata, TILE_METADATA } from './world/tileMetadata';
@@ -54,6 +55,11 @@ const DEBUG_BRUSH_TILE_OPTIONS: readonly DebugBrushOption[] = TILE_METADATA.tile
 const DEBUG_BRUSH_TILE_IDS = DEBUG_BRUSH_TILE_OPTIONS.map((option) => option.tileId);
 const DEBUG_BRUSH_TILE_ID_SET = new Set(DEBUG_BRUSH_TILE_IDS);
 const DEBUG_BRUSH_TILE_LABELS = new Map(DEBUG_BRUSH_TILE_OPTIONS.map((option) => [option.tileId, option.label]));
+
+interface PinnedDebugTileInspectState {
+  tileX: number;
+  tileY: number;
+}
 
 if (DEBUG_BRUSH_TILE_OPTIONS.length === 0) {
   throw new Error('Tile metadata must provide at least one non-empty tile for debug editing');
@@ -112,6 +118,7 @@ const bootstrap = async (): Promise<void> => {
   let debugEditPanelCollapsed = initialDebugEditControlState.panelCollapsed;
   let debugEditControls: TouchDebugEditControls | null = null;
   let suppressDebugEditControlPersistence = false;
+  let pinnedDebugTileInspect: PinnedDebugTileInspectState | null = null;
 
   const persistDebugEditControlsState = (): void => {
     if (suppressDebugEditControlPersistence) return;
@@ -662,11 +669,7 @@ const bootstrap = async (): Promise<void> => {
 
   const getActiveDebugBrushLabel = (): string => DEBUG_BRUSH_TILE_LABELS.get(activeDebugBrushTileId) ?? `tile ${activeDebugBrushTileId}`;
 
-  const getHoveredDebugTileStatus = (pointerInspect: PointerInspectSnapshot | null) => {
-    if (!pointerInspect) return null;
-
-    const tileX = pointerInspect.tile.x;
-    const tileY = pointerInspect.tile.y;
+  const getDebugTileStatusAtTile = (tileX: number, tileY: number): DebugEditHoveredTileState => {
     const tileId = renderer.getTile(tileX, tileY);
     const tileMetadata = getTileMetadata(tileId);
     const gameplay = resolveTileGameplayMetadata(tileId);
@@ -679,6 +682,23 @@ const bootstrap = async (): Promise<void> => {
       solid: gameplay.solid,
       blocksLight: gameplay.blocksLight,
       liquidKind: gameplay.liquidKind ?? null
+    };
+  };
+
+  const getHoveredDebugTileStatus = (pointerInspect: PointerInspectSnapshot | null): DebugEditHoveredTileState | null => {
+    if (!pointerInspect) return null;
+    return getDebugTileStatusAtTile(pointerInspect.tile.x, pointerInspect.tile.y);
+  };
+
+  const togglePinnedDebugTileInspect = (tileX: number, tileY: number): void => {
+    if (pinnedDebugTileInspect?.tileX === tileX && pinnedDebugTileInspect.tileY === tileY) {
+      pinnedDebugTileInspect = null;
+      return;
+    }
+
+    pinnedDebugTileInspect = {
+      tileX,
+      tileY
     };
   };
 
@@ -845,6 +865,10 @@ const bootstrap = async (): Promise<void> => {
         applyDebugBrushEyedropperAtTile(eyedropperRequest.worldTileX, eyedropperRequest.worldTileY);
       }
 
+      for (const inspectPinRequest of input.consumeDebugTileInspectPinRequests()) {
+        togglePinnedDebugTileInspect(inspectPinRequest.worldTileX, inspectPinRequest.worldTileY);
+      }
+
       let historyChanged = false;
       for (const completedStroke of input.consumeCompletedDebugTileStrokes()) {
         historyChanged = debugTileEditHistory.completeStroke(completedStroke.strokeId) || historyChanged;
@@ -863,16 +887,35 @@ const bootstrap = async (): Promise<void> => {
       const pointerInspect = input.getPointerInspect();
       const armedDebugToolPreviewState = input.getArmedDebugToolPreviewState();
       const hoveredDebugTileStatus = getHoveredDebugTileStatus(pointerInspect);
+      const pinnedDebugTileStatus = pinnedDebugTileInspect
+        ? getDebugTileStatusAtTile(pinnedDebugTileInspect.tileX, pinnedDebugTileInspect.tileY)
+        : null;
       renderer.resize();
       renderer.render(camera);
-      hoveredTileCursor.update(camera, pointerInspect);
+      hoveredTileCursor.update(
+        camera,
+        pointerInspect
+          ? {
+              tileX: pointerInspect.tile.x,
+              tileY: pointerInspect.tile.y,
+              pinned: false
+            }
+          : pinnedDebugTileInspect
+            ? {
+                tileX: pinnedDebugTileInspect.tileX,
+                tileY: pinnedDebugTileInspect.tileY,
+                pinned: true
+              }
+            : null
+      );
       armedDebugToolPreview.update(camera, pointerInspect, armedDebugToolPreviewState);
       debugEditStatusStrip.update({
         mode: input.getTouchDebugEditMode(),
         brushLabel: getActiveDebugBrushLabel(),
         brushTileId: activeDebugBrushTileId,
         preview: armedDebugToolPreviewState,
-        hoveredTile: hoveredDebugTileStatus
+        hoveredTile: hoveredDebugTileStatus,
+        pinnedTile: pinnedDebugTileStatus
       });
       debug.update(frameDtMs, renderer.telemetry, pointerInspect);
     }

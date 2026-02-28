@@ -4,6 +4,7 @@ import {
   type DebugTouchHistoryShortcutAction
 } from './debugTouchHistoryShortcuts';
 import { resolveTouchDebugEyedropperShortcutActionForLongPress } from './debugTouchEyedropperShortcuts';
+import { resolveTouchDebugInspectPinShortcutActionForTap } from './debugTouchInspectPinShortcuts';
 import { clientToWorldPoint, pickScreenWorldTileFromCanvas } from './picking';
 
 const DEBUG_TILE_PLACE_MOUSE_BUTTON = 0;
@@ -27,6 +28,12 @@ export interface DebugTileEditRequest {
 }
 
 export interface DebugBrushEyedropperRequest {
+  worldTileX: number;
+  worldTileY: number;
+  pointerType: 'touch';
+}
+
+export interface DebugTileInspectPinRequest {
   worldTileX: number;
   worldTileY: number;
   pointerType: 'touch';
@@ -196,6 +203,14 @@ interface ActiveTouchHistoryTapGestureCandidate {
 }
 
 interface ActiveTouchEyedropperLongPressCandidate {
+  pointerId: number;
+  startedAtMs: number;
+  startClientX: number;
+  startClientY: number;
+  maxPointerTravelPx: number;
+}
+
+interface ActiveTouchInspectPinTapCandidate {
   pointerId: number;
   startedAtMs: number;
   startClientX: number;
@@ -439,6 +454,7 @@ export class InputController {
   private debugEllipseFillQueue: DebugEllipseFillRequest[] = [];
   private debugEllipseOutlineQueue: DebugEllipseOutlineRequest[] = [];
   private debugBrushEyedropperQueue: DebugBrushEyedropperRequest[] = [];
+  private debugTileInspectPinQueue: DebugTileInspectPinRequest[] = [];
   private completedDebugTileStrokeQueue: CompletedDebugTileEditStroke[] = [];
   private debugEditHistoryShortcutQueue: DebugEditHistoryShortcutAction[] = [];
   private activeMouseDebugPaintStroke: ActiveDebugPaintStroke | null = null;
@@ -455,6 +471,7 @@ export class InputController {
   private pendingTouchDebugEllipseOutlineStart: PendingTouchDebugRectStart | null = null;
   private activeTouchHistoryTapGestureCandidate: ActiveTouchHistoryTapGestureCandidate | null = null;
   private activeTouchEyedropperLongPressCandidate: ActiveTouchEyedropperLongPressCandidate | null = null;
+  private activeTouchInspectPinTapCandidate: ActiveTouchInspectPinTapCandidate | null = null;
   private lastTouchHistoryTapGestureTimeMs = Number.NEGATIVE_INFINITY;
   private touchDebugEditMode: TouchDebugEditMode = 'pan';
   private armedDebugFloodFillKind: DebugTileEditKind | null = null;
@@ -549,6 +566,13 @@ export class InputController {
     return requests;
   }
 
+  consumeDebugTileInspectPinRequests(): DebugTileInspectPinRequest[] {
+    if (this.debugTileInspectPinQueue.length === 0) return [];
+    const requests = this.debugTileInspectPinQueue;
+    this.debugTileInspectPinQueue = [];
+    return requests;
+  }
+
   consumeCompletedDebugTileStrokes(): CompletedDebugTileEditStroke[] {
     if (this.completedDebugTileStrokeQueue.length === 0) return [];
     const completedStrokes = this.completedDebugTileStrokeQueue;
@@ -572,6 +596,7 @@ export class InputController {
     this.touchDebugEditMode = mode;
     this.activeTouchHistoryTapGestureCandidate = null;
     this.activeTouchEyedropperLongPressCandidate = null;
+    this.activeTouchInspectPinTapCandidate = null;
     this.pendingTouchDebugLineStart = null;
     this.pendingTouchDebugRectStart = null;
     this.pendingTouchDebugRectOutlineStart = null;
@@ -861,9 +886,11 @@ export class InputController {
       ) {
         this.activeTouchHistoryTapGestureCandidate = null;
         this.activeTouchEyedropperLongPressCandidate = null;
+        this.activeTouchInspectPinTapCandidate = null;
       } else {
         this.refreshTouchHistoryTapGestureCandidateOnPointerDown(event);
         this.refreshTouchEyedropperLongPressCandidateOnPointerDown(event);
+        this.refreshTouchInspectPinTapCandidateOnPointerDown(event);
       }
       const startedMouseDebugPaint =
         queuedArmedDebugFloodFill ||
@@ -917,6 +944,7 @@ export class InputController {
       this.pointers.set(event.pointerId, event);
       this.updateTouchHistoryTapGestureCandidateMetrics(event);
       this.updateTouchEyedropperLongPressCandidateMetrics(event);
+      this.updateTouchInspectPinTapCandidateMetrics(event);
 
       const activeMouseDebugPaintStroke = this.activeMouseDebugPaintStroke;
       const activeTouchDebugPaintStroke = this.activeTouchDebugPaintStroke;
@@ -993,6 +1021,7 @@ export class InputController {
       }
       this.updateTouchHistoryTapGestureCandidateMetrics(event);
       this.updateTouchEyedropperLongPressCandidateMetrics(event);
+      this.updateTouchInspectPinTapCandidateMetrics(event);
       if (this.activeMouseDebugLineDrag?.pointerId === event.pointerId) {
         if (!canceled) {
           this.commitMouseDebugLineDrag(event, this.activeMouseDebugLineDrag);
@@ -1044,6 +1073,7 @@ export class InputController {
         this.pointerInspect = null;
       }
 
+      this.maybeQueueTouchInspectPinTapOnPointerRelease(event, canceled);
       this.maybeQueueTouchHistoryTapGestureShortcutOnPointerRelease(event, canceled);
     };
 
@@ -1198,6 +1228,23 @@ export class InputController {
     };
   }
 
+  private refreshTouchInspectPinTapCandidateOnPointerDown(event: PointerEvent): void {
+    if (event.pointerType !== 'touch') return;
+
+    if (this.touchDebugEditMode !== 'pan' || this.pointers.size !== 1) {
+      this.activeTouchInspectPinTapCandidate = null;
+      return;
+    }
+
+    this.activeTouchInspectPinTapCandidate = {
+      pointerId: event.pointerId,
+      startedAtMs: event.timeStamp,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      maxPointerTravelPx: 0
+    };
+  }
+
   private updateTouchEyedropperLongPressCandidateMetrics(event: PointerEvent): void {
     if (event.pointerType !== 'touch') return;
 
@@ -1213,6 +1260,23 @@ export class InputController {
       event.clientX - candidate.startClientX,
       event.clientY - candidate.startClientY
     );
+    if (pointerTravelPx > candidate.maxPointerTravelPx) {
+      candidate.maxPointerTravelPx = pointerTravelPx;
+    }
+  }
+
+  private updateTouchInspectPinTapCandidateMetrics(event: PointerEvent): void {
+    if (event.pointerType !== 'touch') return;
+
+    const candidate = this.activeTouchInspectPinTapCandidate;
+    if (!candidate || candidate.pointerId !== event.pointerId) return;
+
+    if (this.touchDebugEditMode !== 'pan' || this.pointers.size !== 1) {
+      this.activeTouchInspectPinTapCandidate = null;
+      return;
+    }
+
+    const pointerTravelPx = Math.hypot(event.clientX - candidate.startClientX, event.clientY - candidate.startClientY);
     if (pointerTravelPx > candidate.maxPointerTravelPx) {
       candidate.maxPointerTravelPx = pointerTravelPx;
     }
@@ -1252,6 +1316,34 @@ export class InputController {
     }
 
     this.activeTouchEyedropperLongPressCandidate = null;
+    this.activeTouchInspectPinTapCandidate = null;
+  }
+
+  private maybeQueueTouchInspectPinTapOnPointerRelease(event: PointerEvent, canceled: boolean): void {
+    if (event.pointerType !== 'touch') return;
+
+    const candidate = this.activeTouchInspectPinTapCandidate;
+    if (!candidate || candidate.pointerId !== event.pointerId) return;
+
+    this.activeTouchInspectPinTapCandidate = null;
+    if (canceled) return;
+
+    const action = resolveTouchDebugInspectPinShortcutActionForTap({
+      durationMs: Math.max(0, event.timeStamp - candidate.startedAtMs),
+      maxPointerTravelPx: candidate.maxPointerTravelPx,
+      gesturesEnabled: this.touchDebugEditMode === 'pan' && this.pointers.size === 0
+    });
+    if (action !== 'pin-tile-inspect') return;
+
+    this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
+    const pointerInspect = this.pointerInspect;
+    if (pointerInspect?.pointerType !== 'touch') return;
+
+    this.debugTileInspectPinQueue.push({
+      worldTileX: pointerInspect.tile.x,
+      worldTileY: pointerInspect.tile.y,
+      pointerType: 'touch'
+    });
   }
 
   private maybeQueueTouchHistoryTapGestureShortcutOnPointerRelease(

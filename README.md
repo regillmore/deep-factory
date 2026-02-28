@@ -56,6 +56,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - On-screen debug edit controls: tap `Reset Prefs` to restore default touch mode/brush/panel visibility and clear saved debug edit prefs
 - On-screen debug edit controls: touch `Undo` / `Redo` buttons revert or reapply the last debug paint stroke
 - While a touch pointer is active over the canvas, the compact status strip reports the touched tile name/id plus solid/light/liquid flags for quick gameplay-tag inspection
+- Touch inspect pinning (`Pan` mode): tap a world tile to lock its metadata in the compact status strip and keep a cyan tile outline visible after release; tap the same tile again to clear or tap another tile to repin
 - Touch history gestures (`Pan` mode): `two-finger tap` undo / `three-finger tap` redo (debounced; stationary taps avoid pinch conflicts)
 - Touch eyedropper gesture (`Pan` mode): `long-press` a tile to set the active brush from that tile (non-empty tiles)
 - On-screen debug edit controls: tap `Fill Brush` / `Fill Break` to arm a one-shot flood fill, then tap a world tile (resident chunk bounds only)
@@ -118,6 +119,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Desktop keyboard shortcuts now also arm one-shot line/rect fill/rect outline/ellipse fill/ellipse outline tools (mirroring flood fill with `Shift` for break variants), and the shared debug controls/status hints surface those bindings.
 - A compact debug-edit status strip now sits near the canvas, mirroring the shared mode, active brush, armed one-shot tool state, and mixed-device gesture/shortcut hints while the larger panel is collapsed or out of the way.
 - The compact debug-edit status strip now also shows the hovered/touched tile name/id, world coordinates, and solid/light/liquid gameplay flags for faster gameplay-tag validation.
+- Touch `Pan` mode now also supports tap-to-pin tile inspect state, keeping gameplay metadata and a tile outline visible after release until the same tile is tapped again or a new tile is pinned.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.

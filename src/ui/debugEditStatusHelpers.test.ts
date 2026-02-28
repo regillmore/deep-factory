@@ -66,13 +66,16 @@ describe('buildDebugEditStatusStripModel', () => {
       brushLabel: 'debug brick',
       brushTileId: 3,
       preview: createEmptyPreviewState(),
-      hoveredTile: null
+      hoveredTile: null,
+      pinnedTile: null
     });
 
     expect(model.modeText).toBe('Mode: Place');
     expect(model.brushText).toBe('Brush: debug brick (#3)');
     expect(model.toolText).toBe('Tool: No one-shot armed');
-    expect(model.hoverText).toBe('Hover: move cursor or touch a world tile to inspect gameplay flags.');
+    expect(model.hoverText).toBe(
+      'Hover: move cursor or touch a world tile to inspect gameplay flags. Touch Pan mode taps can pin.'
+    );
     expect(model.hintText).toContain('Touch: drag to paint');
     expect(model.hintText).toContain('N line');
     expect(model.hintText).toContain('Esc cancels one-shot tools');
@@ -84,6 +87,7 @@ describe('buildDebugEditStatusStripModel', () => {
       brushLabel: 'debug brick',
       brushTileId: 3,
       hoveredTile: null,
+      pinnedTile: null,
       preview: {
         ...createEmptyPreviewState(),
         armedFloodFillKind: 'place'
@@ -101,6 +105,7 @@ describe('buildDebugEditStatusStripModel', () => {
       brushLabel: 'debug brick',
       brushTileId: 3,
       preview: createEmptyPreviewState(),
+      pinnedTile: null,
       hoveredTile: {
         tileX: 12,
         tileY: -4,
@@ -114,6 +119,40 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.hoverText).toBe(
       'Hover: lava pool (#9) @ 12,-4 | solid:off | light:on | liquid:lava'
+    );
+  });
+
+  it('prioritizes pinned inspect metadata with a repin hint', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      preview: createEmptyPreviewState(),
+      hoveredTile: {
+        tileX: 4,
+        tileY: 7,
+        tileId: 2,
+        tileLabel: 'dirt',
+        solid: true,
+        blocksLight: true,
+        liquidKind: null
+      },
+      pinnedTile: {
+        tileX: 12,
+        tileY: -4,
+        tileId: 9,
+        tileLabel: 'lava pool',
+        solid: false,
+        blocksLight: true,
+        liquidKind: 'lava'
+      }
+    });
+
+    expect(model.hoverText).toBe(
+      'Pinned: lava pool (#9) @ 12,-4 | solid:off | light:on | liquid:lava'
+    );
+    expect(model.hintText).toBe(
+      'Pinned inspect active: tap another tile to repin, or tap the same tile again to clear.'
     );
   });
 });
