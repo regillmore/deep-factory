@@ -8,6 +8,7 @@ This repository is developed through repeated agent passes. Each pass should com
 2. Read [docs/NEXT.md](docs/NEXT.md) to choose the next task.
 3. Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before changing module boundaries, runtime flow, or data ownership.
 4. Read [docs/DECISIONS.md](docs/DECISIONS.md) when the task touches a prior design decision or introduces a new one.
+5. Read [docs/CAPABILITIES.md](docs/CAPABILITIES.md) when the task changes current controls, user-visible behavior, or subsystem status that should remain easy to discover.
 
 ## Iteration Contract
 
@@ -32,8 +33,10 @@ A task is done only when all of the following are true:
 2. Relevant tests are added or updated for the changed logic.
 3. The build, typecheck, or targeted test command has been run when practical in the current environment.
 4. [docs/NEXT.md](docs/NEXT.md) reflects the new state of the roadmap.
-5. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) is updated if the change modifies module boundaries, core data flow, simulation order, or rendering architecture.
-6. [docs/DECISIONS.md](docs/DECISIONS.md) is updated if the pass introduces a durable design rule, tradeoff, or invariant that later agents should not need to rediscover.
+5. [docs/CHANGELOG.md](docs/CHANGELOG.md) includes a short entry for the completed pass.
+6. [docs/CAPABILITIES.md](docs/CAPABILITIES.md) is updated if current behavior, controls, or subsystem capabilities changed.
+7. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) is updated if the change modifies module boundaries, core data flow, simulation order, or rendering architecture.
+8. [docs/DECISIONS.md](docs/DECISIONS.md) is updated if the pass introduces a durable design rule, tradeoff, or invariant that later agents should not need to rediscover.
 
 If a useful verification step could not be run, state that explicitly in the final handoff.
 
@@ -67,8 +70,11 @@ If a useful verification step could not be run, state that explicitly in the fin
 
 ## Documentation Rules
 
+- Update [docs/CHANGELOG.md](docs/CHANGELOG.md) for every completed pass.
+- Update [docs/CAPABILITIES.md](docs/CAPABILITIES.md) when the current project behavior or control surface changes.
 - Keep [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) short and structural. Do not turn it into a changelog.
 - Keep [docs/DECISIONS.md](docs/DECISIONS.md) short and durable. Record only decisions that affect future implementation choices.
+- Keep [README.md](README.md) concise. Update it only for onboarding, setup, quick controls, or the top-level doc map.
 - Use [docs/NEXT.md](docs/NEXT.md) for actionable work items, not for design rationale.
 
 ## Blockers
@@ -86,5 +92,5 @@ In the final response:
 
 1. State what task was completed.
 2. State what verification was performed and what was not performed.
-3. Point to any roadmap, architecture, or decision-log updates.
+3. Point to any roadmap, changelog, capability, architecture, or decision-log updates.
 4. Mention any remaining risk that the next agent should understand in one or two sentences.
