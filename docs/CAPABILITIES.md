@@ -41,7 +41,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Shared DPR-aware screen, canvas, world, and tile picking utilities centralize pointer coordinate conversion.
 - Camera and picking tests cover viewport round-tripping, DPR-aware selection, and negative-world tile flooring.
 - Debug overlay shows FPS, rendered chunk count, mesh telemetry, and pointer inspect data (`client`, `canvas`, `world`, `tile`).
-- Hovered tile cursor overlay renders in client space from world tile coordinates.
+- Hovered tile cursor overlay renders in client space from world tile coordinates and keeps pinned and hovered inspect outlines visible together when they differ.
 - Compact debug-edit status strip mirrors shared mode, active brush, armed tool state, hovered or pinned tile metadata, and mixed-device hints.
 - Hovered and touched inspect readouts include tile name, tile ID, world coordinates, and solid, light-blocking, and liquid flags.
 - Desktop and touch both support pinned tile inspection through the compact status strip workflow.

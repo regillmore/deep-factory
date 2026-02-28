@@ -905,22 +905,20 @@ const bootstrap = async (): Promise<void> => {
         : null;
       renderer.resize();
       renderer.render(camera);
-      hoveredTileCursor.update(
-        camera,
-        pinnedDebugTileInspect
+      hoveredTileCursor.update(camera, {
+        hovered: pointerInspect
+          ? {
+              tileX: pointerInspect.tile.x,
+              tileY: pointerInspect.tile.y
+            }
+          : null,
+        pinned: pinnedDebugTileInspect
           ? {
               tileX: pinnedDebugTileInspect.tileX,
-              tileY: pinnedDebugTileInspect.tileY,
-              pinned: true
+              tileY: pinnedDebugTileInspect.tileY
             }
-          : pointerInspect
-            ? {
-                tileX: pointerInspect.tile.x,
-                tileY: pointerInspect.tile.y,
-                pinned: false
-              }
-            : null
-      );
+          : null
+      });
       armedDebugToolPreview.update(camera, pointerInspect, armedDebugToolPreviewState);
       debugEditStatusStrip.update({
         mode: input.getTouchDebugEditMode(),

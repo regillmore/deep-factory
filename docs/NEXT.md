@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Render pinned and hovered inspect outlines simultaneously so desktop inspect-pin workflows can compare a locked tile against the current hover target.
+1. Show separate hovered and pinned tile metadata lines in the compact status strip when both inspect targets differ.
 
 ## Authored asset pipeline
 

@@ -12,7 +12,11 @@ export interface HoveredTileCursorClientRect {
 export interface HoveredTileCursorTarget {
   tileX: number;
   tileY: number;
-  pinned: boolean;
+}
+
+export interface HoveredTileCursorTargets {
+  hovered: HoveredTileCursorTarget | null;
+  pinned: HoveredTileCursorTarget | null;
 }
 
 export const computeHoveredTileCursorClientRect = (
@@ -46,51 +50,79 @@ export const computeHoveredTileCursorClientRect = (
   };
 };
 
-export class HoveredTileCursorOverlay {
-  private root: HTMLDivElement;
-
-  constructor(private canvas: HTMLCanvasElement) {
-    this.root = document.createElement('div');
-    this.root.style.position = 'fixed';
-    this.root.style.left = '0';
-    this.root.style.top = '0';
-    this.root.style.width = '0';
-    this.root.style.height = '0';
-    this.root.style.boxSizing = 'border-box';
-    this.root.style.border = '2px solid rgba(255, 232, 122, 0.95)';
-    this.root.style.background = 'rgba(255, 232, 122, 0.14)';
-    this.root.style.borderRadius = '2px';
-    this.root.style.pointerEvents = 'none';
-    this.root.style.zIndex = '10';
-    this.root.style.display = 'none';
-    document.body.append(this.root);
+export const resolveHoveredTileCursorTargets = (
+  hovered: HoveredTileCursorTarget | null,
+  pinned: HoveredTileCursorTarget | null
+): HoveredTileCursorTargets => {
+  if (hovered && pinned && hovered.tileX === pinned.tileX && hovered.tileY === pinned.tileY) {
+    return {
+      hovered: null,
+      pinned
+    };
   }
 
-  update(camera: Camera2D, target: HoveredTileCursorTarget | null): void {
+  return {
+    hovered,
+    pinned
+  };
+};
+
+const createCursorRoot = (borderColor: string, background: string): HTMLDivElement => {
+  const root = document.createElement('div');
+  root.style.position = 'fixed';
+  root.style.left = '0';
+  root.style.top = '0';
+  root.style.width = '0';
+  root.style.height = '0';
+  root.style.boxSizing = 'border-box';
+  root.style.border = `2px solid ${borderColor}`;
+  root.style.background = background;
+  root.style.borderRadius = '2px';
+  root.style.pointerEvents = 'none';
+  root.style.zIndex = '10';
+  root.style.display = 'none';
+  document.body.append(root);
+  return root;
+};
+
+export class HoveredTileCursorOverlay {
+  private hoveredRoot: HTMLDivElement;
+  private pinnedRoot: HTMLDivElement;
+
+  constructor(private canvas: HTMLCanvasElement) {
+    this.hoveredRoot = createCursorRoot('rgba(255, 232, 122, 0.95)', 'rgba(255, 232, 122, 0.14)');
+    this.pinnedRoot = createCursorRoot('rgba(120, 210, 255, 0.95)', 'rgba(120, 210, 255, 0.12)');
+  }
+
+  update(camera: Camera2D, targets: HoveredTileCursorTargets): void {
+    const resolvedTargets = resolveHoveredTileCursorTargets(targets.hovered, targets.pinned);
+    const canvasRect = this.canvas.getBoundingClientRect();
+
+    this.updateCursorRoot(this.hoveredRoot, resolvedTargets.hovered, camera, canvasRect);
+    this.updateCursorRoot(this.pinnedRoot, resolvedTargets.pinned, camera, canvasRect);
+  }
+
+  private updateCursorRoot(
+    root: HTMLDivElement,
+    target: HoveredTileCursorTarget | null,
+    camera: Camera2D,
+    canvasRect: DOMRect
+  ): void {
     if (!target) {
-      this.root.style.display = 'none';
+      root.style.display = 'none';
       return;
     }
 
-    const clientRect = computeHoveredTileCursorClientRect(
-      target.tileX,
-      target.tileY,
-      camera,
-      this.canvas,
-      this.canvas.getBoundingClientRect()
-    );
-
+    const clientRect = computeHoveredTileCursorClientRect(target.tileX, target.tileY, camera, this.canvas, canvasRect);
     if (clientRect.width <= 0 || clientRect.height <= 0) {
-      this.root.style.display = 'none';
+      root.style.display = 'none';
       return;
     }
 
-    this.root.style.display = 'block';
-    this.root.style.borderColor = target.pinned ? 'rgba(120, 210, 255, 0.95)' : 'rgba(255, 232, 122, 0.95)';
-    this.root.style.background = target.pinned ? 'rgba(120, 210, 255, 0.12)' : 'rgba(255, 232, 122, 0.14)';
-    this.root.style.left = `${clientRect.left}px`;
-    this.root.style.top = `${clientRect.top}px`;
-    this.root.style.width = `${clientRect.width}px`;
-    this.root.style.height = `${clientRect.height}px`;
+    root.style.display = 'block';
+    root.style.left = `${clientRect.left}px`;
+    root.style.top = `${clientRect.top}px`;
+    root.style.width = `${clientRect.width}px`;
+    root.style.height = `${clientRect.height}px`;
   }
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { Camera2D } from '../core/camera2d';
-import { computeHoveredTileCursorClientRect } from './hoveredTileCursor';
+import { computeHoveredTileCursorClientRect, resolveHoveredTileCursorTargets } from './hoveredTileCursor';
 
 describe('computeHoveredTileCursorClientRect', () => {
   it('maps a hovered tile to a CSS/client-space rectangle with DPR scaling', () => {
@@ -48,6 +48,30 @@ describe('computeHoveredTileCursorClientRect', () => {
       top: 34,
       width: 0,
       height: 0
+    });
+  });
+
+  it('keeps separate hovered and pinned cursor targets for different tiles', () => {
+    expect(
+      resolveHoveredTileCursorTargets(
+        { tileX: 12, tileY: -4 },
+        { tileX: 7, tileY: 3 }
+      )
+    ).toEqual({
+      hovered: { tileX: 12, tileY: -4 },
+      pinned: { tileX: 7, tileY: 3 }
+    });
+  });
+
+  it('deduplicates the hovered target when it matches the pinned inspect tile', () => {
+    expect(
+      resolveHoveredTileCursorTargets(
+        { tileX: 5, tileY: 8 },
+        { tileX: 5, tileY: 8 }
+      )
+    ).toEqual({
+      hovered: null,
+      pinned: { tileX: 5, tileY: 8 }
     });
   });
 });
