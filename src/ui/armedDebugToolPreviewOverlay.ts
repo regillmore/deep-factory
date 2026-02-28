@@ -1,31 +1,25 @@
 import { Camera2D } from '../core/camera2d';
 import type {
   ArmedDebugToolPreviewState,
-  DebugTileEditKind,
   PointerInspectSnapshot
 } from '../input/controller';
+import { resolveActiveDebugToolStatus } from './debugEditStatusHelpers';
 import { computeHoveredTileCursorClientRect } from './hoveredTileCursor';
 
-const lineAccentForKind = (kind: DebugTileEditKind): string =>
+const lineAccentForKind = (kind: 'place' | 'break'): string =>
   kind === 'place' ? 'rgba(120, 210, 255, 0.95)' : 'rgba(255, 180, 120, 0.95)';
 
-const fillAccentForKind = (kind: DebugTileEditKind): string =>
+const rectAccentForKind = (kind: 'place' | 'break'): string =>
   kind === 'place' ? 'rgba(120, 255, 180, 0.95)' : 'rgba(255, 130, 130, 0.95)';
 
-const rectAccentForKind = (kind: DebugTileEditKind): string =>
-  kind === 'place' ? 'rgba(120, 255, 180, 0.95)' : 'rgba(255, 130, 130, 0.95)';
-
-const rectOutlineAccentForKind = (kind: DebugTileEditKind): string =>
+const rectOutlineAccentForKind = (kind: 'place' | 'break'): string =>
   kind === 'place' ? 'rgba(120, 210, 255, 0.95)' : 'rgba(255, 180, 120, 0.95)';
 
-const ellipseAccentForKind = (kind: DebugTileEditKind): string =>
+const ellipseAccentForKind = (kind: 'place' | 'break'): string =>
   kind === 'place' ? 'rgba(185, 255, 120, 0.95)' : 'rgba(255, 155, 120, 0.95)';
 
-const ellipseOutlineAccentForKind = (kind: DebugTileEditKind): string =>
+const ellipseOutlineAccentForKind = (kind: 'place' | 'break'): string =>
   kind === 'place' ? 'rgba(150, 225, 255, 0.95)' : 'rgba(255, 195, 120, 0.95)';
-
-const toolActionLabel = (tool: string, kind: DebugTileEditKind): string =>
-  `${tool} ${kind === 'place' ? 'Brush' : 'Break'}`;
 
 const hideElement = (element: HTMLElement): void => {
   element.style.display = 'none';
@@ -186,104 +180,20 @@ export class ArmedDebugToolPreviewOverlay {
   }
 
   private updateStatusBadge(canvasRect: DOMRect, preview: ArmedDebugToolPreviewState): void {
-    const activeMouseLineDrag = preview.activeMouseLineDrag;
-    const pendingTouchLineStart = preview.pendingTouchLineStart;
-    const activeMouseRectDrag = preview.activeMouseRectDrag;
-    const activeMouseRectOutlineDrag = preview.activeMouseRectOutlineDrag;
-    const activeMouseEllipseDrag = preview.activeMouseEllipseDrag;
-    const activeMouseEllipseOutlineDrag = preview.activeMouseEllipseOutlineDrag;
-    const pendingTouchRectStart = preview.pendingTouchRectStart;
-    const pendingTouchRectOutlineStart = preview.pendingTouchRectOutlineStart;
-    const pendingTouchEllipseStart = preview.pendingTouchEllipseStart;
-    const pendingTouchEllipseOutlineStart = preview.pendingTouchEllipseOutlineStart;
-
-    if (
-      preview.armedFloodFillKind === null &&
-      preview.armedLineKind === null &&
-      preview.armedRectKind === null &&
-      preview.armedRectOutlineKind === null &&
-      preview.armedEllipseKind === null &&
-      preview.armedEllipseOutlineKind === null &&
-      activeMouseLineDrag === null &&
-      pendingTouchLineStart === null &&
-      activeMouseRectDrag === null &&
-      activeMouseRectOutlineDrag === null &&
-      activeMouseEllipseDrag === null &&
-      activeMouseEllipseOutlineDrag === null &&
-      pendingTouchRectStart === null &&
-      pendingTouchRectOutlineStart === null &&
-      pendingTouchEllipseStart === null &&
-      pendingTouchEllipseOutlineStart === null
-    ) {
+    const status = resolveActiveDebugToolStatus(preview);
+    if (!status) {
       hideElement(this.statusBadge);
       return;
     }
 
-    let text = '';
-    let accent = 'rgba(255, 255, 255, 0.9)';
-
-    if (activeMouseLineDrag) {
-      accent = lineAccentForKind(activeMouseLineDrag.kind);
-      text = `${toolActionLabel('Line', activeMouseLineDrag.kind)} armed - drag endpoint, release to apply - Esc cancel`;
-    } else if (activeMouseRectDrag) {
-      accent = rectAccentForKind(activeMouseRectDrag.kind);
-      text = `${toolActionLabel('Rect Fill', activeMouseRectDrag.kind)} armed - drag box, release to apply - Esc cancel`;
-    } else if (activeMouseRectOutlineDrag) {
-      accent = rectOutlineAccentForKind(activeMouseRectOutlineDrag.kind);
-      text = `${toolActionLabel('Rect Outline', activeMouseRectOutlineDrag.kind)} armed - drag box, release to apply - Esc cancel`;
-    } else if (activeMouseEllipseDrag) {
-      accent = ellipseAccentForKind(activeMouseEllipseDrag.kind);
-      text = `${toolActionLabel('Ellipse Fill', activeMouseEllipseDrag.kind)} armed - drag bounds, release to apply - Esc cancel`;
-    } else if (activeMouseEllipseOutlineDrag) {
-      accent = ellipseOutlineAccentForKind(activeMouseEllipseOutlineDrag.kind);
-      text =
-        `${toolActionLabel('Ellipse Outline', activeMouseEllipseOutlineDrag.kind)} armed - drag bounds, release to apply - Esc cancel`;
-    } else if (pendingTouchLineStart) {
-      accent = lineAccentForKind(pendingTouchLineStart.kind);
-      text = `${toolActionLabel('Line', pendingTouchLineStart.kind)} armed - start set, tap end tile - Esc cancel`;
-    } else if (pendingTouchRectStart) {
-      accent = rectAccentForKind(pendingTouchRectStart.kind);
-      text = `${toolActionLabel('Rect Fill', pendingTouchRectStart.kind)} armed - corner set, tap opposite corner - Esc cancel`;
-    } else if (pendingTouchRectOutlineStart) {
-      accent = rectOutlineAccentForKind(pendingTouchRectOutlineStart.kind);
-      text = `${toolActionLabel('Rect Outline', pendingTouchRectOutlineStart.kind)} armed - corner set, tap opposite corner - Esc cancel`;
-    } else if (pendingTouchEllipseStart) {
-      accent = ellipseAccentForKind(pendingTouchEllipseStart.kind);
-      text = `${toolActionLabel('Ellipse Fill', pendingTouchEllipseStart.kind)} armed - corner set, tap opposite corner - Esc cancel`;
-    } else if (pendingTouchEllipseOutlineStart) {
-      accent = ellipseOutlineAccentForKind(pendingTouchEllipseOutlineStart.kind);
-      text =
-        `${toolActionLabel('Ellipse Outline', pendingTouchEllipseOutlineStart.kind)} armed - corner set, tap opposite corner - Esc cancel`;
-    } else if (preview.armedLineKind) {
-      accent = lineAccentForKind(preview.armedLineKind);
-      text = `${toolActionLabel('Line', preview.armedLineKind)} armed - drag (desktop) or tap start/end (touch) - Esc cancel`;
-    } else if (preview.armedRectKind) {
-      accent = rectAccentForKind(preview.armedRectKind);
-      text = `${toolActionLabel('Rect Fill', preview.armedRectKind)} armed - drag box (desktop) or tap two corners (touch) - Esc cancel`;
-    } else if (preview.armedRectOutlineKind) {
-      accent = rectOutlineAccentForKind(preview.armedRectOutlineKind);
-      text =
-        `${toolActionLabel('Rect Outline', preview.armedRectOutlineKind)} armed - drag box (desktop) or tap two corners (touch) - Esc cancel`;
-    } else if (preview.armedEllipseKind) {
-      accent = ellipseAccentForKind(preview.armedEllipseKind);
-      text =
-        `${toolActionLabel('Ellipse Fill', preview.armedEllipseKind)} armed - drag bounds (desktop) or tap two corners (touch) - Esc cancel`;
-    } else if (preview.armedEllipseOutlineKind) {
-      accent = ellipseOutlineAccentForKind(preview.armedEllipseOutlineKind);
-      text =
-        `${toolActionLabel('Ellipse Outline', preview.armedEllipseOutlineKind)} armed - drag bounds (desktop) or tap two corners (touch) - Esc cancel`;
-    } else if (preview.armedFloodFillKind) {
-      accent = fillAccentForKind(preview.armedFloodFillKind);
-      text = `${toolActionLabel('Fill', preview.armedFloodFillKind)} armed - click/tap target tile - Esc cancel`;
-    }
-
     this.statusBadge.style.display = 'block';
-    this.statusBadge.textContent = text;
+    this.statusBadge.textContent = `${status.title} - ${status.detail}`;
     this.statusBadge.style.left = `${canvasRect.left + 10}px`;
     this.statusBadge.style.top = `${canvasRect.top + 10}px`;
     this.statusBadge.style.maxWidth = `${Math.max(160, canvasRect.width - 20)}px`;
-    this.statusBadge.style.borderColor = accent.replace('0.95', '0.34');
-    this.statusBadge.style.boxShadow = `0 8px 18px rgba(0, 0, 0, 0.22), inset 0 0 0 1px ${accent.replace('0.95', '0.22')}`;
+    this.statusBadge.style.borderColor = status.accent.replace('0.95', '0.34');
+    this.statusBadge.style.boxShadow =
+      `0 8px 18px rgba(0, 0, 0, 0.22), inset 0 0 0 1px ${status.accent.replace('0.95', '0.22')}`;
     this.statusBadge.style.color = 'rgba(255, 255, 255, 0.96)';
   }
 

@@ -22,6 +22,8 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 
 ## Controls
 
+- Compact debug-edit status strip near the canvas mirrors the shared mode, active brush, armed one-shot tool, and mixed-device hints even while the debug panel is collapsed.
+
 ### Desktop
 - Debug edit control state (shared touch mode + active brush + panel visibility) persists across reloads with a metadata-safe brush fallback
 - Move camera: `WASD` or arrow keys
@@ -110,6 +112,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Shared debug edit controls now also include one-shot ellipse fill tools (`Ellipse Brush` / `Ellipse Break`) with desktop drag-bounds and touch two-corner workflows, and each ellipse fill applies as a single undoable stroke.
 - Shared debug edit controls now also include one-shot ellipse outline tools (`Ellipse Outline Brush` / `Ellipse Outline Break`) with desktop drag-bounds and touch two-corner workflows, and each ellipse outline applies as a single undoable stroke.
 - Armed one-shot debug fill/line/rect fill/rect outline/ellipse fill/ellipse outline tools now show an on-canvas preview/status overlay (desktop line endpoint + rectangle/ellipse bounds previews; touch line-start + rectangle/ellipse corner anchors) and support `Esc` cancellation.
+- A compact debug-edit status strip now sits near the canvas, mirroring the shared mode, active brush, armed one-shot tool state, and mixed-device gesture/shortcut hints while the larger panel is collapsed or out of the way.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.

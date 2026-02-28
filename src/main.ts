@@ -25,6 +25,7 @@ import {
   resolveDebugEditShortcutAction
 } from './input/debugEditShortcuts';
 import { DebugOverlay } from './ui/debugOverlay';
+import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import { TouchDebugEditControls, type DebugBrushOption } from './ui/touchDebugEditControls';
@@ -51,6 +52,7 @@ const DEBUG_BRUSH_TILE_OPTIONS: readonly DebugBrushOption[] = TILE_METADATA.tile
   }));
 const DEBUG_BRUSH_TILE_IDS = DEBUG_BRUSH_TILE_OPTIONS.map((option) => option.tileId);
 const DEBUG_BRUSH_TILE_ID_SET = new Set(DEBUG_BRUSH_TILE_IDS);
+const DEBUG_BRUSH_TILE_LABELS = new Map(DEBUG_BRUSH_TILE_OPTIONS.map((option) => [option.tileId, option.label]));
 
 if (DEBUG_BRUSH_TILE_OPTIONS.length === 0) {
   throw new Error('Tile metadata must provide at least one non-empty tile for debug editing');
@@ -85,6 +87,7 @@ const bootstrap = async (): Promise<void> => {
   const debug = new DebugOverlay();
   const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
   const armedDebugToolPreview = new ArmedDebugToolPreviewOverlay(canvas);
+  const debugEditStatusStrip = new DebugEditStatusStrip(canvas);
   const debugTileEditHistory = new DebugTileEditHistory();
   const debugEditControlStorage = (() => {
     try {
@@ -656,6 +659,8 @@ const bootstrap = async (): Promise<void> => {
     return applyDebugBrushShortcutTileId(tileId);
   };
 
+  const getActiveDebugBrushLabel = (): string => DEBUG_BRUSH_TILE_LABELS.get(activeDebugBrushTileId) ?? `tile ${activeDebugBrushTileId}`;
+
   window.addEventListener('keydown', (event) => {
     if (event.defaultPrevented) return;
     if (isEditableKeyboardShortcutTarget(event.target)) return;
@@ -830,6 +835,12 @@ const bootstrap = async (): Promise<void> => {
       renderer.render(camera);
       hoveredTileCursor.update(camera, pointerInspect);
       armedDebugToolPreview.update(camera, pointerInspect, armedDebugToolPreviewState);
+      debugEditStatusStrip.update({
+        mode: input.getTouchDebugEditMode(),
+        brushLabel: getActiveDebugBrushLabel(),
+        brushTileId: activeDebugBrushTileId,
+        preview: armedDebugToolPreviewState
+      });
       debug.update(frameDtMs, renderer.telemetry, pointerInspect);
     }
   );
