@@ -231,29 +231,38 @@ const buildArmedDesktopInspectHintText = (hasPinnedTile: boolean): string =>
 
 const formatHoveredTileFlag = (value: boolean): string => (value ? 'on' : 'off');
 
+const hasSameInspectTarget = (
+  hoveredTile: DebugEditHoveredTileState | null,
+  pinnedTile: DebugEditHoveredTileState | null
+): boolean =>
+  hoveredTile !== null &&
+  pinnedTile !== null &&
+  hoveredTile.tileX === pinnedTile.tileX &&
+  hoveredTile.tileY === pinnedTile.tileY;
+
+const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): string =>
+  `${label}: ${tile.tileLabel} (#${tile.tileId}) @ ${tile.tileX},${tile.tileY}` +
+  ` | solid:${formatHoveredTileFlag(tile.solid)}` +
+  ` | light:${formatHoveredTileFlag(tile.blocksLight)}` +
+  ` | liquid:${tile.liquidKind ?? 'none'}`;
+
 const buildHoveredTileText = (
   hoveredTile: DebugEditHoveredTileState | null,
   pinnedTile: DebugEditHoveredTileState | null
 ): string => {
+  if (pinnedTile && hoveredTile && !hasSameInspectTarget(hoveredTile, pinnedTile)) {
+    return [formatInspectTileLine('Pinned', pinnedTile), formatInspectTileLine('Hover', hoveredTile)].join('\n');
+  }
+
   if (pinnedTile) {
-    return (
-      `Pinned: ${pinnedTile.tileLabel} (#${pinnedTile.tileId}) @ ${pinnedTile.tileX},${pinnedTile.tileY}` +
-      ` | solid:${formatHoveredTileFlag(pinnedTile.solid)}` +
-      ` | light:${formatHoveredTileFlag(pinnedTile.blocksLight)}` +
-      ` | liquid:${pinnedTile.liquidKind ?? 'none'}`
-    );
+    return formatInspectTileLine('Pinned', pinnedTile);
   }
 
   if (!hoveredTile) {
     return 'Hover: move cursor or touch a world tile to inspect gameplay flags. Pin Click keeps metadata visible.';
   }
 
-  return (
-    `Hover: ${hoveredTile.tileLabel} (#${hoveredTile.tileId}) @ ${hoveredTile.tileX},${hoveredTile.tileY}` +
-    ` | solid:${formatHoveredTileFlag(hoveredTile.solid)}` +
-    ` | light:${formatHoveredTileFlag(hoveredTile.blocksLight)}` +
-    ` | liquid:${hoveredTile.liquidKind ?? 'none'}`
-  );
+  return formatInspectTileLine('Hover', hoveredTile);
 };
 
 const buildInspectText = (state: DebugEditStatusStripState): string => {

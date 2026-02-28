@@ -129,7 +129,37 @@ describe('buildDebugEditStatusStripModel', () => {
     );
   });
 
-  it('prioritizes pinned inspect metadata with a repin hint', () => {
+  it('shows pinned inspect metadata with a repin hint when no separate hover target is present', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      preview: createEmptyPreviewState(),
+      desktopInspectPinArmed: false,
+      hoveredTile: null,
+      pinnedTile: {
+        tileX: 12,
+        tileY: -4,
+        tileId: 9,
+        tileLabel: 'lava pool',
+        solid: false,
+        blocksLight: true,
+        liquidKind: 'lava'
+      }
+    });
+
+    expect(model.hoverText).toBe(
+      'Pinned: lava pool (#9) @ 12,-4 | solid:off | light:on | liquid:lava'
+    );
+    expect(model.inspectText).toBe('Inspect: Pinned @ 12,-4');
+    expect(model.inspectActionText).toBe('Repin Click');
+    expect(model.clearActionText).toBe('Clear Pin');
+    expect(model.hintText).toBe(
+      'Pinned inspect active: use Repin Click or Clear Pin in the strip; touch can also tap another tile to repin or the same tile to clear.'
+    );
+  });
+
+  it('shows separate pinned and hovered metadata lines when inspect targets differ', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -157,13 +187,40 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Pinned: lava pool (#9) @ 12,-4 | solid:off | light:on | liquid:lava'
+      'Pinned: lava pool (#9) @ 12,-4 | solid:off | light:on | liquid:lava\n' +
+        'Hover: dirt (#2) @ 4,7 | solid:on | light:on | liquid:none'
     );
-    expect(model.inspectText).toBe('Inspect: Pinned @ 12,-4');
-    expect(model.inspectActionText).toBe('Repin Click');
-    expect(model.clearActionText).toBe('Clear Pin');
-    expect(model.hintText).toBe(
-      'Pinned inspect active: use Repin Click or Clear Pin in the strip; touch can also tap another tile to repin or the same tile to clear.'
+  });
+
+  it('deduplicates compact inspect metadata when hovered and pinned targets match', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      preview: createEmptyPreviewState(),
+      desktopInspectPinArmed: false,
+      hoveredTile: {
+        tileX: 12,
+        tileY: -4,
+        tileId: 9,
+        tileLabel: 'lava pool',
+        solid: false,
+        blocksLight: true,
+        liquidKind: 'lava'
+      },
+      pinnedTile: {
+        tileX: 12,
+        tileY: -4,
+        tileId: 9,
+        tileLabel: 'lava pool',
+        solid: false,
+        blocksLight: true,
+        liquidKind: 'lava'
+      }
+    });
+
+    expect(model.hoverText).toBe(
+      'Pinned: lava pool (#9) @ 12,-4 | solid:off | light:on | liquid:lava'
     );
   });
 

@@ -127,7 +127,7 @@ export class DebugEditStatusStrip {
 
     this.hoverLine = document.createElement('div');
     this.hoverLine.style.color = 'rgba(236, 242, 248, 0.96)';
-    this.hoverLine.style.whiteSpace = 'normal';
+    this.hoverLine.style.whiteSpace = 'pre-line';
     this.hoverLine.style.maxWidth = '100%';
     this.root.append(this.hoverLine);
 

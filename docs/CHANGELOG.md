@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-02-28
 
+- Task: Show separate hovered and pinned tile metadata lines in the compact status strip when both inspect targets differ.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) to emit distinct pinned and hover inspect lines when their targets differ, updated [src/ui/debugEditStatusStrip.ts](../src/ui/debugEditStatusStrip.ts) to render newline-separated inspect text, and added focused coverage in [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts).
+- Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Render pinned and hovered inspect outlines simultaneously so desktop inspect-pin workflows can compare a locked tile against the current hover target.
 - Changes: Updated [src/ui/hoveredTileCursor.ts](../src/ui/hoveredTileCursor.ts) to manage separate pinned and hovered overlay layers, wired [src/main.ts](../src/main.ts) to pass both inspect targets at render time, and added target-resolution coverage in [src/ui/hoveredTileCursor.test.ts](../src/ui/hoveredTileCursor.test.ts).
 - Verification: Ran `npx vitest run src/ui/hoveredTileCursor.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
