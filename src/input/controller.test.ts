@@ -5,6 +5,7 @@ import {
   getDesktopDebugPaintKindForPointerDown,
   getTouchDebugPaintKindForPointerDown,
   markDebugPaintTileSeen,
+  walkFilledEllipseTileArea,
   walkFilledRectangleTileArea,
   walkRectangleOutlineTileArea,
   walkLineSteppedTilePath,
@@ -40,6 +41,19 @@ const collectFilledRectangleTiles = (
 ): Array<[number, number]> => {
   const tiles: Array<[number, number]> = [];
   walkFilledRectangleTileArea(startTileX, startTileY, endTileX, endTileY, (tileX, tileY) => {
+    tiles.push([tileX, tileY]);
+  });
+  return tiles;
+};
+
+const collectFilledEllipseTiles = (
+  startTileX: number,
+  startTileY: number,
+  endTileX: number,
+  endTileY: number
+): Array<[number, number]> => {
+  const tiles: Array<[number, number]> = [];
+  walkFilledEllipseTileArea(startTileX, startTileY, endTileX, endTileY, (tileX, tileY) => {
     tiles.push([tileX, tileY]);
   });
   return tiles;
@@ -196,6 +210,58 @@ describe('walkFilledRectangleTileArea', () => {
       [0, 1],
       [1, 1],
       [2, 1]
+    ]);
+  });
+});
+
+describe('walkFilledEllipseTileArea', () => {
+  it('visits a single tile when both corners are the same', () => {
+    expect(collectFilledEllipseTiles(4, -2, 4, -2)).toEqual([[4, -2]]);
+  });
+
+  it('fills an inscribed ellipse within the inclusive bounds', () => {
+    expect(collectFilledEllipseTiles(0, 0, 4, 4)).toEqual([
+      [1, 0],
+      [2, 0],
+      [3, 0],
+      [0, 1],
+      [1, 1],
+      [2, 1],
+      [3, 1],
+      [4, 1],
+      [0, 2],
+      [1, 2],
+      [2, 2],
+      [3, 2],
+      [4, 2],
+      [0, 3],
+      [1, 3],
+      [2, 3],
+      [3, 3],
+      [4, 3],
+      [1, 4],
+      [2, 4],
+      [3, 4]
+    ]);
+  });
+
+  it('supports reverse corner ordering', () => {
+    expect(collectFilledEllipseTiles(4, 4, 0, 0)).toEqual(collectFilledEllipseTiles(0, 0, 4, 4));
+  });
+
+  it('covers the full span for single-row or single-column ellipses', () => {
+    expect(collectFilledEllipseTiles(1, 2, 5, 2)).toEqual([
+      [1, 2],
+      [2, 2],
+      [3, 2],
+      [4, 2],
+      [5, 2]
+    ]);
+    expect(collectFilledEllipseTiles(3, -1, 3, 2)).toEqual([
+      [3, -1],
+      [3, 0],
+      [3, 1],
+      [3, 2]
     ]);
   });
 });

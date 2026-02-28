@@ -34,10 +34,11 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Debug edit panel shortcut: `\` collapse / expand the shared debug-edit controls panel
 - Debug eyedropper shortcut: `I` sets the active brush from the hovered tile (non-empty tiles)
 - Debug flood fill shortcuts: `F` arms a one-shot brush flood fill, `Shift+F` arms a one-shot break flood fill; next canvas click applies (resident chunk bounds only, `Esc` cancels while armed)
-- One-shot armed fill/line/rect fill/rect outline tools show an on-canvas status badge with the current armed action and cancel hint (`Esc`)
+- One-shot armed fill/line/rect fill/rect outline/ellipse fill tools show an on-canvas status badge with the current armed action and cancel hint (`Esc`)
 - On-screen debug edit controls: click `Line Brush` / `Line Break` to arm a one-shot line tool, then drag on the canvas to apply a single undoable line stroke (with on-canvas endpoint preview)
 - On-screen debug edit controls: click `Rect Brush` / `Rect Break` to arm a one-shot rectangle fill tool, then drag a box on the canvas to apply a single undoable rectangle stroke (with on-canvas box preview)
 - On-screen debug edit controls: click `Rect Outline Brush` / `Rect Outline Break` to arm a one-shot rectangle outline tool, then drag a box on the canvas to apply a single undoable outline stroke (with on-canvas box preview)
+- On-screen debug edit controls: click `Ellipse Brush` / `Ellipse Break` to arm a one-shot ellipse fill tool, then drag bounds on the canvas to apply a single undoable ellipse stroke (with on-canvas ellipse preview)
 - Debug edit history shortcuts: `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` redo
 - Mouse drag: debug paint on hovered tile cursor (`left` place active brush / `right` break, line-stepped + per-tile deduped)
 - `Shift` + mouse drag: pan
@@ -52,10 +53,11 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Touch history gestures (`Pan` mode): `two-finger tap` undo / `three-finger tap` redo (debounced; stationary taps avoid pinch conflicts)
 - Touch eyedropper gesture (`Pan` mode): `long-press` a tile to set the active brush from that tile (non-empty tiles)
 - On-screen debug edit controls: tap `Fill Brush` / `Fill Break` to arm a one-shot flood fill, then tap a world tile (resident chunk bounds only)
-- One-shot armed fill/line/rect fill/rect outline tools show an on-canvas status badge while armed
+- One-shot armed fill/line/rect fill/rect outline/ellipse fill tools show an on-canvas status badge while armed
 - On-screen debug edit controls: tap `Line Brush` / `Line Break`, then tap a start tile and tap an end tile to apply a single undoable line stroke (with a persistent on-canvas start-anchor indicator between taps)
 - On-screen debug edit controls: tap `Rect Brush` / `Rect Break`, then tap a first corner and tap an opposite corner to apply a single undoable rectangle fill stroke (with a persistent on-canvas corner anchor indicator between taps)
 - On-screen debug edit controls: tap `Rect Outline Brush` / `Rect Outline Break`, then tap a first corner and tap an opposite corner to apply a single undoable rectangle outline stroke (with a persistent on-canvas corner anchor indicator between taps)
+- On-screen debug edit controls: tap `Ellipse Brush` / `Ellipse Break`, then tap a first corner and tap an opposite corner to apply a single undoable ellipse fill stroke (with a persistent on-canvas corner anchor indicator between taps)
 - One-finger drag: pan (`Pan` mode)
 - One-finger drag: debug paint active brush / break hovered tile (`Place` / `Break` mode, line-stepped + per-tile deduped)
 - Two-finger pinch: zoom (works while touch debug edit modes are active)
@@ -103,7 +105,8 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Shared debug edit controls now also include one-shot line tools (`Line Brush` / `Line Break`) with desktop drag and touch two-point workflows, and each line applies as a single undoable stroke.
 - Shared debug edit controls now also include one-shot rectangle fill tools (`Rect Brush` / `Rect Break`) with desktop drag-box and touch two-corner workflows, and each rectangle fill applies as a single undoable stroke.
 - Shared debug edit controls now also include one-shot rectangle outline tools (`Rect Outline Brush` / `Rect Outline Break`) with desktop drag-box and touch two-corner workflows, and each rectangle outline applies as a single undoable stroke.
-- Armed one-shot debug fill/line/rect fill/rect outline tools now show an on-canvas preview/status overlay (desktop line endpoint + rectangle box previews; touch line-start + rectangle-corner anchors) and support `Esc` cancellation.
+- Shared debug edit controls now also include one-shot ellipse fill tools (`Ellipse Brush` / `Ellipse Break`) with desktop drag-bounds and touch two-corner workflows, and each ellipse fill applies as a single undoable stroke.
+- Armed one-shot debug fill/line/rect fill/rect outline/ellipse fill tools now show an on-canvas preview/status overlay (desktop line endpoint + rectangle/ellipse bounds previews; touch line-start + rectangle/ellipse corner anchors) and support `Esc` cancellation.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.

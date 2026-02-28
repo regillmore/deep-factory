@@ -71,6 +71,16 @@ export interface DebugRectOutlineRequest {
   pointerType: 'mouse' | 'touch';
 }
 
+export interface DebugEllipseFillRequest {
+  startTileX: number;
+  startTileY: number;
+  endTileX: number;
+  endTileY: number;
+  kind: DebugTileEditKind;
+  strokeId: number;
+  pointerType: 'mouse' | 'touch';
+}
+
 export interface CompletedDebugTileEditStroke {
   strokeId: number;
   kind: DebugTileEditKind;
@@ -119,6 +129,7 @@ export interface ArmedDebugToolPreviewState {
   armedLineKind: DebugTileEditKind | null;
   armedRectKind: DebugTileEditKind | null;
   armedRectOutlineKind: DebugTileEditKind | null;
+  armedEllipseKind: DebugTileEditKind | null;
   activeMouseLineDrag: {
     kind: DebugTileEditKind;
     startTileX: number;
@@ -139,12 +150,22 @@ export interface ArmedDebugToolPreviewState {
     startTileX: number;
     startTileY: number;
   } | null;
+  activeMouseEllipseDrag: {
+    kind: DebugTileEditKind;
+    startTileX: number;
+    startTileY: number;
+  } | null;
   pendingTouchRectStart: {
     kind: DebugTileEditKind;
     tileX: number;
     tileY: number;
   } | null;
   pendingTouchRectOutlineStart: {
+    kind: DebugTileEditKind;
+    tileX: number;
+    tileY: number;
+  } | null;
+  pendingTouchEllipseStart: {
     kind: DebugTileEditKind;
     tileX: number;
     tileY: number;
@@ -288,6 +309,39 @@ export const walkRectangleOutlineTileArea = (
   }
 };
 
+export const walkFilledEllipseTileArea = (
+  startTileX: number,
+  startTileY: number,
+  endTileX: number,
+  endTileY: number,
+  visit: (tileX: number, tileY: number) => void
+): void => {
+  const minTileX = Math.min(startTileX, endTileX);
+  const maxTileX = Math.max(startTileX, endTileX);
+  const minTileY = Math.min(startTileY, endTileY);
+  const maxTileY = Math.max(startTileY, endTileY);
+  const widthTiles = maxTileX - minTileX + 1;
+  const heightTiles = maxTileY - minTileY + 1;
+  const radiusX = widthTiles * 0.5;
+  const radiusY = heightTiles * 0.5;
+  const centerX = minTileX + radiusX;
+  const centerY = minTileY + radiusY;
+
+  for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
+    const tileCenterY = tileY + 0.5;
+    const normalizedY = (tileCenterY - centerY) / radiusY;
+    const maxNormalizedXSquared = 1 - normalizedY * normalizedY;
+    if (maxNormalizedXSquared < 0) continue;
+
+    const maxCenterOffsetX = radiusX * Math.sqrt(maxNormalizedXSquared);
+    const rowMinTileX = Math.max(minTileX, Math.ceil(centerX - maxCenterOffsetX - 0.5));
+    const rowMaxTileX = Math.min(maxTileX, Math.floor(centerX + maxCenterOffsetX - 0.5));
+    for (let tileX = rowMinTileX; tileX <= rowMaxTileX; tileX += 1) {
+      visit(tileX, tileY);
+    }
+  }
+};
+
 export class InputController {
   private keys = new Set<string>();
   private pointerActive = false;
@@ -302,6 +356,7 @@ export class InputController {
   private debugLineQueue: DebugLineRequest[] = [];
   private debugRectFillQueue: DebugRectFillRequest[] = [];
   private debugRectOutlineQueue: DebugRectOutlineRequest[] = [];
+  private debugEllipseFillQueue: DebugEllipseFillRequest[] = [];
   private debugBrushEyedropperQueue: DebugBrushEyedropperRequest[] = [];
   private completedDebugTileStrokeQueue: CompletedDebugTileEditStroke[] = [];
   private debugEditHistoryShortcutQueue: DebugEditHistoryShortcutAction[] = [];
@@ -313,6 +368,8 @@ export class InputController {
   private pendingTouchDebugRectStart: PendingTouchDebugRectStart | null = null;
   private activeMouseDebugRectOutlineDrag: ActiveMouseDebugRectDrag | null = null;
   private pendingTouchDebugRectOutlineStart: PendingTouchDebugRectStart | null = null;
+  private activeMouseDebugEllipseDrag: ActiveMouseDebugRectDrag | null = null;
+  private pendingTouchDebugEllipseStart: PendingTouchDebugRectStart | null = null;
   private activeTouchHistoryTapGestureCandidate: ActiveTouchHistoryTapGestureCandidate | null = null;
   private activeTouchEyedropperLongPressCandidate: ActiveTouchEyedropperLongPressCandidate | null = null;
   private lastTouchHistoryTapGestureTimeMs = Number.NEGATIVE_INFINITY;
@@ -321,6 +378,7 @@ export class InputController {
   private armedDebugLineKind: DebugTileEditKind | null = null;
   private armedDebugRectKind: DebugTileEditKind | null = null;
   private armedDebugRectOutlineKind: DebugTileEditKind | null = null;
+  private armedDebugEllipseKind: DebugTileEditKind | null = null;
   private nextDebugPaintStrokeId = 1;
 
   constructor(
@@ -386,6 +444,13 @@ export class InputController {
     return requests;
   }
 
+  consumeDebugEllipseFillRequests(): DebugEllipseFillRequest[] {
+    if (this.debugEllipseFillQueue.length === 0) return [];
+    const requests = this.debugEllipseFillQueue;
+    this.debugEllipseFillQueue = [];
+    return requests;
+  }
+
   consumeDebugBrushEyedropperRequests(): DebugBrushEyedropperRequest[] {
     if (this.debugBrushEyedropperQueue.length === 0) return [];
     const requests = this.debugBrushEyedropperQueue;
@@ -419,6 +484,7 @@ export class InputController {
     this.pendingTouchDebugLineStart = null;
     this.pendingTouchDebugRectStart = null;
     this.pendingTouchDebugRectOutlineStart = null;
+    this.pendingTouchDebugEllipseStart = null;
     this.completeDebugPaintStroke(this.activeTouchDebugPaintStroke);
     this.activeTouchDebugPaintStroke = null;
   }
@@ -485,30 +551,53 @@ export class InputController {
     }
   }
 
+  getArmedDebugEllipseKind(): DebugTileEditKind | null {
+    return this.armedDebugEllipseKind;
+  }
+
+  setArmedDebugEllipseKind(kind: DebugTileEditKind | null): void {
+    if (this.armedDebugEllipseKind === kind && (kind !== null || this.pendingTouchDebugEllipseStart === null)) {
+      return;
+    }
+    this.armedDebugEllipseKind = kind;
+    if (kind === null || this.pendingTouchDebugEllipseStart?.kind !== kind) {
+      this.pendingTouchDebugEllipseStart = null;
+    }
+    if (kind === null) {
+      this.activeMouseDebugEllipseDrag = null;
+    }
+  }
+
   cancelArmedDebugTools(): boolean {
     const hadArmedTools =
       this.armedDebugFloodFillKind !== null ||
       this.armedDebugLineKind !== null ||
       this.armedDebugRectKind !== null ||
       this.armedDebugRectOutlineKind !== null ||
+      this.armedDebugEllipseKind !== null ||
       this.activeMouseDebugLineDrag !== null ||
       this.pendingTouchDebugLineStart !== null ||
       this.activeMouseDebugRectDrag !== null ||
       this.pendingTouchDebugRectStart !== null ||
       this.activeMouseDebugRectOutlineDrag !== null ||
-      this.pendingTouchDebugRectOutlineStart !== null;
+      this.pendingTouchDebugRectOutlineStart !== null ||
+      this.activeMouseDebugEllipseDrag !== null ||
+      this.pendingTouchDebugEllipseStart !== null;
     if (!hadArmedTools) return false;
 
     this.armedDebugFloodFillKind = null;
     this.armedDebugLineKind = null;
     this.armedDebugRectKind = null;
     this.armedDebugRectOutlineKind = null;
+    this.armedDebugEllipseKind = null;
     this.activeMouseDebugLineDrag = null;
     this.pendingTouchDebugLineStart = null;
     this.activeMouseDebugRectDrag = null;
     this.pendingTouchDebugRectStart = null;
     this.activeMouseDebugRectOutlineDrag = null;
     this.pendingTouchDebugRectOutlineStart = null;
+    this.activeMouseDebugEllipseDrag = null;
+    this.pendingTouchDebugEllipseStart = null;
     return true;
   }
 
@@ -519,11 +608,14 @@ export class InputController {
     const pendingTouchRectStart = this.pendingTouchDebugRectStart;
     const activeMouseRectOutlineDrag = this.activeMouseDebugRectOutlineDrag;
     const pendingTouchRectOutlineStart = this.pendingTouchDebugRectOutlineStart;
+    const activeMouseEllipseDrag = this.activeMouseDebugEllipseDrag;
+    const pendingTouchEllipseStart = this.pendingTouchDebugEllipseStart;
     return {
       armedFloodFillKind: this.armedDebugFloodFillKind,
       armedLineKind: this.armedDebugLineKind,
       armedRectKind: this.armedDebugRectKind,
       armedRectOutlineKind: this.armedDebugRectOutlineKind,
+      armedEllipseKind: this.armedDebugEllipseKind,
       activeMouseLineDrag: activeMouseLineDrag
         ? {
             kind: activeMouseLineDrag.kind,
@@ -552,6 +644,13 @@ export class InputController {
             startTileY: activeMouseRectOutlineDrag.startTileY
           }
         : null,
+      activeMouseEllipseDrag: activeMouseEllipseDrag
+        ? {
+            kind: activeMouseEllipseDrag.kind,
+            startTileX: activeMouseEllipseDrag.startTileX,
+            startTileY: activeMouseEllipseDrag.startTileY
+          }
+        : null,
       pendingTouchRectStart: pendingTouchRectStart
         ? {
             kind: pendingTouchRectStart.kind,
@@ -564,6 +663,13 @@ export class InputController {
             kind: pendingTouchRectOutlineStart.kind,
             tileX: pendingTouchRectOutlineStart.tileX,
             tileY: pendingTouchRectOutlineStart.tileY
+          }
+        : null,
+      pendingTouchEllipseStart: pendingTouchEllipseStart
+        ? {
+            kind: pendingTouchEllipseStart.kind,
+            tileX: pendingTouchEllipseStart.tileX,
+            tileY: pendingTouchEllipseStart.tileY
           }
         : null
     };
@@ -598,11 +704,16 @@ export class InputController {
         queuedArmedDebugFloodFill || handledArmedDebugLine || handledArmedDebugRect
           ? false
           : this.tryHandleArmedDebugRectOutlinePointerDown(event);
+      const handledArmedDebugEllipse =
+        queuedArmedDebugFloodFill || handledArmedDebugLine || handledArmedDebugRect || handledArmedDebugRectOutline
+          ? false
+          : this.tryHandleArmedDebugEllipsePointerDown(event);
       if (
         queuedArmedDebugFloodFill ||
         handledArmedDebugLine ||
         handledArmedDebugRect ||
-        handledArmedDebugRectOutline
+        handledArmedDebugRectOutline ||
+        handledArmedDebugEllipse
       ) {
         this.activeTouchHistoryTapGestureCandidate = null;
         this.activeTouchEyedropperLongPressCandidate = null;
@@ -614,14 +725,16 @@ export class InputController {
         queuedArmedDebugFloodFill ||
         handledArmedDebugLine ||
         handledArmedDebugRect ||
-        handledArmedDebugRectOutline
+        handledArmedDebugRectOutline ||
+        handledArmedDebugEllipse
         ? false
         : this.tryStartMouseDebugPaintStroke(event);
       const startedTouchDebugPaint =
         queuedArmedDebugFloodFill ||
         handledArmedDebugLine ||
         handledArmedDebugRect ||
-        handledArmedDebugRectOutline
+        handledArmedDebugRectOutline ||
+        handledArmedDebugEllipse
         ? false
         : this.tryStartTouchDebugPaintStroke(event);
       if (this.pointers.size === 1) {
@@ -630,6 +743,7 @@ export class InputController {
           handledArmedDebugLine ||
           handledArmedDebugRect ||
           handledArmedDebugRectOutline ||
+          handledArmedDebugEllipse ||
           startedMouseDebugPaint ||
           startedTouchDebugPaint
         ) {
@@ -662,6 +776,7 @@ export class InputController {
       const activeMouseDebugLineDrag = this.activeMouseDebugLineDrag;
       const activeMouseDebugRectDrag = this.activeMouseDebugRectDrag;
       const activeMouseDebugRectOutlineDrag = this.activeMouseDebugRectOutlineDrag;
+      const activeMouseDebugEllipseDrag = this.activeMouseDebugEllipseDrag;
       if (
         this.pointers.size === 1 &&
         activeMouseDebugPaintStroke &&
@@ -692,6 +807,12 @@ export class InputController {
         activeMouseDebugRectOutlineDrag.pointerId === event.pointerId
       ) {
         // Reserved for one-shot rectangle-outline drag endpoint capture on pointerup.
+      } else if (
+        this.pointers.size === 1 &&
+        activeMouseDebugEllipseDrag &&
+        activeMouseDebugEllipseDrag.pointerId === event.pointerId
+      ) {
+        // Reserved for one-shot ellipse drag endpoint capture on pointerup.
       } else if (this.pointers.size === 1 && this.pointerActive && this.pointerId === event.pointerId) {
         const dx = event.clientX - this.lastX;
         const dy = event.clientY - this.lastY;
@@ -735,6 +856,12 @@ export class InputController {
           this.commitMouseDebugRectOutlineDrag(event, this.activeMouseDebugRectOutlineDrag);
         }
         this.activeMouseDebugRectOutlineDrag = null;
+      }
+      if (this.activeMouseDebugEllipseDrag?.pointerId === event.pointerId) {
+        if (!canceled) {
+          this.commitMouseDebugEllipseDrag(event, this.activeMouseDebugEllipseDrag);
+        }
+        this.activeMouseDebugEllipseDrag = null;
       }
       this.pointers.delete(event.pointerId);
       this.clearTouchEyedropperLongPressCandidateForPointer(event.pointerId);
@@ -1224,6 +1351,51 @@ export class InputController {
     return true;
   }
 
+  private tryHandleArmedDebugEllipsePointerDown(event: PointerEvent): boolean {
+    const kind = this.armedDebugEllipseKind;
+    if (!kind || this.pointers.size !== 1) return false;
+    if (event.pointerType !== 'mouse' && event.pointerType !== 'touch') return false;
+
+    this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
+    const pointerInspect = this.pointerInspect;
+    if (!pointerInspect) return false;
+
+    if (pointerInspect.pointerType === 'mouse') {
+      if (event.button !== DEBUG_TILE_PLACE_MOUSE_BUTTON && event.button !== DEBUG_TILE_BREAK_MOUSE_BUTTON) {
+        return false;
+      }
+      this.activeMouseDebugEllipseDrag = {
+        pointerId: event.pointerId,
+        kind,
+        startTileX: pointerInspect.tile.x,
+        startTileY: pointerInspect.tile.y
+      };
+      return true;
+    }
+
+    const pendingStart = this.pendingTouchDebugEllipseStart;
+    if (!pendingStart || pendingStart.kind !== kind) {
+      this.pendingTouchDebugEllipseStart = {
+        kind,
+        tileX: pointerInspect.tile.x,
+        tileY: pointerInspect.tile.y
+      };
+      return true;
+    }
+
+    this.queueDebugEllipseFillRequest(
+      pendingStart.tileX,
+      pendingStart.tileY,
+      pointerInspect.tile.x,
+      pointerInspect.tile.y,
+      kind,
+      'touch'
+    );
+    this.pendingTouchDebugEllipseStart = null;
+    this.armedDebugEllipseKind = null;
+    return true;
+  }
+
   private tryQueueArmedDebugFloodFill(event: PointerEvent): boolean {
     const kind = this.armedDebugFloodFillKind;
     if (!kind || this.pointers.size !== 1) return false;
@@ -1301,6 +1473,23 @@ export class InputController {
     this.pendingTouchDebugRectOutlineStart = null;
   }
 
+  private commitMouseDebugEllipseDrag(event: PointerEvent, drag: ActiveMouseDebugRectDrag): void {
+    this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
+    const pointerInspect = this.pointerInspect;
+    if (!pointerInspect || pointerInspect.pointerType !== 'mouse') return;
+
+    this.queueDebugEllipseFillRequest(
+      drag.startTileX,
+      drag.startTileY,
+      pointerInspect.tile.x,
+      pointerInspect.tile.y,
+      drag.kind,
+      'mouse'
+    );
+    this.armedDebugEllipseKind = null;
+    this.pendingTouchDebugEllipseStart = null;
+  }
+
   private queueDebugLineRequest(
     startTileX: number,
     startTileY: number,
@@ -1361,6 +1550,31 @@ export class InputController {
   ): void {
     const strokeId = this.nextDebugPaintStrokeId++;
     this.debugRectOutlineQueue.push({
+      startTileX,
+      startTileY,
+      endTileX,
+      endTileY,
+      kind,
+      strokeId,
+      pointerType
+    });
+    this.completedDebugTileStrokeQueue.push({
+      strokeId,
+      kind,
+      pointerType
+    });
+  }
+
+  private queueDebugEllipseFillRequest(
+    startTileX: number,
+    startTileY: number,
+    endTileX: number,
+    endTileY: number,
+    kind: DebugTileEditKind,
+    pointerType: 'mouse' | 'touch'
+  ): void {
+    const strokeId = this.nextDebugPaintStrokeId++;
+    this.debugEllipseFillQueue.push({
       startTileX,
       startTileY,
       endTileX,

@@ -18,6 +18,9 @@ const rectAccentForKind = (kind: DebugTileEditKind): string =>
 const rectOutlineAccentForKind = (kind: DebugTileEditKind): string =>
   kind === 'place' ? 'rgba(120, 210, 255, 0.95)' : 'rgba(255, 180, 120, 0.95)';
 
+const ellipseAccentForKind = (kind: DebugTileEditKind): string =>
+  kind === 'place' ? 'rgba(185, 255, 120, 0.95)' : 'rgba(255, 155, 120, 0.95)';
+
 const toolActionLabel = (tool: string, kind: DebugTileEditKind): string =>
   `${tool} ${kind === 'place' ? 'Brush' : 'Break'}`;
 
@@ -58,6 +61,7 @@ export class ArmedDebugToolPreviewOverlay {
   private lineStartMarker: HTMLDivElement;
   private lineEndMarker: HTMLDivElement;
   private rectPreviewBox: HTMLDivElement;
+  private ellipsePreviewBox: HTMLDivElement;
   private touchAnchorMarker: HTMLDivElement;
   private touchAnchorLabel: HTMLDivElement;
 
@@ -120,6 +124,16 @@ export class ArmedDebugToolPreviewOverlay {
     this.rectPreviewBox.style.background = 'rgba(255, 255, 255, 0.05)';
     this.rectPreviewBox.style.boxShadow = '0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.08)';
 
+    this.ellipsePreviewBox = document.createElement('div');
+    this.ellipsePreviewBox.style.position = 'fixed';
+    this.ellipsePreviewBox.style.display = 'none';
+    this.ellipsePreviewBox.style.boxSizing = 'border-box';
+    this.ellipsePreviewBox.style.borderRadius = '999px';
+    this.ellipsePreviewBox.style.border = '2px dashed rgba(255, 255, 255, 0.95)';
+    this.ellipsePreviewBox.style.background = 'rgba(255, 255, 255, 0.05)';
+    this.ellipsePreviewBox.style.boxShadow =
+      '0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.08)';
+
     this.touchAnchorMarker = document.createElement('div');
     this.touchAnchorMarker.style.position = 'fixed';
     this.touchAnchorMarker.style.display = 'none';
@@ -147,6 +161,7 @@ export class ArmedDebugToolPreviewOverlay {
       this.lineStartMarker,
       this.lineEndMarker,
       this.rectPreviewBox,
+      this.ellipsePreviewBox,
       this.touchAnchorMarker,
       this.touchAnchorLabel,
       this.statusBadge
@@ -163,6 +178,7 @@ export class ArmedDebugToolPreviewOverlay {
     this.updateStatusBadge(canvasRect, preview);
     this.updateMouseLinePreview(camera, canvasRect, pointerInspect, preview);
     this.updateMouseRectPreview(camera, canvasRect, pointerInspect, preview);
+    this.updateMouseEllipsePreview(camera, canvasRect, pointerInspect, preview);
     this.updateTouchAnchorPreview(camera, canvasRect, preview);
   }
 
@@ -171,20 +187,25 @@ export class ArmedDebugToolPreviewOverlay {
     const pendingTouchLineStart = preview.pendingTouchLineStart;
     const activeMouseRectDrag = preview.activeMouseRectDrag;
     const activeMouseRectOutlineDrag = preview.activeMouseRectOutlineDrag;
+    const activeMouseEllipseDrag = preview.activeMouseEllipseDrag;
     const pendingTouchRectStart = preview.pendingTouchRectStart;
     const pendingTouchRectOutlineStart = preview.pendingTouchRectOutlineStart;
+    const pendingTouchEllipseStart = preview.pendingTouchEllipseStart;
 
     if (
       preview.armedFloodFillKind === null &&
       preview.armedLineKind === null &&
       preview.armedRectKind === null &&
       preview.armedRectOutlineKind === null &&
+      preview.armedEllipseKind === null &&
       activeMouseLineDrag === null &&
       pendingTouchLineStart === null &&
       activeMouseRectDrag === null &&
       activeMouseRectOutlineDrag === null &&
+      activeMouseEllipseDrag === null &&
       pendingTouchRectStart === null &&
-      pendingTouchRectOutlineStart === null
+      pendingTouchRectOutlineStart === null &&
+      pendingTouchEllipseStart === null
     ) {
       hideElement(this.statusBadge);
       return;
@@ -202,6 +223,9 @@ export class ArmedDebugToolPreviewOverlay {
     } else if (activeMouseRectOutlineDrag) {
       accent = rectOutlineAccentForKind(activeMouseRectOutlineDrag.kind);
       text = `${toolActionLabel('Rect Outline', activeMouseRectOutlineDrag.kind)} armed - drag box, release to apply - Esc cancel`;
+    } else if (activeMouseEllipseDrag) {
+      accent = ellipseAccentForKind(activeMouseEllipseDrag.kind);
+      text = `${toolActionLabel('Ellipse Fill', activeMouseEllipseDrag.kind)} armed - drag bounds, release to apply - Esc cancel`;
     } else if (pendingTouchLineStart) {
       accent = lineAccentForKind(pendingTouchLineStart.kind);
       text = `${toolActionLabel('Line', pendingTouchLineStart.kind)} armed - start set, tap end tile - Esc cancel`;
@@ -211,6 +235,9 @@ export class ArmedDebugToolPreviewOverlay {
     } else if (pendingTouchRectOutlineStart) {
       accent = rectOutlineAccentForKind(pendingTouchRectOutlineStart.kind);
       text = `${toolActionLabel('Rect Outline', pendingTouchRectOutlineStart.kind)} armed - corner set, tap opposite corner - Esc cancel`;
+    } else if (pendingTouchEllipseStart) {
+      accent = ellipseAccentForKind(pendingTouchEllipseStart.kind);
+      text = `${toolActionLabel('Ellipse Fill', pendingTouchEllipseStart.kind)} armed - corner set, tap opposite corner - Esc cancel`;
     } else if (preview.armedLineKind) {
       accent = lineAccentForKind(preview.armedLineKind);
       text = `${toolActionLabel('Line', preview.armedLineKind)} armed - drag (desktop) or tap start/end (touch) - Esc cancel`;
@@ -221,6 +248,10 @@ export class ArmedDebugToolPreviewOverlay {
       accent = rectOutlineAccentForKind(preview.armedRectOutlineKind);
       text =
         `${toolActionLabel('Rect Outline', preview.armedRectOutlineKind)} armed - drag box (desktop) or tap two corners (touch) - Esc cancel`;
+    } else if (preview.armedEllipseKind) {
+      accent = ellipseAccentForKind(preview.armedEllipseKind);
+      text =
+        `${toolActionLabel('Ellipse Fill', preview.armedEllipseKind)} armed - drag bounds (desktop) or tap two corners (touch) - Esc cancel`;
     } else if (preview.armedFloodFillKind) {
       accent = fillAccentForKind(preview.armedFloodFillKind);
       text = `${toolActionLabel('Fill', preview.armedFloodFillKind)} armed - click/tap target tile - Esc cancel`;
@@ -358,6 +389,60 @@ export class ArmedDebugToolPreviewOverlay {
       `0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 0 0 1px ${accent.replace('0.95', '0.16')}`;
   }
 
+  private updateMouseEllipsePreview(
+    camera: Camera2D,
+    canvasRect: DOMRect,
+    pointerInspect: PointerInspectSnapshot | null,
+    preview: ArmedDebugToolPreviewState
+  ): void {
+    const drag = preview.activeMouseEllipseDrag;
+    if (!drag || pointerInspect?.pointerType !== 'mouse') {
+      hideElement(this.ellipsePreviewBox);
+      return;
+    }
+
+    const startRect = computeTileClientRectOrNull(
+      drag.startTileX,
+      drag.startTileY,
+      camera,
+      this.canvas,
+      canvasRect
+    );
+    const endRect = computeTileClientRectOrNull(
+      pointerInspect.tile.x,
+      pointerInspect.tile.y,
+      camera,
+      this.canvas,
+      canvasRect
+    );
+    if (!startRect || !endRect) {
+      hideElement(this.ellipsePreviewBox);
+      return;
+    }
+
+    const left = Math.min(startRect.left, endRect.left);
+    const top = Math.min(startRect.top, endRect.top);
+    const right = Math.max(startRect.left + startRect.width, endRect.left + endRect.width);
+    const bottom = Math.max(startRect.top + startRect.height, endRect.top + endRect.height);
+    const width = Math.max(0, right - left);
+    const height = Math.max(0, bottom - top);
+    if (width <= 0 || height <= 0) {
+      hideElement(this.ellipsePreviewBox);
+      return;
+    }
+
+    const accent = ellipseAccentForKind(drag.kind);
+    this.ellipsePreviewBox.style.display = 'block';
+    this.ellipsePreviewBox.style.left = `${left}px`;
+    this.ellipsePreviewBox.style.top = `${top}px`;
+    this.ellipsePreviewBox.style.width = `${width}px`;
+    this.ellipsePreviewBox.style.height = `${height}px`;
+    this.ellipsePreviewBox.style.borderColor = accent;
+    this.ellipsePreviewBox.style.background = accent.replace('0.95', '0.12');
+    this.ellipsePreviewBox.style.boxShadow =
+      `0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 0 0 1px ${accent.replace('0.95', '0.18')}`;
+  }
+
   private updateTouchAnchorPreview(
     camera: Camera2D,
     canvasRect: DOMRect,
@@ -366,7 +451,8 @@ export class ArmedDebugToolPreviewOverlay {
     const lineAnchor = preview.pendingTouchLineStart;
     const rectFillAnchor = preview.pendingTouchRectStart;
     const rectOutlineAnchor = preview.pendingTouchRectOutlineStart;
-    const anchor = lineAnchor ?? rectFillAnchor ?? rectOutlineAnchor;
+    const ellipseAnchor = preview.pendingTouchEllipseStart;
+    const anchor = lineAnchor ?? rectFillAnchor ?? rectOutlineAnchor ?? ellipseAnchor;
     if (!anchor) {
       hideElement(this.touchAnchorMarker);
       hideElement(this.touchAnchorLabel);
@@ -382,10 +468,13 @@ export class ArmedDebugToolPreviewOverlay {
 
     const isRectFillAnchor = rectFillAnchor !== null && anchor === rectFillAnchor;
     const isRectOutlineAnchor = rectOutlineAnchor !== null && anchor === rectOutlineAnchor;
+    const isEllipseAnchor = ellipseAnchor !== null && anchor === ellipseAnchor;
     const accent = isRectFillAnchor
       ? rectAccentForKind(anchor.kind)
       : isRectOutlineAnchor
         ? rectOutlineAccentForKind(anchor.kind)
+        : isEllipseAnchor
+          ? ellipseAccentForKind(anchor.kind)
         : lineAccentForKind(anchor.kind);
     showTileMarker(
       this.touchAnchorMarker,
@@ -404,6 +493,8 @@ export class ArmedDebugToolPreviewOverlay {
       ? 'Rect fill corner'
       : isRectOutlineAnchor
         ? 'Rect outline corner'
+        : isEllipseAnchor
+          ? 'Ellipse corner'
         : 'Line start';
     this.touchAnchorLabel.style.left = `${anchorRect.left}px`;
     this.touchAnchorLabel.style.top = `${Math.max(4, anchorRect.top - 24)}px`;

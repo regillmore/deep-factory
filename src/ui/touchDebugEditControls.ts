@@ -29,6 +29,8 @@ interface TouchDebugEditControlsOptions {
   onArmRect?: (kind: 'place' | 'break') => void;
   initialArmedRectOutlineKind?: 'place' | 'break' | null;
   onArmRectOutline?: (kind: 'place' | 'break') => void;
+  initialArmedEllipseKind?: 'place' | 'break' | null;
+  onArmEllipse?: (kind: 'place' | 'break') => void;
   initialCollapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
   onUndo?: () => void;
@@ -67,18 +69,22 @@ export class TouchDebugEditControls {
   private rectBreakButton: HTMLButtonElement;
   private rectOutlinePlaceButton: HTMLButtonElement;
   private rectOutlineBreakButton: HTMLButtonElement;
+  private ellipsePlaceButton: HTMLButtonElement;
+  private ellipseBreakButton: HTMLButtonElement;
   private undoStrokeCount = 0;
   private redoStrokeCount = 0;
   private armedFloodFillKind: 'place' | 'break' | null;
   private armedLineKind: 'place' | 'break' | null;
   private armedRectKind: 'place' | 'break' | null;
   private armedRectOutlineKind: 'place' | 'break' | null;
+  private armedEllipseKind: 'place' | 'break' | null;
   private onModeChange: (mode: TouchDebugEditMode) => void;
   private onBrushTileIdChange: (tileId: number) => void;
   private onArmFloodFill: (kind: 'place' | 'break') => void;
   private onArmLine: (kind: 'place' | 'break') => void;
   private onArmRect: (kind: 'place' | 'break') => void;
   private onArmRectOutline: (kind: 'place' | 'break') => void;
+  private onArmEllipse: (kind: 'place' | 'break') => void;
   private onCollapsedChange: (collapsed: boolean) => void;
   private onUndo: () => void;
   private onRedo: () => void;
@@ -99,6 +105,8 @@ export class TouchDebugEditControls {
     this.onArmRect = options.onArmRect ?? (() => {});
     this.armedRectOutlineKind = options.initialArmedRectOutlineKind ?? null;
     this.onArmRectOutline = options.onArmRectOutline ?? (() => {});
+    this.armedEllipseKind = options.initialArmedEllipseKind ?? null;
+    this.onArmEllipse = options.onArmEllipse ?? (() => {});
     this.collapsed = options.initialCollapsed ?? false;
     this.onCollapsedChange = options.onCollapsedChange ?? (() => {});
     this.onUndo = options.onUndo ?? (() => {});
@@ -496,6 +504,66 @@ export class TouchDebugEditControls {
     rectOutlineToolHintLine.style.lineHeight = '1.35';
     rectOutlineToolSection.append(rectOutlineToolHintLine);
 
+    const ellipseToolSection = document.createElement('div');
+    ellipseToolSection.style.display = 'flex';
+    ellipseToolSection.style.flexDirection = 'column';
+    ellipseToolSection.style.gap = '6px';
+    this.content.append(ellipseToolSection);
+
+    const ellipseToolTitle = document.createElement('div');
+    ellipseToolTitle.textContent = 'Ellipse Fill Tool';
+    ellipseToolTitle.style.color = '#aab7c7';
+    ellipseToolTitle.style.fontSize = '11px';
+    ellipseToolSection.append(ellipseToolTitle);
+
+    const ellipseToolRow = document.createElement('div');
+    ellipseToolRow.style.display = 'flex';
+    ellipseToolRow.style.flexWrap = 'wrap';
+    ellipseToolRow.style.gap = '6px';
+    ellipseToolSection.append(ellipseToolRow);
+
+    this.ellipsePlaceButton = document.createElement('button');
+    this.ellipsePlaceButton.type = 'button';
+    this.ellipsePlaceButton.textContent = 'Ellipse Brush';
+    this.ellipsePlaceButton.title =
+      'Arm one ellipse fill with the active brush (desktop drag bounds or touch two-corner)';
+    this.ellipsePlaceButton.addEventListener('click', () => this.onArmEllipse('place'));
+    this.ellipsePlaceButton.style.padding = '6px 8px';
+    this.ellipsePlaceButton.style.borderRadius = '8px';
+    this.ellipsePlaceButton.style.border = '1px solid rgba(255, 255, 255, 0.16)';
+    this.ellipsePlaceButton.style.background = 'rgba(255, 255, 255, 0.06)';
+    this.ellipsePlaceButton.style.color = '#f3f7fb';
+    this.ellipsePlaceButton.style.fontFamily = 'inherit';
+    this.ellipsePlaceButton.style.fontSize = '12px';
+    this.ellipsePlaceButton.style.cursor = 'pointer';
+    this.ellipsePlaceButton.style.touchAction = 'manipulation';
+    ellipseToolRow.append(this.ellipsePlaceButton);
+
+    this.ellipseBreakButton = document.createElement('button');
+    this.ellipseBreakButton.type = 'button';
+    this.ellipseBreakButton.textContent = 'Ellipse Break';
+    this.ellipseBreakButton.title =
+      'Arm one ellipse fill that clears tiles (desktop drag bounds or touch two-corner)';
+    this.ellipseBreakButton.addEventListener('click', () => this.onArmEllipse('break'));
+    this.ellipseBreakButton.style.padding = '6px 8px';
+    this.ellipseBreakButton.style.borderRadius = '8px';
+    this.ellipseBreakButton.style.border = '1px solid rgba(255, 255, 255, 0.16)';
+    this.ellipseBreakButton.style.background = 'rgba(255, 255, 255, 0.06)';
+    this.ellipseBreakButton.style.color = '#f3f7fb';
+    this.ellipseBreakButton.style.fontFamily = 'inherit';
+    this.ellipseBreakButton.style.fontSize = '12px';
+    this.ellipseBreakButton.style.cursor = 'pointer';
+    this.ellipseBreakButton.style.touchAction = 'manipulation';
+    ellipseToolRow.append(this.ellipseBreakButton);
+
+    const ellipseToolHintLine = document.createElement('div');
+    ellipseToolHintLine.textContent =
+      'Desktop: arm Ellipse Brush/Break, then drag bounds. Touch: tap first corner, then tap opposite corner.';
+    ellipseToolHintLine.style.color = '#d6dde8';
+    ellipseToolHintLine.style.fontSize = '11px';
+    ellipseToolHintLine.style.lineHeight = '1.35';
+    ellipseToolSection.append(ellipseToolHintLine);
+
     const prefsSection = document.createElement('div');
     prefsSection.style.display = 'flex';
     prefsSection.style.flexDirection = 'column';
@@ -657,6 +725,7 @@ export class TouchDebugEditControls {
     this.syncLineToolState();
     this.syncRectToolState();
     this.syncRectOutlineToolState();
+    this.syncEllipseToolState();
     this.syncBrushState();
     this.syncCollapsedState();
     document.body.append(this.root);
@@ -720,6 +789,12 @@ export class TouchDebugEditControls {
     if (this.armedRectOutlineKind === kind) return;
     this.armedRectOutlineKind = kind;
     this.syncRectOutlineToolState();
+  }
+
+  setArmedEllipseKind(kind: 'place' | 'break' | null): void {
+    if (this.armedEllipseKind === kind) return;
+    this.armedEllipseKind = kind;
+    this.syncEllipseToolState();
   }
 
   private syncButtonState(): void {
@@ -801,6 +876,19 @@ export class TouchDebugEditControls {
     this.syncCollapsedSummary();
   }
 
+  private syncEllipseToolState(): void {
+    const syncButton = (button: HTMLButtonElement, active: boolean, activeColor: string): void => {
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      button.style.background = active ? activeColor : 'rgba(255, 255, 255, 0.06)';
+      button.style.borderColor = active ? 'rgba(255, 255, 255, 0.58)' : 'rgba(255, 255, 255, 0.16)';
+      button.style.color = active ? '#ffffff' : '#f3f7fb';
+    };
+
+    syncButton(this.ellipsePlaceButton, this.armedEllipseKind === 'place', 'rgba(185, 255, 120, 0.22)');
+    syncButton(this.ellipseBreakButton, this.armedEllipseKind === 'break', 'rgba(255, 155, 120, 0.22)');
+    this.syncCollapsedSummary();
+  }
+
   private syncCollapsedState(): void {
     this.content.style.display = this.collapsed ? 'none' : 'flex';
     this.collapsedSummary.style.display = this.collapsed ? 'block' : 'none';
@@ -859,6 +947,12 @@ export class TouchDebugEditControls {
         : this.armedRectOutlineKind === 'place'
           ? ' | RectO:Brush'
           : ' | RectO:Break';
-    this.collapsedSummary.textContent = `${modeLabel} | Brush: ${brushSummary}${armedFillSummary}${armedLineSummary}${armedRectFillSummary}${armedRectOutlineSummary} | U:${this.undoStrokeCount} R:${this.redoStrokeCount}`;
+    const armedEllipseSummary =
+      this.armedEllipseKind === null
+        ? ''
+        : this.armedEllipseKind === 'place'
+          ? ' | Ellipse:Brush'
+          : ' | Ellipse:Break';
+    this.collapsedSummary.textContent = `${modeLabel} | Brush: ${brushSummary}${armedFillSummary}${armedLineSummary}${armedRectFillSummary}${armedRectOutlineSummary}${armedEllipseSummary} | U:${this.undoStrokeCount} R:${this.redoStrokeCount}`;
   }
 }
