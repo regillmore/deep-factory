@@ -21,6 +21,9 @@ const rectOutlineAccentForKind = (kind: DebugTileEditKind): string =>
 const ellipseAccentForKind = (kind: DebugTileEditKind): string =>
   kind === 'place' ? 'rgba(185, 255, 120, 0.95)' : 'rgba(255, 155, 120, 0.95)';
 
+const ellipseOutlineAccentForKind = (kind: DebugTileEditKind): string =>
+  kind === 'place' ? 'rgba(150, 225, 255, 0.95)' : 'rgba(255, 195, 120, 0.95)';
+
 const toolActionLabel = (tool: string, kind: DebugTileEditKind): string =>
   `${tool} ${kind === 'place' ? 'Brush' : 'Break'}`;
 
@@ -188,9 +191,11 @@ export class ArmedDebugToolPreviewOverlay {
     const activeMouseRectDrag = preview.activeMouseRectDrag;
     const activeMouseRectOutlineDrag = preview.activeMouseRectOutlineDrag;
     const activeMouseEllipseDrag = preview.activeMouseEllipseDrag;
+    const activeMouseEllipseOutlineDrag = preview.activeMouseEllipseOutlineDrag;
     const pendingTouchRectStart = preview.pendingTouchRectStart;
     const pendingTouchRectOutlineStart = preview.pendingTouchRectOutlineStart;
     const pendingTouchEllipseStart = preview.pendingTouchEllipseStart;
+    const pendingTouchEllipseOutlineStart = preview.pendingTouchEllipseOutlineStart;
 
     if (
       preview.armedFloodFillKind === null &&
@@ -198,14 +203,17 @@ export class ArmedDebugToolPreviewOverlay {
       preview.armedRectKind === null &&
       preview.armedRectOutlineKind === null &&
       preview.armedEllipseKind === null &&
+      preview.armedEllipseOutlineKind === null &&
       activeMouseLineDrag === null &&
       pendingTouchLineStart === null &&
       activeMouseRectDrag === null &&
       activeMouseRectOutlineDrag === null &&
       activeMouseEllipseDrag === null &&
+      activeMouseEllipseOutlineDrag === null &&
       pendingTouchRectStart === null &&
       pendingTouchRectOutlineStart === null &&
-      pendingTouchEllipseStart === null
+      pendingTouchEllipseStart === null &&
+      pendingTouchEllipseOutlineStart === null
     ) {
       hideElement(this.statusBadge);
       return;
@@ -226,6 +234,10 @@ export class ArmedDebugToolPreviewOverlay {
     } else if (activeMouseEllipseDrag) {
       accent = ellipseAccentForKind(activeMouseEllipseDrag.kind);
       text = `${toolActionLabel('Ellipse Fill', activeMouseEllipseDrag.kind)} armed - drag bounds, release to apply - Esc cancel`;
+    } else if (activeMouseEllipseOutlineDrag) {
+      accent = ellipseOutlineAccentForKind(activeMouseEllipseOutlineDrag.kind);
+      text =
+        `${toolActionLabel('Ellipse Outline', activeMouseEllipseOutlineDrag.kind)} armed - drag bounds, release to apply - Esc cancel`;
     } else if (pendingTouchLineStart) {
       accent = lineAccentForKind(pendingTouchLineStart.kind);
       text = `${toolActionLabel('Line', pendingTouchLineStart.kind)} armed - start set, tap end tile - Esc cancel`;
@@ -238,6 +250,10 @@ export class ArmedDebugToolPreviewOverlay {
     } else if (pendingTouchEllipseStart) {
       accent = ellipseAccentForKind(pendingTouchEllipseStart.kind);
       text = `${toolActionLabel('Ellipse Fill', pendingTouchEllipseStart.kind)} armed - corner set, tap opposite corner - Esc cancel`;
+    } else if (pendingTouchEllipseOutlineStart) {
+      accent = ellipseOutlineAccentForKind(pendingTouchEllipseOutlineStart.kind);
+      text =
+        `${toolActionLabel('Ellipse Outline', pendingTouchEllipseOutlineStart.kind)} armed - corner set, tap opposite corner - Esc cancel`;
     } else if (preview.armedLineKind) {
       accent = lineAccentForKind(preview.armedLineKind);
       text = `${toolActionLabel('Line', preview.armedLineKind)} armed - drag (desktop) or tap start/end (touch) - Esc cancel`;
@@ -252,6 +268,10 @@ export class ArmedDebugToolPreviewOverlay {
       accent = ellipseAccentForKind(preview.armedEllipseKind);
       text =
         `${toolActionLabel('Ellipse Fill', preview.armedEllipseKind)} armed - drag bounds (desktop) or tap two corners (touch) - Esc cancel`;
+    } else if (preview.armedEllipseOutlineKind) {
+      accent = ellipseOutlineAccentForKind(preview.armedEllipseOutlineKind);
+      text =
+        `${toolActionLabel('Ellipse Outline', preview.armedEllipseOutlineKind)} armed - drag bounds (desktop) or tap two corners (touch) - Esc cancel`;
     } else if (preview.armedFloodFillKind) {
       accent = fillAccentForKind(preview.armedFloodFillKind);
       text = `${toolActionLabel('Fill', preview.armedFloodFillKind)} armed - click/tap target tile - Esc cancel`;
@@ -395,7 +415,9 @@ export class ArmedDebugToolPreviewOverlay {
     pointerInspect: PointerInspectSnapshot | null,
     preview: ArmedDebugToolPreviewState
   ): void {
-    const drag = preview.activeMouseEllipseDrag;
+    const fillDrag = preview.activeMouseEllipseDrag;
+    const outlineDrag = preview.activeMouseEllipseOutlineDrag;
+    const drag = fillDrag ?? outlineDrag;
     if (!drag || pointerInspect?.pointerType !== 'mouse') {
       hideElement(this.ellipsePreviewBox);
       return;
@@ -431,16 +453,18 @@ export class ArmedDebugToolPreviewOverlay {
       return;
     }
 
-    const accent = ellipseAccentForKind(drag.kind);
+    const isOutlineDrag = outlineDrag !== null && drag === outlineDrag;
+    const accent = isOutlineDrag ? ellipseOutlineAccentForKind(drag.kind) : ellipseAccentForKind(drag.kind);
     this.ellipsePreviewBox.style.display = 'block';
     this.ellipsePreviewBox.style.left = `${left}px`;
     this.ellipsePreviewBox.style.top = `${top}px`;
     this.ellipsePreviewBox.style.width = `${width}px`;
     this.ellipsePreviewBox.style.height = `${height}px`;
     this.ellipsePreviewBox.style.borderColor = accent;
-    this.ellipsePreviewBox.style.background = accent.replace('0.95', '0.12');
+    this.ellipsePreviewBox.style.borderStyle = isOutlineDrag ? 'solid' : 'dashed';
+    this.ellipsePreviewBox.style.background = accent.replace('0.95', isOutlineDrag ? '0.06' : '0.12');
     this.ellipsePreviewBox.style.boxShadow =
-      `0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 0 0 1px ${accent.replace('0.95', '0.18')}`;
+      `0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 0 0 1px ${accent.replace('0.95', isOutlineDrag ? '0.16' : '0.18')}`;
   }
 
   private updateTouchAnchorPreview(
@@ -452,7 +476,8 @@ export class ArmedDebugToolPreviewOverlay {
     const rectFillAnchor = preview.pendingTouchRectStart;
     const rectOutlineAnchor = preview.pendingTouchRectOutlineStart;
     const ellipseAnchor = preview.pendingTouchEllipseStart;
-    const anchor = lineAnchor ?? rectFillAnchor ?? rectOutlineAnchor ?? ellipseAnchor;
+    const ellipseOutlineAnchor = preview.pendingTouchEllipseOutlineStart;
+    const anchor = lineAnchor ?? rectFillAnchor ?? rectOutlineAnchor ?? ellipseAnchor ?? ellipseOutlineAnchor;
     if (!anchor) {
       hideElement(this.touchAnchorMarker);
       hideElement(this.touchAnchorLabel);
@@ -469,12 +494,15 @@ export class ArmedDebugToolPreviewOverlay {
     const isRectFillAnchor = rectFillAnchor !== null && anchor === rectFillAnchor;
     const isRectOutlineAnchor = rectOutlineAnchor !== null && anchor === rectOutlineAnchor;
     const isEllipseAnchor = ellipseAnchor !== null && anchor === ellipseAnchor;
+    const isEllipseOutlineAnchor = ellipseOutlineAnchor !== null && anchor === ellipseOutlineAnchor;
     const accent = isRectFillAnchor
       ? rectAccentForKind(anchor.kind)
       : isRectOutlineAnchor
         ? rectOutlineAccentForKind(anchor.kind)
-        : isEllipseAnchor
+      : isEllipseAnchor
           ? ellipseAccentForKind(anchor.kind)
+        : isEllipseOutlineAnchor
+          ? ellipseOutlineAccentForKind(anchor.kind)
         : lineAccentForKind(anchor.kind);
     showTileMarker(
       this.touchAnchorMarker,
@@ -493,8 +521,10 @@ export class ArmedDebugToolPreviewOverlay {
       ? 'Rect fill corner'
       : isRectOutlineAnchor
         ? 'Rect outline corner'
-        : isEllipseAnchor
+      : isEllipseAnchor
           ? 'Ellipse corner'
+        : isEllipseOutlineAnchor
+          ? 'Ellipse outline corner'
         : 'Line start';
     this.touchAnchorLabel.style.left = `${anchorRect.left}px`;
     this.touchAnchorLabel.style.top = `${Math.max(4, anchorRect.top - 24)}px`;

@@ -8,5 +8,5 @@
 6. Add save/load format for chunk snapshots.
 7. Prepare networking scaffolding (state diff messages, interest management).
 8. Add a main menu shell and move debug overlay to a UI toggle.
-9. Add a one-shot debug-edit ellipse outline tool (desktop drag bounds + touch two-corner workflow) with stroke history integration.
-10. Add desktop keyboard shortcuts to arm one-shot line/rect/ellipse debug-edit tools with discoverable control hints.
+9. Add desktop keyboard shortcuts to arm one-shot line/rect/rect-outline/ellipse fill/ellipse outline debug-edit tools with discoverable control hints.
+10. Add a compact debug-edit status strip that mirrors the active one-shot tool, current brush, and gesture/shortcut hints near the canvas.

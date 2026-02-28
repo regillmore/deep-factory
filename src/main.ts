@@ -5,6 +5,7 @@ import { GameLoop } from './core/gameLoop';
 import { Renderer } from './gl/renderer';
 import {
   InputController,
+  walkEllipseOutlineTileArea,
   walkFilledEllipseTileArea,
   walkFilledRectangleTileArea,
   walkRectangleOutlineTileArea,
@@ -170,12 +171,18 @@ const bootstrap = async (): Promise<void> => {
     debugEditControls.setArmedEllipseKind(input.getArmedDebugEllipseKind());
   };
 
+  const syncArmedEllipseOutlineControls = (): void => {
+    if (!debugEditControls) return;
+    debugEditControls.setArmedEllipseOutlineKind(input.getArmedDebugEllipseOutlineKind());
+  };
+
   const syncArmedDebugToolControls = (): void => {
     syncArmedFloodFillControls();
     syncArmedLineControls();
     syncArmedRectControls();
     syncArmedRectOutlineControls();
     syncArmedEllipseControls();
+    syncArmedEllipseOutlineControls();
   };
 
   const setArmedDebugFloodFillKind = (kind: DebugTileEditKind | null): boolean => {
@@ -184,13 +191,15 @@ const bootstrap = async (): Promise<void> => {
     const previousRectKind = input.getArmedDebugRectKind();
     const previousRectOutlineKind = input.getArmedDebugRectOutlineKind();
     const previousEllipseKind = input.getArmedDebugEllipseKind();
+    const previousEllipseOutlineKind = input.getArmedDebugEllipseOutlineKind();
     if (
       previousKind === kind &&
       (kind === null ||
         (previousLineKind === null &&
           previousRectKind === null &&
           previousRectOutlineKind === null &&
-          previousEllipseKind === null))
+          previousEllipseKind === null &&
+          previousEllipseOutlineKind === null))
     ) {
       return false;
     }
@@ -205,6 +214,9 @@ const bootstrap = async (): Promise<void> => {
     }
     if (kind !== null && previousEllipseKind !== null) {
       input.setArmedDebugEllipseKind(null);
+    }
+    if (kind !== null && previousEllipseOutlineKind !== null) {
+      input.setArmedDebugEllipseOutlineKind(null);
     }
     input.setArmedDebugFloodFillKind(kind);
     syncArmedDebugToolControls();
@@ -222,13 +234,15 @@ const bootstrap = async (): Promise<void> => {
     const previousRectKind = input.getArmedDebugRectKind();
     const previousRectOutlineKind = input.getArmedDebugRectOutlineKind();
     const previousEllipseKind = input.getArmedDebugEllipseKind();
+    const previousEllipseOutlineKind = input.getArmedDebugEllipseOutlineKind();
     if (
       previousKind === kind &&
       (kind === null ||
         (previousFloodFillKind === null &&
           previousRectKind === null &&
           previousRectOutlineKind === null &&
-          previousEllipseKind === null))
+          previousEllipseKind === null &&
+          previousEllipseOutlineKind === null))
     ) {
       return false;
     }
@@ -243,6 +257,9 @@ const bootstrap = async (): Promise<void> => {
     }
     if (kind !== null && previousEllipseKind !== null) {
       input.setArmedDebugEllipseKind(null);
+    }
+    if (kind !== null && previousEllipseOutlineKind !== null) {
+      input.setArmedDebugEllipseOutlineKind(null);
     }
     input.setArmedDebugLineKind(kind);
     syncArmedDebugToolControls();
@@ -260,13 +277,15 @@ const bootstrap = async (): Promise<void> => {
     const previousLineKind = input.getArmedDebugLineKind();
     const previousRectOutlineKind = input.getArmedDebugRectOutlineKind();
     const previousEllipseKind = input.getArmedDebugEllipseKind();
+    const previousEllipseOutlineKind = input.getArmedDebugEllipseOutlineKind();
     if (
       previousKind === kind &&
       (kind === null ||
         (previousFloodFillKind === null &&
           previousLineKind === null &&
           previousRectOutlineKind === null &&
-          previousEllipseKind === null))
+          previousEllipseKind === null &&
+          previousEllipseOutlineKind === null))
     ) {
       return false;
     }
@@ -281,6 +300,9 @@ const bootstrap = async (): Promise<void> => {
     }
     if (kind !== null && previousEllipseKind !== null) {
       input.setArmedDebugEllipseKind(null);
+    }
+    if (kind !== null && previousEllipseOutlineKind !== null) {
+      input.setArmedDebugEllipseOutlineKind(null);
     }
     input.setArmedDebugRectKind(kind);
     syncArmedDebugToolControls();
@@ -298,13 +320,15 @@ const bootstrap = async (): Promise<void> => {
     const previousLineKind = input.getArmedDebugLineKind();
     const previousRectKind = input.getArmedDebugRectKind();
     const previousEllipseKind = input.getArmedDebugEllipseKind();
+    const previousEllipseOutlineKind = input.getArmedDebugEllipseOutlineKind();
     if (
       previousKind === kind &&
       (kind === null ||
         (previousFloodFillKind === null &&
           previousLineKind === null &&
           previousRectKind === null &&
-          previousEllipseKind === null))
+          previousEllipseKind === null &&
+          previousEllipseOutlineKind === null))
     ) {
       return false;
     }
@@ -319,6 +343,9 @@ const bootstrap = async (): Promise<void> => {
     }
     if (kind !== null && previousEllipseKind !== null) {
       input.setArmedDebugEllipseKind(null);
+    }
+    if (kind !== null && previousEllipseOutlineKind !== null) {
+      input.setArmedDebugEllipseOutlineKind(null);
     }
     input.setArmedDebugRectOutlineKind(kind);
     syncArmedDebugToolControls();
@@ -336,13 +363,15 @@ const bootstrap = async (): Promise<void> => {
     const previousLineKind = input.getArmedDebugLineKind();
     const previousRectKind = input.getArmedDebugRectKind();
     const previousRectOutlineKind = input.getArmedDebugRectOutlineKind();
+    const previousEllipseOutlineKind = input.getArmedDebugEllipseOutlineKind();
     if (
       previousKind === kind &&
       (kind === null ||
         (previousFloodFillKind === null &&
           previousLineKind === null &&
           previousRectKind === null &&
-          previousRectOutlineKind === null))
+          previousRectOutlineKind === null &&
+          previousEllipseOutlineKind === null))
     ) {
       return false;
     }
@@ -358,6 +387,9 @@ const bootstrap = async (): Promise<void> => {
     if (kind !== null && previousRectOutlineKind !== null) {
       input.setArmedDebugRectOutlineKind(null);
     }
+    if (kind !== null && previousEllipseOutlineKind !== null) {
+      input.setArmedDebugEllipseOutlineKind(null);
+    }
     input.setArmedDebugEllipseKind(kind);
     syncArmedDebugToolControls();
     return true;
@@ -366,6 +398,49 @@ const bootstrap = async (): Promise<void> => {
   const toggleArmedDebugEllipseKind = (kind: DebugTileEditKind): boolean => {
     const currentKind = input.getArmedDebugEllipseKind();
     return setArmedDebugEllipseKind(currentKind === kind ? null : kind);
+  };
+
+  const setArmedDebugEllipseOutlineKind = (kind: DebugTileEditKind | null): boolean => {
+    const previousKind = input.getArmedDebugEllipseOutlineKind();
+    const previousFloodFillKind = input.getArmedDebugFloodFillKind();
+    const previousLineKind = input.getArmedDebugLineKind();
+    const previousRectKind = input.getArmedDebugRectKind();
+    const previousRectOutlineKind = input.getArmedDebugRectOutlineKind();
+    const previousEllipseKind = input.getArmedDebugEllipseKind();
+    if (
+      previousKind === kind &&
+      (kind === null ||
+        (previousFloodFillKind === null &&
+          previousLineKind === null &&
+          previousRectKind === null &&
+          previousRectOutlineKind === null &&
+          previousEllipseKind === null))
+    ) {
+      return false;
+    }
+    if (kind !== null && previousFloodFillKind !== null) {
+      input.setArmedDebugFloodFillKind(null);
+    }
+    if (kind !== null && previousLineKind !== null) {
+      input.setArmedDebugLineKind(null);
+    }
+    if (kind !== null && previousRectKind !== null) {
+      input.setArmedDebugRectKind(null);
+    }
+    if (kind !== null && previousRectOutlineKind !== null) {
+      input.setArmedDebugRectOutlineKind(null);
+    }
+    if (kind !== null && previousEllipseKind !== null) {
+      input.setArmedDebugEllipseKind(null);
+    }
+    input.setArmedDebugEllipseOutlineKind(kind);
+    syncArmedDebugToolControls();
+    return true;
+  };
+
+  const toggleArmedDebugEllipseOutlineKind = (kind: DebugTileEditKind): boolean => {
+    const currentKind = input.getArmedDebugEllipseOutlineKind();
+    return setArmedDebugEllipseOutlineKind(currentKind === kind ? null : kind);
   };
 
   const applyDebugHistoryTile = (worldTileX: number, worldTileY: number, tileId: number): void => {
@@ -484,6 +559,25 @@ const bootstrap = async (): Promise<void> => {
     return changedTileCount;
   };
 
+  const applyDebugEllipseOutline = (
+    startTileX: number,
+    startTileY: number,
+    endTileX: number,
+    endTileY: number,
+    kind: DebugTileEditKind,
+    strokeId: number
+  ): number => {
+    const tileId = kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
+    let changedTileCount = 0;
+    walkEllipseOutlineTileArea(startTileX, startTileY, endTileX, endTileY, (worldTileX, worldTileY) => {
+      const previousTileId = renderer.getTile(worldTileX, worldTileY);
+      if (!renderer.setTile(worldTileX, worldTileY, tileId)) return;
+      debugTileEditHistory.recordAppliedEdit(strokeId, worldTileX, worldTileY, previousTileId, tileId);
+      changedTileCount += 1;
+    });
+    return changedTileCount;
+  };
+
   const undoDebugTileStroke = (): boolean => {
     if (!debugTileEditHistory.undo(applyDebugHistoryTile)) return false;
     syncDebugEditHistoryControls();
@@ -518,6 +612,7 @@ const bootstrap = async (): Promise<void> => {
     initialArmedRectKind: input.getArmedDebugRectKind(),
     initialArmedRectOutlineKind: input.getArmedDebugRectOutlineKind(),
     initialArmedEllipseKind: input.getArmedDebugEllipseKind(),
+    initialArmedEllipseOutlineKind: input.getArmedDebugEllipseOutlineKind(),
     onArmFloodFill: (kind) => {
       toggleArmedDebugFloodFillKind(kind);
     },
@@ -532,6 +627,9 @@ const bootstrap = async (): Promise<void> => {
     },
     onArmEllipse: (kind) => {
       toggleArmedDebugEllipseKind(kind);
+    },
+    onArmEllipseOutline: (kind) => {
+      toggleArmedDebugEllipseOutlineKind(kind);
     },
     onUndo: undoDebugTileStroke,
     onRedo: redoDebugTileStroke,
@@ -692,6 +790,17 @@ const bootstrap = async (): Promise<void> => {
           ellipseFillRequest.endTileY,
           ellipseFillRequest.kind,
           ellipseFillRequest.strokeId
+        );
+      }
+
+      for (const ellipseOutlineRequest of input.consumeDebugEllipseOutlineRequests()) {
+        applyDebugEllipseOutline(
+          ellipseOutlineRequest.startTileX,
+          ellipseOutlineRequest.startTileY,
+          ellipseOutlineRequest.endTileX,
+          ellipseOutlineRequest.endTileY,
+          ellipseOutlineRequest.kind,
+          ellipseOutlineRequest.strokeId
         );
       }
       syncArmedDebugToolControls();

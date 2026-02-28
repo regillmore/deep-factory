@@ -6,6 +6,7 @@ import {
   getTouchDebugPaintKindForPointerDown,
   markDebugPaintTileSeen,
   walkFilledEllipseTileArea,
+  walkEllipseOutlineTileArea,
   walkFilledRectangleTileArea,
   walkRectangleOutlineTileArea,
   walkLineSteppedTilePath,
@@ -54,6 +55,19 @@ const collectFilledEllipseTiles = (
 ): Array<[number, number]> => {
   const tiles: Array<[number, number]> = [];
   walkFilledEllipseTileArea(startTileX, startTileY, endTileX, endTileY, (tileX, tileY) => {
+    tiles.push([tileX, tileY]);
+  });
+  return tiles;
+};
+
+const collectEllipseOutlineTiles = (
+  startTileX: number,
+  startTileY: number,
+  endTileX: number,
+  endTileY: number
+): Array<[number, number]> => {
+  const tiles: Array<[number, number]> = [];
+  walkEllipseOutlineTileArea(startTileX, startTileY, endTileX, endTileY, (tileX, tileY) => {
     tiles.push([tileX, tileY]);
   });
   return tiles;
@@ -258,6 +272,49 @@ describe('walkFilledEllipseTileArea', () => {
       [5, 2]
     ]);
     expect(collectFilledEllipseTiles(3, -1, 3, 2)).toEqual([
+      [3, -1],
+      [3, 0],
+      [3, 1],
+      [3, 2]
+    ]);
+  });
+});
+
+describe('walkEllipseOutlineTileArea', () => {
+  it('visits a single tile when both corners are the same', () => {
+    expect(collectEllipseOutlineTiles(4, -2, 4, -2)).toEqual([[4, -2]]);
+  });
+
+  it('visits the perimeter of an inscribed ellipse without the interior fill', () => {
+    expect(collectEllipseOutlineTiles(0, 0, 4, 4)).toEqual([
+      [1, 0],
+      [2, 0],
+      [3, 0],
+      [0, 1],
+      [4, 1],
+      [0, 2],
+      [4, 2],
+      [0, 3],
+      [4, 3],
+      [1, 4],
+      [2, 4],
+      [3, 4]
+    ]);
+  });
+
+  it('supports reverse corner ordering', () => {
+    expect(collectEllipseOutlineTiles(4, 4, 0, 0)).toEqual(collectEllipseOutlineTiles(0, 0, 4, 4));
+  });
+
+  it('covers the full span for single-row or single-column ellipse outlines', () => {
+    expect(collectEllipseOutlineTiles(1, 2, 5, 2)).toEqual([
+      [1, 2],
+      [2, 2],
+      [3, 2],
+      [4, 2],
+      [5, 2]
+    ]);
+    expect(collectEllipseOutlineTiles(3, -1, 3, 2)).toEqual([
       [3, -1],
       [3, 0],
       [3, 1],

@@ -31,6 +31,8 @@ interface TouchDebugEditControlsOptions {
   onArmRectOutline?: (kind: 'place' | 'break') => void;
   initialArmedEllipseKind?: 'place' | 'break' | null;
   onArmEllipse?: (kind: 'place' | 'break') => void;
+  initialArmedEllipseOutlineKind?: 'place' | 'break' | null;
+  onArmEllipseOutline?: (kind: 'place' | 'break') => void;
   initialCollapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
   onUndo?: () => void;
@@ -71,6 +73,8 @@ export class TouchDebugEditControls {
   private rectOutlineBreakButton: HTMLButtonElement;
   private ellipsePlaceButton: HTMLButtonElement;
   private ellipseBreakButton: HTMLButtonElement;
+  private ellipseOutlinePlaceButton: HTMLButtonElement;
+  private ellipseOutlineBreakButton: HTMLButtonElement;
   private undoStrokeCount = 0;
   private redoStrokeCount = 0;
   private armedFloodFillKind: 'place' | 'break' | null;
@@ -78,6 +82,7 @@ export class TouchDebugEditControls {
   private armedRectKind: 'place' | 'break' | null;
   private armedRectOutlineKind: 'place' | 'break' | null;
   private armedEllipseKind: 'place' | 'break' | null;
+  private armedEllipseOutlineKind: 'place' | 'break' | null;
   private onModeChange: (mode: TouchDebugEditMode) => void;
   private onBrushTileIdChange: (tileId: number) => void;
   private onArmFloodFill: (kind: 'place' | 'break') => void;
@@ -85,6 +90,7 @@ export class TouchDebugEditControls {
   private onArmRect: (kind: 'place' | 'break') => void;
   private onArmRectOutline: (kind: 'place' | 'break') => void;
   private onArmEllipse: (kind: 'place' | 'break') => void;
+  private onArmEllipseOutline: (kind: 'place' | 'break') => void;
   private onCollapsedChange: (collapsed: boolean) => void;
   private onUndo: () => void;
   private onRedo: () => void;
@@ -107,6 +113,8 @@ export class TouchDebugEditControls {
     this.onArmRectOutline = options.onArmRectOutline ?? (() => {});
     this.armedEllipseKind = options.initialArmedEllipseKind ?? null;
     this.onArmEllipse = options.onArmEllipse ?? (() => {});
+    this.armedEllipseOutlineKind = options.initialArmedEllipseOutlineKind ?? null;
+    this.onArmEllipseOutline = options.onArmEllipseOutline ?? (() => {});
     this.collapsed = options.initialCollapsed ?? false;
     this.onCollapsedChange = options.onCollapsedChange ?? (() => {});
     this.onUndo = options.onUndo ?? (() => {});
@@ -564,6 +572,66 @@ export class TouchDebugEditControls {
     ellipseToolHintLine.style.lineHeight = '1.35';
     ellipseToolSection.append(ellipseToolHintLine);
 
+    const ellipseOutlineToolSection = document.createElement('div');
+    ellipseOutlineToolSection.style.display = 'flex';
+    ellipseOutlineToolSection.style.flexDirection = 'column';
+    ellipseOutlineToolSection.style.gap = '6px';
+    this.content.append(ellipseOutlineToolSection);
+
+    const ellipseOutlineToolTitle = document.createElement('div');
+    ellipseOutlineToolTitle.textContent = 'Ellipse Outline Tool';
+    ellipseOutlineToolTitle.style.color = '#aab7c7';
+    ellipseOutlineToolTitle.style.fontSize = '11px';
+    ellipseOutlineToolSection.append(ellipseOutlineToolTitle);
+
+    const ellipseOutlineToolRow = document.createElement('div');
+    ellipseOutlineToolRow.style.display = 'flex';
+    ellipseOutlineToolRow.style.flexWrap = 'wrap';
+    ellipseOutlineToolRow.style.gap = '6px';
+    ellipseOutlineToolSection.append(ellipseOutlineToolRow);
+
+    this.ellipseOutlinePlaceButton = document.createElement('button');
+    this.ellipseOutlinePlaceButton.type = 'button';
+    this.ellipseOutlinePlaceButton.textContent = 'Ellipse Outline Brush';
+    this.ellipseOutlinePlaceButton.title =
+      'Arm one ellipse outline with the active brush (desktop drag bounds or touch two-corner)';
+    this.ellipseOutlinePlaceButton.addEventListener('click', () => this.onArmEllipseOutline('place'));
+    this.ellipseOutlinePlaceButton.style.padding = '6px 8px';
+    this.ellipseOutlinePlaceButton.style.borderRadius = '8px';
+    this.ellipseOutlinePlaceButton.style.border = '1px solid rgba(255, 255, 255, 0.16)';
+    this.ellipseOutlinePlaceButton.style.background = 'rgba(255, 255, 255, 0.06)';
+    this.ellipseOutlinePlaceButton.style.color = '#f3f7fb';
+    this.ellipseOutlinePlaceButton.style.fontFamily = 'inherit';
+    this.ellipseOutlinePlaceButton.style.fontSize = '12px';
+    this.ellipseOutlinePlaceButton.style.cursor = 'pointer';
+    this.ellipseOutlinePlaceButton.style.touchAction = 'manipulation';
+    ellipseOutlineToolRow.append(this.ellipseOutlinePlaceButton);
+
+    this.ellipseOutlineBreakButton = document.createElement('button');
+    this.ellipseOutlineBreakButton.type = 'button';
+    this.ellipseOutlineBreakButton.textContent = 'Ellipse Outline Break';
+    this.ellipseOutlineBreakButton.title =
+      'Arm one ellipse outline that clears tiles (desktop drag bounds or touch two-corner)';
+    this.ellipseOutlineBreakButton.addEventListener('click', () => this.onArmEllipseOutline('break'));
+    this.ellipseOutlineBreakButton.style.padding = '6px 8px';
+    this.ellipseOutlineBreakButton.style.borderRadius = '8px';
+    this.ellipseOutlineBreakButton.style.border = '1px solid rgba(255, 255, 255, 0.16)';
+    this.ellipseOutlineBreakButton.style.background = 'rgba(255, 255, 255, 0.06)';
+    this.ellipseOutlineBreakButton.style.color = '#f3f7fb';
+    this.ellipseOutlineBreakButton.style.fontFamily = 'inherit';
+    this.ellipseOutlineBreakButton.style.fontSize = '12px';
+    this.ellipseOutlineBreakButton.style.cursor = 'pointer';
+    this.ellipseOutlineBreakButton.style.touchAction = 'manipulation';
+    ellipseOutlineToolRow.append(this.ellipseOutlineBreakButton);
+
+    const ellipseOutlineToolHintLine = document.createElement('div');
+    ellipseOutlineToolHintLine.textContent =
+      'Desktop: arm Ellipse Outline Brush/Break, then drag bounds. Touch: tap first corner, then tap opposite corner.';
+    ellipseOutlineToolHintLine.style.color = '#d6dde8';
+    ellipseOutlineToolHintLine.style.fontSize = '11px';
+    ellipseOutlineToolHintLine.style.lineHeight = '1.35';
+    ellipseOutlineToolSection.append(ellipseOutlineToolHintLine);
+
     const prefsSection = document.createElement('div');
     prefsSection.style.display = 'flex';
     prefsSection.style.flexDirection = 'column';
@@ -726,6 +794,7 @@ export class TouchDebugEditControls {
     this.syncRectToolState();
     this.syncRectOutlineToolState();
     this.syncEllipseToolState();
+    this.syncEllipseOutlineToolState();
     this.syncBrushState();
     this.syncCollapsedState();
     document.body.append(this.root);
@@ -795,6 +864,12 @@ export class TouchDebugEditControls {
     if (this.armedEllipseKind === kind) return;
     this.armedEllipseKind = kind;
     this.syncEllipseToolState();
+  }
+
+  setArmedEllipseOutlineKind(kind: 'place' | 'break' | null): void {
+    if (this.armedEllipseOutlineKind === kind) return;
+    this.armedEllipseOutlineKind = kind;
+    this.syncEllipseOutlineToolState();
   }
 
   private syncButtonState(): void {
@@ -889,6 +964,19 @@ export class TouchDebugEditControls {
     this.syncCollapsedSummary();
   }
 
+  private syncEllipseOutlineToolState(): void {
+    const syncButton = (button: HTMLButtonElement, active: boolean, activeColor: string): void => {
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      button.style.background = active ? activeColor : 'rgba(255, 255, 255, 0.06)';
+      button.style.borderColor = active ? 'rgba(255, 255, 255, 0.58)' : 'rgba(255, 255, 255, 0.16)';
+      button.style.color = active ? '#ffffff' : '#f3f7fb';
+    };
+
+    syncButton(this.ellipseOutlinePlaceButton, this.armedEllipseOutlineKind === 'place', 'rgba(150, 225, 255, 0.22)');
+    syncButton(this.ellipseOutlineBreakButton, this.armedEllipseOutlineKind === 'break', 'rgba(255, 195, 120, 0.22)');
+    this.syncCollapsedSummary();
+  }
+
   private syncCollapsedState(): void {
     this.content.style.display = this.collapsed ? 'none' : 'flex';
     this.collapsedSummary.style.display = this.collapsed ? 'block' : 'none';
@@ -953,6 +1041,12 @@ export class TouchDebugEditControls {
         : this.armedEllipseKind === 'place'
           ? ' | Ellipse:Brush'
           : ' | Ellipse:Break';
-    this.collapsedSummary.textContent = `${modeLabel} | Brush: ${brushSummary}${armedFillSummary}${armedLineSummary}${armedRectFillSummary}${armedRectOutlineSummary}${armedEllipseSummary} | U:${this.undoStrokeCount} R:${this.redoStrokeCount}`;
+    const armedEllipseOutlineSummary =
+      this.armedEllipseOutlineKind === null
+        ? ''
+        : this.armedEllipseOutlineKind === 'place'
+          ? ' | EllipseO:Brush'
+          : ' | EllipseO:Break';
+    this.collapsedSummary.textContent = `${modeLabel} | Brush: ${brushSummary}${armedFillSummary}${armedLineSummary}${armedRectFillSummary}${armedRectOutlineSummary}${armedEllipseSummary}${armedEllipseOutlineSummary} | U:${this.undoStrokeCount} R:${this.redoStrokeCount}`;
   }
 }
