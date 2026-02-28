@@ -4,6 +4,7 @@ import {
   cycleDebugBrushTileId,
   getDebugEditPanelToggleHotkeyLabel,
   getDebugBrushSlotHotkeyLabel,
+  getDebugOneShotToolHotkeyLabel,
   getDebugBrushTileIdForShortcutSlot,
   getTouchDebugEditModeHotkeyLabel,
   resolveDebugEditShortcutAction,
@@ -100,6 +101,49 @@ describe('resolveDebugEditShortcutAction', () => {
     });
   });
 
+  it('maps one-shot shape tool shortcuts for brush and break variants', () => {
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'n' }))).toEqual({
+      type: 'arm-line',
+      kind: 'place'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'N', shiftKey: true }))).toEqual({
+      type: 'arm-line',
+      kind: 'break'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'r' }))).toEqual({
+      type: 'arm-rect',
+      kind: 'place'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'R', shiftKey: true }))).toEqual({
+      type: 'arm-rect',
+      kind: 'break'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 't' }))).toEqual({
+      type: 'arm-rect-outline',
+      kind: 'place'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'T', shiftKey: true }))).toEqual({
+      type: 'arm-rect-outline',
+      kind: 'break'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'e' }))).toEqual({
+      type: 'arm-ellipse',
+      kind: 'place'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'E', shiftKey: true }))).toEqual({
+      type: 'arm-ellipse',
+      kind: 'break'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'o' }))).toEqual({
+      type: 'arm-ellipse-outline',
+      kind: 'place'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'O', shiftKey: true }))).toEqual({
+      type: 'arm-ellipse-outline',
+      kind: 'break'
+    });
+  });
+
   it('maps Escape to armed-tool cancel', () => {
     expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'Escape' }))).toEqual({
       type: 'cancel-armed-tools'
@@ -153,6 +197,15 @@ describe('brush shortcut helpers', () => {
 
   it('returns the panel toggle hotkey label', () => {
     expect(getDebugEditPanelToggleHotkeyLabel()).toBe('\\');
+  });
+
+  it('returns one-shot tool hotkey labels for brush and break actions', () => {
+    expect(getDebugOneShotToolHotkeyLabel('flood-fill', 'place')).toBe('F');
+    expect(getDebugOneShotToolHotkeyLabel('line', 'break')).toBe('Shift+N');
+    expect(getDebugOneShotToolHotkeyLabel('rect-fill', 'place')).toBe('R');
+    expect(getDebugOneShotToolHotkeyLabel('rect-outline', 'break')).toBe('Shift+T');
+    expect(getDebugOneShotToolHotkeyLabel('ellipse-fill', 'place')).toBe('E');
+    expect(getDebugOneShotToolHotkeyLabel('ellipse-outline', 'break')).toBe('Shift+O');
   });
 
   it('maps slot indexes to brush tile IDs', () => {

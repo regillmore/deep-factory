@@ -2,6 +2,7 @@ import type { TouchDebugEditMode } from '../input/controller';
 import {
   getDebugBrushSlotHotkeyLabel,
   getDebugEditPanelToggleHotkeyLabel,
+  getDebugOneShotToolHotkeyLabel,
   getTouchDebugEditModeHotkeyLabel
 } from '../input/debugEditShortcuts';
 
@@ -297,7 +298,7 @@ export class TouchDebugEditControls {
     this.fillPlaceButton = document.createElement('button');
     this.fillPlaceButton.type = 'button';
     this.fillPlaceButton.textContent = 'Fill Brush';
-    this.fillPlaceButton.title = 'Arm one flood fill with the active brush (keyboard: F)';
+    this.fillPlaceButton.title = `Arm one flood fill with the active brush (keyboard: ${getDebugOneShotToolHotkeyLabel('flood-fill', 'place')})`;
     this.fillPlaceButton.addEventListener('click', () => this.onArmFloodFill('place'));
     this.fillPlaceButton.style.padding = '6px 8px';
     this.fillPlaceButton.style.borderRadius = '8px';
@@ -313,7 +314,7 @@ export class TouchDebugEditControls {
     this.fillBreakButton = document.createElement('button');
     this.fillBreakButton.type = 'button';
     this.fillBreakButton.textContent = 'Fill Break';
-    this.fillBreakButton.title = 'Arm one flood fill that clears matching tiles (keyboard: Shift+F)';
+    this.fillBreakButton.title = `Arm one flood fill that clears matching tiles (keyboard: ${getDebugOneShotToolHotkeyLabel('flood-fill', 'break')})`;
     this.fillBreakButton.addEventListener('click', () => this.onArmFloodFill('break'));
     this.fillBreakButton.style.padding = '6px 8px';
     this.fillBreakButton.style.borderRadius = '8px';
@@ -355,7 +356,7 @@ export class TouchDebugEditControls {
     this.linePlaceButton = document.createElement('button');
     this.linePlaceButton.type = 'button';
     this.linePlaceButton.textContent = 'Line Brush';
-    this.linePlaceButton.title = 'Arm one line draw with the active brush (desktop drag or touch two-point)';
+    this.linePlaceButton.title = `Arm one line draw with the active brush (keyboard: ${getDebugOneShotToolHotkeyLabel('line', 'place')}; desktop drag or touch two-point)`;
     this.linePlaceButton.addEventListener('click', () => this.onArmLine('place'));
     this.linePlaceButton.style.padding = '6px 8px';
     this.linePlaceButton.style.borderRadius = '8px';
@@ -371,7 +372,7 @@ export class TouchDebugEditControls {
     this.lineBreakButton = document.createElement('button');
     this.lineBreakButton.type = 'button';
     this.lineBreakButton.textContent = 'Line Break';
-    this.lineBreakButton.title = 'Arm one line draw that clears tiles (desktop drag or touch two-point)';
+    this.lineBreakButton.title = `Arm one line draw that clears tiles (keyboard: ${getDebugOneShotToolHotkeyLabel('line', 'break')}; desktop drag or touch two-point)`;
     this.lineBreakButton.addEventListener('click', () => this.onArmLine('break'));
     this.lineBreakButton.style.padding = '6px 8px';
     this.lineBreakButton.style.borderRadius = '8px';
@@ -386,7 +387,7 @@ export class TouchDebugEditControls {
 
     const lineToolHintLine = document.createElement('div');
     lineToolHintLine.textContent =
-      'Desktop: arm Line Brush/Break, then drag on the canvas. Touch: tap start tile, then tap end tile.';
+      `Desktop: ${getDebugOneShotToolHotkeyLabel('line', 'place')} arms Line Brush, ${getDebugOneShotToolHotkeyLabel('line', 'break')} arms Line Break, then drag on the canvas. Touch: tap start tile, then tap end tile.`;
     lineToolHintLine.style.color = '#d6dde8';
     lineToolHintLine.style.fontSize = '11px';
     lineToolHintLine.style.lineHeight = '1.35';
@@ -414,7 +415,7 @@ export class TouchDebugEditControls {
     this.rectPlaceButton.type = 'button';
     this.rectPlaceButton.textContent = 'Rect Brush';
     this.rectPlaceButton.title =
-      'Arm one rectangle fill with the active brush (desktop drag box or touch two-corner)';
+      `Arm one rectangle fill with the active brush (keyboard: ${getDebugOneShotToolHotkeyLabel('rect-fill', 'place')}; desktop drag box or touch two-corner)`;
     this.rectPlaceButton.addEventListener('click', () => this.onArmRect('place'));
     this.rectPlaceButton.style.padding = '6px 8px';
     this.rectPlaceButton.style.borderRadius = '8px';
@@ -431,7 +432,7 @@ export class TouchDebugEditControls {
     this.rectBreakButton.type = 'button';
     this.rectBreakButton.textContent = 'Rect Break';
     this.rectBreakButton.title =
-      'Arm one rectangle fill that clears tiles (desktop drag box or touch two-corner)';
+      `Arm one rectangle fill that clears tiles (keyboard: ${getDebugOneShotToolHotkeyLabel('rect-fill', 'break')}; desktop drag box or touch two-corner)`;
     this.rectBreakButton.addEventListener('click', () => this.onArmRect('break'));
     this.rectBreakButton.style.padding = '6px 8px';
     this.rectBreakButton.style.borderRadius = '8px';
@@ -446,7 +447,7 @@ export class TouchDebugEditControls {
 
     const rectToolHintLine = document.createElement('div');
     rectToolHintLine.textContent =
-      'Desktop: arm Rect Brush/Break, then drag a box. Touch: tap first corner, then tap opposite corner.';
+      `Desktop: ${getDebugOneShotToolHotkeyLabel('rect-fill', 'place')} arms Rect Brush, ${getDebugOneShotToolHotkeyLabel('rect-fill', 'break')} arms Rect Break, then drag a box. Touch: tap first corner, then tap opposite corner.`;
     rectToolHintLine.style.color = '#d6dde8';
     rectToolHintLine.style.fontSize = '11px';
     rectToolHintLine.style.lineHeight = '1.35';
@@ -474,7 +475,7 @@ export class TouchDebugEditControls {
     this.rectOutlinePlaceButton.type = 'button';
     this.rectOutlinePlaceButton.textContent = 'Rect Outline Brush';
     this.rectOutlinePlaceButton.title =
-      'Arm one rectangle outline with the active brush (desktop drag box or touch two-corner)';
+      `Arm one rectangle outline with the active brush (keyboard: ${getDebugOneShotToolHotkeyLabel('rect-outline', 'place')}; desktop drag box or touch two-corner)`;
     this.rectOutlinePlaceButton.addEventListener('click', () => this.onArmRectOutline('place'));
     this.rectOutlinePlaceButton.style.padding = '6px 8px';
     this.rectOutlinePlaceButton.style.borderRadius = '8px';
@@ -491,7 +492,7 @@ export class TouchDebugEditControls {
     this.rectOutlineBreakButton.type = 'button';
     this.rectOutlineBreakButton.textContent = 'Rect Outline Break';
     this.rectOutlineBreakButton.title =
-      'Arm one rectangle outline that clears tiles (desktop drag box or touch two-corner)';
+      `Arm one rectangle outline that clears tiles (keyboard: ${getDebugOneShotToolHotkeyLabel('rect-outline', 'break')}; desktop drag box or touch two-corner)`;
     this.rectOutlineBreakButton.addEventListener('click', () => this.onArmRectOutline('break'));
     this.rectOutlineBreakButton.style.padding = '6px 8px';
     this.rectOutlineBreakButton.style.borderRadius = '8px';
@@ -506,7 +507,7 @@ export class TouchDebugEditControls {
 
     const rectOutlineToolHintLine = document.createElement('div');
     rectOutlineToolHintLine.textContent =
-      'Desktop: arm Rect Outline Brush/Break, then drag a box. Touch: tap first corner, then tap opposite corner.';
+      `Desktop: ${getDebugOneShotToolHotkeyLabel('rect-outline', 'place')} arms Rect Outline Brush, ${getDebugOneShotToolHotkeyLabel('rect-outline', 'break')} arms Rect Outline Break, then drag a box. Touch: tap first corner, then tap opposite corner.`;
     rectOutlineToolHintLine.style.color = '#d6dde8';
     rectOutlineToolHintLine.style.fontSize = '11px';
     rectOutlineToolHintLine.style.lineHeight = '1.35';
@@ -534,7 +535,7 @@ export class TouchDebugEditControls {
     this.ellipsePlaceButton.type = 'button';
     this.ellipsePlaceButton.textContent = 'Ellipse Brush';
     this.ellipsePlaceButton.title =
-      'Arm one ellipse fill with the active brush (desktop drag bounds or touch two-corner)';
+      `Arm one ellipse fill with the active brush (keyboard: ${getDebugOneShotToolHotkeyLabel('ellipse-fill', 'place')}; desktop drag bounds or touch two-corner)`;
     this.ellipsePlaceButton.addEventListener('click', () => this.onArmEllipse('place'));
     this.ellipsePlaceButton.style.padding = '6px 8px';
     this.ellipsePlaceButton.style.borderRadius = '8px';
@@ -551,7 +552,7 @@ export class TouchDebugEditControls {
     this.ellipseBreakButton.type = 'button';
     this.ellipseBreakButton.textContent = 'Ellipse Break';
     this.ellipseBreakButton.title =
-      'Arm one ellipse fill that clears tiles (desktop drag bounds or touch two-corner)';
+      `Arm one ellipse fill that clears tiles (keyboard: ${getDebugOneShotToolHotkeyLabel('ellipse-fill', 'break')}; desktop drag bounds or touch two-corner)`;
     this.ellipseBreakButton.addEventListener('click', () => this.onArmEllipse('break'));
     this.ellipseBreakButton.style.padding = '6px 8px';
     this.ellipseBreakButton.style.borderRadius = '8px';
@@ -566,7 +567,7 @@ export class TouchDebugEditControls {
 
     const ellipseToolHintLine = document.createElement('div');
     ellipseToolHintLine.textContent =
-      'Desktop: arm Ellipse Brush/Break, then drag bounds. Touch: tap first corner, then tap opposite corner.';
+      `Desktop: ${getDebugOneShotToolHotkeyLabel('ellipse-fill', 'place')} arms Ellipse Brush, ${getDebugOneShotToolHotkeyLabel('ellipse-fill', 'break')} arms Ellipse Break, then drag bounds. Touch: tap first corner, then tap opposite corner.`;
     ellipseToolHintLine.style.color = '#d6dde8';
     ellipseToolHintLine.style.fontSize = '11px';
     ellipseToolHintLine.style.lineHeight = '1.35';
@@ -594,7 +595,7 @@ export class TouchDebugEditControls {
     this.ellipseOutlinePlaceButton.type = 'button';
     this.ellipseOutlinePlaceButton.textContent = 'Ellipse Outline Brush';
     this.ellipseOutlinePlaceButton.title =
-      'Arm one ellipse outline with the active brush (desktop drag bounds or touch two-corner)';
+      `Arm one ellipse outline with the active brush (keyboard: ${getDebugOneShotToolHotkeyLabel('ellipse-outline', 'place')}; desktop drag bounds or touch two-corner)`;
     this.ellipseOutlinePlaceButton.addEventListener('click', () => this.onArmEllipseOutline('place'));
     this.ellipseOutlinePlaceButton.style.padding = '6px 8px';
     this.ellipseOutlinePlaceButton.style.borderRadius = '8px';
@@ -611,7 +612,7 @@ export class TouchDebugEditControls {
     this.ellipseOutlineBreakButton.type = 'button';
     this.ellipseOutlineBreakButton.textContent = 'Ellipse Outline Break';
     this.ellipseOutlineBreakButton.title =
-      'Arm one ellipse outline that clears tiles (desktop drag bounds or touch two-corner)';
+      `Arm one ellipse outline that clears tiles (keyboard: ${getDebugOneShotToolHotkeyLabel('ellipse-outline', 'break')}; desktop drag bounds or touch two-corner)`;
     this.ellipseOutlineBreakButton.addEventListener('click', () => this.onArmEllipseOutline('break'));
     this.ellipseOutlineBreakButton.style.padding = '6px 8px';
     this.ellipseOutlineBreakButton.style.borderRadius = '8px';
@@ -626,7 +627,7 @@ export class TouchDebugEditControls {
 
     const ellipseOutlineToolHintLine = document.createElement('div');
     ellipseOutlineToolHintLine.textContent =
-      'Desktop: arm Ellipse Outline Brush/Break, then drag bounds. Touch: tap first corner, then tap opposite corner.';
+      `Desktop: ${getDebugOneShotToolHotkeyLabel('ellipse-outline', 'place')} arms Ellipse Outline Brush, ${getDebugOneShotToolHotkeyLabel('ellipse-outline', 'break')} arms Ellipse Outline Break, then drag bounds. Touch: tap first corner, then tap opposite corner.`;
     ellipseOutlineToolHintLine.style.color = '#d6dde8';
     ellipseOutlineToolHintLine.style.fontSize = '11px';
     ellipseOutlineToolHintLine.style.lineHeight = '1.35';
@@ -714,6 +715,14 @@ export class TouchDebugEditControls {
     floodFillShortcutLine.style.fontSize = '11px';
     floodFillShortcutLine.style.lineHeight = '1.35';
     shortcutSection.append(floodFillShortcutLine);
+
+    const oneShotShortcutLine = document.createElement('div');
+    oneShotShortcutLine.textContent =
+      'Shape tools: N line, R rect fill, T rect outline, E ellipse fill, O ellipse outline (Shift = break)';
+    oneShotShortcutLine.style.color = '#d6dde8';
+    oneShotShortcutLine.style.fontSize = '11px';
+    oneShotShortcutLine.style.lineHeight = '1.35';
+    shortcutSection.append(oneShotShortcutLine);
 
     const cancelShortcutLine = document.createElement('div');
     cancelShortcutLine.textContent = 'Cancel armed one-shot tools: Esc';

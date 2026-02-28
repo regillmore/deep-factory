@@ -37,6 +37,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Hovering a world tile updates the compact status strip with tile name/id plus solid/light/liquid flags for quick gameplay-tag inspection
 - Debug eyedropper shortcut: `I` sets the active brush from the hovered tile (non-empty tiles)
 - Debug flood fill shortcuts: `F` arms a one-shot brush flood fill, `Shift+F` arms a one-shot break flood fill; next canvas click applies (resident chunk bounds only, `Esc` cancels while armed)
+- Debug one-shot shape shortcuts: `N` / `Shift+N` line brush/break, `R` / `Shift+R` rect fill brush/break, `T` / `Shift+T` rect outline brush/break, `E` / `Shift+E` ellipse fill brush/break, `O` / `Shift+O` ellipse outline brush/break
 - One-shot armed fill/line/rect fill/rect outline/ellipse fill/ellipse outline tools show an on-canvas status badge with the current armed action and cancel hint (`Esc`)
 - On-screen debug edit controls: click `Line Brush` / `Line Break` to arm a one-shot line tool, then drag on the canvas to apply a single undoable line stroke (with on-canvas endpoint preview)
 - On-screen debug edit controls: click `Rect Brush` / `Rect Break` to arm a one-shot rectangle fill tool, then drag a box on the canvas to apply a single undoable rectangle stroke (with on-canvas box preview)
@@ -114,6 +115,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Shared debug edit controls now also include one-shot ellipse fill tools (`Ellipse Brush` / `Ellipse Break`) with desktop drag-bounds and touch two-corner workflows, and each ellipse fill applies as a single undoable stroke.
 - Shared debug edit controls now also include one-shot ellipse outline tools (`Ellipse Outline Brush` / `Ellipse Outline Break`) with desktop drag-bounds and touch two-corner workflows, and each ellipse outline applies as a single undoable stroke.
 - Armed one-shot debug fill/line/rect fill/rect outline/ellipse fill/ellipse outline tools now show an on-canvas preview/status overlay (desktop line endpoint + rectangle/ellipse bounds previews; touch line-start + rectangle/ellipse corner anchors) and support `Esc` cancellation.
+- Desktop keyboard shortcuts now also arm one-shot line/rect fill/rect outline/ellipse fill/ellipse outline tools (mirroring flood fill with `Shift` for break variants), and the shared debug controls/status hints surface those bindings.
 - A compact debug-edit status strip now sits near the canvas, mirroring the shared mode, active brush, armed one-shot tool state, and mixed-device gesture/shortcut hints while the larger panel is collapsed or out of the way.
 - The compact debug-edit status strip now also shows the hovered/touched tile name/id, world coordinates, and solid/light/liquid gameplay flags for faster gameplay-tag validation.
 - Debug overlay showing FPS + rendered chunk count.

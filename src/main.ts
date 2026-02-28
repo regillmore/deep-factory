@@ -702,6 +702,16 @@ const bootstrap = async (): Promise<void> => {
       }
     } else if (action.type === 'arm-flood-fill') {
       handled = toggleArmedDebugFloodFillKind(action.kind);
+    } else if (action.type === 'arm-line') {
+      handled = toggleArmedDebugLineKind(action.kind);
+    } else if (action.type === 'arm-rect') {
+      handled = toggleArmedDebugRectKind(action.kind);
+    } else if (action.type === 'arm-rect-outline') {
+      handled = toggleArmedDebugRectOutlineKind(action.kind);
+    } else if (action.type === 'arm-ellipse') {
+      handled = toggleArmedDebugEllipseKind(action.kind);
+    } else if (action.type === 'arm-ellipse-outline') {
+      handled = toggleArmedDebugEllipseOutlineKind(action.kind);
     } else if (action.type === 'toggle-panel-collapsed') {
       const previousCollapsed = debugEditControls ? debugEditControls.isCollapsed() : debugEditPanelCollapsed;
       if (debugEditControls) {

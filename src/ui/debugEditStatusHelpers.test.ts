@@ -74,6 +74,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.toolText).toBe('Tool: No one-shot armed');
     expect(model.hoverText).toBe('Hover: move cursor or touch a world tile to inspect gameplay flags.');
     expect(model.hintText).toContain('Touch: drag to paint');
+    expect(model.hintText).toContain('N line');
     expect(model.hintText).toContain('Esc cancels one-shot tools');
   });
 

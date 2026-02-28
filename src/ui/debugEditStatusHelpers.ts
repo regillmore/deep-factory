@@ -35,6 +35,8 @@ export interface DebugEditHoveredTileState {
 }
 
 const NEUTRAL_TOOL_ACCENT = 'rgba(176, 190, 208, 0.9)';
+const DESKTOP_ONE_SHOT_HINT =
+  'Desktop one-shot: F fill, N line, R rect fill, T rect outline, E ellipse fill, O ellipse outline (Shift = break).';
 
 const lineAccentForKind = (kind: DebugTileEditKind): string =>
   kind === 'place' ? 'rgba(120, 210, 255, 0.95)' : 'rgba(255, 180, 120, 0.95)';
@@ -199,12 +201,12 @@ export const resolveActiveDebugToolStatus = (
 
 const buildIdleHintText = (mode: TouchDebugEditMode): string => {
   if (mode === 'pan') {
-    return 'Touch: pan/pinch, long-press eyedropper, two-finger tap undo, three-finger tap redo. Desktop: P/L/B modes, 1-0 or [ ] brush, I pick, F fill.';
+    return `Touch: pan/pinch, long-press eyedropper, two-finger tap undo, three-finger tap redo. Desktop: P/L/B modes, 1-0 or [ ] brush, I pick. ${DESKTOP_ONE_SHOT_HINT}`;
   }
   if (mode === 'place') {
-    return 'Touch: drag to paint, pinch zoom. Desktop: left paint, right break, Shift-drag pan, wheel zoom, Esc cancels one-shot tools.';
+    return `Touch: drag to paint, pinch zoom. Desktop: left paint, right break, Shift-drag pan, wheel zoom. ${DESKTOP_ONE_SHOT_HINT} Esc cancels one-shot tools.`;
   }
-  return 'Touch: drag to break, pinch zoom. Desktop: left paint, right break, Shift-drag pan, wheel zoom, Esc cancels one-shot tools.';
+  return `Touch: drag to break, pinch zoom. Desktop: left paint, right break, Shift-drag pan, wheel zoom. ${DESKTOP_ONE_SHOT_HINT} Esc cancels one-shot tools.`;
 };
 
 const formatHoveredTileFlag = (value: boolean): string => (value ? 'on' : 'off');

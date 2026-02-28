@@ -18,11 +18,32 @@ export type DebugEditShortcutAction =
   | { type: 'toggle-panel-collapsed' }
   | { type: 'set-touch-mode'; mode: 'pan' | 'place' | 'break' }
   | { type: 'arm-flood-fill'; kind: 'place' | 'break' }
+  | { type: 'arm-line'; kind: 'place' | 'break' }
+  | { type: 'arm-rect'; kind: 'place' | 'break' }
+  | { type: 'arm-rect-outline'; kind: 'place' | 'break' }
+  | { type: 'arm-ellipse'; kind: 'place' | 'break' }
+  | { type: 'arm-ellipse-outline'; kind: 'place' | 'break' }
   | { type: 'eyedropper' }
   | { type: 'select-brush-slot'; slotIndex: number }
   | { type: 'cycle-brush'; delta: -1 | 1 };
 
+export type DebugOneShotToolShortcutId =
+  | 'flood-fill'
+  | 'line'
+  | 'rect-fill'
+  | 'rect-outline'
+  | 'ellipse-fill'
+  | 'ellipse-outline';
+
 const DEBUG_BRUSH_SLOT_HOTKEY_LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'] as const;
+const DEBUG_ONE_SHOT_TOOL_SHORTCUT_KEYS: Readonly<Record<DebugOneShotToolShortcutId, string>> = {
+  'flood-fill': 'F',
+  line: 'N',
+  'rect-fill': 'R',
+  'rect-outline': 'T',
+  'ellipse-fill': 'E',
+  'ellipse-outline': 'O'
+};
 
 export const DEBUG_BRUSH_SLOT_SHORTCUT_COUNT = DEBUG_BRUSH_SLOT_HOTKEY_LABELS.length;
 
@@ -55,6 +76,14 @@ export const getTouchDebugEditModeHotkeyLabel = (mode: 'pan' | 'place' | 'break'
 };
 
 export const getDebugEditPanelToggleHotkeyLabel = (): string => '\\';
+
+export const getDebugOneShotToolHotkeyLabel = (
+  tool: DebugOneShotToolShortcutId,
+  kind: 'place' | 'break'
+): string => {
+  const baseLabel = DEBUG_ONE_SHOT_TOOL_SHORTCUT_KEYS[tool];
+  return kind === 'place' ? baseLabel : `Shift+${baseLabel}`;
+};
 
 export const getDebugBrushTileIdForShortcutSlot = (
   brushOptions: readonly DebugBrushShortcutOption[],
@@ -122,6 +151,21 @@ export const resolveDebugEditShortcutAction = (
   }
   if (normalizedKey === 'f') {
     return { type: 'arm-flood-fill', kind: event.shiftKey ? 'break' : 'place' };
+  }
+  if (normalizedKey === 'n') {
+    return { type: 'arm-line', kind: event.shiftKey ? 'break' : 'place' };
+  }
+  if (normalizedKey === 'r') {
+    return { type: 'arm-rect', kind: event.shiftKey ? 'break' : 'place' };
+  }
+  if (normalizedKey === 't') {
+    return { type: 'arm-rect-outline', kind: event.shiftKey ? 'break' : 'place' };
+  }
+  if (normalizedKey === 'e') {
+    return { type: 'arm-ellipse', kind: event.shiftKey ? 'break' : 'place' };
+  }
+  if (normalizedKey === 'o') {
+    return { type: 'arm-ellipse-outline', kind: event.shiftKey ? 'break' : 'place' };
   }
 
   if (code === 'BracketLeft' || (!code && event.key === '[')) {
