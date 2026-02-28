@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Label the compact status strip inspect readout as shared when pinned and hovered targets resolve to the same tile.
+1. Show the hovered-to-pinned tile offset in the compact status strip when both inspect targets are visible and different.
 
 ## Authored asset pipeline
 

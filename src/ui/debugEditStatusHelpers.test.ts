@@ -220,8 +220,9 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Pinned: lava pool (#9) @ 12,-4 | solid:off | light:on | liquid:lava'
+      'Shared: lava pool (#9) @ 12,-4 | solid:off | light:on | liquid:lava'
     );
+    expect(model.inspectText).toBe('Inspect: Shared @ 12,-4');
   });
 
   it('surfaces armed desktop repin guidance separately from the pinned idle state', () => {

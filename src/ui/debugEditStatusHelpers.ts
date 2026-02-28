@@ -254,6 +254,10 @@ const buildHoveredTileText = (
     return [formatInspectTileLine('Pinned', pinnedTile), formatInspectTileLine('Hover', hoveredTile)].join('\n');
   }
 
+  if (pinnedTile && hoveredTile) {
+    return formatInspectTileLine('Shared', pinnedTile);
+  }
+
   if (pinnedTile) {
     return formatInspectTileLine('Pinned', pinnedTile);
   }
@@ -267,6 +271,9 @@ const buildHoveredTileText = (
 
 const buildInspectText = (state: DebugEditStatusStripState): string => {
   if (state.desktopInspectPinArmed) return 'Inspect: Click-to-pin armed';
+  if (state.pinnedTile && hasSameInspectTarget(state.hoveredTile, state.pinnedTile)) {
+    return `Inspect: Shared @ ${state.pinnedTile.tileX},${state.pinnedTile.tileY}`;
+  }
   if (state.pinnedTile) {
     return `Inspect: Pinned @ ${state.pinnedTile.tileX},${state.pinnedTile.tileY}`;
   }
