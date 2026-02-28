@@ -1,4 +1,5 @@
 import { Camera2D } from '../core/camera2d';
+import { resolveDesktopDebugInspectPinShortcutActionForClick } from './debugDesktopInspectPinShortcuts';
 import {
   resolveTouchDebugHistoryShortcutActionForTap,
   type DebugTouchHistoryShortcutAction
@@ -36,7 +37,7 @@ export interface DebugBrushEyedropperRequest {
 export interface DebugTileInspectPinRequest {
   worldTileX: number;
   worldTileY: number;
-  pointerType: 'touch';
+  pointerType: 'mouse' | 'touch';
 }
 
 export interface DebugTileStrokeEditRequest extends DebugTileEditRequest {
@@ -212,6 +213,16 @@ interface ActiveTouchEyedropperLongPressCandidate {
 
 interface ActiveTouchInspectPinTapCandidate {
   pointerId: number;
+  startedAtMs: number;
+  startClientX: number;
+  startClientY: number;
+  maxPointerTravelPx: number;
+}
+
+interface ActiveMouseInspectPinClickCandidate {
+  pointerId: number;
+  button: number;
+  shiftKey: boolean;
   startedAtMs: number;
   startClientX: number;
   startClientY: number;
@@ -472,8 +483,10 @@ export class InputController {
   private activeTouchHistoryTapGestureCandidate: ActiveTouchHistoryTapGestureCandidate | null = null;
   private activeTouchEyedropperLongPressCandidate: ActiveTouchEyedropperLongPressCandidate | null = null;
   private activeTouchInspectPinTapCandidate: ActiveTouchInspectPinTapCandidate | null = null;
+  private activeMouseInspectPinClickCandidate: ActiveMouseInspectPinClickCandidate | null = null;
   private lastTouchHistoryTapGestureTimeMs = Number.NEGATIVE_INFINITY;
   private touchDebugEditMode: TouchDebugEditMode = 'pan';
+  private armedDesktopDebugInspectPin = false;
   private armedDebugFloodFillKind: DebugTileEditKind | null = null;
   private armedDebugLineKind: DebugTileEditKind | null = null;
   private armedDebugRectKind: DebugTileEditKind | null = null;
@@ -597,6 +610,7 @@ export class InputController {
     this.activeTouchHistoryTapGestureCandidate = null;
     this.activeTouchEyedropperLongPressCandidate = null;
     this.activeTouchInspectPinTapCandidate = null;
+    this.activeMouseInspectPinClickCandidate = null;
     this.pendingTouchDebugLineStart = null;
     this.pendingTouchDebugRectStart = null;
     this.pendingTouchDebugRectOutlineStart = null;
@@ -608,6 +622,18 @@ export class InputController {
 
   getArmedDebugFloodFillKind(): DebugTileEditKind | null {
     return this.armedDebugFloodFillKind;
+  }
+
+  getArmedDesktopDebugInspectPin(): boolean {
+    return this.armedDesktopDebugInspectPin;
+  }
+
+  setArmedDesktopDebugInspectPin(armed: boolean): void {
+    if (this.armedDesktopDebugInspectPin === armed) return;
+    this.armedDesktopDebugInspectPin = armed;
+    if (!armed) {
+      this.activeMouseInspectPinClickCandidate = null;
+    }
   }
 
   setArmedDebugFloodFillKind(kind: DebugTileEditKind | null): void {
@@ -707,6 +733,7 @@ export class InputController {
 
   cancelArmedDebugTools(): boolean {
     const hadArmedTools =
+      this.armedDesktopDebugInspectPin ||
       this.armedDebugFloodFillKind !== null ||
       this.armedDebugLineKind !== null ||
       this.armedDebugRectKind !== null ||
@@ -722,9 +749,11 @@ export class InputController {
       this.activeMouseDebugEllipseDrag !== null ||
       this.pendingTouchDebugEllipseStart !== null ||
       this.activeMouseDebugEllipseOutlineDrag !== null ||
-      this.pendingTouchDebugEllipseOutlineStart !== null;
+      this.pendingTouchDebugEllipseOutlineStart !== null ||
+      this.activeMouseInspectPinClickCandidate !== null;
     if (!hadArmedTools) return false;
 
+    this.armedDesktopDebugInspectPin = false;
     this.armedDebugFloodFillKind = null;
     this.armedDebugLineKind = null;
     this.armedDebugRectKind = null;
@@ -741,6 +770,7 @@ export class InputController {
     this.pendingTouchDebugEllipseStart = null;
     this.activeMouseDebugEllipseOutlineDrag = null;
     this.pendingTouchDebugEllipseOutlineStart = null;
+    this.activeMouseInspectPinClickCandidate = null;
     return true;
   }
 
@@ -887,10 +917,12 @@ export class InputController {
         this.activeTouchHistoryTapGestureCandidate = null;
         this.activeTouchEyedropperLongPressCandidate = null;
         this.activeTouchInspectPinTapCandidate = null;
+        this.activeMouseInspectPinClickCandidate = null;
       } else {
         this.refreshTouchHistoryTapGestureCandidateOnPointerDown(event);
         this.refreshTouchEyedropperLongPressCandidateOnPointerDown(event);
         this.refreshTouchInspectPinTapCandidateOnPointerDown(event);
+        this.refreshMouseInspectPinClickCandidateOnPointerDown(event);
       }
       const startedMouseDebugPaint =
         queuedArmedDebugFloodFill ||
@@ -945,6 +977,7 @@ export class InputController {
       this.updateTouchHistoryTapGestureCandidateMetrics(event);
       this.updateTouchEyedropperLongPressCandidateMetrics(event);
       this.updateTouchInspectPinTapCandidateMetrics(event);
+      this.updateMouseInspectPinClickCandidateMetrics(event);
 
       const activeMouseDebugPaintStroke = this.activeMouseDebugPaintStroke;
       const activeTouchDebugPaintStroke = this.activeTouchDebugPaintStroke;
@@ -1022,6 +1055,7 @@ export class InputController {
       this.updateTouchHistoryTapGestureCandidateMetrics(event);
       this.updateTouchEyedropperLongPressCandidateMetrics(event);
       this.updateTouchInspectPinTapCandidateMetrics(event);
+      this.updateMouseInspectPinClickCandidateMetrics(event);
       if (this.activeMouseDebugLineDrag?.pointerId === event.pointerId) {
         if (!canceled) {
           this.commitMouseDebugLineDrag(event, this.activeMouseDebugLineDrag);
@@ -1073,6 +1107,7 @@ export class InputController {
         this.pointerInspect = null;
       }
 
+      this.maybeQueueMouseInspectPinClickOnPointerRelease(event, canceled);
       this.maybeQueueTouchInspectPinTapOnPointerRelease(event, canceled);
       this.maybeQueueTouchHistoryTapGestureShortcutOnPointerRelease(event, canceled);
     };
@@ -1088,6 +1123,7 @@ export class InputController {
         this.activeMouseDebugRectOutlineDrag = null;
         this.activeMouseDebugEllipseDrag = null;
         this.activeMouseDebugEllipseOutlineDrag = null;
+        this.activeMouseInspectPinClickCandidate = null;
         this.pointerInspect = null;
       } else if (event.pointerType === 'touch' && this.pointers.size === 0) {
         this.completeDebugPaintStroke(this.activeTouchDebugPaintStroke);
@@ -1098,6 +1134,10 @@ export class InputController {
   }
 
   private tryStartMouseDebugPaintStroke(event: PointerEvent): boolean {
+    if (this.armedDesktopDebugInspectPin && event.pointerType === 'mouse' && !event.shiftKey) {
+      return false;
+    }
+
     const kind = getDesktopDebugPaintKindForPointerDown(event.pointerType, event.button, event.shiftKey);
     if (!kind || this.pointers.size !== 1) return false;
 
@@ -1245,6 +1285,25 @@ export class InputController {
     };
   }
 
+  private refreshMouseInspectPinClickCandidateOnPointerDown(event: PointerEvent): void {
+    if (event.pointerType !== 'mouse') return;
+
+    if (!this.armedDesktopDebugInspectPin || this.pointers.size !== 1) {
+      this.activeMouseInspectPinClickCandidate = null;
+      return;
+    }
+
+    this.activeMouseInspectPinClickCandidate = {
+      pointerId: event.pointerId,
+      button: event.button,
+      shiftKey: event.shiftKey,
+      startedAtMs: event.timeStamp,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      maxPointerTravelPx: 0
+    };
+  }
+
   private updateTouchEyedropperLongPressCandidateMetrics(event: PointerEvent): void {
     if (event.pointerType !== 'touch') return;
 
@@ -1273,6 +1332,23 @@ export class InputController {
 
     if (this.touchDebugEditMode !== 'pan' || this.pointers.size !== 1) {
       this.activeTouchInspectPinTapCandidate = null;
+      return;
+    }
+
+    const pointerTravelPx = Math.hypot(event.clientX - candidate.startClientX, event.clientY - candidate.startClientY);
+    if (pointerTravelPx > candidate.maxPointerTravelPx) {
+      candidate.maxPointerTravelPx = pointerTravelPx;
+    }
+  }
+
+  private updateMouseInspectPinClickCandidateMetrics(event: PointerEvent): void {
+    if (event.pointerType !== 'mouse') return;
+
+    const candidate = this.activeMouseInspectPinClickCandidate;
+    if (!candidate || candidate.pointerId !== event.pointerId) return;
+
+    if (!this.armedDesktopDebugInspectPin || this.pointers.size > 1) {
+      this.activeMouseInspectPinClickCandidate = null;
       return;
     }
 
@@ -1344,6 +1420,36 @@ export class InputController {
       worldTileY: pointerInspect.tile.y,
       pointerType: 'touch'
     });
+  }
+
+  private maybeQueueMouseInspectPinClickOnPointerRelease(event: PointerEvent, canceled: boolean): void {
+    if (event.pointerType !== 'mouse') return;
+
+    const candidate = this.activeMouseInspectPinClickCandidate;
+    if (!candidate || candidate.pointerId !== event.pointerId) return;
+
+    this.activeMouseInspectPinClickCandidate = null;
+    if (canceled) return;
+
+    const action = resolveDesktopDebugInspectPinShortcutActionForClick({
+      durationMs: Math.max(0, event.timeStamp - candidate.startedAtMs),
+      maxPointerTravelPx: candidate.maxPointerTravelPx,
+      gesturesEnabled: this.armedDesktopDebugInspectPin && this.pointers.size === 0,
+      button: candidate.button,
+      shiftKey: candidate.shiftKey
+    });
+    if (action !== 'pin-tile-inspect') return;
+
+    this.updatePointerInspect(event.clientX, event.clientY, event.pointerType);
+    const pointerInspect = this.pointerInspect;
+    if (pointerInspect?.pointerType !== 'mouse') return;
+
+    this.debugTileInspectPinQueue.push({
+      worldTileX: pointerInspect.tile.x,
+      worldTileY: pointerInspect.tile.y,
+      pointerType: 'mouse'
+    });
+    this.armedDesktopDebugInspectPin = false;
   }
 
   private maybeQueueTouchHistoryTapGestureShortcutOnPointerRelease(

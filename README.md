@@ -22,7 +22,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 
 ## Controls
 
-- Compact debug-edit status strip near the canvas mirrors the shared mode, active brush, armed one-shot tool, hovered tile metadata (name/id plus solid/light/liquid flags), and mixed-device hints even while the debug panel is collapsed.
+- Compact debug-edit status strip near the canvas mirrors the shared mode, active brush, armed one-shot tool, hovered or pinned tile metadata (name/id plus solid/light/liquid flags), mixed-device hints, and desktop inspect-pin actions even while the debug panel is collapsed.
 
 ### Desktop
 - Debug edit control state (shared touch mode + active brush + panel visibility) persists across reloads with a metadata-safe brush fallback
@@ -35,6 +35,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - Debug edit brush shortcuts: `1`-`0` select visible brush slots, `[` / `]` cycle active brush
 - Debug edit panel shortcut: `\` collapse / expand the shared debug-edit controls panel
 - Hovering a world tile updates the compact status strip with tile name/id plus solid/light/liquid flags for quick gameplay-tag inspection
+- Compact status strip inspect controls: click `Pin Click`, then click a world tile to lock its metadata and keep a cyan tile outline visible while the cursor moves away; click `Repin Click` or `Clear Pin` in the strip to move or remove the lock (`Esc` cancels an armed pin click)
 - Debug eyedropper shortcut: `I` sets the active brush from the hovered tile (non-empty tiles)
 - Debug flood fill shortcuts: `F` arms a one-shot brush flood fill, `Shift+F` arms a one-shot break flood fill; next canvas click applies (resident chunk bounds only, `Esc` cancels while armed)
 - Debug one-shot shape shortcuts: `N` / `Shift+N` line brush/break, `R` / `Shift+R` rect fill brush/break, `T` / `Shift+T` rect outline brush/break, `E` / `Shift+E` ellipse fill brush/break, `O` / `Shift+O` ellipse outline brush/break
@@ -120,6 +121,7 @@ Open the local Vite URL in Chrome/Firefox/Safari.
 - A compact debug-edit status strip now sits near the canvas, mirroring the shared mode, active brush, armed one-shot tool state, and mixed-device gesture/shortcut hints while the larger panel is collapsed or out of the way.
 - The compact debug-edit status strip now also shows the hovered/touched tile name/id, world coordinates, and solid/light/liquid gameplay flags for faster gameplay-tag validation.
 - Touch `Pan` mode now also supports tap-to-pin tile inspect state, keeping gameplay metadata and a tile outline visible after release until the same tile is tapped again or a new tile is pinned.
+- Desktop inspect pinning now uses the compact status strip: `Pin Click` / `Repin Click` arms a short click-to-pin workflow, `Clear Pin` clears the lock, and pinned tiles keep their cyan outline visible while the cursor moves elsewhere.
 - Debug overlay showing FPS + rendered chunk count.
 
 See `docs/ARCHITECTURE.md` and `docs/NEXT.md` for implementation details and roadmap.

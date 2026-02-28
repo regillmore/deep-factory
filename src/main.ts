@@ -702,6 +702,19 @@ const bootstrap = async (): Promise<void> => {
     };
   };
 
+  const clearPinnedDebugTileInspect = (): void => {
+    pinnedDebugTileInspect = null;
+  };
+
+  debugEditStatusStrip.setActionHandlers({
+    onInspectAction: () => {
+      input.setArmedDesktopDebugInspectPin(!input.getArmedDesktopDebugInspectPin());
+    },
+    onClearPinnedTile: () => {
+      clearPinnedDebugTileInspect();
+    }
+  });
+
   window.addEventListener('keydown', (event) => {
     if (event.defaultPrevented) return;
     if (isEditableKeyboardShortcutTarget(event.target)) return;
@@ -894,17 +907,17 @@ const bootstrap = async (): Promise<void> => {
       renderer.render(camera);
       hoveredTileCursor.update(
         camera,
-        pointerInspect
+        pinnedDebugTileInspect
           ? {
-              tileX: pointerInspect.tile.x,
-              tileY: pointerInspect.tile.y,
-              pinned: false
+              tileX: pinnedDebugTileInspect.tileX,
+              tileY: pinnedDebugTileInspect.tileY,
+              pinned: true
             }
-          : pinnedDebugTileInspect
+          : pointerInspect
             ? {
-                tileX: pinnedDebugTileInspect.tileX,
-                tileY: pinnedDebugTileInspect.tileY,
-                pinned: true
+                tileX: pointerInspect.tile.x,
+                tileY: pointerInspect.tile.y,
+                pinned: false
               }
             : null
       );
@@ -915,7 +928,8 @@ const bootstrap = async (): Promise<void> => {
         brushTileId: activeDebugBrushTileId,
         preview: armedDebugToolPreviewState,
         hoveredTile: hoveredDebugTileStatus,
-        pinnedTile: pinnedDebugTileStatus
+        pinnedTile: pinnedDebugTileStatus,
+        desktopInspectPinArmed: input.getArmedDesktopDebugInspectPin()
       });
       debug.update(frameDtMs, renderer.telemetry, pointerInspect);
     }

@@ -67,16 +67,21 @@ describe('buildDebugEditStatusStripModel', () => {
       brushTileId: 3,
       preview: createEmptyPreviewState(),
       hoveredTile: null,
-      pinnedTile: null
+      pinnedTile: null,
+      desktopInspectPinArmed: false
     });
 
     expect(model.modeText).toBe('Mode: Place');
     expect(model.brushText).toBe('Brush: debug brick (#3)');
     expect(model.toolText).toBe('Tool: No one-shot armed');
+    expect(model.inspectText).toBe('Inspect: Hover only');
     expect(model.hoverText).toBe(
-      'Hover: move cursor or touch a world tile to inspect gameplay flags. Touch Pan mode taps can pin.'
+      'Hover: move cursor or touch a world tile to inspect gameplay flags. Pin Click keeps metadata visible.'
     );
+    expect(model.inspectActionText).toBe('Pin Click');
+    expect(model.clearActionText).toBeNull();
     expect(model.hintText).toContain('Touch: drag to paint');
+    expect(model.hintText).toContain('Pin Click arms inspect pinning');
     expect(model.hintText).toContain('N line');
     expect(model.hintText).toContain('Esc cancels one-shot tools');
   });
@@ -88,6 +93,7 @@ describe('buildDebugEditStatusStripModel', () => {
       brushTileId: 3,
       hoveredTile: null,
       pinnedTile: null,
+      desktopInspectPinArmed: false,
       preview: {
         ...createEmptyPreviewState(),
         armedFloodFillKind: 'place'
@@ -106,6 +112,7 @@ describe('buildDebugEditStatusStripModel', () => {
       brushTileId: 3,
       preview: createEmptyPreviewState(),
       pinnedTile: null,
+      desktopInspectPinArmed: false,
       hoveredTile: {
         tileX: 12,
         tileY: -4,
@@ -128,6 +135,7 @@ describe('buildDebugEditStatusStripModel', () => {
       brushLabel: 'debug brick',
       brushTileId: 3,
       preview: createEmptyPreviewState(),
+      desktopInspectPinArmed: false,
       hoveredTile: {
         tileX: 4,
         tileY: 7,
@@ -151,8 +159,38 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.hoverText).toBe(
       'Pinned: lava pool (#9) @ 12,-4 | solid:off | light:on | liquid:lava'
     );
+    expect(model.inspectText).toBe('Inspect: Pinned @ 12,-4');
+    expect(model.inspectActionText).toBe('Repin Click');
+    expect(model.clearActionText).toBe('Clear Pin');
     expect(model.hintText).toBe(
-      'Pinned inspect active: tap another tile to repin, or tap the same tile again to clear.'
+      'Pinned inspect active: use Repin Click or Clear Pin in the strip; touch can also tap another tile to repin or the same tile to clear.'
+    );
+  });
+
+  it('surfaces armed desktop repin guidance separately from the pinned idle state', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      preview: createEmptyPreviewState(),
+      hoveredTile: null,
+      pinnedTile: {
+        tileX: 12,
+        tileY: -4,
+        tileId: 9,
+        tileLabel: 'lava pool',
+        solid: false,
+        blocksLight: true,
+        liquidKind: 'lava'
+      },
+      desktopInspectPinArmed: true
+    });
+
+    expect(model.inspectText).toBe('Inspect: Click-to-pin armed');
+    expect(model.inspectActionText).toBe('Cancel Pin Click');
+    expect(model.clearActionText).toBe('Clear Pin');
+    expect(model.hintText).toBe(
+      'Repin Click armed: click a world tile to move the pinned inspect target. Dragging still pans, Esc cancels.'
     );
   });
 });

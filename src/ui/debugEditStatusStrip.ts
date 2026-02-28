@@ -3,6 +3,11 @@ import { buildDebugEditStatusStripModel } from './debugEditStatusHelpers';
 
 const withAlpha = (color: string, alpha: string): string => color.replace(/[\d.]+\)\s*$/, `${alpha})`);
 
+export interface DebugEditStatusStripActionHandlers {
+  onInspectAction?: () => void;
+  onClearPinnedTile?: () => void;
+}
+
 const createSummaryChip = (): HTMLDivElement => {
   const chip = document.createElement('div');
   chip.style.display = 'inline-flex';
@@ -19,16 +24,41 @@ const createSummaryChip = (): HTMLDivElement => {
   return chip;
 };
 
+const createActionButton = (): HTMLButtonElement => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.style.display = 'inline-flex';
+  button.style.alignItems = 'center';
+  button.style.justifyContent = 'center';
+  button.style.padding = '4px 10px';
+  button.style.borderRadius = '999px';
+  button.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+  button.style.background = 'rgba(255, 255, 255, 0.08)';
+  button.style.color = 'rgba(244, 248, 252, 0.98)';
+  button.style.font = 'inherit';
+  button.style.letterSpacing = 'inherit';
+  button.style.cursor = 'pointer';
+  button.style.pointerEvents = 'auto';
+  button.style.userSelect = 'none';
+  return button;
+};
+
 export class DebugEditStatusStrip {
   private root: HTMLDivElement;
   private summaryRow: HTMLDivElement;
   private modeChip: HTMLDivElement;
   private brushChip: HTMLDivElement;
   private toolChip: HTMLDivElement;
+  private inspectChip: HTMLDivElement;
+  private actionRow: HTMLDivElement;
+  private inspectActionButton: HTMLButtonElement;
+  private clearActionButton: HTMLButtonElement;
   private hoverLine: HTMLDivElement;
   private hintLine: HTMLDivElement;
+  private onInspectAction: () => void = () => {};
+  private onClearPinnedTile: () => void = () => {};
 
-  constructor(private canvas: HTMLCanvasElement) {
+  constructor(private canvas: HTMLCanvasElement, handlers: DebugEditStatusStripActionHandlers = {}) {
     this.root = document.createElement('div');
     this.root.style.position = 'fixed';
     this.root.style.display = 'none';
@@ -63,8 +93,37 @@ export class DebugEditStatusStrip {
     this.brushChip.style.background = 'rgba(120, 255, 180, 0.12)';
 
     this.toolChip = createSummaryChip();
+    this.inspectChip = createSummaryChip();
 
-    this.summaryRow.append(this.modeChip, this.brushChip, this.toolChip);
+    this.summaryRow.append(this.modeChip, this.brushChip, this.toolChip, this.inspectChip);
+
+    this.actionRow = document.createElement('div');
+    this.actionRow.style.display = 'flex';
+    this.actionRow.style.flexWrap = 'wrap';
+    this.actionRow.style.gap = '6px';
+    this.actionRow.style.pointerEvents = 'auto';
+    this.root.append(this.actionRow);
+
+    this.inspectActionButton = createActionButton();
+    this.clearActionButton = createActionButton();
+    this.clearActionButton.style.borderColor = 'rgba(255, 185, 150, 0.3)';
+    this.clearActionButton.style.background = 'rgba(255, 185, 150, 0.14)';
+    this.actionRow.append(this.inspectActionButton, this.clearActionButton);
+
+    const stopActionEvent = (event: Event): void => {
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    this.inspectActionButton.addEventListener('pointerdown', stopActionEvent);
+    this.inspectActionButton.addEventListener('click', (event) => {
+      stopActionEvent(event);
+      this.onInspectAction();
+    });
+    this.clearActionButton.addEventListener('pointerdown', stopActionEvent);
+    this.clearActionButton.addEventListener('click', (event) => {
+      stopActionEvent(event);
+      this.onClearPinnedTile();
+    });
 
     this.hoverLine = document.createElement('div');
     this.hoverLine.style.color = 'rgba(236, 242, 248, 0.96)';
@@ -80,6 +139,12 @@ export class DebugEditStatusStrip {
     this.root.append(this.hintLine);
 
     document.body.append(this.root);
+    this.setActionHandlers(handlers);
+  }
+
+  setActionHandlers(handlers: DebugEditStatusStripActionHandlers): void {
+    this.onInspectAction = handlers.onInspectAction ?? (() => {});
+    this.onClearPinnedTile = handlers.onClearPinnedTile ?? (() => {});
   }
 
   update(state: DebugEditStatusStripState): void {
@@ -102,6 +167,15 @@ export class DebugEditStatusStrip {
     this.toolChip.textContent = model.toolText;
     this.toolChip.style.borderColor = withAlpha(model.toolAccent, '0.34');
     this.toolChip.style.background = withAlpha(model.toolAccent, '0.16');
+    this.inspectChip.textContent = model.inspectText;
+    this.inspectChip.style.borderColor = withAlpha(model.inspectAccent, '0.34');
+    this.inspectChip.style.background = withAlpha(model.inspectAccent, '0.16');
+
+    this.inspectActionButton.textContent = model.inspectActionText;
+    this.inspectActionButton.style.borderColor = withAlpha(model.inspectAccent, '0.34');
+    this.inspectActionButton.style.background = withAlpha(model.inspectAccent, '0.16');
+    this.clearActionButton.textContent = model.clearActionText ?? '';
+    this.clearActionButton.style.display = model.clearActionText ? 'inline-flex' : 'none';
 
     this.hoverLine.textContent = model.hoverText;
     this.hintLine.textContent = model.hintText;

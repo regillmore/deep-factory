@@ -14,15 +14,20 @@ export interface DebugEditStatusStripState {
   preview: ArmedDebugToolPreviewState;
   hoveredTile: DebugEditHoveredTileState | null;
   pinnedTile: DebugEditHoveredTileState | null;
+  desktopInspectPinArmed: boolean;
 }
 
 export interface DebugEditStatusStripModel {
   modeText: string;
   brushText: string;
   toolText: string;
+  inspectText: string;
   hoverText: string;
   hintText: string;
+  inspectActionText: string;
+  clearActionText: string | null;
   toolAccent: string;
+  inspectAccent: string;
 }
 
 export interface DebugEditHoveredTileState {
@@ -36,6 +41,8 @@ export interface DebugEditHoveredTileState {
 }
 
 const NEUTRAL_TOOL_ACCENT = 'rgba(176, 190, 208, 0.9)';
+const INSPECT_IDLE_ACCENT = 'rgba(176, 190, 208, 0.9)';
+const INSPECT_ACTIVE_ACCENT = 'rgba(120, 210, 255, 0.95)';
 const DESKTOP_ONE_SHOT_HINT =
   'Desktop one-shot: F fill, N line, R rect fill, T rect outline, E ellipse fill, O ellipse outline (Shift = break).';
 
@@ -202,20 +209,25 @@ export const resolveActiveDebugToolStatus = (
 
 const buildIdleHintText = (mode: TouchDebugEditMode): string => {
   if (mode === 'pan') {
-    return `Touch: tap tile to pin inspect, pan/pinch, long-press eyedropper, two-finger tap undo, three-finger tap redo. Desktop: P/L/B modes, 1-0 or [ ] brush, I pick. ${DESKTOP_ONE_SHOT_HINT}`;
+    return `Touch: tap tile to pin inspect, pan/pinch, long-press eyedropper, two-finger tap undo, three-finger tap redo. Desktop: Pin Click arms inspect pinning, P/L/B modes, 1-0 or [ ] brush, I pick. ${DESKTOP_ONE_SHOT_HINT}`;
   }
   if (mode === 'place') {
-    return `Touch: drag to paint, pinch zoom. Desktop: left paint, right break, Shift-drag pan, wheel zoom. ${DESKTOP_ONE_SHOT_HINT} Esc cancels one-shot tools.`;
+    return `Touch: drag to paint, pinch zoom. Desktop: left paint, right break, Shift-drag pan, wheel zoom, Pin Click arms inspect pinning. ${DESKTOP_ONE_SHOT_HINT} Esc cancels one-shot tools.`;
   }
-  return `Touch: drag to break, pinch zoom. Desktop: left paint, right break, Shift-drag pan, wheel zoom. ${DESKTOP_ONE_SHOT_HINT} Esc cancels one-shot tools.`;
+  return `Touch: drag to break, pinch zoom. Desktop: left paint, right break, Shift-drag pan, wheel zoom, Pin Click arms inspect pinning. ${DESKTOP_ONE_SHOT_HINT} Esc cancels one-shot tools.`;
 };
 
 const buildPinnedInspectHintText = (mode: TouchDebugEditMode): string => {
   if (mode === 'pan') {
-    return 'Pinned inspect active: tap another tile to repin, or tap the same tile again to clear.';
+    return 'Pinned inspect active: use Repin Click or Clear Pin in the strip; touch can also tap another tile to repin or the same tile to clear.';
   }
-  return 'Pinned inspect stays visible in edit modes; switch to Pan and tap another tile to repin or clear.';
+  return 'Pinned inspect stays visible in edit modes; use Repin Click or Clear Pin in the strip, or switch touch to Pan to repin.';
 };
+
+const buildArmedDesktopInspectHintText = (hasPinnedTile: boolean): string =>
+  hasPinnedTile
+    ? 'Repin Click armed: click a world tile to move the pinned inspect target. Dragging still pans, Esc cancels.'
+    : 'Pin Click armed: click a world tile to lock its metadata in the strip. Dragging still pans, Esc cancels.';
 
 const formatHoveredTileFlag = (value: boolean): string => (value ? 'on' : 'off');
 
@@ -233,7 +245,7 @@ const buildHoveredTileText = (
   }
 
   if (!hoveredTile) {
-    return 'Hover: move cursor or touch a world tile to inspect gameplay flags. Touch Pan mode taps can pin.';
+    return 'Hover: move cursor or touch a world tile to inspect gameplay flags. Pin Click keeps metadata visible.';
   }
 
   return (
@@ -242,6 +254,20 @@ const buildHoveredTileText = (
     ` | light:${formatHoveredTileFlag(hoveredTile.blocksLight)}` +
     ` | liquid:${hoveredTile.liquidKind ?? 'none'}`
   );
+};
+
+const buildInspectText = (state: DebugEditStatusStripState): string => {
+  if (state.desktopInspectPinArmed) return 'Inspect: Click-to-pin armed';
+  if (state.pinnedTile) {
+    return `Inspect: Pinned @ ${state.pinnedTile.tileX},${state.pinnedTile.tileY}`;
+  }
+  return 'Inspect: Hover only';
+};
+
+const buildInspectActionText = (state: DebugEditStatusStripState): string => {
+  if (state.desktopInspectPinArmed) return 'Cancel Pin Click';
+  if (state.pinnedTile) return 'Repin Click';
+  return 'Pin Click';
 };
 
 export const buildDebugEditStatusStripModel = (
@@ -253,12 +279,18 @@ export const buildDebugEditStatusStripModel = (
     modeText: `Mode: ${formatTouchDebugEditModeLabel(state.mode)}`,
     brushText: `Brush: ${state.brushLabel} (#${state.brushTileId})`,
     toolText: activeToolStatus ? `Tool: ${activeToolStatus.title}` : 'Tool: No one-shot armed',
+    inspectText: buildInspectText(state),
     hoverText: buildHoveredTileText(state.hoveredTile, state.pinnedTile),
     hintText: activeToolStatus
       ? activeToolStatus.detail
-      : state.pinnedTile
-        ? buildPinnedInspectHintText(state.mode)
-        : buildIdleHintText(state.mode),
-    toolAccent: activeToolStatus?.accent ?? NEUTRAL_TOOL_ACCENT
+      : state.desktopInspectPinArmed
+        ? buildArmedDesktopInspectHintText(state.pinnedTile !== null)
+        : state.pinnedTile
+          ? buildPinnedInspectHintText(state.mode)
+          : buildIdleHintText(state.mode),
+    inspectActionText: buildInspectActionText(state),
+    clearActionText: state.pinnedTile ? 'Clear Pin' : null,
+    toolAccent: activeToolStatus?.accent ?? NEUTRAL_TOOL_ACCENT,
+    inspectAccent: state.desktopInspectPinArmed || state.pinnedTile ? INSPECT_ACTIVE_ACCENT : INSPECT_IDLE_ACCENT
   };
 };
