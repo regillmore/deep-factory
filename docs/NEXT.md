@@ -11,10 +11,10 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Collision and player foundation
 
-5. Add a player spawn-point finder that locates grounded standing headroom near the world origin using the collision helpers.
-6. Introduce a fixed-step player state model (`position`, `velocity`, `size`, `grounded`, facing) with unit tests.
-7. Implement walk, jump, gravity, and tile collision resolution for the player using the new collision helpers.
-8. Add mixed-device player input bindings and camera follow rules without removing the existing debug-edit controls.
+5. Introduce a fixed-step player state model (`position`, `velocity`, `size`, `grounded`, facing) with unit tests.
+6. Implement walk, jump, gravity, and tile collision resolution for the player using the new collision helpers.
+7. Add mixed-device player input bindings and camera follow rules without removing the existing debug-edit controls.
+8. Add a debug-visible marker for the resolved player spawn point so spawn placement can be validated before the player controller is wired in.
 
 ## Liquid rendering
 

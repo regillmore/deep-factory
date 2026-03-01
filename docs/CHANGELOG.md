@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Add a player spawn-point finder that locates grounded standing headroom near the world origin using the collision helpers.
+- Changes: Added [src/world/playerSpawn.ts](../src/world/playerSpawn.ts) with a collision-backed spawn search that returns a standing AABB plus support tile near a chosen origin, added focused coverage in [src/world/playerSpawn.test.ts](../src/world/playerSpawn.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/world/playerSpawn.test.ts src/world/collision.test.ts src/world/world.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Add world collision query helpers that read `solid` gameplay metadata for tile checks, AABB overlap, and per-axis sweeps.
 - Changes: Added [src/world/collision.ts](../src/world/collision.ts) with metadata-backed `isSolidAt`, half-open world-space AABB overlap checks, and single-axis sweep helpers, added focused coverage in [src/world/collision.test.ts](../src/world/collision.test.ts), replaced the completed roadmap item in [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Verification: Ran `npx vitest run src/world/collision.test.ts src/world/world.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
