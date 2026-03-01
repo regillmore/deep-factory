@@ -8,6 +8,8 @@ import {
   AUTHORED_ATLAS_REGIONS,
   AUTHORED_ATLAS_WIDTH
 } from '../world/authoredAtlasLayout';
+import { TILE_METADATA } from '../world/tileMetadata';
+import { collectAtlasValidationWarnings } from './atlasValidation';
 
 const PNG_SIGNATURE = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -19,17 +21,23 @@ const readPngDimension = (data: Uint8Array, byteOffset: number): number =>
     data[byteOffset + 3]!
   ) >>> 0;
 
+const readCommittedAtlasPng = (): { pngWidth: number; pngHeight: number } => {
+  const atlasPath = resolve(process.cwd(), 'public/atlas/tile-atlas.png');
+
+  expect(existsSync(atlasPath)).toBe(true);
+
+  const data = readFileSync(atlasPath);
+  expect(data.subarray(0, PNG_SIGNATURE.length)).toEqual(Buffer.from(PNG_SIGNATURE));
+
+  return {
+    pngWidth: readPngDimension(data, 16),
+    pngHeight: readPngDimension(data, 20)
+  };
+};
+
 describe('authored atlas asset', () => {
   it('ships a committed PNG compatible with the authored atlas region layout', () => {
-    const atlasPath = resolve(process.cwd(), 'public/atlas/tile-atlas.png');
-
-    expect(existsSync(atlasPath)).toBe(true);
-
-    const data = readFileSync(atlasPath);
-    const pngWidth = readPngDimension(data, 16);
-    const pngHeight = readPngDimension(data, 20);
-
-    expect(data.subarray(0, PNG_SIGNATURE.length)).toEqual(Buffer.from(PNG_SIGNATURE));
+    const { pngWidth, pngHeight } = readCommittedAtlasPng();
     expect(pngWidth).toBe(AUTHORED_ATLAS_WIDTH);
     expect(pngHeight).toBe(AUTHORED_ATLAS_HEIGHT);
 
@@ -38,6 +46,21 @@ describe('authored atlas asset', () => {
       expect(region.y).toBeGreaterThanOrEqual(0);
       expect(region.x + region.width).toBeLessThanOrEqual(pngWidth);
       expect(region.y + region.height).toBeLessThanOrEqual(pngHeight);
+    }
+  });
+
+  it('keeps committed direct render.uvRect metadata aligned to whole atlas pixels', () => {
+    const { pngWidth, pngHeight } = readCommittedAtlasPng();
+    const directUvRectTiles = TILE_METADATA.tiles.filter((tile) => tile.render?.uvRect !== undefined);
+
+    expect(directUvRectTiles.length).toBeGreaterThan(0);
+
+    for (const tile of directUvRectTiles) {
+      const warnings = collectAtlasValidationWarnings([tile], pngWidth, pngHeight).filter(
+        (warning) => warning.sourcePath === 'render.uvRect'
+      );
+
+      expect(warnings).toEqual([]);
     }
   });
 });

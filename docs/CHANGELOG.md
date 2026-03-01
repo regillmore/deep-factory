@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Add an authored-atlas asset regression test that direct tile `render.uvRect` metadata still resolves to whole atlas pixels against the committed PNG dimensions.
+- Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) to read the committed atlas PNG dimensions, enumerate real direct-`render.uvRect` tile metadata, and assert through the atlas-validation helper that those sources stay whole-pixel aligned against the shipped asset, then advanced [docs/NEXT.md](docs/NEXT.md).
+- Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Surface live standalone player input-intent telemetry in the debug overlay.
 - Changes: Updated [src/input/controller.ts](../src/input/controller.ts) plus [src/input/controller.test.ts](../src/input/controller.test.ts) to expose a shared player input telemetry snapshot with `move`, `jumpHeld`, and rising-edge `jumpPressed`, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to render a dedicated intent line beside the existing player state readout, wired [src/main.ts](../src/main.ts) to pass the current input telemetry into the overlay each frame, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/input/controller.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
