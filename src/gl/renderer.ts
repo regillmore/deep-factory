@@ -3,6 +3,7 @@ import { createStaticVertexBuffer, createVertexArray } from './buffer';
 import { createProgram } from './shader';
 import type { AtlasImageLoadResult } from './texture';
 import { createTextureFromImageSource, loadAtlasImageSource } from './texture';
+import { collectAtlasUvRectBoundsWarnings } from './atlasValidation';
 import { TILE_SIZE } from '../world/constants';
 import {
   affectedChunkCoordsForLocalTileEdit,
@@ -13,6 +14,7 @@ import {
 } from '../world/chunkMath';
 import type { ChunkBounds } from '../world/chunkMath';
 import { buildChunkMesh } from '../world/mesher';
+import { TILE_METADATA } from '../world/tileMetadata';
 import {
   findPlayerSpawnPoint as findWorldPlayerSpawnPoint,
   type PlayerSpawnPoint,
@@ -50,6 +52,8 @@ export interface RenderTelemetry {
   atlasSourceKind: AtlasImageLoadResult['sourceKind'] | 'pending';
   atlasWidth: number | null;
   atlasHeight: number | null;
+  atlasValidationWarningCount: number | null;
+  atlasValidationFirstWarning: string | null;
   renderedChunks: number;
   drawCalls: number;
   drawCallBudget: number;
@@ -83,6 +87,8 @@ export class Renderer {
     atlasSourceKind: 'pending',
     atlasWidth: null,
     atlasHeight: null,
+    atlasValidationWarningCount: null,
+    atlasValidationFirstWarning: null,
     renderedChunks: 0,
     drawCalls: 0,
     drawCallBudget: DRAW_CALL_BUDGET,
@@ -143,6 +149,15 @@ export class Renderer {
     this.telemetry.atlasSourceKind = atlas.sourceKind;
     this.telemetry.atlasWidth = atlas.width;
     this.telemetry.atlasHeight = atlas.height;
+    const atlasWarnings = collectAtlasUvRectBoundsWarnings(TILE_METADATA.tiles, atlas.width, atlas.height);
+    this.telemetry.atlasValidationWarningCount = atlasWarnings.length;
+    this.telemetry.atlasValidationFirstWarning = atlasWarnings[0]?.summary ?? null;
+    if (atlasWarnings.length > 0) {
+      console.warn(
+        `[Renderer] Atlas uvRect validation found ${atlasWarnings.length} warning(s) for ${atlas.sourceKind} atlas ${atlas.width}x${atlas.height}.\n` +
+          atlasWarnings.map((warning) => `- ${warning.message}`).join('\n')
+      );
+    }
   }
 
   resize(): void {

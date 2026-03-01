@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AtlasUvRectBoundsWarning } from './atlasValidation';
 
-const { loadAtlasImageSource, createTextureFromImageSource, createProgram } = vi.hoisted(() => ({
+const { loadAtlasImageSource, createTextureFromImageSource, createProgram, collectAtlasUvRectBoundsWarnings } =
+  vi.hoisted(() => ({
   loadAtlasImageSource: vi.fn(),
   createTextureFromImageSource: vi.fn(() => ({ kind: 'texture' } as unknown as WebGLTexture)),
-  createProgram: vi.fn(() => ({ kind: 'program' } as unknown as WebGLProgram))
-}));
+  createProgram: vi.fn(() => ({ kind: 'program' } as unknown as WebGLProgram)),
+  collectAtlasUvRectBoundsWarnings:
+    vi.fn<(tiles: unknown, atlasWidth: number, atlasHeight: number) => AtlasUvRectBoundsWarning[]>(
+      () => []
+    )
+  }));
 
 vi.mock('./texture', () => ({
   createTextureFromImageSource,
@@ -13,6 +19,10 @@ vi.mock('./texture', () => ({
 
 vi.mock('./shader', () => ({
   createProgram
+}));
+
+vi.mock('./atlasValidation', () => ({
+  collectAtlasUvRectBoundsWarnings
 }));
 
 import { Renderer } from './renderer';
@@ -37,6 +47,9 @@ describe('Renderer atlas telemetry', () => {
     loadAtlasImageSource.mockReset();
     createTextureFromImageSource.mockClear();
     createProgram.mockClear();
+    collectAtlasUvRectBoundsWarnings.mockReset();
+    collectAtlasUvRectBoundsWarnings.mockReturnValue([]);
+    vi.restoreAllMocks();
   });
 
   it('starts with pending atlas telemetry before initialization', () => {
@@ -45,6 +58,8 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.atlasSourceKind).toBe('pending');
     expect(renderer.telemetry.atlasWidth).toBeNull();
     expect(renderer.telemetry.atlasHeight).toBeNull();
+    expect(renderer.telemetry.atlasValidationWarningCount).toBeNull();
+    expect(renderer.telemetry.atlasValidationFirstWarning).toBeNull();
   });
 
   it('records an authored atlas load in telemetry during initialization', async () => {
@@ -66,6 +81,8 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.atlasSourceKind).toBe('authored');
     expect(renderer.telemetry.atlasWidth).toBe(96);
     expect(renderer.telemetry.atlasHeight).toBe(64);
+    expect(renderer.telemetry.atlasValidationWarningCount).toBe(0);
+    expect(renderer.telemetry.atlasValidationFirstWarning).toBeNull();
   });
 
   it('records placeholder fallback atlas loads in telemetry during initialization', async () => {
@@ -86,5 +103,39 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.atlasSourceKind).toBe('placeholder');
     expect(renderer.telemetry.atlasWidth).toBe(64);
     expect(renderer.telemetry.atlasHeight).toBe(64);
+    expect(renderer.telemetry.atlasValidationWarningCount).toBe(0);
+    expect(renderer.telemetry.atlasValidationFirstWarning).toBeNull();
+  });
+
+  it('records atlas uvRect warnings and logs them during initialization', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    collectAtlasUvRectBoundsWarnings.mockReturnValue([
+      {
+        tileId: 4,
+        tileName: 'debug_panel',
+        sourcePath: 'render.uvRect',
+        summary: 'tile 4 "debug_panel" render.uvRect',
+        message:
+          'tile 4 "debug_panel" render.uvRect resolves to [60, 48]..[120, 80] outside atlas 96x64'
+      }
+    ]);
+
+    await renderer.initialize();
+
+    expect(renderer.telemetry.atlasValidationWarningCount).toBe(1);
+    expect(renderer.telemetry.atlasValidationFirstWarning).toBe('tile 4 "debug_panel" render.uvRect');
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0]?.[0]).toContain('Atlas uvRect validation found 1 warning(s)');
+    expect(warnSpy.mock.calls[0]?.[0]).toContain('tile 4 "debug_panel" render.uvRect');
   });
 });

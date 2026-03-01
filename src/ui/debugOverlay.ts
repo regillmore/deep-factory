@@ -5,6 +5,8 @@ export interface DebugOverlayStats {
   atlasSourceKind: 'pending' | 'authored' | 'placeholder';
   atlasWidth: number | null;
   atlasHeight: number | null;
+  atlasValidationWarningCount: number | null;
+  atlasValidationFirstWarning: string | null;
   renderedChunks: number;
   drawCalls: number;
   drawCallBudget: number;
@@ -60,6 +62,20 @@ const formatAtlasLine = (stats: DebugOverlayStats): string => {
   }
 
   return `Atlas: ${stats.atlasSourceKind} | ${stats.atlasWidth}x${stats.atlasHeight}`;
+};
+
+const formatAtlasValidationLine = (stats: DebugOverlayStats): string => {
+  if (stats.atlasValidationWarningCount === null) {
+    return 'AtlasWarn: pending';
+  }
+  if (stats.atlasValidationWarningCount === 0) {
+    return 'AtlasWarn: none';
+  }
+
+  const firstWarning = stats.atlasValidationFirstWarning
+    ? ` | ${stats.atlasValidationFirstWarning}`
+    : '';
+  return `AtlasWarn: ${stats.atlasValidationWarningCount}${firstWarning}`;
 };
 
 const formatTileIdentity = (tileInspect: DebugOverlayTileInspect): string | null => {
@@ -125,7 +141,12 @@ export const formatDebugOverlayText = (
   const pointerInspect = inspect?.pointer ?? null;
   const pinnedInspect = inspect?.pinned ?? null;
   const spawn = inspect?.spawn ?? null;
-  const lines = [summaryLine, formatAtlasLine(stats), formatSpawnLine(spawn)];
+  const lines = [
+    summaryLine,
+    formatAtlasLine(stats),
+    formatAtlasValidationLine(stats),
+    formatSpawnLine(spawn)
+  ];
 
   if (!pointerInspect) {
     lines.push('Ptr: n/a');

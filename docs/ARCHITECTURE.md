@@ -7,7 +7,7 @@
 - `src/input/`: input abstraction for keyboard, mouse, touch/pinch, and standalone player intent extraction.
 - `src/gl/`: low-level WebGL2 utilities and renderer orchestration.
 - `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, mesh construction.
-- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups; authored-atlas region validation is still a later task).
+- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups; renderer boot now validates direct `uvRect` metadata against the loaded atlas dimensions, while authored-atlas source-of-truth validation for slot-based regions is still a later task).
 - `src/ui/`: debug DOM overlays, spawn marker, standalone player marker, and touch-only player controls.
 
 ## Update loop
@@ -31,7 +31,9 @@ Current update phase applies debug tile-edit actions, spawn refresh after tile e
 Renderer initialization first attempts to fetch and decode the committed authored atlas image served from
 `public/atlas/tile-atlas.png` at runtime as `/atlas/tile-atlas.png`.
 If that asset is unavailable or decoding fails, initialization falls back to the generated placeholder atlas so the
-existing tile rendering path still boots.
+existing tile rendering path still boots. After the atlas is loaded, renderer startup validates direct tile
+`render.uvRect` metadata against the runtime atlas dimensions, stores warning telemetry, and emits a console warning
+if any static or animated sub-rect falls outside the source image.
 
 1. Ensure canvas backbuffer matches CSS size × `devicePixelRatio`.
 2. Build camera matrix (`world -> clip`) for orthographic projection.

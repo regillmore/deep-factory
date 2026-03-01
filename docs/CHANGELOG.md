@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Add runtime atlas-bounds validation that warns when tile `render.uvRect` metadata falls outside the loaded atlas dimensions.
+- Changes: Added [src/gl/atlasValidation.ts](../src/gl/atlasValidation.ts) plus [src/gl/atlasValidation.test.ts](../src/gl/atlasValidation.test.ts) to scan static and animated `uvRect` render metadata against the loaded atlas size, updated [src/gl/renderer.ts](../src/gl/renderer.ts) and [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) to run that validation at boot, retain warning telemetry, and emit a console warning when issues exist, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to surface atlas-validation status in the debug overlay, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `npx vitest run src/gl/atlasValidation.test.ts src/gl/renderer.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Add the committed authored atlas asset and verify the runtime can use it instead of the placeholder fallback.
 - Changes: Added [public/atlas/tile-atlas.png](../public/atlas/tile-atlas.png) as the first committed atlas image, added [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) to verify the PNG exists and still matches the current `4x4` tile-slot dimensions expected by the loader and metadata, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts src/gl/texture.test.ts src/gl/renderer.test.ts` and `npm run build`.

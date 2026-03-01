@@ -6,6 +6,8 @@ const baseStats: DebugOverlayStats = {
   atlasSourceKind: 'authored',
   atlasWidth: 96,
   atlasHeight: 64,
+  atlasValidationWarningCount: 0,
+  atlasValidationFirstWarning: null,
   renderedChunks: 4,
   drawCalls: 4,
   drawCallBudget: 256,
@@ -25,6 +27,7 @@ describe('formatDebugOverlayText', () => {
 
     expect(text).toContain('FPS: 60.0');
     expect(text).toContain('\nAtlas: authored | 96x64');
+    expect(text).toContain('\nAtlasWarn: none');
     expect(text).toContain('\nSpawn: unresolved');
     expect(text).toContain('Draws: 4/256 (OK)');
     expect(text).toContain('\nPtr: n/a');
@@ -43,12 +46,34 @@ describe('formatDebugOverlayText', () => {
   it('omits atlas dimensions while atlas initialization is still pending', () => {
     const text = formatDebugOverlayText(
       60,
-      { ...baseStats, atlasSourceKind: 'pending', atlasWidth: null, atlasHeight: null },
+      {
+        ...baseStats,
+        atlasSourceKind: 'pending',
+        atlasWidth: null,
+        atlasHeight: null,
+        atlasValidationWarningCount: null,
+        atlasValidationFirstWarning: null
+      },
       null
     );
 
     expect(text).toContain('\nAtlas: pending');
     expect(text).not.toContain('pending |');
+    expect(text).toContain('\nAtlasWarn: pending');
+  });
+
+  it('shows the first atlas uvRect warning when runtime validation finds issues', () => {
+    const text = formatDebugOverlayText(
+      60,
+      {
+        ...baseStats,
+        atlasValidationWarningCount: 2,
+        atlasValidationFirstWarning: 'tile 4 "debug_panel" render.uvRect'
+      },
+      null
+    );
+
+    expect(text).toContain('\nAtlasWarn: 2 | tile 4 "debug_panel" render.uvRect');
   });
 
   it('formats pointer client/canvas/world/tile readout with tile identity and gameplay flags', () => {

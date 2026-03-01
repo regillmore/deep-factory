@@ -6,6 +6,7 @@ This document describes the current project state. Unlike the changelog, it shou
 
 - WebGL2 renderer with shader utilities, buffer helpers, texture loading, and DPR-aware resize.
 - Renderer atlas initialization ships with an authored atlas at `public/atlas/tile-atlas.png` exposed as `/atlas/tile-atlas.png`, then falls back to the generated placeholder atlas if that asset cannot be fetched or decoded.
+- Renderer boot validates direct tile `render.uvRect` metadata against the loaded atlas dimensions, logs a warning when any static or animated sub-rect falls outside the source image, and surfaces the warning count plus first warning in debug telemetry.
 - Orthographic camera with anchored zoom, pointer pan controls, and standalone-player follow that tracks the player body center while preserving manual inspection offsets.
 - Fixed-step game loop (`60hz`) with separate render interpolation alpha.
 - Chunked world model with `32x32` tiles per chunk and `16px` tiles.
@@ -50,7 +51,7 @@ This document describes the current project state. Unlike the changelog, it shou
 
 - Shared DPR-aware screen, canvas, world, and tile picking utilities centralize pointer coordinate conversion.
 - Camera and picking tests cover viewport round-tripping, DPR-aware selection, and negative-world tile flooring.
-- Debug overlay shows FPS, rendered chunk count, mesh telemetry, loaded atlas source kind plus atlas dimensions, the resolved standalone player spawn tile plus world coordinates, live pointer inspect data (`client`, `canvas`, `world`, hovered tile name plus tile ID, `tile`, `chunk`, `chunk-local`, `solid`, `light`, `liquid`), and a separate pinned tile metadata line when inspect pin is active.
+- Debug overlay shows FPS, rendered chunk count, mesh telemetry, loaded atlas source kind plus atlas dimensions, atlas `uvRect` validation status, the resolved standalone player spawn tile plus world coordinates, live pointer inspect data (`client`, `canvas`, `world`, hovered tile name plus tile ID, `tile`, `chunk`, `chunk-local`, `solid`, `light`, `liquid`), and a separate pinned tile metadata line when inspect pin is active.
 - Hovered tile cursor overlay renders in client space from world tile coordinates and keeps pinned and hovered inspect outlines visible together when they differ.
 - A dedicated spawn marker overlay outlines the resolved spawn AABB, support tile, and feet anchor in client space and refreshes after tile edits so spawn placement can be validated before movement is wired.
 - A dedicated standalone player overlay outlines the current gravity-stepped player AABB plus feet anchor in client space so the spawned player remains visible before sprite or entity rendering exists.

@@ -6,6 +6,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 2. Update tile render metadata validation so authored atlas regions are the source of truth instead of placeholder `4x4` slot assumptions.
 3. Add a render-time animated-tile frame resolver that maps elapsed time into `render.frames` / `frameDurationMs` without changing terrain or static tile UV resolution.
+4. Add runtime pixel-alignment validation for tile `render.uvRect` metadata so authored sub-rects snap to whole atlas pixels at boot.
 
 ## Collision and player foundation
 
@@ -46,7 +47,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 25. Add an app shell with explicit `boot`, `main menu`, and `in-world` states.
 26. Move debug overlay visibility behind shell/UI toggles instead of always-on bootstrap wiring.
-27. Add runtime atlas-bounds validation that warns when tile `render.uvRect` metadata falls outside the loaded atlas dimensions.
 
 ## Player debugging
 
