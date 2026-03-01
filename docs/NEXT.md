@@ -2,15 +2,12 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-## Immediate UX cleanup
-
-1. Add an atlas asset loader helper that fetches and decodes an authored image while preserving the generated placeholder atlas as a fallback.
-
 ## Authored asset pipeline
 
-2. Replace the runtime-generated placeholder atlas with loading an authored atlas asset from disk.
-3. Update tile render metadata validation so authored atlas regions are the source of truth instead of placeholder `4x4` slot assumptions.
-4. Add optional tile animation metadata (`frames`, `frameDurationMs`) without changing the static-tile path.
+1. Add an authored atlas image at `/atlas/tile-atlas.png` and verify the runtime loader replaces the placeholder fallback when the asset is present.
+2. Update tile render metadata validation so authored atlas regions are the source of truth instead of placeholder `4x4` slot assumptions.
+3. Add optional tile animation metadata (`frames`, `frameDurationMs`) without changing the static-tile path.
+4. Surface whether the renderer loaded the authored atlas or the placeholder fallback in debug-visible telemetry.
 
 ## Collision and player foundation
 

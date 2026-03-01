@@ -1,7 +1,7 @@
 import { Camera2D } from '../core/camera2d';
 import { createStaticVertexBuffer, createVertexArray } from './buffer';
 import { createProgram } from './shader';
-import { buildPlaceholderAtlas, loadTexture } from './texture';
+import { createTextureFromImageSource, loadAtlasImageSource } from './texture';
 import { TILE_SIZE } from '../world/constants';
 import {
   affectedChunkCoordsForLocalTileEdit,
@@ -52,6 +52,7 @@ const MESH_BUILD_QUEUE_CHUNK_BUDGET = 4;
 const MESH_BUILD_QUEUE_TIME_BUDGET_MS = 3;
 const FRUSTUM_PADDING_CHUNKS = 1;
 const STREAM_RETAIN_PADDING_CHUNKS = 3;
+const AUTHORED_TILE_ATLAS_URL = '/atlas/tile-atlas.png';
 
 export class Renderer {
   private gl: WebGL2RenderingContext;
@@ -118,8 +119,8 @@ export class Renderer {
   }
 
   async initialize(): Promise<void> {
-    const atlasDataUrl = buildPlaceholderAtlas();
-    this.texture = await loadTexture(this.gl, atlasDataUrl);
+    const atlas = await loadAtlasImageSource(AUTHORED_TILE_ATLAS_URL);
+    this.texture = createTextureFromImageSource(this.gl, atlas.imageSource);
   }
 
   resize(): void {

@@ -7,7 +7,7 @@
 - `src/input/`: input abstraction for keyboard, mouse, and touch/pinch.
 - `src/gl/`: low-level WebGL2 utilities and renderer orchestration.
 - `src/world/`: world data model, chunk math, procedural generation, mesh construction.
-- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata; authored atlas pipeline hook later).
+- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata; authored-atlas region validation is still a later task).
 - `src/ui/`: debug DOM overlay.
 
 ## Update loop
@@ -20,6 +20,10 @@
 Current update phase applies input-driven camera movement.
 
 ## Render pipeline
+
+Renderer initialization first attempts to fetch and decode an authored atlas image from `/atlas/tile-atlas.png`.
+If that asset is absent or decoding fails, initialization falls back to the generated placeholder atlas so the
+existing tile rendering path still boots.
 
 1. Ensure canvas backbuffer matches CSS size × `devicePixelRatio`.
 2. Build camera matrix (`world -> clip`) for orthographic projection.

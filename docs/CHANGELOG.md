@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Add an atlas asset loader helper that fetches and decodes an authored image while preserving the generated placeholder atlas as a fallback.
+- Changes: Updated [src/gl/texture.ts](../src/gl/texture.ts) with an authored-atlas loader plus shared texture upload helper, wired [src/gl/renderer.ts](../src/gl/renderer.ts) to try `/atlas/tile-atlas.png` before falling back, added focused coverage in [src/gl/texture.test.ts](../src/gl/texture.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `npx vitest run src/gl/texture.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Split empty compact status-strip hover guidance into wrap-friendly action segments on narrow mobile layouts instead of reflowing the whole sentence.
 - Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so the empty hover state emits segmented action guidance, added focused expectations in [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) and [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugEditStatusStrip.test.ts src/ui/debugEditStatusHelpers.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
