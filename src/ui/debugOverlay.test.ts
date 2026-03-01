@@ -25,19 +25,22 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nPtr: n/a');
   });
 
-  it('formats pointer client/canvas/world/tile readout', () => {
+  it('formats pointer client/canvas/world/tile readout with tile identity', () => {
     const text = formatDebugOverlayText(120.25, baseStats, {
       client: { x: 500.4, y: 250.6 },
       canvas: { x: 1000.2, y: 501.8 },
       world: { x: -32.125, y: 16.5 },
       tile: { x: -3, y: 1 },
-      pointerType: 'mouse'
+      pointerType: 'mouse',
+      tileId: 1,
+      tileLabel: 'stone'
     });
 
     expect(text).toContain('Ptr(mouse)');
     expect(text).toContain('C:500,251');
     expect(text).toContain('Cv:1000,502');
     expect(text).toContain('W:-32.13,16.50');
+    expect(text).toContain('Tile:stone (#1)');
     expect(text).toContain('T:-3,1');
     expect(text).toContain('Ch:-1,0');
     expect(text).toContain('L:29,1');

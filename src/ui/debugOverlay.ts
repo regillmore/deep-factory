@@ -20,10 +20,24 @@ export interface DebugOverlayPointerInspect {
   world: { x: number; y: number };
   tile: { x: number; y: number };
   pointerType: string;
+  tileId?: number;
+  tileLabel?: string;
 }
 
 const formatFloat = (value: number, digits: number): string => value.toFixed(digits);
 const formatInt = (value: number): string => Math.round(value).toString();
+const formatTileIdentity = (pointerInspect: DebugOverlayPointerInspect): string | null => {
+  if (pointerInspect.tileLabel && typeof pointerInspect.tileId === 'number') {
+    return `Tile:${pointerInspect.tileLabel} (#${pointerInspect.tileId})`;
+  }
+  if (pointerInspect.tileLabel) {
+    return `Tile:${pointerInspect.tileLabel}`;
+  }
+  if (typeof pointerInspect.tileId === 'number') {
+    return `Tile:#${pointerInspect.tileId}`;
+  }
+  return null;
+};
 
 export const formatDebugOverlayText = (
   fps: number,
@@ -46,11 +60,13 @@ export const formatDebugOverlayText = (
 
   const { chunkX, chunkY } = worldToChunkCoord(pointerInspect.tile.x, pointerInspect.tile.y);
   const { localX, localY } = worldToLocalTile(pointerInspect.tile.x, pointerInspect.tile.y);
+  const tileIdentity = formatTileIdentity(pointerInspect);
   const pointerLine =
     `Ptr(${pointerInspect.pointerType}) ` +
     `C:${formatInt(pointerInspect.client.x)},${formatInt(pointerInspect.client.y)} | ` +
     `Cv:${formatInt(pointerInspect.canvas.x)},${formatInt(pointerInspect.canvas.y)} | ` +
     `W:${formatFloat(pointerInspect.world.x, 2)},${formatFloat(pointerInspect.world.y, 2)} | ` +
+    (tileIdentity ? `${tileIdentity} | ` : '') +
     `T:${pointerInspect.tile.x},${pointerInspect.tile.y} | ` +
     `Ch:${chunkX},${chunkY} | ` +
     `L:${localX},${localY}`;

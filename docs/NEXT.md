@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Show hovered tile name plus tile ID in the debug overlay pointer inspect line so it stays useful when the compact status strip is collapsed.
+1. Show hovered tile gameplay flags in the debug overlay pointer inspect line so overlay-only inspection still surfaces solid, light-blocking, and liquid state.
 
 ## Authored asset pipeline
 

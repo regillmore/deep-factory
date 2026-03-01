@@ -911,6 +911,13 @@ const bootstrap = async (): Promise<void> => {
       const pinnedDebugTileStatus = pinnedDebugTileInspect
         ? getDebugTileStatusAtTile(pinnedDebugTileInspect.tileX, pinnedDebugTileInspect.tileY)
         : null;
+      const debugOverlayPointerInspect = pointerInspect
+        ? {
+            ...pointerInspect,
+            tileId: hoveredDebugTileStatus?.tileId,
+            tileLabel: hoveredDebugTileStatus?.tileLabel
+          }
+        : null;
       renderer.resize();
       renderer.render(camera);
       hoveredTileCursor.update(camera, {
@@ -937,7 +944,7 @@ const bootstrap = async (): Promise<void> => {
         pinnedTile: pinnedDebugTileStatus,
         desktopInspectPinArmed: input.getArmedDesktopDebugInspectPin()
       });
-      debug.update(frameDtMs, renderer.telemetry, pointerInspect);
+      debug.update(frameDtMs, renderer.telemetry, debugOverlayPointerInspect);
     }
   );
 

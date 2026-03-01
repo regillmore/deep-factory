@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Show hovered tile name plus tile ID in the debug overlay pointer inspect line.
+- Changes: Updated [src/main.ts](../src/main.ts) to pass hovered tile identity into the overlay payload, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) to render tile name plus tile ID in the pointer inspect line, added regression coverage in [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Show chunk plus chunk-local tile coordinates in the debug overlay pointer inspect line.
 - Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) to derive chunk and chunk-local tile coordinates from shared chunk math for pointer inspect text, added regression coverage in [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
