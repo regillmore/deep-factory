@@ -25,6 +25,7 @@ describe('formatDebugOverlayText', () => {
 
     expect(text).toContain('FPS: 60.0');
     expect(text).toContain('\nAtlas: authored | 96x64');
+    expect(text).toContain('\nSpawn: unresolved');
     expect(text).toContain('Draws: 4/256 (OK)');
     expect(text).toContain('\nPtr: n/a');
   });
@@ -64,9 +65,14 @@ describe('formatDebugOverlayText', () => {
         blocksLight: true,
         liquidKind: null
       },
+      spawn: {
+        tile: { x: 0, y: -2 },
+        world: { x: 8, y: -32 }
+      },
       pinned: null
     });
 
+    expect(text).toContain('Spawn: T:0,-2 | W:8.00,-32.00');
     expect(text).toContain('Ptr(mouse)');
     expect(text).toContain('C:500,251');
     expect(text).toContain('Cv:1000,502');
@@ -83,6 +89,7 @@ describe('formatDebugOverlayText', () => {
   it('shows pinned tile metadata even when no live pointer snapshot is available', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: null,
+      spawn: null,
       pinned: {
         tile: { x: 40, y: -2 },
         tileId: 2,
@@ -117,6 +124,10 @@ describe('formatDebugOverlayText', () => {
         blocksLight: true,
         liquidKind: null
       },
+      spawn: {
+        tile: { x: -1, y: 0 },
+        world: { x: -8, y: 0 }
+      },
       pinned: {
         tile: { x: -1, y: 65 },
         tileId: 4,
@@ -128,6 +139,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain('Ptr(touch)');
+    expect(text).toContain('Spawn: T:-1,0 | W:-8.00,0.00');
     expect(text).toContain('Tile:dirt (#3)');
     expect(text).toContain('\nPin: Tile:lava (#4)');
     expect(text).toContain('T:-1,65');

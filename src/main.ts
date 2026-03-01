@@ -29,10 +29,12 @@ import { DebugOverlay } from './ui/debugOverlay';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
+import { PlayerSpawnMarkerOverlay } from './ui/playerSpawnMarkerOverlay';
 import type { DebugEditHoveredTileState } from './ui/debugEditStatusHelpers';
 import { TouchDebugEditControls, type DebugBrushOption } from './ui/touchDebugEditControls';
 import { CHUNK_SIZE } from './world/constants';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
+import { DEFAULT_PLAYER_HEIGHT, DEFAULT_PLAYER_WIDTH } from './world/playerState';
 import { getTileMetadata, resolveTileGameplayMetadata, TILE_METADATA } from './world/tileMetadata';
 
 const DEBUG_TILE_BREAK_ID = 0;
@@ -56,6 +58,10 @@ const DEBUG_BRUSH_TILE_OPTIONS: readonly DebugBrushOption[] = TILE_METADATA.tile
 const DEBUG_BRUSH_TILE_IDS = DEBUG_BRUSH_TILE_OPTIONS.map((option) => option.tileId);
 const DEBUG_BRUSH_TILE_ID_SET = new Set(DEBUG_BRUSH_TILE_IDS);
 const DEBUG_BRUSH_TILE_LABELS = new Map(DEBUG_BRUSH_TILE_OPTIONS.map((option) => [option.tileId, option.label]));
+const DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS = {
+  width: DEFAULT_PLAYER_WIDTH,
+  height: DEFAULT_PLAYER_HEIGHT
+} as const;
 
 interface PinnedDebugTileInspectState {
   tileX: number;
@@ -94,6 +100,7 @@ const bootstrap = async (): Promise<void> => {
   const input = new InputController(canvas, camera);
   const debug = new DebugOverlay();
   const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
+  const playerSpawnMarker = new PlayerSpawnMarkerOverlay(canvas);
   const armedDebugToolPreview = new ArmedDebugToolPreviewOverlay(canvas);
   const debugEditStatusStrip = new DebugEditStatusStrip(canvas);
   input.retainPointerInspectWhenLeavingToElement(debugEditStatusStrip.getPointerInspectRetainerElement());
@@ -121,6 +128,30 @@ const bootstrap = async (): Promise<void> => {
   let debugEditControls: TouchDebugEditControls | null = null;
   let suppressDebugEditControlPersistence = false;
   let pinnedDebugTileInspect: PinnedDebugTileInspectState | null = null;
+  let resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
+  let playerSpawnNeedsRefresh = false;
+
+  const refreshResolvedPlayerSpawn = (): void => {
+    resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
+    playerSpawnNeedsRefresh = false;
+  };
+
+  const applyWorldTileEdit = (
+    worldTileX: number,
+    worldTileY: number,
+    tileId: number
+  ): { previousTileId: number; changed: boolean } => {
+    const previousTileId = renderer.getTile(worldTileX, worldTileY);
+    const changed = renderer.setTile(worldTileX, worldTileY, tileId);
+    if (changed) {
+      playerSpawnNeedsRefresh = true;
+    }
+
+    return {
+      previousTileId,
+      changed
+    };
+  };
 
   const persistDebugEditControlsState = (): void => {
     if (suppressDebugEditControlPersistence) return;
@@ -457,7 +488,7 @@ const bootstrap = async (): Promise<void> => {
   };
 
   const applyDebugHistoryTile = (worldTileX: number, worldTileY: number, tileId: number): void => {
-    renderer.setTile(worldTileX, worldTileY, tileId);
+    applyWorldTileEdit(worldTileX, worldTileY, tileId);
   };
 
   const applyDebugFloodFill = (
@@ -482,7 +513,8 @@ const bootstrap = async (): Promise<void> => {
       },
       readTile: (fillTileX, fillTileY) => renderer.getTile(fillTileX, fillTileY),
       visitFilledTile: (fillTileX, fillTileY, previousTileId) => {
-        if (!renderer.setTile(fillTileX, fillTileY, replacementTileId)) return;
+        const { changed } = applyWorldTileEdit(fillTileX, fillTileY, replacementTileId);
+        if (!changed) return;
         debugTileEditHistory.recordAppliedEdit(
           strokeId,
           fillTileX,
@@ -507,8 +539,8 @@ const bootstrap = async (): Promise<void> => {
     const tileId = kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
     let changedTileCount = 0;
     walkLineSteppedTilePath(startTileX, startTileY, endTileX, endTileY, (worldTileX, worldTileY) => {
-      const previousTileId = renderer.getTile(worldTileX, worldTileY);
-      if (!renderer.setTile(worldTileX, worldTileY, tileId)) return;
+      const { previousTileId, changed } = applyWorldTileEdit(worldTileX, worldTileY, tileId);
+      if (!changed) return;
       debugTileEditHistory.recordAppliedEdit(strokeId, worldTileX, worldTileY, previousTileId, tileId);
       changedTileCount += 1;
     });
@@ -526,8 +558,8 @@ const bootstrap = async (): Promise<void> => {
     const tileId = kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
     let changedTileCount = 0;
     walkFilledRectangleTileArea(startTileX, startTileY, endTileX, endTileY, (worldTileX, worldTileY) => {
-      const previousTileId = renderer.getTile(worldTileX, worldTileY);
-      if (!renderer.setTile(worldTileX, worldTileY, tileId)) return;
+      const { previousTileId, changed } = applyWorldTileEdit(worldTileX, worldTileY, tileId);
+      if (!changed) return;
       debugTileEditHistory.recordAppliedEdit(strokeId, worldTileX, worldTileY, previousTileId, tileId);
       changedTileCount += 1;
     });
@@ -545,8 +577,8 @@ const bootstrap = async (): Promise<void> => {
     const tileId = kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
     let changedTileCount = 0;
     walkRectangleOutlineTileArea(startTileX, startTileY, endTileX, endTileY, (worldTileX, worldTileY) => {
-      const previousTileId = renderer.getTile(worldTileX, worldTileY);
-      if (!renderer.setTile(worldTileX, worldTileY, tileId)) return;
+      const { previousTileId, changed } = applyWorldTileEdit(worldTileX, worldTileY, tileId);
+      if (!changed) return;
       debugTileEditHistory.recordAppliedEdit(strokeId, worldTileX, worldTileY, previousTileId, tileId);
       changedTileCount += 1;
     });
@@ -564,8 +596,8 @@ const bootstrap = async (): Promise<void> => {
     const tileId = kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
     let changedTileCount = 0;
     walkFilledEllipseTileArea(startTileX, startTileY, endTileX, endTileY, (worldTileX, worldTileY) => {
-      const previousTileId = renderer.getTile(worldTileX, worldTileY);
-      if (!renderer.setTile(worldTileX, worldTileY, tileId)) return;
+      const { previousTileId, changed } = applyWorldTileEdit(worldTileX, worldTileY, tileId);
+      if (!changed) return;
       debugTileEditHistory.recordAppliedEdit(strokeId, worldTileX, worldTileY, previousTileId, tileId);
       changedTileCount += 1;
     });
@@ -583,8 +615,8 @@ const bootstrap = async (): Promise<void> => {
     const tileId = kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
     let changedTileCount = 0;
     walkEllipseOutlineTileArea(startTileX, startTileY, endTileX, endTileY, (worldTileX, worldTileY) => {
-      const previousTileId = renderer.getTile(worldTileX, worldTileY);
-      if (!renderer.setTile(worldTileX, worldTileY, tileId)) return;
+      const { previousTileId, changed } = applyWorldTileEdit(worldTileX, worldTileY, tileId);
+      if (!changed) return;
       debugTileEditHistory.recordAppliedEdit(strokeId, worldTileX, worldTileY, previousTileId, tileId);
       changedTileCount += 1;
     });
@@ -795,6 +827,7 @@ const bootstrap = async (): Promise<void> => {
 
   await renderer.initialize();
   renderer.resize();
+  refreshResolvedPlayerSpawn();
 
   window.addEventListener('resize', () => renderer.resize());
 
@@ -804,8 +837,7 @@ const bootstrap = async (): Promise<void> => {
       input.update(fixedDt);
       for (const edit of input.consumeDebugTileEdits()) {
         const tileId = edit.kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
-        const previousTileId = renderer.getTile(edit.worldTileX, edit.worldTileY);
-        const changed = renderer.setTile(edit.worldTileX, edit.worldTileY, tileId);
+        const { previousTileId, changed } = applyWorldTileEdit(edit.worldTileX, edit.worldTileY, tileId);
         if (!changed) continue;
 
         debugTileEditHistory.recordAppliedEdit(
@@ -903,6 +935,10 @@ const bootstrap = async (): Promise<void> => {
       if (historyChanged) {
         syncDebugEditHistoryControls();
       }
+
+      if (playerSpawnNeedsRefresh) {
+        refreshResolvedPlayerSpawn();
+      }
     },
     (_alpha, frameDtMs) => {
       const pointerInspect = input.getPointerInspect();
@@ -934,6 +970,18 @@ const bootstrap = async (): Promise<void> => {
             liquidKind: pinnedDebugTileStatus.liquidKind
           }
         : null;
+      const debugOverlaySpawn = resolvedPlayerSpawn
+        ? {
+            tile: {
+              x: resolvedPlayerSpawn.anchorTileX,
+              y: resolvedPlayerSpawn.standingTileY
+            },
+            world: {
+              x: resolvedPlayerSpawn.x,
+              y: resolvedPlayerSpawn.y
+            }
+          }
+        : null;
       renderer.resize();
       renderer.render(camera);
       hoveredTileCursor.update(camera, {
@@ -950,6 +998,7 @@ const bootstrap = async (): Promise<void> => {
             }
           : null
       });
+      playerSpawnMarker.update(camera, resolvedPlayerSpawn);
       armedDebugToolPreview.update(camera, pointerInspect, armedDebugToolPreviewState);
       debugEditStatusStrip.update({
         mode: input.getTouchDebugEditMode(),
@@ -962,7 +1011,8 @@ const bootstrap = async (): Promise<void> => {
       });
       debug.update(frameDtMs, renderer.telemetry, {
         pointer: debugOverlayPointerInspect,
-        pinned: debugOverlayPinnedInspect
+        pinned: debugOverlayPinnedInspect,
+        spawn: debugOverlaySpawn
       });
     }
   );

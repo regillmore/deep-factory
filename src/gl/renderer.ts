@@ -13,6 +13,11 @@ import {
 } from '../world/chunkMath';
 import type { ChunkBounds } from '../world/chunkMath';
 import { buildChunkMesh } from '../world/mesher';
+import {
+  findPlayerSpawnPoint as findWorldPlayerSpawnPoint,
+  type PlayerSpawnPoint,
+  type PlayerSpawnSearchOptions
+} from '../world/playerSpawn';
 import { TileWorld } from '../world/world';
 
 interface ChunkGpuMesh {
@@ -202,6 +207,10 @@ export class Renderer {
 
   getTile(worldTileX: number, worldTileY: number): number {
     return this.world.getTile(worldTileX, worldTileY);
+  }
+
+  findPlayerSpawnPoint(options: PlayerSpawnSearchOptions): PlayerSpawnPoint | null {
+    return findWorldPlayerSpawnPoint(this.world, options);
   }
 
   getResidentChunkBounds(): ChunkBounds | null {

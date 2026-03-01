@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Add a debug-visible marker for the resolved player spawn point so spawn placement can be validated before the player controller is wired in.
+- Changes: Added [src/ui/playerSpawnMarkerOverlay.ts](../src/ui/playerSpawnMarkerOverlay.ts) with screen-space spawn AABB, support-tile, and feet-anchor placement helpers plus [src/ui/playerSpawnMarkerOverlay.test.ts](../src/ui/playerSpawnMarkerOverlay.test.ts), updated [src/gl/renderer.ts](../src/gl/renderer.ts) and [src/main.ts](../src/main.ts) to resolve and refresh spawn placement from the live world after tile edits, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to surface the resolved spawn in debug text, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/playerSpawnMarkerOverlay.test.ts src/ui/debugOverlay.test.ts src/world/playerSpawn.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Introduce a fixed-step player state model with spawn seeding, AABB derivation, and one-step kinematic integration helpers.
 - Changes: Added [src/world/playerState.ts](../src/world/playerState.ts) with validated player state creation, spawn-based initialization, feet-centered AABB derivation, and fixed-step velocity integration, added focused coverage in [src/world/playerState.test.ts](../src/world/playerState.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `npx vitest run src/world/playerState.test.ts src/world/playerSpawn.test.ts src/world/collision.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

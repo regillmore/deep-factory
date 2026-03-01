@@ -40,9 +40,15 @@ export interface DebugOverlayTileInspect {
   liquidKind?: TileLiquidKind | null;
 }
 
+export interface DebugOverlayPlayerSpawn {
+  tile: { x: number; y: number };
+  world: { x: number; y: number };
+}
+
 export interface DebugOverlayInspectState {
   pointer: DebugOverlayPointerInspect | null;
   pinned: DebugOverlayTileInspect | null;
+  spawn: DebugOverlayPlayerSpawn | null;
 }
 
 const formatFloat = (value: number, digits: number): string => value.toFixed(digits);
@@ -90,6 +96,17 @@ const formatTileLocation = (tileInspect: DebugOverlayTileInspect): string => {
   );
 };
 
+const formatSpawnLine = (spawn: DebugOverlayPlayerSpawn | null): string => {
+  if (!spawn) {
+    return 'Spawn: unresolved';
+  }
+
+  return (
+    `Spawn: T:${spawn.tile.x},${spawn.tile.y} | ` +
+    `W:${formatFloat(spawn.world.x, 2)},${formatFloat(spawn.world.y, 2)}`
+  );
+};
+
 export const formatDebugOverlayText = (
   fps: number,
   stats: DebugOverlayStats,
@@ -107,7 +124,8 @@ export const formatDebugOverlayText = (
 
   const pointerInspect = inspect?.pointer ?? null;
   const pinnedInspect = inspect?.pinned ?? null;
-  const lines = [summaryLine, formatAtlasLine(stats)];
+  const spawn = inspect?.spawn ?? null;
+  const lines = [summaryLine, formatAtlasLine(stats), formatSpawnLine(spawn)];
 
   if (!pointerInspect) {
     lines.push('Ptr: n/a');
