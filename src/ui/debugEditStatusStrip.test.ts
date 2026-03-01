@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildWrappedDetailLines } from './debugEditStatusStrip';
+import { buildWrappedDetailLines, resolveActionRowShouldStack } from './debugEditStatusStrip';
 
 describe('buildWrappedDetailLines', () => {
   it('splits preview text into wrap-friendly segments at pipe separators', () => {
@@ -28,5 +28,19 @@ describe('buildWrappedDetailLines', () => {
       ['Hover: dirt (#2) @ 4,7 chunk:0,0 local:4,7', '| solid:on', '| light:on', '| liquid:none'],
       ['Offset: Hover->Pinned x:+8 y:-11']
     ]);
+  });
+});
+
+describe('resolveActionRowShouldStack', () => {
+  it('keeps the inspect actions inline when the strip is wide enough for both buttons', () => {
+    expect(resolveActionRowShouldStack(238, 2)).toBe(false);
+  });
+
+  it('stacks the inspect actions before two buttons would clip on narrow strips', () => {
+    expect(resolveActionRowShouldStack(237, 2)).toBe(true);
+  });
+
+  it('stacks even a single action button when the strip is narrower than the button minimum width', () => {
+    expect(resolveActionRowShouldStack(115, 1)).toBe(true);
   });
 });

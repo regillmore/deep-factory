@@ -9,11 +9,20 @@ export interface DebugEditStatusStripActionHandlers {
 }
 
 const DETAIL_SEGMENT_SEPARATOR = ' | ';
+const ACTION_ROW_GAP_PX = 6;
+const ACTION_BUTTON_MIN_WIDTH_PX = 116;
 
 export const buildWrappedDetailLines = (text: string): string[][] =>
   text.split('\n').map((line) =>
     line.split(DETAIL_SEGMENT_SEPARATOR).map((segment, index) => (index === 0 ? segment : `| ${segment}`))
   );
+
+export const resolveActionRowShouldStack = (availableWidth: number, visibleActionCount: number): boolean => {
+  const clampedActionCount = Math.max(1, visibleActionCount);
+  const inlineWidth =
+    clampedActionCount * ACTION_BUTTON_MIN_WIDTH_PX + (clampedActionCount - 1) * ACTION_ROW_GAP_PX;
+  return availableWidth < inlineWidth;
+};
 
 const createSummaryChip = (): HTMLDivElement => {
   const chip = document.createElement('div');
@@ -47,6 +56,10 @@ const createActionButton = (): HTMLButtonElement => {
   button.style.cursor = 'pointer';
   button.style.pointerEvents = 'auto';
   button.style.userSelect = 'none';
+  button.style.minWidth = '0';
+  button.style.maxWidth = '100%';
+  button.style.whiteSpace = 'normal';
+  button.style.textAlign = 'center';
   return button;
 };
 
@@ -149,7 +162,9 @@ export class DebugEditStatusStrip {
     this.actionRow = document.createElement('div');
     this.actionRow.style.display = 'flex';
     this.actionRow.style.flexWrap = 'wrap';
-    this.actionRow.style.gap = '6px';
+    this.actionRow.style.gap = `${ACTION_ROW_GAP_PX}px`;
+    this.actionRow.style.alignItems = 'center';
+    this.actionRow.style.maxWidth = '100%';
     this.actionRow.style.pointerEvents = 'auto';
     this.root.append(this.actionRow);
 
@@ -209,11 +224,15 @@ export class DebugEditStatusStrip {
       return;
     }
 
+    const availableWidth = Math.max(0, canvasRect.width - 20);
     const model = buildDebugEditStatusStripModel(state);
+    const visibleActionCount = model.clearActionText ? 2 : 1;
+    const stackActionButtons = resolveActionRowShouldStack(availableWidth, visibleActionCount);
     this.root.style.display = 'flex';
     this.root.style.left = `${canvasRect.left + 10}px`;
     this.root.style.bottom = `${Math.max(4, window.innerHeight - canvasRect.bottom + 10)}px`;
-    this.root.style.maxWidth = `${Math.max(0, canvasRect.width - 20)}px`;
+    this.root.style.width = stackActionButtons ? `${availableWidth}px` : 'auto';
+    this.root.style.maxWidth = `${availableWidth}px`;
     this.root.style.borderColor = withAlpha(model.toolAccent, '0.22');
     this.root.style.boxShadow = `0 8px 18px rgba(0, 0, 0, 0.24), inset 0 0 0 1px ${withAlpha(model.toolAccent, '0.12')}`;
 
@@ -231,6 +250,10 @@ export class DebugEditStatusStrip {
     this.inspectActionButton.style.background = withAlpha(model.inspectAccent, '0.16');
     this.clearActionButton.textContent = model.clearActionText ?? '';
     this.clearActionButton.style.display = model.clearActionText ? 'inline-flex' : 'none';
+    this.actionRow.style.flexDirection = stackActionButtons ? 'column' : 'row';
+    this.actionRow.style.alignItems = stackActionButtons ? 'stretch' : 'center';
+    this.inspectActionButton.style.width = stackActionButtons ? '100%' : 'auto';
+    this.clearActionButton.style.width = stackActionButtons ? '100%' : 'auto';
 
     if (model.previewText) {
       renderWrappedDetailText(this.previewLine, model.previewText);

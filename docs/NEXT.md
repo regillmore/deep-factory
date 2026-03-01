@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Keep the compact debug-edit status strip action buttons within the viewport on narrow mobile layouts by stacking them before they clip.
+1. Let compact debug-edit status strip summary chips wrap long brush or tool labels on narrow mobile layouts instead of truncating them to ellipses.
 
 ## Authored asset pipeline
 
