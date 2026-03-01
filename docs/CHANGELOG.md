@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Introduce a fixed-step player state model with spawn seeding, AABB derivation, and one-step kinematic integration helpers.
+- Changes: Added [src/world/playerState.ts](../src/world/playerState.ts) with validated player state creation, spawn-based initialization, feet-centered AABB derivation, and fixed-step velocity integration, added focused coverage in [src/world/playerState.test.ts](../src/world/playerState.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run src/world/playerState.test.ts src/world/playerSpawn.test.ts src/world/collision.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Surface loaded atlas dimensions in debug-visible telemetry so authored atlas revisions can be validated in-runtime.
 - Changes: Updated [src/gl/texture.ts](../src/gl/texture.ts) to capture atlas image dimensions for authored and placeholder loads, wired [src/gl/renderer.ts](../src/gl/renderer.ts) telemetry to retain those dimensions, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) to render atlas size alongside the source kind, added focused coverage in [src/gl/texture.test.ts](../src/gl/texture.test.ts), [src/gl/renderer.test.ts](../src/gl/renderer.test.ts), and [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/gl/texture.test.ts src/gl/renderer.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

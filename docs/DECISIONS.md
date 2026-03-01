@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-01: Player state uses a feet-centered position anchor
+
+- Decision: Standalone player state stores `position` at the player's bottom center and derives the collision AABB from explicit `size`.
+- Reason: Spawn search already resolves a standing feet position plus AABB, and sharing that anchor avoids ad hoc transforms between spawn, collision, and future controller code.
+- Consequence: Player movement, debug markers, and later entity migration should treat player `position` as bottom-center world space and use the shared AABB helper instead of introducing alternate anchor conventions.
+
 ### 2026-02-28: Simulation runs in fixed steps, rendering interpolates
 
 - Decision: Authoritative game state advances in the fixed `60hz` update loop, while rendering receives interpolation alpha and frame timing separately.

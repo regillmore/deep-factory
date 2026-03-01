@@ -6,7 +6,7 @@
 - `src/core/`: camera math + fixed timestep loop.
 - `src/input/`: input abstraction for keyboard, mouse, and touch/pinch.
 - `src/gl/`: low-level WebGL2 utilities and renderer orchestration.
-- `src/world/`: world data model, chunk math, collision queries, procedural generation, mesh construction.
+- `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, mesh construction.
 - `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata; authored-atlas region validation is still a later task).
 - `src/ui/`: debug DOM overlay.
 
@@ -18,6 +18,12 @@
 - render interpolation alpha (currently unused but available).
 
 Current update phase applies input-driven camera movement.
+
+## Player state foundation
+
+- Standalone player simulation state currently lives in `src/world/playerState.ts`.
+- `PlayerState.position` uses bottom-center world coordinates so spawn placement, collision AABB derivation, and future controller updates share one anchor convention.
+- Shared helpers can initialize player state directly from spawn-search output and advance position from velocity on fixed steps without mixing render interpolation into the source-of-truth state.
 
 ## Render pipeline
 

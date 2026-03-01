@@ -33,6 +33,7 @@ This document describes the current project state. Unlike the changelog, it shou
 
 - World collision helpers expose metadata-backed `isSolidAt` tile queries, world-space solid-overlap checks for half-open AABBs, and single-axis AABB sweep results that clamp movement to the first blocking tile.
 - Player spawn queries can scan near a chosen origin tile for grounded standing headroom and return the resolved standing AABB plus supporting solid tile.
+- Standalone player-state helpers track feet-centered `position`, `velocity`, explicit `size`, `grounded`, and `facing`, can seed that state from spawn output, and derive the collision AABB plus one-step fixed-update integration from the same model.
 
 ## Hot-Path Lookup Strategy
 

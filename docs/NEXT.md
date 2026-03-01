@@ -10,7 +10,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Collision and player foundation
 
-5. Introduce a fixed-step player state model (`position`, `velocity`, `size`, `grounded`, facing) with unit tests.
 6. Implement walk, jump, gravity, and tile collision resolution for the player using the new collision helpers.
 7. Add mixed-device player input bindings and camera follow rules without removing the existing debug-edit controls.
 8. Add a debug-visible marker for the resolved player spawn point so spawn placement can be validated before the player controller is wired in.
@@ -51,3 +50,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 25. Add an app shell with explicit `boot`, `main menu`, and `in-world` states.
 26. Move debug overlay visibility behind shell/UI toggles instead of always-on bootstrap wiring.
 27. Add runtime atlas-bounds validation that warns when tile `render.uvRect` metadata falls outside the loaded atlas dimensions.
+
+## Player debugging
+
+28. Surface live standalone player-state telemetry (`position`, `velocity`, `grounded`, `facing`) in the debug overlay once movement is wired.
