@@ -1,6 +1,7 @@
 import { Camera2D } from '../core/camera2d';
 import { createStaticVertexBuffer, createVertexArray } from './buffer';
 import { createProgram } from './shader';
+import { applyAnimatedChunkMeshFrameAtElapsedMs, createAnimatedChunkMeshState } from './animatedChunkMesh';
 import {
   buildStandalonePlayerPlaceholderVertices,
   getStandalonePlayerPlaceholderFacingSign,
@@ -39,6 +40,7 @@ interface ChunkGpuMesh {
   buffer: WebGLBuffer;
   vao: WebGLVertexArrayObject;
   vertexCount: number;
+  animatedMesh: ReturnType<typeof createAnimatedChunkMeshState>;
 }
 
 interface CachedChunkMesh {
@@ -56,6 +58,7 @@ interface MeshBuildRequest {
 
 export interface RendererFrameState {
   standalonePlayer?: PlayerState | null;
+  timeMs?: number;
 }
 
 export interface RenderTelemetry {
@@ -255,6 +258,7 @@ export class Renderer {
     if (!this.texture) return;
 
     const gl = this.gl;
+    const timeMs = frameState.timeMs ?? performance.now();
     this.telemetry.renderedChunks = 0;
     this.telemetry.drawCalls = 0;
     this.telemetry.meshBuilds = 0;
@@ -290,6 +294,7 @@ export class Renderer {
       for (let x = drawBounds.minChunkX; x <= drawBounds.maxChunkX; x += 1) {
         const mesh = this.getReadyChunkMesh(x, y);
         if (!mesh) continue;
+        this.updateAnimatedChunkMesh(mesh, timeMs);
         gl.bindVertexArray(mesh.vao);
         gl.drawArrays(gl.TRIANGLES, 0, mesh.vertexCount);
         this.telemetry.renderedChunks += 1;
@@ -466,10 +471,26 @@ export class Renderer {
       return;
     }
 
-    const buffer = createStaticVertexBuffer(this.gl, meshData.vertices);
+    const animatedMesh = createAnimatedChunkMeshState(meshData.vertices, meshData.animatedTileQuads);
+    const buffer = animatedMesh
+      ? createDynamicVertexBuffer(this.gl, meshData.vertices)
+      : createStaticVertexBuffer(this.gl, meshData.vertices);
     const vao = createVertexArray(this.gl, buffer, 4);
     cached.state = 'ready';
-    cached.mesh = { buffer, vao, vertexCount: meshData.vertexCount };
+    cached.mesh = { buffer, vao, vertexCount: meshData.vertexCount, animatedMesh };
+  }
+
+  private updateAnimatedChunkMesh(mesh: ChunkGpuMesh, timeMs: number): void {
+    if (!mesh.animatedMesh) {
+      return;
+    }
+
+    if (!applyAnimatedChunkMeshFrameAtElapsedMs(mesh.animatedMesh, timeMs, TILE_METADATA)) {
+      return;
+    }
+
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, mesh.animatedMesh.vertices, this.gl.DYNAMIC_DRAW);
   }
 
   private drawStandalonePlayer(state: PlayerState, worldToClipMatrix: Float32Array): void {

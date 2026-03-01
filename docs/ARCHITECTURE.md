@@ -7,7 +7,8 @@
 - `src/input/`: input abstraction for keyboard, mouse, touch/pinch, and standalone player intent extraction.
 - `src/gl/`: low-level WebGL2 utilities, world rendering orchestration, and the standalone player placeholder draw pass.
 - `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, mesh construction, plus authored atlas-region layout data.
-- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups backed by `src/world/authoredAtlasLayout.ts`; renderer boot now validates authored atlas-index sources and direct `uvRect` metadata against the loaded atlas dimensions).
+- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups and elapsed-frame resolvers backed by `src/world/authoredAtlasLayout.ts`; renderer boot now validates authored atlas-index sources and direct `uvRect` metadata against the loaded atlas dimensions).
+- `src/gl/animatedChunkMesh.ts`: renderer-side helper that rewrites baked chunk UVs for animated non-terrain quads when elapsed time advances to a new metadata frame.
 - `src/ui/`: debug DOM overlays, spawn marker, and touch-only player controls.
 
 ## Update loop
@@ -40,7 +41,7 @@ outside the source image.
 2. Build camera matrix (`world -> clip`) for orthographic projection.
 3. Compute visible chunk bounds from camera viewport and tile scale.
 4. Queue visible (and nearby prefetch) chunk mesh builds, then process a small per-frame build budget.
-5. Draw ready chunk VAOs with a shared shader + atlas texture.
+5. Patch ready animated chunk meshes to the current elapsed metadata frame when needed, then draw chunk VAOs with a shared shader + atlas texture.
 6. Draw the standalone player placeholder in world space from the latest `PlayerState`.
 7. Prune far chunk/world caches outside the retain ring.
 8. Update debug overlay with frame timing and renderer telemetry.
@@ -51,10 +52,11 @@ outside the source image.
 - Mesher scans all tiles in a chunk.
 - For each non-zero tile:
   - emits two triangles (6 vertices) for one quad,
-  - writes per-vertex world position and UV.
+  - writes per-vertex world position and UV,
+  - records animated non-terrain quad offsets so the renderer can patch only those UVs later.
 - UVs are resolved through tile metadata (terrain autotile variant maps or non-autotile static render metadata), with atlas indices translated through the authored atlas region layout instead of a synthetic grid cache.
-- Optional animated render frames compile beside the static render lookup, but the current mesher still bakes the static frame only until render-time animation lands.
-- Output is uploaded once per chunk as static vertex data.
+- Optional animated render frames compile beside the static render lookup; chunk meshes still bake the static frame-zero UVs, and the renderer mutates only the recorded animated quad UVs when the elapsed frame changes.
+- Static chunks upload once as static vertex data; chunks containing animated non-terrain quads keep a CPU-side vertex copy so the renderer can reupload UV-only changes on frame boundaries.
 
 This is intentionally simple and easy to evolve (greedy meshing, layered tiles, occlusion rules can be added later).
 

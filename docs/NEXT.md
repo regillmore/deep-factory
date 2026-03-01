@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Authored asset pipeline
 
-3. Add a render-time animated-tile frame resolver that maps elapsed time into `render.frames` / `frameDurationMs` without changing terrain or static tile UV resolution.
-4. Add runtime pixel-alignment validation for tile `render.uvRect` metadata so authored sub-rects snap to whole atlas pixels at boot.
-5. Make the generated placeholder fallback atlas derive its canvas size and painted regions from the authored atlas layout so atlas-index previews stay aligned when the layout changes.
+3. Add runtime pixel-alignment validation for tile `render.uvRect` metadata so authored sub-rects snap to whole atlas pixels at boot.
+4. Make the generated placeholder fallback atlas derive its canvas size and painted regions from the authored atlas layout so atlas-index previews stay aligned when the layout changes.
+5. Add debug telemetry for animated chunk UV uploads so renderer-side tile animation cost stays visible as authored frame counts grow.
 
 ## Collision and player foundation
 

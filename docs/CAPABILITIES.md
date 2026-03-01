@@ -7,6 +7,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - WebGL2 renderer with shader utilities, buffer helpers, texture loading, and DPR-aware resize.
 - Renderer atlas initialization ships with an authored atlas at `public/atlas/tile-atlas.png` exposed as `/atlas/tile-atlas.png`, then falls back to the generated placeholder atlas if that asset cannot be fetched or decoded.
 - Renderer boot validates authored atlas-index regions plus direct tile `render.uvRect` metadata against the loaded atlas dimensions, logs a warning when any static, animated, or terrain-variant source falls outside the source image, and surfaces the warning count plus first warning in debug telemetry.
+- Renderer animates non-terrain tiles from metadata-driven frame sequences at draw time by patching chunk UVs only when an animated tile's elapsed frame changes; terrain autotile and static tile UV resolution remain unchanged.
 - Renderer draws the standalone player through a facing-aware world-space placeholder pass instead of a client-space DOM marker.
 - Orthographic camera with anchored zoom, pointer pan controls, and standalone-player follow that tracks the player body center while preserving manual inspection offsets.
 - Fixed-step game loop (`60hz`) with separate render interpolation alpha.
@@ -18,7 +19,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Chunk visibility culling with padded chunk streaming retention.
 - Budgeted per-frame mesh build queue with visible-first scheduling and nearby prefetch.
 - Tile edit events trigger edge and corner neighbor-chunk mesh invalidation.
-- Chunk meshing currently emits one quad per non-empty tile and uploads static vertex data once per chunk.
+- Chunk meshing currently emits one quad per non-empty tile; static chunks upload once, while chunks with animated non-terrain quads keep CPU-side vertex copies so UV-only updates can be reuploaded on frame boundaries.
 - `buildChunkMesh` pre-counts non-empty tiles and writes directly into an exact-sized `Float32Array`.
 - Chunk meshing supports reusable `TileNeighborhood` scratch sampling so terrain meshing avoids per-tile neighborhood allocations.
 
@@ -27,6 +28,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Tile definitions live in validated JSON metadata at `src/world/tileMetadata.json`.
 - Tile metadata covers render data, terrain autotile data, connectivity groups, material tags, and gameplay flags such as `solid`, `blocksLight`, and `liquidKind`.
 - Render metadata can optionally define animated frame sequences through `frames` plus `frameDurationMs`, while the current meshing path continues to use the base static `atlasIndex` or `uvRect` as frame-zero fallback.
+- The default tile set now includes an animated `debug_blink` brush tile that exercises the renderer-side frame resolver against the authored atlas.
 - Atlas-backed render metadata resolves through explicit authored atlas region definitions in `src/world/authoredAtlasLayout.ts`, while direct sub-rect metadata can still use normalized `uvRect` values.
 - Terrain autotile adjacency supports cross-chunk 8-neighbor sampling plus normalization helpers.
 - Terrain autotile connectivity uses metadata-driven connectivity groups first, then shared material tags for seam compatibility.
@@ -44,7 +46,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Gameplay metadata compiles into dense lookup arrays for collision, lighting, and liquid queries.
 - Terrain connectivity compiles into dense connectivity-group and material-tag lookup tables.
 - Tile render metadata compiles into dense static UV and terrain variant atlas-index lookup tables.
-- Optional animated render metadata compiles into dense per-tile frame start, frame count, and frame duration tables plus a flattened UV-frame list for later renderer-time sampling.
+- Optional animated render metadata compiles into dense per-tile frame start, frame count, and frame duration tables plus a flattened UV-frame list for renderer-time elapsed-frame sampling.
 - Placeholder terrain autotile resolution uses precomputed lookup tables for normalized adjacency masks and raw adjacency masks.
 - Authored-atlas region UV rect objects are precomputed and reused by atlas-index and terrain-autotile resolution paths.
 

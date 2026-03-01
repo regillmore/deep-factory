@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Camera2D } from '../core/camera2d';
 import { createPlayerState } from '../world/playerState';
+import { atlasIndexToUvRect } from '../world/tileMetadata';
 import type { AtlasUvRectBoundsWarning } from './atlasValidation';
 
 const { loadAtlasImageSource, createTextureFromImageSource, createProgram, collectAtlasUvRectBoundsWarnings } =
@@ -210,5 +211,57 @@ describe('Renderer atlas telemetry', () => {
     expect((lastBufferDataCall?.[1] as Float32Array | undefined)?.length).toBe(24);
     expect(lastBufferDataCall?.[2]).toBe(gl.DYNAMIC_DRAW);
     expect(uniform1f).toHaveBeenCalledWith(expect.anything(), -1);
+  });
+
+  it('reuploads animated chunk UVs only when the elapsed frame changes', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    const performanceNowSpy = vi.spyOn(performance, 'now').mockReturnValue(0);
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    renderer.setTile(0, 0, 5);
+    const camera = new Camera2D();
+    camera.zoom = 16;
+
+    for (let frame = 0; frame < 40; frame += 1) {
+      renderer.render(camera, { timeMs: 0 });
+      if (renderer.telemetry.meshBuildQueueLength === 0) {
+        break;
+      }
+    }
+
+    expect(renderer.telemetry.meshBuildQueueLength).toBe(0);
+
+    const bufferData = vi.mocked(gl.bufferData);
+    bufferData.mockClear();
+
+    renderer.render(camera, { timeMs: 0 });
+    renderer.render(camera, { timeMs: 179 });
+    expect(bufferData).not.toHaveBeenCalled();
+
+    renderer.render(camera, { timeMs: 180 });
+    expect(bufferData).toHaveBeenCalledTimes(1);
+    const frameOneVertices = bufferData.mock.calls[0]?.[1] as Float32Array | undefined;
+    const frameOneUv = atlasIndexToUvRect(15);
+    expect(frameOneVertices).toBeInstanceOf(Float32Array);
+    expect(Array.from(frameOneVertices?.slice(2, 4) ?? [])).toEqual([frameOneUv.u0, frameOneUv.v0]);
+
+    renderer.render(camera, { timeMs: 359 });
+    expect(bufferData).toHaveBeenCalledTimes(1);
+
+    renderer.render(camera, { timeMs: 360 });
+    expect(bufferData).toHaveBeenCalledTimes(2);
+    const frameZeroVertices = bufferData.mock.calls[1]?.[1] as Float32Array | undefined;
+    const frameZeroUv = atlasIndexToUvRect(14);
+    expect(Array.from(frameZeroVertices?.slice(2, 4) ?? [])).toEqual([frameZeroUv.u0, frameZeroUv.v0]);
+    performanceNowSpy.mockRestore();
   });
 });

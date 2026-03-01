@@ -18,7 +18,9 @@ import {
   hasTerrainAutotileMetadata,
   isTileSolid,
   parseTileMetadataRegistry,
+  resolveAnimatedTileRenderFrameIndexAtElapsedMs,
   resolveAnimatedTileRenderFrameUvRect,
+  resolveAnimatedTileRenderFrameUvRectAtElapsedMs,
   resolveTileGameplayMetadata,
   resolveTerrainAutotileAtlasIndexByRawAdjacencyMask,
   resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask,
@@ -465,6 +467,22 @@ describe('tile metadata loader', () => {
     expect(resolveAnimatedTileRenderFrameUvRect(7, -1, registry)).toBe(null);
     expect(resolveAnimatedTileRenderFrameUvRect(7, 3, registry)).toBe(null);
     expect(resolveAnimatedTileRenderFrameUvRect(8, 0, registry)).toBe(null);
+    expect(resolveAnimatedTileRenderFrameIndexAtElapsedMs(7, 0, registry)).toBe(0);
+    expect(resolveAnimatedTileRenderFrameIndexAtElapsedMs(7, 119, registry)).toBe(0);
+    expect(resolveAnimatedTileRenderFrameIndexAtElapsedMs(7, 120, registry)).toBe(1);
+    expect(resolveAnimatedTileRenderFrameIndexAtElapsedMs(7, 240, registry)).toBe(2);
+    expect(resolveAnimatedTileRenderFrameIndexAtElapsedMs(7, 360, registry)).toBe(0);
+    expect(resolveAnimatedTileRenderFrameIndexAtElapsedMs(7, -1, registry)).toBe(2);
+    expect(resolveAnimatedTileRenderFrameIndexAtElapsedMs(8, 120, registry)).toBe(null);
+    expect(resolveAnimatedTileRenderFrameUvRectAtElapsedMs(7, 0, registry)).toBe(atlasIndexToUvRect(6));
+    expect(resolveAnimatedTileRenderFrameUvRectAtElapsedMs(7, 120, registry)).toEqual({
+      u0: 0.5,
+      v0: 0,
+      u1: 0.75,
+      v1: 0.25
+    });
+    expect(resolveAnimatedTileRenderFrameUvRectAtElapsedMs(7, 360, registry)).toBe(atlasIndexToUvRect(6));
+    expect(resolveAnimatedTileRenderFrameUvRectAtElapsedMs(8, 0, registry)).toBe(null);
     expect(registry.renderLookup.animationFrameUvRects.length).toBe(3);
   });
 

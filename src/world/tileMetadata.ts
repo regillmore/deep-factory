@@ -639,6 +639,43 @@ const getAnimatedTileRenderFrameUvRectFromLookup = (
   return animationFrameUvRects[frameStart + frameIndex] ?? null;
 };
 
+const getAnimatedTileRenderFrameIndexAtElapsedMsFromLookup = (
+  tileId: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry
+): number | null => {
+  if (!Number.isFinite(elapsedMs)) {
+    return null;
+  }
+
+  const frameCount = getAnimatedTileRenderFrameCountFromLookup(tileId, registry);
+  if (frameCount === 0) {
+    return null;
+  }
+
+  const frameDurationMs = getAnimatedTileRenderFrameDurationMsFromLookup(tileId, registry);
+  if (frameDurationMs === null || frameDurationMs <= 0) {
+    return null;
+  }
+
+  const elapsedFrameSteps = Math.floor(elapsedMs / frameDurationMs);
+  const wrappedFrameIndex = elapsedFrameSteps % frameCount;
+  return wrappedFrameIndex >= 0 ? wrappedFrameIndex : wrappedFrameIndex + frameCount;
+};
+
+const getAnimatedTileRenderFrameUvRectAtElapsedMsFromLookup = (
+  tileId: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry
+): TileUvRect | null => {
+  const frameIndex = getAnimatedTileRenderFrameIndexAtElapsedMsFromLookup(tileId, elapsedMs, registry);
+  if (frameIndex === null) {
+    return null;
+  }
+
+  return getAnimatedTileRenderFrameUvRectFromLookup(tileId, frameIndex, registry);
+};
+
 const getTerrainAutotileVariantAtlasIndexFromLookup = (
   tileId: number,
   cardinalVariantIndex: number,
@@ -914,11 +951,23 @@ export const getAnimatedTileRenderFrameDurationMs = (
   registry: TileMetadataRegistry = TILE_METADATA
 ): number | null => getAnimatedTileRenderFrameDurationMsFromLookup(tileId, registry);
 
+export const resolveAnimatedTileRenderFrameIndexAtElapsedMs = (
+  tileId: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): number | null => getAnimatedTileRenderFrameIndexAtElapsedMsFromLookup(tileId, elapsedMs, registry);
+
 export const resolveAnimatedTileRenderFrameUvRect = (
   tileId: number,
   frameIndex: number,
   registry: TileMetadataRegistry = TILE_METADATA
 ): TileUvRect | null => getAnimatedTileRenderFrameUvRectFromLookup(tileId, frameIndex, registry);
+
+export const resolveAnimatedTileRenderFrameUvRectAtElapsedMs = (
+  tileId: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): TileUvRect | null => getAnimatedTileRenderFrameUvRectAtElapsedMsFromLookup(tileId, elapsedMs, registry);
 
 export const resolveTerrainAutotileVariantUvRect = (
   tileId: number,

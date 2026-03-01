@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-01: Animated non-terrain tiles advance through renderer-side UV patching
+
+- Decision: Chunk meshes continue to bake static frame-zero UVs, while the renderer retains CPU-side vertex copies only for chunks containing animated non-terrain quads and rewrites those UVs when elapsed time advances to a new metadata frame.
+- Reason: This preserves terrain autotile and static-tile mesh resolution, avoids per-frame remeshing, and lets authored animation metadata layer onto the existing chunk format with a narrow renderer-only update path.
+- Consequence: Future tile animation work should reuse the compiled animation lookup plus animated-quad patch path; tiles whose animation changes topology or adjacency still need a different pipeline.
+
 ### 2026-03-01: Authored atlas layout owns atlas-index resolution
 
 - Decision: `atlasIndex` render metadata and terrain variant maps now resolve through an explicit authored atlas layout definition instead of deriving UVs from hard-coded `4x4` slot math.

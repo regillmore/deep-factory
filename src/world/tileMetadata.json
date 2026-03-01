@@ -60,6 +60,22 @@
           "v1": 0.5
         }
       }
+    },
+    {
+      "id": 5,
+      "name": "debug_blink",
+      "gameplay": {
+        "solid": false,
+        "blocksLight": false
+      },
+      "render": {
+        "atlasIndex": 14,
+        "frames": [
+          { "atlasIndex": 14 },
+          { "atlasIndex": 15 }
+        ],
+        "frameDurationMs": 180
+      }
     }
   ]
 }

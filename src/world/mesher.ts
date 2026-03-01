@@ -3,6 +3,7 @@ import { CHUNK_SIZE, TILE_SIZE } from './constants';
 import { toTileIndex } from './chunkMath';
 import {
   areTerrainAutotileNeighborsConnected,
+  hasAnimatedTileRenderMetadata,
   hasTerrainAutotileMetadata,
   resolveTerrainAutotileUvRectByRawAdjacencyMask,
   resolveTileRenderUvRect
@@ -14,6 +15,12 @@ import type { TileNeighborhood } from './world';
 export interface ChunkMeshData {
   vertices: Float32Array;
   vertexCount: number;
+  animatedTileQuads: readonly AnimatedTileQuad[];
+}
+
+export interface AnimatedTileQuad {
+  tileId: number;
+  vertexFloatOffset: number;
 }
 
 export interface ChunkMeshBuildOptions {
@@ -37,6 +44,8 @@ const VERTICES_PER_TILE_QUAD = 6;
 const FLOATS_PER_TILE_QUAD = FLOATS_PER_VERTEX * VERTICES_PER_TILE_QUAD;
 
 const usesTerrainAutotile = (tileId: number): boolean => hasTerrainAutotileMetadata(tileId);
+const usesAnimatedTileRender = (tileId: number): boolean =>
+  !usesTerrainAutotile(tileId) && hasAnimatedTileRenderMetadata(tileId);
 
 const countNonEmptyTiles = (chunk: Chunk): number => {
   let count = 0;
@@ -103,10 +112,11 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
   const { sampleNeighborhood, sampleNeighborhoodInto } = options;
   const nonEmptyTileCount = countNonEmptyTiles(chunk);
   if (nonEmptyTileCount === 0) {
-    return { vertices: new Float32Array(0), vertexCount: 0 };
+    return { vertices: new Float32Array(0), vertexCount: 0, animatedTileQuads: [] };
   }
 
   const vertices = new Float32Array(nonEmptyTileCount * FLOATS_PER_TILE_QUAD);
+  const animatedTileQuads: AnimatedTileQuad[] = [];
   let writeIndex = 0;
   const neighborhoodScratch = sampleNeighborhoodInto ? createTileNeighborhoodScratch() : undefined;
 
@@ -119,6 +129,7 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
       const py = chunkOriginY + y * TILE_SIZE;
       const px1 = px + TILE_SIZE;
       const py1 = py + TILE_SIZE;
+      const tileVertexFloatOffset = writeIndex;
       const { u0, v0, u1, v1 } = resolveChunkTileUvRect(
         chunk,
         x,
@@ -128,6 +139,12 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
         sampleNeighborhoodInto,
         neighborhoodScratch
       );
+      if (usesAnimatedTileRender(tileId)) {
+        animatedTileQuads.push({
+          tileId,
+          vertexFloatOffset: tileVertexFloatOffset
+        });
+      }
 
       vertices[writeIndex] = px;
       vertices[writeIndex + 1] = py;
@@ -157,5 +174,9 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
     }
   }
 
-  return { vertices, vertexCount: writeIndex / FLOATS_PER_VERTEX };
+  return {
+    vertices,
+    vertexCount: writeIndex / FLOATS_PER_VERTEX,
+    animatedTileQuads
+  };
 };
