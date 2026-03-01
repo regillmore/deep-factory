@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Add a renderer regression test that a re-streamed animated chunk resumes elapsed-frame UV uploads after prune and rebuild.
+- Changes: Updated [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a streaming round-trip regression plus a fixed-time mesh-queue drain helper so a rebuilt animated chunk is exercised at non-zero elapsed time and verified to reupload the correct frame UVs after prune, then advanced [docs/NEXT.md](docs/NEXT.md).
+- Verification: Ran `npx vitest run src/gl/renderer.test.ts`.
 - Task: Add an authored-atlas layout regression test that explicit atlas regions do not overlap each other.
 - Changes: Added [src/world/authoredAtlasLayout.test.ts](../src/world/authoredAtlasLayout.test.ts) to assert every authored region has positive area, stays within the declared atlas bounds, and does not overlap any other region, then advanced [docs/NEXT.md](docs/NEXT.md).
 - Verification: Ran `npx vitest run src/world/authoredAtlasLayout.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
