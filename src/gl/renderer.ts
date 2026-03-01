@@ -19,6 +19,7 @@ import {
   type PlayerSpawnSearchOptions
 } from '../world/playerSpawn';
 import {
+  respawnPlayerStateAtSpawnIfEmbeddedInSolid as respawnWorldPlayerStateAtSpawnIfEmbeddedInSolid,
   stepPlayerStateWithGravity as stepWorldPlayerStateWithGravity,
   type PlayerState
 } from '../world/playerState';
@@ -219,6 +220,13 @@ export class Renderer {
 
   stepPlayerStateWithGravity(state: PlayerState, fixedDtSeconds: number): PlayerState {
     return stepWorldPlayerStateWithGravity(this.world, state, fixedDtSeconds);
+  }
+
+  respawnPlayerStateAtSpawnIfEmbeddedInSolid(
+    state: PlayerState,
+    spawn: PlayerSpawnPoint | null
+  ): PlayerState {
+    return respawnWorldPlayerStateAtSpawnIfEmbeddedInSolid(this.world, state, spawn);
   }
 
   getResidentChunkBounds(): ChunkBounds | null {

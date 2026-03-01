@@ -16,6 +16,7 @@ import {
   getPlayerAabb,
   integratePlayerState,
   movePlayerStateWithCollisions,
+  respawnPlayerStateAtSpawnIfEmbeddedInSolid,
   stepPlayerState,
   stepPlayerStateWithGravity
 } from './playerState';
@@ -62,6 +63,63 @@ describe('playerState', () => {
       facing: 'right'
     });
     expect(getPlayerAabb(state)).toEqual(spawn!.aabb);
+  });
+
+  it('respawns from the latest resolved spawn when debug edits embed the player in solid tiles', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -3, -6, 3, 3, 0);
+    setTiles(world, -1, 0, 1, 0, 3);
+
+    const spawn = findPlayerSpawnPoint(world, {
+      width: DEFAULT_PLAYER_WIDTH,
+      height: DEFAULT_PLAYER_HEIGHT,
+      maxHorizontalOffsetTiles: 2,
+      maxVerticalOffsetTiles: 2
+    });
+
+    expect(spawn).not.toBeNull();
+
+    const embedded = createPlayerState({
+      position: { x: 8, y: 0 },
+      velocity: { x: -24, y: 60 },
+      grounded: false,
+      facing: 'left'
+    });
+    world.setTile(0, -1, 3);
+
+    const recovered = respawnPlayerStateAtSpawnIfEmbeddedInSolid(world, embedded, spawn);
+
+    expect(recovered).toEqual({
+      position: { x: 8, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: DEFAULT_PLAYER_WIDTH, height: DEFAULT_PLAYER_HEIGHT },
+      grounded: true,
+      facing: 'left'
+    });
+  });
+
+  it('leaves the player state unchanged when no solid overlap or fallback spawn exists', () => {
+    const world = new TileWorld(0);
+    const clearState = createPlayerState({
+      position: { x: 8, y: -16 },
+      velocity: { x: 18, y: 0 },
+      grounded: false,
+      facing: 'left'
+    });
+
+    expect(respawnPlayerStateAtSpawnIfEmbeddedInSolid(world, clearState, null)).toBe(clearState);
+
+    world.setTile(0, -1, 3);
+
+    const embeddedState = createPlayerState({
+      position: { x: 8, y: 0 },
+      velocity: { x: 18, y: 0 },
+      grounded: false,
+      facing: 'left'
+    });
+
+    expect(respawnPlayerStateAtSpawnIfEmbeddedInSolid(world, embeddedState, null)).toBe(embeddedState);
   });
 
   it('derives a collision AABB from feet-centered position and explicit size', () => {

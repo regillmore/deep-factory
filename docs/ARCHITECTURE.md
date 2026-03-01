@@ -17,13 +17,13 @@
 - fixed update step (`60hz`) for deterministic simulation hooks,
 - render interpolation alpha (currently unused but available).
 
-Current update phase applies input-driven camera movement, debug tile-edit actions, spawn refresh after tile edits, and standalone player stepping through shared movement, gravity, and collision helpers with neutral movement intent for now.
+Current update phase applies input-driven camera movement, debug tile-edit actions, spawn refresh after tile edits, embedded-player respawn recovery from the latest resolved spawn when edits trap the current AABB in solid terrain, and standalone player stepping through shared movement, gravity, and collision helpers with neutral movement intent for now.
 
 ## Player state foundation
 
 - Standalone player simulation state currently lives in `src/world/playerState.ts`.
 - `PlayerState.position` uses bottom-center world coordinates so spawn placement, collision AABB derivation, and future controller updates share one anchor convention.
-- Shared helpers can initialize player state directly from spawn-search output, advance position from velocity on fixed steps, resolve normalized movement intent into grounded walk acceleration or braking plus jump impulse, apply gravity before movement, and resolve x-then-y collision sweeps plus post-move grounded support without mixing render interpolation into the source-of-truth state.
+- Shared helpers can initialize player state directly from spawn-search output, advance position from velocity on fixed steps, recover embedded state by respawning from the latest resolved spawn, resolve normalized movement intent into grounded walk acceleration or braking plus jump impulse, apply gravity before movement, and resolve x-then-y collision sweeps plus post-move grounded support without mixing render interpolation into the source-of-truth state.
 - `src/main.ts` owns the current standalone-player orchestration: it seeds the player from the resolved spawn once, advances that state in fixed updates via a narrow renderer world-query wrapper, and forwards the result to a temporary DOM overlay until entity rendering exists.
 
 ## Render pipeline

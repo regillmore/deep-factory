@@ -34,7 +34,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - World collision helpers expose metadata-backed `isSolidAt` tile queries, world-space solid-overlap checks for half-open AABBs, and single-axis AABB sweep results that clamp movement to the first blocking tile.
 - Player spawn queries can scan near a chosen origin tile for grounded standing headroom and return the resolved standing AABB plus supporting solid tile.
 - Standalone player-state helpers track feet-centered `position`, `velocity`, explicit `size`, `grounded`, and `facing`, can seed that state from spawn output, derive the collision AABB plus one-step fixed-update integration from the same model, can resolve normalized movement intent into grounded walk acceleration or braking plus a grounded jump impulse, can advance through x-then-y collision sweeps that zero blocked velocity and recompute grounded support after movement, and can apply gravity plus fall-speed clamping before the shared collision step.
-- The fixed update loop now keeps a spawned standalone player state alive through that shared step helper with neutral movement intent until controller bindings exist, so removing support tiles in debug edit mode still causes the player to fall and re-collide against terrain.
+- The fixed update loop now keeps a spawned standalone player state alive through that shared step helper with neutral movement intent until controller bindings exist, so removing support tiles in debug edit mode still causes the player to fall and re-collide against terrain, while debug edits that trap the player inside solid tiles respawn it from the latest resolved valid spawn.
 
 ## Hot-Path Lookup Strategy
 

@@ -11,7 +11,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Collision and player foundation
 
 7. Add mixed-device player input bindings and camera follow rules without removing the existing debug-edit controls.
-29. Add a recovery path that respawns the standalone player from the latest resolved spawn when debug edits leave its AABB embedded in solid tiles.
 
 ## Liquid rendering
 
@@ -54,3 +53,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 28. Surface live standalone player-state telemetry (`position`, `velocity`, `grounded`, `facing`) in the debug overlay once movement is wired.
 30. Surface standalone player collision-contact telemetry (`support`, `wall`, `ceiling`) in the debug overlay after live player-state telemetry lands.
+31. Surface standalone player auto-respawn events in the debug overlay when embedded-tile recovery triggers.

@@ -1,4 +1,4 @@
-import { sweepAabbAlongAxis, type SolidTileCollision, type WorldAabb } from './collision';
+import { doesAabbOverlapSolid, sweepAabbAlongAxis, type SolidTileCollision, type WorldAabb } from './collision';
 import { TILE_METADATA } from './tileMetadata';
 import type { TileMetadataRegistry } from './tileMetadata';
 import type { TileWorld } from './world';
@@ -203,6 +203,19 @@ export const createPlayerStateFromSpawn = (
     size: buildSpawnSize(spawn.aabb),
     grounded: true
   });
+
+export const respawnPlayerStateAtSpawnIfEmbeddedInSolid = (
+  world: TileWorld,
+  state: PlayerState,
+  spawn: PlayerSpawnPlacement | null,
+  registry: TileMetadataRegistry = TILE_METADATA
+): PlayerState => {
+  if (!doesAabbOverlapSolid(world, getPlayerAabb(state), registry) || spawn === null) {
+    return state;
+  }
+
+  return createPlayerStateFromSpawn(spawn, { facing: state.facing });
+};
 
 export const getPlayerAabb = (state: PlayerState): WorldAabb => {
   const halfWidth = state.size.width * 0.5;

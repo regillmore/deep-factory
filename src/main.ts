@@ -144,6 +144,14 @@ const bootstrap = async (): Promise<void> => {
     playerSpawnNeedsRefresh = false;
     if (standalonePlayerState === null && resolvedPlayerSpawn) {
       standalonePlayerState = createPlayerStateFromSpawn(resolvedPlayerSpawn);
+      return;
+    }
+
+    if (standalonePlayerState !== null) {
+      standalonePlayerState = renderer.respawnPlayerStateAtSpawnIfEmbeddedInSolid(
+        standalonePlayerState,
+        resolvedPlayerSpawn
+      );
     }
   };
 

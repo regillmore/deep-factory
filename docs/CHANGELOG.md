@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Add a recovery path that respawns the standalone player from the latest resolved spawn when debug edits leave its AABB embedded in solid tiles.
+- Changes: Updated [src/world/playerState.ts](../src/world/playerState.ts) with an embedded-solid recovery helper, wired [src/gl/renderer.ts](../src/gl/renderer.ts) and [src/main.ts](../src/main.ts) to reuse the latest resolved spawn during post-edit recovery, expanded [src/world/playerState.test.ts](../src/world/playerState.test.ts) with focused respawn coverage, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `npx vitest run src/gl/renderer.test.ts src/world/playerState.test.ts src/world/collision.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Implement intent-driven standalone player walking and jumping on top of the shared fixed-step gravity and collision helpers.
 - Changes: Updated [src/world/playerState.ts](../src/world/playerState.ts) with a movement-intent step helper that resolves grounded walk acceleration or braking, jump impulse, gravity, and collision response through the existing shared sweep path while preserving the gravity-only wrapper behavior, expanded [src/world/playerState.test.ts](../src/world/playerState.test.ts) with focused walk, wall-block, jump, airborne re-jump, braking, and option-validation coverage, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `npx vitest run src/world/playerState.test.ts src/world/collision.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
