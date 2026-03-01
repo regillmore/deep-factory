@@ -921,6 +921,19 @@ const bootstrap = async (): Promise<void> => {
             liquidKind: hoveredDebugTileStatus?.liquidKind ?? null
           }
         : null;
+      const debugOverlayPinnedInspect = pinnedDebugTileStatus
+        ? {
+            tile: {
+              x: pinnedDebugTileStatus.tileX,
+              y: pinnedDebugTileStatus.tileY
+            },
+            tileId: pinnedDebugTileStatus.tileId,
+            tileLabel: pinnedDebugTileStatus.tileLabel,
+            solid: pinnedDebugTileStatus.solid,
+            blocksLight: pinnedDebugTileStatus.blocksLight,
+            liquidKind: pinnedDebugTileStatus.liquidKind
+          }
+        : null;
       renderer.resize();
       renderer.render(camera);
       hoveredTileCursor.update(camera, {
@@ -947,7 +960,10 @@ const bootstrap = async (): Promise<void> => {
         pinnedTile: pinnedDebugTileStatus,
         desktopInspectPinArmed: input.getArmedDesktopDebugInspectPin()
       });
-      debug.update(frameDtMs, renderer.telemetry, debugOverlayPointerInspect);
+      debug.update(frameDtMs, renderer.telemetry, {
+        pointer: debugOverlayPointerInspect,
+        pinned: debugOverlayPinnedInspect
+      });
     }
   );
 

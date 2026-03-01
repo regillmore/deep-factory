@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Show pinned tile inspect metadata in the debug overlay when a tile is pinned from the compact status strip.
+1. Show active one-shot tool anchor and endpoint tile coordinates in the compact status strip while preview overlays are armed.
 
 ## Authored asset pipeline
 

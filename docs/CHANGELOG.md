@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Show pinned tile inspect metadata in the debug overlay when a tile is pinned from the compact status strip.
+- Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) to render a separate pinned inspect line alongside the existing pointer line, updated [src/main.ts](../src/main.ts) to pass pinned tile metadata into the overlay payload, added regression coverage in [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Show hovered tile gameplay flags in the debug overlay pointer inspect line.
 - Changes: Updated [src/main.ts](../src/main.ts) to pass hovered tile gameplay flags into the overlay payload, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) to render solid, light-blocking, and liquid state alongside the existing hovered tile inspect data, added regression coverage in [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
