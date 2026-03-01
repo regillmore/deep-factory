@@ -39,5 +39,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('Cv:1000,502');
     expect(text).toContain('W:-32.13,16.50');
     expect(text).toContain('T:-3,1');
+    expect(text).toContain('Ch:-1,0');
+    expect(text).toContain('L:29,1');
   });
 });

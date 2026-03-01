@@ -1,3 +1,5 @@
+import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
+
 export interface DebugOverlayStats {
   renderedChunks: number;
   drawCalls: number;
@@ -42,12 +44,16 @@ export const formatDebugOverlayText = (
     return `${summaryLine}\nPtr: n/a`;
   }
 
+  const { chunkX, chunkY } = worldToChunkCoord(pointerInspect.tile.x, pointerInspect.tile.y);
+  const { localX, localY } = worldToLocalTile(pointerInspect.tile.x, pointerInspect.tile.y);
   const pointerLine =
     `Ptr(${pointerInspect.pointerType}) ` +
     `C:${formatInt(pointerInspect.client.x)},${formatInt(pointerInspect.client.y)} | ` +
     `Cv:${formatInt(pointerInspect.canvas.x)},${formatInt(pointerInspect.canvas.y)} | ` +
     `W:${formatFloat(pointerInspect.world.x, 2)},${formatFloat(pointerInspect.world.y, 2)} | ` +
-    `T:${pointerInspect.tile.x},${pointerInspect.tile.y}`;
+    `T:${pointerInspect.tile.x},${pointerInspect.tile.y} | ` +
+    `Ch:${chunkX},${chunkY} | ` +
+    `L:${localX},${localY}`;
 
   return `${summaryLine}\n${pointerLine}`;
 };

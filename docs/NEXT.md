@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Show chunk plus chunk-local tile coordinates in the debug overlay pointer inspect line so the overlay matches the compact status strip readout.
+1. Show hovered tile name plus tile ID in the debug overlay pointer inspect line so it stays useful when the compact status strip is collapsed.
 
 ## Authored asset pipeline
 
