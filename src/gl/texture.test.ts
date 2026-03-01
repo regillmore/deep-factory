@@ -5,7 +5,7 @@ import { loadAtlasImageSource } from './texture';
 describe('loadAtlasImageSource', () => {
   it('returns a decoded authored atlas image when fetch and bitmap decode succeed', async () => {
     const atlasBlob = new Blob(['atlas']);
-    const authoredBitmap = { kind: 'bitmap' } as unknown as ImageBitmap;
+    const authoredBitmap = { kind: 'bitmap', width: 96, height: 64 } as unknown as ImageBitmap;
     const fetchImpl = vi.fn(async () => ({
       ok: true,
       status: 200,
@@ -28,14 +28,20 @@ describe('loadAtlasImageSource', () => {
     expect(result).toEqual({
       imageSource: authoredBitmap,
       sourceKind: 'authored',
-      sourceUrl: '/atlas/tile-atlas.png'
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
     });
     expect(fetchImpl).toHaveBeenCalledWith('/atlas/tile-atlas.png');
     expect(loadImage).not.toHaveBeenCalled();
   });
 
   it('falls back to the generated placeholder atlas when the authored atlas fetch fails', async () => {
-    const fallbackImage = { kind: 'image' } as unknown as HTMLImageElement;
+    const fallbackImage = {
+      kind: 'image',
+      naturalWidth: 64,
+      naturalHeight: 64
+    } as unknown as HTMLImageElement;
     const fetchImpl = vi.fn(async () => ({
       ok: false,
       status: 404,
@@ -62,7 +68,9 @@ describe('loadAtlasImageSource', () => {
     expect(result).toEqual({
       imageSource: fallbackImage,
       sourceKind: 'placeholder',
-      sourceUrl: 'data:image/png;base64,placeholder'
+      sourceUrl: 'data:image/png;base64,placeholder',
+      width: 64,
+      height: 64
     });
     expect(buildFallbackAtlas).toHaveBeenCalledTimes(1);
     expect(loadImage).toHaveBeenCalledTimes(1);
@@ -70,7 +78,11 @@ describe('loadAtlasImageSource', () => {
 
   it('falls back to the generated placeholder atlas when bitmap decode throws', async () => {
     const atlasBlob = new Blob(['atlas']);
-    const fallbackImage = { kind: 'image' } as unknown as HTMLImageElement;
+    const fallbackImage = {
+      kind: 'image',
+      naturalWidth: 64,
+      naturalHeight: 64
+    } as unknown as HTMLImageElement;
     const fetchImpl = vi.fn(async () => ({
       ok: true,
       status: 200,
@@ -92,7 +104,9 @@ describe('loadAtlasImageSource', () => {
     expect(result).toEqual({
       imageSource: fallbackImage,
       sourceKind: 'placeholder',
-      sourceUrl: 'data:image/png;base64,placeholder'
+      sourceUrl: 'data:image/png;base64,placeholder',
+      width: 64,
+      height: 64
     });
     expect(decodeBitmap).toHaveBeenCalledTimes(1);
     expect(loadImage).toHaveBeenCalledTimes(1);

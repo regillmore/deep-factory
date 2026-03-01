@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Surface loaded atlas dimensions in debug-visible telemetry so authored atlas revisions can be validated in-runtime.
+- Changes: Updated [src/gl/texture.ts](../src/gl/texture.ts) to capture atlas image dimensions for authored and placeholder loads, wired [src/gl/renderer.ts](../src/gl/renderer.ts) telemetry to retain those dimensions, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) to render atlas size alongside the source kind, added focused coverage in [src/gl/texture.test.ts](../src/gl/texture.test.ts), [src/gl/renderer.test.ts](../src/gl/renderer.test.ts), and [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/gl/texture.test.ts src/gl/renderer.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Add a player spawn-point finder that locates grounded standing headroom near the world origin using the collision helpers.
 - Changes: Added [src/world/playerSpawn.ts](../src/world/playerSpawn.ts) with a collision-backed spawn search that returns a standing AABB plus support tile near a chosen origin, added focused coverage in [src/world/playerSpawn.test.ts](../src/world/playerSpawn.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/world/playerSpawn.test.ts src/world/collision.test.ts src/world/world.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

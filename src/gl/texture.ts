@@ -2,6 +2,8 @@ export interface AtlasImageLoadResult {
   imageSource: TexImageSource;
   sourceKind: 'authored' | 'placeholder';
   sourceUrl: string;
+  width: number;
+  height: number;
 }
 
 interface AtlasImageLoaderOptions {
@@ -29,6 +31,28 @@ const getDefaultDecodeBitmap = (): typeof createImageBitmap | null => {
   return typeof createImageBitmap === 'function' ? createImageBitmap.bind(globalThis) : null;
 };
 
+const getImageSourceDimensions = (
+  imageSource: TexImageSource
+): { width: number; height: number } => {
+  const dimensionSource = imageSource as {
+    width?: number;
+    height?: number;
+    naturalWidth?: number;
+    naturalHeight?: number;
+  };
+  const width = dimensionSource.naturalWidth ?? dimensionSource.width;
+  const height = dimensionSource.naturalHeight ?? dimensionSource.height;
+
+  if (!Number.isFinite(width) || width === undefined || width <= 0) {
+    throw new Error('Atlas image source width must be a positive finite number');
+  }
+  if (!Number.isFinite(height) || height === undefined || height <= 0) {
+    throw new Error('Atlas image source height must be a positive finite number');
+  }
+
+  return { width, height };
+};
+
 export const loadAtlasImageSource = async (
   atlasAssetUrl: string,
   options: AtlasImageLoaderOptions = {}
@@ -45,10 +69,13 @@ export const loadAtlasImageSource = async (
 
       const atlasBlob = await response.blob();
       const imageSource = await decodeBitmap(atlasBlob);
+      const { width, height } = getImageSourceDimensions(imageSource);
       return {
         imageSource,
         sourceKind: 'authored',
-        sourceUrl: atlasAssetUrl
+        sourceUrl: atlasAssetUrl,
+        width,
+        height
       };
     } catch {
       // Fallback to the generated placeholder atlas until an authored asset exists.
@@ -57,10 +84,13 @@ export const loadAtlasImageSource = async (
 
   const placeholderSourceUrl = (options.buildFallbackAtlas ?? buildPlaceholderAtlas)();
   const imageSource = await (options.loadImage ?? loadImageElement)(placeholderSourceUrl);
+  const { width, height } = getImageSourceDimensions(imageSource);
   return {
     imageSource,
     sourceKind: 'placeholder',
-    sourceUrl: placeholderSourceUrl
+    sourceUrl: placeholderSourceUrl,
+    width,
+    height
   };
 };
 

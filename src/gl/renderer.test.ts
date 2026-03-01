@@ -43,6 +43,8 @@ describe('Renderer atlas telemetry', () => {
     const renderer = new Renderer(createMockCanvas(createMockGl()));
 
     expect(renderer.telemetry.atlasSourceKind).toBe('pending');
+    expect(renderer.telemetry.atlasWidth).toBeNull();
+    expect(renderer.telemetry.atlasHeight).toBeNull();
   });
 
   it('records an authored atlas load in telemetry during initialization', async () => {
@@ -52,7 +54,9 @@ describe('Renderer atlas telemetry', () => {
     loadAtlasImageSource.mockResolvedValue({
       imageSource: authoredBitmap,
       sourceKind: 'authored',
-      sourceUrl: '/atlas/tile-atlas.png'
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
     });
 
     await renderer.initialize();
@@ -60,6 +64,8 @@ describe('Renderer atlas telemetry', () => {
     expect(loadAtlasImageSource).toHaveBeenCalledWith('/atlas/tile-atlas.png');
     expect(createTextureFromImageSource).toHaveBeenCalledWith(gl, authoredBitmap);
     expect(renderer.telemetry.atlasSourceKind).toBe('authored');
+    expect(renderer.telemetry.atlasWidth).toBe(96);
+    expect(renderer.telemetry.atlasHeight).toBe(64);
   });
 
   it('records placeholder fallback atlas loads in telemetry during initialization', async () => {
@@ -69,12 +75,16 @@ describe('Renderer atlas telemetry', () => {
     loadAtlasImageSource.mockResolvedValue({
       imageSource: placeholderImage,
       sourceKind: 'placeholder',
-      sourceUrl: 'data:image/png;base64,placeholder'
+      sourceUrl: 'data:image/png;base64,placeholder',
+      width: 64,
+      height: 64
     });
 
     await renderer.initialize();
 
     expect(createTextureFromImageSource).toHaveBeenCalledWith(gl, placeholderImage);
     expect(renderer.telemetry.atlasSourceKind).toBe('placeholder');
+    expect(renderer.telemetry.atlasWidth).toBe(64);
+    expect(renderer.telemetry.atlasHeight).toBe(64);
   });
 });

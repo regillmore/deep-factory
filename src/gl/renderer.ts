@@ -36,6 +36,8 @@ interface MeshBuildRequest {
 
 export interface RenderTelemetry {
   atlasSourceKind: AtlasImageLoadResult['sourceKind'] | 'pending';
+  atlasWidth: number | null;
+  atlasHeight: number | null;
   renderedChunks: number;
   drawCalls: number;
   drawCallBudget: number;
@@ -67,6 +69,8 @@ export class Renderer {
 
   readonly telemetry: RenderTelemetry = {
     atlasSourceKind: 'pending',
+    atlasWidth: null,
+    atlasHeight: null,
     renderedChunks: 0,
     drawCalls: 0,
     drawCallBudget: DRAW_CALL_BUDGET,
@@ -125,6 +129,8 @@ export class Renderer {
     const atlas = await loadAtlasImageSource(AUTHORED_TILE_ATLAS_URL);
     this.texture = createTextureFromImageSource(this.gl, atlas.imageSource);
     this.telemetry.atlasSourceKind = atlas.sourceKind;
+    this.telemetry.atlasWidth = atlas.width;
+    this.telemetry.atlasHeight = atlas.height;
   }
 
   resize(): void {

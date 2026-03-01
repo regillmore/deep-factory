@@ -4,6 +4,8 @@ import { formatDebugOverlayText, type DebugOverlayStats } from './debugOverlay';
 
 const baseStats: DebugOverlayStats = {
   atlasSourceKind: 'authored',
+  atlasWidth: 96,
+  atlasHeight: 64,
   renderedChunks: 4,
   drawCalls: 4,
   drawCallBudget: 256,
@@ -22,15 +24,30 @@ describe('formatDebugOverlayText', () => {
     const text = formatDebugOverlayText(60, baseStats, null);
 
     expect(text).toContain('FPS: 60.0');
-    expect(text).toContain('\nAtlas: authored');
+    expect(text).toContain('\nAtlas: authored | 96x64');
     expect(text).toContain('Draws: 4/256 (OK)');
     expect(text).toContain('\nPtr: n/a');
   });
 
   it('shows when the renderer is using the placeholder atlas fallback', () => {
-    const text = formatDebugOverlayText(60, { ...baseStats, atlasSourceKind: 'placeholder' }, null);
+    const text = formatDebugOverlayText(
+      60,
+      { ...baseStats, atlasSourceKind: 'placeholder', atlasWidth: 64, atlasHeight: 64 },
+      null
+    );
 
-    expect(text).toContain('\nAtlas: placeholder');
+    expect(text).toContain('\nAtlas: placeholder | 64x64');
+  });
+
+  it('omits atlas dimensions while atlas initialization is still pending', () => {
+    const text = formatDebugOverlayText(
+      60,
+      { ...baseStats, atlasSourceKind: 'pending', atlasWidth: null, atlasHeight: null },
+      null
+    );
+
+    expect(text).toContain('\nAtlas: pending');
+    expect(text).not.toContain('pending |');
   });
 
   it('formats pointer client/canvas/world/tile readout with tile identity and gameplay flags', () => {

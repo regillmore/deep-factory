@@ -3,6 +3,8 @@ import type { TileLiquidKind } from '../world/tileMetadata';
 
 export interface DebugOverlayStats {
   atlasSourceKind: 'pending' | 'authored' | 'placeholder';
+  atlasWidth: number | null;
+  atlasHeight: number | null;
   renderedChunks: number;
   drawCalls: number;
   drawCallBudget: number;
@@ -46,6 +48,14 @@ export interface DebugOverlayInspectState {
 const formatFloat = (value: number, digits: number): string => value.toFixed(digits);
 const formatInt = (value: number): string => Math.round(value).toString();
 const formatGameplayFlag = (value: boolean): string => (value ? 'on' : 'off');
+const formatAtlasLine = (stats: DebugOverlayStats): string => {
+  if (stats.atlasWidth === null || stats.atlasHeight === null) {
+    return `Atlas: ${stats.atlasSourceKind}`;
+  }
+
+  return `Atlas: ${stats.atlasSourceKind} | ${stats.atlasWidth}x${stats.atlasHeight}`;
+};
+
 const formatTileIdentity = (tileInspect: DebugOverlayTileInspect): string | null => {
   if (tileInspect.tileLabel && typeof tileInspect.tileId === 'number') {
     return `Tile:${tileInspect.tileLabel} (#${tileInspect.tileId})`;
@@ -97,7 +107,7 @@ export const formatDebugOverlayText = (
 
   const pointerInspect = inspect?.pointer ?? null;
   const pinnedInspect = inspect?.pinned ?? null;
-  const lines = [summaryLine, `Atlas: ${stats.atlasSourceKind}`];
+  const lines = [summaryLine, formatAtlasLine(stats)];
 
   if (!pointerInspect) {
     lines.push('Ptr: n/a');

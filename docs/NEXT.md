@@ -7,7 +7,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 1. Add an authored atlas image at `/atlas/tile-atlas.png` and verify the runtime loader replaces the placeholder fallback when the asset is present.
 2. Update tile render metadata validation so authored atlas regions are the source of truth instead of placeholder `4x4` slot assumptions.
 3. Add optional tile animation metadata (`frames`, `frameDurationMs`) without changing the static-tile path.
-4. Surface loaded atlas dimensions in debug-visible telemetry so authored atlas revisions can be validated in-runtime.
 
 ## Collision and player foundation
 
@@ -51,3 +50,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 25. Add an app shell with explicit `boot`, `main menu`, and `in-world` states.
 26. Move debug overlay visibility behind shell/UI toggles instead of always-on bootstrap wiring.
+27. Add runtime atlas-bounds validation that warns when tile `render.uvRect` metadata falls outside the loaded atlas dimensions.
