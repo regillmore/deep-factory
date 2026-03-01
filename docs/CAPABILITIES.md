@@ -6,7 +6,7 @@ This document describes the current project state. Unlike the changelog, it shou
 
 - WebGL2 renderer with shader utilities, buffer helpers, texture loading, and DPR-aware resize.
 - Renderer atlas initialization ships with an authored atlas at `public/atlas/tile-atlas.png` exposed as `/atlas/tile-atlas.png`, then falls back to the generated placeholder atlas if that asset cannot be fetched or decoded.
-- Renderer boot validates direct tile `render.uvRect` metadata against the loaded atlas dimensions, logs a warning when any static or animated sub-rect falls outside the source image, and surfaces the warning count plus first warning in debug telemetry.
+- Renderer boot validates authored atlas-index regions plus direct tile `render.uvRect` metadata against the loaded atlas dimensions, logs a warning when any static, animated, or terrain-variant source falls outside the source image, and surfaces the warning count plus first warning in debug telemetry.
 - Renderer draws the standalone player through a facing-aware world-space placeholder pass instead of a client-space DOM marker.
 - Orthographic camera with anchored zoom, pointer pan controls, and standalone-player follow that tracks the player body center while preserving manual inspection offsets.
 - Fixed-step game loop (`60hz`) with separate render interpolation alpha.
@@ -27,10 +27,10 @@ This document describes the current project state. Unlike the changelog, it shou
 - Tile definitions live in validated JSON metadata at `src/world/tileMetadata.json`.
 - Tile metadata covers render data, terrain autotile data, connectivity groups, material tags, and gameplay flags such as `solid`, `blocksLight`, and `liquidKind`.
 - Render metadata can optionally define animated frame sequences through `frames` plus `frameDurationMs`, while the current meshing path continues to use the base static `atlasIndex` or `uvRect` as frame-zero fallback.
-- Non-autotile tiles resolve render UVs through explicit metadata (`atlasIndex` or normalized `uvRect`) instead of raw tile ID fallback.
+- Atlas-backed render metadata resolves through explicit authored atlas region definitions in `src/world/authoredAtlasLayout.ts`, while direct sub-rect metadata can still use normalized `uvRect` values.
 - Terrain autotile adjacency supports cross-chunk 8-neighbor sampling plus normalization helpers.
 - Terrain autotile connectivity uses metadata-driven connectivity groups first, then shared material tags for seam compatibility.
-- Placeholder terrain autotile layout still uses a `4x4` atlas mapping documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Placeholder terrain autotile layout still uses 16 cardinal-mask variants documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), but those atlas indices now resolve through the authored atlas region layout.
 
 ## Collision Foundations
 
@@ -46,7 +46,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Tile render metadata compiles into dense static UV and terrain variant atlas-index lookup tables.
 - Optional animated render metadata compiles into dense per-tile frame start, frame count, and frame duration tables plus a flattened UV-frame list for later renderer-time sampling.
 - Placeholder terrain autotile resolution uses precomputed lookup tables for normalized adjacency masks and raw adjacency masks.
-- Atlas-slot UV rect objects are precomputed and reused by atlas-index and terrain-autotile resolution paths.
+- Authored-atlas region UV rect objects are precomputed and reused by atlas-index and terrain-autotile resolution paths.
 
 ## Picking, Debugging, And Inspection
 

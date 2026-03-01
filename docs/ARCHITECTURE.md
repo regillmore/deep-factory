@@ -6,8 +6,8 @@
 - `src/core/`: camera math, camera-follow offset helpers, and fixed timestep loop.
 - `src/input/`: input abstraction for keyboard, mouse, touch/pinch, and standalone player intent extraction.
 - `src/gl/`: low-level WebGL2 utilities, world rendering orchestration, and the standalone player placeholder draw pass.
-- `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, mesh construction.
-- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups; renderer boot now validates direct `uvRect` metadata against the loaded atlas dimensions, while authored-atlas source-of-truth validation for slot-based regions is still a later task).
+- `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, mesh construction, plus authored atlas-region layout data.
+- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups backed by `src/world/authoredAtlasLayout.ts`; renderer boot now validates authored atlas-index sources and direct `uvRect` metadata against the loaded atlas dimensions).
 - `src/ui/`: debug DOM overlays, spawn marker, and touch-only player controls.
 
 ## Update loop
@@ -32,8 +32,9 @@ Renderer initialization first attempts to fetch and decode the committed authore
 `public/atlas/tile-atlas.png` at runtime as `/atlas/tile-atlas.png`.
 If that asset is unavailable or decoding fails, initialization falls back to the generated placeholder atlas so the
 existing tile rendering path still boots. After the atlas is loaded, renderer startup validates direct tile
-`render.uvRect` metadata against the runtime atlas dimensions, stores warning telemetry, and emits a console warning
-if any static or animated sub-rect falls outside the source image.
+`render.uvRect` metadata plus atlas-index-backed render and terrain sources against the runtime atlas dimensions,
+stores warning telemetry, and emits a console warning if any static, animated, or terrain variant source falls
+outside the source image.
 
 1. Ensure canvas backbuffer matches CSS size × `devicePixelRatio`.
 2. Build camera matrix (`world -> clip`) for orthographic projection.
@@ -51,7 +52,7 @@ if any static or animated sub-rect falls outside the source image.
 - For each non-zero tile:
   - emits two triangles (6 vertices) for one quad,
   - writes per-vertex world position and UV.
-- UVs are resolved through tile metadata (terrain autotile variant maps or non-autotile static render metadata), then mapped into the fixed placeholder atlas grid (`4x4` currently).
+- UVs are resolved through tile metadata (terrain autotile variant maps or non-autotile static render metadata), with atlas indices translated through the authored atlas region layout instead of a synthetic grid cache.
 - Optional animated render frames compile beside the static render lookup, but the current mesher still bakes the static frame only until render-time animation lands.
 - Output is uploaded once per chunk as static vertex data.
 
@@ -63,10 +64,11 @@ Terrain autotile placeholder variants currently occupy the full `4x4` atlas and 
 variant index derived from the normalized cardinal adjacency mask (`N/E/S/W` bits mapped to `1/2/4/8`).
 Diagonal neighbors are sampled and normalized for corner-gating, but placeholder UV selection collapses to the
 16 cardinal combinations for now. The current mapping is defined in `src/world/tileMetadata.json` and validated at
-startup by `src/world/tileMetadata.ts`.
+startup by `src/world/tileMetadata.ts`, while the atlas indices themselves resolve through the explicit authored
+region list in `src/world/authoredAtlasLayout.ts`.
 
 Non-autotile tiles also resolve UVs through the same metadata registry via explicit render metadata:
-- `render.atlasIndex`: atlas slot index in the placeholder `4x4` grid.
+- `render.atlasIndex`: authored atlas region index.
 - `render.uvRect`: normalized UV rectangle (`u0/v0/u1/v1`) for direct sub-rect mapping.
 
 | Atlas row | Variant indices | Cardinal mask combinations |

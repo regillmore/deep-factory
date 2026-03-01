@@ -9,7 +9,10 @@ describe('collectAtlasUvRectBoundsWarnings', () => {
       {
         id: 1,
         name: 'stone',
-        render: { atlasIndex: 0 }
+        render: { atlasIndex: 0 },
+        terrainAutotile: {
+          placeholderVariantAtlasByCardinalMask: Array.from({ length: 16 }, (_, index) => index)
+        }
       },
       {
         id: 2,
@@ -26,6 +29,37 @@ describe('collectAtlasUvRectBoundsWarnings', () => {
     ];
 
     expect(collectAtlasUvRectBoundsWarnings(tiles, 96, 64)).toEqual([]);
+  });
+
+  it('reports authored atlas-index sources when the loaded atlas is smaller than the authored layout', () => {
+    const tiles: TileMetadataEntry[] = [
+      {
+        id: 3,
+        name: 'brick',
+        render: {
+          atlasIndex: 15,
+          frames: [{ atlasIndex: 15 }],
+          frameDurationMs: 120
+        }
+      },
+      {
+        id: 4,
+        name: 'ground',
+        terrainAutotile: {
+          placeholderVariantAtlasByCardinalMask: Array.from({ length: 16 }, (_, index) =>
+            index === 15 ? 15 : 0
+          )
+        }
+      }
+    ];
+
+    const warnings = collectAtlasUvRectBoundsWarnings(tiles, 48, 48);
+
+    expect(warnings).toHaveLength(3);
+    expect(warnings[0]?.sourcePath).toBe('render.atlasIndex');
+    expect(warnings[0]?.message).toContain('[48, 48]..[64, 64] outside atlas 48x48');
+    expect(warnings[1]?.sourcePath).toBe('render.frames[0].atlasIndex');
+    expect(warnings[2]?.sourcePath).toBe('terrainAutotile.placeholderVariantAtlasByCardinalMask[15]');
   });
 
   it('reports out-of-bounds static and animated uv rects with tile-specific source paths', () => {

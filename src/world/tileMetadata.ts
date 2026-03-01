@@ -3,7 +3,11 @@ import {
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK,
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
 } from './autotile';
-import { TILE_ATLAS_COLUMNS, TILE_ATLAS_ROWS } from './constants';
+import {
+  AUTHORED_ATLAS_REGION_COUNT,
+  AUTHORED_ATLAS_UV_RECTS,
+  getAuthoredAtlasRegionUvRect
+} from './authoredAtlasLayout';
 import rawTileMetadata from './tileMetadata.json';
 
 export interface TerrainAutotileTileMetadata {
@@ -116,20 +120,8 @@ const expectFiniteNumber = (value: unknown, label: string): number => {
   return value;
 };
 
-const ATLAS_TILE_CAPACITY = TILE_ATLAS_COLUMNS * TILE_ATLAS_ROWS;
-const ATLAS_INDEX_UV_RECT_CACHE: readonly TileUvRect[] = Array.from(
-  { length: ATLAS_TILE_CAPACITY },
-  (_, atlasIndex) => {
-    const col = atlasIndex % TILE_ATLAS_COLUMNS;
-    const row = Math.floor(atlasIndex / TILE_ATLAS_COLUMNS);
-    return {
-      u0: col / TILE_ATLAS_COLUMNS,
-      v0: row / TILE_ATLAS_ROWS,
-      u1: (col + 1) / TILE_ATLAS_COLUMNS,
-      v1: (row + 1) / TILE_ATLAS_ROWS
-    };
-  }
-);
+const ATLAS_TILE_CAPACITY = AUTHORED_ATLAS_REGION_COUNT;
+const ATLAS_INDEX_UV_RECT_CACHE: readonly TileUvRect[] = AUTHORED_ATLAS_UV_RECTS;
 
 const expectAtlasIndex = (value: unknown, label: string): number => {
   const atlasIndex = expectInteger(value, label);
@@ -894,7 +886,12 @@ export const resolveTerrainAutotileAtlasIndexByRawAdjacencyMask = (
 ): number | null => getTerrainAutotileVariantAtlasIndexFromRawAdjacencyLookup(tileId, rawAdjacencyMask, registry);
 
 export const atlasIndexToUvRect = (atlasIndex: number): TileUvRect => {
-  return ATLAS_INDEX_UV_RECT_CACHE[atlasIndex]!;
+  const uvRect = getAuthoredAtlasRegionUvRect(atlasIndex);
+  if (!uvRect) {
+    throw new Error(`atlasIndexToUvRect expected atlas index between 0 and ${ATLAS_TILE_CAPACITY - 1}`);
+  }
+
+  return uvRect;
 };
 
 export const resolveTileRenderUvRect = (

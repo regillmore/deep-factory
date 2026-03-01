@@ -5,6 +5,7 @@ import {
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK,
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
 } from './autotile';
+import { AUTHORED_ATLAS_REGION_COUNT } from './authoredAtlasLayout';
 import {
   TILE_METADATA,
   areTerrainAutotileNeighborsConnected,
@@ -100,6 +101,8 @@ describe('tile metadata loader', () => {
   });
 
   it('rejects terrain variant atlas indices outside the atlas capacity', () => {
+    const invalidAtlasIndex = AUTHORED_ATLAS_REGION_COUNT;
+
     expect(() =>
       parseTileMetadataRegistry({
         tiles: [
@@ -109,13 +112,15 @@ describe('tile metadata loader', () => {
             terrainAutotile: {
               placeholderVariantAtlasByCardinalMask: Array.from(
                 { length: TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT },
-                (_, index) => (index === 5 ? 16 : index)
+                (_, index) => (index === 5 ? invalidAtlasIndex : index)
               )
             }
           }
         ]
       })
-    ).toThrowError(/atlas index must be between 0 and 15/);
+    ).toThrowError(
+      new RegExp(`atlas index must be between 0 and ${AUTHORED_ATLAS_REGION_COUNT - 1}`)
+    );
   });
 
   it('uses connectivity groups first and falls back to shared material tags for terrain adjacency', () => {

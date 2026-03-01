@@ -1,3 +1,4 @@
+import { getAuthoredAtlasRegion } from '../world/authoredAtlasLayout';
 import type { TileMetadataEntry, TileRenderFrameMetadata, TileUvRect } from '../world/tileMetadata';
 
 export interface AtlasUvRectBoundsWarning {
@@ -26,6 +27,20 @@ const toPixelRect = (
   y1: uvRect.v1 * atlasHeight
 });
 
+const authoredRegionToPixelRect = (atlasIndex: number): PixelRect | null => {
+  const region = getAuthoredAtlasRegion(atlasIndex);
+  if (!region) {
+    return null;
+  }
+
+  return {
+    x0: region.x,
+    y0: region.y,
+    x1: region.x + region.width,
+    y1: region.y + region.height
+  };
+};
+
 const isPixelRectWithinAtlasBounds = (
   pixelRect: PixelRect,
   atlasWidth: number,
@@ -47,11 +62,10 @@ const formatPixelRect = ({ x0, y0, x1, y1 }: PixelRect): string =>
 const buildWarning = (
   tile: TileMetadataEntry,
   sourcePath: string,
-  uvRect: TileUvRect,
+  pixelRect: PixelRect,
   atlasWidth: number,
   atlasHeight: number
 ): AtlasUvRectBoundsWarning => {
-  const pixelRect = toPixelRect(uvRect, atlasWidth, atlasHeight);
   const summary = `tile ${tile.id} "${tile.name}" ${sourcePath}`;
   return {
     tileId: tile.id,
@@ -63,6 +77,15 @@ const buildWarning = (
   };
 };
 
+const buildUvRectWarning = (
+  tile: TileMetadataEntry,
+  sourcePath: string,
+  uvRect: TileUvRect,
+  atlasWidth: number,
+  atlasHeight: number
+): AtlasUvRectBoundsWarning =>
+  buildWarning(tile, sourcePath, toPixelRect(uvRect, atlasWidth, atlasHeight), atlasWidth, atlasHeight);
+
 const collectFrameUvRectWarnings = (
   warnings: AtlasUvRectBoundsWarning[],
   tile: TileMetadataEntry,
@@ -71,16 +94,31 @@ const collectFrameUvRectWarnings = (
   atlasWidth: number,
   atlasHeight: number
 ): void => {
-  if (!frame.uvRect) {
+  if (frame.atlasIndex !== undefined) {
+    const pixelRect = authoredRegionToPixelRect(frame.atlasIndex);
+    if (!pixelRect) {
+      return;
+    }
+
+    if (isPixelRectWithinAtlasBounds(pixelRect, atlasWidth, atlasHeight)) {
+      return;
+    }
+
+    warnings.push(buildWarning(tile, sourcePath, pixelRect, atlasWidth, atlasHeight));
     return;
   }
 
-  const pixelRect = toPixelRect(frame.uvRect, atlasWidth, atlasHeight);
+  const uvRect = frame.uvRect;
+  if (!uvRect) {
+    return;
+  }
+
+  const pixelRect = toPixelRect(uvRect, atlasWidth, atlasHeight);
   if (isPixelRectWithinAtlasBounds(pixelRect, atlasWidth, atlasHeight)) {
     return;
   }
 
-  warnings.push(buildWarning(tile, sourcePath, frame.uvRect, atlasWidth, atlasHeight));
+  warnings.push(buildUvRectWarning(tile, sourcePath, uvRect, atlasWidth, atlasHeight));
 };
 
 export const collectAtlasUvRectBoundsWarnings = (
@@ -92,36 +130,65 @@ export const collectAtlasUvRectBoundsWarnings = (
 
   for (const tile of tiles) {
     const render = tile.render;
-    if (!render) {
-      continue;
-    }
-
-    collectFrameUvRectWarnings(
-      warnings,
-      tile,
-      render,
-      'render.uvRect',
-      atlasWidth,
-      atlasHeight
-    );
-
-    if (!render.frames) {
-      continue;
-    }
-
-    for (let frameIndex = 0; frameIndex < render.frames.length; frameIndex += 1) {
-      const frame = render.frames[frameIndex];
-      if (!frame) {
-        continue;
-      }
-
+    if (render) {
       collectFrameUvRectWarnings(
         warnings,
         tile,
-        frame,
-        `render.frames[${frameIndex}].uvRect`,
+        render,
+        render.atlasIndex !== undefined ? 'render.atlasIndex' : 'render.uvRect',
         atlasWidth,
         atlasHeight
+      );
+
+      if (render.frames) {
+        for (let frameIndex = 0; frameIndex < render.frames.length; frameIndex += 1) {
+          const frame = render.frames[frameIndex];
+          if (!frame) {
+            continue;
+          }
+
+          collectFrameUvRectWarnings(
+            warnings,
+            tile,
+            frame,
+            frame.atlasIndex !== undefined
+              ? `render.frames[${frameIndex}].atlasIndex`
+              : `render.frames[${frameIndex}].uvRect`,
+            atlasWidth,
+            atlasHeight
+          );
+        }
+      }
+    }
+
+    const terrainVariantMap = tile.terrainAutotile?.placeholderVariantAtlasByCardinalMask;
+    if (!terrainVariantMap) {
+      continue;
+    }
+
+    for (let cardinalMask = 0; cardinalMask < terrainVariantMap.length; cardinalMask += 1) {
+      const atlasIndex = terrainVariantMap[cardinalMask];
+      if (atlasIndex === undefined) {
+        continue;
+      }
+
+      const pixelRect = authoredRegionToPixelRect(atlasIndex);
+      if (!pixelRect) {
+        continue;
+      }
+
+      if (isPixelRectWithinAtlasBounds(pixelRect, atlasWidth, atlasHeight)) {
+        continue;
+      }
+
+      warnings.push(
+        buildWarning(
+          tile,
+          `terrainAutotile.placeholderVariantAtlasByCardinalMask[${cardinalMask}]`,
+          pixelRect,
+          atlasWidth,
+          atlasHeight
+        )
       );
     }
   }

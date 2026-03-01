@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { AUTOTILE_DIRECTION_BITS, normalizeAutotileAdjacencyMask } from './autotile';
 import { toTileIndex } from './chunkMath';
-import { TILE_ATLAS_COLUMNS, TILE_ATLAS_ROWS, CHUNK_SIZE, TILE_SIZE } from './constants';
+import { CHUNK_SIZE, TILE_SIZE } from './constants';
 import { buildChunkMesh } from './mesher';
-import { resolveTerrainAutotileUvRectByNormalizedAdjacencyMask } from './tileMetadata';
+import { atlasIndexToUvRect, resolveTerrainAutotileUvRectByNormalizedAdjacencyMask } from './tileMetadata';
 import type { Chunk } from './types';
 import { TileWorld } from './world';
 import type { TileNeighborhood } from './world';
@@ -18,16 +18,7 @@ const setChunkTile = (chunk: Chunk, localX: number, localY: number, tileId: numb
   chunk.tiles[toTileIndex(localX, localY)] = tileId;
 };
 
-const atlasUvRect = (atlasTileIndex: number) => {
-  const col = atlasTileIndex % TILE_ATLAS_COLUMNS;
-  const row = Math.floor(atlasTileIndex / TILE_ATLAS_COLUMNS);
-  return {
-    u0: col / TILE_ATLAS_COLUMNS,
-    v0: row / TILE_ATLAS_ROWS,
-    u1: (col + 1) / TILE_ATLAS_COLUMNS,
-    v1: (row + 1) / TILE_ATLAS_ROWS
-  };
-};
+const atlasUvRect = (atlasTileIndex: number) => atlasIndexToUvRect(atlasTileIndex);
 
 const resolveTerrainAutotileVariantIndexBitwiseBaseline = (normalizedMask: number): number => {
   let cardinalMask = 0;
