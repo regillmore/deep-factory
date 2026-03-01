@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Surface resident animated chunk mesh counts and recorded animated-quad totals in debug telemetry.
+- Changes: Updated [src/gl/renderer.ts](../src/gl/renderer.ts) plus [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so renderer telemetry now reports how many cached ready chunk meshes retain animated state and how many animated quads they record, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to surface that steady-state footprint alongside the existing per-frame UV upload line, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/gl/renderer.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Add debug telemetry for animated chunk UV uploads so renderer-side tile animation cost stays visible as authored frame counts grow.
 - Changes: Updated [src/gl/animatedChunkMesh.ts](../src/gl/animatedChunkMesh.ts) plus [src/gl/animatedChunkMesh.test.ts](../src/gl/animatedChunkMesh.test.ts) so animated-frame application reports how many quads changed, updated [src/gl/renderer.ts](../src/gl/renderer.ts) plus [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) to track per-frame animated chunk UV upload counts, changed-quad totals, and uploaded bytes, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to surface that telemetry in the debug overlay, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/gl/renderer.test.ts src/ui/debugOverlay.test.ts src/gl/animatedChunkMesh.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

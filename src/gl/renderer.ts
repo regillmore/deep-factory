@@ -68,6 +68,8 @@ export interface RenderTelemetry {
   atlasHeight: number | null;
   atlasValidationWarningCount: number | null;
   atlasValidationFirstWarning: string | null;
+  residentAnimatedChunkMeshes: number;
+  residentAnimatedChunkQuadCount: number;
   animatedChunkUvUploadCount: number;
   animatedChunkUvUploadQuadCount: number;
   animatedChunkUvUploadBytes: number;
@@ -123,6 +125,8 @@ export class Renderer {
     atlasHeight: null,
     atlasValidationWarningCount: null,
     atlasValidationFirstWarning: null,
+    residentAnimatedChunkMeshes: 0,
+    residentAnimatedChunkQuadCount: 0,
     animatedChunkUvUploadCount: 0,
     animatedChunkUvUploadQuadCount: 0,
     animatedChunkUvUploadBytes: 0,
@@ -391,6 +395,7 @@ export class Renderer {
     this.pruneStreamingCaches(retainBounds);
     this.telemetry.residentWorldChunks = this.world.getChunkCount();
     this.telemetry.cachedChunkMeshes = this.meshes.size;
+    this.updateAnimatedChunkResidencyTelemetry();
     this.telemetry.meshBuildQueueLength = this.meshBuildQueue.length;
   }
 
@@ -589,6 +594,23 @@ export class Renderer {
     gl.bindVertexArray(this.standalonePlayerVao);
     gl.drawArrays(gl.TRIANGLES, 0, STANDALONE_PLAYER_PLACEHOLDER_VERTEX_COUNT);
     this.telemetry.drawCalls += 1;
+  }
+
+  private updateAnimatedChunkResidencyTelemetry(): void {
+    let residentAnimatedChunkMeshes = 0;
+    let residentAnimatedChunkQuadCount = 0;
+
+    for (const cached of this.meshes.values()) {
+      if (cached.state !== 'ready' || !cached.mesh?.animatedMesh) {
+        continue;
+      }
+
+      residentAnimatedChunkMeshes += 1;
+      residentAnimatedChunkQuadCount += cached.mesh.animatedMesh.animatedTiles.length;
+    }
+
+    this.telemetry.residentAnimatedChunkMeshes = residentAnimatedChunkMeshes;
+    this.telemetry.residentAnimatedChunkQuadCount = residentAnimatedChunkQuadCount;
   }
 
   private pruneStreamingCaches(retainBounds: ChunkBounds): void {

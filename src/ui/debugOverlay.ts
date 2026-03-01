@@ -7,6 +7,8 @@ export interface DebugOverlayStats {
   atlasHeight: number | null;
   atlasValidationWarningCount: number | null;
   atlasValidationFirstWarning: string | null;
+  residentAnimatedChunkMeshes: number;
+  residentAnimatedChunkQuadCount: number;
   animatedChunkUvUploadCount: number;
   animatedChunkUvUploadQuadCount: number;
   animatedChunkUvUploadBytes: number;
@@ -152,6 +154,10 @@ const formatAnimatedChunkUvUploadLine = (stats: DebugOverlayStats): string =>
   `quads:${stats.animatedChunkUvUploadQuadCount} | ` +
   `bytes:${stats.animatedChunkUvUploadBytes}`;
 
+const formatAnimatedChunkResidencyLine = (stats: DebugOverlayStats): string =>
+  `AnimMesh: chunks:${stats.residentAnimatedChunkMeshes} | ` +
+  `quads:${stats.residentAnimatedChunkQuadCount}`;
+
 export const formatDebugOverlayText = (
   fps: number,
   stats: DebugOverlayStats,
@@ -177,6 +183,7 @@ export const formatDebugOverlayText = (
     formatAtlasValidationLine(stats),
     formatSpawnLine(spawn),
     formatPlayerLine(player),
+    formatAnimatedChunkResidencyLine(stats),
     formatAnimatedChunkUvUploadLine(stats)
   ];
 
