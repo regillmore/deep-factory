@@ -5,6 +5,7 @@ import { applyAnimatedChunkMeshFrameAtElapsedMs, createAnimatedChunkMeshState } 
 import {
   buildStandalonePlayerPlaceholderVertices,
   getStandalonePlayerPlaceholderFacingSign,
+  getStandalonePlayerPlaceholderPoseIndex,
   STANDALONE_PLAYER_PLACEHOLDER_VERTEX_COUNT,
   STANDALONE_PLAYER_PLACEHOLDER_VERTEX_FLOAT_COUNT
 } from './standalonePlayerPlaceholder';
@@ -108,6 +109,7 @@ export class Renderer {
   private uMatrix: WebGLUniformLocation;
   private uPlayerMatrix: WebGLUniformLocation;
   private uPlayerFacingSign: WebGLUniformLocation;
+  private uPlayerPoseIndex: WebGLUniformLocation;
   private texture: WebGLTexture | null = null;
   private standalonePlayerBuffer: WebGLBuffer;
   private standalonePlayerVao: WebGLVertexArrayObject;
@@ -178,24 +180,90 @@ export class Renderer {
       precision mediump float;
       in vec2 v_uv;
       uniform float u_facingSign;
+      uniform float u_poseIndex;
       out vec4 outColor;
+
+      bool inRect(vec2 uv, vec4 rect) {
+        return uv.x >= rect.x && uv.x <= rect.z && uv.y >= rect.y && uv.y <= rect.w;
+      }
+
+      bool inBorder(vec2 uv, vec4 rect, float inset) {
+        return inRect(uv, rect) &&
+          !inRect(uv, vec4(rect.x + inset, rect.y + inset, rect.z - inset, rect.w - inset));
+      }
+
       void main() {
         vec2 uv = v_uv;
         if (u_facingSign < 0.0) {
           uv.x = 1.0 - uv.x;
         }
+        uv.y = 1.0 - uv.y;
+
+        bool airborne = u_poseIndex > 0.5;
+
+        vec4 head = vec4(0.24, 0.62, 0.76, 0.94);
+        vec4 hair = vec4(0.18, 0.80, 0.82, 0.98);
+        vec4 torso = vec4(0.30, 0.34, 0.70, 0.62);
+        vec4 eye = vec4(0.58, 0.74, 0.68, 0.80);
+        vec4 leftArm = airborne ? vec4(0.12, 0.52, 0.26, 0.78) : vec4(0.16, 0.38, 0.28, 0.60);
+        vec4 rightArm = airborne ? vec4(0.74, 0.30, 0.88, 0.54) : vec4(0.72, 0.38, 0.84, 0.58);
+        vec4 leftLeg = airborne ? vec4(0.20, 0.14, 0.40, 0.30) : vec4(0.32, 0.10, 0.46, 0.36);
+        vec4 rightLeg = airborne ? vec4(0.56, 0.24, 0.76, 0.42) : vec4(0.54, 0.10, 0.68, 0.36);
+        vec4 leftBoot = airborne ? vec4(0.12, 0.06, 0.32, 0.14) : vec4(0.30, 0.02, 0.48, 0.10);
+        vec4 rightBoot = airborne ? vec4(0.66, 0.16, 0.86, 0.24) : vec4(0.52, 0.02, 0.70, 0.10);
+
+        bool insideHead = inRect(uv, head);
+        bool insideHair = inRect(uv, hair) && uv.y > 0.82;
+        bool insideShirt = inRect(uv, torso);
+        bool insideLeftArm = inRect(uv, leftArm);
+        bool insideRightArm = inRect(uv, rightArm);
+        bool insideLeftLeg = inRect(uv, leftLeg);
+        bool insideRightLeg = inRect(uv, rightLeg);
+        bool insideLeftBoot = inRect(uv, leftBoot);
+        bool insideRightBoot = inRect(uv, rightBoot);
+        bool insideEye = insideHead && inRect(uv, eye);
+        bool insideAny = insideHead ||
+          insideHair ||
+          insideShirt ||
+          insideLeftArm ||
+          insideRightArm ||
+          insideLeftLeg ||
+          insideRightLeg ||
+          insideLeftBoot ||
+          insideRightBoot;
+
+        if (!insideAny) {
+          discard;
+        }
+
+        bool outline = inBorder(uv, head, 0.03) ||
+          inBorder(uv, hair, 0.03) ||
+          inBorder(uv, torso, 0.03) ||
+          inBorder(uv, leftArm, 0.025) ||
+          inBorder(uv, rightArm, 0.025) ||
+          inBorder(uv, leftLeg, 0.025) ||
+          inBorder(uv, rightLeg, 0.025) ||
+          inBorder(uv, leftBoot, 0.02) ||
+          inBorder(uv, rightBoot, 0.02);
 
         vec3 color = vec3(0.98, 0.72, 0.34);
-        if (uv.x < 0.08 || uv.x > 0.92 || uv.y < 0.04 || uv.y > 0.96) {
-          color = vec3(0.24, 0.14, 0.06);
-        } else if (uv.y > 0.68 && abs(uv.x - 0.5) < 0.05) {
-          color = vec3(0.24, 0.14, 0.06);
-        } else if (uv.x > 0.58 && uv.x < 0.84 && uv.y > 0.18 && uv.y < 0.34) {
-          color = vec3(0.99, 0.95, 0.82);
-        } else if (uv.x > 0.64 && uv.x < 0.74 && uv.y > 0.22 && uv.y < 0.30) {
-          color = vec3(0.12, 0.09, 0.06);
-        } else if (uv.y > 0.34 && uv.y < 0.54 && uv.x > 0.2 && uv.x < 0.34) {
+        if (insideShirt) {
           color = vec3(0.84, 0.43, 0.16);
+        }
+        if (insideLeftLeg || insideRightLeg) {
+          color = vec3(0.20, 0.33, 0.72);
+        }
+        if (insideLeftBoot || insideRightBoot) {
+          color = vec3(0.16, 0.10, 0.06);
+        }
+        if (insideHair) {
+          color = vec3(0.24, 0.14, 0.06);
+        }
+        if (insideEye) {
+          color = vec3(0.12, 0.09, 0.06);
+        }
+        if (outline) {
+          color = vec3(0.18, 0.10, 0.04);
         }
 
         outColor = vec4(color, 1.0);
@@ -209,6 +277,10 @@ export class Renderer {
     const playerFacingSign = gl.getUniformLocation(this.playerProgram, 'u_facingSign');
     if (!playerFacingSign) throw new Error('Missing uniform u_facingSign');
     this.uPlayerFacingSign = playerFacingSign;
+
+    const playerPoseIndex = gl.getUniformLocation(this.playerProgram, 'u_poseIndex');
+    if (!playerPoseIndex) throw new Error('Missing uniform u_poseIndex');
+    this.uPlayerPoseIndex = playerPoseIndex;
 
     this.standalonePlayerBuffer = createDynamicVertexBuffer(
       gl,
@@ -498,6 +570,7 @@ export class Renderer {
     gl.useProgram(this.playerProgram);
     gl.uniformMatrix4fv(this.uPlayerMatrix, false, worldToClipMatrix);
     gl.uniform1f(this.uPlayerFacingSign, getStandalonePlayerPlaceholderFacingSign(state));
+    gl.uniform1f(this.uPlayerPoseIndex, getStandalonePlayerPlaceholderPoseIndex(state));
     gl.bindBuffer(gl.ARRAY_BUFFER, this.standalonePlayerBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, buildStandalonePlayerPlaceholderVertices(state), gl.DYNAMIC_DRAW);
     gl.bindVertexArray(this.standalonePlayerVao);

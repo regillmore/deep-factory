@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { createPlayerState } from '../world/playerState';
 import {
   buildStandalonePlayerPlaceholderVertices,
-  getStandalonePlayerPlaceholderFacingSign
+  getStandalonePlayerPlaceholderFacingSign,
+  getStandalonePlayerPlaceholderPoseIndex,
+  STANDALONE_PLAYER_PLACEHOLDER_POSE_AIRBORNE,
+  STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED
 } from './standalonePlayerPlaceholder';
 
 describe('standalonePlayerPlaceholder', () => {
@@ -44,5 +47,14 @@ describe('standalonePlayerPlaceholder', () => {
   it('maps player facing into a shader-friendly sign', () => {
     expect(getStandalonePlayerPlaceholderFacingSign(createPlayerState({ facing: 'right' }))).toBe(1);
     expect(getStandalonePlayerPlaceholderFacingSign(createPlayerState({ facing: 'left' }))).toBe(-1);
+  });
+
+  it('maps grounded state into grounded and airborne placeholder poses', () => {
+    expect(getStandalonePlayerPlaceholderPoseIndex(createPlayerState({ grounded: true }))).toBe(
+      STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED
+    );
+    expect(getStandalonePlayerPlaceholderPoseIndex(createPlayerState({ grounded: false }))).toBe(
+      STANDALONE_PLAYER_PLACEHOLDER_POSE_AIRBORNE
+    );
   });
 });

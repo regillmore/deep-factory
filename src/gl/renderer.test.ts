@@ -95,6 +95,16 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.atlasValidationFirstWarning).toBeNull();
   });
 
+  it('flips placeholder shader uv.y so pose rectangles stay upright with top-to-bottom quad UVs', () => {
+    new Renderer(createMockCanvas(createMockGl()));
+
+    const createProgramCalls = createProgram.mock.calls as unknown as Array<
+      [WebGL2RenderingContext, string, string]
+    >;
+    const playerProgramFragmentSource = createProgramCalls[1]?.[2];
+    expect(playerProgramFragmentSource).toContain('uv.y = 1.0 - uv.y;');
+  });
+
   it('records an authored atlas load in telemetry during initialization', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));
@@ -210,7 +220,7 @@ describe('Renderer atlas telemetry', () => {
     expect(lastBufferDataCall?.[1]).toBeInstanceOf(Float32Array);
     expect((lastBufferDataCall?.[1] as Float32Array | undefined)?.length).toBe(24);
     expect(lastBufferDataCall?.[2]).toBe(gl.DYNAMIC_DRAW);
-    expect(uniform1f).toHaveBeenCalledWith(expect.anything(), -1);
+    expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([-1, 1]);
   });
 
   it('reuploads animated chunk UVs only when the elapsed frame changes', async () => {

@@ -45,7 +45,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 25. Add an app shell with explicit `boot`, `main menu`, and `in-world` states.
 26. Move debug overlay visibility behind shell/UI toggles instead of always-on bootstrap wiring.
-27. Add grounded and airborne placeholder pose variants to the renderer-side standalone player draw pass so jump state is readable before sprite assets land.
+27. Add grounded-walk placeholder pose variants to the renderer-side standalone player draw pass so horizontal movement direction reads before sprite assets land.
 
 ## Player debugging
 

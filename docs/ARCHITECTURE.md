@@ -5,7 +5,7 @@
 - `src/main.ts`: bootstrapping and dependency wiring.
 - `src/core/`: camera math, camera-follow offset helpers, and fixed timestep loop.
 - `src/input/`: input abstraction for keyboard, mouse, touch/pinch, and standalone player intent extraction.
-- `src/gl/`: low-level WebGL2 utilities, world rendering orchestration, and the standalone player placeholder draw pass.
+- `src/gl/`: low-level WebGL2 utilities, world rendering orchestration, and the grounded-versus-airborne standalone player placeholder draw pass.
 - `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, mesh construction, plus authored atlas-region layout data.
 - `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups and elapsed-frame resolvers backed by `src/world/authoredAtlasLayout.ts`; renderer boot now validates authored atlas-index sources and direct `uvRect` metadata against the loaded atlas dimensions).
 - `src/gl/animatedChunkMesh.ts`: renderer-side helper that rewrites baked chunk UVs for animated non-terrain quads when elapsed time advances to a new metadata frame.
@@ -42,7 +42,7 @@ outside the source image.
 3. Compute visible chunk bounds from camera viewport and tile scale.
 4. Queue visible (and nearby prefetch) chunk mesh builds, then process a small per-frame build budget.
 5. Patch ready animated chunk meshes to the current elapsed metadata frame when needed, then draw chunk VAOs with a shared shader + atlas texture.
-6. Draw the standalone player placeholder in world space from the latest `PlayerState`.
+6. Draw the standalone player placeholder in world space from the latest `PlayerState`, with facing plus grounded-versus-airborne pose selection handled in the placeholder shader.
 7. Prune far chunk/world caches outside the retain ring.
 8. Update debug overlay with frame timing and renderer telemetry.
 

@@ -4,6 +4,8 @@ export const STANDALONE_PLAYER_PLACEHOLDER_VERTEX_STRIDE_FLOATS = 4;
 export const STANDALONE_PLAYER_PLACEHOLDER_VERTEX_COUNT = 6;
 export const STANDALONE_PLAYER_PLACEHOLDER_VERTEX_FLOAT_COUNT =
   STANDALONE_PLAYER_PLACEHOLDER_VERTEX_COUNT * STANDALONE_PLAYER_PLACEHOLDER_VERTEX_STRIDE_FLOATS;
+export const STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED = 0;
+export const STANDALONE_PLAYER_PLACEHOLDER_POSE_AIRBORNE = 1;
 
 export const buildStandalonePlayerPlaceholderVertices = (state: PlayerState): Float32Array => {
   const aabb = getPlayerAabb(state);
@@ -38,3 +40,6 @@ export const buildStandalonePlayerPlaceholderVertices = (state: PlayerState): Fl
 
 export const getStandalonePlayerPlaceholderFacingSign = (state: PlayerState): number =>
   state.facing === 'left' ? -1 : 1;
+
+export const getStandalonePlayerPlaceholderPoseIndex = (state: PlayerState): number =>
+  state.grounded ? STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED : STANDALONE_PLAYER_PLACEHOLDER_POSE_AIRBORNE;
