@@ -8,7 +8,7 @@
 - `src/gl/`: low-level WebGL2 utilities and renderer orchestration.
 - `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, mesh construction.
 - `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata; authored-atlas region validation is still a later task).
-- `src/ui/`: debug DOM overlay.
+- `src/ui/`: debug DOM overlays, spawn marker, and standalone player marker.
 
 ## Update loop
 
@@ -17,13 +17,14 @@
 - fixed update step (`60hz`) for deterministic simulation hooks,
 - render interpolation alpha (currently unused but available).
 
-Current update phase applies input-driven camera movement.
+Current update phase applies input-driven camera movement, debug tile-edit actions, spawn refresh after tile edits, and gravity-only standalone player stepping through shared collision helpers.
 
 ## Player state foundation
 
 - Standalone player simulation state currently lives in `src/world/playerState.ts`.
 - `PlayerState.position` uses bottom-center world coordinates so spawn placement, collision AABB derivation, and future controller updates share one anchor convention.
-- Shared helpers can initialize player state directly from spawn-search output, advance position from velocity on fixed steps, and resolve x-then-y collision sweeps plus post-move grounded support without mixing render interpolation into the source-of-truth state.
+- Shared helpers can initialize player state directly from spawn-search output, advance position from velocity on fixed steps, apply gravity before movement, and resolve x-then-y collision sweeps plus post-move grounded support without mixing render interpolation into the source-of-truth state.
+- `src/main.ts` owns the current standalone-player orchestration: it seeds the player from the resolved spawn once, advances that state in fixed updates via a narrow renderer world-query wrapper, and forwards the result to a temporary DOM overlay until entity rendering exists.
 
 ## Render pipeline
 

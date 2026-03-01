@@ -12,7 +12,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 6. Implement walk, jump, gravity, and tile collision resolution for the player using the new collision helpers.
 7. Add mixed-device player input bindings and camera follow rules without removing the existing debug-edit controls.
-8. Wire a spawned standalone player through the fixed update loop with gravity-only collision stepping before input-driven movement exists.
+29. Add a recovery path that respawns the standalone player from the latest resolved spawn when debug edits leave its AABB embedded in solid tiles.
 
 ## Liquid rendering
 

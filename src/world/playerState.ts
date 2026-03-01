@@ -37,8 +37,15 @@ export interface CreatePlayerStateOptions {
   facing?: PlayerFacing;
 }
 
+export interface StepPlayerStateWithGravityOptions {
+  gravityAcceleration?: number;
+  maxFallSpeed?: number;
+}
+
 export const DEFAULT_PLAYER_WIDTH = 12;
 export const DEFAULT_PLAYER_HEIGHT = 28;
+export const DEFAULT_PLAYER_GRAVITY_ACCELERATION = 1800;
+export const DEFAULT_PLAYER_MAX_FALL_SPEED = 720;
 const DEFAULT_PLAYER_FACING: PlayerFacing = 'right';
 const GROUND_SUPPORT_PROBE_DISTANCE = 1;
 
@@ -206,4 +213,45 @@ export const movePlayerStateWithCollisions = (
     grounded: groundSupport !== null,
     facing
   };
+};
+
+export const stepPlayerStateWithGravity = (
+  world: TileWorld,
+  state: PlayerState,
+  fixedDtSeconds: number,
+  options: StepPlayerStateWithGravityOptions = {},
+  registry: TileMetadataRegistry = TILE_METADATA
+): PlayerState => {
+  const dt = expectNonNegativeFiniteNumber(fixedDtSeconds, 'fixedDtSeconds');
+  const gravityAcceleration = expectNonNegativeFiniteNumber(
+    options.gravityAcceleration ?? DEFAULT_PLAYER_GRAVITY_ACCELERATION,
+    'options.gravityAcceleration'
+  );
+  const maxFallSpeed = expectNonNegativeFiniteNumber(
+    options.maxFallSpeed ?? DEFAULT_PLAYER_MAX_FALL_SPEED,
+    'options.maxFallSpeed'
+  );
+  const velocityY = Math.min(state.velocity.y + gravityAcceleration * dt, maxFallSpeed);
+
+  return movePlayerStateWithCollisions(
+    world,
+    {
+      position: {
+        x: state.position.x,
+        y: state.position.y
+      },
+      velocity: {
+        x: state.velocity.x,
+        y: velocityY
+      },
+      size: {
+        width: state.size.width,
+        height: state.size.height
+      },
+      grounded: state.grounded,
+      facing: state.facing
+    },
+    dt,
+    registry
+  );
 };

@@ -30,11 +30,17 @@ import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import { PlayerSpawnMarkerOverlay } from './ui/playerSpawnMarkerOverlay';
+import { StandalonePlayerOverlay } from './ui/standalonePlayerOverlay';
 import type { DebugEditHoveredTileState } from './ui/debugEditStatusHelpers';
 import { TouchDebugEditControls, type DebugBrushOption } from './ui/touchDebugEditControls';
 import { CHUNK_SIZE } from './world/constants';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
-import { DEFAULT_PLAYER_HEIGHT, DEFAULT_PLAYER_WIDTH } from './world/playerState';
+import {
+  createPlayerStateFromSpawn,
+  DEFAULT_PLAYER_HEIGHT,
+  DEFAULT_PLAYER_WIDTH,
+  type PlayerState
+} from './world/playerState';
 import { getTileMetadata, resolveTileGameplayMetadata, TILE_METADATA } from './world/tileMetadata';
 
 const DEBUG_TILE_BREAK_ID = 0;
@@ -101,6 +107,7 @@ const bootstrap = async (): Promise<void> => {
   const debug = new DebugOverlay();
   const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
   const playerSpawnMarker = new PlayerSpawnMarkerOverlay(canvas);
+  const standalonePlayerOverlay = new StandalonePlayerOverlay(canvas);
   const armedDebugToolPreview = new ArmedDebugToolPreviewOverlay(canvas);
   const debugEditStatusStrip = new DebugEditStatusStrip(canvas);
   input.retainPointerInspectWhenLeavingToElement(debugEditStatusStrip.getPointerInspectRetainerElement());
@@ -129,11 +136,15 @@ const bootstrap = async (): Promise<void> => {
   let suppressDebugEditControlPersistence = false;
   let pinnedDebugTileInspect: PinnedDebugTileInspectState | null = null;
   let resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
+  let standalonePlayerState: PlayerState | null = null;
   let playerSpawnNeedsRefresh = false;
 
   const refreshResolvedPlayerSpawn = (): void => {
     resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
     playerSpawnNeedsRefresh = false;
+    if (standalonePlayerState === null && resolvedPlayerSpawn) {
+      standalonePlayerState = createPlayerStateFromSpawn(resolvedPlayerSpawn);
+    }
   };
 
   const applyWorldTileEdit = (
@@ -939,6 +950,10 @@ const bootstrap = async (): Promise<void> => {
       if (playerSpawnNeedsRefresh) {
         refreshResolvedPlayerSpawn();
       }
+
+      if (standalonePlayerState) {
+        standalonePlayerState = renderer.stepPlayerStateWithGravity(standalonePlayerState, fixedDt);
+      }
     },
     (_alpha, frameDtMs) => {
       const pointerInspect = input.getPointerInspect();
@@ -999,6 +1014,7 @@ const bootstrap = async (): Promise<void> => {
           : null
       });
       playerSpawnMarker.update(camera, resolvedPlayerSpawn);
+      standalonePlayerOverlay.update(camera, standalonePlayerState);
       armedDebugToolPreview.update(camera, pointerInspect, armedDebugToolPreviewState);
       debugEditStatusStrip.update({
         mode: input.getTouchDebugEditMode(),

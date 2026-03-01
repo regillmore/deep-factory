@@ -4,11 +4,14 @@ import { findPlayerSpawnPoint } from './playerSpawn';
 import {
   createPlayerState,
   createPlayerStateFromSpawn,
+  DEFAULT_PLAYER_GRAVITY_ACCELERATION,
   DEFAULT_PLAYER_HEIGHT,
+  DEFAULT_PLAYER_MAX_FALL_SPEED,
   DEFAULT_PLAYER_WIDTH,
   getPlayerAabb,
   integratePlayerState,
-  movePlayerStateWithCollisions
+  movePlayerStateWithCollisions,
+  stepPlayerStateWithGravity
 } from './playerState';
 import { TileWorld } from './world';
 
@@ -217,6 +220,83 @@ describe('playerState', () => {
     });
   });
 
+  it('applies gravity before collision stepping so unsupported players start falling immediately', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -2, 2, 2, 0);
+
+    const stepped = stepPlayerStateWithGravity(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -16 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      { gravityAcceleration: 80, maxFallSpeed: 120 }
+    );
+
+    expect(stepped).toEqual({
+      position: { x: 8, y: -11 },
+      velocity: { x: 0, y: 20 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    });
+  });
+
+  it('keeps grounded players resting on support while gravity is active', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -2, 2, 2, 0);
+    world.setTile(0, 0, 3);
+
+    const stepped = stepPlayerStateWithGravity(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        grounded: true
+      }),
+      1 / 60,
+      { gravityAcceleration: 120, maxFallSpeed: 200 }
+    );
+
+    expect(stepped).toEqual({
+      position: { x: 8, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: true,
+      facing: 'right'
+    });
+  });
+
+  it('clamps downward speed before collision stepping when gravity would exceed the fall-speed cap', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -2, 2, 4, 0);
+
+    const stepped = stepPlayerStateWithGravity(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -16 },
+        velocity: { x: 0, y: 500 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      { gravityAcceleration: 80, maxFallSpeed: 120 }
+    );
+
+    expect(stepped).toEqual({
+      position: { x: 8, y: 14 },
+      velocity: { x: 0, y: 120 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    });
+  });
+
   it('rejects invalid size and fixed-step durations', () => {
     expect(() =>
       createPlayerState({
@@ -230,5 +310,15 @@ describe('playerState', () => {
     expect(() =>
       movePlayerStateWithCollisions(new TileWorld(0), createPlayerState(), -1 / 60)
     ).toThrowError(/fixedDtSeconds must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerStateWithGravity(new TileWorld(0), createPlayerState(), 1 / 60, {
+        gravityAcceleration: -DEFAULT_PLAYER_GRAVITY_ACCELERATION
+      })
+    ).toThrowError(/options\.gravityAcceleration must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerStateWithGravity(new TileWorld(0), createPlayerState(), 1 / 60, {
+        maxFallSpeed: -DEFAULT_PLAYER_MAX_FALL_SPEED
+      })
+    ).toThrowError(/options\.maxFallSpeed must be a non-negative finite number/);
   });
 });

@@ -18,6 +18,10 @@ import {
   type PlayerSpawnPoint,
   type PlayerSpawnSearchOptions
 } from '../world/playerSpawn';
+import {
+  stepPlayerStateWithGravity as stepWorldPlayerStateWithGravity,
+  type PlayerState
+} from '../world/playerState';
 import { TileWorld } from '../world/world';
 
 interface ChunkGpuMesh {
@@ -211,6 +215,10 @@ export class Renderer {
 
   findPlayerSpawnPoint(options: PlayerSpawnSearchOptions): PlayerSpawnPoint | null {
     return findWorldPlayerSpawnPoint(this.world, options);
+  }
+
+  stepPlayerStateWithGravity(state: PlayerState, fixedDtSeconds: number): PlayerState {
+    return stepWorldPlayerStateWithGravity(this.world, state, fixedDtSeconds);
   }
 
   getResidentChunkBounds(): ChunkBounds | null {
