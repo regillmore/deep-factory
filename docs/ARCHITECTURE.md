@@ -28,8 +28,9 @@ Current update phase applies debug tile-edit actions, spawn refresh after tile e
 
 ## Render pipeline
 
-Renderer initialization first attempts to fetch and decode an authored atlas image from `/atlas/tile-atlas.png`.
-If that asset is absent or decoding fails, initialization falls back to the generated placeholder atlas so the
+Renderer initialization first attempts to fetch and decode the committed authored atlas image served from
+`public/atlas/tile-atlas.png` at runtime as `/atlas/tile-atlas.png`.
+If that asset is unavailable or decoding fails, initialization falls back to the generated placeholder atlas so the
 existing tile rendering path still boots.
 
 1. Ensure canvas backbuffer matches CSS size × `devicePixelRatio`.

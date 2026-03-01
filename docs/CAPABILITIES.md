@@ -5,7 +5,7 @@ This document describes the current project state. Unlike the changelog, it shou
 ## Core Runtime
 
 - WebGL2 renderer with shader utilities, buffer helpers, texture loading, and DPR-aware resize.
-- Renderer atlas initialization attempts to fetch and decode `/atlas/tile-atlas.png`, then falls back to the generated placeholder atlas when no authored asset is present yet.
+- Renderer atlas initialization ships with an authored atlas at `public/atlas/tile-atlas.png` exposed as `/atlas/tile-atlas.png`, then falls back to the generated placeholder atlas if that asset cannot be fetched or decoded.
 - Orthographic camera with anchored zoom, pointer pan controls, and standalone-player follow that tracks the player body center while preserving manual inspection offsets.
 - Fixed-step game loop (`60hz`) with separate render interpolation alpha.
 - Chunked world model with `32x32` tiles per chunk and `16px` tiles.

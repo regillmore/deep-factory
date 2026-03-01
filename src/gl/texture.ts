@@ -78,7 +78,7 @@ export const loadAtlasImageSource = async (
         height
       };
     } catch {
-      // Fallback to the generated placeholder atlas until an authored asset exists.
+      // Fallback keeps renderer boot robust when the authored atlas cannot be fetched or decoded.
     }
   }
 

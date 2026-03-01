@@ -4,7 +4,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Authored asset pipeline
 
-1. Add an authored atlas image at `/atlas/tile-atlas.png` and verify the runtime loader replaces the placeholder fallback when the asset is present.
 2. Update tile render metadata validation so authored atlas regions are the source of truth instead of placeholder `4x4` slot assumptions.
 3. Add a render-time animated-tile frame resolver that maps elapsed time into `render.frames` / `frameDurationMs` without changing terrain or static tile UV resolution.
 
@@ -52,5 +51,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Player debugging
 
 28. Surface live standalone player-state telemetry (`position`, `velocity`, `grounded`, `facing`) in the debug overlay once movement is wired.
+29. Surface live standalone player input-intent telemetry (`move`, `jumpHeld`, `jumpPressed`) in the debug overlay alongside the player state readout.
 30. Surface standalone player collision-contact telemetry (`support`, `wall`, `ceiling`) in the debug overlay after live player-state telemetry lands.
 31. Surface standalone player auto-respawn events in the debug overlay when embedded-tile recovery triggers.
