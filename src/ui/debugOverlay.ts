@@ -47,10 +47,18 @@ export interface DebugOverlayPlayerSpawn {
   world: { x: number; y: number };
 }
 
+export interface DebugOverlayPlayerTelemetry {
+  position: { x: number; y: number };
+  velocity: { x: number; y: number };
+  grounded: boolean;
+  facing: 'left' | 'right';
+}
+
 export interface DebugOverlayInspectState {
   pointer: DebugOverlayPointerInspect | null;
   pinned: DebugOverlayTileInspect | null;
   spawn: DebugOverlayPlayerSpawn | null;
+  player: DebugOverlayPlayerTelemetry | null;
 }
 
 const formatFloat = (value: number, digits: number): string => value.toFixed(digits);
@@ -123,6 +131,19 @@ const formatSpawnLine = (spawn: DebugOverlayPlayerSpawn | null): string => {
   );
 };
 
+const formatPlayerLine = (player: DebugOverlayPlayerTelemetry | null): string => {
+  if (!player) {
+    return 'Player: n/a';
+  }
+
+  return (
+    `Player: Pos:${formatFloat(player.position.x, 2)},${formatFloat(player.position.y, 2)} | ` +
+    `Vel:${formatFloat(player.velocity.x, 2)},${formatFloat(player.velocity.y, 2)} | ` +
+    `grounded:${formatGameplayFlag(player.grounded)} | ` +
+    `facing:${player.facing}`
+  );
+};
+
 export const formatDebugOverlayText = (
   fps: number,
   stats: DebugOverlayStats,
@@ -141,11 +162,13 @@ export const formatDebugOverlayText = (
   const pointerInspect = inspect?.pointer ?? null;
   const pinnedInspect = inspect?.pinned ?? null;
   const spawn = inspect?.spawn ?? null;
+  const player = inspect?.player ?? null;
   const lines = [
     summaryLine,
     formatAtlasLine(stats),
     formatAtlasValidationLine(stats),
-    formatSpawnLine(spawn)
+    formatSpawnLine(spawn),
+    formatPlayerLine(player)
   ];
 
   if (!pointerInspect) {

@@ -49,7 +49,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Player debugging
 
-28. Surface live standalone player-state telemetry (`position`, `velocity`, `grounded`, `facing`) in the debug overlay once movement is wired.
 29. Surface live standalone player input-intent telemetry (`move`, `jumpHeld`, `jumpPressed`) in the debug overlay alongside the player state readout.
 30. Surface standalone player collision-contact telemetry (`support`, `wall`, `ceiling`) in the debug overlay after live player-state telemetry lands.
 31. Surface standalone player auto-respawn events in the debug overlay when embedded-tile recovery triggers.
+32. Surface standalone player collision AABB telemetry (`min`, `max`, `size`) in the debug overlay after collision-contact telemetry lands.

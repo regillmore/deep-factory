@@ -29,6 +29,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nAtlas: authored | 96x64');
     expect(text).toContain('\nAtlasWarn: none');
     expect(text).toContain('\nSpawn: unresolved');
+    expect(text).toContain('\nPlayer: n/a');
     expect(text).toContain('Draws: 4/256 (OK)');
     expect(text).toContain('\nPtr: n/a');
   });
@@ -94,6 +95,7 @@ describe('formatDebugOverlayText', () => {
         tile: { x: 0, y: -2 },
         world: { x: 8, y: -32 }
       },
+      player: null,
       pinned: null
     });
 
@@ -111,10 +113,27 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquid:none');
   });
 
+  it('shows live standalone player position, velocity, grounded state, and facing', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      spawn: null,
+      player: {
+        position: { x: 24.5, y: -12.25 },
+        velocity: { x: -180, y: 60 },
+        grounded: false,
+        facing: 'left'
+      },
+      pinned: null
+    });
+
+    expect(text).toContain('\nPlayer: Pos:24.50,-12.25 | Vel:-180.00,60.00 | grounded:off | facing:left');
+  });
+
   it('shows pinned tile metadata even when no live pointer snapshot is available', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: null,
       spawn: null,
+      player: null,
       pinned: {
         tile: { x: 40, y: -2 },
         tileId: 2,
@@ -153,6 +172,7 @@ describe('formatDebugOverlayText', () => {
         tile: { x: -1, y: 0 },
         world: { x: -8, y: 0 }
       },
+      player: null,
       pinned: {
         tile: { x: -1, y: 65 },
         tileId: 4,

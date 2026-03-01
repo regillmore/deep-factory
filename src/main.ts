@@ -1078,6 +1078,20 @@ const bootstrap = async (): Promise<void> => {
             }
           }
         : null;
+      const debugOverlayPlayer = standalonePlayerState
+        ? {
+            position: {
+              x: standalonePlayerState.position.x,
+              y: standalonePlayerState.position.y
+            },
+            velocity: {
+              x: standalonePlayerState.velocity.x,
+              y: standalonePlayerState.velocity.y
+            },
+            grounded: standalonePlayerState.grounded,
+            facing: standalonePlayerState.facing
+          }
+        : null;
       renderer.resize();
       renderer.render(camera, {
         standalonePlayer: standalonePlayerState
@@ -1110,7 +1124,8 @@ const bootstrap = async (): Promise<void> => {
       debug.update(frameDtMs, renderer.telemetry, {
         pointer: debugOverlayPointerInspect,
         pinned: debugOverlayPinnedInspect,
-        spawn: debugOverlaySpawn
+        spawn: debugOverlaySpawn,
+        player: debugOverlayPlayer
       });
     }
   );
