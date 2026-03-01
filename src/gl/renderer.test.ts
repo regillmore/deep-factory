@@ -353,4 +353,46 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.evictedWorldChunks).toBeGreaterThan(0);
     performanceNowSpy.mockRestore();
   });
+
+  it('recovers resident animated chunk telemetry when a pruned animated chunk streams back into view', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    renderer.setTile(0, 0, 5);
+    const nearCamera = new Camera2D();
+    nearCamera.zoom = 16;
+
+    const performanceNowSpy = vi.spyOn(performance, 'now').mockReturnValue(0);
+    renderUntilMeshBuildQueueDrains(renderer, nearCamera);
+    expect(renderer.telemetry.meshBuildQueueLength).toBe(0);
+    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
+    expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+
+    const farCamera = new Camera2D();
+    farCamera.zoom = nearCamera.zoom;
+    farCamera.x = CHUNK_SIZE * TILE_SIZE * 10;
+
+    renderer.render(farCamera, { timeMs: 0 });
+
+    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(0);
+    expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(0);
+    expect(renderer.telemetry.evictedMeshEntries).toBeGreaterThan(0);
+    expect(renderer.telemetry.evictedWorldChunks).toBeGreaterThan(0);
+
+    renderUntilMeshBuildQueueDrains(renderer, nearCamera);
+
+    expect(renderer.telemetry.meshBuildQueueLength).toBe(0);
+    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
+    expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+    performanceNowSpy.mockRestore();
+  });
 });

@@ -44,6 +44,29 @@ describe('TileWorld', () => {
     ]);
   });
 
+  it('reapplies edited tiles when a pruned chunk streams back in', () => {
+    const world = new TileWorld(0);
+    const editedTileId = 5;
+
+    world.setTile(0, 0, editedTileId);
+
+    expect(world.pruneChunksOutside({ minChunkX: 1, minChunkY: 1, maxChunkX: 1, maxChunkY: 1 })).toBe(1);
+    expect(world.getChunkCount()).toBe(0);
+    expect(world.getTile(0, 0)).toBe(editedTileId);
+    expect(world.getChunkCount()).toBe(1);
+  });
+
+  it('drops stored chunk overrides when an edited tile is reset to its procedural value', () => {
+    const world = new TileWorld(0);
+    const proceduralTileId = world.getTile(0, 0);
+
+    world.setTile(0, 0, 5);
+    world.setTile(0, 0, proceduralTileId);
+
+    expect(world.pruneChunksOutside({ minChunkX: 1, minChunkY: 1, maxChunkX: 1, maxChunkY: 1 })).toBe(1);
+    expect(world.getTile(0, 0)).toBe(proceduralTileId);
+  });
+
   it('generates procedural terrain with sky above and ground below in +Y-down world space', () => {
     const world = new TileWorld(0);
     const worldX = 0;

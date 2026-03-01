@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Add a renderer regression test that animated chunk residency telemetry recovers after a previously pruned animated chunk streams back into view and the rebuilt animated mesh becomes resident again.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts) plus [src/world/world.test.ts](../src/world/world.test.ts) so sparse edited tile overrides survive chunk streaming prune and reapply when a chunk is rebuilt, expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a streaming round-trip regression that verifies resident animated mesh and quad telemetry recover after prune and rebuild, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run src/world/world.test.ts src/gl/renderer.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Stabilize the renderer animated-chunk telemetry regressions so they do not depend on wall-clock mesh-build timing.
 - Changes: Updated [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a shared warm-up helper that drains the mesh-build queue under a mocked `performance.now()` clock, applied that deterministic setup to the animated-UV upload and prune-telemetry regressions so later assertions no longer race normal queued mesh uploads, and advanced [docs/NEXT.md](docs/NEXT.md) to the next animated-streaming follow-up.
 - Verification: Ran `npx vitest run src/gl/renderer.test.ts` 25 times in a row, ran `npm test`, and ran `npx tsc --noEmit -p tsconfig.app.json`.

@@ -17,6 +17,7 @@ This document describes the current project state. Unlike the changelog, it shou
 ## World Streaming And Meshing
 
 - Chunk visibility culling with padded chunk streaming retention.
+- Chunk pruning can evict resident world chunks from memory without losing edited tile values; sparse per-chunk tile overrides are reapplied when those chunks stream back in.
 - Budgeted per-frame mesh build queue with visible-first scheduling and nearby prefetch.
 - Tile edit events trigger edge and corner neighbor-chunk mesh invalidation.
 - Chunk meshing currently emits one quad per non-empty tile; static chunks upload once, while chunks with animated non-terrain quads keep CPU-side vertex copies so UV-only updates can be reuploaded on frame boundaries.

@@ -58,6 +58,7 @@ const createTileNeighborhood = (): TileNeighborhood => ({
 
 export class TileWorld {
   private chunks = new Map<string, Chunk>();
+  private editedChunkTiles = new Map<string, Map<number, number>>();
   private tileEditListeners = new Set<TileEditListener>();
 
   constructor(radius = 3) {
@@ -82,6 +83,13 @@ export class TileWorld {
       }
     }
 
+    const editedTiles = this.editedChunkTiles.get(key);
+    if (editedTiles) {
+      for (const [tileIndex, tileId] of editedTiles) {
+        tiles[tileIndex] = tileId;
+      }
+    }
+
     const chunk: Chunk = { coord: { x: chunkX, y: chunkY }, tiles };
     this.chunks.set(key, chunk);
     return chunk;
@@ -96,6 +104,7 @@ export class TileWorld {
 
   setTile(worldTileX: number, worldTileY: number, tileId: number): boolean {
     const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+    const key = chunkKey(chunkX, chunkY);
     const chunk = this.ensureChunk(chunkX, chunkY);
     const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
     const tileIndex = toTileIndex(localX, localY);
@@ -103,6 +112,21 @@ export class TileWorld {
     if (previousTileId === tileId) return false;
 
     chunk.tiles[tileIndex] = tileId;
+    const generatedTileId = proceduralTile(worldTileX, worldTileY);
+    if (tileId === generatedTileId) {
+      const editedTiles = this.editedChunkTiles.get(key);
+      editedTiles?.delete(tileIndex);
+      if (editedTiles && editedTiles.size === 0) {
+        this.editedChunkTiles.delete(key);
+      }
+    } else {
+      let editedTiles = this.editedChunkTiles.get(key);
+      if (!editedTiles) {
+        editedTiles = new Map<number, number>();
+        this.editedChunkTiles.set(key, editedTiles);
+      }
+      editedTiles.set(tileIndex, tileId);
+    }
 
     const event: TileEditEvent = {
       worldTileX,
