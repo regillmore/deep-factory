@@ -1,4 +1,13 @@
-import type { ArmedDebugToolPreviewState, DebugTileEditKind, TouchDebugEditMode } from '../input/controller';
+import {
+  walkFilledEllipseTileArea,
+  walkEllipseOutlineTileArea,
+  walkFilledRectangleTileArea,
+  walkRectangleOutlineTileArea,
+  walkLineSteppedTilePath,
+  type ArmedDebugToolPreviewState,
+  type DebugTileEditKind,
+  type TouchDebugEditMode
+} from '../input/controller';
 import type { TileLiquidKind } from '../world/tileMetadata';
 
 export interface ActiveDebugToolStatus {
@@ -257,11 +266,68 @@ const formatSignedOffset = (value: number): string => (value >= 0 ? `+${value}` 
 
 const formatTileCoordinatePair = (tileX: number, tileY: number): string => `${tileX},${tileY}`;
 
+const formatEstimatedAffectedTileCount = (tileCount: number | null): string =>
+  tileCount === null ? 'pending' : `${tileCount} ${tileCount === 1 ? 'tile' : 'tiles'}`;
+
+const countVisitedTiles = (walk: (visit: (tileX: number, tileY: number) => void) => void): number => {
+  let tileCount = 0;
+  walk(() => {
+    tileCount += 1;
+  });
+  return tileCount;
+};
+
+const countLinePreviewTiles = (startTileX: number, startTileY: number, endTileX: number, endTileY: number): number =>
+  countVisitedTiles((visit) => {
+    walkLineSteppedTilePath(startTileX, startTileY, endTileX, endTileY, visit);
+  });
+
+const countFilledRectPreviewTiles = (
+  startTileX: number,
+  startTileY: number,
+  endTileX: number,
+  endTileY: number
+): number =>
+  countVisitedTiles((visit) => {
+    walkFilledRectangleTileArea(startTileX, startTileY, endTileX, endTileY, visit);
+  });
+
+const countRectOutlinePreviewTiles = (
+  startTileX: number,
+  startTileY: number,
+  endTileX: number,
+  endTileY: number
+): number =>
+  countVisitedTiles((visit) => {
+    walkRectangleOutlineTileArea(startTileX, startTileY, endTileX, endTileY, visit);
+  });
+
+const countFilledEllipsePreviewTiles = (
+  startTileX: number,
+  startTileY: number,
+  endTileX: number,
+  endTileY: number
+): number =>
+  countVisitedTiles((visit) => {
+    walkFilledEllipseTileArea(startTileX, startTileY, endTileX, endTileY, visit);
+  });
+
+const countEllipseOutlinePreviewTiles = (
+  startTileX: number,
+  startTileY: number,
+  endTileX: number,
+  endTileY: number
+): number =>
+  countVisitedTiles((visit) => {
+    walkEllipseOutlineTileArea(startTileX, startTileY, endTileX, endTileY, visit);
+  });
+
 const formatPreviewCoordinatesText = (
   anchorTileX: number,
   anchorTileY: number,
   endpointTileX: number | null,
-  endpointTileY: number | null
+  endpointTileY: number | null,
+  affectedTileCount: number | null
 ): string => {
   const endpointText =
     endpointTileX === null || endpointTileY === null
@@ -271,7 +337,12 @@ const formatPreviewCoordinatesText = (
     endpointTileX === null || endpointTileY === null
       ? 'pending'
       : `${Math.abs(endpointTileX - anchorTileX) + 1}x${Math.abs(endpointTileY - anchorTileY) + 1} tiles`;
-  return `Preview: anchor ${formatTileCoordinatePair(anchorTileX, anchorTileY)} | endpoint ${endpointText} | span ${spanText}`;
+  return (
+    `Preview: anchor ${formatTileCoordinatePair(anchorTileX, anchorTileY)}` +
+    ` | endpoint ${endpointText}` +
+    ` | span ${spanText}` +
+    ` | affects ${formatEstimatedAffectedTileCount(affectedTileCount)}`
+  );
 };
 
 const formatInspectOffsetLine = (
@@ -329,12 +400,23 @@ const buildPreviewText = (
   preview: ArmedDebugToolPreviewState,
   hoveredTile: DebugEditHoveredTileState | null
 ): string | null => {
+  const hoveredTileX = hoveredTile?.tileX ?? null;
+  const hoveredTileY = hoveredTile?.tileY ?? null;
+
   if (preview.activeMouseLineDrag) {
     return formatPreviewCoordinatesText(
       preview.activeMouseLineDrag.startTileX,
       preview.activeMouseLineDrag.startTileY,
-      hoveredTile?.tileX ?? null,
-      hoveredTile?.tileY ?? null
+      hoveredTileX,
+      hoveredTileY,
+      hoveredTileX === null || hoveredTileY === null
+        ? null
+        : countLinePreviewTiles(
+            preview.activeMouseLineDrag.startTileX,
+            preview.activeMouseLineDrag.startTileY,
+            hoveredTileX,
+            hoveredTileY
+          )
     );
   }
 
@@ -342,8 +424,16 @@ const buildPreviewText = (
     return formatPreviewCoordinatesText(
       preview.activeMouseRectDrag.startTileX,
       preview.activeMouseRectDrag.startTileY,
-      hoveredTile?.tileX ?? null,
-      hoveredTile?.tileY ?? null
+      hoveredTileX,
+      hoveredTileY,
+      hoveredTileX === null || hoveredTileY === null
+        ? null
+        : countFilledRectPreviewTiles(
+            preview.activeMouseRectDrag.startTileX,
+            preview.activeMouseRectDrag.startTileY,
+            hoveredTileX,
+            hoveredTileY
+          )
     );
   }
 
@@ -351,8 +441,16 @@ const buildPreviewText = (
     return formatPreviewCoordinatesText(
       preview.activeMouseRectOutlineDrag.startTileX,
       preview.activeMouseRectOutlineDrag.startTileY,
-      hoveredTile?.tileX ?? null,
-      hoveredTile?.tileY ?? null
+      hoveredTileX,
+      hoveredTileY,
+      hoveredTileX === null || hoveredTileY === null
+        ? null
+        : countRectOutlinePreviewTiles(
+            preview.activeMouseRectOutlineDrag.startTileX,
+            preview.activeMouseRectOutlineDrag.startTileY,
+            hoveredTileX,
+            hoveredTileY
+          )
     );
   }
 
@@ -360,8 +458,16 @@ const buildPreviewText = (
     return formatPreviewCoordinatesText(
       preview.activeMouseEllipseDrag.startTileX,
       preview.activeMouseEllipseDrag.startTileY,
-      hoveredTile?.tileX ?? null,
-      hoveredTile?.tileY ?? null
+      hoveredTileX,
+      hoveredTileY,
+      hoveredTileX === null || hoveredTileY === null
+        ? null
+        : countFilledEllipsePreviewTiles(
+            preview.activeMouseEllipseDrag.startTileX,
+            preview.activeMouseEllipseDrag.startTileY,
+            hoveredTileX,
+            hoveredTileY
+          )
     );
   }
 
@@ -369,8 +475,16 @@ const buildPreviewText = (
     return formatPreviewCoordinatesText(
       preview.activeMouseEllipseOutlineDrag.startTileX,
       preview.activeMouseEllipseOutlineDrag.startTileY,
-      hoveredTile?.tileX ?? null,
-      hoveredTile?.tileY ?? null
+      hoveredTileX,
+      hoveredTileY,
+      hoveredTileX === null || hoveredTileY === null
+        ? null
+        : countEllipseOutlinePreviewTiles(
+            preview.activeMouseEllipseOutlineDrag.startTileX,
+            preview.activeMouseEllipseOutlineDrag.startTileY,
+            hoveredTileX,
+            hoveredTileY
+          )
     );
   }
 
@@ -378,6 +492,7 @@ const buildPreviewText = (
     return formatPreviewCoordinatesText(
       preview.pendingTouchLineStart.tileX,
       preview.pendingTouchLineStart.tileY,
+      null,
       null,
       null
     );
@@ -388,6 +503,7 @@ const buildPreviewText = (
       preview.pendingTouchRectStart.tileX,
       preview.pendingTouchRectStart.tileY,
       null,
+      null,
       null
     );
   }
@@ -396,6 +512,7 @@ const buildPreviewText = (
     return formatPreviewCoordinatesText(
       preview.pendingTouchRectOutlineStart.tileX,
       preview.pendingTouchRectOutlineStart.tileY,
+      null,
       null,
       null
     );
@@ -406,6 +523,7 @@ const buildPreviewText = (
       preview.pendingTouchEllipseStart.tileX,
       preview.pendingTouchEllipseStart.tileY,
       null,
+      null,
       null
     );
   }
@@ -414,6 +532,7 @@ const buildPreviewText = (
     return formatPreviewCoordinatesText(
       preview.pendingTouchEllipseOutlineStart.tileX,
       preview.pendingTouchEllipseOutlineStart.tileY,
+      null,
       null,
       null
     );

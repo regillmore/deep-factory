@@ -138,7 +138,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.toolText).toBe('Tool: Line Brush armed');
-    expect(model.previewText).toBe('Preview: anchor 4,7 | endpoint 12,-4 | span 9x12 tiles');
+    expect(model.previewText).toBe('Preview: anchor 4,7 | endpoint 12,-4 | span 9x12 tiles | affects 12 tiles');
   });
 
   it('shows anchored touch preview coordinates while the endpoint is still pending', () => {
@@ -160,7 +160,106 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.toolText).toBe('Tool: Rect Outline Break armed');
-    expect(model.previewText).toBe('Preview: anchor -3,15 | endpoint pending | span pending');
+    expect(model.previewText).toBe('Preview: anchor -3,15 | endpoint pending | span pending | affects pending');
+  });
+
+  it('shows rectangle fill preview affected tile counts from the inclusive preview bounds', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      desktopInspectPinArmed: false,
+      pinnedTile: null,
+      preview: {
+        ...createEmptyPreviewState(),
+        activeMouseRectDrag: {
+          kind: 'place',
+          startTileX: 1,
+          startTileY: 2
+        }
+      },
+      hoveredTile: {
+        tileX: 3,
+        tileY: 4,
+        chunkX: 0,
+        chunkY: 0,
+        localX: 3,
+        localY: 4,
+        tileId: 2,
+        tileLabel: 'dirt',
+        solid: true,
+        blocksLight: true,
+        liquidKind: null
+      }
+    });
+
+    expect(model.previewText).toBe('Preview: anchor 1,2 | endpoint 3,4 | span 3x3 tiles | affects 9 tiles');
+  });
+
+  it('shows rectangle outline preview affected tile counts from the perimeter tiles', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      desktopInspectPinArmed: false,
+      pinnedTile: null,
+      preview: {
+        ...createEmptyPreviewState(),
+        activeMouseRectOutlineDrag: {
+          kind: 'break',
+          startTileX: 1,
+          startTileY: 2
+        }
+      },
+      hoveredTile: {
+        tileX: 3,
+        tileY: 4,
+        chunkX: 0,
+        chunkY: 0,
+        localX: 3,
+        localY: 4,
+        tileId: 0,
+        tileLabel: 'air',
+        solid: false,
+        blocksLight: false,
+        liquidKind: null
+      }
+    });
+
+    expect(model.previewText).toBe('Preview: anchor 1,2 | endpoint 3,4 | span 3x3 tiles | affects 8 tiles');
+  });
+
+  it('shows ellipse fill preview affected tile counts from the resolved ellipse area', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      desktopInspectPinArmed: false,
+      pinnedTile: null,
+      preview: {
+        ...createEmptyPreviewState(),
+        activeMouseEllipseDrag: {
+          kind: 'place',
+          startTileX: 0,
+          startTileY: 0
+        }
+      },
+      hoveredTile: {
+        tileX: 4,
+        tileY: 4,
+        chunkX: 0,
+        chunkY: 0,
+        localX: 4,
+        localY: 4,
+        tileId: 2,
+        tileLabel: 'dirt',
+        solid: true,
+        blocksLight: true,
+        liquidKind: null
+      }
+    });
+
+    expect(model.previewText).toBe('Preview: anchor 0,0 | endpoint 4,4 | span 5x5 tiles | affects 21 tiles');
   });
 
   it('shows active shape preview span dimensions from the inclusive tile bounds', () => {
@@ -194,7 +293,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.toolText).toBe('Tool: Ellipse Outline Break armed');
-    expect(model.previewText).toBe('Preview: anchor -5,8 | endpoint -2,2 | span 4x7 tiles');
+    expect(model.previewText).toBe('Preview: anchor -5,8 | endpoint -2,2 | span 4x7 tiles | affects 14 tiles');
   });
 
   it('formats hovered tile metadata with compact gameplay flag readouts', () => {
