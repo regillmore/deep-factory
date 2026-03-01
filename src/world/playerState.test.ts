@@ -7,7 +7,8 @@ import {
   DEFAULT_PLAYER_HEIGHT,
   DEFAULT_PLAYER_WIDTH,
   getPlayerAabb,
-  integratePlayerState
+  integratePlayerState,
+  movePlayerStateWithCollisions
 } from './playerState';
 import { TileWorld } from './world';
 
@@ -113,6 +114,109 @@ describe('playerState', () => {
     expect(idle.grounded).toBe(true);
   });
 
+  it('sweeps horizontally into a wall tile and zeroes blocked horizontal velocity', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -2, 2, 1, 0);
+    world.setTile(1, -1, 3);
+
+    const stepped = movePlayerStateWithCollisions(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        velocity: { x: 20, y: 0 },
+        size: { width: 12, height: 12 },
+        facing: 'left',
+        grounded: true
+      }),
+      0.5
+    );
+
+    expect(stepped).toEqual({
+      position: { x: 10, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    });
+  });
+
+  it('lands on solid ground and marks the player as grounded', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -2, 2, 1, 0);
+    world.setTile(0, 0, 3);
+
+    const stepped = movePlayerStateWithCollisions(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -2 },
+        velocity: { x: 0, y: 20 },
+        size: { width: 12, height: 12 }
+      }),
+      0.5
+    );
+
+    expect(stepped).toEqual({
+      position: { x: 8, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: true,
+      facing: 'right'
+    });
+  });
+
+  it('clamps upward movement against a ceiling tile without reporting grounded support', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -3, 2, 1, 0);
+    world.setTile(0, -2, 3);
+
+    const stepped = movePlayerStateWithCollisions(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -2 },
+        velocity: { x: 0, y: -20 },
+        size: { width: 12, height: 12 }
+      }),
+      0.5
+    );
+
+    expect(stepped).toEqual({
+      position: { x: 8, y: -4 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    });
+  });
+
+  it('recomputes grounded from post-move support so horizontal movement can walk off ledges', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -2, 3, 1, 0);
+    world.setTile(0, 0, 3);
+
+    const stepped = movePlayerStateWithCollisions(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        velocity: { x: 32, y: 0 },
+        size: { width: 12, height: 12 },
+        grounded: true
+      }),
+      0.5
+    );
+
+    expect(stepped).toEqual({
+      position: { x: 24, y: 0 },
+      velocity: { x: 32, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    });
+  });
+
   it('rejects invalid size and fixed-step durations', () => {
     expect(() =>
       createPlayerState({
@@ -123,5 +227,8 @@ describe('playerState', () => {
     expect(() => integratePlayerState(createPlayerState(), -1 / 60)).toThrowError(
       /fixedDtSeconds must be a non-negative finite number/
     );
+    expect(() =>
+      movePlayerStateWithCollisions(new TileWorld(0), createPlayerState(), -1 / 60)
+    ).toThrowError(/fixedDtSeconds must be a non-negative finite number/);
   });
 });

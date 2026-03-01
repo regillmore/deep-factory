@@ -12,6 +12,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 6. Implement walk, jump, gravity, and tile collision resolution for the player using the new collision helpers.
 7. Add mixed-device player input bindings and camera follow rules without removing the existing debug-edit controls.
+8. Wire a spawned standalone player through the fixed update loop with gravity-only collision stepping before input-driven movement exists.
 
 ## Liquid rendering
 
@@ -53,4 +54,3 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Player debugging
 
 28. Surface live standalone player-state telemetry (`position`, `velocity`, `grounded`, `facing`) in the debug overlay once movement is wired.
-29. Add a fixed-step player collision-move helper that advances `PlayerState` through per-axis AABB sweeps without input forces yet.

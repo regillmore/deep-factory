@@ -23,7 +23,7 @@ Current update phase applies input-driven camera movement.
 
 - Standalone player simulation state currently lives in `src/world/playerState.ts`.
 - `PlayerState.position` uses bottom-center world coordinates so spawn placement, collision AABB derivation, and future controller updates share one anchor convention.
-- Shared helpers can initialize player state directly from spawn-search output and advance position from velocity on fixed steps without mixing render interpolation into the source-of-truth state.
+- Shared helpers can initialize player state directly from spawn-search output, advance position from velocity on fixed steps, and resolve x-then-y collision sweeps plus post-move grounded support without mixing render interpolation into the source-of-truth state.
 
 ## Render pipeline
 

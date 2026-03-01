@@ -1,4 +1,7 @@
-import type { WorldAabb } from './collision';
+import { sweepAabbAlongAxis, type SolidTileCollision, type WorldAabb } from './collision';
+import { TILE_METADATA } from './tileMetadata';
+import type { TileMetadataRegistry } from './tileMetadata';
+import type { TileWorld } from './world';
 
 export type PlayerFacing = 'left' | 'right';
 
@@ -37,6 +40,7 @@ export interface CreatePlayerStateOptions {
 export const DEFAULT_PLAYER_WIDTH = 12;
 export const DEFAULT_PLAYER_HEIGHT = 28;
 const DEFAULT_PLAYER_FACING: PlayerFacing = 'right';
+const GROUND_SUPPORT_PROBE_DISTANCE = 1;
 
 const expectFiniteNumber = (value: number, label: string): number => {
   if (!Number.isFinite(value)) {
@@ -90,6 +94,26 @@ const buildSpawnSize = (aabb: WorldAabb): PlayerSize => ({
   width: expectPositiveFiniteNumber(aabb.maxX - aabb.minX, 'spawn.aabb.width'),
   height: expectPositiveFiniteNumber(aabb.maxY - aabb.minY, 'spawn.aabb.height')
 });
+
+const offsetAabb = (aabb: WorldAabb, deltaX: number, deltaY: number): WorldAabb => ({
+  minX: aabb.minX + deltaX,
+  minY: aabb.minY + deltaY,
+  maxX: aabb.maxX + deltaX,
+  maxY: aabb.maxY + deltaY
+});
+
+const getGroundSupport = (
+  world: TileWorld,
+  aabb: WorldAabb,
+  registry: TileMetadataRegistry
+): SolidTileCollision | null => {
+  const supportSweep = sweepAabbAlongAxis(world, aabb, 'y', GROUND_SUPPORT_PROBE_DISTANCE, registry);
+  if (supportSweep.allowedDelta !== 0 || supportSweep.hit === null) {
+    return null;
+  }
+
+  return supportSweep.hit;
+};
 
 export const createPlayerState = (options: CreatePlayerStateOptions = {}): PlayerState => {
   const velocity = buildVector(options.velocity, 'velocity');
@@ -147,6 +171,39 @@ export const integratePlayerState = (state: PlayerState, fixedDtSeconds: number)
       height: state.size.height
     },
     grounded: state.grounded && state.velocity.y === 0,
+    facing
+  };
+};
+
+export const movePlayerStateWithCollisions = (
+  world: TileWorld,
+  state: PlayerState,
+  fixedDtSeconds: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): PlayerState => {
+  const dt = expectNonNegativeFiniteNumber(fixedDtSeconds, 'fixedDtSeconds');
+  const facing = resolveFacingFromHorizontalVelocity(state.facing, state.velocity.x);
+  const initialAabb = getPlayerAabb(state);
+  const horizontalSweep = sweepAabbAlongAxis(world, initialAabb, 'x', state.velocity.x * dt, registry);
+  const afterHorizontalAabb = offsetAabb(initialAabb, horizontalSweep.allowedDelta, 0);
+  const verticalSweep = sweepAabbAlongAxis(world, afterHorizontalAabb, 'y', state.velocity.y * dt, registry);
+  const finalAabb = offsetAabb(afterHorizontalAabb, 0, verticalSweep.allowedDelta);
+  const groundSupport = getGroundSupport(world, finalAabb, registry);
+
+  return {
+    position: {
+      x: (finalAabb.minX + finalAabb.maxX) * 0.5,
+      y: finalAabb.maxY
+    },
+    velocity: {
+      x: horizontalSweep.hit ? 0 : state.velocity.x,
+      y: verticalSweep.hit ? 0 : state.velocity.y
+    },
+    size: {
+      width: state.size.width,
+      height: state.size.height
+    },
+    grounded: groundSupport !== null,
     facing
   };
 };
