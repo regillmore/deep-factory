@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Show chunk-local tile coordinates alongside world plus chunk coordinates in the compact status strip inspect metadata for hover, pinned, and shared inspect states.
+1. Show chunk plus chunk-local tile coordinates in the debug overlay pointer inspect line so the overlay matches the compact status strip readout.
 
 ## Authored asset pipeline
 

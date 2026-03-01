@@ -32,7 +32,7 @@ import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import type { DebugEditHoveredTileState } from './ui/debugEditStatusHelpers';
 import { TouchDebugEditControls, type DebugBrushOption } from './ui/touchDebugEditControls';
 import { CHUNK_SIZE } from './world/constants';
-import { worldToChunkCoord } from './world/chunkMath';
+import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
 import { getTileMetadata, resolveTileGameplayMetadata, TILE_METADATA } from './world/tileMetadata';
 
 const DEBUG_TILE_BREAK_ID = 0;
@@ -676,12 +676,15 @@ const bootstrap = async (): Promise<void> => {
     const tileMetadata = getTileMetadata(tileId);
     const gameplay = resolveTileGameplayMetadata(tileId);
     const { chunkX, chunkY } = worldToChunkCoord(tileX, tileY);
+    const { localX, localY } = worldToLocalTile(tileX, tileY);
 
     return {
       tileX,
       tileY,
       chunkX,
       chunkY,
+      localX,
+      localY,
       tileId,
       tileLabel: tileMetadata ? formatDebugBrushLabel(tileMetadata.name) : `tile ${tileId}`,
       solid: gameplay.solid,

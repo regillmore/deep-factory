@@ -35,6 +35,8 @@ export interface DebugEditHoveredTileState {
   tileY: number;
   chunkX: number;
   chunkY: number;
+  localX: number;
+  localY: number;
   tileId: number;
   tileLabel: string;
   solid: boolean;
@@ -245,6 +247,7 @@ const hasSameInspectTarget = (
 const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): string =>
   `${label}: ${tile.tileLabel} (#${tile.tileId}) @ ${tile.tileX},${tile.tileY}` +
   ` chunk:${tile.chunkX},${tile.chunkY}` +
+  ` local:${tile.localX},${tile.localY}` +
   ` | solid:${formatHoveredTileFlag(tile.solid)}` +
   ` | light:${formatHoveredTileFlag(tile.blocksLight)}` +
   ` | liquid:${tile.liquidKind ?? 'none'}`;

@@ -118,6 +118,8 @@ describe('buildDebugEditStatusStripModel', () => {
         tileY: -4,
         chunkX: 0,
         chunkY: -1,
+        localX: 12,
+        localY: 28,
         tileId: 9,
         tileLabel: 'lava pool',
         solid: false,
@@ -127,7 +129,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Hover: lava pool (#9) @ 12,-4 chunk:0,-1 | solid:off | light:on | liquid:lava'
+      'Hover: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava'
     );
   });
 
@@ -144,6 +146,8 @@ describe('buildDebugEditStatusStripModel', () => {
         tileY: -4,
         chunkX: 0,
         chunkY: -1,
+        localX: 12,
+        localY: 28,
         tileId: 9,
         tileLabel: 'lava pool',
         solid: false,
@@ -153,7 +157,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 | solid:off | light:on | liquid:lava'
+      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava'
     );
     expect(model.inspectText).toBe('Inspect: Pinned @ 12,-4');
     expect(model.inspectActionText).toBe('Repin Click');
@@ -175,6 +179,8 @@ describe('buildDebugEditStatusStripModel', () => {
         tileY: 7,
         chunkX: 0,
         chunkY: 0,
+        localX: 4,
+        localY: 7,
         tileId: 2,
         tileLabel: 'dirt',
         solid: true,
@@ -186,6 +192,8 @@ describe('buildDebugEditStatusStripModel', () => {
         tileY: -4,
         chunkX: 0,
         chunkY: -1,
+        localX: 12,
+        localY: 28,
         tileId: 9,
         tileLabel: 'lava pool',
         solid: false,
@@ -195,8 +203,8 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 | solid:off | light:on | liquid:lava\n' +
-        'Hover: dirt (#2) @ 4,7 chunk:0,0 | solid:on | light:on | liquid:none\n' +
+      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava\n' +
+        'Hover: dirt (#2) @ 4,7 chunk:0,0 local:4,7 | solid:on | light:on | liquid:none\n' +
         'Offset: Hover->Pinned x:+8 y:-11'
     );
   });
@@ -213,6 +221,8 @@ describe('buildDebugEditStatusStripModel', () => {
         tileY: -4,
         chunkX: 0,
         chunkY: -1,
+        localX: 12,
+        localY: 28,
         tileId: 9,
         tileLabel: 'lava pool',
         solid: false,
@@ -224,6 +234,8 @@ describe('buildDebugEditStatusStripModel', () => {
         tileY: -4,
         chunkX: 0,
         chunkY: -1,
+        localX: 12,
+        localY: 28,
         tileId: 9,
         tileLabel: 'lava pool',
         solid: false,
@@ -233,7 +245,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Shared: lava pool (#9) @ 12,-4 chunk:0,-1 | solid:off | light:on | liquid:lava'
+      'Shared: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava'
     );
     expect(model.inspectText).toBe('Inspect: Shared @ 12,-4');
   });
@@ -250,6 +262,8 @@ describe('buildDebugEditStatusStripModel', () => {
         tileY: -4,
         chunkX: 0,
         chunkY: -1,
+        localX: 12,
+        localY: 28,
         tileId: 9,
         tileLabel: 'lava pool',
         solid: false,
@@ -264,6 +278,34 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.clearActionText).toBe('Clear Pin');
     expect(model.hintText).toBe(
       'Repin Click armed: click a world tile to move the pinned inspect target. Dragging still pans, Esc cancels.'
+    );
+  });
+
+  it('formats chunk-local inspect coordinates for negative-world tiles', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      preview: createEmptyPreviewState(),
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      hoveredTile: {
+        tileX: -33,
+        tileY: -1,
+        chunkX: -2,
+        chunkY: -1,
+        localX: 31,
+        localY: 31,
+        tileId: 2,
+        tileLabel: 'dirt',
+        solid: true,
+        blocksLight: true,
+        liquidKind: null
+      }
+    });
+
+    expect(model.hoverText).toBe(
+      'Hover: dirt (#2) @ -33,-1 chunk:-2,-1 local:31,31 | solid:on | light:on | liquid:none'
     );
   });
 });

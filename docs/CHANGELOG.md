@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Show chunk-local tile coordinates alongside world plus chunk coordinates in the compact status strip inspect metadata.
+- Changes: Updated [src/main.ts](../src/main.ts) to attach chunk-local inspect coordinates from shared chunk math helpers, updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) to render local coordinates for hover, pinned, and shared inspect states, added regression coverage in [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Stabilize compact status strip inspect hover metadata while the mouse is over the `Pin Click` or `Repin Click` action row.
 - Changes: Updated [src/input/controller.ts](../src/input/controller.ts) to preserve mouse inspect state when the pointer leaves the canvas into registered retainer UI, updated [src/ui/debugEditStatusStrip.ts](../src/ui/debugEditStatusStrip.ts) plus [src/main.ts](../src/main.ts) to register the compact status strip action row as a retainer, added regression coverage in [src/input/controller.test.ts](../src/input/controller.test.ts), refined [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/input/controller.test.ts src/ui/debugEditStatusHelpers.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
