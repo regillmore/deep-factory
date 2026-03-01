@@ -53,6 +53,7 @@ export class DebugEditStatusStrip {
   private actionRow: HTMLDivElement;
   private inspectActionButton: HTMLButtonElement;
   private clearActionButton: HTMLButtonElement;
+  private previewLine: HTMLDivElement;
   private hoverLine: HTMLDivElement;
   private hintLine: HTMLDivElement;
   private onInspectAction: () => void = () => {};
@@ -125,6 +126,12 @@ export class DebugEditStatusStrip {
       this.onClearPinnedTile();
     });
 
+    this.previewLine = document.createElement('div');
+    this.previewLine.style.display = 'none';
+    this.previewLine.style.maxWidth = '100%';
+    this.previewLine.style.whiteSpace = 'normal';
+    this.root.append(this.previewLine);
+
     this.hoverLine = document.createElement('div');
     this.hoverLine.style.color = 'rgba(236, 242, 248, 0.96)';
     this.hoverLine.style.whiteSpace = 'pre-line';
@@ -181,6 +188,9 @@ export class DebugEditStatusStrip {
     this.clearActionButton.textContent = model.clearActionText ?? '';
     this.clearActionButton.style.display = model.clearActionText ? 'inline-flex' : 'none';
 
+    this.previewLine.textContent = model.previewText ?? '';
+    this.previewLine.style.display = model.previewText ? 'block' : 'none';
+    this.previewLine.style.color = withAlpha(model.toolAccent, '0.92');
     this.hoverLine.textContent = model.hoverText;
     this.hintLine.textContent = model.hintText;
     this.hintLine.style.borderTopColor = withAlpha(model.toolAccent, '0.16');

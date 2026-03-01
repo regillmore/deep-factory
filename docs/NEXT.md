@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Show active one-shot tool anchor and endpoint tile coordinates in the compact status strip while preview overlays are armed.
+1. Show live line or shape span dimensions in the compact status strip while one-shot preview overlays are active.
 
 ## Authored asset pipeline
 

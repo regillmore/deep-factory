@@ -74,6 +74,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.modeText).toBe('Mode: Place');
     expect(model.brushText).toBe('Brush: debug brick (#3)');
     expect(model.toolText).toBe('Tool: No one-shot armed');
+    expect(model.previewText).toBeNull();
     expect(model.inspectText).toBe('Inspect: Hover only');
     expect(model.hoverText).toBe(
       'Hover: move cursor or touch a world tile to inspect gameplay flags. Pin Click keeps metadata visible.'
@@ -101,8 +102,65 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.toolText).toBe('Tool: Fill Brush armed');
+    expect(model.previewText).toBeNull();
     expect(model.hintText).toBe('click/tap target tile - Esc cancel');
     expect(model.toolAccent).toBe('rgba(120, 255, 180, 0.95)');
+  });
+
+  it('shows active mouse-drag preview anchor and endpoint coordinates in the status-strip model', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      desktopInspectPinArmed: false,
+      pinnedTile: null,
+      preview: {
+        ...createEmptyPreviewState(),
+        activeMouseLineDrag: {
+          kind: 'place',
+          startTileX: 4,
+          startTileY: 7
+        }
+      },
+      hoveredTile: {
+        tileX: 12,
+        tileY: -4,
+        chunkX: 0,
+        chunkY: -1,
+        localX: 12,
+        localY: 28,
+        tileId: 9,
+        tileLabel: 'lava pool',
+        solid: false,
+        blocksLight: true,
+        liquidKind: 'lava'
+      }
+    });
+
+    expect(model.toolText).toBe('Tool: Line Brush armed');
+    expect(model.previewText).toBe('Preview: anchor 4,7 | endpoint 12,-4');
+  });
+
+  it('shows anchored touch preview coordinates while the endpoint is still pending', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      desktopInspectPinArmed: false,
+      pinnedTile: null,
+      hoveredTile: null,
+      preview: {
+        ...createEmptyPreviewState(),
+        pendingTouchRectOutlineStart: {
+          kind: 'break',
+          tileX: -3,
+          tileY: 15
+        }
+      }
+    });
+
+    expect(model.toolText).toBe('Tool: Rect Outline Break armed');
+    expect(model.previewText).toBe('Preview: anchor -3,15 | endpoint pending');
   });
 
   it('formats hovered tile metadata with compact gameplay flag readouts', () => {

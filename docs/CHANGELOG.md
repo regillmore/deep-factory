@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Show active one-shot tool anchor and endpoint tile coordinates in the compact status strip while preview overlays are armed.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) to derive preview anchor plus endpoint text from shared one-shot preview state, updated [src/ui/debugEditStatusStrip.ts](../src/ui/debugEditStatusStrip.ts) to render a dedicated preview line in the compact strip, added regression coverage in [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Show pinned tile inspect metadata in the debug overlay when a tile is pinned from the compact status strip.
 - Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) to render a separate pinned inspect line alongside the existing pointer line, updated [src/main.ts](../src/main.ts) to pass pinned tile metadata into the overlay payload, added regression coverage in [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

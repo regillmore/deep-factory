@@ -21,6 +21,7 @@ export interface DebugEditStatusStripModel {
   modeText: string;
   brushText: string;
   toolText: string;
+  previewText: string | null;
   inspectText: string;
   hoverText: string;
   hintText: string;
@@ -254,6 +255,19 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
 
 const formatSignedOffset = (value: number): string => (value >= 0 ? `+${value}` : `${value}`);
 
+const formatTileCoordinatePair = (tileX: number, tileY: number): string => `${tileX},${tileY}`;
+
+const formatPreviewCoordinatesText = (
+  anchorTileX: number,
+  anchorTileY: number,
+  endpointTileX: number | null,
+  endpointTileY: number | null
+): string =>
+  `Preview: anchor ${formatTileCoordinatePair(anchorTileX, anchorTileY)} | endpoint ` +
+  (endpointTileX === null || endpointTileY === null
+    ? 'pending'
+    : formatTileCoordinatePair(endpointTileX, endpointTileY));
+
 const formatInspectOffsetLine = (
   hoveredTile: DebugEditHoveredTileState,
   pinnedTile: DebugEditHoveredTileState
@@ -305,6 +319,103 @@ const buildInspectActionText = (state: DebugEditStatusStripState): string => {
   return 'Pin Click';
 };
 
+const buildPreviewText = (
+  preview: ArmedDebugToolPreviewState,
+  hoveredTile: DebugEditHoveredTileState | null
+): string | null => {
+  if (preview.activeMouseLineDrag) {
+    return formatPreviewCoordinatesText(
+      preview.activeMouseLineDrag.startTileX,
+      preview.activeMouseLineDrag.startTileY,
+      hoveredTile?.tileX ?? null,
+      hoveredTile?.tileY ?? null
+    );
+  }
+
+  if (preview.activeMouseRectDrag) {
+    return formatPreviewCoordinatesText(
+      preview.activeMouseRectDrag.startTileX,
+      preview.activeMouseRectDrag.startTileY,
+      hoveredTile?.tileX ?? null,
+      hoveredTile?.tileY ?? null
+    );
+  }
+
+  if (preview.activeMouseRectOutlineDrag) {
+    return formatPreviewCoordinatesText(
+      preview.activeMouseRectOutlineDrag.startTileX,
+      preview.activeMouseRectOutlineDrag.startTileY,
+      hoveredTile?.tileX ?? null,
+      hoveredTile?.tileY ?? null
+    );
+  }
+
+  if (preview.activeMouseEllipseDrag) {
+    return formatPreviewCoordinatesText(
+      preview.activeMouseEllipseDrag.startTileX,
+      preview.activeMouseEllipseDrag.startTileY,
+      hoveredTile?.tileX ?? null,
+      hoveredTile?.tileY ?? null
+    );
+  }
+
+  if (preview.activeMouseEllipseOutlineDrag) {
+    return formatPreviewCoordinatesText(
+      preview.activeMouseEllipseOutlineDrag.startTileX,
+      preview.activeMouseEllipseOutlineDrag.startTileY,
+      hoveredTile?.tileX ?? null,
+      hoveredTile?.tileY ?? null
+    );
+  }
+
+  if (preview.pendingTouchLineStart) {
+    return formatPreviewCoordinatesText(
+      preview.pendingTouchLineStart.tileX,
+      preview.pendingTouchLineStart.tileY,
+      null,
+      null
+    );
+  }
+
+  if (preview.pendingTouchRectStart) {
+    return formatPreviewCoordinatesText(
+      preview.pendingTouchRectStart.tileX,
+      preview.pendingTouchRectStart.tileY,
+      null,
+      null
+    );
+  }
+
+  if (preview.pendingTouchRectOutlineStart) {
+    return formatPreviewCoordinatesText(
+      preview.pendingTouchRectOutlineStart.tileX,
+      preview.pendingTouchRectOutlineStart.tileY,
+      null,
+      null
+    );
+  }
+
+  if (preview.pendingTouchEllipseStart) {
+    return formatPreviewCoordinatesText(
+      preview.pendingTouchEllipseStart.tileX,
+      preview.pendingTouchEllipseStart.tileY,
+      null,
+      null
+    );
+  }
+
+  if (preview.pendingTouchEllipseOutlineStart) {
+    return formatPreviewCoordinatesText(
+      preview.pendingTouchEllipseOutlineStart.tileX,
+      preview.pendingTouchEllipseOutlineStart.tileY,
+      null,
+      null
+    );
+  }
+
+  return null;
+};
+
 export const buildDebugEditStatusStripModel = (
   state: DebugEditStatusStripState
 ): DebugEditStatusStripModel => {
@@ -314,6 +425,7 @@ export const buildDebugEditStatusStripModel = (
     modeText: `Mode: ${formatTouchDebugEditModeLabel(state.mode)}`,
     brushText: `Brush: ${state.brushLabel} (#${state.brushTileId})`,
     toolText: activeToolStatus ? `Tool: ${activeToolStatus.title}` : 'Tool: No one-shot armed',
+    previewText: buildPreviewText(state.preview, state.hoveredTile),
     inspectText: buildInspectText(state),
     hoverText: buildHoveredTileText(state.hoveredTile, state.pinnedTile),
     hintText: activeToolStatus
