@@ -1,6 +1,43 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveTouchAnchorLabelPlacement } from './armedDebugToolPreviewOverlay';
+import {
+  resolveStatusBadgePlacement,
+  resolveTouchAnchorLabelPlacement
+} from './armedDebugToolPreviewOverlay';
+
+describe('resolveStatusBadgePlacement', () => {
+  it('keeps the badge inset from the canvas top-left corner when the canvas has room', () => {
+    expect(
+      resolveStatusBadgePlacement({
+        left: 100,
+        top: 120,
+        width: 320,
+        height: 180
+      })
+    ).toEqual({
+      left: 110,
+      top: 130,
+      maxWidth: 300,
+      maxHeight: 160
+    });
+  });
+
+  it('shrinks the badge bounds to stay inside a small offset canvas', () => {
+    expect(
+      resolveStatusBadgePlacement({
+        left: 240,
+        top: 320,
+        width: 96,
+        height: 52
+      })
+    ).toEqual({
+      left: 250,
+      top: 330,
+      maxWidth: 76,
+      maxHeight: 32
+    });
+  });
+});
 
 describe('resolveTouchAnchorLabelPlacement', () => {
   it('keeps the touch anchor label aligned to the anchor when the label already fits inside the canvas', () => {

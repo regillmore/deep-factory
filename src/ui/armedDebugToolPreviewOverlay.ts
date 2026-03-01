@@ -11,6 +11,7 @@ import {
 } from './debugEditStatusHelpers';
 import { computeHoveredTileCursorClientRect, type HoveredTileCursorClientRect } from './hoveredTileCursor';
 
+const STATUS_BADGE_PADDING_PX = 10;
 const TOUCH_ANCHOR_LABEL_PADDING_PX = 4;
 const TOUCH_ANCHOR_LABEL_GAP_PX = 4;
 
@@ -70,6 +71,13 @@ export interface TouchAnchorLabelPlacement {
   maxWidth: number;
 }
 
+export interface StatusBadgePlacement {
+  left: number;
+  top: number;
+  maxWidth: number;
+  maxHeight: number;
+}
+
 const clamp = (value: number, min: number, max: number): number => Math.min(Math.max(value, min), max);
 
 export const resolveTouchAnchorLabelPlacement = (
@@ -92,6 +100,13 @@ export const resolveTouchAnchorLabelPlacement = (
     maxWidth
   };
 };
+
+export const resolveStatusBadgePlacement = (canvasRect: ClientRectLike): StatusBadgePlacement => ({
+  left: canvasRect.left + STATUS_BADGE_PADDING_PX,
+  top: canvasRect.top + STATUS_BADGE_PADDING_PX,
+  maxWidth: Math.max(0, canvasRect.width - STATUS_BADGE_PADDING_PX * 2),
+  maxHeight: Math.max(0, canvasRect.height - STATUS_BADGE_PADDING_PX * 2)
+});
 
 export class ArmedDebugToolPreviewOverlay {
   private root: HTMLDivElement;
@@ -117,6 +132,7 @@ export class ArmedDebugToolPreviewOverlay {
     this.statusBadge = document.createElement('div');
     this.statusBadge.style.position = 'fixed';
     this.statusBadge.style.display = 'none';
+    this.statusBadge.style.boxSizing = 'border-box';
     this.statusBadge.style.padding = '8px 10px';
     this.statusBadge.style.borderRadius = '8px';
     this.statusBadge.style.border = '1px solid rgba(255, 255, 255, 0.22)';
@@ -127,6 +143,8 @@ export class ArmedDebugToolPreviewOverlay {
     this.statusBadge.style.boxShadow = '0 8px 18px rgba(0, 0, 0, 0.22)';
     this.statusBadge.style.backdropFilter = 'blur(2px)';
     this.statusBadge.style.whiteSpace = 'pre-line';
+    this.statusBadge.style.overflow = 'hidden';
+    this.statusBadge.style.overflowWrap = 'anywhere';
 
     this.lineSegment = document.createElement('div');
     this.lineSegment.style.position = 'fixed';
@@ -245,9 +263,11 @@ export class ArmedDebugToolPreviewOverlay {
     this.statusBadge.textContent = previewBadgeText
       ? `${status.title} - ${status.detail}\n${previewBadgeText}`
       : `${status.title} - ${status.detail}`;
-    this.statusBadge.style.left = `${canvasRect.left + 10}px`;
-    this.statusBadge.style.top = `${canvasRect.top + 10}px`;
-    this.statusBadge.style.maxWidth = `${Math.max(160, canvasRect.width - 20)}px`;
+    const statusBadgePlacement = resolveStatusBadgePlacement(canvasRect);
+    this.statusBadge.style.left = `${statusBadgePlacement.left}px`;
+    this.statusBadge.style.top = `${statusBadgePlacement.top}px`;
+    this.statusBadge.style.maxWidth = `${statusBadgePlacement.maxWidth}px`;
+    this.statusBadge.style.maxHeight = `${statusBadgePlacement.maxHeight}px`;
     this.statusBadge.style.borderColor = status.accent.replace('0.95', '0.34');
     this.statusBadge.style.boxShadow =
       `0 8px 18px rgba(0, 0, 0, 0.22), inset 0 0 0 1px ${status.accent.replace('0.95', '0.22')}`;

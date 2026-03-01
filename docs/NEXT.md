@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Clamp the active one-shot preview status badge inside the visible canvas bounds when the canvas is small or offset within the page.
+1. Keep the compact debug-edit status strip within the viewport on narrow mobile layouts by wrapping long preview and inspect lines.
 
 ## Authored asset pipeline
 

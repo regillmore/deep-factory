@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Clamp the active one-shot preview status badge inside the visible canvas bounds when the canvas is small or offset within the page.
+- Changes: Updated [src/ui/armedDebugToolPreviewOverlay.ts](../src/ui/armedDebugToolPreviewOverlay.ts) so the active preview badge uses canvas-relative bounded placement and border-box clipping instead of a fixed minimum width that could spill outside narrow canvases, added focused placement coverage in [src/ui/armedDebugToolPreviewOverlay.test.ts](../src/ui/armedDebugToolPreviewOverlay.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/armedDebugToolPreviewOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Clamp the persistent touch one-shot anchor label inside the visible canvas bounds when the anchor tile is near a viewport edge.
 - Changes: Updated [src/ui/armedDebugToolPreviewOverlay.ts](../src/ui/armedDebugToolPreviewOverlay.ts) to measure and clamp the persistent touch anchor label against the live canvas rect instead of the viewport, added focused placement coverage in [src/ui/armedDebugToolPreviewOverlay.test.ts](../src/ui/armedDebugToolPreviewOverlay.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/armedDebugToolPreviewOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
