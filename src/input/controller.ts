@@ -241,6 +241,11 @@ export const buildDebugTileEditRequest = (
   };
 };
 
+export const shouldRetainPointerInspectOnPointerLeave = (
+  relatedTarget: EventTarget | null,
+  retainers: ReadonlyArray<(candidate: EventTarget | null) => boolean>
+): boolean => retainers.some((retainer) => retainer(relatedTarget));
+
 export const getDesktopDebugPaintKindForPointerDown = (
   pointerType: string,
   button: number,
@@ -493,6 +498,7 @@ export class InputController {
   private armedDebugRectOutlineKind: DebugTileEditKind | null = null;
   private armedDebugEllipseKind: DebugTileEditKind | null = null;
   private armedDebugEllipseOutlineKind: DebugTileEditKind | null = null;
+  private pointerInspectRetainers: Array<(candidate: EventTarget | null) => boolean> = [];
   private nextDebugPaintStrokeId = 1;
 
   constructor(
@@ -521,6 +527,10 @@ export class InputController {
       );
     }
     return this.pointerInspect;
+  }
+
+  retainPointerInspectWhenLeavingToElement(element: HTMLElement): void {
+    this.pointerInspectRetainers.push((candidate) => candidate instanceof Node && element.contains(candidate));
   }
 
   consumeDebugTileEdits(): DebugTileStrokeEditRequest[] {
@@ -1116,6 +1126,10 @@ export class InputController {
     this.canvas.addEventListener('pointercancel', (event) => release(event, true));
     this.canvas.addEventListener('pointerleave', (event) => {
       if (event.pointerType === 'mouse' && this.pointers.size === 0) {
+        const retainPointerInspect = shouldRetainPointerInspectOnPointerLeave(
+          event.relatedTarget,
+          this.pointerInspectRetainers
+        );
         this.completeDebugPaintStroke(this.activeMouseDebugPaintStroke);
         this.activeMouseDebugPaintStroke = null;
         this.activeMouseDebugLineDrag = null;
@@ -1124,7 +1138,9 @@ export class InputController {
         this.activeMouseDebugEllipseDrag = null;
         this.activeMouseDebugEllipseOutlineDrag = null;
         this.activeMouseInspectPinClickCandidate = null;
-        this.pointerInspect = null;
+        if (!retainPointerInspect) {
+          this.pointerInspect = null;
+        }
       } else if (event.pointerType === 'touch' && this.pointers.size === 0) {
         this.completeDebugPaintStroke(this.activeTouchDebugPaintStroke);
         this.activeTouchDebugPaintStroke = null;

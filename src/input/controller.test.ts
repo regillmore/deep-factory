@@ -5,6 +5,7 @@ import {
   getDesktopDebugPaintKindForPointerDown,
   getTouchDebugPaintKindForPointerDown,
   markDebugPaintTileSeen,
+  shouldRetainPointerInspectOnPointerLeave,
   walkFilledEllipseTileArea,
   walkEllipseOutlineTileArea,
   walkFilledRectangleTileArea,
@@ -109,6 +110,29 @@ describe('buildDebugTileEditRequest', () => {
         'break'
       )
     ).toBeNull();
+  });
+});
+
+describe('shouldRetainPointerInspectOnPointerLeave', () => {
+  it('retains pointer inspect when any registered retainer matches the leave target', () => {
+    const matchingTarget = new EventTarget();
+
+    expect(
+      shouldRetainPointerInspectOnPointerLeave(matchingTarget, [
+        () => false,
+        (candidate) => candidate === matchingTarget
+      ])
+    ).toBe(true);
+  });
+
+  it('clears pointer inspect when no registered retainer matches the leave target', () => {
+    expect(
+      shouldRetainPointerInspectOnPointerLeave(
+        new EventTarget(),
+        [() => false, () => false]
+      )
+    ).toBe(false);
+    expect(shouldRetainPointerInspectOnPointerLeave(null, [(candidate) => candidate !== null])).toBe(false);
   });
 });
 

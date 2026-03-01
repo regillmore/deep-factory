@@ -116,6 +116,8 @@ describe('buildDebugEditStatusStripModel', () => {
       hoveredTile: {
         tileX: 12,
         tileY: -4,
+        chunkX: 0,
+        chunkY: -1,
         tileId: 9,
         tileLabel: 'lava pool',
         solid: false,
@@ -125,7 +127,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Hover: lava pool (#9) @ 12,-4 | solid:off | light:on | liquid:lava'
+      'Hover: lava pool (#9) @ 12,-4 chunk:0,-1 | solid:off | light:on | liquid:lava'
     );
   });
 
@@ -140,6 +142,8 @@ describe('buildDebugEditStatusStripModel', () => {
       pinnedTile: {
         tileX: 12,
         tileY: -4,
+        chunkX: 0,
+        chunkY: -1,
         tileId: 9,
         tileLabel: 'lava pool',
         solid: false,
@@ -149,7 +153,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Pinned: lava pool (#9) @ 12,-4 | solid:off | light:on | liquid:lava'
+      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 | solid:off | light:on | liquid:lava'
     );
     expect(model.inspectText).toBe('Inspect: Pinned @ 12,-4');
     expect(model.inspectActionText).toBe('Repin Click');
@@ -169,6 +173,8 @@ describe('buildDebugEditStatusStripModel', () => {
       hoveredTile: {
         tileX: 4,
         tileY: 7,
+        chunkX: 0,
+        chunkY: 0,
         tileId: 2,
         tileLabel: 'dirt',
         solid: true,
@@ -178,6 +184,8 @@ describe('buildDebugEditStatusStripModel', () => {
       pinnedTile: {
         tileX: 12,
         tileY: -4,
+        chunkX: 0,
+        chunkY: -1,
         tileId: 9,
         tileLabel: 'lava pool',
         solid: false,
@@ -187,8 +195,8 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Pinned: lava pool (#9) @ 12,-4 | solid:off | light:on | liquid:lava\n' +
-        'Hover: dirt (#2) @ 4,7 | solid:on | light:on | liquid:none\n' +
+      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 | solid:off | light:on | liquid:lava\n' +
+        'Hover: dirt (#2) @ 4,7 chunk:0,0 | solid:on | light:on | liquid:none\n' +
         'Offset: Hover->Pinned x:+8 y:-11'
     );
   });
@@ -203,6 +211,8 @@ describe('buildDebugEditStatusStripModel', () => {
       hoveredTile: {
         tileX: 12,
         tileY: -4,
+        chunkX: 0,
+        chunkY: -1,
         tileId: 9,
         tileLabel: 'lava pool',
         solid: false,
@@ -212,6 +222,8 @@ describe('buildDebugEditStatusStripModel', () => {
       pinnedTile: {
         tileX: 12,
         tileY: -4,
+        chunkX: 0,
+        chunkY: -1,
         tileId: 9,
         tileLabel: 'lava pool',
         solid: false,
@@ -221,7 +233,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Shared: lava pool (#9) @ 12,-4 | solid:off | light:on | liquid:lava'
+      'Shared: lava pool (#9) @ 12,-4 chunk:0,-1 | solid:off | light:on | liquid:lava'
     );
     expect(model.inspectText).toBe('Inspect: Shared @ 12,-4');
   });
@@ -236,6 +248,8 @@ describe('buildDebugEditStatusStripModel', () => {
       pinnedTile: {
         tileX: 12,
         tileY: -4,
+        chunkX: 0,
+        chunkY: -1,
         tileId: 9,
         tileLabel: 'lava pool',
         solid: false,

@@ -32,6 +32,7 @@ import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import type { DebugEditHoveredTileState } from './ui/debugEditStatusHelpers';
 import { TouchDebugEditControls, type DebugBrushOption } from './ui/touchDebugEditControls';
 import { CHUNK_SIZE } from './world/constants';
+import { worldToChunkCoord } from './world/chunkMath';
 import { getTileMetadata, resolveTileGameplayMetadata, TILE_METADATA } from './world/tileMetadata';
 
 const DEBUG_TILE_BREAK_ID = 0;
@@ -95,6 +96,7 @@ const bootstrap = async (): Promise<void> => {
   const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
   const armedDebugToolPreview = new ArmedDebugToolPreviewOverlay(canvas);
   const debugEditStatusStrip = new DebugEditStatusStrip(canvas);
+  input.retainPointerInspectWhenLeavingToElement(debugEditStatusStrip.getPointerInspectRetainerElement());
   const debugTileEditHistory = new DebugTileEditHistory();
   const debugEditControlStorage = (() => {
     try {
@@ -673,10 +675,13 @@ const bootstrap = async (): Promise<void> => {
     const tileId = renderer.getTile(tileX, tileY);
     const tileMetadata = getTileMetadata(tileId);
     const gameplay = resolveTileGameplayMetadata(tileId);
+    const { chunkX, chunkY } = worldToChunkCoord(tileX, tileY);
 
     return {
       tileX,
       tileY,
+      chunkX,
+      chunkY,
       tileId,
       tileLabel: tileMetadata ? formatDebugBrushLabel(tileMetadata.name) : `tile ${tileId}`,
       solid: gameplay.solid,

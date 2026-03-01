@@ -147,6 +147,10 @@ export class DebugEditStatusStrip {
     this.onClearPinnedTile = handlers.onClearPinnedTile ?? (() => {});
   }
 
+  getPointerInspectRetainerElement(): HTMLElement {
+    return this.actionRow;
+  }
+
   update(state: DebugEditStatusStripState): void {
     const canvasRect = this.canvas.getBoundingClientRect();
     if (canvasRect.width <= 0 || canvasRect.height <= 0) {

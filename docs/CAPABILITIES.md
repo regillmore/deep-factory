@@ -43,7 +43,8 @@ This document describes the current project state. Unlike the changelog, it shou
 - Debug overlay shows FPS, rendered chunk count, mesh telemetry, and pointer inspect data (`client`, `canvas`, `world`, `tile`).
 - Hovered tile cursor overlay renders in client space from world tile coordinates and keeps pinned and hovered inspect outlines visible together when they differ.
 - Compact debug-edit status strip mirrors shared mode, active brush, armed tool state, mixed-device hints, shows separate pinned plus hovered tile metadata lines plus a hovered-to-pinned offset when both inspect targets differ, and labels deduplicated same-tile inspect state as shared.
-- Hovered and touched inspect readouts include tile name, tile ID, world coordinates, and solid, light-blocking, and liquid flags.
+- Compact status-strip inspect action buttons retain the last mouse hover comparison state while the pointer is over the action row, so pinned plus hovered metadata does not flap when using `Pin Click` or `Repin Click`.
+- Hovered and touched inspect readouts include tile name, tile ID, world plus chunk coordinates, and solid, light-blocking, and liquid flags.
 - Desktop and touch both support pinned tile inspection through the compact status strip workflow.
 
 ## Shared Debug Edit Model
