@@ -6,7 +6,7 @@ This document describes the current project state. Unlike the changelog, it shou
 
 - WebGL2 renderer with shader utilities, buffer helpers, texture loading, and DPR-aware resize.
 - Renderer atlas initialization attempts to fetch and decode `/atlas/tile-atlas.png`, then falls back to the generated placeholder atlas when no authored asset is present yet.
-- Orthographic camera with anchored zoom and pan controls for mouse and touch input.
+- Orthographic camera with anchored zoom, pointer pan controls, and standalone-player follow that tracks the player body center while preserving manual inspection offsets.
 - Fixed-step game loop (`60hz`) with separate render interpolation alpha.
 - Chunked world model with `32x32` tiles per chunk and `16px` tiles.
 - Procedural terrain fill stub backing the current resident world.
@@ -34,8 +34,8 @@ This document describes the current project state. Unlike the changelog, it shou
 
 - World collision helpers expose metadata-backed `isSolidAt` tile queries, world-space solid-overlap checks for half-open AABBs, and single-axis AABB sweep results that clamp movement to the first blocking tile.
 - Player spawn queries can scan near a chosen origin tile for grounded standing headroom and return the resolved standing AABB plus supporting solid tile.
-- Standalone player-state helpers track feet-centered `position`, `velocity`, explicit `size`, `grounded`, and `facing`, can seed that state from spawn output, derive the collision AABB plus one-step fixed-update integration from the same model, can resolve normalized movement intent into grounded walk acceleration or braking plus a grounded jump impulse, can advance through x-then-y collision sweeps that zero blocked velocity and recompute grounded support after movement, and can apply gravity plus fall-speed clamping before the shared collision step.
-- The fixed update loop now keeps a spawned standalone player state alive through that shared step helper with neutral movement intent until controller bindings exist, so removing support tiles in debug edit mode still causes the player to fall and re-collide against terrain, while debug edits that trap the player inside solid tiles respawn it from the latest resolved valid spawn.
+- Standalone player-state helpers track feet-centered `position`, `velocity`, explicit `size`, `grounded`, and `facing`, can seed that state from spawn output, derive the collision AABB plus one-step fixed-update integration from the same model, expose a body-center camera focus point, can resolve normalized movement intent into grounded walk acceleration or braking plus a grounded jump impulse, can advance through x-then-y collision sweeps that zero blocked velocity and recompute grounded support after movement, and can apply gravity plus fall-speed clamping before the shared collision step.
+- The fixed update loop now keeps a spawned standalone player state alive through shared keyboard and touch movement intent, so desktop keys and touch buttons can move and jump the player while debug edits still refresh spawn placement, unsupported tiles still make the player fall, and edits that trap the player inside solid tiles still respawn it from the latest resolved valid spawn.
 
 ## Hot-Path Lookup Strategy
 
@@ -71,7 +71,8 @@ This document describes the current project state. Unlike the changelog, it shou
 
 ## Desktop Controls
 
-- Move camera: `WASD` or arrow keys.
+- Move player: `A` and `D` or left and right arrows.
+- Jump: `W`, up arrow, or `Space`.
 - Mouse wheel: zoom in or out.
 - `Shift` + mouse drag: pan without painting.
 - Mouse drag: debug paint on hovered tiles (`left` place active brush, `right` break).
@@ -88,6 +89,7 @@ This document describes the current project state. Unlike the changelog, it shou
 ## Touch Controls
 
 - Shared on-screen debug controls expose `Pan`, `Place`, and `Break` modes plus a shared brush palette.
+- A separate on-screen touch player pad exposes hold-to-move left, hold-to-move right, and hold-to-jump buttons without disabling the debug edit panel.
 - One-finger drag pans in `Pan` mode.
 - One-finger drag paints in `Place` or `Break` mode with line-stepped per-tile dedupe.
 - Two-finger pinch zoom works while touch debug edit modes are active.

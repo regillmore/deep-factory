@@ -3,12 +3,12 @@
 ## Module boundaries
 
 - `src/main.ts`: bootstrapping and dependency wiring.
-- `src/core/`: camera math + fixed timestep loop.
-- `src/input/`: input abstraction for keyboard, mouse, and touch/pinch.
+- `src/core/`: camera math, camera-follow offset helpers, and fixed timestep loop.
+- `src/input/`: input abstraction for keyboard, mouse, touch/pinch, and standalone player intent extraction.
 - `src/gl/`: low-level WebGL2 utilities and renderer orchestration.
 - `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, mesh construction.
 - `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups; authored-atlas region validation is still a later task).
-- `src/ui/`: debug DOM overlays, spawn marker, and standalone player marker.
+- `src/ui/`: debug DOM overlays, spawn marker, standalone player marker, and touch-only player controls.
 
 ## Update loop
 
@@ -17,14 +17,14 @@
 - fixed update step (`60hz`) for deterministic simulation hooks,
 - render interpolation alpha (currently unused but available).
 
-Current update phase applies input-driven camera movement, debug tile-edit actions, spawn refresh after tile edits, embedded-player respawn recovery from the latest resolved spawn when edits trap the current AABB in solid terrain, and standalone player stepping through shared movement, gravity, and collision helpers with neutral movement intent for now.
+Current update phase applies debug tile-edit actions, spawn refresh after tile edits, embedded-player respawn recovery from the latest resolved spawn when edits trap the current AABB in solid terrain, standalone player stepping through shared movement, gravity, and collision helpers from mixed-device intent, and camera follow that targets the player body center while preserving manual pan or zoom offsets from pointer interaction.
 
 ## Player state foundation
 
 - Standalone player simulation state currently lives in `src/world/playerState.ts`.
 - `PlayerState.position` uses bottom-center world coordinates so spawn placement, collision AABB derivation, and future controller updates share one anchor convention.
-- Shared helpers can initialize player state directly from spawn-search output, advance position from velocity on fixed steps, recover embedded state by respawning from the latest resolved spawn, resolve normalized movement intent into grounded walk acceleration or braking plus jump impulse, apply gravity before movement, and resolve x-then-y collision sweeps plus post-move grounded support without mixing render interpolation into the source-of-truth state.
-- `src/main.ts` owns the current standalone-player orchestration: it seeds the player from the resolved spawn once, advances that state in fixed updates via a narrow renderer world-query wrapper, and forwards the result to a temporary DOM overlay until entity rendering exists.
+- Shared helpers can initialize player state directly from spawn-search output, advance position from velocity on fixed steps, recover embedded state by respawning from the latest resolved spawn, resolve normalized movement intent into grounded walk acceleration or braking plus jump impulse, expose a body-center camera focus point, apply gravity before movement, and resolve x-then-y collision sweeps plus post-move grounded support without mixing render interpolation into the source-of-truth state.
+- `src/main.ts` owns the current standalone-player orchestration: it seeds the player from the resolved spawn once, pulls shared desktop or touch movement intent from `src/input/controller.ts`, advances that state in fixed updates via a narrow renderer world-query wrapper, folds manual pan or zoom camera deltas into a persistent follow offset, and forwards the result to a temporary DOM overlay until entity rendering exists.
 
 ## Render pipeline
 

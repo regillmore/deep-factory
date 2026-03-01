@@ -7,6 +7,7 @@ import {
 import { resolveTouchDebugEyedropperShortcutActionForLongPress } from './debugTouchEyedropperShortcuts';
 import { resolveTouchDebugInspectPinShortcutActionForTap } from './debugTouchInspectPinShortcuts';
 import { clientToWorldPoint, pickScreenWorldTileFromCanvas } from './picking';
+import type { PlayerMovementIntent } from '../world/playerState';
 
 const DEBUG_TILE_PLACE_MOUSE_BUTTON = 0;
 const DEBUG_TILE_BREAK_MOUSE_BUTTON = 2;
@@ -265,6 +266,28 @@ export const getTouchDebugPaintKindForPointerDown = (
   return touchDebugEditMode;
 };
 
+export const isPlayerMoveLeftControlKey = (key: string): boolean => key === 'a' || key === 'arrowleft';
+
+export const isPlayerMoveRightControlKey = (key: string): boolean => key === 'd' || key === 'arrowright';
+
+export const isPlayerJumpControlKey = (key: string): boolean =>
+  key === ' ' || key === 'spacebar' || key === 'w' || key === 'arrowup';
+
+export const resolvePlayerMoveXIntent = (moveLeftPressed: boolean, moveRightPressed: boolean): -1 | 0 | 1 => {
+  if (moveLeftPressed === moveRightPressed) return 0;
+  return moveLeftPressed ? -1 : 1;
+};
+
+export const resolvePlayerMovementIntent = (
+  moveLeftPressed: boolean,
+  moveRightPressed: boolean,
+  jumpHeld: boolean,
+  previousJumpHeld: boolean
+): PlayerMovementIntent => ({
+  moveX: resolvePlayerMoveXIntent(moveLeftPressed, moveRightPressed),
+  jumpPressed: jumpHeld && !previousJumpHeld
+});
+
 export const markDebugPaintTileSeen = (
   worldTileX: number,
   worldTileY: number,
@@ -498,6 +521,14 @@ export class InputController {
   private armedDebugRectOutlineKind: DebugTileEditKind | null = null;
   private armedDebugEllipseKind: DebugTileEditKind | null = null;
   private armedDebugEllipseOutlineKind: DebugTileEditKind | null = null;
+  private touchPlayerMoveLeftHeld = false;
+  private touchPlayerMoveRightHeld = false;
+  private touchPlayerJumpHeld = false;
+  private previousPlayerJumpHeld = false;
+  private playerMovementIntent: PlayerMovementIntent = {
+    moveX: 0,
+    jumpPressed: false
+  };
   private pointerInspectRetainers: Array<(candidate: EventTarget | null) => boolean> = [];
   private nextDebugPaintStrokeId = 1;
 
@@ -508,14 +539,24 @@ export class InputController {
     this.bind();
   }
 
-  update(dtSeconds: number): void {
+  update(_dtSeconds: number): void {
     this.maybeQueueTouchEyedropperLongPressShortcut(performance.now());
-
-    const speed = 450 * dtSeconds / this.camera.zoom;
-    if (this.keys.has('w') || this.keys.has('arrowup')) this.camera.pan(0, -speed);
-    if (this.keys.has('s') || this.keys.has('arrowdown')) this.camera.pan(0, speed);
-    if (this.keys.has('a') || this.keys.has('arrowleft')) this.camera.pan(-speed, 0);
-    if (this.keys.has('d') || this.keys.has('arrowright')) this.camera.pan(speed, 0);
+    const moveLeftPressed =
+      this.touchPlayerMoveLeftHeld ||
+      Array.from(this.keys).some((key) => isPlayerMoveLeftControlKey(key));
+    const moveRightPressed =
+      this.touchPlayerMoveRightHeld ||
+      Array.from(this.keys).some((key) => isPlayerMoveRightControlKey(key));
+    const jumpHeld =
+      this.touchPlayerJumpHeld ||
+      Array.from(this.keys).some((key) => isPlayerJumpControlKey(key));
+    this.playerMovementIntent = resolvePlayerMovementIntent(
+      moveLeftPressed,
+      moveRightPressed,
+      jumpHeld,
+      this.previousPlayerJumpHeld
+    );
+    this.previousPlayerJumpHeld = jumpHeld;
   }
 
   getPointerInspect(): PointerInspectSnapshot | null {
@@ -628,6 +669,25 @@ export class InputController {
     this.pendingTouchDebugEllipseOutlineStart = null;
     this.completeDebugPaintStroke(this.activeTouchDebugPaintStroke);
     this.activeTouchDebugPaintStroke = null;
+  }
+
+  getPlayerMovementIntent(): PlayerMovementIntent {
+    return {
+      moveX: this.playerMovementIntent.moveX ?? 0,
+      jumpPressed: this.playerMovementIntent.jumpPressed ?? false
+    };
+  }
+
+  setTouchPlayerMoveLeftHeld(held: boolean): void {
+    this.touchPlayerMoveLeftHeld = held;
+  }
+
+  setTouchPlayerMoveRightHeld(held: boolean): void {
+    this.touchPlayerMoveRightHeld = held;
+  }
+
+  setTouchPlayerJumpHeld(held: boolean): void {
+    this.touchPlayerJumpHeld = held;
   }
 
   getArmedDebugFloodFillKind(): DebugTileEditKind | null {
@@ -878,6 +938,10 @@ export class InputController {
   private bind(): void {
     window.addEventListener('keydown', (event) => this.keys.add(event.key.toLowerCase()));
     window.addEventListener('keyup', (event) => this.keys.delete(event.key.toLowerCase()));
+    window.addEventListener('blur', () => {
+      this.keys.clear();
+      this.clearPlayerControlState();
+    });
 
     this.canvas.addEventListener('wheel', (event) => {
       event.preventDefault();
@@ -1508,6 +1572,17 @@ export class InputController {
       }
     }
     return touchPointers;
+  }
+
+  private clearPlayerControlState(): void {
+    this.touchPlayerMoveLeftHeld = false;
+    this.touchPlayerMoveRightHeld = false;
+    this.touchPlayerJumpHeld = false;
+    this.previousPlayerJumpHeld = false;
+    this.playerMovementIntent = {
+      moveX: 0,
+      jumpPressed: false
+    };
   }
 
   private currentPinchDistance(): number {

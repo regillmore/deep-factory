@@ -20,7 +20,9 @@ import {
 } from '../world/playerSpawn';
 import {
   respawnPlayerStateAtSpawnIfEmbeddedInSolid as respawnWorldPlayerStateAtSpawnIfEmbeddedInSolid,
+  stepPlayerState as stepWorldPlayerState,
   stepPlayerStateWithGravity as stepWorldPlayerStateWithGravity,
+  type PlayerMovementIntent,
   type PlayerState
 } from '../world/playerState';
 import { TileWorld } from '../world/world';
@@ -220,6 +222,10 @@ export class Renderer {
 
   stepPlayerStateWithGravity(state: PlayerState, fixedDtSeconds: number): PlayerState {
     return stepWorldPlayerStateWithGravity(this.world, state, fixedDtSeconds);
+  }
+
+  stepPlayerState(state: PlayerState, fixedDtSeconds: number, intent: PlayerMovementIntent): PlayerState {
+    return stepWorldPlayerState(this.world, state, fixedDtSeconds, intent);
   }
 
   respawnPlayerStateAtSpawnIfEmbeddedInSolid(

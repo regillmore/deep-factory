@@ -1,6 +1,12 @@
 import './style.css';
 
 import { Camera2D } from './core/camera2d';
+import {
+  absorbManualCameraDeltaIntoFollowOffset,
+  resolveCameraPositionFromFollowTarget,
+  type CameraFollowOffset,
+  type CameraFollowPoint
+} from './core/cameraFollow';
 import { GameLoop } from './core/gameLoop';
 import { Renderer } from './gl/renderer';
 import {
@@ -33,12 +39,14 @@ import { PlayerSpawnMarkerOverlay } from './ui/playerSpawnMarkerOverlay';
 import { StandalonePlayerOverlay } from './ui/standalonePlayerOverlay';
 import type { DebugEditHoveredTileState } from './ui/debugEditStatusHelpers';
 import { TouchDebugEditControls, type DebugBrushOption } from './ui/touchDebugEditControls';
+import { TouchPlayerControls } from './ui/touchPlayerControls';
 import { CHUNK_SIZE } from './world/constants';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
 import {
   createPlayerStateFromSpawn,
   DEFAULT_PLAYER_HEIGHT,
   DEFAULT_PLAYER_WIDTH,
+  getPlayerCameraFocusPoint,
   type PlayerState
 } from './world/playerState';
 import { getTileMetadata, resolveTileGameplayMetadata, TILE_METADATA } from './world/tileMetadata';
@@ -68,6 +76,12 @@ const DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS = {
   width: DEFAULT_PLAYER_WIDTH,
   height: DEFAULT_PLAYER_HEIGHT
 } as const;
+const supportsTouchPlayerControls = (): boolean => {
+  const maxTouchPoints = navigator.maxTouchPoints ?? 0;
+  if (maxTouchPoints > 0) return true;
+  if (typeof window.matchMedia !== 'function') return false;
+  return window.matchMedia('(pointer: coarse)').matches;
+};
 
 interface PinnedDebugTileInspectState {
   tileX: number;
@@ -138,12 +152,44 @@ const bootstrap = async (): Promise<void> => {
   let resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
   let standalonePlayerState: PlayerState | null = null;
   let playerSpawnNeedsRefresh = false;
+  let cameraFollowOffset: CameraFollowOffset = { x: 0, y: 0 };
+  let lastAppliedPlayerFollowCameraPosition: CameraFollowPoint | null = null;
+
+  const applyStandalonePlayerCameraFollow = (): void => {
+    if (!standalonePlayerState) {
+      lastAppliedPlayerFollowCameraPosition = null;
+      return;
+    }
+
+    const focusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const cameraPosition = resolveCameraPositionFromFollowTarget(focusPoint, cameraFollowOffset);
+    camera.x = cameraPosition.x;
+    camera.y = cameraPosition.y;
+    lastAppliedPlayerFollowCameraPosition = cameraPosition;
+  };
+
+  const centerCameraOnStandalonePlayer = (): void => {
+    if (!standalonePlayerState) {
+      lastAppliedPlayerFollowCameraPosition = null;
+      return;
+    }
+
+    const focusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    cameraFollowOffset = { x: 0, y: 0 };
+    camera.x = focusPoint.x;
+    camera.y = focusPoint.y;
+    lastAppliedPlayerFollowCameraPosition = {
+      x: camera.x,
+      y: camera.y
+    };
+  };
 
   const refreshResolvedPlayerSpawn = (): void => {
     resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
     playerSpawnNeedsRefresh = false;
     if (standalonePlayerState === null && resolvedPlayerSpawn) {
       standalonePlayerState = createPlayerStateFromSpawn(resolvedPlayerSpawn);
+      centerCameraOnStandalonePlayer();
       return;
     }
 
@@ -699,6 +745,19 @@ const bootstrap = async (): Promise<void> => {
     onRedo: redoDebugTileStroke,
     onResetPrefs: resetDebugEditControlPrefs
   });
+  if (supportsTouchPlayerControls()) {
+    new TouchPlayerControls({
+      onMoveLeftHeldChange: (held) => {
+        input.setTouchPlayerMoveLeftHeld(held);
+      },
+      onMoveRightHeldChange: (held) => {
+        input.setTouchPlayerMoveRightHeld(held);
+      },
+      onJumpHeldChange: (held) => {
+        input.setTouchPlayerJumpHeld(held);
+      }
+    });
+  }
   syncDebugEditHistoryControls();
   syncArmedDebugToolControls();
   persistDebugEditControlsState();
@@ -955,12 +1014,28 @@ const bootstrap = async (): Promise<void> => {
         syncDebugEditHistoryControls();
       }
 
+      if (standalonePlayerState) {
+        cameraFollowOffset = absorbManualCameraDeltaIntoFollowOffset(
+          cameraFollowOffset,
+          lastAppliedPlayerFollowCameraPosition,
+          {
+            x: camera.x,
+            y: camera.y
+          }
+        );
+      }
+
       if (playerSpawnNeedsRefresh) {
         refreshResolvedPlayerSpawn();
       }
 
       if (standalonePlayerState) {
-        standalonePlayerState = renderer.stepPlayerStateWithGravity(standalonePlayerState, fixedDt);
+        standalonePlayerState = renderer.stepPlayerState(
+          standalonePlayerState,
+          fixedDt,
+          input.getPlayerMovementIntent()
+        );
+        applyStandalonePlayerCameraFollow();
       }
     },
     (_alpha, frameDtMs) => {

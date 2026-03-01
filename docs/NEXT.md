@@ -10,7 +10,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Collision and player foundation
 
-7. Add mixed-device player input bindings and camera follow rules without removing the existing debug-edit controls.
+8. Add a renderer-side placeholder player draw pass that renders the standalone player in world space instead of relying on the DOM overlay.
 
 ## Liquid rendering
 

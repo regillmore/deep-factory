@@ -13,6 +13,7 @@ import {
   DEFAULT_PLAYER_MAX_FALL_SPEED,
   DEFAULT_PLAYER_MAX_WALK_SPEED,
   DEFAULT_PLAYER_WIDTH,
+  getPlayerCameraFocusPoint,
   getPlayerAabb,
   integratePlayerState,
   movePlayerStateWithCollisions,
@@ -133,6 +134,18 @@ describe('playerState', () => {
       minY: -28,
       maxX: 29,
       maxY: -8
+    });
+  });
+
+  it('derives the camera follow focus point from the player body center', () => {
+    const state = createPlayerState({
+      position: { x: 24, y: -8 },
+      size: { width: 10, height: 20 }
+    });
+
+    expect(getPlayerCameraFocusPoint(state)).toEqual({
+      x: 24,
+      y: -18
     });
   });
 

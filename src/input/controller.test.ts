@@ -4,7 +4,12 @@ import {
   buildDebugTileEditRequest,
   getDesktopDebugPaintKindForPointerDown,
   getTouchDebugPaintKindForPointerDown,
+  isPlayerJumpControlKey,
+  isPlayerMoveLeftControlKey,
+  isPlayerMoveRightControlKey,
   markDebugPaintTileSeen,
+  resolvePlayerMovementIntent,
+  resolvePlayerMoveXIntent,
   shouldRetainPointerInspectOnPointerLeave,
   walkFilledEllipseTileArea,
   walkEllipseOutlineTileArea,
@@ -170,6 +175,41 @@ describe('getTouchDebugPaintKindForPointerDown', () => {
 
   it('ignores non-touch pointerdown events', () => {
     expect(getTouchDebugPaintKindForPointerDown('mouse', 'place')).toBeNull();
+  });
+});
+
+describe('player control key resolution', () => {
+  it('maps keyboard and touch-facing horizontal controls into a normalized movement axis', () => {
+    expect(resolvePlayerMoveXIntent(true, false)).toBe(-1);
+    expect(resolvePlayerMoveXIntent(false, true)).toBe(1);
+    expect(resolvePlayerMoveXIntent(false, false)).toBe(0);
+    expect(resolvePlayerMoveXIntent(true, true)).toBe(0);
+  });
+
+  it('recognizes desktop movement and jump keys', () => {
+    expect(isPlayerMoveLeftControlKey('a')).toBe(true);
+    expect(isPlayerMoveLeftControlKey('arrowleft')).toBe(true);
+    expect(isPlayerMoveRightControlKey('d')).toBe(true);
+    expect(isPlayerMoveRightControlKey('arrowright')).toBe(true);
+    expect(isPlayerJumpControlKey(' ')).toBe(true);
+    expect(isPlayerJumpControlKey('w')).toBe(true);
+    expect(isPlayerJumpControlKey('arrowup')).toBe(true);
+    expect(isPlayerJumpControlKey('s')).toBe(false);
+  });
+
+  it('emits jumpPressed only on the rising edge of the held jump state', () => {
+    expect(resolvePlayerMovementIntent(true, false, true, false)).toEqual({
+      moveX: -1,
+      jumpPressed: true
+    });
+    expect(resolvePlayerMovementIntent(true, false, true, true)).toEqual({
+      moveX: -1,
+      jumpPressed: false
+    });
+    expect(resolvePlayerMovementIntent(false, true, false, true)).toEqual({
+      moveX: 1,
+      jumpPressed: false
+    });
   });
 });
 

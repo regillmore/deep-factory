@@ -228,6 +228,11 @@ export const getPlayerAabb = (state: PlayerState): WorldAabb => {
   };
 };
 
+export const getPlayerCameraFocusPoint = (state: PlayerState): PlayerVector => ({
+  x: state.position.x,
+  y: state.position.y - state.size.height * 0.5
+});
+
 export const integratePlayerState = (state: PlayerState, fixedDtSeconds: number): PlayerState => {
   const dt = expectNonNegativeFiniteNumber(fixedDtSeconds, 'fixedDtSeconds');
   const facing = resolveFacingFromHorizontalVelocity(state.facing, state.velocity.x);
