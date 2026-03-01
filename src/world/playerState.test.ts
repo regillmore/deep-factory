@@ -4,13 +4,19 @@ import { findPlayerSpawnPoint } from './playerSpawn';
 import {
   createPlayerState,
   createPlayerStateFromSpawn,
+  DEFAULT_PLAYER_AIR_ACCELERATION,
+  DEFAULT_PLAYER_GROUND_ACCELERATION,
+  DEFAULT_PLAYER_GROUND_DECELERATION,
   DEFAULT_PLAYER_GRAVITY_ACCELERATION,
   DEFAULT_PLAYER_HEIGHT,
+  DEFAULT_PLAYER_JUMP_SPEED,
   DEFAULT_PLAYER_MAX_FALL_SPEED,
+  DEFAULT_PLAYER_MAX_WALK_SPEED,
   DEFAULT_PLAYER_WIDTH,
   getPlayerAabb,
   integratePlayerState,
   movePlayerStateWithCollisions,
+  stepPlayerState,
   stepPlayerStateWithGravity
 } from './playerState';
 import { TileWorld } from './world';
@@ -245,6 +251,186 @@ describe('playerState', () => {
     });
   });
 
+  it('accelerates grounded movement toward the requested walk speed before collision stepping', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -3, -2, 5, 2, 0);
+    setTiles(world, -3, 0, 5, 0, 3);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        grounded: true
+      }),
+      0.25,
+      { moveX: 1 },
+      {
+        maxWalkSpeed: 40,
+        groundAcceleration: 160,
+        airAcceleration: 80,
+        groundDeceleration: 80,
+        jumpSpeed: 100,
+        gravityAcceleration: 80,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual({
+      position: { x: 18, y: 0 },
+      velocity: { x: 40, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: true,
+      facing: 'right'
+    });
+  });
+
+  it('reuses collision sweeps for walk input so a blocking wall zeroes horizontal velocity', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -3, -2, 5, 2, 0);
+    setTiles(world, -3, 0, 5, 0, 3);
+    world.setTile(1, -1, 3);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        grounded: true
+      }),
+      0.5,
+      { moveX: 1 },
+      {
+        maxWalkSpeed: 40,
+        groundAcceleration: 160,
+        airAcceleration: 80,
+        groundDeceleration: 80,
+        jumpSpeed: 100,
+        gravityAcceleration: 80,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual({
+      position: { x: 10, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: true,
+      facing: 'right'
+    });
+  });
+
+  it('applies a grounded jump impulse before gravity so the player leaves support immediately', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -3, -4, 5, 2, 0);
+    setTiles(world, -3, 0, 5, 0, 3);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        grounded: true
+      }),
+      0.25,
+      { jumpPressed: true },
+      {
+        maxWalkSpeed: 40,
+        groundAcceleration: 160,
+        airAcceleration: 80,
+        groundDeceleration: 80,
+        jumpSpeed: 100,
+        gravityAcceleration: 80,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual({
+      position: { x: 8, y: -20 },
+      velocity: { x: 0, y: -80 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    });
+  });
+
+  it('does not reapply the jump impulse while airborne', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -3, -4, 5, 2, 0);
+    setTiles(world, -3, 0, 5, 0, 3);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -20 },
+        velocity: { x: 0, y: -80 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      { jumpPressed: true },
+      {
+        maxWalkSpeed: 40,
+        groundAcceleration: 160,
+        airAcceleration: 80,
+        groundDeceleration: 80,
+        jumpSpeed: 100,
+        gravityAcceleration: 80,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual({
+      position: { x: 8, y: -35 },
+      velocity: { x: 0, y: -60 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    });
+  });
+
+  it('applies grounded braking when no horizontal movement intent is present', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -3, -2, 5, 2, 0);
+    setTiles(world, -3, 0, 5, 0, 3);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        velocity: { x: 40, y: 0 },
+        size: { width: 12, height: 12 },
+        grounded: true
+      }),
+      0.25,
+      {},
+      {
+        maxWalkSpeed: 40,
+        groundAcceleration: 160,
+        airAcceleration: 80,
+        groundDeceleration: 80,
+        jumpSpeed: 100,
+        gravityAcceleration: 80,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual({
+      position: { x: 13, y: 0 },
+      velocity: { x: 20, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: true,
+      facing: 'right'
+    });
+  });
+
   it('keeps grounded players resting on support while gravity is active', () => {
     const world = new TileWorld(0);
 
@@ -320,5 +506,35 @@ describe('playerState', () => {
         maxFallSpeed: -DEFAULT_PLAYER_MAX_FALL_SPEED
       })
     ).toThrowError(/options\.maxFallSpeed must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {
+        moveX: Number.NaN
+      })
+    ).toThrowError(/intent\.moveX must be a finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        maxWalkSpeed: -DEFAULT_PLAYER_MAX_WALK_SPEED
+      })
+    ).toThrowError(/options\.maxWalkSpeed must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        groundAcceleration: -DEFAULT_PLAYER_GROUND_ACCELERATION
+      })
+    ).toThrowError(/options\.groundAcceleration must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        airAcceleration: -DEFAULT_PLAYER_AIR_ACCELERATION
+      })
+    ).toThrowError(/options\.airAcceleration must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        groundDeceleration: -DEFAULT_PLAYER_GROUND_DECELERATION
+      })
+    ).toThrowError(/options\.groundDeceleration must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        jumpSpeed: -DEFAULT_PLAYER_JUMP_SPEED
+      })
+    ).toThrowError(/options\.jumpSpeed must be a non-negative finite number/);
   });
 });
