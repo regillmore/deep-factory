@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Add debug telemetry for animated chunk UV uploads so renderer-side tile animation cost stays visible as authored frame counts grow.
+- Changes: Updated [src/gl/animatedChunkMesh.ts](../src/gl/animatedChunkMesh.ts) plus [src/gl/animatedChunkMesh.test.ts](../src/gl/animatedChunkMesh.test.ts) so animated-frame application reports how many quads changed, updated [src/gl/renderer.ts](../src/gl/renderer.ts) plus [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) to track per-frame animated chunk UV upload counts, changed-quad totals, and uploaded bytes, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to surface that telemetry in the debug overlay, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/gl/renderer.test.ts src/ui/debugOverlay.test.ts src/gl/animatedChunkMesh.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Make the generated placeholder fallback atlas derive its canvas size and painted regions from the authored atlas layout.
 - Changes: Updated [src/gl/texture.ts](../src/gl/texture.ts) so placeholder atlas generation sizes its canvas from the authored atlas dimensions and paints the explicit authored regions instead of a hard-coded `4x4` grid, expanded [src/gl/texture.test.ts](../src/gl/texture.test.ts) with a direct generator regression that inspects authored-region draw operations, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `npx vitest run src/gl/texture.test.ts src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

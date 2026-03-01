@@ -8,6 +8,9 @@ const baseStats: DebugOverlayStats = {
   atlasHeight: 64,
   atlasValidationWarningCount: 0,
   atlasValidationFirstWarning: null,
+  animatedChunkUvUploadCount: 0,
+  animatedChunkUvUploadQuadCount: 0,
+  animatedChunkUvUploadBytes: 0,
   renderedChunks: 4,
   drawCalls: 4,
   drawCallBudget: 256,
@@ -30,6 +33,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nAtlasWarn: none');
     expect(text).toContain('\nSpawn: unresolved');
     expect(text).toContain('\nPlayer: n/a');
+    expect(text).toContain('\nAnimUV: uploads:0 | quads:0 | bytes:0');
     expect(text).toContain('Draws: 4/256 (OK)');
     expect(text).toContain('\nPtr: n/a');
   });
@@ -127,6 +131,21 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain('\nPlayer: Pos:24.50,-12.25 | Vel:-180.00,60.00 | grounded:off | facing:left');
+  });
+
+  it('shows animated chunk uv upload cost telemetry', () => {
+    const text = formatDebugOverlayText(
+      60,
+      {
+        ...baseStats,
+        animatedChunkUvUploadCount: 2,
+        animatedChunkUvUploadQuadCount: 5,
+        animatedChunkUvUploadBytes: 3072
+      },
+      null
+    );
+
+    expect(text).toContain('\nAnimUV: uploads:2 | quads:5 | bytes:3072');
   });
 
   it('shows pinned tile metadata even when no live pointer snapshot is available', () => {

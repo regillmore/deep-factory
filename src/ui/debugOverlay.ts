@@ -7,6 +7,9 @@ export interface DebugOverlayStats {
   atlasHeight: number | null;
   atlasValidationWarningCount: number | null;
   atlasValidationFirstWarning: string | null;
+  animatedChunkUvUploadCount: number;
+  animatedChunkUvUploadQuadCount: number;
+  animatedChunkUvUploadBytes: number;
   renderedChunks: number;
   drawCalls: number;
   drawCallBudget: number;
@@ -144,6 +147,11 @@ const formatPlayerLine = (player: DebugOverlayPlayerTelemetry | null): string =>
   );
 };
 
+const formatAnimatedChunkUvUploadLine = (stats: DebugOverlayStats): string =>
+  `AnimUV: uploads:${stats.animatedChunkUvUploadCount} | ` +
+  `quads:${stats.animatedChunkUvUploadQuadCount} | ` +
+  `bytes:${stats.animatedChunkUvUploadBytes}`;
+
 export const formatDebugOverlayText = (
   fps: number,
   stats: DebugOverlayStats,
@@ -168,7 +176,8 @@ export const formatDebugOverlayText = (
     formatAtlasLine(stats),
     formatAtlasValidationLine(stats),
     formatSpawnLine(spawn),
-    formatPlayerLine(player)
+    formatPlayerLine(player),
+    formatAnimatedChunkUvUploadLine(stats)
   ];
 
   if (!pointerInspect) {

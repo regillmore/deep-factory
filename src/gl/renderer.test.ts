@@ -93,6 +93,9 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.atlasHeight).toBeNull();
     expect(renderer.telemetry.atlasValidationWarningCount).toBeNull();
     expect(renderer.telemetry.atlasValidationFirstWarning).toBeNull();
+    expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
   });
 
   it('flips placeholder shader uv.y so pose rectangles stay upright with top-to-bottom quad UVs', () => {
@@ -257,6 +260,9 @@ describe('Renderer atlas telemetry', () => {
     renderer.render(camera, { timeMs: 0 });
     renderer.render(camera, { timeMs: 179 });
     expect(bufferData).not.toHaveBeenCalled();
+    expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
 
     renderer.render(camera, { timeMs: 180 });
     expect(bufferData).toHaveBeenCalledTimes(1);
@@ -264,15 +270,24 @@ describe('Renderer atlas telemetry', () => {
     const frameOneUv = atlasIndexToUvRect(15);
     expect(frameOneVertices).toBeInstanceOf(Float32Array);
     expect(Array.from(frameOneVertices?.slice(2, 4) ?? [])).toEqual([frameOneUv.u0, frameOneUv.v0]);
+    expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameOneVertices?.byteLength ?? 0);
 
     renderer.render(camera, { timeMs: 359 });
     expect(bufferData).toHaveBeenCalledTimes(1);
+    expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
 
     renderer.render(camera, { timeMs: 360 });
     expect(bufferData).toHaveBeenCalledTimes(2);
     const frameZeroVertices = bufferData.mock.calls[1]?.[1] as Float32Array | undefined;
     const frameZeroUv = atlasIndexToUvRect(14);
     expect(Array.from(frameZeroVertices?.slice(2, 4) ?? [])).toEqual([frameZeroUv.u0, frameZeroUv.v0]);
+    expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameZeroVertices?.byteLength ?? 0);
     performanceNowSpy.mockRestore();
   });
 });

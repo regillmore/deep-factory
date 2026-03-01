@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Authored asset pipeline
 
-5. Add debug telemetry for animated chunk UV uploads so renderer-side tile animation cost stays visible as authored frame counts grow.
 6. Add an authored-atlas asset regression test that direct tile `render.uvRect` metadata still resolves to whole atlas pixels against the committed PNG dimensions.
 7. Add an authored-atlas layout regression test that explicit atlas regions do not overlap each other, so atlas-index sampling stays one-to-one as the layout evolves.
+8. Surface resident animated chunk mesh counts and recorded animated-quad totals in debug telemetry so authored animation footprint stays visible even on frames without UV uploads.
 
 ## Collision and player foundation
 

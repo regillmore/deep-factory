@@ -68,6 +68,9 @@ export interface RenderTelemetry {
   atlasHeight: number | null;
   atlasValidationWarningCount: number | null;
   atlasValidationFirstWarning: string | null;
+  animatedChunkUvUploadCount: number;
+  animatedChunkUvUploadQuadCount: number;
+  animatedChunkUvUploadBytes: number;
   renderedChunks: number;
   drawCalls: number;
   drawCallBudget: number;
@@ -120,6 +123,9 @@ export class Renderer {
     atlasHeight: null,
     atlasValidationWarningCount: null,
     atlasValidationFirstWarning: null,
+    animatedChunkUvUploadCount: 0,
+    animatedChunkUvUploadQuadCount: 0,
+    animatedChunkUvUploadBytes: 0,
     renderedChunks: 0,
     drawCalls: 0,
     drawCallBudget: DRAW_CALL_BUDGET,
@@ -331,6 +337,9 @@ export class Renderer {
 
     const gl = this.gl;
     const timeMs = frameState.timeMs ?? performance.now();
+    this.telemetry.animatedChunkUvUploadCount = 0;
+    this.telemetry.animatedChunkUvUploadQuadCount = 0;
+    this.telemetry.animatedChunkUvUploadBytes = 0;
     this.telemetry.renderedChunks = 0;
     this.telemetry.drawCalls = 0;
     this.telemetry.meshBuilds = 0;
@@ -557,12 +566,16 @@ export class Renderer {
       return;
     }
 
-    if (!applyAnimatedChunkMeshFrameAtElapsedMs(mesh.animatedMesh, timeMs, TILE_METADATA)) {
+    const changedQuadCount = applyAnimatedChunkMeshFrameAtElapsedMs(mesh.animatedMesh, timeMs, TILE_METADATA);
+    if (changedQuadCount === 0) {
       return;
     }
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer);
     this.gl.bufferData(this.gl.ARRAY_BUFFER, mesh.animatedMesh.vertices, this.gl.DYNAMIC_DRAW);
+    this.telemetry.animatedChunkUvUploadCount += 1;
+    this.telemetry.animatedChunkUvUploadQuadCount += changedQuadCount;
+    this.telemetry.animatedChunkUvUploadBytes += mesh.animatedMesh.vertices.byteLength;
   }
 
   private drawStandalonePlayer(state: PlayerState, worldToClipMatrix: Float32Array): void {

@@ -58,8 +58,8 @@ export const applyAnimatedChunkMeshFrameAtElapsedMs = (
   animatedMesh: AnimatedChunkMeshState,
   elapsedMs: number,
   registry: TileMetadataRegistry = TILE_METADATA
-): boolean => {
-  let changed = false;
+): number => {
+  let changedTileCount = 0;
 
   for (const animatedTile of animatedMesh.animatedTiles) {
     const nextFrameIndex = resolveAnimatedTileRenderFrameIndexAtElapsedMs(
@@ -78,8 +78,8 @@ export const applyAnimatedChunkMeshFrameAtElapsedMs = (
 
     setTileQuadUvRect(animatedMesh.vertices, animatedTile.vertexFloatOffset, uvRect);
     animatedTile.frameIndex = nextFrameIndex;
-    changed = true;
+    changedTileCount += 1;
   }
 
-  return changed;
+  return changedTileCount;
 };
