@@ -16,9 +16,9 @@ Record only durable design decisions here. Keep each entry short: date, decision
 
 ### 2026-03-01: Authored atlas layout owns atlas-index resolution
 
-- Decision: `atlasIndex` render metadata and terrain variant maps now resolve through an explicit authored atlas layout definition instead of deriving UVs from hard-coded `4x4` slot math.
-- Reason: Atlas validation and UV lookup need one content-owned source of truth that can stay aligned with the committed PNG as authored regions evolve, without coupling render metadata to placeholder fallback implementation details.
-- Consequence: Future atlas edits should update `src/world/authoredAtlasLayout.ts` first, and new atlas-index validation or rendering work should consume that layout rather than reintroducing grid-derived UV caches.
+- Decision: `atlasIndex` render metadata, terrain variant maps, and the generated placeholder fallback atlas now resolve through an explicit authored atlas layout definition instead of deriving UVs or fallback paint regions from hard-coded `4x4` slot math.
+- Reason: Atlas validation, UV lookup, and fallback preview generation need one content-owned source of truth that can stay aligned with the committed PNG as authored regions evolve, without coupling runtime behavior to placeholder implementation details.
+- Consequence: Future atlas edits should update `src/world/authoredAtlasLayout.ts` first, and new atlas-index validation, rendering, or fallback atlas work should consume that layout rather than reintroducing grid-derived assumptions.
 
 ### 2026-03-01: Temporary standalone player visualization lives in the WebGL renderer
 

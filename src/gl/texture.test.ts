@@ -1,6 +1,85 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { loadAtlasImageSource } from './texture';
+import {
+  AUTHORED_ATLAS_HEIGHT,
+  AUTHORED_ATLAS_REGIONS,
+  AUTHORED_ATLAS_WIDTH
+} from '../world/authoredAtlasLayout';
+import { buildPlaceholderAtlas, loadAtlasImageSource } from './texture';
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
+describe('buildPlaceholderAtlas', () => {
+  it('sizes and paints the fallback atlas from the authored layout regions', () => {
+    const drawOps: Array<{
+      kind: 'fill' | 'stroke';
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }> = [];
+    const context = {
+      fillStyle: '',
+      strokeStyle: '',
+      fillRect: (x: number, y: number, width: number, height: number) => {
+        drawOps.push({ kind: 'fill', x, y, width, height });
+      },
+      strokeRect: (x: number, y: number, width: number, height: number) => {
+        drawOps.push({ kind: 'stroke', x, y, width, height });
+      }
+    };
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn((contextId: string) => {
+        expect(contextId).toBe('2d');
+        return context;
+      }),
+      toDataURL: vi.fn((mimeType: string) => {
+        expect(mimeType).toBe('image/png');
+        return 'data:image/png;base64,placeholder';
+      })
+    };
+    const documentStub = {
+      createElement: vi.fn((tagName: string) => {
+        expect(tagName).toBe('canvas');
+        return canvas;
+      })
+    };
+
+    vi.stubGlobal('document', documentStub);
+
+    const result = buildPlaceholderAtlas();
+
+    expect(result).toBe('data:image/png;base64,placeholder');
+    expect(canvas.width).toBe(AUTHORED_ATLAS_WIDTH);
+    expect(canvas.height).toBe(AUTHORED_ATLAS_HEIGHT);
+    expect(documentStub.createElement).toHaveBeenCalledWith('canvas');
+    expect(canvas.getContext).toHaveBeenCalledWith('2d');
+    expect(canvas.toDataURL).toHaveBeenCalledWith('image/png');
+    expect(drawOps.filter((op) => op.kind === 'fill')).toEqual(
+      AUTHORED_ATLAS_REGIONS.map((region) => ({
+        kind: 'fill' as const,
+        x: region.x,
+        y: region.y,
+        width: region.width,
+        height: region.height
+      }))
+    );
+    expect(drawOps.filter((op) => op.kind === 'stroke')).toEqual(
+      AUTHORED_ATLAS_REGIONS.map((region) => ({
+        kind: 'stroke' as const,
+        x: region.x + 0.5,
+        y: region.y + 0.5,
+        width: Math.max(region.width - 1, 0),
+        height: Math.max(region.height - 1, 0)
+      }))
+    );
+  });
+});
 
 describe('loadAtlasImageSource', () => {
   it('returns a decoded authored atlas image when fetch and bitmap decode succeed', async () => {

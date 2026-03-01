@@ -5,7 +5,7 @@
 - `src/main.ts`: bootstrapping and dependency wiring.
 - `src/core/`: camera math, camera-follow offset helpers, and fixed timestep loop.
 - `src/input/`: input abstraction for keyboard, mouse, touch/pinch, and standalone player intent extraction.
-- `src/gl/`: low-level WebGL2 utilities, world rendering orchestration, and the grounded-versus-airborne standalone player placeholder draw pass.
+- `src/gl/`: low-level WebGL2 utilities, authored-atlas loading plus layout-driven placeholder fallback generation, world rendering orchestration, and the grounded-versus-airborne standalone player placeholder draw pass.
 - `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, mesh construction, plus authored atlas-region layout data.
 - `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups and elapsed-frame resolvers backed by `src/world/authoredAtlasLayout.ts`; renderer boot now validates authored atlas-index sources against the loaded atlas dimensions and direct `uvRect` metadata against both atlas bounds and whole-pixel atlas edges).
 - `src/gl/animatedChunkMesh.ts`: renderer-side helper that rewrites baked chunk UVs for animated non-terrain quads when elapsed time advances to a new metadata frame.
@@ -31,8 +31,9 @@ Current update phase applies debug tile-edit actions, spawn refresh after tile e
 
 Renderer initialization first attempts to fetch and decode the committed authored atlas image served from
 `public/atlas/tile-atlas.png` at runtime as `/atlas/tile-atlas.png`.
-If that asset is unavailable or decoding fails, initialization falls back to the generated placeholder atlas so the
-existing tile rendering path still boots. After the atlas is loaded, renderer startup validates direct tile
+If that asset is unavailable or decoding fails, initialization falls back to a generated placeholder atlas derived
+from the authored atlas layout so the existing tile rendering path still boots with atlas-index regions in the same
+places. After the atlas is loaded, renderer startup validates direct tile
 `render.uvRect` metadata plus atlas-index-backed render and terrain sources against the runtime atlas dimensions,
 stores warning telemetry, and emits a console warning if any static, animated, or terrain variant source falls
 outside the source image or any direct `uvRect` source lands between whole atlas pixels.

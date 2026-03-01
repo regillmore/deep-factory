@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Make the generated placeholder fallback atlas derive its canvas size and painted regions from the authored atlas layout.
+- Changes: Updated [src/gl/texture.ts](../src/gl/texture.ts) so placeholder atlas generation sizes its canvas from the authored atlas dimensions and paints the explicit authored regions instead of a hard-coded `4x4` grid, expanded [src/gl/texture.test.ts](../src/gl/texture.test.ts) with a direct generator regression that inspects authored-region draw operations, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run src/gl/texture.test.ts src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Surface live standalone player-state telemetry in the debug overlay.
 - Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to render a dedicated player line with live `position`, `velocity`, `grounded`, and `facing` values, wired [src/main.ts](../src/main.ts) to pass the current standalone player state into the overlay payload each frame, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

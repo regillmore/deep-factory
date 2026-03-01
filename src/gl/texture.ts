@@ -1,3 +1,9 @@
+import {
+  AUTHORED_ATLAS_HEIGHT,
+  AUTHORED_ATLAS_REGIONS,
+  AUTHORED_ATLAS_WIDTH
+} from '../world/authoredAtlasLayout';
+
 export interface AtlasImageLoadResult {
   imageSource: TexImageSource;
   sourceKind: 'authored' | 'placeholder';
@@ -122,19 +128,22 @@ export const loadTexture = async (
 
 export const buildPlaceholderAtlas = (): string => {
   const canvas = document.createElement('canvas');
-  canvas.width = 64;
-  canvas.height = 64;
+  canvas.width = AUTHORED_ATLAS_WIDTH;
+  canvas.height = AUTHORED_ATLAS_HEIGHT;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('2D canvas unavailable for atlas generation');
 
   const colors = ['#4e7d2f', '#739b3d', '#755642', '#3e6ea3', '#b6d97a', '#9c7f65'];
-  for (let y = 0; y < 4; y += 1) {
-    for (let x = 0; x < 4; x += 1) {
-      ctx.fillStyle = colors[(x + y) % colors.length];
-      ctx.fillRect(x * 16, y * 16, 16, 16);
-      ctx.strokeStyle = '#00000022';
-      ctx.strokeRect(x * 16 + 0.5, y * 16 + 0.5, 15, 15);
-    }
+  for (const [atlasIndex, region] of AUTHORED_ATLAS_REGIONS.entries()) {
+    ctx.fillStyle = colors[atlasIndex % colors.length]!;
+    ctx.fillRect(region.x, region.y, region.width, region.height);
+    ctx.strokeStyle = '#00000022';
+    ctx.strokeRect(
+      region.x + 0.5,
+      region.y + 0.5,
+      Math.max(region.width - 1, 0),
+      Math.max(region.height - 1, 0)
+    );
   }
 
   return canvas.toDataURL('image/png');
