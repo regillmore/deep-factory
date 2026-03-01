@@ -506,7 +506,7 @@ describe('buildDebugEditStatusStripModel', () => {
 });
 
 describe('buildActiveDebugToolPreviewBadgeText', () => {
-  it('shows estimated affected tile counts for active mouse-drag previews', () => {
+  it('shows active mouse-drag preview coordinates alongside span and affected counts', () => {
     expect(
       buildActiveDebugToolPreviewBadgeText(
         {
@@ -522,10 +522,10 @@ describe('buildActiveDebugToolPreviewBadgeText', () => {
           tileY: -4
         }
       )
-    ).toBe('Span 9x12 tiles | Affects 12 tiles');
+    ).toBe('Preview: anchor 4,7 | endpoint 12,-4 | span 9x12 tiles | affects 12 tiles');
   });
 
-  it('shows pending affected tile counts for anchored touch previews without an endpoint yet', () => {
+  it('shows pending touch preview coordinates while the endpoint is still pending', () => {
     expect(
       buildActiveDebugToolPreviewBadgeText(
         {
@@ -538,7 +538,7 @@ describe('buildActiveDebugToolPreviewBadgeText', () => {
         },
         null
       )
-    ).toBe('Span pending | Affects pending');
+    ).toBe('Preview: anchor -3,15 | endpoint pending | span pending | affects pending');
   });
 
   it('returns no badge estimate when a one-shot tool is armed but no preview overlay is active', () => {

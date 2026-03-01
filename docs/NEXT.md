@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Show live preview anchor and endpoint tile coordinates in the on-canvas preview badge while one-shot preview overlays are active.
+1. Show active touch one-shot anchor tile coordinates in the persistent on-canvas anchor label while the second point is still pending.
 
 ## Authored asset pipeline
 

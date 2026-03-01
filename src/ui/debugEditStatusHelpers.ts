@@ -531,13 +531,12 @@ export const buildActiveDebugToolPreviewBadgeText = (
     endpointTile?.tileY ?? null
   );
   if (!summary) return null;
-  return (
-    `Span ${formatPreviewSpanText(
-      summary.anchorTileX,
-      summary.anchorTileY,
-      summary.endpointTileX,
-      summary.endpointTileY
-    )}` + ` | Affects ${formatEstimatedAffectedTileCount(summary.affectedTileCount)}`
+  return formatPreviewCoordinatesText(
+    summary.anchorTileX,
+    summary.anchorTileY,
+    summary.endpointTileX,
+    summary.endpointTileY,
+    summary.affectedTileCount
   );
 };
 
