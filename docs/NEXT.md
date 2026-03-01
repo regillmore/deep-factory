@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Show active touch one-shot `Brush` or `Break` action text in the persistent on-canvas anchor label while the second point is still pending.
+1. Clamp the persistent touch one-shot anchor label inside the visible canvas bounds when the anchor tile is near a viewport edge.
 
 ## Authored asset pipeline
 

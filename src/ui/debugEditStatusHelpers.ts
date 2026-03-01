@@ -89,6 +89,14 @@ const ellipseOutlineAccentForKind = (kind: DebugTileEditKind): string =>
 const toolActionLabel = (tool: string, kind: DebugTileEditKind): string =>
   `${tool} ${kind === 'place' ? 'Brush' : 'Break'}`;
 
+const formatPendingTouchAnchorLabel = (
+  tool: string,
+  kind: DebugTileEditKind,
+  anchorLabel: string,
+  tileX: number,
+  tileY: number
+): string => `${toolActionLabel(tool, kind)} ${anchorLabel} @ ${formatTileCoordinatePair(tileX, tileY)}`;
+
 export const formatTouchDebugEditModeLabel = (mode: TouchDebugEditMode): string => {
   if (mode === 'pan') return 'Pan';
   if (mode === 'place') return 'Place';
@@ -542,38 +550,53 @@ export const buildActiveDebugToolPreviewBadgeText = (
 
 export const buildPendingTouchAnchorLabelText = (preview: ArmedDebugToolPreviewState): string | null => {
   if (preview.pendingTouchLineStart) {
-    return `Line start @ ${formatTileCoordinatePair(
+    return formatPendingTouchAnchorLabel(
+      'Line',
+      preview.pendingTouchLineStart.kind,
+      'start',
       preview.pendingTouchLineStart.tileX,
       preview.pendingTouchLineStart.tileY
-    )}`;
+    );
   }
 
   if (preview.pendingTouchRectStart) {
-    return `Rect fill corner @ ${formatTileCoordinatePair(
+    return formatPendingTouchAnchorLabel(
+      'Rect Fill',
+      preview.pendingTouchRectStart.kind,
+      'corner',
       preview.pendingTouchRectStart.tileX,
       preview.pendingTouchRectStart.tileY
-    )}`;
+    );
   }
 
   if (preview.pendingTouchRectOutlineStart) {
-    return `Rect outline corner @ ${formatTileCoordinatePair(
+    return formatPendingTouchAnchorLabel(
+      'Rect Outline',
+      preview.pendingTouchRectOutlineStart.kind,
+      'corner',
       preview.pendingTouchRectOutlineStart.tileX,
       preview.pendingTouchRectOutlineStart.tileY
-    )}`;
+    );
   }
 
   if (preview.pendingTouchEllipseStart) {
-    return `Ellipse corner @ ${formatTileCoordinatePair(
+    return formatPendingTouchAnchorLabel(
+      'Ellipse Fill',
+      preview.pendingTouchEllipseStart.kind,
+      'corner',
       preview.pendingTouchEllipseStart.tileX,
       preview.pendingTouchEllipseStart.tileY
-    )}`;
+    );
   }
 
   if (preview.pendingTouchEllipseOutlineStart) {
-    return `Ellipse outline corner @ ${formatTileCoordinatePair(
+    return formatPendingTouchAnchorLabel(
+      'Ellipse Outline',
+      preview.pendingTouchEllipseOutlineStart.kind,
+      'corner',
       preview.pendingTouchEllipseOutlineStart.tileX,
       preview.pendingTouchEllipseOutlineStart.tileY
-    )}`;
+    );
   }
 
   return null;

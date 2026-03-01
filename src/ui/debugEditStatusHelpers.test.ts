@@ -569,10 +569,10 @@ describe('buildPendingTouchAnchorLabelText', () => {
           tileY: 7
         }
       })
-    ).toBe('Line start @ 4,7');
+    ).toBe('Line Brush start @ 4,7');
   });
 
-  it('includes touch shape anchor coordinates in the persistent anchor label text', () => {
+  it('includes touch shape anchor coordinates and break action text in the persistent anchor label text', () => {
     expect(
       buildPendingTouchAnchorLabelText({
         ...createEmptyPreviewState(),
@@ -582,7 +582,7 @@ describe('buildPendingTouchAnchorLabelText', () => {
           tileY: 15
         }
       })
-    ).toBe('Ellipse outline corner @ -3,15');
+    ).toBe('Ellipse Outline Break corner @ -3,15');
   });
 
   it('returns null when no anchored touch preview is pending', () => {

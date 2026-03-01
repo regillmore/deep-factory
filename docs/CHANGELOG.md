@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Show active touch one-shot `Brush` or `Break` action text in the persistent on-canvas anchor label while the second point is still pending.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so pending touch line and shape anchor labels include the armed `Brush` or `Break` action text alongside the tool name and tile coordinates, added focused regression coverage in [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Show active touch one-shot anchor tile coordinates in the persistent on-canvas anchor label while the second point is still pending.
 - Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) to build coordinate-bearing pending-touch anchor label text, updated [src/ui/armedDebugToolPreviewOverlay.ts](../src/ui/armedDebugToolPreviewOverlay.ts) to render that shared label text in the persistent touch anchor chip, added regression coverage in [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
