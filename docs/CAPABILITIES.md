@@ -24,6 +24,7 @@ This document describes the current project state. Unlike the changelog, it shou
 
 - Tile definitions live in validated JSON metadata at `src/world/tileMetadata.json`.
 - Tile metadata covers render data, terrain autotile data, connectivity groups, material tags, and gameplay flags such as `solid`, `blocksLight`, and `liquidKind`.
+- Render metadata can optionally define animated frame sequences through `frames` plus `frameDurationMs`, while the current meshing path continues to use the base static `atlasIndex` or `uvRect` as frame-zero fallback.
 - Non-autotile tiles resolve render UVs through explicit metadata (`atlasIndex` or normalized `uvRect`) instead of raw tile ID fallback.
 - Terrain autotile adjacency supports cross-chunk 8-neighbor sampling plus normalization helpers.
 - Terrain autotile connectivity uses metadata-driven connectivity groups first, then shared material tags for seam compatibility.
@@ -41,6 +42,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Gameplay metadata compiles into dense lookup arrays for collision, lighting, and liquid queries.
 - Terrain connectivity compiles into dense connectivity-group and material-tag lookup tables.
 - Tile render metadata compiles into dense static UV and terrain variant atlas-index lookup tables.
+- Optional animated render metadata compiles into dense per-tile frame start, frame count, and frame duration tables plus a flattened UV-frame list for later renderer-time sampling.
 - Placeholder terrain autotile resolution uses precomputed lookup tables for normalized adjacency masks and raw adjacency masks.
 - Atlas-slot UV rect objects are precomputed and reused by atlas-index and terrain-autotile resolution paths.
 

@@ -18,9 +18,14 @@ export interface TileUvRect {
   v1: number;
 }
 
-export interface TileRenderMetadata {
+export interface TileRenderFrameMetadata {
   atlasIndex?: number;
   uvRect?: TileUvRect;
+}
+
+export interface TileRenderMetadata extends TileRenderFrameMetadata {
+  frames?: readonly TileRenderFrameMetadata[];
+  frameDurationMs?: number;
 }
 
 export type TileLiquidKind = 'water' | 'lava';
@@ -60,6 +65,10 @@ export interface TileTerrainConnectivityLookup {
 
 export interface TileRenderLookup {
   staticUvRectByTileId: readonly (TileUvRect | null)[];
+  animationFrameStartByTileId: Int32Array;
+  animationFrameCountByTileId: Int32Array;
+  animationFrameDurationMsByTileId: Uint32Array;
+  animationFrameUvRects: readonly TileUvRect[];
   terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask: Int32Array;
   terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask: Int32Array;
   terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask: Int32Array;
@@ -73,6 +82,15 @@ const expectInteger = (value: unknown, label: string): number => {
     throw new Error(`${label} must be an integer`);
   }
   return value;
+};
+
+const expectPositiveInteger = (value: unknown, label: string): number => {
+  const parsed = expectInteger(value, label);
+  if (parsed <= 0) {
+    throw new Error(`${label} must be > 0`);
+  }
+
+  return parsed;
 };
 
 const expectNonEmptyString = (value: unknown, label: string): string => {
@@ -141,6 +159,42 @@ const parseTileUvRect = (value: unknown, label: string): TileUvRect => {
   return { u0, v0, u1, v1 };
 };
 
+const tileUvRectsMatch = (a: TileUvRect, b: TileUvRect): boolean =>
+  a.u0 === b.u0 && a.v0 === b.v0 && a.u1 === b.u1 && a.v1 === b.v1;
+
+const parseTileRenderFrameMetadata = (
+  value: unknown,
+  label: string
+): TileRenderFrameMetadata => {
+  if (!isRecord(value)) {
+    throw new Error(`${label} must be an object`);
+  }
+
+  const hasAtlasIndex = value.atlasIndex !== undefined;
+  const hasUvRect = value.uvRect !== undefined;
+  if (hasAtlasIndex === hasUvRect) {
+    throw new Error(`${label} must define exactly one of atlasIndex or uvRect`);
+  }
+
+  if (hasAtlasIndex) {
+    return {
+      atlasIndex: expectAtlasIndex(value.atlasIndex, `${label}.atlasIndex`)
+    };
+  }
+
+  return {
+    uvRect: parseTileUvRect(value.uvRect, `${label}.uvRect`)
+  };
+};
+
+const resolveTileRenderFrameUvRect = (value: TileRenderFrameMetadata): TileUvRect => {
+  if (value.atlasIndex !== undefined) {
+    return ATLAS_INDEX_UV_RECT_CACHE[value.atlasIndex]!;
+  }
+
+  return value.uvRect!;
+};
+
 const parseMaterialTags = (value: unknown, tileId: number): readonly string[] => {
   if (!Array.isArray(value)) {
     throw new Error(`tiles[${tileId}].materialTags must be an array`);
@@ -183,24 +237,45 @@ const parseTileGameplayMetadata = (value: unknown, tileId: number): TileGameplay
 };
 
 const parseTileRenderMetadata = (value: unknown, tileId: number): TileRenderMetadata => {
-  if (!isRecord(value)) {
-    throw new Error(`tiles[${tileId}].render must be an object`);
+  const render = parseTileRenderFrameMetadata(value, `tiles[${tileId}].render`);
+  const renderRecord = value as Record<string, unknown>;
+  const hasFrames = renderRecord.frames !== undefined;
+  const hasFrameDurationMs = renderRecord.frameDurationMs !== undefined;
+
+  if (hasFrames !== hasFrameDurationMs) {
+    throw new Error(
+      `tiles[${tileId}].render must define both frames and frameDurationMs when animation metadata is present`
+    );
   }
 
-  const hasAtlasIndex = value.atlasIndex !== undefined;
-  const hasUvRect = value.uvRect !== undefined;
-  if (hasAtlasIndex === hasUvRect) {
-    throw new Error(`tiles[${tileId}].render must define exactly one of atlasIndex or uvRect`);
+  if (!hasFrames) {
+    return render;
   }
 
-  if (hasAtlasIndex) {
-    return {
-      atlasIndex: expectAtlasIndex(value.atlasIndex, `tiles[${tileId}].render.atlasIndex`)
-    };
+  if (!Array.isArray(renderRecord.frames)) {
+    throw new Error(`tiles[${tileId}].render.frames must be an array`);
+  }
+
+  if (renderRecord.frames.length === 0) {
+    throw new Error(`tiles[${tileId}].render.frames must contain at least one frame`);
+  }
+
+  const frames = renderRecord.frames.map((entry, frameIndex) =>
+    parseTileRenderFrameMetadata(entry, `tiles[${tileId}].render.frames[${frameIndex}]`)
+  );
+  const staticUvRect = resolveTileRenderFrameUvRect(render);
+  const firstFrameUvRect = resolveTileRenderFrameUvRect(frames[0]!);
+  if (!tileUvRectsMatch(staticUvRect, firstFrameUvRect)) {
+    throw new Error(`tiles[${tileId}].render.frames[0] must match the static render source`);
   }
 
   return {
-    uvRect: parseTileUvRect(value.uvRect, `tiles[${tileId}].render.uvRect`)
+    ...render,
+    frames,
+    frameDurationMs: expectPositiveInteger(
+      renderRecord.frameDurationMs,
+      `tiles[${tileId}].render.frameDurationMs`
+    )
   };
 };
 
@@ -380,6 +455,11 @@ const buildTileRenderLookup = (tiles: readonly TileMetadataEntry[]): TileRenderL
   }
 
   const staticUvRectByTileId = Array<TileUvRect | null>(maxTileId + 1).fill(null);
+  const animationFrameStartByTileId = new Int32Array(maxTileId + 1);
+  animationFrameStartByTileId.fill(-1);
+  const animationFrameCountByTileId = new Int32Array(maxTileId + 1);
+  const animationFrameDurationMsByTileId = new Uint32Array(maxTileId + 1);
+  const animationFrameUvRects: TileUvRect[] = [];
   const terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask = new Int32Array(
     (maxTileId + 1) * TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
   );
@@ -397,10 +477,15 @@ const buildTileRenderLookup = (tiles: readonly TileMetadataEntry[]): TileRenderL
 
   for (const tile of tiles) {
     if (tile.render) {
-      if (tile.render.atlasIndex !== undefined) {
-        staticUvRectByTileId[tile.id] = ATLAS_INDEX_UV_RECT_CACHE[tile.render.atlasIndex] ?? null;
-      } else {
-        staticUvRectByTileId[tile.id] = tile.render.uvRect ?? null;
+      staticUvRectByTileId[tile.id] = resolveTileRenderFrameUvRect(tile.render);
+
+      if (tile.render.frames && tile.render.frameDurationMs !== undefined) {
+        animationFrameStartByTileId[tile.id] = animationFrameUvRects.length;
+        animationFrameCountByTileId[tile.id] = tile.render.frames.length;
+        animationFrameDurationMsByTileId[tile.id] = tile.render.frameDurationMs;
+        for (const frame of tile.render.frames) {
+          animationFrameUvRects.push(resolveTileRenderFrameUvRect(frame));
+        }
       }
     }
 
@@ -443,6 +528,10 @@ const buildTileRenderLookup = (tiles: readonly TileMetadataEntry[]): TileRenderL
 
   return {
     staticUvRectByTileId,
+    animationFrameStartByTileId,
+    animationFrameCountByTileId,
+    animationFrameDurationMsByTileId,
+    animationFrameUvRects,
     terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask,
     terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask,
     terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask
@@ -501,6 +590,61 @@ const getStaticTileRenderUvRect = (
   }
 
   return staticUvRectByTileId[tileId] ?? null;
+};
+
+const getAnimatedTileRenderFrameCountFromLookup = (
+  tileId: number,
+  registry: TileMetadataRegistry
+): number => {
+  const { animationFrameCountByTileId } = registry.renderLookup;
+  if (!isDenseLookupTileIdInRange(tileId, animationFrameCountByTileId.length)) {
+    return 0;
+  }
+
+  return animationFrameCountByTileId[tileId] ?? 0;
+};
+
+const getAnimatedTileRenderFrameDurationMsFromLookup = (
+  tileId: number,
+  registry: TileMetadataRegistry
+): number | null => {
+  if (getAnimatedTileRenderFrameCountFromLookup(tileId, registry) === 0) {
+    return null;
+  }
+
+  const { animationFrameDurationMsByTileId } = registry.renderLookup;
+  if (!isDenseLookupTileIdInRange(tileId, animationFrameDurationMsByTileId.length)) {
+    return null;
+  }
+
+  return animationFrameDurationMsByTileId[tileId] ?? null;
+};
+
+const getAnimatedTileRenderFrameUvRectFromLookup = (
+  tileId: number,
+  frameIndex: number,
+  registry: TileMetadataRegistry
+): TileUvRect | null => {
+  if (!Number.isInteger(frameIndex) || frameIndex < 0) {
+    return null;
+  }
+
+  const frameCount = getAnimatedTileRenderFrameCountFromLookup(tileId, registry);
+  if (frameCount === 0 || frameIndex >= frameCount) {
+    return null;
+  }
+
+  const { animationFrameStartByTileId, animationFrameUvRects } = registry.renderLookup;
+  if (!isDenseLookupTileIdInRange(tileId, animationFrameStartByTileId.length)) {
+    return null;
+  }
+
+  const frameStart = animationFrameStartByTileId[tileId] ?? -1;
+  if (frameStart < 0) {
+    return null;
+  }
+
+  return animationFrameUvRects[frameStart + frameIndex] ?? null;
 };
 
 const getTerrainAutotileVariantAtlasIndexFromLookup = (
@@ -757,6 +901,27 @@ export const resolveTileRenderUvRect = (
   tileId: number,
   registry: TileMetadataRegistry = TILE_METADATA
 ): TileUvRect | null => getStaticTileRenderUvRect(tileId, registry);
+
+export const hasAnimatedTileRenderMetadata = (
+  tileId: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): boolean => getAnimatedTileRenderFrameCountFromLookup(tileId, registry) > 0;
+
+export const getAnimatedTileRenderFrameCount = (
+  tileId: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): number => getAnimatedTileRenderFrameCountFromLookup(tileId, registry);
+
+export const getAnimatedTileRenderFrameDurationMs = (
+  tileId: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): number | null => getAnimatedTileRenderFrameDurationMsFromLookup(tileId, registry);
+
+export const resolveAnimatedTileRenderFrameUvRect = (
+  tileId: number,
+  frameIndex: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): TileUvRect | null => getAnimatedTileRenderFrameUvRectFromLookup(tileId, frameIndex, registry);
 
 export const resolveTerrainAutotileVariantUvRect = (
   tileId: number,

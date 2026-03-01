@@ -7,7 +7,7 @@
 - `src/input/`: input abstraction for keyboard, mouse, and touch/pinch.
 - `src/gl/`: low-level WebGL2 utilities and renderer orchestration.
 - `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, mesh construction.
-- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata; authored-atlas region validation is still a later task).
+- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups; authored-atlas region validation is still a later task).
 - `src/ui/`: debug DOM overlays, spawn marker, and standalone player marker.
 
 ## Update loop
@@ -47,7 +47,8 @@ existing tile rendering path still boots.
 - For each non-zero tile:
   - emits two triangles (6 vertices) for one quad,
   - writes per-vertex world position and UV.
-- UVs are resolved through tile metadata (terrain autotile variant maps or non-autotile render metadata), then mapped into the fixed placeholder atlas grid (`4x4` currently).
+- UVs are resolved through tile metadata (terrain autotile variant maps or non-autotile static render metadata), then mapped into the fixed placeholder atlas grid (`4x4` currently).
+- Optional animated render frames compile beside the static render lookup, but the current mesher still bakes the static frame only until render-time animation lands.
 - Output is uploaded once per chunk as static vertex data.
 
 This is intentionally simple and easy to evolve (greedy meshing, layered tiles, occlusion rules can be added later).

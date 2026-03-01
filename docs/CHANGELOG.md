@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Add optional animated tile render metadata (`frames`, `frameDurationMs`) without changing the current static UV path.
+- Changes: Updated [src/world/tileMetadata.ts](../src/world/tileMetadata.ts) so render metadata can validate optional animation frames, require a matching static frame-zero source, and compile dense animation lookup tables plus UV-frame helpers, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with positive and negative animated-metadata coverage, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run src/world/tileMetadata.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Add a recovery path that respawns the standalone player from the latest resolved spawn when debug edits leave its AABB embedded in solid tiles.
 - Changes: Updated [src/world/playerState.ts](../src/world/playerState.ts) with an embedded-solid recovery helper, wired [src/gl/renderer.ts](../src/gl/renderer.ts) and [src/main.ts](../src/main.ts) to reuse the latest resolved spawn during post-edit recovery, expanded [src/world/playerState.test.ts](../src/world/playerState.test.ts) with focused respawn coverage, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Verification: Ran `npx vitest run src/gl/renderer.test.ts src/world/playerState.test.ts src/world/collision.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

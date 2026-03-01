@@ -10,10 +10,14 @@ import {
   areTerrainAutotileNeighborsConnected,
   atlasIndexToUvRect,
   doesTileBlockLight,
+  getAnimatedTileRenderFrameCount,
+  getAnimatedTileRenderFrameDurationMs,
   getTileLiquidKind,
+  hasAnimatedTileRenderMetadata,
   hasTerrainAutotileMetadata,
   isTileSolid,
   parseTileMetadataRegistry,
+  resolveAnimatedTileRenderFrameUvRect,
   resolveTileGameplayMetadata,
   resolveTerrainAutotileAtlasIndexByRawAdjacencyMask,
   resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask,
@@ -355,6 +359,13 @@ describe('tile metadata loader', () => {
     });
 
     expect(registry.renderLookup.staticUvRectByTileId.length).toBe(19);
+    expect(registry.renderLookup.animationFrameStartByTileId).toBeInstanceOf(Int32Array);
+    expect(registry.renderLookup.animationFrameCountByTileId).toBeInstanceOf(Int32Array);
+    expect(registry.renderLookup.animationFrameDurationMsByTileId).toBeInstanceOf(Uint32Array);
+    expect(registry.renderLookup.animationFrameStartByTileId.length).toBe(19);
+    expect(registry.renderLookup.animationFrameCountByTileId.length).toBe(19);
+    expect(registry.renderLookup.animationFrameDurationMsByTileId.length).toBe(19);
+    expect(registry.renderLookup.animationFrameUvRects).toEqual([]);
     expect(registry.renderLookup.terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask).toBeInstanceOf(
       Int32Array
     );
@@ -398,6 +409,58 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileAtlasIndexByRawAdjacencyMask(12, 0, registry)).toBe(null);
     expect(resolveTerrainAutotileAtlasIndexByRawAdjacencyMask(18, -1, registry)).toBe(null);
     expect(resolveTerrainAutotileAtlasIndexByRawAdjacencyMask(18, 256, registry)).toBe(null);
+  });
+
+  it('builds dense animated render lookup tables without changing static render resolution', () => {
+    const registry = parseTileMetadataRegistry({
+      tiles: [
+        {
+          id: 0,
+          name: 'empty',
+          gameplay: { solid: false, blocksLight: false }
+        },
+        {
+          id: 7,
+          name: 'lantern',
+          render: {
+            atlasIndex: 6,
+            frames: [
+              { atlasIndex: 6 },
+              { uvRect: { u0: 0.5, v0: 0, u1: 0.75, v1: 0.25 } },
+              { atlasIndex: 7 }
+            ],
+            frameDurationMs: 120
+          }
+        },
+        {
+          id: 8,
+          name: 'panel',
+          render: { uvRect: { u0: 0, v0: 0.5, u1: 0.25, v1: 0.75 } }
+        }
+      ]
+    });
+
+    expect(hasAnimatedTileRenderMetadata(7, registry)).toBe(true);
+    expect(hasAnimatedTileRenderMetadata(8, registry)).toBe(false);
+    expect(getAnimatedTileRenderFrameCount(7, registry)).toBe(3);
+    expect(getAnimatedTileRenderFrameCount(999, registry)).toBe(0);
+    expect(getAnimatedTileRenderFrameDurationMs(7, registry)).toBe(120);
+    expect(getAnimatedTileRenderFrameDurationMs(8, registry)).toBe(null);
+
+    expect(resolveTileRenderUvRect(7, registry)).toBe(atlasIndexToUvRect(6));
+    expect(resolveAnimatedTileRenderFrameUvRect(7, 0, registry)).toBe(atlasIndexToUvRect(6));
+    expect(resolveAnimatedTileRenderFrameUvRect(7, 0, registry)).toBe(resolveTileRenderUvRect(7, registry));
+    expect(resolveAnimatedTileRenderFrameUvRect(7, 1, registry)).toEqual({
+      u0: 0.5,
+      v0: 0,
+      u1: 0.75,
+      v1: 0.25
+    });
+    expect(resolveAnimatedTileRenderFrameUvRect(7, 2, registry)).toBe(atlasIndexToUvRect(7));
+    expect(resolveAnimatedTileRenderFrameUvRect(7, -1, registry)).toBe(null);
+    expect(resolveAnimatedTileRenderFrameUvRect(7, 3, registry)).toBe(null);
+    expect(resolveAnimatedTileRenderFrameUvRect(8, 0, registry)).toBe(null);
+    expect(registry.renderLookup.animationFrameUvRects.length).toBe(3);
   });
 
   it('precomputes normalized-adjacency terrain atlas lookup entries with parity to placeholder variant mapping', () => {
@@ -561,5 +624,70 @@ describe('tile metadata loader', () => {
         ]
       })
     ).toThrowError(/exactly one of atlasIndex or uvRect/);
+  });
+
+  it('rejects partial or invalid animated render metadata', () => {
+    expect(() =>
+      parseTileMetadataRegistry({
+        tiles: [
+          {
+            id: 7,
+            name: 'missing_duration',
+            render: {
+              atlasIndex: 1,
+              frames: [{ atlasIndex: 1 }, { atlasIndex: 2 }]
+            }
+          }
+        ]
+      })
+    ).toThrowError(/must define both frames and frameDurationMs/);
+
+    expect(() =>
+      parseTileMetadataRegistry({
+        tiles: [
+          {
+            id: 7,
+            name: 'empty_frames',
+            render: {
+              atlasIndex: 1,
+              frames: [],
+              frameDurationMs: 120
+            }
+          }
+        ]
+      })
+    ).toThrowError(/must contain at least one frame/);
+
+    expect(() =>
+      parseTileMetadataRegistry({
+        tiles: [
+          {
+            id: 7,
+            name: 'bad_duration',
+            render: {
+              atlasIndex: 1,
+              frames: [{ atlasIndex: 1 }, { atlasIndex: 2 }],
+              frameDurationMs: 0
+            }
+          }
+        ]
+      })
+    ).toThrowError(/frameDurationMs must be > 0/);
+
+    expect(() =>
+      parseTileMetadataRegistry({
+        tiles: [
+          {
+            id: 7,
+            name: 'mismatched_first_frame',
+            render: {
+              atlasIndex: 1,
+              frames: [{ atlasIndex: 2 }, { atlasIndex: 3 }],
+              frameDurationMs: 120
+            }
+          }
+        ]
+      })
+    ).toThrowError(/frames\[0\] must match the static render source/);
   });
 });
