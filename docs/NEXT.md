@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Split empty compact status-strip hover guidance into wrap-friendly action segments on narrow mobile layouts instead of reflowing the whole sentence.
+1. Add an atlas asset loader helper that fetches and decodes an authored image while preserving the generated placeholder atlas as a fallback.
 
 ## Authored asset pipeline
 

@@ -689,7 +689,12 @@ const buildHoveredTileText = (
   }
 
   if (!hoveredTile) {
-    return 'Hover: move cursor or touch a world tile to inspect gameplay flags. Pin Click keeps metadata visible.';
+    return joinHintSegments(
+      'Hover: move cursor',
+      'touch a world tile',
+      'inspect gameplay flags',
+      'Pin Click keeps metadata visible'
+    );
   }
 
   return formatInspectTileLine('Hover', hoveredTile);

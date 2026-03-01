@@ -52,6 +52,21 @@ describe('buildWrappedDetailLines', () => {
       ]
     ]);
   });
+
+  it('splits empty-hover guidance into wrap-friendly action segments', () => {
+    expect(
+      buildWrappedDetailLines(
+        'Hover: move cursor | touch a world tile | inspect gameplay flags | Pin Click keeps metadata visible'
+      )
+    ).toEqual([
+      [
+        'Hover: move cursor',
+        '| touch a world tile',
+        '| inspect gameplay flags',
+        '| Pin Click keeps metadata visible'
+      ]
+    ]);
+  });
 });
 
 describe('splitSummaryChipText', () => {

@@ -82,7 +82,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.previewText).toBeNull();
     expect(model.inspectText).toBe('Inspect: Hover only');
     expect(model.hoverText).toBe(
-      'Hover: move cursor or touch a world tile to inspect gameplay flags. Pin Click keeps metadata visible.'
+      'Hover: move cursor | touch a world tile | inspect gameplay flags | Pin Click keeps metadata visible'
     );
     expect(model.inspectActionText).toBe('Pin Click');
     expect(model.clearActionText).toBeNull();
