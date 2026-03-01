@@ -1,4 +1,5 @@
 import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
+import type { TileLiquidKind } from '../world/tileMetadata';
 
 export interface DebugOverlayStats {
   renderedChunks: number;
@@ -22,10 +23,14 @@ export interface DebugOverlayPointerInspect {
   pointerType: string;
   tileId?: number;
   tileLabel?: string;
+  solid?: boolean;
+  blocksLight?: boolean;
+  liquidKind?: TileLiquidKind | null;
 }
 
 const formatFloat = (value: number, digits: number): string => value.toFixed(digits);
 const formatInt = (value: number): string => Math.round(value).toString();
+const formatGameplayFlag = (value: boolean): string => (value ? 'on' : 'off');
 const formatTileIdentity = (pointerInspect: DebugOverlayPointerInspect): string | null => {
   if (pointerInspect.tileLabel && typeof pointerInspect.tileId === 'number') {
     return `Tile:${pointerInspect.tileLabel} (#${pointerInspect.tileId})`;
@@ -61,6 +66,12 @@ export const formatDebugOverlayText = (
   const { chunkX, chunkY } = worldToChunkCoord(pointerInspect.tile.x, pointerInspect.tile.y);
   const { localX, localY } = worldToLocalTile(pointerInspect.tile.x, pointerInspect.tile.y);
   const tileIdentity = formatTileIdentity(pointerInspect);
+  const tileGameplay =
+    typeof pointerInspect.solid === 'boolean' && typeof pointerInspect.blocksLight === 'boolean'
+      ? ` | solid:${formatGameplayFlag(pointerInspect.solid)}` +
+        ` | light:${formatGameplayFlag(pointerInspect.blocksLight)}` +
+        ` | liquid:${pointerInspect.liquidKind ?? 'none'}`
+      : '';
   const pointerLine =
     `Ptr(${pointerInspect.pointerType}) ` +
     `C:${formatInt(pointerInspect.client.x)},${formatInt(pointerInspect.client.y)} | ` +
@@ -69,7 +80,8 @@ export const formatDebugOverlayText = (
     (tileIdentity ? `${tileIdentity} | ` : '') +
     `T:${pointerInspect.tile.x},${pointerInspect.tile.y} | ` +
     `Ch:${chunkX},${chunkY} | ` +
-    `L:${localX},${localY}`;
+    `L:${localX},${localY}` +
+    tileGameplay;
 
   return `${summaryLine}\n${pointerLine}`;
 };

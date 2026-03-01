@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Show hovered tile gameplay flags in the debug overlay pointer inspect line so overlay-only inspection still surfaces solid, light-blocking, and liquid state.
+1. Show pinned tile inspect metadata in the debug overlay when a tile is pinned from the compact status strip.
 
 ## Authored asset pipeline
 

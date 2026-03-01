@@ -25,7 +25,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nPtr: n/a');
   });
 
-  it('formats pointer client/canvas/world/tile readout with tile identity', () => {
+  it('formats pointer client/canvas/world/tile readout with tile identity and gameplay flags', () => {
     const text = formatDebugOverlayText(120.25, baseStats, {
       client: { x: 500.4, y: 250.6 },
       canvas: { x: 1000.2, y: 501.8 },
@@ -33,7 +33,10 @@ describe('formatDebugOverlayText', () => {
       tile: { x: -3, y: 1 },
       pointerType: 'mouse',
       tileId: 1,
-      tileLabel: 'stone'
+      tileLabel: 'stone',
+      solid: true,
+      blocksLight: true,
+      liquidKind: null
     });
 
     expect(text).toContain('Ptr(mouse)');
@@ -44,5 +47,8 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('T:-3,1');
     expect(text).toContain('Ch:-1,0');
     expect(text).toContain('L:29,1');
+    expect(text).toContain('solid:on');
+    expect(text).toContain('light:on');
+    expect(text).toContain('liquid:none');
   });
 });

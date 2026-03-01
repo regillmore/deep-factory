@@ -915,7 +915,10 @@ const bootstrap = async (): Promise<void> => {
         ? {
             ...pointerInspect,
             tileId: hoveredDebugTileStatus?.tileId,
-            tileLabel: hoveredDebugTileStatus?.tileLabel
+            tileLabel: hoveredDebugTileStatus?.tileLabel,
+            solid: hoveredDebugTileStatus?.solid,
+            blocksLight: hoveredDebugTileStatus?.blocksLight,
+            liquidKind: hoveredDebugTileStatus?.liquidKind ?? null
           }
         : null;
       renderer.resize();
