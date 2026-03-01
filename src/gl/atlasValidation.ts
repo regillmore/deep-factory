@@ -1,12 +1,13 @@
 import { getAuthoredAtlasRegion } from '../world/authoredAtlasLayout';
 import type { TileMetadataEntry, TileRenderFrameMetadata, TileUvRect } from '../world/tileMetadata';
 
-export interface AtlasUvRectBoundsWarning {
+export interface AtlasValidationWarning {
   tileId: number;
   tileName: string;
   sourcePath: string;
   summary: string;
   message: string;
+  kind: 'bounds' | 'pixelAlignment';
 }
 
 interface PixelRect {
@@ -15,6 +16,8 @@ interface PixelRect {
   x1: number;
   y1: number;
 }
+
+const WHOLE_PIXEL_EPSILON = 0.000001;
 
 const toPixelRect = (
   uvRect: TileUvRect,
@@ -51,6 +54,15 @@ const isPixelRectWithinAtlasBounds = (
   pixelRect.x1 <= atlasWidth &&
   pixelRect.y1 <= atlasHeight;
 
+const isWholePixelValue = (value: number): boolean =>
+  Math.abs(value - Math.round(value)) <= WHOLE_PIXEL_EPSILON;
+
+const isPixelRectWholePixelAligned = (pixelRect: PixelRect): boolean =>
+  isWholePixelValue(pixelRect.x0) &&
+  isWholePixelValue(pixelRect.y0) &&
+  isWholePixelValue(pixelRect.x1) &&
+  isWholePixelValue(pixelRect.y1);
+
 const formatPixelValue = (value: number): string => {
   const rounded = Math.round(value * 1000) / 1000;
   return `${rounded}`;
@@ -64,30 +76,44 @@ const buildWarning = (
   sourcePath: string,
   pixelRect: PixelRect,
   atlasWidth: number,
-  atlasHeight: number
-): AtlasUvRectBoundsWarning => {
+  atlasHeight: number,
+  kind: AtlasValidationWarning['kind']
+): AtlasValidationWarning => {
   const summary = `tile ${tile.id} "${tile.name}" ${sourcePath}`;
+  const issueDescription =
+    kind === 'bounds'
+      ? `resolves to ${formatPixelRect(pixelRect)} outside atlas ${atlasWidth}x${atlasHeight}`
+      : `resolves to ${formatPixelRect(pixelRect)} on non-integer atlas pixels for ${atlasWidth}x${atlasHeight}`;
   return {
     tileId: tile.id,
     tileName: tile.name,
     sourcePath,
     summary,
-    message:
-      `${summary} resolves to ${formatPixelRect(pixelRect)} outside atlas ${atlasWidth}x${atlasHeight}`
+    kind,
+    message: `${summary} ${issueDescription}`
   };
 };
 
-const buildUvRectWarning = (
+const buildBoundsWarning = (
   tile: TileMetadataEntry,
   sourcePath: string,
-  uvRect: TileUvRect,
+  pixelRect: PixelRect,
   atlasWidth: number,
   atlasHeight: number
-): AtlasUvRectBoundsWarning =>
-  buildWarning(tile, sourcePath, toPixelRect(uvRect, atlasWidth, atlasHeight), atlasWidth, atlasHeight);
+): AtlasValidationWarning =>
+  buildWarning(tile, sourcePath, pixelRect, atlasWidth, atlasHeight, 'bounds');
+
+const buildPixelAlignmentWarning = (
+  tile: TileMetadataEntry,
+  sourcePath: string,
+  pixelRect: PixelRect,
+  atlasWidth: number,
+  atlasHeight: number
+): AtlasValidationWarning =>
+  buildWarning(tile, sourcePath, pixelRect, atlasWidth, atlasHeight, 'pixelAlignment');
 
 const collectFrameUvRectWarnings = (
-  warnings: AtlasUvRectBoundsWarning[],
+  warnings: AtlasValidationWarning[],
   tile: TileMetadataEntry,
   frame: TileRenderFrameMetadata,
   sourcePath: string,
@@ -104,7 +130,7 @@ const collectFrameUvRectWarnings = (
       return;
     }
 
-    warnings.push(buildWarning(tile, sourcePath, pixelRect, atlasWidth, atlasHeight));
+    warnings.push(buildBoundsWarning(tile, sourcePath, pixelRect, atlasWidth, atlasHeight));
     return;
   }
 
@@ -114,19 +140,24 @@ const collectFrameUvRectWarnings = (
   }
 
   const pixelRect = toPixelRect(uvRect, atlasWidth, atlasHeight);
-  if (isPixelRectWithinAtlasBounds(pixelRect, atlasWidth, atlasHeight)) {
+  if (!isPixelRectWithinAtlasBounds(pixelRect, atlasWidth, atlasHeight)) {
+    warnings.push(buildBoundsWarning(tile, sourcePath, pixelRect, atlasWidth, atlasHeight));
     return;
   }
 
-  warnings.push(buildUvRectWarning(tile, sourcePath, uvRect, atlasWidth, atlasHeight));
+  if (isPixelRectWholePixelAligned(pixelRect)) {
+    return;
+  }
+
+  warnings.push(buildPixelAlignmentWarning(tile, sourcePath, pixelRect, atlasWidth, atlasHeight));
 };
 
-export const collectAtlasUvRectBoundsWarnings = (
+export const collectAtlasValidationWarnings = (
   tiles: readonly TileMetadataEntry[],
   atlasWidth: number,
   atlasHeight: number
-): AtlasUvRectBoundsWarning[] => {
-  const warnings: AtlasUvRectBoundsWarning[] = [];
+): AtlasValidationWarning[] => {
+  const warnings: AtlasValidationWarning[] = [];
 
   for (const tile of tiles) {
     const render = tile.render;
@@ -182,7 +213,7 @@ export const collectAtlasUvRectBoundsWarnings = (
       }
 
       warnings.push(
-        buildWarning(
+        buildBoundsWarning(
           tile,
           `terrainAutotile.placeholderVariantAtlasByCardinalMask[${cardinalMask}]`,
           pixelRect,

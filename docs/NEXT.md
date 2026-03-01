@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Authored asset pipeline
 
-3. Add runtime pixel-alignment validation for tile `render.uvRect` metadata so authored sub-rects snap to whole atlas pixels at boot.
 4. Make the generated placeholder fallback atlas derive its canvas size and painted regions from the authored atlas layout so atlas-index previews stay aligned when the layout changes.
 5. Add debug telemetry for animated chunk UV uploads so renderer-side tile animation cost stays visible as authored frame counts grow.
+6. Add an authored-atlas asset regression test that direct tile `render.uvRect` metadata still resolves to whole atlas pixels against the committed PNG dimensions.
 
 ## Collision and player foundation
 

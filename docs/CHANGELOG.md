@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Add runtime pixel-alignment validation for tile `render.uvRect` metadata so authored sub-rects snap to whole atlas pixels at boot.
+- Changes: Updated [src/gl/atlasValidation.ts](../src/gl/atlasValidation.ts) plus [src/gl/atlasValidation.test.ts](../src/gl/atlasValidation.test.ts) so direct static and animated `uvRect` render sources now warn when they resolve to non-integer atlas-pixel edges while preserving existing atlas-bounds checks, updated [src/gl/renderer.ts](../src/gl/renderer.ts) plus [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) to use the generalized atlas-validation warning path, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run src/gl/atlasValidation.test.ts src/gl/renderer.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Fix the standalone player placeholder pose silhouette orientation so grounded and airborne poses render upright instead of upside down.
 - Changes: Updated [src/gl/renderer.ts](../src/gl/renderer.ts) so the placeholder shader flips `uv.y` into pose-local space before applying grounded or airborne silhouette boxes, and expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a regression test that locks the shader-source vertical flip in place.
 - Verification: Ran `npx vitest run src/gl/renderer.test.ts src/gl/standalonePlayerPlaceholder.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

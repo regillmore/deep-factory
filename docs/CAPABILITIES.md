@@ -6,7 +6,7 @@ This document describes the current project state. Unlike the changelog, it shou
 
 - WebGL2 renderer with shader utilities, buffer helpers, texture loading, and DPR-aware resize.
 - Renderer atlas initialization ships with an authored atlas at `public/atlas/tile-atlas.png` exposed as `/atlas/tile-atlas.png`, then falls back to the generated placeholder atlas if that asset cannot be fetched or decoded.
-- Renderer boot validates authored atlas-index regions plus direct tile `render.uvRect` metadata against the loaded atlas dimensions, logs a warning when any static, animated, or terrain-variant source falls outside the source image, and surfaces the warning count plus first warning in debug telemetry.
+- Renderer boot validates authored atlas-index regions plus direct tile `render.uvRect` metadata against the loaded atlas dimensions, logs a warning when any atlas-backed source falls outside the source image or any direct static or animated `uvRect` edge lands between atlas pixels, and surfaces the warning count plus first warning in debug telemetry.
 - Renderer animates non-terrain tiles from metadata-driven frame sequences at draw time by patching chunk UVs only when an animated tile's elapsed frame changes; terrain autotile and static tile UV resolution remain unchanged.
 - Renderer draws the standalone player through a facing-aware world-space placeholder pass with distinct grounded and airborne silhouettes instead of a client-space DOM marker.
 - Orthographic camera with anchored zoom, pointer pan controls, and standalone-player follow that tracks the player body center while preserving manual inspection offsets.
@@ -29,7 +29,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Tile metadata covers render data, terrain autotile data, connectivity groups, material tags, and gameplay flags such as `solid`, `blocksLight`, and `liquidKind`.
 - Render metadata can optionally define animated frame sequences through `frames` plus `frameDurationMs`, while the current meshing path continues to use the base static `atlasIndex` or `uvRect` as frame-zero fallback.
 - The default tile set now includes an animated `debug_blink` brush tile that exercises the renderer-side frame resolver against the authored atlas.
-- Atlas-backed render metadata resolves through explicit authored atlas region definitions in `src/world/authoredAtlasLayout.ts`, while direct sub-rect metadata can still use normalized `uvRect` values.
+- Atlas-backed render metadata resolves through explicit authored atlas region definitions in `src/world/authoredAtlasLayout.ts`, while direct sub-rect metadata can still use normalized `uvRect` values and are runtime-validated against whole atlas-pixel edges.
 - Terrain autotile adjacency supports cross-chunk 8-neighbor sampling plus normalization helpers.
 - Terrain autotile connectivity uses metadata-driven connectivity groups first, then shared material tags for seam compatibility.
 - Placeholder terrain autotile layout still uses 16 cardinal-mask variants documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), but those atlas indices now resolve through the authored atlas region layout.
@@ -54,7 +54,7 @@ This document describes the current project state. Unlike the changelog, it shou
 
 - Shared DPR-aware screen, canvas, world, and tile picking utilities centralize pointer coordinate conversion.
 - Camera and picking tests cover viewport round-tripping, DPR-aware selection, and negative-world tile flooring.
-- Debug overlay shows FPS, rendered chunk count, mesh telemetry, loaded atlas source kind plus atlas dimensions, atlas `uvRect` validation status, the resolved standalone player spawn tile plus world coordinates, live pointer inspect data (`client`, `canvas`, `world`, hovered tile name plus tile ID, `tile`, `chunk`, `chunk-local`, `solid`, `light`, `liquid`), and a separate pinned tile metadata line when inspect pin is active.
+- Debug overlay shows FPS, rendered chunk count, mesh telemetry, loaded atlas source kind plus atlas dimensions, atlas validation status, the resolved standalone player spawn tile plus world coordinates, live pointer inspect data (`client`, `canvas`, `world`, hovered tile name plus tile ID, `tile`, `chunk`, `chunk-local`, `solid`, `light`, `liquid`), and a separate pinned tile metadata line when inspect pin is active.
 - Hovered tile cursor overlay renders in client space from world tile coordinates and keeps pinned and hovered inspect outlines visible together when they differ.
 - A dedicated spawn marker overlay outlines the resolved spawn AABB, support tile, and feet anchor in client space and refreshes after tile edits so spawn placement can be validated before movement is wired.
 - On-canvas one-shot preview badges show live anchor plus endpoint tile coordinates, inclusive span dimensions, and affected-tile estimates for active previews and stay clipped to the visible canvas bounds on small or offset canvases, while anchored touch previews keep the endpoint, span, and affected-count text pending until the second point is chosen and show a persistent anchor label with the armed tool name, `Brush` or `Break` action text, and anchor tile coordinates that stays clamped inside the visible canvas bounds near viewport edges.

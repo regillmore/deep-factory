@@ -2,15 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Camera2D } from '../core/camera2d';
 import { createPlayerState } from '../world/playerState';
 import { atlasIndexToUvRect } from '../world/tileMetadata';
-import type { AtlasUvRectBoundsWarning } from './atlasValidation';
+import type { AtlasValidationWarning } from './atlasValidation';
 
-const { loadAtlasImageSource, createTextureFromImageSource, createProgram, collectAtlasUvRectBoundsWarnings } =
+const { loadAtlasImageSource, createTextureFromImageSource, createProgram, collectAtlasValidationWarnings } =
   vi.hoisted(() => ({
   loadAtlasImageSource: vi.fn(),
   createTextureFromImageSource: vi.fn(() => ({ kind: 'texture' } as unknown as WebGLTexture)),
   createProgram: vi.fn(() => ({ kind: 'program' } as unknown as WebGLProgram)),
-  collectAtlasUvRectBoundsWarnings:
-    vi.fn<(tiles: unknown, atlasWidth: number, atlasHeight: number) => AtlasUvRectBoundsWarning[]>(
+  collectAtlasValidationWarnings:
+    vi.fn<(tiles: unknown, atlasWidth: number, atlasHeight: number) => AtlasValidationWarning[]>(
       () => []
     )
   }));
@@ -25,7 +25,7 @@ vi.mock('./shader', () => ({
 }));
 
 vi.mock('./atlasValidation', () => ({
-  collectAtlasUvRectBoundsWarnings
+  collectAtlasValidationWarnings
 }));
 
 import { Renderer } from './renderer';
@@ -80,8 +80,8 @@ describe('Renderer atlas telemetry', () => {
     loadAtlasImageSource.mockReset();
     createTextureFromImageSource.mockClear();
     createProgram.mockClear();
-    collectAtlasUvRectBoundsWarnings.mockReset();
-    collectAtlasUvRectBoundsWarnings.mockReturnValue([]);
+    collectAtlasValidationWarnings.mockReset();
+    collectAtlasValidationWarnings.mockReturnValue([]);
     vi.restoreAllMocks();
   });
 
@@ -162,14 +162,15 @@ describe('Renderer atlas telemetry', () => {
       width: 96,
       height: 64
     });
-    collectAtlasUvRectBoundsWarnings.mockReturnValue([
+    collectAtlasValidationWarnings.mockReturnValue([
       {
         tileId: 4,
         tileName: 'debug_panel',
+        kind: 'pixelAlignment',
         sourcePath: 'render.uvRect',
         summary: 'tile 4 "debug_panel" render.uvRect',
         message:
-          'tile 4 "debug_panel" render.uvRect resolves to [60, 48]..[120, 80] outside atlas 96x64'
+          'tile 4 "debug_panel" render.uvRect resolves to [9.6, 16]..[48, 48] on non-integer atlas pixels for 96x64'
       }
     ]);
 
@@ -178,7 +179,7 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.atlasValidationWarningCount).toBe(1);
     expect(renderer.telemetry.atlasValidationFirstWarning).toBe('tile 4 "debug_panel" render.uvRect');
     expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(warnSpy.mock.calls[0]?.[0]).toContain('Atlas uvRect validation found 1 warning(s)');
+    expect(warnSpy.mock.calls[0]?.[0]).toContain('Atlas validation found 1 warning(s)');
     expect(warnSpy.mock.calls[0]?.[0]).toContain('tile 4 "debug_panel" render.uvRect');
   });
 

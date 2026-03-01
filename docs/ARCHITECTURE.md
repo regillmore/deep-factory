@@ -7,7 +7,7 @@
 - `src/input/`: input abstraction for keyboard, mouse, touch/pinch, and standalone player intent extraction.
 - `src/gl/`: low-level WebGL2 utilities, world rendering orchestration, and the grounded-versus-airborne standalone player placeholder draw pass.
 - `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, mesh construction, plus authored atlas-region layout data.
-- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups and elapsed-frame resolvers backed by `src/world/authoredAtlasLayout.ts`; renderer boot now validates authored atlas-index sources and direct `uvRect` metadata against the loaded atlas dimensions).
+- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups and elapsed-frame resolvers backed by `src/world/authoredAtlasLayout.ts`; renderer boot now validates authored atlas-index sources against the loaded atlas dimensions and direct `uvRect` metadata against both atlas bounds and whole-pixel atlas edges).
 - `src/gl/animatedChunkMesh.ts`: renderer-side helper that rewrites baked chunk UVs for animated non-terrain quads when elapsed time advances to a new metadata frame.
 - `src/ui/`: debug DOM overlays, spawn marker, and touch-only player controls.
 
@@ -35,7 +35,7 @@ If that asset is unavailable or decoding fails, initialization falls back to the
 existing tile rendering path still boots. After the atlas is loaded, renderer startup validates direct tile
 `render.uvRect` metadata plus atlas-index-backed render and terrain sources against the runtime atlas dimensions,
 stores warning telemetry, and emits a console warning if any static, animated, or terrain variant source falls
-outside the source image.
+outside the source image or any direct `uvRect` source lands between whole atlas pixels.
 
 1. Ensure canvas backbuffer matches CSS size × `devicePixelRatio`.
 2. Build camera matrix (`world -> clip`) for orthographic projection.

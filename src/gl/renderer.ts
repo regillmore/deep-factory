@@ -11,7 +11,7 @@ import {
 } from './standalonePlayerPlaceholder';
 import type { AtlasImageLoadResult } from './texture';
 import { createTextureFromImageSource, loadAtlasImageSource } from './texture';
-import { collectAtlasUvRectBoundsWarnings } from './atlasValidation';
+import { collectAtlasValidationWarnings } from './atlasValidation';
 import { TILE_SIZE } from '../world/constants';
 import {
   affectedChunkCoordsForLocalTileEdit,
@@ -304,12 +304,12 @@ export class Renderer {
     this.telemetry.atlasSourceKind = atlas.sourceKind;
     this.telemetry.atlasWidth = atlas.width;
     this.telemetry.atlasHeight = atlas.height;
-    const atlasWarnings = collectAtlasUvRectBoundsWarnings(TILE_METADATA.tiles, atlas.width, atlas.height);
+    const atlasWarnings = collectAtlasValidationWarnings(TILE_METADATA.tiles, atlas.width, atlas.height);
     this.telemetry.atlasValidationWarningCount = atlasWarnings.length;
     this.telemetry.atlasValidationFirstWarning = atlasWarnings[0]?.summary ?? null;
     if (atlasWarnings.length > 0) {
       console.warn(
-        `[Renderer] Atlas uvRect validation found ${atlasWarnings.length} warning(s) for ${atlas.sourceKind} atlas ${atlas.width}x${atlas.height}.\n` +
+        `[Renderer] Atlas validation found ${atlasWarnings.length} warning(s) for ${atlas.sourceKind} atlas ${atlas.width}x${atlas.height}.\n` +
           atlasWarnings.map((warning) => `- ${warning.message}`).join('\n')
       );
     }
