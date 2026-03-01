@@ -1092,6 +1092,7 @@ const bootstrap = async (): Promise<void> => {
             facing: standalonePlayerState.facing
           }
         : null;
+      const debugOverlayPlayerIntent = input.getPlayerInputTelemetry();
       renderer.resize();
       renderer.render(camera, {
         standalonePlayer: standalonePlayerState
@@ -1125,7 +1126,8 @@ const bootstrap = async (): Promise<void> => {
         pointer: debugOverlayPointerInspect,
         pinned: debugOverlayPinnedInspect,
         spawn: debugOverlaySpawn,
-        player: debugOverlayPlayer
+        player: debugOverlayPlayer,
+        playerIntent: debugOverlayPlayerIntent
       });
     }
   );

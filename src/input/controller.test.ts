@@ -8,6 +8,7 @@ import {
   isPlayerMoveLeftControlKey,
   isPlayerMoveRightControlKey,
   markDebugPaintTileSeen,
+  resolvePlayerInputTelemetry,
   resolvePlayerMovementIntent,
   resolvePlayerMoveXIntent,
   shouldRetainPointerInspectOnPointerLeave,
@@ -208,6 +209,24 @@ describe('player control key resolution', () => {
     });
     expect(resolvePlayerMovementIntent(false, true, false, true)).toEqual({
       moveX: 1,
+      jumpPressed: false
+    });
+  });
+
+  it('captures move, jumpHeld, and jumpPressed telemetry for the current input sample', () => {
+    expect(resolvePlayerInputTelemetry(true, false, true, false)).toEqual({
+      moveX: -1,
+      jumpHeld: true,
+      jumpPressed: true
+    });
+    expect(resolvePlayerInputTelemetry(true, false, true, true)).toEqual({
+      moveX: -1,
+      jumpHeld: true,
+      jumpPressed: false
+    });
+    expect(resolvePlayerInputTelemetry(false, false, false, true)).toEqual({
+      moveX: 0,
+      jumpHeld: false,
       jumpPressed: false
     });
   });

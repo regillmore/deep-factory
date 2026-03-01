@@ -20,6 +20,12 @@ export interface PointerInspectSnapshot {
   pointerType: string;
 }
 
+export interface PlayerInputTelemetry {
+  moveX: -1 | 0 | 1;
+  jumpHeld: boolean;
+  jumpPressed: boolean;
+}
+
 export type DebugTileEditKind = 'place' | 'break';
 export type TouchDebugEditMode = 'pan' | DebugTileEditKind;
 
@@ -283,8 +289,27 @@ export const resolvePlayerMovementIntent = (
   moveRightPressed: boolean,
   jumpHeld: boolean,
   previousJumpHeld: boolean
-): PlayerMovementIntent => ({
+): PlayerMovementIntent => {
+  const telemetry = resolvePlayerInputTelemetry(
+    moveLeftPressed,
+    moveRightPressed,
+    jumpHeld,
+    previousJumpHeld
+  );
+  return {
+    moveX: telemetry.moveX,
+    jumpPressed: telemetry.jumpPressed
+  };
+};
+
+export const resolvePlayerInputTelemetry = (
+  moveLeftPressed: boolean,
+  moveRightPressed: boolean,
+  jumpHeld: boolean,
+  previousJumpHeld: boolean
+): PlayerInputTelemetry => ({
   moveX: resolvePlayerMoveXIntent(moveLeftPressed, moveRightPressed),
+  jumpHeld,
   jumpPressed: jumpHeld && !previousJumpHeld
 });
 
@@ -525,8 +550,9 @@ export class InputController {
   private touchPlayerMoveRightHeld = false;
   private touchPlayerJumpHeld = false;
   private previousPlayerJumpHeld = false;
-  private playerMovementIntent: PlayerMovementIntent = {
+  private playerInputTelemetry: PlayerInputTelemetry = {
     moveX: 0,
+    jumpHeld: false,
     jumpPressed: false
   };
   private pointerInspectRetainers: Array<(candidate: EventTarget | null) => boolean> = [];
@@ -550,7 +576,7 @@ export class InputController {
     const jumpHeld =
       this.touchPlayerJumpHeld ||
       Array.from(this.keys).some((key) => isPlayerJumpControlKey(key));
-    this.playerMovementIntent = resolvePlayerMovementIntent(
+    this.playerInputTelemetry = resolvePlayerInputTelemetry(
       moveLeftPressed,
       moveRightPressed,
       jumpHeld,
@@ -673,8 +699,16 @@ export class InputController {
 
   getPlayerMovementIntent(): PlayerMovementIntent {
     return {
-      moveX: this.playerMovementIntent.moveX ?? 0,
-      jumpPressed: this.playerMovementIntent.jumpPressed ?? false
+      moveX: this.playerInputTelemetry.moveX,
+      jumpPressed: this.playerInputTelemetry.jumpPressed
+    };
+  }
+
+  getPlayerInputTelemetry(): PlayerInputTelemetry {
+    return {
+      moveX: this.playerInputTelemetry.moveX,
+      jumpHeld: this.playerInputTelemetry.jumpHeld,
+      jumpPressed: this.playerInputTelemetry.jumpPressed
     };
   }
 
@@ -1579,8 +1613,9 @@ export class InputController {
     this.touchPlayerMoveRightHeld = false;
     this.touchPlayerJumpHeld = false;
     this.previousPlayerJumpHeld = false;
-    this.playerMovementIntent = {
+    this.playerInputTelemetry = {
       moveX: 0,
+      jumpHeld: false,
       jumpPressed: false
     };
   }

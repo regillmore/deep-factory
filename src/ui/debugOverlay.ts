@@ -59,11 +59,18 @@ export interface DebugOverlayPlayerTelemetry {
   facing: 'left' | 'right';
 }
 
+export interface DebugOverlayPlayerIntentTelemetry {
+  moveX: number;
+  jumpHeld: boolean;
+  jumpPressed: boolean;
+}
+
 export interface DebugOverlayInspectState {
   pointer: DebugOverlayPointerInspect | null;
   pinned: DebugOverlayTileInspect | null;
   spawn: DebugOverlayPlayerSpawn | null;
   player: DebugOverlayPlayerTelemetry | null;
+  playerIntent: DebugOverlayPlayerIntentTelemetry | null;
 }
 
 const formatFloat = (value: number, digits: number): string => value.toFixed(digits);
@@ -149,6 +156,18 @@ const formatPlayerLine = (player: DebugOverlayPlayerTelemetry | null): string =>
   );
 };
 
+const formatPlayerIntentLine = (playerIntent: DebugOverlayPlayerIntentTelemetry | null): string => {
+  if (!playerIntent) {
+    return 'Intent: n/a';
+  }
+
+  return (
+    `Intent: move:${playerIntent.moveX} | ` +
+    `jumpHeld:${formatGameplayFlag(playerIntent.jumpHeld)} | ` +
+    `jumpPressed:${formatGameplayFlag(playerIntent.jumpPressed)}`
+  );
+};
+
 const formatAnimatedChunkUvUploadLine = (stats: DebugOverlayStats): string =>
   `AnimUV: uploads:${stats.animatedChunkUvUploadCount} | ` +
   `quads:${stats.animatedChunkUvUploadQuadCount} | ` +
@@ -177,12 +196,14 @@ export const formatDebugOverlayText = (
   const pinnedInspect = inspect?.pinned ?? null;
   const spawn = inspect?.spawn ?? null;
   const player = inspect?.player ?? null;
+  const playerIntent = inspect?.playerIntent ?? null;
   const lines = [
     summaryLine,
     formatAtlasLine(stats),
     formatAtlasValidationLine(stats),
     formatSpawnLine(spawn),
     formatPlayerLine(player),
+    formatPlayerIntentLine(playerIntent),
     formatAnimatedChunkResidencyLine(stats),
     formatAnimatedChunkUvUploadLine(stats)
   ];

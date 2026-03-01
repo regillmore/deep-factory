@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Surface live standalone player input-intent telemetry in the debug overlay.
+- Changes: Updated [src/input/controller.ts](../src/input/controller.ts) plus [src/input/controller.test.ts](../src/input/controller.test.ts) to expose a shared player input telemetry snapshot with `move`, `jumpHeld`, and rising-edge `jumpPressed`, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to render a dedicated intent line beside the existing player state readout, wired [src/main.ts](../src/main.ts) to pass the current input telemetry into the overlay each frame, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/input/controller.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Add a renderer regression test that animated chunk residency telemetry recovers after a previously pruned animated chunk streams back into view and the rebuilt animated mesh becomes resident again.
 - Changes: Updated [src/world/world.ts](../src/world/world.ts) plus [src/world/world.test.ts](../src/world/world.test.ts) so sparse edited tile overrides survive chunk streaming prune and reapply when a chunk is rebuilt, expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a streaming round-trip regression that verifies resident animated mesh and quad telemetry recover after prune and rebuild, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `npx vitest run src/world/world.test.ts src/gl/renderer.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

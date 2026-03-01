@@ -35,6 +35,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nAtlasWarn: none');
     expect(text).toContain('\nSpawn: unresolved');
     expect(text).toContain('\nPlayer: n/a');
+    expect(text).toContain('\nIntent: n/a');
     expect(text).toContain('\nAnimMesh: chunks:0 | quads:0');
     expect(text).toContain('\nAnimUV: uploads:0 | quads:0 | bytes:0');
     expect(text).toContain('Draws: 4/256 (OK)');
@@ -102,11 +103,17 @@ describe('formatDebugOverlayText', () => {
         tile: { x: 0, y: -2 },
         world: { x: 8, y: -32 }
       },
+      playerIntent: {
+        moveX: 1,
+        jumpHeld: true,
+        jumpPressed: false
+      },
       player: null,
       pinned: null
     });
 
     expect(text).toContain('Spawn: T:0,-2 | W:8.00,-32.00');
+    expect(text).toContain('Intent: move:1 | jumpHeld:on | jumpPressed:off');
     expect(text).toContain('Ptr(mouse)');
     expect(text).toContain('C:500,251');
     expect(text).toContain('Cv:1000,502');
@@ -124,6 +131,11 @@ describe('formatDebugOverlayText', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: null,
       spawn: null,
+      playerIntent: {
+        moveX: -1,
+        jumpHeld: true,
+        jumpPressed: true
+      },
       player: {
         position: { x: 24.5, y: -12.25 },
         velocity: { x: -180, y: 60 },
@@ -134,6 +146,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain('\nPlayer: Pos:24.50,-12.25 | Vel:-180.00,60.00 | grounded:off | facing:left');
+    expect(text).toContain('\nIntent: move:-1 | jumpHeld:on | jumpPressed:on');
   });
 
   it('shows animated chunk uv upload cost telemetry', () => {
@@ -170,6 +183,7 @@ describe('formatDebugOverlayText', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: null,
       spawn: null,
+      playerIntent: null,
       player: null,
       pinned: {
         tile: { x: 40, y: -2 },
@@ -209,6 +223,11 @@ describe('formatDebugOverlayText', () => {
         tile: { x: -1, y: 0 },
         world: { x: -8, y: 0 }
       },
+      playerIntent: {
+        moveX: 0,
+        jumpHeld: false,
+        jumpPressed: false
+      },
       player: null,
       pinned: {
         tile: { x: -1, y: 65 },
@@ -222,6 +241,7 @@ describe('formatDebugOverlayText', () => {
 
     expect(text).toContain('Ptr(touch)');
     expect(text).toContain('Spawn: T:-1,0 | W:-8.00,0.00');
+    expect(text).toContain('Intent: move:0 | jumpHeld:off | jumpPressed:off');
     expect(text).toContain('Tile:dirt (#3)');
     expect(text).toContain('\nPin: Tile:lava (#4)');
     expect(text).toContain('T:-1,65');
