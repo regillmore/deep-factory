@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Camera2D } from '../core/camera2d';
+import { CHUNK_SIZE, TILE_SIZE } from '../world/constants';
 import { createPlayerState } from '../world/playerState';
 import { atlasIndexToUvRect } from '../world/tileMetadata';
 import type { AtlasValidationWarning } from './atlasValidation';
@@ -74,6 +75,26 @@ const createMockCanvas = (gl: WebGL2RenderingContext): HTMLCanvasElement =>
     height: 240,
     getContext: vi.fn((kind: string) => (kind === 'webgl2' ? gl : null))
   }) as unknown as HTMLCanvasElement;
+
+const renderUntilMeshBuildQueueDrains = (
+  renderer: Renderer,
+  camera: Camera2D,
+  maxFrames = 120
+): void => {
+  for (let frame = 0; frame < maxFrames; frame += 1) {
+    renderer.render(camera, { timeMs: 0 });
+    if (renderer.telemetry.meshBuildQueueLength === 0) {
+      return;
+    }
+  }
+
+  throw new Error(
+    `Renderer test warm-up did not drain the mesh build queue within ${maxFrames} frames ` +
+      `(queue=${renderer.telemetry.meshBuildQueueLength}, ` +
+      `animMeshes=${renderer.telemetry.residentAnimatedChunkMeshes}, ` +
+      `animQuads=${renderer.telemetry.residentAnimatedChunkQuadCount})`
+  );
+};
 
 describe('Renderer atlas telemetry', () => {
   beforeEach(() => {
@@ -247,13 +268,7 @@ describe('Renderer atlas telemetry', () => {
     const camera = new Camera2D();
     camera.zoom = 16;
 
-    for (let frame = 0; frame < 40; frame += 1) {
-      renderer.render(camera, { timeMs: 0 });
-      if (renderer.telemetry.meshBuildQueueLength === 0) {
-        break;
-      }
-    }
-
+    renderUntilMeshBuildQueueDrains(renderer, camera);
     expect(renderer.telemetry.meshBuildQueueLength).toBe(0);
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
@@ -300,6 +315,42 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameZeroVertices?.byteLength ?? 0);
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+    performanceNowSpy.mockRestore();
+  });
+
+  it('drops resident animated chunk telemetry after streaming prunes an off-screen animated mesh', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    renderer.setTile(0, 0, 5);
+    const nearCamera = new Camera2D();
+    nearCamera.zoom = 16;
+
+    const performanceNowSpy = vi.spyOn(performance, 'now').mockReturnValue(0);
+    renderUntilMeshBuildQueueDrains(renderer, nearCamera);
+    expect(renderer.telemetry.meshBuildQueueLength).toBe(0);
+    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
+    expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+
+    const farCamera = new Camera2D();
+    farCamera.zoom = nearCamera.zoom;
+    farCamera.x = CHUNK_SIZE * TILE_SIZE * 10;
+
+    renderer.render(farCamera, { timeMs: 0 });
+
+    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(0);
+    expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(0);
+    expect(renderer.telemetry.evictedMeshEntries).toBeGreaterThan(0);
+    expect(renderer.telemetry.evictedWorldChunks).toBeGreaterThan(0);
     performanceNowSpy.mockRestore();
   });
 });

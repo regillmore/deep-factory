@@ -6,7 +6,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 6. Add an authored-atlas asset regression test that direct tile `render.uvRect` metadata still resolves to whole atlas pixels against the committed PNG dimensions.
 7. Add an authored-atlas layout regression test that explicit atlas regions do not overlap each other, so atlas-index sampling stays one-to-one as the layout evolves.
-33. Add a renderer regression test that resident animated chunk telemetry drops after streaming prunes off-screen animated meshes.
+35. Add a renderer regression test that animated chunk residency telemetry recovers after a previously pruned animated chunk streams back into view and the rebuilt animated mesh becomes resident again.
 
 ## Collision and player foundation
 

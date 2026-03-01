@@ -4,6 +4,12 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Stabilize the renderer animated-chunk telemetry regressions so they do not depend on wall-clock mesh-build timing.
+- Changes: Updated [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a shared warm-up helper that drains the mesh-build queue under a mocked `performance.now()` clock, applied that deterministic setup to the animated-UV upload and prune-telemetry regressions so later assertions no longer race normal queued mesh uploads, and advanced [docs/NEXT.md](docs/NEXT.md) to the next animated-streaming follow-up.
+- Verification: Ran `npx vitest run src/gl/renderer.test.ts` 25 times in a row, ran `npm test`, and ran `npx tsc --noEmit -p tsconfig.app.json`.
+- Task: Add a renderer regression test that resident animated chunk telemetry drops after streaming prunes off-screen animated meshes.
+- Changes: Updated [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a streaming-eviction regression that builds an animated chunk mesh, moves the camera outside the retain ring, and locks in that resident animated mesh and quad telemetry returns to zero after prune, then advanced [docs/NEXT.md](docs/NEXT.md) to the next animated-streaming follow-up.
+- Verification: Ran `npx vitest run src/gl/renderer.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Surface resident animated chunk mesh counts and recorded animated-quad totals in debug telemetry.
 - Changes: Updated [src/gl/renderer.ts](../src/gl/renderer.ts) plus [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so renderer telemetry now reports how many cached ready chunk meshes retain animated state and how many animated quads they record, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to surface that steady-state footprint alongside the existing per-frame UV upload line, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/gl/renderer.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
