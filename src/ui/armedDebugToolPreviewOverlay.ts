@@ -1,4 +1,5 @@
 import { Camera2D } from '../core/camera2d';
+import type { ClientRectLike } from '../input/picking';
 import type {
   ArmedDebugToolPreviewState,
   PointerInspectSnapshot
@@ -8,7 +9,10 @@ import {
   buildPendingTouchAnchorLabelText,
   resolveActiveDebugToolStatus
 } from './debugEditStatusHelpers';
-import { computeHoveredTileCursorClientRect } from './hoveredTileCursor';
+import { computeHoveredTileCursorClientRect, type HoveredTileCursorClientRect } from './hoveredTileCursor';
+
+const TOUCH_ANCHOR_LABEL_PADDING_PX = 4;
+const TOUCH_ANCHOR_LABEL_GAP_PX = 4;
 
 const lineAccentForKind = (kind: 'place' | 'break'): string =>
   kind === 'place' ? 'rgba(120, 210, 255, 0.95)' : 'rgba(255, 180, 120, 0.95)';
@@ -53,6 +57,40 @@ const computeTileClientRectOrNull = (
   const clientRect = computeHoveredTileCursorClientRect(tileX, tileY, camera, canvas, canvasRect);
   if (clientRect.width <= 0 || clientRect.height <= 0) return null;
   return clientRect;
+};
+
+export interface OverlayLabelSize {
+  width: number;
+  height: number;
+}
+
+export interface TouchAnchorLabelPlacement {
+  left: number;
+  top: number;
+  maxWidth: number;
+}
+
+const clamp = (value: number, min: number, max: number): number => Math.min(Math.max(value, min), max);
+
+export const resolveTouchAnchorLabelPlacement = (
+  anchorRect: HoveredTileCursorClientRect,
+  canvasRect: ClientRectLike,
+  labelSize: OverlayLabelSize
+): TouchAnchorLabelPlacement => {
+  const maxWidth = Math.max(0, canvasRect.width - TOUCH_ANCHOR_LABEL_PADDING_PX * 2);
+  const labelWidth = Math.min(Math.max(0, labelSize.width), maxWidth);
+  const labelHeight = Math.max(0, labelSize.height);
+  const minLeft = canvasRect.left + TOUCH_ANCHOR_LABEL_PADDING_PX;
+  const maxLeft = canvasRect.left + canvasRect.width - TOUCH_ANCHOR_LABEL_PADDING_PX - labelWidth;
+  const minTop = canvasRect.top + TOUCH_ANCHOR_LABEL_PADDING_PX;
+  const maxTop = canvasRect.top + canvasRect.height - TOUCH_ANCHOR_LABEL_PADDING_PX - labelHeight;
+  const preferredTop = anchorRect.top - labelHeight - TOUCH_ANCHOR_LABEL_GAP_PX;
+
+  return {
+    left: clamp(anchorRect.left, minLeft, Math.max(minLeft, maxLeft)),
+    top: clamp(preferredTop, minTop, Math.max(minTop, maxTop)),
+    maxWidth
+  };
 };
 
 export class ArmedDebugToolPreviewOverlay {
@@ -454,11 +492,18 @@ export class ArmedDebugToolPreviewOverlay {
           ? 'Rect outline corner'
           : isEllipseAnchor
             ? 'Ellipse corner'
-            : isEllipseOutlineAnchor
+          : isEllipseOutlineAnchor
               ? 'Ellipse outline corner'
             : 'Line start');
-    this.touchAnchorLabel.style.left = `${anchorRect.left}px`;
-    this.touchAnchorLabel.style.top = `${Math.max(4, anchorRect.top - 24)}px`;
+    this.touchAnchorLabel.style.maxWidth = `${Math.max(0, canvasRect.width - TOUCH_ANCHOR_LABEL_PADDING_PX * 2)}px`;
+    const touchAnchorLabelBounds = this.touchAnchorLabel.getBoundingClientRect();
+    const touchAnchorLabelPlacement = resolveTouchAnchorLabelPlacement(anchorRect, canvasRect, {
+      width: touchAnchorLabelBounds.width,
+      height: touchAnchorLabelBounds.height
+    });
+    this.touchAnchorLabel.style.left = `${touchAnchorLabelPlacement.left}px`;
+    this.touchAnchorLabel.style.top = `${touchAnchorLabelPlacement.top}px`;
+    this.touchAnchorLabel.style.maxWidth = `${touchAnchorLabelPlacement.maxWidth}px`;
     this.touchAnchorLabel.style.borderColor = accent.replace('0.95', '0.34');
     this.touchAnchorLabel.style.boxShadow = `inset 0 0 0 1px ${accent.replace('0.95', '0.22')}`;
   }

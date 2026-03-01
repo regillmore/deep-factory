@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Clamp the persistent touch one-shot anchor label inside the visible canvas bounds when the anchor tile is near a viewport edge.
+- Changes: Updated [src/ui/armedDebugToolPreviewOverlay.ts](../src/ui/armedDebugToolPreviewOverlay.ts) to measure and clamp the persistent touch anchor label against the live canvas rect instead of the viewport, added focused placement coverage in [src/ui/armedDebugToolPreviewOverlay.test.ts](../src/ui/armedDebugToolPreviewOverlay.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/armedDebugToolPreviewOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Show active touch one-shot `Brush` or `Break` action text in the persistent on-canvas anchor label while the second point is still pending.
 - Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so pending touch line and shape anchor labels include the armed `Brush` or `Break` action text alongside the tool name and tile coordinates, added focused regression coverage in [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

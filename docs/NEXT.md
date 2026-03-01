@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Clamp the persistent touch one-shot anchor label inside the visible canvas bounds when the anchor tile is near a viewport edge.
+1. Clamp the active one-shot preview status badge inside the visible canvas bounds when the canvas is small or offset within the page.
 
 ## Authored asset pipeline
 
