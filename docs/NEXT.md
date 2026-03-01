@@ -10,8 +10,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Collision and player foundation
 
-8. Add a renderer-side placeholder player draw pass that renders the standalone player in world space instead of relying on the DOM overlay.
-
 ## Liquid rendering
 
 9. Define liquid-specific render metadata for water and lava tiles, including connectivity rules separate from terrain autotile grouping.
@@ -47,6 +45,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 25. Add an app shell with explicit `boot`, `main menu`, and `in-world` states.
 26. Move debug overlay visibility behind shell/UI toggles instead of always-on bootstrap wiring.
+27. Add grounded and airborne placeholder pose variants to the renderer-side standalone player draw pass so jump state is readable before sprite assets land.
 
 ## Player debugging
 

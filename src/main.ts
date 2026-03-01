@@ -36,7 +36,6 @@ import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import { PlayerSpawnMarkerOverlay } from './ui/playerSpawnMarkerOverlay';
-import { StandalonePlayerOverlay } from './ui/standalonePlayerOverlay';
 import type { DebugEditHoveredTileState } from './ui/debugEditStatusHelpers';
 import { TouchDebugEditControls, type DebugBrushOption } from './ui/touchDebugEditControls';
 import { TouchPlayerControls } from './ui/touchPlayerControls';
@@ -121,7 +120,6 @@ const bootstrap = async (): Promise<void> => {
   const debug = new DebugOverlay();
   const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
   const playerSpawnMarker = new PlayerSpawnMarkerOverlay(canvas);
-  const standalonePlayerOverlay = new StandalonePlayerOverlay(canvas);
   const armedDebugToolPreview = new ArmedDebugToolPreviewOverlay(canvas);
   const debugEditStatusStrip = new DebugEditStatusStrip(canvas);
   input.retainPointerInspectWhenLeavingToElement(debugEditStatusStrip.getPointerInspectRetainerElement());
@@ -1081,7 +1079,9 @@ const bootstrap = async (): Promise<void> => {
           }
         : null;
       renderer.resize();
-      renderer.render(camera);
+      renderer.render(camera, {
+        standalonePlayer: standalonePlayerState
+      });
       hoveredTileCursor.update(camera, {
         hovered: pointerInspect
           ? {
@@ -1097,7 +1097,6 @@ const bootstrap = async (): Promise<void> => {
           : null
       });
       playerSpawnMarker.update(camera, resolvedPlayerSpawn);
-      standalonePlayerOverlay.update(camera, standalonePlayerState);
       armedDebugToolPreview.update(camera, pointerInspect, armedDebugToolPreviewState);
       debugEditStatusStrip.update({
         mode: input.getTouchDebugEditMode(),

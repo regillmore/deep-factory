@@ -1,6 +1,12 @@
 import { Camera2D } from '../core/camera2d';
 import { createStaticVertexBuffer, createVertexArray } from './buffer';
 import { createProgram } from './shader';
+import {
+  buildStandalonePlayerPlaceholderVertices,
+  getStandalonePlayerPlaceholderFacingSign,
+  STANDALONE_PLAYER_PLACEHOLDER_VERTEX_COUNT,
+  STANDALONE_PLAYER_PLACEHOLDER_VERTEX_FLOAT_COUNT
+} from './standalonePlayerPlaceholder';
 import type { AtlasImageLoadResult } from './texture';
 import { createTextureFromImageSource, loadAtlasImageSource } from './texture';
 import { collectAtlasUvRectBoundsWarnings } from './atlasValidation';
@@ -48,6 +54,10 @@ interface MeshBuildRequest {
   chunkY: number;
 }
 
+export interface RendererFrameState {
+  standalonePlayer?: PlayerState | null;
+}
+
 export interface RenderTelemetry {
   atlasSourceKind: AtlasImageLoadResult['sourceKind'] | 'pending';
   atlasWidth: number | null;
@@ -74,14 +84,30 @@ const FRUSTUM_PADDING_CHUNKS = 1;
 const STREAM_RETAIN_PADDING_CHUNKS = 3;
 const AUTHORED_TILE_ATLAS_URL = '/atlas/tile-atlas.png';
 
+const createDynamicVertexBuffer = (
+  gl: WebGL2RenderingContext,
+  data: Float32Array
+): WebGLBuffer => {
+  const buffer = gl.createBuffer();
+  if (!buffer) throw new Error('Unable to create vertex buffer');
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+  return buffer;
+};
+
 export class Renderer {
   private gl: WebGL2RenderingContext;
   private program: WebGLProgram;
+  private playerProgram: WebGLProgram;
   private world = new TileWorld();
   private meshes = new Map<string, CachedChunkMesh>();
   private meshBuildQueue: MeshBuildRequest[] = [];
   private uMatrix: WebGLUniformLocation;
+  private uPlayerMatrix: WebGLUniformLocation;
+  private uPlayerFacingSign: WebGLUniformLocation;
   private texture: WebGLTexture | null = null;
+  private standalonePlayerBuffer: WebGLBuffer;
+  private standalonePlayerVao: WebGLVertexArrayObject;
 
   readonly telemetry: RenderTelemetry = {
     atlasSourceKind: 'pending',
@@ -133,6 +159,60 @@ export class Renderer {
     if (!matrix) throw new Error('Missing uniform u_matrix');
     this.uMatrix = matrix;
 
+    this.playerProgram = createProgram(
+      gl,
+      `#version 300 es
+      precision mediump float;
+      layout(location = 0) in vec2 a_position;
+      layout(location = 1) in vec2 a_uv;
+      uniform mat4 u_matrix;
+      out vec2 v_uv;
+      void main() {
+        v_uv = a_uv;
+        gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);
+      }`,
+      `#version 300 es
+      precision mediump float;
+      in vec2 v_uv;
+      uniform float u_facingSign;
+      out vec4 outColor;
+      void main() {
+        vec2 uv = v_uv;
+        if (u_facingSign < 0.0) {
+          uv.x = 1.0 - uv.x;
+        }
+
+        vec3 color = vec3(0.98, 0.72, 0.34);
+        if (uv.x < 0.08 || uv.x > 0.92 || uv.y < 0.04 || uv.y > 0.96) {
+          color = vec3(0.24, 0.14, 0.06);
+        } else if (uv.y > 0.68 && abs(uv.x - 0.5) < 0.05) {
+          color = vec3(0.24, 0.14, 0.06);
+        } else if (uv.x > 0.58 && uv.x < 0.84 && uv.y > 0.18 && uv.y < 0.34) {
+          color = vec3(0.99, 0.95, 0.82);
+        } else if (uv.x > 0.64 && uv.x < 0.74 && uv.y > 0.22 && uv.y < 0.30) {
+          color = vec3(0.12, 0.09, 0.06);
+        } else if (uv.y > 0.34 && uv.y < 0.54 && uv.x > 0.2 && uv.x < 0.34) {
+          color = vec3(0.84, 0.43, 0.16);
+        }
+
+        outColor = vec4(color, 1.0);
+      }`
+    );
+
+    const playerMatrix = gl.getUniformLocation(this.playerProgram, 'u_matrix');
+    if (!playerMatrix) throw new Error('Missing uniform u_matrix');
+    this.uPlayerMatrix = playerMatrix;
+
+    const playerFacingSign = gl.getUniformLocation(this.playerProgram, 'u_facingSign');
+    if (!playerFacingSign) throw new Error('Missing uniform u_facingSign');
+    this.uPlayerFacingSign = playerFacingSign;
+
+    this.standalonePlayerBuffer = createDynamicVertexBuffer(
+      gl,
+      new Float32Array(STANDALONE_PLAYER_PLACEHOLDER_VERTEX_FLOAT_COUNT)
+    );
+    this.standalonePlayerVao = createVertexArray(gl, this.standalonePlayerBuffer, 4);
+
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
@@ -171,7 +251,7 @@ export class Renderer {
     }
   }
 
-  render(camera: Camera2D): void {
+  render(camera: Camera2D, frameState: RendererFrameState = {}): void {
     if (!this.texture) return;
 
     const gl = this.gl;
@@ -185,8 +265,9 @@ export class Renderer {
     gl.clearColor(0.12, 0.15, 0.2, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
+    const worldToClipMatrix = camera.worldToClipMatrix(this.canvas.width, this.canvas.height);
     gl.useProgram(this.program);
-    gl.uniformMatrix4fv(this.uMatrix, false, camera.worldToClipMatrix(this.canvas.width, this.canvas.height));
+    gl.uniformMatrix4fv(this.uMatrix, false, worldToClipMatrix);
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
@@ -214,6 +295,10 @@ export class Renderer {
         this.telemetry.renderedChunks += 1;
         this.telemetry.drawCalls += 1;
       }
+    }
+
+    if (frameState.standalonePlayer) {
+      this.drawStandalonePlayer(frameState.standalonePlayer, worldToClipMatrix);
     }
 
     gl.bindVertexArray(null);
@@ -385,6 +470,18 @@ export class Renderer {
     const vao = createVertexArray(this.gl, buffer, 4);
     cached.state = 'ready';
     cached.mesh = { buffer, vao, vertexCount: meshData.vertexCount };
+  }
+
+  private drawStandalonePlayer(state: PlayerState, worldToClipMatrix: Float32Array): void {
+    const gl = this.gl;
+    gl.useProgram(this.playerProgram);
+    gl.uniformMatrix4fv(this.uPlayerMatrix, false, worldToClipMatrix);
+    gl.uniform1f(this.uPlayerFacingSign, getStandalonePlayerPlaceholderFacingSign(state));
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.standalonePlayerBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, buildStandalonePlayerPlaceholderVertices(state), gl.DYNAMIC_DRAW);
+    gl.bindVertexArray(this.standalonePlayerVao);
+    gl.drawArrays(gl.TRIANGLES, 0, STANDALONE_PLAYER_PLACEHOLDER_VERTEX_COUNT);
+    this.telemetry.drawCalls += 1;
   }
 
   private pruneStreamingCaches(retainBounds: ChunkBounds): void {

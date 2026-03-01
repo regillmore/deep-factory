@@ -5,10 +5,10 @@
 - `src/main.ts`: bootstrapping and dependency wiring.
 - `src/core/`: camera math, camera-follow offset helpers, and fixed timestep loop.
 - `src/input/`: input abstraction for keyboard, mouse, touch/pinch, and standalone player intent extraction.
-- `src/gl/`: low-level WebGL2 utilities and renderer orchestration.
+- `src/gl/`: low-level WebGL2 utilities, world rendering orchestration, and the standalone player placeholder draw pass.
 - `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, mesh construction.
 - `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups; renderer boot now validates direct `uvRect` metadata against the loaded atlas dimensions, while authored-atlas source-of-truth validation for slot-based regions is still a later task).
-- `src/ui/`: debug DOM overlays, spawn marker, standalone player marker, and touch-only player controls.
+- `src/ui/`: debug DOM overlays, spawn marker, and touch-only player controls.
 
 ## Update loop
 
@@ -24,7 +24,7 @@ Current update phase applies debug tile-edit actions, spawn refresh after tile e
 - Standalone player simulation state currently lives in `src/world/playerState.ts`.
 - `PlayerState.position` uses bottom-center world coordinates so spawn placement, collision AABB derivation, and future controller updates share one anchor convention.
 - Shared helpers can initialize player state directly from spawn-search output, advance position from velocity on fixed steps, recover embedded state by respawning from the latest resolved spawn, resolve normalized movement intent into grounded walk acceleration or braking plus jump impulse, expose a body-center camera focus point, apply gravity before movement, and resolve x-then-y collision sweeps plus post-move grounded support without mixing render interpolation into the source-of-truth state.
-- `src/main.ts` owns the current standalone-player orchestration: it seeds the player from the resolved spawn once, pulls shared desktop or touch movement intent from `src/input/controller.ts`, advances that state in fixed updates via a narrow renderer world-query wrapper, folds manual pan or zoom camera deltas into a persistent follow offset, and forwards the result to a temporary DOM overlay until entity rendering exists.
+- `src/main.ts` owns the current standalone-player orchestration: it seeds the player from the resolved spawn once, pulls shared desktop or touch movement intent from `src/input/controller.ts`, advances that state in fixed updates via a narrow renderer world-query wrapper, folds manual pan or zoom camera deltas into a persistent follow offset, and passes the latest state into the renderer's temporary world-space placeholder draw pass until entity rendering exists.
 
 ## Render pipeline
 
@@ -40,8 +40,9 @@ if any static or animated sub-rect falls outside the source image.
 3. Compute visible chunk bounds from camera viewport and tile scale.
 4. Queue visible (and nearby prefetch) chunk mesh builds, then process a small per-frame build budget.
 5. Draw ready chunk VAOs with a shared shader + atlas texture.
-6. Prune far chunk/world caches outside the retain ring.
-7. Update debug overlay with frame timing and renderer telemetry.
+6. Draw the standalone player placeholder in world space from the latest `PlayerState`.
+7. Prune far chunk/world caches outside the retain ring.
+8. Update debug overlay with frame timing and renderer telemetry.
 
 ## Chunk meshing
 
