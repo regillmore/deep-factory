@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Show active touch one-shot anchor tile coordinates in the persistent on-canvas anchor label while the second point is still pending.
+1. Show active touch one-shot `Brush` or `Break` action text in the persistent on-canvas anchor label while the second point is still pending.
 
 ## Authored asset pipeline
 

@@ -5,6 +5,7 @@ import type {
 } from '../input/controller';
 import {
   buildActiveDebugToolPreviewBadgeText,
+  buildPendingTouchAnchorLabelText,
   resolveActiveDebugToolStatus
 } from './debugEditStatusHelpers';
 import { computeHoveredTileCursorClientRect } from './hoveredTileCursor';
@@ -445,15 +446,17 @@ export class ArmedDebugToolPreviewOverlay {
       `radial-gradient(circle at 50% 50%, ${accent.replace('0.95', '0.22')}, rgba(255,255,255,0.04) 62%, rgba(255,255,255,0) 72%)`;
 
     this.touchAnchorLabel.style.display = 'block';
-    this.touchAnchorLabel.textContent = isRectFillAnchor
-      ? 'Rect fill corner'
-      : isRectOutlineAnchor
-        ? 'Rect outline corner'
-      : isEllipseAnchor
-          ? 'Ellipse corner'
-        : isEllipseOutlineAnchor
-          ? 'Ellipse outline corner'
-        : 'Line start';
+    this.touchAnchorLabel.textContent =
+      buildPendingTouchAnchorLabelText(preview) ??
+      (isRectFillAnchor
+        ? 'Rect fill corner'
+        : isRectOutlineAnchor
+          ? 'Rect outline corner'
+          : isEllipseAnchor
+            ? 'Ellipse corner'
+            : isEllipseOutlineAnchor
+              ? 'Ellipse outline corner'
+            : 'Line start');
     this.touchAnchorLabel.style.left = `${anchorRect.left}px`;
     this.touchAnchorLabel.style.top = `${Math.max(4, anchorRect.top - 24)}px`;
     this.touchAnchorLabel.style.borderColor = accent.replace('0.95', '0.34');

@@ -540,6 +540,45 @@ export const buildActiveDebugToolPreviewBadgeText = (
   );
 };
 
+export const buildPendingTouchAnchorLabelText = (preview: ArmedDebugToolPreviewState): string | null => {
+  if (preview.pendingTouchLineStart) {
+    return `Line start @ ${formatTileCoordinatePair(
+      preview.pendingTouchLineStart.tileX,
+      preview.pendingTouchLineStart.tileY
+    )}`;
+  }
+
+  if (preview.pendingTouchRectStart) {
+    return `Rect fill corner @ ${formatTileCoordinatePair(
+      preview.pendingTouchRectStart.tileX,
+      preview.pendingTouchRectStart.tileY
+    )}`;
+  }
+
+  if (preview.pendingTouchRectOutlineStart) {
+    return `Rect outline corner @ ${formatTileCoordinatePair(
+      preview.pendingTouchRectOutlineStart.tileX,
+      preview.pendingTouchRectOutlineStart.tileY
+    )}`;
+  }
+
+  if (preview.pendingTouchEllipseStart) {
+    return `Ellipse corner @ ${formatTileCoordinatePair(
+      preview.pendingTouchEllipseStart.tileX,
+      preview.pendingTouchEllipseStart.tileY
+    )}`;
+  }
+
+  if (preview.pendingTouchEllipseOutlineStart) {
+    return `Ellipse outline corner @ ${formatTileCoordinatePair(
+      preview.pendingTouchEllipseOutlineStart.tileX,
+      preview.pendingTouchEllipseOutlineStart.tileY
+    )}`;
+  }
+
+  return null;
+};
+
 const formatInspectOffsetLine = (
   hoveredTile: DebugEditHoveredTileState,
   pinnedTile: DebugEditHoveredTileState

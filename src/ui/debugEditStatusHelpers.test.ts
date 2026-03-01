@@ -4,6 +4,7 @@ import type { ArmedDebugToolPreviewState } from '../input/controller';
 import {
   buildActiveDebugToolPreviewBadgeText,
   buildDebugEditStatusStripModel,
+  buildPendingTouchAnchorLabelText,
   resolveActiveDebugToolStatus
 } from './debugEditStatusHelpers';
 
@@ -554,5 +555,37 @@ describe('buildActiveDebugToolPreviewBadgeText', () => {
         }
       )
     ).toBeNull();
+  });
+});
+
+describe('buildPendingTouchAnchorLabelText', () => {
+  it('includes touch line anchor coordinates in the persistent anchor label text', () => {
+    expect(
+      buildPendingTouchAnchorLabelText({
+        ...createEmptyPreviewState(),
+        pendingTouchLineStart: {
+          kind: 'place',
+          tileX: 4,
+          tileY: 7
+        }
+      })
+    ).toBe('Line start @ 4,7');
+  });
+
+  it('includes touch shape anchor coordinates in the persistent anchor label text', () => {
+    expect(
+      buildPendingTouchAnchorLabelText({
+        ...createEmptyPreviewState(),
+        pendingTouchEllipseOutlineStart: {
+          kind: 'break',
+          tileX: -3,
+          tileY: 15
+        }
+      })
+    ).toBe('Ellipse outline corner @ -3,15');
+  });
+
+  it('returns null when no anchored touch preview is pending', () => {
+    expect(buildPendingTouchAnchorLabelText(createEmptyPreviewState())).toBeNull();
   });
 });

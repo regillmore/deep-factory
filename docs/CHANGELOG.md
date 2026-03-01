@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Show active touch one-shot anchor tile coordinates in the persistent on-canvas anchor label while the second point is still pending.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) to build coordinate-bearing pending-touch anchor label text, updated [src/ui/armedDebugToolPreviewOverlay.ts](../src/ui/armedDebugToolPreviewOverlay.ts) to render that shared label text in the persistent touch anchor chip, added regression coverage in [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Show live preview anchor and endpoint tile coordinates in the on-canvas preview badge while one-shot preview overlays are active.
 - Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so the overlay badge reuses the existing coordinate-aware preview formatter, expanded [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) to cover live and pending coordinate text in the badge, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
