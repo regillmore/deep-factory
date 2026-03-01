@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Let compact debug-edit status strip summary chips wrap long brush or tool labels on narrow mobile layouts instead of truncating them to ellipses.
+1. Split compact debug-edit status strip hint text into wrap-friendly shortcut segments on narrow mobile layouts instead of letting long hint sentences reflow awkwardly.
 
 ## Authored asset pipeline
 

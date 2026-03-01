@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildWrappedDetailLines, resolveActionRowShouldStack } from './debugEditStatusStrip';
+import {
+  applySummaryChipStyles,
+  buildWrappedDetailLines,
+  resolveActionRowShouldStack,
+  splitSummaryChipText
+} from './debugEditStatusStrip';
 
 describe('buildWrappedDetailLines', () => {
   it('splits preview text into wrap-friendly segments at pipe separators', () => {
@@ -28,6 +33,40 @@ describe('buildWrappedDetailLines', () => {
       ['Hover: dirt (#2) @ 4,7 chunk:0,0 local:4,7', '| solid:on', '| light:on', '| liquid:none'],
       ['Offset: Hover->Pinned x:+8 y:-11']
     ]);
+  });
+});
+
+describe('splitSummaryChipText', () => {
+  it('separates the fixed chip label from the wrap-friendly detail text', () => {
+    expect(splitSummaryChipText('Brush: polished obsidian brick (#12)')).toEqual({
+      label: 'Brush:',
+      detail: 'polished obsidian brick (#12)'
+    });
+  });
+
+  it('keeps the full text as the label when no label separator is present', () => {
+    expect(splitSummaryChipText('Hover only')).toEqual({
+      label: 'Hover only',
+      detail: null
+    });
+  });
+});
+
+describe('applySummaryChipStyles', () => {
+  it('uses wrap-friendly chip styles instead of nowrap ellipsis truncation', () => {
+    const chip = {
+      style: {} as Record<string, string | undefined>
+    };
+
+    applySummaryChipStyles(chip);
+
+    expect(chip.style.display).toBe('inline-flex');
+    expect(chip.style.flex).toBe('0 1 auto');
+    expect(chip.style.flexWrap).toBe('wrap');
+    expect(chip.style.minWidth).toBe('0');
+    expect(chip.style.maxWidth).toBe('100%');
+    expect(chip.style.overflowWrap).toBe('anywhere');
+    expect(chip.style.textOverflow).toBe('clip');
   });
 });
 

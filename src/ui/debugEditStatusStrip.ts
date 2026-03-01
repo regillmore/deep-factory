@@ -8,6 +8,33 @@ export interface DebugEditStatusStripActionHandlers {
   onClearPinnedTile?: () => void;
 }
 
+interface SummaryChipStyleTarget {
+  style: {
+    display?: string;
+    flex?: string;
+    flexWrap?: string;
+    alignItems?: string;
+    columnGap?: string;
+    rowGap?: string;
+    padding?: string;
+    borderRadius?: string;
+    border?: string;
+    background?: string;
+    color?: string;
+    minWidth?: string;
+    maxWidth?: string;
+    overflow?: string;
+    overflowWrap?: string;
+    textOverflow?: string;
+  };
+}
+
+interface SummaryChipView {
+  root: HTMLDivElement;
+  label: HTMLSpanElement;
+  detail: HTMLSpanElement;
+}
+
 const DETAIL_SEGMENT_SEPARATOR = ' | ';
 const ACTION_ROW_GAP_PX = 6;
 const ACTION_BUTTON_MIN_WIDTH_PX = 116;
@@ -24,20 +51,62 @@ export const resolveActionRowShouldStack = (availableWidth: number, visibleActio
   return availableWidth < inlineWidth;
 };
 
-const createSummaryChip = (): HTMLDivElement => {
-  const chip = document.createElement('div');
+export const splitSummaryChipText = (text: string): { label: string; detail: string | null } => {
+  const separatorIndex = text.indexOf(': ');
+  if (separatorIndex < 0) {
+    return {
+      label: text,
+      detail: null
+    };
+  }
+
+  return {
+    label: text.slice(0, separatorIndex + 1),
+    detail: text.slice(separatorIndex + 2)
+  };
+};
+
+export const applySummaryChipStyles = (chip: SummaryChipStyleTarget): void => {
   chip.style.display = 'inline-flex';
+  chip.style.flex = '0 1 auto';
+  chip.style.flexWrap = 'wrap';
   chip.style.alignItems = 'center';
+  chip.style.columnGap = '4px';
+  chip.style.rowGap = '2px';
   chip.style.padding = '4px 8px';
   chip.style.borderRadius = '999px';
   chip.style.border = '1px solid rgba(255, 255, 255, 0.16)';
   chip.style.background = 'rgba(255, 255, 255, 0.06)';
   chip.style.color = 'rgba(244, 248, 252, 0.98)';
-  chip.style.whiteSpace = 'nowrap';
+  chip.style.minWidth = '0';
+  chip.style.overflowWrap = 'anywhere';
   chip.style.overflow = 'hidden';
-  chip.style.textOverflow = 'ellipsis';
+  chip.style.textOverflow = 'clip';
   chip.style.maxWidth = '100%';
-  return chip;
+};
+
+const createSummaryChip = (): SummaryChipView => {
+  const root = document.createElement('div');
+  applySummaryChipStyles(root);
+
+  const label = document.createElement('span');
+  label.style.whiteSpace = 'nowrap';
+
+  const detail = document.createElement('span');
+  detail.style.minWidth = '0';
+  detail.style.maxWidth = '100%';
+  detail.style.overflowWrap = 'anywhere';
+  detail.style.wordBreak = 'break-word';
+
+  root.append(label, detail);
+  return { root, label, detail };
+};
+
+const setSummaryChipText = (chip: SummaryChipView, text: string): void => {
+  const summaryText = splitSummaryChipText(text);
+  chip.label.textContent = summaryText.label;
+  chip.detail.textContent = summaryText.detail ?? '';
+  chip.detail.style.display = summaryText.detail ? 'inline' : 'none';
 };
 
 const createActionButton = (): HTMLButtonElement => {
@@ -107,10 +176,10 @@ const renderWrappedDetailText = (container: HTMLDivElement, text: string): void 
 export class DebugEditStatusStrip {
   private root: HTMLDivElement;
   private summaryRow: HTMLDivElement;
-  private modeChip: HTMLDivElement;
-  private brushChip: HTMLDivElement;
-  private toolChip: HTMLDivElement;
-  private inspectChip: HTMLDivElement;
+  private modeChip: SummaryChipView;
+  private brushChip: SummaryChipView;
+  private toolChip: SummaryChipView;
+  private inspectChip: SummaryChipView;
   private actionRow: HTMLDivElement;
   private inspectActionButton: HTMLButtonElement;
   private clearActionButton: HTMLButtonElement;
@@ -147,17 +216,17 @@ export class DebugEditStatusStrip {
     this.root.append(this.summaryRow);
 
     this.modeChip = createSummaryChip();
-    this.modeChip.style.borderColor = 'rgba(120, 210, 255, 0.32)';
-    this.modeChip.style.background = 'rgba(120, 210, 255, 0.14)';
+    this.modeChip.root.style.borderColor = 'rgba(120, 210, 255, 0.32)';
+    this.modeChip.root.style.background = 'rgba(120, 210, 255, 0.14)';
 
     this.brushChip = createSummaryChip();
-    this.brushChip.style.borderColor = 'rgba(120, 255, 180, 0.3)';
-    this.brushChip.style.background = 'rgba(120, 255, 180, 0.12)';
+    this.brushChip.root.style.borderColor = 'rgba(120, 255, 180, 0.3)';
+    this.brushChip.root.style.background = 'rgba(120, 255, 180, 0.12)';
 
     this.toolChip = createSummaryChip();
     this.inspectChip = createSummaryChip();
 
-    this.summaryRow.append(this.modeChip, this.brushChip, this.toolChip, this.inspectChip);
+    this.summaryRow.append(this.modeChip.root, this.brushChip.root, this.toolChip.root, this.inspectChip.root);
 
     this.actionRow = document.createElement('div');
     this.actionRow.style.display = 'flex';
@@ -236,14 +305,14 @@ export class DebugEditStatusStrip {
     this.root.style.borderColor = withAlpha(model.toolAccent, '0.22');
     this.root.style.boxShadow = `0 8px 18px rgba(0, 0, 0, 0.24), inset 0 0 0 1px ${withAlpha(model.toolAccent, '0.12')}`;
 
-    this.modeChip.textContent = model.modeText;
-    this.brushChip.textContent = model.brushText;
-    this.toolChip.textContent = model.toolText;
-    this.toolChip.style.borderColor = withAlpha(model.toolAccent, '0.34');
-    this.toolChip.style.background = withAlpha(model.toolAccent, '0.16');
-    this.inspectChip.textContent = model.inspectText;
-    this.inspectChip.style.borderColor = withAlpha(model.inspectAccent, '0.34');
-    this.inspectChip.style.background = withAlpha(model.inspectAccent, '0.16');
+    setSummaryChipText(this.modeChip, model.modeText);
+    setSummaryChipText(this.brushChip, model.brushText);
+    setSummaryChipText(this.toolChip, model.toolText);
+    this.toolChip.root.style.borderColor = withAlpha(model.toolAccent, '0.34');
+    this.toolChip.root.style.background = withAlpha(model.toolAccent, '0.16');
+    setSummaryChipText(this.inspectChip, model.inspectText);
+    this.inspectChip.root.style.borderColor = withAlpha(model.inspectAccent, '0.34');
+    this.inspectChip.root.style.background = withAlpha(model.inspectAccent, '0.16');
 
     this.inspectActionButton.textContent = model.inspectActionText;
     this.inspectActionButton.style.borderColor = withAlpha(model.inspectAccent, '0.34');
