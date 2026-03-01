@@ -262,11 +262,17 @@ const formatPreviewCoordinatesText = (
   anchorTileY: number,
   endpointTileX: number | null,
   endpointTileY: number | null
-): string =>
-  `Preview: anchor ${formatTileCoordinatePair(anchorTileX, anchorTileY)} | endpoint ` +
-  (endpointTileX === null || endpointTileY === null
-    ? 'pending'
-    : formatTileCoordinatePair(endpointTileX, endpointTileY));
+): string => {
+  const endpointText =
+    endpointTileX === null || endpointTileY === null
+      ? 'pending'
+      : formatTileCoordinatePair(endpointTileX, endpointTileY);
+  const spanText =
+    endpointTileX === null || endpointTileY === null
+      ? 'pending'
+      : `${Math.abs(endpointTileX - anchorTileX) + 1}x${Math.abs(endpointTileY - anchorTileY) + 1} tiles`;
+  return `Preview: anchor ${formatTileCoordinatePair(anchorTileX, anchorTileY)} | endpoint ${endpointText} | span ${spanText}`;
+};
 
 const formatInspectOffsetLine = (
   hoveredTile: DebugEditHoveredTileState,

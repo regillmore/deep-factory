@@ -138,7 +138,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.toolText).toBe('Tool: Line Brush armed');
-    expect(model.previewText).toBe('Preview: anchor 4,7 | endpoint 12,-4');
+    expect(model.previewText).toBe('Preview: anchor 4,7 | endpoint 12,-4 | span 9x12 tiles');
   });
 
   it('shows anchored touch preview coordinates while the endpoint is still pending', () => {
@@ -160,7 +160,41 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.toolText).toBe('Tool: Rect Outline Break armed');
-    expect(model.previewText).toBe('Preview: anchor -3,15 | endpoint pending');
+    expect(model.previewText).toBe('Preview: anchor -3,15 | endpoint pending | span pending');
+  });
+
+  it('shows active shape preview span dimensions from the inclusive tile bounds', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      desktopInspectPinArmed: false,
+      pinnedTile: null,
+      preview: {
+        ...createEmptyPreviewState(),
+        activeMouseEllipseOutlineDrag: {
+          kind: 'break',
+          startTileX: -5,
+          startTileY: 8
+        }
+      },
+      hoveredTile: {
+        tileX: -2,
+        tileY: 2,
+        chunkX: -1,
+        chunkY: 0,
+        localX: 30,
+        localY: 2,
+        tileId: 9,
+        tileLabel: 'lava pool',
+        solid: false,
+        blocksLight: true,
+        liquidKind: 'lava'
+      }
+    });
+
+    expect(model.toolText).toBe('Tool: Ellipse Outline Break armed');
+    expect(model.previewText).toBe('Preview: anchor -5,8 | endpoint -2,2 | span 4x7 tiles');
   });
 
   it('formats hovered tile metadata with compact gameplay flag readouts', () => {
