@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ArmedDebugToolPreviewState } from '../input/controller';
-import { buildDebugEditStatusStripModel, resolveActiveDebugToolStatus } from './debugEditStatusHelpers';
+import {
+  buildActiveDebugToolPreviewBadgeText,
+  buildDebugEditStatusStripModel,
+  resolveActiveDebugToolStatus
+} from './debugEditStatusHelpers';
 
 const createEmptyPreviewState = (): ArmedDebugToolPreviewState => ({
   armedFloodFillKind: null,
@@ -498,5 +502,57 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.hoverText).toBe(
       'Hover: dirt (#2) @ -33,-1 chunk:-2,-1 local:31,31 | solid:on | light:on | liquid:none'
     );
+  });
+});
+
+describe('buildActiveDebugToolPreviewBadgeText', () => {
+  it('shows estimated affected tile counts for active mouse-drag previews', () => {
+    expect(
+      buildActiveDebugToolPreviewBadgeText(
+        {
+          ...createEmptyPreviewState(),
+          activeMouseLineDrag: {
+            kind: 'place',
+            startTileX: 4,
+            startTileY: 7
+          }
+        },
+        {
+          tileX: 12,
+          tileY: -4
+        }
+      )
+    ).toBe('Affects 12 tiles');
+  });
+
+  it('shows pending affected tile counts for anchored touch previews without an endpoint yet', () => {
+    expect(
+      buildActiveDebugToolPreviewBadgeText(
+        {
+          ...createEmptyPreviewState(),
+          pendingTouchEllipseOutlineStart: {
+            kind: 'break',
+            tileX: -3,
+            tileY: 15
+          }
+        },
+        null
+      )
+    ).toBe('Affects pending');
+  });
+
+  it('returns no badge estimate when a one-shot tool is armed but no preview overlay is active', () => {
+    expect(
+      buildActiveDebugToolPreviewBadgeText(
+        {
+          ...createEmptyPreviewState(),
+          armedRectKind: 'place'
+        },
+        {
+          tileX: 8,
+          tileY: 9
+        }
+      )
+    ).toBeNull();
   });
 });

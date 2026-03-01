@@ -54,6 +54,14 @@ export interface DebugEditHoveredTileState {
   liquidKind: TileLiquidKind | null;
 }
 
+interface ActiveDebugToolPreviewSummary {
+  anchorTileX: number;
+  anchorTileY: number;
+  endpointTileX: number | null;
+  endpointTileY: number | null;
+  affectedTileCount: number | null;
+}
+
 const NEUTRAL_TOOL_ACCENT = 'rgba(176, 190, 208, 0.9)';
 const INSPECT_IDLE_ACCENT = 'rgba(176, 190, 208, 0.9)';
 const INSPECT_ACTIVE_ACCENT = 'rgba(120, 210, 255, 0.95)';
@@ -322,6 +330,163 @@ const countEllipseOutlinePreviewTiles = (
     walkEllipseOutlineTileArea(startTileX, startTileY, endTileX, endTileY, visit);
   });
 
+const buildActivePreviewSummary = (
+  anchorTileX: number,
+  anchorTileY: number,
+  endpointTileX: number | null,
+  endpointTileY: number | null,
+  affectedTileCount: number | null
+): ActiveDebugToolPreviewSummary => ({
+  anchorTileX,
+  anchorTileY,
+  endpointTileX,
+  endpointTileY,
+  affectedTileCount
+});
+
+const resolveActiveDebugToolPreviewSummary = (
+  preview: ArmedDebugToolPreviewState,
+  endpointTileX: number | null,
+  endpointTileY: number | null
+): ActiveDebugToolPreviewSummary | null => {
+  if (preview.activeMouseLineDrag) {
+    return buildActivePreviewSummary(
+      preview.activeMouseLineDrag.startTileX,
+      preview.activeMouseLineDrag.startTileY,
+      endpointTileX,
+      endpointTileY,
+      endpointTileX === null || endpointTileY === null
+        ? null
+        : countLinePreviewTiles(
+            preview.activeMouseLineDrag.startTileX,
+            preview.activeMouseLineDrag.startTileY,
+            endpointTileX,
+            endpointTileY
+          )
+    );
+  }
+
+  if (preview.activeMouseRectDrag) {
+    return buildActivePreviewSummary(
+      preview.activeMouseRectDrag.startTileX,
+      preview.activeMouseRectDrag.startTileY,
+      endpointTileX,
+      endpointTileY,
+      endpointTileX === null || endpointTileY === null
+        ? null
+        : countFilledRectPreviewTiles(
+            preview.activeMouseRectDrag.startTileX,
+            preview.activeMouseRectDrag.startTileY,
+            endpointTileX,
+            endpointTileY
+          )
+    );
+  }
+
+  if (preview.activeMouseRectOutlineDrag) {
+    return buildActivePreviewSummary(
+      preview.activeMouseRectOutlineDrag.startTileX,
+      preview.activeMouseRectOutlineDrag.startTileY,
+      endpointTileX,
+      endpointTileY,
+      endpointTileX === null || endpointTileY === null
+        ? null
+        : countRectOutlinePreviewTiles(
+            preview.activeMouseRectOutlineDrag.startTileX,
+            preview.activeMouseRectOutlineDrag.startTileY,
+            endpointTileX,
+            endpointTileY
+          )
+    );
+  }
+
+  if (preview.activeMouseEllipseDrag) {
+    return buildActivePreviewSummary(
+      preview.activeMouseEllipseDrag.startTileX,
+      preview.activeMouseEllipseDrag.startTileY,
+      endpointTileX,
+      endpointTileY,
+      endpointTileX === null || endpointTileY === null
+        ? null
+        : countFilledEllipsePreviewTiles(
+            preview.activeMouseEllipseDrag.startTileX,
+            preview.activeMouseEllipseDrag.startTileY,
+            endpointTileX,
+            endpointTileY
+          )
+    );
+  }
+
+  if (preview.activeMouseEllipseOutlineDrag) {
+    return buildActivePreviewSummary(
+      preview.activeMouseEllipseOutlineDrag.startTileX,
+      preview.activeMouseEllipseOutlineDrag.startTileY,
+      endpointTileX,
+      endpointTileY,
+      endpointTileX === null || endpointTileY === null
+        ? null
+        : countEllipseOutlinePreviewTiles(
+            preview.activeMouseEllipseOutlineDrag.startTileX,
+            preview.activeMouseEllipseOutlineDrag.startTileY,
+            endpointTileX,
+            endpointTileY
+          )
+    );
+  }
+
+  if (preview.pendingTouchLineStart) {
+    return buildActivePreviewSummary(
+      preview.pendingTouchLineStart.tileX,
+      preview.pendingTouchLineStart.tileY,
+      null,
+      null,
+      null
+    );
+  }
+
+  if (preview.pendingTouchRectStart) {
+    return buildActivePreviewSummary(
+      preview.pendingTouchRectStart.tileX,
+      preview.pendingTouchRectStart.tileY,
+      null,
+      null,
+      null
+    );
+  }
+
+  if (preview.pendingTouchRectOutlineStart) {
+    return buildActivePreviewSummary(
+      preview.pendingTouchRectOutlineStart.tileX,
+      preview.pendingTouchRectOutlineStart.tileY,
+      null,
+      null,
+      null
+    );
+  }
+
+  if (preview.pendingTouchEllipseStart) {
+    return buildActivePreviewSummary(
+      preview.pendingTouchEllipseStart.tileX,
+      preview.pendingTouchEllipseStart.tileY,
+      null,
+      null,
+      null
+    );
+  }
+
+  if (preview.pendingTouchEllipseOutlineStart) {
+    return buildActivePreviewSummary(
+      preview.pendingTouchEllipseOutlineStart.tileX,
+      preview.pendingTouchEllipseOutlineStart.tileY,
+      null,
+      null,
+      null
+    );
+  }
+
+  return null;
+};
+
 const formatPreviewCoordinatesText = (
   anchorTileX: number,
   anchorTileY: number,
@@ -343,6 +508,24 @@ const formatPreviewCoordinatesText = (
     ` | span ${spanText}` +
     ` | affects ${formatEstimatedAffectedTileCount(affectedTileCount)}`
   );
+};
+
+export const buildActiveDebugToolPreviewBadgeText = (
+  preview: ArmedDebugToolPreviewState,
+  endpointTile:
+    | {
+        tileX: number;
+        tileY: number;
+      }
+    | null
+): string | null => {
+  const summary = resolveActiveDebugToolPreviewSummary(
+    preview,
+    endpointTile?.tileX ?? null,
+    endpointTile?.tileY ?? null
+  );
+  if (!summary) return null;
+  return `Affects ${formatEstimatedAffectedTileCount(summary.affectedTileCount)}`;
 };
 
 const formatInspectOffsetLine = (
@@ -400,145 +583,19 @@ const buildPreviewText = (
   preview: ArmedDebugToolPreviewState,
   hoveredTile: DebugEditHoveredTileState | null
 ): string | null => {
-  const hoveredTileX = hoveredTile?.tileX ?? null;
-  const hoveredTileY = hoveredTile?.tileY ?? null;
-
-  if (preview.activeMouseLineDrag) {
-    return formatPreviewCoordinatesText(
-      preview.activeMouseLineDrag.startTileX,
-      preview.activeMouseLineDrag.startTileY,
-      hoveredTileX,
-      hoveredTileY,
-      hoveredTileX === null || hoveredTileY === null
-        ? null
-        : countLinePreviewTiles(
-            preview.activeMouseLineDrag.startTileX,
-            preview.activeMouseLineDrag.startTileY,
-            hoveredTileX,
-            hoveredTileY
-          )
-    );
-  }
-
-  if (preview.activeMouseRectDrag) {
-    return formatPreviewCoordinatesText(
-      preview.activeMouseRectDrag.startTileX,
-      preview.activeMouseRectDrag.startTileY,
-      hoveredTileX,
-      hoveredTileY,
-      hoveredTileX === null || hoveredTileY === null
-        ? null
-        : countFilledRectPreviewTiles(
-            preview.activeMouseRectDrag.startTileX,
-            preview.activeMouseRectDrag.startTileY,
-            hoveredTileX,
-            hoveredTileY
-          )
-    );
-  }
-
-  if (preview.activeMouseRectOutlineDrag) {
-    return formatPreviewCoordinatesText(
-      preview.activeMouseRectOutlineDrag.startTileX,
-      preview.activeMouseRectOutlineDrag.startTileY,
-      hoveredTileX,
-      hoveredTileY,
-      hoveredTileX === null || hoveredTileY === null
-        ? null
-        : countRectOutlinePreviewTiles(
-            preview.activeMouseRectOutlineDrag.startTileX,
-            preview.activeMouseRectOutlineDrag.startTileY,
-            hoveredTileX,
-            hoveredTileY
-          )
-    );
-  }
-
-  if (preview.activeMouseEllipseDrag) {
-    return formatPreviewCoordinatesText(
-      preview.activeMouseEllipseDrag.startTileX,
-      preview.activeMouseEllipseDrag.startTileY,
-      hoveredTileX,
-      hoveredTileY,
-      hoveredTileX === null || hoveredTileY === null
-        ? null
-        : countFilledEllipsePreviewTiles(
-            preview.activeMouseEllipseDrag.startTileX,
-            preview.activeMouseEllipseDrag.startTileY,
-            hoveredTileX,
-            hoveredTileY
-          )
-    );
-  }
-
-  if (preview.activeMouseEllipseOutlineDrag) {
-    return formatPreviewCoordinatesText(
-      preview.activeMouseEllipseOutlineDrag.startTileX,
-      preview.activeMouseEllipseOutlineDrag.startTileY,
-      hoveredTileX,
-      hoveredTileY,
-      hoveredTileX === null || hoveredTileY === null
-        ? null
-        : countEllipseOutlinePreviewTiles(
-            preview.activeMouseEllipseOutlineDrag.startTileX,
-            preview.activeMouseEllipseOutlineDrag.startTileY,
-            hoveredTileX,
-            hoveredTileY
-          )
-    );
-  }
-
-  if (preview.pendingTouchLineStart) {
-    return formatPreviewCoordinatesText(
-      preview.pendingTouchLineStart.tileX,
-      preview.pendingTouchLineStart.tileY,
-      null,
-      null,
-      null
-    );
-  }
-
-  if (preview.pendingTouchRectStart) {
-    return formatPreviewCoordinatesText(
-      preview.pendingTouchRectStart.tileX,
-      preview.pendingTouchRectStart.tileY,
-      null,
-      null,
-      null
-    );
-  }
-
-  if (preview.pendingTouchRectOutlineStart) {
-    return formatPreviewCoordinatesText(
-      preview.pendingTouchRectOutlineStart.tileX,
-      preview.pendingTouchRectOutlineStart.tileY,
-      null,
-      null,
-      null
-    );
-  }
-
-  if (preview.pendingTouchEllipseStart) {
-    return formatPreviewCoordinatesText(
-      preview.pendingTouchEllipseStart.tileX,
-      preview.pendingTouchEllipseStart.tileY,
-      null,
-      null,
-      null
-    );
-  }
-
-  if (preview.pendingTouchEllipseOutlineStart) {
-    return formatPreviewCoordinatesText(
-      preview.pendingTouchEllipseOutlineStart.tileX,
-      preview.pendingTouchEllipseOutlineStart.tileY,
-      null,
-      null,
-      null
-    );
-  }
-
-  return null;
+  const summary = resolveActiveDebugToolPreviewSummary(
+    preview,
+    hoveredTile?.tileX ?? null,
+    hoveredTile?.tileY ?? null
+  );
+  if (!summary) return null;
+  return formatPreviewCoordinatesText(
+    summary.anchorTileX,
+    summary.anchorTileY,
+    summary.endpointTileX,
+    summary.endpointTileY,
+    summary.affectedTileCount
+  );
 };
 
 export const buildDebugEditStatusStripModel = (

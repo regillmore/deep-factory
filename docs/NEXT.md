@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Show estimated affected tile counts in the on-canvas preview badge while one-shot preview overlays are active.
+1. Show live preview span dimensions in the on-canvas preview badge while one-shot preview overlays are active.
 
 ## Authored asset pipeline
 

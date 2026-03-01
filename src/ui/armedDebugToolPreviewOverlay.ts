@@ -3,7 +3,10 @@ import type {
   ArmedDebugToolPreviewState,
   PointerInspectSnapshot
 } from '../input/controller';
-import { resolveActiveDebugToolStatus } from './debugEditStatusHelpers';
+import {
+  buildActiveDebugToolPreviewBadgeText,
+  resolveActiveDebugToolStatus
+} from './debugEditStatusHelpers';
 import { computeHoveredTileCursorClientRect } from './hoveredTileCursor';
 
 const lineAccentForKind = (kind: 'place' | 'break'): string =>
@@ -84,7 +87,7 @@ export class ArmedDebugToolPreviewOverlay {
     this.statusBadge.style.letterSpacing = '0.01em';
     this.statusBadge.style.boxShadow = '0 8px 18px rgba(0, 0, 0, 0.22)';
     this.statusBadge.style.backdropFilter = 'blur(2px)';
-    this.statusBadge.style.whiteSpace = 'normal';
+    this.statusBadge.style.whiteSpace = 'pre-line';
 
     this.lineSegment = document.createElement('div');
     this.lineSegment.style.position = 'fixed';
@@ -172,22 +175,37 @@ export class ArmedDebugToolPreviewOverlay {
     preview: ArmedDebugToolPreviewState
   ): void {
     const canvasRect = this.canvas.getBoundingClientRect();
-    this.updateStatusBadge(canvasRect, preview);
+    this.updateStatusBadge(canvasRect, pointerInspect, preview);
     this.updateMouseLinePreview(camera, canvasRect, pointerInspect, preview);
     this.updateMouseRectPreview(camera, canvasRect, pointerInspect, preview);
     this.updateMouseEllipsePreview(camera, canvasRect, pointerInspect, preview);
     this.updateTouchAnchorPreview(camera, canvasRect, preview);
   }
 
-  private updateStatusBadge(canvasRect: DOMRect, preview: ArmedDebugToolPreviewState): void {
+  private updateStatusBadge(
+    canvasRect: DOMRect,
+    pointerInspect: PointerInspectSnapshot | null,
+    preview: ArmedDebugToolPreviewState
+  ): void {
     const status = resolveActiveDebugToolStatus(preview);
     if (!status) {
       hideElement(this.statusBadge);
       return;
     }
 
+    const previewBadgeText = buildActiveDebugToolPreviewBadgeText(
+      preview,
+      pointerInspect?.pointerType === 'mouse'
+        ? {
+            tileX: pointerInspect.tile.x,
+            tileY: pointerInspect.tile.y
+          }
+        : null
+    );
     this.statusBadge.style.display = 'block';
-    this.statusBadge.textContent = `${status.title} - ${status.detail}`;
+    this.statusBadge.textContent = previewBadgeText
+      ? `${status.title} - ${status.detail}\n${previewBadgeText}`
+      : `${status.title} - ${status.detail}`;
     this.statusBadge.style.left = `${canvasRect.left + 10}px`;
     this.statusBadge.style.top = `${canvasRect.top + 10}px`;
     this.statusBadge.style.maxWidth = `${Math.max(160, canvasRect.width - 20)}px`;
