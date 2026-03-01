@@ -11,7 +11,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Collision and player foundation
 
-5. Add world collision query helpers that read `solid` gameplay metadata (`isSolidAt`, AABB overlap, axis sweep).
+5. Add a player spawn-point finder that locates grounded standing headroom near the world origin using the collision helpers.
 6. Introduce a fixed-step player state model (`position`, `velocity`, `size`, `grounded`, facing) with unit tests.
 7. Implement walk, jump, gravity, and tile collision resolution for the player using the new collision helpers.
 8. Add mixed-device player input bindings and camera follow rules without removing the existing debug-edit controls.

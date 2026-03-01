@@ -29,6 +29,10 @@ This document describes the current project state. Unlike the changelog, it shou
 - Terrain autotile connectivity uses metadata-driven connectivity groups first, then shared material tags for seam compatibility.
 - Placeholder terrain autotile layout still uses a `4x4` atlas mapping documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+## Collision Foundations
+
+- World collision helpers expose metadata-backed `isSolidAt` tile queries, world-space solid-overlap checks for half-open AABBs, and single-axis AABB sweep results that clamp movement to the first blocking tile.
+
 ## Hot-Path Lookup Strategy
 
 - Gameplay metadata compiles into dense lookup arrays for collision, lighting, and liquid queries.

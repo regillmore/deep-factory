@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Add world collision query helpers that read `solid` gameplay metadata for tile checks, AABB overlap, and per-axis sweeps.
+- Changes: Added [src/world/collision.ts](../src/world/collision.ts) with metadata-backed `isSolidAt`, half-open world-space AABB overlap checks, and single-axis sweep helpers, added focused coverage in [src/world/collision.test.ts](../src/world/collision.test.ts), replaced the completed roadmap item in [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `npx vitest run src/world/collision.test.ts src/world/world.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Surface whether the renderer loaded the authored atlas or the placeholder fallback in debug-visible telemetry.
 - Changes: Updated [src/gl/renderer.ts](../src/gl/renderer.ts) to record atlas source telemetry during initialization, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) to render the atlas source kind in the debug overlay, added focused coverage in [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) and [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/gl/renderer.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

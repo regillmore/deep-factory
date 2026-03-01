@@ -6,7 +6,7 @@
 - `src/core/`: camera math + fixed timestep loop.
 - `src/input/`: input abstraction for keyboard, mouse, and touch/pinch.
 - `src/gl/`: low-level WebGL2 utilities and renderer orchestration.
-- `src/world/`: world data model, chunk math, procedural generation, mesh construction.
+- `src/world/`: world data model, chunk math, collision queries, procedural generation, mesh construction.
 - `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata; authored-atlas region validation is still a later task).
 - `src/ui/`: debug DOM overlay.
 
