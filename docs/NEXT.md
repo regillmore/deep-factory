@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Authored asset pipeline
 
-7. Add an authored-atlas layout regression test that explicit atlas regions do not overlap each other, so atlas-index sampling stays one-to-one as the layout evolves.
 35. Add a renderer regression test that a re-streamed animated chunk resumes elapsed-frame UV uploads after prune and rebuild.
 36. Add an authored-atlas asset regression test that default tile metadata only references authored atlas regions containing at least one non-transparent pixel in the committed PNG.
+37. Add an authored-atlas asset regression test that every committed region is either referenced by tile metadata or explicitly documented as intentionally unused.
 
 ## Collision and player foundation
 
