@@ -1,6 +1,7 @@
 import { Camera2D } from '../core/camera2d';
 import { createStaticVertexBuffer, createVertexArray } from './buffer';
 import { createProgram } from './shader';
+import type { AtlasImageLoadResult } from './texture';
 import { createTextureFromImageSource, loadAtlasImageSource } from './texture';
 import { TILE_SIZE } from '../world/constants';
 import {
@@ -34,6 +35,7 @@ interface MeshBuildRequest {
 }
 
 export interface RenderTelemetry {
+  atlasSourceKind: AtlasImageLoadResult['sourceKind'] | 'pending';
   renderedChunks: number;
   drawCalls: number;
   drawCallBudget: number;
@@ -64,6 +66,7 @@ export class Renderer {
   private texture: WebGLTexture | null = null;
 
   readonly telemetry: RenderTelemetry = {
+    atlasSourceKind: 'pending',
     renderedChunks: 0,
     drawCalls: 0,
     drawCallBudget: DRAW_CALL_BUDGET,
@@ -121,6 +124,7 @@ export class Renderer {
   async initialize(): Promise<void> {
     const atlas = await loadAtlasImageSource(AUTHORED_TILE_ATLAS_URL);
     this.texture = createTextureFromImageSource(this.gl, atlas.imageSource);
+    this.telemetry.atlasSourceKind = atlas.sourceKind;
   }
 
   resize(): void {

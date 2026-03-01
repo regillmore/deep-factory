@@ -2,6 +2,7 @@ import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
 import type { TileLiquidKind } from '../world/tileMetadata';
 
 export interface DebugOverlayStats {
+  atlasSourceKind: 'pending' | 'authored' | 'placeholder';
   renderedChunks: number;
   drawCalls: number;
   drawCallBudget: number;
@@ -96,7 +97,7 @@ export const formatDebugOverlayText = (
 
   const pointerInspect = inspect?.pointer ?? null;
   const pinnedInspect = inspect?.pinned ?? null;
-  const lines = [summaryLine];
+  const lines = [summaryLine, `Atlas: ${stats.atlasSourceKind}`];
 
   if (!pointerInspect) {
     lines.push('Ptr: n/a');

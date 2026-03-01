@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { formatDebugOverlayText, type DebugOverlayStats } from './debugOverlay';
 
 const baseStats: DebugOverlayStats = {
+  atlasSourceKind: 'authored',
   renderedChunks: 4,
   drawCalls: 4,
   drawCallBudget: 256,
@@ -21,8 +22,15 @@ describe('formatDebugOverlayText', () => {
     const text = formatDebugOverlayText(60, baseStats, null);
 
     expect(text).toContain('FPS: 60.0');
+    expect(text).toContain('\nAtlas: authored');
     expect(text).toContain('Draws: 4/256 (OK)');
     expect(text).toContain('\nPtr: n/a');
+  });
+
+  it('shows when the renderer is using the placeholder atlas fallback', () => {
+    const text = formatDebugOverlayText(60, { ...baseStats, atlasSourceKind: 'placeholder' }, null);
+
+    expect(text).toContain('\nAtlas: placeholder');
   });
 
   it('formats pointer client/canvas/world/tile readout with tile identity and gameplay flags', () => {

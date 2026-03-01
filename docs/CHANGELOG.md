@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Surface whether the renderer loaded the authored atlas or the placeholder fallback in debug-visible telemetry.
+- Changes: Updated [src/gl/renderer.ts](../src/gl/renderer.ts) to record atlas source telemetry during initialization, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) to render the atlas source kind in the debug overlay, added focused coverage in [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) and [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/gl/renderer.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Add an atlas asset loader helper that fetches and decodes an authored image while preserving the generated placeholder atlas as a fallback.
 - Changes: Updated [src/gl/texture.ts](../src/gl/texture.ts) with an authored-atlas loader plus shared texture upload helper, wired [src/gl/renderer.ts](../src/gl/renderer.ts) to try `/atlas/tile-atlas.png` before falling back, added focused coverage in [src/gl/texture.test.ts](../src/gl/texture.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Verification: Ran `npx vitest run src/gl/texture.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
