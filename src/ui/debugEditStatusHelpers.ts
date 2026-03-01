@@ -277,6 +277,16 @@ const formatTileCoordinatePair = (tileX: number, tileY: number): string => `${ti
 const formatEstimatedAffectedTileCount = (tileCount: number | null): string =>
   tileCount === null ? 'pending' : `${tileCount} ${tileCount === 1 ? 'tile' : 'tiles'}`;
 
+const formatPreviewSpanText = (
+  anchorTileX: number,
+  anchorTileY: number,
+  endpointTileX: number | null,
+  endpointTileY: number | null
+): string =>
+  endpointTileX === null || endpointTileY === null
+    ? 'pending'
+    : `${Math.abs(endpointTileX - anchorTileX) + 1}x${Math.abs(endpointTileY - anchorTileY) + 1} tiles`;
+
 const countVisitedTiles = (walk: (visit: (tileX: number, tileY: number) => void) => void): number => {
   let tileCount = 0;
   walk(() => {
@@ -498,14 +508,10 @@ const formatPreviewCoordinatesText = (
     endpointTileX === null || endpointTileY === null
       ? 'pending'
       : formatTileCoordinatePair(endpointTileX, endpointTileY);
-  const spanText =
-    endpointTileX === null || endpointTileY === null
-      ? 'pending'
-      : `${Math.abs(endpointTileX - anchorTileX) + 1}x${Math.abs(endpointTileY - anchorTileY) + 1} tiles`;
   return (
     `Preview: anchor ${formatTileCoordinatePair(anchorTileX, anchorTileY)}` +
     ` | endpoint ${endpointText}` +
-    ` | span ${spanText}` +
+    ` | span ${formatPreviewSpanText(anchorTileX, anchorTileY, endpointTileX, endpointTileY)}` +
     ` | affects ${formatEstimatedAffectedTileCount(affectedTileCount)}`
   );
 };
@@ -525,7 +531,14 @@ export const buildActiveDebugToolPreviewBadgeText = (
     endpointTile?.tileY ?? null
   );
   if (!summary) return null;
-  return `Affects ${formatEstimatedAffectedTileCount(summary.affectedTileCount)}`;
+  return (
+    `Span ${formatPreviewSpanText(
+      summary.anchorTileX,
+      summary.anchorTileY,
+      summary.endpointTileX,
+      summary.endpointTileY
+    )}` + ` | Affects ${formatEstimatedAffectedTileCount(summary.affectedTileCount)}`
+  );
 };
 
 const formatInspectOffsetLine = (

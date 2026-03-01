@@ -522,7 +522,7 @@ describe('buildActiveDebugToolPreviewBadgeText', () => {
           tileY: -4
         }
       )
-    ).toBe('Affects 12 tiles');
+    ).toBe('Span 9x12 tiles | Affects 12 tiles');
   });
 
   it('shows pending affected tile counts for anchored touch previews without an endpoint yet', () => {
@@ -538,7 +538,7 @@ describe('buildActiveDebugToolPreviewBadgeText', () => {
         },
         null
       )
-    ).toBe('Affects pending');
+    ).toBe('Span pending | Affects pending');
   });
 
   it('returns no badge estimate when a one-shot tool is armed but no preview overlay is active', () => {

@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Show live preview span dimensions in the on-canvas preview badge while one-shot preview overlays are active.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) to share badge span formatting with the existing preview summary text, expanded [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) to cover live and pending badge span text, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Show estimated affected tile counts in the on-canvas preview badge while one-shot preview overlays are active.
 - Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) to share one-shot preview estimate resolution between the status strip and overlay badge, updated [src/ui/armedDebugToolPreviewOverlay.ts](../src/ui/armedDebugToolPreviewOverlay.ts) to append affected-tile text to the on-canvas badge only while preview overlays are active, added focused coverage in [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
