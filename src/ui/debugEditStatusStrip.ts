@@ -8,6 +8,13 @@ export interface DebugEditStatusStripActionHandlers {
   onClearPinnedTile?: () => void;
 }
 
+const DETAIL_SEGMENT_SEPARATOR = ' | ';
+
+export const buildWrappedDetailLines = (text: string): string[][] =>
+  text.split('\n').map((line) =>
+    line.split(DETAIL_SEGMENT_SEPARATOR).map((segment, index) => (index === 0 ? segment : `| ${segment}`))
+  );
+
 const createSummaryChip = (): HTMLDivElement => {
   const chip = document.createElement('div');
   chip.style.display = 'inline-flex';
@@ -41,6 +48,47 @@ const createActionButton = (): HTMLButtonElement => {
   button.style.pointerEvents = 'auto';
   button.style.userSelect = 'none';
   return button;
+};
+
+const createWrappedDetailContainer = (): HTMLDivElement => {
+  const container = document.createElement('div');
+  container.style.display = 'flex';
+  container.style.flexDirection = 'column';
+  container.style.gap = '2px';
+  container.style.width = '100%';
+  container.style.maxWidth = '100%';
+  container.style.minWidth = '0';
+  container.style.boxSizing = 'border-box';
+  return container;
+};
+
+const createWrappedDetailRow = (): HTMLDivElement => {
+  const row = document.createElement('div');
+  row.style.display = 'flex';
+  row.style.flexWrap = 'wrap';
+  row.style.alignItems = 'baseline';
+  row.style.columnGap = '6px';
+  row.style.rowGap = '2px';
+  row.style.minWidth = '0';
+  return row;
+};
+
+const createWrappedDetailSegment = (text: string): HTMLSpanElement => {
+  const segment = document.createElement('span');
+  segment.textContent = text;
+  segment.style.minWidth = '0';
+  segment.style.overflowWrap = 'anywhere';
+  return segment;
+};
+
+const renderWrappedDetailText = (container: HTMLDivElement, text: string): void => {
+  container.replaceChildren(
+    ...buildWrappedDetailLines(text).map((segments) => {
+      const row = createWrappedDetailRow();
+      row.append(...segments.map(createWrappedDetailSegment));
+      return row;
+    })
+  );
 };
 
 export class DebugEditStatusStrip {
@@ -126,16 +174,12 @@ export class DebugEditStatusStrip {
       this.onClearPinnedTile();
     });
 
-    this.previewLine = document.createElement('div');
+    this.previewLine = createWrappedDetailContainer();
     this.previewLine.style.display = 'none';
-    this.previewLine.style.maxWidth = '100%';
-    this.previewLine.style.whiteSpace = 'normal';
     this.root.append(this.previewLine);
 
-    this.hoverLine = document.createElement('div');
+    this.hoverLine = createWrappedDetailContainer();
     this.hoverLine.style.color = 'rgba(236, 242, 248, 0.96)';
-    this.hoverLine.style.whiteSpace = 'pre-line';
-    this.hoverLine.style.maxWidth = '100%';
     this.root.append(this.hoverLine);
 
     this.hintLine = document.createElement('div');
@@ -188,10 +232,15 @@ export class DebugEditStatusStrip {
     this.clearActionButton.textContent = model.clearActionText ?? '';
     this.clearActionButton.style.display = model.clearActionText ? 'inline-flex' : 'none';
 
-    this.previewLine.textContent = model.previewText ?? '';
-    this.previewLine.style.display = model.previewText ? 'block' : 'none';
+    if (model.previewText) {
+      renderWrappedDetailText(this.previewLine, model.previewText);
+      this.previewLine.style.display = 'flex';
+    } else {
+      this.previewLine.replaceChildren();
+      this.previewLine.style.display = 'none';
+    }
     this.previewLine.style.color = withAlpha(model.toolAccent, '0.92');
-    this.hoverLine.textContent = model.hoverText;
+    renderWrappedDetailText(this.hoverLine, model.hoverText);
     this.hintLine.textContent = model.hintText;
     this.hintLine.style.borderTopColor = withAlpha(model.toolAccent, '0.16');
   }

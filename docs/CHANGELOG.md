@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Keep the compact debug-edit status strip within the viewport on narrow mobile layouts by wrapping long preview and inspect lines.
+- Changes: Updated [src/ui/debugEditStatusStrip.ts](../src/ui/debugEditStatusStrip.ts) so preview and inspect detail text renders as wrap-friendly segmented rows instead of single long text nodes, added focused coverage in [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugEditStatusStrip.test.ts src/ui/debugEditStatusHelpers.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Clamp the active one-shot preview status badge inside the visible canvas bounds when the canvas is small or offset within the page.
 - Changes: Updated [src/ui/armedDebugToolPreviewOverlay.ts](../src/ui/armedDebugToolPreviewOverlay.ts) so the active preview badge uses canvas-relative bounded placement and border-box clipping instead of a fixed minimum width that could spill outside narrow canvases, added focused placement coverage in [src/ui/armedDebugToolPreviewOverlay.test.ts](../src/ui/armedDebugToolPreviewOverlay.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/armedDebugToolPreviewOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
