@@ -34,6 +34,24 @@ describe('buildWrappedDetailLines', () => {
       ['Offset: Hover->Pinned x:+8 y:-11']
     ]);
   });
+
+  it('preserves multiline hint rows while splitting shortcut segments at pipe separators', () => {
+    expect(
+      buildWrappedDetailLines(
+        'Touch: drag to paint | pinch zoom\n' +
+          'Desktop: left paint | right break | Shift-drag pan | wheel zoom | Pin Click arms inspect pinning'
+      )
+    ).toEqual([
+      ['Touch: drag to paint', '| pinch zoom'],
+      [
+        'Desktop: left paint',
+        '| right break',
+        '| Shift-drag pan',
+        '| wheel zoom',
+        '| Pin Click arms inspect pinning'
+      ]
+    ]);
+  });
 });
 
 describe('splitSummaryChipText', () => {

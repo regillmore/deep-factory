@@ -65,8 +65,21 @@ interface ActiveDebugToolPreviewSummary {
 const NEUTRAL_TOOL_ACCENT = 'rgba(176, 190, 208, 0.9)';
 const INSPECT_IDLE_ACCENT = 'rgba(176, 190, 208, 0.9)';
 const INSPECT_ACTIVE_ACCENT = 'rgba(120, 210, 255, 0.95)';
-const DESKTOP_ONE_SHOT_HINT =
-  'Desktop one-shot: F fill, N line, R rect fill, T rect outline, E ellipse fill, O ellipse outline (Shift = break).';
+const HINT_SEGMENT_SEPARATOR = ' | ';
+
+const joinHintSegments = (...segments: string[]): string => segments.join(HINT_SEGMENT_SEPARATOR);
+
+const joinHintLines = (...lines: string[]): string => lines.join('\n');
+
+const DESKTOP_ONE_SHOT_HINT = joinHintSegments(
+  'Desktop one-shot: F fill',
+  'N line',
+  'R rect fill',
+  'T rect outline',
+  'E ellipse fill',
+  'O ellipse outline',
+  'Shift = break'
+);
 
 const lineAccentForKind = (kind: DebugTileEditKind): string =>
   kind === 'place' ? 'rgba(120, 210, 255, 0.95)' : 'rgba(255, 180, 120, 0.95)';
@@ -109,7 +122,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.activeMouseLineDrag) {
     return {
       title: `${toolActionLabel('Line', preview.activeMouseLineDrag.kind)} armed`,
-      detail: 'drag endpoint, release to apply - Esc cancel',
+      detail: joinHintSegments('drag endpoint', 'release to apply', 'Esc cancel'),
       accent: lineAccentForKind(preview.activeMouseLineDrag.kind)
     };
   }
@@ -117,7 +130,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.activeMouseRectDrag) {
     return {
       title: `${toolActionLabel('Rect Fill', preview.activeMouseRectDrag.kind)} armed`,
-      detail: 'drag box, release to apply - Esc cancel',
+      detail: joinHintSegments('drag box', 'release to apply', 'Esc cancel'),
       accent: rectAccentForKind(preview.activeMouseRectDrag.kind)
     };
   }
@@ -125,7 +138,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.activeMouseRectOutlineDrag) {
     return {
       title: `${toolActionLabel('Rect Outline', preview.activeMouseRectOutlineDrag.kind)} armed`,
-      detail: 'drag box, release to apply - Esc cancel',
+      detail: joinHintSegments('drag box', 'release to apply', 'Esc cancel'),
       accent: rectOutlineAccentForKind(preview.activeMouseRectOutlineDrag.kind)
     };
   }
@@ -133,7 +146,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.activeMouseEllipseDrag) {
     return {
       title: `${toolActionLabel('Ellipse Fill', preview.activeMouseEllipseDrag.kind)} armed`,
-      detail: 'drag bounds, release to apply - Esc cancel',
+      detail: joinHintSegments('drag bounds', 'release to apply', 'Esc cancel'),
       accent: ellipseAccentForKind(preview.activeMouseEllipseDrag.kind)
     };
   }
@@ -141,7 +154,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.activeMouseEllipseOutlineDrag) {
     return {
       title: `${toolActionLabel('Ellipse Outline', preview.activeMouseEllipseOutlineDrag.kind)} armed`,
-      detail: 'drag bounds, release to apply - Esc cancel',
+      detail: joinHintSegments('drag bounds', 'release to apply', 'Esc cancel'),
       accent: ellipseOutlineAccentForKind(preview.activeMouseEllipseOutlineDrag.kind)
     };
   }
@@ -149,7 +162,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.pendingTouchLineStart) {
     return {
       title: `${toolActionLabel('Line', preview.pendingTouchLineStart.kind)} armed`,
-      detail: 'start set, tap end tile - Esc cancel',
+      detail: joinHintSegments('start set', 'tap end tile', 'Esc cancel'),
       accent: lineAccentForKind(preview.pendingTouchLineStart.kind)
     };
   }
@@ -157,7 +170,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.pendingTouchRectStart) {
     return {
       title: `${toolActionLabel('Rect Fill', preview.pendingTouchRectStart.kind)} armed`,
-      detail: 'corner set, tap opposite corner - Esc cancel',
+      detail: joinHintSegments('corner set', 'tap opposite corner', 'Esc cancel'),
       accent: rectAccentForKind(preview.pendingTouchRectStart.kind)
     };
   }
@@ -165,7 +178,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.pendingTouchRectOutlineStart) {
     return {
       title: `${toolActionLabel('Rect Outline', preview.pendingTouchRectOutlineStart.kind)} armed`,
-      detail: 'corner set, tap opposite corner - Esc cancel',
+      detail: joinHintSegments('corner set', 'tap opposite corner', 'Esc cancel'),
       accent: rectOutlineAccentForKind(preview.pendingTouchRectOutlineStart.kind)
     };
   }
@@ -173,7 +186,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.pendingTouchEllipseStart) {
     return {
       title: `${toolActionLabel('Ellipse Fill', preview.pendingTouchEllipseStart.kind)} armed`,
-      detail: 'corner set, tap opposite corner - Esc cancel',
+      detail: joinHintSegments('corner set', 'tap opposite corner', 'Esc cancel'),
       accent: ellipseAccentForKind(preview.pendingTouchEllipseStart.kind)
     };
   }
@@ -181,7 +194,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.pendingTouchEllipseOutlineStart) {
     return {
       title: `${toolActionLabel('Ellipse Outline', preview.pendingTouchEllipseOutlineStart.kind)} armed`,
-      detail: 'corner set, tap opposite corner - Esc cancel',
+      detail: joinHintSegments('corner set', 'tap opposite corner', 'Esc cancel'),
       accent: ellipseOutlineAccentForKind(preview.pendingTouchEllipseOutlineStart.kind)
     };
   }
@@ -189,7 +202,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.armedLineKind) {
     return {
       title: `${toolActionLabel('Line', preview.armedLineKind)} armed`,
-      detail: 'drag (desktop) or tap start/end (touch) - Esc cancel',
+      detail: joinHintSegments('drag on desktop', 'tap start/end on touch', 'Esc cancel'),
       accent: lineAccentForKind(preview.armedLineKind)
     };
   }
@@ -197,7 +210,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.armedRectKind) {
     return {
       title: `${toolActionLabel('Rect Fill', preview.armedRectKind)} armed`,
-      detail: 'drag box (desktop) or tap two corners (touch) - Esc cancel',
+      detail: joinHintSegments('drag box on desktop', 'tap two corners on touch', 'Esc cancel'),
       accent: rectAccentForKind(preview.armedRectKind)
     };
   }
@@ -205,7 +218,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.armedRectOutlineKind) {
     return {
       title: `${toolActionLabel('Rect Outline', preview.armedRectOutlineKind)} armed`,
-      detail: 'drag box (desktop) or tap two corners (touch) - Esc cancel',
+      detail: joinHintSegments('drag box on desktop', 'tap two corners on touch', 'Esc cancel'),
       accent: rectOutlineAccentForKind(preview.armedRectOutlineKind)
     };
   }
@@ -213,7 +226,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.armedEllipseKind) {
     return {
       title: `${toolActionLabel('Ellipse Fill', preview.armedEllipseKind)} armed`,
-      detail: 'drag bounds (desktop) or tap two corners (touch) - Esc cancel',
+      detail: joinHintSegments('drag bounds on desktop', 'tap two corners on touch', 'Esc cancel'),
       accent: ellipseAccentForKind(preview.armedEllipseKind)
     };
   }
@@ -221,7 +234,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.armedEllipseOutlineKind) {
     return {
       title: `${toolActionLabel('Ellipse Outline', preview.armedEllipseOutlineKind)} armed`,
-      detail: 'drag bounds (desktop) or tap two corners (touch) - Esc cancel',
+      detail: joinHintSegments('drag bounds on desktop', 'tap two corners on touch', 'Esc cancel'),
       accent: ellipseOutlineAccentForKind(preview.armedEllipseOutlineKind)
     };
   }
@@ -229,7 +242,7 @@ export const resolveActiveDebugToolStatus = (
   if (preview.armedFloodFillKind) {
     return {
       title: `${toolActionLabel('Fill', preview.armedFloodFillKind)} armed`,
-      detail: 'click/tap target tile - Esc cancel',
+      detail: joinHintSegments('click/tap target tile', 'Esc cancel'),
       accent: fillAccentForKind(preview.armedFloodFillKind)
     };
   }
@@ -239,25 +252,71 @@ export const resolveActiveDebugToolStatus = (
 
 const buildIdleHintText = (mode: TouchDebugEditMode): string => {
   if (mode === 'pan') {
-    return `Touch: tap tile to pin inspect, pan/pinch, long-press eyedropper, two-finger tap undo, three-finger tap redo. Desktop: Pin Click arms inspect pinning, P/L/B modes, 1-0 or [ ] brush, I pick. ${DESKTOP_ONE_SHOT_HINT}`;
+    return joinHintLines(
+      joinHintSegments(
+        'Touch: tap tile to pin inspect',
+        'pan/pinch',
+        'long-press eyedropper',
+        'two-finger tap undo',
+        'three-finger tap redo'
+      ),
+      joinHintSegments('Desktop: Pin Click arms inspect pinning', 'P/L/B modes', '1-0 or [ ] brush', 'I pick'),
+      DESKTOP_ONE_SHOT_HINT
+    );
   }
   if (mode === 'place') {
-    return `Touch: drag to paint, pinch zoom. Desktop: left paint, right break, Shift-drag pan, wheel zoom, Pin Click arms inspect pinning. ${DESKTOP_ONE_SHOT_HINT} Esc cancels one-shot tools.`;
+    return joinHintLines(
+      joinHintSegments('Touch: drag to paint', 'pinch zoom'),
+      joinHintSegments(
+        'Desktop: left paint',
+        'right break',
+        'Shift-drag pan',
+        'wheel zoom',
+        'Pin Click arms inspect pinning'
+      ),
+      joinHintSegments(DESKTOP_ONE_SHOT_HINT, 'Esc cancels one-shot tools')
+    );
   }
-  return `Touch: drag to break, pinch zoom. Desktop: left paint, right break, Shift-drag pan, wheel zoom, Pin Click arms inspect pinning. ${DESKTOP_ONE_SHOT_HINT} Esc cancels one-shot tools.`;
+  return joinHintLines(
+    joinHintSegments('Touch: drag to break', 'pinch zoom'),
+    joinHintSegments(
+      'Desktop: left paint',
+      'right break',
+      'Shift-drag pan',
+      'wheel zoom',
+      'Pin Click arms inspect pinning'
+    ),
+    joinHintSegments(DESKTOP_ONE_SHOT_HINT, 'Esc cancels one-shot tools')
+  );
 };
 
 const buildPinnedInspectHintText = (mode: TouchDebugEditMode): string => {
   if (mode === 'pan') {
-    return 'Pinned inspect active: use Repin Click or Clear Pin in the strip; touch can also tap another tile to repin or the same tile to clear.';
+    return joinHintLines(
+      joinHintSegments('Pinned inspect active', 'strip: Repin Click or Clear Pin'),
+      'Touch: tap another tile to repin or the same tile to clear'
+    );
   }
-  return 'Pinned inspect stays visible in edit modes; use Repin Click or Clear Pin in the strip, or switch touch to Pan to repin.';
+  return joinHintLines(
+    joinHintSegments('Pinned inspect stays visible in edit modes', 'strip: Repin Click or Clear Pin'),
+    'Touch: switch to Pan to repin'
+  );
 };
 
 const buildArmedDesktopInspectHintText = (hasPinnedTile: boolean): string =>
   hasPinnedTile
-    ? 'Repin Click armed: click a world tile to move the pinned inspect target. Dragging still pans, Esc cancels.'
-    : 'Pin Click armed: click a world tile to lock its metadata in the strip. Dragging still pans, Esc cancels.';
+    ? joinHintSegments(
+        'Repin Click armed',
+        'click a world tile to move the pinned inspect target',
+        'dragging still pans',
+        'Esc cancels'
+      )
+    : joinHintSegments(
+        'Pin Click armed',
+        'click a world tile to lock its metadata in the strip',
+        'dragging still pans',
+        'Esc cancels'
+      );
 
 const formatHoveredTileFlag = (value: boolean): string => (value ? 'on' : 'off');
 

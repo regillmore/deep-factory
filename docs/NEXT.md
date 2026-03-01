@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Immediate UX cleanup
 
-1. Split compact debug-edit status strip hint text into wrap-friendly shortcut segments on narrow mobile layouts instead of letting long hint sentences reflow awkwardly.
+1. Split empty compact status-strip hover guidance into wrap-friendly action segments on narrow mobile layouts instead of reflowing the whole sentence.
 
 ## Authored asset pipeline
 

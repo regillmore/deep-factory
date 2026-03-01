@@ -266,11 +266,10 @@ export class DebugEditStatusStrip {
     this.hoverLine.style.color = 'rgba(236, 242, 248, 0.96)';
     this.root.append(this.hoverLine);
 
-    this.hintLine = document.createElement('div');
+    this.hintLine = createWrappedDetailContainer();
     this.hintLine.style.color = 'rgba(222, 231, 240, 0.96)';
     this.hintLine.style.paddingTop = '2px';
     this.hintLine.style.borderTop = '1px solid rgba(255, 255, 255, 0.1)';
-    this.hintLine.style.whiteSpace = 'normal';
     this.root.append(this.hintLine);
 
     document.body.append(this.root);
@@ -333,7 +332,7 @@ export class DebugEditStatusStrip {
     }
     this.previewLine.style.color = withAlpha(model.toolAccent, '0.92');
     renderWrappedDetailText(this.hoverLine, model.hoverText);
-    this.hintLine.textContent = model.hintText;
+    renderWrappedDetailText(this.hintLine, model.hintText);
     this.hintLine.style.borderTopColor = withAlpha(model.toolAccent, '0.16');
   }
 }

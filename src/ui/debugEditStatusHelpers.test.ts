@@ -41,7 +41,7 @@ describe('resolveActiveDebugToolStatus', () => {
 
     expect(status).toEqual({
       title: 'Line Brush armed',
-      detail: 'drag endpoint, release to apply - Esc cancel',
+      detail: 'drag endpoint | release to apply | Esc cancel',
       accent: 'rgba(120, 210, 255, 0.95)'
     });
   });
@@ -58,7 +58,7 @@ describe('resolveActiveDebugToolStatus', () => {
 
     expect(status).toEqual({
       title: 'Ellipse Outline Break armed',
-      detail: 'corner set, tap opposite corner - Esc cancel',
+      detail: 'corner set | tap opposite corner | Esc cancel',
       accent: 'rgba(255, 195, 120, 0.95)'
     });
   });
@@ -86,10 +86,11 @@ describe('buildDebugEditStatusStripModel', () => {
     );
     expect(model.inspectActionText).toBe('Pin Click');
     expect(model.clearActionText).toBeNull();
-    expect(model.hintText).toContain('Touch: drag to paint');
-    expect(model.hintText).toContain('Pin Click arms inspect pinning');
-    expect(model.hintText).toContain('N line');
-    expect(model.hintText).toContain('Esc cancels one-shot tools');
+    expect(model.hintText).toBe(
+      'Touch: drag to paint | pinch zoom\n' +
+        'Desktop: left paint | right break | Shift-drag pan | wheel zoom | Pin Click arms inspect pinning\n' +
+        'Desktop one-shot: F fill | N line | R rect fill | T rect outline | E ellipse fill | O ellipse outline | Shift = break | Esc cancels one-shot tools'
+    );
   });
 
   it('surfaces active flood-fill guidance directly in the status-strip model', () => {
@@ -108,7 +109,7 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.toolText).toBe('Tool: Fill Brush armed');
     expect(model.previewText).toBeNull();
-    expect(model.hintText).toBe('click/tap target tile - Esc cancel');
+    expect(model.hintText).toBe('click/tap target tile | Esc cancel');
     expect(model.toolAccent).toBe('rgba(120, 255, 180, 0.95)');
   });
 
@@ -359,7 +360,8 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.inspectActionText).toBe('Repin Click');
     expect(model.clearActionText).toBe('Clear Pin');
     expect(model.hintText).toBe(
-      'Pinned inspect active: use Repin Click or Clear Pin in the strip; touch can also tap another tile to repin or the same tile to clear.'
+      'Pinned inspect active | strip: Repin Click or Clear Pin\n' +
+        'Touch: tap another tile to repin or the same tile to clear'
     );
   });
 
@@ -473,7 +475,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.inspectActionText).toBe('Cancel Pin Click');
     expect(model.clearActionText).toBe('Clear Pin');
     expect(model.hintText).toBe(
-      'Repin Click armed: click a world tile to move the pinned inspect target. Dragging still pans, Esc cancels.'
+      'Repin Click armed | click a world tile to move the pinned inspect target | dragging still pans | Esc cancels'
     );
   });
 
