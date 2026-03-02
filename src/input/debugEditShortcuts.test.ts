@@ -4,6 +4,7 @@ import {
   cycleDebugBrushTileId,
   getDesktopDebugOverlayHotkeyLabel,
   getDesktopDebugEditOverlaysHotkeyLabel,
+  getDesktopFreshWorldHotkeyLabel,
   getDesktopPlayerSpawnMarkerHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel,
   getDesktopReturnToMainMenuHotkeyLabel,
@@ -62,6 +63,31 @@ describe('resolveDebugEditShortcutAction', () => {
     });
     expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'Q', shiftKey: true }))).toEqual({
       type: 'return-to-main-menu'
+    });
+  });
+
+  it('maps N to a fresh-world action only when the paused main menu enables it', () => {
+    expect(
+      resolveDebugEditShortcutAction(keyboardEventLike({ key: 'n' }), {
+        pausedMainMenuFreshWorldAvailable: true
+      })
+    ).toEqual({
+      type: 'start-fresh-world-session'
+    });
+    expect(
+      resolveDebugEditShortcutAction(keyboardEventLike({ key: 'N', shiftKey: true }), {
+        pausedMainMenuFreshWorldAvailable: true
+      })
+    ).toEqual({
+      type: 'start-fresh-world-session'
+    });
+    expect(
+      resolveDebugEditShortcutAction(keyboardEventLike({ key: 'n' }), {
+        pausedMainMenuFreshWorldAvailable: false
+      })
+    ).toEqual({
+      type: 'arm-line',
+      kind: 'place'
     });
   });
 
@@ -251,6 +277,10 @@ describe('brush shortcut helpers', () => {
 
   it('returns the desktop return-to-main-menu hotkey label', () => {
     expect(getDesktopReturnToMainMenuHotkeyLabel()).toBe('Q');
+  });
+
+  it('returns the desktop fresh-world hotkey label', () => {
+    expect(getDesktopFreshWorldHotkeyLabel()).toBe('N');
   });
 
   it('returns the desktop debug-overlay hotkey label', () => {

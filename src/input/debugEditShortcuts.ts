@@ -11,9 +11,14 @@ export interface DebugEditShortcutKeyEventLike {
   altKey: boolean;
 }
 
+export interface DebugEditShortcutContext {
+  pausedMainMenuFreshWorldAvailable?: boolean;
+}
+
 export type DebugEditShortcutAction =
   | { type: 'undo' }
   | { type: 'redo' }
+  | { type: 'start-fresh-world-session' }
   | { type: 'return-to-main-menu' }
   | { type: 'recenter-camera' }
   | { type: 'toggle-debug-overlay' }
@@ -81,6 +86,7 @@ export const getTouchDebugEditModeHotkeyLabel = (mode: 'pan' | 'place' | 'break'
 };
 
 export const getDesktopReturnToMainMenuHotkeyLabel = (): string => 'Q';
+export const getDesktopFreshWorldHotkeyLabel = (): string => 'N';
 export const getDesktopRecenterCameraHotkeyLabel = (): string => 'C';
 export const getDesktopDebugOverlayHotkeyLabel = (): string => 'H';
 export const getDesktopDebugEditOverlaysHotkeyLabel = (): string => 'V';
@@ -118,7 +124,8 @@ export const cycleDebugBrushTileId = (
 };
 
 export const resolveDebugEditShortcutAction = (
-  event: DebugEditShortcutKeyEventLike
+  event: DebugEditShortcutKeyEventLike,
+  context: DebugEditShortcutContext = {}
 ): DebugEditShortcutAction | null => {
   const normalizedKey = event.key.toLowerCase();
   const hasCommandModifier = event.ctrlKey || event.metaKey;
@@ -161,6 +168,13 @@ export const resolveDebugEditShortcutAction = (
 
   if (normalizedKey === getDesktopPlayerSpawnMarkerHotkeyLabel().toLowerCase()) {
     return { type: 'toggle-player-spawn-marker' };
+  }
+
+  if (
+    context.pausedMainMenuFreshWorldAvailable === true &&
+    normalizedKey === getDesktopFreshWorldHotkeyLabel().toLowerCase()
+  ) {
+    return { type: 'start-fresh-world-session' };
   }
 
   const code = event.code ?? '';

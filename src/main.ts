@@ -1033,8 +1033,15 @@ const bootstrap = async (): Promise<void> => {
     if (event.defaultPrevented) return;
     if (isEditableKeyboardShortcutTarget(event.target)) return;
 
-    const action = resolveDebugEditShortcutAction(event);
+    const action = resolveDebugEditShortcutAction(event, {
+      pausedMainMenuFreshWorldAvailable: currentScreen === 'main-menu' && worldSessionStarted
+    });
     if (!action) return;
+    if (action.type === 'start-fresh-world-session') {
+      event.preventDefault();
+      startFreshWorldSessionFromMainMenu();
+      return;
+    }
     if (currentScreen !== 'in-world') return;
     event.preventDefault();
 

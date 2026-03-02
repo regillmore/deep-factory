@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Add a desktop keyboard shortcut on the paused main menu that starts a fresh world through the existing reset path.
+- Changes: Updated [src/input/debugEditShortcuts.ts](../src/input/debugEditShortcuts.ts) plus [src/input/debugEditShortcuts.test.ts](../src/input/debugEditShortcuts.test.ts) to expose a context-aware paused-menu `start-fresh-world-session` shortcut action on `N` without stealing the in-world line-tool hotkey, wired [src/main.ts](../src/main.ts) to route that action through the existing paused-menu world reset path only when a resumable session exists, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/input/debugEditShortcuts.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a paused-main-menu shell action that abandons the current session and boots a fresh world.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so a paused main menu can expose a secondary `New World` action beside `Resume World`, added [src/gl/renderer.ts](../src/gl/renderer.ts) plus [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) reset coverage so the renderer can replace its active `TileWorld` and clear cached meshes without reinitializing WebGL, wired [src/main.ts](../src/main.ts) so `New World` resets world, player, camera, undo history, and shell toggle state back through the first-start path while preserving initialized renderer/input and persisted debug-edit prefs, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DECISIONS.md](docs/DECISIONS.md), and [README.md](../README.md).
 - Verification: Ran `npx vitest run src/ui/appShell.test.ts src/gl/renderer.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
