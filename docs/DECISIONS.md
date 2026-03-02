@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-02: Default animated atlas-index frames must differ in committed atlas content
+
+- Decision: Consecutive default animation frames that resolve through authored atlas indices must not point at identical committed PNG pixels.
+- Reason: Atlas-index animation metadata can otherwise exercise the renderer path while shipping a visually static repeated frame, which hides authored-asset drift until later art work builds on it.
+- Consequence: Future atlas-index animation authoring should change committed atlas content from one frame to the next whenever a tile is intended to animate visibly.
+
 ### 2026-03-02: Default direct `render.uvRect` tiles must point at visible committed atlas content
 
 - Decision: Default tile metadata that uses direct `render.uvRect` mapping must resolve to a committed atlas sub-rect containing at least one non-transparent pixel.

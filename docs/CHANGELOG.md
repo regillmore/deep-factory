@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Add an authored-atlas asset regression test that each default animated atlas-index frame differs from its prior frame in the committed PNG.
+- Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) to enumerate consecutive atlas-index animation frames from default tile metadata, compare their committed PNG regions pixel-for-pixel, and fail when any animated frame repeats its prior atlas art; then advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Add an authored-atlas asset regression test that direct `render.uvRect` default metadata only references committed PNG rects containing at least one non-transparent pixel.
 - Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) to enumerate default direct-`render.uvRect` tiles, convert their committed PNG sub-rects into whole-pixel bounds, and assert that each referenced rect contains visible atlas content; then advanced [docs/NEXT.md](docs/NEXT.md) to remove the stale completed renderer regression, keep the remaining authored-atlas follow-up, and add two new replacement asset checks while updating [docs/CAPABILITIES.md](docs/CAPABILITIES.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
