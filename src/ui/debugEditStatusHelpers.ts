@@ -8,6 +8,7 @@ import {
   type DebugTileEditKind,
   type TouchDebugEditMode
 } from '../input/controller';
+import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
 import type { PlayerRespawnEventKind } from '../world/playerRespawnEvent';
 import type { PlayerWallContactTransitionKind } from '../world/playerWallContactTransition';
 import type { TileLiquidKind } from '../world/tileMetadata';
@@ -28,6 +29,7 @@ export interface DebugEditStatusStripState {
   desktopInspectPinArmed: boolean;
   playerRespawn?: DebugEditStatusStripPlayerRespawnTelemetry | null;
   playerWallContactTransition?: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null;
+  playerCeilingContactTransition?: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null;
 }
 
 export interface DebugEditStatusStripModel {
@@ -68,6 +70,13 @@ export interface DebugEditStatusStripPlayerRespawnTelemetry {
 
 export interface DebugEditStatusStripPlayerWallContactTransitionTelemetry {
   kind: PlayerWallContactTransitionKind;
+  tile: { x: number; y: number; id: number };
+  position: { x: number; y: number };
+  velocity: { x: number; y: number };
+}
+
+export interface DebugEditStatusStripPlayerCeilingContactTransitionTelemetry {
+  kind: PlayerCeilingContactTransitionKind;
   tile: { x: number; y: number; id: number };
   position: { x: number; y: number };
   velocity: { x: number; y: number };
@@ -396,13 +405,33 @@ const formatWallContactTransitionEventText = (
   );
 };
 
+const formatCeilingContactTransitionEventText = (
+  playerCeilingContactTransition: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null
+): string | null => {
+  if (!playerCeilingContactTransition) {
+    return null;
+  }
+
+  return (
+    `Ceiling: ${playerCeilingContactTransition.kind} | ` +
+    `tile ${formatTileCoordinatePair(
+      playerCeilingContactTransition.tile.x,
+      playerCeilingContactTransition.tile.y
+    )} (#${playerCeilingContactTransition.tile.id}) | ` +
+    `pos ${playerCeilingContactTransition.position.x.toFixed(2)},${playerCeilingContactTransition.position.y.toFixed(2)} | ` +
+    `vel ${playerCeilingContactTransition.velocity.x.toFixed(2)},${playerCeilingContactTransition.velocity.y.toFixed(2)}`
+  );
+};
+
 const buildEventText = (
   playerRespawn: DebugEditStatusStripPlayerRespawnTelemetry | null,
-  playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null
+  playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null,
+  playerCeilingContactTransition: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null
 ): string | null => {
   const eventLines = [
     formatRespawnEventText(playerRespawn),
-    formatWallContactTransitionEventText(playerWallContactTransition)
+    formatWallContactTransitionEventText(playerWallContactTransition),
+    formatCeilingContactTransitionEventText(playerCeilingContactTransition)
   ].filter((line): line is string => line !== null);
 
   return eventLines.length > 0 ? eventLines.join('\n') : null;
@@ -806,13 +835,18 @@ export const buildDebugEditStatusStripModel = (
   const activeToolStatus = resolveActiveDebugToolStatus(state.preview);
   const playerRespawn = state.playerRespawn ?? null;
   const playerWallContactTransition = state.playerWallContactTransition ?? null;
+  const playerCeilingContactTransition = state.playerCeilingContactTransition ?? null;
 
   return {
     modeText: `Mode: ${formatTouchDebugEditModeLabel(state.mode)}`,
     brushText: `Brush: ${state.brushLabel} (#${state.brushTileId})`,
     toolText: activeToolStatus ? `Tool: ${activeToolStatus.title}` : 'Tool: No one-shot armed',
     previewText: buildPreviewText(state.preview, state.hoveredTile),
-    eventText: buildEventText(playerRespawn, playerWallContactTransition),
+    eventText: buildEventText(
+      playerRespawn,
+      playerWallContactTransition,
+      playerCeilingContactTransition
+    ),
     inspectText: buildInspectText(state),
     hoverText: buildHoveredTileText(state.hoveredTile, state.pinnedTile),
     hintText: activeToolStatus

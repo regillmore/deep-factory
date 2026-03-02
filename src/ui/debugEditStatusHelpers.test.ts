@@ -154,6 +154,26 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBe('Wall: blocked | tile 5,-3 (#7) | pos 88.00,-24.00 | vel -180.00,60.00');
   });
 
+  it('formats the latest ceiling-contact transition event for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerCeilingContactTransition: {
+        kind: 'blocked',
+        tile: { x: 2, y: -6, id: 8 },
+        position: { x: 72, y: -48 },
+        velocity: { x: 15, y: -210 }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.eventText).toBe('Ceiling: blocked | tile 2,-6 (#8) | pos 72.00,-48.00 | vel 15.00,-210.00');
+  });
+
   it('keeps respawn and wall-contact telemetry on separate wrap-friendly event lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -180,6 +200,42 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBe(
       'Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
         'Wall: cleared | tile -1,-2 (#4) | pos 64.00,-16.00 | vel 120.00,0.00'
+    );
+  });
+
+  it('keeps respawn, wall-contact, and ceiling-contact telemetry on separate wrap-friendly event lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerRespawn: {
+        kind: 'embedded',
+        spawnTile: { x: 3, y: -2 },
+        position: { x: 56, y: -32 },
+        velocity: { x: 0, y: 0 }
+      },
+      playerWallContactTransition: {
+        kind: 'cleared',
+        tile: { x: -1, y: -2, id: 4 },
+        position: { x: 64, y: -16 },
+        velocity: { x: 120, y: 0 }
+      },
+      playerCeilingContactTransition: {
+        kind: 'blocked',
+        tile: { x: 2, y: -6, id: 8 },
+        position: { x: 72, y: -48 },
+        velocity: { x: 15, y: -210 }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.eventText).toBe(
+      'Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
+        'Wall: cleared | tile -1,-2 (#4) | pos 64.00,-16.00 | vel 120.00,0.00\n' +
+        'Ceiling: blocked | tile 2,-6 (#8) | pos 72.00,-48.00 | vel 15.00,-210.00'
     );
   });
 
