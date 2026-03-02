@@ -33,7 +33,7 @@ import {
   resolveDebugEditShortcutAction
 } from './input/debugEditShortcuts';
 import { DebugOverlay } from './ui/debugOverlay';
-import { AppShell } from './ui/appShell';
+import { AppShell, type AppShellScreen } from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
@@ -67,6 +67,12 @@ import { getTileMetadata, resolveTileGameplayMetadata, TILE_METADATA } from './w
 
 const DEBUG_TILE_BREAK_ID = 0;
 const PREFERRED_INITIAL_DEBUG_BRUSH_TILE_NAME = 'debug_brick';
+const PAUSED_MAIN_MENU_STATUS =
+  'World session paused. Resume when you want the fixed-step simulation and live controls to continue.';
+const PAUSED_MAIN_MENU_DETAIL_LINES = [
+  'Returning here keeps the initialized world, player state, and debug edits intact.',
+  'Resume returns to that same mixed-device session without rebuilding renderer state.'
+] as const;
 
 const formatDebugBrushLabel = (tileName: string): string => tileName.replace(/_/g, ' ');
 const isEditableKeyboardShortcutTarget = (target: EventTarget | null): boolean => {
@@ -116,23 +122,35 @@ if (!app) throw new Error('Missing #app root element');
 
 const bootstrap = async (): Promise<void> => {
   const touchControlsAvailable = supportsTouchPlayerControls();
-  let worldStarted = false;
+  let worldSessionStarted = false;
+  let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
   let debugOverlayVisible = false;
   let debugEditControlsVisible = touchControlsAvailable;
   let debugEditOverlaysVisible = true;
   let playerSpawnMarkerVisible = true;
   const shell = new AppShell(app, {
-      onPrimaryAction: (screen) => {
-        if (screen !== 'main-menu' || worldStarted || loop === null) return;
-        worldStarted = true;
-        syncInWorldShellState();
-        syncDebugOverlayVisibility();
-        syncDebugEditControlsVisibility();
-        syncDebugEditOverlayVisibility();
-        syncPlayerSpawnMarkerVisibility();
-        loop.start();
-      },
+    onPrimaryAction: (screen) => {
+      if (screen !== 'main-menu' || loop === null) return;
+      currentScreen = 'in-world';
+      syncInWorldShellState();
+      syncDebugOverlayVisibility();
+      syncDebugEditControlsVisibility();
+      syncDebugEditOverlayVisibility();
+      syncPlayerSpawnMarkerVisibility();
+      if (worldSessionStarted) return;
+      worldSessionStarted = true;
+      loop.start();
+    },
+    onReturnToMainMenu: (screen) => {
+      if (screen !== 'in-world') return;
+      currentScreen = 'main-menu';
+      showMainMenuShellState();
+      syncDebugOverlayVisibility();
+      syncDebugEditControlsVisibility();
+      syncDebugEditOverlayVisibility();
+      syncPlayerSpawnMarkerVisibility();
+    },
     onRecenterCamera: (screen) => {
       if (screen !== 'in-world') return;
       centerCameraOnStandalonePlayer();
@@ -191,6 +209,7 @@ const bootstrap = async (): Promise<void> => {
   const debugEditStatusStrip = new DebugEditStatusStrip(canvas);
   let debugEditControls: TouchDebugEditControls | null = null;
   const syncInWorldShellState = (): void => {
+    currentScreen = 'in-world';
     shell.setState({
       screen: 'in-world',
       debugOverlayVisible,
@@ -199,20 +218,33 @@ const bootstrap = async (): Promise<void> => {
       playerSpawnMarkerVisible
     });
   };
+  const showMainMenuShellState = (): void => {
+    currentScreen = 'main-menu';
+    shell.setState(
+      worldSessionStarted
+        ? {
+            screen: 'main-menu',
+            statusText: PAUSED_MAIN_MENU_STATUS,
+            detailLines: PAUSED_MAIN_MENU_DETAIL_LINES,
+            primaryActionLabel: 'Resume World'
+          }
+        : { screen: 'main-menu' }
+    );
+  };
   const syncDebugOverlayVisibility = (): void => {
-    debug.setVisible(worldStarted && debugOverlayVisible);
+    debug.setVisible(currentScreen === 'in-world' && debugOverlayVisible);
   };
   const syncDebugEditOverlayVisibility = (): void => {
-    const visible = worldStarted && debugEditOverlaysVisible;
+    const visible = currentScreen === 'in-world' && debugEditOverlaysVisible;
     hoveredTileCursor.setVisible(visible);
     armedDebugToolPreview.setVisible(visible);
     debugEditStatusStrip.setVisible(visible);
   };
   const syncDebugEditControlsVisibility = (): void => {
-    debugEditControls?.setVisible(worldStarted && debugEditControlsVisible);
+    debugEditControls?.setVisible(currentScreen === 'in-world' && debugEditControlsVisible);
   };
   const syncPlayerSpawnMarkerVisibility = (): void => {
-    playerSpawnMarker.setVisible(worldStarted && playerSpawnMarkerVisible);
+    playerSpawnMarker.setVisible(currentScreen === 'in-world' && playerSpawnMarkerVisible);
   };
   syncDebugOverlayVisibility();
   syncDebugEditControlsVisibility();
@@ -804,7 +836,7 @@ const bootstrap = async (): Promise<void> => {
   };
 
   debugEditControls = new TouchDebugEditControls({
-    initialVisible: worldStarted && debugEditControlsVisible,
+    initialVisible: false,
     initialMode: input.getTouchDebugEditMode(),
     onModeChange: (mode) => {
       input.setTouchDebugEditMode(mode);
@@ -944,6 +976,7 @@ const bootstrap = async (): Promise<void> => {
 
     const action = resolveDebugEditShortcutAction(event);
     if (!action) return;
+    if (currentScreen !== 'in-world') return;
     event.preventDefault();
 
     let handled = false;
@@ -952,31 +985,25 @@ const bootstrap = async (): Promise<void> => {
     } else if (action.type === 'redo') {
       handled = redoDebugTileStroke();
     } else if (action.type === 'recenter-camera') {
-      handled = worldStarted && standalonePlayerState !== null;
+      handled = standalonePlayerState !== null;
       if (handled) {
         centerCameraOnStandalonePlayer();
       }
     } else if (action.type === 'toggle-debug-overlay') {
-      handled = worldStarted;
-      if (handled) {
-        debugOverlayVisible = !debugOverlayVisible;
-        syncInWorldShellState();
-        syncDebugOverlayVisibility();
-      }
+      handled = true;
+      debugOverlayVisible = !debugOverlayVisible;
+      syncInWorldShellState();
+      syncDebugOverlayVisibility();
     } else if (action.type === 'toggle-debug-edit-overlays') {
-      handled = worldStarted;
-      if (handled) {
-        debugEditOverlaysVisible = !debugEditOverlaysVisible;
-        syncInWorldShellState();
-        syncDebugEditOverlayVisibility();
-      }
+      handled = true;
+      debugEditOverlaysVisible = !debugEditOverlaysVisible;
+      syncInWorldShellState();
+      syncDebugEditOverlayVisibility();
     } else if (action.type === 'toggle-player-spawn-marker') {
-      handled = worldStarted;
-      if (handled) {
-        playerSpawnMarkerVisible = !playerSpawnMarkerVisible;
-        syncInWorldShellState();
-        syncPlayerSpawnMarkerVisibility();
-      }
+      handled = true;
+      playerSpawnMarkerVisible = !playerSpawnMarkerVisible;
+      syncInWorldShellState();
+      syncPlayerSpawnMarkerVisibility();
     } else if (action.type === 'cancel-armed-tools') {
       handled = input.cancelArmedDebugTools();
       if (handled) {
@@ -1177,6 +1204,7 @@ const bootstrap = async (): Promise<void> => {
   loop = new GameLoop(
     1000 / 60,
     (fixedDt) => {
+      if (currentScreen !== 'in-world') return;
       input.update(fixedDt);
       for (const edit of input.consumeDebugTileEdits()) {
         const tileId = edit.kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
@@ -1331,7 +1359,14 @@ const bootstrap = async (): Promise<void> => {
         applyStandalonePlayerCameraFollow();
       }
     },
-    (_alpha, frameDtMs) => renderWorldFrame(frameDtMs)
+    (_alpha, frameDtMs) => {
+      if (currentScreen !== 'in-world') {
+        renderWorldPreview();
+        return;
+      }
+
+      renderWorldFrame(frameDtMs);
+    }
   );
 
   try {
@@ -1352,11 +1387,11 @@ const bootstrap = async (): Promise<void> => {
   renderer.resize();
   refreshResolvedPlayerSpawn();
   renderWorldPreview();
-  shell.setState({ screen: 'main-menu' });
+  showMainMenuShellState();
 
   window.addEventListener('resize', () => {
     renderer.resize();
-    if (!worldStarted) {
+    if (!worldSessionStarted || currentScreen !== 'in-world') {
       renderWorldPreview();
     }
   });

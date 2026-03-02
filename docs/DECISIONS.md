@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Upcoming shell and menu work needs a stable state boundary above renderer/input bootstrap instead of auto-starting gameplay directly from `main.ts`.
 - Consequence: Future shell, pause, and menu tasks should transition through the app-shell state model rather than assuming world simulation begins as soon as bootstrap finishes.
 
+### 2026-03-02: Returning to the main menu pauses and preserves the current world session
+
+- Decision: Leaving `in-world` through the shell's `Main Menu` action now returns to the main menu without rebuilding renderer, world, player, or debug-edit state; the same session resumes through the menu's primary action.
+- Reason: Shell navigation needs a reversible pause boundary before reset or multi-session work lands, and that boundary should preserve the current mixed-device runtime instead of treating menu navigation as a hard restart.
+- Consequence: Future main-menu, pause, or shortcut work should treat `main menu` as a resumable paused-shell state once a world session exists, and should introduce explicit reset paths instead of implicitly reinitializing the world on every menu return.
+
 ### 2026-03-02: Debug HUD visibility is controlled by in-world shell chrome
 
 - Decision: The text debug overlay now defaults hidden and is shown only when the in-world shell toggle enables it.

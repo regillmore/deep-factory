@@ -28,6 +28,7 @@ export interface AppShellViewModel {
   statusText: string;
   detailLines: readonly string[];
   primaryActionLabel: string | null;
+  returnToMainMenuActionLabel: string | null;
   recenterCameraActionLabel: string | null;
   debugOverlayToggleLabel: string | null;
   debugOverlayTogglePressed: boolean;
@@ -41,6 +42,7 @@ export interface AppShellViewModel {
 
 interface AppShellOptions {
   onPrimaryAction?: (screen: AppShellScreen) => void;
+  onReturnToMainMenu?: (screen: AppShellScreen) => void;
   onRecenterCamera?: (screen: AppShellScreen) => void;
   onToggleDebugOverlay?: (screen: AppShellScreen) => void;
   onToggleDebugEditControls?: (screen: AppShellScreen) => void;
@@ -76,6 +78,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         statusText: state.statusText ?? DEFAULT_BOOT_STATUS,
         detailLines: state.detailLines ?? DEFAULT_BOOT_DETAIL_LINES,
         primaryActionLabel: state.primaryActionLabel ?? null,
+        returnToMainMenuActionLabel: null,
         recenterCameraActionLabel: null,
         debugOverlayToggleLabel: null,
         debugOverlayTogglePressed: false,
@@ -96,6 +99,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         statusText: state.statusText ?? DEFAULT_MAIN_MENU_STATUS,
         detailLines: state.detailLines ?? DEFAULT_MAIN_MENU_DETAIL_LINES,
         primaryActionLabel: state.primaryActionLabel ?? 'Enter World',
+        returnToMainMenuActionLabel: null,
         recenterCameraActionLabel: null,
         debugOverlayToggleLabel: null,
         debugOverlayTogglePressed: false,
@@ -116,6 +120,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         statusText: state.statusText ?? '',
         detailLines: state.detailLines ?? [],
         primaryActionLabel: null,
+        returnToMainMenuActionLabel: 'Main Menu',
         recenterCameraActionLabel: 'Recenter Camera',
         debugOverlayToggleLabel:
           state.debugOverlayVisible === true ? 'Hide Debug HUD' : 'Show Debug HUD',
@@ -138,6 +143,7 @@ export class AppShell {
   private worldHost: HTMLDivElement;
   private overlay: HTMLDivElement;
   private chrome: HTMLDivElement;
+  private returnToMainMenuActionButton: HTMLButtonElement;
   private recenterCameraActionButton: HTMLButtonElement;
   private debugOverlayToggleButton: HTMLButtonElement;
   private debugEditControlsToggleButton: HTMLButtonElement;
@@ -149,6 +155,7 @@ export class AppShell {
   private detailList: HTMLUListElement;
   private primaryButton: HTMLButtonElement;
   private onPrimaryAction: (screen: AppShellScreen) => void;
+  private onReturnToMainMenu: (screen: AppShellScreen) => void;
   private onRecenterCamera: (screen: AppShellScreen) => void;
   private onToggleDebugOverlay: (screen: AppShellScreen) => void;
   private onToggleDebugEditControls: (screen: AppShellScreen) => void;
@@ -158,6 +165,7 @@ export class AppShell {
 
   constructor(container: HTMLElement, options: AppShellOptions = {}) {
     this.onPrimaryAction = options.onPrimaryAction ?? (() => {});
+    this.onReturnToMainMenu = options.onReturnToMainMenu ?? (() => {});
     this.onRecenterCamera = options.onRecenterCamera ?? (() => {});
     this.onToggleDebugOverlay = options.onToggleDebugOverlay ?? (() => {});
     this.onToggleDebugEditControls = options.onToggleDebugEditControls ?? (() => {});
@@ -174,6 +182,15 @@ export class AppShell {
     this.chrome = document.createElement('div');
     this.chrome.className = 'app-shell__chrome';
     this.root.append(this.chrome);
+
+    this.returnToMainMenuActionButton = document.createElement('button');
+    this.returnToMainMenuActionButton.type = 'button';
+    this.returnToMainMenuActionButton.className = 'app-shell__chrome-button';
+    this.returnToMainMenuActionButton.addEventListener('click', () =>
+      this.onReturnToMainMenu(this.currentState.screen)
+    );
+    installPointerClickFocusRelease(this.returnToMainMenuActionButton);
+    this.chrome.append(this.returnToMainMenuActionButton);
 
     this.recenterCameraActionButton = document.createElement('button');
     this.recenterCameraActionButton.type = 'button';
@@ -282,6 +299,10 @@ export class AppShell {
     this.detailList.style.display = resolveAppShellRegionDisplay(viewModel.detailLines.length > 0, 'grid');
     this.primaryButton.textContent = viewModel.primaryActionLabel ?? '';
     this.primaryButton.hidden = viewModel.primaryActionLabel === null;
+    this.returnToMainMenuActionButton.textContent = viewModel.returnToMainMenuActionLabel ?? '';
+    this.returnToMainMenuActionButton.hidden = viewModel.returnToMainMenuActionLabel === null;
+    this.returnToMainMenuActionButton.title =
+      'Return to the main menu without discarding the current world session';
     this.recenterCameraActionButton.textContent = viewModel.recenterCameraActionLabel ?? '';
     this.recenterCameraActionButton.hidden = viewModel.recenterCameraActionLabel === null;
     this.recenterCameraActionButton.title = `Center the camera on the standalone player and clear manual follow offset (${getDesktopRecenterCameraHotkeyLabel()})`;

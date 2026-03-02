@@ -44,8 +44,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## App shell
 
 27. Add grounded-walk placeholder pose variants to the renderer-side standalone player draw pass so horizontal movement direction reads before sprite assets land.
-28. Add an in-world shell action that returns to the main menu without discarding the initialized world session.
 57. Add a desktop keyboard shortcut that returns to the main menu from the in-world session without discarding the initialized world session.
+58. Add a main-menu shell action that abandons the paused world session and boots a fresh world from the existing startup path.
 
 ## Player debugging
 
