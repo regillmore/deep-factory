@@ -43,6 +43,10 @@ import { TouchPlayerControls } from './ui/touchPlayerControls';
 import { CHUNK_SIZE } from './world/constants';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
 import {
+  resolvePlayerCeilingContactTransitionEvent,
+  type PlayerCeilingContactTransitionEvent
+} from './world/playerCeilingContactTransition';
+import {
   resolvePlayerGroundedTransitionEvent,
   type PlayerGroundedTransitionEvent
 } from './world/playerGroundedTransition';
@@ -190,6 +194,7 @@ const bootstrap = async (): Promise<void> => {
   let lastAppliedPlayerFollowCameraPosition: CameraFollowPoint | null = null;
   let lastPlayerGroundedTransitionEvent: PlayerGroundedTransitionEvent | null = null;
   let lastPlayerWallContactTransitionEvent: PlayerWallContactTransitionEvent | null = null;
+  let lastPlayerCeilingContactTransitionEvent: PlayerCeilingContactTransitionEvent | null = null;
 
   const applyStandalonePlayerCameraFollow = (): void => {
     if (!standalonePlayerState) {
@@ -227,6 +232,7 @@ const bootstrap = async (): Promise<void> => {
       standalonePlayerState = createPlayerStateFromSpawn(resolvedPlayerSpawn);
       lastPlayerGroundedTransitionEvent = null;
       lastPlayerWallContactTransitionEvent = null;
+      lastPlayerCeilingContactTransitionEvent = null;
       centerCameraOnStandalonePlayer();
       return;
     }
@@ -239,6 +245,7 @@ const bootstrap = async (): Promise<void> => {
       if (nextPlayerState !== standalonePlayerState) {
         lastPlayerGroundedTransitionEvent = null;
         lastPlayerWallContactTransitionEvent = null;
+        lastPlayerCeilingContactTransitionEvent = null;
       }
       standalonePlayerState = nextPlayerState;
     }
@@ -1073,7 +1080,8 @@ const bootstrap = async (): Promise<void> => {
       playerIntent: debugOverlayPlayerIntent,
       playerCameraFollow: debugOverlayPlayerCameraFollow,
       playerGroundedTransition: lastPlayerGroundedTransitionEvent,
-      playerWallContactTransition: lastPlayerWallContactTransitionEvent
+      playerWallContactTransition: lastPlayerWallContactTransitionEvent,
+      playerCeilingContactTransition: lastPlayerCeilingContactTransitionEvent
     });
   };
 
@@ -1223,12 +1231,20 @@ const bootstrap = async (): Promise<void> => {
           nextPlayerState,
           nextPlayerContacts
         );
+        const ceilingContactTransitionEvent = resolvePlayerCeilingContactTransitionEvent(
+          previousPlayerContacts,
+          nextPlayerState,
+          nextPlayerContacts
+        );
         standalonePlayerState = nextPlayerState;
         if (groundedTransitionEvent !== null) {
           lastPlayerGroundedTransitionEvent = groundedTransitionEvent;
         }
         if (wallContactTransitionEvent !== null) {
           lastPlayerWallContactTransitionEvent = wallContactTransitionEvent;
+        }
+        if (ceilingContactTransitionEvent !== null) {
+          lastPlayerCeilingContactTransitionEvent = ceilingContactTransitionEvent;
         }
         applyStandalonePlayerCameraFollow();
       }

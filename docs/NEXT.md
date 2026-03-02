@@ -50,4 +50,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Player debugging
 
 31. Surface standalone player auto-respawn events in the debug overlay when embedded-tile recovery triggers.
-36. Surface standalone player ceiling-contact transition events in the debug overlay when upward collision blocking appears or clears between fixed steps.
+37. Surface standalone player facing-transition events in the debug overlay when horizontal movement flips left or right between fixed steps.
