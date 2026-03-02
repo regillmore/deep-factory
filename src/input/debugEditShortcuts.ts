@@ -14,6 +14,7 @@ export interface DebugEditShortcutKeyEventLike {
 export type DebugEditShortcutAction =
   | { type: 'undo' }
   | { type: 'redo' }
+  | { type: 'return-to-main-menu' }
   | { type: 'recenter-camera' }
   | { type: 'toggle-debug-overlay' }
   | { type: 'toggle-debug-edit-overlays' }
@@ -79,6 +80,7 @@ export const getTouchDebugEditModeHotkeyLabel = (mode: 'pan' | 'place' | 'break'
   return 'B';
 };
 
+export const getDesktopReturnToMainMenuHotkeyLabel = (): string => 'Q';
 export const getDesktopRecenterCameraHotkeyLabel = (): string => 'C';
 export const getDesktopDebugOverlayHotkeyLabel = (): string => 'H';
 export const getDesktopDebugEditOverlaysHotkeyLabel = (): string => 'V';
@@ -139,6 +141,10 @@ export const resolveDebugEditShortcutAction = (
 
   if (normalizedKey === 'escape' || normalizedKey === 'esc') {
     return { type: 'cancel-armed-tools' };
+  }
+
+  if (normalizedKey === getDesktopReturnToMainMenuHotkeyLabel().toLowerCase()) {
+    return { type: 'return-to-main-menu' };
   }
 
   if (normalizedKey === getDesktopRecenterCameraHotkeyLabel().toLowerCase()) {

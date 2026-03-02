@@ -6,6 +6,7 @@ import {
   getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopPlayerSpawnMarkerHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel,
+  getDesktopReturnToMainMenuHotkeyLabel,
   getDebugEditPanelToggleHotkeyLabel,
   getDebugBrushSlotHotkeyLabel,
   getDebugOneShotToolHotkeyLabel,
@@ -52,6 +53,15 @@ describe('resolveDebugEditShortcutAction', () => {
     });
     expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'C', shiftKey: true }))).toEqual({
       type: 'recenter-camera'
+    });
+  });
+
+  it('maps Q to return to the main menu', () => {
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'q' }))).toEqual({
+      type: 'return-to-main-menu'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'Q', shiftKey: true }))).toEqual({
+      type: 'return-to-main-menu'
     });
   });
 
@@ -237,6 +247,10 @@ describe('brush shortcut helpers', () => {
 
   it('returns the desktop recenter-camera hotkey label', () => {
     expect(getDesktopRecenterCameraHotkeyLabel()).toBe('C');
+  });
+
+  it('returns the desktop return-to-main-menu hotkey label', () => {
+    expect(getDesktopReturnToMainMenuHotkeyLabel()).toBe('Q');
   });
 
   it('returns the desktop debug-overlay hotkey label', () => {

@@ -3,7 +3,8 @@ import {
   getDesktopDebugOverlayHotkeyLabel,
   getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopPlayerSpawnMarkerHotkeyLabel,
-  getDesktopRecenterCameraHotkeyLabel
+  getDesktopRecenterCameraHotkeyLabel,
+  getDesktopReturnToMainMenuHotkeyLabel
 } from '../input/debugEditShortcuts';
 
 export type AppShellScreen = 'boot' | 'main-menu' | 'in-world';
@@ -301,8 +302,7 @@ export class AppShell {
     this.primaryButton.hidden = viewModel.primaryActionLabel === null;
     this.returnToMainMenuActionButton.textContent = viewModel.returnToMainMenuActionLabel ?? '';
     this.returnToMainMenuActionButton.hidden = viewModel.returnToMainMenuActionLabel === null;
-    this.returnToMainMenuActionButton.title =
-      'Return to the main menu without discarding the current world session';
+    this.returnToMainMenuActionButton.title = `Return to the main menu without discarding the current world session (${getDesktopReturnToMainMenuHotkeyLabel()})`;
     this.recenterCameraActionButton.textContent = viewModel.recenterCameraActionLabel ?? '';
     this.recenterCameraActionButton.hidden = viewModel.recenterCameraActionLabel === null;
     this.recenterCameraActionButton.title = `Center the camera on the standalone player and clear manual follow offset (${getDesktopRecenterCameraHotkeyLabel()})`;

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Add a desktop keyboard shortcut that returns to the main menu from the in-world session without discarding the initialized world session.
+- Changes: Updated [src/input/debugEditShortcuts.ts](../src/input/debugEditShortcuts.ts) plus [src/input/debugEditShortcuts.test.ts](../src/input/debugEditShortcuts.test.ts) to expose a dedicated `return-to-main-menu` shortcut action on `Q`, wired [src/main.ts](../src/main.ts) to route that shortcut through the existing session-preserving shell transition, refreshed [src/ui/appShell.ts](../src/ui/appShell.ts), [src/ui/touchDebugEditControls.ts](../src/ui/touchDebugEditControls.ts), [docs/CAPABILITIES.md](docs/CAPABILITIES.md), and [README.md](../README.md) with the new hotkey hint, and advanced [docs/NEXT.md](docs/NEXT.md) with one focused replacement task.
+- Verification: Ran `npx vitest run src/input/debugEditShortcuts.test.ts src/ui/appShell.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an in-world shell action that returns to the main menu without discarding the initialized world session.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the in-world shell chrome now exposes a dedicated `Main Menu` action and explicit resumable main-menu copy, wired [src/main.ts](../src/main.ts) so returning to the menu pauses fixed-step world updates and in-world overlay visibility while preserving the initialized renderer, world, player, and debug-edit session for a later `Resume World`, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DECISIONS.md](docs/DECISIONS.md), and [README.md](../README.md).
 - Verification: Ran `npx vitest run src/ui/appShell.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

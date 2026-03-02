@@ -129,6 +129,15 @@ const bootstrap = async (): Promise<void> => {
   let debugEditControlsVisible = touchControlsAvailable;
   let debugEditOverlaysVisible = true;
   let playerSpawnMarkerVisible = true;
+  const returnToMainMenuFromInWorld = (): void => {
+    if (currentScreen !== 'in-world') return;
+    currentScreen = 'main-menu';
+    showMainMenuShellState();
+    syncDebugOverlayVisibility();
+    syncDebugEditControlsVisibility();
+    syncDebugEditOverlayVisibility();
+    syncPlayerSpawnMarkerVisibility();
+  };
   const shell = new AppShell(app, {
     onPrimaryAction: (screen) => {
       if (screen !== 'main-menu' || loop === null) return;
@@ -144,12 +153,7 @@ const bootstrap = async (): Promise<void> => {
     },
     onReturnToMainMenu: (screen) => {
       if (screen !== 'in-world') return;
-      currentScreen = 'main-menu';
-      showMainMenuShellState();
-      syncDebugOverlayVisibility();
-      syncDebugEditControlsVisibility();
-      syncDebugEditOverlayVisibility();
-      syncPlayerSpawnMarkerVisibility();
+      returnToMainMenuFromInWorld();
     },
     onRecenterCamera: (screen) => {
       if (screen !== 'in-world') return;
@@ -984,6 +988,9 @@ const bootstrap = async (): Promise<void> => {
       handled = undoDebugTileStroke();
     } else if (action.type === 'redo') {
       handled = redoDebugTileStroke();
+    } else if (action.type === 'return-to-main-menu') {
+      handled = true;
+      returnToMainMenuFromInWorld();
     } else if (action.type === 'recenter-camera') {
       handled = standalonePlayerState !== null;
       if (handled) {

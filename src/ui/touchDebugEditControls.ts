@@ -4,6 +4,7 @@ import {
   getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopPlayerSpawnMarkerHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel,
+  getDesktopReturnToMainMenuHotkeyLabel,
   getDebugBrushSlotHotkeyLabel,
   getDebugEditPanelToggleHotkeyLabel,
   getDebugOneShotToolHotkeyLabel,
@@ -730,6 +731,13 @@ export class TouchDebugEditControls {
     cameraShortcutLine.style.fontSize = '11px';
     cameraShortcutLine.style.lineHeight = '1.35';
     shortcutSection.append(cameraShortcutLine);
+
+    const sessionShortcutLine = document.createElement('div');
+    sessionShortcutLine.textContent = `Session: ${getDesktopReturnToMainMenuHotkeyLabel()} return to the main menu without discarding the current world`;
+    sessionShortcutLine.style.color = '#d6dde8';
+    sessionShortcutLine.style.fontSize = '11px';
+    sessionShortcutLine.style.lineHeight = '1.35';
+    shortcutSection.append(sessionShortcutLine);
 
     const hudShortcutLine = document.createElement('div');
     hudShortcutLine.textContent = `HUD: ${getDesktopDebugOverlayHotkeyLabel()} toggle debug telemetry`;
