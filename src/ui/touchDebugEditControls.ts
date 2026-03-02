@@ -1,5 +1,6 @@
 import type { TouchDebugEditMode } from '../input/controller';
 import {
+  getDesktopDebugOverlayHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel,
   getDebugBrushSlotHotkeyLabel,
   getDebugEditPanelToggleHotkeyLabel,
@@ -703,6 +704,13 @@ export class TouchDebugEditControls {
     cameraShortcutLine.style.fontSize = '11px';
     cameraShortcutLine.style.lineHeight = '1.35';
     shortcutSection.append(cameraShortcutLine);
+
+    const hudShortcutLine = document.createElement('div');
+    hudShortcutLine.textContent = `HUD: ${getDesktopDebugOverlayHotkeyLabel()} toggle debug telemetry`;
+    hudShortcutLine.style.color = '#d6dde8';
+    hudShortcutLine.style.fontSize = '11px';
+    hudShortcutLine.style.lineHeight = '1.35';
+    shortcutSection.append(hudShortcutLine);
 
     const panelShortcutLine = document.createElement('div');
     panelShortcutLine.textContent = `Panel: ${panelToggleHotkeyLabel} collapse/expand`;

@@ -940,6 +940,13 @@ const bootstrap = async (): Promise<void> => {
       if (handled) {
         centerCameraOnStandalonePlayer();
       }
+    } else if (action.type === 'toggle-debug-overlay') {
+      handled = worldStarted;
+      if (handled) {
+        debugOverlayVisible = !debugOverlayVisible;
+        syncInWorldShellState();
+        syncDebugOverlayVisibility();
+      }
     } else if (action.type === 'cancel-armed-tools') {
       handled = input.cancelArmedDebugTools();
       if (handled) {

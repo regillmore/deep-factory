@@ -1,5 +1,8 @@
 import { installPointerClickFocusRelease } from './buttonFocus';
-import { getDesktopRecenterCameraHotkeyLabel } from '../input/debugEditShortcuts';
+import {
+  getDesktopDebugOverlayHotkeyLabel,
+  getDesktopRecenterCameraHotkeyLabel
+} from '../input/debugEditShortcuts';
 
 export type AppShellScreen = 'boot' | 'main-menu' | 'in-world';
 
@@ -264,8 +267,8 @@ export class AppShell {
       viewModel.debugOverlayTogglePressed ? 'true' : 'false'
     );
     this.debugOverlayToggleButton.title = viewModel.debugOverlayTogglePressed
-      ? 'Hide debug HUD telemetry'
-      : 'Show debug HUD telemetry';
+      ? `Hide debug HUD telemetry (${getDesktopDebugOverlayHotkeyLabel()})`
+      : `Show debug HUD telemetry (${getDesktopDebugOverlayHotkeyLabel()})`;
     this.debugEditOverlaysToggleButton.textContent = viewModel.debugEditOverlaysToggleLabel ?? '';
     this.debugEditOverlaysToggleButton.hidden = viewModel.debugEditOverlaysToggleLabel === null;
     this.debugEditOverlaysToggleButton.setAttribute(

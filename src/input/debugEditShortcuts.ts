@@ -15,6 +15,7 @@ export type DebugEditShortcutAction =
   | { type: 'undo' }
   | { type: 'redo' }
   | { type: 'recenter-camera' }
+  | { type: 'toggle-debug-overlay' }
   | { type: 'cancel-armed-tools' }
   | { type: 'toggle-panel-collapsed' }
   | { type: 'set-touch-mode'; mode: 'pan' | 'place' | 'break' }
@@ -77,6 +78,7 @@ export const getTouchDebugEditModeHotkeyLabel = (mode: 'pan' | 'place' | 'break'
 };
 
 export const getDesktopRecenterCameraHotkeyLabel = (): string => 'C';
+export const getDesktopDebugOverlayHotkeyLabel = (): string => 'H';
 
 export const getDebugEditPanelToggleHotkeyLabel = (): string => '\\';
 
@@ -137,6 +139,10 @@ export const resolveDebugEditShortcutAction = (
 
   if (normalizedKey === getDesktopRecenterCameraHotkeyLabel().toLowerCase()) {
     return { type: 'recenter-camera' };
+  }
+
+  if (normalizedKey === getDesktopDebugOverlayHotkeyLabel().toLowerCase()) {
+    return { type: 'toggle-debug-overlay' };
   }
 
   const code = event.code ?? '';

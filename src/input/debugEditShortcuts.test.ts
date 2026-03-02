@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   cycleDebugBrushTileId,
+  getDesktopDebugOverlayHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel,
   getDebugEditPanelToggleHotkeyLabel,
   getDebugBrushSlotHotkeyLabel,
@@ -49,6 +50,15 @@ describe('resolveDebugEditShortcutAction', () => {
     });
     expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'C', shiftKey: true }))).toEqual({
       type: 'recenter-camera'
+    });
+  });
+
+  it('maps H to toggle the debug HUD', () => {
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'h' }))).toEqual({
+      type: 'toggle-debug-overlay'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'H', shiftKey: true }))).toEqual({
+      type: 'toggle-debug-overlay'
     });
   });
 
@@ -207,6 +217,10 @@ describe('brush shortcut helpers', () => {
 
   it('returns the desktop recenter-camera hotkey label', () => {
     expect(getDesktopRecenterCameraHotkeyLabel()).toBe('C');
+  });
+
+  it('returns the desktop debug-overlay hotkey label', () => {
+    expect(getDesktopDebugOverlayHotkeyLabel()).toBe('H');
   });
 
   it('returns the panel toggle hotkey label', () => {

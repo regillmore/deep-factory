@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Add a desktop keyboard shortcut that toggles the in-world debug HUD without mutating edit or movement intent.
+- Changes: Updated [src/input/debugEditShortcuts.ts](../src/input/debugEditShortcuts.ts) plus [src/input/debugEditShortcuts.test.ts](../src/input/debugEditShortcuts.test.ts) to expose a dedicated `toggle-debug-overlay` shortcut action on `H`, wired [src/main.ts](../src/main.ts) to flip HUD visibility only while the world session is active, refreshed [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/ui/touchDebugEditControls.ts](../src/ui/touchDebugEditControls.ts) with the new hotkey hint, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [README.md](../README.md).
+- Verification: Ran `npx vitest run src/input/debugEditShortcuts.test.ts src/input/controller.test.ts src/ui/appShell.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a desktop keyboard shortcut that recenters the camera on the standalone player without mutating movement intent.
 - Changes: Updated [src/input/debugEditShortcuts.ts](../src/input/debugEditShortcuts.ts) plus [src/input/debugEditShortcuts.test.ts](../src/input/debugEditShortcuts.test.ts) to expose a dedicated `recenter-camera` shortcut action on `C`, wired [src/main.ts](../src/main.ts) to reuse the existing standalone-player recenter helper from the global desktop keydown path, refreshed [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/ui/touchDebugEditControls.ts](../src/ui/touchDebugEditControls.ts) with shortcut hints, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [README.md](../README.md).
 - Verification: Ran `npx vitest run src/input/debugEditShortcuts.test.ts src/input/controller.test.ts src/ui/appShell.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
