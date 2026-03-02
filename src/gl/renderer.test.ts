@@ -397,6 +397,59 @@ describe('Renderer atlas telemetry', () => {
     performanceNowSpy.mockRestore();
   });
 
+  it('skips redundant animated UV reuploads when a pruned animated chunk streams back into view at frame zero', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    renderer.setTile(0, 0, 5);
+    const nearCamera = new Camera2D();
+    nearCamera.zoom = 16;
+
+    const performanceNowSpy = vi.spyOn(performance, 'now').mockReturnValue(0);
+    renderUntilMeshBuildQueueDrains(renderer, nearCamera);
+    expect(renderer.telemetry.meshBuildQueueLength).toBe(0);
+    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
+    expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+
+    const farCamera = new Camera2D();
+    farCamera.zoom = nearCamera.zoom;
+    farCamera.x = CHUNK_SIZE * TILE_SIZE * 10;
+
+    renderer.render(farCamera, { timeMs: 0 });
+
+    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(0);
+    expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(0);
+
+    const bufferData = vi.mocked(gl.bufferData);
+    bufferData.mockClear();
+
+    renderUntilMeshBuildQueueDrains(renderer, nearCamera, 120, 0);
+
+    const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
+    expect(dynamicUploads).toHaveLength(1);
+
+    const rebuiltAnimatedVertices = dynamicUploads[0]?.[1] as Float32Array | undefined;
+    const frameZeroUv = atlasIndexToUvRect(14);
+    expect(rebuiltAnimatedVertices).toBeInstanceOf(Float32Array);
+    expect(Array.from(rebuiltAnimatedVertices?.slice(2, 4) ?? [])).toEqual([frameZeroUv.u0, frameZeroUv.v0]);
+    expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
+    expect(renderer.telemetry.meshBuildQueueLength).toBe(0);
+    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
+    expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+    performanceNowSpy.mockRestore();
+  });
+
   it('reuploads the elapsed animation frame after a pruned animated chunk streams back into view', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));

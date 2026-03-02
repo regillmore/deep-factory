@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-01
 
+- Task: Add a renderer regression test that a re-streamed animated chunk rebuilt on frame-zero elapsed time skips redundant animated UV reuploads.
+- Changes: Updated [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a prune-and-rebuild regression that clears prior GL uploads, rebuilds the animated chunk at elapsed frame zero, and asserts the renderer only performs the rebuild's dynamic vertex upload while skipping an extra animated UV patch upload; then advanced [docs/NEXT.md](docs/NEXT.md).
+- Verification: Ran `npx vitest run src/gl/renderer.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Add an authored-atlas asset regression test that default tile metadata only references authored atlas regions containing at least one non-transparent pixel in the committed PNG.
 - Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) with a minimal committed-PNG RGBA decoder, enumerated atlas-index references from default tile metadata across static render, animated frames, and terrain variant maps, and asserted that every referenced authored region contains at least one non-transparent pixel in [public/atlas/tile-atlas.png](../public/atlas/tile-atlas.png), then advanced [docs/NEXT.md](docs/NEXT.md).
 - Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
