@@ -52,7 +52,12 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileVariantAtlasIndex(2, 6)).toBe(6);
     expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(1, 0)).toBe(0);
     expect(resolveTileRenderUvRect(3)).toEqual(atlasIndexToUvRect(14));
-    expect(resolveTileRenderUvRect(4)).toEqual({ u0: 0.25, v0: 0.25, u1: 0.5, v1: 0.5 });
+    expect(resolveTileRenderUvRect(4)).toEqual({
+      u0: 0.16666666666666666,
+      v0: 0.25,
+      u1: 0.3333333333333333,
+      v1: 0.5
+    });
     expect(resolveTerrainAutotileVariantUvRect(2, 6)).toEqual(atlasIndexToUvRect(6));
     expect(resolveTerrainAutotileUvRectByNormalizedAdjacencyMask(2, 0)).toEqual(atlasIndexToUvRect(0));
     expect(resolveTerrainAutotileVariantAtlasIndex(1, TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT)).toBe(
@@ -348,7 +353,14 @@ describe('tile metadata loader', () => {
         {
           id: 5,
           name: 'panel',
-          render: { uvRect: { u0: 0.25, v0: 0.25, u1: 0.5, v1: 0.5 } }
+          render: {
+            uvRect: {
+              u0: 0.16666666666666666,
+              v0: 0.25,
+              u1: 0.3333333333333333,
+              v1: 0.5
+            }
+          }
         },
         {
           id: 12,
@@ -392,7 +404,12 @@ describe('tile metadata loader', () => {
       19 * 256
     );
 
-    expect(resolveTileRenderUvRect(5, registry)).toEqual({ u0: 0.25, v0: 0.25, u1: 0.5, v1: 0.5 });
+    expect(resolveTileRenderUvRect(5, registry)).toEqual({
+      u0: 0.16666666666666666,
+      v0: 0.25,
+      u1: 0.3333333333333333,
+      v1: 0.5
+    });
     expect(resolveTileRenderUvRect(12, registry)).toEqual(atlasIndexToUvRect(14));
     expect(resolveTileRenderUvRect(12, registry)).toBe(atlasIndexToUvRect(14));
     expect(resolveTileRenderUvRect(18, registry)).toBe(null);

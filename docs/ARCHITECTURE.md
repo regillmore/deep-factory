@@ -63,12 +63,14 @@ This is intentionally simple and easy to evolve (greedy meshing, layered tiles, 
 
 ### Placeholder terrain autotile layout
 
-Terrain autotile placeholder variants currently occupy the full `4x4` atlas and are addressed by a row-major
-variant index derived from the normalized cardinal adjacency mask (`N/E/S/W` bits mapped to `1/2/4/8`).
+Terrain autotile placeholder variants currently occupy the first `4x4` block of the authored atlas and are addressed
+by a row-major variant index derived from the normalized cardinal adjacency mask (`N/E/S/W` bits mapped to `1/2/4/8`).
 Diagonal neighbors are sampled and normalized for corner-gating, but placeholder UV selection collapses to the
 16 cardinal combinations for now. The current mapping is defined in `src/world/tileMetadata.json` and validated at
 startup by `src/world/tileMetadata.ts`, while the atlas indices themselves resolve through the explicit authored
-region list in `src/world/authoredAtlasLayout.ts`.
+region list in `src/world/authoredAtlasLayout.ts`. The current authored layout also reserves one spare documented
+unused region plus transparent exterior padding to the right of the authored regions so committed-asset regressions
+have real empty atlas space to inspect.
 
 Non-autotile tiles also resolve UVs through the same metadata registry via explicit render metadata:
 - `render.atlasIndex`: authored atlas region index.

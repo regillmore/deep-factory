@@ -37,7 +37,8 @@ This document describes the current project state. Unlike the changelog, it shou
 - Committed-asset regressions also verify that every default animated direct `render.uvRect` frame stays aligned to whole atlas pixels in the shipped PNG, so committed direct-frame animations remain sampling-safe against the authored asset dimensions.
 - Committed-asset regressions also verify that every default animated direct `render.uvRect` frame differs from its prior committed PNG frame, so shipped direct-UV animations do not silently collapse into repeated art.
 - Those animated frame-difference regressions ignore RGB drift under pixels that are fully transparent in both compared committed PNG frames, so invisible padding churn does not count as a shipped animation change.
-- The authored atlas layout also records any intentionally unused committed slots, and committed-asset regressions require every authored region index to be either referenced by default tile metadata or documented there as deliberately unused.
+- The authored atlas layout also records any intentionally unused committed slots, currently reserves one documented spare region, and leaves transparent exterior padding outside the authored region bounds so committed-asset regressions can inspect real empty atlas space.
+- Committed-asset regressions require every authored region index to be either referenced by default tile metadata or documented there as deliberately unused.
 - Terrain autotile adjacency supports cross-chunk 8-neighbor sampling plus normalization helpers.
 - Terrain autotile connectivity uses metadata-driven connectivity groups first, then shared material tags for seam compatibility.
 - Placeholder terrain autotile layout still uses 16 cardinal-mask variants documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), but those atlas indices now resolve through the authored atlas region layout.

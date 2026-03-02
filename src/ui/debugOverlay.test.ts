@@ -47,11 +47,11 @@ describe('formatDebugOverlayText', () => {
   it('shows when the renderer is using the placeholder atlas fallback', () => {
     const text = formatDebugOverlayText(
       60,
-      { ...baseStats, atlasSourceKind: 'placeholder', atlasWidth: 64, atlasHeight: 64 },
+      { ...baseStats, atlasSourceKind: 'placeholder', atlasWidth: 96, atlasHeight: 64 },
       null
     );
 
-    expect(text).toContain('\nAtlas: placeholder | 64x64');
+    expect(text).toContain('\nAtlas: placeholder | 96x64');
   });
 
   it('omits atlas dimensions while atlas initialization is still pending', () => {

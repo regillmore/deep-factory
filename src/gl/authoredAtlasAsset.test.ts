@@ -453,6 +453,28 @@ describe('authored atlas asset', () => {
     }
   });
 
+  it('ships a committed atlas PNG with uncovered space beyond the authored regions', () => {
+    const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
+    const maxAuthoredRegionRight = AUTHORED_ATLAS_REGIONS.reduce(
+      (maxRight, region) => Math.max(maxRight, region.x + region.width),
+      0
+    );
+
+    expect(maxAuthoredRegionRight).toBeLessThan(pngWidth);
+
+    let transparentPaddingPixelCount = 0;
+    for (let y = 0; y < pngHeight; y += 1) {
+      for (let x = maxAuthoredRegionRight; x < pngWidth; x += 1) {
+        const alphaIndex = (y * pngWidth + x) * PNG_BYTES_PER_PIXEL_RGBA + 3;
+        if (rgbaPixels[alphaIndex] === 0) {
+          transparentPaddingPixelCount += 1;
+        }
+      }
+    }
+
+    expect(transparentPaddingPixelCount).toBeGreaterThan(0);
+  });
+
   it('accounts for every committed authored atlas region through metadata or explicit unused documentation', () => {
     const referencedAtlasIndices = new Set(collectReferencedAtlasIndices());
     const intentionallyUnusedEntries = Object.entries(AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS);

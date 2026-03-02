@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   AUTHORED_ATLAS_HEIGHT,
+  AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS,
   AUTHORED_ATLAS_REGIONS,
   AUTHORED_ATLAS_WIDTH
 } from './authoredAtlasLayout';
@@ -26,5 +27,16 @@ describe('authored atlas layout', () => {
         expect(regionsOverlap(region, AUTHORED_ATLAS_REGIONS[otherIndex]!)).toBe(false);
       }
     }
+  });
+
+  it('documents a spare unused region and leaves canvas space outside authored regions', () => {
+    expect(AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS[16]?.trim().length).toBeGreaterThan(0);
+
+    const maxRegionRight = AUTHORED_ATLAS_REGIONS.reduce(
+      (maxRight, region) => Math.max(maxRight, region.x + region.width),
+      0
+    );
+
+    expect(maxRegionRight).toBeLessThan(AUTHORED_ATLAS_WIDTH);
   });
 });

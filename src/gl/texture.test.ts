@@ -118,8 +118,8 @@ describe('loadAtlasImageSource', () => {
   it('falls back to the generated placeholder atlas when the authored atlas fetch fails', async () => {
     const fallbackImage = {
       kind: 'image',
-      naturalWidth: 64,
-      naturalHeight: 64
+      naturalWidth: AUTHORED_ATLAS_WIDTH,
+      naturalHeight: AUTHORED_ATLAS_HEIGHT
     } as unknown as HTMLImageElement;
     const fetchImpl = vi.fn(async () => ({
       ok: false,
@@ -148,8 +148,8 @@ describe('loadAtlasImageSource', () => {
       imageSource: fallbackImage,
       sourceKind: 'placeholder',
       sourceUrl: 'data:image/png;base64,placeholder',
-      width: 64,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     expect(buildFallbackAtlas).toHaveBeenCalledTimes(1);
     expect(loadImage).toHaveBeenCalledTimes(1);
@@ -159,8 +159,8 @@ describe('loadAtlasImageSource', () => {
     const atlasBlob = new Blob(['atlas']);
     const fallbackImage = {
       kind: 'image',
-      naturalWidth: 64,
-      naturalHeight: 64
+      naturalWidth: AUTHORED_ATLAS_WIDTH,
+      naturalHeight: AUTHORED_ATLAS_HEIGHT
     } as unknown as HTMLImageElement;
     const fetchImpl = vi.fn(async () => ({
       ok: true,
@@ -184,8 +184,8 @@ describe('loadAtlasImageSource', () => {
       imageSource: fallbackImage,
       sourceKind: 'placeholder',
       sourceUrl: 'data:image/png;base64,placeholder',
-      width: 64,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     expect(decodeBitmap).toHaveBeenCalledTimes(1);
     expect(loadImage).toHaveBeenCalledTimes(1);

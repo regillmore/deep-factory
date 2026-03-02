@@ -67,8 +67,9 @@ export const normalizeAutotileAdjacencyMask = (mask: number): number => {
 
 export const TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT = 16;
 
-// Placeholder atlas is a 4x4 sheet, so we currently compress the normalized
-// 8-neighbor mask into a 4-bit cardinal mask (N/E/S/W) for variant selection.
+// Placeholder terrain variants still occupy a 4x4 block inside the authored atlas,
+// so we currently compress the normalized 8-neighbor mask into a 4-bit cardinal
+// mask (N/E/S/W) for variant selection.
 const resolveTerrainAutotileVariantIndexBitwise = (normalizedMask: number): number => {
   let cardinalMask = 0;
   const mask = normalizedMask & 0xff;

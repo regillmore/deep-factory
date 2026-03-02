@@ -76,6 +76,8 @@ const createMockCanvas = (gl: WebGL2RenderingContext): HTMLCanvasElement =>
     getContext: vi.fn((kind: string) => (kind === 'webgl2' ? gl : null))
   }) as unknown as HTMLCanvasElement;
 
+const toFloat32 = (value: number): number => Math.fround(value);
+
 const renderUntilMeshBuildQueueDrains = (
   renderer: Renderer,
   camera: Camera2D,
@@ -163,7 +165,7 @@ describe('Renderer atlas telemetry', () => {
       imageSource: placeholderImage,
       sourceKind: 'placeholder',
       sourceUrl: 'data:image/png;base64,placeholder',
-      width: 64,
+      width: 96,
       height: 64
     });
 
@@ -171,7 +173,7 @@ describe('Renderer atlas telemetry', () => {
 
     expect(createTextureFromImageSource).toHaveBeenCalledWith(gl, placeholderImage);
     expect(renderer.telemetry.atlasSourceKind).toBe('placeholder');
-    expect(renderer.telemetry.atlasWidth).toBe(64);
+    expect(renderer.telemetry.atlasWidth).toBe(96);
     expect(renderer.telemetry.atlasHeight).toBe(64);
     expect(renderer.telemetry.atlasValidationWarningCount).toBe(0);
     expect(renderer.telemetry.atlasValidationFirstWarning).toBeNull();
@@ -291,7 +293,10 @@ describe('Renderer atlas telemetry', () => {
     const frameOneVertices = bufferData.mock.calls[0]?.[1] as Float32Array | undefined;
     const frameOneUv = atlasIndexToUvRect(15);
     expect(frameOneVertices).toBeInstanceOf(Float32Array);
-    expect(Array.from(frameOneVertices?.slice(2, 4) ?? [])).toEqual([frameOneUv.u0, frameOneUv.v0]);
+    expect(Array.from(frameOneVertices?.slice(2, 4) ?? [])).toEqual([
+      toFloat32(frameOneUv.u0),
+      toFloat32(frameOneUv.v0)
+    ]);
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameOneVertices?.byteLength ?? 0);
@@ -310,7 +315,10 @@ describe('Renderer atlas telemetry', () => {
     expect(bufferData).toHaveBeenCalledTimes(2);
     const frameZeroVertices = bufferData.mock.calls[1]?.[1] as Float32Array | undefined;
     const frameZeroUv = atlasIndexToUvRect(14);
-    expect(Array.from(frameZeroVertices?.slice(2, 4) ?? [])).toEqual([frameZeroUv.u0, frameZeroUv.v0]);
+    expect(Array.from(frameZeroVertices?.slice(2, 4) ?? [])).toEqual([
+      toFloat32(frameZeroUv.u0),
+      toFloat32(frameZeroUv.v0)
+    ]);
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameZeroVertices?.byteLength ?? 0);
@@ -358,8 +366,14 @@ describe('Renderer atlas telemetry', () => {
     const frameOneUv = resolveAnimatedTileRenderFrameUvRect(6, 1);
     expect(frameOneUv).not.toBeNull();
     expect(frameOneVertices).toBeInstanceOf(Float32Array);
-    expect(Array.from(frameOneVertices?.slice(2, 4) ?? [])).toEqual([frameOneUv!.u0, frameOneUv!.v0]);
-    expect(Array.from(frameOneVertices?.slice(22, 24) ?? [])).toEqual([frameOneUv!.u0, frameOneUv!.v1]);
+    expect(Array.from(frameOneVertices?.slice(2, 4) ?? [])).toEqual([
+      toFloat32(frameOneUv!.u0),
+      toFloat32(frameOneUv!.v0)
+    ]);
+    expect(Array.from(frameOneVertices?.slice(22, 24) ?? [])).toEqual([
+      toFloat32(frameOneUv!.u0),
+      toFloat32(frameOneUv!.v1)
+    ]);
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameOneVertices?.byteLength ?? 0);
@@ -375,8 +389,14 @@ describe('Renderer atlas telemetry', () => {
     const frameZeroVertices = bufferData.mock.calls[1]?.[1] as Float32Array | undefined;
     const frameZeroUv = resolveAnimatedTileRenderFrameUvRect(6, 0);
     expect(frameZeroUv).not.toBeNull();
-    expect(Array.from(frameZeroVertices?.slice(2, 4) ?? [])).toEqual([frameZeroUv!.u0, frameZeroUv!.v0]);
-    expect(Array.from(frameZeroVertices?.slice(22, 24) ?? [])).toEqual([frameZeroUv!.u0, frameZeroUv!.v1]);
+    expect(Array.from(frameZeroVertices?.slice(2, 4) ?? [])).toEqual([
+      toFloat32(frameZeroUv!.u0),
+      toFloat32(frameZeroUv!.v0)
+    ]);
+    expect(Array.from(frameZeroVertices?.slice(22, 24) ?? [])).toEqual([
+      toFloat32(frameZeroUv!.u0),
+      toFloat32(frameZeroUv!.v1)
+    ]);
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameZeroVertices?.byteLength ?? 0);
@@ -504,7 +524,10 @@ describe('Renderer atlas telemetry', () => {
     const rebuiltAnimatedVertices = dynamicUploads[0]?.[1] as Float32Array | undefined;
     const frameZeroUv = atlasIndexToUvRect(14);
     expect(rebuiltAnimatedVertices).toBeInstanceOf(Float32Array);
-    expect(Array.from(rebuiltAnimatedVertices?.slice(2, 4) ?? [])).toEqual([frameZeroUv.u0, frameZeroUv.v0]);
+    expect(Array.from(rebuiltAnimatedVertices?.slice(2, 4) ?? [])).toEqual([
+      toFloat32(frameZeroUv.u0),
+      toFloat32(frameZeroUv.v0)
+    ]);
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);

@@ -19,6 +19,7 @@ const setChunkTile = (chunk: Chunk, localX: number, localY: number, tileId: numb
 };
 
 const atlasUvRect = (atlasTileIndex: number) => atlasIndexToUvRect(atlasTileIndex);
+const toFloat32 = (value: number): number => Math.fround(value);
 
 const resolveTerrainAutotileVariantIndexBitwiseBaseline = (normalizedMask: number): number => {
   let cardinalMask = 0;
@@ -58,32 +59,36 @@ const expectSingleQuadUv = (
   uvRect: { u0: number; v0: number; u1: number; v1: number }
 ): void => {
   const { u0, v0, u1, v1 } = uvRect;
+  const expectedU0 = toFloat32(u0);
+  const expectedV0 = toFloat32(v0);
+  const expectedU1 = toFloat32(u1);
+  const expectedV1 = toFloat32(v1);
 
   expect(Array.from(vertices)).toEqual([
     expect.any(Number),
     expect.any(Number),
-    u0,
-    v0,
+    expectedU0,
+    expectedV0,
     expect.any(Number),
     expect.any(Number),
-    u1,
-    v0,
+    expectedU1,
+    expectedV0,
     expect.any(Number),
     expect.any(Number),
-    u1,
-    v1,
+    expectedU1,
+    expectedV1,
     expect.any(Number),
     expect.any(Number),
-    u0,
-    v0,
+    expectedU0,
+    expectedV0,
     expect.any(Number),
     expect.any(Number),
-    u1,
-    v1,
+    expectedU1,
+    expectedV1,
     expect.any(Number),
     expect.any(Number),
-    u0,
-    v1
+    expectedU0,
+    expectedV1
   ]);
 };
 
@@ -211,7 +216,12 @@ describe('buildChunkMesh autotile UV selection', () => {
     const mesh = buildChunkMesh(chunk);
 
     expect(mesh.vertexCount).toBe(6);
-    expectSingleQuadUv(mesh.vertices, { u0: 0.25, v0: 0.25, u1: 0.5, v1: 0.5 });
+    expectSingleQuadUv(mesh.vertices, {
+      u0: 0.16666666666666666,
+      v0: 0.25,
+      u1: 0.3333333333333333,
+      v1: 0.5
+    });
   });
 
   it('records animated non-terrain quads while keeping the baked static frame-zero UVs', () => {
