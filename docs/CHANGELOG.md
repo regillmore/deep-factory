@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Add an authored-atlas asset regression test that direct `render.uvRect` default metadata only references committed PNG rects containing at least one non-transparent pixel.
+- Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) to enumerate default direct-`render.uvRect` tiles, convert their committed PNG sub-rects into whole-pixel bounds, and assert that each referenced rect contains visible atlas content; then advanced [docs/NEXT.md](docs/NEXT.md) to remove the stale completed renderer regression, keep the remaining authored-atlas follow-up, and add two new replacement asset checks while updating [docs/CAPABILITIES.md](docs/CAPABILITIES.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Add an authored-atlas asset regression test that every committed region is either referenced by tile metadata or explicitly documented as intentionally unused.
 - Changes: Updated [src/world/authoredAtlasLayout.ts](../src/world/authoredAtlasLayout.ts) with an explicit intentionally-unused region declaration table, expanded [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) so every committed authored atlas region must now be covered by tile metadata references or that documentation, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

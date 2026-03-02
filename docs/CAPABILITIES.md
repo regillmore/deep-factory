@@ -31,6 +31,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Render metadata can optionally define animated frame sequences through `frames` plus `frameDurationMs`, while the current meshing path continues to use the base static `atlasIndex` or `uvRect` as frame-zero fallback.
 - The default tile set now includes an animated `debug_blink` brush tile that exercises the renderer-side frame resolver against the authored atlas.
 - Atlas-backed render metadata resolves through explicit authored atlas region definitions in `src/world/authoredAtlasLayout.ts`, while the generated placeholder fallback atlas paints those same authored regions and direct sub-rect metadata can still use normalized `uvRect` values that are runtime-validated against whole atlas-pixel edges.
+- Committed-asset regressions also verify that every default direct `render.uvRect` source covers at least one non-transparent pixel in the shipped atlas PNG, so blank authored sub-rects do not silently ship through the direct-UV path.
 - The authored atlas layout also records any intentionally unused committed slots, and committed-asset regressions require every authored region index to be either referenced by default tile metadata or documented there as deliberately unused.
 - Terrain autotile adjacency supports cross-chunk 8-neighbor sampling plus normalization helpers.
 - Terrain autotile connectivity uses metadata-driven connectivity groups first, then shared material tags for seam compatibility.

@@ -10,6 +10,7 @@ import {
   AUTHORED_ATLAS_REGIONS,
   AUTHORED_ATLAS_WIDTH
 } from '../world/authoredAtlasLayout';
+import type { TileUvRect } from '../world/tileMetadata';
 import { TILE_METADATA } from '../world/tileMetadata';
 import { collectAtlasValidationWarnings } from './atlasValidation';
 
@@ -37,6 +38,19 @@ interface DecodedAtlasPng {
   pngWidth: number;
   pngHeight: number;
   rgbaPixels: Uint8Array;
+}
+
+interface AtlasPixelRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface DirectRenderUvRectSource {
+  tileId: number;
+  tileName: string;
+  uvRect: TileUvRect;
 }
 
 const readPngChunkType = (data: Uint8Array, byteOffset: number): string =>
@@ -194,10 +208,52 @@ const collectReferencedAtlasIndices = (): number[] => {
   return [...referencedAtlasIndices].sort((a, b) => a - b);
 };
 
+const collectDirectRenderUvRectSources = (): DirectRenderUvRectSource[] =>
+  TILE_METADATA.tiles.flatMap((tile) =>
+    tile.render?.uvRect
+      ? [
+          {
+            tileId: tile.id,
+            tileName: tile.name,
+            uvRect: tile.render.uvRect
+          }
+        ]
+      : []
+  );
+
+const uvRectToPixelRegion = (
+  uvRect: TileUvRect,
+  pngWidth: number,
+  pngHeight: number
+): AtlasPixelRegion => {
+  const x0 = uvRect.u0 * pngWidth;
+  const y0 = uvRect.v0 * pngHeight;
+  const x1 = uvRect.u1 * pngWidth;
+  const y1 = uvRect.v1 * pngHeight;
+
+  expect(Number.isInteger(x0)).toBe(true);
+  expect(Number.isInteger(y0)).toBe(true);
+  expect(Number.isInteger(x1)).toBe(true);
+  expect(Number.isInteger(y1)).toBe(true);
+  expect(x0).toBeGreaterThanOrEqual(0);
+  expect(y0).toBeGreaterThanOrEqual(0);
+  expect(x1).toBeLessThanOrEqual(pngWidth);
+  expect(y1).toBeLessThanOrEqual(pngHeight);
+  expect(x1).toBeGreaterThan(x0);
+  expect(y1).toBeGreaterThan(y0);
+
+  return {
+    x: x0,
+    y: y0,
+    width: x1 - x0,
+    height: y1 - y0
+  };
+};
+
 const regionContainsAnyNonTransparentPixel = (
   rgbaPixels: Uint8Array,
   pngWidth: number,
-  region: { x: number; y: number; width: number; height: number }
+  region: AtlasPixelRegion
 ): boolean => {
   for (let y = region.y; y < region.y + region.height; y += 1) {
     for (let x = region.x; x < region.x + region.width; x += 1) {
@@ -251,16 +307,32 @@ describe('authored atlas asset', () => {
 
   it('keeps committed direct render.uvRect metadata aligned to whole atlas pixels', () => {
     const { pngWidth, pngHeight } = readCommittedAtlasPng();
-    const directUvRectTiles = TILE_METADATA.tiles.filter((tile) => tile.render?.uvRect !== undefined);
+    const directUvRectTiles = collectDirectRenderUvRectSources();
 
     expect(directUvRectTiles.length).toBeGreaterThan(0);
 
-    for (const tile of directUvRectTiles) {
-      const warnings = collectAtlasValidationWarnings([tile], pngWidth, pngHeight).filter(
+    for (const source of directUvRectTiles) {
+      const tile = TILE_METADATA.tiles.find((candidate) => candidate.id === source.tileId);
+      expect(tile).toBeDefined();
+
+      const warnings = collectAtlasValidationWarnings([tile!], pngWidth, pngHeight).filter(
         (warning) => warning.sourcePath === 'render.uvRect'
       );
 
       expect(warnings).toEqual([]);
+    }
+  });
+
+  it('keeps every default direct render.uvRect source non-transparent in the committed PNG', () => {
+    const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
+    const directUvRectSources = collectDirectRenderUvRectSources();
+
+    expect(directUvRectSources.length).toBeGreaterThan(0);
+
+    for (const source of directUvRectSources) {
+      const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
+
+      expect(regionContainsAnyNonTransparentPixel(rgbaPixels, pngWidth, pixelRegion)).toBe(true);
     }
   });
 
