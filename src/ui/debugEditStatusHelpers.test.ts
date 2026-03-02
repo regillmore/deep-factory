@@ -134,6 +134,55 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBe('Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00');
   });
 
+  it('formats the latest wall-contact transition event for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerWallContactTransition: {
+        kind: 'blocked',
+        tile: { x: 5, y: -3, id: 7 },
+        position: { x: 88, y: -24 },
+        velocity: { x: -180, y: 60 }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.eventText).toBe('Wall: blocked | tile 5,-3 (#7) | pos 88.00,-24.00 | vel -180.00,60.00');
+  });
+
+  it('keeps respawn and wall-contact telemetry on separate wrap-friendly event lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerRespawn: {
+        kind: 'embedded',
+        spawnTile: { x: 3, y: -2 },
+        position: { x: 56, y: -32 },
+        velocity: { x: 0, y: 0 }
+      },
+      playerWallContactTransition: {
+        kind: 'cleared',
+        tile: { x: -1, y: -2, id: 4 },
+        position: { x: 64, y: -16 },
+        velocity: { x: 120, y: 0 }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.eventText).toBe(
+      'Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
+        'Wall: cleared | tile -1,-2 (#4) | pos 64.00,-16.00 | vel 120.00,0.00'
+    );
+  });
+
   it('shows active mouse-drag preview anchor and endpoint coordinates in the status-strip model', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',

@@ -9,6 +9,7 @@ import {
   type TouchDebugEditMode
 } from '../input/controller';
 import type { PlayerRespawnEventKind } from '../world/playerRespawnEvent';
+import type { PlayerWallContactTransitionKind } from '../world/playerWallContactTransition';
 import type { TileLiquidKind } from '../world/tileMetadata';
 
 export interface ActiveDebugToolStatus {
@@ -26,6 +27,7 @@ export interface DebugEditStatusStripState {
   pinnedTile: DebugEditHoveredTileState | null;
   desktopInspectPinArmed: boolean;
   playerRespawn?: DebugEditStatusStripPlayerRespawnTelemetry | null;
+  playerWallContactTransition?: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null;
 }
 
 export interface DebugEditStatusStripModel {
@@ -60,6 +62,13 @@ export interface DebugEditHoveredTileState {
 export interface DebugEditStatusStripPlayerRespawnTelemetry {
   kind: PlayerRespawnEventKind;
   spawnTile: { x: number; y: number };
+  position: { x: number; y: number };
+  velocity: { x: number; y: number };
+}
+
+export interface DebugEditStatusStripPlayerWallContactTransitionTelemetry {
+  kind: PlayerWallContactTransitionKind;
+  tile: { x: number; y: number; id: number };
   position: { x: number; y: number };
   velocity: { x: number; y: number };
 }
@@ -367,6 +376,36 @@ const formatRespawnEventText = (
     `pos ${playerRespawn.position.x.toFixed(2)},${playerRespawn.position.y.toFixed(2)} | ` +
     `vel ${playerRespawn.velocity.x.toFixed(2)},${playerRespawn.velocity.y.toFixed(2)}`
   );
+};
+
+const formatWallContactTransitionEventText = (
+  playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null
+): string | null => {
+  if (!playerWallContactTransition) {
+    return null;
+  }
+
+  return (
+    `Wall: ${playerWallContactTransition.kind} | ` +
+    `tile ${formatTileCoordinatePair(
+      playerWallContactTransition.tile.x,
+      playerWallContactTransition.tile.y
+    )} (#${playerWallContactTransition.tile.id}) | ` +
+    `pos ${playerWallContactTransition.position.x.toFixed(2)},${playerWallContactTransition.position.y.toFixed(2)} | ` +
+    `vel ${playerWallContactTransition.velocity.x.toFixed(2)},${playerWallContactTransition.velocity.y.toFixed(2)}`
+  );
+};
+
+const buildEventText = (
+  playerRespawn: DebugEditStatusStripPlayerRespawnTelemetry | null,
+  playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null
+): string | null => {
+  const eventLines = [
+    formatRespawnEventText(playerRespawn),
+    formatWallContactTransitionEventText(playerWallContactTransition)
+  ].filter((line): line is string => line !== null);
+
+  return eventLines.length > 0 ? eventLines.join('\n') : null;
 };
 
 const formatPreviewSpanText = (
@@ -766,13 +805,14 @@ export const buildDebugEditStatusStripModel = (
 ): DebugEditStatusStripModel => {
   const activeToolStatus = resolveActiveDebugToolStatus(state.preview);
   const playerRespawn = state.playerRespawn ?? null;
+  const playerWallContactTransition = state.playerWallContactTransition ?? null;
 
   return {
     modeText: `Mode: ${formatTouchDebugEditModeLabel(state.mode)}`,
     brushText: `Brush: ${state.brushLabel} (#${state.brushTileId})`,
     toolText: activeToolStatus ? `Tool: ${activeToolStatus.title}` : 'Tool: No one-shot armed',
     previewText: buildPreviewText(state.preview, state.hoveredTile),
-    eventText: formatRespawnEventText(playerRespawn),
+    eventText: buildEventText(playerRespawn, playerWallContactTransition),
     inspectText: buildInspectText(state),
     hoverText: buildHoveredTileText(state.hoveredTile, state.pinnedTile),
     hintText: activeToolStatus

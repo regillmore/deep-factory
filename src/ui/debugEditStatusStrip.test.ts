@@ -73,6 +73,18 @@ describe('buildWrappedDetailLines', () => {
       buildWrappedDetailLines('Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00')
     ).toEqual([['Respawn: embedded', '| spawn 3,-2', '| pos 56.00,-32.00', '| vel 0.00,0.00']]);
   });
+
+  it('preserves separate respawn and wall-contact event lines while splitting each line at pipe separators', () => {
+    expect(
+      buildWrappedDetailLines(
+        'Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
+          'Wall: blocked | tile 5,-3 (#7) | pos 88.00,-24.00 | vel -180.00,60.00'
+      )
+    ).toEqual([
+      ['Respawn: embedded', '| spawn 3,-2', '| pos 56.00,-32.00', '| vel 0.00,0.00'],
+      ['Wall: blocked', '| tile 5,-3 (#7)', '| pos 88.00,-24.00', '| vel -180.00,60.00']
+    ]);
+  });
 });
 
 describe('splitSummaryChipText', () => {
