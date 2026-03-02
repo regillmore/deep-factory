@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Add an in-world shell action that recenters the camera on the standalone player and clears accumulated manual follow offset.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the shell now exposes a dedicated in-world `Recenter Camera` action beside the existing toggles, extracted a small recenter helper in [src/core/cameraFollow.ts](../src/core/cameraFollow.ts) plus [src/core/cameraFollow.test.ts](../src/core/cameraFollow.test.ts), wired [src/main.ts](../src/main.ts) to zero the preserved follow offset and snap back to the standalone player's focus point when that shell action fires, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DECISIONS.md](docs/DECISIONS.md), and [README.md](../README.md).
+- Verification: Ran `npx vitest run src/ui/appShell.test.ts src/core/cameraFollow.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an in-world shell toggle that hides the standalone player spawn marker overlay without disabling world controls or simulation.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the shell now exposes a dedicated in-world `Spawn Marker` toggle state, updated [src/main.ts](../src/main.ts) to drive spawn-marker visibility through that shell state, extended [src/ui/playerSpawnMarkerOverlay.ts](../src/ui/playerSpawnMarkerOverlay.ts) with explicit visibility gating, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DECISIONS.md](docs/DECISIONS.md), and [README.md](../README.md).
 - Verification: Ran `npx vitest run src/ui/appShell.test.ts src/ui/playerSpawnMarkerOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

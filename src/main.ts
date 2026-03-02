@@ -3,6 +3,7 @@ import './style.css';
 import { Camera2D } from './core/camera2d';
 import {
   absorbManualCameraDeltaIntoFollowOffset,
+  recenterCameraOnFollowTarget,
   resolveCameraPositionFromFollowTarget,
   type CameraFollowOffset,
   type CameraFollowPoint
@@ -129,6 +130,10 @@ const bootstrap = async (): Promise<void> => {
       syncPlayerSpawnMarkerVisibility();
       loop.start();
     },
+    onRecenterCamera: (screen) => {
+      if (screen !== 'in-world') return;
+      centerCameraOnStandalonePlayer();
+    },
     onToggleDebugOverlay: (screen) => {
       if (screen !== 'in-world') return;
       debugOverlayVisible = !debugOverlayVisible;
@@ -252,13 +257,11 @@ const bootstrap = async (): Promise<void> => {
     }
 
     const focusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
-    cameraFollowOffset = { x: 0, y: 0 };
-    camera.x = focusPoint.x;
-    camera.y = focusPoint.y;
-    lastAppliedPlayerFollowCameraPosition = {
-      x: camera.x,
-      y: camera.y
-    };
+    const recenteredCameraFollow = recenterCameraOnFollowTarget(focusPoint);
+    cameraFollowOffset = recenteredCameraFollow.offset;
+    camera.x = recenteredCameraFollow.cameraPosition.x;
+    camera.y = recenteredCameraFollow.cameraPosition.y;
+    lastAppliedPlayerFollowCameraPosition = recenteredCameraFollow.cameraPosition;
   };
 
   const refreshResolvedPlayerSpawn = (): void => {

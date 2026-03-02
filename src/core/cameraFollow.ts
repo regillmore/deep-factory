@@ -8,6 +8,11 @@ export interface CameraFollowOffset {
   y: number;
 }
 
+export interface RecenteredCameraFollowState {
+  cameraPosition: CameraFollowPoint;
+  offset: CameraFollowOffset;
+}
+
 export const createCameraFollowOffset = (
   cameraPosition: CameraFollowPoint,
   targetPosition: CameraFollowPoint
@@ -40,4 +45,17 @@ export const resolveCameraPositionFromFollowTarget = (
 ): CameraFollowPoint => ({
   x: targetPosition.x + offset.x,
   y: targetPosition.y + offset.y
+});
+
+export const recenterCameraOnFollowTarget = (
+  targetPosition: CameraFollowPoint
+): RecenteredCameraFollowState => ({
+  cameraPosition: {
+    x: targetPosition.x,
+    y: targetPosition.y
+  },
+  offset: {
+    x: 0,
+    y: 0
+  }
 });

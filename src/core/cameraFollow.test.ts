@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   absorbManualCameraDeltaIntoFollowOffset,
   createCameraFollowOffset,
+  recenterCameraOnFollowTarget,
   resolveCameraPositionFromFollowTarget
 } from './cameraFollow';
 
@@ -40,6 +41,19 @@ describe('cameraFollow', () => {
     expect(resolveCameraPositionFromFollowTarget({ x: 48, y: -16 }, { x: -12, y: 20 })).toEqual({
       x: 36,
       y: 4
+    });
+  });
+
+  it('recenters the camera on the follow target and clears any manual offset', () => {
+    expect(recenterCameraOnFollowTarget({ x: 48, y: -16 })).toEqual({
+      cameraPosition: {
+        x: 48,
+        y: -16
+      },
+      offset: {
+        x: 0,
+        y: 0
+      }
     });
   });
 });
