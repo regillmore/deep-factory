@@ -46,5 +46,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Player debugging
 
-31. Surface standalone player auto-respawn events in the debug overlay when embedded-tile recovery triggers.
 63. Surface standalone player wall-side direction in the debug overlay when wall-contact events block or clear on the left versus right side.
+69. Surface standalone player auto-respawn events in the compact debug-edit status strip when the text debug HUD is hidden.

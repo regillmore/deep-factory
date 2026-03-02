@@ -56,6 +56,10 @@ import {
   type PlayerGroundedTransitionEvent
 } from './world/playerGroundedTransition';
 import {
+  createEmbeddedPlayerRespawnEvent,
+  type PlayerRespawnEvent
+} from './world/playerRespawnEvent';
+import {
   resolvePlayerWallContactTransitionEvent,
   type PlayerWallContactTransitionEvent
 } from './world/playerWallContactTransition';
@@ -311,6 +315,7 @@ const bootstrap = async (): Promise<void> => {
   let lastAppliedPlayerFollowCameraPosition: CameraFollowPoint | null = null;
   let lastPlayerGroundedTransitionEvent: PlayerGroundedTransitionEvent | null = null;
   let lastPlayerFacingTransitionEvent: PlayerFacingTransitionEvent | null = null;
+  let lastPlayerRespawnEvent: PlayerRespawnEvent | null = null;
   let lastPlayerWallContactTransitionEvent: PlayerWallContactTransitionEvent | null = null;
   let lastPlayerCeilingContactTransitionEvent: PlayerCeilingContactTransitionEvent | null = null;
 
@@ -348,6 +353,7 @@ const bootstrap = async (): Promise<void> => {
       standalonePlayerState = createPlayerStateFromSpawn(resolvedPlayerSpawn);
       lastPlayerGroundedTransitionEvent = null;
       lastPlayerFacingTransitionEvent = null;
+      lastPlayerRespawnEvent = null;
       lastPlayerWallContactTransitionEvent = null;
       lastPlayerCeilingContactTransitionEvent = null;
       centerCameraOnStandalonePlayer();
@@ -362,6 +368,10 @@ const bootstrap = async (): Promise<void> => {
       if (nextPlayerState !== standalonePlayerState) {
         lastPlayerGroundedTransitionEvent = null;
         lastPlayerFacingTransitionEvent = null;
+        lastPlayerRespawnEvent =
+          resolvedPlayerSpawn === null
+            ? null
+            : createEmbeddedPlayerRespawnEvent(nextPlayerState, resolvedPlayerSpawn);
         lastPlayerWallContactTransitionEvent = null;
         lastPlayerCeilingContactTransitionEvent = null;
       }
@@ -1007,6 +1017,7 @@ const bootstrap = async (): Promise<void> => {
     lastAppliedPlayerFollowCameraPosition = null;
     lastPlayerGroundedTransitionEvent = null;
     lastPlayerFacingTransitionEvent = null;
+    lastPlayerRespawnEvent = null;
     lastPlayerWallContactTransitionEvent = null;
     lastPlayerCeilingContactTransitionEvent = null;
     standalonePlayerState = null;
@@ -1273,6 +1284,7 @@ const bootstrap = async (): Promise<void> => {
       playerCameraFollow: debugOverlayPlayerCameraFollow,
       playerGroundedTransition: lastPlayerGroundedTransitionEvent,
       playerFacingTransition: lastPlayerFacingTransitionEvent,
+      playerRespawn: lastPlayerRespawnEvent,
       playerWallContactTransition: lastPlayerWallContactTransitionEvent,
       playerCeilingContactTransition: lastPlayerCeilingContactTransitionEvent
     });

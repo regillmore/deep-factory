@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Surface standalone player auto-respawn events in the debug overlay when embedded-tile recovery triggers.
+- Changes: Added [src/world/playerRespawnEvent.ts](../src/world/playerRespawnEvent.ts) plus [src/world/playerRespawnEvent.test.ts](../src/world/playerRespawnEvent.test.ts) to capture embedded-recovery respawn telemetry from the resolved spawn point, updated [src/main.ts](../src/main.ts) to retain the latest auto-respawn event alongside the existing player transition telemetry, extended [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to render the latest respawn event line, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/world/playerRespawnEvent.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an authored-atlas asset regression test that default direct `render.uvRect` sources do not overlap the fully transparent exterior padding strip outside authored regions.
 - Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) to enumerate shipped static and animated direct-`render.uvRect` sources through one helper and fail if any committed pixel rect overlaps the exterior padding strip beyond the authored atlas bounds; advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

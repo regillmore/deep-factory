@@ -2,6 +2,7 @@ import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
+import type { PlayerRespawnEventKind } from '../world/playerRespawnEvent';
 import type { PlayerWallContactTransitionKind } from '../world/playerWallContactTransition';
 import type { TileLiquidKind } from '../world/tileMetadata';
 
@@ -98,6 +99,13 @@ export interface DebugOverlayPlayerFacingTransitionTelemetry {
   velocity: { x: number; y: number };
 }
 
+export interface DebugOverlayPlayerRespawnTelemetry {
+  kind: PlayerRespawnEventKind;
+  spawnTile: { x: number; y: number };
+  position: { x: number; y: number };
+  velocity: { x: number; y: number };
+}
+
 export interface DebugOverlayPlayerWallContactTransitionTelemetry {
   kind: PlayerWallContactTransitionKind;
   tile: { x: number; y: number; id: number };
@@ -121,6 +129,7 @@ export interface DebugOverlayInspectState {
   playerCameraFollow: DebugOverlayPlayerCameraFollowTelemetry | null;
   playerGroundedTransition: DebugOverlayPlayerGroundedTransitionTelemetry | null;
   playerFacingTransition: DebugOverlayPlayerFacingTransitionTelemetry | null;
+  playerRespawn: DebugOverlayPlayerRespawnTelemetry | null;
   playerWallContactTransition: DebugOverlayPlayerWallContactTransitionTelemetry | null;
   playerCeilingContactTransition: DebugOverlayPlayerCeilingContactTransitionTelemetry | null;
 }
@@ -301,6 +310,23 @@ const formatPlayerFacingTransitionLine = (
   );
 };
 
+const formatPlayerRespawnLine = (
+  playerRespawn: DebugOverlayPlayerRespawnTelemetry | null
+): string => {
+  if (!playerRespawn) {
+    return 'RespawnEvt: none';
+  }
+
+  return (
+    `RespawnEvt: ${playerRespawn.kind} | ` +
+    `SpawnT:${playerRespawn.spawnTile.x},${playerRespawn.spawnTile.y} | ` +
+    `Pos:${formatFloat(playerRespawn.position.x, 2)},` +
+    `${formatFloat(playerRespawn.position.y, 2)} | ` +
+    `Vel:${formatFloat(playerRespawn.velocity.x, 2)},` +
+    `${formatFloat(playerRespawn.velocity.y, 2)}`
+  );
+};
+
 const formatPlayerWallContactTransitionLine = (
   playerWallContactTransition: DebugOverlayPlayerWallContactTransitionTelemetry | null
 ): string => {
@@ -369,6 +395,7 @@ export const formatDebugOverlayText = (
   const playerCameraFollow = inspect?.playerCameraFollow ?? null;
   const playerGroundedTransition = inspect?.playerGroundedTransition ?? null;
   const playerFacingTransition = inspect?.playerFacingTransition ?? null;
+  const playerRespawn = inspect?.playerRespawn ?? null;
   const playerWallContactTransition = inspect?.playerWallContactTransition ?? null;
   const playerCeilingContactTransition = inspect?.playerCeilingContactTransition ?? null;
   const lines = [
@@ -379,6 +406,7 @@ export const formatDebugOverlayText = (
     formatPlayerLine(player),
     formatPlayerGroundedTransitionLine(playerGroundedTransition),
     formatPlayerFacingTransitionLine(playerFacingTransition),
+    formatPlayerRespawnLine(playerRespawn),
     formatPlayerWallContactTransitionLine(playerWallContactTransition),
     formatPlayerCeilingContactTransitionLine(playerCeilingContactTransition),
     formatPlayerAabbLine(player),
