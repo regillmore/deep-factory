@@ -1,6 +1,7 @@
 import type { TouchDebugEditMode } from '../input/controller';
 import {
   getDesktopDebugOverlayHotkeyLabel,
+  getDesktopPlayerSpawnMarkerHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel,
   getDebugBrushSlotHotkeyLabel,
   getDebugEditPanelToggleHotkeyLabel,
@@ -711,6 +712,13 @@ export class TouchDebugEditControls {
     hudShortcutLine.style.fontSize = '11px';
     hudShortcutLine.style.lineHeight = '1.35';
     shortcutSection.append(hudShortcutLine);
+
+    const spawnMarkerShortcutLine = document.createElement('div');
+    spawnMarkerShortcutLine.textContent = `Spawn marker: ${getDesktopPlayerSpawnMarkerHotkeyLabel()} toggle the standalone player spawn overlay`;
+    spawnMarkerShortcutLine.style.color = '#d6dde8';
+    spawnMarkerShortcutLine.style.fontSize = '11px';
+    spawnMarkerShortcutLine.style.lineHeight = '1.35';
+    shortcutSection.append(spawnMarkerShortcutLine);
 
     const panelShortcutLine = document.createElement('div');
     panelShortcutLine.textContent = `Panel: ${panelToggleHotkeyLabel} collapse/expand`;

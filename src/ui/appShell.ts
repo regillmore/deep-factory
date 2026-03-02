@@ -1,6 +1,7 @@
 import { installPointerClickFocusRelease } from './buttonFocus';
 import {
   getDesktopDebugOverlayHotkeyLabel,
+  getDesktopPlayerSpawnMarkerHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel
 } from '../input/debugEditShortcuts';
 
@@ -285,7 +286,7 @@ export class AppShell {
       viewModel.playerSpawnMarkerTogglePressed ? 'true' : 'false'
     );
     this.playerSpawnMarkerToggleButton.title = viewModel.playerSpawnMarkerTogglePressed
-      ? 'Hide standalone player spawn marker overlay'
-      : 'Show standalone player spawn marker overlay';
+      ? `Hide standalone player spawn marker overlay (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`
+      : `Show standalone player spawn marker overlay (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`;
   }
 }

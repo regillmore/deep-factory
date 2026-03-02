@@ -192,15 +192,18 @@ describe('player control key resolution', () => {
     expect(isPlayerMoveLeftControlKey('arrowleft')).toBe(true);
     expect(isPlayerMoveLeftControlKey('c')).toBe(false);
     expect(isPlayerMoveLeftControlKey('h')).toBe(false);
+    expect(isPlayerMoveLeftControlKey('m')).toBe(false);
     expect(isPlayerMoveRightControlKey('d')).toBe(true);
     expect(isPlayerMoveRightControlKey('arrowright')).toBe(true);
     expect(isPlayerMoveRightControlKey('c')).toBe(false);
     expect(isPlayerMoveRightControlKey('h')).toBe(false);
+    expect(isPlayerMoveRightControlKey('m')).toBe(false);
     expect(isPlayerJumpControlKey(' ')).toBe(true);
     expect(isPlayerJumpControlKey('w')).toBe(true);
     expect(isPlayerJumpControlKey('arrowup')).toBe(true);
     expect(isPlayerJumpControlKey('c')).toBe(false);
     expect(isPlayerJumpControlKey('h')).toBe(false);
+    expect(isPlayerJumpControlKey('m')).toBe(false);
     expect(isPlayerJumpControlKey('s')).toBe(false);
   });
 

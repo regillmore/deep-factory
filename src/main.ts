@@ -947,6 +947,13 @@ const bootstrap = async (): Promise<void> => {
         syncInWorldShellState();
         syncDebugOverlayVisibility();
       }
+    } else if (action.type === 'toggle-player-spawn-marker') {
+      handled = worldStarted;
+      if (handled) {
+        playerSpawnMarkerVisible = !playerSpawnMarkerVisible;
+        syncInWorldShellState();
+        syncPlayerSpawnMarkerVisibility();
+      }
     } else if (action.type === 'cancel-armed-tools') {
       handled = input.cancelArmedDebugTools();
       if (handled) {

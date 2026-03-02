@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cycleDebugBrushTileId,
   getDesktopDebugOverlayHotkeyLabel,
+  getDesktopPlayerSpawnMarkerHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel,
   getDebugEditPanelToggleHotkeyLabel,
   getDebugBrushSlotHotkeyLabel,
@@ -59,6 +60,15 @@ describe('resolveDebugEditShortcutAction', () => {
     });
     expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'H', shiftKey: true }))).toEqual({
       type: 'toggle-debug-overlay'
+    });
+  });
+
+  it('maps M to toggle the spawn marker overlay', () => {
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'm' }))).toEqual({
+      type: 'toggle-player-spawn-marker'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'M', shiftKey: true }))).toEqual({
+      type: 'toggle-player-spawn-marker'
     });
   });
 
@@ -221,6 +231,10 @@ describe('brush shortcut helpers', () => {
 
   it('returns the desktop debug-overlay hotkey label', () => {
     expect(getDesktopDebugOverlayHotkeyLabel()).toBe('H');
+  });
+
+  it('returns the desktop spawn-marker hotkey label', () => {
+    expect(getDesktopPlayerSpawnMarkerHotkeyLabel()).toBe('M');
   });
 
   it('returns the panel toggle hotkey label', () => {

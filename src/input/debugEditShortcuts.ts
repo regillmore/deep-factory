@@ -16,6 +16,7 @@ export type DebugEditShortcutAction =
   | { type: 'redo' }
   | { type: 'recenter-camera' }
   | { type: 'toggle-debug-overlay' }
+  | { type: 'toggle-player-spawn-marker' }
   | { type: 'cancel-armed-tools' }
   | { type: 'toggle-panel-collapsed' }
   | { type: 'set-touch-mode'; mode: 'pan' | 'place' | 'break' }
@@ -79,6 +80,7 @@ export const getTouchDebugEditModeHotkeyLabel = (mode: 'pan' | 'place' | 'break'
 
 export const getDesktopRecenterCameraHotkeyLabel = (): string => 'C';
 export const getDesktopDebugOverlayHotkeyLabel = (): string => 'H';
+export const getDesktopPlayerSpawnMarkerHotkeyLabel = (): string => 'M';
 
 export const getDebugEditPanelToggleHotkeyLabel = (): string => '\\';
 
@@ -143,6 +145,10 @@ export const resolveDebugEditShortcutAction = (
 
   if (normalizedKey === getDesktopDebugOverlayHotkeyLabel().toLowerCase()) {
     return { type: 'toggle-debug-overlay' };
+  }
+
+  if (normalizedKey === getDesktopPlayerSpawnMarkerHotkeyLabel().toLowerCase()) {
+    return { type: 'toggle-player-spawn-marker' };
   }
 
   const code = event.code ?? '';
