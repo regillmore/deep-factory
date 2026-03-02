@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Move debug overlay visibility behind shell/UI toggles instead of always-on bootstrap wiring.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the shell now exposes an in-world `Debug HUD` toggle state, refreshed [src/style.css](../src/style.css) with matching in-world chrome styling, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) so the text HUD honors explicit visibility instead of forcing itself on every frame, wired [src/main.ts](../src/main.ts) so entering the world and the new shell toggle drive that visibility, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DECISIONS.md](docs/DECISIONS.md), and [README.md](../README.md).
+- Verification: Ran `npx vitest run src/ui/appShell.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an app shell with explicit `boot`, `main menu`, and `in-world` states.
 - Changes: Added [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) for a focused shell-state model and overlay UI, updated [src/main.ts](../src/main.ts) so renderer bootstrap runs behind a boot screen, lands on a main menu after initialization, renders a static world preview before play, and only starts the fixed-step loop when `Enter World` is pressed, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) so the overlay stays hidden until in-world rendering actually begins, refreshed [src/style.css](../src/style.css) for the new shell presentation, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DECISIONS.md](docs/DECISIONS.md), and [README.md](../README.md).
 - Verification: Ran `npx vitest run src/ui/appShell.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

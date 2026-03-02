@@ -326,6 +326,7 @@ export class DebugOverlay {
   private root: HTMLDivElement;
   private fps = 0;
   private smoothDelta = 16;
+  private visible = false;
 
   constructor() {
     this.root = document.createElement('div');
@@ -345,6 +346,11 @@ export class DebugOverlay {
     document.body.append(this.root);
   }
 
+  setVisible(visible: boolean): void {
+    this.visible = visible;
+    this.root.style.display = this.visible ? 'block' : 'none';
+  }
+
   update(
     deltaMs: number,
     stats: DebugOverlayStats,
@@ -352,7 +358,7 @@ export class DebugOverlay {
   ): void {
     this.smoothDelta = this.smoothDelta * 0.9 + deltaMs * 0.1;
     this.fps = 1000 / this.smoothDelta;
-    this.root.style.display = 'block';
+    this.root.style.display = this.visible ? 'block' : 'none';
     this.root.textContent = formatDebugOverlayText(this.fps, stats, inspect);
   }
 }

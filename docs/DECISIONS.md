@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Upcoming shell and menu work needs a stable state boundary above renderer/input bootstrap instead of auto-starting gameplay directly from `main.ts`.
 - Consequence: Future shell, pause, and menu tasks should transition through the app-shell state model rather than assuming world simulation begins as soon as bootstrap finishes.
 
+### 2026-03-02: Debug HUD visibility is controlled by in-world shell chrome
+
+- Decision: The text debug overlay now defaults hidden and is shown only when the in-world shell toggle enables it.
+- Reason: The project needs debug telemetry available on demand without forcing an always-on HUD over normal play and menu flows.
+- Consequence: Future debug HUD additions should respect the shell-controlled visibility state instead of assuming the overlay is permanently visible once gameplay starts.
+
 ### 2026-03-02: Visible authored-atlas pixels must stay inside documented authored regions
 
 - Decision: Non-transparent pixels in the committed atlas PNG must stay inside authored regions touched by shipped metadata or explicitly documented as intentionally unused.

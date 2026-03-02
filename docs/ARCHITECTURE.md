@@ -9,7 +9,7 @@
 - `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, sparse edited-tile overrides that survive chunk streaming prune, mesh construction, plus authored atlas-region layout data.
 - `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups and elapsed-frame resolvers backed by `src/world/authoredAtlasLayout.ts`; renderer boot now validates authored atlas-index sources against the loaded atlas dimensions and direct `uvRect` metadata against both atlas bounds and whole-pixel atlas edges).
 - `src/gl/animatedChunkMesh.ts`: renderer-side helper that rewrites baked chunk UVs for animated non-terrain quads when elapsed time advances to a new metadata frame.
-- `src/ui/`: app shell, debug DOM overlays, spawn marker, and touch-only player controls.
+- `src/ui/`: app shell plus in-world shell chrome, debug DOM overlays, spawn marker, and touch-only player controls.
 
 ## Update loop
 

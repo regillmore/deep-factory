@@ -45,6 +45,54 @@ canvas {
   inset: 0;
 }
 
+.app-shell__chrome {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 120;
+  display: flex;
+  justify-content: flex-end;
+  padding: clamp(12px, 2.5vw, 20px);
+  pointer-events: none;
+}
+
+.app-shell__chrome-button {
+  pointer-events: auto;
+  padding: 10px 14px;
+  border: 1px solid rgba(140, 220, 255, 0.26);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(12, 18, 25, 0.88), rgba(8, 12, 18, 0.84)),
+    linear-gradient(135deg, rgba(120, 210, 255, 0.1), rgba(243, 205, 135, 0.08));
+  color: #d6edf7;
+  font:
+    700 11px/1.1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+}
+
+.app-shell__chrome-button[aria-pressed='true'] {
+  border-color: rgba(243, 205, 135, 0.34);
+  background:
+    linear-gradient(180deg, rgba(34, 25, 13, 0.9), rgba(23, 16, 9, 0.86)),
+    linear-gradient(135deg, rgba(243, 205, 135, 0.18), rgba(120, 210, 255, 0.08));
+  color: #fff1cf;
+}
+
+.app-shell__chrome-button:hover {
+  filter: brightness(1.04);
+}
+
+.app-shell__chrome-button:focus-visible {
+  outline: 2px solid #9fddff;
+  outline-offset: 3px;
+}
+
 .app-shell__overlay {
   position: absolute;
   inset: 0;
@@ -164,6 +212,11 @@ canvas {
 
   .app-shell__primary {
     width: 100%;
+  }
+
+  .app-shell__chrome {
+    left: 0;
+    justify-content: center;
   }
 }
 

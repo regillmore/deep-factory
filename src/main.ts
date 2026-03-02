@@ -108,12 +108,20 @@ if (!app) throw new Error('Missing #app root element');
 const bootstrap = async (): Promise<void> => {
   let worldStarted = false;
   let loop: GameLoop | null = null;
+  let debugOverlayVisible = false;
   const shell = new AppShell(app, {
     onPrimaryAction: (screen) => {
       if (screen !== 'main-menu' || worldStarted || loop === null) return;
       worldStarted = true;
-      shell.setState({ screen: 'in-world' });
+      shell.setState({ screen: 'in-world', debugOverlayVisible });
+      syncDebugOverlayVisibility();
       loop.start();
+    },
+    onToggleDebugOverlay: (screen) => {
+      if (screen !== 'in-world') return;
+      debugOverlayVisible = !debugOverlayVisible;
+      shell.setState({ screen: 'in-world', debugOverlayVisible });
+      syncDebugOverlayVisibility();
     }
   });
   shell.setState({
@@ -138,10 +146,14 @@ const bootstrap = async (): Promise<void> => {
   const camera = new Camera2D();
   const input = new InputController(canvas, camera);
   const debug = new DebugOverlay();
+  debug.setVisible(false);
   const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
   const playerSpawnMarker = new PlayerSpawnMarkerOverlay(canvas);
   const armedDebugToolPreview = new ArmedDebugToolPreviewOverlay(canvas);
   const debugEditStatusStrip = new DebugEditStatusStrip(canvas);
+  const syncDebugOverlayVisibility = (): void => {
+    debug.setVisible(worldStarted && debugOverlayVisible);
+  };
   input.retainPointerInspectWhenLeavingToElement(debugEditStatusStrip.getPointerInspectRetainerElement());
   const debugTileEditHistory = new DebugTileEditHistory();
   const debugEditControlStorage = (() => {
