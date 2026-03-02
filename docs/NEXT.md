@@ -6,7 +6,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 50. Add an authored-atlas asset regression test that explicitly unused authored regions stay unreferenced by default direct `render.uvRect` sources as well as atlas-index metadata.
 51. Add an authored-atlas asset regression test that default direct `render.uvRect` sources do not overlap the fully transparent exterior padding strip outside authored regions.
-52. Add an authored-atlas asset regression test that animated direct `render.uvRect` frames stay inside authored atlas regions instead of overlapping uncovered canvas space.
+53. Add an authored-atlas asset regression test that static default direct `render.uvRect` sources stay inside authored atlas regions instead of overlapping uncovered canvas space.
 
 ## Collision and player foundation
 

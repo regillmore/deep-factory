@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Add an authored-atlas asset regression test that animated direct `render.uvRect` frames stay inside authored atlas regions instead of overlapping uncovered canvas space.
+- Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) to convert every default animated direct-`render.uvRect` frame into committed-atlas pixel bounds and fail when any pixel falls outside the explicit authored region set, then advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface standalone player grounded-transition events in the debug overlay when jump, fall, or landing changes `grounded` between fixed steps.
 - Changes: Added [src/world/playerGroundedTransition.ts](../src/world/playerGroundedTransition.ts) plus [src/world/playerGroundedTransition.test.ts](../src/world/playerGroundedTransition.test.ts) to classify fixed-step `grounded` flips as `jump`, `fall`, or `landing`, updated [src/main.ts](../src/main.ts) to retain the latest grounded-transition event from the shared player step path and clear stale events on spawn or respawn, extended [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to render that latest event in the overlay, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/world/playerGroundedTransition.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

@@ -433,6 +433,22 @@ const findFirstNonTransparentPixelOutsideRegions = (
   return null;
 };
 
+const findFirstPixelInRegionOutsideRegions = (
+  candidateRegion: AtlasPixelRegion,
+  allowedRegions: readonly AtlasPixelRegion[]
+): AtlasPixelCoordinate | null => {
+  for (let y = candidateRegion.y; y < candidateRegion.y + candidateRegion.height; y += 1) {
+    for (let x = candidateRegion.x; x < candidateRegion.x + candidateRegion.width; x += 1) {
+      const coordinate = { x, y };
+      if (!allowedRegions.some((region) => regionContainsPixel(region, coordinate))) {
+        return coordinate;
+      }
+    }
+  }
+
+  return null;
+};
+
 const regionsMatchForVisibleContent = (
   rgbaPixels: Uint8Array,
   pngWidth: number,
@@ -689,6 +705,26 @@ describe('authored atlas asset', () => {
           `tile ${transition.tileId} "${transition.tileName}" frame ${transition.frameIndex} matches frame ${transition.previousFrameIndex} in the committed atlas PNG`
         );
       }
+    }
+  });
+
+  it('keeps every default animated direct render.uvRect frame inside authored atlas regions', () => {
+    const { pngWidth, pngHeight } = readCommittedAtlasPng();
+    const animatedDirectUvRectFrameSources = collectAnimatedDirectRenderUvRectFrameSources();
+
+    expect(animatedDirectUvRectFrameSources.length).toBeGreaterThan(1);
+    expect(animatedDirectUvRectFrameSources.some((source) => source.frameIndex > 0)).toBe(true);
+
+    for (const source of animatedDirectUvRectFrameSources) {
+      const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
+      const spillPixel = findFirstPixelInRegionOutsideRegions(pixelRegion, AUTHORED_ATLAS_REGIONS);
+
+      expect(
+        spillPixel,
+        spillPixel
+          ? `tile ${source.tileId} "${source.tileName}" frame ${source.frameIndex} overlaps uncovered atlas pixel (${spillPixel.x}, ${spillPixel.y}) outside authored regions`
+          : undefined
+      ).toBeNull();
     }
   });
 
