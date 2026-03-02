@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Surface standalone player grounded-transition events in the debug overlay when jump, fall, or landing changes `grounded` between fixed steps.
+- Changes: Added [src/world/playerGroundedTransition.ts](../src/world/playerGroundedTransition.ts) plus [src/world/playerGroundedTransition.test.ts](../src/world/playerGroundedTransition.test.ts) to classify fixed-step `grounded` flips as `jump`, `fall`, or `landing`, updated [src/main.ts](../src/main.ts) to retain the latest grounded-transition event from the shared player step path and clear stale events on spawn or respawn, extended [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to render that latest event in the overlay, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/world/playerGroundedTransition.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an authored-atlas asset regression test that committed non-transparent pixels do not spill outside authored regions referenced by default metadata or regions documented as intentionally unused.
 - Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) to derive the authored regions touched by shipped atlas-index and direct-`render.uvRect` metadata, then scan the committed PNG for visible pixels outside that documented region set; advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

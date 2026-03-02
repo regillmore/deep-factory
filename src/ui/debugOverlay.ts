@@ -1,4 +1,5 @@
 import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
+import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
 import type { TileLiquidKind } from '../world/tileMetadata';
 
 export interface DebugOverlayStats {
@@ -80,6 +81,12 @@ export interface DebugOverlayPlayerCameraFollowTelemetry {
   offset: { x: number; y: number };
 }
 
+export interface DebugOverlayPlayerGroundedTransitionTelemetry {
+  kind: PlayerGroundedTransitionKind;
+  position: { x: number; y: number };
+  velocity: { x: number; y: number };
+}
+
 export interface DebugOverlayInspectState {
   pointer: DebugOverlayPointerInspect | null;
   pinned: DebugOverlayTileInspect | null;
@@ -87,6 +94,7 @@ export interface DebugOverlayInspectState {
   player: DebugOverlayPlayerTelemetry | null;
   playerIntent: DebugOverlayPlayerIntentTelemetry | null;
   playerCameraFollow: DebugOverlayPlayerCameraFollowTelemetry | null;
+  playerGroundedTransition: DebugOverlayPlayerGroundedTransitionTelemetry | null;
 }
 
 const formatFloat = (value: number, digits: number): string => value.toFixed(digits);
@@ -233,6 +241,22 @@ const formatPlayerIntentLine = (playerIntent: DebugOverlayPlayerIntentTelemetry 
   );
 };
 
+const formatPlayerGroundedTransitionLine = (
+  playerGroundedTransition: DebugOverlayPlayerGroundedTransitionTelemetry | null
+): string => {
+  if (!playerGroundedTransition) {
+    return 'GroundEvt: none';
+  }
+
+  return (
+    `GroundEvt: ${playerGroundedTransition.kind} | ` +
+    `Pos:${formatFloat(playerGroundedTransition.position.x, 2)},` +
+    `${formatFloat(playerGroundedTransition.position.y, 2)} | ` +
+    `Vel:${formatFloat(playerGroundedTransition.velocity.x, 2)},` +
+    `${formatFloat(playerGroundedTransition.velocity.y, 2)}`
+  );
+};
+
 const formatAnimatedChunkUvUploadLine = (stats: DebugOverlayStats): string =>
   `AnimUV: uploads:${stats.animatedChunkUvUploadCount} | ` +
   `quads:${stats.animatedChunkUvUploadQuadCount} | ` +
@@ -263,12 +287,14 @@ export const formatDebugOverlayText = (
   const player = inspect?.player ?? null;
   const playerIntent = inspect?.playerIntent ?? null;
   const playerCameraFollow = inspect?.playerCameraFollow ?? null;
+  const playerGroundedTransition = inspect?.playerGroundedTransition ?? null;
   const lines = [
     summaryLine,
     formatAtlasLine(stats),
     formatAtlasValidationLine(stats),
     formatSpawnLine(spawn),
     formatPlayerLine(player),
+    formatPlayerGroundedTransitionLine(playerGroundedTransition),
     formatPlayerAabbLine(player),
     formatPlayerCameraFollowLine(playerCameraFollow),
     formatPlayerContactsLine(player),

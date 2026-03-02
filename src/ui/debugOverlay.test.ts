@@ -35,6 +35,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nAtlasWarn: none');
     expect(text).toContain('\nSpawn: unresolved');
     expect(text).toContain('\nPlayer: n/a');
+    expect(text).toContain('\nGroundEvt: none');
     expect(text).toContain('\nAABB: n/a');
     expect(text).toContain('\nFollow: n/a');
     expect(text).toContain('\nContact: n/a');
@@ -111,6 +112,7 @@ describe('formatDebugOverlayText', () => {
         jumpHeld: true,
         jumpPressed: false
       },
+      playerGroundedTransition: null,
       playerCameraFollow: null,
       player: null,
       pinned: null
@@ -140,6 +142,11 @@ describe('formatDebugOverlayText', () => {
         jumpHeld: true,
         jumpPressed: true
       },
+      playerGroundedTransition: {
+        kind: 'jump',
+        position: { x: 24.5, y: -12.25 },
+        velocity: { x: -180, y: -220 }
+      },
       playerCameraFollow: {
         focus: { x: 24.5, y: -26.25 },
         offset: { x: 18, y: -6 }
@@ -164,6 +171,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain('\nPlayer: Pos:24.50,-12.25 | Vel:-180.00,60.00 | grounded:off | facing:left');
+    expect(text).toContain('\nGroundEvt: jump | Pos:24.50,-12.25 | Vel:-180.00,-220.00');
     expect(text).toContain('\nAABB: min:18.50,-40.25 | max:30.50,-12.25 | size:12.00,28.00');
     expect(text).toContain('\nFollow: focus:24.50,-26.25 | offset:18.00,-6.00');
     expect(text).toContain('\nContact: support:none | wall:0,-1 (#3) | ceiling:1,-3 (#5)');
@@ -205,6 +213,7 @@ describe('formatDebugOverlayText', () => {
       pointer: null,
       spawn: null,
       playerIntent: null,
+      playerGroundedTransition: null,
       playerCameraFollow: null,
       player: null,
       pinned: {
@@ -250,6 +259,11 @@ describe('formatDebugOverlayText', () => {
         jumpHeld: false,
         jumpPressed: false
       },
+      playerGroundedTransition: {
+        kind: 'landing',
+        position: { x: 12, y: 0 },
+        velocity: { x: 0, y: 0 }
+      },
       playerCameraFollow: null,
       player: null,
       pinned: {
@@ -265,6 +279,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('Ptr(touch)');
     expect(text).toContain('Spawn: T:-1,0 | W:-8.00,0.00');
     expect(text).toContain('Intent: move:0 | jumpHeld:off | jumpPressed:off');
+    expect(text).toContain('GroundEvt: landing | Pos:12.00,0.00 | Vel:0.00,0.00');
     expect(text).toContain('Tile:dirt (#3)');
     expect(text).toContain('\nPin: Tile:lava (#4)');
     expect(text).toContain('T:-1,65');

@@ -42,6 +42,10 @@ import { TouchPlayerControls } from './ui/touchPlayerControls';
 import { CHUNK_SIZE } from './world/constants';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
 import {
+  resolvePlayerGroundedTransitionEvent,
+  type PlayerGroundedTransitionEvent
+} from './world/playerGroundedTransition';
+import {
   createPlayerStateFromSpawn,
   DEFAULT_PLAYER_HEIGHT,
   DEFAULT_PLAYER_WIDTH,
@@ -153,6 +157,7 @@ const bootstrap = async (): Promise<void> => {
   let playerSpawnNeedsRefresh = false;
   let cameraFollowOffset: CameraFollowOffset = { x: 0, y: 0 };
   let lastAppliedPlayerFollowCameraPosition: CameraFollowPoint | null = null;
+  let lastPlayerGroundedTransitionEvent: PlayerGroundedTransitionEvent | null = null;
 
   const applyStandalonePlayerCameraFollow = (): void => {
     if (!standalonePlayerState) {
@@ -188,15 +193,20 @@ const bootstrap = async (): Promise<void> => {
     playerSpawnNeedsRefresh = false;
     if (standalonePlayerState === null && resolvedPlayerSpawn) {
       standalonePlayerState = createPlayerStateFromSpawn(resolvedPlayerSpawn);
+      lastPlayerGroundedTransitionEvent = null;
       centerCameraOnStandalonePlayer();
       return;
     }
 
     if (standalonePlayerState !== null) {
-      standalonePlayerState = renderer.respawnPlayerStateAtSpawnIfEmbeddedInSolid(
+      const nextPlayerState = renderer.respawnPlayerStateAtSpawnIfEmbeddedInSolid(
         standalonePlayerState,
         resolvedPlayerSpawn
       );
+      if (nextPlayerState !== standalonePlayerState) {
+        lastPlayerGroundedTransitionEvent = null;
+      }
+      standalonePlayerState = nextPlayerState;
     }
   };
 
@@ -1029,11 +1039,21 @@ const bootstrap = async (): Promise<void> => {
       }
 
       if (standalonePlayerState) {
-        standalonePlayerState = renderer.stepPlayerState(
+        const playerMovementIntent = input.getPlayerMovementIntent();
+        const nextPlayerState = renderer.stepPlayerState(
           standalonePlayerState,
           fixedDt,
-          input.getPlayerMovementIntent()
+          playerMovementIntent
         );
+        const groundedTransitionEvent = resolvePlayerGroundedTransitionEvent(
+          standalonePlayerState,
+          nextPlayerState,
+          playerMovementIntent
+        );
+        standalonePlayerState = nextPlayerState;
+        if (groundedTransitionEvent !== null) {
+          lastPlayerGroundedTransitionEvent = groundedTransitionEvent;
+        }
         applyStandalonePlayerCameraFollow();
       }
     },
@@ -1162,7 +1182,8 @@ const bootstrap = async (): Promise<void> => {
         spawn: debugOverlaySpawn,
         player: debugOverlayPlayer,
         playerIntent: debugOverlayPlayerIntent,
-        playerCameraFollow: debugOverlayPlayerCameraFollow
+        playerCameraFollow: debugOverlayPlayerCameraFollow,
+        playerGroundedTransition: lastPlayerGroundedTransitionEvent
       });
     }
   );

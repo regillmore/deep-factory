@@ -50,4 +50,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Player debugging
 
 31. Surface standalone player auto-respawn events in the debug overlay when embedded-tile recovery triggers.
-34. Surface standalone player grounded-transition events in the debug overlay when jump, fall, or landing changes `grounded` between fixed steps.
+35. Surface standalone player wall-contact transition events in the debug overlay when horizontal collision blocking appears or clears between fixed steps.
