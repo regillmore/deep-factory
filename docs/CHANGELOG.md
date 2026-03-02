@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Normalize away fully transparent RGB when authored-atlas animation regressions compare consecutive committed PNG frames, so invisible pixel drift does not satisfy the atlas-index or direct-`render.uvRect` frame-difference checks.
+- Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) so animated committed-frame comparisons now ignore RGB differences when both pixels are fully transparent while still failing on visible drift, added focused helper coverage for that normalization, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Add an authored-atlas asset regression test that any default animated direct `render.uvRect` frame differs from its prior frame in the committed PNG.
 - Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) to enumerate consecutive default direct-`render.uvRect` animation frames from shipped metadata, compare their committed PNG sub-rects pixel-for-pixel, and fail when any frame repeats its prior atlas art; then advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

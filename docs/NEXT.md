@@ -8,7 +8,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 40. Add an authored-atlas asset regression test that committed non-transparent pixels do not spill outside authored regions referenced by default metadata or regions documented as intentionally unused.
 45. Add a renderer regression test that pruned animated direct `render.uvRect` chunks resume elapsed-frame UV uploads after rebuild.
 46. Add a renderer regression test that pruned animated direct `render.uvRect` chunks rebuilt at frame-zero elapsed time skip redundant UV reuploads.
-47. Normalize away fully transparent RGB when authored-atlas animation regressions compare consecutive committed PNG frames, so invisible pixel drift does not satisfy the atlas-index or direct-`render.uvRect` frame-difference checks.
+48. Expand the committed atlas canvas with one documented unused authored region plus transparent padding outside all authored regions so tasks 39 and 40 exercise real empty space.
 
 ## Collision and player foundation
 

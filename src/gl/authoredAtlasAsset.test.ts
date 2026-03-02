@@ -367,7 +367,7 @@ const regionContainsAnyNonTransparentPixel = (
   return false;
 };
 
-const regionsMatchExactly = (
+const regionsMatchForVisibleContent = (
   rgbaPixels: Uint8Array,
   pngWidth: number,
   leftRegion: AtlasPixelRegion,
@@ -383,8 +383,18 @@ const regionsMatchExactly = (
         ((leftRegion.y + y) * pngWidth + leftRegion.x + x) * PNG_BYTES_PER_PIXEL_RGBA;
       const rightPixelStart =
         ((rightRegion.y + y) * pngWidth + rightRegion.x + x) * PNG_BYTES_PER_PIXEL_RGBA;
+      const leftAlpha = rgbaPixels[leftPixelStart + 3];
+      const rightAlpha = rgbaPixels[rightPixelStart + 3];
 
-      for (let channel = 0; channel < PNG_BYTES_PER_PIXEL_RGBA; channel += 1) {
+      if (leftAlpha !== rightAlpha) {
+        return false;
+      }
+
+      if (leftAlpha === 0 && rightAlpha === 0) {
+        continue;
+      }
+
+      for (let channel = 0; channel < PNG_BYTES_PER_PIXEL_RGBA - 1; channel += 1) {
         if (rgbaPixels[leftPixelStart + channel] !== rgbaPixels[rightPixelStart + channel]) {
           return false;
         }
@@ -394,6 +404,40 @@ const regionsMatchExactly = (
 
   return true;
 };
+
+describe('authored atlas asset comparison helper', () => {
+  it('ignores RGB drift when both compared pixels are fully transparent', () => {
+    const rgbaPixels = Uint8Array.from([
+      255, 0, 0, 0,
+      0, 255, 255, 0
+    ]);
+
+    expect(
+      regionsMatchForVisibleContent(
+        rgbaPixels,
+        2,
+        { x: 0, y: 0, width: 1, height: 1 },
+        { x: 1, y: 0, width: 1, height: 1 }
+      )
+    ).toBe(true);
+  });
+
+  it('still fails when compared pixels differ visibly', () => {
+    const rgbaPixels = Uint8Array.from([
+      255, 0, 0, 255,
+      0, 255, 255, 255
+    ]);
+
+    expect(
+      regionsMatchForVisibleContent(
+        rgbaPixels,
+        2,
+        { x: 0, y: 0, width: 1, height: 1 },
+        { x: 1, y: 0, width: 1, height: 1 }
+      )
+    ).toBe(false);
+  });
+});
 
 describe('authored atlas asset', () => {
   it('ships a committed PNG compatible with the authored atlas region layout', () => {
@@ -511,7 +555,7 @@ describe('authored atlas asset', () => {
       );
       const region = uvRectToPixelRegion(transition.uvRect, pngWidth, pngHeight);
 
-      if (regionsMatchExactly(rgbaPixels, pngWidth, previousRegion, region)) {
+      if (regionsMatchForVisibleContent(rgbaPixels, pngWidth, previousRegion, region)) {
         throw new Error(
           `tile ${transition.tileId} "${transition.tileName}" frame ${transition.frameIndex} matches frame ${transition.previousFrameIndex} in the committed atlas PNG`
         );
@@ -546,7 +590,7 @@ describe('authored atlas asset', () => {
       expect(previousRegion).toBeDefined();
       expect(region).toBeDefined();
 
-      if (regionsMatchExactly(rgbaPixels, pngWidth, previousRegion!, region!)) {
+      if (regionsMatchForVisibleContent(rgbaPixels, pngWidth, previousRegion!, region!)) {
         throw new Error(
           `tile ${transition.tileId} "${transition.tileName}" frame ${transition.frameIndex} matches frame ${transition.previousFrameIndex} in the committed atlas PNG`
         );
