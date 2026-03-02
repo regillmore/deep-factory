@@ -2,6 +2,7 @@ import { installPointerClickFocusRelease } from './buttonFocus';
 import {
   getDesktopDebugOverlayHotkeyLabel,
   getDesktopDebugEditOverlaysHotkeyLabel,
+  getDesktopFreshWorldHotkeyLabel,
   getDesktopPlayerSpawnMarkerHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel,
   getDesktopResumeWorldHotkeyLabel,
@@ -74,6 +75,9 @@ export const resolveAppShellRegionDisplay = (
 const resolveMainMenuPrimaryActionLabel = (label: string): string =>
   label === 'Resume World' ? `${label} (${getDesktopResumeWorldHotkeyLabel()})` : label;
 
+const resolveMainMenuSecondaryActionLabel = (label: string): string =>
+  label === 'New World' ? `${label} (${getDesktopFreshWorldHotkeyLabel()})` : label;
+
 export const resolveAppShellViewModel = (state: AppShellState): AppShellViewModel => {
   switch (state.screen) {
     case 'boot':
@@ -110,7 +114,10 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         primaryActionLabel: resolveMainMenuPrimaryActionLabel(
           state.primaryActionLabel ?? 'Enter World'
         ),
-        secondaryActionLabel: state.secondaryActionLabel ?? null,
+        secondaryActionLabel:
+          state.secondaryActionLabel == null
+            ? null
+            : resolveMainMenuSecondaryActionLabel(state.secondaryActionLabel),
         returnToMainMenuActionLabel: null,
         recenterCameraActionLabel: null,
         debugOverlayToggleLabel: null,
@@ -330,7 +337,7 @@ export class AppShell {
     this.secondaryButton.textContent = viewModel.secondaryActionLabel ?? '';
     this.secondaryButton.hidden = viewModel.secondaryActionLabel === null;
     this.secondaryButton.title =
-      viewModel.secondaryActionLabel === 'New World'
+      state.screen === 'main-menu' && state.secondaryActionLabel === 'New World'
         ? 'Abandon the paused world session and boot a fresh world'
         : '';
     const overlayActionsVisible =

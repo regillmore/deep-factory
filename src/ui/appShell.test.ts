@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { getDesktopResumeWorldHotkeyLabel } from '../input/debugEditShortcuts';
+import {
+  getDesktopFreshWorldHotkeyLabel,
+  getDesktopResumeWorldHotkeyLabel
+} from '../input/debugEditShortcuts';
 import { resolveAppShellRegionDisplay, resolveAppShellViewModel } from './appShell';
 
 describe('resolveAppShellRegionDisplay', () => {
@@ -70,7 +73,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.primaryActionLabel).toBe(
       `Resume World (${getDesktopResumeWorldHotkeyLabel()})`
     );
-    expect(viewModel.secondaryActionLabel).toBe('New World');
+    expect(viewModel.secondaryActionLabel).toBe(`New World (${getDesktopFreshWorldHotkeyLabel()})`);
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
     expect(viewModel.statusText).toBe('World session paused.');
     expect(viewModel.detailLines).toEqual(['Resume returns to the same initialized world session.']);
