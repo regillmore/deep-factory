@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Add a renderer regression test that default animated direct `render.uvRect` tiles patch chunk UVs when elapsed animation frames advance.
+- Changes: Updated [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a direct-`render.uvRect` animation regression around the default `debug_panel_blink` tile so renderer-time UV patch uploads are now locked to the expected frame-one and frame-zero sub-rects, then advanced [docs/NEXT.md](docs/NEXT.md).
+- Verification: Ran `npx vitest run src/gl/renderer.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Add a default animated direct `render.uvRect` metadata tile plus committed atlas content so direct-frame authored-asset regressions exercise a real shipped path.
 - Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) to add the default `debug_panel_blink` tile with direct `render.uvRect` animation frames against committed atlas pixels, expanded [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) with a regression that requires shipped metadata to include an animated direct-`uvRect` path backed by non-transparent committed PNG content, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

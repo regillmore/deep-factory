@@ -8,7 +8,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 40. Add an authored-atlas asset regression test that committed non-transparent pixels do not spill outside authored regions referenced by default metadata or regions documented as intentionally unused.
 41. Add an authored-atlas asset regression test that default animated direct `render.uvRect` frames stay aligned to whole atlas pixels in the committed PNG.
 42. Add an authored-atlas asset regression test that any default animated direct `render.uvRect` frame differs from its prior frame in the committed PNG.
-44. Add a renderer regression test that default animated direct `render.uvRect` tiles patch chunk UVs when elapsed animation frames advance.
+45. Add a renderer regression test that pruned animated direct `render.uvRect` chunks resume elapsed-frame UV uploads after rebuild.
 
 ## Collision and player foundation
 

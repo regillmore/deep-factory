@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Camera2D } from '../core/camera2d';
 import { CHUNK_SIZE, TILE_SIZE } from '../world/constants';
 import { createPlayerState } from '../world/playerState';
-import { atlasIndexToUvRect } from '../world/tileMetadata';
+import { atlasIndexToUvRect, resolveAnimatedTileRenderFrameUvRect } from '../world/tileMetadata';
 import type { AtlasValidationWarning } from './atlasValidation';
 
 const { loadAtlasImageSource, createTextureFromImageSource, createProgram, collectAtlasValidationWarnings } =
@@ -316,6 +316,70 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameZeroVertices?.byteLength ?? 0);
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+    performanceNowSpy.mockRestore();
+  });
+
+  it('patches animated direct render.uvRect chunk UVs when the elapsed frame changes', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    const performanceNowSpy = vi.spyOn(performance, 'now').mockReturnValue(0);
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    renderer.setTile(0, 0, 6);
+    const camera = new Camera2D();
+    camera.zoom = 16;
+
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+    expect(renderer.telemetry.meshBuildQueueLength).toBe(0);
+    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
+    expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+
+    const bufferData = vi.mocked(gl.bufferData);
+    bufferData.mockClear();
+
+    renderer.render(camera, { timeMs: 0 });
+    renderer.render(camera, { timeMs: 179 });
+    expect(bufferData).not.toHaveBeenCalled();
+    expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
+
+    renderer.render(camera, { timeMs: 180 });
+    expect(bufferData).toHaveBeenCalledTimes(1);
+    const frameOneVertices = bufferData.mock.calls[0]?.[1] as Float32Array | undefined;
+    const frameOneUv = resolveAnimatedTileRenderFrameUvRect(6, 1);
+    expect(frameOneUv).not.toBeNull();
+    expect(frameOneVertices).toBeInstanceOf(Float32Array);
+    expect(Array.from(frameOneVertices?.slice(2, 4) ?? [])).toEqual([frameOneUv!.u0, frameOneUv!.v0]);
+    expect(Array.from(frameOneVertices?.slice(22, 24) ?? [])).toEqual([frameOneUv!.u0, frameOneUv!.v1]);
+    expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameOneVertices?.byteLength ?? 0);
+
+    renderer.render(camera, { timeMs: 359 });
+    expect(bufferData).toHaveBeenCalledTimes(1);
+    expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
+
+    renderer.render(camera, { timeMs: 360 });
+    expect(bufferData).toHaveBeenCalledTimes(2);
+    const frameZeroVertices = bufferData.mock.calls[1]?.[1] as Float32Array | undefined;
+    const frameZeroUv = resolveAnimatedTileRenderFrameUvRect(6, 0);
+    expect(frameZeroUv).not.toBeNull();
+    expect(Array.from(frameZeroVertices?.slice(2, 4) ?? [])).toEqual([frameZeroUv!.u0, frameZeroUv!.v0]);
+    expect(Array.from(frameZeroVertices?.slice(22, 24) ?? [])).toEqual([frameZeroUv!.u0, frameZeroUv!.v1]);
+    expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameZeroVertices?.byteLength ?? 0);
     performanceNowSpy.mockRestore();
   });
 
