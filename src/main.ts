@@ -47,6 +47,10 @@ import {
   type PlayerGroundedTransitionEvent
 } from './world/playerGroundedTransition';
 import {
+  resolvePlayerWallContactTransitionEvent,
+  type PlayerWallContactTransitionEvent
+} from './world/playerWallContactTransition';
+import {
   createPlayerStateFromSpawn,
   DEFAULT_PLAYER_HEIGHT,
   DEFAULT_PLAYER_WIDTH,
@@ -185,6 +189,7 @@ const bootstrap = async (): Promise<void> => {
   let cameraFollowOffset: CameraFollowOffset = { x: 0, y: 0 };
   let lastAppliedPlayerFollowCameraPosition: CameraFollowPoint | null = null;
   let lastPlayerGroundedTransitionEvent: PlayerGroundedTransitionEvent | null = null;
+  let lastPlayerWallContactTransitionEvent: PlayerWallContactTransitionEvent | null = null;
 
   const applyStandalonePlayerCameraFollow = (): void => {
     if (!standalonePlayerState) {
@@ -221,6 +226,7 @@ const bootstrap = async (): Promise<void> => {
     if (standalonePlayerState === null && resolvedPlayerSpawn) {
       standalonePlayerState = createPlayerStateFromSpawn(resolvedPlayerSpawn);
       lastPlayerGroundedTransitionEvent = null;
+      lastPlayerWallContactTransitionEvent = null;
       centerCameraOnStandalonePlayer();
       return;
     }
@@ -232,6 +238,7 @@ const bootstrap = async (): Promise<void> => {
       );
       if (nextPlayerState !== standalonePlayerState) {
         lastPlayerGroundedTransitionEvent = null;
+        lastPlayerWallContactTransitionEvent = null;
       }
       standalonePlayerState = nextPlayerState;
     }
@@ -1065,7 +1072,8 @@ const bootstrap = async (): Promise<void> => {
       player: debugOverlayPlayer,
       playerIntent: debugOverlayPlayerIntent,
       playerCameraFollow: debugOverlayPlayerCameraFollow,
-      playerGroundedTransition: lastPlayerGroundedTransitionEvent
+      playerGroundedTransition: lastPlayerGroundedTransitionEvent,
+      playerWallContactTransition: lastPlayerWallContactTransitionEvent
     });
   };
 
@@ -1198,19 +1206,29 @@ const bootstrap = async (): Promise<void> => {
 
       if (standalonePlayerState) {
         const playerMovementIntent = input.getPlayerMovementIntent();
+        const previousPlayerContacts = renderer.getPlayerCollisionContacts(standalonePlayerState);
         const nextPlayerState = renderer.stepPlayerState(
           standalonePlayerState,
           fixedDt,
           playerMovementIntent
         );
+        const nextPlayerContacts = renderer.getPlayerCollisionContacts(nextPlayerState);
         const groundedTransitionEvent = resolvePlayerGroundedTransitionEvent(
           standalonePlayerState,
           nextPlayerState,
           playerMovementIntent
         );
+        const wallContactTransitionEvent = resolvePlayerWallContactTransitionEvent(
+          previousPlayerContacts,
+          nextPlayerState,
+          nextPlayerContacts
+        );
         standalonePlayerState = nextPlayerState;
         if (groundedTransitionEvent !== null) {
           lastPlayerGroundedTransitionEvent = groundedTransitionEvent;
+        }
+        if (wallContactTransitionEvent !== null) {
+          lastPlayerWallContactTransitionEvent = wallContactTransitionEvent;
         }
         applyStandalonePlayerCameraFollow();
       }

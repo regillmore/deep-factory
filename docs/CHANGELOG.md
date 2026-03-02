@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Surface standalone player wall-contact transition events in the debug overlay when horizontal collision blocking appears or clears between fixed steps.
+- Changes: Added [src/world/playerWallContactTransition.ts](../src/world/playerWallContactTransition.ts) plus [src/world/playerWallContactTransition.test.ts](../src/world/playerWallContactTransition.test.ts) to classify fixed-step wall-contact appearance and clearing, updated [src/main.ts](../src/main.ts) to compare player wall-contact probes across fixed steps and keep the latest event beside the existing grounded-transition telemetry, extended [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to render the latest wall-contact event in the HUD, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/world/playerWallContactTransition.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Move debug overlay visibility behind shell/UI toggles instead of always-on bootstrap wiring.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the shell now exposes an in-world `Debug HUD` toggle state, refreshed [src/style.css](../src/style.css) with matching in-world chrome styling, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) so the text HUD honors explicit visibility instead of forcing itself on every frame, wired [src/main.ts](../src/main.ts) so entering the world and the new shell toggle drive that visibility, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DECISIONS.md](docs/DECISIONS.md), and [README.md](../README.md).
 - Verification: Ran `npx vitest run src/ui/appShell.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
