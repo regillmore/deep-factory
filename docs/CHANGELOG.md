@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Surface standalone player facing-transition events in the debug overlay when horizontal movement flips left or right between fixed steps.
+- Changes: Added [src/world/playerFacingTransition.ts](../src/world/playerFacingTransition.ts) plus [src/world/playerFacingTransition.test.ts](../src/world/playerFacingTransition.test.ts) to classify fixed-step left/right facing flips, updated [src/main.ts](../src/main.ts) to retain the latest facing-transition event alongside the existing grounded, wall, and ceiling telemetry, extended [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to render the latest facing-transition line, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/world/playerFacingTransition.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a desktop keyboard shortcut on the paused main menu that resumes the current world through the existing primary-action path.
 - Changes: Updated [src/input/debugEditShortcuts.ts](../src/input/debugEditShortcuts.ts) plus [src/input/debugEditShortcuts.test.ts](../src/input/debugEditShortcuts.test.ts) to expose a context-aware paused-menu `resume-paused-world-session` shortcut action on `Enter`, wired [src/main.ts](../src/main.ts) to route that action through the existing main-menu primary-action resume path only when a resumable session exists, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [README.md](../README.md).
 - Verification: Ran `npx vitest run src/input/debugEditShortcuts.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

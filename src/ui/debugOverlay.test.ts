@@ -36,6 +36,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nSpawn: unresolved');
     expect(text).toContain('\nPlayer: n/a');
     expect(text).toContain('\nGroundEvt: none');
+    expect(text).toContain('\nFaceEvt: none');
     expect(text).toContain('\nWallEvt: none');
     expect(text).toContain('\nCeilEvt: none');
     expect(text).toContain('\nAABB: n/a');
@@ -115,6 +116,7 @@ describe('formatDebugOverlayText', () => {
         jumpPressed: false
       },
       playerGroundedTransition: null,
+      playerFacingTransition: null,
       playerWallContactTransition: null,
       playerCeilingContactTransition: null,
       playerCameraFollow: null,
@@ -150,6 +152,13 @@ describe('formatDebugOverlayText', () => {
         kind: 'jump',
         position: { x: 24.5, y: -12.25 },
         velocity: { x: -180, y: -220 }
+      },
+      playerFacingTransition: {
+        kind: 'left',
+        previousFacing: 'right',
+        nextFacing: 'left',
+        position: { x: 24.5, y: -12.25 },
+        velocity: { x: -180, y: 60 }
       },
       playerWallContactTransition: {
         kind: 'blocked',
@@ -188,6 +197,7 @@ describe('formatDebugOverlayText', () => {
 
     expect(text).toContain('\nPlayer: Pos:24.50,-12.25 | Vel:-180.00,60.00 | grounded:off | facing:left');
     expect(text).toContain('\nGroundEvt: jump | Pos:24.50,-12.25 | Vel:-180.00,-220.00');
+    expect(text).toContain('\nFaceEvt: right->left | Pos:24.50,-12.25 | Vel:-180.00,60.00');
     expect(text).toContain('\nWallEvt: blocked | Tile:0,-1 (#3) | Pos:24.50,-12.25 | Vel:-180.00,60.00');
     expect(text).toContain('\nCeilEvt: blocked | Tile:1,-3 (#5) | Pos:24.50,-12.25 | Vel:-180.00,0.00');
     expect(text).toContain('\nAABB: min:18.50,-40.25 | max:30.50,-12.25 | size:12.00,28.00');
@@ -232,6 +242,7 @@ describe('formatDebugOverlayText', () => {
       spawn: null,
       playerIntent: null,
       playerGroundedTransition: null,
+      playerFacingTransition: null,
       playerWallContactTransition: null,
       playerCeilingContactTransition: null,
       playerCameraFollow: null,
@@ -284,6 +295,13 @@ describe('formatDebugOverlayText', () => {
         position: { x: 12, y: 0 },
         velocity: { x: 0, y: 0 }
       },
+      playerFacingTransition: {
+        kind: 'right',
+        previousFacing: 'left',
+        nextFacing: 'right',
+        position: { x: 12, y: 0 },
+        velocity: { x: 0, y: 0 }
+      },
       playerWallContactTransition: {
         kind: 'cleared',
         tile: { x: 4, y: 6, id: 3 },
@@ -312,6 +330,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('Spawn: T:-1,0 | W:-8.00,0.00');
     expect(text).toContain('Intent: move:0 | jumpHeld:off | jumpPressed:off');
     expect(text).toContain('GroundEvt: landing | Pos:12.00,0.00 | Vel:0.00,0.00');
+    expect(text).toContain('FaceEvt: left->right | Pos:12.00,0.00 | Vel:0.00,0.00');
     expect(text).toContain('WallEvt: cleared | Tile:4,6 (#3) | Pos:12.00,0.00 | Vel:0.00,0.00');
     expect(text).toContain('CeilEvt: cleared | Tile:4,5 (#7) | Pos:12.00,0.00 | Vel:0.00,0.00');
     expect(text).toContain('Tile:dirt (#3)');
