@@ -104,6 +104,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Direct UV sources bypass authored atlas-index coverage, so they need their own committed-asset regression guard against silently pointing at blank atlas space.
 - Consequence: Future direct-UV tile authoring should ship visible atlas content in the referenced sub-rect or avoid referencing that rect from default metadata.
 
+### 2026-03-02: Static direct `render.uvRect` tiles must stay inside authored atlas regions
+
+- Decision: Every default static direct `render.uvRect` source must stay fully inside the explicit authored atlas region set.
+- Reason: Static direct UV metadata bypasses atlas-index ownership just like animated frames, so uncovered atlas canvas would otherwise remain vulnerable to silent metadata drift even when a tile is not animated.
+- Consequence: Future direct-UV tile authoring should keep each base static source inside documented authored regions or update the authored layout and related regressions in the same pass.
+
 ### 2026-03-02: Committed authored atlas regions must be accounted for explicitly
 
 - Decision: Every region declared in `src/world/authoredAtlasLayout.ts` must either be referenced by default tile metadata or listed in the same module as intentionally unused with a reason.

@@ -6,7 +6,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 50. Add an authored-atlas asset regression test that explicitly unused authored regions stay unreferenced by default direct `render.uvRect` sources as well as atlas-index metadata.
 51. Add an authored-atlas asset regression test that default direct `render.uvRect` sources do not overlap the fully transparent exterior padding strip outside authored regions.
-53. Add an authored-atlas asset regression test that static default direct `render.uvRect` sources stay inside authored atlas regions instead of overlapping uncovered canvas space.
 
 ## Collision and player foundation
 
@@ -46,6 +45,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 27. Add grounded-walk placeholder pose variants to the renderer-side standalone player draw pass so horizontal movement direction reads before sprite assets land.
 60. Surface the paused-main-menu fresh-world shortcut in shell copy once the keyboard action exists.
 64. Surface the paused-main-menu fresh-world reset consequence in shell copy so the destructive action reads clearly before activation.
+65. Surface the in-world main-menu shortcut in shell copy once the keyboard action exists.
 
 ## Player debugging
 

@@ -653,6 +653,25 @@ describe('authored atlas asset', () => {
     }
   });
 
+  it('keeps every static default direct render.uvRect source inside authored atlas regions', () => {
+    const { pngWidth, pngHeight } = readCommittedAtlasPng();
+    const directUvRectSources = collectDirectRenderUvRectSources();
+
+    expect(directUvRectSources.length).toBeGreaterThan(0);
+
+    for (const source of directUvRectSources) {
+      const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
+      const spillPixel = findFirstPixelInRegionOutsideRegions(pixelRegion, AUTHORED_ATLAS_REGIONS);
+
+      expect(
+        spillPixel,
+        spillPixel
+          ? `tile ${source.tileId} "${source.tileName}" static render.uvRect overlaps uncovered atlas pixel (${spillPixel.x}, ${spillPixel.y}) outside authored regions`
+          : undefined
+      ).toBeNull();
+    }
+  });
+
   it('keeps default animated direct render.uvRect frames aligned to whole atlas pixels', () => {
     const { pngWidth, pngHeight } = readCommittedAtlasPng();
     const animatedDirectUvRectFrameSources = collectAnimatedDirectRenderUvRectFrameSources();
