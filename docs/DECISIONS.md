@@ -14,6 +14,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: The project needs debug telemetry available on demand without forcing an always-on HUD over normal play and menu flows.
 - Consequence: Future debug HUD additions should respect the shell-controlled visibility state instead of assuming the overlay is permanently visible once gameplay starts.
 
+### 2026-03-02: Compact debug-edit overlay visibility is controlled by in-world shell chrome
+
+- Decision: The compact debug-edit status strip, inspect outlines, and one-shot preview overlays are now shown or hidden through a dedicated in-world shell toggle instead of always rendering whenever gameplay is active.
+- Reason: Mixed-device play needs a quick way to declutter the screen for normal movement and inspection without disabling edit controls, one-shot tool state, or simulation.
+- Consequence: Future compact debug-edit overlay work should respect the shell-controlled visibility state instead of assuming those overlays are always visible during in-world runtime.
+
 ### 2026-03-02: Visible authored-atlas pixels must stay inside documented authored regions
 
 - Decision: Non-transparent pixels in the committed atlas PNG must stay inside authored regions touched by shipped metadata or explicitly documented as intentionally unused.

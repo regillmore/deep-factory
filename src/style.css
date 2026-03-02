@@ -51,6 +51,8 @@ canvas {
   right: 0;
   z-index: 120;
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   justify-content: flex-end;
   padding: clamp(12px, 2.5vw, 20px);
   pointer-events: none;

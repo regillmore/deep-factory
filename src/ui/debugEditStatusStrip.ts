@@ -1,4 +1,5 @@
 import type { DebugEditStatusStripState } from './debugEditStatusHelpers';
+import { installPointerClickFocusRelease } from './buttonFocus';
 import { buildDebugEditStatusStripModel } from './debugEditStatusHelpers';
 
 const withAlpha = (color: string, alpha: string): string => color.replace(/[\d.]+\)\s*$/, `${alpha})`);
@@ -188,6 +189,7 @@ export class DebugEditStatusStrip {
   private hintLine: HTMLDivElement;
   private onInspectAction: () => void = () => {};
   private onClearPinnedTile: () => void = () => {};
+  private visible = true;
 
   constructor(private canvas: HTMLCanvasElement, handlers: DebugEditStatusStripActionHandlers = {}) {
     this.root = document.createElement('div');
@@ -239,6 +241,8 @@ export class DebugEditStatusStrip {
 
     this.inspectActionButton = createActionButton();
     this.clearActionButton = createActionButton();
+    installPointerClickFocusRelease(this.inspectActionButton);
+    installPointerClickFocusRelease(this.clearActionButton);
     this.clearActionButton.style.borderColor = 'rgba(255, 185, 150, 0.3)';
     this.clearActionButton.style.background = 'rgba(255, 185, 150, 0.14)';
     this.actionRow.append(this.inspectActionButton, this.clearActionButton);
@@ -285,7 +289,18 @@ export class DebugEditStatusStrip {
     return this.actionRow;
   }
 
+  setVisible(visible: boolean): void {
+    this.visible = visible;
+    if (visible) return;
+    this.root.style.display = 'none';
+  }
+
   update(state: DebugEditStatusStripState): void {
+    if (!this.visible) {
+      this.root.style.display = 'none';
+      return;
+    }
+
     const canvasRect = this.canvas.getBoundingClientRect();
     if (canvasRect.width <= 0 || canvasRect.height <= 0) {
       this.root.style.display = 'none';

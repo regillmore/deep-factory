@@ -5,6 +5,7 @@ import {
   getDebugOneShotToolHotkeyLabel,
   getTouchDebugEditModeHotkeyLabel
 } from '../input/debugEditShortcuts';
+import { installPointerClickFocusRelease } from './buttonFocus';
 
 export interface DebugBrushOption {
   tileId: number;
@@ -806,6 +807,7 @@ export class TouchDebugEditControls {
     this.syncEllipseOutlineToolState();
     this.syncBrushState();
     this.syncCollapsedState();
+    this.installPointerButtonFocusRelease();
     document.body.append(this.root);
   }
 
@@ -1057,5 +1059,12 @@ export class TouchDebugEditControls {
           ? ' | EllipseO:Brush'
           : ' | EllipseO:Break';
     this.collapsedSummary.textContent = `${modeLabel} | Brush: ${brushSummary}${armedFillSummary}${armedLineSummary}${armedRectFillSummary}${armedRectOutlineSummary}${armedEllipseSummary}${armedEllipseOutlineSummary} | U:${this.undoStrokeCount} R:${this.redoStrokeCount}`;
+  }
+
+  private installPointerButtonFocusRelease(): void {
+    const buttons = this.root.querySelectorAll<HTMLButtonElement>('button');
+    for (const button of buttons) {
+      installPointerClickFocusRelease(button);
+    }
   }
 }

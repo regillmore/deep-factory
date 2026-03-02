@@ -118,6 +118,7 @@ export class ArmedDebugToolPreviewOverlay {
   private ellipsePreviewBox: HTMLDivElement;
   private touchAnchorMarker: HTMLDivElement;
   private touchAnchorLabel: HTMLDivElement;
+  private visible = true;
 
   constructor(private canvas: HTMLCanvasElement) {
     this.root = document.createElement('div');
@@ -226,11 +227,22 @@ export class ArmedDebugToolPreviewOverlay {
     document.body.append(this.root);
   }
 
+  setVisible(visible: boolean): void {
+    this.visible = visible;
+    this.root.style.display = visible ? 'block' : 'none';
+  }
+
   update(
     camera: Camera2D,
     pointerInspect: PointerInspectSnapshot | null,
     preview: ArmedDebugToolPreviewState
   ): void {
+    if (!this.visible) {
+      this.root.style.display = 'none';
+      return;
+    }
+
+    this.root.style.display = 'block';
     const canvasRect = this.canvas.getBoundingClientRect();
     this.updateStatusBadge(canvasRect, pointerInspect, preview);
     this.updateMouseLinePreview(camera, canvasRect, pointerInspect, preview);

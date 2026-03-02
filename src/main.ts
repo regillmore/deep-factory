@@ -117,19 +117,27 @@ const bootstrap = async (): Promise<void> => {
   let worldStarted = false;
   let loop: GameLoop | null = null;
   let debugOverlayVisible = false;
+  let debugEditOverlaysVisible = true;
   const shell = new AppShell(app, {
     onPrimaryAction: (screen) => {
       if (screen !== 'main-menu' || worldStarted || loop === null) return;
       worldStarted = true;
-      shell.setState({ screen: 'in-world', debugOverlayVisible });
+      syncInWorldShellState();
       syncDebugOverlayVisibility();
+      syncDebugEditOverlayVisibility();
       loop.start();
     },
     onToggleDebugOverlay: (screen) => {
       if (screen !== 'in-world') return;
       debugOverlayVisible = !debugOverlayVisible;
-      shell.setState({ screen: 'in-world', debugOverlayVisible });
+      syncInWorldShellState();
       syncDebugOverlayVisibility();
+    },
+    onToggleDebugEditOverlays: (screen) => {
+      if (screen !== 'in-world') return;
+      debugEditOverlaysVisible = !debugEditOverlaysVisible;
+      syncInWorldShellState();
+      syncDebugEditOverlayVisibility();
     }
   });
   shell.setState({
@@ -159,9 +167,24 @@ const bootstrap = async (): Promise<void> => {
   const playerSpawnMarker = new PlayerSpawnMarkerOverlay(canvas);
   const armedDebugToolPreview = new ArmedDebugToolPreviewOverlay(canvas);
   const debugEditStatusStrip = new DebugEditStatusStrip(canvas);
+  const syncInWorldShellState = (): void => {
+    shell.setState({
+      screen: 'in-world',
+      debugOverlayVisible,
+      debugEditOverlaysVisible
+    });
+  };
   const syncDebugOverlayVisibility = (): void => {
     debug.setVisible(worldStarted && debugOverlayVisible);
   };
+  const syncDebugEditOverlayVisibility = (): void => {
+    const visible = worldStarted && debugEditOverlaysVisible;
+    hoveredTileCursor.setVisible(visible);
+    armedDebugToolPreview.setVisible(visible);
+    debugEditStatusStrip.setVisible(visible);
+  };
+  syncDebugOverlayVisibility();
+  syncDebugEditOverlayVisibility();
   input.retainPointerInspectWhenLeavingToElement(debugEditStatusStrip.getPointerInspectRetainerElement());
   const debugTileEditHistory = new DebugTileEditHistory();
   const debugEditControlStorage = (() => {

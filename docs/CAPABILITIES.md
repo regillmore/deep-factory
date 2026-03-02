@@ -5,7 +5,7 @@ This document describes the current project state. Unlike the changelog, it shou
 ## Core Runtime
 
 - App shell now has explicit `boot`, `main menu`, and `in-world` states; renderer and input bootstrap run behind the boot screen, the main menu exposes an `Enter World` action once startup finishes, and the fixed-step simulation starts only after that transition.
-- Once in-world, the shell keeps a lightweight top-right `Debug HUD` toggle that shows or hides the text telemetry overlay without leaving the active world session.
+- Once in-world, the shell keeps lightweight top-right `Debug HUD` and `Edit Overlays` toggles; the HUD toggle shows or hides the text telemetry overlay, while the edit-overlay toggle hides or restores the compact status strip, hovered or pinned inspect outlines, and one-shot preview overlays without leaving the active world session or disabling controls.
 - WebGL2 renderer with shader utilities, buffer helpers, texture loading, and DPR-aware resize.
 - Renderer atlas initialization ships with an authored atlas at `public/atlas/tile-atlas.png` exposed as `/atlas/tile-atlas.png`, then falls back to a generated placeholder atlas whose canvas size and painted regions derive from `src/world/authoredAtlasLayout.ts` if that asset cannot be fetched or decoded.
 - Renderer boot validates authored atlas-index regions plus direct tile `render.uvRect` metadata against the loaded atlas dimensions, logs a warning when any atlas-backed source falls outside the source image or any direct static or animated `uvRect` edge lands between atlas pixels, and surfaces the warning count plus first warning in debug telemetry.
@@ -74,6 +74,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - A dedicated spawn marker overlay outlines the resolved spawn AABB, support tile, and feet anchor in client space and refreshes after tile edits so spawn placement can be validated before movement is wired.
 - On-canvas one-shot preview badges show live anchor plus endpoint tile coordinates, inclusive span dimensions, and affected-tile estimates for active previews and stay clipped to the visible canvas bounds on small or offset canvases, while anchored touch previews keep the endpoint, span, and affected-count text pending until the second point is chosen and show a persistent anchor label with the armed tool name, `Brush` or `Break` action text, and anchor tile coordinates that stays clamped inside the visible canvas bounds near viewport edges.
 - Compact debug-edit status strip mirrors shared mode, active brush, armed tool state, mixed-device hints, lets summary chips wrap long brush or tool values inside the chip on narrow mobile viewports, shows active one-shot preview anchor plus endpoint tile coordinates with live inclusive span dimensions and estimated affected tile counts while preview state is live, wraps preview, inspect, empty-hover guidance, and shortcut hint details into segmented rows to stay inside narrow mobile viewports, stacks inspect action buttons vertically before they clip on narrow canvases, shows separate pinned plus hovered tile metadata lines plus a hovered-to-pinned offset when both inspect targets differ, labels deduplicated same-tile inspect state as shared, and includes world plus chunk and chunk-local tile coordinates in inspect metadata.
+- The shell-level `Edit Overlays` toggle hides those compact inspect and preview overlays without disabling inspect pinning, one-shot tool state, painting, movement, or simulation.
 - Compact status-strip inspect action buttons retain the last mouse hover comparison state while the pointer is over the action row, so pinned plus hovered metadata does not flap when using `Pin Click` or `Repin Click`.
 - Hovered and touched inspect readouts include tile name, tile ID, world plus chunk and chunk-local coordinates, and solid, light-blocking, and liquid flags.
 - Desktop and touch both support pinned tile inspection through the compact status strip workflow.
@@ -90,7 +91,7 @@ This document describes the current project state. Unlike the changelog, it shou
 ## Desktop Controls
 
 - App shell: click `Enter World` from the main menu after boot finishes.
-- In-world shell: click `Show Debug HUD` or `Hide Debug HUD` in the top-right chrome to toggle the text telemetry overlay.
+- In-world shell: click `Show Debug HUD` or `Hide Debug HUD` to toggle the text telemetry overlay, and click `Show Edit Overlays` or `Hide Edit Overlays` to toggle the compact debug-edit overlays.
 - Move player: `A` and `D` or left and right arrows.
 - Jump: `W`, up arrow, or `Space`.
 - Mouse wheel: zoom in or out.

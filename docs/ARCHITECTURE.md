@@ -18,7 +18,7 @@
 - fixed update step (`60hz`) for deterministic simulation hooks,
 - render interpolation alpha (currently unused but available).
 
-Bootstrap now mounts the app shell first, initializes renderer plus input behind the `boot` screen, renders one static world preview for the `main menu`, and only starts the `GameLoop` after the shell enters `in-world`. Once active, the current update phase applies debug tile-edit actions, spawn refresh after tile edits, embedded-player respawn recovery from the latest resolved spawn when edits trap the current AABB in solid terrain, standalone player stepping through shared movement, gravity, and collision helpers from mixed-device intent, and camera follow that targets the player body center while preserving manual pan or zoom offsets from pointer interaction.
+Bootstrap now mounts the app shell first, initializes renderer plus input behind the `boot` screen, renders one static world preview for the `main menu`, and only starts the `GameLoop` after the shell enters `in-world`. Once active, the in-world shell chrome can independently show or hide the text debug HUD and the compact debug-edit overlay layer while the current update phase applies debug tile-edit actions, spawn refresh after tile edits, embedded-player respawn recovery from the latest resolved spawn when edits trap the current AABB in solid terrain, standalone player stepping through shared movement, gravity, and collision helpers from mixed-device intent, and camera follow that targets the player body center while preserving manual pan or zoom offsets from pointer interaction.
 
 ## Player state foundation
 

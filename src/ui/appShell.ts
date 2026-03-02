@@ -1,3 +1,5 @@
+import { installPointerClickFocusRelease } from './buttonFocus';
+
 export type AppShellScreen = 'boot' | 'main-menu' | 'in-world';
 
 export interface AppShellState {
@@ -6,6 +8,7 @@ export interface AppShellState {
   detailLines?: readonly string[];
   primaryActionLabel?: string | null;
   debugOverlayVisible?: boolean;
+  debugEditOverlaysVisible?: boolean;
 }
 
 export interface AppShellViewModel {
@@ -19,11 +22,14 @@ export interface AppShellViewModel {
   primaryActionLabel: string | null;
   debugOverlayToggleLabel: string | null;
   debugOverlayTogglePressed: boolean;
+  debugEditOverlaysToggleLabel: string | null;
+  debugEditOverlaysTogglePressed: boolean;
 }
 
 interface AppShellOptions {
   onPrimaryAction?: (screen: AppShellScreen) => void;
   onToggleDebugOverlay?: (screen: AppShellScreen) => void;
+  onToggleDebugEditOverlays?: (screen: AppShellScreen) => void;
 }
 
 const DEFAULT_BOOT_STATUS = 'Preparing renderer, controls, and spawn state.';
@@ -36,6 +42,11 @@ const DEFAULT_MAIN_MENU_DETAIL_LINES = [
   'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
   'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
 ] as const;
+
+export const resolveAppShellRegionDisplay = (
+  visible: boolean,
+  visibleDisplay: 'flex' | 'grid'
+): 'flex' | 'grid' | 'none' => (visible ? visibleDisplay : 'none');
 
 export const resolveAppShellViewModel = (state: AppShellState): AppShellViewModel => {
   switch (state.screen) {
@@ -50,7 +61,9 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         detailLines: state.detailLines ?? DEFAULT_BOOT_DETAIL_LINES,
         primaryActionLabel: state.primaryActionLabel ?? null,
         debugOverlayToggleLabel: null,
-        debugOverlayTogglePressed: false
+        debugOverlayTogglePressed: false,
+        debugEditOverlaysToggleLabel: null,
+        debugEditOverlaysTogglePressed: false
       };
     case 'main-menu':
       return {
@@ -63,7 +76,9 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         detailLines: state.detailLines ?? DEFAULT_MAIN_MENU_DETAIL_LINES,
         primaryActionLabel: state.primaryActionLabel ?? 'Enter World',
         debugOverlayToggleLabel: null,
-        debugOverlayTogglePressed: false
+        debugOverlayTogglePressed: false,
+        debugEditOverlaysToggleLabel: null,
+        debugEditOverlaysTogglePressed: false
       };
     case 'in-world':
       return {
@@ -77,7 +92,10 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         primaryActionLabel: null,
         debugOverlayToggleLabel:
           state.debugOverlayVisible === true ? 'Hide Debug HUD' : 'Show Debug HUD',
-        debugOverlayTogglePressed: state.debugOverlayVisible === true
+        debugOverlayTogglePressed: state.debugOverlayVisible === true,
+        debugEditOverlaysToggleLabel:
+          state.debugEditOverlaysVisible === false ? 'Show Edit Overlays' : 'Hide Edit Overlays',
+        debugEditOverlaysTogglePressed: state.debugEditOverlaysVisible !== false
       };
   }
 };
@@ -88,6 +106,7 @@ export class AppShell {
   private overlay: HTMLDivElement;
   private chrome: HTMLDivElement;
   private debugOverlayToggleButton: HTMLButtonElement;
+  private debugEditOverlaysToggleButton: HTMLButtonElement;
   private stageLabel: HTMLSpanElement;
   private title: HTMLHeadingElement;
   private status: HTMLParagraphElement;
@@ -95,11 +114,13 @@ export class AppShell {
   private primaryButton: HTMLButtonElement;
   private onPrimaryAction: (screen: AppShellScreen) => void;
   private onToggleDebugOverlay: (screen: AppShellScreen) => void;
+  private onToggleDebugEditOverlays: (screen: AppShellScreen) => void;
   private currentState: AppShellState = { screen: 'boot' };
 
   constructor(container: HTMLElement, options: AppShellOptions = {}) {
     this.onPrimaryAction = options.onPrimaryAction ?? (() => {});
     this.onToggleDebugOverlay = options.onToggleDebugOverlay ?? (() => {});
+    this.onToggleDebugEditOverlays = options.onToggleDebugEditOverlays ?? (() => {});
 
     this.root = document.createElement('div');
     this.root.className = 'app-shell';
@@ -118,7 +139,17 @@ export class AppShell {
     this.debugOverlayToggleButton.addEventListener('click', () =>
       this.onToggleDebugOverlay(this.currentState.screen)
     );
+    installPointerClickFocusRelease(this.debugOverlayToggleButton);
     this.chrome.append(this.debugOverlayToggleButton);
+
+    this.debugEditOverlaysToggleButton = document.createElement('button');
+    this.debugEditOverlaysToggleButton.type = 'button';
+    this.debugEditOverlaysToggleButton.className = 'app-shell__chrome-button';
+    this.debugEditOverlaysToggleButton.addEventListener('click', () =>
+      this.onToggleDebugEditOverlays(this.currentState.screen)
+    );
+    installPointerClickFocusRelease(this.debugEditOverlaysToggleButton);
+    this.chrome.append(this.debugEditOverlaysToggleButton);
 
     this.overlay = document.createElement('div');
     this.overlay.className = 'app-shell__overlay';
@@ -148,6 +179,7 @@ export class AppShell {
     this.primaryButton.type = 'button';
     this.primaryButton.className = 'app-shell__primary';
     this.primaryButton.addEventListener('click', () => this.onPrimaryAction(this.currentState.screen));
+    installPointerClickFocusRelease(this.primaryButton);
     panel.append(this.primaryButton);
 
     container.replaceChildren(this.root);
@@ -164,7 +196,9 @@ export class AppShell {
 
     this.root.dataset.screen = viewModel.screen;
     this.overlay.hidden = !viewModel.overlayVisible;
+    this.overlay.style.display = resolveAppShellRegionDisplay(viewModel.overlayVisible, 'grid');
     this.chrome.hidden = !viewModel.chromeVisible;
+    this.chrome.style.display = resolveAppShellRegionDisplay(viewModel.chromeVisible, 'flex');
     this.stageLabel.textContent = viewModel.stageLabel;
     this.title.textContent = viewModel.title;
     this.status.textContent = viewModel.statusText;
@@ -176,6 +210,7 @@ export class AppShell {
       })
     );
     this.detailList.hidden = viewModel.detailLines.length === 0;
+    this.detailList.style.display = resolveAppShellRegionDisplay(viewModel.detailLines.length > 0, 'grid');
     this.primaryButton.textContent = viewModel.primaryActionLabel ?? '';
     this.primaryButton.hidden = viewModel.primaryActionLabel === null;
     this.debugOverlayToggleButton.textContent = viewModel.debugOverlayToggleLabel ?? '';
@@ -187,5 +222,14 @@ export class AppShell {
     this.debugOverlayToggleButton.title = viewModel.debugOverlayTogglePressed
       ? 'Hide debug HUD telemetry'
       : 'Show debug HUD telemetry';
+    this.debugEditOverlaysToggleButton.textContent = viewModel.debugEditOverlaysToggleLabel ?? '';
+    this.debugEditOverlaysToggleButton.hidden = viewModel.debugEditOverlaysToggleLabel === null;
+    this.debugEditOverlaysToggleButton.setAttribute(
+      'aria-pressed',
+      viewModel.debugEditOverlaysTogglePressed ? 'true' : 'false'
+    );
+    this.debugEditOverlaysToggleButton.title = viewModel.debugEditOverlaysTogglePressed
+      ? 'Hide compact debug-edit overlays'
+      : 'Show compact debug-edit overlays';
   }
 }

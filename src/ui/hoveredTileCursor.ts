@@ -88,18 +88,35 @@ const createCursorRoot = (borderColor: string, background: string): HTMLDivEleme
 export class HoveredTileCursorOverlay {
   private hoveredRoot: HTMLDivElement;
   private pinnedRoot: HTMLDivElement;
+  private visible = true;
 
   constructor(private canvas: HTMLCanvasElement) {
     this.hoveredRoot = createCursorRoot('rgba(255, 232, 122, 0.95)', 'rgba(255, 232, 122, 0.14)');
     this.pinnedRoot = createCursorRoot('rgba(120, 210, 255, 0.95)', 'rgba(120, 210, 255, 0.12)');
   }
 
+  setVisible(visible: boolean): void {
+    this.visible = visible;
+    if (visible) return;
+    this.hideAll();
+  }
+
   update(camera: Camera2D, targets: HoveredTileCursorTargets): void {
+    if (!this.visible) {
+      this.hideAll();
+      return;
+    }
+
     const resolvedTargets = resolveHoveredTileCursorTargets(targets.hovered, targets.pinned);
     const canvasRect = this.canvas.getBoundingClientRect();
 
     this.updateCursorRoot(this.hoveredRoot, resolvedTargets.hovered, camera, canvasRect);
     this.updateCursorRoot(this.pinnedRoot, resolvedTargets.pinned, camera, canvasRect);
+  }
+
+  private hideAll(): void {
+    this.hoveredRoot.style.display = 'none';
+    this.pinnedRoot.style.display = 'none';
   }
 
   private updateCursorRoot(
