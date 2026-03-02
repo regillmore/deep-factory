@@ -36,6 +36,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nSpawn: unresolved');
     expect(text).toContain('\nPlayer: n/a');
     expect(text).toContain('\nAABB: n/a');
+    expect(text).toContain('\nFollow: n/a');
     expect(text).toContain('\nContact: n/a');
     expect(text).toContain('\nIntent: n/a');
     expect(text).toContain('\nAnimMesh: chunks:0 | quads:0');
@@ -110,6 +111,7 @@ describe('formatDebugOverlayText', () => {
         jumpHeld: true,
         jumpPressed: false
       },
+      playerCameraFollow: null,
       player: null,
       pinned: null
     });
@@ -138,6 +140,10 @@ describe('formatDebugOverlayText', () => {
         jumpHeld: true,
         jumpPressed: true
       },
+      playerCameraFollow: {
+        focus: { x: 24.5, y: -26.25 },
+        offset: { x: 18, y: -6 }
+      },
       player: {
         position: { x: 24.5, y: -12.25 },
         velocity: { x: -180, y: 60 },
@@ -159,6 +165,7 @@ describe('formatDebugOverlayText', () => {
 
     expect(text).toContain('\nPlayer: Pos:24.50,-12.25 | Vel:-180.00,60.00 | grounded:off | facing:left');
     expect(text).toContain('\nAABB: min:18.50,-40.25 | max:30.50,-12.25 | size:12.00,28.00');
+    expect(text).toContain('\nFollow: focus:24.50,-26.25 | offset:18.00,-6.00');
     expect(text).toContain('\nContact: support:none | wall:0,-1 (#3) | ceiling:1,-3 (#5)');
     expect(text).toContain('\nIntent: move:-1 | jumpHeld:on | jumpPressed:on');
   });
@@ -198,6 +205,7 @@ describe('formatDebugOverlayText', () => {
       pointer: null,
       spawn: null,
       playerIntent: null,
+      playerCameraFollow: null,
       player: null,
       pinned: {
         tile: { x: 40, y: -2 },
@@ -242,6 +250,7 @@ describe('formatDebugOverlayText', () => {
         jumpHeld: false,
         jumpPressed: false
       },
+      playerCameraFollow: null,
       player: null,
       pinned: {
         tile: { x: -1, y: 65 },

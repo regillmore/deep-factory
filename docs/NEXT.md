@@ -50,4 +50,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Player debugging
 
 31. Surface standalone player auto-respawn events in the debug overlay when embedded-tile recovery triggers.
-33. Surface standalone player camera-follow telemetry (`focus`, `offset`) in the debug overlay after collision AABB telemetry lands.
+34. Surface standalone player grounded-transition events in the debug overlay when jump, fall, or landing changes `grounded` between fixed steps.

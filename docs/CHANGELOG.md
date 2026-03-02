@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Surface standalone player camera-follow telemetry (`focus`, `offset`) in the debug overlay after collision AABB telemetry lands.
+- Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so the overlay formats a dedicated follow line beside the existing standalone player telemetry, wired [src/main.ts](../src/main.ts) to pass the live camera-follow focus point and preserved follow offset into that overlay snapshot each frame, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an authored-atlas asset regression test that every explicitly unused committed atlas region remains fully transparent in the committed PNG.
 - Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) to enumerate every atlas region documented as intentionally unused and assert that each committed PNG region stays fully transparent, then advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

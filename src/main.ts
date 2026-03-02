@@ -1117,6 +1117,15 @@ const bootstrap = async (): Promise<void> => {
             };
           })()
         : null;
+      const debugOverlayPlayerCameraFollow = standalonePlayerState
+        ? {
+            focus: getPlayerCameraFocusPoint(standalonePlayerState),
+            offset: {
+              x: cameraFollowOffset.x,
+              y: cameraFollowOffset.y
+            }
+          }
+        : null;
       const debugOverlayPlayerIntent = input.getPlayerInputTelemetry();
       renderer.resize();
       renderer.render(camera, {
@@ -1152,7 +1161,8 @@ const bootstrap = async (): Promise<void> => {
         pinned: debugOverlayPinnedInspect,
         spawn: debugOverlaySpawn,
         player: debugOverlayPlayer,
-        playerIntent: debugOverlayPlayerIntent
+        playerIntent: debugOverlayPlayerIntent,
+        playerCameraFollow: debugOverlayPlayerCameraFollow
       });
     }
   );

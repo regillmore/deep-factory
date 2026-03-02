@@ -75,12 +75,18 @@ export interface DebugOverlayPlayerIntentTelemetry {
   jumpPressed: boolean;
 }
 
+export interface DebugOverlayPlayerCameraFollowTelemetry {
+  focus: { x: number; y: number };
+  offset: { x: number; y: number };
+}
+
 export interface DebugOverlayInspectState {
   pointer: DebugOverlayPointerInspect | null;
   pinned: DebugOverlayTileInspect | null;
   spawn: DebugOverlayPlayerSpawn | null;
   player: DebugOverlayPlayerTelemetry | null;
   playerIntent: DebugOverlayPlayerIntentTelemetry | null;
+  playerCameraFollow: DebugOverlayPlayerCameraFollowTelemetry | null;
 }
 
 const formatFloat = (value: number, digits: number): string => value.toFixed(digits);
@@ -178,6 +184,21 @@ const formatPlayerAabbLine = (player: DebugOverlayPlayerTelemetry | null): strin
   );
 };
 
+const formatPlayerCameraFollowLine = (
+  playerCameraFollow: DebugOverlayPlayerCameraFollowTelemetry | null
+): string => {
+  if (!playerCameraFollow) {
+    return 'Follow: n/a';
+  }
+
+  return (
+    `Follow: focus:${formatFloat(playerCameraFollow.focus.x, 2)},` +
+    `${formatFloat(playerCameraFollow.focus.y, 2)} | ` +
+    `offset:${formatFloat(playerCameraFollow.offset.x, 2)},` +
+    `${formatFloat(playerCameraFollow.offset.y, 2)}`
+  );
+};
+
 const formatPlayerContact = (
   contact: { tileX: number; tileY: number; tileId: number } | null
 ): string => {
@@ -241,6 +262,7 @@ export const formatDebugOverlayText = (
   const spawn = inspect?.spawn ?? null;
   const player = inspect?.player ?? null;
   const playerIntent = inspect?.playerIntent ?? null;
+  const playerCameraFollow = inspect?.playerCameraFollow ?? null;
   const lines = [
     summaryLine,
     formatAtlasLine(stats),
@@ -248,6 +270,7 @@ export const formatDebugOverlayText = (
     formatSpawnLine(spawn),
     formatPlayerLine(player),
     formatPlayerAabbLine(player),
+    formatPlayerCameraFollowLine(playerCameraFollow),
     formatPlayerContactsLine(player),
     formatPlayerIntentLine(playerIntent),
     formatAnimatedChunkResidencyLine(stats),
