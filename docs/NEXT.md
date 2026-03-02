@@ -45,7 +45,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 27. Add grounded-walk placeholder pose variants to the renderer-side standalone player draw pass so horizontal movement direction reads before sprite assets land.
 60. Surface the paused-main-menu fresh-world shortcut in shell copy once the keyboard action exists.
-61. Add a desktop keyboard shortcut on the paused main menu that resumes the current world through the existing primary-action path.
+62. Surface the paused-main-menu resume shortcut in shell copy once the keyboard action exists.
 
 ## Player debugging
 

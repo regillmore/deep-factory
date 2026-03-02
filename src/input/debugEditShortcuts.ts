@@ -12,12 +12,14 @@ export interface DebugEditShortcutKeyEventLike {
 }
 
 export interface DebugEditShortcutContext {
+  pausedMainMenuResumeWorldAvailable?: boolean;
   pausedMainMenuFreshWorldAvailable?: boolean;
 }
 
 export type DebugEditShortcutAction =
   | { type: 'undo' }
   | { type: 'redo' }
+  | { type: 'resume-paused-world-session' }
   | { type: 'start-fresh-world-session' }
   | { type: 'return-to-main-menu' }
   | { type: 'recenter-camera' }
@@ -85,6 +87,7 @@ export const getTouchDebugEditModeHotkeyLabel = (mode: 'pan' | 'place' | 'break'
   return 'B';
 };
 
+export const getDesktopResumeWorldHotkeyLabel = (): string => 'Enter';
 export const getDesktopReturnToMainMenuHotkeyLabel = (): string => 'Q';
 export const getDesktopFreshWorldHotkeyLabel = (): string => 'N';
 export const getDesktopRecenterCameraHotkeyLabel = (): string => 'C';
@@ -148,6 +151,13 @@ export const resolveDebugEditShortcutAction = (
 
   if (normalizedKey === 'escape' || normalizedKey === 'esc') {
     return { type: 'cancel-armed-tools' };
+  }
+
+  if (
+    context.pausedMainMenuResumeWorldAvailable === true &&
+    normalizedKey === getDesktopResumeWorldHotkeyLabel().toLowerCase()
+  ) {
+    return { type: 'resume-paused-world-session' };
   }
 
   if (normalizedKey === getDesktopReturnToMainMenuHotkeyLabel().toLowerCase()) {

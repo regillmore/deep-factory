@@ -1034,9 +1034,15 @@ const bootstrap = async (): Promise<void> => {
     if (isEditableKeyboardShortcutTarget(event.target)) return;
 
     const action = resolveDebugEditShortcutAction(event, {
+      pausedMainMenuResumeWorldAvailable: currentScreen === 'main-menu' && worldSessionStarted,
       pausedMainMenuFreshWorldAvailable: currentScreen === 'main-menu' && worldSessionStarted
     });
     if (!action) return;
+    if (action.type === 'resume-paused-world-session') {
+      event.preventDefault();
+      enterOrResumeWorldSessionFromMainMenu();
+      return;
+    }
     if (action.type === 'start-fresh-world-session') {
       event.preventDefault();
       startFreshWorldSessionFromMainMenu();

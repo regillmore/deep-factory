@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Add a desktop keyboard shortcut on the paused main menu that resumes the current world through the existing primary-action path.
+- Changes: Updated [src/input/debugEditShortcuts.ts](../src/input/debugEditShortcuts.ts) plus [src/input/debugEditShortcuts.test.ts](../src/input/debugEditShortcuts.test.ts) to expose a context-aware paused-menu `resume-paused-world-session` shortcut action on `Enter`, wired [src/main.ts](../src/main.ts) to route that action through the existing main-menu primary-action resume path only when a resumable session exists, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [README.md](../README.md).
+- Verification: Ran `npx vitest run src/input/debugEditShortcuts.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a desktop keyboard shortcut on the paused main menu that starts a fresh world through the existing reset path.
 - Changes: Updated [src/input/debugEditShortcuts.ts](../src/input/debugEditShortcuts.ts) plus [src/input/debugEditShortcuts.test.ts](../src/input/debugEditShortcuts.test.ts) to expose a context-aware paused-menu `start-fresh-world-session` shortcut action on `N` without stealing the in-world line-tool hotkey, wired [src/main.ts](../src/main.ts) to route that action through the existing paused-menu world reset path only when a resumable session exists, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/input/debugEditShortcuts.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

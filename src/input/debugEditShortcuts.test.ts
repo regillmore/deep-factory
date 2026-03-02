@@ -7,6 +7,7 @@ import {
   getDesktopFreshWorldHotkeyLabel,
   getDesktopPlayerSpawnMarkerHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel,
+  getDesktopResumeWorldHotkeyLabel,
   getDesktopReturnToMainMenuHotkeyLabel,
   getDebugEditPanelToggleHotkeyLabel,
   getDebugBrushSlotHotkeyLabel,
@@ -64,6 +65,21 @@ describe('resolveDebugEditShortcutAction', () => {
     expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'Q', shiftKey: true }))).toEqual({
       type: 'return-to-main-menu'
     });
+  });
+
+  it('maps Enter to resume the paused main-menu world session only when that context is active', () => {
+    expect(
+      resolveDebugEditShortcutAction(keyboardEventLike({ key: 'Enter' }), {
+        pausedMainMenuResumeWorldAvailable: true
+      })
+    ).toEqual({
+      type: 'resume-paused-world-session'
+    });
+    expect(
+      resolveDebugEditShortcutAction(keyboardEventLike({ key: 'Enter' }), {
+        pausedMainMenuResumeWorldAvailable: false
+      })
+    ).toBeNull();
   });
 
   it('maps N to a fresh-world action only when the paused main menu enables it', () => {
@@ -277,6 +293,10 @@ describe('brush shortcut helpers', () => {
 
   it('returns the desktop return-to-main-menu hotkey label', () => {
     expect(getDesktopReturnToMainMenuHotkeyLabel()).toBe('Q');
+  });
+
+  it('returns the desktop resume-world hotkey label', () => {
+    expect(getDesktopResumeWorldHotkeyLabel()).toBe('Enter');
   });
 
   it('returns the desktop fresh-world hotkey label', () => {
