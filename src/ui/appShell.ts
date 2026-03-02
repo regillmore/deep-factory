@@ -9,6 +9,7 @@ export interface AppShellState {
   primaryActionLabel?: string | null;
   debugOverlayVisible?: boolean;
   debugEditOverlaysVisible?: boolean;
+  playerSpawnMarkerVisible?: boolean;
 }
 
 export interface AppShellViewModel {
@@ -24,12 +25,15 @@ export interface AppShellViewModel {
   debugOverlayTogglePressed: boolean;
   debugEditOverlaysToggleLabel: string | null;
   debugEditOverlaysTogglePressed: boolean;
+  playerSpawnMarkerToggleLabel: string | null;
+  playerSpawnMarkerTogglePressed: boolean;
 }
 
 interface AppShellOptions {
   onPrimaryAction?: (screen: AppShellScreen) => void;
   onToggleDebugOverlay?: (screen: AppShellScreen) => void;
   onToggleDebugEditOverlays?: (screen: AppShellScreen) => void;
+  onTogglePlayerSpawnMarker?: (screen: AppShellScreen) => void;
 }
 
 const DEFAULT_BOOT_STATUS = 'Preparing renderer, controls, and spawn state.';
@@ -63,7 +67,9 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         debugOverlayToggleLabel: null,
         debugOverlayTogglePressed: false,
         debugEditOverlaysToggleLabel: null,
-        debugEditOverlaysTogglePressed: false
+        debugEditOverlaysTogglePressed: false,
+        playerSpawnMarkerToggleLabel: null,
+        playerSpawnMarkerTogglePressed: false
       };
     case 'main-menu':
       return {
@@ -78,7 +84,9 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         debugOverlayToggleLabel: null,
         debugOverlayTogglePressed: false,
         debugEditOverlaysToggleLabel: null,
-        debugEditOverlaysTogglePressed: false
+        debugEditOverlaysTogglePressed: false,
+        playerSpawnMarkerToggleLabel: null,
+        playerSpawnMarkerTogglePressed: false
       };
     case 'in-world':
       return {
@@ -95,7 +103,10 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         debugOverlayTogglePressed: state.debugOverlayVisible === true,
         debugEditOverlaysToggleLabel:
           state.debugEditOverlaysVisible === false ? 'Show Edit Overlays' : 'Hide Edit Overlays',
-        debugEditOverlaysTogglePressed: state.debugEditOverlaysVisible !== false
+        debugEditOverlaysTogglePressed: state.debugEditOverlaysVisible !== false,
+        playerSpawnMarkerToggleLabel:
+          state.playerSpawnMarkerVisible === false ? 'Show Spawn Marker' : 'Hide Spawn Marker',
+        playerSpawnMarkerTogglePressed: state.playerSpawnMarkerVisible !== false
       };
   }
 };
@@ -107,6 +118,7 @@ export class AppShell {
   private chrome: HTMLDivElement;
   private debugOverlayToggleButton: HTMLButtonElement;
   private debugEditOverlaysToggleButton: HTMLButtonElement;
+  private playerSpawnMarkerToggleButton: HTMLButtonElement;
   private stageLabel: HTMLSpanElement;
   private title: HTMLHeadingElement;
   private status: HTMLParagraphElement;
@@ -115,12 +127,14 @@ export class AppShell {
   private onPrimaryAction: (screen: AppShellScreen) => void;
   private onToggleDebugOverlay: (screen: AppShellScreen) => void;
   private onToggleDebugEditOverlays: (screen: AppShellScreen) => void;
+  private onTogglePlayerSpawnMarker: (screen: AppShellScreen) => void;
   private currentState: AppShellState = { screen: 'boot' };
 
   constructor(container: HTMLElement, options: AppShellOptions = {}) {
     this.onPrimaryAction = options.onPrimaryAction ?? (() => {});
     this.onToggleDebugOverlay = options.onToggleDebugOverlay ?? (() => {});
     this.onToggleDebugEditOverlays = options.onToggleDebugEditOverlays ?? (() => {});
+    this.onTogglePlayerSpawnMarker = options.onTogglePlayerSpawnMarker ?? (() => {});
 
     this.root = document.createElement('div');
     this.root.className = 'app-shell';
@@ -150,6 +164,15 @@ export class AppShell {
     );
     installPointerClickFocusRelease(this.debugEditOverlaysToggleButton);
     this.chrome.append(this.debugEditOverlaysToggleButton);
+
+    this.playerSpawnMarkerToggleButton = document.createElement('button');
+    this.playerSpawnMarkerToggleButton.type = 'button';
+    this.playerSpawnMarkerToggleButton.className = 'app-shell__chrome-button';
+    this.playerSpawnMarkerToggleButton.addEventListener('click', () =>
+      this.onTogglePlayerSpawnMarker(this.currentState.screen)
+    );
+    installPointerClickFocusRelease(this.playerSpawnMarkerToggleButton);
+    this.chrome.append(this.playerSpawnMarkerToggleButton);
 
     this.overlay = document.createElement('div');
     this.overlay.className = 'app-shell__overlay';
@@ -231,5 +254,14 @@ export class AppShell {
     this.debugEditOverlaysToggleButton.title = viewModel.debugEditOverlaysTogglePressed
       ? 'Hide compact debug-edit overlays'
       : 'Show compact debug-edit overlays';
+    this.playerSpawnMarkerToggleButton.textContent = viewModel.playerSpawnMarkerToggleLabel ?? '';
+    this.playerSpawnMarkerToggleButton.hidden = viewModel.playerSpawnMarkerToggleLabel === null;
+    this.playerSpawnMarkerToggleButton.setAttribute(
+      'aria-pressed',
+      viewModel.playerSpawnMarkerTogglePressed ? 'true' : 'false'
+    );
+    this.playerSpawnMarkerToggleButton.title = viewModel.playerSpawnMarkerTogglePressed
+      ? 'Hide standalone player spawn marker overlay'
+      : 'Show standalone player spawn marker overlay';
   }
 }

@@ -118,6 +118,7 @@ const bootstrap = async (): Promise<void> => {
   let loop: GameLoop | null = null;
   let debugOverlayVisible = false;
   let debugEditOverlaysVisible = true;
+  let playerSpawnMarkerVisible = true;
   const shell = new AppShell(app, {
     onPrimaryAction: (screen) => {
       if (screen !== 'main-menu' || worldStarted || loop === null) return;
@@ -125,6 +126,7 @@ const bootstrap = async (): Promise<void> => {
       syncInWorldShellState();
       syncDebugOverlayVisibility();
       syncDebugEditOverlayVisibility();
+      syncPlayerSpawnMarkerVisibility();
       loop.start();
     },
     onToggleDebugOverlay: (screen) => {
@@ -138,6 +140,12 @@ const bootstrap = async (): Promise<void> => {
       debugEditOverlaysVisible = !debugEditOverlaysVisible;
       syncInWorldShellState();
       syncDebugEditOverlayVisibility();
+    },
+    onTogglePlayerSpawnMarker: (screen) => {
+      if (screen !== 'in-world') return;
+      playerSpawnMarkerVisible = !playerSpawnMarkerVisible;
+      syncInWorldShellState();
+      syncPlayerSpawnMarkerVisibility();
     }
   });
   shell.setState({
@@ -171,7 +179,8 @@ const bootstrap = async (): Promise<void> => {
     shell.setState({
       screen: 'in-world',
       debugOverlayVisible,
-      debugEditOverlaysVisible
+      debugEditOverlaysVisible,
+      playerSpawnMarkerVisible
     });
   };
   const syncDebugOverlayVisibility = (): void => {
@@ -183,8 +192,12 @@ const bootstrap = async (): Promise<void> => {
     armedDebugToolPreview.setVisible(visible);
     debugEditStatusStrip.setVisible(visible);
   };
+  const syncPlayerSpawnMarkerVisibility = (): void => {
+    playerSpawnMarker.setVisible(worldStarted && playerSpawnMarkerVisible);
+  };
   syncDebugOverlayVisibility();
   syncDebugEditOverlayVisibility();
+  syncPlayerSpawnMarkerVisibility();
   input.retainPointerInspectWhenLeavingToElement(debugEditStatusStrip.getPointerInspectRetainerElement());
   const debugTileEditHistory = new DebugTileEditHistory();
   const debugEditControlStorage = (() => {

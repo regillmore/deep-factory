@@ -135,6 +135,7 @@ export class PlayerSpawnMarkerOverlay {
   private aabbRoot: HTMLDivElement;
   private supportRoot: HTMLDivElement;
   private anchorRoot: HTMLDivElement;
+  private visible = true;
 
   constructor(private canvas: HTMLCanvasElement) {
     this.aabbRoot = createRectRoot('2px solid rgba(108, 255, 171, 0.96)', 'rgba(108, 255, 171, 0.08)');
@@ -147,7 +148,18 @@ export class PlayerSpawnMarkerOverlay {
     this.anchorRoot = createAnchorRoot();
   }
 
+  setVisible(visible: boolean): void {
+    this.visible = visible;
+    if (visible) return;
+    this.hideRoots();
+  }
+
   update(camera: Camera2D, spawn: PlayerSpawnPoint | null): void {
+    if (!this.visible) {
+      this.hideRoots();
+      return;
+    }
+
     if (!spawn) {
       this.hideRoots();
       return;

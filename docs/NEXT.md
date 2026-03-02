@@ -45,7 +45,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 27. Add grounded-walk placeholder pose variants to the renderer-side standalone player draw pass so horizontal movement direction reads before sprite assets land.
 28. Add an in-world shell action that returns to the main menu without discarding the initialized world session.
-30. Add an in-world shell toggle that hides the standalone player spawn marker overlay without disabling world controls or simulation.
+38. Add an in-world shell action that recenters the camera on the standalone player and clears accumulated manual follow offset.
 
 ## Player debugging
 

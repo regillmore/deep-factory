@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Add an in-world shell toggle that hides the standalone player spawn marker overlay without disabling world controls or simulation.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the shell now exposes a dedicated in-world `Spawn Marker` toggle state, updated [src/main.ts](../src/main.ts) to drive spawn-marker visibility through that shell state, extended [src/ui/playerSpawnMarkerOverlay.ts](../src/ui/playerSpawnMarkerOverlay.ts) with explicit visibility gating, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DECISIONS.md](docs/DECISIONS.md), and [README.md](../README.md).
+- Verification: Ran `npx vitest run src/ui/appShell.test.ts src/ui/playerSpawnMarkerOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Stop pointer-clicked in-world UI buttons from re-triggering on later `Space` presses meant for player jump.
 - Changes: Added [src/ui/buttonFocus.ts](../src/ui/buttonFocus.ts) plus [src/ui/buttonFocus.test.ts](../src/ui/buttonFocus.test.ts) to classify pointer-generated button clicks and release focus after those activations, then applied that helper in [src/ui/appShell.ts](../src/ui/appShell.ts), [src/ui/debugEditStatusStrip.ts](../src/ui/debugEditStatusStrip.ts), and [src/ui/touchDebugEditControls.ts](../src/ui/touchDebugEditControls.ts) so shell toggles and debug-edit panel buttons no longer stay focused after mouse or touch clicks while keyboard-triggered button activation still works.
 - Verification: Ran `npx vitest run src/ui/buttonFocus.test.ts src/ui/appShell.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

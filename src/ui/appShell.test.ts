@@ -24,6 +24,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.primaryActionLabel).toBeNull();
     expect(viewModel.debugOverlayToggleLabel).toBeNull();
     expect(viewModel.debugEditOverlaysToggleLabel).toBeNull();
+    expect(viewModel.playerSpawnMarkerToggleLabel).toBeNull();
     expect(viewModel.statusText).toContain('Preparing renderer');
     expect(viewModel.detailLines).toEqual([
       'Boot runs before the fixed-step simulation starts so later shell work has a stable entry point.'
@@ -39,6 +40,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.primaryActionLabel).toBe('Enter World');
     expect(viewModel.debugOverlayToggleLabel).toBeNull();
     expect(viewModel.debugEditOverlaysToggleLabel).toBeNull();
+    expect(viewModel.playerSpawnMarkerToggleLabel).toBeNull();
     expect(viewModel.detailLines).toEqual([
       'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
       'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
@@ -56,6 +58,8 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.debugOverlayTogglePressed).toBe(false);
     expect(viewModel.debugEditOverlaysToggleLabel).toBe('Hide Edit Overlays');
     expect(viewModel.debugEditOverlaysTogglePressed).toBe(true);
+    expect(viewModel.playerSpawnMarkerToggleLabel).toBe('Hide Spawn Marker');
+    expect(viewModel.playerSpawnMarkerTogglePressed).toBe(true);
     expect(viewModel.detailLines).toEqual([]);
   });
 
@@ -67,6 +71,8 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.debugOverlayTogglePressed).toBe(true);
     expect(viewModel.debugEditOverlaysToggleLabel).toBe('Hide Edit Overlays');
     expect(viewModel.debugEditOverlaysTogglePressed).toBe(true);
+    expect(viewModel.playerSpawnMarkerToggleLabel).toBe('Hide Spawn Marker');
+    expect(viewModel.playerSpawnMarkerTogglePressed).toBe(true);
   });
 
   it('reflects the compact edit overlay toggle state while in-world', () => {
@@ -79,6 +85,21 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
     expect(viewModel.debugEditOverlaysToggleLabel).toBe('Show Edit Overlays');
     expect(viewModel.debugEditOverlaysTogglePressed).toBe(false);
+    expect(viewModel.playerSpawnMarkerToggleLabel).toBe('Hide Spawn Marker');
+    expect(viewModel.playerSpawnMarkerTogglePressed).toBe(true);
+  });
+
+  it('reflects the spawn marker toggle state while in-world', () => {
+    const viewModel = resolveAppShellViewModel({
+      screen: 'in-world',
+      playerSpawnMarkerVisible: false
+    });
+
+    expect(viewModel.chromeVisible).toBe(true);
+    expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
+    expect(viewModel.debugEditOverlaysToggleLabel).toBe('Hide Edit Overlays');
+    expect(viewModel.playerSpawnMarkerToggleLabel).toBe('Show Spawn Marker');
+    expect(viewModel.playerSpawnMarkerTogglePressed).toBe(false);
   });
 
   it('honors explicit boot failure copy without changing the boot state contract', () => {
@@ -94,5 +115,6 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.statusText).toBe('WebGL2 is not available in this browser.');
     expect(viewModel.detailLines).toEqual(['Use a current Chrome, Firefox, or Safari build to continue.']);
     expect(viewModel.debugEditOverlaysToggleLabel).toBeNull();
+    expect(viewModel.playerSpawnMarkerToggleLabel).toBeNull();
   });
 });
