@@ -1,3 +1,13 @@
+ :root {
+  color: #f2ede1;
+  font-family:
+    'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', sans-serif;
+  background:
+    radial-gradient(circle at top, rgba(206, 145, 69, 0.16), transparent 42%),
+    radial-gradient(circle at bottom right, rgba(64, 108, 122, 0.2), transparent 38%),
+    #0a0d11;
+}
+
 html,
 body,
 #app {
@@ -5,13 +15,156 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #161a21;
+  background: transparent;
+}
+
+body {
+  color: #f2ede1;
+}
+
+#app {
+  position: relative;
 }
 
 canvas {
   width: 100%;
   height: 100%;
   display: block;
+  background: #090c10;
+}
+
+.app-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.app-shell__world {
+  position: absolute;
+  inset: 0;
+}
+
+.app-shell__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: clamp(18px, 4vw, 42px);
+  background:
+    linear-gradient(180deg, rgba(6, 8, 11, 0.84), rgba(7, 10, 14, 0.66)),
+    radial-gradient(circle at top, rgba(255, 205, 128, 0.12), transparent 36%);
+}
+
+.app-shell__panel {
+  width: min(560px, 100%);
+  box-sizing: border-box;
+  padding: clamp(22px, 4vw, 38px);
+  border: 1px solid rgba(255, 236, 201, 0.18);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(18, 24, 32, 0.94), rgba(11, 16, 22, 0.9)),
+    linear-gradient(135deg, rgba(220, 158, 72, 0.08), rgba(75, 122, 137, 0.1));
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 243, 220, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.app-shell__stage {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(220, 158, 72, 0.16);
+  color: #f3cd87;
+  font:
+    700 11px/1.1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.app-shell__title {
+  margin: 16px 0 8px;
+  color: #fff3d9;
+  font-family: 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 700;
+  line-height: 0.96;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.app-shell__status {
+  margin: 0;
+  color: #f1e7d5;
+  font-size: clamp(1rem, 2.3vw, 1.1rem);
+  line-height: 1.55;
+}
+
+.app-shell__detail-list {
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  color: #b7c4ca;
+  font-size: 0.96rem;
+  line-height: 1.55;
+}
+
+.app-shell__detail-list li {
+  position: relative;
+  padding-left: 18px;
+}
+
+.app-shell__detail-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.72em;
+  width: 8px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(243, 205, 135, 0.9), rgba(243, 205, 135, 0.16));
+}
+
+.app-shell__primary {
+  margin-top: 22px;
+  padding: 12px 18px;
+  border: 1px solid rgba(255, 225, 169, 0.28);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(224, 165, 83, 0.92), rgba(192, 121, 48, 0.9));
+  color: #120f0a;
+  font:
+    700 12px/1.1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 14px 28px rgba(120, 66, 19, 0.24);
+}
+
+.app-shell__primary:hover {
+  filter: brightness(1.04);
+}
+
+.app-shell__primary:focus-visible {
+  outline: 2px solid #f6d9a1;
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .app-shell__panel {
+    border-radius: 20px;
+  }
+
+  .app-shell__detail-list {
+    font-size: 0.92rem;
+  }
+
+  .app-shell__primary {
+    width: 100%;
+  }
 }
 
 .message {

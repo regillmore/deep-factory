@@ -2,14 +2,14 @@
 
 ## Module boundaries
 
-- `src/main.ts`: bootstrapping and dependency wiring.
+- `src/main.ts`: bootstrapping, app-shell coordination, and dependency wiring.
 - `src/core/`: camera math, camera-follow offset helpers, and fixed timestep loop.
 - `src/input/`: input abstraction for keyboard, mouse, touch/pinch, and standalone player intent extraction.
 - `src/gl/`: low-level WebGL2 utilities, authored-atlas loading plus layout-driven placeholder fallback generation, world rendering orchestration, and the grounded-versus-airborne standalone player placeholder draw pass.
 - `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, sparse edited-tile overrides that survive chunk streaming prune, mesh construction, plus authored atlas-region layout data.
 - `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups and elapsed-frame resolvers backed by `src/world/authoredAtlasLayout.ts`; renderer boot now validates authored atlas-index sources against the loaded atlas dimensions and direct `uvRect` metadata against both atlas bounds and whole-pixel atlas edges).
 - `src/gl/animatedChunkMesh.ts`: renderer-side helper that rewrites baked chunk UVs for animated non-terrain quads when elapsed time advances to a new metadata frame.
-- `src/ui/`: debug DOM overlays, spawn marker, and touch-only player controls.
+- `src/ui/`: app shell, debug DOM overlays, spawn marker, and touch-only player controls.
 
 ## Update loop
 
@@ -18,7 +18,7 @@
 - fixed update step (`60hz`) for deterministic simulation hooks,
 - render interpolation alpha (currently unused but available).
 
-Current update phase applies debug tile-edit actions, spawn refresh after tile edits, embedded-player respawn recovery from the latest resolved spawn when edits trap the current AABB in solid terrain, standalone player stepping through shared movement, gravity, and collision helpers from mixed-device intent, and camera follow that targets the player body center while preserving manual pan or zoom offsets from pointer interaction.
+Bootstrap now mounts the app shell first, initializes renderer plus input behind the `boot` screen, renders one static world preview for the `main menu`, and only starts the `GameLoop` after the shell enters `in-world`. Once active, the current update phase applies debug tile-edit actions, spawn refresh after tile edits, embedded-player respawn recovery from the latest resolved spawn when edits trap the current AABB in solid terrain, standalone player stepping through shared movement, gravity, and collision helpers from mixed-device intent, and camera follow that targets the player body center while preserving manual pan or zoom offsets from pointer interaction.
 
 ## Player state foundation
 

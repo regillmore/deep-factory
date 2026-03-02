@@ -332,6 +332,7 @@ export class DebugOverlay {
     this.root.style.position = 'fixed';
     this.root.style.top = '12px';
     this.root.style.left = '12px';
+    this.root.style.display = 'none';
     this.root.style.padding = '8px 10px';
     this.root.style.background = 'rgba(0, 0, 0, 0.6)';
     this.root.style.color = '#fff';
@@ -351,6 +352,7 @@ export class DebugOverlay {
   ): void {
     this.smoothDelta = this.smoothDelta * 0.9 + deltaMs * 0.1;
     this.fps = 1000 / this.smoothDelta;
+    this.root.style.display = 'block';
     this.root.textContent = formatDebugOverlayText(this.fps, stats, inspect);
   }
 }

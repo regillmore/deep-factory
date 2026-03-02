@@ -32,6 +32,7 @@ import {
   resolveDebugEditShortcutAction
 } from './input/debugEditShortcuts';
 import { DebugOverlay } from './ui/debugOverlay';
+import { AppShell } from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
@@ -105,18 +106,32 @@ const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing #app root element');
 
 const bootstrap = async (): Promise<void> => {
+  let worldStarted = false;
+  let loop: GameLoop | null = null;
+  const shell = new AppShell(app, {
+    onPrimaryAction: (screen) => {
+      if (screen !== 'main-menu' || worldStarted || loop === null) return;
+      worldStarted = true;
+      shell.setState({ screen: 'in-world' });
+      loop.start();
+    }
+  });
+  shell.setState({
+    screen: 'boot',
+    statusText: 'Preparing renderer, controls, and spawn state.'
+  });
   const canvas = document.createElement('canvas');
-  app.append(canvas);
+  shell.getWorldHost().append(canvas);
 
   let renderer: Renderer;
   try {
     renderer = new Renderer(canvas);
   } catch {
-    const message = document.createElement('div');
-    message.className = 'message';
-    message.textContent =
-      'WebGL2 is not available in this browser. Please use a modern Chrome, Firefox, or Safari build.';
-    app.replaceChildren(message);
+    shell.setState({
+      screen: 'boot',
+      statusText: 'WebGL2 is not available in this browser.',
+      detailLines: ['Use a current Chrome, Firefox, or Safari build to continue.']
+    });
     return;
   }
 
@@ -912,13 +927,144 @@ const bootstrap = async (): Promise<void> => {
     if (!handled) return;
   });
 
-  await renderer.initialize();
-  renderer.resize();
-  refreshResolvedPlayerSpawn();
+  const renderWorldFrame = (frameDtMs: number): void => {
+    const pointerInspect = input.getPointerInspect();
+    const armedDebugToolPreviewState = input.getArmedDebugToolPreviewState();
+    const hoveredDebugTileStatus = getHoveredDebugTileStatus(pointerInspect);
+    const pinnedDebugTileStatus = pinnedDebugTileInspect
+      ? getDebugTileStatusAtTile(pinnedDebugTileInspect.tileX, pinnedDebugTileInspect.tileY)
+      : null;
+    const debugOverlayPointerInspect = pointerInspect
+      ? {
+          ...pointerInspect,
+          tileId: hoveredDebugTileStatus?.tileId,
+          tileLabel: hoveredDebugTileStatus?.tileLabel,
+          solid: hoveredDebugTileStatus?.solid,
+          blocksLight: hoveredDebugTileStatus?.blocksLight,
+          liquidKind: hoveredDebugTileStatus?.liquidKind ?? null
+        }
+      : null;
+    const debugOverlayPinnedInspect = pinnedDebugTileStatus
+      ? {
+          tile: {
+            x: pinnedDebugTileStatus.tileX,
+            y: pinnedDebugTileStatus.tileY
+          },
+          tileId: pinnedDebugTileStatus.tileId,
+          tileLabel: pinnedDebugTileStatus.tileLabel,
+          solid: pinnedDebugTileStatus.solid,
+          blocksLight: pinnedDebugTileStatus.blocksLight,
+          liquidKind: pinnedDebugTileStatus.liquidKind
+        }
+      : null;
+    const debugOverlaySpawn = resolvedPlayerSpawn
+      ? {
+          tile: {
+            x: resolvedPlayerSpawn.anchorTileX,
+            y: resolvedPlayerSpawn.standingTileY
+          },
+          world: {
+            x: resolvedPlayerSpawn.x,
+            y: resolvedPlayerSpawn.y
+          }
+        }
+      : null;
+    const debugOverlayPlayer = standalonePlayerState
+      ? (() => {
+          const aabb = getPlayerAabb(standalonePlayerState);
+          const contacts = renderer.getPlayerCollisionContacts(standalonePlayerState);
 
-  window.addEventListener('resize', () => renderer.resize());
+          return {
+            position: {
+              x: standalonePlayerState.position.x,
+              y: standalonePlayerState.position.y
+            },
+            velocity: {
+              x: standalonePlayerState.velocity.x,
+              y: standalonePlayerState.velocity.y
+            },
+            aabb: {
+              min: {
+                x: aabb.minX,
+                y: aabb.minY
+              },
+              max: {
+                x: aabb.maxX,
+                y: aabb.maxY
+              },
+              size: {
+                x: aabb.maxX - aabb.minX,
+                y: aabb.maxY - aabb.minY
+              }
+            },
+            grounded: standalonePlayerState.grounded,
+            facing: standalonePlayerState.facing,
+            contacts: {
+              support: contacts.support,
+              wall: contacts.wall,
+              ceiling: contacts.ceiling
+            }
+          };
+        })()
+      : null;
+    const debugOverlayPlayerCameraFollow = standalonePlayerState
+      ? {
+          focus: getPlayerCameraFocusPoint(standalonePlayerState),
+          offset: {
+            x: cameraFollowOffset.x,
+            y: cameraFollowOffset.y
+          }
+        }
+      : null;
+    const debugOverlayPlayerIntent = input.getPlayerInputTelemetry();
+    renderer.resize();
+    renderer.render(camera, {
+      standalonePlayer: standalonePlayerState
+    });
+    hoveredTileCursor.update(camera, {
+      hovered: pointerInspect
+        ? {
+            tileX: pointerInspect.tile.x,
+            tileY: pointerInspect.tile.y
+          }
+        : null,
+      pinned: pinnedDebugTileInspect
+        ? {
+            tileX: pinnedDebugTileInspect.tileX,
+            tileY: pinnedDebugTileInspect.tileY
+          }
+        : null
+    });
+    playerSpawnMarker.update(camera, resolvedPlayerSpawn);
+    armedDebugToolPreview.update(camera, pointerInspect, armedDebugToolPreviewState);
+    debugEditStatusStrip.update({
+      mode: input.getTouchDebugEditMode(),
+      brushLabel: getActiveDebugBrushLabel(),
+      brushTileId: activeDebugBrushTileId,
+      preview: armedDebugToolPreviewState,
+      hoveredTile: hoveredDebugTileStatus,
+      pinnedTile: pinnedDebugTileStatus,
+      desktopInspectPinArmed: input.getArmedDesktopDebugInspectPin()
+    });
+    debug.update(frameDtMs, renderer.telemetry, {
+      pointer: debugOverlayPointerInspect,
+      pinned: debugOverlayPinnedInspect,
+      spawn: debugOverlaySpawn,
+      player: debugOverlayPlayer,
+      playerIntent: debugOverlayPlayerIntent,
+      playerCameraFollow: debugOverlayPlayerCameraFollow,
+      playerGroundedTransition: lastPlayerGroundedTransitionEvent
+    });
+  };
 
-  const loop = new GameLoop(
+  const renderWorldPreview = (): void => {
+    renderer.resize();
+    renderer.render(camera, {
+      standalonePlayer: standalonePlayerState
+    });
+  };
+
+  loop = new GameLoop(
     1000 / 60,
     (fixedDt) => {
       input.update(fixedDt);
@@ -1057,138 +1203,35 @@ const bootstrap = async (): Promise<void> => {
         applyStandalonePlayerCameraFollow();
       }
     },
-    (_alpha, frameDtMs) => {
-      const pointerInspect = input.getPointerInspect();
-      const armedDebugToolPreviewState = input.getArmedDebugToolPreviewState();
-      const hoveredDebugTileStatus = getHoveredDebugTileStatus(pointerInspect);
-      const pinnedDebugTileStatus = pinnedDebugTileInspect
-        ? getDebugTileStatusAtTile(pinnedDebugTileInspect.tileX, pinnedDebugTileInspect.tileY)
-        : null;
-      const debugOverlayPointerInspect = pointerInspect
-        ? {
-            ...pointerInspect,
-            tileId: hoveredDebugTileStatus?.tileId,
-            tileLabel: hoveredDebugTileStatus?.tileLabel,
-            solid: hoveredDebugTileStatus?.solid,
-            blocksLight: hoveredDebugTileStatus?.blocksLight,
-            liquidKind: hoveredDebugTileStatus?.liquidKind ?? null
-          }
-        : null;
-      const debugOverlayPinnedInspect = pinnedDebugTileStatus
-        ? {
-            tile: {
-              x: pinnedDebugTileStatus.tileX,
-              y: pinnedDebugTileStatus.tileY
-            },
-            tileId: pinnedDebugTileStatus.tileId,
-            tileLabel: pinnedDebugTileStatus.tileLabel,
-            solid: pinnedDebugTileStatus.solid,
-            blocksLight: pinnedDebugTileStatus.blocksLight,
-            liquidKind: pinnedDebugTileStatus.liquidKind
-          }
-        : null;
-      const debugOverlaySpawn = resolvedPlayerSpawn
-        ? {
-            tile: {
-              x: resolvedPlayerSpawn.anchorTileX,
-              y: resolvedPlayerSpawn.standingTileY
-            },
-            world: {
-              x: resolvedPlayerSpawn.x,
-              y: resolvedPlayerSpawn.y
-            }
-          }
-        : null;
-      const debugOverlayPlayer = standalonePlayerState
-        ? (() => {
-            const aabb = getPlayerAabb(standalonePlayerState);
-            const contacts = renderer.getPlayerCollisionContacts(standalonePlayerState);
-
-            return {
-              position: {
-                x: standalonePlayerState.position.x,
-                y: standalonePlayerState.position.y
-              },
-              velocity: {
-                x: standalonePlayerState.velocity.x,
-                y: standalonePlayerState.velocity.y
-              },
-              aabb: {
-                min: {
-                  x: aabb.minX,
-                  y: aabb.minY
-                },
-                max: {
-                  x: aabb.maxX,
-                  y: aabb.maxY
-                },
-                size: {
-                  x: aabb.maxX - aabb.minX,
-                  y: aabb.maxY - aabb.minY
-                }
-              },
-              grounded: standalonePlayerState.grounded,
-              facing: standalonePlayerState.facing,
-              contacts: {
-                support: contacts.support,
-                wall: contacts.wall,
-                ceiling: contacts.ceiling
-              }
-            };
-          })()
-        : null;
-      const debugOverlayPlayerCameraFollow = standalonePlayerState
-        ? {
-            focus: getPlayerCameraFocusPoint(standalonePlayerState),
-            offset: {
-              x: cameraFollowOffset.x,
-              y: cameraFollowOffset.y
-            }
-          }
-        : null;
-      const debugOverlayPlayerIntent = input.getPlayerInputTelemetry();
-      renderer.resize();
-      renderer.render(camera, {
-        standalonePlayer: standalonePlayerState
-      });
-      hoveredTileCursor.update(camera, {
-        hovered: pointerInspect
-          ? {
-              tileX: pointerInspect.tile.x,
-              tileY: pointerInspect.tile.y
-            }
-          : null,
-        pinned: pinnedDebugTileInspect
-          ? {
-              tileX: pinnedDebugTileInspect.tileX,
-              tileY: pinnedDebugTileInspect.tileY
-            }
-          : null
-      });
-      playerSpawnMarker.update(camera, resolvedPlayerSpawn);
-      armedDebugToolPreview.update(camera, pointerInspect, armedDebugToolPreviewState);
-      debugEditStatusStrip.update({
-        mode: input.getTouchDebugEditMode(),
-        brushLabel: getActiveDebugBrushLabel(),
-        brushTileId: activeDebugBrushTileId,
-        preview: armedDebugToolPreviewState,
-        hoveredTile: hoveredDebugTileStatus,
-        pinnedTile: pinnedDebugTileStatus,
-        desktopInspectPinArmed: input.getArmedDesktopDebugInspectPin()
-      });
-      debug.update(frameDtMs, renderer.telemetry, {
-        pointer: debugOverlayPointerInspect,
-        pinned: debugOverlayPinnedInspect,
-        spawn: debugOverlaySpawn,
-        player: debugOverlayPlayer,
-        playerIntent: debugOverlayPlayerIntent,
-        playerCameraFollow: debugOverlayPlayerCameraFollow,
-        playerGroundedTransition: lastPlayerGroundedTransitionEvent
-      });
-    }
+    (_alpha, frameDtMs) => renderWorldFrame(frameDtMs)
   );
 
-  loop.start();
+  try {
+    await renderer.initialize();
+  } catch (error) {
+    const detailMessage =
+      error instanceof Error && error.message.length > 0
+        ? error.message
+        : 'Reload the page after confirming WebGL2 is available.';
+    shell.setState({
+      screen: 'boot',
+      statusText: 'Renderer initialization failed.',
+      detailLines: [detailMessage]
+    });
+    return;
+  }
+
+  renderer.resize();
+  refreshResolvedPlayerSpawn();
+  renderWorldPreview();
+  shell.setState({ screen: 'main-menu' });
+
+  window.addEventListener('resize', () => {
+    renderer.resize();
+    if (!worldStarted) {
+      renderWorldPreview();
+    }
+  });
 };
 
 void bootstrap();

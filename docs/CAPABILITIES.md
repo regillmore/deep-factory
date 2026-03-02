@@ -4,6 +4,7 @@ This document describes the current project state. Unlike the changelog, it shou
 
 ## Core Runtime
 
+- App shell now has explicit `boot`, `main menu`, and `in-world` states; renderer and input bootstrap run behind the boot screen, the main menu exposes an `Enter World` action once startup finishes, and the fixed-step simulation starts only after that transition.
 - WebGL2 renderer with shader utilities, buffer helpers, texture loading, and DPR-aware resize.
 - Renderer atlas initialization ships with an authored atlas at `public/atlas/tile-atlas.png` exposed as `/atlas/tile-atlas.png`, then falls back to a generated placeholder atlas whose canvas size and painted regions derive from `src/world/authoredAtlasLayout.ts` if that asset cannot be fetched or decoded.
 - Renderer boot validates authored atlas-index regions plus direct tile `render.uvRect` metadata against the loaded atlas dimensions, logs a warning when any atlas-backed source falls outside the source image or any direct static or animated `uvRect` edge lands between atlas pixels, and surfaces the warning count plus first warning in debug telemetry.
@@ -87,6 +88,7 @@ This document describes the current project state. Unlike the changelog, it shou
 
 ## Desktop Controls
 
+- App shell: click `Enter World` from the main menu after boot finishes.
 - Move player: `A` and `D` or left and right arrows.
 - Jump: `W`, up arrow, or `Space`.
 - Mouse wheel: zoom in or out.

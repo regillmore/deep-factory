@@ -43,9 +43,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## App shell
 
-25. Add an app shell with explicit `boot`, `main menu`, and `in-world` states.
 26. Move debug overlay visibility behind shell/UI toggles instead of always-on bootstrap wiring.
 27. Add grounded-walk placeholder pose variants to the renderer-side standalone player draw pass so horizontal movement direction reads before sprite assets land.
+28. Add an in-world shell action that returns to the main menu without discarding the initialized world session.
 
 ## Player debugging
 
