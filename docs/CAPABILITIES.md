@@ -5,7 +5,7 @@ This document describes the current project state. Unlike the changelog, it shou
 ## Core Runtime
 
 - App shell now has explicit `boot`, `main menu`, and `in-world` states; renderer and input bootstrap run behind the boot screen, the main menu exposes an `Enter World` action once startup finishes, and the fixed-step simulation starts only after that transition.
-- Once in-world, the shell keeps lightweight top-right `Recenter Camera` action plus `Debug HUD`, `Edit Overlays`, and `Spawn Marker` toggles; the recenter action, and matching desktop `C` shortcut, snap the camera back to the standalone player's body-center focus and clear any accumulated manual follow offset, the HUD toggle and matching desktop `H` shortcut show or hide the text telemetry overlay, the edit-overlay toggle hides or restores the compact status strip, hovered or pinned inspect outlines, and one-shot preview overlays, and the spawn-marker toggle plus matching desktop `M` shortcut hide or restore the resolved standalone player spawn AABB, support, and anchor overlay without leaving the active world session or disabling controls.
+- Once in-world, the shell keeps lightweight top-right `Recenter Camera` action plus `Debug HUD`, `Edit Panel`, `Edit Overlays`, and `Spawn Marker` toggles; the recenter action, and matching desktop `C` shortcut, snap the camera back to the standalone player's body-center focus and clear any accumulated manual follow offset, the HUD toggle and matching desktop `H` shortcut show or hide the text telemetry overlay, the edit-panel toggle shows or hides the full `Debug Edit` control surface independently from the compact overlays, the edit-overlay toggle plus matching desktop `V` shortcut hide or restore the compact status strip, hovered or pinned inspect outlines, and one-shot preview overlays, and the spawn-marker toggle plus matching desktop `M` shortcut hide or restore the resolved standalone player spawn AABB, support, and anchor overlay without leaving the active world session or disabling controls.
 - WebGL2 renderer with shader utilities, buffer helpers, texture loading, and DPR-aware resize.
 - Renderer atlas initialization ships with an authored atlas at `public/atlas/tile-atlas.png` exposed as `/atlas/tile-atlas.png`, then falls back to a generated placeholder atlas whose canvas size and painted regions derive from `src/world/authoredAtlasLayout.ts` if that asset cannot be fetched or decoded.
 - Renderer boot validates authored atlas-index regions plus direct tile `render.uvRect` metadata against the loaded atlas dimensions, logs a warning when any atlas-backed source falls outside the source image or any direct static or animated `uvRect` edge lands between atlas pixels, and surfaces the warning count plus first warning in debug telemetry.
@@ -75,7 +75,8 @@ This document describes the current project state. Unlike the changelog, it shou
 - The shell-level `Spawn Marker` toggle hides that spawn overlay without interrupting world controls, spawn refresh, or simulation.
 - On-canvas one-shot preview badges show live anchor plus endpoint tile coordinates, inclusive span dimensions, and affected-tile estimates for active previews and stay clipped to the visible canvas bounds on small or offset canvases, while anchored touch previews keep the endpoint, span, and affected-count text pending until the second point is chosen and show a persistent anchor label with the armed tool name, `Brush` or `Break` action text, and anchor tile coordinates that stays clamped inside the visible canvas bounds near viewport edges.
 - Compact debug-edit status strip mirrors shared mode, active brush, armed tool state, mixed-device hints, lets summary chips wrap long brush or tool values inside the chip on narrow mobile viewports, shows active one-shot preview anchor plus endpoint tile coordinates with live inclusive span dimensions and estimated affected tile counts while preview state is live, wraps preview, inspect, empty-hover guidance, and shortcut hint details into segmented rows to stay inside narrow mobile viewports, stacks inspect action buttons vertically before they clip on narrow canvases, shows separate pinned plus hovered tile metadata lines plus a hovered-to-pinned offset when both inspect targets differ, labels deduplicated same-tile inspect state as shared, and includes world plus chunk and chunk-local tile coordinates in inspect metadata.
-- The shell-level `Edit Overlays` toggle hides those compact inspect and preview overlays without disabling inspect pinning, one-shot tool state, painting, movement, or simulation.
+- The shell-level `Edit Overlays` toggle and matching desktop `V` shortcut hide those compact inspect and preview overlays without disabling inspect pinning, one-shot tool state, painting, movement, or simulation.
+- The shell-level `Edit Panel` toggle hides or restores the full `Debug Edit` control surface independently from the compact overlays; the panel starts hidden on desktop-oriented sessions and visible on touch-oriented sessions where the on-screen controls are the primary editing surface.
 - Compact status-strip inspect action buttons retain the last mouse hover comparison state while the pointer is over the action row, so pinned plus hovered metadata does not flap when using `Pin Click` or `Repin Click`.
 - Hovered and touched inspect readouts include tile name, tile ID, world plus chunk and chunk-local coordinates, and solid, light-blocking, and liquid flags.
 - Desktop and touch both support pinned tile inspection through the compact status strip workflow.
@@ -92,13 +93,14 @@ This document describes the current project state. Unlike the changelog, it shou
 ## Desktop Controls
 
 - App shell: click `Enter World` from the main menu after boot finishes.
-- In-world shell: click `Recenter Camera` or press `C` to snap the camera back to the standalone player and clear any preserved manual follow offset, click `Show Debug HUD` or `Hide Debug HUD` or press `H` to toggle the text telemetry overlay, click `Show Edit Overlays` or `Hide Edit Overlays` to toggle the compact debug-edit overlays, and click `Show Spawn Marker` or `Hide Spawn Marker` or press `M` to toggle the resolved spawn overlay.
+- In-world shell: click `Recenter Camera` or press `C` to snap the camera back to the standalone player and clear any preserved manual follow offset, click `Show Debug HUD` or `Hide Debug HUD` or press `H` to toggle the text telemetry overlay, click `Show Edit Panel` or `Hide Edit Panel` to toggle the full `Debug Edit` control surface, click `Show Edit Overlays` or `Hide Edit Overlays` or press `V` to toggle the compact debug-edit overlays, and click `Show Spawn Marker` or `Hide Spawn Marker` or press `M` to toggle the resolved spawn overlay.
 - Move player: `A` and `D` or left and right arrows.
 - Jump: `W`, up arrow, or `Space`.
 - Mouse wheel: zoom in or out.
 - `Shift` + mouse drag: pan without painting.
 - Mouse drag: debug paint on hovered tiles (`left` place active brush, `right` break).
 - Camera shortcut: `C` recenters on the standalone player without affecting movement input.
+- Compact edit-overlay shortcut: `V` toggles the in-world compact debug-edit overlays without affecting movement input.
 - Debug edit brush shortcuts: `1`-`0` select visible brush slots, `[` and `]` cycle active brush.
 - Debug touch-mode shortcuts: `P` pan, `L` place, `B` break.
 - Debug panel shortcut: `\` collapses or expands the shared debug-edit controls panel.
@@ -126,5 +128,6 @@ This document describes the current project state. Unlike the changelog, it shou
 ## Debug Edit UI
 
 - On-screen debug edit controls support brush selection, mode switching, undo, redo, collapse and expand, reset prefs, and one-shot tool arming.
+- The full `Debug Edit` panel is now distinct from the compact inspect and preview overlay layer, so either surface can be hidden without forcing the other one off.
 - Collapsed panel state still shows a compact header with current mode, active brush, and undo or redo counts.
 - The compact status strip stays useful even when the larger panel is collapsed or out of the way.

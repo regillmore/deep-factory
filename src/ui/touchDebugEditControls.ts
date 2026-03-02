@@ -1,6 +1,7 @@
 import type { TouchDebugEditMode } from '../input/controller';
 import {
   getDesktopDebugOverlayHotkeyLabel,
+  getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopPlayerSpawnMarkerHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel,
   getDebugBrushSlotHotkeyLabel,
@@ -20,7 +21,17 @@ export interface DebugEditHistoryControlState {
   redoStrokeCount: number;
 }
 
+export interface TouchDebugEditControlsDisplayState {
+  rootDisplay: 'flex' | 'none';
+  contentDisplay: 'flex' | 'none';
+  collapsedSummaryDisplay: 'block' | 'none';
+  ariaExpanded: 'true' | 'false';
+  ariaHidden: 'true' | 'false';
+  collapseToggleLabel: 'Expand' | 'Collapse';
+}
+
 interface TouchDebugEditControlsOptions {
+  initialVisible?: boolean;
   initialMode?: TouchDebugEditMode;
   onModeChange?: (mode: TouchDebugEditMode) => void;
   brushOptions?: readonly DebugBrushOption[];
@@ -54,6 +65,18 @@ const buttonLabelForMode = (mode: TouchDebugEditMode): string => {
   return 'Break';
 };
 
+export const resolveTouchDebugEditControlsDisplayState = (
+  visible: boolean,
+  collapsed: boolean
+): TouchDebugEditControlsDisplayState => ({
+  rootDisplay: visible ? 'flex' : 'none',
+  contentDisplay: collapsed ? 'none' : 'flex',
+  collapsedSummaryDisplay: collapsed ? 'block' : 'none',
+  ariaExpanded: collapsed ? 'false' : 'true',
+  ariaHidden: visible ? 'false' : 'true',
+  collapseToggleLabel: collapsed ? 'Expand' : 'Collapse'
+});
+
 export class TouchDebugEditControls {
   private root: HTMLDivElement;
   private collapsedSummary: HTMLDivElement;
@@ -61,6 +84,7 @@ export class TouchDebugEditControls {
   private collapseToggleButton: HTMLButtonElement;
   private buttons = new Map<TouchDebugEditMode, HTMLButtonElement>();
   private brushButtons = new Map<number, HTMLButtonElement>();
+  private visible: boolean;
   private mode: TouchDebugEditMode;
   private brushTileId: number;
   private collapsed: boolean;
@@ -102,6 +126,7 @@ export class TouchDebugEditControls {
   private onResetPrefs: () => void;
 
   constructor(options: TouchDebugEditControlsOptions = {}) {
+    this.visible = options.initialVisible ?? true;
     this.mode = options.initialMode ?? 'pan';
     this.onModeChange = options.onModeChange ?? (() => {});
     this.brushOptions = options.brushOptions ?? [];
@@ -713,6 +738,13 @@ export class TouchDebugEditControls {
     hudShortcutLine.style.lineHeight = '1.35';
     shortcutSection.append(hudShortcutLine);
 
+    const editOverlayShortcutLine = document.createElement('div');
+    editOverlayShortcutLine.textContent = `Edit overlays: ${getDesktopDebugEditOverlaysHotkeyLabel()} toggle compact in-world overlays`;
+    editOverlayShortcutLine.style.color = '#d6dde8';
+    editOverlayShortcutLine.style.fontSize = '11px';
+    editOverlayShortcutLine.style.lineHeight = '1.35';
+    shortcutSection.append(editOverlayShortcutLine);
+
     const spawnMarkerShortcutLine = document.createElement('div');
     spawnMarkerShortcutLine.textContent = `Spawn marker: ${getDesktopPlayerSpawnMarkerHotkeyLabel()} toggle the standalone player spawn overlay`;
     spawnMarkerShortcutLine.style.color = '#d6dde8';
@@ -831,6 +863,7 @@ export class TouchDebugEditControls {
     this.syncEllipseOutlineToolState();
     this.syncBrushState();
     this.syncCollapsedState();
+    this.syncVisibility();
     this.installPointerButtonFocusRelease();
     document.body.append(this.root);
   }
@@ -852,6 +885,16 @@ export class TouchDebugEditControls {
 
   getBrushTileId(): number {
     return this.brushTileId;
+  }
+
+  isVisible(): boolean {
+    return this.visible;
+  }
+
+  setVisible(visible: boolean): void {
+    if (this.visible === visible) return;
+    this.visible = visible;
+    this.syncVisibility();
   }
 
   isCollapsed(): boolean {
@@ -1013,15 +1056,22 @@ export class TouchDebugEditControls {
   }
 
   private syncCollapsedState(): void {
-    this.content.style.display = this.collapsed ? 'none' : 'flex';
-    this.collapsedSummary.style.display = this.collapsed ? 'block' : 'none';
-    this.collapseToggleButton.textContent = this.collapsed ? 'Expand' : 'Collapse';
+    const displayState = resolveTouchDebugEditControlsDisplayState(this.visible, this.collapsed);
+    this.content.style.display = displayState.contentDisplay;
+    this.collapsedSummary.style.display = displayState.collapsedSummaryDisplay;
+    this.collapseToggleButton.textContent = displayState.collapseToggleLabel;
     const panelToggleHotkeyLabel = getDebugEditPanelToggleHotkeyLabel();
     this.collapseToggleButton.title = this.collapsed
       ? `Expand debug edit controls (${panelToggleHotkeyLabel})`
       : `Collapse debug edit controls (${panelToggleHotkeyLabel})`;
-    this.collapseToggleButton.setAttribute('aria-expanded', this.collapsed ? 'false' : 'true');
+    this.collapseToggleButton.setAttribute('aria-expanded', displayState.ariaExpanded);
     this.syncCollapsedSummary();
+  }
+
+  private syncVisibility(): void {
+    const displayState = resolveTouchDebugEditControlsDisplayState(this.visible, this.collapsed);
+    this.root.style.display = displayState.rootDisplay;
+    this.root.setAttribute('aria-hidden', displayState.ariaHidden);
   }
 
   private syncBrushState(): void {

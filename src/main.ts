@@ -115,21 +115,24 @@ const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing #app root element');
 
 const bootstrap = async (): Promise<void> => {
+  const touchControlsAvailable = supportsTouchPlayerControls();
   let worldStarted = false;
   let loop: GameLoop | null = null;
   let debugOverlayVisible = false;
+  let debugEditControlsVisible = touchControlsAvailable;
   let debugEditOverlaysVisible = true;
   let playerSpawnMarkerVisible = true;
   const shell = new AppShell(app, {
-    onPrimaryAction: (screen) => {
-      if (screen !== 'main-menu' || worldStarted || loop === null) return;
-      worldStarted = true;
-      syncInWorldShellState();
-      syncDebugOverlayVisibility();
-      syncDebugEditOverlayVisibility();
-      syncPlayerSpawnMarkerVisibility();
-      loop.start();
-    },
+      onPrimaryAction: (screen) => {
+        if (screen !== 'main-menu' || worldStarted || loop === null) return;
+        worldStarted = true;
+        syncInWorldShellState();
+        syncDebugOverlayVisibility();
+        syncDebugEditControlsVisibility();
+        syncDebugEditOverlayVisibility();
+        syncPlayerSpawnMarkerVisibility();
+        loop.start();
+      },
     onRecenterCamera: (screen) => {
       if (screen !== 'in-world') return;
       centerCameraOnStandalonePlayer();
@@ -139,6 +142,12 @@ const bootstrap = async (): Promise<void> => {
       debugOverlayVisible = !debugOverlayVisible;
       syncInWorldShellState();
       syncDebugOverlayVisibility();
+    },
+    onToggleDebugEditControls: (screen) => {
+      if (screen !== 'in-world') return;
+      debugEditControlsVisible = !debugEditControlsVisible;
+      syncInWorldShellState();
+      syncDebugEditControlsVisibility();
     },
     onToggleDebugEditOverlays: (screen) => {
       if (screen !== 'in-world') return;
@@ -180,10 +189,12 @@ const bootstrap = async (): Promise<void> => {
   const playerSpawnMarker = new PlayerSpawnMarkerOverlay(canvas);
   const armedDebugToolPreview = new ArmedDebugToolPreviewOverlay(canvas);
   const debugEditStatusStrip = new DebugEditStatusStrip(canvas);
+  let debugEditControls: TouchDebugEditControls | null = null;
   const syncInWorldShellState = (): void => {
     shell.setState({
       screen: 'in-world',
       debugOverlayVisible,
+      debugEditControlsVisible,
       debugEditOverlaysVisible,
       playerSpawnMarkerVisible
     });
@@ -197,10 +208,14 @@ const bootstrap = async (): Promise<void> => {
     armedDebugToolPreview.setVisible(visible);
     debugEditStatusStrip.setVisible(visible);
   };
+  const syncDebugEditControlsVisibility = (): void => {
+    debugEditControls?.setVisible(worldStarted && debugEditControlsVisible);
+  };
   const syncPlayerSpawnMarkerVisibility = (): void => {
     playerSpawnMarker.setVisible(worldStarted && playerSpawnMarkerVisible);
   };
   syncDebugOverlayVisibility();
+  syncDebugEditControlsVisibility();
   syncDebugEditOverlayVisibility();
   syncPlayerSpawnMarkerVisibility();
   input.retainPointerInspectWhenLeavingToElement(debugEditStatusStrip.getPointerInspectRetainerElement());
@@ -225,7 +240,6 @@ const bootstrap = async (): Promise<void> => {
   input.setTouchDebugEditMode(initialDebugEditControlState.touchMode);
   let activeDebugBrushTileId = initialDebugEditControlState.brushTileId;
   let debugEditPanelCollapsed = initialDebugEditControlState.panelCollapsed;
-  let debugEditControls: TouchDebugEditControls | null = null;
   let suppressDebugEditControlPersistence = false;
   let pinnedDebugTileInspect: PinnedDebugTileInspectState | null = null;
   let resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
@@ -790,6 +804,7 @@ const bootstrap = async (): Promise<void> => {
   };
 
   debugEditControls = new TouchDebugEditControls({
+    initialVisible: worldStarted && debugEditControlsVisible,
     initialMode: input.getTouchDebugEditMode(),
     onModeChange: (mode) => {
       input.setTouchDebugEditMode(mode);
@@ -834,7 +849,8 @@ const bootstrap = async (): Promise<void> => {
     onRedo: redoDebugTileStroke,
     onResetPrefs: resetDebugEditControlPrefs
   });
-  if (supportsTouchPlayerControls()) {
+  syncDebugEditControlsVisibility();
+  if (touchControlsAvailable) {
     new TouchPlayerControls({
       onMoveLeftHeldChange: (held) => {
         input.setTouchPlayerMoveLeftHeld(held);
@@ -947,6 +963,13 @@ const bootstrap = async (): Promise<void> => {
         syncInWorldShellState();
         syncDebugOverlayVisibility();
       }
+    } else if (action.type === 'toggle-debug-edit-overlays') {
+      handled = worldStarted;
+      if (handled) {
+        debugEditOverlaysVisible = !debugEditOverlaysVisible;
+        syncInWorldShellState();
+        syncDebugEditOverlayVisibility();
+      }
     } else if (action.type === 'toggle-player-spawn-marker') {
       handled = worldStarted;
       if (handled) {
@@ -972,6 +995,7 @@ const bootstrap = async (): Promise<void> => {
     } else if (action.type === 'arm-ellipse-outline') {
       handled = toggleArmedDebugEllipseOutlineKind(action.kind);
     } else if (action.type === 'toggle-panel-collapsed') {
+      if (!debugEditControlsVisible) return;
       const previousCollapsed = debugEditControls ? debugEditControls.isCollapsed() : debugEditPanelCollapsed;
       if (debugEditControls) {
         debugEditControls.setCollapsed(!previousCollapsed);

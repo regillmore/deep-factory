@@ -1,6 +1,7 @@
 import { installPointerClickFocusRelease } from './buttonFocus';
 import {
   getDesktopDebugOverlayHotkeyLabel,
+  getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopPlayerSpawnMarkerHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel
 } from '../input/debugEditShortcuts';
@@ -13,6 +14,7 @@ export interface AppShellState {
   detailLines?: readonly string[];
   primaryActionLabel?: string | null;
   debugOverlayVisible?: boolean;
+  debugEditControlsVisible?: boolean;
   debugEditOverlaysVisible?: boolean;
   playerSpawnMarkerVisible?: boolean;
 }
@@ -29,6 +31,8 @@ export interface AppShellViewModel {
   recenterCameraActionLabel: string | null;
   debugOverlayToggleLabel: string | null;
   debugOverlayTogglePressed: boolean;
+  debugEditControlsToggleLabel: string | null;
+  debugEditControlsTogglePressed: boolean;
   debugEditOverlaysToggleLabel: string | null;
   debugEditOverlaysTogglePressed: boolean;
   playerSpawnMarkerToggleLabel: string | null;
@@ -39,6 +43,7 @@ interface AppShellOptions {
   onPrimaryAction?: (screen: AppShellScreen) => void;
   onRecenterCamera?: (screen: AppShellScreen) => void;
   onToggleDebugOverlay?: (screen: AppShellScreen) => void;
+  onToggleDebugEditControls?: (screen: AppShellScreen) => void;
   onToggleDebugEditOverlays?: (screen: AppShellScreen) => void;
   onTogglePlayerSpawnMarker?: (screen: AppShellScreen) => void;
 }
@@ -74,6 +79,8 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         recenterCameraActionLabel: null,
         debugOverlayToggleLabel: null,
         debugOverlayTogglePressed: false,
+        debugEditControlsToggleLabel: null,
+        debugEditControlsTogglePressed: false,
         debugEditOverlaysToggleLabel: null,
         debugEditOverlaysTogglePressed: false,
         playerSpawnMarkerToggleLabel: null,
@@ -92,6 +99,8 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         recenterCameraActionLabel: null,
         debugOverlayToggleLabel: null,
         debugOverlayTogglePressed: false,
+        debugEditControlsToggleLabel: null,
+        debugEditControlsTogglePressed: false,
         debugEditOverlaysToggleLabel: null,
         debugEditOverlaysTogglePressed: false,
         playerSpawnMarkerToggleLabel: null,
@@ -111,6 +120,9 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         debugOverlayToggleLabel:
           state.debugOverlayVisible === true ? 'Hide Debug HUD' : 'Show Debug HUD',
         debugOverlayTogglePressed: state.debugOverlayVisible === true,
+        debugEditControlsToggleLabel:
+          state.debugEditControlsVisible === true ? 'Hide Edit Panel' : 'Show Edit Panel',
+        debugEditControlsTogglePressed: state.debugEditControlsVisible === true,
         debugEditOverlaysToggleLabel:
           state.debugEditOverlaysVisible === false ? 'Show Edit Overlays' : 'Hide Edit Overlays',
         debugEditOverlaysTogglePressed: state.debugEditOverlaysVisible !== false,
@@ -128,6 +140,7 @@ export class AppShell {
   private chrome: HTMLDivElement;
   private recenterCameraActionButton: HTMLButtonElement;
   private debugOverlayToggleButton: HTMLButtonElement;
+  private debugEditControlsToggleButton: HTMLButtonElement;
   private debugEditOverlaysToggleButton: HTMLButtonElement;
   private playerSpawnMarkerToggleButton: HTMLButtonElement;
   private stageLabel: HTMLSpanElement;
@@ -138,6 +151,7 @@ export class AppShell {
   private onPrimaryAction: (screen: AppShellScreen) => void;
   private onRecenterCamera: (screen: AppShellScreen) => void;
   private onToggleDebugOverlay: (screen: AppShellScreen) => void;
+  private onToggleDebugEditControls: (screen: AppShellScreen) => void;
   private onToggleDebugEditOverlays: (screen: AppShellScreen) => void;
   private onTogglePlayerSpawnMarker: (screen: AppShellScreen) => void;
   private currentState: AppShellState = { screen: 'boot' };
@@ -146,6 +160,7 @@ export class AppShell {
     this.onPrimaryAction = options.onPrimaryAction ?? (() => {});
     this.onRecenterCamera = options.onRecenterCamera ?? (() => {});
     this.onToggleDebugOverlay = options.onToggleDebugOverlay ?? (() => {});
+    this.onToggleDebugEditControls = options.onToggleDebugEditControls ?? (() => {});
     this.onToggleDebugEditOverlays = options.onToggleDebugEditOverlays ?? (() => {});
     this.onTogglePlayerSpawnMarker = options.onTogglePlayerSpawnMarker ?? (() => {});
 
@@ -177,6 +192,15 @@ export class AppShell {
     );
     installPointerClickFocusRelease(this.debugOverlayToggleButton);
     this.chrome.append(this.debugOverlayToggleButton);
+
+    this.debugEditControlsToggleButton = document.createElement('button');
+    this.debugEditControlsToggleButton.type = 'button';
+    this.debugEditControlsToggleButton.className = 'app-shell__chrome-button';
+    this.debugEditControlsToggleButton.addEventListener('click', () =>
+      this.onToggleDebugEditControls(this.currentState.screen)
+    );
+    installPointerClickFocusRelease(this.debugEditControlsToggleButton);
+    this.chrome.append(this.debugEditControlsToggleButton);
 
     this.debugEditOverlaysToggleButton = document.createElement('button');
     this.debugEditOverlaysToggleButton.type = 'button';
@@ -270,6 +294,15 @@ export class AppShell {
     this.debugOverlayToggleButton.title = viewModel.debugOverlayTogglePressed
       ? `Hide debug HUD telemetry (${getDesktopDebugOverlayHotkeyLabel()})`
       : `Show debug HUD telemetry (${getDesktopDebugOverlayHotkeyLabel()})`;
+    this.debugEditControlsToggleButton.textContent = viewModel.debugEditControlsToggleLabel ?? '';
+    this.debugEditControlsToggleButton.hidden = viewModel.debugEditControlsToggleLabel === null;
+    this.debugEditControlsToggleButton.setAttribute(
+      'aria-pressed',
+      viewModel.debugEditControlsTogglePressed ? 'true' : 'false'
+    );
+    this.debugEditControlsToggleButton.title = viewModel.debugEditControlsTogglePressed
+      ? 'Hide the full debug-edit control panel'
+      : 'Show the full debug-edit control panel';
     this.debugEditOverlaysToggleButton.textContent = viewModel.debugEditOverlaysToggleLabel ?? '';
     this.debugEditOverlaysToggleButton.hidden = viewModel.debugEditOverlaysToggleLabel === null;
     this.debugEditOverlaysToggleButton.setAttribute(
@@ -277,8 +310,8 @@ export class AppShell {
       viewModel.debugEditOverlaysTogglePressed ? 'true' : 'false'
     );
     this.debugEditOverlaysToggleButton.title = viewModel.debugEditOverlaysTogglePressed
-      ? 'Hide compact debug-edit overlays'
-      : 'Show compact debug-edit overlays';
+      ? `Hide compact debug-edit overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`
+      : `Show compact debug-edit overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`;
     this.playerSpawnMarkerToggleButton.textContent = viewModel.playerSpawnMarkerToggleLabel ?? '';
     this.playerSpawnMarkerToggleButton.hidden = viewModel.playerSpawnMarkerToggleLabel === null;
     this.playerSpawnMarkerToggleButton.setAttribute(
