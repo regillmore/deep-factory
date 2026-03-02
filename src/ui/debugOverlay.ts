@@ -57,6 +57,11 @@ export interface DebugOverlayPlayerTelemetry {
   velocity: { x: number; y: number };
   grounded: boolean;
   facing: 'left' | 'right';
+  contacts: {
+    support: { tileX: number; tileY: number; tileId: number } | null;
+    wall: { tileX: number; tileY: number; tileId: number } | null;
+    ceiling: { tileX: number; tileY: number; tileId: number } | null;
+  };
 }
 
 export interface DebugOverlayPlayerIntentTelemetry {
@@ -156,6 +161,28 @@ const formatPlayerLine = (player: DebugOverlayPlayerTelemetry | null): string =>
   );
 };
 
+const formatPlayerContact = (
+  contact: { tileX: number; tileY: number; tileId: number } | null
+): string => {
+  if (!contact) {
+    return 'none';
+  }
+
+  return `${contact.tileX},${contact.tileY} (#${contact.tileId})`;
+};
+
+const formatPlayerContactsLine = (player: DebugOverlayPlayerTelemetry | null): string => {
+  if (!player) {
+    return 'Contact: n/a';
+  }
+
+  return (
+    `Contact: support:${formatPlayerContact(player.contacts.support)} | ` +
+    `wall:${formatPlayerContact(player.contacts.wall)} | ` +
+    `ceiling:${formatPlayerContact(player.contacts.ceiling)}`
+  );
+};
+
 const formatPlayerIntentLine = (playerIntent: DebugOverlayPlayerIntentTelemetry | null): string => {
   if (!playerIntent) {
     return 'Intent: n/a';
@@ -203,6 +230,7 @@ export const formatDebugOverlayText = (
     formatAtlasValidationLine(stats),
     formatSpawnLine(spawn),
     formatPlayerLine(player),
+    formatPlayerContactsLine(player),
     formatPlayerIntentLine(playerIntent),
     formatAnimatedChunkResidencyLine(stats),
     formatAnimatedChunkUvUploadLine(stats)

@@ -35,6 +35,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nAtlasWarn: none');
     expect(text).toContain('\nSpawn: unresolved');
     expect(text).toContain('\nPlayer: n/a');
+    expect(text).toContain('\nContact: n/a');
     expect(text).toContain('\nIntent: n/a');
     expect(text).toContain('\nAnimMesh: chunks:0 | quads:0');
     expect(text).toContain('\nAnimUV: uploads:0 | quads:0 | bytes:0');
@@ -140,12 +141,18 @@ describe('formatDebugOverlayText', () => {
         position: { x: 24.5, y: -12.25 },
         velocity: { x: -180, y: 60 },
         grounded: false,
-        facing: 'left'
+        facing: 'left',
+        contacts: {
+          support: null,
+          wall: { tileX: 0, tileY: -1, tileId: 3 },
+          ceiling: { tileX: 1, tileY: -3, tileId: 5 }
+        }
       },
       pinned: null
     });
 
     expect(text).toContain('\nPlayer: Pos:24.50,-12.25 | Vel:-180.00,60.00 | grounded:off | facing:left');
+    expect(text).toContain('\nContact: support:none | wall:0,-1 (#3) | ceiling:1,-3 (#5)');
     expect(text).toContain('\nIntent: move:-1 | jumpHeld:on | jumpPressed:on');
   });
 

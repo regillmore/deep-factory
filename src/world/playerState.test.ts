@@ -14,6 +14,7 @@ import {
   DEFAULT_PLAYER_MAX_WALK_SPEED,
   DEFAULT_PLAYER_WIDTH,
   getPlayerCameraFocusPoint,
+  getPlayerCollisionContacts,
   getPlayerAabb,
   integratePlayerState,
   movePlayerStateWithCollisions,
@@ -146,6 +147,53 @@ describe('playerState', () => {
     expect(getPlayerCameraFocusPoint(state)).toEqual({
       x: 24,
       y: -18
+    });
+  });
+
+  it('reports support, wall, and ceiling contacts adjacent to the current player AABB', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -3, 2, 2, 0);
+    world.setTile(0, 0, 3);
+    world.setTile(1, -1, 3);
+    world.setTile(0, -2, 3);
+
+    const contacts = getPlayerCollisionContacts(
+      world,
+      createPlayerState({
+        position: { x: 10, y: 0 },
+        size: { width: 12, height: 16 },
+        grounded: true,
+        facing: 'right'
+      })
+    );
+
+    expect(contacts).toEqual({
+      support: { tileX: 0, tileY: 0, tileId: 3 },
+      wall: { tileX: 1, tileY: -1, tileId: 3 },
+      ceiling: { tileX: 0, tileY: -2, tileId: 3 }
+    });
+  });
+
+  it('returns null contacts when no adjacent blocking tiles are present', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -3, 2, 2, 0);
+
+    const contacts = getPlayerCollisionContacts(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        size: { width: 12, height: 16 },
+        grounded: true,
+        facing: 'right'
+      })
+    );
+
+    expect(contacts).toEqual({
+      support: null,
+      wall: null,
+      ceiling: null
     });
   });
 

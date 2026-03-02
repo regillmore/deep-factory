@@ -1079,18 +1079,27 @@ const bootstrap = async (): Promise<void> => {
           }
         : null;
       const debugOverlayPlayer = standalonePlayerState
-        ? {
-            position: {
-              x: standalonePlayerState.position.x,
-              y: standalonePlayerState.position.y
-            },
-            velocity: {
-              x: standalonePlayerState.velocity.x,
-              y: standalonePlayerState.velocity.y
-            },
-            grounded: standalonePlayerState.grounded,
-            facing: standalonePlayerState.facing
-          }
+        ? (() => {
+            const contacts = renderer.getPlayerCollisionContacts(standalonePlayerState);
+
+            return {
+              position: {
+                x: standalonePlayerState.position.x,
+                y: standalonePlayerState.position.y
+              },
+              velocity: {
+                x: standalonePlayerState.velocity.x,
+                y: standalonePlayerState.velocity.y
+              },
+              grounded: standalonePlayerState.grounded,
+              facing: standalonePlayerState.facing,
+              contacts: {
+                support: contacts.support,
+                wall: contacts.wall,
+                ceiling: contacts.ceiling
+              }
+            };
+          })()
         : null;
       const debugOverlayPlayerIntent = input.getPlayerInputTelemetry();
       renderer.resize();

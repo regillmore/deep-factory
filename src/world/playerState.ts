@@ -23,6 +23,12 @@ export interface PlayerState {
   facing: PlayerFacing;
 }
 
+export interface PlayerCollisionContacts {
+  support: SolidTileCollision | null;
+  wall: SolidTileCollision | null;
+  ceiling: SolidTileCollision | null;
+}
+
 export interface PlayerSpawnPlacement {
   x: number;
   y: number;
@@ -65,7 +71,7 @@ export const DEFAULT_PLAYER_AIR_ACCELERATION = 900;
 export const DEFAULT_PLAYER_GROUND_DECELERATION = 2400;
 export const DEFAULT_PLAYER_JUMP_SPEED = 520;
 const DEFAULT_PLAYER_FACING: PlayerFacing = 'right';
-const GROUND_SUPPORT_PROBE_DISTANCE = 1;
+const COLLISION_CONTACT_PROBE_DISTANCE = 1;
 
 const expectFiniteNumber = (value: number, label: string): number => {
   if (!Number.isFinite(value)) {
@@ -143,17 +149,40 @@ const offsetAabb = (aabb: WorldAabb, deltaX: number, deltaY: number): WorldAabb 
   maxY: aabb.maxY + deltaY
 });
 
+const getAabbContact = (
+  world: TileWorld,
+  aabb: WorldAabb,
+  axis: 'x' | 'y',
+  delta: number,
+  registry: TileMetadataRegistry
+): SolidTileCollision | null => {
+  const sweep = sweepAabbAlongAxis(world, aabb, axis, delta, registry);
+  if (sweep.allowedDelta !== 0 || sweep.hit === null) {
+    return null;
+  }
+
+  return sweep.hit;
+};
+
 const getGroundSupport = (
   world: TileWorld,
   aabb: WorldAabb,
   registry: TileMetadataRegistry
-): SolidTileCollision | null => {
-  const supportSweep = sweepAabbAlongAxis(world, aabb, 'y', GROUND_SUPPORT_PROBE_DISTANCE, registry);
-  if (supportSweep.allowedDelta !== 0 || supportSweep.hit === null) {
-    return null;
+): SolidTileCollision | null =>
+  getAabbContact(world, aabb, 'y', COLLISION_CONTACT_PROBE_DISTANCE, registry);
+
+const getPreferredWallContactProbeDelta = (state: PlayerState): number => {
+  if (state.velocity.x < 0) {
+    return -COLLISION_CONTACT_PROBE_DISTANCE;
+  }
+  if (state.velocity.x > 0) {
+    return COLLISION_CONTACT_PROBE_DISTANCE;
+  }
+  if (state.facing === 'left') {
+    return -COLLISION_CONTACT_PROBE_DISTANCE;
   }
 
-  return supportSweep.hit;
+  return COLLISION_CONTACT_PROBE_DISTANCE;
 };
 
 const resolveHorizontalVelocityFromIntent = (
@@ -232,6 +261,23 @@ export const getPlayerCameraFocusPoint = (state: PlayerState): PlayerVector => (
   x: state.position.x,
   y: state.position.y - state.size.height * 0.5
 });
+
+export const getPlayerCollisionContacts = (
+  world: TileWorld,
+  state: PlayerState,
+  registry: TileMetadataRegistry = TILE_METADATA
+): PlayerCollisionContacts => {
+  const aabb = getPlayerAabb(state);
+  const preferredWallProbeDelta = getPreferredWallContactProbeDelta(state);
+
+  return {
+    support: getGroundSupport(world, aabb, registry),
+    wall:
+      getAabbContact(world, aabb, 'x', preferredWallProbeDelta, registry) ??
+      getAabbContact(world, aabb, 'x', -preferredWallProbeDelta, registry),
+    ceiling: getAabbContact(world, aabb, 'y', -COLLISION_CONTACT_PROBE_DISTANCE, registry)
+  };
+};
 
 export const integratePlayerState = (state: PlayerState, fixedDtSeconds: number): PlayerState => {
   const dt = expectNonNegativeFiniteNumber(fixedDtSeconds, 'fixedDtSeconds');

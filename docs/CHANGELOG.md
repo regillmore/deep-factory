@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Surface standalone player collision-contact telemetry (`support`, `wall`, `ceiling`) in the debug overlay after live player-state telemetry lands.
+- Changes: Updated [src/world/playerState.ts](../src/world/playerState.ts) plus [src/world/playerState.test.ts](../src/world/playerState.test.ts) with a reusable current-AABB contact probe helper for support, wall, and ceiling tiles, extended [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to render those contact tiles in the live player readout, wired [src/main.ts](../src/main.ts) to feed the resolved contact telemetry into the overlay, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/world/playerState.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Add an authored-atlas asset regression test that each default animated atlas-index frame differs from its prior frame in the committed PNG.
 - Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) to enumerate consecutive atlas-index animation frames from default tile metadata, compare their committed PNG regions pixel-for-pixel, and fail when any animated frame repeats its prior atlas art; then advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

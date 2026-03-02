@@ -29,9 +29,11 @@ import {
   type PlayerSpawnSearchOptions
 } from '../world/playerSpawn';
 import {
+  getPlayerCollisionContacts as getWorldPlayerCollisionContacts,
   respawnPlayerStateAtSpawnIfEmbeddedInSolid as respawnWorldPlayerStateAtSpawnIfEmbeddedInSolid,
   stepPlayerState as stepWorldPlayerState,
   stepPlayerStateWithGravity as stepWorldPlayerStateWithGravity,
+  type PlayerCollisionContacts,
   type PlayerMovementIntent,
   type PlayerState
 } from '../world/playerState';
@@ -409,6 +411,10 @@ export class Renderer {
 
   findPlayerSpawnPoint(options: PlayerSpawnSearchOptions): PlayerSpawnPoint | null {
     return findWorldPlayerSpawnPoint(this.world, options);
+  }
+
+  getPlayerCollisionContacts(state: PlayerState): PlayerCollisionContacts {
+    return getWorldPlayerCollisionContacts(this.world, state);
   }
 
   stepPlayerStateWithGravity(state: PlayerState, fixedDtSeconds: number): PlayerState {

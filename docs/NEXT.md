@@ -6,6 +6,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 39. Add an authored-atlas asset regression test that every explicitly unused committed atlas region remains fully transparent in the committed PNG.
 40. Add an authored-atlas asset regression test that committed non-transparent pixels do not spill outside authored regions referenced by default metadata or regions documented as intentionally unused.
+41. Add an authored-atlas asset regression test that default animated direct `render.uvRect` frames stay aligned to whole atlas pixels in the committed PNG.
 42. Add an authored-atlas asset regression test that any default animated direct `render.uvRect` frame differs from its prior frame in the committed PNG.
 
 ## Collision and player foundation
@@ -49,7 +50,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Player debugging
 
-30. Surface standalone player collision-contact telemetry (`support`, `wall`, `ceiling`) in the debug overlay after live player-state telemetry lands.
 31. Surface standalone player auto-respawn events in the debug overlay when embedded-tile recovery triggers.
 32. Surface standalone player collision AABB telemetry (`min`, `max`, `size`) in the debug overlay after collision-contact telemetry lands.
 33. Surface standalone player camera-follow telemetry (`focus`, `offset`) in the debug overlay after collision AABB telemetry lands.
