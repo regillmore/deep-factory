@@ -45,6 +45,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - The authored atlas layout also records any intentionally unused committed slots, currently reserves one documented spare region, and keeps a fully transparent exterior padding strip outside the authored region bounds; committed-asset regressions verify that whole strip stays blank so real empty atlas space remains available for spill detection.
 - Committed-asset regressions also verify that non-transparent shipped atlas pixels stay inside authored regions touched by default metadata or documented as intentionally unused, so uncovered atlas canvas cannot silently accumulate visible spill.
 - Committed-asset regressions also verify that every explicitly unused authored atlas region stays fully transparent in the shipped PNG, so documented spare slots cannot silently pick up stray art.
+- Committed-asset regressions also verify that every explicitly unused authored atlas region stays unreferenced by shipped `atlasIndex` metadata and default direct `render.uvRect` sources, so reserved blank slots cannot silently become live metadata targets.
 - Committed-asset regressions require every authored region index to be either referenced by default tile metadata or documented there as deliberately unused.
 - Terrain autotile adjacency supports cross-chunk 8-neighbor sampling plus normalization helpers.
 - Terrain autotile connectivity uses metadata-driven connectivity groups first, then shared material tags for seam compatibility.

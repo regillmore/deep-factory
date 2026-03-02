@@ -74,6 +74,13 @@ interface AnimatedDirectRenderUvRectFrameTransition {
   uvRect: TileUvRect;
 }
 
+interface DirectRenderUvRectAuthoredRegionReference {
+  tileId: number;
+  tileName: string;
+  sourcePath: string;
+  atlasIndex: number;
+}
+
 interface AnimatedAtlasIndexFrameTransition {
   tileId: number;
   tileName: string;
@@ -300,6 +307,49 @@ const collectAnimatedDirectRenderUvRectFrameTransitions =
       return transitions;
     });
 
+const collectDirectRenderUvRectAuthoredRegionReferences = (
+  pngWidth: number,
+  pngHeight: number
+): DirectRenderUvRectAuthoredRegionReference[] => {
+  const references: DirectRenderUvRectAuthoredRegionReference[] = [];
+
+  for (const source of collectDirectRenderUvRectSources()) {
+    const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
+
+    for (const [atlasIndex, authoredRegion] of AUTHORED_ATLAS_REGIONS.entries()) {
+      if (!regionsOverlap(pixelRegion, authoredRegion)) {
+        continue;
+      }
+
+      references.push({
+        tileId: source.tileId,
+        tileName: source.tileName,
+        sourcePath: 'render.uvRect',
+        atlasIndex
+      });
+    }
+  }
+
+  for (const source of collectAnimatedDirectRenderUvRectFrameSources()) {
+    const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
+
+    for (const [atlasIndex, authoredRegion] of AUTHORED_ATLAS_REGIONS.entries()) {
+      if (!regionsOverlap(pixelRegion, authoredRegion)) {
+        continue;
+      }
+
+      references.push({
+        tileId: source.tileId,
+        tileName: source.tileName,
+        sourcePath: `render.frames[${source.frameIndex}].uvRect`,
+        atlasIndex
+      });
+    }
+  }
+
+  return references;
+};
+
 const collectAnimatedAtlasIndexFrameTransitions = (): AnimatedAtlasIndexFrameTransition[] =>
   TILE_METADATA.tiles.flatMap((tile) => {
     const frames = tile.render?.frames ?? [];
@@ -392,19 +442,13 @@ const collectReferencedAuthoredAtlasIndices = (
   pngHeight: number
 ): number[] => {
   const referencedAtlasIndices = new Set(collectReferencedAtlasIndices());
-  const directUvRectSources = [
-    ...collectDirectRenderUvRectSources(),
-    ...collectAnimatedDirectRenderUvRectFrameSources()
-  ];
+  const directUvRectAtlasReferences = collectDirectRenderUvRectAuthoredRegionReferences(
+    pngWidth,
+    pngHeight
+  );
 
-  for (const source of directUvRectSources) {
-    const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
-
-    for (const [atlasIndex, authoredRegion] of AUTHORED_ATLAS_REGIONS.entries()) {
-      if (regionsOverlap(pixelRegion, authoredRegion)) {
-        referencedAtlasIndices.add(atlasIndex);
-      }
-    }
+  for (const reference of directUvRectAtlasReferences) {
+    referencedAtlasIndices.add(reference.atlasIndex);
   }
 
   return [...referencedAtlasIndices].sort((a, b) => a - b);
@@ -619,6 +663,36 @@ describe('authored atlas asset', () => {
 
       expect(region, `missing authored region ${atlasIndex} for unused reason "${reason}"`).toBeDefined();
       expect(regionContainsAnyNonTransparentPixel(rgbaPixels, pngWidth, region!)).toBe(false);
+    }
+  });
+
+  it('keeps every explicitly unused authored atlas region unreferenced by default atlas-index and direct render metadata', () => {
+    const { pngWidth, pngHeight } = readCommittedAtlasPng();
+    const referencedAtlasIndices = new Set(collectReferencedAtlasIndices());
+    const directUvRectAtlasReferences = collectDirectRenderUvRectAuthoredRegionReferences(
+      pngWidth,
+      pngHeight
+    );
+    const intentionallyUnusedEntries = Object.entries(AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS);
+
+    expect(intentionallyUnusedEntries.length).toBeGreaterThan(0);
+
+    for (const [rawAtlasIndex, reason] of intentionallyUnusedEntries) {
+      const atlasIndex = Number(rawAtlasIndex);
+      const directReference = directUvRectAtlasReferences.find(
+        (reference) => reference.atlasIndex === atlasIndex
+      );
+
+      expect(
+        referencedAtlasIndices.has(atlasIndex),
+        `unused authored atlas region ${atlasIndex} (${reason}) is still referenced by shipped atlas-index metadata`
+      ).toBe(false);
+      expect(
+        directReference,
+        directReference
+          ? `unused authored atlas region ${atlasIndex} (${reason}) is overlapped by tile ${directReference.tileId} "${directReference.tileName}" ${directReference.sourcePath}`
+          : undefined
+      ).toBeUndefined();
     }
   });
 

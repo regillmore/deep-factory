@@ -4,7 +4,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Authored asset pipeline
 
-50. Add an authored-atlas asset regression test that explicitly unused authored regions stay unreferenced by default direct `render.uvRect` sources as well as atlas-index metadata.
 51. Add an authored-atlas asset regression test that default direct `render.uvRect` sources do not overlap the fully transparent exterior padding strip outside authored regions.
 
 ## Collision and player foundation
@@ -46,6 +45,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 64. Surface the paused-main-menu fresh-world reset consequence in shell copy so the destructive action reads clearly before activation.
 65. Surface the in-world main-menu shortcut in shell copy once the keyboard action exists.
 66. Surface the in-world recenter-camera shortcut in shell copy once the keyboard action exists.
+67. Surface the in-world debug-HUD shortcut in shell copy once the keyboard action exists.
 
 ## Player debugging
 
