@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Surface standalone player collision AABB telemetry (`min`, `max`, `size`) in the debug overlay after collision-contact telemetry lands.
+- Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so live player telemetry now includes a formatted AABB line, wired [src/main.ts](../src/main.ts) to derive that AABB from the shared player-state helper, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Surface standalone player collision-contact telemetry (`support`, `wall`, `ceiling`) in the debug overlay after live player-state telemetry lands.
 - Changes: Updated [src/world/playerState.ts](../src/world/playerState.ts) plus [src/world/playerState.test.ts](../src/world/playerState.test.ts) with a reusable current-AABB contact probe helper for support, wall, and ceiling tiles, extended [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to render those contact tiles in the live player readout, wired [src/main.ts](../src/main.ts) to feed the resolved contact telemetry into the overlay, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/world/playerState.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

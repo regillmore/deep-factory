@@ -35,6 +35,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nAtlasWarn: none');
     expect(text).toContain('\nSpawn: unresolved');
     expect(text).toContain('\nPlayer: n/a');
+    expect(text).toContain('\nAABB: n/a');
     expect(text).toContain('\nContact: n/a');
     expect(text).toContain('\nIntent: n/a');
     expect(text).toContain('\nAnimMesh: chunks:0 | quads:0');
@@ -140,6 +141,11 @@ describe('formatDebugOverlayText', () => {
       player: {
         position: { x: 24.5, y: -12.25 },
         velocity: { x: -180, y: 60 },
+        aabb: {
+          min: { x: 18.5, y: -40.25 },
+          max: { x: 30.5, y: -12.25 },
+          size: { x: 12, y: 28 }
+        },
         grounded: false,
         facing: 'left',
         contacts: {
@@ -152,6 +158,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain('\nPlayer: Pos:24.50,-12.25 | Vel:-180.00,60.00 | grounded:off | facing:left');
+    expect(text).toContain('\nAABB: min:18.50,-40.25 | max:30.50,-12.25 | size:12.00,28.00');
     expect(text).toContain('\nContact: support:none | wall:0,-1 (#3) | ceiling:1,-3 (#5)');
     expect(text).toContain('\nIntent: move:-1 | jumpHeld:on | jumpPressed:on');
   });

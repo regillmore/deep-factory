@@ -45,6 +45,7 @@ import {
   createPlayerStateFromSpawn,
   DEFAULT_PLAYER_HEIGHT,
   DEFAULT_PLAYER_WIDTH,
+  getPlayerAabb,
   getPlayerCameraFocusPoint,
   type PlayerState
 } from './world/playerState';
@@ -1080,6 +1081,7 @@ const bootstrap = async (): Promise<void> => {
         : null;
       const debugOverlayPlayer = standalonePlayerState
         ? (() => {
+            const aabb = getPlayerAabb(standalonePlayerState);
             const contacts = renderer.getPlayerCollisionContacts(standalonePlayerState);
 
             return {
@@ -1090,6 +1092,20 @@ const bootstrap = async (): Promise<void> => {
               velocity: {
                 x: standalonePlayerState.velocity.x,
                 y: standalonePlayerState.velocity.y
+              },
+              aabb: {
+                min: {
+                  x: aabb.minX,
+                  y: aabb.minY
+                },
+                max: {
+                  x: aabb.maxX,
+                  y: aabb.maxY
+                },
+                size: {
+                  x: aabb.maxX - aabb.minX,
+                  y: aabb.maxY - aabb.minY
+                }
               },
               grounded: standalonePlayerState.grounded,
               facing: standalonePlayerState.facing,

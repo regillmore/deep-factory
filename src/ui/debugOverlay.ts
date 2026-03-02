@@ -55,6 +55,11 @@ export interface DebugOverlayPlayerSpawn {
 export interface DebugOverlayPlayerTelemetry {
   position: { x: number; y: number };
   velocity: { x: number; y: number };
+  aabb: {
+    min: { x: number; y: number };
+    max: { x: number; y: number };
+    size: { x: number; y: number };
+  };
   grounded: boolean;
   facing: 'left' | 'right';
   contacts: {
@@ -161,6 +166,18 @@ const formatPlayerLine = (player: DebugOverlayPlayerTelemetry | null): string =>
   );
 };
 
+const formatPlayerAabbLine = (player: DebugOverlayPlayerTelemetry | null): string => {
+  if (!player) {
+    return 'AABB: n/a';
+  }
+
+  return (
+    `AABB: min:${formatFloat(player.aabb.min.x, 2)},${formatFloat(player.aabb.min.y, 2)} | ` +
+    `max:${formatFloat(player.aabb.max.x, 2)},${formatFloat(player.aabb.max.y, 2)} | ` +
+    `size:${formatFloat(player.aabb.size.x, 2)},${formatFloat(player.aabb.size.y, 2)}`
+  );
+};
+
 const formatPlayerContact = (
   contact: { tileX: number; tileY: number; tileId: number } | null
 ): string => {
@@ -230,6 +247,7 @@ export const formatDebugOverlayText = (
     formatAtlasValidationLine(stats),
     formatSpawnLine(spawn),
     formatPlayerLine(player),
+    formatPlayerAabbLine(player),
     formatPlayerContactsLine(player),
     formatPlayerIntentLine(playerIntent),
     formatAnimatedChunkResidencyLine(stats),
