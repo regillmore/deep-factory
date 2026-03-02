@@ -90,6 +90,10 @@ interface AnimatedAtlasIndexFrameTransition {
   atlasIndex: number;
 }
 
+interface NamedDirectRenderUvRectSource extends DirectRenderUvRectSource {
+  sourcePath: string;
+}
+
 const readPngChunkType = (data: Uint8Array, byteOffset: number): string =>
   Buffer.from(data.subarray(byteOffset, byteOffset + 4)).toString('ascii');
 
@@ -376,6 +380,19 @@ const collectAnimatedAtlasIndexFrameTransitions = (): AnimatedAtlasIndexFrameTra
     return transitions;
   });
 
+const collectNamedDirectRenderUvRectSources = (): NamedDirectRenderUvRectSource[] => [
+  ...collectDirectRenderUvRectSources().map((source) => ({
+    ...source,
+    sourcePath: 'render.uvRect'
+  })),
+  ...collectAnimatedDirectRenderUvRectFrameSources().map((source) => ({
+    tileId: source.tileId,
+    tileName: source.tileName,
+    sourcePath: `render.frames[${source.frameIndex}].uvRect`,
+    uvRect: source.uvRect
+  }))
+];
+
 const uvRectToPixelRegion = (
   uvRect: TileUvRect,
   pngWidth: number,
@@ -436,6 +453,25 @@ const regionContainsPixel = (
   coordinate.x < region.x + region.width &&
   coordinate.y >= region.y &&
   coordinate.y < region.y + region.height;
+
+const getExteriorPaddingStripRegion = (
+  pngWidth: number,
+  pngHeight: number
+): AtlasPixelRegion => {
+  const maxAuthoredRegionRight = AUTHORED_ATLAS_REGIONS.reduce(
+    (maxRight, region) => Math.max(maxRight, region.x + region.width),
+    0
+  );
+
+  expect(maxAuthoredRegionRight).toBeLessThan(pngWidth);
+
+  return {
+    x: maxAuthoredRegionRight,
+    y: 0,
+    width: pngWidth - maxAuthoredRegionRight,
+    height: pngHeight
+  };
+};
 
 const collectReferencedAuthoredAtlasIndices = (
   pngWidth: number,
@@ -581,19 +617,12 @@ describe('authored atlas asset', () => {
 
   it('keeps every pixel in the exterior padding strip beyond authored regions fully transparent', () => {
     const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
-    const maxAuthoredRegionRight = AUTHORED_ATLAS_REGIONS.reduce(
-      (maxRight, region) => Math.max(maxRight, region.x + region.width),
-      0
-    );
-
-    expect(maxAuthoredRegionRight).toBeLessThan(pngWidth);
     expect(
-      regionContainsAnyNonTransparentPixel(rgbaPixels, pngWidth, {
-        x: maxAuthoredRegionRight,
-        y: 0,
-        width: pngWidth - maxAuthoredRegionRight,
-        height: pngHeight
-      })
+      regionContainsAnyNonTransparentPixel(
+        rgbaPixels,
+        pngWidth,
+        getExteriorPaddingStripRegion(pngWidth, pngHeight)
+      )
     ).toBe(false);
   });
 
@@ -818,6 +847,26 @@ describe('authored atlas asset', () => {
           ? `tile ${source.tileId} "${source.tileName}" frame ${source.frameIndex} overlaps uncovered atlas pixel (${spillPixel.x}, ${spillPixel.y}) outside authored regions`
           : undefined
       ).toBeNull();
+    }
+  });
+
+  it('keeps every default direct render.uvRect source out of the exterior padding strip', () => {
+    const { pngWidth, pngHeight } = readCommittedAtlasPng();
+    const directUvRectSources = collectNamedDirectRenderUvRectSources();
+    const exteriorPaddingStrip = getExteriorPaddingStripRegion(pngWidth, pngHeight);
+
+    expect(directUvRectSources.length).toBeGreaterThan(0);
+    expect(
+      directUvRectSources.some((source) => source.sourcePath !== 'render.uvRect')
+    ).toBe(true);
+
+    for (const source of directUvRectSources) {
+      const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
+
+      expect(
+        regionsOverlap(pixelRegion, exteriorPaddingStrip),
+        `tile ${source.tileId} "${source.tileName}" ${source.sourcePath} overlaps the fully transparent exterior padding strip beyond authored regions`
+      ).toBe(false);
     }
   });
 

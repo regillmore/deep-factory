@@ -2,10 +2,6 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-## Authored asset pipeline
-
-51. Add an authored-atlas asset regression test that default direct `render.uvRect` sources do not overlap the fully transparent exterior padding strip outside authored regions.
-
 ## Collision and player foundation
 
 ## Liquid rendering
@@ -46,6 +42,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 65. Surface the in-world main-menu shortcut in shell copy once the keyboard action exists.
 66. Surface the in-world recenter-camera shortcut in shell copy once the keyboard action exists.
 67. Surface the in-world debug-HUD shortcut in shell copy once the keyboard action exists.
+68. Surface the in-world spawn-marker shortcut in shell copy once the keyboard action exists.
 
 ## Player debugging
 

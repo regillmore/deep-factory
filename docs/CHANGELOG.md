@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Add an authored-atlas asset regression test that default direct `render.uvRect` sources do not overlap the fully transparent exterior padding strip outside authored regions.
+- Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) to enumerate shipped static and animated direct-`render.uvRect` sources through one helper and fail if any committed pixel rect overlaps the exterior padding strip beyond the authored atlas bounds; advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an authored-atlas asset regression test that explicitly unused authored regions stay unreferenced by default direct `render.uvRect` sources as well as atlas-index metadata.
 - Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) to map shipped direct-`render.uvRect` sources back onto authored atlas regions and fail whenever metadata references a region documented as intentionally unused, then advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

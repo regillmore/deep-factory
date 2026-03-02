@@ -74,6 +74,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Atlas spill regressions need one unambiguous blank band where any non-transparent pixel is automatically an authored-content leak.
 - Consequence: Future atlas growth should preserve a fully transparent exterior strip or update the authored layout, committed asset, and related regressions together.
 
+### 2026-03-02: Default direct `render.uvRect` sources must stay out of the exterior padding strip
+
+- Decision: Every shipped direct `render.uvRect` source, including animated frames, must stay entirely outside the fully transparent committed atlas strip beyond the authored-region bounds.
+- Reason: Direct UV metadata bypasses authored atlas-index ownership, so the exterior blank band only remains a trustworthy spill-detection target if metadata cannot sample it either.
+- Consequence: Future direct-UV authoring should stay within the authored-region span or update the authored layout, committed asset, and related regressions together.
+
 ### 2026-03-02: Authored atlas keeps a spare unused region plus exterior padding
 
 - Decision: The committed authored atlas now expands to `96x64`, preserves the original `4x4` used region block, reserves authored region `16` as intentionally unused, and leaves exterior transparent padding beyond the authored-region bounds.
