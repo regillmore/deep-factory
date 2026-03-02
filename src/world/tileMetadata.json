@@ -76,6 +76,41 @@
         ],
         "frameDurationMs": 180
       }
+    },
+    {
+      "id": 6,
+      "name": "debug_panel_blink",
+      "gameplay": {
+        "solid": false,
+        "blocksLight": false
+      },
+      "render": {
+        "uvRect": {
+          "u0": 0.25,
+          "v0": 0.25,
+          "u1": 0.5,
+          "v1": 0.5
+        },
+        "frames": [
+          {
+            "uvRect": {
+              "u0": 0.25,
+              "v0": 0.25,
+              "u1": 0.5,
+              "v1": 0.5
+            }
+          },
+          {
+            "uvRect": {
+              "u0": 0.75,
+              "v0": 0.25,
+              "u1": 1.0,
+              "v1": 0.5
+            }
+          }
+        ],
+        "frameDurationMs": 180
+      }
     }
   ]
 }

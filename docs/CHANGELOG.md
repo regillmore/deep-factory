@@ -4,6 +4,9 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Add a default animated direct `render.uvRect` metadata tile plus committed atlas content so direct-frame authored-asset regressions exercise a real shipped path.
+- Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) to add the default `debug_panel_blink` tile with direct `render.uvRect` animation frames against committed atlas pixels, expanded [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) with a regression that requires shipped metadata to include an animated direct-`uvRect` path backed by non-transparent committed PNG content, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
 - Task: Surface standalone player collision AABB telemetry (`min`, `max`, `size`) in the debug overlay after collision-contact telemetry lands.
 - Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so live player telemetry now includes a formatted AABB line, wired [src/main.ts](../src/main.ts) to derive that AABB from the shared player-state helper, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

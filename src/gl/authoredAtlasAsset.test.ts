@@ -53,6 +53,13 @@ interface DirectRenderUvRectSource {
   uvRect: TileUvRect;
 }
 
+interface AnimatedDirectRenderUvRectFrameSource {
+  tileId: number;
+  tileName: string;
+  frameIndex: number;
+  uvRect: TileUvRect;
+}
+
 interface AnimatedAtlasIndexFrameTransition {
   tileId: number;
   tileName: string;
@@ -230,6 +237,26 @@ const collectDirectRenderUvRectSources = (): DirectRenderUvRectSource[] =>
       : []
   );
 
+const collectAnimatedDirectRenderUvRectFrameSources = (): AnimatedDirectRenderUvRectFrameSource[] =>
+  TILE_METADATA.tiles.flatMap((tile) => {
+    if (!tile.render?.uvRect || !tile.render.frames) {
+      return [];
+    }
+
+    return tile.render.frames.flatMap((frame, frameIndex) =>
+      frame.uvRect
+        ? [
+            {
+              tileId: tile.id,
+              tileName: tile.name,
+              frameIndex,
+              uvRect: frame.uvRect
+            }
+          ]
+        : []
+    );
+  });
+
 const collectAnimatedAtlasIndexFrameTransitions = (): AnimatedAtlasIndexFrameTransition[] =>
   TILE_METADATA.tiles.flatMap((tile) => {
     const frames = tile.render?.frames ?? [];
@@ -393,6 +420,20 @@ describe('authored atlas asset', () => {
     expect(directUvRectSources.length).toBeGreaterThan(0);
 
     for (const source of directUvRectSources) {
+      const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
+
+      expect(regionContainsAnyNonTransparentPixel(rgbaPixels, pngWidth, pixelRegion)).toBe(true);
+    }
+  });
+
+  it('ships a default animated direct render.uvRect tile backed by committed atlas pixels', () => {
+    const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
+    const animatedDirectUvRectFrameSources = collectAnimatedDirectRenderUvRectFrameSources();
+
+    expect(animatedDirectUvRectFrameSources.length).toBeGreaterThan(1);
+    expect(animatedDirectUvRectFrameSources.some((source) => source.frameIndex > 0)).toBe(true);
+
+    for (const source of animatedDirectUvRectFrameSources) {
       const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
 
       expect(regionContainsAnyNonTransparentPixel(rgbaPixels, pngWidth, pixelRegion)).toBe(true);
