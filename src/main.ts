@@ -935,6 +935,11 @@ const bootstrap = async (): Promise<void> => {
       handled = undoDebugTileStroke();
     } else if (action.type === 'redo') {
       handled = redoDebugTileStroke();
+    } else if (action.type === 'recenter-camera') {
+      handled = worldStarted && standalonePlayerState !== null;
+      if (handled) {
+        centerCameraOnStandalonePlayer();
+      }
     } else if (action.type === 'cancel-armed-tools') {
       handled = input.cancelArmedDebugTools();
       if (handled) {

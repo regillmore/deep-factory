@@ -45,7 +45,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 27. Add grounded-walk placeholder pose variants to the renderer-side standalone player draw pass so horizontal movement direction reads before sprite assets land.
 28. Add an in-world shell action that returns to the main menu without discarding the initialized world session.
-39. Add a desktop keyboard shortcut that recenters the camera on the standalone player without mutating movement intent.
+40. Add a desktop keyboard shortcut that toggles the in-world debug HUD without mutating edit or movement intent.
 
 ## Player debugging
 

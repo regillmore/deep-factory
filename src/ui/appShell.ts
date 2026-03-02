@@ -1,4 +1,5 @@
 import { installPointerClickFocusRelease } from './buttonFocus';
+import { getDesktopRecenterCameraHotkeyLabel } from '../input/debugEditShortcuts';
 
 export type AppShellScreen = 'boot' | 'main-menu' | 'in-world';
 
@@ -255,8 +256,7 @@ export class AppShell {
     this.primaryButton.hidden = viewModel.primaryActionLabel === null;
     this.recenterCameraActionButton.textContent = viewModel.recenterCameraActionLabel ?? '';
     this.recenterCameraActionButton.hidden = viewModel.recenterCameraActionLabel === null;
-    this.recenterCameraActionButton.title =
-      'Center the camera on the standalone player and clear manual follow offset';
+    this.recenterCameraActionButton.title = `Center the camera on the standalone player and clear manual follow offset (${getDesktopRecenterCameraHotkeyLabel()})`;
     this.debugOverlayToggleButton.textContent = viewModel.debugOverlayToggleLabel ?? '';
     this.debugOverlayToggleButton.hidden = viewModel.debugOverlayToggleLabel === null;
     this.debugOverlayToggleButton.setAttribute(

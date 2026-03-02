@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   cycleDebugBrushTileId,
+  getDesktopRecenterCameraHotkeyLabel,
   getDebugEditPanelToggleHotkeyLabel,
   getDebugBrushSlotHotkeyLabel,
   getDebugOneShotToolHotkeyLabel,
@@ -39,6 +40,15 @@ describe('resolveDebugEditShortcutAction', () => {
     ).toEqual({ type: 'redo' });
     expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'y', metaKey: true }))).toEqual({
       type: 'redo'
+    });
+  });
+
+  it('maps C to recenter the camera', () => {
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'c' }))).toEqual({
+      type: 'recenter-camera'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'C', shiftKey: true }))).toEqual({
+      type: 'recenter-camera'
     });
   });
 
@@ -193,6 +203,10 @@ describe('brush shortcut helpers', () => {
     expect(getTouchDebugEditModeHotkeyLabel('pan')).toBe('P');
     expect(getTouchDebugEditModeHotkeyLabel('place')).toBe('L');
     expect(getTouchDebugEditModeHotkeyLabel('break')).toBe('B');
+  });
+
+  it('returns the desktop recenter-camera hotkey label', () => {
+    expect(getDesktopRecenterCameraHotkeyLabel()).toBe('C');
   });
 
   it('returns the panel toggle hotkey label', () => {

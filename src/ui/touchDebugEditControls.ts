@@ -1,5 +1,6 @@
 import type { TouchDebugEditMode } from '../input/controller';
 import {
+  getDesktopRecenterCameraHotkeyLabel,
   getDebugBrushSlotHotkeyLabel,
   getDebugEditPanelToggleHotkeyLabel,
   getDebugOneShotToolHotkeyLabel,
@@ -695,6 +696,13 @@ export class TouchDebugEditControls {
     historyShortcutLine.style.fontSize = '11px';
     historyShortcutLine.style.lineHeight = '1.35';
     shortcutSection.append(historyShortcutLine);
+
+    const cameraShortcutLine = document.createElement('div');
+    cameraShortcutLine.textContent = `Camera: ${getDesktopRecenterCameraHotkeyLabel()} recenter on the standalone player`;
+    cameraShortcutLine.style.color = '#d6dde8';
+    cameraShortcutLine.style.fontSize = '11px';
+    cameraShortcutLine.style.lineHeight = '1.35';
+    shortcutSection.append(cameraShortcutLine);
 
     const panelShortcutLine = document.createElement('div');
     panelShortcutLine.textContent = `Panel: ${panelToggleHotkeyLabel} collapse/expand`;

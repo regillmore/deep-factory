@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Add a desktop keyboard shortcut that recenters the camera on the standalone player without mutating movement intent.
+- Changes: Updated [src/input/debugEditShortcuts.ts](../src/input/debugEditShortcuts.ts) plus [src/input/debugEditShortcuts.test.ts](../src/input/debugEditShortcuts.test.ts) to expose a dedicated `recenter-camera` shortcut action on `C`, wired [src/main.ts](../src/main.ts) to reuse the existing standalone-player recenter helper from the global desktop keydown path, refreshed [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/ui/touchDebugEditControls.ts](../src/ui/touchDebugEditControls.ts) with shortcut hints, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [README.md](../README.md).
+- Verification: Ran `npx vitest run src/input/debugEditShortcuts.test.ts src/input/controller.test.ts src/ui/appShell.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an in-world shell action that recenters the camera on the standalone player and clears accumulated manual follow offset.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the shell now exposes a dedicated in-world `Recenter Camera` action beside the existing toggles, extracted a small recenter helper in [src/core/cameraFollow.ts](../src/core/cameraFollow.ts) plus [src/core/cameraFollow.test.ts](../src/core/cameraFollow.test.ts), wired [src/main.ts](../src/main.ts) to zero the preserved follow offset and snap back to the standalone player's focus point when that shell action fires, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DECISIONS.md](docs/DECISIONS.md), and [README.md](../README.md).
 - Verification: Ran `npx vitest run src/ui/appShell.test.ts src/core/cameraFollow.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

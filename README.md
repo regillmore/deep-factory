@@ -22,7 +22,7 @@ Open the local Vite URL in Chrome, Firefox, or Safari.
 
 ## Quick Controls
 
-- App shell: wait for boot to finish, choose `Enter World` from the main menu, then use the top-right `Recenter Camera` action plus `Debug HUD`, `Edit Overlays`, and `Spawn Marker` toggles to reset camera follow framing or show and hide the text telemetry, compact debug-edit overlays, and standalone player spawn marker.
+- App shell: wait for boot to finish, choose `Enter World` from the main menu, then use the top-right `Recenter Camera` action or press `C` to reset camera follow framing; the `Debug HUD`, `Edit Overlays`, and `Spawn Marker` toggles show and hide the text telemetry, compact debug-edit overlays, and standalone player spawn marker.
 - Desktop: `WASD` or arrow keys move the standalone player, mouse wheel zooms, left-drag places with the active brush, right-drag breaks, and `Shift` + drag pans while painting is available.
 - Touch: the shared on-screen debug controls switch between `Pan`, `Place`, and `Break`; one-finger drag pans or paints based on mode, and two-finger pinch zooms.
 - Full controls, mixed-device debug tooling, and the current feature inventory live in [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
