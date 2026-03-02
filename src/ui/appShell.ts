@@ -14,6 +14,7 @@ export interface AppShellState {
   statusText?: string;
   detailLines?: readonly string[];
   primaryActionLabel?: string | null;
+  secondaryActionLabel?: string | null;
   debugOverlayVisible?: boolean;
   debugEditControlsVisible?: boolean;
   debugEditOverlaysVisible?: boolean;
@@ -29,6 +30,7 @@ export interface AppShellViewModel {
   statusText: string;
   detailLines: readonly string[];
   primaryActionLabel: string | null;
+  secondaryActionLabel: string | null;
   returnToMainMenuActionLabel: string | null;
   recenterCameraActionLabel: string | null;
   debugOverlayToggleLabel: string | null;
@@ -43,6 +45,7 @@ export interface AppShellViewModel {
 
 interface AppShellOptions {
   onPrimaryAction?: (screen: AppShellScreen) => void;
+  onSecondaryAction?: (screen: AppShellScreen) => void;
   onReturnToMainMenu?: (screen: AppShellScreen) => void;
   onRecenterCamera?: (screen: AppShellScreen) => void;
   onToggleDebugOverlay?: (screen: AppShellScreen) => void;
@@ -79,6 +82,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         statusText: state.statusText ?? DEFAULT_BOOT_STATUS,
         detailLines: state.detailLines ?? DEFAULT_BOOT_DETAIL_LINES,
         primaryActionLabel: state.primaryActionLabel ?? null,
+        secondaryActionLabel: state.secondaryActionLabel ?? null,
         returnToMainMenuActionLabel: null,
         recenterCameraActionLabel: null,
         debugOverlayToggleLabel: null,
@@ -100,6 +104,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         statusText: state.statusText ?? DEFAULT_MAIN_MENU_STATUS,
         detailLines: state.detailLines ?? DEFAULT_MAIN_MENU_DETAIL_LINES,
         primaryActionLabel: state.primaryActionLabel ?? 'Enter World',
+        secondaryActionLabel: state.secondaryActionLabel ?? null,
         returnToMainMenuActionLabel: null,
         recenterCameraActionLabel: null,
         debugOverlayToggleLabel: null,
@@ -121,6 +126,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         statusText: state.statusText ?? '',
         detailLines: state.detailLines ?? [],
         primaryActionLabel: null,
+        secondaryActionLabel: null,
         returnToMainMenuActionLabel: 'Main Menu',
         recenterCameraActionLabel: 'Recenter Camera',
         debugOverlayToggleLabel:
@@ -143,6 +149,7 @@ export class AppShell {
   private root: HTMLDivElement;
   private worldHost: HTMLDivElement;
   private overlay: HTMLDivElement;
+  private overlayActions: HTMLDivElement;
   private chrome: HTMLDivElement;
   private returnToMainMenuActionButton: HTMLButtonElement;
   private recenterCameraActionButton: HTMLButtonElement;
@@ -155,7 +162,9 @@ export class AppShell {
   private status: HTMLParagraphElement;
   private detailList: HTMLUListElement;
   private primaryButton: HTMLButtonElement;
+  private secondaryButton: HTMLButtonElement;
   private onPrimaryAction: (screen: AppShellScreen) => void;
+  private onSecondaryAction: (screen: AppShellScreen) => void;
   private onReturnToMainMenu: (screen: AppShellScreen) => void;
   private onRecenterCamera: (screen: AppShellScreen) => void;
   private onToggleDebugOverlay: (screen: AppShellScreen) => void;
@@ -166,6 +175,7 @@ export class AppShell {
 
   constructor(container: HTMLElement, options: AppShellOptions = {}) {
     this.onPrimaryAction = options.onPrimaryAction ?? (() => {});
+    this.onSecondaryAction = options.onSecondaryAction ?? (() => {});
     this.onReturnToMainMenu = options.onReturnToMainMenu ?? (() => {});
     this.onRecenterCamera = options.onRecenterCamera ?? (() => {});
     this.onToggleDebugOverlay = options.onToggleDebugOverlay ?? (() => {});
@@ -262,12 +272,23 @@ export class AppShell {
     this.detailList.className = 'app-shell__detail-list';
     panel.append(this.detailList);
 
+    this.overlayActions = document.createElement('div');
+    this.overlayActions.className = 'app-shell__actions';
+    panel.append(this.overlayActions);
+
     this.primaryButton = document.createElement('button');
     this.primaryButton.type = 'button';
     this.primaryButton.className = 'app-shell__primary';
     this.primaryButton.addEventListener('click', () => this.onPrimaryAction(this.currentState.screen));
     installPointerClickFocusRelease(this.primaryButton);
-    panel.append(this.primaryButton);
+    this.overlayActions.append(this.primaryButton);
+
+    this.secondaryButton = document.createElement('button');
+    this.secondaryButton.type = 'button';
+    this.secondaryButton.className = 'app-shell__secondary';
+    this.secondaryButton.addEventListener('click', () => this.onSecondaryAction(this.currentState.screen));
+    installPointerClickFocusRelease(this.secondaryButton);
+    this.overlayActions.append(this.secondaryButton);
 
     container.replaceChildren(this.root);
     this.setState(this.currentState);
@@ -300,6 +321,16 @@ export class AppShell {
     this.detailList.style.display = resolveAppShellRegionDisplay(viewModel.detailLines.length > 0, 'grid');
     this.primaryButton.textContent = viewModel.primaryActionLabel ?? '';
     this.primaryButton.hidden = viewModel.primaryActionLabel === null;
+    this.secondaryButton.textContent = viewModel.secondaryActionLabel ?? '';
+    this.secondaryButton.hidden = viewModel.secondaryActionLabel === null;
+    this.secondaryButton.title =
+      viewModel.secondaryActionLabel === 'New World'
+        ? 'Abandon the paused world session and boot a fresh world'
+        : '';
+    const overlayActionsVisible =
+      viewModel.primaryActionLabel !== null || viewModel.secondaryActionLabel !== null;
+    this.overlayActions.hidden = !overlayActionsVisible;
+    this.overlayActions.style.display = resolveAppShellRegionDisplay(overlayActionsVisible, 'flex');
     this.returnToMainMenuActionButton.textContent = viewModel.returnToMainMenuActionLabel ?? '';
     this.returnToMainMenuActionButton.hidden = viewModel.returnToMainMenuActionLabel === null;
     this.returnToMainMenuActionButton.title = `Return to the main menu without discarding the current world session (${getDesktopReturnToMainMenuHotkeyLabel()})`;

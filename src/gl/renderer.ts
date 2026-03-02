@@ -110,7 +110,8 @@ export class Renderer {
   private gl: WebGL2RenderingContext;
   private program: WebGLProgram;
   private playerProgram: WebGLProgram;
-  private world = new TileWorld();
+  private world!: TileWorld;
+  private detachWorldTileEditListener: (() => void) | null = null;
   private meshes = new Map<string, CachedChunkMesh>();
   private meshBuildQueue: MeshBuildRequest[] = [];
   private uMatrix: WebGLUniformLocation;
@@ -303,11 +304,7 @@ export class Renderer {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-    this.world.onTileEdited(({ chunkX, chunkY, localX, localY }) => {
-      for (const coord of affectedChunkCoordsForLocalTileEdit(chunkX, chunkY, localX, localY)) {
-        this.invalidateChunkMesh(coord.x, coord.y);
-      }
-    });
+    this.attachWorld(new TileWorld());
   }
 
   async initialize(): Promise<void> {
@@ -409,6 +406,21 @@ export class Renderer {
     return this.world.getTile(worldTileX, worldTileY);
   }
 
+  resetWorld(): void {
+    this.clearMeshCaches();
+    this.attachWorld(new TileWorld());
+    this.telemetry.meshBuildQueueLength = 0;
+    this.telemetry.residentWorldChunks = this.world.getChunkCount();
+    this.telemetry.cachedChunkMeshes = 0;
+    this.telemetry.evictedWorldChunks = 0;
+    this.telemetry.evictedMeshEntries = 0;
+    this.telemetry.residentAnimatedChunkMeshes = 0;
+    this.telemetry.residentAnimatedChunkQuadCount = 0;
+    this.telemetry.animatedChunkUvUploadCount = 0;
+    this.telemetry.animatedChunkUvUploadQuadCount = 0;
+    this.telemetry.animatedChunkUvUploadBytes = 0;
+  }
+
   findPlayerSpawnPoint(options: PlayerSpawnSearchOptions): PlayerSpawnPoint | null {
     return findWorldPlayerSpawnPoint(this.world, options);
   }
@@ -453,11 +465,32 @@ export class Renderer {
     return bounds;
   }
 
+  private attachWorld(world: TileWorld): void {
+    this.detachWorldTileEditListener?.();
+    this.world = world;
+    this.detachWorldTileEditListener = this.world.onTileEdited(({ chunkX, chunkY, localX, localY }) => {
+      for (const coord of affectedChunkCoordsForLocalTileEdit(chunkX, chunkY, localX, localY)) {
+        this.invalidateChunkMesh(coord.x, coord.y);
+      }
+    });
+  }
+
   private getReadyChunkMesh(chunkX: number, chunkY: number): ChunkGpuMesh | null {
     const key = chunkKey(chunkX, chunkY);
     const cached = this.meshes.get(key);
     if (!cached) return null;
     return cached.state === 'ready' ? cached.mesh : null;
+  }
+
+  private clearMeshCaches(): void {
+    for (const cached of this.meshes.values()) {
+      if (cached.state === 'ready' && cached.mesh) {
+        this.gl.deleteVertexArray(cached.mesh.vao);
+        this.gl.deleteBuffer(cached.mesh.buffer);
+      }
+    }
+    this.meshes.clear();
+    this.meshBuildQueue = [];
   }
 
   private invalidateChunkMesh(chunkX: number, chunkY: number): void {

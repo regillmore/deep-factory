@@ -212,6 +212,43 @@ describe('Renderer atlas telemetry', () => {
     expect(warnSpy.mock.calls[0]?.[0]).toContain('tile 4 "debug_panel" render.uvRect');
   });
 
+  it('resets the active world and clears cached animated meshes for a fresh session', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    renderer.setTile(0, 0, 5);
+    const camera = new Camera2D();
+    camera.zoom = 16;
+
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+    expect(renderer.getTile(0, 0)).toBe(5);
+    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
+    expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+
+    const deleteBuffer = vi.mocked(gl.deleteBuffer);
+    const deleteVertexArray = vi.mocked(gl.deleteVertexArray);
+    deleteBuffer.mockClear();
+    deleteVertexArray.mockClear();
+
+    renderer.resetWorld();
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+
+    expect(renderer.getTile(0, 0)).toBe(1);
+    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(0);
+    expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(0);
+    expect(deleteBuffer).toHaveBeenCalled();
+    expect(deleteVertexArray).toHaveBeenCalled();
+  });
+
   it('renders the standalone player placeholder as an extra world-space draw call', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));

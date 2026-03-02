@@ -70,8 +70,8 @@ const PREFERRED_INITIAL_DEBUG_BRUSH_TILE_NAME = 'debug_brick';
 const PAUSED_MAIN_MENU_STATUS =
   'World session paused. Resume when you want the fixed-step simulation and live controls to continue.';
 const PAUSED_MAIN_MENU_DETAIL_LINES = [
-  'Returning here keeps the initialized world, player state, and debug edits intact.',
-  'Resume returns to that same mixed-device session without rebuilding renderer state.'
+  'Returning here keeps the initialized world, player state, and debug edits intact until you abandon them.',
+  'Resume returns to that same mixed-device session, while New World discards it and boots a fresh procedural world.'
 ] as const;
 
 const formatDebugBrushLabel = (tileName: string): string => tileName.replace(/_/g, ' ');
@@ -102,6 +102,12 @@ const supportsTouchPlayerControls = (): boolean => {
   if (typeof window.matchMedia !== 'function') return false;
   return window.matchMedia('(pointer: coarse)').matches;
 };
+const createDefaultWorldSessionShellState = (touchControlsAvailable: boolean) => ({
+  debugOverlayVisible: false,
+  debugEditControlsVisible: touchControlsAvailable,
+  debugEditOverlaysVisible: true,
+  playerSpawnMarkerVisible: true
+});
 
 interface PinnedDebugTileInspectState {
   tileX: number;
@@ -125,10 +131,12 @@ const bootstrap = async (): Promise<void> => {
   let worldSessionStarted = false;
   let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
-  let debugOverlayVisible = false;
-  let debugEditControlsVisible = touchControlsAvailable;
-  let debugEditOverlaysVisible = true;
-  let playerSpawnMarkerVisible = true;
+  let {
+    debugOverlayVisible,
+    debugEditControlsVisible,
+    debugEditOverlaysVisible,
+    playerSpawnMarkerVisible
+  } = createDefaultWorldSessionShellState(touchControlsAvailable);
   const returnToMainMenuFromInWorld = (): void => {
     if (currentScreen !== 'in-world') return;
     currentScreen = 'main-menu';
@@ -141,15 +149,11 @@ const bootstrap = async (): Promise<void> => {
   const shell = new AppShell(app, {
     onPrimaryAction: (screen) => {
       if (screen !== 'main-menu' || loop === null) return;
-      currentScreen = 'in-world';
-      syncInWorldShellState();
-      syncDebugOverlayVisibility();
-      syncDebugEditControlsVisibility();
-      syncDebugEditOverlayVisibility();
-      syncPlayerSpawnMarkerVisibility();
-      if (worldSessionStarted) return;
-      worldSessionStarted = true;
-      loop.start();
+      enterOrResumeWorldSessionFromMainMenu();
+    },
+    onSecondaryAction: (screen) => {
+      if (screen !== 'main-menu' || loop === null || !worldSessionStarted) return;
+      startFreshWorldSessionFromMainMenu();
     },
     onReturnToMainMenu: (screen) => {
       if (screen !== 'in-world') return;
@@ -204,6 +208,7 @@ const bootstrap = async (): Promise<void> => {
   }
 
   const camera = new Camera2D();
+  const defaultCameraZoom = camera.zoom;
   const input = new InputController(canvas, camera);
   const debug = new DebugOverlay();
   debug.setVisible(false);
@@ -230,7 +235,8 @@ const bootstrap = async (): Promise<void> => {
             screen: 'main-menu',
             statusText: PAUSED_MAIN_MENU_STATUS,
             detailLines: PAUSED_MAIN_MENU_DETAIL_LINES,
-            primaryActionLabel: 'Resume World'
+            primaryActionLabel: 'Resume World',
+            secondaryActionLabel: 'New World'
           }
         : { screen: 'main-menu' }
     );
@@ -250,12 +256,28 @@ const bootstrap = async (): Promise<void> => {
   const syncPlayerSpawnMarkerVisibility = (): void => {
     playerSpawnMarker.setVisible(currentScreen === 'in-world' && playerSpawnMarkerVisible);
   };
+  const applyDefaultWorldSessionShellState = (): void => {
+    ({
+      debugOverlayVisible,
+      debugEditControlsVisible,
+      debugEditOverlaysVisible,
+      playerSpawnMarkerVisible
+    } = createDefaultWorldSessionShellState(touchControlsAvailable));
+  };
+  const enterInWorldShellState = (): void => {
+    currentScreen = 'in-world';
+    syncInWorldShellState();
+    syncDebugOverlayVisibility();
+    syncDebugEditControlsVisibility();
+    syncDebugEditOverlayVisibility();
+    syncPlayerSpawnMarkerVisibility();
+  };
   syncDebugOverlayVisibility();
   syncDebugEditControlsVisibility();
   syncDebugEditOverlayVisibility();
   syncPlayerSpawnMarkerVisibility();
   input.retainPointerInspectWhenLeavingToElement(debugEditStatusStrip.getPointerInspectRetainerElement());
-  const debugTileEditHistory = new DebugTileEditHistory();
+  let debugTileEditHistory = new DebugTileEditHistory();
   const debugEditControlStorage = (() => {
     try {
       return window.localStorage;
@@ -963,6 +985,39 @@ const bootstrap = async (): Promise<void> => {
 
   const clearPinnedDebugTileInspect = (): void => {
     pinnedDebugTileInspect = null;
+  };
+  const resetFreshWorldSessionRuntimeState = (): void => {
+    renderer.resetWorld();
+    debugTileEditHistory = new DebugTileEditHistory();
+    syncDebugEditHistoryControls();
+    input.cancelArmedDebugTools();
+    syncArmedDebugToolControls();
+    clearPinnedDebugTileInspect();
+    camera.x = 0;
+    camera.y = 0;
+    camera.zoom = defaultCameraZoom;
+    cameraFollowOffset = { x: 0, y: 0 };
+    lastAppliedPlayerFollowCameraPosition = null;
+    lastPlayerGroundedTransitionEvent = null;
+    lastPlayerWallContactTransitionEvent = null;
+    lastPlayerCeilingContactTransitionEvent = null;
+    standalonePlayerState = null;
+    resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
+    playerSpawnNeedsRefresh = false;
+    refreshResolvedPlayerSpawn();
+  };
+  const enterOrResumeWorldSessionFromMainMenu = (): void => {
+    if (loop === null) return;
+    enterInWorldShellState();
+    if (worldSessionStarted) return;
+    worldSessionStarted = true;
+    loop.start();
+  };
+  const startFreshWorldSessionFromMainMenu = (): void => {
+    if (loop === null || !worldSessionStarted) return;
+    applyDefaultWorldSessionShellState();
+    resetFreshWorldSessionRuntimeState();
+    enterInWorldShellState();
   };
 
   debugEditStatusStrip.setActionHandlers({

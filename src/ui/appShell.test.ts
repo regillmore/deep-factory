@@ -22,6 +22,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.chromeVisible).toBe(false);
     expect(viewModel.stageLabel).toBe('Boot');
     expect(viewModel.primaryActionLabel).toBeNull();
+    expect(viewModel.secondaryActionLabel).toBeNull();
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
     expect(viewModel.recenterCameraActionLabel).toBeNull();
     expect(viewModel.debugOverlayToggleLabel).toBeNull();
@@ -41,6 +42,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.chromeVisible).toBe(false);
     expect(viewModel.stageLabel).toBe('Main Menu');
     expect(viewModel.primaryActionLabel).toBe('Enter World');
+    expect(viewModel.secondaryActionLabel).toBeNull();
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
     expect(viewModel.recenterCameraActionLabel).toBeNull();
     expect(viewModel.debugOverlayToggleLabel).toBeNull();
@@ -58,12 +60,14 @@ describe('resolveAppShellViewModel', () => {
       screen: 'main-menu',
       statusText: 'World session paused.',
       detailLines: ['Resume returns to the same initialized world session.'],
-      primaryActionLabel: 'Resume World'
+      primaryActionLabel: 'Resume World',
+      secondaryActionLabel: 'New World'
     });
 
     expect(viewModel.overlayVisible).toBe(true);
     expect(viewModel.chromeVisible).toBe(false);
     expect(viewModel.primaryActionLabel).toBe('Resume World');
+    expect(viewModel.secondaryActionLabel).toBe('New World');
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
     expect(viewModel.statusText).toBe('World session paused.');
     expect(viewModel.detailLines).toEqual(['Resume returns to the same initialized world session.']);
@@ -76,6 +80,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.chromeVisible).toBe(true);
     expect(viewModel.stageLabel).toBe('In World');
     expect(viewModel.primaryActionLabel).toBeNull();
+    expect(viewModel.secondaryActionLabel).toBeNull();
     expect(viewModel.returnToMainMenuActionLabel).toBe('Main Menu');
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
     expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
@@ -96,6 +101,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.returnToMainMenuActionLabel).toBe('Main Menu');
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
     expect(viewModel.debugOverlayToggleLabel).toBe('Hide Debug HUD');
+    expect(viewModel.secondaryActionLabel).toBeNull();
     expect(viewModel.debugOverlayTogglePressed).toBe(true);
     expect(viewModel.debugEditControlsToggleLabel).toBe('Show Edit Panel');
     expect(viewModel.debugEditControlsTogglePressed).toBe(false);
@@ -115,6 +121,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.returnToMainMenuActionLabel).toBe('Main Menu');
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
     expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
+    expect(viewModel.secondaryActionLabel).toBeNull();
     expect(viewModel.debugEditControlsToggleLabel).toBe('Hide Edit Panel');
     expect(viewModel.debugEditControlsTogglePressed).toBe(true);
     expect(viewModel.debugEditOverlaysToggleLabel).toBe('Hide Edit Overlays');
@@ -131,6 +138,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.returnToMainMenuActionLabel).toBe('Main Menu');
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
     expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
+    expect(viewModel.secondaryActionLabel).toBeNull();
     expect(viewModel.debugEditControlsToggleLabel).toBe('Show Edit Panel');
     expect(viewModel.debugEditOverlaysToggleLabel).toBe('Show Edit Overlays');
     expect(viewModel.debugEditOverlaysTogglePressed).toBe(false);
@@ -148,6 +156,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.returnToMainMenuActionLabel).toBe('Main Menu');
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
     expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
+    expect(viewModel.secondaryActionLabel).toBeNull();
     expect(viewModel.debugEditControlsToggleLabel).toBe('Show Edit Panel');
     expect(viewModel.debugEditOverlaysToggleLabel).toBe('Hide Edit Overlays');
     expect(viewModel.playerSpawnMarkerToggleLabel).toBe('Show Spawn Marker');
@@ -164,6 +173,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.overlayVisible).toBe(true);
     expect(viewModel.chromeVisible).toBe(false);
     expect(viewModel.primaryActionLabel).toBeNull();
+    expect(viewModel.secondaryActionLabel).toBeNull();
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
     expect(viewModel.recenterCameraActionLabel).toBeNull();
     expect(viewModel.statusText).toBe('WebGL2 is not available in this browser.');
