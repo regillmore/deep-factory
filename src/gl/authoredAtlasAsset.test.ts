@@ -60,6 +60,15 @@ interface AnimatedDirectRenderUvRectFrameSource {
   uvRect: TileUvRect;
 }
 
+interface AnimatedDirectRenderUvRectFrameTransition {
+  tileId: number;
+  tileName: string;
+  previousFrameIndex: number;
+  previousUvRect: TileUvRect;
+  frameIndex: number;
+  uvRect: TileUvRect;
+}
+
 interface AnimatedAtlasIndexFrameTransition {
   tileId: number;
   tileName: string;
@@ -253,9 +262,38 @@ const collectAnimatedDirectRenderUvRectFrameSources = (): AnimatedDirectRenderUv
               uvRect: frame.uvRect
             }
           ]
-        : []
+      : []
     );
   });
+
+const collectAnimatedDirectRenderUvRectFrameTransitions =
+  (): AnimatedDirectRenderUvRectFrameTransition[] =>
+    TILE_METADATA.tiles.flatMap((tile) => {
+      if (!tile.render?.uvRect || !tile.render.frames) {
+        return [];
+      }
+
+      const transitions: AnimatedDirectRenderUvRectFrameTransition[] = [];
+      for (let frameIndex = 1; frameIndex < tile.render.frames.length; frameIndex += 1) {
+        const previousFrame = tile.render.frames[frameIndex - 1];
+        const frame = tile.render.frames[frameIndex];
+
+        if (!previousFrame?.uvRect || !frame?.uvRect) {
+          continue;
+        }
+
+        transitions.push({
+          tileId: tile.id,
+          tileName: tile.name,
+          previousFrameIndex: frameIndex - 1,
+          previousUvRect: previousFrame.uvRect,
+          frameIndex,
+          uvRect: frame.uvRect
+        });
+      }
+
+      return transitions;
+    });
 
 const collectAnimatedAtlasIndexFrameTransitions = (): AnimatedAtlasIndexFrameTransition[] =>
   TILE_METADATA.tiles.flatMap((tile) => {
@@ -456,6 +494,28 @@ describe('authored atlas asset', () => {
       const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
 
       expect(regionContainsAnyNonTransparentPixel(rgbaPixels, pngWidth, pixelRegion)).toBe(true);
+    }
+  });
+
+  it('keeps every default animated direct render.uvRect frame distinct from its prior committed PNG frame', () => {
+    const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
+    const animatedFrameTransitions = collectAnimatedDirectRenderUvRectFrameTransitions();
+
+    expect(animatedFrameTransitions.length).toBeGreaterThan(0);
+
+    for (const transition of animatedFrameTransitions) {
+      const previousRegion = uvRectToPixelRegion(
+        transition.previousUvRect,
+        pngWidth,
+        pngHeight
+      );
+      const region = uvRectToPixelRegion(transition.uvRect, pngWidth, pngHeight);
+
+      if (regionsMatchExactly(rgbaPixels, pngWidth, previousRegion, region)) {
+        throw new Error(
+          `tile ${transition.tileId} "${transition.tileName}" frame ${transition.frameIndex} matches frame ${transition.previousFrameIndex} in the committed atlas PNG`
+        );
+      }
     }
   });
 

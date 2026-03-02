@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-02: Default animated direct `render.uvRect` frames must differ in committed atlas content
+
+- Decision: Consecutive default animation frames that resolve through direct `render.uvRect` metadata must not point at identical committed PNG pixels.
+- Reason: Direct-UV animation metadata can otherwise exercise the renderer path while shipping a visually static repeated frame, which hides authored-asset drift until later art work builds on it.
+- Consequence: Future direct-UV animation authoring should change committed atlas content from one frame to the next whenever a tile is intended to animate visibly.
+
 ### 2026-03-02: Default animated atlas-index frames must differ in committed atlas content
 
 - Decision: Consecutive default animation frames that resolve through authored atlas indices must not point at identical committed PNG pixels.
