@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Add an authored-atlas asset regression test that every explicitly unused committed atlas region remains fully transparent in the committed PNG.
+- Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) to enumerate every atlas region documented as intentionally unused and assert that each committed PNG region stays fully transparent, then advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an authored-atlas asset regression test that every pixel in the exterior padding strip outside all authored regions remains fully transparent in the committed PNG.
 - Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) so the committed atlas no longer passes with merely some transparent right-side padding pixels; the regression now treats the entire strip beyond the authored-region bounds as blank space and fails on any non-transparent spill, then advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

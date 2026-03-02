@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-02: Explicitly unused authored atlas regions must stay fully transparent
+
+- Decision: Any authored atlas region documented in `AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS` must remain fully transparent in the committed PNG.
+- Reason: A documented spare slot is only a reliable regression target if stray committed art cannot accumulate inside it unnoticed.
+- Consequence: Future atlas edits should either keep unused documented regions blank or remove them from the intentionally-unused table as part of the same change.
+
 ### 2026-03-02: Exterior authored-atlas padding strip must stay fully transparent
 
 - Decision: The entire committed PNG strip beyond the right edge of all authored atlas regions must remain fully transparent, not merely partially empty.

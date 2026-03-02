@@ -495,6 +495,21 @@ describe('authored atlas asset', () => {
     }
   });
 
+  it('keeps every explicitly unused authored atlas region fully transparent in the committed PNG', () => {
+    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
+    const intentionallyUnusedEntries = Object.entries(AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS);
+
+    expect(intentionallyUnusedEntries.length).toBeGreaterThan(0);
+
+    for (const [rawAtlasIndex, reason] of intentionallyUnusedEntries) {
+      const atlasIndex = Number(rawAtlasIndex);
+      const region = AUTHORED_ATLAS_REGIONS[atlasIndex];
+
+      expect(region, `missing authored region ${atlasIndex} for unused reason "${reason}"`).toBeDefined();
+      expect(regionContainsAnyNonTransparentPixel(rgbaPixels, pngWidth, region!)).toBe(false);
+    }
+  });
+
   it('keeps committed direct render.uvRect metadata aligned to whole atlas pixels', () => {
     const { pngWidth, pngHeight } = readCommittedAtlasPng();
     const directUvRectTiles = collectDirectRenderUvRectSources();

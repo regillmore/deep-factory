@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Authored asset pipeline
 
-39. Add an authored-atlas asset regression test that every explicitly unused committed atlas region remains fully transparent in the committed PNG.
 40. Add an authored-atlas asset regression test that committed non-transparent pixels do not spill outside authored regions referenced by default metadata or regions documented as intentionally unused.
 50. Add an authored-atlas asset regression test that explicitly unused authored regions stay unreferenced by default direct `render.uvRect` sources as well as atlas-index metadata.
+51. Add an authored-atlas asset regression test that default direct `render.uvRect` sources do not overlap the fully transparent exterior padding strip outside authored regions.
 
 ## Collision and player foundation
 
