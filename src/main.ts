@@ -1273,7 +1273,8 @@ const bootstrap = async (): Promise<void> => {
       preview: armedDebugToolPreviewState,
       hoveredTile: hoveredDebugTileStatus,
       pinnedTile: pinnedDebugTileStatus,
-      desktopInspectPinArmed: input.getArmedDesktopDebugInspectPin()
+      desktopInspectPinArmed: input.getArmedDesktopDebugInspectPin(),
+      playerRespawn: debugOverlayVisible ? null : lastPlayerRespawnEvent
     });
     debug.update(frameDtMs, renderer.telemetry, {
       pointer: debugOverlayPointerInspect,

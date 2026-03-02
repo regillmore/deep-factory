@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Surface standalone player auto-respawn events in the compact debug-edit status strip when the text debug HUD is hidden.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) plus [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so the compact-strip model formats the latest embedded-respawn telemetry, updated [src/ui/debugEditStatusStrip.ts](../src/ui/debugEditStatusStrip.ts) plus [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts) to render that telemetry as its own wrap-friendly status line, wired [src/main.ts](../src/main.ts) to pass the latest respawn event into the compact strip only while the text debug HUD is hidden, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface standalone player auto-respawn events in the debug overlay when embedded-tile recovery triggers.
 - Changes: Added [src/world/playerRespawnEvent.ts](../src/world/playerRespawnEvent.ts) plus [src/world/playerRespawnEvent.test.ts](../src/world/playerRespawnEvent.test.ts) to capture embedded-recovery respawn telemetry from the resolved spawn point, updated [src/main.ts](../src/main.ts) to retain the latest auto-respawn event alongside the existing player transition telemetry, extended [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to render the latest respawn event line, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/world/playerRespawnEvent.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

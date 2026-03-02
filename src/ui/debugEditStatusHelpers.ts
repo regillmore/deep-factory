@@ -8,6 +8,7 @@ import {
   type DebugTileEditKind,
   type TouchDebugEditMode
 } from '../input/controller';
+import type { PlayerRespawnEventKind } from '../world/playerRespawnEvent';
 import type { TileLiquidKind } from '../world/tileMetadata';
 
 export interface ActiveDebugToolStatus {
@@ -24,6 +25,7 @@ export interface DebugEditStatusStripState {
   hoveredTile: DebugEditHoveredTileState | null;
   pinnedTile: DebugEditHoveredTileState | null;
   desktopInspectPinArmed: boolean;
+  playerRespawn?: DebugEditStatusStripPlayerRespawnTelemetry | null;
 }
 
 export interface DebugEditStatusStripModel {
@@ -31,6 +33,7 @@ export interface DebugEditStatusStripModel {
   brushText: string;
   toolText: string;
   previewText: string | null;
+  eventText: string | null;
   inspectText: string;
   hoverText: string;
   hintText: string;
@@ -52,6 +55,13 @@ export interface DebugEditHoveredTileState {
   solid: boolean;
   blocksLight: boolean;
   liquidKind: TileLiquidKind | null;
+}
+
+export interface DebugEditStatusStripPlayerRespawnTelemetry {
+  kind: PlayerRespawnEventKind;
+  spawnTile: { x: number; y: number };
+  position: { x: number; y: number };
+  velocity: { x: number; y: number };
 }
 
 interface ActiveDebugToolPreviewSummary {
@@ -343,6 +353,21 @@ const formatTileCoordinatePair = (tileX: number, tileY: number): string => `${ti
 
 const formatEstimatedAffectedTileCount = (tileCount: number | null): string =>
   tileCount === null ? 'pending' : `${tileCount} ${tileCount === 1 ? 'tile' : 'tiles'}`;
+
+const formatRespawnEventText = (
+  playerRespawn: DebugEditStatusStripPlayerRespawnTelemetry | null
+): string | null => {
+  if (!playerRespawn) {
+    return null;
+  }
+
+  return (
+    `Respawn: ${playerRespawn.kind} | ` +
+    `spawn ${formatTileCoordinatePair(playerRespawn.spawnTile.x, playerRespawn.spawnTile.y)} | ` +
+    `pos ${playerRespawn.position.x.toFixed(2)},${playerRespawn.position.y.toFixed(2)} | ` +
+    `vel ${playerRespawn.velocity.x.toFixed(2)},${playerRespawn.velocity.y.toFixed(2)}`
+  );
+};
 
 const formatPreviewSpanText = (
   anchorTileX: number,
@@ -740,12 +765,14 @@ export const buildDebugEditStatusStripModel = (
   state: DebugEditStatusStripState
 ): DebugEditStatusStripModel => {
   const activeToolStatus = resolveActiveDebugToolStatus(state.preview);
+  const playerRespawn = state.playerRespawn ?? null;
 
   return {
     modeText: `Mode: ${formatTouchDebugEditModeLabel(state.mode)}`,
     brushText: `Brush: ${state.brushLabel} (#${state.brushTileId})`,
     toolText: activeToolStatus ? `Tool: ${activeToolStatus.title}` : 'Tool: No one-shot armed',
     previewText: buildPreviewText(state.preview, state.hoveredTile),
+    eventText: formatRespawnEventText(playerRespawn),
     inspectText: buildInspectText(state),
     hoverText: buildHoveredTileText(state.hoveredTile, state.pinnedTile),
     hintText: activeToolStatus

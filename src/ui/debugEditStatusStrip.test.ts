@@ -67,6 +67,12 @@ describe('buildWrappedDetailLines', () => {
       ]
     ]);
   });
+
+  it('splits respawn event text into wrap-friendly telemetry segments', () => {
+    expect(
+      buildWrappedDetailLines('Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00')
+    ).toEqual([['Respawn: embedded', '| spawn 3,-2', '| pos 56.00,-32.00', '| vel 0.00,0.00']]);
+  });
 });
 
 describe('splitSummaryChipText', () => {

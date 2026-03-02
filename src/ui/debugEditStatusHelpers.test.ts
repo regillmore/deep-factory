@@ -80,6 +80,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.brushText).toBe('Brush: debug brick (#3)');
     expect(model.toolText).toBe('Tool: No one-shot armed');
     expect(model.previewText).toBeNull();
+    expect(model.eventText).toBeNull();
     expect(model.inspectText).toBe('Inspect: Hover only');
     expect(model.hoverText).toBe(
       'Hover: move cursor | touch a world tile | inspect gameplay flags | Pin Click keeps metadata visible'
@@ -111,6 +112,26 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.previewText).toBeNull();
     expect(model.hintText).toBe('click/tap target tile | Esc cancel');
     expect(model.toolAccent).toBe('rgba(120, 255, 180, 0.95)');
+  });
+
+  it('formats the latest auto-respawn event for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerRespawn: {
+        kind: 'embedded',
+        spawnTile: { x: 3, y: -2 },
+        position: { x: 56, y: -32 },
+        velocity: { x: 0, y: 0 }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.eventText).toBe('Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00');
   });
 
   it('shows active mouse-drag preview anchor and endpoint coordinates in the status-strip model', () => {
