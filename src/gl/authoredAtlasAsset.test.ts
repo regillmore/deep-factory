@@ -453,7 +453,7 @@ describe('authored atlas asset', () => {
     }
   });
 
-  it('ships a committed atlas PNG with uncovered space beyond the authored regions', () => {
+  it('keeps every pixel in the exterior padding strip beyond authored regions fully transparent', () => {
     const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
     const maxAuthoredRegionRight = AUTHORED_ATLAS_REGIONS.reduce(
       (maxRight, region) => Math.max(maxRight, region.x + region.width),
@@ -461,18 +461,14 @@ describe('authored atlas asset', () => {
     );
 
     expect(maxAuthoredRegionRight).toBeLessThan(pngWidth);
-
-    let transparentPaddingPixelCount = 0;
-    for (let y = 0; y < pngHeight; y += 1) {
-      for (let x = maxAuthoredRegionRight; x < pngWidth; x += 1) {
-        const alphaIndex = (y * pngWidth + x) * PNG_BYTES_PER_PIXEL_RGBA + 3;
-        if (rgbaPixels[alphaIndex] === 0) {
-          transparentPaddingPixelCount += 1;
-        }
-      }
-    }
-
-    expect(transparentPaddingPixelCount).toBeGreaterThan(0);
+    expect(
+      regionContainsAnyNonTransparentPixel(rgbaPixels, pngWidth, {
+        x: maxAuthoredRegionRight,
+        y: 0,
+        width: pngWidth - maxAuthoredRegionRight,
+        height: pngHeight
+      })
+    ).toBe(false);
   });
 
   it('accounts for every committed authored atlas region through metadata or explicit unused documentation', () => {
