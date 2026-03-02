@@ -47,6 +47,11 @@ interface AtlasPixelRegion {
   height: number;
 }
 
+interface AtlasPixelCoordinate {
+  x: number;
+  y: number;
+}
+
 interface DirectRenderUvRectSource {
   tileId: number;
   tileName: string;
@@ -367,6 +372,67 @@ const regionContainsAnyNonTransparentPixel = (
   return false;
 };
 
+const regionsOverlap = (left: AtlasPixelRegion, right: AtlasPixelRegion): boolean =>
+  left.x < right.x + right.width &&
+  left.x + left.width > right.x &&
+  left.y < right.y + right.height &&
+  left.y + left.height > right.y;
+
+const regionContainsPixel = (
+  region: AtlasPixelRegion,
+  coordinate: AtlasPixelCoordinate
+): boolean =>
+  coordinate.x >= region.x &&
+  coordinate.x < region.x + region.width &&
+  coordinate.y >= region.y &&
+  coordinate.y < region.y + region.height;
+
+const collectReferencedAuthoredAtlasIndices = (
+  pngWidth: number,
+  pngHeight: number
+): number[] => {
+  const referencedAtlasIndices = new Set(collectReferencedAtlasIndices());
+  const directUvRectSources = [
+    ...collectDirectRenderUvRectSources(),
+    ...collectAnimatedDirectRenderUvRectFrameSources()
+  ];
+
+  for (const source of directUvRectSources) {
+    const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
+
+    for (const [atlasIndex, authoredRegion] of AUTHORED_ATLAS_REGIONS.entries()) {
+      if (regionsOverlap(pixelRegion, authoredRegion)) {
+        referencedAtlasIndices.add(atlasIndex);
+      }
+    }
+  }
+
+  return [...referencedAtlasIndices].sort((a, b) => a - b);
+};
+
+const findFirstNonTransparentPixelOutsideRegions = (
+  rgbaPixels: Uint8Array,
+  pngWidth: number,
+  pngHeight: number,
+  allowedRegions: readonly AtlasPixelRegion[]
+): AtlasPixelCoordinate | null => {
+  for (let y = 0; y < pngHeight; y += 1) {
+    for (let x = 0; x < pngWidth; x += 1) {
+      const alphaIndex = (y * pngWidth + x) * PNG_BYTES_PER_PIXEL_RGBA + 3;
+      if (rgbaPixels[alphaIndex] === 0) {
+        continue;
+      }
+
+      const coordinate = { x, y };
+      if (!allowedRegions.some((region) => regionContainsPixel(region, coordinate))) {
+        return coordinate;
+      }
+    }
+  }
+
+  return null;
+};
+
 const regionsMatchForVisibleContent = (
   rgbaPixels: Uint8Array,
   pngWidth: number,
@@ -469,6 +535,36 @@ describe('authored atlas asset', () => {
         height: pngHeight
       })
     ).toBe(false);
+  });
+
+  it('keeps committed non-transparent pixels inside authored regions covered by default metadata or explicit unused documentation', () => {
+    const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
+    const allowedAtlasIndices = new Set([
+      ...collectReferencedAuthoredAtlasIndices(pngWidth, pngHeight),
+      ...Object.keys(AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS).map((rawAtlasIndex) =>
+        Number(rawAtlasIndex)
+      )
+    ]);
+    const allowedRegions = [...allowedAtlasIndices]
+      .sort((a, b) => a - b)
+      .map((atlasIndex) => AUTHORED_ATLAS_REGIONS[atlasIndex])
+      .filter((region): region is AtlasPixelRegion => region !== undefined);
+
+    expect(allowedRegions.length).toBeGreaterThan(0);
+
+    const spillPixel = findFirstNonTransparentPixelOutsideRegions(
+      rgbaPixels,
+      pngWidth,
+      pngHeight,
+      allowedRegions
+    );
+
+    expect(
+      spillPixel,
+      spillPixel
+        ? `found non-transparent committed atlas spill at (${spillPixel.x}, ${spillPixel.y}) outside authored regions tracked by shipped metadata or explicit unused-region documentation`
+        : undefined
+    ).toBeNull();
   });
 
   it('accounts for every committed authored atlas region through metadata or explicit unused documentation', () => {

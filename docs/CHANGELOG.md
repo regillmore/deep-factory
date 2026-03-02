@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Add an authored-atlas asset regression test that committed non-transparent pixels do not spill outside authored regions referenced by default metadata or regions documented as intentionally unused.
+- Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) to derive the authored regions touched by shipped atlas-index and direct-`render.uvRect` metadata, then scan the committed PNG for visible pixels outside that documented region set; advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface standalone player camera-follow telemetry (`focus`, `offset`) in the debug overlay after collision AABB telemetry lands.
 - Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so the overlay formats a dedicated follow line beside the existing standalone player telemetry, wired [src/main.ts](../src/main.ts) to pass the live camera-follow focus point and preserved follow offset into that overlay snapshot each frame, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
