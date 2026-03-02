@@ -45,7 +45,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 27. Add grounded-walk placeholder pose variants to the renderer-side standalone player draw pass so horizontal movement direction reads before sprite assets land.
 60. Surface the paused-main-menu fresh-world shortcut in shell copy once the keyboard action exists.
-62. Surface the paused-main-menu resume shortcut in shell copy once the keyboard action exists.
+64. Surface the paused-main-menu fresh-world reset consequence in shell copy so the destructive action reads clearly before activation.
 
 ## Player debugging
 

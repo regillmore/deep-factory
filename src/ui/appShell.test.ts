@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { getDesktopResumeWorldHotkeyLabel } from '../input/debugEditShortcuts';
 import { resolveAppShellRegionDisplay, resolveAppShellViewModel } from './appShell';
 
 describe('resolveAppShellRegionDisplay', () => {
@@ -66,7 +67,9 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.overlayVisible).toBe(true);
     expect(viewModel.chromeVisible).toBe(false);
-    expect(viewModel.primaryActionLabel).toBe('Resume World');
+    expect(viewModel.primaryActionLabel).toBe(
+      `Resume World (${getDesktopResumeWorldHotkeyLabel()})`
+    );
     expect(viewModel.secondaryActionLabel).toBe('New World');
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
     expect(viewModel.statusText).toBe('World session paused.');

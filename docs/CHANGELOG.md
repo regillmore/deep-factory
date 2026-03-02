@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-02
 
+- Task: Surface the paused-main-menu resume shortcut in shell copy once the keyboard action exists.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the paused main-menu primary action now renders as `Resume World (Enter)` while first-entry copy stays unchanged, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [README.md](../README.md).
+- Verification: Ran `npx vitest run src/ui/appShell.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface standalone player facing-transition events in the debug overlay when horizontal movement flips left or right between fixed steps.
 - Changes: Added [src/world/playerFacingTransition.ts](../src/world/playerFacingTransition.ts) plus [src/world/playerFacingTransition.test.ts](../src/world/playerFacingTransition.test.ts) to classify fixed-step left/right facing flips, updated [src/main.ts](../src/main.ts) to retain the latest facing-transition event alongside the existing grounded, wall, and ceiling telemetry, extended [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) to render the latest facing-transition line, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/world/playerFacingTransition.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

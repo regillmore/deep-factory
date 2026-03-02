@@ -4,6 +4,7 @@ import {
   getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopPlayerSpawnMarkerHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel,
+  getDesktopResumeWorldHotkeyLabel,
   getDesktopReturnToMainMenuHotkeyLabel
 } from '../input/debugEditShortcuts';
 
@@ -70,6 +71,9 @@ export const resolveAppShellRegionDisplay = (
   visibleDisplay: 'flex' | 'grid'
 ): 'flex' | 'grid' | 'none' => (visible ? visibleDisplay : 'none');
 
+const resolveMainMenuPrimaryActionLabel = (label: string): string =>
+  label === 'Resume World' ? `${label} (${getDesktopResumeWorldHotkeyLabel()})` : label;
+
 export const resolveAppShellViewModel = (state: AppShellState): AppShellViewModel => {
   switch (state.screen) {
     case 'boot':
@@ -103,7 +107,9 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         title: 'Deep Factory',
         statusText: state.statusText ?? DEFAULT_MAIN_MENU_STATUS,
         detailLines: state.detailLines ?? DEFAULT_MAIN_MENU_DETAIL_LINES,
-        primaryActionLabel: state.primaryActionLabel ?? 'Enter World',
+        primaryActionLabel: resolveMainMenuPrimaryActionLabel(
+          state.primaryActionLabel ?? 'Enter World'
+        ),
         secondaryActionLabel: state.secondaryActionLabel ?? null,
         returnToMainMenuActionLabel: null,
         recenterCameraActionLabel: null,
