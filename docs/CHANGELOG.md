@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-02
+
+- Task: Add an authored-atlas asset regression test that every committed region is either referenced by tile metadata or explicitly documented as intentionally unused.
+- Changes: Updated [src/world/authoredAtlasLayout.ts](../src/world/authoredAtlasLayout.ts) with an explicit intentionally-unused region declaration table, expanded [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) so every committed authored atlas region must now be covered by tile metadata references or that documentation, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-01
 
 - Task: Add a renderer regression test that a re-streamed animated chunk rebuilt on frame-zero elapsed time skips redundant animated UV reuploads.

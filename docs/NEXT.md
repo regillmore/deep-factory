@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Authored asset pipeline
 
-37. Add an authored-atlas asset regression test that every committed region is either referenced by tile metadata or explicitly documented as intentionally unused.
 39. Add an authored-atlas asset regression test that direct `render.uvRect` default metadata only references committed PNG rects containing at least one non-transparent pixel.
 40. Add a renderer regression test that a re-streamed animated chunk rebuilt at wrapped frame-zero elapsed time also skips redundant animated UV reuploads.
+41. Add an authored-atlas asset regression test that every explicitly unused committed atlas region remains fully transparent in the committed PNG.
 
 ## Collision and player foundation
 

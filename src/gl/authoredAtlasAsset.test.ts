@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   AUTHORED_ATLAS_HEIGHT,
+  AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS,
   AUTHORED_ATLAS_REGIONS,
   AUTHORED_ATLAS_WIDTH
 } from '../world/authoredAtlasLayout';
@@ -221,6 +222,30 @@ describe('authored atlas asset', () => {
       expect(region.y).toBeGreaterThanOrEqual(0);
       expect(region.x + region.width).toBeLessThanOrEqual(pngWidth);
       expect(region.y + region.height).toBeLessThanOrEqual(pngHeight);
+    }
+  });
+
+  it('accounts for every committed authored atlas region through metadata or explicit unused documentation', () => {
+    const referencedAtlasIndices = new Set(collectReferencedAtlasIndices());
+    const intentionallyUnusedEntries = Object.entries(AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS);
+    const intentionallyUnusedAtlasIndices = new Set<number>();
+
+    for (const [rawAtlasIndex, reason] of intentionallyUnusedEntries) {
+      const atlasIndex = Number(rawAtlasIndex);
+
+      expect(Number.isInteger(atlasIndex)).toBe(true);
+      expect(atlasIndex).toBeGreaterThanOrEqual(0);
+      expect(atlasIndex).toBeLessThan(AUTHORED_ATLAS_REGIONS.length);
+      expect(reason.trim().length).toBeGreaterThan(0);
+      expect(referencedAtlasIndices.has(atlasIndex)).toBe(false);
+
+      intentionallyUnusedAtlasIndices.add(atlasIndex);
+    }
+
+    for (let atlasIndex = 0; atlasIndex < AUTHORED_ATLAS_REGIONS.length; atlasIndex += 1) {
+      expect(
+        referencedAtlasIndices.has(atlasIndex) || intentionallyUnusedAtlasIndices.has(atlasIndex)
+      ).toBe(true);
     }
   });
 

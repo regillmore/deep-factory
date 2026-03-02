@@ -37,6 +37,10 @@ export const AUTHORED_ATLAS_REGIONS: readonly AuthoredAtlasRegion[] = [
 
 export const AUTHORED_ATLAS_REGION_COUNT = AUTHORED_ATLAS_REGIONS.length;
 
+// Document reserved or blank committed slots here so asset regressions can distinguish drift from intent.
+export const AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS: Readonly<Record<number, string>> =
+  Object.freeze({});
+
 export const AUTHORED_ATLAS_UV_RECTS: readonly AuthoredAtlasUvRect[] = AUTHORED_ATLAS_REGIONS.map(
   (region) => ({
     u0: region.x / AUTHORED_ATLAS_WIDTH,
