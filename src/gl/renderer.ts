@@ -214,7 +214,8 @@ export class Renderer {
 
         bool walkPoseA = u_poseIndex > 0.5 && u_poseIndex < 1.5;
         bool walkPoseB = u_poseIndex > 1.5 && u_poseIndex < 2.5;
-        bool airborne = u_poseIndex > 2.5;
+        bool jumpRisePose = u_poseIndex > 2.5 && u_poseIndex < 3.5;
+        bool fallPose = u_poseIndex > 3.5;
 
         vec4 head = vec4(0.24, 0.62, 0.76, 0.94);
         vec4 hair = vec4(0.18, 0.80, 0.82, 0.98);
@@ -241,13 +242,20 @@ export class Renderer {
           rightLeg = vec4(0.60, 0.14, 0.76, 0.38);
           leftBoot = vec4(0.22, 0.00, 0.46, 0.08);
           rightBoot = vec4(0.58, 0.02, 0.78, 0.10);
-        } else if (airborne) {
-          leftArm = vec4(0.12, 0.52, 0.26, 0.78);
-          rightArm = vec4(0.74, 0.30, 0.88, 0.54);
-          leftLeg = vec4(0.20, 0.14, 0.40, 0.30);
-          rightLeg = vec4(0.56, 0.24, 0.76, 0.42);
-          leftBoot = vec4(0.12, 0.06, 0.32, 0.14);
-          rightBoot = vec4(0.66, 0.16, 0.86, 0.24);
+        } else if (jumpRisePose) {
+          leftArm = vec4(0.10, 0.52, 0.24, 0.82);
+          rightArm = vec4(0.76, 0.56, 0.90, 0.84);
+          leftLeg = vec4(0.22, 0.18, 0.40, 0.34);
+          rightLeg = vec4(0.58, 0.22, 0.76, 0.38);
+          leftBoot = vec4(0.16, 0.10, 0.36, 0.18);
+          rightBoot = vec4(0.64, 0.14, 0.84, 0.22);
+        } else if (fallPose) {
+          leftArm = vec4(0.14, 0.26, 0.28, 0.54);
+          rightArm = vec4(0.72, 0.34, 0.86, 0.62);
+          leftLeg = vec4(0.30, 0.08, 0.44, 0.40);
+          rightLeg = vec4(0.56, 0.06, 0.70, 0.38);
+          leftBoot = vec4(0.28, 0.00, 0.46, 0.08);
+          rightBoot = vec4(0.54, 0.00, 0.72, 0.08);
         }
 
         bool insideHead = inRect(uv, head);

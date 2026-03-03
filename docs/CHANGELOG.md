@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-03
 
+- Task: Add separate jump-rise and fall placeholder pose variants to the renderer-side standalone player draw pass so airborne travel direction reads before sprite assets land.
+- Changes: Updated [src/gl/standalonePlayerPlaceholder.ts](../src/gl/standalonePlayerPlaceholder.ts) plus [src/gl/standalonePlayerPlaceholder.test.ts](../src/gl/standalonePlayerPlaceholder.test.ts) so airborne placeholder pose selection now splits upward travel from falling movement by vertical velocity, updated [src/gl/renderer.ts](../src/gl/renderer.ts) and [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so the placeholder shader renders distinct jump-rise and fall silhouettes, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `npx vitest run src/gl/standalonePlayerPlaceholder.test.ts src/gl/renderer.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface standalone player facing-transition events in the compact debug-edit status strip when the text debug HUD is hidden.
 - Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) plus [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so the compact-strip model now formats facing-transition telemetry beside the existing hidden-HUD grounded, respawn, and contact event lines, wired [src/main.ts](../src/main.ts) to pass the latest facing event into the compact strip only while the text debug HUD is hidden, extended [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

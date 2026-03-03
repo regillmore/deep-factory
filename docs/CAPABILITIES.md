@@ -11,7 +11,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Renderer atlas initialization ships with an authored atlas at `public/atlas/tile-atlas.png` exposed as `/atlas/tile-atlas.png`, then falls back to a generated placeholder atlas whose canvas size and painted regions derive from `src/world/authoredAtlasLayout.ts` if that asset cannot be fetched or decoded.
 - Renderer boot validates authored atlas-index regions plus direct tile `render.uvRect` metadata against the loaded atlas dimensions, logs a warning when any atlas-backed source falls outside the source image or any direct static or animated `uvRect` edge lands between atlas pixels, and surfaces the warning count plus first warning in debug telemetry.
 - Renderer animates non-terrain tiles from metadata-driven frame sequences at draw time by patching chunk UVs only when an animated tile's elapsed frame changes; terrain autotile and static tile UV resolution remain unchanged.
-- Renderer draws the standalone player through a facing-aware world-space placeholder pass with grounded idle, alternating grounded-walk, and airborne silhouettes instead of a client-space DOM marker.
+- Renderer draws the standalone player through a facing-aware world-space placeholder pass with grounded idle, alternating grounded-walk, jump-rise, and fall silhouettes instead of a client-space DOM marker.
 - Orthographic camera with anchored zoom, pointer pan controls, and standalone-player follow that tracks the player body center while preserving manual inspection offsets.
 - Fixed-step game loop (`60hz`) with separate render interpolation alpha.
 - Chunked world model with `32x32` tiles per chunk and `16px` tiles.

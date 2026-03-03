@@ -5,10 +5,11 @@ import {
   buildStandalonePlayerPlaceholderVertices,
   getStandalonePlayerPlaceholderFacingSign,
   getStandalonePlayerPlaceholderPoseIndex,
-  STANDALONE_PLAYER_PLACEHOLDER_POSE_AIRBORNE,
+  STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_IDLE,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B,
+  STANDALONE_PLAYER_PLACEHOLDER_POSE_JUMP_RISE,
   STANDALONE_PLAYER_PLACEHOLDER_WALK_FRAME_DURATION_MS
 } from './standalonePlayerPlaceholder';
 
@@ -52,13 +53,34 @@ describe('standalonePlayerPlaceholder', () => {
     expect(getStandalonePlayerPlaceholderFacingSign(createPlayerState({ facing: 'left' }))).toBe(-1);
   });
 
-  it('maps grounded idle and airborne state into placeholder poses', () => {
+  it('maps grounded idle, jump-rise, and fall state into placeholder poses', () => {
     expect(getStandalonePlayerPlaceholderPoseIndex(createPlayerState({ grounded: true }))).toBe(
       STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_IDLE
     );
-    expect(getStandalonePlayerPlaceholderPoseIndex(createPlayerState({ grounded: false }))).toBe(
-      STANDALONE_PLAYER_PLACEHOLDER_POSE_AIRBORNE
-    );
+    expect(
+      getStandalonePlayerPlaceholderPoseIndex(
+        createPlayerState({
+          grounded: false,
+          velocity: { x: 0, y: -60 }
+        })
+      )
+    ).toBe(STANDALONE_PLAYER_PLACEHOLDER_POSE_JUMP_RISE);
+    expect(
+      getStandalonePlayerPlaceholderPoseIndex(
+        createPlayerState({
+          grounded: false,
+          velocity: { x: 0, y: 60 }
+        })
+      )
+    ).toBe(STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL);
+    expect(
+      getStandalonePlayerPlaceholderPoseIndex(
+        createPlayerState({
+          grounded: false,
+          velocity: { x: 0, y: 0 }
+        })
+      )
+    ).toBe(STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL);
   });
 
   it('alternates grounded walk placeholder poses while horizontal movement is active', () => {

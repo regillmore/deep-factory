@@ -42,7 +42,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 66. Surface the in-world recenter-camera shortcut in shell copy once the keyboard action exists.
 67. Surface the in-world debug-HUD shortcut in shell copy once the keyboard action exists.
 68. Surface the in-world spawn-marker shortcut in shell copy once the keyboard action exists.
-73. Add separate jump-rise and fall placeholder pose variants to the renderer-side standalone player draw pass so airborne travel direction reads before sprite assets land.
+74. Pass wall-contact state into the renderer-side standalone player draw pass and add a wall-slide placeholder pose variant so blocked airborne movement reads before sprite assets land.
 
 ## Player debugging
 

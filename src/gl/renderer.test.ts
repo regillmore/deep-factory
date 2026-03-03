@@ -5,8 +5,10 @@ import { createPlayerState } from '../world/playerState';
 import { atlasIndexToUvRect, resolveAnimatedTileRenderFrameUvRect } from '../world/tileMetadata';
 import type { AtlasValidationWarning } from './atlasValidation';
 import {
+  STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B,
+  STANDALONE_PLAYER_PLACEHOLDER_POSE_JUMP_RISE,
   STANDALONE_PLAYER_PLACEHOLDER_WALK_FRAME_DURATION_MS
 } from './standalonePlayerPlaceholder';
 
@@ -139,7 +141,7 @@ describe('Renderer atlas telemetry', () => {
     expect(playerProgramFragmentSource).toContain('uv.y = 1.0 - uv.y;');
   });
 
-  it('compiles grounded walk pose branches into the placeholder shader', () => {
+  it('compiles grounded walk and airborne direction pose branches into the placeholder shader', () => {
     new Renderer(createMockCanvas(createMockGl()));
 
     const createProgramCalls = createProgram.mock.calls as unknown as Array<
@@ -148,6 +150,8 @@ describe('Renderer atlas telemetry', () => {
     const playerProgramFragmentSource = createProgramCalls[1]?.[2];
     expect(playerProgramFragmentSource).toContain('bool walkPoseA');
     expect(playerProgramFragmentSource).toContain('bool walkPoseB');
+    expect(playerProgramFragmentSource).toContain('bool jumpRisePose');
+    expect(playerProgramFragmentSource).toContain('bool fallPose');
   });
 
   it('records an authored atlas load in telemetry during initialization', async () => {
@@ -348,6 +352,49 @@ describe('Renderer atlas telemetry', () => {
       STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A,
       1,
       STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B
+    ]);
+  });
+
+  it('maps airborne rise and fall velocity into distinct placeholder poses', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const uniform1f = vi.mocked(gl.uniform1f);
+    uniform1f.mockClear();
+
+    const camera = new Camera2D();
+    const jumpRiseState = createPlayerState({
+      grounded: false,
+      velocity: { x: 0, y: -120 }
+    });
+    const fallState = createPlayerState({
+      grounded: false,
+      velocity: { x: 0, y: 120 }
+    });
+
+    renderer.render(camera, {
+      standalonePlayer: jumpRiseState,
+      timeMs: 0
+    });
+    renderer.render(camera, {
+      standalonePlayer: fallState,
+      timeMs: 0
+    });
+
+    expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([
+      1,
+      STANDALONE_PLAYER_PLACEHOLDER_POSE_JUMP_RISE,
+      1,
+      STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL
     ]);
   });
 
