@@ -1198,10 +1198,12 @@ const bootstrap = async (): Promise<void> => {
           }
         }
       : null;
+    const standalonePlayerContacts = standalonePlayerState
+      ? renderer.getPlayerCollisionContacts(standalonePlayerState)
+      : null;
     const debugOverlayPlayer = standalonePlayerState
       ? (() => {
           const aabb = getPlayerAabb(standalonePlayerState);
-          const contacts = renderer.getPlayerCollisionContacts(standalonePlayerState);
 
           return {
             position: {
@@ -1229,9 +1231,9 @@ const bootstrap = async (): Promise<void> => {
             grounded: standalonePlayerState.grounded,
             facing: standalonePlayerState.facing,
             contacts: {
-              support: contacts.support,
-              wall: contacts.wall,
-              ceiling: contacts.ceiling
+              support: standalonePlayerContacts?.support ?? null,
+              wall: standalonePlayerContacts?.wall ?? null,
+              ceiling: standalonePlayerContacts?.ceiling ?? null
             }
           };
         })()
@@ -1248,7 +1250,8 @@ const bootstrap = async (): Promise<void> => {
     const debugOverlayPlayerIntent = input.getPlayerInputTelemetry();
     renderer.resize();
     renderer.render(camera, {
-      standalonePlayer: standalonePlayerState
+      standalonePlayer: standalonePlayerState,
+      standalonePlayerWallContact: standalonePlayerContacts?.wall ?? null
     });
     hoveredTileCursor.update(camera, {
       hovered: pointerInspect
@@ -1296,9 +1299,13 @@ const bootstrap = async (): Promise<void> => {
   };
 
   const renderWorldPreview = (): void => {
+    const standalonePlayerWallContact = standalonePlayerState
+      ? renderer.getPlayerCollisionContacts(standalonePlayerState).wall
+      : null;
     renderer.resize();
     renderer.render(camera, {
-      standalonePlayer: standalonePlayerState
+      standalonePlayer: standalonePlayerState,
+      standalonePlayerWallContact
     });
   };
 

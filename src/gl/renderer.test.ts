@@ -9,6 +9,7 @@ import {
   STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_JUMP_RISE,
+  STANDALONE_PLAYER_PLACEHOLDER_POSE_WALL_SLIDE,
   STANDALONE_PLAYER_PLACEHOLDER_WALK_FRAME_DURATION_MS
 } from './standalonePlayerPlaceholder';
 
@@ -152,6 +153,7 @@ describe('Renderer atlas telemetry', () => {
     expect(playerProgramFragmentSource).toContain('bool walkPoseB');
     expect(playerProgramFragmentSource).toContain('bool jumpRisePose');
     expect(playerProgramFragmentSource).toContain('bool fallPose');
+    expect(playerProgramFragmentSource).toContain('bool wallSlidePose');
   });
 
   it('records an authored atlas load in telemetry during initialization', async () => {
@@ -395,6 +397,40 @@ describe('Renderer atlas telemetry', () => {
       STANDALONE_PLAYER_PLACEHOLDER_POSE_JUMP_RISE,
       1,
       STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL
+    ]);
+  });
+
+  it('maps airborne wall contact into the wall-slide placeholder pose', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const uniform1f = vi.mocked(gl.uniform1f);
+    uniform1f.mockClear();
+
+    const camera = new Camera2D();
+    const wallSlideState = createPlayerState({
+      grounded: false,
+      velocity: { x: 0, y: -120 }
+    });
+
+    renderer.render(camera, {
+      standalonePlayer: wallSlideState,
+      standalonePlayerWallContact: { tileX: 1, tileY: -1, tileId: 3 },
+      timeMs: 0
+    });
+
+    expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([
+      1,
+      STANDALONE_PLAYER_PLACEHOLDER_POSE_WALL_SLIDE
     ]);
   });
 

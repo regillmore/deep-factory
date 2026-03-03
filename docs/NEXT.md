@@ -42,7 +42,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 66. Surface the in-world recenter-camera shortcut in shell copy once the keyboard action exists.
 67. Surface the in-world debug-HUD shortcut in shell copy once the keyboard action exists.
 68. Surface the in-world spawn-marker shortcut in shell copy once the keyboard action exists.
-74. Pass wall-contact state into the renderer-side standalone player draw pass and add a wall-slide placeholder pose variant so blocked airborne movement reads before sprite assets land.
+76. Pass ceiling-contact state into the renderer-side standalone player draw pass and add a ceiling-bonk placeholder pose variant so upward collisions read before sprite assets land.
 
 ## Player debugging
 

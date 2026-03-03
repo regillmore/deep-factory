@@ -61,6 +61,7 @@ interface MeshBuildRequest {
 
 export interface RendererFrameState {
   standalonePlayer?: PlayerState | null;
+  standalonePlayerWallContact?: PlayerCollisionContacts['wall'] | null;
   timeMs?: number;
 }
 
@@ -215,7 +216,8 @@ export class Renderer {
         bool walkPoseA = u_poseIndex > 0.5 && u_poseIndex < 1.5;
         bool walkPoseB = u_poseIndex > 1.5 && u_poseIndex < 2.5;
         bool jumpRisePose = u_poseIndex > 2.5 && u_poseIndex < 3.5;
-        bool fallPose = u_poseIndex > 3.5;
+        bool fallPose = u_poseIndex > 3.5 && u_poseIndex < 4.5;
+        bool wallSlidePose = u_poseIndex > 4.5;
 
         vec4 head = vec4(0.24, 0.62, 0.76, 0.94);
         vec4 hair = vec4(0.18, 0.80, 0.82, 0.98);
@@ -256,6 +258,14 @@ export class Renderer {
           rightLeg = vec4(0.56, 0.06, 0.70, 0.38);
           leftBoot = vec4(0.28, 0.00, 0.46, 0.08);
           rightBoot = vec4(0.54, 0.00, 0.72, 0.08);
+        } else if (wallSlidePose) {
+          torso = vec4(0.28, 0.32, 0.68, 0.64);
+          leftArm = vec4(0.10, 0.42, 0.24, 0.84);
+          rightArm = vec4(0.70, 0.26, 0.84, 0.56);
+          leftLeg = vec4(0.34, 0.12, 0.50, 0.40);
+          rightLeg = vec4(0.48, 0.20, 0.68, 0.42);
+          leftBoot = vec4(0.32, 0.04, 0.50, 0.12);
+          rightBoot = vec4(0.48, 0.12, 0.70, 0.20);
         }
 
         bool insideHead = inRect(uv, head);
@@ -420,7 +430,12 @@ export class Renderer {
     }
 
     if (frameState.standalonePlayer) {
-      this.drawStandalonePlayer(frameState.standalonePlayer, worldToClipMatrix, timeMs);
+      this.drawStandalonePlayer(
+        frameState.standalonePlayer,
+        frameState.standalonePlayerWallContact ?? null,
+        worldToClipMatrix,
+        timeMs
+      );
     }
 
     gl.bindVertexArray(null);
@@ -655,12 +670,20 @@ export class Renderer {
     this.telemetry.animatedChunkUvUploadBytes += mesh.animatedMesh.vertices.byteLength;
   }
 
-  private drawStandalonePlayer(state: PlayerState, worldToClipMatrix: Float32Array, timeMs: number): void {
+  private drawStandalonePlayer(
+    state: PlayerState,
+    wallContact: PlayerCollisionContacts['wall'] | null,
+    worldToClipMatrix: Float32Array,
+    timeMs: number
+  ): void {
     const gl = this.gl;
     gl.useProgram(this.playerProgram);
     gl.uniformMatrix4fv(this.uPlayerMatrix, false, worldToClipMatrix);
     gl.uniform1f(this.uPlayerFacingSign, getStandalonePlayerPlaceholderFacingSign(state));
-    gl.uniform1f(this.uPlayerPoseIndex, getStandalonePlayerPlaceholderPoseIndex(state, timeMs));
+    gl.uniform1f(
+      this.uPlayerPoseIndex,
+      getStandalonePlayerPlaceholderPoseIndex(state, { elapsedMs: timeMs, wallContact })
+    );
     gl.bindBuffer(gl.ARRAY_BUFFER, this.standalonePlayerBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, buildStandalonePlayerPlaceholderVertices(state), gl.DYNAMIC_DRAW);
     gl.bindVertexArray(this.standalonePlayerVao);
