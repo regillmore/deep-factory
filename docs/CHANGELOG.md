@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-03
 
+- Task: Add a desktop keyboard shortcut that toggles the in-world edit panel without mutating edit or movement intent.
+- Changes: Updated [src/input/debugEditShortcuts.ts](../src/input/debugEditShortcuts.ts) plus [src/input/debugEditShortcuts.test.ts](../src/input/debugEditShortcuts.test.ts) to expose a dedicated `toggle-debug-edit-controls` shortcut action on `G`, wired [src/main.ts](../src/main.ts) to reuse the existing in-world full-panel visibility sync from the global desktop keydown path without touching panel collapse state, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [README.md](../README.md).
+- Verification: Ran `npx vitest run src/input/debugEditShortcuts.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface standalone player ceiling-bonk hold state in the live debug overlay while the renderer-side presentation latch is active.
 - Changes: Updated [src/main.ts](../src/main.ts) to distinguish the brief ceiling-bonk presentation hold from live ceiling contact, extended [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so the text HUD renders a dedicated `BonkHold:` line with `n/a`, `off`, and latched `on` states, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

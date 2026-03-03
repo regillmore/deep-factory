@@ -1079,6 +1079,11 @@ const bootstrap = async (): Promise<void> => {
       debugOverlayVisible = !debugOverlayVisible;
       syncInWorldShellState();
       syncDebugOverlayVisibility();
+    } else if (action.type === 'toggle-debug-edit-controls') {
+      handled = true;
+      debugEditControlsVisible = !debugEditControlsVisible;
+      syncInWorldShellState();
+      syncDebugEditControlsVisibility();
     } else if (action.type === 'toggle-debug-edit-overlays') {
       handled = true;
       debugEditOverlaysVisible = !debugEditOverlaysVisible;

@@ -24,6 +24,7 @@ export type DebugEditShortcutAction =
   | { type: 'return-to-main-menu' }
   | { type: 'recenter-camera' }
   | { type: 'toggle-debug-overlay' }
+  | { type: 'toggle-debug-edit-controls' }
   | { type: 'toggle-debug-edit-overlays' }
   | { type: 'toggle-player-spawn-marker' }
   | { type: 'cancel-armed-tools' }
@@ -92,6 +93,7 @@ export const getDesktopReturnToMainMenuHotkeyLabel = (): string => 'Q';
 export const getDesktopFreshWorldHotkeyLabel = (): string => 'N';
 export const getDesktopRecenterCameraHotkeyLabel = (): string => 'C';
 export const getDesktopDebugOverlayHotkeyLabel = (): string => 'H';
+export const getDesktopDebugEditControlsHotkeyLabel = (): string => 'G';
 export const getDesktopDebugEditOverlaysHotkeyLabel = (): string => 'V';
 export const getDesktopPlayerSpawnMarkerHotkeyLabel = (): string => 'M';
 
@@ -170,6 +172,10 @@ export const resolveDebugEditShortcutAction = (
 
   if (normalizedKey === getDesktopDebugOverlayHotkeyLabel().toLowerCase()) {
     return { type: 'toggle-debug-overlay' };
+  }
+
+  if (normalizedKey === getDesktopDebugEditControlsHotkeyLabel().toLowerCase()) {
+    return { type: 'toggle-debug-edit-controls' };
   }
 
   if (normalizedKey === getDesktopDebugEditOverlaysHotkeyLabel().toLowerCase()) {

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cycleDebugBrushTileId,
   getDesktopDebugOverlayHotkeyLabel,
+  getDesktopDebugEditControlsHotkeyLabel,
   getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopFreshWorldHotkeyLabel,
   getDesktopPlayerSpawnMarkerHotkeyLabel,
@@ -113,6 +114,15 @@ describe('resolveDebugEditShortcutAction', () => {
     });
     expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'H', shiftKey: true }))).toEqual({
       type: 'toggle-debug-overlay'
+    });
+  });
+
+  it('maps G to toggle the full edit panel', () => {
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'g' }))).toEqual({
+      type: 'toggle-debug-edit-controls'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'G', shiftKey: true }))).toEqual({
+      type: 'toggle-debug-edit-controls'
     });
   });
 
@@ -305,6 +315,10 @@ describe('brush shortcut helpers', () => {
 
   it('returns the desktop debug-overlay hotkey label', () => {
     expect(getDesktopDebugOverlayHotkeyLabel()).toBe('H');
+  });
+
+  it('returns the desktop edit-panel hotkey label', () => {
+    expect(getDesktopDebugEditControlsHotkeyLabel()).toBe('G');
   });
 
   it('returns the desktop edit-overlays hotkey label', () => {
