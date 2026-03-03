@@ -32,6 +32,7 @@ export interface DebugEditStatusStripState {
   desktopInspectPinArmed: boolean;
   playerPlaceholderPoseLabel?: string | null;
   playerWorldPosition?: { x: number; y: number } | null;
+  playerAabb?: DebugEditStatusStripPlayerAabbTelemetry | null;
   playerCeilingBonkHoldActive?: boolean | null;
   playerGrounded?: boolean | null;
   playerFacing?: PlayerFacing | null;
@@ -90,6 +91,11 @@ export interface DebugEditStatusStripPlayerRespawnTelemetry {
   spawnTile: { x: number; y: number };
   position: { x: number; y: number };
   velocity: { x: number; y: number };
+}
+
+export interface DebugEditStatusStripPlayerAabbTelemetry {
+  min: { x: number; y: number };
+  max: { x: number; y: number };
 }
 
 export interface DebugEditStatusStripPlayerGroundedTransitionTelemetry {
@@ -506,6 +512,19 @@ const formatLiveWorldPositionText = (
   return `PosNow: ${playerWorldPosition.x.toFixed(2)},${playerWorldPosition.y.toFixed(2)}`;
 };
 
+const formatLiveAabbText = (
+  playerAabb: DebugEditStatusStripPlayerAabbTelemetry | null
+): string | null => {
+  if (playerAabb === null) {
+    return null;
+  }
+
+  return (
+    `AABBNow: min ${playerAabb.min.x.toFixed(2)},${playerAabb.min.y.toFixed(2)} | ` +
+    `max ${playerAabb.max.x.toFixed(2)},${playerAabb.max.y.toFixed(2)}`
+  );
+};
+
 const formatLiveFacingText = (playerFacing: PlayerFacing | null): string | null => {
   if (playerFacing === null) {
     return null;
@@ -589,6 +608,7 @@ const formatLiveCeilingContactText = (
 const buildPlayerText = (
   playerPlaceholderPoseLabel: string | null,
   playerWorldPosition: { x: number; y: number } | null,
+  playerAabb: DebugEditStatusStripPlayerAabbTelemetry | null,
   playerCeilingBonkHoldActive: boolean | null,
   playerGrounded: boolean | null,
   playerFacing: PlayerFacing | null,
@@ -604,6 +624,7 @@ const buildPlayerText = (
   const playerLines = [
     playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : null,
     formatLiveWorldPositionText(playerWorldPosition),
+    formatLiveAabbText(playerAabb),
     formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive),
     formatLiveGroundedText(playerGrounded),
     formatLiveFacingText(playerFacing),
@@ -1101,6 +1122,7 @@ export const buildDebugEditStatusStripModel = (
   const activeToolStatus = resolveActiveDebugToolStatus(state.preview);
   const playerPlaceholderPoseLabel = state.playerPlaceholderPoseLabel ?? null;
   const playerWorldPosition = state.playerWorldPosition ?? null;
+  const playerAabb = state.playerAabb ?? null;
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
   const playerGrounded = state.playerGrounded ?? null;
   const playerFacing = state.playerFacing ?? null;
@@ -1126,6 +1148,7 @@ export const buildDebugEditStatusStripModel = (
     playerText: buildPlayerText(
       playerPlaceholderPoseLabel,
       playerWorldPosition,
+      playerAabb,
       playerCeilingBonkHoldActive,
       playerGrounded,
       playerFacing,

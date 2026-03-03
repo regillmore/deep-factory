@@ -1275,6 +1275,7 @@ const bootstrap = async (): Promise<void> => {
           }
         }
       : null;
+    const standalonePlayerAabb = standalonePlayerState ? getPlayerAabb(standalonePlayerState) : null;
     const debugOverlayPlayerPlaceholderPoseLabel = standalonePlayerState
       ? getStandalonePlayerPlaceholderPoseLabel(standalonePlayerState, {
           elapsedMs: renderTimeMs,
@@ -1283,10 +1284,8 @@ const bootstrap = async (): Promise<void> => {
           ceilingBonkActive: standalonePlayerCeilingBonkActive
         })
       : null;
-    const debugOverlayPlayer = standalonePlayerState
+    const debugOverlayPlayer = standalonePlayerState && standalonePlayerAabb
       ? (() => {
-          const aabb = getPlayerAabb(standalonePlayerState);
-
           return {
             position: {
               x: standalonePlayerState.position.x,
@@ -1298,16 +1297,16 @@ const bootstrap = async (): Promise<void> => {
             },
             aabb: {
               min: {
-                x: aabb.minX,
-                y: aabb.minY
+                x: standalonePlayerAabb.minX,
+                y: standalonePlayerAabb.minY
               },
               max: {
-                x: aabb.maxX,
-                y: aabb.maxY
+                x: standalonePlayerAabb.maxX,
+                y: standalonePlayerAabb.maxY
               },
               size: {
-                x: aabb.maxX - aabb.minX,
-                y: aabb.maxY - aabb.minY
+                x: standalonePlayerAabb.maxX - standalonePlayerAabb.minX,
+                y: standalonePlayerAabb.maxY - standalonePlayerAabb.minY
               }
             },
             grounded: standalonePlayerState.grounded,
@@ -1369,6 +1368,19 @@ const bootstrap = async (): Promise<void> => {
           : {
               x: standalonePlayerState.position.x,
               y: standalonePlayerState.position.y
+            },
+      playerAabb:
+        debugOverlayVisible || !standalonePlayerAabb
+          ? null
+          : {
+              min: {
+                x: standalonePlayerAabb.minX,
+                y: standalonePlayerAabb.minY
+              },
+              max: {
+                x: standalonePlayerAabb.maxX,
+                y: standalonePlayerAabb.maxY
+              }
             },
       playerCeilingBonkHoldActive:
         debugOverlayVisible || !standalonePlayerState ? null : standalonePlayerCeilingBonkHoldActive,

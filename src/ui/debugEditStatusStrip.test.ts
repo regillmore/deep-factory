@@ -111,6 +111,15 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose and live collision AABB min/max player lines while keeping each line individually wrappable', () => {
+    expect(
+      buildWrappedDetailLines('Pose: grounded-idle\nAABBNow: min 18.50,-40.25 | max 30.50,-12.25')
+    ).toEqual([
+      ['Pose: grounded-idle'],
+      ['AABBNow: min 18.50,-40.25', '| max 30.50,-12.25']
+    ]);
+  });
+
   it('preserves separate pose and live facing player lines while keeping each line individually wrappable', () => {
     expect(buildWrappedDetailLines('Pose: grounded-idle\nFacingNow: right')).toEqual([
       ['Pose: grounded-idle'],
@@ -218,14 +227,15 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
-  it('preserves separate pose, input-edge, horizontal and vertical velocity, speed magnitude, and contact player lines while keeping each line individually wrappable', () => {
+  it('preserves separate pose, world-position, collision AABB min/max, input-edge, horizontal and vertical velocity, speed magnitude, and contact player lines while keeping each line individually wrappable', () => {
     expect(
       buildWrappedDetailLines(
-        'Pose: ceiling-bonk\nPosNow: 72.00,-48.00\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nVelYNow: -210.00\nSpeedNow: 276.59\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
+        'Pose: ceiling-bonk\nPosNow: 72.00,-48.00\nAABBNow: min 66.00,-76.00 | max 78.00,-48.00\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nVelYNow: -210.00\nSpeedNow: 276.59\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
       )
     ).toEqual([
       ['Pose: ceiling-bonk'],
       ['PosNow: 72.00,-48.00'],
+      ['AABBNow: min 66.00,-76.00', '| max 78.00,-48.00'],
       ['GroundedNow: off'],
       ['FacingNow: right'],
       ['MoveXNow: 1'],

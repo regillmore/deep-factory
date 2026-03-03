@@ -166,6 +166,25 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats the live standalone player collision AABB min/max for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerAabb: {
+        min: { x: 18.5, y: -40.25 },
+        max: { x: 30.5, y: -12.25 }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('AABBNow: min 18.50,-40.25 | max 30.50,-12.25');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the live standalone player facing direction for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -424,6 +443,28 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('keeps pose and live collision AABB min/max telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'grounded-idle',
+      playerAabb: {
+        min: { x: 18.5, y: -40.25 },
+        max: { x: 30.5, y: -12.25 }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe(
+      'Pose: grounded-idle\nAABBNow: min 18.50,-40.25 | max 30.50,-12.25'
+    );
+    expect(model.eventText).toBeNull();
+  });
+
   it('keeps pose and live facing telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -665,7 +706,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose, grounded, facing, horizontal and vertical velocity, speed magnitude, jump telemetry, and contact telemetry on separate player lines', () => {
+  it('keeps pose, world-position, collision AABB min/max, grounded, facing, horizontal and vertical velocity, speed magnitude, jump telemetry, and contact telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -677,6 +718,10 @@ describe('buildDebugEditStatusStripModel', () => {
       playerWorldPosition: {
         x: 72,
         y: -48
+      },
+      playerAabb: {
+        min: { x: 66, y: -76 },
+        max: { x: 78, y: -48 }
       },
       playerGrounded: false,
       playerFacing: 'right',
@@ -700,6 +745,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.playerText).toBe(
       'Pose: ceiling-bonk\n' +
         'PosNow: 72.00,-48.00\n' +
+        'AABBNow: min 66.00,-76.00 | max 78.00,-48.00\n' +
         'GroundedNow: off\n' +
         'FacingNow: right\n' +
         'MoveXNow: 1\n' +
