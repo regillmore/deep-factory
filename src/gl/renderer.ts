@@ -79,8 +79,10 @@ export interface RenderTelemetry {
   atlasValidationFirstWarning: string | null;
   residentAnimatedChunkMeshes: number;
   residentAnimatedChunkQuadCount: number;
+  residentAnimatedLiquidChunkQuadCount: number;
   animatedChunkUvUploadCount: number;
   animatedChunkUvUploadQuadCount: number;
+  animatedChunkUvUploadLiquidQuadCount: number;
   animatedChunkUvUploadBytes: number;
   renderedChunks: number;
   drawCalls: number;
@@ -137,8 +139,10 @@ export class Renderer {
     atlasValidationFirstWarning: null,
     residentAnimatedChunkMeshes: 0,
     residentAnimatedChunkQuadCount: 0,
+    residentAnimatedLiquidChunkQuadCount: 0,
     animatedChunkUvUploadCount: 0,
     animatedChunkUvUploadQuadCount: 0,
+    animatedChunkUvUploadLiquidQuadCount: 0,
     animatedChunkUvUploadBytes: 0,
     renderedChunks: 0,
     drawCalls: 0,
@@ -402,6 +406,7 @@ export class Renderer {
     const timeMs = frameState.timeMs ?? performance.now();
     this.telemetry.animatedChunkUvUploadCount = 0;
     this.telemetry.animatedChunkUvUploadQuadCount = 0;
+    this.telemetry.animatedChunkUvUploadLiquidQuadCount = 0;
     this.telemetry.animatedChunkUvUploadBytes = 0;
     this.telemetry.renderedChunks = 0;
     this.telemetry.drawCalls = 0;
@@ -495,8 +500,10 @@ export class Renderer {
     this.telemetry.evictedMeshEntries = 0;
     this.telemetry.residentAnimatedChunkMeshes = 0;
     this.telemetry.residentAnimatedChunkQuadCount = 0;
+    this.telemetry.residentAnimatedLiquidChunkQuadCount = 0;
     this.telemetry.animatedChunkUvUploadCount = 0;
     this.telemetry.animatedChunkUvUploadQuadCount = 0;
+    this.telemetry.animatedChunkUvUploadLiquidQuadCount = 0;
     this.telemetry.animatedChunkUvUploadBytes = 0;
   }
 
@@ -689,15 +696,16 @@ export class Renderer {
       return;
     }
 
-    const changedQuadCount = applyAnimatedChunkMeshFrameAtElapsedMs(mesh.animatedMesh, timeMs, TILE_METADATA);
-    if (changedQuadCount === 0) {
+    const changedFrame = applyAnimatedChunkMeshFrameAtElapsedMs(mesh.animatedMesh, timeMs, TILE_METADATA);
+    if (changedFrame.changedQuadCount === 0) {
       return;
     }
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer);
     this.gl.bufferData(this.gl.ARRAY_BUFFER, mesh.animatedMesh.vertices, this.gl.DYNAMIC_DRAW);
     this.telemetry.animatedChunkUvUploadCount += 1;
-    this.telemetry.animatedChunkUvUploadQuadCount += changedQuadCount;
+    this.telemetry.animatedChunkUvUploadQuadCount += changedFrame.changedQuadCount;
+    this.telemetry.animatedChunkUvUploadLiquidQuadCount += changedFrame.changedLiquidQuadCount;
     this.telemetry.animatedChunkUvUploadBytes += mesh.animatedMesh.vertices.byteLength;
   }
 
@@ -734,6 +742,7 @@ export class Renderer {
   private updateAnimatedChunkResidencyTelemetry(): void {
     let residentAnimatedChunkMeshes = 0;
     let residentAnimatedChunkQuadCount = 0;
+    let residentAnimatedLiquidChunkQuadCount = 0;
 
     for (const cached of this.meshes.values()) {
       if (cached.state !== 'ready' || !cached.mesh?.animatedMesh) {
@@ -741,11 +750,17 @@ export class Renderer {
       }
 
       residentAnimatedChunkMeshes += 1;
-      residentAnimatedChunkQuadCount += cached.mesh.animatedMesh.animatedTiles.length;
+      for (const animatedTile of cached.mesh.animatedMesh.animatedTiles) {
+        residentAnimatedChunkQuadCount += 1;
+        if (animatedTile.liquidCardinalMask !== undefined) {
+          residentAnimatedLiquidChunkQuadCount += 1;
+        }
+      }
     }
 
     this.telemetry.residentAnimatedChunkMeshes = residentAnimatedChunkMeshes;
     this.telemetry.residentAnimatedChunkQuadCount = residentAnimatedChunkQuadCount;
+    this.telemetry.residentAnimatedLiquidChunkQuadCount = residentAnimatedLiquidChunkQuadCount;
   }
 
   private pruneStreamingCaches(retainBounds: ChunkBounds): void {

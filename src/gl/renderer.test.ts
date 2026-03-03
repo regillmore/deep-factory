@@ -129,8 +129,10 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.atlasValidationFirstWarning).toBeNull();
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(0);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(0);
+    expect(renderer.telemetry.residentAnimatedLiquidChunkQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadLiquidQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
   });
 
@@ -258,6 +260,7 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.getTile(0, 0)).toBe(5);
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+    expect(renderer.telemetry.residentAnimatedLiquidChunkQuadCount).toBe(0);
 
     const deleteBuffer = vi.mocked(gl.deleteBuffer);
     const deleteVertexArray = vi.mocked(gl.deleteVertexArray);
@@ -270,6 +273,7 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.getTile(0, 0)).toBe(1);
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(0);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(0);
+    expect(renderer.telemetry.residentAnimatedLiquidChunkQuadCount).toBe(0);
     expect(deleteBuffer).toHaveBeenCalled();
     expect(deleteVertexArray).toHaveBeenCalled();
   });
@@ -562,6 +566,7 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.meshBuildQueueLength).toBe(0);
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+    expect(renderer.telemetry.residentAnimatedLiquidChunkQuadCount).toBe(0);
 
     const bufferData = vi.mocked(gl.bufferData);
     bufferData.mockClear();
@@ -571,8 +576,10 @@ describe('Renderer atlas telemetry', () => {
     expect(bufferData).not.toHaveBeenCalled();
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+    expect(renderer.telemetry.residentAnimatedLiquidChunkQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadLiquidQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
 
     renderer.render(camera, { timeMs: 180 });
@@ -586,16 +593,20 @@ describe('Renderer atlas telemetry', () => {
     ]);
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadLiquidQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameOneVertices?.byteLength ?? 0);
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+    expect(renderer.telemetry.residentAnimatedLiquidChunkQuadCount).toBe(0);
 
     renderer.render(camera, { timeMs: 359 });
     expect(bufferData).toHaveBeenCalledTimes(1);
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+    expect(renderer.telemetry.residentAnimatedLiquidChunkQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadLiquidQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
 
     renderer.render(camera, { timeMs: 360 });
@@ -608,9 +619,11 @@ describe('Renderer atlas telemetry', () => {
     ]);
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadLiquidQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameZeroVertices?.byteLength ?? 0);
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+    expect(renderer.telemetry.residentAnimatedLiquidChunkQuadCount).toBe(0);
     performanceNowSpy.mockRestore();
   });
 
@@ -636,6 +649,7 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.meshBuildQueueLength).toBe(0);
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+    expect(renderer.telemetry.residentAnimatedLiquidChunkQuadCount).toBe(0);
 
     const bufferData = vi.mocked(gl.bufferData);
     bufferData.mockClear();
@@ -645,6 +659,7 @@ describe('Renderer atlas telemetry', () => {
     expect(bufferData).not.toHaveBeenCalled();
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadLiquidQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
 
     renderer.render(camera, { timeMs: 180 });
@@ -663,12 +678,14 @@ describe('Renderer atlas telemetry', () => {
     ]);
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadLiquidQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameOneVertices?.byteLength ?? 0);
 
     renderer.render(camera, { timeMs: 359 });
     expect(bufferData).toHaveBeenCalledTimes(1);
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadLiquidQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
 
     renderer.render(camera, { timeMs: 360 });
@@ -686,6 +703,7 @@ describe('Renderer atlas telemetry', () => {
     ]);
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadLiquidQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameZeroVertices?.byteLength ?? 0);
     performanceNowSpy.mockRestore();
   });

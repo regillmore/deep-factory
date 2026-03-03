@@ -14,8 +14,10 @@ export interface DebugOverlayStats {
   atlasValidationFirstWarning: string | null;
   residentAnimatedChunkMeshes: number;
   residentAnimatedChunkQuadCount: number;
+  residentAnimatedLiquidChunkQuadCount: number;
   animatedChunkUvUploadCount: number;
   animatedChunkUvUploadQuadCount: number;
+  animatedChunkUvUploadLiquidQuadCount: number;
   animatedChunkUvUploadBytes: number;
   renderedChunks: number;
   drawCalls: number;
@@ -435,11 +437,15 @@ const formatPlayerCeilingContactTransitionLine = (
 const formatAnimatedChunkUvUploadLine = (stats: DebugOverlayStats): string =>
   `AnimUV: uploads:${stats.animatedChunkUvUploadCount} | ` +
   `quads:${stats.animatedChunkUvUploadQuadCount} | ` +
+  `nonLiquid:${Math.max(0, stats.animatedChunkUvUploadQuadCount - stats.animatedChunkUvUploadLiquidQuadCount)} | ` +
+  `liquid:${stats.animatedChunkUvUploadLiquidQuadCount} | ` +
   `bytes:${stats.animatedChunkUvUploadBytes}`;
 
 const formatAnimatedChunkResidencyLine = (stats: DebugOverlayStats): string =>
   `AnimMesh: chunks:${stats.residentAnimatedChunkMeshes} | ` +
-  `quads:${stats.residentAnimatedChunkQuadCount}`;
+  `quads:${stats.residentAnimatedChunkQuadCount} | ` +
+  `nonLiquid:${Math.max(0, stats.residentAnimatedChunkQuadCount - stats.residentAnimatedLiquidChunkQuadCount)} | ` +
+  `liquid:${stats.residentAnimatedLiquidChunkQuadCount}`;
 
 export const formatDebugOverlayText = (
   fps: number,

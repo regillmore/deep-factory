@@ -10,8 +10,10 @@ const baseStats: DebugOverlayStats = {
   atlasValidationFirstWarning: null,
   residentAnimatedChunkMeshes: 0,
   residentAnimatedChunkQuadCount: 0,
+  residentAnimatedLiquidChunkQuadCount: 0,
   animatedChunkUvUploadCount: 0,
   animatedChunkUvUploadQuadCount: 0,
+  animatedChunkUvUploadLiquidQuadCount: 0,
   animatedChunkUvUploadBytes: 0,
   renderedChunks: 4,
   drawCalls: 4,
@@ -46,8 +48,8 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nFollow: n/a');
     expect(text).toContain('\nContact: n/a');
     expect(text).toContain('\nIntent: n/a');
-    expect(text).toContain('\nAnimMesh: chunks:0 | quads:0');
-    expect(text).toContain('\nAnimUV: uploads:0 | quads:0 | bytes:0');
+    expect(text).toContain('\nAnimMesh: chunks:0 | quads:0 | nonLiquid:0 | liquid:0');
+    expect(text).toContain('\nAnimUV: uploads:0 | quads:0 | nonLiquid:0 | liquid:0 | bytes:0');
     expect(text).toContain('Draws: 4/256 (OK)');
     expect(text).toContain('\nPtr: n/a');
   });
@@ -315,12 +317,13 @@ describe('formatDebugOverlayText', () => {
         ...baseStats,
         animatedChunkUvUploadCount: 2,
         animatedChunkUvUploadQuadCount: 5,
+        animatedChunkUvUploadLiquidQuadCount: 2,
         animatedChunkUvUploadBytes: 3072
       },
       null
     );
 
-    expect(text).toContain('\nAnimUV: uploads:2 | quads:5 | bytes:3072');
+    expect(text).toContain('\nAnimUV: uploads:2 | quads:5 | nonLiquid:3 | liquid:2 | bytes:3072');
   });
 
   it('shows resident animated chunk mesh footprint telemetry even without uv uploads', () => {
@@ -329,13 +332,14 @@ describe('formatDebugOverlayText', () => {
       {
         ...baseStats,
         residentAnimatedChunkMeshes: 3,
-        residentAnimatedChunkQuadCount: 11
+        residentAnimatedChunkQuadCount: 11,
+        residentAnimatedLiquidChunkQuadCount: 4
       },
       null
     );
 
-    expect(text).toContain('\nAnimMesh: chunks:3 | quads:11');
-    expect(text).toContain('\nAnimUV: uploads:0 | quads:0 | bytes:0');
+    expect(text).toContain('\nAnimMesh: chunks:3 | quads:11 | nonLiquid:7 | liquid:4');
+    expect(text).toContain('\nAnimUV: uploads:0 | quads:0 | nonLiquid:0 | liquid:0 | bytes:0');
   });
 
   it('shows pinned tile metadata even when no live pointer snapshot is available', () => {

@@ -17,6 +17,11 @@ export interface AnimatedChunkMeshState {
   animatedTiles: AnimatedChunkTileState[];
 }
 
+export interface AnimatedChunkMeshFrameApplyResult {
+  changedQuadCount: number;
+  changedLiquidQuadCount: number;
+}
+
 const setTileQuadUvRect = (
   vertices: Float32Array,
   vertexFloatOffset: number,
@@ -61,8 +66,9 @@ export const applyAnimatedChunkMeshFrameAtElapsedMs = (
   animatedMesh: AnimatedChunkMeshState,
   elapsedMs: number,
   registry: TileMetadataRegistry = TILE_METADATA
-): number => {
+): AnimatedChunkMeshFrameApplyResult => {
   let changedTileCount = 0;
+  let changedLiquidTileCount = 0;
 
   for (const animatedTile of animatedMesh.animatedTiles) {
     const nextFrameIndex =
@@ -94,7 +100,13 @@ export const applyAnimatedChunkMeshFrameAtElapsedMs = (
     setTileQuadUvRect(animatedMesh.vertices, animatedTile.vertexFloatOffset, uvRect);
     animatedTile.frameIndex = nextFrameIndex;
     changedTileCount += 1;
+    if (animatedTile.liquidCardinalMask !== undefined) {
+      changedLiquidTileCount += 1;
+    }
   }
 
-  return changedTileCount;
+  return {
+    changedQuadCount: changedTileCount,
+    changedLiquidQuadCount: changedLiquidTileCount
+  };
 };

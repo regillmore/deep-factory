@@ -65,13 +65,22 @@ describe('animated chunk mesh helpers', () => {
       throw new Error('expected animated mesh state');
     }
 
-    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 0, registry)).toBe(0);
+    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 0, registry)).toEqual({
+      changedQuadCount: 0,
+      changedLiquidQuadCount: 0
+    });
     expect(animatedMesh.animatedTiles[0]?.frameIndex).toBe(0);
 
-    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 179, registry)).toBe(0);
+    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 179, registry)).toEqual({
+      changedQuadCount: 0,
+      changedLiquidQuadCount: 0
+    });
     expect(animatedMesh.animatedTiles[0]?.frameIndex).toBe(0);
 
-    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 180, registry)).toBe(1);
+    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 180, registry)).toEqual({
+      changedQuadCount: 1,
+      changedLiquidQuadCount: 0
+    });
     expect(animatedMesh.animatedTiles[0]?.frameIndex).toBe(1);
     expect(Array.from(vertices.slice(2, 4))).toEqual([
       toFloat32(atlasIndexToUvRect(15).u0),
@@ -82,8 +91,14 @@ describe('animated chunk mesh helpers', () => {
       toFloat32(atlasIndexToUvRect(15).v1)
     ]);
 
-    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 359, registry)).toBe(0);
-    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 360, registry)).toBe(1);
+    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 359, registry)).toEqual({
+      changedQuadCount: 0,
+      changedLiquidQuadCount: 0
+    });
+    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 360, registry)).toEqual({
+      changedQuadCount: 1,
+      changedLiquidQuadCount: 0
+    });
     expect(animatedMesh.animatedTiles[0]?.frameIndex).toBe(0);
     expect(Array.from(vertices.slice(2, 4))).toEqual([
       toFloat32(atlasIndexToUvRect(14).u0),
@@ -122,17 +137,26 @@ describe('animated chunk mesh helpers', () => {
       throw new Error('expected animated mesh state');
     }
 
-    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 0, registry)).toBe(0);
+    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 0, registry)).toEqual({
+      changedQuadCount: 0,
+      changedLiquidQuadCount: 0
+    });
     expect(animatedMesh.animatedTiles[0]?.frameIndex).toBe(0);
 
-    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 180, registry)).toBe(1);
+    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 180, registry)).toEqual({
+      changedQuadCount: 1,
+      changedLiquidQuadCount: 1
+    });
     expect(animatedMesh.animatedTiles[0]?.frameIndex).toBe(1);
     expect(Array.from(vertices.slice(2, 4))).toEqual([
       toFloat32(atlasIndexToUvRect(15).u0),
       toFloat32(atlasIndexToUvRect(15).v0)
     ]);
 
-    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 360, registry)).toBe(1);
+    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 360, registry)).toEqual({
+      changedQuadCount: 1,
+      changedLiquidQuadCount: 1
+    });
     expect(animatedMesh.animatedTiles[0]?.frameIndex).toBe(0);
     expect(Array.from(vertices.slice(22, 24))).toEqual([
       toFloat32(atlasIndexToUvRect(14).u0),
