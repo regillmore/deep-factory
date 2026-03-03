@@ -80,6 +80,7 @@ export interface TileTerrainConnectivityLookup {
 
 export interface TileLiquidConnectivityLookup {
   connectivityGroupIdByTileId: Int32Array;
+  connectivityGroupLabelByTileId: readonly (string | null)[];
 }
 
 export interface TileRenderLookup {
@@ -434,6 +435,7 @@ const TERRAIN_CONNECTIVITY_GROUP_ID_NON_TERRAIN = -1;
 const TERRAIN_CONNECTIVITY_GROUP_ID_UNGROUPED_TERRAIN = -2;
 const LIQUID_CONNECTIVITY_GROUP_ID_NON_LIQUID = -1;
 const LIQUID_CONNECTIVITY_GROUP_ID_UNGROUPED_LIQUID = -2;
+const LIQUID_CONNECTIVITY_GROUP_LABEL_UNGROUPED = 'ungrouped';
 
 const encodeTileLiquidKindCode = (liquidKind: TileLiquidKind | undefined): number => {
   switch (liquidKind) {
@@ -575,6 +577,7 @@ const buildTileLiquidConnectivityLookup = (
 
   const connectivityGroupIdByTileId = new Int32Array(maxTileId + 1);
   connectivityGroupIdByTileId.fill(LIQUID_CONNECTIVITY_GROUP_ID_NON_LIQUID);
+  const connectivityGroupLabelByTileId = Array<string | null>(maxTileId + 1).fill(null);
 
   for (const tile of tiles) {
     const liquidRender = tile.liquidRender;
@@ -585,10 +588,13 @@ const buildTileLiquidConnectivityLookup = (
       connectivityGroup === undefined
         ? LIQUID_CONNECTIVITY_GROUP_ID_UNGROUPED_LIQUID
         : (connectivityGroupIdByName.get(connectivityGroup) ?? LIQUID_CONNECTIVITY_GROUP_ID_NON_LIQUID);
+    connectivityGroupLabelByTileId[tile.id] =
+      connectivityGroup ?? LIQUID_CONNECTIVITY_GROUP_LABEL_UNGROUPED;
   }
 
   return {
-    connectivityGroupIdByTileId
+    connectivityGroupIdByTileId,
+    connectivityGroupLabelByTileId
   };
 };
 
@@ -745,6 +751,18 @@ const getLiquidConnectivityGroupId = (tileId: number, registry: TileMetadataRegi
   }
 
   return connectivityGroupIdByTileId[tileId];
+};
+
+const getLiquidConnectivityGroupLabelFromLookup = (
+  tileId: number,
+  registry: TileMetadataRegistry
+): string | null => {
+  const { connectivityGroupLabelByTileId } = registry.liquidConnectivityLookup;
+  if (!isDenseLookupTileIdInRange(tileId, connectivityGroupLabelByTileId.length)) {
+    return null;
+  }
+
+  return connectivityGroupLabelByTileId[tileId] ?? null;
 };
 
 const getTerrainMaterialTagMask = (tileId: number, registry: TileMetadataRegistry): bigint => {
@@ -1201,6 +1219,11 @@ export const describeLiquidRenderVariantSource = (
   registry: TileMetadataRegistry = TILE_METADATA
 ): string | null =>
   describeTileRenderFrameSource(resolveLiquidRenderVariantMetadata(tileId, cardinalMask, registry));
+
+export const describeLiquidConnectivityGroup = (
+  tileId: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): string | null => getLiquidConnectivityGroupLabelFromLookup(tileId, registry);
 
 export const describeLiquidRenderVariantUvRect = (
   tileId: number,

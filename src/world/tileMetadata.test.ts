@@ -7,6 +7,7 @@ import {
 } from './autotile';
 import { AUTHORED_ATLAS_REGION_COUNT } from './authoredAtlasLayout';
 import {
+  describeLiquidConnectivityGroup,
   describeLiquidRenderVariantPixelBounds,
   describeLiquidRenderVariantUvRect,
   describeLiquidRenderVariantSource,
@@ -509,6 +510,49 @@ describe('tile metadata loader', () => {
     expect(describeLiquidRenderVariantPixelBounds(20, LIQUID_RENDER_CARDINAL_MASK_COUNT, 96, 64, registry)).toBe(
       null
     );
+  });
+
+  it('describes resolved liquid connectivity-group labels for grouped and ungrouped liquid tiles', () => {
+    const registry = parseTileMetadataRegistry({
+      tiles: [
+        {
+          id: 0,
+          name: 'empty',
+          gameplay: { solid: false, blocksLight: false }
+        },
+        {
+          id: 12,
+          name: 'water_grouped',
+          gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
+          liquidRender: {
+            connectivityGroup: 'water',
+            variantRenderByCardinalMask: Array.from({ length: LIQUID_RENDER_CARDINAL_MASK_COUNT }, () => ({
+              atlasIndex: 0
+            }))
+          }
+        },
+        {
+          id: 20,
+          name: 'lava_ungrouped',
+          gameplay: { solid: false, blocksLight: true, liquidKind: 'lava' },
+          liquidRender: {
+            variantRenderByCardinalMask: Array.from({ length: LIQUID_RENDER_CARDINAL_MASK_COUNT }, () => ({
+              atlasIndex: 1
+            }))
+          }
+        },
+        {
+          id: 30,
+          name: 'stone',
+          gameplay: { solid: true, blocksLight: true },
+          render: { atlasIndex: 2 }
+        }
+      ]
+    });
+
+    expect(describeLiquidConnectivityGroup(12, registry)).toBe('water');
+    expect(describeLiquidConnectivityGroup(20, registry)).toBe('ungrouped');
+    expect(describeLiquidConnectivityGroup(30, registry)).toBe(null);
   });
 
   it('describes tile uv rects with compact rounded coordinates', () => {

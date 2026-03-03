@@ -76,6 +76,7 @@ import {
   type PlayerState
 } from './world/playerState';
 import {
+  describeLiquidConnectivityGroup,
   describeLiquidRenderVariantPixelBounds,
   describeLiquidRenderVariantSource,
   describeLiquidRenderVariantUvRect,
@@ -969,6 +970,7 @@ const bootstrap = async (): Promise<void> => {
     const atlasHeight = renderer.telemetry.atlasHeight;
 
     return {
+      liquidConnectivityGroupLabel: describeLiquidConnectivityGroup(tileId),
       liquidCardinalMask,
       liquidVariantSource:
         typeof liquidCardinalMask === 'number'
@@ -1193,6 +1195,7 @@ const bootstrap = async (): Promise<void> => {
           solid: hoveredDebugTileStatus?.solid,
           blocksLight: hoveredDebugTileStatus?.blocksLight,
           liquidKind: hoveredDebugTileStatus?.liquidKind ?? null,
+          liquidConnectivityGroupLabel: hoveredDebugTileStatus?.liquidConnectivityGroupLabel ?? null,
           liquidCardinalMask: hoveredDebugTileStatus?.liquidCardinalMask ?? null,
           liquidVariantSource: hoveredDebugTileStatus?.liquidVariantSource ?? null,
           liquidVariantUvRect: hoveredDebugTileStatus?.liquidVariantUvRect ?? null,
@@ -1210,6 +1213,7 @@ const bootstrap = async (): Promise<void> => {
           solid: pinnedDebugTileStatus.solid,
           blocksLight: pinnedDebugTileStatus.blocksLight,
           liquidKind: pinnedDebugTileStatus.liquidKind,
+          liquidConnectivityGroupLabel: pinnedDebugTileStatus.liquidConnectivityGroupLabel ?? null,
           liquidCardinalMask: pinnedDebugTileStatus.liquidCardinalMask ?? null,
           liquidVariantSource: pinnedDebugTileStatus.liquidVariantSource ?? null,
           liquidVariantUvRect: pinnedDebugTileStatus.liquidVariantUvRect ?? null,

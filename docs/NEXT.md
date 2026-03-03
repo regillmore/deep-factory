@@ -8,7 +8,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 11. Animate liquid tiles in the renderer from metadata-driven frame sequences.
 93. Populate distinct placeholder water and lava edge or surface liquid variant sources now that liquid masks resolve.
-99. Surface the resolved liquid connectivity-group label in debug inspect readouts for hovered liquid tiles.
+100. Surface the resolved liquid animation frame index in debug inspect readouts once task 11 adds liquid frame resolution.
 
 ## Lighting
 

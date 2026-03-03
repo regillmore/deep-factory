@@ -158,6 +158,7 @@ describe('formatDebugOverlayText', () => {
         solid: false,
         blocksLight: false,
         liquidKind: 'water',
+        liquidConnectivityGroupLabel: 'water',
         liquidCardinalMask: 11,
         liquidVariantSource: 'atlasIndex 14',
         liquidVariantUvRect: '0.333,0.75..0.5,1',
@@ -179,6 +180,7 @@ describe('formatDebugOverlayText', () => {
 
     expect(text).toContain('Tile:water (#7)');
     expect(text).toContain('liquid:water');
+    expect(text).toContain('liquidGroup:water');
     expect(text).toContain('liquidMask:NE-W (11)');
     expect(text).toContain('liquidSrc:atlasIndex 14');
     expect(text).toContain('liquidUv:0.333,0.75..0.5,1');
@@ -316,6 +318,7 @@ describe('formatDebugOverlayText', () => {
         solid: true,
         blocksLight: false,
         liquidKind: 'water',
+        liquidConnectivityGroupLabel: 'water',
         liquidCardinalMask: 13,
         liquidVariantSource: 'atlasIndex 14',
         liquidVariantUvRect: '0.333,0.75..0.5,1',
@@ -331,6 +334,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('solid:on');
     expect(text).toContain('light:off');
     expect(text).toContain('liquid:water');
+    expect(text).toContain('liquidGroup:water');
     expect(text).toContain('liquidMask:N-SW (13)');
     expect(text).toContain('liquidSrc:atlasIndex 14');
     expect(text).toContain('liquidUv:0.333,0.75..0.5,1');
@@ -401,6 +405,7 @@ describe('formatDebugOverlayText', () => {
         solid: false,
         blocksLight: false,
         liquidKind: 'lava',
+        liquidConnectivityGroupLabel: 'lava',
         liquidCardinalMask: 6,
         liquidVariantSource: 'atlasIndex 15',
         liquidVariantUvRect: '0.5,0.75..0.667,1',
@@ -422,6 +427,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('Ch:-1,2');
     expect(text).toContain('L:31,1');
     expect(text).toContain('liquid:lava');
+    expect(text).toContain('liquidGroup:lava');
     expect(text).toContain('liquidMask:-ES- (6)');
     expect(text).toContain('liquidSrc:atlasIndex 15');
     expect(text).toContain('liquidUv:0.5,0.75..0.667,1');

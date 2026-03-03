@@ -37,6 +37,7 @@ export interface DebugOverlayPointerInspect {
   solid?: boolean;
   blocksLight?: boolean;
   liquidKind?: TileLiquidKind | null;
+  liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
@@ -54,6 +55,7 @@ export interface DebugOverlayTileInspect {
   solid?: boolean;
   blocksLight?: boolean;
   liquidKind?: TileLiquidKind | null;
+  liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
@@ -205,6 +207,10 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string =>
     ? ` | solid:${formatGameplayFlag(tileInspect.solid)}` +
       ` | light:${formatGameplayFlag(tileInspect.blocksLight)}` +
       ` | liquid:${tileInspect.liquidKind ?? 'none'}` +
+      (typeof tileInspect.liquidConnectivityGroupLabel === 'string' &&
+      tileInspect.liquidConnectivityGroupLabel.length > 0
+        ? ` | liquidGroup:${tileInspect.liquidConnectivityGroupLabel}`
+        : '') +
       (typeof tileInspect.liquidCardinalMask === 'number'
         ? ` | liquidMask:${formatLiquidCardinalMask(tileInspect.liquidCardinalMask)}`
         : '') +

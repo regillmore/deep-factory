@@ -77,6 +77,7 @@ export interface DebugEditHoveredTileState {
   solid: boolean;
   blocksLight: boolean;
   liquidKind: TileLiquidKind | null;
+  liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
@@ -420,6 +421,9 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
   ` | solid:${formatHoveredTileFlag(tile.solid)}` +
   ` | light:${formatHoveredTileFlag(tile.blocksLight)}` +
   ` | liquid:${tile.liquidKind ?? 'none'}` +
+  (typeof tile.liquidConnectivityGroupLabel === 'string' && tile.liquidConnectivityGroupLabel.length > 0
+    ? ` | liquidGroup:${tile.liquidConnectivityGroupLabel}`
+    : '') +
   (typeof tile.liquidCardinalMask === 'number'
     ? ` | liquidMask:${formatLiquidCardinalMask(tile.liquidCardinalMask)}`
     : '') +
