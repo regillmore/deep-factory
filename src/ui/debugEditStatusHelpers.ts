@@ -9,6 +9,7 @@ import {
   type TouchDebugEditMode
 } from '../input/controller';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
+import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
 import type { PlayerRespawnEventKind } from '../world/playerRespawnEvent';
 import type { PlayerWallContactTransitionKind } from '../world/playerWallContactTransition';
 import type { TileLiquidKind } from '../world/tileMetadata';
@@ -27,6 +28,7 @@ export interface DebugEditStatusStripState {
   hoveredTile: DebugEditHoveredTileState | null;
   pinnedTile: DebugEditHoveredTileState | null;
   desktopInspectPinArmed: boolean;
+  playerGroundedTransition?: DebugEditStatusStripPlayerGroundedTransitionTelemetry | null;
   playerRespawn?: DebugEditStatusStripPlayerRespawnTelemetry | null;
   playerWallContactTransition?: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null;
   playerCeilingContactTransition?: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null;
@@ -64,6 +66,12 @@ export interface DebugEditHoveredTileState {
 export interface DebugEditStatusStripPlayerRespawnTelemetry {
   kind: PlayerRespawnEventKind;
   spawnTile: { x: number; y: number };
+  position: { x: number; y: number };
+  velocity: { x: number; y: number };
+}
+
+export interface DebugEditStatusStripPlayerGroundedTransitionTelemetry {
+  kind: PlayerGroundedTransitionKind;
   position: { x: number; y: number };
   velocity: { x: number; y: number };
 }
@@ -387,6 +395,20 @@ const formatRespawnEventText = (
   );
 };
 
+const formatGroundedTransitionEventText = (
+  playerGroundedTransition: DebugEditStatusStripPlayerGroundedTransitionTelemetry | null
+): string | null => {
+  if (!playerGroundedTransition) {
+    return null;
+  }
+
+  return (
+    `Ground: ${playerGroundedTransition.kind} | ` +
+    `pos ${playerGroundedTransition.position.x.toFixed(2)},${playerGroundedTransition.position.y.toFixed(2)} | ` +
+    `vel ${playerGroundedTransition.velocity.x.toFixed(2)},${playerGroundedTransition.velocity.y.toFixed(2)}`
+  );
+};
+
 const formatWallContactTransitionEventText = (
   playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null
 ): string | null => {
@@ -424,11 +446,13 @@ const formatCeilingContactTransitionEventText = (
 };
 
 const buildEventText = (
+  playerGroundedTransition: DebugEditStatusStripPlayerGroundedTransitionTelemetry | null,
   playerRespawn: DebugEditStatusStripPlayerRespawnTelemetry | null,
   playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null,
   playerCeilingContactTransition: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null
 ): string | null => {
   const eventLines = [
+    formatGroundedTransitionEventText(playerGroundedTransition),
     formatRespawnEventText(playerRespawn),
     formatWallContactTransitionEventText(playerWallContactTransition),
     formatCeilingContactTransitionEventText(playerCeilingContactTransition)
@@ -833,6 +857,7 @@ export const buildDebugEditStatusStripModel = (
   state: DebugEditStatusStripState
 ): DebugEditStatusStripModel => {
   const activeToolStatus = resolveActiveDebugToolStatus(state.preview);
+  const playerGroundedTransition = state.playerGroundedTransition ?? null;
   const playerRespawn = state.playerRespawn ?? null;
   const playerWallContactTransition = state.playerWallContactTransition ?? null;
   const playerCeilingContactTransition = state.playerCeilingContactTransition ?? null;
@@ -843,6 +868,7 @@ export const buildDebugEditStatusStripModel = (
     toolText: activeToolStatus ? `Tool: ${activeToolStatus.title}` : 'Tool: No one-shot armed',
     previewText: buildPreviewText(state.preview, state.hoveredTile),
     eventText: buildEventText(
+      playerGroundedTransition,
       playerRespawn,
       playerWallContactTransition,
       playerCeilingContactTransition

@@ -134,6 +134,25 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBe('Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00');
   });
 
+  it('formats the latest grounded-transition event for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerGroundedTransition: {
+        kind: 'landing',
+        position: { x: 80, y: -16 },
+        velocity: { x: 30, y: 0 }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.eventText).toBe('Ground: landing | pos 80.00,-16.00 | vel 30.00,0.00');
+  });
+
   it('formats the latest wall-contact transition event for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -174,7 +193,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBe('Ceiling: blocked | tile 2,-6 (#8) | pos 72.00,-48.00 | vel 15.00,-210.00');
   });
 
-  it('keeps respawn and wall-contact telemetry on separate wrap-friendly event lines', () => {
+  it('keeps grounded and respawn telemetry on separate wrap-friendly event lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -182,6 +201,39 @@ describe('buildDebugEditStatusStripModel', () => {
       hoveredTile: null,
       pinnedTile: null,
       desktopInspectPinArmed: false,
+      playerGroundedTransition: {
+        kind: 'fall',
+        position: { x: 40, y: -8 },
+        velocity: { x: 60, y: 90 }
+      },
+      playerRespawn: {
+        kind: 'embedded',
+        spawnTile: { x: 3, y: -2 },
+        position: { x: 56, y: -32 },
+        velocity: { x: 0, y: 0 }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.eventText).toBe(
+      'Ground: fall | pos 40.00,-8.00 | vel 60.00,90.00\n' +
+        'Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00'
+    );
+  });
+
+  it('keeps grounded, respawn, and wall-contact telemetry on separate wrap-friendly event lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerGroundedTransition: {
+        kind: 'fall',
+        position: { x: 40, y: -8 },
+        velocity: { x: 60, y: 90 }
+      },
       playerRespawn: {
         kind: 'embedded',
         spawnTile: { x: 3, y: -2 },
@@ -198,12 +250,13 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.eventText).toBe(
-      'Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
+      'Ground: fall | pos 40.00,-8.00 | vel 60.00,90.00\n' +
+        'Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
         'Wall: cleared | tile -1,-2 (#4) | pos 64.00,-16.00 | vel 120.00,0.00'
     );
   });
 
-  it('keeps respawn, wall-contact, and ceiling-contact telemetry on separate wrap-friendly event lines', () => {
+  it('keeps grounded, respawn, wall-contact, and ceiling-contact telemetry on separate wrap-friendly event lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -211,6 +264,11 @@ describe('buildDebugEditStatusStripModel', () => {
       hoveredTile: null,
       pinnedTile: null,
       desktopInspectPinArmed: false,
+      playerGroundedTransition: {
+        kind: 'jump',
+        position: { x: 56, y: -48 },
+        velocity: { x: 20, y: -180 }
+      },
       playerRespawn: {
         kind: 'embedded',
         spawnTile: { x: 3, y: -2 },
@@ -233,7 +291,8 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.eventText).toBe(
-      'Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
+      'Ground: jump | pos 56.00,-48.00 | vel 20.00,-180.00\n' +
+        'Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
         'Wall: cleared | tile -1,-2 (#4) | pos 64.00,-16.00 | vel 120.00,0.00\n' +
         'Ceiling: blocked | tile 2,-6 (#8) | pos 72.00,-48.00 | vel 15.00,-210.00'
     );

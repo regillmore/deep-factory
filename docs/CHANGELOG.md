@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-03
 
+- Task: Surface standalone player grounded-transition events in the compact debug-edit status strip when the text debug HUD is hidden.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) plus [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so the compact-strip model now formats grounded-transition telemetry beside the existing hidden-HUD respawn and contact event lines, wired [src/main.ts](../src/main.ts) to pass the latest grounded event into the compact strip only while the text debug HUD is hidden, extended [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add grounded-walk placeholder pose variants to the renderer-side standalone player draw pass so horizontal movement direction reads before sprite assets land.
 - Changes: Updated [src/gl/standalonePlayerPlaceholder.ts](../src/gl/standalonePlayerPlaceholder.ts) plus [src/gl/standalonePlayerPlaceholder.test.ts](../src/gl/standalonePlayerPlaceholder.test.ts) to distinguish grounded idle, alternating grounded walk, and airborne placeholder poses from player velocity plus elapsed render time, updated [src/gl/renderer.ts](../src/gl/renderer.ts) and [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so the placeholder shader receives the new pose state and renders distinct grounded walk silhouettes, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Verification: Ran `npx vitest run src/gl/standalonePlayerPlaceholder.test.ts src/gl/renderer.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
