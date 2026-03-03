@@ -19,6 +19,20 @@ interface AtlasImageLoaderOptions {
   buildFallbackAtlas?: () => string;
 }
 
+const AUTHORED_TILE_ATLAS_ASSET_PATH = 'atlas/tile-atlas.png';
+
+const normalizeBaseAssetPath = (basePath: string): string => {
+  if (basePath === '' || basePath === '/') {
+    return '/';
+  }
+
+  const trimmedBasePath = basePath.replace(/^\/+|\/+$/g, '');
+  return `/${trimmedBasePath}/`;
+};
+
+export const resolveAuthoredTileAtlasUrl = (basePath: string = import.meta.env.BASE_URL): string =>
+  `${normalizeBaseAssetPath(basePath)}${AUTHORED_TILE_ATLAS_ASSET_PATH}`;
+
 const loadImageElement = async (source: string): Promise<HTMLImageElement> => {
   return await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();

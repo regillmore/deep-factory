@@ -51,4 +51,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-109. Add a deployment regression check that verifies the production entry HTML references the configured `/deep-factory/` GitHub Pages base path.
+109. Add a deployment regression check that verifies the production build references both `/deep-factory/assets/...` and `/deep-factory/atlas/tile-atlas.png` under the GitHub Pages project-site base path.

@@ -5,7 +5,7 @@ import {
   AUTHORED_ATLAS_REGIONS,
   AUTHORED_ATLAS_WIDTH
 } from '../world/authoredAtlasLayout';
-import { buildPlaceholderAtlas, loadAtlasImageSource } from './texture';
+import { buildPlaceholderAtlas, loadAtlasImageSource, resolveAuthoredTileAtlasUrl } from './texture';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -78,6 +78,16 @@ describe('buildPlaceholderAtlas', () => {
         height: Math.max(region.height - 1, 0)
       }))
     );
+  });
+});
+
+describe('resolveAuthoredTileAtlasUrl', () => {
+  it('keeps the authored atlas at the site root for local-root builds', () => {
+    expect(resolveAuthoredTileAtlasUrl('/')).toBe('/atlas/tile-atlas.png');
+  });
+
+  it('prefixes the authored atlas with the project-site base path for Pages builds', () => {
+    expect(resolveAuthoredTileAtlasUrl('/deep-factory/')).toBe('/deep-factory/atlas/tile-atlas.png');
   });
 });
 

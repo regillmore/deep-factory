@@ -10,7 +10,11 @@ import {
   STANDALONE_PLAYER_PLACEHOLDER_VERTEX_FLOAT_COUNT
 } from './standalonePlayerPlaceholder';
 import type { AtlasImageLoadResult } from './texture';
-import { createTextureFromImageSource, loadAtlasImageSource } from './texture';
+import {
+  createTextureFromImageSource,
+  loadAtlasImageSource,
+  resolveAuthoredTileAtlasUrl
+} from './texture';
 import { collectAtlasValidationWarnings } from './atlasValidation';
 import { TILE_SIZE } from '../world/constants';
 import {
@@ -102,7 +106,6 @@ const MESH_BUILD_QUEUE_CHUNK_BUDGET = 4;
 const MESH_BUILD_QUEUE_TIME_BUDGET_MS = 3;
 const FRUSTUM_PADDING_CHUNKS = 1;
 const STREAM_RETAIN_PADDING_CHUNKS = 3;
-const AUTHORED_TILE_ATLAS_URL = '/atlas/tile-atlas.png';
 
 const createDynamicVertexBuffer = (
   gl: WebGL2RenderingContext,
@@ -372,7 +375,7 @@ export class Renderer {
   }
 
   async initialize(): Promise<void> {
-    const atlas = await loadAtlasImageSource(AUTHORED_TILE_ATLAS_URL);
+    const atlas = await loadAtlasImageSource(resolveAuthoredTileAtlasUrl());
     this.texture = createTextureFromImageSource(this.gl, atlas.imageSource);
     this.telemetry.atlasSourceKind = atlas.sourceKind;
     this.telemetry.atlasWidth = atlas.width;

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-03
 
+- Task: Resolve the authored atlas PNG through the GitHub Pages project-site base path.
+- Changes: Updated [src/gl/texture.ts](../src/gl/texture.ts) with a base-path-aware authored-atlas URL resolver, wired [src/gl/renderer.ts](../src/gl/renderer.ts) to fetch the committed atlas through that resolver instead of a hard-coded site-root path, extended [src/gl/texture.test.ts](../src/gl/texture.test.ts) and [src/gl/renderer.test.ts](../src/gl/renderer.test.ts), narrowed [docs/NEXT.md](docs/NEXT.md) to the remaining deployment regression follow-up, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run src/gl/texture.test.ts src/gl/renderer.test.ts`, `npx tsc --noEmit -p tsconfig.app.json`, and `npm run build`; confirmed the emitted JS bundle now references `/deep-factory/atlas/tile-atlas.png`.
+
 - Task: Fix GitHub Pages project-site asset paths so production builds load under `/deep-factory/`.
 - Changes: Updated [vite.config.ts](../vite.config.ts) to emit the GitHub Pages project-site base path only for production builds while keeping local dev rooted at `/`, added [pagesBasePath.test.ts](../pagesBasePath.test.ts) plus [tsconfig.node.json](../tsconfig.node.json) coverage for that config contract, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run pagesBasePath.test.ts`, `npx tsc --noEmit -p tsconfig.node.json`, and `npm run build`; confirmed [dist/index.html](../dist/index.html) now references `/deep-factory/assets/...`.

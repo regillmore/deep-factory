@@ -28,7 +28,8 @@ const { loadAtlasImageSource, createTextureFromImageSource, createProgram, colle
 
 vi.mock('./texture', () => ({
   createTextureFromImageSource,
-  loadAtlasImageSource
+  loadAtlasImageSource,
+  resolveAuthoredTileAtlasUrl: vi.fn(() => '/atlas/tile-atlas.png')
 }));
 
 vi.mock('./shader', () => ({
