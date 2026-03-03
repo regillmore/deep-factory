@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-03
+
+- Task: Add grounded-walk placeholder pose variants to the renderer-side standalone player draw pass so horizontal movement direction reads before sprite assets land.
+- Changes: Updated [src/gl/standalonePlayerPlaceholder.ts](../src/gl/standalonePlayerPlaceholder.ts) plus [src/gl/standalonePlayerPlaceholder.test.ts](../src/gl/standalonePlayerPlaceholder.test.ts) to distinguish grounded idle, alternating grounded walk, and airborne placeholder poses from player velocity plus elapsed render time, updated [src/gl/renderer.ts](../src/gl/renderer.ts) and [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so the placeholder shader receives the new pose state and renders distinct grounded walk silhouettes, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `npx vitest run src/gl/standalonePlayerPlaceholder.test.ts src/gl/renderer.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-02
 
 - Task: Surface standalone player ceiling-contact transition events in the compact debug-edit status strip when the text debug HUD is hidden.

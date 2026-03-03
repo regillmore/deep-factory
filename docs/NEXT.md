@@ -37,12 +37,12 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## App shell
 
-27. Add grounded-walk placeholder pose variants to the renderer-side standalone player draw pass so horizontal movement direction reads before sprite assets land.
 64. Surface the paused-main-menu fresh-world reset consequence in shell copy so the destructive action reads clearly before activation.
 65. Surface the in-world main-menu shortcut in shell copy once the keyboard action exists.
 66. Surface the in-world recenter-camera shortcut in shell copy once the keyboard action exists.
 67. Surface the in-world debug-HUD shortcut in shell copy once the keyboard action exists.
 68. Surface the in-world spawn-marker shortcut in shell copy once the keyboard action exists.
+73. Add separate jump-rise and fall placeholder pose variants to the renderer-side standalone player draw pass so airborne travel direction reads before sprite assets land.
 
 ## Player debugging
 

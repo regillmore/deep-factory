@@ -4,6 +4,11 @@ import { CHUNK_SIZE, TILE_SIZE } from '../world/constants';
 import { createPlayerState } from '../world/playerState';
 import { atlasIndexToUvRect, resolveAnimatedTileRenderFrameUvRect } from '../world/tileMetadata';
 import type { AtlasValidationWarning } from './atlasValidation';
+import {
+  STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A,
+  STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B,
+  STANDALONE_PLAYER_PLACEHOLDER_WALK_FRAME_DURATION_MS
+} from './standalonePlayerPlaceholder';
 
 const { loadAtlasImageSource, createTextureFromImageSource, createProgram, collectAtlasValidationWarnings } =
   vi.hoisted(() => ({
@@ -132,6 +137,17 @@ describe('Renderer atlas telemetry', () => {
     >;
     const playerProgramFragmentSource = createProgramCalls[1]?.[2];
     expect(playerProgramFragmentSource).toContain('uv.y = 1.0 - uv.y;');
+  });
+
+  it('compiles grounded walk pose branches into the placeholder shader', () => {
+    new Renderer(createMockCanvas(createMockGl()));
+
+    const createProgramCalls = createProgram.mock.calls as unknown as Array<
+      [WebGL2RenderingContext, string, string]
+    >;
+    const playerProgramFragmentSource = createProgramCalls[1]?.[2];
+    expect(playerProgramFragmentSource).toContain('bool walkPoseA');
+    expect(playerProgramFragmentSource).toContain('bool walkPoseB');
   });
 
   it('records an authored atlas load in telemetry during initialization', async () => {
@@ -273,11 +289,14 @@ describe('Renderer atlas telemetry', () => {
     const playerState = createPlayerState({
       position: { x: 8, y: 24 },
       size: { width: 12, height: 28 },
+      velocity: { x: -60, y: 0 },
+      grounded: true,
       facing: 'left'
     });
 
     renderer.render(camera, {
-      standalonePlayer: playerState
+      standalonePlayer: playerState,
+      timeMs: 0
     });
 
     expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
@@ -287,7 +306,49 @@ describe('Renderer atlas telemetry', () => {
     expect(lastBufferDataCall?.[1]).toBeInstanceOf(Float32Array);
     expect((lastBufferDataCall?.[1] as Float32Array | undefined)?.length).toBe(24);
     expect(lastBufferDataCall?.[2]).toBe(gl.DYNAMIC_DRAW);
-    expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([-1, 1]);
+    expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([
+      -1,
+      STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A
+    ]);
+  });
+
+  it('advances grounded walk placeholder poses across elapsed render time', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const uniform1f = vi.mocked(gl.uniform1f);
+    uniform1f.mockClear();
+
+    const camera = new Camera2D();
+    const playerState = createPlayerState({
+      grounded: true,
+      velocity: { x: 60, y: 0 }
+    });
+
+    renderer.render(camera, {
+      standalonePlayer: playerState,
+      timeMs: 0
+    });
+    renderer.render(camera, {
+      standalonePlayer: playerState,
+      timeMs: STANDALONE_PLAYER_PLACEHOLDER_WALK_FRAME_DURATION_MS
+    });
+
+    expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([
+      1,
+      STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A,
+      1,
+      STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B
+    ]);
   });
 
   it('reuploads animated chunk UVs only when the elapsed frame changes', async () => {

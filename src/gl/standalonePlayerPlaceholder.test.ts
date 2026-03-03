@@ -6,7 +6,10 @@ import {
   getStandalonePlayerPlaceholderFacingSign,
   getStandalonePlayerPlaceholderPoseIndex,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_AIRBORNE,
-  STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED
+  STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_IDLE,
+  STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A,
+  STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B,
+  STANDALONE_PLAYER_PLACEHOLDER_WALK_FRAME_DURATION_MS
 } from './standalonePlayerPlaceholder';
 
 describe('standalonePlayerPlaceholder', () => {
@@ -49,12 +52,26 @@ describe('standalonePlayerPlaceholder', () => {
     expect(getStandalonePlayerPlaceholderFacingSign(createPlayerState({ facing: 'left' }))).toBe(-1);
   });
 
-  it('maps grounded state into grounded and airborne placeholder poses', () => {
+  it('maps grounded idle and airborne state into placeholder poses', () => {
     expect(getStandalonePlayerPlaceholderPoseIndex(createPlayerState({ grounded: true }))).toBe(
-      STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED
+      STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_IDLE
     );
     expect(getStandalonePlayerPlaceholderPoseIndex(createPlayerState({ grounded: false }))).toBe(
       STANDALONE_PLAYER_PLACEHOLDER_POSE_AIRBORNE
     );
+  });
+
+  it('alternates grounded walk placeholder poses while horizontal movement is active', () => {
+    const state = createPlayerState({
+      grounded: true,
+      velocity: { x: 60, y: 0 }
+    });
+
+    expect(getStandalonePlayerPlaceholderPoseIndex(state, 0)).toBe(
+      STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A
+    );
+    expect(
+      getStandalonePlayerPlaceholderPoseIndex(state, STANDALONE_PLAYER_PLACEHOLDER_WALK_FRAME_DURATION_MS)
+    ).toBe(STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B);
   });
 });

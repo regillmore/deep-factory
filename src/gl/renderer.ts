@@ -212,18 +212,43 @@ export class Renderer {
         }
         uv.y = 1.0 - uv.y;
 
-        bool airborne = u_poseIndex > 0.5;
+        bool walkPoseA = u_poseIndex > 0.5 && u_poseIndex < 1.5;
+        bool walkPoseB = u_poseIndex > 1.5 && u_poseIndex < 2.5;
+        bool airborne = u_poseIndex > 2.5;
 
         vec4 head = vec4(0.24, 0.62, 0.76, 0.94);
         vec4 hair = vec4(0.18, 0.80, 0.82, 0.98);
         vec4 torso = vec4(0.30, 0.34, 0.70, 0.62);
         vec4 eye = vec4(0.58, 0.74, 0.68, 0.80);
-        vec4 leftArm = airborne ? vec4(0.12, 0.52, 0.26, 0.78) : vec4(0.16, 0.38, 0.28, 0.60);
-        vec4 rightArm = airborne ? vec4(0.74, 0.30, 0.88, 0.54) : vec4(0.72, 0.38, 0.84, 0.58);
-        vec4 leftLeg = airborne ? vec4(0.20, 0.14, 0.40, 0.30) : vec4(0.32, 0.10, 0.46, 0.36);
-        vec4 rightLeg = airborne ? vec4(0.56, 0.24, 0.76, 0.42) : vec4(0.54, 0.10, 0.68, 0.36);
-        vec4 leftBoot = airborne ? vec4(0.12, 0.06, 0.32, 0.14) : vec4(0.30, 0.02, 0.48, 0.10);
-        vec4 rightBoot = airborne ? vec4(0.66, 0.16, 0.86, 0.24) : vec4(0.52, 0.02, 0.70, 0.10);
+        vec4 leftArm = vec4(0.16, 0.38, 0.28, 0.60);
+        vec4 rightArm = vec4(0.72, 0.38, 0.84, 0.58);
+        vec4 leftLeg = vec4(0.32, 0.10, 0.46, 0.36);
+        vec4 rightLeg = vec4(0.54, 0.10, 0.68, 0.36);
+        vec4 leftBoot = vec4(0.30, 0.02, 0.48, 0.10);
+        vec4 rightBoot = vec4(0.52, 0.02, 0.70, 0.10);
+
+        if (walkPoseA) {
+          leftArm = vec4(0.14, 0.44, 0.26, 0.70);
+          rightArm = vec4(0.74, 0.30, 0.88, 0.62);
+          leftLeg = vec4(0.24, 0.14, 0.40, 0.38);
+          rightLeg = vec4(0.58, 0.08, 0.74, 0.34);
+          leftBoot = vec4(0.22, 0.02, 0.42, 0.10);
+          rightBoot = vec4(0.56, 0.00, 0.80, 0.08);
+        } else if (walkPoseB) {
+          leftArm = vec4(0.12, 0.30, 0.26, 0.62);
+          rightArm = vec4(0.72, 0.44, 0.86, 0.70);
+          leftLeg = vec4(0.26, 0.08, 0.42, 0.34);
+          rightLeg = vec4(0.60, 0.14, 0.76, 0.38);
+          leftBoot = vec4(0.22, 0.00, 0.46, 0.08);
+          rightBoot = vec4(0.58, 0.02, 0.78, 0.10);
+        } else if (airborne) {
+          leftArm = vec4(0.12, 0.52, 0.26, 0.78);
+          rightArm = vec4(0.74, 0.30, 0.88, 0.54);
+          leftLeg = vec4(0.20, 0.14, 0.40, 0.30);
+          rightLeg = vec4(0.56, 0.24, 0.76, 0.42);
+          leftBoot = vec4(0.12, 0.06, 0.32, 0.14);
+          rightBoot = vec4(0.66, 0.16, 0.86, 0.24);
+        }
 
         bool insideHead = inRect(uv, head);
         bool insideHair = inRect(uv, hair) && uv.y > 0.82;
@@ -387,7 +412,7 @@ export class Renderer {
     }
 
     if (frameState.standalonePlayer) {
-      this.drawStandalonePlayer(frameState.standalonePlayer, worldToClipMatrix);
+      this.drawStandalonePlayer(frameState.standalonePlayer, worldToClipMatrix, timeMs);
     }
 
     gl.bindVertexArray(null);
@@ -622,12 +647,12 @@ export class Renderer {
     this.telemetry.animatedChunkUvUploadBytes += mesh.animatedMesh.vertices.byteLength;
   }
 
-  private drawStandalonePlayer(state: PlayerState, worldToClipMatrix: Float32Array): void {
+  private drawStandalonePlayer(state: PlayerState, worldToClipMatrix: Float32Array, timeMs: number): void {
     const gl = this.gl;
     gl.useProgram(this.playerProgram);
     gl.uniformMatrix4fv(this.uPlayerMatrix, false, worldToClipMatrix);
     gl.uniform1f(this.uPlayerFacingSign, getStandalonePlayerPlaceholderFacingSign(state));
-    gl.uniform1f(this.uPlayerPoseIndex, getStandalonePlayerPlaceholderPoseIndex(state));
+    gl.uniform1f(this.uPlayerPoseIndex, getStandalonePlayerPlaceholderPoseIndex(state, timeMs));
     gl.bindBuffer(gl.ARRAY_BUFFER, this.standalonePlayerBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, buildStandalonePlayerPlaceholderVertices(state), gl.DYNAMIC_DRAW);
     gl.bindVertexArray(this.standalonePlayerVao);
