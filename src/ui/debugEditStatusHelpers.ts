@@ -9,6 +9,7 @@ import {
   type TouchDebugEditMode
 } from '../input/controller';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
+import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
 import type { PlayerRespawnEventKind } from '../world/playerRespawnEvent';
 import type { PlayerWallContactTransitionKind } from '../world/playerWallContactTransition';
@@ -29,6 +30,7 @@ export interface DebugEditStatusStripState {
   pinnedTile: DebugEditHoveredTileState | null;
   desktopInspectPinArmed: boolean;
   playerGroundedTransition?: DebugEditStatusStripPlayerGroundedTransitionTelemetry | null;
+  playerFacingTransition?: DebugEditStatusStripPlayerFacingTransitionTelemetry | null;
   playerRespawn?: DebugEditStatusStripPlayerRespawnTelemetry | null;
   playerWallContactTransition?: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null;
   playerCeilingContactTransition?: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null;
@@ -72,6 +74,14 @@ export interface DebugEditStatusStripPlayerRespawnTelemetry {
 
 export interface DebugEditStatusStripPlayerGroundedTransitionTelemetry {
   kind: PlayerGroundedTransitionKind;
+  position: { x: number; y: number };
+  velocity: { x: number; y: number };
+}
+
+export interface DebugEditStatusStripPlayerFacingTransitionTelemetry {
+  kind: PlayerFacingTransitionKind;
+  previousFacing: 'left' | 'right';
+  nextFacing: 'left' | 'right';
   position: { x: number; y: number };
   velocity: { x: number; y: number };
 }
@@ -409,6 +419,20 @@ const formatGroundedTransitionEventText = (
   );
 };
 
+const formatFacingTransitionEventText = (
+  playerFacingTransition: DebugEditStatusStripPlayerFacingTransitionTelemetry | null
+): string | null => {
+  if (!playerFacingTransition) {
+    return null;
+  }
+
+  return (
+    `Facing: ${playerFacingTransition.previousFacing}->${playerFacingTransition.nextFacing} | ` +
+    `pos ${playerFacingTransition.position.x.toFixed(2)},${playerFacingTransition.position.y.toFixed(2)} | ` +
+    `vel ${playerFacingTransition.velocity.x.toFixed(2)},${playerFacingTransition.velocity.y.toFixed(2)}`
+  );
+};
+
 const formatWallContactTransitionEventText = (
   playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null
 ): string | null => {
@@ -447,12 +471,14 @@ const formatCeilingContactTransitionEventText = (
 
 const buildEventText = (
   playerGroundedTransition: DebugEditStatusStripPlayerGroundedTransitionTelemetry | null,
+  playerFacingTransition: DebugEditStatusStripPlayerFacingTransitionTelemetry | null,
   playerRespawn: DebugEditStatusStripPlayerRespawnTelemetry | null,
   playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null,
   playerCeilingContactTransition: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null
 ): string | null => {
   const eventLines = [
     formatGroundedTransitionEventText(playerGroundedTransition),
+    formatFacingTransitionEventText(playerFacingTransition),
     formatRespawnEventText(playerRespawn),
     formatWallContactTransitionEventText(playerWallContactTransition),
     formatCeilingContactTransitionEventText(playerCeilingContactTransition)
@@ -858,6 +884,7 @@ export const buildDebugEditStatusStripModel = (
 ): DebugEditStatusStripModel => {
   const activeToolStatus = resolveActiveDebugToolStatus(state.preview);
   const playerGroundedTransition = state.playerGroundedTransition ?? null;
+  const playerFacingTransition = state.playerFacingTransition ?? null;
   const playerRespawn = state.playerRespawn ?? null;
   const playerWallContactTransition = state.playerWallContactTransition ?? null;
   const playerCeilingContactTransition = state.playerCeilingContactTransition ?? null;
@@ -869,6 +896,7 @@ export const buildDebugEditStatusStripModel = (
     previewText: buildPreviewText(state.preview, state.hoveredTile),
     eventText: buildEventText(
       playerGroundedTransition,
+      playerFacingTransition,
       playerRespawn,
       playerWallContactTransition,
       playerCeilingContactTransition

@@ -1275,6 +1275,7 @@ const bootstrap = async (): Promise<void> => {
       pinnedTile: pinnedDebugTileStatus,
       desktopInspectPinArmed: input.getArmedDesktopDebugInspectPin(),
       playerGroundedTransition: debugOverlayVisible ? null : lastPlayerGroundedTransitionEvent,
+      playerFacingTransition: debugOverlayVisible ? null : lastPlayerFacingTransitionEvent,
       playerRespawn: debugOverlayVisible ? null : lastPlayerRespawnEvent,
       playerWallContactTransition: debugOverlayVisible ? null : lastPlayerWallContactTransitionEvent,
       playerCeilingContactTransition: debugOverlayVisible ? null : lastPlayerCeilingContactTransitionEvent

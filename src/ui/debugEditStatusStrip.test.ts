@@ -86,16 +86,18 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
-  it('preserves separate grounded, respawn, wall-contact, and ceiling-contact event lines while splitting each line at pipe separators', () => {
+  it('preserves separate grounded, facing, respawn, wall-contact, and ceiling-contact event lines while splitting each line at pipe separators', () => {
     expect(
       buildWrappedDetailLines(
         'Ground: landing | pos 80.00,-16.00 | vel 30.00,0.00\n' +
+        'Facing: left->right | pos 84.00,-20.00 | vel 120.00,0.00\n' +
         'Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
           'Wall: blocked | tile 5,-3 (#7) | pos 88.00,-24.00 | vel -180.00,60.00\n' +
           'Ceiling: blocked | tile 2,-6 (#8) | pos 72.00,-48.00 | vel 15.00,-210.00'
       )
     ).toEqual([
       ['Ground: landing', '| pos 80.00,-16.00', '| vel 30.00,0.00'],
+      ['Facing: left->right', '| pos 84.00,-20.00', '| vel 120.00,0.00'],
       ['Respawn: embedded', '| spawn 3,-2', '| pos 56.00,-32.00', '| vel 0.00,0.00'],
       ['Wall: blocked', '| tile 5,-3 (#7)', '| pos 88.00,-24.00', '| vel -180.00,60.00'],
       ['Ceiling: blocked', '| tile 2,-6 (#8)', '| pos 72.00,-48.00', '| vel 15.00,-210.00']

@@ -47,4 +47,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Player debugging
 
 63. Surface standalone player wall-side direction in the debug overlay when wall-contact events block or clear on the left versus right side.
-74. Surface standalone player facing-transition events in the compact debug-edit status strip when the text debug HUD is hidden.
+75. Surface standalone player wall-side direction in the compact debug-edit status strip when the text debug HUD is hidden.

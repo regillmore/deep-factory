@@ -153,6 +153,27 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBe('Ground: landing | pos 80.00,-16.00 | vel 30.00,0.00');
   });
 
+  it('formats the latest facing-transition event for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerFacingTransition: {
+        kind: 'right',
+        previousFacing: 'left',
+        nextFacing: 'right',
+        position: { x: 84, y: -20 },
+        velocity: { x: 120, y: 0 }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.eventText).toBe('Facing: left->right | pos 84.00,-20.00 | vel 120.00,0.00');
+  });
+
   it('formats the latest wall-contact transition event for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -193,7 +214,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBe('Ceiling: blocked | tile 2,-6 (#8) | pos 72.00,-48.00 | vel 15.00,-210.00');
   });
 
-  it('keeps grounded and respawn telemetry on separate wrap-friendly event lines', () => {
+  it('keeps grounded, facing, and respawn telemetry on separate wrap-friendly event lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -205,6 +226,13 @@ describe('buildDebugEditStatusStripModel', () => {
         kind: 'fall',
         position: { x: 40, y: -8 },
         velocity: { x: 60, y: 90 }
+      },
+      playerFacingTransition: {
+        kind: 'right',
+        previousFacing: 'left',
+        nextFacing: 'right',
+        position: { x: 48, y: -8 },
+        velocity: { x: 120, y: 90 }
       },
       playerRespawn: {
         kind: 'embedded',
@@ -217,11 +245,12 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.eventText).toBe(
       'Ground: fall | pos 40.00,-8.00 | vel 60.00,90.00\n' +
+        'Facing: left->right | pos 48.00,-8.00 | vel 120.00,90.00\n' +
         'Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00'
     );
   });
 
-  it('keeps grounded, respawn, and wall-contact telemetry on separate wrap-friendly event lines', () => {
+  it('keeps grounded, facing, respawn, and wall-contact telemetry on separate wrap-friendly event lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -233,6 +262,13 @@ describe('buildDebugEditStatusStripModel', () => {
         kind: 'fall',
         position: { x: 40, y: -8 },
         velocity: { x: 60, y: 90 }
+      },
+      playerFacingTransition: {
+        kind: 'left',
+        previousFacing: 'right',
+        nextFacing: 'left',
+        position: { x: 52, y: -10 },
+        velocity: { x: -140, y: 80 }
       },
       playerRespawn: {
         kind: 'embedded',
@@ -251,12 +287,13 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.eventText).toBe(
       'Ground: fall | pos 40.00,-8.00 | vel 60.00,90.00\n' +
+        'Facing: right->left | pos 52.00,-10.00 | vel -140.00,80.00\n' +
         'Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
         'Wall: cleared | tile -1,-2 (#4) | pos 64.00,-16.00 | vel 120.00,0.00'
     );
   });
 
-  it('keeps grounded, respawn, wall-contact, and ceiling-contact telemetry on separate wrap-friendly event lines', () => {
+  it('keeps grounded, facing, respawn, wall-contact, and ceiling-contact telemetry on separate wrap-friendly event lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -268,6 +305,13 @@ describe('buildDebugEditStatusStripModel', () => {
         kind: 'jump',
         position: { x: 56, y: -48 },
         velocity: { x: 20, y: -180 }
+      },
+      playerFacingTransition: {
+        kind: 'right',
+        previousFacing: 'left',
+        nextFacing: 'right',
+        position: { x: 60, y: -42 },
+        velocity: { x: 110, y: -170 }
       },
       playerRespawn: {
         kind: 'embedded',
@@ -292,6 +336,7 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.eventText).toBe(
       'Ground: jump | pos 56.00,-48.00 | vel 20.00,-180.00\n' +
+        'Facing: left->right | pos 60.00,-42.00 | vel 110.00,-170.00\n' +
         'Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
         'Wall: cleared | tile -1,-2 (#4) | pos 64.00,-16.00 | vel 120.00,0.00\n' +
         'Ceiling: blocked | tile 2,-6 (#8) | pos 72.00,-48.00 | vel 15.00,-210.00'
