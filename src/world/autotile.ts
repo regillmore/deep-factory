@@ -65,14 +65,9 @@ export const normalizeAutotileAdjacencyMask = (mask: number): number => {
   return normalized;
 };
 
-export const TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT = 16;
-
-// Placeholder terrain variants still occupy a 4x4 block inside the authored atlas,
-// so we currently compress the normalized 8-neighbor mask into a 4-bit cardinal
-// mask (N/E/S/W) for variant selection.
-const resolveTerrainAutotileVariantIndexBitwise = (normalizedMask: number): number => {
+const resolveAutotileCardinalMaskBitwise = (adjacencyMask: number): number => {
   let cardinalMask = 0;
-  const mask = normalizedMask & 0xff;
+  const mask = adjacencyMask & 0xff;
 
   if (mask & AUTOTILE_DIRECTION_BITS.north) cardinalMask |= 1 << 0;
   if (mask & AUTOTILE_DIRECTION_BITS.east) cardinalMask |= 1 << 1;
@@ -82,11 +77,33 @@ const resolveTerrainAutotileVariantIndexBitwise = (normalizedMask: number): numb
   return cardinalMask;
 };
 
+const buildAutotileCardinalMaskLookup = (): Uint8Array => {
+  const lookup = new Uint8Array(256);
+  for (let adjacencyMask = 0; adjacencyMask < lookup.length; adjacencyMask += 1) {
+    lookup[adjacencyMask] = resolveAutotileCardinalMaskBitwise(adjacencyMask);
+  }
+  return lookup;
+};
+
+export const AUTOTILE_CARDINAL_MASK_BY_ADJACENCY_MASK = buildAutotileCardinalMaskLookup();
+
+export const resolveAutotileCardinalMask = (adjacencyMask: number): number =>
+  AUTOTILE_CARDINAL_MASK_BY_ADJACENCY_MASK[adjacencyMask & 0xff] ?? 0;
+
+export const buildAutotileCardinalMask = (
+  neighborhood: TileNeighborhood,
+  isConnected: AutotileAdjacencyPredicate = defaultAdjacencyPredicate
+): number => resolveAutotileCardinalMask(buildAutotileAdjacencyMask(neighborhood, isConnected));
+
+export const TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT = 16;
+
+// Placeholder terrain variants still occupy a 4x4 block inside the authored atlas,
+// so we currently compress the normalized 8-neighbor mask into a 4-bit cardinal
+// mask (N/E/S/W) for variant selection.
 const buildTerrainAutotilePlaceholderVariantLookup = (): Uint8Array => {
   const lookup = new Uint8Array(256);
   for (let normalizedAdjacencyMask = 0; normalizedAdjacencyMask < lookup.length; normalizedAdjacencyMask += 1) {
-    lookup[normalizedAdjacencyMask] =
-      resolveTerrainAutotileVariantIndexBitwise(normalizedAdjacencyMask);
+    lookup[normalizedAdjacencyMask] = resolveAutotileCardinalMaskBitwise(normalizedAdjacencyMask);
   }
   return lookup;
 };

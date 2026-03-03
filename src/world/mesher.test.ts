@@ -4,7 +4,12 @@ import { AUTOTILE_DIRECTION_BITS, normalizeAutotileAdjacencyMask } from './autot
 import { toTileIndex } from './chunkMath';
 import { CHUNK_SIZE, TILE_SIZE } from './constants';
 import { buildChunkMesh } from './mesher';
-import { atlasIndexToUvRect, resolveTerrainAutotileUvRectByNormalizedAdjacencyMask } from './tileMetadata';
+import {
+  LIQUID_RENDER_CARDINAL_MASK_COUNT,
+  atlasIndexToUvRect,
+  parseTileMetadataRegistry,
+  resolveTerrainAutotileUvRectByNormalizedAdjacencyMask
+} from './tileMetadata';
 import type { Chunk } from './types';
 import { TileWorld } from './world';
 import type { TileNeighborhood } from './world';
@@ -20,6 +25,49 @@ const setChunkTile = (chunk: Chunk, localX: number, localY: number, tileId: numb
 
 const atlasUvRect = (atlasTileIndex: number) => atlasIndexToUvRect(atlasTileIndex);
 const toFloat32 = (value: number): number => Math.fround(value);
+
+const createDistinctLiquidVariantMap = () =>
+  Array.from({ length: LIQUID_RENDER_CARDINAL_MASK_COUNT }, (_, index) => ({
+    atlasIndex: index
+  }));
+
+const createLiquidTestRegistry = () =>
+  parseTileMetadataRegistry({
+    tiles: [
+      {
+        id: 0,
+        name: 'empty',
+        gameplay: { solid: false, blocksLight: false }
+      },
+      {
+        id: 12,
+        name: 'water_a',
+        gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
+        liquidRender: {
+          connectivityGroup: 'water',
+          variantRenderByCardinalMask: createDistinctLiquidVariantMap()
+        }
+      },
+      {
+        id: 20,
+        name: 'water_b',
+        gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
+        liquidRender: {
+          connectivityGroup: 'water',
+          variantRenderByCardinalMask: createDistinctLiquidVariantMap()
+        }
+      },
+      {
+        id: 25,
+        name: 'lava',
+        gameplay: { solid: false, blocksLight: true, liquidKind: 'lava' },
+        liquidRender: {
+          connectivityGroup: 'lava',
+          variantRenderByCardinalMask: createDistinctLiquidVariantMap()
+        }
+      }
+    ]
+  });
 
 const resolveTerrainAutotileVariantIndexBitwiseBaseline = (normalizedMask: number): number => {
   let cardinalMask = 0;
@@ -240,14 +288,53 @@ describe('buildChunkMesh autotile UV selection', () => {
     ]);
   });
 
-  it('uses the static render fallback for liquid tiles until liquid mask resolution lands', () => {
+  it('resolves liquid tile UVs from sampled liquid cardinal masks', () => {
+    const registry = createLiquidTestRegistry();
     const chunk = createEmptyChunk();
-    setChunkTile(chunk, 0, 0, 7);
+    setChunkTile(chunk, 0, 0, 12);
 
-    const mesh = buildChunkMesh(chunk);
+    const mesh = buildChunkMesh(chunk, {
+      tileMetadataRegistry: registry,
+      sampleNeighborhood: () => ({
+        center: 12,
+        north: 12,
+        northEast: 12,
+        east: 12,
+        southEast: 12,
+        south: 0,
+        southWest: 12,
+        west: 0,
+        northWest: 12
+      })
+    });
 
     expect(mesh.vertexCount).toBe(6);
-    expectSingleQuadUvRect(mesh.vertices, 14);
+    expectSingleQuadUvRect(mesh.vertices, 3);
+    expect(mesh.animatedTileQuads).toEqual([]);
+  });
+
+  it('treats related liquid tile ids as connected when metadata groups match', () => {
+    const registry = createLiquidTestRegistry();
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 12);
+
+    const mesh = buildChunkMesh(chunk, {
+      tileMetadataRegistry: registry,
+      sampleNeighborhood: () => ({
+        center: 12,
+        north: 20,
+        northEast: 25,
+        east: 0,
+        southEast: 0,
+        south: 0,
+        southWest: 0,
+        west: 20,
+        northWest: 25
+      })
+    });
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 9);
     expect(mesh.animatedTileQuads).toEqual([]);
   });
 
@@ -265,6 +352,55 @@ describe('buildChunkMesh autotile UV selection', () => {
     expect(mesh.vertices[1]).toBe(0);
     expect(mesh.vertices[24]).toBe(TILE_SIZE);
     expect(mesh.vertices[25]).toBe(0);
+  });
+
+  it('uses the isolated liquid variant when no neighborhood sampler is provided', () => {
+    const registry = createLiquidTestRegistry();
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 12);
+
+    const mesh = buildChunkMesh(chunk, {
+      tileMetadataRegistry: registry
+    });
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 0);
+  });
+
+  it('uses chunk-edge neighborhood sampling to resolve liquid UVs across adjacent chunks', () => {
+    const registry = createLiquidTestRegistry();
+    const chunkX = 0;
+    const chunkY = -10;
+    const localX = CHUNK_SIZE - 1;
+    const localY = CHUNK_SIZE - 1;
+    const world = new TileWorld(0);
+    const worldTileX = chunkX * CHUNK_SIZE + localX;
+    const worldTileY = chunkY * CHUNK_SIZE + localY;
+
+    world.setTile(worldTileX, worldTileY, 12);
+    world.setTile(worldTileX + 1, worldTileY, 20);
+    world.setTile(worldTileX, worldTileY + 1, 12);
+    world.setTile(worldTileX + 1, worldTileY + 1, 25);
+
+    const chunk = world.ensureChunk(chunkX, chunkY);
+    const scratchRefs: object[] = [];
+    const mesh = buildChunkMesh(chunk, {
+      tileMetadataRegistry: registry,
+      sampleNeighborhoodInto: (sampleChunkX, sampleChunkY, sampleLocalX, sampleLocalY, target) => {
+        scratchRefs.push(target);
+        world.sampleLocalTileNeighborhoodInto(
+          sampleChunkX,
+          sampleChunkY,
+          sampleLocalX,
+          sampleLocalY,
+          target
+        );
+      }
+    });
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 6);
+    expect(scratchRefs).toHaveLength(1);
   });
 
   it('reuses one neighborhood scratch object across terrain tiles with sampleNeighborhoodInto', () => {

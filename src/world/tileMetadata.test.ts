@@ -355,9 +355,12 @@ describe('tile metadata loader', () => {
   });
 
   it('builds a dense liquid connectivity lookup and preserves liquid adjacency semantics', () => {
-    const repeatedLiquidVariantMap = Array.from({ length: LIQUID_RENDER_CARDINAL_MASK_COUNT }, () => ({
-      atlasIndex: 14
-    }));
+    const distinctLiquidVariantMap = Array.from(
+      { length: LIQUID_RENDER_CARDINAL_MASK_COUNT },
+      (_, index) => ({
+        atlasIndex: index
+      })
+    );
     const registry = parseTileMetadataRegistry({
       tiles: [
         {
@@ -371,7 +374,7 @@ describe('tile metadata loader', () => {
           gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
           liquidRender: {
             connectivityGroup: 'water',
-            variantRenderByCardinalMask: repeatedLiquidVariantMap
+            variantRenderByCardinalMask: distinctLiquidVariantMap
           }
         },
         {
@@ -380,7 +383,7 @@ describe('tile metadata loader', () => {
           gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
           liquidRender: {
             connectivityGroup: 'water',
-            variantRenderByCardinalMask: repeatedLiquidVariantMap
+            variantRenderByCardinalMask: distinctLiquidVariantMap
           }
         },
         {
@@ -389,7 +392,7 @@ describe('tile metadata loader', () => {
           gameplay: { solid: false, blocksLight: true, liquidKind: 'lava' },
           liquidRender: {
             connectivityGroup: 'lava',
-            variantRenderByCardinalMask: repeatedLiquidVariantMap
+            variantRenderByCardinalMask: distinctLiquidVariantMap
           }
         },
         {
@@ -397,7 +400,7 @@ describe('tile metadata loader', () => {
           name: 'sludge',
           gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
           liquidRender: {
-            variantRenderByCardinalMask: repeatedLiquidVariantMap
+            variantRenderByCardinalMask: distinctLiquidVariantMap
           }
         },
         {
@@ -423,8 +426,11 @@ describe('tile metadata loader', () => {
     expect(areLiquidRenderNeighborsConnected(30, 12, registry)).toBe(false);
     expect(areLiquidRenderNeighborsConnected(12, 40, registry)).toBe(false);
     expect(hasLiquidRenderMetadata(30, registry)).toBe(true);
-    expect(resolveLiquidRenderVariantMetadata(12, 0, registry)).toMatchObject({ atlasIndex: 14 });
-    expect(resolveLiquidRenderVariantUvRect(12, 0, registry)).toBe(atlasIndexToUvRect(14));
+    expect(resolveLiquidRenderVariantMetadata(12, 0, registry)).toMatchObject({ atlasIndex: 0 });
+    expect(resolveLiquidRenderVariantMetadata(12, 5, registry)).toMatchObject({ atlasIndex: 5 });
+    expect(resolveLiquidRenderVariantMetadata(25, 15, registry)).toMatchObject({ atlasIndex: 15 });
+    expect(resolveLiquidRenderVariantUvRect(12, 0, registry)).toBe(atlasIndexToUvRect(0));
+    expect(resolveLiquidRenderVariantUvRect(12, 5, registry)).toBe(atlasIndexToUvRect(5));
     expect(resolveLiquidRenderVariantUvRect(12, -1, registry)).toBe(null);
     expect(resolveLiquidRenderVariantUvRect(12, LIQUID_RENDER_CARDINAL_MASK_COUNT, registry)).toBe(null);
   });

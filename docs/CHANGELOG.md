@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-03
 
+- Task: Add liquid autotile mask resolution for edge and surface variants.
+- Changes: Updated [src/world/autotile.ts](../src/world/autotile.ts) plus [src/world/mesher.ts](../src/world/mesher.ts) so chunk meshing now resolves liquid `variantRenderByCardinalMask` entries from sampled NESW liquid connectivity instead of always falling back to the base static render, added custom-registry coverage in [src/world/mesher.test.ts](../src/world/mesher.test.ts) plus liquid cardinal-mask regressions in [src/world/autotile.test.ts](../src/world/autotile.test.ts) and [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `npx vitest run src/world/autotile.test.ts src/world/mesher.test.ts src/world/tileMetadata.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface standalone player live vertical velocity in the compact debug-edit status strip when the text debug HUD is hidden.
 - Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) plus [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so the compact strip now carries a dedicated hidden-HUD `VelYNow:` line beside the existing live player telemetry, refreshed [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts) for multiline player-line wrapping, wired [src/main.ts](../src/main.ts) to pass the live `velocity.y` player telemetry into the strip only while the text HUD is hidden, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

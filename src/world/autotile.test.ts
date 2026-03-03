@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import { CHUNK_SIZE } from './constants';
 import {
+  AUTOTILE_CARDINAL_MASK_BY_ADJACENCY_MASK,
   AUTOTILE_DIRECTION_BITS,
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK,
+  buildAutotileCardinalMask,
   buildAutotileAdjacencyMask,
   normalizeAutotileAdjacencyMask,
+  resolveAutotileCardinalMask,
   resolveTerrainAutotileVariantIndex,
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
 } from './autotile';
@@ -180,6 +183,33 @@ describe('autotile adjacency mask', () => {
     expect(normalizedMask).toBe(AUTOTILE_DIRECTION_BITS.east | AUTOTILE_DIRECTION_BITS.west);
   });
 
+  it('compresses adjacency masks into NESW liquid-style cardinal masks', () => {
+    const { north, northEast, east, southEast, south, southWest, west, northWest } =
+      AUTOTILE_DIRECTION_BITS;
+
+    expect(resolveAutotileCardinalMask(0)).toBe(0);
+    expect(resolveAutotileCardinalMask(north | east | south | west)).toBe(15);
+    expect(resolveAutotileCardinalMask(northEast | southWest)).toBe(0);
+    expect(resolveAutotileCardinalMask(north | northEast | east | southEast | northWest)).toBe(3);
+    expect(resolveAutotileCardinalMask(south | southWest | west)).toBe(12);
+  });
+
+  it('builds cardinal masks directly from sampled neighborhoods without diagonal influence', () => {
+    const neighborhood: TileNeighborhood = {
+      center: 7,
+      north: 7,
+      northEast: 7,
+      east: 0,
+      southEast: 7,
+      south: 7,
+      southWest: 7,
+      west: 0,
+      northWest: 7
+    };
+
+    expect(buildAutotileCardinalMask(neighborhood)).toBe(5);
+  });
+
   it('resolves normalized masks into 16 placeholder atlas variants using NESW cardinal bits', () => {
     const { north, east, south, west } = AUTOTILE_DIRECTION_BITS;
 
@@ -226,6 +256,21 @@ describe('autotile adjacency mask', () => {
         `lookup entry ${normalizedMask}`
       ).toBe(expectedVariant);
       expect(resolveTerrainAutotileVariantIndex(normalizedMask), `resolver entry ${normalizedMask}`).toBe(
+        expectedVariant
+      );
+    }
+  });
+
+  it('precomputes a 256-entry cardinal-mask lookup matching the bitwise baseline', () => {
+    expect(AUTOTILE_CARDINAL_MASK_BY_ADJACENCY_MASK).toHaveLength(256);
+
+    for (let adjacencyMask = 0; adjacencyMask < 256; adjacencyMask += 1) {
+      const expectedVariant = resolveTerrainAutotileVariantIndexBitwiseBaseline(adjacencyMask);
+
+      expect(AUTOTILE_CARDINAL_MASK_BY_ADJACENCY_MASK[adjacencyMask], `lookup entry ${adjacencyMask}`).toBe(
+        expectedVariant
+      );
+      expect(resolveAutotileCardinalMask(adjacencyMask), `resolver entry ${adjacencyMask}`).toBe(
         expectedVariant
       );
     }

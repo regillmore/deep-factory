@@ -24,7 +24,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Budgeted per-frame mesh build queue with visible-first scheduling and nearby prefetch.
 - Tile edit events trigger edge and corner neighbor-chunk mesh invalidation.
 - Chunk meshing currently emits one quad per non-empty tile; static chunks upload once, while chunks with animated non-terrain quads keep CPU-side vertex copies so UV-only updates can be reuploaded on frame boundaries.
-- Liquid tiles now carry separate liquid-render metadata, but chunk meshing still uses their static `render` fallback until liquid mask resolution lands.
+- Liquid tiles now carry separate liquid-render metadata and chunk meshing resolves their `variantRenderByCardinalMask` entries from sampled NESW liquid connectivity, falling back to the isolated mask when neighborhood sampling is unavailable.
 - `buildChunkMesh` pre-counts non-empty tiles and writes directly into an exact-sized `Float32Array`.
 - Chunk meshing supports reusable `TileNeighborhood` scratch sampling so terrain meshing avoids per-tile neighborhood allocations.
 
@@ -35,7 +35,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Render metadata can optionally define animated frame sequences through `frames` plus `frameDurationMs`, while the current meshing path continues to use the base static `atlasIndex` or `uvRect` as frame-zero fallback.
 - The default tile set now includes an animated `debug_blink` brush tile that exercises the renderer-side frame resolver against the authored atlas.
 - The default tile set also includes an animated `debug_panel_blink` brush tile that exercises the same renderer-side frame resolver through direct `render.uvRect` frames backed by committed atlas pixels.
-- The default tile set now also includes placeholder `water` and `lava` brush tiles with dedicated `liquidRender` metadata and separate liquid connectivity groups, ready for later liquid mask resolution.
+- The default tile set now also includes placeholder `water` and `lava` brush tiles with dedicated `liquidRender` metadata and separate liquid connectivity groups; current shipped placeholder variants still reuse the same authored source across masks until task 93 lands distinct edge and surface art.
 - Committed-asset regressions also verify that every default animated atlas-index frame differs from its prior committed PNG frame, so shipped atlas-backed animations do not silently collapse into repeated art.
 - Atlas-backed render metadata resolves through explicit authored atlas region definitions in `src/world/authoredAtlasLayout.ts`, while the generated placeholder fallback atlas paints those same authored regions and direct sub-rect metadata can still use normalized `uvRect` values that are runtime-validated against whole atlas-pixel edges.
 - Runtime atlas validation and committed-asset regressions also walk liquid variant render sources, so shipped liquid metadata stays inside the authored atlas and whole-pixel direct-UV bounds.
@@ -67,7 +67,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Gameplay metadata compiles into dense lookup arrays for collision, lighting, and liquid queries.
 - Terrain connectivity compiles into dense connectivity-group and material-tag lookup tables.
 - Tile render metadata compiles into dense static UV and terrain variant atlas-index lookup tables.
-- Liquid connectivity compiles into its own dense lookup table, and liquid variant metadata compiles into per-tile cardinal-mask render lookups for the upcoming liquid meshing path.
+- Liquid connectivity compiles into its own dense lookup table, and liquid variant metadata compiles into per-tile cardinal-mask render lookups consumed directly by the liquid meshing path.
 - Optional animated render metadata compiles into dense per-tile frame start, frame count, and frame duration tables plus a flattened UV-frame list for renderer-time elapsed-frame sampling.
 - Placeholder terrain autotile resolution uses precomputed lookup tables for normalized adjacency masks and raw adjacency masks.
 - Authored-atlas region UV rect objects are precomputed and reused by atlas-index and terrain-autotile resolution paths.

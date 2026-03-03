@@ -6,9 +6,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Liquid rendering
 
-10. Add liquid autotile mask resolution for edge and surface variants.
 11. Animate liquid tiles in the renderer from metadata-driven frame sequences.
-93. Populate distinct placeholder water and lava edge or surface liquid variant sources once task 10 resolves liquid masks.
+93. Populate distinct placeholder water and lava edge or surface liquid variant sources now that liquid masks resolve.
+95. Surface the resolved liquid cardinal mask in debug inspect readouts for hovered liquid tiles.
 
 ## Lighting
 

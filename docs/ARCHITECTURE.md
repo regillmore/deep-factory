@@ -57,7 +57,7 @@ variant source falls outside the source image or any direct `uvRect` source land
   - records animated non-terrain quad offsets so the renderer can patch only those UVs later.
 - UVs are resolved through tile metadata (terrain autotile variant maps or non-autotile static render metadata), with atlas indices translated through the authored atlas region layout instead of a synthetic grid cache.
 - Optional animated render frames compile beside the static render lookup; chunk meshes still bake the static frame-zero UVs, and the renderer mutates only the recorded animated quad UVs when the elapsed frame changes.
-- Liquid variant render metadata now compiles beside the base static render lookup, but chunk meshing still bakes the base `render` fallback until liquid-specific mask resolution lands.
+- Liquid variant render metadata now compiles beside the base static render lookup, and chunk meshing resolves liquid UVs from sampled NESW liquid-connectivity masks with an isolated-mask fallback when neighborhood sampling is unavailable.
 - Static chunks upload once as static vertex data; chunks containing animated non-terrain quads keep a CPU-side vertex copy so the renderer can reupload UV-only changes on frame boundaries.
 
 This is intentionally simple and easy to evolve (greedy meshing, layered tiles, occlusion rules can be added later).

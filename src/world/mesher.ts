@@ -1,14 +1,18 @@
-import { buildAutotileAdjacencyMask } from './autotile';
+import { buildAutotileAdjacencyMask, buildAutotileCardinalMask } from './autotile';
 import { CHUNK_SIZE, TILE_SIZE } from './constants';
 import { toTileIndex } from './chunkMath';
 import {
+  TILE_METADATA,
+  areLiquidRenderNeighborsConnected,
   areTerrainAutotileNeighborsConnected,
   hasAnimatedTileRenderMetadata,
+  hasLiquidRenderMetadata,
   hasTerrainAutotileMetadata,
+  resolveLiquidRenderVariantUvRect,
   resolveTerrainAutotileUvRectByRawAdjacencyMask,
   resolveTileRenderUvRect
 } from './tileMetadata';
-import type { TileUvRect } from './tileMetadata';
+import type { TileMetadataRegistry, TileUvRect } from './tileMetadata';
 import type { Chunk } from './types';
 import type { TileNeighborhood } from './world';
 
@@ -37,15 +41,21 @@ export interface ChunkMeshBuildOptions {
     localY: number,
     target: TileNeighborhood
   ) => void;
+  tileMetadataRegistry?: TileMetadataRegistry;
 }
 
 const FLOATS_PER_VERTEX = 4;
 const VERTICES_PER_TILE_QUAD = 6;
 const FLOATS_PER_TILE_QUAD = FLOATS_PER_VERTEX * VERTICES_PER_TILE_QUAD;
 
-const usesTerrainAutotile = (tileId: number): boolean => hasTerrainAutotileMetadata(tileId);
-const usesAnimatedTileRender = (tileId: number): boolean =>
-  !usesTerrainAutotile(tileId) && hasAnimatedTileRenderMetadata(tileId);
+const usesTerrainAutotile = (tileId: number, tileMetadataRegistry: TileMetadataRegistry): boolean =>
+  hasTerrainAutotileMetadata(tileId, tileMetadataRegistry);
+const usesLiquidRender = (tileId: number, tileMetadataRegistry: TileMetadataRegistry): boolean =>
+  hasLiquidRenderMetadata(tileId, tileMetadataRegistry);
+const usesAnimatedTileRender = (tileId: number, tileMetadataRegistry: TileMetadataRegistry): boolean =>
+  !usesTerrainAutotile(tileId, tileMetadataRegistry) &&
+  !usesLiquidRender(tileId, tileMetadataRegistry) &&
+  hasAnimatedTileRenderMetadata(tileId, tileMetadataRegistry);
 
 const countNonEmptyTiles = (chunk: Chunk): number => {
   let count = 0;
@@ -70,38 +80,92 @@ const createTileNeighborhoodScratch = (): TileNeighborhood => ({
   northWest: 0
 });
 
+const resolveChunkTileNeighborhood = (
+  chunk: Chunk,
+  localX: number,
+  localY: number,
+  sampleNeighborhood?: ChunkMeshBuildOptions['sampleNeighborhood'],
+  sampleNeighborhoodInto?: ChunkMeshBuildOptions['sampleNeighborhoodInto'],
+  neighborhoodScratch?: TileNeighborhood
+): TileNeighborhood | null => {
+  if (sampleNeighborhoodInto && neighborhoodScratch) {
+    sampleNeighborhoodInto(chunk.coord.x, chunk.coord.y, localX, localY, neighborhoodScratch);
+    return neighborhoodScratch;
+  }
+
+  if (sampleNeighborhood) {
+    return sampleNeighborhood(chunk.coord.x, chunk.coord.y, localX, localY);
+  }
+
+  return null;
+};
+
 const resolveChunkTileUvRect = (
   chunk: Chunk,
   localX: number,
   localY: number,
   tileId: number,
+  tileMetadataRegistry: TileMetadataRegistry,
   sampleNeighborhood?: ChunkMeshBuildOptions['sampleNeighborhood'],
   sampleNeighborhoodInto?: ChunkMeshBuildOptions['sampleNeighborhoodInto'],
   neighborhoodScratch?: TileNeighborhood
 ): TileUvRect => {
-  if (usesTerrainAutotile(tileId)) {
-    if (!sampleNeighborhood && !(sampleNeighborhoodInto && neighborhoodScratch)) {
-      const isolatedTerrainUvRect = resolveTerrainAutotileUvRectByRawAdjacencyMask(tileId, 0);
+  if (usesTerrainAutotile(tileId, tileMetadataRegistry)) {
+    const neighborhood = resolveChunkTileNeighborhood(
+      chunk,
+      localX,
+      localY,
+      sampleNeighborhood,
+      sampleNeighborhoodInto,
+      neighborhoodScratch
+    );
+    if (!neighborhood) {
+      const isolatedTerrainUvRect = resolveTerrainAutotileUvRectByRawAdjacencyMask(
+        tileId,
+        0,
+        tileMetadataRegistry
+      );
       if (isolatedTerrainUvRect) return isolatedTerrainUvRect;
       throw new Error(`Missing terrain autotile metadata for tile ${tileId}`);
     }
 
-    let neighborhood: TileNeighborhood;
-    if (sampleNeighborhoodInto && neighborhoodScratch) {
-      sampleNeighborhoodInto(chunk.coord.x, chunk.coord.y, localX, localY, neighborhoodScratch);
-      neighborhood = neighborhoodScratch;
-    } else {
-      neighborhood = sampleNeighborhood!(chunk.coord.x, chunk.coord.y, localX, localY);
-    }
     const rawMask = buildAutotileAdjacencyMask(neighborhood, (centerTileId, neighborTileId) =>
-      areTerrainAutotileNeighborsConnected(centerTileId, neighborTileId)
+      areTerrainAutotileNeighborsConnected(centerTileId, neighborTileId, tileMetadataRegistry)
     );
-    const terrainUvRect = resolveTerrainAutotileUvRectByRawAdjacencyMask(tileId, rawMask);
+    const terrainUvRect = resolveTerrainAutotileUvRectByRawAdjacencyMask(
+      tileId,
+      rawMask,
+      tileMetadataRegistry
+    );
     if (terrainUvRect) return terrainUvRect;
     throw new Error(`Missing terrain autotile variant metadata for tile ${tileId}`);
   }
 
-  const staticUvRect = resolveTileRenderUvRect(tileId);
+  if (usesLiquidRender(tileId, tileMetadataRegistry)) {
+    const neighborhood = resolveChunkTileNeighborhood(
+      chunk,
+      localX,
+      localY,
+      sampleNeighborhood,
+      sampleNeighborhoodInto,
+      neighborhoodScratch
+    );
+    const liquidCardinalMask =
+      neighborhood === null
+        ? 0
+        : buildAutotileCardinalMask(neighborhood, (centerTileId, neighborTileId) =>
+            areLiquidRenderNeighborsConnected(centerTileId, neighborTileId, tileMetadataRegistry)
+          );
+    const liquidUvRect = resolveLiquidRenderVariantUvRect(
+      tileId,
+      liquidCardinalMask,
+      tileMetadataRegistry
+    );
+    if (liquidUvRect) return liquidUvRect;
+    throw new Error(`Missing liquid render variant metadata for tile ${tileId}`);
+  }
+
+  const staticUvRect = resolveTileRenderUvRect(tileId, tileMetadataRegistry);
   if (staticUvRect) return staticUvRect;
   throw new Error(`Missing tile render metadata for tile ${tileId}`);
 };
@@ -109,7 +173,11 @@ const resolveChunkTileUvRect = (
 export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}): ChunkMeshData => {
   const chunkOriginX = chunk.coord.x * CHUNK_SIZE * TILE_SIZE;
   const chunkOriginY = chunk.coord.y * CHUNK_SIZE * TILE_SIZE;
-  const { sampleNeighborhood, sampleNeighborhoodInto } = options;
+  const {
+    sampleNeighborhood,
+    sampleNeighborhoodInto,
+    tileMetadataRegistry = TILE_METADATA
+  } = options;
   const nonEmptyTileCount = countNonEmptyTiles(chunk);
   if (nonEmptyTileCount === 0) {
     return { vertices: new Float32Array(0), vertexCount: 0, animatedTileQuads: [] };
@@ -135,11 +203,12 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
         x,
         y,
         tileId,
+        tileMetadataRegistry,
         sampleNeighborhood,
         sampleNeighborhoodInto,
         neighborhoodScratch
       );
-      if (usesAnimatedTileRender(tileId)) {
+      if (usesAnimatedTileRender(tileId, tileMetadataRegistry)) {
         animatedTileQuads.push({
           tileId,
           vertexFloatOffset: tileVertexFloatOffset
