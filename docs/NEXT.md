@@ -50,3 +50,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 104. Surface standalone player live camera-follow offset in the compact debug-edit status strip when the text debug HUD is hidden.
 
 ## Project structure optimization
+
+109. Add a deployment regression check that verifies the production entry HTML references the configured `/deep-factory/` GitHub Pages base path.

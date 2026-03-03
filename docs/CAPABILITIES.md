@@ -141,3 +141,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - The full `Debug Edit` panel is now distinct from the compact inspect and preview overlay layer, so either surface can be hidden without forcing the other one off.
 - Collapsed panel state still shows a compact header with current mode, active brush, and undo or redo counts.
 - The compact status strip stays useful even when the larger panel is collapsed or out of the way.
+
+## Tooling And Deployment
+
+- Production Vite builds target the GitHub Pages project-site base path `/deep-factory/`, so emitted script, stylesheet, and static-asset URLs resolve correctly under `https://regillmore.github.io/deep-factory/` while local development stays rooted at `/`.
