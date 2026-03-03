@@ -46,5 +46,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Player debugging
 
-75. Surface standalone player wall-side direction in the compact debug-edit status strip when the text debug HUD is hidden.
 81. Surface standalone player ceiling-bonk hold state in the compact debug-edit status strip when the text debug HUD is hidden.
+83. Surface standalone player live wall-contact tile and side in the compact debug-edit status strip when the text debug HUD is hidden.

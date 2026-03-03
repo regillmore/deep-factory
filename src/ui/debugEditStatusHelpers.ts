@@ -90,7 +90,7 @@ export interface DebugEditStatusStripPlayerFacingTransitionTelemetry {
 
 export interface DebugEditStatusStripPlayerWallContactTransitionTelemetry {
   kind: PlayerWallContactTransitionKind;
-  tile: { x: number; y: number; id: number };
+  tile: { x: number; y: number; id: number; side: 'left' | 'right' };
   position: { x: number; y: number };
   velocity: { x: number; y: number };
 }
@@ -450,7 +450,7 @@ const formatWallContactTransitionEventText = (
     `tile ${formatTileCoordinatePair(
       playerWallContactTransition.tile.x,
       playerWallContactTransition.tile.y
-    )} (#${playerWallContactTransition.tile.id}) | ` +
+    )} (#${playerWallContactTransition.tile.id}, ${playerWallContactTransition.tile.side}) | ` +
     `pos ${playerWallContactTransition.position.x.toFixed(2)},${playerWallContactTransition.position.y.toFixed(2)} | ` +
     `vel ${playerWallContactTransition.velocity.x.toFixed(2)},${playerWallContactTransition.velocity.y.toFixed(2)}`
   );

@@ -201,14 +201,16 @@ describe('buildDebugEditStatusStripModel', () => {
       desktopInspectPinArmed: false,
       playerWallContactTransition: {
         kind: 'blocked',
-        tile: { x: 5, y: -3, id: 7 },
+        tile: { x: 5, y: -3, id: 7, side: 'right' },
         position: { x: 88, y: -24 },
         velocity: { x: -180, y: 60 }
       },
       preview: createEmptyPreviewState()
     });
 
-    expect(model.eventText).toBe('Wall: blocked | tile 5,-3 (#7) | pos 88.00,-24.00 | vel -180.00,60.00');
+    expect(model.eventText).toBe(
+      'Wall: blocked | tile 5,-3 (#7, right) | pos 88.00,-24.00 | vel -180.00,60.00'
+    );
   });
 
   it('formats the latest ceiling-contact transition event for the compact strip when provided', () => {
@@ -295,7 +297,7 @@ describe('buildDebugEditStatusStripModel', () => {
       },
       playerWallContactTransition: {
         kind: 'cleared',
-        tile: { x: -1, y: -2, id: 4 },
+        tile: { x: -1, y: -2, id: 4, side: 'left' },
         position: { x: 64, y: -16 },
         velocity: { x: 120, y: 0 }
       },
@@ -306,7 +308,7 @@ describe('buildDebugEditStatusStripModel', () => {
       'Ground: fall | pos 40.00,-8.00 | vel 60.00,90.00\n' +
         'Facing: right->left | pos 52.00,-10.00 | vel -140.00,80.00\n' +
         'Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
-        'Wall: cleared | tile -1,-2 (#4) | pos 64.00,-16.00 | vel 120.00,0.00'
+        'Wall: cleared | tile -1,-2 (#4, left) | pos 64.00,-16.00 | vel 120.00,0.00'
     );
   });
 
@@ -338,7 +340,7 @@ describe('buildDebugEditStatusStripModel', () => {
       },
       playerWallContactTransition: {
         kind: 'cleared',
-        tile: { x: -1, y: -2, id: 4 },
+        tile: { x: -1, y: -2, id: 4, side: 'left' },
         position: { x: 64, y: -16 },
         velocity: { x: 120, y: 0 }
       },
@@ -355,7 +357,7 @@ describe('buildDebugEditStatusStripModel', () => {
       'Ground: jump | pos 56.00,-48.00 | vel 20.00,-180.00\n' +
         'Facing: left->right | pos 60.00,-42.00 | vel 110.00,-170.00\n' +
         'Respawn: embedded | spawn 3,-2 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
-        'Wall: cleared | tile -1,-2 (#4) | pos 64.00,-16.00 | vel 120.00,0.00\n' +
+        'Wall: cleared | tile -1,-2 (#4, left) | pos 64.00,-16.00 | vel 120.00,0.00\n' +
         'Ceiling: blocked | tile 2,-6 (#8) | pos 72.00,-48.00 | vel 15.00,-210.00'
     );
   });

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-03
 
+- Task: Surface standalone player wall-side direction in the compact debug-edit status strip when the text debug HUD is hidden.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) plus [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so hidden-HUD wall-contact events keep and format their resolved `left` or `right` side in the compact strip, refreshed [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts) for the wrap-friendly segmented event text, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a desktop keyboard shortcut that toggles the in-world edit panel without mutating edit or movement intent.
 - Changes: Updated [src/input/debugEditShortcuts.ts](../src/input/debugEditShortcuts.ts) plus [src/input/debugEditShortcuts.test.ts](../src/input/debugEditShortcuts.test.ts) to expose a dedicated `toggle-debug-edit-controls` shortcut action on `G`, wired [src/main.ts](../src/main.ts) to reuse the existing in-world full-panel visibility sync from the global desktop keydown path without touching panel collapse state, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [README.md](../README.md).
 - Verification: Ran `npx vitest run src/input/debugEditShortcuts.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
