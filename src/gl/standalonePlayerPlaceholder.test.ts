@@ -4,6 +4,7 @@ import { createPlayerState } from '../world/playerState';
 import {
   buildStandalonePlayerPlaceholderVertices,
   getStandalonePlayerPlaceholderFacingSign,
+  getStandalonePlayerPlaceholderRenderFacingSign,
   getStandalonePlayerPlaceholderPoseIndex,
   STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK,
@@ -97,10 +98,28 @@ describe('standalonePlayerPlaceholder', () => {
           velocity: { x: 0, y: -60 }
         }),
         {
-          wallContact: { tileX: 1, tileY: -1, tileId: 3 }
+          wallContact: { tileX: 1, tileY: -1, tileId: 3, side: 'right' }
         }
       )
     ).toBe(STANDALONE_PLAYER_PLACEHOLDER_POSE_WALL_SLIDE);
+  });
+
+  it('mirrors the wall-slide placeholder away from the blocking wall side', () => {
+    expect(
+      getStandalonePlayerPlaceholderRenderFacingSign(
+        createPlayerState({ facing: 'right' }),
+        STANDALONE_PLAYER_PLACEHOLDER_POSE_WALL_SLIDE,
+        { tileX: 1, tileY: -1, tileId: 3, side: 'right' }
+      )
+    ).toBe(-1);
+
+    expect(
+      getStandalonePlayerPlaceholderRenderFacingSign(
+        createPlayerState({ facing: 'left' }),
+        STANDALONE_PLAYER_PLACEHOLDER_POSE_WALL_SLIDE,
+        { tileX: -1, tileY: -1, tileId: 3, side: 'left' }
+      )
+    ).toBe(1);
   });
 
   it('maps airborne ceiling contact into a dedicated ceiling-bonk pose', () => {
@@ -111,7 +130,7 @@ describe('standalonePlayerPlaceholder', () => {
           velocity: { x: 0, y: 0 }
         }),
         {
-          wallContact: { tileX: 1, tileY: -1, tileId: 3 },
+          wallContact: { tileX: 1, tileY: -1, tileId: 3, side: 'right' },
           ceilingContact: { tileX: 0, tileY: -2, tileId: 4 }
         }
       )

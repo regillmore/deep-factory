@@ -42,9 +42,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 66. Surface the in-world recenter-camera shortcut in shell copy once the keyboard action exists.
 67. Surface the in-world debug-HUD shortcut in shell copy once the keyboard action exists.
 68. Surface the in-world spawn-marker shortcut in shell copy once the keyboard action exists.
-78. Pass resolved left/right wall-contact side into the renderer-side standalone player draw pass and mirror the wall-slide placeholder lean away from the blocking side.
 
 ## Player debugging
 
 63. Surface standalone player wall-side direction in the debug overlay when wall-contact events block or clear on the left versus right side.
 75. Surface standalone player wall-side direction in the compact debug-edit status strip when the text debug HUD is hidden.
+79. Surface standalone player wall-contact side in the live debug overlay `Contact:` line once sided wall probes exist.

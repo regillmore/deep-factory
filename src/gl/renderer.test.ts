@@ -427,12 +427,12 @@ describe('Renderer atlas telemetry', () => {
 
     renderer.render(camera, {
       standalonePlayer: wallSlideState,
-      standalonePlayerWallContact: { tileX: 1, tileY: -1, tileId: 3 },
+      standalonePlayerWallContact: { tileX: 1, tileY: -1, tileId: 3, side: 'right' },
       timeMs: 0
     });
 
     expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([
-      1,
+      -1,
       STANDALONE_PLAYER_PLACEHOLDER_POSE_WALL_SLIDE
     ]);
   });
@@ -461,7 +461,7 @@ describe('Renderer atlas telemetry', () => {
 
     renderer.render(camera, {
       standalonePlayer: ceilingBonkState,
-      standalonePlayerWallContact: { tileX: 1, tileY: -1, tileId: 3 },
+      standalonePlayerWallContact: { tileX: 1, tileY: -1, tileId: 3, side: 'right' },
       standalonePlayerCeilingContact: { tileX: 0, tileY: -2, tileId: 4 },
       timeMs: 0
     });

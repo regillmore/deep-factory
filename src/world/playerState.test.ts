@@ -170,9 +170,28 @@ describe('playerState', () => {
 
     expect(contacts).toEqual({
       support: { tileX: 0, tileY: 0, tileId: 3 },
-      wall: { tileX: 1, tileY: -1, tileId: 3 },
+      wall: { tileX: 1, tileY: -1, tileId: 3, side: 'right' },
       ceiling: { tileX: 0, tileY: -2, tileId: 3 }
     });
+  });
+
+  it('tags fallback wall probes with the actual blocking side instead of the preferred facing side', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -3, 2, 2, 0);
+    world.setTile(-1, -1, 3);
+
+    const contacts = getPlayerCollisionContacts(
+      world,
+      createPlayerState({
+        position: { x: 6, y: 0 },
+        size: { width: 12, height: 16 },
+        grounded: false,
+        facing: 'right'
+      })
+    );
+
+    expect(contacts.wall).toEqual({ tileX: -1, tileY: -1, tileId: 3, side: 'left' });
   });
 
   it('returns null contacts when no adjacent blocking tiles are present', () => {

@@ -57,6 +57,10 @@ export const buildStandalonePlayerPlaceholderVertices = (state: PlayerState): Fl
 export const getStandalonePlayerPlaceholderFacingSign = (state: PlayerState): number =>
   state.facing === 'left' ? -1 : 1;
 
+const getStandalonePlayerPlaceholderWallSlideFacingSign = (
+  wallContact: NonNullable<PlayerCollisionContacts['wall']>
+): number => (wallContact.side === 'left' ? 1 : -1);
+
 export const getStandalonePlayerPlaceholderPoseIndex = (
   state: PlayerState,
   options: StandalonePlayerPlaceholderPoseOptions = {}
@@ -90,4 +94,16 @@ export const getStandalonePlayerPlaceholderPoseIndex = (
   return walkFrameIndex === 0
     ? STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A
     : STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B;
+};
+
+export const getStandalonePlayerPlaceholderRenderFacingSign = (
+  state: PlayerState,
+  poseIndex: number,
+  wallContact: PlayerCollisionContacts['wall'] | null = null
+): number => {
+  if (poseIndex === STANDALONE_PLAYER_PLACEHOLDER_POSE_WALL_SLIDE && wallContact !== null) {
+    return getStandalonePlayerPlaceholderWallSlideFacingSign(wallContact);
+  }
+
+  return getStandalonePlayerPlaceholderFacingSign(state);
 };

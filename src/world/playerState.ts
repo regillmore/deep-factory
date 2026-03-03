@@ -4,6 +4,7 @@ import type { TileMetadataRegistry } from './tileMetadata';
 import type { TileWorld } from './world';
 
 export type PlayerFacing = 'left' | 'right';
+export type PlayerWallContactSide = 'left' | 'right';
 
 export interface PlayerVector {
   x: number;
@@ -25,8 +26,12 @@ export interface PlayerState {
 
 export interface PlayerCollisionContacts {
   support: SolidTileCollision | null;
-  wall: SolidTileCollision | null;
+  wall: PlayerWallCollision | null;
   ceiling: SolidTileCollision | null;
+}
+
+export interface PlayerWallCollision extends SolidTileCollision {
+  side: PlayerWallContactSide;
 }
 
 export interface PlayerSpawnPlacement {
@@ -171,6 +176,26 @@ const getGroundSupport = (
 ): SolidTileCollision | null =>
   getAabbContact(world, aabb, 'y', COLLISION_CONTACT_PROBE_DISTANCE, registry);
 
+const getWallContactSideFromProbeDelta = (probeDelta: number): PlayerWallContactSide =>
+  probeDelta < 0 ? 'left' : 'right';
+
+const getWallContact = (
+  world: TileWorld,
+  aabb: WorldAabb,
+  probeDelta: number,
+  registry: TileMetadataRegistry
+): PlayerWallCollision | null => {
+  const collision = getAabbContact(world, aabb, 'x', probeDelta, registry);
+  if (collision === null) {
+    return null;
+  }
+
+  return {
+    ...collision,
+    side: getWallContactSideFromProbeDelta(probeDelta)
+  };
+};
+
 const getPreferredWallContactProbeDelta = (state: PlayerState): number => {
   if (state.velocity.x < 0) {
     return -COLLISION_CONTACT_PROBE_DISTANCE;
@@ -272,9 +297,8 @@ export const getPlayerCollisionContacts = (
 
   return {
     support: getGroundSupport(world, aabb, registry),
-    wall:
-      getAabbContact(world, aabb, 'x', preferredWallProbeDelta, registry) ??
-      getAabbContact(world, aabb, 'x', -preferredWallProbeDelta, registry),
+    wall: getWallContact(world, aabb, preferredWallProbeDelta, registry) ??
+      getWallContact(world, aabb, -preferredWallProbeDelta, registry),
     ceiling: getAabbContact(world, aabb, 'y', -COLLISION_CONTACT_PROBE_DISTANCE, registry)
   };
 };

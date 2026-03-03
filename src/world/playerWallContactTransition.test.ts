@@ -28,13 +28,13 @@ describe('resolvePlayerWallContactTransitionEvent', () => {
 
   it('returns null when a wall contact persists on a different tile', () => {
     const event = resolvePlayerWallContactTransitionEvent(
-      contactsWithWall({ tileX: 2, tileY: -1, tileId: 3 }),
+      contactsWithWall({ tileX: 2, tileY: -1, tileId: 3, side: 'right' }),
       createPlayerState({
         position: { x: 12, y: 0 },
         velocity: { x: 0, y: 0 },
         grounded: true
       }),
-      contactsWithWall({ tileX: 3, tileY: -1, tileId: 3 })
+      contactsWithWall({ tileX: 3, tileY: -1, tileId: 3, side: 'right' })
     );
 
     expect(event).toBeNull();
@@ -48,7 +48,7 @@ describe('resolvePlayerWallContactTransitionEvent', () => {
         velocity: { x: 0, y: 0 },
         grounded: true
       }),
-      contactsWithWall({ tileX: 1, tileY: -1, tileId: 4 })
+      contactsWithWall({ tileX: 1, tileY: -1, tileId: 4, side: 'right' })
     );
 
     expect(event).toEqual({
@@ -61,7 +61,7 @@ describe('resolvePlayerWallContactTransitionEvent', () => {
 
   it('classifies wall-contact clearing as cleared', () => {
     const event = resolvePlayerWallContactTransitionEvent(
-      contactsWithWall({ tileX: -1, tileY: -1, tileId: 5 }),
+      contactsWithWall({ tileX: -1, tileY: -1, tileId: 5, side: 'left' }),
       createPlayerState({
         position: { x: 12, y: 0 },
         velocity: { x: 90, y: 0 },

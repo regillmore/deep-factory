@@ -4,7 +4,7 @@ import { createProgram } from './shader';
 import { applyAnimatedChunkMeshFrameAtElapsedMs, createAnimatedChunkMeshState } from './animatedChunkMesh';
 import {
   buildStandalonePlayerPlaceholderVertices,
-  getStandalonePlayerPlaceholderFacingSign,
+  getStandalonePlayerPlaceholderRenderFacingSign,
   getStandalonePlayerPlaceholderPoseIndex,
   STANDALONE_PLAYER_PLACEHOLDER_VERTEX_COUNT,
   STANDALONE_PLAYER_PLACEHOLDER_VERTEX_FLOAT_COUNT
@@ -694,22 +694,20 @@ export class Renderer {
     timeMs: number
   ): void {
     const gl = this.gl;
+    const poseIndex = getStandalonePlayerPlaceholderPoseIndex(state, {
+      elapsedMs: timeMs,
+      wallContact,
+      ceilingContact,
+      ceilingBonkActive:
+        ceilingContact !== null ||
+        (ceilingBonkHoldUntilTimeMs !== null && Number.isFinite(ceilingBonkHoldUntilTimeMs)
+          ? timeMs < ceilingBonkHoldUntilTimeMs
+          : false)
+    });
     gl.useProgram(this.playerProgram);
     gl.uniformMatrix4fv(this.uPlayerMatrix, false, worldToClipMatrix);
-    gl.uniform1f(this.uPlayerFacingSign, getStandalonePlayerPlaceholderFacingSign(state));
-    gl.uniform1f(
-      this.uPlayerPoseIndex,
-      getStandalonePlayerPlaceholderPoseIndex(state, {
-        elapsedMs: timeMs,
-        wallContact,
-        ceilingContact,
-        ceilingBonkActive:
-          ceilingContact !== null ||
-          (ceilingBonkHoldUntilTimeMs !== null && Number.isFinite(ceilingBonkHoldUntilTimeMs)
-            ? timeMs < ceilingBonkHoldUntilTimeMs
-            : false)
-      })
-    );
+    gl.uniform1f(this.uPlayerFacingSign, getStandalonePlayerPlaceholderRenderFacingSign(state, poseIndex, wallContact));
+    gl.uniform1f(this.uPlayerPoseIndex, poseIndex);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.standalonePlayerBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, buildStandalonePlayerPlaceholderVertices(state), gl.DYNAMIC_DRAW);
     gl.bindVertexArray(this.standalonePlayerVao);
