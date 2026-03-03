@@ -131,6 +131,22 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats the live standalone player grounded flag for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerGrounded: true,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('GroundedNow: on');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the live standalone player wall-contact tile and side for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -223,6 +239,23 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('keeps pose and live grounded telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'grounded-idle',
+      playerGrounded: true,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: grounded-idle\nGroundedNow: on');
+    expect(model.eventText).toBeNull();
+  });
+
   it('keeps pose, live wall-contact, and live ceiling-contact telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -247,7 +280,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose, live support-contact, wall-contact, and ceiling-contact telemetry on separate player lines', () => {
+  it('keeps pose, live grounded, support-contact, wall-contact, and ceiling-contact telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -256,6 +289,7 @@ describe('buildDebugEditStatusStripModel', () => {
       pinnedTile: null,
       desktopInspectPinArmed: false,
       playerPlaceholderPoseLabel: 'ceiling-bonk',
+      playerGrounded: false,
       playerSupportContact: {
         tile: { x: 4, y: -1, id: 6 }
       },
@@ -270,6 +304,7 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.playerText).toBe(
       'Pose: ceiling-bonk\n' +
+        'GroundedNow: off\n' +
         'SupportNow: tile 4,-1 (#6)\n' +
         'WallNow: tile 5,-3 (#7, right)\n' +
         'CeilingNow: tile 2,-6 (#8)'

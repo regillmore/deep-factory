@@ -30,6 +30,7 @@ export interface DebugEditStatusStripState {
   pinnedTile: DebugEditHoveredTileState | null;
   desktopInspectPinArmed: boolean;
   playerPlaceholderPoseLabel?: string | null;
+  playerGrounded?: boolean | null;
   playerSupportContact?: DebugEditStatusStripPlayerSupportContactTelemetry | null;
   playerWallContact?: DebugEditStatusStripPlayerWallContactTelemetry | null;
   playerCeilingContact?: DebugEditStatusStripPlayerCeilingContactTelemetry | null;
@@ -407,6 +408,8 @@ const formatTileCoordinatePair = (tileX: number, tileY: number): string => `${ti
 const formatEstimatedAffectedTileCount = (tileCount: number | null): string =>
   tileCount === null ? 'pending' : `${tileCount} ${tileCount === 1 ? 'tile' : 'tiles'}`;
 
+const formatGameplayFlag = (value: boolean): string => (value ? 'on' : 'off');
+
 const formatRespawnEventText = (
   playerRespawn: DebugEditStatusStripPlayerRespawnTelemetry | null
 ): string | null => {
@@ -448,6 +451,14 @@ const formatLiveSupportContactText = (
   );
 };
 
+const formatLiveGroundedText = (playerGrounded: boolean | null): string | null => {
+  if (playerGrounded === null) {
+    return null;
+  }
+
+  return `GroundedNow: ${formatGameplayFlag(playerGrounded)}`;
+};
+
 const formatLiveCeilingContactText = (
   playerCeilingContact: DebugEditStatusStripPlayerCeilingContactTelemetry | null
 ): string | null => {
@@ -463,12 +474,14 @@ const formatLiveCeilingContactText = (
 
 const buildPlayerText = (
   playerPlaceholderPoseLabel: string | null,
+  playerGrounded: boolean | null,
   playerSupportContact: DebugEditStatusStripPlayerSupportContactTelemetry | null,
   playerWallContact: DebugEditStatusStripPlayerWallContactTelemetry | null,
   playerCeilingContact: DebugEditStatusStripPlayerCeilingContactTelemetry | null
 ): string | null => {
   const playerLines = [
     playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : null,
+    formatLiveGroundedText(playerGrounded),
     formatLiveSupportContactText(playerSupportContact),
     formatLiveWallContactText(playerWallContact),
     formatLiveCeilingContactText(playerCeilingContact)
@@ -956,6 +969,7 @@ export const buildDebugEditStatusStripModel = (
 ): DebugEditStatusStripModel => {
   const activeToolStatus = resolveActiveDebugToolStatus(state.preview);
   const playerPlaceholderPoseLabel = state.playerPlaceholderPoseLabel ?? null;
+  const playerGrounded = state.playerGrounded ?? null;
   const playerSupportContact = state.playerSupportContact ?? null;
   const playerWallContact = state.playerWallContact ?? null;
   const playerCeilingContact = state.playerCeilingContact ?? null;
@@ -972,6 +986,7 @@ export const buildDebugEditStatusStripModel = (
     previewText: buildPreviewText(state.preview, state.hoveredTile),
     playerText: buildPlayerText(
       playerPlaceholderPoseLabel,
+      playerGrounded,
       playerSupportContact,
       playerWallContact,
       playerCeilingContact
