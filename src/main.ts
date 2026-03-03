@@ -1210,6 +1210,16 @@ const bootstrap = async (): Promise<void> => {
       Number.isFinite(standalonePlayerCeilingBonkHoldUntilTimeMs)
         ? renderTimeMs < standalonePlayerCeilingBonkHoldUntilTimeMs
         : false;
+    const debugStatusStripPlayerWallContact = standalonePlayerContacts?.wall
+      ? {
+          tile: {
+            x: standalonePlayerContacts.wall.tileX,
+            y: standalonePlayerContacts.wall.tileY,
+            id: standalonePlayerContacts.wall.tileId,
+            side: standalonePlayerContacts.wall.side
+          }
+        }
+      : null;
     const debugOverlayPlayerPlaceholderPoseLabel = standalonePlayerState
       ? getStandalonePlayerPlaceholderPoseLabel(standalonePlayerState, {
           elapsedMs: renderTimeMs,
@@ -1298,6 +1308,7 @@ const bootstrap = async (): Promise<void> => {
       pinnedTile: pinnedDebugTileStatus,
       desktopInspectPinArmed: input.getArmedDesktopDebugInspectPin(),
       playerPlaceholderPoseLabel: debugOverlayVisible ? null : debugOverlayPlayerPlaceholderPoseLabel,
+      playerWallContact: debugOverlayVisible ? null : debugStatusStripPlayerWallContact,
       playerGroundedTransition: debugOverlayVisible ? null : lastPlayerGroundedTransitionEvent,
       playerFacingTransition: debugOverlayVisible ? null : lastPlayerFacingTransitionEvent,
       playerRespawn: debugOverlayVisible ? null : lastPlayerRespawnEvent,

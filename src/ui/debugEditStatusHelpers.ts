@@ -30,6 +30,7 @@ export interface DebugEditStatusStripState {
   pinnedTile: DebugEditHoveredTileState | null;
   desktopInspectPinArmed: boolean;
   playerPlaceholderPoseLabel?: string | null;
+  playerWallContact?: DebugEditStatusStripPlayerWallContactTelemetry | null;
   playerGroundedTransition?: DebugEditStatusStripPlayerGroundedTransitionTelemetry | null;
   playerFacingTransition?: DebugEditStatusStripPlayerFacingTransitionTelemetry | null;
   playerRespawn?: DebugEditStatusStripPlayerRespawnTelemetry | null;
@@ -86,6 +87,10 @@ export interface DebugEditStatusStripPlayerFacingTransitionTelemetry {
   nextFacing: 'left' | 'right';
   position: { x: number; y: number };
   velocity: { x: number; y: number };
+}
+
+export interface DebugEditStatusStripPlayerWallContactTelemetry {
+  tile: { x: number; y: number; id: number; side: 'left' | 'right' };
 }
 
 export interface DebugEditStatusStripPlayerWallContactTransitionTelemetry {
@@ -407,8 +412,30 @@ const formatRespawnEventText = (
   );
 };
 
-const buildPlayerText = (playerPlaceholderPoseLabel: string | null): string | null =>
-  playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : null;
+const formatLiveWallContactText = (
+  playerWallContact: DebugEditStatusStripPlayerWallContactTelemetry | null
+): string | null => {
+  if (!playerWallContact) {
+    return null;
+  }
+
+  return (
+    `WallNow: tile ${formatTileCoordinatePair(playerWallContact.tile.x, playerWallContact.tile.y)} ` +
+    `(#${playerWallContact.tile.id}, ${playerWallContact.tile.side})`
+  );
+};
+
+const buildPlayerText = (
+  playerPlaceholderPoseLabel: string | null,
+  playerWallContact: DebugEditStatusStripPlayerWallContactTelemetry | null
+): string | null => {
+  const playerLines = [
+    playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : null,
+    formatLiveWallContactText(playerWallContact)
+  ].filter((line): line is string => line !== null);
+
+  return playerLines.length > 0 ? playerLines.join('\n') : null;
+};
 
 const formatGroundedTransitionEventText = (
   playerGroundedTransition: DebugEditStatusStripPlayerGroundedTransitionTelemetry | null
@@ -889,6 +916,7 @@ export const buildDebugEditStatusStripModel = (
 ): DebugEditStatusStripModel => {
   const activeToolStatus = resolveActiveDebugToolStatus(state.preview);
   const playerPlaceholderPoseLabel = state.playerPlaceholderPoseLabel ?? null;
+  const playerWallContact = state.playerWallContact ?? null;
   const playerGroundedTransition = state.playerGroundedTransition ?? null;
   const playerFacingTransition = state.playerFacingTransition ?? null;
   const playerRespawn = state.playerRespawn ?? null;
@@ -900,7 +928,7 @@ export const buildDebugEditStatusStripModel = (
     brushText: `Brush: ${state.brushLabel} (#${state.brushTileId})`,
     toolText: activeToolStatus ? `Tool: ${activeToolStatus.title}` : 'Tool: No one-shot armed',
     previewText: buildPreviewText(state.preview, state.hoveredTile),
-    playerText: buildPlayerText(playerPlaceholderPoseLabel),
+    playerText: buildPlayerText(playerPlaceholderPoseLabel, playerWallContact),
     eventText: buildEventText(
       playerGroundedTransition,
       playerFacingTransition,

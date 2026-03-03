@@ -131,6 +131,43 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats the live standalone player wall-contact tile and side for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerWallContact: {
+        tile: { x: 5, y: -3, id: 7, side: 'right' }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('WallNow: tile 5,-3 (#7, right)');
+    expect(model.eventText).toBeNull();
+  });
+
+  it('keeps pose and live wall-contact telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'wall-slide',
+      playerWallContact: {
+        tile: { x: 5, y: -3, id: 7, side: 'right' }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: wall-slide\nWallNow: tile 5,-3 (#7, right)');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the latest auto-respawn event for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',

@@ -78,6 +78,13 @@ describe('buildWrappedDetailLines', () => {
     expect(buildWrappedDetailLines('Pose: wall-slide')).toEqual([['Pose: wall-slide']]);
   });
 
+  it('preserves separate pose and live wall-contact player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: wall-slide\nWallNow: tile 5,-3 (#7, right)')).toEqual([
+      ['Pose: wall-slide'],
+      ['WallNow: tile 5,-3 (#7, right)']
+    ]);
+  });
+
   it('preserves separate respawn and wall-contact event lines while splitting each line at pipe separators', () => {
     expect(
       buildWrappedDetailLines(
