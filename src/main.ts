@@ -10,7 +10,10 @@ import {
 } from './core/cameraFollow';
 import { GameLoop } from './core/gameLoop';
 import { Renderer } from './gl/renderer';
-import { STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS } from './gl/standalonePlayerPlaceholder';
+import {
+  getStandalonePlayerPlaceholderPoseLabel,
+  STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS
+} from './gl/standalonePlayerPlaceholder';
 import {
   InputController,
   walkEllipseOutlineTileArea,
@@ -1145,6 +1148,7 @@ const bootstrap = async (): Promise<void> => {
   });
 
   const renderWorldFrame = (frameDtMs: number): void => {
+    const renderTimeMs = performance.now();
     const pointerInspect = input.getPointerInspect();
     const armedDebugToolPreviewState = input.getArmedDebugToolPreviewState();
     const hoveredDebugTileStatus = getHoveredDebugTileStatus(pointerInspect);
@@ -1188,6 +1192,20 @@ const bootstrap = async (): Promise<void> => {
       : null;
     const standalonePlayerContacts = standalonePlayerState
       ? renderer.getPlayerCollisionContacts(standalonePlayerState)
+      : null;
+    const standalonePlayerCeilingBonkActive =
+      standalonePlayerContacts?.ceiling !== null ||
+      (standalonePlayerCeilingBonkHoldUntilTimeMs !== null &&
+      Number.isFinite(standalonePlayerCeilingBonkHoldUntilTimeMs)
+        ? renderTimeMs < standalonePlayerCeilingBonkHoldUntilTimeMs
+        : false);
+    const debugOverlayPlayerPlaceholderPoseLabel = standalonePlayerState
+      ? getStandalonePlayerPlaceholderPoseLabel(standalonePlayerState, {
+          elapsedMs: renderTimeMs,
+          wallContact: standalonePlayerContacts?.wall ?? null,
+          ceilingContact: standalonePlayerContacts?.ceiling ?? null,
+          ceilingBonkActive: standalonePlayerCeilingBonkActive
+        })
       : null;
     const debugOverlayPlayer = standalonePlayerState
       ? (() => {
@@ -1241,7 +1259,8 @@ const bootstrap = async (): Promise<void> => {
       standalonePlayer: standalonePlayerState,
       standalonePlayerWallContact: standalonePlayerContacts?.wall ?? null,
       standalonePlayerCeilingContact: standalonePlayerContacts?.ceiling ?? null,
-      standalonePlayerCeilingBonkHoldUntilTimeMs: standalonePlayerCeilingBonkHoldUntilTimeMs
+      standalonePlayerCeilingBonkHoldUntilTimeMs: standalonePlayerCeilingBonkHoldUntilTimeMs,
+      timeMs: renderTimeMs
     });
     hoveredTileCursor.update(camera, {
       hovered: pointerInspect
@@ -1278,6 +1297,7 @@ const bootstrap = async (): Promise<void> => {
       pinned: debugOverlayPinnedInspect,
       spawn: debugOverlaySpawn,
       player: debugOverlayPlayer,
+      playerPlaceholderPoseLabel: debugOverlayPlayerPlaceholderPoseLabel,
       playerIntent: debugOverlayPlayerIntent,
       playerCameraFollow: debugOverlayPlayerCameraFollow,
       playerGroundedTransition: lastPlayerGroundedTransitionEvent,

@@ -4,6 +4,8 @@ import { createPlayerState } from '../world/playerState';
 import {
   buildStandalonePlayerPlaceholderVertices,
   getStandalonePlayerPlaceholderFacingSign,
+  getStandalonePlayerPlaceholderPoseLabel,
+  getStandalonePlayerPlaceholderPoseLabelFromIndex,
   getStandalonePlayerPlaceholderRenderFacingSign,
   getStandalonePlayerPlaceholderPoseIndex,
   STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS,
@@ -176,5 +178,56 @@ describe('standalonePlayerPlaceholder', () => {
         elapsedMs: STANDALONE_PLAYER_PLACEHOLDER_WALK_FRAME_DURATION_MS
       })
     ).toBe(STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B);
+  });
+
+  it('maps pose indices into stable debug labels', () => {
+    expect(
+      getStandalonePlayerPlaceholderPoseLabelFromIndex(STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_IDLE)
+    ).toBe('grounded-idle');
+    expect(
+      getStandalonePlayerPlaceholderPoseLabelFromIndex(STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A)
+    ).toBe('grounded-walk-a');
+    expect(
+      getStandalonePlayerPlaceholderPoseLabelFromIndex(STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B)
+    ).toBe('grounded-walk-b');
+    expect(
+      getStandalonePlayerPlaceholderPoseLabelFromIndex(STANDALONE_PLAYER_PLACEHOLDER_POSE_JUMP_RISE)
+    ).toBe('jump-rise');
+    expect(getStandalonePlayerPlaceholderPoseLabelFromIndex(STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL)).toBe(
+      'fall'
+    );
+    expect(
+      getStandalonePlayerPlaceholderPoseLabelFromIndex(STANDALONE_PLAYER_PLACEHOLDER_POSE_WALL_SLIDE)
+    ).toBe('wall-slide');
+    expect(
+      getStandalonePlayerPlaceholderPoseLabelFromIndex(STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK)
+    ).toBe('ceiling-bonk');
+  });
+
+  it('derives a pose label from the same state and renderer options used for placeholder animation', () => {
+    expect(
+      getStandalonePlayerPlaceholderPoseLabel(
+        createPlayerState({
+          grounded: false,
+          velocity: { x: 0, y: 60 }
+        }),
+        {
+          ceilingBonkActive: true,
+          elapsedMs: STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS - 1
+        }
+      )
+    ).toBe('ceiling-bonk');
+
+    expect(
+      getStandalonePlayerPlaceholderPoseLabel(
+        createPlayerState({
+          grounded: true,
+          velocity: { x: 60, y: 0 }
+        }),
+        {
+          elapsedMs: STANDALONE_PLAYER_PLACEHOLDER_WALK_FRAME_DURATION_MS
+        }
+      )
+    ).toBe('grounded-walk-b');
   });
 });

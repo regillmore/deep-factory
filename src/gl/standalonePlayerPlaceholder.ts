@@ -23,6 +23,15 @@ export interface StandalonePlayerPlaceholderPoseOptions {
   ceilingBonkActive?: boolean;
 }
 
+export type StandalonePlayerPlaceholderPoseLabel =
+  | 'grounded-idle'
+  | 'grounded-walk-a'
+  | 'grounded-walk-b'
+  | 'jump-rise'
+  | 'fall'
+  | 'wall-slide'
+  | 'ceiling-bonk';
+
 export const buildStandalonePlayerPlaceholderVertices = (state: PlayerState): Float32Array => {
   const aabb = getPlayerAabb(state);
 
@@ -95,6 +104,36 @@ export const getStandalonePlayerPlaceholderPoseIndex = (
     ? STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A
     : STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B;
 };
+
+export const getStandalonePlayerPlaceholderPoseLabelFromIndex = (
+  poseIndex: number
+): StandalonePlayerPlaceholderPoseLabel => {
+  if (poseIndex === STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_IDLE) {
+    return 'grounded-idle';
+  }
+  if (poseIndex === STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A) {
+    return 'grounded-walk-a';
+  }
+  if (poseIndex === STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B) {
+    return 'grounded-walk-b';
+  }
+  if (poseIndex === STANDALONE_PLAYER_PLACEHOLDER_POSE_JUMP_RISE) {
+    return 'jump-rise';
+  }
+  if (poseIndex === STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL) {
+    return 'fall';
+  }
+  if (poseIndex === STANDALONE_PLAYER_PLACEHOLDER_POSE_WALL_SLIDE) {
+    return 'wall-slide';
+  }
+  return 'ceiling-bonk';
+};
+
+export const getStandalonePlayerPlaceholderPoseLabel = (
+  state: PlayerState,
+  options: StandalonePlayerPlaceholderPoseOptions = {}
+): StandalonePlayerPlaceholderPoseLabel =>
+  getStandalonePlayerPlaceholderPoseLabelFromIndex(getStandalonePlayerPlaceholderPoseIndex(state, options));
 
 export const getStandalonePlayerPlaceholderRenderFacingSign = (
   state: PlayerState,

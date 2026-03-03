@@ -35,6 +35,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nAtlasWarn: none');
     expect(text).toContain('\nSpawn: unresolved');
     expect(text).toContain('\nPlayer: n/a');
+    expect(text).toContain('\nPose: n/a');
     expect(text).toContain('\nGroundEvt: none');
     expect(text).toContain('\nFaceEvt: none');
     expect(text).toContain('\nRespawnEvt: none');
@@ -111,6 +112,7 @@ describe('formatDebugOverlayText', () => {
         tile: { x: 0, y: -2 },
         world: { x: 8, y: -32 }
       },
+      playerPlaceholderPoseLabel: null,
       playerIntent: {
         moveX: 1,
         jumpHeld: true,
@@ -155,6 +157,7 @@ describe('formatDebugOverlayText', () => {
         position: { x: 24.5, y: -12.25 },
         velocity: { x: -180, y: -220 }
       },
+      playerPlaceholderPoseLabel: 'wall-slide',
       playerFacingTransition: {
         kind: 'left',
         previousFacing: 'right',
@@ -204,6 +207,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain('\nPlayer: Pos:24.50,-12.25 | Vel:-180.00,60.00 | grounded:off | facing:left');
+    expect(text).toContain('\nPose: wall-slide');
     expect(text).toContain('\nGroundEvt: jump | Pos:24.50,-12.25 | Vel:-180.00,-220.00');
     expect(text).toContain('\nFaceEvt: right->left | Pos:24.50,-12.25 | Vel:-180.00,60.00');
     expect(text).toContain('\nRespawnEvt: embedded | SpawnT:1,-2 | Pos:24.50,-12.25 | Vel:0.00,0.00');
@@ -251,6 +255,7 @@ describe('formatDebugOverlayText', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: null,
       spawn: null,
+      playerPlaceholderPoseLabel: null,
       playerIntent: null,
       playerGroundedTransition: null,
       playerFacingTransition: null,
@@ -297,6 +302,7 @@ describe('formatDebugOverlayText', () => {
         tile: { x: -1, y: 0 },
         world: { x: -8, y: 0 }
       },
+      playerPlaceholderPoseLabel: null,
       playerIntent: {
         moveX: 0,
         jumpHeld: false,

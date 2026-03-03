@@ -135,6 +135,7 @@ export interface DebugOverlayInspectState {
   pinned: DebugOverlayTileInspect | null;
   spawn: DebugOverlayPlayerSpawn | null;
   player: DebugOverlayPlayerTelemetry | null;
+  playerPlaceholderPoseLabel: string | null;
   playerIntent: DebugOverlayPlayerIntentTelemetry | null;
   playerCameraFollow: DebugOverlayPlayerCameraFollowTelemetry | null;
   playerGroundedTransition: DebugOverlayPlayerGroundedTransitionTelemetry | null;
@@ -226,6 +227,9 @@ const formatPlayerLine = (player: DebugOverlayPlayerTelemetry | null): string =>
     `facing:${player.facing}`
   );
 };
+
+const formatPlayerPlaceholderPoseLine = (playerPlaceholderPoseLabel: string | null): string =>
+  playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : 'Pose: n/a';
 
 const formatPlayerAabbLine = (player: DebugOverlayPlayerTelemetry | null): string => {
   if (!player) {
@@ -407,6 +411,7 @@ export const formatDebugOverlayText = (
   const pinnedInspect = inspect?.pinned ?? null;
   const spawn = inspect?.spawn ?? null;
   const player = inspect?.player ?? null;
+  const playerPlaceholderPoseLabel = inspect?.playerPlaceholderPoseLabel ?? null;
   const playerIntent = inspect?.playerIntent ?? null;
   const playerCameraFollow = inspect?.playerCameraFollow ?? null;
   const playerGroundedTransition = inspect?.playerGroundedTransition ?? null;
@@ -420,6 +425,7 @@ export const formatDebugOverlayText = (
     formatAtlasValidationLine(stats),
     formatSpawnLine(spawn),
     formatPlayerLine(player),
+    formatPlayerPlaceholderPoseLine(playerPlaceholderPoseLabel),
     formatPlayerGroundedTransitionLine(playerGroundedTransition),
     formatPlayerFacingTransitionLine(playerFacingTransition),
     formatPlayerRespawnLine(playerRespawn),

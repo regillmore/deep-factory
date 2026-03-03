@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-03
 
+- Task: Surface the current standalone player placeholder pose label in the live debug overlay while renderer-side placeholder animation remains active.
+- Changes: Updated [src/gl/standalonePlayerPlaceholder.ts](../src/gl/standalonePlayerPlaceholder.ts) plus [src/gl/standalonePlayerPlaceholder.test.ts](../src/gl/standalonePlayerPlaceholder.test.ts) with reusable pose-label helpers beside the existing pose-index resolver, wired [src/main.ts](../src/main.ts) to compute the label from the same render-time pose inputs passed into the placeholder draw, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so the live HUD renders a dedicated `Pose:` line, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/gl/standalonePlayerPlaceholder.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface standalone player wall-side direction in the debug overlay when wall-contact events block or clear on the left versus right side.
 - Changes: Updated [src/world/playerWallContactTransition.ts](../src/world/playerWallContactTransition.ts) plus [src/world/playerWallContactTransition.test.ts](../src/world/playerWallContactTransition.test.ts) so wall-contact transition events retain the resolved `left` or `right` blocking side, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so the live `WallEvt` line shows that side, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/world/playerWallContactTransition.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
