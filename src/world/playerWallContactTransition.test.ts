@@ -53,7 +53,7 @@ describe('resolvePlayerWallContactTransitionEvent', () => {
 
     expect(event).toEqual({
       kind: 'blocked',
-      tile: { x: 1, y: -1, id: 4 },
+      tile: { x: 1, y: -1, id: 4, side: 'right' },
       position: { x: 10, y: 0 },
       velocity: { x: 0, y: 0 }
     });
@@ -72,7 +72,7 @@ describe('resolvePlayerWallContactTransitionEvent', () => {
 
     expect(event).toEqual({
       kind: 'cleared',
-      tile: { x: -1, y: -1, id: 5 },
+      tile: { x: -1, y: -1, id: 5, side: 'left' },
       position: { x: 12, y: 0 },
       velocity: { x: 90, y: 0 }
     });

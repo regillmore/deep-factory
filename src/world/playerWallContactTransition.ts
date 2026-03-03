@@ -4,7 +4,7 @@ export type PlayerWallContactTransitionKind = 'blocked' | 'cleared';
 
 export interface PlayerWallContactTransitionEvent {
   kind: PlayerWallContactTransitionKind;
-  tile: { x: number; y: number; id: number };
+  tile: { x: number; y: number; id: number; side: 'left' | 'right' };
   position: { x: number; y: number };
   velocity: { x: number; y: number };
 }
@@ -31,7 +31,8 @@ export const resolvePlayerWallContactTransitionEvent = (
     tile: {
       x: relevantWall.tileX,
       y: relevantWall.tileY,
-      id: relevantWall.tileId
+      id: relevantWall.tileId,
+      side: relevantWall.side
     },
     position: {
       x: nextState.position.x,

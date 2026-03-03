@@ -118,7 +118,7 @@ export interface DebugOverlayPlayerRespawnTelemetry {
 
 export interface DebugOverlayPlayerWallContactTransitionTelemetry {
   kind: PlayerWallContactTransitionKind;
-  tile: { x: number; y: number; id: number };
+  tile: { x: number; y: number; id: number; side: 'left' | 'right' };
   position: { x: number; y: number };
   velocity: { x: number; y: number };
 }
@@ -353,7 +353,7 @@ const formatPlayerWallContactTransitionLine = (
   return (
     `WallEvt: ${playerWallContactTransition.kind} | ` +
     `Tile:${playerWallContactTransition.tile.x},${playerWallContactTransition.tile.y} ` +
-    `(#${playerWallContactTransition.tile.id}) | ` +
+    `(#${playerWallContactTransition.tile.id}, ${playerWallContactTransition.tile.side}) | ` +
     `Pos:${formatFloat(playerWallContactTransition.position.x, 2)},` +
     `${formatFloat(playerWallContactTransition.position.y, 2)} | ` +
     `Vel:${formatFloat(playerWallContactTransition.velocity.x, 2)},` +

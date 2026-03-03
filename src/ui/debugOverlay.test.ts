@@ -170,7 +170,7 @@ describe('formatDebugOverlayText', () => {
       },
       playerWallContactTransition: {
         kind: 'blocked',
-        tile: { x: 0, y: -1, id: 3 },
+        tile: { x: 0, y: -1, id: 3, side: 'right' },
         position: { x: 24.5, y: -12.25 },
         velocity: { x: -180, y: 60 }
       },
@@ -207,7 +207,9 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nGroundEvt: jump | Pos:24.50,-12.25 | Vel:-180.00,-220.00');
     expect(text).toContain('\nFaceEvt: right->left | Pos:24.50,-12.25 | Vel:-180.00,60.00');
     expect(text).toContain('\nRespawnEvt: embedded | SpawnT:1,-2 | Pos:24.50,-12.25 | Vel:0.00,0.00');
-    expect(text).toContain('\nWallEvt: blocked | Tile:0,-1 (#3) | Pos:24.50,-12.25 | Vel:-180.00,60.00');
+    expect(text).toContain(
+      '\nWallEvt: blocked | Tile:0,-1 (#3, right) | Pos:24.50,-12.25 | Vel:-180.00,60.00'
+    );
     expect(text).toContain('\nCeilEvt: blocked | Tile:1,-3 (#5) | Pos:24.50,-12.25 | Vel:-180.00,0.00');
     expect(text).toContain('\nAABB: min:18.50,-40.25 | max:30.50,-12.25 | size:12.00,28.00');
     expect(text).toContain('\nFollow: focus:24.50,-26.25 | offset:18.00,-6.00');
@@ -320,7 +322,7 @@ describe('formatDebugOverlayText', () => {
       },
       playerWallContactTransition: {
         kind: 'cleared',
-        tile: { x: 4, y: 6, id: 3 },
+        tile: { x: 4, y: 6, id: 3, side: 'left' },
         position: { x: 12, y: 0 },
         velocity: { x: 0, y: 0 }
       },
@@ -348,7 +350,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('GroundEvt: landing | Pos:12.00,0.00 | Vel:0.00,0.00');
     expect(text).toContain('FaceEvt: left->right | Pos:12.00,0.00 | Vel:0.00,0.00');
     expect(text).toContain('RespawnEvt: embedded | SpawnT:-1,0 | Pos:12.00,0.00 | Vel:0.00,0.00');
-    expect(text).toContain('WallEvt: cleared | Tile:4,6 (#3) | Pos:12.00,0.00 | Vel:0.00,0.00');
+    expect(text).toContain('WallEvt: cleared | Tile:4,6 (#3, left) | Pos:12.00,0.00 | Vel:0.00,0.00');
     expect(text).toContain('CeilEvt: cleared | Tile:4,5 (#7) | Pos:12.00,0.00 | Vel:0.00,0.00');
     expect(text).toContain('Tile:dirt (#3)');
     expect(text).toContain('\nPin: Tile:lava (#4)');
