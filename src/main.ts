@@ -1199,6 +1199,12 @@ const bootstrap = async (): Promise<void> => {
       Number.isFinite(standalonePlayerCeilingBonkHoldUntilTimeMs)
         ? renderTimeMs < standalonePlayerCeilingBonkHoldUntilTimeMs
         : false);
+    const standalonePlayerCeilingBonkHoldActive =
+      standalonePlayerContacts?.ceiling === null &&
+      standalonePlayerCeilingBonkHoldUntilTimeMs !== null &&
+      Number.isFinite(standalonePlayerCeilingBonkHoldUntilTimeMs)
+        ? renderTimeMs < standalonePlayerCeilingBonkHoldUntilTimeMs
+        : false;
     const debugOverlayPlayerPlaceholderPoseLabel = standalonePlayerState
       ? getStandalonePlayerPlaceholderPoseLabel(standalonePlayerState, {
           elapsedMs: renderTimeMs,
@@ -1299,6 +1305,7 @@ const bootstrap = async (): Promise<void> => {
       spawn: debugOverlaySpawn,
       player: debugOverlayPlayer,
       playerPlaceholderPoseLabel: debugOverlayPlayerPlaceholderPoseLabel,
+      playerCeilingBonkHoldActive: standalonePlayerState ? standalonePlayerCeilingBonkHoldActive : null,
       playerIntent: debugOverlayPlayerIntent,
       playerCameraFollow: debugOverlayPlayerCameraFollow,
       playerGroundedTransition: lastPlayerGroundedTransitionEvent,

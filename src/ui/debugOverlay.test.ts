@@ -36,6 +36,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nSpawn: unresolved');
     expect(text).toContain('\nPlayer: n/a');
     expect(text).toContain('\nPose: n/a');
+    expect(text).toContain('\nBonkHold: n/a');
     expect(text).toContain('\nGroundEvt: none');
     expect(text).toContain('\nFaceEvt: none');
     expect(text).toContain('\nRespawnEvt: none');
@@ -113,6 +114,7 @@ describe('formatDebugOverlayText', () => {
         world: { x: 8, y: -32 }
       },
       playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
       playerIntent: {
         moveX: 1,
         jumpHeld: true,
@@ -158,6 +160,7 @@ describe('formatDebugOverlayText', () => {
         velocity: { x: -180, y: -220 }
       },
       playerPlaceholderPoseLabel: 'wall-slide',
+      playerCeilingBonkHoldActive: false,
       playerFacingTransition: {
         kind: 'left',
         previousFacing: 'right',
@@ -208,6 +211,7 @@ describe('formatDebugOverlayText', () => {
 
     expect(text).toContain('\nPlayer: Pos:24.50,-12.25 | Vel:-180.00,60.00 | grounded:off | facing:left');
     expect(text).toContain('\nPose: wall-slide');
+    expect(text).toContain('\nBonkHold: off');
     expect(text).toContain('\nGroundEvt: jump | Pos:24.50,-12.25 | Vel:-180.00,-220.00');
     expect(text).toContain('\nFaceEvt: right->left | Pos:24.50,-12.25 | Vel:-180.00,60.00');
     expect(text).toContain('\nRespawnEvt: embedded | SpawnT:1,-2 | Pos:24.50,-12.25 | Vel:0.00,0.00');
@@ -256,6 +260,7 @@ describe('formatDebugOverlayText', () => {
       pointer: null,
       spawn: null,
       playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
       playerIntent: null,
       playerGroundedTransition: null,
       playerFacingTransition: null,
@@ -303,6 +308,7 @@ describe('formatDebugOverlayText', () => {
         world: { x: -8, y: 0 }
       },
       playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
       playerIntent: {
         moveX: 0,
         jumpHeld: false,
@@ -364,5 +370,46 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('Ch:-1,2');
     expect(text).toContain('L:31,1');
     expect(text).toContain('liquid:lava');
+  });
+
+  it('shows when the renderer-side ceiling-bonk hold latch stays active after live contact clears', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      pinned: null,
+      spawn: null,
+      player: {
+        position: { x: 12, y: -8 },
+        velocity: { x: 0, y: 24 },
+        aabb: {
+          min: { x: 6, y: -36 },
+          max: { x: 18, y: -8 },
+          size: { x: 12, y: 28 }
+        },
+        grounded: false,
+        facing: 'right',
+        contacts: {
+          support: null,
+          wall: null,
+          ceiling: null
+        }
+      },
+      playerPlaceholderPoseLabel: 'ceiling-bonk',
+      playerCeilingBonkHoldActive: true,
+      playerIntent: {
+        moveX: 0,
+        jumpHeld: false,
+        jumpPressed: false
+      },
+      playerCameraFollow: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null
+    });
+
+    expect(text).toContain('\nPose: ceiling-bonk');
+    expect(text).toContain('\nBonkHold: on');
+    expect(text).toContain('\nContact: support:none | wall:none | ceiling:none');
   });
 });

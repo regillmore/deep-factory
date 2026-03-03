@@ -136,6 +136,7 @@ export interface DebugOverlayInspectState {
   spawn: DebugOverlayPlayerSpawn | null;
   player: DebugOverlayPlayerTelemetry | null;
   playerPlaceholderPoseLabel: string | null;
+  playerCeilingBonkHoldActive: boolean | null;
   playerIntent: DebugOverlayPlayerIntentTelemetry | null;
   playerCameraFollow: DebugOverlayPlayerCameraFollowTelemetry | null;
   playerGroundedTransition: DebugOverlayPlayerGroundedTransitionTelemetry | null;
@@ -230,6 +231,14 @@ const formatPlayerLine = (player: DebugOverlayPlayerTelemetry | null): string =>
 
 const formatPlayerPlaceholderPoseLine = (playerPlaceholderPoseLabel: string | null): string =>
   playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : 'Pose: n/a';
+
+const formatPlayerCeilingBonkHoldLine = (playerCeilingBonkHoldActive: boolean | null): string => {
+  if (playerCeilingBonkHoldActive === null) {
+    return 'BonkHold: n/a';
+  }
+
+  return `BonkHold: ${formatGameplayFlag(playerCeilingBonkHoldActive)}`;
+};
 
 const formatPlayerAabbLine = (player: DebugOverlayPlayerTelemetry | null): string => {
   if (!player) {
@@ -412,6 +421,7 @@ export const formatDebugOverlayText = (
   const spawn = inspect?.spawn ?? null;
   const player = inspect?.player ?? null;
   const playerPlaceholderPoseLabel = inspect?.playerPlaceholderPoseLabel ?? null;
+  const playerCeilingBonkHoldActive = inspect?.playerCeilingBonkHoldActive ?? null;
   const playerIntent = inspect?.playerIntent ?? null;
   const playerCameraFollow = inspect?.playerCameraFollow ?? null;
   const playerGroundedTransition = inspect?.playerGroundedTransition ?? null;
@@ -426,6 +436,7 @@ export const formatDebugOverlayText = (
     formatSpawnLine(spawn),
     formatPlayerLine(player),
     formatPlayerPlaceholderPoseLine(playerPlaceholderPoseLabel),
+    formatPlayerCeilingBonkHoldLine(playerCeilingBonkHoldActive),
     formatPlayerGroundedTransitionLine(playerGroundedTransition),
     formatPlayerFacingTransitionLine(playerFacingTransition),
     formatPlayerRespawnLine(playerRespawn),

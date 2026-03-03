@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-03
 
+- Task: Surface standalone player ceiling-bonk hold state in the live debug overlay while the renderer-side presentation latch is active.
+- Changes: Updated [src/main.ts](../src/main.ts) to distinguish the brief ceiling-bonk presentation hold from live ceiling contact, extended [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so the text HUD renders a dedicated `BonkHold:` line with `n/a`, `off`, and latched `on` states, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the current standalone player placeholder pose label in the compact debug-edit status strip when the text debug HUD is hidden.
 - Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) plus [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so the compact-strip model carries a dedicated live player `Pose:` line beside the existing hidden-HUD event telemetry, updated [src/ui/debugEditStatusStrip.ts](../src/ui/debugEditStatusStrip.ts) to render that line separately from transition events, wired [src/main.ts](../src/main.ts) to pass the already-resolved render-time pose label into the strip only while the text HUD is hidden, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
