@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-03
 
+- Task: Surface the resolved liquid animation frame duration beside the frame index and frame count in debug inspect readouts.
+- Changes: Updated [src/main.ts](../src/main.ts) to carry resolved liquid frame duration through hovered and pinned inspect snapshots, refreshed [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) and [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so both debug readouts append `liquidFrameDur:` beside `liquidFrame:`, extended [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the resolved liquid animation frame count beside the frame index in debug inspect readouts.
 - Changes: Updated [src/main.ts](../src/main.ts) to carry the resolved animated liquid frame count through hovered and pinned inspect snapshots, refreshed [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) and [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so both debug readouts format liquid animation as `liquidFrame:index/count`, extended [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts`.

@@ -43,6 +43,7 @@ export interface DebugOverlayPointerInspect {
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
   liquidAnimationFrameCount?: number | null;
+  liquidAnimationFrameDurationMs?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
@@ -63,6 +64,7 @@ export interface DebugOverlayTileInspect {
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
   liquidAnimationFrameCount?: number | null;
+  liquidAnimationFrameDurationMs?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
@@ -177,6 +179,12 @@ const formatLiquidAnimationFrame = (
   }
   return `${frameIndex}`;
 };
+const formatDurationMs = (durationMs: number | null | undefined): string | null => {
+  if (typeof durationMs !== 'number' || !Number.isFinite(durationMs) || durationMs <= 0) {
+    return null;
+  }
+  return `${Math.round(durationMs)}ms`;
+};
 const formatLiquidCardinalMask = (value: number): string => {
   const mask = value & 0xf;
   return (
@@ -229,6 +237,7 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     tileInspect.liquidAnimationFrameIndex,
     tileInspect.liquidAnimationFrameCount
   );
+  const liquidAnimationFrameDuration = formatDurationMs(tileInspect.liquidAnimationFrameDurationMs);
 
   return (
     ` | solid:${formatGameplayFlag(tileInspect.solid)}` +
@@ -242,6 +251,7 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
       ? ` | liquidMask:${formatLiquidCardinalMask(tileInspect.liquidCardinalMask)}`
       : '') +
     (liquidAnimationFrame ? ` | liquidFrame:${liquidAnimationFrame}` : '') +
+    (liquidAnimationFrameDuration ? ` | liquidFrameDur:${liquidAnimationFrameDuration}` : '') +
     (typeof tileInspect.liquidVariantSource === 'string' && tileInspect.liquidVariantSource.length > 0
       ? ` | liquidSrc:${tileInspect.liquidVariantSource}`
       : '') +

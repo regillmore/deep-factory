@@ -83,6 +83,7 @@ export interface DebugEditHoveredTileState {
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
   liquidAnimationFrameCount?: number | null;
+  liquidAnimationFrameDurationMs?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
@@ -425,6 +426,12 @@ const formatLiquidAnimationFrame = (
   }
   return `${frameIndex}`;
 };
+const formatDurationMs = (durationMs: number | null | undefined): string | null => {
+  if (typeof durationMs !== 'number' || !Number.isFinite(durationMs) || durationMs <= 0) {
+    return null;
+  }
+  return `${Math.round(durationMs)}ms`;
+};
 
 const hasSameInspectTarget = (
   hoveredTile: DebugEditHoveredTileState | null,
@@ -440,6 +447,7 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     tile.liquidAnimationFrameIndex,
     tile.liquidAnimationFrameCount
   );
+  const liquidAnimationFrameDuration = formatDurationMs(tile.liquidAnimationFrameDurationMs);
 
   return (
     `${label}: ${tile.tileLabel} (#${tile.tileId}) @ ${tile.tileX},${tile.tileY}` +
@@ -455,6 +463,7 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
       ? ` | liquidMask:${formatLiquidCardinalMask(tile.liquidCardinalMask)}`
       : '') +
     (liquidAnimationFrame ? ` | liquidFrame:${liquidAnimationFrame}` : '') +
+    (liquidAnimationFrameDuration ? ` | liquidFrameDur:${liquidAnimationFrameDuration}` : '') +
     (typeof tile.liquidVariantSource === 'string' && tile.liquidVariantSource.length > 0
       ? ` | liquidSrc:${tile.liquidVariantSource}`
       : '') +

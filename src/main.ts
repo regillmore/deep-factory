@@ -81,6 +81,7 @@ import {
   describeLiquidRenderVariantSourceAtElapsedMs,
   describeLiquidRenderVariantUvRectAtElapsedMs,
   getAnimatedLiquidRenderVariantFrameCount,
+  getAnimatedLiquidRenderVariantFrameDurationMs,
   getTileMetadata,
   resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs,
   resolveTileGameplayMetadata,
@@ -976,6 +977,10 @@ const bootstrap = async (): Promise<void> => {
       typeof liquidCardinalMask === 'number'
         ? getAnimatedLiquidRenderVariantFrameCount(tileId, liquidCardinalMask)
         : 0;
+    const liquidAnimationFrameDurationMs =
+      typeof liquidCardinalMask === 'number' && liquidAnimationFrameCount > 0
+        ? getAnimatedLiquidRenderVariantFrameDurationMs(tileId, liquidCardinalMask)
+        : null;
     const liquidAnimationFrameIndex =
       typeof liquidCardinalMask === 'number' && liquidAnimationFrameCount > 0
         ? resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(tileId, liquidCardinalMask, elapsedMs)
@@ -988,6 +993,7 @@ const bootstrap = async (): Promise<void> => {
       liquidCardinalMask,
       liquidAnimationFrameIndex,
       liquidAnimationFrameCount: liquidAnimationFrameCount > 0 ? liquidAnimationFrameCount : null,
+      liquidAnimationFrameDurationMs,
       liquidVariantSource:
         typeof liquidCardinalMask === 'number'
           ? describeLiquidRenderVariantSourceAtElapsedMs(tileId, liquidCardinalMask, elapsedMs)
@@ -1228,6 +1234,7 @@ const bootstrap = async (): Promise<void> => {
           liquidCardinalMask: hoveredDebugTileStatus?.liquidCardinalMask ?? null,
           liquidAnimationFrameIndex: hoveredDebugTileStatus?.liquidAnimationFrameIndex ?? null,
           liquidAnimationFrameCount: hoveredDebugTileStatus?.liquidAnimationFrameCount ?? null,
+          liquidAnimationFrameDurationMs: hoveredDebugTileStatus?.liquidAnimationFrameDurationMs ?? null,
           liquidVariantSource: hoveredDebugTileStatus?.liquidVariantSource ?? null,
           liquidVariantUvRect: hoveredDebugTileStatus?.liquidVariantUvRect ?? null,
           liquidVariantPixelBounds: hoveredDebugTileStatus?.liquidVariantPixelBounds ?? null
@@ -1248,6 +1255,7 @@ const bootstrap = async (): Promise<void> => {
           liquidCardinalMask: pinnedDebugTileStatus.liquidCardinalMask ?? null,
           liquidAnimationFrameIndex: pinnedDebugTileStatus.liquidAnimationFrameIndex ?? null,
           liquidAnimationFrameCount: pinnedDebugTileStatus.liquidAnimationFrameCount ?? null,
+          liquidAnimationFrameDurationMs: pinnedDebugTileStatus.liquidAnimationFrameDurationMs ?? null,
           liquidVariantSource: pinnedDebugTileStatus.liquidVariantSource ?? null,
           liquidVariantUvRect: pinnedDebugTileStatus.liquidVariantUvRect ?? null,
           liquidVariantPixelBounds: pinnedDebugTileStatus.liquidVariantPixelBounds ?? null
