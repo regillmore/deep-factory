@@ -1251,7 +1251,8 @@ const bootstrap = async (): Promise<void> => {
     renderer.resize();
     renderer.render(camera, {
       standalonePlayer: standalonePlayerState,
-      standalonePlayerWallContact: standalonePlayerContacts?.wall ?? null
+      standalonePlayerWallContact: standalonePlayerContacts?.wall ?? null,
+      standalonePlayerCeilingContact: standalonePlayerContacts?.ceiling ?? null
     });
     hoveredTileCursor.update(camera, {
       hovered: pointerInspect
@@ -1299,13 +1300,14 @@ const bootstrap = async (): Promise<void> => {
   };
 
   const renderWorldPreview = (): void => {
-    const standalonePlayerWallContact = standalonePlayerState
-      ? renderer.getPlayerCollisionContacts(standalonePlayerState).wall
+    const standalonePlayerContacts = standalonePlayerState
+      ? renderer.getPlayerCollisionContacts(standalonePlayerState)
       : null;
     renderer.resize();
     renderer.render(camera, {
       standalonePlayer: standalonePlayerState,
-      standalonePlayerWallContact
+      standalonePlayerWallContact: standalonePlayerContacts?.wall ?? null,
+      standalonePlayerCeilingContact: standalonePlayerContacts?.ceiling ?? null
     });
   };
 

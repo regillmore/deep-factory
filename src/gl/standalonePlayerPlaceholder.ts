@@ -10,6 +10,7 @@ export const STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B = 2;
 export const STANDALONE_PLAYER_PLACEHOLDER_POSE_JUMP_RISE = 3;
 export const STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL = 4;
 export const STANDALONE_PLAYER_PLACEHOLDER_POSE_WALL_SLIDE = 5;
+export const STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK = 6;
 export const STANDALONE_PLAYER_PLACEHOLDER_WALK_FRAME_DURATION_MS = 120;
 
 const STANDALONE_PLAYER_PLACEHOLDER_WALK_SPEED_THRESHOLD = 1;
@@ -17,6 +18,7 @@ const STANDALONE_PLAYER_PLACEHOLDER_WALK_SPEED_THRESHOLD = 1;
 export interface StandalonePlayerPlaceholderPoseOptions {
   elapsedMs?: number;
   wallContact?: PlayerCollisionContacts['wall'] | null;
+  ceilingContact?: PlayerCollisionContacts['ceiling'] | null;
 }
 
 export const buildStandalonePlayerPlaceholderVertices = (state: PlayerState): Float32Array => {
@@ -58,9 +60,14 @@ export const getStandalonePlayerPlaceholderPoseIndex = (
   options: StandalonePlayerPlaceholderPoseOptions = {}
 ): number => {
   const wallContact = options.wallContact ?? null;
+  const ceilingContact = options.ceilingContact ?? null;
   const elapsedMs = options.elapsedMs ?? 0;
 
   if (!state.grounded) {
+    if (ceilingContact !== null) {
+      return STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK;
+    }
+
     if (wallContact !== null) {
       return STANDALONE_PLAYER_PLACEHOLDER_POSE_WALL_SLIDE;
     }

@@ -62,6 +62,7 @@ interface MeshBuildRequest {
 export interface RendererFrameState {
   standalonePlayer?: PlayerState | null;
   standalonePlayerWallContact?: PlayerCollisionContacts['wall'] | null;
+  standalonePlayerCeilingContact?: PlayerCollisionContacts['ceiling'] | null;
   timeMs?: number;
 }
 
@@ -217,7 +218,8 @@ export class Renderer {
         bool walkPoseB = u_poseIndex > 1.5 && u_poseIndex < 2.5;
         bool jumpRisePose = u_poseIndex > 2.5 && u_poseIndex < 3.5;
         bool fallPose = u_poseIndex > 3.5 && u_poseIndex < 4.5;
-        bool wallSlidePose = u_poseIndex > 4.5;
+        bool wallSlidePose = u_poseIndex > 4.5 && u_poseIndex < 5.5;
+        bool ceilingBonkPose = u_poseIndex > 5.5;
 
         vec4 head = vec4(0.24, 0.62, 0.76, 0.94);
         vec4 hair = vec4(0.18, 0.80, 0.82, 0.98);
@@ -266,6 +268,16 @@ export class Renderer {
           rightLeg = vec4(0.48, 0.20, 0.68, 0.42);
           leftBoot = vec4(0.32, 0.04, 0.50, 0.12);
           rightBoot = vec4(0.48, 0.12, 0.70, 0.20);
+        } else if (ceilingBonkPose) {
+          head = vec4(0.22, 0.64, 0.78, 0.92);
+          hair = vec4(0.18, 0.82, 0.82, 0.96);
+          torso = vec4(0.30, 0.34, 0.70, 0.60);
+          leftArm = vec4(0.08, 0.54, 0.28, 0.86);
+          rightArm = vec4(0.72, 0.54, 0.92, 0.86);
+          leftLeg = vec4(0.28, 0.16, 0.44, 0.32);
+          rightLeg = vec4(0.56, 0.16, 0.72, 0.32);
+          leftBoot = vec4(0.22, 0.08, 0.44, 0.16);
+          rightBoot = vec4(0.56, 0.08, 0.78, 0.16);
         }
 
         bool insideHead = inRect(uv, head);
@@ -433,6 +445,7 @@ export class Renderer {
       this.drawStandalonePlayer(
         frameState.standalonePlayer,
         frameState.standalonePlayerWallContact ?? null,
+        frameState.standalonePlayerCeilingContact ?? null,
         worldToClipMatrix,
         timeMs
       );
@@ -673,6 +686,7 @@ export class Renderer {
   private drawStandalonePlayer(
     state: PlayerState,
     wallContact: PlayerCollisionContacts['wall'] | null,
+    ceilingContact: PlayerCollisionContacts['ceiling'] | null,
     worldToClipMatrix: Float32Array,
     timeMs: number
   ): void {
@@ -682,7 +696,7 @@ export class Renderer {
     gl.uniform1f(this.uPlayerFacingSign, getStandalonePlayerPlaceholderFacingSign(state));
     gl.uniform1f(
       this.uPlayerPoseIndex,
-      getStandalonePlayerPlaceholderPoseIndex(state, { elapsedMs: timeMs, wallContact })
+      getStandalonePlayerPlaceholderPoseIndex(state, { elapsedMs: timeMs, wallContact, ceilingContact })
     );
     gl.bindBuffer(gl.ARRAY_BUFFER, this.standalonePlayerBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, buildStandalonePlayerPlaceholderVertices(state), gl.DYNAMIC_DRAW);

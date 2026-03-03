@@ -5,6 +5,7 @@ import { createPlayerState } from '../world/playerState';
 import { atlasIndexToUvRect, resolveAnimatedTileRenderFrameUvRect } from '../world/tileMetadata';
 import type { AtlasValidationWarning } from './atlasValidation';
 import {
+  STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B,
@@ -154,6 +155,7 @@ describe('Renderer atlas telemetry', () => {
     expect(playerProgramFragmentSource).toContain('bool jumpRisePose');
     expect(playerProgramFragmentSource).toContain('bool fallPose');
     expect(playerProgramFragmentSource).toContain('bool wallSlidePose');
+    expect(playerProgramFragmentSource).toContain('bool ceilingBonkPose');
   });
 
   it('records an authored atlas load in telemetry during initialization', async () => {
@@ -431,6 +433,41 @@ describe('Renderer atlas telemetry', () => {
     expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([
       1,
       STANDALONE_PLAYER_PLACEHOLDER_POSE_WALL_SLIDE
+    ]);
+  });
+
+  it('maps airborne ceiling contact into the ceiling-bonk placeholder pose', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const uniform1f = vi.mocked(gl.uniform1f);
+    uniform1f.mockClear();
+
+    const camera = new Camera2D();
+    const ceilingBonkState = createPlayerState({
+      grounded: false,
+      velocity: { x: 0, y: 0 }
+    });
+
+    renderer.render(camera, {
+      standalonePlayer: ceilingBonkState,
+      standalonePlayerWallContact: { tileX: 1, tileY: -1, tileId: 3 },
+      standalonePlayerCeilingContact: { tileX: 0, tileY: -2, tileId: 4 },
+      timeMs: 0
+    });
+
+    expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([
+      1,
+      STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK
     ]);
   });
 
