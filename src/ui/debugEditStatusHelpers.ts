@@ -12,6 +12,7 @@ import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingC
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
 import type { PlayerRespawnEventKind } from '../world/playerRespawnEvent';
+import type { PlayerFacing } from '../world/playerState';
 import type { PlayerWallContactTransitionKind } from '../world/playerWallContactTransition';
 import type { TileLiquidKind } from '../world/tileMetadata';
 
@@ -32,6 +33,7 @@ export interface DebugEditStatusStripState {
   playerPlaceholderPoseLabel?: string | null;
   playerCeilingBonkHoldActive?: boolean | null;
   playerGrounded?: boolean | null;
+  playerFacing?: PlayerFacing | null;
   playerSupportContact?: DebugEditStatusStripPlayerSupportContactTelemetry | null;
   playerWallContact?: DebugEditStatusStripPlayerWallContactTelemetry | null;
   playerCeilingContact?: DebugEditStatusStripPlayerCeilingContactTelemetry | null;
@@ -460,6 +462,14 @@ const formatLiveGroundedText = (playerGrounded: boolean | null): string | null =
   return `GroundedNow: ${formatGameplayFlag(playerGrounded)}`;
 };
 
+const formatLiveFacingText = (playerFacing: PlayerFacing | null): string | null => {
+  if (playerFacing === null) {
+    return null;
+  }
+
+  return `FacingNow: ${playerFacing}`;
+};
+
 const formatLiveCeilingBonkHoldText = (playerCeilingBonkHoldActive: boolean | null): string | null => {
   if (playerCeilingBonkHoldActive === null) {
     return null;
@@ -485,6 +495,7 @@ const buildPlayerText = (
   playerPlaceholderPoseLabel: string | null,
   playerCeilingBonkHoldActive: boolean | null,
   playerGrounded: boolean | null,
+  playerFacing: PlayerFacing | null,
   playerSupportContact: DebugEditStatusStripPlayerSupportContactTelemetry | null,
   playerWallContact: DebugEditStatusStripPlayerWallContactTelemetry | null,
   playerCeilingContact: DebugEditStatusStripPlayerCeilingContactTelemetry | null
@@ -493,6 +504,7 @@ const buildPlayerText = (
     playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : null,
     formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive),
     formatLiveGroundedText(playerGrounded),
+    formatLiveFacingText(playerFacing),
     formatLiveSupportContactText(playerSupportContact),
     formatLiveWallContactText(playerWallContact),
     formatLiveCeilingContactText(playerCeilingContact)
@@ -982,6 +994,7 @@ export const buildDebugEditStatusStripModel = (
   const playerPlaceholderPoseLabel = state.playerPlaceholderPoseLabel ?? null;
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
   const playerGrounded = state.playerGrounded ?? null;
+  const playerFacing = state.playerFacing ?? null;
   const playerSupportContact = state.playerSupportContact ?? null;
   const playerWallContact = state.playerWallContact ?? null;
   const playerCeilingContact = state.playerCeilingContact ?? null;
@@ -1000,6 +1013,7 @@ export const buildDebugEditStatusStripModel = (
       playerPlaceholderPoseLabel,
       playerCeilingBonkHoldActive,
       playerGrounded,
+      playerFacing,
       playerSupportContact,
       playerWallContact,
       playerCeilingContact

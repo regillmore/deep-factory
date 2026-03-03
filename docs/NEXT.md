@@ -46,5 +46,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Player debugging
 
-86. Surface standalone player live facing direction in the compact debug-edit status strip when the text debug HUD is hidden.
 87. Surface standalone player live jump-held input state in the compact debug-edit status strip when the text debug HUD is hidden.
+88. Surface standalone player live horizontal move input axis in the compact debug-edit status strip when the text debug HUD is hidden.

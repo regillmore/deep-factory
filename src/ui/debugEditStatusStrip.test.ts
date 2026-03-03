@@ -99,6 +99,13 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose and live facing player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: grounded-idle\nFacingNow: right')).toEqual([
+      ['Pose: grounded-idle'],
+      ['FacingNow: right']
+    ]);
+  });
+
   it('preserves separate pose and live bonk-hold player lines while keeping each line individually wrappable', () => {
     expect(buildWrappedDetailLines('Pose: ceiling-bonk\nBonkHold: on')).toEqual([
       ['Pose: ceiling-bonk'],
@@ -121,11 +128,12 @@ describe('buildWrappedDetailLines', () => {
   it('preserves separate pose, live grounded-state, live support-contact, live wall-contact, and live ceiling-contact player lines while keeping each line individually wrappable', () => {
     expect(
       buildWrappedDetailLines(
-        'Pose: ceiling-bonk\nGroundedNow: off\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
+        'Pose: ceiling-bonk\nGroundedNow: off\nFacingNow: left\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
       )
     ).toEqual([
       ['Pose: ceiling-bonk'],
       ['GroundedNow: off'],
+      ['FacingNow: left'],
       ['SupportNow: tile 4,-1 (#6)'],
       ['WallNow: tile 5,-3 (#7, right)'],
       ['CeilingNow: tile 2,-6 (#8)']
@@ -135,12 +143,13 @@ describe('buildWrappedDetailLines', () => {
   it('preserves separate pose, bonk-hold, live grounded-state, live support-contact, live wall-contact, and live ceiling-contact player lines while keeping each line individually wrappable', () => {
     expect(
       buildWrappedDetailLines(
-        'Pose: ceiling-bonk\nBonkHold: on\nGroundedNow: off\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
+        'Pose: ceiling-bonk\nBonkHold: on\nGroundedNow: off\nFacingNow: right\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
       )
     ).toEqual([
       ['Pose: ceiling-bonk'],
       ['BonkHold: on'],
       ['GroundedNow: off'],
+      ['FacingNow: right'],
       ['SupportNow: tile 4,-1 (#6)'],
       ['WallNow: tile 5,-3 (#7, right)'],
       ['CeilingNow: tile 2,-6 (#8)']
