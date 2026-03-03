@@ -31,6 +31,13 @@ const createDistinctLiquidVariantMap = () =>
     atlasIndex: index
   }));
 
+const createAnimatedLiquidVariantMap = (staticAtlasIndex: number, animatedAtlasIndex: number) =>
+  Array.from({ length: LIQUID_RENDER_CARDINAL_MASK_COUNT }, () => ({
+    atlasIndex: staticAtlasIndex,
+    frames: [{ atlasIndex: staticAtlasIndex }, { atlasIndex: animatedAtlasIndex }],
+    frameDurationMs: 120
+  }));
+
 const createLiquidTestRegistry = () =>
   parseTileMetadataRegistry({
     tiles: [
@@ -365,6 +372,54 @@ describe('buildChunkMesh autotile UV selection', () => {
 
     expect(mesh.vertexCount).toBe(6);
     expectSingleQuadUvRect(mesh.vertices, 0);
+  });
+
+  it('records animated liquid quads with the resolved liquid cardinal mask while keeping frame-zero UVs baked', () => {
+    const registry = parseTileMetadataRegistry({
+      tiles: [
+        {
+          id: 0,
+          name: 'empty',
+          gameplay: { solid: false, blocksLight: false }
+        },
+        {
+          id: 12,
+          name: 'water',
+          gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
+          liquidRender: {
+            connectivityGroup: 'water',
+            variantRenderByCardinalMask: createAnimatedLiquidVariantMap(14, 15)
+          }
+        }
+      ]
+    });
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 12);
+
+    const mesh = buildChunkMesh(chunk, {
+      tileMetadataRegistry: registry,
+      sampleNeighborhood: () => ({
+        center: 12,
+        north: 12,
+        northEast: 0,
+        east: 12,
+        southEast: 0,
+        south: 0,
+        southWest: 0,
+        west: 0,
+        northWest: 0
+      })
+    });
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 14);
+    expect(mesh.animatedTileQuads).toEqual([
+      {
+        tileId: 12,
+        vertexFloatOffset: 0,
+        liquidCardinalMask: 3
+      }
+    ]);
   });
 
   it('uses chunk-edge neighborhood sampling to resolve liquid UVs across adjacent chunks', () => {

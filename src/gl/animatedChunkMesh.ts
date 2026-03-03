@@ -1,5 +1,7 @@
 import {
   TILE_METADATA,
+  resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs,
+  resolveAnimatedLiquidRenderVariantFrameUvRect,
   resolveAnimatedTileRenderFrameIndexAtElapsedMs,
   resolveAnimatedTileRenderFrameUvRect
 } from '../world/tileMetadata';
@@ -49,6 +51,7 @@ export const createAnimatedChunkMeshState = (
     animatedTiles: animatedTileQuads.map((quad) => ({
       tileId: quad.tileId,
       vertexFloatOffset: quad.vertexFloatOffset,
+      liquidCardinalMask: quad.liquidCardinalMask,
       frameIndex: 0
     }))
   };
@@ -62,16 +65,28 @@ export const applyAnimatedChunkMeshFrameAtElapsedMs = (
   let changedTileCount = 0;
 
   for (const animatedTile of animatedMesh.animatedTiles) {
-    const nextFrameIndex = resolveAnimatedTileRenderFrameIndexAtElapsedMs(
-      animatedTile.tileId,
-      elapsedMs,
-      registry
-    );
+    const nextFrameIndex =
+      animatedTile.liquidCardinalMask === undefined
+        ? resolveAnimatedTileRenderFrameIndexAtElapsedMs(animatedTile.tileId, elapsedMs, registry)
+        : resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(
+            animatedTile.tileId,
+            animatedTile.liquidCardinalMask,
+            elapsedMs,
+            registry
+          );
     if (nextFrameIndex === null || nextFrameIndex === animatedTile.frameIndex) {
       continue;
     }
 
-    const uvRect = resolveAnimatedTileRenderFrameUvRect(animatedTile.tileId, nextFrameIndex, registry);
+    const uvRect =
+      animatedTile.liquidCardinalMask === undefined
+        ? resolveAnimatedTileRenderFrameUvRect(animatedTile.tileId, nextFrameIndex, registry)
+        : resolveAnimatedLiquidRenderVariantFrameUvRect(
+            animatedTile.tileId,
+            animatedTile.liquidCardinalMask,
+            nextFrameIndex,
+            registry
+          );
     if (!uvRect) {
       continue;
     }

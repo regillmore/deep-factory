@@ -10,7 +10,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - WebGL2 renderer with shader utilities, buffer helpers, texture loading, and DPR-aware resize.
 - Renderer atlas initialization ships with an authored atlas at `public/atlas/tile-atlas.png` exposed as `/atlas/tile-atlas.png`, then falls back to a generated placeholder atlas whose canvas size and painted regions derive from `src/world/authoredAtlasLayout.ts` if that asset cannot be fetched or decoded.
 - Renderer boot validates authored atlas-index regions plus direct tile `render.uvRect` metadata against the loaded atlas dimensions, logs a warning when any atlas-backed source falls outside the source image or any direct static or animated `uvRect` edge lands between atlas pixels, and surfaces the warning count plus first warning in debug telemetry.
-- Renderer animates non-terrain tiles from metadata-driven frame sequences at draw time by patching chunk UVs only when an animated tile's elapsed frame changes; terrain autotile and static tile UV resolution remain unchanged.
+- Renderer animates non-terrain tiles and resolved liquid variants from metadata-driven frame sequences at draw time by patching chunk UVs only when an animated tile or liquid variant's elapsed frame changes; terrain autotile and other static tile UV resolution remain unchanged.
 - Renderer draws the standalone player through a facing-aware world-space placeholder pass with grounded idle, alternating grounded-walk, jump-rise, fall, airborne wall-slide, and airborne ceiling-bonk silhouettes instead of a client-space DOM marker, mirrors the wall-slide lean away from the blocking wall side, and keeps the ceiling-bonk pose briefly latched after contact clears so fixed-step head hits still read visually.
 - Orthographic camera with anchored zoom, pointer pan controls, and standalone-player follow that tracks the player body center while preserving manual inspection offsets.
 - Fixed-step game loop (`60hz`) with separate render interpolation alpha.
@@ -23,7 +23,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Chunk pruning can evict resident world chunks from memory without losing edited tile values; sparse per-chunk tile overrides are reapplied when those chunks stream back in.
 - Budgeted per-frame mesh build queue with visible-first scheduling and nearby prefetch.
 - Tile edit events trigger edge and corner neighbor-chunk mesh invalidation.
-- Chunk meshing currently emits one quad per non-empty tile; static chunks upload once, while chunks with animated non-terrain quads keep CPU-side vertex copies so UV-only updates can be reuploaded on frame boundaries.
+- Chunk meshing currently emits one quad per non-empty tile; static chunks upload once, while chunks with animated non-terrain or liquid quads keep CPU-side vertex copies so UV-only updates can be reuploaded on frame boundaries.
 - Liquid tiles now carry separate liquid-render metadata and chunk meshing resolves their `variantRenderByCardinalMask` entries from sampled NESW liquid connectivity, falling back to the isolated mask when neighborhood sampling is unavailable.
 - `buildChunkMesh` pre-counts non-empty tiles and writes directly into an exact-sized `Float32Array`.
 - Chunk meshing supports reusable `TileNeighborhood` scratch sampling so terrain meshing avoids per-tile neighborhood allocations.
@@ -35,7 +35,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Render metadata can optionally define animated frame sequences through `frames` plus `frameDurationMs`, while the current meshing path continues to use the base static `atlasIndex` or `uvRect` as frame-zero fallback.
 - The default tile set now includes an animated `debug_blink` brush tile that exercises the renderer-side frame resolver against the authored atlas.
 - The default tile set also includes an animated `debug_panel_blink` brush tile that exercises the same renderer-side frame resolver through direct `render.uvRect` frames backed by committed atlas pixels.
-- The default tile set now also includes placeholder `water` and `lava` brush tiles with dedicated `liquidRender` metadata and separate liquid connectivity groups; current shipped placeholder variants still reuse the same authored source across masks until task 93 lands distinct edge and surface art.
+- The default tile set now also includes placeholder `water` and `lava` brush tiles with dedicated `liquidRender` metadata, separate liquid connectivity groups, and animated liquid frame sequences; current shipped placeholder variants still reuse the same authored frame pair across masks until task 93 lands distinct edge and surface art.
 - Committed-asset regressions also verify that every default animated atlas-index frame differs from its prior committed PNG frame, so shipped atlas-backed animations do not silently collapse into repeated art.
 - Atlas-backed render metadata resolves through explicit authored atlas region definitions in `src/world/authoredAtlasLayout.ts`, while the generated placeholder fallback atlas paints those same authored regions and direct sub-rect metadata can still use normalized `uvRect` values that are runtime-validated against whole atlas-pixel edges.
 - Runtime atlas validation and committed-asset regressions also walk liquid variant render sources, so shipped liquid metadata stays inside the authored atlas and whole-pixel direct-UV bounds.
@@ -69,6 +69,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Tile render metadata compiles into dense static UV and terrain variant atlas-index lookup tables.
 - Liquid connectivity compiles into dense per-tile group ID and label lookups, and liquid variant metadata compiles into per-tile cardinal-mask render lookups consumed directly by the liquid meshing path.
 - Optional animated render metadata compiles into dense per-tile frame start, frame count, and frame duration tables plus a flattened UV-frame list for renderer-time elapsed-frame sampling.
+- Optional animated liquid variant metadata also compiles into dense per-tile-per-cardinal-mask frame start, frame count, and frame duration tables plus a flattened UV-frame list for renderer-time liquid elapsed-frame sampling.
 - Placeholder terrain autotile resolution uses precomputed lookup tables for normalized adjacency masks and raw adjacency masks.
 - Authored-atlas region UV rect objects are precomputed and reused by atlas-index and terrain-autotile resolution paths.
 

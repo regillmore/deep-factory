@@ -11,6 +11,8 @@ import {
   describeLiquidRenderVariantPixelBounds,
   describeLiquidRenderVariantUvRect,
   describeLiquidRenderVariantSource,
+  getAnimatedLiquidRenderVariantFrameCount,
+  getAnimatedLiquidRenderVariantFrameDurationMs,
   describeTileUvRectPixelBounds,
   describeTileUvRect,
   LIQUID_RENDER_CARDINAL_MASK_COUNT,
@@ -22,11 +24,15 @@ import {
   getAnimatedTileRenderFrameCount,
   getAnimatedTileRenderFrameDurationMs,
   getTileLiquidKind,
+  hasAnimatedLiquidRenderVariantMetadata,
   hasAnimatedTileRenderMetadata,
   hasLiquidRenderMetadata,
   hasTerrainAutotileMetadata,
   isTileSolid,
   parseTileMetadataRegistry,
+  resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs,
+  resolveAnimatedLiquidRenderVariantFrameUvRect,
+  resolveAnimatedLiquidRenderVariantFrameUvRectAtElapsedMs,
   resolveAnimatedTileRenderFrameIndexAtElapsedMs,
   resolveAnimatedTileRenderFrameUvRect,
   resolveAnimatedTileRenderFrameUvRectAtElapsedMs,
@@ -758,6 +764,96 @@ describe('tile metadata loader', () => {
     expect(resolveAnimatedTileRenderFrameUvRectAtElapsedMs(7, 360, registry)).toBe(atlasIndexToUvRect(6));
     expect(resolveAnimatedTileRenderFrameUvRectAtElapsedMs(8, 0, registry)).toBe(null);
     expect(registry.renderLookup.animationFrameUvRects.length).toBe(3);
+  });
+
+  it('builds dense animated liquid variant lookup tables without changing static liquid variant resolution', () => {
+    const animatedVariantMap = Array.from({ length: LIQUID_RENDER_CARDINAL_MASK_COUNT }, (_, index) =>
+      index === 3
+        ? {
+            atlasIndex: 14,
+            frames: [{ atlasIndex: 14 }, { atlasIndex: 15 }],
+            frameDurationMs: 120
+          }
+        : { atlasIndex: index % AUTHORED_ATLAS_REGION_COUNT }
+    );
+    const registry = parseTileMetadataRegistry({
+      tiles: [
+        {
+          id: 0,
+          name: 'empty',
+          gameplay: { solid: false, blocksLight: false }
+        },
+        {
+          id: 12,
+          name: 'animated_water',
+          gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
+          liquidRender: {
+            connectivityGroup: 'water',
+            variantRenderByCardinalMask: animatedVariantMap
+          }
+        },
+        {
+          id: 13,
+          name: 'static_lava',
+          gameplay: { solid: false, blocksLight: true, liquidKind: 'lava' },
+          liquidRender: {
+            connectivityGroup: 'lava',
+            variantRenderByCardinalMask: Array.from(
+              { length: LIQUID_RENDER_CARDINAL_MASK_COUNT },
+              () => ({ atlasIndex: 15 })
+            )
+          }
+        }
+      ]
+    });
+
+    expect(hasAnimatedLiquidRenderVariantMetadata(12, 3, registry)).toBe(true);
+    expect(hasAnimatedLiquidRenderVariantMetadata(12, 4, registry)).toBe(false);
+    expect(hasAnimatedLiquidRenderVariantMetadata(13, 3, registry)).toBe(false);
+    expect(getAnimatedLiquidRenderVariantFrameCount(12, 3, registry)).toBe(2);
+    expect(getAnimatedLiquidRenderVariantFrameCount(12, 4, registry)).toBe(0);
+    expect(getAnimatedLiquidRenderVariantFrameDurationMs(12, 3, registry)).toBe(120);
+    expect(getAnimatedLiquidRenderVariantFrameDurationMs(12, 4, registry)).toBe(null);
+    expect(resolveLiquidRenderVariantUvRect(12, 3, registry)).toBe(atlasIndexToUvRect(14));
+    expect(resolveAnimatedLiquidRenderVariantFrameUvRect(12, 0, 0, registry)).toBe(null);
+    expect(resolveAnimatedLiquidRenderVariantFrameUvRect(12, 3, 0, registry)).toBe(atlasIndexToUvRect(14));
+    expect(resolveAnimatedLiquidRenderVariantFrameUvRect(12, 3, 1, registry)).toBe(atlasIndexToUvRect(15));
+    expect(resolveAnimatedLiquidRenderVariantFrameUvRect(12, 3, 2, registry)).toBe(null);
+    expect(resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(12, 3, 0, registry)).toBe(0);
+    expect(resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(12, 3, 119, registry)).toBe(0);
+    expect(resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(12, 3, 120, registry)).toBe(1);
+    expect(resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(12, 3, 240, registry)).toBe(0);
+    expect(resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(12, 3, -1, registry)).toBe(1);
+    expect(resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(12, 4, 120, registry)).toBe(null);
+    expect(resolveAnimatedLiquidRenderVariantFrameUvRectAtElapsedMs(12, 3, 0, registry)).toBe(
+      atlasIndexToUvRect(14)
+    );
+    expect(resolveAnimatedLiquidRenderVariantFrameUvRectAtElapsedMs(12, 3, 120, registry)).toBe(
+      atlasIndexToUvRect(15)
+    );
+    expect(resolveAnimatedLiquidRenderVariantFrameUvRectAtElapsedMs(12, 4, 120, registry)).toBe(null);
+    expect(registry.renderLookup.liquidVariantAnimationFrameStartByTileIdAndCardinalMask).toBeInstanceOf(
+      Int32Array
+    );
+    expect(registry.renderLookup.liquidVariantAnimationFrameCountByTileIdAndCardinalMask).toBeInstanceOf(
+      Int32Array
+    );
+    expect(
+      registry.renderLookup.liquidVariantAnimationFrameDurationMsByTileIdAndCardinalMask
+    ).toBeInstanceOf(Uint32Array);
+    expect(registry.renderLookup.liquidVariantAnimationFrameStartByTileIdAndCardinalMask.length).toBe(
+      14 * LIQUID_RENDER_CARDINAL_MASK_COUNT
+    );
+    expect(registry.renderLookup.liquidVariantAnimationFrameCountByTileIdAndCardinalMask.length).toBe(
+      14 * LIQUID_RENDER_CARDINAL_MASK_COUNT
+    );
+    expect(
+      registry.renderLookup.liquidVariantAnimationFrameDurationMsByTileIdAndCardinalMask.length
+    ).toBe(14 * LIQUID_RENDER_CARDINAL_MASK_COUNT);
+    expect(registry.renderLookup.liquidVariantAnimationFrameUvRects).toEqual([
+      atlasIndexToUvRect(14),
+      atlasIndexToUvRect(15)
+    ]);
   });
 
   it('precomputes normalized-adjacency terrain atlas lookup entries with parity to placeholder variant mapping', () => {

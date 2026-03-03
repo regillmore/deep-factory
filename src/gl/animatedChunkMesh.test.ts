@@ -90,4 +90,53 @@ describe('animated chunk mesh helpers', () => {
       toFloat32(atlasIndexToUvRect(14).v0)
     ]);
   });
+
+  it('patches liquid-variant quad UVs using the recorded liquid cardinal mask', () => {
+    const registry = parseTileMetadataRegistry({
+      tiles: [
+        {
+          id: 0,
+          name: 'empty',
+          gameplay: { solid: false, blocksLight: false }
+        },
+        {
+          id: 7,
+          name: 'water',
+          gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
+          liquidRender: {
+            connectivityGroup: 'water',
+            variantRenderByCardinalMask: Array.from({ length: 16 }, () => ({
+              atlasIndex: 14,
+              frames: [{ atlasIndex: 14 }, { atlasIndex: 15 }],
+              frameDurationMs: 180
+            }))
+          }
+        }
+      ]
+    });
+    const vertices = createSingleQuadVertices(14);
+    const animatedMesh = createAnimatedChunkMeshState(vertices, [
+      { tileId: 7, vertexFloatOffset: 0, liquidCardinalMask: 3 }
+    ]);
+    if (!animatedMesh) {
+      throw new Error('expected animated mesh state');
+    }
+
+    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 0, registry)).toBe(0);
+    expect(animatedMesh.animatedTiles[0]?.frameIndex).toBe(0);
+
+    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 180, registry)).toBe(1);
+    expect(animatedMesh.animatedTiles[0]?.frameIndex).toBe(1);
+    expect(Array.from(vertices.slice(2, 4))).toEqual([
+      toFloat32(atlasIndexToUvRect(15).u0),
+      toFloat32(atlasIndexToUvRect(15).v0)
+    ]);
+
+    expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 360, registry)).toBe(1);
+    expect(animatedMesh.animatedTiles[0]?.frameIndex).toBe(0);
+    expect(Array.from(vertices.slice(22, 24))).toEqual([
+      toFloat32(atlasIndexToUvRect(14).u0),
+      toFloat32(atlasIndexToUvRect(14).v1)
+    ]);
+  });
 });

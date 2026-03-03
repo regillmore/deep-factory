@@ -4,6 +4,7 @@ import { toTileIndex } from './chunkMath';
 import {
   TILE_METADATA,
   areTerrainAutotileNeighborsConnected,
+  hasAnimatedLiquidRenderVariantMetadata,
   hasAnimatedTileRenderMetadata,
   hasLiquidRenderMetadata,
   hasTerrainAutotileMetadata,
@@ -25,6 +26,7 @@ export interface ChunkMeshData {
 export interface AnimatedTileQuad {
   tileId: number;
   vertexFloatOffset: number;
+  liquidCardinalMask?: number;
 }
 
 export interface ChunkMeshBuildOptions {
@@ -56,6 +58,16 @@ const usesAnimatedTileRender = (tileId: number, tileMetadataRegistry: TileMetada
   !usesTerrainAutotile(tileId, tileMetadataRegistry) &&
   !usesLiquidRender(tileId, tileMetadataRegistry) &&
   hasAnimatedTileRenderMetadata(tileId, tileMetadataRegistry);
+const usesAnimatedLiquidRenderVariant = (
+  tileId: number,
+  cardinalMask: number,
+  tileMetadataRegistry: TileMetadataRegistry
+): boolean => hasAnimatedLiquidRenderVariantMetadata(tileId, cardinalMask, tileMetadataRegistry);
+
+interface ResolvedChunkTileRender {
+  uvRect: TileUvRect;
+  liquidCardinalMask: number | null;
+}
 
 const countNonEmptyTiles = (chunk: Chunk): number => {
   let count = 0;
@@ -100,7 +112,7 @@ const resolveChunkTileNeighborhood = (
   return null;
 };
 
-const resolveChunkTileUvRect = (
+const resolveChunkTileRender = (
   chunk: Chunk,
   localX: number,
   localY: number,
@@ -109,7 +121,7 @@ const resolveChunkTileUvRect = (
   sampleNeighborhood?: ChunkMeshBuildOptions['sampleNeighborhood'],
   sampleNeighborhoodInto?: ChunkMeshBuildOptions['sampleNeighborhoodInto'],
   neighborhoodScratch?: TileNeighborhood
-): TileUvRect => {
+): ResolvedChunkTileRender => {
   if (usesTerrainAutotile(tileId, tileMetadataRegistry)) {
     const neighborhood = resolveChunkTileNeighborhood(
       chunk,
@@ -125,7 +137,7 @@ const resolveChunkTileUvRect = (
         0,
         tileMetadataRegistry
       );
-      if (isolatedTerrainUvRect) return isolatedTerrainUvRect;
+      if (isolatedTerrainUvRect) return { uvRect: isolatedTerrainUvRect, liquidCardinalMask: null };
       throw new Error(`Missing terrain autotile metadata for tile ${tileId}`);
     }
 
@@ -137,7 +149,7 @@ const resolveChunkTileUvRect = (
       rawMask,
       tileMetadataRegistry
     );
-    if (terrainUvRect) return terrainUvRect;
+    if (terrainUvRect) return { uvRect: terrainUvRect, liquidCardinalMask: null };
     throw new Error(`Missing terrain autotile variant metadata for tile ${tileId}`);
   }
 
@@ -159,12 +171,12 @@ const resolveChunkTileUvRect = (
       liquidCardinalMask,
       tileMetadataRegistry
     );
-    if (liquidUvRect) return liquidUvRect;
+    if (liquidUvRect) return { uvRect: liquidUvRect, liquidCardinalMask };
     throw new Error(`Missing liquid render variant metadata for tile ${tileId}`);
   }
 
   const staticUvRect = resolveTileRenderUvRect(tileId, tileMetadataRegistry);
-  if (staticUvRect) return staticUvRect;
+  if (staticUvRect) return { uvRect: staticUvRect, liquidCardinalMask: null };
   throw new Error(`Missing tile render metadata for tile ${tileId}`);
 };
 
@@ -196,7 +208,7 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
       const px1 = px + TILE_SIZE;
       const py1 = py + TILE_SIZE;
       const tileVertexFloatOffset = writeIndex;
-      const { u0, v0, u1, v1 } = resolveChunkTileUvRect(
+      const resolvedRender = resolveChunkTileRender(
         chunk,
         x,
         y,
@@ -206,7 +218,22 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
         sampleNeighborhoodInto,
         neighborhoodScratch
       );
-      if (usesAnimatedTileRender(tileId, tileMetadataRegistry)) {
+      const { u0, v0, u1, v1 } = resolvedRender.uvRect;
+      if (resolvedRender.liquidCardinalMask !== null) {
+        if (
+          usesAnimatedLiquidRenderVariant(
+            tileId,
+            resolvedRender.liquidCardinalMask,
+            tileMetadataRegistry
+          )
+        ) {
+          animatedTileQuads.push({
+            tileId,
+            vertexFloatOffset: tileVertexFloatOffset,
+            liquidCardinalMask: resolvedRender.liquidCardinalMask
+          });
+        }
+      } else if (usesAnimatedTileRender(tileId, tileMetadataRegistry)) {
         animatedTileQuads.push({
           tileId,
           vertexFloatOffset: tileVertexFloatOffset

@@ -94,6 +94,10 @@ export interface TileRenderLookup {
   terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask: Int32Array;
   liquidVariantRenderByTileIdAndCardinalMask: readonly (TileRenderMetadata | null)[];
   liquidVariantStaticUvRectByTileIdAndCardinalMask: readonly (TileUvRect | null)[];
+  liquidVariantAnimationFrameStartByTileIdAndCardinalMask: Int32Array;
+  liquidVariantAnimationFrameCountByTileIdAndCardinalMask: Int32Array;
+  liquidVariantAnimationFrameDurationMsByTileIdAndCardinalMask: Uint32Array;
+  liquidVariantAnimationFrameUvRects: readonly TileUvRect[];
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -627,6 +631,17 @@ const buildTileRenderLookup = (tiles: readonly TileMetadataEntry[]): TileRenderL
   const liquidVariantStaticUvRectByTileIdAndCardinalMask = Array<TileUvRect | null>(
     (maxTileId + 1) * LIQUID_RENDER_CARDINAL_MASK_COUNT
   ).fill(null);
+  const liquidVariantAnimationFrameStartByTileIdAndCardinalMask = new Int32Array(
+    (maxTileId + 1) * LIQUID_RENDER_CARDINAL_MASK_COUNT
+  );
+  liquidVariantAnimationFrameStartByTileIdAndCardinalMask.fill(-1);
+  const liquidVariantAnimationFrameCountByTileIdAndCardinalMask = new Int32Array(
+    (maxTileId + 1) * LIQUID_RENDER_CARDINAL_MASK_COUNT
+  );
+  const liquidVariantAnimationFrameDurationMsByTileIdAndCardinalMask = new Uint32Array(
+    (maxTileId + 1) * LIQUID_RENDER_CARDINAL_MASK_COUNT
+  );
+  const liquidVariantAnimationFrameUvRects: TileUvRect[] = [];
   terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask.fill(TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX);
   terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask.fill(
     TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX
@@ -691,9 +706,21 @@ const buildTileRenderLookup = (tiles: readonly TileMetadataEntry[]): TileRenderL
     const liquidTableOffset = tile.id * LIQUID_RENDER_CARDINAL_MASK_COUNT;
     for (let cardinalMask = 0; cardinalMask < liquidVariantMap.length; cardinalMask += 1) {
       const variantRender = liquidVariantMap[cardinalMask] ?? null;
-      liquidVariantRenderByTileIdAndCardinalMask[liquidTableOffset + cardinalMask] = variantRender;
-      liquidVariantStaticUvRectByTileIdAndCardinalMask[liquidTableOffset + cardinalMask] =
+      const liquidVariantLookupIndex = liquidTableOffset + cardinalMask;
+      liquidVariantRenderByTileIdAndCardinalMask[liquidVariantLookupIndex] = variantRender;
+      liquidVariantStaticUvRectByTileIdAndCardinalMask[liquidVariantLookupIndex] =
         variantRender === null ? null : resolveTileRenderFrameUvRect(variantRender);
+      if (variantRender?.frames && variantRender.frameDurationMs !== undefined) {
+        liquidVariantAnimationFrameStartByTileIdAndCardinalMask[liquidVariantLookupIndex] =
+          liquidVariantAnimationFrameUvRects.length;
+        liquidVariantAnimationFrameCountByTileIdAndCardinalMask[liquidVariantLookupIndex] =
+          variantRender.frames.length;
+        liquidVariantAnimationFrameDurationMsByTileIdAndCardinalMask[liquidVariantLookupIndex] =
+          variantRender.frameDurationMs;
+        for (const frame of variantRender.frames) {
+          liquidVariantAnimationFrameUvRects.push(resolveTileRenderFrameUvRect(frame));
+        }
+      }
     }
   }
 
@@ -707,12 +734,37 @@ const buildTileRenderLookup = (tiles: readonly TileMetadataEntry[]): TileRenderL
     terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask,
     terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask,
     liquidVariantRenderByTileIdAndCardinalMask,
-    liquidVariantStaticUvRectByTileIdAndCardinalMask
+    liquidVariantStaticUvRectByTileIdAndCardinalMask,
+    liquidVariantAnimationFrameStartByTileIdAndCardinalMask,
+    liquidVariantAnimationFrameCountByTileIdAndCardinalMask,
+    liquidVariantAnimationFrameDurationMsByTileIdAndCardinalMask,
+    liquidVariantAnimationFrameUvRects
   };
 };
 
 const isDenseLookupTileIdInRange = (tileId: number, length: number): boolean =>
   Number.isInteger(tileId) && tileId >= 0 && tileId < length;
+
+const isLiquidVariantCardinalMaskInRange = (cardinalMask: number): boolean =>
+  Number.isInteger(cardinalMask) &&
+  cardinalMask >= 0 &&
+  cardinalMask < LIQUID_RENDER_CARDINAL_MASK_COUNT;
+
+const getLiquidVariantLookupIndex = (
+  tileId: number,
+  cardinalMask: number,
+  registry: TileMetadataRegistry
+): number | null => {
+  const { staticUvRectByTileId } = registry.renderLookup;
+  if (!isDenseLookupTileIdInRange(tileId, staticUvRectByTileId.length)) {
+    return null;
+  }
+  if (!isLiquidVariantCardinalMaskInRange(cardinalMask)) {
+    return null;
+  }
+
+  return tileId * LIQUID_RENDER_CARDINAL_MASK_COUNT + cardinalMask;
+};
 
 const getTileGameplayPropertyFlags = (
   tileId: number,
@@ -791,23 +843,14 @@ const getLiquidVariantRenderMetadataFromLookup = (
   cardinalMask: number,
   registry: TileMetadataRegistry
 ): TileRenderMetadata | null => {
-  if (!Number.isInteger(cardinalMask)) {
-    return null;
-  }
-  if (cardinalMask < 0 || cardinalMask >= LIQUID_RENDER_CARDINAL_MASK_COUNT) {
-    return null;
-  }
-
-  const { liquidVariantRenderByTileIdAndCardinalMask, staticUvRectByTileId } = registry.renderLookup;
-  if (!isDenseLookupTileIdInRange(tileId, staticUvRectByTileId.length)) {
+  const lookupIndex = getLiquidVariantLookupIndex(tileId, cardinalMask, registry);
+  if (lookupIndex === null) {
     return null;
   }
 
-  return (
-    liquidVariantRenderByTileIdAndCardinalMask[
-      tileId * LIQUID_RENDER_CARDINAL_MASK_COUNT + cardinalMask
-    ] ?? null
-  );
+  const { liquidVariantRenderByTileIdAndCardinalMask } = registry.renderLookup;
+
+  return liquidVariantRenderByTileIdAndCardinalMask[lookupIndex] ?? null;
 };
 
 const getLiquidVariantStaticUvRectFromLookup = (
@@ -815,23 +858,14 @@ const getLiquidVariantStaticUvRectFromLookup = (
   cardinalMask: number,
   registry: TileMetadataRegistry
 ): TileUvRect | null => {
-  if (!Number.isInteger(cardinalMask)) {
-    return null;
-  }
-  if (cardinalMask < 0 || cardinalMask >= LIQUID_RENDER_CARDINAL_MASK_COUNT) {
-    return null;
-  }
-
-  const { liquidVariantStaticUvRectByTileIdAndCardinalMask, staticUvRectByTileId } = registry.renderLookup;
-  if (!isDenseLookupTileIdInRange(tileId, staticUvRectByTileId.length)) {
+  const lookupIndex = getLiquidVariantLookupIndex(tileId, cardinalMask, registry);
+  if (lookupIndex === null) {
     return null;
   }
 
-  return (
-    liquidVariantStaticUvRectByTileIdAndCardinalMask[
-      tileId * LIQUID_RENDER_CARDINAL_MASK_COUNT + cardinalMask
-    ] ?? null
-  );
+  const { liquidVariantStaticUvRectByTileIdAndCardinalMask } = registry.renderLookup;
+
+  return liquidVariantStaticUvRectByTileIdAndCardinalMask[lookupIndex] ?? null;
 };
 
 const getAnimatedTileRenderFrameCountFromLookup = (
@@ -862,6 +896,34 @@ const getAnimatedTileRenderFrameDurationMsFromLookup = (
   return animationFrameDurationMsByTileId[tileId] ?? null;
 };
 
+const getAnimatedLiquidRenderVariantFrameCountFromLookup = (
+  tileId: number,
+  cardinalMask: number,
+  registry: TileMetadataRegistry
+): number => {
+  const lookupIndex = getLiquidVariantLookupIndex(tileId, cardinalMask, registry);
+  if (lookupIndex === null) {
+    return 0;
+  }
+
+  return registry.renderLookup.liquidVariantAnimationFrameCountByTileIdAndCardinalMask[lookupIndex] ?? 0;
+};
+
+const getAnimatedLiquidRenderVariantFrameDurationMsFromLookup = (
+  tileId: number,
+  cardinalMask: number,
+  registry: TileMetadataRegistry
+): number | null => {
+  const lookupIndex = getLiquidVariantLookupIndex(tileId, cardinalMask, registry);
+  if (lookupIndex === null || getAnimatedLiquidRenderVariantFrameCountFromLookup(tileId, cardinalMask, registry) === 0) {
+    return null;
+  }
+
+  return (
+    registry.renderLookup.liquidVariantAnimationFrameDurationMsByTileIdAndCardinalMask[lookupIndex] ?? null
+  );
+};
+
 const getAnimatedTileRenderFrameUvRectFromLookup = (
   tileId: number,
   frameIndex: number,
@@ -889,28 +951,73 @@ const getAnimatedTileRenderFrameUvRectFromLookup = (
   return animationFrameUvRects[frameStart + frameIndex] ?? null;
 };
 
-const getAnimatedTileRenderFrameIndexAtElapsedMsFromLookup = (
+const getAnimatedLiquidRenderVariantFrameUvRectFromLookup = (
   tileId: number,
-  elapsedMs: number,
+  cardinalMask: number,
+  frameIndex: number,
   registry: TileMetadataRegistry
+): TileUvRect | null => {
+  if (!Number.isInteger(frameIndex) || frameIndex < 0) {
+    return null;
+  }
+
+  const frameCount = getAnimatedLiquidRenderVariantFrameCountFromLookup(tileId, cardinalMask, registry);
+  if (frameCount === 0 || frameIndex >= frameCount) {
+    return null;
+  }
+
+  const lookupIndex = getLiquidVariantLookupIndex(tileId, cardinalMask, registry);
+  if (lookupIndex === null) {
+    return null;
+  }
+
+  const { liquidVariantAnimationFrameStartByTileIdAndCardinalMask, liquidVariantAnimationFrameUvRects } =
+    registry.renderLookup;
+  const frameStart = liquidVariantAnimationFrameStartByTileIdAndCardinalMask[lookupIndex] ?? -1;
+  if (frameStart < 0) {
+    return null;
+  }
+
+  return liquidVariantAnimationFrameUvRects[frameStart + frameIndex] ?? null;
+};
+
+const resolveWrappedAnimatedFrameIndexAtElapsedMs = (
+  frameCount: number,
+  frameDurationMs: number | null,
+  elapsedMs: number
 ): number | null => {
-  if (!Number.isFinite(elapsedMs)) {
-    return null;
-  }
-
-  const frameCount = getAnimatedTileRenderFrameCountFromLookup(tileId, registry);
-  if (frameCount === 0) {
-    return null;
-  }
-
-  const frameDurationMs = getAnimatedTileRenderFrameDurationMsFromLookup(tileId, registry);
-  if (frameDurationMs === null || frameDurationMs <= 0) {
+  if (!Number.isFinite(elapsedMs) || frameCount === 0 || frameDurationMs === null || frameDurationMs <= 0) {
     return null;
   }
 
   const elapsedFrameSteps = Math.floor(elapsedMs / frameDurationMs);
   const wrappedFrameIndex = elapsedFrameSteps % frameCount;
   return wrappedFrameIndex >= 0 ? wrappedFrameIndex : wrappedFrameIndex + frameCount;
+};
+
+const getAnimatedTileRenderFrameIndexAtElapsedMsFromLookup = (
+  tileId: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry
+): number | null => {
+  const frameCount = getAnimatedTileRenderFrameCountFromLookup(tileId, registry);
+  const frameDurationMs = getAnimatedTileRenderFrameDurationMsFromLookup(tileId, registry);
+  return resolveWrappedAnimatedFrameIndexAtElapsedMs(frameCount, frameDurationMs, elapsedMs);
+};
+
+const getAnimatedLiquidRenderVariantFrameIndexAtElapsedMsFromLookup = (
+  tileId: number,
+  cardinalMask: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry
+): number | null => {
+  const frameCount = getAnimatedLiquidRenderVariantFrameCountFromLookup(tileId, cardinalMask, registry);
+  const frameDurationMs = getAnimatedLiquidRenderVariantFrameDurationMsFromLookup(
+    tileId,
+    cardinalMask,
+    registry
+  );
+  return resolveWrappedAnimatedFrameIndexAtElapsedMs(frameCount, frameDurationMs, elapsedMs);
 };
 
 const getAnimatedTileRenderFrameUvRectAtElapsedMsFromLookup = (
@@ -924,6 +1031,25 @@ const getAnimatedTileRenderFrameUvRectAtElapsedMsFromLookup = (
   }
 
   return getAnimatedTileRenderFrameUvRectFromLookup(tileId, frameIndex, registry);
+};
+
+const getAnimatedLiquidRenderVariantFrameUvRectAtElapsedMsFromLookup = (
+  tileId: number,
+  cardinalMask: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry
+): TileUvRect | null => {
+  const frameIndex = getAnimatedLiquidRenderVariantFrameIndexAtElapsedMsFromLookup(
+    tileId,
+    cardinalMask,
+    elapsedMs,
+    registry
+  );
+  if (frameIndex === null) {
+    return null;
+  }
+
+  return getAnimatedLiquidRenderVariantFrameUvRectFromLookup(tileId, cardinalMask, frameIndex, registry);
 };
 
 const getTerrainAutotileVariantAtlasIndexFromLookup = (
@@ -1313,6 +1439,54 @@ export const resolveAnimatedTileRenderFrameUvRectAtElapsedMs = (
   elapsedMs: number,
   registry: TileMetadataRegistry = TILE_METADATA
 ): TileUvRect | null => getAnimatedTileRenderFrameUvRectAtElapsedMsFromLookup(tileId, elapsedMs, registry);
+
+export const hasAnimatedLiquidRenderVariantMetadata = (
+  tileId: number,
+  cardinalMask: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): boolean => getAnimatedLiquidRenderVariantFrameCountFromLookup(tileId, cardinalMask, registry) > 0;
+
+export const getAnimatedLiquidRenderVariantFrameCount = (
+  tileId: number,
+  cardinalMask: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): number => getAnimatedLiquidRenderVariantFrameCountFromLookup(tileId, cardinalMask, registry);
+
+export const getAnimatedLiquidRenderVariantFrameDurationMs = (
+  tileId: number,
+  cardinalMask: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): number | null =>
+  getAnimatedLiquidRenderVariantFrameDurationMsFromLookup(tileId, cardinalMask, registry);
+
+export const resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs = (
+  tileId: number,
+  cardinalMask: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): number | null =>
+  getAnimatedLiquidRenderVariantFrameIndexAtElapsedMsFromLookup(tileId, cardinalMask, elapsedMs, registry);
+
+export const resolveAnimatedLiquidRenderVariantFrameUvRect = (
+  tileId: number,
+  cardinalMask: number,
+  frameIndex: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): TileUvRect | null =>
+  getAnimatedLiquidRenderVariantFrameUvRectFromLookup(tileId, cardinalMask, frameIndex, registry);
+
+export const resolveAnimatedLiquidRenderVariantFrameUvRectAtElapsedMs = (
+  tileId: number,
+  cardinalMask: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): TileUvRect | null =>
+  getAnimatedLiquidRenderVariantFrameUvRectAtElapsedMsFromLookup(
+    tileId,
+    cardinalMask,
+    elapsedMs,
+    registry
+  );
 
 export const resolveTerrainAutotileVariantUvRect = (
   tileId: number,

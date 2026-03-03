@@ -690,6 +690,80 @@ describe('Renderer atlas telemetry', () => {
     performanceNowSpy.mockRestore();
   });
 
+  it('patches animated liquid chunk UVs when the elapsed frame changes', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    const performanceNowSpy = vi.spyOn(performance, 'now').mockReturnValue(0);
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    renderer.setTile(0, 0, 7);
+    const camera = new Camera2D();
+    camera.zoom = 16;
+
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+    expect(renderer.telemetry.meshBuildQueueLength).toBe(0);
+    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
+    expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
+
+    const bufferData = vi.mocked(gl.bufferData);
+    bufferData.mockClear();
+
+    renderer.render(camera, { timeMs: 0 });
+    renderer.render(camera, { timeMs: 179 });
+    expect(bufferData).not.toHaveBeenCalled();
+    expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
+
+    renderer.render(camera, { timeMs: 180 });
+    expect(bufferData).toHaveBeenCalledTimes(1);
+    const frameOneVertices = bufferData.mock.calls[0]?.[1] as Float32Array | undefined;
+    const frameOneUv = atlasIndexToUvRect(15);
+    expect(frameOneVertices).toBeInstanceOf(Float32Array);
+    expect(Array.from(frameOneVertices?.slice(2, 4) ?? [])).toEqual([
+      toFloat32(frameOneUv.u0),
+      toFloat32(frameOneUv.v0)
+    ]);
+    expect(Array.from(frameOneVertices?.slice(22, 24) ?? [])).toEqual([
+      toFloat32(frameOneUv.u0),
+      toFloat32(frameOneUv.v1)
+    ]);
+    expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameOneVertices?.byteLength ?? 0);
+
+    renderer.render(camera, { timeMs: 359 });
+    expect(bufferData).toHaveBeenCalledTimes(1);
+    expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(0);
+    expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
+
+    renderer.render(camera, { timeMs: 360 });
+    expect(bufferData).toHaveBeenCalledTimes(2);
+    const frameZeroVertices = bufferData.mock.calls[1]?.[1] as Float32Array | undefined;
+    const frameZeroUv = atlasIndexToUvRect(14);
+    expect(Array.from(frameZeroVertices?.slice(2, 4) ?? [])).toEqual([
+      toFloat32(frameZeroUv.u0),
+      toFloat32(frameZeroUv.v0)
+    ]);
+    expect(Array.from(frameZeroVertices?.slice(22, 24) ?? [])).toEqual([
+      toFloat32(frameZeroUv.u0),
+      toFloat32(frameZeroUv.v1)
+    ]);
+    expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);
+    expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(frameZeroVertices?.byteLength ?? 0);
+    performanceNowSpy.mockRestore();
+  });
+
   it('drops resident animated chunk telemetry after streaming prunes an off-screen animated mesh', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-03: Liquid animation resolves against the meshed liquid cardinal mask
+
+- Decision: Liquid variant animation now uses per-tile-per-cardinal-mask frame lookups, and chunk meshes record the resolved liquid cardinal mask for each animated liquid quad instead of re-sampling liquid neighbors during rendering.
+- Reason: Liquid animation should stay on the same UV-patching path as other animated tiles without adding per-frame neighborhood sampling or tighter renderer-to-world coupling.
+- Consequence: Future liquid animation work should key frame resolution by the meshed liquid mask, and liquid connectivity changes still require chunk invalidation or remeshing before the animation source changes.
+
 ### 2026-03-03: Liquid render connectivity is separate from terrain autotile grouping
 
 - Decision: Liquid tiles now declare `liquidRender` metadata with their own connectivity groups and per-cardinal-mask variant render entries instead of reusing terrain autotile connectivity or material-tag fallback.

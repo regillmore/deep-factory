@@ -6,9 +6,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Liquid rendering
 
-11. Animate liquid tiles in the renderer from metadata-driven frame sequences.
 93. Populate distinct placeholder water and lava edge or surface liquid variant sources now that liquid masks resolve.
-100. Surface the resolved liquid animation frame index in debug inspect readouts once task 11 adds liquid frame resolution.
+100. Surface the resolved liquid animation frame index in debug inspect readouts.
+103. Break out animated liquid quad counts from other animated chunk telemetry in the renderer debug HUD.
 
 ## Lighting
 

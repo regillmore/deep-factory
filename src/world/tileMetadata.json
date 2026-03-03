@@ -126,22 +126,22 @@
       "liquidRender": {
         "connectivityGroup": "water",
         "variantRenderByCardinalMask": [
-          { "atlasIndex": 14 },
-          { "atlasIndex": 14 },
-          { "atlasIndex": 14 },
-          { "atlasIndex": 14 },
-          { "atlasIndex": 14 },
-          { "atlasIndex": 14 },
-          { "atlasIndex": 14 },
-          { "atlasIndex": 14 },
-          { "atlasIndex": 14 },
-          { "atlasIndex": 14 },
-          { "atlasIndex": 14 },
-          { "atlasIndex": 14 },
-          { "atlasIndex": 14 },
-          { "atlasIndex": 14 },
-          { "atlasIndex": 14 },
-          { "atlasIndex": 14 }
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
+          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 }
         ]
       }
     },
@@ -159,22 +159,22 @@
       "liquidRender": {
         "connectivityGroup": "lava",
         "variantRenderByCardinalMask": [
-          { "atlasIndex": 15 },
-          { "atlasIndex": 15 },
-          { "atlasIndex": 15 },
-          { "atlasIndex": 15 },
-          { "atlasIndex": 15 },
-          { "atlasIndex": 15 },
-          { "atlasIndex": 15 },
-          { "atlasIndex": 15 },
-          { "atlasIndex": 15 },
-          { "atlasIndex": 15 },
-          { "atlasIndex": 15 },
-          { "atlasIndex": 15 },
-          { "atlasIndex": 15 },
-          { "atlasIndex": 15 },
-          { "atlasIndex": 15 },
-          { "atlasIndex": 15 }
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 }
         ]
       }
     }
