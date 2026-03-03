@@ -195,6 +195,22 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats the live standalone player vertical velocity for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerVelocityY: 96.5,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('VelYNow: 96.50');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the live standalone player jump-held input state for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -403,6 +419,23 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('keeps pose and live vertical velocity telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'jump-rise',
+      playerVelocityY: -210.5,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: jump-rise\nVelYNow: -210.50');
+    expect(model.eventText).toBeNull();
+  });
+
   it('keeps pose and live jump-held telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -556,7 +589,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose, grounded, facing, move-axis, horizontal velocity, jump-held, jump-pressed, and contact telemetry on separate player lines', () => {
+  it('keeps pose, grounded, facing, move-axis, horizontal and vertical velocity, jump-held, jump-pressed, and contact telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -569,6 +602,7 @@ describe('buildDebugEditStatusStripModel', () => {
       playerFacing: 'right',
       playerMoveX: 1,
       playerVelocityX: 180,
+      playerVelocityY: -210,
       playerJumpHeld: true,
       playerJumpPressed: true,
       playerSupportContact: {
@@ -589,6 +623,7 @@ describe('buildDebugEditStatusStripModel', () => {
         'FacingNow: right\n' +
         'MoveXNow: 1\n' +
         'VelXNow: 180.00\n' +
+        'VelYNow: -210.00\n' +
         'JumpHeldNow: on\n' +
         'JumpPressedNow: on\n' +
         'SupportNow: tile 4,-1 (#6)\n' +

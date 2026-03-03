@@ -1332,6 +1332,7 @@ const bootstrap = async (): Promise<void> => {
       playerFacing: debugOverlayVisible ? null : standalonePlayerState?.facing ?? null,
       playerMoveX: debugOverlayVisible || !standalonePlayerState ? null : debugOverlayPlayerIntent.moveX,
       playerVelocityX: debugOverlayVisible || !standalonePlayerState ? null : standalonePlayerState.velocity.x,
+      playerVelocityY: debugOverlayVisible || !standalonePlayerState ? null : standalonePlayerState.velocity.y,
       playerJumpHeld: debugOverlayVisible || !standalonePlayerState ? null : debugOverlayPlayerIntent.jumpHeld,
       playerJumpPressed:
         debugOverlayVisible || !standalonePlayerState ? null : debugOverlayPlayerIntent.jumpPressed,

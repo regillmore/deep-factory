@@ -36,6 +36,7 @@ export interface DebugEditStatusStripState {
   playerFacing?: PlayerFacing | null;
   playerMoveX?: -1 | 0 | 1 | null;
   playerVelocityX?: number | null;
+  playerVelocityY?: number | null;
   playerJumpHeld?: boolean | null;
   playerJumpPressed?: boolean | null;
   playerSupportContact?: DebugEditStatusStripPlayerSupportContactTelemetry | null;
@@ -490,6 +491,14 @@ const formatLiveVelocityXText = (playerVelocityX: number | null): string | null 
   return `VelXNow: ${playerVelocityX.toFixed(2)}`;
 };
 
+const formatLiveVelocityYText = (playerVelocityY: number | null): string | null => {
+  if (playerVelocityY === null) {
+    return null;
+  }
+
+  return `VelYNow: ${playerVelocityY.toFixed(2)}`;
+};
+
 const formatLiveJumpHeldText = (playerJumpHeld: boolean | null): string | null => {
   if (playerJumpHeld === null) {
     return null;
@@ -534,6 +543,7 @@ const buildPlayerText = (
   playerFacing: PlayerFacing | null,
   playerMoveX: -1 | 0 | 1 | null,
   playerVelocityX: number | null,
+  playerVelocityY: number | null,
   playerJumpHeld: boolean | null,
   playerJumpPressed: boolean | null,
   playerSupportContact: DebugEditStatusStripPlayerSupportContactTelemetry | null,
@@ -547,6 +557,7 @@ const buildPlayerText = (
     formatLiveFacingText(playerFacing),
     formatLiveMoveXText(playerMoveX),
     formatLiveVelocityXText(playerVelocityX),
+    formatLiveVelocityYText(playerVelocityY),
     formatLiveJumpHeldText(playerJumpHeld),
     formatLiveJumpPressedText(playerJumpPressed),
     formatLiveSupportContactText(playerSupportContact),
@@ -1041,6 +1052,7 @@ export const buildDebugEditStatusStripModel = (
   const playerFacing = state.playerFacing ?? null;
   const playerMoveX = state.playerMoveX ?? null;
   const playerVelocityX = state.playerVelocityX ?? null;
+  const playerVelocityY = state.playerVelocityY ?? null;
   const playerJumpHeld = state.playerJumpHeld ?? null;
   const playerJumpPressed = state.playerJumpPressed ?? null;
   const playerSupportContact = state.playerSupportContact ?? null;
@@ -1064,6 +1076,7 @@ export const buildDebugEditStatusStripModel = (
       playerFacing,
       playerMoveX,
       playerVelocityX,
+      playerVelocityY,
       playerJumpHeld,
       playerJumpPressed,
       playerSupportContact,

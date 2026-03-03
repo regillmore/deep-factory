@@ -46,7 +46,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Player debugging
 
-91. Surface standalone player live vertical velocity in the compact debug-edit status strip when the text debug HUD is hidden.
 92. Surface standalone player live speed magnitude in the compact debug-edit status strip when the text debug HUD is hidden.
+94. Surface standalone player live world position in the compact debug-edit status strip when the text debug HUD is hidden.
 
 ## Project structure optimization

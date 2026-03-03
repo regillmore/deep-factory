@@ -120,6 +120,13 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose and live vertical velocity player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: jump-rise\nVelYNow: -210.50')).toEqual([
+      ['Pose: jump-rise'],
+      ['VelYNow: -210.50']
+    ]);
+  });
+
   it('preserves separate pose and live jump-held player lines while keeping each line individually wrappable', () => {
     expect(buildWrappedDetailLines('Pose: jump-rise\nJumpHeldNow: on')).toEqual([
       ['Pose: jump-rise'],
@@ -188,10 +195,10 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
-  it('preserves separate pose, input-edge, horizontal velocity, and contact player lines while keeping each line individually wrappable', () => {
+  it('preserves separate pose, input-edge, horizontal and vertical velocity, and contact player lines while keeping each line individually wrappable', () => {
     expect(
       buildWrappedDetailLines(
-        'Pose: ceiling-bonk\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
+        'Pose: ceiling-bonk\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nVelYNow: -210.00\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
       )
     ).toEqual([
       ['Pose: ceiling-bonk'],
@@ -199,6 +206,7 @@ describe('buildWrappedDetailLines', () => {
       ['FacingNow: right'],
       ['MoveXNow: 1'],
       ['VelXNow: 180.00'],
+      ['VelYNow: -210.00'],
       ['JumpHeldNow: on'],
       ['JumpPressedNow: on'],
       ['SupportNow: tile 4,-1 (#6)'],
