@@ -46,5 +46,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Player debugging
 
-88. Surface standalone player live horizontal move input axis in the compact debug-edit status strip when the text debug HUD is hidden.
 89. Surface standalone player live jump-pressed input edge state in the compact debug-edit status strip when the text debug HUD is hidden.
+90. Surface standalone player live horizontal velocity in the compact debug-edit status strip when the text debug HUD is hidden.

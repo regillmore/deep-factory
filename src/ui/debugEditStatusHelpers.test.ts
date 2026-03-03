@@ -163,6 +163,22 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats the live standalone player horizontal move input axis for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerMoveX: -1,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('MoveXNow: -1');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the live standalone player jump-held input state for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -321,6 +337,23 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('keeps pose and live horizontal move-axis telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'grounded-walk',
+      playerMoveX: 1,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: grounded-walk\nMoveXNow: 1');
+    expect(model.eventText).toBeNull();
+  });
+
   it('keeps pose and live jump-held telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -390,6 +423,7 @@ describe('buildDebugEditStatusStripModel', () => {
       playerPlaceholderPoseLabel: 'ceiling-bonk',
       playerGrounded: false,
       playerFacing: 'left',
+      playerMoveX: -1,
       playerSupportContact: {
         tile: { x: 4, y: -1, id: 6 }
       },
@@ -406,6 +440,7 @@ describe('buildDebugEditStatusStripModel', () => {
       'Pose: ceiling-bonk\n' +
         'GroundedNow: off\n' +
         'FacingNow: left\n' +
+        'MoveXNow: -1\n' +
         'SupportNow: tile 4,-1 (#6)\n' +
         'WallNow: tile 5,-3 (#7, right)\n' +
         'CeilingNow: tile 2,-6 (#8)'
@@ -425,6 +460,7 @@ describe('buildDebugEditStatusStripModel', () => {
       playerCeilingBonkHoldActive: true,
       playerGrounded: false,
       playerFacing: 'right',
+      playerMoveX: 1,
       playerSupportContact: {
         tile: { x: 4, y: -1, id: 6 }
       },
@@ -442,6 +478,7 @@ describe('buildDebugEditStatusStripModel', () => {
         'BonkHold: on\n' +
         'GroundedNow: off\n' +
         'FacingNow: right\n' +
+        'MoveXNow: 1\n' +
         'SupportNow: tile 4,-1 (#6)\n' +
         'WallNow: tile 5,-3 (#7, right)\n' +
         'CeilingNow: tile 2,-6 (#8)'

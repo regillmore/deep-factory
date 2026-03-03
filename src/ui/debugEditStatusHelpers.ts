@@ -34,6 +34,7 @@ export interface DebugEditStatusStripState {
   playerCeilingBonkHoldActive?: boolean | null;
   playerGrounded?: boolean | null;
   playerFacing?: PlayerFacing | null;
+  playerMoveX?: -1 | 0 | 1 | null;
   playerJumpHeld?: boolean | null;
   playerSupportContact?: DebugEditStatusStripPlayerSupportContactTelemetry | null;
   playerWallContact?: DebugEditStatusStripPlayerWallContactTelemetry | null;
@@ -471,6 +472,14 @@ const formatLiveFacingText = (playerFacing: PlayerFacing | null): string | null 
   return `FacingNow: ${playerFacing}`;
 };
 
+const formatLiveMoveXText = (playerMoveX: -1 | 0 | 1 | null): string | null => {
+  if (playerMoveX === null) {
+    return null;
+  }
+
+  return `MoveXNow: ${playerMoveX}`;
+};
+
 const formatLiveJumpHeldText = (playerJumpHeld: boolean | null): string | null => {
   if (playerJumpHeld === null) {
     return null;
@@ -505,6 +514,7 @@ const buildPlayerText = (
   playerCeilingBonkHoldActive: boolean | null,
   playerGrounded: boolean | null,
   playerFacing: PlayerFacing | null,
+  playerMoveX: -1 | 0 | 1 | null,
   playerJumpHeld: boolean | null,
   playerSupportContact: DebugEditStatusStripPlayerSupportContactTelemetry | null,
   playerWallContact: DebugEditStatusStripPlayerWallContactTelemetry | null,
@@ -515,6 +525,7 @@ const buildPlayerText = (
     formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive),
     formatLiveGroundedText(playerGrounded),
     formatLiveFacingText(playerFacing),
+    formatLiveMoveXText(playerMoveX),
     formatLiveJumpHeldText(playerJumpHeld),
     formatLiveSupportContactText(playerSupportContact),
     formatLiveWallContactText(playerWallContact),
@@ -1006,6 +1017,7 @@ export const buildDebugEditStatusStripModel = (
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
   const playerGrounded = state.playerGrounded ?? null;
   const playerFacing = state.playerFacing ?? null;
+  const playerMoveX = state.playerMoveX ?? null;
   const playerJumpHeld = state.playerJumpHeld ?? null;
   const playerSupportContact = state.playerSupportContact ?? null;
   const playerWallContact = state.playerWallContact ?? null;
@@ -1026,6 +1038,7 @@ export const buildDebugEditStatusStripModel = (
       playerCeilingBonkHoldActive,
       playerGrounded,
       playerFacing,
+      playerMoveX,
       playerJumpHeld,
       playerSupportContact,
       playerWallContact,
