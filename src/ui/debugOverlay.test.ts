@@ -145,6 +145,40 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquid:none');
   });
 
+  it('shows the resolved liquid cardinal mask for hovered liquid tiles', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: {
+        client: { x: 48, y: 80 },
+        canvas: { x: 96, y: 160 },
+        world: { x: 32, y: -16 },
+        tile: { x: 2, y: -1 },
+        pointerType: 'mouse',
+        tileId: 7,
+        tileLabel: 'water',
+        solid: false,
+        blocksLight: false,
+        liquidKind: 'water',
+        liquidCardinalMask: 11
+      },
+      spawn: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: null,
+      player: null,
+      pinned: null
+    });
+
+    expect(text).toContain('Tile:water (#7)');
+    expect(text).toContain('liquid:water');
+    expect(text).toContain('liquidMask:NE-W (11)');
+  });
+
   it('shows live standalone player position, velocity, grounded state, and facing', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: null,
@@ -275,7 +309,8 @@ describe('formatDebugOverlayText', () => {
         tileLabel: 'grass',
         solid: true,
         blocksLight: false,
-        liquidKind: 'water'
+        liquidKind: 'water',
+        liquidCardinalMask: 13
       }
     });
 
@@ -287,6 +322,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('solid:on');
     expect(text).toContain('light:off');
     expect(text).toContain('liquid:water');
+    expect(text).toContain('liquidMask:N-SW (13)');
   });
 
   it('renders separate pointer and pinned inspect lines when both are present', () => {
@@ -352,7 +388,8 @@ describe('formatDebugOverlayText', () => {
         tileLabel: 'lava',
         solid: false,
         blocksLight: false,
-        liquidKind: 'lava'
+        liquidKind: 'lava',
+        liquidCardinalMask: 6
       }
     });
 
@@ -370,6 +407,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('Ch:-1,2');
     expect(text).toContain('L:31,1');
     expect(text).toContain('liquid:lava');
+    expect(text).toContain('liquidMask:-ES- (6)');
   });
 
   it('shows when the renderer-side ceiling-bonk hold latch stays active after live contact clears', () => {

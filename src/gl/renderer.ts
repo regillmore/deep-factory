@@ -22,7 +22,11 @@ import {
 } from '../world/chunkMath';
 import type { ChunkBounds } from '../world/chunkMath';
 import { buildChunkMesh } from '../world/mesher';
-import { TILE_METADATA } from '../world/tileMetadata';
+import {
+  hasLiquidRenderMetadata,
+  resolveLiquidRenderCardinalMaskFromNeighborhood,
+  TILE_METADATA
+} from '../world/tileMetadata';
 import {
   findPlayerSpawnPoint as findWorldPlayerSpawnPoint,
   type PlayerSpawnPoint,
@@ -467,6 +471,18 @@ export class Renderer {
 
   getTile(worldTileX: number, worldTileY: number): number {
     return this.world.getTile(worldTileX, worldTileY);
+  }
+
+  getLiquidRenderCardinalMask(worldTileX: number, worldTileY: number): number | null {
+    const tileId = this.world.getTile(worldTileX, worldTileY);
+    if (!hasLiquidRenderMetadata(tileId, TILE_METADATA)) {
+      return null;
+    }
+
+    return resolveLiquidRenderCardinalMaskFromNeighborhood(
+      this.world.sampleTileNeighborhood(worldTileX, worldTileY),
+      TILE_METADATA
+    );
   }
 
   resetWorld(): void {

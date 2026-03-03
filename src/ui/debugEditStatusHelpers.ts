@@ -77,6 +77,7 @@ export interface DebugEditHoveredTileState {
   solid: boolean;
   blocksLight: boolean;
   liquidKind: TileLiquidKind | null;
+  liquidCardinalMask?: number | null;
 }
 
 export interface DebugEditStatusStripPlayerRespawnTelemetry {
@@ -391,6 +392,14 @@ const buildArmedDesktopInspectHintText = (hasPinnedTile: boolean): string =>
       );
 
 const formatHoveredTileFlag = (value: boolean): string => (value ? 'on' : 'off');
+const formatLiquidCardinalMask = (value: number): string => {
+  const mask = value & 0xf;
+  return (
+    `${(mask & (1 << 0)) !== 0 ? 'N' : '-'}${(mask & (1 << 1)) !== 0 ? 'E' : '-'}` +
+    `${(mask & (1 << 2)) !== 0 ? 'S' : '-'}${(mask & (1 << 3)) !== 0 ? 'W' : '-'}` +
+    ` (${mask})`
+  );
+};
 
 const hasSameInspectTarget = (
   hoveredTile: DebugEditHoveredTileState | null,
@@ -407,7 +416,10 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
   ` local:${tile.localX},${tile.localY}` +
   ` | solid:${formatHoveredTileFlag(tile.solid)}` +
   ` | light:${formatHoveredTileFlag(tile.blocksLight)}` +
-  ` | liquid:${tile.liquidKind ?? 'none'}`;
+  ` | liquid:${tile.liquidKind ?? 'none'}` +
+  (typeof tile.liquidCardinalMask === 'number'
+    ? ` | liquidMask:${formatLiquidCardinalMask(tile.liquidCardinalMask)}`
+    : '');
 
 const formatSignedOffset = (value: number): string => (value >= 0 ? `+${value}` : `${value}`);
 

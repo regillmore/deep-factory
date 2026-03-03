@@ -959,6 +959,7 @@ const bootstrap = async (): Promise<void> => {
     const { localX, localY } = worldToLocalTile(tileX, tileY);
 
     return {
+      liquidCardinalMask: renderer.getLiquidRenderCardinalMask(tileX, tileY),
       tileX,
       tileY,
       chunkX,
@@ -1167,7 +1168,8 @@ const bootstrap = async (): Promise<void> => {
           tileLabel: hoveredDebugTileStatus?.tileLabel,
           solid: hoveredDebugTileStatus?.solid,
           blocksLight: hoveredDebugTileStatus?.blocksLight,
-          liquidKind: hoveredDebugTileStatus?.liquidKind ?? null
+          liquidKind: hoveredDebugTileStatus?.liquidKind ?? null,
+          liquidCardinalMask: hoveredDebugTileStatus?.liquidCardinalMask ?? null
         }
       : null;
     const debugOverlayPinnedInspect = pinnedDebugTileStatus
@@ -1180,7 +1182,8 @@ const bootstrap = async (): Promise<void> => {
           tileLabel: pinnedDebugTileStatus.tileLabel,
           solid: pinnedDebugTileStatus.solid,
           blocksLight: pinnedDebugTileStatus.blocksLight,
-          liquidKind: pinnedDebugTileStatus.liquidKind
+          liquidKind: pinnedDebugTileStatus.liquidKind,
+          liquidCardinalMask: pinnedDebugTileStatus.liquidCardinalMask ?? null
         }
       : null;
     const debugOverlaySpawn = resolvedPlayerSpawn

@@ -1,4 +1,5 @@
 import {
+  buildAutotileCardinalMask,
   normalizeAutotileAdjacencyMask,
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK,
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
@@ -9,6 +10,7 @@ import {
   getAuthoredAtlasRegionUvRect
 } from './authoredAtlasLayout';
 import rawTileMetadata from './tileMetadata.json';
+import type { TileNeighborhood } from './world';
 
 export interface TerrainAutotileTileMetadata {
   placeholderVariantAtlasByCardinalMask: readonly number[];
@@ -1114,6 +1116,14 @@ export const areLiquidRenderNeighborsConnected = (
 
   return false;
 };
+
+export const resolveLiquidRenderCardinalMaskFromNeighborhood = (
+  neighborhood: TileNeighborhood,
+  registry: TileMetadataRegistry = TILE_METADATA
+): number =>
+  buildAutotileCardinalMask(neighborhood, (centerTileId, neighborTileId) =>
+    areLiquidRenderNeighborsConnected(centerTileId, neighborTileId, registry)
+  );
 
 export const resolveTerrainAutotileVariantAtlasIndex = (
   tileId: number,

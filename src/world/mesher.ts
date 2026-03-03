@@ -1,13 +1,13 @@
-import { buildAutotileAdjacencyMask, buildAutotileCardinalMask } from './autotile';
+import { buildAutotileAdjacencyMask } from './autotile';
 import { CHUNK_SIZE, TILE_SIZE } from './constants';
 import { toTileIndex } from './chunkMath';
 import {
   TILE_METADATA,
-  areLiquidRenderNeighborsConnected,
   areTerrainAutotileNeighborsConnected,
   hasAnimatedTileRenderMetadata,
   hasLiquidRenderMetadata,
   hasTerrainAutotileMetadata,
+  resolveLiquidRenderCardinalMaskFromNeighborhood,
   resolveLiquidRenderVariantUvRect,
   resolveTerrainAutotileUvRectByRawAdjacencyMask,
   resolveTileRenderUvRect
@@ -153,9 +153,7 @@ const resolveChunkTileUvRect = (
     const liquidCardinalMask =
       neighborhood === null
         ? 0
-        : buildAutotileCardinalMask(neighborhood, (centerTileId, neighborTileId) =>
-            areLiquidRenderNeighborsConnected(centerTileId, neighborTileId, tileMetadataRegistry)
-          );
+        : resolveLiquidRenderCardinalMaskFromNeighborhood(neighborhood, tileMetadataRegistry);
     const liquidUvRect = resolveLiquidRenderVariantUvRect(
       tileId,
       liquidCardinalMask,

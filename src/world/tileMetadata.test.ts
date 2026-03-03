@@ -24,6 +24,7 @@ import {
   resolveAnimatedTileRenderFrameIndexAtElapsedMs,
   resolveAnimatedTileRenderFrameUvRect,
   resolveAnimatedTileRenderFrameUvRectAtElapsedMs,
+  resolveLiquidRenderCardinalMaskFromNeighborhood,
   resolveLiquidRenderVariantMetadata,
   resolveLiquidRenderVariantUvRect,
   resolveTileGameplayMetadata,
@@ -79,6 +80,22 @@ describe('tile metadata loader', () => {
       null
     );
     expect(resolveLiquidRenderVariantMetadata(7, LIQUID_RENDER_CARDINAL_MASK_COUNT)).toBe(null);
+  });
+
+  it('resolves liquid cardinal masks from sampled neighborhoods using liquid connectivity rules', () => {
+    expect(
+      resolveLiquidRenderCardinalMaskFromNeighborhood({
+        center: 7,
+        north: 7,
+        northEast: 8,
+        east: 7,
+        southEast: 7,
+        south: 0,
+        southWest: 7,
+        west: 8,
+        northWest: 7
+      })
+    ).toBe(1 | 2);
   });
 
   it('reuses cached atlas UV rect objects for atlas-index and terrain variant lookups', () => {

@@ -37,6 +37,7 @@ export interface DebugOverlayPointerInspect {
   solid?: boolean;
   blocksLight?: boolean;
   liquidKind?: TileLiquidKind | null;
+  liquidCardinalMask?: number | null;
   client: { x: number; y: number };
   canvas: { x: number; y: number };
   world: { x: number; y: number };
@@ -50,6 +51,7 @@ export interface DebugOverlayTileInspect {
   solid?: boolean;
   blocksLight?: boolean;
   liquidKind?: TileLiquidKind | null;
+  liquidCardinalMask?: number | null;
 }
 
 export interface DebugOverlayPlayerSpawn {
@@ -149,6 +151,14 @@ export interface DebugOverlayInspectState {
 const formatFloat = (value: number, digits: number): string => value.toFixed(digits);
 const formatInt = (value: number): string => Math.round(value).toString();
 const formatGameplayFlag = (value: boolean): string => (value ? 'on' : 'off');
+const formatLiquidCardinalMask = (value: number): string => {
+  const mask = value & 0xf;
+  return (
+    `${(mask & (1 << 0)) !== 0 ? 'N' : '-'}${(mask & (1 << 1)) !== 0 ? 'E' : '-'}` +
+    `${(mask & (1 << 2)) !== 0 ? 'S' : '-'}${(mask & (1 << 3)) !== 0 ? 'W' : '-'}` +
+    ` (${mask})`
+  );
+};
 const formatAtlasLine = (stats: DebugOverlayStats): string => {
   if (stats.atlasWidth === null || stats.atlasHeight === null) {
     return `Atlas: ${stats.atlasSourceKind}`;
@@ -188,7 +198,10 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string =>
   typeof tileInspect.solid === 'boolean' && typeof tileInspect.blocksLight === 'boolean'
     ? ` | solid:${formatGameplayFlag(tileInspect.solid)}` +
       ` | light:${formatGameplayFlag(tileInspect.blocksLight)}` +
-      ` | liquid:${tileInspect.liquidKind ?? 'none'}`
+      ` | liquid:${tileInspect.liquidKind ?? 'none'}` +
+      (typeof tileInspect.liquidCardinalMask === 'number'
+        ? ` | liquidMask:${formatLiquidCardinalMask(tileInspect.liquidCardinalMask)}`
+        : '')
     : '';
 
 const formatTileLocation = (tileInspect: DebugOverlayTileInspect): string => {
