@@ -39,6 +39,7 @@ export interface DebugOverlayPointerInspect {
   liquidKind?: TileLiquidKind | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
+  liquidAnimationFrameIndex?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
@@ -57,6 +58,7 @@ export interface DebugOverlayTileInspect {
   liquidKind?: TileLiquidKind | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
+  liquidAnimationFrameIndex?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
@@ -213,6 +215,9 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string =>
         : '') +
       (typeof tileInspect.liquidCardinalMask === 'number'
         ? ` | liquidMask:${formatLiquidCardinalMask(tileInspect.liquidCardinalMask)}`
+        : '') +
+      (typeof tileInspect.liquidAnimationFrameIndex === 'number'
+        ? ` | liquidFrame:${tileInspect.liquidAnimationFrameIndex}`
         : '') +
       (typeof tileInspect.liquidVariantSource === 'string' && tileInspect.liquidVariantSource.length > 0
         ? ` | liquidSrc:${tileInspect.liquidVariantSource}`

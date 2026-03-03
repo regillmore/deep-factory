@@ -9,8 +9,11 @@ import { AUTHORED_ATLAS_REGION_COUNT } from './authoredAtlasLayout';
 import {
   describeLiquidConnectivityGroup,
   describeLiquidRenderVariantPixelBounds,
+  describeLiquidRenderVariantPixelBoundsAtElapsedMs,
   describeLiquidRenderVariantUvRect,
+  describeLiquidRenderVariantUvRectAtElapsedMs,
   describeLiquidRenderVariantSource,
+  describeLiquidRenderVariantSourceAtElapsedMs,
   getAnimatedLiquidRenderVariantFrameCount,
   getAnimatedLiquidRenderVariantFrameDurationMs,
   describeTileUvRectPixelBounds,
@@ -37,6 +40,8 @@ import {
   resolveAnimatedTileRenderFrameUvRect,
   resolveAnimatedTileRenderFrameUvRectAtElapsedMs,
   resolveLiquidRenderCardinalMaskFromNeighborhood,
+  resolveLiquidRenderVariantFrameMetadataAtElapsedMs,
+  resolveLiquidRenderVariantUvRectAtElapsedMs,
   resolveLiquidRenderVariantMetadata,
   resolveLiquidRenderVariantUvRect,
   resolveTileGameplayMetadata,
@@ -825,6 +830,29 @@ describe('tile metadata loader', () => {
     expect(resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(12, 3, 240, registry)).toBe(0);
     expect(resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(12, 3, -1, registry)).toBe(1);
     expect(resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(12, 4, 120, registry)).toBe(null);
+    expect(resolveLiquidRenderVariantFrameMetadataAtElapsedMs(12, 3, 0, registry)).toEqual({
+      atlasIndex: 14
+    });
+    expect(resolveLiquidRenderVariantFrameMetadataAtElapsedMs(12, 3, 120, registry)).toEqual({
+      atlasIndex: 15
+    });
+    expect(resolveLiquidRenderVariantFrameMetadataAtElapsedMs(13, 3, 120, registry)).toEqual({
+      atlasIndex: 15
+    });
+    expect(resolveLiquidRenderVariantUvRectAtElapsedMs(12, 3, 0, registry)).toBe(atlasIndexToUvRect(14));
+    expect(resolveLiquidRenderVariantUvRectAtElapsedMs(12, 3, 120, registry)).toBe(atlasIndexToUvRect(15));
+    expect(resolveLiquidRenderVariantUvRectAtElapsedMs(13, 3, 120, registry)).toBe(atlasIndexToUvRect(15));
+    expect(describeLiquidRenderVariantSourceAtElapsedMs(12, 3, 0, registry)).toBe('atlasIndex 14');
+    expect(describeLiquidRenderVariantSourceAtElapsedMs(12, 3, 120, registry)).toBe('atlasIndex 15');
+    expect(describeLiquidRenderVariantSourceAtElapsedMs(13, 3, 120, registry)).toBe('atlasIndex 15');
+    expect(describeLiquidRenderVariantUvRectAtElapsedMs(12, 3, 0, registry)).toBe('0.333,0.75..0.5,1');
+    expect(describeLiquidRenderVariantUvRectAtElapsedMs(12, 3, 120, registry)).toBe('0.5,0.75..0.667,1');
+    expect(describeLiquidRenderVariantPixelBoundsAtElapsedMs(12, 3, 0, 96, 64, registry)).toBe(
+      '32,48..48,64'
+    );
+    expect(describeLiquidRenderVariantPixelBoundsAtElapsedMs(12, 3, 120, 96, 64, registry)).toBe(
+      '48,48..64,64'
+    );
     expect(resolveAnimatedLiquidRenderVariantFrameUvRectAtElapsedMs(12, 3, 0, registry)).toBe(
       atlasIndexToUvRect(14)
     );

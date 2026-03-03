@@ -81,6 +81,7 @@ export interface DebugEditHoveredTileState {
   liquidKind: TileLiquidKind | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
+  liquidAnimationFrameIndex?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
@@ -433,6 +434,9 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     : '') +
   (typeof tile.liquidCardinalMask === 'number'
     ? ` | liquidMask:${formatLiquidCardinalMask(tile.liquidCardinalMask)}`
+    : '') +
+  (typeof tile.liquidAnimationFrameIndex === 'number'
+    ? ` | liquidFrame:${tile.liquidAnimationFrameIndex}`
     : '') +
   (typeof tile.liquidVariantSource === 'string' && tile.liquidVariantSource.length > 0
     ? ` | liquidSrc:${tile.liquidVariantSource}`

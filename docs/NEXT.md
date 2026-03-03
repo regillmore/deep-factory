@@ -7,8 +7,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Liquid rendering
 
 93. Populate distinct placeholder water and lava edge or surface liquid variant sources now that liquid masks resolve.
-100. Surface the resolved liquid animation frame index in debug inspect readouts.
 103. Break out animated liquid quad counts from other animated chunk telemetry in the renderer debug HUD.
+105. Surface the resolved liquid animation frame count beside the frame index in debug inspect readouts.
 
 ## Lighting
 

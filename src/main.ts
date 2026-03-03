@@ -77,10 +77,12 @@ import {
 } from './world/playerState';
 import {
   describeLiquidConnectivityGroup,
-  describeLiquidRenderVariantPixelBounds,
-  describeLiquidRenderVariantSource,
-  describeLiquidRenderVariantUvRect,
+  describeLiquidRenderVariantPixelBoundsAtElapsedMs,
+  describeLiquidRenderVariantSourceAtElapsedMs,
+  describeLiquidRenderVariantUvRectAtElapsedMs,
+  getAnimatedLiquidRenderVariantFrameCount,
   getTileMetadata,
+  resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs,
   resolveTileGameplayMetadata,
   TILE_METADATA
 } from './world/tileMetadata';
@@ -959,32 +961,51 @@ const bootstrap = async (): Promise<void> => {
 
   const getActiveDebugBrushLabel = (): string => DEBUG_BRUSH_TILE_LABELS.get(activeDebugBrushTileId) ?? `tile ${activeDebugBrushTileId}`;
 
-  const getDebugTileStatusAtTile = (tileX: number, tileY: number): DebugEditHoveredTileState => {
+  const getDebugTileStatusAtTile = (
+    tileX: number,
+    tileY: number,
+    elapsedMs: number
+  ): DebugEditHoveredTileState => {
     const tileId = renderer.getTile(tileX, tileY);
     const tileMetadata = getTileMetadata(tileId);
     const gameplay = resolveTileGameplayMetadata(tileId);
     const { chunkX, chunkY } = worldToChunkCoord(tileX, tileY);
     const { localX, localY } = worldToLocalTile(tileX, tileY);
     const liquidCardinalMask = renderer.getLiquidRenderCardinalMask(tileX, tileY);
+    const liquidAnimationFrameCount =
+      typeof liquidCardinalMask === 'number'
+        ? getAnimatedLiquidRenderVariantFrameCount(tileId, liquidCardinalMask)
+        : 0;
+    const liquidAnimationFrameIndex =
+      typeof liquidCardinalMask === 'number' && liquidAnimationFrameCount > 0
+        ? resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(tileId, liquidCardinalMask, elapsedMs)
+        : null;
     const atlasWidth = renderer.telemetry.atlasWidth;
     const atlasHeight = renderer.telemetry.atlasHeight;
 
     return {
       liquidConnectivityGroupLabel: describeLiquidConnectivityGroup(tileId),
       liquidCardinalMask,
+      liquidAnimationFrameIndex,
       liquidVariantSource:
         typeof liquidCardinalMask === 'number'
-          ? describeLiquidRenderVariantSource(tileId, liquidCardinalMask)
+          ? describeLiquidRenderVariantSourceAtElapsedMs(tileId, liquidCardinalMask, elapsedMs)
           : null,
       liquidVariantUvRect:
         typeof liquidCardinalMask === 'number'
-          ? describeLiquidRenderVariantUvRect(tileId, liquidCardinalMask)
+          ? describeLiquidRenderVariantUvRectAtElapsedMs(tileId, liquidCardinalMask, elapsedMs)
           : null,
       liquidVariantPixelBounds:
         typeof liquidCardinalMask === 'number' &&
         typeof atlasWidth === 'number' &&
         typeof atlasHeight === 'number'
-          ? describeLiquidRenderVariantPixelBounds(tileId, liquidCardinalMask, atlasWidth, atlasHeight)
+          ? describeLiquidRenderVariantPixelBoundsAtElapsedMs(
+              tileId,
+              liquidCardinalMask,
+              elapsedMs,
+              atlasWidth,
+              atlasHeight
+            )
           : null,
       tileX,
       tileY,
@@ -1000,9 +1021,12 @@ const bootstrap = async (): Promise<void> => {
     };
   };
 
-  const getHoveredDebugTileStatus = (pointerInspect: PointerInspectSnapshot | null): DebugEditHoveredTileState | null => {
+  const getHoveredDebugTileStatus = (
+    pointerInspect: PointerInspectSnapshot | null,
+    elapsedMs: number
+  ): DebugEditHoveredTileState | null => {
     if (!pointerInspect) return null;
-    return getDebugTileStatusAtTile(pointerInspect.tile.x, pointerInspect.tile.y);
+    return getDebugTileStatusAtTile(pointerInspect.tile.x, pointerInspect.tile.y, elapsedMs);
   };
 
   const togglePinnedDebugTileInspect = (tileX: number, tileY: number): void => {
@@ -1183,9 +1207,13 @@ const bootstrap = async (): Promise<void> => {
     const renderTimeMs = performance.now();
     const pointerInspect = input.getPointerInspect();
     const armedDebugToolPreviewState = input.getArmedDebugToolPreviewState();
-    const hoveredDebugTileStatus = getHoveredDebugTileStatus(pointerInspect);
+    const hoveredDebugTileStatus = getHoveredDebugTileStatus(pointerInspect, renderTimeMs);
     const pinnedDebugTileStatus = pinnedDebugTileInspect
-      ? getDebugTileStatusAtTile(pinnedDebugTileInspect.tileX, pinnedDebugTileInspect.tileY)
+      ? getDebugTileStatusAtTile(
+          pinnedDebugTileInspect.tileX,
+          pinnedDebugTileInspect.tileY,
+          renderTimeMs
+        )
       : null;
     const debugOverlayPointerInspect = pointerInspect
       ? {
@@ -1197,6 +1225,7 @@ const bootstrap = async (): Promise<void> => {
           liquidKind: hoveredDebugTileStatus?.liquidKind ?? null,
           liquidConnectivityGroupLabel: hoveredDebugTileStatus?.liquidConnectivityGroupLabel ?? null,
           liquidCardinalMask: hoveredDebugTileStatus?.liquidCardinalMask ?? null,
+          liquidAnimationFrameIndex: hoveredDebugTileStatus?.liquidAnimationFrameIndex ?? null,
           liquidVariantSource: hoveredDebugTileStatus?.liquidVariantSource ?? null,
           liquidVariantUvRect: hoveredDebugTileStatus?.liquidVariantUvRect ?? null,
           liquidVariantPixelBounds: hoveredDebugTileStatus?.liquidVariantPixelBounds ?? null
@@ -1215,6 +1244,7 @@ const bootstrap = async (): Promise<void> => {
           liquidKind: pinnedDebugTileStatus.liquidKind,
           liquidConnectivityGroupLabel: pinnedDebugTileStatus.liquidConnectivityGroupLabel ?? null,
           liquidCardinalMask: pinnedDebugTileStatus.liquidCardinalMask ?? null,
+          liquidAnimationFrameIndex: pinnedDebugTileStatus.liquidAnimationFrameIndex ?? null,
           liquidVariantSource: pinnedDebugTileStatus.liquidVariantSource ?? null,
           liquidVariantUvRect: pinnedDebugTileStatus.liquidVariantUvRect ?? null,
           liquidVariantPixelBounds: pinnedDebugTileStatus.liquidVariantPixelBounds ?? null

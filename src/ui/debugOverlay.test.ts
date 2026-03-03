@@ -187,6 +187,47 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidPx:32,48..48,64');
   });
 
+  it('shows the resolved liquid animation frame index for hovered animated liquid tiles', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: {
+        client: { x: 48, y: 80 },
+        canvas: { x: 96, y: 160 },
+        world: { x: 32, y: -16 },
+        tile: { x: 2, y: -1 },
+        pointerType: 'mouse',
+        tileId: 7,
+        tileLabel: 'water',
+        solid: false,
+        blocksLight: false,
+        liquidKind: 'water',
+        liquidConnectivityGroupLabel: 'water',
+        liquidCardinalMask: 11,
+        liquidAnimationFrameIndex: 1,
+        liquidVariantSource: 'atlasIndex 15',
+        liquidVariantUvRect: '0.5,0.75..0.667,1',
+        liquidVariantPixelBounds: '48,48..64,64'
+      },
+      spawn: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: null,
+      player: null,
+      pinned: null
+    });
+
+    expect(text).toContain('liquidMask:NE-W (11)');
+    expect(text).toContain('liquidFrame:1');
+    expect(text).toContain('liquidSrc:atlasIndex 15');
+    expect(text).toContain('liquidUv:0.5,0.75..0.667,1');
+    expect(text).toContain('liquidPx:48,48..64,64');
+  });
+
   it('shows live standalone player position, velocity, grounded state, and facing', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: null,

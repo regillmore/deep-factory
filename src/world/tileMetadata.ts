@@ -1488,6 +1488,77 @@ export const resolveAnimatedLiquidRenderVariantFrameUvRectAtElapsedMs = (
     registry
   );
 
+export const resolveLiquidRenderVariantFrameMetadataAtElapsedMs = (
+  tileId: number,
+  cardinalMask: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): TileRenderFrameMetadata | null => {
+  const renderMetadata = resolveLiquidRenderVariantMetadata(tileId, cardinalMask, registry);
+  if (!renderMetadata) {
+    return null;
+  }
+
+  const frameIndex = resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(
+    tileId,
+    cardinalMask,
+    elapsedMs,
+    registry
+  );
+  if (frameIndex === null) {
+    return renderMetadata;
+  }
+
+  return renderMetadata.frames?.[frameIndex] ?? renderMetadata;
+};
+
+export const resolveLiquidRenderVariantUvRectAtElapsedMs = (
+  tileId: number,
+  cardinalMask: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): TileUvRect | null => {
+  const frameMetadata = resolveLiquidRenderVariantFrameMetadataAtElapsedMs(
+    tileId,
+    cardinalMask,
+    elapsedMs,
+    registry
+  );
+  return frameMetadata ? resolveTileRenderFrameUvRect(frameMetadata) : null;
+};
+
+export const describeLiquidRenderVariantSourceAtElapsedMs = (
+  tileId: number,
+  cardinalMask: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): string | null =>
+  describeTileRenderFrameSource(
+    resolveLiquidRenderVariantFrameMetadataAtElapsedMs(tileId, cardinalMask, elapsedMs, registry)
+  );
+
+export const describeLiquidRenderVariantUvRectAtElapsedMs = (
+  tileId: number,
+  cardinalMask: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): string | null =>
+  describeTileUvRect(resolveLiquidRenderVariantUvRectAtElapsedMs(tileId, cardinalMask, elapsedMs, registry));
+
+export const describeLiquidRenderVariantPixelBoundsAtElapsedMs = (
+  tileId: number,
+  cardinalMask: number,
+  elapsedMs: number,
+  atlasWidth: number,
+  atlasHeight: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): string | null =>
+  describeTileUvRectPixelBounds(
+    resolveLiquidRenderVariantUvRectAtElapsedMs(tileId, cardinalMask, elapsedMs, registry),
+    atlasWidth,
+    atlasHeight
+  );
+
 export const resolveTerrainAutotileVariantUvRect = (
   tileId: number,
   cardinalVariantIndex: number,
