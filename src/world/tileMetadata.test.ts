@@ -7,8 +7,10 @@ import {
 } from './autotile';
 import { AUTHORED_ATLAS_REGION_COUNT } from './authoredAtlasLayout';
 import {
+  describeLiquidRenderVariantPixelBounds,
   describeLiquidRenderVariantUvRect,
   describeLiquidRenderVariantSource,
+  describeTileUvRectPixelBounds,
   describeTileUvRect,
   LIQUID_RENDER_CARDINAL_MASK_COUNT,
   TILE_METADATA,
@@ -502,6 +504,11 @@ describe('tile metadata loader', () => {
     expect(describeLiquidRenderVariantUvRect(12, 5, registry)).toBe('0.167,0.25..0.333,0.5');
     expect(describeLiquidRenderVariantUvRect(20, 2, registry)).toBe('0.125,0.25..0.5,0.75');
     expect(describeLiquidRenderVariantUvRect(20, LIQUID_RENDER_CARDINAL_MASK_COUNT, registry)).toBe(null);
+    expect(describeLiquidRenderVariantPixelBounds(12, 5, 96, 64, registry)).toBe('16,16..32,32');
+    expect(describeLiquidRenderVariantPixelBounds(20, 2, 96, 64, registry)).toBe('12,16..48,48');
+    expect(describeLiquidRenderVariantPixelBounds(20, LIQUID_RENDER_CARDINAL_MASK_COUNT, 96, 64, registry)).toBe(
+      null
+    );
   });
 
   it('describes tile uv rects with compact rounded coordinates', () => {
@@ -514,6 +521,34 @@ describe('tile metadata loader', () => {
       })
     ).toBe('0.167,0.25..0.333,0.5');
     expect(describeTileUvRect(null)).toBe(null);
+  });
+
+  it('describes tile uv rect pixel bounds using atlas dimensions', () => {
+    expect(
+      describeTileUvRectPixelBounds(
+        {
+          u0: 1 / 6,
+          v0: 0.25,
+          u1: 1 / 3,
+          v1: 0.5
+        },
+        96,
+        64
+      )
+    ).toBe('16,16..32,32');
+    expect(describeTileUvRectPixelBounds(null, 96, 64)).toBe(null);
+    expect(
+      describeTileUvRectPixelBounds(
+        {
+          u0: 1 / 6,
+          v0: 0.25,
+          u1: 1 / 3,
+          v1: 0.5
+        },
+        0,
+        64
+      )
+    ).toBe(null);
   });
 
   it('builds dense render lookup tables for static UVs and terrain variants', () => {

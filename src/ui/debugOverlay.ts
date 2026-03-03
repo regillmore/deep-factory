@@ -40,6 +40,7 @@ export interface DebugOverlayPointerInspect {
   liquidCardinalMask?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
+  liquidVariantPixelBounds?: string | null;
   client: { x: number; y: number };
   canvas: { x: number; y: number };
   world: { x: number; y: number };
@@ -56,6 +57,7 @@ export interface DebugOverlayTileInspect {
   liquidCardinalMask?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
+  liquidVariantPixelBounds?: string | null;
 }
 
 export interface DebugOverlayPlayerSpawn {
@@ -211,6 +213,10 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string =>
         : '') +
       (typeof tileInspect.liquidVariantUvRect === 'string' && tileInspect.liquidVariantUvRect.length > 0
         ? ` | liquidUv:${tileInspect.liquidVariantUvRect}`
+        : '') +
+      (typeof tileInspect.liquidVariantPixelBounds === 'string' &&
+      tileInspect.liquidVariantPixelBounds.length > 0
+        ? ` | liquidPx:${tileInspect.liquidVariantPixelBounds}`
         : '')
     : '';
 

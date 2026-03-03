@@ -160,7 +160,8 @@ describe('formatDebugOverlayText', () => {
         liquidKind: 'water',
         liquidCardinalMask: 11,
         liquidVariantSource: 'atlasIndex 14',
-        liquidVariantUvRect: '0.333,0.75..0.5,1'
+        liquidVariantUvRect: '0.333,0.75..0.5,1',
+        liquidVariantPixelBounds: '32,48..48,64'
       },
       spawn: null,
       playerPlaceholderPoseLabel: null,
@@ -181,6 +182,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidMask:NE-W (11)');
     expect(text).toContain('liquidSrc:atlasIndex 14');
     expect(text).toContain('liquidUv:0.333,0.75..0.5,1');
+    expect(text).toContain('liquidPx:32,48..48,64');
   });
 
   it('shows live standalone player position, velocity, grounded state, and facing', () => {
@@ -316,7 +318,8 @@ describe('formatDebugOverlayText', () => {
         liquidKind: 'water',
         liquidCardinalMask: 13,
         liquidVariantSource: 'atlasIndex 14',
-        liquidVariantUvRect: '0.333,0.75..0.5,1'
+        liquidVariantUvRect: '0.333,0.75..0.5,1',
+        liquidVariantPixelBounds: '32,48..48,64'
       }
     });
 
@@ -331,6 +334,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidMask:N-SW (13)');
     expect(text).toContain('liquidSrc:atlasIndex 14');
     expect(text).toContain('liquidUv:0.333,0.75..0.5,1');
+    expect(text).toContain('liquidPx:32,48..48,64');
   });
 
   it('renders separate pointer and pinned inspect lines when both are present', () => {
@@ -399,7 +403,8 @@ describe('formatDebugOverlayText', () => {
         liquidKind: 'lava',
         liquidCardinalMask: 6,
         liquidVariantSource: 'atlasIndex 15',
-        liquidVariantUvRect: '0.5,0.75..0.667,1'
+        liquidVariantUvRect: '0.5,0.75..0.667,1',
+        liquidVariantPixelBounds: '48,48..64,64'
       }
     });
 
@@ -420,6 +425,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidMask:-ES- (6)');
     expect(text).toContain('liquidSrc:atlasIndex 15');
     expect(text).toContain('liquidUv:0.5,0.75..0.667,1');
+    expect(text).toContain('liquidPx:48,48..64,64');
   });
 
   it('shows when the renderer-side ceiling-bonk hold latch stays active after live contact clears', () => {

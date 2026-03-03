@@ -76,6 +76,7 @@ import {
   type PlayerState
 } from './world/playerState';
 import {
+  describeLiquidRenderVariantPixelBounds,
   describeLiquidRenderVariantSource,
   describeLiquidRenderVariantUvRect,
   getTileMetadata,
@@ -964,6 +965,8 @@ const bootstrap = async (): Promise<void> => {
     const { chunkX, chunkY } = worldToChunkCoord(tileX, tileY);
     const { localX, localY } = worldToLocalTile(tileX, tileY);
     const liquidCardinalMask = renderer.getLiquidRenderCardinalMask(tileX, tileY);
+    const atlasWidth = renderer.telemetry.atlasWidth;
+    const atlasHeight = renderer.telemetry.atlasHeight;
 
     return {
       liquidCardinalMask,
@@ -974,6 +977,12 @@ const bootstrap = async (): Promise<void> => {
       liquidVariantUvRect:
         typeof liquidCardinalMask === 'number'
           ? describeLiquidRenderVariantUvRect(tileId, liquidCardinalMask)
+          : null,
+      liquidVariantPixelBounds:
+        typeof liquidCardinalMask === 'number' &&
+        typeof atlasWidth === 'number' &&
+        typeof atlasHeight === 'number'
+          ? describeLiquidRenderVariantPixelBounds(tileId, liquidCardinalMask, atlasWidth, atlasHeight)
           : null,
       tileX,
       tileY,
@@ -1186,7 +1195,8 @@ const bootstrap = async (): Promise<void> => {
           liquidKind: hoveredDebugTileStatus?.liquidKind ?? null,
           liquidCardinalMask: hoveredDebugTileStatus?.liquidCardinalMask ?? null,
           liquidVariantSource: hoveredDebugTileStatus?.liquidVariantSource ?? null,
-          liquidVariantUvRect: hoveredDebugTileStatus?.liquidVariantUvRect ?? null
+          liquidVariantUvRect: hoveredDebugTileStatus?.liquidVariantUvRect ?? null,
+          liquidVariantPixelBounds: hoveredDebugTileStatus?.liquidVariantPixelBounds ?? null
         }
       : null;
     const debugOverlayPinnedInspect = pinnedDebugTileStatus
@@ -1202,7 +1212,8 @@ const bootstrap = async (): Promise<void> => {
           liquidKind: pinnedDebugTileStatus.liquidKind,
           liquidCardinalMask: pinnedDebugTileStatus.liquidCardinalMask ?? null,
           liquidVariantSource: pinnedDebugTileStatus.liquidVariantSource ?? null,
-          liquidVariantUvRect: pinnedDebugTileStatus.liquidVariantUvRect ?? null
+          liquidVariantUvRect: pinnedDebugTileStatus.liquidVariantUvRect ?? null,
+          liquidVariantPixelBounds: pinnedDebugTileStatus.liquidVariantPixelBounds ?? null
         }
       : null;
     const debugOverlaySpawn = resolvedPlayerSpawn

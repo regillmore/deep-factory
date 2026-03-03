@@ -8,7 +8,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 11. Animate liquid tiles in the renderer from metadata-driven frame sequences.
 93. Populate distinct placeholder water and lava edge or surface liquid variant sources now that liquid masks resolve.
-98. Surface the resolved liquid variant atlas pixel bounds in debug inspect readouts for hovered liquid tiles.
+99. Surface the resolved liquid connectivity-group label in debug inspect readouts for hovered liquid tiles.
 
 ## Lighting
 

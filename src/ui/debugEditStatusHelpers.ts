@@ -80,6 +80,7 @@ export interface DebugEditHoveredTileState {
   liquidCardinalMask?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
+  liquidVariantPixelBounds?: string | null;
 }
 
 export interface DebugEditStatusStripPlayerRespawnTelemetry {
@@ -427,6 +428,9 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     : '') +
   (typeof tile.liquidVariantUvRect === 'string' && tile.liquidVariantUvRect.length > 0
     ? ` | liquidUv:${tile.liquidVariantUvRect}`
+    : '') +
+  (typeof tile.liquidVariantPixelBounds === 'string' && tile.liquidVariantPixelBounds.length > 0
+    ? ` | liquidPx:${tile.liquidVariantPixelBounds}`
     : '');
 
 const formatSignedOffset = (value: number): string => (value >= 0 ? `+${value}` : `${value}`);

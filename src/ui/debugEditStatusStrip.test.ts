@@ -19,7 +19,7 @@ describe('buildWrappedDetailLines', () => {
   it('preserves newline-separated inspect entries while adding wrap points inside each line', () => {
     expect(
       buildWrappedDetailLines(
-        'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidMask:NE-W (11) | liquidSrc:atlasIndex 15 | liquidUv:0.5,0.75..0.667,1\n' +
+        'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidMask:NE-W (11) | liquidSrc:atlasIndex 15 | liquidUv:0.5,0.75..0.667,1 | liquidPx:48,48..64,64\n' +
           'Hover: dirt (#2) @ 4,7 chunk:0,0 local:4,7 | solid:on | light:on | liquid:none\n' +
           'Offset: Hover->Pinned x:+8 y:-11'
       )
@@ -31,7 +31,8 @@ describe('buildWrappedDetailLines', () => {
         '| liquid:lava',
         '| liquidMask:NE-W (11)',
         '| liquidSrc:atlasIndex 15',
-        '| liquidUv:0.5,0.75..0.667,1'
+        '| liquidUv:0.5,0.75..0.667,1',
+        '| liquidPx:48,48..64,64'
       ],
       ['Hover: dirt (#2) @ 4,7 chunk:0,0 local:4,7', '| solid:on', '| light:on', '| liquid:none'],
       ['Offset: Hover->Pinned x:+8 y:-11']

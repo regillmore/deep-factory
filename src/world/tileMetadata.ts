@@ -219,6 +219,29 @@ export const describeTileUvRect = (uvRect: TileUvRect | null | undefined): strin
   );
 };
 
+export const describeTileUvRectPixelBounds = (
+  uvRect: TileUvRect | null | undefined,
+  atlasWidth: number,
+  atlasHeight: number
+): string | null => {
+  if (
+    !uvRect ||
+    !Number.isFinite(atlasWidth) ||
+    !Number.isFinite(atlasHeight) ||
+    atlasWidth <= 0 ||
+    atlasHeight <= 0
+  ) {
+    return null;
+  }
+
+  return (
+    `${formatTileRenderSourceCoordinate(uvRect.u0 * atlasWidth)},` +
+    `${formatTileRenderSourceCoordinate(uvRect.v0 * atlasHeight)}..` +
+    `${formatTileRenderSourceCoordinate(uvRect.u1 * atlasWidth)},` +
+    `${formatTileRenderSourceCoordinate(uvRect.v1 * atlasHeight)}`
+  );
+};
+
 export const describeTileRenderFrameSource = (
   value: TileRenderFrameMetadata | null | undefined
 ): string | null => {
@@ -1184,6 +1207,19 @@ export const describeLiquidRenderVariantUvRect = (
   cardinalMask: number,
   registry: TileMetadataRegistry = TILE_METADATA
 ): string | null => describeTileUvRect(resolveLiquidRenderVariantUvRect(tileId, cardinalMask, registry));
+
+export const describeLiquidRenderVariantPixelBounds = (
+  tileId: number,
+  cardinalMask: number,
+  atlasWidth: number,
+  atlasHeight: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): string | null =>
+  describeTileUvRectPixelBounds(
+    resolveLiquidRenderVariantUvRect(tileId, cardinalMask, registry),
+    atlasWidth,
+    atlasHeight
+  );
 
 export const resolveLiquidRenderVariantUvRect = (
   tileId: number,
