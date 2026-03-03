@@ -23,6 +23,21 @@ export interface AppShellState {
   playerSpawnMarkerVisible?: boolean;
 }
 
+export const DEFAULT_PAUSED_MAIN_MENU_STATUS =
+  'World session paused. Resume to continue it, or choose New World to discard it and boot a fresh procedural world.';
+export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [
+  'Returning here keeps the initialized world, player state, and debug edits intact until you abandon them.',
+  'New World also clears the paused session camera state and undo history before the fresh world boots.'
+] as const;
+
+export const createPausedMainMenuShellState = (): AppShellState => ({
+  screen: 'main-menu',
+  statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
+  detailLines: DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES,
+  primaryActionLabel: 'Resume World',
+  secondaryActionLabel: 'New World'
+});
+
 export interface AppShellViewModel {
   screen: AppShellScreen;
   overlayVisible: boolean;
@@ -338,7 +353,7 @@ export class AppShell {
     this.secondaryButton.hidden = viewModel.secondaryActionLabel === null;
     this.secondaryButton.title =
       state.screen === 'main-menu' && state.secondaryActionLabel === 'New World'
-        ? 'Abandon the paused world session and boot a fresh world'
+        ? 'Discard the paused session, camera state, and undo history, then boot a fresh world'
         : '';
     const overlayActionsVisible =
       viewModel.primaryActionLabel !== null || viewModel.secondaryActionLabel !== null;

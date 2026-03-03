@@ -34,7 +34,7 @@ import {
   resolveDebugEditShortcutAction
 } from './input/debugEditShortcuts';
 import { DebugOverlay } from './ui/debugOverlay';
-import { AppShell, type AppShellScreen } from './ui/appShell';
+import { AppShell, createPausedMainMenuShellState, type AppShellScreen } from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
@@ -76,13 +76,6 @@ import { getTileMetadata, resolveTileGameplayMetadata, TILE_METADATA } from './w
 
 const DEBUG_TILE_BREAK_ID = 0;
 const PREFERRED_INITIAL_DEBUG_BRUSH_TILE_NAME = 'debug_brick';
-const PAUSED_MAIN_MENU_STATUS =
-  'World session paused. Resume when you want the fixed-step simulation and live controls to continue.';
-const PAUSED_MAIN_MENU_DETAIL_LINES = [
-  'Returning here keeps the initialized world, player state, and debug edits intact until you abandon them.',
-  'Resume returns to that same mixed-device session, while New World discards it and boots a fresh procedural world.'
-] as const;
-
 const formatDebugBrushLabel = (tileName: string): string => tileName.replace(/_/g, ' ');
 const isEditableKeyboardShortcutTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
@@ -238,17 +231,7 @@ const bootstrap = async (): Promise<void> => {
   };
   const showMainMenuShellState = (): void => {
     currentScreen = 'main-menu';
-    shell.setState(
-      worldSessionStarted
-        ? {
-            screen: 'main-menu',
-            statusText: PAUSED_MAIN_MENU_STATUS,
-            detailLines: PAUSED_MAIN_MENU_DETAIL_LINES,
-            primaryActionLabel: 'Resume World',
-            secondaryActionLabel: 'New World'
-          }
-        : { screen: 'main-menu' }
-    );
+    shell.setState(worldSessionStarted ? createPausedMainMenuShellState() : { screen: 'main-menu' });
   };
   const syncDebugOverlayVisibility = (): void => {
     debug.setVisible(currentScreen === 'in-world' && debugOverlayVisible);

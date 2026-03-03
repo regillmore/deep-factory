@@ -37,7 +37,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## App shell
 
-64. Surface the paused-main-menu fresh-world reset consequence in shell copy so the destructive action reads clearly before activation.
 65. Surface the in-world main-menu shortcut in shell copy once the keyboard action exists.
 66. Surface the in-world recenter-camera shortcut in shell copy once the keyboard action exists.
 67. Surface the in-world debug-HUD shortcut in shell copy once the keyboard action exists.
@@ -48,3 +47,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 63. Surface standalone player wall-side direction in the debug overlay when wall-contact events block or clear on the left versus right side.
 75. Surface standalone player wall-side direction in the compact debug-edit status strip when the text debug HUD is hidden.
 79. Surface standalone player wall-contact side in the live debug overlay `Contact:` line once sided wall probes exist.
+80. Surface standalone player ceiling-bonk hold state in the live debug overlay while the renderer-side presentation latch is active.

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-03
 
+- Task: Surface the paused-main-menu fresh-world reset consequence in shell copy so the destructive action reads clearly before activation.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) to own the paused main-menu shell copy through a shared state helper with explicit fresh-world reset wording, wired [src/main.ts](../src/main.ts) to reuse that shell state, refreshed [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused paused-menu copy coverage, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/appShell.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Pass resolved left/right wall-contact side into the renderer-side standalone player draw pass and mirror the wall-slide placeholder lean away from the blocking side.
 - Changes: Updated [src/world/playerState.ts](../src/world/playerState.ts) plus [src/world/playerState.test.ts](../src/world/playerState.test.ts) so wall-contact probes retain a resolved blocking side, updated [src/gl/standalonePlayerPlaceholder.ts](../src/gl/standalonePlayerPlaceholder.ts) plus [src/gl/standalonePlayerPlaceholder.test.ts](../src/gl/standalonePlayerPlaceholder.test.ts) so wall-slide presentation can lean away from that side, updated [src/gl/renderer.ts](../src/gl/renderer.ts) and [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) to use the sided wall contact when choosing the placeholder-facing mirror, refreshed [src/world/playerWallContactTransition.test.ts](../src/world/playerWallContactTransition.test.ts) for the new wall-contact shape, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Verification: Ran `npx vitest run src/world/playerState.test.ts src/world/playerWallContactTransition.test.ts src/gl/standalonePlayerPlaceholder.test.ts src/gl/renderer.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

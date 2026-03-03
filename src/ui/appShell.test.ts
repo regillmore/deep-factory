@@ -4,7 +4,11 @@ import {
   getDesktopFreshWorldHotkeyLabel,
   getDesktopResumeWorldHotkeyLabel
 } from '../input/debugEditShortcuts';
-import { resolveAppShellRegionDisplay, resolveAppShellViewModel } from './appShell';
+import {
+  createPausedMainMenuShellState,
+  resolveAppShellRegionDisplay,
+  resolveAppShellViewModel
+} from './appShell';
 
 describe('resolveAppShellRegionDisplay', () => {
   it('returns the requested visible display mode when the shell region should be shown', () => {
@@ -59,14 +63,8 @@ describe('resolveAppShellViewModel', () => {
     ]);
   });
 
-  it('allows the main menu action copy to switch to resume language for a paused session', () => {
-    const viewModel = resolveAppShellViewModel({
-      screen: 'main-menu',
-      statusText: 'World session paused.',
-      detailLines: ['Resume returns to the same initialized world session.'],
-      primaryActionLabel: 'Resume World',
-      secondaryActionLabel: 'New World'
-    });
+  it('surfaces destructive fresh-world guidance in the paused main-menu copy', () => {
+    const viewModel = resolveAppShellViewModel(createPausedMainMenuShellState());
 
     expect(viewModel.overlayVisible).toBe(true);
     expect(viewModel.chromeVisible).toBe(false);
@@ -75,8 +73,13 @@ describe('resolveAppShellViewModel', () => {
     );
     expect(viewModel.secondaryActionLabel).toBe(`New World (${getDesktopFreshWorldHotkeyLabel()})`);
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
-    expect(viewModel.statusText).toBe('World session paused.');
-    expect(viewModel.detailLines).toEqual(['Resume returns to the same initialized world session.']);
+    expect(viewModel.statusText).toBe(
+      'World session paused. Resume to continue it, or choose New World to discard it and boot a fresh procedural world.'
+    );
+    expect(viewModel.detailLines).toEqual([
+      'Returning here keeps the initialized world, player state, and debug edits intact until you abandon them.',
+      'New World also clears the paused session camera state and undo history before the fresh world boots.'
+    ]);
   });
 
   it('swaps the boot overlay for in-world chrome once the shell enters the world', () => {
