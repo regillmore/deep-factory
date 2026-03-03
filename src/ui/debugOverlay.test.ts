@@ -158,7 +158,8 @@ describe('formatDebugOverlayText', () => {
         solid: false,
         blocksLight: false,
         liquidKind: 'water',
-        liquidCardinalMask: 11
+        liquidCardinalMask: 11,
+        liquidVariantSource: 'atlasIndex 14'
       },
       spawn: null,
       playerPlaceholderPoseLabel: null,
@@ -177,6 +178,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('Tile:water (#7)');
     expect(text).toContain('liquid:water');
     expect(text).toContain('liquidMask:NE-W (11)');
+    expect(text).toContain('liquidSrc:atlasIndex 14');
   });
 
   it('shows live standalone player position, velocity, grounded state, and facing', () => {
@@ -310,7 +312,8 @@ describe('formatDebugOverlayText', () => {
         solid: true,
         blocksLight: false,
         liquidKind: 'water',
-        liquidCardinalMask: 13
+        liquidCardinalMask: 13,
+        liquidVariantSource: 'atlasIndex 14'
       }
     });
 
@@ -323,6 +326,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('light:off');
     expect(text).toContain('liquid:water');
     expect(text).toContain('liquidMask:N-SW (13)');
+    expect(text).toContain('liquidSrc:atlasIndex 14');
   });
 
   it('renders separate pointer and pinned inspect lines when both are present', () => {
@@ -389,7 +393,8 @@ describe('formatDebugOverlayText', () => {
         solid: false,
         blocksLight: false,
         liquidKind: 'lava',
-        liquidCardinalMask: 6
+        liquidCardinalMask: 6,
+        liquidVariantSource: 'atlasIndex 15'
       }
     });
 
@@ -408,6 +413,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('L:31,1');
     expect(text).toContain('liquid:lava');
     expect(text).toContain('liquidMask:-ES- (6)');
+    expect(text).toContain('liquidSrc:atlasIndex 15');
   });
 
   it('shows when the renderer-side ceiling-bonk hold latch stays active after live contact clears', () => {

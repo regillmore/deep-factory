@@ -75,7 +75,12 @@ import {
   getPlayerCameraFocusPoint,
   type PlayerState
 } from './world/playerState';
-import { getTileMetadata, resolveTileGameplayMetadata, TILE_METADATA } from './world/tileMetadata';
+import {
+  describeLiquidRenderVariantSource,
+  getTileMetadata,
+  resolveTileGameplayMetadata,
+  TILE_METADATA
+} from './world/tileMetadata';
 
 const DEBUG_TILE_BREAK_ID = 0;
 const PREFERRED_INITIAL_DEBUG_BRUSH_TILE_NAME = 'debug_brick';
@@ -957,9 +962,14 @@ const bootstrap = async (): Promise<void> => {
     const gameplay = resolveTileGameplayMetadata(tileId);
     const { chunkX, chunkY } = worldToChunkCoord(tileX, tileY);
     const { localX, localY } = worldToLocalTile(tileX, tileY);
+    const liquidCardinalMask = renderer.getLiquidRenderCardinalMask(tileX, tileY);
 
     return {
-      liquidCardinalMask: renderer.getLiquidRenderCardinalMask(tileX, tileY),
+      liquidCardinalMask,
+      liquidVariantSource:
+        typeof liquidCardinalMask === 'number'
+          ? describeLiquidRenderVariantSource(tileId, liquidCardinalMask)
+          : null,
       tileX,
       tileY,
       chunkX,
@@ -1169,7 +1179,8 @@ const bootstrap = async (): Promise<void> => {
           solid: hoveredDebugTileStatus?.solid,
           blocksLight: hoveredDebugTileStatus?.blocksLight,
           liquidKind: hoveredDebugTileStatus?.liquidKind ?? null,
-          liquidCardinalMask: hoveredDebugTileStatus?.liquidCardinalMask ?? null
+          liquidCardinalMask: hoveredDebugTileStatus?.liquidCardinalMask ?? null,
+          liquidVariantSource: hoveredDebugTileStatus?.liquidVariantSource ?? null
         }
       : null;
     const debugOverlayPinnedInspect = pinnedDebugTileStatus
@@ -1183,7 +1194,8 @@ const bootstrap = async (): Promise<void> => {
           solid: pinnedDebugTileStatus.solid,
           blocksLight: pinnedDebugTileStatus.blocksLight,
           liquidKind: pinnedDebugTileStatus.liquidKind,
-          liquidCardinalMask: pinnedDebugTileStatus.liquidCardinalMask ?? null
+          liquidCardinalMask: pinnedDebugTileStatus.liquidCardinalMask ?? null,
+          liquidVariantSource: pinnedDebugTileStatus.liquidVariantSource ?? null
         }
       : null;
     const debugOverlaySpawn = resolvedPlayerSpawn

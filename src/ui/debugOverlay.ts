@@ -38,6 +38,7 @@ export interface DebugOverlayPointerInspect {
   blocksLight?: boolean;
   liquidKind?: TileLiquidKind | null;
   liquidCardinalMask?: number | null;
+  liquidVariantSource?: string | null;
   client: { x: number; y: number };
   canvas: { x: number; y: number };
   world: { x: number; y: number };
@@ -52,6 +53,7 @@ export interface DebugOverlayTileInspect {
   blocksLight?: boolean;
   liquidKind?: TileLiquidKind | null;
   liquidCardinalMask?: number | null;
+  liquidVariantSource?: string | null;
 }
 
 export interface DebugOverlayPlayerSpawn {
@@ -201,6 +203,9 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string =>
       ` | liquid:${tileInspect.liquidKind ?? 'none'}` +
       (typeof tileInspect.liquidCardinalMask === 'number'
         ? ` | liquidMask:${formatLiquidCardinalMask(tileInspect.liquidCardinalMask)}`
+        : '') +
+      (typeof tileInspect.liquidVariantSource === 'string' && tileInspect.liquidVariantSource.length > 0
+        ? ` | liquidSrc:${tileInspect.liquidVariantSource}`
         : '')
     : '';
 

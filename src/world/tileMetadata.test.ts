@@ -7,6 +7,7 @@ import {
 } from './autotile';
 import { AUTHORED_ATLAS_REGION_COUNT } from './authoredAtlasLayout';
 import {
+  describeLiquidRenderVariantSource,
   LIQUID_RENDER_CARDINAL_MASK_COUNT,
   TILE_METADATA,
   areLiquidRenderNeighborsConnected,
@@ -66,6 +67,7 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(1, 0)).toBe(0);
     expect(resolveTileRenderUvRect(3)).toEqual(atlasIndexToUvRect(14));
     expect(resolveLiquidRenderVariantMetadata(7, 0)).toMatchObject({ atlasIndex: 14 });
+    expect(describeLiquidRenderVariantSource(7, 0)).toBe('atlasIndex 14');
     expect(resolveLiquidRenderVariantUvRect(7, 0)).toEqual(atlasIndexToUvRect(14));
     expect(resolveLiquidRenderVariantUvRect(8, 15)).toEqual(atlasIndexToUvRect(15));
     expect(resolveTileRenderUvRect(4)).toEqual({
@@ -450,6 +452,51 @@ describe('tile metadata loader', () => {
     expect(resolveLiquidRenderVariantUvRect(12, 5, registry)).toBe(atlasIndexToUvRect(5));
     expect(resolveLiquidRenderVariantUvRect(12, -1, registry)).toBe(null);
     expect(resolveLiquidRenderVariantUvRect(12, LIQUID_RENDER_CARDINAL_MASK_COUNT, registry)).toBe(null);
+  });
+
+  it('describes resolved liquid variant sources for atlas-index and direct uvRect metadata', () => {
+    const atlasVariantMap = Array.from({ length: LIQUID_RENDER_CARDINAL_MASK_COUNT }, (_, index) => ({
+      atlasIndex: index
+    }));
+    const uvRectVariantMap = Array.from({ length: LIQUID_RENDER_CARDINAL_MASK_COUNT }, () => ({
+      uvRect: {
+        u0: 0.125,
+        v0: 0.25,
+        u1: 0.5,
+        v1: 0.75
+      }
+    }));
+    const registry = parseTileMetadataRegistry({
+      tiles: [
+        {
+          id: 0,
+          name: 'empty',
+          gameplay: { solid: false, blocksLight: false }
+        },
+        {
+          id: 12,
+          name: 'water_atlas',
+          gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
+          liquidRender: {
+            connectivityGroup: 'water',
+            variantRenderByCardinalMask: atlasVariantMap
+          }
+        },
+        {
+          id: 20,
+          name: 'water_uv',
+          gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
+          liquidRender: {
+            connectivityGroup: 'water',
+            variantRenderByCardinalMask: uvRectVariantMap
+          }
+        }
+      ]
+    });
+
+    expect(describeLiquidRenderVariantSource(12, 5, registry)).toBe('atlasIndex 5');
+    expect(describeLiquidRenderVariantSource(20, 2, registry)).toBe('uvRect 0.125,0.25..0.5,0.75');
+    expect(describeLiquidRenderVariantSource(20, LIQUID_RENDER_CARDINAL_MASK_COUNT, registry)).toBe(null);
   });
 
   it('builds dense render lookup tables for static UVs and terrain variants', () => {

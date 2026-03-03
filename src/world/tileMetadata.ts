@@ -204,6 +204,32 @@ const resolveTileRenderFrameUvRect = (value: TileRenderFrameMetadata): TileUvRec
   return value.uvRect!;
 };
 
+const formatTileRenderSourceCoordinate = (value: number): string => `${Math.round(value * 1000) / 1000}`;
+
+export const describeTileRenderFrameSource = (
+  value: TileRenderFrameMetadata | null | undefined
+): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  if (value.atlasIndex !== undefined) {
+    return `atlasIndex ${value.atlasIndex}`;
+  }
+
+  const uvRect = value.uvRect;
+  if (!uvRect) {
+    return null;
+  }
+
+  return (
+    `uvRect ${formatTileRenderSourceCoordinate(uvRect.u0)},` +
+    `${formatTileRenderSourceCoordinate(uvRect.v0)}..` +
+    `${formatTileRenderSourceCoordinate(uvRect.u1)},` +
+    `${formatTileRenderSourceCoordinate(uvRect.v1)}`
+  );
+};
+
 const parseMaterialTags = (value: unknown, tileId: number): readonly string[] => {
   if (!Array.isArray(value)) {
     throw new Error(`tiles[${tileId}].materialTags must be an array`);
@@ -1137,6 +1163,13 @@ export const resolveLiquidRenderVariantMetadata = (
   cardinalMask: number,
   registry: TileMetadataRegistry = TILE_METADATA
 ): TileRenderMetadata | null => getLiquidVariantRenderMetadataFromLookup(tileId, cardinalMask, registry);
+
+export const describeLiquidRenderVariantSource = (
+  tileId: number,
+  cardinalMask: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): string | null =>
+  describeTileRenderFrameSource(resolveLiquidRenderVariantMetadata(tileId, cardinalMask, registry));
 
 export const resolveLiquidRenderVariantUvRect = (
   tileId: number,

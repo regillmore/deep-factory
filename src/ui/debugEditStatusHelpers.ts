@@ -78,6 +78,7 @@ export interface DebugEditHoveredTileState {
   blocksLight: boolean;
   liquidKind: TileLiquidKind | null;
   liquidCardinalMask?: number | null;
+  liquidVariantSource?: string | null;
 }
 
 export interface DebugEditStatusStripPlayerRespawnTelemetry {
@@ -419,6 +420,9 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
   ` | liquid:${tile.liquidKind ?? 'none'}` +
   (typeof tile.liquidCardinalMask === 'number'
     ? ` | liquidMask:${formatLiquidCardinalMask(tile.liquidCardinalMask)}`
+    : '') +
+  (typeof tile.liquidVariantSource === 'string' && tile.liquidVariantSource.length > 0
+    ? ` | liquidSrc:${tile.liquidVariantSource}`
     : '');
 
 const formatSignedOffset = (value: number): string => (value >= 0 ? `+${value}` : `${value}`);
