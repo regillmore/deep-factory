@@ -47,4 +47,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Player debugging
 
 81. Surface standalone player ceiling-bonk hold state in the compact debug-edit status strip when the text debug HUD is hidden.
-85. Surface standalone player live support-contact tile in the compact debug-edit status strip when the text debug HUD is hidden.
+86. Surface standalone player live grounded-state flag in the compact debug-edit status strip when the text debug HUD is hidden.

@@ -30,6 +30,7 @@ export interface DebugEditStatusStripState {
   pinnedTile: DebugEditHoveredTileState | null;
   desktopInspectPinArmed: boolean;
   playerPlaceholderPoseLabel?: string | null;
+  playerSupportContact?: DebugEditStatusStripPlayerSupportContactTelemetry | null;
   playerWallContact?: DebugEditStatusStripPlayerWallContactTelemetry | null;
   playerCeilingContact?: DebugEditStatusStripPlayerCeilingContactTelemetry | null;
   playerGroundedTransition?: DebugEditStatusStripPlayerGroundedTransitionTelemetry | null;
@@ -88,6 +89,10 @@ export interface DebugEditStatusStripPlayerFacingTransitionTelemetry {
   nextFacing: 'left' | 'right';
   position: { x: number; y: number };
   velocity: { x: number; y: number };
+}
+
+export interface DebugEditStatusStripPlayerSupportContactTelemetry {
+  tile: { x: number; y: number; id: number };
 }
 
 export interface DebugEditStatusStripPlayerWallContactTelemetry {
@@ -430,6 +435,19 @@ const formatLiveWallContactText = (
   );
 };
 
+const formatLiveSupportContactText = (
+  playerSupportContact: DebugEditStatusStripPlayerSupportContactTelemetry | null
+): string | null => {
+  if (!playerSupportContact) {
+    return null;
+  }
+
+  return (
+    `SupportNow: tile ${formatTileCoordinatePair(playerSupportContact.tile.x, playerSupportContact.tile.y)} ` +
+    `(#${playerSupportContact.tile.id})`
+  );
+};
+
 const formatLiveCeilingContactText = (
   playerCeilingContact: DebugEditStatusStripPlayerCeilingContactTelemetry | null
 ): string | null => {
@@ -445,11 +463,13 @@ const formatLiveCeilingContactText = (
 
 const buildPlayerText = (
   playerPlaceholderPoseLabel: string | null,
+  playerSupportContact: DebugEditStatusStripPlayerSupportContactTelemetry | null,
   playerWallContact: DebugEditStatusStripPlayerWallContactTelemetry | null,
   playerCeilingContact: DebugEditStatusStripPlayerCeilingContactTelemetry | null
 ): string | null => {
   const playerLines = [
     playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : null,
+    formatLiveSupportContactText(playerSupportContact),
     formatLiveWallContactText(playerWallContact),
     formatLiveCeilingContactText(playerCeilingContact)
   ].filter((line): line is string => line !== null);
@@ -936,6 +956,7 @@ export const buildDebugEditStatusStripModel = (
 ): DebugEditStatusStripModel => {
   const activeToolStatus = resolveActiveDebugToolStatus(state.preview);
   const playerPlaceholderPoseLabel = state.playerPlaceholderPoseLabel ?? null;
+  const playerSupportContact = state.playerSupportContact ?? null;
   const playerWallContact = state.playerWallContact ?? null;
   const playerCeilingContact = state.playerCeilingContact ?? null;
   const playerGroundedTransition = state.playerGroundedTransition ?? null;
@@ -949,7 +970,12 @@ export const buildDebugEditStatusStripModel = (
     brushText: `Brush: ${state.brushLabel} (#${state.brushTileId})`,
     toolText: activeToolStatus ? `Tool: ${activeToolStatus.title}` : 'Tool: No one-shot armed',
     previewText: buildPreviewText(state.preview, state.hoveredTile),
-    playerText: buildPlayerText(playerPlaceholderPoseLabel, playerWallContact, playerCeilingContact),
+    playerText: buildPlayerText(
+      playerPlaceholderPoseLabel,
+      playerSupportContact,
+      playerWallContact,
+      playerCeilingContact
+    ),
     eventText: buildEventText(
       playerGroundedTransition,
       playerFacingTransition,

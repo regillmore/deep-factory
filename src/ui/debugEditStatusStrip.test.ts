@@ -85,6 +85,13 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose and live support-contact player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: grounded-idle\nSupportNow: tile 4,-1 (#6)')).toEqual([
+      ['Pose: grounded-idle'],
+      ['SupportNow: tile 4,-1 (#6)']
+    ]);
+  });
+
   it('preserves separate pose, live wall-contact, and live ceiling-contact player lines while keeping each line individually wrappable', () => {
     expect(
       buildWrappedDetailLines(
@@ -92,6 +99,19 @@ describe('buildWrappedDetailLines', () => {
       )
     ).toEqual([
       ['Pose: ceiling-bonk'],
+      ['WallNow: tile 5,-3 (#7, right)'],
+      ['CeilingNow: tile 2,-6 (#8)']
+    ]);
+  });
+
+  it('preserves separate pose, live support-contact, live wall-contact, and live ceiling-contact player lines while keeping each line individually wrappable', () => {
+    expect(
+      buildWrappedDetailLines(
+        'Pose: ceiling-bonk\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
+      )
+    ).toEqual([
+      ['Pose: ceiling-bonk'],
+      ['SupportNow: tile 4,-1 (#6)'],
       ['WallNow: tile 5,-3 (#7, right)'],
       ['CeilingNow: tile 2,-6 (#8)']
     ]);

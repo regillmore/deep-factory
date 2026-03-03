@@ -1220,6 +1220,15 @@ const bootstrap = async (): Promise<void> => {
           }
         }
       : null;
+    const debugStatusStripPlayerSupportContact = standalonePlayerContacts?.support
+      ? {
+          tile: {
+            x: standalonePlayerContacts.support.tileX,
+            y: standalonePlayerContacts.support.tileY,
+            id: standalonePlayerContacts.support.tileId
+          }
+        }
+      : null;
     const debugStatusStripPlayerCeilingContact = standalonePlayerContacts?.ceiling
       ? {
           tile: {
@@ -1317,6 +1326,7 @@ const bootstrap = async (): Promise<void> => {
       pinnedTile: pinnedDebugTileStatus,
       desktopInspectPinArmed: input.getArmedDesktopDebugInspectPin(),
       playerPlaceholderPoseLabel: debugOverlayVisible ? null : debugOverlayPlayerPlaceholderPoseLabel,
+      playerSupportContact: debugOverlayVisible ? null : debugStatusStripPlayerSupportContact,
       playerWallContact: debugOverlayVisible ? null : debugStatusStripPlayerWallContact,
       playerCeilingContact: debugOverlayVisible ? null : debugStatusStripPlayerCeilingContact,
       playerGroundedTransition: debugOverlayVisible ? null : lastPlayerGroundedTransitionEvent,
