@@ -29,6 +29,7 @@ export interface DebugEditStatusStripState {
   hoveredTile: DebugEditHoveredTileState | null;
   pinnedTile: DebugEditHoveredTileState | null;
   desktopInspectPinArmed: boolean;
+  playerPlaceholderPoseLabel?: string | null;
   playerGroundedTransition?: DebugEditStatusStripPlayerGroundedTransitionTelemetry | null;
   playerFacingTransition?: DebugEditStatusStripPlayerFacingTransitionTelemetry | null;
   playerRespawn?: DebugEditStatusStripPlayerRespawnTelemetry | null;
@@ -41,6 +42,7 @@ export interface DebugEditStatusStripModel {
   brushText: string;
   toolText: string;
   previewText: string | null;
+  playerText: string | null;
   eventText: string | null;
   inspectText: string;
   hoverText: string;
@@ -404,6 +406,9 @@ const formatRespawnEventText = (
     `vel ${playerRespawn.velocity.x.toFixed(2)},${playerRespawn.velocity.y.toFixed(2)}`
   );
 };
+
+const buildPlayerText = (playerPlaceholderPoseLabel: string | null): string | null =>
+  playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : null;
 
 const formatGroundedTransitionEventText = (
   playerGroundedTransition: DebugEditStatusStripPlayerGroundedTransitionTelemetry | null
@@ -883,6 +888,7 @@ export const buildDebugEditStatusStripModel = (
   state: DebugEditStatusStripState
 ): DebugEditStatusStripModel => {
   const activeToolStatus = resolveActiveDebugToolStatus(state.preview);
+  const playerPlaceholderPoseLabel = state.playerPlaceholderPoseLabel ?? null;
   const playerGroundedTransition = state.playerGroundedTransition ?? null;
   const playerFacingTransition = state.playerFacingTransition ?? null;
   const playerRespawn = state.playerRespawn ?? null;
@@ -894,6 +900,7 @@ export const buildDebugEditStatusStripModel = (
     brushText: `Brush: ${state.brushLabel} (#${state.brushTileId})`,
     toolText: activeToolStatus ? `Tool: ${activeToolStatus.title}` : 'Tool: No one-shot armed',
     previewText: buildPreviewText(state.preview, state.hoveredTile),
+    playerText: buildPlayerText(playerPlaceholderPoseLabel),
     eventText: buildEventText(
       playerGroundedTransition,
       playerFacingTransition,

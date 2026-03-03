@@ -80,6 +80,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.brushText).toBe('Brush: debug brick (#3)');
     expect(model.toolText).toBe('Tool: No one-shot armed');
     expect(model.previewText).toBeNull();
+    expect(model.playerText).toBeNull();
     expect(model.eventText).toBeNull();
     expect(model.inspectText).toBe('Inspect: Hover only');
     expect(model.hoverText).toBe(
@@ -112,6 +113,22 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.previewText).toBeNull();
     expect(model.hintText).toBe('click/tap target tile | Esc cancel');
     expect(model.toolAccent).toBe('rgba(120, 255, 180, 0.95)');
+  });
+
+  it('formats the current standalone player placeholder pose label for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'wall-slide',
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: wall-slide');
+    expect(model.eventText).toBeNull();
   });
 
   it('formats the latest auto-respawn event for the compact strip when provided', () => {

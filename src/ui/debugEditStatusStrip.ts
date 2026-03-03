@@ -185,6 +185,7 @@ export class DebugEditStatusStrip {
   private inspectActionButton: HTMLButtonElement;
   private clearActionButton: HTMLButtonElement;
   private previewLine: HTMLDivElement;
+  private playerLine: HTMLDivElement;
   private eventLine: HTMLDivElement;
   private hoverLine: HTMLDivElement;
   private hintLine: HTMLDivElement;
@@ -266,6 +267,11 @@ export class DebugEditStatusStrip {
     this.previewLine = createWrappedDetailContainer();
     this.previewLine.style.display = 'none';
     this.root.append(this.previewLine);
+
+    this.playerLine = createWrappedDetailContainer();
+    this.playerLine.style.display = 'none';
+    this.playerLine.style.color = 'rgba(190, 225, 255, 0.96)';
+    this.root.append(this.playerLine);
 
     this.eventLine = createWrappedDetailContainer();
     this.eventLine.style.display = 'none';
@@ -350,6 +356,14 @@ export class DebugEditStatusStrip {
     } else {
       this.previewLine.replaceChildren();
       this.previewLine.style.display = 'none';
+    }
+
+    if (model.playerText) {
+      renderWrappedDetailText(this.playerLine, model.playerText);
+      this.playerLine.style.display = 'flex';
+    } else {
+      this.playerLine.replaceChildren();
+      this.playerLine.style.display = 'none';
     }
 
     if (model.eventText) {

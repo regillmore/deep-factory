@@ -74,6 +74,10 @@ describe('buildWrappedDetailLines', () => {
     ).toEqual([['Respawn: embedded', '| spawn 3,-2', '| pos 56.00,-32.00', '| vel 0.00,0.00']]);
   });
 
+  it('keeps live player pose telemetry as a single segment when no pipe separators are present', () => {
+    expect(buildWrappedDetailLines('Pose: wall-slide')).toEqual([['Pose: wall-slide']]);
+  });
+
   it('preserves separate respawn and wall-contact event lines while splitting each line at pipe separators', () => {
     expect(
       buildWrappedDetailLines(

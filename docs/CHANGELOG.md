@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-03
 
+- Task: Surface the current standalone player placeholder pose label in the compact debug-edit status strip when the text debug HUD is hidden.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) plus [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so the compact-strip model carries a dedicated live player `Pose:` line beside the existing hidden-HUD event telemetry, updated [src/ui/debugEditStatusStrip.ts](../src/ui/debugEditStatusStrip.ts) to render that line separately from transition events, wired [src/main.ts](../src/main.ts) to pass the already-resolved render-time pose label into the strip only while the text HUD is hidden, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the current standalone player placeholder pose label in the live debug overlay while renderer-side placeholder animation remains active.
 - Changes: Updated [src/gl/standalonePlayerPlaceholder.ts](../src/gl/standalonePlayerPlaceholder.ts) plus [src/gl/standalonePlayerPlaceholder.test.ts](../src/gl/standalonePlayerPlaceholder.test.ts) with reusable pose-label helpers beside the existing pose-index resolver, wired [src/main.ts](../src/main.ts) to compute the label from the same render-time pose inputs passed into the placeholder draw, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so the live HUD renders a dedicated `Pose:` line, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/gl/standalonePlayerPlaceholder.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
