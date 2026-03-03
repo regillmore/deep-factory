@@ -30,6 +30,7 @@ export interface DebugEditStatusStripState {
   pinnedTile: DebugEditHoveredTileState | null;
   desktopInspectPinArmed: boolean;
   playerPlaceholderPoseLabel?: string | null;
+  playerCeilingBonkHoldActive?: boolean | null;
   playerGrounded?: boolean | null;
   playerSupportContact?: DebugEditStatusStripPlayerSupportContactTelemetry | null;
   playerWallContact?: DebugEditStatusStripPlayerWallContactTelemetry | null;
@@ -459,6 +460,14 @@ const formatLiveGroundedText = (playerGrounded: boolean | null): string | null =
   return `GroundedNow: ${formatGameplayFlag(playerGrounded)}`;
 };
 
+const formatLiveCeilingBonkHoldText = (playerCeilingBonkHoldActive: boolean | null): string | null => {
+  if (playerCeilingBonkHoldActive === null) {
+    return null;
+  }
+
+  return `BonkHold: ${formatGameplayFlag(playerCeilingBonkHoldActive)}`;
+};
+
 const formatLiveCeilingContactText = (
   playerCeilingContact: DebugEditStatusStripPlayerCeilingContactTelemetry | null
 ): string | null => {
@@ -474,6 +483,7 @@ const formatLiveCeilingContactText = (
 
 const buildPlayerText = (
   playerPlaceholderPoseLabel: string | null,
+  playerCeilingBonkHoldActive: boolean | null,
   playerGrounded: boolean | null,
   playerSupportContact: DebugEditStatusStripPlayerSupportContactTelemetry | null,
   playerWallContact: DebugEditStatusStripPlayerWallContactTelemetry | null,
@@ -481,6 +491,7 @@ const buildPlayerText = (
 ): string | null => {
   const playerLines = [
     playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : null,
+    formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive),
     formatLiveGroundedText(playerGrounded),
     formatLiveSupportContactText(playerSupportContact),
     formatLiveWallContactText(playerWallContact),
@@ -969,6 +980,7 @@ export const buildDebugEditStatusStripModel = (
 ): DebugEditStatusStripModel => {
   const activeToolStatus = resolveActiveDebugToolStatus(state.preview);
   const playerPlaceholderPoseLabel = state.playerPlaceholderPoseLabel ?? null;
+  const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
   const playerGrounded = state.playerGrounded ?? null;
   const playerSupportContact = state.playerSupportContact ?? null;
   const playerWallContact = state.playerWallContact ?? null;
@@ -986,6 +998,7 @@ export const buildDebugEditStatusStripModel = (
     previewText: buildPreviewText(state.preview, state.hoveredTile),
     playerText: buildPlayerText(
       playerPlaceholderPoseLabel,
+      playerCeilingBonkHoldActive,
       playerGrounded,
       playerSupportContact,
       playerWallContact,

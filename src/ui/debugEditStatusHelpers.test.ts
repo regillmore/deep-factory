@@ -147,6 +147,22 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats the renderer-side standalone player ceiling-bonk hold state for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerCeilingBonkHoldActive: true,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('BonkHold: on');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the live standalone player wall-contact tile and side for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -256,6 +272,23 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('keeps pose and live ceiling-bonk hold telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'ceiling-bonk',
+      playerCeilingBonkHoldActive: true,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: ceiling-bonk\nBonkHold: on');
+    expect(model.eventText).toBeNull();
+  });
+
   it('keeps pose, live wall-contact, and live ceiling-contact telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -304,6 +337,40 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.playerText).toBe(
       'Pose: ceiling-bonk\n' +
+        'GroundedNow: off\n' +
+        'SupportNow: tile 4,-1 (#6)\n' +
+        'WallNow: tile 5,-3 (#7, right)\n' +
+        'CeilingNow: tile 2,-6 (#8)'
+    );
+    expect(model.eventText).toBeNull();
+  });
+
+  it('keeps pose, bonk-hold, live grounded, support-contact, wall-contact, and ceiling-contact telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'ceiling-bonk',
+      playerCeilingBonkHoldActive: true,
+      playerGrounded: false,
+      playerSupportContact: {
+        tile: { x: 4, y: -1, id: 6 }
+      },
+      playerWallContact: {
+        tile: { x: 5, y: -3, id: 7, side: 'right' }
+      },
+      playerCeilingContact: {
+        tile: { x: 2, y: -6, id: 8 }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe(
+      'Pose: ceiling-bonk\n' +
+        'BonkHold: on\n' +
         'GroundedNow: off\n' +
         'SupportNow: tile 4,-1 (#6)\n' +
         'WallNow: tile 5,-3 (#7, right)\n' +
