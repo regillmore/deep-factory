@@ -149,6 +149,24 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats the live standalone player ceiling-contact tile for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerCeilingContact: {
+        tile: { x: 2, y: -6, id: 8 }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('CeilingNow: tile 2,-6 (#8)');
+    expect(model.eventText).toBeNull();
+  });
+
   it('keeps pose and live wall-contact telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -165,6 +183,30 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.playerText).toBe('Pose: wall-slide\nWallNow: tile 5,-3 (#7, right)');
+    expect(model.eventText).toBeNull();
+  });
+
+  it('keeps pose, live wall-contact, and live ceiling-contact telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'ceiling-bonk',
+      playerWallContact: {
+        tile: { x: 5, y: -3, id: 7, side: 'right' }
+      },
+      playerCeilingContact: {
+        tile: { x: 2, y: -6, id: 8 }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe(
+      'Pose: ceiling-bonk\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
+    );
     expect(model.eventText).toBeNull();
   });
 

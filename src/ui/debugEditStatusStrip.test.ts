@@ -85,6 +85,18 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose, live wall-contact, and live ceiling-contact player lines while keeping each line individually wrappable', () => {
+    expect(
+      buildWrappedDetailLines(
+        'Pose: ceiling-bonk\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
+      )
+    ).toEqual([
+      ['Pose: ceiling-bonk'],
+      ['WallNow: tile 5,-3 (#7, right)'],
+      ['CeilingNow: tile 2,-6 (#8)']
+    ]);
+  });
+
   it('preserves separate respawn and wall-contact event lines while splitting each line at pipe separators', () => {
     expect(
       buildWrappedDetailLines(
