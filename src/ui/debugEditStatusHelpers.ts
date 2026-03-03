@@ -79,6 +79,7 @@ export interface DebugEditHoveredTileState {
   liquidKind: TileLiquidKind | null;
   liquidCardinalMask?: number | null;
   liquidVariantSource?: string | null;
+  liquidVariantUvRect?: string | null;
 }
 
 export interface DebugEditStatusStripPlayerRespawnTelemetry {
@@ -423,6 +424,9 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     : '') +
   (typeof tile.liquidVariantSource === 'string' && tile.liquidVariantSource.length > 0
     ? ` | liquidSrc:${tile.liquidVariantSource}`
+    : '') +
+  (typeof tile.liquidVariantUvRect === 'string' && tile.liquidVariantUvRect.length > 0
+    ? ` | liquidUv:${tile.liquidVariantUvRect}`
     : '');
 
 const formatSignedOffset = (value: number): string => (value >= 0 ? `+${value}` : `${value}`);

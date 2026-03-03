@@ -1074,12 +1074,13 @@ describe('buildDebugEditStatusStripModel', () => {
         blocksLight: true,
         liquidKind: 'lava',
         liquidCardinalMask: 11,
-        liquidVariantSource: 'atlasIndex 15'
+        liquidVariantSource: 'atlasIndex 15',
+        liquidVariantUvRect: '0.5,0.75..0.667,1'
       }
     });
 
     expect(model.hoverText).toBe(
-      'Hover: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidMask:NE-W (11) | liquidSrc:atlasIndex 15'
+      'Hover: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidMask:NE-W (11) | liquidSrc:atlasIndex 15 | liquidUv:0.5,0.75..0.667,1'
     );
   });
 
@@ -1104,12 +1105,13 @@ describe('buildDebugEditStatusStripModel', () => {
         blocksLight: true,
         liquidKind: 'lava',
         liquidCardinalMask: 11,
-        liquidVariantSource: 'atlasIndex 15'
+        liquidVariantSource: 'atlasIndex 15',
+        liquidVariantUvRect: '0.5,0.75..0.667,1'
       }
     });
 
     expect(model.hoverText).toBe(
-      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidMask:NE-W (11) | liquidSrc:atlasIndex 15'
+      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidMask:NE-W (11) | liquidSrc:atlasIndex 15 | liquidUv:0.5,0.75..0.667,1'
     );
     expect(model.inspectText).toBe('Inspect: Pinned @ 12,-4');
     expect(model.inspectActionText).toBe('Repin Click');
@@ -1153,12 +1155,13 @@ describe('buildDebugEditStatusStripModel', () => {
         blocksLight: true,
         liquidKind: 'lava',
         liquidCardinalMask: 11,
-        liquidVariantSource: 'atlasIndex 15'
+        liquidVariantSource: 'atlasIndex 15',
+        liquidVariantUvRect: '0.5,0.75..0.667,1'
       }
     });
 
     expect(model.hoverText).toBe(
-      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidMask:NE-W (11) | liquidSrc:atlasIndex 15\n' +
+      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidMask:NE-W (11) | liquidSrc:atlasIndex 15 | liquidUv:0.5,0.75..0.667,1\n' +
         'Hover: dirt (#2) @ 4,7 chunk:0,0 local:4,7 | solid:on | light:on | liquid:none\n' +
         'Offset: Hover->Pinned x:+8 y:-11'
     );
@@ -1184,7 +1187,8 @@ describe('buildDebugEditStatusStripModel', () => {
         blocksLight: true,
         liquidKind: 'lava',
         liquidCardinalMask: 11,
-        liquidVariantSource: 'atlasIndex 15'
+        liquidVariantSource: 'atlasIndex 15',
+        liquidVariantUvRect: '0.5,0.75..0.667,1'
       },
       pinnedTile: {
         tileX: 12,
@@ -1199,12 +1203,13 @@ describe('buildDebugEditStatusStripModel', () => {
         blocksLight: true,
         liquidKind: 'lava',
         liquidCardinalMask: 11,
-        liquidVariantSource: 'atlasIndex 15'
+        liquidVariantSource: 'atlasIndex 15',
+        liquidVariantUvRect: '0.5,0.75..0.667,1'
       }
     });
 
     expect(model.hoverText).toBe(
-      'Shared: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidMask:NE-W (11) | liquidSrc:atlasIndex 15'
+      'Shared: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidMask:NE-W (11) | liquidSrc:atlasIndex 15 | liquidUv:0.5,0.75..0.667,1'
     );
     expect(model.inspectText).toBe('Inspect: Shared @ 12,-4');
   });

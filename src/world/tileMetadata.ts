@@ -206,6 +206,19 @@ const resolveTileRenderFrameUvRect = (value: TileRenderFrameMetadata): TileUvRec
 
 const formatTileRenderSourceCoordinate = (value: number): string => `${Math.round(value * 1000) / 1000}`;
 
+export const describeTileUvRect = (uvRect: TileUvRect | null | undefined): string | null => {
+  if (!uvRect) {
+    return null;
+  }
+
+  return (
+    `${formatTileRenderSourceCoordinate(uvRect.u0)},` +
+    `${formatTileRenderSourceCoordinate(uvRect.v0)}..` +
+    `${formatTileRenderSourceCoordinate(uvRect.u1)},` +
+    `${formatTileRenderSourceCoordinate(uvRect.v1)}`
+  );
+};
+
 export const describeTileRenderFrameSource = (
   value: TileRenderFrameMetadata | null | undefined
 ): string | null => {
@@ -222,12 +235,7 @@ export const describeTileRenderFrameSource = (
     return null;
   }
 
-  return (
-    `uvRect ${formatTileRenderSourceCoordinate(uvRect.u0)},` +
-    `${formatTileRenderSourceCoordinate(uvRect.v0)}..` +
-    `${formatTileRenderSourceCoordinate(uvRect.u1)},` +
-    `${formatTileRenderSourceCoordinate(uvRect.v1)}`
-  );
+  return `uvRect ${describeTileUvRect(uvRect)}`;
 };
 
 const parseMaterialTags = (value: unknown, tileId: number): readonly string[] => {
@@ -1170,6 +1178,12 @@ export const describeLiquidRenderVariantSource = (
   registry: TileMetadataRegistry = TILE_METADATA
 ): string | null =>
   describeTileRenderFrameSource(resolveLiquidRenderVariantMetadata(tileId, cardinalMask, registry));
+
+export const describeLiquidRenderVariantUvRect = (
+  tileId: number,
+  cardinalMask: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): string | null => describeTileUvRect(resolveLiquidRenderVariantUvRect(tileId, cardinalMask, registry));
 
 export const resolveLiquidRenderVariantUvRect = (
   tileId: number,

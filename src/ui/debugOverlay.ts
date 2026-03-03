@@ -39,6 +39,7 @@ export interface DebugOverlayPointerInspect {
   liquidKind?: TileLiquidKind | null;
   liquidCardinalMask?: number | null;
   liquidVariantSource?: string | null;
+  liquidVariantUvRect?: string | null;
   client: { x: number; y: number };
   canvas: { x: number; y: number };
   world: { x: number; y: number };
@@ -54,6 +55,7 @@ export interface DebugOverlayTileInspect {
   liquidKind?: TileLiquidKind | null;
   liquidCardinalMask?: number | null;
   liquidVariantSource?: string | null;
+  liquidVariantUvRect?: string | null;
 }
 
 export interface DebugOverlayPlayerSpawn {
@@ -206,6 +208,9 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string =>
         : '') +
       (typeof tileInspect.liquidVariantSource === 'string' && tileInspect.liquidVariantSource.length > 0
         ? ` | liquidSrc:${tileInspect.liquidVariantSource}`
+        : '') +
+      (typeof tileInspect.liquidVariantUvRect === 'string' && tileInspect.liquidVariantUvRect.length > 0
+        ? ` | liquidUv:${tileInspect.liquidVariantUvRect}`
         : '')
     : '';
 

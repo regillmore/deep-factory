@@ -7,7 +7,9 @@ import {
 } from './autotile';
 import { AUTHORED_ATLAS_REGION_COUNT } from './authoredAtlasLayout';
 import {
+  describeLiquidRenderVariantUvRect,
   describeLiquidRenderVariantSource,
+  describeTileUvRect,
   LIQUID_RENDER_CARDINAL_MASK_COUNT,
   TILE_METADATA,
   areLiquidRenderNeighborsConnected,
@@ -497,6 +499,21 @@ describe('tile metadata loader', () => {
     expect(describeLiquidRenderVariantSource(12, 5, registry)).toBe('atlasIndex 5');
     expect(describeLiquidRenderVariantSource(20, 2, registry)).toBe('uvRect 0.125,0.25..0.5,0.75');
     expect(describeLiquidRenderVariantSource(20, LIQUID_RENDER_CARDINAL_MASK_COUNT, registry)).toBe(null);
+    expect(describeLiquidRenderVariantUvRect(12, 5, registry)).toBe('0.167,0.25..0.333,0.5');
+    expect(describeLiquidRenderVariantUvRect(20, 2, registry)).toBe('0.125,0.25..0.5,0.75');
+    expect(describeLiquidRenderVariantUvRect(20, LIQUID_RENDER_CARDINAL_MASK_COUNT, registry)).toBe(null);
+  });
+
+  it('describes tile uv rects with compact rounded coordinates', () => {
+    expect(
+      describeTileUvRect({
+        u0: 1 / 6,
+        v0: 0.25,
+        u1: 1 / 3,
+        v1: 0.5
+      })
+    ).toBe('0.167,0.25..0.333,0.5');
+    expect(describeTileUvRect(null)).toBe(null);
   });
 
   it('builds dense render lookup tables for static UVs and terrain variants', () => {

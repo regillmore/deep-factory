@@ -77,6 +77,7 @@ import {
 } from './world/playerState';
 import {
   describeLiquidRenderVariantSource,
+  describeLiquidRenderVariantUvRect,
   getTileMetadata,
   resolveTileGameplayMetadata,
   TILE_METADATA
@@ -970,6 +971,10 @@ const bootstrap = async (): Promise<void> => {
         typeof liquidCardinalMask === 'number'
           ? describeLiquidRenderVariantSource(tileId, liquidCardinalMask)
           : null,
+      liquidVariantUvRect:
+        typeof liquidCardinalMask === 'number'
+          ? describeLiquidRenderVariantUvRect(tileId, liquidCardinalMask)
+          : null,
       tileX,
       tileY,
       chunkX,
@@ -1180,7 +1185,8 @@ const bootstrap = async (): Promise<void> => {
           blocksLight: hoveredDebugTileStatus?.blocksLight,
           liquidKind: hoveredDebugTileStatus?.liquidKind ?? null,
           liquidCardinalMask: hoveredDebugTileStatus?.liquidCardinalMask ?? null,
-          liquidVariantSource: hoveredDebugTileStatus?.liquidVariantSource ?? null
+          liquidVariantSource: hoveredDebugTileStatus?.liquidVariantSource ?? null,
+          liquidVariantUvRect: hoveredDebugTileStatus?.liquidVariantUvRect ?? null
         }
       : null;
     const debugOverlayPinnedInspect = pinnedDebugTileStatus
@@ -1195,7 +1201,8 @@ const bootstrap = async (): Promise<void> => {
           blocksLight: pinnedDebugTileStatus.blocksLight,
           liquidKind: pinnedDebugTileStatus.liquidKind,
           liquidCardinalMask: pinnedDebugTileStatus.liquidCardinalMask ?? null,
-          liquidVariantSource: pinnedDebugTileStatus.liquidVariantSource ?? null
+          liquidVariantSource: pinnedDebugTileStatus.liquidVariantSource ?? null,
+          liquidVariantUvRect: pinnedDebugTileStatus.liquidVariantUvRect ?? null
         }
       : null;
     const debugOverlaySpawn = resolvedPlayerSpawn

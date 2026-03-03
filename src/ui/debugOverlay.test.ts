@@ -159,7 +159,8 @@ describe('formatDebugOverlayText', () => {
         blocksLight: false,
         liquidKind: 'water',
         liquidCardinalMask: 11,
-        liquidVariantSource: 'atlasIndex 14'
+        liquidVariantSource: 'atlasIndex 14',
+        liquidVariantUvRect: '0.333,0.75..0.5,1'
       },
       spawn: null,
       playerPlaceholderPoseLabel: null,
@@ -179,6 +180,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquid:water');
     expect(text).toContain('liquidMask:NE-W (11)');
     expect(text).toContain('liquidSrc:atlasIndex 14');
+    expect(text).toContain('liquidUv:0.333,0.75..0.5,1');
   });
 
   it('shows live standalone player position, velocity, grounded state, and facing', () => {
@@ -313,7 +315,8 @@ describe('formatDebugOverlayText', () => {
         blocksLight: false,
         liquidKind: 'water',
         liquidCardinalMask: 13,
-        liquidVariantSource: 'atlasIndex 14'
+        liquidVariantSource: 'atlasIndex 14',
+        liquidVariantUvRect: '0.333,0.75..0.5,1'
       }
     });
 
@@ -327,6 +330,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquid:water');
     expect(text).toContain('liquidMask:N-SW (13)');
     expect(text).toContain('liquidSrc:atlasIndex 14');
+    expect(text).toContain('liquidUv:0.333,0.75..0.5,1');
   });
 
   it('renders separate pointer and pinned inspect lines when both are present', () => {
@@ -394,7 +398,8 @@ describe('formatDebugOverlayText', () => {
         blocksLight: false,
         liquidKind: 'lava',
         liquidCardinalMask: 6,
-        liquidVariantSource: 'atlasIndex 15'
+        liquidVariantSource: 'atlasIndex 15',
+        liquidVariantUvRect: '0.5,0.75..0.667,1'
       }
     });
 
@@ -414,6 +419,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquid:lava');
     expect(text).toContain('liquidMask:-ES- (6)');
     expect(text).toContain('liquidSrc:atlasIndex 15');
+    expect(text).toContain('liquidUv:0.5,0.75..0.667,1');
   });
 
   it('shows when the renderer-side ceiling-bonk hold latch stays active after live contact clears', () => {
