@@ -179,6 +179,22 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats the live standalone player horizontal velocity for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerVelocityX: -180.25,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('VelXNow: -180.25');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the live standalone player jump-held input state for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -370,6 +386,23 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('keeps pose and live horizontal velocity telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'grounded-walk',
+      playerVelocityX: 160,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: grounded-walk\nVelXNow: 160.00');
+    expect(model.eventText).toBeNull();
+  });
+
   it('keeps pose and live jump-held telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -445,7 +478,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose, live grounded, support-contact, wall-contact, and ceiling-contact telemetry on separate player lines', () => {
+  it('keeps pose, live grounded, facing, move-axis, horizontal velocity, support-contact, wall-contact, and ceiling-contact telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -457,6 +490,7 @@ describe('buildDebugEditStatusStripModel', () => {
       playerGrounded: false,
       playerFacing: 'left',
       playerMoveX: -1,
+      playerVelocityX: -180,
       playerSupportContact: {
         tile: { x: 4, y: -1, id: 6 }
       },
@@ -474,6 +508,7 @@ describe('buildDebugEditStatusStripModel', () => {
         'GroundedNow: off\n' +
         'FacingNow: left\n' +
         'MoveXNow: -1\n' +
+        'VelXNow: -180.00\n' +
         'SupportNow: tile 4,-1 (#6)\n' +
         'WallNow: tile 5,-3 (#7, right)\n' +
         'CeilingNow: tile 2,-6 (#8)'
@@ -481,7 +516,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose, bonk-hold, live grounded, support-contact, wall-contact, and ceiling-contact telemetry on separate player lines', () => {
+  it('keeps pose, bonk-hold, live grounded, facing, move-axis, horizontal velocity, support-contact, wall-contact, and ceiling-contact telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -494,6 +529,7 @@ describe('buildDebugEditStatusStripModel', () => {
       playerGrounded: false,
       playerFacing: 'right',
       playerMoveX: 1,
+      playerVelocityX: 180,
       playerSupportContact: {
         tile: { x: 4, y: -1, id: 6 }
       },
@@ -512,6 +548,7 @@ describe('buildDebugEditStatusStripModel', () => {
         'GroundedNow: off\n' +
         'FacingNow: right\n' +
         'MoveXNow: 1\n' +
+        'VelXNow: 180.00\n' +
         'SupportNow: tile 4,-1 (#6)\n' +
         'WallNow: tile 5,-3 (#7, right)\n' +
         'CeilingNow: tile 2,-6 (#8)'
@@ -519,7 +556,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose, grounded, move-axis, jump-held, jump-pressed, and contact telemetry on separate player lines', () => {
+  it('keeps pose, grounded, facing, move-axis, horizontal velocity, jump-held, jump-pressed, and contact telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -531,6 +568,7 @@ describe('buildDebugEditStatusStripModel', () => {
       playerGrounded: false,
       playerFacing: 'right',
       playerMoveX: 1,
+      playerVelocityX: 180,
       playerJumpHeld: true,
       playerJumpPressed: true,
       playerSupportContact: {
@@ -550,6 +588,7 @@ describe('buildDebugEditStatusStripModel', () => {
         'GroundedNow: off\n' +
         'FacingNow: right\n' +
         'MoveXNow: 1\n' +
+        'VelXNow: 180.00\n' +
         'JumpHeldNow: on\n' +
         'JumpPressedNow: on\n' +
         'SupportNow: tile 4,-1 (#6)\n' +
