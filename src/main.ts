@@ -1363,6 +1363,13 @@ const bootstrap = async (): Promise<void> => {
       pinnedTile: pinnedDebugTileStatus,
       desktopInspectPinArmed: input.getArmedDesktopDebugInspectPin(),
       playerPlaceholderPoseLabel: debugOverlayVisible ? null : debugOverlayPlayerPlaceholderPoseLabel,
+      playerWorldPosition:
+        debugOverlayVisible || !standalonePlayerState
+          ? null
+          : {
+              x: standalonePlayerState.position.x,
+              y: standalonePlayerState.position.y
+            },
       playerCeilingBonkHoldActive:
         debugOverlayVisible || !standalonePlayerState ? null : standalonePlayerCeilingBonkHoldActive,
       playerGrounded: debugOverlayVisible ? null : standalonePlayerState?.grounded ?? null,

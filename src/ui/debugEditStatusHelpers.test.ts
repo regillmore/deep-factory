@@ -147,6 +147,25 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats the live standalone player world position for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerWorldPosition: {
+        x: 72.5,
+        y: -48.25
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('PosNow: 72.50,-48.25');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the live standalone player facing direction for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -365,6 +384,26 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.playerText).toBe('Pose: grounded-idle\nGroundedNow: on');
+    expect(model.eventText).toBeNull();
+  });
+
+  it('keeps pose and live world-position telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'grounded-idle',
+      playerWorldPosition: {
+        x: 56,
+        y: -32
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: grounded-idle\nPosNow: 56.00,-32.00');
     expect(model.eventText).toBeNull();
   });
 
@@ -598,6 +637,10 @@ describe('buildDebugEditStatusStripModel', () => {
       pinnedTile: null,
       desktopInspectPinArmed: false,
       playerPlaceholderPoseLabel: 'ceiling-bonk',
+      playerWorldPosition: {
+        x: 72,
+        y: -48
+      },
       playerGrounded: false,
       playerFacing: 'right',
       playerMoveX: 1,
@@ -619,6 +662,7 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.playerText).toBe(
       'Pose: ceiling-bonk\n' +
+        'PosNow: 72.00,-48.00\n' +
         'GroundedNow: off\n' +
         'FacingNow: right\n' +
         'MoveXNow: 1\n' +

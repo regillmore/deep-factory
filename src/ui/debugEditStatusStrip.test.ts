@@ -104,6 +104,13 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose and live world-position player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: grounded-idle\nPosNow: 56.00,-32.00')).toEqual([
+      ['Pose: grounded-idle'],
+      ['PosNow: 56.00,-32.00']
+    ]);
+  });
+
   it('preserves separate pose and live facing player lines while keeping each line individually wrappable', () => {
     expect(buildWrappedDetailLines('Pose: grounded-idle\nFacingNow: right')).toEqual([
       ['Pose: grounded-idle'],
@@ -203,10 +210,11 @@ describe('buildWrappedDetailLines', () => {
   it('preserves separate pose, input-edge, horizontal and vertical velocity, and contact player lines while keeping each line individually wrappable', () => {
     expect(
       buildWrappedDetailLines(
-        'Pose: ceiling-bonk\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nVelYNow: -210.00\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
+        'Pose: ceiling-bonk\nPosNow: 72.00,-48.00\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nVelYNow: -210.00\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
       )
     ).toEqual([
       ['Pose: ceiling-bonk'],
+      ['PosNow: 72.00,-48.00'],
       ['GroundedNow: off'],
       ['FacingNow: right'],
       ['MoveXNow: 1'],

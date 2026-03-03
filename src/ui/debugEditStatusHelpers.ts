@@ -31,6 +31,7 @@ export interface DebugEditStatusStripState {
   pinnedTile: DebugEditHoveredTileState | null;
   desktopInspectPinArmed: boolean;
   playerPlaceholderPoseLabel?: string | null;
+  playerWorldPosition?: { x: number; y: number } | null;
   playerCeilingBonkHoldActive?: boolean | null;
   playerGrounded?: boolean | null;
   playerFacing?: PlayerFacing | null;
@@ -495,6 +496,16 @@ const formatLiveGroundedText = (playerGrounded: boolean | null): string | null =
   return `GroundedNow: ${formatGameplayFlag(playerGrounded)}`;
 };
 
+const formatLiveWorldPositionText = (
+  playerWorldPosition: { x: number; y: number } | null
+): string | null => {
+  if (playerWorldPosition === null) {
+    return null;
+  }
+
+  return `PosNow: ${playerWorldPosition.x.toFixed(2)},${playerWorldPosition.y.toFixed(2)}`;
+};
+
 const formatLiveFacingText = (playerFacing: PlayerFacing | null): string | null => {
   if (playerFacing === null) {
     return null;
@@ -566,6 +577,7 @@ const formatLiveCeilingContactText = (
 
 const buildPlayerText = (
   playerPlaceholderPoseLabel: string | null,
+  playerWorldPosition: { x: number; y: number } | null,
   playerCeilingBonkHoldActive: boolean | null,
   playerGrounded: boolean | null,
   playerFacing: PlayerFacing | null,
@@ -580,6 +592,7 @@ const buildPlayerText = (
 ): string | null => {
   const playerLines = [
     playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : null,
+    formatLiveWorldPositionText(playerWorldPosition),
     formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive),
     formatLiveGroundedText(playerGrounded),
     formatLiveFacingText(playerFacing),
@@ -1075,6 +1088,7 @@ export const buildDebugEditStatusStripModel = (
 ): DebugEditStatusStripModel => {
   const activeToolStatus = resolveActiveDebugToolStatus(state.preview);
   const playerPlaceholderPoseLabel = state.playerPlaceholderPoseLabel ?? null;
+  const playerWorldPosition = state.playerWorldPosition ?? null;
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
   const playerGrounded = state.playerGrounded ?? null;
   const playerFacing = state.playerFacing ?? null;
@@ -1099,6 +1113,7 @@ export const buildDebugEditStatusStripModel = (
     previewText: buildPreviewText(state.preview, state.hoveredTile),
     playerText: buildPlayerText(
       playerPlaceholderPoseLabel,
+      playerWorldPosition,
       playerCeilingBonkHoldActive,
       playerGrounded,
       playerFacing,
