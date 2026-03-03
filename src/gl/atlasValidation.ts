@@ -193,34 +193,77 @@ export const collectAtlasValidationWarnings = (
     }
 
     const terrainVariantMap = tile.terrainAutotile?.placeholderVariantAtlasByCardinalMask;
-    if (!terrainVariantMap) {
+    if (terrainVariantMap) {
+      for (let cardinalMask = 0; cardinalMask < terrainVariantMap.length; cardinalMask += 1) {
+        const atlasIndex = terrainVariantMap[cardinalMask];
+        if (atlasIndex === undefined) {
+          continue;
+        }
+
+        const pixelRect = authoredRegionToPixelRect(atlasIndex);
+        if (!pixelRect) {
+          continue;
+        }
+
+        if (isPixelRectWithinAtlasBounds(pixelRect, atlasWidth, atlasHeight)) {
+          continue;
+        }
+
+        warnings.push(
+          buildBoundsWarning(
+            tile,
+            `terrainAutotile.placeholderVariantAtlasByCardinalMask[${cardinalMask}]`,
+            pixelRect,
+            atlasWidth,
+            atlasHeight
+          )
+        );
+      }
+    }
+
+    const liquidVariantMap = tile.liquidRender?.variantRenderByCardinalMask;
+    if (!liquidVariantMap) {
       continue;
     }
 
-    for (let cardinalMask = 0; cardinalMask < terrainVariantMap.length; cardinalMask += 1) {
-      const atlasIndex = terrainVariantMap[cardinalMask];
-      if (atlasIndex === undefined) {
+    for (let cardinalMask = 0; cardinalMask < liquidVariantMap.length; cardinalMask += 1) {
+      const variant = liquidVariantMap[cardinalMask];
+      if (!variant) {
         continue;
       }
 
-      const pixelRect = authoredRegionToPixelRect(atlasIndex);
-      if (!pixelRect) {
+      collectFrameUvRectWarnings(
+        warnings,
+        tile,
+        variant,
+        variant.atlasIndex !== undefined
+          ? `liquidRender.variantRenderByCardinalMask[${cardinalMask}].atlasIndex`
+          : `liquidRender.variantRenderByCardinalMask[${cardinalMask}].uvRect`,
+        atlasWidth,
+        atlasHeight
+      );
+
+      if (!variant.frames) {
         continue;
       }
 
-      if (isPixelRectWithinAtlasBounds(pixelRect, atlasWidth, atlasHeight)) {
-        continue;
-      }
+      for (let frameIndex = 0; frameIndex < variant.frames.length; frameIndex += 1) {
+        const frame = variant.frames[frameIndex];
+        if (!frame) {
+          continue;
+        }
 
-      warnings.push(
-        buildBoundsWarning(
+        collectFrameUvRectWarnings(
+          warnings,
           tile,
-          `terrainAutotile.placeholderVariantAtlasByCardinalMask[${cardinalMask}]`,
-          pixelRect,
+          frame,
+          frame.atlasIndex !== undefined
+            ? `liquidRender.variantRenderByCardinalMask[${cardinalMask}].frames[${frameIndex}].atlasIndex`
+            : `liquidRender.variantRenderByCardinalMask[${cardinalMask}].frames[${frameIndex}].uvRect`,
           atlasWidth,
           atlasHeight
-        )
-      );
+        );
+      }
     }
   }
 

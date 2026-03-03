@@ -7,7 +7,7 @@
 - `src/input/`: input abstraction for keyboard, mouse, touch/pinch, and standalone player intent extraction.
 - `src/gl/`: low-level WebGL2 utilities, authored-atlas loading plus layout-driven placeholder fallback generation, world rendering orchestration, and the grounded-idle, grounded-walk, jump-rise, fall, wall-slide, and briefly latched ceiling-bonk standalone player placeholder draw pass.
 - `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, sparse edited-tile overrides that survive chunk streaming prune, mesh construction, plus authored atlas-region layout data.
-- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, connectivity/material grouping, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups and elapsed-frame resolvers backed by `src/world/authoredAtlasLayout.ts`; renderer boot now validates authored atlas-index sources against the loaded atlas dimensions and direct `uvRect` metadata against both atlas bounds and whole-pixel atlas edges).
+- `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, liquid-render variant maps with liquid-only connectivity groups, gameplay flags like `solid` / `blocksLight` / `liquidKind`, plus non-autotile render `atlasIndex` / `uvRect` metadata and optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups and elapsed-frame resolvers backed by `src/world/authoredAtlasLayout.ts`; renderer boot now validates authored atlas-index sources plus direct `uvRect` metadata, including liquid variants, against the loaded atlas dimensions and whole-pixel atlas edges).
 - `src/gl/animatedChunkMesh.ts`: renderer-side helper that rewrites baked chunk UVs for animated non-terrain quads when elapsed time advances to a new metadata frame.
 - `src/ui/`: app shell plus in-world shell chrome, debug DOM overlays, spawn marker, and touch-only player controls.
 
@@ -34,9 +34,9 @@ Renderer initialization first attempts to fetch and decode the committed authore
 If that asset is unavailable or decoding fails, initialization falls back to a generated placeholder atlas derived
 from the authored atlas layout so the existing tile rendering path still boots with atlas-index regions in the same
 places. After the atlas is loaded, renderer startup validates direct tile
-`render.uvRect` metadata plus atlas-index-backed render and terrain sources against the runtime atlas dimensions,
-stores warning telemetry, and emits a console warning if any static, animated, or terrain variant source falls
-outside the source image or any direct `uvRect` source lands between whole atlas pixels.
+`render.uvRect` metadata plus atlas-index-backed render, terrain, and liquid-variant sources against the runtime
+atlas dimensions, stores warning telemetry, and emits a console warning if any static, animated, terrain, or liquid
+variant source falls outside the source image or any direct `uvRect` source lands between whole atlas pixels.
 
 1. Ensure canvas backbuffer matches CSS size × `devicePixelRatio`.
 2. Build camera matrix (`world -> clip`) for orthographic projection.
@@ -57,6 +57,7 @@ outside the source image or any direct `uvRect` source lands between whole atlas
   - records animated non-terrain quad offsets so the renderer can patch only those UVs later.
 - UVs are resolved through tile metadata (terrain autotile variant maps or non-autotile static render metadata), with atlas indices translated through the authored atlas region layout instead of a synthetic grid cache.
 - Optional animated render frames compile beside the static render lookup; chunk meshes still bake the static frame-zero UVs, and the renderer mutates only the recorded animated quad UVs when the elapsed frame changes.
+- Liquid variant render metadata now compiles beside the base static render lookup, but chunk meshing still bakes the base `render` fallback until liquid-specific mask resolution lands.
 - Static chunks upload once as static vertex data; chunks containing animated non-terrain quads keep a CPU-side vertex copy so the renderer can reupload UV-only changes on frame boundaries.
 
 This is intentionally simple and easy to evolve (greedy meshing, layered tiles, occlusion rules can be added later).

@@ -240,6 +240,17 @@ describe('buildChunkMesh autotile UV selection', () => {
     ]);
   });
 
+  it('uses the static render fallback for liquid tiles until liquid mask resolution lands', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 7);
+
+    const mesh = buildChunkMesh(chunk);
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 14);
+    expect(mesh.animatedTileQuads).toEqual([]);
+  });
+
   it('packs multiple tile quads contiguously into a tightly sized Float32Array', () => {
     const chunk = createEmptyChunk();
     setChunkTile(chunk, 0, 0, 3);

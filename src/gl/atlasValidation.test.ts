@@ -136,4 +136,44 @@ describe('collectAtlasValidationWarnings', () => {
     });
     expect(warnings[2]?.message).toContain('[48, 8]..[86.4, 40] on non-integer atlas pixels');
   });
+
+  it('reports liquid variant render sources with variant-specific source paths', () => {
+    const tiles: TileMetadataEntry[] = [
+      {
+        id: 9,
+        name: 'water',
+        gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
+        liquidRender: {
+          variantRenderByCardinalMask: [
+            { atlasIndex: 15 },
+            {
+              uvRect: { u0: 0.1, v0: 0.25, u1: 0.5, v1: 0.75 },
+              frames: [
+                { uvRect: { u0: 0.1, v0: 0.25, u1: 0.5, v1: 0.75 } },
+                { uvRect: { u0: -0.125, v0: 0, u1: 0.125, v1: 0.25 } }
+              ],
+              frameDurationMs: 120
+            },
+            ...Array.from({ length: 14 }, () => ({ atlasIndex: 0 }))
+          ]
+        }
+      }
+    ];
+
+    const warnings = collectAtlasValidationWarnings(tiles, 48, 48);
+
+    expect(warnings).toHaveLength(4);
+    expect(warnings[0]?.sourcePath).toBe('liquidRender.variantRenderByCardinalMask[0].atlasIndex');
+    expect(warnings[0]?.message).toContain('[48, 48]..[64, 64] outside atlas 48x48');
+    expect(warnings[1]?.sourcePath).toBe('liquidRender.variantRenderByCardinalMask[1].uvRect');
+    expect(warnings[1]?.kind).toBe('pixelAlignment');
+    expect(warnings[2]?.sourcePath).toBe(
+      'liquidRender.variantRenderByCardinalMask[1].frames[0].uvRect'
+    );
+    expect(warnings[2]?.kind).toBe('pixelAlignment');
+    expect(warnings[3]?.sourcePath).toBe(
+      'liquidRender.variantRenderByCardinalMask[1].frames[1].uvRect'
+    );
+    expect(warnings[3]?.kind).toBe('bounds');
+  });
 });

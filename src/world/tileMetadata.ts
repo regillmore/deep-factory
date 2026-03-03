@@ -32,6 +32,13 @@ export interface TileRenderMetadata extends TileRenderFrameMetadata {
   frameDurationMs?: number;
 }
 
+export const LIQUID_RENDER_CARDINAL_MASK_COUNT = 16;
+
+export interface LiquidRenderTileMetadata {
+  variantRenderByCardinalMask: readonly TileRenderMetadata[];
+  connectivityGroup?: string;
+}
+
 export type TileLiquidKind = 'water' | 'lava';
 
 export interface TileGameplayMetadata {
@@ -47,6 +54,7 @@ export interface TileMetadataEntry {
   gameplay?: TileGameplayMetadata;
   render?: TileRenderMetadata;
   terrainAutotile?: TerrainAutotileTileMetadata;
+  liquidRender?: LiquidRenderTileMetadata;
 }
 
 export interface TileMetadataRegistry {
@@ -54,6 +62,7 @@ export interface TileMetadataRegistry {
   tilesById: ReadonlyMap<number, TileMetadataEntry>;
   gameplayPropertyLookup: TileGameplayPropertyLookup;
   terrainConnectivityLookup: TileTerrainConnectivityLookup;
+  liquidConnectivityLookup: TileLiquidConnectivityLookup;
   renderLookup: TileRenderLookup;
 }
 
@@ -67,6 +76,10 @@ export interface TileTerrainConnectivityLookup {
   materialTagMaskByTileId: readonly bigint[];
 }
 
+export interface TileLiquidConnectivityLookup {
+  connectivityGroupIdByTileId: Int32Array;
+}
+
 export interface TileRenderLookup {
   staticUvRectByTileId: readonly (TileUvRect | null)[];
   animationFrameStartByTileId: Int32Array;
@@ -76,6 +89,8 @@ export interface TileRenderLookup {
   terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask: Int32Array;
   terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask: Int32Array;
   terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask: Int32Array;
+  liquidVariantRenderByTileIdAndCardinalMask: readonly (TileRenderMetadata | null)[];
+  liquidVariantStaticUvRectByTileIdAndCardinalMask: readonly (TileUvRect | null)[];
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -228,16 +243,16 @@ const parseTileGameplayMetadata = (value: unknown, tileId: number): TileGameplay
   return liquidKind === undefined ? { solid, blocksLight } : { solid, blocksLight, liquidKind };
 };
 
-const parseTileRenderMetadata = (value: unknown, tileId: number): TileRenderMetadata => {
-  const render = parseTileRenderFrameMetadata(value, `tiles[${tileId}].render`);
+const parseTileRenderMetadata = (value: unknown, tileIdOrLabel: number | string): TileRenderMetadata => {
+  const label =
+    typeof tileIdOrLabel === 'number' ? `tiles[${tileIdOrLabel}].render` : tileIdOrLabel;
+  const render = parseTileRenderFrameMetadata(value, label);
   const renderRecord = value as Record<string, unknown>;
   const hasFrames = renderRecord.frames !== undefined;
   const hasFrameDurationMs = renderRecord.frameDurationMs !== undefined;
 
   if (hasFrames !== hasFrameDurationMs) {
-    throw new Error(
-      `tiles[${tileId}].render must define both frames and frameDurationMs when animation metadata is present`
-    );
+    throw new Error(`${label} must define both frames and frameDurationMs when animation metadata is present`);
   }
 
   if (!hasFrames) {
@@ -245,29 +260,26 @@ const parseTileRenderMetadata = (value: unknown, tileId: number): TileRenderMeta
   }
 
   if (!Array.isArray(renderRecord.frames)) {
-    throw new Error(`tiles[${tileId}].render.frames must be an array`);
+    throw new Error(`${label}.frames must be an array`);
   }
 
   if (renderRecord.frames.length === 0) {
-    throw new Error(`tiles[${tileId}].render.frames must contain at least one frame`);
+    throw new Error(`${label}.frames must contain at least one frame`);
   }
 
   const frames = renderRecord.frames.map((entry, frameIndex) =>
-    parseTileRenderFrameMetadata(entry, `tiles[${tileId}].render.frames[${frameIndex}]`)
+    parseTileRenderFrameMetadata(entry, `${label}.frames[${frameIndex}]`)
   );
   const staticUvRect = resolveTileRenderFrameUvRect(render);
   const firstFrameUvRect = resolveTileRenderFrameUvRect(frames[0]!);
   if (!tileUvRectsMatch(staticUvRect, firstFrameUvRect)) {
-    throw new Error(`tiles[${tileId}].render.frames[0] must match the static render source`);
+    throw new Error(`${label}.frames[0] must match the static render source`);
   }
 
   return {
     ...render,
     frames,
-    frameDurationMs: expectPositiveInteger(
-      renderRecord.frameDurationMs,
-      `tiles[${tileId}].render.frameDurationMs`
-    )
+    frameDurationMs: expectPositiveInteger(renderRecord.frameDurationMs, `${label}.frameDurationMs`)
   };
 };
 
@@ -311,6 +323,44 @@ const parseTerrainAutotileMetadata = (
   };
 };
 
+const parseLiquidRenderMetadata = (
+  value: unknown,
+  tileId: number
+): LiquidRenderTileMetadata => {
+  if (!isRecord(value)) {
+    throw new Error(`tiles[${tileId}].liquidRender must be an object`);
+  }
+
+  const variantMap = value.variantRenderByCardinalMask;
+  if (!Array.isArray(variantMap)) {
+    throw new Error(`tiles[${tileId}].liquidRender.variantRenderByCardinalMask must be an array`);
+  }
+
+  if (variantMap.length !== LIQUID_RENDER_CARDINAL_MASK_COUNT) {
+    throw new Error(
+      `tiles[${tileId}].liquidRender.variantRenderByCardinalMask must have ${LIQUID_RENDER_CARDINAL_MASK_COUNT} entries`
+    );
+  }
+
+  const parsedVariantMap = variantMap.map((entry, cardinalMask) =>
+    parseTileRenderMetadata(
+      entry,
+      `tiles[${tileId}].liquidRender.variantRenderByCardinalMask[${cardinalMask}]`
+    )
+  );
+
+  return {
+    variantRenderByCardinalMask: parsedVariantMap,
+    connectivityGroup:
+      value.connectivityGroup === undefined
+        ? undefined
+        : expectNonEmptyString(
+            value.connectivityGroup,
+            `tiles[${tileId}].liquidRender.connectivityGroup`
+          )
+  };
+};
+
 const TILE_GAMEPLAY_PROPERTY_FLAG_SOLID = 1 << 0;
 const TILE_GAMEPLAY_PROPERTY_FLAG_BLOCKS_LIGHT = 1 << 1;
 
@@ -323,6 +373,8 @@ const TERRAIN_AUTOTILE_RAW_ADJACENCY_MASK_COUNT = 256;
 
 const TERRAIN_CONNECTIVITY_GROUP_ID_NON_TERRAIN = -1;
 const TERRAIN_CONNECTIVITY_GROUP_ID_UNGROUPED_TERRAIN = -2;
+const LIQUID_CONNECTIVITY_GROUP_ID_NON_LIQUID = -1;
+const LIQUID_CONNECTIVITY_GROUP_ID_UNGROUPED_LIQUID = -2;
 
 const encodeTileLiquidKindCode = (liquidKind: TileLiquidKind | undefined): number => {
   switch (liquidKind) {
@@ -438,6 +490,49 @@ const buildTileTerrainConnectivityLookup = (
   };
 };
 
+const buildTileLiquidConnectivityLookup = (
+  tiles: readonly TileMetadataEntry[]
+): TileLiquidConnectivityLookup => {
+  let maxTileId = 0;
+  for (const tile of tiles) {
+    if (tile.id > maxTileId) {
+      maxTileId = tile.id;
+    }
+  }
+
+  const connectivityGroupIdByName = new Map<string, number>();
+  let nextConnectivityGroupId = 0;
+
+  for (const tile of tiles) {
+    const liquidRender = tile.liquidRender;
+    if (!liquidRender) continue;
+
+    const connectivityGroup = liquidRender.connectivityGroup;
+    if (connectivityGroup !== undefined && !connectivityGroupIdByName.has(connectivityGroup)) {
+      connectivityGroupIdByName.set(connectivityGroup, nextConnectivityGroupId);
+      nextConnectivityGroupId += 1;
+    }
+  }
+
+  const connectivityGroupIdByTileId = new Int32Array(maxTileId + 1);
+  connectivityGroupIdByTileId.fill(LIQUID_CONNECTIVITY_GROUP_ID_NON_LIQUID);
+
+  for (const tile of tiles) {
+    const liquidRender = tile.liquidRender;
+    if (!liquidRender) continue;
+
+    const connectivityGroup = liquidRender.connectivityGroup;
+    connectivityGroupIdByTileId[tile.id] =
+      connectivityGroup === undefined
+        ? LIQUID_CONNECTIVITY_GROUP_ID_UNGROUPED_LIQUID
+        : (connectivityGroupIdByName.get(connectivityGroup) ?? LIQUID_CONNECTIVITY_GROUP_ID_NON_LIQUID);
+  }
+
+  return {
+    connectivityGroupIdByTileId
+  };
+};
+
 const buildTileRenderLookup = (tiles: readonly TileMetadataEntry[]): TileRenderLookup => {
   let maxTileId = 0;
   for (const tile of tiles) {
@@ -461,6 +556,12 @@ const buildTileRenderLookup = (tiles: readonly TileMetadataEntry[]): TileRenderL
   const terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask = new Int32Array(
     (maxTileId + 1) * TERRAIN_AUTOTILE_RAW_ADJACENCY_MASK_COUNT
   );
+  const liquidVariantRenderByTileIdAndCardinalMask = Array<TileRenderMetadata | null>(
+    (maxTileId + 1) * LIQUID_RENDER_CARDINAL_MASK_COUNT
+  ).fill(null);
+  const liquidVariantStaticUvRectByTileIdAndCardinalMask = Array<TileUvRect | null>(
+    (maxTileId + 1) * LIQUID_RENDER_CARDINAL_MASK_COUNT
+  ).fill(null);
   terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask.fill(TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX);
   terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask.fill(
     TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX
@@ -482,39 +583,52 @@ const buildTileRenderLookup = (tiles: readonly TileMetadataEntry[]): TileRenderL
     }
 
     const variantMap = tile.terrainAutotile?.placeholderVariantAtlasByCardinalMask;
-    if (!variantMap) continue;
+    if (variantMap) {
+      const cardinalTableOffset = tile.id * TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT;
+      for (let cardinalMask = 0; cardinalMask < variantMap.length; cardinalMask += 1) {
+        terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask[cardinalTableOffset + cardinalMask] =
+          variantMap[cardinalMask] ?? TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX;
+      }
 
-    const cardinalTableOffset = tile.id * TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT;
-    for (let cardinalMask = 0; cardinalMask < variantMap.length; cardinalMask += 1) {
-      terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask[cardinalTableOffset + cardinalMask] =
-        variantMap[cardinalMask] ?? TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX;
-    }
-
-    const normalizedTableOffset = tile.id * TERRAIN_AUTOTILE_NORMALIZED_ADJACENCY_MASK_COUNT;
-    for (
-      let normalizedAdjacencyMask = 0;
-      normalizedAdjacencyMask < TERRAIN_AUTOTILE_NORMALIZED_ADJACENCY_MASK_COUNT;
-      normalizedAdjacencyMask += 1
-    ) {
-      const cardinalMask =
-        TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK[normalizedAdjacencyMask] ??
-        0;
-      terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask[
-        normalizedTableOffset + normalizedAdjacencyMask
-      ] = variantMap[cardinalMask] ?? TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX;
-    }
-
-    const rawTableOffset = tile.id * TERRAIN_AUTOTILE_RAW_ADJACENCY_MASK_COUNT;
-    for (
-      let rawAdjacencyMask = 0;
-      rawAdjacencyMask < TERRAIN_AUTOTILE_RAW_ADJACENCY_MASK_COUNT;
-      rawAdjacencyMask += 1
-    ) {
-      const normalizedAdjacencyMask = normalizeAutotileAdjacencyMask(rawAdjacencyMask);
-      terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask[rawTableOffset + rawAdjacencyMask] =
+      const normalizedTableOffset = tile.id * TERRAIN_AUTOTILE_NORMALIZED_ADJACENCY_MASK_COUNT;
+      for (
+        let normalizedAdjacencyMask = 0;
+        normalizedAdjacencyMask < TERRAIN_AUTOTILE_NORMALIZED_ADJACENCY_MASK_COUNT;
+        normalizedAdjacencyMask += 1
+      ) {
+        const cardinalMask =
+          TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK[normalizedAdjacencyMask] ??
+          0;
         terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask[
           normalizedTableOffset + normalizedAdjacencyMask
-        ] ?? TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX;
+        ] = variantMap[cardinalMask] ?? TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX;
+      }
+
+      const rawTableOffset = tile.id * TERRAIN_AUTOTILE_RAW_ADJACENCY_MASK_COUNT;
+      for (
+        let rawAdjacencyMask = 0;
+        rawAdjacencyMask < TERRAIN_AUTOTILE_RAW_ADJACENCY_MASK_COUNT;
+        rawAdjacencyMask += 1
+      ) {
+        const normalizedAdjacencyMask = normalizeAutotileAdjacencyMask(rawAdjacencyMask);
+        terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask[
+          rawTableOffset + rawAdjacencyMask
+        ] =
+          terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask[
+            normalizedTableOffset + normalizedAdjacencyMask
+          ] ?? TILE_RENDER_LOOKUP_MISSING_ATLAS_INDEX;
+      }
+    }
+
+    const liquidVariantMap = tile.liquidRender?.variantRenderByCardinalMask;
+    if (!liquidVariantMap) continue;
+
+    const liquidTableOffset = tile.id * LIQUID_RENDER_CARDINAL_MASK_COUNT;
+    for (let cardinalMask = 0; cardinalMask < liquidVariantMap.length; cardinalMask += 1) {
+      const variantRender = liquidVariantMap[cardinalMask] ?? null;
+      liquidVariantRenderByTileIdAndCardinalMask[liquidTableOffset + cardinalMask] = variantRender;
+      liquidVariantStaticUvRectByTileIdAndCardinalMask[liquidTableOffset + cardinalMask] =
+        variantRender === null ? null : resolveTileRenderFrameUvRect(variantRender);
     }
   }
 
@@ -526,7 +640,9 @@ const buildTileRenderLookup = (tiles: readonly TileMetadataEntry[]): TileRenderL
     animationFrameUvRects,
     terrainAutotileVariantAtlasIndexByTileIdAndCardinalMask,
     terrainAutotileVariantAtlasIndexByTileIdAndNormalizedAdjacencyMask,
-    terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask
+    terrainAutotileVariantAtlasIndexByTileIdAndRawAdjacencyMask,
+    liquidVariantRenderByTileIdAndCardinalMask,
+    liquidVariantStaticUvRectByTileIdAndCardinalMask
   };
 };
 
@@ -563,6 +679,15 @@ const getTerrainConnectivityGroupId = (tileId: number, registry: TileMetadataReg
   return connectivityGroupIdByTileId[tileId];
 };
 
+const getLiquidConnectivityGroupId = (tileId: number, registry: TileMetadataRegistry): number => {
+  const { connectivityGroupIdByTileId } = registry.liquidConnectivityLookup;
+  if (!isDenseLookupTileIdInRange(tileId, connectivityGroupIdByTileId.length)) {
+    return LIQUID_CONNECTIVITY_GROUP_ID_NON_LIQUID;
+  }
+
+  return connectivityGroupIdByTileId[tileId];
+};
+
 const getTerrainMaterialTagMask = (tileId: number, registry: TileMetadataRegistry): bigint => {
   const { materialTagMaskByTileId } = registry.terrainConnectivityLookup;
   if (!isDenseLookupTileIdInRange(tileId, materialTagMaskByTileId.length)) {
@@ -582,6 +707,54 @@ const getStaticTileRenderUvRect = (
   }
 
   return staticUvRectByTileId[tileId] ?? null;
+};
+
+const getLiquidVariantRenderMetadataFromLookup = (
+  tileId: number,
+  cardinalMask: number,
+  registry: TileMetadataRegistry
+): TileRenderMetadata | null => {
+  if (!Number.isInteger(cardinalMask)) {
+    return null;
+  }
+  if (cardinalMask < 0 || cardinalMask >= LIQUID_RENDER_CARDINAL_MASK_COUNT) {
+    return null;
+  }
+
+  const { liquidVariantRenderByTileIdAndCardinalMask, staticUvRectByTileId } = registry.renderLookup;
+  if (!isDenseLookupTileIdInRange(tileId, staticUvRectByTileId.length)) {
+    return null;
+  }
+
+  return (
+    liquidVariantRenderByTileIdAndCardinalMask[
+      tileId * LIQUID_RENDER_CARDINAL_MASK_COUNT + cardinalMask
+    ] ?? null
+  );
+};
+
+const getLiquidVariantStaticUvRectFromLookup = (
+  tileId: number,
+  cardinalMask: number,
+  registry: TileMetadataRegistry
+): TileUvRect | null => {
+  if (!Number.isInteger(cardinalMask)) {
+    return null;
+  }
+  if (cardinalMask < 0 || cardinalMask >= LIQUID_RENDER_CARDINAL_MASK_COUNT) {
+    return null;
+  }
+
+  const { liquidVariantStaticUvRectByTileIdAndCardinalMask, staticUvRectByTileId } = registry.renderLookup;
+  if (!isDenseLookupTileIdInRange(tileId, staticUvRectByTileId.length)) {
+    return null;
+  }
+
+  return (
+    liquidVariantStaticUvRectByTileIdAndCardinalMask[
+      tileId * LIQUID_RENDER_CARDINAL_MASK_COUNT + cardinalMask
+    ] ?? null
+  );
 };
 
 const getAnimatedTileRenderFrameCountFromLookup = (
@@ -789,6 +962,7 @@ export const parseTileMetadataRegistry = (value: unknown): TileMetadataRegistry 
     const gameplayValue = rawTile.gameplay;
     const renderValue = rawTile.render;
     const terrainAutotileValue = rawTile.terrainAutotile;
+    const liquidRenderValue = rawTile.liquidRender;
     const parsedTile: TileMetadataEntry = {
       id: tileId,
       name,
@@ -799,11 +973,23 @@ export const parseTileMetadataRegistry = (value: unknown): TileMetadataRegistry 
       terrainAutotile:
         terrainAutotileValue === undefined
           ? undefined
-          : parseTerrainAutotileMetadata(terrainAutotileValue, tileId)
+          : parseTerrainAutotileMetadata(terrainAutotileValue, tileId),
+      liquidRender:
+        liquidRenderValue === undefined
+          ? undefined
+          : parseLiquidRenderMetadata(liquidRenderValue, tileId)
     };
 
-    if (tileId !== 0 && !parsedTile.render && !parsedTile.terrainAutotile) {
-      throw new Error(`tiles[${index}] (id ${tileId}) must define render or terrainAutotile metadata`);
+    if (parsedTile.liquidRender && parsedTile.gameplay?.liquidKind === undefined) {
+      throw new Error(`tiles[${index}] (id ${tileId}) liquidRender requires gameplay.liquidKind`);
+    }
+    if (parsedTile.liquidRender && parsedTile.terrainAutotile) {
+      throw new Error(`tiles[${index}] (id ${tileId}) cannot define both terrainAutotile and liquidRender`);
+    }
+    if (tileId !== 0 && !parsedTile.render && !parsedTile.terrainAutotile && !parsedTile.liquidRender) {
+      throw new Error(
+        `tiles[${index}] (id ${tileId}) must define render, terrainAutotile, or liquidRender metadata`
+      );
     }
 
     tiles.push(parsedTile);
@@ -815,6 +1001,7 @@ export const parseTileMetadataRegistry = (value: unknown): TileMetadataRegistry 
     tilesById,
     gameplayPropertyLookup: buildTileGameplayPropertyLookup(tiles),
     terrainConnectivityLookup: buildTileTerrainConnectivityLookup(tiles),
+    liquidConnectivityLookup: buildTileLiquidConnectivityLookup(tiles),
     renderLookup: buildTileRenderLookup(tiles)
   };
 };
@@ -870,6 +1057,11 @@ export const hasTerrainAutotileMetadata = (
 ): boolean =>
   getTerrainConnectivityGroupId(tileId, registry) !== TERRAIN_CONNECTIVITY_GROUP_ID_NON_TERRAIN;
 
+export const hasLiquidRenderMetadata = (
+  tileId: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): boolean => getLiquidConnectivityGroupId(tileId, registry) !== LIQUID_CONNECTIVITY_GROUP_ID_NON_LIQUID;
+
 export const areTerrainAutotileNeighborsConnected = (
   centerTileId: number,
   neighborTileId: number,
@@ -898,12 +1090,49 @@ export const areTerrainAutotileNeighborsConnected = (
   );
 };
 
+export const areLiquidRenderNeighborsConnected = (
+  centerTileId: number,
+  neighborTileId: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): boolean => {
+  if (centerTileId === 0 || neighborTileId === 0) return false;
+  const centerConnectivityGroupId = getLiquidConnectivityGroupId(centerTileId, registry);
+  const neighborConnectivityGroupId = getLiquidConnectivityGroupId(neighborTileId, registry);
+  if (
+    centerConnectivityGroupId === LIQUID_CONNECTIVITY_GROUP_ID_NON_LIQUID ||
+    neighborConnectivityGroupId === LIQUID_CONNECTIVITY_GROUP_ID_NON_LIQUID
+  ) {
+    return false;
+  }
+  if (centerTileId === neighborTileId) return true;
+
+  const centerHasConnectivityGroup = centerConnectivityGroupId >= 0;
+  const neighborHasConnectivityGroup = neighborConnectivityGroupId >= 0;
+  if (centerHasConnectivityGroup && neighborHasConnectivityGroup) {
+    return centerConnectivityGroupId === neighborConnectivityGroupId;
+  }
+
+  return false;
+};
+
 export const resolveTerrainAutotileVariantAtlasIndex = (
   tileId: number,
   cardinalVariantIndex: number,
   registry: TileMetadataRegistry = TILE_METADATA
 ): number | null =>
   getTerrainAutotileVariantAtlasIndexFromLookup(tileId, cardinalVariantIndex, registry);
+
+export const resolveLiquidRenderVariantMetadata = (
+  tileId: number,
+  cardinalMask: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): TileRenderMetadata | null => getLiquidVariantRenderMetadataFromLookup(tileId, cardinalMask, registry);
+
+export const resolveLiquidRenderVariantUvRect = (
+  tileId: number,
+  cardinalMask: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): TileUvRect | null => getLiquidVariantStaticUvRectFromLookup(tileId, cardinalMask, registry);
 
 export const resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask = (
   tileId: number,

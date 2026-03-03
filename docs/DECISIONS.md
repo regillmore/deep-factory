@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-03: Liquid render connectivity is separate from terrain autotile grouping
+
+- Decision: Liquid tiles now declare `liquidRender` metadata with their own connectivity groups and per-cardinal-mask variant render entries instead of reusing terrain autotile connectivity or material-tag fallback.
+- Reason: Water and lava need adjacency rules that stay independent from solid terrain seams, and later liquid edge, surface, and animation work needs a liquid-owned metadata path.
+- Consequence: Future liquid rendering work should use `liquidRender` metadata and liquid connectivity helpers rather than terrain autotile group IDs or terrain material tags.
+
 ### 2026-03-02: World runtime starts behind explicit app-shell states
 
 - Decision: Boot now flows through explicit `boot`, `main menu`, and `in-world` shell states, and the fixed-step world loop starts only after the main-menu enter action fires.

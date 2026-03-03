@@ -55,19 +55,21 @@ interface AtlasPixelCoordinate {
 interface DirectRenderUvRectSource {
   tileId: number;
   tileName: string;
+  sourcePath: string;
   uvRect: TileUvRect;
 }
 
 interface AnimatedDirectRenderUvRectFrameSource {
   tileId: number;
   tileName: string;
-  frameIndex: number;
+  sourcePath: string;
   uvRect: TileUvRect;
 }
 
 interface AnimatedDirectRenderUvRectFrameTransition {
   tileId: number;
   tileName: string;
+  sourcePath: string;
   previousFrameIndex: number;
   previousUvRect: TileUvRect;
   frameIndex: number;
@@ -84,14 +86,11 @@ interface DirectRenderUvRectAuthoredRegionReference {
 interface AnimatedAtlasIndexFrameTransition {
   tileId: number;
   tileName: string;
+  sourcePath: string;
   previousFrameIndex: number;
   previousAtlasIndex: number;
   frameIndex: number;
   atlasIndex: number;
-}
-
-interface NamedDirectRenderUvRectSource extends DirectRenderUvRectSource {
-  sourcePath: string;
 }
 
 const readPngChunkType = (data: Uint8Array, byteOffset: number): string =>
@@ -236,6 +235,25 @@ const collectReferencedAtlasIndices = (): number[] => {
       }
     }
 
+    const liquidVariantMap = tile.liquidRender?.variantRenderByCardinalMask;
+    if (liquidVariantMap) {
+      for (const variant of liquidVariantMap) {
+        if (variant.atlasIndex !== undefined) {
+          referencedAtlasIndices.add(variant.atlasIndex);
+        }
+
+        if (!variant.frames) {
+          continue;
+        }
+
+        for (const frame of variant.frames) {
+          if (frame.atlasIndex !== undefined) {
+            referencedAtlasIndices.add(frame.atlasIndex);
+          }
+        }
+      }
+    }
+
     const terrainVariantMap = tile.terrainAutotile?.placeholderVariantAtlasByCardinalMask;
     if (!terrainVariantMap) {
       continue;
@@ -250,63 +268,144 @@ const collectReferencedAtlasIndices = (): number[] => {
 };
 
 const collectDirectRenderUvRectSources = (): DirectRenderUvRectSource[] =>
-  TILE_METADATA.tiles.flatMap((tile) =>
-    tile.render?.uvRect
-      ? [
-          {
-            tileId: tile.id,
-            tileName: tile.name,
-            uvRect: tile.render.uvRect
-          }
-        ]
-      : []
-  );
+  TILE_METADATA.tiles.flatMap((tile) => {
+    const sources: DirectRenderUvRectSource[] = [];
+
+    if (tile.render?.uvRect) {
+      sources.push({
+        tileId: tile.id,
+        tileName: tile.name,
+        sourcePath: 'render.uvRect',
+        uvRect: tile.render.uvRect
+      });
+    }
+
+    const liquidVariantMap = tile.liquidRender?.variantRenderByCardinalMask;
+    if (!liquidVariantMap) {
+      return sources;
+    }
+
+    liquidVariantMap.forEach((variant, cardinalMask) => {
+      if (!variant.uvRect) {
+        return;
+      }
+
+      sources.push({
+        tileId: tile.id,
+        tileName: tile.name,
+        sourcePath: `liquidRender.variantRenderByCardinalMask[${cardinalMask}].uvRect`,
+        uvRect: variant.uvRect
+      });
+    });
+
+    return sources;
+  });
 
 const collectAnimatedDirectRenderUvRectFrameSources = (): AnimatedDirectRenderUvRectFrameSource[] =>
   TILE_METADATA.tiles.flatMap((tile) => {
-    if (!tile.render?.uvRect || !tile.render.frames) {
-      return [];
+    const sources: AnimatedDirectRenderUvRectFrameSource[] = [];
+
+    if (tile.render?.uvRect && tile.render.frames) {
+      sources.push(
+        ...tile.render.frames.flatMap((frame, frameIndex) =>
+          frame.uvRect
+            ? [
+                {
+                  tileId: tile.id,
+                  tileName: tile.name,
+                  sourcePath: `render.frames[${frameIndex}].uvRect`,
+                  uvRect: frame.uvRect
+                }
+              ]
+            : []
+        )
+      );
     }
 
-    return tile.render.frames.flatMap((frame, frameIndex) =>
-      frame.uvRect
-        ? [
-            {
-              tileId: tile.id,
-              tileName: tile.name,
-              frameIndex,
-              uvRect: frame.uvRect
-            }
-          ]
-      : []
-    );
+    const liquidVariantMap = tile.liquidRender?.variantRenderByCardinalMask;
+    if (!liquidVariantMap) {
+      return sources;
+    }
+
+    liquidVariantMap.forEach((variant, cardinalMask) => {
+      if (!variant.uvRect || !variant.frames) {
+        return;
+      }
+
+      sources.push(
+        ...variant.frames.flatMap((frame, frameIndex) =>
+          frame.uvRect
+            ? [
+                {
+                  tileId: tile.id,
+                  tileName: tile.name,
+                  sourcePath: `liquidRender.variantRenderByCardinalMask[${cardinalMask}].frames[${frameIndex}].uvRect`,
+                  uvRect: frame.uvRect
+                }
+              ]
+            : []
+        )
+      );
+    });
+
+    return sources;
   });
 
 const collectAnimatedDirectRenderUvRectFrameTransitions =
   (): AnimatedDirectRenderUvRectFrameTransition[] =>
     TILE_METADATA.tiles.flatMap((tile) => {
-      if (!tile.render?.uvRect || !tile.render.frames) {
-        return [];
+      const transitions: AnimatedDirectRenderUvRectFrameTransition[] = [];
+
+      if (tile.render?.uvRect && tile.render.frames) {
+        for (let frameIndex = 1; frameIndex < tile.render.frames.length; frameIndex += 1) {
+          const previousFrame = tile.render.frames[frameIndex - 1];
+          const frame = tile.render.frames[frameIndex];
+
+          if (!previousFrame?.uvRect || !frame?.uvRect) {
+            continue;
+          }
+
+          transitions.push({
+            tileId: tile.id,
+            tileName: tile.name,
+            sourcePath: `render.frames[${frameIndex}].uvRect`,
+            previousFrameIndex: frameIndex - 1,
+            previousUvRect: previousFrame.uvRect,
+            frameIndex,
+            uvRect: frame.uvRect
+          });
+        }
       }
 
-      const transitions: AnimatedDirectRenderUvRectFrameTransition[] = [];
-      for (let frameIndex = 1; frameIndex < tile.render.frames.length; frameIndex += 1) {
-        const previousFrame = tile.render.frames[frameIndex - 1];
-        const frame = tile.render.frames[frameIndex];
+      const liquidVariantMap = tile.liquidRender?.variantRenderByCardinalMask;
+      if (!liquidVariantMap) {
+        return transitions;
+      }
 
-        if (!previousFrame?.uvRect || !frame?.uvRect) {
-          continue;
+      liquidVariantMap.forEach((variant, cardinalMask) => {
+        if (!variant.uvRect || !variant.frames) {
+          return;
         }
 
-        transitions.push({
-          tileId: tile.id,
-          tileName: tile.name,
-          previousFrameIndex: frameIndex - 1,
-          previousUvRect: previousFrame.uvRect,
-          frameIndex,
-          uvRect: frame.uvRect
-        });
-      }
+        for (let frameIndex = 1; frameIndex < variant.frames.length; frameIndex += 1) {
+          const previousFrame = variant.frames[frameIndex - 1];
+          const frame = variant.frames[frameIndex];
+
+          if (!previousFrame?.uvRect || !frame?.uvRect) {
+            continue;
+          }
+
+          transitions.push({
+            tileId: tile.id,
+            tileName: tile.name,
+            sourcePath: `liquidRender.variantRenderByCardinalMask[${cardinalMask}].frames[${frameIndex}].uvRect`,
+            previousFrameIndex: frameIndex - 1,
+            previousUvRect: previousFrame.uvRect,
+            frameIndex,
+            uvRect: frame.uvRect
+          });
+        }
+      });
 
       return transitions;
     });
@@ -328,7 +427,7 @@ const collectDirectRenderUvRectAuthoredRegionReferences = (
       references.push({
         tileId: source.tileId,
         tileName: source.tileName,
-        sourcePath: 'render.uvRect',
+        sourcePath: source.sourcePath,
         atlasIndex
       });
     }
@@ -345,7 +444,7 @@ const collectDirectRenderUvRectAuthoredRegionReferences = (
       references.push({
         tileId: source.tileId,
         tileName: source.tileName,
-        sourcePath: `render.frames[${source.frameIndex}].uvRect`,
+        sourcePath: source.sourcePath,
         atlasIndex
       });
     }
@@ -356,12 +455,12 @@ const collectDirectRenderUvRectAuthoredRegionReferences = (
 
 const collectAnimatedAtlasIndexFrameTransitions = (): AnimatedAtlasIndexFrameTransition[] =>
   TILE_METADATA.tiles.flatMap((tile) => {
-    const frames = tile.render?.frames ?? [];
     const transitions: AnimatedAtlasIndexFrameTransition[] = [];
 
-    for (let frameIndex = 1; frameIndex < frames.length; frameIndex += 1) {
-      const previousFrame = frames[frameIndex - 1];
-      const frame = frames[frameIndex];
+    const renderFrames = tile.render?.frames ?? [];
+    for (let frameIndex = 1; frameIndex < renderFrames.length; frameIndex += 1) {
+      const previousFrame = renderFrames[frameIndex - 1];
+      const frame = renderFrames[frameIndex];
 
       if (previousFrame?.atlasIndex === undefined || frame?.atlasIndex === undefined) {
         continue;
@@ -370,6 +469,7 @@ const collectAnimatedAtlasIndexFrameTransitions = (): AnimatedAtlasIndexFrameTra
       transitions.push({
         tileId: tile.id,
         tileName: tile.name,
+        sourcePath: `render.frames[${frameIndex}].atlasIndex`,
         previousFrameIndex: frameIndex - 1,
         previousAtlasIndex: previousFrame.atlasIndex,
         frameIndex,
@@ -377,20 +477,39 @@ const collectAnimatedAtlasIndexFrameTransitions = (): AnimatedAtlasIndexFrameTra
       });
     }
 
+    const liquidVariantMap = tile.liquidRender?.variantRenderByCardinalMask;
+    if (!liquidVariantMap) {
+      return transitions;
+    }
+
+    liquidVariantMap.forEach((variant, cardinalMask) => {
+      const frames = variant.frames ?? [];
+      for (let frameIndex = 1; frameIndex < frames.length; frameIndex += 1) {
+        const previousFrame = frames[frameIndex - 1];
+        const frame = frames[frameIndex];
+
+        if (previousFrame?.atlasIndex === undefined || frame?.atlasIndex === undefined) {
+          continue;
+        }
+
+        transitions.push({
+          tileId: tile.id,
+          tileName: tile.name,
+          sourcePath: `liquidRender.variantRenderByCardinalMask[${cardinalMask}].frames[${frameIndex}].atlasIndex`,
+          previousFrameIndex: frameIndex - 1,
+          previousAtlasIndex: previousFrame.atlasIndex,
+          frameIndex,
+          atlasIndex: frame.atlasIndex
+        });
+      }
+    });
+
     return transitions;
   });
 
-const collectNamedDirectRenderUvRectSources = (): NamedDirectRenderUvRectSource[] => [
-  ...collectDirectRenderUvRectSources().map((source) => ({
-    ...source,
-    sourcePath: 'render.uvRect'
-  })),
-  ...collectAnimatedDirectRenderUvRectFrameSources().map((source) => ({
-    tileId: source.tileId,
-    tileName: source.tileName,
-    sourcePath: `render.frames[${source.frameIndex}].uvRect`,
-    uvRect: source.uvRect
-  }))
+const collectNamedDirectRenderUvRectSources = (): DirectRenderUvRectSource[] => [
+  ...collectDirectRenderUvRectSources(),
+  ...collectAnimatedDirectRenderUvRectFrameSources()
 ];
 
 const uvRectToPixelRegion = (
@@ -780,14 +899,16 @@ describe('authored atlas asset', () => {
     const animatedDirectUvRectFrameSources = collectAnimatedDirectRenderUvRectFrameSources();
 
     expect(animatedDirectUvRectFrameSources.length).toBeGreaterThan(1);
-    expect(animatedDirectUvRectFrameSources.some((source) => source.frameIndex > 0)).toBe(true);
+    expect(animatedDirectUvRectFrameSources.some((source) => source.sourcePath.includes('.frames[1].'))).toBe(
+      true
+    );
 
     for (const source of animatedDirectUvRectFrameSources) {
       const tile = TILE_METADATA.tiles.find((candidate) => candidate.id === source.tileId);
       expect(tile).toBeDefined();
 
       const warnings = collectAtlasValidationWarnings([tile!], pngWidth, pngHeight).filter(
-        (warning) => warning.sourcePath === `render.frames[${source.frameIndex}].uvRect`
+        (warning) => warning.sourcePath === source.sourcePath
       );
 
       expect(warnings).toEqual([]);
@@ -799,7 +920,9 @@ describe('authored atlas asset', () => {
     const animatedDirectUvRectFrameSources = collectAnimatedDirectRenderUvRectFrameSources();
 
     expect(animatedDirectUvRectFrameSources.length).toBeGreaterThan(1);
-    expect(animatedDirectUvRectFrameSources.some((source) => source.frameIndex > 0)).toBe(true);
+    expect(animatedDirectUvRectFrameSources.some((source) => source.sourcePath.includes('.frames[1].'))).toBe(
+      true
+    );
 
     for (const source of animatedDirectUvRectFrameSources) {
       const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
@@ -824,7 +947,7 @@ describe('authored atlas asset', () => {
 
       if (regionsMatchForVisibleContent(rgbaPixels, pngWidth, previousRegion, region)) {
         throw new Error(
-          `tile ${transition.tileId} "${transition.tileName}" frame ${transition.frameIndex} matches frame ${transition.previousFrameIndex} in the committed atlas PNG`
+          `tile ${transition.tileId} "${transition.tileName}" ${transition.sourcePath} matches the prior committed PNG frame`
         );
       }
     }
@@ -835,7 +958,9 @@ describe('authored atlas asset', () => {
     const animatedDirectUvRectFrameSources = collectAnimatedDirectRenderUvRectFrameSources();
 
     expect(animatedDirectUvRectFrameSources.length).toBeGreaterThan(1);
-    expect(animatedDirectUvRectFrameSources.some((source) => source.frameIndex > 0)).toBe(true);
+    expect(animatedDirectUvRectFrameSources.some((source) => source.sourcePath.includes('.frames[1].'))).toBe(
+      true
+    );
 
     for (const source of animatedDirectUvRectFrameSources) {
       const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
@@ -844,7 +969,7 @@ describe('authored atlas asset', () => {
       expect(
         spillPixel,
         spillPixel
-          ? `tile ${source.tileId} "${source.tileName}" frame ${source.frameIndex} overlaps uncovered atlas pixel (${spillPixel.x}, ${spillPixel.y}) outside authored regions`
+          ? `tile ${source.tileId} "${source.tileName}" ${source.sourcePath} overlaps uncovered atlas pixel (${spillPixel.x}, ${spillPixel.y}) outside authored regions`
           : undefined
       ).toBeNull();
     }
@@ -899,7 +1024,7 @@ describe('authored atlas asset', () => {
 
       if (regionsMatchForVisibleContent(rgbaPixels, pngWidth, previousRegion!, region!)) {
         throw new Error(
-          `tile ${transition.tileId} "${transition.tileName}" frame ${transition.frameIndex} matches frame ${transition.previousFrameIndex} in the committed atlas PNG`
+          `tile ${transition.tileId} "${transition.tileName}" ${transition.sourcePath} matches the prior committed PNG frame`
         );
       }
     }

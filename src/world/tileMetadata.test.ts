@@ -7,7 +7,9 @@ import {
 } from './autotile';
 import { AUTHORED_ATLAS_REGION_COUNT } from './authoredAtlasLayout';
 import {
+  LIQUID_RENDER_CARDINAL_MASK_COUNT,
   TILE_METADATA,
+  areLiquidRenderNeighborsConnected,
   areTerrainAutotileNeighborsConnected,
   atlasIndexToUvRect,
   doesTileBlockLight,
@@ -15,12 +17,15 @@ import {
   getAnimatedTileRenderFrameDurationMs,
   getTileLiquidKind,
   hasAnimatedTileRenderMetadata,
+  hasLiquidRenderMetadata,
   hasTerrainAutotileMetadata,
   isTileSolid,
   parseTileMetadataRegistry,
   resolveAnimatedTileRenderFrameIndexAtElapsedMs,
   resolveAnimatedTileRenderFrameUvRect,
   resolveAnimatedTileRenderFrameUvRectAtElapsedMs,
+  resolveLiquidRenderVariantMetadata,
+  resolveLiquidRenderVariantUvRect,
   resolveTileGameplayMetadata,
   resolveTerrainAutotileAtlasIndexByRawAdjacencyMask,
   resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask,
@@ -37,8 +42,13 @@ describe('tile metadata loader', () => {
     expect(hasTerrainAutotileMetadata(1)).toBe(true);
     expect(hasTerrainAutotileMetadata(2)).toBe(true);
     expect(hasTerrainAutotileMetadata(3)).toBe(false);
+    expect(hasLiquidRenderMetadata(7)).toBe(true);
+    expect(hasLiquidRenderMetadata(8)).toBe(true);
+    expect(hasLiquidRenderMetadata(3)).toBe(false);
     expect(areTerrainAutotileNeighborsConnected(1, 2)).toBe(true);
     expect(areTerrainAutotileNeighborsConnected(1, 3)).toBe(false);
+    expect(areLiquidRenderNeighborsConnected(7, 7)).toBe(true);
+    expect(areLiquidRenderNeighborsConnected(7, 8)).toBe(false);
     expect(resolveTileGameplayMetadata(0)).toEqual({ solid: false, blocksLight: false });
     expect(resolveTileGameplayMetadata(1)).toEqual({ solid: true, blocksLight: true });
     expect(isTileSolid(1)).toBe(true);
@@ -46,12 +56,17 @@ describe('tile metadata loader', () => {
     expect(doesTileBlockLight(1)).toBe(true);
     expect(doesTileBlockLight(4)).toBe(false);
     expect(getTileLiquidKind(1)).toBe(null);
+    expect(getTileLiquidKind(7)).toBe('water');
+    expect(getTileLiquidKind(8)).toBe('lava');
 
     expect(resolveTerrainAutotileVariantAtlasIndex(1, 0)).toBe(0);
     expect(resolveTerrainAutotileVariantAtlasIndex(1, 15)).toBe(15);
     expect(resolveTerrainAutotileVariantAtlasIndex(2, 6)).toBe(6);
     expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(1, 0)).toBe(0);
     expect(resolveTileRenderUvRect(3)).toEqual(atlasIndexToUvRect(14));
+    expect(resolveLiquidRenderVariantMetadata(7, 0)).toMatchObject({ atlasIndex: 14 });
+    expect(resolveLiquidRenderVariantUvRect(7, 0)).toEqual(atlasIndexToUvRect(14));
+    expect(resolveLiquidRenderVariantUvRect(8, 15)).toEqual(atlasIndexToUvRect(15));
     expect(resolveTileRenderUvRect(4)).toEqual({
       u0: 0.16666666666666666,
       v0: 0.25,
@@ -63,6 +78,7 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileVariantAtlasIndex(1, TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT)).toBe(
       null
     );
+    expect(resolveLiquidRenderVariantMetadata(7, LIQUID_RENDER_CARDINAL_MASK_COUNT)).toBe(null);
   });
 
   it('reuses cached atlas UV rect objects for atlas-index and terrain variant lookups', () => {
@@ -336,6 +352,81 @@ describe('tile metadata loader', () => {
     expect(getTileLiquidKind(12, registry)).toBe('lava');
     expect(getTileLiquidKind(7, registry)).toBe(null);
     expect(isTileSolid(-1, registry)).toBe(false);
+  });
+
+  it('builds a dense liquid connectivity lookup and preserves liquid adjacency semantics', () => {
+    const repeatedLiquidVariantMap = Array.from({ length: LIQUID_RENDER_CARDINAL_MASK_COUNT }, () => ({
+      atlasIndex: 14
+    }));
+    const registry = parseTileMetadataRegistry({
+      tiles: [
+        {
+          id: 0,
+          name: 'empty',
+          gameplay: { solid: false, blocksLight: false }
+        },
+        {
+          id: 12,
+          name: 'water_a',
+          gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
+          liquidRender: {
+            connectivityGroup: 'water',
+            variantRenderByCardinalMask: repeatedLiquidVariantMap
+          }
+        },
+        {
+          id: 20,
+          name: 'water_b',
+          gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
+          liquidRender: {
+            connectivityGroup: 'water',
+            variantRenderByCardinalMask: repeatedLiquidVariantMap
+          }
+        },
+        {
+          id: 25,
+          name: 'lava',
+          gameplay: { solid: false, blocksLight: true, liquidKind: 'lava' },
+          liquidRender: {
+            connectivityGroup: 'lava',
+            variantRenderByCardinalMask: repeatedLiquidVariantMap
+          }
+        },
+        {
+          id: 30,
+          name: 'sludge',
+          gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
+          liquidRender: {
+            variantRenderByCardinalMask: repeatedLiquidVariantMap
+          }
+        },
+        {
+          id: 40,
+          name: 'soft_decor',
+          render: { atlasIndex: 0 }
+        }
+      ]
+    });
+
+    expect(registry.liquidConnectivityLookup.connectivityGroupIdByTileId).toBeInstanceOf(Int32Array);
+    expect(registry.liquidConnectivityLookup.connectivityGroupIdByTileId.length).toBe(41);
+    expect(registry.renderLookup.liquidVariantRenderByTileIdAndCardinalMask.length).toBe(
+      41 * LIQUID_RENDER_CARDINAL_MASK_COUNT
+    );
+    expect(registry.renderLookup.liquidVariantStaticUvRectByTileIdAndCardinalMask.length).toBe(
+      41 * LIQUID_RENDER_CARDINAL_MASK_COUNT
+    );
+
+    expect(areLiquidRenderNeighborsConnected(12, 20, registry)).toBe(true);
+    expect(areLiquidRenderNeighborsConnected(12, 25, registry)).toBe(false);
+    expect(areLiquidRenderNeighborsConnected(30, 30, registry)).toBe(true);
+    expect(areLiquidRenderNeighborsConnected(30, 12, registry)).toBe(false);
+    expect(areLiquidRenderNeighborsConnected(12, 40, registry)).toBe(false);
+    expect(hasLiquidRenderMetadata(30, registry)).toBe(true);
+    expect(resolveLiquidRenderVariantMetadata(12, 0, registry)).toMatchObject({ atlasIndex: 14 });
+    expect(resolveLiquidRenderVariantUvRect(12, 0, registry)).toBe(atlasIndexToUvRect(14));
+    expect(resolveLiquidRenderVariantUvRect(12, -1, registry)).toBe(null);
+    expect(resolveLiquidRenderVariantUvRect(12, LIQUID_RENDER_CARDINAL_MASK_COUNT, registry)).toBe(null);
   });
 
   it('builds dense render lookup tables for static UVs and terrain variants', () => {
@@ -646,7 +737,70 @@ describe('tile metadata loader', () => {
       parseTileMetadataRegistry({
         tiles: [{ id: 7, name: 'missing_render' }]
       })
-    ).toThrowError(/must define render or terrainAutotile metadata/);
+    ).toThrowError(/must define render, terrainAutotile, or liquidRender metadata/);
+  });
+
+  it('rejects invalid liquid render metadata', () => {
+    expect(() =>
+      parseTileMetadataRegistry({
+        tiles: [
+          {
+            id: 7,
+            name: 'bad_liquid_variant_count',
+            gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
+            liquidRender: {
+              variantRenderByCardinalMask: Array.from(
+                { length: LIQUID_RENDER_CARDINAL_MASK_COUNT - 1 },
+                () => ({ atlasIndex: 1 })
+              )
+            }
+          }
+        ]
+      })
+    ).toThrowError(
+      new RegExp(`liquidRender\\.variantRenderByCardinalMask must have ${LIQUID_RENDER_CARDINAL_MASK_COUNT} entries`)
+    );
+
+    expect(() =>
+      parseTileMetadataRegistry({
+        tiles: [
+          {
+            id: 7,
+            name: 'liquid_without_kind',
+            liquidRender: {
+              variantRenderByCardinalMask: Array.from(
+                { length: LIQUID_RENDER_CARDINAL_MASK_COUNT },
+                () => ({ atlasIndex: 1 })
+              )
+            }
+          }
+        ]
+      })
+    ).toThrowError(/liquidRender requires gameplay\.liquidKind/);
+
+    expect(() =>
+      parseTileMetadataRegistry({
+        tiles: [
+          {
+            id: 7,
+            name: 'liquid_terrain_hybrid',
+            gameplay: { solid: false, blocksLight: false, liquidKind: 'water' },
+            terrainAutotile: {
+              placeholderVariantAtlasByCardinalMask: Array.from(
+                { length: TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT },
+                (_, index) => index
+              )
+            },
+            liquidRender: {
+              variantRenderByCardinalMask: Array.from(
+                { length: LIQUID_RENDER_CARDINAL_MASK_COUNT },
+                () => ({ atlasIndex: 1 })
+              )
+            }
+          }
+        ]
+      })
+    ).toThrowError(/cannot define both terrainAutotile and liquidRender/);
   });
 
   it('rejects render metadata that defines both atlasIndex and uvRect', () => {
