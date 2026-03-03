@@ -120,6 +120,13 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose and live jump-pressed player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: jump-rise\nJumpPressedNow: on')).toEqual([
+      ['Pose: jump-rise'],
+      ['JumpPressedNow: on']
+    ]);
+  });
+
   it('preserves separate pose and live bonk-hold player lines while keeping each line individually wrappable', () => {
     expect(buildWrappedDetailLines('Pose: ceiling-bonk\nBonkHold: on')).toEqual([
       ['Pose: ceiling-bonk'],
@@ -166,6 +173,24 @@ describe('buildWrappedDetailLines', () => {
       ['GroundedNow: off'],
       ['FacingNow: right'],
       ['MoveXNow: 1'],
+      ['SupportNow: tile 4,-1 (#6)'],
+      ['WallNow: tile 5,-3 (#7, right)'],
+      ['CeilingNow: tile 2,-6 (#8)']
+    ]);
+  });
+
+  it('preserves separate pose, input-edge, and contact player lines while keeping each line individually wrappable', () => {
+    expect(
+      buildWrappedDetailLines(
+        'Pose: ceiling-bonk\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
+      )
+    ).toEqual([
+      ['Pose: ceiling-bonk'],
+      ['GroundedNow: off'],
+      ['FacingNow: right'],
+      ['MoveXNow: 1'],
+      ['JumpHeldNow: on'],
+      ['JumpPressedNow: on'],
       ['SupportNow: tile 4,-1 (#6)'],
       ['WallNow: tile 5,-3 (#7, right)'],
       ['CeilingNow: tile 2,-6 (#8)']
