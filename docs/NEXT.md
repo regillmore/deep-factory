@@ -46,5 +46,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 63. Surface standalone player wall-side direction in the debug overlay when wall-contact events block or clear on the left versus right side.
 75. Surface standalone player wall-side direction in the compact debug-edit status strip when the text debug HUD is hidden.
-79. Surface standalone player wall-contact side in the live debug overlay `Contact:` line once sided wall probes exist.
 80. Surface standalone player ceiling-bonk hold state in the live debug overlay while the renderer-side presentation latch is active.
+81. Surface standalone player ceiling-bonk hold state in the compact debug-edit status strip when the text debug HUD is hidden.

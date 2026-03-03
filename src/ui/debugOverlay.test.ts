@@ -196,7 +196,7 @@ describe('formatDebugOverlayText', () => {
         facing: 'left',
         contacts: {
           support: null,
-          wall: { tileX: 0, tileY: -1, tileId: 3 },
+          wall: { tileX: 0, tileY: -1, tileId: 3, side: 'right' },
           ceiling: { tileX: 1, tileY: -3, tileId: 5 }
         }
       },
@@ -211,7 +211,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nCeilEvt: blocked | Tile:1,-3 (#5) | Pos:24.50,-12.25 | Vel:-180.00,0.00');
     expect(text).toContain('\nAABB: min:18.50,-40.25 | max:30.50,-12.25 | size:12.00,28.00');
     expect(text).toContain('\nFollow: focus:24.50,-26.25 | offset:18.00,-6.00');
-    expect(text).toContain('\nContact: support:none | wall:0,-1 (#3) | ceiling:1,-3 (#5)');
+    expect(text).toContain('\nContact: support:none | wall:0,-1 (#3, right) | ceiling:1,-3 (#5)');
     expect(text).toContain('\nIntent: move:-1 | jumpHeld:on | jumpPressed:on');
   });
 

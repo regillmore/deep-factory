@@ -57,6 +57,16 @@ export interface DebugOverlayPlayerSpawn {
   world: { x: number; y: number };
 }
 
+interface DebugOverlayTileContact {
+  tileX: number;
+  tileY: number;
+  tileId: number;
+}
+
+interface DebugOverlayWallContact extends DebugOverlayTileContact {
+  side: 'left' | 'right';
+}
+
 export interface DebugOverlayPlayerTelemetry {
   position: { x: number; y: number };
   velocity: { x: number; y: number };
@@ -68,9 +78,9 @@ export interface DebugOverlayPlayerTelemetry {
   grounded: boolean;
   facing: 'left' | 'right';
   contacts: {
-    support: { tileX: number; tileY: number; tileId: number } | null;
-    wall: { tileX: number; tileY: number; tileId: number } | null;
-    ceiling: { tileX: number; tileY: number; tileId: number } | null;
+    support: DebugOverlayTileContact | null;
+    wall: DebugOverlayWallContact | null;
+    ceiling: DebugOverlayTileContact | null;
   };
 }
 
@@ -244,14 +254,20 @@ const formatPlayerCameraFollowLine = (
   );
 };
 
-const formatPlayerContact = (
-  contact: { tileX: number; tileY: number; tileId: number } | null
-): string => {
+const formatPlayerContact = (contact: DebugOverlayTileContact | null): string => {
   if (!contact) {
     return 'none';
   }
 
   return `${contact.tileX},${contact.tileY} (#${contact.tileId})`;
+};
+
+const formatPlayerWallContact = (contact: DebugOverlayWallContact | null): string => {
+  if (!contact) {
+    return 'none';
+  }
+
+  return `${contact.tileX},${contact.tileY} (#${contact.tileId}, ${contact.side})`;
 };
 
 const formatPlayerContactsLine = (player: DebugOverlayPlayerTelemetry | null): string => {
@@ -261,7 +277,7 @@ const formatPlayerContactsLine = (player: DebugOverlayPlayerTelemetry | null): s
 
   return (
     `Contact: support:${formatPlayerContact(player.contacts.support)} | ` +
-    `wall:${formatPlayerContact(player.contacts.wall)} | ` +
+    `wall:${formatPlayerWallContact(player.contacts.wall)} | ` +
     `ceiling:${formatPlayerContact(player.contacts.ceiling)}`
   );
 };

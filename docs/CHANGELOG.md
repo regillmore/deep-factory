@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-03
 
+- Task: Surface standalone player wall-contact side in the live debug overlay `Contact:` line once sided wall probes exist.
+- Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so live player contact telemetry now labels wall collisions with their resolved `left` or `right` blocking side, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the paused-main-menu fresh-world reset consequence in shell copy so the destructive action reads clearly before activation.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) to own the paused main-menu shell copy through a shared state helper with explicit fresh-world reset wording, wired [src/main.ts](../src/main.ts) to reuse that shell state, refreshed [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused paused-menu copy coverage, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/appShell.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
