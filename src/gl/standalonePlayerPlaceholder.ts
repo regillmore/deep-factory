@@ -12,6 +12,7 @@ export const STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL = 4;
 export const STANDALONE_PLAYER_PLACEHOLDER_POSE_WALL_SLIDE = 5;
 export const STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK = 6;
 export const STANDALONE_PLAYER_PLACEHOLDER_WALK_FRAME_DURATION_MS = 120;
+export const STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS = 96;
 
 const STANDALONE_PLAYER_PLACEHOLDER_WALK_SPEED_THRESHOLD = 1;
 
@@ -19,6 +20,7 @@ export interface StandalonePlayerPlaceholderPoseOptions {
   elapsedMs?: number;
   wallContact?: PlayerCollisionContacts['wall'] | null;
   ceilingContact?: PlayerCollisionContacts['ceiling'] | null;
+  ceilingBonkActive?: boolean;
 }
 
 export const buildStandalonePlayerPlaceholderVertices = (state: PlayerState): Float32Array => {
@@ -61,10 +63,11 @@ export const getStandalonePlayerPlaceholderPoseIndex = (
 ): number => {
   const wallContact = options.wallContact ?? null;
   const ceilingContact = options.ceilingContact ?? null;
+  const ceilingBonkActive = options.ceilingBonkActive ?? ceilingContact !== null;
   const elapsedMs = options.elapsedMs ?? 0;
 
   if (!state.grounded) {
-    if (ceilingContact !== null) {
+    if (ceilingBonkActive) {
       return STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK;
     }
 

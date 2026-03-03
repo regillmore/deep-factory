@@ -10,6 +10,7 @@ import {
 } from './core/cameraFollow';
 import { GameLoop } from './core/gameLoop';
 import { Renderer } from './gl/renderer';
+import { STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS } from './gl/standalonePlayerPlaceholder';
 import {
   InputController,
   walkEllipseOutlineTileArea,
@@ -318,6 +319,7 @@ const bootstrap = async (): Promise<void> => {
   let lastPlayerRespawnEvent: PlayerRespawnEvent | null = null;
   let lastPlayerWallContactTransitionEvent: PlayerWallContactTransitionEvent | null = null;
   let lastPlayerCeilingContactTransitionEvent: PlayerCeilingContactTransitionEvent | null = null;
+  let standalonePlayerCeilingBonkHoldUntilTimeMs: number | null = null;
 
   const applyStandalonePlayerCameraFollow = (): void => {
     if (!standalonePlayerState) {
@@ -356,6 +358,7 @@ const bootstrap = async (): Promise<void> => {
       lastPlayerRespawnEvent = null;
       lastPlayerWallContactTransitionEvent = null;
       lastPlayerCeilingContactTransitionEvent = null;
+      standalonePlayerCeilingBonkHoldUntilTimeMs = null;
       centerCameraOnStandalonePlayer();
       return;
     }
@@ -374,6 +377,7 @@ const bootstrap = async (): Promise<void> => {
             : createEmbeddedPlayerRespawnEvent(nextPlayerState, resolvedPlayerSpawn);
         lastPlayerWallContactTransitionEvent = null;
         lastPlayerCeilingContactTransitionEvent = null;
+        standalonePlayerCeilingBonkHoldUntilTimeMs = null;
       }
       standalonePlayerState = nextPlayerState;
     }
@@ -1020,6 +1024,7 @@ const bootstrap = async (): Promise<void> => {
     lastPlayerRespawnEvent = null;
     lastPlayerWallContactTransitionEvent = null;
     lastPlayerCeilingContactTransitionEvent = null;
+    standalonePlayerCeilingBonkHoldUntilTimeMs = null;
     standalonePlayerState = null;
     resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
     playerSpawnNeedsRefresh = false;
@@ -1252,7 +1257,8 @@ const bootstrap = async (): Promise<void> => {
     renderer.render(camera, {
       standalonePlayer: standalonePlayerState,
       standalonePlayerWallContact: standalonePlayerContacts?.wall ?? null,
-      standalonePlayerCeilingContact: standalonePlayerContacts?.ceiling ?? null
+      standalonePlayerCeilingContact: standalonePlayerContacts?.ceiling ?? null,
+      standalonePlayerCeilingBonkHoldUntilTimeMs: standalonePlayerCeilingBonkHoldUntilTimeMs
     });
     hoveredTileCursor.update(camera, {
       hovered: pointerInspect
@@ -1307,7 +1313,8 @@ const bootstrap = async (): Promise<void> => {
     renderer.render(camera, {
       standalonePlayer: standalonePlayerState,
       standalonePlayerWallContact: standalonePlayerContacts?.wall ?? null,
-      standalonePlayerCeilingContact: standalonePlayerContacts?.ceiling ?? null
+      standalonePlayerCeilingContact: standalonePlayerContacts?.ceiling ?? null,
+      standalonePlayerCeilingBonkHoldUntilTimeMs: standalonePlayerCeilingBonkHoldUntilTimeMs
     });
   };
 
@@ -1472,6 +1479,10 @@ const bootstrap = async (): Promise<void> => {
         }
         if (ceilingContactTransitionEvent !== null) {
           lastPlayerCeilingContactTransitionEvent = ceilingContactTransitionEvent;
+          if (ceilingContactTransitionEvent.kind === 'blocked') {
+            standalonePlayerCeilingBonkHoldUntilTimeMs =
+              performance.now() + STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS;
+          }
         }
         applyStandalonePlayerCameraFollow();
       }

@@ -63,6 +63,7 @@ export interface RendererFrameState {
   standalonePlayer?: PlayerState | null;
   standalonePlayerWallContact?: PlayerCollisionContacts['wall'] | null;
   standalonePlayerCeilingContact?: PlayerCollisionContacts['ceiling'] | null;
+  standalonePlayerCeilingBonkHoldUntilTimeMs?: number | null;
   timeMs?: number;
 }
 
@@ -446,6 +447,7 @@ export class Renderer {
         frameState.standalonePlayer,
         frameState.standalonePlayerWallContact ?? null,
         frameState.standalonePlayerCeilingContact ?? null,
+        frameState.standalonePlayerCeilingBonkHoldUntilTimeMs ?? null,
         worldToClipMatrix,
         timeMs
       );
@@ -687,6 +689,7 @@ export class Renderer {
     state: PlayerState,
     wallContact: PlayerCollisionContacts['wall'] | null,
     ceilingContact: PlayerCollisionContacts['ceiling'] | null,
+    ceilingBonkHoldUntilTimeMs: number | null,
     worldToClipMatrix: Float32Array,
     timeMs: number
   ): void {
@@ -696,7 +699,16 @@ export class Renderer {
     gl.uniform1f(this.uPlayerFacingSign, getStandalonePlayerPlaceholderFacingSign(state));
     gl.uniform1f(
       this.uPlayerPoseIndex,
-      getStandalonePlayerPlaceholderPoseIndex(state, { elapsedMs: timeMs, wallContact, ceilingContact })
+      getStandalonePlayerPlaceholderPoseIndex(state, {
+        elapsedMs: timeMs,
+        wallContact,
+        ceilingContact,
+        ceilingBonkActive:
+          ceilingContact !== null ||
+          (ceilingBonkHoldUntilTimeMs !== null && Number.isFinite(ceilingBonkHoldUntilTimeMs)
+            ? timeMs < ceilingBonkHoldUntilTimeMs
+            : false)
+      })
     );
     gl.bindBuffer(gl.ARRAY_BUFFER, this.standalonePlayerBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, buildStandalonePlayerPlaceholderVertices(state), gl.DYNAMIC_DRAW);

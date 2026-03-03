@@ -5,6 +5,7 @@ import {
   buildStandalonePlayerPlaceholderVertices,
   getStandalonePlayerPlaceholderFacingSign,
   getStandalonePlayerPlaceholderPoseIndex,
+  STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_IDLE,
@@ -115,6 +116,31 @@ describe('standalonePlayerPlaceholder', () => {
         }
       )
     ).toBe(STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK);
+  });
+
+  it('can keep the ceiling-bonk pose latched briefly after contact clears', () => {
+    expect(
+      getStandalonePlayerPlaceholderPoseIndex(
+        createPlayerState({
+          grounded: false,
+          velocity: { x: 0, y: 60 }
+        }),
+        {
+          ceilingBonkActive: true,
+          elapsedMs: STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS - 1
+        }
+      )
+    ).toBe(STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK);
+
+    expect(
+      getStandalonePlayerPlaceholderPoseIndex(
+        createPlayerState({
+          grounded: false,
+          velocity: { x: 0, y: 60 }
+        }),
+        {}
+      )
+    ).toBe(STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL);
   });
 
   it('alternates grounded walk placeholder poses while horizontal movement is active', () => {

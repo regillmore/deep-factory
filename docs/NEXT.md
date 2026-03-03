@@ -42,7 +42,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 66. Surface the in-world recenter-camera shortcut in shell copy once the keyboard action exists.
 67. Surface the in-world debug-HUD shortcut in shell copy once the keyboard action exists.
 68. Surface the in-world spawn-marker shortcut in shell copy once the keyboard action exists.
-77. Pass resolved left/right wall-contact side into the renderer-side standalone player draw pass and mirror the wall-slide placeholder lean away from the blocking side.
+78. Pass resolved left/right wall-contact side into the renderer-side standalone player draw pass and mirror the wall-slide placeholder lean away from the blocking side.
 
 ## Player debugging
 
