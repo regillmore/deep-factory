@@ -42,6 +42,7 @@ export interface DebugOverlayPointerInspect {
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
+  liquidAnimationFrameCount?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
@@ -61,6 +62,7 @@ export interface DebugOverlayTileInspect {
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
+  liquidAnimationFrameCount?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
@@ -163,6 +165,18 @@ export interface DebugOverlayInspectState {
 const formatFloat = (value: number, digits: number): string => value.toFixed(digits);
 const formatInt = (value: number): string => Math.round(value).toString();
 const formatGameplayFlag = (value: boolean): string => (value ? 'on' : 'off');
+const formatLiquidAnimationFrame = (
+  frameIndex: number | null | undefined,
+  frameCount: number | null | undefined
+): string | null => {
+  if (typeof frameIndex !== 'number') {
+    return null;
+  }
+  if (typeof frameCount === 'number' && frameCount > 0) {
+    return `${frameIndex}/${frameCount}`;
+  }
+  return `${frameIndex}`;
+};
 const formatLiquidCardinalMask = (value: number): string => {
   const mask = value & 0xf;
   return (
@@ -206,32 +220,40 @@ const formatTileIdentity = (tileInspect: DebugOverlayTileInspect): string | null
   return null;
 };
 
-const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string =>
-  typeof tileInspect.solid === 'boolean' && typeof tileInspect.blocksLight === 'boolean'
-    ? ` | solid:${formatGameplayFlag(tileInspect.solid)}` +
-      ` | light:${formatGameplayFlag(tileInspect.blocksLight)}` +
-      ` | liquid:${tileInspect.liquidKind ?? 'none'}` +
-      (typeof tileInspect.liquidConnectivityGroupLabel === 'string' &&
-      tileInspect.liquidConnectivityGroupLabel.length > 0
-        ? ` | liquidGroup:${tileInspect.liquidConnectivityGroupLabel}`
-        : '') +
-      (typeof tileInspect.liquidCardinalMask === 'number'
-        ? ` | liquidMask:${formatLiquidCardinalMask(tileInspect.liquidCardinalMask)}`
-        : '') +
-      (typeof tileInspect.liquidAnimationFrameIndex === 'number'
-        ? ` | liquidFrame:${tileInspect.liquidAnimationFrameIndex}`
-        : '') +
-      (typeof tileInspect.liquidVariantSource === 'string' && tileInspect.liquidVariantSource.length > 0
-        ? ` | liquidSrc:${tileInspect.liquidVariantSource}`
-        : '') +
-      (typeof tileInspect.liquidVariantUvRect === 'string' && tileInspect.liquidVariantUvRect.length > 0
-        ? ` | liquidUv:${tileInspect.liquidVariantUvRect}`
-        : '') +
-      (typeof tileInspect.liquidVariantPixelBounds === 'string' &&
-      tileInspect.liquidVariantPixelBounds.length > 0
-        ? ` | liquidPx:${tileInspect.liquidVariantPixelBounds}`
-        : '')
-    : '';
+const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
+  if (typeof tileInspect.solid !== 'boolean' || typeof tileInspect.blocksLight !== 'boolean') {
+    return '';
+  }
+
+  const liquidAnimationFrame = formatLiquidAnimationFrame(
+    tileInspect.liquidAnimationFrameIndex,
+    tileInspect.liquidAnimationFrameCount
+  );
+
+  return (
+    ` | solid:${formatGameplayFlag(tileInspect.solid)}` +
+    ` | light:${formatGameplayFlag(tileInspect.blocksLight)}` +
+    ` | liquid:${tileInspect.liquidKind ?? 'none'}` +
+    (typeof tileInspect.liquidConnectivityGroupLabel === 'string' &&
+    tileInspect.liquidConnectivityGroupLabel.length > 0
+      ? ` | liquidGroup:${tileInspect.liquidConnectivityGroupLabel}`
+      : '') +
+    (typeof tileInspect.liquidCardinalMask === 'number'
+      ? ` | liquidMask:${formatLiquidCardinalMask(tileInspect.liquidCardinalMask)}`
+      : '') +
+    (liquidAnimationFrame ? ` | liquidFrame:${liquidAnimationFrame}` : '') +
+    (typeof tileInspect.liquidVariantSource === 'string' && tileInspect.liquidVariantSource.length > 0
+      ? ` | liquidSrc:${tileInspect.liquidVariantSource}`
+      : '') +
+    (typeof tileInspect.liquidVariantUvRect === 'string' && tileInspect.liquidVariantUvRect.length > 0
+      ? ` | liquidUv:${tileInspect.liquidVariantUvRect}`
+      : '') +
+    (typeof tileInspect.liquidVariantPixelBounds === 'string' &&
+    tileInspect.liquidVariantPixelBounds.length > 0
+      ? ` | liquidPx:${tileInspect.liquidVariantPixelBounds}`
+      : '')
+  );
+};
 
 const formatTileLocation = (tileInspect: DebugOverlayTileInspect): string => {
   const { chunkX, chunkY } = worldToChunkCoord(tileInspect.tile.x, tileInspect.tile.y);

@@ -1204,6 +1204,7 @@ describe('buildDebugEditStatusStripModel', () => {
         liquidConnectivityGroupLabel: 'lava',
         liquidCardinalMask: 11,
         liquidAnimationFrameIndex: 1,
+        liquidAnimationFrameCount: 2,
         liquidVariantSource: 'atlasIndex 14',
         liquidVariantUvRect: '0.333,0.75..0.5,1',
         liquidVariantPixelBounds: '32,48..48,64'
@@ -1211,7 +1212,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Hover: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1 | liquidSrc:atlasIndex 14 | liquidUv:0.333,0.75..0.5,1 | liquidPx:32,48..48,64'
+      'Hover: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidSrc:atlasIndex 14 | liquidUv:0.333,0.75..0.5,1 | liquidPx:32,48..48,64'
     );
   });
 

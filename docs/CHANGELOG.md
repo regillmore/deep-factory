@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-03
 
+- Task: Surface the resolved liquid animation frame count beside the frame index in debug inspect readouts.
+- Changes: Updated [src/main.ts](../src/main.ts) to carry the resolved animated liquid frame count through hovered and pinned inspect snapshots, refreshed [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) and [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so both debug readouts format liquid animation as `liquidFrame:index/count`, extended [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts`.
+
 - Task: Break out animated liquid quad counts from other animated chunk telemetry in the renderer debug HUD.
 - Changes: Updated [src/gl/animatedChunkMesh.ts](../src/gl/animatedChunkMesh.ts) plus [src/gl/animatedChunkMesh.test.ts](../src/gl/animatedChunkMesh.test.ts) so animated frame application reports liquid-changed quad counts beside total changes, refreshed [src/gl/renderer.ts](../src/gl/renderer.ts) plus [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so renderer telemetry tracks resident and per-frame animated liquid quad counts separately from total animated quads, updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so the text HUD shows `nonLiquid` and `liquid` quad breakdowns alongside existing aggregate counts, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/gl/animatedChunkMesh.test.ts src/gl/renderer.test.ts src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

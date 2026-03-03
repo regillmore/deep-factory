@@ -82,6 +82,7 @@ export interface DebugEditHoveredTileState {
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
+  liquidAnimationFrameCount?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
@@ -412,6 +413,18 @@ const formatLiquidCardinalMask = (value: number): string => {
     ` (${mask})`
   );
 };
+const formatLiquidAnimationFrame = (
+  frameIndex: number | null | undefined,
+  frameCount: number | null | undefined
+): string | null => {
+  if (typeof frameIndex !== 'number') {
+    return null;
+  }
+  if (typeof frameCount === 'number' && frameCount > 0) {
+    return `${frameIndex}/${frameCount}`;
+  }
+  return `${frameIndex}`;
+};
 
 const hasSameInspectTarget = (
   hoveredTile: DebugEditHoveredTileState | null,
@@ -422,31 +435,37 @@ const hasSameInspectTarget = (
   hoveredTile.tileX === pinnedTile.tileX &&
   hoveredTile.tileY === pinnedTile.tileY;
 
-const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): string =>
-  `${label}: ${tile.tileLabel} (#${tile.tileId}) @ ${tile.tileX},${tile.tileY}` +
-  ` chunk:${tile.chunkX},${tile.chunkY}` +
-  ` local:${tile.localX},${tile.localY}` +
-  ` | solid:${formatHoveredTileFlag(tile.solid)}` +
-  ` | light:${formatHoveredTileFlag(tile.blocksLight)}` +
-  ` | liquid:${tile.liquidKind ?? 'none'}` +
-  (typeof tile.liquidConnectivityGroupLabel === 'string' && tile.liquidConnectivityGroupLabel.length > 0
-    ? ` | liquidGroup:${tile.liquidConnectivityGroupLabel}`
-    : '') +
-  (typeof tile.liquidCardinalMask === 'number'
-    ? ` | liquidMask:${formatLiquidCardinalMask(tile.liquidCardinalMask)}`
-    : '') +
-  (typeof tile.liquidAnimationFrameIndex === 'number'
-    ? ` | liquidFrame:${tile.liquidAnimationFrameIndex}`
-    : '') +
-  (typeof tile.liquidVariantSource === 'string' && tile.liquidVariantSource.length > 0
-    ? ` | liquidSrc:${tile.liquidVariantSource}`
-    : '') +
-  (typeof tile.liquidVariantUvRect === 'string' && tile.liquidVariantUvRect.length > 0
-    ? ` | liquidUv:${tile.liquidVariantUvRect}`
-    : '') +
-  (typeof tile.liquidVariantPixelBounds === 'string' && tile.liquidVariantPixelBounds.length > 0
-    ? ` | liquidPx:${tile.liquidVariantPixelBounds}`
-    : '');
+const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): string => {
+  const liquidAnimationFrame = formatLiquidAnimationFrame(
+    tile.liquidAnimationFrameIndex,
+    tile.liquidAnimationFrameCount
+  );
+
+  return (
+    `${label}: ${tile.tileLabel} (#${tile.tileId}) @ ${tile.tileX},${tile.tileY}` +
+    ` chunk:${tile.chunkX},${tile.chunkY}` +
+    ` local:${tile.localX},${tile.localY}` +
+    ` | solid:${formatHoveredTileFlag(tile.solid)}` +
+    ` | light:${formatHoveredTileFlag(tile.blocksLight)}` +
+    ` | liquid:${tile.liquidKind ?? 'none'}` +
+    (typeof tile.liquidConnectivityGroupLabel === 'string' && tile.liquidConnectivityGroupLabel.length > 0
+      ? ` | liquidGroup:${tile.liquidConnectivityGroupLabel}`
+      : '') +
+    (typeof tile.liquidCardinalMask === 'number'
+      ? ` | liquidMask:${formatLiquidCardinalMask(tile.liquidCardinalMask)}`
+      : '') +
+    (liquidAnimationFrame ? ` | liquidFrame:${liquidAnimationFrame}` : '') +
+    (typeof tile.liquidVariantSource === 'string' && tile.liquidVariantSource.length > 0
+      ? ` | liquidSrc:${tile.liquidVariantSource}`
+      : '') +
+    (typeof tile.liquidVariantUvRect === 'string' && tile.liquidVariantUvRect.length > 0
+      ? ` | liquidUv:${tile.liquidVariantUvRect}`
+      : '') +
+    (typeof tile.liquidVariantPixelBounds === 'string' && tile.liquidVariantPixelBounds.length > 0
+      ? ` | liquidPx:${tile.liquidVariantPixelBounds}`
+      : '')
+  );
+};
 
 const formatSignedOffset = (value: number): string => (value >= 0 ? `+${value}` : `${value}`);
 
