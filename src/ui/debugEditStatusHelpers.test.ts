@@ -163,6 +163,22 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats the live standalone player jump-held input state for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerJumpHeld: true,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('JumpHeldNow: on');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the renderer-side standalone player ceiling-bonk hold state for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -302,6 +318,23 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.playerText).toBe('Pose: grounded-idle\nFacingNow: right');
+    expect(model.eventText).toBeNull();
+  });
+
+  it('keeps pose and live jump-held telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'jump-rise',
+      playerJumpHeld: true,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: jump-rise\nJumpHeldNow: on');
     expect(model.eventText).toBeNull();
   });
 

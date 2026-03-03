@@ -106,6 +106,13 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose and live jump-held player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: jump-rise\nJumpHeldNow: on')).toEqual([
+      ['Pose: jump-rise'],
+      ['JumpHeldNow: on']
+    ]);
+  });
+
   it('preserves separate pose and live bonk-hold player lines while keeping each line individually wrappable', () => {
     expect(buildWrappedDetailLines('Pose: ceiling-bonk\nBonkHold: on')).toEqual([
       ['Pose: ceiling-bonk'],
