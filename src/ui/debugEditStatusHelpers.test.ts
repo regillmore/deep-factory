@@ -230,6 +230,23 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats the live standalone player speed magnitude for the compact strip when both velocity components are provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerVelocityX: 3,
+      playerVelocityY: 4,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('VelXNow: 3.00\nVelYNow: 4.00\nSpeedNow: 5.00');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the live standalone player jump-held input state for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -475,6 +492,26 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('keeps pose, live velocity, and live speed-magnitude telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'jump-rise',
+      playerVelocityX: 120,
+      playerVelocityY: -160,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe(
+      'Pose: jump-rise\nVelXNow: 120.00\nVelYNow: -160.00\nSpeedNow: 200.00'
+    );
+    expect(model.eventText).toBeNull();
+  });
+
   it('keeps pose and live jump-held telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -628,7 +665,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose, grounded, facing, move-axis, horizontal and vertical velocity, jump-held, jump-pressed, and contact telemetry on separate player lines', () => {
+  it('keeps pose, grounded, facing, horizontal and vertical velocity, speed magnitude, jump telemetry, and contact telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -668,6 +705,7 @@ describe('buildDebugEditStatusStripModel', () => {
         'MoveXNow: 1\n' +
         'VelXNow: 180.00\n' +
         'VelYNow: -210.00\n' +
+        'SpeedNow: 276.59\n' +
         'JumpHeldNow: on\n' +
         'JumpPressedNow: on\n' +
         'SupportNow: tile 4,-1 (#6)\n' +

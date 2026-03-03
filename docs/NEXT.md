@@ -46,7 +46,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Player debugging
 
-92. Surface standalone player live speed magnitude in the compact debug-edit status strip when the text debug HUD is hidden.
 95. Surface standalone player live collision AABB min/max in the compact debug-edit status strip when the text debug HUD is hidden.
+101. Surface standalone player live collision AABB size in the compact debug-edit status strip when the text debug HUD is hidden.
 
 ## Project structure optimization

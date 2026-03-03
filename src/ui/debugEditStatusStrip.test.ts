@@ -139,6 +139,17 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose, live velocity, and live speed-magnitude player lines while keeping each line individually wrappable', () => {
+    expect(
+      buildWrappedDetailLines('Pose: jump-rise\nVelXNow: 120.00\nVelYNow: -160.00\nSpeedNow: 200.00')
+    ).toEqual([
+      ['Pose: jump-rise'],
+      ['VelXNow: 120.00'],
+      ['VelYNow: -160.00'],
+      ['SpeedNow: 200.00']
+    ]);
+  });
+
   it('preserves separate pose and live jump-held player lines while keeping each line individually wrappable', () => {
     expect(buildWrappedDetailLines('Pose: jump-rise\nJumpHeldNow: on')).toEqual([
       ['Pose: jump-rise'],
@@ -207,10 +218,10 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
-  it('preserves separate pose, input-edge, horizontal and vertical velocity, and contact player lines while keeping each line individually wrappable', () => {
+  it('preserves separate pose, input-edge, horizontal and vertical velocity, speed magnitude, and contact player lines while keeping each line individually wrappable', () => {
     expect(
       buildWrappedDetailLines(
-        'Pose: ceiling-bonk\nPosNow: 72.00,-48.00\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nVelYNow: -210.00\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
+        'Pose: ceiling-bonk\nPosNow: 72.00,-48.00\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nVelYNow: -210.00\nSpeedNow: 276.59\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
       )
     ).toEqual([
       ['Pose: ceiling-bonk'],
@@ -220,6 +231,7 @@ describe('buildWrappedDetailLines', () => {
       ['MoveXNow: 1'],
       ['VelXNow: 180.00'],
       ['VelYNow: -210.00'],
+      ['SpeedNow: 276.59'],
       ['JumpHeldNow: on'],
       ['JumpPressedNow: on'],
       ['SupportNow: tile 4,-1 (#6)'],

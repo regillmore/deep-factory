@@ -538,6 +538,17 @@ const formatLiveVelocityYText = (playerVelocityY: number | null): string | null 
   return `VelYNow: ${playerVelocityY.toFixed(2)}`;
 };
 
+const formatLiveSpeedMagnitudeText = (
+  playerVelocityX: number | null,
+  playerVelocityY: number | null
+): string | null => {
+  if (playerVelocityX === null || playerVelocityY === null) {
+    return null;
+  }
+
+  return `SpeedNow: ${Math.hypot(playerVelocityX, playerVelocityY).toFixed(2)}`;
+};
+
 const formatLiveJumpHeldText = (playerJumpHeld: boolean | null): string | null => {
   if (playerJumpHeld === null) {
     return null;
@@ -599,6 +610,7 @@ const buildPlayerText = (
     formatLiveMoveXText(playerMoveX),
     formatLiveVelocityXText(playerVelocityX),
     formatLiveVelocityYText(playerVelocityY),
+    formatLiveSpeedMagnitudeText(playerVelocityX, playerVelocityY),
     formatLiveJumpHeldText(playerJumpHeld),
     formatLiveJumpPressedText(playerJumpPressed),
     formatLiveSupportContactText(playerSupportContact),
