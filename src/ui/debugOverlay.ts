@@ -45,6 +45,7 @@ export interface DebugOverlayPointerInspect {
   liquidAnimationFrameCount?: number | null;
   liquidAnimationFrameDurationMs?: number | null;
   liquidAnimationFrameElapsedMs?: number | null;
+  liquidAnimationFrameRemainingMs?: number | null;
   liquidAnimationLoopDurationMs?: number | null;
   liquidAnimationLoopElapsedMs?: number | null;
   liquidVariantSource?: string | null;
@@ -69,6 +70,7 @@ export interface DebugOverlayTileInspect {
   liquidAnimationFrameCount?: number | null;
   liquidAnimationFrameDurationMs?: number | null;
   liquidAnimationFrameElapsedMs?: number | null;
+  liquidAnimationFrameRemainingMs?: number | null;
   liquidAnimationLoopDurationMs?: number | null;
   liquidAnimationLoopElapsedMs?: number | null;
   liquidVariantSource?: string | null;
@@ -245,6 +247,7 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
   );
   const liquidAnimationFrameDuration = formatDurationMs(tileInspect.liquidAnimationFrameDurationMs);
   const liquidAnimationFrameElapsed = formatDurationMs(tileInspect.liquidAnimationFrameElapsedMs);
+  const liquidAnimationFrameRemaining = formatDurationMs(tileInspect.liquidAnimationFrameRemainingMs);
   const liquidAnimationLoopDuration = formatDurationMs(tileInspect.liquidAnimationLoopDurationMs);
   const liquidAnimationLoopElapsed = formatDurationMs(tileInspect.liquidAnimationLoopElapsedMs);
 
@@ -262,6 +265,7 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     (liquidAnimationFrame ? ` | liquidFrame:${liquidAnimationFrame}` : '') +
     (liquidAnimationFrameDuration ? ` | liquidFrameDur:${liquidAnimationFrameDuration}` : '') +
     (liquidAnimationFrameElapsed ? ` | liquidFrameElapsed:${liquidAnimationFrameElapsed}` : '') +
+    (liquidAnimationFrameRemaining ? ` | liquidFrameRemain:${liquidAnimationFrameRemaining}` : '') +
     (liquidAnimationLoopDuration ? ` | liquidLoopDur:${liquidAnimationLoopDuration}` : '') +
     (liquidAnimationLoopElapsed ? ` | liquidLoopElapsed:${liquidAnimationLoopElapsed}` : '') +
     (typeof tileInspect.liquidVariantSource === 'string' && tileInspect.liquidVariantSource.length > 0

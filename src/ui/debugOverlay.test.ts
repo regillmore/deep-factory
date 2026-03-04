@@ -208,6 +208,7 @@ describe('formatDebugOverlayText', () => {
         liquidAnimationFrameCount: 2,
         liquidAnimationFrameDurationMs: 180,
         liquidAnimationFrameElapsedMs: 60,
+        liquidAnimationFrameRemainingMs: 120,
         liquidAnimationLoopDurationMs: 360,
         liquidAnimationLoopElapsedMs: 240,
         liquidVariantSource: 'atlasIndex 15',
@@ -232,6 +233,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidFrame:1/2');
     expect(text).toContain('liquidFrameDur:180ms');
     expect(text).toContain('liquidFrameElapsed:60ms');
+    expect(text).toContain('liquidFrameRemain:120ms');
     expect(text).toContain('liquidLoopDur:360ms');
     expect(text).toContain('liquidLoopElapsed:240ms');
     expect(text).toContain('liquidSrc:atlasIndex 15');
@@ -465,6 +467,7 @@ describe('formatDebugOverlayText', () => {
         liquidAnimationFrameCount: 2,
         liquidAnimationFrameDurationMs: 180,
         liquidAnimationFrameElapsedMs: 60,
+        liquidAnimationFrameRemainingMs: 120,
         liquidAnimationLoopDurationMs: 360,
         liquidAnimationLoopElapsedMs: 240,
         liquidVariantSource: 'atlasIndex 15',
@@ -492,6 +495,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidFrame:1/2');
     expect(text).toContain('liquidFrameDur:180ms');
     expect(text).toContain('liquidFrameElapsed:60ms');
+    expect(text).toContain('liquidFrameRemain:120ms');
     expect(text).toContain('liquidLoopDur:360ms');
     expect(text).toContain('liquidLoopElapsed:240ms');
     expect(text).toContain('liquidSrc:atlasIndex 15');

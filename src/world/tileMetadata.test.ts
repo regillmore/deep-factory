@@ -34,6 +34,7 @@ import {
   isTileSolid,
   parseTileMetadataRegistry,
   resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs,
+  resolveAnimatedLiquidRenderVariantFrameRemainingMsAtElapsedMs,
   resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs,
   resolveAnimatedLiquidRenderVariantLoopElapsedMsAtElapsedMs,
   resolveAnimatedLiquidRenderVariantFrameUvRect,
@@ -838,6 +839,12 @@ describe('tile metadata loader', () => {
     expect(resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs(12, 3, 181, registry)).toBe(61);
     expect(resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs(12, 3, -1, registry)).toBe(119);
     expect(resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs(12, 4, 120, registry)).toBe(null);
+    expect(resolveAnimatedLiquidRenderVariantFrameRemainingMsAtElapsedMs(12, 3, 0, registry)).toBe(120);
+    expect(resolveAnimatedLiquidRenderVariantFrameRemainingMsAtElapsedMs(12, 3, 119, registry)).toBe(1);
+    expect(resolveAnimatedLiquidRenderVariantFrameRemainingMsAtElapsedMs(12, 3, 120, registry)).toBe(120);
+    expect(resolveAnimatedLiquidRenderVariantFrameRemainingMsAtElapsedMs(12, 3, 181, registry)).toBe(59);
+    expect(resolveAnimatedLiquidRenderVariantFrameRemainingMsAtElapsedMs(12, 3, -1, registry)).toBe(1);
+    expect(resolveAnimatedLiquidRenderVariantFrameRemainingMsAtElapsedMs(12, 4, 120, registry)).toBe(null);
     expect(resolveAnimatedLiquidRenderVariantLoopElapsedMsAtElapsedMs(12, 3, 0, registry)).toBe(0);
     expect(resolveAnimatedLiquidRenderVariantLoopElapsedMsAtElapsedMs(12, 3, 119, registry)).toBe(119);
     expect(resolveAnimatedLiquidRenderVariantLoopElapsedMsAtElapsedMs(12, 3, 120, registry)).toBe(120);

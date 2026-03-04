@@ -7,8 +7,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Liquid rendering
 
 93. Populate distinct placeholder water and lava edge or surface liquid variant sources now that liquid masks resolve.
-112. Surface the resolved liquid animation remaining-in-frame time beside the frame duration and elapsed-in-frame time in debug inspect readouts.
 113. Surface the resolved liquid animation remaining-in-loop time beside the loop duration and elapsed-in-loop time in debug inspect readouts.
+114. Surface the resolved liquid animation normalized frame-progress percentage beside the frame timing fields in debug inspect readouts.
 
 ## Lighting
 

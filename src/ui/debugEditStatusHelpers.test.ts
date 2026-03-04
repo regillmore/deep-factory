@@ -1207,6 +1207,7 @@ describe('buildDebugEditStatusStripModel', () => {
         liquidAnimationFrameCount: 2,
         liquidAnimationFrameDurationMs: 180,
         liquidAnimationFrameElapsedMs: 60,
+        liquidAnimationFrameRemainingMs: 120,
         liquidAnimationLoopDurationMs: 360,
         liquidAnimationLoopElapsedMs: 240,
         liquidVariantSource: 'atlasIndex 14',
@@ -1216,7 +1217,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Hover: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidSrc:atlasIndex 14 | liquidUv:0.333,0.75..0.5,1 | liquidPx:32,48..48,64'
+      'Hover: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidSrc:atlasIndex 14 | liquidUv:0.333,0.75..0.5,1 | liquidPx:32,48..48,64'
     );
   });
 
@@ -1246,6 +1247,7 @@ describe('buildDebugEditStatusStripModel', () => {
         liquidAnimationFrameCount: 2,
         liquidAnimationFrameDurationMs: 180,
         liquidAnimationFrameElapsedMs: 60,
+        liquidAnimationFrameRemainingMs: 120,
         liquidAnimationLoopDurationMs: 360,
         liquidAnimationLoopElapsedMs: 240,
         liquidVariantSource: 'atlasIndex 15',
@@ -1255,7 +1257,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidSrc:atlasIndex 15 | liquidUv:0.5,0.75..0.667,1 | liquidPx:48,48..64,64'
+      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidSrc:atlasIndex 15 | liquidUv:0.5,0.75..0.667,1 | liquidPx:48,48..64,64'
     );
     expect(model.inspectText).toBe('Inspect: Pinned @ 12,-4');
     expect(model.inspectActionText).toBe('Repin Click');
@@ -1304,6 +1306,7 @@ describe('buildDebugEditStatusStripModel', () => {
         liquidAnimationFrameCount: 2,
         liquidAnimationFrameDurationMs: 180,
         liquidAnimationFrameElapsedMs: 60,
+        liquidAnimationFrameRemainingMs: 120,
         liquidAnimationLoopDurationMs: 360,
         liquidAnimationLoopElapsedMs: 240,
         liquidVariantSource: 'atlasIndex 15',
@@ -1313,7 +1316,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidSrc:atlasIndex 15 | liquidUv:0.5,0.75..0.667,1 | liquidPx:48,48..64,64\n' +
+      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidSrc:atlasIndex 15 | liquidUv:0.5,0.75..0.667,1 | liquidPx:48,48..64,64\n' +
         'Hover: dirt (#2) @ 4,7 chunk:0,0 local:4,7 | solid:on | light:on | liquid:none\n' +
         'Offset: Hover->Pinned x:+8 y:-11'
     );
@@ -1344,6 +1347,7 @@ describe('buildDebugEditStatusStripModel', () => {
         liquidAnimationFrameCount: 2,
         liquidAnimationFrameDurationMs: 180,
         liquidAnimationFrameElapsedMs: 60,
+        liquidAnimationFrameRemainingMs: 120,
         liquidAnimationLoopDurationMs: 360,
         liquidAnimationLoopElapsedMs: 240,
         liquidVariantSource: 'atlasIndex 15',
@@ -1368,6 +1372,7 @@ describe('buildDebugEditStatusStripModel', () => {
         liquidAnimationFrameCount: 2,
         liquidAnimationFrameDurationMs: 180,
         liquidAnimationFrameElapsedMs: 60,
+        liquidAnimationFrameRemainingMs: 120,
         liquidAnimationLoopDurationMs: 360,
         liquidAnimationLoopElapsedMs: 240,
         liquidVariantSource: 'atlasIndex 15',
@@ -1377,7 +1382,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Shared: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidSrc:atlasIndex 15 | liquidUv:0.5,0.75..0.667,1 | liquidPx:48,48..64,64'
+      'Shared: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidSrc:atlasIndex 15 | liquidUv:0.5,0.75..0.667,1 | liquidPx:48,48..64,64'
     );
     expect(model.inspectText).toBe('Inspect: Shared @ 12,-4');
   });
