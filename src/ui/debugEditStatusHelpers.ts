@@ -34,6 +34,7 @@ export interface DebugEditStatusStripState {
   playerWorldPosition?: { x: number; y: number } | null;
   playerAabb?: DebugEditStatusStripPlayerAabbTelemetry | null;
   playerCameraFollowOffset?: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null;
+  playerCameraZoom?: number | null;
   playerCeilingBonkHoldActive?: boolean | null;
   playerGrounded?: boolean | null;
   playerFacing?: PlayerFacing | null;
@@ -620,6 +621,14 @@ const formatLiveCameraFollowOffsetText = (
   );
 };
 
+const formatLiveCameraZoomText = (playerCameraZoom: number | null): string | null => {
+  if (playerCameraZoom === null) {
+    return null;
+  }
+
+  return `ZoomNow: ${playerCameraZoom.toFixed(2)}x`;
+};
+
 const formatLiveFacingText = (playerFacing: PlayerFacing | null): string | null => {
   if (playerFacing === null) {
     return null;
@@ -705,6 +714,7 @@ const buildPlayerText = (
   playerWorldPosition: { x: number; y: number } | null,
   playerAabb: DebugEditStatusStripPlayerAabbTelemetry | null,
   playerCameraFollowOffset: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null,
+  playerCameraZoom: number | null,
   playerCeilingBonkHoldActive: boolean | null,
   playerGrounded: boolean | null,
   playerFacing: PlayerFacing | null,
@@ -722,6 +732,7 @@ const buildPlayerText = (
     formatLiveWorldPositionText(playerWorldPosition),
     formatLiveAabbText(playerAabb),
     formatLiveCameraFollowOffsetText(playerCameraFollowOffset),
+    formatLiveCameraZoomText(playerCameraZoom),
     formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive),
     formatLiveGroundedText(playerGrounded),
     formatLiveFacingText(playerFacing),
@@ -1221,6 +1232,7 @@ export const buildDebugEditStatusStripModel = (
   const playerWorldPosition = state.playerWorldPosition ?? null;
   const playerAabb = state.playerAabb ?? null;
   const playerCameraFollowOffset = state.playerCameraFollowOffset ?? null;
+  const playerCameraZoom = state.playerCameraZoom ?? null;
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
   const playerGrounded = state.playerGrounded ?? null;
   const playerFacing = state.playerFacing ?? null;
@@ -1248,6 +1260,7 @@ export const buildDebugEditStatusStripModel = (
       playerWorldPosition,
       playerAabb,
       playerCameraFollowOffset,
+      playerCameraZoom,
       playerCeilingBonkHoldActive,
       playerGrounded,
       playerFacing,

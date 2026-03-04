@@ -1497,6 +1497,7 @@ const bootstrap = async (): Promise<void> => {
               x: cameraFollowOffset.x,
               y: cameraFollowOffset.y
             },
+      playerCameraZoom: debugOverlayVisible || !standalonePlayerState ? null : camera.zoom,
       playerCeilingBonkHoldActive:
         debugOverlayVisible || !standalonePlayerState ? null : standalonePlayerCeilingBonkHoldActive,
       playerGrounded: debugOverlayVisible ? null : standalonePlayerState?.grounded ?? null,

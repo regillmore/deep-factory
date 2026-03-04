@@ -138,6 +138,13 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose and live camera-zoom player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: grounded-idle\nZoomNow: 2.50x')).toEqual([
+      ['Pose: grounded-idle'],
+      ['ZoomNow: 2.50x']
+    ]);
+  });
+
   it('preserves separate pose and live facing player lines while keeping each line individually wrappable', () => {
     expect(buildWrappedDetailLines('Pose: grounded-idle\nFacingNow: right')).toEqual([
       ['Pose: grounded-idle'],

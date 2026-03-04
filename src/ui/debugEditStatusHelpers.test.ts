@@ -204,6 +204,22 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats the live standalone player camera zoom for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerCameraZoom: 2.5,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('ZoomNow: 2.50x');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the live standalone player facing direction for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -501,6 +517,23 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.playerText).toBe('Pose: grounded-idle\nOffsetNow: x:+18.00 | y:-6.00');
+    expect(model.eventText).toBeNull();
+  });
+
+  it('keeps pose and live camera zoom telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'grounded-idle',
+      playerCameraZoom: 2.5,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: grounded-idle\nZoomNow: 2.50x');
     expect(model.eventText).toBeNull();
   });
 
