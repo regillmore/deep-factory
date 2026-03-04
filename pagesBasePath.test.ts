@@ -10,7 +10,10 @@ import { createViteConfig, GITHUB_PAGES_BASE_PATH } from './vite.config';
 const tempBuildDirs: string[] = [];
 const countExactOccurrences = (haystack: string, needle: string): number =>
   haystack.split(needle).length - 1;
-const LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_LITERAL = "'/atlas/tile-atlas.png'";
+const LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_RUNTIME_URL_SINGLE_QUOTED_LITERAL =
+  "'/atlas/tile-atlas.png'";
+const LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_RUNTIME_URL_DOUBLE_QUOTED_LITERAL =
+  '"/atlas/tile-atlas.png"';
 const DOUBLE_PREFIXED_AUTHORED_ATLAS_RUNTIME_URL_LITERAL =
   '"/deep-factory/deep-factory/atlas/tile-atlas.png"';
 const ROOT_RELATIVE_PRODUCTION_ASSET_LITERAL = '"/assets/';
@@ -69,7 +72,12 @@ describe('createViteConfig', () => {
         expect(bundleContents).not.toMatch(ROOT_RELATIVE_PRODUCTION_CSS_ASSET_URL);
         expect(bundleContents).not.toMatch(DOUBLE_PREFIXED_PRODUCTION_JS_ASSET_URL);
         expect(bundleContents).not.toMatch(DOUBLE_PREFIXED_PRODUCTION_CSS_ASSET_URL);
-        expect(bundleContents).not.toContain(LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_LITERAL);
+        expect(bundleContents).not.toContain(
+          LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_RUNTIME_URL_SINGLE_QUOTED_LITERAL
+        );
+        expect(bundleContents).not.toContain(
+          LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_RUNTIME_URL_DOUBLE_QUOTED_LITERAL
+        );
         expect(bundleContents).not.toContain(DOUBLE_PREFIXED_AUTHORED_ATLAS_RUNTIME_URL_LITERAL);
       }
 
@@ -108,7 +116,12 @@ describe('createViteConfig', () => {
       for (const bundleContents of cssBundles) {
         expect(bundleContents).not.toContain(ROOT_RELATIVE_PRODUCTION_ASSET_LITERAL);
         expect(bundleContents).not.toContain(DOUBLE_PREFIXED_PRODUCTION_ASSET_LITERAL);
-        expect(bundleContents).not.toContain(LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_LITERAL);
+        expect(bundleContents).not.toContain(
+          LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_RUNTIME_URL_SINGLE_QUOTED_LITERAL
+        );
+        expect(bundleContents).not.toContain(
+          LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_RUNTIME_URL_DOUBLE_QUOTED_LITERAL
+        );
         expect(bundleContents).not.toContain(DOUBLE_PREFIXED_AUTHORED_ATLAS_RUNTIME_URL_LITERAL);
       }
 
