@@ -23,7 +23,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Chunk pruning can evict resident world chunks from memory without losing edited tile values; sparse per-chunk tile overrides are reapplied when those chunks stream back in.
 - Resident world chunks now also own zeroed per-chunk `Uint8Array` light fields plus dirty-light flags, and newly streamed chunks start dirty so resident lighting caches can be rebuilt from tile state.
 - Tile edits now clear and dirty the loaded chunk light fields affected by that edit whenever the edited tile changes `blocksLight` or emissive-light state, including loaded border-neighbor chunks touched by edge or corner edits.
-- Dirty resident light fields are recomputed during rendering by propagating sunlight top-down from exposed resident chunk tops, using gameplay `blocksLight` metadata to terminate each column and then marking rebuilt chunks clean.
+- Dirty resident light fields are recomputed during rendering by propagating sunlight top-down from exposed resident chunk tops only within resident chunk columns that currently contain dirty light chunks, using gameplay `blocksLight` metadata to terminate each column and then marking rebuilt chunks clean.
 - Budgeted per-frame mesh build queue with visible-first scheduling and nearby prefetch.
 - Tile edit events trigger edge and corner neighbor-chunk mesh invalidation.
 - Chunk meshing currently emits one quad per non-empty tile; static chunks upload once, while chunks with animated non-terrain or liquid quads keep CPU-side vertex copies so UV-only updates can be reuploaded on frame boundaries.

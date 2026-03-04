@@ -41,7 +41,7 @@ variant source falls outside the source image or any direct `uvRect` source land
 1. Ensure canvas backbuffer matches CSS size x `devicePixelRatio`.
 2. Build camera matrix (`world -> clip`) for orthographic projection.
 3. Compute visible chunk bounds from camera viewport and tile scale.
-4. Recompute dirty resident chunk light fields by propagating sunlight top-down from exposed resident chunk tops before chunk rendering work consumes those caches.
+4. Recompute dirty resident chunk light fields by propagating sunlight top-down from exposed resident chunk tops only within resident chunk columns that currently contain dirty light chunks before chunk rendering work consumes those caches.
 5. Queue visible (and nearby prefetch) chunk mesh builds, then process a small per-frame build budget.
 6. Patch ready animated chunk meshes to the current elapsed metadata frame when needed, including liquid-variant frame swaps keyed by the meshed liquid cardinal mask, then draw chunk VAOs with a shared shader + atlas texture.
 7. Draw the standalone player placeholder in world space from the latest `PlayerState`, with facing plus grounded-idle, grounded-walk, jump-rise, fall, wall-slide, and ceiling-bonk pose selection handled in the placeholder shader from render-frame player state plus current sided wall and ceiling contact state and a short render-only bonk hold after blocked ceiling transitions.

@@ -13,6 +13,15 @@ interface ResidentChunkLightingBounds {
   chunksByKey: Map<string, Chunk>;
 }
 
+const collectDirtyResidentChunkColumns = (world: TileWorld): number[] => {
+  const dirtyChunkColumnXs = new Set<number>();
+  for (const { x } of world.getDirtyLightChunkCoords()) {
+    dirtyChunkColumnXs.add(x);
+  }
+
+  return Array.from(dirtyChunkColumnXs).sort((a, b) => a - b);
+};
+
 const collectResidentChunkLightingBounds = (world: TileWorld): ResidentChunkLightingBounds | null => {
   const chunksByKey = new Map<string, Chunk>();
   let minChunkX = Number.POSITIVE_INFINITY;
@@ -54,15 +63,29 @@ export const recomputeSunlightFromExposedChunkTops = (
     return 0;
   }
 
-  for (let chunkX = bounds.minChunkX; chunkX <= bounds.maxChunkX; chunkX += 1) {
+  const dirtyChunkColumns = collectDirtyResidentChunkColumns(world);
+  if (dirtyChunkColumns.length === 0) {
+    return 0;
+  }
+
+  let recomputedChunkCount = 0;
+
+  for (const chunkX of dirtyChunkColumns) {
+    const residentColumnChunks: Chunk[] = [];
+    for (let chunkY = bounds.minChunkY; chunkY <= bounds.maxChunkY; chunkY += 1) {
+      const chunk = bounds.chunksByKey.get(chunkKey(chunkX, chunkY));
+      if (chunk) {
+        residentColumnChunks.push(chunk);
+      }
+    }
+
+    if (residentColumnChunks.length === 0) {
+      continue;
+    }
+
     for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
       let sunlightVisible = true;
-      for (let chunkY = bounds.minChunkY; chunkY <= bounds.maxChunkY; chunkY += 1) {
-        const chunk = bounds.chunksByKey.get(chunkKey(chunkX, chunkY));
-        if (!chunk) {
-          continue;
-        }
-
+      for (const chunk of residentColumnChunks) {
         for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
           const tileIndex = toTileIndex(localX, localY);
           const tileId = chunk.tiles[tileIndex] ?? 0;
@@ -74,11 +97,13 @@ export const recomputeSunlightFromExposedChunkTops = (
         }
       }
     }
+
+    for (const chunk of residentColumnChunks) {
+      world.markChunkLightClean(chunk.coord.x, chunk.coord.y);
+    }
+
+    recomputedChunkCount += residentColumnChunks.length;
   }
 
-  for (const chunk of bounds.chunksByKey.values()) {
-    world.markChunkLightClean(chunk.coord.x, chunk.coord.y);
-  }
-
-  return bounds.chunksByKey.size;
+  return recomputedChunkCount;
 };

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-04: Sunlight rebuilds now target dirty resident chunk columns only
+
+- Decision: Sunlight recomputation now derives the set of resident `chunkX` columns from dirty-light chunks and rebuilds only those vertical columns instead of scanning every resident column each dirty pass.
+- Reason: Light invalidation often touches a small subset of loaded columns, so rebuilding all resident columns did avoidable per-frame work as the loaded world footprint grew.
+- Consequence: Future sunlight invalidation refinements should continue feeding this dirty-column rebuild path; any system that dirties light chunks should expect same-column resident chunks to be recomputed together.
+
 ### 2026-03-04: Resident sunlight rebuilds run top-down from exposed chunk tops
 
 - Decision: The renderer now resolves dirty resident light caches through a world helper that scans each resident chunk column from the highest loaded chunk downward, applies `MAX_LIGHT_LEVEL` sunlight until a `blocksLight` tile is hit, and then marks rebuilt chunks clean.
