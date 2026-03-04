@@ -46,8 +46,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Player debugging
 
 134. Surface standalone player live camera chunk-local tile coordinates in the compact debug-edit status strip once task 133 lands camera world chunk coordinates.
-137. Surface standalone player live camera-follow focus-point world tile coordinates in the compact debug-edit status strip alongside the existing focus-point position line.
 141. Surface standalone player live camera-follow focus-point world chunk coordinates in the compact debug-edit status strip once task 137 lands focus-point world tile coordinates.
+142. Surface standalone player live camera-follow focus-point chunk-local tile coordinates in the compact debug-edit status strip once task 141 lands focus-point world chunk coordinates.
 
 ## Project structure optimization
 

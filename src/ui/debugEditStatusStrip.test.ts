@@ -159,6 +159,13 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose and live camera-follow focus-point world-tile player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: grounded-idle\nFocusTileNow: 4,-4')).toEqual([
+      ['Pose: grounded-idle'],
+      ['FocusTileNow: 4,-4']
+    ]);
+  });
+
   it('preserves separate pose and live camera-follow offset player lines while keeping each line individually wrappable', () => {
     expect(buildWrappedDetailLines('Pose: grounded-idle\nOffsetNow: x:+18.00 | y:-6.00')).toEqual([
       ['Pose: grounded-idle'],
@@ -283,7 +290,7 @@ describe('buildWrappedDetailLines', () => {
   it('preserves separate pose, world-position, world-tile, collision AABB min/max and size, input-edge, horizontal and vertical velocity, speed magnitude, and contact player lines while keeping each line individually wrappable', () => {
     expect(
       buildWrappedDetailLines(
-        'Pose: ceiling-bonk\nPosNow: 72.00,-48.00\nTileNow: 4,-3\nAABBNow: min 66.00,-76.00 | max 78.00,-48.00 | size 12.00,28.00\nCamPosNow: 90.50,-54.25\nCamTileNow: 5,-4\nFocusPosNow: 72.00,-62.00\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nVelYNow: -210.00\nSpeedNow: 276.59\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
+        'Pose: ceiling-bonk\nPosNow: 72.00,-48.00\nTileNow: 4,-3\nAABBNow: min 66.00,-76.00 | max 78.00,-48.00 | size 12.00,28.00\nCamPosNow: 90.50,-54.25\nCamTileNow: 5,-4\nFocusPosNow: 72.00,-62.00\nFocusTileNow: 4,-4\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nVelYNow: -210.00\nSpeedNow: 276.59\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
       )
     ).toEqual([
       ['Pose: ceiling-bonk'],
@@ -293,6 +300,7 @@ describe('buildWrappedDetailLines', () => {
       ['CamPosNow: 90.50,-54.25'],
       ['CamTileNow: 5,-4'],
       ['FocusPosNow: 72.00,-62.00'],
+      ['FocusTileNow: 4,-4'],
       ['GroundedNow: off'],
       ['FacingNow: right'],
       ['MoveXNow: 1'],

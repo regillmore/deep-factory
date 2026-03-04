@@ -1430,6 +1430,13 @@ const bootstrap = async (): Promise<void> => {
       : null;
     const debugStatusStripPlayerCameraFocusPoint =
       standalonePlayerState === null ? null : getPlayerCameraFocusPoint(standalonePlayerState);
+    const debugStatusStripPlayerCameraFocusTile =
+      debugStatusStripPlayerCameraFocusPoint === null
+        ? null
+        : worldToTilePoint(
+            debugStatusStripPlayerCameraFocusPoint.x,
+            debugStatusStripPlayerCameraFocusPoint.y
+          );
     const debugOverlayPlayerCameraFollow = debugStatusStripPlayerCameraFocusPoint
       ? {
           focus: debugStatusStripPlayerCameraFocusPoint,
@@ -1520,6 +1527,7 @@ const bootstrap = async (): Promise<void> => {
       playerCameraWorldTile: debugOverlayVisible ? null : debugStatusStripPlayerCameraWorldTile,
       playerCameraWorldChunk: debugOverlayVisible ? null : debugStatusStripPlayerCameraWorldChunk,
       playerCameraFocusPoint: debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusPoint,
+      playerCameraFocusTile: debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusTile,
       playerCameraFollowOffset:
         debugOverlayVisible || !standalonePlayerState
           ? null
