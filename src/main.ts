@@ -1447,9 +1447,11 @@ const bootstrap = async (): Promise<void> => {
             );
             return { x: chunkX, y: chunkY };
           })();
-    const debugOverlayPlayerCameraFollow = debugStatusStripPlayerCameraFocusPoint
+    const debugOverlayPlayerCameraFollow =
+      debugStatusStripPlayerCameraFocusPoint && debugStatusStripPlayerCameraFocusChunk
       ? {
           focus: debugStatusStripPlayerCameraFocusPoint,
+          focusChunk: debugStatusStripPlayerCameraFocusChunk,
           offset: {
             x: cameraFollowOffset.x,
             y: cameraFollowOffset.y

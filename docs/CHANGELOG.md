@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Surface standalone player live camera-follow focus-point world chunk coordinates in the text debug HUD now that the compact debug-edit strip telemetry exists.
+- Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so the text HUD follow line now includes `focusChunk:` telemetry beside the existing focus position and offset, and wired [src/main.ts](../src/main.ts) to reuse the existing focus-point chunk derivation when feeding overlay snapshots; advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the in-world main-menu shortcut in shell copy once the keyboard action exists.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the in-world shell button label now renders `Main Menu (Q)` from the existing desktop shortcut helper, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/appShell.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
