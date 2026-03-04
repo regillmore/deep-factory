@@ -46,9 +46,11 @@ export interface ChunkMeshBuildOptions {
   tileMetadataRegistry?: TileMetadataRegistry;
 }
 
-const FLOATS_PER_VERTEX = 4;
+export const CHUNK_MESH_FLOATS_PER_VERTEX = 5;
+export const CHUNK_MESH_UV_FLOAT_OFFSET = 2;
+export const CHUNK_MESH_LIGHT_FLOAT_OFFSET = 4;
 const VERTICES_PER_TILE_QUAD = 6;
-const FLOATS_PER_TILE_QUAD = FLOATS_PER_VERTEX * VERTICES_PER_TILE_QUAD;
+const FLOATS_PER_TILE_QUAD = CHUNK_MESH_FLOATS_PER_VERTEX * VERTICES_PER_TILE_QUAD;
 
 const usesTerrainAutotile = (tileId: number, tileMetadataRegistry: TileMetadataRegistry): boolean =>
   hasTerrainAutotileMetadata(tileId, tileMetadataRegistry);
@@ -219,6 +221,7 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
         neighborhoodScratch
       );
       const { u0, v0, u1, v1 } = resolvedRender.uvRect;
+      const lightLevel = chunk.lightLevels[toTileIndex(x, y)] ?? 0;
       if (resolvedRender.liquidCardinalMask !== null) {
         if (
           usesAnimatedLiquidRenderVariant(
@@ -244,33 +247,39 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
       vertices[writeIndex + 1] = py;
       vertices[writeIndex + 2] = u0;
       vertices[writeIndex + 3] = v0;
-      vertices[writeIndex + 4] = px1;
-      vertices[writeIndex + 5] = py;
-      vertices[writeIndex + 6] = u1;
-      vertices[writeIndex + 7] = v0;
-      vertices[writeIndex + 8] = px1;
-      vertices[writeIndex + 9] = py1;
-      vertices[writeIndex + 10] = u1;
-      vertices[writeIndex + 11] = v1;
-      vertices[writeIndex + 12] = px;
-      vertices[writeIndex + 13] = py;
-      vertices[writeIndex + 14] = u0;
-      vertices[writeIndex + 15] = v0;
-      vertices[writeIndex + 16] = px1;
-      vertices[writeIndex + 17] = py1;
-      vertices[writeIndex + 18] = u1;
-      vertices[writeIndex + 19] = v1;
-      vertices[writeIndex + 20] = px;
+      vertices[writeIndex + 4] = lightLevel;
+      vertices[writeIndex + 5] = px1;
+      vertices[writeIndex + 6] = py;
+      vertices[writeIndex + 7] = u1;
+      vertices[writeIndex + 8] = v0;
+      vertices[writeIndex + 9] = lightLevel;
+      vertices[writeIndex + 10] = px1;
+      vertices[writeIndex + 11] = py1;
+      vertices[writeIndex + 12] = u1;
+      vertices[writeIndex + 13] = v1;
+      vertices[writeIndex + 14] = lightLevel;
+      vertices[writeIndex + 15] = px;
+      vertices[writeIndex + 16] = py;
+      vertices[writeIndex + 17] = u0;
+      vertices[writeIndex + 18] = v0;
+      vertices[writeIndex + 19] = lightLevel;
+      vertices[writeIndex + 20] = px1;
       vertices[writeIndex + 21] = py1;
-      vertices[writeIndex + 22] = u0;
+      vertices[writeIndex + 22] = u1;
       vertices[writeIndex + 23] = v1;
+      vertices[writeIndex + 24] = lightLevel;
+      vertices[writeIndex + 25] = px;
+      vertices[writeIndex + 26] = py1;
+      vertices[writeIndex + 27] = u0;
+      vertices[writeIndex + 28] = v1;
+      vertices[writeIndex + 29] = lightLevel;
       writeIndex += FLOATS_PER_TILE_QUAD;
     }
   }
 
   return {
     vertices,
-    vertexCount: writeIndex / FLOATS_PER_VERTEX,
+    vertexCount: writeIndex / CHUNK_MESH_FLOATS_PER_VERTEX,
     animatedTileQuads
   };
 };

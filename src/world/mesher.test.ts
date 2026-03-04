@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { AUTOTILE_DIRECTION_BITS, normalizeAutotileAdjacencyMask } from './autotile';
 import { toTileIndex } from './chunkMath';
 import { CHUNK_SIZE, TILE_SIZE } from './constants';
-import { buildChunkMesh } from './mesher';
+import { CHUNK_MESH_FLOATS_PER_VERTEX, buildChunkMesh } from './mesher';
 import {
   LIQUID_RENDER_CARDINAL_MASK_COUNT,
   atlasIndexToUvRect,
@@ -121,33 +121,29 @@ const expectSingleQuadUv = (
   const expectedV0 = toFloat32(v0);
   const expectedU1 = toFloat32(u1);
   const expectedV1 = toFloat32(v1);
+  const expectedUvs: Array<{ u: number; v: number }> = [
+    { u: expectedU0, v: expectedV0 },
+    { u: expectedU1, v: expectedV0 },
+    { u: expectedU1, v: expectedV1 },
+    { u: expectedU0, v: expectedV0 },
+    { u: expectedU1, v: expectedV1 },
+    { u: expectedU0, v: expectedV1 }
+  ];
 
-  expect(Array.from(vertices)).toEqual([
-    expect.any(Number),
-    expect.any(Number),
-    expectedU0,
-    expectedV0,
-    expect.any(Number),
-    expect.any(Number),
-    expectedU1,
-    expectedV0,
-    expect.any(Number),
-    expect.any(Number),
-    expectedU1,
-    expectedV1,
-    expect.any(Number),
-    expect.any(Number),
-    expectedU0,
-    expectedV0,
-    expect.any(Number),
-    expect.any(Number),
-    expectedU1,
-    expectedV1,
-    expect.any(Number),
-    expect.any(Number),
-    expectedU0,
-    expectedV1
-  ]);
+  expect(vertices.length).toBe(6 * CHUNK_MESH_FLOATS_PER_VERTEX);
+  expectedUvs.forEach((expectedUv, vertexIndex) => {
+    const uvOffset = vertexIndex * CHUNK_MESH_FLOATS_PER_VERTEX + 2;
+    expect(vertices[uvOffset]).toBe(expectedUv.u);
+    expect(vertices[uvOffset + 1]).toBe(expectedUv.v);
+  });
+};
+
+const expectSingleQuadLightLevel = (vertices: Float32Array, expectedLightLevel: number): void => {
+  expect(vertices.length).toBe(6 * CHUNK_MESH_FLOATS_PER_VERTEX);
+  for (let vertexIndex = 0; vertexIndex < 6; vertexIndex += 1) {
+    const lightOffset = vertexIndex * CHUNK_MESH_FLOATS_PER_VERTEX + 4;
+    expect(vertices[lightOffset]).toBe(expectedLightLevel);
+  }
 };
 
 describe('buildChunkMesh autotile UV selection', () => {
@@ -282,6 +278,17 @@ describe('buildChunkMesh autotile UV selection', () => {
     });
   });
 
+  it('bakes per-tile light levels into each vertex of the emitted quad', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 3);
+    chunk.lightLevels[toTileIndex(0, 0)] = 11;
+
+    const mesh = buildChunkMesh(chunk);
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadLightLevel(mesh.vertices, 11);
+  });
+
   it('records animated non-terrain quads while keeping the baked static frame-zero UVs', () => {
     const chunk = createEmptyChunk();
     setChunkTile(chunk, 0, 0, 5);
@@ -356,12 +363,12 @@ describe('buildChunkMesh autotile UV selection', () => {
     const mesh = buildChunkMesh(chunk);
 
     expect(mesh.vertexCount).toBe(12);
-    expect(mesh.vertices.length).toBe(12 * 4);
+    expect(mesh.vertices.length).toBe(12 * CHUNK_MESH_FLOATS_PER_VERTEX);
 
     expect(mesh.vertices[0]).toBe(0);
     expect(mesh.vertices[1]).toBe(0);
-    expect(mesh.vertices[24]).toBe(TILE_SIZE);
-    expect(mesh.vertices[25]).toBe(0);
+    expect(mesh.vertices[30]).toBe(TILE_SIZE);
+    expect(mesh.vertices[31]).toBe(0);
   });
 
   it('uses the isolated liquid variant when no neighborhood sampler is provided', () => {

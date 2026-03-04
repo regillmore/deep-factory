@@ -16,7 +16,7 @@ import {
   resolveAuthoredTileAtlasUrl
 } from './texture';
 import { collectAtlasValidationWarnings } from './atlasValidation';
-import { TILE_SIZE } from '../world/constants';
+import { MAX_LIGHT_LEVEL, TILE_SIZE } from '../world/constants';
 import {
   affectedChunkCoordsForLocalTileEdit,
   chunkBoundsContains,
@@ -25,7 +25,7 @@ import {
   expandChunkBounds
 } from '../world/chunkMath';
 import type { ChunkBounds } from '../world/chunkMath';
-import { buildChunkMesh } from '../world/mesher';
+import { CHUNK_MESH_FLOATS_PER_VERTEX, buildChunkMesh } from '../world/mesher';
 import {
   hasLiquidRenderMetadata,
   resolveLiquidRenderCardinalMaskFromNeighborhood,
@@ -174,19 +174,24 @@ export class Renderer {
       precision mediump float;
       layout(location = 0) in vec2 a_position;
       layout(location = 1) in vec2 a_uv;
+      layout(location = 2) in float a_light;
       uniform mat4 u_matrix;
       out vec2 v_uv;
+      out float v_light;
       void main() {
         v_uv = a_uv;
+        v_light = clamp(a_light / ${MAX_LIGHT_LEVEL.toFixed(1)}, 0.0, 1.0);
         gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);
       }`,
       `#version 300 es
       precision mediump float;
       in vec2 v_uv;
+      in float v_light;
       uniform sampler2D u_atlas;
       out vec4 outColor;
       void main() {
-        outColor = texture(u_atlas, v_uv);
+        vec4 atlasColor = texture(u_atlas, v_uv);
+        outColor = vec4(atlasColor.rgb * v_light, atlasColor.a);
       }`
     );
 
@@ -442,7 +447,11 @@ export class Renderer {
     const drawBounds = expandChunkBounds(visibleBounds, FRUSTUM_PADDING_CHUNKS);
     const retainBounds = expandChunkBounds(drawBounds, STREAM_RETAIN_PADDING_CHUNKS);
 
+    const dirtyLightChunks = this.world.getDirtyLightChunkCoords();
     recomputeSunlightFromExposedChunkTops(this.world);
+    for (const dirtyChunk of dirtyLightChunks) {
+      this.invalidateChunkMesh(dirtyChunk.x, dirtyChunk.y);
+    }
     this.scheduleMeshBuilds(drawBounds, retainBounds);
     this.processMeshBuildQueue();
 
@@ -695,7 +704,9 @@ export class Renderer {
     const buffer = animatedMesh
       ? createDynamicVertexBuffer(this.gl, meshData.vertices)
       : createStaticVertexBuffer(this.gl, meshData.vertices);
-    const vao = createVertexArray(this.gl, buffer, 4);
+    const vao = createVertexArray(this.gl, buffer, CHUNK_MESH_FLOATS_PER_VERTEX, {
+      includeLightAttribute: true
+    });
     cached.state = 'ready';
     cached.mesh = { buffer, vao, vertexCount: meshData.vertexCount, animatedMesh };
   }

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-04: Chunk lighting modulation is baked into mesh vertices
+
+- Decision: Chunk meshes now bake per-vertex light levels from resident chunk light caches, the world shader multiplies atlas color by that normalized vertex light, and the renderer invalidates cached chunk meshes for chunks that were dirty-light before recomputation.
+- Reason: This keeps lighting on the existing chunk draw path without introducing a second texture-sampling light pipeline, while still letting lighting-only edits refresh rendered terrain.
+- Consequence: Future lighting changes should continue driving chunk-light dirtiness so affected meshes rebuild, and mesh/animation helpers must preserve the light-inclusive chunk vertex stride.
+
 ### 2026-03-04: Non-emissive blocker edits now widen invalidation around reachable resident emitters
 
 - Decision: When a non-emissive tile edit toggles `blocksLight`, `TileWorld` now scans nearby resident tiles for emissive sources that can still reach the edited tile and widens dirty-light local-column invalidation to that local emissive range instead of always invalidating only the edited column.

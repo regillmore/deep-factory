@@ -167,6 +167,58 @@ describe('Renderer atlas telemetry', () => {
     expect(playerProgramFragmentSource).toContain('bool ceilingBonkPose');
   });
 
+  it('compiles world-tile lighting modulation into the chunk shader', () => {
+    new Renderer(createMockCanvas(createMockGl()));
+
+    const createProgramCalls = createProgram.mock.calls as unknown as Array<
+      [WebGL2RenderingContext, string, string]
+    >;
+    const worldProgramVertexSource = createProgramCalls[0]?.[1];
+    const worldProgramFragmentSource = createProgramCalls[0]?.[2];
+    expect(worldProgramVertexSource).toContain('layout(location = 2) in float a_light;');
+    expect(worldProgramVertexSource).toContain('v_light = clamp(a_light / 15.0, 0.0, 1.0);');
+    expect(worldProgramFragmentSource).toContain('vec4 atlasColor = texture(u_atlas, v_uv);');
+    expect(worldProgramFragmentSource).toContain('vec4(atlasColor.rgb * v_light, atlasColor.a);');
+  });
+
+  it('configures chunk VAOs with a dedicated per-vertex light attribute', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const enableVertexAttribArray = vi.mocked(gl.enableVertexAttribArray);
+    const vertexAttribPointer = vi.mocked(gl.vertexAttribPointer);
+    enableVertexAttribArray.mockClear();
+    vertexAttribPointer.mockClear();
+
+    const camera = new Camera2D();
+    camera.zoom = 16;
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+
+    expect(
+      enableVertexAttribArray.mock.calls.some(([index]) => index === 2)
+    ).toBe(true);
+    expect(
+      vertexAttribPointer.mock.calls.some(
+        ([index, size, type, normalized, strideBytes, offsetBytes]) =>
+          index === 2 &&
+          size === 1 &&
+          type === gl.FLOAT &&
+          normalized === false &&
+          strideBytes === 20 &&
+          offsetBytes === 16
+      )
+    ).toBe(true);
+  });
+
   it('records an authored atlas load in telemetry during initialization', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));
@@ -680,7 +732,7 @@ describe('Renderer atlas telemetry', () => {
       toFloat32(frameOneUv!.u0),
       toFloat32(frameOneUv!.v0)
     ]);
-    expect(Array.from(frameOneVertices?.slice(22, 24) ?? [])).toEqual([
+    expect(Array.from(frameOneVertices?.slice(27, 29) ?? [])).toEqual([
       toFloat32(frameOneUv!.u0),
       toFloat32(frameOneUv!.v1)
     ]);
@@ -705,7 +757,7 @@ describe('Renderer atlas telemetry', () => {
       toFloat32(frameZeroUv!.u0),
       toFloat32(frameZeroUv!.v0)
     ]);
-    expect(Array.from(frameZeroVertices?.slice(22, 24) ?? [])).toEqual([
+    expect(Array.from(frameZeroVertices?.slice(27, 29) ?? [])).toEqual([
       toFloat32(frameZeroUv!.u0),
       toFloat32(frameZeroUv!.v1)
     ]);
@@ -760,7 +812,7 @@ describe('Renderer atlas telemetry', () => {
       toFloat32(frameOneUv!.u0),
       toFloat32(frameOneUv!.v0)
     ]);
-    expect(Array.from(frameOneVertices?.slice(22, 24) ?? [])).toEqual([
+    expect(Array.from(frameOneVertices?.slice(27, 29) ?? [])).toEqual([
       toFloat32(frameOneUv!.u0),
       toFloat32(frameOneUv!.v1)
     ]);
@@ -783,7 +835,7 @@ describe('Renderer atlas telemetry', () => {
       toFloat32(frameZeroUv!.u0),
       toFloat32(frameZeroUv!.v0)
     ]);
-    expect(Array.from(frameZeroVertices?.slice(22, 24) ?? [])).toEqual([
+    expect(Array.from(frameZeroVertices?.slice(27, 29) ?? [])).toEqual([
       toFloat32(frameZeroUv!.u0),
       toFloat32(frameZeroUv!.v1)
     ]);

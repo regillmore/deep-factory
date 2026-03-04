@@ -42,8 +42,8 @@ variant source falls outside the source image or any direct `uvRect` source land
 2. Build camera matrix (`world -> clip`) for orthographic projection.
 3. Compute visible chunk bounds from camera viewport and tile scale.
 4. Recompute dirty resident chunk light fields by propagating sunlight top-down from exposed resident chunk tops only within resident chunk columns that currently contain dirty light chunks, then merge local emissive source falloff over that sunlight base, while limiting both passes to the dirty local sunlight columns collected for each resident `chunkX` column before chunk rendering work consumes those caches.
-5. Queue visible (and nearby prefetch) chunk mesh builds, then process a small per-frame build budget.
-6. Patch ready animated chunk meshes to the current elapsed metadata frame when needed, including liquid-variant frame swaps keyed by the meshed liquid cardinal mask, then draw chunk VAOs with a shared shader + atlas texture.
+5. Invalidate cached chunk meshes for chunks that were dirty-light this frame, then queue visible (and nearby prefetch) chunk mesh builds and process a small per-frame build budget.
+6. Patch ready animated chunk meshes to the current elapsed metadata frame when needed, including liquid-variant frame swaps keyed by the meshed liquid cardinal mask, then draw chunk VAOs with a shared atlas shader that multiplies tile color by the baked per-vertex light value.
 7. Draw the standalone player placeholder in world space from the latest `PlayerState`, with facing plus grounded-idle, grounded-walk, jump-rise, fall, wall-slide, and ceiling-bonk pose selection handled in the placeholder shader from render-frame player state plus current sided wall and ceiling contact state and a short render-only bonk hold after blocked ceiling transitions.
 8. Prune far chunk/world caches outside the retain ring.
 9. Update debug overlay with frame timing and renderer telemetry.
@@ -54,7 +54,7 @@ variant source falls outside the source image or any direct `uvRect` source land
 - Mesher scans all tiles in a chunk.
 - For each non-zero tile:
   - emits two triangles (6 vertices) for one quad,
-  - writes per-vertex world position and UV,
+  - writes per-vertex world position, UV, and resolved light level from the chunk light cache,
   - records animated non-terrain quad offsets plus animated liquid quad offsets keyed by the resolved liquid cardinal mask so the renderer can patch only those UVs later.
 - UVs are resolved through tile metadata (terrain autotile variant maps or non-autotile static render metadata), with atlas indices translated through the authored atlas region layout instead of a synthetic grid cache.
 - Optional animated render frames compile beside the static render lookup; chunk meshes still bake the static frame-zero UVs, and the renderer mutates only the recorded animated quad UVs when the elapsed frame changes.

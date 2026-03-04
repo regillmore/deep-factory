@@ -6,7 +6,11 @@ import {
   resolveAnimatedTileRenderFrameUvRect
 } from '../world/tileMetadata';
 import type { TileMetadataRegistry, TileUvRect } from '../world/tileMetadata';
-import type { AnimatedTileQuad } from '../world/mesher';
+import {
+  CHUNK_MESH_FLOATS_PER_VERTEX,
+  CHUNK_MESH_UV_FLOAT_OFFSET,
+  type AnimatedTileQuad
+} from '../world/mesher';
 
 export interface AnimatedChunkTileState extends AnimatedTileQuad {
   frameIndex: number;
@@ -28,19 +32,25 @@ const setTileQuadUvRect = (
   uvRect: TileUvRect
 ): void => {
   const { u0, v0, u1, v1 } = uvRect;
+  const vertex0UvOffset = vertexFloatOffset + CHUNK_MESH_UV_FLOAT_OFFSET;
+  const vertex1UvOffset = vertex0UvOffset + CHUNK_MESH_FLOATS_PER_VERTEX;
+  const vertex2UvOffset = vertex1UvOffset + CHUNK_MESH_FLOATS_PER_VERTEX;
+  const vertex3UvOffset = vertex2UvOffset + CHUNK_MESH_FLOATS_PER_VERTEX;
+  const vertex4UvOffset = vertex3UvOffset + CHUNK_MESH_FLOATS_PER_VERTEX;
+  const vertex5UvOffset = vertex4UvOffset + CHUNK_MESH_FLOATS_PER_VERTEX;
 
-  vertices[vertexFloatOffset + 2] = u0;
-  vertices[vertexFloatOffset + 3] = v0;
-  vertices[vertexFloatOffset + 6] = u1;
-  vertices[vertexFloatOffset + 7] = v0;
-  vertices[vertexFloatOffset + 10] = u1;
-  vertices[vertexFloatOffset + 11] = v1;
-  vertices[vertexFloatOffset + 14] = u0;
-  vertices[vertexFloatOffset + 15] = v0;
-  vertices[vertexFloatOffset + 18] = u1;
-  vertices[vertexFloatOffset + 19] = v1;
-  vertices[vertexFloatOffset + 22] = u0;
-  vertices[vertexFloatOffset + 23] = v1;
+  vertices[vertex0UvOffset] = u0;
+  vertices[vertex0UvOffset + 1] = v0;
+  vertices[vertex1UvOffset] = u1;
+  vertices[vertex1UvOffset + 1] = v0;
+  vertices[vertex2UvOffset] = u1;
+  vertices[vertex2UvOffset + 1] = v1;
+  vertices[vertex3UvOffset] = u0;
+  vertices[vertex3UvOffset + 1] = v0;
+  vertices[vertex4UvOffset] = u1;
+  vertices[vertex4UvOffset + 1] = v1;
+  vertices[vertex5UvOffset] = u0;
+  vertices[vertex5UvOffset + 1] = v1;
 };
 
 export const createAnimatedChunkMeshState = (

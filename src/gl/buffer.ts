@@ -12,7 +12,8 @@ export const createStaticVertexBuffer = (
 export const createVertexArray = (
   gl: WebGL2RenderingContext,
   buffer: WebGLBuffer,
-  strideFloats: number
+  strideFloats: number,
+  options: { includeLightAttribute?: boolean } = {}
 ): WebGLVertexArrayObject => {
   const vao = gl.createVertexArray();
   if (!vao) throw new Error('Unable to create VAO');
@@ -25,6 +26,11 @@ export const createVertexArray = (
 
   gl.enableVertexAttribArray(1);
   gl.vertexAttribPointer(1, 2, gl.FLOAT, false, strideFloats * 4, 2 * 4);
+
+  if (options.includeLightAttribute) {
+    gl.enableVertexAttribArray(2);
+    gl.vertexAttribPointer(2, 1, gl.FLOAT, false, strideFloats * 4, 4 * 4);
+  }
 
   gl.bindVertexArray(null);
   return vao;

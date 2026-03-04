@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Modulate tile rendering by resolved light values.
+- Changes: Updated [src/world/mesher.ts](../src/world/mesher.ts) to bake per-tile light levels into chunk-mesh vertex data, updated [src/gl/renderer.ts](../src/gl/renderer.ts) plus [src/gl/buffer.ts](../src/gl/buffer.ts) so world chunk VAOs bind a dedicated light attribute and the world shader modulates atlas color by resolved light, refreshed [src/gl/animatedChunkMesh.ts](../src/gl/animatedChunkMesh.ts) UV patching offsets for the new stride, added and updated regressions in [src/world/mesher.test.ts](../src/world/mesher.test.ts), [src/gl/animatedChunkMesh.test.ts](../src/gl/animatedChunkMesh.test.ts), and [src/gl/renderer.test.ts](../src/gl/renderer.test.ts), advanced [docs/NEXT.md](docs/NEXT.md) with a standalone-player lighting follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx.cmd vitest run src/world/mesher.test.ts src/gl/animatedChunkMesh.test.ts src/gl/renderer.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a sunlight regression where toggling a non-emissive `blocksLight` tile near an emissive source changes recomputed shadowed light levels across neighboring columns.
 - Changes: Updated [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a chunk-boundary tunnel regression that toggles a non-emissive blocker beside an emissive source and asserts neighboring-column shadowed light disappears and returns after recomputation, and advanced [docs/NEXT.md](docs/NEXT.md) with a resident-boundary streaming follow-up task.
 - Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts`.

@@ -5,33 +5,39 @@ import { atlasIndexToUvRect, parseTileMetadataRegistry } from '../world/tileMeta
 
 const toFloat32 = (value: number): number => Math.fround(value);
 
-const createSingleQuadVertices = (atlasIndex: number): Float32Array => {
+const createSingleQuadVertices = (atlasIndex: number, lightLevel = 7): Float32Array => {
   const { u0, v0, u1, v1 } = atlasIndexToUvRect(atlasIndex);
   return new Float32Array([
     0,
     0,
     u0,
     v0,
+    lightLevel,
     16,
     0,
     u1,
     v0,
+    lightLevel,
     16,
     16,
     u1,
     v1,
+    lightLevel,
     0,
     0,
     u0,
     v0,
+    lightLevel,
     16,
     16,
     u1,
     v1,
+    lightLevel,
     0,
     16,
     u0,
-    v1
+    v1,
+    lightLevel
   ]);
 };
 
@@ -86,7 +92,7 @@ describe('animated chunk mesh helpers', () => {
       toFloat32(atlasIndexToUvRect(15).u0),
       toFloat32(atlasIndexToUvRect(15).v0)
     ]);
-    expect(Array.from(vertices.slice(22, 24))).toEqual([
+    expect(Array.from(vertices.slice(27, 29))).toEqual([
       toFloat32(atlasIndexToUvRect(15).u0),
       toFloat32(atlasIndexToUvRect(15).v1)
     ]);
@@ -158,7 +164,7 @@ describe('animated chunk mesh helpers', () => {
       changedLiquidQuadCount: 1
     });
     expect(animatedMesh.animatedTiles[0]?.frameIndex).toBe(0);
-    expect(Array.from(vertices.slice(22, 24))).toEqual([
+    expect(Array.from(vertices.slice(27, 29))).toEqual([
       toFloat32(atlasIndexToUvRect(14).u0),
       toFloat32(atlasIndexToUvRect(14).v1)
     ]);
