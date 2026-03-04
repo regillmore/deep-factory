@@ -51,4 +51,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-128. Extend deployment regression coverage to assert emitted HTML omits root-relative `"/assets/"` script and stylesheet URLs in production output.
+129. Extend deployment regression coverage to assert emitted HTML omits double-prefixed `"/deep-factory/deep-factory/assets/"` script and stylesheet URLs in production output.

@@ -11,6 +11,8 @@ const tempBuildDirs: string[] = [];
 const countExactOccurrences = (haystack: string, needle: string): number =>
   haystack.split(needle).length - 1;
 const LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_LITERAL = "'/atlas/tile-atlas.png'";
+const ROOT_RELATIVE_PRODUCTION_JS_ASSET_URL = /\bsrc=(["'])\/assets\/[^"']+\.js\1/;
+const ROOT_RELATIVE_PRODUCTION_CSS_ASSET_URL = /\bhref=(["'])\/assets\/[^"']+\.css\1/;
 
 afterEach(async () => {
   await Promise.all(tempBuildDirs.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
@@ -42,10 +44,23 @@ describe('createViteConfig', () => {
         }
       });
 
-      const indexHtml = await readFile(join(outDir, 'index.html'), 'utf8');
-      expect(indexHtml).toMatch(/\/deep-factory\/assets\/[^"]+\.js/);
-      expect(indexHtml).toMatch(/\/deep-factory\/assets\/[^"]+\.css/);
-      expect(indexHtml).not.toContain(LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_LITERAL);
+      const emittedRootNames = await readdir(outDir);
+      const htmlAssetNames = emittedRootNames.filter((name) => name.endsWith('.html'));
+      expect(htmlAssetNames.length).toBeGreaterThan(0);
+      if (htmlAssetNames.length === 0) {
+        throw new Error('Expected the production build to emit at least one HTML file');
+      }
+
+      const htmlBundles = await Promise.all(
+        htmlAssetNames.map(async (name) => readFile(join(outDir, name), 'utf8'))
+      );
+      for (const bundleContents of htmlBundles) {
+        expect(bundleContents).toMatch(/\/deep-factory\/assets\/[^"]+\.js/);
+        expect(bundleContents).toMatch(/\/deep-factory\/assets\/[^"]+\.css/);
+        expect(bundleContents).not.toMatch(ROOT_RELATIVE_PRODUCTION_JS_ASSET_URL);
+        expect(bundleContents).not.toMatch(ROOT_RELATIVE_PRODUCTION_CSS_ASSET_URL);
+        expect(bundleContents).not.toContain(LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_LITERAL);
+      }
 
       const emittedAssetNames = await readdir(join(outDir, 'assets'));
       const jsBundleNames = emittedAssetNames.filter((name) => name.endsWith('.js'));
