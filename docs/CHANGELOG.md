@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Populate distinct placeholder lava liquid corner-specific variant sources once the lava surface and edge placeholders are in place.
+- Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so lava liquid corner masks `NE--`, `-ES-`, `N--W`, and `--SW` now resolve to dedicated animated direct-`uvRect` corner crops instead of reusing body or edge sources, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with corner-source and elapsed-frame assertions for those masks, advanced [docs/NEXT.md](docs/NEXT.md) with a lava cross or fully surrounded follow-up after T-junction work, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/world/tileMetadata.test.ts src/gl/authoredAtlasAsset.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add local emissive light sources (start with a torch tile or debug light source) and merge them into the light field.
 - Changes: Updated [src/world/sunlight.ts](../src/world/sunlight.ts) to layer emissive falloff over dirty-column sunlight recomputation, updated [src/world/world.ts](../src/world/world.ts) plus [src/world/world.test.ts](../src/world/world.test.ts) so emissive tile edits invalidate neighboring light columns within emissive range, promoted [src/world/tileMetadata.json](../src/world/tileMetadata.json) `debug_panel_blink` into a default emissive debug source, expanded [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with emissive merge regressions, advanced [docs/NEXT.md](docs/NEXT.md) with a blocker-invalidation follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts src/world/tileMetadata.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
