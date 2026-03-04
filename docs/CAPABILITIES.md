@@ -22,7 +22,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Chunk visibility culling with padded chunk streaming retention.
 - Chunk pruning can evict resident world chunks from memory without losing edited tile values; sparse per-chunk tile overrides are reapplied when those chunks stream back in.
 - Resident world chunks now also own zeroed per-chunk `Uint8Array` light fields plus dirty-light flags and dirty-local-column masks, and newly streamed chunks start with all local sunlight columns dirty so resident lighting caches can be rebuilt from tile state.
-- Tile edits now clear and dirty only the loaded local sunlight columns affected by that edit whenever the edited tile changes `blocksLight` or emissive-light state, including loaded border-neighbor chunks touched by edge or corner edits.
+- Tile edits now clear and dirty only the loaded local sunlight columns affected by that edit whenever the edited tile changes `blocksLight` or emissive-light state, and edge edits now keep sunlight invalidation inside the edited `chunkX` column until horizontal sunlight transport exists.
 - Dirty resident light fields are recomputed during rendering by propagating sunlight top-down from exposed resident chunk tops only within resident `chunkX` columns that currently contain dirty light chunks, and only for the dirty local sunlight columns collected from those chunks, using gameplay `blocksLight` metadata to terminate each column before marking rebuilt local columns clean.
 - Budgeted per-frame mesh build queue with visible-first scheduling and nearby prefetch.
 - Tile edit events trigger edge and corner neighbor-chunk mesh invalidation.

@@ -100,4 +100,29 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(world.getLightLevel(1, -32)).toBe(7);
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
+
+  it('keeps neighboring chunkX columns clean for edge lighting edits until horizontal sunlight transport exists', () => {
+    const world = new TileWorld(1);
+
+    for (const chunk of world.getChunks()) {
+      world.fillChunkLight(chunk.coord.x, chunk.coord.y, 7);
+      world.markChunkLightClean(chunk.coord.x, chunk.coord.y);
+    }
+
+    expect(world.setTile(CHUNK_SIZE - 1, 0, 0)).toBe(true);
+
+    expect(world.getDirtyLightChunkCoords()).toEqual(
+      expect.arrayContaining([
+        { x: 0, y: -1 },
+        { x: 0, y: 0 }
+      ])
+    );
+    expect(world.getDirtyLightChunkCoords()).toHaveLength(2);
+
+    const recomputedChunkCount = recomputeSunlightFromExposedChunkTops(world);
+
+    expect(recomputedChunkCount).toBe(3);
+    expect(world.getLightLevel(CHUNK_SIZE, -32)).toBe(7);
+    expect(world.getDirtyLightChunkCount()).toBe(0);
+  });
 });

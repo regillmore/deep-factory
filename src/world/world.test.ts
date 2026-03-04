@@ -129,13 +129,15 @@ describe('TileWorld', () => {
     const world = new TileWorld(1);
     const affectedChunks = [
       { x: 0, y: -1 },
+      { x: 0, y: 0 }
+    ];
+    const unaffectedChunks = [
+      { x: -1, y: 0 },
       { x: 1, y: -1 },
-      { x: 0, y: 0 },
       { x: 1, y: 0 }
     ];
-    const unaffectedChunk = { x: -1, y: 0 };
 
-    for (const chunk of [...affectedChunks, unaffectedChunk]) {
+    for (const chunk of [...affectedChunks, ...unaffectedChunks]) {
       world.fillChunkLight(chunk.x, chunk.y, 7);
       world.markChunkLightClean(chunk.x, chunk.y);
     }
@@ -144,7 +146,7 @@ describe('TileWorld', () => {
 
     for (const chunk of affectedChunks) {
       expect(world.isChunkLightDirty(chunk.x, chunk.y)).toBe(true);
-      const expectedLocalX = chunk.x === 0 ? CHUNK_SIZE - 1 : 0;
+      const expectedLocalX = CHUNK_SIZE - 1;
       expect(world.getChunkLightDirtyColumnMask(chunk.x, chunk.y)).toBe(localLightColumnBit(expectedLocalX));
 
       const levels = world.getChunkLightLevels(chunk.x, chunk.y);
@@ -158,10 +160,10 @@ describe('TileWorld', () => {
       }
     }
 
-    expect(world.isChunkLightDirty(unaffectedChunk.x, unaffectedChunk.y)).toBe(false);
-    expect(world.getChunkLightLevels(unaffectedChunk.x, unaffectedChunk.y).every((lightLevel) => lightLevel === 7)).toBe(
-      true
-    );
+    for (const chunk of unaffectedChunks) {
+      expect(world.isChunkLightDirty(chunk.x, chunk.y)).toBe(false);
+      expect(world.getChunkLightLevels(chunk.x, chunk.y).every((lightLevel) => lightLevel === 7)).toBe(true);
+    }
 
     for (const chunk of affectedChunks) {
       world.markChunkLightClean(chunk.x, chunk.y);

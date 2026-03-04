@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Restrict sunlight invalidation for edge tile edits to the edited world-x column so neighboring `chunkX` columns stay clean until horizontal light transport exists.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts) so lighting-state tile edits now invalidate only the edited `chunkX` column while still propagating to loaded vertical neighbor chunks for top or bottom edge edits, refreshed [src/world/world.test.ts](../src/world/world.test.ts) expectations for the narrowed dirty-light footprint, added [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) regression coverage that neighboring `chunkX` columns stay clean through recomputation after edge edits, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/world.test.ts src/world/sunlight.test.ts`.
+
 - Task: Track per-local-column sunlight dirty invalidation so isolated tile edits do not force full chunk-column sunlight recomputation.
 - Changes: Updated [src/world/world.ts](../src/world/world.ts), [src/world/types.ts](../src/world/types.ts), and [src/world/sunlight.ts](../src/world/sunlight.ts) so resident chunks now track dirty sunlight local-column masks, tile edits invalidate only affected local columns, and sunlight rebuilds only recompute those local columns while clearing matching dirty bits; expanded [src/world/world.test.ts](../src/world/world.test.ts), [src/world/sunlight.test.ts](../src/world/sunlight.test.ts), and [src/world/mesher.test.ts](../src/world/mesher.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/world.test.ts src/world/sunlight.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

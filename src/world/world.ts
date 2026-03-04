@@ -1,6 +1,5 @@
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './constants';
 import {
-  affectedChunkCoordsForLocalTileEdit,
   chunkBoundsContains,
   chunkKey,
   toTileIndex,
@@ -105,12 +104,15 @@ const clearChunkLightColumns = (chunk: Chunk, localColumnMask: number): void => 
   }
 };
 
-const resolveAffectedLocalLightColumnMask = (editedLocalX: number, chunkOffsetX: number): number => {
-  if (chunkOffsetX === 0) {
-    return toLocalLightColumnBit(editedLocalX);
+const collectSunlightInvalidationChunkYOffsetsForLocalTile = (localY: number): number[] => {
+  const yOffsets = [0];
+  if (localY === 0) {
+    yOffsets.push(-1);
   }
-
-  return chunkOffsetX < 0 ? toLocalLightColumnBit(CHUNK_SIZE - 1) : toLocalLightColumnBit(0);
+  if (localY === CHUNK_SIZE - 1) {
+    yOffsets.push(1);
+  }
+  return yOffsets;
 };
 
 const expectLightLevel = (lightLevel: number): number => {
@@ -212,12 +214,9 @@ export class TileWorld {
     }
 
     if (didTileLightingStateChange(previousTileId, tileId)) {
-      for (const coord of affectedChunkCoordsForLocalTileEdit(chunkX, chunkY, localX, localY)) {
-        this.invalidateChunkLightColumns(
-          coord.x,
-          coord.y,
-          resolveAffectedLocalLightColumnMask(localX, coord.x - chunkX)
-        );
+      const localColumnMask = toLocalLightColumnBit(localX);
+      for (const chunkYOffset of collectSunlightInvalidationChunkYOffsetsForLocalTile(localY)) {
+        this.invalidateChunkLightColumns(chunkX, chunkY + chunkYOffset, localColumnMask);
       }
     }
 

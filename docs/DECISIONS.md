@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-04: Edge tile light invalidation stays inside the edited chunk column
+
+- Decision: Tile lighting edits now invalidate sunlight only in the edited `chunkX` column (plus loaded vertical neighbor chunks for top or bottom edge edits), and no longer dirty neighboring `chunkX` columns for left or right edge edits.
+- Reason: The current sunlight rebuild path is vertical-only per `chunkX` column, so cross-column invalidation on edge edits forced unnecessary recomputation in columns that cannot yet receive horizontal sunlight.
+- Consequence: Until horizontal sunlight transport is added, future sunlight invalidation changes should keep edge-edit dirtiness scoped to the edited world-x column.
+
 ### 2026-03-04: Sunlight invalidation now tracks dirty local columns per resident chunk
 
 - Decision: Resident chunks now store a dirty-local-column sunlight bitmask, tile lighting edits invalidate only affected local columns, and sunlight recomputation unions those masks per resident `chunkX` column before rebuilding and clearing only the matching local columns.
