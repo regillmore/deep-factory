@@ -45,6 +45,7 @@ import {
   type PlayerMovementIntent,
   type PlayerState
 } from '../world/playerState';
+import { recomputeSunlightFromExposedChunkTops } from '../world/sunlight';
 import { TileWorld } from '../world/world';
 
 interface ChunkGpuMesh {
@@ -441,6 +442,7 @@ export class Renderer {
     const drawBounds = expandChunkBounds(visibleBounds, FRUSTUM_PADDING_CHUNKS);
     const retainBounds = expandChunkBounds(drawBounds, STREAM_RETAIN_PADDING_CHUNKS);
 
+    recomputeSunlightFromExposedChunkTops(this.world);
     this.scheduleMeshBuilds(drawBounds, retainBounds);
     this.processMeshBuildQueue();
 

@@ -1,0 +1,58 @@
+import { describe, expect, it } from 'vitest';
+
+import { MAX_LIGHT_LEVEL } from './constants';
+import { recomputeSunlightFromExposedChunkTops } from './sunlight';
+import { TileWorld } from './world';
+
+describe('recomputeSunlightFromExposedChunkTops', () => {
+  it('propagates sunlight downward from exposed chunk tops until light-blocking tiles', () => {
+    const world = new TileWorld(0);
+    world.ensureChunk(0, -1);
+
+    world.setTile(0, -32, 0);
+    world.setTile(0, -31, 0);
+    world.setTile(0, -30, 1);
+    world.setTile(0, -29, 0);
+    world.setTile(0, 0, 0);
+
+    const recomputedChunkCount = recomputeSunlightFromExposedChunkTops(world);
+
+    expect(recomputedChunkCount).toBe(2);
+    expect(world.getLightLevel(0, -32)).toBe(MAX_LIGHT_LEVEL);
+    expect(world.getLightLevel(0, -31)).toBe(MAX_LIGHT_LEVEL);
+    expect(world.getLightLevel(0, -30)).toBe(0);
+    expect(world.getLightLevel(0, -29)).toBe(0);
+    expect(world.getLightLevel(0, 0)).toBe(0);
+    expect(world.getDirtyLightChunkCount()).toBe(0);
+  });
+
+  it('keeps lower chunks unlit when a loaded chunk above blocks sunlight', () => {
+    const world = new TileWorld(0);
+    world.ensureChunk(0, -2);
+    world.ensureChunk(0, -1);
+
+    world.setTile(0, -34, 0);
+    world.setTile(0, -33, 1);
+    world.setTile(0, -32, 0);
+
+    const recomputedChunkCount = recomputeSunlightFromExposedChunkTops(world);
+
+    expect(recomputedChunkCount).toBe(3);
+    expect(world.getLightLevel(0, -34)).toBe(MAX_LIGHT_LEVEL);
+    expect(world.getLightLevel(0, -33)).toBe(0);
+    expect(world.getLightLevel(0, -32)).toBe(0);
+    expect(world.getDirtyLightChunkCount()).toBe(0);
+  });
+
+  it('returns early when no resident chunks are dirty', () => {
+    const world = new TileWorld(0);
+
+    for (const coord of world.getDirtyLightChunkCoords()) {
+      world.markChunkLightClean(coord.x, coord.y);
+    }
+
+    const recomputedChunkCount = recomputeSunlightFromExposedChunkTops(world);
+
+    expect(recomputedChunkCount).toBe(0);
+  });
+});

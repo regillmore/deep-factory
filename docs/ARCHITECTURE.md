@@ -6,7 +6,7 @@
 - `src/core/`: camera math, camera-follow offset helpers, and fixed timestep loop.
 - `src/input/`: input abstraction for keyboard, mouse, touch/pinch, and standalone player intent extraction.
 - `src/gl/`: low-level WebGL2 utilities, authored-atlas loading plus layout-driven placeholder fallback generation, world rendering orchestration, and the grounded-idle, grounded-walk, jump-rise, fall, wall-slide, and briefly latched ceiling-bonk standalone player placeholder draw pass.
-- `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, sparse edited-tile overrides that survive chunk streaming prune, resident per-chunk light storage plus dirty-light invalidation, mesh construction, plus authored atlas-region layout data.
+- `src/world/`: world data model, chunk math, collision queries, spawn and player-state helpers, procedural generation, sparse edited-tile overrides that survive chunk streaming prune, resident per-chunk light storage plus dirty-light invalidation, resident sunlight recomputation from exposed chunk tops, mesh construction, plus authored atlas-region layout data.
 - `src/world/tileMetadata.json` + `src/world/tileMetadata.ts`: validated tile metadata registry (terrain autotile variant maps, liquid-render variant maps with liquid-only connectivity groups, gameplay flags like `solid` / `blocksLight` / `liquidKind` plus optional `emissiveLight`, and non-autotile render `atlasIndex` / `uvRect` metadata with optional animated `frames` / `frameDurationMs` sequences compiled into dense lookups and elapsed-frame resolvers backed by `src/world/authoredAtlasLayout.ts`; liquid variant animations compile into parallel per-tile-per-cardinal-mask frame lookups; renderer boot now validates authored atlas-index sources plus direct `uvRect` metadata, including liquid variants, against the loaded atlas dimensions and whole-pixel atlas edges).
 - `src/gl/animatedChunkMesh.ts`: renderer-side helper that rewrites baked chunk UVs for animated non-terrain quads and animated liquid-variant quads keyed by their resolved liquid cardinal masks when elapsed time advances to a new metadata frame.
 - `src/ui/`: app shell plus in-world shell chrome, debug DOM overlays, spawn marker, and touch-only player controls.
@@ -38,14 +38,15 @@ places. After the atlas is loaded, renderer startup validates direct tile
 atlas dimensions, stores warning telemetry, and emits a console warning if any static, animated, terrain, or liquid
 variant source falls outside the source image or any direct `uvRect` source lands between whole atlas pixels.
 
-1. Ensure canvas backbuffer matches CSS size × `devicePixelRatio`.
+1. Ensure canvas backbuffer matches CSS size x `devicePixelRatio`.
 2. Build camera matrix (`world -> clip`) for orthographic projection.
 3. Compute visible chunk bounds from camera viewport and tile scale.
-4. Queue visible (and nearby prefetch) chunk mesh builds, then process a small per-frame build budget.
-5. Patch ready animated chunk meshes to the current elapsed metadata frame when needed, including liquid-variant frame swaps keyed by the meshed liquid cardinal mask, then draw chunk VAOs with a shared shader + atlas texture.
-6. Draw the standalone player placeholder in world space from the latest `PlayerState`, with facing plus grounded-idle, grounded-walk, jump-rise, fall, wall-slide, and ceiling-bonk pose selection handled in the placeholder shader from render-frame player state plus current sided wall and ceiling contact state and a short render-only bonk hold after blocked ceiling transitions.
-7. Prune far chunk/world caches outside the retain ring.
-8. Update debug overlay with frame timing and renderer telemetry.
+4. Recompute dirty resident chunk light fields by propagating sunlight top-down from exposed resident chunk tops before chunk rendering work consumes those caches.
+5. Queue visible (and nearby prefetch) chunk mesh builds, then process a small per-frame build budget.
+6. Patch ready animated chunk meshes to the current elapsed metadata frame when needed, including liquid-variant frame swaps keyed by the meshed liquid cardinal mask, then draw chunk VAOs with a shared shader + atlas texture.
+7. Draw the standalone player placeholder in world space from the latest `PlayerState`, with facing plus grounded-idle, grounded-walk, jump-rise, fall, wall-slide, and ceiling-bonk pose selection handled in the placeholder shader from render-frame player state plus current sided wall and ceiling contact state and a short render-only bonk hold after blocked ceiling transitions.
+8. Prune far chunk/world caches outside the retain ring.
+9. Update debug overlay with frame timing and renderer telemetry.
 
 ## Chunk meshing
 

@@ -11,7 +11,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Lighting
 
-13. Implement sunlight propagation from exposed chunk tops using the existing gameplay metadata.
+164. Limit sunlight recomputation to affected resident columns instead of rebuilding every resident chunk light field each dirty pass.
 14. Add local emissive light sources (start with a torch tile or debug light source) and merge them into the light field.
 15. Modulate tile rendering by resolved light values.
 162. Surface resident dirty-light chunk counts in a compact debug-edit summary chip when the text debug HUD is hidden.

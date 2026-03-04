@@ -267,7 +267,7 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
     expect(renderer.telemetry.residentAnimatedLiquidChunkQuadCount).toBe(0);
-    expect(renderer.telemetry.residentDirtyLightChunks).toBeGreaterThan(0);
+    expect(renderer.telemetry.residentDirtyLightChunks).toBe(0);
 
     const deleteBuffer = vi.mocked(gl.deleteBuffer);
     const deleteVertexArray = vi.mocked(gl.deleteVertexArray);
@@ -281,7 +281,7 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(0);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(0);
     expect(renderer.telemetry.residentAnimatedLiquidChunkQuadCount).toBe(0);
-    expect(renderer.telemetry.residentDirtyLightChunks).toBeGreaterThan(0);
+    expect(renderer.telemetry.residentDirtyLightChunks).toBe(0);
     expect(deleteBuffer).toHaveBeenCalled();
     expect(deleteVertexArray).toHaveBeenCalled();
   });

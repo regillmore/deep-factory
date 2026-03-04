@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-04: Resident sunlight rebuilds run top-down from exposed chunk tops
+
+- Decision: The renderer now resolves dirty resident light caches through a world helper that scans each resident chunk column from the highest loaded chunk downward, applies `MAX_LIGHT_LEVEL` sunlight until a `blocksLight` tile is hit, and then marks rebuilt chunks clean.
+- Reason: The first sunlight slice needed a deterministic light-field rebuild path that works with existing dirty-light invalidation without introducing a second vertical dependency tracker yet.
+- Consequence: Upcoming emissive and tile-lighting work should treat this exposed-top sunlight field as the base layer and merge additional light sources into that cache model rather than bypassing it.
+
 ### 2026-03-04: Chunk light fields are derived resident caches
 
 - Decision: `TileWorld` now keeps per-chunk light arrays plus dirty flags alongside resident chunk tiles, and lighting-relevant tile edits clear and dirty the affected loaded chunk light fields instead of preserving their previous resolved values.

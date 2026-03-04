@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Implement sunlight propagation from exposed chunk tops using the existing gameplay metadata.
+- Changes: Added [src/world/sunlight.ts](../src/world/sunlight.ts) plus [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) to rebuild dirty resident light caches by scanning sunlight top-down from exposed resident chunk tops with metadata-backed `blocksLight` termination, wired that rebuild into [src/gl/renderer.ts](../src/gl/renderer.ts) before mesh scheduling, updated [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) for the now-clean post-render dirty-light telemetry, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the paused-menu `Resume World` shortcut in the paused-session shell copy alongside the existing resume guidance.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so paused main-menu status copy now includes `Resume World (Enter)` shortcut guidance from the shared desktop shortcut helper, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/appShell.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
