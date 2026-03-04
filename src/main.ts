@@ -1437,6 +1437,16 @@ const bootstrap = async (): Promise<void> => {
             debugStatusStripPlayerCameraFocusPoint.x,
             debugStatusStripPlayerCameraFocusPoint.y
           );
+    const debugStatusStripPlayerCameraFocusChunk =
+      debugStatusStripPlayerCameraFocusTile === null
+        ? null
+        : (() => {
+            const { chunkX, chunkY } = worldToChunkCoord(
+              debugStatusStripPlayerCameraFocusTile.x,
+              debugStatusStripPlayerCameraFocusTile.y
+            );
+            return { x: chunkX, y: chunkY };
+          })();
     const debugOverlayPlayerCameraFollow = debugStatusStripPlayerCameraFocusPoint
       ? {
           focus: debugStatusStripPlayerCameraFocusPoint,
@@ -1528,6 +1538,7 @@ const bootstrap = async (): Promise<void> => {
       playerCameraWorldChunk: debugOverlayVisible ? null : debugStatusStripPlayerCameraWorldChunk,
       playerCameraFocusPoint: debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusPoint,
       playerCameraFocusTile: debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusTile,
+      playerCameraFocusChunk: debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusChunk,
       playerCameraFollowOffset:
         debugOverlayVisible || !standalonePlayerState
           ? null

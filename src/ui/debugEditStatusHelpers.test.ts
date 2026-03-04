@@ -299,6 +299,25 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats the live camera-follow focus-point world chunk coordinates for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerCameraFocusChunk: {
+        x: 0,
+        y: -1
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('FocusChunkNow: 0,-1');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the live standalone player camera-follow offset for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -751,6 +770,26 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.playerText).toBe('Pose: grounded-idle\nFocusTileNow: 4,-4');
+    expect(model.eventText).toBeNull();
+  });
+
+  it('keeps pose and live camera-follow focus-point world-chunk telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'grounded-idle',
+      playerCameraFocusChunk: {
+        x: 0,
+        y: -1
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: grounded-idle\nFocusChunkNow: 0,-1');
     expect(model.eventText).toBeNull();
   });
 
