@@ -14,7 +14,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 15. Modulate tile rendering by resolved light values.
 162. Surface resident dirty-light chunk counts in a compact debug-edit summary chip when the text debug HUD is hidden.
 168. Add horizontal sunlight transport between neighboring `chunkX` columns, then widen edge-edit invalidation to include those neighbors once that transport path exists.
-176. Add a sunlight regression where toggling a non-emissive `blocksLight` tile near an emissive source changes recomputed shadowed light levels across neighboring columns.
+177. Add a sunlight regression where toggling a non-emissive `blocksLight` tile beside an emissive source at a resident-boundary edge does not leak stale light into unloaded neighboring columns when those chunks stream back in.
 
 ## Entities and interpolation
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './constants';
 import { recomputeSunlightFromExposedChunkTops } from './sunlight';
-import { parseTileMetadataRegistry } from './tileMetadata';
+import { getTileEmissiveLightLevel, parseTileMetadataRegistry } from './tileMetadata';
 import { TileWorld } from './world';
 
 const localLightColumnBit = (localX: number): number => (1 << localX) >>> 0;
@@ -190,5 +190,41 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(recomputedChunkCount).toBe(1);
     expect(world.getLightLevel(0, 1)).toBe(11);
     expect(world.getDirtyLightChunkCount()).toBe(0);
+  });
+
+  it('updates neighboring-column shadowed light when a non-emissive blocker near an emissive source toggles', () => {
+    const world = new TileWorld(1);
+    const tunnelWorldTileY = 1;
+    const tunnelStartWorldTileX = CHUNK_SIZE - 2;
+    const tunnelEndWorldTileX = CHUNK_SIZE + 4;
+    const emissiveWorldTileX = CHUNK_SIZE - 1;
+    const blockerWorldTileX = CHUNK_SIZE + 1;
+    const shadowedProbeWorldTileX = CHUNK_SIZE + 3;
+    const emissiveTileId = 6;
+    const expectedUnblockedLightLevel =
+      getTileEmissiveLightLevel(emissiveTileId) -
+      Math.abs(shadowedProbeWorldTileX - emissiveWorldTileX);
+
+    for (let worldTileX = tunnelStartWorldTileX; worldTileX <= tunnelEndWorldTileX; worldTileX += 1) {
+      world.setTile(worldTileX, tunnelWorldTileY - 1, 1);
+      world.setTile(worldTileX, tunnelWorldTileY, 0);
+      world.setTile(worldTileX, tunnelWorldTileY + 1, 1);
+    }
+    world.setTile(emissiveWorldTileX, tunnelWorldTileY, emissiveTileId);
+
+    recomputeSunlightFromExposedChunkTops(world);
+    expect(world.getLightLevel(shadowedProbeWorldTileX, tunnelWorldTileY)).toBe(
+      expectedUnblockedLightLevel
+    );
+
+    world.setTile(blockerWorldTileX, tunnelWorldTileY, 1);
+    recomputeSunlightFromExposedChunkTops(world);
+    expect(world.getLightLevel(shadowedProbeWorldTileX, tunnelWorldTileY)).toBe(0);
+
+    world.setTile(blockerWorldTileX, tunnelWorldTileY, 0);
+    recomputeSunlightFromExposedChunkTops(world);
+    expect(world.getLightLevel(shadowedProbeWorldTileX, tunnelWorldTileY)).toBe(
+      expectedUnblockedLightLevel
+    );
   });
 });

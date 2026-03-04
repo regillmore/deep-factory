@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Add a sunlight regression where toggling a non-emissive `blocksLight` tile near an emissive source changes recomputed shadowed light levels across neighboring columns.
+- Changes: Updated [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a chunk-boundary tunnel regression that toggles a non-emissive blocker beside an emissive source and asserts neighboring-column shadowed light disappears and returns after recomputation, and advanced [docs/NEXT.md](docs/NEXT.md) with a resident-boundary streaming follow-up task.
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts`.
+
 - Task: Invalidate nearby columns when non-emissive `blocksLight` edits could alter emissive propagation paths from existing local light sources.
 - Changes: Updated [src/world/world.ts](../src/world/world.ts) so non-emissive blocker edits now scan nearby resident tiles for reachable emissive sources and widen dirty local-column invalidation accordingly without streaming new chunks, added regression coverage in [src/world/world.test.ts](../src/world/world.test.ts), advanced [docs/NEXT.md](docs/NEXT.md) with a recomputed-shadow follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/world.test.ts src/world/sunlight.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
