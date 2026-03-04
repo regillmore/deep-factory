@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Surface the in-world edit-panel shortcut in shell copy once task 69 adds the keyboard action.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the in-world full-panel shell toggle now renders `Show Edit Panel (G)` or `Hide Edit Panel (G)` from the existing desktop shortcut helper, advanced [docs/NEXT.md](docs/NEXT.md) with a shell-tooltip follow-up, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/appShell.test.ts`.
+
 - Task: Extend deployment regression coverage to assert emitted HTML and CSS assets omit exact double-prefixed `"/deep-factory/deep-factory/atlas/"` static-asset URL prefix literals in production output.
 - Changes: Updated [pagesBasePath.test.ts](../pagesBasePath.test.ts) so the temp-directory Vite production build now rejects the exact double-quoted double-prefixed `"/deep-factory/deep-factory/atlas/"` prefix literal in every emitted HTML and CSS asset, and corrected the shared literal used by the existing JavaScript assertion to require the full exact prefix instead of a truncated substring; advanced [docs/NEXT.md](docs/NEXT.md) with a single-quoted double-prefixed authored-atlas runtime URL follow-up and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run pagesBasePath.test.ts`.

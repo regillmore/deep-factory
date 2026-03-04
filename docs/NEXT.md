@@ -39,9 +39,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 66. Surface the in-world recenter-camera shortcut in shell copy once the keyboard action exists.
 67. Surface the in-world debug-HUD shortcut in shell copy once the keyboard action exists.
 68. Surface the in-world spawn-marker shortcut in shell copy once the keyboard action exists.
-70. Surface the in-world edit-panel shortcut in shell copy once task 69 adds the keyboard action.
 82. Surface the in-world edit-panel shortcut in the touch debug controls keyboard reference once task 69 adds the keyboard action.
 83. Surface the in-world edit-overlay shortcut in shell copy once the keyboard action exists.
+156. Surface the in-world edit-panel shortcut in the shell button tooltip alongside the existing title copy.
 
 ## Player debugging
 
@@ -50,4 +50,3 @@ These items are intentionally scoped to fit a focused implementation pass with t
 155. Surface standalone player live camera zoom level in the text debug HUD alongside the existing follow telemetry.
 
 ## Project structure optimization
-

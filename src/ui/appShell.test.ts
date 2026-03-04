@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  getDesktopDebugEditControlsHotkeyLabel,
   getDesktopFreshWorldHotkeyLabel,
   getDesktopResumeWorldHotkeyLabel,
   getDesktopReturnToMainMenuHotkeyLabel
@@ -97,7 +98,9 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
     expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
     expect(viewModel.debugOverlayTogglePressed).toBe(false);
-    expect(viewModel.debugEditControlsToggleLabel).toBe('Show Edit Panel');
+    expect(viewModel.debugEditControlsToggleLabel).toBe(
+      `Show Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
+    );
     expect(viewModel.debugEditControlsTogglePressed).toBe(false);
     expect(viewModel.debugEditOverlaysToggleLabel).toBe('Hide Edit Overlays');
     expect(viewModel.debugEditOverlaysTogglePressed).toBe(true);
@@ -117,7 +120,9 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.debugOverlayToggleLabel).toBe('Hide Debug HUD');
     expect(viewModel.secondaryActionLabel).toBeNull();
     expect(viewModel.debugOverlayTogglePressed).toBe(true);
-    expect(viewModel.debugEditControlsToggleLabel).toBe('Show Edit Panel');
+    expect(viewModel.debugEditControlsToggleLabel).toBe(
+      `Show Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
+    );
     expect(viewModel.debugEditControlsTogglePressed).toBe(false);
     expect(viewModel.debugEditOverlaysToggleLabel).toBe('Hide Edit Overlays');
     expect(viewModel.debugEditOverlaysTogglePressed).toBe(true);
@@ -138,7 +143,9 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
     expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
     expect(viewModel.secondaryActionLabel).toBeNull();
-    expect(viewModel.debugEditControlsToggleLabel).toBe('Hide Edit Panel');
+    expect(viewModel.debugEditControlsToggleLabel).toBe(
+      `Hide Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
+    );
     expect(viewModel.debugEditControlsTogglePressed).toBe(true);
     expect(viewModel.debugEditOverlaysToggleLabel).toBe('Hide Edit Overlays');
     expect(viewModel.playerSpawnMarkerToggleLabel).toBe('Hide Spawn Marker');
@@ -157,7 +164,9 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
     expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
     expect(viewModel.secondaryActionLabel).toBeNull();
-    expect(viewModel.debugEditControlsToggleLabel).toBe('Show Edit Panel');
+    expect(viewModel.debugEditControlsToggleLabel).toBe(
+      `Show Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
+    );
     expect(viewModel.debugEditOverlaysToggleLabel).toBe('Show Edit Overlays');
     expect(viewModel.debugEditOverlaysTogglePressed).toBe(false);
     expect(viewModel.playerSpawnMarkerToggleLabel).toBe('Hide Spawn Marker');
@@ -177,7 +186,9 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
     expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
     expect(viewModel.secondaryActionLabel).toBeNull();
-    expect(viewModel.debugEditControlsToggleLabel).toBe('Show Edit Panel');
+    expect(viewModel.debugEditControlsToggleLabel).toBe(
+      `Show Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
+    );
     expect(viewModel.debugEditOverlaysToggleLabel).toBe('Hide Edit Overlays');
     expect(viewModel.playerSpawnMarkerToggleLabel).toBe('Show Spawn Marker');
     expect(viewModel.playerSpawnMarkerTogglePressed).toBe(false);

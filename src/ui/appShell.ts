@@ -1,6 +1,7 @@
 import { installPointerClickFocusRelease } from './buttonFocus';
 import {
   getDesktopDebugOverlayHotkeyLabel,
+  getDesktopDebugEditControlsHotkeyLabel,
   getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopFreshWorldHotkeyLabel,
   getDesktopPlayerSpawnMarkerHotkeyLabel,
@@ -96,6 +97,9 @@ const resolveMainMenuSecondaryActionLabel = (label: string): string =>
 const resolveInWorldReturnToMainMenuActionLabel = (): string =>
   `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`;
 
+const resolveInWorldDebugEditControlsToggleLabel = (visible: boolean): string =>
+  `${visible ? 'Hide' : 'Show'} Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`;
+
 export const resolveAppShellViewModel = (state: AppShellState): AppShellViewModel => {
   switch (state.screen) {
     case 'boot':
@@ -163,8 +167,9 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         debugOverlayToggleLabel:
           state.debugOverlayVisible === true ? 'Hide Debug HUD' : 'Show Debug HUD',
         debugOverlayTogglePressed: state.debugOverlayVisible === true,
-        debugEditControlsToggleLabel:
-          state.debugEditControlsVisible === true ? 'Hide Edit Panel' : 'Show Edit Panel',
+        debugEditControlsToggleLabel: resolveInWorldDebugEditControlsToggleLabel(
+          state.debugEditControlsVisible === true
+        ),
         debugEditControlsTogglePressed: state.debugEditControlsVisible === true,
         debugEditOverlaysToggleLabel:
           state.debugEditOverlaysVisible === false ? 'Show Edit Overlays' : 'Hide Edit Overlays',
