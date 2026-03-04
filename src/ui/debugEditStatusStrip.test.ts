@@ -129,6 +129,13 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose and live camera-follow offset player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: grounded-idle\nOffsetNow: x:+18.00 | y:-6.00')).toEqual([
+      ['Pose: grounded-idle'],
+      ['OffsetNow: x:+18.00', '| y:-6.00']
+    ]);
+  });
+
   it('preserves separate pose and live facing player lines while keeping each line individually wrappable', () => {
     expect(buildWrappedDetailLines('Pose: grounded-idle\nFacingNow: right')).toEqual([
       ['Pose: grounded-idle'],

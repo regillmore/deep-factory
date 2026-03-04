@@ -185,6 +185,25 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats the live standalone player camera-follow offset for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerCameraFollowOffset: {
+        x: 18,
+        y: -6
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('OffsetNow: x:+18.00 | y:-6.00');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the live standalone player facing direction for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -462,6 +481,26 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.playerText).toBe(
       'Pose: grounded-idle\nAABBNow: min 18.50,-40.25 | max 30.50,-12.25'
     );
+    expect(model.eventText).toBeNull();
+  });
+
+  it('keeps pose and live camera-follow offset telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'grounded-idle',
+      playerCameraFollowOffset: {
+        x: 18,
+        y: -6
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: grounded-idle\nOffsetNow: x:+18.00 | y:-6.00');
     expect(model.eventText).toBeNull();
   });
 

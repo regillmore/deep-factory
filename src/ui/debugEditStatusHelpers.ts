@@ -33,6 +33,7 @@ export interface DebugEditStatusStripState {
   playerPlaceholderPoseLabel?: string | null;
   playerWorldPosition?: { x: number; y: number } | null;
   playerAabb?: DebugEditStatusStripPlayerAabbTelemetry | null;
+  playerCameraFollowOffset?: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null;
   playerCeilingBonkHoldActive?: boolean | null;
   playerGrounded?: boolean | null;
   playerFacing?: PlayerFacing | null;
@@ -106,6 +107,11 @@ export interface DebugEditStatusStripPlayerRespawnTelemetry {
 export interface DebugEditStatusStripPlayerAabbTelemetry {
   min: { x: number; y: number };
   max: { x: number; y: number };
+}
+
+export interface DebugEditStatusStripPlayerCameraFollowOffsetTelemetry {
+  x: number;
+  y: number;
 }
 
 export interface DebugEditStatusStripPlayerGroundedTransitionTelemetry {
@@ -510,7 +516,13 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
   );
 };
 
-const formatSignedOffset = (value: number): string => (value >= 0 ? `+${value}` : `${value}`);
+const formatSignedOffset = (value: number | string): string => {
+  if (typeof value === 'number') {
+    return value >= 0 ? `+${value}` : `${value}`;
+  }
+
+  return value.startsWith('-') ? value : `+${value}`;
+};
 
 const formatTileCoordinatePair = (tileX: number, tileY: number): string => `${tileX},${tileY}`;
 
@@ -588,6 +600,19 @@ const formatLiveAabbText = (
   return (
     `AABBNow: min ${playerAabb.min.x.toFixed(2)},${playerAabb.min.y.toFixed(2)} | ` +
     `max ${playerAabb.max.x.toFixed(2)},${playerAabb.max.y.toFixed(2)}`
+  );
+};
+
+const formatLiveCameraFollowOffsetText = (
+  playerCameraFollowOffset: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null
+): string | null => {
+  if (playerCameraFollowOffset === null) {
+    return null;
+  }
+
+  return (
+    `OffsetNow: x:${formatSignedOffset(playerCameraFollowOffset.x.toFixed(2))} | ` +
+    `y:${formatSignedOffset(playerCameraFollowOffset.y.toFixed(2))}`
   );
 };
 
@@ -675,6 +700,7 @@ const buildPlayerText = (
   playerPlaceholderPoseLabel: string | null,
   playerWorldPosition: { x: number; y: number } | null,
   playerAabb: DebugEditStatusStripPlayerAabbTelemetry | null,
+  playerCameraFollowOffset: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null,
   playerCeilingBonkHoldActive: boolean | null,
   playerGrounded: boolean | null,
   playerFacing: PlayerFacing | null,
@@ -691,6 +717,7 @@ const buildPlayerText = (
     playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : null,
     formatLiveWorldPositionText(playerWorldPosition),
     formatLiveAabbText(playerAabb),
+    formatLiveCameraFollowOffsetText(playerCameraFollowOffset),
     formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive),
     formatLiveGroundedText(playerGrounded),
     formatLiveFacingText(playerFacing),
@@ -1189,6 +1216,7 @@ export const buildDebugEditStatusStripModel = (
   const playerPlaceholderPoseLabel = state.playerPlaceholderPoseLabel ?? null;
   const playerWorldPosition = state.playerWorldPosition ?? null;
   const playerAabb = state.playerAabb ?? null;
+  const playerCameraFollowOffset = state.playerCameraFollowOffset ?? null;
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
   const playerGrounded = state.playerGrounded ?? null;
   const playerFacing = state.playerFacing ?? null;
@@ -1215,6 +1243,7 @@ export const buildDebugEditStatusStripModel = (
       playerPlaceholderPoseLabel,
       playerWorldPosition,
       playerAabb,
+      playerCameraFollowOffset,
       playerCeilingBonkHoldActive,
       playerGrounded,
       playerFacing,

@@ -46,8 +46,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Player debugging
 
 101. Surface standalone player live collision AABB size in the compact debug-edit status strip when the text debug HUD is hidden.
-104. Surface standalone player live camera-follow offset in the compact debug-edit status strip when the text debug HUD is hidden.
 116. Surface standalone player live camera-follow focus point in the compact debug-edit status strip when the text debug HUD is hidden.
+118. Surface standalone player live camera zoom level in the compact debug-edit status strip when the text debug HUD is hidden.
 
 ## Project structure optimization
 
