@@ -6,8 +6,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Liquid rendering
 
-93. Populate distinct placeholder water and lava edge or surface liquid variant sources now that liquid masks resolve.
-115. Surface the resolved liquid animation normalized loop-progress percentage beside the loop timing fields in debug inspect readouts.
+93. Populate distinct placeholder water liquid edge or surface variant sources now that liquid masks resolve.
+117. Populate distinct placeholder lava liquid edge or surface variant sources now that liquid masks resolve.
 
 ## Lighting
 
@@ -51,4 +51,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-111. Add a deployment regression check that verifies the production build emits `dist/atlas/tile-atlas.png` alongside hashed `/deep-factory/assets/...` bundles for GitHub Pages publishing.
+111. Add a deployment regression check that verifies the production build emits `dist/atlas/tile-atlas.png` for GitHub Pages publishing.

@@ -84,6 +84,7 @@ import {
   resolveAnimatedLiquidRenderVariantFrameProgressNormalizedAtElapsedMs,
   resolveAnimatedLiquidRenderVariantFrameRemainingMsAtElapsedMs,
   resolveAnimatedLiquidRenderVariantLoopElapsedMsAtElapsedMs,
+  resolveAnimatedLiquidRenderVariantLoopProgressNormalizedAtElapsedMs,
   resolveAnimatedLiquidRenderVariantLoopRemainingMsAtElapsedMs,
   getAnimatedLiquidRenderVariantFrameCount,
   getAnimatedLiquidRenderVariantFrameDurationMs,
@@ -1010,6 +1011,14 @@ const bootstrap = async (): Promise<void> => {
       typeof liquidCardinalMask === 'number' && liquidAnimationFrameCount > 0
         ? resolveAnimatedLiquidRenderVariantLoopElapsedMsAtElapsedMs(tileId, liquidCardinalMask, elapsedMs)
         : null;
+    const liquidAnimationLoopProgressNormalized =
+      typeof liquidCardinalMask === 'number' && liquidAnimationFrameCount > 0
+        ? resolveAnimatedLiquidRenderVariantLoopProgressNormalizedAtElapsedMs(
+            tileId,
+            liquidCardinalMask,
+            elapsedMs
+          )
+        : null;
     const liquidAnimationLoopRemainingMs =
       typeof liquidCardinalMask === 'number' && liquidAnimationFrameCount > 0
         ? resolveAnimatedLiquidRenderVariantLoopRemainingMsAtElapsedMs(tileId, liquidCardinalMask, elapsedMs)
@@ -1032,6 +1041,7 @@ const bootstrap = async (): Promise<void> => {
       liquidAnimationFrameRemainingMs,
       liquidAnimationLoopDurationMs,
       liquidAnimationLoopElapsedMs,
+      liquidAnimationLoopProgressNormalized,
       liquidAnimationLoopRemainingMs,
       liquidVariantSource:
         typeof liquidCardinalMask === 'number'
@@ -1280,6 +1290,8 @@ const bootstrap = async (): Promise<void> => {
           liquidAnimationFrameRemainingMs: hoveredDebugTileStatus?.liquidAnimationFrameRemainingMs ?? null,
           liquidAnimationLoopDurationMs: hoveredDebugTileStatus?.liquidAnimationLoopDurationMs ?? null,
           liquidAnimationLoopElapsedMs: hoveredDebugTileStatus?.liquidAnimationLoopElapsedMs ?? null,
+          liquidAnimationLoopProgressNormalized:
+            hoveredDebugTileStatus?.liquidAnimationLoopProgressNormalized ?? null,
           liquidAnimationLoopRemainingMs: hoveredDebugTileStatus?.liquidAnimationLoopRemainingMs ?? null,
           liquidVariantSource: hoveredDebugTileStatus?.liquidVariantSource ?? null,
           liquidVariantUvRect: hoveredDebugTileStatus?.liquidVariantUvRect ?? null,
@@ -1308,6 +1320,8 @@ const bootstrap = async (): Promise<void> => {
           liquidAnimationFrameRemainingMs: pinnedDebugTileStatus.liquidAnimationFrameRemainingMs ?? null,
           liquidAnimationLoopDurationMs: pinnedDebugTileStatus.liquidAnimationLoopDurationMs ?? null,
           liquidAnimationLoopElapsedMs: pinnedDebugTileStatus.liquidAnimationLoopElapsedMs ?? null,
+          liquidAnimationLoopProgressNormalized:
+            pinnedDebugTileStatus.liquidAnimationLoopProgressNormalized ?? null,
           liquidAnimationLoopRemainingMs: pinnedDebugTileStatus.liquidAnimationLoopRemainingMs ?? null,
           liquidVariantSource: pinnedDebugTileStatus.liquidVariantSource ?? null,
           liquidVariantUvRect: pinnedDebugTileStatus.liquidVariantUvRect ?? null,

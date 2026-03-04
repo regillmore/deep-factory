@@ -1594,6 +1594,27 @@ export const resolveAnimatedLiquidRenderVariantLoopRemainingMsAtElapsedMs = (
   return resolveWrappedRemainingMsAtDuration(loopDurationMs, elapsedMs);
 };
 
+export const resolveAnimatedLiquidRenderVariantLoopProgressNormalizedAtElapsedMs = (
+  tileId: number,
+  cardinalMask: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): number | null => {
+  const frameCount = getAnimatedLiquidRenderVariantFrameCountFromLookup(tileId, cardinalMask, registry);
+  if (frameCount === 0) {
+    return null;
+  }
+
+  const frameDurationMs = getAnimatedLiquidRenderVariantFrameDurationMsFromLookup(
+    tileId,
+    cardinalMask,
+    registry
+  );
+  const loopDurationMs =
+    typeof frameDurationMs === 'number' && frameDurationMs > 0 ? frameCount * frameDurationMs : null;
+  return resolveWrappedProgressNormalizedAtDuration(loopDurationMs, elapsedMs);
+};
+
 export const resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs = (
   tileId: number,
   cardinalMask: number,

@@ -49,6 +49,7 @@ export interface DebugOverlayPointerInspect {
   liquidAnimationFrameRemainingMs?: number | null;
   liquidAnimationLoopDurationMs?: number | null;
   liquidAnimationLoopElapsedMs?: number | null;
+  liquidAnimationLoopProgressNormalized?: number | null;
   liquidAnimationLoopRemainingMs?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
@@ -76,6 +77,7 @@ export interface DebugOverlayTileInspect {
   liquidAnimationFrameRemainingMs?: number | null;
   liquidAnimationLoopDurationMs?: number | null;
   liquidAnimationLoopElapsedMs?: number | null;
+  liquidAnimationLoopProgressNormalized?: number | null;
   liquidAnimationLoopRemainingMs?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
@@ -266,6 +268,9 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
   const liquidAnimationFrameRemaining = formatDurationMs(tileInspect.liquidAnimationFrameRemainingMs);
   const liquidAnimationLoopDuration = formatDurationMs(tileInspect.liquidAnimationLoopDurationMs);
   const liquidAnimationLoopElapsed = formatDurationMs(tileInspect.liquidAnimationLoopElapsedMs);
+  const liquidAnimationLoopProgress = formatProgressPercentage(
+    tileInspect.liquidAnimationLoopProgressNormalized
+  );
   const liquidAnimationLoopRemaining = formatDurationMs(tileInspect.liquidAnimationLoopRemainingMs);
 
   return (
@@ -286,6 +291,7 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     (liquidAnimationFrameProgress ? ` | liquidFramePct:${liquidAnimationFrameProgress}` : '') +
     (liquidAnimationLoopDuration ? ` | liquidLoopDur:${liquidAnimationLoopDuration}` : '') +
     (liquidAnimationLoopElapsed ? ` | liquidLoopElapsed:${liquidAnimationLoopElapsed}` : '') +
+    (liquidAnimationLoopProgress ? ` | liquidLoopPct:${liquidAnimationLoopProgress}` : '') +
     (liquidAnimationLoopRemaining ? ` | liquidLoopRemain:${liquidAnimationLoopRemaining}` : '') +
     (typeof tileInspect.liquidVariantSource === 'string' && tileInspect.liquidVariantSource.length > 0
       ? ` | liquidSrc:${tileInspect.liquidVariantSource}`

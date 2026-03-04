@@ -38,6 +38,7 @@ import {
   resolveAnimatedLiquidRenderVariantFrameRemainingMsAtElapsedMs,
   resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs,
   resolveAnimatedLiquidRenderVariantLoopElapsedMsAtElapsedMs,
+  resolveAnimatedLiquidRenderVariantLoopProgressNormalizedAtElapsedMs,
   resolveAnimatedLiquidRenderVariantLoopRemainingMsAtElapsedMs,
   resolveAnimatedLiquidRenderVariantFrameUvRect,
   resolveAnimatedLiquidRenderVariantFrameUvRectAtElapsedMs,
@@ -866,6 +867,21 @@ describe('tile metadata loader', () => {
     expect(resolveAnimatedLiquidRenderVariantLoopElapsedMsAtElapsedMs(12, 3, 240, registry)).toBe(0);
     expect(resolveAnimatedLiquidRenderVariantLoopElapsedMsAtElapsedMs(12, 3, -1, registry)).toBe(239);
     expect(resolveAnimatedLiquidRenderVariantLoopElapsedMsAtElapsedMs(12, 4, 120, registry)).toBe(null);
+    expect(resolveAnimatedLiquidRenderVariantLoopProgressNormalizedAtElapsedMs(12, 3, 0, registry)).toBe(0);
+    expect(resolveAnimatedLiquidRenderVariantLoopProgressNormalizedAtElapsedMs(12, 3, 119, registry)).toBeCloseTo(
+      119 / 240
+    );
+    expect(resolveAnimatedLiquidRenderVariantLoopProgressNormalizedAtElapsedMs(12, 3, 120, registry)).toBeCloseTo(
+      0.5
+    );
+    expect(resolveAnimatedLiquidRenderVariantLoopProgressNormalizedAtElapsedMs(12, 3, 239, registry)).toBeCloseTo(
+      239 / 240
+    );
+    expect(resolveAnimatedLiquidRenderVariantLoopProgressNormalizedAtElapsedMs(12, 3, 240, registry)).toBe(0);
+    expect(resolveAnimatedLiquidRenderVariantLoopProgressNormalizedAtElapsedMs(12, 3, -1, registry)).toBeCloseTo(
+      239 / 240
+    );
+    expect(resolveAnimatedLiquidRenderVariantLoopProgressNormalizedAtElapsedMs(12, 4, 120, registry)).toBe(null);
     expect(resolveAnimatedLiquidRenderVariantLoopRemainingMsAtElapsedMs(12, 3, 0, registry)).toBe(240);
     expect(resolveAnimatedLiquidRenderVariantLoopRemainingMsAtElapsedMs(12, 3, 119, registry)).toBe(121);
     expect(resolveAnimatedLiquidRenderVariantLoopRemainingMsAtElapsedMs(12, 3, 120, registry)).toBe(120);
