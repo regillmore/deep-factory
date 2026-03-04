@@ -85,6 +85,7 @@ export interface DebugEditHoveredTileState {
   liquidAnimationFrameCount?: number | null;
   liquidAnimationFrameDurationMs?: number | null;
   liquidAnimationFrameElapsedMs?: number | null;
+  liquidAnimationFrameProgressNormalized?: number | null;
   liquidAnimationFrameRemainingMs?: number | null;
   liquidAnimationLoopDurationMs?: number | null;
   liquidAnimationLoopElapsedMs?: number | null;
@@ -437,6 +438,15 @@ const formatDurationMs = (durationMs: number | null | undefined): string | null 
   }
   return `${Math.round(durationMs)}ms`;
 };
+const formatProgressPercentage = (value: number | null | undefined): string | null => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null;
+  }
+
+  const clampedPercent = Math.min(Math.max(value, 0), 1) * 100;
+  const roundedPercent = Math.round(clampedPercent * 10) / 10;
+  return Number.isInteger(roundedPercent) ? `${roundedPercent.toFixed(0)}%` : `${roundedPercent.toFixed(1)}%`;
+};
 
 const hasSameInspectTarget = (
   hoveredTile: DebugEditHoveredTileState | null,
@@ -454,6 +464,9 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
   );
   const liquidAnimationFrameDuration = formatDurationMs(tile.liquidAnimationFrameDurationMs);
   const liquidAnimationFrameElapsed = formatDurationMs(tile.liquidAnimationFrameElapsedMs);
+  const liquidAnimationFrameProgress = formatProgressPercentage(
+    tile.liquidAnimationFrameProgressNormalized
+  );
   const liquidAnimationFrameRemaining = formatDurationMs(tile.liquidAnimationFrameRemainingMs);
   const liquidAnimationLoopDuration = formatDurationMs(tile.liquidAnimationLoopDurationMs);
   const liquidAnimationLoopElapsed = formatDurationMs(tile.liquidAnimationLoopElapsedMs);
@@ -476,6 +489,7 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     (liquidAnimationFrameDuration ? ` | liquidFrameDur:${liquidAnimationFrameDuration}` : '') +
     (liquidAnimationFrameElapsed ? ` | liquidFrameElapsed:${liquidAnimationFrameElapsed}` : '') +
     (liquidAnimationFrameRemaining ? ` | liquidFrameRemain:${liquidAnimationFrameRemaining}` : '') +
+    (liquidAnimationFrameProgress ? ` | liquidFramePct:${liquidAnimationFrameProgress}` : '') +
     (liquidAnimationLoopDuration ? ` | liquidLoopDur:${liquidAnimationLoopDuration}` : '') +
     (liquidAnimationLoopElapsed ? ` | liquidLoopElapsed:${liquidAnimationLoopElapsed}` : '') +
     (liquidAnimationLoopRemaining ? ` | liquidLoopRemain:${liquidAnimationLoopRemaining}` : '') +

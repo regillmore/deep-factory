@@ -208,6 +208,7 @@ describe('formatDebugOverlayText', () => {
         liquidAnimationFrameCount: 2,
         liquidAnimationFrameDurationMs: 180,
         liquidAnimationFrameElapsedMs: 60,
+        liquidAnimationFrameProgressNormalized: 60 / 180,
         liquidAnimationFrameRemainingMs: 120,
         liquidAnimationLoopDurationMs: 360,
         liquidAnimationLoopElapsedMs: 240,
@@ -235,6 +236,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidFrameDur:180ms');
     expect(text).toContain('liquidFrameElapsed:60ms');
     expect(text).toContain('liquidFrameRemain:120ms');
+    expect(text).toContain('liquidFramePct:33.3%');
     expect(text).toContain('liquidLoopDur:360ms');
     expect(text).toContain('liquidLoopElapsed:240ms');
     expect(text).toContain('liquidLoopRemain:120ms');
@@ -469,6 +471,7 @@ describe('formatDebugOverlayText', () => {
         liquidAnimationFrameCount: 2,
         liquidAnimationFrameDurationMs: 180,
         liquidAnimationFrameElapsedMs: 60,
+        liquidAnimationFrameProgressNormalized: 60 / 180,
         liquidAnimationFrameRemainingMs: 120,
         liquidAnimationLoopDurationMs: 360,
         liquidAnimationLoopElapsedMs: 240,
@@ -499,6 +502,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidFrameDur:180ms');
     expect(text).toContain('liquidFrameElapsed:60ms');
     expect(text).toContain('liquidFrameRemain:120ms');
+    expect(text).toContain('liquidFramePct:33.3%');
     expect(text).toContain('liquidLoopDur:360ms');
     expect(text).toContain('liquidLoopElapsed:240ms');
     expect(text).toContain('liquidLoopRemain:120ms');

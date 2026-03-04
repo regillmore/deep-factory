@@ -7,7 +7,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Liquid rendering
 
 93. Populate distinct placeholder water and lava edge or surface liquid variant sources now that liquid masks resolve.
-114. Surface the resolved liquid animation normalized frame-progress percentage beside the frame timing fields in debug inspect readouts.
 115. Surface the resolved liquid animation normalized loop-progress percentage beside the loop timing fields in debug inspect readouts.
 
 ## Lighting
@@ -48,6 +47,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 101. Surface standalone player live collision AABB size in the compact debug-edit status strip when the text debug HUD is hidden.
 104. Surface standalone player live camera-follow offset in the compact debug-edit status strip when the text debug HUD is hidden.
+116. Surface standalone player live camera-follow focus point in the compact debug-edit status strip when the text debug HUD is hidden.
 
 ## Project structure optimization
 

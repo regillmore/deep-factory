@@ -34,6 +34,7 @@ import {
   isTileSolid,
   parseTileMetadataRegistry,
   resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs,
+  resolveAnimatedLiquidRenderVariantFrameProgressNormalizedAtElapsedMs,
   resolveAnimatedLiquidRenderVariantFrameRemainingMsAtElapsedMs,
   resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs,
   resolveAnimatedLiquidRenderVariantLoopElapsedMsAtElapsedMs,
@@ -840,6 +841,18 @@ describe('tile metadata loader', () => {
     expect(resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs(12, 3, 181, registry)).toBe(61);
     expect(resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs(12, 3, -1, registry)).toBe(119);
     expect(resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs(12, 4, 120, registry)).toBe(null);
+    expect(resolveAnimatedLiquidRenderVariantFrameProgressNormalizedAtElapsedMs(12, 3, 0, registry)).toBe(0);
+    expect(resolveAnimatedLiquidRenderVariantFrameProgressNormalizedAtElapsedMs(12, 3, 119, registry)).toBeCloseTo(
+      119 / 120
+    );
+    expect(resolveAnimatedLiquidRenderVariantFrameProgressNormalizedAtElapsedMs(12, 3, 120, registry)).toBe(0);
+    expect(resolveAnimatedLiquidRenderVariantFrameProgressNormalizedAtElapsedMs(12, 3, 181, registry)).toBeCloseTo(
+      61 / 120
+    );
+    expect(resolveAnimatedLiquidRenderVariantFrameProgressNormalizedAtElapsedMs(12, 3, -1, registry)).toBeCloseTo(
+      119 / 120
+    );
+    expect(resolveAnimatedLiquidRenderVariantFrameProgressNormalizedAtElapsedMs(12, 4, 120, registry)).toBe(null);
     expect(resolveAnimatedLiquidRenderVariantFrameRemainingMsAtElapsedMs(12, 3, 0, registry)).toBe(120);
     expect(resolveAnimatedLiquidRenderVariantFrameRemainingMsAtElapsedMs(12, 3, 119, registry)).toBe(1);
     expect(resolveAnimatedLiquidRenderVariantFrameRemainingMsAtElapsedMs(12, 3, 120, registry)).toBe(120);

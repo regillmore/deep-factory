@@ -45,6 +45,7 @@ export interface DebugOverlayPointerInspect {
   liquidAnimationFrameCount?: number | null;
   liquidAnimationFrameDurationMs?: number | null;
   liquidAnimationFrameElapsedMs?: number | null;
+  liquidAnimationFrameProgressNormalized?: number | null;
   liquidAnimationFrameRemainingMs?: number | null;
   liquidAnimationLoopDurationMs?: number | null;
   liquidAnimationLoopElapsedMs?: number | null;
@@ -71,6 +72,7 @@ export interface DebugOverlayTileInspect {
   liquidAnimationFrameCount?: number | null;
   liquidAnimationFrameDurationMs?: number | null;
   liquidAnimationFrameElapsedMs?: number | null;
+  liquidAnimationFrameProgressNormalized?: number | null;
   liquidAnimationFrameRemainingMs?: number | null;
   liquidAnimationLoopDurationMs?: number | null;
   liquidAnimationLoopElapsedMs?: number | null;
@@ -195,6 +197,15 @@ const formatDurationMs = (durationMs: number | null | undefined): string | null 
   }
   return `${Math.round(durationMs)}ms`;
 };
+const formatProgressPercentage = (value: number | null | undefined): string | null => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null;
+  }
+
+  const clampedPercent = Math.min(Math.max(value, 0), 1) * 100;
+  const roundedPercent = Math.round(clampedPercent * 10) / 10;
+  return Number.isInteger(roundedPercent) ? `${roundedPercent.toFixed(0)}%` : `${roundedPercent.toFixed(1)}%`;
+};
 const formatLiquidCardinalMask = (value: number): string => {
   const mask = value & 0xf;
   return (
@@ -249,6 +260,9 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
   );
   const liquidAnimationFrameDuration = formatDurationMs(tileInspect.liquidAnimationFrameDurationMs);
   const liquidAnimationFrameElapsed = formatDurationMs(tileInspect.liquidAnimationFrameElapsedMs);
+  const liquidAnimationFrameProgress = formatProgressPercentage(
+    tileInspect.liquidAnimationFrameProgressNormalized
+  );
   const liquidAnimationFrameRemaining = formatDurationMs(tileInspect.liquidAnimationFrameRemainingMs);
   const liquidAnimationLoopDuration = formatDurationMs(tileInspect.liquidAnimationLoopDurationMs);
   const liquidAnimationLoopElapsed = formatDurationMs(tileInspect.liquidAnimationLoopElapsedMs);
@@ -269,6 +283,7 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     (liquidAnimationFrameDuration ? ` | liquidFrameDur:${liquidAnimationFrameDuration}` : '') +
     (liquidAnimationFrameElapsed ? ` | liquidFrameElapsed:${liquidAnimationFrameElapsed}` : '') +
     (liquidAnimationFrameRemaining ? ` | liquidFrameRemain:${liquidAnimationFrameRemaining}` : '') +
+    (liquidAnimationFrameProgress ? ` | liquidFramePct:${liquidAnimationFrameProgress}` : '') +
     (liquidAnimationLoopDuration ? ` | liquidLoopDur:${liquidAnimationLoopDuration}` : '') +
     (liquidAnimationLoopElapsed ? ` | liquidLoopElapsed:${liquidAnimationLoopElapsed}` : '') +
     (liquidAnimationLoopRemaining ? ` | liquidLoopRemain:${liquidAnimationLoopRemaining}` : '') +
