@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Surface the paused-menu `Resume World (Enter)` shortcut in the paused-session detail-line shell copy that describes session preservation.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the paused-session detail line now includes `Resume World (Enter)` shortcut guidance through the shared desktop shortcut helper, advanced [docs/NEXT.md](docs/NEXT.md) with a paused-menu `New World (N)` detail-line follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Limit sunlight recomputation to affected resident columns instead of rebuilding every resident chunk light field each dirty pass.
 - Changes: Updated [src/world/sunlight.ts](../src/world/sunlight.ts) to derive dirty resident `chunkX` columns from dirty-light chunks and rebuild only those vertical columns while keeping the same top-down `blocksLight` propagation model, added [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) coverage that confirms clean chunk columns keep their cached light values when unrelated columns are dirty, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
