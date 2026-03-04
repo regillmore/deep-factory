@@ -51,4 +51,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-131. Extend deployment regression coverage to assert emitted CSS and JavaScript assets omit exact root-relative `"/assets/"` bundle URL literals in production output.
+132. Extend deployment regression coverage to assert emitted JavaScript assets omit exact double-prefixed `"/deep-factory/deep-factory/atlas/tile-atlas.png"` authored-atlas runtime URL literals in production output.
