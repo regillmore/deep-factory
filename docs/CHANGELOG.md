@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Surface the paused-menu `New World` shortcut in the shell button tooltip alongside the existing discard warning copy.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the paused-menu destructive `New World` tooltip now resolves through a shared shortcut-aware title helper and repeats the existing desktop `N` shortcut alongside the existing reset warning copy, advanced [docs/NEXT.md](docs/NEXT.md) with a paused-menu `Resume World` tooltip follow-up, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/appShell.test.ts`.
+
 - Task: Surface the in-world edit-panel shortcut in the shell button tooltip alongside the existing title copy.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the in-world full-panel shell button tooltip now includes the existing desktop `G` shortcut alongside the existing show or hide copy through a shared resolver, advanced [docs/NEXT.md](docs/NEXT.md) with a paused-menu `New World` tooltip follow-up, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/appShell.test.ts`.

@@ -94,6 +94,9 @@ const resolveMainMenuPrimaryActionLabel = (label: string): string =>
 const resolveMainMenuSecondaryActionLabel = (label: string): string =>
   label === 'New World' ? `${label} (${getDesktopFreshWorldHotkeyLabel()})` : label;
 
+export const resolvePausedMainMenuFreshWorldTitle = (): string =>
+  `Discard the paused session, camera state, and undo history, then boot a fresh world (${getDesktopFreshWorldHotkeyLabel()})`;
+
 const resolveInWorldReturnToMainMenuActionLabel = (): string =>
   `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`;
 
@@ -364,7 +367,7 @@ export class AppShell {
     this.secondaryButton.hidden = viewModel.secondaryActionLabel === null;
     this.secondaryButton.title =
       state.screen === 'main-menu' && state.secondaryActionLabel === 'New World'
-        ? 'Discard the paused session, camera state, and undo history, then boot a fresh world'
+        ? resolvePausedMainMenuFreshWorldTitle()
         : '';
     const overlayActionsVisible =
       viewModel.primaryActionLabel !== null || viewModel.secondaryActionLabel !== null;

@@ -41,7 +41,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 68. Surface the in-world spawn-marker shortcut in shell copy once the keyboard action exists.
 82. Surface the in-world edit-panel shortcut in the touch debug controls keyboard reference once task 69 adds the keyboard action.
 83. Surface the in-world edit-overlay shortcut in shell copy once the keyboard action exists.
-157. Surface the paused-menu `New World` shortcut in the shell button tooltip alongside the existing discard warning copy.
+158. Surface the paused-menu `Resume World` shortcut in the shell button tooltip alongside the existing paused-session copy.
 
 ## Player debugging
 

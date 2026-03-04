@@ -9,6 +9,7 @@ import {
 import {
   createPausedMainMenuShellState,
   resolveAppShellRegionDisplay,
+  resolvePausedMainMenuFreshWorldTitle,
   resolveInWorldDebugEditControlsToggleTitle,
   resolveAppShellViewModel
 } from './appShell';
@@ -226,6 +227,14 @@ describe('resolveInWorldDebugEditControlsToggleTitle', () => {
   it('includes the edit-panel desktop shortcut when the panel is visible', () => {
     expect(resolveInWorldDebugEditControlsToggleTitle(true)).toBe(
       `Hide the full debug-edit control panel (${getDesktopDebugEditControlsHotkeyLabel()})`
+    );
+  });
+});
+
+describe('resolvePausedMainMenuFreshWorldTitle', () => {
+  it('includes the paused-menu New World desktop shortcut in the destructive tooltip copy', () => {
+    expect(resolvePausedMainMenuFreshWorldTitle()).toBe(
+      `Discard the paused session, camera state, and undo history, then boot a fresh world (${getDesktopFreshWorldHotkeyLabel()})`
     );
   });
 });
