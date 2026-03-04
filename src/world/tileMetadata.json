@@ -126,22 +126,134 @@
       "liquidRender": {
         "connectivityGroup": "water",
         "variantRenderByCardinalMask": [
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 },
-          { "atlasIndex": 14, "frames": [{ "atlasIndex": 14 }, { "atlasIndex": 15 }], "frameDurationMs": 180 }
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 } },
+              { "uvRect": { "u0": 0.75, "v0": 0.25, "u1": 0.8333333333333334, "v1": 0.5 } }
+            ],
+            "frameDurationMs": 180
+          },
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0.5, "u1": 0.75, "v1": 0.75 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0.5, "u1": 0.75, "v1": 0.75 } },
+              { "uvRect": { "u0": 0.75, "v0": 0.5, "u1": 0.8333333333333334, "v1": 0.75 } }
+            ],
+            "frameDurationMs": 180
+          },
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 } },
+              { "uvRect": { "u0": 0.75, "v0": 0.25, "u1": 0.8333333333333334, "v1": 0.5 } }
+            ],
+            "frameDurationMs": 180
+          },
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0.5, "u1": 0.75, "v1": 0.75 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0.5, "u1": 0.75, "v1": 0.75 } },
+              { "uvRect": { "u0": 0.75, "v0": 0.5, "u1": 0.8333333333333334, "v1": 0.75 } }
+            ],
+            "frameDurationMs": 180
+          },
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 } },
+              { "uvRect": { "u0": 0.75, "v0": 0.25, "u1": 0.8333333333333334, "v1": 0.5 } }
+            ],
+            "frameDurationMs": 180
+          },
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0.5, "u1": 0.75, "v1": 0.75 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0.5, "u1": 0.75, "v1": 0.75 } },
+              { "uvRect": { "u0": 0.75, "v0": 0.5, "u1": 0.8333333333333334, "v1": 0.75 } }
+            ],
+            "frameDurationMs": 180
+          },
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 } },
+              { "uvRect": { "u0": 0.75, "v0": 0.25, "u1": 0.8333333333333334, "v1": 0.5 } }
+            ],
+            "frameDurationMs": 180
+          },
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0.5, "u1": 0.75, "v1": 0.75 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0.5, "u1": 0.75, "v1": 0.75 } },
+              { "uvRect": { "u0": 0.75, "v0": 0.5, "u1": 0.8333333333333334, "v1": 0.75 } }
+            ],
+            "frameDurationMs": 180
+          },
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 } },
+              { "uvRect": { "u0": 0.75, "v0": 0.25, "u1": 0.8333333333333334, "v1": 0.5 } }
+            ],
+            "frameDurationMs": 180
+          },
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0.5, "u1": 0.75, "v1": 0.75 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0.5, "u1": 0.75, "v1": 0.75 } },
+              { "uvRect": { "u0": 0.75, "v0": 0.5, "u1": 0.8333333333333334, "v1": 0.75 } }
+            ],
+            "frameDurationMs": 180
+          },
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 } },
+              { "uvRect": { "u0": 0.75, "v0": 0.25, "u1": 0.8333333333333334, "v1": 0.5 } }
+            ],
+            "frameDurationMs": 180
+          },
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0, "u1": 0.75, "v1": 0.25 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0, "u1": 0.75, "v1": 0.25 } },
+              { "uvRect": { "u0": 0.75, "v0": 0, "u1": 0.8333333333333334, "v1": 0.25 } }
+            ],
+            "frameDurationMs": 180
+          },
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 } },
+              { "uvRect": { "u0": 0.75, "v0": 0.25, "u1": 0.8333333333333334, "v1": 0.5 } }
+            ],
+            "frameDurationMs": 180
+          },
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0.5, "u1": 0.75, "v1": 0.75 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0.5, "u1": 0.75, "v1": 0.75 } },
+              { "uvRect": { "u0": 0.75, "v0": 0.5, "u1": 0.8333333333333334, "v1": 0.75 } }
+            ],
+            "frameDurationMs": 180
+          },
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0.25, "u1": 0.75, "v1": 0.5 } },
+              { "uvRect": { "u0": 0.75, "v0": 0.25, "u1": 0.8333333333333334, "v1": 0.5 } }
+            ],
+            "frameDurationMs": 180
+          },
+          {
+            "uvRect": { "u0": 0.6666666666666666, "v0": 0, "u1": 0.75, "v1": 0.25 },
+            "frames": [
+              { "uvRect": { "u0": 0.6666666666666666, "v0": 0, "u1": 0.75, "v1": 0.25 } },
+              { "uvRect": { "u0": 0.75, "v0": 0, "u1": 0.8333333333333334, "v1": 0.25 } }
+            ],
+            "frameDurationMs": 180
+          }
         ]
       }
     },

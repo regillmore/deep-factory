@@ -776,7 +776,8 @@ describe('authored atlas asset', () => {
   });
 
   it('accounts for every committed authored atlas region through metadata or explicit unused documentation', () => {
-    const referencedAtlasIndices = new Set(collectReferencedAtlasIndices());
+    const { pngWidth, pngHeight } = readCommittedAtlasPng();
+    const referencedAtlasIndices = new Set(collectReferencedAuthoredAtlasIndices(pngWidth, pngHeight));
     const intentionallyUnusedEntries = Object.entries(AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS);
     const intentionallyUnusedAtlasIndices = new Set<number>();
 
@@ -996,8 +997,8 @@ describe('authored atlas asset', () => {
   });
 
   it('keeps every referenced authored atlas region non-transparent in the committed PNG', () => {
-    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
-    const referencedAtlasIndices = collectReferencedAtlasIndices();
+    const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
+    const referencedAtlasIndices = collectReferencedAuthoredAtlasIndices(pngWidth, pngHeight);
 
     expect(referencedAtlasIndices.length).toBeGreaterThan(0);
 

@@ -88,9 +88,18 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileVariantAtlasIndex(2, 6)).toBe(6);
     expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(1, 0)).toBe(0);
     expect(resolveTileRenderUvRect(3)).toEqual(atlasIndexToUvRect(14));
-    expect(resolveLiquidRenderVariantMetadata(7, 0)).toMatchObject({ atlasIndex: 14 });
-    expect(describeLiquidRenderVariantSource(7, 0)).toBe('atlasIndex 14');
-    expect(resolveLiquidRenderVariantUvRect(7, 0)).toEqual(atlasIndexToUvRect(14));
+    expect(resolveLiquidRenderVariantMetadata(7, 0)).toMatchObject({
+      uvRect: { u0: 0.6666666666666666, v0: 0.25, u1: 0.75, v1: 0.5 }
+    });
+    expect(describeLiquidRenderVariantSource(7, 0)).toBe('uvRect 0.667,0.25..0.75,0.5');
+    expect(resolveLiquidRenderVariantUvRect(7, 0)).toEqual({
+      u0: 0.6666666666666666,
+      v0: 0.25,
+      u1: 0.75,
+      v1: 0.5
+    });
+    expect(describeLiquidRenderVariantSource(7, 13)).toBe('uvRect 0.667,0.5..0.75,0.75');
+    expect(describeLiquidRenderVariantSource(7, 15)).toBe('uvRect 0.667,0..0.75,0.25');
     expect(resolveLiquidRenderVariantUvRect(8, 15)).toEqual(atlasIndexToUvRect(15));
     expect(resolveTileRenderUvRect(4)).toEqual({
       u0: 0.16666666666666666,

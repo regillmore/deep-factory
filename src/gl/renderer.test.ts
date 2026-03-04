@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Camera2D } from '../core/camera2d';
 import { CHUNK_SIZE, TILE_SIZE } from '../world/constants';
 import { createPlayerState } from '../world/playerState';
-import { atlasIndexToUvRect, resolveAnimatedTileRenderFrameUvRect } from '../world/tileMetadata';
+import {
+  atlasIndexToUvRect,
+  resolveAnimatedTileRenderFrameUvRect,
+  resolveLiquidRenderVariantUvRectAtElapsedMs
+} from '../world/tileMetadata';
 import type { AtlasValidationWarning } from './atlasValidation';
 import {
   STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS,
@@ -745,15 +749,17 @@ describe('Renderer atlas telemetry', () => {
     renderer.render(camera, { timeMs: 180 });
     expect(bufferData).toHaveBeenCalledTimes(1);
     const frameOneVertices = bufferData.mock.calls[0]?.[1] as Float32Array | undefined;
-    const frameOneUv = atlasIndexToUvRect(15);
+    const liquidCardinalMask = 0;
+    const frameOneUv = resolveLiquidRenderVariantUvRectAtElapsedMs(7, liquidCardinalMask, 180);
+    expect(frameOneUv).not.toBeNull();
     expect(frameOneVertices).toBeInstanceOf(Float32Array);
     expect(Array.from(frameOneVertices?.slice(2, 4) ?? [])).toEqual([
-      toFloat32(frameOneUv.u0),
-      toFloat32(frameOneUv.v0)
+      toFloat32(frameOneUv!.u0),
+      toFloat32(frameOneUv!.v0)
     ]);
     expect(Array.from(frameOneVertices?.slice(22, 24) ?? [])).toEqual([
-      toFloat32(frameOneUv.u0),
-      toFloat32(frameOneUv.v1)
+      toFloat32(frameOneUv!.u0),
+      toFloat32(frameOneUv!.v1)
     ]);
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);
@@ -768,14 +774,15 @@ describe('Renderer atlas telemetry', () => {
     renderer.render(camera, { timeMs: 360 });
     expect(bufferData).toHaveBeenCalledTimes(2);
     const frameZeroVertices = bufferData.mock.calls[1]?.[1] as Float32Array | undefined;
-    const frameZeroUv = atlasIndexToUvRect(14);
+    const frameZeroUv = resolveLiquidRenderVariantUvRectAtElapsedMs(7, liquidCardinalMask, 360);
+    expect(frameZeroUv).not.toBeNull();
     expect(Array.from(frameZeroVertices?.slice(2, 4) ?? [])).toEqual([
-      toFloat32(frameZeroUv.u0),
-      toFloat32(frameZeroUv.v0)
+      toFloat32(frameZeroUv!.u0),
+      toFloat32(frameZeroUv!.v0)
     ]);
     expect(Array.from(frameZeroVertices?.slice(22, 24) ?? [])).toEqual([
-      toFloat32(frameZeroUv.u0),
-      toFloat32(frameZeroUv.v1)
+      toFloat32(frameZeroUv!.u0),
+      toFloat32(frameZeroUv!.v1)
     ]);
     expect(renderer.telemetry.animatedChunkUvUploadCount).toBe(1);
     expect(renderer.telemetry.animatedChunkUvUploadQuadCount).toBe(1);

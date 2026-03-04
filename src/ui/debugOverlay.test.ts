@@ -162,9 +162,9 @@ describe('formatDebugOverlayText', () => {
         liquidKind: 'water',
         liquidConnectivityGroupLabel: 'water',
         liquidCardinalMask: 11,
-        liquidVariantSource: 'atlasIndex 14',
-        liquidVariantUvRect: '0.333,0.75..0.5,1',
-        liquidVariantPixelBounds: '32,48..48,64'
+        liquidVariantSource: 'uvRect 0.667,0..0.75,0.25',
+        liquidVariantUvRect: '0.667,0..0.75,0.25',
+        liquidVariantPixelBounds: '64,0..72,16'
       },
       spawn: null,
       playerPlaceholderPoseLabel: null,
@@ -184,9 +184,9 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquid:water');
     expect(text).toContain('liquidGroup:water');
     expect(text).toContain('liquidMask:NE-W (11)');
-    expect(text).toContain('liquidSrc:atlasIndex 14');
-    expect(text).toContain('liquidUv:0.333,0.75..0.5,1');
-    expect(text).toContain('liquidPx:32,48..48,64');
+    expect(text).toContain('liquidSrc:uvRect 0.667,0..0.75,0.25');
+    expect(text).toContain('liquidUv:0.667,0..0.75,0.25');
+    expect(text).toContain('liquidPx:64,0..72,16');
   });
 
   it('shows the resolved liquid animation frame index for hovered animated liquid tiles', () => {
@@ -214,9 +214,9 @@ describe('formatDebugOverlayText', () => {
         liquidAnimationLoopElapsedMs: 240,
         liquidAnimationLoopProgressNormalized: 240 / 360,
         liquidAnimationLoopRemainingMs: 120,
-        liquidVariantSource: 'atlasIndex 15',
-        liquidVariantUvRect: '0.5,0.75..0.667,1',
-        liquidVariantPixelBounds: '48,48..64,64'
+        liquidVariantSource: 'uvRect 0.75,0..0.833,0.25',
+        liquidVariantUvRect: '0.75,0..0.833,0.25',
+        liquidVariantPixelBounds: '72,0..80,16'
       },
       spawn: null,
       playerPlaceholderPoseLabel: null,
@@ -242,9 +242,9 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidLoopElapsed:240ms');
     expect(text).toContain('liquidLoopPct:66.7%');
     expect(text).toContain('liquidLoopRemain:120ms');
-    expect(text).toContain('liquidSrc:atlasIndex 15');
-    expect(text).toContain('liquidUv:0.5,0.75..0.667,1');
-    expect(text).toContain('liquidPx:48,48..64,64');
+    expect(text).toContain('liquidSrc:uvRect 0.75,0..0.833,0.25');
+    expect(text).toContain('liquidUv:0.75,0..0.833,0.25');
+    expect(text).toContain('liquidPx:72,0..80,16');
   });
 
   it('shows live standalone player position, velocity, grounded state, and facing', () => {
@@ -382,9 +382,9 @@ describe('formatDebugOverlayText', () => {
         liquidKind: 'water',
         liquidConnectivityGroupLabel: 'water',
         liquidCardinalMask: 13,
-        liquidVariantSource: 'atlasIndex 14',
-        liquidVariantUvRect: '0.333,0.75..0.5,1',
-        liquidVariantPixelBounds: '32,48..48,64'
+        liquidVariantSource: 'uvRect 0.667,0.5..0.75,0.75',
+        liquidVariantUvRect: '0.667,0.5..0.75,0.75',
+        liquidVariantPixelBounds: '64,32..72,48'
       }
     });
 
@@ -398,9 +398,9 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquid:water');
     expect(text).toContain('liquidGroup:water');
     expect(text).toContain('liquidMask:N-SW (13)');
-    expect(text).toContain('liquidSrc:atlasIndex 14');
-    expect(text).toContain('liquidUv:0.333,0.75..0.5,1');
-    expect(text).toContain('liquidPx:32,48..48,64');
+    expect(text).toContain('liquidSrc:uvRect 0.667,0.5..0.75,0.75');
+    expect(text).toContain('liquidUv:0.667,0.5..0.75,0.75');
+    expect(text).toContain('liquidPx:64,32..72,48');
   });
 
   it('renders separate pointer and pinned inspect lines when both are present', () => {

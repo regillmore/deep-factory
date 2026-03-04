@@ -30,7 +30,7 @@ describe('authored atlas layout', () => {
   });
 
   it('documents a spare unused region and leaves canvas space outside authored regions', () => {
-    expect(AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS[16]?.trim().length).toBeGreaterThan(0);
+    expect(AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS[19]?.trim().length).toBeGreaterThan(0);
 
     const maxRegionRight = AUTHORED_ATLAS_REGIONS.reduce(
       (maxRight, region) => Math.max(maxRight, region.x + region.width),
