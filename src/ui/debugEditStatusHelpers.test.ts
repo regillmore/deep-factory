@@ -1446,14 +1446,14 @@ describe('buildDebugEditStatusStripModel', () => {
         liquidAnimationLoopElapsedMs: 240,
         liquidAnimationLoopProgressNormalized: 240 / 360,
         liquidAnimationLoopRemainingMs: 120,
-        liquidVariantSource: 'atlasIndex 14',
-        liquidVariantUvRect: '0.333,0.75..0.5,1',
-        liquidVariantPixelBounds: '32,48..48,64'
+        liquidVariantSource: 'uvRect 0.333,0.75..0.5,0.875',
+        liquidVariantUvRect: '0.333,0.75..0.5,0.875',
+        liquidVariantPixelBounds: '32,48..48,56'
       }
     });
 
     expect(model.hoverText).toBe(
-      'Hover: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidFramePct:33.3% | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidLoopPct:66.7% | liquidLoopRemain:120ms | liquidSrc:atlasIndex 14 | liquidUv:0.333,0.75..0.5,1 | liquidPx:32,48..48,64'
+      'Hover: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidFramePct:33.3% | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidLoopPct:66.7% | liquidLoopRemain:120ms | liquidSrc:uvRect 0.333,0.75..0.5,0.875 | liquidUv:0.333,0.75..0.5,0.875 | liquidPx:32,48..48,56'
     );
   });
 
@@ -1489,14 +1489,14 @@ describe('buildDebugEditStatusStripModel', () => {
         liquidAnimationLoopElapsedMs: 240,
         liquidAnimationLoopProgressNormalized: 240 / 360,
         liquidAnimationLoopRemainingMs: 120,
-        liquidVariantSource: 'atlasIndex 15',
-        liquidVariantUvRect: '0.5,0.75..0.667,1',
-        liquidVariantPixelBounds: '48,48..64,64'
+        liquidVariantSource: 'uvRect 0.5,0.75..0.667,0.875',
+        liquidVariantUvRect: '0.5,0.75..0.667,0.875',
+        liquidVariantPixelBounds: '48,48..64,56'
       }
     });
 
     expect(model.hoverText).toBe(
-      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidFramePct:33.3% | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidLoopPct:66.7% | liquidLoopRemain:120ms | liquidSrc:atlasIndex 15 | liquidUv:0.5,0.75..0.667,1 | liquidPx:48,48..64,64'
+      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidFramePct:33.3% | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidLoopPct:66.7% | liquidLoopRemain:120ms | liquidSrc:uvRect 0.5,0.75..0.667,0.875 | liquidUv:0.5,0.75..0.667,0.875 | liquidPx:48,48..64,56'
     );
     expect(model.inspectText).toBe('Inspect: Pinned @ 12,-4');
     expect(model.inspectActionText).toBe('Repin Click');
@@ -1551,14 +1551,14 @@ describe('buildDebugEditStatusStripModel', () => {
         liquidAnimationLoopElapsedMs: 240,
         liquidAnimationLoopProgressNormalized: 240 / 360,
         liquidAnimationLoopRemainingMs: 120,
-        liquidVariantSource: 'atlasIndex 15',
-        liquidVariantUvRect: '0.5,0.75..0.667,1',
-        liquidVariantPixelBounds: '48,48..64,64'
+        liquidVariantSource: 'uvRect 0.5,0.75..0.667,0.875',
+        liquidVariantUvRect: '0.5,0.75..0.667,0.875',
+        liquidVariantPixelBounds: '48,48..64,56'
       }
     });
 
     expect(model.hoverText).toBe(
-      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidFramePct:33.3% | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidLoopPct:66.7% | liquidLoopRemain:120ms | liquidSrc:atlasIndex 15 | liquidUv:0.5,0.75..0.667,1 | liquidPx:48,48..64,64\n' +
+      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidFramePct:33.3% | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidLoopPct:66.7% | liquidLoopRemain:120ms | liquidSrc:uvRect 0.5,0.75..0.667,0.875 | liquidUv:0.5,0.75..0.667,0.875 | liquidPx:48,48..64,56\n' +
         'Hover: dirt (#2) @ 4,7 chunk:0,0 local:4,7 | solid:on | light:on | liquid:none\n' +
         'Offset: Hover->Pinned x:+8 y:-11'
     );
@@ -1595,9 +1595,9 @@ describe('buildDebugEditStatusStripModel', () => {
         liquidAnimationLoopElapsedMs: 240,
         liquidAnimationLoopProgressNormalized: 240 / 360,
         liquidAnimationLoopRemainingMs: 120,
-        liquidVariantSource: 'atlasIndex 15',
-        liquidVariantUvRect: '0.5,0.75..0.667,1',
-        liquidVariantPixelBounds: '48,48..64,64'
+        liquidVariantSource: 'uvRect 0.5,0.75..0.667,0.875',
+        liquidVariantUvRect: '0.5,0.75..0.667,0.875',
+        liquidVariantPixelBounds: '48,48..64,56'
       },
       pinnedTile: {
         tileX: 12,
@@ -1623,14 +1623,14 @@ describe('buildDebugEditStatusStripModel', () => {
         liquidAnimationLoopElapsedMs: 240,
         liquidAnimationLoopProgressNormalized: 240 / 360,
         liquidAnimationLoopRemainingMs: 120,
-        liquidVariantSource: 'atlasIndex 15',
-        liquidVariantUvRect: '0.5,0.75..0.667,1',
-        liquidVariantPixelBounds: '48,48..64,64'
+        liquidVariantSource: 'uvRect 0.5,0.75..0.667,0.875',
+        liquidVariantUvRect: '0.5,0.75..0.667,0.875',
+        liquidVariantPixelBounds: '48,48..64,56'
       }
     });
 
     expect(model.hoverText).toBe(
-      'Shared: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidFramePct:33.3% | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidLoopPct:66.7% | liquidLoopRemain:120ms | liquidSrc:atlasIndex 15 | liquidUv:0.5,0.75..0.667,1 | liquidPx:48,48..64,64'
+      'Shared: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidFramePct:33.3% | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidLoopPct:66.7% | liquidLoopRemain:120ms | liquidSrc:uvRect 0.5,0.75..0.667,0.875 | liquidUv:0.5,0.75..0.667,0.875 | liquidPx:48,48..64,56'
     );
     expect(model.inspectText).toBe('Inspect: Shared @ 12,-4');
   });

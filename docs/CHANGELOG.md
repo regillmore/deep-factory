@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Populate distinct placeholder lava liquid edge or surface variant sources now that liquid masks resolve.
+- Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so the default lava liquid mask map now resolves animated body, edge, and surface placeholder source classes by mixing the existing full-frame lava atlas entries with mask-specific direct-`uvRect` crops, refreshed [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/world/tileMetadata.test.ts src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extend deployment regression coverage to assert emitted HTML and CSS assets omit exact double-prefixed `"/deep-factory/deep-factory/atlas/tile-atlas.png"` authored-atlas runtime URL literals in production output.
 - Changes: Updated [pagesBasePath.test.ts](../pagesBasePath.test.ts) so the temp-directory Vite production build now rejects the exact double-prefixed authored-atlas runtime URL literal in every emitted HTML and CSS asset while preserving the existing bundle-path, legacy atlas literal, emitted JavaScript authored-atlas scan, joined runtime atlas URL, and authored-atlas byte-copy regressions, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run pagesBasePath.test.ts`.

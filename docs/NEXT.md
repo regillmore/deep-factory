@@ -6,8 +6,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Liquid rendering
 
-117. Populate distinct placeholder lava liquid edge or surface variant sources now that liquid masks resolve.
 135. Populate distinct placeholder water liquid corner-specific variant sources once the surface and edge placeholders are in place.
+139. Populate distinct placeholder lava liquid corner-specific variant sources once the lava surface and edge placeholders are in place.
 
 ## Lighting
 

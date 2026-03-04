@@ -100,7 +100,19 @@ describe('tile metadata loader', () => {
     });
     expect(describeLiquidRenderVariantSource(7, 13)).toBe('uvRect 0.667,0.5..0.75,0.75');
     expect(describeLiquidRenderVariantSource(7, 15)).toBe('uvRect 0.667,0..0.75,0.25');
-    expect(resolveLiquidRenderVariantUvRect(8, 15)).toEqual(atlasIndexToUvRect(15));
+    expect(describeLiquidRenderVariantSource(8, 10)).toBe('atlasIndex 15');
+    expect(describeLiquidRenderVariantSource(8, 1)).toBe('uvRect 0.583,0.75..0.667,1');
+    expect(describeLiquidRenderVariantSource(8, 15)).toBe('uvRect 0.5,0.75..0.667,0.875');
+    expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 1, 180)).toBe('uvRect 0.417,0.75..0.5,1');
+    expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 15, 180)).toBe(
+      'uvRect 0.333,0.75..0.5,0.875'
+    );
+    expect(resolveLiquidRenderVariantUvRect(8, 15)).toEqual({
+      u0: 0.5,
+      v0: 0.75,
+      u1: 0.6666666666666666,
+      v1: 0.875
+    });
     expect(resolveTileRenderUvRect(4)).toEqual({
       u0: 0.16666666666666666,
       v0: 0.25,
