@@ -289,6 +289,7 @@ describe('formatDebugOverlayText', () => {
         velocity: { x: -180, y: 0 }
       },
       playerCameraFollow: {
+        cameraTile: { x: 2, y: -2 },
         focus: { x: 24.5, y: -26.25 },
         focusTile: { x: 1, y: -2 },
         focusChunk: { x: 0, y: -1 },
@@ -325,7 +326,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nCeilEvt: blocked | Tile:1,-3 (#5) | Pos:24.50,-12.25 | Vel:-180.00,0.00');
     expect(text).toContain('\nAABB: min:18.50,-40.25 | max:30.50,-12.25 | size:12.00,28.00');
     expect(text).toContain(
-      '\nFollow: focus:24.50,-26.25 | focusTile:1,-2 | focusChunk:0,-1 | offset:18.00,-6.00'
+      '\nFollow: camTile:2,-2 | focus:24.50,-26.25 | focusTile:1,-2 | focusChunk:0,-1 | offset:18.00,-6.00'
     );
     expect(text).toContain('\nContact: support:none | wall:0,-1 (#3, right) | ceiling:1,-3 (#5)');
     expect(text).toContain('\nIntent: move:-1 | jumpHeld:on | jumpPressed:on');

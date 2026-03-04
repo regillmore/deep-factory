@@ -1457,21 +1457,6 @@ const bootstrap = async (): Promise<void> => {
             );
             return { x: localX, y: localY };
           })();
-    const debugOverlayPlayerCameraFollow =
-      debugStatusStripPlayerCameraFocusPoint &&
-      debugStatusStripPlayerCameraFocusTile &&
-      debugStatusStripPlayerCameraFocusChunk
-        ? {
-            focus: debugStatusStripPlayerCameraFocusPoint,
-            focusTile: debugStatusStripPlayerCameraFocusTile,
-            focusChunk: debugStatusStripPlayerCameraFocusChunk,
-            offset: {
-              x: cameraFollowOffset.x,
-              y: cameraFollowOffset.y
-            }
-          }
-      : null;
-    const debugOverlayPlayerIntent = input.getPlayerInputTelemetry();
     const debugStatusStripPlayerWorldTile =
       standalonePlayerState === null
         ? null
@@ -1488,6 +1473,23 @@ const bootstrap = async (): Promise<void> => {
             );
             return { x: chunkX, y: chunkY };
           })();
+    const debugOverlayPlayerCameraFollow =
+      debugStatusStripPlayerCameraWorldTile &&
+      debugStatusStripPlayerCameraFocusPoint &&
+      debugStatusStripPlayerCameraFocusTile &&
+      debugStatusStripPlayerCameraFocusChunk
+        ? {
+            cameraTile: debugStatusStripPlayerCameraWorldTile,
+            focus: debugStatusStripPlayerCameraFocusPoint,
+            focusTile: debugStatusStripPlayerCameraFocusTile,
+            focusChunk: debugStatusStripPlayerCameraFocusChunk,
+            offset: {
+              x: cameraFollowOffset.x,
+              y: cameraFollowOffset.y
+            }
+          }
+      : null;
+    const debugOverlayPlayerIntent = input.getPlayerInputTelemetry();
     renderer.resize();
     renderer.render(camera, {
       standalonePlayer: standalonePlayerState,
