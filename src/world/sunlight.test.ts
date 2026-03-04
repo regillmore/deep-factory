@@ -2,9 +2,31 @@ import { describe, expect, it } from 'vitest';
 
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './constants';
 import { recomputeSunlightFromExposedChunkTops } from './sunlight';
+import { parseTileMetadataRegistry } from './tileMetadata';
 import { TileWorld } from './world';
 
 const localLightColumnBit = (localX: number): number => (1 << localX) >>> 0;
+const emissiveTestRegistry = parseTileMetadataRegistry({
+  tiles: [
+    {
+      id: 0,
+      name: 'empty',
+      gameplay: { solid: false, blocksLight: false }
+    },
+    {
+      id: 1,
+      name: 'solid',
+      gameplay: { solid: true, blocksLight: true },
+      render: { atlasIndex: 0 }
+    },
+    {
+      id: 2,
+      name: 'debug_light',
+      gameplay: { solid: false, blocksLight: false, emissiveLight: 12 },
+      render: { atlasIndex: 1 }
+    }
+  ]
+});
 
 describe('recomputeSunlightFromExposedChunkTops', () => {
   it('propagates sunlight downward from exposed chunk tops until light-blocking tiles', () => {
@@ -123,6 +145,50 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
 
     expect(recomputedChunkCount).toBe(3);
     expect(world.getLightLevel(CHUNK_SIZE, -32)).toBe(7);
+    expect(world.getDirtyLightChunkCount()).toBe(0);
+  });
+
+  it('merges local emissive falloff over the sunlight base field', () => {
+    const world = new TileWorld(0);
+
+    for (const worldTileX of [0, 1, 2, 3]) {
+      world.setTile(worldTileX, 0, 1);
+    }
+    world.setTile(1, 1, 2);
+    world.setTile(0, 1, 0);
+    world.setTile(2, 1, 0);
+    world.setTile(3, 1, 0);
+    world.setTile(1, 2, 0);
+
+    const recomputedChunkCount = recomputeSunlightFromExposedChunkTops(world, emissiveTestRegistry);
+
+    expect(recomputedChunkCount).toBe(1);
+    expect(world.getLightLevel(1, 1)).toBe(12);
+    expect(world.getLightLevel(2, 1)).toBe(11);
+    expect(world.getLightLevel(3, 1)).toBe(10);
+    expect(world.getLightLevel(1, 0)).toBe(0);
+    expect(world.getDirtyLightChunkCount()).toBe(0);
+  });
+
+  it('applies clean-column emissive sources when a neighboring column is recomputed', () => {
+    const world = new TileWorld(0);
+
+    world.setTile(0, 0, 1);
+    world.setTile(1, 0, 1);
+    world.setTile(0, 1, 0);
+    world.setTile(1, 1, 2);
+
+    recomputeSunlightFromExposedChunkTops(world, emissiveTestRegistry);
+    expect(world.getLightLevel(0, 1)).toBe(11);
+
+    world.fillChunkLight(0, 0, 0);
+    world.markChunkLightClean(0, 0);
+    world.invalidateChunkLightColumns(0, 0, localLightColumnBit(0));
+
+    const recomputedChunkCount = recomputeSunlightFromExposedChunkTops(world, emissiveTestRegistry);
+
+    expect(recomputedChunkCount).toBe(1);
+    expect(world.getLightLevel(0, 1)).toBe(11);
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
 });

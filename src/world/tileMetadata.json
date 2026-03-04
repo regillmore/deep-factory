@@ -82,7 +82,8 @@
       "name": "debug_panel_blink",
       "gameplay": {
         "solid": false,
-        "blocksLight": false
+        "blocksLight": false,
+        "emissiveLight": 12
       },
       "render": {
         "uvRect": {

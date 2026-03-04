@@ -1,6 +1,6 @@
-import { chunkKey, toTileIndex } from './chunkMath';
+import { chunkKey, toTileIndex, worldToChunkCoord, worldToLocalTile } from './chunkMath';
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './constants';
-import { doesTileBlockLight, TILE_METADATA } from './tileMetadata';
+import { doesTileBlockLight, getTileEmissiveLightLevel, TILE_METADATA } from './tileMetadata';
 import type { TileMetadataRegistry } from './tileMetadata';
 import type { Chunk } from './types';
 import { TileWorld } from './world';
@@ -10,12 +10,34 @@ interface ResidentChunkLightingBounds {
   minChunkY: number;
   maxChunkX: number;
   maxChunkY: number;
+  minWorldTileX: number;
+  minWorldTileY: number;
+  maxWorldTileX: number;
+  maxWorldTileY: number;
   chunksByKey: Map<string, Chunk>;
 }
 
 interface DirtyResidentChunkColumn {
   chunkX: number;
   localColumnMask: number;
+}
+
+interface DirtyResidentChunkColumnContext extends DirtyResidentChunkColumn {
+  residentColumnChunks: Chunk[];
+}
+
+interface ResidentTileSample {
+  chunk: Chunk;
+  tileId: number;
+  tileIndex: number;
+  chunkX: number;
+  localX: number;
+}
+
+interface EmissiveLightSource {
+  worldTileX: number;
+  worldTileY: number;
+  lightLevel: number;
 }
 
 const collectDirtyResidentChunkColumns = (world: TileWorld): DirtyResidentChunkColumn[] => {
@@ -59,8 +81,196 @@ const collectResidentChunkLightingBounds = (world: TileWorld): ResidentChunkLigh
     minChunkY,
     maxChunkX,
     maxChunkY,
+    minWorldTileX: minChunkX * CHUNK_SIZE,
+    minWorldTileY: minChunkY * CHUNK_SIZE,
+    maxWorldTileX: (maxChunkX + 1) * CHUNK_SIZE - 1,
+    maxWorldTileY: (maxChunkY + 1) * CHUNK_SIZE - 1,
     chunksByKey
   };
+};
+
+const collectResidentChunkColumnChunks = (
+  bounds: ResidentChunkLightingBounds,
+  chunkX: number
+): Chunk[] => {
+  const residentColumnChunks: Chunk[] = [];
+  for (let chunkY = bounds.minChunkY; chunkY <= bounds.maxChunkY; chunkY += 1) {
+    const chunk = bounds.chunksByKey.get(chunkKey(chunkX, chunkY));
+    if (chunk) {
+      residentColumnChunks.push(chunk);
+    }
+  }
+  return residentColumnChunks;
+};
+
+const sampleResidentTileAtWorldTile = (
+  bounds: ResidentChunkLightingBounds,
+  worldTileX: number,
+  worldTileY: number
+): ResidentTileSample | null => {
+  if (
+    worldTileX < bounds.minWorldTileX ||
+    worldTileX > bounds.maxWorldTileX ||
+    worldTileY < bounds.minWorldTileY ||
+    worldTileY > bounds.maxWorldTileY
+  ) {
+    return null;
+  }
+
+  const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+  const chunk = bounds.chunksByKey.get(chunkKey(chunkX, chunkY));
+  if (!chunk) {
+    return null;
+  }
+
+  const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
+  const tileIndex = toTileIndex(localX, localY);
+  const tileId = chunk.tiles[tileIndex] ?? 0;
+  return {
+    chunk,
+    tileId,
+    tileIndex,
+    chunkX,
+    localX
+  };
+};
+
+const collectResidentEmissiveLightSources = (
+  bounds: ResidentChunkLightingBounds,
+  registry: TileMetadataRegistry
+): EmissiveLightSource[] => {
+  const sources: EmissiveLightSource[] = [];
+  for (const chunk of bounds.chunksByKey.values()) {
+    const chunkBaseWorldX = chunk.coord.x * CHUNK_SIZE;
+    const chunkBaseWorldY = chunk.coord.y * CHUNK_SIZE;
+    for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
+      for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
+        const tileId = chunk.tiles[toTileIndex(localX, localY)] ?? 0;
+        const lightLevel = getTileEmissiveLightLevel(tileId, registry);
+        if (lightLevel <= 0) {
+          continue;
+        }
+
+        sources.push({
+          worldTileX: chunkBaseWorldX + localX,
+          worldTileY: chunkBaseWorldY + localY,
+          lightLevel
+        });
+      }
+    }
+  }
+
+  return sources;
+};
+
+const applyResidentEmissiveLightToDirtyColumns = (
+  bounds: ResidentChunkLightingBounds,
+  dirtyLocalColumnMaskByChunkX: Map<number, number>,
+  registry: TileMetadataRegistry
+): void => {
+  const emissiveSources = collectResidentEmissiveLightSources(bounds, registry);
+  if (emissiveSources.length === 0) {
+    return;
+  }
+
+  const residentWidthInTiles = bounds.maxWorldTileX - bounds.minWorldTileX + 1;
+  const residentHeightInTiles = bounds.maxWorldTileY - bounds.minWorldTileY + 1;
+  const propagatedLightByResidentTile = new Uint8Array(residentWidthInTiles * residentHeightInTiles);
+
+  const toResidentTileLookupIndex = (worldTileX: number, worldTileY: number): number => {
+    if (
+      worldTileX < bounds.minWorldTileX ||
+      worldTileX > bounds.maxWorldTileX ||
+      worldTileY < bounds.minWorldTileY ||
+      worldTileY > bounds.maxWorldTileY
+    ) {
+      return -1;
+    }
+
+    const localX = worldTileX - bounds.minWorldTileX;
+    const localY = worldTileY - bounds.minWorldTileY;
+    return localY * residentWidthInTiles + localX;
+  };
+
+  const writeLightLevelIfDirtyColumn = (tile: ResidentTileSample, lightLevel: number): void => {
+    const localColumnMask = dirtyLocalColumnMaskByChunkX.get(tile.chunkX) ?? 0;
+    if (((localColumnMask >>> tile.localX) & 1) === 0) {
+      return;
+    }
+
+    const previousLightLevel = tile.chunk.lightLevels[tile.tileIndex] ?? 0;
+    if (lightLevel > previousLightLevel) {
+      tile.chunk.lightLevels[tile.tileIndex] = lightLevel;
+    }
+  };
+
+  const queueWorldTileX: number[] = [];
+  const queueWorldTileY: number[] = [];
+  const queueLightLevel: number[] = [];
+  let queueReadIndex = 0;
+
+  for (const source of emissiveSources) {
+    const sourceLookupIndex = toResidentTileLookupIndex(source.worldTileX, source.worldTileY);
+    if (sourceLookupIndex < 0) {
+      continue;
+    }
+
+    if ((propagatedLightByResidentTile[sourceLookupIndex] ?? 0) >= source.lightLevel) {
+      continue;
+    }
+
+    const sourceTile = sampleResidentTileAtWorldTile(bounds, source.worldTileX, source.worldTileY);
+    if (!sourceTile) {
+      continue;
+    }
+
+    propagatedLightByResidentTile[sourceLookupIndex] = source.lightLevel;
+    writeLightLevelIfDirtyColumn(sourceTile, source.lightLevel);
+    queueWorldTileX.push(source.worldTileX);
+    queueWorldTileY.push(source.worldTileY);
+    queueLightLevel.push(source.lightLevel);
+  }
+
+  while (queueReadIndex < queueWorldTileX.length) {
+    const currentWorldTileX = queueWorldTileX[queueReadIndex] ?? 0;
+    const currentWorldTileY = queueWorldTileY[queueReadIndex] ?? 0;
+    const currentLightLevel = queueLightLevel[queueReadIndex] ?? 0;
+    queueReadIndex += 1;
+
+    if (currentLightLevel <= 1) {
+      continue;
+    }
+
+    const nextLightLevel = currentLightLevel - 1;
+    const neighboringWorldTiles = [
+      [currentWorldTileX, currentWorldTileY - 1],
+      [currentWorldTileX + 1, currentWorldTileY],
+      [currentWorldTileX, currentWorldTileY + 1],
+      [currentWorldTileX - 1, currentWorldTileY]
+    ];
+
+    for (const [neighborWorldTileX, neighborWorldTileY] of neighboringWorldTiles) {
+      const neighborLookupIndex = toResidentTileLookupIndex(neighborWorldTileX, neighborWorldTileY);
+      if (neighborLookupIndex < 0) {
+        continue;
+      }
+
+      if ((propagatedLightByResidentTile[neighborLookupIndex] ?? 0) >= nextLightLevel) {
+        continue;
+      }
+
+      const neighborTile = sampleResidentTileAtWorldTile(bounds, neighborWorldTileX, neighborWorldTileY);
+      if (!neighborTile || doesTileBlockLight(neighborTile.tileId, registry)) {
+        continue;
+      }
+
+      propagatedLightByResidentTile[neighborLookupIndex] = nextLightLevel;
+      writeLightLevelIfDirtyColumn(neighborTile, nextLightLevel);
+      queueWorldTileX.push(neighborWorldTileX);
+      queueWorldTileY.push(neighborWorldTileY);
+      queueLightLevel.push(nextLightLevel);
+    }
+  }
 };
 
 export const recomputeSunlightFromExposedChunkTops = (
@@ -81,7 +291,8 @@ export const recomputeSunlightFromExposedChunkTops = (
     return 0;
   }
 
-  let recomputedChunkCount = 0;
+  const dirtyColumnContexts: DirtyResidentChunkColumnContext[] = [];
+  const dirtyLocalColumnMaskByChunkX = new Map<number, number>();
 
   for (const dirtyColumn of dirtyChunkColumns) {
     const { chunkX, localColumnMask } = dirtyColumn;
@@ -89,18 +300,27 @@ export const recomputeSunlightFromExposedChunkTops = (
       continue;
     }
 
-    const residentColumnChunks: Chunk[] = [];
-    for (let chunkY = bounds.minChunkY; chunkY <= bounds.maxChunkY; chunkY += 1) {
-      const chunk = bounds.chunksByKey.get(chunkKey(chunkX, chunkY));
-      if (chunk) {
-        residentColumnChunks.push(chunk);
-      }
-    }
-
+    const residentColumnChunks = collectResidentChunkColumnChunks(bounds, chunkX);
     if (residentColumnChunks.length === 0) {
       continue;
     }
 
+    dirtyColumnContexts.push({
+      chunkX,
+      localColumnMask,
+      residentColumnChunks
+    });
+    dirtyLocalColumnMaskByChunkX.set(chunkX, localColumnMask);
+  }
+
+  if (dirtyColumnContexts.length === 0) {
+    return 0;
+  }
+
+  let recomputedChunkCount = 0;
+
+  for (const dirtyColumn of dirtyColumnContexts) {
+    const { localColumnMask, residentColumnChunks } = dirtyColumn;
     for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
       if (((localColumnMask >>> localX) & 1) === 0) {
         continue;
@@ -120,11 +340,16 @@ export const recomputeSunlightFromExposedChunkTops = (
       }
     }
 
+    recomputedChunkCount += residentColumnChunks.length;
+  }
+
+  applyResidentEmissiveLightToDirtyColumns(bounds, dirtyLocalColumnMaskByChunkX, registry);
+
+  for (const dirtyColumn of dirtyColumnContexts) {
+    const { localColumnMask, residentColumnChunks } = dirtyColumn;
     for (const chunk of residentColumnChunks) {
       world.markChunkLightColumnsClean(chunk.coord.x, chunk.coord.y, localColumnMask);
     }
-
-    recomputedChunkCount += residentColumnChunks.length;
   }
 
   return recomputedChunkCount;

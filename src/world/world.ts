@@ -115,6 +115,26 @@ const collectSunlightInvalidationChunkYOffsetsForLocalTile = (localY: number): n
   return yOffsets;
 };
 
+const collectLightInvalidationColumnsForWorldTileXRange = (
+  minWorldTileX: number,
+  maxWorldTileX: number
+): Array<{ chunkX: number; localColumnMask: number }> => {
+  const startWorldTileX = Math.min(minWorldTileX, maxWorldTileX);
+  const endWorldTileX = Math.max(minWorldTileX, maxWorldTileX);
+  const localColumnMasksByChunkX = new Map<number, number>();
+
+  for (let worldTileX = startWorldTileX; worldTileX <= endWorldTileX; worldTileX += 1) {
+    const { chunkX } = worldToChunkCoord(worldTileX, 0);
+    const { localX } = worldToLocalTile(worldTileX, 0);
+    const existingMask = localColumnMasksByChunkX.get(chunkX) ?? 0;
+    localColumnMasksByChunkX.set(chunkX, (existingMask | toLocalLightColumnBit(localX)) >>> 0);
+  }
+
+  return Array.from(localColumnMasksByChunkX.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([chunkX, localColumnMask]) => ({ chunkX, localColumnMask }));
+};
+
 const expectLightLevel = (lightLevel: number): number => {
   if (!Number.isInteger(lightLevel) || lightLevel < 0 || lightLevel > MAX_LIGHT_LEVEL) {
     throw new Error(`lightLevel must be an integer between 0 and ${MAX_LIGHT_LEVEL}`);
@@ -214,9 +234,19 @@ export class TileWorld {
     }
 
     if (didTileLightingStateChange(previousTileId, tileId)) {
-      const localColumnMask = toLocalLightColumnBit(localX);
+      const localLightingRange = Math.max(
+        getTileEmissiveLightLevel(previousTileId),
+        getTileEmissiveLightLevel(tileId)
+      );
+      const invalidationColumns = collectLightInvalidationColumnsForWorldTileXRange(
+        worldTileX - localLightingRange,
+        worldTileX + localLightingRange
+      );
+
       for (const chunkYOffset of collectSunlightInvalidationChunkYOffsetsForLocalTile(localY)) {
-        this.invalidateChunkLightColumns(chunkX, chunkY + chunkYOffset, localColumnMask);
+        for (const column of invalidationColumns) {
+          this.invalidateChunkLightColumns(column.chunkX, chunkY + chunkYOffset, column.localColumnMask);
+        }
       }
     }
 

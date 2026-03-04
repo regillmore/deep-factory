@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-04: Dirty resident lighting now layers emissive falloff over sunlight
+
+- Decision: Resident light recomputation now keeps the existing top-down sunlight pass as a base layer and then merges local emissive sources through cardinal falloff (`level - 1` per step) across non-light-blocking tiles, taking the max of sunlight and emissive contribution on rebuilt dirty columns.
+- Reason: The first emissive slice needed to reuse the existing resident light cache model and dirty-column rebuild path instead of introducing a second light-field storage or a per-frame global remesh dependency.
+- Consequence: Future lighting work should treat resident light values as a composed field (sunlight + local emitters), preserve `blocksLight` as the propagation stop condition for both passes, and widen non-emissive obstruction invalidation around existing emitters as a follow-up when blocker edits need fully local emissive shadow updates.
+
 ### 2026-03-04: Edge tile light invalidation stays inside the edited chunk column
 
 - Decision: Tile lighting edits now invalidate sunlight only in the edited `chunkX` column (plus loaded vertical neighbor chunks for top or bottom edge edits), and no longer dirty neighboring `chunkX` columns for left or right edge edits.

@@ -11,10 +11,10 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Lighting
 
-14. Add local emissive light sources (start with a torch tile or debug light source) and merge them into the light field.
 15. Modulate tile rendering by resolved light values.
 162. Surface resident dirty-light chunk counts in a compact debug-edit summary chip when the text debug HUD is hidden.
 168. Add horizontal sunlight transport between neighboring `chunkX` columns, then widen edge-edit invalidation to include those neighbors once that transport path exists.
+173. Invalidate nearby columns when non-emissive `blocksLight` edits could alter emissive propagation paths from existing local light sources.
 
 ## Entities and interpolation
 

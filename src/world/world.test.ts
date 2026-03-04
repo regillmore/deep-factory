@@ -9,6 +9,13 @@ import type { TileEditEvent } from './world';
 
 const ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK = 0xffffffff >>> 0;
 const localLightColumnBit = (localX: number): number => (1 << localX) >>> 0;
+const localLightColumnRangeMask = (startLocalX: number, endLocalX: number): number => {
+  let mask = 0;
+  for (let localX = startLocalX; localX <= endLocalX; localX += 1) {
+    mask = (mask | localLightColumnBit(localX)) >>> 0;
+  }
+  return mask;
+};
 
 describe('TileWorld', () => {
   it('prunes chunks outside retained bounds', () => {
@@ -177,7 +184,7 @@ describe('TileWorld', () => {
     expect(world.getChunkLightLevels(0, 0).every((lightLevel) => lightLevel === 5)).toBe(true);
   });
 
-  it('treats emissive changes as lighting-state changes even before default tiles emit light', () => {
+  it('treats emissive gameplay changes as lighting-state changes', () => {
     const registry = parseTileMetadataRegistry({
       tiles: [
         {
@@ -203,6 +210,27 @@ describe('TileWorld', () => {
     expect(didTileLightingStateChange(5, 6, registry)).toBe(true);
     expect(didTileLightingStateChange(6, 5, registry)).toBe(true);
     expect(didTileLightingStateChange(5, 0, registry)).toBe(false);
+  });
+
+  it('invalidates neighboring chunk columns when a local emissive source is edited', () => {
+    const world = new TileWorld(1);
+    const placedEmissiveWorldTileX = CHUNK_SIZE - 1;
+
+    for (const chunk of world.getChunks()) {
+      world.fillChunkLight(chunk.coord.x, chunk.coord.y, 7);
+      world.markChunkLightClean(chunk.coord.x, chunk.coord.y);
+    }
+
+    expect(world.setTile(placedEmissiveWorldTileX, 0, 6)).toBe(true);
+
+    const expectedSameChunkMask = localLightColumnRangeMask(CHUNK_SIZE - 13, CHUNK_SIZE - 1);
+    const expectedNextChunkMask = localLightColumnRangeMask(0, 11);
+
+    expect(world.getChunkLightDirtyColumnMask(0, -1)).toBe(expectedSameChunkMask);
+    expect(world.getChunkLightDirtyColumnMask(0, 0)).toBe(expectedSameChunkMask);
+    expect(world.getChunkLightDirtyColumnMask(1, -1)).toBe(expectedNextChunkMask);
+    expect(world.getChunkLightDirtyColumnMask(1, 0)).toBe(expectedNextChunkMask);
+    expect(world.isChunkLightDirty(-1, 0)).toBe(false);
   });
 
   it('tracks and clears chunk light dirtiness per local sunlight column', () => {

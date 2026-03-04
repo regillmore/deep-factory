@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Add local emissive light sources (start with a torch tile or debug light source) and merge them into the light field.
+- Changes: Updated [src/world/sunlight.ts](../src/world/sunlight.ts) to layer emissive falloff over dirty-column sunlight recomputation, updated [src/world/world.ts](../src/world/world.ts) plus [src/world/world.test.ts](../src/world/world.test.ts) so emissive tile edits invalidate neighboring light columns within emissive range, promoted [src/world/tileMetadata.json](../src/world/tileMetadata.json) `debug_panel_blink` into a default emissive debug source, expanded [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with emissive merge regressions, advanced [docs/NEXT.md](docs/NEXT.md) with a blocker-invalidation follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts src/world/tileMetadata.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the paused-menu `New World (N)` shortcut in the paused-session detail-line shell copy that currently describes camera and undo reset behavior.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the paused-session camera and undo reset detail line now includes `New World (N)` via the shared desktop shortcut helper, advanced [docs/NEXT.md](docs/NEXT.md) with a paused-menu status-line shortcut follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
