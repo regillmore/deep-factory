@@ -207,6 +207,7 @@ describe('formatDebugOverlayText', () => {
         liquidAnimationFrameIndex: 1,
         liquidAnimationFrameCount: 2,
         liquidAnimationFrameDurationMs: 180,
+        liquidAnimationLoopDurationMs: 360,
         liquidVariantSource: 'atlasIndex 15',
         liquidVariantUvRect: '0.5,0.75..0.667,1',
         liquidVariantPixelBounds: '48,48..64,64'
@@ -228,6 +229,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidMask:NE-W (11)');
     expect(text).toContain('liquidFrame:1/2');
     expect(text).toContain('liquidFrameDur:180ms');
+    expect(text).toContain('liquidLoopDur:360ms');
     expect(text).toContain('liquidSrc:atlasIndex 15');
     expect(text).toContain('liquidUv:0.5,0.75..0.667,1');
     expect(text).toContain('liquidPx:48,48..64,64');
@@ -458,6 +460,7 @@ describe('formatDebugOverlayText', () => {
         liquidAnimationFrameIndex: 1,
         liquidAnimationFrameCount: 2,
         liquidAnimationFrameDurationMs: 180,
+        liquidAnimationLoopDurationMs: 360,
         liquidVariantSource: 'atlasIndex 15',
         liquidVariantUvRect: '0.5,0.75..0.667,1',
         liquidVariantPixelBounds: '48,48..64,64'
@@ -482,6 +485,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidMask:-ES- (6)');
     expect(text).toContain('liquidFrame:1/2');
     expect(text).toContain('liquidFrameDur:180ms');
+    expect(text).toContain('liquidLoopDur:360ms');
     expect(text).toContain('liquidSrc:atlasIndex 15');
     expect(text).toContain('liquidUv:0.5,0.75..0.667,1');
     expect(text).toContain('liquidPx:48,48..64,64');

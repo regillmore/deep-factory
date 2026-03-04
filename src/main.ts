@@ -981,6 +981,10 @@ const bootstrap = async (): Promise<void> => {
       typeof liquidCardinalMask === 'number' && liquidAnimationFrameCount > 0
         ? getAnimatedLiquidRenderVariantFrameDurationMs(tileId, liquidCardinalMask)
         : null;
+    const liquidAnimationLoopDurationMs =
+      liquidAnimationFrameCount > 0 && typeof liquidAnimationFrameDurationMs === 'number'
+        ? liquidAnimationFrameCount * liquidAnimationFrameDurationMs
+        : null;
     const liquidAnimationFrameIndex =
       typeof liquidCardinalMask === 'number' && liquidAnimationFrameCount > 0
         ? resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(tileId, liquidCardinalMask, elapsedMs)
@@ -994,6 +998,7 @@ const bootstrap = async (): Promise<void> => {
       liquidAnimationFrameIndex,
       liquidAnimationFrameCount: liquidAnimationFrameCount > 0 ? liquidAnimationFrameCount : null,
       liquidAnimationFrameDurationMs,
+      liquidAnimationLoopDurationMs,
       liquidVariantSource:
         typeof liquidCardinalMask === 'number'
           ? describeLiquidRenderVariantSourceAtElapsedMs(tileId, liquidCardinalMask, elapsedMs)
@@ -1235,6 +1240,7 @@ const bootstrap = async (): Promise<void> => {
           liquidAnimationFrameIndex: hoveredDebugTileStatus?.liquidAnimationFrameIndex ?? null,
           liquidAnimationFrameCount: hoveredDebugTileStatus?.liquidAnimationFrameCount ?? null,
           liquidAnimationFrameDurationMs: hoveredDebugTileStatus?.liquidAnimationFrameDurationMs ?? null,
+          liquidAnimationLoopDurationMs: hoveredDebugTileStatus?.liquidAnimationLoopDurationMs ?? null,
           liquidVariantSource: hoveredDebugTileStatus?.liquidVariantSource ?? null,
           liquidVariantUvRect: hoveredDebugTileStatus?.liquidVariantUvRect ?? null,
           liquidVariantPixelBounds: hoveredDebugTileStatus?.liquidVariantPixelBounds ?? null
@@ -1256,6 +1262,7 @@ const bootstrap = async (): Promise<void> => {
           liquidAnimationFrameIndex: pinnedDebugTileStatus.liquidAnimationFrameIndex ?? null,
           liquidAnimationFrameCount: pinnedDebugTileStatus.liquidAnimationFrameCount ?? null,
           liquidAnimationFrameDurationMs: pinnedDebugTileStatus.liquidAnimationFrameDurationMs ?? null,
+          liquidAnimationLoopDurationMs: pinnedDebugTileStatus.liquidAnimationLoopDurationMs ?? null,
           liquidVariantSource: pinnedDebugTileStatus.liquidVariantSource ?? null,
           liquidVariantUvRect: pinnedDebugTileStatus.liquidVariantUvRect ?? null,
           liquidVariantPixelBounds: pinnedDebugTileStatus.liquidVariantPixelBounds ?? null

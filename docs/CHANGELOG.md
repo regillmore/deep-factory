@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-04
+
+- Task: Surface the resolved liquid animation loop duration beside the frame index, frame count, and frame duration in debug inspect readouts.
+- Changes: Updated [src/main.ts](../src/main.ts) to derive liquid loop duration from the resolved animated-liquid frame count and frame duration and carry it through hovered and pinned inspect snapshots, refreshed [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) and [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so both inspect readouts append `liquidLoopDur:` beside the existing liquid animation fields, extended [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-03
 
 - Task: Resolve the authored atlas PNG through the GitHub Pages project-site base path.

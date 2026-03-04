@@ -84,6 +84,7 @@ export interface DebugEditHoveredTileState {
   liquidAnimationFrameIndex?: number | null;
   liquidAnimationFrameCount?: number | null;
   liquidAnimationFrameDurationMs?: number | null;
+  liquidAnimationLoopDurationMs?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
@@ -448,6 +449,7 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     tile.liquidAnimationFrameCount
   );
   const liquidAnimationFrameDuration = formatDurationMs(tile.liquidAnimationFrameDurationMs);
+  const liquidAnimationLoopDuration = formatDurationMs(tile.liquidAnimationLoopDurationMs);
 
   return (
     `${label}: ${tile.tileLabel} (#${tile.tileId}) @ ${tile.tileX},${tile.tileY}` +
@@ -464,6 +466,7 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
       : '') +
     (liquidAnimationFrame ? ` | liquidFrame:${liquidAnimationFrame}` : '') +
     (liquidAnimationFrameDuration ? ` | liquidFrameDur:${liquidAnimationFrameDuration}` : '') +
+    (liquidAnimationLoopDuration ? ` | liquidLoopDur:${liquidAnimationLoopDuration}` : '') +
     (typeof tile.liquidVariantSource === 'string' && tile.liquidVariantSource.length > 0
       ? ` | liquidSrc:${tile.liquidVariantSource}`
       : '') +
