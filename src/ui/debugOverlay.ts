@@ -48,6 +48,7 @@ export interface DebugOverlayPointerInspect {
   liquidAnimationFrameRemainingMs?: number | null;
   liquidAnimationLoopDurationMs?: number | null;
   liquidAnimationLoopElapsedMs?: number | null;
+  liquidAnimationLoopRemainingMs?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
@@ -73,6 +74,7 @@ export interface DebugOverlayTileInspect {
   liquidAnimationFrameRemainingMs?: number | null;
   liquidAnimationLoopDurationMs?: number | null;
   liquidAnimationLoopElapsedMs?: number | null;
+  liquidAnimationLoopRemainingMs?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
@@ -250,6 +252,7 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
   const liquidAnimationFrameRemaining = formatDurationMs(tileInspect.liquidAnimationFrameRemainingMs);
   const liquidAnimationLoopDuration = formatDurationMs(tileInspect.liquidAnimationLoopDurationMs);
   const liquidAnimationLoopElapsed = formatDurationMs(tileInspect.liquidAnimationLoopElapsedMs);
+  const liquidAnimationLoopRemaining = formatDurationMs(tileInspect.liquidAnimationLoopRemainingMs);
 
   return (
     ` | solid:${formatGameplayFlag(tileInspect.solid)}` +
@@ -268,6 +271,7 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     (liquidAnimationFrameRemaining ? ` | liquidFrameRemain:${liquidAnimationFrameRemaining}` : '') +
     (liquidAnimationLoopDuration ? ` | liquidLoopDur:${liquidAnimationLoopDuration}` : '') +
     (liquidAnimationLoopElapsed ? ` | liquidLoopElapsed:${liquidAnimationLoopElapsed}` : '') +
+    (liquidAnimationLoopRemaining ? ` | liquidLoopRemain:${liquidAnimationLoopRemaining}` : '') +
     (typeof tileInspect.liquidVariantSource === 'string' && tileInspect.liquidVariantSource.length > 0
       ? ` | liquidSrc:${tileInspect.liquidVariantSource}`
       : '') +

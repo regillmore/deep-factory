@@ -88,6 +88,7 @@ export interface DebugEditHoveredTileState {
   liquidAnimationFrameRemainingMs?: number | null;
   liquidAnimationLoopDurationMs?: number | null;
   liquidAnimationLoopElapsedMs?: number | null;
+  liquidAnimationLoopRemainingMs?: number | null;
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
@@ -456,6 +457,7 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
   const liquidAnimationFrameRemaining = formatDurationMs(tile.liquidAnimationFrameRemainingMs);
   const liquidAnimationLoopDuration = formatDurationMs(tile.liquidAnimationLoopDurationMs);
   const liquidAnimationLoopElapsed = formatDurationMs(tile.liquidAnimationLoopElapsedMs);
+  const liquidAnimationLoopRemaining = formatDurationMs(tile.liquidAnimationLoopRemainingMs);
 
   return (
     `${label}: ${tile.tileLabel} (#${tile.tileId}) @ ${tile.tileX},${tile.tileY}` +
@@ -476,6 +478,7 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     (liquidAnimationFrameRemaining ? ` | liquidFrameRemain:${liquidAnimationFrameRemaining}` : '') +
     (liquidAnimationLoopDuration ? ` | liquidLoopDur:${liquidAnimationLoopDuration}` : '') +
     (liquidAnimationLoopElapsed ? ` | liquidLoopElapsed:${liquidAnimationLoopElapsed}` : '') +
+    (liquidAnimationLoopRemaining ? ` | liquidLoopRemain:${liquidAnimationLoopRemaining}` : '') +
     (typeof tile.liquidVariantSource === 'string' && tile.liquidVariantSource.length > 0
       ? ` | liquidSrc:${tile.liquidVariantSource}`
       : '') +
