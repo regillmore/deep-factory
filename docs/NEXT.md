@@ -42,11 +42,11 @@ These items are intentionally scoped to fit a focused implementation pass with t
 82. Surface the in-world edit-panel shortcut in the touch debug controls keyboard reference once task 69 adds the keyboard action.
 83. Surface the in-world edit-overlay shortcut in shell copy once the keyboard action exists.
 158. Surface the paused-menu `Resume World` shortcut in the shell button tooltip alongside the existing paused-session copy.
+160. Surface the paused-menu `Resume World` shortcut in the paused-session shell copy alongside the existing resume guidance.
 
 ## Player debugging
 
 134. Surface standalone player live camera chunk-local tile coordinates in the compact debug-edit status strip once task 133 lands camera world chunk coordinates.
 148. Surface standalone player live camera chunk-local tile coordinates in the text debug HUD once camera world tile and world chunk telemetry are both available.
-155. Surface standalone player live camera zoom level in the text debug HUD alongside the existing follow telemetry.
 
 ## Project structure optimization

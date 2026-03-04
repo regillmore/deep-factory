@@ -1485,6 +1485,7 @@ const bootstrap = async (): Promise<void> => {
               y: camera.y
             },
             cameraTile: debugStatusStripPlayerCameraWorldTile,
+            cameraZoom: camera.zoom,
             focus: debugStatusStripPlayerCameraFocusPoint,
             focusTile: debugStatusStripPlayerCameraFocusTile,
             focusChunk: debugStatusStripPlayerCameraFocusChunk,

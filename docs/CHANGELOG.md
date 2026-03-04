@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Surface standalone player live camera zoom level in the text debug HUD alongside the existing follow telemetry.
+- Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so the text HUD `Follow:` line now includes live `zoom:` telemetry beside the existing camera world-position, tile, chunk, focus, and offset fields, wired [src/main.ts](../src/main.ts) to pass the current camera zoom into that overlay snapshot, advanced [docs/NEXT.md](docs/NEXT.md) with a paused-menu resume-copy follow-up, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add per-chunk light storage plus invalidation hooks when edited tiles change `blocksLight` or emissive state.
 - Changes: Updated [src/world/world.ts](../src/world/world.ts) plus [src/world/world.test.ts](../src/world/world.test.ts) so resident chunks now carry zeroed light arrays and dirty-light flags, added lighting-state-aware chunk invalidation for loaded edit-adjacent chunks, extended [src/world/tileMetadata.ts](../src/world/tileMetadata.ts) plus [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with optional dense `emissiveLight` gameplay lookup support for future emissive tiles, refreshed [src/world/constants.ts](../src/world/constants.ts), [src/world/types.ts](../src/world/types.ts), and [src/world/mesher.test.ts](../src/world/mesher.test.ts) for the new chunk-light shape, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `npx vitest run src/world/world.test.ts src/world/tileMetadata.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
