@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Extend deployment regression coverage to assert emitted HTML and CSS assets also omit the exact legacy root-relative `'/atlas/tile-atlas.png'` literal.
+- Changes: Updated [pagesBasePath.test.ts](../pagesBasePath.test.ts) so the temp-directory Vite production build now rejects the exact legacy authored-atlas literal in emitted `index.html` and every emitted CSS bundle while preserving the existing JavaScript literal scan and authored atlas byte-for-byte copy check, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run pagesBasePath.test.ts`.
+
 - Task: Surface standalone player live world tile coordinates in the compact debug-edit status strip when the text debug HUD is hidden.
 - Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) plus [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so the compact strip now formats a hidden-HUD `TileNow:` line beside the existing player world-position telemetry, refreshed [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts) for wrap-friendly world-tile rows, wired [src/main.ts](../src/main.ts) to floor the live player world position through the shared picking tile-coordinate helper before passing it into the strip, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

@@ -51,4 +51,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-126. Extend deployment regression coverage to assert emitted HTML and CSS assets also omit the exact legacy root-relative `'/atlas/tile-atlas.png'` literal.
+128. Extend deployment regression coverage to assert emitted HTML omits root-relative `"/assets/"` script and stylesheet URLs in production output.
