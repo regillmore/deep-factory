@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Surface the in-world edit-panel shortcut in the shell button tooltip alongside the existing title copy.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the in-world full-panel shell button tooltip now includes the existing desktop `G` shortcut alongside the existing show or hide copy through a shared resolver, advanced [docs/NEXT.md](docs/NEXT.md) with a paused-menu `New World` tooltip follow-up, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/appShell.test.ts`.
+
 - Task: Surface the in-world edit-panel shortcut in shell copy once task 69 adds the keyboard action.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the in-world full-panel shell toggle now renders `Show Edit Panel (G)` or `Hide Edit Panel (G)` from the existing desktop shortcut helper, advanced [docs/NEXT.md](docs/NEXT.md) with a shell-tooltip follow-up, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/appShell.test.ts`.

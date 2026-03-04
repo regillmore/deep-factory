@@ -100,6 +100,9 @@ const resolveInWorldReturnToMainMenuActionLabel = (): string =>
 const resolveInWorldDebugEditControlsToggleLabel = (visible: boolean): string =>
   `${visible ? 'Hide' : 'Show'} Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`;
 
+export const resolveInWorldDebugEditControlsToggleTitle = (visible: boolean): string =>
+  `${visible ? 'Hide' : 'Show'} the full debug-edit control panel (${getDesktopDebugEditControlsHotkeyLabel()})`;
+
 export const resolveAppShellViewModel = (state: AppShellState): AppShellViewModel => {
   switch (state.screen) {
     case 'boot':
@@ -388,9 +391,9 @@ export class AppShell {
       'aria-pressed',
       viewModel.debugEditControlsTogglePressed ? 'true' : 'false'
     );
-    this.debugEditControlsToggleButton.title = viewModel.debugEditControlsTogglePressed
-      ? 'Hide the full debug-edit control panel'
-      : 'Show the full debug-edit control panel';
+    this.debugEditControlsToggleButton.title = resolveInWorldDebugEditControlsToggleTitle(
+      viewModel.debugEditControlsTogglePressed
+    );
     this.debugEditOverlaysToggleButton.textContent = viewModel.debugEditOverlaysToggleLabel ?? '';
     this.debugEditOverlaysToggleButton.hidden = viewModel.debugEditOverlaysToggleLabel === null;
     this.debugEditOverlaysToggleButton.setAttribute(

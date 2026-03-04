@@ -9,6 +9,7 @@ import {
 import {
   createPausedMainMenuShellState,
   resolveAppShellRegionDisplay,
+  resolveInWorldDebugEditControlsToggleTitle,
   resolveAppShellViewModel
 } from './appShell';
 
@@ -212,5 +213,19 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.debugEditControlsToggleLabel).toBeNull();
     expect(viewModel.debugEditOverlaysToggleLabel).toBeNull();
     expect(viewModel.playerSpawnMarkerToggleLabel).toBeNull();
+  });
+});
+
+describe('resolveInWorldDebugEditControlsToggleTitle', () => {
+  it('includes the edit-panel desktop shortcut when the panel is hidden', () => {
+    expect(resolveInWorldDebugEditControlsToggleTitle(false)).toBe(
+      `Show the full debug-edit control panel (${getDesktopDebugEditControlsHotkeyLabel()})`
+    );
+  });
+
+  it('includes the edit-panel desktop shortcut when the panel is visible', () => {
+    expect(resolveInWorldDebugEditControlsToggleTitle(true)).toBe(
+      `Hide the full debug-edit control panel (${getDesktopDebugEditControlsHotkeyLabel()})`
+    );
   });
 });
