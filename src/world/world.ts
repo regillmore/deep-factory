@@ -230,6 +230,10 @@ export class TileWorld {
     return coords;
   }
 
+  getDirtyLightChunkCount(): number {
+    return this.dirtyLightChunkKeys.size;
+  }
+
   markChunkLightClean(chunkX: number, chunkY: number): void {
     const key = chunkKey(chunkX, chunkY);
     const chunk = this.chunks.get(key);

@@ -28,6 +28,7 @@ export interface DebugOverlayStats {
   meshBuildQueueLength: number;
   residentWorldChunks: number;
   cachedChunkMeshes: number;
+  residentDirtyLightChunks: number;
   evictedWorldChunks: number;
   evictedMeshEntries: number;
 }
@@ -553,6 +554,7 @@ export const formatDebugOverlayText = (
     `Mesh builds: ${stats.meshBuilds}/${stats.meshBuildBudget} (${stats.meshBuildTimeMs.toFixed(2)} ms) | ` +
     `MeshQ: ${stats.meshBuildQueueLength} | ` +
     `Cache W/M: ${stats.residentWorldChunks}/${stats.cachedChunkMeshes} | ` +
+    `LightDirty: ${stats.residentDirtyLightChunks} | ` +
     `Evict W/M: ${stats.evictedWorldChunks}/${stats.evictedMeshEntries}`;
 
   const pointerInspect = inspect?.pointer ?? null;

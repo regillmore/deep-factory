@@ -14,7 +14,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 13. Implement sunlight propagation from exposed chunk tops using the existing gameplay metadata.
 14. Add local emissive light sources (start with a torch tile or debug light source) and merge them into the light field.
 15. Modulate tile rendering by resolved light values.
-159. Surface resident dirty-light chunk counts in the debug HUD once per-chunk light invalidation exists.
+161. Surface resident dirty-light chunk counts in the compact debug-edit status strip when the text debug HUD is hidden.
 
 ## Entities and interpolation
 

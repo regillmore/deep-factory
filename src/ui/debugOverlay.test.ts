@@ -24,6 +24,7 @@ const baseStats: DebugOverlayStats = {
   meshBuildQueueLength: 7,
   residentWorldChunks: 20,
   cachedChunkMeshes: 18,
+  residentDirtyLightChunks: 20,
   evictedWorldChunks: 1,
   evictedMeshEntries: 1
 };
@@ -50,6 +51,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nIntent: n/a');
     expect(text).toContain('\nAnimMesh: chunks:0 | quads:0 | nonLiquid:0 | liquid:0');
     expect(text).toContain('\nAnimUV: uploads:0 | quads:0 | nonLiquid:0 | liquid:0 | bytes:0');
+    expect(text).toContain('LightDirty: 20');
     expect(text).toContain('Draws: 4/256 (OK)');
     expect(text).toContain('\nPtr: n/a');
   });

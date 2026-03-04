@@ -97,6 +97,7 @@ export interface RenderTelemetry {
   meshBuildQueueLength: number;
   residentWorldChunks: number;
   cachedChunkMeshes: number;
+  residentDirtyLightChunks: number;
   evictedWorldChunks: number;
   evictedMeshEntries: number;
 }
@@ -156,6 +157,7 @@ export class Renderer {
     meshBuildQueueLength: 0,
     residentWorldChunks: 0,
     cachedChunkMeshes: 0,
+    residentDirtyLightChunks: 0,
     evictedWorldChunks: 0,
     evictedMeshEntries: 0
   };
@@ -469,6 +471,7 @@ export class Renderer {
     this.pruneStreamingCaches(retainBounds);
     this.telemetry.residentWorldChunks = this.world.getChunkCount();
     this.telemetry.cachedChunkMeshes = this.meshes.size;
+    this.telemetry.residentDirtyLightChunks = this.world.getDirtyLightChunkCount();
     this.updateAnimatedChunkResidencyTelemetry();
     this.telemetry.meshBuildQueueLength = this.meshBuildQueue.length;
   }
@@ -499,6 +502,7 @@ export class Renderer {
     this.telemetry.meshBuildQueueLength = 0;
     this.telemetry.residentWorldChunks = this.world.getChunkCount();
     this.telemetry.cachedChunkMeshes = 0;
+    this.telemetry.residentDirtyLightChunks = this.world.getDirtyLightChunkCount();
     this.telemetry.evictedWorldChunks = 0;
     this.telemetry.evictedMeshEntries = 0;
     this.telemetry.residentAnimatedChunkMeshes = 0;

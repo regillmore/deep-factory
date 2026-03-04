@@ -17,6 +17,7 @@ describe('TileWorld', () => {
     expect(world.getChunkCount()).toBe(1);
     expect(Array.from(world.getChunks()).map((chunk) => chunk.coord)).toEqual([{ x: 0, y: 0 }]);
     expect(world.getDirtyLightChunkCoords()).toEqual([{ x: 0, y: 0 }]);
+    expect(world.getDirtyLightChunkCount()).toBe(1);
   });
 
   it('sets tiles and emits edit metadata', () => {
@@ -100,6 +101,7 @@ describe('TileWorld', () => {
     expect(world.getLightLevel(0, 0)).toBe(0);
     expect(world.isChunkLightDirty(0, 0)).toBe(true);
     expect(world.getDirtyLightChunkCoords()).toEqual([{ x: 0, y: 0 }]);
+    expect(world.getDirtyLightChunkCount()).toBe(1);
 
     world.fillChunkLight(0, 0, MAX_LIGHT_LEVEL);
     expect(world.getLightLevel(0, 0)).toBe(MAX_LIGHT_LEVEL);
@@ -110,6 +112,7 @@ describe('TileWorld', () => {
     world.markChunkLightClean(0, 0);
     expect(world.isChunkLightDirty(0, 0)).toBe(false);
     expect(world.getDirtyLightChunkCoords()).toEqual([]);
+    expect(world.getDirtyLightChunkCount()).toBe(0);
 
     expect(() => world.setLightLevel(0, 0, MAX_LIGHT_LEVEL + 1)).toThrowError(
       /lightLevel must be an integer between 0 and 15/
