@@ -51,4 +51,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-151. Extend deployment regression coverage to assert emitted JavaScript assets omit exact double-prefixed `'/deep-factory/deep-factory/atlas/'` static-asset URL prefix literals in production output.
+153. Extend deployment regression coverage to assert emitted JavaScript assets omit exact double-prefixed `"/deep-factory/deep-factory/atlas/"` static-asset URL prefix literals in production output.
