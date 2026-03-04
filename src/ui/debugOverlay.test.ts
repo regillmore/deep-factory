@@ -326,10 +326,38 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nCeilEvt: blocked | Tile:1,-3 (#5) | Pos:24.50,-12.25 | Vel:-180.00,0.00');
     expect(text).toContain('\nAABB: min:18.50,-40.25 | max:30.50,-12.25 | size:12.00,28.00');
     expect(text).toContain(
-      '\nFollow: camTile:2,-2 | focus:24.50,-26.25 | focusTile:1,-2 | focusChunk:0,-1 | offset:18.00,-6.00'
+      '\nFollow: camTile:2,-2 | camChunk:0,-1 | focus:24.50,-26.25 | focusTile:1,-2 | focusChunk:0,-1 | offset:18.00,-6.00'
     );
     expect(text).toContain('\nContact: support:none | wall:0,-1 (#3, right) | ceiling:1,-3 (#5)');
     expect(text).toContain('\nIntent: move:-1 | jumpHeld:on | jumpPressed:on');
+  });
+
+  it('derives negative-world camera chunk coordinates from the live camera tile telemetry', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      spawn: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: {
+        cameraTile: { x: -33, y: -1 },
+        focus: { x: -520, y: -8 },
+        focusTile: { x: -33, y: -1 },
+        focusChunk: { x: -2, y: -1 },
+        offset: { x: 0, y: 0 }
+      },
+      player: null,
+      pinned: null
+    });
+
+    expect(text).toContain(
+      '\nFollow: camTile:-33,-1 | camChunk:-2,-1 | focus:-520.00,-8.00 | focusTile:-33,-1 | focusChunk:-2,-1 | offset:0.00,0.00'
+    );
   });
 
   it('shows animated chunk uv upload cost telemetry', () => {

@@ -377,9 +377,15 @@ const formatPlayerCameraFollowLine = (
     return 'Follow: n/a';
   }
 
+  const { chunkX, chunkY } = worldToChunkCoord(
+    playerCameraFollow.cameraTile.x,
+    playerCameraFollow.cameraTile.y
+  );
+
   return (
     `Follow: camTile:${formatInt(playerCameraFollow.cameraTile.x)},` +
     `${formatInt(playerCameraFollow.cameraTile.y)} | ` +
+    `camChunk:${formatInt(chunkX)},${formatInt(chunkY)} | ` +
     `focus:${formatFloat(playerCameraFollow.focus.x, 2)},` +
     `${formatFloat(playerCameraFollow.focus.y, 2)} | ` +
     `focusTile:${formatInt(playerCameraFollow.focusTile.x)},${formatInt(playerCameraFollow.focusTile.y)} | ` +

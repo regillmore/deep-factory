@@ -41,12 +41,12 @@ These items are intentionally scoped to fit a focused implementation pass with t
 68. Surface the in-world spawn-marker shortcut in shell copy once the keyboard action exists.
 70. Surface the in-world edit-panel shortcut in shell copy once task 69 adds the keyboard action.
 82. Surface the in-world edit-panel shortcut in the touch debug controls keyboard reference once task 69 adds the keyboard action.
+83. Surface the in-world edit-overlay shortcut in shell copy once the keyboard action exists.
 
 ## Player debugging
 
 134. Surface standalone player live camera chunk-local tile coordinates in the compact debug-edit status strip once task 133 lands camera world chunk coordinates.
 144. Surface standalone player live camera-follow focus-point chunk-local tile coordinates in the text debug HUD now that focus-point world tile coordinates are available.
-146. Surface standalone player live camera world chunk coordinates in the text debug HUD once camera world tile telemetry exists.
 148. Surface standalone player live camera chunk-local tile coordinates in the text debug HUD once camera world tile and world chunk telemetry are both available.
 
 ## Project structure optimization
