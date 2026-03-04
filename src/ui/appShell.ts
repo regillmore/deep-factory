@@ -25,7 +25,7 @@ export interface AppShellState {
 }
 
 export const DEFAULT_PAUSED_MAIN_MENU_STATUS =
-  'World session paused. Resume to continue it, or choose New World to discard it and boot a fresh procedural world.';
+  `World session paused. Resume World (${getDesktopResumeWorldHotkeyLabel()}) to continue it, or choose New World to discard it and boot a fresh procedural world.`;
 export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [
   'Returning here keeps the initialized world, player state, and debug edits intact until you abandon them.',
   'New World also clears the paused session camera state and undo history before the fresh world boots.'

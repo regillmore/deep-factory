@@ -42,7 +42,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 82. Surface the in-world edit-panel shortcut in the touch debug controls keyboard reference once task 69 adds the keyboard action.
 83. Surface the in-world edit-overlay shortcut in shell copy once the keyboard action exists.
 158. Surface the paused-menu `Resume World` shortcut in the shell button tooltip alongside the existing paused-session copy.
-160. Surface the paused-menu `Resume World` shortcut in the paused-session shell copy alongside the existing resume guidance.
+163. Surface the paused-menu `Resume World (Enter)` shortcut in the paused-session detail-line shell copy that currently describes session preservation.
 
 ## Player debugging
 
