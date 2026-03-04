@@ -1447,6 +1447,16 @@ const bootstrap = async (): Promise<void> => {
             );
             return { x: chunkX, y: chunkY };
           })();
+    const debugStatusStripPlayerCameraFocusLocalTile =
+      debugStatusStripPlayerCameraFocusTile === null
+        ? null
+        : (() => {
+            const { localX, localY } = worldToLocalTile(
+              debugStatusStripPlayerCameraFocusTile.x,
+              debugStatusStripPlayerCameraFocusTile.y
+            );
+            return { x: localX, y: localY };
+          })();
     const debugOverlayPlayerCameraFollow =
       debugStatusStripPlayerCameraFocusPoint &&
       debugStatusStripPlayerCameraFocusTile &&
@@ -1457,9 +1467,9 @@ const bootstrap = async (): Promise<void> => {
             focusChunk: debugStatusStripPlayerCameraFocusChunk,
             offset: {
               x: cameraFollowOffset.x,
-            y: cameraFollowOffset.y
+              y: cameraFollowOffset.y
+            }
           }
-        }
       : null;
     const debugOverlayPlayerIntent = input.getPlayerInputTelemetry();
     const debugStatusStripPlayerWorldTile =
@@ -1544,6 +1554,8 @@ const bootstrap = async (): Promise<void> => {
       playerCameraFocusPoint: debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusPoint,
       playerCameraFocusTile: debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusTile,
       playerCameraFocusChunk: debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusChunk,
+      playerCameraFocusLocalTile:
+        debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusLocalTile,
       playerCameraFollowOffset:
         debugOverlayVisible || !standalonePlayerState
           ? null

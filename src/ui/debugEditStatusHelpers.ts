@@ -40,6 +40,7 @@ export interface DebugEditStatusStripState {
   playerCameraFocusPoint?: { x: number; y: number } | null;
   playerCameraFocusTile?: { x: number; y: number } | null;
   playerCameraFocusChunk?: { x: number; y: number } | null;
+  playerCameraFocusLocalTile?: { x: number; y: number } | null;
   playerCameraFollowOffset?: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null;
   playerCameraZoom?: number | null;
   playerCeilingBonkHoldActive?: boolean | null;
@@ -683,6 +684,16 @@ const formatLiveCameraFocusChunkText = (
   return `FocusChunkNow: ${formatTileCoordinatePair(playerCameraFocusChunk.x, playerCameraFocusChunk.y)}`;
 };
 
+const formatLiveCameraFocusChunkLocalTileText = (
+  playerCameraFocusLocalTile: { x: number; y: number } | null
+): string | null => {
+  if (playerCameraFocusLocalTile === null) {
+    return null;
+  }
+
+  return `FocusLocalNow: ${formatTileCoordinatePair(playerCameraFocusLocalTile.x, playerCameraFocusLocalTile.y)}`;
+};
+
 const formatLiveCameraFollowOffsetText = (
   playerCameraFollowOffset: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null
 ): string | null => {
@@ -795,6 +806,7 @@ const buildPlayerText = (
   playerCameraFocusPoint: { x: number; y: number } | null,
   playerCameraFocusTile: { x: number; y: number } | null,
   playerCameraFocusChunk: { x: number; y: number } | null,
+  playerCameraFocusLocalTile: { x: number; y: number } | null,
   playerCameraFollowOffset: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null,
   playerCameraZoom: number | null,
   playerCeilingBonkHoldActive: boolean | null,
@@ -820,6 +832,7 @@ const buildPlayerText = (
     formatLiveCameraFocusPointText(playerCameraFocusPoint),
     formatLiveCameraFocusTileText(playerCameraFocusTile),
     formatLiveCameraFocusChunkText(playerCameraFocusChunk),
+    formatLiveCameraFocusChunkLocalTileText(playerCameraFocusLocalTile),
     formatLiveCameraFollowOffsetText(playerCameraFollowOffset),
     formatLiveCameraZoomText(playerCameraZoom),
     formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive),
@@ -1327,6 +1340,7 @@ export const buildDebugEditStatusStripModel = (
   const playerCameraFocusPoint = state.playerCameraFocusPoint ?? null;
   const playerCameraFocusTile = state.playerCameraFocusTile ?? null;
   const playerCameraFocusChunk = state.playerCameraFocusChunk ?? null;
+  const playerCameraFocusLocalTile = state.playerCameraFocusLocalTile ?? null;
   const playerCameraFollowOffset = state.playerCameraFollowOffset ?? null;
   const playerCameraZoom = state.playerCameraZoom ?? null;
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
@@ -1362,6 +1376,7 @@ export const buildDebugEditStatusStripModel = (
       playerCameraFocusPoint,
       playerCameraFocusTile,
       playerCameraFocusChunk,
+      playerCameraFocusLocalTile,
       playerCameraFollowOffset,
       playerCameraZoom,
       playerCeilingBonkHoldActive,
