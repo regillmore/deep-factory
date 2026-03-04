@@ -120,6 +120,13 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose and live world-tile player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: grounded-idle\nTileNow: 3,-2')).toEqual([
+      ['Pose: grounded-idle'],
+      ['TileNow: 3,-2']
+    ]);
+  });
+
   it('preserves separate pose and live collision AABB min/max and size player lines while keeping each line individually wrappable', () => {
     expect(
       buildWrappedDetailLines(
@@ -252,14 +259,15 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
-  it('preserves separate pose, world-position, collision AABB min/max and size, input-edge, horizontal and vertical velocity, speed magnitude, and contact player lines while keeping each line individually wrappable', () => {
+  it('preserves separate pose, world-position, world-tile, collision AABB min/max and size, input-edge, horizontal and vertical velocity, speed magnitude, and contact player lines while keeping each line individually wrappable', () => {
     expect(
       buildWrappedDetailLines(
-        'Pose: ceiling-bonk\nPosNow: 72.00,-48.00\nAABBNow: min 66.00,-76.00 | max 78.00,-48.00 | size 12.00,28.00\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nVelYNow: -210.00\nSpeedNow: 276.59\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
+        'Pose: ceiling-bonk\nPosNow: 72.00,-48.00\nTileNow: 4,-3\nAABBNow: min 66.00,-76.00 | max 78.00,-48.00 | size 12.00,28.00\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nVelYNow: -210.00\nSpeedNow: 276.59\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
       )
     ).toEqual([
       ['Pose: ceiling-bonk'],
       ['PosNow: 72.00,-48.00'],
+      ['TileNow: 4,-3'],
       ['AABBNow: min 66.00,-76.00', '| max 78.00,-48.00', '| size 12.00,28.00'],
       ['GroundedNow: off'],
       ['FacingNow: right'],

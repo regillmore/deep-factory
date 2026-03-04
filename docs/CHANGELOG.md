@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Surface standalone player live world tile coordinates in the compact debug-edit status strip when the text debug HUD is hidden.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) plus [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so the compact strip now formats a hidden-HUD `TileNow:` line beside the existing player world-position telemetry, refreshed [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts) for wrap-friendly world-tile rows, wired [src/main.ts](../src/main.ts) to floor the live player world position through the shared picking tile-coordinate helper before passing it into the strip, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extend deployment regression coverage to scan every emitted JavaScript asset for authored-atlas runtime URL literals instead of only the first bundle.
 - Changes: Updated [pagesBasePath.test.ts](../pagesBasePath.test.ts) so the temp-directory Vite production build now reads every emitted JavaScript asset under `dist/assets`, asserts the exact joined `/deep-factory/atlas/tile-atlas.png` literal appears exactly once across the full emitted JS set, and rejects the exact legacy root-relative `'/atlas/tile-atlas.png'` literal in every emitted bundle; advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run pagesBasePath.test.ts`.

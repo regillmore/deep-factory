@@ -32,6 +32,7 @@ export interface DebugEditStatusStripState {
   desktopInspectPinArmed: boolean;
   playerPlaceholderPoseLabel?: string | null;
   playerWorldPosition?: { x: number; y: number } | null;
+  playerWorldTile?: { x: number; y: number } | null;
   playerAabb?: DebugEditStatusStripPlayerAabbTelemetry | null;
   playerCameraFollowOffset?: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null;
   playerCameraZoom?: number | null;
@@ -591,6 +592,14 @@ const formatLiveWorldPositionText = (
   return `PosNow: ${playerWorldPosition.x.toFixed(2)},${playerWorldPosition.y.toFixed(2)}`;
 };
 
+const formatLiveWorldTileText = (playerWorldTile: { x: number; y: number } | null): string | null => {
+  if (playerWorldTile === null) {
+    return null;
+  }
+
+  return `TileNow: ${formatTileCoordinatePair(playerWorldTile.x, playerWorldTile.y)}`;
+};
+
 const formatLiveAabbText = (
   playerAabb: DebugEditStatusStripPlayerAabbTelemetry | null
 ): string | null => {
@@ -712,6 +721,7 @@ const formatLiveCeilingContactText = (
 const buildPlayerText = (
   playerPlaceholderPoseLabel: string | null,
   playerWorldPosition: { x: number; y: number } | null,
+  playerWorldTile: { x: number; y: number } | null,
   playerAabb: DebugEditStatusStripPlayerAabbTelemetry | null,
   playerCameraFollowOffset: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null,
   playerCameraZoom: number | null,
@@ -730,6 +740,7 @@ const buildPlayerText = (
   const playerLines = [
     playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : null,
     formatLiveWorldPositionText(playerWorldPosition),
+    formatLiveWorldTileText(playerWorldTile),
     formatLiveAabbText(playerAabb),
     formatLiveCameraFollowOffsetText(playerCameraFollowOffset),
     formatLiveCameraZoomText(playerCameraZoom),
@@ -1230,6 +1241,7 @@ export const buildDebugEditStatusStripModel = (
   const activeToolStatus = resolveActiveDebugToolStatus(state.preview);
   const playerPlaceholderPoseLabel = state.playerPlaceholderPoseLabel ?? null;
   const playerWorldPosition = state.playerWorldPosition ?? null;
+  const playerWorldTile = state.playerWorldTile ?? null;
   const playerAabb = state.playerAabb ?? null;
   const playerCameraFollowOffset = state.playerCameraFollowOffset ?? null;
   const playerCameraZoom = state.playerCameraZoom ?? null;
@@ -1258,6 +1270,7 @@ export const buildDebugEditStatusStripModel = (
     playerText: buildPlayerText(
       playerPlaceholderPoseLabel,
       playerWorldPosition,
+      playerWorldTile,
       playerAabb,
       playerCameraFollowOffset,
       playerCameraZoom,

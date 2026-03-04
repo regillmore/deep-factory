@@ -24,6 +24,7 @@ import {
   type DebugTileEditKind,
   type PointerInspectSnapshot
 } from './input/controller';
+import { worldToTilePoint } from './input/picking';
 import {
   clearDebugEditControlState,
   loadDebugEditControlState,
@@ -1437,6 +1438,10 @@ const bootstrap = async (): Promise<void> => {
         }
       : null;
     const debugOverlayPlayerIntent = input.getPlayerInputTelemetry();
+    const debugStatusStripPlayerWorldTile =
+      standalonePlayerState === null
+        ? null
+        : worldToTilePoint(standalonePlayerState.position.x, standalonePlayerState.position.y);
     renderer.resize();
     renderer.render(camera, {
       standalonePlayer: standalonePlayerState,
@@ -1477,6 +1482,7 @@ const bootstrap = async (): Promise<void> => {
               x: standalonePlayerState.position.x,
               y: standalonePlayerState.position.y
             },
+      playerWorldTile: debugOverlayVisible ? null : debugStatusStripPlayerWorldTile,
       playerAabb:
         debugOverlayVisible || !standalonePlayerAabb
           ? null
