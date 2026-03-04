@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Surface standalone player live collision AABB size in the compact debug-edit status strip when the text debug HUD is hidden.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) plus [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so the compact strip now extends the hidden-HUD `AABBNow:` line with derived live `size` telemetry beside the existing `min` and `max` corners, refreshed [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts) for wrap-friendly segmented AABB rows, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a deployment regression check that verifies the production build emits `dist/atlas/tile-atlas.png` for GitHub Pages publishing.
 - Changes: Extended [pagesBasePath.test.ts](../pagesBasePath.test.ts) so the temp-directory Vite production build now also asserts that the copied public authored atlas lands at `atlas/tile-atlas.png` in the emitted output, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run pagesBasePath.test.ts` and `npx tsc --noEmit -p tsconfig.node.json`.

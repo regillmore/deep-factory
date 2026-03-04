@@ -166,7 +166,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('formats the live standalone player collision AABB min/max for the compact strip when provided', () => {
+  it('formats the live standalone player collision AABB min/max and size for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -181,7 +181,7 @@ describe('buildDebugEditStatusStripModel', () => {
       preview: createEmptyPreviewState()
     });
 
-    expect(model.playerText).toBe('AABBNow: min 18.50,-40.25 | max 30.50,-12.25');
+    expect(model.playerText).toBe('AABBNow: min 18.50,-40.25 | max 30.50,-12.25 | size 12.00,28.00');
     expect(model.eventText).toBeNull();
   });
 
@@ -462,7 +462,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose and live collision AABB min/max telemetry on separate player lines', () => {
+  it('keeps pose and live collision AABB min/max and size telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -479,7 +479,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.playerText).toBe(
-      'Pose: grounded-idle\nAABBNow: min 18.50,-40.25 | max 30.50,-12.25'
+      'Pose: grounded-idle\nAABBNow: min 18.50,-40.25 | max 30.50,-12.25 | size 12.00,28.00'
     );
     expect(model.eventText).toBeNull();
   });
@@ -745,7 +745,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose, world-position, collision AABB min/max, grounded, facing, horizontal and vertical velocity, speed magnitude, jump telemetry, and contact telemetry on separate player lines', () => {
+  it('keeps pose, world-position, collision AABB min/max and size, grounded, facing, horizontal and vertical velocity, speed magnitude, jump telemetry, and contact telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -784,7 +784,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.playerText).toBe(
       'Pose: ceiling-bonk\n' +
         'PosNow: 72.00,-48.00\n' +
-        'AABBNow: min 66.00,-76.00 | max 78.00,-48.00\n' +
+        'AABBNow: min 66.00,-76.00 | max 78.00,-48.00 | size 12.00,28.00\n' +
         'GroundedNow: off\n' +
         'FacingNow: right\n' +
         'MoveXNow: 1\n' +

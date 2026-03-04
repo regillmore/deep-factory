@@ -597,9 +597,13 @@ const formatLiveAabbText = (
     return null;
   }
 
+  const width = playerAabb.max.x - playerAabb.min.x;
+  const height = playerAabb.max.y - playerAabb.min.y;
+
   return (
     `AABBNow: min ${playerAabb.min.x.toFixed(2)},${playerAabb.min.y.toFixed(2)} | ` +
-    `max ${playerAabb.max.x.toFixed(2)},${playerAabb.max.y.toFixed(2)}`
+    `max ${playerAabb.max.x.toFixed(2)},${playerAabb.max.y.toFixed(2)} | ` +
+    `size ${width.toFixed(2)},${height.toFixed(2)}`
   );
 };
 
