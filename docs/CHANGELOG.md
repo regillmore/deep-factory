@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Add a deployment regression check that verifies the production bundle no longer retains the legacy root-relative `/atlas/tile-atlas.png` runtime atlas URL.
+- Changes: Tightened [pagesBasePath.test.ts](../pagesBasePath.test.ts) so the temp-directory Vite production build now rejects the exact quoted legacy authored-atlas runtime URL literal while still requiring the joined `/deep-factory/atlas/tile-atlas.png` fetch path, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run pagesBasePath.test.ts` and `npx tsc --noEmit -p tsconfig.node.json`.
+
 - Task: Surface standalone player live camera zoom level in the compact debug-edit status strip when the text debug HUD is hidden.
 - Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) plus [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so the compact strip now formats a hidden-HUD `ZoomNow:` line from the live camera zoom, refreshed [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts) for wrap-friendly segmented zoom rows, wired [src/main.ts](../src/main.ts) to pass the current camera zoom into the strip only while the text debug HUD is hidden, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

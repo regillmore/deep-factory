@@ -51,4 +51,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-122. Add a deployment regression check that verifies the production bundle no longer retains the legacy root-relative `/atlas/tile-atlas.png` runtime atlas URL.
+124. Add a deployment regression check that verifies the production bundle emits exactly one authored-atlas runtime URL literal so future base-path helpers cannot leave duplicate fallback strings behind.

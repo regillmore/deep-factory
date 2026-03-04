@@ -53,6 +53,7 @@ describe('createViteConfig', () => {
       const jsBundle = await readFile(join(outDir, 'assets', jsBundleName), 'utf8');
       expect(jsBundle).toContain(GITHUB_PAGES_BASE_PATH);
       expect(jsBundle).toContain(`${GITHUB_PAGES_BASE_PATH}atlas/tile-atlas.png`);
+      expect(jsBundle).not.toMatch(/(["'`])\/atlas\/tile-atlas\.png\1/);
 
       const sourceAtlasPng = await readFile(join(process.cwd(), 'public', 'atlas', 'tile-atlas.png'));
       const emittedAtlasPng = await readFile(join(outDir, 'atlas', 'tile-atlas.png'));
