@@ -93,6 +93,9 @@ const resolveMainMenuPrimaryActionLabel = (label: string): string =>
 const resolveMainMenuSecondaryActionLabel = (label: string): string =>
   label === 'New World' ? `${label} (${getDesktopFreshWorldHotkeyLabel()})` : label;
 
+const resolveInWorldReturnToMainMenuActionLabel = (): string =>
+  `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`;
+
 export const resolveAppShellViewModel = (state: AppShellState): AppShellViewModel => {
   switch (state.screen) {
     case 'boot':
@@ -155,7 +158,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         detailLines: state.detailLines ?? [],
         primaryActionLabel: null,
         secondaryActionLabel: null,
-        returnToMainMenuActionLabel: 'Main Menu',
+        returnToMainMenuActionLabel: resolveInWorldReturnToMainMenuActionLabel(),
         recenterCameraActionLabel: 'Recenter Camera',
         debugOverlayToggleLabel:
           state.debugOverlayVisible === true ? 'Hide Debug HUD' : 'Show Debug HUD',

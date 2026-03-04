@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Surface the in-world main-menu shortcut in shell copy once the keyboard action exists.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the in-world shell button label now renders `Main Menu (Q)` from the existing desktop shortcut helper, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/appShell.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface standalone player live camera-follow focus-point world chunk coordinates in the compact debug-edit status strip once the focus-point world tile telemetry exists.
 - Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) plus [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so the compact strip now formats a hidden-HUD `FocusChunkNow:` line beside the existing focus-point position and tile telemetry, wired [src/main.ts](../src/main.ts) to derive those chunk coordinates from the shared focus-point tile telemetry via shared chunk math, refreshed [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

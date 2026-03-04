@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getDesktopFreshWorldHotkeyLabel,
-  getDesktopResumeWorldHotkeyLabel
+  getDesktopResumeWorldHotkeyLabel,
+  getDesktopReturnToMainMenuHotkeyLabel
 } from '../input/debugEditShortcuts';
 import {
   createPausedMainMenuShellState,
@@ -90,7 +91,9 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.stageLabel).toBe('In World');
     expect(viewModel.primaryActionLabel).toBeNull();
     expect(viewModel.secondaryActionLabel).toBeNull();
-    expect(viewModel.returnToMainMenuActionLabel).toBe('Main Menu');
+    expect(viewModel.returnToMainMenuActionLabel).toBe(
+      `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
+    );
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
     expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
     expect(viewModel.debugOverlayTogglePressed).toBe(false);
@@ -107,7 +110,9 @@ describe('resolveAppShellViewModel', () => {
     const viewModel = resolveAppShellViewModel({ screen: 'in-world', debugOverlayVisible: true });
 
     expect(viewModel.chromeVisible).toBe(true);
-    expect(viewModel.returnToMainMenuActionLabel).toBe('Main Menu');
+    expect(viewModel.returnToMainMenuActionLabel).toBe(
+      `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
+    );
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
     expect(viewModel.debugOverlayToggleLabel).toBe('Hide Debug HUD');
     expect(viewModel.secondaryActionLabel).toBeNull();
@@ -127,7 +132,9 @@ describe('resolveAppShellViewModel', () => {
     });
 
     expect(viewModel.chromeVisible).toBe(true);
-    expect(viewModel.returnToMainMenuActionLabel).toBe('Main Menu');
+    expect(viewModel.returnToMainMenuActionLabel).toBe(
+      `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
+    );
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
     expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
     expect(viewModel.secondaryActionLabel).toBeNull();
@@ -144,7 +151,9 @@ describe('resolveAppShellViewModel', () => {
     });
 
     expect(viewModel.chromeVisible).toBe(true);
-    expect(viewModel.returnToMainMenuActionLabel).toBe('Main Menu');
+    expect(viewModel.returnToMainMenuActionLabel).toBe(
+      `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
+    );
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
     expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
     expect(viewModel.secondaryActionLabel).toBeNull();
@@ -162,7 +171,9 @@ describe('resolveAppShellViewModel', () => {
     });
 
     expect(viewModel.chromeVisible).toBe(true);
-    expect(viewModel.returnToMainMenuActionLabel).toBe('Main Menu');
+    expect(viewModel.returnToMainMenuActionLabel).toBe(
+      `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
+    );
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
     expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
     expect(viewModel.secondaryActionLabel).toBeNull();

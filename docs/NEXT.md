@@ -36,7 +36,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## App shell
 
-65. Surface the in-world main-menu shortcut in shell copy once the keyboard action exists.
 66. Surface the in-world recenter-camera shortcut in shell copy once the keyboard action exists.
 67. Surface the in-world debug-HUD shortcut in shell copy once the keyboard action exists.
 68. Surface the in-world spawn-marker shortcut in shell copy once the keyboard action exists.
@@ -48,6 +47,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 134. Surface standalone player live camera chunk-local tile coordinates in the compact debug-edit status strip once task 133 lands camera world chunk coordinates.
 142. Surface standalone player live camera-follow focus-point chunk-local tile coordinates in the compact debug-edit status strip now that focus-point world chunk coordinates are available.
 143. Surface standalone player live camera-follow focus-point world chunk coordinates in the text debug HUD now that the compact debug-edit strip telemetry exists.
+144. Surface standalone player live camera-follow focus-point chunk-local tile coordinates in the text debug HUD once task 143 lands focus-point world chunk coordinates.
 
 ## Project structure optimization
 
