@@ -8,6 +8,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createViteConfig, GITHUB_PAGES_BASE_PATH } from './vite.config';
 
 const tempBuildDirs: string[] = [];
+const countExactOccurrences = (haystack: string, needle: string): number =>
+  haystack.split(needle).length - 1;
 
 afterEach(async () => {
   await Promise.all(tempBuildDirs.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
@@ -51,8 +53,10 @@ describe('createViteConfig', () => {
       }
 
       const jsBundle = await readFile(join(outDir, 'assets', jsBundleName), 'utf8');
+      const authoredAtlasRuntimeUrl = `${GITHUB_PAGES_BASE_PATH}atlas/tile-atlas.png`;
       expect(jsBundle).toContain(GITHUB_PAGES_BASE_PATH);
-      expect(jsBundle).toContain(`${GITHUB_PAGES_BASE_PATH}atlas/tile-atlas.png`);
+      expect(jsBundle).toContain(authoredAtlasRuntimeUrl);
+      expect(countExactOccurrences(jsBundle, authoredAtlasRuntimeUrl)).toBe(1);
       expect(jsBundle).not.toMatch(/(["'`])\/atlas\/tile-atlas\.png\1/);
 
       const sourceAtlasPng = await readFile(join(process.cwd(), 'public', 'atlas', 'tile-atlas.png'));

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Add a deployment regression check that verifies the production bundle emits exactly one authored-atlas runtime URL literal.
+- Changes: Tightened [pagesBasePath.test.ts](../pagesBasePath.test.ts) so the temp-directory Vite production build now counts exact occurrences of the joined `/deep-factory/atlas/tile-atlas.png` runtime atlas URL in the emitted JavaScript bundle and rejects any duplicate authored-atlas fallback literal, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run pagesBasePath.test.ts` and `npx tsc --noEmit -p tsconfig.node.json`.
+
 - Task: Add a deployment regression check that verifies the production bundle no longer retains the legacy root-relative `/atlas/tile-atlas.png` runtime atlas URL.
 - Changes: Tightened [pagesBasePath.test.ts](../pagesBasePath.test.ts) so the temp-directory Vite production build now rejects the exact quoted legacy authored-atlas runtime URL literal while still requiring the joined `/deep-factory/atlas/tile-atlas.png` fetch path, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run pagesBasePath.test.ts` and `npx tsc --noEmit -p tsconfig.node.json`.

@@ -51,4 +51,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-124. Add a deployment regression check that verifies the production bundle emits exactly one authored-atlas runtime URL literal so future base-path helpers cannot leave duplicate fallback strings behind.
+125. Extend deployment regression coverage to scan every emitted JavaScript asset for authored-atlas runtime URL literals instead of only the first bundle.
