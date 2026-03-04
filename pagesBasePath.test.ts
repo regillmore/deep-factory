@@ -23,7 +23,7 @@ describe('createViteConfig', () => {
   });
 
   it(
-    'emits project-site asset URLs and preserves authored atlas bytes in the production build output',
+    'emits project-site asset URLs, keeps the joined authored atlas runtime URL, and preserves authored atlas bytes in the production build output',
     async () => {
       const outDir = await mkdtemp(join(tmpdir(), 'deep-factory-build-'));
       tempBuildDirs.push(outDir);
@@ -52,7 +52,7 @@ describe('createViteConfig', () => {
 
       const jsBundle = await readFile(join(outDir, 'assets', jsBundleName), 'utf8');
       expect(jsBundle).toContain(GITHUB_PAGES_BASE_PATH);
-      expect(jsBundle).toContain('atlas/tile-atlas.png');
+      expect(jsBundle).toContain(`${GITHUB_PAGES_BASE_PATH}atlas/tile-atlas.png`);
 
       const sourceAtlasPng = await readFile(join(process.cwd(), 'public', 'atlas', 'tile-atlas.png'));
       const emittedAtlasPng = await readFile(join(outDir, 'atlas', 'tile-atlas.png'));

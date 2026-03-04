@@ -4,9 +4,9 @@ Record only durable design decisions here. Keep each entry short: date, decision
 
 ### 2026-03-03: Runtime static asset URLs resolve through the Vite base path
 
-- Decision: Runtime fetch paths for shipped static assets, including the authored atlas PNG, now resolve through `import.meta.env.BASE_URL` instead of hard-coded site-root URLs.
+- Decision: Runtime fetch paths for shipped static assets, including the authored atlas PNG, now resolve through build-time constants derived from the Vite base path instead of hard-coded site-root URLs.
 - Reason: GitHub Pages project-site deploys serve the app under `/deep-factory/`, so root-relative runtime asset URLs break even when the entry bundle paths are configured correctly.
-- Consequence: Future runtime asset loads should build URLs from the Vite base path rather than assuming the app is hosted at `/`.
+- Consequence: Future runtime asset loads should derive from the Vite base path rather than assuming the app is hosted at `/`, and deployment regressions can assert exact joined runtime URLs in emitted bundles.
 
 ### 2026-03-03: Liquid animation resolves against the meshed liquid cardinal mask
 

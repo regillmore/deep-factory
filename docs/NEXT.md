@@ -51,4 +51,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-121. Add a deployment regression check that verifies the production bundle retains the joined `/deep-factory/atlas/tile-atlas.png` runtime atlas URL instead of separate base-path and asset-path substrings.
+122. Add a deployment regression check that verifies the production bundle no longer retains the legacy root-relative `/atlas/tile-atlas.png` runtime atlas URL.

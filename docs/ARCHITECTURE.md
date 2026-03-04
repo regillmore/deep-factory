@@ -30,7 +30,7 @@ Bootstrap now mounts the app shell first, initializes renderer plus input behind
 ## Render pipeline
 
 Renderer initialization first attempts to fetch and decode the committed authored atlas image served from
-`public/atlas/tile-atlas.png` at runtime as `${import.meta.env.BASE_URL}atlas/tile-atlas.png`.
+`public/atlas/tile-atlas.png` at runtime through a compile-time URL derived from the active Vite base path.
 If that asset is unavailable or decoding fails, initialization falls back to a generated placeholder atlas derived
 from the authored atlas layout so the existing tile rendering path still boots with atlas-index regions in the same
 places. After the atlas is loaded, renderer startup validates direct tile

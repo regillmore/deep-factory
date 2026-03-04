@@ -20,6 +20,7 @@ interface AtlasImageLoaderOptions {
 }
 
 const AUTHORED_TILE_ATLAS_ASSET_PATH = 'atlas/tile-atlas.png';
+const DEFAULT_AUTHORED_TILE_ATLAS_URL = __AUTHORED_TILE_ATLAS_URL__;
 
 const normalizeBaseAssetPath = (basePath: string): string => {
   if (basePath === '' || basePath === '/') {
@@ -30,8 +31,13 @@ const normalizeBaseAssetPath = (basePath: string): string => {
   return `/${trimmedBasePath}/`;
 };
 
-export const resolveAuthoredTileAtlasUrl = (basePath: string = import.meta.env.BASE_URL): string =>
-  `${normalizeBaseAssetPath(basePath)}${AUTHORED_TILE_ATLAS_ASSET_PATH}`;
+export const resolveAuthoredTileAtlasUrl = (basePath?: string): string => {
+  if (basePath === undefined) {
+    return DEFAULT_AUTHORED_TILE_ATLAS_URL;
+  }
+
+  return `${normalizeBaseAssetPath(basePath)}${AUTHORED_TILE_ATLAS_ASSET_PATH}`;
+};
 
 const loadImageElement = async (source: string): Promise<HTMLImageElement> => {
   return await new Promise<HTMLImageElement>((resolve, reject) => {

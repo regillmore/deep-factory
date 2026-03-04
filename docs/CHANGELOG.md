@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Add a deployment regression check that verifies the production bundle retains the joined `/deep-factory/atlas/tile-atlas.png` runtime atlas URL instead of separate base-path and asset-path substrings.
+- Changes: Updated [vite.config.ts](../vite.config.ts) to inject a compile-time authored-atlas runtime URL constant derived from the active Vite base path, wired [src/gl/texture.ts](../src/gl/texture.ts) to use that default constant while keeping explicit override inputs normalized through the existing helper, added [src/vite-env.d.ts](../src/vite-env.d.ts) for the injected constant type, and tightened [pagesBasePath.test.ts](../pagesBasePath.test.ts) so the temp-directory Vite production build now asserts that the emitted JavaScript bundle contains the exact joined GitHub Pages atlas fetch URL `/deep-factory/atlas/tile-atlas.png` instead of only checking the base path and atlas asset path independently; advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run pagesBasePath.test.ts src/gl/texture.test.ts`, `npx tsc --noEmit -p tsconfig.app.json`, and `npx tsc --noEmit -p tsconfig.node.json`.
+
 - Task: Add a deployment regression check that verifies the production build preserves the authored atlas PNG bytes when copying `public/atlas/tile-atlas.png` into `dist/atlas/tile-atlas.png`.
 - Changes: Updated [pagesBasePath.test.ts](../pagesBasePath.test.ts) so the temp-directory Vite production build now reads both the source atlas at [public/atlas/tile-atlas.png](../public/atlas/tile-atlas.png) and the emitted atlas at `dist/atlas/tile-atlas.png`, then asserts exact byte-length and byte-for-byte equality; advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run pagesBasePath.test.ts` and `npx tsc --noEmit -p tsconfig.node.json`.
