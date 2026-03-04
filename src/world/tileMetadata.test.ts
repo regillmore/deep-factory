@@ -99,8 +99,15 @@ describe('tile metadata loader', () => {
       u1: 0.75,
       v1: 0.5
     });
+    expect(describeLiquidRenderVariantSource(7, 3)).toBe('uvRect 0.667,0.125..0.708,0.25');
+    expect(describeLiquidRenderVariantSource(7, 6)).toBe('uvRect 0.708,0..0.75,0.125');
+    expect(describeLiquidRenderVariantSource(7, 9)).toBe('uvRect 0.667,0..0.708,0.125');
+    expect(describeLiquidRenderVariantSource(7, 12)).toBe('uvRect 0.708,0.125..0.75,0.25');
     expect(describeLiquidRenderVariantSource(7, 13)).toBe('uvRect 0.667,0.5..0.75,0.75');
     expect(describeLiquidRenderVariantSource(7, 15)).toBe('uvRect 0.667,0..0.75,0.25');
+    expect(describeLiquidRenderVariantSourceAtElapsedMs(7, 9, 180)).toBe(
+      'uvRect 0.75,0..0.792,0.125'
+    );
     expect(describeLiquidRenderVariantSource(8, 10)).toBe('atlasIndex 15');
     expect(describeLiquidRenderVariantSource(8, 1)).toBe('uvRect 0.583,0.75..0.667,1');
     expect(describeLiquidRenderVariantSource(8, 15)).toBe('uvRect 0.5,0.75..0.667,0.875');

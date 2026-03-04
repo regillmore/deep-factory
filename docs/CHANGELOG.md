@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Populate distinct placeholder water liquid corner-specific variant sources once the surface and edge placeholders are in place.
+- Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so default water liquid masks now map the corner cases (`NE--`, `-ES-`, `N--W`, `--SW`) to dedicated animated direct-`uvRect` corner crops instead of reusing only body or edge sources, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with corner-source and animated corner-frame assertions, advanced [docs/NEXT.md](docs/NEXT.md) with a water T-junction liquid-variant follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/world/tileMetadata.test.ts src/gl/authoredAtlasAsset.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Restrict sunlight invalidation for edge tile edits to the edited world-x column so neighboring `chunkX` columns stay clean until horizontal light transport exists.
 - Changes: Updated [src/world/world.ts](../src/world/world.ts) so lighting-state tile edits now invalidate only the edited `chunkX` column while still propagating to loaded vertical neighbor chunks for top or bottom edge edits, refreshed [src/world/world.test.ts](../src/world/world.test.ts) expectations for the narrowed dirty-light footprint, added [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) regression coverage that neighboring `chunkX` columns stay clean through recomputation after edge edits, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/world.test.ts src/world/sunlight.test.ts`.
