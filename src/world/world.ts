@@ -157,6 +157,51 @@ export class TileWorld {
   private tileEditListeners = new Set<TileEditListener>();
   private dirtyLightChunkKeys = new Set<string>();
 
+  private getResidentTileId(worldTileX: number, worldTileY: number): number | null {
+    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+    const chunk = this.chunks.get(chunkKey(chunkX, chunkY));
+    if (!chunk) {
+      return null;
+    }
+
+    const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
+    return chunk.tiles[toTileIndex(localX, localY)] ?? 0;
+  }
+
+  private collectNearbyEmissiveInvalidationRange(worldTileX: number, worldTileY: number): number {
+    const maxSearchDistance = MAX_LIGHT_LEVEL - 1;
+    let localLightingRange = 0;
+
+    for (let yOffset = -maxSearchDistance; yOffset <= maxSearchDistance; yOffset += 1) {
+      const maxHorizontalDistance = maxSearchDistance - Math.abs(yOffset);
+      for (let xOffset = -maxHorizontalDistance; xOffset <= maxHorizontalDistance; xOffset += 1) {
+        const sampledTileId = this.getResidentTileId(worldTileX + xOffset, worldTileY + yOffset);
+        if (sampledTileId === null) {
+          continue;
+        }
+
+        const sourceLightLevel = getTileEmissiveLightLevel(sampledTileId);
+        if (sourceLightLevel === 0) {
+          continue;
+        }
+
+        const sourceDistance = Math.abs(xOffset) + Math.abs(yOffset);
+        if (sourceDistance >= sourceLightLevel) {
+          continue;
+        }
+
+        if (sourceLightLevel > localLightingRange) {
+          localLightingRange = sourceLightLevel;
+          if (localLightingRange === MAX_LIGHT_LEVEL) {
+            return localLightingRange;
+          }
+        }
+      }
+    }
+
+    return localLightingRange;
+  }
+
   constructor(radius = 3) {
     for (let y = -radius; y <= radius; y += 1) {
       for (let x = -radius; x <= radius; x += 1) {
@@ -233,11 +278,20 @@ export class TileWorld {
       editedTiles.set(tileIndex, tileId);
     }
 
-    if (didTileLightingStateChange(previousTileId, tileId)) {
-      const localLightingRange = Math.max(
-        getTileEmissiveLightLevel(previousTileId),
-        getTileEmissiveLightLevel(tileId)
-      );
+    const previousTileBlocksLight = doesTileBlockLight(previousTileId);
+    const nextTileBlocksLight = doesTileBlockLight(tileId);
+    const previousTileEmissiveLight = getTileEmissiveLightLevel(previousTileId);
+    const nextTileEmissiveLight = getTileEmissiveLightLevel(tileId);
+
+    if (
+      previousTileBlocksLight !== nextTileBlocksLight ||
+      previousTileEmissiveLight !== nextTileEmissiveLight
+    ) {
+      let localLightingRange = Math.max(previousTileEmissiveLight, nextTileEmissiveLight);
+      if (localLightingRange === 0 && previousTileBlocksLight !== nextTileBlocksLight) {
+        localLightingRange = this.collectNearbyEmissiveInvalidationRange(worldTileX, worldTileY);
+      }
+
       const invalidationColumns = collectLightInvalidationColumnsForWorldTileXRange(
         worldTileX - localLightingRange,
         worldTileX + localLightingRange
