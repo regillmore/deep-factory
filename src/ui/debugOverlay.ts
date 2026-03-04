@@ -127,6 +127,7 @@ export interface DebugOverlayPlayerCameraFollowTelemetry {
   focus: { x: number; y: number };
   focusTile: { x: number; y: number };
   focusChunk: { x: number; y: number };
+  focusLocal: { x: number; y: number };
   offset: { x: number; y: number };
 }
 
@@ -390,6 +391,7 @@ const formatPlayerCameraFollowLine = (
     `${formatFloat(playerCameraFollow.focus.y, 2)} | ` +
     `focusTile:${formatInt(playerCameraFollow.focusTile.x)},${formatInt(playerCameraFollow.focusTile.y)} | ` +
     `focusChunk:${formatInt(playerCameraFollow.focusChunk.x)},${formatInt(playerCameraFollow.focusChunk.y)} | ` +
+    `focusLocal:${formatInt(playerCameraFollow.focusLocal.x)},${formatInt(playerCameraFollow.focusLocal.y)} | ` +
     `offset:${formatFloat(playerCameraFollow.offset.x, 2)},` +
     `${formatFloat(playerCameraFollow.offset.y, 2)}`
   );
