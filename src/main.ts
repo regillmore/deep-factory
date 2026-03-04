@@ -1448,12 +1448,15 @@ const bootstrap = async (): Promise<void> => {
             return { x: chunkX, y: chunkY };
           })();
     const debugOverlayPlayerCameraFollow =
-      debugStatusStripPlayerCameraFocusPoint && debugStatusStripPlayerCameraFocusChunk
-      ? {
-          focus: debugStatusStripPlayerCameraFocusPoint,
-          focusChunk: debugStatusStripPlayerCameraFocusChunk,
-          offset: {
-            x: cameraFollowOffset.x,
+      debugStatusStripPlayerCameraFocusPoint &&
+      debugStatusStripPlayerCameraFocusTile &&
+      debugStatusStripPlayerCameraFocusChunk
+        ? {
+            focus: debugStatusStripPlayerCameraFocusPoint,
+            focusTile: debugStatusStripPlayerCameraFocusTile,
+            focusChunk: debugStatusStripPlayerCameraFocusChunk,
+            offset: {
+              x: cameraFollowOffset.x,
             y: cameraFollowOffset.y
           }
         }
