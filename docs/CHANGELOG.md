@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Surface the resolved liquid animation elapsed-in-frame time beside the frame index, frame count, frame duration, and loop duration in debug inspect readouts.
+- Changes: Updated [src/world/tileMetadata.ts](../src/world/tileMetadata.ts) to resolve wrapped elapsed time within animated liquid frames, wired [src/main.ts](../src/main.ts) to carry that elapsed-in-frame value through hovered and pinned inspect snapshots, refreshed [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) and [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so both inspect readouts append `liquidFrameElapsed:` beside the existing liquid animation timing fields, extended [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts), [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/world/tileMetadata.test.ts src/ui/debugOverlay.test.ts src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a deployment regression check for GitHub Pages production asset URLs.
 - Changes: Extended [pagesBasePath.test.ts](../pagesBasePath.test.ts) to run a temp-directory Vite production build and assert the emitted HTML still references hashed `/deep-factory/assets/...` bundle URLs while the built JavaScript bundle still retains the GitHub Pages base path plus the authored atlas `atlas/tile-atlas.png` asset segment, then advanced [docs/NEXT.md](docs/NEXT.md).
 - Verification: Ran `npx vitest run pagesBasePath.test.ts` and `npx tsc --noEmit -p tsconfig.node.json`.

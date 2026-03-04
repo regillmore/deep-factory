@@ -995,6 +995,18 @@ const resolveWrappedAnimatedFrameIndexAtElapsedMs = (
   return wrappedFrameIndex >= 0 ? wrappedFrameIndex : wrappedFrameIndex + frameCount;
 };
 
+const resolveWrappedElapsedMsAtDuration = (
+  durationMs: number | null,
+  elapsedMs: number
+): number | null => {
+  if (!Number.isFinite(elapsedMs) || durationMs === null || durationMs <= 0) {
+    return null;
+  }
+
+  const wrappedElapsedMs = elapsedMs % durationMs;
+  return wrappedElapsedMs >= 0 ? wrappedElapsedMs : wrappedElapsedMs + durationMs;
+};
+
 const getAnimatedTileRenderFrameIndexAtElapsedMsFromLookup = (
   tileId: number,
   elapsedMs: number,
@@ -1458,6 +1470,25 @@ export const getAnimatedLiquidRenderVariantFrameDurationMs = (
   registry: TileMetadataRegistry = TILE_METADATA
 ): number | null =>
   getAnimatedLiquidRenderVariantFrameDurationMsFromLookup(tileId, cardinalMask, registry);
+
+export const resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs = (
+  tileId: number,
+  cardinalMask: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): number | null => {
+  const frameCount = getAnimatedLiquidRenderVariantFrameCountFromLookup(tileId, cardinalMask, registry);
+  if (frameCount === 0) {
+    return null;
+  }
+
+  const frameDurationMs = getAnimatedLiquidRenderVariantFrameDurationMsFromLookup(
+    tileId,
+    cardinalMask,
+    registry
+  );
+  return resolveWrappedElapsedMsAtDuration(frameDurationMs, elapsedMs);
+};
 
 export const resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs = (
   tileId: number,

@@ -33,6 +33,7 @@ import {
   hasTerrainAutotileMetadata,
   isTileSolid,
   parseTileMetadataRegistry,
+  resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs,
   resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs,
   resolveAnimatedLiquidRenderVariantFrameUvRect,
   resolveAnimatedLiquidRenderVariantFrameUvRectAtElapsedMs,
@@ -830,6 +831,12 @@ describe('tile metadata loader', () => {
     expect(resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(12, 3, 240, registry)).toBe(0);
     expect(resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(12, 3, -1, registry)).toBe(1);
     expect(resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(12, 4, 120, registry)).toBe(null);
+    expect(resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs(12, 3, 0, registry)).toBe(0);
+    expect(resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs(12, 3, 119, registry)).toBe(119);
+    expect(resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs(12, 3, 120, registry)).toBe(0);
+    expect(resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs(12, 3, 181, registry)).toBe(61);
+    expect(resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs(12, 3, -1, registry)).toBe(119);
+    expect(resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs(12, 4, 120, registry)).toBe(null);
     expect(resolveLiquidRenderVariantFrameMetadataAtElapsedMs(12, 3, 0, registry)).toEqual({
       atlasIndex: 14
     });
