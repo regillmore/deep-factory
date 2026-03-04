@@ -7,7 +7,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Liquid rendering
 
 139. Populate distinct placeholder lava liquid corner-specific variant sources once the lava surface and edge placeholders are in place.
-170. Populate distinct placeholder water liquid T-junction variant sources for `NES-`, `N-SW`, and `-ESW` masks now that corner-specific water sources exist.
+171. Populate distinct placeholder lava liquid T-junction variant sources for `NES-`, `N-SW`, and `-ESW` masks once corner-specific lava sources exist.
 
 ## Lighting
 

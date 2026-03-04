@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Populate distinct placeholder water liquid T-junction variant sources for `NES-`, `N-SW`, and `-ESW` masks now that corner-specific water sources exist.
+- Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so default water liquid masks `NES-`, `N-SW`, and `-ESW` now map to dedicated animated direct-`uvRect` T-junction placeholder crops instead of reusing only body or edge sources, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with source and elapsed-frame assertions for those masks, advanced [docs/NEXT.md](docs/NEXT.md) with a lava T-junction follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/world/tileMetadata.test.ts src/gl/authoredAtlasAsset.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Populate distinct placeholder water liquid corner-specific variant sources once the surface and edge placeholders are in place.
 - Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so default water liquid masks now map the corner cases (`NE--`, `-ES-`, `N--W`, `--SW`) to dedicated animated direct-`uvRect` corner crops instead of reusing only body or edge sources, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with corner-source and animated corner-frame assertions, advanced [docs/NEXT.md](docs/NEXT.md) with a water T-junction liquid-variant follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/world/tileMetadata.test.ts src/gl/authoredAtlasAsset.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
