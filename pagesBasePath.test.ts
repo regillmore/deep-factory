@@ -70,6 +70,7 @@ describe('createViteConfig', () => {
         expect(bundleContents).not.toMatch(DOUBLE_PREFIXED_PRODUCTION_JS_ASSET_URL);
         expect(bundleContents).not.toMatch(DOUBLE_PREFIXED_PRODUCTION_CSS_ASSET_URL);
         expect(bundleContents).not.toContain(LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_LITERAL);
+        expect(bundleContents).not.toContain(DOUBLE_PREFIXED_AUTHORED_ATLAS_RUNTIME_URL_LITERAL);
       }
 
       const emittedAssetNames = await readdir(join(outDir, 'assets'));
@@ -108,6 +109,7 @@ describe('createViteConfig', () => {
         expect(bundleContents).not.toContain(ROOT_RELATIVE_PRODUCTION_ASSET_LITERAL);
         expect(bundleContents).not.toContain(DOUBLE_PREFIXED_PRODUCTION_ASSET_LITERAL);
         expect(bundleContents).not.toContain(LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_LITERAL);
+        expect(bundleContents).not.toContain(DOUBLE_PREFIXED_AUTHORED_ATLAS_RUNTIME_URL_LITERAL);
       }
 
       const sourceAtlasPng = await readFile(join(process.cwd(), 'public', 'atlas', 'tile-atlas.png'));
