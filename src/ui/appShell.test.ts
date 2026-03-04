@@ -82,7 +82,7 @@ describe('resolveAppShellViewModel', () => {
     );
     expect(viewModel.detailLines).toEqual([
       `Returning here keeps the initialized world, player state, and debug edits intact until you choose Resume World (${getDesktopResumeWorldHotkeyLabel()}) or abandon them.`,
-      'New World also clears the paused session camera state and undo history before the fresh world boots.'
+      `New World (${getDesktopFreshWorldHotkeyLabel()}) also clears the paused session camera state and undo history before the fresh world boots.`
     ]);
   });
 

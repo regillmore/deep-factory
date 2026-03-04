@@ -42,7 +42,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 82. Surface the in-world edit-panel shortcut in the touch debug controls keyboard reference once task 69 adds the keyboard action.
 83. Surface the in-world edit-overlay shortcut in shell copy once the keyboard action exists.
 158. Surface the paused-menu `Resume World` shortcut in the shell button tooltip alongside the existing paused-session copy.
-166. Surface the paused-menu `New World (N)` shortcut in the paused-session detail-line shell copy that currently describes camera and undo reset behavior.
+172. Surface the paused-menu `New World (N)` shortcut in the paused-session status-line shell copy that currently says `choose New World` without the keyboard hint.
 
 ## Player debugging
 

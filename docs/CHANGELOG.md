@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Surface the paused-menu `New World (N)` shortcut in the paused-session detail-line shell copy that currently describes camera and undo reset behavior.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the paused-session camera and undo reset detail line now includes `New World (N)` via the shared desktop shortcut helper, advanced [docs/NEXT.md](docs/NEXT.md) with a paused-menu status-line shortcut follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Populate distinct placeholder water liquid T-junction variant sources for `NES-`, `N-SW`, and `-ESW` masks now that corner-specific water sources exist.
 - Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so default water liquid masks `NES-`, `N-SW`, and `-ESW` now map to dedicated animated direct-`uvRect` T-junction placeholder crops instead of reusing only body or edge sources, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with source and elapsed-frame assertions for those masks, advanced [docs/NEXT.md](docs/NEXT.md) with a lava T-junction follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/world/tileMetadata.test.ts src/gl/authoredAtlasAsset.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
