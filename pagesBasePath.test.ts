@@ -11,6 +11,8 @@ const tempBuildDirs: string[] = [];
 const countExactOccurrences = (haystack: string, needle: string): number =>
   haystack.split(needle).length - 1;
 const LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_LITERAL = "'/atlas/tile-atlas.png'";
+const DOUBLE_PREFIXED_AUTHORED_ATLAS_RUNTIME_URL_LITERAL =
+  '"/deep-factory/deep-factory/atlas/tile-atlas.png"';
 const ROOT_RELATIVE_PRODUCTION_ASSET_LITERAL = '"/assets/';
 const DOUBLE_PREFIXED_PRODUCTION_ASSET_LITERAL = '/deep-factory/deep-factory/assets/';
 const ROOT_RELATIVE_PRODUCTION_JS_ASSET_URL = /\bsrc=(["'])\/assets\/[^"']+\.js\1/;
@@ -34,7 +36,7 @@ describe('createViteConfig', () => {
   });
 
   it(
-    'emits project-site asset URLs, rejects legacy or double-prefixed emitted HTML asset URLs plus root-relative or double-prefixed bundle literals and the legacy authored atlas literal across emitted text assets, keeps the joined authored atlas runtime URL, and preserves authored atlas bytes in the production build output',
+    'emits project-site asset URLs, rejects legacy or double-prefixed emitted HTML asset URLs plus root-relative or double-prefixed bundle literals and authored-atlas literals across emitted text assets, keeps the joined authored atlas runtime URL, and preserves authored atlas bytes in the production build output',
     async () => {
       const outDir = await mkdtemp(join(tmpdir(), 'deep-factory-build-'));
       tempBuildDirs.push(outDir);
@@ -91,6 +93,7 @@ describe('createViteConfig', () => {
         expect(bundleContents).not.toContain(ROOT_RELATIVE_PRODUCTION_ASSET_LITERAL);
         expect(bundleContents).not.toContain(DOUBLE_PREFIXED_PRODUCTION_ASSET_LITERAL);
         expect(bundleContents).not.toMatch(/(["'`])\/atlas\/tile-atlas\.png\1/);
+        expect(bundleContents).not.toContain(DOUBLE_PREFIXED_AUTHORED_ATLAS_RUNTIME_URL_LITERAL);
       }
 
       expect(cssBundleNames.length).toBeGreaterThan(0);

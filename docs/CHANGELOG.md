@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Extend deployment regression coverage to assert emitted JavaScript assets omit exact double-prefixed `"/deep-factory/deep-factory/atlas/tile-atlas.png"` authored-atlas runtime URL literals in production output.
+- Changes: Updated [pagesBasePath.test.ts](../pagesBasePath.test.ts) so the temp-directory Vite production build now rejects the exact double-prefixed authored-atlas runtime URL literal in every emitted JavaScript asset while preserving the existing bundle-path, legacy atlas literal, joined runtime atlas URL, and authored-atlas byte-copy regressions, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run pagesBasePath.test.ts`.
+
 - Task: Populate distinct placeholder water liquid edge or surface variant sources now that liquid masks resolve.
 - Changes: Updated [src/world/authoredAtlasLayout.ts](../src/world/authoredAtlasLayout.ts) plus [public/atlas/tile-atlas.png](../public/atlas/tile-atlas.png) to allocate dedicated water-authored regions while preserving one explicit unused spare, rewired the default water entries in [src/world/tileMetadata.json](../src/world/tileMetadata.json) so liquid masks now resolve to animated surface, edge, or body direct-`uvRect` sources, refreshed [src/world/authoredAtlasLayout.test.ts](../src/world/authoredAtlasLayout.test.ts), [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts), [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), and [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/world/authoredAtlasLayout.test.ts src/world/tileMetadata.test.ts src/ui/debugOverlay.test.ts src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
