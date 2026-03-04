@@ -14,7 +14,8 @@ const LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_RUNTIME_URL_SINGLE_QUOTED_LITERAL =
   "'/atlas/tile-atlas.png'";
 const LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_RUNTIME_URL_DOUBLE_QUOTED_LITERAL =
   '"/atlas/tile-atlas.png"';
-const ROOT_RELATIVE_AUTHORED_ATLAS_ASSET_PREFIX_LITERAL = '"/atlas/';
+const ROOT_RELATIVE_AUTHORED_ATLAS_ASSET_PREFIX_LITERAL_SINGLE_QUOTED = "'/atlas/";
+const ROOT_RELATIVE_AUTHORED_ATLAS_ASSET_PREFIX_LITERAL_DOUBLE_QUOTED = '"/atlas/';
 const DOUBLE_PREFIXED_AUTHORED_ATLAS_RUNTIME_URL_LITERAL =
   '"/deep-factory/deep-factory/atlas/tile-atlas.png"';
 const ROOT_RELATIVE_PRODUCTION_ASSET_LITERAL = '"/assets/';
@@ -79,7 +80,9 @@ describe('createViteConfig', () => {
         expect(bundleContents).not.toContain(
           LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_RUNTIME_URL_DOUBLE_QUOTED_LITERAL
         );
-        expect(bundleContents).not.toContain(ROOT_RELATIVE_AUTHORED_ATLAS_ASSET_PREFIX_LITERAL);
+        expect(bundleContents).not.toContain(
+          ROOT_RELATIVE_AUTHORED_ATLAS_ASSET_PREFIX_LITERAL_DOUBLE_QUOTED
+        );
         expect(bundleContents).not.toContain(DOUBLE_PREFIXED_AUTHORED_ATLAS_RUNTIME_URL_LITERAL);
       }
 
@@ -103,7 +106,12 @@ describe('createViteConfig', () => {
       for (const bundleContents of jsBundles) {
         expect(bundleContents).not.toContain(ROOT_RELATIVE_PRODUCTION_ASSET_LITERAL);
         expect(bundleContents).not.toContain(DOUBLE_PREFIXED_PRODUCTION_ASSET_LITERAL);
-        expect(bundleContents).not.toContain(ROOT_RELATIVE_AUTHORED_ATLAS_ASSET_PREFIX_LITERAL);
+        expect(bundleContents).not.toContain(
+          ROOT_RELATIVE_AUTHORED_ATLAS_ASSET_PREFIX_LITERAL_SINGLE_QUOTED
+        );
+        expect(bundleContents).not.toContain(
+          ROOT_RELATIVE_AUTHORED_ATLAS_ASSET_PREFIX_LITERAL_DOUBLE_QUOTED
+        );
         expect(bundleContents).not.toMatch(/(["'`])\/atlas\/tile-atlas\.png\1/);
         expect(bundleContents).not.toContain(DOUBLE_PREFIXED_AUTHORED_ATLAS_RUNTIME_URL_LITERAL);
       }
@@ -125,7 +133,9 @@ describe('createViteConfig', () => {
         expect(bundleContents).not.toContain(
           LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_RUNTIME_URL_DOUBLE_QUOTED_LITERAL
         );
-        expect(bundleContents).not.toContain(ROOT_RELATIVE_AUTHORED_ATLAS_ASSET_PREFIX_LITERAL);
+        expect(bundleContents).not.toContain(
+          ROOT_RELATIVE_AUTHORED_ATLAS_ASSET_PREFIX_LITERAL_DOUBLE_QUOTED
+        );
         expect(bundleContents).not.toContain(DOUBLE_PREFIXED_AUTHORED_ATLAS_RUNTIME_URL_LITERAL);
       }
 

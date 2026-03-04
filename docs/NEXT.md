@@ -51,4 +51,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-149. Extend deployment regression coverage to assert emitted JavaScript assets omit exact root-relative `'/atlas/'` static-asset URL prefix literals in production output.
+150. Extend deployment regression coverage to assert emitted HTML and CSS assets omit exact root-relative `'/atlas/'` static-asset URL prefix literals in production output.
