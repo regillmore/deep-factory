@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Extend deployment regression coverage to assert emitted JavaScript assets omit exact root-relative `"/atlas/"` static-asset URL prefix literals in production output.
+- Changes: Updated [pagesBasePath.test.ts](../pagesBasePath.test.ts) so the temp-directory Vite production build now rejects the exact root-relative `"/atlas/"` prefix literal in every emitted JavaScript asset alongside the existing bundle-path, authored-atlas runtime URL, and authored-atlas byte-copy regressions, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run pagesBasePath.test.ts`.
+
 - Task: Surface standalone player live camera-follow focus-point chunk-local tile coordinates in the compact debug-edit status strip now that focus-point world chunk coordinates are available.
 - Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) plus [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so the compact strip now formats a hidden-HUD `FocusLocalNow:` line beside the existing focus-point position, tile, and chunk telemetry, wired [src/main.ts](../src/main.ts) to derive those chunk-local coordinates from the shared focus-point tile telemetry via shared chunk math, refreshed [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

@@ -103,6 +103,7 @@ describe('createViteConfig', () => {
       for (const bundleContents of jsBundles) {
         expect(bundleContents).not.toContain(ROOT_RELATIVE_PRODUCTION_ASSET_LITERAL);
         expect(bundleContents).not.toContain(DOUBLE_PREFIXED_PRODUCTION_ASSET_LITERAL);
+        expect(bundleContents).not.toContain(ROOT_RELATIVE_AUTHORED_ATLAS_ASSET_PREFIX_LITERAL);
         expect(bundleContents).not.toMatch(/(["'`])\/atlas\/tile-atlas\.png\1/);
         expect(bundleContents).not.toContain(DOUBLE_PREFIXED_AUTHORED_ATLAS_RUNTIME_URL_LITERAL);
       }
