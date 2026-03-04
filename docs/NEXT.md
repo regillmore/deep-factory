@@ -51,4 +51,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-109. Add a deployment regression check that verifies the production build references both `/deep-factory/assets/...` and `/deep-factory/atlas/tile-atlas.png` under the GitHub Pages project-site base path.
+111. Add a deployment regression check that verifies the production build emits `dist/atlas/tile-atlas.png` alongside hashed `/deep-factory/assets/...` bundles for GitHub Pages publishing.
