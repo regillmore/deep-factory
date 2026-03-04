@@ -10,4 +10,5 @@ export interface Chunk {
   tiles: Uint8Array;
   lightLevels: Uint8Array;
   lightDirty: boolean;
+  lightDirtyColumnMask: number;
 }

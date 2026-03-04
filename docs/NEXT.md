@@ -11,10 +11,10 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Lighting
 
-165. Track per-local-column sunlight dirty invalidation so isolated tile edits do not force full chunk-column sunlight recomputation.
 14. Add local emissive light sources (start with a torch tile or debug light source) and merge them into the light field.
 15. Modulate tile rendering by resolved light values.
 162. Surface resident dirty-light chunk counts in a compact debug-edit summary chip when the text debug HUD is hidden.
+167. Restrict sunlight invalidation for edge tile edits to the edited world-x column so neighboring `chunkX` columns stay clean until horizontal light transport exists.
 
 ## Entities and interpolation
 

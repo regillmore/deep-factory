@@ -4,6 +4,8 @@ import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './constants';
 import { recomputeSunlightFromExposedChunkTops } from './sunlight';
 import { TileWorld } from './world';
 
+const localLightColumnBit = (localX: number): number => (1 << localX) >>> 0;
+
 describe('recomputeSunlightFromExposedChunkTops', () => {
   it('propagates sunlight downward from exposed chunk tops until light-blocking tiles', () => {
     const world = new TileWorld(0);
@@ -75,5 +77,27 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     const recomputedChunkCount = recomputeSunlightFromExposedChunkTops(world);
 
     expect(recomputedChunkCount).toBe(0);
+  });
+
+  it('recomputes only dirty local sunlight columns within a dirty resident chunk column', () => {
+    const world = new TileWorld(0);
+    world.ensureChunk(0, -1);
+
+    world.setTile(0, -32, 0);
+    world.setTile(1, -32, 0);
+
+    for (const chunk of world.getChunks()) {
+      world.fillChunkLight(chunk.coord.x, chunk.coord.y, 7);
+      world.markChunkLightClean(chunk.coord.x, chunk.coord.y);
+    }
+
+    world.invalidateChunkLightColumns(0, 0, localLightColumnBit(0));
+
+    const recomputedChunkCount = recomputeSunlightFromExposedChunkTops(world);
+
+    expect(recomputedChunkCount).toBe(2);
+    expect(world.getLightLevel(0, -32)).toBe(MAX_LIGHT_LEVEL);
+    expect(world.getLightLevel(1, -32)).toBe(7);
+    expect(world.getDirtyLightChunkCount()).toBe(0);
   });
 });

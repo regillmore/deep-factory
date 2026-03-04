@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Track per-local-column sunlight dirty invalidation so isolated tile edits do not force full chunk-column sunlight recomputation.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts), [src/world/types.ts](../src/world/types.ts), and [src/world/sunlight.ts](../src/world/sunlight.ts) so resident chunks now track dirty sunlight local-column masks, tile edits invalidate only affected local columns, and sunlight rebuilds only recompute those local columns while clearing matching dirty bits; expanded [src/world/world.test.ts](../src/world/world.test.ts), [src/world/sunlight.test.ts](../src/world/sunlight.test.ts), and [src/world/mesher.test.ts](../src/world/mesher.test.ts), advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/world.test.ts src/world/sunlight.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the paused-menu `Resume World (Enter)` shortcut in the paused-session detail-line shell copy that describes session preservation.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the paused-session detail line now includes `Resume World (Enter)` shortcut guidance through the shared desktop shortcut helper, advanced [docs/NEXT.md](docs/NEXT.md) with a paused-menu `New World (N)` detail-line follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

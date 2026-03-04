@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-04: Sunlight invalidation now tracks dirty local columns per resident chunk
+
+- Decision: Resident chunks now store a dirty-local-column sunlight bitmask, tile lighting edits invalidate only affected local columns, and sunlight recomputation unions those masks per resident `chunkX` column before rebuilding and clearing only the matching local columns.
+- Reason: Isolated tile edits were forcing full `chunkX`-column sunlight rebuilds, which did unnecessary per-frame work across untouched local columns.
+- Consequence: Future sunlight invalidation paths should provide precise local-column masks whenever possible and reserve full-chunk-column invalidation for explicit fallback cases.
+
 ### 2026-03-04: Sunlight rebuilds now target dirty resident chunk columns only
 
 - Decision: Sunlight recomputation now derives the set of resident `chunkX` columns from dirty-light chunks and rebuilds only those vertical columns instead of scanning every resident column each dirty pass.

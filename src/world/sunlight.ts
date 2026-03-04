@@ -13,13 +13,26 @@ interface ResidentChunkLightingBounds {
   chunksByKey: Map<string, Chunk>;
 }
 
-const collectDirtyResidentChunkColumns = (world: TileWorld): number[] => {
-  const dirtyChunkColumnXs = new Set<number>();
-  for (const { x } of world.getDirtyLightChunkCoords()) {
-    dirtyChunkColumnXs.add(x);
+interface DirtyResidentChunkColumn {
+  chunkX: number;
+  localColumnMask: number;
+}
+
+const collectDirtyResidentChunkColumns = (world: TileWorld): DirtyResidentChunkColumn[] => {
+  const dirtyChunkColumnMasksByChunkX = new Map<number, number>();
+  for (const { x, y } of world.getDirtyLightChunkCoords()) {
+    const chunkMask = world.getChunkLightDirtyColumnMask(x, y);
+    if (chunkMask === 0) {
+      continue;
+    }
+
+    const accumulatedMask = dirtyChunkColumnMasksByChunkX.get(x) ?? 0;
+    dirtyChunkColumnMasksByChunkX.set(x, (accumulatedMask | chunkMask) >>> 0);
   }
 
-  return Array.from(dirtyChunkColumnXs).sort((a, b) => a - b);
+  return Array.from(dirtyChunkColumnMasksByChunkX.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([chunkX, localColumnMask]) => ({ chunkX, localColumnMask }));
 };
 
 const collectResidentChunkLightingBounds = (world: TileWorld): ResidentChunkLightingBounds | null => {
@@ -70,7 +83,12 @@ export const recomputeSunlightFromExposedChunkTops = (
 
   let recomputedChunkCount = 0;
 
-  for (const chunkX of dirtyChunkColumns) {
+  for (const dirtyColumn of dirtyChunkColumns) {
+    const { chunkX, localColumnMask } = dirtyColumn;
+    if (localColumnMask === 0) {
+      continue;
+    }
+
     const residentColumnChunks: Chunk[] = [];
     for (let chunkY = bounds.minChunkY; chunkY <= bounds.maxChunkY; chunkY += 1) {
       const chunk = bounds.chunksByKey.get(chunkKey(chunkX, chunkY));
@@ -84,6 +102,10 @@ export const recomputeSunlightFromExposedChunkTops = (
     }
 
     for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
+      if (((localColumnMask >>> localX) & 1) === 0) {
+        continue;
+      }
+
       let sunlightVisible = true;
       for (const chunk of residentColumnChunks) {
         for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
@@ -99,7 +121,7 @@ export const recomputeSunlightFromExposedChunkTops = (
     }
 
     for (const chunk of residentColumnChunks) {
-      world.markChunkLightClean(chunk.coord.x, chunk.coord.y);
+      world.markChunkLightColumnsClean(chunk.coord.x, chunk.coord.y, localColumnMask);
     }
 
     recomputedChunkCount += residentColumnChunks.length;

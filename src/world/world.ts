@@ -60,6 +60,58 @@ const createTileNeighborhood = (): TileNeighborhood => ({
 });
 
 const createChunkLightLevels = (): Uint8Array => new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
+const ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK = CHUNK_SIZE >= 32 ? 0xffffffff >>> 0 : ((1 << CHUNK_SIZE) - 1) >>> 0;
+
+const toLocalLightColumnBit = (localX: number): number => {
+  if (!Number.isInteger(localX) || localX < 0 || localX >= CHUNK_SIZE) {
+    throw new Error(`localX must be an integer between 0 and ${CHUNK_SIZE - 1}`);
+  }
+
+  return (1 << localX) >>> 0;
+};
+
+const expectLocalLightColumnMask = (localColumnMask: number): number => {
+  if (!Number.isInteger(localColumnMask) || localColumnMask < 0) {
+    throw new Error('localColumnMask must be a non-negative integer');
+  }
+
+  const normalizedMask = localColumnMask >>> 0;
+  const uncoveredMask = (normalizedMask & ~ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK) >>> 0;
+  if (uncoveredMask !== 0) {
+    throw new Error(`localColumnMask must only use the lowest ${CHUNK_SIZE} bits`);
+  }
+
+  return normalizedMask;
+};
+
+const clearChunkLightColumns = (chunk: Chunk, localColumnMask: number): void => {
+  if (localColumnMask === 0) {
+    return;
+  }
+
+  if (localColumnMask === ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK) {
+    chunk.lightLevels.fill(0);
+    return;
+  }
+
+  for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
+    for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
+      if (((localColumnMask >>> localX) & 1) === 0) {
+        continue;
+      }
+
+      chunk.lightLevels[toTileIndex(localX, localY)] = 0;
+    }
+  }
+};
+
+const resolveAffectedLocalLightColumnMask = (editedLocalX: number, chunkOffsetX: number): number => {
+  if (chunkOffsetX === 0) {
+    return toLocalLightColumnBit(editedLocalX);
+  }
+
+  return chunkOffsetX < 0 ? toLocalLightColumnBit(CHUNK_SIZE - 1) : toLocalLightColumnBit(0);
+};
 
 const expectLightLevel = (lightLevel: number): number => {
   if (!Number.isInteger(lightLevel) || lightLevel < 0 || lightLevel > MAX_LIGHT_LEVEL) {
@@ -118,7 +170,8 @@ export class TileWorld {
       coord: { x: normalizedChunkX, y: normalizedChunkY },
       tiles,
       lightLevels: createChunkLightLevels(),
-      lightDirty: true
+      lightDirty: true,
+      lightDirtyColumnMask: ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK
     };
     this.chunks.set(key, chunk);
     this.dirtyLightChunkKeys.add(key);
@@ -160,7 +213,11 @@ export class TileWorld {
 
     if (didTileLightingStateChange(previousTileId, tileId)) {
       for (const coord of affectedChunkCoordsForLocalTileEdit(chunkX, chunkY, localX, localY)) {
-        this.invalidateChunkLight(coord.x, coord.y);
+        this.invalidateChunkLightColumns(
+          coord.x,
+          coord.y,
+          resolveAffectedLocalLightColumnMask(localX, coord.x - chunkX)
+        );
       }
     }
 
@@ -216,6 +273,10 @@ export class TileWorld {
     return this.chunks.get(chunkKey(chunkX, chunkY))?.lightDirty ?? false;
   }
 
+  getChunkLightDirtyColumnMask(chunkX: number, chunkY: number): number {
+    return this.chunks.get(chunkKey(chunkX, chunkY))?.lightDirtyColumnMask ?? 0;
+  }
+
   getDirtyLightChunkCoords(): Array<{ x: number; y: number }> {
     const coords: Array<{ x: number; y: number }> = [];
     for (const key of this.dirtyLightChunkKeys) {
@@ -235,24 +296,50 @@ export class TileWorld {
   }
 
   markChunkLightClean(chunkX: number, chunkY: number): void {
+    this.markChunkLightColumnsClean(chunkX, chunkY, ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK);
+  }
+
+  markChunkLightColumnsClean(chunkX: number, chunkY: number, localColumnMask: number): void {
+    const normalizedMask = expectLocalLightColumnMask(localColumnMask);
+    if (normalizedMask === 0) {
+      return;
+    }
+
     const key = chunkKey(chunkX, chunkY);
     const chunk = this.chunks.get(key);
     if (!chunk) {
       return;
     }
 
-    chunk.lightDirty = false;
-    this.dirtyLightChunkKeys.delete(key);
+    chunk.lightDirtyColumnMask = (chunk.lightDirtyColumnMask & ~normalizedMask) >>> 0;
+    if (chunk.lightDirtyColumnMask === 0) {
+      chunk.lightDirty = false;
+      this.dirtyLightChunkKeys.delete(key);
+      return;
+    }
+
+    chunk.lightDirty = true;
+    this.dirtyLightChunkKeys.add(key);
   }
 
   invalidateChunkLight(chunkX: number, chunkY: number): void {
+    this.invalidateChunkLightColumns(chunkX, chunkY, ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK);
+  }
+
+  invalidateChunkLightColumns(chunkX: number, chunkY: number, localColumnMask: number): void {
+    const normalizedMask = expectLocalLightColumnMask(localColumnMask);
+    if (normalizedMask === 0) {
+      return;
+    }
+
     const key = chunkKey(chunkX, chunkY);
     const chunk = this.chunks.get(key);
     if (!chunk) {
       return;
     }
 
-    chunk.lightLevels.fill(0);
+    clearChunkLightColumns(chunk, normalizedMask);
+    chunk.lightDirtyColumnMask = (chunk.lightDirtyColumnMask | normalizedMask) >>> 0;
     chunk.lightDirty = true;
     this.dirtyLightChunkKeys.add(key);
   }

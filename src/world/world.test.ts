@@ -2,9 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './constants';
 import type { ChunkBounds } from './chunkMath';
+import { toTileIndex } from './chunkMath';
 import { parseTileMetadataRegistry } from './tileMetadata';
 import { didTileLightingStateChange, TileWorld } from './world';
 import type { TileEditEvent } from './world';
+
+const ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK = 0xffffffff >>> 0;
+const localLightColumnBit = (localX: number): number => (1 << localX) >>> 0;
 
 describe('TileWorld', () => {
   it('prunes chunks outside retained bounds', () => {
@@ -100,6 +104,7 @@ describe('TileWorld', () => {
 
     expect(world.getLightLevel(0, 0)).toBe(0);
     expect(world.isChunkLightDirty(0, 0)).toBe(true);
+    expect(world.getChunkLightDirtyColumnMask(0, 0)).toBe(ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK);
     expect(world.getDirtyLightChunkCoords()).toEqual([{ x: 0, y: 0 }]);
     expect(world.getDirtyLightChunkCount()).toBe(1);
 
@@ -111,6 +116,7 @@ describe('TileWorld', () => {
 
     world.markChunkLightClean(0, 0);
     expect(world.isChunkLightDirty(0, 0)).toBe(false);
+    expect(world.getChunkLightDirtyColumnMask(0, 0)).toBe(0);
     expect(world.getDirtyLightChunkCoords()).toEqual([]);
     expect(world.getDirtyLightChunkCount()).toBe(0);
 
@@ -138,7 +144,18 @@ describe('TileWorld', () => {
 
     for (const chunk of affectedChunks) {
       expect(world.isChunkLightDirty(chunk.x, chunk.y)).toBe(true);
-      expect(world.getChunkLightLevels(chunk.x, chunk.y).every((lightLevel) => lightLevel === 0)).toBe(true);
+      const expectedLocalX = chunk.x === 0 ? CHUNK_SIZE - 1 : 0;
+      expect(world.getChunkLightDirtyColumnMask(chunk.x, chunk.y)).toBe(localLightColumnBit(expectedLocalX));
+
+      const levels = world.getChunkLightLevels(chunk.x, chunk.y);
+      for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
+        expect(levels[toTileIndex(expectedLocalX, localY)]).toBe(0);
+      }
+
+      const untouchedLocalX = expectedLocalX === 0 ? 1 : 0;
+      for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
+        expect(levels[toTileIndex(untouchedLocalX, localY)]).toBe(7);
+      }
     }
 
     expect(world.isChunkLightDirty(unaffectedChunk.x, unaffectedChunk.y)).toBe(false);
@@ -184,6 +201,34 @@ describe('TileWorld', () => {
     expect(didTileLightingStateChange(5, 6, registry)).toBe(true);
     expect(didTileLightingStateChange(6, 5, registry)).toBe(true);
     expect(didTileLightingStateChange(5, 0, registry)).toBe(false);
+  });
+
+  it('tracks and clears chunk light dirtiness per local sunlight column', () => {
+    const world = new TileWorld(0);
+    const firstColumnMask = localLightColumnBit(3);
+    const secondColumnMask = localLightColumnBit(8);
+
+    world.fillChunkLight(0, 0, 9);
+    world.markChunkLightClean(0, 0);
+
+    world.invalidateChunkLightColumns(0, 0, firstColumnMask);
+    expect(world.isChunkLightDirty(0, 0)).toBe(true);
+    expect(world.getChunkLightDirtyColumnMask(0, 0)).toBe(firstColumnMask);
+
+    const levelsAfterFirstInvalidation = world.getChunkLightLevels(0, 0);
+    expect(levelsAfterFirstInvalidation[toTileIndex(3, 0)]).toBe(0);
+    expect(levelsAfterFirstInvalidation[toTileIndex(4, 0)]).toBe(9);
+
+    world.invalidateChunkLightColumns(0, 0, secondColumnMask);
+    expect(world.getChunkLightDirtyColumnMask(0, 0)).toBe((firstColumnMask | secondColumnMask) >>> 0);
+
+    world.markChunkLightColumnsClean(0, 0, firstColumnMask);
+    expect(world.isChunkLightDirty(0, 0)).toBe(true);
+    expect(world.getChunkLightDirtyColumnMask(0, 0)).toBe(secondColumnMask);
+
+    world.markChunkLightColumnsClean(0, 0, secondColumnMask);
+    expect(world.isChunkLightDirty(0, 0)).toBe(false);
+    expect(world.getChunkLightDirtyColumnMask(0, 0)).toBe(0);
   });
 
   it('samples cardinal and diagonal neighbors across chunk boundaries', () => {
