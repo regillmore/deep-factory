@@ -51,4 +51,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-111. Add a deployment regression check that verifies the production build emits `dist/atlas/tile-atlas.png` for GitHub Pages publishing.
+119. Add a deployment regression check that verifies the production build preserves the authored atlas PNG bytes when copying `public/atlas/tile-atlas.png` into `dist/atlas/tile-atlas.png`.

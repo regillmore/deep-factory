@@ -145,3 +145,4 @@ This document describes the current project state. Unlike the changelog, it shou
 ## Tooling And Deployment
 
 - Production Vite builds target the GitHub Pages project-site base path `/deep-factory/`, so emitted script, stylesheet, and static-asset URLs resolve correctly under `https://regillmore.github.io/deep-factory/` while local development stays rooted at `/`.
+- Deployment regression coverage temp-builds the production app and verifies both the `/deep-factory/` bundle URLs and the copied authored atlas output at `dist/atlas/tile-atlas.png`.
