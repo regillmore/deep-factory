@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Populate distinct placeholder lava liquid T-junction variant sources for `NES-`, `N-SW`, and `-ESW` masks once corner-specific lava sources exist.
+- Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so lava liquid masks `NES-`, `N-SW`, and `-ESW` now resolve to dedicated animated direct-`uvRect` T-junction crops instead of reusing edge or body placeholders, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with source and elapsed-frame assertions for those masks, advanced [docs/NEXT.md](docs/NEXT.md) with a follow-up for the lava `-E-W` straight-through source after cross or fully surrounded work, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/world/tileMetadata.test.ts src/gl/authoredAtlasAsset.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Populate distinct placeholder lava liquid corner-specific variant sources once the lava surface and edge placeholders are in place.
 - Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so lava liquid corner masks `NE--`, `-ES-`, `N--W`, and `--SW` now resolve to dedicated animated direct-`uvRect` corner crops instead of reusing body or edge sources, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with corner-source and elapsed-frame assertions for those masks, advanced [docs/NEXT.md](docs/NEXT.md) with a lava cross or fully surrounded follow-up after T-junction work, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/world/tileMetadata.test.ts src/gl/authoredAtlasAsset.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
