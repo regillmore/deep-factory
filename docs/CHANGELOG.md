@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Add per-chunk light storage plus invalidation hooks when edited tiles change `blocksLight` or emissive state.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts) plus [src/world/world.test.ts](../src/world/world.test.ts) so resident chunks now carry zeroed light arrays and dirty-light flags, added lighting-state-aware chunk invalidation for loaded edit-adjacent chunks, extended [src/world/tileMetadata.ts](../src/world/tileMetadata.ts) plus [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with optional dense `emissiveLight` gameplay lookup support for future emissive tiles, refreshed [src/world/constants.ts](../src/world/constants.ts), [src/world/types.ts](../src/world/types.ts), and [src/world/mesher.test.ts](../src/world/mesher.test.ts) for the new chunk-light shape, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `npx vitest run src/world/world.test.ts src/world/tileMetadata.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the paused-menu `New World` shortcut in the shell button tooltip alongside the existing discard warning copy.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the paused-menu destructive `New World` tooltip now resolves through a shared shortcut-aware title helper and repeats the existing desktop `N` shortcut alongside the existing reset warning copy, advanced [docs/NEXT.md](docs/NEXT.md) with a paused-menu `Resume World` tooltip follow-up, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/appShell.test.ts`.

@@ -16,7 +16,9 @@ import type { TileNeighborhood } from './world';
 
 const createEmptyChunk = (chunkX = 0, chunkY = 0): Chunk => ({
   coord: { x: chunkX, y: chunkY },
-  tiles: new Uint8Array(CHUNK_SIZE * CHUNK_SIZE)
+  tiles: new Uint8Array(CHUNK_SIZE * CHUNK_SIZE),
+  lightLevels: new Uint8Array(CHUNK_SIZE * CHUNK_SIZE),
+  lightDirty: true
 });
 
 const setChunkTile = (chunk: Chunk, localX: number, localY: number, tileId: number): void => {

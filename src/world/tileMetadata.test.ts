@@ -26,6 +26,7 @@ import {
   doesTileBlockLight,
   getAnimatedTileRenderFrameCount,
   getAnimatedTileRenderFrameDurationMs,
+  getTileEmissiveLightLevel,
   getTileLiquidKind,
   hasAnimatedLiquidRenderVariantMetadata,
   hasAnimatedTileRenderMetadata,
@@ -370,6 +371,12 @@ describe('tile metadata loader', () => {
           name: 'lava',
           gameplay: { solid: false, blocksLight: true, liquidKind: 'lava' },
           render: { atlasIndex: 3 }
+        },
+        {
+          id: 10,
+          name: 'torch',
+          gameplay: { solid: false, blocksLight: false, emissiveLight: 12 },
+          render: { atlasIndex: 4 }
         }
       ]
     });
@@ -381,6 +388,12 @@ describe('tile metadata loader', () => {
     });
     expect(getTileLiquidKind(8, registry)).toBe('water');
     expect(getTileLiquidKind(9, registry)).toBe('lava');
+    expect(resolveTileGameplayMetadata(10, registry)).toEqual({
+      solid: false,
+      blocksLight: false,
+      emissiveLight: 12
+    });
+    expect(getTileEmissiveLightLevel(10, registry)).toBe(12);
     expect(isTileSolid(8, registry)).toBe(false);
     expect(doesTileBlockLight(9, registry)).toBe(true);
   });
@@ -396,7 +409,7 @@ describe('tile metadata loader', () => {
         {
           id: 12,
           name: 'torch_lava',
-          gameplay: { solid: false, blocksLight: true, liquidKind: 'lava' },
+          gameplay: { solid: false, blocksLight: true, liquidKind: 'lava', emissiveLight: 9 },
           render: { atlasIndex: 1 }
         }
       ]
@@ -404,15 +417,19 @@ describe('tile metadata loader', () => {
 
     expect(registry.gameplayPropertyLookup.propertyFlagsByTileId).toBeInstanceOf(Uint8Array);
     expect(registry.gameplayPropertyLookup.liquidKindCodeByTileId).toBeInstanceOf(Int8Array);
+    expect(registry.gameplayPropertyLookup.emissiveLightByTileId).toBeInstanceOf(Uint8Array);
     expect(registry.gameplayPropertyLookup.propertyFlagsByTileId.length).toBe(13);
     expect(registry.gameplayPropertyLookup.liquidKindCodeByTileId.length).toBe(13);
+    expect(registry.gameplayPropertyLookup.emissiveLightByTileId.length).toBe(13);
 
     expect(resolveTileGameplayMetadata(7, registry)).toEqual({ solid: false, blocksLight: false });
     expect(resolveTileGameplayMetadata(999, registry)).toEqual({ solid: false, blocksLight: false });
     expect(isTileSolid(12, registry)).toBe(false);
     expect(doesTileBlockLight(12, registry)).toBe(true);
+    expect(getTileEmissiveLightLevel(12, registry)).toBe(9);
     expect(getTileLiquidKind(12, registry)).toBe('lava');
     expect(getTileLiquidKind(7, registry)).toBe(null);
+    expect(getTileEmissiveLightLevel(7, registry)).toBe(0);
     expect(isTileSolid(-1, registry)).toBe(false);
   });
 
@@ -1072,6 +1089,19 @@ describe('tile metadata loader', () => {
         ]
       })
     ).toThrowError(/gameplay\.solid must be a boolean/);
+
+    expect(() =>
+      parseTileMetadataRegistry({
+        tiles: [
+          {
+            id: 7,
+            name: 'bad_emissive',
+            gameplay: { solid: false, blocksLight: false, emissiveLight: 0 },
+            render: { atlasIndex: 1 }
+          }
+        ]
+      })
+    ).toThrowError(/gameplay\.emissiveLight must be between 1 and 15/);
   });
 
   it('rejects unsupported liquid kinds and solid liquids', () => {

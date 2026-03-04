@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-04: Chunk light fields are derived resident caches
+
+- Decision: `TileWorld` now keeps per-chunk light arrays plus dirty flags alongside resident chunk tiles, and lighting-relevant tile edits clear and dirty the affected loaded chunk light fields instead of preserving their previous resolved values.
+- Reason: Upcoming sunlight and emissive passes need writable light storage in the world layer, but resolved lighting should stay a recomputable cache over tile state rather than becoming new authoritative terrain data.
+- Consequence: Future lighting work should recompute dirty resident light chunks from world tiles and treat pruned light fields as disposable caches that can restart from zero when a chunk streams back in.
+
 ### 2026-03-03: Runtime static asset URLs resolve through the Vite base path
 
 - Decision: Runtime fetch paths for shipped static assets, including the authored atlas PNG, now resolve through build-time constants derived from the Vite base path instead of hard-coded site-root URLs.

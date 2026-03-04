@@ -1,5 +1,6 @@
-import { CHUNK_SIZE } from './constants';
+import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './constants';
 import {
+  affectedChunkCoordsForLocalTileEdit,
   chunkBoundsContains,
   chunkKey,
   toTileIndex,
@@ -7,6 +8,8 @@ import {
   worldToLocalTile
 } from './chunkMath';
 import type { ChunkBounds } from './chunkMath';
+import { doesTileBlockLight, getTileEmissiveLightLevel } from './tileMetadata';
+import type { TileMetadataRegistry } from './tileMetadata';
 import type { Chunk } from './types';
 
 const solidTileId = 1;
@@ -56,10 +59,29 @@ const createTileNeighborhood = (): TileNeighborhood => ({
   northWest: 0
 });
 
+const createChunkLightLevels = (): Uint8Array => new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
+
+const expectLightLevel = (lightLevel: number): number => {
+  if (!Number.isInteger(lightLevel) || lightLevel < 0 || lightLevel > MAX_LIGHT_LEVEL) {
+    throw new Error(`lightLevel must be an integer between 0 and ${MAX_LIGHT_LEVEL}`);
+  }
+
+  return lightLevel;
+};
+
+export const didTileLightingStateChange = (
+  previousTileId: number,
+  tileId: number,
+  registry?: TileMetadataRegistry
+): boolean =>
+  doesTileBlockLight(previousTileId, registry) !== doesTileBlockLight(tileId, registry) ||
+  getTileEmissiveLightLevel(previousTileId, registry) !== getTileEmissiveLightLevel(tileId, registry);
+
 export class TileWorld {
   private chunks = new Map<string, Chunk>();
   private editedChunkTiles = new Map<string, Map<number, number>>();
   private tileEditListeners = new Set<TileEditListener>();
+  private dirtyLightChunkKeys = new Set<string>();
 
   constructor(radius = 3) {
     for (let y = -radius; y <= radius; y += 1) {
@@ -73,12 +95,14 @@ export class TileWorld {
     const key = chunkKey(chunkX, chunkY);
     const existing = this.chunks.get(key);
     if (existing) return existing;
+    const normalizedChunkX = chunkX === 0 ? 0 : chunkX;
+    const normalizedChunkY = chunkY === 0 ? 0 : chunkY;
 
     const tiles = new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
     for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
       for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
-        const worldX = chunkX * CHUNK_SIZE + localX;
-        const worldY = chunkY * CHUNK_SIZE + localY;
+        const worldX = normalizedChunkX * CHUNK_SIZE + localX;
+        const worldY = normalizedChunkY * CHUNK_SIZE + localY;
         tiles[toTileIndex(localX, localY)] = proceduralTile(worldX, worldY);
       }
     }
@@ -90,8 +114,14 @@ export class TileWorld {
       }
     }
 
-    const chunk: Chunk = { coord: { x: chunkX, y: chunkY }, tiles };
+    const chunk: Chunk = {
+      coord: { x: normalizedChunkX, y: normalizedChunkY },
+      tiles,
+      lightLevels: createChunkLightLevels(),
+      lightDirty: true
+    };
     this.chunks.set(key, chunk);
+    this.dirtyLightChunkKeys.add(key);
     return chunk;
   }
 
@@ -128,6 +158,12 @@ export class TileWorld {
       editedTiles.set(tileIndex, tileId);
     }
 
+    if (didTileLightingStateChange(previousTileId, tileId)) {
+      for (const coord of affectedChunkCoordsForLocalTileEdit(chunkX, chunkY, localX, localY)) {
+        this.invalidateChunkLight(coord.x, coord.y);
+      }
+    }
+
     const event: TileEditEvent = {
       worldTileX,
       worldTileY,
@@ -144,6 +180,77 @@ export class TileWorld {
     }
 
     return true;
+  }
+
+  getLightLevel(worldTileX: number, worldTileY: number): number {
+    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+    const chunk = this.ensureChunk(chunkX, chunkY);
+    const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
+    return chunk.lightLevels[toTileIndex(localX, localY)] ?? 0;
+  }
+
+  setLightLevel(worldTileX: number, worldTileY: number, lightLevel: number): boolean {
+    const nextLightLevel = expectLightLevel(lightLevel);
+    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+    const chunk = this.ensureChunk(chunkX, chunkY);
+    const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
+    const tileIndex = toTileIndex(localX, localY);
+    const previousLightLevel = chunk.lightLevels[tileIndex] ?? 0;
+    if (previousLightLevel === nextLightLevel) {
+      return false;
+    }
+
+    chunk.lightLevels[tileIndex] = nextLightLevel;
+    return true;
+  }
+
+  getChunkLightLevels(chunkX: number, chunkY: number): Uint8Array {
+    return this.ensureChunk(chunkX, chunkY).lightLevels;
+  }
+
+  fillChunkLight(chunkX: number, chunkY: number, lightLevel: number): void {
+    this.ensureChunk(chunkX, chunkY).lightLevels.fill(expectLightLevel(lightLevel));
+  }
+
+  isChunkLightDirty(chunkX: number, chunkY: number): boolean {
+    return this.chunks.get(chunkKey(chunkX, chunkY))?.lightDirty ?? false;
+  }
+
+  getDirtyLightChunkCoords(): Array<{ x: number; y: number }> {
+    const coords: Array<{ x: number; y: number }> = [];
+    for (const key of this.dirtyLightChunkKeys) {
+      const chunk = this.chunks.get(key);
+      if (!chunk || !chunk.lightDirty) {
+        continue;
+      }
+
+      coords.push({ x: chunk.coord.x, y: chunk.coord.y });
+    }
+
+    return coords;
+  }
+
+  markChunkLightClean(chunkX: number, chunkY: number): void {
+    const key = chunkKey(chunkX, chunkY);
+    const chunk = this.chunks.get(key);
+    if (!chunk) {
+      return;
+    }
+
+    chunk.lightDirty = false;
+    this.dirtyLightChunkKeys.delete(key);
+  }
+
+  invalidateChunkLight(chunkX: number, chunkY: number): void {
+    const key = chunkKey(chunkX, chunkY);
+    const chunk = this.chunks.get(key);
+    if (!chunk) {
+      return;
+    }
+
+    chunk.lightLevels.fill(0);
+    chunk.lightDirty = true;
+    this.dirtyLightChunkKeys.add(key);
   }
 
   sampleTileNeighborhood(worldTileX: number, worldTileY: number): TileNeighborhood {
@@ -208,6 +315,7 @@ export class TileWorld {
     for (const [key, chunk] of this.chunks) {
       if (chunkBoundsContains(bounds, chunk.coord.x, chunk.coord.y)) continue;
       this.chunks.delete(key);
+      this.dirtyLightChunkKeys.delete(key);
       removed += 1;
     }
     return removed;

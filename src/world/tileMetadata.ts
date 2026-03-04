@@ -4,6 +4,7 @@ import {
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK,
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
 } from './autotile';
+import { MAX_LIGHT_LEVEL } from './constants';
 import {
   AUTHORED_ATLAS_REGION_COUNT,
   AUTHORED_ATLAS_UV_RECTS,
@@ -47,6 +48,7 @@ export interface TileGameplayMetadata {
   solid: boolean;
   blocksLight: boolean;
   liquidKind?: TileLiquidKind;
+  emissiveLight?: number;
 }
 
 export interface TileMetadataEntry {
@@ -71,6 +73,7 @@ export interface TileMetadataRegistry {
 export interface TileGameplayPropertyLookup {
   propertyFlagsByTileId: Uint8Array;
   liquidKindCodeByTileId: Int8Array;
+  emissiveLightByTileId: Uint8Array;
 }
 
 export interface TileTerrainConnectivityLookup {
@@ -140,6 +143,15 @@ const expectFiniteNumber = (value: unknown, label: string): number => {
     throw new Error(`${label} must be a finite number`);
   }
   return value;
+};
+
+const expectEmissiveLightLevel = (value: unknown, label: string): number => {
+  const parsed = expectInteger(value, label);
+  if (parsed < 1 || parsed > MAX_LIGHT_LEVEL) {
+    throw new Error(`${label} must be between 1 and ${MAX_LIGHT_LEVEL}`);
+  }
+
+  return parsed;
 };
 
 const ATLAS_TILE_CAPACITY = AUTHORED_ATLAS_REGION_COUNT;
@@ -292,6 +304,10 @@ const parseTileGameplayMetadata = (value: unknown, tileId: number): TileGameplay
 
   const solid = expectBoolean(value.solid, `tiles[${tileId}].gameplay.solid`);
   const blocksLight = expectBoolean(value.blocksLight, `tiles[${tileId}].gameplay.blocksLight`);
+  const emissiveLight =
+    value.emissiveLight === undefined
+      ? undefined
+      : expectEmissiveLightLevel(value.emissiveLight, `tiles[${tileId}].gameplay.emissiveLight`);
 
   let liquidKind: TileLiquidKind | undefined;
   if (value.liquidKind !== undefined) {
@@ -304,7 +320,12 @@ const parseTileGameplayMetadata = (value: unknown, tileId: number): TileGameplay
     liquidKind = value.liquidKind;
   }
 
-  return liquidKind === undefined ? { solid, blocksLight } : { solid, blocksLight, liquidKind };
+  return {
+    solid,
+    blocksLight,
+    ...(liquidKind === undefined ? {} : { liquidKind }),
+    ...(emissiveLight === undefined ? {} : { emissiveLight })
+  };
 };
 
 const parseTileRenderMetadata = (value: unknown, tileIdOrLabel: number | string): TileRenderMetadata => {
@@ -470,6 +491,7 @@ const buildTileGameplayPropertyLookup = (
 
   const propertyFlagsByTileId = new Uint8Array(maxTileId + 1);
   const liquidKindCodeByTileId = new Int8Array(maxTileId + 1);
+  const emissiveLightByTileId = new Uint8Array(maxTileId + 1);
   liquidKindCodeByTileId.fill(TILE_LIQUID_KIND_CODE_NONE);
 
   for (const tile of tiles) {
@@ -486,11 +508,13 @@ const buildTileGameplayPropertyLookup = (
 
     propertyFlagsByTileId[tile.id] = flags;
     liquidKindCodeByTileId[tile.id] = encodeTileLiquidKindCode(gameplay.liquidKind);
+    emissiveLightByTileId[tile.id] = gameplay.emissiveLight ?? 0;
   }
 
   return {
     propertyFlagsByTileId,
-    liquidKindCodeByTileId
+    liquidKindCodeByTileId,
+    emissiveLightByTileId
   };
 };
 
@@ -785,6 +809,15 @@ const getTileLiquidKindCode = (tileId: number, registry: TileMetadataRegistry): 
   }
 
   return liquidKindCodeByTileId[tileId];
+};
+
+const getTileEmissiveLightLevelFromLookup = (tileId: number, registry: TileMetadataRegistry): number => {
+  const { emissiveLightByTileId } = registry.gameplayPropertyLookup;
+  if (!isDenseLookupTileIdInRange(tileId, emissiveLightByTileId.length)) {
+    return 0;
+  }
+
+  return emissiveLightByTileId[tileId] ?? 0;
 };
 
 const getTerrainConnectivityGroupId = (tileId: number, registry: TileMetadataRegistry): number => {
@@ -1263,14 +1296,20 @@ export const resolveTileGameplayMetadata = (
 ): TileGameplayMetadata => {
   const flags = getTileGameplayPropertyFlags(tileId, registry);
   const liquidKind = decodeTileLiquidKindCode(getTileLiquidKindCode(tileId, registry));
+  const emissiveLight = getTileEmissiveLightLevelFromLookup(tileId, registry);
   const solid = (flags & TILE_GAMEPLAY_PROPERTY_FLAG_SOLID) !== 0;
   const blocksLight = (flags & TILE_GAMEPLAY_PROPERTY_FLAG_BLOCKS_LIGHT) !== 0;
 
-  if (!solid && !blocksLight && liquidKind === null) {
+  if (!solid && !blocksLight && liquidKind === null && emissiveLight === 0) {
     return DEFAULT_TILE_GAMEPLAY_METADATA;
   }
 
-  return liquidKind === null ? { solid, blocksLight } : { solid, blocksLight, liquidKind };
+  return {
+    solid,
+    blocksLight,
+    ...(liquidKind === null ? {} : { liquidKind }),
+    ...(emissiveLight === 0 ? {} : { emissiveLight })
+  };
 };
 
 export const isTileSolid = (
@@ -1289,6 +1328,11 @@ export const getTileLiquidKind = (
   tileId: number,
   registry: TileMetadataRegistry = TILE_METADATA
 ): TileLiquidKind | null => decodeTileLiquidKindCode(getTileLiquidKindCode(tileId, registry));
+
+export const getTileEmissiveLightLevel = (
+  tileId: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): number => getTileEmissiveLightLevelFromLookup(tileId, registry);
 
 export const hasTerrainAutotileMetadata = (
   tileId: number,

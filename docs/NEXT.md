@@ -11,10 +11,10 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Lighting
 
-12. Add per-chunk light storage plus invalidation hooks when edited tiles change `blocksLight` or emissive state.
 13. Implement sunlight propagation from exposed chunk tops using the existing gameplay metadata.
 14. Add local emissive light sources (start with a torch tile or debug light source) and merge them into the light field.
 15. Modulate tile rendering by resolved light values.
+159. Surface resident dirty-light chunk counts in the debug HUD once per-chunk light invalidation exists.
 
 ## Entities and interpolation
 
