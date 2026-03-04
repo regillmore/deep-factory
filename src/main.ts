@@ -1444,6 +1444,16 @@ const bootstrap = async (): Promise<void> => {
         : worldToTilePoint(standalonePlayerState.position.x, standalonePlayerState.position.y);
     const debugStatusStripPlayerCameraWorldTile =
       standalonePlayerState === null ? null : worldToTilePoint(camera.x, camera.y);
+    const debugStatusStripPlayerCameraWorldChunk =
+      debugStatusStripPlayerCameraWorldTile === null
+        ? null
+        : (() => {
+            const { chunkX, chunkY } = worldToChunkCoord(
+              debugStatusStripPlayerCameraWorldTile.x,
+              debugStatusStripPlayerCameraWorldTile.y
+            );
+            return { x: chunkX, y: chunkY };
+          })();
     renderer.resize();
     renderer.render(camera, {
       standalonePlayer: standalonePlayerState,
@@ -1506,6 +1516,7 @@ const bootstrap = async (): Promise<void> => {
               y: camera.y
             },
       playerCameraWorldTile: debugOverlayVisible ? null : debugStatusStripPlayerCameraWorldTile,
+      playerCameraWorldChunk: debugOverlayVisible ? null : debugStatusStripPlayerCameraWorldChunk,
       playerCameraFollowOffset:
         debugOverlayVisible || !standalonePlayerState
           ? null

@@ -36,6 +36,7 @@ export interface DebugEditStatusStripState {
   playerAabb?: DebugEditStatusStripPlayerAabbTelemetry | null;
   playerCameraWorldPosition?: { x: number; y: number } | null;
   playerCameraWorldTile?: { x: number; y: number } | null;
+  playerCameraWorldChunk?: { x: number; y: number } | null;
   playerCameraFollowOffset?: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null;
   playerCameraZoom?: number | null;
   playerCeilingBonkHoldActive?: boolean | null;
@@ -639,6 +640,16 @@ const formatLiveCameraWorldTileText = (
   return `CamTileNow: ${formatTileCoordinatePair(playerCameraWorldTile.x, playerCameraWorldTile.y)}`;
 };
 
+const formatLiveCameraWorldChunkText = (
+  playerCameraWorldChunk: { x: number; y: number } | null
+): string | null => {
+  if (playerCameraWorldChunk === null) {
+    return null;
+  }
+
+  return `CamChunkNow: ${formatTileCoordinatePair(playerCameraWorldChunk.x, playerCameraWorldChunk.y)}`;
+};
+
 const formatLiveCameraFollowOffsetText = (
   playerCameraFollowOffset: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null
 ): string | null => {
@@ -747,6 +758,7 @@ const buildPlayerText = (
   playerAabb: DebugEditStatusStripPlayerAabbTelemetry | null,
   playerCameraWorldPosition: { x: number; y: number } | null,
   playerCameraWorldTile: { x: number; y: number } | null,
+  playerCameraWorldChunk: { x: number; y: number } | null,
   playerCameraFollowOffset: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null,
   playerCameraZoom: number | null,
   playerCeilingBonkHoldActive: boolean | null,
@@ -768,6 +780,7 @@ const buildPlayerText = (
     formatLiveAabbText(playerAabb),
     formatLiveCameraWorldPositionText(playerCameraWorldPosition),
     formatLiveCameraWorldTileText(playerCameraWorldTile),
+    formatLiveCameraWorldChunkText(playerCameraWorldChunk),
     formatLiveCameraFollowOffsetText(playerCameraFollowOffset),
     formatLiveCameraZoomText(playerCameraZoom),
     formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive),
@@ -1271,6 +1284,7 @@ export const buildDebugEditStatusStripModel = (
   const playerAabb = state.playerAabb ?? null;
   const playerCameraWorldPosition = state.playerCameraWorldPosition ?? null;
   const playerCameraWorldTile = state.playerCameraWorldTile ?? null;
+  const playerCameraWorldChunk = state.playerCameraWorldChunk ?? null;
   const playerCameraFollowOffset = state.playerCameraFollowOffset ?? null;
   const playerCameraZoom = state.playerCameraZoom ?? null;
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
@@ -1302,6 +1316,7 @@ export const buildDebugEditStatusStripModel = (
       playerAabb,
       playerCameraWorldPosition,
       playerCameraWorldTile,
+      playerCameraWorldChunk,
       playerCameraFollowOffset,
       playerCameraZoom,
       playerCeilingBonkHoldActive,
