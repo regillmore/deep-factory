@@ -138,6 +138,13 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose and live camera world-position player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: grounded-idle\nCamPosNow: 90.50,-54.25')).toEqual([
+      ['Pose: grounded-idle'],
+      ['CamPosNow: 90.50,-54.25']
+    ]);
+  });
+
   it('preserves separate pose and live camera-follow offset player lines while keeping each line individually wrappable', () => {
     expect(buildWrappedDetailLines('Pose: grounded-idle\nOffsetNow: x:+18.00 | y:-6.00')).toEqual([
       ['Pose: grounded-idle'],
@@ -262,13 +269,14 @@ describe('buildWrappedDetailLines', () => {
   it('preserves separate pose, world-position, world-tile, collision AABB min/max and size, input-edge, horizontal and vertical velocity, speed magnitude, and contact player lines while keeping each line individually wrappable', () => {
     expect(
       buildWrappedDetailLines(
-        'Pose: ceiling-bonk\nPosNow: 72.00,-48.00\nTileNow: 4,-3\nAABBNow: min 66.00,-76.00 | max 78.00,-48.00 | size 12.00,28.00\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nVelYNow: -210.00\nSpeedNow: 276.59\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
+        'Pose: ceiling-bonk\nPosNow: 72.00,-48.00\nTileNow: 4,-3\nAABBNow: min 66.00,-76.00 | max 78.00,-48.00 | size 12.00,28.00\nCamPosNow: 90.50,-54.25\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nVelYNow: -210.00\nSpeedNow: 276.59\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
       )
     ).toEqual([
       ['Pose: ceiling-bonk'],
       ['PosNow: 72.00,-48.00'],
       ['TileNow: 4,-3'],
       ['AABBNow: min 66.00,-76.00', '| max 78.00,-48.00', '| size 12.00,28.00'],
+      ['CamPosNow: 90.50,-54.25'],
       ['GroundedNow: off'],
       ['FacingNow: right'],
       ['MoveXNow: 1'],

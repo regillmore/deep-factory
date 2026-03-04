@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Surface standalone player live camera world position in the compact debug-edit status strip when the text debug HUD is hidden.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) plus [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so the compact strip now formats a hidden-HUD `CamPosNow:` line from the live camera center, refreshed [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts) for wrap-friendly camera-position rows, wired [src/main.ts](../src/main.ts) to pass the current camera world position into the strip only while the text debug HUD is hidden, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extend deployment regression coverage to assert emitted CSS and JavaScript assets omit exact root-relative `"/assets/"` bundle URL literals in production output.
 - Changes: Updated [pagesBasePath.test.ts](../pagesBasePath.test.ts) so the temp-directory Vite production build now rejects the exact root-relative `"/assets/` bundle literal in every emitted CSS and JavaScript asset while preserving the existing HTML, double-prefixed bundle, authored-atlas runtime URL, and authored-atlas byte-copy regressions, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run pagesBasePath.test.ts`.

@@ -1496,6 +1496,13 @@ const bootstrap = async (): Promise<void> => {
                 y: standalonePlayerAabb.maxY
               }
             },
+      playerCameraWorldPosition:
+        debugOverlayVisible || !standalonePlayerState
+          ? null
+          : {
+              x: camera.x,
+              y: camera.y
+            },
       playerCameraFollowOffset:
         debugOverlayVisible || !standalonePlayerState
           ? null
