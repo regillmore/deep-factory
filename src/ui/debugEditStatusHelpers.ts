@@ -43,6 +43,7 @@ export interface DebugEditStatusStripState {
   playerCameraFocusLocalTile?: { x: number; y: number } | null;
   playerCameraFollowOffset?: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null;
   playerCameraZoom?: number | null;
+  residentDirtyLightChunks?: number | null;
   playerCeilingBonkHoldActive?: boolean | null;
   playerGrounded?: boolean | null;
   playerFacing?: PlayerFacing | null;
@@ -715,6 +716,16 @@ const formatLiveCameraZoomText = (playerCameraZoom: number | null): string | nul
   return `ZoomNow: ${playerCameraZoom.toFixed(2)}x`;
 };
 
+const formatLiveResidentDirtyLightChunksText = (
+  residentDirtyLightChunks: number | null
+): string | null => {
+  if (residentDirtyLightChunks === null) {
+    return null;
+  }
+
+  return `LightDirtyNow: ${Math.round(residentDirtyLightChunks)}`;
+};
+
 const formatLiveFacingText = (playerFacing: PlayerFacing | null): string | null => {
   if (playerFacing === null) {
     return null;
@@ -809,6 +820,7 @@ const buildPlayerText = (
   playerCameraFocusLocalTile: { x: number; y: number } | null,
   playerCameraFollowOffset: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null,
   playerCameraZoom: number | null,
+  residentDirtyLightChunks: number | null,
   playerCeilingBonkHoldActive: boolean | null,
   playerGrounded: boolean | null,
   playerFacing: PlayerFacing | null,
@@ -835,6 +847,7 @@ const buildPlayerText = (
     formatLiveCameraFocusChunkLocalTileText(playerCameraFocusLocalTile),
     formatLiveCameraFollowOffsetText(playerCameraFollowOffset),
     formatLiveCameraZoomText(playerCameraZoom),
+    formatLiveResidentDirtyLightChunksText(residentDirtyLightChunks),
     formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive),
     formatLiveGroundedText(playerGrounded),
     formatLiveFacingText(playerFacing),
@@ -1343,6 +1356,7 @@ export const buildDebugEditStatusStripModel = (
   const playerCameraFocusLocalTile = state.playerCameraFocusLocalTile ?? null;
   const playerCameraFollowOffset = state.playerCameraFollowOffset ?? null;
   const playerCameraZoom = state.playerCameraZoom ?? null;
+  const residentDirtyLightChunks = state.residentDirtyLightChunks ?? null;
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
   const playerGrounded = state.playerGrounded ?? null;
   const playerFacing = state.playerFacing ?? null;
@@ -1379,6 +1393,7 @@ export const buildDebugEditStatusStripModel = (
       playerCameraFocusLocalTile,
       playerCameraFollowOffset,
       playerCameraZoom,
+      residentDirtyLightChunks,
       playerCeilingBonkHoldActive,
       playerGrounded,
       playerFacing,

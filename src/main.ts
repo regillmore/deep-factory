@@ -1573,6 +1573,7 @@ const bootstrap = async (): Promise<void> => {
               y: cameraFollowOffset.y
             },
       playerCameraZoom: debugOverlayVisible || !standalonePlayerState ? null : camera.zoom,
+      residentDirtyLightChunks: debugOverlayVisible ? null : renderer.telemetry.residentDirtyLightChunks,
       playerCeilingBonkHoldActive:
         debugOverlayVisible || !standalonePlayerState ? null : standalonePlayerCeilingBonkHoldActive,
       playerGrounded: debugOverlayVisible ? null : standalonePlayerState?.grounded ?? null,

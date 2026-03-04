@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Surface resident dirty-light chunk counts in the compact debug-edit status strip when the text debug HUD is hidden.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts), [src/main.ts](../src/main.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts) so hidden-HUD compact-strip telemetry now includes a `LightDirtyNow` line from renderer telemetry, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface resident dirty-light chunk counts in the debug HUD once per-chunk light invalidation exists.
 - Changes: Updated [src/world/world.ts](../src/world/world.ts) plus [src/world/world.test.ts](../src/world/world.test.ts) with a resident dirty-light chunk count helper, threaded that count through [src/gl/renderer.ts](../src/gl/renderer.ts) plus [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) telemetry, and updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so the text HUD summary now surfaces `LightDirty` counts alongside existing cache telemetry; advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/world/world.test.ts src/ui/debugOverlay.test.ts src/gl/renderer.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

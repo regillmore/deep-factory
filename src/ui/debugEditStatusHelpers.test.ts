@@ -372,6 +372,22 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats resident dirty-light chunk counts for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      residentDirtyLightChunks: 7,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('LightDirtyNow: 7');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the live standalone player facing direction for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -846,6 +862,23 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.playerText).toBe('Pose: grounded-idle\nZoomNow: 2.50x');
+    expect(model.eventText).toBeNull();
+  });
+
+  it('keeps pose and resident dirty-light chunk telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'grounded-idle',
+      residentDirtyLightChunks: 14,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: grounded-idle\nLightDirtyNow: 14');
     expect(model.eventText).toBeNull();
   });
 

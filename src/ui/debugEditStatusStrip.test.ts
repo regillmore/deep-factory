@@ -194,6 +194,13 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose and resident dirty-light player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: grounded-idle\nLightDirtyNow: 14')).toEqual([
+      ['Pose: grounded-idle'],
+      ['LightDirtyNow: 14']
+    ]);
+  });
+
   it('preserves separate pose and live facing player lines while keeping each line individually wrappable', () => {
     expect(buildWrappedDetailLines('Pose: grounded-idle\nFacingNow: right')).toEqual([
       ['Pose: grounded-idle'],
