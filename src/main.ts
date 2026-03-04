@@ -1442,6 +1442,8 @@ const bootstrap = async (): Promise<void> => {
       standalonePlayerState === null
         ? null
         : worldToTilePoint(standalonePlayerState.position.x, standalonePlayerState.position.y);
+    const debugStatusStripPlayerCameraWorldTile =
+      standalonePlayerState === null ? null : worldToTilePoint(camera.x, camera.y);
     renderer.resize();
     renderer.render(camera, {
       standalonePlayer: standalonePlayerState,
@@ -1503,6 +1505,7 @@ const bootstrap = async (): Promise<void> => {
               x: camera.x,
               y: camera.y
             },
+      playerCameraWorldTile: debugOverlayVisible ? null : debugStatusStripPlayerCameraWorldTile,
       playerCameraFollowOffset:
         debugOverlayVisible || !standalonePlayerState
           ? null
