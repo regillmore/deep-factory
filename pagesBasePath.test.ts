@@ -11,6 +11,7 @@ const tempBuildDirs: string[] = [];
 const countExactOccurrences = (haystack: string, needle: string): number =>
   haystack.split(needle).length - 1;
 const LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_LITERAL = "'/atlas/tile-atlas.png'";
+const DOUBLE_PREFIXED_PRODUCTION_ASSET_LITERAL = '/deep-factory/deep-factory/assets/';
 const ROOT_RELATIVE_PRODUCTION_JS_ASSET_URL = /\bsrc=(["'])\/assets\/[^"']+\.js\1/;
 const ROOT_RELATIVE_PRODUCTION_CSS_ASSET_URL = /\bhref=(["'])\/assets\/[^"']+\.css\1/;
 const DOUBLE_PREFIXED_PRODUCTION_JS_ASSET_URL =
@@ -32,7 +33,7 @@ describe('createViteConfig', () => {
   });
 
   it(
-    'emits project-site asset URLs, rejects legacy or double-prefixed emitted HTML asset URLs plus the legacy authored atlas literal across emitted text assets, keeps the joined authored atlas runtime URL, and preserves authored atlas bytes in the production build output',
+    'emits project-site asset URLs, rejects legacy or double-prefixed emitted HTML asset URLs plus double-prefixed bundle literals and the legacy authored atlas literal across emitted text assets, keeps the joined authored atlas runtime URL, and preserves authored atlas bytes in the production build output',
     async () => {
       const outDir = await mkdtemp(join(tmpdir(), 'deep-factory-build-'));
       tempBuildDirs.push(outDir);
@@ -86,6 +87,7 @@ describe('createViteConfig', () => {
       );
       expect(authoredAtlasRuntimeUrlOccurrences).toBe(1);
       for (const bundleContents of jsBundles) {
+        expect(bundleContents).not.toContain(DOUBLE_PREFIXED_PRODUCTION_ASSET_LITERAL);
         expect(bundleContents).not.toMatch(/(["'`])\/atlas\/tile-atlas\.png\1/);
       }
 
@@ -98,6 +100,7 @@ describe('createViteConfig', () => {
         cssBundleNames.map(async (name) => readFile(join(outDir, 'assets', name), 'utf8'))
       );
       for (const bundleContents of cssBundles) {
+        expect(bundleContents).not.toContain(DOUBLE_PREFIXED_PRODUCTION_ASSET_LITERAL);
         expect(bundleContents).not.toContain(LEGACY_ROOT_RELATIVE_AUTHORED_ATLAS_LITERAL);
       }
 
