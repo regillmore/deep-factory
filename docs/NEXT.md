@@ -51,4 +51,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-125. Extend deployment regression coverage to scan every emitted JavaScript asset for authored-atlas runtime URL literals instead of only the first bundle.
+126. Extend deployment regression coverage to assert emitted HTML and CSS assets also omit the exact legacy root-relative `'/atlas/tile-atlas.png'` literal.

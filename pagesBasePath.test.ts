@@ -46,18 +46,24 @@ describe('createViteConfig', () => {
       expect(indexHtml).toMatch(/\/deep-factory\/assets\/[^"]+\.css/);
 
       const emittedAssetNames = await readdir(join(outDir, 'assets'));
-      const jsBundleName = emittedAssetNames.find((name) => name.endsWith('.js'));
-      expect(jsBundleName).toBeDefined();
-      if (!jsBundleName) {
-        throw new Error('Expected the production build to emit a JavaScript bundle');
+      const jsBundleNames = emittedAssetNames.filter((name) => name.endsWith('.js'));
+      expect(jsBundleNames.length).toBeGreaterThan(0);
+      if (jsBundleNames.length === 0) {
+        throw new Error('Expected the production build to emit at least one JavaScript bundle');
       }
 
-      const jsBundle = await readFile(join(outDir, 'assets', jsBundleName), 'utf8');
+      const jsBundles = await Promise.all(
+        jsBundleNames.map(async (name) => readFile(join(outDir, 'assets', name), 'utf8'))
+      );
       const authoredAtlasRuntimeUrl = `${GITHUB_PAGES_BASE_PATH}atlas/tile-atlas.png`;
-      expect(jsBundle).toContain(GITHUB_PAGES_BASE_PATH);
-      expect(jsBundle).toContain(authoredAtlasRuntimeUrl);
-      expect(countExactOccurrences(jsBundle, authoredAtlasRuntimeUrl)).toBe(1);
-      expect(jsBundle).not.toMatch(/(["'`])\/atlas\/tile-atlas\.png\1/);
+      const authoredAtlasRuntimeUrlOccurrences = jsBundles.reduce(
+        (total, bundleContents) => total + countExactOccurrences(bundleContents, authoredAtlasRuntimeUrl),
+        0
+      );
+      expect(authoredAtlasRuntimeUrlOccurrences).toBe(1);
+      for (const bundleContents of jsBundles) {
+        expect(bundleContents).not.toMatch(/(["'`])\/atlas\/tile-atlas\.png\1/);
+      }
 
       const sourceAtlasPng = await readFile(join(process.cwd(), 'public', 'atlas', 'tile-atlas.png'));
       const emittedAtlasPng = await readFile(join(outDir, 'atlas', 'tile-atlas.png'));
