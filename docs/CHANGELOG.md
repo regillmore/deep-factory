@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Extend deployment regression coverage to assert emitted HTML and CSS assets omit exact root-relative `"/atlas/"` static-asset URL prefix literals in production output.
+- Changes: Updated [pagesBasePath.test.ts](../pagesBasePath.test.ts) so the temp-directory Vite production build now rejects the exact root-relative `"/atlas/"` prefix literal in every emitted HTML and CSS asset alongside the existing full authored-atlas URL and bundle-path regressions, advanced [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run pagesBasePath.test.ts`.
+
 - Task: Surface standalone player live camera-follow focus-point world tile coordinates in the text debug HUD now that focus-point world chunk coordinates are available.
 - Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so the text HUD follow line now includes `focusTile:` telemetry beside the existing focus position, chunk, and offset fields, and wired [src/main.ts](../src/main.ts) to reuse the existing focus-point tile derivation when feeding overlay snapshots; advanced [docs/NEXT.md](docs/NEXT.md) and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
