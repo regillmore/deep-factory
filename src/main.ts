@@ -1480,6 +1480,10 @@ const bootstrap = async (): Promise<void> => {
       debugStatusStripPlayerCameraFocusChunk &&
       debugStatusStripPlayerCameraFocusLocalTile
         ? {
+            cameraPosition: {
+              x: camera.x,
+              y: camera.y
+            },
             cameraTile: debugStatusStripPlayerCameraWorldTile,
             focus: debugStatusStripPlayerCameraFocusPoint,
             focusTile: debugStatusStripPlayerCameraFocusTile,

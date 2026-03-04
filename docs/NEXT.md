@@ -47,7 +47,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 134. Surface standalone player live camera chunk-local tile coordinates in the compact debug-edit status strip once task 133 lands camera world chunk coordinates.
 148. Surface standalone player live camera chunk-local tile coordinates in the text debug HUD once camera world tile and world chunk telemetry are both available.
-152. Surface standalone player live camera world position in the text debug HUD alongside the existing follow telemetry.
+155. Surface standalone player live camera zoom level in the text debug HUD alongside the existing follow telemetry.
 
 ## Project structure optimization
 

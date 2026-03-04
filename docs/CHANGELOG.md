@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Surface standalone player live camera world position in the text debug HUD alongside the existing follow telemetry.
+- Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) so the text HUD `Follow:` line now includes live `cam:` world-position telemetry beside the existing camera tile, camera chunk, focus, and offset fields, wired [src/main.ts](../src/main.ts) to pass the current camera center into that overlay snapshot, advanced [docs/NEXT.md](docs/NEXT.md) with a camera-zoom HUD follow-up, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extend deployment regression coverage to assert emitted JavaScript assets omit exact double-prefixed `"/deep-factory/deep-factory/atlas/"` static-asset URL prefix literals in production output.
 - Changes: Updated [pagesBasePath.test.ts](../pagesBasePath.test.ts) so the temp-directory Vite production build now rejects the exact double-quoted double-prefixed `"/deep-factory/deep-factory/atlas/"` prefix literal in every emitted JavaScript asset alongside the existing root-relative prefix, single-quoted double-prefixed prefix, bundle-path, authored-atlas runtime URL, and authored-atlas byte-copy regressions, advanced [docs/NEXT.md](docs/NEXT.md) with an HTML/CSS follow-up, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run pagesBasePath.test.ts`.
