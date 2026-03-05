@@ -6,8 +6,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Liquid rendering
 
-192. Populate a distinct placeholder lava liquid single-side source for the `N---` mask now that the dedicated lava single-side `--S-` source has landed.
 193. Add a tile-metadata regression that confirms all lava single-side masks (`N---`, `-E--`, `--S-`, `---W`) resolve to distinct placeholder sources once the dedicated `N---` source lands.
+194. Add an authored-atlas asset regression that verifies both animated lava `N---` single-side direct-`uvRect` frames sample non-transparent committed pixels.
 
 ## Lighting
 

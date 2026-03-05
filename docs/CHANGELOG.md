@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Populate a distinct placeholder lava liquid single-side source for the `N---` mask now that the dedicated lava single-side `--S-` source has landed.
+- Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so lava mask `N---` now resolves to a dedicated animated direct-`uvRect` top-cap single-side source instead of the previous taller placeholder crop, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with updated source and elapsed-frame assertions plus focused distinctness checks for mask `N---`, advanced [docs/NEXT.md](docs/NEXT.md) with one new authored-atlas regression follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx.cmd vitest run src/world/tileMetadata.test.ts src/gl/authoredAtlasAsset.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Populate a distinct placeholder lava liquid single-side source for the `--S-` mask now that the dedicated lava single-side `---W` source has landed.
 - Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so lava mask `--S-` now resolves to a dedicated animated direct-`uvRect` single-side source instead of reusing the base atlas tile, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with source distinctness and elapsed-frame assertions for mask `--S-`, advanced [docs/NEXT.md](docs/NEXT.md) with the now-unblocked `N---` single-side follow-up plus one new post-`N---` single-side regression task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/world/tileMetadata.test.ts src/gl/authoredAtlasAsset.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
