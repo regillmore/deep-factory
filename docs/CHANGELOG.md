@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Surface the in-world recenter-camera, edit-overlay, and spawn-marker shortcuts in shell copy once the keyboard actions exist.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the in-world shell labels now render `Recenter Camera (C)`, `Show/Hide Edit Overlays (V)`, and `Show/Hide Spawn Marker (M)` from shared desktop shortcut helpers, refreshed [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with shortcut-aware expectations, removed completed tasks `66`, `68`, and `83` from [docs/NEXT.md](docs/NEXT.md), added replacement roadmap tasks `198`, `199`, and `200`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx.cmd vitest run src/ui/appShell.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the in-world debug-HUD shortcut in shell copy once the keyboard action exists.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the in-world debug-HUD shell label now renders `Show Debug HUD (H)` or `Hide Debug HUD (H)` from the shared desktop shortcut helper, refreshed [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) expectations for the shortcut-aware labels, advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `67` and adding one replacement roadmap item, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx.cmd vitest run src/ui/appShell.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.

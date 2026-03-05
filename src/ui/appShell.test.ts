@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopDebugOverlayHotkeyLabel,
   getDesktopDebugEditControlsHotkeyLabel,
   getDesktopFreshWorldHotkeyLabel,
+  getDesktopPlayerSpawnMarkerHotkeyLabel,
+  getDesktopRecenterCameraHotkeyLabel,
   getDesktopResumeWorldHotkeyLabel,
   getDesktopReturnToMainMenuHotkeyLabel
 } from '../input/debugEditShortcuts';
@@ -98,7 +101,9 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.returnToMainMenuActionLabel).toBe(
       `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
     );
-    expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
+    expect(viewModel.recenterCameraActionLabel).toBe(
+      `Recenter Camera (${getDesktopRecenterCameraHotkeyLabel()})`
+    );
     expect(viewModel.debugOverlayToggleLabel).toBe(
       `Show Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`
     );
@@ -107,9 +112,13 @@ describe('resolveAppShellViewModel', () => {
       `Show Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
     );
     expect(viewModel.debugEditControlsTogglePressed).toBe(false);
-    expect(viewModel.debugEditOverlaysToggleLabel).toBe('Hide Edit Overlays');
+    expect(viewModel.debugEditOverlaysToggleLabel).toBe(
+      `Hide Edit Overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`
+    );
     expect(viewModel.debugEditOverlaysTogglePressed).toBe(true);
-    expect(viewModel.playerSpawnMarkerToggleLabel).toBe('Hide Spawn Marker');
+    expect(viewModel.playerSpawnMarkerToggleLabel).toBe(
+      `Hide Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`
+    );
     expect(viewModel.playerSpawnMarkerTogglePressed).toBe(true);
     expect(viewModel.detailLines).toEqual([]);
   });
@@ -121,7 +130,9 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.returnToMainMenuActionLabel).toBe(
       `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
     );
-    expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
+    expect(viewModel.recenterCameraActionLabel).toBe(
+      `Recenter Camera (${getDesktopRecenterCameraHotkeyLabel()})`
+    );
     expect(viewModel.debugOverlayToggleLabel).toBe(
       `Hide Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`
     );
@@ -131,9 +142,13 @@ describe('resolveAppShellViewModel', () => {
       `Show Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
     );
     expect(viewModel.debugEditControlsTogglePressed).toBe(false);
-    expect(viewModel.debugEditOverlaysToggleLabel).toBe('Hide Edit Overlays');
+    expect(viewModel.debugEditOverlaysToggleLabel).toBe(
+      `Hide Edit Overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`
+    );
     expect(viewModel.debugEditOverlaysTogglePressed).toBe(true);
-    expect(viewModel.playerSpawnMarkerToggleLabel).toBe('Hide Spawn Marker');
+    expect(viewModel.playerSpawnMarkerToggleLabel).toBe(
+      `Hide Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`
+    );
     expect(viewModel.playerSpawnMarkerTogglePressed).toBe(true);
   });
 
@@ -147,7 +162,9 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.returnToMainMenuActionLabel).toBe(
       `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
     );
-    expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
+    expect(viewModel.recenterCameraActionLabel).toBe(
+      `Recenter Camera (${getDesktopRecenterCameraHotkeyLabel()})`
+    );
     expect(viewModel.debugOverlayToggleLabel).toBe(
       `Show Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`
     );
@@ -156,8 +173,12 @@ describe('resolveAppShellViewModel', () => {
       `Hide Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
     );
     expect(viewModel.debugEditControlsTogglePressed).toBe(true);
-    expect(viewModel.debugEditOverlaysToggleLabel).toBe('Hide Edit Overlays');
-    expect(viewModel.playerSpawnMarkerToggleLabel).toBe('Hide Spawn Marker');
+    expect(viewModel.debugEditOverlaysToggleLabel).toBe(
+      `Hide Edit Overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`
+    );
+    expect(viewModel.playerSpawnMarkerToggleLabel).toBe(
+      `Hide Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`
+    );
   });
 
   it('reflects the compact edit overlay toggle state while in-world', () => {
@@ -170,7 +191,9 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.returnToMainMenuActionLabel).toBe(
       `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
     );
-    expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
+    expect(viewModel.recenterCameraActionLabel).toBe(
+      `Recenter Camera (${getDesktopRecenterCameraHotkeyLabel()})`
+    );
     expect(viewModel.debugOverlayToggleLabel).toBe(
       `Show Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`
     );
@@ -178,9 +201,13 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.debugEditControlsToggleLabel).toBe(
       `Show Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
     );
-    expect(viewModel.debugEditOverlaysToggleLabel).toBe('Show Edit Overlays');
+    expect(viewModel.debugEditOverlaysToggleLabel).toBe(
+      `Show Edit Overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`
+    );
     expect(viewModel.debugEditOverlaysTogglePressed).toBe(false);
-    expect(viewModel.playerSpawnMarkerToggleLabel).toBe('Hide Spawn Marker');
+    expect(viewModel.playerSpawnMarkerToggleLabel).toBe(
+      `Hide Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`
+    );
     expect(viewModel.playerSpawnMarkerTogglePressed).toBe(true);
   });
 
@@ -194,7 +221,9 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.returnToMainMenuActionLabel).toBe(
       `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
     );
-    expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
+    expect(viewModel.recenterCameraActionLabel).toBe(
+      `Recenter Camera (${getDesktopRecenterCameraHotkeyLabel()})`
+    );
     expect(viewModel.debugOverlayToggleLabel).toBe(
       `Show Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`
     );
@@ -202,8 +231,12 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.debugEditControlsToggleLabel).toBe(
       `Show Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
     );
-    expect(viewModel.debugEditOverlaysToggleLabel).toBe('Hide Edit Overlays');
-    expect(viewModel.playerSpawnMarkerToggleLabel).toBe('Show Spawn Marker');
+    expect(viewModel.debugEditOverlaysToggleLabel).toBe(
+      `Hide Edit Overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`
+    );
+    expect(viewModel.playerSpawnMarkerToggleLabel).toBe(
+      `Show Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`
+    );
     expect(viewModel.playerSpawnMarkerTogglePressed).toBe(false);
   });
 

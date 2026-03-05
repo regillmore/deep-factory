@@ -37,12 +37,12 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## App shell
 
-66. Surface the in-world recenter-camera shortcut in shell copy once the keyboard action exists.
-68. Surface the in-world spawn-marker shortcut in shell copy once the keyboard action exists.
 82. Surface the in-world edit-panel shortcut in the touch debug controls keyboard reference once task 69 adds the keyboard action.
-83. Surface the in-world edit-overlay shortcut in shell copy once the keyboard action exists.
 158. Surface the paused-menu `Resume World` shortcut in the shell button tooltip alongside the existing paused-session copy.
 188. Surface the paused-menu `Resume World (Enter)` shortcut in the paused-session camera and undo reset detail line alongside the existing `New World (N)` reset guidance.
+198. Add an in-world `Shortcuts (?)` overlay that lists current desktop and touch controls, opens from both a shell button and `?`, and preserves visibility across pause/resume.
+199. Add shell-level keybinding remap settings for in-world actions (`Main Menu`, `Recenter Camera`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`) with conflict validation and persisted preferences.
+200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
 
 ## Player debugging
 

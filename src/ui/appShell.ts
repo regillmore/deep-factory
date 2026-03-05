@@ -100,11 +100,20 @@ export const resolvePausedMainMenuFreshWorldTitle = (): string =>
 const resolveInWorldReturnToMainMenuActionLabel = (): string =>
   `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`;
 
+const resolveInWorldRecenterCameraActionLabel = (): string =>
+  `Recenter Camera (${getDesktopRecenterCameraHotkeyLabel()})`;
+
 const resolveInWorldDebugOverlayToggleLabel = (visible: boolean): string =>
   `${visible ? 'Hide' : 'Show'} Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`;
 
 const resolveInWorldDebugEditControlsToggleLabel = (visible: boolean): string =>
   `${visible ? 'Hide' : 'Show'} Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`;
+
+const resolveInWorldDebugEditOverlaysToggleLabel = (visible: boolean): string =>
+  `${visible ? 'Hide' : 'Show'} Edit Overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`;
+
+const resolveInWorldPlayerSpawnMarkerToggleLabel = (visible: boolean): string =>
+  `${visible ? 'Hide' : 'Show'} Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`;
 
 export const resolveInWorldDebugEditControlsToggleTitle = (visible: boolean): string =>
   `${visible ? 'Hide' : 'Show'} the full debug-edit control panel (${getDesktopDebugEditControlsHotkeyLabel()})`;
@@ -172,7 +181,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         primaryActionLabel: null,
         secondaryActionLabel: null,
         returnToMainMenuActionLabel: resolveInWorldReturnToMainMenuActionLabel(),
-        recenterCameraActionLabel: 'Recenter Camera',
+        recenterCameraActionLabel: resolveInWorldRecenterCameraActionLabel(),
         debugOverlayToggleLabel: resolveInWorldDebugOverlayToggleLabel(
           state.debugOverlayVisible === true
         ),
@@ -181,11 +190,13 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
           state.debugEditControlsVisible === true
         ),
         debugEditControlsTogglePressed: state.debugEditControlsVisible === true,
-        debugEditOverlaysToggleLabel:
-          state.debugEditOverlaysVisible === false ? 'Show Edit Overlays' : 'Hide Edit Overlays',
+        debugEditOverlaysToggleLabel: resolveInWorldDebugEditOverlaysToggleLabel(
+          state.debugEditOverlaysVisible !== false
+        ),
         debugEditOverlaysTogglePressed: state.debugEditOverlaysVisible !== false,
-        playerSpawnMarkerToggleLabel:
-          state.playerSpawnMarkerVisible === false ? 'Show Spawn Marker' : 'Hide Spawn Marker',
+        playerSpawnMarkerToggleLabel: resolveInWorldPlayerSpawnMarkerToggleLabel(
+          state.playerSpawnMarkerVisible !== false
+        ),
         playerSpawnMarkerTogglePressed: state.playerSpawnMarkerVisible !== false
       };
   }
