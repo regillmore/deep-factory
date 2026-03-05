@@ -6,8 +6,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Liquid rendering
 
-186. Populate a distinct placeholder lava liquid single-side source for the `-E--` mask once the dedicated lava isolated-body `----` source lands.
 187. Populate a distinct placeholder lava liquid single-side source for the `---W` mask once the dedicated lava single-side `-E--` source lands.
+190. Populate a distinct placeholder lava liquid single-side source for the `--S-` mask once the dedicated lava single-side `---W` source lands.
 
 ## Lighting
 

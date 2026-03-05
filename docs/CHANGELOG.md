@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Populate a distinct placeholder lava liquid single-side source for the `-E--` mask once the dedicated lava isolated-body `----` source lands.
+- Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so lava mask `-E--` now resolves to a dedicated animated direct-`uvRect` single-side source instead of reusing the base atlas tile, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with source distinctness and elapsed-frame assertions for mask `-E--`, advanced [docs/NEXT.md](docs/NEXT.md) with a follow-up lava `--S-` single-side source task after `---W`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx.cmd vitest run src/world/tileMetadata.test.ts src/gl/authoredAtlasAsset.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface standalone-player nearby-light sample source chunk and chunk-local tile coordinates in the debug HUD and hidden-HUD compact strip once source world tile coordinates are available.
 - Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so nearby-light lines now derive and display source chunk plus source chunk-local coordinates from the sampled source world tile, expanded [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts) with chunk-local coverage (including negative-world tile mapping), advanced [docs/NEXT.md](docs/NEXT.md) with one focused nearby-light renderer-telemetry follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx.cmd vitest run src/ui/debugOverlay.test.ts src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.

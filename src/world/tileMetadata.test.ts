@@ -119,6 +119,7 @@ describe('tile metadata loader', () => {
     expect(describeLiquidRenderVariantSource(8, 0)).toBe('uvRect 0.5,0.75..0.583,1');
     expect(describeLiquidRenderVariantSource(8, 10)).toBe('uvRect 0.5,0.813..0.667,0.938');
     expect(describeLiquidRenderVariantSource(8, 1)).toBe('uvRect 0.583,0.75..0.667,1');
+    expect(describeLiquidRenderVariantSource(8, 2)).toBe('uvRect 0.5,0.75..0.542,1');
     expect(describeLiquidRenderVariantSource(8, 3)).toBe('uvRect 0.625,0.75..0.667,0.875');
     expect(describeLiquidRenderVariantSource(8, 5)).toBe('uvRect 0.542,0.75..0.625,1');
     expect(describeLiquidRenderVariantSource(8, 6)).toBe('uvRect 0.625,0.875..0.667,1');
@@ -131,6 +132,8 @@ describe('tile metadata loader', () => {
     expect(describeLiquidRenderVariantSource(8, 15)).toBe('uvRect 0.5,0.875..0.667,1');
     expect(describeLiquidRenderVariantSource(8, 0)).not.toBe(describeLiquidRenderVariantSource(8, 5));
     expect(describeLiquidRenderVariantSource(8, 0)).not.toBe(describeLiquidRenderVariantSource(8, 10));
+    expect(describeLiquidRenderVariantSource(8, 2)).not.toBe(describeLiquidRenderVariantSource(8, 0));
+    expect(describeLiquidRenderVariantSource(8, 2)).not.toBe(describeLiquidRenderVariantSource(8, 1));
     expect(describeLiquidRenderVariantSource(8, 5)).not.toBe(describeLiquidRenderVariantSource(8, 1));
     expect(describeLiquidRenderVariantSource(8, 5)).not.toBe(describeLiquidRenderVariantSource(8, 10));
     expect(describeLiquidRenderVariantSource(8, 10)).not.toBe(describeLiquidRenderVariantSource(8, 11));
@@ -138,6 +141,9 @@ describe('tile metadata loader', () => {
     expect(describeLiquidRenderVariantSource(8, 11)).not.toBe(describeLiquidRenderVariantSource(8, 15));
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 0, 180)).toBe('uvRect 0.333,0.75..0.417,1');
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 1, 180)).toBe('uvRect 0.417,0.75..0.5,1');
+    expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 2, 180)).toBe(
+      'uvRect 0.333,0.75..0.375,1'
+    );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 3, 180)).toBe(
       'uvRect 0.458,0.75..0.5,0.875'
     );
