@@ -42,7 +42,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 198. Add an in-world `Shortcuts (?)` overlay that lists current desktop and touch controls, opens from both a shell button and `?`, and preserves visibility across pause/resume.
 199. Add shell-level keybinding remap settings for in-world actions (`Main Menu`, `Recenter Camera`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`) with conflict validation and persisted preferences.
 200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
-220. Add an app-shell regression where paused-menu `Resume World (Enter)` and `New World (N)` tooltip titles return after first-launch main-menu copy transitions back to a resumable paused session.
 
 ## Player debugging
 
@@ -54,5 +53,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 213. Add a hostile-slime combat slice after entity scaffolding (`16-18`): deterministic spawn windows near the player, jump-chase movement, player contact damage plus invulnerability cooldown, and fixed-step combat regressions.
 214. Add a dropped-item + hotbar inventory slice after entity scaffolding (`16-18`): stackable world pickups with proximity pickup rules, hotbar assignment and selection, and save/load snapshot regressions for item stacks.
 215. Add a placeable-workbench crafting slice after inventory basics: recipe registry for a minimal starter set, in-world station-range gating, shell or debug panel crafting actions, and recipe resolution regressions.
+221. Add a starter melee-weapon follow-up after hostile-slime combat (`213`): fixed-step swing windup/active/recovery timing, slime hit detection plus knockback, and deterministic hit-cooldown regressions.
 
 ## Project structure optimization

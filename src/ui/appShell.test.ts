@@ -320,4 +320,26 @@ describe('paused main-menu tooltip-title resolution', () => {
     expect(resolveMainMenuPrimaryActionTitle(firstLaunchState)).toBe('');
     expect(resolveMainMenuSecondaryActionTitle(firstLaunchState)).toBe('');
   });
+
+  it('restores paused-session tooltip titles after first-launch main-menu copy transitions back to a resumable session', () => {
+    const pausedState = createPausedMainMenuShellState();
+
+    expect(resolveMainMenuPrimaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuResumeWorldTitle()
+    );
+    expect(resolveMainMenuSecondaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuFreshWorldTitle()
+    );
+
+    const firstLaunchState = { screen: 'main-menu' } as const;
+    expect(resolveMainMenuPrimaryActionTitle(firstLaunchState)).toBe('');
+    expect(resolveMainMenuSecondaryActionTitle(firstLaunchState)).toBe('');
+
+    expect(resolveMainMenuPrimaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuResumeWorldTitle()
+    );
+    expect(resolveMainMenuSecondaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuFreshWorldTitle()
+    );
+  });
 });
