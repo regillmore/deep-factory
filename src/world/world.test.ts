@@ -135,10 +135,34 @@ describe('TileWorld', () => {
   it('invalidates loaded light chunks only when an edit changes tile lighting state', () => {
     const world = new TileWorld(1);
     const affectedChunks = [
-      { x: 0, y: -1, expectedLocalX: CHUNK_SIZE - 1 },
-      { x: 0, y: 0, expectedLocalX: CHUNK_SIZE - 1 },
-      { x: 1, y: -1, expectedLocalX: 0 },
-      { x: 1, y: 0, expectedLocalX: 0 }
+      {
+        x: 0,
+        y: -1,
+        expectedMask: localLightColumnRangeMask(CHUNK_SIZE - 2, CHUNK_SIZE - 1),
+        clearedLocalXs: [CHUNK_SIZE - 2, CHUNK_SIZE - 1],
+        untouchedLocalX: CHUNK_SIZE - 3
+      },
+      {
+        x: 0,
+        y: 0,
+        expectedMask: localLightColumnRangeMask(CHUNK_SIZE - 2, CHUNK_SIZE - 1),
+        clearedLocalXs: [CHUNK_SIZE - 2, CHUNK_SIZE - 1],
+        untouchedLocalX: CHUNK_SIZE - 3
+      },
+      {
+        x: 1,
+        y: -1,
+        expectedMask: localLightColumnRangeMask(0, 1),
+        clearedLocalXs: [0, 1],
+        untouchedLocalX: 2
+      },
+      {
+        x: 1,
+        y: 0,
+        expectedMask: localLightColumnRangeMask(0, 1),
+        clearedLocalXs: [0, 1],
+        untouchedLocalX: 2
+      }
     ];
     const unaffectedChunks = [
       { x: -1, y: 0 },
@@ -155,18 +179,17 @@ describe('TileWorld', () => {
 
     for (const chunk of affectedChunks) {
       expect(world.isChunkLightDirty(chunk.x, chunk.y)).toBe(true);
-      expect(world.getChunkLightDirtyColumnMask(chunk.x, chunk.y)).toBe(
-        localLightColumnBit(chunk.expectedLocalX)
-      );
+      expect(world.getChunkLightDirtyColumnMask(chunk.x, chunk.y)).toBe(chunk.expectedMask);
 
       const levels = world.getChunkLightLevels(chunk.x, chunk.y);
-      for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
-        expect(levels[toTileIndex(chunk.expectedLocalX, localY)]).toBe(0);
+      for (const clearedLocalX of chunk.clearedLocalXs) {
+        for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
+          expect(levels[toTileIndex(clearedLocalX, localY)]).toBe(0);
+        }
       }
 
-      const untouchedLocalX = chunk.expectedLocalX === 0 ? 1 : 0;
       for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
-        expect(levels[toTileIndex(untouchedLocalX, localY)]).toBe(7);
+        expect(levels[toTileIndex(chunk.untouchedLocalX, localY)]).toBe(7);
       }
     }
 

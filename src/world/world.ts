@@ -145,9 +145,11 @@ const collectSunlightInvalidationWorldTileXRangeForLocalTile = (
 
   if (localLightingRange === 0) {
     if (localX === 0) {
-      minWorldTileX -= 1;
-    } else if (localX === CHUNK_SIZE - 1) {
+      minWorldTileX -= 2;
       maxWorldTileX += 1;
+    } else if (localX === CHUNK_SIZE - 1) {
+      minWorldTileX -= 1;
+      maxWorldTileX += 2;
     }
   }
 

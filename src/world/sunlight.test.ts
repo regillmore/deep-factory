@@ -89,6 +89,28 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
 
+  it('lights a lower middle solid beneath a hovering blocker after horizontal sunlight transport relights the gap air', () => {
+    const world = new TileWorld(0);
+
+    for (const worldTileX of [-1, 0, 1]) {
+      for (const worldTileY of [-2, -1, 0, 1, 2]) {
+        world.setTile(worldTileX, worldTileY, 0);
+      }
+    }
+
+    world.setTile(0, 0, 1);
+    world.setTile(-1, 2, 1);
+    world.setTile(0, 2, 1);
+    world.setTile(1, 2, 1);
+
+    const recomputedChunkCount = recomputeSunlightFromExposedChunkTops(world);
+
+    expect(recomputedChunkCount).toBe(4);
+    expect(world.getLightLevel(0, 1)).toBe(0);
+    expect(world.getLightLevel(0, 2)).toBe(MAX_LIGHT_LEVEL);
+    expect(world.getDirtyLightChunkCount()).toBe(0);
+  });
+
   it('recomputes only chunk columns that contain dirty resident light chunks', () => {
     const world = new TileWorld(1);
 
@@ -183,6 +205,38 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
 
+  it('lights boundary-adjacent solid tiles when horizontal transport relights edge air columns', () => {
+    const world = new TileWorld(0);
+    world.ensureChunk(0, -1);
+    world.ensureChunk(1, -1);
+    world.ensureChunk(1, 0);
+
+    const leftBoundaryWorldTileX = CHUNK_SIZE - 1;
+    const rightBoundaryWorldTileX = CHUNK_SIZE;
+    const rightInteriorWorldTileX = CHUNK_SIZE + 1;
+    const probeWorldTileY = 0;
+    const rowAboveWorldTileY = -1;
+
+    for (let worldTileY = -CHUNK_SIZE; worldTileY <= probeWorldTileY; worldTileY += 1) {
+      world.setTile(leftBoundaryWorldTileX, worldTileY, 0);
+    }
+    world.setTile(leftBoundaryWorldTileX, probeWorldTileY, 1);
+    world.setTile(rightBoundaryWorldTileX, rowAboveWorldTileY, 1);
+    world.setTile(rightBoundaryWorldTileX, probeWorldTileY, 0);
+    world.setTile(rightInteriorWorldTileX, rowAboveWorldTileY, 1);
+    world.setTile(rightInteriorWorldTileX, probeWorldTileY, 1);
+
+    recomputeSunlightFromExposedChunkTops(world);
+    expect(world.getLightLevel(rightBoundaryWorldTileX, probeWorldTileY)).toBe(0);
+    expect(world.getLightLevel(rightInteriorWorldTileX, probeWorldTileY)).toBe(0);
+
+    expect(world.setTile(leftBoundaryWorldTileX, probeWorldTileY, 0)).toBe(true);
+    expect(recomputeSunlightFromExposedChunkTops(world)).toBe(4);
+    expect(world.getLightLevel(rightBoundaryWorldTileX, probeWorldTileY)).toBe(MAX_LIGHT_LEVEL);
+    expect(world.getLightLevel(rightInteriorWorldTileX, probeWorldTileY)).toBe(MAX_LIGHT_LEVEL);
+    expect(world.getDirtyLightChunkCount()).toBe(0);
+  });
+
   it('updates transported sunlight symmetrically when non-emissive boundary blockers toggle on either side', () => {
     const createBoundaryWorld = (): TileWorld => {
       const world = new TileWorld(0);
@@ -239,7 +293,7 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(rightToLeftWorld.getDirtyLightChunkCount()).toBe(0);
   });
 
-  it('updates transported sunlight in the loaded chunk row below while preserving clean non-boundary columns when a boundary-corner blocker toggles on either side', () => {
+  it('updates transported sunlight in the loaded chunk row below while invalidating adjacent non-boundary columns when a boundary-corner blocker toggles on either side', () => {
     const createCornerBoundaryWorld = (): TileWorld => {
       const world = new TileWorld(0);
       world.ensureChunk(1, 0);
@@ -254,8 +308,8 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     const cornerWorldTileY = CHUNK_SIZE - 1;
     const rowBelowWorldTileY = CHUNK_SIZE;
     const staleCleanColumnLightLevel = 7;
-    const leftBoundaryColumnMask = localLightColumnBit(CHUNK_SIZE - 1);
-    const rightBoundaryColumnMask = localLightColumnBit(0);
+    const leftBoundaryColumnMask = (localLightColumnBit(CHUNK_SIZE - 2) | localLightColumnBit(CHUNK_SIZE - 1)) >>> 0;
+    const rightBoundaryColumnMask = (localLightColumnBit(0) | localLightColumnBit(1)) >>> 0;
     const expectedDirtyBoundaryAndRowBelowChunks = expect.arrayContaining([
       { x: 0, y: 0 },
       { x: 1, y: 0 },
@@ -308,12 +362,8 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(leftToRightWorld.getChunkLightDirtyColumnMask(1, 1)).toBe(rightBoundaryColumnMask);
     expect(leftToRightWorld.getLightLevel(leftBoundaryWorldTileX, rowBelowWorldTileY)).toBe(0);
     expect(leftToRightWorld.getLightLevel(rightBoundaryWorldTileX, rowBelowWorldTileY)).toBe(0);
-    expect(leftToRightWorld.getLightLevel(leftNonBoundaryWorldTileX, rowBelowWorldTileY)).toBe(
-      staleCleanColumnLightLevel
-    );
-    expect(leftToRightWorld.getLightLevel(rightNonBoundaryWorldTileX, rowBelowWorldTileY)).toBe(
-      staleCleanColumnLightLevel
-    );
+    expect(leftToRightWorld.getLightLevel(leftNonBoundaryWorldTileX, rowBelowWorldTileY)).toBe(0);
+    expect(leftToRightWorld.getLightLevel(rightNonBoundaryWorldTileX, rowBelowWorldTileY)).toBe(0);
 
     expect(recomputeSunlightFromExposedChunkTops(leftToRightWorld)).toBe(4);
     expect(leftToRightWorld.getLightLevel(leftBoundaryWorldTileX, rowBelowWorldTileY)).toBe(
@@ -323,10 +373,10 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
       MAX_LIGHT_LEVEL
     );
     expect(leftToRightWorld.getLightLevel(leftNonBoundaryWorldTileX, rowBelowWorldTileY)).toBe(
-      staleCleanColumnLightLevel
+      MAX_LIGHT_LEVEL
     );
     expect(leftToRightWorld.getLightLevel(rightNonBoundaryWorldTileX, rowBelowWorldTileY)).toBe(
-      staleCleanColumnLightLevel
+      MAX_LIGHT_LEVEL
     );
     expect(leftToRightWorld.getDirtyLightChunkCount()).toBe(0);
 
@@ -361,12 +411,8 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(rightToLeftWorld.getChunkLightDirtyColumnMask(1, 1)).toBe(rightBoundaryColumnMask);
     expect(rightToLeftWorld.getLightLevel(leftBoundaryWorldTileX, rowBelowWorldTileY)).toBe(0);
     expect(rightToLeftWorld.getLightLevel(rightBoundaryWorldTileX, rowBelowWorldTileY)).toBe(0);
-    expect(rightToLeftWorld.getLightLevel(leftNonBoundaryWorldTileX, rowBelowWorldTileY)).toBe(
-      staleCleanColumnLightLevel
-    );
-    expect(rightToLeftWorld.getLightLevel(rightNonBoundaryWorldTileX, rowBelowWorldTileY)).toBe(
-      staleCleanColumnLightLevel
-    );
+    expect(rightToLeftWorld.getLightLevel(leftNonBoundaryWorldTileX, rowBelowWorldTileY)).toBe(0);
+    expect(rightToLeftWorld.getLightLevel(rightNonBoundaryWorldTileX, rowBelowWorldTileY)).toBe(0);
 
     expect(recomputeSunlightFromExposedChunkTops(rightToLeftWorld)).toBe(4);
     expect(rightToLeftWorld.getLightLevel(leftBoundaryWorldTileX, rowBelowWorldTileY)).toBe(
@@ -376,15 +422,15 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
       MAX_LIGHT_LEVEL
     );
     expect(rightToLeftWorld.getLightLevel(leftNonBoundaryWorldTileX, rowBelowWorldTileY)).toBe(
-      staleCleanColumnLightLevel
+      MAX_LIGHT_LEVEL
     );
     expect(rightToLeftWorld.getLightLevel(rightNonBoundaryWorldTileX, rowBelowWorldTileY)).toBe(
-      staleCleanColumnLightLevel
+      MAX_LIGHT_LEVEL
     );
     expect(rightToLeftWorld.getDirtyLightChunkCount()).toBe(0);
   });
 
-  it('updates transported sunlight in the loaded chunk row above while preserving clean non-boundary columns when a boundary-corner top blocker toggles on either side', () => {
+  it('updates transported sunlight in the loaded chunk row above while invalidating adjacent non-boundary columns when a boundary-corner top blocker toggles on either side', () => {
     const createTopCornerBoundaryWorld = (): TileWorld => {
       const world = new TileWorld(0);
       world.ensureChunk(0, -1);
@@ -400,8 +446,8 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     const rowAboveWorldTileY = -1;
     const shadowBlockerWorldTileY = -2;
     const staleCleanColumnLightLevel = 7;
-    const leftBoundaryColumnMask = localLightColumnBit(CHUNK_SIZE - 1);
-    const rightBoundaryColumnMask = localLightColumnBit(0);
+    const leftBoundaryColumnMask = (localLightColumnBit(CHUNK_SIZE - 2) | localLightColumnBit(CHUNK_SIZE - 1)) >>> 0;
+    const rightBoundaryColumnMask = (localLightColumnBit(0) | localLightColumnBit(1)) >>> 0;
     const expectedDirtyBoundaryAndRowAboveChunks = expect.arrayContaining([
       { x: 0, y: -1 },
       { x: 1, y: -1 },
@@ -458,12 +504,8 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(leftToRightWorld.getChunkLightDirtyColumnMask(1, 0)).toBe(rightBoundaryColumnMask);
     expect(leftToRightWorld.getLightLevel(leftBoundaryWorldTileX, rowAboveWorldTileY)).toBe(0);
     expect(leftToRightWorld.getLightLevel(rightBoundaryWorldTileX, rowAboveWorldTileY)).toBe(0);
-    expect(leftToRightWorld.getLightLevel(leftNonBoundaryWorldTileX, rowAboveWorldTileY)).toBe(
-      staleCleanColumnLightLevel
-    );
-    expect(leftToRightWorld.getLightLevel(rightNonBoundaryWorldTileX, rowAboveWorldTileY)).toBe(
-      staleCleanColumnLightLevel
-    );
+    expect(leftToRightWorld.getLightLevel(leftNonBoundaryWorldTileX, rowAboveWorldTileY)).toBe(0);
+    expect(leftToRightWorld.getLightLevel(rightNonBoundaryWorldTileX, rowAboveWorldTileY)).toBe(0);
 
     expect(recomputeSunlightFromExposedChunkTops(leftToRightWorld)).toBe(4);
     expect(leftToRightWorld.getLightLevel(leftBoundaryWorldTileX, rowAboveWorldTileY)).toBe(
@@ -473,10 +515,10 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
       MAX_LIGHT_LEVEL
     );
     expect(leftToRightWorld.getLightLevel(leftNonBoundaryWorldTileX, rowAboveWorldTileY)).toBe(
-      staleCleanColumnLightLevel
+      MAX_LIGHT_LEVEL
     );
     expect(leftToRightWorld.getLightLevel(rightNonBoundaryWorldTileX, rowAboveWorldTileY)).toBe(
-      staleCleanColumnLightLevel
+      MAX_LIGHT_LEVEL
     );
     expect(leftToRightWorld.getDirtyLightChunkCount()).toBe(0);
 
@@ -511,12 +553,8 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(rightToLeftWorld.getChunkLightDirtyColumnMask(1, 0)).toBe(rightBoundaryColumnMask);
     expect(rightToLeftWorld.getLightLevel(leftBoundaryWorldTileX, rowAboveWorldTileY)).toBe(0);
     expect(rightToLeftWorld.getLightLevel(rightBoundaryWorldTileX, rowAboveWorldTileY)).toBe(0);
-    expect(rightToLeftWorld.getLightLevel(leftNonBoundaryWorldTileX, rowAboveWorldTileY)).toBe(
-      staleCleanColumnLightLevel
-    );
-    expect(rightToLeftWorld.getLightLevel(rightNonBoundaryWorldTileX, rowAboveWorldTileY)).toBe(
-      staleCleanColumnLightLevel
-    );
+    expect(rightToLeftWorld.getLightLevel(leftNonBoundaryWorldTileX, rowAboveWorldTileY)).toBe(0);
+    expect(rightToLeftWorld.getLightLevel(rightNonBoundaryWorldTileX, rowAboveWorldTileY)).toBe(0);
 
     expect(recomputeSunlightFromExposedChunkTops(rightToLeftWorld)).toBe(4);
     expect(rightToLeftWorld.getLightLevel(leftBoundaryWorldTileX, rowAboveWorldTileY)).toBe(
@@ -526,10 +564,10 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
       MAX_LIGHT_LEVEL
     );
     expect(rightToLeftWorld.getLightLevel(leftNonBoundaryWorldTileX, rowAboveWorldTileY)).toBe(
-      staleCleanColumnLightLevel
+      MAX_LIGHT_LEVEL
     );
     expect(rightToLeftWorld.getLightLevel(rightNonBoundaryWorldTileX, rowAboveWorldTileY)).toBe(
-      staleCleanColumnLightLevel
+      MAX_LIGHT_LEVEL
     );
     expect(rightToLeftWorld.getDirtyLightChunkCount()).toBe(0);
   });

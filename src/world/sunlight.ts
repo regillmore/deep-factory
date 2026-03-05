@@ -325,6 +325,30 @@ const applySunlightToBlockingTilesAdjacentToLitAir = (
   dirtyColumnContexts: DirtyResidentChunkColumnContext[],
   registry: TileMetadataRegistry
 ): void => {
+  const hasHorizontalSunlitAirNeighbor = (worldTileX: number, worldTileY: number): boolean => {
+    const horizontalNeighborWorldTiles = [
+      [worldTileX - 1, worldTileY],
+      [worldTileX + 1, worldTileY]
+    ];
+
+    for (const [neighborWorldTileX, neighborWorldTileY] of horizontalNeighborWorldTiles) {
+      const horizontalNeighborTile = sampleResidentTileAtWorldTile(
+        bounds,
+        neighborWorldTileX,
+        neighborWorldTileY
+      );
+      if (!horizontalNeighborTile || doesTileBlockLight(horizontalNeighborTile.tileId, registry)) {
+        continue;
+      }
+
+      if ((horizontalNeighborTile.chunk.lightLevels[horizontalNeighborTile.tileIndex] ?? 0) > 0) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   for (const dirtyColumn of dirtyColumnContexts) {
     const { localColumnMask, residentColumnChunks } = dirtyColumn;
     for (const chunk of residentColumnChunks) {
@@ -360,6 +384,15 @@ const applySunlightToBlockingTilesAdjacentToLitAir = (
             }
 
             if ((neighborTile.chunk.lightLevels[neighborTile.tileIndex] ?? 0) > 0) {
+              hasAdjacentSunlitAir = true;
+              break;
+            }
+
+            const isVerticalNeighbor = neighborWorldTileX === worldTileX;
+            if (
+              isVerticalNeighbor &&
+              hasHorizontalSunlitAirNeighbor(neighborWorldTileX, neighborWorldTileY)
+            ) {
               hasAdjacentSunlitAir = true;
               break;
             }

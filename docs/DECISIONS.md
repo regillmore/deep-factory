@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-05: Sunlight now lights recessed blocker faces through one-tile vertical air pockets
+
+- Decision: During the blocking-face sunlight pass, a dirty-column blocking tile is also lit when its vertically adjacent non-blocking tile is shadowed but that vertical neighbor has a horizontally adjacent sunlit non-blocking tile.
+- Reason: A hovering blocker above a one-tile air gap and lower solid row left the lower middle solid face black even though neighboring lit air made that face expectedly exposed.
+- Consequence: Future sunlight changes should preserve this recessed one-tile pocket blocker-face lighting behavior without broadening sunlight into unrestricted horizontal air flood-fill.
+
 ### 2026-03-05: Sunlight now lights blocking faces adjacent to sunlit air
 
 - Decision: After sunlight column and boundary transport passes run, resident lighting now also writes full sunlight to blocking tiles in dirty columns when a cardinally adjacent resident tile is non-blocking and already sunlit.
@@ -22,9 +28,9 @@ Record only durable design decisions here. Keep each entry short: date, decision
 
 ### 2026-03-05: Sunlight transport now crosses loaded neighboring chunk boundaries
 
-- Decision: Resident sunlight recomputation now includes a horizontal transport pass between adjacent loaded `chunkX` boundary columns on dirty edge columns, and non-emissive edge `blocksLight` edits with no local emissive range now invalidate both sides of that loaded boundary.
-- Reason: Vertical-only sunlight recomputation left neighboring chunk-edge columns stale after edge blocker edits once sunlight needed to cross chunk boundaries.
-- Consequence: Future sunlight invalidation updates should keep loaded boundary-edge edits dirty on both sides and preserve horizontal boundary transport before emissive-light blending.
+- Decision: Resident sunlight recomputation includes a horizontal transport pass between adjacent loaded `chunkX` boundary columns on dirty edge columns, and non-emissive edge `blocksLight` edits with no local emissive range now invalidate both boundary columns and their immediate interior neighbors on both sides of that loaded boundary.
+- Reason: Vertical-only sunlight recomputation left neighboring chunk-edge columns stale after edge blocker edits once sunlight needed to cross chunk boundaries, and boundary-adjacent solid faces could remain stale when transported boundary air changed.
+- Consequence: Future sunlight invalidation updates should keep loaded boundary-edge edits dirty across both boundary columns plus their interior-adjacent columns, and preserve horizontal boundary transport before emissive-light blending.
 
 ### 2026-03-05: Nearby-light telemetry includes brightest sampled source tile coordinates
 
