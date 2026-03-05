@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add a sunlight regression where toggling a non-emissive `blocksLight` tile beside a resident-boundary emissive source does not leak stale light into unloaded neighboring columns when those chunks stream back in.
+- Changes: Updated [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a boundary emissive-source blocker-toggle unload/reload regression that verifies neighboring boundary-interior columns stay shadowed after stream-back, removed completed task `177` from [docs/NEXT.md](docs/NEXT.md), and added replacement lighting task `222`.
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an app-shell regression where paused-menu `Resume World (Enter)` and `New World (N)` tooltip titles return after first-launch main-menu copy transitions back to a resumable paused session.
 - Changes: Updated [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with a paused -> first-launch -> paused tooltip-title restoration regression that asserts `Resume World (Enter)` and `New World (N)` titles return after being cleared, removed completed task `220` from [docs/NEXT.md](docs/NEXT.md), and added replacement Ambitious vertical-slice task `221`.
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
