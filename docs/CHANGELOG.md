@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add a tile-metadata regression that confirms all lava single-side masks (`N---`, `-E--`, `--S-`, `---W`) resolve to distinct placeholder sources once the dedicated `N---` source lands.
+- Changes: Updated [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with a focused lava single-side regression that asserts those four masks resolve to distinct placeholder sources in both static and animated elapsed-frame lookups, and advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `193` and adding one replacement follow-up task.
+- Verification: Ran `npx vitest run src/world/tileMetadata.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Populate a distinct placeholder lava liquid single-side source for the `N---` mask now that the dedicated lava single-side `--S-` source has landed.
 - Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so lava mask `N---` now resolves to a dedicated animated direct-`uvRect` top-cap single-side source instead of the previous taller placeholder crop, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with updated source and elapsed-frame assertions plus focused distinctness checks for mask `N---`, advanced [docs/NEXT.md](docs/NEXT.md) with one new authored-atlas regression follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx.cmd vitest run src/world/tileMetadata.test.ts src/gl/authoredAtlasAsset.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.

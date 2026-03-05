@@ -208,6 +208,23 @@ describe('tile metadata loader', () => {
     expect(resolveLiquidRenderVariantMetadata(7, LIQUID_RENDER_CARDINAL_MASK_COUNT)).toBe(null);
   });
 
+  it('resolves lava single-side masks to distinct placeholder sources', () => {
+    const lavaTileId = 8;
+    const lavaSingleSideMasks = [1, 2, 4, 8];
+
+    const staticSources = lavaSingleSideMasks.map((cardinalMask) =>
+      describeLiquidRenderVariantSource(lavaTileId, cardinalMask)
+    );
+    expect(staticSources).not.toContain(null);
+    expect(new Set(staticSources).size).toBe(lavaSingleSideMasks.length);
+
+    const animatedSources = lavaSingleSideMasks.map((cardinalMask) =>
+      describeLiquidRenderVariantSourceAtElapsedMs(lavaTileId, cardinalMask, 180)
+    );
+    expect(animatedSources).not.toContain(null);
+    expect(new Set(animatedSources).size).toBe(lavaSingleSideMasks.length);
+  });
+
   it('resolves liquid cardinal masks from sampled neighborhoods using liquid connectivity rules', () => {
     expect(
       resolveLiquidRenderCardinalMaskFromNeighborhood({
