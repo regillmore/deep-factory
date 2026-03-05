@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add renderer telemetry fields for standalone-player nearby-light source chunk and chunk-local tile coordinates alongside the existing source world tile coordinates.
+- Changes: Updated [src/gl/renderer.ts](../src/gl/renderer.ts) so nearby-light telemetry now stores source chunk and source chunk-local coordinates whenever the standalone player placeholder sampling runs and clears those fields alongside the existing world-tile telemetry on frame and world resets; expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with initial, populated, and cleared assertions for the new telemetry fields; advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `189` and adding replacement task `212`; and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) to note the renderer-backed source chunk/local telemetry path.
+- Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a sunlight regression where a boundary bottom-corner `blocksLight` toggle (`localY = CHUNK_SIZE - 1`) recomputes only dirty boundary columns in the loaded row below while preserving clean non-boundary column light values.
 - Changes: Updated [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) so the bidirectional loaded-row-below boundary-corner regression now also asserts boundary-only dirty-column masks, confirms boundary row-below light caches clear before recompute, and verifies non-boundary row-below columns keep their prior clean cached light levels across recomputation; advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `210` and adding ambitious replacement task `211` for unload/reload corner transport coverage.
 - Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts`.

@@ -23,7 +23,9 @@ import {
   chunkBoundsContains,
   chunkCoordBounds,
   chunkKey,
-  expandChunkBounds
+  expandChunkBounds,
+  worldToChunkCoord,
+  worldToLocalTile
 } from '../world/chunkMath';
 import type { ChunkBounds } from '../world/chunkMath';
 import { CHUNK_MESH_FLOATS_PER_VERTEX, buildChunkMesh } from '../world/mesher';
@@ -104,6 +106,10 @@ export interface RenderTelemetry {
   standalonePlayerNearbyLightFactor: number | null;
   standalonePlayerNearbyLightSourceTileX: number | null;
   standalonePlayerNearbyLightSourceTileY: number | null;
+  standalonePlayerNearbyLightSourceChunkX: number | null;
+  standalonePlayerNearbyLightSourceChunkY: number | null;
+  standalonePlayerNearbyLightSourceLocalTileX: number | null;
+  standalonePlayerNearbyLightSourceLocalTileY: number | null;
   evictedWorldChunks: number;
   evictedMeshEntries: number;
 }
@@ -169,6 +175,10 @@ export class Renderer {
     standalonePlayerNearbyLightFactor: null,
     standalonePlayerNearbyLightSourceTileX: null,
     standalonePlayerNearbyLightSourceTileY: null,
+    standalonePlayerNearbyLightSourceChunkX: null,
+    standalonePlayerNearbyLightSourceChunkY: null,
+    standalonePlayerNearbyLightSourceLocalTileX: null,
+    standalonePlayerNearbyLightSourceLocalTileY: null,
     evictedWorldChunks: 0,
     evictedMeshEntries: 0
   };
@@ -445,6 +455,10 @@ export class Renderer {
     this.telemetry.standalonePlayerNearbyLightFactor = null;
     this.telemetry.standalonePlayerNearbyLightSourceTileX = null;
     this.telemetry.standalonePlayerNearbyLightSourceTileY = null;
+    this.telemetry.standalonePlayerNearbyLightSourceChunkX = null;
+    this.telemetry.standalonePlayerNearbyLightSourceChunkY = null;
+    this.telemetry.standalonePlayerNearbyLightSourceLocalTileX = null;
+    this.telemetry.standalonePlayerNearbyLightSourceLocalTileY = null;
     gl.clearColor(0.12, 0.15, 0.2, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -537,6 +551,10 @@ export class Renderer {
     this.telemetry.standalonePlayerNearbyLightFactor = null;
     this.telemetry.standalonePlayerNearbyLightSourceTileX = null;
     this.telemetry.standalonePlayerNearbyLightSourceTileY = null;
+    this.telemetry.standalonePlayerNearbyLightSourceChunkX = null;
+    this.telemetry.standalonePlayerNearbyLightSourceChunkY = null;
+    this.telemetry.standalonePlayerNearbyLightSourceLocalTileX = null;
+    this.telemetry.standalonePlayerNearbyLightSourceLocalTileY = null;
     this.telemetry.evictedWorldChunks = 0;
     this.telemetry.evictedMeshEntries = 0;
     this.telemetry.residentAnimatedChunkMeshes = 0;
@@ -778,10 +796,23 @@ export class Renderer {
     const nearbyLightSample = getStandalonePlayerPlaceholderNearbyLightSample(this.world, state);
     const nearbyLightLevel = nearbyLightSample.level;
     const nearbyLightFactor = nearbyLightLevel / MAX_LIGHT_LEVEL;
+    const nearbyLightSourceTile = nearbyLightSample.sourceTile;
+    const nearbyLightSourceChunk =
+      nearbyLightSourceTile === null
+        ? null
+        : worldToChunkCoord(nearbyLightSourceTile.x, nearbyLightSourceTile.y);
+    const nearbyLightSourceLocalTile =
+      nearbyLightSourceTile === null
+        ? null
+        : worldToLocalTile(nearbyLightSourceTile.x, nearbyLightSourceTile.y);
     this.telemetry.standalonePlayerNearbyLightLevel = nearbyLightLevel;
     this.telemetry.standalonePlayerNearbyLightFactor = nearbyLightFactor;
-    this.telemetry.standalonePlayerNearbyLightSourceTileX = nearbyLightSample.sourceTile?.x ?? null;
-    this.telemetry.standalonePlayerNearbyLightSourceTileY = nearbyLightSample.sourceTile?.y ?? null;
+    this.telemetry.standalonePlayerNearbyLightSourceTileX = nearbyLightSourceTile?.x ?? null;
+    this.telemetry.standalonePlayerNearbyLightSourceTileY = nearbyLightSourceTile?.y ?? null;
+    this.telemetry.standalonePlayerNearbyLightSourceChunkX = nearbyLightSourceChunk?.chunkX ?? null;
+    this.telemetry.standalonePlayerNearbyLightSourceChunkY = nearbyLightSourceChunk?.chunkY ?? null;
+    this.telemetry.standalonePlayerNearbyLightSourceLocalTileX = nearbyLightSourceLocalTile?.localX ?? null;
+    this.telemetry.standalonePlayerNearbyLightSourceLocalTileY = nearbyLightSourceLocalTile?.localY ?? null;
     gl.uniform1f(this.uPlayerLight, nearbyLightFactor);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.standalonePlayerBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, buildStandalonePlayerPlaceholderVertices(state), gl.DYNAMIC_DRAW);

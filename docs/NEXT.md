@@ -14,8 +14,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 208. Add a sunlight regression where dirty-column-only recompute keeps lateral blocker-face sunlight stable when the adjacent lit-air column remains clean.
 177. Add a sunlight regression where toggling a non-emissive `blocksLight` tile beside an emissive source at a resident-boundary edge does not leak stale light into unloaded neighboring columns when those chunks stream back in.
-189. Add renderer telemetry fields for standalone-player nearby-light source chunk and chunk-local tile coordinates alongside the existing source world tile coordinates.
 211. Add a sunlight regression where a boundary bottom-corner `blocksLight` toggle (`localY = CHUNK_SIZE - 1`) followed by unloading and reloading the adjacent row-below chunk keeps transported sunlight correct on dirty boundary columns without stale carryover into clean non-boundary columns.
+212. Consume renderer-provided standalone-player nearby-light source chunk and chunk-local tile telemetry in debug HUD and compact-strip formatting paths instead of recomputing from source world tile coordinates, with negative-world regression coverage.
 
 ## Entities and interpolation
 
