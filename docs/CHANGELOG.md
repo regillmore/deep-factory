@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add a sunlight regression where toggling a non-emissive `blocksLight` boundary tile at a loaded chunk-boundary top corner (`localY = 0`) updates transported sunlight in the loaded chunk row above on both sides.
+- Changes: Updated [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a bidirectional top-corner regression that verifies both toggle directions dirty the expected boundary-plus-row-above chunks and refresh transported sunlight in the loaded row above, and advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `205` and adding replacement task `209`.
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts`.
+
 - Task: Close the remaining `206` visibility gap by lighting blocking solids that are laterally adjacent to sunlit air, then add boundary regression coverage for blocker-face emissive lighting.
 - Changes: Updated [src/world/sunlight.ts](../src/world/sunlight.ts) so sunlight also lights blocking tiles that are cardinally adjacent to already sunlit non-blocking tiles in dirty columns, added stacked-solid and boundary blocker-face regressions in [src/world/sunlight.test.ts](../src/world/sunlight.test.ts), advanced [docs/NEXT.md](docs/NEXT.md) by replacing completed task `206` with replacement task `208`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts`.
