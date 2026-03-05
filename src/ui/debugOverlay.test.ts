@@ -77,7 +77,34 @@ describe('formatDebugOverlayText', () => {
       playerCeilingContactTransition: null
     });
 
-    expect(text).toContain('\nLightSample: 9/15 | factor:0.60 | source:2,2');
+    expect(text).toContain(
+      '\nLightSample: 9/15 | factor:0.60 | source:2,2 | sourceChunk:0,0 | sourceLocal:2,2'
+    );
+  });
+
+  it('derives nearby-light source chunk-local telemetry for negative-world source tiles', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      pinned: null,
+      spawn: null,
+      player: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerNearbyLightLevel: 12,
+      playerNearbyLightFactor: 0.8,
+      playerNearbyLightSourceTile: { x: -33, y: -1 },
+      playerIntent: null,
+      playerCameraFollow: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null
+    });
+
+    expect(text).toContain(
+      '\nLightSample: 12/15 | factor:0.80 | source:-33,-1 | sourceChunk:-2,-1 | sourceLocal:31,31'
+    );
   });
 
   it('shows when the renderer is using the placeholder atlas fallback', () => {

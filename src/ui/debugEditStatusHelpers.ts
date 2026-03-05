@@ -9,6 +9,7 @@ import {
   type TouchDebugEditMode
 } from '../input/controller';
 import { MAX_LIGHT_LEVEL } from '../world/constants';
+import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
@@ -748,10 +749,32 @@ const formatLiveNearbyLightText = (
     playerNearbyLightSourceTile === null
       ? 'n/a'
       : `${Math.round(playerNearbyLightSourceTile.x)},${Math.round(playerNearbyLightSourceTile.y)}`;
+  const nearbyLightSourceChunkText =
+    playerNearbyLightSourceTile === null
+      ? 'n/a'
+      : (() => {
+          const { chunkX, chunkY } = worldToChunkCoord(
+            playerNearbyLightSourceTile.x,
+            playerNearbyLightSourceTile.y
+          );
+          return `${chunkX},${chunkY}`;
+        })();
+  const nearbyLightSourceLocalText =
+    playerNearbyLightSourceTile === null
+      ? 'n/a'
+      : (() => {
+          const { localX, localY } = worldToLocalTile(
+            playerNearbyLightSourceTile.x,
+            playerNearbyLightSourceTile.y
+          );
+          return `${localX},${localY}`;
+        })();
   return (
     `LightSampleNow: ${nearbyLightLevelText} | ` +
     `factor:${nearbyLightFactorText} | ` +
-    `source:${nearbyLightSourceTileText}`
+    `source:${nearbyLightSourceTileText} | ` +
+    `sourceChunk:${nearbyLightSourceChunkText} | ` +
+    `sourceLocal:${nearbyLightSourceLocalText}`
   );
 };
 

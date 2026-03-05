@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Surface standalone-player nearby-light sample source chunk and chunk-local tile coordinates in the debug HUD and hidden-HUD compact strip once source world tile coordinates are available.
+- Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so nearby-light lines now derive and display source chunk plus source chunk-local coordinates from the sampled source world tile, expanded [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts) with chunk-local coverage (including negative-world tile mapping), advanced [docs/NEXT.md](docs/NEXT.md) with one focused nearby-light renderer-telemetry follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx.cmd vitest run src/ui/debugOverlay.test.ts src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the paused-menu `New World (N)` shortcut in the paused-session detail line that currently ends with `or abandon them`.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so paused-session preservation copy now includes `New World (N)` beside the existing resume guidance, advanced [docs/NEXT.md](docs/NEXT.md) with one focused paused-menu detail-line follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx.cmd vitest run src/ui/appShell.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.

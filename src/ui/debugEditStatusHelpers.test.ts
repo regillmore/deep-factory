@@ -402,7 +402,29 @@ describe('buildDebugEditStatusStripModel', () => {
       preview: createEmptyPreviewState()
     });
 
-    expect(model.playerText).toBe('LightSampleNow: 9/15 | factor:0.60 | source:2,2');
+    expect(model.playerText).toBe(
+      'LightSampleNow: 9/15 | factor:0.60 | source:2,2 | sourceChunk:0,0 | sourceLocal:2,2'
+    );
+    expect(model.eventText).toBeNull();
+  });
+
+  it('formats standalone-player nearby-light source chunk-local telemetry for negative-world source tiles', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerNearbyLightLevel: 12,
+      playerNearbyLightFactor: 0.8,
+      playerNearbyLightSourceTile: { x: -33, y: -1 },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe(
+      'LightSampleNow: 12/15 | factor:0.80 | source:-33,-1 | sourceChunk:-2,-1 | sourceLocal:31,31'
+    );
     expect(model.eventText).toBeNull();
   });
 
@@ -916,7 +938,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.playerText).toBe(
-      'Pose: grounded-idle\nLightSampleNow: 12/15 | factor:0.80 | source:4,-1'
+      'Pose: grounded-idle\nLightSampleNow: 12/15 | factor:0.80 | source:4,-1 | sourceChunk:0,-1 | sourceLocal:4,31'
     );
     expect(model.eventText).toBeNull();
   });

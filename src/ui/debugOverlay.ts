@@ -384,7 +384,30 @@ const formatPlayerNearbyLightLine = (
     playerNearbyLightSourceTile === null
       ? 'n/a'
       : `${formatInt(playerNearbyLightSourceTile.x)},${formatInt(playerNearbyLightSourceTile.y)}`;
-  return `LightSample: ${lightLevel} | factor:${lightFactor} | source:${lightSourceTile}`;
+  const lightSourceChunk =
+    playerNearbyLightSourceTile === null
+      ? 'n/a'
+      : (() => {
+          const { chunkX, chunkY } = worldToChunkCoord(
+            playerNearbyLightSourceTile.x,
+            playerNearbyLightSourceTile.y
+          );
+          return `${formatInt(chunkX)},${formatInt(chunkY)}`;
+        })();
+  const lightSourceLocal =
+    playerNearbyLightSourceTile === null
+      ? 'n/a'
+      : (() => {
+          const { localX, localY } = worldToLocalTile(
+            playerNearbyLightSourceTile.x,
+            playerNearbyLightSourceTile.y
+          );
+          return `${formatInt(localX)},${formatInt(localY)}`;
+        })();
+  return (
+    `LightSample: ${lightLevel} | factor:${lightFactor} | source:${lightSourceTile} | ` +
+    `sourceChunk:${lightSourceChunk} | sourceLocal:${lightSourceLocal}`
+  );
 };
 
 const formatPlayerAabbLine = (player: DebugOverlayPlayerTelemetry | null): string => {
