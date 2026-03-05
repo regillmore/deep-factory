@@ -6,8 +6,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Liquid rendering
 
-194. Add an authored-atlas asset regression that verifies both animated lava `N---` single-side direct-`uvRect` frames sample non-transparent committed pixels.
 195. Add an authored-atlas asset regression that verifies lava single-side masks (`N---`, `-E--`, `--S-`, `---W`) sample distinct committed pixels per animation frame.
+196. Add an authored-atlas asset regression that verifies both animated lava `-E--` single-side direct-`uvRect` frames sample non-transparent committed pixels.
 
 ## Lighting
 

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add an authored-atlas asset regression that verifies both animated lava `N---` single-side direct-`uvRect` frames sample non-transparent committed pixels.
+- Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) with a focused committed-atlas regression that targets lava mask `N---` (`cardinalMask 1`) frame `0` and frame `1` direct-`uvRect` sources and asserts both sample non-transparent committed PNG pixels, then advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `194` and adding one replacement follow-up task.
+- Verification: Ran `cmd /c npx vitest run src/gl/authoredAtlasAsset.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a tile-metadata regression that confirms all lava single-side masks (`N---`, `-E--`, `--S-`, `---W`) resolve to distinct placeholder sources once the dedicated `N---` source lands.
 - Changes: Updated [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with a focused lava single-side regression that asserts those four masks resolve to distinct placeholder sources in both static and animated elapsed-frame lookups, and advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `193` and adding one replacement follow-up task.
 - Verification: Ran `npx vitest run src/world/tileMetadata.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

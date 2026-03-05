@@ -932,6 +932,32 @@ describe('authored atlas asset', () => {
     }
   });
 
+  it('keeps both animated lava N--- single-side direct-uvRect frames non-transparent in the committed PNG', () => {
+    const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
+    const lavaNorthSingleSideAnimatedSources = collectAnimatedDirectRenderUvRectFrameSources()
+      .filter(
+        (source) =>
+          source.tileName === 'lava' &&
+          source.sourcePath.startsWith('liquidRender.variantRenderByCardinalMask[1].frames[')
+      )
+      .sort((left, right) => left.sourcePath.localeCompare(right.sourcePath));
+
+    expect(lavaNorthSingleSideAnimatedSources).toHaveLength(2);
+    expect(lavaNorthSingleSideAnimatedSources.map((source) => source.sourcePath)).toEqual([
+      'liquidRender.variantRenderByCardinalMask[1].frames[0].uvRect',
+      'liquidRender.variantRenderByCardinalMask[1].frames[1].uvRect'
+    ]);
+
+    for (const source of lavaNorthSingleSideAnimatedSources) {
+      const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
+
+      expect(
+        regionContainsAnyNonTransparentPixel(rgbaPixels, pngWidth, pixelRegion),
+        `tile ${source.tileId} "${source.tileName}" ${source.sourcePath} resolves to fully transparent committed atlas pixels`
+      ).toBe(true);
+    }
+  });
+
   it('keeps every default animated direct render.uvRect frame distinct from its prior committed PNG frame', () => {
     const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
     const animatedFrameTransitions = collectAnimatedDirectRenderUvRectFrameTransitions();
