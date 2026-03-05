@@ -7,6 +7,7 @@ import {
   getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopFreshWorldHotkeyLabel,
   getDesktopPlayerSpawnMarkerHotkeyLabel,
+  getDesktopShortcutsOverlayHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel,
   getDesktopResumeWorldHotkeyLabel,
   getDesktopReturnToMainMenuHotkeyLabel,
@@ -141,6 +142,14 @@ describe('resolveDebugEditShortcutAction', () => {
     });
     expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'M', shiftKey: true }))).toEqual({
       type: 'toggle-player-spawn-marker'
+    });
+  });
+
+  it('maps ? to toggle the in-world shortcuts overlay', () => {
+    expect(
+      resolveDebugEditShortcutAction(keyboardEventLike({ key: '?', code: 'Slash', shiftKey: true }))
+    ).toEqual({
+      type: 'toggle-shortcuts-overlay'
     });
   });
 
@@ -327,6 +336,10 @@ describe('brush shortcut helpers', () => {
 
   it('returns the desktop spawn-marker hotkey label', () => {
     expect(getDesktopPlayerSpawnMarkerHotkeyLabel()).toBe('M');
+  });
+
+  it('returns the desktop shortcuts-overlay hotkey label', () => {
+    expect(getDesktopShortcutsOverlayHotkeyLabel()).toBe('?');
   });
 
   it('returns the panel toggle hotkey label', () => {

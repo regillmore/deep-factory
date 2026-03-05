@@ -129,7 +129,8 @@ const createDefaultWorldSessionShellState = (touchControlsAvailable: boolean) =>
   debugOverlayVisible: false,
   debugEditControlsVisible: touchControlsAvailable,
   debugEditOverlaysVisible: true,
-  playerSpawnMarkerVisible: true
+  playerSpawnMarkerVisible: true,
+  shortcutsOverlayVisible: false
 });
 
 interface PinnedDebugTileInspectState {
@@ -158,7 +159,8 @@ const bootstrap = async (): Promise<void> => {
     debugOverlayVisible,
     debugEditControlsVisible,
     debugEditOverlaysVisible,
-    playerSpawnMarkerVisible
+    playerSpawnMarkerVisible,
+    shortcutsOverlayVisible
   } = createDefaultWorldSessionShellState(touchControlsAvailable);
   const returnToMainMenuFromInWorld = (): void => {
     if (currentScreen !== 'in-world') return;
@@ -209,6 +211,11 @@ const bootstrap = async (): Promise<void> => {
       playerSpawnMarkerVisible = !playerSpawnMarkerVisible;
       syncInWorldShellState();
       syncPlayerSpawnMarkerVisibility();
+    },
+    onToggleShortcutsOverlay: (screen) => {
+      if (screen !== 'in-world') return;
+      shortcutsOverlayVisible = !shortcutsOverlayVisible;
+      syncInWorldShellState();
     }
   });
   shell.setState({
@@ -247,7 +254,8 @@ const bootstrap = async (): Promise<void> => {
       debugOverlayVisible,
       debugEditControlsVisible,
       debugEditOverlaysVisible,
-      playerSpawnMarkerVisible
+      playerSpawnMarkerVisible,
+      shortcutsOverlayVisible
     });
   };
   const showMainMenuShellState = (): void => {
@@ -274,7 +282,8 @@ const bootstrap = async (): Promise<void> => {
       debugOverlayVisible,
       debugEditControlsVisible,
       debugEditOverlaysVisible,
-      playerSpawnMarkerVisible
+      playerSpawnMarkerVisible,
+      shortcutsOverlayVisible
     } = createDefaultWorldSessionShellState(touchControlsAvailable));
   };
   const enterInWorldShellState = (): void => {
@@ -1202,6 +1211,10 @@ const bootstrap = async (): Promise<void> => {
       playerSpawnMarkerVisible = !playerSpawnMarkerVisible;
       syncInWorldShellState();
       syncPlayerSpawnMarkerVisibility();
+    } else if (action.type === 'toggle-shortcuts-overlay') {
+      handled = true;
+      shortcutsOverlayVisible = !shortcutsOverlayVisible;
+      syncInWorldShellState();
     } else if (action.type === 'cancel-armed-tools') {
       handled = input.cancelArmedDebugTools();
       if (handled) {

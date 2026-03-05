@@ -5,6 +5,7 @@ import {
   getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopFreshWorldHotkeyLabel,
   getDesktopPlayerSpawnMarkerHotkeyLabel,
+  getDesktopShortcutsOverlayHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel,
   getDesktopResumeWorldHotkeyLabel,
   getDesktopReturnToMainMenuHotkeyLabel
@@ -22,6 +23,7 @@ export interface AppShellState {
   debugEditControlsVisible?: boolean;
   debugEditOverlaysVisible?: boolean;
   playerSpawnMarkerVisible?: boolean;
+  shortcutsOverlayVisible?: boolean;
 }
 
 export const DEFAULT_PAUSED_MAIN_MENU_STATUS =
@@ -59,6 +61,9 @@ export interface AppShellViewModel {
   debugEditOverlaysTogglePressed: boolean;
   playerSpawnMarkerToggleLabel: string | null;
   playerSpawnMarkerTogglePressed: boolean;
+  shortcutsToggleLabel: string | null;
+  shortcutsTogglePressed: boolean;
+  shortcutsOverlayVisible: boolean;
 }
 
 interface AppShellOptions {
@@ -70,6 +75,7 @@ interface AppShellOptions {
   onToggleDebugEditControls?: (screen: AppShellScreen) => void;
   onToggleDebugEditOverlays?: (screen: AppShellScreen) => void;
   onTogglePlayerSpawnMarker?: (screen: AppShellScreen) => void;
+  onToggleShortcutsOverlay?: (screen: AppShellScreen) => void;
 }
 
 const DEFAULT_BOOT_STATUS = 'Preparing renderer, controls, and spawn state.';
@@ -128,8 +134,63 @@ const resolveInWorldDebugEditOverlaysToggleLabel = (visible: boolean): string =>
 const resolveInWorldPlayerSpawnMarkerToggleLabel = (visible: boolean): string =>
   `${visible ? 'Hide' : 'Show'} Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`;
 
+const resolveInWorldShortcutsToggleLabel = (): string =>
+  `Shortcuts (${getDesktopShortcutsOverlayHotkeyLabel()})`;
+
 export const resolveInWorldDebugEditControlsToggleTitle = (visible: boolean): string =>
   `${visible ? 'Hide' : 'Show'} the full debug-edit control panel (${getDesktopDebugEditControlsHotkeyLabel()})`;
+
+interface InWorldShortcutsSection {
+  title: string;
+  lines: readonly string[];
+}
+
+const resolveInWorldShortcutsSections = (): readonly InWorldShortcutsSection[] => [
+  {
+    title: 'Desktop',
+    lines: [
+      `Move: A or D, or Left or Right Arrow`,
+      'Jump: W, Up Arrow, or Space',
+      `Session: ${getDesktopReturnToMainMenuHotkeyLabel()} return to main menu; ${getDesktopResumeWorldHotkeyLabel()} resume paused world; ${getDesktopFreshWorldHotkeyLabel()} new world from paused menu`,
+      `Camera + shell: ${getDesktopRecenterCameraHotkeyLabel()} recenter, ${getDesktopDebugOverlayHotkeyLabel()} HUD, ${getDesktopDebugEditControlsHotkeyLabel()} edit panel, ${getDesktopDebugEditOverlaysHotkeyLabel()} edit overlays, ${getDesktopPlayerSpawnMarkerHotkeyLabel()} spawn marker`,
+      `Brush + tools: 1-0 brush slots, [ and ] cycle brush, Esc cancel armed tools`,
+      'History: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo'
+    ]
+  },
+  {
+    title: 'Touch',
+    lines: [
+      'Player: hold Left, Right, and Jump on the touch player pad',
+      'Pan mode: one-finger drag camera, two-finger tap undo, three-finger tap redo',
+      'Place and Break modes: one-finger drag paints or breaks tiles',
+      'Pinch: two-finger pinch zoom while editing stays active',
+      'Inspect: tap to pin in Pan mode, long-press eyedropper in Pan mode'
+    ]
+  }
+];
+
+const createShortcutsSectionElement = (section: InWorldShortcutsSection): HTMLElement => {
+  const sectionElement = document.createElement('section');
+  sectionElement.className = 'app-shell__shortcuts-section';
+
+  const heading = document.createElement('h3');
+  heading.className = 'app-shell__shortcuts-section-title';
+  heading.textContent = section.title;
+  sectionElement.append(heading);
+
+  const list = document.createElement('ul');
+  list.className = 'app-shell__shortcuts-list';
+  list.replaceChildren(
+    ...section.lines.map((line) => {
+      const item = document.createElement('li');
+      item.textContent = line;
+      return item;
+    })
+  );
+  sectionElement.append(list);
+
+  return sectionElement;
+};
 
 export const resolveAppShellViewModel = (state: AppShellState): AppShellViewModel => {
   switch (state.screen) {
@@ -153,7 +214,10 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         debugEditOverlaysToggleLabel: null,
         debugEditOverlaysTogglePressed: false,
         playerSpawnMarkerToggleLabel: null,
-        playerSpawnMarkerTogglePressed: false
+        playerSpawnMarkerTogglePressed: false,
+        shortcutsToggleLabel: null,
+        shortcutsTogglePressed: false,
+        shortcutsOverlayVisible: false
       };
     case 'main-menu':
       return {
@@ -180,7 +244,10 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         debugEditOverlaysToggleLabel: null,
         debugEditOverlaysTogglePressed: false,
         playerSpawnMarkerToggleLabel: null,
-        playerSpawnMarkerTogglePressed: false
+        playerSpawnMarkerTogglePressed: false,
+        shortcutsToggleLabel: null,
+        shortcutsTogglePressed: false,
+        shortcutsOverlayVisible: false
       };
     case 'in-world':
       return {
@@ -210,7 +277,10 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         playerSpawnMarkerToggleLabel: resolveInWorldPlayerSpawnMarkerToggleLabel(
           state.playerSpawnMarkerVisible !== false
         ),
-        playerSpawnMarkerTogglePressed: state.playerSpawnMarkerVisible !== false
+        playerSpawnMarkerTogglePressed: state.playerSpawnMarkerVisible !== false,
+        shortcutsToggleLabel: resolveInWorldShortcutsToggleLabel(),
+        shortcutsTogglePressed: state.shortcutsOverlayVisible === true,
+        shortcutsOverlayVisible: state.shortcutsOverlayVisible === true
       };
   }
 };
@@ -227,6 +297,8 @@ export class AppShell {
   private debugEditControlsToggleButton: HTMLButtonElement;
   private debugEditOverlaysToggleButton: HTMLButtonElement;
   private playerSpawnMarkerToggleButton: HTMLButtonElement;
+  private shortcutsToggleButton: HTMLButtonElement;
+  private shortcutsOverlay: HTMLDivElement;
   private stageLabel: HTMLSpanElement;
   private title: HTMLHeadingElement;
   private status: HTMLParagraphElement;
@@ -241,6 +313,7 @@ export class AppShell {
   private onToggleDebugEditControls: (screen: AppShellScreen) => void;
   private onToggleDebugEditOverlays: (screen: AppShellScreen) => void;
   private onTogglePlayerSpawnMarker: (screen: AppShellScreen) => void;
+  private onToggleShortcutsOverlay: (screen: AppShellScreen) => void;
   private currentState: AppShellState = { screen: 'boot' };
 
   constructor(container: HTMLElement, options: AppShellOptions = {}) {
@@ -252,6 +325,7 @@ export class AppShell {
     this.onToggleDebugEditControls = options.onToggleDebugEditControls ?? (() => {});
     this.onToggleDebugEditOverlays = options.onToggleDebugEditOverlays ?? (() => {});
     this.onTogglePlayerSpawnMarker = options.onTogglePlayerSpawnMarker ?? (() => {});
+    this.onToggleShortcutsOverlay = options.onToggleShortcutsOverlay ?? (() => {});
 
     this.root = document.createElement('div');
     this.root.className = 'app-shell';
@@ -317,6 +391,40 @@ export class AppShell {
     );
     installPointerClickFocusRelease(this.playerSpawnMarkerToggleButton);
     this.chrome.append(this.playerSpawnMarkerToggleButton);
+
+    this.shortcutsToggleButton = document.createElement('button');
+    this.shortcutsToggleButton.type = 'button';
+    this.shortcutsToggleButton.className = 'app-shell__chrome-button';
+    this.shortcutsToggleButton.addEventListener('click', () =>
+      this.onToggleShortcutsOverlay(this.currentState.screen)
+    );
+    installPointerClickFocusRelease(this.shortcutsToggleButton);
+    this.chrome.append(this.shortcutsToggleButton);
+
+    this.shortcutsOverlay = document.createElement('div');
+    this.shortcutsOverlay.className = 'app-shell__shortcuts-overlay';
+    this.root.append(this.shortcutsOverlay);
+
+    const shortcutsPanel = document.createElement('section');
+    shortcutsPanel.className = 'app-shell__shortcuts-panel';
+    this.shortcutsOverlay.append(shortcutsPanel);
+
+    const shortcutsTitle = document.createElement('h2');
+    shortcutsTitle.className = 'app-shell__shortcuts-title';
+    shortcutsTitle.textContent = 'Shortcuts';
+    shortcutsPanel.append(shortcutsTitle);
+
+    const shortcutsSubtitle = document.createElement('p');
+    shortcutsSubtitle.className = 'app-shell__shortcuts-subtitle';
+    shortcutsSubtitle.textContent = 'Current desktop and touch controls for this session.';
+    shortcutsPanel.append(shortcutsSubtitle);
+
+    const shortcutsSections = document.createElement('div');
+    shortcutsSections.className = 'app-shell__shortcuts-sections';
+    shortcutsSections.replaceChildren(
+      ...resolveInWorldShortcutsSections().map((section) => createShortcutsSectionElement(section))
+    );
+    shortcutsPanel.append(shortcutsSections);
 
     this.overlay = document.createElement('div');
     this.overlay.className = 'app-shell__overlay';
@@ -441,5 +549,20 @@ export class AppShell {
     this.playerSpawnMarkerToggleButton.title = viewModel.playerSpawnMarkerTogglePressed
       ? `Hide standalone player spawn marker overlay (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`
       : `Show standalone player spawn marker overlay (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`;
+    this.shortcutsToggleButton.textContent = viewModel.shortcutsToggleLabel ?? '';
+    this.shortcutsToggleButton.hidden = viewModel.shortcutsToggleLabel === null;
+    this.shortcutsToggleButton.setAttribute(
+      'aria-pressed',
+      viewModel.shortcutsTogglePressed ? 'true' : 'false'
+    );
+    this.shortcutsToggleButton.title = viewModel.shortcutsTogglePressed
+      ? `Hide current desktop and touch controls (${getDesktopShortcutsOverlayHotkeyLabel()})`
+      : `Show current desktop and touch controls (${getDesktopShortcutsOverlayHotkeyLabel()})`;
+    this.shortcutsOverlay.hidden = !viewModel.shortcutsOverlayVisible;
+    this.shortcutsOverlay.style.display = resolveAppShellRegionDisplay(
+      viewModel.shortcutsOverlayVisible,
+      'grid'
+    );
+    this.shortcutsOverlay.setAttribute('aria-hidden', viewModel.shortcutsOverlayVisible ? 'false' : 'true');
   }
 }

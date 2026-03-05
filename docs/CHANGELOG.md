@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add an in-world `Shortcuts (?)` overlay that lists current desktop and touch controls, opens from both shell chrome and `?`, and preserves visibility across pause/resume.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/main.ts](../src/main.ts), and [src/style.css](../src/style.css) with a new in-world shell `Shortcuts (?)` toggle plus a responsive controls overlay that stays in session state across pause/resume; extended shortcut parsing in [src/input/debugEditShortcuts.ts](../src/input/debugEditShortcuts.ts) for the `?` action; expanded [src/input/debugEditShortcuts.test.ts](../src/input/debugEditShortcuts.test.ts) and [src/ui/appShell.test.ts](../src/ui/appShell.test.ts); removed completed task `198` from [docs/NEXT.md](docs/NEXT.md); and added replacement task `223`.
+- Verification: Ran `cmd /c npx vitest run src/input/debugEditShortcuts.test.ts src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a sunlight regression where toggling a non-emissive `blocksLight` tile beside a resident-boundary emissive source does not leak stale light into unloaded neighboring columns when those chunks stream back in.
 - Changes: Updated [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a boundary emissive-source blocker-toggle unload/reload regression that verifies neighboring boundary-interior columns stay shadowed after stream-back, removed completed task `177` from [docs/NEXT.md](docs/NEXT.md), and added replacement lighting task `222`.
 - Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

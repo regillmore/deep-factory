@@ -6,6 +6,7 @@ import {
   getDesktopDebugEditControlsHotkeyLabel,
   getDesktopFreshWorldHotkeyLabel,
   getDesktopPlayerSpawnMarkerHotkeyLabel,
+  getDesktopShortcutsOverlayHotkeyLabel,
   getDesktopRecenterCameraHotkeyLabel,
   getDesktopResumeWorldHotkeyLabel,
   getDesktopReturnToMainMenuHotkeyLabel
@@ -48,6 +49,9 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.debugEditControlsToggleLabel).toBeNull();
     expect(viewModel.debugEditOverlaysToggleLabel).toBeNull();
     expect(viewModel.playerSpawnMarkerToggleLabel).toBeNull();
+    expect(viewModel.shortcutsToggleLabel).toBeNull();
+    expect(viewModel.shortcutsTogglePressed).toBe(false);
+    expect(viewModel.shortcutsOverlayVisible).toBe(false);
     expect(viewModel.statusText).toContain('Preparing renderer');
     expect(viewModel.detailLines).toEqual([
       'Boot runs before the fixed-step simulation starts so later shell work has a stable entry point.'
@@ -68,6 +72,9 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.debugEditControlsToggleLabel).toBeNull();
     expect(viewModel.debugEditOverlaysToggleLabel).toBeNull();
     expect(viewModel.playerSpawnMarkerToggleLabel).toBeNull();
+    expect(viewModel.shortcutsToggleLabel).toBeNull();
+    expect(viewModel.shortcutsTogglePressed).toBe(false);
+    expect(viewModel.shortcutsOverlayVisible).toBe(false);
     expect(viewModel.detailLines).toEqual([
       'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
       'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
@@ -123,7 +130,25 @@ describe('resolveAppShellViewModel', () => {
       `Hide Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`
     );
     expect(viewModel.playerSpawnMarkerTogglePressed).toBe(true);
+    expect(viewModel.shortcutsToggleLabel).toBe(
+      `Shortcuts (${getDesktopShortcutsOverlayHotkeyLabel()})`
+    );
+    expect(viewModel.shortcutsTogglePressed).toBe(false);
+    expect(viewModel.shortcutsOverlayVisible).toBe(false);
     expect(viewModel.detailLines).toEqual([]);
+  });
+
+  it('reflects the in-world shortcuts overlay toggle state', () => {
+    const viewModel = resolveAppShellViewModel({
+      screen: 'in-world',
+      shortcutsOverlayVisible: true
+    });
+
+    expect(viewModel.shortcutsToggleLabel).toBe(
+      `Shortcuts (${getDesktopShortcutsOverlayHotkeyLabel()})`
+    );
+    expect(viewModel.shortcutsTogglePressed).toBe(true);
+    expect(viewModel.shortcutsOverlayVisible).toBe(true);
   });
 
   it('reflects the active debug hud toggle state while in-world', () => {
@@ -261,6 +286,9 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.debugEditControlsToggleLabel).toBeNull();
     expect(viewModel.debugEditOverlaysToggleLabel).toBeNull();
     expect(viewModel.playerSpawnMarkerToggleLabel).toBeNull();
+    expect(viewModel.shortcutsToggleLabel).toBeNull();
+    expect(viewModel.shortcutsTogglePressed).toBe(false);
+    expect(viewModel.shortcutsOverlayVisible).toBe(false);
   });
 });
 
