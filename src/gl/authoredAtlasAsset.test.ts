@@ -958,6 +958,45 @@ describe('authored atlas asset', () => {
     }
   });
 
+  it('keeps lava single-side mask direct-uvRect frames sampling distinct committed pixels per animation frame', () => {
+    const { pngWidth, pngHeight } = readCommittedAtlasPng();
+    const lavaSingleSideMasks = [1, 2, 4, 8];
+    const animatedDirectUvRectFrameSources = collectAnimatedDirectRenderUvRectFrameSources();
+    const sourcesByMask = new Map<number, AnimatedDirectRenderUvRectFrameSource[]>();
+
+    for (const mask of lavaSingleSideMasks) {
+      const sources = animatedDirectUvRectFrameSources
+        .filter(
+          (source) =>
+            source.tileName === 'lava' &&
+            source.sourcePath.startsWith(
+              `liquidRender.variantRenderByCardinalMask[${mask}].frames[`
+            )
+        )
+        .sort((left, right) => left.sourcePath.localeCompare(right.sourcePath));
+
+      expect(sources).toHaveLength(2);
+      expect(sources.map((source) => source.sourcePath)).toEqual([
+        `liquidRender.variantRenderByCardinalMask[${mask}].frames[0].uvRect`,
+        `liquidRender.variantRenderByCardinalMask[${mask}].frames[1].uvRect`
+      ]);
+
+      sourcesByMask.set(mask, sources);
+    }
+
+    for (let frameIndex = 0; frameIndex < 2; frameIndex += 1) {
+      const frameRegionKeys = lavaSingleSideMasks.map((mask) => {
+        const source = sourcesByMask.get(mask)?.[frameIndex];
+        expect(source).toBeDefined();
+        const region = uvRectToPixelRegion(source!.uvRect, pngWidth, pngHeight);
+
+        return `${region.x},${region.y},${region.width},${region.height}`;
+      });
+
+      expect(new Set(frameRegionKeys).size).toBe(lavaSingleSideMasks.length);
+    }
+  });
+
   it('keeps every default animated direct render.uvRect frame distinct from its prior committed PNG frame', () => {
     const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
     const animatedFrameTransitions = collectAnimatedDirectRenderUvRectFrameTransitions();

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add an authored-atlas asset regression that verifies lava single-side masks (`N---`, `-E--`, `--S-`, `---W`) sample distinct committed pixels per animation frame.
+- Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) with a focused lava single-side regression that targets masks `1`, `2`, `4`, and `8`, asserts both animated direct-`uvRect` frame sources exist per mask, and verifies each frame index resolves to distinct committed atlas pixel rectangles across those four masks; advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `195` and adding one replacement follow-up task.
+- Verification: Ran `cmd /c npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the in-world recenter-camera, edit-overlay, and spawn-marker shortcuts in shell copy once the keyboard actions exist.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the in-world shell labels now render `Recenter Camera (C)`, `Show/Hide Edit Overlays (V)`, and `Show/Hide Spawn Marker (M)` from shared desktop shortcut helpers, refreshed [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with shortcut-aware expectations, removed completed tasks `66`, `68`, and `83` from [docs/NEXT.md](docs/NEXT.md), added replacement roadmap tasks `198`, `199`, and `200`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx.cmd vitest run src/ui/appShell.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.
