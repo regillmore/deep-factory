@@ -12,6 +12,8 @@ import {
 } from '../input/debugEditShortcuts';
 import {
   createPausedMainMenuShellState,
+  resolveMainMenuPrimaryActionTitle,
+  resolveMainMenuSecondaryActionTitle,
   resolveAppShellRegionDisplay,
   resolvePausedMainMenuFreshWorldTitle,
   resolvePausedMainMenuResumeWorldTitle,
@@ -289,5 +291,33 @@ describe('resolvePausedMainMenuResumeWorldTitle', () => {
     expect(resolvePausedMainMenuResumeWorldTitle()).toBe(
       `Resume the paused world session with current player, camera state, and debug edits intact (${getDesktopResumeWorldHotkeyLabel()})`
     );
+  });
+});
+
+describe('paused main-menu tooltip-title resolution', () => {
+  it('uses paused-session tooltip titles when resume and fresh-world actions are active', () => {
+    const pausedState = createPausedMainMenuShellState();
+
+    expect(resolveMainMenuPrimaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuResumeWorldTitle()
+    );
+    expect(resolveMainMenuSecondaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuFreshWorldTitle()
+    );
+  });
+
+  it('clears paused-session tooltip titles when first-launch main-menu copy is restored', () => {
+    const pausedState = createPausedMainMenuShellState();
+
+    expect(resolveMainMenuPrimaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuResumeWorldTitle()
+    );
+    expect(resolveMainMenuSecondaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuFreshWorldTitle()
+    );
+
+    const firstLaunchState = { screen: 'main-menu' } as const;
+    expect(resolveMainMenuPrimaryActionTitle(firstLaunchState)).toBe('');
+    expect(resolveMainMenuSecondaryActionTitle(firstLaunchState)).toBe('');
   });
 });

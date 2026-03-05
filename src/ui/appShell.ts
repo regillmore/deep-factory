@@ -100,6 +100,16 @@ export const resolvePausedMainMenuFreshWorldTitle = (): string =>
 export const resolvePausedMainMenuResumeWorldTitle = (): string =>
   `Resume the paused world session with current player, camera state, and debug edits intact (${getDesktopResumeWorldHotkeyLabel()})`;
 
+export const resolveMainMenuPrimaryActionTitle = (state: AppShellState): string =>
+  state.screen === 'main-menu' && state.primaryActionLabel === 'Resume World'
+    ? resolvePausedMainMenuResumeWorldTitle()
+    : '';
+
+export const resolveMainMenuSecondaryActionTitle = (state: AppShellState): string =>
+  state.screen === 'main-menu' && state.secondaryActionLabel === 'New World'
+    ? resolvePausedMainMenuFreshWorldTitle()
+    : '';
+
 const resolveInWorldReturnToMainMenuActionLabel = (): string =>
   `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`;
 
@@ -381,16 +391,10 @@ export class AppShell {
     this.detailList.style.display = resolveAppShellRegionDisplay(viewModel.detailLines.length > 0, 'grid');
     this.primaryButton.textContent = viewModel.primaryActionLabel ?? '';
     this.primaryButton.hidden = viewModel.primaryActionLabel === null;
-    this.primaryButton.title =
-      state.screen === 'main-menu' && state.primaryActionLabel === 'Resume World'
-        ? resolvePausedMainMenuResumeWorldTitle()
-        : '';
+    this.primaryButton.title = resolveMainMenuPrimaryActionTitle(state);
     this.secondaryButton.textContent = viewModel.secondaryActionLabel ?? '';
     this.secondaryButton.hidden = viewModel.secondaryActionLabel === null;
-    this.secondaryButton.title =
-      state.screen === 'main-menu' && state.secondaryActionLabel === 'New World'
-        ? resolvePausedMainMenuFreshWorldTitle()
-        : '';
+    this.secondaryButton.title = resolveMainMenuSecondaryActionTitle(state);
     const overlayActionsVisible =
       viewModel.primaryActionLabel !== null || viewModel.secondaryActionLabel !== null;
     this.overlayActions.hidden = !overlayActionsVisible;

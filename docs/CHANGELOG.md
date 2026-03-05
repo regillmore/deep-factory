@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add app-shell regressions that paused-menu `Resume World (Enter)` and `New World (N)` tooltip titles clear when first-launch main-menu copy is restored without a resumable session.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) with explicit main-menu action tooltip-title resolvers used by `setState`, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with paused-to-first-launch tooltip clearing regressions, removed completed task `219` from [docs/NEXT.md](docs/NEXT.md), and added replacement task `220`.
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the paused-menu `Resume World` shortcut in the shell button tooltip alongside the existing paused-session copy.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused-menu primary `Resume World` button now exposes shortcut-aware paused-session-preservation tooltip copy, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused tooltip-title resolver coverage, removed completed task `158` from [docs/NEXT.md](docs/NEXT.md) and added replacement task `219`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx.cmd vitest run src/ui/appShell.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.

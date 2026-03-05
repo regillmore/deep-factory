@@ -42,7 +42,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 198. Add an in-world `Shortcuts (?)` overlay that lists current desktop and touch controls, opens from both a shell button and `?`, and preserves visibility across pause/resume.
 199. Add shell-level keybinding remap settings for in-world actions (`Main Menu`, `Recenter Camera`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`) with conflict validation and persisted preferences.
 200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
-219. Add app-shell regressions that paused-menu `Resume World (Enter)` and `New World (N)` tooltip titles clear when first-launch main-menu copy is restored without a resumable session.
+220. Add an app-shell regression where paused-menu `Resume World (Enter)` and `New World (N)` tooltip titles return after first-launch main-menu copy transitions back to a resumable paused session.
 
 ## Player debugging
 
