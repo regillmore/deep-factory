@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Persist in-world shell toggle states with local storage and make debug shell toggles default to off when no persisted state is available.
+- Changes: Updated [src/mainWorldSessionShellState.ts](../src/mainWorldSessionShellState.ts) with all-off default shell-toggle state plus safe local-storage load and save helpers, expanded [src/mainWorldSessionShellState.test.ts](../src/mainWorldSessionShellState.test.ts) with default-state and persistence coverage, wired [src/main.ts](../src/main.ts) to load and persist shell-toggle state through runtime shell and keyboard toggle flows plus paused-menu transitions, removed completed task `225` from [docs/NEXT.md](docs/NEXT.md), added replacement task `227`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/mainWorldSessionShellState.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a `src/main.ts` flow regression that verifies paused-menu `New World (N)` resets all in-world shell toggles to first-start defaults before entering a fresh world.
 - Changes: Expanded [src/mainWorldSessionShellState.test.ts](../src/mainWorldSessionShellState.test.ts) with all-toggle pause/resume preservation coverage plus desktop and touch fresh-world reset assertions for `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`, and `Shortcuts`; removed completed task `224` from [docs/NEXT.md](docs/NEXT.md); and added replacement task `226`.
 - Verification: Ran `cmd /c npx vitest run src/mainWorldSessionShellState.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

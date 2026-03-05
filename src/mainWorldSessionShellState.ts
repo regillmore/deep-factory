@@ -6,29 +6,97 @@ export interface WorldSessionShellState {
   shortcutsOverlayVisible: boolean;
 }
 
+interface StorageLike {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+}
+
 export type PausedMainMenuWorldSessionShellTransition =
   | 'pause-to-main-menu'
   | 'resume-paused-world-session'
   | 'start-fresh-world-session';
 
-export const createDefaultWorldSessionShellState = (
-  touchControlsAvailable: boolean
-): WorldSessionShellState => ({
+const STORAGE_KEY = 'deep-factory.worldSessionShellState.v1';
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
+
+export const createDefaultWorldSessionShellState = (): WorldSessionShellState => ({
   debugOverlayVisible: false,
-  debugEditControlsVisible: touchControlsAvailable,
-  debugEditOverlaysVisible: true,
-  playerSpawnMarkerVisible: true,
+  debugEditControlsVisible: false,
+  debugEditOverlaysVisible: false,
+  playerSpawnMarkerVisible: false,
   shortcutsOverlayVisible: false
 });
 
 export const resolveWorldSessionShellStateAfterPausedMainMenuTransition = (
   currentState: WorldSessionShellState,
-  transition: PausedMainMenuWorldSessionShellTransition,
-  touchControlsAvailable: boolean
+  transition: PausedMainMenuWorldSessionShellTransition
 ): WorldSessionShellState => {
   if (transition === 'start-fresh-world-session') {
-    return createDefaultWorldSessionShellState(touchControlsAvailable);
+    return createDefaultWorldSessionShellState();
   }
 
   return currentState;
 };
+
+export const loadWorldSessionShellState = (
+  storage: StorageLike | null | undefined,
+  fallbackState: WorldSessionShellState
+): WorldSessionShellState => {
+  if (!storage) return fallbackState;
+
+  let rawState: string | null;
+  try {
+    rawState = storage.getItem(STORAGE_KEY);
+  } catch {
+    return fallbackState;
+  }
+
+  if (!rawState) return fallbackState;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawState);
+  } catch {
+    return fallbackState;
+  }
+
+  if (!isRecord(parsed)) return fallbackState;
+
+  return {
+    debugOverlayVisible: isBoolean(parsed.debugOverlayVisible)
+      ? parsed.debugOverlayVisible
+      : fallbackState.debugOverlayVisible,
+    debugEditControlsVisible: isBoolean(parsed.debugEditControlsVisible)
+      ? parsed.debugEditControlsVisible
+      : fallbackState.debugEditControlsVisible,
+    debugEditOverlaysVisible: isBoolean(parsed.debugEditOverlaysVisible)
+      ? parsed.debugEditOverlaysVisible
+      : fallbackState.debugEditOverlaysVisible,
+    playerSpawnMarkerVisible: isBoolean(parsed.playerSpawnMarkerVisible)
+      ? parsed.playerSpawnMarkerVisible
+      : fallbackState.playerSpawnMarkerVisible,
+    shortcutsOverlayVisible: isBoolean(parsed.shortcutsOverlayVisible)
+      ? parsed.shortcutsOverlayVisible
+      : fallbackState.shortcutsOverlayVisible
+  };
+};
+
+export const saveWorldSessionShellState = (
+  storage: StorageLike | null | undefined,
+  state: WorldSessionShellState
+): boolean => {
+  if (!storage) return false;
+
+  try {
+    storage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const WORLD_SESSION_SHELL_STATE_STORAGE_KEY = STORAGE_KEY;

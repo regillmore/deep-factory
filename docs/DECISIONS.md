@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-05: In-world shell toggle preferences persist locally with all-off fallback defaults
+
+- Decision: In-world shell toggle visibility for `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`, and `Shortcuts` now loads and saves through `localStorage`, and missing, invalid, or unreadable persisted state falls back to all five toggles off.
+- Reason: Shell-toggle visibility behaves like user preference, so keeping it across reloads improves continuity while defaulting to an uncluttered first-run presentation.
+- Consequence: Future shell-toggle additions should update the persisted shape and validation together, and fresh-world resets should continue reapplying fallback defaults unless product behavior changes intentionally.
+
 ### 2026-03-05: Sunlight now lights recessed blocker faces through one-tile vertical air pockets
 
 - Decision: During the blocking-face sunlight pass, a dirty-column blocking tile is also lit when its vertically adjacent non-blocking tile is shadowed but that vertical neighbor has a horizontally adjacent sunlit non-blocking tile.
