@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-05
+
+- Task: Surface standalone-player nearby-light sample telemetry in the debug HUD and hidden-HUD compact strip so placeholder-light tuning stays inspectable.
+- Changes: Updated [src/gl/renderer.ts](../src/gl/renderer.ts) and [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so render telemetry now records per-frame standalone-player nearby-light sample level and normalized factor and clears those values when no player draw occurs; updated [src/main.ts](../src/main.ts), [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts), [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts) so both debug surfaces render nearby-light sample telemetry; advanced [docs/NEXT.md](docs/NEXT.md) with a follow-up nearby-light sample-source task and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts src/ui/debugOverlay.test.ts src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-04
 
 - Task: Populate distinct placeholder lava liquid cross or fully surrounded variant sources for `NE-W` and `NESW` masks once lava T-junction sources exist.

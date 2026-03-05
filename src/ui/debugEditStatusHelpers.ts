@@ -8,6 +8,7 @@ import {
   type DebugTileEditKind,
   type TouchDebugEditMode
 } from '../input/controller';
+import { MAX_LIGHT_LEVEL } from '../world/constants';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
@@ -44,6 +45,8 @@ export interface DebugEditStatusStripState {
   playerCameraFollowOffset?: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null;
   playerCameraZoom?: number | null;
   residentDirtyLightChunks?: number | null;
+  playerNearbyLightLevel?: number | null;
+  playerNearbyLightFactor?: number | null;
   playerCeilingBonkHoldActive?: boolean | null;
   playerGrounded?: boolean | null;
   playerFacing?: PlayerFacing | null;
@@ -726,6 +729,22 @@ const formatLiveResidentDirtyLightChunksText = (
   return `LightDirtyNow: ${Math.round(residentDirtyLightChunks)}`;
 };
 
+const formatLiveNearbyLightText = (
+  playerNearbyLightLevel: number | null,
+  playerNearbyLightFactor: number | null
+): string | null => {
+  if (playerNearbyLightLevel === null && playerNearbyLightFactor === null) {
+    return null;
+  }
+
+  const nearbyLightLevelText =
+    playerNearbyLightLevel === null
+      ? 'n/a'
+      : `${Math.round(playerNearbyLightLevel)}/${MAX_LIGHT_LEVEL}`;
+  const nearbyLightFactorText = playerNearbyLightFactor === null ? 'n/a' : playerNearbyLightFactor.toFixed(2);
+  return `LightSampleNow: ${nearbyLightLevelText} | factor:${nearbyLightFactorText}`;
+};
+
 const formatLiveFacingText = (playerFacing: PlayerFacing | null): string | null => {
   if (playerFacing === null) {
     return null;
@@ -821,6 +840,8 @@ const buildPlayerText = (
   playerCameraFollowOffset: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null,
   playerCameraZoom: number | null,
   residentDirtyLightChunks: number | null,
+  playerNearbyLightLevel: number | null,
+  playerNearbyLightFactor: number | null,
   playerCeilingBonkHoldActive: boolean | null,
   playerGrounded: boolean | null,
   playerFacing: PlayerFacing | null,
@@ -848,6 +869,7 @@ const buildPlayerText = (
     formatLiveCameraFollowOffsetText(playerCameraFollowOffset),
     formatLiveCameraZoomText(playerCameraZoom),
     formatLiveResidentDirtyLightChunksText(residentDirtyLightChunks),
+    formatLiveNearbyLightText(playerNearbyLightLevel, playerNearbyLightFactor),
     formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive),
     formatLiveGroundedText(playerGrounded),
     formatLiveFacingText(playerFacing),
@@ -1357,6 +1379,8 @@ export const buildDebugEditStatusStripModel = (
   const playerCameraFollowOffset = state.playerCameraFollowOffset ?? null;
   const playerCameraZoom = state.playerCameraZoom ?? null;
   const residentDirtyLightChunks = state.residentDirtyLightChunks ?? null;
+  const playerNearbyLightLevel = state.playerNearbyLightLevel ?? null;
+  const playerNearbyLightFactor = state.playerNearbyLightFactor ?? null;
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
   const playerGrounded = state.playerGrounded ?? null;
   const playerFacing = state.playerFacing ?? null;
@@ -1394,6 +1418,8 @@ export const buildDebugEditStatusStripModel = (
       playerCameraFollowOffset,
       playerCameraZoom,
       residentDirtyLightChunks,
+      playerNearbyLightLevel,
+      playerNearbyLightFactor,
       playerCeilingBonkHoldActive,
       playerGrounded,
       playerFacing,

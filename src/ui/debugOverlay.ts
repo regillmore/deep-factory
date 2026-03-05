@@ -1,4 +1,5 @@
 import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
+import { MAX_LIGHT_LEVEL } from '../world/constants';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
@@ -176,6 +177,8 @@ export interface DebugOverlayInspectState {
   player: DebugOverlayPlayerTelemetry | null;
   playerPlaceholderPoseLabel: string | null;
   playerCeilingBonkHoldActive: boolean | null;
+  playerNearbyLightLevel?: number | null;
+  playerNearbyLightFactor?: number | null;
   playerIntent: DebugOverlayPlayerIntentTelemetry | null;
   playerCameraFollow: DebugOverlayPlayerCameraFollowTelemetry | null;
   playerGroundedTransition: DebugOverlayPlayerGroundedTransitionTelemetry | null;
@@ -360,6 +363,22 @@ const formatPlayerCeilingBonkHoldLine = (playerCeilingBonkHoldActive: boolean | 
   }
 
   return `BonkHold: ${formatGameplayFlag(playerCeilingBonkHoldActive)}`;
+};
+
+const formatPlayerNearbyLightLine = (
+  playerNearbyLightLevel: number | null,
+  playerNearbyLightFactor: number | null
+): string => {
+  if (playerNearbyLightLevel === null && playerNearbyLightFactor === null) {
+    return 'LightSample: n/a';
+  }
+
+  const lightLevel =
+    playerNearbyLightLevel === null
+      ? 'n/a'
+      : `${formatInt(playerNearbyLightLevel)}/${MAX_LIGHT_LEVEL}`;
+  const lightFactor = playerNearbyLightFactor === null ? 'n/a' : formatFloat(playerNearbyLightFactor, 2);
+  return `LightSample: ${lightLevel} | factor:${lightFactor}`;
 };
 
 const formatPlayerAabbLine = (player: DebugOverlayPlayerTelemetry | null): string => {
@@ -563,6 +582,8 @@ export const formatDebugOverlayText = (
   const player = inspect?.player ?? null;
   const playerPlaceholderPoseLabel = inspect?.playerPlaceholderPoseLabel ?? null;
   const playerCeilingBonkHoldActive = inspect?.playerCeilingBonkHoldActive ?? null;
+  const playerNearbyLightLevel = inspect?.playerNearbyLightLevel ?? null;
+  const playerNearbyLightFactor = inspect?.playerNearbyLightFactor ?? null;
   const playerIntent = inspect?.playerIntent ?? null;
   const playerCameraFollow = inspect?.playerCameraFollow ?? null;
   const playerGroundedTransition = inspect?.playerGroundedTransition ?? null;
@@ -578,6 +599,7 @@ export const formatDebugOverlayText = (
     formatPlayerLine(player),
     formatPlayerPlaceholderPoseLine(playerPlaceholderPoseLabel),
     formatPlayerCeilingBonkHoldLine(playerCeilingBonkHoldActive),
+    formatPlayerNearbyLightLine(playerNearbyLightLevel, playerNearbyLightFactor),
     formatPlayerGroundedTransitionLine(playerGroundedTransition),
     formatPlayerFacingTransitionLine(playerFacingTransition),
     formatPlayerRespawnLine(playerRespawn),

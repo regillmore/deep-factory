@@ -4,7 +4,7 @@ import { createProgram } from './shader';
 import { applyAnimatedChunkMeshFrameAtElapsedMs, createAnimatedChunkMeshState } from './animatedChunkMesh';
 import {
   buildStandalonePlayerPlaceholderVertices,
-  getStandalonePlayerPlaceholderNearbyLightFactor,
+  getStandalonePlayerPlaceholderNearbyLightLevel,
   getStandalonePlayerPlaceholderRenderFacingSign,
   getStandalonePlayerPlaceholderPoseIndex,
   STANDALONE_PLAYER_PLACEHOLDER_VERTEX_COUNT,
@@ -100,6 +100,8 @@ export interface RenderTelemetry {
   residentWorldChunks: number;
   cachedChunkMeshes: number;
   residentDirtyLightChunks: number;
+  standalonePlayerNearbyLightLevel: number | null;
+  standalonePlayerNearbyLightFactor: number | null;
   evictedWorldChunks: number;
   evictedMeshEntries: number;
 }
@@ -161,6 +163,8 @@ export class Renderer {
     residentWorldChunks: 0,
     cachedChunkMeshes: 0,
     residentDirtyLightChunks: 0,
+    standalonePlayerNearbyLightLevel: null,
+    standalonePlayerNearbyLightFactor: null,
     evictedWorldChunks: 0,
     evictedMeshEntries: 0
   };
@@ -433,6 +437,8 @@ export class Renderer {
     this.telemetry.meshBuildQueueLength = this.meshBuildQueue.length;
     this.telemetry.evictedWorldChunks = 0;
     this.telemetry.evictedMeshEntries = 0;
+    this.telemetry.standalonePlayerNearbyLightLevel = null;
+    this.telemetry.standalonePlayerNearbyLightFactor = null;
     gl.clearColor(0.12, 0.15, 0.2, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -521,6 +527,8 @@ export class Renderer {
     this.telemetry.residentWorldChunks = this.world.getChunkCount();
     this.telemetry.cachedChunkMeshes = 0;
     this.telemetry.residentDirtyLightChunks = this.world.getDirtyLightChunkCount();
+    this.telemetry.standalonePlayerNearbyLightLevel = null;
+    this.telemetry.standalonePlayerNearbyLightFactor = null;
     this.telemetry.evictedWorldChunks = 0;
     this.telemetry.evictedMeshEntries = 0;
     this.telemetry.residentAnimatedChunkMeshes = 0;
@@ -759,7 +767,11 @@ export class Renderer {
     gl.uniformMatrix4fv(this.uPlayerMatrix, false, worldToClipMatrix);
     gl.uniform1f(this.uPlayerFacingSign, getStandalonePlayerPlaceholderRenderFacingSign(state, poseIndex, wallContact));
     gl.uniform1f(this.uPlayerPoseIndex, poseIndex);
-    gl.uniform1f(this.uPlayerLight, getStandalonePlayerPlaceholderNearbyLightFactor(this.world, state));
+    const nearbyLightLevel = getStandalonePlayerPlaceholderNearbyLightLevel(this.world, state);
+    const nearbyLightFactor = nearbyLightLevel / MAX_LIGHT_LEVEL;
+    this.telemetry.standalonePlayerNearbyLightLevel = nearbyLightLevel;
+    this.telemetry.standalonePlayerNearbyLightFactor = nearbyLightFactor;
+    gl.uniform1f(this.uPlayerLight, nearbyLightFactor);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.standalonePlayerBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, buildStandalonePlayerPlaceholderVertices(state), gl.DYNAMIC_DRAW);
     gl.bindVertexArray(this.standalonePlayerVao);

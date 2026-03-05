@@ -201,6 +201,13 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
+  it('preserves separate pose and nearby-light sample player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: grounded-idle\nLightSampleNow: 9/15 | factor:0.60')).toEqual([
+      ['Pose: grounded-idle'],
+      ['LightSampleNow: 9/15', '| factor:0.60']
+    ]);
+  });
+
   it('preserves separate pose and live facing player lines while keeping each line individually wrappable', () => {
     expect(buildWrappedDetailLines('Pose: grounded-idle\nFacingNow: right')).toEqual([
       ['Pose: grounded-idle'],

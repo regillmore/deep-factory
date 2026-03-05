@@ -155,6 +155,8 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.animatedChunkUvUploadLiquidQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
     expect(renderer.telemetry.residentDirtyLightChunks).toBe(0);
+    expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBeNull();
+    expect(renderer.telemetry.standalonePlayerNearbyLightFactor).toBeNull();
   });
 
   it('flips placeholder shader uv.y so pose rectangles stay upright with top-to-bottom quad UVs', () => {
@@ -445,6 +447,44 @@ describe('Renderer atlas telemetry', () => {
     ]);
     expect(uniformCalls[2]?.[1]).toBeCloseTo(9 / 15, 5);
     expect(getLightLevelSpy).toHaveBeenCalled();
+    expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBe(9);
+    expect(renderer.telemetry.standalonePlayerNearbyLightFactor).toBeCloseTo(9 / 15, 5);
+  });
+
+  it('clears standalone player nearby-light telemetry when the player is not rendered', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const world = (renderer as unknown as { world: { getLightLevel: (tileX: number, tileY: number) => number } })
+      .world;
+    vi.spyOn(world, 'getLightLevel').mockReturnValue(12);
+
+    const camera = new Camera2D();
+    renderer.render(camera, {
+      standalonePlayer: createPlayerState({
+        grounded: true,
+        velocity: { x: 0, y: 0 },
+        facing: 'right'
+      }),
+      timeMs: 0
+    });
+    expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBe(12);
+    expect(renderer.telemetry.standalonePlayerNearbyLightFactor).toBeCloseTo(12 / 15, 5);
+
+    renderer.render(camera, {
+      timeMs: 16
+    });
+    expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBeNull();
+    expect(renderer.telemetry.standalonePlayerNearbyLightFactor).toBeNull();
   });
 
   it('advances grounded walk placeholder poses across elapsed render time', async () => {

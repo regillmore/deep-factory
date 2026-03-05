@@ -40,6 +40,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nPlayer: n/a');
     expect(text).toContain('\nPose: n/a');
     expect(text).toContain('\nBonkHold: n/a');
+    expect(text).toContain('\nLightSample: n/a');
     expect(text).toContain('\nGroundEvt: none');
     expect(text).toContain('\nFaceEvt: none');
     expect(text).toContain('\nRespawnEvt: none');
@@ -54,6 +55,28 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('LightDirty: 20');
     expect(text).toContain('Draws: 4/256 (OK)');
     expect(text).toContain('\nPtr: n/a');
+  });
+
+  it('shows standalone-player nearby-light sampling telemetry when available', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      pinned: null,
+      spawn: null,
+      player: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerNearbyLightLevel: 9,
+      playerNearbyLightFactor: 0.6,
+      playerIntent: null,
+      playerCameraFollow: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null
+    });
+
+    expect(text).toContain('\nLightSample: 9/15 | factor:0.60');
   });
 
   it('shows when the renderer is using the placeholder atlas fallback', () => {

@@ -388,6 +388,23 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats standalone-player nearby-light sampling for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerNearbyLightLevel: 9,
+      playerNearbyLightFactor: 0.6,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('LightSampleNow: 9/15 | factor:0.60');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the live standalone player facing direction for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -879,6 +896,24 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.playerText).toBe('Pose: grounded-idle\nLightDirtyNow: 14');
+    expect(model.eventText).toBeNull();
+  });
+
+  it('keeps pose and nearby-light sample telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'grounded-idle',
+      playerNearbyLightLevel: 12,
+      playerNearbyLightFactor: 0.8,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: grounded-idle\nLightSampleNow: 12/15 | factor:0.80');
     expect(model.eventText).toBeNull();
   });
 

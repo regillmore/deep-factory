@@ -1505,6 +1505,12 @@ const bootstrap = async (): Promise<void> => {
       standalonePlayerCeilingBonkHoldUntilTimeMs: standalonePlayerCeilingBonkHoldUntilTimeMs,
       timeMs: renderTimeMs
     });
+    const standalonePlayerNearbyLightLevel = standalonePlayerState
+      ? renderer.telemetry.standalonePlayerNearbyLightLevel
+      : null;
+    const standalonePlayerNearbyLightFactor = standalonePlayerState
+      ? renderer.telemetry.standalonePlayerNearbyLightFactor
+      : null;
     hoveredTileCursor.update(camera, {
       hovered: pointerInspect
         ? {
@@ -1574,6 +1580,8 @@ const bootstrap = async (): Promise<void> => {
             },
       playerCameraZoom: debugOverlayVisible || !standalonePlayerState ? null : camera.zoom,
       residentDirtyLightChunks: debugOverlayVisible ? null : renderer.telemetry.residentDirtyLightChunks,
+      playerNearbyLightLevel: debugOverlayVisible ? null : standalonePlayerNearbyLightLevel,
+      playerNearbyLightFactor: debugOverlayVisible ? null : standalonePlayerNearbyLightFactor,
       playerCeilingBonkHoldActive:
         debugOverlayVisible || !standalonePlayerState ? null : standalonePlayerCeilingBonkHoldActive,
       playerGrounded: debugOverlayVisible ? null : standalonePlayerState?.grounded ?? null,
@@ -1600,6 +1608,8 @@ const bootstrap = async (): Promise<void> => {
       player: debugOverlayPlayer,
       playerPlaceholderPoseLabel: debugOverlayPlayerPlaceholderPoseLabel,
       playerCeilingBonkHoldActive: standalonePlayerState ? standalonePlayerCeilingBonkHoldActive : null,
+      playerNearbyLightLevel: standalonePlayerState ? standalonePlayerNearbyLightLevel : null,
+      playerNearbyLightFactor: standalonePlayerState ? standalonePlayerNearbyLightFactor : null,
       playerIntent: debugOverlayPlayerIntent,
       playerCameraFollow: debugOverlayPlayerCameraFollow,
       playerGroundedTransition: lastPlayerGroundedTransitionEvent,
