@@ -6,9 +6,12 @@ import {
 } from './mainWorldSessionShellState';
 
 describe('resolveWorldSessionShellStateAfterPausedMainMenuTransition', () => {
-  it('keeps shortcuts overlay visibility through paused-session pause and resume transitions', () => {
+  it('keeps all in-world shell toggles through paused-session pause and resume transitions', () => {
     const initial = {
-      ...createDefaultWorldSessionShellState(false),
+      debugOverlayVisible: true,
+      debugEditControlsVisible: true,
+      debugEditOverlaysVisible: false,
+      playerSpawnMarkerVisible: false,
       shortcutsOverlayVisible: true
     };
 
@@ -23,13 +26,13 @@ describe('resolveWorldSessionShellStateAfterPausedMainMenuTransition', () => {
       false
     );
 
-    expect(resumed.shortcutsOverlayVisible).toBe(true);
+    expect(resumed).toEqual(initial);
   });
 
-  it('resets shortcuts overlay visibility to hidden when a fresh paused-menu world starts', () => {
+  it('resets all in-world shell toggles to desktop first-start defaults when a fresh paused-menu world starts', () => {
     const pausedSessionState = {
       debugOverlayVisible: true,
-      debugEditControlsVisible: false,
+      debugEditControlsVisible: true,
       debugEditOverlaysVisible: false,
       playerSpawnMarkerVisible: false,
       shortcutsOverlayVisible: true
@@ -42,6 +45,24 @@ describe('resolveWorldSessionShellStateAfterPausedMainMenuTransition', () => {
     );
 
     expect(freshWorldState).toEqual(createDefaultWorldSessionShellState(false));
-    expect(freshWorldState.shortcutsOverlayVisible).toBe(false);
+  });
+
+  it('resets all in-world shell toggles to touch first-start defaults when a fresh paused-menu world starts', () => {
+    const pausedSessionState = {
+      debugOverlayVisible: true,
+      debugEditControlsVisible: false,
+      debugEditOverlaysVisible: false,
+      playerSpawnMarkerVisible: false,
+      shortcutsOverlayVisible: true
+    };
+
+    const freshWorldState = resolveWorldSessionShellStateAfterPausedMainMenuTransition(
+      pausedSessionState,
+      'start-fresh-world-session',
+      true
+    );
+
+    expect(freshWorldState).toEqual(createDefaultWorldSessionShellState(true));
+    expect(freshWorldState.debugEditControlsVisible).toBe(true);
   });
 });

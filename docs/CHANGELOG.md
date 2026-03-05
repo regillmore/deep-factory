@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add a `src/main.ts` flow regression that verifies paused-menu `New World (N)` resets all in-world shell toggles to first-start defaults before entering a fresh world.
+- Changes: Expanded [src/mainWorldSessionShellState.test.ts](../src/mainWorldSessionShellState.test.ts) with all-toggle pause/resume preservation coverage plus desktop and touch fresh-world reset assertions for `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`, and `Shortcuts`; removed completed task `224` from [docs/NEXT.md](docs/NEXT.md); and added replacement task `226`.
+- Verification: Ran `cmd /c npx vitest run src/mainWorldSessionShellState.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a `src/main.ts` runtime regression that keeps `Shortcuts (?)` visibility through paused-session `Main Menu (Q)` and `Resume World (Enter)` while resetting it on paused-menu `New World (N)`.
 - Changes: Added [src/mainWorldSessionShellState.ts](../src/mainWorldSessionShellState.ts) to centralize paused-main-menu shell-toggle transition behavior, routed [src/main.ts](../src/main.ts) through that transition helper for pause, resume, and fresh-world flows, added [src/mainWorldSessionShellState.test.ts](../src/mainWorldSessionShellState.test.ts) with the shortcuts-visibility regression coverage, removed completed task `223` from [docs/NEXT.md](docs/NEXT.md), and added replacement task `224`.
 - Verification: Ran `cmd /c npx vitest run src/mainWorldSessionShellState.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
