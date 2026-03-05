@@ -4,6 +4,14 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add a sunlight regression where a boundary bottom-corner `blocksLight` toggle (`localY = CHUNK_SIZE - 1`) recomputes only dirty boundary columns in the loaded row below while preserving clean non-boundary column light values.
+- Changes: Updated [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) so the bidirectional loaded-row-below boundary-corner regression now also asserts boundary-only dirty-column masks, confirms boundary row-below light caches clear before recompute, and verifies non-boundary row-below columns keep their prior clean cached light levels across recomputation; advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `210` and adding ambitious replacement task `211` for unload/reload corner transport coverage.
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts`.
+
+- Task: Add a sunlight regression where a boundary top-corner `blocksLight` toggle (`localY = 0`) recomputes only dirty boundary columns in the loaded row above while preserving clean non-boundary column light values.
+- Changes: Updated [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) so the bidirectional loaded-row-above top-corner boundary regression now also asserts boundary-only dirty-column masks, confirms boundary column light caches clear before recompute, and verifies non-boundary row-above columns keep their prior clean cached light levels across recomputation; advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `209` and adding replacement task `210`.
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts`.
+
 - Task: Add a sunlight regression where toggling a non-emissive `blocksLight` boundary tile at a loaded chunk-boundary top corner (`localY = 0`) updates transported sunlight in the loaded chunk row above on both sides.
 - Changes: Updated [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a bidirectional top-corner regression that verifies both toggle directions dirty the expected boundary-plus-row-above chunks and refresh transported sunlight in the loaded row above, and advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `205` and adding replacement task `209`.
 - Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts`.
