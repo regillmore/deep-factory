@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Populate a distinct placeholder lava liquid straight-through source for the `N-S-` mask once the dedicated lava `-E-W` straight-through source lands.
+- Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so lava mask `N-S-` now resolves to a dedicated animated direct-`uvRect` straight-through source instead of reusing the `N---` source, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with source distinctness and elapsed-frame assertions for mask `N-S-`, advanced [docs/NEXT.md](docs/NEXT.md) with a follow-up lava `-E--` single-side source task after the isolated-body source lands, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/world/tileMetadata.test.ts src/gl/authoredAtlasAsset.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the paused-menu `New World (N)` shortcut in the paused-session status-line shell copy that currently says `choose New World` without the keyboard hint.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so paused-session status copy now includes `New World (N)` through the shared desktop shortcut helper, advanced [docs/NEXT.md](docs/NEXT.md) with one focused paused-menu detail-line follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx.cmd vitest run src/ui/appShell.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.
