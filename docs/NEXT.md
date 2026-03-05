@@ -6,9 +6,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Liquid rendering
 
-196. Add an authored-atlas asset regression that verifies both animated lava `-E--` single-side direct-`uvRect` frames sample non-transparent committed pixels.
-197. Add an authored-atlas asset regression that verifies both animated lava `--S-` single-side direct-`uvRect` frames sample non-transparent committed pixels.
-201. Add an authored-atlas asset regression that verifies both animated lava `---W` single-side direct-`uvRect` frames sample non-transparent committed pixels.
+202. Add a fixed-step liquid simulation slice that flows water and lava downward first, then sideways across loaded chunks, with deterministic chunk-boundary regression coverage.
+203. Extend chunk meshing to support metadata-driven partial liquid fill heights (`0..8`) so liquid tops render flat or sloped by neighbor fill levels, with mask-to-geometry regression tests.
+204. Add standalone-player liquid interaction basics: water buoyancy plus swim drag, lava contact damage ticks with respawn fallback, and fixed-step player-state regressions.
 
 ## Lighting
 

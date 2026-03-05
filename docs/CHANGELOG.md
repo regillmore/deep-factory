@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add authored-atlas asset regressions that verify both animated lava `-E--`, `--S-`, and `---W` single-side direct-`uvRect` frames sample non-transparent committed pixels.
+- Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) with a shared lava single-side frame-source helper plus three focused committed-atlas regressions for masks `2`, `4`, and `8`, each asserting both animated frame source paths and non-transparent committed PNG pixels; advanced [docs/NEXT.md](docs/NEXT.md) by removing completed tasks `196`, `197`, and `201`, then added three ambitious replacement tasks `202`, `203`, and `204`.
+- Verification: Ran `cmd /c npx vitest run src/gl/authoredAtlasAsset.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an authored-atlas asset regression that verifies lava single-side masks (`N---`, `-E--`, `--S-`, `---W`) sample distinct committed pixels per animation frame.
 - Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) with a focused lava single-side regression that targets masks `1`, `2`, `4`, and `8`, asserts both animated direct-`uvRect` frame sources exist per mask, and verifies each frame index resolves to distinct committed atlas pixel rectangles across those four masks; advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `195` and adding one replacement follow-up task.
 - Verification: Ran `cmd /c npx vitest run src/gl/authoredAtlasAsset.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

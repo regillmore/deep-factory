@@ -512,6 +512,17 @@ const collectNamedDirectRenderUvRectSources = (): DirectRenderUvRectSource[] => 
   ...collectAnimatedDirectRenderUvRectFrameSources()
 ];
 
+const collectLavaSingleSideAnimatedSources = (
+  cardinalMask: 1 | 2 | 4 | 8
+): AnimatedDirectRenderUvRectFrameSource[] =>
+  collectAnimatedDirectRenderUvRectFrameSources()
+    .filter(
+      (source) =>
+        source.tileName === 'lava' &&
+        source.sourcePath.startsWith(`liquidRender.variantRenderByCardinalMask[${cardinalMask}].frames[`)
+    )
+    .sort((left, right) => left.sourcePath.localeCompare(right.sourcePath));
+
 const uvRectToPixelRegion = (
   uvRect: TileUvRect,
   pngWidth: number,
@@ -934,13 +945,7 @@ describe('authored atlas asset', () => {
 
   it('keeps both animated lava N--- single-side direct-uvRect frames non-transparent in the committed PNG', () => {
     const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
-    const lavaNorthSingleSideAnimatedSources = collectAnimatedDirectRenderUvRectFrameSources()
-      .filter(
-        (source) =>
-          source.tileName === 'lava' &&
-          source.sourcePath.startsWith('liquidRender.variantRenderByCardinalMask[1].frames[')
-      )
-      .sort((left, right) => left.sourcePath.localeCompare(right.sourcePath));
+    const lavaNorthSingleSideAnimatedSources = collectLavaSingleSideAnimatedSources(1);
 
     expect(lavaNorthSingleSideAnimatedSources).toHaveLength(2);
     expect(lavaNorthSingleSideAnimatedSources.map((source) => source.sourcePath)).toEqual([
@@ -949,6 +954,66 @@ describe('authored atlas asset', () => {
     ]);
 
     for (const source of lavaNorthSingleSideAnimatedSources) {
+      const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
+
+      expect(
+        regionContainsAnyNonTransparentPixel(rgbaPixels, pngWidth, pixelRegion),
+        `tile ${source.tileId} "${source.tileName}" ${source.sourcePath} resolves to fully transparent committed atlas pixels`
+      ).toBe(true);
+    }
+  });
+
+  it('keeps both animated lava -E-- single-side direct-uvRect frames non-transparent in the committed PNG', () => {
+    const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
+    const lavaEastSingleSideAnimatedSources = collectLavaSingleSideAnimatedSources(2);
+
+    expect(lavaEastSingleSideAnimatedSources).toHaveLength(2);
+    expect(lavaEastSingleSideAnimatedSources.map((source) => source.sourcePath)).toEqual([
+      'liquidRender.variantRenderByCardinalMask[2].frames[0].uvRect',
+      'liquidRender.variantRenderByCardinalMask[2].frames[1].uvRect'
+    ]);
+
+    for (const source of lavaEastSingleSideAnimatedSources) {
+      const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
+
+      expect(
+        regionContainsAnyNonTransparentPixel(rgbaPixels, pngWidth, pixelRegion),
+        `tile ${source.tileId} "${source.tileName}" ${source.sourcePath} resolves to fully transparent committed atlas pixels`
+      ).toBe(true);
+    }
+  });
+
+  it('keeps both animated lava --S- single-side direct-uvRect frames non-transparent in the committed PNG', () => {
+    const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
+    const lavaSouthSingleSideAnimatedSources = collectLavaSingleSideAnimatedSources(4);
+
+    expect(lavaSouthSingleSideAnimatedSources).toHaveLength(2);
+    expect(lavaSouthSingleSideAnimatedSources.map((source) => source.sourcePath)).toEqual([
+      'liquidRender.variantRenderByCardinalMask[4].frames[0].uvRect',
+      'liquidRender.variantRenderByCardinalMask[4].frames[1].uvRect'
+    ]);
+
+    for (const source of lavaSouthSingleSideAnimatedSources) {
+      const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
+
+      expect(
+        regionContainsAnyNonTransparentPixel(rgbaPixels, pngWidth, pixelRegion),
+        `tile ${source.tileId} "${source.tileName}" ${source.sourcePath} resolves to fully transparent committed atlas pixels`
+      ).toBe(true);
+    }
+  });
+
+  it('keeps both animated lava ---W single-side direct-uvRect frames non-transparent in the committed PNG', () => {
+    const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
+    const lavaWestSingleSideAnimatedSources = collectLavaSingleSideAnimatedSources(8);
+
+    expect(lavaWestSingleSideAnimatedSources).toHaveLength(2);
+    expect(lavaWestSingleSideAnimatedSources.map((source) => source.sourcePath)).toEqual([
+      'liquidRender.variantRenderByCardinalMask[8].frames[0].uvRect',
+      'liquidRender.variantRenderByCardinalMask[8].frames[1].uvRect'
+    ]);
+
+    for (const source of lavaWestSingleSideAnimatedSources) {
       const pixelRegion = uvRectToPixelRegion(source.uvRect, pngWidth, pngHeight);
 
       expect(
