@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Surface the paused-menu `New World (N)` shortcut in the paused-session detail line that currently ends with `or abandon them`.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so paused-session preservation copy now includes `New World (N)` beside the existing resume guidance, advanced [docs/NEXT.md](docs/NEXT.md) with one focused paused-menu detail-line follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx.cmd vitest run src/ui/appShell.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Populate a distinct placeholder lava liquid isolated-body source for the `----` mask once dedicated lava straight-through sources for `-E-W` and `N-S-` both exist.
 - Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so lava mask `----` now resolves to a dedicated animated direct-`uvRect` isolated-body source instead of reusing the base atlas tile, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with source distinctness and elapsed-frame assertions for mask `----`, advanced [docs/NEXT.md](docs/NEXT.md) with a follow-up lava `---W` single-side source task after `-E--`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx.cmd vitest run src/world/tileMetadata.test.ts src/gl/authoredAtlasAsset.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.

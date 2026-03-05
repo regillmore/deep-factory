@@ -81,7 +81,7 @@ describe('resolveAppShellViewModel', () => {
       `World session paused. Resume World (${getDesktopResumeWorldHotkeyLabel()}) to continue it, or choose New World (${getDesktopFreshWorldHotkeyLabel()}) to discard it and boot a fresh procedural world.`
     );
     expect(viewModel.detailLines).toEqual([
-      `Returning here keeps the initialized world, player state, and debug edits intact until you choose Resume World (${getDesktopResumeWorldHotkeyLabel()}) or abandon them.`,
+      `Returning here keeps the initialized world, player state, and debug edits intact until you choose Resume World (${getDesktopResumeWorldHotkeyLabel()}) or New World (${getDesktopFreshWorldHotkeyLabel()}) to abandon them.`,
       `New World (${getDesktopFreshWorldHotkeyLabel()}) also clears the paused session camera state and undo history before the fresh world boots.`
     ]);
   });
