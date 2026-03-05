@@ -78,7 +78,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.secondaryActionLabel).toBe(`New World (${getDesktopFreshWorldHotkeyLabel()})`);
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
     expect(viewModel.statusText).toBe(
-      `World session paused. Resume World (${getDesktopResumeWorldHotkeyLabel()}) to continue it, or choose New World to discard it and boot a fresh procedural world.`
+      `World session paused. Resume World (${getDesktopResumeWorldHotkeyLabel()}) to continue it, or choose New World (${getDesktopFreshWorldHotkeyLabel()}) to discard it and boot a fresh procedural world.`
     );
     expect(viewModel.detailLines).toEqual([
       `Returning here keeps the initialized world, player state, and debug edits intact until you choose Resume World (${getDesktopResumeWorldHotkeyLabel()}) or abandon them.`,

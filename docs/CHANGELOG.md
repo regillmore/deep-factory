@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Surface the paused-menu `New World (N)` shortcut in the paused-session status-line shell copy that currently says `choose New World` without the keyboard hint.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so paused-session status copy now includes `New World (N)` through the shared desktop shortcut helper, advanced [docs/NEXT.md](docs/NEXT.md) with one focused paused-menu detail-line follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx.cmd vitest run src/ui/appShell.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add horizontal sunlight transport between neighboring `chunkX` columns, then widen edge-edit invalidation to include those neighbors once that transport path exists.
 - Changes: Updated [src/world/sunlight.ts](../src/world/sunlight.ts) so dirty-column sunlight recomputation now includes a boundary transport pass that moves sunlight across loaded neighboring `chunkX` edge columns before emissive blending, updated [src/world/world.ts](../src/world/world.ts) so non-emissive edge `blocksLight` edits with zero local emissive range now dirty loaded neighboring boundary columns, refreshed [src/world/world.test.ts](../src/world/world.test.ts) and [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with new boundary invalidation and transport regressions, advanced [docs/NEXT.md](docs/NEXT.md) with a follow-up symmetry regression, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `npx.cmd vitest run src/world/world.test.ts src/world/sunlight.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.
