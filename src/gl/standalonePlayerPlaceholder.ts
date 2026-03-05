@@ -1,4 +1,6 @@
+import { MAX_LIGHT_LEVEL, TILE_SIZE } from '../world/constants';
 import { getPlayerAabb, type PlayerCollisionContacts, type PlayerState } from '../world/playerState';
+import type { TileWorld } from '../world/world';
 
 export const STANDALONE_PLAYER_PLACEHOLDER_VERTEX_STRIDE_FLOATS = 4;
 export const STANDALONE_PLAYER_PLACEHOLDER_VERTEX_COUNT = 6;
@@ -15,6 +17,26 @@ export const STANDALONE_PLAYER_PLACEHOLDER_WALK_FRAME_DURATION_MS = 120;
 export const STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS = 96;
 
 const STANDALONE_PLAYER_PLACEHOLDER_WALK_SPEED_THRESHOLD = 1;
+const STANDALONE_PLAYER_PLACEHOLDER_NEARBY_LIGHT_SAMPLE_PADDING_TILES = 1;
+
+interface TileRange {
+  min: number;
+  max: number;
+}
+
+const clampStandalonePlayerPlaceholderLightLevel = (lightLevel: number): number =>
+  Math.max(0, Math.min(MAX_LIGHT_LEVEL, Math.floor(lightLevel)));
+
+const getOverlappingTileRange = (min: number, max: number): TileRange | null => {
+  if (max <= min) {
+    return null;
+  }
+
+  return {
+    min: Math.floor(min / TILE_SIZE),
+    max: Math.ceil(max / TILE_SIZE) - 1
+  };
+};
 
 export interface StandalonePlayerPlaceholderPoseOptions {
   elapsedMs?: number;
@@ -146,3 +168,40 @@ export const getStandalonePlayerPlaceholderRenderFacingSign = (
 
   return getStandalonePlayerPlaceholderFacingSign(state);
 };
+
+export const getStandalonePlayerPlaceholderNearbyLightLevel = (
+  world: Pick<TileWorld, 'getLightLevel'>,
+  state: PlayerState
+): number => {
+  const aabb = getPlayerAabb(state);
+  const xRange = getOverlappingTileRange(aabb.minX, aabb.maxX);
+  const yRange = getOverlappingTileRange(aabb.minY, aabb.maxY);
+  if (!xRange || !yRange) {
+    return 0;
+  }
+
+  let maxNearbyLightLevel = 0;
+  for (
+    let tileY = yRange.min - STANDALONE_PLAYER_PLACEHOLDER_NEARBY_LIGHT_SAMPLE_PADDING_TILES;
+    tileY <= yRange.max + STANDALONE_PLAYER_PLACEHOLDER_NEARBY_LIGHT_SAMPLE_PADDING_TILES;
+    tileY += 1
+  ) {
+    for (
+      let tileX = xRange.min - STANDALONE_PLAYER_PLACEHOLDER_NEARBY_LIGHT_SAMPLE_PADDING_TILES;
+      tileX <= xRange.max + STANDALONE_PLAYER_PLACEHOLDER_NEARBY_LIGHT_SAMPLE_PADDING_TILES;
+      tileX += 1
+    ) {
+      maxNearbyLightLevel = Math.max(maxNearbyLightLevel, world.getLightLevel(tileX, tileY));
+      if (maxNearbyLightLevel >= MAX_LIGHT_LEVEL) {
+        return MAX_LIGHT_LEVEL;
+      }
+    }
+  }
+
+  return clampStandalonePlayerPlaceholderLightLevel(maxNearbyLightLevel);
+};
+
+export const getStandalonePlayerPlaceholderNearbyLightFactor = (
+  world: Pick<TileWorld, 'getLightLevel'>,
+  state: PlayerState
+): number => getStandalonePlayerPlaceholderNearbyLightLevel(world, state) / MAX_LIGHT_LEVEL;

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-04: Standalone player placeholder lighting uses nearby max-light sampling
+
+- Decision: The temporary standalone player draw pass now samples resolved world light across the player AABB plus a one-tile padding ring, uses the brightest sampled tile as the placeholder light level, and applies that normalized factor in the placeholder fragment shader.
+- Reason: The placeholder pass needs to stay visually aligned with terrain lighting without introducing a separate player light-field pipeline or per-pixel world light sampling in the shader.
+- Consequence: Future placeholder or temporary entity lighting should continue consuming resolved world light caches through lightweight nearby sampling helpers, and lighting regressions should treat the one-tile padded max-light sample window as the current expected behavior.
+
 ### 2026-03-04: Chunk lighting modulation is baked into mesh vertices
 
 - Decision: Chunk meshes now bake per-vertex light levels from resident chunk light caches, the world shader multiplies atlas color by that normalized vertex light, and the renderer invalidates cached chunk meshes for chunks that were dirty-light before recomputation.

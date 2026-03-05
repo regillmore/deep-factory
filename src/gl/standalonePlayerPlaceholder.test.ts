@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
+import { MAX_LIGHT_LEVEL } from '../world/constants';
 import { createPlayerState } from '../world/playerState';
+import { TileWorld } from '../world/world';
 import {
   buildStandalonePlayerPlaceholderVertices,
   getStandalonePlayerPlaceholderFacingSign,
+  getStandalonePlayerPlaceholderNearbyLightFactor,
+  getStandalonePlayerPlaceholderNearbyLightLevel,
   getStandalonePlayerPlaceholderPoseLabel,
   getStandalonePlayerPlaceholderPoseLabelFromIndex,
   getStandalonePlayerPlaceholderRenderFacingSign,
@@ -229,5 +233,28 @@ describe('standalonePlayerPlaceholder', () => {
         }
       )
     ).toBe('grounded-walk-b');
+  });
+
+  it('samples the brightest nearby light tile around the player AABB', () => {
+    const world = new TileWorld(0);
+    const state = createPlayerState({
+      position: { x: 24, y: 32 },
+      size: { width: 12, height: 28 }
+    });
+    expect(world.setLightLevel(1, 0, 5)).toBe(true);
+    expect(world.setLightLevel(2, 2, 11)).toBe(true);
+
+    expect(getStandalonePlayerPlaceholderNearbyLightLevel(world, state)).toBe(11);
+  });
+
+  it('normalizes nearby player light to the same 0..1 lighting scale as world tiles', () => {
+    const world = new TileWorld(0);
+    const state = createPlayerState({
+      position: { x: 24, y: 32 },
+      size: { width: 12, height: 28 }
+    });
+    expect(world.setLightLevel(2, 2, MAX_LIGHT_LEVEL)).toBe(true);
+
+    expect(getStandalonePlayerPlaceholderNearbyLightFactor(world, state)).toBe(1);
   });
 });

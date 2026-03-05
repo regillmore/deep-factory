@@ -14,7 +14,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 162. Surface resident dirty-light chunk counts in a compact debug-edit summary chip when the text debug HUD is hidden.
 168. Add horizontal sunlight transport between neighboring `chunkX` columns, then widen edge-edit invalidation to include those neighbors once that transport path exists.
 177. Add a sunlight regression where toggling a non-emissive `blocksLight` tile beside an emissive source at a resident-boundary edge does not leak stale light into unloaded neighboring columns when those chunks stream back in.
-178. Modulate standalone player placeholder rendering by nearby resolved world light so the temporary player pass matches terrain brightness.
+179. Surface standalone-player nearby-light sample telemetry in the debug HUD and hidden-HUD compact strip so placeholder-light tuning stays inspectable.
 
 ## Entities and interpolation
 

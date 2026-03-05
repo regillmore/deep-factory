@@ -12,6 +12,7 @@ import {
   STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL,
+  STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_IDLE,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B,
   STANDALONE_PLAYER_PLACEHOLDER_POSE_JUMP_RISE,
@@ -93,6 +94,20 @@ const createMockCanvas = (gl: WebGL2RenderingContext): HTMLCanvasElement =>
 
 const toFloat32 = (value: number): number => Math.fround(value);
 
+const expectStandalonePlayerUniformValues = (
+  uniformCalls: Array<[WebGLUniformLocation | null, number]>,
+  expected: Array<{ facing: number; pose: number }>
+): void => {
+  expect(uniformCalls).toHaveLength(expected.length * 3);
+  for (let index = 0; index < expected.length; index += 1) {
+    const base = index * 3;
+    expect(uniformCalls[base]?.[1]).toBe(expected[index]!.facing);
+    expect(uniformCalls[base + 1]?.[1]).toBe(expected[index]!.pose);
+    expect(uniformCalls[base + 2]?.[1]).toBeGreaterThanOrEqual(0);
+    expect(uniformCalls[base + 2]?.[1]).toBeLessThanOrEqual(1);
+  }
+};
+
 const renderUntilMeshBuildQueueDrains = (
   renderer: Renderer,
   camera: Camera2D,
@@ -165,6 +180,17 @@ describe('Renderer atlas telemetry', () => {
     expect(playerProgramFragmentSource).toContain('bool fallPose');
     expect(playerProgramFragmentSource).toContain('bool wallSlidePose');
     expect(playerProgramFragmentSource).toContain('bool ceilingBonkPose');
+  });
+
+  it('compiles nearby world-light modulation into the placeholder shader', () => {
+    new Renderer(createMockCanvas(createMockGl()));
+
+    const createProgramCalls = createProgram.mock.calls as unknown as Array<
+      [WebGL2RenderingContext, string, string]
+    >;
+    const playerProgramFragmentSource = createProgramCalls[1]?.[2];
+    expect(playerProgramFragmentSource).toContain('uniform float u_light;');
+    expect(playerProgramFragmentSource).toContain('vec4(color * clamp(u_light, 0.0, 1.0), 1.0);');
   });
 
   it('compiles world-tile lighting modulation into the chunk shader', () => {
@@ -379,10 +405,46 @@ describe('Renderer atlas telemetry', () => {
     expect(lastBufferDataCall?.[1]).toBeInstanceOf(Float32Array);
     expect((lastBufferDataCall?.[1] as Float32Array | undefined)?.length).toBe(24);
     expect(lastBufferDataCall?.[2]).toBe(gl.DYNAMIC_DRAW);
-    expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([
-      -1,
-      STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A
+    expectStandalonePlayerUniformValues(
+      uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
+      [{ facing: -1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A }]
+    );
+  });
+
+  it('passes nearby resolved world light into the standalone player shader', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const world = (renderer as unknown as { world: { getLightLevel: (tileX: number, tileY: number) => number } })
+      .world;
+    const getLightLevelSpy = vi.spyOn(world, 'getLightLevel').mockReturnValue(9);
+    const uniform1f = vi.mocked(gl.uniform1f);
+    uniform1f.mockClear();
+
+    renderer.render(new Camera2D(), {
+      standalonePlayer: createPlayerState({
+        grounded: true,
+        velocity: { x: 0, y: 0 },
+        facing: 'right'
+      }),
+      timeMs: 0
+    });
+
+    const uniformCalls = uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>;
+    expectStandalonePlayerUniformValues(uniformCalls, [
+      { facing: 1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_IDLE }
     ]);
+    expect(uniformCalls[2]?.[1]).toBeCloseTo(9 / 15, 5);
+    expect(getLightLevelSpy).toHaveBeenCalled();
   });
 
   it('advances grounded walk placeholder poses across elapsed render time', async () => {
@@ -416,12 +478,13 @@ describe('Renderer atlas telemetry', () => {
       timeMs: STANDALONE_PLAYER_PLACEHOLDER_WALK_FRAME_DURATION_MS
     });
 
-    expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([
-      1,
-      STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A,
-      1,
-      STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B
-    ]);
+    expectStandalonePlayerUniformValues(
+      uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
+      [
+        { facing: 1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A },
+        { facing: 1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_B }
+      ]
+    );
   });
 
   it('maps airborne rise and fall velocity into distinct placeholder poses', async () => {
@@ -459,12 +522,13 @@ describe('Renderer atlas telemetry', () => {
       timeMs: 0
     });
 
-    expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([
-      1,
-      STANDALONE_PLAYER_PLACEHOLDER_POSE_JUMP_RISE,
-      1,
-      STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL
-    ]);
+    expectStandalonePlayerUniformValues(
+      uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
+      [
+        { facing: 1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_JUMP_RISE },
+        { facing: 1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL }
+      ]
+    );
   });
 
   it('maps airborne wall contact into the wall-slide placeholder pose', async () => {
@@ -495,10 +559,10 @@ describe('Renderer atlas telemetry', () => {
       timeMs: 0
     });
 
-    expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([
-      -1,
-      STANDALONE_PLAYER_PLACEHOLDER_POSE_WALL_SLIDE
-    ]);
+    expectStandalonePlayerUniformValues(
+      uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
+      [{ facing: -1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_WALL_SLIDE }]
+    );
   });
 
   it('maps airborne ceiling contact into the ceiling-bonk placeholder pose', async () => {
@@ -530,10 +594,10 @@ describe('Renderer atlas telemetry', () => {
       timeMs: 0
     });
 
-    expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([
-      1,
-      STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK
-    ]);
+    expectStandalonePlayerUniformValues(
+      uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
+      [{ facing: 1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK }]
+    );
   });
 
   it('keeps the ceiling-bonk placeholder pose active briefly after live contact clears', async () => {
@@ -564,10 +628,10 @@ describe('Renderer atlas telemetry', () => {
       timeMs: STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS - 1
     });
 
-    expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([
-      1,
-      STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK
-    ]);
+    expectStandalonePlayerUniformValues(
+      uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
+      [{ facing: 1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_CEILING_BONK }]
+    );
   });
 
   it('returns to the fall placeholder pose once the ceiling-bonk hold expires', async () => {
@@ -598,10 +662,10 @@ describe('Renderer atlas telemetry', () => {
       timeMs: STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS
     });
 
-    expect(uniform1f.mock.calls.map(([, value]) => value)).toEqual([
-      1,
-      STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL
-    ]);
+    expectStandalonePlayerUniformValues(
+      uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
+      [{ facing: 1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL }]
+    );
   });
 
   it('reuploads animated chunk UVs only when the elapsed frame changes', async () => {

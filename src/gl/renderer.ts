@@ -4,6 +4,7 @@ import { createProgram } from './shader';
 import { applyAnimatedChunkMeshFrameAtElapsedMs, createAnimatedChunkMeshState } from './animatedChunkMesh';
 import {
   buildStandalonePlayerPlaceholderVertices,
+  getStandalonePlayerPlaceholderNearbyLightFactor,
   getStandalonePlayerPlaceholderRenderFacingSign,
   getStandalonePlayerPlaceholderPoseIndex,
   STANDALONE_PLAYER_PLACEHOLDER_VERTEX_COUNT,
@@ -132,6 +133,7 @@ export class Renderer {
   private uPlayerMatrix: WebGLUniformLocation;
   private uPlayerFacingSign: WebGLUniformLocation;
   private uPlayerPoseIndex: WebGLUniformLocation;
+  private uPlayerLight: WebGLUniformLocation;
   private texture: WebGLTexture | null = null;
   private standalonePlayerBuffer: WebGLBuffer;
   private standalonePlayerVao: WebGLVertexArrayObject;
@@ -216,6 +218,7 @@ export class Renderer {
       in vec2 v_uv;
       uniform float u_facingSign;
       uniform float u_poseIndex;
+      uniform float u_light;
       out vec4 outColor;
 
       bool inRect(vec2 uv, vec4 rect) {
@@ -354,7 +357,7 @@ export class Renderer {
           color = vec3(0.18, 0.10, 0.04);
         }
 
-        outColor = vec4(color, 1.0);
+        outColor = vec4(color * clamp(u_light, 0.0, 1.0), 1.0);
       }`
     );
 
@@ -369,6 +372,10 @@ export class Renderer {
     const playerPoseIndex = gl.getUniformLocation(this.playerProgram, 'u_poseIndex');
     if (!playerPoseIndex) throw new Error('Missing uniform u_poseIndex');
     this.uPlayerPoseIndex = playerPoseIndex;
+
+    const playerLight = gl.getUniformLocation(this.playerProgram, 'u_light');
+    if (!playerLight) throw new Error('Missing uniform u_light');
+    this.uPlayerLight = playerLight;
 
     this.standalonePlayerBuffer = createDynamicVertexBuffer(
       gl,
@@ -752,6 +759,7 @@ export class Renderer {
     gl.uniformMatrix4fv(this.uPlayerMatrix, false, worldToClipMatrix);
     gl.uniform1f(this.uPlayerFacingSign, getStandalonePlayerPlaceholderRenderFacingSign(state, poseIndex, wallContact));
     gl.uniform1f(this.uPlayerPoseIndex, poseIndex);
+    gl.uniform1f(this.uPlayerLight, getStandalonePlayerPlaceholderNearbyLightFactor(this.world, state));
     gl.bindBuffer(gl.ARRAY_BUFFER, this.standalonePlayerBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, buildStandalonePlayerPlaceholderVertices(state), gl.DYNAMIC_DRAW);
     gl.bindVertexArray(this.standalonePlayerVao);
