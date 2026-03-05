@@ -6,8 +6,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Liquid rendering
 
-174. Populate distinct placeholder lava liquid cross or fully surrounded variant sources for `NE-W` and `NESW` masks once lava T-junction sources exist.
 175. Populate a distinct placeholder lava liquid straight-through source for the `-E-W` mask once dedicated lava cross and fully surrounded sources exist.
+180. Populate a distinct placeholder lava liquid straight-through source for the `N-S-` mask once the dedicated lava `-E-W` straight-through source lands.
 
 ## Lighting
 

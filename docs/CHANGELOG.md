@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-04
 
+- Task: Populate distinct placeholder lava liquid cross or fully surrounded variant sources for `NE-W` and `NESW` masks once lava T-junction sources exist.
+- Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so lava mask `NESW` now resolves to a dedicated animated direct-`uvRect` fully surrounded placeholder source instead of sharing the `NE-W` source, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with source distinctness and elapsed-frame assertions for lava masks `NE-W` and `NESW`, advanced [docs/NEXT.md](docs/NEXT.md) with a follow-up for `N-S-` lava straight-through sourcing after `-E-W`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx.cmd vitest run src/world/tileMetadata.test.ts src/gl/authoredAtlasAsset.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Modulate standalone player placeholder rendering by nearby resolved world light so the temporary player pass matches terrain brightness.
 - Changes: Updated [src/gl/standalonePlayerPlaceholder.ts](../src/gl/standalonePlayerPlaceholder.ts) to sample nearby chunk-light values around the player AABB and expose normalized placeholder-light helpers, updated [src/gl/renderer.ts](../src/gl/renderer.ts) so the standalone player shader receives and applies a nearby-light uniform during the player draw pass, expanded [src/gl/standalonePlayerPlaceholder.test.ts](../src/gl/standalonePlayerPlaceholder.test.ts) and [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with nearby-light sampling and shader/uniform regressions, advanced [docs/NEXT.md](docs/NEXT.md) with a debug-light telemetry follow-up task, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/gl/standalonePlayerPlaceholder.test.ts src/gl/renderer.test.ts`.

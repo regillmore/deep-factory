@@ -125,7 +125,9 @@ describe('tile metadata loader', () => {
     expect(describeLiquidRenderVariantSource(8, 12)).toBe('uvRect 0.583,0.875..0.625,1');
     expect(describeLiquidRenderVariantSource(8, 13)).toBe('uvRect 0.583,0.75..0.625,1');
     expect(describeLiquidRenderVariantSource(8, 14)).toBe('uvRect 0.583,0.875..0.667,1');
-    expect(describeLiquidRenderVariantSource(8, 15)).toBe('uvRect 0.5,0.75..0.667,0.875');
+    expect(describeLiquidRenderVariantSource(8, 11)).toBe('uvRect 0.5,0.75..0.667,0.875');
+    expect(describeLiquidRenderVariantSource(8, 15)).toBe('uvRect 0.5,0.875..0.667,1');
+    expect(describeLiquidRenderVariantSource(8, 11)).not.toBe(describeLiquidRenderVariantSource(8, 15));
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 1, 180)).toBe('uvRect 0.417,0.75..0.5,1');
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 3, 180)).toBe(
       'uvRect 0.458,0.75..0.5,0.875'
@@ -143,7 +145,7 @@ describe('tile metadata loader', () => {
       'uvRect 0.417,0.875..0.5,1'
     );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 15, 180)).toBe(
-      'uvRect 0.333,0.75..0.5,0.875'
+      'uvRect 0.333,0.875..0.5,1'
     );
     expect(resolveLiquidRenderVariantUvRect(8, 14)).toEqual({
       u0: 0.5833333333333334,
@@ -153,9 +155,9 @@ describe('tile metadata loader', () => {
     });
     expect(resolveLiquidRenderVariantUvRect(8, 15)).toEqual({
       u0: 0.5,
-      v0: 0.75,
+      v0: 0.875,
       u1: 0.6666666666666666,
-      v1: 0.875
+      v1: 1
     });
     expect(resolveTileRenderUvRect(4)).toEqual({
       u0: 0.16666666666666666,
