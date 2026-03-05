@@ -123,28 +123,42 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
 
-  it('keeps neighboring chunkX columns clean for edge lighting edits until horizontal sunlight transport exists', () => {
-    const world = new TileWorld(1);
+  it('transports sunlight across neighboring chunkX columns after edge edits dirty both boundary columns', () => {
+    const world = new TileWorld(0);
+    world.ensureChunk(0, -1);
+    world.ensureChunk(1, -1);
+    world.ensureChunk(1, 0);
 
-    for (const chunk of world.getChunks()) {
-      world.fillChunkLight(chunk.coord.x, chunk.coord.y, 7);
-      world.markChunkLightClean(chunk.coord.x, chunk.coord.y);
+    const sourceWorldTileX = CHUNK_SIZE - 1;
+    const neighboringWorldTileX = CHUNK_SIZE;
+
+    for (let worldTileY = -CHUNK_SIZE; worldTileY <= 0; worldTileY += 1) {
+      world.setTile(sourceWorldTileX, worldTileY, 0);
     }
+    world.setTile(sourceWorldTileX, 0, 1);
+    world.setTile(neighboringWorldTileX, -1, 1);
+    world.setTile(neighboringWorldTileX, 0, 0);
 
-    expect(world.setTile(CHUNK_SIZE - 1, 0, 0)).toBe(true);
+    recomputeSunlightFromExposedChunkTops(world);
+    expect(world.getLightLevel(neighboringWorldTileX, 0)).toBe(0);
+    expect(world.getDirtyLightChunkCount()).toBe(0);
+
+    expect(world.setTile(sourceWorldTileX, 0, 0)).toBe(true);
 
     expect(world.getDirtyLightChunkCoords()).toEqual(
       expect.arrayContaining([
         { x: 0, y: -1 },
-        { x: 0, y: 0 }
+        { x: 0, y: 0 },
+        { x: 1, y: -1 },
+        { x: 1, y: 0 }
       ])
     );
-    expect(world.getDirtyLightChunkCoords()).toHaveLength(2);
+    expect(world.getDirtyLightChunkCount()).toBe(4);
 
     const recomputedChunkCount = recomputeSunlightFromExposedChunkTops(world);
 
-    expect(recomputedChunkCount).toBe(3);
-    expect(world.getLightLevel(CHUNK_SIZE, -32)).toBe(7);
+    expect(recomputedChunkCount).toBe(4);
+    expect(world.getLightLevel(neighboringWorldTileX, 0)).toBe(MAX_LIGHT_LEVEL);
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
 

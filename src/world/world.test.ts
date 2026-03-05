@@ -135,13 +135,15 @@ describe('TileWorld', () => {
   it('invalidates loaded light chunks only when an edit changes tile lighting state', () => {
     const world = new TileWorld(1);
     const affectedChunks = [
-      { x: 0, y: -1 },
-      { x: 0, y: 0 }
+      { x: 0, y: -1, expectedLocalX: CHUNK_SIZE - 1 },
+      { x: 0, y: 0, expectedLocalX: CHUNK_SIZE - 1 },
+      { x: 1, y: -1, expectedLocalX: 0 },
+      { x: 1, y: 0, expectedLocalX: 0 }
     ];
     const unaffectedChunks = [
       { x: -1, y: 0 },
-      { x: 1, y: -1 },
-      { x: 1, y: 0 }
+      { x: 0, y: 1 },
+      { x: 1, y: 1 }
     ];
 
     for (const chunk of [...affectedChunks, ...unaffectedChunks]) {
@@ -153,15 +155,16 @@ describe('TileWorld', () => {
 
     for (const chunk of affectedChunks) {
       expect(world.isChunkLightDirty(chunk.x, chunk.y)).toBe(true);
-      const expectedLocalX = CHUNK_SIZE - 1;
-      expect(world.getChunkLightDirtyColumnMask(chunk.x, chunk.y)).toBe(localLightColumnBit(expectedLocalX));
+      expect(world.getChunkLightDirtyColumnMask(chunk.x, chunk.y)).toBe(
+        localLightColumnBit(chunk.expectedLocalX)
+      );
 
       const levels = world.getChunkLightLevels(chunk.x, chunk.y);
       for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
-        expect(levels[toTileIndex(expectedLocalX, localY)]).toBe(0);
+        expect(levels[toTileIndex(chunk.expectedLocalX, localY)]).toBe(0);
       }
 
-      const untouchedLocalX = expectedLocalX === 0 ? 1 : 0;
+      const untouchedLocalX = chunk.expectedLocalX === 0 ? 1 : 0;
       for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
         expect(levels[toTileIndex(untouchedLocalX, localY)]).toBe(7);
       }

@@ -135,6 +135,25 @@ const collectLightInvalidationColumnsForWorldTileXRange = (
     .map(([chunkX, localColumnMask]) => ({ chunkX, localColumnMask }));
 };
 
+const collectSunlightInvalidationWorldTileXRangeForLocalTile = (
+  worldTileX: number,
+  localX: number,
+  localLightingRange: number
+): { minWorldTileX: number; maxWorldTileX: number } => {
+  let minWorldTileX = worldTileX - localLightingRange;
+  let maxWorldTileX = worldTileX + localLightingRange;
+
+  if (localLightingRange === 0) {
+    if (localX === 0) {
+      minWorldTileX -= 1;
+    } else if (localX === CHUNK_SIZE - 1) {
+      maxWorldTileX += 1;
+    }
+  }
+
+  return { minWorldTileX, maxWorldTileX };
+};
+
 const expectLightLevel = (lightLevel: number): number => {
   if (!Number.isInteger(lightLevel) || lightLevel < 0 || lightLevel > MAX_LIGHT_LEVEL) {
     throw new Error(`lightLevel must be an integer between 0 and ${MAX_LIGHT_LEVEL}`);
@@ -292,9 +311,14 @@ export class TileWorld {
         localLightingRange = this.collectNearbyEmissiveInvalidationRange(worldTileX, worldTileY);
       }
 
+      const sunlightInvalidationWorldTileXRange = collectSunlightInvalidationWorldTileXRangeForLocalTile(
+        worldTileX,
+        localX,
+        localLightingRange
+      );
       const invalidationColumns = collectLightInvalidationColumnsForWorldTileXRange(
-        worldTileX - localLightingRange,
-        worldTileX + localLightingRange
+        sunlightInvalidationWorldTileXRange.minWorldTileX,
+        sunlightInvalidationWorldTileXRange.maxWorldTileX
       );
 
       for (const chunkYOffset of collectSunlightInvalidationChunkYOffsetsForLocalTile(localY)) {

@@ -273,6 +273,49 @@ const applyResidentEmissiveLightToDirtyColumns = (
   }
 };
 
+const applyHorizontalSunlightTransportBetweenNeighborChunkColumns = (
+  bounds: ResidentChunkLightingBounds,
+  dirtyLocalColumnMaskByChunkX: Map<number, number>,
+  registry: TileMetadataRegistry
+): void => {
+  for (let chunkX = bounds.minChunkX; chunkX < bounds.maxChunkX; chunkX += 1) {
+    const leftDirtyMask = dirtyLocalColumnMaskByChunkX.get(chunkX) ?? 0;
+    const rightDirtyMask = dirtyLocalColumnMaskByChunkX.get(chunkX + 1) ?? 0;
+    const leftBoundaryColumnDirty = ((leftDirtyMask >>> (CHUNK_SIZE - 1)) & 1) !== 0;
+    const rightBoundaryColumnDirty = (rightDirtyMask & 1) !== 0;
+    if (!leftBoundaryColumnDirty && !rightBoundaryColumnDirty) {
+      continue;
+    }
+
+    for (let chunkY = bounds.minChunkY; chunkY <= bounds.maxChunkY; chunkY += 1) {
+      const leftChunk = bounds.chunksByKey.get(chunkKey(chunkX, chunkY));
+      const rightChunk = bounds.chunksByKey.get(chunkKey(chunkX + 1, chunkY));
+      if (!leftChunk || !rightChunk) {
+        continue;
+      }
+
+      for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
+        const leftTileIndex = toTileIndex(CHUNK_SIZE - 1, localY);
+        const rightTileIndex = toTileIndex(0, localY);
+        const leftTileId = leftChunk.tiles[leftTileIndex] ?? 0;
+        const rightTileId = rightChunk.tiles[rightTileIndex] ?? 0;
+        if (doesTileBlockLight(leftTileId, registry) || doesTileBlockLight(rightTileId, registry)) {
+          continue;
+        }
+
+        const leftSunlit = (leftChunk.lightLevels[leftTileIndex] ?? 0) > 0;
+        const rightSunlit = (rightChunk.lightLevels[rightTileIndex] ?? 0) > 0;
+        if (leftSunlit && rightBoundaryColumnDirty) {
+          rightChunk.lightLevels[rightTileIndex] = MAX_LIGHT_LEVEL;
+        }
+        if (rightSunlit && leftBoundaryColumnDirty) {
+          leftChunk.lightLevels[leftTileIndex] = MAX_LIGHT_LEVEL;
+        }
+      }
+    }
+  }
+};
+
 export const recomputeSunlightFromExposedChunkTops = (
   world: TileWorld,
   registry: TileMetadataRegistry = TILE_METADATA
@@ -343,6 +386,11 @@ export const recomputeSunlightFromExposedChunkTops = (
     recomputedChunkCount += residentColumnChunks.length;
   }
 
+  applyHorizontalSunlightTransportBetweenNeighborChunkColumns(
+    bounds,
+    dirtyLocalColumnMaskByChunkX,
+    registry
+  );
   applyResidentEmissiveLightToDirtyColumns(bounds, dirtyLocalColumnMaskByChunkX, registry);
 
   for (const dirtyColumn of dirtyColumnContexts) {

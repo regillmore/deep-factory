@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-05: Sunlight transport now crosses loaded neighboring chunk boundaries
+
+- Decision: Resident sunlight recomputation now includes a horizontal transport pass between adjacent loaded `chunkX` boundary columns on dirty edge columns, and non-emissive edge `blocksLight` edits with no local emissive range now invalidate both sides of that loaded boundary.
+- Reason: Vertical-only sunlight recomputation left neighboring chunk-edge columns stale after edge blocker edits once sunlight needed to cross chunk boundaries.
+- Consequence: Future sunlight invalidation updates should keep loaded boundary-edge edits dirty on both sides and preserve horizontal boundary transport before emissive-light blending.
+
 ### 2026-03-05: Nearby-light telemetry includes brightest sampled source tile coordinates
 
 - Decision: Standalone-player nearby-light sampling now exposes both the resolved light level and the sampled world tile coordinates that produced that level, and renderer/debug telemetry surfaces those coordinates beside the existing level and factor values.
