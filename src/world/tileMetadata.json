@@ -405,7 +405,14 @@
             ],
             "frameDurationMs": 180
           },
-          { "atlasIndex": 15, "frames": [{ "atlasIndex": 15 }, { "atlasIndex": 14 }], "frameDurationMs": 180 },
+          {
+            "uvRect": { "u0": 0.625, "v0": 0.75, "u1": 0.6666666666666666, "v1": 1 },
+            "frames": [
+              { "uvRect": { "u0": 0.625, "v0": 0.75, "u1": 0.6666666666666666, "v1": 1 } },
+              { "uvRect": { "u0": 0.4583333333333333, "v0": 0.75, "u1": 0.5, "v1": 1 } }
+            ],
+            "frameDurationMs": 180
+          },
           {
             "uvRect": { "u0": 0.5833333333333334, "v0": 0.75, "u1": 0.625, "v1": 0.875 },
             "frames": [

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Populate a distinct placeholder lava liquid single-side source for the `---W` mask once the dedicated lava single-side `-E--` source lands.
+- Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) so lava mask `---W` now resolves to a dedicated animated direct-`uvRect` single-side source instead of reusing the base atlas tile, expanded [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts) with source distinctness and elapsed-frame assertions for mask `---W`, advanced [docs/NEXT.md](docs/NEXT.md) with a follow-up lava `N---` single-side source task after `--S-`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx.cmd vitest run src/world/tileMetadata.test.ts src/gl/authoredAtlasAsset.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a sunlight regression that toggling a non-emissive `blocksLight` tile on either side of a resident chunk-boundary edge updates transported sunlight symmetrically across that boundary.
 - Changes: Updated [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a bidirectional edge-blocker toggle regression that covers left-to-right and right-to-left boundary transport updates, including matching dirty-light boundary chunk assertions before recomputation; updated [docs/NEXT.md](docs/NEXT.md) by removing completed task `184` and adding a focused loaded-corner transport follow-up task.
 - Verification: Ran `npx.cmd vitest run src/world/sunlight.test.ts src/world/world.test.ts`.
