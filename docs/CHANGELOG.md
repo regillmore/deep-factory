@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Restore solid-tile visibility under sunlight by lighting the first `blocksLight` tile in each lit column.
+- Changes: Updated [src/world/sunlight.ts](../src/world/sunlight.ts) so sunlight writes onto the first blocking tile before terminating each vertical column, refreshed [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) expectations to cover lit blockers and preserved shadowing below, replaced stale completed roadmap item `162` with a new solid-visibility follow-up in [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md) for the new lighting rule.
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts`.
+
 - Task: Add a sunlight regression where toggling a non-emissive `blocksLight` boundary tile at a loaded chunk-boundary corner (`localY = CHUNK_SIZE - 1`) updates transported sunlight in the loaded chunk row below on both sides.
 - Changes: Updated [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a new bidirectional boundary-corner regression that verifies both left-to-right and right-to-left blocker toggles dirty the expected boundary-plus-row-below chunks and refresh transported sunlight in the loaded row below; advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `191` and adding one replacement follow-up task.
 - Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts`.

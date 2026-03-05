@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-05: Sunlight now lights the first blocking tile in each lit column
+
+- Decision: Sunlight recomputation now writes full sunlight to the first `blocksLight` tile encountered in a lit vertical column, then terminates propagation below that tile.
+- Reason: After chunk shading switched to per-tile light modulation, solid terrain tiles became fully black under sunlight because blocking tiles were forced to zero light.
+- Consequence: Future sunlight or blocker-lighting changes should preserve "first blocker receives light, tiles below stay shadowed" semantics unless a separate solid-surface shading model replaces it.
+
 ### 2026-03-05: Sunlight transport now crosses loaded neighboring chunk boundaries
 
 - Decision: Resident sunlight recomputation now includes a horizontal transport pass between adjacent loaded `chunkX` boundary columns on dirty edge columns, and non-emissive edge `blocksLight` edits with no local emissive range now invalidate both sides of that loaded boundary.

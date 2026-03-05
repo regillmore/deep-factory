@@ -29,7 +29,7 @@ const emissiveTestRegistry = parseTileMetadataRegistry({
 });
 
 describe('recomputeSunlightFromExposedChunkTops', () => {
-  it('propagates sunlight downward from exposed chunk tops until light-blocking tiles', () => {
+  it('propagates sunlight downward from exposed chunk tops and lights the first blocking tile', () => {
     const world = new TileWorld(0);
     world.ensureChunk(0, -1);
 
@@ -44,13 +44,13 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(recomputedChunkCount).toBe(2);
     expect(world.getLightLevel(0, -32)).toBe(MAX_LIGHT_LEVEL);
     expect(world.getLightLevel(0, -31)).toBe(MAX_LIGHT_LEVEL);
-    expect(world.getLightLevel(0, -30)).toBe(0);
+    expect(world.getLightLevel(0, -30)).toBe(MAX_LIGHT_LEVEL);
     expect(world.getLightLevel(0, -29)).toBe(0);
     expect(world.getLightLevel(0, 0)).toBe(0);
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
 
-  it('keeps lower chunks unlit when a loaded chunk above blocks sunlight', () => {
+  it('keeps lower chunks unlit when a loaded chunk above blocks sunlight after the blocker receives sunlight', () => {
     const world = new TileWorld(0);
     world.ensureChunk(0, -2);
     world.ensureChunk(0, -1);
@@ -63,7 +63,7 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
 
     expect(recomputedChunkCount).toBe(3);
     expect(world.getLightLevel(0, -34)).toBe(MAX_LIGHT_LEVEL);
-    expect(world.getLightLevel(0, -33)).toBe(0);
+    expect(world.getLightLevel(0, -33)).toBe(MAX_LIGHT_LEVEL);
     expect(world.getLightLevel(0, -32)).toBe(0);
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
@@ -312,7 +312,7 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(world.getLightLevel(1, 1)).toBe(12);
     expect(world.getLightLevel(2, 1)).toBe(11);
     expect(world.getLightLevel(3, 1)).toBe(10);
-    expect(world.getLightLevel(1, 0)).toBe(0);
+    expect(world.getLightLevel(1, 0)).toBe(MAX_LIGHT_LEVEL);
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
 

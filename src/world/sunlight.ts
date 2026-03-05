@@ -375,7 +375,7 @@ export const recomputeSunlightFromExposedChunkTops = (
           const tileIndex = toTileIndex(localX, localY);
           const tileId = chunk.tiles[tileIndex] ?? 0;
           const blocksLight = doesTileBlockLight(tileId, registry);
-          chunk.lightLevels[tileIndex] = sunlightVisible && !blocksLight ? MAX_LIGHT_LEVEL : 0;
+          chunk.lightLevels[tileIndex] = sunlightVisible ? MAX_LIGHT_LEVEL : 0;
           if (blocksLight) {
             sunlightVisible = false;
           }
