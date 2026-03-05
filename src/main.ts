@@ -37,6 +37,10 @@ import {
   getDebugBrushTileIdForShortcutSlot,
   resolveDebugEditShortcutAction
 } from './input/debugEditShortcuts';
+import {
+  createDefaultWorldSessionShellState,
+  resolveWorldSessionShellStateAfterPausedMainMenuTransition
+} from './mainWorldSessionShellState';
 import { DebugOverlay } from './ui/debugOverlay';
 import { AppShell, createPausedMainMenuShellState, type AppShellScreen } from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
@@ -125,13 +129,6 @@ const supportsTouchPlayerControls = (): boolean => {
   if (typeof window.matchMedia !== 'function') return false;
   return window.matchMedia('(pointer: coarse)').matches;
 };
-const createDefaultWorldSessionShellState = (touchControlsAvailable: boolean) => ({
-  debugOverlayVisible: false,
-  debugEditControlsVisible: touchControlsAvailable,
-  debugEditOverlaysVisible: true,
-  playerSpawnMarkerVisible: true,
-  shortcutsOverlayVisible: false
-});
 
 interface PinnedDebugTileInspectState {
   tileX: number;
@@ -162,8 +159,38 @@ const bootstrap = async (): Promise<void> => {
     playerSpawnMarkerVisible,
     shortcutsOverlayVisible
   } = createDefaultWorldSessionShellState(touchControlsAvailable);
+  const readWorldSessionShellState = () => ({
+    debugOverlayVisible,
+    debugEditControlsVisible,
+    debugEditOverlaysVisible,
+    playerSpawnMarkerVisible,
+    shortcutsOverlayVisible
+  });
+  const applyWorldSessionShellState = (
+    state: ReturnType<typeof createDefaultWorldSessionShellState>
+  ): void => {
+    ({
+      debugOverlayVisible,
+      debugEditControlsVisible,
+      debugEditOverlaysVisible,
+      playerSpawnMarkerVisible,
+      shortcutsOverlayVisible
+    } = state);
+  };
+  const applyPausedMainMenuWorldSessionShellTransition = (
+    transition: Parameters<typeof resolveWorldSessionShellStateAfterPausedMainMenuTransition>[1]
+  ): void => {
+    applyWorldSessionShellState(
+      resolveWorldSessionShellStateAfterPausedMainMenuTransition(
+        readWorldSessionShellState(),
+        transition,
+        touchControlsAvailable
+      )
+    );
+  };
   const returnToMainMenuFromInWorld = (): void => {
     if (currentScreen !== 'in-world') return;
+    applyPausedMainMenuWorldSessionShellTransition('pause-to-main-menu');
     currentScreen = 'main-menu';
     showMainMenuShellState();
     syncDebugOverlayVisibility();
@@ -276,15 +303,6 @@ const bootstrap = async (): Promise<void> => {
   };
   const syncPlayerSpawnMarkerVisibility = (): void => {
     playerSpawnMarker.setVisible(currentScreen === 'in-world' && playerSpawnMarkerVisible);
-  };
-  const applyDefaultWorldSessionShellState = (): void => {
-    ({
-      debugOverlayVisible,
-      debugEditControlsVisible,
-      debugEditOverlaysVisible,
-      playerSpawnMarkerVisible,
-      shortcutsOverlayVisible
-    } = createDefaultWorldSessionShellState(touchControlsAvailable));
   };
   const enterInWorldShellState = (): void => {
     currentScreen = 'in-world';
@@ -1135,6 +1153,7 @@ const bootstrap = async (): Promise<void> => {
   };
   const enterOrResumeWorldSessionFromMainMenu = (): void => {
     if (loop === null) return;
+    applyPausedMainMenuWorldSessionShellTransition('resume-paused-world-session');
     enterInWorldShellState();
     if (worldSessionStarted) return;
     worldSessionStarted = true;
@@ -1142,7 +1161,7 @@ const bootstrap = async (): Promise<void> => {
   };
   const startFreshWorldSessionFromMainMenu = (): void => {
     if (loop === null || !worldSessionStarted) return;
-    applyDefaultWorldSessionShellState();
+    applyPausedMainMenuWorldSessionShellTransition('start-fresh-world-session');
     resetFreshWorldSessionRuntimeState();
     enterInWorldShellState();
   };

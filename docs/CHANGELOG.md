@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add a `src/main.ts` runtime regression that keeps `Shortcuts (?)` visibility through paused-session `Main Menu (Q)` and `Resume World (Enter)` while resetting it on paused-menu `New World (N)`.
+- Changes: Added [src/mainWorldSessionShellState.ts](../src/mainWorldSessionShellState.ts) to centralize paused-main-menu shell-toggle transition behavior, routed [src/main.ts](../src/main.ts) through that transition helper for pause, resume, and fresh-world flows, added [src/mainWorldSessionShellState.test.ts](../src/mainWorldSessionShellState.test.ts) with the shortcuts-visibility regression coverage, removed completed task `223` from [docs/NEXT.md](docs/NEXT.md), and added replacement task `224`.
+- Verification: Ran `cmd /c npx vitest run src/mainWorldSessionShellState.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an in-world `Shortcuts (?)` overlay that lists current desktop and touch controls, opens from both shell chrome and `?`, and preserves visibility across pause/resume.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/main.ts](../src/main.ts), and [src/style.css](../src/style.css) with a new in-world shell `Shortcuts (?)` toggle plus a responsive controls overlay that stays in session state across pause/resume; extended shortcut parsing in [src/input/debugEditShortcuts.ts](../src/input/debugEditShortcuts.ts) for the `?` action; expanded [src/input/debugEditShortcuts.test.ts](../src/input/debugEditShortcuts.test.ts) and [src/ui/appShell.test.ts](../src/ui/appShell.test.ts); removed completed task `198` from [docs/NEXT.md](docs/NEXT.md); and added replacement task `223`.
 - Verification: Ran `cmd /c npx vitest run src/input/debugEditShortcuts.test.ts src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
