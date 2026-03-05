@@ -162,6 +162,62 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
 
+  it('updates transported sunlight symmetrically when non-emissive boundary blockers toggle on either side', () => {
+    const createBoundaryWorld = (): TileWorld => {
+      const world = new TileWorld(0);
+      world.ensureChunk(0, -1);
+      world.ensureChunk(1, -1);
+      world.ensureChunk(1, 0);
+      return world;
+    };
+    const expectedDirtyBoundaryChunks = expect.arrayContaining([
+      { x: 0, y: -1 },
+      { x: 0, y: 0 },
+      { x: 1, y: -1 },
+      { x: 1, y: 0 }
+    ]);
+    const leftBoundaryWorldTileX = CHUNK_SIZE - 1;
+    const rightBoundaryWorldTileX = CHUNK_SIZE;
+
+    const leftToRightWorld = createBoundaryWorld();
+    for (let worldTileY = -CHUNK_SIZE; worldTileY <= 0; worldTileY += 1) {
+      leftToRightWorld.setTile(leftBoundaryWorldTileX, worldTileY, 0);
+    }
+    leftToRightWorld.setTile(leftBoundaryWorldTileX, 0, 1);
+    leftToRightWorld.setTile(rightBoundaryWorldTileX, -1, 1);
+    leftToRightWorld.setTile(rightBoundaryWorldTileX, 0, 0);
+
+    recomputeSunlightFromExposedChunkTops(leftToRightWorld);
+    expect(leftToRightWorld.getLightLevel(rightBoundaryWorldTileX, 0)).toBe(0);
+
+    expect(leftToRightWorld.setTile(leftBoundaryWorldTileX, 0, 0)).toBe(true);
+    expect(leftToRightWorld.getDirtyLightChunkCoords()).toEqual(expectedDirtyBoundaryChunks);
+    expect(leftToRightWorld.getDirtyLightChunkCount()).toBe(4);
+
+    expect(recomputeSunlightFromExposedChunkTops(leftToRightWorld)).toBe(4);
+    expect(leftToRightWorld.getLightLevel(rightBoundaryWorldTileX, 0)).toBe(MAX_LIGHT_LEVEL);
+    expect(leftToRightWorld.getDirtyLightChunkCount()).toBe(0);
+
+    const rightToLeftWorld = createBoundaryWorld();
+    for (let worldTileY = -CHUNK_SIZE; worldTileY <= 0; worldTileY += 1) {
+      rightToLeftWorld.setTile(rightBoundaryWorldTileX, worldTileY, 0);
+    }
+    rightToLeftWorld.setTile(rightBoundaryWorldTileX, 0, 1);
+    rightToLeftWorld.setTile(leftBoundaryWorldTileX, -1, 1);
+    rightToLeftWorld.setTile(leftBoundaryWorldTileX, 0, 0);
+
+    recomputeSunlightFromExposedChunkTops(rightToLeftWorld);
+    expect(rightToLeftWorld.getLightLevel(leftBoundaryWorldTileX, 0)).toBe(0);
+
+    expect(rightToLeftWorld.setTile(rightBoundaryWorldTileX, 0, 0)).toBe(true);
+    expect(rightToLeftWorld.getDirtyLightChunkCoords()).toEqual(expectedDirtyBoundaryChunks);
+    expect(rightToLeftWorld.getDirtyLightChunkCount()).toBe(4);
+
+    expect(recomputeSunlightFromExposedChunkTops(rightToLeftWorld)).toBe(4);
+    expect(rightToLeftWorld.getLightLevel(leftBoundaryWorldTileX, 0)).toBe(MAX_LIGHT_LEVEL);
+    expect(rightToLeftWorld.getDirtyLightChunkCount()).toBe(0);
+  });
+
   it('merges local emissive falloff over the sunlight base field', () => {
     const world = new TileWorld(0);
 

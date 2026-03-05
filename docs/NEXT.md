@@ -13,8 +13,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 162. Surface resident dirty-light chunk counts in a compact debug-edit summary chip when the text debug HUD is hidden.
 177. Add a sunlight regression where toggling a non-emissive `blocksLight` tile beside an emissive source at a resident-boundary edge does not leak stale light into unloaded neighboring columns when those chunks stream back in.
-184. Add a sunlight regression that toggling a non-emissive `blocksLight` tile on either side of a resident chunk-boundary edge updates transported sunlight symmetrically across that boundary.
 189. Add renderer telemetry fields for standalone-player nearby-light source chunk and chunk-local tile coordinates alongside the existing source world tile coordinates.
+191. Add a sunlight regression where toggling a non-emissive `blocksLight` boundary tile at a loaded chunk-boundary corner (`localY = CHUNK_SIZE - 1`) updates transported sunlight in the loaded chunk row below on both sides.
 
 ## Entities and interpolation
 
