@@ -121,6 +121,7 @@ describe('tile metadata loader', () => {
     expect(describeLiquidRenderVariantSource(8, 1)).toBe('uvRect 0.583,0.75..0.667,1');
     expect(describeLiquidRenderVariantSource(8, 2)).toBe('uvRect 0.5,0.75..0.542,1');
     expect(describeLiquidRenderVariantSource(8, 3)).toBe('uvRect 0.625,0.75..0.667,0.875');
+    expect(describeLiquidRenderVariantSource(8, 4)).toBe('uvRect 0.542,0.75..0.583,1');
     expect(describeLiquidRenderVariantSource(8, 5)).toBe('uvRect 0.542,0.75..0.625,1');
     expect(describeLiquidRenderVariantSource(8, 6)).toBe('uvRect 0.625,0.875..0.667,1');
     expect(describeLiquidRenderVariantSource(8, 7)).toBe('uvRect 0.625,0.75..0.667,1');
@@ -135,6 +136,8 @@ describe('tile metadata loader', () => {
     expect(describeLiquidRenderVariantSource(8, 0)).not.toBe(describeLiquidRenderVariantSource(8, 10));
     expect(describeLiquidRenderVariantSource(8, 2)).not.toBe(describeLiquidRenderVariantSource(8, 0));
     expect(describeLiquidRenderVariantSource(8, 2)).not.toBe(describeLiquidRenderVariantSource(8, 1));
+    expect(describeLiquidRenderVariantSource(8, 4)).not.toBe(describeLiquidRenderVariantSource(8, 0));
+    expect(describeLiquidRenderVariantSource(8, 4)).not.toBe(describeLiquidRenderVariantSource(8, 1));
     expect(describeLiquidRenderVariantSource(8, 5)).not.toBe(describeLiquidRenderVariantSource(8, 1));
     expect(describeLiquidRenderVariantSource(8, 5)).not.toBe(describeLiquidRenderVariantSource(8, 10));
     expect(describeLiquidRenderVariantSource(8, 8)).not.toBe(describeLiquidRenderVariantSource(8, 0));
@@ -149,6 +152,9 @@ describe('tile metadata loader', () => {
     );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 3, 180)).toBe(
       'uvRect 0.458,0.75..0.5,0.875'
+    );
+    expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 4, 180)).toBe(
+      'uvRect 0.375,0.75..0.417,1'
     );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 5, 180)).toBe(
       'uvRect 0.375,0.75..0.458,1'
