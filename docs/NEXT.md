@@ -19,9 +19,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Entities and interpolation
 
-16. Add a minimal entity registry with fixed-step update hooks and render-state snapshots.
 17. Move the player onto the entity layer once the standalone controller works.
 18. Render entities in a separate pass with interpolation between fixed updates.
+228. Re-route standalone-player placeholder pose selection and nearby-light telemetry through the entity render-snapshot path once tasks `17-18` land, with focused renderer regression coverage.
 
 ## Save/load
 
@@ -51,8 +51,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Ambitious vertical slices
 
-213. Add a hostile-slime combat slice after entity scaffolding (`16-18`): deterministic spawn windows near the player, jump-chase movement, player contact damage plus invulnerability cooldown, and fixed-step combat regressions.
-214. Add a dropped-item + hotbar inventory slice after entity scaffolding (`16-18`): stackable world pickups with proximity pickup rules, hotbar assignment and selection, and save/load snapshot regressions for item stacks.
+213. Add a hostile-slime combat slice after entity scaffolding (`17-18`): deterministic spawn windows near the player, jump-chase movement, player contact damage plus invulnerability cooldown, and fixed-step combat regressions.
+214. Add a dropped-item + hotbar inventory slice after entity scaffolding (`17-18`): stackable world pickups with proximity pickup rules, hotbar assignment and selection, and save/load snapshot regressions for item stacks.
 215. Add a placeable-workbench crafting slice after inventory basics: recipe registry for a minimal starter set, in-world station-range gating, shell or debug panel crafting actions, and recipe resolution regressions.
 221. Add a starter melee-weapon follow-up after hostile-slime combat (`213`): fixed-step swing windup/active/recovery timing, slime hit detection plus knockback, and deterministic hit-cooldown regressions.
 

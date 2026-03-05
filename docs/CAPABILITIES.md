@@ -66,6 +66,10 @@ This document describes the current project state. Unlike the changelog, it shou
 - Standalone player-state helpers track feet-centered `position`, `velocity`, explicit `size`, `grounded`, and `facing`, can seed that state from spawn output, derive the collision AABB plus one-step fixed-update integration from the same model, expose a body-center camera focus point, probe adjacent support, wall, and ceiling contacts from the current AABB while tagging wall contacts with a resolved `left` or `right` side, resolve normalized movement intent into grounded walk acceleration or braking plus a grounded jump impulse, advance through x-then-y collision sweeps that zero blocked velocity and recompute grounded support after movement, and apply gravity plus fall-speed clamping before the shared collision step.
 - The fixed update loop now keeps a spawned standalone player state alive through shared keyboard and touch movement intent, so desktop keys and touch buttons can move and jump the player while debug edits still refresh spawn placement, unsupported tiles still make the player fall, edits that trap the player inside solid tiles still respawn it from the latest resolved valid spawn, and the renderer receives the current wall and ceiling contact state plus a short ceiling-bonk presentation latch so airborne wall collisions can swap the placeholder into a wall-slide pose while upward collisions can swap it into a ceiling-bonk pose that remains readable after the immediate contact frame.
 
+## Entity Foundation
+
+- `src/world/entityRegistry.ts` now provides a simulation-owned entity registry that assigns stable numeric IDs, runs per-entity fixed-step hooks in spawn order, keeps `previous` and `current` render-state snapshots ready for future interpolation, and lets external state replacement resynchronize those snapshots immediately so spawn, teleport, and respawn-style discontinuities can avoid interpolation smear; no live gameplay actor has migrated onto that layer yet.
+
 ## Hot-Path Lookup Strategy
 
 - Gameplay metadata compiles into dense lookup arrays for collision, light-blocking, emissive-light, and liquid queries.

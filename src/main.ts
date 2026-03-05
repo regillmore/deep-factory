@@ -53,6 +53,7 @@ import type { DebugEditHoveredTileState } from './ui/debugEditStatusHelpers';
 import { TouchDebugEditControls, type DebugBrushOption } from './ui/touchDebugEditControls';
 import { TouchPlayerControls } from './ui/touchPlayerControls';
 import { CHUNK_SIZE } from './world/constants';
+import { EntityRegistry } from './world/entityRegistry';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
 import {
   resolvePlayerCeilingContactTransitionEvent,
@@ -350,6 +351,7 @@ const bootstrap = async (): Promise<void> => {
   let suppressDebugEditControlPersistence = false;
   let pinnedDebugTileInspect: PinnedDebugTileInspectState | null = null;
   let resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
+  const entityRegistry = new EntityRegistry();
   let standalonePlayerState: PlayerState | null = null;
   let playerSpawnNeedsRefresh = false;
   let cameraFollowOffset: CameraFollowOffset = { x: 0, y: 0 };
@@ -1886,6 +1888,9 @@ const bootstrap = async (): Promise<void> => {
         }
         applyStandalonePlayerCameraFollow();
       }
+
+      // Non-player entities step here until the standalone player moves onto the entity layer.
+      entityRegistry.fixedUpdateAll(fixedDt);
     },
     (_alpha, frameDtMs) => {
       if (currentScreen !== 'in-world') {

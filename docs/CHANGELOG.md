@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add a minimal entity registry with fixed-step update hooks and render-state snapshots.
+- Changes: Added [src/world/entityRegistry.ts](../src/world/entityRegistry.ts) with deterministic entity IDs, per-entity fixed-step hooks, and previous/current render-state snapshot tracking; added focused regression coverage in [src/world/entityRegistry.test.ts](../src/world/entityRegistry.test.ts); wired a no-op-ready fixed-step hook point into [src/main.ts](../src/main.ts) without moving the standalone player yet; removed completed task `16` from [docs/NEXT.md](docs/NEXT.md), added replacement task `228`, and updated [docs/CHANGELOG.md](docs/CHANGELOG.md), [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/entityRegistry.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Persist in-world shell toggle states with local storage and make debug shell toggles default to off when no persisted state is available.
 - Changes: Updated [src/mainWorldSessionShellState.ts](../src/mainWorldSessionShellState.ts) with all-off default shell-toggle state plus safe local-storage load and save helpers, expanded [src/mainWorldSessionShellState.test.ts](../src/mainWorldSessionShellState.test.ts) with default-state and persistence coverage, wired [src/main.ts](../src/main.ts) to load and persist shell-toggle state through runtime shell and keyboard toggle flows plus paused-menu transitions, removed completed task `225` from [docs/NEXT.md](docs/NEXT.md), added replacement task `227`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/mainWorldSessionShellState.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

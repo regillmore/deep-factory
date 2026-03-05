@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-05: Entity render snapshots advance on fixed-step boundaries
+
+- Decision: `EntityRegistry` stores `previous` and `current` render snapshots per entity, rotates those snapshots only after each completed fixed update, and resets both snapshots together when an entity spawns or its simulation state is replaced outside the fixed-step path.
+- Reason: Upcoming interpolated entity rendering needs stable pre-step and post-step render data, and spawn, teleport, or respawn-style discontinuities should not smear across frames.
+- Consequence: Future entity migration and rendering work should capture presentation state through the registry snapshot path and use explicit state replacement when interpolation must reset immediately.
+
 ### 2026-03-05: In-world shell toggle preferences persist locally with all-off fallback defaults
 
 - Decision: In-world shell toggle visibility for `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`, and `Shortcuts` now loads and saves through `localStorage`, and missing, invalid, or unreadable persisted state falls back to all five toggles off.
