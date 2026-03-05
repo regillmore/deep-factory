@@ -180,6 +180,8 @@ export interface DebugOverlayInspectState {
   playerNearbyLightLevel?: number | null;
   playerNearbyLightFactor?: number | null;
   playerNearbyLightSourceTile?: { x: number; y: number } | null;
+  playerNearbyLightSourceChunk?: { x: number; y: number } | null;
+  playerNearbyLightSourceLocalTile?: { x: number; y: number } | null;
   playerIntent: DebugOverlayPlayerIntentTelemetry | null;
   playerCameraFollow: DebugOverlayPlayerCameraFollowTelemetry | null;
   playerGroundedTransition: DebugOverlayPlayerGroundedTransitionTelemetry | null;
@@ -369,7 +371,9 @@ const formatPlayerCeilingBonkHoldLine = (playerCeilingBonkHoldActive: boolean | 
 const formatPlayerNearbyLightLine = (
   playerNearbyLightLevel: number | null,
   playerNearbyLightFactor: number | null,
-  playerNearbyLightSourceTile: { x: number; y: number } | null
+  playerNearbyLightSourceTile: { x: number; y: number } | null,
+  playerNearbyLightSourceChunk: { x: number; y: number } | null,
+  playerNearbyLightSourceLocalTile: { x: number; y: number } | null
 ): string => {
   if (playerNearbyLightLevel === null && playerNearbyLightFactor === null) {
     return 'LightSample: n/a';
@@ -385,25 +389,15 @@ const formatPlayerNearbyLightLine = (
       ? 'n/a'
       : `${formatInt(playerNearbyLightSourceTile.x)},${formatInt(playerNearbyLightSourceTile.y)}`;
   const lightSourceChunk =
-    playerNearbyLightSourceTile === null
+    playerNearbyLightSourceChunk === null
       ? 'n/a'
-      : (() => {
-          const { chunkX, chunkY } = worldToChunkCoord(
-            playerNearbyLightSourceTile.x,
-            playerNearbyLightSourceTile.y
-          );
-          return `${formatInt(chunkX)},${formatInt(chunkY)}`;
-        })();
+      : `${formatInt(playerNearbyLightSourceChunk.x)},${formatInt(playerNearbyLightSourceChunk.y)}`;
   const lightSourceLocal =
-    playerNearbyLightSourceTile === null
+    playerNearbyLightSourceLocalTile === null
       ? 'n/a'
-      : (() => {
-          const { localX, localY } = worldToLocalTile(
-            playerNearbyLightSourceTile.x,
-            playerNearbyLightSourceTile.y
-          );
-          return `${formatInt(localX)},${formatInt(localY)}`;
-        })();
+      : `${formatInt(playerNearbyLightSourceLocalTile.x)},${formatInt(
+          playerNearbyLightSourceLocalTile.y
+        )}`;
   return (
     `LightSample: ${lightLevel} | factor:${lightFactor} | source:${lightSourceTile} | ` +
     `sourceChunk:${lightSourceChunk} | sourceLocal:${lightSourceLocal}`
@@ -614,6 +608,8 @@ export const formatDebugOverlayText = (
   const playerNearbyLightLevel = inspect?.playerNearbyLightLevel ?? null;
   const playerNearbyLightFactor = inspect?.playerNearbyLightFactor ?? null;
   const playerNearbyLightSourceTile = inspect?.playerNearbyLightSourceTile ?? null;
+  const playerNearbyLightSourceChunk = inspect?.playerNearbyLightSourceChunk ?? null;
+  const playerNearbyLightSourceLocalTile = inspect?.playerNearbyLightSourceLocalTile ?? null;
   const playerIntent = inspect?.playerIntent ?? null;
   const playerCameraFollow = inspect?.playerCameraFollow ?? null;
   const playerGroundedTransition = inspect?.playerGroundedTransition ?? null;
@@ -632,7 +628,9 @@ export const formatDebugOverlayText = (
     formatPlayerNearbyLightLine(
       playerNearbyLightLevel,
       playerNearbyLightFactor,
-      playerNearbyLightSourceTile
+      playerNearbyLightSourceTile,
+      playerNearbyLightSourceChunk,
+      playerNearbyLightSourceLocalTile
     ),
     formatPlayerGroundedTransitionLine(playerGroundedTransition),
     formatPlayerFacingTransitionLine(playerFacingTransition),

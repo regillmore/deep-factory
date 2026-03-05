@@ -68,6 +68,8 @@ describe('formatDebugOverlayText', () => {
       playerNearbyLightLevel: 9,
       playerNearbyLightFactor: 0.6,
       playerNearbyLightSourceTile: { x: 2, y: 2 },
+      playerNearbyLightSourceChunk: { x: 0, y: 0 },
+      playerNearbyLightSourceLocalTile: { x: 2, y: 2 },
       playerIntent: null,
       playerCameraFollow: null,
       playerGroundedTransition: null,
@@ -82,7 +84,7 @@ describe('formatDebugOverlayText', () => {
     );
   });
 
-  it('derives nearby-light source chunk-local telemetry for negative-world source tiles', () => {
+  it('uses renderer-provided nearby-light source chunk-local telemetry for negative-world source tiles', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: null,
       pinned: null,
@@ -93,6 +95,8 @@ describe('formatDebugOverlayText', () => {
       playerNearbyLightLevel: 12,
       playerNearbyLightFactor: 0.8,
       playerNearbyLightSourceTile: { x: -33, y: -1 },
+      playerNearbyLightSourceChunk: { x: -5, y: 4 },
+      playerNearbyLightSourceLocalTile: { x: 9, y: 10 },
       playerIntent: null,
       playerCameraFollow: null,
       playerGroundedTransition: null,
@@ -103,7 +107,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain(
-      '\nLightSample: 12/15 | factor:0.80 | source:-33,-1 | sourceChunk:-2,-1 | sourceLocal:31,31'
+      '\nLightSample: 12/15 | factor:0.80 | source:-33,-1 | sourceChunk:-5,4 | sourceLocal:9,10'
     );
   });
 

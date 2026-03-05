@@ -1520,6 +1520,24 @@ const bootstrap = async (): Promise<void> => {
             y: renderer.telemetry.standalonePlayerNearbyLightSourceTileY
           }
         : null;
+    const standalonePlayerNearbyLightSourceChunk =
+      standalonePlayerState &&
+      renderer.telemetry.standalonePlayerNearbyLightSourceChunkX !== null &&
+      renderer.telemetry.standalonePlayerNearbyLightSourceChunkY !== null
+        ? {
+            x: renderer.telemetry.standalonePlayerNearbyLightSourceChunkX,
+            y: renderer.telemetry.standalonePlayerNearbyLightSourceChunkY
+          }
+        : null;
+    const standalonePlayerNearbyLightSourceLocalTile =
+      standalonePlayerState &&
+      renderer.telemetry.standalonePlayerNearbyLightSourceLocalTileX !== null &&
+      renderer.telemetry.standalonePlayerNearbyLightSourceLocalTileY !== null
+        ? {
+            x: renderer.telemetry.standalonePlayerNearbyLightSourceLocalTileX,
+            y: renderer.telemetry.standalonePlayerNearbyLightSourceLocalTileY
+          }
+        : null;
     hoveredTileCursor.update(camera, {
       hovered: pointerInspect
         ? {
@@ -1592,6 +1610,10 @@ const bootstrap = async (): Promise<void> => {
       playerNearbyLightLevel: debugOverlayVisible ? null : standalonePlayerNearbyLightLevel,
       playerNearbyLightFactor: debugOverlayVisible ? null : standalonePlayerNearbyLightFactor,
       playerNearbyLightSourceTile: debugOverlayVisible ? null : standalonePlayerNearbyLightSourceTile,
+      playerNearbyLightSourceChunk:
+        debugOverlayVisible ? null : standalonePlayerNearbyLightSourceChunk,
+      playerNearbyLightSourceLocalTile:
+        debugOverlayVisible ? null : standalonePlayerNearbyLightSourceLocalTile,
       playerCeilingBonkHoldActive:
         debugOverlayVisible || !standalonePlayerState ? null : standalonePlayerCeilingBonkHoldActive,
       playerGrounded: debugOverlayVisible ? null : standalonePlayerState?.grounded ?? null,
@@ -1621,6 +1643,12 @@ const bootstrap = async (): Promise<void> => {
       playerNearbyLightLevel: standalonePlayerState ? standalonePlayerNearbyLightLevel : null,
       playerNearbyLightFactor: standalonePlayerState ? standalonePlayerNearbyLightFactor : null,
       playerNearbyLightSourceTile: standalonePlayerState ? standalonePlayerNearbyLightSourceTile : null,
+      playerNearbyLightSourceChunk: standalonePlayerState
+        ? standalonePlayerNearbyLightSourceChunk
+        : null,
+      playerNearbyLightSourceLocalTile: standalonePlayerState
+        ? standalonePlayerNearbyLightSourceLocalTile
+        : null,
       playerIntent: debugOverlayPlayerIntent,
       playerCameraFollow: debugOverlayPlayerCameraFollow,
       playerGroundedTransition: lastPlayerGroundedTransitionEvent,

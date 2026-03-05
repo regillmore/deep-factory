@@ -9,7 +9,6 @@ import {
   type TouchDebugEditMode
 } from '../input/controller';
 import { MAX_LIGHT_LEVEL } from '../world/constants';
-import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
@@ -49,6 +48,8 @@ export interface DebugEditStatusStripState {
   playerNearbyLightLevel?: number | null;
   playerNearbyLightFactor?: number | null;
   playerNearbyLightSourceTile?: { x: number; y: number } | null;
+  playerNearbyLightSourceChunk?: { x: number; y: number } | null;
+  playerNearbyLightSourceLocalTile?: { x: number; y: number } | null;
   playerCeilingBonkHoldActive?: boolean | null;
   playerGrounded?: boolean | null;
   playerFacing?: PlayerFacing | null;
@@ -734,7 +735,9 @@ const formatLiveResidentDirtyLightChunksText = (
 const formatLiveNearbyLightText = (
   playerNearbyLightLevel: number | null,
   playerNearbyLightFactor: number | null,
-  playerNearbyLightSourceTile: { x: number; y: number } | null
+  playerNearbyLightSourceTile: { x: number; y: number } | null,
+  playerNearbyLightSourceChunk: { x: number; y: number } | null,
+  playerNearbyLightSourceLocalTile: { x: number; y: number } | null
 ): string | null => {
   if (playerNearbyLightLevel === null && playerNearbyLightFactor === null) {
     return null;
@@ -750,25 +753,15 @@ const formatLiveNearbyLightText = (
       ? 'n/a'
       : `${Math.round(playerNearbyLightSourceTile.x)},${Math.round(playerNearbyLightSourceTile.y)}`;
   const nearbyLightSourceChunkText =
-    playerNearbyLightSourceTile === null
+    playerNearbyLightSourceChunk === null
       ? 'n/a'
-      : (() => {
-          const { chunkX, chunkY } = worldToChunkCoord(
-            playerNearbyLightSourceTile.x,
-            playerNearbyLightSourceTile.y
-          );
-          return `${chunkX},${chunkY}`;
-        })();
+      : `${Math.round(playerNearbyLightSourceChunk.x)},${Math.round(playerNearbyLightSourceChunk.y)}`;
   const nearbyLightSourceLocalText =
-    playerNearbyLightSourceTile === null
+    playerNearbyLightSourceLocalTile === null
       ? 'n/a'
-      : (() => {
-          const { localX, localY } = worldToLocalTile(
-            playerNearbyLightSourceTile.x,
-            playerNearbyLightSourceTile.y
-          );
-          return `${localX},${localY}`;
-        })();
+      : `${Math.round(playerNearbyLightSourceLocalTile.x)},${Math.round(
+          playerNearbyLightSourceLocalTile.y
+        )}`;
   return (
     `LightSampleNow: ${nearbyLightLevelText} | ` +
     `factor:${nearbyLightFactorText} | ` +
@@ -876,6 +869,8 @@ const buildPlayerText = (
   playerNearbyLightLevel: number | null,
   playerNearbyLightFactor: number | null,
   playerNearbyLightSourceTile: { x: number; y: number } | null,
+  playerNearbyLightSourceChunk: { x: number; y: number } | null,
+  playerNearbyLightSourceLocalTile: { x: number; y: number } | null,
   playerCeilingBonkHoldActive: boolean | null,
   playerGrounded: boolean | null,
   playerFacing: PlayerFacing | null,
@@ -906,7 +901,9 @@ const buildPlayerText = (
     formatLiveNearbyLightText(
       playerNearbyLightLevel,
       playerNearbyLightFactor,
-      playerNearbyLightSourceTile
+      playerNearbyLightSourceTile,
+      playerNearbyLightSourceChunk,
+      playerNearbyLightSourceLocalTile
     ),
     formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive),
     formatLiveGroundedText(playerGrounded),
@@ -1420,6 +1417,8 @@ export const buildDebugEditStatusStripModel = (
   const playerNearbyLightLevel = state.playerNearbyLightLevel ?? null;
   const playerNearbyLightFactor = state.playerNearbyLightFactor ?? null;
   const playerNearbyLightSourceTile = state.playerNearbyLightSourceTile ?? null;
+  const playerNearbyLightSourceChunk = state.playerNearbyLightSourceChunk ?? null;
+  const playerNearbyLightSourceLocalTile = state.playerNearbyLightSourceLocalTile ?? null;
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
   const playerGrounded = state.playerGrounded ?? null;
   const playerFacing = state.playerFacing ?? null;
@@ -1460,6 +1459,8 @@ export const buildDebugEditStatusStripModel = (
       playerNearbyLightLevel,
       playerNearbyLightFactor,
       playerNearbyLightSourceTile,
+      playerNearbyLightSourceChunk,
+      playerNearbyLightSourceLocalTile,
       playerCeilingBonkHoldActive,
       playerGrounded,
       playerFacing,

@@ -399,6 +399,8 @@ describe('buildDebugEditStatusStripModel', () => {
       playerNearbyLightLevel: 9,
       playerNearbyLightFactor: 0.6,
       playerNearbyLightSourceTile: { x: 2, y: 2 },
+      playerNearbyLightSourceChunk: { x: 0, y: 0 },
+      playerNearbyLightSourceLocalTile: { x: 2, y: 2 },
       preview: createEmptyPreviewState()
     });
 
@@ -408,7 +410,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('formats standalone-player nearby-light source chunk-local telemetry for negative-world source tiles', () => {
+  it('uses renderer-provided standalone-player nearby-light source chunk-local telemetry for negative-world source tiles', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -419,11 +421,13 @@ describe('buildDebugEditStatusStripModel', () => {
       playerNearbyLightLevel: 12,
       playerNearbyLightFactor: 0.8,
       playerNearbyLightSourceTile: { x: -33, y: -1 },
+      playerNearbyLightSourceChunk: { x: -5, y: 4 },
+      playerNearbyLightSourceLocalTile: { x: 9, y: 10 },
       preview: createEmptyPreviewState()
     });
 
     expect(model.playerText).toBe(
-      'LightSampleNow: 12/15 | factor:0.80 | source:-33,-1 | sourceChunk:-2,-1 | sourceLocal:31,31'
+      'LightSampleNow: 12/15 | factor:0.80 | source:-33,-1 | sourceChunk:-5,4 | sourceLocal:9,10'
     );
     expect(model.eventText).toBeNull();
   });
@@ -934,6 +938,8 @@ describe('buildDebugEditStatusStripModel', () => {
       playerNearbyLightLevel: 12,
       playerNearbyLightFactor: 0.8,
       playerNearbyLightSourceTile: { x: 4, y: -1 },
+      playerNearbyLightSourceChunk: { x: 0, y: -1 },
+      playerNearbyLightSourceLocalTile: { x: 4, y: 31 },
       preview: createEmptyPreviewState()
     });
 

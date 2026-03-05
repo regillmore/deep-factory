@@ -15,7 +15,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 208. Add a sunlight regression where dirty-column-only recompute keeps lateral blocker-face sunlight stable when the adjacent lit-air column remains clean.
 177. Add a sunlight regression where toggling a non-emissive `blocksLight` tile beside an emissive source at a resident-boundary edge does not leak stale light into unloaded neighboring columns when those chunks stream back in.
 211. Add a sunlight regression where a boundary bottom-corner `blocksLight` toggle (`localY = CHUNK_SIZE - 1`) followed by unloading and reloading the adjacent row-below chunk keeps transported sunlight correct on dirty boundary columns without stale carryover into clean non-boundary columns.
-212. Consume renderer-provided standalone-player nearby-light source chunk and chunk-local tile telemetry in debug HUD and compact-strip formatting paths instead of recomputing from source world tile coordinates, with negative-world regression coverage.
 
 ## Entities and interpolation
 
@@ -48,5 +47,11 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 134. Surface standalone player live camera chunk-local tile coordinates in the compact debug-edit status strip once task 133 lands camera world chunk coordinates.
 148. Surface standalone player live camera chunk-local tile coordinates in the text debug HUD once camera world tile and world chunk telemetry are both available.
+
+## Ambitious vertical slices
+
+213. Add a hostile-slime combat slice after entity scaffolding (`16-18`): deterministic spawn windows near the player, jump-chase movement, player contact damage plus invulnerability cooldown, and fixed-step combat regressions.
+214. Add a dropped-item + hotbar inventory slice after entity scaffolding (`16-18`): stackable world pickups with proximity pickup rules, hotbar assignment and selection, and save/load snapshot regressions for item stacks.
+215. Add a placeable-workbench crafting slice after inventory basics: recipe registry for a minimal starter set, in-world station-range gating, shell or debug panel crafting actions, and recipe resolution regressions.
 
 ## Project structure optimization
