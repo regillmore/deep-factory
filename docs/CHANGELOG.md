@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add a sunlight regression where toggling a non-emissive `blocksLight` boundary tile at a loaded chunk-boundary corner (`localY = CHUNK_SIZE - 1`) updates transported sunlight in the loaded chunk row below on both sides.
+- Changes: Updated [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a new bidirectional boundary-corner regression that verifies both left-to-right and right-to-left blocker toggles dirty the expected boundary-plus-row-below chunks and refresh transported sunlight in the loaded row below; advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `191` and adding one replacement follow-up task.
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts`.
+
 - Task: Add authored-atlas asset regressions that verify both animated lava `-E--`, `--S-`, and `---W` single-side direct-`uvRect` frames sample non-transparent committed pixels.
 - Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) with a shared lava single-side frame-source helper plus three focused committed-atlas regressions for masks `2`, `4`, and `8`, each asserting both animated frame source paths and non-transparent committed PNG pixels; advanced [docs/NEXT.md](docs/NEXT.md) by removing completed tasks `196`, `197`, and `201`, then added three ambitious replacement tasks `202`, `203`, and `204`.
 - Verification: Ran `cmd /c npx vitest run src/gl/authoredAtlasAsset.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
