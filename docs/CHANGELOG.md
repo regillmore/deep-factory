@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Surface the paused-menu `Resume World` shortcut in the shell button tooltip alongside the existing paused-session copy.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused-menu primary `Resume World` button now exposes shortcut-aware paused-session-preservation tooltip copy, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused tooltip-title resolver coverage, removed completed task `158` from [docs/NEXT.md](docs/NEXT.md) and added replacement task `219`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx.cmd vitest run src/ui/appShell.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Fix recessed solid-face sunlight in the hovering-blocker vertical stack case where a one-tile gap sits above a three-solid row.
 - Changes: Updated [src/world/sunlight.ts](../src/world/sunlight.ts) so the blocker-face sunlight pass now also lights dirty-column blockers when their vertical adjacent air tile is shadowed but has horizontal sunlit air neighbors, preserving existing boundary transport scope while covering the lower-middle-solid case; added a focused regression in [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) for the hovering-blocker-plus-gap-plus-row layout; advanced [docs/NEXT.md](docs/NEXT.md) by replacing completed task `216` with follow-up task `217`; and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

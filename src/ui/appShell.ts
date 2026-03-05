@@ -97,6 +97,9 @@ const resolveMainMenuSecondaryActionLabel = (label: string): string =>
 export const resolvePausedMainMenuFreshWorldTitle = (): string =>
   `Discard the paused session, camera state, and undo history, then boot a fresh world (${getDesktopFreshWorldHotkeyLabel()})`;
 
+export const resolvePausedMainMenuResumeWorldTitle = (): string =>
+  `Resume the paused world session with current player, camera state, and debug edits intact (${getDesktopResumeWorldHotkeyLabel()})`;
+
 const resolveInWorldReturnToMainMenuActionLabel = (): string =>
   `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`;
 
@@ -378,6 +381,10 @@ export class AppShell {
     this.detailList.style.display = resolveAppShellRegionDisplay(viewModel.detailLines.length > 0, 'grid');
     this.primaryButton.textContent = viewModel.primaryActionLabel ?? '';
     this.primaryButton.hidden = viewModel.primaryActionLabel === null;
+    this.primaryButton.title =
+      state.screen === 'main-menu' && state.primaryActionLabel === 'Resume World'
+        ? resolvePausedMainMenuResumeWorldTitle()
+        : '';
     this.secondaryButton.textContent = viewModel.secondaryActionLabel ?? '';
     this.secondaryButton.hidden = viewModel.secondaryActionLabel === null;
     this.secondaryButton.title =

@@ -14,6 +14,7 @@ import {
   createPausedMainMenuShellState,
   resolveAppShellRegionDisplay,
   resolvePausedMainMenuFreshWorldTitle,
+  resolvePausedMainMenuResumeWorldTitle,
   resolveInWorldDebugEditControlsToggleTitle,
   resolveAppShellViewModel
 } from './appShell';
@@ -279,6 +280,14 @@ describe('resolvePausedMainMenuFreshWorldTitle', () => {
   it('includes the paused-menu New World desktop shortcut in the destructive tooltip copy', () => {
     expect(resolvePausedMainMenuFreshWorldTitle()).toBe(
       `Discard the paused session, camera state, and undo history, then boot a fresh world (${getDesktopFreshWorldHotkeyLabel()})`
+    );
+  });
+});
+
+describe('resolvePausedMainMenuResumeWorldTitle', () => {
+  it('includes the paused-menu Resume World desktop shortcut in the resume tooltip copy', () => {
+    expect(resolvePausedMainMenuResumeWorldTitle()).toBe(
+      `Resume the paused world session with current player, camera state, and debug edits intact (${getDesktopResumeWorldHotkeyLabel()})`
     );
   });
 });
