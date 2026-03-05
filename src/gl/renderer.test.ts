@@ -157,6 +157,8 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.residentDirtyLightChunks).toBe(0);
     expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBeNull();
     expect(renderer.telemetry.standalonePlayerNearbyLightFactor).toBeNull();
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileX).toBeNull();
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileY).toBeNull();
   });
 
   it('flips placeholder shader uv.y so pose rectangles stay upright with top-to-bottom quad UVs', () => {
@@ -449,6 +451,8 @@ describe('Renderer atlas telemetry', () => {
     expect(getLightLevelSpy).toHaveBeenCalled();
     expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBe(9);
     expect(renderer.telemetry.standalonePlayerNearbyLightFactor).toBeCloseTo(9 / 15, 5);
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileX).toBe(-2);
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileY).toBe(-3);
   });
 
   it('clears standalone player nearby-light telemetry when the player is not rendered', async () => {
@@ -479,12 +483,16 @@ describe('Renderer atlas telemetry', () => {
     });
     expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBe(12);
     expect(renderer.telemetry.standalonePlayerNearbyLightFactor).toBeCloseTo(12 / 15, 5);
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileX).toBe(-2);
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileY).toBe(-3);
 
     renderer.render(camera, {
       timeMs: 16
     });
     expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBeNull();
     expect(renderer.telemetry.standalonePlayerNearbyLightFactor).toBeNull();
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileX).toBeNull();
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileY).toBeNull();
   });
 
   it('advances grounded walk placeholder poses across elapsed render time', async () => {

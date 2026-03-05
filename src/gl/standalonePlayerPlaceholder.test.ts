@@ -8,6 +8,7 @@ import {
   getStandalonePlayerPlaceholderFacingSign,
   getStandalonePlayerPlaceholderNearbyLightFactor,
   getStandalonePlayerPlaceholderNearbyLightLevel,
+  getStandalonePlayerPlaceholderNearbyLightSample,
   getStandalonePlayerPlaceholderPoseLabel,
   getStandalonePlayerPlaceholderPoseLabelFromIndex,
   getStandalonePlayerPlaceholderRenderFacingSign,
@@ -244,6 +245,10 @@ describe('standalonePlayerPlaceholder', () => {
     expect(world.setLightLevel(1, 0, 5)).toBe(true);
     expect(world.setLightLevel(2, 2, 11)).toBe(true);
 
+    expect(getStandalonePlayerPlaceholderNearbyLightSample(world, state)).toEqual({
+      level: 11,
+      sourceTile: { x: 2, y: 2 }
+    });
     expect(getStandalonePlayerPlaceholderNearbyLightLevel(world, state)).toBe(11);
   });
 

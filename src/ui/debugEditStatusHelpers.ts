@@ -47,6 +47,7 @@ export interface DebugEditStatusStripState {
   residentDirtyLightChunks?: number | null;
   playerNearbyLightLevel?: number | null;
   playerNearbyLightFactor?: number | null;
+  playerNearbyLightSourceTile?: { x: number; y: number } | null;
   playerCeilingBonkHoldActive?: boolean | null;
   playerGrounded?: boolean | null;
   playerFacing?: PlayerFacing | null;
@@ -731,7 +732,8 @@ const formatLiveResidentDirtyLightChunksText = (
 
 const formatLiveNearbyLightText = (
   playerNearbyLightLevel: number | null,
-  playerNearbyLightFactor: number | null
+  playerNearbyLightFactor: number | null,
+  playerNearbyLightSourceTile: { x: number; y: number } | null
 ): string | null => {
   if (playerNearbyLightLevel === null && playerNearbyLightFactor === null) {
     return null;
@@ -742,7 +744,15 @@ const formatLiveNearbyLightText = (
       ? 'n/a'
       : `${Math.round(playerNearbyLightLevel)}/${MAX_LIGHT_LEVEL}`;
   const nearbyLightFactorText = playerNearbyLightFactor === null ? 'n/a' : playerNearbyLightFactor.toFixed(2);
-  return `LightSampleNow: ${nearbyLightLevelText} | factor:${nearbyLightFactorText}`;
+  const nearbyLightSourceTileText =
+    playerNearbyLightSourceTile === null
+      ? 'n/a'
+      : `${Math.round(playerNearbyLightSourceTile.x)},${Math.round(playerNearbyLightSourceTile.y)}`;
+  return (
+    `LightSampleNow: ${nearbyLightLevelText} | ` +
+    `factor:${nearbyLightFactorText} | ` +
+    `source:${nearbyLightSourceTileText}`
+  );
 };
 
 const formatLiveFacingText = (playerFacing: PlayerFacing | null): string | null => {
@@ -842,6 +852,7 @@ const buildPlayerText = (
   residentDirtyLightChunks: number | null,
   playerNearbyLightLevel: number | null,
   playerNearbyLightFactor: number | null,
+  playerNearbyLightSourceTile: { x: number; y: number } | null,
   playerCeilingBonkHoldActive: boolean | null,
   playerGrounded: boolean | null,
   playerFacing: PlayerFacing | null,
@@ -869,7 +880,11 @@ const buildPlayerText = (
     formatLiveCameraFollowOffsetText(playerCameraFollowOffset),
     formatLiveCameraZoomText(playerCameraZoom),
     formatLiveResidentDirtyLightChunksText(residentDirtyLightChunks),
-    formatLiveNearbyLightText(playerNearbyLightLevel, playerNearbyLightFactor),
+    formatLiveNearbyLightText(
+      playerNearbyLightLevel,
+      playerNearbyLightFactor,
+      playerNearbyLightSourceTile
+    ),
     formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive),
     formatLiveGroundedText(playerGrounded),
     formatLiveFacingText(playerFacing),
@@ -1381,6 +1396,7 @@ export const buildDebugEditStatusStripModel = (
   const residentDirtyLightChunks = state.residentDirtyLightChunks ?? null;
   const playerNearbyLightLevel = state.playerNearbyLightLevel ?? null;
   const playerNearbyLightFactor = state.playerNearbyLightFactor ?? null;
+  const playerNearbyLightSourceTile = state.playerNearbyLightSourceTile ?? null;
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
   const playerGrounded = state.playerGrounded ?? null;
   const playerFacing = state.playerFacing ?? null;
@@ -1420,6 +1436,7 @@ export const buildDebugEditStatusStripModel = (
       residentDirtyLightChunks,
       playerNearbyLightLevel,
       playerNearbyLightFactor,
+      playerNearbyLightSourceTile,
       playerCeilingBonkHoldActive,
       playerGrounded,
       playerFacing,

@@ -67,6 +67,7 @@ describe('formatDebugOverlayText', () => {
       playerCeilingBonkHoldActive: null,
       playerNearbyLightLevel: 9,
       playerNearbyLightFactor: 0.6,
+      playerNearbyLightSourceTile: { x: 2, y: 2 },
       playerIntent: null,
       playerCameraFollow: null,
       playerGroundedTransition: null,
@@ -76,7 +77,7 @@ describe('formatDebugOverlayText', () => {
       playerCeilingContactTransition: null
     });
 
-    expect(text).toContain('\nLightSample: 9/15 | factor:0.60');
+    expect(text).toContain('\nLightSample: 9/15 | factor:0.60 | source:2,2');
   });
 
   it('shows when the renderer is using the placeholder atlas fallback', () => {

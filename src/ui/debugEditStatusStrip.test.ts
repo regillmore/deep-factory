@@ -202,9 +202,11 @@ describe('buildWrappedDetailLines', () => {
   });
 
   it('preserves separate pose and nearby-light sample player lines while keeping each line individually wrappable', () => {
-    expect(buildWrappedDetailLines('Pose: grounded-idle\nLightSampleNow: 9/15 | factor:0.60')).toEqual([
+    expect(
+      buildWrappedDetailLines('Pose: grounded-idle\nLightSampleNow: 9/15 | factor:0.60 | source:2,2')
+    ).toEqual([
       ['Pose: grounded-idle'],
-      ['LightSampleNow: 9/15', '| factor:0.60']
+      ['LightSampleNow: 9/15', '| factor:0.60', '| source:2,2']
     ]);
   });
 

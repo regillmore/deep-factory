@@ -1511,6 +1511,15 @@ const bootstrap = async (): Promise<void> => {
     const standalonePlayerNearbyLightFactor = standalonePlayerState
       ? renderer.telemetry.standalonePlayerNearbyLightFactor
       : null;
+    const standalonePlayerNearbyLightSourceTile =
+      standalonePlayerState &&
+      renderer.telemetry.standalonePlayerNearbyLightSourceTileX !== null &&
+      renderer.telemetry.standalonePlayerNearbyLightSourceTileY !== null
+        ? {
+            x: renderer.telemetry.standalonePlayerNearbyLightSourceTileX,
+            y: renderer.telemetry.standalonePlayerNearbyLightSourceTileY
+          }
+        : null;
     hoveredTileCursor.update(camera, {
       hovered: pointerInspect
         ? {
@@ -1582,6 +1591,7 @@ const bootstrap = async (): Promise<void> => {
       residentDirtyLightChunks: debugOverlayVisible ? null : renderer.telemetry.residentDirtyLightChunks,
       playerNearbyLightLevel: debugOverlayVisible ? null : standalonePlayerNearbyLightLevel,
       playerNearbyLightFactor: debugOverlayVisible ? null : standalonePlayerNearbyLightFactor,
+      playerNearbyLightSourceTile: debugOverlayVisible ? null : standalonePlayerNearbyLightSourceTile,
       playerCeilingBonkHoldActive:
         debugOverlayVisible || !standalonePlayerState ? null : standalonePlayerCeilingBonkHoldActive,
       playerGrounded: debugOverlayVisible ? null : standalonePlayerState?.grounded ?? null,
@@ -1610,6 +1620,7 @@ const bootstrap = async (): Promise<void> => {
       playerCeilingBonkHoldActive: standalonePlayerState ? standalonePlayerCeilingBonkHoldActive : null,
       playerNearbyLightLevel: standalonePlayerState ? standalonePlayerNearbyLightLevel : null,
       playerNearbyLightFactor: standalonePlayerState ? standalonePlayerNearbyLightFactor : null,
+      playerNearbyLightSourceTile: standalonePlayerState ? standalonePlayerNearbyLightSourceTile : null,
       playerIntent: debugOverlayPlayerIntent,
       playerCameraFollow: debugOverlayPlayerCameraFollow,
       playerGroundedTransition: lastPlayerGroundedTransitionEvent,

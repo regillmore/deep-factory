@@ -24,6 +24,16 @@ interface TileRange {
   max: number;
 }
 
+export interface StandalonePlayerPlaceholderNearbyLightSourceTile {
+  x: number;
+  y: number;
+}
+
+export interface StandalonePlayerPlaceholderNearbyLightSample {
+  level: number;
+  sourceTile: StandalonePlayerPlaceholderNearbyLightSourceTile | null;
+}
+
 const clampStandalonePlayerPlaceholderLightLevel = (lightLevel: number): number =>
   Math.max(0, Math.min(MAX_LIGHT_LEVEL, Math.floor(lightLevel)));
 
@@ -172,15 +182,21 @@ export const getStandalonePlayerPlaceholderRenderFacingSign = (
 export const getStandalonePlayerPlaceholderNearbyLightLevel = (
   world: Pick<TileWorld, 'getLightLevel'>,
   state: PlayerState
-): number => {
+): number => getStandalonePlayerPlaceholderNearbyLightSample(world, state).level;
+
+export const getStandalonePlayerPlaceholderNearbyLightSample = (
+  world: Pick<TileWorld, 'getLightLevel'>,
+  state: PlayerState
+): StandalonePlayerPlaceholderNearbyLightSample => {
   const aabb = getPlayerAabb(state);
   const xRange = getOverlappingTileRange(aabb.minX, aabb.maxX);
   const yRange = getOverlappingTileRange(aabb.minY, aabb.maxY);
   if (!xRange || !yRange) {
-    return 0;
+    return { level: 0, sourceTile: null };
   }
 
   let maxNearbyLightLevel = 0;
+  let maxNearbyLightSourceTile: StandalonePlayerPlaceholderNearbyLightSourceTile | null = null;
   for (
     let tileY = yRange.min - STANDALONE_PLAYER_PLACEHOLDER_NEARBY_LIGHT_SAMPLE_PADDING_TILES;
     tileY <= yRange.max + STANDALONE_PLAYER_PLACEHOLDER_NEARBY_LIGHT_SAMPLE_PADDING_TILES;
@@ -191,14 +207,24 @@ export const getStandalonePlayerPlaceholderNearbyLightLevel = (
       tileX <= xRange.max + STANDALONE_PLAYER_PLACEHOLDER_NEARBY_LIGHT_SAMPLE_PADDING_TILES;
       tileX += 1
     ) {
-      maxNearbyLightLevel = Math.max(maxNearbyLightLevel, world.getLightLevel(tileX, tileY));
+      const sampledLightLevel = clampStandalonePlayerPlaceholderLightLevel(world.getLightLevel(tileX, tileY));
+      if (sampledLightLevel > maxNearbyLightLevel || maxNearbyLightSourceTile === null) {
+        maxNearbyLightLevel = sampledLightLevel;
+        maxNearbyLightSourceTile = { x: tileX, y: tileY };
+      }
       if (maxNearbyLightLevel >= MAX_LIGHT_LEVEL) {
-        return MAX_LIGHT_LEVEL;
+        return {
+          level: MAX_LIGHT_LEVEL,
+          sourceTile: maxNearbyLightSourceTile
+        };
       }
     }
   }
 
-  return clampStandalonePlayerPlaceholderLightLevel(maxNearbyLightLevel);
+  return {
+    level: clampStandalonePlayerPlaceholderLightLevel(maxNearbyLightLevel),
+    sourceTile: maxNearbyLightSourceTile
+  };
 };
 
 export const getStandalonePlayerPlaceholderNearbyLightFactor = (

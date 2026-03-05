@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-05: Nearby-light telemetry includes brightest sampled source tile coordinates
+
+- Decision: Standalone-player nearby-light sampling now exposes both the resolved light level and the sampled world tile coordinates that produced that level, and renderer/debug telemetry surfaces those coordinates beside the existing level and factor values.
+- Reason: Light level and factor alone were not enough to validate why placeholder lighting changed near overlapping light fields.
+- Consequence: Future nearby-light sampling changes should keep source-tile reporting stable, including deterministic tie behavior (first sampled tile at the max level), so telemetry and tests remain comparable across passes.
+
 ### 2026-03-04: Standalone player placeholder lighting uses nearby max-light sampling
 
 - Decision: The temporary standalone player draw pass now samples resolved world light across the player AABB plus a one-tile padding ring, uses the brightest sampled tile as the placeholder light level, and applies that normalized factor in the placeholder fragment shader.

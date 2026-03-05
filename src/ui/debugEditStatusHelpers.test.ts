@@ -398,10 +398,11 @@ describe('buildDebugEditStatusStripModel', () => {
       desktopInspectPinArmed: false,
       playerNearbyLightLevel: 9,
       playerNearbyLightFactor: 0.6,
+      playerNearbyLightSourceTile: { x: 2, y: 2 },
       preview: createEmptyPreviewState()
     });
 
-    expect(model.playerText).toBe('LightSampleNow: 9/15 | factor:0.60');
+    expect(model.playerText).toBe('LightSampleNow: 9/15 | factor:0.60 | source:2,2');
     expect(model.eventText).toBeNull();
   });
 
@@ -910,10 +911,13 @@ describe('buildDebugEditStatusStripModel', () => {
       playerPlaceholderPoseLabel: 'grounded-idle',
       playerNearbyLightLevel: 12,
       playerNearbyLightFactor: 0.8,
+      playerNearbyLightSourceTile: { x: 4, y: -1 },
       preview: createEmptyPreviewState()
     });
 
-    expect(model.playerText).toBe('Pose: grounded-idle\nLightSampleNow: 12/15 | factor:0.80');
+    expect(model.playerText).toBe(
+      'Pose: grounded-idle\nLightSampleNow: 12/15 | factor:0.80 | source:4,-1'
+    );
     expect(model.eventText).toBeNull();
   });
 
