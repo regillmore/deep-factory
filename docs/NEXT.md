@@ -8,6 +8,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 195. Add an authored-atlas asset regression that verifies lava single-side masks (`N---`, `-E--`, `--S-`, `---W`) sample distinct committed pixels per animation frame.
 196. Add an authored-atlas asset regression that verifies both animated lava `-E--` single-side direct-`uvRect` frames sample non-transparent committed pixels.
+197. Add an authored-atlas asset regression that verifies both animated lava `--S-` single-side direct-`uvRect` frames sample non-transparent committed pixels.
 
 ## Lighting
 
@@ -37,7 +38,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## App shell
 
 66. Surface the in-world recenter-camera shortcut in shell copy once the keyboard action exists.
-67. Surface the in-world debug-HUD shortcut in shell copy once the keyboard action exists.
 68. Surface the in-world spawn-marker shortcut in shell copy once the keyboard action exists.
 82. Surface the in-world edit-panel shortcut in the touch debug controls keyboard reference once task 69 adds the keyboard action.
 83. Surface the in-world edit-overlay shortcut in shell copy once the keyboard action exists.

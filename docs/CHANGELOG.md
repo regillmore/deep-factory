@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Surface the in-world debug-HUD shortcut in shell copy once the keyboard action exists.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the in-world debug-HUD shell label now renders `Show Debug HUD (H)` or `Hide Debug HUD (H)` from the shared desktop shortcut helper, refreshed [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) expectations for the shortcut-aware labels, advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `67` and adding one replacement roadmap item, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `npx.cmd vitest run src/ui/appShell.test.ts` and `npx.cmd tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an authored-atlas asset regression that verifies both animated lava `N---` single-side direct-`uvRect` frames sample non-transparent committed pixels.
 - Changes: Updated [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) with a focused committed-atlas regression that targets lava mask `N---` (`cardinalMask 1`) frame `0` and frame `1` direct-`uvRect` sources and asserts both sample non-transparent committed PNG pixels, then advanced [docs/NEXT.md](docs/NEXT.md) by removing completed task `194` and adding one replacement follow-up task.
 - Verification: Ran `cmd /c npx vitest run src/gl/authoredAtlasAsset.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

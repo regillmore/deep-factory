@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  getDesktopDebugOverlayHotkeyLabel,
   getDesktopDebugEditControlsHotkeyLabel,
   getDesktopFreshWorldHotkeyLabel,
   getDesktopResumeWorldHotkeyLabel,
@@ -98,7 +99,9 @@ describe('resolveAppShellViewModel', () => {
       `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
     );
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
-    expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
+    expect(viewModel.debugOverlayToggleLabel).toBe(
+      `Show Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`
+    );
     expect(viewModel.debugOverlayTogglePressed).toBe(false);
     expect(viewModel.debugEditControlsToggleLabel).toBe(
       `Show Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
@@ -119,7 +122,9 @@ describe('resolveAppShellViewModel', () => {
       `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
     );
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
-    expect(viewModel.debugOverlayToggleLabel).toBe('Hide Debug HUD');
+    expect(viewModel.debugOverlayToggleLabel).toBe(
+      `Hide Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`
+    );
     expect(viewModel.secondaryActionLabel).toBeNull();
     expect(viewModel.debugOverlayTogglePressed).toBe(true);
     expect(viewModel.debugEditControlsToggleLabel).toBe(
@@ -143,7 +148,9 @@ describe('resolveAppShellViewModel', () => {
       `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
     );
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
-    expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
+    expect(viewModel.debugOverlayToggleLabel).toBe(
+      `Show Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`
+    );
     expect(viewModel.secondaryActionLabel).toBeNull();
     expect(viewModel.debugEditControlsToggleLabel).toBe(
       `Hide Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
@@ -164,7 +171,9 @@ describe('resolveAppShellViewModel', () => {
       `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
     );
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
-    expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
+    expect(viewModel.debugOverlayToggleLabel).toBe(
+      `Show Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`
+    );
     expect(viewModel.secondaryActionLabel).toBeNull();
     expect(viewModel.debugEditControlsToggleLabel).toBe(
       `Show Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
@@ -186,7 +195,9 @@ describe('resolveAppShellViewModel', () => {
       `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
     );
     expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera');
-    expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD');
+    expect(viewModel.debugOverlayToggleLabel).toBe(
+      `Show Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`
+    );
     expect(viewModel.secondaryActionLabel).toBeNull();
     expect(viewModel.debugEditControlsToggleLabel).toBe(
       `Show Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`

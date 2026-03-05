@@ -100,6 +100,9 @@ export const resolvePausedMainMenuFreshWorldTitle = (): string =>
 const resolveInWorldReturnToMainMenuActionLabel = (): string =>
   `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`;
 
+const resolveInWorldDebugOverlayToggleLabel = (visible: boolean): string =>
+  `${visible ? 'Hide' : 'Show'} Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`;
+
 const resolveInWorldDebugEditControlsToggleLabel = (visible: boolean): string =>
   `${visible ? 'Hide' : 'Show'} Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`;
 
@@ -170,8 +173,9 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         secondaryActionLabel: null,
         returnToMainMenuActionLabel: resolveInWorldReturnToMainMenuActionLabel(),
         recenterCameraActionLabel: 'Recenter Camera',
-        debugOverlayToggleLabel:
-          state.debugOverlayVisible === true ? 'Hide Debug HUD' : 'Show Debug HUD',
+        debugOverlayToggleLabel: resolveInWorldDebugOverlayToggleLabel(
+          state.debugOverlayVisible === true
+        ),
         debugOverlayTogglePressed: state.debugOverlayVisible === true,
         debugEditControlsToggleLabel: resolveInWorldDebugEditControlsToggleLabel(
           state.debugEditControlsVisible === true
