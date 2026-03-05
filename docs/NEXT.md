@@ -12,7 +12,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Lighting
 
-206. Add a lighting regression where blocking solid tiles beside emissive-lit air stay visibly lit while still preventing emissive light propagation through those blockers.
+208. Add a sunlight regression where dirty-column-only recompute keeps lateral blocker-face sunlight stable when the adjacent lit-air column remains clean.
 177. Add a sunlight regression where toggling a non-emissive `blocksLight` tile beside an emissive source at a resident-boundary edge does not leak stale light into unloaded neighboring columns when those chunks stream back in.
 189. Add renderer telemetry fields for standalone-player nearby-light source chunk and chunk-local tile coordinates alongside the existing source world tile coordinates.
 205. Add a sunlight regression where toggling a non-emissive `blocksLight` boundary tile at a loaded chunk-boundary top corner (`localY = 0`) updates transported sunlight in the loaded chunk row above on both sides.

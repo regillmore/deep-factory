@@ -4,6 +4,14 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Close the remaining `206` visibility gap by lighting blocking solids that are laterally adjacent to sunlit air, then add boundary regression coverage for blocker-face emissive lighting.
+- Changes: Updated [src/world/sunlight.ts](../src/world/sunlight.ts) so sunlight also lights blocking tiles that are cardinally adjacent to already sunlit non-blocking tiles in dirty columns, added stacked-solid and boundary blocker-face regressions in [src/world/sunlight.test.ts](../src/world/sunlight.test.ts), advanced [docs/NEXT.md](docs/NEXT.md) by replacing completed task `206` with replacement task `208`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts`.
+
+- Task: Add a lighting regression where blocking solid tiles beside emissive-lit air stay visibly lit while still preventing emissive light propagation through those blockers.
+- Changes: Updated [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a focused emissive tunnel regression that asserts adjacent blocking tiles receive emissive light while tiles behind those blockers remain shadowed, updated [src/world/sunlight.ts](../src/world/sunlight.ts) so emissive propagation writes to blocking neighbor tiles but does not enqueue propagation past them, replaced completed task `206` with a chunk-boundary follow-up in [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md) for the new emissive-blocker rule.
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts`.
+
 - Task: Restore solid-tile visibility under sunlight by lighting the first `blocksLight` tile in each lit column.
 - Changes: Updated [src/world/sunlight.ts](../src/world/sunlight.ts) so sunlight writes onto the first blocking tile before terminating each vertical column, refreshed [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) expectations to cover lit blockers and preserved shadowing below, replaced stale completed roadmap item `162` with a new solid-visibility follow-up in [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md) for the new lighting rule.
 - Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts`.

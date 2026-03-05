@@ -68,6 +68,27 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
 
+  it('lights blocking stacked solids that are laterally adjacent to sunlit air without lighting tiles behind them', () => {
+    const world = new TileWorld(0);
+
+    for (let worldTileY = 0; worldTileY <= 4; worldTileY += 1) {
+      world.setTile(1, worldTileY, 0);
+      world.setTile(0, worldTileY, 1);
+      world.setTile(-1, worldTileY, 1);
+    }
+
+    const recomputedChunkCount = recomputeSunlightFromExposedChunkTops(world);
+
+    expect(recomputedChunkCount).toBe(2);
+    expect(world.getLightLevel(0, 0)).toBe(MAX_LIGHT_LEVEL);
+    expect(world.getLightLevel(0, 1)).toBe(MAX_LIGHT_LEVEL);
+    expect(world.getLightLevel(0, 4)).toBe(MAX_LIGHT_LEVEL);
+    expect(world.getLightLevel(-1, 0)).toBe(MAX_LIGHT_LEVEL);
+    expect(world.getLightLevel(-1, 1)).toBe(0);
+    expect(world.getLightLevel(-1, 4)).toBe(0);
+    expect(world.getDirtyLightChunkCount()).toBe(0);
+  });
+
   it('recomputes only chunk columns that contain dirty resident light chunks', () => {
     const world = new TileWorld(1);
 
@@ -314,6 +335,62 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(world.getLightLevel(3, 1)).toBe(10);
     expect(world.getLightLevel(1, 0)).toBe(MAX_LIGHT_LEVEL);
     expect(world.getDirtyLightChunkCount()).toBe(0);
+  });
+
+  it('keeps blocking tiles beside emissive-lit air visibly lit while blocking emissive propagation behind them', () => {
+    const world = new TileWorld(0);
+    const tunnelWorldTileY = 1;
+    const emissiveWorldTileX = 1;
+    const blockerWorldTileX = 2;
+    const shadowedProbeWorldTileX = 3;
+
+    for (let worldTileX = 0; worldTileX <= 4; worldTileX += 1) {
+      world.setTile(worldTileX, tunnelWorldTileY - 1, 1);
+      world.setTile(worldTileX, tunnelWorldTileY, 0);
+      world.setTile(worldTileX, tunnelWorldTileY + 1, 1);
+    }
+    world.setTile(emissiveWorldTileX, tunnelWorldTileY, 2);
+    world.setTile(blockerWorldTileX, tunnelWorldTileY, 1);
+
+    const recomputedChunkCount = recomputeSunlightFromExposedChunkTops(world, emissiveTestRegistry);
+
+    expect(recomputedChunkCount).toBe(1);
+    expect(world.getLightLevel(emissiveWorldTileX, tunnelWorldTileY)).toBe(12);
+    expect(world.getLightLevel(blockerWorldTileX, tunnelWorldTileY)).toBe(11);
+    expect(world.getLightLevel(shadowedProbeWorldTileX, tunnelWorldTileY)).toBe(0);
+    expect(world.getDirtyLightChunkCount()).toBe(0);
+  });
+
+  it('lights boundary blockers from adjacent-chunk emissive air while keeping tiles behind those blockers shadowed on both sides', () => {
+    const tunnelWorldTileY = 1;
+    const tunnelStartWorldTileX = CHUNK_SIZE - 2;
+    const tunnelEndWorldTileX = CHUNK_SIZE + 2;
+
+    const initializeBoundaryTunnel = (world: TileWorld): void => {
+      for (let worldTileX = tunnelStartWorldTileX; worldTileX <= tunnelEndWorldTileX; worldTileX += 1) {
+        world.setTile(worldTileX, tunnelWorldTileY - 1, 1);
+        world.setTile(worldTileX, tunnelWorldTileY, 0);
+        world.setTile(worldTileX, tunnelWorldTileY + 1, 1);
+      }
+    };
+
+    const blockerAtLocalX0World = new TileWorld(0);
+    initializeBoundaryTunnel(blockerAtLocalX0World);
+    blockerAtLocalX0World.setTile(CHUNK_SIZE - 1, tunnelWorldTileY, 2);
+    blockerAtLocalX0World.setTile(CHUNK_SIZE, tunnelWorldTileY, 1);
+
+    recomputeSunlightFromExposedChunkTops(blockerAtLocalX0World, emissiveTestRegistry);
+    expect(blockerAtLocalX0World.getLightLevel(CHUNK_SIZE, tunnelWorldTileY)).toBe(11);
+    expect(blockerAtLocalX0World.getLightLevel(CHUNK_SIZE + 1, tunnelWorldTileY)).toBe(0);
+
+    const blockerAtLocalXMaxWorld = new TileWorld(0);
+    initializeBoundaryTunnel(blockerAtLocalXMaxWorld);
+    blockerAtLocalXMaxWorld.setTile(CHUNK_SIZE, tunnelWorldTileY, 2);
+    blockerAtLocalXMaxWorld.setTile(CHUNK_SIZE - 1, tunnelWorldTileY, 1);
+
+    recomputeSunlightFromExposedChunkTops(blockerAtLocalXMaxWorld, emissiveTestRegistry);
+    expect(blockerAtLocalXMaxWorld.getLightLevel(CHUNK_SIZE - 1, tunnelWorldTileY)).toBe(11);
+    expect(blockerAtLocalXMaxWorld.getLightLevel(CHUNK_SIZE - 2, tunnelWorldTileY)).toBe(0);
   });
 
   it('applies clean-column emissive sources when a neighboring column is recomputed', () => {

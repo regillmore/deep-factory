@@ -260,12 +260,16 @@ const applyResidentEmissiveLightToDirtyColumns = (
       }
 
       const neighborTile = sampleResidentTileAtWorldTile(bounds, neighborWorldTileX, neighborWorldTileY);
-      if (!neighborTile || doesTileBlockLight(neighborTile.tileId, registry)) {
+      if (!neighborTile) {
         continue;
       }
 
       propagatedLightByResidentTile[neighborLookupIndex] = nextLightLevel;
       writeLightLevelIfDirtyColumn(neighborTile, nextLightLevel);
+      if (doesTileBlockLight(neighborTile.tileId, registry)) {
+        continue;
+      }
+
       queueWorldTileX.push(neighborWorldTileX);
       queueWorldTileY.push(neighborWorldTileY);
       queueLightLevel.push(nextLightLevel);
@@ -310,6 +314,60 @@ const applyHorizontalSunlightTransportBetweenNeighborChunkColumns = (
         }
         if (rightSunlit && leftBoundaryColumnDirty) {
           leftChunk.lightLevels[leftTileIndex] = MAX_LIGHT_LEVEL;
+        }
+      }
+    }
+  }
+};
+
+const applySunlightToBlockingTilesAdjacentToLitAir = (
+  bounds: ResidentChunkLightingBounds,
+  dirtyColumnContexts: DirtyResidentChunkColumnContext[],
+  registry: TileMetadataRegistry
+): void => {
+  for (const dirtyColumn of dirtyColumnContexts) {
+    const { localColumnMask, residentColumnChunks } = dirtyColumn;
+    for (const chunk of residentColumnChunks) {
+      const chunkBaseWorldTileX = chunk.coord.x * CHUNK_SIZE;
+      const chunkBaseWorldTileY = chunk.coord.y * CHUNK_SIZE;
+
+      for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
+        if (((localColumnMask >>> localX) & 1) === 0) {
+          continue;
+        }
+
+        for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
+          const tileIndex = toTileIndex(localX, localY);
+          const tileId = chunk.tiles[tileIndex] ?? 0;
+          if (!doesTileBlockLight(tileId, registry)) {
+            continue;
+          }
+
+          const worldTileX = chunkBaseWorldTileX + localX;
+          const worldTileY = chunkBaseWorldTileY + localY;
+          const neighboringWorldTiles = [
+            [worldTileX, worldTileY - 1],
+            [worldTileX + 1, worldTileY],
+            [worldTileX, worldTileY + 1],
+            [worldTileX - 1, worldTileY]
+          ];
+
+          let hasAdjacentSunlitAir = false;
+          for (const [neighborWorldTileX, neighborWorldTileY] of neighboringWorldTiles) {
+            const neighborTile = sampleResidentTileAtWorldTile(bounds, neighborWorldTileX, neighborWorldTileY);
+            if (!neighborTile || doesTileBlockLight(neighborTile.tileId, registry)) {
+              continue;
+            }
+
+            if ((neighborTile.chunk.lightLevels[neighborTile.tileIndex] ?? 0) > 0) {
+              hasAdjacentSunlitAir = true;
+              break;
+            }
+          }
+
+          if (hasAdjacentSunlitAir) {
+            chunk.lightLevels[tileIndex] = MAX_LIGHT_LEVEL;
+          }
         }
       }
     }
@@ -391,6 +449,7 @@ export const recomputeSunlightFromExposedChunkTops = (
     dirtyLocalColumnMaskByChunkX,
     registry
   );
+  applySunlightToBlockingTilesAdjacentToLitAir(bounds, dirtyColumnContexts, registry);
   applyResidentEmissiveLightToDirtyColumns(bounds, dirtyLocalColumnMaskByChunkX, registry);
 
   for (const dirtyColumn of dirtyColumnContexts) {

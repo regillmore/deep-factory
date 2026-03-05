@@ -2,6 +2,18 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-05: Sunlight now lights blocking faces adjacent to sunlit air
+
+- Decision: After sunlight column and boundary transport passes run, resident lighting now also writes full sunlight to blocking tiles in dirty columns when a cardinally adjacent resident tile is non-blocking and already sunlit.
+- Reason: Vertical-only blocker lighting left stacked or wall-like solid tiles black except at the top tile, even when those solid faces directly bordered sunlit air.
+- Consequence: Future sunlight changes should preserve "adjacent sunlit air lights one blocking face, but blockers still prevent propagation behind themselves" behavior unless a different surface-light model replaces this pass.
+
+### 2026-03-05: Emissive falloff now lights the first blocking tile on each path
+
+- Decision: Resident emissive-light recomputation now writes the falloff value onto the first `blocksLight` tile reached by each propagation path, then stops propagation beyond that tile.
+- Reason: Solid faces beside emissive-lit air were rendering black because the emissive pass skipped blocking tiles entirely once chunk shading began using per-tile light levels.
+- Consequence: Future emissive-light changes should preserve "first blocker receives emissive light, tiles behind remain shadowed" behavior unless a dedicated solid-surface lighting model replaces it.
+
 ### 2026-03-05: Sunlight now lights the first blocking tile in each lit column
 
 - Decision: Sunlight recomputation now writes full sunlight to the first `blocksLight` tile encountered in a lit vertical column, then terminates propagation below that tile.
