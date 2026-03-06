@@ -1535,6 +1535,16 @@ const bootstrap = async (): Promise<void> => {
             );
             return { x: chunkX, y: chunkY };
           })();
+    const debugStatusStripPlayerCameraWorldLocalTile =
+      debugStatusStripPlayerCameraWorldTile === null
+        ? null
+        : (() => {
+            const { localX, localY } = worldToLocalTile(
+              debugStatusStripPlayerCameraWorldTile.x,
+              debugStatusStripPlayerCameraWorldTile.y
+            );
+            return { x: localX, y: localY };
+          })();
     const debugOverlayPlayerCameraFollow =
       debugStatusStripPlayerCameraWorldTile &&
       debugStatusStripPlayerCameraFocusPoint &&
@@ -1655,6 +1665,8 @@ const bootstrap = async (): Promise<void> => {
             },
       playerCameraWorldTile: debugOverlayVisible ? null : debugStatusStripPlayerCameraWorldTile,
       playerCameraWorldChunk: debugOverlayVisible ? null : debugStatusStripPlayerCameraWorldChunk,
+      playerCameraWorldLocalTile:
+        debugOverlayVisible ? null : debugStatusStripPlayerCameraWorldLocalTile,
       playerCameraFocusPoint: debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusPoint,
       playerCameraFocusTile: debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusTile,
       playerCameraFocusChunk: debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusChunk,

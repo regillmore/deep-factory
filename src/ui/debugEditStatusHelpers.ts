@@ -38,6 +38,7 @@ export interface DebugEditStatusStripState {
   playerCameraWorldPosition?: { x: number; y: number } | null;
   playerCameraWorldTile?: { x: number; y: number } | null;
   playerCameraWorldChunk?: { x: number; y: number } | null;
+  playerCameraWorldLocalTile?: { x: number; y: number } | null;
   playerCameraFocusPoint?: { x: number; y: number } | null;
   playerCameraFocusTile?: { x: number; y: number } | null;
   playerCameraFocusChunk?: { x: number; y: number } | null;
@@ -661,6 +662,16 @@ const formatLiveCameraWorldChunkText = (
   return `CamChunkNow: ${formatTileCoordinatePair(playerCameraWorldChunk.x, playerCameraWorldChunk.y)}`;
 };
 
+const formatLiveCameraWorldChunkLocalTileText = (
+  playerCameraWorldLocalTile: { x: number; y: number } | null
+): string | null => {
+  if (playerCameraWorldLocalTile === null) {
+    return null;
+  }
+
+  return `CamLocalNow: ${formatTileCoordinatePair(playerCameraWorldLocalTile.x, playerCameraWorldLocalTile.y)}`;
+};
+
 const formatLiveCameraFocusPointText = (
   playerCameraFocusPoint: { x: number; y: number } | null
 ): string | null => {
@@ -859,6 +870,7 @@ const buildPlayerText = (
   playerCameraWorldPosition: { x: number; y: number } | null,
   playerCameraWorldTile: { x: number; y: number } | null,
   playerCameraWorldChunk: { x: number; y: number } | null,
+  playerCameraWorldLocalTile: { x: number; y: number } | null,
   playerCameraFocusPoint: { x: number; y: number } | null,
   playerCameraFocusTile: { x: number; y: number } | null,
   playerCameraFocusChunk: { x: number; y: number } | null,
@@ -891,6 +903,7 @@ const buildPlayerText = (
     formatLiveCameraWorldPositionText(playerCameraWorldPosition),
     formatLiveCameraWorldTileText(playerCameraWorldTile),
     formatLiveCameraWorldChunkText(playerCameraWorldChunk),
+    formatLiveCameraWorldChunkLocalTileText(playerCameraWorldLocalTile),
     formatLiveCameraFocusPointText(playerCameraFocusPoint),
     formatLiveCameraFocusTileText(playerCameraFocusTile),
     formatLiveCameraFocusChunkText(playerCameraFocusChunk),
@@ -1407,6 +1420,7 @@ export const buildDebugEditStatusStripModel = (
   const playerCameraWorldPosition = state.playerCameraWorldPosition ?? null;
   const playerCameraWorldTile = state.playerCameraWorldTile ?? null;
   const playerCameraWorldChunk = state.playerCameraWorldChunk ?? null;
+  const playerCameraWorldLocalTile = state.playerCameraWorldLocalTile ?? null;
   const playerCameraFocusPoint = state.playerCameraFocusPoint ?? null;
   const playerCameraFocusTile = state.playerCameraFocusTile ?? null;
   const playerCameraFocusChunk = state.playerCameraFocusChunk ?? null;
@@ -1449,6 +1463,7 @@ export const buildDebugEditStatusStripModel = (
       playerCameraWorldPosition,
       playerCameraWorldTile,
       playerCameraWorldChunk,
+      playerCameraWorldLocalTile,
       playerCameraFocusPoint,
       playerCameraFocusTile,
       playerCameraFocusChunk,
