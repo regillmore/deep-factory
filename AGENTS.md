@@ -68,6 +68,10 @@ If a useful verification step could not be run, state that explicitly in the fin
 - For rendering-heavy work, test the deterministic parts first: metadata resolution, mask calculation, geometry generation, queue behavior, and state transitions.
 - If full end-to-end validation is not practical, leave a concise note describing what was verified and what remains manual.
 
+## Windows tooling note
+
+This workspace runs commands through PowerShell, and bare `npx` / `npm` may resolve to blocked `*.ps1` shims. Prefer `cmd /c npx ...`, `cmd /c npm ...`, or `npx.cmd` / `npm.cmd` for Node-based test and build commands.
+
 ## Documentation Rules
 
 - Update [docs/CHANGELOG.md](docs/CHANGELOG.md) for every completed pass.
@@ -94,3 +98,4 @@ In the final response:
 2. State what verification was performed and what was not performed.
 3. Point to any roadmap, changelog, capability, architecture, or decision-log updates.
 4. Mention any remaining risk that the next agent should understand in one or two sentences.
+
