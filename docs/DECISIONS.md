@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Keyboard main-menu shell actions should share one helper
+
+- Decision: Keyboard-triggered paused-main-menu shell actions (`resume-paused-world-session` and `start-fresh-world-session`) should route through a shared `applyKeyboardMainMenuShellAction()` helper in `src/main.ts` instead of repeating `preventDefault()` plus `applyMainMenuShellAction()` at the top of the `keydown` branch.
+- Reason: Both paused-menu keyboard actions already share the same shortcut-side event handling contract, so leaving those steps repeated inline makes the runtime main-menu shortcut path easier to drift from focused mixed-surface regressions.
+- Consequence: Future keyboard-triggered paused-main-menu shell actions should extend the shared keyboard helper and its focused runtime regressions instead of adding another repeated `preventDefault()` plus `applyMainMenuShellAction()` branch in `src/main.ts`.
+
 ### 2026-03-06: Keyboard in-world shell actions should share one helper
 
 - Decision: Keyboard-triggered in-world shell actions (`return-to-main-menu`, `recenter-camera`, and the in-world shell toggles) should route through a shared `applyKeyboardInWorldShellAction()` helper in `src/main.ts` instead of repeating `preventDefault()` plus `applyInWorldShellAction()` across the `keydown` branch.

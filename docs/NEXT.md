@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-267. Extract a shared keyboard main-menu shell action handler so the `keydown` branch in `src/main.ts` stops repeating `event.preventDefault()` plus `applyMainMenuShellAction()` across `resume-paused-world-session` and `start-fresh-world-session`, with focused runtime regressions.
+268. Extract a shared keyboard debug-history action handler so the `keydown` branch in `src/main.ts` stops repeating `event.preventDefault()` plus `undoDebugTileStroke()` or `redoDebugTileStroke()` across `undo` and `redo`, with focused runtime regressions.

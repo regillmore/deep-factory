@@ -843,7 +843,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.gameLoopStartCount).toBe(1);
   });
 
-  it('applies main-menu shell actions through one shared dispatcher across shell clicks and paused-menu shortcuts', async () => {
+  it('applies main-menu shell actions through one shared keyboard shell-action handler across shell clicks and paused-menu shortcuts', async () => {
     await import('./main');
     await flushBootstrap();
 

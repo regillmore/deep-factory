@@ -435,6 +435,13 @@ const bootstrap = async (): Promise<void> => {
         return true;
     }
   };
+  const applyKeyboardMainMenuShellAction = (
+    event: Pick<KeyboardEvent, 'preventDefault'>,
+    actionType: MainMenuShellActionType
+  ): boolean => {
+    event.preventDefault();
+    return applyMainMenuShellAction(actionType);
+  };
   const applyInWorldShellAction = (actionType: InWorldShellActionType): boolean => {
     if (actionType === 'return-to-main-menu' || actionType === 'recenter-camera') {
       return applyInWorldShellNonToggleAction(actionType);
@@ -1318,14 +1325,16 @@ const bootstrap = async (): Promise<void> => {
       createDebugEditShortcutContext(currentScreen, worldSessionStarted)
     );
     if (!action) return;
-    if (action.type === 'resume-paused-world-session') {
-      event.preventDefault();
-      applyMainMenuShellAction('enter-or-resume-world-session');
-      return;
-    }
-    if (action.type === 'start-fresh-world-session') {
-      event.preventDefault();
-      applyMainMenuShellAction('start-fresh-world-session');
+    if (
+      action.type === 'resume-paused-world-session' ||
+      action.type === 'start-fresh-world-session'
+    ) {
+      applyKeyboardMainMenuShellAction(
+        event,
+        action.type === 'resume-paused-world-session'
+          ? 'enter-or-resume-world-session'
+          : 'start-fresh-world-session'
+      );
       return;
     }
     if (currentScreen !== 'in-world' && isInWorldOnlyDebugEditShortcutAction(action)) {
