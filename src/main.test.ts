@@ -1027,7 +1027,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
   });
 
-  it('commits in-world shell toggle state through one shared persisted-shell refresh path across overlay and shortcuts actions', async () => {
+  it('finalizes in-world shell toggle actions through one shared commit-plus-visibility path across overlay and shortcuts actions', async () => {
     await import('./main');
     await flushBootstrap();
 

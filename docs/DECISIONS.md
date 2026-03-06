@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: In-world shell toggle finalization should share one helper
+
+- Decision: After an in-world shell toggle mutates state, the shared post-toggle sequence should route through `finalizeInWorldShellToggleAction()` in `src/main.ts`, combining the persisted-shell refresh step with any overlay-specific visibility sync while letting `toggle-shortcuts-overlay` finalize as a no-op beyond commit.
+- Reason: Once toggle-state mutation and commit already have shared helpers, keeping a separate `toggle-shortcuts-overlay` branch in `applyInWorldShellAction()` still duplicates the toggle-finalization contract in the central in-world shell dispatcher.
+- Consequence: Future in-world shell toggles should extend the shared finalize helper and its focused runtime regressions instead of adding more action-specific post-toggle branching in `applyInWorldShellAction()`.
+
 ### 2026-03-06: In-world shell toggle commits should share one persisted-shell refresh helper
 
 - Decision: After an in-world shell toggle mutates state, the shared `persistWorldSessionShellState()` plus `syncInWorldShellState()` sequence should run through a dedicated `commitInWorldShellToggleStateAction()` helper in `src/main.ts`.

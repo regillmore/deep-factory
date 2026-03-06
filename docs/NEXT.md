@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-262. Extract a shared in-world shell toggle finalize helper that combines the post-toggle commit and optional overlay visibility sync so `applyInWorldShellAction()` stops special-casing `toggle-shortcuts-overlay` in `src/main.ts`, with focused runtime regressions.
+263. Extract a shared in-world shell toggle pipeline helper that combines toggle-state mutation and finalize steps so `applyInWorldShellAction()` stops manually sequencing toggle actions in `src/main.ts`, with focused runtime regressions.

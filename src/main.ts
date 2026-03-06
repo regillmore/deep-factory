@@ -379,6 +379,20 @@ const bootstrap = async (): Promise<void> => {
     persistWorldSessionShellState();
     syncInWorldShellState();
   };
+  const finalizeInWorldShellToggleAction = (actionType: InWorldShellToggleActionType): void => {
+    commitInWorldShellToggleStateAction();
+
+    switch (actionType) {
+      case 'toggle-debug-overlay':
+      case 'toggle-debug-edit-controls':
+      case 'toggle-debug-edit-overlays':
+      case 'toggle-player-spawn-marker':
+        syncInWorldShellOverlayVisibility(actionType);
+        return;
+      case 'toggle-shortcuts-overlay':
+        return;
+    }
+  };
   const applyMainMenuShellAction = (actionType: MainMenuShellActionType): boolean => {
     if (currentScreen !== 'main-menu' || loop === null) return false;
 
@@ -415,11 +429,7 @@ const bootstrap = async (): Promise<void> => {
     }
 
     applyInWorldShellToggleStateAction(actionType);
-    commitInWorldShellToggleStateAction();
-
-    if (actionType !== 'toggle-shortcuts-overlay') {
-      syncInWorldShellOverlayVisibility(actionType);
-    }
+    finalizeInWorldShellToggleAction(actionType);
 
     return true;
   };
