@@ -1547,6 +1547,7 @@ const bootstrap = async (): Promise<void> => {
           })();
     const debugOverlayPlayerCameraFollow =
       debugStatusStripPlayerCameraWorldTile &&
+      debugStatusStripPlayerCameraWorldLocalTile &&
       debugStatusStripPlayerCameraFocusPoint &&
       debugStatusStripPlayerCameraFocusTile &&
       debugStatusStripPlayerCameraFocusChunk &&
@@ -1557,6 +1558,7 @@ const bootstrap = async (): Promise<void> => {
               y: camera.y
             },
             cameraTile: debugStatusStripPlayerCameraWorldTile,
+            cameraLocal: debugStatusStripPlayerCameraWorldLocalTile,
             cameraZoom: camera.zoom,
             focus: debugStatusStripPlayerCameraFocusPoint,
             focusTile: debugStatusStripPlayerCameraFocusTile,

@@ -47,7 +47,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Player debugging
 
-148. Surface standalone player live camera chunk-local tile coordinates in the text debug HUD once camera world tile and world chunk telemetry are both available.
+240. Surface standalone player live body world tile coordinates in the text debug HUD beside the existing world-position telemetry.
 
 ## Ambitious vertical slices
 

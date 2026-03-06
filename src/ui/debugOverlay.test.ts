@@ -348,6 +348,7 @@ describe('formatDebugOverlayText', () => {
       playerCameraFollow: {
         cameraPosition: { x: 40.5, y: -26.25 },
         cameraTile: { x: 2, y: -2 },
+        cameraLocal: { x: 2, y: 30 },
         cameraZoom: 1.25,
         focus: { x: 24.5, y: -26.25 },
         focusTile: { x: 1, y: -2 },
@@ -386,7 +387,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nCeilEvt: blocked | Tile:1,-3 (#5) | Pos:24.50,-12.25 | Vel:-180.00,0.00');
     expect(text).toContain('\nAABB: min:18.50,-40.25 | max:30.50,-12.25 | size:12.00,28.00');
     expect(text).toContain(
-      '\nFollow: cam:40.50,-26.25 | camTile:2,-2 | camChunk:0,-1 | zoom:1.25 | focus:24.50,-26.25 | focusTile:1,-2 | focusChunk:0,-1 | focusLocal:1,30 | offset:18.00,-6.00'
+      '\nFollow: cam:40.50,-26.25 | camTile:2,-2 | camChunk:0,-1 | camLocal:2,30 | zoom:1.25 | focus:24.50,-26.25 | focusTile:1,-2 | focusChunk:0,-1 | focusLocal:1,30 | offset:18.00,-6.00'
     );
     expect(text).toContain('\nContact: support:none | wall:0,-1 (#3, right) | ceiling:1,-3 (#5)');
     expect(text).toContain('\nIntent: move:-1 | jumpHeld:on | jumpPressed:on');
@@ -407,6 +408,7 @@ describe('formatDebugOverlayText', () => {
       playerCameraFollow: {
         cameraPosition: { x: -520, y: -8 },
         cameraTile: { x: -33, y: -1 },
+        cameraLocal: { x: 31, y: 31 },
         cameraZoom: 0.75,
         focus: { x: -520, y: -8 },
         focusTile: { x: -33, y: -1 },
@@ -419,7 +421,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain(
-      '\nFollow: cam:-520.00,-8.00 | camTile:-33,-1 | camChunk:-2,-1 | zoom:0.75 | focus:-520.00,-8.00 | focusTile:-33,-1 | focusChunk:-2,-1 | focusLocal:31,31 | offset:0.00,0.00'
+      '\nFollow: cam:-520.00,-8.00 | camTile:-33,-1 | camChunk:-2,-1 | camLocal:31,31 | zoom:0.75 | focus:-520.00,-8.00 | focusTile:-33,-1 | focusChunk:-2,-1 | focusLocal:31,31 | offset:0.00,0.00'
     );
   });
 
