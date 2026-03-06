@@ -1,5 +1,5 @@
 import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
-import { MAX_LIGHT_LEVEL } from '../world/constants';
+import { MAX_LIGHT_LEVEL, TILE_SIZE } from '../world/constants';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
@@ -195,6 +195,7 @@ export interface DebugOverlayInspectState {
 const formatFloat = (value: number, digits: number): string => value.toFixed(digits);
 const formatInt = (value: number): string => Math.round(value).toString();
 const formatGameplayFlag = (value: boolean): string => (value ? 'on' : 'off');
+const worldToTileCoordinate = (world: number): number => Math.floor(world / TILE_SIZE);
 const formatLiquidAnimationFrame = (
   frameIndex: number | null | undefined,
   frameCount: number | null | undefined
@@ -350,8 +351,11 @@ const formatPlayerLine = (player: DebugOverlayPlayerTelemetry | null): string =>
     return 'Player: n/a';
   }
 
+  const playerTileX = worldToTileCoordinate(player.position.x);
+  const playerTileY = worldToTileCoordinate(player.position.y);
   return (
     `Player: Pos:${formatFloat(player.position.x, 2)},${formatFloat(player.position.y, 2)} | ` +
+    `Tile:${formatInt(playerTileX)},${formatInt(playerTileY)} | ` +
     `Vel:${formatFloat(player.velocity.x, 2)},${formatFloat(player.velocity.y, 2)} | ` +
     `grounded:${formatGameplayFlag(player.grounded)} | ` +
     `facing:${player.facing}`

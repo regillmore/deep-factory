@@ -375,7 +375,9 @@ describe('formatDebugOverlayText', () => {
       pinned: null
     });
 
-    expect(text).toContain('\nPlayer: Pos:24.50,-12.25 | Vel:-180.00,60.00 | grounded:off | facing:left');
+    expect(text).toContain(
+      '\nPlayer: Pos:24.50,-12.25 | Tile:1,-1 | Vel:-180.00,60.00 | grounded:off | facing:left'
+    );
     expect(text).toContain('\nPose: wall-slide');
     expect(text).toContain('\nBonkHold: off');
     expect(text).toContain('\nGroundEvt: jump | Pos:24.50,-12.25 | Vel:-180.00,-220.00');
@@ -391,6 +393,43 @@ describe('formatDebugOverlayText', () => {
     );
     expect(text).toContain('\nContact: support:none | wall:0,-1 (#3, right) | ceiling:1,-3 (#5)');
     expect(text).toContain('\nIntent: move:-1 | jumpHeld:on | jumpPressed:on');
+  });
+
+  it('derives standalone-player world tile coordinates from negative body positions', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      spawn: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: null,
+      player: {
+        position: { x: -0.1, y: -16.01 },
+        velocity: { x: 0, y: 0 },
+        aabb: {
+          min: { x: -6.1, y: -44.01 },
+          max: { x: 5.9, y: -16.01 },
+          size: { x: 12, y: 28 }
+        },
+        grounded: false,
+        facing: 'right',
+        contacts: {
+          support: null,
+          wall: null,
+          ceiling: null
+        }
+      },
+      pinned: null
+    });
+
+    expect(text).toContain(
+      '\nPlayer: Pos:-0.10,-16.01 | Tile:-1,-2 | Vel:0.00,0.00 | grounded:off | facing:right'
+    );
   });
 
   it('derives negative-world camera chunk coordinates from the live camera tile telemetry', () => {

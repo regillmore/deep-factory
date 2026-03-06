@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Surface standalone player live body world tile coordinates in the text debug HUD beside the existing world-position telemetry.
+- Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) so the text HUD `Player:` line now derives and shows live body `Tile:` coordinates beside the existing world-position readout, expanded [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) with positive- and negative-world regressions for that tile formatting, removed completed task `240` from [docs/NEXT.md](docs/NEXT.md), added replacement task `241`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/debugOverlay.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface standalone player live camera chunk-local tile coordinates in the text debug HUD once camera world tile and world chunk telemetry are both available.
 - Changes: Updated [src/main.ts](../src/main.ts) and [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) so the text HUD `Follow:` line now carries `camLocal:` telemetry from the existing live camera world-tile snapshot beside `camTile:` and `camChunk:`, expanded [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) with positive- and negative-world regressions for that camera-local readout, removed completed task `148` from [docs/NEXT.md](docs/NEXT.md), added replacement task `240`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/debugOverlay.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
