@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add a `src/main.ts` runtime regression where paused-menu `Resume World (Enter)` preserves all in-world shell toggles changed before `Main Menu (Q)`.
+- Changes: Added [src/main.test.ts](../src/main.test.ts) with a mocked runtime harness that boots [src/main.ts](../src/main.ts), toggles `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`, and `Shortcuts`, then verifies `Q` pause plus `Enter` resume preserve the shell state, overlay visibility sync, and persisted toggle payload; removed completed task `226` from [docs/NEXT.md](docs/NEXT.md); and added replacement task `229`.
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a minimal entity registry with fixed-step update hooks and render-state snapshots.
 - Changes: Added [src/world/entityRegistry.ts](../src/world/entityRegistry.ts) with deterministic entity IDs, per-entity fixed-step hooks, and previous/current render-state snapshot tracking; added focused regression coverage in [src/world/entityRegistry.test.ts](../src/world/entityRegistry.test.ts); wired a no-op-ready fixed-step hook point into [src/main.ts](../src/main.ts) without moving the standalone player yet; removed completed task `16` from [docs/NEXT.md](docs/NEXT.md), added replacement task `228`, and updated [docs/CHANGELOG.md](docs/CHANGELOG.md), [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/entityRegistry.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
