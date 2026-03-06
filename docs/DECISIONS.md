@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: First-launch main-menu guidance should use structured section cards
+
+- Decision: The initial `main menu` now renders its `Enter World` and mixed-device runtime guidance through `menuSections` instead of flat detail bullets.
+- Reason: First-launch and paused overlays should share one richer guidance layout before card-level shortcut and readiness metadata lands.
+- Consequence: Future first-launch main-menu guidance should extend structured section cards rather than re-expanding the flat detail-line list.
+
 ### 2026-03-06: Multi-action shell menus should use structured section cards
 
 - Decision: `AppShellState` can now carry structured `menuSections`, and paused-session menus render action guidance through titled section cards instead of stuffing all consequences into one long status line plus flat detail bullets.

@@ -40,9 +40,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 199. Add shell-level keybinding remap settings for in-world actions (`Main Menu`, `Recenter Camera`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`) with conflict validation and persisted preferences.
 200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
-237. Move first-launch main-menu runtime and mixed-device control guidance onto the structured app-shell menu-section path so overlay menus share one richer layout.
 238. Add shortcut and consequence metadata rows inside structured paused-menu action cards so action context is visible without relying on button tooltips.
-239. Add shortcut and readiness metadata rows inside structured first-launch main-menu action cards after task `237` so enter-world and mixed-device guidance stay visible without relying on button tooltips.
+239. Add shortcut and readiness metadata rows inside structured first-launch main-menu action cards so enter-world and mixed-device guidance stay visible without relying on button tooltips.
 244. Surface the in-world shortcuts-overlay toggle in the touch debug controls keyboard reference so the touch panel lists the `?` action alongside the other shell shortcuts.
 
 ## Ambitious vertical slices
@@ -55,3 +54,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 243. Add a torch-lighting utility slice after inventory basics (`214`): stackable torch hotbar slots, mixed-device solid-face placement of light-emitting torch tiles, and lighting regressions for placed torches.
 
 ## Project structure optimization
+
+245. Extract a first-launch main-menu shell-state helper and wire bootstrap through it so structured menu cards stop depending on implicit app-shell defaults, with focused shell/runtime regressions.

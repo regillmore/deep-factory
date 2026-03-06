@@ -111,11 +111,21 @@ const DEFAULT_BOOT_STATUS = 'Preparing renderer, controls, and spawn state.';
 const DEFAULT_BOOT_DETAIL_LINES = [
   'Boot runs before the fixed-step simulation starts so later shell work has a stable entry point.'
 ] as const;
-const DEFAULT_MAIN_MENU_STATUS =
-  'Renderer ready. Enter the world when you want the fixed-step simulation and live controls to take over.';
-const DEFAULT_MAIN_MENU_DETAIL_LINES = [
-  'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
-  'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
+const DEFAULT_MAIN_MENU_STATUS = 'Renderer ready.';
+const DEFAULT_MAIN_MENU_DETAIL_LINES = [] as const;
+const DEFAULT_MAIN_MENU_MENU_SECTIONS: readonly AppShellMenuSection[] = [
+  {
+    title: 'Enter World',
+    lines: ['Start the fixed-step simulation, standalone player, and live in-world controls.'],
+    tone: 'accent'
+  },
+  {
+    title: 'Mixed-Device Runtime',
+    lines: [
+      'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
+      'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
+    ]
+  }
 ] as const;
 
 export const resolveAppShellRegionDisplay = (
@@ -293,7 +303,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         title: 'Deep Factory',
         statusText: state.statusText ?? DEFAULT_MAIN_MENU_STATUS,
         detailLines: state.detailLines ?? DEFAULT_MAIN_MENU_DETAIL_LINES,
-        menuSections: state.menuSections ?? [],
+        menuSections: state.menuSections ?? DEFAULT_MAIN_MENU_MENU_SECTIONS,
         primaryActionLabel: resolveMainMenuPrimaryActionLabel(
           state.primaryActionLabel ?? 'Enter World'
         ),

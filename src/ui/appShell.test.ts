@@ -62,13 +62,14 @@ describe('resolveAppShellViewModel', () => {
     ]);
   });
 
-  it('shows the main menu enter-world action with mixed-device runtime guidance', () => {
+  it('shows the first-launch main menu with structured enter-world and mixed-device guidance cards', () => {
     const viewModel = resolveAppShellViewModel({ screen: 'main-menu' });
 
     expect(viewModel.overlayVisible).toBe(true);
     expect(viewModel.chromeVisible).toBe(false);
     expect(viewModel.stageLabel).toBe('Main Menu');
     expect(viewModel.primaryActionLabel).toBe('Enter World');
+    expect(viewModel.statusText).toBe('Renderer ready.');
     expect(viewModel.secondaryActionLabel).toBeNull();
     expect(viewModel.tertiaryActionLabel).toBeNull();
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
@@ -80,10 +81,20 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.shortcutsToggleLabel).toBeNull();
     expect(viewModel.shortcutsTogglePressed).toBe(false);
     expect(viewModel.shortcutsOverlayVisible).toBe(false);
-    expect(viewModel.menuSections).toEqual([]);
-    expect(viewModel.detailLines).toEqual([
-      'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
-      'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
+    expect(viewModel.detailLines).toEqual([]);
+    expect(viewModel.menuSections).toEqual([
+      {
+        title: 'Enter World',
+        lines: ['Start the fixed-step simulation, standalone player, and live in-world controls.'],
+        tone: 'accent'
+      },
+      {
+        title: 'Mixed-Device Runtime',
+        lines: [
+          'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
+          'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
+        ]
+      }
     ]);
   });
 

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Move first-launch main-menu runtime and mixed-device control guidance onto the structured app-shell menu-section path so overlay menus share one richer layout.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the first-launch main menu now renders a concise `Renderer ready.` headline plus structured `Enter World` and `Mixed-Device Runtime` guidance cards instead of flat detail bullets, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with a focused view-model regression for that default state, removed completed task `237` from [docs/NEXT.md](docs/NEXT.md), added replacement task `245`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the in-world edit-panel shortcut in the touch debug controls keyboard reference once the `G` keyboard action exists.
 - Changes: Updated [src/ui/touchDebugEditControls.ts](../src/ui/touchDebugEditControls.ts) so the touch panel `Keyboard` section now lists the in-world `Edit panel: G` shortcut beside the existing shell toggle hints through a shared shortcut-line resolver, expanded [src/ui/touchDebugEditControls.test.ts](../src/ui/touchDebugEditControls.test.ts) with a focused regression for that keyboard-reference line, removed completed task `82` from [docs/NEXT.md](docs/NEXT.md), added replacement app-shell task `244`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/touchDebugEditControls.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
