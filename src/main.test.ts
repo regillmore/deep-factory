@@ -766,6 +766,24 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(createMainMenuShellState(true));
   });
 
+  it('enables the paused-menu N shortcut only after a resumable world session exists', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    expect(dispatchKeydown('n').prevented).toBe(false);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
+    expect(testRuntime.gameLoopStartCount).toBe(0);
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+
+    expect(dispatchKeydown('n').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+    expect(testRuntime.gameLoopStartCount).toBe(1);
+  });
+
   it('keeps all in-world shell toggles enabled after pausing with Q and resuming with Enter', async () => {
     await import('./main');
     await flushBootstrap();

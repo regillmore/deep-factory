@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract a paused-main-menu shortcut-context helper and route `resolveDebugEditShortcutAction()` setup through it so `src/main.ts` stops inlining resumable-session availability checks for `Resume World (Enter)` and `New World (N)`.
+- Changes: Updated [src/input/debugEditShortcuts.ts](../src/input/debugEditShortcuts.ts) with a shared `createPausedMainMenuShortcutContext()` helper, routed [src/main.ts](../src/main.ts) through that helper when resolving keyboard shortcut actions, expanded [src/input/debugEditShortcuts.test.ts](../src/input/debugEditShortcuts.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused shortcut and runtime regressions including the paused-menu `N` path, removed completed task `250` from [docs/NEXT.md](docs/NEXT.md), added replacement task `251`, and updated [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/input/debugEditShortcuts.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a main-menu shell-state selector helper and route `showMainMenuShellState()` through it so first-launch versus paused-session menu selection stops depending on inline branching in `src/main.ts`.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) with a shared `createMainMenuShellState()` selector, routed [src/main.ts](../src/main.ts) through that helper for `showMainMenuShellState()`, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused selector regressions, removed completed task `249` from [docs/NEXT.md](docs/NEXT.md), added replacement task `250`, and updated [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

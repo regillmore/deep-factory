@@ -16,6 +16,8 @@ export interface DebugEditShortcutContext {
   pausedMainMenuFreshWorldAvailable?: boolean;
 }
 
+export type DebugEditShortcutShellScreen = 'boot' | 'main-menu' | 'in-world';
+
 export type DebugEditShortcutAction =
   | { type: 'undo' }
   | { type: 'redo' }
@@ -113,6 +115,19 @@ export const getDebugBrushTileIdForShortcutSlot = (
   brushOptions: readonly DebugBrushShortcutOption[],
   slotIndex: number
 ): number | null => brushOptions[slotIndex]?.tileId ?? null;
+
+export const createPausedMainMenuShortcutContext = (
+  screen: DebugEditShortcutShellScreen,
+  hasResumableWorldSession: boolean
+): DebugEditShortcutContext => {
+  const pausedMainMenuShortcutsAvailable =
+    screen === 'main-menu' && hasResumableWorldSession === true;
+
+  return {
+    pausedMainMenuResumeWorldAvailable: pausedMainMenuShortcutsAvailable,
+    pausedMainMenuFreshWorldAvailable: pausedMainMenuShortcutsAvailable
+  };
+};
 
 export const cycleDebugBrushTileId = (
   brushOptions: readonly DebugBrushShortcutOption[],

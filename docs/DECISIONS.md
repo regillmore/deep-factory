@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Paused-main-menu shortcut availability should use a shared helper
+
+- Decision: Keyboard shortcut availability for paused-main-menu `Resume World (Enter)` and `New World (N)` should be derived through a shared helper in `src/input/debugEditShortcuts.ts`, and `src/main.ts` should pass that helper output into `resolveDebugEditShortcutAction()`.
+- Reason: Both shortcuts share the same `main-menu` plus resumable-session gate, so duplicating those checks inline in runtime wiring makes the context contract easier to drift from its input-layer tests.
+- Consequence: Future paused-main-menu keyboard actions should extend the shared shortcut-context helper and its focused shortcut/runtime regressions instead of adding new inline availability booleans in `src/main.ts`.
+
 ### 2026-03-06: Main-menu shell-state selection should use an explicit helper
 
 - Decision: First-launch versus paused-session `main menu` state selection should be handled by a shared helper in `src/ui/appShell.ts`, and `src/main.ts` should call that helper instead of branching inline on `worldSessionStarted`.

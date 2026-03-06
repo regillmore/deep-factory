@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  createPausedMainMenuShortcutContext,
   cycleDebugBrushTileId,
   getDesktopDebugOverlayHotkeyLabel,
   getDesktopDebugEditControlsHotkeyLabel,
@@ -30,6 +31,23 @@ const keyboardEventLike = (
   shiftKey: false,
   altKey: false,
   ...overrides
+});
+
+describe('createPausedMainMenuShortcutContext', () => {
+  it('enables paused-main-menu resume and fresh-world shortcuts only for resumable main-menu sessions', () => {
+    expect(createPausedMainMenuShortcutContext('main-menu', true)).toEqual({
+      pausedMainMenuResumeWorldAvailable: true,
+      pausedMainMenuFreshWorldAvailable: true
+    });
+    expect(createPausedMainMenuShortcutContext('main-menu', false)).toEqual({
+      pausedMainMenuResumeWorldAvailable: false,
+      pausedMainMenuFreshWorldAvailable: false
+    });
+    expect(createPausedMainMenuShortcutContext('in-world', true)).toEqual({
+      pausedMainMenuResumeWorldAvailable: false,
+      pausedMainMenuFreshWorldAvailable: false
+    });
+  });
 });
 
 describe('resolveDebugEditShortcutAction', () => {
@@ -71,38 +89,43 @@ describe('resolveDebugEditShortcutAction', () => {
 
   it('maps Enter to resume the paused main-menu world session only when that context is active', () => {
     expect(
-      resolveDebugEditShortcutAction(keyboardEventLike({ key: 'Enter' }), {
-        pausedMainMenuResumeWorldAvailable: true
-      })
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'Enter' }),
+        createPausedMainMenuShortcutContext('main-menu', true)
+      )
     ).toEqual({
       type: 'resume-paused-world-session'
     });
     expect(
-      resolveDebugEditShortcutAction(keyboardEventLike({ key: 'Enter' }), {
-        pausedMainMenuResumeWorldAvailable: false
-      })
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'Enter' }),
+        createPausedMainMenuShortcutContext('main-menu', false)
+      )
     ).toBeNull();
   });
 
   it('maps N to a fresh-world action only when the paused main menu enables it', () => {
     expect(
-      resolveDebugEditShortcutAction(keyboardEventLike({ key: 'n' }), {
-        pausedMainMenuFreshWorldAvailable: true
-      })
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'n' }),
+        createPausedMainMenuShortcutContext('main-menu', true)
+      )
     ).toEqual({
       type: 'start-fresh-world-session'
     });
     expect(
-      resolveDebugEditShortcutAction(keyboardEventLike({ key: 'N', shiftKey: true }), {
-        pausedMainMenuFreshWorldAvailable: true
-      })
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'N', shiftKey: true }),
+        createPausedMainMenuShortcutContext('main-menu', true)
+      )
     ).toEqual({
       type: 'start-fresh-world-session'
     });
     expect(
-      resolveDebugEditShortcutAction(keyboardEventLike({ key: 'n' }), {
-        pausedMainMenuFreshWorldAvailable: false
-      })
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'n' }),
+        createPausedMainMenuShortcutContext('main-menu', false)
+      )
     ).toEqual({
       type: 'arm-line',
       kind: 'place'

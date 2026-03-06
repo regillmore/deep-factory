@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-250. Extract a paused-main-menu shortcut-context helper and route `resolveDebugEditShortcutAction()` setup through it so `src/main.ts` stops inlining `currentScreen === 'main-menu' && worldSessionStarted` availability checks for `Resume World (Enter)` and `New World (N)`, with focused shortcut/runtime regressions.
+251. Extract an in-world shortcut-context helper and route `resolveDebugEditShortcutAction()` setup through it so `src/main.ts` stops relying on a blanket `currentScreen !== 'in-world'` early return to gate in-world-only shell shortcuts (`Q`, `C`, `H`, `G`, `V`, `M`, `?`), with focused shortcut/runtime regressions.

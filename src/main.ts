@@ -33,6 +33,7 @@ import {
 import { runDebugFloodFill } from './input/debugFloodFill';
 import { DebugTileEditHistory } from './input/debugTileEditHistory';
 import {
+  createPausedMainMenuShortcutContext,
   cycleDebugBrushTileId,
   getDebugBrushTileIdForShortcutSlot,
   resolveDebugEditShortcutAction
@@ -1204,10 +1205,10 @@ const bootstrap = async (): Promise<void> => {
     if (event.defaultPrevented) return;
     if (isEditableKeyboardShortcutTarget(event.target)) return;
 
-    const action = resolveDebugEditShortcutAction(event, {
-      pausedMainMenuResumeWorldAvailable: currentScreen === 'main-menu' && worldSessionStarted,
-      pausedMainMenuFreshWorldAvailable: currentScreen === 'main-menu' && worldSessionStarted
-    });
+    const action = resolveDebugEditShortcutAction(
+      event,
+      createPausedMainMenuShortcutContext(currentScreen, worldSessionStarted)
+    );
     if (!action) return;
     if (action.type === 'resume-paused-world-session') {
       event.preventDefault();
