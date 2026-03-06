@@ -115,6 +115,10 @@ import {
 
 const DEBUG_TILE_BREAK_ID = 0;
 const PREFERRED_INITIAL_DEBUG_BRUSH_TILE_NAME = 'debug_brick';
+type MainMenuShellActionType =
+  | 'enter-or-resume-world-session'
+  | 'start-fresh-world-session'
+  | 'reset-shell-toggle-preferences';
 const formatDebugBrushLabel = (tileName: string): string => tileName.replace(/_/g, ' ');
 const isEditableKeyboardShortcutTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
@@ -236,22 +240,26 @@ const bootstrap = async (): Promise<void> => {
     syncDebugEditOverlayVisibility();
     syncPlayerSpawnMarkerVisibility();
   };
+  const handleMainMenuShellAction = (
+    screen: AppShellScreen,
+    actionType: MainMenuShellActionType
+  ): void => {
+    if (screen !== 'main-menu') return;
+    applyMainMenuShellAction(actionType);
+  };
   const handleInWorldShellAction = (screen: AppShellScreen, actionType: InWorldShellActionType): void => {
     if (screen !== 'in-world') return;
     applyInWorldShellAction(actionType);
   };
   const shell = new AppShell(app, {
     onPrimaryAction: (screen) => {
-      if (screen !== 'main-menu' || loop === null) return;
-      enterOrResumeWorldSessionFromMainMenu();
+      handleMainMenuShellAction(screen, 'enter-or-resume-world-session');
     },
     onSecondaryAction: (screen) => {
-      if (screen !== 'main-menu' || loop === null || !worldSessionStarted) return;
-      startFreshWorldSessionFromMainMenu();
+      handleMainMenuShellAction(screen, 'start-fresh-world-session');
     },
     onTertiaryAction: (screen) => {
-      if (screen !== 'main-menu' || loop === null || !worldSessionStarted) return;
-      resetPausedMainMenuShellTogglePreferences();
+      handleMainMenuShellAction(screen, 'reset-shell-toggle-preferences');
     },
     onReturnToMainMenu: (screen) => {
       handleInWorldShellAction(screen, 'return-to-main-menu');
@@ -325,6 +333,29 @@ const bootstrap = async (): Promise<void> => {
   };
   const syncPlayerSpawnMarkerVisibility = (): void => {
     playerSpawnMarker.setVisible(currentScreen === 'in-world' && playerSpawnMarkerVisible);
+  };
+  const applyMainMenuShellAction = (actionType: MainMenuShellActionType): boolean => {
+    if (currentScreen !== 'main-menu' || loop === null) return false;
+
+    if (
+      (actionType === 'start-fresh-world-session' ||
+        actionType === 'reset-shell-toggle-preferences') &&
+      !worldSessionStarted
+    ) {
+      return false;
+    }
+
+    switch (actionType) {
+      case 'enter-or-resume-world-session':
+        enterOrResumeWorldSessionFromMainMenu();
+        return true;
+      case 'start-fresh-world-session':
+        startFreshWorldSessionFromMainMenu();
+        return true;
+      case 'reset-shell-toggle-preferences':
+        resetPausedMainMenuShellTogglePreferences();
+        return true;
+    }
   };
   const applyInWorldShellAction = (actionType: InWorldShellActionType): boolean => {
     if (actionType === 'return-to-main-menu') {
@@ -1259,12 +1290,12 @@ const bootstrap = async (): Promise<void> => {
     if (!action) return;
     if (action.type === 'resume-paused-world-session') {
       event.preventDefault();
-      enterOrResumeWorldSessionFromMainMenu();
+      applyMainMenuShellAction('enter-or-resume-world-session');
       return;
     }
     if (action.type === 'start-fresh-world-session') {
       event.preventDefault();
-      startFreshWorldSessionFromMainMenu();
+      applyMainMenuShellAction('start-fresh-world-session');
       return;
     }
     if (currentScreen !== 'in-world' && isInWorldOnlyDebugEditShortcutAction(action)) {

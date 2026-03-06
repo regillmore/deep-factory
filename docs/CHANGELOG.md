@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract a shared main-menu shell action dispatcher for `Enter World`, `New World`, and `Reset Shell Toggles` so app-shell callbacks stop duplicating screen/session guards in `src/main.ts`.
+- Changes: Updated [src/main.ts](../src/main.ts) with shared `handleMainMenuShellAction()` and `applyMainMenuShellAction()` helpers, routed main-menu shell callbacks plus paused-menu `Enter` and `N` shortcut branches through that shared path, expanded [src/main.test.ts](../src/main.test.ts) with a focused mixed-surface main-menu action regression, removed completed task `257` from [docs/NEXT.md](docs/NEXT.md), added replacement task `258`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared in-world shell action dispatcher for `Main Menu` and `Recenter Camera` so app-shell click handlers and keyboard branches stop duplicating those non-toggle runtime actions across input surfaces.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyInWorldShellAction()` dispatcher for `Main Menu`, `Recenter Camera`, and the existing in-world shell toggles, routed both shell callbacks and keyboard branches through that shared path, expanded [src/main.test.ts](../src/main.test.ts) with a focused mixed-surface runtime regression that recenters via shell click and keyboard shortcut before pausing via both input surfaces, removed completed task `256` from [docs/NEXT.md](docs/NEXT.md), added replacement task `257`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

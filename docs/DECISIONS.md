@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Main-menu shell actions should share one runtime dispatcher across input surfaces
+
+- Decision: Main-menu shell actions (`Enter World` / `Resume World`, `New World`, and `Reset Shell Toggles`) should route through a shared `applyMainMenuShellAction()` helper in `src/main.ts`; app-shell callbacks call it directly, and paused-menu keyboard shortcuts reuse the same helper for the actions they expose.
+- Reason: Main-menu shell clicks and paused-menu shortcuts target the same runtime transitions, and duplicating screen or session guards across those branches makes the shell wiring easier to drift from runtime test coverage.
+- Consequence: Future main-menu shell actions should extend the shared dispatcher and its mixed-surface runtime regressions instead of adding more callback-specific guard branches in `src/main.ts`.
+
 ### 2026-03-06: In-world shell actions should share one runtime dispatcher across input surfaces
 
 - Decision: In-world shell actions that do not depend on paused-menu state (`Main Menu`, `Recenter Camera`, and the in-world shell toggles) should route through a shared `applyInWorldShellAction()` helper in `src/main.ts`, regardless of whether the action comes from app-shell clicks or keyboard shortcuts.

@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-257. Extract a shared main-menu shell action dispatcher for `Enter World`, `New World`, and `Reset Shell Toggles` so app-shell callbacks stop duplicating screen/session guards in `src/main.ts`, with focused runtime regressions.
+258. Extract a shared shell-visibility synchronizer for the debug HUD, edit panel, edit overlays, and spawn marker so `src/main.ts` stops repeating overlay-sync sequences across world-screen transitions, with focused runtime regressions.
