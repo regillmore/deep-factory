@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-256. Extract a shared in-world shell action dispatcher for `Main Menu` and `Recenter Camera` so app-shell click handlers and keyboard branches stop duplicating those non-toggle runtime actions across input surfaces, with focused runtime regressions.
+257. Extract a shared main-menu shell action dispatcher for `Enter World`, `New World`, and `Reset Shell Toggles` so app-shell callbacks stop duplicating screen/session guards in `src/main.ts`, with focused runtime regressions.

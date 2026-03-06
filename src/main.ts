@@ -167,6 +167,10 @@ type InWorldShellToggleActionType =
   | 'toggle-debug-edit-overlays'
   | 'toggle-player-spawn-marker'
   | 'toggle-shortcuts-overlay';
+type InWorldShellActionType =
+  | InWorldShellToggleActionType
+  | 'return-to-main-menu'
+  | 'recenter-camera';
 
 const bootstrap = async (): Promise<void> => {
   const touchControlsAvailable = supportsTouchPlayerControls();
@@ -232,12 +236,9 @@ const bootstrap = async (): Promise<void> => {
     syncDebugEditOverlayVisibility();
     syncPlayerSpawnMarkerVisibility();
   };
-  const handleInWorldShellToggleAction = (
-    screen: AppShellScreen,
-    actionType: InWorldShellToggleActionType
-  ): void => {
+  const handleInWorldShellAction = (screen: AppShellScreen, actionType: InWorldShellActionType): void => {
     if (screen !== 'in-world') return;
-    applyInWorldShellToggleAction(actionType);
+    applyInWorldShellAction(actionType);
   };
   const shell = new AppShell(app, {
     onPrimaryAction: (screen) => {
@@ -253,27 +254,25 @@ const bootstrap = async (): Promise<void> => {
       resetPausedMainMenuShellTogglePreferences();
     },
     onReturnToMainMenu: (screen) => {
-      if (screen !== 'in-world') return;
-      returnToMainMenuFromInWorld();
+      handleInWorldShellAction(screen, 'return-to-main-menu');
     },
     onRecenterCamera: (screen) => {
-      if (screen !== 'in-world') return;
-      centerCameraOnStandalonePlayer();
+      handleInWorldShellAction(screen, 'recenter-camera');
     },
     onToggleDebugOverlay: (screen) => {
-      handleInWorldShellToggleAction(screen, 'toggle-debug-overlay');
+      handleInWorldShellAction(screen, 'toggle-debug-overlay');
     },
     onToggleDebugEditControls: (screen) => {
-      handleInWorldShellToggleAction(screen, 'toggle-debug-edit-controls');
+      handleInWorldShellAction(screen, 'toggle-debug-edit-controls');
     },
     onToggleDebugEditOverlays: (screen) => {
-      handleInWorldShellToggleAction(screen, 'toggle-debug-edit-overlays');
+      handleInWorldShellAction(screen, 'toggle-debug-edit-overlays');
     },
     onTogglePlayerSpawnMarker: (screen) => {
-      handleInWorldShellToggleAction(screen, 'toggle-player-spawn-marker');
+      handleInWorldShellAction(screen, 'toggle-player-spawn-marker');
     },
     onToggleShortcutsOverlay: (screen) => {
-      handleInWorldShellToggleAction(screen, 'toggle-shortcuts-overlay');
+      handleInWorldShellAction(screen, 'toggle-shortcuts-overlay');
     }
   });
   shell.setState(createDefaultBootShellState());
@@ -327,7 +326,18 @@ const bootstrap = async (): Promise<void> => {
   const syncPlayerSpawnMarkerVisibility = (): void => {
     playerSpawnMarker.setVisible(currentScreen === 'in-world' && playerSpawnMarkerVisible);
   };
-  const applyInWorldShellToggleAction = (actionType: InWorldShellToggleActionType): boolean => {
+  const applyInWorldShellAction = (actionType: InWorldShellActionType): boolean => {
+    if (actionType === 'return-to-main-menu') {
+      returnToMainMenuFromInWorld();
+      return true;
+    }
+
+    if (actionType === 'recenter-camera') {
+      if (standalonePlayerState === null) return false;
+      centerCameraOnStandalonePlayer();
+      return true;
+    }
+
     switch (actionType) {
       case 'toggle-debug-overlay':
         debugOverlayVisible = !debugOverlayVisible;
@@ -1270,29 +1280,25 @@ const bootstrap = async (): Promise<void> => {
       handled = redoDebugTileStroke();
     } else if (action.type === 'return-to-main-menu') {
       event.preventDefault();
-      handled = true;
-      returnToMainMenuFromInWorld();
+      handled = applyInWorldShellAction(action.type);
     } else if (action.type === 'recenter-camera') {
       event.preventDefault();
-      handled = standalonePlayerState !== null;
-      if (handled) {
-        centerCameraOnStandalonePlayer();
-      }
+      handled = applyInWorldShellAction(action.type);
     } else if (action.type === 'toggle-debug-overlay') {
       event.preventDefault();
-      handled = applyInWorldShellToggleAction(action.type);
+      handled = applyInWorldShellAction(action.type);
     } else if (action.type === 'toggle-debug-edit-controls') {
       event.preventDefault();
-      handled = applyInWorldShellToggleAction(action.type);
+      handled = applyInWorldShellAction(action.type);
     } else if (action.type === 'toggle-debug-edit-overlays') {
       event.preventDefault();
-      handled = applyInWorldShellToggleAction(action.type);
+      handled = applyInWorldShellAction(action.type);
     } else if (action.type === 'toggle-player-spawn-marker') {
       event.preventDefault();
-      handled = applyInWorldShellToggleAction(action.type);
+      handled = applyInWorldShellAction(action.type);
     } else if (action.type === 'toggle-shortcuts-overlay') {
       event.preventDefault();
-      handled = applyInWorldShellToggleAction(action.type);
+      handled = applyInWorldShellAction(action.type);
     } else if (action.type === 'cancel-armed-tools') {
       event.preventDefault();
       handled = input.cancelArmedDebugTools();

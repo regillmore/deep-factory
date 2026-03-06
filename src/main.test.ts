@@ -51,6 +51,7 @@ const testRuntime = vi.hoisted(() => {
   return {
     FakeHTMLElement,
     appRoot: null as FakeHTMLElement | null,
+    cameraInstance: null as null | { x: number; y: number; zoom: number },
     windowListeners: new Map<string, Array<(event: unknown) => void>>(),
     shellInstance: null as null | {
       currentState: unknown;
@@ -71,6 +72,18 @@ const testRuntime = vi.hoisted(() => {
 });
 
 vi.mock('./style.css', () => ({}));
+
+vi.mock('./core/camera2d', () => ({
+  Camera2D: class {
+    x = 0;
+    y = 0;
+    zoom = 1;
+
+    constructor() {
+      testRuntime.cameraInstance = this;
+    }
+  }
+}));
 
 vi.mock('./core/gameLoop', () => ({
   GameLoop: class {
@@ -584,6 +597,7 @@ describe('main.ts shell state orchestration', () => {
     vi.unstubAllGlobals();
 
     testRuntime.appRoot = new testRuntime.FakeHTMLElement('div');
+    testRuntime.cameraInstance = null;
     testRuntime.windowListeners.clear();
     testRuntime.shellInstance = null;
     testRuntime.debugOverlayInstance = null;
@@ -888,6 +902,39 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
     expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(false);
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
+  });
+
+  it('applies recenter-camera and return-to-main-menu through one shared in-world shell action path across shell clicks and keyboard shortcuts', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(testRuntime.cameraInstance).not.toBeNull();
+    if (!testRuntime.cameraInstance) {
+      throw new Error('expected camera instance');
+    }
+
+    testRuntime.cameraInstance.x = 120;
+    testRuntime.cameraInstance.y = 45;
+    testRuntime.shellInstance?.options.onRecenterCamera('in-world');
+    expect(testRuntime.cameraInstance.x).toBe(8);
+    expect(testRuntime.cameraInstance.y).toBe(-14);
+
+    testRuntime.cameraInstance.x = -30;
+    testRuntime.cameraInstance.y = 64;
+    expect(dispatchKeydown('c').prevented).toBe(true);
+    expect(testRuntime.cameraInstance.x).toBe(8);
+    expect(testRuntime.cameraInstance.y).toBe(-14);
+
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
   });
 
   it('keeps all in-world shell toggles enabled after pausing with Q and resuming with Enter', async () => {

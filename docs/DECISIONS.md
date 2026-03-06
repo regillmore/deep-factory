@@ -2,11 +2,11 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
-### 2026-03-06: In-world shell toggles should share one runtime mutator across input surfaces
+### 2026-03-06: In-world shell actions should share one runtime dispatcher across input surfaces
 
-- Decision: In-world shell toggles (`Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`, `Shortcuts`) should flow through a shared `applyInWorldShellToggleAction()` helper in `src/main.ts`, regardless of whether the action comes from app-shell clicks or keyboard shortcuts.
-- Reason: Both input surfaces mutate the same shell-toggle state and require the same persistence, shell-state refresh, and overlay resync sequence; maintaining separate inline paths risks behavioral drift between click and keyboard control surfaces.
-- Consequence: Future in-world shell toggles should extend the shared mutator and mixed-surface runtime regressions instead of adding another input-surface-specific toggle implementation in `src/main.ts`.
+- Decision: In-world shell actions that do not depend on paused-menu state (`Main Menu`, `Recenter Camera`, and the in-world shell toggles) should route through a shared `applyInWorldShellAction()` helper in `src/main.ts`, regardless of whether the action comes from app-shell clicks or keyboard shortcuts.
+- Reason: Click and keyboard control surfaces target the same runtime state transitions, and duplicating those non-toggle actions separately from the shared toggle mutator risks drift between the two in-world input paths.
+- Consequence: Future in-world shell actions should extend the shared dispatcher and its mixed-surface runtime regressions instead of adding another input-surface-specific branch in `src/main.ts`.
 
 ### 2026-03-06: In-world-only debug-edit keyboard actions should use a shared guard helper
 
