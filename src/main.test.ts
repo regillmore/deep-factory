@@ -1172,7 +1172,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
   });
 
-  it('applies recenter-camera and return-to-main-menu through one shared in-world shell action path across shell clicks and keyboard shortcuts', async () => {
+  it('routes recenter-camera and return-to-main-menu through one shared in-world shell non-toggle helper across shell clicks and keyboard shortcuts', async () => {
     await import('./main');
     await flushBootstrap();
 

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract a shared in-world shell non-toggle action helper for `return-to-main-menu` and `recenter-camera` so `applyInWorldShellAction()` stops branching those runtime actions inline before the toggle pipeline.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyInWorldShellNonToggleAction()` helper for `return-to-main-menu` and `recenter-camera`, routed the remaining non-toggle branch in `applyInWorldShellAction()` through that helper, updated [src/main.test.ts](../src/main.test.ts) so the mixed-surface recenter and pause regression now points at the shared non-toggle path, removed completed task `264` from [docs/NEXT.md](docs/NEXT.md), added replacement task `265`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared in-world shell toggle pipeline helper that combines toggle-state mutation and finalize steps so `applyInWorldShellAction()` stops manually sequencing toggle actions.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyInWorldShellToggleAction()` helper that wraps the existing toggle-state mutation and finalize helpers, routed the in-world toggle path through that pipeline, updated [src/main.test.ts](../src/main.test.ts) with a focused pipeline-path regression covering overlay-backed and shortcuts-only toggles, removed completed task `263` from [docs/NEXT.md](docs/NEXT.md), added replacement task `264`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

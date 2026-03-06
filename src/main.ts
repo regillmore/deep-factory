@@ -179,6 +179,7 @@ type InWorldShellActionType =
   | InWorldShellToggleActionType
   | 'return-to-main-menu'
   | 'recenter-camera';
+type InWorldShellNonToggleActionType = Exclude<InWorldShellActionType, InWorldShellToggleActionType>;
 
 const bootstrap = async (): Promise<void> => {
   const touchControlsAvailable = supportsTouchPlayerControls();
@@ -397,6 +398,17 @@ const bootstrap = async (): Promise<void> => {
     applyInWorldShellToggleStateAction(actionType);
     finalizeInWorldShellToggleAction(actionType);
   };
+  const applyInWorldShellNonToggleAction = (actionType: InWorldShellNonToggleActionType): boolean => {
+    switch (actionType) {
+      case 'return-to-main-menu':
+        returnToMainMenuFromInWorld();
+        return true;
+      case 'recenter-camera':
+        if (standalonePlayerState === null) return false;
+        centerCameraOnStandalonePlayer();
+        return true;
+    }
+  };
   const applyMainMenuShellAction = (actionType: MainMenuShellActionType): boolean => {
     if (currentScreen !== 'main-menu' || loop === null) return false;
 
@@ -421,15 +433,8 @@ const bootstrap = async (): Promise<void> => {
     }
   };
   const applyInWorldShellAction = (actionType: InWorldShellActionType): boolean => {
-    if (actionType === 'return-to-main-menu') {
-      returnToMainMenuFromInWorld();
-      return true;
-    }
-
-    if (actionType === 'recenter-camera') {
-      if (standalonePlayerState === null) return false;
-      centerCameraOnStandalonePlayer();
-      return true;
+    if (actionType === 'return-to-main-menu' || actionType === 'recenter-camera') {
+      return applyInWorldShellNonToggleAction(actionType);
     }
 
     applyInWorldShellToggleAction(actionType);

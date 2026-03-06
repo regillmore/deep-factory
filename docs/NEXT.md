@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-264. Extract a shared in-world shell non-toggle action helper for `return-to-main-menu` and `recenter-camera` so `applyInWorldShellAction()` stops branching those runtime actions inline before the toggle pipeline in `src/main.ts`, with focused runtime regressions.
+265. Extract a shared in-world recenter availability helper so `applyInWorldShellNonToggleAction()` stops inlining the standalone-player presence guard for `recenter-camera` in `src/main.ts`, with focused runtime regressions.

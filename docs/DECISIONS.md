@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: In-world shell non-toggle actions should share one helper
+
+- Decision: The in-world shell non-toggle actions (`return-to-main-menu` and `recenter-camera`) should route through a shared `applyInWorldShellNonToggleAction()` helper in `src/main.ts` instead of branching inline inside `applyInWorldShellAction()`.
+- Reason: Once in-world shell toggles already use a dedicated pipeline helper, leaving the remaining non-toggle actions inline duplicates the same action-family split inside the central in-world shell dispatcher.
+- Consequence: Future in-world shell actions that do not use the toggle pipeline should extend the shared non-toggle helper and its focused runtime regressions instead of adding more inline pre-toggle branches in `applyInWorldShellAction()`.
+
 ### 2026-03-06: In-world shell toggles should run through one pipeline helper
 
 - Decision: In-world shell toggle actions should route through a shared `applyInWorldShellToggleAction()` helper in `src/main.ts`, combining the existing toggle-state mutation and finalize steps before `applyInWorldShellAction()` returns.
