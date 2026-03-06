@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: World-screen shell visibility should sync through one shared helper
+
+- Decision: Non-shortcuts shell overlay visibility (`Debug HUD`, `Edit Panel`, `Edit Overlays`, and `Spawn Marker`) should route through a shared `syncWorldScreenShellVisibility()` helper in `src/main.ts` whenever runtime transitions between boot, paused main menu, and in-world screens.
+- Reason: Those transitions all need the same visibility recomputation from `currentScreen` plus persisted toggle state, and repeating four overlay-sync calls in each transition path makes the shell wiring easier to drift from regression coverage.
+- Consequence: Future world-screen transitions that can affect those four overlays should call the shared visibility helper instead of repeating the individual sync sequence in `src/main.ts`.
+
 ### 2026-03-06: Main-menu shell actions should share one runtime dispatcher across input surfaces
 
 - Decision: Main-menu shell actions (`Enter World` / `Resume World`, `New World`, and `Reset Shell Toggles`) should route through a shared `applyMainMenuShellAction()` helper in `src/main.ts`; app-shell callbacks call it directly, and paused-menu keyboard shortcuts reuse the same helper for the actions they expose.

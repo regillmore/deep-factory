@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-258. Extract a shared shell-visibility synchronizer for the debug HUD, edit panel, edit overlays, and spawn marker so `src/main.ts` stops repeating overlay-sync sequences across world-screen transitions, with focused runtime regressions.
+259. Extract a shared in-world shell overlay sync dispatcher for `toggle-debug-overlay`, `toggle-debug-edit-controls`, `toggle-debug-edit-overlays`, and `toggle-player-spawn-marker` so `applyInWorldShellAction()` stops switching over individual visibility sync calls in `src/main.ts`, with focused runtime regressions.

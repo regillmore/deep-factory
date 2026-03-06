@@ -233,12 +233,7 @@ const bootstrap = async (): Promise<void> => {
   const returnToMainMenuFromInWorld = (): void => {
     if (currentScreen !== 'in-world') return;
     applyPausedMainMenuWorldSessionShellTransition('pause-to-main-menu');
-    currentScreen = 'main-menu';
     showMainMenuShellState();
-    syncDebugOverlayVisibility();
-    syncDebugEditControlsVisibility();
-    syncDebugEditOverlayVisibility();
-    syncPlayerSpawnMarkerVisibility();
   };
   const handleMainMenuShellAction = (
     screen: AppShellScreen,
@@ -318,6 +313,7 @@ const bootstrap = async (): Promise<void> => {
   const showMainMenuShellState = (): void => {
     currentScreen = 'main-menu';
     shell.setState(createMainMenuShellState(worldSessionStarted));
+    syncWorldScreenShellVisibility();
   };
   const syncDebugOverlayVisibility = (): void => {
     debug.setVisible(currentScreen === 'in-world' && debugOverlayVisible);
@@ -333,6 +329,12 @@ const bootstrap = async (): Promise<void> => {
   };
   const syncPlayerSpawnMarkerVisibility = (): void => {
     playerSpawnMarker.setVisible(currentScreen === 'in-world' && playerSpawnMarkerVisible);
+  };
+  const syncWorldScreenShellVisibility = (): void => {
+    syncDebugOverlayVisibility();
+    syncDebugEditControlsVisibility();
+    syncDebugEditOverlayVisibility();
+    syncPlayerSpawnMarkerVisibility();
   };
   const applyMainMenuShellAction = (actionType: MainMenuShellActionType): boolean => {
     if (currentScreen !== 'main-menu' || loop === null) return false;
@@ -410,17 +412,10 @@ const bootstrap = async (): Promise<void> => {
     return true;
   };
   const enterInWorldShellState = (): void => {
-    currentScreen = 'in-world';
     syncInWorldShellState();
-    syncDebugOverlayVisibility();
-    syncDebugEditControlsVisibility();
-    syncDebugEditOverlayVisibility();
-    syncPlayerSpawnMarkerVisibility();
+    syncWorldScreenShellVisibility();
   };
-  syncDebugOverlayVisibility();
-  syncDebugEditControlsVisibility();
-  syncDebugEditOverlayVisibility();
-  syncPlayerSpawnMarkerVisibility();
+  syncWorldScreenShellVisibility();
   input.retainPointerInspectWhenLeavingToElement(debugEditStatusStrip.getPointerInspectRetainerElement());
   let debugTileEditHistory = new DebugTileEditHistory();
   const debugEditControlStorage = worldSessionShellStateStorage;
