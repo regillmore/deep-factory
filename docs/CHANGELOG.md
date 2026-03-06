@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-05
 
+- Task: Add a `src/main.ts` runtime regression where persisted in-world shell toggle preferences hydrate the first `Enter World` transition before any in-world toggle input occurs.
+- Changes: Expanded [src/main.test.ts](../src/main.test.ts) with a mocked bootstrap regression that seeds persisted `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`, and `Shortcuts` visibility before importing [src/main.ts](../src/main.ts), then verifies the first `Enter World` transition hydrates matching shell state and overlay visibility without any in-world toggle input; removed completed task `229` from [docs/NEXT.md](docs/NEXT.md) and added replacement task `230`.
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a `src/main.ts` runtime regression where paused-menu `Resume World (Enter)` preserves all in-world shell toggles changed before `Main Menu (Q)`.
 - Changes: Added [src/main.test.ts](../src/main.test.ts) with a mocked runtime harness that boots [src/main.ts](../src/main.ts), toggles `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`, and `Shortcuts`, then verifies `Q` pause plus `Enter` resume preserve the shell state, overlay visibility sync, and persisted toggle payload; removed completed task `226` from [docs/NEXT.md](docs/NEXT.md); and added replacement task `229`.
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

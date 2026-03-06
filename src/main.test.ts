@@ -555,6 +555,46 @@ describe('main.ts paused-world shell toggles', () => {
     vi.unstubAllGlobals();
   });
 
+  it('hydrates persisted shell toggles on the first Enter World transition before in-world input changes them', async () => {
+    const persistedShellState = {
+      debugOverlayVisible: true,
+      debugEditControlsVisible: false,
+      debugEditOverlaysVisible: true,
+      playerSpawnMarkerVisible: false,
+      shortcutsOverlayVisible: true
+    };
+    testRuntime.storageValues.set(
+      WORLD_SESSION_SHELL_STATE_STORAGE_KEY,
+      JSON.stringify(persistedShellState)
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.shellInstance?.currentState).toEqual({ screen: 'main-menu' });
+    expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
+    expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
+    expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
+    expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(false);
+    expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(testRuntime.shellInstance?.currentState).toEqual({
+      screen: 'in-world',
+      ...persistedShellState
+    });
+    expect(readPersistedShellState()).toEqual(persistedShellState);
+    expect(testRuntime.debugOverlayInstance?.visible).toBe(true);
+    expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
+    expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(true);
+    expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(true);
+    expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(true);
+    expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
+    expect(testRuntime.gameLoopStartCount).toBe(1);
+  });
+
   it('keeps all in-world shell toggles enabled after pausing with Q and resuming with Enter', async () => {
     await import('./main');
     await flushBootstrap();
