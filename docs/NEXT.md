@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-268. Extract a shared keyboard debug-history action handler so the `keydown` branch in `src/main.ts` stops repeating `event.preventDefault()` plus `undoDebugTileStroke()` or `redoDebugTileStroke()` across `undo` and `redo`, with focused runtime regressions.
+269. Extract a shared fixed-step debug-history shortcut handler so the `consumeDebugEditHistoryShortcutActions()` loop in `src/main.ts` stops repeating `undoDebugTileStroke()` or `redoDebugTileStroke()` across touch `undo` and `redo`, with focused runtime regressions.

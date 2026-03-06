@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Keyboard debug-history actions should share one helper
+
+- Decision: Keyboard-triggered debug-history actions (`undo` and `redo`) should route through a shared `applyKeyboardDebugHistoryAction()` helper in `src/main.ts` instead of repeating `preventDefault()` plus `undoDebugTileStroke()` or `redoDebugTileStroke()` in the `keydown` branch.
+- Reason: Both keyboard history actions already share the same shortcut-side event handling contract, so leaving those steps repeated inline makes the runtime history path easier to drift from focused regressions.
+- Consequence: Future keyboard-triggered debug-history actions should extend the shared helper and its focused runtime regressions instead of adding another repeated `preventDefault()` plus history-mutation branch in `src/main.ts`.
+
 ### 2026-03-06: Keyboard main-menu shell actions should share one helper
 
 - Decision: Keyboard-triggered paused-main-menu shell actions (`resume-paused-world-session` and `start-fresh-world-session`) should route through a shared `applyKeyboardMainMenuShellAction()` helper in `src/main.ts` instead of repeating `preventDefault()` plus `applyMainMenuShellAction()` at the top of the `keydown` branch.

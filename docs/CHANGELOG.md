@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract a shared keyboard debug-history action handler so the `keydown` branch in `src/main.ts` stops repeating `event.preventDefault()` plus `undoDebugTileStroke()` or `redoDebugTileStroke()` across `undo` and `redo`.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyKeyboardDebugHistoryAction()` helper for keyboard-driven `undo` and `redo`, expanded [src/main.test.ts](../src/main.test.ts) with a focused in-world runtime regression for both keyboard history shortcuts, removed completed task `268` from [docs/NEXT.md](docs/NEXT.md), added replacement task `269`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared keyboard main-menu shell action handler so the `keydown` branch in `src/main.ts` stops repeating `event.preventDefault()` plus `applyMainMenuShellAction()` across `resume-paused-world-session` and `start-fresh-world-session`.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyKeyboardMainMenuShellAction()` helper for paused-menu keyboard actions, routed the `Enter` and `N` shortcut branches through that helper, refreshed the focused mixed-surface main-menu regression in [src/main.test.ts](../src/main.test.ts), removed completed task `267` from [docs/NEXT.md](docs/NEXT.md), added replacement task `268`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

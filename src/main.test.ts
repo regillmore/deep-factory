@@ -66,6 +66,8 @@ const testRuntime = vi.hoisted(() => {
     playerSpawnMarkerInstance: null as null | { visible: boolean },
     rendererConstructorError: null as unknown,
     rendererInitializeError: null as unknown,
+    debugHistoryUndoCallCount: 0,
+    debugHistoryRedoCallCount: 0,
     playerSpawnPoint: null as null | {
       anchorTileX: number;
       standingTileY: number;
@@ -351,6 +353,33 @@ vi.mock('./input/controller', () => ({
   walkLineSteppedTilePath: () => {}
 }));
 
+vi.mock('./input/debugTileEditHistory', () => ({
+  DebugTileEditHistory: class {
+    getStatus() {
+      return {
+        undoStrokeCount: 0,
+        redoStrokeCount: 0
+      };
+    }
+
+    recordAppliedEdit(): void {}
+
+    completeStroke(): boolean {
+      return false;
+    }
+
+    undo(): boolean {
+      testRuntime.debugHistoryUndoCallCount += 1;
+      return false;
+    }
+
+    redo(): boolean {
+      testRuntime.debugHistoryRedoCallCount += 1;
+      return false;
+    }
+  }
+}));
+
 vi.mock('./ui/appShell', async () => {
   const actual = await vi.importActual<typeof import('./ui/appShell')>('./ui/appShell');
 
@@ -515,7 +544,18 @@ const flushBootstrap = async (): Promise<void> => {
 const readPersistedShellState = (): Record<string, boolean> =>
   JSON.parse(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? '{}');
 
-const dispatchKeydown = (key: string, code = '') => {
+const dispatchKeydown = (
+  key: string,
+  code = '',
+  overrides: Partial<{
+    ctrlKey: boolean;
+    metaKey: boolean;
+    shiftKey: boolean;
+    altKey: boolean;
+    defaultPrevented: boolean;
+    target: unknown;
+  }> = {}
+) => {
   let prevented = false;
   const event = {
     key,
@@ -528,7 +568,8 @@ const dispatchKeydown = (key: string, code = '') => {
     target: null,
     preventDefault: () => {
       prevented = true;
-    }
+    },
+    ...overrides
   };
 
   const keydownListeners = testRuntime.windowListeners.get('keydown') ?? [];
@@ -609,6 +650,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.playerSpawnMarkerInstance = null;
     testRuntime.rendererConstructorError = null;
     testRuntime.rendererInitializeError = null;
+    testRuntime.debugHistoryUndoCallCount = 0;
+    testRuntime.debugHistoryRedoCallCount = 0;
     testRuntime.playerSpawnPoint = {
       anchorTileX: 0,
       standingTileY: 0,
@@ -823,6 +866,23 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(
       createInWorldShellState({ debugOverlayVisible: true })
     );
+  });
+
+  it('routes keyboard undo and redo through one shared debug-history handler only while in-world', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    expect(dispatchKeydown('z', 'KeyZ', { ctrlKey: true }).prevented).toBe(false);
+    expect(dispatchKeydown('y', 'KeyY', { ctrlKey: true }).prevented).toBe(false);
+    expect(testRuntime.debugHistoryUndoCallCount).toBe(0);
+    expect(testRuntime.debugHistoryRedoCallCount).toBe(0);
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('z', 'KeyZ', { ctrlKey: true }).prevented).toBe(true);
+    expect(dispatchKeydown('y', 'KeyY', { ctrlKey: true }).prevented).toBe(true);
+    expect(testRuntime.debugHistoryUndoCallCount).toBe(1);
+    expect(testRuntime.debugHistoryRedoCallCount).toBe(1);
   });
 
   it('enables the paused-menu N shortcut only after a resumable world session exists', async () => {

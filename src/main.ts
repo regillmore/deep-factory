@@ -119,6 +119,7 @@ type MainMenuShellActionType =
   | 'enter-or-resume-world-session'
   | 'start-fresh-world-session'
   | 'reset-shell-toggle-preferences';
+type KeyboardDebugHistoryActionType = 'undo' | 'redo';
 const formatDebugBrushLabel = (tileName: string): string => tileName.replace(/_/g, ' ');
 const isEditableKeyboardShortcutTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
@@ -457,6 +458,13 @@ const bootstrap = async (): Promise<void> => {
   ): boolean => {
     event.preventDefault();
     return applyInWorldShellAction(actionType);
+  };
+  const applyKeyboardDebugHistoryAction = (
+    event: Pick<KeyboardEvent, 'preventDefault'>,
+    actionType: KeyboardDebugHistoryActionType
+  ): boolean => {
+    event.preventDefault();
+    return actionType === 'undo' ? undoDebugTileStroke() : redoDebugTileStroke();
   };
   const enterInWorldShellState = (): void => {
     syncInWorldShellState();
@@ -1342,12 +1350,8 @@ const bootstrap = async (): Promise<void> => {
     }
 
     let handled = false;
-    if (action.type === 'undo') {
-      event.preventDefault();
-      handled = undoDebugTileStroke();
-    } else if (action.type === 'redo') {
-      event.preventDefault();
-      handled = redoDebugTileStroke();
+    if (action.type === 'undo' || action.type === 'redo') {
+      handled = applyKeyboardDebugHistoryAction(event, action.type);
     } else if (
       action.type === 'return-to-main-menu' ||
       action.type === 'recenter-camera' ||
