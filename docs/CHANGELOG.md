@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract a shared in-world shell toggle-state mutator for `toggle-debug-overlay`, `toggle-debug-edit-controls`, `toggle-debug-edit-overlays`, `toggle-player-spawn-marker`, and `toggle-shortcuts-overlay` so `applyInWorldShellAction()` stops switching over individual boolean flips.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyInWorldShellToggleStateAction()` helper for all five in-world shell toggles, kept the existing persisted shell-state refresh and overlay-sync behavior intact, expanded [src/main.test.ts](../src/main.test.ts) with a focused `?` shell-click-plus-keyboard regression for the shared toggle-state path, removed completed task `260` from [docs/NEXT.md](docs/NEXT.md), added replacement task `261`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared in-world shell overlay sync dispatcher for `toggle-debug-overlay`, `toggle-debug-edit-controls`, `toggle-debug-edit-overlays`, and `toggle-player-spawn-marker` so `applyInWorldShellAction()` stops switching over individual visibility sync calls.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `syncInWorldShellOverlayVisibility()` helper for the four overlay-backed in-world toggles while keeping `toggle-shortcuts-overlay` on the shell-state-only path, expanded [src/main.test.ts](../src/main.test.ts) with a focused mixed-surface regression that keeps `?` off the overlay-sync path while `H/G/V/M` still update visibility, removed completed task `259` from [docs/NEXT.md](docs/NEXT.md), added replacement task `260`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

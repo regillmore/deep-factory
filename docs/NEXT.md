@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-260. Extract a shared in-world shell toggle-state mutator for `toggle-debug-overlay`, `toggle-debug-edit-controls`, `toggle-debug-edit-overlays`, `toggle-player-spawn-marker`, and `toggle-shortcuts-overlay` so `applyInWorldShellAction()` stops switching over individual boolean flips in `src/main.ts`, with focused runtime regressions.
+261. Extract a shared in-world shell toggle commit helper for `persistWorldSessionShellState()` plus `syncInWorldShellState()` so `applyInWorldShellAction()` stops repeating the persisted-shell refresh sequence after toggle-state mutations in `src/main.ts`, with focused runtime regressions.

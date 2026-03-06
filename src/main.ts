@@ -356,6 +356,25 @@ const bootstrap = async (): Promise<void> => {
         return;
     }
   };
+  const applyInWorldShellToggleStateAction = (actionType: InWorldShellToggleActionType): void => {
+    switch (actionType) {
+      case 'toggle-debug-overlay':
+        debugOverlayVisible = !debugOverlayVisible;
+        return;
+      case 'toggle-debug-edit-controls':
+        debugEditControlsVisible = !debugEditControlsVisible;
+        return;
+      case 'toggle-debug-edit-overlays':
+        debugEditOverlaysVisible = !debugEditOverlaysVisible;
+        return;
+      case 'toggle-player-spawn-marker':
+        playerSpawnMarkerVisible = !playerSpawnMarkerVisible;
+        return;
+      case 'toggle-shortcuts-overlay':
+        shortcutsOverlayVisible = !shortcutsOverlayVisible;
+        return;
+    }
+  };
   const applyMainMenuShellAction = (actionType: MainMenuShellActionType): boolean => {
     if (currentScreen !== 'main-menu' || loop === null) return false;
 
@@ -391,23 +410,7 @@ const bootstrap = async (): Promise<void> => {
       return true;
     }
 
-    switch (actionType) {
-      case 'toggle-debug-overlay':
-        debugOverlayVisible = !debugOverlayVisible;
-        break;
-      case 'toggle-debug-edit-controls':
-        debugEditControlsVisible = !debugEditControlsVisible;
-        break;
-      case 'toggle-debug-edit-overlays':
-        debugEditOverlaysVisible = !debugEditOverlaysVisible;
-        break;
-      case 'toggle-player-spawn-marker':
-        playerSpawnMarkerVisible = !playerSpawnMarkerVisible;
-        break;
-      case 'toggle-shortcuts-overlay':
-        shortcutsOverlayVisible = !shortcutsOverlayVisible;
-        break;
-    }
+    applyInWorldShellToggleStateAction(actionType);
 
     persistWorldSessionShellState();
     syncInWorldShellState();

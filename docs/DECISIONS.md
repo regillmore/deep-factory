@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: In-world shell toggle state should mutate through one shared helper
+
+- Decision: All five in-world shell toggle actions (`toggle-debug-overlay`, `toggle-debug-edit-controls`, `toggle-debug-edit-overlays`, `toggle-player-spawn-marker`, and `toggle-shortcuts-overlay`) should flip their persisted runtime booleans through a shared `applyInWorldShellToggleStateAction()` helper in `src/main.ts`.
+- Reason: Those toggle actions all mutate the same persisted shell state before the shared in-world shell-state refresh and any follow-up overlay visibility sync runs, so keeping the boolean flips inline in `applyInWorldShellAction()` duplicates the toggle-to-state mapping in the hottest shell-action path.
+- Consequence: Future in-world shell toggle additions should extend the shared state mutator and its focused runtime regressions instead of adding more inline boolean-flip branches in `applyInWorldShellAction()`.
+
 ### 2026-03-06: Overlay-backed in-world shell toggles should share one visibility sync dispatcher
 
 - Decision: The in-world shell toggle actions that directly control live overlay visibility (`toggle-debug-overlay`, `toggle-debug-edit-controls`, `toggle-debug-edit-overlays`, and `toggle-player-spawn-marker`) should route through a shared `syncInWorldShellOverlayVisibility()` helper in `src/main.ts`, while `toggle-shortcuts-overlay` remains shell-state-only.
