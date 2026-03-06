@@ -47,7 +47,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Player debugging
 
-241. Surface standalone player live body chunk and chunk-local tile coordinates in the text debug HUD beside the existing world-position and world-tile telemetry.
+242. Surface standalone player live body chunk and chunk-local tile coordinates in the compact debug-edit status strip beside the existing world-position and world-tile telemetry.
 
 ## Ambitious vertical slices
 

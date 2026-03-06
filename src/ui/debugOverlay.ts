@@ -353,9 +353,13 @@ const formatPlayerLine = (player: DebugOverlayPlayerTelemetry | null): string =>
 
   const playerTileX = worldToTileCoordinate(player.position.x);
   const playerTileY = worldToTileCoordinate(player.position.y);
+  const { chunkX, chunkY } = worldToChunkCoord(playerTileX, playerTileY);
+  const { localX, localY } = worldToLocalTile(playerTileX, playerTileY);
   return (
     `Player: Pos:${formatFloat(player.position.x, 2)},${formatFloat(player.position.y, 2)} | ` +
     `Tile:${formatInt(playerTileX)},${formatInt(playerTileY)} | ` +
+    `Chunk:${formatInt(chunkX)},${formatInt(chunkY)} | ` +
+    `Local:${formatInt(localX)},${formatInt(localY)} | ` +
     `Vel:${formatFloat(player.velocity.x, 2)},${formatFloat(player.velocity.y, 2)} | ` +
     `grounded:${formatGameplayFlag(player.grounded)} | ` +
     `facing:${player.facing}`

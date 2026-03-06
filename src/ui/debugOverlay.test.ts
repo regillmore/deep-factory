@@ -376,7 +376,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain(
-      '\nPlayer: Pos:24.50,-12.25 | Tile:1,-1 | Vel:-180.00,60.00 | grounded:off | facing:left'
+      '\nPlayer: Pos:24.50,-12.25 | Tile:1,-1 | Chunk:0,-1 | Local:1,31 | Vel:-180.00,60.00 | grounded:off | facing:left'
     );
     expect(text).toContain('\nPose: wall-slide');
     expect(text).toContain('\nBonkHold: off');
@@ -428,7 +428,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain(
-      '\nPlayer: Pos:-0.10,-16.01 | Tile:-1,-2 | Vel:0.00,0.00 | grounded:off | facing:right'
+      '\nPlayer: Pos:-0.10,-16.01 | Tile:-1,-2 | Chunk:-1,-1 | Local:31,30 | Vel:0.00,0.00 | grounded:off | facing:right'
     );
   });
 
