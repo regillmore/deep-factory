@@ -210,6 +210,34 @@ describe('TileWorld', () => {
     expect(world.getChunkLightLevels(0, 0).every((lightLevel) => lightLevel === 5)).toBe(true);
   });
 
+  it('widens non-emissive blocksLight edit invalidation to immediate neighboring columns for one-tile-gap blocker-face relighting', () => {
+    const world = new TileWorld(0);
+    const editedWorldTileX = 4;
+    const editedWorldTileY = -20;
+    const editedChunkY = -1;
+
+    world.ensureChunk(0, editedChunkY);
+    world.fillChunkLight(0, editedChunkY, 7);
+    world.markChunkLightClean(0, editedChunkY);
+
+    expect(world.getTile(editedWorldTileX, editedWorldTileY)).toBe(0);
+    expect(world.setTile(editedWorldTileX, editedWorldTileY, 1)).toBe(true);
+
+    expect(world.getChunkLightDirtyColumnMask(0, editedChunkY)).toBe(localLightColumnRangeMask(3, 5));
+
+    const levels = world.getChunkLightLevels(0, editedChunkY);
+    for (const clearedLocalX of [3, 4, 5]) {
+      for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
+        expect(levels[toTileIndex(clearedLocalX, localY)]).toBe(0);
+      }
+    }
+    for (const untouchedLocalX of [2, 6]) {
+      for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
+        expect(levels[toTileIndex(untouchedLocalX, localY)]).toBe(7);
+      }
+    }
+  });
+
   it('treats emissive gameplay changes as lighting-state changes', () => {
     const registry = parseTileMetadataRegistry({
       tiles: [

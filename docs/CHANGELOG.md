@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Fix stale lower-row solid-face sunlight when a one-tile-gap roof is built one `blocksLight` tile at a time.
+- Changes: Added a stepwise roof-build regression in [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) and a matching dirty-mask regression in [src/world/world.test.ts](../src/world/world.test.ts), updated [src/world/world.ts](../src/world/world.ts) so zero-range non-emissive `blocksLight` edits dirty the edited column plus its immediate neighbors, added boundary follow-up task `234` to [docs/NEXT.md](docs/NEXT.md), and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md) for the widened invalidation rule.
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a sunlight regression where a clean emissive source beside a dirty boundary blocker does not promote that blocker to full sunlight (`MAX_LIGHT_LEVEL`) after the neighboring chunk unloads and streams back in.
 - Changes: Updated [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a streamed-back boundary-blocker regression that keeps a clean adjacent emissive source resident while the blocker chunk reloads, updated [src/world/sunlight.ts](../src/world/sunlight.ts) so blocker-face relighting classifies sunlit air from resident geometry plus boundary sunlight transport instead of the combined cached light field, removed completed task `222` from [docs/NEXT.md](docs/NEXT.md), added replacement lighting task `233`, and recorded the sunlight-classification invariant in [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

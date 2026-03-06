@@ -111,6 +111,37 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
 
+  it('clears stale lower-row solid-face sunlight as a one-tile-gap roof is built one tile at a time', () => {
+    const world = new TileWorld(0);
+    const rowStartWorldTileX = 4;
+    const rowEndWorldTileX = 13;
+    const lowerRowWorldTileY = -20;
+    const gapWorldTileY = lowerRowWorldTileY - 1;
+    const roofWorldTileY = lowerRowWorldTileY - 2;
+
+    for (let worldTileX = rowStartWorldTileX; worldTileX <= rowEndWorldTileX; worldTileX += 1) {
+      world.setTile(worldTileX, lowerRowWorldTileY, 1);
+      world.setTile(worldTileX, gapWorldTileY, 0);
+      world.setTile(worldTileX, roofWorldTileY, 0);
+    }
+
+    recomputeSunlightFromExposedChunkTops(world);
+    for (let worldTileX = rowStartWorldTileX; worldTileX <= rowEndWorldTileX; worldTileX += 1) {
+      expect(world.getLightLevel(worldTileX, lowerRowWorldTileY)).toBe(MAX_LIGHT_LEVEL);
+    }
+
+    for (let worldTileX = rowStartWorldTileX; worldTileX <= rowEndWorldTileX; worldTileX += 1) {
+      world.setTile(worldTileX, roofWorldTileY, 1);
+      recomputeSunlightFromExposedChunkTops(world);
+    }
+
+    expect(world.getLightLevel(rowStartWorldTileX, lowerRowWorldTileY)).toBe(MAX_LIGHT_LEVEL);
+    expect(world.getLightLevel(rowEndWorldTileX, lowerRowWorldTileY)).toBe(MAX_LIGHT_LEVEL);
+    for (let worldTileX = rowStartWorldTileX + 1; worldTileX < rowEndWorldTileX; worldTileX += 1) {
+      expect(world.getLightLevel(worldTileX, lowerRowWorldTileY)).toBe(0);
+    }
+  });
+
   it('recomputes only chunk columns that contain dirty resident light chunks', () => {
     const world = new TileWorld(1);
 

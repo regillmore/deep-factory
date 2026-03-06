@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Non-emissive blocker edits dirty immediate neighboring columns
+
+- Decision: Zero-range non-emissive `blocksLight` edits now invalidate the edited column plus its immediate left and right columns, while boundary edits still extend that widening across the loaded neighboring chunk boundary and its interior-adjacent column.
+- Reason: One-tile-gap blocker-face sunlight can change in adjacent columns when an edited column stops or starts providing the horizontal sunlit-air neighbor that those adjacent blockers depend on.
+- Consequence: Future sunlight invalidation work should preserve immediate-neighbor dirtiness for non-emissive blocker toggles instead of limiting zero-range invalidation to only the edited column except at chunk seams.
+
 ### 2026-03-06: Blocker-face sunlight relighting ignores emissive-only cached light
 
 - Decision: The blocker-face sunlight pass now determines whether neighboring air is sunlit from resident tile geometry plus boundary sunlight transport rules instead of reusing the combined cached light field.
