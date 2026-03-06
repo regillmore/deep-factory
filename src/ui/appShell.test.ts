@@ -12,6 +12,7 @@ import {
   getDesktopReturnToMainMenuHotkeyLabel
 } from '../input/debugEditShortcuts';
 import {
+  createDefaultBootShellState,
   createFirstLaunchMainMenuShellState,
   createPausedMainMenuShellState,
   createRendererInitializationFailedBootShellState,
@@ -41,7 +42,7 @@ describe('resolveAppShellRegionDisplay', () => {
 
 describe('resolveAppShellViewModel', () => {
   it('keeps the overlay visible during boot without a default action button', () => {
-    const viewModel = resolveAppShellViewModel({ screen: 'boot' });
+    const viewModel = resolveAppShellViewModel(createDefaultBootShellState());
 
     expect(viewModel.overlayVisible).toBe(true);
     expect(viewModel.chromeVisible).toBe(false);
@@ -327,6 +328,18 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.shortcutsToggleLabel).toBeNull();
     expect(viewModel.shortcutsTogglePressed).toBe(false);
     expect(viewModel.shortcutsOverlayVisible).toBe(false);
+  });
+});
+
+describe('createDefaultBootShellState', () => {
+  it('returns the explicit default boot loading copy', () => {
+    expect(createDefaultBootShellState()).toEqual({
+      screen: 'boot',
+      statusText: 'Preparing renderer, controls, and spawn state.',
+      detailLines: [
+        'Boot runs before the fixed-step simulation starts so later shell work has a stable entry point.'
+      ]
+    });
   });
 });
 

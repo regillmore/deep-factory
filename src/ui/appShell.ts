@@ -145,6 +145,12 @@ export const createFirstLaunchMainMenuShellState = (): AppShellState => ({
   tertiaryActionLabel: null
 });
 
+export const createDefaultBootShellState = (): AppShellState => ({
+  screen: 'boot',
+  statusText: DEFAULT_BOOT_STATUS,
+  detailLines: DEFAULT_BOOT_DETAIL_LINES
+});
+
 export const createWebGlUnavailableBootShellState = (): AppShellState => ({
   screen: 'boot',
   statusText: DEFAULT_WEBGL_UNAVAILABLE_BOOT_STATUS,
@@ -306,15 +312,16 @@ const createMenuSectionElement = (section: AppShellMenuSection): HTMLElement => 
 
 export const resolveAppShellViewModel = (state: AppShellState): AppShellViewModel => {
   switch (state.screen) {
-    case 'boot':
+    case 'boot': {
+      const defaultBootState = createDefaultBootShellState();
       return {
         screen: 'boot',
         overlayVisible: true,
         chromeVisible: false,
         stageLabel: 'Boot',
         title: 'Deep Factory',
-        statusText: state.statusText ?? DEFAULT_BOOT_STATUS,
-        detailLines: state.detailLines ?? DEFAULT_BOOT_DETAIL_LINES,
+        statusText: state.statusText ?? defaultBootState.statusText ?? '',
+        detailLines: state.detailLines ?? defaultBootState.detailLines ?? [],
         menuSections: state.menuSections ?? [],
         primaryActionLabel: state.primaryActionLabel ?? null,
         secondaryActionLabel: state.secondaryActionLabel ?? null,
@@ -333,6 +340,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         shortcutsTogglePressed: false,
         shortcutsOverlayVisible: false
       };
+    }
     case 'main-menu': {
       const firstLaunchMainMenuState = createFirstLaunchMainMenuShellState();
       return {
@@ -444,7 +452,7 @@ export class AppShell {
   private onToggleDebugEditOverlays: (screen: AppShellScreen) => void;
   private onTogglePlayerSpawnMarker: (screen: AppShellScreen) => void;
   private onToggleShortcutsOverlay: (screen: AppShellScreen) => void;
-  private currentState: AppShellState = { screen: 'boot' };
+  private currentState: AppShellState = createDefaultBootShellState();
 
   constructor(container: HTMLElement, options: AppShellOptions = {}) {
     this.onPrimaryAction = options.onPrimaryAction ?? (() => {});

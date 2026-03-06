@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract a default boot shell-state helper and route the initial bootstrap loading copy through it so normal boot still uses the same explicit shell-state factory pattern as the boot-failure overlays.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) with an explicit `createDefaultBootShellState()` helper, routed boot view-model defaults and the initial [src/main.ts](../src/main.ts) bootstrap loading state through that helper, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused helper and runtime-history regressions, removed completed task `247` from [docs/NEXT.md](docs/NEXT.md), added replacement task `248`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract boot-failure shell-state helpers and wire WebGL-unavailable plus renderer-init-failure bootstrap paths through them so startup error copy stops depending on inline state literals.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) with explicit `createWebGlUnavailableBootShellState()` and `createRendererInitializationFailedBootShellState()` helpers, routed [src/main.ts](../src/main.ts) through those helpers for both constructor-time WebGL unavailability and async renderer initialization failure paths, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused helper and runtime regressions, removed completed task `246` from [docs/NEXT.md](docs/NEXT.md), added replacement task `247`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

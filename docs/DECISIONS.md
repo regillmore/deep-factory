@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Default boot shell state should use an explicit helper factory
+
+- Decision: The normal startup loading overlay should be created through a named helper in `src/ui/appShell.ts`, and `src/main.ts` bootstrap should call that helper instead of constructing inline `{ screen: 'boot', ... }` loading literals.
+- Reason: Loading and failure boot overlays now follow one explicit shell-state factory pattern, which keeps shell tests and runtime regressions aligned on the same startup-state contract.
+- Consequence: Future default boot-copy changes should update the shared boot helper and its focused regressions rather than embedding startup loading text directly in bootstrap wiring.
+
 ### 2026-03-06: Boot-failure shell states should use explicit helper factories
 
 - Decision: WebGL-unavailable and renderer-initialization-failed boot overlays should be created through named helpers in `src/ui/appShell.ts`, and `src/main.ts` bootstrap should call those helpers instead of constructing inline `{ screen: 'boot', ... }` literals for failure states.

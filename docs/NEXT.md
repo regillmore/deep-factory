@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-247. Extract a default boot shell-state helper and route the initial bootstrap loading copy through it so normal boot still uses the same explicit shell-state factory pattern as the boot-failure overlays, with focused shell/runtime regressions.
+248. Extract an in-world shell-state helper and route shell-toggle synchronization through it so active-session chrome state stops depending on inline `{ screen: 'in-world', ... }` literals, with focused shell/runtime regressions.

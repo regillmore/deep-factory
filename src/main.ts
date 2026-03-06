@@ -47,6 +47,7 @@ import {
 import { DebugOverlay } from './ui/debugOverlay';
 import {
   AppShell,
+  createDefaultBootShellState,
   createFirstLaunchMainMenuShellState,
   createPausedMainMenuShellState,
   createRendererInitializationFailedBootShellState,
@@ -278,10 +279,7 @@ const bootstrap = async (): Promise<void> => {
       syncInWorldShellState();
     }
   });
-  shell.setState({
-    screen: 'boot',
-    statusText: 'Preparing renderer, controls, and spawn state.'
-  });
+  shell.setState(createDefaultBootShellState());
   const canvas = document.createElement('canvas');
   shell.getWorldHost().append(canvas);
 

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WORLD_SESSION_SHELL_STATE_STORAGE_KEY } from './mainWorldSessionShellState';
 import {
+  createDefaultBootShellState,
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState
 } from './ui/appShell';
@@ -635,6 +636,15 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(createWebGlUnavailableBootShellState());
     expect(testRuntime.debugOverlayInstance).toBeNull();
     expect(testRuntime.debugEditControlsInstance).toBeNull();
+    expect(testRuntime.gameLoopStartCount).toBe(0);
+  });
+
+  it('routes the initial bootstrap loading copy through the explicit default boot shell helper', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.shellInstance?.stateHistory[0]).toEqual(createDefaultBootShellState());
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
     expect(testRuntime.gameLoopStartCount).toBe(0);
   });
 
