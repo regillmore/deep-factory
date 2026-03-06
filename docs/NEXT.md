@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-249. Extract a main-menu shell-state selector helper and route `showMainMenuShellState()` through it so first-launch versus paused-session menu selection stops depending on inline branching in `src/main.ts`, with focused shell/runtime regressions.
+250. Extract a paused-main-menu shortcut-context helper and route `resolveDebugEditShortcutAction()` setup through it so `src/main.ts` stops inlining `currentScreen === 'main-menu' && worldSessionStarted` availability checks for `Resume World (Enter)` and `New World (N)`, with focused shortcut/runtime regressions.

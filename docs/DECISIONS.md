@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Main-menu shell-state selection should use an explicit helper
+
+- Decision: First-launch versus paused-session `main menu` state selection should be handled by a shared helper in `src/ui/appShell.ts`, and `src/main.ts` should call that helper instead of branching inline on `worldSessionStarted`.
+- Reason: The shell module already owns the explicit state factories for both menu variants, so keeping the selection logic there avoids scattering shell-state branching across runtime wiring.
+- Consequence: Future main-menu state variants or resumable-session rules should extend the shared selector helper and its focused regressions instead of adding more inline `main menu` selection branches in `src/main.ts`.
+
 ### 2026-03-06: In-world shell state should use an explicit helper factory
 
 - Decision: Active-session shell chrome state should be created through a named helper in `src/ui/appShell.ts`, and `src/main.ts` should use that helper when synchronizing in-world shell-toggle visibility.

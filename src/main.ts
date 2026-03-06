@@ -48,9 +48,8 @@ import { DebugOverlay } from './ui/debugOverlay';
 import {
   AppShell,
   createDefaultBootShellState,
-  createFirstLaunchMainMenuShellState,
   createInWorldShellState,
-  createPausedMainMenuShellState,
+  createMainMenuShellState,
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState,
   type AppShellScreen
@@ -314,9 +313,7 @@ const bootstrap = async (): Promise<void> => {
   };
   const showMainMenuShellState = (): void => {
     currentScreen = 'main-menu';
-    shell.setState(
-      worldSessionStarted ? createPausedMainMenuShellState() : createFirstLaunchMainMenuShellState()
-    );
+    shell.setState(createMainMenuShellState(worldSessionStarted));
   };
   const syncDebugOverlayVisibility = (): void => {
     debug.setVisible(currentScreen === 'in-world' && debugOverlayVisible);

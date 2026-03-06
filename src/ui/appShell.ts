@@ -153,6 +153,11 @@ export const createFirstLaunchMainMenuShellState = (): AppShellState => ({
   tertiaryActionLabel: null
 });
 
+export const createMainMenuShellState = (hasResumableWorldSession: boolean): AppShellState =>
+  hasResumableWorldSession
+    ? createPausedMainMenuShellState()
+    : createFirstLaunchMainMenuShellState();
+
 export const createDefaultBootShellState = (): AppShellState => ({
   screen: 'boot',
   statusText: DEFAULT_BOOT_STATUS,

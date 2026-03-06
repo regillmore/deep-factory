@@ -15,6 +15,7 @@ import {
   createDefaultBootShellState,
   createFirstLaunchMainMenuShellState,
   createInWorldShellState,
+  createMainMenuShellState,
   createPausedMainMenuShellState,
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState,
@@ -381,6 +382,16 @@ describe('createFirstLaunchMainMenuShellState', () => {
       secondaryActionLabel: null,
       tertiaryActionLabel: null
     });
+  });
+});
+
+describe('createMainMenuShellState', () => {
+  it('returns the first-launch main menu when no resumable world session exists', () => {
+    expect(createMainMenuShellState(false)).toEqual(createFirstLaunchMainMenuShellState());
+  });
+
+  it('returns the paused main menu when a resumable world session exists', () => {
+    expect(createMainMenuShellState(true)).toEqual(createPausedMainMenuShellState());
   });
 });
 

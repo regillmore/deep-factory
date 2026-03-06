@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract a main-menu shell-state selector helper and route `showMainMenuShellState()` through it so first-launch versus paused-session menu selection stops depending on inline branching in `src/main.ts`.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) with a shared `createMainMenuShellState()` selector, routed [src/main.ts](../src/main.ts) through that helper for `showMainMenuShellState()`, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused selector regressions, removed completed task `249` from [docs/NEXT.md](docs/NEXT.md), added replacement task `250`, and updated [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract an in-world shell-state helper and route shell-toggle synchronization through it so active-session chrome state stops depending on inline `{ screen: 'in-world', ... }` literals.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) with an explicit `createInWorldShellState()` helper and routed in-world view-model defaults through it, updated [src/main.ts](../src/main.ts) so active-session shell-toggle synchronization now passes the explicit helper state instead of inline literals, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused helper and runtime regressions, removed completed task `248` from [docs/NEXT.md](docs/NEXT.md), added replacement task `249`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

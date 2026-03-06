@@ -4,6 +4,7 @@ import { WORLD_SESSION_SHELL_STATE_STORAGE_KEY } from './mainWorldSessionShellSt
 import {
   createDefaultBootShellState,
   createInWorldShellState,
+  createMainMenuShellState,
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState
 } from './ui/appShell';
@@ -751,6 +752,18 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(false);
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
     expect(testRuntime.gameLoopStartCount).toBe(1);
+  });
+
+  it('uses the shared main-menu shell-state selector for first-launch bootstrap and paused-session returns', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(createMainMenuShellState(false));
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createMainMenuShellState(true));
   });
 
   it('keeps all in-world shell toggles enabled after pausing with Q and resuming with Enter', async () => {
