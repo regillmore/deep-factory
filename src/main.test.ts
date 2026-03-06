@@ -934,6 +934,56 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(true);
   });
 
+  it('routes overlay-backed in-world shell toggles through one shared visibility sync path while shortcuts stay shell-state only', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.shellInstance?.options.onToggleShortcutsOverlay('in-world');
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({
+        shortcutsOverlayVisible: true
+      })
+    );
+    expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
+    expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
+    expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
+    expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(false);
+    expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
+
+    testRuntime.shellInstance?.options.onToggleDebugOverlay('in-world');
+    testRuntime.shellInstance?.options.onToggleDebugEditControls('in-world');
+    testRuntime.shellInstance?.options.onToggleDebugEditOverlays('in-world');
+    testRuntime.shellInstance?.options.onTogglePlayerSpawnMarker('in-world');
+
+    expect(testRuntime.debugOverlayInstance?.visible).toBe(true);
+    expect(testRuntime.debugEditControlsInstance?.visible).toBe(true);
+    expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(true);
+    expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(true);
+    expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(true);
+    expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(true);
+
+    expect(dispatchKeydown('h').prevented).toBe(true);
+    expect(dispatchKeydown('g').prevented).toBe(true);
+    expect(dispatchKeydown('v').prevented).toBe(true);
+    expect(dispatchKeydown('m').prevented).toBe(true);
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({
+        shortcutsOverlayVisible: true
+      })
+    );
+    expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
+    expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
+    expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
+    expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(false);
+    expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
+  });
+
   it('keeps in-world-only debug-edit shortcut keys inert outside in-world runtime and enables them once the session is live', async () => {
     await import('./main');
     await flushBootstrap();

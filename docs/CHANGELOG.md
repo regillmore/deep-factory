@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract a shared in-world shell overlay sync dispatcher for `toggle-debug-overlay`, `toggle-debug-edit-controls`, `toggle-debug-edit-overlays`, and `toggle-player-spawn-marker` so `applyInWorldShellAction()` stops switching over individual visibility sync calls.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `syncInWorldShellOverlayVisibility()` helper for the four overlay-backed in-world toggles while keeping `toggle-shortcuts-overlay` on the shell-state-only path, expanded [src/main.test.ts](../src/main.test.ts) with a focused mixed-surface regression that keeps `?` off the overlay-sync path while `H/G/V/M` still update visibility, removed completed task `259` from [docs/NEXT.md](docs/NEXT.md), added replacement task `260`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared shell-visibility synchronizer for the debug HUD, edit panel, edit overlays, and spawn marker so `src/main.ts` stops repeating overlay-sync sequences across world-screen transitions.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `syncWorldScreenShellVisibility()` helper, routed the bootstrap, pause-to-main-menu, and enter-or-resume in-world transition paths through that shared overlay sync, expanded [src/main.test.ts](../src/main.test.ts) with a focused shell-driven enter/pause/resume visibility regression, removed completed task `258` from [docs/NEXT.md](docs/NEXT.md), added replacement task `259`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

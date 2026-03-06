@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-259. Extract a shared in-world shell overlay sync dispatcher for `toggle-debug-overlay`, `toggle-debug-edit-controls`, `toggle-debug-edit-overlays`, and `toggle-player-spawn-marker` so `applyInWorldShellAction()` stops switching over individual visibility sync calls in `src/main.ts`, with focused runtime regressions.
+260. Extract a shared in-world shell toggle-state mutator for `toggle-debug-overlay`, `toggle-debug-edit-controls`, `toggle-debug-edit-overlays`, `toggle-player-spawn-marker`, and `toggle-shortcuts-overlay` so `applyInWorldShellAction()` stops switching over individual boolean flips in `src/main.ts`, with focused runtime regressions.

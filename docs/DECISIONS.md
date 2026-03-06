@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Overlay-backed in-world shell toggles should share one visibility sync dispatcher
+
+- Decision: The in-world shell toggle actions that directly control live overlay visibility (`toggle-debug-overlay`, `toggle-debug-edit-controls`, `toggle-debug-edit-overlays`, and `toggle-player-spawn-marker`) should route through a shared `syncInWorldShellOverlayVisibility()` helper in `src/main.ts`, while `toggle-shortcuts-overlay` remains shell-state-only.
+- Reason: Those four toggle actions all recompute one specific visible overlay surface after the shared persisted shell state and in-world shell state already update, so repeating a second per-action switch inside `applyInWorldShellAction()` makes that runtime path easier to drift from mixed-surface regression coverage.
+- Consequence: Future in-world shell toggles that directly control live overlay visibility should extend the shared dispatcher and its focused runtime regressions instead of adding more inline per-action sync branches in `src/main.ts`.
+
 ### 2026-03-06: World-screen shell visibility should sync through one shared helper
 
 - Decision: Non-shortcuts shell overlay visibility (`Debug HUD`, `Edit Panel`, `Edit Overlays`, and `Spawn Marker`) should route through a shared `syncWorldScreenShellVisibility()` helper in `src/main.ts` whenever runtime transitions between boot, paused main menu, and in-world screens.
