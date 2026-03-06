@@ -14,6 +14,8 @@ import {
 import {
   createFirstLaunchMainMenuShellState,
   createPausedMainMenuShellState,
+  createRendererInitializationFailedBootShellState,
+  createWebGlUnavailableBootShellState,
   resolveMainMenuPrimaryActionTitle,
   resolveMainMenuSecondaryActionTitle,
   resolveMainMenuTertiaryActionTitle,
@@ -306,12 +308,8 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.playerSpawnMarkerTogglePressed).toBe(false);
   });
 
-  it('honors explicit boot failure copy without changing the boot state contract', () => {
-    const viewModel = resolveAppShellViewModel({
-      screen: 'boot',
-      statusText: 'WebGL2 is not available in this browser.',
-      detailLines: ['Use a current Chrome, Firefox, or Safari build to continue.']
-    });
+  it('keeps the boot overlay contract for the WebGL-unavailable boot helper', () => {
+    const viewModel = resolveAppShellViewModel(createWebGlUnavailableBootShellState());
 
     expect(viewModel.overlayVisible).toBe(true);
     expect(viewModel.chromeVisible).toBe(false);
@@ -355,6 +353,34 @@ describe('createFirstLaunchMainMenuShellState', () => {
       primaryActionLabel: 'Enter World',
       secondaryActionLabel: null,
       tertiaryActionLabel: null
+    });
+  });
+});
+
+describe('createWebGlUnavailableBootShellState', () => {
+  it('returns the explicit boot-failure copy for missing WebGL2 support', () => {
+    expect(createWebGlUnavailableBootShellState()).toEqual({
+      screen: 'boot',
+      statusText: 'WebGL2 is not available in this browser.',
+      detailLines: ['Use a current Chrome, Firefox, or Safari build to continue.']
+    });
+  });
+});
+
+describe('createRendererInitializationFailedBootShellState', () => {
+  it('preserves a non-empty renderer initialization error message in the boot failure copy', () => {
+    expect(createRendererInitializationFailedBootShellState(new Error('GPU device lost'))).toEqual({
+      screen: 'boot',
+      statusText: 'Renderer initialization failed.',
+      detailLines: ['GPU device lost']
+    });
+  });
+
+  it('falls back to reload guidance when renderer initialization fails without a usable error message', () => {
+    expect(createRendererInitializationFailedBootShellState(new Error('   '))).toEqual({
+      screen: 'boot',
+      statusText: 'Renderer initialization failed.',
+      detailLines: ['Reload the page after confirming WebGL2 is available.']
     });
   });
 });

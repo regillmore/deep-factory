@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-246. Extract boot-failure shell-state helpers and wire WebGL-unavailable plus renderer-init-failure bootstrap paths through them so startup error copy stops depending on inline state literals, with focused shell/runtime regressions.
+247. Extract a default boot shell-state helper and route the initial bootstrap loading copy through it so normal boot still uses the same explicit shell-state factory pattern as the boot-failure overlays, with focused shell/runtime regressions.

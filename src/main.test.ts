@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WORLD_SESSION_SHELL_STATE_STORAGE_KEY } from './mainWorldSessionShellState';
+import {
+  createRendererInitializationFailedBootShellState,
+  createWebGlUnavailableBootShellState
+} from './ui/appShell';
 
 const testRuntime = vi.hoisted(() => {
   class FakeHTMLElement {
@@ -56,6 +60,8 @@ const testRuntime = vi.hoisted(() => {
     armedDebugToolPreviewInstance: null as null | { visible: boolean },
     debugEditStatusStripInstance: null as null | { visible: boolean },
     playerSpawnMarkerInstance: null as null | { visible: boolean },
+    rendererConstructorError: null as unknown,
+    rendererInitializeError: null as unknown,
     gameLoopStartCount: 0,
     storageValues: new Map<string, string>()
   };
@@ -73,6 +79,12 @@ vi.mock('./core/gameLoop', () => ({
 
 vi.mock('./gl/renderer', () => ({
   Renderer: class {
+    constructor() {
+      if (testRuntime.rendererConstructorError !== null) {
+        throw testRuntime.rendererConstructorError;
+      }
+    }
+
     telemetry = {
       atlasWidth: null,
       atlasHeight: null,
@@ -87,7 +99,11 @@ vi.mock('./gl/renderer', () => ({
       standalonePlayerNearbyLightSourceLocalTileY: null
     };
 
-    async initialize(): Promise<void> {}
+    async initialize(): Promise<void> {
+      if (testRuntime.rendererInitializeError !== null) {
+        throw testRuntime.rendererInitializeError;
+      }
+    }
 
     resize(): void {}
 
@@ -558,7 +574,7 @@ const createExpectedFirstLaunchMainMenuState = () => ({
   tertiaryActionLabel: null
 });
 
-describe('main.ts paused-world shell toggles', () => {
+describe('main.ts shell state orchestration', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -573,6 +589,8 @@ describe('main.ts paused-world shell toggles', () => {
     testRuntime.armedDebugToolPreviewInstance = null;
     testRuntime.debugEditStatusStripInstance = null;
     testRuntime.playerSpawnMarkerInstance = null;
+    testRuntime.rendererConstructorError = null;
+    testRuntime.rendererInitializeError = null;
     testRuntime.gameLoopStartCount = 0;
     testRuntime.storageValues.clear();
 
@@ -606,6 +624,30 @@ describe('main.ts paused-world shell toggles', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it('routes WebGL-unavailable bootstrap failures through the explicit boot shell helper', async () => {
+    testRuntime.rendererConstructorError = new Error('webgl unavailable');
+
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(createWebGlUnavailableBootShellState());
+    expect(testRuntime.debugOverlayInstance).toBeNull();
+    expect(testRuntime.debugEditControlsInstance).toBeNull();
+    expect(testRuntime.gameLoopStartCount).toBe(0);
+  });
+
+  it('routes renderer initialization failures through the explicit boot shell helper', async () => {
+    testRuntime.rendererInitializeError = new Error('GPU device lost');
+
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createRendererInitializationFailedBootShellState(new Error('GPU device lost'))
+    );
+    expect(testRuntime.gameLoopStartCount).toBe(0);
   });
 
   it('hydrates persisted shell toggles on the first Enter World transition before in-world input changes them', async () => {

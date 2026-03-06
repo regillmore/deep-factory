@@ -49,6 +49,8 @@ import {
   AppShell,
   createFirstLaunchMainMenuShellState,
   createPausedMainMenuShellState,
+  createRendererInitializationFailedBootShellState,
+  createWebGlUnavailableBootShellState,
   type AppShellScreen
 } from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
@@ -287,11 +289,7 @@ const bootstrap = async (): Promise<void> => {
   try {
     renderer = new Renderer(canvas);
   } catch {
-    shell.setState({
-      screen: 'boot',
-      statusText: 'WebGL2 is not available in this browser.',
-      detailLines: ['Use a current Chrome, Firefox, or Safari build to continue.']
-    });
+    shell.setState(createWebGlUnavailableBootShellState());
     return;
   }
 
@@ -1940,15 +1938,7 @@ const bootstrap = async (): Promise<void> => {
   try {
     await renderer.initialize();
   } catch (error) {
-    const detailMessage =
-      error instanceof Error && error.message.length > 0
-        ? error.message
-        : 'Reload the page after confirming WebGL2 is available.';
-    shell.setState({
-      screen: 'boot',
-      statusText: 'Renderer initialization failed.',
-      detailLines: [detailMessage]
-    });
+    shell.setState(createRendererInitializationFailedBootShellState(error));
     return;
   }
 

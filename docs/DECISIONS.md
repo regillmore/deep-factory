@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Boot-failure shell states should use explicit helper factories
+
+- Decision: WebGL-unavailable and renderer-initialization-failed boot overlays should be created through named helpers in `src/ui/appShell.ts`, and `src/main.ts` bootstrap should call those helpers instead of constructing inline `{ screen: 'boot', ... }` literals for failure states.
+- Reason: Startup failure copy now has one explicit state contract that shell tests and runtime regressions can share without duplicating ad hoc boot-state objects.
+- Consequence: Future boot-time failure overlays should add or reuse explicit boot-state helpers in the shell module rather than embedding failure copy directly in bootstrap wiring or tests.
+
 ### 2026-03-06: Runtime shell entry states should use explicit helper factories
 
 - Decision: Nontrivial shell states such as the first-launch main menu should be created through named helpers in `src/ui/appShell.ts`, and runtime transitions in `src/main.ts` should pass those explicit states instead of minimal `{ screen: ... }` placeholders.

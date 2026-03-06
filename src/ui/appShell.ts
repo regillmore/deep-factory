@@ -111,6 +111,13 @@ const DEFAULT_BOOT_STATUS = 'Preparing renderer, controls, and spawn state.';
 const DEFAULT_BOOT_DETAIL_LINES = [
   'Boot runs before the fixed-step simulation starts so later shell work has a stable entry point.'
 ] as const;
+const DEFAULT_WEBGL_UNAVAILABLE_BOOT_STATUS = 'WebGL2 is not available in this browser.';
+const DEFAULT_WEBGL_UNAVAILABLE_BOOT_DETAIL_LINES = [
+  'Use a current Chrome, Firefox, or Safari build to continue.'
+] as const;
+const DEFAULT_RENDERER_INITIALIZATION_FAILED_BOOT_STATUS = 'Renderer initialization failed.';
+const DEFAULT_RENDERER_INITIALIZATION_FAILED_BOOT_DETAIL_LINE =
+  'Reload the page after confirming WebGL2 is available.';
 const DEFAULT_FIRST_LAUNCH_MAIN_MENU_STATUS = 'Renderer ready.';
 const DEFAULT_FIRST_LAUNCH_MAIN_MENU_DETAIL_LINES = [] as const;
 const DEFAULT_FIRST_LAUNCH_MAIN_MENU_MENU_SECTIONS: readonly AppShellMenuSection[] = [
@@ -136,6 +143,28 @@ export const createFirstLaunchMainMenuShellState = (): AppShellState => ({
   primaryActionLabel: 'Enter World',
   secondaryActionLabel: null,
   tertiaryActionLabel: null
+});
+
+export const createWebGlUnavailableBootShellState = (): AppShellState => ({
+  screen: 'boot',
+  statusText: DEFAULT_WEBGL_UNAVAILABLE_BOOT_STATUS,
+  detailLines: DEFAULT_WEBGL_UNAVAILABLE_BOOT_DETAIL_LINES
+});
+
+const resolveRendererInitializationFailedBootDetailLine = (error: unknown): string => {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return DEFAULT_RENDERER_INITIALIZATION_FAILED_BOOT_DETAIL_LINE;
+};
+
+export const createRendererInitializationFailedBootShellState = (
+  error?: unknown
+): AppShellState => ({
+  screen: 'boot',
+  statusText: DEFAULT_RENDERER_INITIALIZATION_FAILED_BOOT_STATUS,
+  detailLines: [resolveRendererInitializationFailedBootDetailLine(error)]
 });
 
 export const resolveAppShellRegionDisplay = (
