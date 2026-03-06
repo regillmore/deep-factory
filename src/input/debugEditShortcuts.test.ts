@@ -19,6 +19,7 @@ import {
   getDebugOneShotToolHotkeyLabel,
   getDebugBrushTileIdForShortcutSlot,
   getTouchDebugEditModeHotkeyLabel,
+  isInWorldOnlyDebugEditShortcutAction,
   resolveDebugEditShortcutAction,
   type DebugEditShortcutKeyEventLike
 } from './debugEditShortcuts';
@@ -88,6 +89,23 @@ describe('createDebugEditShortcutContext', () => {
       pausedMainMenuFreshWorldAvailable: false,
       inWorldShellShortcutsAvailable: false
     });
+  });
+});
+
+describe('isInWorldOnlyDebugEditShortcutAction', () => {
+  it('flags non-shell debug-edit actions that should stay inert outside in-world runtime', () => {
+    expect(isInWorldOnlyDebugEditShortcutAction({ type: 'undo' })).toBe(true);
+    expect(isInWorldOnlyDebugEditShortcutAction({ type: 'arm-line', kind: 'place' })).toBe(true);
+    expect(isInWorldOnlyDebugEditShortcutAction({ type: 'select-brush-slot', slotIndex: 2 })).toBe(true);
+    expect(isInWorldOnlyDebugEditShortcutAction({ type: 'cycle-brush', delta: 1 })).toBe(true);
+  });
+
+  it('does not flag shell-context or paused-menu actions that already resolve by screen context', () => {
+    expect(isInWorldOnlyDebugEditShortcutAction({ type: 'resume-paused-world-session' })).toBe(false);
+    expect(isInWorldOnlyDebugEditShortcutAction({ type: 'start-fresh-world-session' })).toBe(false);
+    expect(isInWorldOnlyDebugEditShortcutAction({ type: 'return-to-main-menu' })).toBe(false);
+    expect(isInWorldOnlyDebugEditShortcutAction({ type: 'toggle-debug-overlay' })).toBe(false);
+    expect(isInWorldOnlyDebugEditShortcutAction({ type: 'toggle-shortcuts-overlay' })).toBe(false);
   });
 });
 

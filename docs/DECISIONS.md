@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: In-world-only debug-edit keyboard actions should use a shared guard helper
+
+- Decision: Shortcut actions that should stay inert outside active `in-world` runtime (`undo`/`redo`, tool arming, touch-mode changes, brush selection and cycling, panel collapse, eyedropper, and armed-tool cancel) should be identified through a shared `isInWorldOnlyDebugEditShortcutAction()` helper in `src/input/debugEditShortcuts.ts`.
+- Reason: Once shortcut resolution already handles screen-aware shell and paused-menu actions, the remaining repeated `currentScreen !== 'in-world'` checks in `src/main.ts` were all classifying the same in-world-only debug-edit action subset by hand.
+- Consequence: Future in-world-only debug-edit keyboard actions should extend the shared guard helper and its focused shortcut/runtime regressions instead of adding more per-branch screen checks in `src/main.ts`.
+
 ### 2026-03-06: Runtime shortcut-context composition should use a shared helper
 
 - Decision: Runtime callers that need a `resolveDebugEditShortcutAction()` context should use a shared `createDebugEditShortcutContext()` helper in `src/input/debugEditShortcuts.ts` instead of merging paused-main-menu and in-world shortcut helper outputs inline.

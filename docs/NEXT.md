@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-253. Extract a shared in-world debug-edit keyboard-action guard and route the `keydown` switch through it so `src/main.ts` stops repeating `currentScreen !== 'in-world'` checks across non-shell shortcut branches, with focused shortcut/runtime regressions.
+254. Extract a shared keyboard-side in-world shell-toggle mutator and route the `H/G/V/M/?` shortcut branches through it so `src/main.ts` stops repeating persisted shell-state sync sequences, with focused runtime regressions.

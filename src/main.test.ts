@@ -811,6 +811,24 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.gameLoopStartCount).toBe(1);
   });
 
+  it('keeps in-world-only debug-edit shortcut keys inert outside in-world runtime and enables them once the session is live', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    expect(dispatchKeydown('l').prevented).toBe(false);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('l').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+    expect(dispatchKeydown('b').prevented).toBe(false);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+  });
+
   it('keeps all in-world shell toggles enabled after pausing with Q and resuming with Enter', async () => {
     await import('./main');
     await flushBootstrap();

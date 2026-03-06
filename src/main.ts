@@ -36,6 +36,7 @@ import {
   createDebugEditShortcutContext,
   cycleDebugBrushTileId,
   getDebugBrushTileIdForShortcutSlot,
+  isInWorldOnlyDebugEditShortcutAction,
   resolveDebugEditShortcutAction
 } from './input/debugEditShortcuts';
 import {
@@ -1220,14 +1221,15 @@ const bootstrap = async (): Promise<void> => {
       startFreshWorldSessionFromMainMenu();
       return;
     }
+    if (currentScreen !== 'in-world' && isInWorldOnlyDebugEditShortcutAction(action)) {
+      return;
+    }
 
     let handled = false;
     if (action.type === 'undo') {
-      if (currentScreen !== 'in-world') return;
       event.preventDefault();
       handled = undoDebugTileStroke();
     } else if (action.type === 'redo') {
-      if (currentScreen !== 'in-world') return;
       event.preventDefault();
       handled = redoDebugTileStroke();
     } else if (action.type === 'return-to-main-menu') {
@@ -1275,38 +1277,30 @@ const bootstrap = async (): Promise<void> => {
       persistWorldSessionShellState();
       syncInWorldShellState();
     } else if (action.type === 'cancel-armed-tools') {
-      if (currentScreen !== 'in-world') return;
       event.preventDefault();
       handled = input.cancelArmedDebugTools();
       if (handled) {
         syncArmedDebugToolControls();
       }
     } else if (action.type === 'arm-flood-fill') {
-      if (currentScreen !== 'in-world') return;
       event.preventDefault();
       handled = toggleArmedDebugFloodFillKind(action.kind);
     } else if (action.type === 'arm-line') {
-      if (currentScreen !== 'in-world') return;
       event.preventDefault();
       handled = toggleArmedDebugLineKind(action.kind);
     } else if (action.type === 'arm-rect') {
-      if (currentScreen !== 'in-world') return;
       event.preventDefault();
       handled = toggleArmedDebugRectKind(action.kind);
     } else if (action.type === 'arm-rect-outline') {
-      if (currentScreen !== 'in-world') return;
       event.preventDefault();
       handled = toggleArmedDebugRectOutlineKind(action.kind);
     } else if (action.type === 'arm-ellipse') {
-      if (currentScreen !== 'in-world') return;
       event.preventDefault();
       handled = toggleArmedDebugEllipseKind(action.kind);
     } else if (action.type === 'arm-ellipse-outline') {
-      if (currentScreen !== 'in-world') return;
       event.preventDefault();
       handled = toggleArmedDebugEllipseOutlineKind(action.kind);
     } else if (action.type === 'toggle-panel-collapsed') {
-      if (currentScreen !== 'in-world') return;
       event.preventDefault();
       if (!debugEditControlsVisible) return;
       const previousCollapsed = debugEditControls ? debugEditControls.isCollapsed() : debugEditPanelCollapsed;
@@ -1321,7 +1315,6 @@ const bootstrap = async (): Promise<void> => {
         }
       }
     } else if (action.type === 'set-touch-mode') {
-      if (currentScreen !== 'in-world') return;
       event.preventDefault();
       const previousMode = input.getTouchDebugEditMode();
       if (debugEditControls) {
@@ -1334,12 +1327,10 @@ const bootstrap = async (): Promise<void> => {
         persistDebugEditControlsState();
       }
     } else if (action.type === 'select-brush-slot') {
-      if (currentScreen !== 'in-world') return;
       event.preventDefault();
       const tileId = getDebugBrushTileIdForShortcutSlot(DEBUG_BRUSH_TILE_OPTIONS, action.slotIndex);
       handled = tileId !== null ? applyDebugBrushShortcutTileId(tileId) : false;
     } else if (action.type === 'eyedropper') {
-      if (currentScreen !== 'in-world') return;
       event.preventDefault();
       const pointerInspect = input.getPointerInspect();
       handled =
@@ -1347,7 +1338,6 @@ const bootstrap = async (): Promise<void> => {
           ? applyDebugBrushEyedropperAtTile(pointerInspect.tile.x, pointerInspect.tile.y)
           : false;
     } else {
-      if (currentScreen !== 'in-world') return;
       event.preventDefault();
       const tileId = cycleDebugBrushTileId(DEBUG_BRUSH_TILE_OPTIONS, activeDebugBrushTileId, action.delta);
       handled = tileId !== null ? applyDebugBrushShortcutTileId(tileId) : false;

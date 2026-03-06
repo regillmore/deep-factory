@@ -144,6 +144,30 @@ export const createDebugEditShortcutContext = (
   ...createInWorldShortcutContext(screen)
 });
 
+export const isInWorldOnlyDebugEditShortcutAction = (
+  action: DebugEditShortcutAction
+): boolean => {
+  switch (action.type) {
+    case 'undo':
+    case 'redo':
+    case 'cancel-armed-tools':
+    case 'toggle-panel-collapsed':
+    case 'set-touch-mode':
+    case 'arm-flood-fill':
+    case 'arm-line':
+    case 'arm-rect':
+    case 'arm-rect-outline':
+    case 'arm-ellipse':
+    case 'arm-ellipse-outline':
+    case 'eyedropper':
+    case 'select-brush-slot':
+    case 'cycle-brush':
+      return true;
+    default:
+      return false;
+  }
+};
+
 export const cycleDebugBrushTileId = (
   brushOptions: readonly DebugBrushShortcutOption[],
   activeBrushTileId: number,
