@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Surface standalone player live body chunk and chunk-local tile coordinates in the compact debug-edit status strip beside the existing world-position and world-tile telemetry.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so the compact strip now derives and shows body `ChunkNow:` and `LocalNow:` lines from the existing live player `TileNow:` telemetry, expanded [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) and [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts) with positive-world, negative-world, and wrap-preservation regressions, removed completed task `242` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical-slice task `243`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface standalone player live body chunk and chunk-local tile coordinates in the text debug HUD beside the existing world-position and world-tile telemetry.
 - Changes: Updated [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) so the text HUD `Player:` line now derives and shows live body `Chunk:` and `Local:` coordinates beside the existing position and `Tile:` readout, expanded [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) with positive- and negative-world regressions for that formatting, removed completed task `241` from [docs/NEXT.md](docs/NEXT.md), added replacement task `242`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/debugOverlay.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

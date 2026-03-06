@@ -166,7 +166,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('formats the live standalone player world tile coordinates for the compact strip when provided', () => {
+  it('formats the live standalone player world tile, chunk, and chunk-local coordinates for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -181,7 +181,26 @@ describe('buildDebugEditStatusStripModel', () => {
       preview: createEmptyPreviewState()
     });
 
-    expect(model.playerText).toBe('TileNow: 4,-4');
+    expect(model.playerText).toBe('TileNow: 4,-4\nChunkNow: 0,-1\nLocalNow: 4,28');
+    expect(model.eventText).toBeNull();
+  });
+
+  it('derives negative-world standalone player chunk and chunk-local coordinates from the live body tile telemetry', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerWorldTile: {
+        x: -1,
+        y: -2
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('TileNow: -1,-2\nChunkNow: -1,-1\nLocalNow: 31,30');
     expect(model.eventText).toBeNull();
   });
 
@@ -709,7 +728,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose and live world-tile telemetry on separate player lines', () => {
+  it('keeps pose plus live world-tile, chunk, and chunk-local telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -725,7 +744,7 @@ describe('buildDebugEditStatusStripModel', () => {
       preview: createEmptyPreviewState()
     });
 
-    expect(model.playerText).toBe('Pose: grounded-idle\nTileNow: 3,-2');
+    expect(model.playerText).toBe('Pose: grounded-idle\nTileNow: 3,-2\nChunkNow: 0,-1\nLocalNow: 3,30');
     expect(model.eventText).toBeNull();
   });
 
@@ -1229,7 +1248,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose, world-position, collision AABB min/max and size, grounded, facing, horizontal and vertical velocity, speed magnitude, jump telemetry, and contact telemetry on separate player lines', () => {
+  it('keeps pose, world-position, world-tile, body chunk/local, collision AABB, grounded, facing, velocity, jump telemetry, and contact telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -1273,6 +1292,8 @@ describe('buildDebugEditStatusStripModel', () => {
       'Pose: ceiling-bonk\n' +
         'PosNow: 72.00,-48.00\n' +
         'TileNow: 4,-3\n' +
+        'ChunkNow: 0,-1\n' +
+        'LocalNow: 4,29\n' +
         'AABBNow: min 66.00,-76.00 | max 78.00,-48.00 | size 12.00,28.00\n' +
         'GroundedNow: off\n' +
         'FacingNow: right\n' +

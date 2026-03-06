@@ -120,10 +120,18 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
-  it('preserves separate pose and live world-tile player lines while keeping each line individually wrappable', () => {
-    expect(buildWrappedDetailLines('Pose: grounded-idle\nTileNow: 3,-2')).toEqual([
+  it('preserves separate pose, live world-tile, and live body-chunk player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: grounded-idle\nTileNow: 3,-2\nChunkNow: 0,-1')).toEqual([
       ['Pose: grounded-idle'],
-      ['TileNow: 3,-2']
+      ['TileNow: 3,-2'],
+      ['ChunkNow: 0,-1']
+    ]);
+  });
+
+  it('preserves separate pose and live body chunk-local player lines while keeping each line individually wrappable', () => {
+    expect(buildWrappedDetailLines('Pose: grounded-idle\nLocalNow: 3,30')).toEqual([
+      ['Pose: grounded-idle'],
+      ['LocalNow: 3,30']
     ]);
   });
 
@@ -332,15 +340,17 @@ describe('buildWrappedDetailLines', () => {
     ]);
   });
 
-  it('preserves separate pose, world-position, world-tile, collision AABB min/max and size, input-edge, horizontal and vertical velocity, speed magnitude, and contact player lines while keeping each line individually wrappable', () => {
+  it('preserves separate pose, world-position, world-tile, live body chunk/local, collision AABB, input-edge, velocity, speed magnitude, and contact player lines while keeping each line individually wrappable', () => {
     expect(
       buildWrappedDetailLines(
-        'Pose: ceiling-bonk\nPosNow: 72.00,-48.00\nTileNow: 4,-3\nAABBNow: min 66.00,-76.00 | max 78.00,-48.00 | size 12.00,28.00\nCamPosNow: 90.50,-54.25\nCamTileNow: 5,-4\nCamLocalNow: 31,28\nFocusPosNow: 72.00,-62.00\nFocusTileNow: 4,-4\nFocusChunkNow: 0,-1\nFocusLocalNow: 4,28\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nVelYNow: -210.00\nSpeedNow: 276.59\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
+        'Pose: ceiling-bonk\nPosNow: 72.00,-48.00\nTileNow: 4,-3\nChunkNow: 0,-1\nLocalNow: 4,29\nAABBNow: min 66.00,-76.00 | max 78.00,-48.00 | size 12.00,28.00\nCamPosNow: 90.50,-54.25\nCamTileNow: 5,-4\nCamLocalNow: 31,28\nFocusPosNow: 72.00,-62.00\nFocusTileNow: 4,-4\nFocusChunkNow: 0,-1\nFocusLocalNow: 4,28\nGroundedNow: off\nFacingNow: right\nMoveXNow: 1\nVelXNow: 180.00\nVelYNow: -210.00\nSpeedNow: 276.59\nJumpHeldNow: on\nJumpPressedNow: on\nSupportNow: tile 4,-1 (#6)\nWallNow: tile 5,-3 (#7, right)\nCeilingNow: tile 2,-6 (#8)'
       )
     ).toEqual([
       ['Pose: ceiling-bonk'],
       ['PosNow: 72.00,-48.00'],
       ['TileNow: 4,-3'],
+      ['ChunkNow: 0,-1'],
+      ['LocalNow: 4,29'],
       ['AABBNow: min 66.00,-76.00', '| max 78.00,-48.00', '| size 12.00,28.00'],
       ['CamPosNow: 90.50,-54.25'],
       ['CamTileNow: 5,-4'],

@@ -45,10 +45,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 238. Add shortcut and consequence metadata rows inside structured paused-menu action cards so action context is visible without relying on button tooltips.
 239. Add shortcut and readiness metadata rows inside structured first-launch main-menu action cards after task `237` so enter-world and mixed-device guidance stay visible without relying on button tooltips.
 
-## Player debugging
-
-242. Surface standalone player live body chunk and chunk-local tile coordinates in the compact debug-edit status strip beside the existing world-position and world-tile telemetry.
-
 ## Ambitious vertical slices
 
 213. Add a hostile-slime combat slice after entity scaffolding (`17-18`): deterministic spawn windows near the player, jump-chase movement, player contact damage plus invulnerability cooldown, and fixed-step combat regressions.
@@ -56,5 +52,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 215. Add a placeable-workbench crafting slice after inventory basics: recipe registry for a minimal starter set, in-world station-range gating, shell or debug panel crafting actions, and recipe resolution regressions.
 221. Add a starter melee-weapon follow-up after hostile-slime combat (`213`): fixed-step swing windup/active/recovery timing, slime hit detection plus knockback, and deterministic hit-cooldown regressions.
 232. Add a grappling-hook traversal slice after entity scaffolding (`17-18`): mixed-device aimed hook firing, solid-tile latch plus pull-and-release rules, and fixed-step hook-state regressions.
+243. Add a torch-lighting utility slice after inventory basics (`214`): stackable torch hotbar slots, mixed-device solid-face placement of light-emitting torch tiles, and lighting regressions for placed torches.
 
 ## Project structure optimization

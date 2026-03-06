@@ -8,6 +8,7 @@ import {
   type DebugTileEditKind,
   type TouchDebugEditMode
 } from '../input/controller';
+import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
 import { MAX_LIGHT_LEVEL } from '../world/constants';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
@@ -615,6 +616,26 @@ const formatLiveWorldTileText = (playerWorldTile: { x: number; y: number } | nul
   return `TileNow: ${formatTileCoordinatePair(playerWorldTile.x, playerWorldTile.y)}`;
 };
 
+const formatLiveWorldChunkText = (playerWorldTile: { x: number; y: number } | null): string | null => {
+  if (playerWorldTile === null) {
+    return null;
+  }
+
+  const { chunkX, chunkY } = worldToChunkCoord(playerWorldTile.x, playerWorldTile.y);
+  return `ChunkNow: ${formatTileCoordinatePair(chunkX, chunkY)}`;
+};
+
+const formatLiveWorldChunkLocalTileText = (
+  playerWorldTile: { x: number; y: number } | null
+): string | null => {
+  if (playerWorldTile === null) {
+    return null;
+  }
+
+  const { localX, localY } = worldToLocalTile(playerWorldTile.x, playerWorldTile.y);
+  return `LocalNow: ${formatTileCoordinatePair(localX, localY)}`;
+};
+
 const formatLiveAabbText = (
   playerAabb: DebugEditStatusStripPlayerAabbTelemetry | null
 ): string | null => {
@@ -899,6 +920,8 @@ const buildPlayerText = (
     playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : null,
     formatLiveWorldPositionText(playerWorldPosition),
     formatLiveWorldTileText(playerWorldTile),
+    formatLiveWorldChunkText(playerWorldTile),
+    formatLiveWorldChunkLocalTileText(playerWorldTile),
     formatLiveAabbText(playerAabb),
     formatLiveCameraWorldPositionText(playerCameraWorldPosition),
     formatLiveCameraWorldTileText(playerCameraWorldTile),
