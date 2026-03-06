@@ -752,4 +752,49 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(world.getLightLevel(rightInteriorWorldTileX, tunnelWorldTileY)).toBe(0);
     expect(world.getLightLevel(shadowedProbeWorldTileX, tunnelWorldTileY)).toBe(0);
   });
+
+  it('keeps a streamed-back dirty boundary blocker at emissive falloff instead of full sunlight when the adjacent emissive source column stays clean', () => {
+    const world = new TileWorld(0);
+    const tunnelWorldTileY = -20;
+    const tunnelStartWorldTileX = CHUNK_SIZE - 2;
+    const tunnelEndWorldTileX = CHUNK_SIZE + 2;
+    const emissiveWorldTileX = CHUNK_SIZE - 1;
+    const boundaryBlockerWorldTileX = CHUNK_SIZE;
+    const shadowedProbeWorldTileX = CHUNK_SIZE + 1;
+    const emissiveTileId = 6;
+    const expectedBoundaryBlockerLightLevel =
+      getTileEmissiveLightLevel(emissiveTileId) -
+      Math.abs(boundaryBlockerWorldTileX - emissiveWorldTileX);
+
+    for (let worldTileX = tunnelStartWorldTileX; worldTileX <= tunnelEndWorldTileX; worldTileX += 1) {
+      world.setTile(worldTileX, tunnelWorldTileY - 1, 1);
+      world.setTile(worldTileX, tunnelWorldTileY, 0);
+      world.setTile(worldTileX, tunnelWorldTileY + 1, 1);
+    }
+    world.setTile(emissiveWorldTileX, tunnelWorldTileY, emissiveTileId);
+    world.setTile(boundaryBlockerWorldTileX, tunnelWorldTileY, 1);
+
+    recomputeSunlightFromExposedChunkTops(world);
+    expect(world.getLightLevel(boundaryBlockerWorldTileX, tunnelWorldTileY)).toBe(
+      expectedBoundaryBlockerLightLevel
+    );
+    expect(world.getLightLevel(shadowedProbeWorldTileX, tunnelWorldTileY)).toBe(0);
+
+    world.pruneChunksOutside({
+      minChunkX: 0,
+      minChunkY: -1,
+      maxChunkX: 0,
+      maxChunkY: -1
+    });
+    expect(world.getChunkCount()).toBe(1);
+
+    world.ensureChunk(1, -1);
+    recomputeSunlightFromExposedChunkTops(world);
+
+    expect(world.getLightLevel(boundaryBlockerWorldTileX, tunnelWorldTileY)).toBe(
+      expectedBoundaryBlockerLightLevel
+    );
+    expect(world.getLightLevel(boundaryBlockerWorldTileX, tunnelWorldTileY)).not.toBe(MAX_LIGHT_LEVEL);
+    expect(world.getLightLevel(shadowedProbeWorldTileX, tunnelWorldTileY)).toBe(0);
+  });
 });

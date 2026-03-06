@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Add a sunlight regression where a clean emissive source beside a dirty boundary blocker does not promote that blocker to full sunlight (`MAX_LIGHT_LEVEL`) after the neighboring chunk unloads and streams back in.
+- Changes: Updated [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a streamed-back boundary-blocker regression that keeps a clean adjacent emissive source resident while the blocker chunk reloads, updated [src/world/sunlight.ts](../src/world/sunlight.ts) so blocker-face relighting classifies sunlit air from resident geometry plus boundary sunlight transport instead of the combined cached light field, removed completed task `222` from [docs/NEXT.md](docs/NEXT.md), added replacement lighting task `233`, and recorded the sunlight-classification invariant in [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a `src/main.ts` runtime regression where inaccessible in-world shell-toggle local storage still boots the first `Enter World` transition with all shell overlays hidden.
 - Changes: Expanded [src/main.test.ts](../src/main.test.ts) with a mocked bootstrap regression that makes `window.localStorage` throw during startup, then verifies the first `Enter World` transition still reaches in-world state with every shell overlay hidden and no bootstrap crash; removed completed task `231` from [docs/NEXT.md](docs/NEXT.md) and added replacement ambitious vertical-slice task `232`.
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

@@ -325,6 +325,62 @@ const applySunlightToBlockingTilesAdjacentToLitAir = (
   dirtyColumnContexts: DirtyResidentChunkColumnContext[],
   registry: TileMetadataRegistry
 ): void => {
+  const sunlitAirByWorldTileKey = new Map<string, boolean>();
+  const sunlitAirInProgressWorldTileKeys = new Set<string>();
+
+  const isResidentAirTileLitBySunlight = (worldTileX: number, worldTileY: number): boolean => {
+    const worldTileKey = `${worldTileX},${worldTileY}`;
+    const cachedResult = sunlitAirByWorldTileKey.get(worldTileKey);
+    if (cachedResult !== undefined) {
+      return cachedResult;
+    }
+    if (sunlitAirInProgressWorldTileKeys.has(worldTileKey)) {
+      return false;
+    }
+
+    sunlitAirInProgressWorldTileKeys.add(worldTileKey);
+
+    let isSunlit = false;
+    const tile = sampleResidentTileAtWorldTile(bounds, worldTileX, worldTileY);
+    if (tile && !doesTileBlockLight(tile.tileId, registry)) {
+      isSunlit = true;
+      for (let probeWorldTileY = worldTileY - 1; probeWorldTileY >= bounds.minWorldTileY; probeWorldTileY -= 1) {
+        const aboveTile = sampleResidentTileAtWorldTile(bounds, worldTileX, probeWorldTileY);
+        if (aboveTile && doesTileBlockLight(aboveTile.tileId, registry)) {
+          isSunlit = false;
+          break;
+        }
+      }
+
+      if (!isSunlit) {
+        let transportedNeighborWorldTileX: number | null = null;
+        if (tile.localX === 0) {
+          transportedNeighborWorldTileX = worldTileX - 1;
+        } else if (tile.localX === CHUNK_SIZE - 1) {
+          transportedNeighborWorldTileX = worldTileX + 1;
+        }
+
+        if (transportedNeighborWorldTileX !== null) {
+          const transportedNeighborTile = sampleResidentTileAtWorldTile(
+            bounds,
+            transportedNeighborWorldTileX,
+            worldTileY
+          );
+          if (
+            transportedNeighborTile &&
+            !doesTileBlockLight(transportedNeighborTile.tileId, registry)
+          ) {
+            isSunlit = isResidentAirTileLitBySunlight(transportedNeighborWorldTileX, worldTileY);
+          }
+        }
+      }
+    }
+
+    sunlitAirInProgressWorldTileKeys.delete(worldTileKey);
+    sunlitAirByWorldTileKey.set(worldTileKey, isSunlit);
+    return isSunlit;
+  };
+
   const hasHorizontalSunlitAirNeighbor = (worldTileX: number, worldTileY: number): boolean => {
     const horizontalNeighborWorldTiles = [
       [worldTileX - 1, worldTileY],
@@ -341,7 +397,7 @@ const applySunlightToBlockingTilesAdjacentToLitAir = (
         continue;
       }
 
-      if ((horizontalNeighborTile.chunk.lightLevels[horizontalNeighborTile.tileIndex] ?? 0) > 0) {
+      if (isResidentAirTileLitBySunlight(neighborWorldTileX, neighborWorldTileY)) {
         return true;
       }
     }
@@ -383,7 +439,7 @@ const applySunlightToBlockingTilesAdjacentToLitAir = (
               continue;
             }
 
-            if ((neighborTile.chunk.lightLevels[neighborTile.tileIndex] ?? 0) > 0) {
+            if (isResidentAirTileLitBySunlight(neighborWorldTileX, neighborWorldTileY)) {
               hasAdjacentSunlitAir = true;
               break;
             }
