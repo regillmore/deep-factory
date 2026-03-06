@@ -14,6 +14,7 @@ import {
 import {
   createDefaultBootShellState,
   createFirstLaunchMainMenuShellState,
+  createInWorldShellState,
   createPausedMainMenuShellState,
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState,
@@ -136,7 +137,7 @@ describe('resolveAppShellViewModel', () => {
   });
 
   it('swaps the boot overlay for in-world chrome once the shell enters the world', () => {
-    const viewModel = resolveAppShellViewModel({ screen: 'in-world' });
+    const viewModel = resolveAppShellViewModel(createInWorldShellState());
 
     expect(viewModel.overlayVisible).toBe(false);
     expect(viewModel.chromeVisible).toBe(true);
@@ -159,13 +160,13 @@ describe('resolveAppShellViewModel', () => {
     );
     expect(viewModel.debugEditControlsTogglePressed).toBe(false);
     expect(viewModel.debugEditOverlaysToggleLabel).toBe(
-      `Hide Edit Overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`
+      `Show Edit Overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`
     );
-    expect(viewModel.debugEditOverlaysTogglePressed).toBe(true);
+    expect(viewModel.debugEditOverlaysTogglePressed).toBe(false);
     expect(viewModel.playerSpawnMarkerToggleLabel).toBe(
-      `Hide Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`
+      `Show Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`
     );
-    expect(viewModel.playerSpawnMarkerTogglePressed).toBe(true);
+    expect(viewModel.playerSpawnMarkerTogglePressed).toBe(false);
     expect(viewModel.shortcutsToggleLabel).toBe(
       `Shortcuts (${getDesktopShortcutsOverlayHotkeyLabel()})`
     );
@@ -176,10 +177,9 @@ describe('resolveAppShellViewModel', () => {
   });
 
   it('reflects the in-world shortcuts overlay toggle state', () => {
-    const viewModel = resolveAppShellViewModel({
-      screen: 'in-world',
+    const viewModel = resolveAppShellViewModel(createInWorldShellState({
       shortcutsOverlayVisible: true
-    });
+    }));
 
     expect(viewModel.shortcutsToggleLabel).toBe(
       `Shortcuts (${getDesktopShortcutsOverlayHotkeyLabel()})`
@@ -189,7 +189,9 @@ describe('resolveAppShellViewModel', () => {
   });
 
   it('reflects the active debug hud toggle state while in-world', () => {
-    const viewModel = resolveAppShellViewModel({ screen: 'in-world', debugOverlayVisible: true });
+    const viewModel = resolveAppShellViewModel(
+      createInWorldShellState({ debugOverlayVisible: true })
+    );
 
     expect(viewModel.chromeVisible).toBe(true);
     expect(viewModel.returnToMainMenuActionLabel).toBe(
@@ -209,20 +211,19 @@ describe('resolveAppShellViewModel', () => {
     );
     expect(viewModel.debugEditControlsTogglePressed).toBe(false);
     expect(viewModel.debugEditOverlaysToggleLabel).toBe(
-      `Hide Edit Overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`
+      `Show Edit Overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`
     );
-    expect(viewModel.debugEditOverlaysTogglePressed).toBe(true);
+    expect(viewModel.debugEditOverlaysTogglePressed).toBe(false);
     expect(viewModel.playerSpawnMarkerToggleLabel).toBe(
-      `Hide Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`
+      `Show Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`
     );
-    expect(viewModel.playerSpawnMarkerTogglePressed).toBe(true);
+    expect(viewModel.playerSpawnMarkerTogglePressed).toBe(false);
   });
 
   it('reflects the full debug-edit panel toggle state while in-world', () => {
-    const viewModel = resolveAppShellViewModel({
-      screen: 'in-world',
+    const viewModel = resolveAppShellViewModel(createInWorldShellState({
       debugEditControlsVisible: true
-    });
+    }));
 
     expect(viewModel.chromeVisible).toBe(true);
     expect(viewModel.returnToMainMenuActionLabel).toBe(
@@ -241,18 +242,18 @@ describe('resolveAppShellViewModel', () => {
     );
     expect(viewModel.debugEditControlsTogglePressed).toBe(true);
     expect(viewModel.debugEditOverlaysToggleLabel).toBe(
-      `Hide Edit Overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`
+      `Show Edit Overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`
     );
     expect(viewModel.playerSpawnMarkerToggleLabel).toBe(
-      `Hide Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`
+      `Show Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`
     );
   });
 
   it('reflects the compact edit overlay toggle state while in-world', () => {
-    const viewModel = resolveAppShellViewModel({
-      screen: 'in-world',
-      debugEditOverlaysVisible: false
-    });
+    const viewModel = resolveAppShellViewModel(createInWorldShellState({
+      debugEditOverlaysVisible: false,
+      playerSpawnMarkerVisible: true
+    }));
 
     expect(viewModel.chromeVisible).toBe(true);
     expect(viewModel.returnToMainMenuActionLabel).toBe(
@@ -280,10 +281,10 @@ describe('resolveAppShellViewModel', () => {
   });
 
   it('reflects the spawn marker toggle state while in-world', () => {
-    const viewModel = resolveAppShellViewModel({
-      screen: 'in-world',
+    const viewModel = resolveAppShellViewModel(createInWorldShellState({
+      debugEditOverlaysVisible: true,
       playerSpawnMarkerVisible: false
-    });
+    }));
 
     expect(viewModel.chromeVisible).toBe(true);
     expect(viewModel.returnToMainMenuActionLabel).toBe(
@@ -339,6 +340,19 @@ describe('createDefaultBootShellState', () => {
       detailLines: [
         'Boot runs before the fixed-step simulation starts so later shell work has a stable entry point.'
       ]
+    });
+  });
+});
+
+describe('createInWorldShellState', () => {
+  it('returns the explicit active-session shell state with all toggles defaulted off', () => {
+    expect(createInWorldShellState()).toEqual({
+      screen: 'in-world',
+      debugOverlayVisible: false,
+      debugEditControlsVisible: false,
+      debugEditOverlaysVisible: false,
+      playerSpawnMarkerVisible: false,
+      shortcutsOverlayVisible: false
     });
   });
 });

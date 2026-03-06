@@ -36,6 +36,14 @@ export interface AppShellState {
   shortcutsOverlayVisible?: boolean;
 }
 
+export interface InWorldShellStateOptions {
+  debugOverlayVisible?: boolean;
+  debugEditControlsVisible?: boolean;
+  debugEditOverlaysVisible?: boolean;
+  playerSpawnMarkerVisible?: boolean;
+  shortcutsOverlayVisible?: boolean;
+}
+
 export const DEFAULT_PAUSED_MAIN_MENU_STATUS = 'World session paused.';
 export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [] as const;
 export const DEFAULT_PAUSED_MAIN_MENU_MENU_SECTIONS: readonly AppShellMenuSection[] = [
@@ -171,6 +179,17 @@ export const createRendererInitializationFailedBootShellState = (
   screen: 'boot',
   statusText: DEFAULT_RENDERER_INITIALIZATION_FAILED_BOOT_STATUS,
   detailLines: [resolveRendererInitializationFailedBootDetailLine(error)]
+});
+
+export const createInWorldShellState = (
+  options: InWorldShellStateOptions = {}
+): AppShellState => ({
+  screen: 'in-world',
+  debugOverlayVisible: options.debugOverlayVisible ?? false,
+  debugEditControlsVisible: options.debugEditControlsVisible ?? false,
+  debugEditOverlaysVisible: options.debugEditOverlaysVisible ?? false,
+  playerSpawnMarkerVisible: options.playerSpawnMarkerVisible ?? false,
+  shortcutsOverlayVisible: options.shortcutsOverlayVisible ?? false
 });
 
 export const resolveAppShellRegionDisplay = (
@@ -382,7 +401,14 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         shortcutsOverlayVisible: false
       };
     }
-    case 'in-world':
+    case 'in-world': {
+      const inWorldState = createInWorldShellState({
+        debugOverlayVisible: state.debugOverlayVisible,
+        debugEditControlsVisible: state.debugEditControlsVisible,
+        debugEditOverlaysVisible: state.debugEditOverlaysVisible,
+        playerSpawnMarkerVisible: state.playerSpawnMarkerVisible,
+        shortcutsOverlayVisible: state.shortcutsOverlayVisible
+      });
       return {
         screen: 'in-world',
         overlayVisible: false,
@@ -398,25 +424,26 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         returnToMainMenuActionLabel: resolveInWorldReturnToMainMenuActionLabel(),
         recenterCameraActionLabel: resolveInWorldRecenterCameraActionLabel(),
         debugOverlayToggleLabel: resolveInWorldDebugOverlayToggleLabel(
-          state.debugOverlayVisible === true
+          inWorldState.debugOverlayVisible === true
         ),
-        debugOverlayTogglePressed: state.debugOverlayVisible === true,
+        debugOverlayTogglePressed: inWorldState.debugOverlayVisible === true,
         debugEditControlsToggleLabel: resolveInWorldDebugEditControlsToggleLabel(
-          state.debugEditControlsVisible === true
+          inWorldState.debugEditControlsVisible === true
         ),
-        debugEditControlsTogglePressed: state.debugEditControlsVisible === true,
+        debugEditControlsTogglePressed: inWorldState.debugEditControlsVisible === true,
         debugEditOverlaysToggleLabel: resolveInWorldDebugEditOverlaysToggleLabel(
-          state.debugEditOverlaysVisible !== false
+          inWorldState.debugEditOverlaysVisible === true
         ),
-        debugEditOverlaysTogglePressed: state.debugEditOverlaysVisible !== false,
+        debugEditOverlaysTogglePressed: inWorldState.debugEditOverlaysVisible === true,
         playerSpawnMarkerToggleLabel: resolveInWorldPlayerSpawnMarkerToggleLabel(
-          state.playerSpawnMarkerVisible !== false
+          inWorldState.playerSpawnMarkerVisible === true
         ),
-        playerSpawnMarkerTogglePressed: state.playerSpawnMarkerVisible !== false,
+        playerSpawnMarkerTogglePressed: inWorldState.playerSpawnMarkerVisible === true,
         shortcutsToggleLabel: resolveInWorldShortcutsToggleLabel(),
-        shortcutsTogglePressed: state.shortcutsOverlayVisible === true,
-        shortcutsOverlayVisible: state.shortcutsOverlayVisible === true
+        shortcutsTogglePressed: inWorldState.shortcutsOverlayVisible === true,
+        shortcutsOverlayVisible: inWorldState.shortcutsOverlayVisible === true
       };
+    }
   }
 };
 

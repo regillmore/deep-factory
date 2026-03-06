@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract an in-world shell-state helper and route shell-toggle synchronization through it so active-session chrome state stops depending on inline `{ screen: 'in-world', ... }` literals.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) with an explicit `createInWorldShellState()` helper and routed in-world view-model defaults through it, updated [src/main.ts](../src/main.ts) so active-session shell-toggle synchronization now passes the explicit helper state instead of inline literals, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused helper and runtime regressions, removed completed task `248` from [docs/NEXT.md](docs/NEXT.md), added replacement task `249`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a default boot shell-state helper and route the initial bootstrap loading copy through it so normal boot still uses the same explicit shell-state factory pattern as the boot-failure overlays.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) with an explicit `createDefaultBootShellState()` helper, routed boot view-model defaults and the initial [src/main.ts](../src/main.ts) bootstrap loading state through that helper, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused helper and runtime-history regressions, removed completed task `247` from [docs/NEXT.md](docs/NEXT.md), added replacement task `248`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

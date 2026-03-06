@@ -49,6 +49,7 @@ import {
   AppShell,
   createDefaultBootShellState,
   createFirstLaunchMainMenuShellState,
+  createInWorldShellState,
   createPausedMainMenuShellState,
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState,
@@ -303,14 +304,13 @@ const bootstrap = async (): Promise<void> => {
   let debugEditControls: TouchDebugEditControls | null = null;
   const syncInWorldShellState = (): void => {
     currentScreen = 'in-world';
-    shell.setState({
-      screen: 'in-world',
+    shell.setState(createInWorldShellState({
       debugOverlayVisible,
       debugEditControlsVisible,
       debugEditOverlaysVisible,
       playerSpawnMarkerVisible,
       shortcutsOverlayVisible
-    });
+    }));
   };
   const showMainMenuShellState = (): void => {
     currentScreen = 'main-menu';

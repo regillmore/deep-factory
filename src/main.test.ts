@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WORLD_SESSION_SHELL_STATE_STORAGE_KEY } from './mainWorldSessionShellState';
 import {
   createDefaultBootShellState,
+  createInWorldShellState,
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState
 } from './ui/appShell';
@@ -686,10 +687,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
-    expect(testRuntime.shellInstance?.currentState).toEqual({
-      screen: 'in-world',
-      ...persistedShellState
-    });
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState(persistedShellState));
     expect(readPersistedShellState()).toEqual(persistedShellState);
     expect(testRuntime.debugOverlayInstance?.visible).toBe(true);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
@@ -719,14 +717,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
-    expect(testRuntime.shellInstance?.currentState).toEqual({
-      screen: 'in-world',
-      debugOverlayVisible: false,
-      debugEditControlsVisible: false,
-      debugEditOverlaysVisible: false,
-      playerSpawnMarkerVisible: false,
-      shortcutsOverlayVisible: false
-    });
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
     expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
@@ -752,14 +743,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
-    expect(testRuntime.shellInstance?.currentState).toEqual({
-      screen: 'in-world',
-      debugOverlayVisible: false,
-      debugEditControlsVisible: false,
-      debugEditOverlaysVisible: false,
-      playerSpawnMarkerVisible: false,
-      shortcutsOverlayVisible: false
-    });
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
     expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
@@ -783,14 +767,15 @@ describe('main.ts shell state orchestration', () => {
     dispatchKeydown('m');
     dispatchKeydown('?', 'Slash');
 
-    expect(testRuntime.shellInstance?.currentState).toEqual({
-      screen: 'in-world',
-      debugOverlayVisible: true,
-      debugEditControlsVisible: true,
-      debugEditOverlaysVisible: true,
-      playerSpawnMarkerVisible: true,
-      shortcutsOverlayVisible: true
-    });
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({
+        debugOverlayVisible: true,
+        debugEditControlsVisible: true,
+        debugEditOverlaysVisible: true,
+        playerSpawnMarkerVisible: true,
+        shortcutsOverlayVisible: true
+      })
+    );
     expect(readPersistedShellState()).toEqual({
       debugOverlayVisible: true,
       debugEditControlsVisible: true,
@@ -803,14 +788,15 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
 
     expect(dispatchKeydown('Enter').prevented).toBe(true);
-    expect(testRuntime.shellInstance?.currentState).toEqual({
-      screen: 'in-world',
-      debugOverlayVisible: true,
-      debugEditControlsVisible: true,
-      debugEditOverlaysVisible: true,
-      playerSpawnMarkerVisible: true,
-      shortcutsOverlayVisible: true
-    });
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({
+        debugOverlayVisible: true,
+        debugEditControlsVisible: true,
+        debugEditOverlaysVisible: true,
+        playerSpawnMarkerVisible: true,
+        shortcutsOverlayVisible: true
+      })
+    );
     expect(readPersistedShellState()).toEqual({
       debugOverlayVisible: true,
       debugEditControlsVisible: true,
@@ -857,14 +843,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.storageValues.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)).toBe(false);
 
     expect(dispatchKeydown('Enter').prevented).toBe(true);
-    expect(testRuntime.shellInstance?.currentState).toEqual({
-      screen: 'in-world',
-      debugOverlayVisible: false,
-      debugEditControlsVisible: false,
-      debugEditOverlaysVisible: false,
-      playerSpawnMarkerVisible: false,
-      shortcutsOverlayVisible: false
-    });
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
     expect(readPersistedShellState()).toEqual({
       debugOverlayVisible: false,
       debugEditControlsVisible: false,

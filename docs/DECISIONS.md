@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: In-world shell state should use an explicit helper factory
+
+- Decision: Active-session shell chrome state should be created through a named helper in `src/ui/appShell.ts`, and `src/main.ts` should use that helper when synchronizing in-world shell-toggle visibility.
+- Reason: The boot and main-menu shell states already use explicit factories, so in-world state now follows the same contract instead of duplicating inline `{ screen: 'in-world', ... }` objects across runtime wiring and tests.
+- Consequence: Future in-world shell-toggle additions should update the shared in-world shell-state helper and its focused regressions rather than rebuilding active-session state literals in `src/main.ts` or tests.
+
 ### 2026-03-06: Default boot shell state should use an explicit helper factory
 
 - Decision: The normal startup loading overlay should be created through a named helper in `src/ui/appShell.ts`, and `src/main.ts` bootstrap should call that helper instead of constructing inline `{ screen: 'boot', ... }` loading literals.

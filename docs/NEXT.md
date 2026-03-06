@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-248. Extract an in-world shell-state helper and route shell-toggle synchronization through it so active-session chrome state stops depending on inline `{ screen: 'in-world', ... }` literals, with focused shell/runtime regressions.
+249. Extract a main-menu shell-state selector helper and route `showMainMenuShellState()` through it so first-launch versus paused-session menu selection stops depending on inline branching in `src/main.ts`, with focused shell/runtime regressions.
