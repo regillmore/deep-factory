@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract a first-launch main-menu shell-state helper and wire bootstrap through it so structured menu cards stop depending on implicit app-shell defaults.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) with an explicit `createFirstLaunchMainMenuShellState()` helper and routed main-menu view-model defaults through that helper, updated [src/main.ts](../src/main.ts) so bootstrap and resume paths now pass the full first-launch state explicitly instead of `{ screen: 'main-menu' }`, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused helper and runtime regressions, removed completed task `245` from [docs/NEXT.md](docs/NEXT.md), added replacement task `246`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Move first-launch main-menu runtime and mixed-device control guidance onto the structured app-shell menu-section path so overlay menus share one richer layout.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the first-launch main menu now renders a concise `Renderer ready.` headline plus structured `Enter World` and `Mixed-Device Runtime` guidance cards instead of flat detail bullets, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with a focused view-model regression for that default state, removed completed task `237` from [docs/NEXT.md](docs/NEXT.md), added replacement task `245`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

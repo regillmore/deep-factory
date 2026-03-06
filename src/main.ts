@@ -45,7 +45,12 @@ import {
   resolveWorldSessionShellStateAfterPausedMainMenuTransition
 } from './mainWorldSessionShellState';
 import { DebugOverlay } from './ui/debugOverlay';
-import { AppShell, createPausedMainMenuShellState, type AppShellScreen } from './ui/appShell';
+import {
+  AppShell,
+  createFirstLaunchMainMenuShellState,
+  createPausedMainMenuShellState,
+  type AppShellScreen
+} from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
@@ -313,7 +318,9 @@ const bootstrap = async (): Promise<void> => {
   };
   const showMainMenuShellState = (): void => {
     currentScreen = 'main-menu';
-    shell.setState(worldSessionStarted ? createPausedMainMenuShellState() : { screen: 'main-menu' });
+    shell.setState(
+      worldSessionStarted ? createPausedMainMenuShellState() : createFirstLaunchMainMenuShellState()
+    );
   };
   const syncDebugOverlayVisibility = (): void => {
     debug.setVisible(currentScreen === 'in-world' && debugOverlayVisible);

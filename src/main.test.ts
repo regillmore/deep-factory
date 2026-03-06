@@ -535,6 +535,29 @@ const createExpectedPausedMainMenuState = () => ({
   tertiaryActionLabel: 'Reset Shell Toggles'
 });
 
+const createExpectedFirstLaunchMainMenuState = () => ({
+  screen: 'main-menu',
+  statusText: 'Renderer ready.',
+  detailLines: [],
+  menuSections: [
+    {
+      title: 'Enter World',
+      lines: ['Start the fixed-step simulation, standalone player, and live in-world controls.'],
+      tone: 'accent'
+    },
+    {
+      title: 'Mixed-Device Runtime',
+      lines: [
+        'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
+        'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
+      ]
+    }
+  ],
+  primaryActionLabel: 'Enter World',
+  secondaryActionLabel: null,
+  tertiaryActionLabel: null
+});
+
 describe('main.ts paused-world shell toggles', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -601,7 +624,7 @@ describe('main.ts paused-world shell toggles', () => {
     await import('./main');
     await flushBootstrap();
 
-    expect(testRuntime.shellInstance?.currentState).toEqual({ screen: 'main-menu' });
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
     expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
@@ -640,7 +663,7 @@ describe('main.ts paused-world shell toggles', () => {
     await import('./main');
     await flushBootstrap();
 
-    expect(testRuntime.shellInstance?.currentState).toEqual({ screen: 'main-menu' });
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
@@ -672,7 +695,7 @@ describe('main.ts paused-world shell toggles', () => {
     await import('./main');
     await flushBootstrap();
 
-    expect(testRuntime.shellInstance?.currentState).toEqual({ screen: 'main-menu' });
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
     expect(testRuntime.storageValues.size).toBe(0);
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
@@ -698,7 +721,7 @@ describe('main.ts paused-world shell toggles', () => {
     await import('./main');
     await flushBootstrap();
 
-    expect(testRuntime.shellInstance?.currentState).toEqual({ screen: 'main-menu' });
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
@@ -756,7 +779,7 @@ describe('main.ts paused-world shell toggles', () => {
     await import('./main');
     await flushBootstrap();
 
-    expect(testRuntime.shellInstance?.currentState).toEqual({ screen: 'main-menu' });
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 

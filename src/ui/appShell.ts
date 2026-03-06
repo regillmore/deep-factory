@@ -111,9 +111,9 @@ const DEFAULT_BOOT_STATUS = 'Preparing renderer, controls, and spawn state.';
 const DEFAULT_BOOT_DETAIL_LINES = [
   'Boot runs before the fixed-step simulation starts so later shell work has a stable entry point.'
 ] as const;
-const DEFAULT_MAIN_MENU_STATUS = 'Renderer ready.';
-const DEFAULT_MAIN_MENU_DETAIL_LINES = [] as const;
-const DEFAULT_MAIN_MENU_MENU_SECTIONS: readonly AppShellMenuSection[] = [
+const DEFAULT_FIRST_LAUNCH_MAIN_MENU_STATUS = 'Renderer ready.';
+const DEFAULT_FIRST_LAUNCH_MAIN_MENU_DETAIL_LINES = [] as const;
+const DEFAULT_FIRST_LAUNCH_MAIN_MENU_MENU_SECTIONS: readonly AppShellMenuSection[] = [
   {
     title: 'Enter World',
     lines: ['Start the fixed-step simulation, standalone player, and live in-world controls.'],
@@ -127,6 +127,16 @@ const DEFAULT_MAIN_MENU_MENU_SECTIONS: readonly AppShellMenuSection[] = [
     ]
   }
 ] as const;
+
+export const createFirstLaunchMainMenuShellState = (): AppShellState => ({
+  screen: 'main-menu',
+  statusText: DEFAULT_FIRST_LAUNCH_MAIN_MENU_STATUS,
+  detailLines: DEFAULT_FIRST_LAUNCH_MAIN_MENU_DETAIL_LINES,
+  menuSections: DEFAULT_FIRST_LAUNCH_MAIN_MENU_MENU_SECTIONS,
+  primaryActionLabel: 'Enter World',
+  secondaryActionLabel: null,
+  tertiaryActionLabel: null
+});
 
 export const resolveAppShellRegionDisplay = (
   visible: boolean,
@@ -294,27 +304,32 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         shortcutsTogglePressed: false,
         shortcutsOverlayVisible: false
       };
-    case 'main-menu':
+    case 'main-menu': {
+      const firstLaunchMainMenuState = createFirstLaunchMainMenuShellState();
       return {
         screen: 'main-menu',
         overlayVisible: true,
         chromeVisible: false,
         stageLabel: 'Main Menu',
         title: 'Deep Factory',
-        statusText: state.statusText ?? DEFAULT_MAIN_MENU_STATUS,
-        detailLines: state.detailLines ?? DEFAULT_MAIN_MENU_DETAIL_LINES,
-        menuSections: state.menuSections ?? DEFAULT_MAIN_MENU_MENU_SECTIONS,
+        statusText: state.statusText ?? firstLaunchMainMenuState.statusText ?? '',
+        detailLines: state.detailLines ?? firstLaunchMainMenuState.detailLines ?? [],
+        menuSections: state.menuSections ?? firstLaunchMainMenuState.menuSections ?? [],
         primaryActionLabel: resolveMainMenuPrimaryActionLabel(
-          state.primaryActionLabel ?? 'Enter World'
+          state.primaryActionLabel ?? firstLaunchMainMenuState.primaryActionLabel ?? 'Enter World'
         ),
         secondaryActionLabel:
-          state.secondaryActionLabel == null
+          (state.secondaryActionLabel ?? firstLaunchMainMenuState.secondaryActionLabel) == null
             ? null
-            : resolveMainMenuSecondaryActionLabel(state.secondaryActionLabel),
+            : resolveMainMenuSecondaryActionLabel(
+                state.secondaryActionLabel ?? firstLaunchMainMenuState.secondaryActionLabel ?? ''
+              ),
         tertiaryActionLabel:
-          state.tertiaryActionLabel == null
+          (state.tertiaryActionLabel ?? firstLaunchMainMenuState.tertiaryActionLabel) == null
             ? null
-            : resolveMainMenuTertiaryActionLabel(state.tertiaryActionLabel),
+            : resolveMainMenuTertiaryActionLabel(
+                state.tertiaryActionLabel ?? firstLaunchMainMenuState.tertiaryActionLabel ?? ''
+              ),
         returnToMainMenuActionLabel: null,
         recenterCameraActionLabel: null,
         debugOverlayToggleLabel: null,
@@ -329,6 +344,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         shortcutsTogglePressed: false,
         shortcutsOverlayVisible: false
       };
+    }
     case 'in-world':
       return {
         screen: 'in-world',

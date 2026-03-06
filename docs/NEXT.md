@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-245. Extract a first-launch main-menu shell-state helper and wire bootstrap through it so structured menu cards stop depending on implicit app-shell defaults, with focused shell/runtime regressions.
+246. Extract boot-failure shell-state helpers and wire WebGL-unavailable plus renderer-init-failure bootstrap paths through them so startup error copy stops depending on inline state literals, with focused shell/runtime regressions.

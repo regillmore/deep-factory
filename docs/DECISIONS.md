@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Runtime shell entry states should use explicit helper factories
+
+- Decision: Nontrivial shell states such as the first-launch main menu should be created through named helpers in `src/ui/appShell.ts`, and runtime transitions in `src/main.ts` should pass those explicit states instead of minimal `{ screen: ... }` placeholders.
+- Reason: Once shell overlays carry structured guidance cards, runtime wiring and regressions need one explicit state shape rather than depending on implicit `resolveAppShellViewModel` fallbacks.
+- Consequence: Future shell-state additions with structured defaults should add or reuse explicit helper factories when bootstrapping runtime transitions and tests.
+
 ### 2026-03-06: First-launch main-menu guidance should use structured section cards
 
 - Decision: The initial `main menu` now renders its `Enter World` and mixed-device runtime guidance through `menuSections` instead of flat detail bullets.

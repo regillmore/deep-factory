@@ -12,6 +12,7 @@ import {
   getDesktopReturnToMainMenuHotkeyLabel
 } from '../input/debugEditShortcuts';
 import {
+  createFirstLaunchMainMenuShellState,
   createPausedMainMenuShellState,
   resolveMainMenuPrimaryActionTitle,
   resolveMainMenuSecondaryActionTitle,
@@ -63,7 +64,7 @@ describe('resolveAppShellViewModel', () => {
   });
 
   it('shows the first-launch main menu with structured enter-world and mixed-device guidance cards', () => {
-    const viewModel = resolveAppShellViewModel({ screen: 'main-menu' });
+    const viewModel = resolveAppShellViewModel(createFirstLaunchMainMenuShellState());
 
     expect(viewModel.overlayVisible).toBe(true);
     expect(viewModel.chromeVisible).toBe(false);
@@ -331,6 +332,33 @@ describe('resolveAppShellViewModel', () => {
   });
 });
 
+describe('createFirstLaunchMainMenuShellState', () => {
+  it('returns an explicit first-launch main-menu state with structured guidance cards', () => {
+    expect(createFirstLaunchMainMenuShellState()).toEqual({
+      screen: 'main-menu',
+      statusText: 'Renderer ready.',
+      detailLines: [],
+      menuSections: [
+        {
+          title: 'Enter World',
+          lines: ['Start the fixed-step simulation, standalone player, and live in-world controls.'],
+          tone: 'accent'
+        },
+        {
+          title: 'Mixed-Device Runtime',
+          lines: [
+            'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
+            'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
+          ]
+        }
+      ],
+      primaryActionLabel: 'Enter World',
+      secondaryActionLabel: null,
+      tertiaryActionLabel: null
+    });
+  });
+});
+
 describe('createPausedMainMenuShellState', () => {
   it('returns a concise paused headline plus structured session guidance cards', () => {
     expect(createPausedMainMenuShellState()).toEqual({
@@ -428,7 +456,7 @@ describe('paused main-menu tooltip-title resolution', () => {
       resolvePausedMainMenuResetShellTogglesTitle()
     );
 
-    const firstLaunchState = { screen: 'main-menu' } as const;
+    const firstLaunchState = createFirstLaunchMainMenuShellState();
     expect(resolveMainMenuPrimaryActionTitle(firstLaunchState)).toBe('');
     expect(resolveMainMenuSecondaryActionTitle(firstLaunchState)).toBe('');
     expect(resolveMainMenuTertiaryActionTitle(firstLaunchState)).toBe('');
@@ -447,7 +475,7 @@ describe('paused main-menu tooltip-title resolution', () => {
       resolvePausedMainMenuResetShellTogglesTitle()
     );
 
-    const firstLaunchState = { screen: 'main-menu' } as const;
+    const firstLaunchState = createFirstLaunchMainMenuShellState();
     expect(resolveMainMenuPrimaryActionTitle(firstLaunchState)).toBe('');
     expect(resolveMainMenuSecondaryActionTitle(firstLaunchState)).toBe('');
     expect(resolveMainMenuTertiaryActionTitle(firstLaunchState)).toBe('');
