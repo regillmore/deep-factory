@@ -14,6 +14,7 @@ export interface DebugEditShortcutKeyEventLike {
 export interface DebugEditShortcutContext {
   pausedMainMenuResumeWorldAvailable?: boolean;
   pausedMainMenuFreshWorldAvailable?: boolean;
+  inWorldShellShortcutsAvailable?: boolean;
 }
 
 export type DebugEditShortcutShellScreen = 'boot' | 'main-menu' | 'in-world';
@@ -129,6 +130,12 @@ export const createPausedMainMenuShortcutContext = (
   };
 };
 
+export const createInWorldShortcutContext = (
+  screen: DebugEditShortcutShellScreen
+): DebugEditShortcutContext => ({
+  inWorldShellShortcutsAvailable: screen === 'in-world'
+});
+
 export const cycleDebugBrushTileId = (
   brushOptions: readonly DebugBrushShortcutOption[],
   activeBrushTileId: number,
@@ -179,34 +186,53 @@ export const resolveDebugEditShortcutAction = (
     return { type: 'resume-paused-world-session' };
   }
 
-  if (normalizedKey === getDesktopReturnToMainMenuHotkeyLabel().toLowerCase()) {
+  if (
+    context.inWorldShellShortcutsAvailable === true &&
+    normalizedKey === getDesktopReturnToMainMenuHotkeyLabel().toLowerCase()
+  ) {
     return { type: 'return-to-main-menu' };
   }
 
-  if (normalizedKey === getDesktopRecenterCameraHotkeyLabel().toLowerCase()) {
+  if (
+    context.inWorldShellShortcutsAvailable === true &&
+    normalizedKey === getDesktopRecenterCameraHotkeyLabel().toLowerCase()
+  ) {
     return { type: 'recenter-camera' };
   }
 
   if (
+    context.inWorldShellShortcutsAvailable === true &&
     normalizedKey === getDesktopShortcutsOverlayHotkeyLabel().toLowerCase() ||
-    (event.code === 'Slash' && event.shiftKey)
+    (context.inWorldShellShortcutsAvailable === true && event.code === 'Slash' && event.shiftKey)
   ) {
     return { type: 'toggle-shortcuts-overlay' };
   }
 
-  if (normalizedKey === getDesktopDebugOverlayHotkeyLabel().toLowerCase()) {
+  if (
+    context.inWorldShellShortcutsAvailable === true &&
+    normalizedKey === getDesktopDebugOverlayHotkeyLabel().toLowerCase()
+  ) {
     return { type: 'toggle-debug-overlay' };
   }
 
-  if (normalizedKey === getDesktopDebugEditControlsHotkeyLabel().toLowerCase()) {
+  if (
+    context.inWorldShellShortcutsAvailable === true &&
+    normalizedKey === getDesktopDebugEditControlsHotkeyLabel().toLowerCase()
+  ) {
     return { type: 'toggle-debug-edit-controls' };
   }
 
-  if (normalizedKey === getDesktopDebugEditOverlaysHotkeyLabel().toLowerCase()) {
+  if (
+    context.inWorldShellShortcutsAvailable === true &&
+    normalizedKey === getDesktopDebugEditOverlaysHotkeyLabel().toLowerCase()
+  ) {
     return { type: 'toggle-debug-edit-overlays' };
   }
 
-  if (normalizedKey === getDesktopPlayerSpawnMarkerHotkeyLabel().toLowerCase()) {
+  if (
+    context.inWorldShellShortcutsAvailable === true &&
+    normalizedKey === getDesktopPlayerSpawnMarkerHotkeyLabel().toLowerCase()
+  ) {
     return { type: 'toggle-player-spawn-marker' };
   }
 

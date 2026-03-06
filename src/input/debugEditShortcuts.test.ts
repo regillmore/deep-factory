@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  createInWorldShortcutContext,
   createPausedMainMenuShortcutContext,
   cycleDebugBrushTileId,
   getDesktopDebugOverlayHotkeyLabel,
@@ -50,6 +51,20 @@ describe('createPausedMainMenuShortcutContext', () => {
   });
 });
 
+describe('createInWorldShortcutContext', () => {
+  it('enables in-world shell shortcuts only while the shell screen is in-world', () => {
+    expect(createInWorldShortcutContext('in-world')).toEqual({
+      inWorldShellShortcutsAvailable: true
+    });
+    expect(createInWorldShortcutContext('main-menu')).toEqual({
+      inWorldShellShortcutsAvailable: false
+    });
+    expect(createInWorldShortcutContext('boot')).toEqual({
+      inWorldShellShortcutsAvailable: false
+    });
+  });
+});
+
 describe('resolveDebugEditShortcutAction', () => {
   it('maps Ctrl/Cmd+Z to undo', () => {
     expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'z', ctrlKey: true }))).toEqual({
@@ -70,19 +85,39 @@ describe('resolveDebugEditShortcutAction', () => {
   });
 
   it('maps C to recenter the camera', () => {
-    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'c' }))).toEqual({
+    expect(
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'c' }),
+        createInWorldShortcutContext('in-world')
+      )
+    ).toEqual({
       type: 'recenter-camera'
     });
-    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'C', shiftKey: true }))).toEqual({
+    expect(
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'C', shiftKey: true }),
+        createInWorldShortcutContext('in-world')
+      )
+    ).toEqual({
       type: 'recenter-camera'
     });
   });
 
   it('maps Q to return to the main menu', () => {
-    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'q' }))).toEqual({
+    expect(
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'q' }),
+        createInWorldShortcutContext('in-world')
+      )
+    ).toEqual({
       type: 'return-to-main-menu'
     });
-    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'Q', shiftKey: true }))).toEqual({
+    expect(
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'Q', shiftKey: true }),
+        createInWorldShortcutContext('in-world')
+      )
+    ).toEqual({
       type: 'return-to-main-menu'
     });
   });
@@ -133,47 +168,107 @@ describe('resolveDebugEditShortcutAction', () => {
   });
 
   it('maps H to toggle the debug HUD', () => {
-    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'h' }))).toEqual({
+    expect(
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'h' }),
+        createInWorldShortcutContext('in-world')
+      )
+    ).toEqual({
       type: 'toggle-debug-overlay'
     });
-    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'H', shiftKey: true }))).toEqual({
+    expect(
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'H', shiftKey: true }),
+        createInWorldShortcutContext('in-world')
+      )
+    ).toEqual({
       type: 'toggle-debug-overlay'
     });
   });
 
   it('maps G to toggle the full edit panel', () => {
-    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'g' }))).toEqual({
+    expect(
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'g' }),
+        createInWorldShortcutContext('in-world')
+      )
+    ).toEqual({
       type: 'toggle-debug-edit-controls'
     });
-    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'G', shiftKey: true }))).toEqual({
+    expect(
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'G', shiftKey: true }),
+        createInWorldShortcutContext('in-world')
+      )
+    ).toEqual({
       type: 'toggle-debug-edit-controls'
     });
   });
 
   it('maps V to toggle the compact edit overlays', () => {
-    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'v' }))).toEqual({
+    expect(
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'v' }),
+        createInWorldShortcutContext('in-world')
+      )
+    ).toEqual({
       type: 'toggle-debug-edit-overlays'
     });
-    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'V', shiftKey: true }))).toEqual({
+    expect(
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'V', shiftKey: true }),
+        createInWorldShortcutContext('in-world')
+      )
+    ).toEqual({
       type: 'toggle-debug-edit-overlays'
     });
   });
 
   it('maps M to toggle the spawn marker overlay', () => {
-    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'm' }))).toEqual({
+    expect(
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'm' }),
+        createInWorldShortcutContext('in-world')
+      )
+    ).toEqual({
       type: 'toggle-player-spawn-marker'
     });
-    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'M', shiftKey: true }))).toEqual({
+    expect(
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: 'M', shiftKey: true }),
+        createInWorldShortcutContext('in-world')
+      )
+    ).toEqual({
       type: 'toggle-player-spawn-marker'
     });
   });
 
   it('maps ? to toggle the in-world shortcuts overlay', () => {
     expect(
-      resolveDebugEditShortcutAction(keyboardEventLike({ key: '?', code: 'Slash', shiftKey: true }))
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: '?', code: 'Slash', shiftKey: true }),
+        createInWorldShortcutContext('in-world')
+      )
     ).toEqual({
       type: 'toggle-shortcuts-overlay'
     });
+  });
+
+  it('does not map in-world shell shortcuts when the in-world shortcut context is inactive', () => {
+    const mainMenuContext = createInWorldShortcutContext('main-menu');
+
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'q' }), mainMenuContext)).toBeNull();
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'c' }), mainMenuContext)).toBeNull();
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'h' }), mainMenuContext)).toBeNull();
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'g' }), mainMenuContext)).toBeNull();
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'v' }), mainMenuContext)).toBeNull();
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'm' }), mainMenuContext)).toBeNull();
+    expect(
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: '?', code: 'Slash', shiftKey: true }),
+        mainMenuContext
+      )
+    ).toBeNull();
   });
 
   it('maps bracket keys to brush cycling', () => {

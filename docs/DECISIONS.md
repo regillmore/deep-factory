@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: In-world shell shortcut availability should use a shared helper
+
+- Decision: Keyboard shortcut availability for in-world shell actions (`Q`, `C`, `H`, `G`, `V`, `M`, `?`) should be derived through a shared helper in `src/input/debugEditShortcuts.ts`, and `src/main.ts` should handle those actions without depending on one blanket `currentScreen !== 'in-world'` early return.
+- Reason: Once shortcut resolution is context-aware, runtime regressions can verify that main-menu key presses stay inert because the shortcut layer declines them, instead of because a later catch-all branch discards every non-paused action.
+- Consequence: Future in-world shell shortcuts should extend the shared in-world shortcut-context helper and its focused shortcut/runtime regressions rather than depending on broad runtime screen guards in `src/main.ts`.
+
 ### 2026-03-06: Paused-main-menu shortcut availability should use a shared helper
 
 - Decision: Keyboard shortcut availability for paused-main-menu `Resume World (Enter)` and `New World (N)` should be derived through a shared helper in `src/input/debugEditShortcuts.ts`, and `src/main.ts` should pass that helper output into `resolveDebugEditShortcutAction()`.
