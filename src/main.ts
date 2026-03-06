@@ -332,6 +332,54 @@ const bootstrap = async (): Promise<void> => {
   const syncPlayerSpawnMarkerVisibility = (): void => {
     playerSpawnMarker.setVisible(currentScreen === 'in-world' && playerSpawnMarkerVisible);
   };
+  const applyKeyboardInWorldShellToggleAction = (
+    actionType:
+      | 'toggle-debug-overlay'
+      | 'toggle-debug-edit-controls'
+      | 'toggle-debug-edit-overlays'
+      | 'toggle-player-spawn-marker'
+      | 'toggle-shortcuts-overlay'
+  ): boolean => {
+    switch (actionType) {
+      case 'toggle-debug-overlay':
+        debugOverlayVisible = !debugOverlayVisible;
+        break;
+      case 'toggle-debug-edit-controls':
+        debugEditControlsVisible = !debugEditControlsVisible;
+        break;
+      case 'toggle-debug-edit-overlays':
+        debugEditOverlaysVisible = !debugEditOverlaysVisible;
+        break;
+      case 'toggle-player-spawn-marker':
+        playerSpawnMarkerVisible = !playerSpawnMarkerVisible;
+        break;
+      case 'toggle-shortcuts-overlay':
+        shortcutsOverlayVisible = !shortcutsOverlayVisible;
+        break;
+    }
+
+    persistWorldSessionShellState();
+    syncInWorldShellState();
+
+    switch (actionType) {
+      case 'toggle-debug-overlay':
+        syncDebugOverlayVisibility();
+        break;
+      case 'toggle-debug-edit-controls':
+        syncDebugEditControlsVisibility();
+        break;
+      case 'toggle-debug-edit-overlays':
+        syncDebugEditOverlayVisibility();
+        break;
+      case 'toggle-player-spawn-marker':
+        syncPlayerSpawnMarkerVisibility();
+        break;
+      case 'toggle-shortcuts-overlay':
+        break;
+    }
+
+    return true;
+  };
   const enterInWorldShellState = (): void => {
     currentScreen = 'in-world';
     syncInWorldShellState();
@@ -1244,38 +1292,19 @@ const bootstrap = async (): Promise<void> => {
       }
     } else if (action.type === 'toggle-debug-overlay') {
       event.preventDefault();
-      handled = true;
-      debugOverlayVisible = !debugOverlayVisible;
-      persistWorldSessionShellState();
-      syncInWorldShellState();
-      syncDebugOverlayVisibility();
+      handled = applyKeyboardInWorldShellToggleAction(action.type);
     } else if (action.type === 'toggle-debug-edit-controls') {
       event.preventDefault();
-      handled = true;
-      debugEditControlsVisible = !debugEditControlsVisible;
-      persistWorldSessionShellState();
-      syncInWorldShellState();
-      syncDebugEditControlsVisibility();
+      handled = applyKeyboardInWorldShellToggleAction(action.type);
     } else if (action.type === 'toggle-debug-edit-overlays') {
       event.preventDefault();
-      handled = true;
-      debugEditOverlaysVisible = !debugEditOverlaysVisible;
-      persistWorldSessionShellState();
-      syncInWorldShellState();
-      syncDebugEditOverlayVisibility();
+      handled = applyKeyboardInWorldShellToggleAction(action.type);
     } else if (action.type === 'toggle-player-spawn-marker') {
       event.preventDefault();
-      handled = true;
-      playerSpawnMarkerVisible = !playerSpawnMarkerVisible;
-      persistWorldSessionShellState();
-      syncInWorldShellState();
-      syncPlayerSpawnMarkerVisibility();
+      handled = applyKeyboardInWorldShellToggleAction(action.type);
     } else if (action.type === 'toggle-shortcuts-overlay') {
       event.preventDefault();
-      handled = true;
-      shortcutsOverlayVisible = !shortcutsOverlayVisible;
-      persistWorldSessionShellState();
-      syncInWorldShellState();
+      handled = applyKeyboardInWorldShellToggleAction(action.type);
     } else if (action.type === 'cancel-armed-tools') {
       event.preventDefault();
       handled = input.cancelArmedDebugTools();

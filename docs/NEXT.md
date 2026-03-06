@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-254. Extract a shared keyboard-side in-world shell-toggle mutator and route the `H/G/V/M/?` shortcut branches through it so `src/main.ts` stops repeating persisted shell-state sync sequences, with focused runtime regressions.
+255. Extract a shared in-world shell-toggle mutator and route both app-shell click handlers and keyboard toggle branches through it so `src/main.ts` stops duplicating toggle persistence and overlay-sync logic across input surfaces, with focused runtime regressions.

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Keyboard in-world shell-toggle shortcuts should use a shared mutator
+
+- Decision: Keyboard shortcut branches for in-world shell toggles (`H`, `G`, `V`, `M`, `?`) should route through a shared `applyKeyboardInWorldShellToggleAction()` helper in `src/main.ts`.
+- Reason: Those branches all perform the same local visibility flip, world-session-shell persistence, shell-state refresh, and optional overlay resync sequence with only one toggle-specific state target differing between branches.
+- Consequence: Future keyboard-driven in-world shell toggles should extend the shared mutator and its focused runtime regression instead of duplicating another inline persist-and-sync sequence in `src/main.ts`.
+
 ### 2026-03-06: In-world-only debug-edit keyboard actions should use a shared guard helper
 
 - Decision: Shortcut actions that should stay inert outside active `in-world` runtime (`undo`/`redo`, tool arming, touch-mode changes, brush selection and cycling, panel collapse, eyedropper, and armed-tool cancel) should be identified through a shared `isInWorldOnlyDebugEditShortcutAction()` helper in `src/input/debugEditShortcuts.ts`.

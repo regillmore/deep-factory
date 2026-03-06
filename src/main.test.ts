@@ -829,6 +829,71 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
   });
 
+  it('applies keyboard shell-toggle shortcuts through one shared persisted mutator for on and off transitions', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    for (const [key, code] of [
+      ['h', ''],
+      ['g', ''],
+      ['v', ''],
+      ['m', ''],
+      ['?', 'Slash']
+    ] as const) {
+      expect(dispatchKeydown(key, code).prevented).toBe(true);
+    }
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({
+        debugOverlayVisible: true,
+        debugEditControlsVisible: true,
+        debugEditOverlaysVisible: true,
+        playerSpawnMarkerVisible: true,
+        shortcutsOverlayVisible: true
+      })
+    );
+    expect(readPersistedShellState()).toEqual({
+      debugOverlayVisible: true,
+      debugEditControlsVisible: true,
+      debugEditOverlaysVisible: true,
+      playerSpawnMarkerVisible: true,
+      shortcutsOverlayVisible: true
+    });
+    expect(testRuntime.debugOverlayInstance?.visible).toBe(true);
+    expect(testRuntime.debugEditControlsInstance?.visible).toBe(true);
+    expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(true);
+    expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(true);
+    expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(true);
+    expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(true);
+
+    for (const [key, code] of [
+      ['h', ''],
+      ['g', ''],
+      ['v', ''],
+      ['m', ''],
+      ['?', 'Slash']
+    ] as const) {
+      expect(dispatchKeydown(key, code).prevented).toBe(true);
+    }
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+    expect(readPersistedShellState()).toEqual({
+      debugOverlayVisible: false,
+      debugEditControlsVisible: false,
+      debugEditOverlaysVisible: false,
+      playerSpawnMarkerVisible: false,
+      shortcutsOverlayVisible: false
+    });
+    expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
+    expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
+    expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
+    expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(false);
+    expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
+  });
+
   it('keeps all in-world shell toggles enabled after pausing with Q and resuming with Enter', async () => {
     await import('./main');
     await flushBootstrap();
