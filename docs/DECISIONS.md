@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: In-world shell toggles should run through one pipeline helper
+
+- Decision: In-world shell toggle actions should route through a shared `applyInWorldShellToggleAction()` helper in `src/main.ts`, combining the existing toggle-state mutation and finalize steps before `applyInWorldShellAction()` returns.
+- Reason: Once both phases already have dedicated helpers, leaving `applyInWorldShellAction()` to sequence them manually still duplicates the central toggle pipeline contract in the in-world shell dispatcher.
+- Consequence: Future in-world shell toggle behavior should extend the shared pipeline helper and its focused runtime regressions instead of reintroducing manual multi-step toggle sequencing in `applyInWorldShellAction()`.
+
 ### 2026-03-06: In-world shell toggle finalization should share one helper
 
 - Decision: After an in-world shell toggle mutates state, the shared post-toggle sequence should route through `finalizeInWorldShellToggleAction()` in `src/main.ts`, combining the persisted-shell refresh step with any overlay-specific visibility sync while letting `toggle-shortcuts-overlay` finalize as a no-op beyond commit.

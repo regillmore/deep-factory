@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-263. Extract a shared in-world shell toggle pipeline helper that combines toggle-state mutation and finalize steps so `applyInWorldShellAction()` stops manually sequencing toggle actions in `src/main.ts`, with focused runtime regressions.
+264. Extract a shared in-world shell non-toggle action helper for `return-to-main-menu` and `recenter-camera` so `applyInWorldShellAction()` stops branching those runtime actions inline before the toggle pipeline in `src/main.ts`, with focused runtime regressions.

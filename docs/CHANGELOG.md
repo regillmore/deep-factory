@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract a shared in-world shell toggle pipeline helper that combines toggle-state mutation and finalize steps so `applyInWorldShellAction()` stops manually sequencing toggle actions.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyInWorldShellToggleAction()` helper that wraps the existing toggle-state mutation and finalize helpers, routed the in-world toggle path through that pipeline, updated [src/main.test.ts](../src/main.test.ts) with a focused pipeline-path regression covering overlay-backed and shortcuts-only toggles, removed completed task `263` from [docs/NEXT.md](docs/NEXT.md), added replacement task `264`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared in-world shell toggle finalize helper that combines the post-toggle commit and optional overlay visibility sync so `applyInWorldShellAction()` stops special-casing `toggle-shortcuts-overlay`.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `finalizeInWorldShellToggleAction()` helper that wraps the shared commit step and overlay-specific visibility follow-up, routed the in-world toggle path through that helper, updated [src/main.test.ts](../src/main.test.ts) with a focused finalize-path regression covering both overlay-backed and shortcuts-only toggles, removed completed task `262` from [docs/NEXT.md](docs/NEXT.md), added replacement task `263`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -393,6 +393,10 @@ const bootstrap = async (): Promise<void> => {
         return;
     }
   };
+  const applyInWorldShellToggleAction = (actionType: InWorldShellToggleActionType): void => {
+    applyInWorldShellToggleStateAction(actionType);
+    finalizeInWorldShellToggleAction(actionType);
+  };
   const applyMainMenuShellAction = (actionType: MainMenuShellActionType): boolean => {
     if (currentScreen !== 'main-menu' || loop === null) return false;
 
@@ -428,8 +432,7 @@ const bootstrap = async (): Promise<void> => {
       return true;
     }
 
-    applyInWorldShellToggleStateAction(actionType);
-    finalizeInWorldShellToggleAction(actionType);
+    applyInWorldShellToggleAction(actionType);
 
     return true;
   };
