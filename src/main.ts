@@ -33,8 +33,7 @@ import {
 import { runDebugFloodFill } from './input/debugFloodFill';
 import { DebugTileEditHistory } from './input/debugTileEditHistory';
 import {
-  createInWorldShortcutContext,
-  createPausedMainMenuShortcutContext,
+  createDebugEditShortcutContext,
   cycleDebugBrushTileId,
   getDebugBrushTileIdForShortcutSlot,
   resolveDebugEditShortcutAction
@@ -1208,10 +1207,7 @@ const bootstrap = async (): Promise<void> => {
 
     const action = resolveDebugEditShortcutAction(
       event,
-      {
-        ...createPausedMainMenuShortcutContext(currentScreen, worldSessionStarted),
-        ...createInWorldShortcutContext(currentScreen)
-      }
+      createDebugEditShortcutContext(currentScreen, worldSessionStarted)
     );
     if (!action) return;
     if (action.type === 'resume-paused-world-session') {

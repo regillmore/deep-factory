@@ -766,10 +766,11 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(createMainMenuShellState(true));
   });
 
-  it('ignores in-world shell shortcuts before the world session enters in-world and then enables them after entry', async () => {
+  it('switches the shared shortcut context between first-launch main menu, in-world, and paused main menu states', async () => {
     await import('./main');
     await flushBootstrap();
 
+    expect(dispatchKeydown('Enter').prevented).toBe(false);
     expect(dispatchKeydown('q').prevented).toBe(false);
     expect(dispatchKeydown('h').prevented).toBe(false);
     expect(dispatchKeydown('?', 'Slash').prevented).toBe(false);
@@ -785,6 +786,11 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugOverlayInstance?.visible).toBe(true);
     expect(dispatchKeydown('q').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+    expect(dispatchKeydown('h').prevented).toBe(false);
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({ debugOverlayVisible: true })
+    );
   });
 
   it('enables the paused-menu N shortcut only after a resumable world session exists', async () => {

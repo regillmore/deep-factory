@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-252. Extract a shared debug-edit shortcut-context composer and route `resolveDebugEditShortcutAction()` setup through it so `src/main.ts` stops merging paused-main-menu and in-world shortcut helper outputs inline, with focused shortcut/runtime regressions.
+253. Extract a shared in-world debug-edit keyboard-action guard and route the `keydown` switch through it so `src/main.ts` stops repeating `currentScreen !== 'in-world'` checks across non-shell shortcut branches, with focused shortcut/runtime regressions.

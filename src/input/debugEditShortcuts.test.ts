@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  createDebugEditShortcutContext,
   createInWorldShortcutContext,
   createPausedMainMenuShortcutContext,
   cycleDebugBrushTileId,
@@ -60,6 +61,31 @@ describe('createInWorldShortcutContext', () => {
       inWorldShellShortcutsAvailable: false
     });
     expect(createInWorldShortcutContext('boot')).toEqual({
+      inWorldShellShortcutsAvailable: false
+    });
+  });
+});
+
+describe('createDebugEditShortcutContext', () => {
+  it('composes paused-main-menu and in-world shortcut availability from the current shell state', () => {
+    expect(createDebugEditShortcutContext('main-menu', true)).toEqual({
+      pausedMainMenuResumeWorldAvailable: true,
+      pausedMainMenuFreshWorldAvailable: true,
+      inWorldShellShortcutsAvailable: false
+    });
+    expect(createDebugEditShortcutContext('main-menu', false)).toEqual({
+      pausedMainMenuResumeWorldAvailable: false,
+      pausedMainMenuFreshWorldAvailable: false,
+      inWorldShellShortcutsAvailable: false
+    });
+    expect(createDebugEditShortcutContext('in-world', true)).toEqual({
+      pausedMainMenuResumeWorldAvailable: false,
+      pausedMainMenuFreshWorldAvailable: false,
+      inWorldShellShortcutsAvailable: true
+    });
+    expect(createDebugEditShortcutContext('boot', false)).toEqual({
+      pausedMainMenuResumeWorldAvailable: false,
+      pausedMainMenuFreshWorldAvailable: false,
       inWorldShellShortcutsAvailable: false
     });
   });

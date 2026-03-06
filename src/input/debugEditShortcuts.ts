@@ -136,6 +136,14 @@ export const createInWorldShortcutContext = (
   inWorldShellShortcutsAvailable: screen === 'in-world'
 });
 
+export const createDebugEditShortcutContext = (
+  screen: DebugEditShortcutShellScreen,
+  hasResumableWorldSession: boolean
+): DebugEditShortcutContext => ({
+  ...createPausedMainMenuShortcutContext(screen, hasResumableWorldSession),
+  ...createInWorldShortcutContext(screen)
+});
+
 export const cycleDebugBrushTileId = (
   brushOptions: readonly DebugBrushShortcutOption[],
   activeBrushTileId: number,

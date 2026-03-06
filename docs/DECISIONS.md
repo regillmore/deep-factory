@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Runtime shortcut-context composition should use a shared helper
+
+- Decision: Runtime callers that need a `resolveDebugEditShortcutAction()` context should use a shared `createDebugEditShortcutContext()` helper in `src/input/debugEditShortcuts.ts` instead of merging paused-main-menu and in-world shortcut helper outputs inline.
+- Reason: Once both shortcut families already expose focused availability helpers, inlining their composition in `src/main.ts` duplicates the shell-state-to-shortcut mapping and makes runtime wiring easier to drift from unit coverage.
+- Consequence: Future runtime or test callers should reuse the composed shortcut-context helper before adding more direct `DebugEditShortcutContext` object assembly.
+
 ### 2026-03-06: In-world shell shortcut availability should use a shared helper
 
 - Decision: Keyboard shortcut availability for in-world shell actions (`Q`, `C`, `H`, `G`, `V`, `M`, `?`) should be derived through a shared helper in `src/input/debugEditShortcuts.ts`, and `src/main.ts` should handle those actions without depending on one blanket `currentScreen !== 'in-world'` early return.
