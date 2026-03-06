@@ -595,6 +595,42 @@ describe('main.ts paused-world shell toggles', () => {
     expect(testRuntime.gameLoopStartCount).toBe(1);
   });
 
+  it('falls back to default-off shell toggles on the first Enter World transition when persisted preferences are invalid', async () => {
+    testRuntime.storageValues.set(
+      WORLD_SESSION_SHELL_STATE_STORAGE_KEY,
+      JSON.stringify({
+        debugOverlayVisible: 'yes',
+        debugEditControlsVisible: true,
+        debugEditOverlaysVisible: true,
+        playerSpawnMarkerVisible: true,
+        shortcutsOverlayVisible: true
+      })
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.shellInstance?.currentState).toEqual({ screen: 'main-menu' });
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(testRuntime.shellInstance?.currentState).toEqual({
+      screen: 'in-world',
+      debugOverlayVisible: false,
+      debugEditControlsVisible: false,
+      debugEditOverlaysVisible: false,
+      playerSpawnMarkerVisible: false,
+      shortcutsOverlayVisible: false
+    });
+    expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
+    expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
+    expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
+    expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(false);
+    expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
+    expect(testRuntime.gameLoopStartCount).toBe(1);
+  });
+
   it('keeps all in-world shell toggles enabled after pausing with Q and resuming with Enter', async () => {
     await import('./main');
     await flushBootstrap();

@@ -113,24 +113,20 @@ describe('loadWorldSessionShellState', () => {
     });
   });
 
-  it('falls back invalid fields and malformed JSON safely', () => {
+  it('falls back to the default all-off state when any persisted field is invalid', () => {
     const invalidFieldStorage = createMemoryStorage(
       JSON.stringify({
         debugOverlayVisible: 'yes',
-        debugEditControlsVisible: 1,
-        debugEditOverlaysVisible: null,
-        playerSpawnMarkerVisible: false,
+        debugEditControlsVisible: true,
+        debugEditOverlaysVisible: true,
+        playerSpawnMarkerVisible: true,
         shortcutsOverlayVisible: true
       })
     );
-    expect(loadWorldSessionShellState(invalidFieldStorage, FALLBACK_STATE)).toEqual({
-      debugOverlayVisible: false,
-      debugEditControlsVisible: false,
-      debugEditOverlaysVisible: false,
-      playerSpawnMarkerVisible: false,
-      shortcutsOverlayVisible: true
-    });
+    expect(loadWorldSessionShellState(invalidFieldStorage, FALLBACK_STATE)).toEqual(FALLBACK_STATE);
+  });
 
+  it('falls back to the default all-off state when persisted JSON is malformed', () => {
     const malformedStorage = createMemoryStorage('{not-json');
     expect(loadWorldSessionShellState(malformedStorage, FALLBACK_STATE)).toEqual(FALLBACK_STATE);
   });

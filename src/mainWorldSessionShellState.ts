@@ -23,6 +23,16 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
 
+const isWorldSessionShellStateRecord = (
+  value: unknown
+): value is Record<keyof WorldSessionShellState, boolean> =>
+  isRecord(value) &&
+  isBoolean(value.debugOverlayVisible) &&
+  isBoolean(value.debugEditControlsVisible) &&
+  isBoolean(value.debugEditOverlaysVisible) &&
+  isBoolean(value.playerSpawnMarkerVisible) &&
+  isBoolean(value.shortcutsOverlayVisible);
+
 export const createDefaultWorldSessionShellState = (): WorldSessionShellState => ({
   debugOverlayVisible: false,
   debugEditControlsVisible: false,
@@ -64,24 +74,14 @@ export const loadWorldSessionShellState = (
     return fallbackState;
   }
 
-  if (!isRecord(parsed)) return fallbackState;
+  if (!isWorldSessionShellStateRecord(parsed)) return fallbackState;
 
   return {
-    debugOverlayVisible: isBoolean(parsed.debugOverlayVisible)
-      ? parsed.debugOverlayVisible
-      : fallbackState.debugOverlayVisible,
-    debugEditControlsVisible: isBoolean(parsed.debugEditControlsVisible)
-      ? parsed.debugEditControlsVisible
-      : fallbackState.debugEditControlsVisible,
-    debugEditOverlaysVisible: isBoolean(parsed.debugEditOverlaysVisible)
-      ? parsed.debugEditOverlaysVisible
-      : fallbackState.debugEditOverlaysVisible,
-    playerSpawnMarkerVisible: isBoolean(parsed.playerSpawnMarkerVisible)
-      ? parsed.playerSpawnMarkerVisible
-      : fallbackState.playerSpawnMarkerVisible,
-    shortcutsOverlayVisible: isBoolean(parsed.shortcutsOverlayVisible)
-      ? parsed.shortcutsOverlayVisible
-      : fallbackState.shortcutsOverlayVisible
+    debugOverlayVisible: parsed.debugOverlayVisible,
+    debugEditControlsVisible: parsed.debugEditControlsVisible,
+    debugEditOverlaysVisible: parsed.debugEditOverlaysVisible,
+    playerSpawnMarkerVisible: parsed.playerSpawnMarkerVisible,
+    shortcutsOverlayVisible: parsed.shortcutsOverlayVisible
   };
 };
 

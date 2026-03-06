@@ -42,7 +42,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 199. Add shell-level keybinding remap settings for in-world actions (`Main Menu`, `Recenter Camera`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`) with conflict validation and persisted preferences.
 200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
 227. Add a paused-menu shell action that clears persisted in-world shell toggle preferences and reapplies default-off in-world shell toggle visibility before resuming play, with focused `src/main.ts` transition regression coverage.
-230. Add a runtime regression in `src/main.ts` flow where invalid persisted in-world shell toggle preferences fall back to default-off shell and overlay visibility on the first `Enter World` transition.
+231. Add a runtime regression in `src/main.ts` flow where inaccessible in-world shell-toggle local storage still boots the first `Enter World` transition with all shell overlays hidden.
 
 ## Player debugging
 

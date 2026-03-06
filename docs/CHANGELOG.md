@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-06
+
+- Task: Add a `src/main.ts` runtime regression where invalid persisted in-world shell toggle preferences fall back to default-off shell and overlay visibility on the first `Enter World` transition.
+- Changes: Tightened [src/mainWorldSessionShellState.ts](../src/mainWorldSessionShellState.ts) so any invalid persisted shell-toggle payload now falls back to the all-off default state, updated [src/mainWorldSessionShellState.test.ts](../src/mainWorldSessionShellState.test.ts) and [src/main.test.ts](../src/main.test.ts) with invalid-persistence regression coverage for both the loader and the first `Enter World` runtime path, refreshed [docs/CAPABILITIES.md](docs/CAPABILITIES.md) to state the invalid-persistence fallback explicitly, removed completed task `230` from [docs/NEXT.md](docs/NEXT.md), and added replacement task `231`.
+- Verification: Ran `npx vitest run src/mainWorldSessionShellState.test.ts src/main.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-05
 
 - Task: Add a `src/main.ts` runtime regression where persisted in-world shell toggle preferences hydrate the first `Enter World` transition before any in-world toggle input occurs.
