@@ -398,14 +398,17 @@ const bootstrap = async (): Promise<void> => {
     applyInWorldShellToggleStateAction(actionType);
     finalizeInWorldShellToggleAction(actionType);
   };
+  const canApplyInWorldRecenterCameraAction = (
+    playerState: PlayerState | null
+  ): playerState is PlayerState => playerState !== null;
   const applyInWorldShellNonToggleAction = (actionType: InWorldShellNonToggleActionType): boolean => {
     switch (actionType) {
       case 'return-to-main-menu':
         returnToMainMenuFromInWorld();
         return true;
       case 'recenter-camera':
-        if (standalonePlayerState === null) return false;
-        centerCameraOnStandalonePlayer();
+        if (!canApplyInWorldRecenterCameraAction(standalonePlayerState)) return false;
+        centerCameraOnStandalonePlayer(standalonePlayerState);
         return true;
     }
   };
@@ -490,13 +493,8 @@ const bootstrap = async (): Promise<void> => {
     lastAppliedPlayerFollowCameraPosition = cameraPosition;
   };
 
-  const centerCameraOnStandalonePlayer = (): void => {
-    if (!standalonePlayerState) {
-      lastAppliedPlayerFollowCameraPosition = null;
-      return;
-    }
-
-    const focusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+  const centerCameraOnStandalonePlayer = (playerState: PlayerState): void => {
+    const focusPoint = getPlayerCameraFocusPoint(playerState);
     const recenteredCameraFollow = recenterCameraOnFollowTarget(focusPoint);
     cameraFollowOffset = recenteredCameraFollow.offset;
     camera.x = recenteredCameraFollow.cameraPosition.x;
@@ -515,7 +513,7 @@ const bootstrap = async (): Promise<void> => {
       lastPlayerWallContactTransitionEvent = null;
       lastPlayerCeilingContactTransitionEvent = null;
       standalonePlayerCeilingBonkHoldUntilTimeMs = null;
-      centerCameraOnStandalonePlayer();
+      centerCameraOnStandalonePlayer(standalonePlayerState);
       return;
     }
 

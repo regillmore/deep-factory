@@ -66,6 +66,23 @@ const testRuntime = vi.hoisted(() => {
     playerSpawnMarkerInstance: null as null | { visible: boolean },
     rendererConstructorError: null as unknown,
     rendererInitializeError: null as unknown,
+    playerSpawnPoint: null as null | {
+      anchorTileX: number;
+      standingTileY: number;
+      x: number;
+      y: number;
+      aabb: {
+        minX: number;
+        minY: number;
+        maxX: number;
+        maxY: number;
+      };
+      support: {
+        tileX: number;
+        tileY: number;
+        tileId: number;
+      };
+    },
     gameLoopStartCount: 0,
     storageValues: new Map<string, string>()
   };
@@ -126,23 +143,7 @@ vi.mock('./gl/renderer', () => ({
     render(): void {}
 
     findPlayerSpawnPoint() {
-      return {
-        anchorTileX: 0,
-        standingTileY: 0,
-        x: 8,
-        y: 0,
-        aabb: {
-          minX: 2,
-          minY: -28,
-          maxX: 14,
-          maxY: 0
-        },
-        support: {
-          tileX: 0,
-          tileY: 0,
-          tileId: 1
-        }
-      };
+      return testRuntime.playerSpawnPoint;
     }
 
     respawnPlayerStateAtSpawnIfEmbeddedInSolid<T>(state: T): T {
@@ -608,6 +609,23 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.playerSpawnMarkerInstance = null;
     testRuntime.rendererConstructorError = null;
     testRuntime.rendererInitializeError = null;
+    testRuntime.playerSpawnPoint = {
+      anchorTileX: 0,
+      standingTileY: 0,
+      x: 8,
+      y: 0,
+      aabb: {
+        minX: 2,
+        minY: -28,
+        maxX: 14,
+        maxY: 0
+      },
+      support: {
+        tileX: 0,
+        tileY: 0,
+        tileId: 1
+      }
+    };
     testRuntime.gameLoopStartCount = 0;
     testRuntime.storageValues.clear();
 
@@ -1203,6 +1221,35 @@ describe('main.ts shell state orchestration', () => {
 
     expect(dispatchKeydown('q').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+  });
+
+  it('keeps recenter-camera inert when the shared in-world recenter availability helper has no standalone player target', async () => {
+    testRuntime.playerSpawnPoint = null;
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+
+    expect(testRuntime.cameraInstance).not.toBeNull();
+    if (!testRuntime.cameraInstance) {
+      throw new Error('expected camera instance');
+    }
+
+    testRuntime.cameraInstance.x = 120;
+    testRuntime.cameraInstance.y = 45;
+    testRuntime.shellInstance?.options.onRecenterCamera('in-world');
+    expect(testRuntime.cameraInstance.x).toBe(120);
+    expect(testRuntime.cameraInstance.y).toBe(45);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+
+    testRuntime.cameraInstance.x = -30;
+    testRuntime.cameraInstance.y = 64;
+    expect(dispatchKeydown('c').prevented).toBe(true);
+    expect(testRuntime.cameraInstance.x).toBe(-30);
+    expect(testRuntime.cameraInstance.y).toBe(64);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
   });
 
   it('keeps all in-world shell toggles enabled after pausing with Q and resuming with Enter', async () => {

@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-265. Extract a shared in-world recenter availability helper so `applyInWorldShellNonToggleAction()` stops inlining the standalone-player presence guard for `recenter-camera` in `src/main.ts`, with focused runtime regressions.
+266. Extract a shared keyboard in-world shell action handler so the `keydown` branch in `src/main.ts` stops repeating `event.preventDefault()` plus `applyInWorldShellAction()` across `return-to-main-menu`, `recenter-camera`, and the in-world shell toggles, with focused runtime regressions.

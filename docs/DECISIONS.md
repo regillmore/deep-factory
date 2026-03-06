@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: In-world recenter availability should use a shared helper
+
+- Decision: `recenter-camera` availability should route through a shared `canApplyInWorldRecenterCameraAction()` helper in `src/main.ts`, and `centerCameraOnStandalonePlayer()` should accept a concrete `PlayerState` instead of inspecting nullable standalone-player state itself.
+- Reason: The in-world non-toggle dispatcher owns whether recenter can run, so repeating standalone-player null guards inline there and again inside the camera-centering routine makes that small shell path easier to drift from focused runtime regressions.
+- Consequence: Future in-world recenter checks should extend the shared availability helper, and camera-centering callers should pass a resolved player state rather than depending on `centerCameraOnStandalonePlayer()` to decide whether a standalone player exists.
+
 ### 2026-03-06: In-world shell non-toggle actions should share one helper
 
 - Decision: The in-world shell non-toggle actions (`return-to-main-menu` and `recenter-camera`) should route through a shared `applyInWorldShellNonToggleAction()` helper in `src/main.ts` instead of branching inline inside `applyInWorldShellAction()`.
