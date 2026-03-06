@@ -1,5 +1,6 @@
 import type { TouchDebugEditMode } from '../input/controller';
 import {
+  getDesktopDebugEditControlsHotkeyLabel,
   getDesktopDebugOverlayHotkeyLabel,
   getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopPlayerSpawnMarkerHotkeyLabel,
@@ -77,6 +78,25 @@ export const resolveTouchDebugEditControlsDisplayState = (
   ariaHidden: visible ? 'false' : 'true',
   collapseToggleLabel: collapsed ? 'Expand' : 'Collapse'
 });
+
+export const resolveTouchDebugKeyboardShortcutLines = (
+  panelToggleHotkeyLabel = getDebugEditPanelToggleHotkeyLabel()
+): readonly string[] => [
+  `Modes: ${getTouchDebugEditModeHotkeyLabel('pan')} pan, ${getTouchDebugEditModeHotkeyLabel('place')} place, ${getTouchDebugEditModeHotkeyLabel('break')} break`,
+  'Brush: [ / ] cycle, 1-0 slots',
+  'History: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo',
+  `Camera: ${getDesktopRecenterCameraHotkeyLabel()} recenter on the standalone player`,
+  `Session: ${getDesktopReturnToMainMenuHotkeyLabel()} return to the main menu without discarding the current world`,
+  `HUD: ${getDesktopDebugOverlayHotkeyLabel()} toggle debug telemetry`,
+  `Edit panel: ${getDesktopDebugEditControlsHotkeyLabel()} toggle the full in-world Debug Edit panel`,
+  `Edit overlays: ${getDesktopDebugEditOverlaysHotkeyLabel()} toggle compact in-world overlays`,
+  `Spawn marker: ${getDesktopPlayerSpawnMarkerHotkeyLabel()} toggle the standalone player spawn overlay`,
+  `Panel: ${panelToggleHotkeyLabel} collapse/expand`,
+  'Eyedropper: press I to pick hovered tile; touch long-press in Pan mode',
+  'Flood fill: F arm brush fill, Shift+F arm break fill; next canvas tap/click applies',
+  'Shape tools: N line, R rect fill, T rect outline, E ellipse fill, O ellipse outline (Shift = break)',
+  'Cancel armed one-shot tools: Esc'
+] as const;
 
 export class TouchDebugEditControls {
   private root: HTMLDivElement;
@@ -704,97 +724,14 @@ export class TouchDebugEditControls {
     shortcutTitle.style.fontSize = '11px';
     shortcutSection.append(shortcutTitle);
 
-    const modeShortcutLine = document.createElement('div');
-    modeShortcutLine.textContent = `Modes: ${getTouchDebugEditModeHotkeyLabel('pan')} pan, ${getTouchDebugEditModeHotkeyLabel('place')} place, ${getTouchDebugEditModeHotkeyLabel('break')} break`;
-    modeShortcutLine.style.color = '#d6dde8';
-    modeShortcutLine.style.fontSize = '11px';
-    modeShortcutLine.style.lineHeight = '1.35';
-    shortcutSection.append(modeShortcutLine);
-
-    const brushShortcutLine = document.createElement('div');
-    brushShortcutLine.textContent = 'Brush: [ / ] cycle, 1-0 slots';
-    brushShortcutLine.style.color = '#d6dde8';
-    brushShortcutLine.style.fontSize = '11px';
-    brushShortcutLine.style.lineHeight = '1.35';
-    shortcutSection.append(brushShortcutLine);
-
-    const historyShortcutLine = document.createElement('div');
-    historyShortcutLine.textContent = 'History: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo';
-    historyShortcutLine.style.color = '#d6dde8';
-    historyShortcutLine.style.fontSize = '11px';
-    historyShortcutLine.style.lineHeight = '1.35';
-    shortcutSection.append(historyShortcutLine);
-
-    const cameraShortcutLine = document.createElement('div');
-    cameraShortcutLine.textContent = `Camera: ${getDesktopRecenterCameraHotkeyLabel()} recenter on the standalone player`;
-    cameraShortcutLine.style.color = '#d6dde8';
-    cameraShortcutLine.style.fontSize = '11px';
-    cameraShortcutLine.style.lineHeight = '1.35';
-    shortcutSection.append(cameraShortcutLine);
-
-    const sessionShortcutLine = document.createElement('div');
-    sessionShortcutLine.textContent = `Session: ${getDesktopReturnToMainMenuHotkeyLabel()} return to the main menu without discarding the current world`;
-    sessionShortcutLine.style.color = '#d6dde8';
-    sessionShortcutLine.style.fontSize = '11px';
-    sessionShortcutLine.style.lineHeight = '1.35';
-    shortcutSection.append(sessionShortcutLine);
-
-    const hudShortcutLine = document.createElement('div');
-    hudShortcutLine.textContent = `HUD: ${getDesktopDebugOverlayHotkeyLabel()} toggle debug telemetry`;
-    hudShortcutLine.style.color = '#d6dde8';
-    hudShortcutLine.style.fontSize = '11px';
-    hudShortcutLine.style.lineHeight = '1.35';
-    shortcutSection.append(hudShortcutLine);
-
-    const editOverlayShortcutLine = document.createElement('div');
-    editOverlayShortcutLine.textContent = `Edit overlays: ${getDesktopDebugEditOverlaysHotkeyLabel()} toggle compact in-world overlays`;
-    editOverlayShortcutLine.style.color = '#d6dde8';
-    editOverlayShortcutLine.style.fontSize = '11px';
-    editOverlayShortcutLine.style.lineHeight = '1.35';
-    shortcutSection.append(editOverlayShortcutLine);
-
-    const spawnMarkerShortcutLine = document.createElement('div');
-    spawnMarkerShortcutLine.textContent = `Spawn marker: ${getDesktopPlayerSpawnMarkerHotkeyLabel()} toggle the standalone player spawn overlay`;
-    spawnMarkerShortcutLine.style.color = '#d6dde8';
-    spawnMarkerShortcutLine.style.fontSize = '11px';
-    spawnMarkerShortcutLine.style.lineHeight = '1.35';
-    shortcutSection.append(spawnMarkerShortcutLine);
-
-    const panelShortcutLine = document.createElement('div');
-    panelShortcutLine.textContent = `Panel: ${panelToggleHotkeyLabel} collapse/expand`;
-    panelShortcutLine.style.color = '#d6dde8';
-    panelShortcutLine.style.fontSize = '11px';
-    panelShortcutLine.style.lineHeight = '1.35';
-    shortcutSection.append(panelShortcutLine);
-
-    const eyedropperShortcutLine = document.createElement('div');
-    eyedropperShortcutLine.textContent = 'Eyedropper: press I to pick hovered tile; touch long-press in Pan mode';
-    eyedropperShortcutLine.style.color = '#d6dde8';
-    eyedropperShortcutLine.style.fontSize = '11px';
-    eyedropperShortcutLine.style.lineHeight = '1.35';
-    shortcutSection.append(eyedropperShortcutLine);
-
-    const floodFillShortcutLine = document.createElement('div');
-    floodFillShortcutLine.textContent = 'Flood fill: F arm brush fill, Shift+F arm break fill; next canvas tap/click applies';
-    floodFillShortcutLine.style.color = '#d6dde8';
-    floodFillShortcutLine.style.fontSize = '11px';
-    floodFillShortcutLine.style.lineHeight = '1.35';
-    shortcutSection.append(floodFillShortcutLine);
-
-    const oneShotShortcutLine = document.createElement('div');
-    oneShotShortcutLine.textContent =
-      'Shape tools: N line, R rect fill, T rect outline, E ellipse fill, O ellipse outline (Shift = break)';
-    oneShotShortcutLine.style.color = '#d6dde8';
-    oneShotShortcutLine.style.fontSize = '11px';
-    oneShotShortcutLine.style.lineHeight = '1.35';
-    shortcutSection.append(oneShotShortcutLine);
-
-    const cancelShortcutLine = document.createElement('div');
-    cancelShortcutLine.textContent = 'Cancel armed one-shot tools: Esc';
-    cancelShortcutLine.style.color = '#d6dde8';
-    cancelShortcutLine.style.fontSize = '11px';
-    cancelShortcutLine.style.lineHeight = '1.35';
-    shortcutSection.append(cancelShortcutLine);
+    for (const line of resolveTouchDebugKeyboardShortcutLines(panelToggleHotkeyLabel)) {
+      const lineElement = document.createElement('div');
+      lineElement.textContent = line;
+      lineElement.style.color = '#d6dde8';
+      lineElement.style.fontSize = '11px';
+      lineElement.style.lineHeight = '1.35';
+      shortcutSection.append(lineElement);
+    }
 
     const brushSection = document.createElement('div');
     brushSection.style.display = 'flex';

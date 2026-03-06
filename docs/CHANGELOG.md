@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Surface the in-world edit-panel shortcut in the touch debug controls keyboard reference once the `G` keyboard action exists.
+- Changes: Updated [src/ui/touchDebugEditControls.ts](../src/ui/touchDebugEditControls.ts) so the touch panel `Keyboard` section now lists the in-world `Edit panel: G` shortcut beside the existing shell toggle hints through a shared shortcut-line resolver, expanded [src/ui/touchDebugEditControls.test.ts](../src/ui/touchDebugEditControls.test.ts) with a focused regression for that keyboard-reference line, removed completed task `82` from [docs/NEXT.md](docs/NEXT.md), added replacement app-shell task `244`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/touchDebugEditControls.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface standalone player live body chunk and chunk-local tile coordinates in the compact debug-edit status strip beside the existing world-position and world-tile telemetry.
 - Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so the compact strip now derives and shows body `ChunkNow:` and `LocalNow:` lines from the existing live player `TileNow:` telemetry, expanded [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) and [src/ui/debugEditStatusStrip.test.ts](../src/ui/debugEditStatusStrip.test.ts) with positive-world, negative-world, and wrap-preservation regressions, removed completed task `242` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical-slice task `243`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/debugEditStatusHelpers.test.ts src/ui/debugEditStatusStrip.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

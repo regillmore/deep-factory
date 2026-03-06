@@ -148,6 +148,7 @@ This document describes the current project state. Unlike the changelog, it shou
 
 - On-screen debug edit controls support brush selection, mode switching, undo, redo, collapse and expand, reset prefs, and one-shot tool arming.
 - The full `Debug Edit` panel is now distinct from the compact inspect and preview overlay layer, so either surface can be hidden without forcing the other one off.
+- The touch `Debug Edit` panel includes a `Keyboard` reference for desktop-parity shortcuts, including in-world shell actions like `Q` main menu, `C` recenter, `H` HUD, `G` edit panel, `V` edit overlays, and `M` spawn marker alongside brush, history, eyedropper, and shape-tool shortcuts.
 - Collapsed panel state still shows a compact header with current mode, active brush, and undo or redo counts.
 - The compact status strip stays useful even when the larger panel is collapsed or out of the way.
 

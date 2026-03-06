@@ -38,12 +38,12 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## App shell
 
-82. Surface the in-world edit-panel shortcut in the touch debug controls keyboard reference once task 69 adds the keyboard action.
 199. Add shell-level keybinding remap settings for in-world actions (`Main Menu`, `Recenter Camera`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`) with conflict validation and persisted preferences.
 200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
 237. Move first-launch main-menu runtime and mixed-device control guidance onto the structured app-shell menu-section path so overlay menus share one richer layout.
 238. Add shortcut and consequence metadata rows inside structured paused-menu action cards so action context is visible without relying on button tooltips.
 239. Add shortcut and readiness metadata rows inside structured first-launch main-menu action cards after task `237` so enter-world and mixed-device guidance stay visible without relying on button tooltips.
+244. Surface the in-world shortcuts-overlay toggle in the touch debug controls keyboard reference so the touch panel lists the `?` action alongside the other shell shortcuts.
 
 ## Ambitious vertical slices
 
