@@ -704,6 +704,7 @@ describe('main.ts paused-world shell toggles', () => {
         'World session paused. Resume World (Enter) to continue it, or choose New World (N) to discard it and boot a fresh procedural world.',
       detailLines: [
         'Returning here keeps the initialized world, player state, and debug edits intact until you choose Resume World (Enter) or New World (N) to abandon them.',
+        'Reset Shell Toggles keeps the paused session intact and restores the default-off shell layout before the next Resume World (Enter).',
         'New World (N) also clears the paused session camera state and undo history before the fresh world boots.'
       ],
       primaryActionLabel: 'Resume World',
@@ -765,6 +766,7 @@ describe('main.ts paused-world shell toggles', () => {
         'World session paused. Resume World (Enter) to continue it, or choose New World (N) to discard it and boot a fresh procedural world.',
       detailLines: [
         'Returning here keeps the initialized world, player state, and debug edits intact until you choose Resume World (Enter) or New World (N) to abandon them.',
+        'Reset Shell Toggles keeps the paused session intact and restores the default-off shell layout before the next Resume World (Enter).',
         'New World (N) also clears the paused session camera state and undo history before the fresh world boots.'
       ],
       primaryActionLabel: 'Resume World',

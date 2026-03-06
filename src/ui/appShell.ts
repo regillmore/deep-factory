@@ -31,6 +31,7 @@ export const DEFAULT_PAUSED_MAIN_MENU_STATUS =
   `World session paused. Resume World (${getDesktopResumeWorldHotkeyLabel()}) to continue it, or choose New World (${getDesktopFreshWorldHotkeyLabel()}) to discard it and boot a fresh procedural world.`;
 export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [
   `Returning here keeps the initialized world, player state, and debug edits intact until you choose Resume World (${getDesktopResumeWorldHotkeyLabel()}) or New World (${getDesktopFreshWorldHotkeyLabel()}) to abandon them.`,
+  `Reset Shell Toggles keeps the paused session intact and restores the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`,
   `New World (${getDesktopFreshWorldHotkeyLabel()}) also clears the paused session camera state and undo history before the fresh world boots.`
 ] as const;
 
