@@ -116,7 +116,7 @@ const renderUntilMeshBuildQueueDrains = (
 ): void => {
   for (let frame = 0; frame < maxFrames; frame += 1) {
     renderer.render(camera, { timeMs });
-    if (renderer.telemetry.meshBuildQueueLength === 0) {
+    if (renderer.telemetry.meshBuildQueueLength === 0 && renderer.telemetry.residentDirtyLightChunks === 0) {
       return;
     }
   }
@@ -124,6 +124,7 @@ const renderUntilMeshBuildQueueDrains = (
   throw new Error(
     `Renderer test warm-up did not drain the mesh build queue within ${maxFrames} frames ` +
       `(queue=${renderer.telemetry.meshBuildQueueLength}, ` +
+      `dirtyLight=${renderer.telemetry.residentDirtyLightChunks}, ` +
       `animMeshes=${renderer.telemetry.residentAnimatedChunkMeshes}, ` +
       `animQuads=${renderer.telemetry.residentAnimatedChunkQuadCount})`
   );
@@ -370,6 +371,120 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.residentDirtyLightChunks).toBe(0);
     expect(deleteBuffer).toHaveBeenCalled();
     expect(deleteVertexArray).toHaveBeenCalled();
+  });
+
+  it('invalidates lower-row chunk meshes when a roof edit changes lighting across the y=-1/0 seam', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const rowStartWorldTileX = 4;
+    const rowEndWorldTileX = 13;
+    const lowerRowWorldTileY = 0;
+    const gapWorldTileY = -1;
+    const roofWorldTileY = -2;
+    const leftPaddingWorldTileX = rowStartWorldTileX - 1;
+    const rightPaddingWorldTileX = rowEndWorldTileX + 1;
+
+    for (let worldTileX = leftPaddingWorldTileX; worldTileX <= rightPaddingWorldTileX; worldTileX += 1) {
+      for (let worldTileY = -CHUNK_SIZE; worldTileY <= gapWorldTileY; worldTileY += 1) {
+        renderer.setTile(worldTileX, worldTileY, 0);
+      }
+    }
+    for (let worldTileX = rowStartWorldTileX; worldTileX <= rowEndWorldTileX; worldTileX += 1) {
+      renderer.setTile(worldTileX, lowerRowWorldTileY, 1);
+    }
+
+    const camera = new Camera2D();
+    camera.zoom = 16;
+    camera.x = ((rowStartWorldTileX + rowEndWorldTileX + 1) * TILE_SIZE) / 2;
+    camera.y = -TILE_SIZE;
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+
+    const invalidateChunkMeshSpy = vi.spyOn(
+      renderer as unknown as {
+        invalidateChunkMesh: (chunkX: number, chunkY: number) => void;
+      },
+      'invalidateChunkMesh'
+    );
+    invalidateChunkMeshSpy.mockClear();
+
+    for (let worldTileX = rowStartWorldTileX; worldTileX <= rowEndWorldTileX; worldTileX += 1) {
+      renderer.setTile(worldTileX, roofWorldTileY, 1);
+      renderer.render(camera, { timeMs: 0 });
+    }
+
+    expect(invalidateChunkMeshSpy.mock.calls).toEqual(
+      expect.arrayContaining([
+        [0, -1],
+        [0, 0]
+      ])
+    );
+  });
+
+  it('invalidates lower-row chunk meshes on both sides of an x chunk boundary when a roof edit changes boundary lighting', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const rowStartWorldTileX = CHUNK_SIZE - 2;
+    const rowEndWorldTileX = CHUNK_SIZE + 7;
+    const lowerRowWorldTileY = 0;
+    const gapWorldTileY = -1;
+    const roofWorldTileY = -2;
+    const leftPaddingWorldTileX = rowStartWorldTileX - 1;
+    const rightPaddingWorldTileX = rowEndWorldTileX + 1;
+
+    for (let worldTileX = leftPaddingWorldTileX; worldTileX <= rightPaddingWorldTileX; worldTileX += 1) {
+      for (let worldTileY = -CHUNK_SIZE; worldTileY <= gapWorldTileY; worldTileY += 1) {
+        renderer.setTile(worldTileX, worldTileY, 0);
+      }
+    }
+    for (let worldTileX = rowStartWorldTileX; worldTileX <= rowEndWorldTileX; worldTileX += 1) {
+      renderer.setTile(worldTileX, lowerRowWorldTileY, 1);
+    }
+
+    const camera = new Camera2D();
+    camera.zoom = 16;
+    camera.x = ((rowStartWorldTileX + rowEndWorldTileX + 1) * TILE_SIZE) / 2;
+    camera.y = -TILE_SIZE;
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+
+    const invalidateChunkMeshSpy = vi.spyOn(
+      renderer as unknown as {
+        invalidateChunkMesh: (chunkX: number, chunkY: number) => void;
+      },
+      'invalidateChunkMesh'
+    );
+    invalidateChunkMeshSpy.mockClear();
+
+    for (let worldTileX = rowStartWorldTileX; worldTileX <= rowEndWorldTileX; worldTileX += 1) {
+      renderer.setTile(worldTileX, roofWorldTileY, 1);
+      renderer.render(camera, { timeMs: 0 });
+    }
+
+    expect(invalidateChunkMeshSpy.mock.calls).toEqual(
+      expect.arrayContaining([
+        [0, 0],
+        [1, 0]
+      ])
+    );
   });
 
   it('renders the standalone player placeholder as an extra world-space draw call', async () => {

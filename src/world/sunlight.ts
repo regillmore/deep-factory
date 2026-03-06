@@ -40,6 +40,11 @@ interface EmissiveLightSource {
   lightLevel: number;
 }
 
+interface TrackedChunkLightSnapshot {
+  chunk: Chunk;
+  lightLevels: Uint8Array;
+}
+
 const collectDirtyResidentChunkColumns = (world: TileWorld): DirtyResidentChunkColumn[] => {
   const dirtyChunkColumnMasksByChunkX = new Map<number, number>();
   for (const { x, y } of world.getDirtyLightChunkCoords()) {
@@ -101,6 +106,31 @@ const collectResidentChunkColumnChunks = (
     }
   }
   return residentColumnChunks;
+};
+
+const trackChunkLightSnapshot = (
+  trackedChunkLightSnapshotsByKey: Map<string, TrackedChunkLightSnapshot>,
+  chunk: Chunk
+): void => {
+  const key = chunkKey(chunk.coord.x, chunk.coord.y);
+  if (trackedChunkLightSnapshotsByKey.has(key)) {
+    return;
+  }
+
+  trackedChunkLightSnapshotsByKey.set(key, {
+    chunk,
+    lightLevels: chunk.lightLevels.slice()
+  });
+};
+
+const didChunkLightLevelsChange = (previousLightLevels: Uint8Array, nextLightLevels: Uint8Array): boolean => {
+  for (let index = 0; index < previousLightLevels.length; index += 1) {
+    if (previousLightLevels[index] !== nextLightLevels[index]) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 const sampleResidentTileAtWorldTile = (
@@ -465,7 +495,8 @@ const applySunlightToBlockingTilesAdjacentToLitAir = (
 
 export const recomputeSunlightFromExposedChunkTops = (
   world: TileWorld,
-  registry: TileMetadataRegistry = TILE_METADATA
+  registry: TileMetadataRegistry = TILE_METADATA,
+  changedChunkCoords?: Array<{ x: number; y: number }>
 ): number => {
   if (world.getDirtyLightChunkCount() === 0) {
     return 0;
@@ -483,6 +514,8 @@ export const recomputeSunlightFromExposedChunkTops = (
 
   const dirtyColumnContexts: DirtyResidentChunkColumnContext[] = [];
   const dirtyLocalColumnMaskByChunkX = new Map<number, number>();
+  const trackedChunkLightSnapshotsByKey =
+    changedChunkCoords === undefined ? null : new Map<string, TrackedChunkLightSnapshot>();
 
   for (const dirtyColumn of dirtyChunkColumns) {
     const { chunkX, localColumnMask } = dirtyColumn;
@@ -501,6 +534,24 @@ export const recomputeSunlightFromExposedChunkTops = (
       residentColumnChunks
     });
     dirtyLocalColumnMaskByChunkX.set(chunkX, localColumnMask);
+
+    if (trackedChunkLightSnapshotsByKey) {
+      for (const chunk of residentColumnChunks) {
+        trackChunkLightSnapshot(trackedChunkLightSnapshotsByKey, chunk);
+      }
+
+      if ((localColumnMask & 1) !== 0) {
+        for (const chunk of collectResidentChunkColumnChunks(bounds, chunkX - 1)) {
+          trackChunkLightSnapshot(trackedChunkLightSnapshotsByKey, chunk);
+        }
+      }
+
+      if (((localColumnMask >>> (CHUNK_SIZE - 1)) & 1) !== 0) {
+        for (const chunk of collectResidentChunkColumnChunks(bounds, chunkX + 1)) {
+          trackChunkLightSnapshot(trackedChunkLightSnapshotsByKey, chunk);
+        }
+      }
+    }
   }
 
   if (dirtyColumnContexts.length === 0) {
@@ -511,6 +562,7 @@ export const recomputeSunlightFromExposedChunkTops = (
 
   for (const dirtyColumn of dirtyColumnContexts) {
     const { localColumnMask, residentColumnChunks } = dirtyColumn;
+
     for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
       if (((localColumnMask >>> localX) & 1) === 0) {
         continue;
@@ -540,6 +592,16 @@ export const recomputeSunlightFromExposedChunkTops = (
   );
   applySunlightToBlockingTilesAdjacentToLitAir(bounds, dirtyColumnContexts, registry);
   applyResidentEmissiveLightToDirtyColumns(bounds, dirtyLocalColumnMaskByChunkX, registry);
+
+  if (trackedChunkLightSnapshotsByKey && changedChunkCoords) {
+    for (const trackedChunk of trackedChunkLightSnapshotsByKey.values()) {
+      if (!didChunkLightLevelsChange(trackedChunk.lightLevels, trackedChunk.chunk.lightLevels)) {
+        continue;
+      }
+
+      changedChunkCoords.push({ x: trackedChunk.chunk.coord.x, y: trackedChunk.chunk.coord.y });
+    }
+  }
 
   for (const dirtyColumn of dirtyColumnContexts) {
     const { localColumnMask, residentColumnChunks } = dirtyColumn;

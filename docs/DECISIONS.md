@@ -14,6 +14,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Clean emissive columns can retain non-sunlight light in cached light levels, and dirty boundary blockers streaming back beside those emitters were being incorrectly promoted to full sunlight.
 - Consequence: Future blocker-face or sunlight-transport work should keep "sunlit air" classification distinct from emissive contribution; combined light levels alone are not a safe proxy.
 
+### 2026-03-06: Renderer relight invalidation follows changed light fields, not all dirty columns
+
+- Decision: The renderer now makes draw-range chunks resident before dirty-light recomputation and invalidates cached chunk meshes only for resident chunks whose light arrays actually changed during that relight pass, including adjacent boundary chunks touched by horizontal sunlight transport.
+- Reason: Streamed-back visible chunks were building once with zeroed dirty light and rebuilding again after relight, while invalidating every chunk in a recomputed dirty column could keep prefetch columns requeued long after their visible neighbors were already correct.
+- Consequence: Future renderer or lighting changes should preserve "resident before relight" for draw-range chunks and should report actual changed-light chunks for mesh invalidation instead of invalidating every chunk that merely participated in dirty-column recomputation.
+
 ### 2026-03-05: Entity render snapshots advance on fixed-step boundaries
 
 - Decision: `EntityRegistry` stores `previous` and `current` render snapshots per entity, rotates those snapshots only after each completed fixed update, and resets both snapshots together when an entity spawns or its simulation state is replaced outside the fixed-step path.
@@ -70,9 +76,9 @@ Record only durable design decisions here. Keep each entry short: date, decision
 
 ### 2026-03-04: Chunk lighting modulation is baked into mesh vertices
 
-- Decision: Chunk meshes now bake per-vertex light levels from resident chunk light caches, the world shader multiplies atlas color by that normalized vertex light, and the renderer invalidates cached chunk meshes for chunks that were dirty-light before recomputation.
+- Decision: Chunk meshes now bake per-vertex light levels from resident chunk light caches, and the world shader multiplies atlas color by that normalized vertex light.
 - Reason: This keeps lighting on the existing chunk draw path without introducing a second texture-sampling light pipeline, while still letting lighting-only edits refresh rendered terrain.
-- Consequence: Future lighting changes should continue driving chunk-light dirtiness so affected meshes rebuild, and mesh/animation helpers must preserve the light-inclusive chunk vertex stride.
+- Consequence: Future lighting changes should continue driving chunk-light dirtiness so affected meshes can rebuild through the renderer invalidation path, and mesh/animation helpers must preserve the light-inclusive chunk vertex stride.
 
 ### 2026-03-04: Non-emissive blocker edits now widen invalidation around reachable resident emitters
 

@@ -480,10 +480,11 @@ export class Renderer {
     const drawBounds = expandChunkBounds(visibleBounds, FRUSTUM_PADDING_CHUNKS);
     const retainBounds = expandChunkBounds(drawBounds, STREAM_RETAIN_PADDING_CHUNKS);
 
-    const dirtyLightChunks = this.world.getDirtyLightChunkCoords();
-    recomputeSunlightFromExposedChunkTops(this.world);
-    for (const dirtyChunk of dirtyLightChunks) {
-      this.invalidateChunkMesh(dirtyChunk.x, dirtyChunk.y);
+    this.ensureWorldChunksResident(drawBounds);
+    const changedLightChunks: Array<{ x: number; y: number }> = [];
+    recomputeSunlightFromExposedChunkTops(this.world, TILE_METADATA, changedLightChunks);
+    for (const chunk of changedLightChunks) {
+      this.invalidateChunkMesh(chunk.x, chunk.y);
     }
     this.scheduleMeshBuilds(drawBounds, retainBounds);
     this.processMeshBuildQueue();
@@ -636,6 +637,14 @@ export class Renderer {
     }
     this.meshes.clear();
     this.meshBuildQueue = [];
+  }
+
+  private ensureWorldChunksResident(bounds: ChunkBounds): void {
+    for (let y = bounds.minChunkY; y <= bounds.maxChunkY; y += 1) {
+      for (let x = bounds.minChunkX; x <= bounds.maxChunkX; x += 1) {
+        this.world.ensureChunk(x, y);
+      }
+    }
   }
 
   private invalidateChunkMesh(chunkX: number, chunkY: number): void {
