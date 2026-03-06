@@ -42,7 +42,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 199. Add shell-level keybinding remap settings for in-world actions (`Main Menu`, `Recenter Camera`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`) with conflict validation and persisted preferences.
 200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
 227. Add a paused-menu shell action that clears persisted in-world shell toggle preferences and reapplies default-off in-world shell toggle visibility before resuming play, with focused `src/main.ts` transition regression coverage.
-231. Add a runtime regression in `src/main.ts` flow where inaccessible in-world shell-toggle local storage still boots the first `Enter World` transition with all shell overlays hidden.
 
 ## Player debugging
 
@@ -55,5 +54,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 214. Add a dropped-item + hotbar inventory slice after entity scaffolding (`17-18`): stackable world pickups with proximity pickup rules, hotbar assignment and selection, and save/load snapshot regressions for item stacks.
 215. Add a placeable-workbench crafting slice after inventory basics: recipe registry for a minimal starter set, in-world station-range gating, shell or debug panel crafting actions, and recipe resolution regressions.
 221. Add a starter melee-weapon follow-up after hostile-slime combat (`213`): fixed-step swing windup/active/recovery timing, slime hit detection plus knockback, and deterministic hit-cooldown regressions.
+232. Add a grappling-hook traversal slice after entity scaffolding (`17-18`): mixed-device aimed hook firing, solid-tile latch plus pull-and-release rules, and fixed-step hook-state regressions.
 
 ## Project structure optimization

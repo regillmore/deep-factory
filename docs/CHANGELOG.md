@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Add a `src/main.ts` runtime regression where inaccessible in-world shell-toggle local storage still boots the first `Enter World` transition with all shell overlays hidden.
+- Changes: Expanded [src/main.test.ts](../src/main.test.ts) with a mocked bootstrap regression that makes `window.localStorage` throw during startup, then verifies the first `Enter World` transition still reaches in-world state with every shell overlay hidden and no bootstrap crash; removed completed task `231` from [docs/NEXT.md](docs/NEXT.md) and added replacement ambitious vertical-slice task `232`.
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a `src/main.ts` runtime regression where invalid persisted in-world shell toggle preferences fall back to default-off shell and overlay visibility on the first `Enter World` transition.
 - Changes: Tightened [src/mainWorldSessionShellState.ts](../src/mainWorldSessionShellState.ts) so any invalid persisted shell-toggle payload now falls back to the all-off default state, updated [src/mainWorldSessionShellState.test.ts](../src/mainWorldSessionShellState.test.ts) and [src/main.test.ts](../src/main.test.ts) with invalid-persistence regression coverage for both the loader and the first `Enter World` runtime path, refreshed [docs/CAPABILITIES.md](docs/CAPABILITIES.md) to state the invalid-persistence fallback explicitly, removed completed task `230` from [docs/NEXT.md](docs/NEXT.md), and added replacement task `231`.
 - Verification: Ran `npx vitest run src/mainWorldSessionShellState.test.ts src/main.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
