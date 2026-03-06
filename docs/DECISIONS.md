@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Paused-menu shell reset clears saved toggle visibility back to default-off
+
+- Decision: The paused main menu now includes a `Reset Shell Toggles` action that removes persisted in-world shell-toggle visibility preferences and reapplies the all-off shell layout to the current paused session before it resumes.
+- Reason: Shell-toggle visibility behaves like preference state, but players also need a quick way to recover the default uncluttered HUD and overlay layout without discarding the current world session.
+- Consequence: Future in-world shell-toggle additions should participate in both the persisted preference shape and the paused-menu reset path so that the default-off recovery action remains comprehensive.
+
 ### 2026-03-06: Non-emissive blocker edits dirty immediate neighboring columns
 
 - Decision: Zero-range non-emissive `blocksLight` edits now invalidate the edited column plus its immediate left and right columns, while boundary edits still extend that widening across the loaded neighboring chunk boundary and its interior-adjacent column.

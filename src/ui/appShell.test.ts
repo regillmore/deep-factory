@@ -15,8 +15,10 @@ import {
   createPausedMainMenuShellState,
   resolveMainMenuPrimaryActionTitle,
   resolveMainMenuSecondaryActionTitle,
+  resolveMainMenuTertiaryActionTitle,
   resolveAppShellRegionDisplay,
   resolvePausedMainMenuFreshWorldTitle,
+  resolvePausedMainMenuResetShellTogglesTitle,
   resolvePausedMainMenuResumeWorldTitle,
   resolveInWorldDebugEditControlsToggleTitle,
   resolveAppShellViewModel
@@ -43,6 +45,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.stageLabel).toBe('Boot');
     expect(viewModel.primaryActionLabel).toBeNull();
     expect(viewModel.secondaryActionLabel).toBeNull();
+    expect(viewModel.tertiaryActionLabel).toBeNull();
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
     expect(viewModel.recenterCameraActionLabel).toBeNull();
     expect(viewModel.debugOverlayToggleLabel).toBeNull();
@@ -66,6 +69,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.stageLabel).toBe('Main Menu');
     expect(viewModel.primaryActionLabel).toBe('Enter World');
     expect(viewModel.secondaryActionLabel).toBeNull();
+    expect(viewModel.tertiaryActionLabel).toBeNull();
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
     expect(viewModel.recenterCameraActionLabel).toBeNull();
     expect(viewModel.debugOverlayToggleLabel).toBeNull();
@@ -90,6 +94,7 @@ describe('resolveAppShellViewModel', () => {
       `Resume World (${getDesktopResumeWorldHotkeyLabel()})`
     );
     expect(viewModel.secondaryActionLabel).toBe(`New World (${getDesktopFreshWorldHotkeyLabel()})`);
+    expect(viewModel.tertiaryActionLabel).toBe('Reset Shell Toggles');
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
     expect(viewModel.statusText).toBe(
       `World session paused. Resume World (${getDesktopResumeWorldHotkeyLabel()}) to continue it, or choose New World (${getDesktopFreshWorldHotkeyLabel()}) to discard it and boot a fresh procedural world.`
@@ -108,6 +113,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.stageLabel).toBe('In World');
     expect(viewModel.primaryActionLabel).toBeNull();
     expect(viewModel.secondaryActionLabel).toBeNull();
+    expect(viewModel.tertiaryActionLabel).toBeNull();
     expect(viewModel.returnToMainMenuActionLabel).toBe(
       `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
     );
@@ -165,6 +171,7 @@ describe('resolveAppShellViewModel', () => {
       `Hide Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`
     );
     expect(viewModel.secondaryActionLabel).toBeNull();
+    expect(viewModel.tertiaryActionLabel).toBeNull();
     expect(viewModel.debugOverlayTogglePressed).toBe(true);
     expect(viewModel.debugEditControlsToggleLabel).toBe(
       `Show Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
@@ -197,6 +204,7 @@ describe('resolveAppShellViewModel', () => {
       `Show Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`
     );
     expect(viewModel.secondaryActionLabel).toBeNull();
+    expect(viewModel.tertiaryActionLabel).toBeNull();
     expect(viewModel.debugEditControlsToggleLabel).toBe(
       `Hide Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
     );
@@ -226,6 +234,7 @@ describe('resolveAppShellViewModel', () => {
       `Show Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`
     );
     expect(viewModel.secondaryActionLabel).toBeNull();
+    expect(viewModel.tertiaryActionLabel).toBeNull();
     expect(viewModel.debugEditControlsToggleLabel).toBe(
       `Show Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
     );
@@ -256,6 +265,7 @@ describe('resolveAppShellViewModel', () => {
       `Show Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`
     );
     expect(viewModel.secondaryActionLabel).toBeNull();
+    expect(viewModel.tertiaryActionLabel).toBeNull();
     expect(viewModel.debugEditControlsToggleLabel).toBe(
       `Show Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`
     );
@@ -279,6 +289,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.chromeVisible).toBe(false);
     expect(viewModel.primaryActionLabel).toBeNull();
     expect(viewModel.secondaryActionLabel).toBeNull();
+    expect(viewModel.tertiaryActionLabel).toBeNull();
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
     expect(viewModel.recenterCameraActionLabel).toBeNull();
     expect(viewModel.statusText).toBe('WebGL2 is not available in this browser.');
@@ -322,8 +333,16 @@ describe('resolvePausedMainMenuResumeWorldTitle', () => {
   });
 });
 
+describe('resolvePausedMainMenuResetShellTogglesTitle', () => {
+  it('explains that paused-menu reset clears saved shell visibility and reapplies default-off layout', () => {
+    expect(resolvePausedMainMenuResetShellTogglesTitle()).toBe(
+      'Clear saved in-world shell visibility preferences and restore the paused session to the default-off shell layout before the next resume'
+    );
+  });
+});
+
 describe('paused main-menu tooltip-title resolution', () => {
-  it('uses paused-session tooltip titles when resume and fresh-world actions are active', () => {
+  it('uses paused-session tooltip titles when resume, fresh-world, and reset-shell actions are active', () => {
     const pausedState = createPausedMainMenuShellState();
 
     expect(resolveMainMenuPrimaryActionTitle(pausedState)).toBe(
@@ -331,6 +350,9 @@ describe('paused main-menu tooltip-title resolution', () => {
     );
     expect(resolveMainMenuSecondaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuFreshWorldTitle()
+    );
+    expect(resolveMainMenuTertiaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuResetShellTogglesTitle()
     );
   });
 
@@ -343,10 +365,14 @@ describe('paused main-menu tooltip-title resolution', () => {
     expect(resolveMainMenuSecondaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuFreshWorldTitle()
     );
+    expect(resolveMainMenuTertiaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuResetShellTogglesTitle()
+    );
 
     const firstLaunchState = { screen: 'main-menu' } as const;
     expect(resolveMainMenuPrimaryActionTitle(firstLaunchState)).toBe('');
     expect(resolveMainMenuSecondaryActionTitle(firstLaunchState)).toBe('');
+    expect(resolveMainMenuTertiaryActionTitle(firstLaunchState)).toBe('');
   });
 
   it('restores paused-session tooltip titles after first-launch main-menu copy transitions back to a resumable session', () => {
@@ -358,16 +384,23 @@ describe('paused main-menu tooltip-title resolution', () => {
     expect(resolveMainMenuSecondaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuFreshWorldTitle()
     );
+    expect(resolveMainMenuTertiaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuResetShellTogglesTitle()
+    );
 
     const firstLaunchState = { screen: 'main-menu' } as const;
     expect(resolveMainMenuPrimaryActionTitle(firstLaunchState)).toBe('');
     expect(resolveMainMenuSecondaryActionTitle(firstLaunchState)).toBe('');
+    expect(resolveMainMenuTertiaryActionTitle(firstLaunchState)).toBe('');
 
     expect(resolveMainMenuPrimaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuResumeWorldTitle()
     );
     expect(resolveMainMenuSecondaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuFreshWorldTitle()
+    );
+    expect(resolveMainMenuTertiaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuResetShellTogglesTitle()
     );
   });
 });

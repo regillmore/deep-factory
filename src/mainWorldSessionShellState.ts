@@ -9,12 +9,14 @@ export interface WorldSessionShellState {
 interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+  removeItem?(key: string): void;
 }
 
 export type PausedMainMenuWorldSessionShellTransition =
   | 'pause-to-main-menu'
   | 'resume-paused-world-session'
-  | 'start-fresh-world-session';
+  | 'start-fresh-world-session'
+  | 'reset-shell-toggle-preferences';
 
 const STORAGE_KEY = 'deep-factory.worldSessionShellState.v1';
 
@@ -45,7 +47,10 @@ export const resolveWorldSessionShellStateAfterPausedMainMenuTransition = (
   currentState: WorldSessionShellState,
   transition: PausedMainMenuWorldSessionShellTransition
 ): WorldSessionShellState => {
-  if (transition === 'start-fresh-world-session') {
+  if (
+    transition === 'start-fresh-world-session' ||
+    transition === 'reset-shell-toggle-preferences'
+  ) {
     return createDefaultWorldSessionShellState();
   }
 
@@ -93,6 +98,17 @@ export const saveWorldSessionShellState = (
 
   try {
     storage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const clearWorldSessionShellState = (storage: StorageLike | null | undefined): boolean => {
+  if (!storage || typeof storage.removeItem !== 'function') return false;
+
+  try {
+    storage.removeItem(STORAGE_KEY);
     return true;
   } catch {
     return false;

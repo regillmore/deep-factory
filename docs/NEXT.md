@@ -42,7 +42,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 188. Surface the paused-menu `Resume World (Enter)` shortcut in the paused-session camera and undo reset detail line alongside the existing `New World (N)` reset guidance.
 199. Add shell-level keybinding remap settings for in-world actions (`Main Menu`, `Recenter Camera`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`) with conflict validation and persisted preferences.
 200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
-227. Add a paused-menu shell action that clears persisted in-world shell toggle preferences and reapplies default-off in-world shell toggle visibility before resuming play, with focused `src/main.ts` transition regression coverage.
+236. Surface the paused-menu `Reset Shell Toggles` action in the paused-session detail copy so the default-off shell reset path is discoverable without relying on the button tooltip.
 
 ## Player debugging
 

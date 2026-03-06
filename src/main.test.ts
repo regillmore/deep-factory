@@ -537,6 +537,9 @@ describe('main.ts paused-world shell toggles', () => {
         getItem: (key: string) => testRuntime.storageValues.get(key) ?? null,
         setItem: (key: string, value: string) => {
           testRuntime.storageValues.set(key, value);
+        },
+        removeItem: (key: string) => {
+          testRuntime.storageValues.delete(key);
         }
       },
       matchMedia: () => ({
@@ -704,7 +707,8 @@ describe('main.ts paused-world shell toggles', () => {
         'New World (N) also clears the paused session camera state and undo history before the fresh world boots.'
       ],
       primaryActionLabel: 'Resume World',
-      secondaryActionLabel: 'New World'
+      secondaryActionLabel: 'New World',
+      tertiaryActionLabel: 'Reset Shell Toggles'
     });
 
     expect(dispatchKeydown('Enter').prevented).toBe(true);
@@ -729,6 +733,71 @@ describe('main.ts paused-world shell toggles', () => {
     expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(true);
     expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(true);
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(true);
+    expect(testRuntime.gameLoopStartCount).toBe(1);
+  });
+
+  it('clears persisted shell toggle preferences from the paused menu and reapplies default-off shell visibility on the next resume', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.shellInstance?.currentState).toEqual({ screen: 'main-menu' });
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    dispatchKeydown('h');
+    dispatchKeydown('g');
+    dispatchKeydown('v');
+    dispatchKeydown('m');
+    dispatchKeydown('?', 'Slash');
+
+    expect(readPersistedShellState()).toEqual({
+      debugOverlayVisible: true,
+      debugEditControlsVisible: true,
+      debugEditOverlaysVisible: true,
+      playerSpawnMarkerVisible: true,
+      shortcutsOverlayVisible: true
+    });
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual({
+      screen: 'main-menu',
+      statusText:
+        'World session paused. Resume World (Enter) to continue it, or choose New World (N) to discard it and boot a fresh procedural world.',
+      detailLines: [
+        'Returning here keeps the initialized world, player state, and debug edits intact until you choose Resume World (Enter) or New World (N) to abandon them.',
+        'New World (N) also clears the paused session camera state and undo history before the fresh world boots.'
+      ],
+      primaryActionLabel: 'Resume World',
+      secondaryActionLabel: 'New World',
+      tertiaryActionLabel: 'Reset Shell Toggles'
+    });
+
+    testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
+
+    expect(testRuntime.storageValues.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)).toBe(false);
+
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual({
+      screen: 'in-world',
+      debugOverlayVisible: false,
+      debugEditControlsVisible: false,
+      debugEditOverlaysVisible: false,
+      playerSpawnMarkerVisible: false,
+      shortcutsOverlayVisible: false
+    });
+    expect(readPersistedShellState()).toEqual({
+      debugOverlayVisible: false,
+      debugEditControlsVisible: false,
+      debugEditOverlaysVisible: false,
+      playerSpawnMarkerVisible: false,
+      shortcutsOverlayVisible: false
+    });
+    expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
+    expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
+    expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
+    expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(false);
+    expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
     expect(testRuntime.gameLoopStartCount).toBe(1);
   });
 });

@@ -38,6 +38,7 @@ import {
   resolveDebugEditShortcutAction
 } from './input/debugEditShortcuts';
 import {
+  clearWorldSessionShellState,
   createDefaultWorldSessionShellState,
   loadWorldSessionShellState,
   saveWorldSessionShellState,
@@ -192,11 +193,16 @@ const bootstrap = async (): Promise<void> => {
     } = state);
   };
   const applyPausedMainMenuWorldSessionShellTransition = (
-    transition: Parameters<typeof resolveWorldSessionShellStateAfterPausedMainMenuTransition>[1]
+    transition: Parameters<typeof resolveWorldSessionShellStateAfterPausedMainMenuTransition>[1],
+    persistence: 'save' | 'clear' = 'save'
   ): void => {
     applyWorldSessionShellState(
       resolveWorldSessionShellStateAfterPausedMainMenuTransition(readWorldSessionShellState(), transition)
     );
+    if (persistence === 'clear') {
+      clearWorldSessionShellState(worldSessionShellStateStorage);
+      return;
+    }
     persistWorldSessionShellState();
   };
   const returnToMainMenuFromInWorld = (): void => {
@@ -217,6 +223,10 @@ const bootstrap = async (): Promise<void> => {
     onSecondaryAction: (screen) => {
       if (screen !== 'main-menu' || loop === null || !worldSessionStarted) return;
       startFreshWorldSessionFromMainMenu();
+    },
+    onTertiaryAction: (screen) => {
+      if (screen !== 'main-menu' || loop === null || !worldSessionStarted) return;
+      resetPausedMainMenuShellTogglePreferences();
     },
     onReturnToMainMenu: (screen) => {
       if (screen !== 'in-world') return;
@@ -1175,6 +1185,10 @@ const bootstrap = async (): Promise<void> => {
     applyPausedMainMenuWorldSessionShellTransition('start-fresh-world-session');
     resetFreshWorldSessionRuntimeState();
     enterInWorldShellState();
+  };
+  const resetPausedMainMenuShellTogglePreferences = (): void => {
+    if (loop === null || !worldSessionStarted) return;
+    applyPausedMainMenuWorldSessionShellTransition('reset-shell-toggle-preferences', 'clear');
   };
 
   debugEditStatusStrip.setActionHandlers({

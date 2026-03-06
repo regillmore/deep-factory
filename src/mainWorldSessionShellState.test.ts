@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  clearWorldSessionShellState,
   createDefaultWorldSessionShellState,
   loadWorldSessionShellState,
   resolveWorldSessionShellStateAfterPausedMainMenuTransition,
@@ -12,6 +13,7 @@ import {
 interface FakeStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+  removeItem?(key: string): void;
 }
 
 const createMemoryStorage = (initialState?: string): FakeStorage & { values: Map<string, string> } => {
@@ -25,6 +27,9 @@ const createMemoryStorage = (initialState?: string): FakeStorage & { values: Map
     getItem: (key) => values.get(key) ?? null,
     setItem: (key, value) => {
       values.set(key, value);
+    },
+    removeItem: (key) => {
+      values.delete(key);
     }
   };
 };
@@ -66,6 +71,23 @@ describe('resolveWorldSessionShellStateAfterPausedMainMenuTransition', () => {
     );
 
     expect(freshWorldState).toEqual(createDefaultWorldSessionShellState());
+  });
+
+  it('reapplies the default-off shell layout when the paused menu resets shell toggle preferences', () => {
+    const pausedSessionState = {
+      debugOverlayVisible: true,
+      debugEditControlsVisible: true,
+      debugEditOverlaysVisible: false,
+      playerSpawnMarkerVisible: false,
+      shortcutsOverlayVisible: true
+    };
+
+    const resetShellState = resolveWorldSessionShellStateAfterPausedMainMenuTransition(
+      pausedSessionState,
+      'reset-shell-toggle-preferences'
+    );
+
+    expect(resetShellState).toEqual(createDefaultWorldSessionShellState());
   });
 
   it('starts with all in-world shell toggles off by default', () => {
@@ -169,5 +191,33 @@ describe('saveWorldSessionShellState', () => {
       }
     };
     expect(saveWorldSessionShellState(throwingStorage, STATE)).toBe(false);
+  });
+});
+
+describe('clearWorldSessionShellState', () => {
+  it('removes the persisted shell-toggle storage entry', () => {
+    const storage = createMemoryStorage(JSON.stringify(createDefaultWorldSessionShellState()));
+
+    expect(clearWorldSessionShellState(storage)).toBe(true);
+    expect(storage.values.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)).toBe(false);
+  });
+
+  it('returns false when storage is unavailable, missing remove support, or throws', () => {
+    expect(clearWorldSessionShellState(null)).toBe(false);
+
+    const storageWithoutRemove: FakeStorage = {
+      getItem: () => null,
+      setItem: () => {}
+    };
+    expect(clearWorldSessionShellState(storageWithoutRemove)).toBe(false);
+
+    const throwingStorage: FakeStorage = {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {
+        throw new Error('remove blocked');
+      }
+    };
+    expect(clearWorldSessionShellState(throwingStorage)).toBe(false);
   });
 });
