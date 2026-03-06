@@ -375,6 +375,10 @@ const bootstrap = async (): Promise<void> => {
         return;
     }
   };
+  const commitInWorldShellToggleStateAction = (): void => {
+    persistWorldSessionShellState();
+    syncInWorldShellState();
+  };
   const applyMainMenuShellAction = (actionType: MainMenuShellActionType): boolean => {
     if (currentScreen !== 'main-menu' || loop === null) return false;
 
@@ -411,9 +415,7 @@ const bootstrap = async (): Promise<void> => {
     }
 
     applyInWorldShellToggleStateAction(actionType);
-
-    persistWorldSessionShellState();
-    syncInWorldShellState();
+    commitInWorldShellToggleStateAction();
 
     if (actionType !== 'toggle-shortcuts-overlay') {
       syncInWorldShellOverlayVisibility(actionType);

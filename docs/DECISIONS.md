@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: In-world shell toggle commits should share one persisted-shell refresh helper
+
+- Decision: After an in-world shell toggle mutates state, the shared `persistWorldSessionShellState()` plus `syncInWorldShellState()` sequence should run through a dedicated `commitInWorldShellToggleStateAction()` helper in `src/main.ts`.
+- Reason: All five in-world shell toggles already share the same persisted preference write and in-world shell-state refresh step before any overlay-specific visibility sync runs, so keeping that two-call commit sequence inline in `applyInWorldShellAction()` repeats the same post-mutation contract in the shell runtime hot path.
+- Consequence: Future in-world shell toggle work should reuse the shared commit helper before adding any action-specific follow-up behavior, instead of inlining another persisted-shell refresh sequence in `applyInWorldShellAction()`.
+
 ### 2026-03-06: In-world shell toggle state should mutate through one shared helper
 
 - Decision: All five in-world shell toggle actions (`toggle-debug-overlay`, `toggle-debug-edit-controls`, `toggle-debug-edit-overlays`, `toggle-player-spawn-marker`, and `toggle-shortcuts-overlay`) should flip their persisted runtime booleans through a shared `applyInWorldShellToggleStateAction()` helper in `src/main.ts`.

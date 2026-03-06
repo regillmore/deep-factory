@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract a shared in-world shell toggle commit helper for `persistWorldSessionShellState()` plus `syncInWorldShellState()` so `applyInWorldShellAction()` stops repeating the persisted-shell refresh sequence after toggle-state mutations.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `commitInWorldShellToggleStateAction()` helper for the post-toggle persisted-shell refresh step, routed the in-world toggle path through that helper, expanded [src/main.test.ts](../src/main.test.ts) with a focused regression that commits both an overlay-backed toggle and the shortcuts-only toggle across shell clicks and keyboard shortcuts, removed completed task `261` from [docs/NEXT.md](docs/NEXT.md), added replacement task `262`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared in-world shell toggle-state mutator for `toggle-debug-overlay`, `toggle-debug-edit-controls`, `toggle-debug-edit-overlays`, `toggle-player-spawn-marker`, and `toggle-shortcuts-overlay` so `applyInWorldShellAction()` stops switching over individual boolean flips.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyInWorldShellToggleStateAction()` helper for all five in-world shell toggles, kept the existing persisted shell-state refresh and overlay-sync behavior intact, expanded [src/main.test.ts](../src/main.test.ts) with a focused `?` shell-click-plus-keyboard regression for the shared toggle-state path, removed completed task `260` from [docs/NEXT.md](docs/NEXT.md), added replacement task `261`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

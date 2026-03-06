@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-261. Extract a shared in-world shell toggle commit helper for `persistWorldSessionShellState()` plus `syncInWorldShellState()` so `applyInWorldShellAction()` stops repeating the persisted-shell refresh sequence after toggle-state mutations in `src/main.ts`, with focused runtime regressions.
+262. Extract a shared in-world shell toggle finalize helper that combines the post-toggle commit and optional overlay visibility sync so `applyInWorldShellAction()` stops special-casing `toggle-shortcuts-overlay` in `src/main.ts`, with focused runtime regressions.
