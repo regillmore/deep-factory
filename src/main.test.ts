@@ -1129,7 +1129,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
   });
 
-  it('applies in-world shell toggles through one shared mutator across shell clicks and keyboard shortcuts', async () => {
+  it('applies in-world shell toggles through one shared keyboard shell-action handler across shell clicks and keyboard shortcuts', async () => {
     await import('./main');
     await flushBootstrap();
 
@@ -1190,7 +1190,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
   });
 
-  it('routes recenter-camera and return-to-main-menu through one shared in-world shell non-toggle helper across shell clicks and keyboard shortcuts', async () => {
+  it('routes recenter-camera and return-to-main-menu through one shared keyboard shell-action handler across shell clicks and keyboard shortcuts', async () => {
     await import('./main');
     await flushBootstrap();
 

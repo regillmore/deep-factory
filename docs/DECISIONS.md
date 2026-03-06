@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Keyboard in-world shell actions should share one helper
+
+- Decision: Keyboard-triggered in-world shell actions (`return-to-main-menu`, `recenter-camera`, and the in-world shell toggles) should route through a shared `applyKeyboardInWorldShellAction()` helper in `src/main.ts` instead of repeating `preventDefault()` plus `applyInWorldShellAction()` across the `keydown` branch.
+- Reason: All seven keyboard-driven in-world shell actions already share the same shortcut-side event handling contract, so leaving those steps repeated inline makes the runtime shortcut path easier to drift from focused shell regressions.
+- Consequence: Future keyboard-triggered in-world shell actions should extend the shared keyboard helper and its focused runtime regressions instead of adding another repeated `preventDefault()` plus `applyInWorldShellAction()` branch in `src/main.ts`.
+
 ### 2026-03-06: In-world recenter availability should use a shared helper
 
 - Decision: `recenter-camera` availability should route through a shared `canApplyInWorldRecenterCameraAction()` helper in `src/main.ts`, and `centerCameraOnStandalonePlayer()` should accept a concrete `PlayerState` instead of inspecting nullable standalone-player state itself.

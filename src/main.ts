@@ -444,6 +444,13 @@ const bootstrap = async (): Promise<void> => {
 
     return true;
   };
+  const applyKeyboardInWorldShellAction = (
+    event: Pick<KeyboardEvent, 'preventDefault'>,
+    actionType: InWorldShellActionType
+  ): boolean => {
+    event.preventDefault();
+    return applyInWorldShellAction(actionType);
+  };
   const enterInWorldShellState = (): void => {
     syncInWorldShellState();
     syncWorldScreenShellVisibility();
@@ -1332,27 +1339,16 @@ const bootstrap = async (): Promise<void> => {
     } else if (action.type === 'redo') {
       event.preventDefault();
       handled = redoDebugTileStroke();
-    } else if (action.type === 'return-to-main-menu') {
-      event.preventDefault();
-      handled = applyInWorldShellAction(action.type);
-    } else if (action.type === 'recenter-camera') {
-      event.preventDefault();
-      handled = applyInWorldShellAction(action.type);
-    } else if (action.type === 'toggle-debug-overlay') {
-      event.preventDefault();
-      handled = applyInWorldShellAction(action.type);
-    } else if (action.type === 'toggle-debug-edit-controls') {
-      event.preventDefault();
-      handled = applyInWorldShellAction(action.type);
-    } else if (action.type === 'toggle-debug-edit-overlays') {
-      event.preventDefault();
-      handled = applyInWorldShellAction(action.type);
-    } else if (action.type === 'toggle-player-spawn-marker') {
-      event.preventDefault();
-      handled = applyInWorldShellAction(action.type);
-    } else if (action.type === 'toggle-shortcuts-overlay') {
-      event.preventDefault();
-      handled = applyInWorldShellAction(action.type);
+    } else if (
+      action.type === 'return-to-main-menu' ||
+      action.type === 'recenter-camera' ||
+      action.type === 'toggle-debug-overlay' ||
+      action.type === 'toggle-debug-edit-controls' ||
+      action.type === 'toggle-debug-edit-overlays' ||
+      action.type === 'toggle-player-spawn-marker' ||
+      action.type === 'toggle-shortcuts-overlay'
+    ) {
+      handled = applyKeyboardInWorldShellAction(event, action.type);
     } else if (action.type === 'cancel-armed-tools') {
       event.preventDefault();
       handled = input.cancelArmedDebugTools();

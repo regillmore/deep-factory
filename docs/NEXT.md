@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-266. Extract a shared keyboard in-world shell action handler so the `keydown` branch in `src/main.ts` stops repeating `event.preventDefault()` plus `applyInWorldShellAction()` across `return-to-main-menu`, `recenter-camera`, and the in-world shell toggles, with focused runtime regressions.
+267. Extract a shared keyboard main-menu shell action handler so the `keydown` branch in `src/main.ts` stops repeating `event.preventDefault()` plus `applyMainMenuShellAction()` across `resume-paused-world-session` and `start-fresh-world-session`, with focused runtime regressions.
