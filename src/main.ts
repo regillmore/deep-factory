@@ -161,6 +161,13 @@ const INITIAL_DEBUG_BRUSH_TILE_ID =
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('Missing #app root element');
 
+type InWorldShellToggleActionType =
+  | 'toggle-debug-overlay'
+  | 'toggle-debug-edit-controls'
+  | 'toggle-debug-edit-overlays'
+  | 'toggle-player-spawn-marker'
+  | 'toggle-shortcuts-overlay';
+
 const bootstrap = async (): Promise<void> => {
   const touchControlsAvailable = supportsTouchPlayerControls();
   const worldSessionShellStateStorage = (() => {
@@ -225,6 +232,13 @@ const bootstrap = async (): Promise<void> => {
     syncDebugEditOverlayVisibility();
     syncPlayerSpawnMarkerVisibility();
   };
+  const handleInWorldShellToggleAction = (
+    screen: AppShellScreen,
+    actionType: InWorldShellToggleActionType
+  ): void => {
+    if (screen !== 'in-world') return;
+    applyInWorldShellToggleAction(actionType);
+  };
   const shell = new AppShell(app, {
     onPrimaryAction: (screen) => {
       if (screen !== 'main-menu' || loop === null) return;
@@ -247,38 +261,19 @@ const bootstrap = async (): Promise<void> => {
       centerCameraOnStandalonePlayer();
     },
     onToggleDebugOverlay: (screen) => {
-      if (screen !== 'in-world') return;
-      debugOverlayVisible = !debugOverlayVisible;
-      persistWorldSessionShellState();
-      syncInWorldShellState();
-      syncDebugOverlayVisibility();
+      handleInWorldShellToggleAction(screen, 'toggle-debug-overlay');
     },
     onToggleDebugEditControls: (screen) => {
-      if (screen !== 'in-world') return;
-      debugEditControlsVisible = !debugEditControlsVisible;
-      persistWorldSessionShellState();
-      syncInWorldShellState();
-      syncDebugEditControlsVisibility();
+      handleInWorldShellToggleAction(screen, 'toggle-debug-edit-controls');
     },
     onToggleDebugEditOverlays: (screen) => {
-      if (screen !== 'in-world') return;
-      debugEditOverlaysVisible = !debugEditOverlaysVisible;
-      persistWorldSessionShellState();
-      syncInWorldShellState();
-      syncDebugEditOverlayVisibility();
+      handleInWorldShellToggleAction(screen, 'toggle-debug-edit-overlays');
     },
     onTogglePlayerSpawnMarker: (screen) => {
-      if (screen !== 'in-world') return;
-      playerSpawnMarkerVisible = !playerSpawnMarkerVisible;
-      persistWorldSessionShellState();
-      syncInWorldShellState();
-      syncPlayerSpawnMarkerVisibility();
+      handleInWorldShellToggleAction(screen, 'toggle-player-spawn-marker');
     },
     onToggleShortcutsOverlay: (screen) => {
-      if (screen !== 'in-world') return;
-      shortcutsOverlayVisible = !shortcutsOverlayVisible;
-      persistWorldSessionShellState();
-      syncInWorldShellState();
+      handleInWorldShellToggleAction(screen, 'toggle-shortcuts-overlay');
     }
   });
   shell.setState(createDefaultBootShellState());
@@ -332,14 +327,7 @@ const bootstrap = async (): Promise<void> => {
   const syncPlayerSpawnMarkerVisibility = (): void => {
     playerSpawnMarker.setVisible(currentScreen === 'in-world' && playerSpawnMarkerVisible);
   };
-  const applyKeyboardInWorldShellToggleAction = (
-    actionType:
-      | 'toggle-debug-overlay'
-      | 'toggle-debug-edit-controls'
-      | 'toggle-debug-edit-overlays'
-      | 'toggle-player-spawn-marker'
-      | 'toggle-shortcuts-overlay'
-  ): boolean => {
+  const applyInWorldShellToggleAction = (actionType: InWorldShellToggleActionType): boolean => {
     switch (actionType) {
       case 'toggle-debug-overlay':
         debugOverlayVisible = !debugOverlayVisible;
@@ -1292,19 +1280,19 @@ const bootstrap = async (): Promise<void> => {
       }
     } else if (action.type === 'toggle-debug-overlay') {
       event.preventDefault();
-      handled = applyKeyboardInWorldShellToggleAction(action.type);
+      handled = applyInWorldShellToggleAction(action.type);
     } else if (action.type === 'toggle-debug-edit-controls') {
       event.preventDefault();
-      handled = applyKeyboardInWorldShellToggleAction(action.type);
+      handled = applyInWorldShellToggleAction(action.type);
     } else if (action.type === 'toggle-debug-edit-overlays') {
       event.preventDefault();
-      handled = applyKeyboardInWorldShellToggleAction(action.type);
+      handled = applyInWorldShellToggleAction(action.type);
     } else if (action.type === 'toggle-player-spawn-marker') {
       event.preventDefault();
-      handled = applyKeyboardInWorldShellToggleAction(action.type);
+      handled = applyInWorldShellToggleAction(action.type);
     } else if (action.type === 'toggle-shortcuts-overlay') {
       event.preventDefault();
-      handled = applyKeyboardInWorldShellToggleAction(action.type);
+      handled = applyInWorldShellToggleAction(action.type);
     } else if (action.type === 'cancel-armed-tools') {
       event.preventDefault();
       handled = input.cancelArmedDebugTools();

@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-255. Extract a shared in-world shell-toggle mutator and route both app-shell click handlers and keyboard toggle branches through it so `src/main.ts` stops duplicating toggle persistence and overlay-sync logic across input surfaces, with focused runtime regressions.
+256. Extract a shared in-world shell action dispatcher for `Main Menu` and `Recenter Camera` so app-shell click handlers and keyboard branches stop duplicating those non-toggle runtime actions across input surfaces, with focused runtime regressions.

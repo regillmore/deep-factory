@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract a shared in-world shell-toggle mutator and route both app-shell click handlers and keyboard toggle branches through it so `src/main.ts` stops duplicating toggle persistence and overlay-sync logic across input surfaces.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyInWorldShellToggleAction()` mutator plus a small app-shell toggle dispatcher, routed both shell click handlers and keyboard toggle branches through that shared path, expanded [src/main.test.ts](../src/main.test.ts) with a focused mixed-surface regression that toggles all in-world shell actions on via shell callbacks and back off via keyboard shortcuts, removed completed task `255` from [docs/NEXT.md](docs/NEXT.md), added replacement task `256`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared keyboard-side in-world shell-toggle mutator and route the `H/G/V/M/?` shortcut branches through it so `src/main.ts` stops repeating persisted shell-state sync sequences.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyKeyboardInWorldShellToggleAction()` helper for keyboard-driven in-world shell toggles, routed the `H`, `G`, `V`, `M`, and `?` shortcut branches through that helper, expanded [src/main.test.ts](../src/main.test.ts) with a focused on/off regression for the shared keyboard toggle path, removed completed task `254` from [docs/NEXT.md](docs/NEXT.md), added replacement task `255`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

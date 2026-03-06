@@ -829,21 +829,17 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
   });
 
-  it('applies keyboard shell-toggle shortcuts through one shared persisted mutator for on and off transitions', async () => {
+  it('applies in-world shell toggles through one shared mutator across shell clicks and keyboard shortcuts', async () => {
     await import('./main');
     await flushBootstrap();
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
-    for (const [key, code] of [
-      ['h', ''],
-      ['g', ''],
-      ['v', ''],
-      ['m', ''],
-      ['?', 'Slash']
-    ] as const) {
-      expect(dispatchKeydown(key, code).prevented).toBe(true);
-    }
+    testRuntime.shellInstance?.options.onToggleDebugOverlay('in-world');
+    testRuntime.shellInstance?.options.onToggleDebugEditControls('in-world');
+    testRuntime.shellInstance?.options.onToggleDebugEditOverlays('in-world');
+    testRuntime.shellInstance?.options.onTogglePlayerSpawnMarker('in-world');
+    testRuntime.shellInstance?.options.onToggleShortcutsOverlay('in-world');
 
     expect(testRuntime.shellInstance?.currentState).toEqual(
       createInWorldShellState({
