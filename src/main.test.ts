@@ -508,6 +508,33 @@ const dispatchKeydown = (key: string, code = '') => {
   };
 };
 
+const createExpectedPausedMainMenuState = () => ({
+  screen: 'main-menu',
+  statusText: 'World session paused.',
+  detailLines: [],
+  menuSections: [
+    {
+      title: 'Resume World (Enter)',
+      lines: ['Continue with the current world, player state, and debug edits intact.'],
+      tone: 'accent'
+    },
+    {
+      title: 'Reset Shell Toggles',
+      lines: [
+        'Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (Enter).'
+      ]
+    },
+    {
+      title: 'New World (N)',
+      lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
+      tone: 'warning'
+    }
+  ],
+  primaryActionLabel: 'Resume World',
+  secondaryActionLabel: 'New World',
+  tertiaryActionLabel: 'Reset Shell Toggles'
+});
+
 describe('main.ts paused-world shell toggles', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -698,19 +725,7 @@ describe('main.ts paused-world shell toggles', () => {
     });
 
     expect(dispatchKeydown('q').prevented).toBe(true);
-    expect(testRuntime.shellInstance?.currentState).toEqual({
-      screen: 'main-menu',
-      statusText:
-        'World session paused. Resume World (Enter) to continue it, or choose New World (N) to discard it and boot a fresh procedural world.',
-      detailLines: [
-        'Returning here keeps the initialized world, player state, and debug edits intact until you choose Resume World (Enter) or New World (N) to abandon them.',
-        'Reset Shell Toggles keeps the paused session intact and restores the default-off shell layout before the next Resume World (Enter).',
-        'New World (N) also clears the paused session camera state and undo history before the fresh world boots.'
-      ],
-      primaryActionLabel: 'Resume World',
-      secondaryActionLabel: 'New World',
-      tertiaryActionLabel: 'Reset Shell Toggles'
-    });
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
 
     expect(dispatchKeydown('Enter').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual({
@@ -760,19 +775,7 @@ describe('main.ts paused-world shell toggles', () => {
     });
 
     expect(dispatchKeydown('q').prevented).toBe(true);
-    expect(testRuntime.shellInstance?.currentState).toEqual({
-      screen: 'main-menu',
-      statusText:
-        'World session paused. Resume World (Enter) to continue it, or choose New World (N) to discard it and boot a fresh procedural world.',
-      detailLines: [
-        'Returning here keeps the initialized world, player state, and debug edits intact until you choose Resume World (Enter) or New World (N) to abandon them.',
-        'Reset Shell Toggles keeps the paused session intact and restores the default-off shell layout before the next Resume World (Enter).',
-        'New World (N) also clears the paused session camera state and undo history before the fresh world boots.'
-      ],
-      primaryActionLabel: 'Resume World',
-      secondaryActionLabel: 'New World',
-      tertiaryActionLabel: 'Reset Shell Toggles'
-    });
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
 
     testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
 

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Add structured app-shell menu sections so paused menus can group session, shell-reset, and fresh-world guidance without overloading the status line and detail bullets.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused sessions now render a concise `World session paused.` headline plus structured `Resume World`, `Reset Shell Toggles`, and `New World` guidance cards through a reusable menu-section model, styled those cards in [src/style.css](../src/style.css), expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with view-model and paused-state regressions for the new section rendering path, updated [src/main.test.ts](../src/main.test.ts) to assert the paused-menu state now carries structured section data, removed completed task `188` from [docs/NEXT.md](docs/NEXT.md), rewrote task `237` as a structured-menu follow-up, added replacement task `238`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the paused-menu `Reset Shell Toggles` action in the paused-session detail copy so the default-off shell reset path is discoverable without relying on the button tooltip.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused-session detail text now explains that `Reset Shell Toggles` preserves the current session while restoring the default-off shell layout before the next `Resume World (Enter)`, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with matching paused-menu copy regressions, removed completed task `236` from [docs/NEXT.md](docs/NEXT.md), added replacement task `237`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

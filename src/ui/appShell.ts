@@ -13,10 +13,19 @@ import {
 
 export type AppShellScreen = 'boot' | 'main-menu' | 'in-world';
 
+export type AppShellMenuSectionTone = 'default' | 'accent' | 'warning';
+
+export interface AppShellMenuSection {
+  title: string;
+  lines: readonly string[];
+  tone?: AppShellMenuSectionTone;
+}
+
 export interface AppShellState {
   screen: AppShellScreen;
   statusText?: string;
   detailLines?: readonly string[];
+  menuSections?: readonly AppShellMenuSection[];
   primaryActionLabel?: string | null;
   secondaryActionLabel?: string | null;
   tertiaryActionLabel?: string | null;
@@ -27,18 +36,32 @@ export interface AppShellState {
   shortcutsOverlayVisible?: boolean;
 }
 
-export const DEFAULT_PAUSED_MAIN_MENU_STATUS =
-  `World session paused. Resume World (${getDesktopResumeWorldHotkeyLabel()}) to continue it, or choose New World (${getDesktopFreshWorldHotkeyLabel()}) to discard it and boot a fresh procedural world.`;
-export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [
-  `Returning here keeps the initialized world, player state, and debug edits intact until you choose Resume World (${getDesktopResumeWorldHotkeyLabel()}) or New World (${getDesktopFreshWorldHotkeyLabel()}) to abandon them.`,
-  `Reset Shell Toggles keeps the paused session intact and restores the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`,
-  `New World (${getDesktopFreshWorldHotkeyLabel()}) also clears the paused session camera state and undo history before the fresh world boots.`
+export const DEFAULT_PAUSED_MAIN_MENU_STATUS = 'World session paused.';
+export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [] as const;
+export const DEFAULT_PAUSED_MAIN_MENU_MENU_SECTIONS: readonly AppShellMenuSection[] = [
+  {
+    title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
+    lines: ['Continue with the current world, player state, and debug edits intact.'],
+    tone: 'accent'
+  },
+  {
+    title: 'Reset Shell Toggles',
+    lines: [
+      `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
+    ]
+  },
+  {
+    title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
+    lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
+    tone: 'warning'
+  }
 ] as const;
 
 export const createPausedMainMenuShellState = (): AppShellState => ({
   screen: 'main-menu',
   statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
   detailLines: DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES,
+  menuSections: DEFAULT_PAUSED_MAIN_MENU_MENU_SECTIONS,
   primaryActionLabel: 'Resume World',
   secondaryActionLabel: 'New World',
   tertiaryActionLabel: 'Reset Shell Toggles'
@@ -52,6 +75,7 @@ export interface AppShellViewModel {
   title: string;
   statusText: string;
   detailLines: readonly string[];
+  menuSections: readonly AppShellMenuSection[];
   primaryActionLabel: string | null;
   secondaryActionLabel: string | null;
   tertiaryActionLabel: string | null;
@@ -207,6 +231,30 @@ const createShortcutsSectionElement = (section: InWorldShortcutsSection): HTMLEl
   return sectionElement;
 };
 
+const createMenuSectionElement = (section: AppShellMenuSection): HTMLElement => {
+  const sectionElement = document.createElement('section');
+  sectionElement.className = 'app-shell__menu-section';
+  sectionElement.setAttribute('data-tone', section.tone ?? 'default');
+
+  const heading = document.createElement('h3');
+  heading.className = 'app-shell__menu-section-title';
+  heading.textContent = section.title;
+  sectionElement.append(heading);
+
+  const lines = document.createElement('div');
+  lines.className = 'app-shell__menu-section-lines';
+  lines.replaceChildren(
+    ...section.lines.map((line) => {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = line;
+      return paragraph;
+    })
+  );
+  sectionElement.append(lines);
+
+  return sectionElement;
+};
+
 export const resolveAppShellViewModel = (state: AppShellState): AppShellViewModel => {
   switch (state.screen) {
     case 'boot':
@@ -218,6 +266,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         title: 'Deep Factory',
         statusText: state.statusText ?? DEFAULT_BOOT_STATUS,
         detailLines: state.detailLines ?? DEFAULT_BOOT_DETAIL_LINES,
+        menuSections: state.menuSections ?? [],
         primaryActionLabel: state.primaryActionLabel ?? null,
         secondaryActionLabel: state.secondaryActionLabel ?? null,
         tertiaryActionLabel: state.tertiaryActionLabel ?? null,
@@ -244,6 +293,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         title: 'Deep Factory',
         statusText: state.statusText ?? DEFAULT_MAIN_MENU_STATUS,
         detailLines: state.detailLines ?? DEFAULT_MAIN_MENU_DETAIL_LINES,
+        menuSections: state.menuSections ?? [],
         primaryActionLabel: resolveMainMenuPrimaryActionLabel(
           state.primaryActionLabel ?? 'Enter World'
         ),
@@ -278,6 +328,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         title: 'Deep Factory',
         statusText: state.statusText ?? '',
         detailLines: state.detailLines ?? [],
+        menuSections: state.menuSections ?? [],
         primaryActionLabel: null,
         secondaryActionLabel: null,
         tertiaryActionLabel: null,
@@ -323,6 +374,7 @@ export class AppShell {
   private stageLabel: HTMLSpanElement;
   private title: HTMLHeadingElement;
   private status: HTMLParagraphElement;
+  private menuSections: HTMLDivElement;
   private detailList: HTMLUListElement;
   private primaryButton: HTMLButtonElement;
   private secondaryButton: HTMLButtonElement;
@@ -470,6 +522,10 @@ export class AppShell {
     this.status.className = 'app-shell__status';
     panel.append(this.status);
 
+    this.menuSections = document.createElement('div');
+    this.menuSections.className = 'app-shell__menu-sections';
+    panel.append(this.menuSections);
+
     this.detailList = document.createElement('ul');
     this.detailList.className = 'app-shell__detail-list';
     panel.append(this.detailList);
@@ -519,6 +575,14 @@ export class AppShell {
     this.stageLabel.textContent = viewModel.stageLabel;
     this.title.textContent = viewModel.title;
     this.status.textContent = viewModel.statusText;
+    this.menuSections.replaceChildren(
+      ...viewModel.menuSections.map((section) => createMenuSectionElement(section))
+    );
+    this.menuSections.hidden = viewModel.menuSections.length === 0;
+    this.menuSections.style.display = resolveAppShellRegionDisplay(
+      viewModel.menuSections.length > 0,
+      'grid'
+    );
     this.detailList.replaceChildren(
       ...viewModel.detailLines.map((line) => {
         const item = document.createElement('li');

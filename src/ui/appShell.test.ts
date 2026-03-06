@@ -55,6 +55,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.shortcutsToggleLabel).toBeNull();
     expect(viewModel.shortcutsTogglePressed).toBe(false);
     expect(viewModel.shortcutsOverlayVisible).toBe(false);
+    expect(viewModel.menuSections).toEqual([]);
     expect(viewModel.statusText).toContain('Preparing renderer');
     expect(viewModel.detailLines).toEqual([
       'Boot runs before the fixed-step simulation starts so later shell work has a stable entry point.'
@@ -79,6 +80,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.shortcutsToggleLabel).toBeNull();
     expect(viewModel.shortcutsTogglePressed).toBe(false);
     expect(viewModel.shortcutsOverlayVisible).toBe(false);
+    expect(viewModel.menuSections).toEqual([]);
     expect(viewModel.detailLines).toEqual([
       'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
       'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
@@ -96,13 +98,25 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.secondaryActionLabel).toBe(`New World (${getDesktopFreshWorldHotkeyLabel()})`);
     expect(viewModel.tertiaryActionLabel).toBe('Reset Shell Toggles');
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
-    expect(viewModel.statusText).toBe(
-      `World session paused. Resume World (${getDesktopResumeWorldHotkeyLabel()}) to continue it, or choose New World (${getDesktopFreshWorldHotkeyLabel()}) to discard it and boot a fresh procedural world.`
-    );
-    expect(viewModel.detailLines).toEqual([
-      `Returning here keeps the initialized world, player state, and debug edits intact until you choose Resume World (${getDesktopResumeWorldHotkeyLabel()}) or New World (${getDesktopFreshWorldHotkeyLabel()}) to abandon them.`,
-      `Reset Shell Toggles keeps the paused session intact and restores the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`,
-      `New World (${getDesktopFreshWorldHotkeyLabel()}) also clears the paused session camera state and undo history before the fresh world boots.`
+    expect(viewModel.statusText).toBe('World session paused.');
+    expect(viewModel.detailLines).toEqual([]);
+    expect(viewModel.menuSections).toEqual([
+      {
+        title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
+        lines: ['Continue with the current world, player state, and debug edits intact.'],
+        tone: 'accent'
+      },
+      {
+        title: 'Reset Shell Toggles',
+        lines: [
+          `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
+        ]
+      },
+      {
+        title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
+        lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
+        tone: 'warning'
+      }
     ]);
   });
 
@@ -143,6 +157,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.shortcutsTogglePressed).toBe(false);
     expect(viewModel.shortcutsOverlayVisible).toBe(false);
     expect(viewModel.detailLines).toEqual([]);
+    expect(viewModel.menuSections).toEqual([]);
   });
 
   it('reflects the in-world shortcuts overlay toggle state', () => {
@@ -295,12 +310,44 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.recenterCameraActionLabel).toBeNull();
     expect(viewModel.statusText).toBe('WebGL2 is not available in this browser.');
     expect(viewModel.detailLines).toEqual(['Use a current Chrome, Firefox, or Safari build to continue.']);
+    expect(viewModel.menuSections).toEqual([]);
     expect(viewModel.debugEditControlsToggleLabel).toBeNull();
     expect(viewModel.debugEditOverlaysToggleLabel).toBeNull();
     expect(viewModel.playerSpawnMarkerToggleLabel).toBeNull();
     expect(viewModel.shortcutsToggleLabel).toBeNull();
     expect(viewModel.shortcutsTogglePressed).toBe(false);
     expect(viewModel.shortcutsOverlayVisible).toBe(false);
+  });
+});
+
+describe('createPausedMainMenuShellState', () => {
+  it('returns a concise paused headline plus structured session guidance cards', () => {
+    expect(createPausedMainMenuShellState()).toEqual({
+      screen: 'main-menu',
+      statusText: 'World session paused.',
+      detailLines: [],
+      menuSections: [
+        {
+          title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
+          lines: ['Continue with the current world, player state, and debug edits intact.'],
+          tone: 'accent'
+        },
+        {
+          title: 'Reset Shell Toggles',
+          lines: [
+            `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
+          ]
+        },
+        {
+          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
+          lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
+          tone: 'warning'
+        }
+      ],
+      primaryActionLabel: 'Resume World',
+      secondaryActionLabel: 'New World',
+      tertiaryActionLabel: 'Reset Shell Toggles'
+    });
   });
 });
 

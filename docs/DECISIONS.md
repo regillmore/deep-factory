@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Multi-action shell menus should use structured section cards
+
+- Decision: `AppShellState` can now carry structured `menuSections`, and paused-session menus render action guidance through titled section cards instead of stuffing all consequences into one long status line plus flat detail bullets.
+- Reason: The paused-menu copy had become redundant, and richer shell menus need reusable UI slots for grouped action context rather than more line-level copy iteration.
+- Consequence: Future multi-action shell menus should prefer concise headlines plus section cards for per-action guidance; status and detail text should stay brief unless a menu truly only needs one undifferentiated note block.
+
 ### 2026-03-06: Paused-menu shell reset clears saved toggle visibility back to default-off
 
 - Decision: The paused main menu now includes a `Reset Shell Toggles` action that removes persisted in-world shell-toggle visibility preferences and reapplies the all-off shell layout to the current paused session before it resumes.

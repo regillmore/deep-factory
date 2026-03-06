@@ -39,10 +39,10 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## App shell
 
 82. Surface the in-world edit-panel shortcut in the touch debug controls keyboard reference once task 69 adds the keyboard action.
-188. Surface the paused-menu `Resume World (Enter)` shortcut in the paused-session camera and undo reset detail line alongside the existing `New World (N)` reset guidance.
 199. Add shell-level keybinding remap settings for in-world actions (`Main Menu`, `Recenter Camera`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`) with conflict validation and persisted preferences.
 200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
-237. Surface the paused-menu `Reset Shell Toggles` action in the paused-session status line so the default-off shell reset path is visible before the detail copy.
+237. Move first-launch main-menu runtime and mixed-device control guidance onto the structured app-shell menu-section path so overlay menus share one richer layout.
+238. Add shortcut and consequence metadata rows inside structured paused-menu action cards so action context is visible without relying on button tooltips.
 
 ## Player debugging
 
