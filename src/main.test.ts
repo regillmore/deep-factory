@@ -137,6 +137,11 @@ const testRuntime = vi.hoisted(() => {
     rendererConstructorError: null as unknown,
     rendererInitializeError: null as unknown,
     gameLoopFixedUpdate: null as null | ((fixedDt: number) => void),
+    debugTileEditHistoryConstructCount: 0,
+    debugTileEditHistoryConstructorStatuses: [] as Array<{
+      undoStrokeCount: number;
+      redoStrokeCount: number;
+    }>,
     debugTileEditHistoryStatus: {
       undoStrokeCount: 0,
       redoStrokeCount: 0
@@ -469,6 +474,17 @@ vi.mock('./input/controller', () => ({
 
 vi.mock('./input/debugTileEditHistory', () => ({
   DebugTileEditHistory: class {
+    constructor() {
+      testRuntime.debugTileEditHistoryConstructCount += 1;
+      const nextStatus = testRuntime.debugTileEditHistoryConstructorStatuses.shift();
+      testRuntime.debugTileEditHistoryStatus = nextStatus
+        ? { ...nextStatus }
+        : {
+            undoStrokeCount: 0,
+            redoStrokeCount: 0
+          };
+    }
+
     getStatus() {
       return { ...testRuntime.debugTileEditHistoryStatus };
     }
@@ -1006,6 +1022,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererConstructorError = null;
     testRuntime.rendererInitializeError = null;
     testRuntime.gameLoopFixedUpdate = null;
+    testRuntime.debugTileEditHistoryConstructCount = 0;
+    testRuntime.debugTileEditHistoryConstructorStatuses = [];
     testRuntime.debugTileEditHistoryStatus = {
       undoStrokeCount: 0,
       redoStrokeCount: 0
@@ -1457,10 +1475,12 @@ describe('main.ts shell state orchestration', () => {
       ellipseKind: 'place',
       ellipseOutlineKind: 'break'
     };
-    testRuntime.debugTileEditHistoryStatus = {
-      undoStrokeCount: 2,
-      redoStrokeCount: 1
-    };
+    testRuntime.debugTileEditHistoryConstructorStatuses = [
+      {
+        undoStrokeCount: 2,
+        redoStrokeCount: 1
+      }
+    ];
 
     await import('./main');
     await flushBootstrap();
@@ -1539,6 +1559,68 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugEditControlsInstance.getMode()).toBe('pan');
     expect(testRuntime.debugEditControlsInstance.getBrushTileId()).toBe(3);
     expect(testRuntime.debugEditControlsInstance.isCollapsed()).toBe(false);
+  });
+
+  it('routes paused-menu New World debug-edit reset through one shared fresh-world helper for history replacement and armed-tool sync', async () => {
+    testRuntime.initialArmedToolKinds = {
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: 'break',
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    };
+    testRuntime.debugTileEditHistoryConstructorStatuses = [
+      {
+        undoStrokeCount: 3,
+        redoStrokeCount: 1
+      }
+    ];
+
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.debugEditControlsLatestHistoryState).toEqual({
+      undoStrokeCount: 3,
+      redoStrokeCount: 1
+    });
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: 'break',
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+
+    const historyConstructCountBeforeReset = testRuntime.debugTileEditHistoryConstructCount;
+    const historySyncCountBeforeReset = testRuntime.debugEditControlsSetHistoryStateCallCount;
+    const armedToolSetterCountBeforeReset = testRuntime.debugEditControlsArmedToolSetterCallCount;
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+    testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
+
+    expect(testRuntime.debugTileEditHistoryConstructCount).toBe(historyConstructCountBeforeReset + 1);
+    expect(testRuntime.debugEditControlsSetHistoryStateCallCount).toBe(historySyncCountBeforeReset + 1);
+    expect(testRuntime.debugEditControlsLatestHistoryState).toEqual({
+      undoStrokeCount: 0,
+      redoStrokeCount: 0
+    });
+    expect(testRuntime.cancelArmedDebugToolsCallCount).toBe(1);
+    expect(testRuntime.debugEditControlsArmedToolSetterCallCount).toBe(
+      armedToolSetterCountBeforeReset + 6
+    );
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
   });
 
   it('routes touch-control armed-tool sync through one shared apply helper', async () => {

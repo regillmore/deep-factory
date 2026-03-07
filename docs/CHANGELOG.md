@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared fresh-world debug-edit reset helper so `resetFreshWorldSessionRuntimeState()` in `src/main.ts` reuses one history replacement, armed-tool cancel, and touch-control sync path.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `resetFreshWorldSessionDebugEditState()` helper for the fresh-world debug-edit reset slice, expanded [src/main.test.ts](../src/main.test.ts) with a focused paused-menu `New World` regression that verifies history replacement and armed-tool cancellation stay synchronized into the touch debug controls, removed completed task `288` from [docs/NEXT.md](docs/NEXT.md), added replacement task `289`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared touch debug control bootstrap helper so `src/main.ts` reuses one `TouchDebugEditControls` creation plus post-construction visibility, history, armed-tool, and persistence sync sequence.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `bootstrapTouchDebugEditControls()` helper that now owns control construction and the immediate visibility, history, armed-tool, and persistence sync sequence, expanded [src/main.test.ts](../src/main.test.ts) so the focused runtime regression records post-construction visibility, history, and armed-tool sync activity alongside persisted control-state writes, removed completed task `287` from [docs/NEXT.md](docs/NEXT.md), added replacement task `288`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

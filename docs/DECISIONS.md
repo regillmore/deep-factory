@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Fresh-world debug-edit reset should share one helper
+
+- Decision: The fresh-world reset path in `src/main.ts` should route its debug-edit state work through a shared `resetFreshWorldSessionDebugEditState()` helper that replaces history, cancels armed tools, and synchronizes the touch debug controls.
+- Reason: Those history and armed-tool steps form one reset contract for the debug-edit subsystem, so leaving them inline inside the broader fresh-world runtime reset makes that smaller state-reset path easier to drift from focused regressions.
+- Consequence: Future fresh-world debug-edit reset changes should extend the shared helper and its paused-menu `New World` regression instead of reintroducing separate history replacement, armed-tool cancellation, and touch-control sync steps in `resetFreshWorldSessionRuntimeState()`.
+
 ### 2026-03-07: Touch debug control bootstrap should share one helper
 
 - Decision: `TouchDebugEditControls` creation in `src/main.ts` should route through a shared `bootstrapTouchDebugEditControls()` helper that both constructs the controls and immediately runs visibility, history, armed-tool, and persistence sync on the created instance.

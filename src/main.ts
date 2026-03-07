@@ -1367,12 +1367,15 @@ const bootstrap = async (): Promise<void> => {
   const clearPinnedDebugTileInspect = (): void => {
     pinnedDebugTileInspect = null;
   };
-  const resetFreshWorldSessionRuntimeState = (): void => {
-    renderer.resetWorld();
+  const resetFreshWorldSessionDebugEditState = (): void => {
     debugTileEditHistory = new DebugTileEditHistory();
     syncDebugEditHistoryControls();
     input.cancelArmedDebugTools();
     syncArmedDebugToolControls();
+  };
+  const resetFreshWorldSessionRuntimeState = (): void => {
+    renderer.resetWorld();
+    resetFreshWorldSessionDebugEditState();
     clearPinnedDebugTileInspect();
     camera.x = 0;
     camera.y = 0;
