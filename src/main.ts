@@ -730,13 +730,14 @@ const bootstrap = async (): Promise<void> => {
     };
   };
 
+  const readDebugEditControlPreferenceSnapshot = (): DebugEditControlState => ({
+    touchMode: input.getTouchDebugEditMode(),
+    brushTileId: activeDebugBrushTileId,
+    panelCollapsed: debugEditPanelCollapsed
+  });
   const persistDebugEditControlsState = (): void => {
     if (suppressDebugEditControlPersistence) return;
-    saveDebugEditControlState(debugEditControlStorage, {
-      touchMode: input.getTouchDebugEditMode(),
-      brushTileId: activeDebugBrushTileId,
-      panelCollapsed: debugEditPanelCollapsed
-    });
+    saveDebugEditControlState(debugEditControlStorage, readDebugEditControlPreferenceSnapshot());
   };
   const commitDebugEditBrushTileId = (tileId: number): boolean => {
     const previousBrushTileId = activeDebugBrushTileId;
@@ -1243,9 +1244,10 @@ const bootstrap = async (): Promise<void> => {
     return true;
   };
 
+  const initialDebugEditControlPreferenceSnapshot = readDebugEditControlPreferenceSnapshot();
   debugEditControls = new TouchDebugEditControls({
     initialVisible: false,
-    initialMode: input.getTouchDebugEditMode(),
+    initialMode: initialDebugEditControlPreferenceSnapshot.touchMode,
     onModeChange: (mode) => {
       commitDebugEditControlStateAction({
         type: 'set-touch-mode',
@@ -1253,11 +1255,11 @@ const bootstrap = async (): Promise<void> => {
       });
     },
     brushOptions: DEBUG_BRUSH_TILE_OPTIONS,
-    initialBrushTileId: activeDebugBrushTileId,
+    initialBrushTileId: initialDebugEditControlPreferenceSnapshot.brushTileId,
     onBrushTileIdChange: (tileId) => {
       commitDebugEditBrushTileId(tileId);
     },
-    initialCollapsed: debugEditPanelCollapsed,
+    initialCollapsed: initialDebugEditControlPreferenceSnapshot.panelCollapsed,
     onCollapsedChange: (collapsed) => {
       commitDebugEditControlStateAction({
         type: 'set-panel-collapsed',

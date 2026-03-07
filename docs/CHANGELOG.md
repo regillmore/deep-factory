@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared debug-edit preference snapshot helper so touch-control initialization and persistence writes in `src/main.ts` reuse one mode, brush, and collapsed-state read path.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `readDebugEditControlPreferenceSnapshot()` helper reused by persisted debug-edit writes and `TouchDebugEditControls` initialization, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that records the hydrated touch-control constructor state and verifies later persisted writes stay aligned with that same snapshot surface, removed completed task `277` from [docs/NEXT.md](docs/NEXT.md), added replacement task `278`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` (rerun with escalation after sandbox `spawn EPERM`) and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Clarify the Windows tooling note in [AGENTS.md](../AGENTS.md) so future agents can distinguish PowerShell shim issues from recurring `spawn EPERM` sandbox failures during Node-based tool startup.
 - Changes: Updated [AGENTS.md](../AGENTS.md) to keep the existing `cmd /c npx ...` / `*.cmd` guidance and add an explicit instruction to rerun the same command with escalation when Vite, Vitest, or esbuild startup fails with `spawn EPERM`.
 - Verification: Not run; docs-only change.

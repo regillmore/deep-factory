@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Debug-edit preference reads should share one snapshot helper
+
+- Decision: Current debug-edit preference reads in `src/main.ts` should route through a shared `readDebugEditControlPreferenceSnapshot()` helper, and both persisted writes plus `TouchDebugEditControls` initialization should consume that snapshot instead of reading `touchMode`, `brushTileId`, and `panelCollapsed` separately.
+- Reason: Touch-control bootstrapping and persistence already target the same runtime preference trio, so leaving those call sites to assemble that state independently makes the mixed-surface debug-edit preference path easier to drift from focused regressions.
+- Consequence: Future `src/main.ts` work that needs the current debug-edit preference trio should extend the shared snapshot helper and its runtime regressions instead of adding another ad hoc read of mode, brush, and collapsed state.
+
 ### 2026-03-06: Debug-edit preference restores should share one helper
 
 - Decision: Bootstrap hydration and `Reset Prefs` should route through a shared `restoreDebugEditControlPreferences()` helper in `src/main.ts` instead of each applying touch mode, brush tile, and panel-collapsed state separately.

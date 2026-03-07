@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Refine, Refactor, Restructure
 
-277. Extract a shared debug-edit preference snapshot helper so touch-control initialization and persistence writes in `src/main.ts` reuse one mode, brush, and collapsed-state read path, with focused runtime regressions.
+278. Extract a shared touch debug armed-tool snapshot helper so `TouchDebugEditControls` initialization in `src/main.ts` reuses one flood-fill, line, rectangle, rectangle-outline, ellipse, and ellipse-outline read path, with focused runtime regressions.

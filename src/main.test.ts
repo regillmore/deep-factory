@@ -72,6 +72,11 @@ const testRuntime = vi.hoisted(() => {
       tile: { x: number; y: number };
     },
     debugOverlayInstance: null as null | { visible: boolean },
+    debugEditControlsInitialPreferenceSnapshot: null as null | {
+      touchMode: 'pan' | 'place' | 'break';
+      brushTileId: number;
+      panelCollapsed: boolean;
+    },
     debugEditControlsInstance: null as null | {
       visible: boolean;
       getBrushTileId(): number;
@@ -580,6 +585,11 @@ vi.mock('./ui/touchDebugEditControls', () => ({
       this.onModeChange = options.onModeChange ?? (() => {});
       this.onCollapsedChange = options.onCollapsedChange ?? (() => {});
       this.onResetPrefs = options.onResetPrefs ?? (() => {});
+      testRuntime.debugEditControlsInitialPreferenceSnapshot = {
+        touchMode: this.mode,
+        brushTileId: this.brushTileId,
+        panelCollapsed: this.collapsed
+      };
       testRuntime.debugEditControlsInstance = this;
     }
 
@@ -761,6 +771,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.inputControllerInstance = null;
     testRuntime.pointerInspect = null;
     testRuntime.debugOverlayInstance = null;
+    testRuntime.debugEditControlsInitialPreferenceSnapshot = null;
     testRuntime.debugEditControlsInstance = null;
     testRuntime.hoveredTileCursorInstance = null;
     testRuntime.armedDebugToolPreviewInstance = null;
@@ -1225,6 +1236,52 @@ describe('main.ts shell state orchestration', () => {
     expect(dispatchKeydown('\\', 'Backslash').prevented).toBe(true);
     expect(readPersistedDebugEditControlState()).toMatchObject({
       touchMode: 'break',
+      panelCollapsed: false
+    });
+  });
+
+  it('routes touch-control initialization and persisted writes through one shared debug-edit preference snapshot helper', async () => {
+    testRuntime.storageValues.set(
+      DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY,
+      JSON.stringify({
+        touchMode: 'break',
+        brushTileId: 4,
+        panelCollapsed: true
+      })
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.debugEditControlsInitialPreferenceSnapshot).toEqual({
+      touchMode: 'break',
+      brushTileId: 4,
+      panelCollapsed: true
+    });
+
+    expect(testRuntime.debugEditControlsInstance).not.toBeNull();
+    if (!testRuntime.debugEditControlsInstance) {
+      throw new Error('expected debug edit controls instance');
+    }
+
+    testRuntime.debugEditControlsInstance.setMode('place');
+    expect(readPersistedDebugEditControlState()).toMatchObject({
+      touchMode: 'place',
+      brushTileId: 4,
+      panelCollapsed: true
+    });
+
+    testRuntime.debugEditControlsInstance.setBrushTileId(2);
+    expect(readPersistedDebugEditControlState()).toMatchObject({
+      touchMode: 'place',
+      brushTileId: 2,
+      panelCollapsed: true
+    });
+
+    testRuntime.debugEditControlsInstance.setCollapsed(false);
+    expect(readPersistedDebugEditControlState()).toMatchObject({
+      touchMode: 'place',
+      brushTileId: 2,
       panelCollapsed: false
     });
   });
