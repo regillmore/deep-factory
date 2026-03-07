@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Add a renderer regression where streamed-back row-above top-corner boundary edits still invalidate both affected chunk meshes before the first rebuilt draw.
+- Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a streamed-back top-corner boundary regression that reopens the row-above boundary pocket, prunes those meshes out of view, streams them back, and verifies reclosing the same blocker invalidates both row-above chunk meshes before the next rebuilt draw; removed completed task `249` from [docs/NEXT.md](docs/NEXT.md) and added replacement task `303`.
+- Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a structured paused-menu persistence-summary card that lists which in-world shell toggles resume from saved preferences and which reset paths clear them.
 - Changes: Updated [src/mainWorldSessionShellState.ts](../src/mainWorldSessionShellState.ts) with a shared persistence-summary helper for resumed shell toggles and reset paths, updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused main menu now includes a `Persistence Summary` card with visible `Resumes` and `Cleared by` rows, expanded [src/mainWorldSessionShellState.test.ts](../src/mainWorldSessionShellState.test.ts) and [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused regressions, removed completed task `285` from [docs/NEXT.md](docs/NEXT.md), added replacement task `302`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/mainWorldSessionShellState.test.ts src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
