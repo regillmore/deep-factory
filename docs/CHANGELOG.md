@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Add a sunlight regression for reclosing a boundary bottom-corner blocker after the row-below chunks stream back in.
+- Changes: Expanded [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a deterministic regression that reopens a boundary bottom-corner, streams the row-below chunks back in, recloses that same blocker, and verifies the invalidated row-below boundary plus adjacent solid-face columns clear again; removed completed task `247` from [docs/NEXT.md](docs/NEXT.md) and added replacement lighting follow-up task `248`.
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts`.
+
 - Task: Add a sunlight regression for streamed-back row-below chunks after a boundary bottom-corner blocker toggle.
 - Changes: Expanded [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a deterministic regression that opens a boundary bottom-corner blocker, verifies row-below boundary transport plus adjacent solid-face relighting, prunes the row-below chunks, streams them back in, and rechecks the same relit columns; removed completed task `211` from [docs/NEXT.md](docs/NEXT.md) and added replacement lighting follow-up task `247`.
 - Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts`.
