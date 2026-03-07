@@ -763,6 +763,132 @@ describe('Renderer atlas telemetry', () => {
     );
   });
 
+  it('invalidates streamed-back boundary-adjacent and recessed-gap solid-face lighting when the chunk adjacent to an opened x-boundary blocker reloads on either side', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const leftExteriorWorldTileX = CHUNK_SIZE - 3;
+    const leftInteriorWorldTileX = CHUNK_SIZE - 2;
+    const leftBoundaryWorldTileX = CHUNK_SIZE - 1;
+    const rightBoundaryWorldTileX = CHUNK_SIZE;
+    const rightInteriorWorldTileX = CHUNK_SIZE + 1;
+    const rightExteriorWorldTileX = CHUNK_SIZE + 2;
+    const topShadowWorldTileY = -4;
+    const boundarySolidWorldTileY = -3;
+    const recessedGapWorldTileY = -2;
+    const recessedSolidWorldTileY = -1;
+
+    const initializeLeftToRightWorld = (): void => {
+      for (let worldTileY = -CHUNK_SIZE; worldTileY <= recessedSolidWorldTileY; worldTileY += 1) {
+        renderer.setTile(leftBoundaryWorldTileX, worldTileY, 0);
+      }
+      renderer.setTile(leftBoundaryWorldTileX, boundarySolidWorldTileY, 1);
+
+      renderer.setTile(rightBoundaryWorldTileX, topShadowWorldTileY, 1);
+      renderer.setTile(rightBoundaryWorldTileX, boundarySolidWorldTileY, 0);
+      renderer.setTile(rightBoundaryWorldTileX, recessedGapWorldTileY, 0);
+
+      renderer.setTile(rightInteriorWorldTileX, topShadowWorldTileY, 1);
+      renderer.setTile(rightInteriorWorldTileX, boundarySolidWorldTileY, 1);
+      renderer.setTile(rightInteriorWorldTileX, recessedGapWorldTileY, 0);
+      renderer.setTile(rightInteriorWorldTileX, recessedSolidWorldTileY, 1);
+
+      renderer.setTile(rightExteriorWorldTileX, topShadowWorldTileY, 1);
+      renderer.setTile(rightExteriorWorldTileX, boundarySolidWorldTileY, 1);
+      renderer.setTile(rightExteriorWorldTileX, recessedGapWorldTileY, 1);
+      renderer.setTile(rightExteriorWorldTileX, recessedSolidWorldTileY, 1);
+    };
+
+    const initializeRightToLeftWorld = (): void => {
+      for (let worldTileY = -CHUNK_SIZE; worldTileY <= recessedSolidWorldTileY; worldTileY += 1) {
+        renderer.setTile(rightBoundaryWorldTileX, worldTileY, 0);
+      }
+      renderer.setTile(rightBoundaryWorldTileX, boundarySolidWorldTileY, 1);
+
+      renderer.setTile(leftBoundaryWorldTileX, topShadowWorldTileY, 1);
+      renderer.setTile(leftBoundaryWorldTileX, boundarySolidWorldTileY, 0);
+      renderer.setTile(leftBoundaryWorldTileX, recessedGapWorldTileY, 0);
+
+      renderer.setTile(leftInteriorWorldTileX, topShadowWorldTileY, 1);
+      renderer.setTile(leftInteriorWorldTileX, boundarySolidWorldTileY, 1);
+      renderer.setTile(leftInteriorWorldTileX, recessedGapWorldTileY, 0);
+      renderer.setTile(leftInteriorWorldTileX, recessedSolidWorldTileY, 1);
+
+      renderer.setTile(leftExteriorWorldTileX, topShadowWorldTileY, 1);
+      renderer.setTile(leftExteriorWorldTileX, boundarySolidWorldTileY, 1);
+      renderer.setTile(leftExteriorWorldTileX, recessedGapWorldTileY, 1);
+      renderer.setTile(leftExteriorWorldTileX, recessedSolidWorldTileY, 1);
+    };
+
+    const nearCamera = new Camera2D();
+    nearCamera.zoom = 16;
+    nearCamera.x = (CHUNK_SIZE * TILE_SIZE);
+    nearCamera.y = -2 * TILE_SIZE;
+
+    initializeLeftToRightWorld();
+    renderUntilMeshBuildQueueDrains(renderer, nearCamera);
+
+    expect(renderer.setTile(leftBoundaryWorldTileX, boundarySolidWorldTileY, 0)).toBe(true);
+    renderUntilMeshBuildQueueDrains(renderer, nearCamera);
+
+    const farLeftCamera = new Camera2D();
+    farLeftCamera.zoom = nearCamera.zoom;
+    farLeftCamera.x = ((-4 * CHUNK_SIZE + CHUNK_SIZE / 2) * TILE_SIZE);
+    farLeftCamera.y = nearCamera.y;
+    renderer.render(farLeftCamera, { timeMs: 0 });
+
+    expect(renderer.telemetry.evictedMeshEntries).toBeGreaterThan(0);
+    expect(renderer.telemetry.evictedWorldChunks).toBeGreaterThan(0);
+
+    const invalidateChunkMeshSpy = vi.spyOn(
+      renderer as unknown as {
+        invalidateChunkMesh: (chunkX: number, chunkY: number) => void;
+      },
+      'invalidateChunkMesh'
+    );
+    invalidateChunkMeshSpy.mockClear();
+
+    renderer.render(nearCamera, { timeMs: 0 });
+
+    expect(invalidateChunkMeshSpy.mock.calls).toEqual(
+      expect.arrayContaining([[1, -1]])
+    );
+
+    renderUntilMeshBuildQueueDrains(renderer, nearCamera);
+
+    initializeRightToLeftWorld();
+    renderUntilMeshBuildQueueDrains(renderer, nearCamera);
+
+    expect(renderer.setTile(rightBoundaryWorldTileX, boundarySolidWorldTileY, 0)).toBe(true);
+    renderUntilMeshBuildQueueDrains(renderer, nearCamera);
+
+    const farRightCamera = new Camera2D();
+    farRightCamera.zoom = nearCamera.zoom;
+    farRightCamera.x = ((5 * CHUNK_SIZE + CHUNK_SIZE / 2) * TILE_SIZE);
+    farRightCamera.y = nearCamera.y;
+    renderer.render(farRightCamera, { timeMs: 0 });
+
+    expect(renderer.telemetry.evictedMeshEntries).toBeGreaterThan(0);
+    expect(renderer.telemetry.evictedWorldChunks).toBeGreaterThan(0);
+
+    invalidateChunkMeshSpy.mockClear();
+
+    renderer.render(nearCamera, { timeMs: 0 });
+
+    expect(invalidateChunkMeshSpy.mock.calls).toEqual(
+      expect.arrayContaining([[0, -1]])
+    );
+  });
+
   it('invalidates both row-below chunk meshes when a streamed-back bottom-corner boundary blocker recloses', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));

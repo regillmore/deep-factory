@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Add a renderer regression where reloading the chunk adjacent to an opened `x`-boundary blocker still invalidates streamed-back boundary-adjacent and recessed-gap solid-face lighting on either side before the first rebuilt draw.
+- Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with mirrored left-to-right and right-to-left stream-back regressions that spy on the first resumed near-camera render after the adjacent boundary chunk reloads, removed completed task `319` from [docs/NEXT.md](docs/NEXT.md), and added replacement task `320`.
+- Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts -t "invalidates streamed-back boundary-adjacent"` plus `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a sunlight regression where toggling a boundary `blocksLight` tile then unloading and reloading the adjacent boundary chunk preserves transported boundary-adjacent and recessed-gap solid-face sunlight on both sides.
 - Changes: Expanded [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with mirrored left-to-right and right-to-left stream-back regressions that keep same-row boundary-adjacent and recessed-gap solid-face sunlight lit after the neighboring boundary chunk unloads and reloads, removed completed task `217` from [docs/NEXT.md](docs/NEXT.md), and added replacement task `319`.
 - Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
