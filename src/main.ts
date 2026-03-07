@@ -814,44 +814,18 @@ const bootstrap = async (): Promise<void> => {
       redoStrokeCount: historyStatus.redoStrokeCount
     });
   };
-
-  const syncArmedFloodFillControls = (): void => {
+  const applyTouchDebugArmedToolSnapshot = (snapshot: TouchDebugArmedToolSnapshot): void => {
     if (!debugEditControls) return;
-    debugEditControls.setArmedFloodFillKind(input.getArmedDebugFloodFillKind());
-  };
-
-  const syncArmedLineControls = (): void => {
-    if (!debugEditControls) return;
-    debugEditControls.setArmedLineKind(input.getArmedDebugLineKind());
-  };
-
-  const syncArmedRectControls = (): void => {
-    if (!debugEditControls) return;
-    debugEditControls.setArmedRectKind(input.getArmedDebugRectKind());
-  };
-
-  const syncArmedRectOutlineControls = (): void => {
-    if (!debugEditControls) return;
-    debugEditControls.setArmedRectOutlineKind(input.getArmedDebugRectOutlineKind());
-  };
-
-  const syncArmedEllipseControls = (): void => {
-    if (!debugEditControls) return;
-    debugEditControls.setArmedEllipseKind(input.getArmedDebugEllipseKind());
-  };
-
-  const syncArmedEllipseOutlineControls = (): void => {
-    if (!debugEditControls) return;
-    debugEditControls.setArmedEllipseOutlineKind(input.getArmedDebugEllipseOutlineKind());
+    debugEditControls.setArmedFloodFillKind(snapshot.floodFillKind);
+    debugEditControls.setArmedLineKind(snapshot.lineKind);
+    debugEditControls.setArmedRectKind(snapshot.rectKind);
+    debugEditControls.setArmedRectOutlineKind(snapshot.rectOutlineKind);
+    debugEditControls.setArmedEllipseKind(snapshot.ellipseKind);
+    debugEditControls.setArmedEllipseOutlineKind(snapshot.ellipseOutlineKind);
   };
 
   const syncArmedDebugToolControls = (): void => {
-    syncArmedFloodFillControls();
-    syncArmedLineControls();
-    syncArmedRectControls();
-    syncArmedRectOutlineControls();
-    syncArmedEllipseControls();
-    syncArmedEllipseOutlineControls();
+    applyTouchDebugArmedToolSnapshot(readTouchDebugArmedToolSnapshot());
   };
 
   const setArmedDebugFloodFillKind = (kind: DebugTileEditKind | null): boolean => {

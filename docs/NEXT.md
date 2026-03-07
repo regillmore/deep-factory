@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Refine, Refactor, Restructure
 
-279. Extract a shared touch debug armed-tool apply helper so `syncArmedDebugToolControls()` in `src/main.ts` reuses one flood-fill, line, rectangle, rectangle-outline, ellipse, and ellipse-outline control-update path, with focused runtime regressions.
+280. Extract a shared mutually-exclusive armed-tool state mutator so `setArmedDebugFloodFillKind()`, `setArmedDebugLineKind()`, `setArmedDebugRectKind()`, `setArmedDebugRectOutlineKind()`, `setArmedDebugEllipseKind()`, and `setArmedDebugEllipseOutlineKind()` in `src/main.ts` reuse one tool-replacement pipeline, with focused runtime regressions.

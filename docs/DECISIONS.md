@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Touch debug armed-tool control updates should share one apply helper
+
+- Decision: `syncArmedDebugToolControls()` in `src/main.ts` should route through a shared `applyTouchDebugArmedToolSnapshot()` helper, and that helper should own pushing flood-fill, line, rectangle, rectangle-outline, ellipse, and ellipse-outline state onto `TouchDebugEditControls`.
+- Reason: Once touch debug armed-tool reads already share one snapshot, leaving the control-update side split across six tiny sync helpers still duplicates the same one-shot tool apply contract and makes runtime touch-control sync easier to drift from focused regressions.
+- Consequence: Future `src/main.ts` work that needs to push current armed one-shot tool state onto `TouchDebugEditControls` should extend the shared apply helper and its runtime regressions instead of adding another per-tool control-sync fan-out.
+
 ### 2026-03-07: Touch debug armed-tool reads should share one snapshot helper
 
 - Decision: Current touch debug armed-tool reads in `src/main.ts` should route through a shared `readTouchDebugArmedToolSnapshot()` helper, and `TouchDebugEditControls` initialization should consume that snapshot instead of reading flood-fill, line, rectangle, rectangle-outline, ellipse, and ellipse-outline kinds separately.

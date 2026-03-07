@@ -93,6 +93,14 @@ const testRuntime = vi.hoisted(() => {
       ellipseKind: 'place' | 'break' | null;
       ellipseOutlineKind: 'place' | 'break' | null;
     },
+    debugEditControlsArmedToolKinds: null as null | {
+      floodFillKind: 'place' | 'break' | null;
+      lineKind: 'place' | 'break' | null;
+      rectKind: 'place' | 'break' | null;
+      rectOutlineKind: 'place' | 'break' | null;
+      ellipseKind: 'place' | 'break' | null;
+      ellipseOutlineKind: 'place' | 'break' | null;
+    },
     debugEditControlsInstance: null as null | {
       visible: boolean;
       getBrushTileId(): number;
@@ -584,10 +592,27 @@ vi.mock('./ui/touchDebugEditControls', () => ({
     private collapsed = false;
     private brushTileId = 0;
     private mode: 'pan' | 'place' | 'break' = 'pan';
+    private armedFloodFillKind: 'place' | 'break' | null = null;
+    private armedLineKind: 'place' | 'break' | null = null;
+    private armedRectKind: 'place' | 'break' | null = null;
+    private armedRectOutlineKind: 'place' | 'break' | null = null;
+    private armedEllipseKind: 'place' | 'break' | null = null;
+    private armedEllipseOutlineKind: 'place' | 'break' | null = null;
     private onBrushTileIdChange: (tileId: number) => void;
     private onModeChange: (mode: 'pan' | 'place' | 'break') => void;
     private onCollapsedChange: (collapsed: boolean) => void;
     private onResetPrefs: () => void;
+
+    private syncArmedToolKinds(): void {
+      testRuntime.debugEditControlsArmedToolKinds = {
+        floodFillKind: this.armedFloodFillKind,
+        lineKind: this.armedLineKind,
+        rectKind: this.armedRectKind,
+        rectOutlineKind: this.armedRectOutlineKind,
+        ellipseKind: this.armedEllipseKind,
+        ellipseOutlineKind: this.armedEllipseOutlineKind
+      };
+    }
 
     constructor(options: {
       initialBrushTileId?: number;
@@ -607,6 +632,12 @@ vi.mock('./ui/touchDebugEditControls', () => ({
       this.brushTileId = options.initialBrushTileId ?? 0;
       this.mode = options.initialMode ?? 'pan';
       this.collapsed = options.initialCollapsed ?? false;
+      this.armedFloodFillKind = options.initialArmedFloodFillKind ?? null;
+      this.armedLineKind = options.initialArmedLineKind ?? null;
+      this.armedRectKind = options.initialArmedRectKind ?? null;
+      this.armedRectOutlineKind = options.initialArmedRectOutlineKind ?? null;
+      this.armedEllipseKind = options.initialArmedEllipseKind ?? null;
+      this.armedEllipseOutlineKind = options.initialArmedEllipseOutlineKind ?? null;
       this.onBrushTileIdChange = options.onBrushTileIdChange ?? (() => {});
       this.onModeChange = options.onModeChange ?? (() => {});
       this.onCollapsedChange = options.onCollapsedChange ?? (() => {});
@@ -617,13 +648,14 @@ vi.mock('./ui/touchDebugEditControls', () => ({
         panelCollapsed: this.collapsed
       };
       testRuntime.debugEditControlsInitialArmedToolSnapshot = {
-        floodFillKind: options.initialArmedFloodFillKind ?? null,
-        lineKind: options.initialArmedLineKind ?? null,
-        rectKind: options.initialArmedRectKind ?? null,
-        rectOutlineKind: options.initialArmedRectOutlineKind ?? null,
-        ellipseKind: options.initialArmedEllipseKind ?? null,
-        ellipseOutlineKind: options.initialArmedEllipseOutlineKind ?? null
+        floodFillKind: this.armedFloodFillKind,
+        lineKind: this.armedLineKind,
+        rectKind: this.armedRectKind,
+        rectOutlineKind: this.armedRectOutlineKind,
+        ellipseKind: this.armedEllipseKind,
+        ellipseOutlineKind: this.armedEllipseOutlineKind
       };
+      this.syncArmedToolKinds();
       testRuntime.debugEditControlsInstance = this;
     }
 
@@ -667,17 +699,35 @@ vi.mock('./ui/touchDebugEditControls', () => ({
 
     setHistoryState(): void {}
 
-    setArmedFloodFillKind(): void {}
+    setArmedFloodFillKind(kind: 'place' | 'break' | null): void {
+      this.armedFloodFillKind = kind;
+      this.syncArmedToolKinds();
+    }
 
-    setArmedLineKind(): void {}
+    setArmedLineKind(kind: 'place' | 'break' | null): void {
+      this.armedLineKind = kind;
+      this.syncArmedToolKinds();
+    }
 
-    setArmedRectKind(): void {}
+    setArmedRectKind(kind: 'place' | 'break' | null): void {
+      this.armedRectKind = kind;
+      this.syncArmedToolKinds();
+    }
 
-    setArmedRectOutlineKind(): void {}
+    setArmedRectOutlineKind(kind: 'place' | 'break' | null): void {
+      this.armedRectOutlineKind = kind;
+      this.syncArmedToolKinds();
+    }
 
-    setArmedEllipseKind(): void {}
+    setArmedEllipseKind(kind: 'place' | 'break' | null): void {
+      this.armedEllipseKind = kind;
+      this.syncArmedToolKinds();
+    }
 
-    setArmedEllipseOutlineKind(): void {}
+    setArmedEllipseOutlineKind(kind: 'place' | 'break' | null): void {
+      this.armedEllipseOutlineKind = kind;
+      this.syncArmedToolKinds();
+    }
   }
 }));
 
@@ -815,6 +865,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugOverlayInstance = null;
     testRuntime.debugEditControlsInitialPreferenceSnapshot = null;
     testRuntime.debugEditControlsInitialArmedToolSnapshot = null;
+    testRuntime.debugEditControlsArmedToolKinds = null;
     testRuntime.debugEditControlsInstance = null;
     testRuntime.hoveredTileCursorInstance = null;
     testRuntime.armedDebugToolPreviewInstance = null;
@@ -1182,6 +1233,55 @@ describe('main.ts shell state orchestration', () => {
       rectOutlineKind: 'break',
       ellipseKind: 'place',
       ellipseOutlineKind: 'break'
+    });
+  });
+
+  it('routes touch-control armed-tool sync through one shared apply helper', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual({
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('f', 'KeyF').prevented).toBe(true);
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual({
+      floodFillKind: 'place',
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+
+    expect(dispatchKeydown('n', 'KeyN', { shiftKey: true }).prevented).toBe(true);
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual({
+      floodFillKind: null,
+      lineKind: 'break',
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+
+    expect(dispatchKeydown('Escape').prevented).toBe(true);
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual({
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
     });
   });
 

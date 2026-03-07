@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared touch debug armed-tool apply helper so `syncArmedDebugToolControls()` in `src/main.ts` reuses one flood-fill, line, rectangle, rectangle-outline, ellipse, and ellipse-outline control-update path.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyTouchDebugArmedToolSnapshot()` helper so `syncArmedDebugToolControls()` now applies one snapshot instead of fan-out through six tiny sync helpers, expanded [src/main.test.ts](../src/main.test.ts) so the mocked touch controls expose live armed-tool state and the new regression verifies keyboard arming plus `Esc` cancel keep that state aligned with the input controller, removed completed task `279` from [docs/NEXT.md](docs/NEXT.md), added replacement task `280`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` (rerun with escalation after sandbox `spawn EPERM`) and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared touch debug armed-tool snapshot helper so `TouchDebugEditControls` initialization in `src/main.ts` reuses one flood-fill, line, rectangle, rectangle-outline, ellipse, and ellipse-outline read path.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `readTouchDebugArmedToolSnapshot()` helper reused by `TouchDebugEditControls` initialization, expanded [src/main.test.ts](../src/main.test.ts) so the mocked input controller can seed initial armed one-shot tool state and the runtime regression can verify the touch-controls constructor receives that same six-tool snapshot, removed completed task `278` from [docs/NEXT.md](docs/NEXT.md), added replacement task `279`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` (rerun with escalation after sandbox `spawn EPERM`) and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
