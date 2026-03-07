@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-270. Extract a shared debug-history action dispatcher so `applyKeyboardDebugHistoryAction()` and `applyFixedStepDebugHistoryShortcutAction()` in `src/main.ts` stop repeating the `undo` versus `redo` selection, with focused runtime regressions.
+271. Extract a shared keyboard armed-tool action dispatcher so the `keydown` branch in `src/main.ts` stops repeating `event.preventDefault()` plus the matching toggle or cancel call across `cancel-armed-tools`, flood fill, line, rectangle, and ellipse shortcut actions, with focused runtime regressions.

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract a shared debug-history action dispatcher so `applyKeyboardDebugHistoryAction()` and `applyFixedStepDebugHistoryShortcutAction()` in `src/main.ts` stop repeating the `undo` versus `redo` selection.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyDebugHistoryAction()` dispatcher reused by the keyboard and fixed-step history helpers, refreshed [src/main.test.ts](../src/main.test.ts) with one runtime regression that exercises both keyboard and fixed-step `undo` plus `redo`, removed completed task `270` from [docs/NEXT.md](docs/NEXT.md), added replacement task `271`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared fixed-step debug-history shortcut handler so the `consumeDebugEditHistoryShortcutActions()` loop in `src/main.ts` stops repeating `undoDebugTileStroke()` or `redoDebugTileStroke()` across touch `undo` and `redo`.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyFixedStepDebugHistoryShortcutAction()` helper for fixed-step touch history shortcuts, expanded [src/main.test.ts](../src/main.test.ts) so the mocked game loop can execute one in-world fixed update and assert both touch history actions, removed completed task `269` from [docs/NEXT.md](docs/NEXT.md), added replacement task `270`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

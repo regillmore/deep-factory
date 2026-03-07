@@ -886,7 +886,7 @@ describe('main.ts shell state orchestration', () => {
     );
   });
 
-  it('routes keyboard undo and redo through one shared debug-history handler only while in-world', async () => {
+  it('routes keyboard and fixed-step undo and redo through one shared debug-history dispatcher', async () => {
     await import('./main');
     await flushBootstrap();
 
@@ -899,21 +899,12 @@ describe('main.ts shell state orchestration', () => {
 
     expect(dispatchKeydown('z', 'KeyZ', { ctrlKey: true }).prevented).toBe(true);
     expect(dispatchKeydown('y', 'KeyY', { ctrlKey: true }).prevented).toBe(true);
-    expect(testRuntime.debugHistoryUndoCallCount).toBe(1);
-    expect(testRuntime.debugHistoryRedoCallCount).toBe(1);
-  });
-
-  it('routes fixed-step touch undo and redo through one shared history shortcut handler', async () => {
-    await import('./main');
-    await flushBootstrap();
-
-    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
     testRuntime.debugHistoryShortcutActions = ['undo', 'redo'];
 
     runFixedUpdate();
 
-    expect(testRuntime.debugHistoryUndoCallCount).toBe(1);
-    expect(testRuntime.debugHistoryRedoCallCount).toBe(1);
+    expect(testRuntime.debugHistoryUndoCallCount).toBe(2);
+    expect(testRuntime.debugHistoryRedoCallCount).toBe(2);
     expect(testRuntime.debugHistoryShortcutActions).toEqual([]);
   });
 

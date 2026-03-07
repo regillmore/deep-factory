@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Debug-history action selection should share one dispatcher
+
+- Decision: `applyKeyboardDebugHistoryAction()` and `applyFixedStepDebugHistoryShortcutAction()` should both route through a shared `applyDebugHistoryAction()` dispatcher in `src/main.ts` instead of each choosing between `undoDebugTileStroke()` and `redoDebugTileStroke()` separately.
+- Reason: Once keyboard-side `preventDefault()` handling and fixed-step shortcut consumption already have dedicated helpers, leaving both helpers to repeat the same history-action mapping still duplicates one runtime contract and invites drift between the two input paths.
+- Consequence: Future debug-history actions should extend the shared dispatcher and its focused runtime regressions instead of reintroducing per-caller `undo` versus `redo` branching in `src/main.ts`.
+
 ### 2026-03-06: Fixed-step debug-history shortcut actions should share one helper
 
 - Decision: Fixed-step debug-history shortcut actions (`undo` and `redo`) consumed from `consumeDebugEditHistoryShortcutActions()` should route through a shared `applyFixedStepDebugHistoryShortcutAction()` helper in `src/main.ts` instead of repeating `undoDebugTileStroke()` or `redoDebugTileStroke()` inside the fixed update loop.

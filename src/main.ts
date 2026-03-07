@@ -459,15 +459,23 @@ const bootstrap = async (): Promise<void> => {
     event.preventDefault();
     return applyInWorldShellAction(actionType);
   };
+  const applyDebugHistoryAction = (actionType: DebugHistoryActionType): boolean => {
+    switch (actionType) {
+      case 'undo':
+        return undoDebugTileStroke();
+      case 'redo':
+        return redoDebugTileStroke();
+    }
+  };
   const applyKeyboardDebugHistoryAction = (
     event: Pick<KeyboardEvent, 'preventDefault'>,
     actionType: DebugHistoryActionType
   ): boolean => {
     event.preventDefault();
-    return actionType === 'undo' ? undoDebugTileStroke() : redoDebugTileStroke();
+    return applyDebugHistoryAction(actionType);
   };
   const applyFixedStepDebugHistoryShortcutAction = (actionType: DebugHistoryActionType): boolean =>
-    actionType === 'undo' ? undoDebugTileStroke() : redoDebugTileStroke();
+    applyDebugHistoryAction(actionType);
   const enterInWorldShellState = (): void => {
     syncInWorldShellState();
     syncWorldScreenShellVisibility();
