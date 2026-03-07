@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared touch debug control constructor-option builder so `TouchDebugEditControls` initialization in `src/main.ts` reuses one combined preference, armed-tool, history, and reset wiring path.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `createTouchDebugEditControlConstructorOptions()` helper that combines preference hydration, armed-tool constructor wiring, initial history state, undo or redo callbacks, and reset handling for `TouchDebugEditControls`, expanded [src/main.test.ts](../src/main.test.ts) so the focused runtime regression now verifies seeded preferences, armed-tool state, initial history counts, undo or redo callback wiring, and reset behavior through the same constructed touch-controls instance, removed completed task `286` from [docs/NEXT.md](docs/NEXT.md), added replacement task `287`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared touch debug armed-tool constructor-option builder so `TouchDebugEditControls` initialization in `src/main.ts` reuses one combined initial-state and toggle-callback wiring path.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `createTouchDebugArmedToolConstructorOptions()` helper that combines the armed-tool snapshot seed and the six `onArm*` callbacks for `TouchDebugEditControls`, refreshed [src/main.test.ts](../src/main.test.ts) so the focused runtime regression now verifies the same constructed touch-controls instance carries both the seeded armed-tool state and callback-driven replacement path, removed completed task `284` from [docs/NEXT.md](docs/NEXT.md), added replacement task `286`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

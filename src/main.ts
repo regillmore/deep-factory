@@ -64,7 +64,11 @@ import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay'
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import { PlayerSpawnMarkerOverlay } from './ui/playerSpawnMarkerOverlay';
 import type { DebugEditHoveredTileState } from './ui/debugEditStatusHelpers';
-import { TouchDebugEditControls, type DebugBrushOption } from './ui/touchDebugEditControls';
+import {
+  TouchDebugEditControls,
+  type DebugBrushOption,
+  type DebugEditHistoryControlState
+} from './ui/touchDebugEditControls';
 import { TouchPlayerControls } from './ui/touchPlayerControls';
 import { CHUNK_SIZE } from './world/constants';
 import { EntityRegistry } from './world/entityRegistry';
@@ -173,6 +177,27 @@ type TouchDebugArmedToolCallbackOptions = {
 };
 type TouchDebugArmedToolConstructorOptions = TouchDebugArmedToolInitialOptions &
   TouchDebugArmedToolCallbackOptions;
+type TouchDebugEditControlPreferenceConstructorOptions = {
+  initialMode: TouchDebugEditMode;
+  onModeChange: (mode: TouchDebugEditMode) => void;
+  brushOptions: readonly DebugBrushOption[];
+  initialBrushTileId: number;
+  onBrushTileIdChange: (tileId: number) => void;
+  initialCollapsed: boolean;
+  onCollapsedChange: (collapsed: boolean) => void;
+};
+type TouchDebugEditControlHistoryConstructorOptions = {
+  initialHistoryState: DebugEditHistoryControlState;
+  onUndo: () => void;
+  onRedo: () => void;
+};
+type TouchDebugEditControlResetConstructorOptions = {
+  onResetPrefs: () => void;
+};
+type TouchDebugEditControlConstructorOptions = TouchDebugEditControlPreferenceConstructorOptions &
+  TouchDebugArmedToolConstructorOptions &
+  TouchDebugEditControlHistoryConstructorOptions &
+  TouchDebugEditControlResetConstructorOptions;
 const TOUCH_DEBUG_ARMED_TOOL_KEYS: readonly TouchDebugArmedToolKey[] = [
   'floodFillKind',
   'lineKind',
@@ -1131,12 +1156,11 @@ const bootstrap = async (): Promise<void> => {
     syncDebugEditHistoryControls();
     return true;
   };
-
-  const initialDebugEditControlPreferenceSnapshot = readDebugEditControlPreferenceSnapshot();
-  const initialTouchDebugArmedToolSnapshot = readTouchDebugArmedToolSnapshot();
-  debugEditControls = new TouchDebugEditControls({
-    initialVisible: false,
-    initialMode: initialDebugEditControlPreferenceSnapshot.touchMode,
+  const createTouchDebugEditControlConstructorOptions = (
+    preferenceSnapshot: DebugEditControlState,
+    armedToolSnapshot: TouchDebugArmedToolSnapshot
+  ): TouchDebugEditControlConstructorOptions => ({
+    initialMode: preferenceSnapshot.touchMode,
     onModeChange: (mode) => {
       commitDebugEditControlStateAction({
         type: 'set-touch-mode',
@@ -1144,21 +1168,32 @@ const bootstrap = async (): Promise<void> => {
       });
     },
     brushOptions: DEBUG_BRUSH_TILE_OPTIONS,
-    initialBrushTileId: initialDebugEditControlPreferenceSnapshot.brushTileId,
+    initialBrushTileId: preferenceSnapshot.brushTileId,
     onBrushTileIdChange: (tileId) => {
       commitDebugEditBrushTileId(tileId);
     },
-    initialCollapsed: initialDebugEditControlPreferenceSnapshot.panelCollapsed,
+    initialCollapsed: preferenceSnapshot.panelCollapsed,
     onCollapsedChange: (collapsed) => {
       commitDebugEditControlStateAction({
         type: 'set-panel-collapsed',
         collapsed
       });
     },
-    ...createTouchDebugArmedToolConstructorOptions(initialTouchDebugArmedToolSnapshot),
+    ...createTouchDebugArmedToolConstructorOptions(armedToolSnapshot),
+    initialHistoryState: debugTileEditHistory.getStatus(),
     onUndo: undoDebugTileStroke,
     onRedo: redoDebugTileStroke,
     onResetPrefs: resetDebugEditControlPrefs
+  });
+
+  const initialDebugEditControlPreferenceSnapshot = readDebugEditControlPreferenceSnapshot();
+  const initialTouchDebugArmedToolSnapshot = readTouchDebugArmedToolSnapshot();
+  debugEditControls = new TouchDebugEditControls({
+    initialVisible: false,
+    ...createTouchDebugEditControlConstructorOptions(
+      initialDebugEditControlPreferenceSnapshot,
+      initialTouchDebugArmedToolSnapshot
+    )
   });
   syncDebugEditControlsVisibility();
   if (touchControlsAvailable) {

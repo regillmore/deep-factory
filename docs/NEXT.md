@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Refine, Refactor, Restructure
 
-286. Extract a shared touch debug control constructor-option builder so `TouchDebugEditControls` initialization in `src/main.ts` reuses one combined preference, armed-tool, history, and reset wiring path, with focused runtime regressions.
+287. Extract a shared touch debug control bootstrap helper so `src/main.ts` reuses one `TouchDebugEditControls` creation plus post-construction visibility, history, armed-tool, and persistence sync sequence, with focused runtime regressions.

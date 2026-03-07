@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Touch debug control constructor wiring should share one builder
+
+- Decision: `TouchDebugEditControls` constructor props in `src/main.ts` should route through a shared `createTouchDebugEditControlConstructorOptions()` helper that combines preference hydration, armed-tool wiring, initial history state, undo or redo callbacks, and reset wiring.
+- Reason: Those constructor props all describe one touch debug control bootstrap surface, so leaving preference, armed-tool, history, and reset options split across separate inline blocks makes the initialization path easier to drift from focused regressions.
+- Consequence: Future touch debug control constructor changes should extend the combined builder and its runtime regression instead of reintroducing separate inline preference, armed-tool, history, or reset props at the `TouchDebugEditControls` call site.
+
 ### 2026-03-07: Touch debug armed-tool constructor wiring should share one builder
 
 - Decision: `TouchDebugEditControls` armed-tool constructor props in `src/main.ts` should route through a shared `createTouchDebugArmedToolConstructorOptions()` helper that combines the initial armed-tool snapshot with the six `onArm*` callbacks.

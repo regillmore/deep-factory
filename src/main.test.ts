@@ -85,6 +85,10 @@ const testRuntime = vi.hoisted(() => {
       brushTileId: number;
       panelCollapsed: boolean;
     },
+    debugEditControlsInitialHistoryState: null as null | {
+      undoStrokeCount: number;
+      redoStrokeCount: number;
+    },
     debugEditControlsInitialArmedToolSnapshot: null as null | {
       floodFillKind: 'place' | 'break' | null;
       lineKind: 'place' | 'break' | null;
@@ -115,6 +119,8 @@ const testRuntime = vi.hoisted(() => {
       triggerArmRectOutline(kind: 'place' | 'break'): void;
       triggerArmEllipse(kind: 'place' | 'break'): void;
       triggerArmEllipseOutline(kind: 'place' | 'break'): void;
+      triggerUndo(): void;
+      triggerRedo(): void;
       triggerResetPrefs(): void;
     },
     hoveredTileCursorInstance: null as null | { visible: boolean },
@@ -124,6 +130,10 @@ const testRuntime = vi.hoisted(() => {
     rendererConstructorError: null as unknown,
     rendererInitializeError: null as unknown,
     gameLoopFixedUpdate: null as null | ((fixedDt: number) => void),
+    debugTileEditHistoryStatus: {
+      undoStrokeCount: 0,
+      redoStrokeCount: 0
+    },
     debugHistoryUndoCallCount: 0,
     debugHistoryRedoCallCount: 0,
     debugHistoryShortcutActions: [] as Array<'undo' | 'redo'>,
@@ -453,10 +463,7 @@ vi.mock('./input/controller', () => ({
 vi.mock('./input/debugTileEditHistory', () => ({
   DebugTileEditHistory: class {
     getStatus() {
-      return {
-        undoStrokeCount: 0,
-        redoStrokeCount: 0
-      };
+      return { ...testRuntime.debugTileEditHistoryStatus };
     }
 
     recordAppliedEdit(): void {}
@@ -613,6 +620,8 @@ vi.mock('./ui/touchDebugEditControls', () => ({
     private onArmRectOutline: (kind: 'place' | 'break') => void;
     private onArmEllipse: (kind: 'place' | 'break') => void;
     private onArmEllipseOutline: (kind: 'place' | 'break') => void;
+    private onUndo: () => void;
+    private onRedo: () => void;
     private onResetPrefs: () => void;
 
     private syncArmedToolKinds(): void {
@@ -645,6 +654,12 @@ vi.mock('./ui/touchDebugEditControls', () => ({
       onArmEllipseOutline?: (kind: 'place' | 'break') => void;
       initialCollapsed?: boolean;
       onCollapsedChange?: (collapsed: boolean) => void;
+      initialHistoryState?: {
+        undoStrokeCount: number;
+        redoStrokeCount: number;
+      };
+      onUndo?: () => void;
+      onRedo?: () => void;
       onResetPrefs?: () => void;
     }) {
       this.brushTileId = options.initialBrushTileId ?? 0;
@@ -665,11 +680,17 @@ vi.mock('./ui/touchDebugEditControls', () => ({
       this.onArmRectOutline = options.onArmRectOutline ?? (() => {});
       this.onArmEllipse = options.onArmEllipse ?? (() => {});
       this.onArmEllipseOutline = options.onArmEllipseOutline ?? (() => {});
+      this.onUndo = options.onUndo ?? (() => {});
+      this.onRedo = options.onRedo ?? (() => {});
       this.onResetPrefs = options.onResetPrefs ?? (() => {});
       testRuntime.debugEditControlsInitialPreferenceSnapshot = {
         touchMode: this.mode,
         brushTileId: this.brushTileId,
         panelCollapsed: this.collapsed
+      };
+      testRuntime.debugEditControlsInitialHistoryState = {
+        undoStrokeCount: options.initialHistoryState?.undoStrokeCount ?? 0,
+        redoStrokeCount: options.initialHistoryState?.redoStrokeCount ?? 0
       };
       testRuntime.debugEditControlsInitialArmedToolSnapshot = {
         floodFillKind: this.armedFloodFillKind,
@@ -739,6 +760,14 @@ vi.mock('./ui/touchDebugEditControls', () => ({
 
     triggerArmEllipseOutline(kind: 'place' | 'break'): void {
       this.onArmEllipseOutline(kind);
+    }
+
+    triggerUndo(): void {
+      this.onUndo();
+    }
+
+    triggerRedo(): void {
+      this.onRedo();
     }
 
     triggerResetPrefs(): void {
@@ -942,6 +971,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.pointerInspect = null;
     testRuntime.debugOverlayInstance = null;
     testRuntime.debugEditControlsInitialPreferenceSnapshot = null;
+    testRuntime.debugEditControlsInitialHistoryState = null;
     testRuntime.debugEditControlsInitialArmedToolSnapshot = null;
     testRuntime.debugEditControlsArmedToolKinds = null;
     testRuntime.debugEditControlsInstance = null;
@@ -952,6 +982,10 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererConstructorError = null;
     testRuntime.rendererInitializeError = null;
     testRuntime.gameLoopFixedUpdate = null;
+    testRuntime.debugTileEditHistoryStatus = {
+      undoStrokeCount: 0,
+      redoStrokeCount: 0
+    };
     testRuntime.debugHistoryUndoCallCount = 0;
     testRuntime.debugHistoryRedoCallCount = 0;
     testRuntime.debugHistoryShortcutActions = [];
@@ -1390,7 +1424,15 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
   });
 
-  it('routes touch-control armed-tool constructor wiring through one shared options builder', async () => {
+  it('routes touch-control constructor wiring through one shared builder for preferences, armed tools, history, and reset handling', async () => {
+    testRuntime.storageValues.set(
+      DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY,
+      JSON.stringify({
+        touchMode: 'break',
+        brushTileId: 4,
+        panelCollapsed: true
+      })
+    );
     testRuntime.initialArmedToolKinds = {
       floodFillKind: 'place',
       lineKind: 'break',
@@ -1399,10 +1441,23 @@ describe('main.ts shell state orchestration', () => {
       ellipseKind: 'place',
       ellipseOutlineKind: 'break'
     };
+    testRuntime.debugTileEditHistoryStatus = {
+      undoStrokeCount: 2,
+      redoStrokeCount: 1
+    };
 
     await import('./main');
     await flushBootstrap();
 
+    expect(testRuntime.debugEditControlsInitialPreferenceSnapshot).toEqual({
+      touchMode: 'break',
+      brushTileId: 4,
+      panelCollapsed: true
+    });
+    expect(testRuntime.debugEditControlsInitialHistoryState).toEqual({
+      undoStrokeCount: 2,
+      redoStrokeCount: 1
+    });
     expect(readArmedToolKinds()).toEqual({
       floodFillKind: 'place',
       lineKind: 'break',
@@ -1444,6 +1499,17 @@ describe('main.ts shell state orchestration', () => {
       ellipseOutlineKind: null
     });
     expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
+
+    testRuntime.debugEditControlsInstance.triggerUndo();
+    testRuntime.debugEditControlsInstance.triggerRedo();
+    expect(testRuntime.debugHistoryUndoCallCount).toBe(1);
+    expect(testRuntime.debugHistoryRedoCallCount).toBe(1);
+
+    testRuntime.debugEditControlsInstance.triggerResetPrefs();
+    expect(testRuntime.storageValues.has(DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY)).toBe(false);
+    expect(testRuntime.debugEditControlsInstance.getMode()).toBe('pan');
+    expect(testRuntime.debugEditControlsInstance.getBrushTileId()).toBe(3);
+    expect(testRuntime.debugEditControlsInstance.isCollapsed()).toBe(false);
   });
 
   it('routes touch-control armed-tool sync through one shared apply helper', async () => {
