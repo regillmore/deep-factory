@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Mutually-exclusive armed-tool writes should share one helper
+
+- Decision: `setArmedDebugFloodFillKind()`, `setArmedDebugLineKind()`, `setArmedDebugRectKind()`, `setArmedDebugRectOutlineKind()`, `setArmedDebugEllipseKind()`, and `setArmedDebugEllipseOutlineKind()` in `src/main.ts` should route through a shared `setMutuallyExclusiveArmedDebugToolKind()` helper backed by one armed-tool snapshot apply path.
+- Reason: Those setters all target the same mutually-exclusive one-shot tool state, so repeating six versions of the same sibling-tool clearing contract makes the runtime path easier to drift from focused regressions.
+- Consequence: Future armed one-shot tool writes should extend the shared helper and its runtime regressions instead of reintroducing per-tool sibling-clearing branches in `src/main.ts`.
+
 ### 2026-03-07: Touch debug armed-tool control updates should share one apply helper
 
 - Decision: `syncArmedDebugToolControls()` in `src/main.ts` should route through a shared `applyTouchDebugArmedToolSnapshot()` helper, and that helper should own pushing flood-fill, line, rectangle, rectangle-outline, ellipse, and ellipse-outline state onto `TouchDebugEditControls`.

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared mutually-exclusive armed-tool state mutator so the six `setArmedDebug*Kind()` helpers in `src/main.ts` reuse one tool-replacement pipeline.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared snapshot-based `setMutuallyExclusiveArmedDebugToolKind()` helper plus one input-apply path, replaced the six duplicated armed-tool setter branches with thin wrappers around that helper, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that starts from an inconsistent multi-armed state and verifies one keyboard arm action clears sibling tools through the shared mutator, removed completed task `280` from [docs/NEXT.md](docs/NEXT.md), added replacement task `281`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Tighten the Windows tooling note in [AGENTS.md](../AGENTS.md) so Vite, Vitest, and esbuild startup is treated as escalation-first when it matters to the task, reducing redundant sandbox `spawn EPERM` failures.
 - Changes: Updated [AGENTS.md](../AGENTS.md) to keep the existing `cmd /c npx ...` / `*.cmd` shim guidance while explicitly telling future agents to prefer escalation on the first attempt for important Vite, Vitest, or esbuild startup commands and to avoid repeating in-sandbox retries after any `spawn EPERM` failure.
 - Verification: Not run; docs-only change.

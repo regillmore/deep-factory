@@ -1285,6 +1285,53 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('routes mutually-exclusive armed-tool replacement through one shared state mutator when sibling tools start armed', async () => {
+    testRuntime.initialArmedToolKinds = {
+      floodFillKind: 'break',
+      lineKind: 'break',
+      rectKind: 'place',
+      rectOutlineKind: 'break',
+      ellipseKind: 'place',
+      ellipseOutlineKind: 'break'
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: 'break',
+      lineKind: 'break',
+      rectKind: 'place',
+      rectOutlineKind: 'break',
+      ellipseKind: 'place',
+      ellipseOutlineKind: 'break'
+    });
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('f', 'KeyF').prevented).toBe(true);
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: 'place',
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
+
+    expect(dispatchKeydown('f', 'KeyF').prevented).toBe(true);
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
+  });
+
   it('routes keyboard brush shortcuts through one shared dispatcher for slot selection, eyedropper, and cycling', async () => {
     await import('./main');
     await flushBootstrap();
