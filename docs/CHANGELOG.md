@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Add a renderer regression where a streamed-back one-tile-gap roof build across the `y=-1/0` chunk seam still invalidates both lower-row chunk meshes before the first rebuilt draw.
+- Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with the streamed-back `y=-1/0` seam roof-lighting regression so the renderer now verifies that pruning the affected upper and lower chunks out of view, streaming them back in, and then resuming the roof build still invalidates both lower-row chunk meshes before the next rebuilt draw; removed completed task `311` from [docs/NEXT.md](docs/NEXT.md), and added replacement task `312`.
+- Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a renderer regression where a streamed-back one-tile-gap roof built right-to-left across an `x` chunk boundary still invalidates both lower-row chunk meshes before the first rebuilt draw.
 - Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with the right-to-left streamed-back x-boundary roof-lighting regression so the renderer now verifies that rebuilding the same roof from the opposite edit order still invalidates both lower-row chunk meshes before the next rebuilt draw; removed completed task `310` from [docs/NEXT.md](docs/NEXT.md), and added replacement task `311`.
 - Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
