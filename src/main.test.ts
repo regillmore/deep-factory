@@ -10,6 +10,7 @@ import {
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState
 } from './ui/appShell';
+import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
 
 const testRuntime = vi.hoisted(() => {
@@ -201,6 +202,7 @@ const testRuntime = vi.hoisted(() => {
       grounded: boolean | null;
       facing: 'left' | 'right' | null;
     }>,
+    latestDebugOverlayInspectState: null as DebugOverlayInspectState | null,
     latestDebugEditStatusStripState: null as DebugEditStatusStripState | null,
     playerSpawnPoint: null as null | {
       anchorTileX: number;
@@ -665,7 +667,9 @@ vi.mock('./ui/debugOverlay', () => ({
       testRuntime.debugEditControlsSetVisibleCallCount += 1;
     }
 
-    update(): void {}
+    update(_frameDtMs: number, _stats: unknown, state: DebugOverlayInspectState): void {
+      testRuntime.latestDebugOverlayInspectState = state;
+    }
   }
 }));
 
@@ -1199,6 +1203,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl = null;
     testRuntime.rendererPlayerCollisionContactsQueue = [];
     testRuntime.rendererPlayerCollisionContactRequestStates = [];
+    testRuntime.latestDebugOverlayInspectState = null;
     testRuntime.latestDebugEditStatusStripState = null;
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint();
     testRuntime.gameLoopStartCount = 0;
@@ -2669,6 +2674,121 @@ describe('main.ts shell state orchestration', () => {
       },
       position: steppedPlayerState.position,
       velocity: steppedPlayerState.velocity
+    });
+  });
+
+  it('routes standalone-player render-frame player, contact, and camera telemetry through one shared snapshot helper for the overlay and status strip', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(testRuntime.cameraInstance).not.toBeNull();
+    if (!testRuntime.cameraInstance) {
+      throw new Error('expected camera instance');
+    }
+
+    testRuntime.cameraInstance.zoom = 1.75;
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    const renderContacts = {
+      support: {
+        tileX: -2,
+        tileY: 3,
+        tileId: 31
+      },
+      wall: {
+        tileX: -1,
+        tileY: 2,
+        tileId: 32,
+        side: 'left' as const
+      },
+      ceiling: {
+        tileX: -2,
+        tileY: 1,
+        tileId: 33
+      }
+    };
+    const steppedPlayerState = {
+      position: { x: -24, y: 48 },
+      velocity: { x: -120, y: 64 },
+      size: { width: 12, height: 28 },
+      grounded: true,
+      facing: 'left' as const
+    };
+
+    testRuntime.playerMovementIntent = {
+      moveX: -1,
+      jumpHeld: true,
+      jumpPressed: false
+    };
+    testRuntime.rendererStepPlayerStateImpl = () => steppedPlayerState;
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, renderContacts];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState).not.toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugOverlayInspectState || !testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest overlay and status-strip telemetry');
+    }
+
+    const overlay = testRuntime.latestDebugOverlayInspectState;
+    const strip = testRuntime.latestDebugEditStatusStripState;
+
+    expect(overlay.player?.position).toEqual(strip.playerWorldPosition);
+    expect(overlay.player?.velocity).toEqual({
+      x: strip.playerVelocityX,
+      y: strip.playerVelocityY
+    });
+    expect(overlay.player?.aabb.min).toEqual(strip.playerAabb?.min ?? null);
+    expect(overlay.player?.aabb.max).toEqual(strip.playerAabb?.max ?? null);
+    expect(overlay.player?.grounded).toBe(strip.playerGrounded);
+    expect(overlay.player?.facing).toBe(strip.playerFacing);
+    expect(overlay.playerPlaceholderPoseLabel).toBe(strip.playerPlaceholderPoseLabel);
+    expect(overlay.playerIntent).toEqual({
+      moveX: strip.playerMoveX,
+      jumpHeld: strip.playerJumpHeld,
+      jumpPressed: strip.playerJumpPressed
+    });
+    expect(overlay.playerCameraFollow?.cameraPosition).toEqual(strip.playerCameraWorldPosition);
+    expect(overlay.playerCameraFollow?.cameraTile).toEqual(strip.playerCameraWorldTile);
+    expect(overlay.playerCameraFollow?.cameraLocal).toEqual(strip.playerCameraWorldLocalTile);
+    expect(overlay.playerCameraFollow?.cameraZoom).toBe(strip.playerCameraZoom);
+    expect(overlay.playerCameraFollow?.focus).toEqual(strip.playerCameraFocusPoint);
+    expect(overlay.playerCameraFollow?.focusTile).toEqual(strip.playerCameraFocusTile);
+    expect(overlay.playerCameraFollow?.focusChunk).toEqual(strip.playerCameraFocusChunk);
+    expect(overlay.playerCameraFollow?.focusLocal).toEqual(strip.playerCameraFocusLocalTile);
+    expect(overlay.playerCameraFollow?.offset).toEqual(strip.playerCameraFollowOffset);
+    expect(overlay.player?.contacts.support).toEqual(renderContacts.support);
+    expect(overlay.player?.contacts.wall).toEqual(renderContacts.wall);
+    expect(overlay.player?.contacts.ceiling).toEqual(renderContacts.ceiling);
+    expect(strip.playerSupportContact).toEqual({
+      tile: {
+        x: renderContacts.support.tileX,
+        y: renderContacts.support.tileY,
+        id: renderContacts.support.tileId
+      }
+    });
+    expect(strip.playerWallContact).toEqual({
+      tile: {
+        x: renderContacts.wall.tileX,
+        y: renderContacts.wall.tileY,
+        id: renderContacts.wall.tileId,
+        side: renderContacts.wall.side
+      }
+    });
+    expect(strip.playerCeilingContact).toEqual({
+      tile: {
+        x: renderContacts.ceiling.tileX,
+        y: renderContacts.ceiling.tileY,
+        id: renderContacts.ceiling.tileId
+      }
     });
   });
 

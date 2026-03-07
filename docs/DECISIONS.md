@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Standalone-player render-frame player telemetry should share one snapshot helper
+
+- Decision: Standalone-player player, contact, input, and camera telemetry assembly in `renderWorldFrame()` should route through a shared `createStandalonePlayerRenderFrameTelemetrySnapshot()` helper before the debug overlay and compact status strip consume it.
+- Reason: Those render-frame reads describe one player-facing telemetry snapshot for the current frame, so leaving `renderWorldFrame()` to assemble overlapping overlay and status-strip payloads inline makes later player telemetry changes easier to drift across the two surfaces.
+- Consequence: Future standalone-player render-frame player or camera telemetry changes should extend the shared snapshot helper and its runtime regression instead of reintroducing separate overlay and status-strip payload assembly in `src/main.ts`.
+
 ### 2026-03-07: Standalone-player fixed-step runtime entry should share one helper
 
 - Decision: Movement-intent read, fixed-step result creation, and post-result apply in `src/main.ts` should route through a shared `updateStandalonePlayerFixedStep()` helper.

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared standalone-player render-frame telemetry snapshot helper so `renderWorldFrame()` in `src/main.ts` reuses one player, contact, input, and camera payload builder for the debug overlay and compact status strip.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `createStandalonePlayerRenderFrameTelemetrySnapshot()` helper that now owns standalone-player render-frame player, contact, input, and camera telemetry assembly before the debug overlay and compact status strip consume it, expanded [src/main.test.ts](../src/main.test.ts) so the debug-overlay mock records inspect payloads and added a focused runtime regression that compares overlay and status-strip telemetry from the same render frame, removed completed task `297` from [docs/NEXT.md](docs/NEXT.md), added replacement task `298`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared standalone-player fixed-step update helper so movement-intent read, result creation, and post-result apply in `src/main.ts` reuse one runtime step entry point.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `updateStandalonePlayerFixedStep()` helper that now owns standalone-player movement-intent reads, fixed-step result creation, and post-result apply inside the fixed-update loop, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that records the intent read, step request, contact sampling, camera follow, and resulting transition telemetry from that shared entry path, removed completed task `296` from [docs/NEXT.md](docs/NEXT.md), added replacement task `297`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

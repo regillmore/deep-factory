@@ -49,7 +49,7 @@ import {
   saveWorldSessionShellState,
   resolveWorldSessionShellStateAfterPausedMainMenuTransition
 } from './mainWorldSessionShellState';
-import { DebugOverlay } from './ui/debugOverlay';
+import { DebugOverlay, type DebugOverlayInspectState } from './ui/debugOverlay';
 import {
   AppShell,
   createDefaultBootShellState,
@@ -63,7 +63,7 @@ import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import { PlayerSpawnMarkerOverlay } from './ui/playerSpawnMarkerOverlay';
-import type { DebugEditHoveredTileState } from './ui/debugEditStatusHelpers';
+import type { DebugEditHoveredTileState, DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
 import {
   TouchDebugEditControls,
   type DebugBrushOption,
@@ -234,6 +234,47 @@ type StandalonePlayerFixedStepTransitionSnapshotOptions = {
   previousPlayerContacts: PlayerCollisionContacts;
   nextPlayerContacts: PlayerCollisionContacts;
   playerMovementIntent: PlayerMovementIntent;
+};
+type StandalonePlayerRenderFrameDebugOverlayTelemetry = Pick<
+  DebugOverlayInspectState,
+  | 'player'
+  | 'playerPlaceholderPoseLabel'
+  | 'playerCeilingBonkHoldActive'
+  | 'playerIntent'
+  | 'playerCameraFollow'
+>;
+type StandalonePlayerRenderFrameStatusStripTelemetry = Pick<
+  DebugEditStatusStripState,
+  | 'playerPlaceholderPoseLabel'
+  | 'playerWorldPosition'
+  | 'playerWorldTile'
+  | 'playerAabb'
+  | 'playerCameraWorldPosition'
+  | 'playerCameraWorldTile'
+  | 'playerCameraWorldChunk'
+  | 'playerCameraWorldLocalTile'
+  | 'playerCameraFocusPoint'
+  | 'playerCameraFocusTile'
+  | 'playerCameraFocusChunk'
+  | 'playerCameraFocusLocalTile'
+  | 'playerCameraFollowOffset'
+  | 'playerCameraZoom'
+  | 'playerCeilingBonkHoldActive'
+  | 'playerGrounded'
+  | 'playerFacing'
+  | 'playerMoveX'
+  | 'playerVelocityX'
+  | 'playerVelocityY'
+  | 'playerJumpHeld'
+  | 'playerJumpPressed'
+  | 'playerSupportContact'
+  | 'playerWallContact'
+  | 'playerCeilingContact'
+>;
+type StandalonePlayerRenderFrameTelemetrySnapshot = {
+  standalonePlayerContacts: PlayerCollisionContacts | null;
+  debugOverlay: StandalonePlayerRenderFrameDebugOverlayTelemetry;
+  debugStatusStrip: StandalonePlayerRenderFrameStatusStripTelemetry;
 };
 const TOUCH_DEBUG_ARMED_TOOL_KEYS: readonly TouchDebugArmedToolKey[] = [
   'floodFillKind',
@@ -1609,6 +1650,240 @@ const bootstrap = async (): Promise<void> => {
     if (!handled) return;
   });
 
+  const createStandalonePlayerRenderFrameTelemetrySnapshot = (
+    renderTimeMs: number
+  ): StandalonePlayerRenderFrameTelemetrySnapshot => {
+    const playerState = standalonePlayerState;
+    const standalonePlayerContacts = playerState
+      ? renderer.getPlayerCollisionContacts(playerState)
+      : null;
+    const standalonePlayerCeilingBonkActive =
+      standalonePlayerContacts?.ceiling !== null ||
+      (standalonePlayerCeilingBonkHoldUntilTimeMs !== null &&
+      Number.isFinite(standalonePlayerCeilingBonkHoldUntilTimeMs)
+        ? renderTimeMs < standalonePlayerCeilingBonkHoldUntilTimeMs
+        : false);
+    const standalonePlayerCeilingBonkHoldActive =
+      standalonePlayerContacts?.ceiling === null &&
+      standalonePlayerCeilingBonkHoldUntilTimeMs !== null &&
+      Number.isFinite(standalonePlayerCeilingBonkHoldUntilTimeMs)
+        ? renderTimeMs < standalonePlayerCeilingBonkHoldUntilTimeMs
+        : false;
+    const playerWorldPosition =
+      playerState === null
+        ? null
+        : {
+            x: playerState.position.x,
+            y: playerState.position.y
+          };
+    const playerAabb = playerState === null ? null : getPlayerAabb(playerState);
+    const playerWorldTile =
+      playerWorldPosition === null
+        ? null
+        : worldToTilePoint(playerWorldPosition.x, playerWorldPosition.y);
+    const playerCameraWorldPosition =
+      playerState === null
+        ? null
+        : {
+            x: camera.x,
+            y: camera.y
+          };
+    const playerCameraWorldTile =
+      playerCameraWorldPosition === null
+        ? null
+        : worldToTilePoint(playerCameraWorldPosition.x, playerCameraWorldPosition.y);
+    const playerCameraWorldChunk =
+      playerCameraWorldTile === null
+        ? null
+        : (() => {
+            const { chunkX, chunkY } = worldToChunkCoord(
+              playerCameraWorldTile.x,
+              playerCameraWorldTile.y
+            );
+            return { x: chunkX, y: chunkY };
+          })();
+    const playerCameraWorldLocalTile =
+      playerCameraWorldTile === null
+        ? null
+        : (() => {
+            const { localX, localY } = worldToLocalTile(
+              playerCameraWorldTile.x,
+              playerCameraWorldTile.y
+            );
+            return { x: localX, y: localY };
+          })();
+    const playerCameraFocusPoint =
+      playerState === null ? null : getPlayerCameraFocusPoint(playerState);
+    const playerCameraFocusTile =
+      playerCameraFocusPoint === null
+        ? null
+        : worldToTilePoint(playerCameraFocusPoint.x, playerCameraFocusPoint.y);
+    const playerCameraFocusChunk =
+      playerCameraFocusTile === null
+        ? null
+        : (() => {
+            const { chunkX, chunkY } = worldToChunkCoord(
+              playerCameraFocusTile.x,
+              playerCameraFocusTile.y
+            );
+            return { x: chunkX, y: chunkY };
+          })();
+    const playerCameraFocusLocalTile =
+      playerCameraFocusTile === null
+        ? null
+        : (() => {
+            const { localX, localY } = worldToLocalTile(
+              playerCameraFocusTile.x,
+              playerCameraFocusTile.y
+            );
+            return { x: localX, y: localY };
+          })();
+    const playerIntent = input.getPlayerInputTelemetry();
+    const playerPlaceholderPoseLabel =
+      playerState === null
+        ? null
+        : getStandalonePlayerPlaceholderPoseLabel(playerState, {
+            elapsedMs: renderTimeMs,
+            wallContact: standalonePlayerContacts?.wall ?? null,
+            ceilingContact: standalonePlayerContacts?.ceiling ?? null,
+            ceilingBonkActive: standalonePlayerCeilingBonkActive
+          });
+    return {
+      standalonePlayerContacts,
+      debugOverlay: {
+        player:
+          playerState && playerWorldPosition && playerAabb
+            ? {
+                position: playerWorldPosition,
+                velocity: {
+                  x: playerState.velocity.x,
+                  y: playerState.velocity.y
+                },
+                aabb: {
+                  min: {
+                    x: playerAabb.minX,
+                    y: playerAabb.minY
+                  },
+                  max: {
+                    x: playerAabb.maxX,
+                    y: playerAabb.maxY
+                  },
+                  size: {
+                    x: playerAabb.maxX - playerAabb.minX,
+                    y: playerAabb.maxY - playerAabb.minY
+                  }
+                },
+                grounded: playerState.grounded,
+                facing: playerState.facing,
+                contacts: {
+                  support: standalonePlayerContacts?.support ?? null,
+                  wall: standalonePlayerContacts?.wall ?? null,
+                  ceiling: standalonePlayerContacts?.ceiling ?? null
+                }
+              }
+            : null,
+        playerPlaceholderPoseLabel,
+        playerCeilingBonkHoldActive:
+          playerState === null ? null : standalonePlayerCeilingBonkActive,
+        playerIntent,
+        playerCameraFollow:
+          playerCameraWorldPosition &&
+          playerCameraWorldTile &&
+          playerCameraWorldLocalTile &&
+          playerCameraFocusPoint &&
+          playerCameraFocusTile &&
+          playerCameraFocusChunk &&
+          playerCameraFocusLocalTile
+            ? {
+                cameraPosition: playerCameraWorldPosition,
+                cameraTile: playerCameraWorldTile,
+                cameraLocal: playerCameraWorldLocalTile,
+                cameraZoom: camera.zoom,
+                focus: playerCameraFocusPoint,
+                focusTile: playerCameraFocusTile,
+                focusChunk: playerCameraFocusChunk,
+                focusLocal: playerCameraFocusLocalTile,
+                offset: {
+                  x: cameraFollowOffset.x,
+                  y: cameraFollowOffset.y
+                }
+              }
+            : null
+      },
+      debugStatusStrip: {
+        playerPlaceholderPoseLabel,
+        playerWorldPosition,
+        playerWorldTile,
+        playerAabb:
+          playerAabb === null
+            ? null
+            : {
+                min: {
+                  x: playerAabb.minX,
+                  y: playerAabb.minY
+                },
+                max: {
+                  x: playerAabb.maxX,
+                  y: playerAabb.maxY
+                }
+              },
+        playerCameraWorldPosition,
+        playerCameraWorldTile,
+        playerCameraWorldChunk,
+        playerCameraWorldLocalTile,
+        playerCameraFocusPoint,
+        playerCameraFocusTile,
+        playerCameraFocusChunk,
+        playerCameraFocusLocalTile,
+        playerCameraFollowOffset:
+          playerState === null
+            ? null
+            : {
+                x: cameraFollowOffset.x,
+                y: cameraFollowOffset.y
+              },
+        playerCameraZoom: playerState === null ? null : camera.zoom,
+        playerCeilingBonkHoldActive:
+          playerState === null ? null : standalonePlayerCeilingBonkHoldActive,
+        playerGrounded: playerState?.grounded ?? null,
+        playerFacing: playerState?.facing ?? null,
+        playerMoveX: playerState === null ? null : playerIntent.moveX,
+        playerVelocityX: playerState === null ? null : playerState.velocity.x,
+        playerVelocityY: playerState === null ? null : playerState.velocity.y,
+        playerJumpHeld: playerState === null ? null : playerIntent.jumpHeld,
+        playerJumpPressed: playerState === null ? null : playerIntent.jumpPressed,
+        playerSupportContact: standalonePlayerContacts?.support
+          ? {
+              tile: {
+                x: standalonePlayerContacts.support.tileX,
+                y: standalonePlayerContacts.support.tileY,
+                id: standalonePlayerContacts.support.tileId
+              }
+            }
+          : null,
+        playerWallContact: standalonePlayerContacts?.wall
+          ? {
+              tile: {
+                x: standalonePlayerContacts.wall.tileX,
+                y: standalonePlayerContacts.wall.tileY,
+                id: standalonePlayerContacts.wall.tileId,
+                side: standalonePlayerContacts.wall.side
+              }
+            }
+          : null,
+        playerCeilingContact: standalonePlayerContacts?.ceiling
+          ? {
+              tile: {
+                x: standalonePlayerContacts.ceiling.tileX,
+                y: standalonePlayerContacts.ceiling.tileY,
+                id: standalonePlayerContacts.ceiling.tileId
+              }
+            }
+          : null
+      }
+    };
+  };
+
   const renderWorldFrame = (frameDtMs: number): void => {
     const renderTimeMs = performance.now();
     const pointerInspect = input.getPointerInspect();
@@ -1690,179 +1965,16 @@ const bootstrap = async (): Promise<void> => {
           }
         }
       : null;
-    const standalonePlayerContacts = standalonePlayerState
-      ? renderer.getPlayerCollisionContacts(standalonePlayerState)
-      : null;
-    const standalonePlayerCeilingBonkActive =
-      standalonePlayerContacts?.ceiling !== null ||
-      (standalonePlayerCeilingBonkHoldUntilTimeMs !== null &&
-      Number.isFinite(standalonePlayerCeilingBonkHoldUntilTimeMs)
-        ? renderTimeMs < standalonePlayerCeilingBonkHoldUntilTimeMs
-        : false);
-    const standalonePlayerCeilingBonkHoldActive =
-      standalonePlayerContacts?.ceiling === null &&
-      standalonePlayerCeilingBonkHoldUntilTimeMs !== null &&
-      Number.isFinite(standalonePlayerCeilingBonkHoldUntilTimeMs)
-        ? renderTimeMs < standalonePlayerCeilingBonkHoldUntilTimeMs
-        : false;
-    const debugStatusStripPlayerWallContact = standalonePlayerContacts?.wall
-      ? {
-          tile: {
-            x: standalonePlayerContacts.wall.tileX,
-            y: standalonePlayerContacts.wall.tileY,
-            id: standalonePlayerContacts.wall.tileId,
-            side: standalonePlayerContacts.wall.side
-          }
-        }
-      : null;
-    const debugStatusStripPlayerSupportContact = standalonePlayerContacts?.support
-      ? {
-          tile: {
-            x: standalonePlayerContacts.support.tileX,
-            y: standalonePlayerContacts.support.tileY,
-            id: standalonePlayerContacts.support.tileId
-          }
-        }
-      : null;
-    const debugStatusStripPlayerCeilingContact = standalonePlayerContacts?.ceiling
-      ? {
-          tile: {
-            x: standalonePlayerContacts.ceiling.tileX,
-            y: standalonePlayerContacts.ceiling.tileY,
-            id: standalonePlayerContacts.ceiling.tileId
-          }
-        }
-      : null;
-    const standalonePlayerAabb = standalonePlayerState ? getPlayerAabb(standalonePlayerState) : null;
-    const debugOverlayPlayerPlaceholderPoseLabel = standalonePlayerState
-      ? getStandalonePlayerPlaceholderPoseLabel(standalonePlayerState, {
-          elapsedMs: renderTimeMs,
-          wallContact: standalonePlayerContacts?.wall ?? null,
-          ceilingContact: standalonePlayerContacts?.ceiling ?? null,
-          ceilingBonkActive: standalonePlayerCeilingBonkActive
-        })
-      : null;
-    const debugOverlayPlayer = standalonePlayerState && standalonePlayerAabb
-      ? (() => {
-          return {
-            position: {
-              x: standalonePlayerState.position.x,
-              y: standalonePlayerState.position.y
-            },
-            velocity: {
-              x: standalonePlayerState.velocity.x,
-              y: standalonePlayerState.velocity.y
-            },
-            aabb: {
-              min: {
-                x: standalonePlayerAabb.minX,
-                y: standalonePlayerAabb.minY
-              },
-              max: {
-                x: standalonePlayerAabb.maxX,
-                y: standalonePlayerAabb.maxY
-              },
-              size: {
-                x: standalonePlayerAabb.maxX - standalonePlayerAabb.minX,
-                y: standalonePlayerAabb.maxY - standalonePlayerAabb.minY
-              }
-            },
-            grounded: standalonePlayerState.grounded,
-            facing: standalonePlayerState.facing,
-            contacts: {
-              support: standalonePlayerContacts?.support ?? null,
-              wall: standalonePlayerContacts?.wall ?? null,
-              ceiling: standalonePlayerContacts?.ceiling ?? null
-            }
-          };
-        })()
-      : null;
-    const debugStatusStripPlayerCameraFocusPoint =
-      standalonePlayerState === null ? null : getPlayerCameraFocusPoint(standalonePlayerState);
-    const debugStatusStripPlayerCameraFocusTile =
-      debugStatusStripPlayerCameraFocusPoint === null
-        ? null
-        : worldToTilePoint(
-            debugStatusStripPlayerCameraFocusPoint.x,
-            debugStatusStripPlayerCameraFocusPoint.y
-          );
-    const debugStatusStripPlayerCameraFocusChunk =
-      debugStatusStripPlayerCameraFocusTile === null
-        ? null
-        : (() => {
-            const { chunkX, chunkY } = worldToChunkCoord(
-              debugStatusStripPlayerCameraFocusTile.x,
-              debugStatusStripPlayerCameraFocusTile.y
-            );
-            return { x: chunkX, y: chunkY };
-          })();
-    const debugStatusStripPlayerCameraFocusLocalTile =
-      debugStatusStripPlayerCameraFocusTile === null
-        ? null
-        : (() => {
-            const { localX, localY } = worldToLocalTile(
-              debugStatusStripPlayerCameraFocusTile.x,
-              debugStatusStripPlayerCameraFocusTile.y
-            );
-            return { x: localX, y: localY };
-          })();
-    const debugStatusStripPlayerWorldTile =
-      standalonePlayerState === null
-        ? null
-        : worldToTilePoint(standalonePlayerState.position.x, standalonePlayerState.position.y);
-    const debugStatusStripPlayerCameraWorldTile =
-      standalonePlayerState === null ? null : worldToTilePoint(camera.x, camera.y);
-    const debugStatusStripPlayerCameraWorldChunk =
-      debugStatusStripPlayerCameraWorldTile === null
-        ? null
-        : (() => {
-            const { chunkX, chunkY } = worldToChunkCoord(
-              debugStatusStripPlayerCameraWorldTile.x,
-              debugStatusStripPlayerCameraWorldTile.y
-            );
-            return { x: chunkX, y: chunkY };
-          })();
-    const debugStatusStripPlayerCameraWorldLocalTile =
-      debugStatusStripPlayerCameraWorldTile === null
-        ? null
-        : (() => {
-            const { localX, localY } = worldToLocalTile(
-              debugStatusStripPlayerCameraWorldTile.x,
-              debugStatusStripPlayerCameraWorldTile.y
-            );
-            return { x: localX, y: localY };
-          })();
-    const debugOverlayPlayerCameraFollow =
-      debugStatusStripPlayerCameraWorldTile &&
-      debugStatusStripPlayerCameraWorldLocalTile &&
-      debugStatusStripPlayerCameraFocusPoint &&
-      debugStatusStripPlayerCameraFocusTile &&
-      debugStatusStripPlayerCameraFocusChunk &&
-      debugStatusStripPlayerCameraFocusLocalTile
-        ? {
-            cameraPosition: {
-              x: camera.x,
-              y: camera.y
-            },
-            cameraTile: debugStatusStripPlayerCameraWorldTile,
-            cameraLocal: debugStatusStripPlayerCameraWorldLocalTile,
-            cameraZoom: camera.zoom,
-            focus: debugStatusStripPlayerCameraFocusPoint,
-            focusTile: debugStatusStripPlayerCameraFocusTile,
-            focusChunk: debugStatusStripPlayerCameraFocusChunk,
-            focusLocal: debugStatusStripPlayerCameraFocusLocalTile,
-            offset: {
-              x: cameraFollowOffset.x,
-              y: cameraFollowOffset.y
-            }
-          }
-      : null;
-    const debugOverlayPlayerIntent = input.getPlayerInputTelemetry();
+    const standalonePlayerRenderFrameTelemetry =
+      createStandalonePlayerRenderFrameTelemetrySnapshot(renderTimeMs);
+    const debugStatusStripPlayerTelemetry = standalonePlayerRenderFrameTelemetry.debugStatusStrip;
     renderer.resize();
     renderer.render(camera, {
       standalonePlayer: standalonePlayerState,
-      standalonePlayerWallContact: standalonePlayerContacts?.wall ?? null,
-      standalonePlayerCeilingContact: standalonePlayerContacts?.ceiling ?? null,
+      standalonePlayerWallContact:
+        standalonePlayerRenderFrameTelemetry.standalonePlayerContacts?.wall ?? null,
+      standalonePlayerCeilingContact:
+        standalonePlayerRenderFrameTelemetry.standalonePlayerContacts?.ceiling ?? null,
       standalonePlayerCeilingBonkHoldUntilTimeMs: standalonePlayerCeilingBonkHoldUntilTimeMs,
       timeMs: renderTimeMs
     });
@@ -1923,52 +2035,31 @@ const bootstrap = async (): Promise<void> => {
       hoveredTile: hoveredDebugTileStatus,
       pinnedTile: pinnedDebugTileStatus,
       desktopInspectPinArmed: input.getArmedDesktopDebugInspectPin(),
-      playerPlaceholderPoseLabel: debugOverlayVisible ? null : debugOverlayPlayerPlaceholderPoseLabel,
+      playerPlaceholderPoseLabel:
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerPlaceholderPoseLabel,
       playerWorldPosition:
-        debugOverlayVisible || !standalonePlayerState
-          ? null
-          : {
-              x: standalonePlayerState.position.x,
-              y: standalonePlayerState.position.y
-            },
-      playerWorldTile: debugOverlayVisible ? null : debugStatusStripPlayerWorldTile,
-      playerAabb:
-        debugOverlayVisible || !standalonePlayerAabb
-          ? null
-          : {
-              min: {
-                x: standalonePlayerAabb.minX,
-                y: standalonePlayerAabb.minY
-              },
-              max: {
-                x: standalonePlayerAabb.maxX,
-                y: standalonePlayerAabb.maxY
-              }
-            },
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerWorldPosition,
+      playerWorldTile: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerWorldTile,
+      playerAabb: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerAabb,
       playerCameraWorldPosition:
-        debugOverlayVisible || !standalonePlayerState
-          ? null
-          : {
-              x: camera.x,
-              y: camera.y
-            },
-      playerCameraWorldTile: debugOverlayVisible ? null : debugStatusStripPlayerCameraWorldTile,
-      playerCameraWorldChunk: debugOverlayVisible ? null : debugStatusStripPlayerCameraWorldChunk,
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraWorldPosition,
+      playerCameraWorldTile:
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraWorldTile,
+      playerCameraWorldChunk:
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraWorldChunk,
       playerCameraWorldLocalTile:
-        debugOverlayVisible ? null : debugStatusStripPlayerCameraWorldLocalTile,
-      playerCameraFocusPoint: debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusPoint,
-      playerCameraFocusTile: debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusTile,
-      playerCameraFocusChunk: debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusChunk,
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraWorldLocalTile,
+      playerCameraFocusPoint:
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraFocusPoint,
+      playerCameraFocusTile:
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraFocusTile,
+      playerCameraFocusChunk:
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraFocusChunk,
       playerCameraFocusLocalTile:
-        debugOverlayVisible ? null : debugStatusStripPlayerCameraFocusLocalTile,
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraFocusLocalTile,
       playerCameraFollowOffset:
-        debugOverlayVisible || !standalonePlayerState
-          ? null
-          : {
-              x: cameraFollowOffset.x,
-              y: cameraFollowOffset.y
-            },
-      playerCameraZoom: debugOverlayVisible || !standalonePlayerState ? null : camera.zoom,
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraFollowOffset,
+      playerCameraZoom: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraZoom,
       residentDirtyLightChunks: debugOverlayVisible ? null : renderer.telemetry.residentDirtyLightChunks,
       playerNearbyLightLevel: debugOverlayVisible ? null : standalonePlayerNearbyLightLevel,
       playerNearbyLightFactor: debugOverlayVisible ? null : standalonePlayerNearbyLightFactor,
@@ -1978,18 +2069,21 @@ const bootstrap = async (): Promise<void> => {
       playerNearbyLightSourceLocalTile:
         debugOverlayVisible ? null : standalonePlayerNearbyLightSourceLocalTile,
       playerCeilingBonkHoldActive:
-        debugOverlayVisible || !standalonePlayerState ? null : standalonePlayerCeilingBonkHoldActive,
-      playerGrounded: debugOverlayVisible ? null : standalonePlayerState?.grounded ?? null,
-      playerFacing: debugOverlayVisible ? null : standalonePlayerState?.facing ?? null,
-      playerMoveX: debugOverlayVisible || !standalonePlayerState ? null : debugOverlayPlayerIntent.moveX,
-      playerVelocityX: debugOverlayVisible || !standalonePlayerState ? null : standalonePlayerState.velocity.x,
-      playerVelocityY: debugOverlayVisible || !standalonePlayerState ? null : standalonePlayerState.velocity.y,
-      playerJumpHeld: debugOverlayVisible || !standalonePlayerState ? null : debugOverlayPlayerIntent.jumpHeld,
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCeilingBonkHoldActive,
+      playerGrounded: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerGrounded,
+      playerFacing: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerFacing,
+      playerMoveX: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerMoveX,
+      playerVelocityX: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerVelocityX,
+      playerVelocityY: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerVelocityY,
+      playerJumpHeld: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerJumpHeld,
       playerJumpPressed:
-        debugOverlayVisible || !standalonePlayerState ? null : debugOverlayPlayerIntent.jumpPressed,
-      playerSupportContact: debugOverlayVisible ? null : debugStatusStripPlayerSupportContact,
-      playerWallContact: debugOverlayVisible ? null : debugStatusStripPlayerWallContact,
-      playerCeilingContact: debugOverlayVisible ? null : debugStatusStripPlayerCeilingContact,
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerJumpPressed,
+      playerSupportContact:
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerSupportContact,
+      playerWallContact:
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerWallContact,
+      playerCeilingContact:
+        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCeilingContact,
       playerGroundedTransition: debugOverlayVisible ? null : lastPlayerGroundedTransitionEvent,
       playerFacingTransition: debugOverlayVisible ? null : lastPlayerFacingTransitionEvent,
       playerRespawn: debugOverlayVisible ? null : lastPlayerRespawnEvent,
@@ -2000,9 +2094,11 @@ const bootstrap = async (): Promise<void> => {
       pointer: debugOverlayPointerInspect,
       pinned: debugOverlayPinnedInspect,
       spawn: debugOverlaySpawn,
-      player: debugOverlayPlayer,
-      playerPlaceholderPoseLabel: debugOverlayPlayerPlaceholderPoseLabel,
-      playerCeilingBonkHoldActive: standalonePlayerState ? standalonePlayerCeilingBonkHoldActive : null,
+      player: standalonePlayerRenderFrameTelemetry.debugOverlay.player,
+      playerPlaceholderPoseLabel:
+        standalonePlayerRenderFrameTelemetry.debugOverlay.playerPlaceholderPoseLabel,
+      playerCeilingBonkHoldActive:
+        standalonePlayerRenderFrameTelemetry.debugOverlay.playerCeilingBonkHoldActive,
       playerNearbyLightLevel: standalonePlayerState ? standalonePlayerNearbyLightLevel : null,
       playerNearbyLightFactor: standalonePlayerState ? standalonePlayerNearbyLightFactor : null,
       playerNearbyLightSourceTile: standalonePlayerState ? standalonePlayerNearbyLightSourceTile : null,
@@ -2012,8 +2108,8 @@ const bootstrap = async (): Promise<void> => {
       playerNearbyLightSourceLocalTile: standalonePlayerState
         ? standalonePlayerNearbyLightSourceLocalTile
         : null,
-      playerIntent: debugOverlayPlayerIntent,
-      playerCameraFollow: debugOverlayPlayerCameraFollow,
+      playerIntent: standalonePlayerRenderFrameTelemetry.debugOverlay.playerIntent,
+      playerCameraFollow: standalonePlayerRenderFrameTelemetry.debugOverlay.playerCameraFollow,
       playerGroundedTransition: lastPlayerGroundedTransitionEvent,
       playerFacingTransition: lastPlayerFacingTransitionEvent,
       playerRespawn: lastPlayerRespawnEvent,

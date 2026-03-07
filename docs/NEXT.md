@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Refine, Extract, Refactor, Restructure
 
-297. Extract a shared standalone-player render-frame telemetry snapshot helper so `renderWorldFrame()` in `src/main.ts` reuses one player/contact/camera payload builder for the debug overlay and compact status strip, with focused runtime regressions.
+298. Extract a shared standalone-player render-frame nearby-light telemetry snapshot helper so post-render light level and source payloads in `renderWorldFrame()` reuse one builder for the debug overlay and compact status strip, with focused runtime regressions.
