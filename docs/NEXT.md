@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Refine, Refactor, Restructure
 
-294. Extract a shared standalone-player fixed-step result helper so next player state, contact snapshot, and transition snapshot in `src/main.ts` reuse one pre-commit build path, with focused runtime regressions.
+295. Extract a shared standalone-player fixed-step apply helper so state assignment, transition commit, and camera follow in `src/main.ts` reuse one post-result path, with focused runtime regressions.

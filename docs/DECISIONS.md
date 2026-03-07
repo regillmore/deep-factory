@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Standalone-player fixed-step result assembly should share one helper
+
+- Decision: Next player state calculation, collision-contact sampling, and transition-resolution assembly in `src/main.ts` should route through a shared `createStandalonePlayerFixedStepResult()` helper before the post-step apply path runs.
+- Reason: Those three pieces together form one fixed-step pre-commit result contract for the standalone player, so leaving them partially split across the fixed-update branch makes later changes easier to drift from the existing contact and transition helper chain plus the focused runtime regressions.
+- Consequence: Future standalone-player fixed-step pre-commit work should extend the shared result helper and its runtime regression instead of reintroducing separate step, contact-snapshot, or transition-snapshot assembly in `src/main.ts`.
+
 ### 2026-03-07: Standalone-player fixed-step contact sampling should share one helper
 
 - Decision: Previous-state and next-state collision-contact queries in `src/main.ts` should route through a shared `createStandalonePlayerFixedStepContactSnapshot()` helper before transition resolution runs.

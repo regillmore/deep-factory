@@ -210,9 +210,19 @@ type StandalonePlayerFixedStepContactSnapshot = {
   previousPlayerContacts: PlayerCollisionContacts;
   nextPlayerContacts: PlayerCollisionContacts;
 };
+type StandalonePlayerFixedStepResult = {
+  nextPlayerState: PlayerState;
+  contactSnapshot: StandalonePlayerFixedStepContactSnapshot;
+  transitionSnapshot: StandalonePlayerFixedStepTransitionSnapshot;
+};
 type StandalonePlayerFixedStepContactSnapshotOptions = {
   previousPlayerState: PlayerState;
   nextPlayerState: PlayerState;
+};
+type StandalonePlayerFixedStepResultOptions = {
+  previousPlayerState: PlayerState;
+  fixedDt: number;
+  playerMovementIntent: PlayerMovementIntent;
 };
 type StandalonePlayerFixedStepTransitionSnapshotOptions = {
   previousPlayerState: PlayerState;
@@ -812,6 +822,32 @@ const bootstrap = async (): Promise<void> => {
       nextPlayerContacts
     )
   });
+  const createStandalonePlayerFixedStepResult = ({
+    previousPlayerState,
+    fixedDt,
+    playerMovementIntent
+  }: StandalonePlayerFixedStepResultOptions): StandalonePlayerFixedStepResult => {
+    const nextPlayerState = renderer.stepPlayerState(
+      previousPlayerState,
+      fixedDt,
+      playerMovementIntent
+    );
+    const contactSnapshot = createStandalonePlayerFixedStepContactSnapshot({
+      previousPlayerState,
+      nextPlayerState
+    });
+    return {
+      nextPlayerState,
+      contactSnapshot,
+      transitionSnapshot: createStandalonePlayerFixedStepTransitionSnapshot({
+        previousPlayerState,
+        nextPlayerState,
+        previousPlayerContacts: contactSnapshot.previousPlayerContacts,
+        nextPlayerContacts: contactSnapshot.nextPlayerContacts,
+        playerMovementIntent
+      })
+    };
+  };
   const commitStandalonePlayerFixedStepTransitions = ({
     groundedTransitionEvent,
     facingTransitionEvent,
@@ -2098,24 +2134,13 @@ const bootstrap = async (): Promise<void> => {
 
       if (standalonePlayerState) {
         const playerMovementIntent = input.getPlayerMovementIntent();
-        const nextPlayerState = renderer.stepPlayerState(
-          standalonePlayerState,
+        const playerFixedStepResult = createStandalonePlayerFixedStepResult({
+          previousPlayerState: standalonePlayerState,
           fixedDt,
           playerMovementIntent
-        );
-        const playerFixedStepContactSnapshot = createStandalonePlayerFixedStepContactSnapshot({
-          previousPlayerState: standalonePlayerState,
-          nextPlayerState
         });
-        const playerFixedStepTransitionSnapshot = createStandalonePlayerFixedStepTransitionSnapshot({
-          previousPlayerState: standalonePlayerState,
-          nextPlayerState,
-          previousPlayerContacts: playerFixedStepContactSnapshot.previousPlayerContacts,
-          nextPlayerContacts: playerFixedStepContactSnapshot.nextPlayerContacts,
-          playerMovementIntent
-        });
-        standalonePlayerState = nextPlayerState;
-        commitStandalonePlayerFixedStepTransitions(playerFixedStepTransitionSnapshot);
+        standalonePlayerState = playerFixedStepResult.nextPlayerState;
+        commitStandalonePlayerFixedStepTransitions(playerFixedStepResult.transitionSnapshot);
         applyStandalonePlayerCameraFollow();
       }
 

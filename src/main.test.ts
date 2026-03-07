@@ -172,6 +172,19 @@ const testRuntime = vi.hoisted(() => {
       fixedDt: number,
       intent: unknown
     ) => unknown),
+    rendererStepPlayerStateRequests: [] as Array<{
+      state: {
+        position: { x: number; y: number } | null;
+        velocity: { x: number; y: number } | null;
+        grounded: boolean | null;
+        facing: 'left' | 'right' | null;
+      };
+      fixedDt: number;
+      intent: {
+        moveX: number | null;
+        jumpPressed: boolean | null;
+      };
+    }>,
     rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl: null as null | ((
       state: unknown,
       spawn: unknown
@@ -346,6 +359,37 @@ vi.mock('./gl/renderer', () => ({
     resetWorld(): void {}
 
     stepPlayerState<T>(state: T, fixedDt: number, intent: unknown): T {
+      const playerState = state as {
+        position?: { x?: number; y?: number };
+        velocity?: { x?: number; y?: number };
+        grounded?: boolean;
+        facing?: 'left' | 'right';
+      };
+      const playerIntent = intent as { moveX?: number; jumpPressed?: boolean };
+      testRuntime.rendererStepPlayerStateRequests.push({
+        state: {
+          position:
+            playerState.position &&
+            typeof playerState.position.x === 'number' &&
+            typeof playerState.position.y === 'number'
+              ? { x: playerState.position.x, y: playerState.position.y }
+              : null,
+          velocity:
+            playerState.velocity &&
+            typeof playerState.velocity.x === 'number' &&
+            typeof playerState.velocity.y === 'number'
+              ? { x: playerState.velocity.x, y: playerState.velocity.y }
+              : null,
+          grounded: typeof playerState.grounded === 'boolean' ? playerState.grounded : null,
+          facing: playerState.facing ?? null
+        },
+        fixedDt,
+        intent: {
+          moveX: typeof playerIntent.moveX === 'number' ? playerIntent.moveX : null,
+          jumpPressed:
+            typeof playerIntent.jumpPressed === 'boolean' ? playerIntent.jumpPressed : null
+        }
+      });
       if (testRuntime.rendererStepPlayerStateImpl) {
         return testRuntime.rendererStepPlayerStateImpl(state, fixedDt, intent) as T;
       }
@@ -1148,6 +1192,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTileId = 0;
     testRuntime.rendererSetTileResult = false;
     testRuntime.rendererStepPlayerStateImpl = null;
+    testRuntime.rendererStepPlayerStateRequests = [];
     testRuntime.rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl = null;
     testRuntime.rendererPlayerCollisionContactsQueue = [];
     testRuntime.rendererPlayerCollisionContactRequestStates = [];
@@ -2268,6 +2313,123 @@ describe('main.ts shell state orchestration', () => {
         x: 1,
         y: -3,
         id: 10
+      },
+      position: steppedPlayerState.position,
+      velocity: steppedPlayerState.velocity
+    });
+  });
+
+  it('routes standalone-player fixed-step next-state, contact, and transition assembly through one shared result helper', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    const blockedContacts = {
+      support: null,
+      wall: {
+        tileX: -3,
+        tileY: -1,
+        tileId: 11,
+        side: 'left' as const
+      },
+      ceiling: {
+        tileX: -2,
+        tileY: -3,
+        tileId: 12
+      }
+    };
+    const steppedPlayerState = {
+      position: { x: -24, y: -16 },
+      velocity: { x: -120, y: -260 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'left' as const
+    };
+
+    testRuntime.playerMovementIntent = {
+      moveX: -1,
+      jumpHeld: true,
+      jumpPressed: true
+    };
+    testRuntime.rendererStepPlayerStateRequests = [];
+    testRuntime.rendererPlayerCollisionContactRequestStates = [];
+    testRuntime.rendererStepPlayerStateImpl = () => steppedPlayerState;
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, blockedContacts, noContacts];
+
+    runFixedUpdate(20);
+
+    expect(testRuntime.rendererStepPlayerStateRequests).toEqual([
+      {
+        state: {
+          position: { x: 8, y: 0 },
+          velocity: { x: 0, y: 0 },
+          grounded: true,
+          facing: 'right'
+        },
+        fixedDt: 20,
+        intent: {
+          moveX: -1,
+          jumpPressed: true
+        }
+      }
+    ]);
+    expect(testRuntime.rendererPlayerCollisionContactRequestStates).toEqual([
+      {
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        grounded: true,
+        facing: 'right'
+      },
+      {
+        position: steppedPlayerState.position,
+        velocity: steppedPlayerState.velocity,
+        grounded: steppedPlayerState.grounded,
+        facing: steppedPlayerState.facing
+      }
+    ]);
+
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest debug status strip state after shared-result step');
+    }
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition).toMatchObject({
+      kind: 'jump',
+      position: steppedPlayerState.position,
+      velocity: steppedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerFacingTransition).toMatchObject({
+      kind: 'left',
+      previousFacing: 'right',
+      nextFacing: 'left',
+      position: steppedPlayerState.position,
+      velocity: steppedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: -3,
+        y: -1,
+        id: 11,
+        side: 'left'
+      },
+      position: steppedPlayerState.position,
+      velocity: steppedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: -2,
+        y: -3,
+        id: 12
       },
       position: steppedPlayerState.position,
       velocity: steppedPlayerState.velocity
