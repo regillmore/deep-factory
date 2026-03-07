@@ -553,6 +553,72 @@ describe('Renderer atlas telemetry', () => {
     );
   });
 
+  it('invalidates both row-above chunk meshes when a streamed-back top-corner boundary blocker recloses from the opposite chunk side', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const leftBoundaryWorldTileX = CHUNK_SIZE - 1;
+    const rightBoundaryWorldTileX = CHUNK_SIZE;
+    const cornerWorldTileY = 0;
+    const shadowBlockerWorldTileY = -2;
+
+    for (let worldTileY = -CHUNK_SIZE; worldTileY <= cornerWorldTileY; worldTileY += 1) {
+      renderer.setTile(leftBoundaryWorldTileX, worldTileY, 0);
+      renderer.setTile(rightBoundaryWorldTileX, worldTileY, 0);
+    }
+    renderer.setTile(rightBoundaryWorldTileX, shadowBlockerWorldTileY, 1);
+    renderer.setTile(leftBoundaryWorldTileX, cornerWorldTileY, 1);
+    renderer.setTile(rightBoundaryWorldTileX, cornerWorldTileY, 1);
+
+    const nearCamera = new Camera2D();
+    nearCamera.zoom = 16;
+    nearCamera.x = ((leftBoundaryWorldTileX + rightBoundaryWorldTileX + 1) * TILE_SIZE) / 2;
+    nearCamera.y = -TILE_SIZE;
+    renderUntilMeshBuildQueueDrains(renderer, nearCamera);
+
+    expect(renderer.setTile(rightBoundaryWorldTileX, cornerWorldTileY, 0)).toBe(true);
+    renderUntilMeshBuildQueueDrains(renderer, nearCamera);
+
+    const farCamera = new Camera2D();
+    farCamera.zoom = nearCamera.zoom;
+    farCamera.x = CHUNK_SIZE * TILE_SIZE * 10;
+    farCamera.y = nearCamera.y;
+    renderer.render(farCamera, { timeMs: 0 });
+
+    expect(renderer.telemetry.evictedMeshEntries).toBeGreaterThan(0);
+    expect(renderer.telemetry.evictedWorldChunks).toBeGreaterThan(0);
+
+    renderUntilMeshBuildQueueDrains(renderer, nearCamera);
+    expect(renderer.telemetry.meshBuildQueueLength).toBe(0);
+
+    const invalidateChunkMeshSpy = vi.spyOn(
+      renderer as unknown as {
+        invalidateChunkMesh: (chunkX: number, chunkY: number) => void;
+      },
+      'invalidateChunkMesh'
+    );
+    invalidateChunkMeshSpy.mockClear();
+
+    expect(renderer.setTile(rightBoundaryWorldTileX, cornerWorldTileY, 1)).toBe(true);
+    renderer.render(nearCamera, { timeMs: 0 });
+
+    expect(invalidateChunkMeshSpy.mock.calls).toEqual(
+      expect.arrayContaining([
+        [0, -1],
+        [1, -1]
+      ])
+    );
+  });
+
   it('invalidates both row-above chunk meshes when a streamed-back top-corner boundary blocker reopens from the opposite chunk side', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));
