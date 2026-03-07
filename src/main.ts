@@ -271,6 +271,14 @@ type StandalonePlayerRenderFrameStatusStripTelemetry = Pick<
   | 'playerWallContact'
   | 'playerCeilingContact'
 >;
+type StandalonePlayerRenderFrameNearbyLightTelemetry = Pick<
+  DebugOverlayInspectState,
+  | 'playerNearbyLightLevel'
+  | 'playerNearbyLightFactor'
+  | 'playerNearbyLightSourceTile'
+  | 'playerNearbyLightSourceChunk'
+  | 'playerNearbyLightSourceLocalTile'
+>;
 type StandalonePlayerRenderFrameTelemetrySnapshot = {
   standalonePlayerContacts: PlayerCollisionContacts | null;
   debugOverlay: StandalonePlayerRenderFrameDebugOverlayTelemetry;
@@ -1883,6 +1891,47 @@ const bootstrap = async (): Promise<void> => {
       }
     };
   };
+  const createStandalonePlayerRenderFrameNearbyLightTelemetrySnapshot =
+    (): StandalonePlayerRenderFrameNearbyLightTelemetry => {
+      if (standalonePlayerState === null) {
+        return {
+          playerNearbyLightLevel: null,
+          playerNearbyLightFactor: null,
+          playerNearbyLightSourceTile: null,
+          playerNearbyLightSourceChunk: null,
+          playerNearbyLightSourceLocalTile: null
+        };
+      }
+      const telemetry = renderer.telemetry;
+      return {
+        playerNearbyLightLevel: telemetry.standalonePlayerNearbyLightLevel,
+        playerNearbyLightFactor: telemetry.standalonePlayerNearbyLightFactor,
+        playerNearbyLightSourceTile:
+          telemetry.standalonePlayerNearbyLightSourceTileX !== null &&
+          telemetry.standalonePlayerNearbyLightSourceTileY !== null
+            ? {
+                x: telemetry.standalonePlayerNearbyLightSourceTileX,
+                y: telemetry.standalonePlayerNearbyLightSourceTileY
+              }
+            : null,
+        playerNearbyLightSourceChunk:
+          telemetry.standalonePlayerNearbyLightSourceChunkX !== null &&
+          telemetry.standalonePlayerNearbyLightSourceChunkY !== null
+            ? {
+                x: telemetry.standalonePlayerNearbyLightSourceChunkX,
+                y: telemetry.standalonePlayerNearbyLightSourceChunkY
+              }
+            : null,
+        playerNearbyLightSourceLocalTile:
+          telemetry.standalonePlayerNearbyLightSourceLocalTileX !== null &&
+          telemetry.standalonePlayerNearbyLightSourceLocalTileY !== null
+            ? {
+                x: telemetry.standalonePlayerNearbyLightSourceLocalTileX,
+                y: telemetry.standalonePlayerNearbyLightSourceLocalTileY
+              }
+            : null
+      };
+    };
 
   const renderWorldFrame = (frameDtMs: number): void => {
     const renderTimeMs = performance.now();
@@ -1978,39 +2027,8 @@ const bootstrap = async (): Promise<void> => {
       standalonePlayerCeilingBonkHoldUntilTimeMs: standalonePlayerCeilingBonkHoldUntilTimeMs,
       timeMs: renderTimeMs
     });
-    const standalonePlayerNearbyLightLevel = standalonePlayerState
-      ? renderer.telemetry.standalonePlayerNearbyLightLevel
-      : null;
-    const standalonePlayerNearbyLightFactor = standalonePlayerState
-      ? renderer.telemetry.standalonePlayerNearbyLightFactor
-      : null;
-    const standalonePlayerNearbyLightSourceTile =
-      standalonePlayerState &&
-      renderer.telemetry.standalonePlayerNearbyLightSourceTileX !== null &&
-      renderer.telemetry.standalonePlayerNearbyLightSourceTileY !== null
-        ? {
-            x: renderer.telemetry.standalonePlayerNearbyLightSourceTileX,
-            y: renderer.telemetry.standalonePlayerNearbyLightSourceTileY
-          }
-        : null;
-    const standalonePlayerNearbyLightSourceChunk =
-      standalonePlayerState &&
-      renderer.telemetry.standalonePlayerNearbyLightSourceChunkX !== null &&
-      renderer.telemetry.standalonePlayerNearbyLightSourceChunkY !== null
-        ? {
-            x: renderer.telemetry.standalonePlayerNearbyLightSourceChunkX,
-            y: renderer.telemetry.standalonePlayerNearbyLightSourceChunkY
-          }
-        : null;
-    const standalonePlayerNearbyLightSourceLocalTile =
-      standalonePlayerState &&
-      renderer.telemetry.standalonePlayerNearbyLightSourceLocalTileX !== null &&
-      renderer.telemetry.standalonePlayerNearbyLightSourceLocalTileY !== null
-        ? {
-            x: renderer.telemetry.standalonePlayerNearbyLightSourceLocalTileX,
-            y: renderer.telemetry.standalonePlayerNearbyLightSourceLocalTileY
-          }
-        : null;
+    const standalonePlayerNearbyLightTelemetry =
+      createStandalonePlayerRenderFrameNearbyLightTelemetrySnapshot();
     hoveredTileCursor.update(camera, {
       hovered: pointerInspect
         ? {
@@ -2061,13 +2079,18 @@ const bootstrap = async (): Promise<void> => {
         debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraFollowOffset,
       playerCameraZoom: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraZoom,
       residentDirtyLightChunks: debugOverlayVisible ? null : renderer.telemetry.residentDirtyLightChunks,
-      playerNearbyLightLevel: debugOverlayVisible ? null : standalonePlayerNearbyLightLevel,
-      playerNearbyLightFactor: debugOverlayVisible ? null : standalonePlayerNearbyLightFactor,
-      playerNearbyLightSourceTile: debugOverlayVisible ? null : standalonePlayerNearbyLightSourceTile,
+      playerNearbyLightLevel:
+        debugOverlayVisible ? null : standalonePlayerNearbyLightTelemetry.playerNearbyLightLevel,
+      playerNearbyLightFactor:
+        debugOverlayVisible ? null : standalonePlayerNearbyLightTelemetry.playerNearbyLightFactor,
+      playerNearbyLightSourceTile:
+        debugOverlayVisible ? null : standalonePlayerNearbyLightTelemetry.playerNearbyLightSourceTile,
       playerNearbyLightSourceChunk:
-        debugOverlayVisible ? null : standalonePlayerNearbyLightSourceChunk,
+        debugOverlayVisible ? null : standalonePlayerNearbyLightTelemetry.playerNearbyLightSourceChunk,
       playerNearbyLightSourceLocalTile:
-        debugOverlayVisible ? null : standalonePlayerNearbyLightSourceLocalTile,
+        debugOverlayVisible
+          ? null
+          : standalonePlayerNearbyLightTelemetry.playerNearbyLightSourceLocalTile,
       playerCeilingBonkHoldActive:
         debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCeilingBonkHoldActive,
       playerGrounded: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerGrounded,
@@ -2099,15 +2122,14 @@ const bootstrap = async (): Promise<void> => {
         standalonePlayerRenderFrameTelemetry.debugOverlay.playerPlaceholderPoseLabel,
       playerCeilingBonkHoldActive:
         standalonePlayerRenderFrameTelemetry.debugOverlay.playerCeilingBonkHoldActive,
-      playerNearbyLightLevel: standalonePlayerState ? standalonePlayerNearbyLightLevel : null,
-      playerNearbyLightFactor: standalonePlayerState ? standalonePlayerNearbyLightFactor : null,
-      playerNearbyLightSourceTile: standalonePlayerState ? standalonePlayerNearbyLightSourceTile : null,
-      playerNearbyLightSourceChunk: standalonePlayerState
-        ? standalonePlayerNearbyLightSourceChunk
-        : null,
-      playerNearbyLightSourceLocalTile: standalonePlayerState
-        ? standalonePlayerNearbyLightSourceLocalTile
-        : null,
+      playerNearbyLightLevel: standalonePlayerNearbyLightTelemetry.playerNearbyLightLevel ?? null,
+      playerNearbyLightFactor: standalonePlayerNearbyLightTelemetry.playerNearbyLightFactor ?? null,
+      playerNearbyLightSourceTile:
+        standalonePlayerNearbyLightTelemetry.playerNearbyLightSourceTile ?? null,
+      playerNearbyLightSourceChunk:
+        standalonePlayerNearbyLightTelemetry.playerNearbyLightSourceChunk ?? null,
+      playerNearbyLightSourceLocalTile:
+        standalonePlayerNearbyLightTelemetry.playerNearbyLightSourceLocalTile ?? null,
       playerIntent: standalonePlayerRenderFrameTelemetry.debugOverlay.playerIntent,
       playerCameraFollow: standalonePlayerRenderFrameTelemetry.debugOverlay.playerCameraFollow,
       playerGroundedTransition: lastPlayerGroundedTransitionEvent,

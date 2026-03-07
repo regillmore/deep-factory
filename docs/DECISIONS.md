@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Standalone-player render-frame nearby-light telemetry should share one snapshot helper
+
+- Decision: Post-render standalone-player nearby-light level, factor, and source payload assembly in `src/main.ts` should route through a shared `createStandalonePlayerRenderFrameNearbyLightTelemetrySnapshot()` helper before the debug overlay and compact status strip consume it.
+- Reason: Those renderer telemetry reads describe one nearby-light snapshot for the same render frame, so leaving `renderWorldFrame()` to assemble them inline makes later telemetry changes easier to drift across the two UI surfaces.
+- Consequence: Future standalone-player nearby-light telemetry changes should extend the shared snapshot helper and its runtime regression instead of reintroducing separate `renderer.telemetry` reads in `renderWorldFrame()`.
+
 ### 2026-03-07: Standalone-player render-frame player telemetry should share one snapshot helper
 
 - Decision: Standalone-player player, contact, input, and camera telemetry assembly in `renderWorldFrame()` should route through a shared `createStandalonePlayerRenderFrameTelemetrySnapshot()` helper before the debug overlay and compact status strip consume it.

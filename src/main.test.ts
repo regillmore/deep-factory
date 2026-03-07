@@ -202,6 +202,19 @@ const testRuntime = vi.hoisted(() => {
       grounded: boolean | null;
       facing: 'left' | 'right' | null;
     }>,
+    rendererTelemetry: {
+      atlasWidth: null as number | null,
+      atlasHeight: null as number | null,
+      residentDirtyLightChunks: 0,
+      standalonePlayerNearbyLightLevel: null as number | null,
+      standalonePlayerNearbyLightFactor: null as number | null,
+      standalonePlayerNearbyLightSourceTileX: null as number | null,
+      standalonePlayerNearbyLightSourceTileY: null as number | null,
+      standalonePlayerNearbyLightSourceChunkX: null as number | null,
+      standalonePlayerNearbyLightSourceChunkY: null as number | null,
+      standalonePlayerNearbyLightSourceLocalTileX: null as number | null,
+      standalonePlayerNearbyLightSourceLocalTileY: null as number | null
+    },
     latestDebugOverlayInspectState: null as DebugOverlayInspectState | null,
     latestDebugEditStatusStripState: null as DebugEditStatusStripState | null,
     playerSpawnPoint: null as null | {
@@ -265,19 +278,7 @@ vi.mock('./gl/renderer', () => ({
       }
     }
 
-    telemetry = {
-      atlasWidth: null,
-      atlasHeight: null,
-      residentDirtyLightChunks: 0,
-      standalonePlayerNearbyLightLevel: null,
-      standalonePlayerNearbyLightFactor: null,
-      standalonePlayerNearbyLightSourceTileX: null,
-      standalonePlayerNearbyLightSourceTileY: null,
-      standalonePlayerNearbyLightSourceChunkX: null,
-      standalonePlayerNearbyLightSourceChunkY: null,
-      standalonePlayerNearbyLightSourceLocalTileX: null,
-      standalonePlayerNearbyLightSourceLocalTileY: null
-    };
+    telemetry = testRuntime.rendererTelemetry;
 
     async initialize(): Promise<void> {
       if (testRuntime.rendererInitializeError !== null) {
@@ -1203,6 +1204,17 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl = null;
     testRuntime.rendererPlayerCollisionContactsQueue = [];
     testRuntime.rendererPlayerCollisionContactRequestStates = [];
+    testRuntime.rendererTelemetry.atlasWidth = null;
+    testRuntime.rendererTelemetry.atlasHeight = null;
+    testRuntime.rendererTelemetry.residentDirtyLightChunks = 0;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightLevel = null;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightFactor = null;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceTileX = null;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceTileY = null;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceChunkX = null;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceChunkY = null;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceLocalTileX = null;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceLocalTileY = null;
     testRuntime.latestDebugOverlayInspectState = null;
     testRuntime.latestDebugEditStatusStripState = null;
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint();
@@ -2677,7 +2689,7 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
-  it('routes standalone-player render-frame player, contact, and camera telemetry through one shared snapshot helper for the overlay and status strip', async () => {
+  it('routes standalone-player render-frame player, nearby-light, contact, and camera telemetry through shared snapshot helpers for the overlay and status strip', async () => {
     await import('./main');
     await flushBootstrap();
 
@@ -2726,6 +2738,14 @@ describe('main.ts shell state orchestration', () => {
       jumpHeld: true,
       jumpPressed: false
     };
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightLevel = 12;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightFactor = 0.8;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceTileX = -33;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceTileY = -1;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceChunkX = -5;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceChunkY = 4;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceLocalTileX = 9;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceLocalTileY = 10;
     testRuntime.rendererStepPlayerStateImpl = () => steppedPlayerState;
     testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, renderContacts];
 
@@ -2765,6 +2785,25 @@ describe('main.ts shell state orchestration', () => {
     expect(overlay.playerCameraFollow?.focusChunk).toEqual(strip.playerCameraFocusChunk);
     expect(overlay.playerCameraFollow?.focusLocal).toEqual(strip.playerCameraFocusLocalTile);
     expect(overlay.playerCameraFollow?.offset).toEqual(strip.playerCameraFollowOffset);
+    expect(overlay.playerNearbyLightLevel).toBe(strip.playerNearbyLightLevel);
+    expect(overlay.playerNearbyLightFactor).toBe(strip.playerNearbyLightFactor);
+    expect(overlay.playerNearbyLightSourceTile).toEqual(strip.playerNearbyLightSourceTile);
+    expect(overlay.playerNearbyLightSourceChunk).toEqual(strip.playerNearbyLightSourceChunk);
+    expect(overlay.playerNearbyLightSourceLocalTile).toEqual(strip.playerNearbyLightSourceLocalTile);
+    expect(overlay.playerNearbyLightLevel).toBe(12);
+    expect(overlay.playerNearbyLightFactor).toBe(0.8);
+    expect(overlay.playerNearbyLightSourceTile).toEqual({
+      x: -33,
+      y: -1
+    });
+    expect(overlay.playerNearbyLightSourceChunk).toEqual({
+      x: -5,
+      y: 4
+    });
+    expect(overlay.playerNearbyLightSourceLocalTile).toEqual({
+      x: 9,
+      y: 10
+    });
     expect(overlay.player?.contacts.support).toEqual(renderContacts.support);
     expect(overlay.player?.contacts.wall).toEqual(renderContacts.wall);
     expect(overlay.player?.contacts.ceiling).toEqual(renderContacts.ceiling);

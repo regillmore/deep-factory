@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Refine, Extract, Refactor, Restructure
 
-298. Extract a shared standalone-player render-frame nearby-light telemetry snapshot helper so post-render light level and source payloads in `renderWorldFrame()` reuse one builder for the debug overlay and compact status strip, with focused runtime regressions.
+299. Extract a shared standalone-player render-frame status-strip player-telemetry selector so `renderWorldFrame()` reuses one `debugOverlayVisible` gate for compact-strip player and nearby-light fields, with focused runtime regressions.
