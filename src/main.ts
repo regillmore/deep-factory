@@ -163,6 +163,16 @@ type TouchDebugArmedToolInitialOptions = {
   initialArmedEllipseKind: DebugTileEditKind | null;
   initialArmedEllipseOutlineKind: DebugTileEditKind | null;
 };
+type TouchDebugArmedToolCallbackOptions = {
+  onArmFloodFill: TouchDebugArmedToolToggleCallback;
+  onArmLine: TouchDebugArmedToolToggleCallback;
+  onArmRect: TouchDebugArmedToolToggleCallback;
+  onArmRectOutline: TouchDebugArmedToolToggleCallback;
+  onArmEllipse: TouchDebugArmedToolToggleCallback;
+  onArmEllipseOutline: TouchDebugArmedToolToggleCallback;
+};
+type TouchDebugArmedToolConstructorOptions = TouchDebugArmedToolInitialOptions &
+  TouchDebugArmedToolCallbackOptions;
 const TOUCH_DEBUG_ARMED_TOOL_KEYS: readonly TouchDebugArmedToolKey[] = [
   'floodFillKind',
   'lineKind',
@@ -893,16 +903,6 @@ const bootstrap = async (): Promise<void> => {
       toggleMutuallyExclusiveArmedDebugToolKind(key, kind, setKind);
     };
   };
-  const createTouchDebugArmedToolInitialOptions = (
-    snapshot: TouchDebugArmedToolSnapshot
-  ): TouchDebugArmedToolInitialOptions => ({
-    initialArmedFloodFillKind: snapshot.floodFillKind,
-    initialArmedLineKind: snapshot.lineKind,
-    initialArmedRectKind: snapshot.rectKind,
-    initialArmedRectOutlineKind: snapshot.rectOutlineKind,
-    initialArmedEllipseKind: snapshot.ellipseKind,
-    initialArmedEllipseOutlineKind: snapshot.ellipseOutlineKind
-  });
   const setArmedDebugFloodFillKind = (kind: DebugTileEditKind | null): boolean => {
     return setMutuallyExclusiveArmedDebugToolKind('floodFillKind', kind);
   };
@@ -958,6 +958,31 @@ const bootstrap = async (): Promise<void> => {
       setArmedDebugEllipseOutlineKind
     );
   };
+  const createTouchDebugArmedToolConstructorOptions = (
+    snapshot: TouchDebugArmedToolSnapshot
+  ): TouchDebugArmedToolConstructorOptions => ({
+    initialArmedFloodFillKind: snapshot.floodFillKind,
+    initialArmedLineKind: snapshot.lineKind,
+    initialArmedRectKind: snapshot.rectKind,
+    initialArmedRectOutlineKind: snapshot.rectOutlineKind,
+    initialArmedEllipseKind: snapshot.ellipseKind,
+    initialArmedEllipseOutlineKind: snapshot.ellipseOutlineKind,
+    onArmFloodFill: createTouchDebugArmedToolToggleCallback(
+      'floodFillKind',
+      setArmedDebugFloodFillKind
+    ),
+    onArmLine: createTouchDebugArmedToolToggleCallback('lineKind', setArmedDebugLineKind),
+    onArmRect: createTouchDebugArmedToolToggleCallback('rectKind', setArmedDebugRectKind),
+    onArmRectOutline: createTouchDebugArmedToolToggleCallback(
+      'rectOutlineKind',
+      setArmedDebugRectOutlineKind
+    ),
+    onArmEllipse: createTouchDebugArmedToolToggleCallback('ellipseKind', setArmedDebugEllipseKind),
+    onArmEllipseOutline: createTouchDebugArmedToolToggleCallback(
+      'ellipseOutlineKind',
+      setArmedDebugEllipseOutlineKind
+    )
+  });
 
   const applyDebugHistoryTile = (worldTileX: number, worldTileY: number, tileId: number): void => {
     applyWorldTileEdit(worldTileX, worldTileY, tileId);
@@ -1130,22 +1155,7 @@ const bootstrap = async (): Promise<void> => {
         collapsed
       });
     },
-    ...createTouchDebugArmedToolInitialOptions(initialTouchDebugArmedToolSnapshot),
-    onArmFloodFill: createTouchDebugArmedToolToggleCallback(
-      'floodFillKind',
-      setArmedDebugFloodFillKind
-    ),
-    onArmLine: createTouchDebugArmedToolToggleCallback('lineKind', setArmedDebugLineKind),
-    onArmRect: createTouchDebugArmedToolToggleCallback('rectKind', setArmedDebugRectKind),
-    onArmRectOutline: createTouchDebugArmedToolToggleCallback(
-      'rectOutlineKind',
-      setArmedDebugRectOutlineKind
-    ),
-    onArmEllipse: createTouchDebugArmedToolToggleCallback('ellipseKind', setArmedDebugEllipseKind),
-    onArmEllipseOutline: createTouchDebugArmedToolToggleCallback(
-      'ellipseOutlineKind',
-      setArmedDebugEllipseOutlineKind
-    ),
+    ...createTouchDebugArmedToolConstructorOptions(initialTouchDebugArmedToolSnapshot),
     onUndo: undoDebugTileStroke,
     onRedo: redoDebugTileStroke,
     onResetPrefs: resetDebugEditControlPrefs

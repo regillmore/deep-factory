@@ -1390,7 +1390,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
   });
 
-  it('routes touch-control armed-tool initialization through shared snapshot and initial-option helpers', async () => {
+  it('routes touch-control armed-tool constructor wiring through one shared options builder', async () => {
     testRuntime.initialArmedToolKinds = {
       floodFillKind: 'place',
       lineKind: 'break',
@@ -1427,6 +1427,23 @@ describe('main.ts shell state orchestration', () => {
       ellipseKind: 'place',
       ellipseOutlineKind: 'break'
     });
+
+    expect(testRuntime.debugEditControlsInstance).not.toBeNull();
+    if (!testRuntime.debugEditControlsInstance) {
+      throw new Error('expected debug edit controls instance');
+    }
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.debugEditControlsInstance.triggerArmLine('place');
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: null,
+      lineKind: 'place',
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
   });
 
   it('routes touch-control armed-tool sync through one shared apply helper', async () => {

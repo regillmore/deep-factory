@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Touch debug armed-tool constructor wiring should share one builder
+
+- Decision: `TouchDebugEditControls` armed-tool constructor props in `src/main.ts` should route through a shared `createTouchDebugArmedToolConstructorOptions()` helper that combines the initial armed-tool snapshot with the six `onArm*` callbacks.
+- Reason: Those props represent one constructor wiring surface for the same armed-tool state, so splitting snapshot seeding and callback creation across separate spreads makes the touch-control boot path easier to drift from focused regressions.
+- Consequence: Future touch debug armed-tool constructor changes should extend the combined builder and its runtime regression instead of reintroducing standalone `initialArmed*` or `onArm*` props in the `TouchDebugEditControls` constructor call.
+
 ### 2026-03-07: Structured shell action cards should surface labeled metadata rows
 
 - Decision: `AppShellMenuSection` cards may carry concise labeled metadata rows such as `Shortcut`, `Consequence`, or `Readiness`, and relevant shell guidance should prefer those visible rows over tooltip-only context.
