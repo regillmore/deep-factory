@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Touch debug armed-tool toggle callbacks should share one factory
+
+- Decision: The six `onArm*` callbacks passed to `TouchDebugEditControls` in `src/main.ts` should route through a shared `createTouchDebugArmedToolToggleCallback()` helper that delegates into the existing shared armed-tool toggle pipeline.
+- Reason: Those touch-panel callbacks all share the same one-argument toggle contract, so leaving six inline `kind => toggle...` wrappers makes the touch debug wiring easier to drift from focused runtime regressions.
+- Consequence: Future touch debug armed-tool toggle wiring should extend the shared callback factory and its touch-driven runtime regressions instead of reintroducing per-tool inline `onArm*` lambdas in `src/main.ts`.
+
 ### 2026-03-07: Armed-tool toggles should share one helper
 
 - Decision: `toggleArmedDebugFloodFillKind()`, `toggleArmedDebugLineKind()`, `toggleArmedDebugRectKind()`, `toggleArmedDebugRectOutlineKind()`, `toggleArmedDebugEllipseKind()`, and `toggleArmedDebugEllipseOutlineKind()` in `src/main.ts` should route through a shared `toggleMutuallyExclusiveArmedDebugToolKind()` helper that reads the current armed kind from the shared snapshot and delegates through the existing per-tool setters.

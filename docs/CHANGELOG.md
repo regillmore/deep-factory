@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared touch debug armed-tool toggle callback factory so the six `onArm*` callbacks passed to `TouchDebugEditControls` in `src/main.ts` reuse one toggle-action wiring path.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `createTouchDebugArmedToolToggleCallback()` helper that routes touch-panel arm requests through the existing shared armed-tool toggle pipeline, expanded the [src/main.test.ts](../src/main.test.ts) touch-control mock to trigger `onArm*` callbacks directly, added a focused runtime regression covering same-tool touch toggles plus cross-tool replacement through that shared callback factory, removed completed task `282` from [docs/NEXT.md](docs/NEXT.md), added replacement task `283`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared armed-tool toggle helper so the six `toggleArmedDebug*Kind()` helpers in `src/main.ts` reuse one current-kind replacement pipeline.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `toggleMutuallyExclusiveArmedDebugToolKind()` helper that resolves the current armed kind from the shared snapshot and delegates through the existing thin setter wrappers, expanded [src/main.test.ts](../src/main.test.ts) with a focused regression that verifies repeated same-tool shortcuts arm then disarm while the touch-control armed-tool mirror stays aligned, removed completed task `281` from [docs/NEXT.md](docs/NEXT.md), added replacement task `282`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

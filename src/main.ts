@@ -154,6 +154,7 @@ type TouchDebugArmedToolSnapshot = {
 };
 type TouchDebugArmedToolKey = keyof TouchDebugArmedToolSnapshot;
 type SetTouchDebugArmedToolKind = (kind: DebugTileEditKind | null) => boolean;
+type TouchDebugArmedToolToggleCallback = (kind: DebugTileEditKind) => void;
 const TOUCH_DEBUG_ARMED_TOOL_KEYS: readonly TouchDebugArmedToolKey[] = [
   'floodFillKind',
   'lineKind',
@@ -876,6 +877,14 @@ const bootstrap = async (): Promise<void> => {
     const currentKind = readTouchDebugArmedToolSnapshot()[key];
     return setKind(currentKind === kind ? null : kind);
   };
+  const createTouchDebugArmedToolToggleCallback = (
+    key: TouchDebugArmedToolKey,
+    setKind: SetTouchDebugArmedToolKind
+  ): TouchDebugArmedToolToggleCallback => {
+    return (kind) => {
+      toggleMutuallyExclusiveArmedDebugToolKind(key, kind, setKind);
+    };
+  };
   const setArmedDebugFloodFillKind = (kind: DebugTileEditKind | null): boolean => {
     return setMutuallyExclusiveArmedDebugToolKind('floodFillKind', kind);
   };
@@ -1109,24 +1118,21 @@ const bootstrap = async (): Promise<void> => {
     initialArmedRectOutlineKind: initialTouchDebugArmedToolSnapshot.rectOutlineKind,
     initialArmedEllipseKind: initialTouchDebugArmedToolSnapshot.ellipseKind,
     initialArmedEllipseOutlineKind: initialTouchDebugArmedToolSnapshot.ellipseOutlineKind,
-    onArmFloodFill: (kind) => {
-      toggleArmedDebugFloodFillKind(kind);
-    },
-    onArmLine: (kind) => {
-      toggleArmedDebugLineKind(kind);
-    },
-    onArmRect: (kind) => {
-      toggleArmedDebugRectKind(kind);
-    },
-    onArmRectOutline: (kind) => {
-      toggleArmedDebugRectOutlineKind(kind);
-    },
-    onArmEllipse: (kind) => {
-      toggleArmedDebugEllipseKind(kind);
-    },
-    onArmEllipseOutline: (kind) => {
-      toggleArmedDebugEllipseOutlineKind(kind);
-    },
+    onArmFloodFill: createTouchDebugArmedToolToggleCallback(
+      'floodFillKind',
+      setArmedDebugFloodFillKind
+    ),
+    onArmLine: createTouchDebugArmedToolToggleCallback('lineKind', setArmedDebugLineKind),
+    onArmRect: createTouchDebugArmedToolToggleCallback('rectKind', setArmedDebugRectKind),
+    onArmRectOutline: createTouchDebugArmedToolToggleCallback(
+      'rectOutlineKind',
+      setArmedDebugRectOutlineKind
+    ),
+    onArmEllipse: createTouchDebugArmedToolToggleCallback('ellipseKind', setArmedDebugEllipseKind),
+    onArmEllipseOutline: createTouchDebugArmedToolToggleCallback(
+      'ellipseOutlineKind',
+      setArmedDebugEllipseOutlineKind
+    ),
     onUndo: undoDebugTileStroke,
     onRedo: redoDebugTileStroke,
     onResetPrefs: resetDebugEditControlPrefs
