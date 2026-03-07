@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getDesktopDebugEditControlsHotkeyLabel,
+  getDesktopFreshWorldHotkeyLabel,
+  getDesktopResumeWorldHotkeyLabel,
   getDesktopShortcutsOverlayHotkeyLabel
 } from '../input/debugEditShortcuts';
 import {
@@ -48,6 +50,15 @@ describe('resolveTouchDebugKeyboardShortcutLines', () => {
   it('lists the in-world shortcuts overlay toggle in the keyboard reference', () => {
     expect(resolveTouchDebugKeyboardShortcutLines()).toContain(
       `Shortcuts: ${getDesktopShortcutsOverlayHotkeyLabel()} toggle the in-world desktop and touch controls reference`
+    );
+  });
+
+  it('lists the paused main-menu resume and new-world shortcuts in the keyboard reference', () => {
+    expect(resolveTouchDebugKeyboardShortcutLines()).toContain(
+      `Paused menu: ${getDesktopResumeWorldHotkeyLabel()} resume the paused world session`
+    );
+    expect(resolveTouchDebugKeyboardShortcutLines()).toContain(
+      `Paused menu: ${getDesktopFreshWorldHotkeyLabel()} start a fresh world from the paused main menu`
     );
   });
 });

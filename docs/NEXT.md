@@ -42,7 +42,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
 238. Add shortcut and consequence metadata rows inside structured paused-menu action cards so action context is visible without relying on button tooltips.
 239. Add shortcut and readiness metadata rows inside structured first-launch main-menu action cards so enter-world and mixed-device guidance stay visible without relying on button tooltips.
-245. Surface the paused-main-menu keyboard shortcuts in the touch debug controls keyboard reference so the touch panel lists `Enter` resume and `N` new-world guidance alongside the in-world shell shortcuts.
 
 ## Ambitious vertical slices
 
@@ -52,6 +51,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 221. Add a starter melee-weapon follow-up after hostile-slime combat (`213`): fixed-step swing windup/active/recovery timing, slime hit detection plus knockback, and deterministic hit-cooldown regressions.
 232. Add a grappling-hook traversal slice after entity scaffolding (`17-18`): mixed-device aimed hook firing, solid-tile latch plus pull-and-release rules, and fixed-step hook-state regressions.
 243. Add a torch-lighting utility slice after inventory basics (`214`): stackable torch hotbar slots, mixed-device solid-face placement of light-emitting torch tiles, and lighting regressions for placed torches.
+246. Add a bow-and-arrow ranged-combat slice after hostile-slime combat (`213`) and inventory basics (`214`): stackable arrow ammo, mixed-device aimed firing, fixed-step projectile flight plus terrain or slime hits, and deterministic ammo-consumption regressions.
 
 ## Refine, Refactor, Restructure
 

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Surface the paused-main-menu keyboard shortcuts in the touch debug controls keyboard reference so the touch panel lists `Enter` resume and `N` new-world guidance alongside the in-world shell shortcuts.
+- Changes: Updated [src/ui/touchDebugEditControls.ts](../src/ui/touchDebugEditControls.ts) so the touch panel `Keyboard` section now lists paused-menu `Resume World (Enter)` and `New World (N)` guidance beside the existing in-world shell shortcut hints, expanded [src/ui/touchDebugEditControls.test.ts](../src/ui/touchDebugEditControls.test.ts) with focused regressions for those keyboard-reference lines, removed completed task `245` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical-slice task `246`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/touchDebugEditControls.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface the in-world shortcuts-overlay toggle in the touch debug controls keyboard reference so the touch panel lists the `?` action alongside the other shell shortcuts.
 - Changes: Updated [src/ui/touchDebugEditControls.ts](../src/ui/touchDebugEditControls.ts) so the touch panel `Keyboard` section now lists the in-world `Shortcuts: ?` toggle beside the other shell shortcut hints, expanded [src/ui/touchDebugEditControls.test.ts](../src/ui/touchDebugEditControls.test.ts) with a focused regression for that keyboard-reference line, removed completed task `244` from [docs/NEXT.md](docs/NEXT.md), added replacement task `245`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/touchDebugEditControls.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
