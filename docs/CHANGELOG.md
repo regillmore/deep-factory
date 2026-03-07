@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Add shortcut and consequence metadata rows inside structured paused-menu action cards so paused-session context stays visible without relying on button tooltips.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so structured menu cards can carry labeled metadata rows and the paused `Resume World`, `Reset Shell Toggles`, and `New World` cards now show visible `Shortcut` and `Consequence` rows, refreshed [src/style.css](../src/style.css) for the new card metadata layout, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with paused-menu regressions for those rows, removed completed task `238` from [docs/NEXT.md](docs/NEXT.md), added replacement task `285`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Refine the row-above boundary top-corner stream-back follow-up to match the current horizontal-transport model and add the resulting regression.
 - Changes: Expanded [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a deterministic regression showing that streamed-back row-above boundary air and adjacent solid-face lighting still restore after the same top-corner blocker recloses on either side, recorded that transport-model assumption in [docs/DECISIONS.md](docs/DECISIONS.md), removed the invalidated task `248` from [docs/NEXT.md](docs/NEXT.md), and added replacement renderer follow-up task `249`.
 - Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts`.

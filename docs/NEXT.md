@@ -40,8 +40,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 199. Add shell-level keybinding remap settings for in-world actions (`Main Menu`, `Recenter Camera`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, `Spawn Marker`) with conflict validation and persisted preferences.
 200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
-238. Add shortcut and consequence metadata rows inside structured paused-menu action cards so action context is visible without relying on button tooltips.
 239. Add shortcut and readiness metadata rows inside structured first-launch main-menu action cards so enter-world and mixed-device guidance stay visible without relying on button tooltips.
+285. Add a structured paused-menu persistence-summary card that lists which in-world shell toggles resume from saved preferences and which reset paths clear them, with focused shell-state view-model regressions.
 
 ## Ambitious vertical slices
 

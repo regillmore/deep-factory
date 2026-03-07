@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Structured shell action cards should surface labeled metadata rows
+
+- Decision: `AppShellMenuSection` cards may carry concise labeled metadata rows such as `Shortcut`, `Consequence`, or `Readiness`, and relevant shell guidance should prefer those visible rows over tooltip-only context.
+- Reason: Main-menu shell actions need their shortcut and effect context to stay readable on touch and narrow layouts where tooltip access is weak or absent.
+- Consequence: Future shell-card work should extend the shared metadata-row model when actions need compact context instead of overloading card titles or depending only on button tooltips.
+
 ### 2026-03-07: Touch debug armed-tool initial constructor props should share one builder
 
 - Decision: The six `initialArmed*` props passed to `TouchDebugEditControls` in `src/main.ts` should route through a shared `createTouchDebugArmedToolInitialOptions()` helper that maps the current armed-tool snapshot into constructor options.

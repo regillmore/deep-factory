@@ -286,6 +286,38 @@ canvas {
   margin: 0;
 }
 
+.app-shell__menu-section-metadata {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 240, 204, 0.1);
+  display: grid;
+  gap: 8px;
+}
+
+.app-shell__menu-section-metadata-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+
+.app-shell__menu-section-metadata-label {
+  margin: 0;
+  color: #9fddff;
+  font:
+    700 10px/1.1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-shell__menu-section-metadata-value {
+  margin: 0;
+  min-width: 0;
+  color: #f1e7d5;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .app-shell__detail-list {
   margin: 18px 0 0;
   padding: 0;
@@ -380,6 +412,10 @@ canvas {
 
   .app-shell__menu-section-lines {
     font-size: 0.9rem;
+  }
+
+  .app-shell__menu-section-metadata-value {
+    font-size: 0.8rem;
   }
 
   .app-shell__detail-list {

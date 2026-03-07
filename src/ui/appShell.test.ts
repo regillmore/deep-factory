@@ -121,17 +121,47 @@ describe('resolveAppShellViewModel', () => {
       {
         title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
         lines: ['Continue with the current world, player state, and debug edits intact.'],
+        metadataRows: [
+          {
+            label: 'Shortcut',
+            value: getDesktopResumeWorldHotkeyLabel()
+          },
+          {
+            label: 'Consequence',
+            value: 'Keeps current world, player, camera, and edits.'
+          }
+        ],
         tone: 'accent'
       },
       {
         title: 'Reset Shell Toggles',
         lines: [
           `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
+        ],
+        metadataRows: [
+          {
+            label: 'Shortcut',
+            value: 'Button only'
+          },
+          {
+            label: 'Consequence',
+            value: 'Keeps the session but clears saved shell visibility.'
+          }
         ]
       },
       {
         title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
         lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
+        metadataRows: [
+          {
+            label: 'Shortcut',
+            value: getDesktopFreshWorldHotkeyLabel()
+          },
+          {
+            label: 'Consequence',
+            value: 'Replaces the current world, player, camera, and undo state.'
+          }
+        ],
         tone: 'warning'
       }
     ]);
@@ -433,17 +463,47 @@ describe('createPausedMainMenuShellState', () => {
         {
           title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
           lines: ['Continue with the current world, player state, and debug edits intact.'],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: getDesktopResumeWorldHotkeyLabel()
+            },
+            {
+              label: 'Consequence',
+              value: 'Keeps current world, player, camera, and edits.'
+            }
+          ],
           tone: 'accent'
         },
         {
           title: 'Reset Shell Toggles',
           lines: [
             `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
+          ],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Consequence',
+              value: 'Keeps the session but clears saved shell visibility.'
+            }
           ]
         },
         {
           title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
           lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: getDesktopFreshWorldHotkeyLabel()
+            },
+            {
+              label: 'Consequence',
+              value: 'Replaces the current world, player, camera, and undo state.'
+            }
+          ],
           tone: 'warning'
         }
       ],

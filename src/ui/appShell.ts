@@ -15,9 +15,15 @@ export type AppShellScreen = 'boot' | 'main-menu' | 'in-world';
 
 export type AppShellMenuSectionTone = 'default' | 'accent' | 'warning';
 
+export interface AppShellMenuSectionMetadataRow {
+  label: string;
+  value: string;
+}
+
 export interface AppShellMenuSection {
   title: string;
   lines: readonly string[];
+  metadataRows?: readonly AppShellMenuSectionMetadataRow[];
   tone?: AppShellMenuSectionTone;
 }
 
@@ -50,17 +56,47 @@ export const DEFAULT_PAUSED_MAIN_MENU_MENU_SECTIONS: readonly AppShellMenuSectio
   {
     title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
     lines: ['Continue with the current world, player state, and debug edits intact.'],
+    metadataRows: [
+      {
+        label: 'Shortcut',
+        value: getDesktopResumeWorldHotkeyLabel()
+      },
+      {
+        label: 'Consequence',
+        value: 'Keeps current world, player, camera, and edits.'
+      }
+    ],
     tone: 'accent'
   },
   {
     title: 'Reset Shell Toggles',
     lines: [
       `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
+    ],
+    metadataRows: [
+      {
+        label: 'Shortcut',
+        value: 'Button only'
+      },
+      {
+        label: 'Consequence',
+        value: 'Keeps the session but clears saved shell visibility.'
+      }
     ]
   },
   {
     title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
     lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
+    metadataRows: [
+      {
+        label: 'Shortcut',
+        value: getDesktopFreshWorldHotkeyLabel()
+      },
+      {
+        label: 'Consequence',
+        value: 'Replaces the current world, player, camera, and undo state.'
+      }
+    ],
     tone: 'warning'
   }
 ] as const;
@@ -330,6 +366,31 @@ const createMenuSectionElement = (section: AppShellMenuSection): HTMLElement => 
     })
   );
   sectionElement.append(lines);
+
+  const metadataRows = section.metadataRows ?? [];
+  if (metadataRows.length > 0) {
+    const metadata = document.createElement('dl');
+    metadata.className = 'app-shell__menu-section-metadata';
+    metadata.replaceChildren(
+      ...metadataRows.map((row) => {
+        const rowElement = document.createElement('div');
+        rowElement.className = 'app-shell__menu-section-metadata-row';
+
+        const label = document.createElement('dt');
+        label.className = 'app-shell__menu-section-metadata-label';
+        label.textContent = row.label;
+        rowElement.append(label);
+
+        const value = document.createElement('dd');
+        value.className = 'app-shell__menu-section-metadata-value';
+        value.textContent = row.value;
+        rowElement.append(value);
+
+        return rowElement;
+      })
+    );
+    sectionElement.append(metadata);
+  }
 
   return sectionElement;
 };
