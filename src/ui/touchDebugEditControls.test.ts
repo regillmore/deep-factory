@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { getDesktopDebugEditControlsHotkeyLabel } from '../input/debugEditShortcuts';
+import {
+  getDesktopDebugEditControlsHotkeyLabel,
+  getDesktopShortcutsOverlayHotkeyLabel
+} from '../input/debugEditShortcuts';
 import {
   resolveTouchDebugEditControlsDisplayState,
   resolveTouchDebugKeyboardShortcutLines
@@ -39,6 +42,12 @@ describe('resolveTouchDebugKeyboardShortcutLines', () => {
   it('lists the in-world edit-panel shortcut in the keyboard reference', () => {
     expect(resolveTouchDebugKeyboardShortcutLines()).toContain(
       `Edit panel: ${getDesktopDebugEditControlsHotkeyLabel()} toggle the full in-world Debug Edit panel`
+    );
+  });
+
+  it('lists the in-world shortcuts overlay toggle in the keyboard reference', () => {
+    expect(resolveTouchDebugKeyboardShortcutLines()).toContain(
+      `Shortcuts: ${getDesktopShortcutsOverlayHotkeyLabel()} toggle the in-world desktop and touch controls reference`
     );
   });
 });

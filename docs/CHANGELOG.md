@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Surface the in-world shortcuts-overlay toggle in the touch debug controls keyboard reference so the touch panel lists the `?` action alongside the other shell shortcuts.
+- Changes: Updated [src/ui/touchDebugEditControls.ts](../src/ui/touchDebugEditControls.ts) so the touch panel `Keyboard` section now lists the in-world `Shortcuts: ?` toggle beside the other shell shortcut hints, expanded [src/ui/touchDebugEditControls.test.ts](../src/ui/touchDebugEditControls.test.ts) with a focused regression for that keyboard-reference line, removed completed task `244` from [docs/NEXT.md](docs/NEXT.md), added replacement task `245`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/touchDebugEditControls.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared touch debug armed-tool initial-option builder so the six `initialArmed*` props passed to `TouchDebugEditControls` in `src/main.ts` reuse one snapshot-to-constructor wiring path.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `createTouchDebugArmedToolInitialOptions()` helper that maps the current armed-tool snapshot into `TouchDebugEditControls` constructor props, refreshed [src/main.test.ts](../src/main.test.ts) so the existing initialization regression now verifies both the constructor snapshot and the live touch-control armed-tool state seeded through that shared initial-option builder, removed completed task `283` from [docs/NEXT.md](docs/NEXT.md), added replacement task `284`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

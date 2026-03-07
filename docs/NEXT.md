@@ -42,7 +42,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
 238. Add shortcut and consequence metadata rows inside structured paused-menu action cards so action context is visible without relying on button tooltips.
 239. Add shortcut and readiness metadata rows inside structured first-launch main-menu action cards so enter-world and mixed-device guidance stay visible without relying on button tooltips.
-244. Surface the in-world shortcuts-overlay toggle in the touch debug controls keyboard reference so the touch panel lists the `?` action alongside the other shell shortcuts.
+245. Surface the paused-main-menu keyboard shortcuts in the touch debug controls keyboard reference so the touch panel lists `Enter` resume and `N` new-world guidance alongside the in-world shell shortcuts.
 
 ## Ambitious vertical slices
 
