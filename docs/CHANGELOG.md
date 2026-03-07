@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Add a sunlight regression where a clean boundary emissive source does not horizontal-transport `MAX_LIGHT_LEVEL` into streamed-back dirty neighboring boundary air after the adjacent chunk unloads and reloads.
+- Changes: Updated [src/world/sunlight.ts](../src/world/sunlight.ts) so boundary sunlight transport now probes sunlight-only air visibility instead of reusing merged cached light levels from clean neighboring columns, expanded [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with mirrored streamed-back boundary-air emissive regressions, removed completed task `233` from [docs/NEXT.md](docs/NEXT.md), added replacement task `322`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts`, `cmd /c npx vitest run src/gl/renderer.test.ts`, and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a renderer regression where a streamed-back dirty `x`-boundary blocker beside a clean emissive source still rebuilds at emissive falloff instead of `MAX_LIGHT_LEVEL` on the first resumed draw.
 - Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with mirrored left-to-right and right-to-left emissive stream-back regressions that assert the first resumed near-camera draw invalidates only the reloaded blocker chunk and keeps the blocker light at emissive falloff instead of `MAX_LIGHT_LEVEL`, removed completed task `320` from [docs/NEXT.md](docs/NEXT.md), and because that closes the current renderer-side streamed-back boundary-lighting regression pattern, added ambitious replacement task `321`.
 - Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts -t "keeps a streamed-back dirty x-boundary blocker at emissive falloff"`, `cmd /c npx vitest run src/gl/renderer.test.ts`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

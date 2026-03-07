@@ -1330,4 +1330,80 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(world.getLightLevel(boundaryBlockerWorldTileX, tunnelWorldTileY)).not.toBe(MAX_LIGHT_LEVEL);
     expect(world.getLightLevel(shadowedProbeWorldTileX, tunnelWorldTileY)).toBe(0);
   });
+
+  it('keeps streamed-back dirty neighboring boundary air at emissive falloff instead of full sunlight when the adjacent emissive source column stays clean', () => {
+    const tunnelWorldTileY = -20;
+    const tunnelStartWorldTileX = CHUNK_SIZE - 2;
+    const tunnelEndWorldTileX = CHUNK_SIZE + 2;
+    const emissiveTileId = 2;
+    const emissiveLightLevel = getTileEmissiveLightLevel(emissiveTileId, emissiveTestRegistry);
+    const expectedBoundaryAirLightLevel = emissiveLightLevel - 1;
+    const expectedInteriorAirLightLevel = emissiveLightLevel - 2;
+
+    const initializeBoundaryTunnel = (world: TileWorld): void => {
+      for (let worldTileX = tunnelStartWorldTileX; worldTileX <= tunnelEndWorldTileX; worldTileX += 1) {
+        world.setTile(worldTileX, tunnelWorldTileY - 1, 1);
+        world.setTile(worldTileX, tunnelWorldTileY, 0);
+        world.setTile(worldTileX, tunnelWorldTileY + 1, 1);
+      }
+    };
+
+    const leftToRightWorld = new TileWorld(0);
+    initializeBoundaryTunnel(leftToRightWorld);
+    leftToRightWorld.setTile(CHUNK_SIZE - 1, tunnelWorldTileY, emissiveTileId);
+
+    recomputeSunlightFromExposedChunkTops(leftToRightWorld, emissiveTestRegistry);
+    expect(leftToRightWorld.getLightLevel(CHUNK_SIZE, tunnelWorldTileY)).toBe(expectedBoundaryAirLightLevel);
+    expect(leftToRightWorld.getLightLevel(CHUNK_SIZE + 1, tunnelWorldTileY)).toBe(
+      expectedInteriorAirLightLevel
+    );
+
+    leftToRightWorld.pruneChunksOutside({
+      minChunkX: 0,
+      minChunkY: -1,
+      maxChunkX: 0,
+      maxChunkY: -1
+    });
+    expect(leftToRightWorld.getChunkCount()).toBe(1);
+
+    leftToRightWorld.ensureChunk(1, -1);
+    recomputeSunlightFromExposedChunkTops(leftToRightWorld, emissiveTestRegistry);
+
+    expect(leftToRightWorld.getLightLevel(CHUNK_SIZE, tunnelWorldTileY)).toBe(expectedBoundaryAirLightLevel);
+    expect(leftToRightWorld.getLightLevel(CHUNK_SIZE, tunnelWorldTileY)).not.toBe(MAX_LIGHT_LEVEL);
+    expect(leftToRightWorld.getLightLevel(CHUNK_SIZE + 1, tunnelWorldTileY)).toBe(
+      expectedInteriorAirLightLevel
+    );
+
+    const rightToLeftWorld = new TileWorld(0);
+    initializeBoundaryTunnel(rightToLeftWorld);
+    rightToLeftWorld.setTile(CHUNK_SIZE, tunnelWorldTileY, emissiveTileId);
+
+    recomputeSunlightFromExposedChunkTops(rightToLeftWorld, emissiveTestRegistry);
+    expect(rightToLeftWorld.getLightLevel(CHUNK_SIZE - 1, tunnelWorldTileY)).toBe(
+      expectedBoundaryAirLightLevel
+    );
+    expect(rightToLeftWorld.getLightLevel(CHUNK_SIZE - 2, tunnelWorldTileY)).toBe(
+      expectedInteriorAirLightLevel
+    );
+
+    rightToLeftWorld.pruneChunksOutside({
+      minChunkX: 1,
+      minChunkY: -1,
+      maxChunkX: 1,
+      maxChunkY: -1
+    });
+    expect(rightToLeftWorld.getChunkCount()).toBe(1);
+
+    rightToLeftWorld.ensureChunk(0, -1);
+    recomputeSunlightFromExposedChunkTops(rightToLeftWorld, emissiveTestRegistry);
+
+    expect(rightToLeftWorld.getLightLevel(CHUNK_SIZE - 1, tunnelWorldTileY)).toBe(
+      expectedBoundaryAirLightLevel
+    );
+    expect(rightToLeftWorld.getLightLevel(CHUNK_SIZE - 1, tunnelWorldTileY)).not.toBe(MAX_LIGHT_LEVEL);
+    expect(rightToLeftWorld.getLightLevel(CHUNK_SIZE - 2, tunnelWorldTileY)).toBe(
+      expectedInteriorAirLightLevel
+    );
+  });
 });

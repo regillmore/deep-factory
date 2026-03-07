@@ -312,6 +312,8 @@ const applyHorizontalSunlightTransportBetweenNeighborChunkColumns = (
   dirtyLocalColumnMaskByChunkX: Map<number, number>,
   registry: TileMetadataRegistry
 ): void => {
+  const isResidentAirTileLitBySunlight = createResidentAirSunlightProbe(bounds, registry);
+
   for (let chunkX = bounds.minChunkX; chunkX < bounds.maxChunkX; chunkX += 1) {
     const leftDirtyMask = dirtyLocalColumnMaskByChunkX.get(chunkX) ?? 0;
     const rightDirtyMask = dirtyLocalColumnMaskByChunkX.get(chunkX + 1) ?? 0;
@@ -337,8 +339,12 @@ const applyHorizontalSunlightTransportBetweenNeighborChunkColumns = (
           continue;
         }
 
-        const leftSunlit = (leftChunk.lightLevels[leftTileIndex] ?? 0) > 0;
-        const rightSunlit = (rightChunk.lightLevels[rightTileIndex] ?? 0) > 0;
+        const worldTileY = chunkY * CHUNK_SIZE + localY;
+        const leftSunlit = isResidentAirTileLitBySunlight(
+          chunkX * CHUNK_SIZE + CHUNK_SIZE - 1,
+          worldTileY
+        );
+        const rightSunlit = isResidentAirTileLitBySunlight((chunkX + 1) * CHUNK_SIZE, worldTileY);
         if (leftSunlit && rightBoundaryColumnDirty) {
           rightChunk.lightLevels[rightTileIndex] = MAX_LIGHT_LEVEL;
         }
@@ -355,61 +361,7 @@ const applySunlightToBlockingTilesAdjacentToLitAir = (
   dirtyColumnContexts: DirtyResidentChunkColumnContext[],
   registry: TileMetadataRegistry
 ): void => {
-  const sunlitAirByWorldTileKey = new Map<string, boolean>();
-  const sunlitAirInProgressWorldTileKeys = new Set<string>();
-
-  const isResidentAirTileLitBySunlight = (worldTileX: number, worldTileY: number): boolean => {
-    const worldTileKey = `${worldTileX},${worldTileY}`;
-    const cachedResult = sunlitAirByWorldTileKey.get(worldTileKey);
-    if (cachedResult !== undefined) {
-      return cachedResult;
-    }
-    if (sunlitAirInProgressWorldTileKeys.has(worldTileKey)) {
-      return false;
-    }
-
-    sunlitAirInProgressWorldTileKeys.add(worldTileKey);
-
-    let isSunlit = false;
-    const tile = sampleResidentTileAtWorldTile(bounds, worldTileX, worldTileY);
-    if (tile && !doesTileBlockLight(tile.tileId, registry)) {
-      isSunlit = true;
-      for (let probeWorldTileY = worldTileY - 1; probeWorldTileY >= bounds.minWorldTileY; probeWorldTileY -= 1) {
-        const aboveTile = sampleResidentTileAtWorldTile(bounds, worldTileX, probeWorldTileY);
-        if (aboveTile && doesTileBlockLight(aboveTile.tileId, registry)) {
-          isSunlit = false;
-          break;
-        }
-      }
-
-      if (!isSunlit) {
-        let transportedNeighborWorldTileX: number | null = null;
-        if (tile.localX === 0) {
-          transportedNeighborWorldTileX = worldTileX - 1;
-        } else if (tile.localX === CHUNK_SIZE - 1) {
-          transportedNeighborWorldTileX = worldTileX + 1;
-        }
-
-        if (transportedNeighborWorldTileX !== null) {
-          const transportedNeighborTile = sampleResidentTileAtWorldTile(
-            bounds,
-            transportedNeighborWorldTileX,
-            worldTileY
-          );
-          if (
-            transportedNeighborTile &&
-            !doesTileBlockLight(transportedNeighborTile.tileId, registry)
-          ) {
-            isSunlit = isResidentAirTileLitBySunlight(transportedNeighborWorldTileX, worldTileY);
-          }
-        }
-      }
-    }
-
-    sunlitAirInProgressWorldTileKeys.delete(worldTileKey);
-    sunlitAirByWorldTileKey.set(worldTileKey, isSunlit);
-    return isSunlit;
-  };
+  const isResidentAirTileLitBySunlight = createResidentAirSunlightProbe(bounds, registry);
 
   const hasHorizontalSunlitAirNeighbor = (worldTileX: number, worldTileY: number): boolean => {
     const horizontalNeighborWorldTiles = [
@@ -491,6 +443,69 @@ const applySunlightToBlockingTilesAdjacentToLitAir = (
       }
     }
   }
+};
+
+const createResidentAirSunlightProbe = (
+  bounds: ResidentChunkLightingBounds,
+  registry: TileMetadataRegistry
+): ((worldTileX: number, worldTileY: number) => boolean) => {
+  const sunlitAirByWorldTileKey = new Map<string, boolean>();
+  const sunlitAirInProgressWorldTileKeys = new Set<string>();
+
+  const isResidentAirTileLitBySunlight = (worldTileX: number, worldTileY: number): boolean => {
+    const worldTileKey = `${worldTileX},${worldTileY}`;
+    const cachedResult = sunlitAirByWorldTileKey.get(worldTileKey);
+    if (cachedResult !== undefined) {
+      return cachedResult;
+    }
+    if (sunlitAirInProgressWorldTileKeys.has(worldTileKey)) {
+      return false;
+    }
+
+    sunlitAirInProgressWorldTileKeys.add(worldTileKey);
+
+    let isSunlit = false;
+    const tile = sampleResidentTileAtWorldTile(bounds, worldTileX, worldTileY);
+    if (tile && !doesTileBlockLight(tile.tileId, registry)) {
+      isSunlit = true;
+      for (let probeWorldTileY = worldTileY - 1; probeWorldTileY >= bounds.minWorldTileY; probeWorldTileY -= 1) {
+        const aboveTile = sampleResidentTileAtWorldTile(bounds, worldTileX, probeWorldTileY);
+        if (aboveTile && doesTileBlockLight(aboveTile.tileId, registry)) {
+          isSunlit = false;
+          break;
+        }
+      }
+
+      if (!isSunlit) {
+        let transportedNeighborWorldTileX: number | null = null;
+        if (tile.localX === 0) {
+          transportedNeighborWorldTileX = worldTileX - 1;
+        } else if (tile.localX === CHUNK_SIZE - 1) {
+          transportedNeighborWorldTileX = worldTileX + 1;
+        }
+
+        if (transportedNeighborWorldTileX !== null) {
+          const transportedNeighborTile = sampleResidentTileAtWorldTile(
+            bounds,
+            transportedNeighborWorldTileX,
+            worldTileY
+          );
+          if (
+            transportedNeighborTile &&
+            !doesTileBlockLight(transportedNeighborTile.tileId, registry)
+          ) {
+            isSunlit = isResidentAirTileLitBySunlight(transportedNeighborWorldTileX, worldTileY);
+          }
+        }
+      }
+    }
+
+    sunlitAirInProgressWorldTileKeys.delete(worldTileKey);
+    sunlitAirByWorldTileKey.set(worldTileKey, isSunlit);
+    return isSunlit;
+  };
+
+  return isResidentAirTileLitBySunlight;
 };
 
 export const recomputeSunlightFromExposedChunkTops = (

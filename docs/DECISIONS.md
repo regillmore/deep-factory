@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Boundary sunlight transport should distinguish sunlight from retained emissive light
+
+- Decision: Boundary-column sunlight transport in `src/world/sunlight.ts` should determine whether neighboring boundary air is sunlight-lit from a geometry-backed sunlight probe instead of treating any retained positive light level in a clean neighboring column as sunlight.
+- Reason: When an adjacent chunk streams back in, dirty boundary air can otherwise upgrade clean-column emissive falloff into incorrect `MAX_LIGHT_LEVEL` sunlight during the horizontal-transport pass.
+- Consequence: Future lighting-cache or boundary-transport work should preserve the distinction between sunlight connectivity and merged emissive light instead of reusing cached boundary light levels as a proxy for sunlight visibility.
+
 ### 2026-03-07: Persisted in-world shell-action keybindings should validate back to one safe default set
 
 - Decision: Boot-time keybindings for the in-world shell actions (`Main Menu`, `Recenter Camera`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, and `Spawn Marker`) should load through one shared `src/input/shellActionKeybindings.ts` helper that normalizes saved single-letter bindings, rejects reserved gameplay or edit letters, and falls duplicate or invalid results back to the default `Q/C/H/G/V/M` set before shortcut resolution or UI labels consume them.
