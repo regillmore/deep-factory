@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY } from './input/debugEditControlStatePersistence';
 import { WORLD_SESSION_SHELL_STATE_STORAGE_KEY } from './mainWorldSessionShellState';
 import {
   createDefaultBootShellState,
@@ -66,6 +67,10 @@ const testRuntime = vi.hoisted(() => {
       getArmedDebugEllipseKind(): 'place' | 'break' | null;
       getArmedDebugEllipseOutlineKind(): 'place' | 'break' | null;
     },
+    pointerInspect: null as null | {
+      pointerType: 'mouse' | 'touch';
+      tile: { x: number; y: number };
+    },
     debugOverlayInstance: null as null | { visible: boolean },
     debugEditControlsInstance: null as null | { visible: boolean },
     hoveredTileCursorInstance: null as null | { visible: boolean },
@@ -79,6 +84,7 @@ const testRuntime = vi.hoisted(() => {
     debugHistoryRedoCallCount: 0,
     debugHistoryShortcutActions: [] as Array<'undo' | 'redo'>,
     cancelArmedDebugToolsCallCount: 0,
+    rendererTileId: 0,
     playerSpawnPoint: null as null | {
       anchorTileX: number;
       standingTileY: number;
@@ -180,7 +186,7 @@ vi.mock('./gl/renderer', () => ({
     }
 
     getTile(): number {
-      return 0;
+      return testRuntime.rendererTileId;
     }
 
     setTile(): boolean {
@@ -320,7 +326,7 @@ vi.mock('./input/controller', () => ({
     update(): void {}
 
     getPointerInspect() {
-      return null;
+      return testRuntime.pointerInspect;
     }
 
     getArmedDebugToolPreviewState() {
@@ -542,8 +548,12 @@ vi.mock('./ui/touchDebugEditControls', () => ({
   TouchDebugEditControls: class {
     visible = false;
     private collapsed = false;
+    private brushTileId = 0;
+    private onBrushTileIdChange: (tileId: number) => void;
 
-    constructor() {
+    constructor(options: { initialBrushTileId?: number; onBrushTileIdChange?: (tileId: number) => void }) {
+      this.brushTileId = options.initialBrushTileId ?? 0;
+      this.onBrushTileIdChange = options.onBrushTileIdChange ?? (() => {});
       testRuntime.debugEditControlsInstance = this;
     }
 
@@ -553,7 +563,11 @@ vi.mock('./ui/touchDebugEditControls', () => ({
 
     setMode(): void {}
 
-    setBrushTileId(): void {}
+    setBrushTileId(tileId: number): void {
+      if (this.brushTileId === tileId) return;
+      this.brushTileId = tileId;
+      this.onBrushTileIdChange(tileId);
+    }
 
     setCollapsed(collapsed: boolean): void {
       this.collapsed = collapsed;
@@ -590,6 +604,8 @@ const runFixedUpdate = (fixedDt = 1000 / 60): void => {
 
 const readPersistedShellState = (): Record<string, boolean> =>
   JSON.parse(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? '{}');
+const readPersistedDebugEditControlState = (): Record<string, unknown> =>
+  JSON.parse(testRuntime.storageValues.get(DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY) ?? '{}');
 
 const dispatchKeydown = (
   key: string,
@@ -699,6 +715,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.windowListeners.clear();
     testRuntime.shellInstance = null;
     testRuntime.inputControllerInstance = null;
+    testRuntime.pointerInspect = null;
     testRuntime.debugOverlayInstance = null;
     testRuntime.debugEditControlsInstance = null;
     testRuntime.hoveredTileCursorInstance = null;
@@ -712,6 +729,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugHistoryRedoCallCount = 0;
     testRuntime.debugHistoryShortcutActions = [];
     testRuntime.cancelArmedDebugToolsCallCount = 0;
+    testRuntime.rendererTileId = 0;
     testRuntime.playerSpawnPoint = {
       anchorTileX: 0,
       standingTileY: 0,
@@ -1036,6 +1054,41 @@ describe('main.ts shell state orchestration', () => {
       ellipseKind: null,
       ellipseOutlineKind: null
     });
+  });
+
+  it('routes keyboard brush shortcuts through one shared dispatcher for slot selection, eyedropper, and cycling', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    expect(readPersistedDebugEditControlState().brushTileId).toBe(3);
+    expect(dispatchKeydown('1', 'Digit1').prevented).toBe(false);
+    expect(readPersistedDebugEditControlState().brushTileId).toBe(3);
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('1', 'Digit1').prevented).toBe(true);
+    expect(readPersistedDebugEditControlState().brushTileId).toBe(1);
+
+    expect(dispatchKeydown(']', 'BracketRight').prevented).toBe(true);
+    expect(readPersistedDebugEditControlState().brushTileId).toBe(2);
+
+    testRuntime.pointerInspect = {
+      pointerType: 'touch',
+      tile: { x: 4, y: 6 }
+    };
+    testRuntime.rendererTileId = 4;
+    expect(dispatchKeydown('i', 'KeyI').prevented).toBe(true);
+    expect(readPersistedDebugEditControlState().brushTileId).toBe(2);
+
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 4, y: 6 }
+    };
+    expect(dispatchKeydown('i', 'KeyI').prevented).toBe(true);
+    expect(readPersistedDebugEditControlState().brushTileId).toBe(4);
+
+    expect(dispatchKeydown('[', 'BracketLeft').prevented).toBe(true);
+    expect(readPersistedDebugEditControlState().brushTileId).toBe(3);
   });
 
   it('enables the paused-menu N shortcut only after a resumable world session exists', async () => {

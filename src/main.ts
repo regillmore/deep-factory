@@ -131,6 +131,10 @@ type KeyboardArmedToolShortcutAction = Extract<
   | { type: 'arm-ellipse' }
   | { type: 'arm-ellipse-outline' }
 >;
+type KeyboardBrushShortcutAction = Extract<
+  DebugEditShortcutAction,
+  { type: 'select-brush-slot' } | { type: 'eyedropper' } | { type: 'cycle-brush' }
+>;
 const formatDebugBrushLabel = (tileName: string): string => tileName.replace(/_/g, ' ');
 const isEditableKeyboardShortcutTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
@@ -529,6 +533,41 @@ const bootstrap = async (): Promise<void> => {
         return toggleArmedDebugEllipseKind(action.kind);
       case 'arm-ellipse-outline':
         return toggleArmedDebugEllipseOutlineKind(action.kind);
+    }
+  };
+  const isKeyboardBrushShortcutAction = (
+    action: DebugEditShortcutAction
+  ): action is KeyboardBrushShortcutAction => {
+    switch (action.type) {
+      case 'select-brush-slot':
+      case 'eyedropper':
+      case 'cycle-brush':
+        return true;
+      default:
+        return false;
+    }
+  };
+  const applyKeyboardBrushAction = (
+    event: Pick<KeyboardEvent, 'preventDefault'>,
+    action: KeyboardBrushShortcutAction
+  ): boolean => {
+    event.preventDefault();
+
+    switch (action.type) {
+      case 'select-brush-slot': {
+        const tileId = getDebugBrushTileIdForShortcutSlot(DEBUG_BRUSH_TILE_OPTIONS, action.slotIndex);
+        return tileId !== null ? applyDebugBrushShortcutTileId(tileId) : false;
+      }
+      case 'eyedropper': {
+        const pointerInspect = input.getPointerInspect();
+        return pointerInspect?.pointerType === 'mouse'
+          ? applyDebugBrushEyedropperAtTile(pointerInspect.tile.x, pointerInspect.tile.y)
+          : false;
+      }
+      case 'cycle-brush': {
+        const tileId = cycleDebugBrushTileId(DEBUG_BRUSH_TILE_OPTIONS, activeDebugBrushTileId, action.delta);
+        return tileId !== null ? applyDebugBrushShortcutTileId(tileId) : false;
+      }
     }
   };
   const enterInWorldShellState = (): void => {
@@ -1455,21 +1494,11 @@ const bootstrap = async (): Promise<void> => {
       if (handled && !debugEditControls) {
         persistDebugEditControlsState();
       }
-    } else if (action.type === 'select-brush-slot') {
-      event.preventDefault();
-      const tileId = getDebugBrushTileIdForShortcutSlot(DEBUG_BRUSH_TILE_OPTIONS, action.slotIndex);
-      handled = tileId !== null ? applyDebugBrushShortcutTileId(tileId) : false;
-    } else if (action.type === 'eyedropper') {
-      event.preventDefault();
-      const pointerInspect = input.getPointerInspect();
-      handled =
-        pointerInspect?.pointerType === 'mouse'
-          ? applyDebugBrushEyedropperAtTile(pointerInspect.tile.x, pointerInspect.tile.y)
-          : false;
+    } else if (isKeyboardBrushShortcutAction(action)) {
+      handled = applyKeyboardBrushAction(event, action);
     } else {
-      event.preventDefault();
-      const tileId = cycleDebugBrushTileId(DEBUG_BRUSH_TILE_OPTIONS, activeDebugBrushTileId, action.delta);
-      handled = tileId !== null ? applyDebugBrushShortcutTileId(tileId) : false;
+      const exhaustiveAction: never = action;
+      return exhaustiveAction;
     }
 
     if (!handled) return;

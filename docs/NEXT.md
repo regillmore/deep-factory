@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-272. Extract a shared keyboard brush action dispatcher so the `keydown` branch in `src/main.ts` stops repeating `event.preventDefault()` plus brush-mutation handling across `select-brush-slot`, `eyedropper`, and `cycle-brush` shortcut actions, with focused runtime regressions.
+273. Extract a shared keyboard debug-edit control action dispatcher so the `keydown` branch in `src/main.ts` stops repeating `event.preventDefault()` plus control-state handling across `toggle-panel-collapsed` and `set-touch-mode` shortcut actions, with focused runtime regressions.

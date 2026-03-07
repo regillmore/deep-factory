@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Keyboard brush actions should share one dispatcher
+
+- Decision: Keyboard `select-brush-slot`, `eyedropper`, and `cycle-brush` shortcut actions should route through a shared `applyKeyboardBrushAction()` dispatcher in `src/main.ts` instead of each repeating `preventDefault()` plus its brush-mutation logic inline.
+- Reason: Those shortcut branches all share the same keyboard-event contract and only differ in how they resolve the next brush tile, so leaving them inline makes the in-world shortcut path easier to drift from focused runtime regressions.
+- Consequence: Future keyboard brush shortcuts should extend the shared dispatcher and its focused runtime regressions instead of adding more repeated inline `preventDefault()` plus brush-mutation branches in `src/main.ts`.
+
 ### 2026-03-06: Keyboard armed-tool actions should share one dispatcher
 
 - Decision: Keyboard `cancel-armed-tools`, flood-fill, line, rectangle, and ellipse shortcut actions should route through a shared `applyKeyboardArmedToolAction()` dispatcher in `src/main.ts` instead of each repeating `preventDefault()` plus its matching toggle or cancel call inline.
