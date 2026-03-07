@@ -45,9 +45,15 @@ const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
 };
 const PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE =
   'Current in-world shell hotkeys preview the active binding set until remap settings land.';
+const PAUSED_MAIN_MENU_KEYBINDING_DEFAULTED_SUMMARY_LINE =
+  'Saved in-world shell-action keybindings fell back to the default set during load, so the rows below show the safe defaults until remap settings land.';
 const DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Saved in-world shell visibility resumes with the paused session until a reset path clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
+] as const;
+const DEFAULTED_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
+  'Saved in-world shell visibility resumes with the paused session until a reset path clears it.',
+  PAUSED_MAIN_MENU_KEYBINDING_DEFAULTED_SUMMARY_LINE
 ] as const;
 const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Browser shell storage is unavailable, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
@@ -355,6 +361,40 @@ describe('resolveAppShellViewModel', () => {
           value: 'Reset Shell Toggles, New World'
         },
         ...createPausedMainMenuShellActionKeybindingSummaryRows(CUSTOM_SHELL_ACTION_KEYBINDINGS)
+      ]
+    });
+  });
+
+  it('explains when saved shell-action keybindings defaulted back to the safe set during load', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState(undefined, true, createDefaultShellActionKeybindingState(), true)
+    );
+
+    expect(viewModel.menuSections[2]).toEqual({
+      title: 'Persistence Summary',
+      lines: [...DEFAULTED_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
+      metadataRows: [
+        {
+          label: 'Status',
+          value: 'Browser saved'
+        },
+        {
+          label: 'Resumes',
+          value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+        },
+        {
+          label: 'Saved On',
+          value: 'None'
+        },
+        {
+          label: 'Saved Off',
+          value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+        },
+        {
+          label: 'Cleared by',
+          value: 'Reset Shell Toggles, New World'
+        },
+        ...createPausedMainMenuShellActionKeybindingSummaryRows()
       ]
     });
   });

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS } from './gl/standalonePlayerPlaceholder';
 import { DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY } from './input/debugEditControlStatePersistence';
 import {
-  createDefaultShellActionKeybindingState,
+  loadShellActionKeybindingStateWithDefaultFallbackStatus,
   SHELL_ACTION_KEYBINDING_STORAGE_KEY,
   type ShellActionKeybindingState
 } from './input/shellActionKeybindings';
@@ -1002,11 +1002,6 @@ const readPersistedShellState = (): ReturnType<typeof createDefaultWorldSessionS
     testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ??
       JSON.stringify(createDefaultWorldSessionShellState())
   );
-const readPersistedShellActionKeybindings = (): ShellActionKeybindingState =>
-  JSON.parse(
-    testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY) ??
-      JSON.stringify(createDefaultShellActionKeybindingState())
-  );
 const readPersistedDebugEditControlState = (): Record<string, unknown> =>
   JSON.parse(testRuntime.storageValues.get(DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY) ?? '{}');
 
@@ -1062,18 +1057,23 @@ const createExpectedPausedMainMenuState = (
     worldSessionShellState: ReturnType<typeof createDefaultWorldSessionShellState>;
     persistenceAvailable: boolean;
   }> = {}
-) =>
-  createMainMenuShellState(
+) => {
+  const shellActionKeybindingLoad = loadShellActionKeybindingStateWithDefaultFallbackStatus({
+    getItem: (key) => testRuntime.storageValues.get(key) ?? null,
+    setItem: () => {}
+  });
+
+  return createMainMenuShellState(
     true,
     options.worldSessionShellState ??
       (testRuntime.storageValues.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)
         ? readPersistedShellState()
         : createDefaultWorldSessionShellState()),
     options.persistenceAvailable ?? true,
-    testRuntime.storageValues.has(SHELL_ACTION_KEYBINDING_STORAGE_KEY)
-      ? readPersistedShellActionKeybindings()
-      : createDefaultShellActionKeybindingState()
+    shellActionKeybindingLoad.state,
+    shellActionKeybindingLoad.defaultedFromPersistedState
   );
+};
 
 const createExpectedFirstLaunchMainMenuState = () => ({
   screen: 'main-menu',
@@ -3735,6 +3735,30 @@ describe('main.ts shell state orchestration', () => {
 
     expect(dispatchKeydown('q').prevented).toBe(false);
     expect(dispatchKeydown('x').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+  });
+
+  it('explains paused-menu default bindings as a load fallback when saved shell-action keybindings were rejected', async () => {
+    testRuntime.storageValues.set(
+      SHELL_ACTION_KEYBINDING_STORAGE_KEY,
+      JSON.stringify({
+        'return-to-main-menu': 'F',
+        'recenter-camera': 'Q',
+        'toggle-debug-overlay': 'Q',
+        'toggle-debug-edit-controls': '11',
+        'toggle-debug-edit-overlays': '?',
+        'toggle-player-spawn-marker': '1'
+      })
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
   });
 

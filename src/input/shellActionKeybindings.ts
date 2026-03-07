@@ -2,6 +2,11 @@ export interface DebugEditShortcutKeyEventLike {
   key: string;
 }
 
+export interface ShellActionKeybindingLoadResult {
+  state: ShellActionKeybindingState;
+  defaultedFromPersistedState: boolean;
+}
+
 interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
@@ -93,34 +98,63 @@ export const matchesDefaultShellActionKeybindingState = (
 export const loadShellActionKeybindingState = (
   storage: StorageLike | null | undefined,
   fallbackState: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
-): ShellActionKeybindingState => {
-  if (!storage) return fallbackState;
+): ShellActionKeybindingState =>
+  loadShellActionKeybindingStateWithDefaultFallbackStatus(storage, fallbackState).state;
+
+export const loadShellActionKeybindingStateWithDefaultFallbackStatus = (
+  storage: StorageLike | null | undefined,
+  fallbackState: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
+): ShellActionKeybindingLoadResult => {
+  if (!storage) {
+    return {
+      state: fallbackState,
+      defaultedFromPersistedState: false
+    };
+  }
 
   let rawState: string | null;
   try {
     rawState = storage.getItem(STORAGE_KEY);
   } catch {
-    return fallbackState;
+    return {
+      state: fallbackState,
+      defaultedFromPersistedState: false
+    };
   }
 
-  if (!rawState) return fallbackState;
+  if (!rawState) {
+    return {
+      state: fallbackState,
+      defaultedFromPersistedState: false
+    };
+  }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawState);
   } catch {
-    return fallbackState;
+    return {
+      state: fallbackState,
+      defaultedFromPersistedState: true
+    };
   }
 
-  if (!isRecord(parsed)) return fallbackState;
+  if (!isRecord(parsed)) {
+    return {
+      state: fallbackState,
+      defaultedFromPersistedState: true
+    };
+  }
 
   const nextState = { ...fallbackState };
+  let persistedStateUsedInvalidFallback = false;
   for (const actionType of IN_WORLD_SHELL_ACTION_KEYBINDING_IDS) {
     const normalizedLabel = normalizeShellActionKeybindingLabel(parsed[actionType]);
     if (
       normalizedLabel === null ||
       RESERVED_NON_SHELL_IN_WORLD_KEYBINDING_LABELS.has(normalizedLabel)
     ) {
+      persistedStateUsedInvalidFallback = true;
       continue;
     }
 
@@ -129,16 +163,27 @@ export const loadShellActionKeybindingState = (
 
   const duplicateLabels = collectDuplicateShellActionKeybindingLabels(nextState);
   if (duplicateLabels.size === 0) {
-    return nextState;
+    return {
+      state: nextState,
+      defaultedFromPersistedState:
+        persistedStateUsedInvalidFallback &&
+        matchesDefaultShellActionKeybindingState(nextState, fallbackState)
+    };
   }
 
+  persistedStateUsedInvalidFallback = true;
   for (const actionType of IN_WORLD_SHELL_ACTION_KEYBINDING_IDS) {
     if (duplicateLabels.has(nextState[actionType])) {
       nextState[actionType] = fallbackState[actionType];
     }
   }
 
-  return nextState;
+  return {
+    state: nextState,
+    defaultedFromPersistedState:
+      persistedStateUsedInvalidFallback &&
+      matchesDefaultShellActionKeybindingState(nextState, fallbackState)
+  };
 };
 
 export const saveShellActionKeybindingState = (

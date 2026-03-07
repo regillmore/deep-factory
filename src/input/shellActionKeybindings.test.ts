@@ -9,6 +9,7 @@ import {
   getDesktopRecenterCameraHotkeyLabel,
   getDesktopReturnToMainMenuHotkeyLabel,
   loadShellActionKeybindingState,
+  loadShellActionKeybindingStateWithDefaultFallbackStatus,
   matchesDefaultShellActionKeybindingState,
   resolveInWorldShellActionKeybindingAction,
   saveShellActionKeybindingState,
@@ -142,6 +143,88 @@ describe('loadShellActionKeybindingState', () => {
       'toggle-debug-edit-controls': 'G',
       'toggle-debug-edit-overlays': 'V',
       'toggle-player-spawn-marker': 'Y'
+    });
+  });
+});
+
+describe('loadShellActionKeybindingStateWithDefaultFallbackStatus', () => {
+  const FALLBACK_STATE = createDefaultShellActionKeybindingState();
+
+  it('keeps the fallback flag off when no persisted shell-action keybindings were loaded', () => {
+    expect(
+      loadShellActionKeybindingStateWithDefaultFallbackStatus(null, FALLBACK_STATE)
+    ).toEqual({
+      state: FALLBACK_STATE,
+      defaultedFromPersistedState: false
+    });
+
+    expect(
+      loadShellActionKeybindingStateWithDefaultFallbackStatus(
+        createMemoryStorage(),
+        FALLBACK_STATE
+      )
+    ).toEqual({
+      state: FALLBACK_STATE,
+      defaultedFromPersistedState: false
+    });
+  });
+
+  it('reports when persisted shell-action keybindings default back to the safe set during load', () => {
+    expect(
+      loadShellActionKeybindingStateWithDefaultFallbackStatus(
+        createMemoryStorage('{not-json'),
+        FALLBACK_STATE
+      )
+    ).toEqual({
+      state: FALLBACK_STATE,
+      defaultedFromPersistedState: true
+    });
+
+    expect(
+      loadShellActionKeybindingStateWithDefaultFallbackStatus(
+        createMemoryStorage(
+          JSON.stringify({
+            'return-to-main-menu': 'F',
+            'recenter-camera': 'Q',
+            'toggle-debug-overlay': 'Q',
+            'toggle-debug-edit-controls': '11',
+            'toggle-debug-edit-overlays': '?',
+            'toggle-player-spawn-marker': '1'
+          })
+        ),
+        FALLBACK_STATE
+      )
+    ).toEqual({
+      state: FALLBACK_STATE,
+      defaultedFromPersistedState: true
+    });
+  });
+
+  it('keeps the fallback flag off when persisted shell-action keybindings still resolve to a mixed custom set', () => {
+    expect(
+      loadShellActionKeybindingStateWithDefaultFallbackStatus(
+        createMemoryStorage(
+          JSON.stringify({
+            'return-to-main-menu': 'X',
+            'recenter-camera': 'C',
+            'toggle-debug-overlay': '?',
+            'toggle-debug-edit-controls': 'G',
+            'toggle-debug-edit-overlays': 'V',
+            'toggle-player-spawn-marker': 'M'
+          })
+        ),
+        FALLBACK_STATE
+      )
+    ).toEqual({
+      state: {
+        'return-to-main-menu': 'X',
+        'recenter-camera': 'C',
+        'toggle-debug-overlay': 'H',
+        'toggle-debug-edit-controls': 'G',
+        'toggle-debug-edit-overlays': 'V',
+        'toggle-player-spawn-marker': 'M'
+      },
+      defaultedFromPersistedState: false
     });
   });
 });

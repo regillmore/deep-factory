@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Persisted shell-action overrides need a safe load path before the remap UI exists, so malformed or conflicting saved values cannot silently disable shell actions or steal core gameplay and debug-edit keys.
 - Consequence: Future shell-action remap, reset, or import/export work should extend the shared keybinding helper and its validation rules instead of reading raw storage or bypassing the default-fallback contract.
 
+### 2026-03-07: Persisted shell-action keybinding load should report when saved bindings default back to the safe set
+
+- Decision: Boot-time shell-action keybinding load should return both the resolved binding state and whether a saved keybinding payload defaulted all the way back to the safe set during validation, and paused-menu summary copy should consume that shared flag instead of reparsing storage.
+- Reason: The paused menu needs to distinguish intentional default shell bindings from invalid saved bindings that were rejected during load.
+- Consequence: Future shell-action remap, import, export, or summary UI work should extend the shared load-result helper when they need fallback context instead of inspecting raw persisted storage separately.
+
 ### 2026-03-07: Standalone-player render-frame compact-strip player-event telemetry should share one visibility selector
 
 - Decision: Compact status-strip standalone-player transition-event payload assembly in `src/main.ts` should route through a shared `selectStandalonePlayerRenderFrameStatusStripPlayerEventTelemetry()` helper that owns the `debugOverlayVisible` null-gating.

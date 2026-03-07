@@ -43,7 +43,7 @@ import {
   type DebugEditShortcutAction
 } from './input/debugEditShortcuts';
 import {
-  loadShellActionKeybindingState,
+  loadShellActionKeybindingStateWithDefaultFallbackStatus,
   type ShellActionKeybindingState
 } from './input/shellActionKeybindings';
 import {
@@ -406,7 +406,12 @@ const bootstrap = async (): Promise<void> => {
       return null;
     }
   })();
-  const shellActionKeybindings = loadShellActionKeybindingState(worldSessionShellStateStorage);
+  const initialShellActionKeybindingLoad = loadShellActionKeybindingStateWithDefaultFallbackStatus(
+    worldSessionShellStateStorage
+  );
+  const shellActionKeybindings = initialShellActionKeybindingLoad.state;
+  const shellActionKeybindingsDefaultedFromPersistedState =
+    initialShellActionKeybindingLoad.defaultedFromPersistedState;
   const defaultWorldSessionShellState = createDefaultWorldSessionShellState();
   let worldSessionStarted = false;
   let currentScreen: AppShellScreen = 'boot';
@@ -556,7 +561,8 @@ const bootstrap = async (): Promise<void> => {
         worldSessionStarted,
         readWorldSessionShellState(),
         worldSessionShellPersistenceAvailable,
-        shellActionKeybindings
+        shellActionKeybindings,
+        shellActionKeybindingsDefaultedFromPersistedState
       )
     );
     syncWorldScreenShellVisibility();
