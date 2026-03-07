@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Persisted debug-edit control-state mutations should share one helper
+
+- Decision: Touch-mode and panel-collapsed mutations should route through a shared `commitDebugEditControlStateAction()` helper in `src/main.ts`; touch-panel callbacks call it directly, and keyboard shortcuts reuse the same persisted update path either through direct fallback mutation or through the panel callback.
+- Reason: Those persisted control-state updates share the same runtime contract, so leaving touch-panel callbacks and keyboard fallback branches to repeat state assignment plus persistence separately makes the mixed-surface control path easier to drift from focused regressions.
+- Consequence: Future persisted debug-edit control-state mutations should extend the shared helper and its runtime regressions instead of adding more inline mode or collapsed-state persistence branches in `src/main.ts`.
+
 ### 2026-03-06: Keyboard debug-edit control actions should share one dispatcher
 
 - Decision: Keyboard `toggle-panel-collapsed` and `set-touch-mode` shortcut actions should route through a shared `applyKeyboardDebugEditControlAction()` dispatcher in `src/main.ts` instead of each repeating `preventDefault()` plus its control-state handling inline.

@@ -72,7 +72,11 @@ const testRuntime = vi.hoisted(() => {
       tile: { x: number; y: number };
     },
     debugOverlayInstance: null as null | { visible: boolean },
-    debugEditControlsInstance: null as null | { visible: boolean },
+    debugEditControlsInstance: null as null | {
+      visible: boolean;
+      setMode(mode: 'pan' | 'place' | 'break'): void;
+      setCollapsed(collapsed: boolean): void;
+    },
     hoveredTileCursorInstance: null as null | { visible: boolean },
     armedDebugToolPreviewInstance: null as null | { visible: boolean },
     debugEditStatusStripInstance: null as null | { visible: boolean },
@@ -1147,6 +1151,43 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedDebugEditControlState()).toMatchObject({
       touchMode: 'break',
       panelCollapsed: true
+    });
+  });
+
+  it('routes touch-panel callbacks and keyboard control mutations through one shared persisted control-state commit helper', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.debugEditControlsInstance).not.toBeNull();
+    if (!testRuntime.debugEditControlsInstance) {
+      throw new Error('expected debug edit controls instance');
+    }
+
+    testRuntime.debugEditControlsInstance.setMode('place');
+    expect(readPersistedDebugEditControlState()).toMatchObject({
+      touchMode: 'place',
+      panelCollapsed: false
+    });
+
+    testRuntime.debugEditControlsInstance.setCollapsed(true);
+    expect(readPersistedDebugEditControlState()).toMatchObject({
+      touchMode: 'place',
+      panelCollapsed: true
+    });
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('b', 'KeyB').prevented).toBe(true);
+    expect(readPersistedDebugEditControlState()).toMatchObject({
+      touchMode: 'break',
+      panelCollapsed: true
+    });
+
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    expect(dispatchKeydown('\\', 'Backslash').prevented).toBe(true);
+    expect(readPersistedDebugEditControlState()).toMatchObject({
+      touchMode: 'break',
+      panelCollapsed: false
     });
   });
 

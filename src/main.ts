@@ -22,7 +22,8 @@ import {
   walkRectangleOutlineTileArea,
   walkLineSteppedTilePath,
   type DebugTileEditKind,
-  type PointerInspectSnapshot
+  type PointerInspectSnapshot,
+  type TouchDebugEditMode
 } from './input/controller';
 import { worldToTilePoint } from './input/picking';
 import {
@@ -139,6 +140,9 @@ type KeyboardDebugEditControlShortcutAction = Extract<
   DebugEditShortcutAction,
   { type: 'toggle-panel-collapsed' } | { type: 'set-touch-mode' }
 >;
+type DebugEditControlStateCommitAction =
+  | { type: 'set-touch-mode'; mode: TouchDebugEditMode }
+  | { type: 'set-panel-collapsed'; collapsed: boolean };
 const formatDebugBrushLabel = (tileName: string): string => tileName.replace(/_/g, ' ');
 const isEditableKeyboardShortcutTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
@@ -594,31 +598,25 @@ const bootstrap = async (): Promise<void> => {
     switch (action.type) {
       case 'toggle-panel-collapsed': {
         if (!debugEditControlsVisible) return false;
-        const previousCollapsed = debugEditControls ? debugEditControls.isCollapsed() : debugEditPanelCollapsed;
+        const nextCollapsed = !(debugEditControls ? debugEditControls.isCollapsed() : debugEditPanelCollapsed);
         if (debugEditControls) {
-          debugEditControls.setCollapsed(!previousCollapsed);
-          return debugEditControls.isCollapsed() !== previousCollapsed;
+          const previousCollapsed = debugEditPanelCollapsed;
+          debugEditControls.setCollapsed(nextCollapsed);
+          return debugEditPanelCollapsed !== previousCollapsed;
         }
 
-        debugEditPanelCollapsed = !previousCollapsed;
-        const handled = debugEditPanelCollapsed !== previousCollapsed;
-        if (handled) {
-          persistDebugEditControlsState();
-        }
-        return handled;
+        return commitDebugEditControlStateAction({
+          type: 'set-panel-collapsed',
+          collapsed: nextCollapsed
+        });
       }
       case 'set-touch-mode': {
-        const previousMode = input.getTouchDebugEditMode();
         if (debugEditControls) {
+          const previousMode = input.getTouchDebugEditMode();
           debugEditControls.setMode(action.mode);
-        } else {
-          input.setTouchDebugEditMode(action.mode);
+          return input.getTouchDebugEditMode() !== previousMode;
         }
-        const handled = input.getTouchDebugEditMode() !== previousMode;
-        if (handled && !debugEditControls) {
-          persistDebugEditControlsState();
-        }
-        return handled;
+        return commitDebugEditControlStateAction(action);
       }
     }
   };
@@ -739,6 +737,24 @@ const bootstrap = async (): Promise<void> => {
       brushTileId: activeDebugBrushTileId,
       panelCollapsed: debugEditPanelCollapsed
     });
+  };
+  const commitDebugEditControlStateAction = (action: DebugEditControlStateCommitAction): boolean => {
+    switch (action.type) {
+      case 'set-touch-mode': {
+        const previousMode = input.getTouchDebugEditMode();
+        if (previousMode === action.mode) return false;
+        input.setTouchDebugEditMode(action.mode);
+        persistDebugEditControlsState();
+        return input.getTouchDebugEditMode() !== previousMode;
+      }
+      case 'set-panel-collapsed': {
+        const previousCollapsed = debugEditPanelCollapsed;
+        if (previousCollapsed === action.collapsed) return false;
+        debugEditPanelCollapsed = action.collapsed;
+        persistDebugEditControlsState();
+        return debugEditPanelCollapsed !== previousCollapsed;
+      }
+    }
   };
 
   const resetDebugEditControlPrefs = (): void => {
@@ -1218,8 +1234,10 @@ const bootstrap = async (): Promise<void> => {
     initialVisible: false,
     initialMode: input.getTouchDebugEditMode(),
     onModeChange: (mode) => {
-      input.setTouchDebugEditMode(mode);
-      persistDebugEditControlsState();
+      commitDebugEditControlStateAction({
+        type: 'set-touch-mode',
+        mode
+      });
     },
     brushOptions: DEBUG_BRUSH_TILE_OPTIONS,
     initialBrushTileId: activeDebugBrushTileId,
@@ -1229,8 +1247,10 @@ const bootstrap = async (): Promise<void> => {
     },
     initialCollapsed: debugEditPanelCollapsed,
     onCollapsedChange: (collapsed) => {
-      debugEditPanelCollapsed = collapsed;
-      persistDebugEditControlsState();
+      commitDebugEditControlStateAction({
+        type: 'set-panel-collapsed',
+        collapsed
+      });
     },
     initialArmedFloodFillKind: input.getArmedDebugFloodFillKind(),
     initialArmedLineKind: input.getArmedDebugLineKind(),

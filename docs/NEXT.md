@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Refine, Refactor, Restructure
 
-274. Extract a shared debug-edit control-state commit helper so touch-panel callbacks and keyboard control mutations in `src/main.ts` reuse one persisted mode or collapsed-state update path, with focused runtime regressions.
+275. Extract a shared debug-edit brush-state commit helper so touch-panel callbacks and keyboard brush mutations in `src/main.ts` reuse one persisted brush update path, with focused runtime regressions.
