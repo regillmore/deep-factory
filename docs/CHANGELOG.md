@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract a shared keyboard debug-edit control action dispatcher so the `keydown` branch in `src/main.ts` stops repeating `event.preventDefault()` plus control-state handling across `toggle-panel-collapsed` and `set-touch-mode` shortcut actions.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyKeyboardDebugEditControlAction()` dispatcher plus a narrow type guard for keyboard debug-edit control shortcuts, expanded [src/main.test.ts](../src/main.test.ts) so the mocked runtime now verifies touch-mode changes, hidden-panel collapse gating, and visible-panel collapse toggling through that shared path, removed completed task `273` from [docs/NEXT.md](docs/NEXT.md), added replacement task `274`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared keyboard brush action dispatcher so the `keydown` branch in `src/main.ts` stops repeating `event.preventDefault()` plus brush-mutation handling across `select-brush-slot`, `eyedropper`, and `cycle-brush` shortcut actions.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyKeyboardBrushAction()` dispatcher plus a narrow type guard for keyboard brush shortcuts, expanded [src/main.test.ts](../src/main.test.ts) so the mocked runtime now verifies brush-slot selection, eyedropper gating, and bracket-key brush cycling through that shared path, removed completed task `272` from [docs/NEXT.md](docs/NEXT.md), added replacement task `273`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Keyboard debug-edit control actions should share one dispatcher
+
+- Decision: Keyboard `toggle-panel-collapsed` and `set-touch-mode` shortcut actions should route through a shared `applyKeyboardDebugEditControlAction()` dispatcher in `src/main.ts` instead of each repeating `preventDefault()` plus its control-state handling inline.
+- Reason: Those shortcut branches share the same keyboard-event contract and only differ in which debug-edit control state they mutate, so leaving them inline makes the remaining in-world shortcut path easier to drift from focused runtime regressions.
+- Consequence: Future keyboard debug-edit control shortcuts should extend the shared dispatcher and its focused runtime regressions instead of adding more repeated inline `preventDefault()` plus control-state branches in `src/main.ts`.
+
 ### 2026-03-06: Keyboard brush actions should share one dispatcher
 
 - Decision: Keyboard `select-brush-slot`, `eyedropper`, and `cycle-brush` shortcut actions should route through a shared `applyKeyboardBrushAction()` dispatcher in `src/main.ts` instead of each repeating `preventDefault()` plus its brush-mutation logic inline.

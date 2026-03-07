@@ -53,6 +53,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 232. Add a grappling-hook traversal slice after entity scaffolding (`17-18`): mixed-device aimed hook firing, solid-tile latch plus pull-and-release rules, and fixed-step hook-state regressions.
 243. Add a torch-lighting utility slice after inventory basics (`214`): stackable torch hotbar slots, mixed-device solid-face placement of light-emitting torch tiles, and lighting regressions for placed torches.
 
-## Project structure optimization
+## Refine, Refactor, Restructure
 
-273. Extract a shared keyboard debug-edit control action dispatcher so the `keydown` branch in `src/main.ts` stops repeating `event.preventDefault()` plus control-state handling across `toggle-panel-collapsed` and `set-touch-mode` shortcut actions, with focused runtime regressions.
+274. Extract a shared debug-edit control-state commit helper so touch-panel callbacks and keyboard control mutations in `src/main.ts` reuse one persisted mode or collapsed-state update path, with focused runtime regressions.

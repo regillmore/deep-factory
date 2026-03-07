@@ -135,6 +135,10 @@ type KeyboardBrushShortcutAction = Extract<
   DebugEditShortcutAction,
   { type: 'select-brush-slot' } | { type: 'eyedropper' } | { type: 'cycle-brush' }
 >;
+type KeyboardDebugEditControlShortcutAction = Extract<
+  DebugEditShortcutAction,
+  { type: 'toggle-panel-collapsed' } | { type: 'set-touch-mode' }
+>;
 const formatDebugBrushLabel = (tileName: string): string => tileName.replace(/_/g, ' ');
 const isEditableKeyboardShortcutTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
@@ -567,6 +571,54 @@ const bootstrap = async (): Promise<void> => {
       case 'cycle-brush': {
         const tileId = cycleDebugBrushTileId(DEBUG_BRUSH_TILE_OPTIONS, activeDebugBrushTileId, action.delta);
         return tileId !== null ? applyDebugBrushShortcutTileId(tileId) : false;
+      }
+    }
+  };
+  const isKeyboardDebugEditControlShortcutAction = (
+    action: DebugEditShortcutAction
+  ): action is KeyboardDebugEditControlShortcutAction => {
+    switch (action.type) {
+      case 'toggle-panel-collapsed':
+      case 'set-touch-mode':
+        return true;
+      default:
+        return false;
+    }
+  };
+  const applyKeyboardDebugEditControlAction = (
+    event: Pick<KeyboardEvent, 'preventDefault'>,
+    action: KeyboardDebugEditControlShortcutAction
+  ): boolean => {
+    event.preventDefault();
+
+    switch (action.type) {
+      case 'toggle-panel-collapsed': {
+        if (!debugEditControlsVisible) return false;
+        const previousCollapsed = debugEditControls ? debugEditControls.isCollapsed() : debugEditPanelCollapsed;
+        if (debugEditControls) {
+          debugEditControls.setCollapsed(!previousCollapsed);
+          return debugEditControls.isCollapsed() !== previousCollapsed;
+        }
+
+        debugEditPanelCollapsed = !previousCollapsed;
+        const handled = debugEditPanelCollapsed !== previousCollapsed;
+        if (handled) {
+          persistDebugEditControlsState();
+        }
+        return handled;
+      }
+      case 'set-touch-mode': {
+        const previousMode = input.getTouchDebugEditMode();
+        if (debugEditControls) {
+          debugEditControls.setMode(action.mode);
+        } else {
+          input.setTouchDebugEditMode(action.mode);
+        }
+        const handled = input.getTouchDebugEditMode() !== previousMode;
+        if (handled && !debugEditControls) {
+          persistDebugEditControlsState();
+        }
+        return handled;
       }
     }
   };
@@ -1468,32 +1520,8 @@ const bootstrap = async (): Promise<void> => {
       handled = applyKeyboardInWorldShellAction(event, action.type);
     } else if (isKeyboardArmedToolShortcutAction(action)) {
       handled = applyKeyboardArmedToolAction(event, action);
-    } else if (action.type === 'toggle-panel-collapsed') {
-      event.preventDefault();
-      if (!debugEditControlsVisible) return;
-      const previousCollapsed = debugEditControls ? debugEditControls.isCollapsed() : debugEditPanelCollapsed;
-      if (debugEditControls) {
-        debugEditControls.setCollapsed(!previousCollapsed);
-        handled = debugEditControls.isCollapsed() !== previousCollapsed;
-      } else {
-        debugEditPanelCollapsed = !previousCollapsed;
-        handled = debugEditPanelCollapsed !== previousCollapsed;
-        if (handled) {
-          persistDebugEditControlsState();
-        }
-      }
-    } else if (action.type === 'set-touch-mode') {
-      event.preventDefault();
-      const previousMode = input.getTouchDebugEditMode();
-      if (debugEditControls) {
-        debugEditControls.setMode(action.mode);
-      } else {
-        input.setTouchDebugEditMode(action.mode);
-      }
-      handled = input.getTouchDebugEditMode() !== previousMode;
-      if (handled && !debugEditControls) {
-        persistDebugEditControlsState();
-      }
+    } else if (isKeyboardDebugEditControlShortcutAction(action)) {
+      handled = applyKeyboardDebugEditControlAction(event, action);
     } else if (isKeyboardBrushShortcutAction(action)) {
       handled = applyKeyboardBrushAction(event, action);
     } else {
