@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Add a sunlight regression for streamed-back row-below chunks after a boundary bottom-corner blocker toggle.
+- Changes: Expanded [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with a deterministic regression that opens a boundary bottom-corner blocker, verifies row-below boundary transport plus adjacent solid-face relighting, prunes the row-below chunks, streams them back in, and rechecks the same relit columns; removed completed task `211` from [docs/NEXT.md](docs/NEXT.md) and added replacement lighting follow-up task `247`.
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts`.
+
 - Task: Surface the paused-main-menu keyboard shortcuts in the touch debug controls keyboard reference so the touch panel lists `Enter` resume and `N` new-world guidance alongside the in-world shell shortcuts.
 - Changes: Updated [src/ui/touchDebugEditControls.ts](../src/ui/touchDebugEditControls.ts) so the touch panel `Keyboard` section now lists paused-menu `Resume World (Enter)` and `New World (N)` guidance beside the existing in-world shell shortcut hints, expanded [src/ui/touchDebugEditControls.test.ts](../src/ui/touchDebugEditControls.test.ts) with focused regressions for those keyboard-reference lines, removed completed task `245` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical-slice task `246`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/touchDebugEditControls.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
