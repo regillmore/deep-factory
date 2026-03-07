@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Camera2D } from '../core/camera2d';
-import { CHUNK_SIZE, TILE_SIZE } from '../world/constants';
+import { CHUNK_SIZE, MAX_LIGHT_LEVEL, TILE_SIZE } from '../world/constants';
 import { createPlayerState } from '../world/playerState';
 import {
   atlasIndexToUvRect,
+  getTileEmissiveLightLevel,
   resolveAnimatedTileRenderFrameUvRect,
   resolveLiquidRenderVariantUvRectAtElapsedMs
 } from '../world/tileMetadata';
@@ -887,6 +888,124 @@ describe('Renderer atlas telemetry', () => {
     expect(invalidateChunkMeshSpy.mock.calls).toEqual(
       expect.arrayContaining([[0, -1]])
     );
+  });
+
+  it('keeps a streamed-back dirty x-boundary blocker at emissive falloff on the first resumed draw when the adjacent emissive source chunk stays clean', async () => {
+    const createInitializedRenderer = async (): Promise<Renderer> => {
+      const gl = createMockGl();
+      const renderer = new Renderer(createMockCanvas(gl));
+      const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+      loadAtlasImageSource.mockResolvedValue({
+        imageSource: authoredBitmap,
+        sourceKind: 'authored',
+        sourceUrl: '/atlas/tile-atlas.png',
+        width: 96,
+        height: 64
+      });
+      await renderer.initialize();
+      return renderer;
+    };
+
+    const tunnelWorldTileY = -20;
+    const tunnelStartWorldTileX = CHUNK_SIZE - 2;
+    const tunnelEndWorldTileX = CHUNK_SIZE + 2;
+    const emissiveTileId = 6;
+    const expectedBoundaryBlockerLightLevel =
+      getTileEmissiveLightLevel(emissiveTileId) - 1;
+
+    const nearCamera = new Camera2D();
+    nearCamera.zoom = 16;
+    nearCamera.x = (CHUNK_SIZE * TILE_SIZE);
+    nearCamera.y = tunnelWorldTileY * TILE_SIZE;
+
+    const runDirectionalCase = async (options: {
+      emissiveWorldTileX: number;
+      boundaryBlockerWorldTileX: number;
+      shadowedProbeWorldTileX: number;
+      farCameraX: number;
+      expectedInvalidatedChunkX: number;
+      cleanChunkX: number;
+    }): Promise<void> => {
+      const renderer = await createInitializedRenderer();
+      const rendererWorld = (
+        renderer as unknown as {
+          world: {
+            getLightLevel: (worldTileX: number, worldTileY: number) => number;
+          };
+        }
+      ).world;
+
+      for (
+        let worldTileX = tunnelStartWorldTileX;
+        worldTileX <= tunnelEndWorldTileX;
+        worldTileX += 1
+      ) {
+        renderer.setTile(worldTileX, tunnelWorldTileY - 1, 1);
+        renderer.setTile(worldTileX, tunnelWorldTileY, 0);
+        renderer.setTile(worldTileX, tunnelWorldTileY + 1, 1);
+      }
+      renderer.setTile(options.emissiveWorldTileX, tunnelWorldTileY, emissiveTileId);
+      renderer.setTile(options.boundaryBlockerWorldTileX, tunnelWorldTileY, 1);
+
+      renderUntilMeshBuildQueueDrains(renderer, nearCamera);
+      expect(rendererWorld.getLightLevel(options.boundaryBlockerWorldTileX, tunnelWorldTileY)).toBe(
+        expectedBoundaryBlockerLightLevel
+      );
+      expect(rendererWorld.getLightLevel(options.boundaryBlockerWorldTileX, tunnelWorldTileY)).not.toBe(
+        MAX_LIGHT_LEVEL
+      );
+      expect(rendererWorld.getLightLevel(options.shadowedProbeWorldTileX, tunnelWorldTileY)).toBe(0);
+
+      const farCamera = new Camera2D();
+      farCamera.zoom = nearCamera.zoom;
+      farCamera.x = options.farCameraX;
+      farCamera.y = nearCamera.y;
+      renderer.render(farCamera, { timeMs: 0 });
+
+      expect(renderer.telemetry.evictedMeshEntries).toBeGreaterThan(0);
+      expect(renderer.telemetry.evictedWorldChunks).toBeGreaterThan(0);
+
+      const invalidateChunkMeshSpy = vi.spyOn(
+        renderer as unknown as {
+          invalidateChunkMesh: (chunkX: number, chunkY: number) => void;
+        },
+        'invalidateChunkMesh'
+      );
+      invalidateChunkMeshSpy.mockClear();
+
+      renderer.render(nearCamera, { timeMs: 0 });
+
+      const invalidatedChunkKeys = invalidateChunkMeshSpy.mock.calls.map(
+        ([chunkX, chunkY]) => `${chunkX},${chunkY}`
+      );
+      expect(invalidatedChunkKeys).toContain(`${options.expectedInvalidatedChunkX},-1`);
+      expect(invalidatedChunkKeys).not.toContain(`${options.cleanChunkX},-1`);
+      expect(rendererWorld.getLightLevel(options.boundaryBlockerWorldTileX, tunnelWorldTileY)).toBe(
+        expectedBoundaryBlockerLightLevel
+      );
+      expect(rendererWorld.getLightLevel(options.boundaryBlockerWorldTileX, tunnelWorldTileY)).not.toBe(
+        MAX_LIGHT_LEVEL
+      );
+      expect(rendererWorld.getLightLevel(options.shadowedProbeWorldTileX, tunnelWorldTileY)).toBe(0);
+    };
+
+    await runDirectionalCase({
+      emissiveWorldTileX: CHUNK_SIZE - 1,
+      boundaryBlockerWorldTileX: CHUNK_SIZE,
+      shadowedProbeWorldTileX: CHUNK_SIZE + 1,
+      farCameraX: ((-4 * CHUNK_SIZE + CHUNK_SIZE / 2) * TILE_SIZE),
+      expectedInvalidatedChunkX: 1,
+      cleanChunkX: 0
+    });
+
+    await runDirectionalCase({
+      emissiveWorldTileX: CHUNK_SIZE,
+      boundaryBlockerWorldTileX: CHUNK_SIZE - 1,
+      shadowedProbeWorldTileX: CHUNK_SIZE - 2,
+      farCameraX: ((5 * CHUNK_SIZE + CHUNK_SIZE / 2) * TILE_SIZE),
+      expectedInvalidatedChunkX: 0,
+      cleanChunkX: 1
+    });
   });
 
   it('invalidates both row-below chunk meshes when a streamed-back bottom-corner boundary blocker recloses', async () => {

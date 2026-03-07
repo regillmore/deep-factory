@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Add a renderer regression where a streamed-back dirty `x`-boundary blocker beside a clean emissive source still rebuilds at emissive falloff instead of `MAX_LIGHT_LEVEL` on the first resumed draw.
+- Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with mirrored left-to-right and right-to-left emissive stream-back regressions that assert the first resumed near-camera draw invalidates only the reloaded blocker chunk and keeps the blocker light at emissive falloff instead of `MAX_LIGHT_LEVEL`, removed completed task `320` from [docs/NEXT.md](docs/NEXT.md), and because that closes the current renderer-side streamed-back boundary-lighting regression pattern, added ambitious replacement task `321`.
+- Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts -t "keeps a streamed-back dirty x-boundary blocker at emissive falloff"`, `cmd /c npx vitest run src/gl/renderer.test.ts`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a renderer regression where reloading the chunk adjacent to an opened `x`-boundary blocker still invalidates streamed-back boundary-adjacent and recessed-gap solid-face lighting on either side before the first rebuilt draw.
 - Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with mirrored left-to-right and right-to-left stream-back regressions that spy on the first resumed near-camera render after the adjacent boundary chunk reloads, removed completed task `319` from [docs/NEXT.md](docs/NEXT.md), and added replacement task `320`.
 - Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts -t "invalidates streamed-back boundary-adjacent"` plus `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
