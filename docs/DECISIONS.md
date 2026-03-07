@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Armed-tool toggles should share one helper
+
+- Decision: `toggleArmedDebugFloodFillKind()`, `toggleArmedDebugLineKind()`, `toggleArmedDebugRectKind()`, `toggleArmedDebugRectOutlineKind()`, `toggleArmedDebugEllipseKind()`, and `toggleArmedDebugEllipseOutlineKind()` in `src/main.ts` should route through a shared `toggleMutuallyExclusiveArmedDebugToolKind()` helper that reads the current armed kind from the shared snapshot and delegates through the existing per-tool setters.
+- Reason: Those toggles all implement the same current-kind comparison and arm-versus-disarm decision, so leaving six copies of that wrapper logic makes the armed-tool path easier to drift from focused regressions.
+- Consequence: Future armed one-shot tool toggles should extend the shared toggle helper and its runtime regressions instead of reintroducing per-tool current-kind comparison branches in `src/main.ts`.
+
 ### 2026-03-07: Mutually-exclusive armed-tool writes should share one helper
 
 - Decision: `setArmedDebugFloodFillKind()`, `setArmedDebugLineKind()`, `setArmedDebugRectKind()`, `setArmedDebugRectOutlineKind()`, `setArmedDebugEllipseKind()`, and `setArmedDebugEllipseOutlineKind()` in `src/main.ts` should route through a shared `setMutuallyExclusiveArmedDebugToolKind()` helper backed by one armed-tool snapshot apply path.

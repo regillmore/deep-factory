@@ -1205,6 +1205,57 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('routes repeated same-tool armed-tool shortcuts through one shared toggle helper for arm and disarm state', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('f', 'KeyF').prevented).toBe(true);
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: 'place',
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
+
+    expect(dispatchKeydown('f', 'KeyF').prevented).toBe(true);
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
+
+    expect(dispatchKeydown('o', 'KeyO', { shiftKey: true }).prevented).toBe(true);
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: 'break'
+    });
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
+
+    expect(dispatchKeydown('o', 'KeyO', { shiftKey: true }).prevented).toBe(true);
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
+  });
+
   it('routes touch-control armed-tool initialization through one shared snapshot helper', async () => {
     testRuntime.initialArmedToolKinds = {
       floodFillKind: 'place',

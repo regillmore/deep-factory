@@ -153,6 +153,7 @@ type TouchDebugArmedToolSnapshot = {
   ellipseOutlineKind: DebugTileEditKind | null;
 };
 type TouchDebugArmedToolKey = keyof TouchDebugArmedToolSnapshot;
+type SetTouchDebugArmedToolKind = (kind: DebugTileEditKind | null) => boolean;
 const TOUCH_DEBUG_ARMED_TOOL_KEYS: readonly TouchDebugArmedToolKey[] = [
   'floodFillKind',
   'lineKind',
@@ -867,13 +868,20 @@ const bootstrap = async (): Promise<void> => {
     syncArmedDebugToolControls();
     return true;
   };
+  const toggleMutuallyExclusiveArmedDebugToolKind = (
+    key: TouchDebugArmedToolKey,
+    kind: DebugTileEditKind,
+    setKind: SetTouchDebugArmedToolKind
+  ): boolean => {
+    const currentKind = readTouchDebugArmedToolSnapshot()[key];
+    return setKind(currentKind === kind ? null : kind);
+  };
   const setArmedDebugFloodFillKind = (kind: DebugTileEditKind | null): boolean => {
     return setMutuallyExclusiveArmedDebugToolKind('floodFillKind', kind);
   };
 
   const toggleArmedDebugFloodFillKind = (kind: DebugTileEditKind): boolean => {
-    const currentKind = input.getArmedDebugFloodFillKind();
-    return setArmedDebugFloodFillKind(currentKind === kind ? null : kind);
+    return toggleMutuallyExclusiveArmedDebugToolKind('floodFillKind', kind, setArmedDebugFloodFillKind);
   };
 
   const setArmedDebugLineKind = (kind: DebugTileEditKind | null): boolean => {
@@ -881,8 +889,7 @@ const bootstrap = async (): Promise<void> => {
   };
 
   const toggleArmedDebugLineKind = (kind: DebugTileEditKind): boolean => {
-    const currentKind = input.getArmedDebugLineKind();
-    return setArmedDebugLineKind(currentKind === kind ? null : kind);
+    return toggleMutuallyExclusiveArmedDebugToolKind('lineKind', kind, setArmedDebugLineKind);
   };
 
   const setArmedDebugRectKind = (kind: DebugTileEditKind | null): boolean => {
@@ -890,8 +897,7 @@ const bootstrap = async (): Promise<void> => {
   };
 
   const toggleArmedDebugRectKind = (kind: DebugTileEditKind): boolean => {
-    const currentKind = input.getArmedDebugRectKind();
-    return setArmedDebugRectKind(currentKind === kind ? null : kind);
+    return toggleMutuallyExclusiveArmedDebugToolKind('rectKind', kind, setArmedDebugRectKind);
   };
 
   const setArmedDebugRectOutlineKind = (kind: DebugTileEditKind | null): boolean => {
@@ -899,8 +905,11 @@ const bootstrap = async (): Promise<void> => {
   };
 
   const toggleArmedDebugRectOutlineKind = (kind: DebugTileEditKind): boolean => {
-    const currentKind = input.getArmedDebugRectOutlineKind();
-    return setArmedDebugRectOutlineKind(currentKind === kind ? null : kind);
+    return toggleMutuallyExclusiveArmedDebugToolKind(
+      'rectOutlineKind',
+      kind,
+      setArmedDebugRectOutlineKind
+    );
   };
 
   const setArmedDebugEllipseKind = (kind: DebugTileEditKind | null): boolean => {
@@ -908,8 +917,7 @@ const bootstrap = async (): Promise<void> => {
   };
 
   const toggleArmedDebugEllipseKind = (kind: DebugTileEditKind): boolean => {
-    const currentKind = input.getArmedDebugEllipseKind();
-    return setArmedDebugEllipseKind(currentKind === kind ? null : kind);
+    return toggleMutuallyExclusiveArmedDebugToolKind('ellipseKind', kind, setArmedDebugEllipseKind);
   };
 
   const setArmedDebugEllipseOutlineKind = (kind: DebugTileEditKind | null): boolean => {
@@ -917,8 +925,11 @@ const bootstrap = async (): Promise<void> => {
   };
 
   const toggleArmedDebugEllipseOutlineKind = (kind: DebugTileEditKind): boolean => {
-    const currentKind = input.getArmedDebugEllipseOutlineKind();
-    return setArmedDebugEllipseOutlineKind(currentKind === kind ? null : kind);
+    return toggleMutuallyExclusiveArmedDebugToolKind(
+      'ellipseOutlineKind',
+      kind,
+      setArmedDebugEllipseOutlineKind
+    );
   };
 
   const applyDebugHistoryTile = (worldTileX: number, worldTileY: number, tileId: number): void => {

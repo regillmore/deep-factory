@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Refine, Refactor, Restructure
 
-281. Extract a shared armed-tool toggle helper so `toggleArmedDebugFloodFillKind()`, `toggleArmedDebugLineKind()`, `toggleArmedDebugRectKind()`, `toggleArmedDebugRectOutlineKind()`, `toggleArmedDebugEllipseKind()`, and `toggleArmedDebugEllipseOutlineKind()` in `src/main.ts` reuse one current-kind replacement pipeline, with focused runtime regressions.
+282. Extract a shared touch debug armed-tool toggle callback factory so the six `onArm*` callbacks passed to `TouchDebugEditControls` in `src/main.ts` reuse one toggle-action wiring path, with focused runtime regressions.
