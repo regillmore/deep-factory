@@ -72,6 +72,8 @@ If a useful verification step could not be run, state that explicitly in the fin
 
 This workspace runs commands through PowerShell, and bare `npx` / `npm` may resolve to blocked `*.ps1` shims. Prefer `cmd /c npx ...`, `cmd /c npm ...`, or `npx.cmd` / `npm.cmd` for Node-based test and build commands.
 
+If a Node-based command already uses one of those forms and still fails with `spawn EPERM` during Vite, Vitest, or esbuild startup, treat that as a sandbox child-process restriction rather than a shim-resolution problem. In that case, rerun the same `cmd /c ...` or `*.cmd` command with escalation instead of retrying bare `npx` / `npm`.
+
 ## Documentation Rules
 
 - Update [docs/CHANGELOG.md](docs/CHANGELOG.md) for every completed pass.
@@ -98,4 +100,3 @@ In the final response:
 2. State what verification was performed and what was not performed.
 3. Point to any roadmap, changelog, capability, architecture, or decision-log updates.
 4. Mention any remaining risk that the next agent should understand in one or two sentences.
-

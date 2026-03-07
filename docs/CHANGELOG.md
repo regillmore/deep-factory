@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-07
+
+- Task: Clarify the Windows tooling note in [AGENTS.md](../AGENTS.md) so future agents can distinguish PowerShell shim issues from recurring `spawn EPERM` sandbox failures during Node-based tool startup.
+- Changes: Updated [AGENTS.md](../AGENTS.md) to keep the existing `cmd /c npx ...` / `*.cmd` guidance and add an explicit instruction to rerun the same command with escalation when Vite, Vitest, or esbuild startup fails with `spawn EPERM`.
+- Verification: Not run; docs-only change.
+
 ## 2026-03-06
 
 - Task: Extract a shared debug-edit preference-restore helper so bootstrap hydration and `Reset Prefs` in `src/main.ts` reuse one mode, brush, and collapsed-state application path.
