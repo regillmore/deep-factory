@@ -16,7 +16,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 218. Add a sunlight levels toggle, visually differentiating tiles in direct sunlight, horizontal sunlight transport, and darkness.
 233. Add a sunlight regression where a clean boundary emissive source does not horizontal-transport `MAX_LIGHT_LEVEL` into streamed-back dirty neighboring boundary air after the adjacent chunk unloads and reloads.
 235. Add a renderer regression where a streamed-back one-tile-gap roof build across an `x` chunk boundary still invalidates both lower-row chunk meshes before the first rebuilt draw.
-307. Add a renderer regression where reclosing a streamed-back row-below bottom-corner boundary blocker from the opposite chunk side still invalidates both row-below chunk meshes before the first rebuilt draw.
 
 ## Entities and interpolation
 
@@ -53,5 +52,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 243. Add a torch-lighting utility slice after inventory basics (`214`): stackable torch hotbar slots, mixed-device solid-face placement of light-emitting torch tiles, and lighting regressions for placed torches.
 246. Add a bow-and-arrow ranged-combat slice after hostile-slime combat (`213`) and inventory basics (`214`): stackable arrow ammo, mixed-device aimed firing, fixed-step projectile flight plus terrain or slime hits, and deterministic ammo-consumption regressions.
 301. Add a healing-potion survival slice after hostile-slime combat (`213`) and inventory basics (`214`): stackable potion items, mixed-device consume input, fixed-step healing plus overheal clamp and use-cooldown rules, and save/load regressions for health plus consumable stacks.
+308. Add a starter building-block placement slice after inventory basics (`214`): stackable dirt-block hotbar slots, mixed-device solid-face placement with player-overlap rejection, stack consumption, and save/load regressions for placed blocks plus remaining stack counts.
 
 ## Refine, Extract, Refactor, Restructure
