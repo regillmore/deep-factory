@@ -72,7 +72,7 @@ If a useful verification step could not be run, state that explicitly in the fin
 
 This workspace runs commands through PowerShell, and bare `npx` / `npm` may resolve to blocked `*.ps1` shims. Prefer `cmd /c npx ...`, `cmd /c npm ...`, or `npx.cmd` / `npm.cmd` for Node-based test and build commands.
 
-If a Node-based command already uses one of those forms and still fails with `spawn EPERM` during Vite, Vitest, or esbuild startup, treat that as a sandbox child-process restriction rather than a shim-resolution problem. In that case, rerun the same `cmd /c ...` or `*.cmd` command with escalation instead of retrying bare `npx` / `npm`.
+If a Node-based command already uses one of those forms and is expected to start Vite, Vitest, or esbuild, assume `spawn EPERM` is a likely sandbox child-process restriction rather than a shim-resolution problem. When that command matters to the task, prefer requesting escalation on the first attempt instead of spending a redundant in-sandbox run confirming the same startup failure. If such a command is attempted in-sandbox anyway and hits `spawn EPERM`, rerun the same `cmd /c ...` or `*.cmd` command with escalation and do not retry it in-sandbox again.
 
 ## Documentation Rules
 
