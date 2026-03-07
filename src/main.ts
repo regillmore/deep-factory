@@ -1373,10 +1373,7 @@ const bootstrap = async (): Promise<void> => {
     input.cancelArmedDebugTools();
     syncArmedDebugToolControls();
   };
-  const resetFreshWorldSessionRuntimeState = (): void => {
-    renderer.resetWorld();
-    resetFreshWorldSessionDebugEditState();
-    clearPinnedDebugTileInspect();
+  const resetFreshWorldSessionCameraAndPlayerState = (): void => {
     camera.x = 0;
     camera.y = 0;
     camera.zoom = defaultCameraZoom;
@@ -1389,9 +1386,15 @@ const bootstrap = async (): Promise<void> => {
     lastPlayerCeilingContactTransitionEvent = null;
     standalonePlayerCeilingBonkHoldUntilTimeMs = null;
     standalonePlayerState = null;
-    resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
+    resolvedPlayerSpawn = null;
     playerSpawnNeedsRefresh = false;
     refreshResolvedPlayerSpawn();
+  };
+  const resetFreshWorldSessionRuntimeState = (): void => {
+    renderer.resetWorld();
+    resetFreshWorldSessionDebugEditState();
+    clearPinnedDebugTileInspect();
+    resetFreshWorldSessionCameraAndPlayerState();
   };
   const enterOrResumeWorldSessionFromMainMenu = (): void => {
     if (loop === null) return;

@@ -984,6 +984,35 @@ const createExpectedFirstLaunchMainMenuState = () => ({
   secondaryActionLabel: null,
   tertiaryActionLabel: null
 });
+const createTestPlayerSpawnPoint = ({
+  anchorTileX = 0,
+  standingTileY = 0,
+  x = 8,
+  y = 0,
+  supportTileId = 1
+}: Partial<{
+  anchorTileX: number;
+  standingTileY: number;
+  x: number;
+  y: number;
+  supportTileId: number;
+}> = {}) => ({
+  anchorTileX,
+  standingTileY,
+  x,
+  y,
+  aabb: {
+    minX: x - 6,
+    minY: y - 28,
+    maxX: x + 6,
+    maxY: y
+  },
+  support: {
+    tileX: anchorTileX,
+    tileY: standingTileY,
+    tileId: supportTileId
+  }
+});
 
 describe('main.ts shell state orchestration', () => {
   beforeEach(() => {
@@ -1033,23 +1062,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugHistoryShortcutActions = [];
     testRuntime.cancelArmedDebugToolsCallCount = 0;
     testRuntime.rendererTileId = 0;
-    testRuntime.playerSpawnPoint = {
-      anchorTileX: 0,
-      standingTileY: 0,
-      x: 8,
-      y: 0,
-      aabb: {
-        minX: 2,
-        minY: -28,
-        maxX: 14,
-        maxY: 0
-      },
-      support: {
-        tileX: 0,
-        tileY: 0,
-        tileId: 1
-      }
-    };
+    testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint();
     testRuntime.gameLoopStartCount = 0;
     testRuntime.storageValues.clear();
 
@@ -1621,6 +1634,44 @@ describe('main.ts shell state orchestration', () => {
     });
     expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
     expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+  });
+
+  it('routes paused-menu New World camera and player reset through one shared fresh-world helper for follow offset, zoom, and spawn refresh', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(testRuntime.cameraInstance).not.toBeNull();
+    if (!testRuntime.cameraInstance) {
+      throw new Error('expected camera instance');
+    }
+
+    testRuntime.cameraInstance.x = 120;
+    testRuntime.cameraInstance.y = 45;
+    testRuntime.cameraInstance.zoom = 3.5;
+    runFixedUpdate();
+
+    testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 5,
+      standingTileY: 4,
+      x: 88,
+      y: 64
+    });
+
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+    testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
+
+    expect(testRuntime.cameraInstance.x).toBe(88);
+    expect(testRuntime.cameraInstance.y).toBe(50);
+    expect(testRuntime.cameraInstance.zoom).toBe(1);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+
+    testRuntime.cameraInstance.x = -20;
+    testRuntime.cameraInstance.y = 10;
+    testRuntime.shellInstance?.options.onRecenterCamera('in-world');
+    expect(testRuntime.cameraInstance.x).toBe(88);
+    expect(testRuntime.cameraInstance.y).toBe(50);
   });
 
   it('routes touch-control armed-tool sync through one shared apply helper', async () => {

@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Refine, Refactor, Restructure
 
-289. Extract a shared fresh-world camera-and-player reset helper so `resetFreshWorldSessionRuntimeState()` in `src/main.ts` reuses one camera, follow-offset, player-transition, and spawn-refresh reset path, with focused runtime regressions.
+290. Extract a shared standalone-player transition-reset helper so spawn initialization and embedded-spawn recovery in `src/main.ts` reuse one grounded/facing/respawn/wall/ceiling/bonk reset path, with focused runtime regressions.

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Fresh-world camera and player reset should share one helper
+
+- Decision: The fresh-world reset path in `src/main.ts` should route its camera, follow-offset, player-transition, and spawn-refresh work through a shared `resetFreshWorldSessionCameraAndPlayerState()` helper.
+- Reason: Those camera and standalone-player steps form one runtime reset contract for abandoning the paused session and booting a fresh world, so leaving them inline inside the broader fresh-world reset makes that state-reset path easier to drift from focused regressions.
+- Consequence: Future fresh-world camera or player reset changes should extend the shared helper and its paused-menu `New World` regression instead of reintroducing separate camera reset, transition clearing, or spawn refresh steps in `resetFreshWorldSessionRuntimeState()`.
+
 ### 2026-03-07: Fresh-world debug-edit reset should share one helper
 
 - Decision: The fresh-world reset path in `src/main.ts` should route its debug-edit state work through a shared `resetFreshWorldSessionDebugEditState()` helper that replaces history, cancels armed tools, and synchronizes the touch debug controls.

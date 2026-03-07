@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared fresh-world camera-and-player reset helper so `resetFreshWorldSessionRuntimeState()` in `src/main.ts` reuses one camera, follow-offset, player-transition, and spawn-refresh reset path.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `resetFreshWorldSessionCameraAndPlayerState()` helper for the fresh-world camera and player reset slice, expanded [src/main.test.ts](../src/main.test.ts) with a focused paused-menu `New World` regression that verifies camera follow-offset drift, zoom, and spawn refresh all reset onto the new player spawn, removed completed task `289` from [docs/NEXT.md](docs/NEXT.md), added replacement task `290`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared fresh-world debug-edit reset helper so `resetFreshWorldSessionRuntimeState()` in `src/main.ts` reuses one history replacement, armed-tool cancel, and touch-control sync path.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `resetFreshWorldSessionDebugEditState()` helper for the fresh-world debug-edit reset slice, expanded [src/main.test.ts](../src/main.test.ts) with a focused paused-menu `New World` regression that verifies history replacement and armed-tool cancellation stay synchronized into the touch debug controls, removed completed task `288` from [docs/NEXT.md](docs/NEXT.md), added replacement task `289`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
