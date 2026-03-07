@@ -4,6 +4,14 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-06
 
+- Task: Extract a shared debug-edit preference-restore helper so bootstrap hydration and `Reset Prefs` in `src/main.ts` reuse one mode, brush, and collapsed-state application path.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `restoreDebugEditControlPreferences()` helper for loaded and default debug-edit preferences, routed bootstrap hydration and `Reset Prefs` through that helper, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that seeds persisted prefs, verifies hydrated touch-panel state, and confirms reset restores the default runtime path, removed completed task `276` from [docs/NEXT.md](docs/NEXT.md), added replacement task `277`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
+- Task: Extract a shared debug-edit brush-state commit helper so touch-panel callbacks and keyboard brush mutations in `src/main.ts` reuse one persisted brush update path.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `commitDebugEditBrushTileId()` helper for persisted brush updates, routed touch-panel callbacks and keyboard fallback brush mutations through that helper, expanded [src/main.test.ts](../src/main.test.ts) with a focused mixed-surface runtime regression that covers touch-panel and keyboard brush commits, removed completed task `275` from [docs/NEXT.md](docs/NEXT.md), added replacement task `276`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared debug-edit control-state commit helper so touch-panel callbacks and keyboard control mutations in `src/main.ts` reuse one persisted mode or collapsed-state update path.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `commitDebugEditControlStateAction()` helper for persisted touch-mode and panel-collapsed updates, routed touch-panel callbacks and keyboard fallback mutations through that helper, expanded [src/main.test.ts](../src/main.test.ts) with a focused mixed-surface runtime regression that covers touch-panel and keyboard control-state commits, removed completed task `274` from [docs/NEXT.md](docs/NEXT.md), added replacement task `275`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

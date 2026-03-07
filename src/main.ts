@@ -29,7 +29,8 @@ import { worldToTilePoint } from './input/picking';
 import {
   clearDebugEditControlState,
   loadDebugEditControlState,
-  saveDebugEditControlState
+  saveDebugEditControlState,
+  type DebugEditControlState
 } from './input/debugEditControlStatePersistence';
 import { runDebugFloodFill } from './input/debugFloodFill';
 import { DebugTileEditHistory } from './input/debugTileEditHistory';
@@ -628,19 +629,18 @@ const bootstrap = async (): Promise<void> => {
   input.retainPointerInspectWhenLeavingToElement(debugEditStatusStrip.getPointerInspectRetainerElement());
   let debugTileEditHistory = new DebugTileEditHistory();
   const debugEditControlStorage = worldSessionShellStateStorage;
-  const defaultDebugEditControlState = {
+  const defaultDebugEditControlState: DebugEditControlState = {
     touchMode: input.getTouchDebugEditMode(),
     brushTileId: INITIAL_DEBUG_BRUSH_TILE_ID,
     panelCollapsed: false
-  } as const;
+  };
   const initialDebugEditControlState = loadDebugEditControlState(
     debugEditControlStorage,
     DEBUG_BRUSH_TILE_IDS,
     defaultDebugEditControlState
   );
-  input.setTouchDebugEditMode(initialDebugEditControlState.touchMode);
-  let activeDebugBrushTileId = initialDebugEditControlState.brushTileId;
-  let debugEditPanelCollapsed = initialDebugEditControlState.panelCollapsed;
+  let activeDebugBrushTileId = defaultDebugEditControlState.brushTileId;
+  let debugEditPanelCollapsed = defaultDebugEditControlState.panelCollapsed;
   let suppressDebugEditControlPersistence = false;
   let pinnedDebugTileInspect: PinnedDebugTileInspectState | null = null;
   let resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
@@ -738,6 +738,13 @@ const bootstrap = async (): Promise<void> => {
       panelCollapsed: debugEditPanelCollapsed
     });
   };
+  const commitDebugEditBrushTileId = (tileId: number): boolean => {
+    const previousBrushTileId = activeDebugBrushTileId;
+    if (previousBrushTileId === tileId) return false;
+    activeDebugBrushTileId = tileId;
+    persistDebugEditControlsState();
+    return activeDebugBrushTileId !== previousBrushTileId;
+  };
   const commitDebugEditControlStateAction = (action: DebugEditControlStateCommitAction): boolean => {
     switch (action.type) {
       case 'set-touch-mode': {
@@ -756,19 +763,25 @@ const bootstrap = async (): Promise<void> => {
       }
     }
   };
+  const restoreDebugEditControlPreferences = (state: DebugEditControlState): void => {
+    if (debugEditControls) {
+      debugEditControls.setMode(state.touchMode);
+      debugEditControls.setBrushTileId(state.brushTileId);
+      debugEditControls.setCollapsed(state.panelCollapsed);
+      return;
+    }
+
+    input.setTouchDebugEditMode(state.touchMode);
+    activeDebugBrushTileId = state.brushTileId;
+    debugEditPanelCollapsed = state.panelCollapsed;
+  };
+
+  restoreDebugEditControlPreferences(initialDebugEditControlState);
 
   const resetDebugEditControlPrefs = (): void => {
     suppressDebugEditControlPersistence = true;
     try {
-      if (debugEditControls) {
-        debugEditControls.setMode(defaultDebugEditControlState.touchMode);
-        debugEditControls.setBrushTileId(defaultDebugEditControlState.brushTileId);
-        debugEditControls.setCollapsed(defaultDebugEditControlState.panelCollapsed);
-      } else {
-        input.setTouchDebugEditMode(defaultDebugEditControlState.touchMode);
-        activeDebugBrushTileId = defaultDebugEditControlState.brushTileId;
-        debugEditPanelCollapsed = defaultDebugEditControlState.panelCollapsed;
-      }
+      restoreDebugEditControlPreferences(defaultDebugEditControlState);
     } finally {
       suppressDebugEditControlPersistence = false;
     }
@@ -1242,8 +1255,7 @@ const bootstrap = async (): Promise<void> => {
     brushOptions: DEBUG_BRUSH_TILE_OPTIONS,
     initialBrushTileId: activeDebugBrushTileId,
     onBrushTileIdChange: (tileId) => {
-      activeDebugBrushTileId = tileId;
-      persistDebugEditControlsState();
+      commitDebugEditBrushTileId(tileId);
     },
     initialCollapsed: debugEditPanelCollapsed,
     onCollapsedChange: (collapsed) => {
@@ -1302,11 +1314,9 @@ const bootstrap = async (): Promise<void> => {
     const previousBrushTileId = activeDebugBrushTileId;
     if (debugEditControls) {
       debugEditControls.setBrushTileId(tileId);
-    } else {
-      activeDebugBrushTileId = tileId;
-      persistDebugEditControlsState();
+      return activeDebugBrushTileId !== previousBrushTileId;
     }
-    return activeDebugBrushTileId !== previousBrushTileId;
+    return commitDebugEditBrushTileId(tileId);
   };
 
   const applyDebugBrushEyedropperAtTile = (worldTileX: number, worldTileY: number): boolean => {

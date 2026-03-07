@@ -2,6 +2,18 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Debug-edit preference restores should share one helper
+
+- Decision: Bootstrap hydration and `Reset Prefs` should route through a shared `restoreDebugEditControlPreferences()` helper in `src/main.ts` instead of each applying touch mode, brush tile, and panel-collapsed state separately.
+- Reason: Those restore paths target the same runtime preference trio, so leaving hydration and reset to duplicate that assignment sequence makes the mixed-surface preference flow easier to drift from focused regressions.
+- Consequence: Future debug-edit preference restore work should extend the shared helper and its runtime regressions instead of reintroducing separate mode, brush, and collapsed-state restore blocks in `src/main.ts`.
+
+### 2026-03-06: Persisted debug-edit brush-state mutations should share one helper
+
+- Decision: Brush-tile mutations should route through a shared `commitDebugEditBrushTileId()` helper in `src/main.ts`; touch-panel callbacks call it directly, and keyboard brush shortcuts reuse the same persisted update path either through direct fallback mutation or through the panel callback.
+- Reason: Those persisted brush updates share the same runtime contract, so leaving touch-panel callbacks and keyboard fallback branches to repeat brush assignment plus persistence separately makes the mixed-surface brush path easier to drift from focused regressions.
+- Consequence: Future persisted brush-state mutations should extend the shared helper and its runtime regressions instead of adding more inline brush assignment and persistence branches in `src/main.ts`.
+
 ### 2026-03-06: Persisted debug-edit control-state mutations should share one helper
 
 - Decision: Touch-mode and panel-collapsed mutations should route through a shared `commitDebugEditControlStateAction()` helper in `src/main.ts`; touch-panel callbacks call it directly, and keyboard shortcuts reuse the same persisted update path either through direct fallback mutation or through the panel callback.

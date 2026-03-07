@@ -74,8 +74,13 @@ const testRuntime = vi.hoisted(() => {
     debugOverlayInstance: null as null | { visible: boolean },
     debugEditControlsInstance: null as null | {
       visible: boolean;
+      getBrushTileId(): number;
+      getMode(): 'pan' | 'place' | 'break';
+      isCollapsed(): boolean;
+      setBrushTileId(tileId: number): void;
       setMode(mode: 'pan' | 'place' | 'break'): void;
       setCollapsed(collapsed: boolean): void;
+      triggerResetPrefs(): void;
     },
     hoveredTileCursorInstance: null as null | { visible: boolean },
     armedDebugToolPreviewInstance: null as null | { visible: boolean },
@@ -557,6 +562,7 @@ vi.mock('./ui/touchDebugEditControls', () => ({
     private onBrushTileIdChange: (tileId: number) => void;
     private onModeChange: (mode: 'pan' | 'place' | 'break') => void;
     private onCollapsedChange: (collapsed: boolean) => void;
+    private onResetPrefs: () => void;
 
     constructor(options: {
       initialBrushTileId?: number;
@@ -565,6 +571,7 @@ vi.mock('./ui/touchDebugEditControls', () => ({
       onModeChange?: (mode: 'pan' | 'place' | 'break') => void;
       initialCollapsed?: boolean;
       onCollapsedChange?: (collapsed: boolean) => void;
+      onResetPrefs?: () => void;
     }) {
       this.brushTileId = options.initialBrushTileId ?? 0;
       this.mode = options.initialMode ?? 'pan';
@@ -572,6 +579,7 @@ vi.mock('./ui/touchDebugEditControls', () => ({
       this.onBrushTileIdChange = options.onBrushTileIdChange ?? (() => {});
       this.onModeChange = options.onModeChange ?? (() => {});
       this.onCollapsedChange = options.onCollapsedChange ?? (() => {});
+      this.onResetPrefs = options.onResetPrefs ?? (() => {});
       testRuntime.debugEditControlsInstance = this;
     }
 
@@ -579,10 +587,18 @@ vi.mock('./ui/touchDebugEditControls', () => ({
       this.visible = visible;
     }
 
+    getMode(): 'pan' | 'place' | 'break' {
+      return this.mode;
+    }
+
     setMode(mode: 'pan' | 'place' | 'break'): void {
       if (this.mode === mode) return;
       this.mode = mode;
       this.onModeChange(mode);
+    }
+
+    getBrushTileId(): number {
+      return this.brushTileId;
     }
 
     setBrushTileId(tileId: number): void {
@@ -599,6 +615,10 @@ vi.mock('./ui/touchDebugEditControls', () => ({
 
     isCollapsed(): boolean {
       return this.collapsed;
+    }
+
+    triggerResetPrefs(): void {
+      this.onResetPrefs();
     }
 
     setHistoryState(): void {}
@@ -1115,6 +1135,24 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedDebugEditControlState().brushTileId).toBe(3);
   });
 
+  it('routes touch-panel callbacks and keyboard brush mutations through one shared persisted brush-state commit helper', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.debugEditControlsInstance).not.toBeNull();
+    if (!testRuntime.debugEditControlsInstance) {
+      throw new Error('expected debug edit controls instance');
+    }
+
+    testRuntime.debugEditControlsInstance.setBrushTileId(4);
+    expect(readPersistedDebugEditControlState().brushTileId).toBe(4);
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('[', 'BracketLeft').prevented).toBe(true);
+    expect(readPersistedDebugEditControlState().brushTileId).toBe(3);
+  });
+
   it('routes keyboard debug-edit control shortcuts through one shared dispatcher for touch mode and panel collapse', async () => {
     await import('./main');
     await flushBootstrap();
@@ -1188,6 +1226,56 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedDebugEditControlState()).toMatchObject({
       touchMode: 'break',
       panelCollapsed: false
+    });
+  });
+
+  it('routes bootstrap hydration and Reset Prefs through one shared debug-edit preference-restore helper', async () => {
+    testRuntime.storageValues.set(
+      DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY,
+      JSON.stringify({
+        touchMode: 'break',
+        brushTileId: 4,
+        panelCollapsed: true
+      })
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.debugEditControlsInstance).not.toBeNull();
+    if (!testRuntime.debugEditControlsInstance) {
+      throw new Error('expected debug edit controls instance');
+    }
+
+    expect(testRuntime.debugEditControlsInstance.getMode()).toBe('break');
+    expect(testRuntime.debugEditControlsInstance.getBrushTileId()).toBe(4);
+    expect(testRuntime.debugEditControlsInstance.isCollapsed()).toBe(true);
+
+    testRuntime.debugEditControlsInstance.triggerResetPrefs();
+
+    expect(testRuntime.storageValues.has(DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY)).toBe(false);
+    expect(testRuntime.debugEditControlsInstance.getMode()).toBe('pan');
+    expect(testRuntime.debugEditControlsInstance.getBrushTileId()).toBe(3);
+    expect(testRuntime.debugEditControlsInstance.isCollapsed()).toBe(false);
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('p', 'KeyP').prevented).toBe(true);
+    expect(testRuntime.storageValues.has(DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY)).toBe(false);
+
+    expect(dispatchKeydown('[', 'BracketLeft').prevented).toBe(true);
+    expect(readPersistedDebugEditControlState()).toMatchObject({
+      touchMode: 'pan',
+      brushTileId: 2,
+      panelCollapsed: false
+    });
+
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    expect(dispatchKeydown('\\', 'Backslash').prevented).toBe(true);
+    expect(readPersistedDebugEditControlState()).toMatchObject({
+      touchMode: 'pan',
+      brushTileId: 2,
+      panelCollapsed: true
     });
   });
 
