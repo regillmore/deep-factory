@@ -6,6 +6,11 @@ export interface WorldSessionShellState {
   shortcutsOverlayVisible: boolean;
 }
 
+export interface WorldSessionShellStatePersistenceSummary {
+  resumedToggleLabels: readonly string[];
+  clearedByActionLabels: readonly string[];
+}
+
 interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
@@ -19,6 +24,19 @@ export type PausedMainMenuWorldSessionShellTransition =
   | 'reset-shell-toggle-preferences';
 
 const STORAGE_KEY = 'deep-factory.worldSessionShellState.v1';
+
+const PERSISTED_WORLD_SESSION_SHELL_TOGGLE_LABELS = [
+  'Debug HUD',
+  'Edit Panel',
+  'Edit Overlays',
+  'Spawn Marker',
+  'Shortcuts'
+] as const;
+
+const WORLD_SESSION_SHELL_STATE_CLEAR_ACTION_LABELS = [
+  'Reset Shell Toggles',
+  'New World'
+] as const;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -42,6 +60,12 @@ export const createDefaultWorldSessionShellState = (): WorldSessionShellState =>
   playerSpawnMarkerVisible: false,
   shortcutsOverlayVisible: false
 });
+
+export const createWorldSessionShellStatePersistenceSummary =
+  (): WorldSessionShellStatePersistenceSummary => ({
+    resumedToggleLabels: PERSISTED_WORLD_SESSION_SHELL_TOGGLE_LABELS,
+    clearedByActionLabels: WORLD_SESSION_SHELL_STATE_CLEAR_ACTION_LABELS
+  });
 
 export const resolveWorldSessionShellStateAfterPausedMainMenuTransition = (
   currentState: WorldSessionShellState,

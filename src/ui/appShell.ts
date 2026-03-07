@@ -10,6 +10,7 @@ import {
   getDesktopResumeWorldHotkeyLabel,
   getDesktopReturnToMainMenuHotkeyLabel
 } from '../input/debugEditShortcuts';
+import { createWorldSessionShellStatePersistenceSummary } from '../mainWorldSessionShellState';
 
 export type AppShellScreen = 'boot' | 'main-menu' | 'in-world';
 
@@ -52,6 +53,8 @@ export interface InWorldShellStateOptions {
 
 export const DEFAULT_PAUSED_MAIN_MENU_STATUS = 'World session paused.';
 export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [] as const;
+const PAUSED_MAIN_MENU_WORLD_SESSION_SHELL_STATE_PERSISTENCE_SUMMARY =
+  createWorldSessionShellStatePersistenceSummary();
 export const DEFAULT_PAUSED_MAIN_MENU_MENU_SECTIONS: readonly AppShellMenuSection[] = [
   {
     title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
@@ -81,6 +84,26 @@ export const DEFAULT_PAUSED_MAIN_MENU_MENU_SECTIONS: readonly AppShellMenuSectio
       {
         label: 'Consequence',
         value: 'Keeps the session but clears saved shell visibility.'
+      }
+    ]
+  },
+  {
+    title: 'Persistence Summary',
+    lines: ['Saved in-world shell visibility resumes with the paused session until a reset path clears it.'],
+    metadataRows: [
+      {
+        label: 'Resumes',
+        value:
+          PAUSED_MAIN_MENU_WORLD_SESSION_SHELL_STATE_PERSISTENCE_SUMMARY.resumedToggleLabels.join(
+            ', '
+          )
+      },
+      {
+        label: 'Cleared by',
+        value:
+          PAUSED_MAIN_MENU_WORLD_SESSION_SHELL_STATE_PERSISTENCE_SUMMARY.clearedByActionLabels.join(
+            ', '
+          )
       }
     ]
   },

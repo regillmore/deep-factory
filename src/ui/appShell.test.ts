@@ -150,6 +150,20 @@ describe('resolveAppShellViewModel', () => {
         ]
       },
       {
+        title: 'Persistence Summary',
+        lines: ['Saved in-world shell visibility resumes with the paused session until a reset path clears it.'],
+        metadataRows: [
+          {
+            label: 'Resumes',
+            value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+          },
+          {
+            label: 'Cleared by',
+            value: 'Reset Shell Toggles, New World'
+          }
+        ]
+      },
+      {
         title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
         lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
         metadataRows: [
@@ -165,6 +179,25 @@ describe('resolveAppShellViewModel', () => {
         tone: 'warning'
       }
     ]);
+  });
+
+  it('adds a paused-menu persistence-summary card that inventories resumed shell toggles and reset paths', () => {
+    const viewModel = resolveAppShellViewModel(createPausedMainMenuShellState());
+
+    expect(viewModel.menuSections[2]).toEqual({
+      title: 'Persistence Summary',
+      lines: ['Saved in-world shell visibility resumes with the paused session until a reset path clears it.'],
+      metadataRows: [
+        {
+          label: 'Resumes',
+          value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+        },
+        {
+          label: 'Cleared by',
+          value: 'Reset Shell Toggles, New World'
+        }
+      ]
+    });
   });
 
   it('swaps the boot overlay for in-world chrome once the shell enters the world', () => {
@@ -488,6 +521,22 @@ describe('createPausedMainMenuShellState', () => {
             {
               label: 'Consequence',
               value: 'Keeps the session but clears saved shell visibility.'
+            }
+          ]
+        },
+        {
+          title: 'Persistence Summary',
+          lines: [
+            'Saved in-world shell visibility resumes with the paused session until a reset path clears it.'
+          ],
+          metadataRows: [
+            {
+              label: 'Resumes',
+              value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+            },
+            {
+              label: 'Cleared by',
+              value: 'Reset Shell Toggles, New World'
             }
           ]
         },

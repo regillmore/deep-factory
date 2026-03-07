@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   clearWorldSessionShellState,
   createDefaultWorldSessionShellState,
+  createWorldSessionShellStatePersistenceSummary,
   loadWorldSessionShellState,
   resolveWorldSessionShellStateAfterPausedMainMenuTransition,
   saveWorldSessionShellState,
@@ -97,6 +98,15 @@ describe('resolveWorldSessionShellStateAfterPausedMainMenuTransition', () => {
       debugEditOverlaysVisible: false,
       playerSpawnMarkerVisible: false,
       shortcutsOverlayVisible: false
+    });
+  });
+});
+
+describe('createWorldSessionShellStatePersistenceSummary', () => {
+  it('lists the paused-session shell toggles that resume from saved preferences and the reset paths that clear them', () => {
+    expect(createWorldSessionShellStatePersistenceSummary()).toEqual({
+      resumedToggleLabels: ['Debug HUD', 'Edit Panel', 'Edit Overlays', 'Spawn Marker', 'Shortcuts'],
+      clearedByActionLabels: ['Reset Shell Toggles', 'New World']
     });
   });
 });

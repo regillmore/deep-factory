@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Add a structured paused-menu persistence-summary card that lists which in-world shell toggles resume from saved preferences and which reset paths clear them.
+- Changes: Updated [src/mainWorldSessionShellState.ts](../src/mainWorldSessionShellState.ts) with a shared persistence-summary helper for resumed shell toggles and reset paths, updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused main menu now includes a `Persistence Summary` card with visible `Resumes` and `Cleared by` rows, expanded [src/mainWorldSessionShellState.test.ts](../src/mainWorldSessionShellState.test.ts) and [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused regressions, removed completed task `285` from [docs/NEXT.md](docs/NEXT.md), added replacement task `302`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/mainWorldSessionShellState.test.ts src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared standalone-player render-frame status-strip player-event telemetry selector so `renderWorldFrame()` in `src/main.ts` reuses one `debugOverlayVisible` gate for compact-strip transition-event fields.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `selectStandalonePlayerRenderFrameStatusStripPlayerEventTelemetry()` helper that now owns compact-strip transition-event null-gating when the debug HUD is visible, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that verifies those strip event fields stay populated with the HUD hidden and clear through the shared selector once the HUD is shown while the overlay keeps the full event snapshot, removed completed task `300` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical-slice task `301`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
