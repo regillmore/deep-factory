@@ -9,6 +9,7 @@ import {
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState
 } from './ui/appShell';
+import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
 
 const testRuntime = vi.hoisted(() => {
   class FakeHTMLElement {
@@ -137,6 +138,8 @@ const testRuntime = vi.hoisted(() => {
     rendererConstructorError: null as unknown,
     rendererInitializeError: null as unknown,
     gameLoopFixedUpdate: null as null | ((fixedDt: number) => void),
+    gameLoopRender: null as null | ((alpha: number, frameDtMs: number) => void),
+    performanceNow: 1000,
     debugTileEditHistoryConstructCount: 0,
     debugTileEditHistoryConstructorStatuses: [] as Array<{
       undoStrokeCount: number;
@@ -150,7 +153,29 @@ const testRuntime = vi.hoisted(() => {
     debugHistoryRedoCallCount: 0,
     debugHistoryShortcutActions: [] as Array<'undo' | 'redo'>,
     cancelArmedDebugToolsCallCount: 0,
+    debugTileEdits: [] as Array<{
+      strokeId: number;
+      worldTileX: number;
+      worldTileY: number;
+      kind: 'place' | 'break';
+    }>,
     rendererTileId: 0,
+    rendererSetTileResult: false,
+    rendererStepPlayerStateImpl: null as null | ((
+      state: unknown,
+      fixedDt: number,
+      intent: unknown
+    ) => unknown),
+    rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl: null as null | ((
+      state: unknown,
+      spawn: unknown
+    ) => unknown),
+    rendererPlayerCollisionContactsQueue: [] as Array<{
+      support: { tileX: number; tileY: number; tileId: number } | null;
+      wall: { tileX: number; tileY: number; tileId: number; side: 'left' | 'right' } | null;
+      ceiling: { tileX: number; tileY: number; tileId: number } | null;
+    }>,
+    latestDebugEditStatusStripState: null as DebugEditStatusStripState | null,
     playerSpawnPoint: null as null | {
       anchorTileX: number;
       standingTileY: number;
@@ -192,9 +217,10 @@ vi.mock('./core/gameLoop', () => ({
     constructor(
       _fixedStepMs: number,
       onFixedUpdate: (fixedDt: number) => void,
-      _onRender: (alpha: number, frameDtMs: number) => void
+      onRender: (alpha: number, frameDtMs: number) => void
     ) {
       testRuntime.gameLoopFixedUpdate = onFixedUpdate;
+      testRuntime.gameLoopRender = onRender;
     }
 
     start(): void {
@@ -239,11 +265,18 @@ vi.mock('./gl/renderer', () => ({
       return testRuntime.playerSpawnPoint;
     }
 
-    respawnPlayerStateAtSpawnIfEmbeddedInSolid<T>(state: T): T {
+    respawnPlayerStateAtSpawnIfEmbeddedInSolid<T>(state: T, spawn: unknown): T {
+      if (testRuntime.rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl) {
+        return testRuntime.rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl(state, spawn) as T;
+      }
       return state;
     }
 
     getPlayerCollisionContacts() {
+      const queuedContacts = testRuntime.rendererPlayerCollisionContactsQueue.shift();
+      if (queuedContacts) {
+        return queuedContacts;
+      }
       return {
         support: null,
         wall: null,
@@ -256,7 +289,9 @@ vi.mock('./gl/renderer', () => ({
     }
 
     setTile(): boolean {
-      return false;
+      const result = testRuntime.rendererSetTileResult;
+      testRuntime.rendererSetTileResult = false;
+      return result;
     }
 
     getResidentChunkBounds() {
@@ -274,7 +309,10 @@ vi.mock('./gl/renderer', () => ({
 
     resetWorld(): void {}
 
-    stepPlayerState<T>(state: T): T {
+    stepPlayerState<T>(state: T, fixedDt: number, intent: unknown): T {
+      if (testRuntime.rendererStepPlayerStateImpl) {
+        return testRuntime.rendererStepPlayerStateImpl(state, fixedDt, intent) as T;
+      }
       return state;
     }
   }
@@ -412,7 +450,9 @@ vi.mock('./input/controller', () => ({
     }
 
     consumeDebugTileEdits() {
-      return [];
+      const edits = [...testRuntime.debugTileEdits];
+      testRuntime.debugTileEdits = [];
+      return edits;
     }
 
     consumeDebugFloodFillRequests() {
@@ -619,7 +659,9 @@ vi.mock('./ui/debugEditStatusStrip', () => ({
 
     setActionHandlers(): void {}
 
-    update(): void {}
+    update(state: DebugEditStatusStripState): void {
+      testRuntime.latestDebugEditStatusStripState = state;
+    }
   }
 }));
 
@@ -852,6 +894,9 @@ const flushBootstrap = async (): Promise<void> => {
 const runFixedUpdate = (fixedDt = 1000 / 60): void => {
   testRuntime.gameLoopFixedUpdate?.(fixedDt);
 };
+const runRenderFrame = (frameDtMs = 1000 / 60): void => {
+  testRuntime.gameLoopRender?.(0, frameDtMs);
+};
 
 const readPersistedShellState = (): Record<string, boolean> =>
   JSON.parse(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? '{}');
@@ -1051,6 +1096,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererConstructorError = null;
     testRuntime.rendererInitializeError = null;
     testRuntime.gameLoopFixedUpdate = null;
+    testRuntime.gameLoopRender = null;
+    testRuntime.performanceNow = 1000;
     testRuntime.debugTileEditHistoryConstructCount = 0;
     testRuntime.debugTileEditHistoryConstructorStatuses = [];
     testRuntime.debugTileEditHistoryStatus = {
@@ -1061,7 +1108,13 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugHistoryRedoCallCount = 0;
     testRuntime.debugHistoryShortcutActions = [];
     testRuntime.cancelArmedDebugToolsCallCount = 0;
+    testRuntime.debugTileEdits = [];
     testRuntime.rendererTileId = 0;
+    testRuntime.rendererSetTileResult = false;
+    testRuntime.rendererStepPlayerStateImpl = null;
+    testRuntime.rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl = null;
+    testRuntime.rendererPlayerCollisionContactsQueue = [];
+    testRuntime.latestDebugEditStatusStripState = null;
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint();
     testRuntime.gameLoopStartCount = 0;
     testRuntime.storageValues.clear();
@@ -1091,6 +1144,9 @@ describe('main.ts shell state orchestration', () => {
         testRuntime.windowListeners.set(type, listeners);
       },
       removeEventListener: () => {}
+    });
+    vi.stubGlobal('performance', {
+      now: () => testRuntime.performanceNow
     });
   });
 
@@ -1672,6 +1728,152 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onRecenterCamera('in-world');
     expect(testRuntime.cameraInstance.x).toBe(88);
     expect(testRuntime.cameraInstance.y).toBe(50);
+  });
+
+  it('routes bootstrap spawn initialization and embedded respawn recovery through one shared standalone-player transition-reset helper', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest debug status strip state');
+    }
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerFacingTransition ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerRespawn ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContactTransition ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContactTransition ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    const transitionedPlayerState = {
+      position: { x: -12, y: -10 },
+      velocity: { x: -48, y: -90 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'left' as const
+    };
+
+    testRuntime.rendererStepPlayerStateImpl = () => transitionedPlayerState;
+    testRuntime.rendererPlayerCollisionContactsQueue = [
+      noContacts,
+      {
+        support: null,
+        wall: {
+          tileX: -2,
+          tileY: -1,
+          tileId: 3,
+          side: 'left'
+        },
+        ceiling: {
+          tileX: -1,
+          tileY: -3,
+          tileId: 4
+        }
+      },
+      noContacts
+    ];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest debug status strip state after transition step');
+    }
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition).toMatchObject({
+      kind: 'fall',
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerFacingTransition).toMatchObject({
+      kind: 'left',
+      previousFacing: 'right',
+      nextFacing: 'left',
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerRespawn ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: -2,
+        y: -1,
+        id: 3,
+        side: 'left'
+      },
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: -1,
+        y: -3,
+        id: 4
+      },
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(true);
+
+    const respawnedPlayerState = {
+      position: { x: 96, y: 80 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 28 },
+      grounded: true,
+      facing: 'right' as const
+    };
+    testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 6,
+      standingTileY: 5,
+      x: 96,
+      y: 80
+    });
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: 6,
+        worldTileY: 5,
+        kind: 'place'
+      }
+    ];
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl = () => respawnedPlayerState;
+    testRuntime.rendererStepPlayerStateImpl = (state) => state;
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, noContacts];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest debug status strip state after embedded respawn');
+    }
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerFacingTransition ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContactTransition ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContactTransition ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerRespawn).toMatchObject({
+      kind: 'embedded',
+      spawnTile: {
+        x: 6,
+        y: 5
+      },
+      position: respawnedPlayerState.position,
+      velocity: respawnedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
   });
 
   it('routes touch-control armed-tool sync through one shared apply helper', async () => {

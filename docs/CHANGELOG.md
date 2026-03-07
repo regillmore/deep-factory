@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared standalone-player transition-reset helper so spawn initialization and embedded-spawn recovery in `src/main.ts` reuse one grounded/facing/respawn/wall/ceiling/bonk reset path.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `resetStandalonePlayerTransitionState()` helper reused by bootstrap spawn initialization, embedded respawn recovery, and the fresh-world camera/player reset helper, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that captures status-strip player telemetry across clean spawn, transition or bonk generation, and embedded respawn recovery, removed completed task `290` from [docs/NEXT.md](docs/NEXT.md), added replacement task `291`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared fresh-world camera-and-player reset helper so `resetFreshWorldSessionRuntimeState()` in `src/main.ts` reuses one camera, follow-offset, player-transition, and spawn-refresh reset path.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `resetFreshWorldSessionCameraAndPlayerState()` helper for the fresh-world camera and player reset slice, expanded [src/main.test.ts](../src/main.test.ts) with a focused paused-menu `New World` regression that verifies camera follow-offset drift, zoom, and spawn refresh all reset onto the new player spawn, removed completed task `289` from [docs/NEXT.md](docs/NEXT.md), added replacement task `290`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

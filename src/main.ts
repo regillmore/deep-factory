@@ -748,17 +748,23 @@ const bootstrap = async (): Promise<void> => {
     lastAppliedPlayerFollowCameraPosition = recenteredCameraFollow.cameraPosition;
   };
 
+  const resetStandalonePlayerTransitionState = (
+    respawnEvent: PlayerRespawnEvent | null = null
+  ): void => {
+    lastPlayerGroundedTransitionEvent = null;
+    lastPlayerFacingTransitionEvent = null;
+    lastPlayerRespawnEvent = respawnEvent;
+    lastPlayerWallContactTransitionEvent = null;
+    lastPlayerCeilingContactTransitionEvent = null;
+    standalonePlayerCeilingBonkHoldUntilTimeMs = null;
+  };
+
   const refreshResolvedPlayerSpawn = (): void => {
     resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
     playerSpawnNeedsRefresh = false;
     if (standalonePlayerState === null && resolvedPlayerSpawn) {
       standalonePlayerState = createPlayerStateFromSpawn(resolvedPlayerSpawn);
-      lastPlayerGroundedTransitionEvent = null;
-      lastPlayerFacingTransitionEvent = null;
-      lastPlayerRespawnEvent = null;
-      lastPlayerWallContactTransitionEvent = null;
-      lastPlayerCeilingContactTransitionEvent = null;
-      standalonePlayerCeilingBonkHoldUntilTimeMs = null;
+      resetStandalonePlayerTransitionState();
       centerCameraOnStandalonePlayer(standalonePlayerState);
       return;
     }
@@ -769,15 +775,11 @@ const bootstrap = async (): Promise<void> => {
         resolvedPlayerSpawn
       );
       if (nextPlayerState !== standalonePlayerState) {
-        lastPlayerGroundedTransitionEvent = null;
-        lastPlayerFacingTransitionEvent = null;
-        lastPlayerRespawnEvent =
+        resetStandalonePlayerTransitionState(
           resolvedPlayerSpawn === null
             ? null
-            : createEmbeddedPlayerRespawnEvent(nextPlayerState, resolvedPlayerSpawn);
-        lastPlayerWallContactTransitionEvent = null;
-        lastPlayerCeilingContactTransitionEvent = null;
-        standalonePlayerCeilingBonkHoldUntilTimeMs = null;
+            : createEmbeddedPlayerRespawnEvent(nextPlayerState, resolvedPlayerSpawn)
+        );
       }
       standalonePlayerState = nextPlayerState;
     }
@@ -1379,12 +1381,7 @@ const bootstrap = async (): Promise<void> => {
     camera.zoom = defaultCameraZoom;
     cameraFollowOffset = { x: 0, y: 0 };
     lastAppliedPlayerFollowCameraPosition = null;
-    lastPlayerGroundedTransitionEvent = null;
-    lastPlayerFacingTransitionEvent = null;
-    lastPlayerRespawnEvent = null;
-    lastPlayerWallContactTransitionEvent = null;
-    lastPlayerCeilingContactTransitionEvent = null;
-    standalonePlayerCeilingBonkHoldUntilTimeMs = null;
+    resetStandalonePlayerTransitionState();
     standalonePlayerState = null;
     resolvedPlayerSpawn = null;
     playerSpawnNeedsRefresh = false;

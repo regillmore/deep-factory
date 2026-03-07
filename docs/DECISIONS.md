@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Standalone-player transition resets should share one helper
+
+- Decision: Bootstrap spawn initialization, embedded-spawn recovery, and fresh-world camera/player reset work in `src/main.ts` should route grounded/facing/respawn/wall/ceiling transition clearing plus ceiling-bonk reset through a shared `resetStandalonePlayerTransitionState()` helper.
+- Reason: Those fields together form one standalone-player transition telemetry contract, so leaving bootstrap, respawn recovery, and fresh-world reset to clear them separately makes later runtime changes easier to drift from focused regressions.
+- Consequence: Future standalone-player spawn or reset work should extend the shared helper and its runtime regression instead of reintroducing ad hoc grounded, facing, respawn, wall, ceiling, or bonk reset blocks in `src/main.ts`.
+
 ### 2026-03-07: Fresh-world camera and player reset should share one helper
 
 - Decision: The fresh-world reset path in `src/main.ts` should route its camera, follow-offset, player-transition, and spawn-refresh work through a shared `resetFreshWorldSessionCameraAndPlayerState()` helper.
