@@ -99,6 +99,8 @@ import {
   DEFAULT_PLAYER_WIDTH,
   getPlayerAabb,
   getPlayerCameraFocusPoint,
+  type PlayerCollisionContacts,
+  type PlayerMovementIntent,
   type PlayerState
 } from './world/playerState';
 import {
@@ -198,11 +200,18 @@ type TouchDebugEditControlConstructorOptions = TouchDebugEditControlPreferenceCo
   TouchDebugArmedToolConstructorOptions &
   TouchDebugEditControlHistoryConstructorOptions &
   TouchDebugEditControlResetConstructorOptions;
-type StandalonePlayerFixedStepTransitions = {
+type StandalonePlayerFixedStepTransitionSnapshot = {
   groundedTransitionEvent: PlayerGroundedTransitionEvent | null;
   facingTransitionEvent: PlayerFacingTransitionEvent | null;
   wallContactTransitionEvent: PlayerWallContactTransitionEvent | null;
   ceilingContactTransitionEvent: PlayerCeilingContactTransitionEvent | null;
+};
+type StandalonePlayerFixedStepTransitionSnapshotOptions = {
+  previousPlayerState: PlayerState;
+  nextPlayerState: PlayerState;
+  previousPlayerContacts: PlayerCollisionContacts;
+  nextPlayerContacts: PlayerCollisionContacts;
+  playerMovementIntent: PlayerMovementIntent;
 };
 const TOUCH_DEBUG_ARMED_TOOL_KEYS: readonly TouchDebugArmedToolKey[] = [
   'floodFillKind',
@@ -764,12 +773,36 @@ const bootstrap = async (): Promise<void> => {
     lastPlayerCeilingContactTransitionEvent = null;
     standalonePlayerCeilingBonkHoldUntilTimeMs = null;
   };
+  const createStandalonePlayerFixedStepTransitionSnapshot = ({
+    previousPlayerState,
+    nextPlayerState,
+    previousPlayerContacts,
+    nextPlayerContacts,
+    playerMovementIntent
+  }: StandalonePlayerFixedStepTransitionSnapshotOptions): StandalonePlayerFixedStepTransitionSnapshot => ({
+    groundedTransitionEvent: resolvePlayerGroundedTransitionEvent(
+      previousPlayerState,
+      nextPlayerState,
+      playerMovementIntent
+    ),
+    facingTransitionEvent: resolvePlayerFacingTransitionEvent(previousPlayerState, nextPlayerState),
+    wallContactTransitionEvent: resolvePlayerWallContactTransitionEvent(
+      previousPlayerContacts,
+      nextPlayerState,
+      nextPlayerContacts
+    ),
+    ceilingContactTransitionEvent: resolvePlayerCeilingContactTransitionEvent(
+      previousPlayerContacts,
+      nextPlayerState,
+      nextPlayerContacts
+    )
+  });
   const commitStandalonePlayerFixedStepTransitions = ({
     groundedTransitionEvent,
     facingTransitionEvent,
     wallContactTransitionEvent,
     ceilingContactTransitionEvent
-  }: StandalonePlayerFixedStepTransitions): void => {
+  }: StandalonePlayerFixedStepTransitionSnapshot): void => {
     if (groundedTransitionEvent !== null) {
       lastPlayerGroundedTransitionEvent = groundedTransitionEvent;
     }
@@ -2057,32 +2090,15 @@ const bootstrap = async (): Promise<void> => {
           playerMovementIntent
         );
         const nextPlayerContacts = renderer.getPlayerCollisionContacts(nextPlayerState);
-        const groundedTransitionEvent = resolvePlayerGroundedTransitionEvent(
-          standalonePlayerState,
+        const playerFixedStepTransitionSnapshot = createStandalonePlayerFixedStepTransitionSnapshot({
+          previousPlayerState: standalonePlayerState,
           nextPlayerState,
+          previousPlayerContacts,
+          nextPlayerContacts,
           playerMovementIntent
-        );
-        const facingTransitionEvent = resolvePlayerFacingTransitionEvent(
-          standalonePlayerState,
-          nextPlayerState
-        );
-        const wallContactTransitionEvent = resolvePlayerWallContactTransitionEvent(
-          previousPlayerContacts,
-          nextPlayerState,
-          nextPlayerContacts
-        );
-        const ceilingContactTransitionEvent = resolvePlayerCeilingContactTransitionEvent(
-          previousPlayerContacts,
-          nextPlayerState,
-          nextPlayerContacts
-        );
-        standalonePlayerState = nextPlayerState;
-        commitStandalonePlayerFixedStepTransitions({
-          groundedTransitionEvent,
-          facingTransitionEvent,
-          wallContactTransitionEvent,
-          ceilingContactTransitionEvent
         });
+        standalonePlayerState = nextPlayerState;
+        commitStandalonePlayerFixedStepTransitions(playerFixedStepTransitionSnapshot);
         applyStandalonePlayerCameraFollow();
       }
 

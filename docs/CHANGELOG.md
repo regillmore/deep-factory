@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared standalone-player fixed-step transition-snapshot helper so grounded, facing, wall-contact, and ceiling-contact transition resolution in `src/main.ts` reuses one pre-commit build path.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `createStandalonePlayerFixedStepTransitionSnapshot()` helper for standalone-player fixed-step transition resolution, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression covering jump-sensitive grounded resolution plus blocked and cleared contact transitions from the shared snapshot path, removed completed task `292` from [docs/NEXT.md](docs/NEXT.md), added replacement task `293`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared standalone-player fixed-step transition-commit helper so grounded, facing, wall-contact, and ceiling-contact event updates plus ceiling-bonk hold latching in `src/main.ts` reuse one post-step apply path.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `commitStandalonePlayerFixedStepTransitions()` helper for post-step standalone-player transition writes, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression covering blocked and cleared contact transitions plus ceiling-bonk hold expiry, removed completed task `291` from [docs/NEXT.md](docs/NEXT.md), added replacement task `292`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

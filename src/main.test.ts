@@ -154,6 +154,11 @@ const testRuntime = vi.hoisted(() => {
     debugHistoryRedoCallCount: 0,
     debugHistoryShortcutActions: [] as Array<'undo' | 'redo'>,
     cancelArmedDebugToolsCallCount: 0,
+    playerMovementIntent: {
+      moveX: 0,
+      jumpHeld: false,
+      jumpPressed: false
+    },
     debugTileEdits: [] as Array<{
       strokeId: number;
       worldTileX: number;
@@ -443,11 +448,7 @@ vi.mock('./input/controller', () => ({
     }
 
     getPlayerInputTelemetry() {
-      return {
-        moveX: 0,
-        jumpHeld: false,
-        jumpPressed: false
-      };
+      return { ...testRuntime.playerMovementIntent };
     }
 
     consumeDebugTileEdits() {
@@ -500,9 +501,8 @@ vi.mock('./input/controller', () => ({
 
     getPlayerMovementIntent() {
       return {
-        moveX: 0,
-        jumpHeld: false,
-        jumpPressed: false
+        moveX: testRuntime.playerMovementIntent.moveX,
+        jumpPressed: testRuntime.playerMovementIntent.jumpPressed
       };
     }
   },
@@ -1109,6 +1109,11 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugHistoryRedoCallCount = 0;
     testRuntime.debugHistoryShortcutActions = [];
     testRuntime.cancelArmedDebugToolsCallCount = 0;
+    testRuntime.playerMovementIntent = {
+      moveX: 0,
+      jumpHeld: false,
+      jumpPressed: false
+    };
     testRuntime.debugTileEdits = [];
     testRuntime.rendererTileId = 0;
     testRuntime.rendererSetTileResult = false;
@@ -2014,6 +2019,140 @@ describe('main.ts shell state orchestration', () => {
     }
 
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
+  });
+
+  it('routes standalone-player fixed-step transition resolution through one shared pre-commit snapshot helper', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    const blockedContacts = {
+      support: null,
+      wall: {
+        tileX: 2,
+        tileY: -1,
+        tileId: 7,
+        side: 'right' as const
+      },
+      ceiling: {
+        tileX: 1,
+        tileY: -3,
+        tileId: 8
+      }
+    };
+    const jumpedPlayerState = {
+      position: { x: 20, y: -6 },
+      velocity: { x: 96, y: -240 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'left' as const
+    };
+
+    testRuntime.playerMovementIntent = {
+      moveX: -1,
+      jumpHeld: true,
+      jumpPressed: true
+    };
+    testRuntime.rendererStepPlayerStateImpl = () => jumpedPlayerState;
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, blockedContacts, noContacts];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest debug status strip state after jump transition step');
+    }
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition).toMatchObject({
+      kind: 'jump',
+      position: jumpedPlayerState.position,
+      velocity: jumpedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerFacingTransition).toMatchObject({
+      kind: 'left',
+      previousFacing: 'right',
+      nextFacing: 'left',
+      position: jumpedPlayerState.position,
+      velocity: jumpedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: 2,
+        y: -1,
+        id: 7,
+        side: 'right'
+      },
+      position: jumpedPlayerState.position,
+      velocity: jumpedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: 1,
+        y: -3,
+        id: 8
+      },
+      position: jumpedPlayerState.position,
+      velocity: jumpedPlayerState.velocity
+    });
+
+    testRuntime.playerMovementIntent = {
+      moveX: 0,
+      jumpHeld: false,
+      jumpPressed: false
+    };
+    testRuntime.rendererStepPlayerStateImpl = (state) => state;
+    testRuntime.rendererPlayerCollisionContactsQueue = [blockedContacts, noContacts, noContacts];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest debug status strip state after cleared-contact step');
+    }
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition).toMatchObject({
+      kind: 'jump',
+      position: jumpedPlayerState.position,
+      velocity: jumpedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerFacingTransition).toMatchObject({
+      kind: 'left',
+      previousFacing: 'right',
+      nextFacing: 'left',
+      position: jumpedPlayerState.position,
+      velocity: jumpedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContactTransition).toMatchObject({
+      kind: 'cleared',
+      tile: {
+        x: 2,
+        y: -1,
+        id: 7,
+        side: 'right'
+      },
+      position: jumpedPlayerState.position,
+      velocity: jumpedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContactTransition).toMatchObject({
+      kind: 'cleared',
+      tile: {
+        x: 1,
+        y: -3,
+        id: 8
+      },
+      position: jumpedPlayerState.position,
+      velocity: jumpedPlayerState.velocity
+    });
   });
 
   it('routes touch-control armed-tool sync through one shared apply helper', async () => {

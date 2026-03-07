@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Standalone-player fixed-step transition resolution should share one snapshot helper
+
+- Decision: Grounded, facing, wall-contact, and ceiling-contact transition resolution in `src/main.ts` should route through a shared `createStandalonePlayerFixedStepTransitionSnapshot()` helper before the post-step commit path runs.
+- Reason: Those four transition resolvers consume one fixed-step snapshot of previous state, next state, player intent, and contact diffs, so leaving them inline makes later transition changes easier to drift from the shared commit helper and the focused runtime regressions.
+- Consequence: Future standalone-player fixed-step transition-resolution changes should extend the shared snapshot helper and its runtime regression instead of reintroducing separate per-transition resolver calls in `src/main.ts`.
+
 ### 2026-03-07: Standalone-player fixed-step transition commits should share one helper
 
 - Decision: Grounded, facing, wall-contact, and ceiling-contact transition updates plus ceiling-bonk hold latching in `src/main.ts` should route through a shared `commitStandalonePlayerFixedStepTransitions()` helper after each standalone-player fixed step.
