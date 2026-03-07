@@ -11,6 +11,10 @@ import {
   getDesktopReturnToMainMenuHotkeyLabel
 } from '../input/debugEditShortcuts';
 import {
+  createDefaultShellActionKeybindingState,
+  type ShellActionKeybindingState
+} from '../input/shellActionKeybindings';
+import {
   createDefaultWorldSessionShellState,
   createWorldSessionShellStatePersistenceSummary,
   type WorldSessionShellState
@@ -45,6 +49,7 @@ export interface AppShellState {
   debugEditOverlaysVisible?: boolean;
   playerSpawnMarkerVisible?: boolean;
   shortcutsOverlayVisible?: boolean;
+  shellActionKeybindings?: ShellActionKeybindingState;
 }
 
 export interface InWorldShellStateOptions {
@@ -53,6 +58,7 @@ export interface InWorldShellStateOptions {
   debugEditOverlaysVisible?: boolean;
   playerSpawnMarkerVisible?: boolean;
   shortcutsOverlayVisible?: boolean;
+  shellActionKeybindings?: ShellActionKeybindingState;
 }
 
 export const DEFAULT_PAUSED_MAIN_MENU_STATUS = 'World session paused.';
@@ -288,7 +294,9 @@ export const createInWorldShellState = (
   debugEditControlsVisible: options.debugEditControlsVisible ?? false,
   debugEditOverlaysVisible: options.debugEditOverlaysVisible ?? false,
   playerSpawnMarkerVisible: options.playerSpawnMarkerVisible ?? false,
-  shortcutsOverlayVisible: options.shortcutsOverlayVisible ?? false
+  shortcutsOverlayVisible: options.shortcutsOverlayVisible ?? false,
+  shellActionKeybindings:
+    options.shellActionKeybindings ?? createDefaultShellActionKeybindingState()
 });
 
 export const resolveAppShellRegionDisplay = (
@@ -328,43 +336,61 @@ export const resolveMainMenuTertiaryActionTitle = (state: AppShellState): string
     ? resolvePausedMainMenuResetShellTogglesTitle()
     : '';
 
-const resolveInWorldReturnToMainMenuActionLabel = (): string =>
-  `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`;
+const resolveInWorldReturnToMainMenuActionLabel = (
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
+): string => `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel(shellActionKeybindings)})`;
 
-const resolveInWorldRecenterCameraActionLabel = (): string =>
-  `Recenter Camera (${getDesktopRecenterCameraHotkeyLabel()})`;
+const resolveInWorldRecenterCameraActionLabel = (
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
+): string => `Recenter Camera (${getDesktopRecenterCameraHotkeyLabel(shellActionKeybindings)})`;
 
-const resolveInWorldDebugOverlayToggleLabel = (visible: boolean): string =>
-  `${visible ? 'Hide' : 'Show'} Debug HUD (${getDesktopDebugOverlayHotkeyLabel()})`;
+const resolveInWorldDebugOverlayToggleLabel = (
+  visible: boolean,
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
+): string => `${visible ? 'Hide' : 'Show'} Debug HUD (${getDesktopDebugOverlayHotkeyLabel(shellActionKeybindings)})`;
 
-const resolveInWorldDebugEditControlsToggleLabel = (visible: boolean): string =>
-  `${visible ? 'Hide' : 'Show'} Edit Panel (${getDesktopDebugEditControlsHotkeyLabel()})`;
+const resolveInWorldDebugEditControlsToggleLabel = (
+  visible: boolean,
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
+): string =>
+  `${visible ? 'Hide' : 'Show'} Edit Panel (${getDesktopDebugEditControlsHotkeyLabel(shellActionKeybindings)})`;
 
-const resolveInWorldDebugEditOverlaysToggleLabel = (visible: boolean): string =>
-  `${visible ? 'Hide' : 'Show'} Edit Overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`;
+const resolveInWorldDebugEditOverlaysToggleLabel = (
+  visible: boolean,
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
+): string =>
+  `${visible ? 'Hide' : 'Show'} Edit Overlays (${getDesktopDebugEditOverlaysHotkeyLabel(shellActionKeybindings)})`;
 
-const resolveInWorldPlayerSpawnMarkerToggleLabel = (visible: boolean): string =>
-  `${visible ? 'Hide' : 'Show'} Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`;
+const resolveInWorldPlayerSpawnMarkerToggleLabel = (
+  visible: boolean,
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
+): string =>
+  `${visible ? 'Hide' : 'Show'} Spawn Marker (${getDesktopPlayerSpawnMarkerHotkeyLabel(shellActionKeybindings)})`;
 
 const resolveInWorldShortcutsToggleLabel = (): string =>
   `Shortcuts (${getDesktopShortcutsOverlayHotkeyLabel()})`;
 
-export const resolveInWorldDebugEditControlsToggleTitle = (visible: boolean): string =>
-  `${visible ? 'Hide' : 'Show'} the full debug-edit control panel (${getDesktopDebugEditControlsHotkeyLabel()})`;
+export const resolveInWorldDebugEditControlsToggleTitle = (
+  visible: boolean,
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
+): string =>
+  `${visible ? 'Hide' : 'Show'} the full debug-edit control panel (${getDesktopDebugEditControlsHotkeyLabel(shellActionKeybindings)})`;
 
 interface InWorldShortcutsSection {
   title: string;
   lines: readonly string[];
 }
 
-const resolveInWorldShortcutsSections = (): readonly InWorldShortcutsSection[] => [
+const resolveInWorldShortcutsSections = (
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
+): readonly InWorldShortcutsSection[] => [
   {
     title: 'Desktop',
     lines: [
       `Move: A or D, or Left or Right Arrow`,
       'Jump: W, Up Arrow, or Space',
-      `Session: ${getDesktopReturnToMainMenuHotkeyLabel()} return to main menu; ${getDesktopResumeWorldHotkeyLabel()} resume paused world; ${getDesktopFreshWorldHotkeyLabel()} new world from paused menu`,
-      `Camera + shell: ${getDesktopRecenterCameraHotkeyLabel()} recenter, ${getDesktopDebugOverlayHotkeyLabel()} HUD, ${getDesktopDebugEditControlsHotkeyLabel()} edit panel, ${getDesktopDebugEditOverlaysHotkeyLabel()} edit overlays, ${getDesktopPlayerSpawnMarkerHotkeyLabel()} spawn marker`,
+      `Session: ${getDesktopReturnToMainMenuHotkeyLabel(shellActionKeybindings)} return to main menu; ${getDesktopResumeWorldHotkeyLabel()} resume paused world; ${getDesktopFreshWorldHotkeyLabel()} new world from paused menu`,
+      `Camera + shell: ${getDesktopRecenterCameraHotkeyLabel(shellActionKeybindings)} recenter, ${getDesktopDebugOverlayHotkeyLabel(shellActionKeybindings)} HUD, ${getDesktopDebugEditControlsHotkeyLabel(shellActionKeybindings)} edit panel, ${getDesktopDebugEditOverlaysHotkeyLabel(shellActionKeybindings)} edit overlays, ${getDesktopPlayerSpawnMarkerHotkeyLabel(shellActionKeybindings)} spawn marker`,
       `Brush + tools: 1-0 brush slots, [ and ] cycle brush, Esc cancel armed tools`,
       'History: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo'
     ]
@@ -531,7 +557,8 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         debugEditControlsVisible: state.debugEditControlsVisible,
         debugEditOverlaysVisible: state.debugEditOverlaysVisible,
         playerSpawnMarkerVisible: state.playerSpawnMarkerVisible,
-        shortcutsOverlayVisible: state.shortcutsOverlayVisible
+        shortcutsOverlayVisible: state.shortcutsOverlayVisible,
+        shellActionKeybindings: state.shellActionKeybindings
       });
       return {
         screen: 'in-world',
@@ -545,22 +572,30 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         primaryActionLabel: null,
         secondaryActionLabel: null,
         tertiaryActionLabel: null,
-        returnToMainMenuActionLabel: resolveInWorldReturnToMainMenuActionLabel(),
-        recenterCameraActionLabel: resolveInWorldRecenterCameraActionLabel(),
+        returnToMainMenuActionLabel: resolveInWorldReturnToMainMenuActionLabel(
+          inWorldState.shellActionKeybindings
+        ),
+        recenterCameraActionLabel: resolveInWorldRecenterCameraActionLabel(
+          inWorldState.shellActionKeybindings
+        ),
         debugOverlayToggleLabel: resolveInWorldDebugOverlayToggleLabel(
-          inWorldState.debugOverlayVisible === true
+          inWorldState.debugOverlayVisible === true,
+          inWorldState.shellActionKeybindings
         ),
         debugOverlayTogglePressed: inWorldState.debugOverlayVisible === true,
         debugEditControlsToggleLabel: resolveInWorldDebugEditControlsToggleLabel(
-          inWorldState.debugEditControlsVisible === true
+          inWorldState.debugEditControlsVisible === true,
+          inWorldState.shellActionKeybindings
         ),
         debugEditControlsTogglePressed: inWorldState.debugEditControlsVisible === true,
         debugEditOverlaysToggleLabel: resolveInWorldDebugEditOverlaysToggleLabel(
-          inWorldState.debugEditOverlaysVisible === true
+          inWorldState.debugEditOverlaysVisible === true,
+          inWorldState.shellActionKeybindings
         ),
         debugEditOverlaysTogglePressed: inWorldState.debugEditOverlaysVisible === true,
         playerSpawnMarkerToggleLabel: resolveInWorldPlayerSpawnMarkerToggleLabel(
-          inWorldState.playerSpawnMarkerVisible === true
+          inWorldState.playerSpawnMarkerVisible === true,
+          inWorldState.shellActionKeybindings
         ),
         playerSpawnMarkerTogglePressed: inWorldState.playerSpawnMarkerVisible === true,
         shortcutsToggleLabel: resolveInWorldShortcutsToggleLabel(),
@@ -585,6 +620,7 @@ export class AppShell {
   private playerSpawnMarkerToggleButton: HTMLButtonElement;
   private shortcutsToggleButton: HTMLButtonElement;
   private shortcutsOverlay: HTMLDivElement;
+  private shortcutsSections: HTMLDivElement;
   private stageLabel: HTMLSpanElement;
   private title: HTMLHeadingElement;
   private status: HTMLParagraphElement;
@@ -709,12 +745,12 @@ export class AppShell {
     shortcutsSubtitle.textContent = 'Current desktop and touch controls for this session.';
     shortcutsPanel.append(shortcutsSubtitle);
 
-    const shortcutsSections = document.createElement('div');
-    shortcutsSections.className = 'app-shell__shortcuts-sections';
-    shortcutsSections.replaceChildren(
+    this.shortcutsSections = document.createElement('div');
+    this.shortcutsSections.className = 'app-shell__shortcuts-sections';
+    this.shortcutsSections.replaceChildren(
       ...resolveInWorldShortcutsSections().map((section) => createShortcutsSectionElement(section))
     );
-    shortcutsPanel.append(shortcutsSections);
+    shortcutsPanel.append(this.shortcutsSections);
 
     this.overlay = document.createElement('div');
     this.overlay.className = 'app-shell__overlay';
@@ -780,6 +816,12 @@ export class AppShell {
   setState(state: AppShellState): void {
     this.currentState = state;
     const viewModel = resolveAppShellViewModel(state);
+    const shellActionKeybindings =
+      state.screen === 'in-world'
+        ? createInWorldShellState({
+            shellActionKeybindings: state.shellActionKeybindings
+          }).shellActionKeybindings
+        : createDefaultShellActionKeybindingState();
 
     this.root.dataset.screen = viewModel.screen;
     this.overlay.hidden = !viewModel.overlayVisible;
@@ -823,10 +865,12 @@ export class AppShell {
     this.overlayActions.style.display = resolveAppShellRegionDisplay(overlayActionsVisible, 'flex');
     this.returnToMainMenuActionButton.textContent = viewModel.returnToMainMenuActionLabel ?? '';
     this.returnToMainMenuActionButton.hidden = viewModel.returnToMainMenuActionLabel === null;
-    this.returnToMainMenuActionButton.title = `Return to the main menu without discarding the current world session (${getDesktopReturnToMainMenuHotkeyLabel()})`;
+    this.returnToMainMenuActionButton.title =
+      `Return to the main menu without discarding the current world session (${getDesktopReturnToMainMenuHotkeyLabel(shellActionKeybindings)})`;
     this.recenterCameraActionButton.textContent = viewModel.recenterCameraActionLabel ?? '';
     this.recenterCameraActionButton.hidden = viewModel.recenterCameraActionLabel === null;
-    this.recenterCameraActionButton.title = `Center the camera on the standalone player and clear manual follow offset (${getDesktopRecenterCameraHotkeyLabel()})`;
+    this.recenterCameraActionButton.title =
+      `Center the camera on the standalone player and clear manual follow offset (${getDesktopRecenterCameraHotkeyLabel(shellActionKeybindings)})`;
     this.debugOverlayToggleButton.textContent = viewModel.debugOverlayToggleLabel ?? '';
     this.debugOverlayToggleButton.hidden = viewModel.debugOverlayToggleLabel === null;
     this.debugOverlayToggleButton.setAttribute(
@@ -834,8 +878,8 @@ export class AppShell {
       viewModel.debugOverlayTogglePressed ? 'true' : 'false'
     );
     this.debugOverlayToggleButton.title = viewModel.debugOverlayTogglePressed
-      ? `Hide debug HUD telemetry (${getDesktopDebugOverlayHotkeyLabel()})`
-      : `Show debug HUD telemetry (${getDesktopDebugOverlayHotkeyLabel()})`;
+      ? `Hide debug HUD telemetry (${getDesktopDebugOverlayHotkeyLabel(shellActionKeybindings)})`
+      : `Show debug HUD telemetry (${getDesktopDebugOverlayHotkeyLabel(shellActionKeybindings)})`;
     this.debugEditControlsToggleButton.textContent = viewModel.debugEditControlsToggleLabel ?? '';
     this.debugEditControlsToggleButton.hidden = viewModel.debugEditControlsToggleLabel === null;
     this.debugEditControlsToggleButton.setAttribute(
@@ -843,7 +887,8 @@ export class AppShell {
       viewModel.debugEditControlsTogglePressed ? 'true' : 'false'
     );
     this.debugEditControlsToggleButton.title = resolveInWorldDebugEditControlsToggleTitle(
-      viewModel.debugEditControlsTogglePressed
+      viewModel.debugEditControlsTogglePressed,
+      shellActionKeybindings
     );
     this.debugEditOverlaysToggleButton.textContent = viewModel.debugEditOverlaysToggleLabel ?? '';
     this.debugEditOverlaysToggleButton.hidden = viewModel.debugEditOverlaysToggleLabel === null;
@@ -852,8 +897,8 @@ export class AppShell {
       viewModel.debugEditOverlaysTogglePressed ? 'true' : 'false'
     );
     this.debugEditOverlaysToggleButton.title = viewModel.debugEditOverlaysTogglePressed
-      ? `Hide compact debug-edit overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`
-      : `Show compact debug-edit overlays (${getDesktopDebugEditOverlaysHotkeyLabel()})`;
+      ? `Hide compact debug-edit overlays (${getDesktopDebugEditOverlaysHotkeyLabel(shellActionKeybindings)})`
+      : `Show compact debug-edit overlays (${getDesktopDebugEditOverlaysHotkeyLabel(shellActionKeybindings)})`;
     this.playerSpawnMarkerToggleButton.textContent = viewModel.playerSpawnMarkerToggleLabel ?? '';
     this.playerSpawnMarkerToggleButton.hidden = viewModel.playerSpawnMarkerToggleLabel === null;
     this.playerSpawnMarkerToggleButton.setAttribute(
@@ -861,8 +906,8 @@ export class AppShell {
       viewModel.playerSpawnMarkerTogglePressed ? 'true' : 'false'
     );
     this.playerSpawnMarkerToggleButton.title = viewModel.playerSpawnMarkerTogglePressed
-      ? `Hide standalone player spawn marker overlay (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`
-      : `Show standalone player spawn marker overlay (${getDesktopPlayerSpawnMarkerHotkeyLabel()})`;
+      ? `Hide standalone player spawn marker overlay (${getDesktopPlayerSpawnMarkerHotkeyLabel(shellActionKeybindings)})`
+      : `Show standalone player spawn marker overlay (${getDesktopPlayerSpawnMarkerHotkeyLabel(shellActionKeybindings)})`;
     this.shortcutsToggleButton.textContent = viewModel.shortcutsToggleLabel ?? '';
     this.shortcutsToggleButton.hidden = viewModel.shortcutsToggleLabel === null;
     this.shortcutsToggleButton.setAttribute(
@@ -872,6 +917,11 @@ export class AppShell {
     this.shortcutsToggleButton.title = viewModel.shortcutsTogglePressed
       ? `Hide current desktop and touch controls (${getDesktopShortcutsOverlayHotkeyLabel()})`
       : `Show current desktop and touch controls (${getDesktopShortcutsOverlayHotkeyLabel()})`;
+    this.shortcutsSections.replaceChildren(
+      ...resolveInWorldShortcutsSections(shellActionKeybindings).map((section) =>
+        createShortcutsSectionElement(section)
+      )
+    );
     this.shortcutsOverlay.hidden = !viewModel.shortcutsOverlayVisible;
     this.shortcutsOverlay.style.display = resolveAppShellRegionDisplay(
       viewModel.shortcutsOverlayVisible,

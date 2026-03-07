@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { ShellActionKeybindingState } from './shellActionKeybindings';
 import {
   createDebugEditShortcutContext,
   createInWorldShortcutContext,
@@ -23,6 +24,15 @@ import {
   resolveDebugEditShortcutAction,
   type DebugEditShortcutKeyEventLike
 } from './debugEditShortcuts';
+
+const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
+  'return-to-main-menu': 'X',
+  'recenter-camera': 'Z',
+  'toggle-debug-overlay': 'U',
+  'toggle-debug-edit-controls': 'J',
+  'toggle-debug-edit-overlays': 'K',
+  'toggle-player-spawn-marker': 'Y'
+};
 
 const keyboardEventLike = (
   overrides: Partial<DebugEditShortcutKeyEventLike>
@@ -63,6 +73,13 @@ describe('createInWorldShortcutContext', () => {
     });
     expect(createInWorldShortcutContext('boot')).toEqual({
       inWorldShellShortcutsAvailable: false
+    });
+  });
+
+  it('can carry configured in-world shell-action keybindings into shortcut resolution', () => {
+    expect(createInWorldShortcutContext('in-world', CUSTOM_SHELL_ACTION_KEYBINDINGS)).toEqual({
+      inWorldShellShortcutsAvailable: true,
+      inWorldShellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
     });
   });
 });
@@ -315,6 +332,29 @@ describe('resolveDebugEditShortcutAction', () => {
     ).toBeNull();
   });
 
+  it('maps configured in-world shell-action keybindings before the static debug-edit shortcuts', () => {
+    const customContext = createInWorldShortcutContext('in-world', CUSTOM_SHELL_ACTION_KEYBINDINGS);
+
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'x' }), customContext)).toEqual({
+      type: 'return-to-main-menu'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'z' }), customContext)).toEqual({
+      type: 'recenter-camera'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'u' }), customContext)).toEqual({
+      type: 'toggle-debug-overlay'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'j' }), customContext)).toEqual({
+      type: 'toggle-debug-edit-controls'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'k' }), customContext)).toEqual({
+      type: 'toggle-debug-edit-overlays'
+    });
+    expect(resolveDebugEditShortcutAction(keyboardEventLike({ key: 'y' }), customContext)).toEqual({
+      type: 'toggle-player-spawn-marker'
+    });
+  });
+
   it('maps bracket keys to brush cycling', () => {
     expect(
       resolveDebugEditShortcutAction(keyboardEventLike({ key: '[', code: 'BracketLeft' }))
@@ -470,10 +510,12 @@ describe('brush shortcut helpers', () => {
 
   it('returns the desktop recenter-camera hotkey label', () => {
     expect(getDesktopRecenterCameraHotkeyLabel()).toBe('C');
+    expect(getDesktopRecenterCameraHotkeyLabel(CUSTOM_SHELL_ACTION_KEYBINDINGS)).toBe('Z');
   });
 
   it('returns the desktop return-to-main-menu hotkey label', () => {
     expect(getDesktopReturnToMainMenuHotkeyLabel()).toBe('Q');
+    expect(getDesktopReturnToMainMenuHotkeyLabel(CUSTOM_SHELL_ACTION_KEYBINDINGS)).toBe('X');
   });
 
   it('returns the desktop resume-world hotkey label', () => {
@@ -486,18 +528,22 @@ describe('brush shortcut helpers', () => {
 
   it('returns the desktop debug-overlay hotkey label', () => {
     expect(getDesktopDebugOverlayHotkeyLabel()).toBe('H');
+    expect(getDesktopDebugOverlayHotkeyLabel(CUSTOM_SHELL_ACTION_KEYBINDINGS)).toBe('U');
   });
 
   it('returns the desktop edit-panel hotkey label', () => {
     expect(getDesktopDebugEditControlsHotkeyLabel()).toBe('G');
+    expect(getDesktopDebugEditControlsHotkeyLabel(CUSTOM_SHELL_ACTION_KEYBINDINGS)).toBe('J');
   });
 
   it('returns the desktop edit-overlays hotkey label', () => {
     expect(getDesktopDebugEditOverlaysHotkeyLabel()).toBe('V');
+    expect(getDesktopDebugEditOverlaysHotkeyLabel(CUSTOM_SHELL_ACTION_KEYBINDINGS)).toBe('K');
   });
 
   it('returns the desktop spawn-marker hotkey label', () => {
     expect(getDesktopPlayerSpawnMarkerHotkeyLabel()).toBe('M');
+    expect(getDesktopPlayerSpawnMarkerHotkeyLabel(CUSTOM_SHELL_ACTION_KEYBINDINGS)).toBe('Y');
   });
 
   it('returns the desktop shortcuts-overlay hotkey label', () => {

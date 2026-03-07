@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  createDefaultShellActionKeybindingState,
+  type ShellActionKeybindingState
+} from '../input/shellActionKeybindings';
+import {
   getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopDebugOverlayHotkeyLabel,
   getDesktopDebugEditControlsHotkeyLabel,
@@ -29,6 +33,15 @@ import {
   resolveInWorldDebugEditControlsToggleTitle,
   resolveAppShellViewModel
 } from './appShell';
+
+const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
+  'return-to-main-menu': 'X',
+  'recenter-camera': 'Z',
+  'toggle-debug-overlay': 'U',
+  'toggle-debug-edit-controls': 'J',
+  'toggle-debug-edit-overlays': 'K',
+  'toggle-player-spawn-marker': 'Y'
+};
 
 describe('resolveAppShellRegionDisplay', () => {
   it('returns the requested visible display mode when the shell region should be shown', () => {
@@ -481,6 +494,21 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.playerSpawnMarkerTogglePressed).toBe(false);
   });
 
+  it('uses configured in-world shell-action keybinding labels in chrome buttons', () => {
+    const viewModel = resolveAppShellViewModel(
+      createInWorldShellState({
+        shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+      })
+    );
+
+    expect(viewModel.returnToMainMenuActionLabel).toBe('Main Menu (X)');
+    expect(viewModel.recenterCameraActionLabel).toBe('Recenter Camera (Z)');
+    expect(viewModel.debugOverlayToggleLabel).toBe('Show Debug HUD (U)');
+    expect(viewModel.debugEditControlsToggleLabel).toBe('Show Edit Panel (J)');
+    expect(viewModel.debugEditOverlaysToggleLabel).toBe('Show Edit Overlays (K)');
+    expect(viewModel.playerSpawnMarkerToggleLabel).toBe('Show Spawn Marker (Y)');
+  });
+
   it('keeps the boot overlay contract for the WebGL-unavailable boot helper', () => {
     const viewModel = resolveAppShellViewModel(createWebGlUnavailableBootShellState());
 
@@ -523,7 +551,8 @@ describe('createInWorldShellState', () => {
       debugEditControlsVisible: false,
       debugEditOverlaysVisible: false,
       playerSpawnMarkerVisible: false,
-      shortcutsOverlayVisible: false
+      shortcutsOverlayVisible: false,
+      shellActionKeybindings: createDefaultShellActionKeybindingState()
     });
   });
 });
@@ -693,6 +722,12 @@ describe('resolveInWorldDebugEditControlsToggleTitle', () => {
     expect(resolveInWorldDebugEditControlsToggleTitle(true)).toBe(
       `Hide the full debug-edit control panel (${getDesktopDebugEditControlsHotkeyLabel()})`
     );
+  });
+
+  it('uses configured shell-action keybinding labels when provided', () => {
+    expect(
+      resolveInWorldDebugEditControlsToggleTitle(true, CUSTOM_SHELL_ACTION_KEYBINDINGS)
+    ).toBe('Hide the full debug-edit control panel (J)');
   });
 });
 

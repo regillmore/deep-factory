@@ -3,6 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS } from './gl/standalonePlayerPlaceholder';
 import { DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY } from './input/debugEditControlStatePersistence';
 import {
+  SHELL_ACTION_KEYBINDING_STORAGE_KEY,
+  type ShellActionKeybindingState
+} from './input/shellActionKeybindings';
+import {
   createDefaultWorldSessionShellState,
   WORLD_SESSION_SHELL_STATE_STORAGE_KEY
 } from './mainWorldSessionShellState';
@@ -15,6 +19,15 @@ import {
 } from './ui/appShell';
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
+
+const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
+  'return-to-main-menu': 'X',
+  'recenter-camera': 'Z',
+  'toggle-debug-overlay': 'U',
+  'toggle-debug-edit-controls': 'J',
+  'toggle-debug-edit-overlays': 'K',
+  'toggle-player-spawn-marker': 'Y'
+};
 
 const testRuntime = vi.hoisted(() => {
   class FakeHTMLElement {
@@ -3681,6 +3694,38 @@ describe('main.ts shell state orchestration', () => {
     expect(dispatchKeydown('q').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
     expect(dispatchKeydown('b').prevented).toBe(false);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+  });
+
+  it('loads persisted in-world shell-action keybindings and routes keyboard shell actions through them', async () => {
+    testRuntime.storageValues.set(
+      SHELL_ACTION_KEYBINDING_STORAGE_KEY,
+      JSON.stringify(CUSTOM_SHELL_ACTION_KEYBINDINGS)
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({
+        shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+      })
+    );
+
+    expect(dispatchKeydown('h').prevented).toBe(false);
+    expect(dispatchKeydown('u').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({
+        debugOverlayVisible: true,
+        shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+      })
+    );
+    expect(testRuntime.debugOverlayInstance?.visible).toBe(true);
+
+    expect(dispatchKeydown('q').prevented).toBe(false);
+    expect(dispatchKeydown('x').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
   });
 

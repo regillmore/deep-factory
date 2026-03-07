@@ -1,3 +1,17 @@
+import {
+  resolveInWorldShellActionKeybindingAction,
+  type ShellActionKeybindingState
+} from './shellActionKeybindings';
+
+export {
+  getDesktopDebugEditControlsHotkeyLabel,
+  getDesktopDebugEditOverlaysHotkeyLabel,
+  getDesktopDebugOverlayHotkeyLabel,
+  getDesktopPlayerSpawnMarkerHotkeyLabel,
+  getDesktopRecenterCameraHotkeyLabel,
+  getDesktopReturnToMainMenuHotkeyLabel
+} from './shellActionKeybindings';
+
 export interface DebugBrushShortcutOption {
   tileId: number;
 }
@@ -15,6 +29,7 @@ export interface DebugEditShortcutContext {
   pausedMainMenuResumeWorldAvailable?: boolean;
   pausedMainMenuFreshWorldAvailable?: boolean;
   inWorldShellShortcutsAvailable?: boolean;
+  inWorldShellActionKeybindings?: ShellActionKeybindingState;
 }
 
 export type DebugEditShortcutShellScreen = 'boot' | 'main-menu' | 'in-world';
@@ -93,13 +108,7 @@ export const getTouchDebugEditModeHotkeyLabel = (mode: 'pan' | 'place' | 'break'
 };
 
 export const getDesktopResumeWorldHotkeyLabel = (): string => 'Enter';
-export const getDesktopReturnToMainMenuHotkeyLabel = (): string => 'Q';
 export const getDesktopFreshWorldHotkeyLabel = (): string => 'N';
-export const getDesktopRecenterCameraHotkeyLabel = (): string => 'C';
-export const getDesktopDebugOverlayHotkeyLabel = (): string => 'H';
-export const getDesktopDebugEditControlsHotkeyLabel = (): string => 'G';
-export const getDesktopDebugEditOverlaysHotkeyLabel = (): string => 'V';
-export const getDesktopPlayerSpawnMarkerHotkeyLabel = (): string => 'M';
 export const getDesktopShortcutsOverlayHotkeyLabel = (): string => '?';
 
 export const getDebugEditPanelToggleHotkeyLabel = (): string => '\\';
@@ -131,17 +140,20 @@ export const createPausedMainMenuShortcutContext = (
 };
 
 export const createInWorldShortcutContext = (
-  screen: DebugEditShortcutShellScreen
+  screen: DebugEditShortcutShellScreen,
+  inWorldShellActionKeybindings?: ShellActionKeybindingState
 ): DebugEditShortcutContext => ({
-  inWorldShellShortcutsAvailable: screen === 'in-world'
+  inWorldShellShortcutsAvailable: screen === 'in-world',
+  ...(inWorldShellActionKeybindings === undefined ? {} : { inWorldShellActionKeybindings })
 });
 
 export const createDebugEditShortcutContext = (
   screen: DebugEditShortcutShellScreen,
-  hasResumableWorldSession: boolean
+  hasResumableWorldSession: boolean,
+  inWorldShellActionKeybindings?: ShellActionKeybindingState
 ): DebugEditShortcutContext => ({
   ...createPausedMainMenuShortcutContext(screen, hasResumableWorldSession),
-  ...createInWorldShortcutContext(screen)
+  ...createInWorldShortcutContext(screen, inWorldShellActionKeybindings)
 });
 
 export const isInWorldOnlyDebugEditShortcutAction = (
@@ -218,18 +230,14 @@ export const resolveDebugEditShortcutAction = (
     return { type: 'resume-paused-world-session' };
   }
 
-  if (
-    context.inWorldShellShortcutsAvailable === true &&
-    normalizedKey === getDesktopReturnToMainMenuHotkeyLabel().toLowerCase()
-  ) {
-    return { type: 'return-to-main-menu' };
-  }
-
-  if (
-    context.inWorldShellShortcutsAvailable === true &&
-    normalizedKey === getDesktopRecenterCameraHotkeyLabel().toLowerCase()
-  ) {
-    return { type: 'recenter-camera' };
+  if (context.inWorldShellShortcutsAvailable === true) {
+    const inWorldShellActionType = resolveInWorldShellActionKeybindingAction(
+      event,
+      context.inWorldShellActionKeybindings
+    );
+    if (inWorldShellActionType !== null) {
+      return { type: inWorldShellActionType };
+    }
   }
 
   if (
@@ -238,34 +246,6 @@ export const resolveDebugEditShortcutAction = (
     (context.inWorldShellShortcutsAvailable === true && event.code === 'Slash' && event.shiftKey)
   ) {
     return { type: 'toggle-shortcuts-overlay' };
-  }
-
-  if (
-    context.inWorldShellShortcutsAvailable === true &&
-    normalizedKey === getDesktopDebugOverlayHotkeyLabel().toLowerCase()
-  ) {
-    return { type: 'toggle-debug-overlay' };
-  }
-
-  if (
-    context.inWorldShellShortcutsAvailable === true &&
-    normalizedKey === getDesktopDebugEditControlsHotkeyLabel().toLowerCase()
-  ) {
-    return { type: 'toggle-debug-edit-controls' };
-  }
-
-  if (
-    context.inWorldShellShortcutsAvailable === true &&
-    normalizedKey === getDesktopDebugEditOverlaysHotkeyLabel().toLowerCase()
-  ) {
-    return { type: 'toggle-debug-edit-overlays' };
-  }
-
-  if (
-    context.inWorldShellShortcutsAvailable === true &&
-    normalizedKey === getDesktopPlayerSpawnMarkerHotkeyLabel().toLowerCase()
-  ) {
-    return { type: 'toggle-player-spawn-marker' };
   }
 
   if (

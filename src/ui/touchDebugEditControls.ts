@@ -14,6 +14,10 @@ import {
   getDebugOneShotToolHotkeyLabel,
   getTouchDebugEditModeHotkeyLabel
 } from '../input/debugEditShortcuts';
+import {
+  createDefaultShellActionKeybindingState,
+  type ShellActionKeybindingState
+} from '../input/shellActionKeybindings';
 import { installPointerClickFocusRelease } from './buttonFocus';
 
 export interface DebugBrushOption {
@@ -60,6 +64,7 @@ interface TouchDebugEditControlsOptions {
   onRedo?: () => void;
   onResetPrefs?: () => void;
   initialHistoryState?: DebugEditHistoryControlState;
+  shellActionKeybindings?: ShellActionKeybindingState;
 }
 
 const TOUCH_DEBUG_BUTTON_ORDER: readonly TouchDebugEditMode[] = ['pan', 'place', 'break'];
@@ -83,19 +88,20 @@ export const resolveTouchDebugEditControlsDisplayState = (
 });
 
 export const resolveTouchDebugKeyboardShortcutLines = (
-  panelToggleHotkeyLabel = getDebugEditPanelToggleHotkeyLabel()
+  panelToggleHotkeyLabel = getDebugEditPanelToggleHotkeyLabel(),
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ): readonly string[] => [
   `Modes: ${getTouchDebugEditModeHotkeyLabel('pan')} pan, ${getTouchDebugEditModeHotkeyLabel('place')} place, ${getTouchDebugEditModeHotkeyLabel('break')} break`,
   'Brush: [ / ] cycle, 1-0 slots',
   'History: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo',
-  `Camera: ${getDesktopRecenterCameraHotkeyLabel()} recenter on the standalone player`,
-  `Session: ${getDesktopReturnToMainMenuHotkeyLabel()} return to the main menu without discarding the current world`,
+  `Camera: ${getDesktopRecenterCameraHotkeyLabel(shellActionKeybindings)} recenter on the standalone player`,
+  `Session: ${getDesktopReturnToMainMenuHotkeyLabel(shellActionKeybindings)} return to the main menu without discarding the current world`,
   `Paused menu: ${getDesktopResumeWorldHotkeyLabel()} resume the paused world session`,
   `Paused menu: ${getDesktopFreshWorldHotkeyLabel()} start a fresh world from the paused main menu`,
-  `HUD: ${getDesktopDebugOverlayHotkeyLabel()} toggle debug telemetry`,
-  `Edit panel: ${getDesktopDebugEditControlsHotkeyLabel()} toggle the full in-world Debug Edit panel`,
-  `Edit overlays: ${getDesktopDebugEditOverlaysHotkeyLabel()} toggle compact in-world overlays`,
-  `Spawn marker: ${getDesktopPlayerSpawnMarkerHotkeyLabel()} toggle the standalone player spawn overlay`,
+  `HUD: ${getDesktopDebugOverlayHotkeyLabel(shellActionKeybindings)} toggle debug telemetry`,
+  `Edit panel: ${getDesktopDebugEditControlsHotkeyLabel(shellActionKeybindings)} toggle the full in-world Debug Edit panel`,
+  `Edit overlays: ${getDesktopDebugEditOverlaysHotkeyLabel(shellActionKeybindings)} toggle compact in-world overlays`,
+  `Spawn marker: ${getDesktopPlayerSpawnMarkerHotkeyLabel(shellActionKeybindings)} toggle the standalone player spawn overlay`,
   `Shortcuts: ${getDesktopShortcutsOverlayHotkeyLabel()} toggle the in-world desktop and touch controls reference`,
   `Panel: ${panelToggleHotkeyLabel} collapse/expand`,
   'Eyedropper: press I to pick hovered tile; touch long-press in Pan mode',
@@ -730,7 +736,10 @@ export class TouchDebugEditControls {
     shortcutTitle.style.fontSize = '11px';
     shortcutSection.append(shortcutTitle);
 
-    for (const line of resolveTouchDebugKeyboardShortcutLines(panelToggleHotkeyLabel)) {
+    for (const line of resolveTouchDebugKeyboardShortcutLines(
+      panelToggleHotkeyLabel,
+      options.shellActionKeybindings
+    )) {
       const lineElement = document.createElement('div');
       lineElement.textContent = line;
       lineElement.style.color = '#d6dde8';

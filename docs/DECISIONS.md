@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Persisted in-world shell-action keybindings should validate back to one safe default set
+
+- Decision: Boot-time keybindings for the in-world shell actions (`Main Menu`, `Recenter Camera`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, and `Spawn Marker`) should load through one shared `src/input/shellActionKeybindings.ts` helper that normalizes saved single-letter bindings, rejects reserved gameplay or edit letters, and falls duplicate or invalid results back to the default `Q/C/H/G/V/M` set before shortcut resolution or UI labels consume them.
+- Reason: Persisted shell-action overrides need a safe load path before the remap UI exists, so malformed or conflicting saved values cannot silently disable shell actions or steal core gameplay and debug-edit keys.
+- Consequence: Future shell-action remap, reset, or import/export work should extend the shared keybinding helper and its validation rules instead of reading raw storage or bypassing the default-fallback contract.
+
 ### 2026-03-07: Standalone-player render-frame compact-strip player-event telemetry should share one visibility selector
 
 - Decision: Compact status-strip standalone-player transition-event payload assembly in `src/main.ts` should route through a shared `selectStandalonePlayerRenderFrameStatusStripPlayerEventTelemetry()` helper that owns the `debugOverlayVisible` null-gating.

@@ -43,6 +43,10 @@ import {
   type DebugEditShortcutAction
 } from './input/debugEditShortcuts';
 import {
+  loadShellActionKeybindingState,
+  type ShellActionKeybindingState
+} from './input/shellActionKeybindings';
+import {
   clearWorldSessionShellState,
   createDefaultWorldSessionShellState,
   loadWorldSessionShellStateWithPersistenceAvailability,
@@ -193,10 +197,14 @@ type TouchDebugEditControlHistoryConstructorOptions = {
   onUndo: () => void;
   onRedo: () => void;
 };
+type TouchDebugEditControlShellActionKeybindingConstructorOptions = {
+  shellActionKeybindings: ShellActionKeybindingState;
+};
 type TouchDebugEditControlResetConstructorOptions = {
   onResetPrefs: () => void;
 };
 type TouchDebugEditControlConstructorOptions = TouchDebugEditControlPreferenceConstructorOptions &
+  TouchDebugEditControlShellActionKeybindingConstructorOptions &
   TouchDebugArmedToolConstructorOptions &
   TouchDebugEditControlHistoryConstructorOptions &
   TouchDebugEditControlResetConstructorOptions;
@@ -398,6 +406,7 @@ const bootstrap = async (): Promise<void> => {
       return null;
     }
   })();
+  const shellActionKeybindings = loadShellActionKeybindingState(worldSessionShellStateStorage);
   const defaultWorldSessionShellState = createDefaultWorldSessionShellState();
   let worldSessionStarted = false;
   let currentScreen: AppShellScreen = 'boot';
@@ -536,7 +545,8 @@ const bootstrap = async (): Promise<void> => {
       debugEditControlsVisible,
       debugEditOverlaysVisible,
       playerSpawnMarkerVisible,
-      shortcutsOverlayVisible
+      shortcutsOverlayVisible,
+      shellActionKeybindings
     }));
   };
   const showMainMenuShellState = (): void => {
@@ -1405,6 +1415,7 @@ const bootstrap = async (): Promise<void> => {
     },
     brushOptions: DEBUG_BRUSH_TILE_OPTIONS,
     initialBrushTileId: preferenceSnapshot.brushTileId,
+    shellActionKeybindings,
     onBrushTileIdChange: (tileId) => {
       commitDebugEditBrushTileId(tileId);
     },
@@ -1662,7 +1673,7 @@ const bootstrap = async (): Promise<void> => {
 
     const action = resolveDebugEditShortcutAction(
       event,
-      createDebugEditShortcutContext(currentScreen, worldSessionStarted)
+      createDebugEditShortcutContext(currentScreen, worldSessionStarted, shellActionKeybindings)
     );
     if (!action) return;
     if (

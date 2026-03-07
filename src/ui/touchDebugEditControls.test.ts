@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { ShellActionKeybindingState } from '../input/shellActionKeybindings';
 import {
   getDesktopDebugEditControlsHotkeyLabel,
   getDesktopFreshWorldHotkeyLabel,
@@ -10,6 +11,15 @@ import {
   resolveTouchDebugEditControlsDisplayState,
   resolveTouchDebugKeyboardShortcutLines
 } from './touchDebugEditControls';
+
+const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
+  'return-to-main-menu': 'X',
+  'recenter-camera': 'Z',
+  'toggle-debug-overlay': 'U',
+  'toggle-debug-edit-controls': 'J',
+  'toggle-debug-edit-overlays': 'K',
+  'toggle-player-spawn-marker': 'Y'
+};
 
 describe('resolveTouchDebugEditControlsDisplayState', () => {
   it('keeps the root hidden or shown independently from whether the panel is collapsed', () => {
@@ -60,5 +70,26 @@ describe('resolveTouchDebugKeyboardShortcutLines', () => {
     expect(resolveTouchDebugKeyboardShortcutLines()).toContain(
       `Paused menu: ${getDesktopFreshWorldHotkeyLabel()} start a fresh world from the paused main menu`
     );
+  });
+
+  it('uses configured in-world shell-action keybindings in the keyboard reference', () => {
+    expect(
+      resolveTouchDebugKeyboardShortcutLines('\\', CUSTOM_SHELL_ACTION_KEYBINDINGS)
+    ).toContain('Session: X return to the main menu without discarding the current world');
+    expect(
+      resolveTouchDebugKeyboardShortcutLines('\\', CUSTOM_SHELL_ACTION_KEYBINDINGS)
+    ).toContain('Camera: Z recenter on the standalone player');
+    expect(
+      resolveTouchDebugKeyboardShortcutLines('\\', CUSTOM_SHELL_ACTION_KEYBINDINGS)
+    ).toContain('HUD: U toggle debug telemetry');
+    expect(
+      resolveTouchDebugKeyboardShortcutLines('\\', CUSTOM_SHELL_ACTION_KEYBINDINGS)
+    ).toContain('Edit panel: J toggle the full in-world Debug Edit panel');
+    expect(
+      resolveTouchDebugKeyboardShortcutLines('\\', CUSTOM_SHELL_ACTION_KEYBINDINGS)
+    ).toContain('Edit overlays: K toggle compact in-world overlays');
+    expect(
+      resolveTouchDebugKeyboardShortcutLines('\\', CUSTOM_SHELL_ACTION_KEYBINDINGS)
+    ).toContain('Spawn marker: Y toggle the standalone player spawn overlay');
   });
 });
