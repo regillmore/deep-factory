@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Standalone-player fixed-step runtime entry should share one helper
+
+- Decision: Movement-intent read, fixed-step result creation, and post-result apply in `src/main.ts` should route through a shared `updateStandalonePlayerFixedStep()` helper.
+- Reason: Those three operations together define one standalone-player fixed-step runtime entry contract, so leaving the fixed-update loop to assemble them inline makes later player-step changes easier to drift from the existing result and apply helpers plus their focused runtime regressions.
+- Consequence: Future standalone-player fixed-step runtime changes should extend the shared update helper and its regression instead of reintroducing separate intent reads, result assembly, or apply calls inside the fixed-update loop.
+
 ### 2026-03-07: Standalone-player fixed-step apply work should share one helper
 
 - Decision: Post-result standalone-player state assignment, transition commit, and camera follow in `src/main.ts` should route through a shared `applyStandalonePlayerFixedStepResult()` helper.

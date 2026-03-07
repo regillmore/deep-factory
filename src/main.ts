@@ -224,6 +224,10 @@ type StandalonePlayerFixedStepResultOptions = {
   fixedDt: number;
   playerMovementIntent: PlayerMovementIntent;
 };
+type StandalonePlayerFixedStepUpdateOptions = {
+  previousPlayerState: PlayerState;
+  fixedDt: number;
+};
 type StandalonePlayerFixedStepTransitionSnapshotOptions = {
   previousPlayerState: PlayerState;
   nextPlayerState: PlayerState;
@@ -854,6 +858,18 @@ const bootstrap = async (): Promise<void> => {
     standalonePlayerState = playerFixedStepResult.nextPlayerState;
     commitStandalonePlayerFixedStepTransitions(playerFixedStepResult.transitionSnapshot);
     applyStandalonePlayerCameraFollow();
+  };
+  const updateStandalonePlayerFixedStep = ({
+    previousPlayerState,
+    fixedDt
+  }: StandalonePlayerFixedStepUpdateOptions): void => {
+    const playerMovementIntent = input.getPlayerMovementIntent();
+    const playerFixedStepResult = createStandalonePlayerFixedStepResult({
+      previousPlayerState,
+      fixedDt,
+      playerMovementIntent
+    });
+    applyStandalonePlayerFixedStepResult(playerFixedStepResult);
   };
   const commitStandalonePlayerFixedStepTransitions = ({
     groundedTransitionEvent,
@@ -2140,13 +2156,10 @@ const bootstrap = async (): Promise<void> => {
       }
 
       if (standalonePlayerState) {
-        const playerMovementIntent = input.getPlayerMovementIntent();
-        const playerFixedStepResult = createStandalonePlayerFixedStepResult({
+        updateStandalonePlayerFixedStep({
           previousPlayerState: standalonePlayerState,
-          fixedDt,
-          playerMovementIntent
+          fixedDt
         });
-        applyStandalonePlayerFixedStepResult(playerFixedStepResult);
       }
 
       // Non-player entities step here until the standalone player moves onto the entity layer.

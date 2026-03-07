@@ -154,6 +154,7 @@ const testRuntime = vi.hoisted(() => {
     debugHistoryRedoCallCount: 0,
     debugHistoryShortcutActions: [] as Array<'undo' | 'redo'>,
     cancelArmedDebugToolsCallCount: 0,
+    playerMovementIntentReadCount: 0,
     playerMovementIntent: {
       moveX: 0,
       jumpHeld: false,
@@ -574,6 +575,7 @@ vi.mock('./input/controller', () => ({
     }
 
     getPlayerMovementIntent() {
+      testRuntime.playerMovementIntentReadCount += 1;
       return {
         moveX: testRuntime.playerMovementIntent.moveX,
         jumpPressed: testRuntime.playerMovementIntent.jumpPressed
@@ -1183,6 +1185,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugHistoryRedoCallCount = 0;
     testRuntime.debugHistoryShortcutActions = [];
     testRuntime.cancelArmedDebugToolsCallCount = 0;
+    testRuntime.playerMovementIntentReadCount = 0;
     testRuntime.playerMovementIntent = {
       moveX: 0,
       jumpHeld: false,
@@ -2530,6 +2533,139 @@ describe('main.ts shell state orchestration', () => {
         x: 3,
         y: -3,
         id: 14
+      },
+      position: steppedPlayerState.position,
+      velocity: steppedPlayerState.velocity
+    });
+  });
+
+  it('routes standalone-player fixed-step intent read, result creation, and result apply through one shared update helper', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(testRuntime.cameraInstance).not.toBeNull();
+    if (!testRuntime.cameraInstance) {
+      throw new Error('expected camera instance');
+    }
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    const blockedContacts = {
+      support: null,
+      wall: {
+        tileX: -5,
+        tileY: -2,
+        tileId: 21,
+        side: 'left' as const
+      },
+      ceiling: {
+        tileX: -4,
+        tileY: -4,
+        tileId: 22
+      }
+    };
+    const steppedPlayerState = {
+      position: { x: 40, y: 20 },
+      velocity: { x: -144, y: -220 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'left' as const
+    };
+
+    testRuntime.playerMovementIntent = {
+      moveX: -1,
+      jumpHeld: true,
+      jumpPressed: true
+    };
+    testRuntime.playerMovementIntentReadCount = 0;
+    testRuntime.rendererStepPlayerStateRequests = [];
+    testRuntime.rendererPlayerCollisionContactRequestStates = [];
+    testRuntime.rendererStepPlayerStateImpl = () => steppedPlayerState;
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, blockedContacts, noContacts];
+
+    runFixedUpdate(20);
+
+    expect(testRuntime.playerMovementIntentReadCount).toBe(1);
+    expect(testRuntime.rendererStepPlayerStateRequests).toEqual([
+      {
+        state: {
+          position: { x: 8, y: 0 },
+          velocity: { x: 0, y: 0 },
+          grounded: true,
+          facing: 'right'
+        },
+        fixedDt: 20,
+        intent: {
+          moveX: -1,
+          jumpPressed: true
+        }
+      }
+    ]);
+    expect(testRuntime.rendererPlayerCollisionContactRequestStates).toEqual([
+      {
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        grounded: true,
+        facing: 'right'
+      },
+      {
+        position: steppedPlayerState.position,
+        velocity: steppedPlayerState.velocity,
+        grounded: steppedPlayerState.grounded,
+        facing: steppedPlayerState.facing
+      }
+    ]);
+    expect(testRuntime.cameraInstance.x).toBe(40);
+    expect(testRuntime.cameraInstance.y).toBe(6);
+
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest debug status strip state after shared update step');
+    }
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerWorldPosition).toEqual(
+      steppedPlayerState.position
+    );
+    expect(testRuntime.latestDebugEditStatusStripState.playerCameraWorldPosition).toEqual({
+      x: 40,
+      y: 6
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition).toMatchObject({
+      kind: 'jump',
+      position: steppedPlayerState.position,
+      velocity: steppedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerFacingTransition).toMatchObject({
+      kind: 'left',
+      previousFacing: 'right',
+      nextFacing: 'left',
+      position: steppedPlayerState.position,
+      velocity: steppedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: -5,
+        y: -2,
+        id: 21,
+        side: 'left'
+      },
+      position: steppedPlayerState.position,
+      velocity: steppedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: -4,
+        y: -4,
+        id: 22
       },
       position: steppedPlayerState.position,
       velocity: steppedPlayerState.velocity
