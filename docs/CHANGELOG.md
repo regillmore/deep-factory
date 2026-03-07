@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared standalone-player render-frame status-strip player-event telemetry selector so `renderWorldFrame()` in `src/main.ts` reuses one `debugOverlayVisible` gate for compact-strip transition-event fields.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `selectStandalonePlayerRenderFrameStatusStripPlayerEventTelemetry()` helper that now owns compact-strip transition-event null-gating when the debug HUD is visible, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that verifies those strip event fields stay populated with the HUD hidden and clear through the shared selector once the HUD is shown while the overlay keeps the full event snapshot, removed completed task `300` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical-slice task `301`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared standalone-player render-frame status-strip player-telemetry selector so `renderWorldFrame()` in `src/main.ts` reuses one `debugOverlayVisible` gate for compact-strip player and nearby-light fields.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `selectStandalonePlayerRenderFrameStatusStripPlayerTelemetry()` helper that now owns compact-strip player and nearby-light null-gating when the debug HUD is visible, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that verifies the strip fields stay populated with the HUD hidden and clear through the shared selector once the HUD is shown while the overlay keeps the full snapshot, removed completed task `299` from [docs/NEXT.md](docs/NEXT.md), added replacement task `300`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

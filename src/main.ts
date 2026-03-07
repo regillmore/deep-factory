@@ -294,6 +294,18 @@ type StandalonePlayerRenderFrameStatusStripPlayerTelemetrySelectionOptions = {
   playerTelemetry: StandalonePlayerRenderFrameStatusStripTelemetry;
   nearbyLightTelemetry: StandalonePlayerRenderFrameNearbyLightTelemetry;
 };
+type StandalonePlayerRenderFrameStatusStripPlayerEventTelemetry = Pick<
+  DebugEditStatusStripState,
+  | 'playerGroundedTransition'
+  | 'playerFacingTransition'
+  | 'playerRespawn'
+  | 'playerWallContactTransition'
+  | 'playerCeilingContactTransition'
+>;
+type StandalonePlayerRenderFrameStatusStripPlayerEventTelemetrySelectionOptions = {
+  debugOverlayVisible: boolean;
+  eventTelemetry: StandalonePlayerRenderFrameStatusStripPlayerEventTelemetry;
+};
 type StandalonePlayerRenderFrameTelemetrySnapshot = {
   standalonePlayerContacts: PlayerCollisionContacts | null;
   debugOverlay: StandalonePlayerRenderFrameDebugOverlayTelemetry;
@@ -1992,6 +2004,22 @@ const bootstrap = async (): Promise<void> => {
           ...playerTelemetry,
           ...nearbyLightTelemetry
         };
+  const createClearedStandalonePlayerRenderFrameStatusStripPlayerEventTelemetry =
+    (): StandalonePlayerRenderFrameStatusStripPlayerEventTelemetry => ({
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null
+    });
+  const selectStandalonePlayerRenderFrameStatusStripPlayerEventTelemetry = ({
+    debugOverlayVisible,
+    eventTelemetry
+  }: StandalonePlayerRenderFrameStatusStripPlayerEventTelemetrySelectionOptions):
+    StandalonePlayerRenderFrameStatusStripPlayerEventTelemetry =>
+    debugOverlayVisible
+      ? createClearedStandalonePlayerRenderFrameStatusStripPlayerEventTelemetry()
+      : eventTelemetry;
 
   const renderWorldFrame = (frameDtMs: number): void => {
     const renderTimeMs = performance.now();
@@ -2094,6 +2122,17 @@ const bootstrap = async (): Promise<void> => {
       playerTelemetry: standalonePlayerStatusStripPlayerTelemetry,
       nearbyLightTelemetry: standalonePlayerNearbyLightTelemetry
     });
+    const debugStatusStripPlayerEventTelemetry =
+      selectStandalonePlayerRenderFrameStatusStripPlayerEventTelemetry({
+        debugOverlayVisible,
+        eventTelemetry: {
+          playerGroundedTransition: lastPlayerGroundedTransitionEvent,
+          playerFacingTransition: lastPlayerFacingTransitionEvent,
+          playerRespawn: lastPlayerRespawnEvent,
+          playerWallContactTransition: lastPlayerWallContactTransitionEvent,
+          playerCeilingContactTransition: lastPlayerCeilingContactTransitionEvent
+        }
+      });
     hoveredTileCursor.update(camera, {
       hovered: pointerInspect
         ? {
@@ -2150,11 +2189,11 @@ const bootstrap = async (): Promise<void> => {
       playerSupportContact: debugStatusStripPlayerTelemetry.playerSupportContact,
       playerWallContact: debugStatusStripPlayerTelemetry.playerWallContact,
       playerCeilingContact: debugStatusStripPlayerTelemetry.playerCeilingContact,
-      playerGroundedTransition: debugOverlayVisible ? null : lastPlayerGroundedTransitionEvent,
-      playerFacingTransition: debugOverlayVisible ? null : lastPlayerFacingTransitionEvent,
-      playerRespawn: debugOverlayVisible ? null : lastPlayerRespawnEvent,
-      playerWallContactTransition: debugOverlayVisible ? null : lastPlayerWallContactTransitionEvent,
-      playerCeilingContactTransition: debugOverlayVisible ? null : lastPlayerCeilingContactTransitionEvent
+      playerGroundedTransition: debugStatusStripPlayerEventTelemetry.playerGroundedTransition,
+      playerFacingTransition: debugStatusStripPlayerEventTelemetry.playerFacingTransition,
+      playerRespawn: debugStatusStripPlayerEventTelemetry.playerRespawn,
+      playerWallContactTransition: debugStatusStripPlayerEventTelemetry.playerWallContactTransition,
+      playerCeilingContactTransition: debugStatusStripPlayerEventTelemetry.playerCeilingContactTransition
     });
     debug.update(frameDtMs, renderer.telemetry, {
       pointer: debugOverlayPointerInspect,

@@ -2931,6 +2931,138 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightSourceLocalTile).toBeNull();
   });
 
+  it('routes compact status-strip player-event telemetry through one shared overlay-visibility selector', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    const blockedContacts = {
+      support: null,
+      wall: {
+        tileX: -2,
+        tileY: -1,
+        tileId: 3,
+        side: 'left' as const
+      },
+      ceiling: {
+        tileX: -1,
+        tileY: -3,
+        tileId: 4
+      }
+    };
+    const transitionedPlayerState = {
+      position: { x: -12, y: -10 },
+      velocity: { x: -48, y: -90 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'left' as const
+    };
+
+    testRuntime.performanceNow = 1500;
+    testRuntime.rendererStepPlayerStateImpl = () => transitionedPlayerState;
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, blockedContacts, noContacts];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest status-strip telemetry');
+    }
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition).toMatchObject({
+      kind: 'fall',
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerFacingTransition).toMatchObject({
+      kind: 'left',
+      previousFacing: 'right',
+      nextFacing: 'left',
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerRespawn ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: -2,
+        y: -1,
+        id: 3,
+        side: 'left'
+      },
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: -1,
+        y: -3,
+        id: 4
+      },
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+
+    testRuntime.shellInstance?.options.onToggleDebugOverlay('in-world');
+    expect(testRuntime.debugOverlayInstance?.visible).toBe(true);
+
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState).not.toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugOverlayInspectState || !testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest overlay and status-strip telemetry');
+    }
+
+    expect(testRuntime.latestDebugOverlayInspectState.playerGroundedTransition).toMatchObject({
+      kind: 'fall',
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugOverlayInspectState.playerFacingTransition).toMatchObject({
+      kind: 'left',
+      previousFacing: 'right',
+      nextFacing: 'left',
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugOverlayInspectState.playerRespawn ?? null).toBeNull();
+    expect(testRuntime.latestDebugOverlayInspectState.playerWallContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: -2,
+        y: -1,
+        id: 3,
+        side: 'left'
+      },
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugOverlayInspectState.playerCeilingContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: -1,
+        y: -3,
+        id: 4
+      },
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerFacingTransition).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerRespawn).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContactTransition).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContactTransition).toBeNull();
+  });
+
   it('routes touch-control armed-tool sync through one shared apply helper', async () => {
     await import('./main');
     await flushBootstrap();

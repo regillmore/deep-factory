@@ -52,7 +52,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 232. Add a grappling-hook traversal slice after entity scaffolding (`17-18`): mixed-device aimed hook firing, solid-tile latch plus pull-and-release rules, and fixed-step hook-state regressions.
 243. Add a torch-lighting utility slice after inventory basics (`214`): stackable torch hotbar slots, mixed-device solid-face placement of light-emitting torch tiles, and lighting regressions for placed torches.
 246. Add a bow-and-arrow ranged-combat slice after hostile-slime combat (`213`) and inventory basics (`214`): stackable arrow ammo, mixed-device aimed firing, fixed-step projectile flight plus terrain or slime hits, and deterministic ammo-consumption regressions.
+301. Add a healing-potion survival slice after hostile-slime combat (`213`) and inventory basics (`214`): stackable potion items, mixed-device consume input, fixed-step healing plus overheal clamp and use-cooldown rules, and save/load regressions for health plus consumable stacks.
 
 ## Refine, Extract, Refactor, Restructure
-
-300. Extract a shared standalone-player render-frame status-strip player-event telemetry selector so `renderWorldFrame()` reuses one `debugOverlayVisible` gate for compact-strip transition-event fields, with focused runtime regressions.
