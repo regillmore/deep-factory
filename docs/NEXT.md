@@ -16,7 +16,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 218. Add a sunlight levels toggle, visually differentiating tiles in direct sunlight, horizontal sunlight transport, and darkness.
 233. Add a sunlight regression where a clean boundary emissive source does not horizontal-transport `MAX_LIGHT_LEVEL` into streamed-back dirty neighboring boundary air after the adjacent chunk unloads and reloads.
 235. Add a renderer regression where a streamed-back one-tile-gap roof build across an `x` chunk boundary still invalidates both lower-row chunk meshes before the first rebuilt draw.
-248. Add a sunlight regression where row-above chunks streamed back after an opened boundary top-corner later clear transported sunlight and adjacent solid-face relighting again when that same corner blocker recloses.
+249. Add a renderer regression where streamed-back row-above top-corner boundary edits still invalidate both affected chunk meshes before the first rebuilt draw.
 
 ## Entities and interpolation
 

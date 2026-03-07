@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Those constructor props all represent the same boot-time armed-tool state surface, so leaving six inline snapshot-to-prop assignments makes touch-control initialization easier to drift from focused runtime regressions.
 - Consequence: Future touch debug armed-tool constructor state wiring should extend the shared initial-option builder and its initialization regressions instead of reintroducing per-tool inline `initialArmed*` assignments in `src/main.ts`.
 
+### 2026-03-07: Row-above boundary air pockets keep same-height horizontal sunlight transport after same-corner reclose
+
+- Decision: A row-above boundary air pocket reopened by a boundary top-corner edit should still regain same-height horizontal boundary sunlight transport, and the adjacent solid-face relighting tied to that air should still restore, even after the same top-corner blocker recloses and the streamed-back row-above chunks recompute.
+- Reason: The current sunlight model treats same-height boundary air columns as transport-connected independently from the blocker directly below that row, and forcing reclose to extinguish that row-above air breaks the established boundary transport regressions.
+- Consequence: Future row-above top-corner lighting or renderer-invalidation work should preserve that restored row-above boundary lighting behavior unless the horizontal transport model is deliberately redesigned together with the broader lighting regression set.
+
 ### 2026-03-07: Touch debug armed-tool toggle callbacks should share one factory
 
 - Decision: The six `onArm*` callbacks passed to `TouchDebugEditControls` in `src/main.ts` should route through a shared `createTouchDebugArmedToolToggleCallback()` helper that delegates into the existing shared armed-tool toggle pipeline.
