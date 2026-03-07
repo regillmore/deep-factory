@@ -555,7 +555,8 @@ const bootstrap = async (): Promise<void> => {
       createMainMenuShellState(
         worldSessionStarted,
         readWorldSessionShellState(),
-        worldSessionShellPersistenceAvailable
+        worldSessionShellPersistenceAvailable,
+        shellActionKeybindings
       )
     );
     syncWorldScreenShellVisibility();

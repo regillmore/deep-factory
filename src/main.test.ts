@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS } from './gl/standalonePlayerPlaceholder';
 import { DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY } from './input/debugEditControlStatePersistence';
 import {
+  createDefaultShellActionKeybindingState,
   SHELL_ACTION_KEYBINDING_STORAGE_KEY,
   type ShellActionKeybindingState
 } from './input/shellActionKeybindings';
@@ -1001,6 +1002,11 @@ const readPersistedShellState = (): ReturnType<typeof createDefaultWorldSessionS
     testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ??
       JSON.stringify(createDefaultWorldSessionShellState())
   );
+const readPersistedShellActionKeybindings = (): ShellActionKeybindingState =>
+  JSON.parse(
+    testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY) ??
+      JSON.stringify(createDefaultShellActionKeybindingState())
+  );
 const readPersistedDebugEditControlState = (): Record<string, unknown> =>
   JSON.parse(testRuntime.storageValues.get(DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY) ?? '{}');
 
@@ -1063,7 +1069,10 @@ const createExpectedPausedMainMenuState = (
       (testRuntime.storageValues.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)
         ? readPersistedShellState()
         : createDefaultWorldSessionShellState()),
-    options.persistenceAvailable ?? true
+    options.persistenceAvailable ?? true,
+    testRuntime.storageValues.has(SHELL_ACTION_KEYBINDING_STORAGE_KEY)
+      ? readPersistedShellActionKeybindings()
+      : createDefaultShellActionKeybindingState()
   );
 
 const createExpectedFirstLaunchMainMenuState = () => ({

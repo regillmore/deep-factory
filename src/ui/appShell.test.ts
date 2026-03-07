@@ -42,6 +42,45 @@ const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
   'toggle-debug-edit-overlays': 'K',
   'toggle-player-spawn-marker': 'Y'
 };
+const PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE =
+  'Current in-world shell hotkeys preview the active bindings until remap settings land.';
+const DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
+  'Saved in-world shell visibility resumes with the paused session until a reset path clears it.',
+  PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
+] as const;
+const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
+  'Browser shell storage is unavailable, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
+  PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
+] as const;
+
+const createPausedMainMenuShellActionKeybindingSummaryRows = (
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
+) => [
+  {
+    label: 'Main Menu',
+    value: getDesktopReturnToMainMenuHotkeyLabel(shellActionKeybindings)
+  },
+  {
+    label: 'Recenter',
+    value: getDesktopRecenterCameraHotkeyLabel(shellActionKeybindings)
+  },
+  {
+    label: 'Debug HUD',
+    value: getDesktopDebugOverlayHotkeyLabel(shellActionKeybindings)
+  },
+  {
+    label: 'Edit Panel',
+    value: getDesktopDebugEditControlsHotkeyLabel(shellActionKeybindings)
+  },
+  {
+    label: 'Edit Overlays',
+    value: getDesktopDebugEditOverlaysHotkeyLabel(shellActionKeybindings)
+  },
+  {
+    label: 'Spawn Marker',
+    value: getDesktopPlayerSpawnMarkerHotkeyLabel(shellActionKeybindings)
+  }
+];
 
 describe('resolveAppShellRegionDisplay', () => {
   it('returns the requested visible display mode when the shell region should be shown', () => {
@@ -164,7 +203,7 @@ describe('resolveAppShellViewModel', () => {
       },
       {
         title: 'Persistence Summary',
-        lines: ['Saved in-world shell visibility resumes with the paused session until a reset path clears it.'],
+        lines: [...DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
         metadataRows: [
           {
             label: 'Status',
@@ -185,7 +224,8 @@ describe('resolveAppShellViewModel', () => {
           {
             label: 'Cleared by',
             value: 'Reset Shell Toggles, New World'
-          }
+          },
+          ...createPausedMainMenuShellActionKeybindingSummaryRows()
         ]
       },
       {
@@ -211,7 +251,7 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.menuSections[2]).toEqual({
       title: 'Persistence Summary',
-      lines: ['Saved in-world shell visibility resumes with the paused session until a reset path clears it.'],
+      lines: [...DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
       metadataRows: [
         {
           label: 'Status',
@@ -232,7 +272,8 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'Cleared by',
           value: 'Reset Shell Toggles, New World'
-        }
+        },
+        ...createPausedMainMenuShellActionKeybindingSummaryRows()
       ]
     });
   });
@@ -250,7 +291,7 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.menuSections[2]).toEqual({
       title: 'Persistence Summary',
-      lines: ['Saved in-world shell visibility resumes with the paused session until a reset path clears it.'],
+      lines: [...DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
       metadataRows: [
         {
           label: 'Status',
@@ -271,7 +312,42 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'Cleared by',
           value: 'Reset Shell Toggles, New World'
-        }
+        },
+        ...createPausedMainMenuShellActionKeybindingSummaryRows()
+      ]
+    });
+  });
+
+  it('uses configured in-world shell-action keybinding labels in the paused-menu persistence summary', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState(undefined, true, CUSTOM_SHELL_ACTION_KEYBINDINGS)
+    );
+
+    expect(viewModel.menuSections[2]).toEqual({
+      title: 'Persistence Summary',
+      lines: [...DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
+      metadataRows: [
+        {
+          label: 'Status',
+          value: 'Browser saved'
+        },
+        {
+          label: 'Resumes',
+          value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+        },
+        {
+          label: 'Saved On',
+          value: 'None'
+        },
+        {
+          label: 'Saved Off',
+          value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+        },
+        {
+          label: 'Cleared by',
+          value: 'Reset Shell Toggles, New World'
+        },
+        ...createPausedMainMenuShellActionKeybindingSummaryRows(CUSTOM_SHELL_ACTION_KEYBINDINGS)
       ]
     });
   });
@@ -292,9 +368,7 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.menuSections[2]).toEqual({
       title: 'Persistence Summary',
-      lines: [
-        'Browser shell storage is unavailable, so this paused session keeps the current shell layout only until a reset path or reload clears it.'
-      ],
+      lines: [...SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
       metadataRows: [
         {
           label: 'Status',
@@ -315,7 +389,8 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'Cleared by',
           value: 'Reset Shell Toggles, New World'
-        }
+        },
+        ...createPausedMainMenuShellActionKeybindingSummaryRows()
       ]
     });
   });
@@ -663,7 +738,7 @@ describe('createPausedMainMenuShellState', () => {
         {
           title: 'Persistence Summary',
           lines: [
-            'Saved in-world shell visibility resumes with the paused session until a reset path clears it.'
+            ...DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES
           ],
           metadataRows: [
             {
@@ -685,7 +760,8 @@ describe('createPausedMainMenuShellState', () => {
             {
               label: 'Cleared by',
               value: 'Reset Shell Toggles, New World'
-            }
+            },
+            ...createPausedMainMenuShellActionKeybindingSummaryRows()
           ]
         },
         {

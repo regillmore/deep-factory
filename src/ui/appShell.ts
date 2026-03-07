@@ -65,10 +65,39 @@ export const DEFAULT_PAUSED_MAIN_MENU_STATUS = 'World session paused.';
 export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [] as const;
 const formatMenuSectionMetadataRowValue = (labels: readonly string[]): string =>
   labels.length > 0 ? labels.join(', ') : 'None';
+const createPausedMainMenuShellActionKeybindingSummaryRows = (
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
+): readonly AppShellMenuSectionMetadataRow[] => [
+  {
+    label: 'Main Menu',
+    value: getDesktopReturnToMainMenuHotkeyLabel(shellActionKeybindings)
+  },
+  {
+    label: 'Recenter',
+    value: getDesktopRecenterCameraHotkeyLabel(shellActionKeybindings)
+  },
+  {
+    label: 'Debug HUD',
+    value: getDesktopDebugOverlayHotkeyLabel(shellActionKeybindings)
+  },
+  {
+    label: 'Edit Panel',
+    value: getDesktopDebugEditControlsHotkeyLabel(shellActionKeybindings)
+  },
+  {
+    label: 'Edit Overlays',
+    value: getDesktopDebugEditOverlaysHotkeyLabel(shellActionKeybindings)
+  },
+  {
+    label: 'Spawn Marker',
+    value: getDesktopPlayerSpawnMarkerHotkeyLabel(shellActionKeybindings)
+  }
+] as const;
 
 export const createPausedMainMenuMenuSections = (
   worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
-  worldSessionShellPersistenceAvailable = true
+  worldSessionShellPersistenceAvailable = true,
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ): readonly AppShellMenuSection[] => {
   const persistenceSummary = createWorldSessionShellStatePersistenceSummary(
     worldSessionShellState,
@@ -108,7 +137,10 @@ export const createPausedMainMenuMenuSections = (
     },
     {
       title: 'Persistence Summary',
-      lines: [persistenceSummary.descriptionLine],
+      lines: [
+        persistenceSummary.descriptionLine,
+        'Current in-world shell hotkeys preview the active bindings until remap settings land.'
+      ],
       metadataRows: [
         {
           label: 'Status',
@@ -129,7 +161,8 @@ export const createPausedMainMenuMenuSections = (
         {
           label: 'Cleared by',
           value: formatMenuSectionMetadataRowValue(persistenceSummary.clearedByActionLabels)
-        }
+        },
+        ...createPausedMainMenuShellActionKeybindingSummaryRows(shellActionKeybindings)
       ]
     },
     {
@@ -154,14 +187,16 @@ export const DEFAULT_PAUSED_MAIN_MENU_MENU_SECTIONS = createPausedMainMenuMenuSe
 
 export const createPausedMainMenuShellState = (
   worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
-  worldSessionShellPersistenceAvailable = true
+  worldSessionShellPersistenceAvailable = true,
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ): AppShellState => ({
   screen: 'main-menu',
   statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
   detailLines: DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES,
   menuSections: createPausedMainMenuMenuSections(
     worldSessionShellState,
-    worldSessionShellPersistenceAvailable
+    worldSessionShellPersistenceAvailable,
+    shellActionKeybindings
   ),
   primaryActionLabel: 'Resume World',
   secondaryActionLabel: 'New World',
@@ -249,12 +284,14 @@ export const createFirstLaunchMainMenuShellState = (): AppShellState => ({
 export const createMainMenuShellState = (
   hasResumableWorldSession: boolean,
   worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
-  worldSessionShellPersistenceAvailable = true
+  worldSessionShellPersistenceAvailable = true,
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ): AppShellState =>
   hasResumableWorldSession
     ? createPausedMainMenuShellState(
         worldSessionShellState,
-        worldSessionShellPersistenceAvailable
+        worldSessionShellPersistenceAvailable,
+        shellActionKeybindings
       )
     : createFirstLaunchMainMenuShellState();
 
