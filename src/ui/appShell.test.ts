@@ -154,6 +154,10 @@ describe('resolveAppShellViewModel', () => {
         lines: ['Saved in-world shell visibility resumes with the paused session until a reset path clears it.'],
         metadataRows: [
           {
+            label: 'Status',
+            value: 'Browser saved'
+          },
+          {
             label: 'Resumes',
             value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
           },
@@ -197,6 +201,10 @@ describe('resolveAppShellViewModel', () => {
       lines: ['Saved in-world shell visibility resumes with the paused session until a reset path clears it.'],
       metadataRows: [
         {
+          label: 'Status',
+          value: 'Browser saved'
+        },
+        {
           label: 'Resumes',
           value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
         },
@@ -231,6 +239,54 @@ describe('resolveAppShellViewModel', () => {
       title: 'Persistence Summary',
       lines: ['Saved in-world shell visibility resumes with the paused session until a reset path clears it.'],
       metadataRows: [
+        {
+          label: 'Status',
+          value: 'Browser saved'
+        },
+        {
+          label: 'Resumes',
+          value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+        },
+        {
+          label: 'Saved On',
+          value: 'Debug HUD, Edit Overlays, Shortcuts'
+        },
+        {
+          label: 'Saved Off',
+          value: 'Edit Panel, Spawn Marker'
+        },
+        {
+          label: 'Cleared by',
+          value: 'Reset Shell Toggles, New World'
+        }
+      ]
+    });
+  });
+
+  it('marks the paused-menu persistence summary as session-only fallback when browser shell storage is unavailable', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState(
+        {
+          debugOverlayVisible: true,
+          debugEditControlsVisible: false,
+          debugEditOverlaysVisible: true,
+          playerSpawnMarkerVisible: false,
+          shortcutsOverlayVisible: true
+        },
+        false
+      )
+    );
+
+    expect(viewModel.menuSections[2]).toEqual({
+      title: 'Persistence Summary',
+      lines: [
+        'Browser shell storage is unavailable, so this paused session keeps the current shell layout only until a reset path or reload clears it.'
+      ],
+      metadataRows: [
+        {
+          label: 'Status',
+          value: 'Session-only fallback'
+        },
         {
           label: 'Resumes',
           value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
@@ -581,6 +637,10 @@ describe('createPausedMainMenuShellState', () => {
             'Saved in-world shell visibility resumes with the paused session until a reset path clears it.'
           ],
           metadataRows: [
+            {
+              label: 'Status',
+              value: 'Browser saved'
+            },
             {
               label: 'Resumes',
               value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'

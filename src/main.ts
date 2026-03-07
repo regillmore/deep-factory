@@ -45,7 +45,7 @@ import {
 import {
   clearWorldSessionShellState,
   createDefaultWorldSessionShellState,
-  loadWorldSessionShellState,
+  loadWorldSessionShellStateWithPersistenceAvailability,
   saveWorldSessionShellState,
   resolveWorldSessionShellStateAfterPausedMainMenuTransition
 } from './mainWorldSessionShellState';
@@ -402,13 +402,21 @@ const bootstrap = async (): Promise<void> => {
   let worldSessionStarted = false;
   let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
+  let worldSessionShellPersistenceAvailable = true;
+  const initialWorldSessionShellStateLoad =
+    loadWorldSessionShellStateWithPersistenceAvailability(
+      worldSessionShellStateStorage,
+      defaultWorldSessionShellState
+    );
+  worldSessionShellPersistenceAvailable =
+    initialWorldSessionShellStateLoad.persistenceAvailable;
   let {
     debugOverlayVisible,
     debugEditControlsVisible,
     debugEditOverlaysVisible,
     playerSpawnMarkerVisible,
     shortcutsOverlayVisible
-  } = loadWorldSessionShellState(worldSessionShellStateStorage, defaultWorldSessionShellState);
+  } = initialWorldSessionShellStateLoad.state;
   const readWorldSessionShellState = () => ({
     debugOverlayVisible,
     debugEditControlsVisible,
@@ -417,7 +425,15 @@ const bootstrap = async (): Promise<void> => {
     shortcutsOverlayVisible
   });
   const persistWorldSessionShellState = (): void => {
-    saveWorldSessionShellState(worldSessionShellStateStorage, readWorldSessionShellState());
+    worldSessionShellPersistenceAvailable = saveWorldSessionShellState(
+      worldSessionShellStateStorage,
+      readWorldSessionShellState()
+    );
+  };
+  const clearPersistedWorldSessionShellState = (): void => {
+    worldSessionShellPersistenceAvailable = clearWorldSessionShellState(
+      worldSessionShellStateStorage
+    );
   };
   const applyWorldSessionShellState = (
     state: ReturnType<typeof createDefaultWorldSessionShellState>
@@ -438,7 +454,7 @@ const bootstrap = async (): Promise<void> => {
       resolveWorldSessionShellStateAfterPausedMainMenuTransition(readWorldSessionShellState(), transition)
     );
     if (persistence === 'clear') {
-      clearWorldSessionShellState(worldSessionShellStateStorage);
+      clearPersistedWorldSessionShellState();
       return;
     }
     persistWorldSessionShellState();
@@ -525,7 +541,13 @@ const bootstrap = async (): Promise<void> => {
   };
   const showMainMenuShellState = (): void => {
     currentScreen = 'main-menu';
-    shell.setState(createMainMenuShellState(worldSessionStarted, readWorldSessionShellState()));
+    shell.setState(
+      createMainMenuShellState(
+        worldSessionStarted,
+        readWorldSessionShellState(),
+        worldSessionShellPersistenceAvailable
+      )
+    );
     syncWorldScreenShellVisibility();
   };
   const syncDebugOverlayVisibility = (): void => {

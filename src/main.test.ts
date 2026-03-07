@@ -1038,12 +1038,19 @@ const readArmedToolKinds = () => ({
   ellipseOutlineKind: testRuntime.inputControllerInstance?.getArmedDebugEllipseOutlineKind() ?? null
 });
 
-const createExpectedPausedMainMenuState = () =>
+const createExpectedPausedMainMenuState = (
+  options: Partial<{
+    worldSessionShellState: ReturnType<typeof createDefaultWorldSessionShellState>;
+    persistenceAvailable: boolean;
+  }> = {}
+) =>
   createMainMenuShellState(
     true,
-    testRuntime.storageValues.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)
-      ? readPersistedShellState()
-      : createDefaultWorldSessionShellState()
+    options.worldSessionShellState ??
+      (testRuntime.storageValues.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)
+        ? readPersistedShellState()
+        : createDefaultWorldSessionShellState()),
+    options.persistenceAvailable ?? true
   );
 
 const createExpectedFirstLaunchMainMenuState = () => ({
@@ -1336,6 +1343,38 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(false);
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
     expect(testRuntime.gameLoopStartCount).toBe(1);
+  });
+
+  it('shows session-only paused-menu shell persistence status when shell-toggle local storage is inaccessible', async () => {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get: () => {
+        throw new Error('storage access denied');
+      }
+    });
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('h').prevented).toBe(true);
+    expect(dispatchKeydown('?', 'Slash').prevented).toBe(true);
+    expect(testRuntime.storageValues.size).toBe(0);
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        worldSessionShellState: {
+          debugOverlayVisible: true,
+          debugEditControlsVisible: false,
+          debugEditOverlaysVisible: false,
+          playerSpawnMarkerVisible: false,
+          shortcutsOverlayVisible: true
+        },
+        persistenceAvailable: false
+      })
+    );
   });
 
   it('uses the shared main-menu shell-state selector for first-launch bootstrap and paused-session returns', async () => {

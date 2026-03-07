@@ -5,6 +5,7 @@ import {
   createDefaultWorldSessionShellState,
   createWorldSessionShellStatePersistenceSummary,
   loadWorldSessionShellState,
+  loadWorldSessionShellStateWithPersistenceAvailability,
   resolveWorldSessionShellStateAfterPausedMainMenuTransition,
   saveWorldSessionShellState,
   WORLD_SESSION_SHELL_STATE_STORAGE_KEY,
@@ -105,6 +106,9 @@ describe('resolveWorldSessionShellStateAfterPausedMainMenuTransition', () => {
 describe('createWorldSessionShellStatePersistenceSummary', () => {
   it('lists the paused-session shell toggles that resume from saved preferences plus the current saved on and off groups', () => {
     expect(createWorldSessionShellStatePersistenceSummary()).toEqual({
+      statusValue: 'Browser saved',
+      descriptionLine:
+        'Saved in-world shell visibility resumes with the paused session until a reset path clears it.',
       resumedToggleLabels: ['Debug HUD', 'Edit Panel', 'Edit Overlays', 'Spawn Marker', 'Shortcuts'],
       savedOnToggleLabels: [],
       savedOffToggleLabels: ['Debug HUD', 'Edit Panel', 'Edit Overlays', 'Spawn Marker', 'Shortcuts'],
@@ -122,10 +126,84 @@ describe('createWorldSessionShellStatePersistenceSummary', () => {
         shortcutsOverlayVisible: true
       })
     ).toEqual({
+      statusValue: 'Browser saved',
+      descriptionLine:
+        'Saved in-world shell visibility resumes with the paused session until a reset path clears it.',
       resumedToggleLabels: ['Debug HUD', 'Edit Panel', 'Edit Overlays', 'Spawn Marker', 'Shortcuts'],
       savedOnToggleLabels: ['Debug HUD', 'Edit Overlays', 'Shortcuts'],
       savedOffToggleLabels: ['Edit Panel', 'Spawn Marker'],
       clearedByActionLabels: ['Reset Shell Toggles', 'New World']
+    });
+  });
+
+  it('switches the summary to session-only fallback copy when browser shell storage is unavailable', () => {
+    expect(
+      createWorldSessionShellStatePersistenceSummary(
+        {
+          debugOverlayVisible: true,
+          debugEditControlsVisible: false,
+          debugEditOverlaysVisible: true,
+          playerSpawnMarkerVisible: false,
+          shortcutsOverlayVisible: true
+        },
+        false
+      )
+    ).toEqual({
+      statusValue: 'Session-only fallback',
+      descriptionLine:
+        'Browser shell storage is unavailable, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
+      resumedToggleLabels: ['Debug HUD', 'Edit Panel', 'Edit Overlays', 'Spawn Marker', 'Shortcuts'],
+      savedOnToggleLabels: ['Debug HUD', 'Edit Overlays', 'Shortcuts'],
+      savedOffToggleLabels: ['Edit Panel', 'Spawn Marker'],
+      clearedByActionLabels: ['Reset Shell Toggles', 'New World']
+    });
+  });
+});
+
+describe('loadWorldSessionShellStateWithPersistenceAvailability', () => {
+  const FALLBACK_STATE: WorldSessionShellState = {
+    debugOverlayVisible: false,
+    debugEditControlsVisible: false,
+    debugEditOverlaysVisible: false,
+    playerSpawnMarkerVisible: false,
+    shortcutsOverlayVisible: false
+  };
+
+  it('marks persistence unavailable when storage access is missing or throws', () => {
+    expect(loadWorldSessionShellStateWithPersistenceAvailability(null, FALLBACK_STATE)).toEqual({
+      state: FALLBACK_STATE,
+      persistenceAvailable: false
+    });
+
+    const throwingStorage: FakeStorage = {
+      getItem: () => {
+        throw new Error('read blocked');
+      },
+      setItem: () => {}
+    };
+
+    expect(
+      loadWorldSessionShellStateWithPersistenceAvailability(throwingStorage, FALLBACK_STATE)
+    ).toEqual({
+      state: FALLBACK_STATE,
+      persistenceAvailable: false
+    });
+  });
+
+  it('keeps persistence available when storage is readable even if no valid saved state exists', () => {
+    expect(
+      loadWorldSessionShellStateWithPersistenceAvailability(createMemoryStorage(), FALLBACK_STATE)
+    ).toEqual({
+      state: FALLBACK_STATE,
+      persistenceAvailable: true
+    });
+
+    const malformedStorage = createMemoryStorage('{not-json');
+    expect(
+      loadWorldSessionShellStateWithPersistenceAvailability(malformedStorage, FALLBACK_STATE)
+    ).toEqual({
+      state: FALLBACK_STATE,
+      persistenceAvailable: true
     });
   });
 });

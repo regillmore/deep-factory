@@ -61,9 +61,13 @@ const formatMenuSectionMetadataRowValue = (labels: readonly string[]): string =>
   labels.length > 0 ? labels.join(', ') : 'None';
 
 export const createPausedMainMenuMenuSections = (
-  worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState()
+  worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
+  worldSessionShellPersistenceAvailable = true
 ): readonly AppShellMenuSection[] => {
-  const persistenceSummary = createWorldSessionShellStatePersistenceSummary(worldSessionShellState);
+  const persistenceSummary = createWorldSessionShellStatePersistenceSummary(
+    worldSessionShellState,
+    worldSessionShellPersistenceAvailable
+  );
   return [
     {
       title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
@@ -98,10 +102,12 @@ export const createPausedMainMenuMenuSections = (
     },
     {
       title: 'Persistence Summary',
-      lines: [
-        'Saved in-world shell visibility resumes with the paused session until a reset path clears it.'
-      ],
+      lines: [persistenceSummary.descriptionLine],
       metadataRows: [
+        {
+          label: 'Status',
+          value: persistenceSummary.statusValue
+        },
         {
           label: 'Resumes',
           value: formatMenuSectionMetadataRowValue(persistenceSummary.resumedToggleLabels)
@@ -141,12 +147,16 @@ export const createPausedMainMenuMenuSections = (
 export const DEFAULT_PAUSED_MAIN_MENU_MENU_SECTIONS = createPausedMainMenuMenuSections();
 
 export const createPausedMainMenuShellState = (
-  worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState()
+  worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
+  worldSessionShellPersistenceAvailable = true
 ): AppShellState => ({
   screen: 'main-menu',
   statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
   detailLines: DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES,
-  menuSections: createPausedMainMenuMenuSections(worldSessionShellState),
+  menuSections: createPausedMainMenuMenuSections(
+    worldSessionShellState,
+    worldSessionShellPersistenceAvailable
+  ),
   primaryActionLabel: 'Resume World',
   secondaryActionLabel: 'New World',
   tertiaryActionLabel: 'Reset Shell Toggles'
@@ -232,10 +242,14 @@ export const createFirstLaunchMainMenuShellState = (): AppShellState => ({
 
 export const createMainMenuShellState = (
   hasResumableWorldSession: boolean,
-  worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState()
+  worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
+  worldSessionShellPersistenceAvailable = true
 ): AppShellState =>
   hasResumableWorldSession
-    ? createPausedMainMenuShellState(worldSessionShellState)
+    ? createPausedMainMenuShellState(
+        worldSessionShellState,
+        worldSessionShellPersistenceAvailable
+      )
     : createFirstLaunchMainMenuShellState();
 
 export const createDefaultBootShellState = (): AppShellState => ({

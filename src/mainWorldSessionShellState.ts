@@ -7,10 +7,17 @@ export interface WorldSessionShellState {
 }
 
 export interface WorldSessionShellStatePersistenceSummary {
+  statusValue: string;
+  descriptionLine: string;
   resumedToggleLabels: readonly string[];
   savedOnToggleLabels: readonly string[];
   savedOffToggleLabels: readonly string[];
   clearedByActionLabels: readonly string[];
+}
+
+export interface WorldSessionShellStateLoadResult {
+  state: WorldSessionShellState;
+  persistenceAvailable: boolean;
 }
 
 interface StorageLike {
@@ -43,6 +50,13 @@ const WORLD_SESSION_SHELL_STATE_CLEAR_ACTION_LABELS = [
   'Reset Shell Toggles',
   'New World'
 ] as const;
+const WORLD_SESSION_SHELL_STATE_PERSISTENCE_STATUS_BROWSER_SAVED = 'Browser saved';
+const WORLD_SESSION_SHELL_STATE_PERSISTENCE_STATUS_SESSION_ONLY_FALLBACK =
+  'Session-only fallback';
+const WORLD_SESSION_SHELL_STATE_PERSISTENCE_DESCRIPTION_BROWSER_SAVED =
+  'Saved in-world shell visibility resumes with the paused session until a reset path clears it.';
+const WORLD_SESSION_SHELL_STATE_PERSISTENCE_DESCRIPTION_SESSION_ONLY_FALLBACK =
+  'Browser shell storage is unavailable, so this paused session keeps the current shell layout only until a reset path or reload clears it.';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -69,7 +83,8 @@ export const createDefaultWorldSessionShellState = (): WorldSessionShellState =>
 
 export const createWorldSessionShellStatePersistenceSummary =
   (
-    state: WorldSessionShellState = createDefaultWorldSessionShellState()
+    state: WorldSessionShellState = createDefaultWorldSessionShellState(),
+    persistenceAvailable = true
   ): WorldSessionShellStatePersistenceSummary => {
     const savedOnToggleLabels: string[] = [];
     const savedOffToggleLabels: string[] = [];
@@ -84,6 +99,12 @@ export const createWorldSessionShellStatePersistenceSummary =
     }
 
     return {
+      statusValue: persistenceAvailable
+        ? WORLD_SESSION_SHELL_STATE_PERSISTENCE_STATUS_BROWSER_SAVED
+        : WORLD_SESSION_SHELL_STATE_PERSISTENCE_STATUS_SESSION_ONLY_FALLBACK,
+      descriptionLine: persistenceAvailable
+        ? WORLD_SESSION_SHELL_STATE_PERSISTENCE_DESCRIPTION_BROWSER_SAVED
+        : WORLD_SESSION_SHELL_STATE_PERSISTENCE_DESCRIPTION_SESSION_ONLY_FALLBACK,
       resumedToggleLabels: PERSISTED_WORLD_SESSION_SHELL_TOGGLE_LABELS,
       savedOnToggleLabels,
       savedOffToggleLabels,
@@ -105,38 +126,68 @@ export const resolveWorldSessionShellStateAfterPausedMainMenuTransition = (
   return currentState;
 };
 
-export const loadWorldSessionShellState = (
+export const loadWorldSessionShellStateWithPersistenceAvailability = (
   storage: StorageLike | null | undefined,
   fallbackState: WorldSessionShellState
-): WorldSessionShellState => {
-  if (!storage) return fallbackState;
+): WorldSessionShellStateLoadResult => {
+  if (!storage) {
+    return {
+      state: fallbackState,
+      persistenceAvailable: false
+    };
+  }
 
   let rawState: string | null;
   try {
     rawState = storage.getItem(STORAGE_KEY);
   } catch {
-    return fallbackState;
+    return {
+      state: fallbackState,
+      persistenceAvailable: false
+    };
   }
 
-  if (!rawState) return fallbackState;
+  if (!rawState) {
+    return {
+      state: fallbackState,
+      persistenceAvailable: true
+    };
+  }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawState);
   } catch {
-    return fallbackState;
+    return {
+      state: fallbackState,
+      persistenceAvailable: true
+    };
   }
 
-  if (!isWorldSessionShellStateRecord(parsed)) return fallbackState;
+  if (!isWorldSessionShellStateRecord(parsed)) {
+    return {
+      state: fallbackState,
+      persistenceAvailable: true
+    };
+  }
 
   return {
-    debugOverlayVisible: parsed.debugOverlayVisible,
-    debugEditControlsVisible: parsed.debugEditControlsVisible,
-    debugEditOverlaysVisible: parsed.debugEditOverlaysVisible,
-    playerSpawnMarkerVisible: parsed.playerSpawnMarkerVisible,
-    shortcutsOverlayVisible: parsed.shortcutsOverlayVisible
+    state: {
+      debugOverlayVisible: parsed.debugOverlayVisible,
+      debugEditControlsVisible: parsed.debugEditControlsVisible,
+      debugEditOverlaysVisible: parsed.debugEditOverlaysVisible,
+      playerSpawnMarkerVisible: parsed.playerSpawnMarkerVisible,
+      shortcutsOverlayVisible: parsed.shortcutsOverlayVisible
+    },
+    persistenceAvailable: true
   };
 };
+
+export const loadWorldSessionShellState = (
+  storage: StorageLike | null | undefined,
+  fallbackState: WorldSessionShellState
+): WorldSessionShellState =>
+  loadWorldSessionShellStateWithPersistenceAvailability(storage, fallbackState).state;
 
 export const saveWorldSessionShellState = (
   storage: StorageLike | null | undefined,
