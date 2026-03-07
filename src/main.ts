@@ -198,6 +198,12 @@ type TouchDebugEditControlConstructorOptions = TouchDebugEditControlPreferenceCo
   TouchDebugArmedToolConstructorOptions &
   TouchDebugEditControlHistoryConstructorOptions &
   TouchDebugEditControlResetConstructorOptions;
+type StandalonePlayerFixedStepTransitions = {
+  groundedTransitionEvent: PlayerGroundedTransitionEvent | null;
+  facingTransitionEvent: PlayerFacingTransitionEvent | null;
+  wallContactTransitionEvent: PlayerWallContactTransitionEvent | null;
+  ceilingContactTransitionEvent: PlayerCeilingContactTransitionEvent | null;
+};
 const TOUCH_DEBUG_ARMED_TOOL_KEYS: readonly TouchDebugArmedToolKey[] = [
   'floodFillKind',
   'lineKind',
@@ -757,6 +763,29 @@ const bootstrap = async (): Promise<void> => {
     lastPlayerWallContactTransitionEvent = null;
     lastPlayerCeilingContactTransitionEvent = null;
     standalonePlayerCeilingBonkHoldUntilTimeMs = null;
+  };
+  const commitStandalonePlayerFixedStepTransitions = ({
+    groundedTransitionEvent,
+    facingTransitionEvent,
+    wallContactTransitionEvent,
+    ceilingContactTransitionEvent
+  }: StandalonePlayerFixedStepTransitions): void => {
+    if (groundedTransitionEvent !== null) {
+      lastPlayerGroundedTransitionEvent = groundedTransitionEvent;
+    }
+    if (facingTransitionEvent !== null) {
+      lastPlayerFacingTransitionEvent = facingTransitionEvent;
+    }
+    if (wallContactTransitionEvent !== null) {
+      lastPlayerWallContactTransitionEvent = wallContactTransitionEvent;
+    }
+    if (ceilingContactTransitionEvent !== null) {
+      lastPlayerCeilingContactTransitionEvent = ceilingContactTransitionEvent;
+      if (ceilingContactTransitionEvent.kind === 'blocked') {
+        standalonePlayerCeilingBonkHoldUntilTimeMs =
+          performance.now() + STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS;
+      }
+    }
   };
 
   const refreshResolvedPlayerSpawn = (): void => {
@@ -2048,22 +2077,12 @@ const bootstrap = async (): Promise<void> => {
           nextPlayerContacts
         );
         standalonePlayerState = nextPlayerState;
-        if (groundedTransitionEvent !== null) {
-          lastPlayerGroundedTransitionEvent = groundedTransitionEvent;
-        }
-        if (facingTransitionEvent !== null) {
-          lastPlayerFacingTransitionEvent = facingTransitionEvent;
-        }
-        if (wallContactTransitionEvent !== null) {
-          lastPlayerWallContactTransitionEvent = wallContactTransitionEvent;
-        }
-        if (ceilingContactTransitionEvent !== null) {
-          lastPlayerCeilingContactTransitionEvent = ceilingContactTransitionEvent;
-          if (ceilingContactTransitionEvent.kind === 'blocked') {
-            standalonePlayerCeilingBonkHoldUntilTimeMs =
-              performance.now() + STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS;
-          }
-        }
+        commitStandalonePlayerFixedStepTransitions({
+          groundedTransitionEvent,
+          facingTransitionEvent,
+          wallContactTransitionEvent,
+          ceilingContactTransitionEvent
+        });
         applyStandalonePlayerCameraFollow();
       }
 

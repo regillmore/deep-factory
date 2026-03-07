@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared standalone-player fixed-step transition-commit helper so grounded, facing, wall-contact, and ceiling-contact event updates plus ceiling-bonk hold latching in `src/main.ts` reuse one post-step apply path.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `commitStandalonePlayerFixedStepTransitions()` helper for post-step standalone-player transition writes, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression covering blocked and cleared contact transitions plus ceiling-bonk hold expiry, removed completed task `291` from [docs/NEXT.md](docs/NEXT.md), added replacement task `292`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared standalone-player transition-reset helper so spawn initialization and embedded-spawn recovery in `src/main.ts` reuse one grounded/facing/respawn/wall/ceiling/bonk reset path.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `resetStandalonePlayerTransitionState()` helper reused by bootstrap spawn initialization, embedded respawn recovery, and the fresh-world camera/player reset helper, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that captures status-strip player telemetry across clean spawn, transition or bonk generation, and embedded respawn recovery, removed completed task `290` from [docs/NEXT.md](docs/NEXT.md), added replacement task `291`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

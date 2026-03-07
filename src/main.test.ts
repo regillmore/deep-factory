@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS } from './gl/standalonePlayerPlaceholder';
 import { DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY } from './input/debugEditControlStatePersistence';
 import { WORLD_SESSION_SHELL_STATE_STORAGE_KEY } from './mainWorldSessionShellState';
 import {
@@ -1873,6 +1874,145 @@ describe('main.ts shell state orchestration', () => {
       position: respawnedPlayerState.position,
       velocity: respawnedPlayerState.velocity
     });
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
+  });
+
+  it('routes standalone-player fixed-step transition updates and ceiling-bonk latching through one shared post-step commit helper', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    const blockedContacts = {
+      support: null,
+      wall: {
+        tileX: -2,
+        tileY: -1,
+        tileId: 3,
+        side: 'left' as const
+      },
+      ceiling: {
+        tileX: -1,
+        tileY: -3,
+        tileId: 4
+      }
+    };
+    const transitionedPlayerState = {
+      position: { x: -12, y: -10 },
+      velocity: { x: -48, y: -90 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'left' as const
+    };
+
+    testRuntime.performanceNow = 1500;
+    testRuntime.rendererStepPlayerStateImpl = () => transitionedPlayerState;
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, blockedContacts, noContacts];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest debug status strip state after blocked transition step');
+    }
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition).toMatchObject({
+      kind: 'fall',
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerFacingTransition).toMatchObject({
+      kind: 'left',
+      previousFacing: 'right',
+      nextFacing: 'left',
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: -2,
+        y: -1,
+        id: 3,
+        side: 'left'
+      },
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: -1,
+        y: -3,
+        id: 4
+      },
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(true);
+
+    testRuntime.performanceNow =
+      1500 + STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS - 1;
+    testRuntime.rendererStepPlayerStateImpl = (state) => state;
+    testRuntime.rendererPlayerCollisionContactsQueue = [blockedContacts, noContacts, noContacts];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest debug status strip state after cleared transition step');
+    }
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition).toMatchObject({
+      kind: 'fall',
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerFacingTransition).toMatchObject({
+      kind: 'left',
+      previousFacing: 'right',
+      nextFacing: 'left',
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContactTransition).toMatchObject({
+      kind: 'cleared',
+      tile: {
+        x: -2,
+        y: -1,
+        id: 3,
+        side: 'left'
+      },
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContactTransition).toMatchObject({
+      kind: 'cleared',
+      tile: {
+        x: -1,
+        y: -3,
+        id: 4
+      },
+      position: transitionedPlayerState.position,
+      velocity: transitionedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(true);
+
+    testRuntime.performanceNow += 2;
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest debug status strip state after bonk-hold expiry');
+    }
+
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
   });
 

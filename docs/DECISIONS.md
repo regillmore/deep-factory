@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Standalone-player fixed-step transition commits should share one helper
+
+- Decision: Grounded, facing, wall-contact, and ceiling-contact transition updates plus ceiling-bonk hold latching in `src/main.ts` should route through a shared `commitStandalonePlayerFixedStepTransitions()` helper after each standalone-player fixed step.
+- Reason: Those post-step writes together form one standalone-player transition telemetry contract, so leaving them split across separate inline branches makes later runtime changes easier to drift from the focused regression coverage.
+- Consequence: Future standalone-player fixed-step transition or ceiling-bonk presentation work should extend the shared commit helper and its runtime regression instead of reintroducing separate per-event writes in `src/main.ts`.
+
 ### 2026-03-07: Standalone-player transition resets should share one helper
 
 - Decision: Bootstrap spawn initialization, embedded-spawn recovery, and fresh-world camera/player reset work in `src/main.ts` should route grounded/facing/respawn/wall/ceiling transition clearing plus ceiling-bonk reset through a shared `resetStandalonePlayerTransitionState()` helper.

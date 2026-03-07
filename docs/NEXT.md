@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Refine, Refactor, Restructure
 
-291. Extract a shared standalone-player fixed-step transition-commit helper so grounded/facing/wall/ceiling event updates plus ceiling-bonk hold latching in `src/main.ts` reuse one post-step apply path, with focused runtime regressions.
+292. Extract a shared standalone-player fixed-step transition-snapshot helper so grounded/facing/wall/ceiling transition resolution in `src/main.ts` reuses one pre-commit build path, with focused runtime regressions.
