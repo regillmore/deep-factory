@@ -1360,7 +1360,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
   });
 
-  it('routes touch-control armed-tool initialization through one shared snapshot helper', async () => {
+  it('routes touch-control armed-tool initialization through shared snapshot and initial-option helpers', async () => {
     testRuntime.initialArmedToolKinds = {
       floodFillKind: 'place',
       lineKind: 'break',
@@ -1382,6 +1382,14 @@ describe('main.ts shell state orchestration', () => {
       ellipseOutlineKind: 'break'
     });
     expect(testRuntime.debugEditControlsInitialArmedToolSnapshot).toEqual({
+      floodFillKind: 'place',
+      lineKind: 'break',
+      rectKind: 'place',
+      rectOutlineKind: 'break',
+      ellipseKind: 'place',
+      ellipseOutlineKind: 'break'
+    });
+    expect(testRuntime.debugEditControlsArmedToolKinds).toEqual({
       floodFillKind: 'place',
       lineKind: 'break',
       rectKind: 'place',

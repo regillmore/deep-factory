@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Touch debug armed-tool initial constructor props should share one builder
+
+- Decision: The six `initialArmed*` props passed to `TouchDebugEditControls` in `src/main.ts` should route through a shared `createTouchDebugArmedToolInitialOptions()` helper that maps the current armed-tool snapshot into constructor options.
+- Reason: Those constructor props all represent the same boot-time armed-tool state surface, so leaving six inline snapshot-to-prop assignments makes touch-control initialization easier to drift from focused runtime regressions.
+- Consequence: Future touch debug armed-tool constructor state wiring should extend the shared initial-option builder and its initialization regressions instead of reintroducing per-tool inline `initialArmed*` assignments in `src/main.ts`.
+
 ### 2026-03-07: Touch debug armed-tool toggle callbacks should share one factory
 
 - Decision: The six `onArm*` callbacks passed to `TouchDebugEditControls` in `src/main.ts` should route through a shared `createTouchDebugArmedToolToggleCallback()` helper that delegates into the existing shared armed-tool toggle pipeline.

@@ -155,6 +155,14 @@ type TouchDebugArmedToolSnapshot = {
 type TouchDebugArmedToolKey = keyof TouchDebugArmedToolSnapshot;
 type SetTouchDebugArmedToolKind = (kind: DebugTileEditKind | null) => boolean;
 type TouchDebugArmedToolToggleCallback = (kind: DebugTileEditKind) => void;
+type TouchDebugArmedToolInitialOptions = {
+  initialArmedFloodFillKind: DebugTileEditKind | null;
+  initialArmedLineKind: DebugTileEditKind | null;
+  initialArmedRectKind: DebugTileEditKind | null;
+  initialArmedRectOutlineKind: DebugTileEditKind | null;
+  initialArmedEllipseKind: DebugTileEditKind | null;
+  initialArmedEllipseOutlineKind: DebugTileEditKind | null;
+};
 const TOUCH_DEBUG_ARMED_TOOL_KEYS: readonly TouchDebugArmedToolKey[] = [
   'floodFillKind',
   'lineKind',
@@ -885,6 +893,16 @@ const bootstrap = async (): Promise<void> => {
       toggleMutuallyExclusiveArmedDebugToolKind(key, kind, setKind);
     };
   };
+  const createTouchDebugArmedToolInitialOptions = (
+    snapshot: TouchDebugArmedToolSnapshot
+  ): TouchDebugArmedToolInitialOptions => ({
+    initialArmedFloodFillKind: snapshot.floodFillKind,
+    initialArmedLineKind: snapshot.lineKind,
+    initialArmedRectKind: snapshot.rectKind,
+    initialArmedRectOutlineKind: snapshot.rectOutlineKind,
+    initialArmedEllipseKind: snapshot.ellipseKind,
+    initialArmedEllipseOutlineKind: snapshot.ellipseOutlineKind
+  });
   const setArmedDebugFloodFillKind = (kind: DebugTileEditKind | null): boolean => {
     return setMutuallyExclusiveArmedDebugToolKind('floodFillKind', kind);
   };
@@ -1112,12 +1130,7 @@ const bootstrap = async (): Promise<void> => {
         collapsed
       });
     },
-    initialArmedFloodFillKind: initialTouchDebugArmedToolSnapshot.floodFillKind,
-    initialArmedLineKind: initialTouchDebugArmedToolSnapshot.lineKind,
-    initialArmedRectKind: initialTouchDebugArmedToolSnapshot.rectKind,
-    initialArmedRectOutlineKind: initialTouchDebugArmedToolSnapshot.rectOutlineKind,
-    initialArmedEllipseKind: initialTouchDebugArmedToolSnapshot.ellipseKind,
-    initialArmedEllipseOutlineKind: initialTouchDebugArmedToolSnapshot.ellipseOutlineKind,
+    ...createTouchDebugArmedToolInitialOptions(initialTouchDebugArmedToolSnapshot),
     onArmFloodFill: createTouchDebugArmedToolToggleCallback(
       'floodFillKind',
       setArmedDebugFloodFillKind

@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Refine, Refactor, Restructure
 
-283. Extract a shared touch debug armed-tool initial-option builder so the six `initialArmed*` props passed to `TouchDebugEditControls` in `src/main.ts` reuse one snapshot-to-constructor wiring path, with focused runtime regressions.
+284. Extract a shared touch debug armed-tool constructor-option builder so `TouchDebugEditControls` initialization in `src/main.ts` reuses one combined initial-state and toggle-callback wiring path, with focused runtime regressions.
