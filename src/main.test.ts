@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS } from './gl/standalonePlayerPlaceholder';
 import { DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY } from './input/debugEditControlStatePersistence';
-import { WORLD_SESSION_SHELL_STATE_STORAGE_KEY } from './mainWorldSessionShellState';
+import {
+  createDefaultWorldSessionShellState,
+  WORLD_SESSION_SHELL_STATE_STORAGE_KEY
+} from './mainWorldSessionShellState';
 import {
   createDefaultBootShellState,
   createInWorldShellState,
@@ -980,8 +983,11 @@ const runRenderFrame = (frameDtMs = 1000 / 60): void => {
   testRuntime.gameLoopRender?.(0, frameDtMs);
 };
 
-const readPersistedShellState = (): Record<string, boolean> =>
-  JSON.parse(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? '{}');
+const readPersistedShellState = (): ReturnType<typeof createDefaultWorldSessionShellState> =>
+  JSON.parse(
+    testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ??
+      JSON.stringify(createDefaultWorldSessionShellState())
+  );
 const readPersistedDebugEditControlState = (): Record<string, unknown> =>
   JSON.parse(testRuntime.storageValues.get(DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY) ?? '{}');
 
@@ -1032,7 +1038,13 @@ const readArmedToolKinds = () => ({
   ellipseOutlineKind: testRuntime.inputControllerInstance?.getArmedDebugEllipseOutlineKind() ?? null
 });
 
-const createExpectedPausedMainMenuState = () => createMainMenuShellState(true);
+const createExpectedPausedMainMenuState = () =>
+  createMainMenuShellState(
+    true,
+    testRuntime.storageValues.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)
+      ? readPersistedShellState()
+      : createDefaultWorldSessionShellState()
+  );
 
 const createExpectedFirstLaunchMainMenuState = () => ({
   screen: 'main-menu',

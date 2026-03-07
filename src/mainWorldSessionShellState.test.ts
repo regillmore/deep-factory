@@ -103,9 +103,28 @@ describe('resolveWorldSessionShellStateAfterPausedMainMenuTransition', () => {
 });
 
 describe('createWorldSessionShellStatePersistenceSummary', () => {
-  it('lists the paused-session shell toggles that resume from saved preferences and the reset paths that clear them', () => {
+  it('lists the paused-session shell toggles that resume from saved preferences plus the current saved on and off groups', () => {
     expect(createWorldSessionShellStatePersistenceSummary()).toEqual({
       resumedToggleLabels: ['Debug HUD', 'Edit Panel', 'Edit Overlays', 'Spawn Marker', 'Shortcuts'],
+      savedOnToggleLabels: [],
+      savedOffToggleLabels: ['Debug HUD', 'Edit Panel', 'Edit Overlays', 'Spawn Marker', 'Shortcuts'],
+      clearedByActionLabels: ['Reset Shell Toggles', 'New World']
+    });
+  });
+
+  it('groups the current saved shell layout into saved-on and saved-off labels', () => {
+    expect(
+      createWorldSessionShellStatePersistenceSummary({
+        debugOverlayVisible: true,
+        debugEditControlsVisible: false,
+        debugEditOverlaysVisible: true,
+        playerSpawnMarkerVisible: false,
+        shortcutsOverlayVisible: true
+      })
+    ).toEqual({
+      resumedToggleLabels: ['Debug HUD', 'Edit Panel', 'Edit Overlays', 'Spawn Marker', 'Shortcuts'],
+      savedOnToggleLabels: ['Debug HUD', 'Edit Overlays', 'Shortcuts'],
+      savedOffToggleLabels: ['Edit Panel', 'Spawn Marker'],
       clearedByActionLabels: ['Reset Shell Toggles', 'New World']
     });
   });

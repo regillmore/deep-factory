@@ -158,6 +158,14 @@ describe('resolveAppShellViewModel', () => {
             value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
           },
           {
+            label: 'Saved On',
+            value: 'None'
+          },
+          {
+            label: 'Saved Off',
+            value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+          },
+          {
             label: 'Cleared by',
             value: 'Reset Shell Toggles, New World'
           }
@@ -181,7 +189,7 @@ describe('resolveAppShellViewModel', () => {
     ]);
   });
 
-  it('adds a paused-menu persistence-summary card that inventories resumed shell toggles and reset paths', () => {
+  it('adds a paused-menu persistence-summary card that inventories resumed toggles plus the saved on and off layout preview', () => {
     const viewModel = resolveAppShellViewModel(createPausedMainMenuShellState());
 
     expect(viewModel.menuSections[2]).toEqual({
@@ -191,6 +199,49 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'Resumes',
           value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+        },
+        {
+          label: 'Saved On',
+          value: 'None'
+        },
+        {
+          label: 'Saved Off',
+          value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+        },
+        {
+          label: 'Cleared by',
+          value: 'Reset Shell Toggles, New World'
+        }
+      ]
+    });
+  });
+
+  it('derives paused-menu saved on and saved off rows from the current persisted shell layout', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState({
+        debugOverlayVisible: true,
+        debugEditControlsVisible: false,
+        debugEditOverlaysVisible: true,
+        playerSpawnMarkerVisible: false,
+        shortcutsOverlayVisible: true
+      })
+    );
+
+    expect(viewModel.menuSections[2]).toEqual({
+      title: 'Persistence Summary',
+      lines: ['Saved in-world shell visibility resumes with the paused session until a reset path clears it.'],
+      metadataRows: [
+        {
+          label: 'Resumes',
+          value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+        },
+        {
+          label: 'Saved On',
+          value: 'Debug HUD, Edit Overlays, Shortcuts'
+        },
+        {
+          label: 'Saved Off',
+          value: 'Edit Panel, Spawn Marker'
         },
         {
           label: 'Cleared by',
@@ -532,6 +583,14 @@ describe('createPausedMainMenuShellState', () => {
           metadataRows: [
             {
               label: 'Resumes',
+              value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+            },
+            {
+              label: 'Saved On',
+              value: 'None'
+            },
+            {
+              label: 'Saved Off',
               value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
             },
             {

@@ -525,7 +525,7 @@ const bootstrap = async (): Promise<void> => {
   };
   const showMainMenuShellState = (): void => {
     currentScreen = 'main-menu';
-    shell.setState(createMainMenuShellState(worldSessionStarted));
+    shell.setState(createMainMenuShellState(worldSessionStarted, readWorldSessionShellState()));
     syncWorldScreenShellVisibility();
   };
   const syncDebugOverlayVisibility = (): void => {
@@ -1622,6 +1622,7 @@ const bootstrap = async (): Promise<void> => {
   const resetPausedMainMenuShellTogglePreferences = (): void => {
     if (loop === null || !worldSessionStarted) return;
     applyPausedMainMenuWorldSessionShellTransition('reset-shell-toggle-preferences', 'clear');
+    showMainMenuShellState();
   };
 
   debugEditStatusStrip.setActionHandlers({

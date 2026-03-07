@@ -8,6 +8,8 @@ export interface WorldSessionShellState {
 
 export interface WorldSessionShellStatePersistenceSummary {
   resumedToggleLabels: readonly string[];
+  savedOnToggleLabels: readonly string[];
+  savedOffToggleLabels: readonly string[];
   clearedByActionLabels: readonly string[];
 }
 
@@ -25,13 +27,17 @@ export type PausedMainMenuWorldSessionShellTransition =
 
 const STORAGE_KEY = 'deep-factory.worldSessionShellState.v1';
 
-const PERSISTED_WORLD_SESSION_SHELL_TOGGLE_LABELS = [
-  'Debug HUD',
-  'Edit Panel',
-  'Edit Overlays',
-  'Spawn Marker',
-  'Shortcuts'
+const PERSISTED_WORLD_SESSION_SHELL_TOGGLE_LABELS_BY_KEY = [
+  ['debugOverlayVisible', 'Debug HUD'],
+  ['debugEditControlsVisible', 'Edit Panel'],
+  ['debugEditOverlaysVisible', 'Edit Overlays'],
+  ['playerSpawnMarkerVisible', 'Spawn Marker'],
+  ['shortcutsOverlayVisible', 'Shortcuts']
 ] as const;
+
+const PERSISTED_WORLD_SESSION_SHELL_TOGGLE_LABELS = PERSISTED_WORLD_SESSION_SHELL_TOGGLE_LABELS_BY_KEY.map(
+  ([, label]) => label
+);
 
 const WORLD_SESSION_SHELL_STATE_CLEAR_ACTION_LABELS = [
   'Reset Shell Toggles',
@@ -62,10 +68,28 @@ export const createDefaultWorldSessionShellState = (): WorldSessionShellState =>
 });
 
 export const createWorldSessionShellStatePersistenceSummary =
-  (): WorldSessionShellStatePersistenceSummary => ({
-    resumedToggleLabels: PERSISTED_WORLD_SESSION_SHELL_TOGGLE_LABELS,
-    clearedByActionLabels: WORLD_SESSION_SHELL_STATE_CLEAR_ACTION_LABELS
-  });
+  (
+    state: WorldSessionShellState = createDefaultWorldSessionShellState()
+  ): WorldSessionShellStatePersistenceSummary => {
+    const savedOnToggleLabels: string[] = [];
+    const savedOffToggleLabels: string[] = [];
+
+    for (const [key, label] of PERSISTED_WORLD_SESSION_SHELL_TOGGLE_LABELS_BY_KEY) {
+      if (state[key]) {
+        savedOnToggleLabels.push(label);
+        continue;
+      }
+
+      savedOffToggleLabels.push(label);
+    }
+
+    return {
+      resumedToggleLabels: PERSISTED_WORLD_SESSION_SHELL_TOGGLE_LABELS,
+      savedOnToggleLabels,
+      savedOffToggleLabels,
+      clearedByActionLabels: WORLD_SESSION_SHELL_STATE_CLEAR_ACTION_LABELS
+    };
+  };
 
 export const resolveWorldSessionShellStateAfterPausedMainMenuTransition = (
   currentState: WorldSessionShellState,

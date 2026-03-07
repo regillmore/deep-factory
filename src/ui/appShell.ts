@@ -10,7 +10,11 @@ import {
   getDesktopResumeWorldHotkeyLabel,
   getDesktopReturnToMainMenuHotkeyLabel
 } from '../input/debugEditShortcuts';
-import { createWorldSessionShellStatePersistenceSummary } from '../mainWorldSessionShellState';
+import {
+  createDefaultWorldSessionShellState,
+  createWorldSessionShellStatePersistenceSummary,
+  type WorldSessionShellState
+} from '../mainWorldSessionShellState';
 
 export type AppShellScreen = 'boot' | 'main-menu' | 'in-world';
 
@@ -53,82 +57,96 @@ export interface InWorldShellStateOptions {
 
 export const DEFAULT_PAUSED_MAIN_MENU_STATUS = 'World session paused.';
 export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [] as const;
-const PAUSED_MAIN_MENU_WORLD_SESSION_SHELL_STATE_PERSISTENCE_SUMMARY =
-  createWorldSessionShellStatePersistenceSummary();
-export const DEFAULT_PAUSED_MAIN_MENU_MENU_SECTIONS: readonly AppShellMenuSection[] = [
-  {
-    title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
-    lines: ['Continue with the current world, player state, and debug edits intact.'],
-    metadataRows: [
-      {
-        label: 'Shortcut',
-        value: getDesktopResumeWorldHotkeyLabel()
-      },
-      {
-        label: 'Consequence',
-        value: 'Keeps current world, player, camera, and edits.'
-      }
-    ],
-    tone: 'accent'
-  },
-  {
-    title: 'Reset Shell Toggles',
-    lines: [
-      `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
-    ],
-    metadataRows: [
-      {
-        label: 'Shortcut',
-        value: 'Button only'
-      },
-      {
-        label: 'Consequence',
-        value: 'Keeps the session but clears saved shell visibility.'
-      }
-    ]
-  },
-  {
-    title: 'Persistence Summary',
-    lines: ['Saved in-world shell visibility resumes with the paused session until a reset path clears it.'],
-    metadataRows: [
-      {
-        label: 'Resumes',
-        value:
-          PAUSED_MAIN_MENU_WORLD_SESSION_SHELL_STATE_PERSISTENCE_SUMMARY.resumedToggleLabels.join(
-            ', '
-          )
-      },
-      {
-        label: 'Cleared by',
-        value:
-          PAUSED_MAIN_MENU_WORLD_SESSION_SHELL_STATE_PERSISTENCE_SUMMARY.clearedByActionLabels.join(
-            ', '
-          )
-      }
-    ]
-  },
-  {
-    title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
-    lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
-    metadataRows: [
-      {
-        label: 'Shortcut',
-        value: getDesktopFreshWorldHotkeyLabel()
-      },
-      {
-        label: 'Consequence',
-        value: 'Replaces the current world, player, camera, and undo state.'
-      }
-    ],
-    tone: 'warning'
-  }
-] as const;
+const formatMenuSectionMetadataRowValue = (labels: readonly string[]): string =>
+  labels.length > 0 ? labels.join(', ') : 'None';
 
-export const createPausedMainMenuShellState = (): AppShellState => ({
+export const createPausedMainMenuMenuSections = (
+  worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState()
+): readonly AppShellMenuSection[] => {
+  const persistenceSummary = createWorldSessionShellStatePersistenceSummary(worldSessionShellState);
+  return [
+    {
+      title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
+      lines: ['Continue with the current world, player state, and debug edits intact.'],
+      metadataRows: [
+        {
+          label: 'Shortcut',
+          value: getDesktopResumeWorldHotkeyLabel()
+        },
+        {
+          label: 'Consequence',
+          value: 'Keeps current world, player, camera, and edits.'
+        }
+      ],
+      tone: 'accent'
+    },
+    {
+      title: 'Reset Shell Toggles',
+      lines: [
+        `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
+      ],
+      metadataRows: [
+        {
+          label: 'Shortcut',
+          value: 'Button only'
+        },
+        {
+          label: 'Consequence',
+          value: 'Keeps the session but clears saved shell visibility.'
+        }
+      ]
+    },
+    {
+      title: 'Persistence Summary',
+      lines: [
+        'Saved in-world shell visibility resumes with the paused session until a reset path clears it.'
+      ],
+      metadataRows: [
+        {
+          label: 'Resumes',
+          value: formatMenuSectionMetadataRowValue(persistenceSummary.resumedToggleLabels)
+        },
+        {
+          label: 'Saved On',
+          value: formatMenuSectionMetadataRowValue(persistenceSummary.savedOnToggleLabels)
+        },
+        {
+          label: 'Saved Off',
+          value: formatMenuSectionMetadataRowValue(persistenceSummary.savedOffToggleLabels)
+        },
+        {
+          label: 'Cleared by',
+          value: formatMenuSectionMetadataRowValue(persistenceSummary.clearedByActionLabels)
+        }
+      ]
+    },
+    {
+      title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
+      lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
+      metadataRows: [
+        {
+          label: 'Shortcut',
+          value: getDesktopFreshWorldHotkeyLabel()
+        },
+        {
+          label: 'Consequence',
+          value: 'Replaces the current world, player, camera, and undo state.'
+        }
+      ],
+      tone: 'warning'
+    }
+  ] as const;
+};
+
+export const DEFAULT_PAUSED_MAIN_MENU_MENU_SECTIONS = createPausedMainMenuMenuSections();
+
+export const createPausedMainMenuShellState = (
+  worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState()
+): AppShellState => ({
   screen: 'main-menu',
   statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
   detailLines: DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES,
-  menuSections: DEFAULT_PAUSED_MAIN_MENU_MENU_SECTIONS,
+  menuSections: createPausedMainMenuMenuSections(worldSessionShellState),
   primaryActionLabel: 'Resume World',
   secondaryActionLabel: 'New World',
   tertiaryActionLabel: 'Reset Shell Toggles'
@@ -212,9 +230,12 @@ export const createFirstLaunchMainMenuShellState = (): AppShellState => ({
   tertiaryActionLabel: null
 });
 
-export const createMainMenuShellState = (hasResumableWorldSession: boolean): AppShellState =>
+export const createMainMenuShellState = (
+  hasResumableWorldSession: boolean,
+  worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState()
+): AppShellState =>
   hasResumableWorldSession
-    ? createPausedMainMenuShellState()
+    ? createPausedMainMenuShellState(worldSessionShellState)
     : createFirstLaunchMainMenuShellState();
 
 export const createDefaultBootShellState = (): AppShellState => ({
