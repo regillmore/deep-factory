@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Refine, Refactor, Restructure
 
-278. Extract a shared touch debug armed-tool snapshot helper so `TouchDebugEditControls` initialization in `src/main.ts` reuses one flood-fill, line, rectangle, rectangle-outline, ellipse, and ellipse-outline read path, with focused runtime regressions.
+279. Extract a shared touch debug armed-tool apply helper so `syncArmedDebugToolControls()` in `src/main.ts` reuses one flood-fill, line, rectangle, rectangle-outline, ellipse, and ellipse-outline control-update path, with focused runtime regressions.

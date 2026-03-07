@@ -144,6 +144,14 @@ type KeyboardDebugEditControlShortcutAction = Extract<
 type DebugEditControlStateCommitAction =
   | { type: 'set-touch-mode'; mode: TouchDebugEditMode }
   | { type: 'set-panel-collapsed'; collapsed: boolean };
+type TouchDebugArmedToolSnapshot = {
+  floodFillKind: DebugTileEditKind | null;
+  lineKind: DebugTileEditKind | null;
+  rectKind: DebugTileEditKind | null;
+  rectOutlineKind: DebugTileEditKind | null;
+  ellipseKind: DebugTileEditKind | null;
+  ellipseOutlineKind: DebugTileEditKind | null;
+};
 const formatDebugBrushLabel = (tileName: string): string => tileName.replace(/_/g, ' ');
 const isEditableKeyboardShortcutTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
@@ -776,6 +784,14 @@ const bootstrap = async (): Promise<void> => {
     activeDebugBrushTileId = state.brushTileId;
     debugEditPanelCollapsed = state.panelCollapsed;
   };
+  const readTouchDebugArmedToolSnapshot = (): TouchDebugArmedToolSnapshot => ({
+    floodFillKind: input.getArmedDebugFloodFillKind(),
+    lineKind: input.getArmedDebugLineKind(),
+    rectKind: input.getArmedDebugRectKind(),
+    rectOutlineKind: input.getArmedDebugRectOutlineKind(),
+    ellipseKind: input.getArmedDebugEllipseKind(),
+    ellipseOutlineKind: input.getArmedDebugEllipseOutlineKind()
+  });
 
   restoreDebugEditControlPreferences(initialDebugEditControlState);
 
@@ -1245,6 +1261,7 @@ const bootstrap = async (): Promise<void> => {
   };
 
   const initialDebugEditControlPreferenceSnapshot = readDebugEditControlPreferenceSnapshot();
+  const initialTouchDebugArmedToolSnapshot = readTouchDebugArmedToolSnapshot();
   debugEditControls = new TouchDebugEditControls({
     initialVisible: false,
     initialMode: initialDebugEditControlPreferenceSnapshot.touchMode,
@@ -1266,12 +1283,12 @@ const bootstrap = async (): Promise<void> => {
         collapsed
       });
     },
-    initialArmedFloodFillKind: input.getArmedDebugFloodFillKind(),
-    initialArmedLineKind: input.getArmedDebugLineKind(),
-    initialArmedRectKind: input.getArmedDebugRectKind(),
-    initialArmedRectOutlineKind: input.getArmedDebugRectOutlineKind(),
-    initialArmedEllipseKind: input.getArmedDebugEllipseKind(),
-    initialArmedEllipseOutlineKind: input.getArmedDebugEllipseOutlineKind(),
+    initialArmedFloodFillKind: initialTouchDebugArmedToolSnapshot.floodFillKind,
+    initialArmedLineKind: initialTouchDebugArmedToolSnapshot.lineKind,
+    initialArmedRectKind: initialTouchDebugArmedToolSnapshot.rectKind,
+    initialArmedRectOutlineKind: initialTouchDebugArmedToolSnapshot.rectOutlineKind,
+    initialArmedEllipseKind: initialTouchDebugArmedToolSnapshot.ellipseKind,
+    initialArmedEllipseOutlineKind: initialTouchDebugArmedToolSnapshot.ellipseOutlineKind,
     onArmFloodFill: (kind) => {
       toggleArmedDebugFloodFillKind(kind);
     },

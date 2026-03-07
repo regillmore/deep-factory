@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Touch debug armed-tool reads should share one snapshot helper
+
+- Decision: Current touch debug armed-tool reads in `src/main.ts` should route through a shared `readTouchDebugArmedToolSnapshot()` helper, and `TouchDebugEditControls` initialization should consume that snapshot instead of reading flood-fill, line, rectangle, rectangle-outline, ellipse, and ellipse-outline kinds separately.
+- Reason: Those constructor reads already target one runtime armed-tool state surface, so leaving them split across six direct input-controller queries makes the touch-control boot path easier to drift from focused regressions.
+- Consequence: Future `src/main.ts` work that needs the current touch debug armed-tool state should extend the shared snapshot helper and its runtime regressions instead of adding another ad hoc cluster of per-tool reads.
+
 ### 2026-03-07: Debug-edit preference reads should share one snapshot helper
 
 - Decision: Current debug-edit preference reads in `src/main.ts` should route through a shared `readDebugEditControlPreferenceSnapshot()` helper, and both persisted writes plus `TouchDebugEditControls` initialization should consume that snapshot instead of reading `touchMode`, `brushTileId`, and `panelCollapsed` separately.

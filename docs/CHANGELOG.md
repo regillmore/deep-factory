@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared touch debug armed-tool snapshot helper so `TouchDebugEditControls` initialization in `src/main.ts` reuses one flood-fill, line, rectangle, rectangle-outline, ellipse, and ellipse-outline read path.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `readTouchDebugArmedToolSnapshot()` helper reused by `TouchDebugEditControls` initialization, expanded [src/main.test.ts](../src/main.test.ts) so the mocked input controller can seed initial armed one-shot tool state and the runtime regression can verify the touch-controls constructor receives that same six-tool snapshot, removed completed task `278` from [docs/NEXT.md](docs/NEXT.md), added replacement task `279`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` (rerun with escalation after sandbox `spawn EPERM`) and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared debug-edit preference snapshot helper so touch-control initialization and persistence writes in `src/main.ts` reuse one mode, brush, and collapsed-state read path.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `readDebugEditControlPreferenceSnapshot()` helper reused by persisted debug-edit writes and `TouchDebugEditControls` initialization, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that records the hydrated touch-control constructor state and verifies later persisted writes stay aligned with that same snapshot surface, removed completed task `277` from [docs/NEXT.md](docs/NEXT.md), added replacement task `278`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` (rerun with escalation after sandbox `spawn EPERM`) and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
