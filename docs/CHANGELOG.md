@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Add a sunlight regression where toggling a boundary `blocksLight` tile then unloading and reloading the adjacent boundary chunk preserves transported boundary-adjacent and recessed-gap solid-face sunlight on both sides.
+- Changes: Expanded [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with mirrored left-to-right and right-to-left stream-back regressions that keep same-row boundary-adjacent and recessed-gap solid-face sunlight lit after the neighboring boundary chunk unloads and reloads, removed completed task `217` from [docs/NEXT.md](docs/NEXT.md), and added replacement task `319`.
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu persistence-summary fallback copy that explains when invalid saved shell-action keybindings defaulted back to the safe in-world set during load.
 - Changes: Updated [src/input/shellActionKeybindings.ts](../src/input/shellActionKeybindings.ts) with a shared load-result helper that reports when persisted keybindings default back to the safe set, wired [src/main.ts](../src/main.ts) and [src/ui/appShell.ts](../src/ui/appShell.ts) so paused-menu `Persistence Summary` copy reflects that load-fallback state, refreshed [src/input/shellActionKeybindings.test.ts](../src/input/shellActionKeybindings.test.ts), [src/ui/appShell.test.ts](../src/ui/appShell.test.ts), and [src/main.test.ts](../src/main.test.ts) with focused storage and runtime regressions, removed completed task `317` from [docs/NEXT.md](docs/NEXT.md), added replacement task `318`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/input/shellActionKeybindings.test.ts src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

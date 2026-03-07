@@ -331,6 +331,123 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
 
+  it('preserves streamed-back boundary-adjacent and recessed-gap solid-face sunlight when a boundary blocker opens on either side', () => {
+    const createBoundaryWorld = (): TileWorld => {
+      const world = new TileWorld(0);
+      world.ensureChunk(0, -1);
+      world.ensureChunk(1, -1);
+      return world;
+    };
+    const leftExteriorWorldTileX = CHUNK_SIZE - 3;
+    const leftInteriorWorldTileX = CHUNK_SIZE - 2;
+    const leftBoundaryWorldTileX = CHUNK_SIZE - 1;
+    const rightBoundaryWorldTileX = CHUNK_SIZE;
+    const rightInteriorWorldTileX = CHUNK_SIZE + 1;
+    const rightExteriorWorldTileX = CHUNK_SIZE + 2;
+    const topShadowWorldTileY = -4;
+    const boundarySolidWorldTileY = -3;
+    const recessedGapWorldTileY = -2;
+    const recessedSolidWorldTileY = -1;
+    const expectSolidFaceLightLevels = (
+      world: TileWorld,
+      targetWorldTileX: number,
+      expectedLightLevel: number
+    ): void => {
+      expect(world.getLightLevel(targetWorldTileX, boundarySolidWorldTileY)).toBe(expectedLightLevel);
+      expect(world.getLightLevel(targetWorldTileX, recessedSolidWorldTileY)).toBe(expectedLightLevel);
+    };
+    const initializeLeftToRightWorld = (world: TileWorld): void => {
+      for (let worldTileY = -CHUNK_SIZE; worldTileY <= recessedSolidWorldTileY; worldTileY += 1) {
+        world.setTile(leftBoundaryWorldTileX, worldTileY, 0);
+      }
+      world.setTile(leftBoundaryWorldTileX, boundarySolidWorldTileY, 1);
+
+      world.setTile(rightBoundaryWorldTileX, topShadowWorldTileY, 1);
+      world.setTile(rightBoundaryWorldTileX, boundarySolidWorldTileY, 0);
+      world.setTile(rightBoundaryWorldTileX, recessedGapWorldTileY, 0);
+
+      world.setTile(rightInteriorWorldTileX, topShadowWorldTileY, 1);
+      world.setTile(rightInteriorWorldTileX, boundarySolidWorldTileY, 1);
+      world.setTile(rightInteriorWorldTileX, recessedGapWorldTileY, 0);
+      world.setTile(rightInteriorWorldTileX, recessedSolidWorldTileY, 1);
+
+      world.setTile(rightExteriorWorldTileX, topShadowWorldTileY, 1);
+      world.setTile(rightExteriorWorldTileX, boundarySolidWorldTileY, 1);
+      world.setTile(rightExteriorWorldTileX, recessedGapWorldTileY, 1);
+      world.setTile(rightExteriorWorldTileX, recessedSolidWorldTileY, 1);
+    };
+    const initializeRightToLeftWorld = (world: TileWorld): void => {
+      for (let worldTileY = -CHUNK_SIZE; worldTileY <= recessedSolidWorldTileY; worldTileY += 1) {
+        world.setTile(rightBoundaryWorldTileX, worldTileY, 0);
+      }
+      world.setTile(rightBoundaryWorldTileX, boundarySolidWorldTileY, 1);
+
+      world.setTile(leftBoundaryWorldTileX, topShadowWorldTileY, 1);
+      world.setTile(leftBoundaryWorldTileX, boundarySolidWorldTileY, 0);
+      world.setTile(leftBoundaryWorldTileX, recessedGapWorldTileY, 0);
+
+      world.setTile(leftInteriorWorldTileX, topShadowWorldTileY, 1);
+      world.setTile(leftInteriorWorldTileX, boundarySolidWorldTileY, 1);
+      world.setTile(leftInteriorWorldTileX, recessedGapWorldTileY, 0);
+      world.setTile(leftInteriorWorldTileX, recessedSolidWorldTileY, 1);
+
+      world.setTile(leftExteriorWorldTileX, topShadowWorldTileY, 1);
+      world.setTile(leftExteriorWorldTileX, boundarySolidWorldTileY, 1);
+      world.setTile(leftExteriorWorldTileX, recessedGapWorldTileY, 1);
+      world.setTile(leftExteriorWorldTileX, recessedSolidWorldTileY, 1);
+    };
+
+    const leftToRightWorld = createBoundaryWorld();
+    initializeLeftToRightWorld(leftToRightWorld);
+
+    recomputeSunlightFromExposedChunkTops(leftToRightWorld);
+    expectSolidFaceLightLevels(leftToRightWorld, rightInteriorWorldTileX, 0);
+
+    expect(leftToRightWorld.setTile(leftBoundaryWorldTileX, boundarySolidWorldTileY, 0)).toBe(true);
+    expect(recomputeSunlightFromExposedChunkTops(leftToRightWorld)).toBe(3);
+    expectSolidFaceLightLevels(leftToRightWorld, rightInteriorWorldTileX, MAX_LIGHT_LEVEL);
+
+    expect(
+      leftToRightWorld.pruneChunksOutside({
+        minChunkX: 0,
+        minChunkY: -1,
+        maxChunkX: 0,
+        maxChunkY: -1
+      })
+    ).toBe(2);
+    expect(leftToRightWorld.getChunkCount()).toBe(1);
+
+    leftToRightWorld.ensureChunk(1, -1);
+    expect(recomputeSunlightFromExposedChunkTops(leftToRightWorld)).toBe(1);
+    expectSolidFaceLightLevels(leftToRightWorld, rightInteriorWorldTileX, MAX_LIGHT_LEVEL);
+    expect(leftToRightWorld.getDirtyLightChunkCount()).toBe(0);
+
+    const rightToLeftWorld = createBoundaryWorld();
+    initializeRightToLeftWorld(rightToLeftWorld);
+
+    recomputeSunlightFromExposedChunkTops(rightToLeftWorld);
+    expectSolidFaceLightLevels(rightToLeftWorld, leftInteriorWorldTileX, 0);
+
+    expect(rightToLeftWorld.setTile(rightBoundaryWorldTileX, boundarySolidWorldTileY, 0)).toBe(true);
+    expect(recomputeSunlightFromExposedChunkTops(rightToLeftWorld)).toBe(3);
+    expectSolidFaceLightLevels(rightToLeftWorld, leftInteriorWorldTileX, MAX_LIGHT_LEVEL);
+
+    expect(
+      rightToLeftWorld.pruneChunksOutside({
+        minChunkX: 1,
+        minChunkY: -1,
+        maxChunkX: 1,
+        maxChunkY: -1
+      })
+    ).toBe(2);
+    expect(rightToLeftWorld.getChunkCount()).toBe(1);
+
+    rightToLeftWorld.ensureChunk(0, -1);
+    expect(recomputeSunlightFromExposedChunkTops(rightToLeftWorld)).toBe(1);
+    expectSolidFaceLightLevels(rightToLeftWorld, leftInteriorWorldTileX, MAX_LIGHT_LEVEL);
+    expect(rightToLeftWorld.getDirtyLightChunkCount()).toBe(0);
+  });
+
   it('updates transported sunlight symmetrically when non-emissive boundary blockers toggle on either side', () => {
     const createBoundaryWorld = (): TileWorld => {
       const world = new TileWorld(0);
