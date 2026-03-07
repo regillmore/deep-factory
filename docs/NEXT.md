@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Refine, Refactor, Restructure
 
-293. Extract a shared standalone-player fixed-step contact-sampling helper so previous and next collision-contact reads in `src/main.ts` reuse one pre/post-step query path, with focused runtime regressions.
+294. Extract a shared standalone-player fixed-step result helper so next player state, contact snapshot, and transition snapshot in `src/main.ts` reuse one pre-commit build path, with focused runtime regressions.

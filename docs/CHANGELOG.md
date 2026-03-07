@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared standalone-player fixed-step contact-sampling helper so previous and next collision-contact reads in `src/main.ts` reuse one pre/post-step query path.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `createStandalonePlayerFixedStepContactSnapshot()` helper for standalone-player fixed-step collision-contact queries, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that records the pre-step and post-step player states used for collision-contact sampling while preserving blocked wall and ceiling transition coverage, removed completed task `293` from [docs/NEXT.md](docs/NEXT.md), added replacement task `294`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared standalone-player fixed-step transition-snapshot helper so grounded, facing, wall-contact, and ceiling-contact transition resolution in `src/main.ts` reuses one pre-commit build path.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `createStandalonePlayerFixedStepTransitionSnapshot()` helper for standalone-player fixed-step transition resolution, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression covering jump-sensitive grounded resolution plus blocked and cleared contact transitions from the shared snapshot path, removed completed task `292` from [docs/NEXT.md](docs/NEXT.md), added replacement task `293`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

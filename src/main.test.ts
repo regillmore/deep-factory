@@ -181,6 +181,12 @@ const testRuntime = vi.hoisted(() => {
       wall: { tileX: number; tileY: number; tileId: number; side: 'left' | 'right' } | null;
       ceiling: { tileX: number; tileY: number; tileId: number } | null;
     }>,
+    rendererPlayerCollisionContactRequestStates: [] as Array<{
+      position: { x: number; y: number } | null;
+      velocity: { x: number; y: number } | null;
+      grounded: boolean | null;
+      facing: 'left' | 'right' | null;
+    }>,
     latestDebugEditStatusStripState: null as DebugEditStatusStripState | null,
     playerSpawnPoint: null as null | {
       anchorTileX: number;
@@ -278,7 +284,31 @@ vi.mock('./gl/renderer', () => ({
       return state;
     }
 
-    getPlayerCollisionContacts() {
+    getPlayerCollisionContacts(state?: unknown) {
+      if (state && typeof state === 'object') {
+        const playerState = state as {
+          position?: { x?: number; y?: number };
+          velocity?: { x?: number; y?: number };
+          grounded?: boolean;
+          facing?: 'left' | 'right';
+        };
+        testRuntime.rendererPlayerCollisionContactRequestStates.push({
+          position:
+            playerState.position &&
+            typeof playerState.position.x === 'number' &&
+            typeof playerState.position.y === 'number'
+              ? { x: playerState.position.x, y: playerState.position.y }
+              : null,
+          velocity:
+            playerState.velocity &&
+            typeof playerState.velocity.x === 'number' &&
+            typeof playerState.velocity.y === 'number'
+              ? { x: playerState.velocity.x, y: playerState.velocity.y }
+              : null,
+          grounded: typeof playerState.grounded === 'boolean' ? playerState.grounded : null,
+          facing: playerState.facing ?? null
+        });
+      }
       const queuedContacts = testRuntime.rendererPlayerCollisionContactsQueue.shift();
       if (queuedContacts) {
         return queuedContacts;
@@ -1120,6 +1150,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererStepPlayerStateImpl = null;
     testRuntime.rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl = null;
     testRuntime.rendererPlayerCollisionContactsQueue = [];
+    testRuntime.rendererPlayerCollisionContactRequestStates = [];
     testRuntime.latestDebugEditStatusStripState = null;
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint();
     testRuntime.gameLoopStartCount = 0;
@@ -2152,6 +2183,94 @@ describe('main.ts shell state orchestration', () => {
       },
       position: jumpedPlayerState.position,
       velocity: jumpedPlayerState.velocity
+    });
+  });
+
+  it('routes standalone-player fixed-step contact sampling through one shared pre/post-step helper', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const previousContacts = {
+      support: {
+        tileX: 0,
+        tileY: 0,
+        tileId: 1
+      },
+      wall: null,
+      ceiling: null
+    };
+    const nextContacts = {
+      support: null,
+      wall: {
+        tileX: 2,
+        tileY: -1,
+        tileId: 9,
+        side: 'right' as const
+      },
+      ceiling: {
+        tileX: 1,
+        tileY: -3,
+        tileId: 10
+      }
+    };
+    const steppedPlayerState = {
+      position: { x: 24, y: -12 },
+      velocity: { x: 120, y: -180 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'right' as const
+    };
+
+    testRuntime.rendererPlayerCollisionContactRequestStates = [];
+    testRuntime.rendererStepPlayerStateImpl = () => steppedPlayerState;
+    testRuntime.rendererPlayerCollisionContactsQueue = [previousContacts, nextContacts, nextContacts];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererPlayerCollisionContactRequestStates).toEqual([
+      {
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        grounded: true,
+        facing: 'right'
+      },
+      {
+        position: steppedPlayerState.position,
+        velocity: steppedPlayerState.velocity,
+        grounded: steppedPlayerState.grounded,
+        facing: steppedPlayerState.facing
+      }
+    ]);
+
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest debug status strip state after sampled-contact step');
+    }
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: 2,
+        y: -1,
+        id: 9,
+        side: 'right'
+      },
+      position: steppedPlayerState.position,
+      velocity: steppedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContactTransition).toMatchObject({
+      kind: 'blocked',
+      tile: {
+        x: 1,
+        y: -3,
+        id: 10
+      },
+      position: steppedPlayerState.position,
+      velocity: steppedPlayerState.velocity
     });
   });
 

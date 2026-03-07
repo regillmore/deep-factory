@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Standalone-player fixed-step contact sampling should share one helper
+
+- Decision: Previous-state and next-state collision-contact queries in `src/main.ts` should route through a shared `createStandalonePlayerFixedStepContactSnapshot()` helper before transition resolution runs.
+- Reason: Those two contact reads form one fixed-step collision-contact sampling contract around the standalone-player step, so leaving them inline makes later contact-query changes easier to drift from the shared transition snapshot path and focused runtime regressions.
+- Consequence: Future standalone-player fixed-step contact-query changes should extend the shared contact-snapshot helper and its runtime regression instead of reintroducing separate pre-step and post-step `getPlayerCollisionContacts()` calls in `src/main.ts`.
+
 ### 2026-03-07: Standalone-player fixed-step transition resolution should share one snapshot helper
 
 - Decision: Grounded, facing, wall-contact, and ceiling-contact transition resolution in `src/main.ts` should route through a shared `createStandalonePlayerFixedStepTransitionSnapshot()` helper before the post-step commit path runs.

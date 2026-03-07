@@ -206,6 +206,14 @@ type StandalonePlayerFixedStepTransitionSnapshot = {
   wallContactTransitionEvent: PlayerWallContactTransitionEvent | null;
   ceilingContactTransitionEvent: PlayerCeilingContactTransitionEvent | null;
 };
+type StandalonePlayerFixedStepContactSnapshot = {
+  previousPlayerContacts: PlayerCollisionContacts;
+  nextPlayerContacts: PlayerCollisionContacts;
+};
+type StandalonePlayerFixedStepContactSnapshotOptions = {
+  previousPlayerState: PlayerState;
+  nextPlayerState: PlayerState;
+};
 type StandalonePlayerFixedStepTransitionSnapshotOptions = {
   previousPlayerState: PlayerState;
   nextPlayerState: PlayerState;
@@ -773,6 +781,13 @@ const bootstrap = async (): Promise<void> => {
     lastPlayerCeilingContactTransitionEvent = null;
     standalonePlayerCeilingBonkHoldUntilTimeMs = null;
   };
+  const createStandalonePlayerFixedStepContactSnapshot = ({
+    previousPlayerState,
+    nextPlayerState
+  }: StandalonePlayerFixedStepContactSnapshotOptions): StandalonePlayerFixedStepContactSnapshot => ({
+    previousPlayerContacts: renderer.getPlayerCollisionContacts(previousPlayerState),
+    nextPlayerContacts: renderer.getPlayerCollisionContacts(nextPlayerState)
+  });
   const createStandalonePlayerFixedStepTransitionSnapshot = ({
     previousPlayerState,
     nextPlayerState,
@@ -2083,18 +2098,20 @@ const bootstrap = async (): Promise<void> => {
 
       if (standalonePlayerState) {
         const playerMovementIntent = input.getPlayerMovementIntent();
-        const previousPlayerContacts = renderer.getPlayerCollisionContacts(standalonePlayerState);
         const nextPlayerState = renderer.stepPlayerState(
           standalonePlayerState,
           fixedDt,
           playerMovementIntent
         );
-        const nextPlayerContacts = renderer.getPlayerCollisionContacts(nextPlayerState);
+        const playerFixedStepContactSnapshot = createStandalonePlayerFixedStepContactSnapshot({
+          previousPlayerState: standalonePlayerState,
+          nextPlayerState
+        });
         const playerFixedStepTransitionSnapshot = createStandalonePlayerFixedStepTransitionSnapshot({
           previousPlayerState: standalonePlayerState,
           nextPlayerState,
-          previousPlayerContacts,
-          nextPlayerContacts,
+          previousPlayerContacts: playerFixedStepContactSnapshot.previousPlayerContacts,
+          nextPlayerContacts: playerFixedStepContactSnapshot.nextPlayerContacts,
           playerMovementIntent
         });
         standalonePlayerState = nextPlayerState;
