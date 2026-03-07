@@ -89,6 +89,13 @@ const testRuntime = vi.hoisted(() => {
       undoStrokeCount: number;
       redoStrokeCount: number;
     },
+    debugEditControlsLatestHistoryState: null as null | {
+      undoStrokeCount: number;
+      redoStrokeCount: number;
+    },
+    debugEditControlsSetVisibleCallCount: 0,
+    debugEditControlsSetHistoryStateCallCount: 0,
+    debugEditControlsArmedToolSetterCallCount: 0,
     debugEditControlsInitialArmedToolSnapshot: null as null | {
       floodFillKind: 'place' | 'break' | null;
       lineKind: 'place' | 'break' | null;
@@ -522,6 +529,7 @@ vi.mock('./ui/debugOverlay', () => ({
 
     setVisible(visible: boolean): void {
       this.visible = visible;
+      testRuntime.debugEditControlsSetVisibleCallCount += 1;
     }
 
     update(): void {}
@@ -774,35 +782,47 @@ vi.mock('./ui/touchDebugEditControls', () => ({
       this.onResetPrefs();
     }
 
-    setHistoryState(): void {}
+    setHistoryState(historyState: { undoStrokeCount: number; redoStrokeCount: number }): void {
+      testRuntime.debugEditControlsSetHistoryStateCallCount += 1;
+      testRuntime.debugEditControlsLatestHistoryState = {
+        undoStrokeCount: historyState.undoStrokeCount,
+        redoStrokeCount: historyState.redoStrokeCount
+      };
+    }
 
     setArmedFloodFillKind(kind: 'place' | 'break' | null): void {
       this.armedFloodFillKind = kind;
+      testRuntime.debugEditControlsArmedToolSetterCallCount += 1;
       this.syncArmedToolKinds();
     }
 
     setArmedLineKind(kind: 'place' | 'break' | null): void {
       this.armedLineKind = kind;
+      testRuntime.debugEditControlsArmedToolSetterCallCount += 1;
       this.syncArmedToolKinds();
     }
 
     setArmedRectKind(kind: 'place' | 'break' | null): void {
       this.armedRectKind = kind;
+      testRuntime.debugEditControlsArmedToolSetterCallCount += 1;
       this.syncArmedToolKinds();
     }
 
     setArmedRectOutlineKind(kind: 'place' | 'break' | null): void {
       this.armedRectOutlineKind = kind;
+      testRuntime.debugEditControlsArmedToolSetterCallCount += 1;
       this.syncArmedToolKinds();
     }
 
     setArmedEllipseKind(kind: 'place' | 'break' | null): void {
       this.armedEllipseKind = kind;
+      testRuntime.debugEditControlsArmedToolSetterCallCount += 1;
       this.syncArmedToolKinds();
     }
 
     setArmedEllipseOutlineKind(kind: 'place' | 'break' | null): void {
       this.armedEllipseOutlineKind = kind;
+      testRuntime.debugEditControlsArmedToolSetterCallCount += 1;
       this.syncArmedToolKinds();
     }
   }
@@ -972,6 +992,10 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugOverlayInstance = null;
     testRuntime.debugEditControlsInitialPreferenceSnapshot = null;
     testRuntime.debugEditControlsInitialHistoryState = null;
+    testRuntime.debugEditControlsLatestHistoryState = null;
+    testRuntime.debugEditControlsSetVisibleCallCount = 0;
+    testRuntime.debugEditControlsSetHistoryStateCallCount = 0;
+    testRuntime.debugEditControlsArmedToolSetterCallCount = 0;
     testRuntime.debugEditControlsInitialArmedToolSnapshot = null;
     testRuntime.debugEditControlsArmedToolKinds = null;
     testRuntime.debugEditControlsInstance = null;
@@ -1424,15 +1448,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
   });
 
-  it('routes touch-control constructor wiring through one shared builder for preferences, armed tools, history, and reset handling', async () => {
-    testRuntime.storageValues.set(
-      DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY,
-      JSON.stringify({
-        touchMode: 'break',
-        brushTileId: 4,
-        panelCollapsed: true
-      })
-    );
+  it('routes touch-control bootstrap through one shared helper for construction plus visibility, history, armed-tool, and persistence sync', async () => {
     testRuntime.initialArmedToolKinds = {
       floodFillKind: 'place',
       lineKind: 'break',
@@ -1450,14 +1466,21 @@ describe('main.ts shell state orchestration', () => {
     await flushBootstrap();
 
     expect(testRuntime.debugEditControlsInitialPreferenceSnapshot).toEqual({
-      touchMode: 'break',
-      brushTileId: 4,
-      panelCollapsed: true
+      touchMode: 'pan',
+      brushTileId: 3,
+      panelCollapsed: false
     });
     expect(testRuntime.debugEditControlsInitialHistoryState).toEqual({
       undoStrokeCount: 2,
       redoStrokeCount: 1
     });
+    expect(testRuntime.debugEditControlsLatestHistoryState).toEqual({
+      undoStrokeCount: 2,
+      redoStrokeCount: 1
+    });
+    expect(testRuntime.debugEditControlsSetVisibleCallCount).toBeGreaterThan(0);
+    expect(testRuntime.debugEditControlsSetHistoryStateCallCount).toBeGreaterThan(0);
+    expect(testRuntime.debugEditControlsArmedToolSetterCallCount).toBe(6);
     expect(readArmedToolKinds()).toEqual({
       floodFillKind: 'place',
       lineKind: 'break',
@@ -1481,6 +1504,12 @@ describe('main.ts shell state orchestration', () => {
       rectOutlineKind: 'break',
       ellipseKind: 'place',
       ellipseOutlineKind: 'break'
+    });
+    expect(testRuntime.storageValues.has(DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY)).toBe(true);
+    expect(readPersistedDebugEditControlState()).toMatchObject({
+      touchMode: 'pan',
+      brushTileId: 3,
+      panelCollapsed: false
     });
 
     expect(testRuntime.debugEditControlsInstance).not.toBeNull();

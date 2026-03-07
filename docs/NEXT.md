@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Refine, Refactor, Restructure
 
-287. Extract a shared touch debug control bootstrap helper so `src/main.ts` reuses one `TouchDebugEditControls` creation plus post-construction visibility, history, armed-tool, and persistence sync sequence, with focused runtime regressions.
+288. Extract a shared fresh-world debug-edit reset helper so `resetFreshWorldSessionRuntimeState()` in `src/main.ts` reuses one history replacement, armed-tool cancel, and touch-control sync path, with focused runtime regressions.

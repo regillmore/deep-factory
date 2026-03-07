@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Touch debug control bootstrap should share one helper
+
+- Decision: `TouchDebugEditControls` creation in `src/main.ts` should route through a shared `bootstrapTouchDebugEditControls()` helper that both constructs the controls and immediately runs visibility, history, armed-tool, and persistence sync on the created instance.
+- Reason: The constructor call and its immediate follow-up sync steps define one bootstrap contract, so leaving them split across separate statements makes the touch debug control startup path easier to drift from focused regressions.
+- Consequence: Future touch debug control startup changes should extend the bootstrap helper and its runtime regression instead of reintroducing ad hoc post-construction sync calls beside the `TouchDebugEditControls` constructor.
+
 ### 2026-03-07: Touch debug control constructor wiring should share one builder
 
 - Decision: `TouchDebugEditControls` constructor props in `src/main.ts` should route through a shared `createTouchDebugEditControlConstructorOptions()` helper that combines preference hydration, armed-tool wiring, initial history state, undo or redo callbacks, and reset wiring.

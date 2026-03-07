@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared touch debug control bootstrap helper so `src/main.ts` reuses one `TouchDebugEditControls` creation plus post-construction visibility, history, armed-tool, and persistence sync sequence.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `bootstrapTouchDebugEditControls()` helper that now owns control construction and the immediate visibility, history, armed-tool, and persistence sync sequence, expanded [src/main.test.ts](../src/main.test.ts) so the focused runtime regression records post-construction visibility, history, and armed-tool sync activity alongside persisted control-state writes, removed completed task `287` from [docs/NEXT.md](docs/NEXT.md), added replacement task `288`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared touch debug control constructor-option builder so `TouchDebugEditControls` initialization in `src/main.ts` reuses one combined preference, armed-tool, history, and reset wiring path.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `createTouchDebugEditControlConstructorOptions()` helper that combines preference hydration, armed-tool constructor wiring, initial history state, undo or redo callbacks, and reset handling for `TouchDebugEditControls`, expanded [src/main.test.ts](../src/main.test.ts) so the focused runtime regression now verifies seeded preferences, armed-tool state, initial history counts, undo or redo callback wiring, and reset behavior through the same constructed touch-controls instance, removed completed task `286` from [docs/NEXT.md](docs/NEXT.md), added replacement task `287`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

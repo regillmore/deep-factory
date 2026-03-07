@@ -1185,17 +1185,25 @@ const bootstrap = async (): Promise<void> => {
     onRedo: redoDebugTileStroke,
     onResetPrefs: resetDebugEditControlPrefs
   });
+  const bootstrapTouchDebugEditControls = (): TouchDebugEditControls => {
+    const initialDebugEditControlPreferenceSnapshot = readDebugEditControlPreferenceSnapshot();
+    const initialTouchDebugArmedToolSnapshot = readTouchDebugArmedToolSnapshot();
+    const controls = new TouchDebugEditControls({
+      initialVisible: false,
+      ...createTouchDebugEditControlConstructorOptions(
+        initialDebugEditControlPreferenceSnapshot,
+        initialTouchDebugArmedToolSnapshot
+      )
+    });
+    debugEditControls = controls;
+    syncDebugEditControlsVisibility();
+    syncDebugEditHistoryControls();
+    syncArmedDebugToolControls();
+    persistDebugEditControlsState();
+    return controls;
+  };
 
-  const initialDebugEditControlPreferenceSnapshot = readDebugEditControlPreferenceSnapshot();
-  const initialTouchDebugArmedToolSnapshot = readTouchDebugArmedToolSnapshot();
-  debugEditControls = new TouchDebugEditControls({
-    initialVisible: false,
-    ...createTouchDebugEditControlConstructorOptions(
-      initialDebugEditControlPreferenceSnapshot,
-      initialTouchDebugArmedToolSnapshot
-    )
-  });
-  syncDebugEditControlsVisibility();
+  debugEditControls = bootstrapTouchDebugEditControls();
   if (touchControlsAvailable) {
     new TouchPlayerControls({
       onMoveLeftHeldChange: (held) => {
@@ -1209,9 +1217,6 @@ const bootstrap = async (): Promise<void> => {
       }
     });
   }
-  syncDebugEditHistoryControls();
-  syncArmedDebugToolControls();
-  persistDebugEditControlsState();
 
   const applyDebugBrushShortcutTileId = (tileId: number): boolean => {
     const previousBrushTileId = activeDebugBrushTileId;
