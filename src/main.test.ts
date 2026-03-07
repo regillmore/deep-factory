@@ -58,6 +58,14 @@ const testRuntime = vi.hoisted(() => {
       stateHistory: unknown[];
       options: Record<string, (screen: string) => void>;
     },
+    inputControllerInstance: null as null | {
+      getArmedDebugFloodFillKind(): 'place' | 'break' | null;
+      getArmedDebugLineKind(): 'place' | 'break' | null;
+      getArmedDebugRectKind(): 'place' | 'break' | null;
+      getArmedDebugRectOutlineKind(): 'place' | 'break' | null;
+      getArmedDebugEllipseKind(): 'place' | 'break' | null;
+      getArmedDebugEllipseOutlineKind(): 'place' | 'break' | null;
+    },
     debugOverlayInstance: null as null | { visible: boolean },
     debugEditControlsInstance: null as null | { visible: boolean },
     hoveredTileCursorInstance: null as null | { visible: boolean },
@@ -70,6 +78,7 @@ const testRuntime = vi.hoisted(() => {
     debugHistoryUndoCallCount: 0,
     debugHistoryRedoCallCount: 0,
     debugHistoryShortcutActions: [] as Array<'undo' | 'redo'>,
+    cancelArmedDebugToolsCallCount: 0,
     playerSpawnPoint: null as null | {
       anchorTileX: number;
       standingTileY: number;
@@ -210,6 +219,10 @@ vi.mock('./input/controller', () => ({
     private armedEllipseKind: 'place' | 'break' | null = null;
     private armedEllipseOutlineKind: 'place' | 'break' | null = null;
 
+    constructor() {
+      testRuntime.inputControllerInstance = this;
+    }
+
     retainPointerInspectWhenLeavingToElement(): void {}
 
     getTouchDebugEditMode(): 'pan' | 'place' | 'break' {
@@ -269,7 +282,25 @@ vi.mock('./input/controller', () => ({
     }
 
     cancelArmedDebugTools(): boolean {
-      return false;
+      testRuntime.cancelArmedDebugToolsCallCount += 1;
+      const hadArmedTools =
+        this.armedDesktopInspectPin ||
+        this.armedFloodFillKind !== null ||
+        this.armedLineKind !== null ||
+        this.armedRectKind !== null ||
+        this.armedRectOutlineKind !== null ||
+        this.armedEllipseKind !== null ||
+        this.armedEllipseOutlineKind !== null;
+      if (!hadArmedTools) return false;
+
+      this.armedDesktopInspectPin = false;
+      this.armedFloodFillKind = null;
+      this.armedLineKind = null;
+      this.armedRectKind = null;
+      this.armedRectOutlineKind = null;
+      this.armedEllipseKind = null;
+      this.armedEllipseOutlineKind = null;
+      return true;
     }
 
     getArmedDesktopDebugInspectPin(): boolean {
@@ -598,6 +629,15 @@ const dispatchKeydown = (
   };
 };
 
+const readArmedToolKinds = () => ({
+  floodFillKind: testRuntime.inputControllerInstance?.getArmedDebugFloodFillKind() ?? null,
+  lineKind: testRuntime.inputControllerInstance?.getArmedDebugLineKind() ?? null,
+  rectKind: testRuntime.inputControllerInstance?.getArmedDebugRectKind() ?? null,
+  rectOutlineKind: testRuntime.inputControllerInstance?.getArmedDebugRectOutlineKind() ?? null,
+  ellipseKind: testRuntime.inputControllerInstance?.getArmedDebugEllipseKind() ?? null,
+  ellipseOutlineKind: testRuntime.inputControllerInstance?.getArmedDebugEllipseOutlineKind() ?? null
+});
+
 const createExpectedPausedMainMenuState = () => ({
   screen: 'main-menu',
   statusText: 'World session paused.',
@@ -658,6 +698,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.cameraInstance = null;
     testRuntime.windowListeners.clear();
     testRuntime.shellInstance = null;
+    testRuntime.inputControllerInstance = null;
     testRuntime.debugOverlayInstance = null;
     testRuntime.debugEditControlsInstance = null;
     testRuntime.hoveredTileCursorInstance = null;
@@ -670,6 +711,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugHistoryUndoCallCount = 0;
     testRuntime.debugHistoryRedoCallCount = 0;
     testRuntime.debugHistoryShortcutActions = [];
+    testRuntime.cancelArmedDebugToolsCallCount = 0;
     testRuntime.playerSpawnPoint = {
       anchorTileX: 0,
       standingTileY: 0,
@@ -906,6 +948,94 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugHistoryUndoCallCount).toBe(2);
     expect(testRuntime.debugHistoryRedoCallCount).toBe(2);
     expect(testRuntime.debugHistoryShortcutActions).toEqual([]);
+  });
+
+  it('routes keyboard armed-tool shortcuts through one shared dispatcher for arming and cancel', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    expect(dispatchKeydown('f', 'KeyF').prevented).toBe(false);
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('f', 'KeyF').prevented).toBe(true);
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: 'place',
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+
+    expect(dispatchKeydown('n', 'KeyN', { shiftKey: true }).prevented).toBe(true);
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: null,
+      lineKind: 'break',
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+
+    expect(dispatchKeydown('r', 'KeyR').prevented).toBe(true);
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: 'place',
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+
+    expect(dispatchKeydown('t', 'KeyT', { shiftKey: true }).prevented).toBe(true);
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: 'break',
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+
+    expect(dispatchKeydown('e', 'KeyE').prevented).toBe(true);
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: 'place',
+      ellipseOutlineKind: null
+    });
+
+    expect(dispatchKeydown('o', 'KeyO', { shiftKey: true }).prevented).toBe(true);
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: 'break'
+    });
+
+    expect(dispatchKeydown('Escape').prevented).toBe(true);
+    expect(testRuntime.cancelArmedDebugToolsCallCount).toBe(1);
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
   });
 
   it('enables the paused-menu N shortcut only after a resumable world session exists', async () => {

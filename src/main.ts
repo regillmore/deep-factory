@@ -37,7 +37,8 @@ import {
   cycleDebugBrushTileId,
   getDebugBrushTileIdForShortcutSlot,
   isInWorldOnlyDebugEditShortcutAction,
-  resolveDebugEditShortcutAction
+  resolveDebugEditShortcutAction,
+  type DebugEditShortcutAction
 } from './input/debugEditShortcuts';
 import {
   clearWorldSessionShellState,
@@ -120,6 +121,16 @@ type MainMenuShellActionType =
   | 'start-fresh-world-session'
   | 'reset-shell-toggle-preferences';
 type DebugHistoryActionType = 'undo' | 'redo';
+type KeyboardArmedToolShortcutAction = Extract<
+  DebugEditShortcutAction,
+  | { type: 'cancel-armed-tools' }
+  | { type: 'arm-flood-fill' }
+  | { type: 'arm-line' }
+  | { type: 'arm-rect' }
+  | { type: 'arm-rect-outline' }
+  | { type: 'arm-ellipse' }
+  | { type: 'arm-ellipse-outline' }
+>;
 const formatDebugBrushLabel = (tileName: string): string => tileName.replace(/_/g, ' ');
 const isEditableKeyboardShortcutTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
@@ -476,6 +487,50 @@ const bootstrap = async (): Promise<void> => {
   };
   const applyFixedStepDebugHistoryShortcutAction = (actionType: DebugHistoryActionType): boolean =>
     applyDebugHistoryAction(actionType);
+  const isKeyboardArmedToolShortcutAction = (
+    action: DebugEditShortcutAction
+  ): action is KeyboardArmedToolShortcutAction => {
+    switch (action.type) {
+      case 'cancel-armed-tools':
+      case 'arm-flood-fill':
+      case 'arm-line':
+      case 'arm-rect':
+      case 'arm-rect-outline':
+      case 'arm-ellipse':
+      case 'arm-ellipse-outline':
+        return true;
+      default:
+        return false;
+    }
+  };
+  const applyKeyboardArmedToolAction = (
+    event: Pick<KeyboardEvent, 'preventDefault'>,
+    action: KeyboardArmedToolShortcutAction
+  ): boolean => {
+    event.preventDefault();
+
+    switch (action.type) {
+      case 'cancel-armed-tools': {
+        const handled = input.cancelArmedDebugTools();
+        if (handled) {
+          syncArmedDebugToolControls();
+        }
+        return handled;
+      }
+      case 'arm-flood-fill':
+        return toggleArmedDebugFloodFillKind(action.kind);
+      case 'arm-line':
+        return toggleArmedDebugLineKind(action.kind);
+      case 'arm-rect':
+        return toggleArmedDebugRectKind(action.kind);
+      case 'arm-rect-outline':
+        return toggleArmedDebugRectOutlineKind(action.kind);
+      case 'arm-ellipse':
+        return toggleArmedDebugEllipseKind(action.kind);
+      case 'arm-ellipse-outline':
+        return toggleArmedDebugEllipseOutlineKind(action.kind);
+    }
+  };
   const enterInWorldShellState = (): void => {
     syncInWorldShellState();
     syncWorldScreenShellVisibility();
@@ -1372,30 +1427,8 @@ const bootstrap = async (): Promise<void> => {
       action.type === 'toggle-shortcuts-overlay'
     ) {
       handled = applyKeyboardInWorldShellAction(event, action.type);
-    } else if (action.type === 'cancel-armed-tools') {
-      event.preventDefault();
-      handled = input.cancelArmedDebugTools();
-      if (handled) {
-        syncArmedDebugToolControls();
-      }
-    } else if (action.type === 'arm-flood-fill') {
-      event.preventDefault();
-      handled = toggleArmedDebugFloodFillKind(action.kind);
-    } else if (action.type === 'arm-line') {
-      event.preventDefault();
-      handled = toggleArmedDebugLineKind(action.kind);
-    } else if (action.type === 'arm-rect') {
-      event.preventDefault();
-      handled = toggleArmedDebugRectKind(action.kind);
-    } else if (action.type === 'arm-rect-outline') {
-      event.preventDefault();
-      handled = toggleArmedDebugRectOutlineKind(action.kind);
-    } else if (action.type === 'arm-ellipse') {
-      event.preventDefault();
-      handled = toggleArmedDebugEllipseKind(action.kind);
-    } else if (action.type === 'arm-ellipse-outline') {
-      event.preventDefault();
-      handled = toggleArmedDebugEllipseOutlineKind(action.kind);
+    } else if (isKeyboardArmedToolShortcutAction(action)) {
+      handled = applyKeyboardArmedToolAction(event, action);
     } else if (action.type === 'toggle-panel-collapsed') {
       event.preventDefault();
       if (!debugEditControlsVisible) return;

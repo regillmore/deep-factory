@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Keyboard armed-tool actions should share one dispatcher
+
+- Decision: Keyboard `cancel-armed-tools`, flood-fill, line, rectangle, and ellipse shortcut actions should route through a shared `applyKeyboardArmedToolAction()` dispatcher in `src/main.ts` instead of each repeating `preventDefault()` plus its matching toggle or cancel call inline.
+- Reason: Those shortcut branches all share the same keyboard-event contract and only differ in which armed-tool mutation they trigger, so leaving them inline makes the in-world shortcut path easier to drift from focused runtime regressions.
+- Consequence: Future keyboard armed-tool shortcuts should extend the shared dispatcher and its focused runtime regressions instead of adding more repeated inline `preventDefault()` plus tool-mutation branches in `src/main.ts`.
+
 ### 2026-03-06: Debug-history action selection should share one dispatcher
 
 - Decision: `applyKeyboardDebugHistoryAction()` and `applyFixedStepDebugHistoryShortcutAction()` should both route through a shared `applyDebugHistoryAction()` dispatcher in `src/main.ts` instead of each choosing between `undoDebugTileStroke()` and `redoDebugTileStroke()` separately.
