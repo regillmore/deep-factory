@@ -53,6 +53,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 243. Add a torch-lighting utility slice after inventory basics (`214`): stackable torch hotbar slots, mixed-device solid-face placement of light-emitting torch tiles, and lighting regressions for placed torches.
 246. Add a bow-and-arrow ranged-combat slice after hostile-slime combat (`213`) and inventory basics (`214`): stackable arrow ammo, mixed-device aimed firing, fixed-step projectile flight plus terrain or slime hits, and deterministic ammo-consumption regressions.
 
-## Refine, Refactor, Restructure
+## Refine, Extract, Refactor, Restructure
 
-295. Extract a shared standalone-player fixed-step apply helper so state assignment, transition commit, and camera follow in `src/main.ts` reuse one post-result path, with focused runtime regressions.
+296. Extract a shared standalone-player fixed-step update helper so movement-intent read, result creation, and post-result apply in `src/main.ts` reuse one runtime step entry point, with focused runtime regressions.

@@ -848,6 +848,13 @@ const bootstrap = async (): Promise<void> => {
       })
     };
   };
+  const applyStandalonePlayerFixedStepResult = (
+    playerFixedStepResult: StandalonePlayerFixedStepResult
+  ): void => {
+    standalonePlayerState = playerFixedStepResult.nextPlayerState;
+    commitStandalonePlayerFixedStepTransitions(playerFixedStepResult.transitionSnapshot);
+    applyStandalonePlayerCameraFollow();
+  };
   const commitStandalonePlayerFixedStepTransitions = ({
     groundedTransitionEvent,
     facingTransitionEvent,
@@ -2139,9 +2146,7 @@ const bootstrap = async (): Promise<void> => {
           fixedDt,
           playerMovementIntent
         });
-        standalonePlayerState = playerFixedStepResult.nextPlayerState;
-        commitStandalonePlayerFixedStepTransitions(playerFixedStepResult.transitionSnapshot);
-        applyStandalonePlayerCameraFollow();
+        applyStandalonePlayerFixedStepResult(playerFixedStepResult);
       }
 
       // Non-player entities step here until the standalone player moves onto the entity layer.

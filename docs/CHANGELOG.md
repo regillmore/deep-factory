@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared standalone-player fixed-step apply helper so state assignment, transition commit, and camera follow in `src/main.ts` reuse one post-result path.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `applyStandalonePlayerFixedStepResult()` helper for the standalone-player fixed-step post-result path, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that verifies camera follow updates immediately on fixed update and the next render sees the newly stepped player state plus committed transition telemetry, removed completed task `295` from [docs/NEXT.md](docs/NEXT.md), added replacement task `296`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared standalone-player fixed-step result helper so next player state, contact snapshot, and transition snapshot in `src/main.ts` reuse one pre-commit build path.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `createStandalonePlayerFixedStepResult()` helper that now owns standalone-player step execution, contact sampling, and transition snapshot assembly before the existing commit path, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that records the step request, sampled contact-query states, and resulting transition telemetry from the shared helper path, removed completed task `294` from [docs/NEXT.md](docs/NEXT.md), added replacement task `295`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Standalone-player fixed-step apply work should share one helper
+
+- Decision: Post-result standalone-player state assignment, transition commit, and camera follow in `src/main.ts` should route through a shared `applyStandalonePlayerFixedStepResult()` helper.
+- Reason: Those three writes together form one fixed-step post-result apply contract for the standalone player, so leaving them inline after the shared result helper makes later follow-camera or transition-commit changes easier to drift from the focused runtime regression coverage.
+- Consequence: Future standalone-player fixed-step post-result work should extend the shared apply helper and its runtime regression instead of reintroducing separate state assignment, transition commit, or camera follow calls in `src/main.ts`.
+
 ### 2026-03-07: Standalone-player fixed-step result assembly should share one helper
 
 - Decision: Next player state calculation, collision-contact sampling, and transition-resolution assembly in `src/main.ts` should route through a shared `createStandalonePlayerFixedStepResult()` helper before the post-step apply path runs.
