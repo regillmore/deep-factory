@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Add a renderer regression where a streamed-back one-tile-gap roof build across an `x` chunk boundary still invalidates both lower-row chunk meshes before the first rebuilt draw.
+- Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a streamed-back x-boundary roof-lighting regression that prunes the affected chunks out of view, streams them back in, then verifies the resumed roof build still invalidates both lower-row chunk meshes before the next rebuilt draw; removed completed task `235` from [docs/NEXT.md](docs/NEXT.md), and added replacement task `310`.
+- Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add current saved on and saved off rows to the paused-menu persistence-summary card so the next `Resume World` previews the actual persisted in-world shell layout.
 - Changes: Updated [src/mainWorldSessionShellState.ts](../src/mainWorldSessionShellState.ts) so the shared persistence-summary helper now groups persisted shell toggles into current `Saved On` and `Saved Off` label sets, updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused-menu summary cards render those rows from live shell state, refreshed [src/main.ts](../src/main.ts) so paused-menu `Reset Shell Toggles` immediately rerenders the updated summary after clearing preferences, expanded [src/mainWorldSessionShellState.test.ts](../src/mainWorldSessionShellState.test.ts), [src/ui/appShell.test.ts](../src/ui/appShell.test.ts), and [src/main.test.ts](../src/main.test.ts) with focused regressions, removed completed task `302` from [docs/NEXT.md](docs/NEXT.md), added replacement task `309`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/mainWorldSessionShellState.test.ts src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
