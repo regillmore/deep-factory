@@ -66,8 +66,10 @@ const testRuntime = vi.hoisted(() => {
     playerSpawnMarkerInstance: null as null | { visible: boolean },
     rendererConstructorError: null as unknown,
     rendererInitializeError: null as unknown,
+    gameLoopFixedUpdate: null as null | ((fixedDt: number) => void),
     debugHistoryUndoCallCount: 0,
     debugHistoryRedoCallCount: 0,
+    debugHistoryShortcutActions: [] as Array<'undo' | 'redo'>,
     playerSpawnPoint: null as null | {
       anchorTileX: number;
       standingTileY: number;
@@ -106,6 +108,14 @@ vi.mock('./core/camera2d', () => ({
 
 vi.mock('./core/gameLoop', () => ({
   GameLoop: class {
+    constructor(
+      _fixedStepMs: number,
+      onFixedUpdate: (fixedDt: number) => void,
+      _onRender: (alpha: number, frameDtMs: number) => void
+    ) {
+      testRuntime.gameLoopFixedUpdate = onFixedUpdate;
+    }
+
     start(): void {
       testRuntime.gameLoopStartCount += 1;
     }
@@ -335,7 +345,9 @@ vi.mock('./input/controller', () => ({
     }
 
     consumeDebugEditHistoryShortcutActions() {
-      return [];
+      const actions = [...testRuntime.debugHistoryShortcutActions];
+      testRuntime.debugHistoryShortcutActions = [];
+      return actions;
     }
 
     getPlayerMovementIntent() {
@@ -541,6 +553,10 @@ const flushBootstrap = async (): Promise<void> => {
   await Promise.resolve();
 };
 
+const runFixedUpdate = (fixedDt = 1000 / 60): void => {
+  testRuntime.gameLoopFixedUpdate?.(fixedDt);
+};
+
 const readPersistedShellState = (): Record<string, boolean> =>
   JSON.parse(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? '{}');
 
@@ -650,8 +666,10 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.playerSpawnMarkerInstance = null;
     testRuntime.rendererConstructorError = null;
     testRuntime.rendererInitializeError = null;
+    testRuntime.gameLoopFixedUpdate = null;
     testRuntime.debugHistoryUndoCallCount = 0;
     testRuntime.debugHistoryRedoCallCount = 0;
+    testRuntime.debugHistoryShortcutActions = [];
     testRuntime.playerSpawnPoint = {
       anchorTileX: 0,
       standingTileY: 0,
@@ -883,6 +901,20 @@ describe('main.ts shell state orchestration', () => {
     expect(dispatchKeydown('y', 'KeyY', { ctrlKey: true }).prevented).toBe(true);
     expect(testRuntime.debugHistoryUndoCallCount).toBe(1);
     expect(testRuntime.debugHistoryRedoCallCount).toBe(1);
+  });
+
+  it('routes fixed-step touch undo and redo through one shared history shortcut handler', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.debugHistoryShortcutActions = ['undo', 'redo'];
+
+    runFixedUpdate();
+
+    expect(testRuntime.debugHistoryUndoCallCount).toBe(1);
+    expect(testRuntime.debugHistoryRedoCallCount).toBe(1);
+    expect(testRuntime.debugHistoryShortcutActions).toEqual([]);
   });
 
   it('enables the paused-menu N shortcut only after a resumable world session exists', async () => {

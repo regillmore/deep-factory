@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Project structure optimization
 
-269. Extract a shared fixed-step debug-history shortcut handler so the `consumeDebugEditHistoryShortcutActions()` loop in `src/main.ts` stops repeating `undoDebugTileStroke()` or `redoDebugTileStroke()` across touch `undo` and `redo`, with focused runtime regressions.
+270. Extract a shared debug-history action dispatcher so `applyKeyboardDebugHistoryAction()` and `applyFixedStepDebugHistoryShortcutAction()` in `src/main.ts` stop repeating the `undo` versus `redo` selection, with focused runtime regressions.

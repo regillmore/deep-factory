@@ -119,7 +119,7 @@ type MainMenuShellActionType =
   | 'enter-or-resume-world-session'
   | 'start-fresh-world-session'
   | 'reset-shell-toggle-preferences';
-type KeyboardDebugHistoryActionType = 'undo' | 'redo';
+type DebugHistoryActionType = 'undo' | 'redo';
 const formatDebugBrushLabel = (tileName: string): string => tileName.replace(/_/g, ' ');
 const isEditableKeyboardShortcutTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
@@ -461,11 +461,13 @@ const bootstrap = async (): Promise<void> => {
   };
   const applyKeyboardDebugHistoryAction = (
     event: Pick<KeyboardEvent, 'preventDefault'>,
-    actionType: KeyboardDebugHistoryActionType
+    actionType: DebugHistoryActionType
   ): boolean => {
     event.preventDefault();
     return actionType === 'undo' ? undoDebugTileStroke() : redoDebugTileStroke();
   };
+  const applyFixedStepDebugHistoryShortcutAction = (actionType: DebugHistoryActionType): boolean =>
+    actionType === 'undo' ? undoDebugTileStroke() : redoDebugTileStroke();
   const enterInWorldShellState = (): void => {
     syncInWorldShellState();
     syncWorldScreenShellVisibility();
@@ -1956,8 +1958,7 @@ const bootstrap = async (): Promise<void> => {
       }
 
       for (const action of input.consumeDebugEditHistoryShortcutActions()) {
-        historyChanged =
-          (action === 'undo' ? undoDebugTileStroke() : redoDebugTileStroke()) || historyChanged;
+        historyChanged = applyFixedStepDebugHistoryShortcutAction(action) || historyChanged;
       }
 
       if (historyChanged) {

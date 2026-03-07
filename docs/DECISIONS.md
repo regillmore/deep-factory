@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-06: Fixed-step debug-history shortcut actions should share one helper
+
+- Decision: Fixed-step debug-history shortcut actions (`undo` and `redo`) consumed from `consumeDebugEditHistoryShortcutActions()` should route through a shared `applyFixedStepDebugHistoryShortcutAction()` helper in `src/main.ts` instead of repeating `undoDebugTileStroke()` or `redoDebugTileStroke()` inside the fixed update loop.
+- Reason: Both touch-driven history shortcuts already share the same fixed-step action contract, so leaving those branches inline makes the simulation-side history path easier to drift from focused runtime regressions.
+- Consequence: Future fixed-step debug-history shortcut actions should extend the shared helper and its focused runtime regressions instead of adding another inline `undo` or `redo` branch in `src/main.ts`.
+
 ### 2026-03-06: Keyboard debug-history actions should share one helper
 
 - Decision: Keyboard-triggered debug-history actions (`undo` and `redo`) should route through a shared `applyKeyboardDebugHistoryAction()` helper in `src/main.ts` instead of repeating `preventDefault()` plus `undoDebugTileStroke()` or `redoDebugTileStroke()` in the `keydown` branch.
