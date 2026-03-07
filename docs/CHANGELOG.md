@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Add paused-menu persistence-summary keybinding-set copy that distinguishes default versus custom in-world shell-action bindings before the remap UI lands.
+- Changes: Updated [src/input/shellActionKeybindings.ts](../src/input/shellActionKeybindings.ts) with a shared default-set matcher, updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused-menu `Persistence Summary` card now includes a visible `Binding Set` row plus matching summary copy, refreshed [src/input/shellActionKeybindings.test.ts](../src/input/shellActionKeybindings.test.ts) and [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused default-versus-custom regressions, removed completed task `316` from [docs/NEXT.md](docs/NEXT.md), added replacement task `317`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/input/shellActionKeybindings.test.ts src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu keybinding summary rows that preview the current persisted in-world shell-action hotkeys before the remap UI lands.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused-menu `Persistence Summary` card now includes current `Main Menu`, `Recenter`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, and `Spawn Marker` hotkey rows, wired [src/main.ts](../src/main.ts) so paused-menu shell state receives the loaded in-world shell-action keybindings, refreshed [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused default and custom keybinding regressions, removed completed task `315` from [docs/NEXT.md](docs/NEXT.md), added replacement task `316`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

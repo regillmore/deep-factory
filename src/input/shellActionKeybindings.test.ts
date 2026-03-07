@@ -9,6 +9,7 @@ import {
   getDesktopRecenterCameraHotkeyLabel,
   getDesktopReturnToMainMenuHotkeyLabel,
   loadShellActionKeybindingState,
+  matchesDefaultShellActionKeybindingState,
   resolveInWorldShellActionKeybindingAction,
   saveShellActionKeybindingState,
   SHELL_ACTION_KEYBINDING_STORAGE_KEY,
@@ -45,6 +46,25 @@ describe('createDefaultShellActionKeybindingState', () => {
       'toggle-debug-edit-overlays': 'V',
       'toggle-player-spawn-marker': 'M'
     });
+  });
+});
+
+describe('matchesDefaultShellActionKeybindingState', () => {
+  it('detects whether the configured in-world shell-action keybindings still match the default set', () => {
+    expect(
+      matchesDefaultShellActionKeybindingState(createDefaultShellActionKeybindingState())
+    ).toBe(true);
+
+    expect(
+      matchesDefaultShellActionKeybindingState({
+        'return-to-main-menu': 'X',
+        'recenter-camera': 'C',
+        'toggle-debug-overlay': 'H',
+        'toggle-debug-edit-controls': 'G',
+        'toggle-debug-edit-overlays': 'V',
+        'toggle-player-spawn-marker': 'M'
+      })
+    ).toBe(false);
   });
 });
 

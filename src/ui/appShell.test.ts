@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createDefaultShellActionKeybindingState,
+  matchesDefaultShellActionKeybindingState,
   type ShellActionKeybindingState
 } from '../input/shellActionKeybindings';
 import {
@@ -43,7 +44,7 @@ const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
   'toggle-player-spawn-marker': 'Y'
 };
 const PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE =
-  'Current in-world shell hotkeys preview the active bindings until remap settings land.';
+  'Current in-world shell hotkeys preview the active binding set until remap settings land.';
 const DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Saved in-world shell visibility resumes with the paused session until a reset path clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
@@ -56,6 +57,12 @@ const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
 const createPausedMainMenuShellActionKeybindingSummaryRows = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ) => [
+  {
+    label: 'Binding Set',
+    value: matchesDefaultShellActionKeybindingState(shellActionKeybindings)
+      ? 'Default set'
+      : 'Custom set'
+  },
   {
     label: 'Main Menu',
     value: getDesktopReturnToMainMenuHotkeyLabel(shellActionKeybindings)

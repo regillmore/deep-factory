@@ -12,6 +12,7 @@ import {
 } from '../input/debugEditShortcuts';
 import {
   createDefaultShellActionKeybindingState,
+  matchesDefaultShellActionKeybindingState,
   type ShellActionKeybindingState
 } from '../input/shellActionKeybindings';
 import {
@@ -65,9 +66,19 @@ export const DEFAULT_PAUSED_MAIN_MENU_STATUS = 'World session paused.';
 export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [] as const;
 const formatMenuSectionMetadataRowValue = (labels: readonly string[]): string =>
   labels.length > 0 ? labels.join(', ') : 'None';
+const resolvePausedMainMenuShellActionKeybindingSetValue = (
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
+): string =>
+  matchesDefaultShellActionKeybindingState(shellActionKeybindings)
+    ? 'Default set'
+    : 'Custom set';
 const createPausedMainMenuShellActionKeybindingSummaryRows = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ): readonly AppShellMenuSectionMetadataRow[] => [
+  {
+    label: 'Binding Set',
+    value: resolvePausedMainMenuShellActionKeybindingSetValue(shellActionKeybindings)
+  },
   {
     label: 'Main Menu',
     value: getDesktopReturnToMainMenuHotkeyLabel(shellActionKeybindings)
@@ -139,7 +150,7 @@ export const createPausedMainMenuMenuSections = (
       title: 'Persistence Summary',
       lines: [
         persistenceSummary.descriptionLine,
-        'Current in-world shell hotkeys preview the active bindings until remap settings land.'
+        'Current in-world shell hotkeys preview the active binding set until remap settings land.'
       ],
       metadataRows: [
         {

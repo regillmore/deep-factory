@@ -82,6 +82,14 @@ export const createDefaultShellActionKeybindingState = (): ShellActionKeybinding
   'toggle-player-spawn-marker': 'M'
 });
 
+export const matchesDefaultShellActionKeybindingState = (
+  keybindings: ShellActionKeybindingState,
+  defaultKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
+): boolean =>
+  IN_WORLD_SHELL_ACTION_KEYBINDING_IDS.every(
+    (actionType) => keybindings[actionType] === defaultKeybindings[actionType]
+  );
+
 export const loadShellActionKeybindingState = (
   storage: StorageLike | null | undefined,
   fallbackState: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
