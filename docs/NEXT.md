@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Refine, Extract, Refactor, Restructure
 
-299. Extract a shared standalone-player render-frame status-strip player-telemetry selector so `renderWorldFrame()` reuses one `debugOverlayVisible` gate for compact-strip player and nearby-light fields, with focused runtime regressions.
+300. Extract a shared standalone-player render-frame status-strip player-event telemetry selector so `renderWorldFrame()` reuses one `debugOverlayVisible` gate for compact-strip transition-event fields, with focused runtime regressions.

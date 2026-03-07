@@ -2831,6 +2831,106 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('routes compact status-strip player and nearby-light telemetry through one shared overlay-visibility selector', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    const renderContacts = {
+      support: {
+        tileX: 1,
+        tileY: 2,
+        tileId: 41
+      },
+      wall: null,
+      ceiling: null
+    };
+    const steppedPlayerState = {
+      position: { x: 40, y: -16 },
+      velocity: { x: 24, y: -48 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'right' as const
+    };
+
+    testRuntime.playerMovementIntent = {
+      moveX: 1,
+      jumpHeld: false,
+      jumpPressed: true
+    };
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightLevel = 7;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightFactor = 7 / 15;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceTileX = 6;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceTileY = -3;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceChunkX = 0;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceChunkY = -1;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceLocalTileX = 6;
+    testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceLocalTileY = 29;
+    testRuntime.rendererStepPlayerStateImpl = () => steppedPlayerState;
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, renderContacts];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest status-strip telemetry');
+    }
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerWorldPosition).toEqual(
+      steppedPlayerState.position
+    );
+    expect(testRuntime.latestDebugEditStatusStripState.playerCameraWorldPosition).not.toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerSupportContact).toEqual({
+      tile: {
+        x: renderContacts.support.tileX,
+        y: renderContacts.support.tileY,
+        id: renderContacts.support.tileId
+      }
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightLevel).toBe(7);
+    expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightFactor).toBe(7 / 15);
+    expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightSourceTile).toEqual({
+      x: 6,
+      y: -3
+    });
+
+    testRuntime.shellInstance?.options.onToggleDebugOverlay('in-world');
+    expect(testRuntime.debugOverlayInstance?.visible).toBe(true);
+
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState).not.toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugOverlayInspectState || !testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest overlay and status-strip telemetry');
+    }
+
+    expect(testRuntime.latestDebugOverlayInspectState.player?.position).toEqual(
+      steppedPlayerState.position
+    );
+    expect(testRuntime.latestDebugOverlayInspectState.playerNearbyLightLevel).toBe(7);
+    expect(testRuntime.latestDebugOverlayInspectState.playerNearbyLightSourceLocalTile).toEqual({
+      x: 6,
+      y: 29
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerPlaceholderPoseLabel).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerWorldPosition).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerCameraWorldPosition).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerSupportContact).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightLevel).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightFactor).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightSourceTile).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightSourceChunk).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightSourceLocalTile).toBeNull();
+  });
+
   it('routes touch-control armed-tool sync through one shared apply helper', async () => {
     await import('./main');
     await flushBootstrap();

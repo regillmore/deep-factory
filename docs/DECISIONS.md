@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Standalone-player render-frame compact-strip player telemetry should share one visibility selector
+
+- Decision: Compact status-strip standalone-player player and nearby-light payload assembly in `src/main.ts` should route through a shared `selectStandalonePlayerRenderFrameStatusStripPlayerTelemetry()` helper that owns the `debugOverlayVisible` null-gating.
+- Reason: Those compact-strip fields all share the same visibility rule, so leaving `renderWorldFrame()` to repeat that gate inline across each field makes later telemetry changes easier to drift between hidden-HUD and visible-HUD behavior.
+- Consequence: Future compact-strip standalone-player player or nearby-light telemetry changes should extend the shared selector and its runtime regression instead of reintroducing per-field `debugOverlayVisible ? null : ...` branches in `renderWorldFrame()`.
+
 ### 2026-03-07: Standalone-player render-frame nearby-light telemetry should share one snapshot helper
 
 - Decision: Post-render standalone-player nearby-light level, factor, and source payload assembly in `src/main.ts` should route through a shared `createStandalonePlayerRenderFrameNearbyLightTelemetrySnapshot()` helper before the debug overlay and compact status strip consume it.

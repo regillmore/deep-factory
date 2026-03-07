@@ -279,6 +279,21 @@ type StandalonePlayerRenderFrameNearbyLightTelemetry = Pick<
   | 'playerNearbyLightSourceChunk'
   | 'playerNearbyLightSourceLocalTile'
 >;
+type StandalonePlayerRenderFrameSelectedStatusStripPlayerTelemetry =
+  StandalonePlayerRenderFrameStatusStripTelemetry &
+    Pick<
+      DebugEditStatusStripState,
+      | 'playerNearbyLightLevel'
+      | 'playerNearbyLightFactor'
+      | 'playerNearbyLightSourceTile'
+      | 'playerNearbyLightSourceChunk'
+      | 'playerNearbyLightSourceLocalTile'
+    >;
+type StandalonePlayerRenderFrameStatusStripPlayerTelemetrySelectionOptions = {
+  debugOverlayVisible: boolean;
+  playerTelemetry: StandalonePlayerRenderFrameStatusStripTelemetry;
+  nearbyLightTelemetry: StandalonePlayerRenderFrameNearbyLightTelemetry;
+};
 type StandalonePlayerRenderFrameTelemetrySnapshot = {
   standalonePlayerContacts: PlayerCollisionContacts | null;
   debugOverlay: StandalonePlayerRenderFrameDebugOverlayTelemetry;
@@ -1932,6 +1947,51 @@ const bootstrap = async (): Promise<void> => {
             : null
       };
     };
+  const createClearedStandalonePlayerRenderFrameStatusStripPlayerTelemetry =
+    (): StandalonePlayerRenderFrameSelectedStatusStripPlayerTelemetry => ({
+      playerPlaceholderPoseLabel: null,
+      playerWorldPosition: null,
+      playerWorldTile: null,
+      playerAabb: null,
+      playerCameraWorldPosition: null,
+      playerCameraWorldTile: null,
+      playerCameraWorldChunk: null,
+      playerCameraWorldLocalTile: null,
+      playerCameraFocusPoint: null,
+      playerCameraFocusTile: null,
+      playerCameraFocusChunk: null,
+      playerCameraFocusLocalTile: null,
+      playerCameraFollowOffset: null,
+      playerCameraZoom: null,
+      playerNearbyLightLevel: null,
+      playerNearbyLightFactor: null,
+      playerNearbyLightSourceTile: null,
+      playerNearbyLightSourceChunk: null,
+      playerNearbyLightSourceLocalTile: null,
+      playerCeilingBonkHoldActive: null,
+      playerGrounded: null,
+      playerFacing: null,
+      playerMoveX: null,
+      playerVelocityX: null,
+      playerVelocityY: null,
+      playerJumpHeld: null,
+      playerJumpPressed: null,
+      playerSupportContact: null,
+      playerWallContact: null,
+      playerCeilingContact: null
+    });
+  const selectStandalonePlayerRenderFrameStatusStripPlayerTelemetry = ({
+    debugOverlayVisible,
+    playerTelemetry,
+    nearbyLightTelemetry
+  }: StandalonePlayerRenderFrameStatusStripPlayerTelemetrySelectionOptions):
+    StandalonePlayerRenderFrameSelectedStatusStripPlayerTelemetry =>
+    debugOverlayVisible
+      ? createClearedStandalonePlayerRenderFrameStatusStripPlayerTelemetry()
+      : {
+          ...playerTelemetry,
+          ...nearbyLightTelemetry
+        };
 
   const renderWorldFrame = (frameDtMs: number): void => {
     const renderTimeMs = performance.now();
@@ -2016,7 +2076,7 @@ const bootstrap = async (): Promise<void> => {
       : null;
     const standalonePlayerRenderFrameTelemetry =
       createStandalonePlayerRenderFrameTelemetrySnapshot(renderTimeMs);
-    const debugStatusStripPlayerTelemetry = standalonePlayerRenderFrameTelemetry.debugStatusStrip;
+    const standalonePlayerStatusStripPlayerTelemetry = standalonePlayerRenderFrameTelemetry.debugStatusStrip;
     renderer.resize();
     renderer.render(camera, {
       standalonePlayer: standalonePlayerState,
@@ -2029,6 +2089,11 @@ const bootstrap = async (): Promise<void> => {
     });
     const standalonePlayerNearbyLightTelemetry =
       createStandalonePlayerRenderFrameNearbyLightTelemetrySnapshot();
+    const debugStatusStripPlayerTelemetry = selectStandalonePlayerRenderFrameStatusStripPlayerTelemetry({
+      debugOverlayVisible,
+      playerTelemetry: standalonePlayerStatusStripPlayerTelemetry,
+      nearbyLightTelemetry: standalonePlayerNearbyLightTelemetry
+    });
     hoveredTileCursor.update(camera, {
       hovered: pointerInspect
         ? {
@@ -2053,60 +2118,38 @@ const bootstrap = async (): Promise<void> => {
       hoveredTile: hoveredDebugTileStatus,
       pinnedTile: pinnedDebugTileStatus,
       desktopInspectPinArmed: input.getArmedDesktopDebugInspectPin(),
-      playerPlaceholderPoseLabel:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerPlaceholderPoseLabel,
-      playerWorldPosition:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerWorldPosition,
-      playerWorldTile: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerWorldTile,
-      playerAabb: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerAabb,
-      playerCameraWorldPosition:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraWorldPosition,
-      playerCameraWorldTile:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraWorldTile,
-      playerCameraWorldChunk:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraWorldChunk,
-      playerCameraWorldLocalTile:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraWorldLocalTile,
-      playerCameraFocusPoint:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraFocusPoint,
-      playerCameraFocusTile:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraFocusTile,
-      playerCameraFocusChunk:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraFocusChunk,
-      playerCameraFocusLocalTile:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraFocusLocalTile,
-      playerCameraFollowOffset:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraFollowOffset,
-      playerCameraZoom: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCameraZoom,
+      playerPlaceholderPoseLabel: debugStatusStripPlayerTelemetry.playerPlaceholderPoseLabel,
+      playerWorldPosition: debugStatusStripPlayerTelemetry.playerWorldPosition,
+      playerWorldTile: debugStatusStripPlayerTelemetry.playerWorldTile,
+      playerAabb: debugStatusStripPlayerTelemetry.playerAabb,
+      playerCameraWorldPosition: debugStatusStripPlayerTelemetry.playerCameraWorldPosition,
+      playerCameraWorldTile: debugStatusStripPlayerTelemetry.playerCameraWorldTile,
+      playerCameraWorldChunk: debugStatusStripPlayerTelemetry.playerCameraWorldChunk,
+      playerCameraWorldLocalTile: debugStatusStripPlayerTelemetry.playerCameraWorldLocalTile,
+      playerCameraFocusPoint: debugStatusStripPlayerTelemetry.playerCameraFocusPoint,
+      playerCameraFocusTile: debugStatusStripPlayerTelemetry.playerCameraFocusTile,
+      playerCameraFocusChunk: debugStatusStripPlayerTelemetry.playerCameraFocusChunk,
+      playerCameraFocusLocalTile: debugStatusStripPlayerTelemetry.playerCameraFocusLocalTile,
+      playerCameraFollowOffset: debugStatusStripPlayerTelemetry.playerCameraFollowOffset,
+      playerCameraZoom: debugStatusStripPlayerTelemetry.playerCameraZoom,
       residentDirtyLightChunks: debugOverlayVisible ? null : renderer.telemetry.residentDirtyLightChunks,
-      playerNearbyLightLevel:
-        debugOverlayVisible ? null : standalonePlayerNearbyLightTelemetry.playerNearbyLightLevel,
-      playerNearbyLightFactor:
-        debugOverlayVisible ? null : standalonePlayerNearbyLightTelemetry.playerNearbyLightFactor,
-      playerNearbyLightSourceTile:
-        debugOverlayVisible ? null : standalonePlayerNearbyLightTelemetry.playerNearbyLightSourceTile,
-      playerNearbyLightSourceChunk:
-        debugOverlayVisible ? null : standalonePlayerNearbyLightTelemetry.playerNearbyLightSourceChunk,
+      playerNearbyLightLevel: debugStatusStripPlayerTelemetry.playerNearbyLightLevel,
+      playerNearbyLightFactor: debugStatusStripPlayerTelemetry.playerNearbyLightFactor,
+      playerNearbyLightSourceTile: debugStatusStripPlayerTelemetry.playerNearbyLightSourceTile,
+      playerNearbyLightSourceChunk: debugStatusStripPlayerTelemetry.playerNearbyLightSourceChunk,
       playerNearbyLightSourceLocalTile:
-        debugOverlayVisible
-          ? null
-          : standalonePlayerNearbyLightTelemetry.playerNearbyLightSourceLocalTile,
-      playerCeilingBonkHoldActive:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCeilingBonkHoldActive,
-      playerGrounded: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerGrounded,
-      playerFacing: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerFacing,
-      playerMoveX: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerMoveX,
-      playerVelocityX: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerVelocityX,
-      playerVelocityY: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerVelocityY,
-      playerJumpHeld: debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerJumpHeld,
-      playerJumpPressed:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerJumpPressed,
-      playerSupportContact:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerSupportContact,
-      playerWallContact:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerWallContact,
-      playerCeilingContact:
-        debugOverlayVisible ? null : debugStatusStripPlayerTelemetry.playerCeilingContact,
+        debugStatusStripPlayerTelemetry.playerNearbyLightSourceLocalTile,
+      playerCeilingBonkHoldActive: debugStatusStripPlayerTelemetry.playerCeilingBonkHoldActive,
+      playerGrounded: debugStatusStripPlayerTelemetry.playerGrounded,
+      playerFacing: debugStatusStripPlayerTelemetry.playerFacing,
+      playerMoveX: debugStatusStripPlayerTelemetry.playerMoveX,
+      playerVelocityX: debugStatusStripPlayerTelemetry.playerVelocityX,
+      playerVelocityY: debugStatusStripPlayerTelemetry.playerVelocityY,
+      playerJumpHeld: debugStatusStripPlayerTelemetry.playerJumpHeld,
+      playerJumpPressed: debugStatusStripPlayerTelemetry.playerJumpPressed,
+      playerSupportContact: debugStatusStripPlayerTelemetry.playerSupportContact,
+      playerWallContact: debugStatusStripPlayerTelemetry.playerWallContact,
+      playerCeilingContact: debugStatusStripPlayerTelemetry.playerCeilingContact,
       playerGroundedTransition: debugOverlayVisible ? null : lastPlayerGroundedTransitionEvent,
       playerFacingTransition: debugOverlayVisible ? null : lastPlayerFacingTransitionEvent,
       playerRespawn: debugOverlayVisible ? null : lastPlayerRespawnEvent,

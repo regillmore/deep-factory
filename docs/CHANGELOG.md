@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Extract a shared standalone-player render-frame status-strip player-telemetry selector so `renderWorldFrame()` in `src/main.ts` reuses one `debugOverlayVisible` gate for compact-strip player and nearby-light fields.
+- Changes: Updated [src/main.ts](../src/main.ts) with a shared `selectStandalonePlayerRenderFrameStatusStripPlayerTelemetry()` helper that now owns compact-strip player and nearby-light null-gating when the debug HUD is visible, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that verifies the strip fields stay populated with the HUD hidden and clear through the shared selector once the HUD is shown while the overlay keeps the full snapshot, removed completed task `299` from [docs/NEXT.md](docs/NEXT.md), added replacement task `300`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Extract a shared standalone-player render-frame nearby-light telemetry snapshot helper so `renderWorldFrame()` in `src/main.ts` reuses one post-render light payload builder for the debug overlay and compact status strip.
 - Changes: Updated [src/main.ts](../src/main.ts) with a shared `createStandalonePlayerRenderFrameNearbyLightTelemetrySnapshot()` helper that now owns standalone-player nearby-light level, factor, and source payload assembly after `renderer.render()`, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that drives mocked renderer nearby-light telemetry and compares the overlay and status-strip payloads from the same render frame, removed completed task `298` from [docs/NEXT.md](docs/NEXT.md), added replacement task `299`, and updated [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
