@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-07
 
+- Task: Add a renderer regression where reopening a streamed-back row-above top-corner boundary blocker from the opposite chunk side still invalidates both row-above chunk meshes before the first rebuilt draw.
+- Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with the opposite-side streamed-back top-corner regression so the renderer now verifies that reopening the right-side boundary blocker after row-above chunks prune and stream back still invalidates both row-above chunk meshes before the first rebuilt draw; removed completed task `303` from [docs/NEXT.md](docs/NEXT.md) and added replacement task `304`.
+- Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a renderer regression where streamed-back row-above top-corner boundary edits still invalidate both affected chunk meshes before the first rebuilt draw.
 - Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a streamed-back top-corner boundary regression that reopens the row-above boundary pocket, prunes those meshes out of view, streams them back, and verifies reclosing the same blocker invalidates both row-above chunk meshes before the next rebuilt draw; removed completed task `249` from [docs/NEXT.md](docs/NEXT.md) and added replacement task `303`.
 - Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
