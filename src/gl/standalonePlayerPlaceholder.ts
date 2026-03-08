@@ -64,8 +64,17 @@ export type StandalonePlayerPlaceholderPoseLabel =
   | 'wall-slide'
   | 'ceiling-bonk';
 
-export const buildStandalonePlayerPlaceholderVertices = (state: PlayerState): Float32Array => {
-  const aabb = getPlayerAabb(state);
+export const buildStandalonePlayerPlaceholderVertices = (
+  state: PlayerState,
+  renderPosition: PlayerState['position'] = state.position
+): Float32Array => {
+  const aabb = getPlayerAabb({
+    ...state,
+    position: {
+      x: renderPosition.x,
+      y: renderPosition.y
+    }
+  });
 
   return new Float32Array([
     aabb.minX,

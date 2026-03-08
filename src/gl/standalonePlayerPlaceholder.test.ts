@@ -59,6 +59,47 @@ describe('standalonePlayerPlaceholder', () => {
     ]);
   });
 
+  it('can build placeholder geometry from an overridden render position', () => {
+    const state = createPlayerState({
+      position: { x: 10, y: 32 },
+      size: { width: 12, height: 28 }
+    });
+
+    expect(
+      Array.from(
+        buildStandalonePlayerPlaceholderVertices(state, {
+          x: 40,
+          y: 56
+        })
+      )
+    ).toEqual([
+      34,
+      28,
+      0,
+      0,
+      46,
+      28,
+      1,
+      0,
+      46,
+      56,
+      1,
+      1,
+      34,
+      28,
+      0,
+      0,
+      46,
+      56,
+      1,
+      1,
+      34,
+      56,
+      0,
+      1
+    ]);
+  });
+
   it('maps player facing into a shader-friendly sign', () => {
     expect(getStandalonePlayerPlaceholderFacingSign(createPlayerState({ facing: 'right' }))).toBe(1);
     expect(getStandalonePlayerPlaceholderFacingSign(createPlayerState({ facing: 'left' }))).toBe(-1);

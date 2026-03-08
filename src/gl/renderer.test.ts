@@ -1714,6 +1714,79 @@ describe('Renderer atlas telemetry', () => {
     );
   });
 
+  it('uses an overridden standalone-player render position for placeholder geometry while nearby-light telemetry stays on current state', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const world = (renderer as unknown as { world: { getLightLevel: (tileX: number, tileY: number) => number } })
+      .world;
+    const getLightLevelSpy = vi.spyOn(world, 'getLightLevel').mockReturnValue(9);
+    const bufferData = vi.mocked(gl.bufferData);
+    const uniform1f = vi.mocked(gl.uniform1f);
+    bufferData.mockClear();
+    uniform1f.mockClear();
+
+    renderer.render(new Camera2D(), {
+      standalonePlayer: createPlayerState({
+        position: { x: 8, y: 24 },
+        size: { width: 12, height: 28 },
+        grounded: true,
+        velocity: { x: 0, y: 0 },
+        facing: 'right'
+      }),
+      standalonePlayerRenderPosition: {
+        x: 40,
+        y: 56
+      },
+      timeMs: 0
+    });
+
+    const lastBufferDataCall = bufferData.mock.calls.at(-1);
+    expect(Array.from((lastBufferDataCall?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      34,
+      28,
+      0,
+      0,
+      46,
+      28,
+      1,
+      0,
+      46,
+      56,
+      1,
+      1,
+      34,
+      28,
+      0,
+      0,
+      46,
+      56,
+      1,
+      1,
+      34,
+      56,
+      0,
+      1
+    ]);
+    expectStandalonePlayerUniformValues(
+      uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
+      [{ facing: 1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_IDLE }]
+    );
+    expect(getLightLevelSpy).toHaveBeenCalled();
+    expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBe(9);
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileX).toBe(-1);
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileY).toBe(-2);
+  });
+
   it('passes nearby resolved world light into the standalone player shader', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));

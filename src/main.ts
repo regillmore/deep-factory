@@ -77,6 +77,7 @@ import { TouchPlayerControls } from './ui/touchPlayerControls';
 import { CHUNK_SIZE } from './world/constants';
 import { EntityRegistry, type EntityId } from './world/entityRegistry';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
+import { resolveInterpolatedEntityWorldPosition } from './world/entityRenderInterpolation';
 import {
   resolvePlayerCeilingContactTransitionEvent,
   type PlayerCeilingContactTransitionEvent
@@ -913,6 +914,21 @@ const bootstrap = async (): Promise<void> => {
       return null;
     }
     return entityRegistry.getEntityState<PlayerState>(standalonePlayerEntityId);
+  };
+  const resolveStandalonePlayerInterpolatedRenderPosition = (
+    alpha: number
+  ): PlayerState['position'] | null => {
+    if (standalonePlayerEntityId === null) {
+      return null;
+    }
+
+    const standalonePlayerRenderStateSnapshot =
+      entityRegistry.getRenderStateSnapshot<PlayerState>(standalonePlayerEntityId);
+    if (standalonePlayerRenderStateSnapshot === null) {
+      return null;
+    }
+
+    return resolveInterpolatedEntityWorldPosition(standalonePlayerRenderStateSnapshot, alpha);
   };
   const replaceWorldSessionEntityRegistry = (): void => {
     entityRegistry = new EntityRegistry();
@@ -2411,7 +2427,7 @@ const bootstrap = async (): Promise<void> => {
       ? createClearedStandalonePlayerRenderFrameStatusStripPlayerEventTelemetry()
       : eventTelemetry;
 
-  const renderWorldFrame = (frameDtMs: number): void => {
+  const renderWorldFrame = (alpha: number, frameDtMs: number): void => {
     const renderTimeMs = performance.now();
     const pointerInspect = input.getPointerInspect();
     const armedDebugToolPreviewState = input.getArmedDebugToolPreviewState();
@@ -2575,9 +2591,11 @@ const bootstrap = async (): Promise<void> => {
       createStandalonePlayerRenderFrameTelemetrySnapshot(renderTimeMs);
     const standalonePlayerStatusStripPlayerTelemetry = standalonePlayerRenderFrameTelemetry.debugStatusStrip;
     const standalonePlayerState = getStandalonePlayerState();
+    const standalonePlayerRenderPosition = resolveStandalonePlayerInterpolatedRenderPosition(alpha);
     renderer.resize();
     renderer.render(camera, {
       standalonePlayer: standalonePlayerState,
+      standalonePlayerRenderPosition,
       standalonePlayerWallContact:
         standalonePlayerRenderFrameTelemetry.standalonePlayerContacts?.wall ?? null,
       standalonePlayerCeilingContact:
@@ -2833,13 +2851,13 @@ const bootstrap = async (): Promise<void> => {
       entityRegistry.fixedUpdateAll(fixedDt);
       flushStandalonePlayerFixedStepResult();
     },
-    (_alpha, frameDtMs) => {
+    (alpha, frameDtMs) => {
       if (currentScreen !== 'in-world') {
         renderWorldPreview();
         return;
       }
 
-      renderWorldFrame(frameDtMs);
+      renderWorldFrame(alpha, frameDtMs);
     }
   );
 

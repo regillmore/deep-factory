@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Standalone-player placeholder draw position should interpolate separately from current-state pose and nearby-light inputs
+
+- Decision: `src/main.ts` now resolves standalone-player placeholder draw position from entity `previous/current` render snapshots plus render alpha and passes that position to the renderer separately from the live `PlayerState`, while placeholder pose selection, wall or ceiling contact input, bonk-hold latching, and nearby-light sampling continue to read the current fixed-step player state.
+- Reason: This adds visible motion smoothing before the full entity render pass lands without smearing pose, contact, or nearby-light presentation across fixed-step boundaries.
+- Consequence: Future placeholder or entity presentation work should treat interpolated world position and current-state pose or lighting inputs as intentionally separate concerns until those other signals are deliberately migrated onto render snapshots.
+
 ### 2026-03-08: Entity render-position interpolation should clamp render alpha and blend from registry snapshots
 
 - Decision: Shared entity render-position interpolation now lives in `src/world/entityRenderInterpolation.ts`, reads `previous/current` registry snapshots, clamps render alpha into `0..1`, and returns a detached blended world position from snapshot `position.x/y`.

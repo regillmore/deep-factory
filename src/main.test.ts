@@ -244,6 +244,16 @@ const testRuntime = vi.hoisted(() => {
       standalonePlayerNearbyLightSourceLocalTileX: null as number | null,
       standalonePlayerNearbyLightSourceLocalTileY: null as number | null
     },
+    latestRendererRenderFrameState: null as null | {
+      standalonePlayerPosition: { x: number; y: number } | null;
+      standalonePlayerRenderPosition: { x: number; y: number } | null;
+      standalonePlayerWallContact:
+        | { tileX: number; tileY: number; tileId: number; side: 'left' | 'right' }
+        | null;
+      standalonePlayerCeilingContact: { tileX: number; tileY: number; tileId: number } | null;
+      standalonePlayerCeilingBonkHoldUntilTimeMs: number | null;
+      timeMs: number | null;
+    },
     latestDebugOverlayInspectState: null as DebugOverlayInspectState | null,
     latestDebugEditStatusStripState: null as DebugEditStatusStripState | null,
     rendererPlayerSpawnLiquidSafetyStatus: 'safe' as 'safe' | 'overlap',
@@ -318,7 +328,51 @@ vi.mock('./gl/renderer', () => ({
 
     resize(): void {}
 
-    render(): void {}
+    render(_camera?: unknown, frameState?: unknown): void {
+      if (!frameState || typeof frameState !== 'object') {
+        testRuntime.latestRendererRenderFrameState = null;
+        return;
+      }
+
+      const renderState = frameState as {
+        standalonePlayer?: {
+          position?: { x?: number; y?: number };
+        } | null;
+        standalonePlayerRenderPosition?: { x?: number; y?: number } | null;
+        standalonePlayerWallContact?:
+          | { tileX: number; tileY: number; tileId: number; side: 'left' | 'right' }
+          | null;
+        standalonePlayerCeilingContact?: { tileX: number; tileY: number; tileId: number } | null;
+        standalonePlayerCeilingBonkHoldUntilTimeMs?: number | null;
+        timeMs?: number;
+      };
+
+      testRuntime.latestRendererRenderFrameState = {
+        standalonePlayerPosition:
+          renderState.standalonePlayer?.position &&
+          typeof renderState.standalonePlayer.position.x === 'number' &&
+          typeof renderState.standalonePlayer.position.y === 'number'
+            ? {
+                x: renderState.standalonePlayer.position.x,
+                y: renderState.standalonePlayer.position.y
+              }
+            : null,
+        standalonePlayerRenderPosition:
+          renderState.standalonePlayerRenderPosition &&
+          typeof renderState.standalonePlayerRenderPosition.x === 'number' &&
+          typeof renderState.standalonePlayerRenderPosition.y === 'number'
+            ? {
+                x: renderState.standalonePlayerRenderPosition.x,
+                y: renderState.standalonePlayerRenderPosition.y
+              }
+            : null,
+        standalonePlayerWallContact: renderState.standalonePlayerWallContact ?? null,
+        standalonePlayerCeilingContact: renderState.standalonePlayerCeilingContact ?? null,
+        standalonePlayerCeilingBonkHoldUntilTimeMs:
+          renderState.standalonePlayerCeilingBonkHoldUntilTimeMs ?? null,
+        timeMs: renderState.timeMs ?? null
+      };
+    }
 
     findPlayerSpawnPoint() {
       return testRuntime.playerSpawnPoint;
@@ -1037,8 +1091,8 @@ const flushBootstrap = async (): Promise<void> => {
 const runFixedUpdate = (fixedDt = 1000 / 60): void => {
   testRuntime.gameLoopFixedUpdate?.(fixedDt);
 };
-const runRenderFrame = (frameDtMs = 1000 / 60): void => {
-  testRuntime.gameLoopRender?.(0, frameDtMs);
+const runRenderFrame = (frameDtMs = 1000 / 60, alpha = 0): void => {
+  testRuntime.gameLoopRender?.(alpha, frameDtMs);
 };
 
 const readPersistedShellState = (): ReturnType<typeof createDefaultWorldSessionShellState> =>
@@ -1255,6 +1309,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceChunkY = null;
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceLocalTileX = null;
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceLocalTileY = null;
+    testRuntime.latestRendererRenderFrameState = null;
     testRuntime.latestDebugOverlayInspectState = null;
     testRuntime.latestDebugEditStatusStripState = null;
     testRuntime.rendererPlayerSpawnLiquidSafetyStatus = 'safe';
@@ -2883,6 +2938,67 @@ describe('main.ts shell state orchestration', () => {
 
     expect(testRuntime.rendererStepLiquidSimulationCallCount).toBe(1);
     expect(testRuntime.fixedStepWorldUpdateOrder).toEqual(['liquids', 'player']);
+  });
+
+  it('routes standalone-player placeholder draw position through entity snapshot interpolation while overlay telemetry stays on current player state', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    const steppedPlayerState = {
+      position: { x: 40, y: 32 },
+      velocity: { x: 96, y: -48 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'right' as const,
+      health: 100,
+      lavaDamageTickSecondsRemaining: 0.5
+    };
+
+    testRuntime.rendererStepPlayerStateImpl = () => steppedPlayerState;
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, noContacts];
+    testRuntime.latestRendererRenderFrameState = null;
+
+    runFixedUpdate();
+    runRenderFrame(1000 / 60, 0.25);
+
+    expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
+    expect(testRuntime.latestDebugOverlayInspectState).not.toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (
+      !testRuntime.latestRendererRenderFrameState ||
+      !testRuntime.latestDebugOverlayInspectState ||
+      !testRuntime.latestDebugEditStatusStripState
+    ) {
+      throw new Error('expected latest renderer, overlay, and status-strip state');
+    }
+
+    const renderFrameState = testRuntime.latestRendererRenderFrameState as {
+      standalonePlayerPosition: { x: number; y: number } | null;
+      standalonePlayerRenderPosition: { x: number; y: number } | null;
+      standalonePlayerWallContact:
+        | { tileX: number; tileY: number; tileId: number; side: 'left' | 'right' }
+        | null;
+      standalonePlayerCeilingContact: { tileX: number; tileY: number; tileId: number } | null;
+      standalonePlayerCeilingBonkHoldUntilTimeMs: number | null;
+      timeMs: number | null;
+    };
+    const overlay = testRuntime.latestDebugOverlayInspectState;
+    const statusStrip = testRuntime.latestDebugEditStatusStripState;
+
+    expect(renderFrameState.standalonePlayerPosition).toEqual(steppedPlayerState.position);
+    expect(renderFrameState.standalonePlayerRenderPosition).toEqual({
+      x: 16,
+      y: 8
+    });
+    expect(overlay.player?.position).toEqual(steppedPlayerState.position);
+    expect(statusStrip.playerWorldPosition).toEqual(steppedPlayerState.position);
   });
 
   it('routes standalone-player render-frame player, nearby-light, contact, and camera telemetry through shared snapshot helpers for the overlay and status strip', async () => {

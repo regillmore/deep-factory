@@ -75,6 +75,7 @@ interface MeshBuildRequest {
 
 export interface RendererFrameState {
   standalonePlayer?: PlayerState | null;
+  standalonePlayerRenderPosition?: PlayerState['position'] | null;
   standalonePlayerWallContact?: PlayerCollisionContacts['wall'] | null;
   standalonePlayerCeilingContact?: PlayerCollisionContacts['ceiling'] | null;
   standalonePlayerCeilingBonkHoldUntilTimeMs?: number | null;
@@ -506,6 +507,7 @@ export class Renderer {
     if (frameState.standalonePlayer) {
       this.drawStandalonePlayer(
         frameState.standalonePlayer,
+        frameState.standalonePlayerRenderPosition ?? null,
         frameState.standalonePlayerWallContact ?? null,
         frameState.standalonePlayerCeilingContact ?? null,
         frameState.standalonePlayerCeilingBonkHoldUntilTimeMs ?? null,
@@ -796,6 +798,7 @@ export class Renderer {
 
   private drawStandalonePlayer(
     state: PlayerState,
+    renderPosition: PlayerState['position'] | null,
     wallContact: PlayerCollisionContacts['wall'] | null,
     ceilingContact: PlayerCollisionContacts['ceiling'] | null,
     ceilingBonkHoldUntilTimeMs: number | null,
@@ -839,7 +842,11 @@ export class Renderer {
     this.telemetry.standalonePlayerNearbyLightSourceLocalTileY = nearbyLightSourceLocalTile?.localY ?? null;
     gl.uniform1f(this.uPlayerLight, nearbyLightFactor);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.standalonePlayerBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, buildStandalonePlayerPlaceholderVertices(state), gl.DYNAMIC_DRAW);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      buildStandalonePlayerPlaceholderVertices(state, renderPosition ?? state.position),
+      gl.DYNAMIC_DRAW
+    );
     gl.bindVertexArray(this.standalonePlayerVao);
     gl.drawArrays(gl.TRIANGLES, 0, STANDALONE_PLAYER_PLACEHOLDER_VERTEX_COUNT);
     this.telemetry.drawCalls += 1;
