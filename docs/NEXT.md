@@ -5,8 +5,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Entities and interpolation
 
 355. Add runtime coverage that respawn or embedded-recovery snapshot resets keep standalone-player placeholder interpolation snapped to the new spawn without one-frame smear.
-361. Add renderer regression coverage that unsupported-only entity-pass submissions leave placeholder draw calls and nearby-light telemetry untouched.
-362. Add renderer regression coverage that mixed supported and unsupported entity-pass entries leave standalone-player nearby-light telemetry sourced from the last supported draw.
 
 ## Save/load
 
@@ -44,5 +42,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 349. Add a platform traversal slice after inventory basics (`214`): stackable platform hotbar slots, mixed-device one-way placement plus drop-through movement, and save/load regressions for placed platform runs.
 350. Add a chest-storage slice after inventory basics (`214`) and save/load (`19-21`): placeable chest items, mixed-device open or close interactions, fixed-slot storage transfer rules, and snapshot regressions for chest contents plus chest placement state.
 352. Add a door utility slice after starter building-block placement (`308`) and save/load (`19-21`): stackable door hotbar slots, mixed-device two-tile doorway placement plus open/close collision swapping, and snapshot regressions for placed door state.
+363. Add a bomb-demolition combat slice after hostile-slime combat (`213`) and inventory basics (`214`): stackable bomb hotbar slots, mixed-device throw aiming with fixed-step fuse timing, terrain blast edits plus player/slime damage falloff, and save/load regressions for cratered terrain plus remaining bomb stacks.
+364. Add a recall-mirror recovery slice after inventory basics (`214`) and bed-checkpoint respawn (`338`): a non-stackable mirror hotbar slot, mixed-device use input with fixed-step channel/cancel rules, teleport to the latest valid checkpoint or world spawn, and deterministic cooldown regressions.
 
 ## Refine, Extract, Refactor, Restructure

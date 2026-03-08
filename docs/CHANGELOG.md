@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Add renderer regression coverage that unsupported-only entity-pass submissions leave placeholder draw calls and nearby-light telemetry untouched, and that mixed supported/unsupported submissions keep nearby-light telemetry on the last supported draw.
+- Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with one unsupported-only entity-pass regression that proves placeholder uploads, pose uniforms, and nearby-light sampling stay inactive while telemetry resets to `null`, plus one mixed entity-pass regression that proves unsupported future kinds do not disturb the last supported standalone-player nearby-light telemetry write; removed completed tasks `361` and `362` from [docs/NEXT.md](docs/NEXT.md) and added ambitious replacement tasks `363` and `364`.
+- Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add renderer regression coverage that interleaved unsupported entity-pass kinds preserve supported-entry submission order after unknown-kind skipping lands.
 - Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a focused mixed entity-pass regression that interleaves two test-only unsupported future kinds around two supported standalone-player entries, then asserts only the supported placeholder uploads and pose uniforms are emitted and that they stay in the original supported-entry order; removed completed task `360` from [docs/NEXT.md](docs/NEXT.md) and added replacement task `362`.
 - Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

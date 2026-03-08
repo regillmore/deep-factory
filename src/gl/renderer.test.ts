@@ -2067,6 +2067,148 @@ describe('Renderer atlas telemetry', () => {
     );
   });
 
+  it('leaves placeholder draw calls and nearby-light telemetry untouched when only unsupported entity-pass kinds are submitted', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const world = (renderer as unknown as { world: { getLightLevel: (tileX: number, tileY: number) => number } })
+      .world;
+    const getLightLevelSpy = vi.spyOn(world, 'getLightLevel').mockReturnValue(12);
+    const drawArrays = vi.mocked(gl.drawArrays);
+    const bufferData = vi.mocked(gl.bufferData);
+    const uniform1f = vi.mocked(gl.uniform1f);
+    const camera = new Camera2D();
+
+    renderer.render(camera, {
+      entities: [
+        createStandalonePlayerEntityFrameState(
+          createPlayerState({
+            grounded: true,
+            velocity: { x: 0, y: 0 },
+            facing: 'right'
+          })
+        )
+      ],
+      timeMs: 0
+    });
+    expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBe(12);
+
+    getLightLevelSpy.mockClear();
+    drawArrays.mockClear();
+    bufferData.mockClear();
+    uniform1f.mockClear();
+
+    renderer.render(camera, {
+      entities: [
+        {
+          id: 301,
+          kind: 'future-slime'
+        } as unknown as RendererEntityFrameState,
+        {
+          id: 302,
+          kind: 'future-pickup'
+        } as unknown as RendererEntityFrameState
+      ],
+      timeMs: 16
+    });
+
+    expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
+    expect(renderer.telemetry.drawCalls).toBe(renderer.telemetry.renderedChunks);
+    expect(bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW)).toHaveLength(0);
+    expect(uniform1f).not.toHaveBeenCalled();
+    expect(getLightLevelSpy).not.toHaveBeenCalled();
+    expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBeNull();
+    expect(renderer.telemetry.standalonePlayerNearbyLightFactor).toBeNull();
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileX).toBeNull();
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileY).toBeNull();
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceChunkX).toBeNull();
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceChunkY).toBeNull();
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceLocalTileX).toBeNull();
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceLocalTileY).toBeNull();
+  });
+
+  it('keeps standalone-player nearby-light telemetry sourced from the last supported draw when unsupported kinds are interleaved', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const world = (renderer as unknown as { world: { getLightLevel: (tileX: number, tileY: number) => number } })
+      .world;
+    const getLightLevelSpy = vi.spyOn(world, 'getLightLevel').mockImplementation((tileX, tileY) => {
+      if (tileX === -2 && tileY === -3) {
+        return 7;
+      }
+      if (tileX === 1 && tileY === 0) {
+        return 11;
+      }
+      return 0;
+    });
+    const uniform1f = vi.mocked(gl.uniform1f);
+    uniform1f.mockClear();
+
+    renderer.render(new Camera2D(), {
+      entities: [
+        createStandalonePlayerEntityFrameState(
+          createPlayerState({
+            grounded: true,
+            velocity: { x: 0, y: 0 },
+            facing: 'right'
+          }),
+          { id: 401 }
+        ),
+        {
+          id: 402,
+          kind: 'future-slime'
+        } as unknown as RendererEntityFrameState,
+        createStandalonePlayerEntityFrameState(
+          createPlayerState({
+            position: { x: 8, y: 24 },
+            size: { width: 12, height: 28 },
+            grounded: true,
+            velocity: { x: 0, y: 0 },
+            facing: 'right'
+          }),
+          { id: 403 }
+        )
+      ],
+      timeMs: 0
+    });
+
+    expectStandalonePlayerUniformValues(
+      uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
+      [
+        { facing: 1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_IDLE },
+        { facing: 1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_IDLE }
+      ]
+    );
+    expect(getLightLevelSpy).toHaveBeenCalled();
+    expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBe(11);
+    expect(renderer.telemetry.standalonePlayerNearbyLightFactor).toBeCloseTo(11 / 15, 5);
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileX).toBe(1);
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileY).toBe(0);
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceChunkX).toBe(0);
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceChunkY).toBe(0);
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceLocalTileX).toBe(1);
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceLocalTileY).toBe(0);
+  });
+
   it('uses the entity render snapshot for placeholder pose selection and interpolated nearby-light sampling', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));
