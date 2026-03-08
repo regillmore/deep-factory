@@ -8,7 +8,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 203. Extend chunk meshing to support metadata-driven partial liquid fill heights (`0..8`) so liquid tops render flat or sloped by neighbor fill levels, with mask-to-geometry regression tests.
 204. Add standalone-player liquid interaction basics: water buoyancy plus swim drag, lava contact damage ticks with respawn fallback, and fixed-step player-state regressions.
-323. Surface simulated liquid fill levels (`0..8`) in hovered and pinned inspect telemetry so partial-liquid state stays debuggable before task `203` lands.
+324. Add a shared liquid-surface height resolver that converts per-tile fill levels (`0..8`) plus same-kind neighbors into normalized top heights for future partial-liquid meshing, with focused clamp and slope regression tests.
 
 ## Lighting
 

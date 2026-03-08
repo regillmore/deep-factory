@@ -1495,6 +1495,7 @@ const bootstrap = async (): Promise<void> => {
     elapsedMs: number
   ): DebugEditHoveredTileState => {
     const tileId = renderer.getTile(tileX, tileY);
+    const liquidLevel = renderer.getLiquidLevel(tileX, tileY);
     const tileMetadata = getTileMetadata(tileId);
     const gameplay = resolveTileGameplayMetadata(tileId);
     const { chunkX, chunkY } = worldToChunkCoord(tileX, tileY);
@@ -1552,6 +1553,7 @@ const bootstrap = async (): Promise<void> => {
     const atlasHeight = renderer.telemetry.atlasHeight;
 
     return {
+      liquidLevel,
       liquidConnectivityGroupLabel: describeLiquidConnectivityGroup(tileId),
       liquidCardinalMask,
       liquidAnimationFrameIndex,
@@ -2082,6 +2084,7 @@ const bootstrap = async (): Promise<void> => {
           solid: hoveredDebugTileStatus?.solid,
           blocksLight: hoveredDebugTileStatus?.blocksLight,
           liquidKind: hoveredDebugTileStatus?.liquidKind ?? null,
+          liquidLevel: hoveredDebugTileStatus?.liquidLevel ?? null,
           liquidConnectivityGroupLabel: hoveredDebugTileStatus?.liquidConnectivityGroupLabel ?? null,
           liquidCardinalMask: hoveredDebugTileStatus?.liquidCardinalMask ?? null,
           liquidAnimationFrameIndex: hoveredDebugTileStatus?.liquidAnimationFrameIndex ?? null,
@@ -2112,6 +2115,7 @@ const bootstrap = async (): Promise<void> => {
           solid: pinnedDebugTileStatus.solid,
           blocksLight: pinnedDebugTileStatus.blocksLight,
           liquidKind: pinnedDebugTileStatus.liquidKind,
+          liquidLevel: pinnedDebugTileStatus.liquidLevel ?? null,
           liquidConnectivityGroupLabel: pinnedDebugTileStatus.liquidConnectivityGroupLabel ?? null,
           liquidCardinalMask: pinnedDebugTileStatus.liquidCardinalMask ?? null,
           liquidAnimationFrameIndex: pinnedDebugTileStatus.liquidAnimationFrameIndex ?? null,

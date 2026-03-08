@@ -529,6 +529,10 @@ export class Renderer {
     return this.world.getTile(worldTileX, worldTileY);
   }
 
+  getLiquidLevel(worldTileX: number, worldTileY: number): number {
+    return this.world.getLiquidLevel(worldTileX, worldTileY);
+  }
+
   stepLiquidSimulation(): boolean {
     return this.world.stepLiquidSimulation();
   }

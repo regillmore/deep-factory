@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-08
+
+- Task: Surface simulated liquid fill levels (`0..8`) in hovered and pinned inspect telemetry so partial-liquid state stays debuggable before partial-liquid meshing lands.
+- Changes: Updated [src/gl/renderer.ts](../src/gl/renderer.ts) and [src/main.ts](../src/main.ts) so inspect snapshots now pull per-tile liquid levels from world state, refreshed [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so hovered and pinned inspect readouts append `liquidLevel:x/8`, expanded [src/main.test.ts](../src/main.test.ts), [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), and [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), removed completed task `323` from [docs/NEXT.md](docs/NEXT.md), added replacement task `324`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/debugOverlay.test.ts src/ui/debugEditStatusHelpers.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-07
 
 - Task: Add a fixed-step liquid simulation slice that flows water and lava downward first, then sideways across loaded chunks, with deterministic chunk-boundary regression coverage.

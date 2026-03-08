@@ -99,6 +99,10 @@ const testRuntime = vi.hoisted(() => {
       pointerType: 'mouse' | 'touch';
       tile: { x: number; y: number };
     },
+    debugTileInspectPinRequests: [] as Array<{
+      worldTileX: number;
+      worldTileY: number;
+    }>,
     debugOverlayInstance: null as null | { visible: boolean },
     debugEditControlsInitialPreferenceSnapshot: null as null | {
       touchMode: 'pan' | 'place' | 'break';
@@ -186,6 +190,7 @@ const testRuntime = vi.hoisted(() => {
       kind: 'place' | 'break';
     }>,
     rendererTileId: 0,
+    rendererLiquidLevel: 0,
     rendererSetTileResult: false,
     rendererStepLiquidSimulationCallCount: 0,
     rendererStepPlayerStateImpl: null as null | ((
@@ -358,6 +363,10 @@ vi.mock('./gl/renderer', () => ({
 
     getTile(): number {
       return testRuntime.rendererTileId;
+    }
+
+    getLiquidLevel(): number {
+      return testRuntime.rendererLiquidLevel;
     }
 
     setTile(): boolean {
@@ -590,7 +599,9 @@ vi.mock('./input/controller', () => ({
     }
 
     consumeDebugTileInspectPinRequests() {
-      return [];
+      const requests = [...testRuntime.debugTileInspectPinRequests];
+      testRuntime.debugTileInspectPinRequests = [];
+      return requests;
     }
 
     consumeCompletedDebugTileStrokes() {
@@ -1194,6 +1205,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.fixedStepWorldUpdateOrder = [];
     testRuntime.debugTileEdits = [];
     testRuntime.rendererTileId = 0;
+    testRuntime.rendererLiquidLevel = 0;
     testRuntime.rendererSetTileResult = false;
     testRuntime.rendererStepLiquidSimulationCallCount = 0;
     testRuntime.rendererStepPlayerStateImpl = null;
@@ -1214,6 +1226,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceLocalTileY = null;
     testRuntime.latestDebugOverlayInspectState = null;
     testRuntime.latestDebugEditStatusStripState = null;
+    testRuntime.debugTileInspectPinRequests = [];
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint();
     testRuntime.gameLoopStartCount = 0;
     testRuntime.storageValues.clear();
@@ -2871,6 +2884,61 @@ describe('main.ts shell state orchestration', () => {
         y: renderContacts.ceiling.tileY,
         id: renderContacts.ceiling.tileId
       }
+    });
+  });
+
+  it('surfaces simulated liquid levels through hovered and pinned inspect telemetry', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 4, y: 6 }
+    };
+    testRuntime.debugTileInspectPinRequests = [
+      {
+        worldTileX: 4,
+        worldTileY: 6
+      }
+    ];
+    testRuntime.rendererTileId = 7;
+    testRuntime.rendererLiquidLevel = 3;
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState).not.toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugOverlayInspectState || !testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest overlay and status-strip inspect telemetry');
+    }
+
+    expect(testRuntime.latestDebugOverlayInspectState.pointer).toMatchObject({
+      tile: { x: 4, y: 6 },
+      tileId: 7,
+      liquidKind: 'water',
+      liquidLevel: 3
+    });
+    expect(testRuntime.latestDebugOverlayInspectState.pinned).toMatchObject({
+      tile: { x: 4, y: 6 },
+      tileId: 7,
+      liquidKind: 'water',
+      liquidLevel: 3
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.hoveredTile).toMatchObject({
+      tileX: 4,
+      tileY: 6,
+      tileId: 7,
+      liquidKind: 'water',
+      liquidLevel: 3
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.pinnedTile).toMatchObject({
+      tileX: 4,
+      tileY: 6,
+      tileId: 7,
+      liquidKind: 'water',
+      liquidLevel: 3
     });
   });
 

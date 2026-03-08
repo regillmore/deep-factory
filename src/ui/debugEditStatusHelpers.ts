@@ -9,7 +9,7 @@ import {
   type TouchDebugEditMode
 } from '../input/controller';
 import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
-import { MAX_LIGHT_LEVEL } from '../world/constants';
+import { MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL } from '../world/constants';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
@@ -98,6 +98,7 @@ export interface DebugEditHoveredTileState {
   solid: boolean;
   blocksLight: boolean;
   liquidKind: TileLiquidKind | null;
+  liquidLevel?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -463,6 +464,14 @@ const formatDurationMs = (durationMs: number | null | undefined): string | null 
   }
   return `${Math.round(durationMs)}ms`;
 };
+const formatLiquidLevel = (liquidLevel: number | null | undefined): string | null => {
+  if (typeof liquidLevel !== 'number' || !Number.isFinite(liquidLevel)) {
+    return null;
+  }
+
+  const clampedLevel = Math.min(Math.max(Math.round(liquidLevel), 0), MAX_LIQUID_LEVEL);
+  return `${clampedLevel}/${MAX_LIQUID_LEVEL}`;
+};
 const formatProgressPercentage = (value: number | null | undefined): string | null => {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     return null;
@@ -483,6 +492,7 @@ const hasSameInspectTarget = (
   hoveredTile.tileY === pinnedTile.tileY;
 
 const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): string => {
+  const liquidLevel = formatLiquidLevel(tile.liquidLevel);
   const liquidAnimationFrame = formatLiquidAnimationFrame(
     tile.liquidAnimationFrameIndex,
     tile.liquidAnimationFrameCount
@@ -507,6 +517,7 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     ` | solid:${formatHoveredTileFlag(tile.solid)}` +
     ` | light:${formatHoveredTileFlag(tile.blocksLight)}` +
     ` | liquid:${tile.liquidKind ?? 'none'}` +
+    (liquidLevel ? ` | liquidLevel:${liquidLevel}` : '') +
     (typeof tile.liquidConnectivityGroupLabel === 'string' && tile.liquidConnectivityGroupLabel.length > 0
       ? ` | liquidGroup:${tile.liquidConnectivityGroupLabel}`
       : '') +

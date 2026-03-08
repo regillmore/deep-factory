@@ -1,5 +1,5 @@
 import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
-import { MAX_LIGHT_LEVEL, TILE_SIZE } from '../world/constants';
+import { MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL, TILE_SIZE } from '../world/constants';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
@@ -41,6 +41,7 @@ export interface DebugOverlayPointerInspect {
   solid?: boolean;
   blocksLight?: boolean;
   liquidKind?: TileLiquidKind | null;
+  liquidLevel?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -69,6 +70,7 @@ export interface DebugOverlayTileInspect {
   solid?: boolean;
   blocksLight?: boolean;
   liquidKind?: TileLiquidKind | null;
+  liquidLevel?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -214,6 +216,14 @@ const formatDurationMs = (durationMs: number | null | undefined): string | null 
   }
   return `${Math.round(durationMs)}ms`;
 };
+const formatLiquidLevel = (liquidLevel: number | null | undefined): string | null => {
+  if (typeof liquidLevel !== 'number' || !Number.isFinite(liquidLevel)) {
+    return null;
+  }
+
+  const clampedLevel = Math.min(Math.max(Math.round(liquidLevel), 0), MAX_LIQUID_LEVEL);
+  return `${clampedLevel}/${MAX_LIQUID_LEVEL}`;
+};
 const formatProgressPercentage = (value: number | null | undefined): string | null => {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     return null;
@@ -271,6 +281,7 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     return '';
   }
 
+  const liquidLevel = formatLiquidLevel(tileInspect.liquidLevel);
   const liquidAnimationFrame = formatLiquidAnimationFrame(
     tileInspect.liquidAnimationFrameIndex,
     tileInspect.liquidAnimationFrameCount
@@ -292,6 +303,7 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     ` | solid:${formatGameplayFlag(tileInspect.solid)}` +
     ` | light:${formatGameplayFlag(tileInspect.blocksLight)}` +
     ` | liquid:${tileInspect.liquidKind ?? 'none'}` +
+    (liquidLevel ? ` | liquidLevel:${liquidLevel}` : '') +
     (typeof tileInspect.liquidConnectivityGroupLabel === 'string' &&
     tileInspect.liquidConnectivityGroupLabel.length > 0
       ? ` | liquidGroup:${tileInspect.liquidConnectivityGroupLabel}`
