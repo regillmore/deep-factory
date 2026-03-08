@@ -2,10 +2,6 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-## Entities and interpolation
-
-371. Add runtime coverage that paused-menu New World resets clear snapshot-owned wall, ceiling, and bonk presentation so the fresh-spawn placeholder cannot inherit a stale blocked pose on its first render.
-
 ## Save/load
 
 19. Define a versioned chunk snapshot format with explicit metadata and tile payload encoding.
@@ -53,3 +49,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 352. Add a door utility slice after starter building-block placement (`308`) and save/load (`19-21`): stackable door hotbar slots, mixed-device two-tile doorway placement plus open/close collision swapping, and snapshot regressions for placed door state.
 363. Add a bomb-demolition combat slice after hostile-slime combat (`213`) and inventory basics (`214`): stackable bomb hotbar slots, mixed-device throw aiming with fixed-step fuse timing, terrain blast edits plus player/slime damage falloff, and save/load regressions for cratered terrain plus remaining bomb stacks.
 364. Add a recall-mirror recovery slice after inventory basics (`214`) and bed-checkpoint respawn (`338`): a non-stackable mirror hotbar slot, mixed-device use input with fixed-step channel/cancel rules, teleport to the latest valid checkpoint or world spawn, and deterministic cooldown regressions.
+372. Add a bucket liquid-transfer utility slice after inventory basics (`214`) and save/load (`19-21`): stackable empty, water, and lava bucket hotbar slots, mixed-device source pickup plus nearby-tile pour placement, deterministic liquid-volume regressions, and snapshot regressions for bucket contents plus resident liquid state.

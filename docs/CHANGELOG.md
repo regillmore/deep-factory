@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Add runtime coverage that paused-menu New World resets clear snapshot-owned wall, ceiling, and bonk presentation so the fresh-spawn placeholder cannot inherit a stale blocked pose on its first render.
+- Changes: Expanded [src/main.test.ts](../src/main.test.ts) with a focused paused-menu regression that first creates a stale blocked wall-plus-ceiling snapshot with an active bonk hold, then triggers `New World` and asserts the first fresh-world render clears those snapshot-owned presentation fields and returns the placeholder to `grounded-idle`; removed completed task `371` from [docs/NEXT.md](docs/NEXT.md) and, because this completes the paused fresh-world snapshot-reset coverage pattern, added new ambitious vertical-slice task `372`.
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add runtime coverage that paused-menu New World resets keep standalone-player placeholder interpolation snapped to the fresh spawn without one-frame smear.
 - Changes: Expanded [src/main.test.ts](../src/main.test.ts) with a focused paused-menu regression that moves the standalone player away from spawn, triggers `New World`, and asserts the first resumed render frame keeps entity `previous/current` snapshots plus the interpolated placeholder position snapped to the fresh spawn at non-zero render alpha; removed completed task `366` from [docs/NEXT.md](docs/NEXT.md) and added replacement task `371`.
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

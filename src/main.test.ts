@@ -2073,6 +2073,127 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
   });
 
+  it('clears standalone-player snapshot-owned wall, ceiling, and bonk presentation on the first render after paused-menu New World reset', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    const blockedContacts = {
+      support: null,
+      wall: {
+        tileX: -2,
+        tileY: -1,
+        tileId: 3,
+        side: 'left' as const
+      },
+      ceiling: {
+        tileX: -1,
+        tileY: -3,
+        tileId: 4
+      }
+    };
+    const airbornePlayerState = {
+      position: { x: -12, y: -10 },
+      velocity: { x: -48, y: 96 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'left' as const
+    };
+
+    testRuntime.performanceNow = 1500;
+    testRuntime.rendererStepPlayerStateImpl = () => airbornePlayerState;
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, blockedContacts, noContacts];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
+    expect(testRuntime.latestDebugOverlayInspectState).not.toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (
+      !testRuntime.latestRendererRenderFrameState ||
+      !testRuntime.latestDebugOverlayInspectState ||
+      !testRuntime.latestDebugEditStatusStripState
+    ) {
+      throw new Error('expected stale blocked presentation before paused-menu New World reset');
+    }
+    const preResetRenderFrameState = testRuntime.latestRendererRenderFrameState as {
+      standalonePlayerWallContact:
+        | { tileX: number; tileY: number; tileId: number; side: 'left' | 'right' }
+        | null;
+      standalonePlayerCeilingContact: { tileX: number; tileY: number; tileId: number } | null;
+      standalonePlayerCeilingBonkHoldUntilTimeMs: number | null;
+    };
+
+    expect(preResetRenderFrameState.standalonePlayerWallContact).toEqual(blockedContacts.wall);
+    expect(preResetRenderFrameState.standalonePlayerCeilingContact).toEqual(
+      blockedContacts.ceiling
+    );
+    expect(preResetRenderFrameState.standalonePlayerCeilingBonkHoldUntilTimeMs).toBe(
+      1500 + STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS
+    );
+    expect(testRuntime.latestDebugOverlayInspectState.playerPlaceholderPoseLabel).toBe(
+      'ceiling-bonk'
+    );
+    expect(testRuntime.latestDebugEditStatusStripState.playerPlaceholderPoseLabel).toBe(
+      'ceiling-bonk'
+    );
+    expect(testRuntime.latestDebugOverlayInspectState.playerCeilingBonkHoldActive).toBe(true);
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(true);
+
+    testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 5,
+      standingTileY: 4,
+      x: 88,
+      y: 64,
+      supportTileX: 5,
+      supportTileY: 5,
+      supportTileId: 9
+    });
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts];
+    testRuntime.latestRendererRenderFrameState = null;
+    testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
+    expect(testRuntime.latestDebugOverlayInspectState).not.toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (
+      !testRuntime.latestRendererRenderFrameState ||
+      !testRuntime.latestDebugOverlayInspectState ||
+      !testRuntime.latestDebugEditStatusStripState
+    ) {
+      throw new Error('expected cleared presentation after paused-menu New World reset');
+    }
+    const postResetRenderFrameState = testRuntime.latestRendererRenderFrameState as {
+      standalonePlayerWallContact:
+        | { tileX: number; tileY: number; tileId: number; side: 'left' | 'right' }
+        | null;
+      standalonePlayerCeilingContact: { tileX: number; tileY: number; tileId: number } | null;
+      standalonePlayerCeilingBonkHoldUntilTimeMs: number | null;
+    };
+
+    expect(postResetRenderFrameState.standalonePlayerWallContact).toBeNull();
+    expect(postResetRenderFrameState.standalonePlayerCeilingContact).toBeNull();
+    expect(postResetRenderFrameState.standalonePlayerCeilingBonkHoldUntilTimeMs).toBeNull();
+    expect(testRuntime.latestDebugOverlayInspectState.playerPlaceholderPoseLabel).toBe(
+      'grounded-idle'
+    );
+    expect(testRuntime.latestDebugEditStatusStripState.playerPlaceholderPoseLabel).toBe(
+      'grounded-idle'
+    );
+    expect(testRuntime.latestDebugOverlayInspectState.playerCeilingBonkHoldActive).toBe(false);
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+  });
+
   it('routes bootstrap spawn initialization, lava respawn, and embedded respawn recovery through one shared standalone-player transition-reset helper', async () => {
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
       anchorTileX: 0,
