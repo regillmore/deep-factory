@@ -63,6 +63,8 @@ export interface DebugOverlayPointerInspect {
   liquidBottomRightPixelY?: number | null;
   liquidVisibleLeftV?: number | null;
   liquidVisibleRightV?: number | null;
+  liquidVisibleLeftPercentage?: number | null;
+  liquidVisibleRightPercentage?: number | null;
   liquidVisibleLeftPixelHeight?: number | null;
   liquidVisibleRightPixelHeight?: number | null;
   liquidRemainderLeftV?: number | null;
@@ -119,6 +121,8 @@ export interface DebugOverlayTileInspect {
   liquidBottomRightPixelY?: number | null;
   liquidVisibleLeftV?: number | null;
   liquidVisibleRightV?: number | null;
+  liquidVisibleLeftPercentage?: number | null;
+  liquidVisibleRightPercentage?: number | null;
   liquidVisibleLeftPixelHeight?: number | null;
   liquidVisibleRightPixelHeight?: number | null;
   liquidRemainderLeftV?: number | null;
@@ -422,6 +426,10 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
   const liquidBottomRightPixelY = formatAtlasPixelCoordinate(tileInspect.liquidBottomRightPixelY);
   const liquidVisibleLeftV = formatLiquidSurfaceHeight(tileInspect.liquidVisibleLeftV);
   const liquidVisibleRightV = formatLiquidSurfaceHeight(tileInspect.liquidVisibleRightV);
+  const liquidVisibleLeftPercentage = formatPercentageValue(tileInspect.liquidVisibleLeftPercentage);
+  const liquidVisibleRightPercentage = formatPercentageValue(
+    tileInspect.liquidVisibleRightPercentage
+  );
   const liquidVisibleLeftPixelHeight = formatAtlasPixelCoordinate(
     tileInspect.liquidVisibleLeftPixelHeight
   );
@@ -480,6 +488,12 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     (liquidBottomRightPixelY !== null ? ` | liquidBottomRightPxY:${liquidBottomRightPixelY}` : '') +
     (liquidVisibleLeftV !== null ? ` | liquidVisibleLeftV:${liquidVisibleLeftV}` : '') +
     (liquidVisibleRightV !== null ? ` | liquidVisibleRightV:${liquidVisibleRightV}` : '') +
+    (liquidVisibleLeftPercentage !== null
+      ? ` | liquidVisibleLeftPct:${liquidVisibleLeftPercentage}`
+      : '') +
+    (liquidVisibleRightPercentage !== null
+      ? ` | liquidVisibleRightPct:${liquidVisibleRightPercentage}`
+      : '') +
     (liquidVisibleLeftPixelHeight !== null
       ? ` | liquidVisibleLeftPxH:${liquidVisibleLeftPixelHeight}`
       : '') +

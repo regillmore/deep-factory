@@ -121,6 +121,8 @@ export interface DebugEditHoveredTileState {
   liquidBottomRightPixelY?: number | null;
   liquidVisibleLeftV?: number | null;
   liquidVisibleRightV?: number | null;
+  liquidVisibleLeftPercentage?: number | null;
+  liquidVisibleRightPercentage?: number | null;
   liquidVisibleLeftPixelHeight?: number | null;
   liquidVisibleRightPixelHeight?: number | null;
   liquidRemainderLeftV?: number | null;
@@ -612,6 +614,8 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
   const liquidBottomRightPixelY = formatAtlasPixelCoordinate(tile.liquidBottomRightPixelY);
   const liquidVisibleLeftV = formatLiquidSurfaceHeight(tile.liquidVisibleLeftV);
   const liquidVisibleRightV = formatLiquidSurfaceHeight(tile.liquidVisibleRightV);
+  const liquidVisibleLeftPercentage = formatPercentageValue(tile.liquidVisibleLeftPercentage);
+  const liquidVisibleRightPercentage = formatPercentageValue(tile.liquidVisibleRightPercentage);
   const liquidVisibleLeftPixelHeight = formatAtlasPixelCoordinate(tile.liquidVisibleLeftPixelHeight);
   const liquidVisibleRightPixelHeight = formatAtlasPixelCoordinate(
     tile.liquidVisibleRightPixelHeight
@@ -669,6 +673,12 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     (liquidBottomRightPixelY !== null ? ` | liquidBottomRightPxY:${liquidBottomRightPixelY}` : '') +
     (liquidVisibleLeftV !== null ? ` | liquidVisibleLeftV:${liquidVisibleLeftV}` : '') +
     (liquidVisibleRightV !== null ? ` | liquidVisibleRightV:${liquidVisibleRightV}` : '') +
+    (liquidVisibleLeftPercentage !== null
+      ? ` | liquidVisibleLeftPct:${liquidVisibleLeftPercentage}`
+      : '') +
+    (liquidVisibleRightPercentage !== null
+      ? ` | liquidVisibleRightPct:${liquidVisibleRightPercentage}`
+      : '') +
     (liquidVisibleLeftPixelHeight !== null
       ? ` | liquidVisibleLeftPxH:${liquidVisibleLeftPixelHeight}`
       : '') +

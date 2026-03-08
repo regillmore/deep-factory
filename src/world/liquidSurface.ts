@@ -28,6 +28,11 @@ export interface LiquidSurfaceVisibleFrameHeights {
   visibleRightV: number;
 }
 
+export interface LiquidSurfaceVisibleFramePercentages {
+  visibleLeftPercentage: number;
+  visibleRightPercentage: number;
+}
+
 export interface LiquidSurfaceCroppedFrameRemainders {
   remainderLeftV: number;
   remainderRightV: number;
@@ -187,6 +192,25 @@ export const resolveLiquidSurfaceVisibleFrameHeights = (
       frameHeightV,
       Math.max(0, clampNormalizedLiquidHeight(bottomVCrops.bottomRightV) - topV)
     )
+  };
+};
+
+export const resolveLiquidSurfaceVisibleFramePercentages = (
+  uvRect: Pick<TileUvRect, 'v0' | 'v1'>,
+  bottomVCrops: LiquidSurfaceBottomVCrops
+): LiquidSurfaceVisibleFramePercentages => {
+  const frameHeightV = resolveLiquidSurfaceFrameHeightV(uvRect);
+  if (frameHeightV <= 0) {
+    return {
+      visibleLeftPercentage: 0,
+      visibleRightPercentage: 0
+    };
+  }
+
+  const visibleFrameHeights = resolveLiquidSurfaceVisibleFrameHeights(uvRect, bottomVCrops);
+  return {
+    visibleLeftPercentage: clampPercentage((visibleFrameHeights.visibleLeftV / frameHeightV) * 100),
+    visibleRightPercentage: clampPercentage((visibleFrameHeights.visibleRightV / frameHeightV) * 100)
   };
 };
 

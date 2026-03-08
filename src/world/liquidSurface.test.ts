@@ -9,6 +9,7 @@ import {
   resolveLiquidSurfaceCroppedFrameAtlasPixelHeights,
   resolveLiquidSurfaceCroppedFramePercentages,
   resolveLiquidSurfaceCroppedFrameRemainders,
+  resolveLiquidSurfaceVisibleFramePercentages,
   resolveLiquidSurfaceFrameAtlasPixelHeight,
   resolveLiquidSurfaceFrameBottomAtlasPixelRow,
   resolveLiquidSurfaceFrameBottomV,
@@ -468,6 +469,44 @@ describe('resolveLiquidSurfaceCroppedFrameRemainders', () => {
     ).toEqual({
       remainderLeftV: 0,
       remainderRightV: 0.25
+    });
+  });
+});
+
+describe('resolveLiquidSurfaceVisibleFramePercentages', () => {
+  it('maps visible frame deltas onto percentages of the current frame height', () => {
+    expect(
+      resolveLiquidSurfaceVisibleFramePercentages(
+        {
+          v0: 0.75,
+          v1: 0.875
+        },
+        {
+          bottomLeftV: 0.8125,
+          bottomRightV: 0.796875
+        }
+      )
+    ).toEqual({
+      visibleLeftPercentage: 50,
+      visibleRightPercentage: 37.5
+    });
+  });
+
+  it('returns clamped percentages when frame bounds or crop inputs are invalid', () => {
+    expect(
+      resolveLiquidSurfaceVisibleFramePercentages(
+        {
+          v0: 0.5,
+          v1: 0.75
+        },
+        {
+          bottomLeftV: 4,
+          bottomRightV: -2
+        }
+      )
+    ).toEqual({
+      visibleLeftPercentage: 100,
+      visibleRightPercentage: 0
     });
   });
 });

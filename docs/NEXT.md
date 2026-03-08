@@ -4,8 +4,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Liquid rendering
 
-346. Surface visible liquid percentages per side in hovered and pinned inspect telemetry so rendered-liquid coverage stays directly comparable across liquid variants with different authored frame heights.
 347. Surface paired visible-plus-cropped per-side percentage accounting in hovered and pinned inspect telemetry so partial-liquid frame coverage can be checked to sum to `100%` without mental math.
+348. Surface paired visible-plus-cropped per-side atlas-pixel accounting in hovered and pinned inspect telemetry so partial-liquid frame coverage can be checked to sum to the current frame pixel height without mental math.
 
 ## Lighting
 

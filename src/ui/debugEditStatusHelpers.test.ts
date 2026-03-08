@@ -1848,6 +1848,8 @@ describe('buildDebugEditStatusStripModel', () => {
         liquidBottomRightPixelY: 51,
         liquidVisibleLeftV: 0.0625,
         liquidVisibleRightV: 0.046875,
+        liquidVisibleLeftPercentage: 50,
+        liquidVisibleRightPercentage: 37.5,
         liquidVisibleLeftPixelHeight: 4,
         liquidVisibleRightPixelHeight: 3,
         liquidRemainderLeftV: 0.0625,
@@ -1875,7 +1877,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Hover: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidLevel:3/8 | liquidSurfaceIn:north=0/8 west=5/8 center=3/8 east=0/8 | liquidSurfaceBranch:exposed | liquidTopLeft:0.5 | liquidTopRight:0.375 | liquidFrameTopV:0.75 | liquidFrameTopPxY:48 | liquidFrameBottomV:0.875 | liquidFrameBottomPxY:56 | liquidFrameHeightV:0.125 | liquidFramePxH:8 | liquidBottomLeftV:0.813 | liquidBottomRightV:0.797 | liquidBottomLeftPxY:52 | liquidBottomRightPxY:51 | liquidVisibleLeftV:0.063 | liquidVisibleRightV:0.047 | liquidVisibleLeftPxH:4 | liquidVisibleRightPxH:3 | liquidRemainderLeftV:0.063 | liquidRemainderRightV:0.078 | liquidRemainderLeftPct:50% | liquidRemainderRightPct:62.5% | liquidRemainderLeftPxH:4 | liquidRemainderRightPxH:5 | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidFramePct:33.3% | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidLoopPct:66.7% | liquidLoopRemain:120ms | liquidSrc:uvRect 0.333,0.75..0.5,0.875 | liquidUv:0.333,0.75..0.5,0.875 | liquidPx:32,48..48,56'
+      'Hover: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidLevel:3/8 | liquidSurfaceIn:north=0/8 west=5/8 center=3/8 east=0/8 | liquidSurfaceBranch:exposed | liquidTopLeft:0.5 | liquidTopRight:0.375 | liquidFrameTopV:0.75 | liquidFrameTopPxY:48 | liquidFrameBottomV:0.875 | liquidFrameBottomPxY:56 | liquidFrameHeightV:0.125 | liquidFramePxH:8 | liquidBottomLeftV:0.813 | liquidBottomRightV:0.797 | liquidBottomLeftPxY:52 | liquidBottomRightPxY:51 | liquidVisibleLeftV:0.063 | liquidVisibleRightV:0.047 | liquidVisibleLeftPct:50% | liquidVisibleRightPct:37.5% | liquidVisibleLeftPxH:4 | liquidVisibleRightPxH:3 | liquidRemainderLeftV:0.063 | liquidRemainderRightV:0.078 | liquidRemainderLeftPct:50% | liquidRemainderRightPct:62.5% | liquidRemainderLeftPxH:4 | liquidRemainderRightPxH:5 | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidFramePct:33.3% | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidLoopPct:66.7% | liquidLoopRemain:120ms | liquidSrc:uvRect 0.333,0.75..0.5,0.875 | liquidUv:0.333,0.75..0.5,0.875 | liquidPx:32,48..48,56'
     );
   });
 
@@ -1918,6 +1920,8 @@ describe('buildDebugEditStatusStripModel', () => {
         liquidBottomRightPixelY: 6,
         liquidVisibleLeftV: 0.125,
         liquidVisibleRightV: 0.09375,
+        liquidVisibleLeftPercentage: 50,
+        liquidVisibleRightPercentage: 37.5,
         liquidVisibleLeftPixelHeight: 8,
         liquidVisibleRightPixelHeight: 6,
         liquidRemainderLeftV: 0.125,
@@ -1940,6 +1944,8 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.hoverText).toContain('liquidFrameBottomV:0.25');
     expect(model.hoverText).toContain('liquidFrameBottomPxY:16');
     expect(model.hoverText).toContain('liquidFrameHeightV:0.25');
+    expect(model.hoverText).toContain('liquidVisibleLeftPct:50%');
+    expect(model.hoverText).toContain('liquidVisibleRightPct:37.5%');
     expect(model.hoverText).toContain('liquidFramePxH:16');
     expect(model.hoverText).toContain('liquidRemainderLeftV:0.125');
     expect(model.hoverText).toContain('liquidRemainderRightV:0.156');
@@ -1988,6 +1994,8 @@ describe('buildDebugEditStatusStripModel', () => {
         liquidBottomRightPixelY: 53,
         liquidVisibleLeftV: 0.09375,
         liquidVisibleRightV: 0.078125,
+        liquidVisibleLeftPercentage: 75,
+        liquidVisibleRightPercentage: 62.5,
         liquidVisibleLeftPixelHeight: 6,
         liquidVisibleRightPixelHeight: 5,
         liquidRemainderLeftV: 0.03125,
@@ -2015,7 +2023,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidLevel:5/8 | liquidSurfaceIn:north=0/8 west=7/8 center=5/8 east=0/8 | liquidTopLeft:0.75 | liquidTopRight:0.625 | liquidFrameTopV:0.75 | liquidFrameTopPxY:48 | liquidFrameBottomV:0.875 | liquidFrameBottomPxY:56 | liquidFrameHeightV:0.125 | liquidFramePxH:8 | liquidBottomLeftV:0.844 | liquidBottomRightV:0.828 | liquidBottomLeftPxY:54 | liquidBottomRightPxY:53 | liquidVisibleLeftV:0.094 | liquidVisibleRightV:0.078 | liquidVisibleLeftPxH:6 | liquidVisibleRightPxH:5 | liquidRemainderLeftV:0.031 | liquidRemainderRightV:0.047 | liquidRemainderLeftPct:25% | liquidRemainderRightPct:37.5% | liquidRemainderLeftPxH:2 | liquidRemainderRightPxH:3 | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidFramePct:33.3% | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidLoopPct:66.7% | liquidLoopRemain:120ms | liquidSrc:uvRect 0.5,0.75..0.667,0.875 | liquidUv:0.5,0.75..0.667,0.875 | liquidPx:48,48..64,56'
+      'Pinned: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidLevel:5/8 | liquidSurfaceIn:north=0/8 west=7/8 center=5/8 east=0/8 | liquidTopLeft:0.75 | liquidTopRight:0.625 | liquidFrameTopV:0.75 | liquidFrameTopPxY:48 | liquidFrameBottomV:0.875 | liquidFrameBottomPxY:56 | liquidFrameHeightV:0.125 | liquidFramePxH:8 | liquidBottomLeftV:0.844 | liquidBottomRightV:0.828 | liquidBottomLeftPxY:54 | liquidBottomRightPxY:53 | liquidVisibleLeftV:0.094 | liquidVisibleRightV:0.078 | liquidVisibleLeftPct:75% | liquidVisibleRightPct:62.5% | liquidVisibleLeftPxH:6 | liquidVisibleRightPxH:5 | liquidRemainderLeftV:0.031 | liquidRemainderRightV:0.047 | liquidRemainderLeftPct:25% | liquidRemainderRightPct:37.5% | liquidRemainderLeftPxH:2 | liquidRemainderRightPxH:3 | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidFramePct:33.3% | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidLoopPct:66.7% | liquidLoopRemain:120ms | liquidSrc:uvRect 0.5,0.75..0.667,0.875 | liquidUv:0.5,0.75..0.667,0.875 | liquidPx:48,48..64,56'
     );
     expect(model.inspectText).toBe('Inspect: Pinned @ 12,-4');
     expect(model.inspectActionText).toBe('Repin Click');

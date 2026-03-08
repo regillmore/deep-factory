@@ -249,6 +249,8 @@ describe('formatDebugOverlayText', () => {
         liquidBottomRightPixelY: 6,
         liquidVisibleLeftV: 0.125,
         liquidVisibleRightV: 0.09375,
+        liquidVisibleLeftPercentage: 50,
+        liquidVisibleRightPercentage: 37.5,
         liquidVisibleLeftPixelHeight: 8,
         liquidVisibleRightPixelHeight: 6,
         liquidRemainderLeftV: 0.125,
@@ -296,6 +298,8 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidBottomRightPxY:6');
     expect(text).toContain('liquidVisibleLeftV:0.125');
     expect(text).toContain('liquidVisibleRightV:0.094');
+    expect(text).toContain('liquidVisibleLeftPct:50%');
+    expect(text).toContain('liquidVisibleRightPct:37.5%');
     expect(text).toContain('liquidVisibleLeftPxH:8');
     expect(text).toContain('liquidVisibleRightPxH:6');
     expect(text).toContain('liquidRemainderLeftV:0.125');
@@ -339,6 +343,8 @@ describe('formatDebugOverlayText', () => {
         liquidBottomRightPixelY: 4,
         liquidVisibleLeftV: 0.15625,
         liquidVisibleRightV: 0.0625,
+        liquidVisibleLeftPercentage: 62.5,
+        liquidVisibleRightPercentage: 25,
         liquidVisibleLeftPixelHeight: 10,
         liquidVisibleRightPixelHeight: 4,
         liquidRemainderLeftV: 0.09375,
@@ -393,6 +399,8 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidBottomRightPxY:4');
     expect(text).toContain('liquidVisibleLeftV:0.156');
     expect(text).toContain('liquidVisibleRightV:0.063');
+    expect(text).toContain('liquidVisibleLeftPct:62.5%');
+    expect(text).toContain('liquidVisibleRightPct:25%');
     expect(text).toContain('liquidVisibleLeftPxH:10');
     expect(text).toContain('liquidVisibleRightPxH:4');
     expect(text).toContain('liquidRemainderLeftV:0.094');
@@ -653,6 +661,8 @@ describe('formatDebugOverlayText', () => {
         liquidBottomRightPixelY: 42,
         liquidVisibleLeftV: 0.1875,
         liquidVisibleRightV: 0.15625,
+        liquidVisibleLeftPercentage: 75,
+        liquidVisibleRightPercentage: 62.5,
         liquidVisibleLeftPixelHeight: 12,
         liquidVisibleRightPixelHeight: 10,
         liquidRemainderLeftV: 0.0625,
@@ -693,6 +703,8 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidBottomRightPxY:42');
     expect(text).toContain('liquidVisibleLeftV:0.188');
     expect(text).toContain('liquidVisibleRightV:0.156');
+    expect(text).toContain('liquidVisibleLeftPct:75%');
+    expect(text).toContain('liquidVisibleRightPct:62.5%');
     expect(text).toContain('liquidVisibleLeftPxH:12');
     expect(text).toContain('liquidVisibleRightPxH:10');
     expect(text).toContain('liquidRemainderLeftV:0.063');
