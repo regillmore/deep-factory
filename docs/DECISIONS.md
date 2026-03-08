@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Session save export should read the renderer-owned world through a snapshot seam
+
+- Decision: `src/mainWorldSessionSave.ts` now builds top-level save envelopes from a `WorldSessionSaveSource`, and `Renderer` exposes `createWorldSnapshot()` instead of leaking direct `TileWorld` access to session code.
+- Reason: The renderer currently owns the live `TileWorld`, so save export needs one stable read seam that preserves that ownership boundary while still letting session-level persistence assemble the full envelope.
+- Consequence: Future save UI, adapters, and restore wiring should call the session export helper or renderer snapshot API instead of reaching into renderer internals or duplicating world ownership in `src/main.ts`.
+
 ### 2026-03-08: Session persistence should wrap world snapshots in one versioned save envelope
 
 - Decision: `src/mainWorldSave.ts` now defines the top-level `deep-factory.world-save` envelope with root `kind`, `version`, `migration`, `session`, and `worldSnapshot` fields, where `session` carries standalone-player `PlayerState` plus camera-follow offset and nested world validation reuses `TileWorld.loadSnapshot()`.

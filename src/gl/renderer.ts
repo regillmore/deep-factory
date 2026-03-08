@@ -57,7 +57,7 @@ import {
   type StandalonePlayerRenderState
 } from '../world/standalonePlayerRenderState';
 import { recomputeSunlightFromExposedChunkTops } from '../world/sunlight';
-import { TileWorld } from '../world/world';
+import { TileWorld, type TileWorldSnapshot } from '../world/world';
 
 interface ChunkGpuMesh {
   buffer: WebGLBuffer;
@@ -560,6 +560,10 @@ export class Renderer {
       this.world.sampleTileNeighborhood(worldTileX, worldTileY),
       TILE_METADATA
     );
+  }
+
+  createWorldSnapshot(): TileWorldSnapshot {
+    return this.world.createSnapshot();
   }
 
   resetWorld(): void {

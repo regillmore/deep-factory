@@ -10,6 +10,7 @@ import {
   cloneStandalonePlayerRenderState,
   createStandalonePlayerRenderPresentationState
 } from '../world/standalonePlayerRenderState';
+import { TileWorld } from '../world/world';
 import {
   atlasIndexToUvRect,
   getTileEmissiveLightLevel,
@@ -445,6 +446,35 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.residentDirtyLightChunks).toBe(0);
     expect(deleteBuffer).toHaveBeenCalled();
     expect(deleteVertexArray).toHaveBeenCalled();
+  });
+
+  it('creates detached world snapshots from the active world state', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const worldTileX = CHUNK_SIZE + 4;
+    const worldTileY = -20;
+    renderer.setTile(worldTileX, worldTileY, 6);
+
+    const snapshot = renderer.createWorldSnapshot();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(snapshot);
+    expect(restoredWorld.getTile(worldTileX, worldTileY)).toBe(6);
+
+    renderer.setTile(worldTileX, worldTileY, 5);
+
+    const restoredSnapshotWorld = new TileWorld(0);
+    restoredSnapshotWorld.loadSnapshot(snapshot);
+    expect(restoredSnapshotWorld.getTile(worldTileX, worldTileY)).toBe(6);
   });
 
   it('invalidates lower-row chunk meshes when a roof edit changes lighting across the y=-1/0 seam', async () => {
