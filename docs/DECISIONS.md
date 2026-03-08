@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Exposed liquid surface corners blend halfway toward same-kind side neighbors
+
+- Decision: `src/world/liquidSurface.ts` now resolves normalized `topLeft` and `topRight` fill heights by clamping raw fill levels, returning `0/0` for empty center tiles, forcing `1/1` when same-kind liquid continues above, and otherwise averaging the center fill with the same-kind west or east fill at each exposed shared corner.
+- Reason: Future partial-liquid meshing needs one world-owned rule that keeps isolated partial tiles flat, produces smooth exposed slopes between unequal neighboring fill levels, and guarantees both tiles on a shared boundary resolve the same corner height.
+- Consequence: Future liquid geometry, debug inspection of resolved liquid surfaces, or other partial-liquid presentation work should consume the shared resolver instead of inventing separate per-side height math.
+
 ### 2026-03-07: Loaded-chunk liquid simulation resolves downward transfers before sideways equalization
 
 - Decision: Resident liquid simulation in `src/world/world.ts` stores per-tile `0..8` fill levels, applies downward transfers before sideways equalization, and only crosses into already loaded neighboring chunk cells during fixed updates.

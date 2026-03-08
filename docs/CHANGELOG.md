@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Add a shared liquid-surface height resolver that converts per-tile fill levels plus same-kind neighbors into normalized exposed-liquid top heights for future partial-liquid meshing.
+- Changes: Added [src/world/liquidSurface.ts](../src/world/liquidSurface.ts) plus [src/world/liquidSurface.test.ts](../src/world/liquidSurface.test.ts) to clamp raw fill levels, force full-height tops when same-kind liquid continues above, and blend exposed side corners halfway toward same-kind neighbors so adjacent tiles share boundary heights, removed completed task `324` from [docs/NEXT.md](docs/NEXT.md), added replacement task `325`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/liquidSurface.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Surface simulated liquid fill levels (`0..8`) in hovered and pinned inspect telemetry so partial-liquid state stays debuggable before partial-liquid meshing lands.
 - Changes: Updated [src/gl/renderer.ts](../src/gl/renderer.ts) and [src/main.ts](../src/main.ts) so inspect snapshots now pull per-tile liquid levels from world state, refreshed [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) plus [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so hovered and pinned inspect readouts append `liquidLevel:x/8`, expanded [src/main.test.ts](../src/main.test.ts), [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), and [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), removed completed task `323` from [docs/NEXT.md](docs/NEXT.md), added replacement task `324`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/debugOverlay.test.ts src/ui/debugEditStatusHelpers.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

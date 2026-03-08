@@ -1,0 +1,80 @@
+import { describe, expect, it } from 'vitest';
+
+import { resolveLiquidSurfaceTopHeights } from './liquidSurface';
+
+describe('resolveLiquidSurfaceTopHeights', () => {
+  it('returns zero heights when the center tile has no liquid after clamping', () => {
+    expect(
+      resolveLiquidSurfaceTopHeights({
+        center: -3,
+        north: 8,
+        east: 8,
+        west: 8
+      })
+    ).toEqual({
+      topLeft: 0,
+      topRight: 0
+    });
+  });
+
+  it('clamps out-of-range exposed fill levels before resolving corner heights', () => {
+    expect(
+      resolveLiquidSurfaceTopHeights({
+        center: 4,
+        north: 0,
+        east: 99,
+        west: -12
+      })
+    ).toEqual({
+      topLeft: 0.5,
+      topRight: 0.75
+    });
+  });
+
+  it('forces a full-height top when same-kind liquid continues above the tile', () => {
+    expect(
+      resolveLiquidSurfaceTopHeights({
+        center: 3,
+        north: 2,
+        east: 8,
+        west: 0
+      })
+    ).toEqual({
+      topLeft: 1,
+      topRight: 1
+    });
+  });
+
+  it('resolves asymmetric exposed slopes from same-kind side neighbors', () => {
+    expect(
+      resolveLiquidSurfaceTopHeights({
+        center: 4,
+        north: 0,
+        east: 2,
+        west: 8
+      })
+    ).toEqual({
+      topLeft: 0.75,
+      topRight: 0.375
+    });
+  });
+
+  it('keeps shared boundary heights continuous across neighboring tiles', () => {
+    const leftTile = resolveLiquidSurfaceTopHeights({
+      center: 4,
+      north: 0,
+      east: 8,
+      west: 0
+    });
+    const rightTile = resolveLiquidSurfaceTopHeights({
+      center: 8,
+      north: 0,
+      east: 0,
+      west: 4
+    });
+
+    expect(leftTile.topRight).toBe(0.75);
+    expect(rightTile.topLeft).toBe(0.75);
+    expect(leftTile.topRight).toBe(rightTile.topLeft);
+  });
+});
