@@ -4,8 +4,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Liquid rendering
 
-340. After task `339`, add a runtime regression where hovered and pinned inspect telemetry keeps partial-liquid crop and visible-height readouts aligned when animated liquid variants advance to a new frame.
 341. After task `340`, surface current liquid variant frame-top `v0` and atlas pixel-row origins in hovered and pinned inspect telemetry so visible-height deltas can be reconciled without parsing `liquidUv` or `liquidPx` strings.
+342. After task `341`, surface current liquid variant frame-bottom `v1` and atlas pixel-row endpoints in hovered and pinned inspect telemetry so cropped-off liquid remainder can be reconciled without parsing `liquidUv` or `liquidPx` strings.
 
 ## Lighting
 

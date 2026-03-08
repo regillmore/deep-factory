@@ -3201,6 +3201,126 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('keeps hovered and pinned partial-liquid crop telemetry aligned when animated liquid variants advance frames', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 4, y: 6 }
+    };
+    testRuntime.debugTileInspectPinRequests = [
+      {
+        worldTileX: 4,
+        worldTileY: 6
+      }
+    ];
+    testRuntime.rendererTileId = 0;
+    testRuntime.rendererLiquidLevel = 0;
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, 6), 8);
+    testRuntime.rendererLiquidLevelsByWorldKey.set(worldTileKey(4, 6), 3);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(3, 6), 8);
+    testRuntime.rendererLiquidLevelsByWorldKey.set(worldTileKey(3, 6), 5);
+    testRuntime.rendererLiquidRenderCardinalMask = 10;
+    testRuntime.rendererTelemetry.atlasWidth = 96;
+    testRuntime.rendererTelemetry.atlasHeight = 64;
+
+    const expectAnimatedLiquidInspectTelemetry = (
+      expectedFrameIndex: number,
+      expectedVariantUvRect: string,
+      expectedVariantPixelBounds: string
+    ): void => {
+      expect(testRuntime.latestDebugOverlayInspectState).not.toBeNull();
+      expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+      if (!testRuntime.latestDebugOverlayInspectState || !testRuntime.latestDebugEditStatusStripState) {
+        throw new Error('expected latest overlay and status-strip inspect telemetry');
+      }
+
+      expect(testRuntime.latestDebugOverlayInspectState.pointer).toMatchObject({
+        tile: { x: 4, y: 6 },
+        tileId: 8,
+        liquidKind: 'lava',
+        liquidBottomLeftV: 0.875,
+        liquidBottomRightV: 0.859375,
+        liquidBottomLeftPixelY: 56,
+        liquidBottomRightPixelY: 55,
+        liquidVisibleLeftV: 0.0625,
+        liquidVisibleRightV: 0.046875,
+        liquidVisibleLeftPixelHeight: 4,
+        liquidVisibleRightPixelHeight: 3,
+        liquidAnimationFrameIndex: expectedFrameIndex,
+        liquidAnimationFrameCount: 2,
+        liquidVariantUvRect: expectedVariantUvRect,
+        liquidVariantPixelBounds: expectedVariantPixelBounds
+      });
+      expect(testRuntime.latestDebugOverlayInspectState.pinned).toMatchObject({
+        tile: { x: 4, y: 6 },
+        tileId: 8,
+        liquidKind: 'lava',
+        liquidBottomLeftV: 0.875,
+        liquidBottomRightV: 0.859375,
+        liquidBottomLeftPixelY: 56,
+        liquidBottomRightPixelY: 55,
+        liquidVisibleLeftV: 0.0625,
+        liquidVisibleRightV: 0.046875,
+        liquidVisibleLeftPixelHeight: 4,
+        liquidVisibleRightPixelHeight: 3,
+        liquidAnimationFrameIndex: expectedFrameIndex,
+        liquidAnimationFrameCount: 2,
+        liquidVariantUvRect: expectedVariantUvRect,
+        liquidVariantPixelBounds: expectedVariantPixelBounds
+      });
+      expect(testRuntime.latestDebugEditStatusStripState.hoveredTile).toMatchObject({
+        tileX: 4,
+        tileY: 6,
+        tileId: 8,
+        liquidKind: 'lava',
+        liquidBottomLeftV: 0.875,
+        liquidBottomRightV: 0.859375,
+        liquidBottomLeftPixelY: 56,
+        liquidBottomRightPixelY: 55,
+        liquidVisibleLeftV: 0.0625,
+        liquidVisibleRightV: 0.046875,
+        liquidVisibleLeftPixelHeight: 4,
+        liquidVisibleRightPixelHeight: 3,
+        liquidAnimationFrameIndex: expectedFrameIndex,
+        liquidAnimationFrameCount: 2,
+        liquidVariantUvRect: expectedVariantUvRect,
+        liquidVariantPixelBounds: expectedVariantPixelBounds
+      });
+      expect(testRuntime.latestDebugEditStatusStripState.pinnedTile).toMatchObject({
+        tileX: 4,
+        tileY: 6,
+        tileId: 8,
+        liquidKind: 'lava',
+        liquidBottomLeftV: 0.875,
+        liquidBottomRightV: 0.859375,
+        liquidBottomLeftPixelY: 56,
+        liquidBottomRightPixelY: 55,
+        liquidVisibleLeftV: 0.0625,
+        liquidVisibleRightV: 0.046875,
+        liquidVisibleLeftPixelHeight: 4,
+        liquidVisibleRightPixelHeight: 3,
+        liquidAnimationFrameIndex: expectedFrameIndex,
+        liquidAnimationFrameCount: 2,
+        liquidVariantUvRect: expectedVariantUvRect,
+        liquidVariantPixelBounds: expectedVariantPixelBounds
+      });
+    };
+
+    testRuntime.performanceNow = 120;
+    runFixedUpdate();
+    runRenderFrame();
+
+    expectAnimatedLiquidInspectTelemetry(0, '0.5,0.813..0.667,0.938', '48,52..64,60');
+
+    testRuntime.performanceNow = 240;
+    runRenderFrame();
+
+    expectAnimatedLiquidInspectTelemetry(1, '0.333,0.813..0.5,0.938', '32,52..48,60');
+  });
+
   it('routes compact status-strip player and nearby-light telemetry through one shared overlay-visibility selector', async () => {
     await import('./main');
     await flushBootstrap();
