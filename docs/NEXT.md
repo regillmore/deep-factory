@@ -4,8 +4,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Liquid rendering
 
-343. Surface cropped-off liquid remainder deltas in normalized `v` units and atlas pixels in hovered and pinned inspect telemetry so partial-liquid loss per side can be compared directly without subtracting crop values from frame endpoints.
 344. Surface cropped-off liquid remainder percentages per side in hovered and pinned inspect telemetry so partial-liquid loss stays comparable across liquid variants with different authored frame heights.
+345. Surface current liquid variant full-frame heights in normalized `v` units and atlas pixels in hovered and pinned inspect telemetry so visible and cropped remainder deltas can be checked against a direct total-frame-height readout.
 
 ## Lighting
 

@@ -249,6 +249,10 @@ describe('formatDebugOverlayText', () => {
         liquidVisibleRightV: 0.09375,
         liquidVisibleLeftPixelHeight: 8,
         liquidVisibleRightPixelHeight: 6,
+        liquidRemainderLeftV: 0.125,
+        liquidRemainderRightV: 0.15625,
+        liquidRemainderLeftPixelHeight: 8,
+        liquidRemainderRightPixelHeight: 10,
         liquidConnectivityGroupLabel: 'water',
         liquidCardinalMask: 11,
         liquidVariantSource: 'uvRect 0.667,0..0.75,0.25',
@@ -288,6 +292,10 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidVisibleRightV:0.094');
     expect(text).toContain('liquidVisibleLeftPxH:8');
     expect(text).toContain('liquidVisibleRightPxH:6');
+    expect(text).toContain('liquidRemainderLeftV:0.125');
+    expect(text).toContain('liquidRemainderRightV:0.156');
+    expect(text).toContain('liquidRemainderLeftPxH:8');
+    expect(text).toContain('liquidRemainderRightPxH:10');
     expect(text).toContain('liquidGroup:water');
     expect(text).toContain('liquidMask:NE-W (11)');
     expect(text).toContain('liquidSrc:uvRect 0.667,0..0.75,0.25');
@@ -323,6 +331,10 @@ describe('formatDebugOverlayText', () => {
         liquidVisibleRightV: 0.0625,
         liquidVisibleLeftPixelHeight: 10,
         liquidVisibleRightPixelHeight: 4,
+        liquidRemainderLeftV: 0.09375,
+        liquidRemainderRightV: 0.1875,
+        liquidRemainderLeftPixelHeight: 6,
+        liquidRemainderRightPixelHeight: 12,
         liquidConnectivityGroupLabel: 'water',
         liquidCardinalMask: 11,
         liquidAnimationFrameIndex: 1,
@@ -369,6 +381,10 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidVisibleRightV:0.063');
     expect(text).toContain('liquidVisibleLeftPxH:10');
     expect(text).toContain('liquidVisibleRightPxH:4');
+    expect(text).toContain('liquidRemainderLeftV:0.094');
+    expect(text).toContain('liquidRemainderRightV:0.188');
+    expect(text).toContain('liquidRemainderLeftPxH:6');
+    expect(text).toContain('liquidRemainderRightPxH:12');
     expect(text).toContain('liquidFrame:1/2');
     expect(text).toContain('liquidFrameDur:180ms');
     expect(text).toContain('liquidFrameElapsed:60ms');
@@ -621,6 +637,10 @@ describe('formatDebugOverlayText', () => {
         liquidVisibleRightV: 0.15625,
         liquidVisibleLeftPixelHeight: 12,
         liquidVisibleRightPixelHeight: 10,
+        liquidRemainderLeftV: 0.0625,
+        liquidRemainderRightV: 0.09375,
+        liquidRemainderLeftPixelHeight: 4,
+        liquidRemainderRightPixelHeight: 6,
         liquidConnectivityGroupLabel: 'water',
         liquidCardinalMask: 13,
         liquidVariantSource: 'uvRect 0.667,0.5..0.75,0.75',
@@ -653,6 +673,10 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidVisibleRightV:0.156');
     expect(text).toContain('liquidVisibleLeftPxH:12');
     expect(text).toContain('liquidVisibleRightPxH:10');
+    expect(text).toContain('liquidRemainderLeftV:0.063');
+    expect(text).toContain('liquidRemainderRightV:0.094');
+    expect(text).toContain('liquidRemainderLeftPxH:4');
+    expect(text).toContain('liquidRemainderRightPxH:6');
     expect(text).toContain('liquidGroup:water');
     expect(text).toContain('liquidMask:N-SW (13)');
     expect(text).toContain('liquidSrc:uvRect 0.667,0.5..0.75,0.75');

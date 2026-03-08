@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Partial-liquid cropped-remainder inspect telemetry should resolve from shared frame-bottom helpers
+
+- Decision: Hovered and pinned inspect telemetry now resolves `liquidRemainderLeftV` and `liquidRemainderRightV` from the current liquid variant frame's `v1` plus the shared bottom-edge crop output in `src/world/liquidSurface.ts`, and resolves `liquidRemainderLeftPixelHeight` and `liquidRemainderRightPixelHeight` through the shared atlas-pixel helper there.
+- Reason: Cropped-off remainder debug readouts need to stay numerically aligned with the exact frame-bottom bounds and bottom-edge crop values the renderer and inspect telemetry already share, without subtracting endpoint strings in `src/main.ts` or formatter code.
+- Consequence: Future cropped-remainder percentages or total-frame-height inspect telemetry should extend those shared remainder helpers instead of re-deriving frame-bottom or crop delta math in runtime assembly or UI formatting code.
+
 ### 2026-03-08: Partial-liquid frame-bottom inspect telemetry should reuse shared frame-bound helpers
 
 - Decision: Hovered and pinned inspect telemetry now resolves `liquidFrameBottomV` and `liquidFrameBottomPixelY` through shared frame-bottom helpers in `src/world/liquidSurface.ts`, and the existing visible-height helpers there reuse the same helpers instead of reading `uvRect.v1` inline.

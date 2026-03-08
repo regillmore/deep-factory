@@ -28,6 +28,11 @@ export interface LiquidSurfaceVisibleFrameHeights {
   visibleRightV: number;
 }
 
+export interface LiquidSurfaceCroppedFrameRemainders {
+  remainderLeftV: number;
+  remainderRightV: number;
+}
+
 export interface LiquidSurfaceBottomAtlasPixelRows {
   bottomLeftPixelY: number;
   bottomRightPixelY: number;
@@ -36,6 +41,11 @@ export interface LiquidSurfaceBottomAtlasPixelRows {
 export interface LiquidSurfaceVisibleFrameAtlasPixelHeights {
   visibleLeftPixelHeight: number;
   visibleRightPixelHeight: number;
+}
+
+export interface LiquidSurfaceCroppedFrameAtlasPixelHeights {
+  remainderLeftPixelHeight: number;
+  remainderRightPixelHeight: number;
 }
 
 export type LiquidSurfaceBranchKind = 'empty' | 'north-covered' | 'exposed';
@@ -155,6 +165,26 @@ export const resolveLiquidSurfaceVisibleFrameHeights = (
   };
 };
 
+export const resolveLiquidSurfaceCroppedFrameRemainders = (
+  uvRect: Pick<TileUvRect, 'v0' | 'v1'>,
+  bottomVCrops: LiquidSurfaceBottomVCrops
+): LiquidSurfaceCroppedFrameRemainders => {
+  const topV = resolveLiquidSurfaceFrameTopV(uvRect);
+  const frameBottomV = resolveLiquidSurfaceFrameBottomV(uvRect);
+  const frameHeightV = Math.max(0, frameBottomV - topV);
+
+  return {
+    remainderLeftV: Math.min(
+      frameHeightV,
+      Math.max(0, frameBottomV - clampNormalizedLiquidHeight(bottomVCrops.bottomLeftV))
+    ),
+    remainderRightV: Math.min(
+      frameHeightV,
+      Math.max(0, frameBottomV - clampNormalizedLiquidHeight(bottomVCrops.bottomRightV))
+    )
+  };
+};
+
 export const resolveLiquidSurfaceBottomAtlasPixelRows = (
   atlasHeight: number,
   bottomVCrops: LiquidSurfaceBottomVCrops
@@ -181,6 +211,28 @@ export const resolveLiquidSurfaceVisibleFrameAtlasPixelHeights = (
     visibleRightPixelHeight: Math.min(
       framePixelHeight,
       Math.max(0, bottomPixelRows.bottomRightPixelY - topPixelY)
+    )
+  };
+};
+
+export const resolveLiquidSurfaceCroppedFrameAtlasPixelHeights = (
+  atlasHeight: number,
+  uvRect: Pick<TileUvRect, 'v0' | 'v1'>,
+  bottomVCrops: LiquidSurfaceBottomVCrops
+): LiquidSurfaceCroppedFrameAtlasPixelHeights => {
+  const bottomPixelRows = resolveLiquidSurfaceBottomAtlasPixelRows(atlasHeight, bottomVCrops);
+  const topPixelY = resolveLiquidSurfaceFrameTopAtlasPixelRow(atlasHeight, uvRect);
+  const frameBottomPixelY = resolveLiquidSurfaceFrameBottomAtlasPixelRow(atlasHeight, uvRect);
+  const framePixelHeight = Math.max(0, frameBottomPixelY - topPixelY);
+
+  return {
+    remainderLeftPixelHeight: Math.min(
+      framePixelHeight,
+      Math.max(0, frameBottomPixelY - bottomPixelRows.bottomLeftPixelY)
+    ),
+    remainderRightPixelHeight: Math.min(
+      framePixelHeight,
+      Math.max(0, frameBottomPixelY - bottomPixelRows.bottomRightPixelY)
     )
   };
 };

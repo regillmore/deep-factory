@@ -6,6 +6,8 @@ import {
   resolveLiquidSurfaceBottomAtlasPixelRows,
   resolveLiquidSurfaceBottomVCrops,
   resolveLiquidSurfaceBranchKind,
+  resolveLiquidSurfaceCroppedFrameAtlasPixelHeights,
+  resolveLiquidSurfaceCroppedFrameRemainders,
   resolveLiquidSurfaceFrameBottomAtlasPixelRow,
   resolveLiquidSurfaceFrameBottomV,
   resolveLiquidSurfaceFrameTopAtlasPixelRow,
@@ -373,6 +375,84 @@ describe('resolveLiquidSurfaceVisibleFrameAtlasPixelHeights', () => {
     ).toEqual({
       visibleLeftPixelHeight: 16,
       visibleRightPixelHeight: 0
+    });
+  });
+});
+
+describe('resolveLiquidSurfaceCroppedFrameRemainders', () => {
+  it('resolves per-side cropped remainder deltas from the current variant bottom edge', () => {
+    expect(
+      resolveLiquidSurfaceCroppedFrameRemainders(
+        {
+          v0: 0.75,
+          v1: 0.875
+        },
+        {
+          bottomLeftV: 0.8125,
+          bottomRightV: 0.796875
+        }
+      )
+    ).toEqual({
+      remainderLeftV: 0.0625,
+      remainderRightV: 0.078125
+    });
+  });
+
+  it('clamps invalid frame and crop inputs before resolving cropped remainder deltas', () => {
+    expect(
+      resolveLiquidSurfaceCroppedFrameRemainders(
+        {
+          v0: 0.5,
+          v1: 0.75
+        },
+        {
+          bottomLeftV: 4,
+          bottomRightV: -2
+        }
+      )
+    ).toEqual({
+      remainderLeftV: 0,
+      remainderRightV: 0.25
+    });
+  });
+});
+
+describe('resolveLiquidSurfaceCroppedFrameAtlasPixelHeights', () => {
+  it('maps cropped remainder deltas onto atlas-pixel heights', () => {
+    expect(
+      resolveLiquidSurfaceCroppedFrameAtlasPixelHeights(
+        64,
+        {
+          v0: 0.75,
+          v1: 0.875
+        },
+        {
+          bottomLeftV: 0.8125,
+          bottomRightV: 0.796875
+        }
+      )
+    ).toEqual({
+      remainderLeftPixelHeight: 4,
+      remainderRightPixelHeight: 5
+    });
+  });
+
+  it('reuses clamped bottom-pixel rows when resolving cropped remainder pixel heights', () => {
+    expect(
+      resolveLiquidSurfaceCroppedFrameAtlasPixelHeights(
+        64,
+        {
+          v0: 0.5,
+          v1: 0.75
+        },
+        {
+          bottomLeftV: 4,
+          bottomRightV: -2
+        }
+      )
+    ).toEqual({
+      remainderLeftPixelHeight: 0,
+      remainderRightPixelHeight: 16
     });
   });
 });

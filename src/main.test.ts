@@ -3136,7 +3136,11 @@ describe('main.ts shell state orchestration', () => {
       liquidVisibleLeftV: 0.0625,
       liquidVisibleRightV: 0.046875,
       liquidVisibleLeftPixelHeight: 4,
-      liquidVisibleRightPixelHeight: 3
+      liquidVisibleRightPixelHeight: 3,
+      liquidRemainderLeftV: 0.0625,
+      liquidRemainderRightV: 0.078125,
+      liquidRemainderLeftPixelHeight: 4,
+      liquidRemainderRightPixelHeight: 5
     });
     expect(testRuntime.latestDebugOverlayInspectState.pinned).toMatchObject({
       tile: { x: 4, y: 6 },
@@ -3161,7 +3165,11 @@ describe('main.ts shell state orchestration', () => {
       liquidVisibleLeftV: 0.0625,
       liquidVisibleRightV: 0.046875,
       liquidVisibleLeftPixelHeight: 4,
-      liquidVisibleRightPixelHeight: 3
+      liquidVisibleRightPixelHeight: 3,
+      liquidRemainderLeftV: 0.0625,
+      liquidRemainderRightV: 0.078125,
+      liquidRemainderLeftPixelHeight: 4,
+      liquidRemainderRightPixelHeight: 5
     });
     expect(testRuntime.latestDebugEditStatusStripState.hoveredTile).toMatchObject({
       tileX: 4,
@@ -3187,7 +3195,11 @@ describe('main.ts shell state orchestration', () => {
       liquidVisibleLeftV: 0.0625,
       liquidVisibleRightV: 0.046875,
       liquidVisibleLeftPixelHeight: 4,
-      liquidVisibleRightPixelHeight: 3
+      liquidVisibleRightPixelHeight: 3,
+      liquidRemainderLeftV: 0.0625,
+      liquidRemainderRightV: 0.078125,
+      liquidRemainderLeftPixelHeight: 4,
+      liquidRemainderRightPixelHeight: 5
     });
     expect(testRuntime.latestDebugEditStatusStripState.pinnedTile).toMatchObject({
       tileX: 4,
@@ -3213,7 +3225,11 @@ describe('main.ts shell state orchestration', () => {
       liquidVisibleLeftV: 0.0625,
       liquidVisibleRightV: 0.046875,
       liquidVisibleLeftPixelHeight: 4,
-      liquidVisibleRightPixelHeight: 3
+      liquidVisibleRightPixelHeight: 3,
+      liquidRemainderLeftV: 0.0625,
+      liquidRemainderRightV: 0.078125,
+      liquidRemainderLeftPixelHeight: 4,
+      liquidRemainderRightPixelHeight: 5
     });
   });
 
@@ -3269,6 +3285,10 @@ describe('main.ts shell state orchestration', () => {
         liquidVisibleRightV: 0.046875,
         liquidVisibleLeftPixelHeight: 4,
         liquidVisibleRightPixelHeight: 3,
+        liquidRemainderLeftV: 0.0625,
+        liquidRemainderRightV: 0.078125,
+        liquidRemainderLeftPixelHeight: 4,
+        liquidRemainderRightPixelHeight: 5,
         liquidAnimationFrameIndex: expectedFrameIndex,
         liquidAnimationFrameCount: 2,
         liquidVariantUvRect: expectedVariantUvRect,
@@ -3290,6 +3310,10 @@ describe('main.ts shell state orchestration', () => {
         liquidVisibleRightV: 0.046875,
         liquidVisibleLeftPixelHeight: 4,
         liquidVisibleRightPixelHeight: 3,
+        liquidRemainderLeftV: 0.0625,
+        liquidRemainderRightV: 0.078125,
+        liquidRemainderLeftPixelHeight: 4,
+        liquidRemainderRightPixelHeight: 5,
         liquidAnimationFrameIndex: expectedFrameIndex,
         liquidAnimationFrameCount: 2,
         liquidVariantUvRect: expectedVariantUvRect,
@@ -3312,6 +3336,10 @@ describe('main.ts shell state orchestration', () => {
         liquidVisibleRightV: 0.046875,
         liquidVisibleLeftPixelHeight: 4,
         liquidVisibleRightPixelHeight: 3,
+        liquidRemainderLeftV: 0.0625,
+        liquidRemainderRightV: 0.078125,
+        liquidRemainderLeftPixelHeight: 4,
+        liquidRemainderRightPixelHeight: 5,
         liquidAnimationFrameIndex: expectedFrameIndex,
         liquidAnimationFrameCount: 2,
         liquidVariantUvRect: expectedVariantUvRect,
@@ -3334,6 +3362,10 @@ describe('main.ts shell state orchestration', () => {
         liquidVisibleRightV: 0.046875,
         liquidVisibleLeftPixelHeight: 4,
         liquidVisibleRightPixelHeight: 3,
+        liquidRemainderLeftV: 0.0625,
+        liquidRemainderRightV: 0.078125,
+        liquidRemainderLeftPixelHeight: 4,
+        liquidRemainderRightPixelHeight: 5,
         liquidAnimationFrameIndex: expectedFrameIndex,
         liquidAnimationFrameCount: 2,
         liquidVariantUvRect: expectedVariantUvRect,

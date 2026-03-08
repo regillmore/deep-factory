@@ -121,6 +121,10 @@ export interface DebugEditHoveredTileState {
   liquidVisibleRightV?: number | null;
   liquidVisibleLeftPixelHeight?: number | null;
   liquidVisibleRightPixelHeight?: number | null;
+  liquidRemainderLeftV?: number | null;
+  liquidRemainderRightV?: number | null;
+  liquidRemainderLeftPixelHeight?: number | null;
+  liquidRemainderRightPixelHeight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -597,6 +601,14 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
   const liquidVisibleRightPixelHeight = formatAtlasPixelCoordinate(
     tile.liquidVisibleRightPixelHeight
   );
+  const liquidRemainderLeftV = formatLiquidSurfaceHeight(tile.liquidRemainderLeftV);
+  const liquidRemainderRightV = formatLiquidSurfaceHeight(tile.liquidRemainderRightV);
+  const liquidRemainderLeftPixelHeight = formatAtlasPixelCoordinate(
+    tile.liquidRemainderLeftPixelHeight
+  );
+  const liquidRemainderRightPixelHeight = formatAtlasPixelCoordinate(
+    tile.liquidRemainderRightPixelHeight
+  );
   const liquidAnimationFrame = formatLiquidAnimationFrame(
     tile.liquidAnimationFrameIndex,
     tile.liquidAnimationFrameCount
@@ -641,6 +653,14 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
       : '') +
     (liquidVisibleRightPixelHeight !== null
       ? ` | liquidVisibleRightPxH:${liquidVisibleRightPixelHeight}`
+      : '') +
+    (liquidRemainderLeftV !== null ? ` | liquidRemainderLeftV:${liquidRemainderLeftV}` : '') +
+    (liquidRemainderRightV !== null ? ` | liquidRemainderRightV:${liquidRemainderRightV}` : '') +
+    (liquidRemainderLeftPixelHeight !== null
+      ? ` | liquidRemainderLeftPxH:${liquidRemainderLeftPixelHeight}`
+      : '') +
+    (liquidRemainderRightPixelHeight !== null
+      ? ` | liquidRemainderRightPxH:${liquidRemainderRightPixelHeight}`
       : '') +
     (typeof tile.liquidConnectivityGroupLabel === 'string' && tile.liquidConnectivityGroupLabel.length > 0
       ? ` | liquidGroup:${tile.liquidConnectivityGroupLabel}`

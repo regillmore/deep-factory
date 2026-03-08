@@ -63,6 +63,10 @@ export interface DebugOverlayPointerInspect {
   liquidVisibleRightV?: number | null;
   liquidVisibleLeftPixelHeight?: number | null;
   liquidVisibleRightPixelHeight?: number | null;
+  liquidRemainderLeftV?: number | null;
+  liquidRemainderRightV?: number | null;
+  liquidRemainderLeftPixelHeight?: number | null;
+  liquidRemainderRightPixelHeight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -111,6 +115,10 @@ export interface DebugOverlayTileInspect {
   liquidVisibleRightV?: number | null;
   liquidVisibleLeftPixelHeight?: number | null;
   liquidVisibleRightPixelHeight?: number | null;
+  liquidRemainderLeftV?: number | null;
+  liquidRemainderRightV?: number | null;
+  liquidRemainderLeftPixelHeight?: number | null;
+  liquidRemainderRightPixelHeight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -401,6 +409,14 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
   const liquidVisibleRightPixelHeight = formatAtlasPixelCoordinate(
     tileInspect.liquidVisibleRightPixelHeight
   );
+  const liquidRemainderLeftV = formatLiquidSurfaceHeight(tileInspect.liquidRemainderLeftV);
+  const liquidRemainderRightV = formatLiquidSurfaceHeight(tileInspect.liquidRemainderRightV);
+  const liquidRemainderLeftPixelHeight = formatAtlasPixelCoordinate(
+    tileInspect.liquidRemainderLeftPixelHeight
+  );
+  const liquidRemainderRightPixelHeight = formatAtlasPixelCoordinate(
+    tileInspect.liquidRemainderRightPixelHeight
+  );
   const liquidAnimationFrame = formatLiquidAnimationFrame(
     tileInspect.liquidAnimationFrameIndex,
     tileInspect.liquidAnimationFrameCount
@@ -442,6 +458,14 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
       : '') +
     (liquidVisibleRightPixelHeight !== null
       ? ` | liquidVisibleRightPxH:${liquidVisibleRightPixelHeight}`
+      : '') +
+    (liquidRemainderLeftV !== null ? ` | liquidRemainderLeftV:${liquidRemainderLeftV}` : '') +
+    (liquidRemainderRightV !== null ? ` | liquidRemainderRightV:${liquidRemainderRightV}` : '') +
+    (liquidRemainderLeftPixelHeight !== null
+      ? ` | liquidRemainderLeftPxH:${liquidRemainderLeftPixelHeight}`
+      : '') +
+    (liquidRemainderRightPixelHeight !== null
+      ? ` | liquidRemainderRightPxH:${liquidRemainderRightPixelHeight}`
       : '') +
     (typeof tileInspect.liquidConnectivityGroupLabel === 'string' &&
     tileInspect.liquidConnectivityGroupLabel.length > 0
