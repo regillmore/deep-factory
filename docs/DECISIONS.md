@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Liquid-step transfer telemetry stays split by phase
+
+- Decision: `TileWorld` last-step liquid stats and renderer telemetry now expose separate `downwardTransfersApplied` and `sidewaysTransfersApplied` counters instead of one aggregate transfer total.
+- Reason: Mixed-flow scenes need to show which half-step still performs work while chunk sleep or wake rules land, and future HUD surfaces should not have to infer phase activity from a combined count.
+- Consequence: Future liquid telemetry or debug-surface work should preserve and consume the split phase counters rather than collapsing them back into one transfer metric.
+
 ### 2026-03-08: Downward liquid transfer scanning only visits active chunks
 
 - Decision: The downward half-step in `src/world/world.ts` now snapshots the resident active-liquid chunk set at the start of the fixed step and only scans those chunks for falling transfers before sideways equalization runs.

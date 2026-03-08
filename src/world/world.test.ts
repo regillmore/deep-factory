@@ -190,7 +190,8 @@ describe('TileWorld', () => {
     expect(world.getLastLiquidSimulationStats()).toEqual({
       residentChunksScanned: 1,
       horizontalPairsTested: 512,
-      transfersApplied: 1
+      downwardTransfersApplied: 1,
+      sidewaysTransfersApplied: 0
     });
   });
 
@@ -203,7 +204,8 @@ describe('TileWorld', () => {
     expect(world.getLastLiquidSimulationStats()).toEqual({
       residentChunksScanned: 0,
       horizontalPairsTested: 0,
-      transfersApplied: 0
+      downwardTransfersApplied: 0,
+      sidewaysTransfersApplied: 0
     });
     expect(world.createSnapshot().liquidSimulationTick).toBe(1);
   });
@@ -255,7 +257,8 @@ describe('TileWorld', () => {
     expect(world.getLastLiquidSimulationStats()).toEqual({
       residentChunksScanned: 1,
       horizontalPairsTested: 512,
-      transfersApplied: 2
+      downwardTransfersApplied: 1,
+      sidewaysTransfersApplied: 1
     });
   });
 
@@ -271,6 +274,12 @@ describe('TileWorld', () => {
 
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.stepLiquidSimulation()).toBe(true);
+    expect(world.getLastLiquidSimulationStats()).toEqual({
+      residentChunksScanned: 1,
+      horizontalPairsTested: 1504,
+      downwardTransfersApplied: 0,
+      sidewaysTransfersApplied: 1
+    });
 
     expect(world.getTile(worldTileX, worldTileY)).toBe(WATER_TILE_ID);
     expect(world.getLiquidLevel(worldTileX, worldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
@@ -339,7 +348,8 @@ describe('TileWorld', () => {
     expect(world.getLastLiquidSimulationStats()).toEqual({
       residentChunksScanned: 0,
       horizontalPairsTested: 0,
-      transfersApplied: 0
+      downwardTransfersApplied: 0,
+      sidewaysTransfersApplied: 0
     });
 
     expect(world.getLiquidLevel(worldTileX, worldTileY)).toBe(MAX_LIQUID_LEVEL);

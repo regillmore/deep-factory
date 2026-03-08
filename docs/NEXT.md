@@ -24,9 +24,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Optimize liquids
 
 370. Add liquid chunk sleep or wake rules for settled fluid: remove unchanged chunks from the active set until a local edit or neighboring transfer wakes them, with regressions for settled pools resuming after a disturbance.
-373. Split liquid-step transfer telemetry by phase (`downward` vs `sideways`) so mixed-flow scenes can prove which pass still performs work while the broader liquid optimizations land.
 382. Split liquid-step scan telemetry by phase so downward active-chunk scans and sideways active-band candidate coverage stay inspectable while chunk sleep rules land.
-383. Expose split downward-vs-sideways liquid-step counters in the compact hidden-HUD status strip after tasks `373` and `382` land so mixed-device wake testing can stay off the full debug HUD.
+383. Expose split downward-vs-sideways liquid-step counters in the compact hidden-HUD status strip after task `382` lands so mixed-device wake testing can stay off the full debug HUD.
+384. Add a derived liquid-step phase summary (`none`, `downward`, `sideways`, `both`) to renderer telemetry and the debug HUD after task `382` lands so wake testing can triage phase activity without comparing raw counters.
 
 ## Refine, Extract, Refactor, Restructure
 

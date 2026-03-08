@@ -214,7 +214,8 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.residentActiveLiquidMaxChunkY).toBeNull();
     expect(renderer.telemetry.liquidStepResidentChunksScanned).toBe(0);
     expect(renderer.telemetry.liquidStepHorizontalPairsTested).toBe(0);
-    expect(renderer.telemetry.liquidStepTransfersApplied).toBe(0);
+    expect(renderer.telemetry.liquidStepDownwardTransfersApplied).toBe(0);
+    expect(renderer.telemetry.liquidStepSidewaysTransfersApplied).toBe(0);
     expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBeNull();
     expect(renderer.telemetry.standalonePlayerNearbyLightFactor).toBeNull();
     expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileX).toBeNull();
@@ -255,7 +256,8 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.residentActiveLiquidMaxChunkY).toBeNull();
     expect(renderer.telemetry.liquidStepResidentChunksScanned).toBe(0);
     expect(renderer.telemetry.liquidStepHorizontalPairsTested).toBe(0);
-    expect(renderer.telemetry.liquidStepTransfersApplied).toBe(0);
+    expect(renderer.telemetry.liquidStepDownwardTransfersApplied).toBe(0);
+    expect(renderer.telemetry.liquidStepSidewaysTransfersApplied).toBe(0);
   });
 
   it('tracks resident active-liquid chunk counts and bounds in renderer telemetry after liquid edits', async () => {

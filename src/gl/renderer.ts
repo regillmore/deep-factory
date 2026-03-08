@@ -123,7 +123,8 @@ export interface RenderTelemetry {
   residentActiveLiquidMaxChunkY: number | null;
   liquidStepResidentChunksScanned: number;
   liquidStepHorizontalPairsTested: number;
-  liquidStepTransfersApplied: number;
+  liquidStepDownwardTransfersApplied: number;
+  liquidStepSidewaysTransfersApplied: number;
   standalonePlayerNearbyLightLevel: number | null;
   standalonePlayerNearbyLightFactor: number | null;
   standalonePlayerNearbyLightSourceTileX: number | null;
@@ -200,7 +201,8 @@ export class Renderer {
     residentActiveLiquidMaxChunkY: null,
     liquidStepResidentChunksScanned: 0,
     liquidStepHorizontalPairsTested: 0,
-    liquidStepTransfersApplied: 0,
+    liquidStepDownwardTransfersApplied: 0,
+    liquidStepSidewaysTransfersApplied: 0,
     standalonePlayerNearbyLightLevel: null,
     standalonePlayerNearbyLightFactor: null,
     standalonePlayerNearbyLightSourceTileX: null,
@@ -677,7 +679,8 @@ export class Renderer {
     const stats = this.world.getLastLiquidSimulationStats();
     this.telemetry.liquidStepResidentChunksScanned = stats.residentChunksScanned;
     this.telemetry.liquidStepHorizontalPairsTested = stats.horizontalPairsTested;
-    this.telemetry.liquidStepTransfersApplied = stats.transfersApplied;
+    this.telemetry.liquidStepDownwardTransfersApplied = stats.downwardTransfersApplied;
+    this.telemetry.liquidStepSidewaysTransfersApplied = stats.sidewaysTransfersApplied;
   }
 
   private getReadyChunkMesh(chunkX: number, chunkY: number): ChunkGpuMesh | null {

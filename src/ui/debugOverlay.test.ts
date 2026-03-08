@@ -32,7 +32,8 @@ const baseStats: DebugOverlayStats = {
   residentActiveLiquidMaxChunkY: null,
   liquidStepResidentChunksScanned: 0,
   liquidStepHorizontalPairsTested: 0,
-  liquidStepTransfersApplied: 0,
+  liquidStepDownwardTransfersApplied: 0,
+  liquidStepSidewaysTransfersApplied: 0,
   evictedWorldChunks: 1,
   evictedMeshEntries: 1
 };
@@ -62,7 +63,9 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nIntent: n/a');
     expect(text).toContain('\nAnimMesh: chunks:0 | quads:0 | nonLiquid:0 | liquid:0');
     expect(text).toContain('\nAnimUV: uploads:0 | quads:0 | nonLiquid:0 | liquid:0 | bytes:0');
-    expect(text).toContain('\nLiquidStep: active:0 | bounds:none | chunks:0 | pairs:0 | transfers:0');
+    expect(text).toContain(
+      '\nLiquidStep: active:0 | bounds:none | chunks:0 | pairs:0 | downTransfers:0 | sideTransfers:0'
+    );
     expect(text).toContain('LightDirty: 20');
     expect(text).toContain('Draws: 4/256 (OK)');
     expect(text).toContain('\nPtr: n/a');
@@ -80,12 +83,15 @@ describe('formatDebugOverlayText', () => {
         residentActiveLiquidMaxChunkY: 5,
         liquidStepResidentChunksScanned: 80,
         liquidStepHorizontalPairsTested: 40960,
-        liquidStepTransfersApplied: 0
+        liquidStepDownwardTransfersApplied: 2,
+        liquidStepSidewaysTransfersApplied: 3
       },
       null
     );
 
-    expect(text).toContain('\nLiquidStep: active:3 | bounds:-1,-2..4,5 | chunks:80 | pairs:40960 | transfers:0');
+    expect(text).toContain(
+      '\nLiquidStep: active:3 | bounds:-1,-2..4,5 | chunks:80 | pairs:40960 | downTransfers:2 | sideTransfers:3'
+    );
   });
 
   it('shows standalone-player nearby-light sampling telemetry when available', () => {

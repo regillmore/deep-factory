@@ -58,7 +58,8 @@ export interface TileNeighborhood {
 export interface LiquidSimulationStats {
   residentChunksScanned: number;
   horizontalPairsTested: number;
-  transfersApplied: number;
+  downwardTransfersApplied: number;
+  sidewaysTransfersApplied: number;
 }
 
 export interface TileWorldSnapshot {
@@ -84,7 +85,8 @@ const createTileNeighborhood = (): TileNeighborhood => ({
 const createLiquidSimulationStats = (): LiquidSimulationStats => ({
   residentChunksScanned: 0,
   horizontalPairsTested: 0,
-  transfersApplied: 0
+  downwardTransfersApplied: 0,
+  sidewaysTransfersApplied: 0
 });
 
 const chunkContainsLiquid = (chunk: Chunk): boolean => {
@@ -782,7 +784,7 @@ export class TileWorld {
     for (const transfer of downwardTransfers) {
       const applied = this.applyLiquidTransfer(transfer);
       if (applied) {
-        stats.transfersApplied += 1;
+        stats.downwardTransfersApplied += 1;
       }
       changed = applied || changed;
     }
@@ -879,7 +881,7 @@ export class TileWorld {
                 }
           );
           if (applied) {
-            stats.transfersApplied += 1;
+            stats.sidewaysTransfersApplied += 1;
           }
           changed = applied || changed;
         }

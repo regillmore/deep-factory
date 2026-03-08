@@ -39,7 +39,8 @@ export interface DebugOverlayStats {
   residentActiveLiquidMaxChunkY: number | null;
   liquidStepResidentChunksScanned: number;
   liquidStepHorizontalPairsTested: number;
-  liquidStepTransfersApplied: number;
+  liquidStepDownwardTransfersApplied: number;
+  liquidStepSidewaysTransfersApplied: number;
   evictedWorldChunks: number;
   evictedMeshEntries: number;
 }
@@ -932,7 +933,8 @@ const formatLiquidStepLine = (stats: DebugOverlayStats): string =>
   `bounds:${formatActiveLiquidBounds(stats)} | ` +
   `chunks:${stats.liquidStepResidentChunksScanned} | ` +
   `pairs:${stats.liquidStepHorizontalPairsTested} | ` +
-  `transfers:${stats.liquidStepTransfersApplied}`;
+  `downTransfers:${stats.liquidStepDownwardTransfersApplied} | ` +
+  `sideTransfers:${stats.liquidStepSidewaysTransfersApplied}`;
 
 export const formatDebugOverlayText = (
   fps: number,
