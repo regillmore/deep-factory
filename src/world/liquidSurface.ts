@@ -23,6 +23,11 @@ export interface LiquidSurfaceBottomVCrops {
   bottomRightV: number;
 }
 
+export interface LiquidSurfaceBottomAtlasPixelRows {
+  bottomLeftPixelY: number;
+  bottomRightPixelY: number;
+}
+
 export type LiquidSurfaceBranchKind = 'empty' | 'north-covered' | 'exposed';
 
 const clampLiquidFillLevel = (fillLevel: number): number => {
@@ -102,6 +107,14 @@ export const resolveLiquidSurfaceBottomVCrops = (
     uvRect.v0 + (uvRect.v1 - uvRect.v0) * clampNormalizedLiquidHeight(topHeights.topLeft),
   bottomRightV:
     uvRect.v0 + (uvRect.v1 - uvRect.v0) * clampNormalizedLiquidHeight(topHeights.topRight)
+});
+
+export const resolveLiquidSurfaceBottomAtlasPixelRows = (
+  atlasHeight: number,
+  bottomVCrops: LiquidSurfaceBottomVCrops
+): LiquidSurfaceBottomAtlasPixelRows => ({
+  bottomLeftPixelY: clampNormalizedLiquidHeight(bottomVCrops.bottomLeftV) * atlasHeight,
+  bottomRightPixelY: clampNormalizedLiquidHeight(bottomVCrops.bottomRightV) * atlasHeight
 });
 
 export const resolveConnectedLiquidNeighborLevel = (

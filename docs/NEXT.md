@@ -4,8 +4,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Liquid rendering
 
-335. Surface resolved partial-liquid bottom-edge atlas pixel-row crop values in hovered and pinned inspect telemetry so normalized `v` crops can be cross-checked against authored atlas rows.
 339. After task `335`, surface resolved partial-liquid visible frame heights in normalized `v` units and atlas pixels in hovered and pinned inspect telemetry so bottom-edge crop endpoints can be validated as deltas instead of only absolute values.
+340. After task `339`, add a runtime regression where hovered and pinned inspect telemetry keeps partial-liquid crop and visible-height readouts aligned when animated liquid variants advance to a new frame.
 
 ## Lighting
 

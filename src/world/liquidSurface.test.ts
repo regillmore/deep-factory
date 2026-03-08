@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { TILE_METADATA } from './tileMetadata';
 import {
   resolveConnectedLiquidNeighborLevel,
+  resolveLiquidSurfaceBottomAtlasPixelRows,
   resolveLiquidSurfaceBottomVCrops,
   resolveLiquidSurfaceBranchKind,
   resolveLiquidSurfaceTopHeights
@@ -170,6 +171,32 @@ describe('resolveLiquidSurfaceBottomVCrops', () => {
     ).toEqual({
       bottomLeftV: 0.75,
       bottomRightV: 0.5
+    });
+  });
+});
+
+describe('resolveLiquidSurfaceBottomAtlasPixelRows', () => {
+  it('maps resolved bottom-edge v crops onto atlas pixel rows', () => {
+    expect(
+      resolveLiquidSurfaceBottomAtlasPixelRows(64, {
+        bottomLeftV: 0.8125,
+        bottomRightV: 0.796875
+      })
+    ).toEqual({
+      bottomLeftPixelY: 52,
+      bottomRightPixelY: 51
+    });
+  });
+
+  it('clamps invalid bottom-edge v crops before resolving atlas pixel rows', () => {
+    expect(
+      resolveLiquidSurfaceBottomAtlasPixelRows(64, {
+        bottomLeftV: 4,
+        bottomRightV: -2
+      })
+    ).toEqual({
+      bottomLeftPixelY: 64,
+      bottomRightPixelY: 0
     });
   });
 });

@@ -3102,6 +3102,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(5, 6), 9);
     testRuntime.rendererLiquidLevelsByWorldKey.set(worldTileKey(5, 6), 8);
     testRuntime.rendererLiquidRenderCardinalMask = 11;
+    testRuntime.rendererTelemetry.atlasWidth = 96;
+    testRuntime.rendererTelemetry.atlasHeight = 64;
 
     runFixedUpdate();
     runRenderFrame();
@@ -3125,7 +3127,9 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375,
       liquidBottomLeftV: 0.125,
-      liquidBottomRightV: 0.09375
+      liquidBottomRightV: 0.09375,
+      liquidBottomLeftPixelY: 8,
+      liquidBottomRightPixelY: 6
     });
     expect(testRuntime.latestDebugOverlayInspectState.pinned).toMatchObject({
       tile: { x: 4, y: 6 },
@@ -3140,7 +3144,9 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375,
       liquidBottomLeftV: 0.125,
-      liquidBottomRightV: 0.09375
+      liquidBottomRightV: 0.09375,
+      liquidBottomLeftPixelY: 8,
+      liquidBottomRightPixelY: 6
     });
     expect(testRuntime.latestDebugEditStatusStripState.hoveredTile).toMatchObject({
       tileX: 4,
@@ -3156,7 +3162,9 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375,
       liquidBottomLeftV: 0.125,
-      liquidBottomRightV: 0.09375
+      liquidBottomRightV: 0.09375,
+      liquidBottomLeftPixelY: 8,
+      liquidBottomRightPixelY: 6
     });
     expect(testRuntime.latestDebugEditStatusStripState.pinnedTile).toMatchObject({
       tileX: 4,
@@ -3172,7 +3180,9 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375,
       liquidBottomLeftV: 0.125,
-      liquidBottomRightV: 0.09375
+      liquidBottomRightV: 0.09375,
+      liquidBottomLeftPixelY: 8,
+      liquidBottomRightPixelY: 6
     });
   });
 

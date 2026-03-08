@@ -96,6 +96,7 @@ import {
 } from './world/playerRespawnEvent';
 import {
   type LiquidSurfaceLevelNeighborhood,
+  resolveLiquidSurfaceBottomAtlasPixelRows,
   resolveConnectedLiquidNeighborLevel,
   resolveLiquidSurfaceBottomVCrops,
   resolveLiquidSurfaceBranchKind,
@@ -1715,6 +1716,10 @@ const bootstrap = async (): Promise<void> => {
         : null;
     const atlasWidth = renderer.telemetry.atlasWidth;
     const atlasHeight = renderer.telemetry.atlasHeight;
+    const liquidBottomPixelRows =
+      liquidBottomVCrops && typeof atlasHeight === 'number' && Number.isFinite(atlasHeight) && atlasHeight > 0
+        ? resolveLiquidSurfaceBottomAtlasPixelRows(atlasHeight, liquidBottomVCrops)
+        : null;
 
     return {
       liquidLevel,
@@ -1727,6 +1732,8 @@ const bootstrap = async (): Promise<void> => {
       liquidSurfaceTopRight: liquidSurfaceTopHeights?.topRight ?? null,
       liquidBottomLeftV: liquidBottomVCrops?.bottomLeftV ?? null,
       liquidBottomRightV: liquidBottomVCrops?.bottomRightV ?? null,
+      liquidBottomLeftPixelY: liquidBottomPixelRows?.bottomLeftPixelY ?? null,
+      liquidBottomRightPixelY: liquidBottomPixelRows?.bottomRightPixelY ?? null,
       liquidConnectivityGroupLabel: describeLiquidConnectivityGroup(tileId),
       liquidCardinalMask,
       liquidAnimationFrameIndex,
@@ -2267,6 +2274,8 @@ const bootstrap = async (): Promise<void> => {
           liquidSurfaceTopRight: hoveredDebugTileStatus?.liquidSurfaceTopRight ?? null,
           liquidBottomLeftV: hoveredDebugTileStatus?.liquidBottomLeftV ?? null,
           liquidBottomRightV: hoveredDebugTileStatus?.liquidBottomRightV ?? null,
+          liquidBottomLeftPixelY: hoveredDebugTileStatus?.liquidBottomLeftPixelY ?? null,
+          liquidBottomRightPixelY: hoveredDebugTileStatus?.liquidBottomRightPixelY ?? null,
           liquidConnectivityGroupLabel: hoveredDebugTileStatus?.liquidConnectivityGroupLabel ?? null,
           liquidCardinalMask: hoveredDebugTileStatus?.liquidCardinalMask ?? null,
           liquidAnimationFrameIndex: hoveredDebugTileStatus?.liquidAnimationFrameIndex ?? null,
@@ -2307,6 +2316,8 @@ const bootstrap = async (): Promise<void> => {
           liquidSurfaceTopRight: pinnedDebugTileStatus.liquidSurfaceTopRight ?? null,
           liquidBottomLeftV: pinnedDebugTileStatus.liquidBottomLeftV ?? null,
           liquidBottomRightV: pinnedDebugTileStatus.liquidBottomRightV ?? null,
+          liquidBottomLeftPixelY: pinnedDebugTileStatus.liquidBottomLeftPixelY ?? null,
+          liquidBottomRightPixelY: pinnedDebugTileStatus.liquidBottomRightPixelY ?? null,
           liquidConnectivityGroupLabel: pinnedDebugTileStatus.liquidConnectivityGroupLabel ?? null,
           liquidCardinalMask: pinnedDebugTileStatus.liquidCardinalMask ?? null,
           liquidAnimationFrameIndex: pinnedDebugTileStatus.liquidAnimationFrameIndex ?? null,

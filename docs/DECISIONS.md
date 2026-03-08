@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Partial-liquid bottom-edge atlas-pixel inspect telemetry should reuse the shared crop-to-pixel helper
+
+- Decision: Hovered and pinned inspect telemetry now resolves `liquidBottomLeftPixelY` and `liquidBottomRightPixelY` through `resolveLiquidSurfaceBottomAtlasPixelRows()` in `src/world/liquidSurface.ts`, fed by the same shared bottom-edge `v` crop output that inspect telemetry already exposes as `liquidBottomLeftV` and `liquidBottomRightV`.
+- Reason: Atlas-row debug readouts need to stay numerically aligned with the exact normalized crop coordinates the renderer and inspect telemetry already share, without re-deriving pixel math in `src/main.ts`.
+- Consequence: Future partial-liquid atlas-pixel or visible-height inspect telemetry should extend the shared crop-to-pixel helper instead of recomputing atlas-row coordinates in runtime assembly or UI formatting code.
+
 ### 2026-03-08: Partial-liquid bottom-edge inspect telemetry should reuse the shared crop resolver
 
 - Decision: Hovered and pinned inspect telemetry now resolves `liquidBottomLeftV` and `liquidBottomRightV` through the same shared bottom-edge `v` crop helper in `src/world/liquidSurface.ts` that `src/world/mesher.ts` uses when writing liquid quad UVs.

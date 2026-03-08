@@ -53,6 +53,8 @@ export interface DebugOverlayPointerInspect {
   liquidSurfaceTopRight?: number | null;
   liquidBottomLeftV?: number | null;
   liquidBottomRightV?: number | null;
+  liquidBottomLeftPixelY?: number | null;
+  liquidBottomRightPixelY?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -91,6 +93,8 @@ export interface DebugOverlayTileInspect {
   liquidSurfaceTopRight?: number | null;
   liquidBottomLeftV?: number | null;
   liquidBottomRightV?: number | null;
+  liquidBottomLeftPixelY?: number | null;
+  liquidBottomRightPixelY?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -265,6 +269,14 @@ const formatLiquidSurfaceHeight = (value: number | null | undefined): string | n
   const roundedValue = Math.round(clampedValue * 1000) / 1000;
   return roundedValue.toString();
 };
+const formatAtlasPixelCoordinate = (value: number | null | undefined): string | null => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null;
+  }
+
+  const roundedValue = Math.round(value * 1000) / 1000;
+  return roundedValue.toString();
+};
 const formatLiquidSurfaceInputs = (
   north: number | null | undefined,
   west: number | null | undefined,
@@ -359,6 +371,8 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
   const liquidSurfaceTopRight = formatLiquidSurfaceHeight(tileInspect.liquidSurfaceTopRight);
   const liquidBottomLeftV = formatLiquidSurfaceHeight(tileInspect.liquidBottomLeftV);
   const liquidBottomRightV = formatLiquidSurfaceHeight(tileInspect.liquidBottomRightV);
+  const liquidBottomLeftPixelY = formatAtlasPixelCoordinate(tileInspect.liquidBottomLeftPixelY);
+  const liquidBottomRightPixelY = formatAtlasPixelCoordinate(tileInspect.liquidBottomRightPixelY);
   const liquidAnimationFrame = formatLiquidAnimationFrame(
     tileInspect.liquidAnimationFrameIndex,
     tileInspect.liquidAnimationFrameCount
@@ -387,6 +401,8 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     (liquidSurfaceTopRight ? ` | liquidTopRight:${liquidSurfaceTopRight}` : '') +
     (liquidBottomLeftV ? ` | liquidBottomLeftV:${liquidBottomLeftV}` : '') +
     (liquidBottomRightV ? ` | liquidBottomRightV:${liquidBottomRightV}` : '') +
+    (liquidBottomLeftPixelY ? ` | liquidBottomLeftPxY:${liquidBottomLeftPixelY}` : '') +
+    (liquidBottomRightPixelY ? ` | liquidBottomRightPxY:${liquidBottomRightPixelY}` : '') +
     (typeof tileInspect.liquidConnectivityGroupLabel === 'string' &&
     tileInspect.liquidConnectivityGroupLabel.length > 0
       ? ` | liquidGroup:${tileInspect.liquidConnectivityGroupLabel}`
