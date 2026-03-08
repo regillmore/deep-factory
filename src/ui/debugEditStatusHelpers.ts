@@ -135,6 +135,7 @@ export interface DebugEditStatusStripPlayerSpawnTelemetry {
   liquidSafetyStatus: PlayerSpawnLiquidSafetyStatus | 'unresolved';
   tile?: { x: number; y: number } | null;
   world?: { x: number; y: number } | null;
+  supportTile?: { x: number; y: number; id: number } | null;
 }
 
 export interface DebugEditStatusStripPlayerAabbTelemetry {
@@ -704,6 +705,24 @@ const formatLivePlayerSpawnText = (
   );
 };
 
+const formatLivePlayerSpawnSupportText = (
+  playerSpawn: DebugEditStatusStripPlayerSpawnTelemetry | null
+): string | null => {
+  if (
+    playerSpawn === null ||
+    playerSpawn.liquidSafetyStatus === 'unresolved' ||
+    playerSpawn.supportTile == null
+  ) {
+    return null;
+  }
+
+  return (
+    `SpawnSupportNow: tile ` +
+    `${formatTileCoordinatePair(playerSpawn.supportTile.x, playerSpawn.supportTile.y)} ` +
+    `(#${playerSpawn.supportTile.id})`
+  );
+};
+
 const formatLiveWorldChunkText = (playerWorldTile: { x: number; y: number } | null): string | null => {
   if (playerWorldTile === null) {
     return null;
@@ -1012,6 +1031,7 @@ const buildPlayerText = (
     formatLiveWorldChunkText(playerWorldTile),
     formatLiveWorldChunkLocalTileText(playerWorldTile),
     formatLivePlayerSpawnText(playerSpawn),
+    formatLivePlayerSpawnSupportText(playerSpawn),
     formatLiveAabbText(playerAabb),
     formatLiveCameraWorldPositionText(playerCameraWorldPosition),
     formatLiveCameraWorldTileText(playerCameraWorldTile),

@@ -202,12 +202,19 @@ describe('buildDebugEditStatusStripModel', () => {
         world: {
           x: -56,
           y: -32
+        },
+        supportTile: {
+          x: -5,
+          y: -1,
+          id: 7
         }
       },
       preview: createEmptyPreviewState()
     });
 
-    expect(model.playerText).toBe('SpawnNow: safe | tile -4,-2 | pos -56.00,-32.00');
+    expect(model.playerText).toBe(
+      'SpawnNow: safe | tile -4,-2 | pos -56.00,-32.00\nSpawnSupportNow: tile -5,-1 (#7)'
+    );
     expect(model.eventText).toBeNull();
   });
 

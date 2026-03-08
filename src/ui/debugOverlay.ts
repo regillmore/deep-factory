@@ -104,6 +104,7 @@ export interface DebugOverlayTileInspect {
 export interface DebugOverlayPlayerSpawn {
   tile: { x: number; y: number };
   world: { x: number; y: number };
+  supportTile?: { x: number; y: number; id: number } | null;
   liquidSafetyStatus: PlayerSpawnLiquidSafetyStatus;
 }
 
@@ -413,6 +414,14 @@ const formatSpawnLine = (spawn: DebugOverlayPlayerSpawn | null): string => {
   );
 };
 
+const formatSpawnSupportLine = (spawn: DebugOverlayPlayerSpawn | null): string => {
+  if (!spawn?.supportTile) {
+    return 'SpawnSupport: unresolved';
+  }
+
+  return `SpawnSupport: T:${spawn.supportTile.x},${spawn.supportTile.y} (#${spawn.supportTile.id})`;
+};
+
 const formatSpawnLiquidSafetyStatus = (
   status: PlayerSpawnLiquidSafetyStatus | 'unresolved'
 ): string => (status === 'overlap' ? 'overlap' : status);
@@ -703,6 +712,7 @@ export const formatDebugOverlayText = (
     formatAtlasLine(stats),
     formatAtlasValidationLine(stats),
     formatSpawnLine(spawn),
+    formatSpawnSupportLine(spawn),
     formatSpawnLiquidSafetyLine(spawn),
     formatPlayerLine(player),
     formatPlayerPlaceholderPoseLine(playerPlaceholderPoseLabel),

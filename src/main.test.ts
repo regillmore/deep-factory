@@ -1145,12 +1145,16 @@ const createTestPlayerSpawnPoint = ({
   standingTileY = 0,
   x = 8,
   y = 0,
+  supportTileX = anchorTileX,
+  supportTileY = standingTileY,
   supportTileId = 1
 }: Partial<{
   anchorTileX: number;
   standingTileY: number;
   x: number;
   y: number;
+  supportTileX: number;
+  supportTileY: number;
   supportTileId: number;
 }> = {}) => ({
   anchorTileX,
@@ -1164,8 +1168,8 @@ const createTestPlayerSpawnPoint = ({
     maxY: y
   },
   support: {
-    tileX: anchorTileX,
-    tileY: standingTileY,
+    tileX: supportTileX,
+    tileY: supportTileY,
     tileId: supportTileId
   }
 });
@@ -2958,7 +2962,10 @@ describe('main.ts shell state orchestration', () => {
       anchorTileX: -4,
       standingTileY: -2,
       x: -56,
-      y: -32
+      y: -32,
+      supportTileX: -5,
+      supportTileY: -1,
+      supportTileId: 7
     });
     testRuntime.rendererPlayerSpawnLiquidSafetyStatus = 'overlap';
 
@@ -2978,11 +2985,13 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugOverlayInspectState.spawn).toEqual({
       tile: { x: -4, y: -2 },
       world: { x: -56, y: -32 },
+      supportTile: { x: -5, y: -1, id: 7 },
       liquidSafetyStatus: 'overlap'
     });
     expect(testRuntime.latestDebugEditStatusStripState.playerSpawn).toEqual({
       tile: { x: -4, y: -2 },
       world: { x: -56, y: -32 },
+      supportTile: { x: -5, y: -1, id: 7 },
       liquidSafetyStatus: 'overlap'
     });
   });

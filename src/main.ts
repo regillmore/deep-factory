@@ -1098,17 +1098,24 @@ const bootstrap = async (): Promise<void> => {
       x: resolvedPlayerSpawn.x,
       y: resolvedPlayerSpawn.y
     };
+    const supportTile = {
+      x: resolvedPlayerSpawn.support.tileX,
+      y: resolvedPlayerSpawn.support.tileY,
+      id: resolvedPlayerSpawn.support.tileId
+    };
     const liquidSafetyStatus = renderer.resolvePlayerSpawnLiquidSafetyStatus(resolvedPlayerSpawn);
 
     return {
       debugOverlaySpawn: {
         tile,
         world,
+        supportTile,
         liquidSafetyStatus
       },
       debugStatusStripPlayerSpawn: {
         tile,
         world,
+        supportTile,
         liquidSafetyStatus
       }
     };
