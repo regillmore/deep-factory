@@ -6,6 +6,8 @@ import {
   resolveLiquidSurfaceBottomAtlasPixelRows,
   resolveLiquidSurfaceBottomVCrops,
   resolveLiquidSurfaceBranchKind,
+  resolveLiquidSurfaceCoverageAtlasPixelHeightTotals,
+  resolveLiquidSurfaceCoveragePercentageTotals,
   resolveLiquidSurfaceCroppedFrameAtlasPixelHeights,
   resolveLiquidSurfaceCroppedFramePercentages,
   resolveLiquidSurfaceCroppedFrameRemainders,
@@ -511,6 +513,44 @@ describe('resolveLiquidSurfaceVisibleFramePercentages', () => {
   });
 });
 
+describe('resolveLiquidSurfaceCoveragePercentageTotals', () => {
+  it('sums the visible and cropped percentages per side for paired frame accounting', () => {
+    expect(
+      resolveLiquidSurfaceCoveragePercentageTotals(
+        {
+          v0: 0.75,
+          v1: 0.875
+        },
+        {
+          bottomLeftV: 0.8125,
+          bottomRightV: 0.796875
+        }
+      )
+    ).toEqual({
+      leftTotalPercentage: 100,
+      rightTotalPercentage: 100
+    });
+  });
+
+  it('clamps invalid inputs back to the current frame total percentage', () => {
+    expect(
+      resolveLiquidSurfaceCoveragePercentageTotals(
+        {
+          v0: 0.5,
+          v1: 0.75
+        },
+        {
+          bottomLeftV: 4,
+          bottomRightV: -2
+        }
+      )
+    ).toEqual({
+      leftTotalPercentage: 100,
+      rightTotalPercentage: 100
+    });
+  });
+});
+
 describe('resolveLiquidSurfaceCroppedFramePercentages', () => {
   it('maps cropped remainder deltas onto percentages of the current frame height', () => {
     expect(
@@ -545,6 +585,46 @@ describe('resolveLiquidSurfaceCroppedFramePercentages', () => {
     ).toEqual({
       remainderLeftPercentage: 0,
       remainderRightPercentage: 100
+    });
+  });
+});
+
+describe('resolveLiquidSurfaceCoverageAtlasPixelHeightTotals', () => {
+  it('sums the visible and cropped pixel heights per side for paired frame accounting', () => {
+    expect(
+      resolveLiquidSurfaceCoverageAtlasPixelHeightTotals(
+        64,
+        {
+          v0: 0.75,
+          v1: 0.875
+        },
+        {
+          bottomLeftV: 0.8125,
+          bottomRightV: 0.796875
+        }
+      )
+    ).toEqual({
+      leftTotalPixelHeight: 8,
+      rightTotalPixelHeight: 8
+    });
+  });
+
+  it('clamps invalid inputs back to the current frame pixel height total', () => {
+    expect(
+      resolveLiquidSurfaceCoverageAtlasPixelHeightTotals(
+        64,
+        {
+          v0: 0.5,
+          v1: 0.75
+        },
+        {
+          bottomLeftV: 4,
+          bottomRightV: -2
+        }
+      )
+    ).toEqual({
+      leftTotalPixelHeight: 16,
+      rightTotalPixelHeight: 16
     });
   });
 });

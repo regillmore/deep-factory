@@ -73,6 +73,10 @@ export interface DebugOverlayPointerInspect {
   liquidRemainderRightPercentage?: number | null;
   liquidRemainderLeftPixelHeight?: number | null;
   liquidRemainderRightPixelHeight?: number | null;
+  liquidCoverageLeftTotalPercentage?: number | null;
+  liquidCoverageRightTotalPercentage?: number | null;
+  liquidCoverageLeftTotalPixelHeight?: number | null;
+  liquidCoverageRightTotalPixelHeight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -131,6 +135,10 @@ export interface DebugOverlayTileInspect {
   liquidRemainderRightPercentage?: number | null;
   liquidRemainderLeftPixelHeight?: number | null;
   liquidRemainderRightPixelHeight?: number | null;
+  liquidCoverageLeftTotalPercentage?: number | null;
+  liquidCoverageRightTotalPercentage?: number | null;
+  liquidCoverageLeftTotalPixelHeight?: number | null;
+  liquidCoverageRightTotalPixelHeight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -356,6 +364,34 @@ const formatPercentageValue = (value: number | null | undefined): string | null 
   const roundedPercent = Math.round(clampedPercent * 10) / 10;
   return Number.isInteger(roundedPercent) ? `${roundedPercent.toFixed(0)}%` : `${roundedPercent.toFixed(1)}%`;
 };
+const formatPairedPercentageAccounting = (
+  visible: number | null | undefined,
+  cropped: number | null | undefined,
+  total: number | null | undefined
+): string | null => {
+  const formattedVisible = formatPercentageValue(visible);
+  const formattedCropped = formatPercentageValue(cropped);
+  const formattedTotal = formatPercentageValue(total);
+  if (formattedVisible === null || formattedCropped === null || formattedTotal === null) {
+    return null;
+  }
+
+  return `${formattedVisible}+${formattedCropped}=${formattedTotal}`;
+};
+const formatPairedAtlasPixelAccounting = (
+  visible: number | null | undefined,
+  cropped: number | null | undefined,
+  total: number | null | undefined
+): string | null => {
+  const formattedVisible = formatAtlasPixelCoordinate(visible);
+  const formattedCropped = formatAtlasPixelCoordinate(cropped);
+  const formattedTotal = formatAtlasPixelCoordinate(total);
+  if (formattedVisible === null || formattedCropped === null || formattedTotal === null) {
+    return null;
+  }
+
+  return `${formattedVisible}+${formattedCropped}=${formattedTotal}`;
+};
 const formatLiquidCardinalMask = (value: number): string => {
   const mask = value & 0xf;
   return (
@@ -450,6 +486,26 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
   const liquidRemainderRightPixelHeight = formatAtlasPixelCoordinate(
     tileInspect.liquidRemainderRightPixelHeight
   );
+  const liquidCoverageLeftPercentage = formatPairedPercentageAccounting(
+    tileInspect.liquidVisibleLeftPercentage,
+    tileInspect.liquidRemainderLeftPercentage,
+    tileInspect.liquidCoverageLeftTotalPercentage
+  );
+  const liquidCoverageRightPercentage = formatPairedPercentageAccounting(
+    tileInspect.liquidVisibleRightPercentage,
+    tileInspect.liquidRemainderRightPercentage,
+    tileInspect.liquidCoverageRightTotalPercentage
+  );
+  const liquidCoverageLeftPixelHeight = formatPairedAtlasPixelAccounting(
+    tileInspect.liquidVisibleLeftPixelHeight,
+    tileInspect.liquidRemainderLeftPixelHeight,
+    tileInspect.liquidCoverageLeftTotalPixelHeight
+  );
+  const liquidCoverageRightPixelHeight = formatPairedAtlasPixelAccounting(
+    tileInspect.liquidVisibleRightPixelHeight,
+    tileInspect.liquidRemainderRightPixelHeight,
+    tileInspect.liquidCoverageRightTotalPixelHeight
+  );
   const liquidAnimationFrame = formatLiquidAnimationFrame(
     tileInspect.liquidAnimationFrameIndex,
     tileInspect.liquidAnimationFrameCount
@@ -513,6 +569,18 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
       : '') +
     (liquidRemainderRightPixelHeight !== null
       ? ` | liquidRemainderRightPxH:${liquidRemainderRightPixelHeight}`
+      : '') +
+    (liquidCoverageLeftPercentage !== null
+      ? ` | liquidCoverageLeftPct:${liquidCoverageLeftPercentage}`
+      : '') +
+    (liquidCoverageRightPercentage !== null
+      ? ` | liquidCoverageRightPct:${liquidCoverageRightPercentage}`
+      : '') +
+    (liquidCoverageLeftPixelHeight !== null
+      ? ` | liquidCoverageLeftPxH:${liquidCoverageLeftPixelHeight}`
+      : '') +
+    (liquidCoverageRightPixelHeight !== null
+      ? ` | liquidCoverageRightPxH:${liquidCoverageRightPixelHeight}`
       : '') +
     (typeof tileInspect.liquidConnectivityGroupLabel === 'string' &&
     tileInspect.liquidConnectivityGroupLabel.length > 0

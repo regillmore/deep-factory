@@ -33,6 +33,11 @@ export interface LiquidSurfaceVisibleFramePercentages {
   visibleRightPercentage: number;
 }
 
+export interface LiquidSurfaceCoveragePercentageTotals {
+  leftTotalPercentage: number;
+  rightTotalPercentage: number;
+}
+
 export interface LiquidSurfaceCroppedFrameRemainders {
   remainderLeftV: number;
   remainderRightV: number;
@@ -51,6 +56,11 @@ export interface LiquidSurfaceBottomAtlasPixelRows {
 export interface LiquidSurfaceVisibleFrameAtlasPixelHeights {
   visibleLeftPixelHeight: number;
   visibleRightPixelHeight: number;
+}
+
+export interface LiquidSurfaceCoverageAtlasPixelHeightTotals {
+  leftTotalPixelHeight: number;
+  rightTotalPixelHeight: number;
 }
 
 export interface LiquidSurfaceCroppedFrameAtlasPixelHeights {
@@ -214,6 +224,23 @@ export const resolveLiquidSurfaceVisibleFramePercentages = (
   };
 };
 
+export const resolveLiquidSurfaceCoveragePercentageTotals = (
+  uvRect: Pick<TileUvRect, 'v0' | 'v1'>,
+  bottomVCrops: LiquidSurfaceBottomVCrops
+): LiquidSurfaceCoveragePercentageTotals => {
+  const visibleFramePercentages = resolveLiquidSurfaceVisibleFramePercentages(uvRect, bottomVCrops);
+  const croppedFramePercentages = resolveLiquidSurfaceCroppedFramePercentages(uvRect, bottomVCrops);
+
+  return {
+    leftTotalPercentage: clampPercentage(
+      visibleFramePercentages.visibleLeftPercentage + croppedFramePercentages.remainderLeftPercentage
+    ),
+    rightTotalPercentage: clampPercentage(
+      visibleFramePercentages.visibleRightPercentage + croppedFramePercentages.remainderRightPercentage
+    )
+  };
+};
+
 export const resolveLiquidSurfaceCroppedFrameRemainders = (
   uvRect: Pick<TileUvRect, 'v0' | 'v1'>,
   bottomVCrops: LiquidSurfaceBottomVCrops
@@ -281,6 +308,41 @@ export const resolveLiquidSurfaceVisibleFrameAtlasPixelHeights = (
     visibleRightPixelHeight: Math.min(
       framePixelHeight,
       Math.max(0, bottomPixelRows.bottomRightPixelY - topPixelY)
+    )
+  };
+};
+
+export const resolveLiquidSurfaceCoverageAtlasPixelHeightTotals = (
+  atlasHeight: number,
+  uvRect: Pick<TileUvRect, 'v0' | 'v1'>,
+  bottomVCrops: LiquidSurfaceBottomVCrops
+): LiquidSurfaceCoverageAtlasPixelHeightTotals => {
+  const visiblePixelHeights = resolveLiquidSurfaceVisibleFrameAtlasPixelHeights(
+    atlasHeight,
+    uvRect,
+    bottomVCrops
+  );
+  const croppedPixelHeights = resolveLiquidSurfaceCroppedFrameAtlasPixelHeights(
+    atlasHeight,
+    uvRect,
+    bottomVCrops
+  );
+  const framePixelHeight = resolveLiquidSurfaceFrameAtlasPixelHeight(atlasHeight, uvRect);
+
+  return {
+    leftTotalPixelHeight: Math.min(
+      framePixelHeight,
+      Math.max(
+        0,
+        visiblePixelHeights.visibleLeftPixelHeight + croppedPixelHeights.remainderLeftPixelHeight
+      )
+    ),
+    rightTotalPixelHeight: Math.min(
+      framePixelHeight,
+      Math.max(
+        0,
+        visiblePixelHeights.visibleRightPixelHeight + croppedPixelHeights.remainderRightPixelHeight
+      )
     )
   };
 };

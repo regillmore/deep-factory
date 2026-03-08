@@ -131,6 +131,10 @@ export interface DebugEditHoveredTileState {
   liquidRemainderRightPercentage?: number | null;
   liquidRemainderLeftPixelHeight?: number | null;
   liquidRemainderRightPixelHeight?: number | null;
+  liquidCoverageLeftTotalPercentage?: number | null;
+  liquidCoverageRightTotalPercentage?: number | null;
+  liquidCoverageLeftTotalPixelHeight?: number | null;
+  liquidCoverageRightTotalPixelHeight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -581,6 +585,34 @@ const formatPercentageValue = (value: number | null | undefined): string | null 
   const roundedPercent = Math.round(clampedPercent * 10) / 10;
   return Number.isInteger(roundedPercent) ? `${roundedPercent.toFixed(0)}%` : `${roundedPercent.toFixed(1)}%`;
 };
+const formatPairedPercentageAccounting = (
+  visible: number | null | undefined,
+  cropped: number | null | undefined,
+  total: number | null | undefined
+): string | null => {
+  const formattedVisible = formatPercentageValue(visible);
+  const formattedCropped = formatPercentageValue(cropped);
+  const formattedTotal = formatPercentageValue(total);
+  if (formattedVisible === null || formattedCropped === null || formattedTotal === null) {
+    return null;
+  }
+
+  return `${formattedVisible}+${formattedCropped}=${formattedTotal}`;
+};
+const formatPairedAtlasPixelAccounting = (
+  visible: number | null | undefined,
+  cropped: number | null | undefined,
+  total: number | null | undefined
+): string | null => {
+  const formattedVisible = formatAtlasPixelCoordinate(visible);
+  const formattedCropped = formatAtlasPixelCoordinate(cropped);
+  const formattedTotal = formatAtlasPixelCoordinate(total);
+  if (formattedVisible === null || formattedCropped === null || formattedTotal === null) {
+    return null;
+  }
+
+  return `${formattedVisible}+${formattedCropped}=${formattedTotal}`;
+};
 
 const hasSameInspectTarget = (
   hoveredTile: DebugEditHoveredTileState | null,
@@ -631,6 +663,26 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
   );
   const liquidRemainderRightPixelHeight = formatAtlasPixelCoordinate(
     tile.liquidRemainderRightPixelHeight
+  );
+  const liquidCoverageLeftPercentage = formatPairedPercentageAccounting(
+    tile.liquidVisibleLeftPercentage,
+    tile.liquidRemainderLeftPercentage,
+    tile.liquidCoverageLeftTotalPercentage
+  );
+  const liquidCoverageRightPercentage = formatPairedPercentageAccounting(
+    tile.liquidVisibleRightPercentage,
+    tile.liquidRemainderRightPercentage,
+    tile.liquidCoverageRightTotalPercentage
+  );
+  const liquidCoverageLeftPixelHeight = formatPairedAtlasPixelAccounting(
+    tile.liquidVisibleLeftPixelHeight,
+    tile.liquidRemainderLeftPixelHeight,
+    tile.liquidCoverageLeftTotalPixelHeight
+  );
+  const liquidCoverageRightPixelHeight = formatPairedAtlasPixelAccounting(
+    tile.liquidVisibleRightPixelHeight,
+    tile.liquidRemainderRightPixelHeight,
+    tile.liquidCoverageRightTotalPixelHeight
   );
   const liquidAnimationFrame = formatLiquidAnimationFrame(
     tile.liquidAnimationFrameIndex,
@@ -698,6 +750,18 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
       : '') +
     (liquidRemainderRightPixelHeight !== null
       ? ` | liquidRemainderRightPxH:${liquidRemainderRightPixelHeight}`
+      : '') +
+    (liquidCoverageLeftPercentage !== null
+      ? ` | liquidCoverageLeftPct:${liquidCoverageLeftPercentage}`
+      : '') +
+    (liquidCoverageRightPercentage !== null
+      ? ` | liquidCoverageRightPct:${liquidCoverageRightPercentage}`
+      : '') +
+    (liquidCoverageLeftPixelHeight !== null
+      ? ` | liquidCoverageLeftPxH:${liquidCoverageLeftPixelHeight}`
+      : '') +
+    (liquidCoverageRightPixelHeight !== null
+      ? ` | liquidCoverageRightPxH:${liquidCoverageRightPixelHeight}`
       : '') +
     (typeof tile.liquidConnectivityGroupLabel === 'string' && tile.liquidConnectivityGroupLabel.length > 0
       ? ` | liquidGroup:${tile.liquidConnectivityGroupLabel}`

@@ -2,11 +2,6 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-## Liquid rendering
-
-347. Surface paired visible-plus-cropped per-side percentage accounting in hovered and pinned inspect telemetry so partial-liquid frame coverage can be checked to sum to `100%` without mental math.
-348. Surface paired visible-plus-cropped per-side atlas-pixel accounting in hovered and pinned inspect telemetry so partial-liquid frame coverage can be checked to sum to the current frame pixel height without mental math.
-
 ## Lighting
 
 322. Add a renderer regression where a clean boundary emissive source does not horizontal-transport `MAX_LIGHT_LEVEL` into streamed-back dirty neighboring boundary air on the first resumed draw.
@@ -50,5 +45,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 313. Add a rope traversal utility slice after inventory basics (`214`): stackable rope hotbar slots, mixed-device downward placement from solid anchors, climb-and-descent movement on rope tiles, and save/load regressions for placed rope plus remaining stack counts.
 321. Add a starter pickaxe mining slice after inventory basics (`214`): a non-stackable pickaxe hotbar slot, mixed-device aimed tile mining with fixed-step swing timing, terrain break progress and completion rules, and deterministic break regressions.
 338. Add a bed-checkpoint respawn slice after inventory basics (`214`) and save/load (`19-21`): placeable bed items, mixed-device checkpoint claim and respawn interactions, obstructed-checkpoint fallback to world spawn, and snapshot regressions for claimed checkpoint state.
+349. Add a platform traversal slice after inventory basics (`214`): stackable platform hotbar slots, mixed-device one-way placement plus drop-through movement, and save/load regressions for placed platform runs.
+350. Add a chest-storage slice after inventory basics (`214`) and save/load (`19-21`): placeable chest items, mixed-device open or close interactions, fixed-slot storage transfer rules, and snapshot regressions for chest contents plus chest placement state.
 
 ## Refine, Extract, Refactor, Restructure

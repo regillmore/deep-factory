@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Partial-liquid paired coverage totals should resolve from shared liquid-surface helpers
+
+- Decision: Hovered and pinned inspect telemetry now resolves `liquidCoverageLeftTotalPercentage`, `liquidCoverageRightTotalPercentage`, `liquidCoverageLeftTotalPixelHeight`, and `liquidCoverageRightTotalPixelHeight` through shared helpers in `src/world/liquidSurface.ts` that sum the existing visible and cropped per-side deltas.
+- Reason: Combined `visible + cropped = total` inspect readouts need to stay numerically aligned with the exact per-side deltas and current variant frame size without re-summing values in `src/main.ts` or the UI formatters.
+- Consequence: Future inspect coverage accounting should extend those shared total helpers rather than recomputing visible-plus-cropped totals in runtime assembly or UI formatting code.
+
 ### 2026-03-08: Partial-liquid visible-percentage inspect telemetry should resolve from shared frame-height helpers
 
 - Decision: Hovered and pinned inspect telemetry now resolves `liquidVisibleLeftPercentage` and `liquidVisibleRightPercentage` through a shared helper in `src/world/liquidSurface.ts` that divides the existing visible-frame deltas by the current liquid variant frame height.

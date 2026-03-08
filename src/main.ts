@@ -100,6 +100,8 @@ import {
   resolveConnectedLiquidNeighborLevel,
   resolveLiquidSurfaceBottomVCrops,
   resolveLiquidSurfaceBranchKind,
+  resolveLiquidSurfaceCoverageAtlasPixelHeightTotals,
+  resolveLiquidSurfaceCoveragePercentageTotals,
   resolveLiquidSurfaceCroppedFrameAtlasPixelHeights,
   resolveLiquidSurfaceCroppedFramePercentages,
   resolveLiquidSurfaceCroppedFrameRemainders,
@@ -1780,6 +1782,10 @@ const bootstrap = async (): Promise<void> => {
             liquidBottomVCrops
           )
         : null;
+    const liquidCoveragePercentageTotals =
+      liquidBottomVCrops && liquidVariantUvRect
+        ? resolveLiquidSurfaceCoveragePercentageTotals(liquidVariantUvRect, liquidBottomVCrops)
+        : null;
     const liquidRemainderFrameHeights =
       liquidBottomVCrops && liquidVariantUvRect
         ? resolveLiquidSurfaceCroppedFrameRemainders(liquidVariantUvRect, liquidBottomVCrops)
@@ -1795,6 +1801,18 @@ const bootstrap = async (): Promise<void> => {
       Number.isFinite(atlasHeight) &&
       atlasHeight > 0
         ? resolveLiquidSurfaceCroppedFrameAtlasPixelHeights(
+            atlasHeight,
+            liquidVariantUvRect,
+            liquidBottomVCrops
+          )
+        : null;
+    const liquidCoveragePixelHeightTotals =
+      liquidBottomVCrops &&
+      liquidVariantUvRect &&
+      typeof atlasHeight === 'number' &&
+      Number.isFinite(atlasHeight) &&
+      atlasHeight > 0
+        ? resolveLiquidSurfaceCoverageAtlasPixelHeightTotals(
             atlasHeight,
             liquidVariantUvRect,
             liquidBottomVCrops
@@ -1834,6 +1852,14 @@ const bootstrap = async (): Promise<void> => {
       liquidRemainderLeftPixelHeight: liquidRemainderPixelHeights?.remainderLeftPixelHeight ?? null,
       liquidRemainderRightPixelHeight:
         liquidRemainderPixelHeights?.remainderRightPixelHeight ?? null,
+      liquidCoverageLeftTotalPercentage:
+        liquidCoveragePercentageTotals?.leftTotalPercentage ?? null,
+      liquidCoverageRightTotalPercentage:
+        liquidCoveragePercentageTotals?.rightTotalPercentage ?? null,
+      liquidCoverageLeftTotalPixelHeight:
+        liquidCoveragePixelHeightTotals?.leftTotalPixelHeight ?? null,
+      liquidCoverageRightTotalPixelHeight:
+        liquidCoveragePixelHeightTotals?.rightTotalPixelHeight ?? null,
       liquidConnectivityGroupLabel: describeLiquidConnectivityGroup(tileId),
       liquidCardinalMask,
       liquidAnimationFrameIndex,
@@ -2401,6 +2427,14 @@ const bootstrap = async (): Promise<void> => {
             hoveredDebugTileStatus?.liquidRemainderLeftPixelHeight ?? null,
           liquidRemainderRightPixelHeight:
             hoveredDebugTileStatus?.liquidRemainderRightPixelHeight ?? null,
+          liquidCoverageLeftTotalPercentage:
+            hoveredDebugTileStatus?.liquidCoverageLeftTotalPercentage ?? null,
+          liquidCoverageRightTotalPercentage:
+            hoveredDebugTileStatus?.liquidCoverageRightTotalPercentage ?? null,
+          liquidCoverageLeftTotalPixelHeight:
+            hoveredDebugTileStatus?.liquidCoverageLeftTotalPixelHeight ?? null,
+          liquidCoverageRightTotalPixelHeight:
+            hoveredDebugTileStatus?.liquidCoverageRightTotalPixelHeight ?? null,
           liquidConnectivityGroupLabel: hoveredDebugTileStatus?.liquidConnectivityGroupLabel ?? null,
           liquidCardinalMask: hoveredDebugTileStatus?.liquidCardinalMask ?? null,
           liquidAnimationFrameIndex: hoveredDebugTileStatus?.liquidAnimationFrameIndex ?? null,
@@ -2467,6 +2501,14 @@ const bootstrap = async (): Promise<void> => {
             pinnedDebugTileStatus.liquidRemainderLeftPixelHeight ?? null,
           liquidRemainderRightPixelHeight:
             pinnedDebugTileStatus.liquidRemainderRightPixelHeight ?? null,
+          liquidCoverageLeftTotalPercentage:
+            pinnedDebugTileStatus.liquidCoverageLeftTotalPercentage ?? null,
+          liquidCoverageRightTotalPercentage:
+            pinnedDebugTileStatus.liquidCoverageRightTotalPercentage ?? null,
+          liquidCoverageLeftTotalPixelHeight:
+            pinnedDebugTileStatus.liquidCoverageLeftTotalPixelHeight ?? null,
+          liquidCoverageRightTotalPixelHeight:
+            pinnedDebugTileStatus.liquidCoverageRightTotalPixelHeight ?? null,
           liquidConnectivityGroupLabel: pinnedDebugTileStatus.liquidConnectivityGroupLabel ?? null,
           liquidCardinalMask: pinnedDebugTileStatus.liquidCardinalMask ?? null,
           liquidAnimationFrameIndex: pinnedDebugTileStatus.liquidAnimationFrameIndex ?? null,

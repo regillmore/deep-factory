@@ -3146,7 +3146,11 @@ describe('main.ts shell state orchestration', () => {
       liquidRemainderLeftPercentage: 50,
       liquidRemainderRightPercentage: 62.5,
       liquidRemainderLeftPixelHeight: 4,
-      liquidRemainderRightPixelHeight: 5
+      liquidRemainderRightPixelHeight: 5,
+      liquidCoverageLeftTotalPercentage: 100,
+      liquidCoverageRightTotalPercentage: 100,
+      liquidCoverageLeftTotalPixelHeight: 8,
+      liquidCoverageRightTotalPixelHeight: 8
     });
     expect(testRuntime.latestDebugOverlayInspectState.pinned).toMatchObject({
       tile: { x: 4, y: 6 },
@@ -3181,7 +3185,11 @@ describe('main.ts shell state orchestration', () => {
       liquidRemainderLeftPercentage: 50,
       liquidRemainderRightPercentage: 62.5,
       liquidRemainderLeftPixelHeight: 4,
-      liquidRemainderRightPixelHeight: 5
+      liquidRemainderRightPixelHeight: 5,
+      liquidCoverageLeftTotalPercentage: 100,
+      liquidCoverageRightTotalPercentage: 100,
+      liquidCoverageLeftTotalPixelHeight: 8,
+      liquidCoverageRightTotalPixelHeight: 8
     });
     expect(testRuntime.latestDebugEditStatusStripState.hoveredTile).toMatchObject({
       tileX: 4,
@@ -3217,7 +3225,11 @@ describe('main.ts shell state orchestration', () => {
       liquidRemainderLeftPercentage: 50,
       liquidRemainderRightPercentage: 62.5,
       liquidRemainderLeftPixelHeight: 4,
-      liquidRemainderRightPixelHeight: 5
+      liquidRemainderRightPixelHeight: 5,
+      liquidCoverageLeftTotalPercentage: 100,
+      liquidCoverageRightTotalPercentage: 100,
+      liquidCoverageLeftTotalPixelHeight: 8,
+      liquidCoverageRightTotalPixelHeight: 8
     });
     expect(testRuntime.latestDebugEditStatusStripState.pinnedTile).toMatchObject({
       tileX: 4,
@@ -3253,7 +3265,11 @@ describe('main.ts shell state orchestration', () => {
       liquidRemainderLeftPercentage: 50,
       liquidRemainderRightPercentage: 62.5,
       liquidRemainderLeftPixelHeight: 4,
-      liquidRemainderRightPixelHeight: 5
+      liquidRemainderRightPixelHeight: 5,
+      liquidCoverageLeftTotalPercentage: 100,
+      liquidCoverageRightTotalPercentage: 100,
+      liquidCoverageLeftTotalPixelHeight: 8,
+      liquidCoverageRightTotalPixelHeight: 8
     });
   });
 
@@ -3319,6 +3335,10 @@ describe('main.ts shell state orchestration', () => {
         liquidRemainderRightPercentage: 62.5,
         liquidRemainderLeftPixelHeight: 4,
         liquidRemainderRightPixelHeight: 5,
+        liquidCoverageLeftTotalPercentage: 100,
+        liquidCoverageRightTotalPercentage: 100,
+        liquidCoverageLeftTotalPixelHeight: 8,
+        liquidCoverageRightTotalPixelHeight: 8,
         liquidAnimationFrameIndex: expectedFrameIndex,
         liquidAnimationFrameCount: 2,
         liquidVariantUvRect: expectedVariantUvRect,
@@ -3350,6 +3370,10 @@ describe('main.ts shell state orchestration', () => {
         liquidRemainderRightPercentage: 62.5,
         liquidRemainderLeftPixelHeight: 4,
         liquidRemainderRightPixelHeight: 5,
+        liquidCoverageLeftTotalPercentage: 100,
+        liquidCoverageRightTotalPercentage: 100,
+        liquidCoverageLeftTotalPixelHeight: 8,
+        liquidCoverageRightTotalPixelHeight: 8,
         liquidAnimationFrameIndex: expectedFrameIndex,
         liquidAnimationFrameCount: 2,
         liquidVariantUvRect: expectedVariantUvRect,
@@ -3382,6 +3406,10 @@ describe('main.ts shell state orchestration', () => {
         liquidRemainderRightPercentage: 62.5,
         liquidRemainderLeftPixelHeight: 4,
         liquidRemainderRightPixelHeight: 5,
+        liquidCoverageLeftTotalPercentage: 100,
+        liquidCoverageRightTotalPercentage: 100,
+        liquidCoverageLeftTotalPixelHeight: 8,
+        liquidCoverageRightTotalPixelHeight: 8,
         liquidAnimationFrameIndex: expectedFrameIndex,
         liquidAnimationFrameCount: 2,
         liquidVariantUvRect: expectedVariantUvRect,
@@ -3414,6 +3442,10 @@ describe('main.ts shell state orchestration', () => {
         liquidRemainderRightPercentage: 62.5,
         liquidRemainderLeftPixelHeight: 4,
         liquidRemainderRightPixelHeight: 5,
+        liquidCoverageLeftTotalPercentage: 100,
+        liquidCoverageRightTotalPercentage: 100,
+        liquidCoverageLeftTotalPixelHeight: 8,
+        liquidCoverageRightTotalPixelHeight: 8,
         liquidAnimationFrameIndex: expectedFrameIndex,
         liquidAnimationFrameCount: 2,
         liquidVariantUvRect: expectedVariantUvRect,
