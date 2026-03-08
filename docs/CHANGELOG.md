@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Route exposed-liquid chunk-mesh vertex heights through the shared liquid-surface resolver so partial-liquid tops render flat or sloped while same-kind-covered tiles stay full-height.
+- Changes: Updated [src/world/mesher.ts](../src/world/mesher.ts) so liquid quads resolve their top-left and top-right vertex heights through [src/world/liquidSurface.ts](../src/world/liquidSurface.ts) using the same liquid-connectivity rule as liquid mask selection, wired [src/gl/renderer.ts](../src/gl/renderer.ts) to feed world liquid levels into chunk builds, expanded [src/world/mesher.test.ts](../src/world/mesher.test.ts) with exposed-flat, exposed-sloped, covered-full-height, and chunk-edge geometry regressions, removed completed task `325` from [docs/NEXT.md](docs/NEXT.md), rewrote task `203` around the remaining partial-liquid UV follow-up, added replacement task `326`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `cmd /c npx vitest run src/world/mesher.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a shared liquid-surface height resolver that converts per-tile fill levels plus same-kind neighbors into normalized exposed-liquid top heights for future partial-liquid meshing.
 - Changes: Added [src/world/liquidSurface.ts](../src/world/liquidSurface.ts) plus [src/world/liquidSurface.test.ts](../src/world/liquidSurface.test.ts) to clamp raw fill levels, force full-height tops when same-kind liquid continues above, and blend exposed side corners halfway toward same-kind neighbors so adjacent tiles share boundary heights, removed completed task `324` from [docs/NEXT.md](docs/NEXT.md), added replacement task `325`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/liquidSurface.test.ts` and `npx tsc --noEmit -p tsconfig.app.json`.

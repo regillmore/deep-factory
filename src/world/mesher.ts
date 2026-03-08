@@ -2,6 +2,7 @@ import { buildAutotileAdjacencyMask } from './autotile';
 import { CHUNK_SIZE, TILE_SIZE } from './constants';
 import { toTileIndex } from './chunkMath';
 import {
+  areLiquidRenderNeighborsConnected,
   TILE_METADATA,
   areTerrainAutotileNeighborsConnected,
   hasAnimatedLiquidRenderVariantMetadata,
@@ -15,6 +16,7 @@ import {
 } from './tileMetadata';
 import type { TileMetadataRegistry, TileUvRect } from './tileMetadata';
 import type { Chunk } from './types';
+import { resolveLiquidSurfaceTopHeights } from './liquidSurface';
 import type { TileNeighborhood } from './world';
 
 export interface ChunkMeshData {
@@ -43,6 +45,7 @@ export interface ChunkMeshBuildOptions {
     localY: number,
     target: TileNeighborhood
   ) => void;
+  sampleLiquidLevel?: (worldTileX: number, worldTileY: number) => number;
   tileMetadataRegistry?: TileMetadataRegistry;
 }
 
@@ -114,25 +117,42 @@ const resolveChunkTileNeighborhood = (
   return null;
 };
 
-const resolveChunkTileRender = (
+const tryResolveChunkLocalLiquidLevel = (
+  chunk: Chunk,
+  localX: number,
+  localY: number
+): number | null => {
+  if (localX < 0 || localX >= CHUNK_SIZE || localY < 0 || localY >= CHUNK_SIZE) {
+    return null;
+  }
+
+  return chunk.liquidLevels[toTileIndex(localX, localY)] ?? 0;
+};
+
+const resolveChunkTileLiquidLevel = (
   chunk: Chunk,
   localX: number,
   localY: number,
+  sampleLiquidLevel?: ChunkMeshBuildOptions['sampleLiquidLevel']
+): number => {
+  const localLiquidLevel = tryResolveChunkLocalLiquidLevel(chunk, localX, localY);
+  if (localLiquidLevel !== null) {
+    return localLiquidLevel;
+  }
+
+  if (!sampleLiquidLevel) {
+    return 0;
+  }
+
+  return sampleLiquidLevel(chunk.coord.x * CHUNK_SIZE + localX, chunk.coord.y * CHUNK_SIZE + localY);
+};
+
+const resolveChunkTileRender = (
   tileId: number,
   tileMetadataRegistry: TileMetadataRegistry,
-  sampleNeighborhood?: ChunkMeshBuildOptions['sampleNeighborhood'],
-  sampleNeighborhoodInto?: ChunkMeshBuildOptions['sampleNeighborhoodInto'],
-  neighborhoodScratch?: TileNeighborhood
+  neighborhood: TileNeighborhood | null
 ): ResolvedChunkTileRender => {
   if (usesTerrainAutotile(tileId, tileMetadataRegistry)) {
-    const neighborhood = resolveChunkTileNeighborhood(
-      chunk,
-      localX,
-      localY,
-      sampleNeighborhood,
-      sampleNeighborhoodInto,
-      neighborhoodScratch
-    );
     if (!neighborhood) {
       const isolatedTerrainUvRect = resolveTerrainAutotileUvRectByRawAdjacencyMask(
         tileId,
@@ -156,14 +176,6 @@ const resolveChunkTileRender = (
   }
 
   if (usesLiquidRender(tileId, tileMetadataRegistry)) {
-    const neighborhood = resolveChunkTileNeighborhood(
-      chunk,
-      localX,
-      localY,
-      sampleNeighborhood,
-      sampleNeighborhoodInto,
-      neighborhoodScratch
-    );
     const liquidCardinalMask =
       neighborhood === null
         ? 0
@@ -182,12 +194,80 @@ const resolveChunkTileRender = (
   throw new Error(`Missing tile render metadata for tile ${tileId}`);
 };
 
+const resolveConnectedLiquidNeighborLevel = (
+  chunk: Chunk,
+  tileId: number,
+  neighborTileId: number,
+  neighborLocalX: number,
+  neighborLocalY: number,
+  tileMetadataRegistry: TileMetadataRegistry,
+  sampleLiquidLevel?: ChunkMeshBuildOptions['sampleLiquidLevel']
+): number => {
+  if (!areLiquidRenderNeighborsConnected(tileId, neighborTileId, tileMetadataRegistry)) {
+    return 0;
+  }
+
+  return resolveChunkTileLiquidLevel(chunk, neighborLocalX, neighborLocalY, sampleLiquidLevel);
+};
+
+const resolveChunkTileLiquidTopHeights = (
+  chunk: Chunk,
+  localX: number,
+  localY: number,
+  tileId: number,
+  tileMetadataRegistry: TileMetadataRegistry,
+  neighborhood: TileNeighborhood | null,
+  sampleLiquidLevel?: ChunkMeshBuildOptions['sampleLiquidLevel']
+) => {
+  const centerLevel = resolveChunkTileLiquidLevel(chunk, localX, localY, sampleLiquidLevel);
+  if (!neighborhood) {
+    return resolveLiquidSurfaceTopHeights({
+      center: centerLevel,
+      north: 0,
+      east: 0,
+      west: 0
+    });
+  }
+
+  return resolveLiquidSurfaceTopHeights({
+    center: centerLevel,
+    north: resolveConnectedLiquidNeighborLevel(
+      chunk,
+      tileId,
+      neighborhood.north,
+      localX,
+      localY - 1,
+      tileMetadataRegistry,
+      sampleLiquidLevel
+    ),
+    east: resolveConnectedLiquidNeighborLevel(
+      chunk,
+      tileId,
+      neighborhood.east,
+      localX + 1,
+      localY,
+      tileMetadataRegistry,
+      sampleLiquidLevel
+    ),
+    west: resolveConnectedLiquidNeighborLevel(
+      chunk,
+      tileId,
+      neighborhood.west,
+      localX - 1,
+      localY,
+      tileMetadataRegistry,
+      sampleLiquidLevel
+    )
+  });
+};
+
 export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}): ChunkMeshData => {
   const chunkOriginX = chunk.coord.x * CHUNK_SIZE * TILE_SIZE;
   const chunkOriginY = chunk.coord.y * CHUNK_SIZE * TILE_SIZE;
   const {
     sampleNeighborhood,
     sampleNeighborhoodInto,
+    sampleLiquidLevel,
     tileMetadataRegistry = TILE_METADATA
   } = options;
   const nonEmptyTileCount = countNonEmptyTiles(chunk);
@@ -205,23 +285,39 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
       const tileId = chunk.tiles[toTileIndex(x, y)];
       if (tileId === 0) continue;
 
+      const neighborhood =
+        usesTerrainAutotile(tileId, tileMetadataRegistry) || usesLiquidRender(tileId, tileMetadataRegistry)
+          ? resolveChunkTileNeighborhood(
+              chunk,
+              x,
+              y,
+              sampleNeighborhood,
+              sampleNeighborhoodInto,
+              neighborhoodScratch
+            )
+          : null;
       const px = chunkOriginX + x * TILE_SIZE;
       const py = chunkOriginY + y * TILE_SIZE;
       const px1 = px + TILE_SIZE;
       const py1 = py + TILE_SIZE;
       const tileVertexFloatOffset = writeIndex;
-      const resolvedRender = resolveChunkTileRender(
-        chunk,
-        x,
-        y,
-        tileId,
-        tileMetadataRegistry,
-        sampleNeighborhood,
-        sampleNeighborhoodInto,
-        neighborhoodScratch
-      );
+      const resolvedRender = resolveChunkTileRender(tileId, tileMetadataRegistry, neighborhood);
       const { u0, v0, u1, v1 } = resolvedRender.uvRect;
       const lightLevel = chunk.lightLevels[toTileIndex(x, y)] ?? 0;
+      const liquidTopHeights =
+        resolvedRender.liquidCardinalMask === null
+          ? null
+          : resolveChunkTileLiquidTopHeights(
+              chunk,
+              x,
+              y,
+              tileId,
+              tileMetadataRegistry,
+              neighborhood,
+              sampleLiquidLevel
+            );
+      const topLeftY = liquidTopHeights === null ? py : py1 - liquidTopHeights.topLeft * TILE_SIZE;
+      const topRightY = liquidTopHeights === null ? py : py1 - liquidTopHeights.topRight * TILE_SIZE;
       if (resolvedRender.liquidCardinalMask !== null) {
         if (
           usesAnimatedLiquidRenderVariant(
@@ -244,12 +340,12 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
       }
 
       vertices[writeIndex] = px;
-      vertices[writeIndex + 1] = py;
+      vertices[writeIndex + 1] = topLeftY;
       vertices[writeIndex + 2] = u0;
       vertices[writeIndex + 3] = v0;
       vertices[writeIndex + 4] = lightLevel;
       vertices[writeIndex + 5] = px1;
-      vertices[writeIndex + 6] = py;
+      vertices[writeIndex + 6] = topRightY;
       vertices[writeIndex + 7] = u1;
       vertices[writeIndex + 8] = v0;
       vertices[writeIndex + 9] = lightLevel;
@@ -259,7 +355,7 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
       vertices[writeIndex + 13] = v1;
       vertices[writeIndex + 14] = lightLevel;
       vertices[writeIndex + 15] = px;
-      vertices[writeIndex + 16] = py;
+      vertices[writeIndex + 16] = topLeftY;
       vertices[writeIndex + 17] = u0;
       vertices[writeIndex + 18] = v0;
       vertices[writeIndex + 19] = lightLevel;

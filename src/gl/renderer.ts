@@ -747,7 +747,8 @@ export class Renderer {
     const meshBuildStart = performance.now();
     const meshData = buildChunkMesh(chunk, {
       sampleNeighborhoodInto: (chunkX, chunkY, localX, localY, target) =>
-        void this.world.sampleLocalTileNeighborhoodInto(chunkX, chunkY, localX, localY, target)
+        void this.world.sampleLocalTileNeighborhoodInto(chunkX, chunkY, localX, localY, target),
+      sampleLiquidLevel: (worldTileX, worldTileY) => this.world.getLiquidLevel(worldTileX, worldTileY)
     });
     this.telemetry.meshBuildTimeMs += performance.now() - meshBuildStart;
     this.telemetry.meshBuilds += 1;

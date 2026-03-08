@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { AUTOTILE_DIRECTION_BITS, normalizeAutotileAdjacencyMask } from './autotile';
-import { toTileIndex } from './chunkMath';
+import { toTileIndex, worldToChunkCoord, worldToLocalTile } from './chunkMath';
 import { CHUNK_SIZE, TILE_SIZE } from './constants';
 import { CHUNK_MESH_FLOATS_PER_VERTEX, buildChunkMesh } from './mesher';
 import {
@@ -27,8 +27,24 @@ const setChunkTile = (chunk: Chunk, localX: number, localY: number, tileId: numb
   chunk.tiles[toTileIndex(localX, localY)] = tileId;
 };
 
+const setChunkLiquidLevel = (chunk: Chunk, localX: number, localY: number, liquidLevel: number): void => {
+  chunk.liquidLevels[toTileIndex(localX, localY)] = liquidLevel;
+};
+
+const setChunkLiquidTile = (
+  chunk: Chunk,
+  localX: number,
+  localY: number,
+  tileId: number,
+  liquidLevel: number
+): void => {
+  setChunkTile(chunk, localX, localY, tileId);
+  setChunkLiquidLevel(chunk, localX, localY, liquidLevel);
+};
+
 const atlasUvRect = (atlasTileIndex: number) => atlasIndexToUvRect(atlasTileIndex);
 const toFloat32 = (value: number): number => Math.fround(value);
+const FLOATS_PER_TILE_QUAD = 6 * CHUNK_MESH_FLOATS_PER_VERTEX;
 
 const createDistinctLiquidVariantMap = () =>
   Array.from({ length: LIQUID_RENDER_CARDINAL_MASK_COUNT }, (_, index) => ({
@@ -146,6 +162,63 @@ const expectSingleQuadLightLevel = (vertices: Float32Array, expectedLightLevel: 
     expect(vertices[lightOffset]).toBe(expectedLightLevel);
   }
 };
+
+const expectSingleQuadGeometry = (
+  vertices: Float32Array,
+  expected: {
+    leftX: number;
+    rightX: number;
+    topLeftY: number;
+    topRightY: number;
+    bottomY: number;
+  }
+): void => {
+  expect(vertices.length).toBe(FLOATS_PER_TILE_QUAD);
+  const expectedPositions = [
+    { x: expected.leftX, y: expected.topLeftY },
+    { x: expected.rightX, y: expected.topRightY },
+    { x: expected.rightX, y: expected.bottomY },
+    { x: expected.leftX, y: expected.topLeftY },
+    { x: expected.rightX, y: expected.bottomY },
+    { x: expected.leftX, y: expected.bottomY }
+  ];
+
+  expectedPositions.forEach((expectedPosition, vertexIndex) => {
+    const positionOffset = vertexIndex * CHUNK_MESH_FLOATS_PER_VERTEX;
+    expect(vertices[positionOffset]).toBe(toFloat32(expectedPosition.x));
+    expect(vertices[positionOffset + 1]).toBe(toFloat32(expectedPosition.y));
+  });
+};
+
+const getQuadVertices = (vertices: Float32Array, quadIndex: number): Float32Array =>
+  vertices.slice(quadIndex * FLOATS_PER_TILE_QUAD, (quadIndex + 1) * FLOATS_PER_TILE_QUAD);
+
+const setWorldLiquidTile = (
+  world: TileWorld,
+  worldTileX: number,
+  worldTileY: number,
+  tileId: number,
+  liquidLevel: number
+): void => {
+  const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+  const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
+  const chunk = world.ensureChunk(chunkX, chunkY);
+  setChunkLiquidTile(chunk, localX, localY, tileId, liquidLevel);
+};
+
+const buildWorldLiquidChunkMesh = (
+  world: TileWorld,
+  chunkX: number,
+  chunkY: number,
+  registry = createLiquidTestRegistry()
+) =>
+  buildChunkMesh(world.ensureChunk(chunkX, chunkY), {
+    tileMetadataRegistry: registry,
+    sampleNeighborhoodInto: (sampleChunkX, sampleChunkY, sampleLocalX, sampleLocalY, target) => {
+      world.sampleLocalTileNeighborhoodInto(sampleChunkX, sampleChunkY, sampleLocalX, sampleLocalY, target);
+    },
+    sampleLiquidLevel: (worldTileX, worldTileY) => world.getLiquidLevel(worldTileX, worldTileY)
+  });
 
 describe('buildChunkMesh autotile UV selection', () => {
   it('resolves terrain tile UVs from sampled neighborhood masks', () => {
@@ -309,7 +382,7 @@ describe('buildChunkMesh autotile UV selection', () => {
   it('resolves liquid tile UVs from sampled liquid cardinal masks', () => {
     const registry = createLiquidTestRegistry();
     const chunk = createEmptyChunk();
-    setChunkTile(chunk, 0, 0, 12);
+    setChunkLiquidTile(chunk, 0, 0, 12, 8);
 
     const mesh = buildChunkMesh(chunk, {
       tileMetadataRegistry: registry,
@@ -334,7 +407,7 @@ describe('buildChunkMesh autotile UV selection', () => {
   it('treats related liquid tile ids as connected when metadata groups match', () => {
     const registry = createLiquidTestRegistry();
     const chunk = createEmptyChunk();
-    setChunkTile(chunk, 0, 0, 12);
+    setChunkLiquidTile(chunk, 0, 0, 12, 8);
 
     const mesh = buildChunkMesh(chunk, {
       tileMetadataRegistry: registry,
@@ -375,7 +448,7 @@ describe('buildChunkMesh autotile UV selection', () => {
   it('uses the isolated liquid variant when no neighborhood sampler is provided', () => {
     const registry = createLiquidTestRegistry();
     const chunk = createEmptyChunk();
-    setChunkTile(chunk, 0, 0, 12);
+    setChunkLiquidTile(chunk, 0, 0, 12, 4);
 
     const mesh = buildChunkMesh(chunk, {
       tileMetadataRegistry: registry
@@ -383,6 +456,103 @@ describe('buildChunkMesh autotile UV selection', () => {
 
     expect(mesh.vertexCount).toBe(6);
     expectSingleQuadUvRect(mesh.vertices, 0);
+  });
+
+  it('uses the center fill height for exposed partial liquid without same-kind neighbors', () => {
+    const registry = createLiquidTestRegistry();
+    const chunk = createEmptyChunk(2, -10);
+    setChunkLiquidTile(chunk, 0, 0, 12, 4);
+
+    const mesh = buildChunkMesh(chunk, {
+      tileMetadataRegistry: registry
+    });
+    const tileOriginX = chunk.coord.x * CHUNK_SIZE * TILE_SIZE;
+    const tileOriginY = chunk.coord.y * CHUNK_SIZE * TILE_SIZE;
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadGeometry(mesh.vertices, {
+      leftX: tileOriginX,
+      rightX: tileOriginX + TILE_SIZE,
+      topLeftY: tileOriginY + TILE_SIZE * 0.5,
+      topRightY: tileOriginY + TILE_SIZE * 0.5,
+      bottomY: tileOriginY + TILE_SIZE
+    });
+  });
+
+  it('slopes exposed partial liquid corners halfway toward same-kind side neighbors', () => {
+    const registry = createLiquidTestRegistry();
+    const world = new TileWorld(-1);
+    const chunkX = 0;
+    const chunkY = -10;
+    const worldTileY = chunkY * CHUNK_SIZE;
+    setWorldLiquidTile(world, chunkX * CHUNK_SIZE + 0, worldTileY, 12, 8);
+    setWorldLiquidTile(world, chunkX * CHUNK_SIZE + 1, worldTileY, 12, 4);
+    setWorldLiquidTile(world, chunkX * CHUNK_SIZE + 2, worldTileY, 20, 2);
+
+    const mesh = buildWorldLiquidChunkMesh(world, chunkX, chunkY, registry);
+    const centerQuadVertices = getQuadVertices(mesh.vertices, 1);
+    const tileOriginX = chunkX * CHUNK_SIZE * TILE_SIZE + TILE_SIZE;
+    const tileOriginY = chunkY * CHUNK_SIZE * TILE_SIZE;
+
+    expect(mesh.vertexCount).toBe(18);
+    expectSingleQuadGeometry(centerQuadVertices, {
+      leftX: tileOriginX,
+      rightX: tileOriginX + TILE_SIZE,
+      topLeftY: tileOriginY + TILE_SIZE * 0.25,
+      topRightY: tileOriginY + TILE_SIZE * 0.625,
+      bottomY: tileOriginY + TILE_SIZE
+    });
+  });
+
+  it('keeps covered liquid tiles full-height even when the center fill is partial', () => {
+    const registry = createLiquidTestRegistry();
+    const world = new TileWorld(-1);
+    const chunkX = 0;
+    const chunkY = -10;
+    const worldTileX = chunkX * CHUNK_SIZE;
+    const worldTileY = chunkY * CHUNK_SIZE;
+    setWorldLiquidTile(world, worldTileX, worldTileY, 12, 2);
+    setWorldLiquidTile(world, worldTileX, worldTileY + 1, 12, 3);
+
+    const mesh = buildWorldLiquidChunkMesh(world, chunkX, chunkY, registry);
+    const centerQuadVertices = getQuadVertices(mesh.vertices, 1);
+    const tileOriginX = chunkX * CHUNK_SIZE * TILE_SIZE;
+    const tileOriginY = chunkY * CHUNK_SIZE * TILE_SIZE + TILE_SIZE;
+
+    expect(mesh.vertexCount).toBe(12);
+    expectSingleQuadGeometry(centerQuadVertices, {
+      leftX: tileOriginX,
+      rightX: tileOriginX + TILE_SIZE,
+      topLeftY: tileOriginY,
+      topRightY: tileOriginY,
+      bottomY: tileOriginY + TILE_SIZE
+    });
+  });
+
+  it('resolves partial-liquid corner slopes across chunk boundaries through the world liquid sampler', () => {
+    const registry = createLiquidTestRegistry();
+    const world = new TileWorld(-1);
+    const chunkX = 0;
+    const chunkY = -10;
+    const localX = CHUNK_SIZE - 1;
+    const localY = 0;
+    const worldTileX = chunkX * CHUNK_SIZE + localX;
+    const worldTileY = chunkY * CHUNK_SIZE + localY;
+    setWorldLiquidTile(world, worldTileX, worldTileY, 12, 4);
+    setWorldLiquidTile(world, worldTileX + 1, worldTileY, 20, 8);
+
+    const mesh = buildWorldLiquidChunkMesh(world, chunkX, chunkY, registry);
+    const tileOriginX = chunkX * CHUNK_SIZE * TILE_SIZE + localX * TILE_SIZE;
+    const tileOriginY = chunkY * CHUNK_SIZE * TILE_SIZE + localY * TILE_SIZE;
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadGeometry(mesh.vertices, {
+      leftX: tileOriginX,
+      rightX: tileOriginX + TILE_SIZE,
+      topLeftY: tileOriginY + TILE_SIZE * 0.5,
+      topRightY: tileOriginY + TILE_SIZE * 0.25,
+      bottomY: tileOriginY + TILE_SIZE
+    });
   });
 
   it('records animated liquid quads with the resolved liquid cardinal mask while keeping frame-zero UVs baked', () => {
@@ -405,7 +575,7 @@ describe('buildChunkMesh autotile UV selection', () => {
       ]
     });
     const chunk = createEmptyChunk();
-    setChunkTile(chunk, 0, 0, 12);
+    setChunkLiquidTile(chunk, 0, 0, 12, 8);
 
     const mesh = buildChunkMesh(chunk, {
       tileMetadataRegistry: registry,
