@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Save/load
 
-19. Define a versioned chunk snapshot format with explicit metadata and tile payload encoding.
 20. Implement save/load serialization for resident chunks and edited world state.
 21. Add a local persistence adapter (`localStorage` or downloadable JSON) on top of the snapshot format.
+374. Define a versioned top-level world-save envelope that bundles chunk snapshots with standalone-player session state, camera follow offset, and migration metadata before the persistence adapter lands.
 
 ## Networking scaffolding
 

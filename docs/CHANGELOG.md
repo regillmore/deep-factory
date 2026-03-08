@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Define a versioned chunk snapshot format with explicit metadata and tile payload encoding.
+- Changes: Added [src/world/chunkSnapshot.ts](../src/world/chunkSnapshot.ts) with versioned resident-chunk and edited-chunk snapshot shapes plus JSON-safe dense RLE and sparse index-value payload encoders/decoders, added focused coverage in [src/world/chunkSnapshot.test.ts](../src/world/chunkSnapshot.test.ts), removed completed task `19` from [docs/NEXT.md](docs/NEXT.md), added replacement task `374`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/chunkSnapshot.test.ts src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add liquid-step instrumentation and no-liquid regression coverage for zoomed-out resident worlds.
 - Changes: Updated [src/world/world.ts](../src/world/world.ts), [src/gl/renderer.ts](../src/gl/renderer.ts), and [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) so the last fixed liquid step now records resident chunks scanned, horizontal pairs tested, and applied transfers, exposes those counters through renderer telemetry, and renders them in the debug HUD; expanded [src/world/world.test.ts](../src/world/world.test.ts), [src/gl/renderer.test.ts](../src/gl/renderer.test.ts), and [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) with focused regressions for an applied transfer plus a zoomed-out no-liquid scene; removed completed task `367` from [docs/NEXT.md](docs/NEXT.md), added replacement task `373`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/world/world.test.ts src/ui/debugOverlay.test.ts src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

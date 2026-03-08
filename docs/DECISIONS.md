@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Chunk snapshots should use versioned metadata with explicit dense and sparse payload encodings
+
+- Decision: `src/world/chunkSnapshot.ts` now defines chunk snapshot metadata with fixed `version`, `chunkSize`, `tileCount`, and row-major tile order, stores resident chunk `tiles`, `liquidLevels`, and `lightLevels` through run-length/value pairs, and stores sparse edited tile or liquid overrides through sorted tile-index/value pairs.
+- Reason: Save/load needs deterministic JSON-safe chunk payloads that can validate current resident caches and sparse edited state without depending on typed-array internals or ad hoc per-call-site JSON shapes.
+- Consequence: Future world persistence, migration, or networking work that serializes chunk state should extend this shared snapshot metadata or bump its version rather than inventing a second chunk JSON contract.
+
 ### 2026-03-08: Standalone-player render-frame camera follow should use the same interpolated snapshot as placeholder drawing
 
 - Decision: `src/main.ts` now resolves preview and in-world camera follow from the standalone-player entity snapshot interpolated with the current render alpha before render-frame pointer inspect and telemetry assembly.

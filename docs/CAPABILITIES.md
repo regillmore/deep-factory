@@ -36,6 +36,10 @@ This document describes the current project state. Unlike the changelog, it shou
 - `buildChunkMesh` pre-counts non-empty tiles and writes directly into an exact-sized `Float32Array`.
 - Chunk meshing supports reusable `TileNeighborhood` scratch sampling so terrain meshing avoids per-tile neighborhood allocations.
 
+## Save/Load Foundations
+
+- `src/world/chunkSnapshot.ts` now defines a version `1` chunk snapshot contract for future persistence work: resident chunks serialize dense row-major `tiles`, `liquidLevels`, and `lightLevels` through JSON-safe run-length/value pairs plus explicit light dirtiness metadata, while sparse edited chunk overrides serialize sorted tile-index/value pairs for tile and liquid edits; focused regressions cover round-trips plus format validation, but no runtime save/load adapter or UI ships yet.
+
 ## Tile Metadata And Terrain Resolution
 
 - Tile definitions live in validated JSON metadata at `src/world/tileMetadata.json`.
