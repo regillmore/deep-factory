@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Collision and player foundation
 
-331. Surface the latest resolved spawn's liquid-safety status in the debug overlay and compact status strip so fluid-driven spawn fallback stays debuggable, with focused runtime regressions.
+332. Surface the latest resolved spawn support tile coordinates and tile ID in the debug overlay and compact status strip so grounded spawn fallback stays debuggable, with focused runtime regressions.
 
 ## Liquid rendering
 

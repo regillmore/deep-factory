@@ -27,6 +27,8 @@ export interface PlayerSpawnPoint {
   support: SolidTileCollision;
 }
 
+export type PlayerSpawnLiquidSafetyStatus = 'safe' | 'overlap';
+
 const DEFAULT_ORIGIN_TILE_X = 0;
 const DEFAULT_ORIGIN_TILE_Y = 0;
 const DEFAULT_MAX_HORIZONTAL_OFFSET_TILES = 8;
@@ -85,11 +87,11 @@ const buildSpawnCandidateAabb = (
   };
 };
 
-const doesAabbOverlapLiquid = (
+const resolveAabbLiquidSafetyStatus = (
   world: TileWorld,
   aabb: WorldAabb,
   registry: TileMetadataRegistry
-): boolean => {
+): PlayerSpawnLiquidSafetyStatus => {
   const minTileX = Math.floor(aabb.minX / TILE_SIZE);
   const maxTileX = Math.floor((aabb.maxX - AABB_INTERSECTION_EPSILON) / TILE_SIZE);
   const minTileY = Math.floor(aabb.minY / TILE_SIZE);
@@ -117,12 +119,12 @@ const doesAabbOverlapLiquid = (
       const overlapWidth = Math.min(aabb.maxX, tileWorldMaxX) - Math.max(aabb.minX, tileWorldMinX);
       const overlapHeight = Math.min(aabb.maxY, tileWorldMaxY) - Math.max(aabb.minY, liquidWorldMinY);
       if (overlapWidth > 0 && overlapHeight > 0) {
-        return true;
+        return 'overlap';
       }
     }
   }
 
-  return false;
+  return 'safe';
 };
 
 const getGroundSupport = (
@@ -187,7 +189,7 @@ export const findPlayerSpawnPoint = (
       continue;
     }
 
-    if (doesAabbOverlapLiquid(world, aabb, registry)) {
+    if (resolveAabbLiquidSafetyStatus(world, aabb, registry) !== 'safe') {
       continue;
     }
 
@@ -208,3 +210,9 @@ export const findPlayerSpawnPoint = (
 
   return null;
 };
+
+export const resolvePlayerSpawnLiquidSafetyStatus = (
+  world: TileWorld,
+  spawn: PlayerSpawnPoint,
+  registry: TileMetadataRegistry = TILE_METADATA
+): PlayerSpawnLiquidSafetyStatus => resolveAabbLiquidSafetyStatus(world, spawn.aabb, registry);

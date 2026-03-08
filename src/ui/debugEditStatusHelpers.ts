@@ -14,6 +14,7 @@ import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingC
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
 import type { PlayerRespawnEventKind } from '../world/playerRespawnEvent';
+import type { PlayerSpawnLiquidSafetyStatus } from '../world/playerSpawn';
 import type { PlayerFacing } from '../world/playerState';
 import type { PlayerWallContactTransitionKind } from '../world/playerWallContactTransition';
 import type { TileLiquidKind } from '../world/tileMetadata';
@@ -35,6 +36,7 @@ export interface DebugEditStatusStripState {
   playerPlaceholderPoseLabel?: string | null;
   playerWorldPosition?: { x: number; y: number } | null;
   playerWorldTile?: { x: number; y: number } | null;
+  playerSpawn?: DebugEditStatusStripPlayerSpawnTelemetry | null;
   playerAabb?: DebugEditStatusStripPlayerAabbTelemetry | null;
   playerCameraWorldPosition?: { x: number; y: number } | null;
   playerCameraWorldTile?: { x: number; y: number } | null;
@@ -127,6 +129,12 @@ export interface DebugEditStatusStripPlayerRespawnTelemetry {
   spawnTile: { x: number; y: number };
   position: { x: number; y: number };
   velocity: { x: number; y: number };
+}
+
+export interface DebugEditStatusStripPlayerSpawnTelemetry {
+  liquidSafetyStatus: PlayerSpawnLiquidSafetyStatus | 'unresolved';
+  tile?: { x: number; y: number } | null;
+  world?: { x: number; y: number } | null;
 }
 
 export interface DebugEditStatusStripPlayerAabbTelemetry {
@@ -674,6 +682,28 @@ const formatLiveWorldTileText = (playerWorldTile: { x: number; y: number } | nul
   return `TileNow: ${formatTileCoordinatePair(playerWorldTile.x, playerWorldTile.y)}`;
 };
 
+const formatPlayerSpawnLiquidSafetyStatus = (
+  liquidSafetyStatus: DebugEditStatusStripPlayerSpawnTelemetry['liquidSafetyStatus']
+): string => (liquidSafetyStatus === 'overlap' ? 'overlap' : liquidSafetyStatus);
+
+const formatLivePlayerSpawnText = (
+  playerSpawn: DebugEditStatusStripPlayerSpawnTelemetry | null
+): string | null => {
+  if (playerSpawn === null) {
+    return null;
+  }
+
+  if (playerSpawn.liquidSafetyStatus === 'unresolved' || playerSpawn.tile == null || playerSpawn.world == null) {
+    return 'SpawnNow: unresolved';
+  }
+
+  return (
+    `SpawnNow: ${formatPlayerSpawnLiquidSafetyStatus(playerSpawn.liquidSafetyStatus)} | ` +
+    `tile ${formatTileCoordinatePair(playerSpawn.tile.x, playerSpawn.tile.y)} | ` +
+    `pos ${playerSpawn.world.x.toFixed(2)},${playerSpawn.world.y.toFixed(2)}`
+  );
+};
+
 const formatLiveWorldChunkText = (playerWorldTile: { x: number; y: number } | null): string | null => {
   if (playerWorldTile === null) {
     return null;
@@ -945,6 +975,7 @@ const buildPlayerText = (
   playerPlaceholderPoseLabel: string | null,
   playerWorldPosition: { x: number; y: number } | null,
   playerWorldTile: { x: number; y: number } | null,
+  playerSpawn: DebugEditStatusStripPlayerSpawnTelemetry | null,
   playerAabb: DebugEditStatusStripPlayerAabbTelemetry | null,
   playerCameraWorldPosition: { x: number; y: number } | null,
   playerCameraWorldTile: { x: number; y: number } | null,
@@ -980,6 +1011,7 @@ const buildPlayerText = (
     formatLiveWorldTileText(playerWorldTile),
     formatLiveWorldChunkText(playerWorldTile),
     formatLiveWorldChunkLocalTileText(playerWorldTile),
+    formatLivePlayerSpawnText(playerSpawn),
     formatLiveAabbText(playerAabb),
     formatLiveCameraWorldPositionText(playerCameraWorldPosition),
     formatLiveCameraWorldTileText(playerCameraWorldTile),
@@ -1497,6 +1529,7 @@ export const buildDebugEditStatusStripModel = (
   const playerPlaceholderPoseLabel = state.playerPlaceholderPoseLabel ?? null;
   const playerWorldPosition = state.playerWorldPosition ?? null;
   const playerWorldTile = state.playerWorldTile ?? null;
+  const playerSpawn = state.playerSpawn ?? null;
   const playerAabb = state.playerAabb ?? null;
   const playerCameraWorldPosition = state.playerCameraWorldPosition ?? null;
   const playerCameraWorldTile = state.playerCameraWorldTile ?? null;
@@ -1540,6 +1573,7 @@ export const buildDebugEditStatusStripModel = (
       playerPlaceholderPoseLabel,
       playerWorldPosition,
       playerWorldTile,
+      playerSpawn,
       playerAabb,
       playerCameraWorldPosition,
       playerCameraWorldTile,

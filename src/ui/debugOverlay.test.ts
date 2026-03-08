@@ -37,6 +37,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nAtlas: authored | 96x64');
     expect(text).toContain('\nAtlasWarn: none');
     expect(text).toContain('\nSpawn: unresolved');
+    expect(text).toContain('\nSpawnLiquid: unresolved');
     expect(text).toContain('\nPlayer: n/a');
     expect(text).toContain('\nPose: n/a');
     expect(text).toContain('\nBonkHold: n/a');
@@ -170,7 +171,8 @@ describe('formatDebugOverlayText', () => {
       },
       spawn: {
         tile: { x: 0, y: -2 },
-        world: { x: 8, y: -32 }
+        world: { x: 8, y: -32 },
+        liquidSafetyStatus: 'safe'
       },
       playerPlaceholderPoseLabel: null,
       playerCeilingBonkHoldActive: null,
@@ -190,6 +192,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain('Spawn: T:0,-2 | W:8.00,-32.00');
+    expect(text).toContain('SpawnLiquid: safe');
     expect(text).toContain('Intent: move:1 | jumpHeld:on | jumpPressed:off');
     expect(text).toContain('Ptr(mouse)');
     expect(text).toContain('C:500,251');
@@ -584,7 +587,8 @@ describe('formatDebugOverlayText', () => {
       },
       spawn: {
         tile: { x: -1, y: 0 },
-        world: { x: -8, y: 0 }
+        world: { x: -8, y: 0 },
+        liquidSafetyStatus: 'overlap'
       },
       playerPlaceholderPoseLabel: null,
       playerCeilingBonkHoldActive: null,
@@ -652,6 +656,7 @@ describe('formatDebugOverlayText', () => {
 
     expect(text).toContain('Ptr(touch)');
     expect(text).toContain('Spawn: T:-1,0 | W:-8.00,0.00');
+    expect(text).toContain('SpawnLiquid: overlap');
     expect(text).toContain('Intent: move:0 | jumpHeld:off | jumpPressed:off');
     expect(text).toContain('GroundEvt: landing | Pos:12.00,0.00 | Vel:0.00,0.00');
     expect(text).toContain('FaceEvt: left->right | Pos:12.00,0.00 | Vel:0.00,0.00');

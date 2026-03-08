@@ -245,6 +245,7 @@ const testRuntime = vi.hoisted(() => {
     },
     latestDebugOverlayInspectState: null as DebugOverlayInspectState | null,
     latestDebugEditStatusStripState: null as DebugEditStatusStripState | null,
+    rendererPlayerSpawnLiquidSafetyStatus: 'safe' as 'safe' | 'overlap',
     playerSpawnPoint: null as null | {
       anchorTileX: number;
       standingTileY: number;
@@ -320,6 +321,10 @@ vi.mock('./gl/renderer', () => ({
 
     findPlayerSpawnPoint() {
       return testRuntime.playerSpawnPoint;
+    }
+
+    resolvePlayerSpawnLiquidSafetyStatus() {
+      return testRuntime.rendererPlayerSpawnLiquidSafetyStatus;
     }
 
     respawnPlayerStateAtSpawnIfEmbeddedInSolid<T>(state: T, spawn: unknown): T {
@@ -1246,6 +1251,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceLocalTileY = null;
     testRuntime.latestDebugOverlayInspectState = null;
     testRuntime.latestDebugEditStatusStripState = null;
+    testRuntime.rendererPlayerSpawnLiquidSafetyStatus = 'safe';
     testRuntime.debugTileInspectPinRequests = [];
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint();
     testRuntime.gameLoopStartCount = 0;
@@ -2944,6 +2950,40 @@ describe('main.ts shell state orchestration', () => {
         y: renderContacts.ceiling.tileY,
         id: renderContacts.ceiling.tileId
       }
+    });
+  });
+
+  it("routes the latest resolved spawn's liquid-safety telemetry into the overlay and compact status strip", async () => {
+    testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: -4,
+      standingTileY: -2,
+      x: -56,
+      y: -32
+    });
+    testRuntime.rendererPlayerSpawnLiquidSafetyStatus = 'overlap';
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState).not.toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugOverlayInspectState || !testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest overlay and status-strip spawn telemetry');
+    }
+
+    expect(testRuntime.latestDebugOverlayInspectState.spawn).toEqual({
+      tile: { x: -4, y: -2 },
+      world: { x: -56, y: -32 },
+      liquidSafetyStatus: 'overlap'
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerSpawn).toEqual({
+      tile: { x: -4, y: -2 },
+      world: { x: -56, y: -32 },
+      liquidSafetyStatus: 'overlap'
     });
   });
 

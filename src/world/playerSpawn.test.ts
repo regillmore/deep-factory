@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { TILE_SIZE } from './constants';
-import { findPlayerSpawnPoint } from './playerSpawn';
+import { findPlayerSpawnPoint, resolvePlayerSpawnLiquidSafetyStatus } from './playerSpawn';
 import { TileWorld } from './world';
 
 const PLAYER_WIDTH = 12;
@@ -138,6 +138,29 @@ describe('findPlayerSpawnPoint', () => {
     });
 
     expect(spawn).toBeNull();
+  });
+
+  it('reports whether an already resolved spawn remains liquid-safe against current world liquid overlap', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -3, -6, 3, 3, 0);
+    setTiles(world, -1, 0, 1, 0, 3);
+
+    const spawn = findPlayerSpawnPoint(world, {
+      width: PLAYER_WIDTH,
+      height: PLAYER_HEIGHT,
+      maxHorizontalOffsetTiles: 2,
+      maxVerticalOffsetTiles: 2
+    });
+
+    expect(spawn).not.toBeNull();
+    expect(resolvePlayerSpawnLiquidSafetyStatus(world, spawn!)).toBe('safe');
+
+    world.setTile(0, -1, WATER_TILE_ID);
+    expect(resolvePlayerSpawnLiquidSafetyStatus(world, spawn!)).toBe('overlap');
+
+    world.setTile(0, -1, LAVA_TILE_ID);
+    expect(resolvePlayerSpawnLiquidSafetyStatus(world, spawn!)).toBe('overlap');
   });
 
   it('returns null when no grounded standing headroom exists within the search bounds', () => {

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Resolved spawn liquid-safety telemetry reuses the shared spawn overlap rule
+
+- Decision: Runtime spawn telemetry now resolves its `safe` or `overlap` liquid-safety status through the shared helper in `src/world/playerSpawn.ts` instead of assuming every resolved spawn is already safe.
+- Reason: The debug overlay and compact status strip need to reflect the actual world-backed spawn safety rule so regressions in spawn filtering remain visible without duplicating liquid-overlap math in `src/main.ts`.
+- Consequence: Future spawn, checkpoint, or respawn telemetry should query the shared player-spawn liquid-safety helper rather than hardcoding resolved placements as safe.
+
 ### 2026-03-08: Standalone-player spawn search rejects liquid-overlapped standing AABBs
 
 - Decision: `src/world/playerSpawn.ts` now skips any grounded spawn candidate whose standing AABB intersects non-zero liquid fill, which currently covers both water and lava tiles.

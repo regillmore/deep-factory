@@ -4,6 +4,7 @@ import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingC
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
 import type { PlayerRespawnEventKind } from '../world/playerRespawnEvent';
+import type { PlayerSpawnLiquidSafetyStatus } from '../world/playerSpawn';
 import type { PlayerWallContactTransitionKind } from '../world/playerWallContactTransition';
 import type { TileLiquidKind } from '../world/tileMetadata';
 
@@ -103,6 +104,7 @@ export interface DebugOverlayTileInspect {
 export interface DebugOverlayPlayerSpawn {
   tile: { x: number; y: number };
   world: { x: number; y: number };
+  liquidSafetyStatus: PlayerSpawnLiquidSafetyStatus;
 }
 
 interface DebugOverlayTileContact {
@@ -411,6 +413,13 @@ const formatSpawnLine = (spawn: DebugOverlayPlayerSpawn | null): string => {
   );
 };
 
+const formatSpawnLiquidSafetyStatus = (
+  status: PlayerSpawnLiquidSafetyStatus | 'unresolved'
+): string => (status === 'overlap' ? 'overlap' : status);
+
+const formatSpawnLiquidSafetyLine = (spawn: DebugOverlayPlayerSpawn | null): string =>
+  `SpawnLiquid: ${formatSpawnLiquidSafetyStatus(spawn?.liquidSafetyStatus ?? 'unresolved')}`;
+
 const formatPlayerLine = (player: DebugOverlayPlayerTelemetry | null): string => {
   if (!player) {
     return 'Player: n/a';
@@ -694,6 +703,7 @@ export const formatDebugOverlayText = (
     formatAtlasLine(stats),
     formatAtlasValidationLine(stats),
     formatSpawnLine(spawn),
+    formatSpawnLiquidSafetyLine(spawn),
     formatPlayerLine(player),
     formatPlayerPlaceholderPoseLine(playerPlaceholderPoseLabel),
     formatPlayerCeilingBonkHoldLine(playerCeilingBonkHoldActive),

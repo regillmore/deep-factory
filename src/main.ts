@@ -326,6 +326,10 @@ type StandalonePlayerRenderFrameTelemetrySnapshot = {
   debugOverlay: StandalonePlayerRenderFrameDebugOverlayTelemetry;
   debugStatusStrip: StandalonePlayerRenderFrameStatusStripTelemetry;
 };
+type ResolvedPlayerSpawnTelemetrySnapshot = {
+  debugOverlaySpawn: DebugOverlayInspectState['spawn'];
+  debugStatusStripPlayerSpawn: DebugEditStatusStripState['playerSpawn'];
+};
 const TOUCH_DEBUG_ARMED_TOOL_KEYS: readonly TouchDebugArmedToolKey[] = [
   'floodFillKind',
   'lineKind',
@@ -1075,6 +1079,39 @@ const bootstrap = async (): Promise<void> => {
       }
       standalonePlayerState = nextPlayerState;
     }
+  };
+  const createResolvedPlayerSpawnTelemetrySnapshot = (): ResolvedPlayerSpawnTelemetrySnapshot => {
+    if (resolvedPlayerSpawn === null) {
+      return {
+        debugOverlaySpawn: null,
+        debugStatusStripPlayerSpawn: {
+          liquidSafetyStatus: 'unresolved'
+        }
+      };
+    }
+
+    const tile = {
+      x: resolvedPlayerSpawn.anchorTileX,
+      y: resolvedPlayerSpawn.standingTileY
+    };
+    const world = {
+      x: resolvedPlayerSpawn.x,
+      y: resolvedPlayerSpawn.y
+    };
+    const liquidSafetyStatus = renderer.resolvePlayerSpawnLiquidSafetyStatus(resolvedPlayerSpawn);
+
+    return {
+      debugOverlaySpawn: {
+        tile,
+        world,
+        liquidSafetyStatus
+      },
+      debugStatusStripPlayerSpawn: {
+        tile,
+        world,
+        liquidSafetyStatus
+      }
+    };
   };
 
   const applyWorldTileEdit = (
@@ -2235,18 +2272,8 @@ const bootstrap = async (): Promise<void> => {
           liquidVariantPixelBounds: pinnedDebugTileStatus.liquidVariantPixelBounds ?? null
         }
       : null;
-    const debugOverlaySpawn = resolvedPlayerSpawn
-      ? {
-          tile: {
-            x: resolvedPlayerSpawn.anchorTileX,
-            y: resolvedPlayerSpawn.standingTileY
-          },
-          world: {
-            x: resolvedPlayerSpawn.x,
-            y: resolvedPlayerSpawn.y
-          }
-        }
-      : null;
+    const resolvedPlayerSpawnTelemetry = createResolvedPlayerSpawnTelemetrySnapshot();
+    const debugOverlaySpawn = resolvedPlayerSpawnTelemetry.debugOverlaySpawn;
     const standalonePlayerRenderFrameTelemetry =
       createStandalonePlayerRenderFrameTelemetrySnapshot(renderTimeMs);
     const standalonePlayerStatusStripPlayerTelemetry = standalonePlayerRenderFrameTelemetry.debugStatusStrip;
@@ -2305,6 +2332,7 @@ const bootstrap = async (): Promise<void> => {
       playerPlaceholderPoseLabel: debugStatusStripPlayerTelemetry.playerPlaceholderPoseLabel,
       playerWorldPosition: debugStatusStripPlayerTelemetry.playerWorldPosition,
       playerWorldTile: debugStatusStripPlayerTelemetry.playerWorldTile,
+      playerSpawn: resolvedPlayerSpawnTelemetry.debugStatusStripPlayerSpawn,
       playerAabb: debugStatusStripPlayerTelemetry.playerAabb,
       playerCameraWorldPosition: debugStatusStripPlayerTelemetry.playerCameraWorldPosition,
       playerCameraWorldTile: debugStatusStripPlayerTelemetry.playerCameraWorldTile,

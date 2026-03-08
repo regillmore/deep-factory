@@ -185,6 +185,50 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it("formats the latest resolved spawn's liquid-safety status for the compact strip when provided", () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerSpawn: {
+        liquidSafetyStatus: 'safe',
+        tile: {
+          x: -4,
+          y: -2
+        },
+        world: {
+          x: -56,
+          y: -32
+        }
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('SpawnNow: safe | tile -4,-2 | pos -56.00,-32.00');
+    expect(model.eventText).toBeNull();
+  });
+
+  it("formats an unresolved latest spawn's liquid-safety status for the compact strip", () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerSpawn: {
+        liquidSafetyStatus: 'unresolved'
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('SpawnNow: unresolved');
+    expect(model.eventText).toBeNull();
+  });
+
   it('derives negative-world standalone player chunk and chunk-local coordinates from the live body tile telemetry', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',

@@ -36,6 +36,8 @@ import {
 } from '../world/tileMetadata';
 import {
   findPlayerSpawnPoint as findWorldPlayerSpawnPoint,
+  resolvePlayerSpawnLiquidSafetyStatus as resolveWorldPlayerSpawnLiquidSafetyStatus,
+  type PlayerSpawnLiquidSafetyStatus,
   type PlayerSpawnPoint,
   type PlayerSpawnSearchOptions
 } from '../world/playerSpawn';
@@ -577,6 +579,10 @@ export class Renderer {
 
   findPlayerSpawnPoint(options: PlayerSpawnSearchOptions): PlayerSpawnPoint | null {
     return findWorldPlayerSpawnPoint(this.world, options);
+  }
+
+  resolvePlayerSpawnLiquidSafetyStatus(spawn: PlayerSpawnPoint): PlayerSpawnLiquidSafetyStatus {
+    return resolveWorldPlayerSpawnLiquidSafetyStatus(this.world, spawn);
   }
 
   getPlayerCollisionContacts(state: PlayerState): PlayerCollisionContacts {
