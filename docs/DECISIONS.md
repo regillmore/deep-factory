@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Standalone-player liquid interaction resolves from overlapped liquid fill area inside the shared player step
+
+- Decision: `src/world/playerState.ts` now samples overlapped water and lava fill area from resident world liquid levels during the shared fixed-step player update, applies water buoyancy and drag there, and advances lava damage through player-owned health plus cooldown state before `src/main.ts` optionally respawns from the latest resolved spawn.
+- Reason: Water motion, lava damage timing, and future player-liquid behavior need one deterministic world-backed rule instead of ad hoc checks split between render code, input code, and runtime orchestration.
+- Consequence: Future swim controls, liquid immunity, liquid HUD telemetry, or other player-liquid mechanics should extend the shared player-state liquid overlap and damage path instead of bypassing it from `src/main.ts` or renderer-only code.
+
 ### 2026-03-08: Partial-liquid UV crops stay anchored to authored liquid surface texels
 
 - Decision: `src/world/mesher.ts` and `src/gl/animatedChunkMesh.ts` now keep liquid quad top-edge vertices on the variant frame's `v0` and crop only the bottom-edge `v` coordinates from resolved `topLeft` and `topRight` fill heights.

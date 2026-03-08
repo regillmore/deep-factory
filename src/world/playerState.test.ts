@@ -10,8 +10,14 @@ import {
   DEFAULT_PLAYER_GRAVITY_ACCELERATION,
   DEFAULT_PLAYER_HEIGHT,
   DEFAULT_PLAYER_JUMP_SPEED,
+  DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
+  DEFAULT_PLAYER_LAVA_DAMAGE_PER_TICK,
+  DEFAULT_PLAYER_MAX_HEALTH,
   DEFAULT_PLAYER_MAX_FALL_SPEED,
   DEFAULT_PLAYER_MAX_WALK_SPEED,
+  DEFAULT_PLAYER_WATER_BUOYANCY_ACCELERATION,
+  DEFAULT_PLAYER_WATER_HORIZONTAL_DRAG_PER_SECOND,
+  DEFAULT_PLAYER_WATER_VERTICAL_DRAG_PER_SECOND,
   DEFAULT_PLAYER_WIDTH,
   getPlayerCameraFocusPoint,
   getPlayerCollisionContacts,
@@ -39,6 +45,18 @@ const setTiles = (
   }
 };
 
+const withDefaultPlayerVitals = <T extends object>(state: T): T & {
+  health: number;
+  lavaDamageTickSecondsRemaining: number;
+} => ({
+  ...state,
+  health: DEFAULT_PLAYER_MAX_HEALTH,
+  lavaDamageTickSecondsRemaining: DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS
+});
+
+const WATER_TILE_ID = 7;
+const LAVA_TILE_ID = 8;
+
 describe('playerState', () => {
   it('creates a grounded standing player state from resolved spawn output', () => {
     const world = new TileWorld(0);
@@ -57,13 +75,13 @@ describe('playerState', () => {
 
     const state = createPlayerStateFromSpawn(spawn!);
 
-    expect(state).toEqual({
+    expect(state).toEqual(withDefaultPlayerVitals({
       position: { x: 8, y: 0 },
       velocity: { x: 0, y: 0 },
       size: { width: DEFAULT_PLAYER_WIDTH, height: DEFAULT_PLAYER_HEIGHT },
       grounded: true,
       facing: 'right'
-    });
+    }));
     expect(getPlayerAabb(state)).toEqual(spawn!.aabb);
   });
 
@@ -92,13 +110,13 @@ describe('playerState', () => {
 
     const recovered = respawnPlayerStateAtSpawnIfEmbeddedInSolid(world, embedded, spawn);
 
-    expect(recovered).toEqual({
+    expect(recovered).toEqual(withDefaultPlayerVitals({
       position: { x: 8, y: 0 },
       velocity: { x: 0, y: 0 },
       size: { width: DEFAULT_PLAYER_WIDTH, height: DEFAULT_PLAYER_HEIGHT },
       grounded: true,
       facing: 'left'
-    });
+    }));
   });
 
   it('leaves the player state unchanged when no solid overlap or fallback spawn exists', () => {
@@ -225,20 +243,20 @@ describe('playerState', () => {
 
     const stepped = integratePlayerState(initial, 0.25);
 
-    expect(stepped).toEqual({
+    expect(stepped).toEqual(withDefaultPlayerVitals({
       position: { x: 16, y: 10 },
       velocity: { x: 24, y: -40 },
       size: { width: DEFAULT_PLAYER_WIDTH, height: DEFAULT_PLAYER_HEIGHT },
       grounded: false,
       facing: 'right'
-    });
-    expect(initial).toEqual({
+    }));
+    expect(initial).toEqual(withDefaultPlayerVitals({
       position: { x: 10, y: 20 },
       velocity: { x: 24, y: -40 },
       size: { width: DEFAULT_PLAYER_WIDTH, height: DEFAULT_PLAYER_HEIGHT },
       grounded: false,
       facing: 'right'
-    });
+    }));
   });
 
   it('tracks facing from horizontal velocity and preserves the last facing while idle', () => {
@@ -279,13 +297,13 @@ describe('playerState', () => {
       0.5
     );
 
-    expect(stepped).toEqual({
+    expect(stepped).toEqual(withDefaultPlayerVitals({
       position: { x: 10, y: 0 },
       velocity: { x: 0, y: 0 },
       size: { width: 12, height: 12 },
       grounded: false,
       facing: 'right'
-    });
+    }));
   });
 
   it('lands on solid ground and marks the player as grounded', () => {
@@ -304,13 +322,13 @@ describe('playerState', () => {
       0.5
     );
 
-    expect(stepped).toEqual({
+    expect(stepped).toEqual(withDefaultPlayerVitals({
       position: { x: 8, y: 0 },
       velocity: { x: 0, y: 0 },
       size: { width: 12, height: 12 },
       grounded: true,
       facing: 'right'
-    });
+    }));
   });
 
   it('clamps upward movement against a ceiling tile without reporting grounded support', () => {
@@ -329,13 +347,13 @@ describe('playerState', () => {
       0.5
     );
 
-    expect(stepped).toEqual({
+    expect(stepped).toEqual(withDefaultPlayerVitals({
       position: { x: 8, y: -4 },
       velocity: { x: 0, y: 0 },
       size: { width: 12, height: 12 },
       grounded: false,
       facing: 'right'
-    });
+    }));
   });
 
   it('recomputes grounded from post-move support so horizontal movement can walk off ledges', () => {
@@ -355,13 +373,13 @@ describe('playerState', () => {
       0.5
     );
 
-    expect(stepped).toEqual({
+    expect(stepped).toEqual(withDefaultPlayerVitals({
       position: { x: 24, y: 0 },
       velocity: { x: 32, y: 0 },
       size: { width: 12, height: 12 },
       grounded: false,
       facing: 'right'
-    });
+    }));
   });
 
   it('applies gravity before collision stepping so unsupported players start falling immediately', () => {
@@ -380,13 +398,13 @@ describe('playerState', () => {
       { gravityAcceleration: 80, maxFallSpeed: 120 }
     );
 
-    expect(stepped).toEqual({
+    expect(stepped).toEqual(withDefaultPlayerVitals({
       position: { x: 8, y: -11 },
       velocity: { x: 0, y: 20 },
       size: { width: 12, height: 12 },
       grounded: false,
       facing: 'right'
-    });
+    }));
   });
 
   it('accelerates grounded movement toward the requested walk speed before collision stepping', () => {
@@ -416,13 +434,13 @@ describe('playerState', () => {
       }
     );
 
-    expect(stepped).toEqual({
+    expect(stepped).toEqual(withDefaultPlayerVitals({
       position: { x: 18, y: 0 },
       velocity: { x: 40, y: 0 },
       size: { width: 12, height: 12 },
       grounded: true,
       facing: 'right'
-    });
+    }));
   });
 
   it('reuses collision sweeps for walk input so a blocking wall zeroes horizontal velocity', () => {
@@ -453,13 +471,13 @@ describe('playerState', () => {
       }
     );
 
-    expect(stepped).toEqual({
+    expect(stepped).toEqual(withDefaultPlayerVitals({
       position: { x: 10, y: 0 },
       velocity: { x: 0, y: 0 },
       size: { width: 12, height: 12 },
       grounded: true,
       facing: 'right'
-    });
+    }));
   });
 
   it('applies a grounded jump impulse before gravity so the player leaves support immediately', () => {
@@ -489,13 +507,13 @@ describe('playerState', () => {
       }
     );
 
-    expect(stepped).toEqual({
+    expect(stepped).toEqual(withDefaultPlayerVitals({
       position: { x: 8, y: -20 },
       velocity: { x: 0, y: -80 },
       size: { width: 12, height: 12 },
       grounded: false,
       facing: 'right'
-    });
+    }));
   });
 
   it('does not reapply the jump impulse while airborne', () => {
@@ -524,13 +542,13 @@ describe('playerState', () => {
       }
     );
 
-    expect(stepped).toEqual({
+    expect(stepped).toEqual(withDefaultPlayerVitals({
       position: { x: 8, y: -35 },
       velocity: { x: 0, y: -60 },
       size: { width: 12, height: 12 },
       grounded: false,
       facing: 'right'
-    });
+    }));
   });
 
   it('applies grounded braking when no horizontal movement intent is present', () => {
@@ -560,13 +578,13 @@ describe('playerState', () => {
       }
     );
 
-    expect(stepped).toEqual({
+    expect(stepped).toEqual(withDefaultPlayerVitals({
       position: { x: 13, y: 0 },
       velocity: { x: 20, y: 0 },
       size: { width: 12, height: 12 },
       grounded: true,
       facing: 'right'
-    });
+    }));
   });
 
   it('keeps grounded players resting on support while gravity is active', () => {
@@ -587,13 +605,13 @@ describe('playerState', () => {
       { gravityAcceleration: 120, maxFallSpeed: 200 }
     );
 
-    expect(stepped).toEqual({
+    expect(stepped).toEqual(withDefaultPlayerVitals({
       position: { x: 8, y: 0 },
       velocity: { x: 0, y: 0 },
       size: { width: 12, height: 12 },
       grounded: true,
       facing: 'right'
-    });
+    }));
   });
 
   it('clamps downward speed before collision stepping when gravity would exceed the fall-speed cap', () => {
@@ -612,12 +630,140 @@ describe('playerState', () => {
       { gravityAcceleration: 80, maxFallSpeed: 120 }
     );
 
-    expect(stepped).toEqual({
+    expect(stepped).toEqual(withDefaultPlayerVitals({
       position: { x: 8, y: 14 },
       velocity: { x: 0, y: 120 },
       size: { width: 12, height: 12 },
       grounded: false,
       facing: 'right'
+    }));
+  });
+
+  it('applies water buoyancy before collision stepping when the player is submerged', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -3, 2, 2, 0);
+    world.setTile(0, -1, WATER_TILE_ID);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      {},
+      {
+        gravityAcceleration: 80,
+        maxFallSpeed: 200,
+        maxWalkSpeed: 40,
+        groundAcceleration: 0,
+        airAcceleration: 0,
+        groundDeceleration: 0,
+        jumpSpeed: 0,
+        waterBuoyancyAcceleration: 120,
+        waterHorizontalDragPerSecond: 0,
+        waterVerticalDragPerSecond: 0,
+        lavaDamagePerTick: 0,
+        lavaDamageTickIntervalSeconds: 0.5
+      }
+    );
+
+    expect(stepped).toEqual(withDefaultPlayerVitals({
+      position: { x: 8, y: -2.5 },
+      velocity: { x: 0, y: -10 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    }));
+  });
+
+  it('applies water drag to horizontal and vertical velocity while submerged', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -3, 2, 2, 0);
+    world.setTile(0, -1, WATER_TILE_ID);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        velocity: { x: 40, y: 20 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      {},
+      {
+        gravityAcceleration: 0,
+        maxFallSpeed: 200,
+        maxWalkSpeed: 40,
+        groundAcceleration: 0,
+        airAcceleration: 0,
+        groundDeceleration: 0,
+        jumpSpeed: 0,
+        waterBuoyancyAcceleration: 0,
+        waterHorizontalDragPerSecond: 4,
+        waterVerticalDragPerSecond: 4,
+        lavaDamagePerTick: 0,
+        lavaDamageTickIntervalSeconds: 0.5
+      }
+    );
+
+    expect(stepped.position.x).toBe(13);
+    expect(stepped.position.y).toBe(2.5);
+    expect(stepped.velocity.x).toBe(20);
+    expect(stepped.velocity.y).toBe(10);
+    expect(stepped.size).toEqual({ width: 12, height: 12 });
+    expect(stepped.grounded).toBe(false);
+    expect(stepped.facing).toBe('right');
+    expect(stepped.health).toBe(DEFAULT_PLAYER_MAX_HEALTH);
+    expect(stepped.lavaDamageTickSecondsRemaining).toBe(
+      DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS
+    );
+  });
+
+  it('applies periodic lava contact damage inside the shared fixed-step player update', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -3, 2, 2, 0);
+    world.setTile(0, -1, LAVA_TILE_ID);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        health: 50,
+        lavaDamageTickSecondsRemaining: 0.25
+      }),
+      0.25,
+      {},
+      {
+        gravityAcceleration: 0,
+        maxFallSpeed: 200,
+        maxWalkSpeed: 40,
+        groundAcceleration: 0,
+        airAcceleration: 0,
+        groundDeceleration: 0,
+        jumpSpeed: 0,
+        waterBuoyancyAcceleration: 0,
+        waterHorizontalDragPerSecond: 0,
+        waterVerticalDragPerSecond: 0,
+        lavaDamagePerTick: 10,
+        lavaDamageTickIntervalSeconds: 0.25
+      }
+    );
+
+    expect(stepped).toEqual({
+      position: { x: 8, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right',
+      health: 40,
+      lavaDamageTickSecondsRemaining: 0.25
     });
   });
 
@@ -627,6 +773,16 @@ describe('playerState', () => {
         size: { width: 0, height: DEFAULT_PLAYER_HEIGHT }
       })
     ).toThrowError(/size\.width must be a positive finite number/);
+    expect(() =>
+      createPlayerState({
+        health: -1
+      })
+    ).toThrowError(/health must be a non-negative finite number/);
+    expect(() =>
+      createPlayerState({
+        lavaDamageTickSecondsRemaining: -0.1
+      })
+    ).toThrowError(/lavaDamageTickSecondsRemaining must be a non-negative finite number/);
 
     expect(() => integratePlayerState(createPlayerState(), -1 / 60)).toThrowError(
       /fixedDtSeconds must be a non-negative finite number/
@@ -674,5 +830,30 @@ describe('playerState', () => {
         jumpSpeed: -DEFAULT_PLAYER_JUMP_SPEED
       })
     ).toThrowError(/options\.jumpSpeed must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        waterBuoyancyAcceleration: -DEFAULT_PLAYER_WATER_BUOYANCY_ACCELERATION
+      })
+    ).toThrowError(/options\.waterBuoyancyAcceleration must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        waterHorizontalDragPerSecond: -DEFAULT_PLAYER_WATER_HORIZONTAL_DRAG_PER_SECOND
+      })
+    ).toThrowError(/options\.waterHorizontalDragPerSecond must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        waterVerticalDragPerSecond: -DEFAULT_PLAYER_WATER_VERTICAL_DRAG_PER_SECOND
+      })
+    ).toThrowError(/options\.waterVerticalDragPerSecond must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        lavaDamagePerTick: -DEFAULT_PLAYER_LAVA_DAMAGE_PER_TICK
+      })
+    ).toThrowError(/options\.lavaDamagePerTick must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        lavaDamageTickIntervalSeconds: 0
+      })
+    ).toThrowError(/options\.lavaDamageTickIntervalSeconds must be a positive finite number/);
   });
 });

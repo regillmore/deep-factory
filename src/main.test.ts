@@ -1894,7 +1894,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.cameraInstance.y).toBe(50);
   });
 
-  it('routes bootstrap spawn initialization and embedded respawn recovery through one shared standalone-player transition-reset helper', async () => {
+  it('routes bootstrap spawn initialization, lava respawn, and embedded respawn recovery through one shared standalone-player transition-reset helper', async () => {
     await import('./main');
     await flushBootstrap();
 
@@ -1989,6 +1989,46 @@ describe('main.ts shell state orchestration', () => {
       velocity: transitionedPlayerState.velocity
     });
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(true);
+
+    testRuntime.rendererStepPlayerStateImpl = () => ({
+      position: { x: 24, y: 12 },
+      velocity: { x: 18, y: 96 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'left' as const,
+      health: 0,
+      lavaDamageTickSecondsRemaining: 0.5
+    });
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, noContacts];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest debug status strip state after lava respawn');
+    }
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerFacingTransition ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContactTransition ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContactTransition ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerRespawn).toMatchObject({
+      kind: 'lava',
+      spawnTile: {
+        x: 0,
+        y: 0
+      },
+      position: {
+        x: 8,
+        y: 0
+      },
+      velocity: {
+        x: 0,
+        y: 0
+      }
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
 
     const respawnedPlayerState = {
       position: { x: 96, y: 80 },

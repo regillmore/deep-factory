@@ -1,5 +1,6 @@
+import { MAX_LIQUID_LEVEL, TILE_SIZE } from './constants';
 import { doesAabbOverlapSolid, sweepAabbAlongAxis, type SolidTileCollision, type WorldAabb } from './collision';
-import { TILE_METADATA } from './tileMetadata';
+import { getTileLiquidKind, TILE_METADATA } from './tileMetadata';
 import type { TileMetadataRegistry } from './tileMetadata';
 import type { TileWorld } from './world';
 
@@ -22,6 +23,8 @@ export interface PlayerState {
   size: PlayerSize;
   grounded: boolean;
   facing: PlayerFacing;
+  health: number;
+  lavaDamageTickSecondsRemaining: number;
 }
 
 export interface PlayerCollisionContacts {
@@ -46,6 +49,8 @@ export interface CreatePlayerStateOptions {
   size?: Partial<PlayerSize>;
   grounded?: boolean;
   facing?: PlayerFacing;
+  health?: number;
+  lavaDamageTickSecondsRemaining?: number;
 }
 
 export interface PlayerMovementIntent {
@@ -64,6 +69,11 @@ export interface StepPlayerStateOptions extends StepPlayerStateWithGravityOption
   airAcceleration?: number;
   groundDeceleration?: number;
   jumpSpeed?: number;
+  waterBuoyancyAcceleration?: number;
+  waterHorizontalDragPerSecond?: number;
+  waterVerticalDragPerSecond?: number;
+  lavaDamagePerTick?: number;
+  lavaDamageTickIntervalSeconds?: number;
 }
 
 export const DEFAULT_PLAYER_WIDTH = 12;
@@ -75,8 +85,20 @@ export const DEFAULT_PLAYER_GROUND_ACCELERATION = 1800;
 export const DEFAULT_PLAYER_AIR_ACCELERATION = 900;
 export const DEFAULT_PLAYER_GROUND_DECELERATION = 2400;
 export const DEFAULT_PLAYER_JUMP_SPEED = 520;
+export const DEFAULT_PLAYER_MAX_HEALTH = 100;
+export const DEFAULT_PLAYER_WATER_BUOYANCY_ACCELERATION = 2400;
+export const DEFAULT_PLAYER_WATER_HORIZONTAL_DRAG_PER_SECOND = 4;
+export const DEFAULT_PLAYER_WATER_VERTICAL_DRAG_PER_SECOND = 2;
+export const DEFAULT_PLAYER_LAVA_DAMAGE_PER_TICK = 25;
+export const DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS = 0.5;
 const DEFAULT_PLAYER_FACING: PlayerFacing = 'right';
 const COLLISION_CONTACT_PROBE_DISTANCE = 1;
+const AABB_INTERSECTION_EPSILON = 1e-6;
+
+interface PlayerLiquidOverlapState {
+  waterSubmergedFraction: number;
+  lavaSubmergedFraction: number;
+}
 
 const expectFiniteNumber = (value: number, label: string): number => {
   if (!Number.isFinite(value)) {
@@ -112,7 +134,23 @@ const buildSize = (size: Partial<PlayerSize> | undefined): PlayerSize => ({
   height: expectPositiveFiniteNumber(size?.height ?? DEFAULT_PLAYER_HEIGHT, 'size.height')
 });
 
+const buildHealth = (health: number | undefined): number =>
+  expectNonNegativeFiniteNumber(health ?? DEFAULT_PLAYER_MAX_HEALTH, 'health');
+
+const buildLavaDamageTickSecondsRemaining = (value: number | undefined): number =>
+  expectNonNegativeFiniteNumber(
+    value ?? DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
+    'lavaDamageTickSecondsRemaining'
+  );
+
 const clampNumber = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
+
+const applyLinearDrag = (
+  velocity: number,
+  dragPerSecond: number,
+  submergedFraction: number,
+  fixedDtSeconds: number
+): number => velocity / (1 + dragPerSecond * submergedFraction * fixedDtSeconds);
 
 const moveTowards = (current: number, target: number, maxDelta: number): number => {
   if (current < target) {
@@ -231,6 +269,105 @@ const resolveHorizontalVelocityFromIntent = (
   return moveTowards(currentVelocityX, 0, groundDeceleration * fixedDtSeconds);
 };
 
+const samplePlayerLiquidOverlapState = (
+  world: TileWorld,
+  state: PlayerState,
+  registry: TileMetadataRegistry
+): PlayerLiquidOverlapState => {
+  const aabb = getPlayerAabb(state);
+  const playerArea = state.size.width * state.size.height;
+  if (playerArea <= 0) {
+    return {
+      waterSubmergedFraction: 0,
+      lavaSubmergedFraction: 0
+    };
+  }
+
+  const minTileX = Math.floor(aabb.minX / TILE_SIZE);
+  const maxTileX = Math.floor((aabb.maxX - AABB_INTERSECTION_EPSILON) / TILE_SIZE);
+  const minTileY = Math.floor(aabb.minY / TILE_SIZE);
+  const maxTileY = Math.floor((aabb.maxY - AABB_INTERSECTION_EPSILON) / TILE_SIZE);
+  let waterOverlapArea = 0;
+  let lavaOverlapArea = 0;
+
+  for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
+    const tileWorldMinY = tileY * TILE_SIZE;
+    const tileWorldMaxY = tileWorldMinY + TILE_SIZE;
+
+    for (let tileX = minTileX; tileX <= maxTileX; tileX += 1) {
+      const tileId = world.getTile(tileX, tileY);
+      const liquidKind = getTileLiquidKind(tileId, registry);
+      if (liquidKind === null) {
+        continue;
+      }
+
+      const liquidLevel = world.getLiquidLevel(tileX, tileY);
+      if (liquidLevel <= 0) {
+        continue;
+      }
+
+      const tileWorldMinX = tileX * TILE_SIZE;
+      const tileWorldMaxX = tileWorldMinX + TILE_SIZE;
+      const liquidFillHeight = (liquidLevel / MAX_LIQUID_LEVEL) * TILE_SIZE;
+      const liquidWorldMinY = tileWorldMaxY - liquidFillHeight;
+      const overlapWidth = Math.min(aabb.maxX, tileWorldMaxX) - Math.max(aabb.minX, tileWorldMinX);
+      const overlapHeight = Math.min(aabb.maxY, tileWorldMaxY) - Math.max(aabb.minY, liquidWorldMinY);
+      if (overlapWidth <= 0 || overlapHeight <= 0) {
+        continue;
+      }
+
+      const overlapArea = overlapWidth * overlapHeight;
+      if (liquidKind === 'water') {
+        waterOverlapArea += overlapArea;
+      } else {
+        lavaOverlapArea += overlapArea;
+      }
+    }
+  }
+
+  return {
+    waterSubmergedFraction: clampNumber(waterOverlapArea / playerArea, 0, 1),
+    lavaSubmergedFraction: clampNumber(lavaOverlapArea / playerArea, 0, 1)
+  };
+};
+
+const resolveLavaDamageStepState = (
+  health: number,
+  lavaDamageTickSecondsRemaining: number,
+  lavaSubmergedFraction: number,
+  fixedDtSeconds: number,
+  lavaDamagePerTick: number,
+  lavaDamageTickIntervalSeconds: number
+): Pick<PlayerState, 'health' | 'lavaDamageTickSecondsRemaining'> => {
+  if (lavaSubmergedFraction <= 0) {
+    return {
+      health,
+      lavaDamageTickSecondsRemaining: lavaDamageTickIntervalSeconds
+    };
+  }
+
+  let remainingHealth = health;
+  let remainingTickSeconds = lavaDamageTickSecondsRemaining;
+  let remainingDt = fixedDtSeconds;
+
+  while (remainingDt > 0 && remainingHealth > 0) {
+    if (remainingTickSeconds > remainingDt) {
+      remainingTickSeconds -= remainingDt;
+      remainingDt = 0;
+      continue;
+    }
+
+    remainingDt -= remainingTickSeconds;
+    remainingHealth = Math.max(0, remainingHealth - lavaDamagePerTick);
+    remainingTickSeconds = lavaDamageTickIntervalSeconds;
+  }
+
+  return {
+    health: remainingHealth,
+    lavaDamageTickSecondsRemaining: remainingTickSeconds
+  };
+};
+
 export const createPlayerState = (options: CreatePlayerStateOptions = {}): PlayerState => {
   const velocity = buildVector(options.velocity, 'velocity');
   const facing = options.facing ?? resolveFacingFromHorizontalVelocity(DEFAULT_PLAYER_FACING, velocity.x);
@@ -240,7 +377,11 @@ export const createPlayerState = (options: CreatePlayerStateOptions = {}): Playe
     velocity,
     size: buildSize(options.size),
     grounded: (options.grounded ?? false) && velocity.y === 0,
-    facing
+    facing,
+    health: buildHealth(options.health),
+    lavaDamageTickSecondsRemaining: buildLavaDamageTickSecondsRemaining(
+      options.lavaDamageTickSecondsRemaining
+    )
   };
 };
 
@@ -268,7 +409,11 @@ export const respawnPlayerStateAtSpawnIfEmbeddedInSolid = (
     return state;
   }
 
-  return createPlayerStateFromSpawn(spawn, { facing: state.facing });
+  return createPlayerStateFromSpawn(spawn, {
+    facing: state.facing,
+    health: state.health,
+    lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining
+  });
 };
 
 export const getPlayerAabb = (state: PlayerState): WorldAabb => {
@@ -321,7 +466,9 @@ export const integratePlayerState = (state: PlayerState, fixedDtSeconds: number)
       height: state.size.height
     },
     grounded: state.grounded && state.velocity.y === 0,
-    facing
+    facing,
+    health: state.health,
+    lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining
   };
 };
 
@@ -354,7 +501,9 @@ export const movePlayerStateWithCollisions = (
       height: state.size.height
     },
     grounded: groundSupport !== null,
-    facing
+    facing,
+    health: state.health,
+    lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining
   };
 };
 
@@ -393,7 +542,28 @@ export const stepPlayerState = (
     'options.groundDeceleration'
   );
   const jumpSpeed = expectNonNegativeFiniteNumber(options.jumpSpeed ?? DEFAULT_PLAYER_JUMP_SPEED, 'options.jumpSpeed');
-  const velocityX = resolveHorizontalVelocityFromIntent(
+  const waterBuoyancyAcceleration = expectNonNegativeFiniteNumber(
+    options.waterBuoyancyAcceleration ?? DEFAULT_PLAYER_WATER_BUOYANCY_ACCELERATION,
+    'options.waterBuoyancyAcceleration'
+  );
+  const waterHorizontalDragPerSecond = expectNonNegativeFiniteNumber(
+    options.waterHorizontalDragPerSecond ?? DEFAULT_PLAYER_WATER_HORIZONTAL_DRAG_PER_SECOND,
+    'options.waterHorizontalDragPerSecond'
+  );
+  const waterVerticalDragPerSecond = expectNonNegativeFiniteNumber(
+    options.waterVerticalDragPerSecond ?? DEFAULT_PLAYER_WATER_VERTICAL_DRAG_PER_SECOND,
+    'options.waterVerticalDragPerSecond'
+  );
+  const lavaDamagePerTick = expectNonNegativeFiniteNumber(
+    options.lavaDamagePerTick ?? DEFAULT_PLAYER_LAVA_DAMAGE_PER_TICK,
+    'options.lavaDamagePerTick'
+  );
+  const lavaDamageTickIntervalSeconds = expectPositiveFiniteNumber(
+    options.lavaDamageTickIntervalSeconds ?? DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
+    'options.lavaDamageTickIntervalSeconds'
+  );
+  const liquidOverlapState = samplePlayerLiquidOverlapState(world, state, registry);
+  let velocityX = resolveHorizontalVelocityFromIntent(
     state.velocity.x,
     moveX,
     state.grounded,
@@ -412,6 +582,30 @@ export const stepPlayerState = (
   }
 
   velocityY = Math.min(velocityY + gravityAcceleration * dt, maxFallSpeed);
+  if (liquidOverlapState.waterSubmergedFraction > 0) {
+    velocityY -= waterBuoyancyAcceleration * liquidOverlapState.waterSubmergedFraction * dt;
+    velocityX = applyLinearDrag(
+      velocityX,
+      waterHorizontalDragPerSecond,
+      liquidOverlapState.waterSubmergedFraction,
+      dt
+    );
+    velocityY = applyLinearDrag(
+      velocityY,
+      waterVerticalDragPerSecond,
+      liquidOverlapState.waterSubmergedFraction,
+      dt
+    );
+  }
+
+  const lavaDamageStepState = resolveLavaDamageStepState(
+    state.health,
+    state.lavaDamageTickSecondsRemaining,
+    liquidOverlapState.lavaSubmergedFraction,
+    dt,
+    lavaDamagePerTick,
+    lavaDamageTickIntervalSeconds
+  );
 
   return movePlayerStateWithCollisions(
     world,
@@ -429,7 +623,9 @@ export const stepPlayerState = (
         height: state.size.height
       },
       grounded,
-      facing: state.facing
+      facing: state.facing,
+      health: lavaDamageStepState.health,
+      lavaDamageTickSecondsRemaining: lavaDamageStepState.lavaDamageTickSecondsRemaining
     },
     dt,
     registry

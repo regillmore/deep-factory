@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createEmbeddedPlayerRespawnEvent } from './playerRespawnEvent';
+import { createEmbeddedPlayerRespawnEvent, createLavaPlayerRespawnEvent } from './playerRespawnEvent';
 import type { PlayerSpawnPoint } from './playerSpawn';
 import { createPlayerState } from './playerState';
 
@@ -38,6 +38,45 @@ describe('createEmbeddedPlayerRespawnEvent', () => {
       kind: 'embedded',
       spawnTile: { x: 3, y: -2 },
       position: { x: 56, y: -32 },
+      velocity: { x: 0, y: 0 }
+    });
+  });
+});
+
+describe('createLavaPlayerRespawnEvent', () => {
+  it('captures the resolved spawn tile plus lava-respawned player state', () => {
+    const spawn: PlayerSpawnPoint = {
+      anchorTileX: -1,
+      standingTileY: 0,
+      x: -8,
+      y: 0,
+      aabb: {
+        minX: -14,
+        minY: -28,
+        maxX: -2,
+        maxY: 0
+      },
+      support: {
+        tileX: -1,
+        tileY: 1,
+        tileId: 4
+      }
+    };
+
+    const event = createLavaPlayerRespawnEvent(
+      createPlayerState({
+        position: { x: -8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        grounded: true,
+        facing: 'right'
+      }),
+      spawn
+    );
+
+    expect(event).toEqual({
+      kind: 'lava',
+      spawnTile: { x: -1, y: 0 },
+      position: { x: -8, y: 0 },
       velocity: { x: 0, y: 0 }
     });
   });

@@ -91,6 +91,7 @@ import {
 } from './world/playerGroundedTransition';
 import {
   createEmbeddedPlayerRespawnEvent,
+  createLavaPlayerRespawnEvent,
   type PlayerRespawnEvent
 } from './world/playerRespawnEvent';
 import {
@@ -227,6 +228,7 @@ type StandalonePlayerFixedStepResult = {
   nextPlayerState: PlayerState;
   contactSnapshot: StandalonePlayerFixedStepContactSnapshot;
   transitionSnapshot: StandalonePlayerFixedStepTransitionSnapshot;
+  respawnEvent: PlayerRespawnEvent | null;
 };
 type StandalonePlayerFixedStepContactSnapshotOptions = {
   previousPlayerState: PlayerState;
@@ -915,6 +917,31 @@ const bootstrap = async (): Promise<void> => {
     lastPlayerCeilingContactTransitionEvent = null;
     standalonePlayerCeilingBonkHoldUntilTimeMs = null;
   };
+  const readStandalonePlayerHealthForRespawnDetection = (playerState: PlayerState): number => {
+    const health = (playerState as { health?: unknown }).health;
+    return typeof health === 'number' && Number.isFinite(health) ? health : 1;
+  };
+  const resolveStandalonePlayerFixedStepRespawn = (
+    previousPlayerState: PlayerState,
+    nextPlayerState: PlayerState
+  ): Pick<StandalonePlayerFixedStepResult, 'nextPlayerState' | 'respawnEvent'> => {
+    const previousHealth = readStandalonePlayerHealthForRespawnDetection(previousPlayerState);
+    const nextHealth = readStandalonePlayerHealthForRespawnDetection(nextPlayerState);
+    if (previousHealth > 0 && nextHealth <= 0 && resolvedPlayerSpawn !== null) {
+      const respawnedPlayerState = createPlayerStateFromSpawn(resolvedPlayerSpawn, {
+        facing: nextPlayerState.facing
+      });
+      return {
+        nextPlayerState: respawnedPlayerState,
+        respawnEvent: createLavaPlayerRespawnEvent(respawnedPlayerState, resolvedPlayerSpawn)
+      };
+    }
+
+    return {
+      nextPlayerState,
+      respawnEvent: null
+    };
+  };
   const createStandalonePlayerFixedStepContactSnapshot = ({
     previousPlayerState,
     nextPlayerState
@@ -951,10 +978,14 @@ const bootstrap = async (): Promise<void> => {
     fixedDt,
     playerMovementIntent
   }: StandalonePlayerFixedStepResultOptions): StandalonePlayerFixedStepResult => {
-    const nextPlayerState = renderer.stepPlayerState(
+    const steppedPlayerState = renderer.stepPlayerState(
       previousPlayerState,
       fixedDt,
       playerMovementIntent
+    );
+    const { nextPlayerState, respawnEvent } = resolveStandalonePlayerFixedStepRespawn(
+      previousPlayerState,
+      steppedPlayerState
     );
     const contactSnapshot = createStandalonePlayerFixedStepContactSnapshot({
       previousPlayerState,
@@ -963,6 +994,7 @@ const bootstrap = async (): Promise<void> => {
     return {
       nextPlayerState,
       contactSnapshot,
+      respawnEvent,
       transitionSnapshot: createStandalonePlayerFixedStepTransitionSnapshot({
         previousPlayerState,
         nextPlayerState,
@@ -976,7 +1008,11 @@ const bootstrap = async (): Promise<void> => {
     playerFixedStepResult: StandalonePlayerFixedStepResult
   ): void => {
     standalonePlayerState = playerFixedStepResult.nextPlayerState;
-    commitStandalonePlayerFixedStepTransitions(playerFixedStepResult.transitionSnapshot);
+    if (playerFixedStepResult.respawnEvent !== null) {
+      resetStandalonePlayerTransitionState(playerFixedStepResult.respawnEvent);
+    } else {
+      commitStandalonePlayerFixedStepTransitions(playerFixedStepResult.transitionSnapshot);
+    }
     applyStandalonePlayerCameraFollow();
   };
   const updateStandalonePlayerFixedStep = ({
