@@ -38,7 +38,7 @@ This document describes the current project state. Unlike the changelog, it shou
 
 ## Save/Load Foundations
 
-- `src/world/chunkSnapshot.ts` now defines a version `1` chunk snapshot contract for future persistence work: resident chunks serialize dense row-major `tiles`, `liquidLevels`, and `lightLevels` through JSON-safe run-length/value pairs plus explicit light dirtiness metadata, while sparse edited chunk overrides serialize sorted tile-index/value pairs for tile and liquid edits; focused regressions cover round-trips plus format validation, but no runtime save/load adapter or UI ships yet.
+- `src/world/chunkSnapshot.ts` now defines a version `1` chunk snapshot contract for future persistence work, and `TileWorld` can now create or load JSON-safe world snapshots on top of it: resident chunks serialize dense row-major `tiles`, `liquidLevels`, and `lightLevels` through run-length/value pairs plus explicit light dirtiness metadata, sparse edited chunk overrides serialize sorted tile-index/value pairs for tile and liquid edits, top-level world snapshots preserve deterministic chunk ordering plus `liquidSimulationTick` parity for post-load liquid behavior, and focused regressions cover round-trips, load validation, streamed-out edited overrides, and post-load liquid continuation; no local persistence adapter or UI ships yet.
 
 ## Tile Metadata And Terrain Resolution
 

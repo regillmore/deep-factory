@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Save/load
 
-20. Implement save/load serialization for resident chunks and edited world state.
 21. Add a local persistence adapter (`localStorage` or downloadable JSON) on top of the snapshot format.
 374. Define a versioned top-level world-save envelope that bundles chunk snapshots with standalone-player session state, camera follow offset, and migration metadata before the persistence adapter lands.
+375. Add a session-owned world-restore helper that swaps `TileWorld` from a loaded world snapshot while preserving existing renderer and input wiring after the top-level save envelope (`374`) lands.
 
 ## Networking scaffolding
 

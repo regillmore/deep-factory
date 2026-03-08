@@ -7,9 +7,20 @@ import {
   worldToLocalTile
 } from './chunkMath';
 import type { ChunkBounds } from './chunkMath';
+import {
+  decodeEditedChunkSnapshot,
+  decodeResidentChunkSnapshot,
+  encodeEditedChunkSnapshot,
+  encodeResidentChunkSnapshot
+} from './chunkSnapshot';
+import type {
+  EditedChunkSnapshot,
+  EditedChunkSnapshotState,
+  ResidentChunkSnapshot
+} from './chunkSnapshot';
 import { doesTileBlockLight, getTileEmissiveLightLevel, getTileLiquidKind } from './tileMetadata';
 import type { TileMetadataRegistry } from './tileMetadata';
-import type { Chunk } from './types';
+import type { Chunk, ChunkCoord } from './types';
 
 const solidTileId = 1;
 
@@ -50,6 +61,12 @@ export interface LiquidSimulationStats {
   transfersApplied: number;
 }
 
+export interface TileWorldSnapshot {
+  liquidSimulationTick: number;
+  residentChunks: ResidentChunkSnapshot[];
+  editedChunks: EditedChunkSnapshot[];
+}
+
 type TileEditListener = (event: TileEditEvent) => void;
 
 const createTileNeighborhood = (): TileNeighborhood => ({
@@ -69,6 +86,23 @@ const createLiquidSimulationStats = (): LiquidSimulationStats => ({
   horizontalPairsTested: 0,
   transfersApplied: 0
 });
+
+const compareChunkCoords = (left: ChunkCoord, right: ChunkCoord): number => left.y - right.y || left.x - right.x;
+
+const parseChunkCoordFromKey = (key: string): ChunkCoord => {
+  const [rawX, rawY, ...rest] = key.split(',');
+  if (rawX === undefined || rawY === undefined || rest.length > 0) {
+    throw new Error(`chunk key must be "x,y", received ${key}`);
+  }
+
+  const x = Number(rawX);
+  const y = Number(rawY);
+  if (!Number.isInteger(x) || !Number.isInteger(y)) {
+    throw new Error(`chunk key must contain integer coordinates, received ${key}`);
+  }
+
+  return { x, y };
+};
 
 const createChunkLiquidLevels = (): Uint8Array => new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
 const createChunkLightLevels = (): Uint8Array => new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
@@ -178,6 +212,14 @@ const expectLightLevel = (lightLevel: number): number => {
   return lightLevel;
 };
 
+const expectLiquidSimulationTick = (liquidSimulationTick: number): number => {
+  if (!Number.isInteger(liquidSimulationTick) || liquidSimulationTick < 0) {
+    throw new Error('liquidSimulationTick must be a non-negative integer');
+  }
+
+  return liquidSimulationTick >>> 0;
+};
+
 const expectLiquidLevel = (
   tileId: number,
   liquidLevel: number,
@@ -196,6 +238,32 @@ const expectLiquidLevel = (
   }
 
   return liquidLevel;
+};
+
+const expectConsistentChunkLightDirtyState = (chunk: Chunk, label: string): Chunk => {
+  if (chunk.lightDirty !== (chunk.lightDirtyColumnMask !== 0)) {
+    throw new Error(`${label} light dirty flag must match dirtyColumnMask`);
+  }
+
+  return chunk;
+};
+
+const expectEditedChunkStateMatchesResidentChunk = (
+  chunk: Chunk,
+  state: EditedChunkSnapshotState,
+  label: string
+): void => {
+  for (const [tileIndex, tileId] of state.tileOverrides) {
+    if ((chunk.tiles[tileIndex] ?? 0) !== tileId) {
+      throw new Error(`${label}.tileOverrides must match resident chunk tile ${tileIndex}`);
+    }
+  }
+
+  for (const [tileIndex, liquidLevel] of state.liquidLevelOverrides) {
+    if ((chunk.liquidLevels[tileIndex] ?? 0) !== liquidLevel) {
+      throw new Error(`${label}.liquidLevelOverrides must match resident chunk liquid ${tileIndex}`);
+    }
+  }
 };
 
 interface LiquidTransfer {
@@ -323,6 +391,24 @@ export class TileWorld {
       this.editedChunkLiquidLevels.set(key, editedLiquidLevels);
     }
     editedLiquidLevels.set(tileIndex, liquidLevel);
+  }
+
+  private collectEditedChunkSnapshotStates(): EditedChunkSnapshotState[] {
+    const editedChunkKeys = new Set<string>([
+      ...this.editedChunkTiles.keys(),
+      ...this.editedChunkLiquidLevels.keys()
+    ]);
+    const states: EditedChunkSnapshotState[] = [];
+
+    for (const key of editedChunkKeys) {
+      states.push({
+        coord: parseChunkCoordFromKey(key),
+        tileOverrides: new Map(this.editedChunkTiles.get(key)),
+        liquidLevelOverrides: new Map(this.editedChunkLiquidLevels.get(key))
+      });
+    }
+
+    return states.sort((left, right) => compareChunkCoords(left.coord, right.coord));
   }
 
   private invalidateLightingForTileStateChange(
@@ -872,6 +958,80 @@ export class TileWorld {
     return () => {
       this.tileEditListeners.delete(listener);
     };
+  }
+
+  createSnapshot(): TileWorldSnapshot {
+    const residentChunks = Array.from(this.chunks.values())
+      .sort((left, right) => compareChunkCoords(left.coord, right.coord))
+      .map((chunk) => encodeResidentChunkSnapshot(chunk));
+    const editedChunks = this.collectEditedChunkSnapshotStates().map((state) =>
+      encodeEditedChunkSnapshot(state)
+    );
+
+    return {
+      liquidSimulationTick: this.liquidSimulationTick,
+      residentChunks,
+      editedChunks
+    };
+  }
+
+  loadSnapshot(snapshot: TileWorldSnapshot): void {
+    if (!Array.isArray(snapshot.residentChunks)) {
+      throw new Error('residentChunks must be an array');
+    }
+    if (!Array.isArray(snapshot.editedChunks)) {
+      throw new Error('editedChunks must be an array');
+    }
+
+    const nextChunks = new Map<string, Chunk>();
+    const nextDirtyLightChunkKeys = new Set<string>();
+    for (const [index, residentChunkSnapshot] of snapshot.residentChunks.entries()) {
+      const chunk = expectConsistentChunkLightDirtyState(
+        decodeResidentChunkSnapshot(residentChunkSnapshot),
+        `residentChunks[${index}]`
+      );
+      const key = chunkKey(chunk.coord.x, chunk.coord.y);
+      if (nextChunks.has(key)) {
+        throw new Error(`residentChunks must not contain duplicate chunk coord ${key}`);
+      }
+
+      nextChunks.set(key, chunk);
+      if (chunk.lightDirty) {
+        nextDirtyLightChunkKeys.add(key);
+      }
+    }
+
+    const nextEditedChunkTiles = new Map<string, Map<number, number>>();
+    const nextEditedChunkLiquidLevels = new Map<string, Map<number, number>>();
+    const seenEditedChunkKeys = new Set<string>();
+    for (const [index, editedChunkSnapshot] of snapshot.editedChunks.entries()) {
+      const state = decodeEditedChunkSnapshot(editedChunkSnapshot);
+      const key = chunkKey(state.coord.x, state.coord.y);
+      if (seenEditedChunkKeys.has(key)) {
+        throw new Error(`editedChunks must not contain duplicate chunk coord ${key}`);
+      }
+
+      seenEditedChunkKeys.add(key);
+
+      const residentChunk = nextChunks.get(key);
+      if (residentChunk) {
+        expectEditedChunkStateMatchesResidentChunk(residentChunk, state, `editedChunks[${index}]`);
+      }
+
+      if (state.tileOverrides.size > 0) {
+        nextEditedChunkTiles.set(key, new Map(state.tileOverrides));
+      }
+      if (state.liquidLevelOverrides.size > 0) {
+        nextEditedChunkLiquidLevels.set(key, new Map(state.liquidLevelOverrides));
+      }
+    }
+
+    this.chunks = nextChunks;
+    this.editedChunkTiles = nextEditedChunkTiles;
+    this.editedChunkLiquidLevels = nextEditedChunkLiquidLevels;
+    this.dirtyLightChunkKeys = nextDirtyLightChunkKeys;
+    this.liquidSimulationTick = expectLiquidSimulationTick(snapshot.liquidSimulationTick);
+    this.lastLiquidSimulationStats = createLiquidSimulationStats();
   }
 
   getChunks(): IterableIterator<Chunk> {

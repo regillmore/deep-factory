@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Implement save/load serialization for resident chunks and edited world state.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts) so `TileWorld` now creates and loads JSON-safe world snapshots on top of [src/world/chunkSnapshot.ts](../src/world/chunkSnapshot.ts), preserving sorted resident chunk payloads, sparse edited overrides, resident light dirtiness, and `liquidSimulationTick` parity with duplicate or mismatched snapshot validation; expanded [src/world/world.test.ts](../src/world/world.test.ts) with focused regressions for sorted snapshot output, streamed-out edited override restore, post-load liquid continuation, and duplicate resident-chunk rejection; removed completed task `20` from [docs/NEXT.md](docs/NEXT.md), added replacement task `375`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/world.test.ts src/world/chunkSnapshot.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Define a versioned chunk snapshot format with explicit metadata and tile payload encoding.
 - Changes: Added [src/world/chunkSnapshot.ts](../src/world/chunkSnapshot.ts) with versioned resident-chunk and edited-chunk snapshot shapes plus JSON-safe dense RLE and sparse index-value payload encoders/decoders, added focused coverage in [src/world/chunkSnapshot.test.ts](../src/world/chunkSnapshot.test.ts), removed completed task `19` from [docs/NEXT.md](docs/NEXT.md), added replacement task `374`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/chunkSnapshot.test.ts src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

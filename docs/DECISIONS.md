@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: TileWorld snapshots should preserve deterministic chunk ordering and liquid-step parity
+
+- Decision: `TileWorld.createSnapshot()` and `TileWorld.loadSnapshot()` now serialize world state through sorted resident and edited chunk snapshot arrays plus `liquidSimulationTick`, and loads reject duplicate resident or edited chunk coordinates together with edited overrides that disagree with resident chunk payloads.
+- Reason: Save/load needs one world-owned snapshot contract that produces stable JSON diffs and restores deterministic sideways-liquid behavior instead of rebuilding state from unordered maps or resetting liquid equalization parity.
+- Consequence: Future save envelopes, persistence adapters, or restore helpers should wrap this world snapshot shape and preserve its chunk ordering plus `liquidSimulationTick` instead of inventing a second world-state serialization path.
+
 ### 2026-03-08: Chunk snapshots should use versioned metadata with explicit dense and sparse payload encodings
 
 - Decision: `src/world/chunkSnapshot.ts` now defines chunk snapshot metadata with fixed `version`, `chunkSize`, `tileCount`, and row-major tile order, stores resident chunk `tiles`, `liquidLevels`, and `lightLevels` through run-length/value pairs, and stores sparse edited tile or liquid overrides through sorted tile-index/value pairs.

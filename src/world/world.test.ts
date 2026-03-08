@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { encodeResidentChunkSnapshot } from './chunkSnapshot';
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL } from './constants';
 import type { ChunkBounds } from './chunkMath';
 import { toTileIndex } from './chunkMath';
@@ -81,6 +82,34 @@ describe('TileWorld', () => {
 
     expect(world.pruneChunksOutside({ minChunkX: 1, minChunkY: 1, maxChunkX: 1, maxChunkY: 1 })).toBe(1);
     expect(world.getTile(0, 0)).toBe(proceduralTileId);
+  });
+
+  it('creates sorted world snapshots for resident chunks and pruned edited chunks', () => {
+    const world = new TileWorld(0);
+
+    world.ensureChunk(1, 0);
+    world.ensureChunk(-1, -1);
+    expect(world.setTile(CHUNK_SIZE * 2, 0, WATER_TILE_ID)).toBe(true);
+    expect(world.setTile(-CHUNK_SIZE * 2, 0, 6)).toBe(true);
+    expect(
+      world.pruneChunksOutside({ minChunkX: -1, minChunkY: -1, maxChunkX: 1, maxChunkY: 0 })
+    ).toBe(2);
+
+    const snapshot = world.createSnapshot();
+
+    expect(snapshot.residentChunks.map((chunk) => chunk.coord)).toEqual([
+      { x: -1, y: -1 },
+      { x: 0, y: 0 },
+      { x: 1, y: 0 }
+    ]);
+    expect(snapshot.editedChunks.map((chunk) => chunk.coord)).toEqual([
+      { x: -2, y: 0 },
+      { x: 2, y: 0 }
+    ]);
+    expect(snapshot.editedChunks[0]?.payload.tileOverrides).toEqual([0, 6]);
+    expect(snapshot.editedChunks[0]?.payload.liquidLevelOverrides).toEqual([]);
+    expect(snapshot.editedChunks[1]?.payload.tileOverrides).toEqual([0, WATER_TILE_ID]);
+    expect(snapshot.editedChunks[1]?.payload.liquidLevelOverrides).toEqual([0, MAX_LIQUID_LEVEL]);
   });
 
   it('stores liquid fill levels for liquid tiles and clears them when the tile becomes non-liquid', () => {
@@ -166,6 +195,58 @@ describe('TileWorld', () => {
     expect(world.pruneChunksOutside({ minChunkX: -1, minChunkY: -1, maxChunkX: 0, maxChunkY: 0 })).toBeGreaterThan(0);
     expect(world.getTile(worldTileX + 1, worldTileY)).toBe(WATER_TILE_ID);
     expect(world.getLiquidLevel(worldTileX + 1, worldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
+  });
+
+  it('loads snapshots back into resident chunks, sparse edited overrides, and liquid parity', () => {
+    const source = new TileWorld(0);
+    const liquidWorldTileX = 1;
+    const liquidWorldTileY = -20;
+    const prunedEditedWorldTileX = CHUNK_SIZE + 5;
+
+    source.ensureChunk(0, -1);
+    expect(source.setTile(liquidWorldTileX - 1, liquidWorldTileY, 1)).toBe(true);
+    expect(source.setTile(liquidWorldTileX, liquidWorldTileY + 1, 1)).toBe(true);
+    expect(source.setTile(liquidWorldTileX + 1, liquidWorldTileY + 1, 1)).toBe(true);
+    expect(source.setTile(liquidWorldTileX, liquidWorldTileY, WATER_TILE_ID)).toBe(true);
+    expect(source.setTile(prunedEditedWorldTileX, liquidWorldTileY, 5)).toBe(true);
+
+    source.fillChunkLight(0, -1, 7);
+    source.markChunkLightClean(0, -1);
+    source.invalidateChunkLightColumns(0, -1, localLightColumnBit(liquidWorldTileX));
+
+    expect(source.pruneChunksOutside({ minChunkX: 0, minChunkY: -1, maxChunkX: 0, maxChunkY: 0 })).toBe(1);
+    expect(source.stepLiquidSimulation()).toBe(false);
+
+    const snapshot = source.createSnapshot();
+    const loaded = new TileWorld(1);
+
+    loaded.loadSnapshot(snapshot);
+
+    expect(snapshot.liquidSimulationTick).toBe(1);
+    expect(loaded.getChunkCount()).toBe(2);
+    expect(loaded.isChunkLightDirty(0, -1)).toBe(true);
+    expect(loaded.getChunkLightDirtyColumnMask(0, -1)).toBe(localLightColumnBit(liquidWorldTileX));
+    expect(loaded.getChunkLightLevels(0, -1)[toTileIndex(liquidWorldTileX, 0)]).toBe(0);
+    expect(loaded.getChunkLightLevels(0, -1)[toTileIndex(liquidWorldTileX - 1, 0)]).toBe(7);
+    expect(loaded.getTile(prunedEditedWorldTileX, liquidWorldTileY)).toBe(5);
+
+    expect(loaded.stepLiquidSimulation()).toBe(true);
+    expect(loaded.getLiquidLevel(liquidWorldTileX, liquidWorldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
+    expect(loaded.getLiquidLevel(liquidWorldTileX + 1, liquidWorldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
+  });
+
+  it('rejects snapshots with duplicate resident chunk coordinates', () => {
+    const source = new TileWorld(0);
+    const residentChunkSnapshot = encodeResidentChunkSnapshot(source.ensureChunk(0, 0));
+    const target = new TileWorld(0);
+
+    expect(() =>
+      target.loadSnapshot({
+        liquidSimulationTick: 0,
+        residentChunks: [residentChunkSnapshot, residentChunkSnapshot],
+        editedChunks: []
+      })
+    ).toThrowError(/residentChunks must not contain duplicate chunk coord 0,0/);
   });
 
   it('keeps water and lava separated when sideways spreading resolves across neighboring cells', () => {
