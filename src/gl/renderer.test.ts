@@ -1008,6 +1008,128 @@ describe('Renderer atlas telemetry', () => {
     });
   });
 
+  it('keeps streamed-back dirty neighboring x-boundary air at emissive falloff on the first resumed draw when the adjacent emissive source chunk stays clean', async () => {
+    const createInitializedRenderer = async (): Promise<Renderer> => {
+      const gl = createMockGl();
+      const renderer = new Renderer(createMockCanvas(gl));
+      const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+      loadAtlasImageSource.mockResolvedValue({
+        imageSource: authoredBitmap,
+        sourceKind: 'authored',
+        sourceUrl: '/atlas/tile-atlas.png',
+        width: 96,
+        height: 64
+      });
+      await renderer.initialize();
+      return renderer;
+    };
+
+    const tunnelWorldTileY = -20;
+    const tunnelStartWorldTileX = CHUNK_SIZE - 2;
+    const tunnelEndWorldTileX = CHUNK_SIZE + 2;
+    const emissiveTileId = 6;
+    const emissiveLightLevel = getTileEmissiveLightLevel(emissiveTileId);
+    const expectedBoundaryAirLightLevel = emissiveLightLevel - 1;
+    const expectedInteriorAirLightLevel = emissiveLightLevel - 2;
+
+    const nearCamera = new Camera2D();
+    nearCamera.zoom = 16;
+    nearCamera.x = CHUNK_SIZE * TILE_SIZE;
+    nearCamera.y = tunnelWorldTileY * TILE_SIZE;
+
+    const runDirectionalCase = async (options: {
+      emissiveWorldTileX: number;
+      boundaryAirWorldTileX: number;
+      interiorAirWorldTileX: number;
+      farCameraX: number;
+      expectedInvalidatedChunkX: number;
+      cleanChunkX: number;
+    }): Promise<void> => {
+      const renderer = await createInitializedRenderer();
+      const rendererWorld = (
+        renderer as unknown as {
+          world: {
+            getLightLevel: (worldTileX: number, worldTileY: number) => number;
+          };
+        }
+      ).world;
+
+      for (
+        let worldTileX = tunnelStartWorldTileX;
+        worldTileX <= tunnelEndWorldTileX;
+        worldTileX += 1
+      ) {
+        renderer.setTile(worldTileX, tunnelWorldTileY - 1, 1);
+        renderer.setTile(worldTileX, tunnelWorldTileY, 0);
+        renderer.setTile(worldTileX, tunnelWorldTileY + 1, 1);
+      }
+      renderer.setTile(options.emissiveWorldTileX, tunnelWorldTileY, emissiveTileId);
+
+      renderUntilMeshBuildQueueDrains(renderer, nearCamera);
+      expect(rendererWorld.getLightLevel(options.boundaryAirWorldTileX, tunnelWorldTileY)).toBe(
+        expectedBoundaryAirLightLevel
+      );
+      expect(rendererWorld.getLightLevel(options.boundaryAirWorldTileX, tunnelWorldTileY)).not.toBe(
+        MAX_LIGHT_LEVEL
+      );
+      expect(rendererWorld.getLightLevel(options.interiorAirWorldTileX, tunnelWorldTileY)).toBe(
+        expectedInteriorAirLightLevel
+      );
+
+      const farCamera = new Camera2D();
+      farCamera.zoom = nearCamera.zoom;
+      farCamera.x = options.farCameraX;
+      farCamera.y = nearCamera.y;
+      renderer.render(farCamera, { timeMs: 0 });
+
+      expect(renderer.telemetry.evictedMeshEntries).toBeGreaterThan(0);
+      expect(renderer.telemetry.evictedWorldChunks).toBeGreaterThan(0);
+
+      const invalidateChunkMeshSpy = vi.spyOn(
+        renderer as unknown as {
+          invalidateChunkMesh: (chunkX: number, chunkY: number) => void;
+        },
+        'invalidateChunkMesh'
+      );
+      invalidateChunkMeshSpy.mockClear();
+
+      renderer.render(nearCamera, { timeMs: 0 });
+
+      const invalidatedChunkKeys = invalidateChunkMeshSpy.mock.calls.map(
+        ([chunkX, chunkY]) => `${chunkX},${chunkY}`
+      );
+      expect(invalidatedChunkKeys).toContain(`${options.expectedInvalidatedChunkX},-1`);
+      expect(invalidatedChunkKeys).not.toContain(`${options.cleanChunkX},-1`);
+      expect(rendererWorld.getLightLevel(options.boundaryAirWorldTileX, tunnelWorldTileY)).toBe(
+        expectedBoundaryAirLightLevel
+      );
+      expect(rendererWorld.getLightLevel(options.boundaryAirWorldTileX, tunnelWorldTileY)).not.toBe(
+        MAX_LIGHT_LEVEL
+      );
+      expect(rendererWorld.getLightLevel(options.interiorAirWorldTileX, tunnelWorldTileY)).toBe(
+        expectedInteriorAirLightLevel
+      );
+    };
+
+    await runDirectionalCase({
+      emissiveWorldTileX: CHUNK_SIZE - 1,
+      boundaryAirWorldTileX: CHUNK_SIZE,
+      interiorAirWorldTileX: CHUNK_SIZE + 1,
+      farCameraX: ((-4 * CHUNK_SIZE + CHUNK_SIZE / 2) * TILE_SIZE),
+      expectedInvalidatedChunkX: 1,
+      cleanChunkX: 0
+    });
+
+    await runDirectionalCase({
+      emissiveWorldTileX: CHUNK_SIZE,
+      boundaryAirWorldTileX: CHUNK_SIZE - 1,
+      interiorAirWorldTileX: CHUNK_SIZE - 2,
+      farCameraX: ((5 * CHUNK_SIZE + CHUNK_SIZE / 2) * TILE_SIZE),
+      expectedInvalidatedChunkX: 0,
+      cleanChunkX: 1
+    });
+  });
+
   it('invalidates both row-below chunk meshes when a streamed-back bottom-corner boundary blocker recloses', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));

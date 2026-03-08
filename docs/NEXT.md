@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Lighting
 
-322. Add a renderer regression where a clean boundary emissive source does not horizontal-transport `MAX_LIGHT_LEVEL` into streamed-back dirty neighboring boundary air on the first resumed draw.
+351. Add a renderer regression where streamed-back emissive boundary-air falloff still drives standalone-player nearby-light telemetry on the first resumed draw when the source chunk stays clean.
 
 ## Entities and interpolation
 
