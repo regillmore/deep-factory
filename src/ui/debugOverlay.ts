@@ -104,7 +104,13 @@ export interface DebugOverlayTileInspect {
 export interface DebugOverlayPlayerSpawn {
   tile: { x: number; y: number };
   world: { x: number; y: number };
-  supportTile?: { x: number; y: number; id: number } | null;
+  supportTile?: {
+    x: number;
+    y: number;
+    id: number;
+    chunk: { x: number; y: number };
+    local: { x: number; y: number };
+  } | null;
   liquidSafetyStatus: PlayerSpawnLiquidSafetyStatus;
 }
 
@@ -419,7 +425,11 @@ const formatSpawnSupportLine = (spawn: DebugOverlayPlayerSpawn | null): string =
     return 'SpawnSupport: unresolved';
   }
 
-  return `SpawnSupport: T:${spawn.supportTile.x},${spawn.supportTile.y} (#${spawn.supportTile.id})`;
+  return (
+    `SpawnSupport: T:${spawn.supportTile.x},${spawn.supportTile.y} (#${spawn.supportTile.id}) | ` +
+    `Ch:${spawn.supportTile.chunk.x},${spawn.supportTile.chunk.y} | ` +
+    `L:${spawn.supportTile.local.x},${spawn.supportTile.local.y}`
+  );
 };
 
 const formatSpawnLiquidSafetyStatus = (

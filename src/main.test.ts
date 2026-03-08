@@ -2957,7 +2957,7 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
-  it("routes the latest resolved spawn's liquid-safety telemetry into the overlay and compact status strip", async () => {
+  it("routes the latest resolved spawn's support chunk, local, and liquid-safety telemetry into the overlay and compact status strip", async () => {
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
       anchorTileX: -4,
       standingTileY: -2,
@@ -2985,13 +2985,25 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugOverlayInspectState.spawn).toEqual({
       tile: { x: -4, y: -2 },
       world: { x: -56, y: -32 },
-      supportTile: { x: -5, y: -1, id: 7 },
+      supportTile: {
+        x: -5,
+        y: -1,
+        id: 7,
+        chunk: { x: -1, y: -1 },
+        local: { x: 27, y: 31 }
+      },
       liquidSafetyStatus: 'overlap'
     });
     expect(testRuntime.latestDebugEditStatusStripState.playerSpawn).toEqual({
       tile: { x: -4, y: -2 },
       world: { x: -56, y: -32 },
-      supportTile: { x: -5, y: -1, id: 7 },
+      supportTile: {
+        x: -5,
+        y: -1,
+        id: 7,
+        chunk: { x: -1, y: -1 },
+        local: { x: 27, y: 31 }
+      },
       liquidSafetyStatus: 'overlap'
     });
   });

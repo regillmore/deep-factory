@@ -1098,10 +1098,26 @@ const bootstrap = async (): Promise<void> => {
       x: resolvedPlayerSpawn.x,
       y: resolvedPlayerSpawn.y
     };
+    const supportChunk = worldToChunkCoord(
+      resolvedPlayerSpawn.support.tileX,
+      resolvedPlayerSpawn.support.tileY
+    );
+    const supportLocal = worldToLocalTile(
+      resolvedPlayerSpawn.support.tileX,
+      resolvedPlayerSpawn.support.tileY
+    );
     const supportTile = {
       x: resolvedPlayerSpawn.support.tileX,
       y: resolvedPlayerSpawn.support.tileY,
-      id: resolvedPlayerSpawn.support.tileId
+      id: resolvedPlayerSpawn.support.tileId,
+      chunk: {
+        x: supportChunk.chunkX,
+        y: supportChunk.chunkY
+      },
+      local: {
+        x: supportLocal.localX,
+        y: supportLocal.localY
+      }
     };
     const liquidSafetyStatus = renderer.resolvePlayerSpawnLiquidSafetyStatus(resolvedPlayerSpawn);
 

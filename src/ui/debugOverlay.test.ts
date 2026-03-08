@@ -173,7 +173,13 @@ describe('formatDebugOverlayText', () => {
       spawn: {
         tile: { x: 0, y: -2 },
         world: { x: 8, y: -32 },
-        supportTile: { x: 0, y: -1, id: 1 },
+        supportTile: {
+          x: 0,
+          y: -1,
+          id: 1,
+          chunk: { x: 0, y: -1 },
+          local: { x: 0, y: 31 }
+        },
         liquidSafetyStatus: 'safe'
       },
       playerPlaceholderPoseLabel: null,
@@ -194,7 +200,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain('Spawn: T:0,-2 | W:8.00,-32.00');
-    expect(text).toContain('SpawnSupport: T:0,-1 (#1)');
+    expect(text).toContain('SpawnSupport: T:0,-1 (#1) | Ch:0,-1 | L:0,31');
     expect(text).toContain('SpawnLiquid: safe');
     expect(text).toContain('Intent: move:1 | jumpHeld:on | jumpPressed:off');
     expect(text).toContain('Ptr(mouse)');
@@ -591,7 +597,13 @@ describe('formatDebugOverlayText', () => {
       spawn: {
         tile: { x: -1, y: 0 },
         world: { x: -8, y: 0 },
-        supportTile: { x: -2, y: 1, id: 6 },
+        supportTile: {
+          x: -2,
+          y: 1,
+          id: 6,
+          chunk: { x: -1, y: 0 },
+          local: { x: 30, y: 1 }
+        },
         liquidSafetyStatus: 'overlap'
       },
       playerPlaceholderPoseLabel: null,

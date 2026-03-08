@@ -135,7 +135,13 @@ export interface DebugEditStatusStripPlayerSpawnTelemetry {
   liquidSafetyStatus: PlayerSpawnLiquidSafetyStatus | 'unresolved';
   tile?: { x: number; y: number } | null;
   world?: { x: number; y: number } | null;
-  supportTile?: { x: number; y: number; id: number } | null;
+  supportTile?: {
+    x: number;
+    y: number;
+    id: number;
+    chunk: { x: number; y: number };
+    local: { x: number; y: number };
+  } | null;
 }
 
 export interface DebugEditStatusStripPlayerAabbTelemetry {
@@ -719,7 +725,12 @@ const formatLivePlayerSpawnSupportText = (
   return (
     `SpawnSupportNow: tile ` +
     `${formatTileCoordinatePair(playerSpawn.supportTile.x, playerSpawn.supportTile.y)} ` +
-    `(#${playerSpawn.supportTile.id})`
+    `(#${playerSpawn.supportTile.id}) | ` +
+    `chunk ${formatTileCoordinatePair(
+      playerSpawn.supportTile.chunk.x,
+      playerSpawn.supportTile.chunk.y
+    )} | ` +
+    `local ${formatTileCoordinatePair(playerSpawn.supportTile.local.x, playerSpawn.supportTile.local.y)}`
   );
 };
 

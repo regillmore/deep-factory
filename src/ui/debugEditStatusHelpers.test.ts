@@ -185,7 +185,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it("formats the latest resolved spawn's liquid-safety status for the compact strip when provided", () => {
+  it("formats the latest resolved spawn's support chunk, local, and liquid-safety status for the compact strip when provided", () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -206,14 +206,23 @@ describe('buildDebugEditStatusStripModel', () => {
         supportTile: {
           x: -5,
           y: -1,
-          id: 7
+          id: 7,
+          chunk: {
+            x: -1,
+            y: -1
+          },
+          local: {
+            x: 27,
+            y: 31
+          }
         }
       },
       preview: createEmptyPreviewState()
     });
 
     expect(model.playerText).toBe(
-      'SpawnNow: safe | tile -4,-2 | pos -56.00,-32.00\nSpawnSupportNow: tile -5,-1 (#7)'
+      'SpawnNow: safe | tile -4,-2 | pos -56.00,-32.00\n' +
+        'SpawnSupportNow: tile -5,-1 (#7) | chunk -1,-1 | local 27,31'
     );
     expect(model.eventText).toBeNull();
   });

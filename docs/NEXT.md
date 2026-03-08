@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Collision and player foundation
 
-333. Surface the latest resolved spawn support chunk and chunk-local tile coordinates in the debug overlay and compact status strip so cross-chunk grounded spawn fallback stays debuggable, with focused runtime regressions.
+334. Surface the latest resolved spawn support chunk and chunk-local tile coordinates in standalone-player respawn event telemetry so cross-chunk lava and embedded recovery stays debuggable, with focused runtime regressions.
 
 ## Liquid rendering
 
