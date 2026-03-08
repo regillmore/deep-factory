@@ -1948,6 +1948,125 @@ describe('Renderer atlas telemetry', () => {
     );
   });
 
+  it('preserves supported-entry submission order when unsupported kinds are interleaved in the entity pass', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const drawArrays = vi.mocked(gl.drawArrays);
+    const bufferData = vi.mocked(gl.bufferData);
+    const uniform1f = vi.mocked(gl.uniform1f);
+    drawArrays.mockClear();
+    bufferData.mockClear();
+    uniform1f.mockClear();
+
+    const firstSupportedState = createPlayerState({
+      position: { x: 20, y: 40 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      velocity: { x: 0, y: 120 },
+      facing: 'left'
+    });
+    const secondSupportedState = createPlayerState({
+      position: { x: 92, y: 52 },
+      size: { width: 12, height: 28 },
+      grounded: true,
+      velocity: { x: 60, y: 0 },
+      facing: 'right'
+    });
+    const unsupportedBefore = {
+      id: 201,
+      kind: 'future-slime'
+    } as unknown as RendererEntityFrameState;
+    const unsupportedBetween = {
+      id: 202,
+      kind: 'future-pickup'
+    } as unknown as RendererEntityFrameState;
+
+    renderer.render(new Camera2D(), {
+      entities: [
+        unsupportedBefore,
+        createStandalonePlayerEntityFrameState(firstSupportedState, { id: 203 }),
+        unsupportedBetween,
+        createStandalonePlayerEntityFrameState(secondSupportedState, { id: 204 })
+      ],
+      timeMs: 0
+    });
+
+    expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
+    expect(renderer.telemetry.drawCalls).toBe(renderer.telemetry.renderedChunks + 2);
+
+    const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
+    expect(dynamicUploads).toHaveLength(2);
+    expect(Array.from((dynamicUploads[0]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      14,
+      12,
+      0,
+      0,
+      26,
+      12,
+      1,
+      0,
+      26,
+      40,
+      1,
+      1,
+      14,
+      12,
+      0,
+      0,
+      26,
+      40,
+      1,
+      1,
+      14,
+      40,
+      0,
+      1
+    ]);
+    expect(Array.from((dynamicUploads[1]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      86,
+      24,
+      0,
+      0,
+      98,
+      24,
+      1,
+      0,
+      98,
+      52,
+      1,
+      1,
+      86,
+      24,
+      0,
+      0,
+      98,
+      52,
+      1,
+      1,
+      86,
+      52,
+      0,
+      1
+    ]);
+    expectStandalonePlayerUniformValues(
+      uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
+      [
+        { facing: -1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL },
+        { facing: 1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A }
+      ]
+    );
+  });
+
   it('uses the entity render snapshot for placeholder pose selection and interpolated nearby-light sampling', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Add renderer regression coverage that interleaved unsupported entity-pass kinds preserve supported-entry submission order after unknown-kind skipping lands.
+- Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a focused mixed entity-pass regression that interleaves two test-only unsupported future kinds around two supported standalone-player entries, then asserts only the supported placeholder uploads and pose uniforms are emitted and that they stay in the original supported-entry order; removed completed task `360` from [docs/NEXT.md](docs/NEXT.md) and added replacement task `362`.
+- Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add renderer regression coverage that unknown future entity-pass kinds are ignored without preventing later supported entries from drawing.
 - Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a focused entity-pass regression that injects a test-only unsupported future kind ahead of a supported standalone-player entry, then asserts the placeholder upload, pose uniforms, and draw-call count still reflect the later supported draw; removed completed task `359` from [docs/NEXT.md](docs/NEXT.md) and added replacement task `361`.
 - Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
