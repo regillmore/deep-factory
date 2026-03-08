@@ -2007,6 +2007,72 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.cameraInstance.y).toBe(50);
   });
 
+  it('keeps standalone-player render snapshots snapped to the fresh spawn on the first render after paused-menu New World reset', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    const movedPlayerState = {
+      position: { x: 152, y: 92 },
+      velocity: { x: 84, y: -24 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'right' as const,
+      health: 100,
+      lavaDamageTickSecondsRemaining: 0.5
+    };
+
+    testRuntime.rendererStepPlayerStateImpl = () => movedPlayerState;
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, noContacts];
+
+    runFixedUpdate();
+
+    testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 5,
+      standingTileY: 4,
+      x: 88,
+      y: 64,
+      supportTileX: 5,
+      supportTileY: 5,
+      supportTileId: 9
+    });
+
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+    testRuntime.latestRendererRenderFrameState = null;
+    testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
+    if (!testRuntime.latestRendererRenderFrameState) {
+      throw new Error('expected renderer frame state after paused-menu New World reset');
+    }
+    const renderFrameState = testRuntime.latestRendererRenderFrameState as {
+      standalonePlayerPreviousPosition: { x: number; y: number } | null;
+      standalonePlayerCurrentPosition: { x: number; y: number } | null;
+      standalonePlayerInterpolatedPosition: { x: number; y: number } | null;
+    };
+
+    expect(renderFrameState.standalonePlayerPreviousPosition).toEqual({
+      x: 88,
+      y: 64
+    });
+    expect(renderFrameState.standalonePlayerCurrentPosition).toEqual({
+      x: 88,
+      y: 64
+    });
+    expect(renderFrameState.standalonePlayerInterpolatedPosition).toEqual({
+      x: 88,
+      y: 64
+    });
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+  });
+
   it('routes bootstrap spawn initialization, lava respawn, and embedded respawn recovery through one shared standalone-player transition-reset helper', async () => {
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
       anchorTileX: 0,

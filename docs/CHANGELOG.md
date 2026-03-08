@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Add runtime coverage that paused-menu New World resets keep standalone-player placeholder interpolation snapped to the fresh spawn without one-frame smear.
+- Changes: Expanded [src/main.test.ts](../src/main.test.ts) with a focused paused-menu regression that moves the standalone player away from spawn, triggers `New World`, and asserts the first resumed render frame keeps entity `previous/current` snapshots plus the interpolated placeholder position snapped to the fresh spawn at non-zero render alpha; removed completed task `366` from [docs/NEXT.md](docs/NEXT.md) and added replacement task `371`.
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Align standalone-player render-frame camera follow with the interpolated entity snapshot so the placeholder no longer appears to trail a second copy during movement.
 - Changes: Updated [src/main.ts](../src/main.ts) so preview and in-world render frames now resolve the standalone-player camera follow target from the same interpolated entity `previous/current` snapshot path used by placeholder drawing before pointer inspect and render-frame telemetry assembly; expanded [src/main.test.ts](../src/main.test.ts) with a focused regression that asserts non-zero render alpha moves the camera to the interpolated focus point while player state telemetry still reads the authoritative current state; removed completed task `365` from [docs/NEXT.md](docs/NEXT.md), added replacement task `366`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

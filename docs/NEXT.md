@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Entities and interpolation
 
-366. Add runtime coverage that paused-menu New World resets keep standalone-player placeholder interpolation snapped to the fresh spawn without one-frame smear.
+371. Add runtime coverage that paused-menu New World resets clear snapshot-owned wall, ceiling, and bonk presentation so the fresh-spawn placeholder cannot inherit a stale blocked pose on its first render.
 
 ## Save/load
 
