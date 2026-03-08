@@ -3231,6 +3231,189 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('keeps standalone-player pose labels aligned with snapshot-owned wall, ceiling, and bonk presentation when live contact telemetry diverges between fixed ticks', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    const blockedContacts = {
+      support: null,
+      wall: {
+        tileX: -2,
+        tileY: -1,
+        tileId: 3,
+        side: 'left' as const
+      },
+      ceiling: {
+        tileX: -1,
+        tileY: -3,
+        tileId: 4
+      }
+    };
+    const wallOnlyContacts = {
+      support: null,
+      wall: {
+        tileX: -2,
+        tileY: -1,
+        tileId: 3,
+        side: 'left' as const
+      },
+      ceiling: null
+    };
+    const divergentLiveContacts = {
+      support: {
+        tileX: 5,
+        tileY: 4,
+        tileId: 41
+      },
+      wall: null,
+      ceiling: null
+    };
+    const airbornePlayerState = {
+      position: { x: -12, y: -10 },
+      velocity: { x: -48, y: 96 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'left' as const
+    };
+
+    testRuntime.rendererStepPlayerStateImpl = () => airbornePlayerState;
+
+    testRuntime.performanceNow = 1500;
+    testRuntime.rendererPlayerCollisionContactsQueue = [
+      noContacts,
+      blockedContacts,
+      divergentLiveContacts
+    ];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
+    expect(testRuntime.latestDebugOverlayInspectState).not.toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (
+      !testRuntime.latestRendererRenderFrameState ||
+      !testRuntime.latestDebugOverlayInspectState ||
+      !testRuntime.latestDebugEditStatusStripState
+    ) {
+      throw new Error('expected latest renderer, overlay, and status-strip state after blocked step');
+    }
+
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerWallContact).toEqual(
+      blockedContacts.wall
+    );
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerCeilingContact).toEqual(
+      blockedContacts.ceiling
+    );
+    expect(testRuntime.latestDebugOverlayInspectState.playerPlaceholderPoseLabel).toBe(
+      'ceiling-bonk'
+    );
+    expect(testRuntime.latestDebugEditStatusStripState.playerPlaceholderPoseLabel).toBe(
+      'ceiling-bonk'
+    );
+    expect(testRuntime.latestDebugOverlayInspectState.playerCeilingBonkHoldActive).toBe(true);
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(true);
+    expect(testRuntime.latestDebugOverlayInspectState.player?.contacts).toEqual(divergentLiveContacts);
+    expect(testRuntime.latestDebugEditStatusStripState.playerSupportContact).toEqual({
+      tile: {
+        x: divergentLiveContacts.support.tileX,
+        y: divergentLiveContacts.support.tileY,
+        id: divergentLiveContacts.support.tileId
+      }
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContact).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContact).toBeNull();
+
+    testRuntime.performanceNow =
+      1500 + STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS - 1;
+    testRuntime.rendererPlayerCollisionContactsQueue = [
+      blockedContacts,
+      wallOnlyContacts,
+      divergentLiveContacts
+    ];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
+    expect(testRuntime.latestDebugOverlayInspectState).not.toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (
+      !testRuntime.latestRendererRenderFrameState ||
+      !testRuntime.latestDebugOverlayInspectState ||
+      !testRuntime.latestDebugEditStatusStripState
+    ) {
+      throw new Error('expected latest renderer, overlay, and status-strip state before bonk expiry');
+    }
+
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerWallContact).toEqual(
+      wallOnlyContacts.wall
+    );
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerCeilingContact).toBeNull();
+    expect(testRuntime.latestDebugOverlayInspectState.playerPlaceholderPoseLabel).toBe(
+      'ceiling-bonk'
+    );
+    expect(testRuntime.latestDebugEditStatusStripState.playerPlaceholderPoseLabel).toBe(
+      'ceiling-bonk'
+    );
+    expect(testRuntime.latestDebugOverlayInspectState.playerCeilingBonkHoldActive).toBe(true);
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(true);
+    expect(testRuntime.latestDebugOverlayInspectState.player?.contacts).toEqual(divergentLiveContacts);
+    expect(testRuntime.latestDebugEditStatusStripState.playerSupportContact).toEqual({
+      tile: {
+        x: divergentLiveContacts.support.tileX,
+        y: divergentLiveContacts.support.tileY,
+        id: divergentLiveContacts.support.tileId
+      }
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContact).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContact).toBeNull();
+
+    testRuntime.performanceNow += 2;
+    testRuntime.rendererPlayerCollisionContactsQueue = [divergentLiveContacts];
+
+    runRenderFrame();
+
+    expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
+    expect(testRuntime.latestDebugOverlayInspectState).not.toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (
+      !testRuntime.latestRendererRenderFrameState ||
+      !testRuntime.latestDebugOverlayInspectState ||
+      !testRuntime.latestDebugEditStatusStripState
+    ) {
+      throw new Error('expected latest renderer, overlay, and status-strip state after bonk expiry');
+    }
+
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerWallContact).toEqual(
+      wallOnlyContacts.wall
+    );
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerCeilingContact).toBeNull();
+    expect(testRuntime.latestDebugOverlayInspectState.playerPlaceholderPoseLabel).toBe('wall-slide');
+    expect(testRuntime.latestDebugEditStatusStripState.playerPlaceholderPoseLabel).toBe(
+      'wall-slide'
+    );
+    expect(testRuntime.latestDebugOverlayInspectState.playerCeilingBonkHoldActive).toBe(false);
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
+    expect(testRuntime.latestDebugOverlayInspectState.player?.contacts).toEqual(divergentLiveContacts);
+    expect(testRuntime.latestDebugEditStatusStripState.playerSupportContact).toEqual({
+      tile: {
+        x: divergentLiveContacts.support.tileX,
+        y: divergentLiveContacts.support.tileY,
+        id: divergentLiveContacts.support.tileId
+      }
+    });
+    expect(testRuntime.latestDebugEditStatusStripState.playerWallContact).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContact).toBeNull();
+  });
+
   it("routes the latest resolved spawn's support chunk, local, and liquid-safety telemetry into the overlay and compact status strip", async () => {
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
       anchorTileX: -4,

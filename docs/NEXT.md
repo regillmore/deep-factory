@@ -6,7 +6,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 355. Add runtime coverage that respawn or embedded-recovery snapshot resets keep standalone-player placeholder interpolation snapped to the new spawn without one-frame smear.
 356. Add renderer regression coverage that multiple entity-pass entries draw in submission order so future hostile and pickup entities can share the pass without placeholder ordering drift.
-358. Add runtime coverage that standalone-player pose labels stay aligned with snapshot-owned wall, ceiling, and bonk presentation when live contact telemetry diverges between fixed ticks.
+359. Add renderer regression coverage that unknown future entity-pass kinds are ignored without preventing later supported entries from drawing.
 
 ## Save/load
 
