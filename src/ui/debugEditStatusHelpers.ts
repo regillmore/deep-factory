@@ -132,6 +132,7 @@ export interface DebugEditStatusStripPlayerRespawnTelemetry {
   supportChunk: { x: number; y: number };
   supportLocal: { x: number; y: number };
   supportTileId: number;
+  liquidSafetyStatus: PlayerSpawnLiquidSafetyStatus;
   position: { x: number; y: number };
   velocity: { x: number; y: number };
 }
@@ -652,6 +653,7 @@ const formatRespawnEventText = (
       playerRespawn.supportLocal.y
     )} | ` +
     `supportId #${playerRespawn.supportTileId} | ` +
+    `spawnLiquid ${formatPlayerSpawnLiquidSafetyStatus(playerRespawn.liquidSafetyStatus)} | ` +
     `pos ${playerRespawn.position.x.toFixed(2)},${playerRespawn.position.y.toFixed(2)} | ` +
     `vel ${playerRespawn.velocity.x.toFixed(2)},${playerRespawn.velocity.y.toFixed(2)}`
   );

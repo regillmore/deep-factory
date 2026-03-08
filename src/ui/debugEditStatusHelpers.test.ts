@@ -1384,6 +1384,7 @@ describe('buildDebugEditStatusStripModel', () => {
         supportChunk: { x: 0, y: -1 },
         supportLocal: { x: 3, y: 31 },
         supportTileId: 4,
+        liquidSafetyStatus: 'safe',
         position: { x: 56, y: -32 },
         velocity: { x: 0, y: 0 }
       },
@@ -1391,7 +1392,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.eventText).toBe(
-      'Respawn: embedded | spawn 3,-2 | supportCh 0,-1 | supportL 3,31 | supportId #4 | pos 56.00,-32.00 | vel 0.00,0.00'
+      'Respawn: embedded | spawn 3,-2 | supportCh 0,-1 | supportL 3,31 | supportId #4 | spawnLiquid safe | pos 56.00,-32.00 | vel 0.00,0.00'
     );
   });
 
@@ -1503,6 +1504,7 @@ describe('buildDebugEditStatusStripModel', () => {
         supportChunk: { x: 0, y: -1 },
         supportLocal: { x: 3, y: 31 },
         supportTileId: 4,
+        liquidSafetyStatus: 'safe',
         position: { x: 56, y: -32 },
         velocity: { x: 0, y: 0 }
       },
@@ -1512,7 +1514,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBe(
       'Ground: fall | pos 40.00,-8.00 | vel 60.00,90.00\n' +
         'Facing: left->right | pos 48.00,-8.00 | vel 120.00,90.00\n' +
-        'Respawn: embedded | spawn 3,-2 | supportCh 0,-1 | supportL 3,31 | supportId #4 | pos 56.00,-32.00 | vel 0.00,0.00'
+        'Respawn: embedded | spawn 3,-2 | supportCh 0,-1 | supportL 3,31 | supportId #4 | spawnLiquid safe | pos 56.00,-32.00 | vel 0.00,0.00'
     );
   });
 
@@ -1542,6 +1544,7 @@ describe('buildDebugEditStatusStripModel', () => {
         supportChunk: { x: 0, y: -1 },
         supportLocal: { x: 3, y: 31 },
         supportTileId: 4,
+        liquidSafetyStatus: 'safe',
         position: { x: 56, y: -32 },
         velocity: { x: 0, y: 0 }
       },
@@ -1557,7 +1560,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBe(
       'Ground: fall | pos 40.00,-8.00 | vel 60.00,90.00\n' +
         'Facing: right->left | pos 52.00,-10.00 | vel -140.00,80.00\n' +
-        'Respawn: embedded | spawn 3,-2 | supportCh 0,-1 | supportL 3,31 | supportId #4 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
+        'Respawn: embedded | spawn 3,-2 | supportCh 0,-1 | supportL 3,31 | supportId #4 | spawnLiquid safe | pos 56.00,-32.00 | vel 0.00,0.00\n' +
         'Wall: cleared | tile -1,-2 (#4, left) | pos 64.00,-16.00 | vel 120.00,0.00'
     );
   });
@@ -1588,6 +1591,7 @@ describe('buildDebugEditStatusStripModel', () => {
         supportChunk: { x: 0, y: -1 },
         supportLocal: { x: 3, y: 31 },
         supportTileId: 4,
+        liquidSafetyStatus: 'safe',
         position: { x: 56, y: -32 },
         velocity: { x: 0, y: 0 }
       },
@@ -1609,7 +1613,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBe(
       'Ground: jump | pos 56.00,-48.00 | vel 20.00,-180.00\n' +
         'Facing: left->right | pos 60.00,-42.00 | vel 110.00,-170.00\n' +
-        'Respawn: embedded | spawn 3,-2 | supportCh 0,-1 | supportL 3,31 | supportId #4 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
+        'Respawn: embedded | spawn 3,-2 | supportCh 0,-1 | supportL 3,31 | supportId #4 | spawnLiquid safe | pos 56.00,-32.00 | vel 0.00,0.00\n' +
         'Wall: cleared | tile -1,-2 (#4, left) | pos 64.00,-16.00 | vel 120.00,0.00\n' +
         'Ceiling: blocked | tile 2,-6 (#8) | pos 72.00,-48.00 | vel 15.00,-210.00'
     );

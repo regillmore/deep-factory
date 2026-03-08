@@ -2,10 +2,6 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-## Collision and player foundation
-
-337. Surface the latest resolved spawn liquid-safety status in standalone-player respawn event telemetry so lava and embedded recovery can be cross-checked against the shared spawn-overlap rule, with focused runtime regressions.
-
 ## Liquid rendering
 
 328. Surface resolved partial-liquid bottom-edge `v` crop values in hovered and pinned inspect telemetry so top-aligned liquid frame mapping stays debuggable without reading chunk meshes.
@@ -53,5 +49,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 308. Add a starter building-block placement slice after inventory basics (`214`): stackable dirt-block hotbar slots, mixed-device solid-face placement with player-overlap rejection, stack consumption, and save/load regressions for placed blocks plus remaining stack counts.
 313. Add a rope traversal utility slice after inventory basics (`214`): stackable rope hotbar slots, mixed-device downward placement from solid anchors, climb-and-descent movement on rope tiles, and save/load regressions for placed rope plus remaining stack counts.
 321. Add a starter pickaxe mining slice after inventory basics (`214`): a non-stackable pickaxe hotbar slot, mixed-device aimed tile mining with fixed-step swing timing, terrain break progress and completion rules, and deterministic break regressions.
+338. Add a bed-checkpoint respawn slice after inventory basics (`214`) and save/load (`19-21`): placeable bed items, mixed-device checkpoint claim and respawn interactions, obstructed-checkpoint fallback to world spawn, and snapshot regressions for claimed checkpoint state.
 
 ## Refine, Extract, Refactor, Restructure

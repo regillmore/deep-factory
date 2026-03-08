@@ -1,5 +1,5 @@
 import { worldToChunkCoord, worldToLocalTile } from './chunkMath';
-import type { PlayerSpawnPoint } from './playerSpawn';
+import type { PlayerSpawnLiquidSafetyStatus, PlayerSpawnPoint } from './playerSpawn';
 import type { PlayerState } from './playerState';
 
 export type PlayerRespawnEventKind = 'embedded' | 'lava';
@@ -10,6 +10,7 @@ export interface PlayerRespawnEvent {
   supportChunk: { x: number; y: number };
   supportLocal: { x: number; y: number };
   supportTileId: number;
+  liquidSafetyStatus: PlayerSpawnLiquidSafetyStatus;
   position: { x: number; y: number };
   velocity: { x: number; y: number };
 }
@@ -17,7 +18,8 @@ export interface PlayerRespawnEvent {
 const createPlayerRespawnEvent = (
   kind: PlayerRespawnEventKind,
   nextState: PlayerState,
-  spawn: PlayerSpawnPoint
+  spawn: PlayerSpawnPoint,
+  liquidSafetyStatus: PlayerSpawnLiquidSafetyStatus
 ): PlayerRespawnEvent => {
   const supportChunk = worldToChunkCoord(spawn.support.tileX, spawn.support.tileY);
   const supportLocal = worldToLocalTile(spawn.support.tileX, spawn.support.tileY);
@@ -37,6 +39,7 @@ const createPlayerRespawnEvent = (
       y: supportLocal.localY
     },
     supportTileId: spawn.support.tileId,
+    liquidSafetyStatus,
     position: {
       x: nextState.position.x,
       y: nextState.position.y
@@ -50,10 +53,12 @@ const createPlayerRespawnEvent = (
 
 export const createEmbeddedPlayerRespawnEvent = (
   nextState: PlayerState,
-  spawn: PlayerSpawnPoint
-): PlayerRespawnEvent => createPlayerRespawnEvent('embedded', nextState, spawn);
+  spawn: PlayerSpawnPoint,
+  liquidSafetyStatus: PlayerSpawnLiquidSafetyStatus
+): PlayerRespawnEvent => createPlayerRespawnEvent('embedded', nextState, spawn, liquidSafetyStatus);
 
 export const createLavaPlayerRespawnEvent = (
   nextState: PlayerState,
-  spawn: PlayerSpawnPoint
-): PlayerRespawnEvent => createPlayerRespawnEvent('lava', nextState, spawn);
+  spawn: PlayerSpawnPoint,
+  liquidSafetyStatus: PlayerSpawnLiquidSafetyStatus
+): PlayerRespawnEvent => createPlayerRespawnEvent('lava', nextState, spawn, liquidSafetyStatus);

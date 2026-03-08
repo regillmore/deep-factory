@@ -85,7 +85,7 @@ describe('buildWrappedDetailLines', () => {
   it('splits respawn event text into wrap-friendly telemetry segments', () => {
     expect(
       buildWrappedDetailLines(
-        'Respawn: embedded | spawn 3,-2 | supportCh 0,-1 | supportL 3,31 | supportId #4 | pos 56.00,-32.00 | vel 0.00,0.00'
+        'Respawn: embedded | spawn 3,-2 | supportCh 0,-1 | supportL 3,31 | supportId #4 | spawnLiquid safe | pos 56.00,-32.00 | vel 0.00,0.00'
       )
     ).toEqual([
       [
@@ -94,6 +94,7 @@ describe('buildWrappedDetailLines', () => {
         '| supportCh 0,-1',
         '| supportL 3,31',
         '| supportId #4',
+        '| spawnLiquid safe',
         '| pos 56.00,-32.00',
         '| vel 0.00,0.00'
       ]
@@ -388,7 +389,7 @@ describe('buildWrappedDetailLines', () => {
   it('preserves separate respawn and wall-contact event lines while splitting each line at pipe separators', () => {
     expect(
       buildWrappedDetailLines(
-        'Respawn: embedded | spawn 3,-2 | supportCh 0,-1 | supportL 3,31 | supportId #4 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
+        'Respawn: embedded | spawn 3,-2 | supportCh 0,-1 | supportL 3,31 | supportId #4 | spawnLiquid safe | pos 56.00,-32.00 | vel 0.00,0.00\n' +
           'Wall: blocked | tile 5,-3 (#7, right) | pos 88.00,-24.00 | vel -180.00,60.00'
       )
     ).toEqual([
@@ -398,6 +399,7 @@ describe('buildWrappedDetailLines', () => {
         '| supportCh 0,-1',
         '| supportL 3,31',
         '| supportId #4',
+        '| spawnLiquid safe',
         '| pos 56.00,-32.00',
         '| vel 0.00,0.00'
       ],
@@ -410,7 +412,7 @@ describe('buildWrappedDetailLines', () => {
       buildWrappedDetailLines(
         'Ground: landing | pos 80.00,-16.00 | vel 30.00,0.00\n' +
         'Facing: left->right | pos 84.00,-20.00 | vel 120.00,0.00\n' +
-        'Respawn: embedded | spawn 3,-2 | supportCh 0,-1 | supportL 3,31 | supportId #4 | pos 56.00,-32.00 | vel 0.00,0.00\n' +
+        'Respawn: embedded | spawn 3,-2 | supportCh 0,-1 | supportL 3,31 | supportId #4 | spawnLiquid safe | pos 56.00,-32.00 | vel 0.00,0.00\n' +
           'Wall: blocked | tile 5,-3 (#7, right) | pos 88.00,-24.00 | vel -180.00,60.00\n' +
           'Ceiling: blocked | tile 2,-6 (#8) | pos 72.00,-48.00 | vel 15.00,-210.00'
       )
@@ -423,6 +425,7 @@ describe('buildWrappedDetailLines', () => {
         '| supportCh 0,-1',
         '| supportL 3,31',
         '| supportId #4',
+        '| spawnLiquid safe',
         '| pos 56.00,-32.00',
         '| vel 0.00,0.00'
       ],

@@ -2018,6 +2018,7 @@ describe('main.ts shell state orchestration', () => {
       health: 0,
       lavaDamageTickSecondsRemaining: 0.5
     });
+    testRuntime.rendererPlayerSpawnLiquidSafetyStatus = 'overlap';
     testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, noContacts];
 
     runFixedUpdate();
@@ -2047,6 +2048,7 @@ describe('main.ts shell state orchestration', () => {
         y: 0
       },
       supportTileId: 1,
+      liquidSafetyStatus: 'overlap',
       position: {
         x: 8,
         y: -16
@@ -2070,7 +2072,8 @@ describe('main.ts shell state orchestration', () => {
         x: 0,
         y: 0
       },
-      supportTileId: 1
+      supportTileId: 1,
+      liquidSafetyStatus: 'overlap'
     });
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
 
@@ -2099,6 +2102,7 @@ describe('main.ts shell state orchestration', () => {
       }
     ];
     testRuntime.rendererSetTileResult = true;
+    testRuntime.rendererPlayerSpawnLiquidSafetyStatus = 'safe';
     testRuntime.rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl = () => respawnedPlayerState;
     testRuntime.rendererStepPlayerStateImpl = (state) => state;
     testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, noContacts];
@@ -2130,6 +2134,7 @@ describe('main.ts shell state orchestration', () => {
         y: 0
       },
       supportTileId: 9,
+      liquidSafetyStatus: 'safe',
       position: respawnedPlayerState.position,
       velocity: respawnedPlayerState.velocity
     });
@@ -2147,7 +2152,8 @@ describe('main.ts shell state orchestration', () => {
         x: 6,
         y: 0
       },
-      supportTileId: 9
+      supportTileId: 9,
+      liquidSafetyStatus: 'safe'
     });
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
   });

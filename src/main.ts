@@ -938,7 +938,11 @@ const bootstrap = async (): Promise<void> => {
       });
       return {
         nextPlayerState: respawnedPlayerState,
-        respawnEvent: createLavaPlayerRespawnEvent(respawnedPlayerState, resolvedPlayerSpawn)
+        respawnEvent: createLavaPlayerRespawnEvent(
+          respawnedPlayerState,
+          resolvedPlayerSpawn,
+          renderer.resolvePlayerSpawnLiquidSafetyStatus(resolvedPlayerSpawn)
+        )
       };
     }
 
@@ -1075,7 +1079,11 @@ const bootstrap = async (): Promise<void> => {
         resetStandalonePlayerTransitionState(
           resolvedPlayerSpawn === null
             ? null
-            : createEmbeddedPlayerRespawnEvent(nextPlayerState, resolvedPlayerSpawn)
+            : createEmbeddedPlayerRespawnEvent(
+                nextPlayerState,
+                resolvedPlayerSpawn,
+                renderer.resolvePlayerSpawnLiquidSafetyStatus(resolvedPlayerSpawn)
+              )
         );
       }
       standalonePlayerState = nextPlayerState;

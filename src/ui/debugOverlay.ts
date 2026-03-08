@@ -182,6 +182,7 @@ export interface DebugOverlayPlayerRespawnTelemetry {
   supportChunk: { x: number; y: number };
   supportLocal: { x: number; y: number };
   supportTileId: number;
+  liquidSafetyStatus: PlayerSpawnLiquidSafetyStatus;
   position: { x: number; y: number };
   velocity: { x: number; y: number };
 }
@@ -642,6 +643,7 @@ const formatPlayerRespawnLine = (
     `SupportCh:${playerRespawn.supportChunk.x},${playerRespawn.supportChunk.y} | ` +
     `SupportL:${playerRespawn.supportLocal.x},${playerRespawn.supportLocal.y} | ` +
     `SupportId:#${playerRespawn.supportTileId} | ` +
+    `SpawnLiquid:${formatSpawnLiquidSafetyStatus(playerRespawn.liquidSafetyStatus)} | ` +
     `Pos:${formatFloat(playerRespawn.position.x, 2)},` +
     `${formatFloat(playerRespawn.position.y, 2)} | ` +
     `Vel:${formatFloat(playerRespawn.velocity.x, 2)},` +

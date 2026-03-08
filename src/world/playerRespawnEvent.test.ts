@@ -31,7 +31,8 @@ describe('createEmbeddedPlayerRespawnEvent', () => {
         grounded: true,
         facing: 'left'
       }),
-      spawn
+      spawn,
+      'safe'
     );
 
     expect(event).toEqual({
@@ -40,6 +41,7 @@ describe('createEmbeddedPlayerRespawnEvent', () => {
       supportChunk: { x: 0, y: -1 },
       supportLocal: { x: 3, y: 31 },
       supportTileId: 4,
+      liquidSafetyStatus: 'safe',
       position: { x: 56, y: -32 },
       velocity: { x: 0, y: 0 }
     });
@@ -73,7 +75,8 @@ describe('createLavaPlayerRespawnEvent', () => {
         grounded: true,
         facing: 'right'
       }),
-      spawn
+      spawn,
+      'overlap'
     );
 
     expect(event).toEqual({
@@ -82,6 +85,7 @@ describe('createLavaPlayerRespawnEvent', () => {
       supportChunk: { x: -1, y: 0 },
       supportLocal: { x: 31, y: 1 },
       supportTileId: 4,
+      liquidSafetyStatus: 'overlap',
       position: { x: -8, y: 0 },
       velocity: { x: 0, y: 0 }
     });
