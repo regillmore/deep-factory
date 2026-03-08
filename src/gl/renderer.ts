@@ -50,6 +50,8 @@ import {
   type PlayerMovementIntent,
   type PlayerState
 } from '../world/playerState';
+import type { EntityId, EntityRenderStateSnapshot } from '../world/entityRegistry';
+import { resolveInterpolatedEntityWorldPosition } from '../world/entityRenderInterpolation';
 import { recomputeSunlightFromExposedChunkTops } from '../world/sunlight';
 import { TileWorld } from '../world/world';
 
@@ -74,13 +76,22 @@ interface MeshBuildRequest {
 }
 
 export interface RendererFrameState {
-  standalonePlayer?: PlayerState | null;
-  standalonePlayerRenderPosition?: PlayerState['position'] | null;
-  standalonePlayerWallContact?: PlayerCollisionContacts['wall'] | null;
-  standalonePlayerCeilingContact?: PlayerCollisionContacts['ceiling'] | null;
-  standalonePlayerCeilingBonkHoldUntilTimeMs?: number | null;
+  entities?: RendererEntityFrameState[];
+  renderAlpha?: number;
   timeMs?: number;
 }
+
+export interface StandalonePlayerEntityFrameState {
+  id: EntityId;
+  kind: 'standalone-player';
+  currentState: PlayerState;
+  snapshot: EntityRenderStateSnapshot<PlayerState>;
+  wallContact?: PlayerCollisionContacts['wall'] | null;
+  ceilingContact?: PlayerCollisionContacts['ceiling'] | null;
+  ceilingBonkHoldUntilTimeMs?: number | null;
+}
+
+export type RendererEntityFrameState = StandalonePlayerEntityFrameState;
 
 export interface RenderTelemetry {
   atlasSourceKind: AtlasImageLoadResult['sourceKind'] | 'pending';
@@ -504,17 +515,7 @@ export class Renderer {
       }
     }
 
-    if (frameState.standalonePlayer) {
-      this.drawStandalonePlayer(
-        frameState.standalonePlayer,
-        frameState.standalonePlayerRenderPosition ?? null,
-        frameState.standalonePlayerWallContact ?? null,
-        frameState.standalonePlayerCeilingContact ?? null,
-        frameState.standalonePlayerCeilingBonkHoldUntilTimeMs ?? null,
-        worldToClipMatrix,
-        timeMs
-      );
-    }
+    this.drawEntityPass(frameState.entities ?? [], frameState.renderAlpha ?? 1, worldToClipMatrix, timeMs);
 
     gl.bindVertexArray(null);
     this.pruneStreamingCaches(retainBounds);
@@ -796,15 +797,32 @@ export class Renderer {
     this.telemetry.animatedChunkUvUploadBytes += mesh.animatedMesh.vertices.byteLength;
   }
 
-  private drawStandalonePlayer(
-    state: PlayerState,
-    renderPosition: PlayerState['position'] | null,
-    wallContact: PlayerCollisionContacts['wall'] | null,
-    ceilingContact: PlayerCollisionContacts['ceiling'] | null,
-    ceilingBonkHoldUntilTimeMs: number | null,
+  private drawEntityPass(
+    entities: RendererEntityFrameState[],
+    renderAlpha: number,
     worldToClipMatrix: Float32Array,
     timeMs: number
   ): void {
+    for (const entity of entities) {
+      switch (entity.kind) {
+        case 'standalone-player':
+          this.drawStandalonePlayer(entity, renderAlpha, worldToClipMatrix, timeMs);
+          break;
+      }
+    }
+  }
+
+  private drawStandalonePlayer(
+    entity: StandalonePlayerEntityFrameState,
+    renderAlpha: number,
+    worldToClipMatrix: Float32Array,
+    timeMs: number
+  ): void {
+    const state = entity.currentState;
+    const renderPosition = resolveInterpolatedEntityWorldPosition(entity.snapshot, renderAlpha);
+    const wallContact = entity.wallContact ?? null;
+    const ceilingContact = entity.ceilingContact ?? null;
+    const ceilingBonkHoldUntilTimeMs = entity.ceilingBonkHoldUntilTimeMs ?? null;
     const gl = this.gl;
     const poseIndex = getStandalonePlayerPlaceholderPoseIndex(state, {
       elapsedMs: timeMs,
@@ -844,7 +862,7 @@ export class Renderer {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.standalonePlayerBuffer);
     gl.bufferData(
       gl.ARRAY_BUFFER,
-      buildStandalonePlayerPlaceholderVertices(state, renderPosition ?? state.position),
+      buildStandalonePlayerPlaceholderVertices(state, renderPosition),
       gl.DYNAMIC_DRAW
     );
     gl.bindVertexArray(this.standalonePlayerVao);

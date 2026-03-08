@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Entities and interpolation
 
-18. Render entities in a separate pass with interpolation between fixed updates.
 228. Re-route standalone-player placeholder pose selection and nearby-light telemetry through the entity render-snapshot path once tasks `17-18` land, with focused renderer regression coverage.
 355. Add runtime coverage that respawn or embedded-recovery snapshot resets keep standalone-player placeholder interpolation snapped to the new spawn without one-frame smear.
+356. Add renderer regression coverage that multiple entity-pass entries draw in submission order so future hostile and pickup entities can share the pass without placeholder ordering drift.
 
 ## Save/load
 

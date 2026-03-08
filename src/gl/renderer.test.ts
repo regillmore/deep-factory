@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Camera2D } from '../core/camera2d';
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL, TILE_SIZE } from '../world/constants';
-import { createPlayerState } from '../world/playerState';
+import {
+  createPlayerState,
+  type PlayerCollisionContacts,
+  type PlayerState
+} from '../world/playerState';
 import {
   atlasIndexToUvRect,
   getTileEmissiveLightLevel,
@@ -46,7 +50,7 @@ vi.mock('./atlasValidation', () => ({
   collectAtlasValidationWarnings
 }));
 
-import { Renderer } from './renderer';
+import { Renderer, type RendererEntityFrameState } from './renderer';
 
 const createMockGl = (): WebGL2RenderingContext =>
   ({
@@ -108,6 +112,27 @@ const expectStandalonePlayerUniformValues = (
     expect(uniformCalls[base + 2]?.[1]).toBeLessThanOrEqual(1);
   }
 };
+
+const createStandalonePlayerEntityFrameState = (
+  currentState: PlayerState,
+  options: {
+    previousState?: PlayerState;
+    wallContact?: PlayerCollisionContacts['wall'] | null;
+    ceilingContact?: PlayerCollisionContacts['ceiling'] | null;
+    ceilingBonkHoldUntilTimeMs?: number | null;
+  } = {}
+): RendererEntityFrameState => ({
+  id: 1,
+  kind: 'standalone-player',
+  currentState,
+  snapshot: {
+    previous: options.previousState ?? currentState,
+    current: currentState
+  },
+  wallContact: options.wallContact ?? null,
+  ceilingContact: options.ceilingContact ?? null,
+  ceilingBonkHoldUntilTimeMs: options.ceilingBonkHoldUntilTimeMs ?? null
+});
 
 const renderUntilMeshBuildQueueDrains = (
   renderer: Renderer,
@@ -1218,12 +1243,16 @@ describe('Renderer atlas telemetry', () => {
       invalidateChunkMeshSpy.mockClear();
 
       renderer.render(nearCamera, {
-        standalonePlayer: createPlayerState({
-          position: { x: options.playerWorldX, y: floorWorldTileY * TILE_SIZE },
-          grounded: true,
-          velocity: { x: 0, y: 0 },
-          facing: 'right'
-        }),
+        entities: [
+          createStandalonePlayerEntityFrameState(
+            createPlayerState({
+              position: { x: options.playerWorldX, y: floorWorldTileY * TILE_SIZE },
+              grounded: true,
+              velocity: { x: 0, y: 0 },
+              facing: 'right'
+            })
+          )
+        ],
         timeMs: 0
       });
 
@@ -1697,7 +1726,7 @@ describe('Renderer atlas telemetry', () => {
     });
 
     renderer.render(camera, {
-      standalonePlayer: playerState,
+      entities: [createStandalonePlayerEntityFrameState(playerState)],
       timeMs: 0
     });
 
@@ -1714,7 +1743,7 @@ describe('Renderer atlas telemetry', () => {
     );
   });
 
-  it('uses an overridden standalone-player render position for placeholder geometry while nearby-light telemetry stays on current state', async () => {
+  it('interpolates standalone-player entity snapshot positions for placeholder geometry while nearby-light telemetry stays on current state', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));
     const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
@@ -1735,18 +1764,29 @@ describe('Renderer atlas telemetry', () => {
     bufferData.mockClear();
     uniform1f.mockClear();
 
+    const currentState = createPlayerState({
+      position: { x: 8, y: 24 },
+      size: { width: 12, height: 28 },
+      grounded: true,
+      velocity: { x: 0, y: 0 },
+      facing: 'right'
+    });
+
     renderer.render(new Camera2D(), {
-      standalonePlayer: createPlayerState({
-        position: { x: 8, y: 24 },
-        size: { width: 12, height: 28 },
-        grounded: true,
-        velocity: { x: 0, y: 0 },
-        facing: 'right'
-      }),
-      standalonePlayerRenderPosition: {
-        x: 40,
-        y: 56
-      },
+      entities: [
+        createStandalonePlayerEntityFrameState(currentState, {
+          previousState: createPlayerState({
+            position: { x: 72, y: 88 },
+            size: currentState.size,
+            grounded: currentState.grounded,
+            velocity: currentState.velocity,
+            facing: currentState.facing,
+            health: currentState.health,
+            lavaDamageTickSecondsRemaining: currentState.lavaDamageTickSecondsRemaining
+          })
+        })
+      ],
+      renderAlpha: 0.5,
       timeMs: 0
     });
 
@@ -1807,11 +1847,15 @@ describe('Renderer atlas telemetry', () => {
     uniform1f.mockClear();
 
     renderer.render(new Camera2D(), {
-      standalonePlayer: createPlayerState({
-        grounded: true,
-        velocity: { x: 0, y: 0 },
-        facing: 'right'
-      }),
+      entities: [
+        createStandalonePlayerEntityFrameState(
+          createPlayerState({
+            grounded: true,
+            velocity: { x: 0, y: 0 },
+            facing: 'right'
+          })
+        )
+      ],
       timeMs: 0
     });
 
@@ -1850,11 +1894,15 @@ describe('Renderer atlas telemetry', () => {
 
     const camera = new Camera2D();
     renderer.render(camera, {
-      standalonePlayer: createPlayerState({
-        grounded: true,
-        velocity: { x: 0, y: 0 },
-        facing: 'right'
-      }),
+      entities: [
+        createStandalonePlayerEntityFrameState(
+          createPlayerState({
+            grounded: true,
+            velocity: { x: 0, y: 0 },
+            facing: 'right'
+          })
+        )
+      ],
       timeMs: 0
     });
     expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBe(12);
@@ -1902,11 +1950,11 @@ describe('Renderer atlas telemetry', () => {
     });
 
     renderer.render(camera, {
-      standalonePlayer: playerState,
+      entities: [createStandalonePlayerEntityFrameState(playerState)],
       timeMs: 0
     });
     renderer.render(camera, {
-      standalonePlayer: playerState,
+      entities: [createStandalonePlayerEntityFrameState(playerState)],
       timeMs: STANDALONE_PLAYER_PLACEHOLDER_WALK_FRAME_DURATION_MS
     });
 
@@ -1946,11 +1994,11 @@ describe('Renderer atlas telemetry', () => {
     });
 
     renderer.render(camera, {
-      standalonePlayer: jumpRiseState,
+      entities: [createStandalonePlayerEntityFrameState(jumpRiseState)],
       timeMs: 0
     });
     renderer.render(camera, {
-      standalonePlayer: fallState,
+      entities: [createStandalonePlayerEntityFrameState(fallState)],
       timeMs: 0
     });
 
@@ -1986,8 +2034,11 @@ describe('Renderer atlas telemetry', () => {
     });
 
     renderer.render(camera, {
-      standalonePlayer: wallSlideState,
-      standalonePlayerWallContact: { tileX: 1, tileY: -1, tileId: 3, side: 'right' },
+      entities: [
+        createStandalonePlayerEntityFrameState(wallSlideState, {
+          wallContact: { tileX: 1, tileY: -1, tileId: 3, side: 'right' }
+        })
+      ],
       timeMs: 0
     });
 
@@ -2020,9 +2071,12 @@ describe('Renderer atlas telemetry', () => {
     });
 
     renderer.render(camera, {
-      standalonePlayer: ceilingBonkState,
-      standalonePlayerWallContact: { tileX: 1, tileY: -1, tileId: 3, side: 'right' },
-      standalonePlayerCeilingContact: { tileX: 0, tileY: -2, tileId: 4 },
+      entities: [
+        createStandalonePlayerEntityFrameState(ceilingBonkState, {
+          wallContact: { tileX: 1, tileY: -1, tileId: 3, side: 'right' },
+          ceilingContact: { tileX: 0, tileY: -2, tileId: 4 }
+        })
+      ],
       timeMs: 0
     });
 
@@ -2055,8 +2109,12 @@ describe('Renderer atlas telemetry', () => {
     });
 
     renderer.render(camera, {
-      standalonePlayer: fallingState,
-      standalonePlayerCeilingBonkHoldUntilTimeMs: STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS,
+      entities: [
+        createStandalonePlayerEntityFrameState(fallingState, {
+          ceilingBonkHoldUntilTimeMs:
+            STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS
+        })
+      ],
       timeMs: STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS - 1
     });
 
@@ -2089,8 +2147,12 @@ describe('Renderer atlas telemetry', () => {
     });
 
     renderer.render(camera, {
-      standalonePlayer: fallingState,
-      standalonePlayerCeilingBonkHoldUntilTimeMs: STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS,
+      entities: [
+        createStandalonePlayerEntityFrameState(fallingState, {
+          ceilingBonkHoldUntilTimeMs:
+            STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS
+        })
+      ],
       timeMs: STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS
     });
 

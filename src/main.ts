@@ -9,7 +9,7 @@ import {
   type CameraFollowPoint
 } from './core/cameraFollow';
 import { GameLoop } from './core/gameLoop';
-import { Renderer } from './gl/renderer';
+import { Renderer, type RendererEntityFrameState } from './gl/renderer';
 import {
   getStandalonePlayerPlaceholderPoseLabel,
   STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS
@@ -77,7 +77,6 @@ import { TouchPlayerControls } from './ui/touchPlayerControls';
 import { CHUNK_SIZE } from './world/constants';
 import { EntityRegistry, type EntityId } from './world/entityRegistry';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
-import { resolveInterpolatedEntityWorldPosition } from './world/entityRenderInterpolation';
 import {
   resolvePlayerCeilingContactTransitionEvent,
   type PlayerCeilingContactTransitionEvent
@@ -915,20 +914,41 @@ const bootstrap = async (): Promise<void> => {
     }
     return entityRegistry.getEntityState<PlayerState>(standalonePlayerEntityId);
   };
-  const resolveStandalonePlayerInterpolatedRenderPosition = (
-    alpha: number
-  ): PlayerState['position'] | null => {
-    if (standalonePlayerEntityId === null) {
-      return null;
-    }
+  const createRendererEntityFrameStates = (
+    standalonePlayerContacts: PlayerCollisionContacts | null
+  ): RendererEntityFrameState[] => {
+    const entityFrameStates: RendererEntityFrameState[] = [];
+    for (const snapshotEntry of entityRegistry.getRenderStateSnapshots<PlayerState>()) {
+      if (snapshotEntry.kind !== STANDALONE_PLAYER_ENTITY_KIND) {
+        continue;
+      }
 
-    const standalonePlayerRenderStateSnapshot =
-      entityRegistry.getRenderStateSnapshot<PlayerState>(standalonePlayerEntityId);
-    if (standalonePlayerRenderStateSnapshot === null) {
-      return null;
-    }
+      const currentState = entityRegistry.getEntityState<PlayerState>(snapshotEntry.id);
+      if (currentState === null) {
+        continue;
+      }
 
-    return resolveInterpolatedEntityWorldPosition(standalonePlayerRenderStateSnapshot, alpha);
+      entityFrameStates.push({
+        id: snapshotEntry.id,
+        kind: STANDALONE_PLAYER_ENTITY_KIND,
+        currentState,
+        snapshot: {
+          previous: snapshotEntry.previous,
+          current: snapshotEntry.current
+        },
+        wallContact:
+          snapshotEntry.id === standalonePlayerEntityId ? standalonePlayerContacts?.wall ?? null : null,
+        ceilingContact:
+          snapshotEntry.id === standalonePlayerEntityId
+            ? standalonePlayerContacts?.ceiling ?? null
+            : null,
+        ceilingBonkHoldUntilTimeMs:
+          snapshotEntry.id === standalonePlayerEntityId
+            ? standalonePlayerCeilingBonkHoldUntilTimeMs
+            : null
+      });
+    }
+    return entityFrameStates;
   };
   const replaceWorldSessionEntityRegistry = (): void => {
     entityRegistry = new EntityRegistry();
@@ -2590,17 +2610,13 @@ const bootstrap = async (): Promise<void> => {
     const standalonePlayerRenderFrameTelemetry =
       createStandalonePlayerRenderFrameTelemetrySnapshot(renderTimeMs);
     const standalonePlayerStatusStripPlayerTelemetry = standalonePlayerRenderFrameTelemetry.debugStatusStrip;
-    const standalonePlayerState = getStandalonePlayerState();
-    const standalonePlayerRenderPosition = resolveStandalonePlayerInterpolatedRenderPosition(alpha);
+    const rendererEntityFrameStates = createRendererEntityFrameStates(
+      standalonePlayerRenderFrameTelemetry.standalonePlayerContacts
+    );
     renderer.resize();
     renderer.render(camera, {
-      standalonePlayer: standalonePlayerState,
-      standalonePlayerRenderPosition,
-      standalonePlayerWallContact:
-        standalonePlayerRenderFrameTelemetry.standalonePlayerContacts?.wall ?? null,
-      standalonePlayerCeilingContact:
-        standalonePlayerRenderFrameTelemetry.standalonePlayerContacts?.ceiling ?? null,
-      standalonePlayerCeilingBonkHoldUntilTimeMs: standalonePlayerCeilingBonkHoldUntilTimeMs,
+      entities: rendererEntityFrameStates,
+      renderAlpha: alpha,
       timeMs: renderTimeMs
     });
     const standalonePlayerNearbyLightTelemetry =
@@ -2716,12 +2732,11 @@ const bootstrap = async (): Promise<void> => {
     const standalonePlayerContacts = standalonePlayerState
       ? renderer.getPlayerCollisionContacts(standalonePlayerState)
       : null;
+    const rendererEntityFrameStates = createRendererEntityFrameStates(standalonePlayerContacts);
     renderer.resize();
     renderer.render(camera, {
-      standalonePlayer: standalonePlayerState,
-      standalonePlayerWallContact: standalonePlayerContacts?.wall ?? null,
-      standalonePlayerCeilingContact: standalonePlayerContacts?.ceiling ?? null,
-      standalonePlayerCeilingBonkHoldUntilTimeMs: standalonePlayerCeilingBonkHoldUntilTimeMs
+      entities: rendererEntityFrameStates,
+      renderAlpha: 1
     });
   };
 

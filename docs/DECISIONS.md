@@ -2,11 +2,11 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
-### 2026-03-08: Standalone-player placeholder draw position should interpolate separately from current-state pose and nearby-light inputs
+### 2026-03-08: Renderer entity pass should interpolate snapshot position separately from current-state pose and nearby-light inputs
 
-- Decision: `src/main.ts` now resolves standalone-player placeholder draw position from entity `previous/current` render snapshots plus render alpha and passes that position to the renderer separately from the live `PlayerState`, while placeholder pose selection, wall or ceiling contact input, bonk-hold latching, and nearby-light sampling continue to read the current fixed-step player state.
-- Reason: This adds visible motion smoothing before the full entity render pass lands without smearing pose, contact, or nearby-light presentation across fixed-step boundaries.
-- Consequence: Future placeholder or entity presentation work should treat interpolated world position and current-state pose or lighting inputs as intentionally separate concerns until those other signals are deliberately migrated onto render snapshots.
+- Decision: `src/main.ts` now submits standalone-player entity-pass entries containing registry `previous/current` render snapshots, the current `PlayerState`, current wall or ceiling contact input, and bonk-hold timing, while `src/gl/renderer.ts` interpolates world position from those snapshots and still resolves placeholder pose selection and nearby-light sampling from the current fixed-step player state.
+- Reason: The separate entity pass needs one renderer-owned interpolation point without smearing pose, contact, or nearby-light presentation across fixed-step boundaries.
+- Consequence: Future entity renderers should treat snapshot-driven world placement and current-state pose or lighting inputs as intentionally separate concerns until those other signals are deliberately migrated onto render snapshots.
 
 ### 2026-03-08: Entity render-position interpolation should clamp render alpha and blend from registry snapshots
 
@@ -14,10 +14,10 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Upcoming entity rendering needs one reusable interpolation rule for world-space placement, and allowing ad hoc extrapolation or duplicated blend math across `main.ts` and the renderer would make later pose and telemetry migration easier to drift.
 - Consequence: Future interpolated entity drawing should reuse the shared helper for world position and layer any non-position presentation rules on top of that result instead of reimplementing per-call-site snapshot lerp logic.
 
-### 2026-03-08: Standalone-player authority should live in the entity registry before interpolated entity rendering lands
+### 2026-03-08: Standalone-player authority should live in the entity registry before broader entity rendering and gameplay slices land
 
-- Decision: `src/main.ts` now spawns the standalone player into `src/world/entityRegistry.ts` as a `standalone-player` entity, drives fixed-step movement through that entity hook, and reads or replaces the authoritative player state through the registry during spawn refresh, respawn recovery, camera follow, preview rendering, and render-frame telemetry while the placeholder renderer still consumes the current state directly.
-- Reason: Task `17` needs one ownership path for player simulation before task `18` adds interpolated entity rendering, and keeping a parallel standalone-player variable would make respawn, reset, and later render-snapshot behavior drift from the entity layer.
+- Decision: `src/main.ts` now spawns the standalone player into `src/world/entityRegistry.ts` as a `standalone-player` entity, drives fixed-step movement through that entity hook, and reads or replaces the authoritative player state through the registry during spawn refresh, respawn recovery, camera follow, preview rendering, render-frame telemetry, and renderer entity-pass submission.
+- Reason: Tasks `17-18` need one ownership path for player simulation and renderer submission before combat, inventory, or networking work expands the entity layer, and keeping a parallel standalone-player variable would make respawn, reset, and render-snapshot behavior drift from the entity layer.
 - Consequence: Future player simulation, interpolation, or networking work should treat the standalone player as an entity-registry resident and extend registry-backed selectors or render snapshots instead of reintroducing duplicate standalone state outside the entity layer.
 
 ### 2026-03-08: Partial-liquid paired coverage totals should resolve from shared liquid-surface helpers
