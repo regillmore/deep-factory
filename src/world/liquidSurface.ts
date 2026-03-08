@@ -33,6 +33,11 @@ export interface LiquidSurfaceCroppedFrameRemainders {
   remainderRightV: number;
 }
 
+export interface LiquidSurfaceCroppedFramePercentages {
+  remainderLeftPercentage: number;
+  remainderRightPercentage: number;
+}
+
 export interface LiquidSurfaceBottomAtlasPixelRows {
   bottomLeftPixelY: number;
   bottomRightPixelY: number;
@@ -66,6 +71,14 @@ const clampNormalizedLiquidHeight = (height: number): number => {
   }
 
   return Math.min(1, Math.max(0, height));
+};
+
+const clampPercentage = (value: number): number => {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, value));
 };
 
 const resolveLiquidSurfaceBranchKindFromClampedLevels = (
@@ -192,6 +205,29 @@ export const resolveLiquidSurfaceCroppedFrameRemainders = (
     remainderRightV: Math.min(
       frameHeightV,
       Math.max(0, frameBottomV - clampNormalizedLiquidHeight(bottomVCrops.bottomRightV))
+    )
+  };
+};
+
+export const resolveLiquidSurfaceCroppedFramePercentages = (
+  uvRect: Pick<TileUvRect, 'v0' | 'v1'>,
+  bottomVCrops: LiquidSurfaceBottomVCrops
+): LiquidSurfaceCroppedFramePercentages => {
+  const frameHeightV = resolveLiquidSurfaceFrameHeightV(uvRect);
+  if (frameHeightV <= 0) {
+    return {
+      remainderLeftPercentage: 0,
+      remainderRightPercentage: 0
+    };
+  }
+
+  const croppedFrameRemainders = resolveLiquidSurfaceCroppedFrameRemainders(uvRect, bottomVCrops);
+  return {
+    remainderLeftPercentage: clampPercentage(
+      (croppedFrameRemainders.remainderLeftV / frameHeightV) * 100
+    ),
+    remainderRightPercentage: clampPercentage(
+      (croppedFrameRemainders.remainderRightV / frameHeightV) * 100
     )
   };
 };

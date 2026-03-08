@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Partial-liquid cropped-remainder inspect percentages should resolve from shared frame-height helpers
+
+- Decision: Hovered and pinned inspect telemetry now resolves `liquidRemainderLeftPercentage` and `liquidRemainderRightPercentage` through a shared helper in `src/world/liquidSurface.ts` that divides the existing cropped-remainder deltas by the current liquid variant frame height.
+- Reason: Cropped-loss percentages need to stay numerically aligned with variant-specific frame heights and the existing remainder deltas without re-dividing values in `src/main.ts` or inspect UI formatting code.
+- Consequence: Future visible or combined liquid percentage telemetry should extend the shared frame-height percentage helper rather than recomputing remainder ratios in runtime assembly or inspect UI formatting.
+
 ### 2026-03-08: Partial-liquid full-frame-height inspect telemetry should reuse shared frame-bound helpers
 
 - Decision: Hovered and pinned inspect telemetry now resolves `liquidFrameHeightV` and `liquidFramePixelHeight` through shared frame-height helpers in `src/world/liquidSurface.ts`, and the existing visible-height and cropped-remainder helpers there reuse those same frame-height helpers instead of subtracting frame endpoints inline.

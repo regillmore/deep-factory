@@ -125,6 +125,8 @@ export interface DebugEditHoveredTileState {
   liquidVisibleRightPixelHeight?: number | null;
   liquidRemainderLeftV?: number | null;
   liquidRemainderRightV?: number | null;
+  liquidRemainderLeftPercentage?: number | null;
+  liquidRemainderRightPercentage?: number | null;
   liquidRemainderLeftPixelHeight?: number | null;
   liquidRemainderRightPixelHeight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
@@ -568,6 +570,15 @@ const formatProgressPercentage = (value: number | null | undefined): string | nu
   const roundedPercent = Math.round(clampedPercent * 10) / 10;
   return Number.isInteger(roundedPercent) ? `${roundedPercent.toFixed(0)}%` : `${roundedPercent.toFixed(1)}%`;
 };
+const formatPercentageValue = (value: number | null | undefined): string | null => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null;
+  }
+
+  const clampedPercent = Math.min(Math.max(value, 0), 100);
+  const roundedPercent = Math.round(clampedPercent * 10) / 10;
+  return Number.isInteger(roundedPercent) ? `${roundedPercent.toFixed(0)}%` : `${roundedPercent.toFixed(1)}%`;
+};
 
 const hasSameInspectTarget = (
   hoveredTile: DebugEditHoveredTileState | null,
@@ -607,6 +618,10 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
   );
   const liquidRemainderLeftV = formatLiquidSurfaceHeight(tile.liquidRemainderLeftV);
   const liquidRemainderRightV = formatLiquidSurfaceHeight(tile.liquidRemainderRightV);
+  const liquidRemainderLeftPercentage = formatPercentageValue(tile.liquidRemainderLeftPercentage);
+  const liquidRemainderRightPercentage = formatPercentageValue(
+    tile.liquidRemainderRightPercentage
+  );
   const liquidRemainderLeftPixelHeight = formatAtlasPixelCoordinate(
     tile.liquidRemainderLeftPixelHeight
   );
@@ -662,6 +677,12 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
       : '') +
     (liquidRemainderLeftV !== null ? ` | liquidRemainderLeftV:${liquidRemainderLeftV}` : '') +
     (liquidRemainderRightV !== null ? ` | liquidRemainderRightV:${liquidRemainderRightV}` : '') +
+    (liquidRemainderLeftPercentage !== null
+      ? ` | liquidRemainderLeftPct:${liquidRemainderLeftPercentage}`
+      : '') +
+    (liquidRemainderRightPercentage !== null
+      ? ` | liquidRemainderRightPct:${liquidRemainderRightPercentage}`
+      : '') +
     (liquidRemainderLeftPixelHeight !== null
       ? ` | liquidRemainderLeftPxH:${liquidRemainderLeftPixelHeight}`
       : '') +

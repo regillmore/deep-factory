@@ -7,6 +7,7 @@ import {
   resolveLiquidSurfaceBottomVCrops,
   resolveLiquidSurfaceBranchKind,
   resolveLiquidSurfaceCroppedFrameAtlasPixelHeights,
+  resolveLiquidSurfaceCroppedFramePercentages,
   resolveLiquidSurfaceCroppedFrameRemainders,
   resolveLiquidSurfaceFrameAtlasPixelHeight,
   resolveLiquidSurfaceFrameBottomAtlasPixelRow,
@@ -467,6 +468,44 @@ describe('resolveLiquidSurfaceCroppedFrameRemainders', () => {
     ).toEqual({
       remainderLeftV: 0,
       remainderRightV: 0.25
+    });
+  });
+});
+
+describe('resolveLiquidSurfaceCroppedFramePercentages', () => {
+  it('maps cropped remainder deltas onto percentages of the current frame height', () => {
+    expect(
+      resolveLiquidSurfaceCroppedFramePercentages(
+        {
+          v0: 0.75,
+          v1: 0.875
+        },
+        {
+          bottomLeftV: 0.8125,
+          bottomRightV: 0.796875
+        }
+      )
+    ).toEqual({
+      remainderLeftPercentage: 50,
+      remainderRightPercentage: 62.5
+    });
+  });
+
+  it('returns clamped percentages when frame bounds or crop inputs are invalid', () => {
+    expect(
+      resolveLiquidSurfaceCroppedFramePercentages(
+        {
+          v0: 0.5,
+          v1: 0.75
+        },
+        {
+          bottomLeftV: 4,
+          bottomRightV: -2
+        }
+      )
+    ).toEqual({
+      remainderLeftPercentage: 0,
+      remainderRightPercentage: 100
     });
   });
 });

@@ -67,6 +67,8 @@ export interface DebugOverlayPointerInspect {
   liquidVisibleRightPixelHeight?: number | null;
   liquidRemainderLeftV?: number | null;
   liquidRemainderRightV?: number | null;
+  liquidRemainderLeftPercentage?: number | null;
+  liquidRemainderRightPercentage?: number | null;
   liquidRemainderLeftPixelHeight?: number | null;
   liquidRemainderRightPixelHeight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
@@ -121,6 +123,8 @@ export interface DebugOverlayTileInspect {
   liquidVisibleRightPixelHeight?: number | null;
   liquidRemainderLeftV?: number | null;
   liquidRemainderRightV?: number | null;
+  liquidRemainderLeftPercentage?: number | null;
+  liquidRemainderRightPercentage?: number | null;
   liquidRemainderLeftPixelHeight?: number | null;
   liquidRemainderRightPixelHeight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
@@ -339,6 +343,15 @@ const formatProgressPercentage = (value: number | null | undefined): string | nu
   const roundedPercent = Math.round(clampedPercent * 10) / 10;
   return Number.isInteger(roundedPercent) ? `${roundedPercent.toFixed(0)}%` : `${roundedPercent.toFixed(1)}%`;
 };
+const formatPercentageValue = (value: number | null | undefined): string | null => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null;
+  }
+
+  const clampedPercent = Math.min(Math.max(value, 0), 100);
+  const roundedPercent = Math.round(clampedPercent * 10) / 10;
+  return Number.isInteger(roundedPercent) ? `${roundedPercent.toFixed(0)}%` : `${roundedPercent.toFixed(1)}%`;
+};
 const formatLiquidCardinalMask = (value: number): string => {
   const mask = value & 0xf;
   return (
@@ -417,6 +430,12 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
   );
   const liquidRemainderLeftV = formatLiquidSurfaceHeight(tileInspect.liquidRemainderLeftV);
   const liquidRemainderRightV = formatLiquidSurfaceHeight(tileInspect.liquidRemainderRightV);
+  const liquidRemainderLeftPercentage = formatPercentageValue(
+    tileInspect.liquidRemainderLeftPercentage
+  );
+  const liquidRemainderRightPercentage = formatPercentageValue(
+    tileInspect.liquidRemainderRightPercentage
+  );
   const liquidRemainderLeftPixelHeight = formatAtlasPixelCoordinate(
     tileInspect.liquidRemainderLeftPixelHeight
   );
@@ -469,6 +488,12 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
       : '') +
     (liquidRemainderLeftV !== null ? ` | liquidRemainderLeftV:${liquidRemainderLeftV}` : '') +
     (liquidRemainderRightV !== null ? ` | liquidRemainderRightV:${liquidRemainderRightV}` : '') +
+    (liquidRemainderLeftPercentage !== null
+      ? ` | liquidRemainderLeftPct:${liquidRemainderLeftPercentage}`
+      : '') +
+    (liquidRemainderRightPercentage !== null
+      ? ` | liquidRemainderRightPct:${liquidRemainderRightPercentage}`
+      : '') +
     (liquidRemainderLeftPixelHeight !== null
       ? ` | liquidRemainderLeftPxH:${liquidRemainderLeftPixelHeight}`
       : '') +

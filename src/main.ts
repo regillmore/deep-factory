@@ -101,6 +101,7 @@ import {
   resolveLiquidSurfaceBottomVCrops,
   resolveLiquidSurfaceBranchKind,
   resolveLiquidSurfaceCroppedFrameAtlasPixelHeights,
+  resolveLiquidSurfaceCroppedFramePercentages,
   resolveLiquidSurfaceCroppedFrameRemainders,
   resolveLiquidSurfaceFrameAtlasPixelHeight,
   resolveLiquidSurfaceFrameBottomAtlasPixelRow,
@@ -1778,6 +1779,10 @@ const bootstrap = async (): Promise<void> => {
       liquidBottomVCrops && liquidVariantUvRect
         ? resolveLiquidSurfaceCroppedFrameRemainders(liquidVariantUvRect, liquidBottomVCrops)
         : null;
+    const liquidRemainderPercentages =
+      liquidBottomVCrops && liquidVariantUvRect
+        ? resolveLiquidSurfaceCroppedFramePercentages(liquidVariantUvRect, liquidBottomVCrops)
+        : null;
     const liquidRemainderPixelHeights =
       liquidBottomVCrops &&
       liquidVariantUvRect &&
@@ -1816,6 +1821,9 @@ const bootstrap = async (): Promise<void> => {
       liquidVisibleRightPixelHeight: liquidVisiblePixelHeights?.visibleRightPixelHeight ?? null,
       liquidRemainderLeftV: liquidRemainderFrameHeights?.remainderLeftV ?? null,
       liquidRemainderRightV: liquidRemainderFrameHeights?.remainderRightV ?? null,
+      liquidRemainderLeftPercentage: liquidRemainderPercentages?.remainderLeftPercentage ?? null,
+      liquidRemainderRightPercentage:
+        liquidRemainderPercentages?.remainderRightPercentage ?? null,
       liquidRemainderLeftPixelHeight: liquidRemainderPixelHeights?.remainderLeftPixelHeight ?? null,
       liquidRemainderRightPixelHeight:
         liquidRemainderPixelHeights?.remainderRightPixelHeight ?? null,
@@ -2374,6 +2382,10 @@ const bootstrap = async (): Promise<void> => {
             hoveredDebugTileStatus?.liquidVisibleRightPixelHeight ?? null,
           liquidRemainderLeftV: hoveredDebugTileStatus?.liquidRemainderLeftV ?? null,
           liquidRemainderRightV: hoveredDebugTileStatus?.liquidRemainderRightV ?? null,
+          liquidRemainderLeftPercentage:
+            hoveredDebugTileStatus?.liquidRemainderLeftPercentage ?? null,
+          liquidRemainderRightPercentage:
+            hoveredDebugTileStatus?.liquidRemainderRightPercentage ?? null,
           liquidRemainderLeftPixelHeight:
             hoveredDebugTileStatus?.liquidRemainderLeftPixelHeight ?? null,
           liquidRemainderRightPixelHeight:
@@ -2432,6 +2444,10 @@ const bootstrap = async (): Promise<void> => {
           liquidVisibleRightPixelHeight: pinnedDebugTileStatus.liquidVisibleRightPixelHeight ?? null,
           liquidRemainderLeftV: pinnedDebugTileStatus.liquidRemainderLeftV ?? null,
           liquidRemainderRightV: pinnedDebugTileStatus.liquidRemainderRightV ?? null,
+          liquidRemainderLeftPercentage:
+            pinnedDebugTileStatus.liquidRemainderLeftPercentage ?? null,
+          liquidRemainderRightPercentage:
+            pinnedDebugTileStatus.liquidRemainderRightPercentage ?? null,
           liquidRemainderLeftPixelHeight:
             pinnedDebugTileStatus.liquidRemainderLeftPixelHeight ?? null,
           liquidRemainderRightPixelHeight:

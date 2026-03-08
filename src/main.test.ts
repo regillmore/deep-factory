@@ -3141,6 +3141,8 @@ describe('main.ts shell state orchestration', () => {
       liquidVisibleRightPixelHeight: 3,
       liquidRemainderLeftV: 0.0625,
       liquidRemainderRightV: 0.078125,
+      liquidRemainderLeftPercentage: 50,
+      liquidRemainderRightPercentage: 62.5,
       liquidRemainderLeftPixelHeight: 4,
       liquidRemainderRightPixelHeight: 5
     });
@@ -3172,6 +3174,8 @@ describe('main.ts shell state orchestration', () => {
       liquidVisibleRightPixelHeight: 3,
       liquidRemainderLeftV: 0.0625,
       liquidRemainderRightV: 0.078125,
+      liquidRemainderLeftPercentage: 50,
+      liquidRemainderRightPercentage: 62.5,
       liquidRemainderLeftPixelHeight: 4,
       liquidRemainderRightPixelHeight: 5
     });
@@ -3204,6 +3208,8 @@ describe('main.ts shell state orchestration', () => {
       liquidVisibleRightPixelHeight: 3,
       liquidRemainderLeftV: 0.0625,
       liquidRemainderRightV: 0.078125,
+      liquidRemainderLeftPercentage: 50,
+      liquidRemainderRightPercentage: 62.5,
       liquidRemainderLeftPixelHeight: 4,
       liquidRemainderRightPixelHeight: 5
     });
@@ -3236,6 +3242,8 @@ describe('main.ts shell state orchestration', () => {
       liquidVisibleRightPixelHeight: 3,
       liquidRemainderLeftV: 0.0625,
       liquidRemainderRightV: 0.078125,
+      liquidRemainderLeftPercentage: 50,
+      liquidRemainderRightPercentage: 62.5,
       liquidRemainderLeftPixelHeight: 4,
       liquidRemainderRightPixelHeight: 5
     });
@@ -3297,6 +3305,8 @@ describe('main.ts shell state orchestration', () => {
         liquidVisibleRightPixelHeight: 3,
         liquidRemainderLeftV: 0.0625,
         liquidRemainderRightV: 0.078125,
+        liquidRemainderLeftPercentage: 50,
+        liquidRemainderRightPercentage: 62.5,
         liquidRemainderLeftPixelHeight: 4,
         liquidRemainderRightPixelHeight: 5,
         liquidAnimationFrameIndex: expectedFrameIndex,
@@ -3324,6 +3334,8 @@ describe('main.ts shell state orchestration', () => {
         liquidVisibleRightPixelHeight: 3,
         liquidRemainderLeftV: 0.0625,
         liquidRemainderRightV: 0.078125,
+        liquidRemainderLeftPercentage: 50,
+        liquidRemainderRightPercentage: 62.5,
         liquidRemainderLeftPixelHeight: 4,
         liquidRemainderRightPixelHeight: 5,
         liquidAnimationFrameIndex: expectedFrameIndex,
@@ -3352,6 +3364,8 @@ describe('main.ts shell state orchestration', () => {
         liquidVisibleRightPixelHeight: 3,
         liquidRemainderLeftV: 0.0625,
         liquidRemainderRightV: 0.078125,
+        liquidRemainderLeftPercentage: 50,
+        liquidRemainderRightPercentage: 62.5,
         liquidRemainderLeftPixelHeight: 4,
         liquidRemainderRightPixelHeight: 5,
         liquidAnimationFrameIndex: expectedFrameIndex,
@@ -3380,6 +3394,8 @@ describe('main.ts shell state orchestration', () => {
         liquidVisibleRightPixelHeight: 3,
         liquidRemainderLeftV: 0.0625,
         liquidRemainderRightV: 0.078125,
+        liquidRemainderLeftPercentage: 50,
+        liquidRemainderRightPercentage: 62.5,
         liquidRemainderLeftPixelHeight: 4,
         liquidRemainderRightPixelHeight: 5,
         liquidAnimationFrameIndex: expectedFrameIndex,
