@@ -5,8 +5,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Entities and interpolation
 
 355. Add runtime coverage that respawn or embedded-recovery snapshot resets keep standalone-player placeholder interpolation snapped to the new spawn without one-frame smear.
-359. Add renderer regression coverage that unknown future entity-pass kinds are ignored without preventing later supported entries from drawing.
 360. Add renderer regression coverage that interleaved unsupported entity-pass kinds preserve supported-entry submission order after unknown-kind skipping lands (`359`).
+361. Add renderer regression coverage that unsupported-only entity-pass submissions leave placeholder draw calls and nearby-light telemetry untouched.
 
 ## Save/load
 
