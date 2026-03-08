@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Add liquid-step instrumentation and no-liquid regression coverage for zoomed-out resident worlds.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts), [src/gl/renderer.ts](../src/gl/renderer.ts), and [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) so the last fixed liquid step now records resident chunks scanned, horizontal pairs tested, and applied transfers, exposes those counters through renderer telemetry, and renders them in the debug HUD; expanded [src/world/world.test.ts](../src/world/world.test.ts), [src/gl/renderer.test.ts](../src/gl/renderer.test.ts), and [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) with focused regressions for an applied transfer plus a zoomed-out no-liquid scene; removed completed task `367` from [docs/NEXT.md](docs/NEXT.md), added replacement task `373`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/world/world.test.ts src/ui/debugOverlay.test.ts src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add runtime coverage that paused-menu New World resets clear snapshot-owned wall, ceiling, and bonk presentation so the fresh-spawn placeholder cannot inherit a stale blocked pose on its first render.
 - Changes: Expanded [src/main.test.ts](../src/main.test.ts) with a focused paused-menu regression that first creates a stale blocked wall-plus-ceiling snapshot with an active bonk hold, then triggers `New World` and asserts the first fresh-world render clears those snapshot-owned presentation fields and returns the placeholder to `grounded-idle`; removed completed task `371` from [docs/NEXT.md](docs/NEXT.md) and, because this completes the paused fresh-world snapshot-reset coverage pattern, added new ambitious vertical-slice task `372`.
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

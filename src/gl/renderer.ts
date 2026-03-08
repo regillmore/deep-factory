@@ -116,6 +116,9 @@ export interface RenderTelemetry {
   residentWorldChunks: number;
   cachedChunkMeshes: number;
   residentDirtyLightChunks: number;
+  liquidStepResidentChunksScanned: number;
+  liquidStepHorizontalPairsTested: number;
+  liquidStepTransfersApplied: number;
   standalonePlayerNearbyLightLevel: number | null;
   standalonePlayerNearbyLightFactor: number | null;
   standalonePlayerNearbyLightSourceTileX: number | null;
@@ -185,6 +188,9 @@ export class Renderer {
     residentWorldChunks: 0,
     cachedChunkMeshes: 0,
     residentDirtyLightChunks: 0,
+    liquidStepResidentChunksScanned: 0,
+    liquidStepHorizontalPairsTested: 0,
+    liquidStepTransfersApplied: 0,
     standalonePlayerNearbyLightLevel: null,
     standalonePlayerNearbyLightFactor: null,
     standalonePlayerNearbyLightSourceTileX: null,
@@ -539,7 +545,9 @@ export class Renderer {
   }
 
   stepLiquidSimulation(): boolean {
-    return this.world.stepLiquidSimulation();
+    const changed = this.world.stepLiquidSimulation();
+    this.updateLiquidStepTelemetry();
+    return changed;
   }
 
   getLiquidRenderCardinalMask(worldTileX: number, worldTileY: number): number | null {
@@ -561,6 +569,7 @@ export class Renderer {
     this.telemetry.residentWorldChunks = this.world.getChunkCount();
     this.telemetry.cachedChunkMeshes = 0;
     this.telemetry.residentDirtyLightChunks = this.world.getDirtyLightChunkCount();
+    this.updateLiquidStepTelemetry();
     this.telemetry.standalonePlayerNearbyLightLevel = null;
     this.telemetry.standalonePlayerNearbyLightFactor = null;
     this.telemetry.standalonePlayerNearbyLightSourceTileX = null;
@@ -631,11 +640,19 @@ export class Renderer {
   private attachWorld(world: TileWorld): void {
     this.detachWorldTileEditListener?.();
     this.world = world;
+    this.updateLiquidStepTelemetry();
     this.detachWorldTileEditListener = this.world.onTileEdited(({ chunkX, chunkY, localX, localY }) => {
       for (const coord of affectedChunkCoordsForLocalTileEdit(chunkX, chunkY, localX, localY)) {
         this.invalidateChunkMesh(coord.x, coord.y);
       }
     });
+  }
+
+  private updateLiquidStepTelemetry(): void {
+    const stats = this.world.getLastLiquidSimulationStats();
+    this.telemetry.liquidStepResidentChunksScanned = stats.residentChunksScanned;
+    this.telemetry.liquidStepHorizontalPairsTested = stats.horizontalPairsTested;
+    this.telemetry.liquidStepTransfersApplied = stats.transfersApplied;
   }
 
   private getReadyChunkMesh(chunkX: number, chunkY: number): ChunkGpuMesh | null {

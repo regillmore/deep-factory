@@ -32,6 +32,9 @@ export interface DebugOverlayStats {
   residentWorldChunks: number;
   cachedChunkMeshes: number;
   residentDirtyLightChunks: number;
+  liquidStepResidentChunksScanned: number;
+  liquidStepHorizontalPairsTested: number;
+  liquidStepTransfersApplied: number;
   evictedWorldChunks: number;
   evictedMeshEntries: number;
 }
@@ -903,6 +906,11 @@ const formatAnimatedChunkResidencyLine = (stats: DebugOverlayStats): string =>
   `nonLiquid:${Math.max(0, stats.residentAnimatedChunkQuadCount - stats.residentAnimatedLiquidChunkQuadCount)} | ` +
   `liquid:${stats.residentAnimatedLiquidChunkQuadCount}`;
 
+const formatLiquidStepLine = (stats: DebugOverlayStats): string =>
+  `LiquidStep: chunks:${stats.liquidStepResidentChunksScanned} | ` +
+  `pairs:${stats.liquidStepHorizontalPairsTested} | ` +
+  `transfers:${stats.liquidStepTransfersApplied}`;
+
 export const formatDebugOverlayText = (
   fps: number,
   stats: DebugOverlayStats,
@@ -964,7 +972,8 @@ export const formatDebugOverlayText = (
     formatPlayerContactsLine(player),
     formatPlayerIntentLine(playerIntent),
     formatAnimatedChunkResidencyLine(stats),
-    formatAnimatedChunkUvUploadLine(stats)
+    formatAnimatedChunkUvUploadLine(stats),
+    formatLiquidStepLine(stats)
   ];
 
   if (!pointerInspect) {

@@ -204,6 +204,9 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.animatedChunkUvUploadLiquidQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
     expect(renderer.telemetry.residentDirtyLightChunks).toBe(0);
+    expect(renderer.telemetry.liquidStepResidentChunksScanned).toBe(0);
+    expect(renderer.telemetry.liquidStepHorizontalPairsTested).toBe(0);
+    expect(renderer.telemetry.liquidStepTransfersApplied).toBe(0);
     expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBeNull();
     expect(renderer.telemetry.standalonePlayerNearbyLightFactor).toBeNull();
     expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileX).toBeNull();
@@ -212,6 +215,29 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.standalonePlayerNearbyLightSourceChunkY).toBeNull();
     expect(renderer.telemetry.standalonePlayerNearbyLightSourceLocalTileX).toBeNull();
     expect(renderer.telemetry.standalonePlayerNearbyLightSourceLocalTileY).toBeNull();
+  });
+
+  it('records zoomed-out no-liquid liquid-step telemetry from the last fixed step', async () => {
+    const renderer = new Renderer(createMockCanvas(createMockGl()));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const camera = new Camera2D();
+    camera.zoom = 0.1;
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+
+    expect(renderer.telemetry.residentWorldChunks).toBe(224);
+    expect(renderer.stepLiquidSimulation()).toBe(false);
+    expect(renderer.telemetry.liquidStepResidentChunksScanned).toBe(224);
+    expect(renderer.telemetry.liquidStepHorizontalPairsTested).toBe(114688);
+    expect(renderer.telemetry.liquidStepTransfersApplied).toBe(0);
   });
 
   it('flips placeholder shader uv.y so pose rectangles stay upright with top-to-bottom quad UVs', () => {

@@ -25,6 +25,9 @@ const baseStats: DebugOverlayStats = {
   residentWorldChunks: 20,
   cachedChunkMeshes: 18,
   residentDirtyLightChunks: 20,
+  liquidStepResidentChunksScanned: 0,
+  liquidStepHorizontalPairsTested: 0,
+  liquidStepTransfersApplied: 0,
   evictedWorldChunks: 1,
   evictedMeshEntries: 1
 };
@@ -54,9 +57,25 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nIntent: n/a');
     expect(text).toContain('\nAnimMesh: chunks:0 | quads:0 | nonLiquid:0 | liquid:0');
     expect(text).toContain('\nAnimUV: uploads:0 | quads:0 | nonLiquid:0 | liquid:0 | bytes:0');
+    expect(text).toContain('\nLiquidStep: chunks:0 | pairs:0 | transfers:0');
     expect(text).toContain('LightDirty: 20');
     expect(text).toContain('Draws: 4/256 (OK)');
     expect(text).toContain('\nPtr: n/a');
+  });
+
+  it('shows last liquid-step scan and transfer telemetry', () => {
+    const text = formatDebugOverlayText(
+      60,
+      {
+        ...baseStats,
+        liquidStepResidentChunksScanned: 80,
+        liquidStepHorizontalPairsTested: 40960,
+        liquidStepTransfersApplied: 0
+      },
+      null
+    );
+
+    expect(text).toContain('\nLiquidStep: chunks:80 | pairs:40960 | transfers:0');
   });
 
   it('shows standalone-player nearby-light sampling telemetry when available', () => {

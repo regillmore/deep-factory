@@ -23,10 +23,10 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Optimize liquids
 
-367. Add liquid-step instrumentation and no-liquid regression coverage: expose world or renderer counters for resident chunks scanned, horizontal pairs tested, and transfers applied per fixed step, then add deterministic regressions that cover zoomed-out no-liquid scenes and verify the liquid step does no useful work when no liquid is present.
 368. Track resident chunks with liquid and skip dormant liquid simulation when the active set is empty: maintain active-liquid chunk membership through tile edits, transfers, prune, and streamback, and make stepLiquidSimulation return immediately when no resident chunk can flow.
 369. Restrict sideways liquid equalization to active liquid chunks plus immediate neighbor chunks: stop scanning every resident tile pair each tick while preserving deterministic chunk-boundary behavior and adding regressions for cross-boundary flow.
 370. Add liquid chunk sleep or wake rules for settled fluid: remove unchanged chunks from the active set until a local edit or neighboring transfer wakes them, with regressions for settled pools resuming after a disturbance.
+373. Split liquid-step transfer telemetry by phase (`downward` vs `sideways`) so mixed-flow scenes can prove which pass still performs work while the broader liquid optimizations land.
 
 ## Refine, Extract, Refactor, Restructure
 

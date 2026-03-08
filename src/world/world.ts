@@ -44,6 +44,12 @@ export interface TileNeighborhood {
   northWest: number;
 }
 
+export interface LiquidSimulationStats {
+  residentChunksScanned: number;
+  horizontalPairsTested: number;
+  transfersApplied: number;
+}
+
 type TileEditListener = (event: TileEditEvent) => void;
 
 const createTileNeighborhood = (): TileNeighborhood => ({
@@ -56,6 +62,12 @@ const createTileNeighborhood = (): TileNeighborhood => ({
   southWest: 0,
   west: 0,
   northWest: 0
+});
+
+const createLiquidSimulationStats = (): LiquidSimulationStats => ({
+  residentChunksScanned: 0,
+  horizontalPairsTested: 0,
+  transfersApplied: 0
 });
 
 const createChunkLiquidLevels = (): Uint8Array => new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
@@ -210,6 +222,7 @@ export class TileWorld {
   private tileEditListeners = new Set<TileEditListener>();
   private dirtyLightChunkKeys = new Set<string>();
   private liquidSimulationTick = 0;
+  private lastLiquidSimulationStats = createLiquidSimulationStats();
 
   private getResidentChunk(chunkX: number, chunkY: number): Chunk | null {
     return this.chunks.get(chunkKey(chunkX, chunkY)) ?? null;
@@ -551,6 +564,11 @@ export class TileWorld {
   }
 
   stepLiquidSimulation(): boolean {
+    const stats: LiquidSimulationStats = {
+      residentChunksScanned: this.chunks.size,
+      horizontalPairsTested: 0,
+      transfersApplied: 0
+    };
     const downwardTransfers: LiquidTransfer[] = [];
 
     for (const chunk of this.chunks.values()) {
@@ -595,7 +613,11 @@ export class TileWorld {
 
     let changed = false;
     for (const transfer of downwardTransfers) {
-      changed = this.applyLiquidTransfer(transfer) || changed;
+      const applied = this.applyLiquidTransfer(transfer);
+      if (applied) {
+        stats.transfersApplied += 1;
+      }
+      changed = applied || changed;
     }
 
     const horizontalPairParity = this.liquidSimulationTick & 1;
@@ -620,6 +642,8 @@ export class TileWorld {
           ) {
             continue;
           }
+
+          stats.horizontalPairsTested += 1;
 
           const leftLiquidKind = getTileLiquidKind(leftTileId);
           const rightLiquidKind = getTileLiquidKind(rightTileId);
@@ -660,32 +684,40 @@ export class TileWorld {
             continue;
           }
 
-          changed =
-            this.applyLiquidTransfer(
-              transferDirection === 'left-to-right'
-                ? {
-                    fromWorldTileX: worldTileX,
-                    fromWorldTileY: worldTileY,
-                    toWorldTileX: worldTileX + 1,
-                    toWorldTileY: worldTileY,
-                    tileId: donorTileId,
-                    liquidLevel: transferLevel
-                  }
-                : {
-                    fromWorldTileX: worldTileX + 1,
-                    fromWorldTileY: worldTileY,
-                    toWorldTileX: worldTileX,
-                    toWorldTileY: worldTileY,
-                    tileId: donorTileId,
-                    liquidLevel: transferLevel
-                  }
-            ) || changed;
+          const applied = this.applyLiquidTransfer(
+            transferDirection === 'left-to-right'
+              ? {
+                  fromWorldTileX: worldTileX,
+                  fromWorldTileY: worldTileY,
+                  toWorldTileX: worldTileX + 1,
+                  toWorldTileY: worldTileY,
+                  tileId: donorTileId,
+                  liquidLevel: transferLevel
+                }
+              : {
+                  fromWorldTileX: worldTileX + 1,
+                  fromWorldTileY: worldTileY,
+                  toWorldTileX: worldTileX,
+                  toWorldTileY: worldTileY,
+                  tileId: donorTileId,
+                  liquidLevel: transferLevel
+                }
+          );
+          if (applied) {
+            stats.transfersApplied += 1;
+          }
+          changed = applied || changed;
         }
       }
     }
 
+    this.lastLiquidSimulationStats = stats;
     this.liquidSimulationTick = (this.liquidSimulationTick + 1) >>> 0;
     return changed;
+  }
+
+  getLastLiquidSimulationStats(): LiquidSimulationStats {
+    return { ...this.lastLiquidSimulationStats };
   }
 
   getLightLevel(worldTileX: number, worldTileY: number): number {

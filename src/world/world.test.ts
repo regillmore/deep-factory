@@ -115,6 +115,23 @@ describe('TileWorld', () => {
     expect(world.getLiquidLevel(worldTileX, worldTileY + 1)).toBe(MAX_LIQUID_LEVEL);
   });
 
+  it('records liquid-step scan, horizontal-pair, and applied-transfer counts for the last fixed step', () => {
+    const world = new TileWorld(0);
+    const worldTileX = 4;
+    const worldTileY = -20;
+
+    world.ensureChunk(0, -1);
+    expect(world.setTile(worldTileX + 1, worldTileY + 1, 1)).toBe(true);
+    expect(world.setTile(worldTileX, worldTileY, WATER_TILE_ID)).toBe(true);
+
+    expect(world.stepLiquidSimulation()).toBe(true);
+    expect(world.getLastLiquidSimulationStats()).toEqual({
+      residentChunksScanned: 2,
+      horizontalPairsTested: 1024,
+      transfersApplied: 1
+    });
+  });
+
   it('spreads loaded liquid sideways across resident chunk boundaries deterministically', () => {
     const world = new TileWorld(1);
     const worldTileX = CHUNK_SIZE - 1;
