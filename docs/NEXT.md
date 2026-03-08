@@ -5,8 +5,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Save/load
 
 21. Add a local persistence adapter (`localStorage` or downloadable JSON) on top of the snapshot format.
-374. Define a versioned top-level world-save envelope that bundles chunk snapshots with standalone-player session state, camera follow offset, and migration metadata before the persistence adapter lands.
-375. Add a session-owned world-restore helper that swaps `TileWorld` from a loaded world snapshot while preserving existing renderer and input wiring after the top-level save envelope (`374`) lands.
+375. Add a session-owned world-restore helper that swaps `TileWorld` from a loaded top-level world-save envelope while preserving existing renderer and input wiring after the save-envelope contract (`374`) lands.
+376. Add a session-owned world-save export helper that assembles the current `TileWorld` snapshot, standalone-player state, and camera follow offset into the top-level world-save envelope from task `374` before the persistence adapter lands.
 
 ## Networking scaffolding
 

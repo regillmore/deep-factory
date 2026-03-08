@@ -3,6 +3,7 @@
 ## Module boundaries
 
 - `src/main.ts`: bootstrapping, app-shell coordination, dependency wiring, renderer entity-pass submission assembly from entity-registry snapshots, render-frame camera-follow alignment to interpolated standalone-player snapshots, and render-frame debug telemetry selection.
+- `src/mainWorldSave.ts`: versioned top-level world-save envelope helpers that validate and normalize `TileWorld` snapshots together with standalone-player state, camera-follow offset, and migration metadata for future persistence or restore wiring.
 - `src/core/`: camera math, camera-follow offset helpers, and fixed timestep loop.
 - `src/input/`: input abstraction for keyboard, mouse, touch/pinch, standalone player intent extraction, persisted in-world shell-action keybinding storage and validation, and shortcut resolution helpers including paused-main-menu and in-world shell shortcut availability helpers, a shared runtime shortcut-context composer, and an in-world-only debug-edit keyboard-action guard used by runtime wiring.
 - `src/gl/`: low-level WebGL2 utilities, authored-atlas loading plus layout-driven placeholder fallback generation, world rendering orchestration, the interpolated entity draw pass, and the grounded-idle, grounded-walk, jump-rise, fall, wall-slide, and briefly latched ceiling-bonk standalone player placeholder draw path with nearby world-light modulation.

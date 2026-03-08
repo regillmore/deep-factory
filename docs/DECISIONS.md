@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Session persistence should wrap world snapshots in one versioned save envelope
+
+- Decision: `src/mainWorldSave.ts` now defines the top-level `deep-factory.world-save` envelope with root `kind`, `version`, `migration`, `session`, and `worldSnapshot` fields, where `session` carries standalone-player `PlayerState` plus camera-follow offset and nested world validation reuses `TileWorld.loadSnapshot()`.
+- Reason: The chunk and world snapshot codecs now cover terrain state, but future persistence adapters and restore helpers still need one shared outer contract for player or camera session data instead of storing that state beside the world snapshot in ad hoc shapes.
+- Consequence: Future save/export/import work should extend or version this envelope and keep terrain state nested under `worldSnapshot` rather than inventing parallel top-level persistence formats for player or camera session state.
+
 ### 2026-03-08: TileWorld snapshots should preserve deterministic chunk ordering and liquid-step parity
 
 - Decision: `TileWorld.createSnapshot()` and `TileWorld.loadSnapshot()` now serialize world state through sorted resident and edited chunk snapshot arrays plus `liquidSimulationTick`, and loads reject duplicate resident or edited chunk coordinates together with edited overrides that disagree with resident chunk payloads.
