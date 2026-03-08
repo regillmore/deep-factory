@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Add runtime coverage that respawn or embedded-recovery snapshot resets keep standalone-player placeholder interpolation snapped to the new spawn without one-frame smear.
+- Changes: Updated [src/main.ts](../src/main.ts) so lava respawn commits now resynchronize standalone-player entity render snapshots after the respawn reset, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that moves the player before both lava respawn and embedded recovery, then asserts `previous/current` render snapshots and the mocked interpolated placeholder position stay snapped to the new spawn at non-zero render alpha; removed completed task `355` from [docs/NEXT.md](docs/NEXT.md) and added replacement task `365`.
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add renderer regression coverage that unsupported-only entity-pass submissions leave placeholder draw calls and nearby-light telemetry untouched, and that mixed supported/unsupported submissions keep nearby-light telemetry on the last supported draw.
 - Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with one unsupported-only entity-pass regression that proves placeholder uploads, pose uniforms, and nearby-light sampling stay inactive while telemetry resets to `null`, plus one mixed entity-pass regression that proves unsupported future kinds do not disturb the last supported standalone-player nearby-light telemetry write; removed completed tasks `361` and `362` from [docs/NEXT.md](docs/NEXT.md) and added ambitious replacement tasks `363` and `364`.
 - Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

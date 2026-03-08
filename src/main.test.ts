@@ -248,6 +248,7 @@ const testRuntime = vi.hoisted(() => {
       standalonePlayerPosition: { x: number; y: number } | null;
       standalonePlayerPreviousPosition: { x: number; y: number } | null;
       standalonePlayerCurrentPosition: { x: number; y: number } | null;
+      standalonePlayerInterpolatedPosition: { x: number; y: number } | null;
       standalonePlayerWallContact:
         | { tileX: number; tileY: number; tileId: number; side: 'left' | 'right' }
         | null;
@@ -366,35 +367,49 @@ vi.mock('./gl/renderer', () => ({
       const standalonePlayerEntity = Array.isArray(renderState.entities)
         ? renderState.entities.find((entity) => entity?.kind === 'standalone-player') ?? null
         : null;
+      const standalonePlayerPreviousPosition =
+        standalonePlayerEntity?.snapshot?.previous?.position &&
+        typeof standalonePlayerEntity.snapshot.previous.position.x === 'number' &&
+        typeof standalonePlayerEntity.snapshot.previous.position.y === 'number'
+          ? {
+              x: standalonePlayerEntity.snapshot.previous.position.x,
+              y: standalonePlayerEntity.snapshot.previous.position.y
+            }
+          : null;
+      const standalonePlayerCurrentPosition =
+        standalonePlayerEntity?.snapshot?.current?.position &&
+        typeof standalonePlayerEntity.snapshot.current.position.x === 'number' &&
+        typeof standalonePlayerEntity.snapshot.current.position.y === 'number'
+          ? {
+              x: standalonePlayerEntity.snapshot.current.position.x,
+              y: standalonePlayerEntity.snapshot.current.position.y
+            }
+          : null;
+      const clampedRenderAlpha =
+        typeof renderState.renderAlpha === 'number'
+          ? Math.max(0, Math.min(1, renderState.renderAlpha))
+          : null;
+      const standalonePlayerInterpolatedPosition =
+        standalonePlayerPreviousPosition !== null &&
+        standalonePlayerCurrentPosition !== null &&
+        clampedRenderAlpha !== null
+          ? {
+              x:
+                standalonePlayerPreviousPosition.x +
+                (standalonePlayerCurrentPosition.x - standalonePlayerPreviousPosition.x) *
+                  clampedRenderAlpha,
+              y:
+                standalonePlayerPreviousPosition.y +
+                (standalonePlayerCurrentPosition.y - standalonePlayerPreviousPosition.y) *
+                  clampedRenderAlpha
+            }
+          : standalonePlayerCurrentPosition;
 
       testRuntime.latestRendererRenderFrameState = {
-        standalonePlayerPosition:
-          standalonePlayerEntity?.snapshot?.current?.position &&
-          typeof standalonePlayerEntity.snapshot.current.position.x === 'number' &&
-          typeof standalonePlayerEntity.snapshot.current.position.y === 'number'
-            ? {
-                x: standalonePlayerEntity.snapshot.current.position.x,
-                y: standalonePlayerEntity.snapshot.current.position.y
-              }
-            : null,
-        standalonePlayerPreviousPosition:
-          standalonePlayerEntity?.snapshot?.previous?.position &&
-          typeof standalonePlayerEntity.snapshot.previous.position.x === 'number' &&
-          typeof standalonePlayerEntity.snapshot.previous.position.y === 'number'
-            ? {
-                x: standalonePlayerEntity.snapshot.previous.position.x,
-                y: standalonePlayerEntity.snapshot.previous.position.y
-              }
-            : null,
-        standalonePlayerCurrentPosition:
-          standalonePlayerEntity?.snapshot?.current?.position &&
-          typeof standalonePlayerEntity.snapshot.current.position.x === 'number' &&
-          typeof standalonePlayerEntity.snapshot.current.position.y === 'number'
-            ? {
-                x: standalonePlayerEntity.snapshot.current.position.x,
-                y: standalonePlayerEntity.snapshot.current.position.y
-              }
-            : null,
+        standalonePlayerPosition: standalonePlayerCurrentPosition,
+        standalonePlayerPreviousPosition,
+        standalonePlayerCurrentPosition,
+        standalonePlayerInterpolatedPosition,
         standalonePlayerWallContact: standalonePlayerEntity?.snapshot?.current?.wallContact ?? null,
         standalonePlayerCeilingContact:
           standalonePlayerEntity?.snapshot?.current?.ceilingContact ?? null,
@@ -2244,6 +2259,138 @@ describe('main.ts shell state orchestration', () => {
       liquidSafetyStatus: 'safe'
     });
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
+  });
+
+  it('keeps standalone-player render snapshots snapped to the new spawn across lava respawn and embedded recovery interpolation resets', async () => {
+    testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 0,
+      standingTileY: -1,
+      x: 8,
+      y: -16,
+      supportTileX: 0,
+      supportTileY: 0
+    });
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    const movedPlayerState = {
+      position: { x: 40, y: 32 },
+      velocity: { x: 96, y: -48 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'right' as const,
+      health: 100,
+      lavaDamageTickSecondsRemaining: 0.5
+    };
+
+    testRuntime.rendererStepPlayerStateImpl = () => movedPlayerState;
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, noContacts];
+
+    runFixedUpdate();
+
+    testRuntime.rendererStepPlayerStateImpl = () => ({
+      position: { x: 56, y: 28 },
+      velocity: { x: 18, y: 96 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'right' as const,
+      health: 0,
+      lavaDamageTickSecondsRemaining: 0.5
+    });
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, noContacts];
+
+    runFixedUpdate();
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
+    if (!testRuntime.latestRendererRenderFrameState) {
+      throw new Error('expected renderer frame state after lava respawn');
+    }
+
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerPreviousPosition).toEqual({
+      x: 8,
+      y: -16
+    });
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerCurrentPosition).toEqual({
+      x: 8,
+      y: -16
+    });
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerInterpolatedPosition).toEqual({
+      x: 8,
+      y: -16
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.playerRespawn?.kind).toBe('lava');
+
+    const movedRecoveredPlayerState = {
+      position: { x: 144, y: 80 },
+      velocity: { x: 72, y: 0 },
+      size: { width: 12, height: 28 },
+      grounded: true,
+      facing: 'right' as const,
+      health: 100,
+      lavaDamageTickSecondsRemaining: 0.5
+    };
+    testRuntime.rendererStepPlayerStateImpl = () => movedRecoveredPlayerState;
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, noContacts];
+
+    runFixedUpdate();
+
+    const embeddedRespawnedPlayerState = {
+      position: { x: 104, y: 496 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 28 },
+      grounded: true,
+      facing: 'right' as const
+    };
+    testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 6,
+      standingTileY: 31,
+      x: 104,
+      y: 496,
+      supportTileX: 6,
+      supportTileY: 32,
+      supportTileId: 9
+    });
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: 6,
+        worldTileY: 5,
+        kind: 'place'
+      }
+    ];
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl = () =>
+      embeddedRespawnedPlayerState;
+    testRuntime.rendererStepPlayerStateImpl = (state) => state;
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, noContacts];
+
+    runFixedUpdate();
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
+    if (!testRuntime.latestRendererRenderFrameState) {
+      throw new Error('expected renderer frame state after embedded recovery');
+    }
+
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerPreviousPosition).toEqual(
+      embeddedRespawnedPlayerState.position
+    );
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerCurrentPosition).toEqual(
+      embeddedRespawnedPlayerState.position
+    );
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerInterpolatedPosition).toEqual(
+      embeddedRespawnedPlayerState.position
+    );
+    expect(testRuntime.latestDebugEditStatusStripState?.playerRespawn?.kind).toBe('embedded');
   });
 
   it('routes standalone-player fixed-step transition updates and ceiling-bonk latching through one shared post-step commit helper', async () => {

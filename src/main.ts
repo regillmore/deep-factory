@@ -1147,6 +1147,7 @@ const bootstrap = async (): Promise<void> => {
   ): void => {
     if (playerFixedStepResult.respawnEvent !== null) {
       resetStandalonePlayerTransitionState(playerFixedStepResult.respawnEvent);
+      setStandalonePlayerState(playerFixedStepResult.nextPlayerState);
     } else {
       commitStandalonePlayerFixedStepTransitions(playerFixedStepResult.transitionSnapshot);
     }
