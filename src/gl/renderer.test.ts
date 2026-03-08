@@ -120,6 +120,7 @@ const expectStandalonePlayerUniformValues = (
 const createStandalonePlayerEntityFrameState = (
   currentState: PlayerState,
   options: {
+    id?: number;
     previousState?: PlayerState;
     previousWallContact?: PlayerCollisionContacts['wall'] | null;
     previousCeilingContact?: PlayerCollisionContacts['ceiling'] | null;
@@ -129,7 +130,7 @@ const createStandalonePlayerEntityFrameState = (
     ceilingBonkHoldUntilTimeMs?: number | null;
   } = {}
 ): RendererEntityFrameState => ({
-  id: 1,
+  id: options.id ?? 1,
   kind: 'standalone-player',
   snapshot: {
     previous: cloneStandalonePlayerRenderState(
@@ -1761,6 +1762,115 @@ describe('Renderer atlas telemetry', () => {
     expectStandalonePlayerUniformValues(
       uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
       [{ facing: -1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A }]
+    );
+  });
+
+  it('draws multiple entity-pass entries in submission order', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const drawArrays = vi.mocked(gl.drawArrays);
+    const bufferData = vi.mocked(gl.bufferData);
+    const uniform1f = vi.mocked(gl.uniform1f);
+    drawArrays.mockClear();
+    bufferData.mockClear();
+    uniform1f.mockClear();
+
+    const firstState = createPlayerState({
+      position: { x: 16, y: 32 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      velocity: { x: 0, y: 120 },
+      facing: 'left'
+    });
+    const secondState = createPlayerState({
+      position: { x: 80, y: 48 },
+      size: { width: 12, height: 28 },
+      grounded: true,
+      velocity: { x: 60, y: 0 },
+      facing: 'right'
+    });
+
+    renderer.render(new Camera2D(), {
+      entities: [
+        createStandalonePlayerEntityFrameState(firstState, { id: 11 }),
+        createStandalonePlayerEntityFrameState(secondState, { id: 12 })
+      ],
+      timeMs: 0
+    });
+
+    expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
+    expect(renderer.telemetry.drawCalls).toBe(renderer.telemetry.renderedChunks + 2);
+
+    const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
+    expect(dynamicUploads).toHaveLength(2);
+    expect(Array.from((dynamicUploads[0]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      10,
+      4,
+      0,
+      0,
+      22,
+      4,
+      1,
+      0,
+      22,
+      32,
+      1,
+      1,
+      10,
+      4,
+      0,
+      0,
+      22,
+      32,
+      1,
+      1,
+      10,
+      32,
+      0,
+      1
+    ]);
+    expect(Array.from((dynamicUploads[1]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      74,
+      20,
+      0,
+      0,
+      86,
+      20,
+      1,
+      0,
+      86,
+      48,
+      1,
+      1,
+      74,
+      20,
+      0,
+      0,
+      86,
+      48,
+      1,
+      1,
+      74,
+      48,
+      0,
+      1
+    ]);
+    expectStandalonePlayerUniformValues(
+      uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
+      [
+        { facing: -1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL },
+        { facing: 1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A }
+      ]
     );
   });
 

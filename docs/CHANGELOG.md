@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Add renderer regression coverage that multiple entity-pass entries draw in submission order so future hostile and pickup entities can share the pass without placeholder ordering drift.
+- Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with a focused entity-pass regression that submits two standalone-player entries with distinct positions and poses, then asserts the placeholder vertex uploads and pose uniforms are emitted in the same order as the input array; removed completed task `356` from [docs/NEXT.md](docs/NEXT.md) and added replacement task `360`.
+- Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add runtime coverage that standalone-player pose labels stay aligned with snapshot-owned wall, ceiling, and bonk presentation when live contact telemetry diverges between fixed ticks.
 - Changes: Expanded [src/main.test.ts](../src/main.test.ts) with a multi-phase regression that forces live render-frame contact telemetry to diverge from snapshot-owned blocked, bonk-held, and wall-only presentation states, then asserts overlay and compact-status pose labels keep following the entity snapshot while live contact fields continue to report the divergent telemetry; removed completed task `358` from [docs/NEXT.md](docs/NEXT.md) and added replacement task `359`.
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
