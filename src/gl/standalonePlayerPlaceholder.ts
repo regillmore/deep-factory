@@ -190,14 +190,22 @@ export const getStandalonePlayerPlaceholderRenderFacingSign = (
 
 export const getStandalonePlayerPlaceholderNearbyLightLevel = (
   world: Pick<TileWorld, 'getLightLevel'>,
-  state: PlayerState
-): number => getStandalonePlayerPlaceholderNearbyLightSample(world, state).level;
+  state: PlayerState,
+  renderPosition: PlayerState['position'] = state.position
+): number => getStandalonePlayerPlaceholderNearbyLightSample(world, state, renderPosition).level;
 
 export const getStandalonePlayerPlaceholderNearbyLightSample = (
   world: Pick<TileWorld, 'getLightLevel'>,
-  state: PlayerState
+  state: PlayerState,
+  renderPosition: PlayerState['position'] = state.position
 ): StandalonePlayerPlaceholderNearbyLightSample => {
-  const aabb = getPlayerAabb(state);
+  const aabb = getPlayerAabb({
+    ...state,
+    position: {
+      x: renderPosition.x,
+      y: renderPosition.y
+    }
+  });
   const xRange = getOverlappingTileRange(aabb.minX, aabb.maxX);
   const yRange = getOverlappingTileRange(aabb.minY, aabb.maxY);
   if (!xRange || !yRange) {
@@ -238,5 +246,6 @@ export const getStandalonePlayerPlaceholderNearbyLightSample = (
 
 export const getStandalonePlayerPlaceholderNearbyLightFactor = (
   world: Pick<TileWorld, 'getLightLevel'>,
-  state: PlayerState
-): number => getStandalonePlayerPlaceholderNearbyLightLevel(world, state) / MAX_LIGHT_LEVEL;
+  state: PlayerState,
+  renderPosition: PlayerState['position'] = state.position
+): number => getStandalonePlayerPlaceholderNearbyLightLevel(world, state, renderPosition) / MAX_LIGHT_LEVEL;

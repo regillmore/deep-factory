@@ -84,7 +84,6 @@ export interface RendererFrameState {
 export interface StandalonePlayerEntityFrameState {
   id: EntityId;
   kind: 'standalone-player';
-  currentState: PlayerState;
   snapshot: EntityRenderStateSnapshot<PlayerState>;
   wallContact?: PlayerCollisionContacts['wall'] | null;
   ceilingContact?: PlayerCollisionContacts['ceiling'] | null;
@@ -818,7 +817,7 @@ export class Renderer {
     worldToClipMatrix: Float32Array,
     timeMs: number
   ): void {
-    const state = entity.currentState;
+    const state = entity.snapshot.current;
     const renderPosition = resolveInterpolatedEntityWorldPosition(entity.snapshot, renderAlpha);
     const wallContact = entity.wallContact ?? null;
     const ceilingContact = entity.ceilingContact ?? null;
@@ -838,7 +837,11 @@ export class Renderer {
     gl.uniformMatrix4fv(this.uPlayerMatrix, false, worldToClipMatrix);
     gl.uniform1f(this.uPlayerFacingSign, getStandalonePlayerPlaceholderRenderFacingSign(state, poseIndex, wallContact));
     gl.uniform1f(this.uPlayerPoseIndex, poseIndex);
-    const nearbyLightSample = getStandalonePlayerPlaceholderNearbyLightSample(this.world, state);
+    const nearbyLightSample = getStandalonePlayerPlaceholderNearbyLightSample(
+      this.world,
+      state,
+      renderPosition
+    );
     const nearbyLightLevel = nearbyLightSample.level;
     const nearbyLightFactor = nearbyLightLevel / MAX_LIGHT_LEVEL;
     const nearbyLightSourceTile = nearbyLightSample.sourceTile;

@@ -124,7 +124,6 @@ const createStandalonePlayerEntityFrameState = (
 ): RendererEntityFrameState => ({
   id: 1,
   kind: 'standalone-player',
-  currentState,
   snapshot: {
     previous: options.previousState ?? currentState,
     current: currentState
@@ -1743,7 +1742,7 @@ describe('Renderer atlas telemetry', () => {
     );
   });
 
-  it('interpolates standalone-player entity snapshot positions for placeholder geometry while nearby-light telemetry stays on current state', async () => {
+  it('uses the entity render snapshot for placeholder pose selection and interpolated nearby-light sampling', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));
     const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
@@ -1778,9 +1777,9 @@ describe('Renderer atlas telemetry', () => {
           previousState: createPlayerState({
             position: { x: 72, y: 88 },
             size: currentState.size,
-            grounded: currentState.grounded,
-            velocity: currentState.velocity,
-            facing: currentState.facing,
+            grounded: false,
+            velocity: { x: -140, y: 180 },
+            facing: 'left',
             health: currentState.health,
             lavaDamageTickSecondsRemaining: currentState.lavaDamageTickSecondsRemaining
           })
@@ -1823,8 +1822,8 @@ describe('Renderer atlas telemetry', () => {
     );
     expect(getLightLevelSpy).toHaveBeenCalled();
     expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBe(9);
-    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileX).toBe(-1);
-    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileY).toBe(-2);
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileX).toBe(1);
+    expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileY).toBe(0);
   });
 
   it('passes nearby resolved world light into the standalone player shader', async () => {

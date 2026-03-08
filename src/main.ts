@@ -75,7 +75,11 @@ import {
 } from './ui/touchDebugEditControls';
 import { TouchPlayerControls } from './ui/touchPlayerControls';
 import { CHUNK_SIZE } from './world/constants';
-import { EntityRegistry, type EntityId } from './world/entityRegistry';
+import {
+  EntityRegistry,
+  type EntityId,
+  type EntityRenderStateSnapshot
+} from './world/entityRegistry';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
 import {
   resolvePlayerCeilingContactTransitionEvent,
@@ -914,6 +918,13 @@ const bootstrap = async (): Promise<void> => {
     }
     return entityRegistry.getEntityState<PlayerState>(standalonePlayerEntityId);
   };
+  const getStandalonePlayerRenderStateSnapshot =
+    (): EntityRenderStateSnapshot<PlayerState> | null => {
+      if (standalonePlayerEntityId === null) {
+        return null;
+      }
+      return entityRegistry.getRenderStateSnapshot<PlayerState>(standalonePlayerEntityId);
+    };
   const createRendererEntityFrameStates = (
     standalonePlayerContacts: PlayerCollisionContacts | null
   ): RendererEntityFrameState[] => {
@@ -923,15 +934,9 @@ const bootstrap = async (): Promise<void> => {
         continue;
       }
 
-      const currentState = entityRegistry.getEntityState<PlayerState>(snapshotEntry.id);
-      if (currentState === null) {
-        continue;
-      }
-
       entityFrameStates.push({
         id: snapshotEntry.id,
         kind: STANDALONE_PLAYER_ENTITY_KIND,
-        currentState,
         snapshot: {
           previous: snapshotEntry.previous,
           current: snapshotEntry.current
@@ -2115,6 +2120,7 @@ const bootstrap = async (): Promise<void> => {
     renderTimeMs: number
   ): StandalonePlayerRenderFrameTelemetrySnapshot => {
     const playerState = getStandalonePlayerState();
+    const playerRenderState = getStandalonePlayerRenderStateSnapshot()?.current ?? null;
     const standalonePlayerContacts = playerState
       ? renderer.getPlayerCollisionContacts(playerState)
       : null;
@@ -2201,9 +2207,9 @@ const bootstrap = async (): Promise<void> => {
           })();
     const playerIntent = input.getPlayerInputTelemetry();
     const playerPlaceholderPoseLabel =
-      playerState === null
+      playerRenderState === null
         ? null
-        : getStandalonePlayerPlaceholderPoseLabel(playerState, {
+        : getStandalonePlayerPlaceholderPoseLabel(playerRenderState, {
             elapsedMs: renderTimeMs,
             wallContact: standalonePlayerContacts?.wall ?? null,
             ceilingContact: standalonePlayerContacts?.ceiling ?? null,

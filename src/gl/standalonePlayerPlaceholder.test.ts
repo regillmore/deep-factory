@@ -293,6 +293,31 @@ describe('standalonePlayerPlaceholder', () => {
     expect(getStandalonePlayerPlaceholderNearbyLightLevel(world, state)).toBe(11);
   });
 
+  it('can sample nearby light from an explicit render position override', () => {
+    const world = new TileWorld(0);
+    const state = createPlayerState({
+      position: { x: 24, y: 32 },
+      size: { width: 12, height: 28 }
+    });
+    expect(world.setLightLevel(5, 4, 13)).toBe(true);
+
+    expect(
+      getStandalonePlayerPlaceholderNearbyLightSample(world, state, {
+        x: 88,
+        y: 80
+      })
+    ).toEqual({
+      level: 13,
+      sourceTile: { x: 5, y: 4 }
+    });
+    expect(
+      getStandalonePlayerPlaceholderNearbyLightFactor(world, state, {
+        x: 88,
+        y: 80
+      })
+    ).toBe(13 / MAX_LIGHT_LEVEL);
+  });
+
   it('normalizes nearby player light to the same 0..1 lighting scale as world tiles', () => {
     const world = new TileWorld(0);
     const state = createPlayerState({

@@ -2,11 +2,11 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
-### 2026-03-08: Renderer entity pass should interpolate snapshot position separately from current-state pose and nearby-light inputs
+### 2026-03-08: Standalone-player placeholder pose and nearby-light sampling should resolve from entity render snapshots
 
-- Decision: `src/main.ts` now submits standalone-player entity-pass entries containing registry `previous/current` render snapshots, the current `PlayerState`, current wall or ceiling contact input, and bonk-hold timing, while `src/gl/renderer.ts` interpolates world position from those snapshots and still resolves placeholder pose selection and nearby-light sampling from the current fixed-step player state.
-- Reason: The separate entity pass needs one renderer-owned interpolation point without smearing pose, contact, or nearby-light presentation across fixed-step boundaries.
-- Consequence: Future entity renderers should treat snapshot-driven world placement and current-state pose or lighting inputs as intentionally separate concerns until those other signals are deliberately migrated onto render snapshots.
+- Decision: `src/main.ts` now submits standalone-player entity-pass entries from registry `previous/current` render snapshots plus current wall or ceiling contact and bonk-hold inputs, `src/gl/renderer.ts` resolves placeholder pose from snapshot `current`, and nearby-light sampling now uses the interpolated render position derived from those snapshots.
+- Reason: The entity pass should own the placeholder's render-frame presentation inputs so debug pose labels and nearby-light telemetry stay aligned with the same snapshot-driven draw path that places the quad between fixed ticks.
+- Consequence: Future entity presentation and telemetry should prefer snapshot-backed render inputs, while any remaining live contact or bonk-latch inputs stay explicit until they are deliberately moved into snapshot-owned presentation state too.
 
 ### 2026-03-08: Entity render-position interpolation should clamp render alpha and blend from registry snapshots
 

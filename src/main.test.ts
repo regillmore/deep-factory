@@ -340,9 +340,6 @@ vi.mock('./gl/renderer', () => ({
         entities?:
           | Array<{
               kind?: string;
-              currentState?: {
-                position?: { x?: number; y?: number };
-              } | null;
               snapshot?: {
                 previous?: {
                   position?: { x?: number; y?: number };
@@ -367,12 +364,12 @@ vi.mock('./gl/renderer', () => ({
 
       testRuntime.latestRendererRenderFrameState = {
         standalonePlayerPosition:
-          standalonePlayerEntity?.currentState?.position &&
-          typeof standalonePlayerEntity.currentState.position.x === 'number' &&
-          typeof standalonePlayerEntity.currentState.position.y === 'number'
+          standalonePlayerEntity?.snapshot?.current?.position &&
+          typeof standalonePlayerEntity.snapshot.current.position.x === 'number' &&
+          typeof standalonePlayerEntity.snapshot.current.position.y === 'number'
             ? {
-                x: standalonePlayerEntity.currentState.position.x,
-                y: standalonePlayerEntity.currentState.position.y
+                x: standalonePlayerEntity.snapshot.current.position.x,
+                y: standalonePlayerEntity.snapshot.current.position.y
               }
             : null,
         standalonePlayerPreviousPosition:
