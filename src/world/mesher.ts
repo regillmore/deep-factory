@@ -16,7 +16,7 @@ import {
 } from './tileMetadata';
 import type { TileMetadataRegistry, TileUvRect } from './tileMetadata';
 import type { Chunk } from './types';
-import { resolveLiquidSurfaceTopHeights } from './liquidSurface';
+import { resolveLiquidSurfaceTopHeights, type LiquidSurfaceTopHeights } from './liquidSurface';
 import type { TileNeighborhood } from './world';
 
 export interface ChunkMeshData {
@@ -29,6 +29,7 @@ export interface AnimatedTileQuad {
   tileId: number;
   vertexFloatOffset: number;
   liquidCardinalMask?: number;
+  liquidTopHeights?: LiquidSurfaceTopHeights;
 }
 
 export interface ChunkMeshBuildOptions {
@@ -68,6 +69,17 @@ const usesAnimatedLiquidRenderVariant = (
   cardinalMask: number,
   tileMetadataRegistry: TileMetadataRegistry
 ): boolean => hasAnimatedLiquidRenderVariantMetadata(tileId, cardinalMask, tileMetadataRegistry);
+
+const clampNormalizedLiquidHeight = (height: number): number => {
+  if (!Number.isFinite(height)) {
+    return 0;
+  }
+
+  return Math.min(1, Math.max(0, height));
+};
+
+const resolveLiquidBottomV = (v0: number, v1: number, topHeight: number): number =>
+  v0 + (v1 - v0) * clampNormalizedLiquidHeight(topHeight);
 
 interface ResolvedChunkTileRender {
   uvRect: TileUvRect;
@@ -261,6 +273,40 @@ const resolveChunkTileLiquidTopHeights = (
   });
 };
 
+export const setChunkMeshTileQuadUvRect = (
+  vertices: Float32Array,
+  vertexFloatOffset: number,
+  uvRect: TileUvRect,
+  liquidTopHeights: LiquidSurfaceTopHeights | null = null
+): void => {
+  const { u0, v0, u1, v1 } = uvRect;
+  const vertex0UvOffset = vertexFloatOffset + CHUNK_MESH_UV_FLOAT_OFFSET;
+  const vertex1UvOffset = vertex0UvOffset + CHUNK_MESH_FLOATS_PER_VERTEX;
+  const vertex2UvOffset = vertex1UvOffset + CHUNK_MESH_FLOATS_PER_VERTEX;
+  const vertex3UvOffset = vertex2UvOffset + CHUNK_MESH_FLOATS_PER_VERTEX;
+  const vertex4UvOffset = vertex3UvOffset + CHUNK_MESH_FLOATS_PER_VERTEX;
+  const vertex5UvOffset = vertex4UvOffset + CHUNK_MESH_FLOATS_PER_VERTEX;
+  const topLeftV = v0;
+  const topRightV = v0;
+  const bottomLeftV =
+    liquidTopHeights === null ? v1 : resolveLiquidBottomV(v0, v1, liquidTopHeights.topLeft);
+  const bottomRightV =
+    liquidTopHeights === null ? v1 : resolveLiquidBottomV(v0, v1, liquidTopHeights.topRight);
+
+  vertices[vertex0UvOffset] = u0;
+  vertices[vertex0UvOffset + 1] = topLeftV;
+  vertices[vertex1UvOffset] = u1;
+  vertices[vertex1UvOffset + 1] = topRightV;
+  vertices[vertex2UvOffset] = u1;
+  vertices[vertex2UvOffset + 1] = bottomRightV;
+  vertices[vertex3UvOffset] = u0;
+  vertices[vertex3UvOffset + 1] = topLeftV;
+  vertices[vertex4UvOffset] = u1;
+  vertices[vertex4UvOffset + 1] = bottomRightV;
+  vertices[vertex5UvOffset] = u0;
+  vertices[vertex5UvOffset + 1] = bottomLeftV;
+};
+
 export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}): ChunkMeshData => {
   const chunkOriginX = chunk.coord.x * CHUNK_SIZE * TILE_SIZE;
   const chunkOriginY = chunk.coord.y * CHUNK_SIZE * TILE_SIZE;
@@ -302,7 +348,6 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
       const py1 = py + TILE_SIZE;
       const tileVertexFloatOffset = writeIndex;
       const resolvedRender = resolveChunkTileRender(tileId, tileMetadataRegistry, neighborhood);
-      const { u0, v0, u1, v1 } = resolvedRender.uvRect;
       const lightLevel = chunk.lightLevels[toTileIndex(x, y)] ?? 0;
       const liquidTopHeights =
         resolvedRender.liquidCardinalMask === null
@@ -329,7 +374,8 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
           animatedTileQuads.push({
             tileId,
             vertexFloatOffset: tileVertexFloatOffset,
-            liquidCardinalMask: resolvedRender.liquidCardinalMask
+            liquidCardinalMask: resolvedRender.liquidCardinalMask,
+            liquidTopHeights: liquidTopHeights ?? undefined
           });
         }
       } else if (usesAnimatedTileRender(tileId, tileMetadataRegistry)) {
@@ -341,34 +387,23 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
 
       vertices[writeIndex] = px;
       vertices[writeIndex + 1] = topLeftY;
-      vertices[writeIndex + 2] = u0;
-      vertices[writeIndex + 3] = v0;
       vertices[writeIndex + 4] = lightLevel;
       vertices[writeIndex + 5] = px1;
       vertices[writeIndex + 6] = topRightY;
-      vertices[writeIndex + 7] = u1;
-      vertices[writeIndex + 8] = v0;
       vertices[writeIndex + 9] = lightLevel;
       vertices[writeIndex + 10] = px1;
       vertices[writeIndex + 11] = py1;
-      vertices[writeIndex + 12] = u1;
-      vertices[writeIndex + 13] = v1;
       vertices[writeIndex + 14] = lightLevel;
       vertices[writeIndex + 15] = px;
       vertices[writeIndex + 16] = topLeftY;
-      vertices[writeIndex + 17] = u0;
-      vertices[writeIndex + 18] = v0;
       vertices[writeIndex + 19] = lightLevel;
       vertices[writeIndex + 20] = px1;
       vertices[writeIndex + 21] = py1;
-      vertices[writeIndex + 22] = u1;
-      vertices[writeIndex + 23] = v1;
       vertices[writeIndex + 24] = lightLevel;
       vertices[writeIndex + 25] = px;
       vertices[writeIndex + 26] = py1;
-      vertices[writeIndex + 27] = u0;
-      vertices[writeIndex + 28] = v1;
       vertices[writeIndex + 29] = lightLevel;
+      setChunkMeshTileQuadUvRect(vertices, writeIndex, resolvedRender.uvRect, liquidTopHeights);
       writeIndex += FLOATS_PER_TILE_QUAD;
     }
   }

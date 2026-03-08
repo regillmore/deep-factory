@@ -190,6 +190,31 @@ const expectSingleQuadGeometry = (
   });
 };
 
+const expectSingleQuadLiquidUv = (
+  vertices: Float32Array,
+  uvRect: { u0: number; v0: number; u1: number; v1: number },
+  topHeights: { topLeft: number; topRight: number }
+): void => {
+  const { u0, v0, u1, v1 } = uvRect;
+  const bottomLeftV = v0 + (v1 - v0) * topHeights.topLeft;
+  const bottomRightV = v0 + (v1 - v0) * topHeights.topRight;
+  const expectedUvs: Array<{ u: number; v: number }> = [
+    { u: toFloat32(u0), v: toFloat32(v0) },
+    { u: toFloat32(u1), v: toFloat32(v0) },
+    { u: toFloat32(u1), v: toFloat32(bottomRightV) },
+    { u: toFloat32(u0), v: toFloat32(v0) },
+    { u: toFloat32(u1), v: toFloat32(bottomRightV) },
+    { u: toFloat32(u0), v: toFloat32(bottomLeftV) }
+  ];
+
+  expect(vertices.length).toBe(6 * CHUNK_MESH_FLOATS_PER_VERTEX);
+  expectedUvs.forEach((expectedUv, vertexIndex) => {
+    const uvOffset = vertexIndex * CHUNK_MESH_FLOATS_PER_VERTEX + 2;
+    expect(vertices[uvOffset]).toBe(expectedUv.u);
+    expect(vertices[uvOffset + 1]).toBe(expectedUv.v);
+  });
+};
+
 const getQuadVertices = (vertices: Float32Array, quadIndex: number): Float32Array =>
   vertices.slice(quadIndex * FLOATS_PER_TILE_QUAD, (quadIndex + 1) * FLOATS_PER_TILE_QUAD);
 
@@ -455,7 +480,10 @@ describe('buildChunkMesh autotile UV selection', () => {
     });
 
     expect(mesh.vertexCount).toBe(6);
-    expectSingleQuadUvRect(mesh.vertices, 0);
+    expectSingleQuadLiquidUv(mesh.vertices, atlasUvRect(0), {
+      topLeft: 0.5,
+      topRight: 0.5
+    });
   });
 
   it('uses the center fill height for exposed partial liquid without same-kind neighbors', () => {
@@ -476,6 +504,10 @@ describe('buildChunkMesh autotile UV selection', () => {
       topLeftY: tileOriginY + TILE_SIZE * 0.5,
       topRightY: tileOriginY + TILE_SIZE * 0.5,
       bottomY: tileOriginY + TILE_SIZE
+    });
+    expectSingleQuadLiquidUv(mesh.vertices, atlasUvRect(0), {
+      topLeft: 0.5,
+      topRight: 0.5
     });
   });
 
@@ -501,6 +533,10 @@ describe('buildChunkMesh autotile UV selection', () => {
       topLeftY: tileOriginY + TILE_SIZE * 0.25,
       topRightY: tileOriginY + TILE_SIZE * 0.625,
       bottomY: tileOriginY + TILE_SIZE
+    });
+    expectSingleQuadLiquidUv(centerQuadVertices, atlasUvRect(10), {
+      topLeft: 0.75,
+      topRight: 0.375
     });
   });
 
@@ -598,7 +634,11 @@ describe('buildChunkMesh autotile UV selection', () => {
       {
         tileId: 12,
         vertexFloatOffset: 0,
-        liquidCardinalMask: 3
+        liquidCardinalMask: 3,
+        liquidTopHeights: {
+          topLeft: 1,
+          topRight: 1
+        }
       }
     ]);
   });
@@ -613,10 +653,10 @@ describe('buildChunkMesh autotile UV selection', () => {
     const worldTileX = chunkX * CHUNK_SIZE + localX;
     const worldTileY = chunkY * CHUNK_SIZE + localY;
 
-    world.setTile(worldTileX, worldTileY, 12);
-    world.setTile(worldTileX + 1, worldTileY, 20);
-    world.setTile(worldTileX, worldTileY + 1, 12);
-    world.setTile(worldTileX + 1, worldTileY + 1, 25);
+    setWorldLiquidTile(world, worldTileX, worldTileY, 12, 8);
+    setWorldLiquidTile(world, worldTileX + 1, worldTileY, 20, 8);
+    setWorldLiquidTile(world, worldTileX, worldTileY + 1, 12, 8);
+    setWorldLiquidTile(world, worldTileX + 1, worldTileY + 1, 25, 8);
 
     const chunk = world.ensureChunk(chunkX, chunkY);
     const scratchRefs: object[] = [];

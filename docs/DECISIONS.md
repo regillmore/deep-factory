@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Partial-liquid UV crops stay anchored to authored liquid surface texels
+
+- Decision: `src/world/mesher.ts` and `src/gl/animatedChunkMesh.ts` now keep liquid quad top-edge vertices on the variant frame's `v0` and crop only the bottom-edge `v` coordinates from resolved `topLeft` and `topRight` fill heights.
+- Reason: Partial-liquid quads need to preserve authored surface highlights when fill drops below a full tile; remapping the full `v0..v1` range onto shorter geometry vertically squashes the surface band.
+- Consequence: Future liquid meshing or animated-liquid UV work should reuse the shared chunk-mesh UV writer and carry resolved liquid top heights through any frame-patching path instead of stretching full liquid frames onto partial-height geometry.
+
 ### 2026-03-08: Exposed liquid surface corners blend halfway toward same-kind side neighbors
 
 - Decision: `src/world/liquidSurface.ts` now resolves normalized `topLeft` and `topRight` fill heights by clamping raw fill levels, returning `0/0` for empty center tiles, forcing `1/1` when same-kind liquid continues above, and otherwise averaging the center fill with the same-kind west or east fill at each exposed shared corner.
