@@ -3050,6 +3050,7 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceWestLevel: 5,
       liquidSurfaceCenterLevel: 3,
       liquidSurfaceEastLevel: 0,
+      liquidSurfaceBranch: 'exposed',
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375
     });
@@ -3062,6 +3063,7 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceWestLevel: 5,
       liquidSurfaceCenterLevel: 3,
       liquidSurfaceEastLevel: 0,
+      liquidSurfaceBranch: 'exposed',
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375
     });
@@ -3075,6 +3077,7 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceWestLevel: 5,
       liquidSurfaceCenterLevel: 3,
       liquidSurfaceEastLevel: 0,
+      liquidSurfaceBranch: 'exposed',
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375
     });
@@ -3088,6 +3091,7 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceWestLevel: 5,
       liquidSurfaceCenterLevel: 3,
       liquidSurfaceEastLevel: 0,
+      liquidSurfaceBranch: 'exposed',
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375
     });

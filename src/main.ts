@@ -97,6 +97,7 @@ import {
 import {
   type LiquidSurfaceLevelNeighborhood,
   resolveConnectedLiquidNeighborLevel,
+  resolveLiquidSurfaceBranchKind,
   resolveLiquidSurfaceTopHeights
 } from './world/liquidSurface';
 import {
@@ -1642,6 +1643,9 @@ const bootstrap = async (): Promise<void> => {
     const liquidSurfaceTopHeights = liquidSurfaceLevelNeighborhood
       ? resolveLiquidSurfaceTopHeights(liquidSurfaceLevelNeighborhood)
       : null;
+    const liquidSurfaceBranch = liquidSurfaceLevelNeighborhood
+      ? resolveLiquidSurfaceBranchKind(liquidSurfaceLevelNeighborhood)
+      : null;
     const liquidCardinalMask = renderer.getLiquidRenderCardinalMask(tileX, tileY);
     const liquidAnimationFrameCount =
       typeof liquidCardinalMask === 'number'
@@ -1700,6 +1704,7 @@ const bootstrap = async (): Promise<void> => {
       liquidSurfaceWestLevel: liquidSurfaceLevelNeighborhood?.west ?? null,
       liquidSurfaceCenterLevel: liquidSurfaceLevelNeighborhood?.center ?? null,
       liquidSurfaceEastLevel: liquidSurfaceLevelNeighborhood?.east ?? null,
+      liquidSurfaceBranch,
       liquidSurfaceTopLeft: liquidSurfaceTopHeights?.topLeft ?? null,
       liquidSurfaceTopRight: liquidSurfaceTopHeights?.topRight ?? null,
       liquidConnectivityGroupLabel: describeLiquidConnectivityGroup(tileId),
@@ -2237,6 +2242,7 @@ const bootstrap = async (): Promise<void> => {
           liquidSurfaceWestLevel: hoveredDebugTileStatus?.liquidSurfaceWestLevel ?? null,
           liquidSurfaceCenterLevel: hoveredDebugTileStatus?.liquidSurfaceCenterLevel ?? null,
           liquidSurfaceEastLevel: hoveredDebugTileStatus?.liquidSurfaceEastLevel ?? null,
+          liquidSurfaceBranch: hoveredDebugTileStatus?.liquidSurfaceBranch ?? null,
           liquidSurfaceTopLeft: hoveredDebugTileStatus?.liquidSurfaceTopLeft ?? null,
           liquidSurfaceTopRight: hoveredDebugTileStatus?.liquidSurfaceTopRight ?? null,
           liquidConnectivityGroupLabel: hoveredDebugTileStatus?.liquidConnectivityGroupLabel ?? null,
@@ -2274,6 +2280,7 @@ const bootstrap = async (): Promise<void> => {
           liquidSurfaceWestLevel: pinnedDebugTileStatus.liquidSurfaceWestLevel ?? null,
           liquidSurfaceCenterLevel: pinnedDebugTileStatus.liquidSurfaceCenterLevel ?? null,
           liquidSurfaceEastLevel: pinnedDebugTileStatus.liquidSurfaceEastLevel ?? null,
+          liquidSurfaceBranch: pinnedDebugTileStatus.liquidSurfaceBranch ?? null,
           liquidSurfaceTopLeft: pinnedDebugTileStatus.liquidSurfaceTopLeft ?? null,
           liquidSurfaceTopRight: pinnedDebugTileStatus.liquidSurfaceTopRight ?? null,
           liquidConnectivityGroupLabel: pinnedDebugTileStatus.liquidConnectivityGroupLabel ?? null,

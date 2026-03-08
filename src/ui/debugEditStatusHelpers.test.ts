@@ -1815,6 +1815,7 @@ describe('buildDebugEditStatusStripModel', () => {
         liquidSurfaceWestLevel: 5,
         liquidSurfaceCenterLevel: 3,
         liquidSurfaceEastLevel: 0,
+        liquidSurfaceBranch: 'exposed',
         liquidSurfaceTopLeft: 0.5,
         liquidSurfaceTopRight: 0.375,
         liquidConnectivityGroupLabel: 'lava',
@@ -1836,7 +1837,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.hoverText).toBe(
-      'Hover: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidLevel:3/8 | liquidSurfaceIn:north=0/8 west=5/8 center=3/8 east=0/8 | liquidTopLeft:0.5 | liquidTopRight:0.375 | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidFramePct:33.3% | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidLoopPct:66.7% | liquidLoopRemain:120ms | liquidSrc:uvRect 0.333,0.75..0.5,0.875 | liquidUv:0.333,0.75..0.5,0.875 | liquidPx:32,48..48,56'
+      'Hover: lava pool (#9) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:on | liquid:lava | liquidLevel:3/8 | liquidSurfaceIn:north=0/8 west=5/8 center=3/8 east=0/8 | liquidSurfaceBranch:exposed | liquidTopLeft:0.5 | liquidTopRight:0.375 | liquidGroup:lava | liquidMask:NE-W (11) | liquidFrame:1/2 | liquidFrameDur:180ms | liquidFrameElapsed:60ms | liquidFrameRemain:120ms | liquidFramePct:33.3% | liquidLoopDur:360ms | liquidLoopElapsed:240ms | liquidLoopPct:66.7% | liquidLoopRemain:120ms | liquidSrc:uvRect 0.333,0.75..0.5,0.875 | liquidUv:0.333,0.75..0.5,0.875 | liquidPx:32,48..48,56'
     );
   });
 

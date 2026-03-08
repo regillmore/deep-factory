@@ -1,5 +1,6 @@
 import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
 import { MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL, TILE_SIZE } from '../world/constants';
+import type { LiquidSurfaceBranchKind } from '../world/liquidSurface';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
@@ -47,6 +48,7 @@ export interface DebugOverlayPointerInspect {
   liquidSurfaceWestLevel?: number | null;
   liquidSurfaceCenterLevel?: number | null;
   liquidSurfaceEastLevel?: number | null;
+  liquidSurfaceBranch?: LiquidSurfaceBranchKind | null;
   liquidSurfaceTopLeft?: number | null;
   liquidSurfaceTopRight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
@@ -82,6 +84,7 @@ export interface DebugOverlayTileInspect {
   liquidSurfaceWestLevel?: number | null;
   liquidSurfaceCenterLevel?: number | null;
   liquidSurfaceEastLevel?: number | null;
+  liquidSurfaceBranch?: LiquidSurfaceBranchKind | null;
   liquidSurfaceTopLeft?: number | null;
   liquidSurfaceTopRight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
@@ -275,6 +278,10 @@ const formatLiquidSurfaceInputs = (
     ` east=${formattedEast ?? 'n/a'}`
   );
 };
+const formatLiquidSurfaceBranch = (
+  value: LiquidSurfaceBranchKind | null | undefined
+): LiquidSurfaceBranchKind | null =>
+  value === 'empty' || value === 'north-covered' || value === 'exposed' ? value : null;
 const formatProgressPercentage = (value: number | null | undefined): string | null => {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     return null;
@@ -339,6 +346,7 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     tileInspect.liquidSurfaceCenterLevel,
     tileInspect.liquidSurfaceEastLevel
   );
+  const liquidSurfaceBranch = formatLiquidSurfaceBranch(tileInspect.liquidSurfaceBranch);
   const liquidSurfaceTopLeft = formatLiquidSurfaceHeight(tileInspect.liquidSurfaceTopLeft);
   const liquidSurfaceTopRight = formatLiquidSurfaceHeight(tileInspect.liquidSurfaceTopRight);
   const liquidAnimationFrame = formatLiquidAnimationFrame(
@@ -364,6 +372,7 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     ` | liquid:${tileInspect.liquidKind ?? 'none'}` +
     (liquidLevel ? ` | liquidLevel:${liquidLevel}` : '') +
     (liquidSurfaceInputs ? ` | liquidSurfaceIn:${liquidSurfaceInputs}` : '') +
+    (liquidSurfaceBranch ? ` | liquidSurfaceBranch:${liquidSurfaceBranch}` : '') +
     (liquidSurfaceTopLeft ? ` | liquidTopLeft:${liquidSurfaceTopLeft}` : '') +
     (liquidSurfaceTopRight ? ` | liquidTopRight:${liquidSurfaceTopRight}` : '') +
     (typeof tileInspect.liquidConnectivityGroupLabel === 'string' &&

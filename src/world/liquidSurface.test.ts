@@ -1,7 +1,46 @@
 import { describe, expect, it } from 'vitest';
 
 import { TILE_METADATA } from './tileMetadata';
-import { resolveConnectedLiquidNeighborLevel, resolveLiquidSurfaceTopHeights } from './liquidSurface';
+import {
+  resolveConnectedLiquidNeighborLevel,
+  resolveLiquidSurfaceBranchKind,
+  resolveLiquidSurfaceTopHeights
+} from './liquidSurface';
+
+describe('resolveLiquidSurfaceBranchKind', () => {
+  it('classifies empty tiles when the clamped center fill is zero', () => {
+    expect(
+      resolveLiquidSurfaceBranchKind({
+        center: -3,
+        north: 8,
+        east: 8,
+        west: 8
+      })
+    ).toBe('empty');
+  });
+
+  it('classifies north-covered tiles when same-kind liquid continues above', () => {
+    expect(
+      resolveLiquidSurfaceBranchKind({
+        center: 3,
+        north: 2,
+        east: 8,
+        west: 0
+      })
+    ).toBe('north-covered');
+  });
+
+  it('classifies exposed tiles when liquid remains in the center without a north cover tile', () => {
+    expect(
+      resolveLiquidSurfaceBranchKind({
+        center: 4,
+        north: 0,
+        east: 2,
+        west: 8
+      })
+    ).toBe('exposed');
+  });
+});
 
 describe('resolveLiquidSurfaceTopHeights', () => {
   it('returns zero heights when the center tile has no liquid after clamping', () => {

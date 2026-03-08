@@ -17,6 +17,8 @@ export interface LiquidSurfaceTopHeights {
   topRight: number;
 }
 
+export type LiquidSurfaceBranchKind = 'empty' | 'north-covered' | 'exposed';
+
 const clampLiquidFillLevel = (fillLevel: number): number => {
   if (!Number.isFinite(fillLevel)) {
     return 0;
@@ -26,6 +28,19 @@ const clampLiquidFillLevel = (fillLevel: number): number => {
 };
 
 const toNormalizedLiquidFillHeight = (fillLevel: number): number => fillLevel / MAX_LIQUID_LEVEL;
+
+const resolveLiquidSurfaceBranchKindFromClampedLevels = (
+  centerLevel: number,
+  northLevel: number
+): LiquidSurfaceBranchKind => {
+  if (centerLevel <= 0) {
+    return 'empty';
+  }
+  if (northLevel > 0) {
+    return 'north-covered';
+  }
+  return 'exposed';
+};
 
 const resolveExposedLiquidCornerHeight = (centerLevel: number, sideLevel: number): number => {
   if (sideLevel <= 0) {
@@ -40,12 +55,12 @@ export const resolveLiquidSurfaceTopHeights = (
   levels: LiquidSurfaceLevelNeighborhood
 ): LiquidSurfaceTopHeights => {
   const centerLevel = clampLiquidFillLevel(levels.center);
-  if (centerLevel <= 0) {
+  const northLevel = clampLiquidFillLevel(levels.north);
+  const branchKind = resolveLiquidSurfaceBranchKindFromClampedLevels(centerLevel, northLevel);
+  if (branchKind === 'empty') {
     return { topLeft: 0, topRight: 0 };
   }
-
-  const northLevel = clampLiquidFillLevel(levels.north);
-  if (northLevel > 0) {
+  if (branchKind === 'north-covered') {
     return { topLeft: 1, topRight: 1 };
   }
 
@@ -56,6 +71,14 @@ export const resolveLiquidSurfaceTopHeights = (
     topRight: resolveExposedLiquidCornerHeight(centerLevel, eastLevel)
   };
 };
+
+export const resolveLiquidSurfaceBranchKind = (
+  levels: LiquidSurfaceLevelNeighborhood
+): LiquidSurfaceBranchKind =>
+  resolveLiquidSurfaceBranchKindFromClampedLevels(
+    clampLiquidFillLevel(levels.center),
+    clampLiquidFillLevel(levels.north)
+  );
 
 export const resolveConnectedLiquidNeighborLevel = (
   centerTileId: number,

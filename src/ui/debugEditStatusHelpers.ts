@@ -10,6 +10,7 @@ import {
 } from '../input/controller';
 import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
 import { MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL } from '../world/constants';
+import type { LiquidSurfaceBranchKind } from '../world/liquidSurface';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
@@ -105,6 +106,7 @@ export interface DebugEditHoveredTileState {
   liquidSurfaceWestLevel?: number | null;
   liquidSurfaceCenterLevel?: number | null;
   liquidSurfaceEastLevel?: number | null;
+  liquidSurfaceBranch?: LiquidSurfaceBranchKind | null;
   liquidSurfaceTopLeft?: number | null;
   liquidSurfaceTopRight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
@@ -523,6 +525,10 @@ const formatLiquidSurfaceInputs = (
     ` east=${formattedEast ?? 'n/a'}`
   );
 };
+const formatLiquidSurfaceBranch = (
+  value: LiquidSurfaceBranchKind | null | undefined
+): LiquidSurfaceBranchKind | null =>
+  value === 'empty' || value === 'north-covered' || value === 'exposed' ? value : null;
 const formatProgressPercentage = (value: number | null | undefined): string | null => {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     return null;
@@ -550,6 +556,7 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     tile.liquidSurfaceCenterLevel,
     tile.liquidSurfaceEastLevel
   );
+  const liquidSurfaceBranch = formatLiquidSurfaceBranch(tile.liquidSurfaceBranch);
   const liquidSurfaceTopLeft = formatLiquidSurfaceHeight(tile.liquidSurfaceTopLeft);
   const liquidSurfaceTopRight = formatLiquidSurfaceHeight(tile.liquidSurfaceTopRight);
   const liquidAnimationFrame = formatLiquidAnimationFrame(
@@ -578,6 +585,7 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     ` | liquid:${tile.liquidKind ?? 'none'}` +
     (liquidLevel ? ` | liquidLevel:${liquidLevel}` : '') +
     (liquidSurfaceInputs ? ` | liquidSurfaceIn:${liquidSurfaceInputs}` : '') +
+    (liquidSurfaceBranch ? ` | liquidSurfaceBranch:${liquidSurfaceBranch}` : '') +
     (liquidSurfaceTopLeft ? ` | liquidTopLeft:${liquidSurfaceTopLeft}` : '') +
     (liquidSurfaceTopRight ? ` | liquidTopRight:${liquidSurfaceTopRight}` : '') +
     (typeof tile.liquidConnectivityGroupLabel === 'string' && tile.liquidConnectivityGroupLabel.length > 0

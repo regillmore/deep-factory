@@ -9,7 +9,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Liquid rendering
 
 328. Surface resolved partial-liquid bottom-edge `v` crop values in hovered and pinned inspect telemetry so top-aligned liquid frame mapping stays debuggable without reading chunk meshes.
-329. Surface liquid-surface branch classification (`empty`, `north-covered`, or `exposed`) in hovered and pinned inspect telemetry so full-height versus exposed-top decisions stay debuggable without stepping through the resolver.
+335. After task `328`, surface resolved partial-liquid bottom-edge atlas pixel-row crop values in hovered and pinned inspect telemetry so normalized `v` crops can be cross-checked against authored atlas rows.
 
 ## Lighting
 

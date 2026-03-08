@@ -234,6 +234,7 @@ describe('formatDebugOverlayText', () => {
         liquidSurfaceWestLevel: 5,
         liquidSurfaceCenterLevel: 3,
         liquidSurfaceEastLevel: 0,
+        liquidSurfaceBranch: 'exposed',
         liquidSurfaceTopLeft: 0.5,
         liquidSurfaceTopRight: 0.375,
         liquidConnectivityGroupLabel: 'water',
@@ -260,6 +261,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquid:water');
     expect(text).toContain('liquidLevel:3/8');
     expect(text).toContain('liquidSurfaceIn:north=0/8 west=5/8 center=3/8 east=0/8');
+    expect(text).toContain('liquidSurfaceBranch:exposed');
     expect(text).toContain('liquidTopLeft:0.5');
     expect(text).toContain('liquidTopRight:0.375');
     expect(text).toContain('liquidGroup:water');
