@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Entities and interpolation
 
-365. Add runtime coverage that paused-menu New World resets keep standalone-player placeholder interpolation snapped to the fresh spawn without one-frame smear.
+366. Add runtime coverage that paused-menu New World resets keep standalone-player placeholder interpolation snapped to the fresh spawn without one-frame smear.
 
 ## Save/load
 

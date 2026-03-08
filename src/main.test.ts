@@ -2933,8 +2933,8 @@ describe('main.ts shell state orchestration', () => {
       steppedPlayerState.position
     );
     expect(testRuntime.latestDebugEditStatusStripState.playerCameraWorldPosition).toEqual({
-      x: 40,
-      y: 6
+      x: 8,
+      y: -14
     });
     expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition).toMatchObject({
       kind: 'jump',
@@ -3066,8 +3066,8 @@ describe('main.ts shell state orchestration', () => {
       steppedPlayerState.position
     );
     expect(testRuntime.latestDebugEditStatusStripState.playerCameraWorldPosition).toEqual({
-      x: 40,
-      y: 6
+      x: 8,
+      y: -14
     });
     expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition).toMatchObject({
       kind: 'jump',
@@ -3118,11 +3118,15 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.fixedStepWorldUpdateOrder).toEqual(['liquids', 'player']);
   });
 
-  it('routes standalone-player entity snapshots and render alpha through the renderer entity pass while overlay telemetry stays on current player state', async () => {
+  it('routes standalone-player entity snapshots, render alpha, and render-frame camera follow through the renderer entity pass while overlay telemetry stays on current player state', async () => {
     await import('./main');
     await flushBootstrap();
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(testRuntime.cameraInstance).not.toBeNull();
+    if (!testRuntime.cameraInstance) {
+      throw new Error('expected camera instance');
+    }
 
     const noContacts = {
       support: null,
@@ -3178,6 +3182,12 @@ describe('main.ts shell state orchestration', () => {
     expect(renderFrameState.renderAlpha).toBe(0.25);
     expect(overlay.player?.position).toEqual(steppedPlayerState.position);
     expect(statusStrip.playerWorldPosition).toEqual(steppedPlayerState.position);
+    expect(testRuntime.cameraInstance.x).toBe(16);
+    expect(testRuntime.cameraInstance.y).toBe(-6);
+    expect(statusStrip.playerCameraWorldPosition).toEqual({
+      x: 16,
+      y: -6
+    });
   });
 
   it('submits standalone-player wall, ceiling, and bonk presentation through the current entity snapshot', async () => {

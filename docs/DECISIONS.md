@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Standalone-player render-frame camera follow should use the same interpolated snapshot as placeholder drawing
+
+- Decision: `src/main.ts` now resolves preview and in-world camera follow from the standalone-player entity snapshot interpolated with the current render alpha before render-frame pointer inspect and telemetry assembly.
+- Reason: Driving the camera from authoritative current state while the placeholder draws from an interpolated snapshot makes the visible player appear to trail a ghost copy behind the camera target.
+- Consequence: Future local-player interpolation work should keep camera follow, pointer inspect, and any render-frame presentation tied to the same snapshot timeline as the visible placeholder instead of mixing current-state camera targets with interpolated draws.
+
 ### 2026-03-08: Standalone-player pose-driving contact and bonk state should live inside render snapshots
 
 - Decision: Standalone-player render snapshots now clone `PlayerState` together with wall contact, ceiling contact, and bonk-hold timing, and both `src/main.ts` pose telemetry and `src/gl/renderer.ts` pose selection read those snapshot-owned fields from snapshot `current`.

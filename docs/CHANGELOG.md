@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Align standalone-player render-frame camera follow with the interpolated entity snapshot so the placeholder no longer appears to trail a second copy during movement.
+- Changes: Updated [src/main.ts](../src/main.ts) so preview and in-world render frames now resolve the standalone-player camera follow target from the same interpolated entity `previous/current` snapshot path used by placeholder drawing before pointer inspect and render-frame telemetry assembly; expanded [src/main.test.ts](../src/main.test.ts) with a focused regression that asserts non-zero render alpha moves the camera to the interpolated focus point while player state telemetry still reads the authoritative current state; removed completed task `365` from [docs/NEXT.md](docs/NEXT.md), added replacement task `366`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add runtime coverage that respawn or embedded-recovery snapshot resets keep standalone-player placeholder interpolation snapped to the new spawn without one-frame smear.
 - Changes: Updated [src/main.ts](../src/main.ts) so lava respawn commits now resynchronize standalone-player entity render snapshots after the respawn reset, expanded [src/main.test.ts](../src/main.test.ts) with a focused runtime regression that moves the player before both lava respawn and embedded recovery, then asserts `previous/current` render snapshots and the mocked interpolated placeholder position stay snapped to the new spawn at non-zero render alpha; removed completed task `355` from [docs/NEXT.md](docs/NEXT.md) and added replacement task `365`.
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

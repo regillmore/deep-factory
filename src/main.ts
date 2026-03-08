@@ -80,6 +80,7 @@ import {
   type EntityId,
   type EntityRenderStateSnapshot
 } from './world/entityRegistry';
+import { resolveInterpolatedEntityWorldPosition } from './world/entityRenderInterpolation';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
 import {
   resolvePlayerCeilingContactTransitionEvent,
@@ -934,6 +935,35 @@ const bootstrap = async (): Promise<void> => {
         standalonePlayerEntityId
       );
     };
+  const applyStandalonePlayerCameraFollowTarget = (focusPoint: CameraFollowPoint | null): void => {
+    if (focusPoint === null) {
+      lastAppliedPlayerFollowCameraPosition = null;
+      return;
+    }
+
+    const cameraPosition = resolveCameraPositionFromFollowTarget(focusPoint, cameraFollowOffset);
+    camera.x = cameraPosition.x;
+    camera.y = cameraPosition.y;
+    lastAppliedPlayerFollowCameraPosition = cameraPosition;
+  };
+  const resolveStandalonePlayerRenderFrameFocusPoint = (
+    renderAlpha: number
+  ): CameraFollowPoint | null => {
+    const playerRenderStateSnapshot = getStandalonePlayerRenderStateSnapshot();
+    if (playerRenderStateSnapshot === null) {
+      const standalonePlayerState = getStandalonePlayerState();
+      return standalonePlayerState === null ? null : getPlayerCameraFocusPoint(standalonePlayerState);
+    }
+
+    const renderPosition = resolveInterpolatedEntityWorldPosition(
+      playerRenderStateSnapshot,
+      renderAlpha
+    );
+    return getPlayerCameraFocusPoint({
+      ...playerRenderStateSnapshot.current,
+      position: renderPosition
+    });
+  };
   const createRendererEntityFrameStates = (): RendererEntityFrameState[] => {
     const entityFrameStates: RendererEntityFrameState[] = [];
     for (const snapshotEntry of entityRegistry.getRenderStateSnapshots<StandalonePlayerRenderState>()) {
@@ -992,16 +1022,12 @@ const bootstrap = async (): Promise<void> => {
 
   const applyStandalonePlayerCameraFollow = (): void => {
     const standalonePlayerState = getStandalonePlayerState();
-    if (standalonePlayerState === null) {
-      lastAppliedPlayerFollowCameraPosition = null;
-      return;
-    }
-
-    const focusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
-    const cameraPosition = resolveCameraPositionFromFollowTarget(focusPoint, cameraFollowOffset);
-    camera.x = cameraPosition.x;
-    camera.y = cameraPosition.y;
-    lastAppliedPlayerFollowCameraPosition = cameraPosition;
+    applyStandalonePlayerCameraFollowTarget(
+      standalonePlayerState === null ? null : getPlayerCameraFocusPoint(standalonePlayerState)
+    );
+  };
+  const applyStandalonePlayerRenderFrameCameraFollow = (renderAlpha: number): void => {
+    applyStandalonePlayerCameraFollowTarget(resolveStandalonePlayerRenderFrameFocusPoint(renderAlpha));
   };
 
   const centerCameraOnStandalonePlayer = (playerState: PlayerState): void => {
@@ -2473,6 +2499,7 @@ const bootstrap = async (): Promise<void> => {
 
   const renderWorldFrame = (alpha: number, frameDtMs: number): void => {
     const renderTimeMs = performance.now();
+    applyStandalonePlayerRenderFrameCameraFollow(alpha);
     const pointerInspect = input.getPointerInspect();
     const armedDebugToolPreviewState = input.getArmedDebugToolPreviewState();
     const hoveredDebugTileStatus = getHoveredDebugTileStatus(pointerInspect, renderTimeMs);
@@ -2750,6 +2777,7 @@ const bootstrap = async (): Promise<void> => {
   };
 
   const renderWorldPreview = (): void => {
+    applyStandalonePlayerRenderFrameCameraFollow(1);
     const rendererEntityFrameStates = createRendererEntityFrameStates();
     renderer.resize();
     renderer.render(camera, {
