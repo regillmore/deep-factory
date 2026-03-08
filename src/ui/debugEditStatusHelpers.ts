@@ -99,6 +99,10 @@ export interface DebugEditHoveredTileState {
   blocksLight: boolean;
   liquidKind: TileLiquidKind | null;
   liquidLevel?: number | null;
+  liquidSurfaceNorthLevel?: number | null;
+  liquidSurfaceWestLevel?: number | null;
+  liquidSurfaceCenterLevel?: number | null;
+  liquidSurfaceEastLevel?: number | null;
   liquidSurfaceTopLeft?: number | null;
   liquidSurfaceTopRight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
@@ -483,6 +487,27 @@ const formatLiquidSurfaceHeight = (value: number | null | undefined): string | n
   const roundedValue = Math.round(clampedValue * 1000) / 1000;
   return roundedValue.toString();
 };
+const formatLiquidSurfaceInputs = (
+  north: number | null | undefined,
+  west: number | null | undefined,
+  center: number | null | undefined,
+  east: number | null | undefined
+): string | null => {
+  const formattedNorth = formatLiquidLevel(north);
+  const formattedWest = formatLiquidLevel(west);
+  const formattedCenter = formatLiquidLevel(center);
+  const formattedEast = formatLiquidLevel(east);
+  if (!formattedNorth && !formattedWest && !formattedCenter && !formattedEast) {
+    return null;
+  }
+
+  return (
+    `north=${formattedNorth ?? 'n/a'}` +
+    ` west=${formattedWest ?? 'n/a'}` +
+    ` center=${formattedCenter ?? 'n/a'}` +
+    ` east=${formattedEast ?? 'n/a'}`
+  );
+};
 const formatProgressPercentage = (value: number | null | undefined): string | null => {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     return null;
@@ -504,6 +529,12 @@ const hasSameInspectTarget = (
 
 const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): string => {
   const liquidLevel = formatLiquidLevel(tile.liquidLevel);
+  const liquidSurfaceInputs = formatLiquidSurfaceInputs(
+    tile.liquidSurfaceNorthLevel,
+    tile.liquidSurfaceWestLevel,
+    tile.liquidSurfaceCenterLevel,
+    tile.liquidSurfaceEastLevel
+  );
   const liquidSurfaceTopLeft = formatLiquidSurfaceHeight(tile.liquidSurfaceTopLeft);
   const liquidSurfaceTopRight = formatLiquidSurfaceHeight(tile.liquidSurfaceTopRight);
   const liquidAnimationFrame = formatLiquidAnimationFrame(
@@ -531,6 +562,7 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     ` | light:${formatHoveredTileFlag(tile.blocksLight)}` +
     ` | liquid:${tile.liquidKind ?? 'none'}` +
     (liquidLevel ? ` | liquidLevel:${liquidLevel}` : '') +
+    (liquidSurfaceInputs ? ` | liquidSurfaceIn:${liquidSurfaceInputs}` : '') +
     (liquidSurfaceTopLeft ? ` | liquidTopLeft:${liquidSurfaceTopLeft}` : '') +
     (liquidSurfaceTopRight ? ` | liquidTopRight:${liquidSurfaceTopRight}` : '') +
     (typeof tile.liquidConnectivityGroupLabel === 'string' && tile.liquidConnectivityGroupLabel.length > 0

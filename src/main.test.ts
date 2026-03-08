@@ -2945,6 +2945,10 @@ describe('main.ts shell state orchestration', () => {
       tileId: 7,
       liquidKind: 'water',
       liquidLevel: 3,
+      liquidSurfaceNorthLevel: 0,
+      liquidSurfaceWestLevel: 5,
+      liquidSurfaceCenterLevel: 3,
+      liquidSurfaceEastLevel: 0,
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375
     });
@@ -2953,6 +2957,10 @@ describe('main.ts shell state orchestration', () => {
       tileId: 7,
       liquidKind: 'water',
       liquidLevel: 3,
+      liquidSurfaceNorthLevel: 0,
+      liquidSurfaceWestLevel: 5,
+      liquidSurfaceCenterLevel: 3,
+      liquidSurfaceEastLevel: 0,
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375
     });
@@ -2962,6 +2970,10 @@ describe('main.ts shell state orchestration', () => {
       tileId: 7,
       liquidKind: 'water',
       liquidLevel: 3,
+      liquidSurfaceNorthLevel: 0,
+      liquidSurfaceWestLevel: 5,
+      liquidSurfaceCenterLevel: 3,
+      liquidSurfaceEastLevel: 0,
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375
     });
@@ -2971,6 +2983,10 @@ describe('main.ts shell state orchestration', () => {
       tileId: 7,
       liquidKind: 'water',
       liquidLevel: 3,
+      liquidSurfaceNorthLevel: 0,
+      liquidSurfaceWestLevel: 5,
+      liquidSurfaceCenterLevel: 3,
+      liquidSurfaceEastLevel: 0,
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375
     });

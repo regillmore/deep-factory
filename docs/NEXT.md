@@ -7,8 +7,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Liquid rendering
 
 204. Add standalone-player liquid interaction basics: water buoyancy plus swim drag, lava contact damage ticks with respawn fallback, and fixed-step player-state regressions.
-327. Surface same-kind liquid surface input levels (`north`, `west`, `center`, `east`) in hovered and pinned inspect telemetry so resolved top-height math stays debuggable without reading chunk buffers.
 328. Surface resolved partial-liquid bottom-edge `v` crop values in hovered and pinned inspect telemetry so top-aligned liquid frame mapping stays debuggable without reading chunk meshes.
+329. Surface liquid-surface branch classification (`empty`, `north-covered`, or `exposed`) in hovered and pinned inspect telemetry so full-height versus exposed-top decisions stay debuggable without stepping through the resolver.
 
 ## Lighting
 

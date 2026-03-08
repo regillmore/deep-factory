@@ -94,6 +94,7 @@ import {
   type PlayerRespawnEvent
 } from './world/playerRespawnEvent';
 import {
+  type LiquidSurfaceLevelNeighborhood,
   resolveConnectedLiquidNeighborLevel,
   resolveLiquidSurfaceTopHeights
 } from './world/liquidSurface';
@@ -1493,18 +1494,18 @@ const bootstrap = async (): Promise<void> => {
 
   const getActiveDebugBrushLabel = (): string => DEBUG_BRUSH_TILE_LABELS.get(activeDebugBrushTileId) ?? `tile ${activeDebugBrushTileId}`;
 
-  const resolveDebugTileLiquidSurfaceTopHeights = (
+  const resolveDebugTileLiquidSurfaceLevelNeighborhood = (
     tileX: number,
     tileY: number,
     tileId: number,
     liquidLevel: number,
     liquidKind: DebugEditHoveredTileState['liquidKind']
-  ) => {
+  ): LiquidSurfaceLevelNeighborhood | null => {
     if (liquidKind === null) {
       return null;
     }
 
-    return resolveLiquidSurfaceTopHeights({
+    return {
       center: liquidLevel,
       north: resolveConnectedLiquidNeighborLevel(
         tileId,
@@ -1521,7 +1522,7 @@ const bootstrap = async (): Promise<void> => {
         renderer.getTile(tileX - 1, tileY),
         renderer.getLiquidLevel(tileX - 1, tileY)
       )
-    });
+    };
   };
 
   const getDebugTileStatusAtTile = (
@@ -1535,13 +1536,16 @@ const bootstrap = async (): Promise<void> => {
     const gameplay = resolveTileGameplayMetadata(tileId);
     const { chunkX, chunkY } = worldToChunkCoord(tileX, tileY);
     const { localX, localY } = worldToLocalTile(tileX, tileY);
-    const liquidSurfaceTopHeights = resolveDebugTileLiquidSurfaceTopHeights(
+    const liquidSurfaceLevelNeighborhood = resolveDebugTileLiquidSurfaceLevelNeighborhood(
       tileX,
       tileY,
       tileId,
       liquidLevel,
       gameplay.liquidKind ?? null
     );
+    const liquidSurfaceTopHeights = liquidSurfaceLevelNeighborhood
+      ? resolveLiquidSurfaceTopHeights(liquidSurfaceLevelNeighborhood)
+      : null;
     const liquidCardinalMask = renderer.getLiquidRenderCardinalMask(tileX, tileY);
     const liquidAnimationFrameCount =
       typeof liquidCardinalMask === 'number'
@@ -1596,6 +1600,10 @@ const bootstrap = async (): Promise<void> => {
 
     return {
       liquidLevel,
+      liquidSurfaceNorthLevel: liquidSurfaceLevelNeighborhood?.north ?? null,
+      liquidSurfaceWestLevel: liquidSurfaceLevelNeighborhood?.west ?? null,
+      liquidSurfaceCenterLevel: liquidSurfaceLevelNeighborhood?.center ?? null,
+      liquidSurfaceEastLevel: liquidSurfaceLevelNeighborhood?.east ?? null,
       liquidSurfaceTopLeft: liquidSurfaceTopHeights?.topLeft ?? null,
       liquidSurfaceTopRight: liquidSurfaceTopHeights?.topRight ?? null,
       liquidConnectivityGroupLabel: describeLiquidConnectivityGroup(tileId),
@@ -2129,6 +2137,10 @@ const bootstrap = async (): Promise<void> => {
           blocksLight: hoveredDebugTileStatus?.blocksLight,
           liquidKind: hoveredDebugTileStatus?.liquidKind ?? null,
           liquidLevel: hoveredDebugTileStatus?.liquidLevel ?? null,
+          liquidSurfaceNorthLevel: hoveredDebugTileStatus?.liquidSurfaceNorthLevel ?? null,
+          liquidSurfaceWestLevel: hoveredDebugTileStatus?.liquidSurfaceWestLevel ?? null,
+          liquidSurfaceCenterLevel: hoveredDebugTileStatus?.liquidSurfaceCenterLevel ?? null,
+          liquidSurfaceEastLevel: hoveredDebugTileStatus?.liquidSurfaceEastLevel ?? null,
           liquidSurfaceTopLeft: hoveredDebugTileStatus?.liquidSurfaceTopLeft ?? null,
           liquidSurfaceTopRight: hoveredDebugTileStatus?.liquidSurfaceTopRight ?? null,
           liquidConnectivityGroupLabel: hoveredDebugTileStatus?.liquidConnectivityGroupLabel ?? null,
@@ -2162,6 +2174,10 @@ const bootstrap = async (): Promise<void> => {
           blocksLight: pinnedDebugTileStatus.blocksLight,
           liquidKind: pinnedDebugTileStatus.liquidKind,
           liquidLevel: pinnedDebugTileStatus.liquidLevel ?? null,
+          liquidSurfaceNorthLevel: pinnedDebugTileStatus.liquidSurfaceNorthLevel ?? null,
+          liquidSurfaceWestLevel: pinnedDebugTileStatus.liquidSurfaceWestLevel ?? null,
+          liquidSurfaceCenterLevel: pinnedDebugTileStatus.liquidSurfaceCenterLevel ?? null,
+          liquidSurfaceEastLevel: pinnedDebugTileStatus.liquidSurfaceEastLevel ?? null,
           liquidSurfaceTopLeft: pinnedDebugTileStatus.liquidSurfaceTopLeft ?? null,
           liquidSurfaceTopRight: pinnedDebugTileStatus.liquidSurfaceTopRight ?? null,
           liquidConnectivityGroupLabel: pinnedDebugTileStatus.liquidConnectivityGroupLabel ?? null,

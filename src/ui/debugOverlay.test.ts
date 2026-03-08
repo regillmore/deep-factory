@@ -218,6 +218,10 @@ describe('formatDebugOverlayText', () => {
         blocksLight: false,
         liquidKind: 'water',
         liquidLevel: 3,
+        liquidSurfaceNorthLevel: 0,
+        liquidSurfaceWestLevel: 5,
+        liquidSurfaceCenterLevel: 3,
+        liquidSurfaceEastLevel: 0,
         liquidSurfaceTopLeft: 0.5,
         liquidSurfaceTopRight: 0.375,
         liquidConnectivityGroupLabel: 'water',
@@ -243,6 +247,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('Tile:water (#7)');
     expect(text).toContain('liquid:water');
     expect(text).toContain('liquidLevel:3/8');
+    expect(text).toContain('liquidSurfaceIn:north=0/8 west=5/8 center=3/8 east=0/8');
     expect(text).toContain('liquidTopLeft:0.5');
     expect(text).toContain('liquidTopRight:0.375');
     expect(text).toContain('liquidGroup:water');
@@ -530,6 +535,10 @@ describe('formatDebugOverlayText', () => {
         blocksLight: false,
         liquidKind: 'water',
         liquidLevel: 4,
+        liquidSurfaceNorthLevel: 0,
+        liquidSurfaceWestLevel: 8,
+        liquidSurfaceCenterLevel: 4,
+        liquidSurfaceEastLevel: 6,
         liquidSurfaceTopLeft: 0.75,
         liquidSurfaceTopRight: 0.625,
         liquidConnectivityGroupLabel: 'water',
@@ -549,6 +558,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('light:off');
     expect(text).toContain('liquid:water');
     expect(text).toContain('liquidLevel:4/8');
+    expect(text).toContain('liquidSurfaceIn:north=0/8 west=8/8 center=4/8 east=6/8');
     expect(text).toContain('liquidTopLeft:0.75');
     expect(text).toContain('liquidTopRight:0.625');
     expect(text).toContain('liquidGroup:water');
