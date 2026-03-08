@@ -51,6 +51,8 @@ export interface DebugOverlayPointerInspect {
   liquidSurfaceBranch?: LiquidSurfaceBranchKind | null;
   liquidSurfaceTopLeft?: number | null;
   liquidSurfaceTopRight?: number | null;
+  liquidBottomLeftV?: number | null;
+  liquidBottomRightV?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -87,6 +89,8 @@ export interface DebugOverlayTileInspect {
   liquidSurfaceBranch?: LiquidSurfaceBranchKind | null;
   liquidSurfaceTopLeft?: number | null;
   liquidSurfaceTopRight?: number | null;
+  liquidBottomLeftV?: number | null;
+  liquidBottomRightV?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -353,6 +357,8 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
   const liquidSurfaceBranch = formatLiquidSurfaceBranch(tileInspect.liquidSurfaceBranch);
   const liquidSurfaceTopLeft = formatLiquidSurfaceHeight(tileInspect.liquidSurfaceTopLeft);
   const liquidSurfaceTopRight = formatLiquidSurfaceHeight(tileInspect.liquidSurfaceTopRight);
+  const liquidBottomLeftV = formatLiquidSurfaceHeight(tileInspect.liquidBottomLeftV);
+  const liquidBottomRightV = formatLiquidSurfaceHeight(tileInspect.liquidBottomRightV);
   const liquidAnimationFrame = formatLiquidAnimationFrame(
     tileInspect.liquidAnimationFrameIndex,
     tileInspect.liquidAnimationFrameCount
@@ -379,6 +385,8 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     (liquidSurfaceBranch ? ` | liquidSurfaceBranch:${liquidSurfaceBranch}` : '') +
     (liquidSurfaceTopLeft ? ` | liquidTopLeft:${liquidSurfaceTopLeft}` : '') +
     (liquidSurfaceTopRight ? ` | liquidTopRight:${liquidSurfaceTopRight}` : '') +
+    (liquidBottomLeftV ? ` | liquidBottomLeftV:${liquidBottomLeftV}` : '') +
+    (liquidBottomRightV ? ` | liquidBottomRightV:${liquidBottomRightV}` : '') +
     (typeof tileInspect.liquidConnectivityGroupLabel === 'string' &&
     tileInspect.liquidConnectivityGroupLabel.length > 0
       ? ` | liquidGroup:${tileInspect.liquidConnectivityGroupLabel}`

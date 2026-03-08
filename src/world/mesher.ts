@@ -16,7 +16,11 @@ import {
 } from './tileMetadata';
 import type { TileMetadataRegistry, TileUvRect } from './tileMetadata';
 import type { Chunk } from './types';
-import { resolveLiquidSurfaceTopHeights, type LiquidSurfaceTopHeights } from './liquidSurface';
+import {
+  resolveLiquidSurfaceBottomVCrops,
+  resolveLiquidSurfaceTopHeights,
+  type LiquidSurfaceTopHeights
+} from './liquidSurface';
 import type { TileNeighborhood } from './world';
 
 export interface ChunkMeshData {
@@ -69,17 +73,6 @@ const usesAnimatedLiquidRenderVariant = (
   cardinalMask: number,
   tileMetadataRegistry: TileMetadataRegistry
 ): boolean => hasAnimatedLiquidRenderVariantMetadata(tileId, cardinalMask, tileMetadataRegistry);
-
-const clampNormalizedLiquidHeight = (height: number): number => {
-  if (!Number.isFinite(height)) {
-    return 0;
-  }
-
-  return Math.min(1, Math.max(0, height));
-};
-
-const resolveLiquidBottomV = (v0: number, v1: number, topHeight: number): number =>
-  v0 + (v1 - v0) * clampNormalizedLiquidHeight(topHeight);
 
 interface ResolvedChunkTileRender {
   uvRect: TileUvRect;
@@ -288,10 +281,12 @@ export const setChunkMeshTileQuadUvRect = (
   const vertex5UvOffset = vertex4UvOffset + CHUNK_MESH_FLOATS_PER_VERTEX;
   const topLeftV = v0;
   const topRightV = v0;
+  const bottomVCrops =
+    liquidTopHeights === null ? null : resolveLiquidSurfaceBottomVCrops(uvRect, liquidTopHeights);
   const bottomLeftV =
-    liquidTopHeights === null ? v1 : resolveLiquidBottomV(v0, v1, liquidTopHeights.topLeft);
+    bottomVCrops === null ? v1 : bottomVCrops.bottomLeftV;
   const bottomRightV =
-    liquidTopHeights === null ? v1 : resolveLiquidBottomV(v0, v1, liquidTopHeights.topRight);
+    bottomVCrops === null ? v1 : bottomVCrops.bottomRightV;
 
   vertices[vertex0UvOffset] = u0;
   vertices[vertex0UvOffset + 1] = topLeftV;

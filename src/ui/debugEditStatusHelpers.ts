@@ -109,6 +109,8 @@ export interface DebugEditHoveredTileState {
   liquidSurfaceBranch?: LiquidSurfaceBranchKind | null;
   liquidSurfaceTopLeft?: number | null;
   liquidSurfaceTopRight?: number | null;
+  liquidBottomLeftV?: number | null;
+  liquidBottomRightV?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -563,6 +565,8 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
   const liquidSurfaceBranch = formatLiquidSurfaceBranch(tile.liquidSurfaceBranch);
   const liquidSurfaceTopLeft = formatLiquidSurfaceHeight(tile.liquidSurfaceTopLeft);
   const liquidSurfaceTopRight = formatLiquidSurfaceHeight(tile.liquidSurfaceTopRight);
+  const liquidBottomLeftV = formatLiquidSurfaceHeight(tile.liquidBottomLeftV);
+  const liquidBottomRightV = formatLiquidSurfaceHeight(tile.liquidBottomRightV);
   const liquidAnimationFrame = formatLiquidAnimationFrame(
     tile.liquidAnimationFrameIndex,
     tile.liquidAnimationFrameCount
@@ -592,6 +596,8 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     (liquidSurfaceBranch ? ` | liquidSurfaceBranch:${liquidSurfaceBranch}` : '') +
     (liquidSurfaceTopLeft ? ` | liquidTopLeft:${liquidSurfaceTopLeft}` : '') +
     (liquidSurfaceTopRight ? ` | liquidTopRight:${liquidSurfaceTopRight}` : '') +
+    (liquidBottomLeftV ? ` | liquidBottomLeftV:${liquidBottomLeftV}` : '') +
+    (liquidBottomRightV ? ` | liquidBottomRightV:${liquidBottomRightV}` : '') +
     (typeof tile.liquidConnectivityGroupLabel === 'string' && tile.liquidConnectivityGroupLabel.length > 0
       ? ` | liquidGroup:${tile.liquidConnectivityGroupLabel}`
       : '') +

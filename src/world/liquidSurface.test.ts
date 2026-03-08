@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { TILE_METADATA } from './tileMetadata';
 import {
   resolveConnectedLiquidNeighborLevel,
+  resolveLiquidSurfaceBottomVCrops,
   resolveLiquidSurfaceBranchKind,
   resolveLiquidSurfaceTopHeights
 } from './liquidSurface';
@@ -132,5 +133,43 @@ describe('resolveConnectedLiquidNeighborLevel', () => {
 
     expect(resolveConnectedLiquidNeighborLevel(waterTileId, waterTileId, 6)).toBe(6);
     expect(resolveConnectedLiquidNeighborLevel(waterTileId, lavaTileId, 6)).toBe(0);
+  });
+});
+
+describe('resolveLiquidSurfaceBottomVCrops', () => {
+  it('maps resolved liquid top heights onto bottom-edge variant v coordinates', () => {
+    expect(
+      resolveLiquidSurfaceBottomVCrops(
+        {
+          v0: 0.75,
+          v1: 0.875
+        },
+        {
+          topLeft: 0.5,
+          topRight: 0.375
+        }
+      )
+    ).toEqual({
+      bottomLeftV: 0.8125,
+      bottomRightV: 0.796875
+    });
+  });
+
+  it('clamps invalid top heights before resolving bottom-edge crops', () => {
+    expect(
+      resolveLiquidSurfaceBottomVCrops(
+        {
+          v0: 0.5,
+          v1: 0.75
+        },
+        {
+          topLeft: 99,
+          topRight: -4
+        }
+      )
+    ).toEqual({
+      bottomLeftV: 0.75,
+      bottomRightV: 0.5
+    });
   });
 });

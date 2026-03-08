@@ -97,6 +97,7 @@ import {
 import {
   type LiquidSurfaceLevelNeighborhood,
   resolveConnectedLiquidNeighborLevel,
+  resolveLiquidSurfaceBottomVCrops,
   resolveLiquidSurfaceBranchKind,
   resolveLiquidSurfaceTopHeights
 } from './world/liquidSurface';
@@ -129,6 +130,7 @@ import {
   getAnimatedLiquidRenderVariantFrameDurationMs,
   getTileMetadata,
   resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs,
+  resolveLiquidRenderVariantUvRectAtElapsedMs,
   resolveTileGameplayMetadata,
   TILE_METADATA
 } from './world/tileMetadata';
@@ -1703,6 +1705,14 @@ const bootstrap = async (): Promise<void> => {
       typeof liquidCardinalMask === 'number' && liquidAnimationFrameCount > 0
         ? resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs(tileId, liquidCardinalMask, elapsedMs)
         : null;
+    const liquidVariantUvRect =
+      typeof liquidCardinalMask === 'number'
+        ? resolveLiquidRenderVariantUvRectAtElapsedMs(tileId, liquidCardinalMask, elapsedMs)
+        : null;
+    const liquidBottomVCrops =
+      liquidSurfaceTopHeights && liquidVariantUvRect
+        ? resolveLiquidSurfaceBottomVCrops(liquidVariantUvRect, liquidSurfaceTopHeights)
+        : null;
     const atlasWidth = renderer.telemetry.atlasWidth;
     const atlasHeight = renderer.telemetry.atlasHeight;
 
@@ -1715,6 +1725,8 @@ const bootstrap = async (): Promise<void> => {
       liquidSurfaceBranch,
       liquidSurfaceTopLeft: liquidSurfaceTopHeights?.topLeft ?? null,
       liquidSurfaceTopRight: liquidSurfaceTopHeights?.topRight ?? null,
+      liquidBottomLeftV: liquidBottomVCrops?.bottomLeftV ?? null,
+      liquidBottomRightV: liquidBottomVCrops?.bottomRightV ?? null,
       liquidConnectivityGroupLabel: describeLiquidConnectivityGroup(tileId),
       liquidCardinalMask,
       liquidAnimationFrameIndex,
@@ -1732,7 +1744,7 @@ const bootstrap = async (): Promise<void> => {
           ? describeLiquidRenderVariantSourceAtElapsedMs(tileId, liquidCardinalMask, elapsedMs)
           : null,
       liquidVariantUvRect:
-        typeof liquidCardinalMask === 'number'
+        liquidVariantUvRect && typeof liquidCardinalMask === 'number'
           ? describeLiquidRenderVariantUvRectAtElapsedMs(tileId, liquidCardinalMask, elapsedMs)
           : null,
       liquidVariantPixelBounds:
@@ -2253,6 +2265,8 @@ const bootstrap = async (): Promise<void> => {
           liquidSurfaceBranch: hoveredDebugTileStatus?.liquidSurfaceBranch ?? null,
           liquidSurfaceTopLeft: hoveredDebugTileStatus?.liquidSurfaceTopLeft ?? null,
           liquidSurfaceTopRight: hoveredDebugTileStatus?.liquidSurfaceTopRight ?? null,
+          liquidBottomLeftV: hoveredDebugTileStatus?.liquidBottomLeftV ?? null,
+          liquidBottomRightV: hoveredDebugTileStatus?.liquidBottomRightV ?? null,
           liquidConnectivityGroupLabel: hoveredDebugTileStatus?.liquidConnectivityGroupLabel ?? null,
           liquidCardinalMask: hoveredDebugTileStatus?.liquidCardinalMask ?? null,
           liquidAnimationFrameIndex: hoveredDebugTileStatus?.liquidAnimationFrameIndex ?? null,
@@ -2291,6 +2305,8 @@ const bootstrap = async (): Promise<void> => {
           liquidSurfaceBranch: pinnedDebugTileStatus.liquidSurfaceBranch ?? null,
           liquidSurfaceTopLeft: pinnedDebugTileStatus.liquidSurfaceTopLeft ?? null,
           liquidSurfaceTopRight: pinnedDebugTileStatus.liquidSurfaceTopRight ?? null,
+          liquidBottomLeftV: pinnedDebugTileStatus.liquidBottomLeftV ?? null,
+          liquidBottomRightV: pinnedDebugTileStatus.liquidBottomRightV ?? null,
           liquidConnectivityGroupLabel: pinnedDebugTileStatus.liquidConnectivityGroupLabel ?? null,
           liquidCardinalMask: pinnedDebugTileStatus.liquidCardinalMask ?? null,
           liquidAnimationFrameIndex: pinnedDebugTileStatus.liquidAnimationFrameIndex ?? null,

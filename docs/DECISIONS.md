@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Partial-liquid bottom-edge inspect telemetry should reuse the shared crop resolver
+
+- Decision: Hovered and pinned inspect telemetry now resolves `liquidBottomLeftV` and `liquidBottomRightV` through the same shared bottom-edge `v` crop helper in `src/world/liquidSurface.ts` that `src/world/mesher.ts` uses when writing liquid quad UVs.
+- Reason: Partial-liquid debug readouts need to reflect the exact UV crop math the renderer bakes into chunk meshes, especially as animated liquid variants swap between different `v0..v1` frame ranges.
+- Consequence: Future liquid crop, atlas-pixel-row, or inspect telemetry work should extend the shared crop helper rather than re-deriving bottom-edge `v` math in `src/main.ts` or UI formatters.
+
 ### 2026-03-08: Resolved spawn liquid-safety telemetry reuses the shared spawn overlap rule
 
 - Decision: Runtime spawn telemetry now resolves its `safe` or `overlap` liquid-safety status through the shared helper in `src/world/playerSpawn.ts` instead of assuming every resolved spawn is already safe.

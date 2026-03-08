@@ -195,6 +195,7 @@ const testRuntime = vi.hoisted(() => {
     rendererTileIdsByWorldKey: new Map<string, number>(),
     rendererLiquidLevel: 0,
     rendererLiquidLevelsByWorldKey: new Map<string, number>(),
+    rendererLiquidRenderCardinalMask: null as number | null,
     rendererSetTileResult: false,
     rendererStepLiquidSimulationCallCount: 0,
     rendererStepPlayerStateImpl: null as null | ((
@@ -414,7 +415,7 @@ vi.mock('./gl/renderer', () => ({
     }
 
     getLiquidRenderCardinalMask(): number | null {
-      return null;
+      return testRuntime.rendererLiquidRenderCardinalMask;
     }
 
     resetWorld(): void {}
@@ -1235,6 +1236,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTileIdsByWorldKey.clear();
     testRuntime.rendererLiquidLevel = 0;
     testRuntime.rendererLiquidLevelsByWorldKey.clear();
+    testRuntime.rendererLiquidRenderCardinalMask = null;
     testRuntime.rendererSetTileResult = false;
     testRuntime.rendererStepLiquidSimulationCallCount = 0;
     testRuntime.rendererStepPlayerStateImpl = null;
@@ -3099,6 +3101,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererLiquidLevelsByWorldKey.set(worldTileKey(3, 6), 5);
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(5, 6), 9);
     testRuntime.rendererLiquidLevelsByWorldKey.set(worldTileKey(5, 6), 8);
+    testRuntime.rendererLiquidRenderCardinalMask = 11;
 
     runFixedUpdate();
     runRenderFrame();
@@ -3120,7 +3123,9 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceEastLevel: 0,
       liquidSurfaceBranch: 'exposed',
       liquidSurfaceTopLeft: 0.5,
-      liquidSurfaceTopRight: 0.375
+      liquidSurfaceTopRight: 0.375,
+      liquidBottomLeftV: 0.125,
+      liquidBottomRightV: 0.09375
     });
     expect(testRuntime.latestDebugOverlayInspectState.pinned).toMatchObject({
       tile: { x: 4, y: 6 },
@@ -3133,7 +3138,9 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceEastLevel: 0,
       liquidSurfaceBranch: 'exposed',
       liquidSurfaceTopLeft: 0.5,
-      liquidSurfaceTopRight: 0.375
+      liquidSurfaceTopRight: 0.375,
+      liquidBottomLeftV: 0.125,
+      liquidBottomRightV: 0.09375
     });
     expect(testRuntime.latestDebugEditStatusStripState.hoveredTile).toMatchObject({
       tileX: 4,
@@ -3147,7 +3154,9 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceEastLevel: 0,
       liquidSurfaceBranch: 'exposed',
       liquidSurfaceTopLeft: 0.5,
-      liquidSurfaceTopRight: 0.375
+      liquidSurfaceTopRight: 0.375,
+      liquidBottomLeftV: 0.125,
+      liquidBottomRightV: 0.09375
     });
     expect(testRuntime.latestDebugEditStatusStripState.pinnedTile).toMatchObject({
       tileX: 4,
@@ -3161,7 +3170,9 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceEastLevel: 0,
       liquidSurfaceBranch: 'exposed',
       liquidSurfaceTopLeft: 0.5,
-      liquidSurfaceTopRight: 0.375
+      liquidSurfaceTopRight: 0.375,
+      liquidBottomLeftV: 0.125,
+      liquidBottomRightV: 0.09375
     });
   });
 

@@ -2,7 +2,8 @@ import { MAX_LIQUID_LEVEL } from './constants';
 import {
   areLiquidRenderNeighborsConnected,
   TILE_METADATA,
-  type TileMetadataRegistry
+  type TileMetadataRegistry,
+  type TileUvRect
 } from './tileMetadata';
 
 export interface LiquidSurfaceLevelNeighborhood {
@@ -17,6 +18,11 @@ export interface LiquidSurfaceTopHeights {
   topRight: number;
 }
 
+export interface LiquidSurfaceBottomVCrops {
+  bottomLeftV: number;
+  bottomRightV: number;
+}
+
 export type LiquidSurfaceBranchKind = 'empty' | 'north-covered' | 'exposed';
 
 const clampLiquidFillLevel = (fillLevel: number): number => {
@@ -28,6 +34,14 @@ const clampLiquidFillLevel = (fillLevel: number): number => {
 };
 
 const toNormalizedLiquidFillHeight = (fillLevel: number): number => fillLevel / MAX_LIQUID_LEVEL;
+
+const clampNormalizedLiquidHeight = (height: number): number => {
+  if (!Number.isFinite(height)) {
+    return 0;
+  }
+
+  return Math.min(1, Math.max(0, height));
+};
 
 const resolveLiquidSurfaceBranchKindFromClampedLevels = (
   centerLevel: number,
@@ -79,6 +93,16 @@ export const resolveLiquidSurfaceBranchKind = (
     clampLiquidFillLevel(levels.center),
     clampLiquidFillLevel(levels.north)
   );
+
+export const resolveLiquidSurfaceBottomVCrops = (
+  uvRect: Pick<TileUvRect, 'v0' | 'v1'>,
+  topHeights: LiquidSurfaceTopHeights
+): LiquidSurfaceBottomVCrops => ({
+  bottomLeftV:
+    uvRect.v0 + (uvRect.v1 - uvRect.v0) * clampNormalizedLiquidHeight(topHeights.topLeft),
+  bottomRightV:
+    uvRect.v0 + (uvRect.v1 - uvRect.v0) * clampNormalizedLiquidHeight(topHeights.topRight)
+});
 
 export const resolveConnectedLiquidNeighborLevel = (
   centerTileId: number,
