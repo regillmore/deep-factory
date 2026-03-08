@@ -7,6 +7,10 @@ import {
   type PlayerState
 } from '../world/playerState';
 import {
+  cloneStandalonePlayerRenderState,
+  createStandalonePlayerRenderPresentationState
+} from '../world/standalonePlayerRenderState';
+import {
   atlasIndexToUvRect,
   getTileEmissiveLightLevel,
   resolveAnimatedTileRenderFrameUvRect,
@@ -117,6 +121,9 @@ const createStandalonePlayerEntityFrameState = (
   currentState: PlayerState,
   options: {
     previousState?: PlayerState;
+    previousWallContact?: PlayerCollisionContacts['wall'] | null;
+    previousCeilingContact?: PlayerCollisionContacts['ceiling'] | null;
+    previousCeilingBonkHoldUntilTimeMs?: number | null;
     wallContact?: PlayerCollisionContacts['wall'] | null;
     ceilingContact?: PlayerCollisionContacts['ceiling'] | null;
     ceilingBonkHoldUntilTimeMs?: number | null;
@@ -125,12 +132,27 @@ const createStandalonePlayerEntityFrameState = (
   id: 1,
   kind: 'standalone-player',
   snapshot: {
-    previous: options.previousState ?? currentState,
-    current: currentState
-  },
-  wallContact: options.wallContact ?? null,
-  ceilingContact: options.ceilingContact ?? null,
-  ceilingBonkHoldUntilTimeMs: options.ceilingBonkHoldUntilTimeMs ?? null
+    previous: cloneStandalonePlayerRenderState(
+      options.previousState ?? currentState,
+      createStandalonePlayerRenderPresentationState(
+        {
+          wall: options.previousWallContact ?? null,
+          ceiling: options.previousCeilingContact ?? null
+        },
+        options.previousCeilingBonkHoldUntilTimeMs ?? null
+      )
+    ),
+    current: cloneStandalonePlayerRenderState(
+      currentState,
+      createStandalonePlayerRenderPresentationState(
+        {
+          wall: options.wallContact ?? null,
+          ceiling: options.ceilingContact ?? null
+        },
+        options.ceilingBonkHoldUntilTimeMs ?? null
+      )
+    )
+  }
 });
 
 const renderUntilMeshBuildQueueDrains = (
@@ -1824,6 +1846,52 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBe(9);
     expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileX).toBe(1);
     expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileY).toBe(0);
+  });
+
+  it('uses the current snapshot presentation state instead of previous snapshot bonk state for pose selection', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const uniform1f = vi.mocked(gl.uniform1f);
+    uniform1f.mockClear();
+
+    const currentState = createPlayerState({
+      grounded: false,
+      velocity: { x: 0, y: 120 },
+      facing: 'right'
+    });
+
+    renderer.render(new Camera2D(), {
+      entities: [
+        createStandalonePlayerEntityFrameState(currentState, {
+          previousState: createPlayerState({
+            grounded: false,
+            velocity: { x: 0, y: 120 },
+            facing: 'right',
+            health: currentState.health,
+            lavaDamageTickSecondsRemaining: currentState.lavaDamageTickSecondsRemaining
+          }),
+          previousCeilingBonkHoldUntilTimeMs:
+            STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS
+        })
+      ],
+      renderAlpha: 0.5,
+      timeMs: STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS - 1
+    });
+
+    expectStandalonePlayerUniformValues(
+      uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
+      [{ facing: 1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_FALL }]
+    );
   });
 
   it('passes nearby resolved world light into the standalone player shader', async () => {

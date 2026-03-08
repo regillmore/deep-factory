@@ -125,7 +125,6 @@ import {
   type PlayerWallContactTransitionEvent
 } from './world/playerWallContactTransition';
 import {
-  clonePlayerState,
   createPlayerStateFromSpawn,
   DEFAULT_PLAYER_HEIGHT,
   DEFAULT_PLAYER_WIDTH,
@@ -135,6 +134,13 @@ import {
   type PlayerMovementIntent,
   type PlayerState
 } from './world/playerState';
+import {
+  cloneStandalonePlayerRenderState,
+  createStandalonePlayerRenderPresentationState,
+  isStandalonePlayerRenderStateCeilingBonkActive,
+  type StandalonePlayerRenderPresentationState,
+  type StandalonePlayerRenderState
+} from './world/standalonePlayerRenderState';
 import {
   describeLiquidConnectivityGroup,
   describeLiquidRenderVariantPixelBoundsAtElapsedMs,
@@ -253,6 +259,7 @@ type StandalonePlayerFixedStepResult = {
   contactSnapshot: StandalonePlayerFixedStepContactSnapshot;
   transitionSnapshot: StandalonePlayerFixedStepTransitionSnapshot;
   respawnEvent: PlayerRespawnEvent | null;
+  renderPresentationState: StandalonePlayerRenderPresentationState;
 };
 type StandalonePlayerFixedStepContactSnapshotOptions = {
   previousPlayerState: PlayerState;
@@ -910,7 +917,7 @@ const bootstrap = async (): Promise<void> => {
   let lastPlayerRespawnEvent: PlayerRespawnEvent | null = null;
   let lastPlayerWallContactTransitionEvent: PlayerWallContactTransitionEvent | null = null;
   let lastPlayerCeilingContactTransitionEvent: PlayerCeilingContactTransitionEvent | null = null;
-  let standalonePlayerCeilingBonkHoldUntilTimeMs: number | null = null;
+  let standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
 
   const getStandalonePlayerState = (): PlayerState | null => {
     if (standalonePlayerEntityId === null) {
@@ -919,17 +926,17 @@ const bootstrap = async (): Promise<void> => {
     return entityRegistry.getEntityState<PlayerState>(standalonePlayerEntityId);
   };
   const getStandalonePlayerRenderStateSnapshot =
-    (): EntityRenderStateSnapshot<PlayerState> | null => {
+    (): EntityRenderStateSnapshot<StandalonePlayerRenderState> | null => {
       if (standalonePlayerEntityId === null) {
         return null;
       }
-      return entityRegistry.getRenderStateSnapshot<PlayerState>(standalonePlayerEntityId);
+      return entityRegistry.getRenderStateSnapshot<StandalonePlayerRenderState>(
+        standalonePlayerEntityId
+      );
     };
-  const createRendererEntityFrameStates = (
-    standalonePlayerContacts: PlayerCollisionContacts | null
-  ): RendererEntityFrameState[] => {
+  const createRendererEntityFrameStates = (): RendererEntityFrameState[] => {
     const entityFrameStates: RendererEntityFrameState[] = [];
-    for (const snapshotEntry of entityRegistry.getRenderStateSnapshots<PlayerState>()) {
+    for (const snapshotEntry of entityRegistry.getRenderStateSnapshots<StandalonePlayerRenderState>()) {
       if (snapshotEntry.kind !== STANDALONE_PLAYER_ENTITY_KIND) {
         continue;
       }
@@ -940,17 +947,7 @@ const bootstrap = async (): Promise<void> => {
         snapshot: {
           previous: snapshotEntry.previous,
           current: snapshotEntry.current
-        },
-        wallContact:
-          snapshotEntry.id === standalonePlayerEntityId ? standalonePlayerContacts?.wall ?? null : null,
-        ceilingContact:
-          snapshotEntry.id === standalonePlayerEntityId
-            ? standalonePlayerContacts?.ceiling ?? null
-            : null,
-        ceilingBonkHoldUntilTimeMs:
-          snapshotEntry.id === standalonePlayerEntityId
-            ? standalonePlayerCeilingBonkHoldUntilTimeMs
-            : null
+        }
       });
     }
     return entityFrameStates;
@@ -959,6 +956,7 @@ const bootstrap = async (): Promise<void> => {
     entityRegistry = new EntityRegistry();
     standalonePlayerEntityId = null;
     pendingStandalonePlayerFixedStepResult = null;
+    standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
   };
   const setStandalonePlayerState = (nextPlayerState: PlayerState): void => {
     if (standalonePlayerEntityId === null) {
@@ -967,10 +965,12 @@ const bootstrap = async (): Promise<void> => {
     entityRegistry.setEntityState(standalonePlayerEntityId, nextPlayerState);
   };
   const spawnStandalonePlayerEntity = (initialPlayerState: PlayerState): PlayerState => {
+    standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
     standalonePlayerEntityId = entityRegistry.spawn({
       kind: STANDALONE_PLAYER_ENTITY_KIND,
       initialState: initialPlayerState,
-      captureRenderState: clonePlayerState,
+      captureRenderState: (playerState) =>
+        cloneStandalonePlayerRenderState(playerState, standalonePlayerRenderPresentationState),
       fixedUpdate: (playerState, fixedDt) => {
         const playerMovementIntent = input.getPlayerMovementIntent();
         const playerFixedStepResult = createStandalonePlayerFixedStepResult({
@@ -979,6 +979,7 @@ const bootstrap = async (): Promise<void> => {
           playerMovementIntent
         });
         pendingStandalonePlayerFixedStepResult = playerFixedStepResult;
+        standalonePlayerRenderPresentationState = playerFixedStepResult.renderPresentationState;
         return playerFixedStepResult.nextPlayerState;
       }
     });
@@ -1020,7 +1021,7 @@ const bootstrap = async (): Promise<void> => {
     lastPlayerRespawnEvent = respawnEvent;
     lastPlayerWallContactTransitionEvent = null;
     lastPlayerCeilingContactTransitionEvent = null;
-    standalonePlayerCeilingBonkHoldUntilTimeMs = null;
+    standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
   };
   const readStandalonePlayerHealthForRespawnDetection = (playerState: PlayerState): number => {
     const health = (playerState as { health?: unknown }).health;
@@ -1082,6 +1083,27 @@ const bootstrap = async (): Promise<void> => {
       nextPlayerContacts
     )
   });
+  const createStandalonePlayerRenderPresentationStateForFixedStepResult = (
+    nextPlayerContacts: PlayerCollisionContacts,
+    transitionSnapshot: StandalonePlayerFixedStepTransitionSnapshot,
+    respawnEvent: PlayerRespawnEvent | null,
+    timeMs: number
+  ): StandalonePlayerRenderPresentationState => {
+    const ceilingBonkHoldUntilTimeMs =
+      respawnEvent !== null
+        ? null
+        : transitionSnapshot.ceilingContactTransitionEvent?.kind === 'blocked'
+          ? timeMs + STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS
+          : typeof standalonePlayerRenderPresentationState.ceilingBonkHoldUntilTimeMs === 'number' &&
+              Number.isFinite(standalonePlayerRenderPresentationState.ceilingBonkHoldUntilTimeMs) &&
+              standalonePlayerRenderPresentationState.ceilingBonkHoldUntilTimeMs > timeMs
+            ? standalonePlayerRenderPresentationState.ceilingBonkHoldUntilTimeMs
+            : null;
+    return createStandalonePlayerRenderPresentationState(
+      nextPlayerContacts,
+      ceilingBonkHoldUntilTimeMs
+    );
+  };
   const createStandalonePlayerFixedStepResult = ({
     previousPlayerState,
     fixedDt,
@@ -1100,17 +1122,24 @@ const bootstrap = async (): Promise<void> => {
       previousPlayerState,
       nextPlayerState
     });
+    const transitionSnapshot = createStandalonePlayerFixedStepTransitionSnapshot({
+      previousPlayerState,
+      nextPlayerState,
+      previousPlayerContacts: contactSnapshot.previousPlayerContacts,
+      nextPlayerContacts: contactSnapshot.nextPlayerContacts,
+      playerMovementIntent
+    });
     return {
       nextPlayerState,
       contactSnapshot,
       respawnEvent,
-      transitionSnapshot: createStandalonePlayerFixedStepTransitionSnapshot({
-        previousPlayerState,
-        nextPlayerState,
-        previousPlayerContacts: contactSnapshot.previousPlayerContacts,
-        nextPlayerContacts: contactSnapshot.nextPlayerContacts,
-        playerMovementIntent
-      })
+      transitionSnapshot,
+      renderPresentationState: createStandalonePlayerRenderPresentationStateForFixedStepResult(
+        contactSnapshot.nextPlayerContacts,
+        transitionSnapshot,
+        respawnEvent,
+        performance.now()
+      )
     };
   };
   const applyStandalonePlayerFixedStepResult = (
@@ -1149,10 +1178,6 @@ const bootstrap = async (): Promise<void> => {
     }
     if (ceilingContactTransitionEvent !== null) {
       lastPlayerCeilingContactTransitionEvent = ceilingContactTransitionEvent;
-      if (ceilingContactTransitionEvent.kind === 'blocked') {
-        standalonePlayerCeilingBonkHoldUntilTimeMs =
-          performance.now() + STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS;
-      }
     }
   };
 
@@ -2125,16 +2150,8 @@ const bootstrap = async (): Promise<void> => {
       ? renderer.getPlayerCollisionContacts(playerState)
       : null;
     const standalonePlayerCeilingBonkActive =
-      standalonePlayerContacts?.ceiling !== null ||
-      (standalonePlayerCeilingBonkHoldUntilTimeMs !== null &&
-      Number.isFinite(standalonePlayerCeilingBonkHoldUntilTimeMs)
-        ? renderTimeMs < standalonePlayerCeilingBonkHoldUntilTimeMs
-        : false);
-    const standalonePlayerCeilingBonkHoldActive =
-      standalonePlayerContacts?.ceiling === null &&
-      standalonePlayerCeilingBonkHoldUntilTimeMs !== null &&
-      Number.isFinite(standalonePlayerCeilingBonkHoldUntilTimeMs)
-        ? renderTimeMs < standalonePlayerCeilingBonkHoldUntilTimeMs
+      playerRenderState !== null
+        ? isStandalonePlayerRenderStateCeilingBonkActive(playerRenderState, renderTimeMs)
         : false;
     const playerWorldPosition =
       playerState === null
@@ -2211,8 +2228,8 @@ const bootstrap = async (): Promise<void> => {
         ? null
         : getStandalonePlayerPlaceholderPoseLabel(playerRenderState, {
             elapsedMs: renderTimeMs,
-            wallContact: standalonePlayerContacts?.wall ?? null,
-            ceilingContact: standalonePlayerContacts?.ceiling ?? null,
+            wallContact: playerRenderState.wallContact,
+            ceilingContact: playerRenderState.ceilingContact,
             ceilingBonkActive: standalonePlayerCeilingBonkActive
           });
     return {
@@ -2311,7 +2328,7 @@ const bootstrap = async (): Promise<void> => {
               },
         playerCameraZoom: playerState === null ? null : camera.zoom,
         playerCeilingBonkHoldActive:
-          playerState === null ? null : standalonePlayerCeilingBonkHoldActive,
+          playerState === null ? null : standalonePlayerCeilingBonkActive,
         playerGrounded: playerState?.grounded ?? null,
         playerFacing: playerState?.facing ?? null,
         playerMoveX: playerState === null ? null : playerIntent.moveX,
@@ -2616,9 +2633,7 @@ const bootstrap = async (): Promise<void> => {
     const standalonePlayerRenderFrameTelemetry =
       createStandalonePlayerRenderFrameTelemetrySnapshot(renderTimeMs);
     const standalonePlayerStatusStripPlayerTelemetry = standalonePlayerRenderFrameTelemetry.debugStatusStrip;
-    const rendererEntityFrameStates = createRendererEntityFrameStates(
-      standalonePlayerRenderFrameTelemetry.standalonePlayerContacts
-    );
+    const rendererEntityFrameStates = createRendererEntityFrameStates();
     renderer.resize();
     renderer.render(camera, {
       entities: rendererEntityFrameStates,
@@ -2734,11 +2749,7 @@ const bootstrap = async (): Promise<void> => {
   };
 
   const renderWorldPreview = (): void => {
-    const standalonePlayerState = getStandalonePlayerState();
-    const standalonePlayerContacts = standalonePlayerState
-      ? renderer.getPlayerCollisionContacts(standalonePlayerState)
-      : null;
-    const rendererEntityFrameStates = createRendererEntityFrameStates(standalonePlayerContacts);
+    const rendererEntityFrameStates = createRendererEntityFrameStates();
     renderer.resize();
     renderer.render(camera, {
       entities: rendererEntityFrameStates,

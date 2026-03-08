@@ -2,11 +2,17 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Standalone-player pose-driving contact and bonk state should live inside render snapshots
+
+- Decision: Standalone-player render snapshots now clone `PlayerState` together with wall contact, ceiling contact, and bonk-hold timing, and both `src/main.ts` pose telemetry and `src/gl/renderer.ts` pose selection read those snapshot-owned fields from snapshot `current`.
+- Reason: Mixing snapshot-interpolated placement with live render-frame contact inputs could make placeholder pose labels and renderer presentation diverge between fixed ticks.
+- Consequence: Future standalone-player or entity presentation inputs that affect pose should enter the snapshot payload during fixed-step capture instead of being supplied as live renderer-only state.
+
 ### 2026-03-08: Standalone-player placeholder pose and nearby-light sampling should resolve from entity render snapshots
 
-- Decision: `src/main.ts` now submits standalone-player entity-pass entries from registry `previous/current` render snapshots plus current wall or ceiling contact and bonk-hold inputs, `src/gl/renderer.ts` resolves placeholder pose from snapshot `current`, and nearby-light sampling now uses the interpolated render position derived from those snapshots.
+- Decision: `src/main.ts` now submits standalone-player entity-pass entries directly from registry `previous/current` render snapshots, `src/gl/renderer.ts` resolves placeholder pose from snapshot `current`, and nearby-light sampling now uses the interpolated render position derived from those snapshots.
 - Reason: The entity pass should own the placeholder's render-frame presentation inputs so debug pose labels and nearby-light telemetry stay aligned with the same snapshot-driven draw path that places the quad between fixed ticks.
-- Consequence: Future entity presentation and telemetry should prefer snapshot-backed render inputs, while any remaining live contact or bonk-latch inputs stay explicit until they are deliberately moved into snapshot-owned presentation state too.
+- Consequence: Future entity presentation and telemetry should prefer snapshot-backed render inputs instead of mixing interpolated draw state with separate live renderer-only pose inputs.
 
 ### 2026-03-08: Entity render-position interpolation should clamp render alpha and blend from registry snapshots
 

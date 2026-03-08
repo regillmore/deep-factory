@@ -52,6 +52,10 @@ import {
 } from '../world/playerState';
 import type { EntityId, EntityRenderStateSnapshot } from '../world/entityRegistry';
 import { resolveInterpolatedEntityWorldPosition } from '../world/entityRenderInterpolation';
+import {
+  isStandalonePlayerRenderStateCeilingBonkActive,
+  type StandalonePlayerRenderState
+} from '../world/standalonePlayerRenderState';
 import { recomputeSunlightFromExposedChunkTops } from '../world/sunlight';
 import { TileWorld } from '../world/world';
 
@@ -84,10 +88,7 @@ export interface RendererFrameState {
 export interface StandalonePlayerEntityFrameState {
   id: EntityId;
   kind: 'standalone-player';
-  snapshot: EntityRenderStateSnapshot<PlayerState>;
-  wallContact?: PlayerCollisionContacts['wall'] | null;
-  ceilingContact?: PlayerCollisionContacts['ceiling'] | null;
-  ceilingBonkHoldUntilTimeMs?: number | null;
+  snapshot: EntityRenderStateSnapshot<StandalonePlayerRenderState>;
 }
 
 export type RendererEntityFrameState = StandalonePlayerEntityFrameState;
@@ -819,19 +820,14 @@ export class Renderer {
   ): void {
     const state = entity.snapshot.current;
     const renderPosition = resolveInterpolatedEntityWorldPosition(entity.snapshot, renderAlpha);
-    const wallContact = entity.wallContact ?? null;
-    const ceilingContact = entity.ceilingContact ?? null;
-    const ceilingBonkHoldUntilTimeMs = entity.ceilingBonkHoldUntilTimeMs ?? null;
+    const wallContact = state.wallContact;
+    const ceilingContact = state.ceilingContact;
     const gl = this.gl;
     const poseIndex = getStandalonePlayerPlaceholderPoseIndex(state, {
       elapsedMs: timeMs,
       wallContact,
       ceilingContact,
-      ceilingBonkActive:
-        ceilingContact !== null ||
-        (ceilingBonkHoldUntilTimeMs !== null && Number.isFinite(ceilingBonkHoldUntilTimeMs)
-          ? timeMs < ceilingBonkHoldUntilTimeMs
-          : false)
+      ceilingBonkActive: isStandalonePlayerRenderStateCeilingBonkActive(state, timeMs)
     });
     gl.useProgram(this.playerProgram);
     gl.uniformMatrix4fv(this.uPlayerMatrix, false, worldToClipMatrix);

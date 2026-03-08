@@ -343,16 +343,21 @@ vi.mock('./gl/renderer', () => ({
               snapshot?: {
                 previous?: {
                   position?: { x?: number; y?: number };
+                  wallContact?:
+                    | { tileX: number; tileY: number; tileId: number; side: 'left' | 'right' }
+                    | null;
+                  ceilingContact?: { tileX: number; tileY: number; tileId: number } | null;
+                  ceilingBonkHoldUntilTimeMs?: number | null;
                 } | null;
                 current?: {
                   position?: { x?: number; y?: number };
+                  wallContact?:
+                    | { tileX: number; tileY: number; tileId: number; side: 'left' | 'right' }
+                    | null;
+                  ceilingContact?: { tileX: number; tileY: number; tileId: number } | null;
+                  ceilingBonkHoldUntilTimeMs?: number | null;
                 } | null;
               } | null;
-              wallContact?:
-                | { tileX: number; tileY: number; tileId: number; side: 'left' | 'right' }
-                | null;
-              ceilingContact?: { tileX: number; tileY: number; tileId: number } | null;
-              ceilingBonkHoldUntilTimeMs?: number | null;
             }>
           | null;
         renderAlpha?: number;
@@ -390,10 +395,11 @@ vi.mock('./gl/renderer', () => ({
                 y: standalonePlayerEntity.snapshot.current.position.y
               }
             : null,
-        standalonePlayerWallContact: standalonePlayerEntity?.wallContact ?? null,
-        standalonePlayerCeilingContact: standalonePlayerEntity?.ceilingContact ?? null,
+        standalonePlayerWallContact: standalonePlayerEntity?.snapshot?.current?.wallContact ?? null,
+        standalonePlayerCeilingContact:
+          standalonePlayerEntity?.snapshot?.current?.ceilingContact ?? null,
         standalonePlayerCeilingBonkHoldUntilTimeMs:
-          standalonePlayerEntity?.ceilingBonkHoldUntilTimeMs ?? null,
+          standalonePlayerEntity?.snapshot?.current?.ceilingBonkHoldUntilTimeMs ?? null,
         renderAlpha: typeof renderState.renderAlpha === 'number' ? renderState.renderAlpha : null,
         timeMs: renderState.timeMs ?? null
       };
@@ -3025,6 +3031,62 @@ describe('main.ts shell state orchestration', () => {
     expect(renderFrameState.renderAlpha).toBe(0.25);
     expect(overlay.player?.position).toEqual(steppedPlayerState.position);
     expect(statusStrip.playerWorldPosition).toEqual(steppedPlayerState.position);
+  });
+
+  it('submits standalone-player wall, ceiling, and bonk presentation through the current entity snapshot', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const noContacts = {
+      support: null,
+      wall: null,
+      ceiling: null
+    };
+    const blockedContacts = {
+      support: null,
+      wall: {
+        tileX: -2,
+        tileY: -1,
+        tileId: 3,
+        side: 'left' as const
+      },
+      ceiling: {
+        tileX: -1,
+        tileY: -3,
+        tileId: 4
+      }
+    };
+    const steppedPlayerState = {
+      position: { x: -12, y: -10 },
+      velocity: { x: -48, y: -90 },
+      size: { width: 12, height: 28 },
+      grounded: false,
+      facing: 'left' as const
+    };
+
+    testRuntime.performanceNow = 1500;
+    testRuntime.rendererStepPlayerStateImpl = () => steppedPlayerState;
+    testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, blockedContacts, noContacts];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
+    if (!testRuntime.latestRendererRenderFrameState) {
+      throw new Error('expected latest renderer frame state after blocked-contact step');
+    }
+
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerWallContact).toEqual(
+      blockedContacts.wall
+    );
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerCeilingContact).toEqual(
+      blockedContacts.ceiling
+    );
+    expect(
+      testRuntime.latestRendererRenderFrameState.standalonePlayerCeilingBonkHoldUntilTimeMs
+    ).toBe(1500 + STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS);
   });
 
   it('routes standalone-player render-frame player, nearby-light, contact, and camera telemetry through shared snapshot helpers for the overlay and status strip', async () => {
