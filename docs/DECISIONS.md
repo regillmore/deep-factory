@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-07: Loaded-chunk liquid simulation resolves downward transfers before sideways equalization
+
+- Decision: Resident liquid simulation in `src/world/world.ts` stores per-tile `0..8` fill levels, applies downward transfers before sideways equalization, and only crosses into already loaded neighboring chunk cells during fixed updates.
+- Reason: Conserved liquid volume and deterministic chunk-boundary behavior need world-owned fill state plus a sideways step that cannot double-spend one source tile into both neighbors in the same tick.
+- Consequence: Future liquid rendering, save/load, inspect telemetry, and player-liquid interaction work should consume the shared fill-level state and preserve the loaded-chunk downward-first stepping contract unless the liquid model is deliberately redesigned end-to-end.
+
 ### 2026-03-07: Boundary sunlight transport should distinguish sunlight from retained emissive light
 
 - Decision: Boundary-column sunlight transport in `src/world/sunlight.ts` should determine whether neighboring boundary air is sunlight-lit from a geometry-backed sunlight probe instead of treating any retained positive light level in a clean neighboring column as sunlight.

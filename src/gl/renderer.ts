@@ -529,6 +529,10 @@ export class Renderer {
     return this.world.getTile(worldTileX, worldTileY);
   }
 
+  stepLiquidSimulation(): boolean {
+    return this.world.stepLiquidSimulation();
+  }
+
   getLiquidRenderCardinalMask(worldTileX: number, worldTileY: number): number | null {
     const tileId = this.world.getTile(worldTileX, worldTileY);
     if (!hasLiquidRenderMetadata(tileId, TILE_METADATA)) {

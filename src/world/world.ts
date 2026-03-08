@@ -1,4 +1,4 @@
-import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './constants';
+import { CHUNK_SIZE, MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL } from './constants';
 import {
   chunkBoundsContains,
   chunkKey,
@@ -7,7 +7,7 @@ import {
   worldToLocalTile
 } from './chunkMath';
 import type { ChunkBounds } from './chunkMath';
-import { doesTileBlockLight, getTileEmissiveLightLevel } from './tileMetadata';
+import { doesTileBlockLight, getTileEmissiveLightLevel, getTileLiquidKind } from './tileMetadata';
 import type { TileMetadataRegistry } from './tileMetadata';
 import type { Chunk } from './types';
 
@@ -58,6 +58,7 @@ const createTileNeighborhood = (): TileNeighborhood => ({
   northWest: 0
 });
 
+const createChunkLiquidLevels = (): Uint8Array => new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
 const createChunkLightLevels = (): Uint8Array => new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
 const ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK = CHUNK_SIZE >= 32 ? 0xffffffff >>> 0 : ((1 << CHUNK_SIZE) - 1) >>> 0;
 
@@ -165,6 +166,35 @@ const expectLightLevel = (lightLevel: number): number => {
   return lightLevel;
 };
 
+const expectLiquidLevel = (
+  tileId: number,
+  liquidLevel: number,
+  registry?: TileMetadataRegistry
+): number => {
+  const liquidKind = getTileLiquidKind(tileId, registry);
+  if (liquidKind === null) {
+    if (liquidLevel !== 0) {
+      throw new Error('liquidLevel must be 0 for non-liquid tiles');
+    }
+    return 0;
+  }
+
+  if (!Number.isInteger(liquidLevel) || liquidLevel < 1 || liquidLevel > MAX_LIQUID_LEVEL) {
+    throw new Error(`liquidLevel must be an integer between 1 and ${MAX_LIQUID_LEVEL}`);
+  }
+
+  return liquidLevel;
+};
+
+interface LiquidTransfer {
+  fromWorldTileX: number;
+  fromWorldTileY: number;
+  toWorldTileX: number;
+  toWorldTileY: number;
+  tileId: number;
+  liquidLevel: number;
+}
+
 export const didTileLightingStateChange = (
   previousTileId: number,
   tileId: number,
@@ -176,18 +206,35 @@ export const didTileLightingStateChange = (
 export class TileWorld {
   private chunks = new Map<string, Chunk>();
   private editedChunkTiles = new Map<string, Map<number, number>>();
+  private editedChunkLiquidLevels = new Map<string, Map<number, number>>();
   private tileEditListeners = new Set<TileEditListener>();
   private dirtyLightChunkKeys = new Set<string>();
+  private liquidSimulationTick = 0;
+
+  private getResidentChunk(chunkX: number, chunkY: number): Chunk | null {
+    return this.chunks.get(chunkKey(chunkX, chunkY)) ?? null;
+  }
 
   private getResidentTileId(worldTileX: number, worldTileY: number): number | null {
     const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
-    const chunk = this.chunks.get(chunkKey(chunkX, chunkY));
+    const chunk = this.getResidentChunk(chunkX, chunkY);
     if (!chunk) {
       return null;
     }
 
     const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
     return chunk.tiles[toTileIndex(localX, localY)] ?? 0;
+  }
+
+  private getResidentLiquidLevel(worldTileX: number, worldTileY: number): number | null {
+    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+    const chunk = this.getResidentChunk(chunkX, chunkY);
+    if (!chunk) {
+      return null;
+    }
+
+    const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
+    return chunk.liquidLevels[toTileIndex(localX, localY)] ?? 0;
   }
 
   private collectNearbyEmissiveInvalidationRange(worldTileX: number, worldTileY: number): number {
@@ -224,6 +271,198 @@ export class TileWorld {
     return localLightingRange;
   }
 
+  private updateEditedChunkTileState(
+    key: string,
+    tileIndex: number,
+    worldTileX: number,
+    worldTileY: number,
+    tileId: number,
+    liquidLevel: number
+  ): void {
+    const generatedTileId = proceduralTile(worldTileX, worldTileY);
+    if (tileId === generatedTileId) {
+      const editedTiles = this.editedChunkTiles.get(key);
+      editedTiles?.delete(tileIndex);
+      if (editedTiles && editedTiles.size === 0) {
+        this.editedChunkTiles.delete(key);
+      }
+    } else {
+      let editedTiles = this.editedChunkTiles.get(key);
+      if (!editedTiles) {
+        editedTiles = new Map<number, number>();
+        this.editedChunkTiles.set(key, editedTiles);
+      }
+      editedTiles.set(tileIndex, tileId);
+    }
+
+    if (liquidLevel === 0) {
+      const editedLiquidLevels = this.editedChunkLiquidLevels.get(key);
+      editedLiquidLevels?.delete(tileIndex);
+      if (editedLiquidLevels && editedLiquidLevels.size === 0) {
+        this.editedChunkLiquidLevels.delete(key);
+      }
+      return;
+    }
+
+    let editedLiquidLevels = this.editedChunkLiquidLevels.get(key);
+    if (!editedLiquidLevels) {
+      editedLiquidLevels = new Map<number, number>();
+      this.editedChunkLiquidLevels.set(key, editedLiquidLevels);
+    }
+    editedLiquidLevels.set(tileIndex, liquidLevel);
+  }
+
+  private invalidateLightingForTileStateChange(
+    worldTileX: number,
+    worldTileY: number,
+    localX: number,
+    localY: number,
+    chunkY: number,
+    previousTileId: number,
+    tileId: number
+  ): void {
+    const previousTileBlocksLight = doesTileBlockLight(previousTileId);
+    const nextTileBlocksLight = doesTileBlockLight(tileId);
+    const previousTileEmissiveLight = getTileEmissiveLightLevel(previousTileId);
+    const nextTileEmissiveLight = getTileEmissiveLightLevel(tileId);
+
+    if (
+      previousTileBlocksLight === nextTileBlocksLight &&
+      previousTileEmissiveLight === nextTileEmissiveLight
+    ) {
+      return;
+    }
+
+    let localLightingRange = Math.max(previousTileEmissiveLight, nextTileEmissiveLight);
+    if (localLightingRange === 0 && previousTileBlocksLight !== nextTileBlocksLight) {
+      localLightingRange = this.collectNearbyEmissiveInvalidationRange(worldTileX, worldTileY);
+    }
+
+    const sunlightInvalidationWorldTileXRange = collectSunlightInvalidationWorldTileXRangeForLocalTile(
+      worldTileX,
+      localX,
+      localLightingRange
+    );
+    const invalidationColumns = collectLightInvalidationColumnsForWorldTileXRange(
+      sunlightInvalidationWorldTileXRange.minWorldTileX,
+      sunlightInvalidationWorldTileXRange.maxWorldTileX
+    );
+
+    for (const chunkYOffset of collectSunlightInvalidationChunkYOffsetsForLocalTile(localY)) {
+      for (const column of invalidationColumns) {
+        this.invalidateChunkLightColumns(column.chunkX, chunkY + chunkYOffset, column.localColumnMask);
+      }
+    }
+  }
+
+  private commitTileState(
+    worldTileX: number,
+    worldTileY: number,
+    tileId: number,
+    liquidLevel: number,
+    emitTileEditEvent: boolean
+  ): {
+    previousTileId: number;
+    previousLiquidLevel: number;
+    changed: boolean;
+    tileIdChanged: boolean;
+  } {
+    const normalizedLiquidLevel = expectLiquidLevel(tileId, liquidLevel);
+    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+    const key = chunkKey(chunkX, chunkY);
+    const chunk = this.ensureChunk(chunkX, chunkY);
+    const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
+    const tileIndex = toTileIndex(localX, localY);
+    const previousTileId = chunk.tiles[tileIndex] ?? 0;
+    const previousLiquidLevel = chunk.liquidLevels[tileIndex] ?? 0;
+    if (previousTileId === tileId && previousLiquidLevel === normalizedLiquidLevel) {
+      return {
+        previousTileId,
+        previousLiquidLevel,
+        changed: false,
+        tileIdChanged: false
+      };
+    }
+
+    chunk.tiles[tileIndex] = tileId;
+    chunk.liquidLevels[tileIndex] = normalizedLiquidLevel;
+    this.updateEditedChunkTileState(key, tileIndex, worldTileX, worldTileY, tileId, normalizedLiquidLevel);
+
+    const tileIdChanged = previousTileId !== tileId;
+    if (tileIdChanged) {
+      this.invalidateLightingForTileStateChange(
+        worldTileX,
+        worldTileY,
+        localX,
+        localY,
+        chunkY,
+        previousTileId,
+        tileId
+      );
+
+      if (emitTileEditEvent) {
+        const event: TileEditEvent = {
+          worldTileX,
+          worldTileY,
+          chunkX,
+          chunkY,
+          localX,
+          localY,
+          previousTileId,
+          tileId
+        };
+
+        for (const listener of this.tileEditListeners) {
+          listener(event);
+        }
+      }
+    }
+
+    return {
+      previousTileId,
+      previousLiquidLevel,
+      changed: true,
+      tileIdChanged
+    };
+  }
+
+  private applyLiquidTransfer(transfer: LiquidTransfer): boolean {
+    const sourceTileId = this.getResidentTileId(transfer.fromWorldTileX, transfer.fromWorldTileY);
+    const sourceLiquidLevel = this.getResidentLiquidLevel(transfer.fromWorldTileX, transfer.fromWorldTileY);
+    const targetTileId = this.getResidentTileId(transfer.toWorldTileX, transfer.toWorldTileY);
+    const targetLiquidLevel = this.getResidentLiquidLevel(transfer.toWorldTileX, transfer.toWorldTileY);
+    if (
+      sourceTileId === null ||
+      sourceLiquidLevel === null ||
+      targetTileId === null ||
+      targetLiquidLevel === null ||
+      sourceTileId !== transfer.tileId ||
+      sourceLiquidLevel < transfer.liquidLevel
+    ) {
+      return false;
+    }
+
+    const nextSourceLiquidLevel = sourceLiquidLevel - transfer.liquidLevel;
+    const nextSourceTileId = nextSourceLiquidLevel === 0 ? 0 : sourceTileId;
+    const nextTargetLiquidLevel = targetLiquidLevel + transfer.liquidLevel;
+    const nextTargetTileId = targetTileId === 0 ? sourceTileId : targetTileId;
+    const sourceChanged = this.commitTileState(
+      transfer.fromWorldTileX,
+      transfer.fromWorldTileY,
+      nextSourceTileId,
+      nextSourceLiquidLevel,
+      true
+    ).changed;
+    const targetChanged = this.commitTileState(
+      transfer.toWorldTileX,
+      transfer.toWorldTileY,
+      nextTargetTileId,
+      nextTargetLiquidLevel,
+      true
+    ).changed;
+    return sourceChanged || targetChanged;
+  }
+
   constructor(radius = 3) {
     for (let y = -radius; y <= radius; y += 1) {
       for (let x = -radius; x <= radius; x += 1) {
@@ -240,6 +479,7 @@ export class TileWorld {
     const normalizedChunkY = chunkY === 0 ? 0 : chunkY;
 
     const tiles = new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
+    const liquidLevels = createChunkLiquidLevels();
     for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
       for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
         const worldX = normalizedChunkX * CHUNK_SIZE + localX;
@@ -249,15 +489,29 @@ export class TileWorld {
     }
 
     const editedTiles = this.editedChunkTiles.get(key);
+    const editedLiquidLevels = this.editedChunkLiquidLevels.get(key);
     if (editedTiles) {
       for (const [tileIndex, tileId] of editedTiles) {
         tiles[tileIndex] = tileId;
+        if (getTileLiquidKind(tileId) !== null) {
+          liquidLevels[tileIndex] = editedLiquidLevels?.get(tileIndex) ?? MAX_LIQUID_LEVEL;
+        }
+      }
+    }
+
+    if (editedLiquidLevels) {
+      for (const [tileIndex, liquidLevel] of editedLiquidLevels) {
+        if (getTileLiquidKind(tiles[tileIndex] ?? 0) === null) {
+          continue;
+        }
+        liquidLevels[tileIndex] = liquidLevel;
       }
     }
 
     const chunk: Chunk = {
       coord: { x: normalizedChunkX, y: normalizedChunkY },
       tiles,
+      liquidLevels,
       lightLevels: createChunkLightLevels(),
       lightDirty: true,
       lightDirtyColumnMask: ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK
@@ -275,78 +529,163 @@ export class TileWorld {
   }
 
   setTile(worldTileX: number, worldTileY: number, tileId: number): boolean {
-    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
-    const key = chunkKey(chunkX, chunkY);
-    const chunk = this.ensureChunk(chunkX, chunkY);
-    const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
-    const tileIndex = toTileIndex(localX, localY);
-    const previousTileId = chunk.tiles[tileIndex];
-    if (previousTileId === tileId) return false;
-
-    chunk.tiles[tileIndex] = tileId;
-    const generatedTileId = proceduralTile(worldTileX, worldTileY);
-    if (tileId === generatedTileId) {
-      const editedTiles = this.editedChunkTiles.get(key);
-      editedTiles?.delete(tileIndex);
-      if (editedTiles && editedTiles.size === 0) {
-        this.editedChunkTiles.delete(key);
-      }
-    } else {
-      let editedTiles = this.editedChunkTiles.get(key);
-      if (!editedTiles) {
-        editedTiles = new Map<number, number>();
-        this.editedChunkTiles.set(key, editedTiles);
-      }
-      editedTiles.set(tileIndex, tileId);
+    if (this.getTile(worldTileX, worldTileY) === tileId) {
+      return false;
     }
 
-    const previousTileBlocksLight = doesTileBlockLight(previousTileId);
-    const nextTileBlocksLight = doesTileBlockLight(tileId);
-    const previousTileEmissiveLight = getTileEmissiveLightLevel(previousTileId);
-    const nextTileEmissiveLight = getTileEmissiveLightLevel(tileId);
+    const liquidKind = getTileLiquidKind(tileId);
+    return this.commitTileState(
+      worldTileX,
+      worldTileY,
+      tileId,
+      liquidKind === null ? 0 : MAX_LIQUID_LEVEL,
+      true
+    ).changed;
+  }
 
-    if (
-      previousTileBlocksLight !== nextTileBlocksLight ||
-      previousTileEmissiveLight !== nextTileEmissiveLight
-    ) {
-      let localLightingRange = Math.max(previousTileEmissiveLight, nextTileEmissiveLight);
-      if (localLightingRange === 0 && previousTileBlocksLight !== nextTileBlocksLight) {
-        localLightingRange = this.collectNearbyEmissiveInvalidationRange(worldTileX, worldTileY);
-      }
+  getLiquidLevel(worldTileX: number, worldTileY: number): number {
+    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+    const chunk = this.ensureChunk(chunkX, chunkY);
+    const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
+    return chunk.liquidLevels[toTileIndex(localX, localY)] ?? 0;
+  }
 
-      const sunlightInvalidationWorldTileXRange = collectSunlightInvalidationWorldTileXRangeForLocalTile(
-        worldTileX,
-        localX,
-        localLightingRange
-      );
-      const invalidationColumns = collectLightInvalidationColumnsForWorldTileXRange(
-        sunlightInvalidationWorldTileXRange.minWorldTileX,
-        sunlightInvalidationWorldTileXRange.maxWorldTileX
-      );
+  stepLiquidSimulation(): boolean {
+    const downwardTransfers: LiquidTransfer[] = [];
 
-      for (const chunkYOffset of collectSunlightInvalidationChunkYOffsetsForLocalTile(localY)) {
-        for (const column of invalidationColumns) {
-          this.invalidateChunkLightColumns(column.chunkX, chunkY + chunkYOffset, column.localColumnMask);
+    for (const chunk of this.chunks.values()) {
+      for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
+        for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
+          const tileIndex = toTileIndex(localX, localY);
+          const tileId = chunk.tiles[tileIndex] ?? 0;
+          const liquidLevel = chunk.liquidLevels[tileIndex] ?? 0;
+          if (liquidLevel === 0 || getTileLiquidKind(tileId) === null) {
+            continue;
+          }
+
+          const worldTileX = chunk.coord.x * CHUNK_SIZE + localX;
+          const worldTileY = chunk.coord.y * CHUNK_SIZE + localY;
+          const belowTileId = this.getResidentTileId(worldTileX, worldTileY + 1);
+          const belowLiquidLevel = this.getResidentLiquidLevel(worldTileX, worldTileY + 1);
+          if (belowTileId === null || belowLiquidLevel === null) {
+            continue;
+          }
+
+          const belowLiquidKind = getTileLiquidKind(belowTileId);
+          if (belowTileId !== 0 && belowLiquidKind !== getTileLiquidKind(tileId)) {
+            continue;
+          }
+
+          const capacity = MAX_LIQUID_LEVEL - belowLiquidLevel;
+          if (capacity <= 0) {
+            continue;
+          }
+
+          downwardTransfers.push({
+            fromWorldTileX: worldTileX,
+            fromWorldTileY: worldTileY,
+            toWorldTileX: worldTileX,
+            toWorldTileY: worldTileY + 1,
+            tileId,
+            liquidLevel: Math.min(liquidLevel, capacity)
+          });
         }
       }
     }
 
-    const event: TileEditEvent = {
-      worldTileX,
-      worldTileY,
-      chunkX,
-      chunkY,
-      localX,
-      localY,
-      previousTileId,
-      tileId
-    };
-
-    for (const listener of this.tileEditListeners) {
-      listener(event);
+    let changed = false;
+    for (const transfer of downwardTransfers) {
+      changed = this.applyLiquidTransfer(transfer) || changed;
     }
 
-    return true;
+    const horizontalPairParity = this.liquidSimulationTick & 1;
+    for (const chunk of this.chunks.values()) {
+      for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
+        for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
+          const worldTileX = chunk.coord.x * CHUNK_SIZE + localX;
+          if ((worldTileX & 1) !== horizontalPairParity) {
+            continue;
+          }
+
+          const worldTileY = chunk.coord.y * CHUNK_SIZE + localY;
+          const leftTileId = this.getResidentTileId(worldTileX, worldTileY);
+          const leftLiquidLevel = this.getResidentLiquidLevel(worldTileX, worldTileY);
+          const rightTileId = this.getResidentTileId(worldTileX + 1, worldTileY);
+          const rightLiquidLevel = this.getResidentLiquidLevel(worldTileX + 1, worldTileY);
+          if (
+            leftTileId === null ||
+            leftLiquidLevel === null ||
+            rightTileId === null ||
+            rightLiquidLevel === null
+          ) {
+            continue;
+          }
+
+          const leftLiquidKind = getTileLiquidKind(leftTileId);
+          const rightLiquidKind = getTileLiquidKind(rightTileId);
+          if (leftLiquidKind === null && rightLiquidKind === null) {
+            continue;
+          }
+          if (leftLiquidKind !== null && rightLiquidKind !== null && leftLiquidKind !== rightLiquidKind) {
+            continue;
+          }
+
+          const transferDirection =
+            leftLiquidLevel > rightLiquidLevel
+              ? 'left-to-right'
+              : rightLiquidLevel > leftLiquidLevel
+                ? 'right-to-left'
+                : null;
+          if (!transferDirection) {
+            continue;
+          }
+
+          const donorTileId = transferDirection === 'left-to-right' ? leftTileId : rightTileId;
+          const donorLiquidLevel =
+            transferDirection === 'left-to-right' ? leftLiquidLevel : rightLiquidLevel;
+          const receiverTileId = transferDirection === 'left-to-right' ? rightTileId : leftTileId;
+          const receiverLiquidLevel =
+            transferDirection === 'left-to-right' ? rightLiquidLevel : leftLiquidLevel;
+          const donorLiquidKind = getTileLiquidKind(donorTileId);
+          if (donorLiquidKind === null) {
+            continue;
+          }
+          if (receiverTileId !== 0 && getTileLiquidKind(receiverTileId) !== donorLiquidKind) {
+            continue;
+          }
+
+          const capacity = MAX_LIQUID_LEVEL - receiverLiquidLevel;
+          const transferLevel = Math.min(Math.floor((donorLiquidLevel - receiverLiquidLevel) / 2), capacity);
+          if (transferLevel <= 0) {
+            continue;
+          }
+
+          changed =
+            this.applyLiquidTransfer(
+              transferDirection === 'left-to-right'
+                ? {
+                    fromWorldTileX: worldTileX,
+                    fromWorldTileY: worldTileY,
+                    toWorldTileX: worldTileX + 1,
+                    toWorldTileY: worldTileY,
+                    tileId: donorTileId,
+                    liquidLevel: transferLevel
+                  }
+                : {
+                    fromWorldTileX: worldTileX + 1,
+                    fromWorldTileY: worldTileY,
+                    toWorldTileX: worldTileX,
+                    toWorldTileY: worldTileY,
+                    tileId: donorTileId,
+                    liquidLevel: transferLevel
+                  }
+            ) || changed;
+        }
+      }
+    }
+
+    this.liquidSimulationTick = (this.liquidSimulationTick + 1) >>> 0;
+    return changed;
   }
 
   getLightLevel(worldTileX: number, worldTileY: number): number {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './constants';
+import { CHUNK_SIZE, MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL } from './constants';
 import type { ChunkBounds } from './chunkMath';
 import { toTileIndex } from './chunkMath';
 import { getTileEmissiveLightLevel, parseTileMetadataRegistry } from './tileMetadata';
@@ -8,6 +8,8 @@ import { didTileLightingStateChange, TileWorld } from './world';
 import type { TileEditEvent } from './world';
 
 const ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK = 0xffffffff >>> 0;
+const WATER_TILE_ID = 7;
+const LAVA_TILE_ID = 8;
 const localLightColumnBit = (localX: number): number => (1 << localX) >>> 0;
 const localLightColumnRangeMask = (startLocalX: number, endLocalX: number): number => {
   let mask = 0;
@@ -79,6 +81,91 @@ describe('TileWorld', () => {
 
     expect(world.pruneChunksOutside({ minChunkX: 1, minChunkY: 1, maxChunkX: 1, maxChunkY: 1 })).toBe(1);
     expect(world.getTile(0, 0)).toBe(proceduralTileId);
+  });
+
+  it('stores liquid fill levels for liquid tiles and clears them when the tile becomes non-liquid', () => {
+    const world = new TileWorld(0);
+    const worldTileX = 4;
+    const worldTileY = -20;
+
+    world.ensureChunk(0, -1);
+
+    expect(world.setTile(worldTileX, worldTileY, WATER_TILE_ID)).toBe(true);
+    expect(world.getTile(worldTileX, worldTileY)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(worldTileX, worldTileY)).toBe(MAX_LIQUID_LEVEL);
+
+    expect(world.setTile(worldTileX, worldTileY, 0)).toBe(true);
+    expect(world.getTile(worldTileX, worldTileY)).toBe(0);
+    expect(world.getLiquidLevel(worldTileX, worldTileY)).toBe(0);
+  });
+
+  it('flows liquid downward before sideways within the fixed-step simulation', () => {
+    const world = new TileWorld(0);
+    const worldTileX = 4;
+    const worldTileY = -20;
+
+    world.ensureChunk(0, -1);
+    expect(world.setTile(worldTileX + 1, worldTileY + 1, 1)).toBe(true);
+    expect(world.setTile(worldTileX, worldTileY, WATER_TILE_ID)).toBe(true);
+
+    expect(world.stepLiquidSimulation()).toBe(true);
+    expect(world.getTile(worldTileX, worldTileY)).toBe(0);
+    expect(world.getLiquidLevel(worldTileX, worldTileY)).toBe(0);
+    expect(world.getTile(worldTileX, worldTileY + 1)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(worldTileX, worldTileY + 1)).toBe(MAX_LIQUID_LEVEL);
+  });
+
+  it('spreads loaded liquid sideways across resident chunk boundaries deterministically', () => {
+    const world = new TileWorld(1);
+    const worldTileX = CHUNK_SIZE - 1;
+    const worldTileY = -20;
+
+    expect(world.setTile(worldTileX - 1, worldTileY, 1)).toBe(true);
+    expect(world.setTile(worldTileX, worldTileY + 1, 1)).toBe(true);
+    expect(world.setTile(worldTileX + 1, worldTileY + 1, 1)).toBe(true);
+    expect(world.setTile(worldTileX, worldTileY, WATER_TILE_ID)).toBe(true);
+
+    expect(world.stepLiquidSimulation()).toBe(false);
+    expect(world.stepLiquidSimulation()).toBe(true);
+
+    expect(world.getTile(worldTileX, worldTileY)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(worldTileX, worldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
+    expect(world.getTile(worldTileX + 1, worldTileY)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(worldTileX + 1, worldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
+  });
+
+  it('reapplies simulated liquid levels when a pruned liquid chunk streams back in', () => {
+    const world = new TileWorld(1);
+    const worldTileX = CHUNK_SIZE - 1;
+    const worldTileY = -20;
+
+    expect(world.setTile(worldTileX - 1, worldTileY, 1)).toBe(true);
+    expect(world.setTile(worldTileX, worldTileY + 1, 1)).toBe(true);
+    expect(world.setTile(worldTileX + 1, worldTileY + 1, 1)).toBe(true);
+    expect(world.setTile(worldTileX, worldTileY, WATER_TILE_ID)).toBe(true);
+    world.stepLiquidSimulation();
+    world.stepLiquidSimulation();
+
+    expect(world.pruneChunksOutside({ minChunkX: -1, minChunkY: -1, maxChunkX: 0, maxChunkY: 0 })).toBeGreaterThan(0);
+    expect(world.getTile(worldTileX + 1, worldTileY)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(worldTileX + 1, worldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
+  });
+
+  it('keeps water and lava separated when sideways spreading resolves across neighboring cells', () => {
+    const world = new TileWorld(1);
+    const worldTileX = 10;
+    const worldTileY = -20;
+
+    expect(world.setTile(worldTileX, worldTileY + 1, 1)).toBe(true);
+    expect(world.setTile(worldTileX + 1, worldTileY + 1, 1)).toBe(true);
+    expect(world.setTile(worldTileX, worldTileY, WATER_TILE_ID)).toBe(true);
+    expect(world.setTile(worldTileX + 1, worldTileY, LAVA_TILE_ID)).toBe(true);
+
+    expect(world.stepLiquidSimulation()).toBe(false);
+    expect(world.getTile(worldTileX, worldTileY)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(worldTileX, worldTileY)).toBe(MAX_LIQUID_LEVEL);
+    expect(world.getTile(worldTileX + 1, worldTileY)).toBe(LAVA_TILE_ID);
+    expect(world.getLiquidLevel(worldTileX + 1, worldTileY)).toBe(MAX_LIQUID_LEVEL);
   });
 
   it('generates procedural terrain with sky above and ground below in +Y-down world space', () => {

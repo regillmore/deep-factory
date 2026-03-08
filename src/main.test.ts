@@ -178,6 +178,7 @@ const testRuntime = vi.hoisted(() => {
       jumpHeld: false,
       jumpPressed: false
     },
+    fixedStepWorldUpdateOrder: [] as string[],
     debugTileEdits: [] as Array<{
       strokeId: number;
       worldTileX: number;
@@ -186,6 +187,7 @@ const testRuntime = vi.hoisted(() => {
     }>,
     rendererTileId: 0,
     rendererSetTileResult: false,
+    rendererStepLiquidSimulationCallCount: 0,
     rendererStepPlayerStateImpl: null as null | ((
       state: unknown,
       fixedDt: number,
@@ -364,6 +366,12 @@ vi.mock('./gl/renderer', () => ({
       return result;
     }
 
+    stepLiquidSimulation(): boolean {
+      testRuntime.rendererStepLiquidSimulationCallCount += 1;
+      testRuntime.fixedStepWorldUpdateOrder.push('liquids');
+      return false;
+    }
+
     getResidentChunkBounds() {
       return {
         minChunkX: 0,
@@ -380,6 +388,7 @@ vi.mock('./gl/renderer', () => ({
     resetWorld(): void {}
 
     stepPlayerState<T>(state: T, fixedDt: number, intent: unknown): T {
+      testRuntime.fixedStepWorldUpdateOrder.push('player');
       const playerState = state as {
         position?: { x?: number; y?: number };
         velocity?: { x?: number; y?: number };
@@ -1182,9 +1191,11 @@ describe('main.ts shell state orchestration', () => {
       jumpHeld: false,
       jumpPressed: false
     };
+    testRuntime.fixedStepWorldUpdateOrder = [];
     testRuntime.debugTileEdits = [];
     testRuntime.rendererTileId = 0;
     testRuntime.rendererSetTileResult = false;
+    testRuntime.rendererStepLiquidSimulationCallCount = 0;
     testRuntime.rendererStepPlayerStateImpl = null;
     testRuntime.rendererStepPlayerStateRequests = [];
     testRuntime.rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl = null;
@@ -2705,6 +2716,20 @@ describe('main.ts shell state orchestration', () => {
       position: steppedPlayerState.position,
       velocity: steppedPlayerState.velocity
     });
+  });
+
+  it('steps resident liquid simulation before standalone-player fixed-step movement while in-world', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.fixedStepWorldUpdateOrder = [];
+    testRuntime.rendererStepLiquidSimulationCallCount = 0;
+
+    runFixedUpdate(20);
+
+    expect(testRuntime.rendererStepLiquidSimulationCallCount).toBe(1);
+    expect(testRuntime.fixedStepWorldUpdateOrder).toEqual(['liquids', 'player']);
   });
 
   it('routes standalone-player render-frame player, nearby-light, contact, and camera telemetry through shared snapshot helpers for the overlay and status strip', async () => {

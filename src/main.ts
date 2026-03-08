@@ -2396,6 +2396,8 @@ const bootstrap = async (): Promise<void> => {
         refreshResolvedPlayerSpawn();
       }
 
+      renderer.stepLiquidSimulation();
+
       if (standalonePlayerState) {
         updateStandalonePlayerFixedStep({
           previousPlayerState: standalonePlayerState,

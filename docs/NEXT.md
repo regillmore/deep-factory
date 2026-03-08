@@ -6,9 +6,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Liquid rendering
 
-202. Add a fixed-step liquid simulation slice that flows water and lava downward first, then sideways across loaded chunks, with deterministic chunk-boundary regression coverage.
 203. Extend chunk meshing to support metadata-driven partial liquid fill heights (`0..8`) so liquid tops render flat or sloped by neighbor fill levels, with mask-to-geometry regression tests.
 204. Add standalone-player liquid interaction basics: water buoyancy plus swim drag, lava contact damage ticks with respawn fallback, and fixed-step player-state regressions.
+323. Surface simulated liquid fill levels (`0..8`) in hovered and pinned inspect telemetry so partial-liquid state stays debuggable before task `203` lands.
 
 ## Lighting
 
