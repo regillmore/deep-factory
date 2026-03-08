@@ -32,6 +32,7 @@ export interface DebugOverlayStats {
   residentWorldChunks: number;
   cachedChunkMeshes: number;
   residentDirtyLightChunks: number;
+  residentActiveLiquidChunks: number;
   liquidStepResidentChunksScanned: number;
   liquidStepHorizontalPairsTested: number;
   liquidStepTransfersApplied: number;
@@ -907,7 +908,8 @@ const formatAnimatedChunkResidencyLine = (stats: DebugOverlayStats): string =>
   `liquid:${stats.residentAnimatedLiquidChunkQuadCount}`;
 
 const formatLiquidStepLine = (stats: DebugOverlayStats): string =>
-  `LiquidStep: chunks:${stats.liquidStepResidentChunksScanned} | ` +
+  `LiquidStep: active:${stats.residentActiveLiquidChunks} | ` +
+  `chunks:${stats.liquidStepResidentChunksScanned} | ` +
   `pairs:${stats.liquidStepHorizontalPairsTested} | ` +
   `transfers:${stats.liquidStepTransfersApplied}`;
 

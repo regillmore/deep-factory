@@ -1093,6 +1093,10 @@ export class TileWorld {
     return this.chunks.size;
   }
 
+  getActiveLiquidChunkCount(): number {
+    return this.activeLiquidChunkKeys.size;
+  }
+
   pruneChunksOutside(bounds: ChunkBounds): number {
     let removed = 0;
     for (const [key, chunk] of this.chunks) {

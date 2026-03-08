@@ -57,6 +57,8 @@ vi.mock('./atlasValidation', () => ({
 
 import { Renderer, type RendererEntityFrameState } from './renderer';
 
+const WATER_TILE_ID = 7;
+
 const createMockGl = (): WebGL2RenderingContext =>
   ({
     ARRAY_BUFFER: 0x8892,
@@ -205,6 +207,7 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.animatedChunkUvUploadLiquidQuadCount).toBe(0);
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
     expect(renderer.telemetry.residentDirtyLightChunks).toBe(0);
+    expect(renderer.telemetry.residentActiveLiquidChunks).toBe(0);
     expect(renderer.telemetry.liquidStepResidentChunksScanned).toBe(0);
     expect(renderer.telemetry.liquidStepHorizontalPairsTested).toBe(0);
     expect(renderer.telemetry.liquidStepTransfersApplied).toBe(0);
@@ -235,10 +238,37 @@ describe('Renderer atlas telemetry', () => {
     renderUntilMeshBuildQueueDrains(renderer, camera);
 
     expect(renderer.telemetry.residentWorldChunks).toBe(224);
+    expect(renderer.telemetry.residentActiveLiquidChunks).toBe(0);
     expect(renderer.stepLiquidSimulation()).toBe(false);
+    expect(renderer.telemetry.residentActiveLiquidChunks).toBe(0);
     expect(renderer.telemetry.liquidStepResidentChunksScanned).toBe(0);
     expect(renderer.telemetry.liquidStepHorizontalPairsTested).toBe(0);
     expect(renderer.telemetry.liquidStepTransfersApplied).toBe(0);
+  });
+
+  it('tracks resident active-liquid chunk counts in renderer telemetry after liquid edits', async () => {
+    const renderer = new Renderer(createMockCanvas(createMockGl()));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const camera = new Camera2D();
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+    expect(renderer.telemetry.residentActiveLiquidChunks).toBe(0);
+
+    expect(renderer.setTile(4, -20, WATER_TILE_ID)).toBe(true);
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+    expect(renderer.telemetry.residentActiveLiquidChunks).toBe(1);
+
+    expect(renderer.setTile(4, -20, 0)).toBe(true);
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+    expect(renderer.telemetry.residentActiveLiquidChunks).toBe(0);
   });
 
   it('flips placeholder shader uv.y so pose rectangles stay upright with top-to-bottom quad UVs', () => {

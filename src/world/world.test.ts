@@ -164,6 +164,7 @@ describe('TileWorld', () => {
   it('skips liquid simulation work when no resident chunk contains liquid', () => {
     const world = new TileWorld(1);
 
+    expect(world.getActiveLiquidChunkCount()).toBe(0);
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.getLastLiquidSimulationStats()).toEqual({
       residentChunksScanned: 0,
@@ -186,11 +187,13 @@ describe('TileWorld', () => {
     expect(world.setTile(worldTileX, targetWorldTileY + 1, 1)).toBe(true);
     expect(world.setTile(worldTileX, sourceWorldTileY, WATER_TILE_ID)).toBe(true);
 
+    expect(world.getActiveLiquidChunkCount()).toBe(1);
     expect(world.stepLiquidSimulation()).toBe(true);
     expect(world.getTile(worldTileX, sourceWorldTileY)).toBe(0);
     expect(world.getLiquidLevel(worldTileX, sourceWorldTileY)).toBe(0);
     expect(world.getTile(worldTileX, targetWorldTileY)).toBe(WATER_TILE_ID);
     expect(world.getLiquidLevel(worldTileX, targetWorldTileY)).toBe(MAX_LIQUID_LEVEL);
+    expect(world.getActiveLiquidChunkCount()).toBe(1);
 
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.getLastLiquidSimulationStats().residentChunksScanned).toBeGreaterThan(0);
@@ -243,7 +246,9 @@ describe('TileWorld', () => {
     expect(world.setTile(worldTileX, worldTileY + 1, 1)).toBe(true);
     expect(world.setTile(worldTileX, worldTileY, WATER_TILE_ID)).toBe(true);
 
+    expect(world.getActiveLiquidChunkCount()).toBe(1);
     expect(world.pruneChunksOutside({ minChunkX: 0, minChunkY: 0, maxChunkX: 0, maxChunkY: 0 })).toBe(1);
+    expect(world.getActiveLiquidChunkCount()).toBe(0);
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.getLastLiquidSimulationStats()).toEqual({
       residentChunksScanned: 0,
@@ -252,6 +257,7 @@ describe('TileWorld', () => {
     });
 
     expect(world.getLiquidLevel(worldTileX, worldTileY)).toBe(MAX_LIQUID_LEVEL);
+    expect(world.getActiveLiquidChunkCount()).toBe(1);
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.getLastLiquidSimulationStats().residentChunksScanned).toBeGreaterThan(0);
   });
@@ -283,6 +289,7 @@ describe('TileWorld', () => {
 
     expect(snapshot.liquidSimulationTick).toBe(1);
     expect(loaded.getChunkCount()).toBe(2);
+    expect(loaded.getActiveLiquidChunkCount()).toBe(1);
     expect(loaded.isChunkLightDirty(0, -1)).toBe(true);
     expect(loaded.getChunkLightDirtyColumnMask(0, -1)).toBe(localLightColumnBit(liquidWorldTileX));
     expect(loaded.getChunkLightLevels(0, -1)[toTileIndex(liquidWorldTileX, 0)]).toBe(0);

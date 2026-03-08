@@ -116,6 +116,7 @@ export interface RenderTelemetry {
   residentWorldChunks: number;
   cachedChunkMeshes: number;
   residentDirtyLightChunks: number;
+  residentActiveLiquidChunks: number;
   liquidStepResidentChunksScanned: number;
   liquidStepHorizontalPairsTested: number;
   liquidStepTransfersApplied: number;
@@ -188,6 +189,7 @@ export class Renderer {
     residentWorldChunks: 0,
     cachedChunkMeshes: 0,
     residentDirtyLightChunks: 0,
+    residentActiveLiquidChunks: 0,
     liquidStepResidentChunksScanned: 0,
     liquidStepHorizontalPairsTested: 0,
     liquidStepTransfersApplied: 0,
@@ -528,6 +530,7 @@ export class Renderer {
     this.telemetry.residentWorldChunks = this.world.getChunkCount();
     this.telemetry.cachedChunkMeshes = this.meshes.size;
     this.telemetry.residentDirtyLightChunks = this.world.getDirtyLightChunkCount();
+    this.telemetry.residentActiveLiquidChunks = this.world.getActiveLiquidChunkCount();
     this.updateAnimatedChunkResidencyTelemetry();
     this.telemetry.meshBuildQueueLength = this.meshBuildQueue.length;
   }
@@ -573,6 +576,7 @@ export class Renderer {
     this.telemetry.residentWorldChunks = this.world.getChunkCount();
     this.telemetry.cachedChunkMeshes = 0;
     this.telemetry.residentDirtyLightChunks = this.world.getDirtyLightChunkCount();
+    this.telemetry.residentActiveLiquidChunks = this.world.getActiveLiquidChunkCount();
     this.updateLiquidStepTelemetry();
     this.telemetry.standalonePlayerNearbyLightLevel = null;
     this.telemetry.standalonePlayerNearbyLightFactor = null;
@@ -653,6 +657,7 @@ export class Renderer {
   }
 
   private updateLiquidStepTelemetry(): void {
+    this.telemetry.residentActiveLiquidChunks = this.world.getActiveLiquidChunkCount();
     const stats = this.world.getLastLiquidSimulationStats();
     this.telemetry.liquidStepResidentChunksScanned = stats.residentChunksScanned;
     this.telemetry.liquidStepHorizontalPairsTested = stats.horizontalPairsTested;
