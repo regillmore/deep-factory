@@ -117,6 +117,10 @@ export interface RenderTelemetry {
   cachedChunkMeshes: number;
   residentDirtyLightChunks: number;
   residentActiveLiquidChunks: number;
+  residentActiveLiquidMinChunkX: number | null;
+  residentActiveLiquidMinChunkY: number | null;
+  residentActiveLiquidMaxChunkX: number | null;
+  residentActiveLiquidMaxChunkY: number | null;
   liquidStepResidentChunksScanned: number;
   liquidStepHorizontalPairsTested: number;
   liquidStepTransfersApplied: number;
@@ -190,6 +194,10 @@ export class Renderer {
     cachedChunkMeshes: 0,
     residentDirtyLightChunks: 0,
     residentActiveLiquidChunks: 0,
+    residentActiveLiquidMinChunkX: null,
+    residentActiveLiquidMinChunkY: null,
+    residentActiveLiquidMaxChunkX: null,
+    residentActiveLiquidMaxChunkY: null,
     liquidStepResidentChunksScanned: 0,
     liquidStepHorizontalPairsTested: 0,
     liquidStepTransfersApplied: 0,
@@ -530,7 +538,7 @@ export class Renderer {
     this.telemetry.residentWorldChunks = this.world.getChunkCount();
     this.telemetry.cachedChunkMeshes = this.meshes.size;
     this.telemetry.residentDirtyLightChunks = this.world.getDirtyLightChunkCount();
-    this.telemetry.residentActiveLiquidChunks = this.world.getActiveLiquidChunkCount();
+    this.updateActiveLiquidTelemetry();
     this.updateAnimatedChunkResidencyTelemetry();
     this.telemetry.meshBuildQueueLength = this.meshBuildQueue.length;
   }
@@ -576,7 +584,6 @@ export class Renderer {
     this.telemetry.residentWorldChunks = this.world.getChunkCount();
     this.telemetry.cachedChunkMeshes = 0;
     this.telemetry.residentDirtyLightChunks = this.world.getDirtyLightChunkCount();
-    this.telemetry.residentActiveLiquidChunks = this.world.getActiveLiquidChunkCount();
     this.updateLiquidStepTelemetry();
     this.telemetry.standalonePlayerNearbyLightLevel = null;
     this.telemetry.standalonePlayerNearbyLightFactor = null;
@@ -656,8 +663,17 @@ export class Renderer {
     });
   }
 
-  private updateLiquidStepTelemetry(): void {
+  private updateActiveLiquidTelemetry(): void {
+    const activeLiquidBounds = this.world.getActiveLiquidChunkBounds();
     this.telemetry.residentActiveLiquidChunks = this.world.getActiveLiquidChunkCount();
+    this.telemetry.residentActiveLiquidMinChunkX = activeLiquidBounds?.minChunkX ?? null;
+    this.telemetry.residentActiveLiquidMinChunkY = activeLiquidBounds?.minChunkY ?? null;
+    this.telemetry.residentActiveLiquidMaxChunkX = activeLiquidBounds?.maxChunkX ?? null;
+    this.telemetry.residentActiveLiquidMaxChunkY = activeLiquidBounds?.maxChunkY ?? null;
+  }
+
+  private updateLiquidStepTelemetry(): void {
+    this.updateActiveLiquidTelemetry();
     const stats = this.world.getLastLiquidSimulationStats();
     this.telemetry.liquidStepResidentChunksScanned = stats.residentChunksScanned;
     this.telemetry.liquidStepHorizontalPairsTested = stats.horizontalPairsTested;

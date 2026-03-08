@@ -33,6 +33,10 @@ export interface DebugOverlayStats {
   cachedChunkMeshes: number;
   residentDirtyLightChunks: number;
   residentActiveLiquidChunks: number;
+  residentActiveLiquidMinChunkX: number | null;
+  residentActiveLiquidMinChunkY: number | null;
+  residentActiveLiquidMaxChunkX: number | null;
+  residentActiveLiquidMaxChunkY: number | null;
   liquidStepResidentChunksScanned: number;
   liquidStepHorizontalPairsTested: number;
   liquidStepTransfersApplied: number;
@@ -907,8 +911,25 @@ const formatAnimatedChunkResidencyLine = (stats: DebugOverlayStats): string =>
   `nonLiquid:${Math.max(0, stats.residentAnimatedChunkQuadCount - stats.residentAnimatedLiquidChunkQuadCount)} | ` +
   `liquid:${stats.residentAnimatedLiquidChunkQuadCount}`;
 
+const formatActiveLiquidBounds = (stats: DebugOverlayStats): string => {
+  if (
+    stats.residentActiveLiquidMinChunkX === null ||
+    stats.residentActiveLiquidMinChunkY === null ||
+    stats.residentActiveLiquidMaxChunkX === null ||
+    stats.residentActiveLiquidMaxChunkY === null
+  ) {
+    return 'none';
+  }
+
+  return (
+    `${stats.residentActiveLiquidMinChunkX},${stats.residentActiveLiquidMinChunkY}` +
+    `..${stats.residentActiveLiquidMaxChunkX},${stats.residentActiveLiquidMaxChunkY}`
+  );
+};
+
 const formatLiquidStepLine = (stats: DebugOverlayStats): string =>
   `LiquidStep: active:${stats.residentActiveLiquidChunks} | ` +
+  `bounds:${formatActiveLiquidBounds(stats)} | ` +
   `chunks:${stats.liquidStepResidentChunksScanned} | ` +
   `pairs:${stats.liquidStepHorizontalPairsTested} | ` +
   `transfers:${stats.liquidStepTransfersApplied}`;

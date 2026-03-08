@@ -144,6 +144,39 @@ describe('TileWorld', () => {
     expect(world.getLiquidLevel(worldTileX, worldTileY + 1)).toBe(MAX_LIQUID_LEVEL);
   });
 
+  it('reports active-liquid chunk bounds and shrinks them when edge chunks clear', () => {
+    const world = new TileWorld(0);
+    const leftWorldTileX = -4;
+    const leftWorldTileY = -20;
+    const rightWorldTileX = CHUNK_SIZE + 4;
+    const rightWorldTileY = 4;
+
+    expect(world.getActiveLiquidChunkBounds()).toBeNull();
+    expect(world.setTile(leftWorldTileX, leftWorldTileY, WATER_TILE_ID)).toBe(true);
+    expect(world.setTile(rightWorldTileX, rightWorldTileY, WATER_TILE_ID)).toBe(true);
+
+    expect(world.getActiveLiquidChunkCount()).toBe(2);
+    expect(world.getActiveLiquidChunkBounds()).toEqual({
+      minChunkX: -1,
+      minChunkY: -1,
+      maxChunkX: 1,
+      maxChunkY: 0
+    });
+
+    expect(world.setTile(rightWorldTileX, rightWorldTileY, 0)).toBe(true);
+    expect(world.getActiveLiquidChunkCount()).toBe(1);
+    expect(world.getActiveLiquidChunkBounds()).toEqual({
+      minChunkX: -1,
+      minChunkY: -1,
+      maxChunkX: -1,
+      maxChunkY: -1
+    });
+
+    expect(world.setTile(leftWorldTileX, leftWorldTileY, 0)).toBe(true);
+    expect(world.getActiveLiquidChunkCount()).toBe(0);
+    expect(world.getActiveLiquidChunkBounds()).toBeNull();
+  });
+
   it('records liquid-step scan, horizontal-pair, and applied-transfer counts for the last fixed step', () => {
     const world = new TileWorld(0);
     const worldTileX = 4;
@@ -165,6 +198,7 @@ describe('TileWorld', () => {
     const world = new TileWorld(1);
 
     expect(world.getActiveLiquidChunkCount()).toBe(0);
+    expect(world.getActiveLiquidChunkBounds()).toBeNull();
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.getLastLiquidSimulationStats()).toEqual({
       residentChunksScanned: 0,
@@ -247,8 +281,15 @@ describe('TileWorld', () => {
     expect(world.setTile(worldTileX, worldTileY, WATER_TILE_ID)).toBe(true);
 
     expect(world.getActiveLiquidChunkCount()).toBe(1);
+    expect(world.getActiveLiquidChunkBounds()).toEqual({
+      minChunkX: 1,
+      minChunkY: -1,
+      maxChunkX: 1,
+      maxChunkY: -1
+    });
     expect(world.pruneChunksOutside({ minChunkX: 0, minChunkY: 0, maxChunkX: 0, maxChunkY: 0 })).toBe(1);
     expect(world.getActiveLiquidChunkCount()).toBe(0);
+    expect(world.getActiveLiquidChunkBounds()).toBeNull();
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.getLastLiquidSimulationStats()).toEqual({
       residentChunksScanned: 0,
@@ -258,6 +299,12 @@ describe('TileWorld', () => {
 
     expect(world.getLiquidLevel(worldTileX, worldTileY)).toBe(MAX_LIQUID_LEVEL);
     expect(world.getActiveLiquidChunkCount()).toBe(1);
+    expect(world.getActiveLiquidChunkBounds()).toEqual({
+      minChunkX: 1,
+      minChunkY: -1,
+      maxChunkX: 1,
+      maxChunkY: -1
+    });
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.getLastLiquidSimulationStats().residentChunksScanned).toBeGreaterThan(0);
   });

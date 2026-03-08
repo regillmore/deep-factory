@@ -1097,6 +1097,29 @@ export class TileWorld {
     return this.activeLiquidChunkKeys.size;
   }
 
+  getActiveLiquidChunkBounds(): ChunkBounds | null {
+    let bounds: ChunkBounds | null = null;
+    for (const key of this.activeLiquidChunkKeys) {
+      const coord = parseChunkCoordFromKey(key);
+      if (!bounds) {
+        bounds = {
+          minChunkX: coord.x,
+          minChunkY: coord.y,
+          maxChunkX: coord.x,
+          maxChunkY: coord.y
+        };
+        continue;
+      }
+
+      if (coord.x < bounds.minChunkX) bounds.minChunkX = coord.x;
+      if (coord.y < bounds.minChunkY) bounds.minChunkY = coord.y;
+      if (coord.x > bounds.maxChunkX) bounds.maxChunkX = coord.x;
+      if (coord.y > bounds.maxChunkY) bounds.maxChunkY = coord.y;
+    }
+
+    return bounds;
+  }
+
   pruneChunksOutside(bounds: ChunkBounds): number {
     let removed = 0;
     for (const [key, chunk] of this.chunks) {
