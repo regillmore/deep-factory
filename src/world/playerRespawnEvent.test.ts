@@ -39,6 +39,7 @@ describe('createEmbeddedPlayerRespawnEvent', () => {
       spawnTile: { x: 3, y: -2 },
       supportChunk: { x: 0, y: -1 },
       supportLocal: { x: 3, y: 31 },
+      supportTileId: 4,
       position: { x: 56, y: -32 },
       velocity: { x: 0, y: 0 }
     });
@@ -80,6 +81,7 @@ describe('createLavaPlayerRespawnEvent', () => {
       spawnTile: { x: -1, y: 0 },
       supportChunk: { x: -1, y: 0 },
       supportLocal: { x: 31, y: 1 },
+      supportTileId: 4,
       position: { x: -8, y: 0 },
       velocity: { x: 0, y: 0 }
     });

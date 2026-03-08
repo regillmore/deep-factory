@@ -2046,6 +2046,7 @@ describe('main.ts shell state orchestration', () => {
         x: 0,
         y: 0
       },
+      supportTileId: 1,
       position: {
         x: 8,
         y: -16
@@ -2068,7 +2069,8 @@ describe('main.ts shell state orchestration', () => {
       supportLocal: {
         x: 0,
         y: 0
-      }
+      },
+      supportTileId: 1
     });
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
 
@@ -2085,7 +2087,8 @@ describe('main.ts shell state orchestration', () => {
       x: 104,
       y: 496,
       supportTileX: 6,
-      supportTileY: 32
+      supportTileY: 32,
+      supportTileId: 9
     });
     testRuntime.debugTileEdits = [
       {
@@ -2126,6 +2129,7 @@ describe('main.ts shell state orchestration', () => {
         x: 6,
         y: 0
       },
+      supportTileId: 9,
       position: respawnedPlayerState.position,
       velocity: respawnedPlayerState.velocity
     });
@@ -2142,7 +2146,8 @@ describe('main.ts shell state orchestration', () => {
       supportLocal: {
         x: 6,
         y: 0
-      }
+      },
+      supportTileId: 9
     });
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
   });

@@ -9,6 +9,7 @@ export interface PlayerRespawnEvent {
   spawnTile: { x: number; y: number };
   supportChunk: { x: number; y: number };
   supportLocal: { x: number; y: number };
+  supportTileId: number;
   position: { x: number; y: number };
   velocity: { x: number; y: number };
 }
@@ -35,6 +36,7 @@ const createPlayerRespawnEvent = (
       x: supportLocal.localX,
       y: supportLocal.localY
     },
+    supportTileId: spawn.support.tileId,
     position: {
       x: nextState.position.x,
       y: nextState.position.y

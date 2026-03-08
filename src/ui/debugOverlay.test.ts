@@ -363,6 +363,7 @@ describe('formatDebugOverlayText', () => {
         spawnTile: { x: 1, y: -2 },
         supportChunk: { x: 0, y: -1 },
         supportLocal: { x: 1, y: 31 },
+        supportTileId: 4,
         position: { x: 24.5, y: -12.25 },
         velocity: { x: 0, y: 0 }
       },
@@ -416,7 +417,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nGroundEvt: jump | Pos:24.50,-12.25 | Vel:-180.00,-220.00');
     expect(text).toContain('\nFaceEvt: right->left | Pos:24.50,-12.25 | Vel:-180.00,60.00');
     expect(text).toContain(
-      '\nRespawnEvt: embedded | SpawnT:1,-2 | SupportCh:0,-1 | SupportL:1,31 | Pos:24.50,-12.25 | Vel:0.00,0.00'
+      '\nRespawnEvt: embedded | SpawnT:1,-2 | SupportCh:0,-1 | SupportL:1,31 | SupportId:#4 | Pos:24.50,-12.25 | Vel:0.00,0.00'
     );
     expect(text).toContain(
       '\nWallEvt: blocked | Tile:0,-1 (#3, right) | Pos:24.50,-12.25 | Vel:-180.00,60.00'
@@ -636,6 +637,7 @@ describe('formatDebugOverlayText', () => {
         spawnTile: { x: -1, y: 0 },
         supportChunk: { x: -1, y: 0 },
         supportLocal: { x: 31, y: 1 },
+        supportTileId: 9,
         position: { x: 12, y: 0 },
         velocity: { x: 0, y: 0 }
       },
@@ -685,7 +687,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('GroundEvt: landing | Pos:12.00,0.00 | Vel:0.00,0.00');
     expect(text).toContain('FaceEvt: left->right | Pos:12.00,0.00 | Vel:0.00,0.00');
     expect(text).toContain(
-      'RespawnEvt: embedded | SpawnT:-1,0 | SupportCh:-1,0 | SupportL:31,1 | Pos:12.00,0.00 | Vel:0.00,0.00'
+      'RespawnEvt: embedded | SpawnT:-1,0 | SupportCh:-1,0 | SupportL:31,1 | SupportId:#9 | Pos:12.00,0.00 | Vel:0.00,0.00'
     );
     expect(text).toContain('WallEvt: cleared | Tile:4,6 (#3, left) | Pos:12.00,0.00 | Vel:0.00,0.00');
     expect(text).toContain('CeilEvt: cleared | Tile:4,5 (#7) | Pos:12.00,0.00 | Vel:0.00,0.00');

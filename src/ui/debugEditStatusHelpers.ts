@@ -131,6 +131,7 @@ export interface DebugEditStatusStripPlayerRespawnTelemetry {
   spawnTile: { x: number; y: number };
   supportChunk: { x: number; y: number };
   supportLocal: { x: number; y: number };
+  supportTileId: number;
   position: { x: number; y: number };
   velocity: { x: number; y: number };
 }
@@ -650,6 +651,7 @@ const formatRespawnEventText = (
       playerRespawn.supportLocal.x,
       playerRespawn.supportLocal.y
     )} | ` +
+    `supportId #${playerRespawn.supportTileId} | ` +
     `pos ${playerRespawn.position.x.toFixed(2)},${playerRespawn.position.y.toFixed(2)} | ` +
     `vel ${playerRespawn.velocity.x.toFixed(2)},${playerRespawn.velocity.y.toFixed(2)}`
   );

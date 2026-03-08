@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Collision and player foundation
 
-336. Surface the latest resolved spawn support tile ID in standalone-player respawn event telemetry so lava and embedded recovery can be cross-checked against support-material changes, with focused runtime regressions.
+337. Surface the latest resolved spawn liquid-safety status in standalone-player respawn event telemetry so lava and embedded recovery can be cross-checked against the shared spawn-overlap rule, with focused runtime regressions.
 
 ## Liquid rendering
 
