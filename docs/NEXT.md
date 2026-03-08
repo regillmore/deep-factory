@@ -25,6 +25,15 @@ These items are intentionally scoped to fit a focused implementation pass with t
 239. Add shortcut and readiness metadata rows inside structured first-launch main-menu action cards so enter-world and mixed-device guidance stay visible without relying on button tooltips.
 318. Add paused-menu persistence-summary copy that surfaces when some persisted in-world shell-action keybindings were rejected during load while a mixed custom/default binding set still remains, with shell-action storage regressions.
 
+## Optimize liquids
+
+367. Add liquid-step instrumentation and no-liquid regression coverage: expose world or renderer counters for resident chunks scanned, horizontal pairs tested, and transfers applied per fixed step, then add deterministic regressions that cover zoomed-out no-liquid scenes and verify the liquid step does no useful work when no liquid is present.
+368. Track resident chunks with liquid and skip dormant liquid simulation when the active set is empty: maintain active-liquid chunk membership through tile edits, transfers, prune, and streamback, and make stepLiquidSimulation return immediately when no resident chunk can flow.
+369. Restrict sideways liquid equalization to active liquid chunks plus immediate neighbor chunks: stop scanning every resident tile pair each tick while preserving deterministic chunk-boundary behavior and adding regressions for cross-boundary flow.
+370. Add liquid chunk sleep or wake rules for settled fluid: remove unchanged chunks from the active set until a local edit or neighboring transfer wakes them, with regressions for settled pools resuming after a disturbance.
+
+## Refine, Extract, Refactor, Restructure
+
 ## Ambitious vertical slices
 
 213. Add a hostile-slime combat slice after entity scaffolding (`17-18`): deterministic spawn windows near the player, jump-chase movement, player contact damage plus invulnerability cooldown, and fixed-step combat regressions.
@@ -44,5 +53,3 @@ These items are intentionally scoped to fit a focused implementation pass with t
 352. Add a door utility slice after starter building-block placement (`308`) and save/load (`19-21`): stackable door hotbar slots, mixed-device two-tile doorway placement plus open/close collision swapping, and snapshot regressions for placed door state.
 363. Add a bomb-demolition combat slice after hostile-slime combat (`213`) and inventory basics (`214`): stackable bomb hotbar slots, mixed-device throw aiming with fixed-step fuse timing, terrain blast edits plus player/slime damage falloff, and save/load regressions for cratered terrain plus remaining bomb stacks.
 364. Add a recall-mirror recovery slice after inventory basics (`214`) and bed-checkpoint respawn (`338`): a non-stackable mirror hotbar slot, mixed-device use input with fixed-step channel/cancel rules, teleport to the latest valid checkpoint or world spawn, and deterministic cooldown regressions.
-
-## Refine, Extract, Refactor, Restructure
