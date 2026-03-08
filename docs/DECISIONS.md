@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Downward liquid transfer scanning only visits active chunks
+
+- Decision: The downward half-step in `src/world/world.ts` now snapshots the resident active-liquid chunk set at the start of the fixed step and only scans those chunks for falling transfers before sideways equalization runs.
+- Reason: Only chunks that already contain liquid can donate downward flow, so rescanning dry resident chunk tiles wastes work without affecting loaded chunk-boundary falls or the same-step downward-then-sideways sequence.
+- Consequence: Future liquid optimizations and telemetry should treat downward scan coverage as an active-chunk metric and keep same-step sideways candidate collection based on the post-downward active set.
+
 ### 2026-03-08: Sideways liquid equalization only scans the active chunk band
 
 - Decision: The sideways half-step in `src/world/world.ts` now snapshots resident candidate chunks from the current active-liquid chunk set plus immediate left and right neighbors after downward transfers, instead of testing every resident horizontal pair each tick.

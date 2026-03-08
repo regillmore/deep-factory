@@ -730,10 +730,15 @@ export class TileWorld {
       return false;
     }
 
-    stats.residentChunksScanned = this.chunks.size;
+    const downwardCandidateChunkKeys = new Set(this.activeLiquidChunkKeys);
     const downwardTransfers: LiquidTransfer[] = [];
 
-    for (const chunk of this.chunks.values()) {
+    for (const [key, chunk] of this.chunks) {
+      if (!downwardCandidateChunkKeys.has(key)) {
+        continue;
+      }
+
+      stats.residentChunksScanned += 1;
       for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
         for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
           const tileIndex = toTileIndex(localX, localY);

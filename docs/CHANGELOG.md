@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Restrict downward liquid transfer scanning to resident active-liquid chunks only.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts) so the downward liquid pass now snapshots the active-liquid chunk set at the start of the step and only scans those chunks before the existing post-fall sideways pass runs, which removes dry resident chunk tile walks without changing the downward-then-sideways order; expanded [src/world/world.test.ts](../src/world/world.test.ts) with the reduced downward scan-count expectation and a same-step loaded chunk-boundary fall regression; removed completed task `381` from [docs/NEXT.md](docs/NEXT.md), added replacement task `382`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Restrict sideways liquid equalization to resident active-liquid chunks plus immediate horizontal neighbors.
 - Changes: Updated [src/world/world.ts](../src/world/world.ts) so the sideways liquid pass now snapshots resident candidate chunks from the current active-liquid set plus immediate left and right neighbors after downward transfers, which preserves same-tick downward-first behavior while avoiding whole-resident-world horizontal pair scans; expanded [src/world/world.test.ts](../src/world/world.test.ts) with the reduced pair-count expectation and a reverse-direction chunk-boundary regression; removed completed task `369` from [docs/NEXT.md](docs/NEXT.md), added replacement task `381`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/world.test.ts` (outside the sandbox after the expected Vitest `spawn EPERM` startup failure in-sandbox) and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -177,7 +177,7 @@ describe('TileWorld', () => {
     expect(world.getActiveLiquidChunkBounds()).toBeNull();
   });
 
-  it('records liquid-step scan, bounded horizontal-pair, and applied-transfer counts for the last fixed step', () => {
+  it('records active downward-chunk scan, bounded horizontal-pair, and applied-transfer counts for the last fixed step', () => {
     const world = new TileWorld(0);
     const worldTileX = 4;
     const worldTileY = -20;
@@ -188,7 +188,7 @@ describe('TileWorld', () => {
 
     expect(world.stepLiquidSimulation()).toBe(true);
     expect(world.getLastLiquidSimulationStats()).toEqual({
-      residentChunksScanned: 2,
+      residentChunksScanned: 1,
       horizontalPairsTested: 512,
       transfersApplied: 1
     });
@@ -231,6 +231,32 @@ describe('TileWorld', () => {
 
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.getLastLiquidSimulationStats().residentChunksScanned).toBeGreaterThan(0);
+  });
+
+  it('preserves same-step downward-then-sideways flow when liquid falls into a loaded chunk across a chunk boundary', () => {
+    const world = new TileWorld(0);
+    const worldTileX = 4;
+    const sourceWorldTileY = -33;
+    const targetWorldTileY = sourceWorldTileY + 1;
+
+    world.ensureChunk(0, -2);
+    world.ensureChunk(0, -1);
+    expect(world.setTile(worldTileX, targetWorldTileY + 1, 1)).toBe(true);
+    expect(world.setTile(worldTileX + 1, targetWorldTileY + 1, 1)).toBe(true);
+    expect(world.setTile(worldTileX, sourceWorldTileY, WATER_TILE_ID)).toBe(true);
+
+    expect(world.stepLiquidSimulation()).toBe(true);
+    expect(world.getTile(worldTileX, sourceWorldTileY)).toBe(0);
+    expect(world.getLiquidLevel(worldTileX, sourceWorldTileY)).toBe(0);
+    expect(world.getTile(worldTileX, targetWorldTileY)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(worldTileX, targetWorldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
+    expect(world.getTile(worldTileX + 1, targetWorldTileY)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(worldTileX + 1, targetWorldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
+    expect(world.getLastLiquidSimulationStats()).toEqual({
+      residentChunksScanned: 1,
+      horizontalPairsTested: 512,
+      transfersApplied: 2
+    });
   });
 
   it('spreads loaded liquid sideways across resident chunk boundaries deterministically', () => {
