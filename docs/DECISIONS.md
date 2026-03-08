@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Partial-liquid frame-bottom inspect telemetry should reuse shared frame-bound helpers
+
+- Decision: Hovered and pinned inspect telemetry now resolves `liquidFrameBottomV` and `liquidFrameBottomPixelY` through shared frame-bottom helpers in `src/world/liquidSurface.ts`, and the existing visible-height helpers there reuse the same helpers instead of reading `uvRect.v1` inline.
+- Reason: Frame-bottom debug readouts need to stay numerically aligned with visible-height deltas and current liquid-frame bounds for animated variants without parsing `liquidUv` or `liquidPx` strings in `src/main.ts` or formatter code.
+- Consequence: Future partial-liquid frame-bound or cropped-remainder telemetry should extend those shared frame-bottom helpers instead of re-deriving `v1` or atlas-row math in runtime assembly or UI formatting code.
+
 ### 2026-03-08: Partial-liquid frame-top inspect telemetry should reuse shared frame-origin helpers
 
 - Decision: Hovered and pinned inspect telemetry now resolves `liquidFrameTopV` and `liquidFrameTopPixelY` through shared frame-origin helpers in `src/world/liquidSurface.ts`, and the existing visible-height helpers there reuse the same helpers instead of reading `uvRect.v0` inline.

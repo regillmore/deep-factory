@@ -53,6 +53,8 @@ export interface DebugOverlayPointerInspect {
   liquidSurfaceTopRight?: number | null;
   liquidFrameTopV?: number | null;
   liquidFrameTopPixelY?: number | null;
+  liquidFrameBottomV?: number | null;
+  liquidFrameBottomPixelY?: number | null;
   liquidBottomLeftV?: number | null;
   liquidBottomRightV?: number | null;
   liquidBottomLeftPixelY?: number | null;
@@ -99,6 +101,8 @@ export interface DebugOverlayTileInspect {
   liquidSurfaceTopRight?: number | null;
   liquidFrameTopV?: number | null;
   liquidFrameTopPixelY?: number | null;
+  liquidFrameBottomV?: number | null;
+  liquidFrameBottomPixelY?: number | null;
   liquidBottomLeftV?: number | null;
   liquidBottomRightV?: number | null;
   liquidBottomLeftPixelY?: number | null;
@@ -383,6 +387,8 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
   const liquidSurfaceTopRight = formatLiquidSurfaceHeight(tileInspect.liquidSurfaceTopRight);
   const liquidFrameTopV = formatLiquidSurfaceHeight(tileInspect.liquidFrameTopV);
   const liquidFrameTopPixelY = formatAtlasPixelCoordinate(tileInspect.liquidFrameTopPixelY);
+  const liquidFrameBottomV = formatLiquidSurfaceHeight(tileInspect.liquidFrameBottomV);
+  const liquidFrameBottomPixelY = formatAtlasPixelCoordinate(tileInspect.liquidFrameBottomPixelY);
   const liquidBottomLeftV = formatLiquidSurfaceHeight(tileInspect.liquidBottomLeftV);
   const liquidBottomRightV = formatLiquidSurfaceHeight(tileInspect.liquidBottomRightV);
   const liquidBottomLeftPixelY = formatAtlasPixelCoordinate(tileInspect.liquidBottomLeftPixelY);
@@ -423,6 +429,8 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     (liquidSurfaceTopRight !== null ? ` | liquidTopRight:${liquidSurfaceTopRight}` : '') +
     (liquidFrameTopV !== null ? ` | liquidFrameTopV:${liquidFrameTopV}` : '') +
     (liquidFrameTopPixelY !== null ? ` | liquidFrameTopPxY:${liquidFrameTopPixelY}` : '') +
+    (liquidFrameBottomV !== null ? ` | liquidFrameBottomV:${liquidFrameBottomV}` : '') +
+    (liquidFrameBottomPixelY !== null ? ` | liquidFrameBottomPxY:${liquidFrameBottomPixelY}` : '') +
     (liquidBottomLeftV !== null ? ` | liquidBottomLeftV:${liquidBottomLeftV}` : '') +
     (liquidBottomRightV !== null ? ` | liquidBottomRightV:${liquidBottomRightV}` : '') +
     (liquidBottomLeftPixelY !== null ? ` | liquidBottomLeftPxY:${liquidBottomLeftPixelY}` : '') +

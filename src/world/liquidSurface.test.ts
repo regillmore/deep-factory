@@ -6,6 +6,8 @@ import {
   resolveLiquidSurfaceBottomAtlasPixelRows,
   resolveLiquidSurfaceBottomVCrops,
   resolveLiquidSurfaceBranchKind,
+  resolveLiquidSurfaceFrameBottomAtlasPixelRow,
+  resolveLiquidSurfaceFrameBottomV,
   resolveLiquidSurfaceFrameTopAtlasPixelRow,
   resolveLiquidSurfaceFrameTopV,
   resolveLiquidSurfaceVisibleFrameAtlasPixelHeights,
@@ -220,6 +222,52 @@ describe('resolveLiquidSurfaceFrameTopAtlasPixelRow', () => {
     expect(
       resolveLiquidSurfaceFrameTopAtlasPixelRow(64, {
         v0: 3
+      })
+    ).toBe(64);
+  });
+});
+
+describe('resolveLiquidSurfaceFrameBottomV', () => {
+  it('returns the clamped current liquid-variant frame bottom v1', () => {
+    expect(
+      resolveLiquidSurfaceFrameBottomV({
+        v1: 0.875
+      })
+    ).toBe(0.875);
+  });
+
+  it('clamps invalid frame-bottom v1 values before exposing them', () => {
+    expect(
+      resolveLiquidSurfaceFrameBottomV({
+        v1: -2
+      })
+    ).toBe(0);
+    expect(
+      resolveLiquidSurfaceFrameBottomV({
+        v1: 3
+      })
+    ).toBe(1);
+  });
+});
+
+describe('resolveLiquidSurfaceFrameBottomAtlasPixelRow', () => {
+  it('maps the clamped current liquid-variant frame bottom v1 onto an atlas pixel row', () => {
+    expect(
+      resolveLiquidSurfaceFrameBottomAtlasPixelRow(64, {
+        v1: 0.875
+      })
+    ).toBe(56);
+  });
+
+  it('clamps invalid frame-bottom v1 values before resolving atlas pixel rows', () => {
+    expect(
+      resolveLiquidSurfaceFrameBottomAtlasPixelRow(64, {
+        v1: -2
+      })
+    ).toBe(0);
+    expect(
+      resolveLiquidSurfaceFrameBottomAtlasPixelRow(64, {
+        v1: 3
       })
     ).toBe(64);
   });

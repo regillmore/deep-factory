@@ -4,8 +4,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Liquid rendering
 
-342. After task `341`, surface current liquid variant frame-bottom `v1` and atlas pixel-row endpoints in hovered and pinned inspect telemetry so cropped-off liquid remainder can be reconciled without parsing `liquidUv` or `liquidPx` strings.
-343. After task `342`, surface cropped-off liquid remainder deltas in normalized `v` units and atlas pixels in hovered and pinned inspect telemetry so partial-liquid loss per side can be compared directly without subtracting crop values from frame endpoints.
+343. Surface cropped-off liquid remainder deltas in normalized `v` units and atlas pixels in hovered and pinned inspect telemetry so partial-liquid loss per side can be compared directly without subtracting crop values from frame endpoints.
+344. Surface cropped-off liquid remainder percentages per side in hovered and pinned inspect telemetry so partial-liquid loss stays comparable across liquid variants with different authored frame heights.
 
 ## Lighting
 

@@ -111,6 +111,8 @@ export interface DebugEditHoveredTileState {
   liquidSurfaceTopRight?: number | null;
   liquidFrameTopV?: number | null;
   liquidFrameTopPixelY?: number | null;
+  liquidFrameBottomV?: number | null;
+  liquidFrameBottomPixelY?: number | null;
   liquidBottomLeftV?: number | null;
   liquidBottomRightV?: number | null;
   liquidBottomLeftPixelY?: number | null;
@@ -583,6 +585,8 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
   const liquidSurfaceTopRight = formatLiquidSurfaceHeight(tile.liquidSurfaceTopRight);
   const liquidFrameTopV = formatLiquidSurfaceHeight(tile.liquidFrameTopV);
   const liquidFrameTopPixelY = formatAtlasPixelCoordinate(tile.liquidFrameTopPixelY);
+  const liquidFrameBottomV = formatLiquidSurfaceHeight(tile.liquidFrameBottomV);
+  const liquidFrameBottomPixelY = formatAtlasPixelCoordinate(tile.liquidFrameBottomPixelY);
   const liquidBottomLeftV = formatLiquidSurfaceHeight(tile.liquidBottomLeftV);
   const liquidBottomRightV = formatLiquidSurfaceHeight(tile.liquidBottomRightV);
   const liquidBottomLeftPixelY = formatAtlasPixelCoordinate(tile.liquidBottomLeftPixelY);
@@ -624,6 +628,8 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     (liquidSurfaceTopRight !== null ? ` | liquidTopRight:${liquidSurfaceTopRight}` : '') +
     (liquidFrameTopV !== null ? ` | liquidFrameTopV:${liquidFrameTopV}` : '') +
     (liquidFrameTopPixelY !== null ? ` | liquidFrameTopPxY:${liquidFrameTopPixelY}` : '') +
+    (liquidFrameBottomV !== null ? ` | liquidFrameBottomV:${liquidFrameBottomV}` : '') +
+    (liquidFrameBottomPixelY !== null ? ` | liquidFrameBottomPxY:${liquidFrameBottomPixelY}` : '') +
     (liquidBottomLeftV !== null ? ` | liquidBottomLeftV:${liquidBottomLeftV}` : '') +
     (liquidBottomRightV !== null ? ` | liquidBottomRightV:${liquidBottomRightV}` : '') +
     (liquidBottomLeftPixelY !== null ? ` | liquidBottomLeftPxY:${liquidBottomLeftPixelY}` : '') +
