@@ -87,6 +87,27 @@ const createLiquidSimulationStats = (): LiquidSimulationStats => ({
   transfersApplied: 0
 });
 
+const chunkContainsLiquid = (chunk: Chunk): boolean => {
+  for (let index = 0; index < chunk.liquidLevels.length; index += 1) {
+    if ((chunk.liquidLevels[index] ?? 0) > 0) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+const collectActiveLiquidChunkKeys = (chunks: ReadonlyMap<string, Chunk>): Set<string> => {
+  const activeLiquidChunkKeys = new Set<string>();
+  for (const [key, chunk] of chunks) {
+    if (chunkContainsLiquid(chunk)) {
+      activeLiquidChunkKeys.add(key);
+    }
+  }
+
+  return activeLiquidChunkKeys;
+};
+
 const compareChunkCoords = (left: ChunkCoord, right: ChunkCoord): number => left.y - right.y || left.x - right.x;
 
 const parseChunkCoordFromKey = (key: string): ChunkCoord => {
@@ -289,6 +310,7 @@ export class TileWorld {
   private editedChunkLiquidLevels = new Map<string, Map<number, number>>();
   private tileEditListeners = new Set<TileEditListener>();
   private dirtyLightChunkKeys = new Set<string>();
+  private activeLiquidChunkKeys = new Set<string>();
   private liquidSimulationTick = 0;
   private lastLiquidSimulationStats = createLiquidSimulationStats();
 
@@ -485,6 +507,12 @@ export class TileWorld {
 
     chunk.tiles[tileIndex] = tileId;
     chunk.liquidLevels[tileIndex] = normalizedLiquidLevel;
+    this.updateActiveLiquidChunkMembershipForCommittedTile(
+      key,
+      chunk,
+      previousLiquidLevel,
+      normalizedLiquidLevel
+    );
     this.updateEditedChunkTileState(key, tileIndex, worldTileX, worldTileY, tileId, normalizedLiquidLevel);
 
     const tileIdChanged = previousTileId !== tileId;
@@ -523,6 +551,22 @@ export class TileWorld {
       changed: true,
       tileIdChanged
     };
+  }
+
+  private updateActiveLiquidChunkMembershipForCommittedTile(
+    key: string,
+    chunk: Chunk,
+    previousLiquidLevel: number,
+    nextLiquidLevel: number
+  ): void {
+    if (nextLiquidLevel > 0) {
+      this.activeLiquidChunkKeys.add(key);
+      return;
+    }
+
+    if (previousLiquidLevel > 0 && !chunkContainsLiquid(chunk)) {
+      this.activeLiquidChunkKeys.delete(key);
+    }
   }
 
   private applyLiquidTransfer(transfer: LiquidTransfer): boolean {
@@ -617,6 +661,9 @@ export class TileWorld {
     };
     this.chunks.set(key, chunk);
     this.dirtyLightChunkKeys.add(key);
+    if (chunkContainsLiquid(chunk)) {
+      this.activeLiquidChunkKeys.add(key);
+    }
     return chunk;
   }
 
@@ -650,11 +697,14 @@ export class TileWorld {
   }
 
   stepLiquidSimulation(): boolean {
-    const stats: LiquidSimulationStats = {
-      residentChunksScanned: this.chunks.size,
-      horizontalPairsTested: 0,
-      transfersApplied: 0
-    };
+    const stats = createLiquidSimulationStats();
+    if (this.activeLiquidChunkKeys.size === 0) {
+      this.lastLiquidSimulationStats = stats;
+      this.liquidSimulationTick = (this.liquidSimulationTick + 1) >>> 0;
+      return false;
+    }
+
+    stats.residentChunksScanned = this.chunks.size;
     const downwardTransfers: LiquidTransfer[] = [];
 
     for (const chunk of this.chunks.values()) {
@@ -1030,6 +1080,7 @@ export class TileWorld {
     this.editedChunkTiles = nextEditedChunkTiles;
     this.editedChunkLiquidLevels = nextEditedChunkLiquidLevels;
     this.dirtyLightChunkKeys = nextDirtyLightChunkKeys;
+    this.activeLiquidChunkKeys = collectActiveLiquidChunkKeys(nextChunks);
     this.liquidSimulationTick = expectLiquidSimulationTick(snapshot.liquidSimulationTick);
     this.lastLiquidSimulationStats = createLiquidSimulationStats();
   }
@@ -1048,6 +1099,7 @@ export class TileWorld {
       if (chunkBoundsContains(bounds, chunk.coord.x, chunk.coord.y)) continue;
       this.chunks.delete(key);
       this.dirtyLightChunkKeys.delete(key);
+      this.activeLiquidChunkKeys.delete(key);
       removed += 1;
     }
     return removed;

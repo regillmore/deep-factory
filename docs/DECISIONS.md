@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Active-liquid chunk membership stays resident runtime state
+
+- Decision: `TileWorld` now keeps a resident active-liquid chunk-key set that is rebuilt from resident chunks on snapshot load or stream-back, updated on tile commits, liquid transfers, and prune, and used to early-out the liquid step when no resident chunk currently contains liquid.
+- Reason: Dry worlds should not rescan every resident tile pair just to discover that no liquid exists, and follow-up liquid optimizations need one stable runtime index without changing the save format.
+- Consequence: Future liquid chunk sleep or wake work should evolve this resident runtime set in place and rebuild it from resident chunk contents after load or stream-back rather than serializing separate active-liquid metadata or rescanning every resident chunk each tick.
+
 ### 2026-03-08: Session save export should read the renderer-owned world through a snapshot seam
 
 - Decision: `src/mainWorldSessionSave.ts` now builds top-level save envelopes from a `WorldSessionSaveSource`, and `Renderer` exposes `createWorldSnapshot()` instead of leaking direct `TileWorld` access to session code.

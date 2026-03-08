@@ -236,8 +236,8 @@ describe('Renderer atlas telemetry', () => {
 
     expect(renderer.telemetry.residentWorldChunks).toBe(224);
     expect(renderer.stepLiquidSimulation()).toBe(false);
-    expect(renderer.telemetry.liquidStepResidentChunksScanned).toBe(224);
-    expect(renderer.telemetry.liquidStepHorizontalPairsTested).toBe(114688);
+    expect(renderer.telemetry.liquidStepResidentChunksScanned).toBe(0);
+    expect(renderer.telemetry.liquidStepHorizontalPairsTested).toBe(0);
     expect(renderer.telemetry.liquidStepTransfersApplied).toBe(0);
   });
 
