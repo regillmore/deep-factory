@@ -42,6 +42,8 @@ export interface DebugOverlayPointerInspect {
   blocksLight?: boolean;
   liquidKind?: TileLiquidKind | null;
   liquidLevel?: number | null;
+  liquidSurfaceTopLeft?: number | null;
+  liquidSurfaceTopRight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -71,6 +73,8 @@ export interface DebugOverlayTileInspect {
   blocksLight?: boolean;
   liquidKind?: TileLiquidKind | null;
   liquidLevel?: number | null;
+  liquidSurfaceTopLeft?: number | null;
+  liquidSurfaceTopRight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -224,6 +228,15 @@ const formatLiquidLevel = (liquidLevel: number | null | undefined): string | nul
   const clampedLevel = Math.min(Math.max(Math.round(liquidLevel), 0), MAX_LIQUID_LEVEL);
   return `${clampedLevel}/${MAX_LIQUID_LEVEL}`;
 };
+const formatLiquidSurfaceHeight = (value: number | null | undefined): string | null => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null;
+  }
+
+  const clampedValue = Math.min(Math.max(value, 0), 1);
+  const roundedValue = Math.round(clampedValue * 1000) / 1000;
+  return roundedValue.toString();
+};
 const formatProgressPercentage = (value: number | null | undefined): string | null => {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     return null;
@@ -282,6 +295,8 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
   }
 
   const liquidLevel = formatLiquidLevel(tileInspect.liquidLevel);
+  const liquidSurfaceTopLeft = formatLiquidSurfaceHeight(tileInspect.liquidSurfaceTopLeft);
+  const liquidSurfaceTopRight = formatLiquidSurfaceHeight(tileInspect.liquidSurfaceTopRight);
   const liquidAnimationFrame = formatLiquidAnimationFrame(
     tileInspect.liquidAnimationFrameIndex,
     tileInspect.liquidAnimationFrameCount
@@ -304,6 +319,8 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     ` | light:${formatGameplayFlag(tileInspect.blocksLight)}` +
     ` | liquid:${tileInspect.liquidKind ?? 'none'}` +
     (liquidLevel ? ` | liquidLevel:${liquidLevel}` : '') +
+    (liquidSurfaceTopLeft ? ` | liquidTopLeft:${liquidSurfaceTopLeft}` : '') +
+    (liquidSurfaceTopRight ? ` | liquidTopRight:${liquidSurfaceTopRight}` : '') +
     (typeof tileInspect.liquidConnectivityGroupLabel === 'string' &&
     tileInspect.liquidConnectivityGroupLabel.length > 0
       ? ` | liquidGroup:${tileInspect.liquidConnectivityGroupLabel}`

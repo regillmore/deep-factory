@@ -1,4 +1,9 @@
 import { MAX_LIQUID_LEVEL } from './constants';
+import {
+  areLiquidRenderNeighborsConnected,
+  TILE_METADATA,
+  type TileMetadataRegistry
+} from './tileMetadata';
 
 export interface LiquidSurfaceLevelNeighborhood {
   center: number;
@@ -51,3 +56,13 @@ export const resolveLiquidSurfaceTopHeights = (
     topRight: resolveExposedLiquidCornerHeight(centerLevel, eastLevel)
   };
 };
+
+export const resolveConnectedLiquidNeighborLevel = (
+  centerTileId: number,
+  neighborTileId: number,
+  neighborLevel: number,
+  tileMetadataRegistry: TileMetadataRegistry = TILE_METADATA
+): number =>
+  areLiquidRenderNeighborsConnected(centerTileId, neighborTileId, tileMetadataRegistry)
+    ? neighborLevel
+    : 0;

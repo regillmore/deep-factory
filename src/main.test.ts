@@ -30,6 +30,8 @@ const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
   'toggle-player-spawn-marker': 'Y'
 };
 
+const worldTileKey = (worldTileX: number, worldTileY: number): string => `${worldTileX},${worldTileY}`;
+
 const testRuntime = vi.hoisted(() => {
   class FakeHTMLElement {
     tagName: string;
@@ -190,7 +192,9 @@ const testRuntime = vi.hoisted(() => {
       kind: 'place' | 'break';
     }>,
     rendererTileId: 0,
+    rendererTileIdsByWorldKey: new Map<string, number>(),
     rendererLiquidLevel: 0,
+    rendererLiquidLevelsByWorldKey: new Map<string, number>(),
     rendererSetTileResult: false,
     rendererStepLiquidSimulationCallCount: 0,
     rendererStepPlayerStateImpl: null as null | ((
@@ -361,11 +365,25 @@ vi.mock('./gl/renderer', () => ({
       };
     }
 
-    getTile(): number {
+    getTile(worldTileX?: number, worldTileY?: number): number {
+      if (typeof worldTileX === 'number' && typeof worldTileY === 'number') {
+        const mappedTileId = testRuntime.rendererTileIdsByWorldKey.get(worldTileKey(worldTileX, worldTileY));
+        if (mappedTileId !== undefined) {
+          return mappedTileId;
+        }
+      }
       return testRuntime.rendererTileId;
     }
 
-    getLiquidLevel(): number {
+    getLiquidLevel(worldTileX?: number, worldTileY?: number): number {
+      if (typeof worldTileX === 'number' && typeof worldTileY === 'number') {
+        const mappedLiquidLevel = testRuntime.rendererLiquidLevelsByWorldKey.get(
+          worldTileKey(worldTileX, worldTileY)
+        );
+        if (mappedLiquidLevel !== undefined) {
+          return mappedLiquidLevel;
+        }
+      }
       return testRuntime.rendererLiquidLevel;
     }
 
@@ -1205,7 +1223,9 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.fixedStepWorldUpdateOrder = [];
     testRuntime.debugTileEdits = [];
     testRuntime.rendererTileId = 0;
+    testRuntime.rendererTileIdsByWorldKey.clear();
     testRuntime.rendererLiquidLevel = 0;
+    testRuntime.rendererLiquidLevelsByWorldKey.clear();
     testRuntime.rendererSetTileResult = false;
     testRuntime.rendererStepLiquidSimulationCallCount = 0;
     testRuntime.rendererStepPlayerStateImpl = null;
@@ -2887,7 +2907,7 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
-  it('surfaces simulated liquid levels through hovered and pinned inspect telemetry', async () => {
+  it('surfaces resolved liquid surface heights through hovered and pinned inspect telemetry', async () => {
     await import('./main');
     await flushBootstrap();
 
@@ -2902,8 +2922,14 @@ describe('main.ts shell state orchestration', () => {
         worldTileY: 6
       }
     ];
-    testRuntime.rendererTileId = 7;
-    testRuntime.rendererLiquidLevel = 3;
+    testRuntime.rendererTileId = 0;
+    testRuntime.rendererLiquidLevel = 0;
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, 6), 7);
+    testRuntime.rendererLiquidLevelsByWorldKey.set(worldTileKey(4, 6), 3);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(3, 6), 7);
+    testRuntime.rendererLiquidLevelsByWorldKey.set(worldTileKey(3, 6), 5);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(5, 6), 9);
+    testRuntime.rendererLiquidLevelsByWorldKey.set(worldTileKey(5, 6), 8);
 
     runFixedUpdate();
     runRenderFrame();
@@ -2918,27 +2944,35 @@ describe('main.ts shell state orchestration', () => {
       tile: { x: 4, y: 6 },
       tileId: 7,
       liquidKind: 'water',
-      liquidLevel: 3
+      liquidLevel: 3,
+      liquidSurfaceTopLeft: 0.5,
+      liquidSurfaceTopRight: 0.375
     });
     expect(testRuntime.latestDebugOverlayInspectState.pinned).toMatchObject({
       tile: { x: 4, y: 6 },
       tileId: 7,
       liquidKind: 'water',
-      liquidLevel: 3
+      liquidLevel: 3,
+      liquidSurfaceTopLeft: 0.5,
+      liquidSurfaceTopRight: 0.375
     });
     expect(testRuntime.latestDebugEditStatusStripState.hoveredTile).toMatchObject({
       tileX: 4,
       tileY: 6,
       tileId: 7,
       liquidKind: 'water',
-      liquidLevel: 3
+      liquidLevel: 3,
+      liquidSurfaceTopLeft: 0.5,
+      liquidSurfaceTopRight: 0.375
     });
     expect(testRuntime.latestDebugEditStatusStripState.pinnedTile).toMatchObject({
       tileX: 4,
       tileY: 6,
       tileId: 7,
       liquidKind: 'water',
-      liquidLevel: 3
+      liquidLevel: 3,
+      liquidSurfaceTopLeft: 0.5,
+      liquidSurfaceTopRight: 0.375
     });
   });
 

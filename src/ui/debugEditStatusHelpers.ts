@@ -99,6 +99,8 @@ export interface DebugEditHoveredTileState {
   blocksLight: boolean;
   liquidKind: TileLiquidKind | null;
   liquidLevel?: number | null;
+  liquidSurfaceTopLeft?: number | null;
+  liquidSurfaceTopRight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -472,6 +474,15 @@ const formatLiquidLevel = (liquidLevel: number | null | undefined): string | nul
   const clampedLevel = Math.min(Math.max(Math.round(liquidLevel), 0), MAX_LIQUID_LEVEL);
   return `${clampedLevel}/${MAX_LIQUID_LEVEL}`;
 };
+const formatLiquidSurfaceHeight = (value: number | null | undefined): string | null => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null;
+  }
+
+  const clampedValue = Math.min(Math.max(value, 0), 1);
+  const roundedValue = Math.round(clampedValue * 1000) / 1000;
+  return roundedValue.toString();
+};
 const formatProgressPercentage = (value: number | null | undefined): string | null => {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     return null;
@@ -493,6 +504,8 @@ const hasSameInspectTarget = (
 
 const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): string => {
   const liquidLevel = formatLiquidLevel(tile.liquidLevel);
+  const liquidSurfaceTopLeft = formatLiquidSurfaceHeight(tile.liquidSurfaceTopLeft);
+  const liquidSurfaceTopRight = formatLiquidSurfaceHeight(tile.liquidSurfaceTopRight);
   const liquidAnimationFrame = formatLiquidAnimationFrame(
     tile.liquidAnimationFrameIndex,
     tile.liquidAnimationFrameCount
@@ -518,6 +531,8 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     ` | light:${formatHoveredTileFlag(tile.blocksLight)}` +
     ` | liquid:${tile.liquidKind ?? 'none'}` +
     (liquidLevel ? ` | liquidLevel:${liquidLevel}` : '') +
+    (liquidSurfaceTopLeft ? ` | liquidTopLeft:${liquidSurfaceTopLeft}` : '') +
+    (liquidSurfaceTopRight ? ` | liquidTopRight:${liquidSurfaceTopRight}` : '') +
     (typeof tile.liquidConnectivityGroupLabel === 'string' && tile.liquidConnectivityGroupLabel.length > 0
       ? ` | liquidGroup:${tile.liquidConnectivityGroupLabel}`
       : '') +

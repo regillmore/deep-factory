@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveLiquidSurfaceTopHeights } from './liquidSurface';
+import { TILE_METADATA } from './tileMetadata';
+import { resolveConnectedLiquidNeighborLevel, resolveLiquidSurfaceTopHeights } from './liquidSurface';
 
 describe('resolveLiquidSurfaceTopHeights', () => {
   it('returns zero heights when the center tile has no liquid after clamping', () => {
@@ -76,5 +77,21 @@ describe('resolveLiquidSurfaceTopHeights', () => {
     expect(leftTile.topRight).toBe(0.75);
     expect(rightTile.topLeft).toBe(0.75);
     expect(leftTile.topRight).toBe(rightTile.topLeft);
+  });
+});
+
+describe('resolveConnectedLiquidNeighborLevel', () => {
+  const waterTileId =
+    TILE_METADATA.tiles.find((tile) => tile.gameplay?.liquidKind === 'water')?.id ?? null;
+  const lavaTileId =
+    TILE_METADATA.tiles.find((tile) => tile.gameplay?.liquidKind === 'lava')?.id ?? null;
+
+  it('ignores non-connected liquid neighbors while preserving same-kind levels', () => {
+    if (waterTileId === null || lavaTileId === null) {
+      throw new Error('expected water and lava tile metadata');
+    }
+
+    expect(resolveConnectedLiquidNeighborLevel(waterTileId, waterTileId, 6)).toBe(6);
+    expect(resolveConnectedLiquidNeighborLevel(waterTileId, lavaTileId, 6)).toBe(0);
   });
 });

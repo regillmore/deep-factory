@@ -94,6 +94,10 @@ import {
   type PlayerRespawnEvent
 } from './world/playerRespawnEvent';
 import {
+  resolveConnectedLiquidNeighborLevel,
+  resolveLiquidSurfaceTopHeights
+} from './world/liquidSurface';
+import {
   resolvePlayerWallContactTransitionEvent,
   type PlayerWallContactTransitionEvent
 } from './world/playerWallContactTransition';
@@ -1489,6 +1493,37 @@ const bootstrap = async (): Promise<void> => {
 
   const getActiveDebugBrushLabel = (): string => DEBUG_BRUSH_TILE_LABELS.get(activeDebugBrushTileId) ?? `tile ${activeDebugBrushTileId}`;
 
+  const resolveDebugTileLiquidSurfaceTopHeights = (
+    tileX: number,
+    tileY: number,
+    tileId: number,
+    liquidLevel: number,
+    liquidKind: DebugEditHoveredTileState['liquidKind']
+  ) => {
+    if (liquidKind === null) {
+      return null;
+    }
+
+    return resolveLiquidSurfaceTopHeights({
+      center: liquidLevel,
+      north: resolveConnectedLiquidNeighborLevel(
+        tileId,
+        renderer.getTile(tileX, tileY - 1),
+        renderer.getLiquidLevel(tileX, tileY - 1)
+      ),
+      east: resolveConnectedLiquidNeighborLevel(
+        tileId,
+        renderer.getTile(tileX + 1, tileY),
+        renderer.getLiquidLevel(tileX + 1, tileY)
+      ),
+      west: resolveConnectedLiquidNeighborLevel(
+        tileId,
+        renderer.getTile(tileX - 1, tileY),
+        renderer.getLiquidLevel(tileX - 1, tileY)
+      )
+    });
+  };
+
   const getDebugTileStatusAtTile = (
     tileX: number,
     tileY: number,
@@ -1500,6 +1535,13 @@ const bootstrap = async (): Promise<void> => {
     const gameplay = resolveTileGameplayMetadata(tileId);
     const { chunkX, chunkY } = worldToChunkCoord(tileX, tileY);
     const { localX, localY } = worldToLocalTile(tileX, tileY);
+    const liquidSurfaceTopHeights = resolveDebugTileLiquidSurfaceTopHeights(
+      tileX,
+      tileY,
+      tileId,
+      liquidLevel,
+      gameplay.liquidKind ?? null
+    );
     const liquidCardinalMask = renderer.getLiquidRenderCardinalMask(tileX, tileY);
     const liquidAnimationFrameCount =
       typeof liquidCardinalMask === 'number'
@@ -1554,6 +1596,8 @@ const bootstrap = async (): Promise<void> => {
 
     return {
       liquidLevel,
+      liquidSurfaceTopLeft: liquidSurfaceTopHeights?.topLeft ?? null,
+      liquidSurfaceTopRight: liquidSurfaceTopHeights?.topRight ?? null,
       liquidConnectivityGroupLabel: describeLiquidConnectivityGroup(tileId),
       liquidCardinalMask,
       liquidAnimationFrameIndex,
@@ -2085,6 +2129,8 @@ const bootstrap = async (): Promise<void> => {
           blocksLight: hoveredDebugTileStatus?.blocksLight,
           liquidKind: hoveredDebugTileStatus?.liquidKind ?? null,
           liquidLevel: hoveredDebugTileStatus?.liquidLevel ?? null,
+          liquidSurfaceTopLeft: hoveredDebugTileStatus?.liquidSurfaceTopLeft ?? null,
+          liquidSurfaceTopRight: hoveredDebugTileStatus?.liquidSurfaceTopRight ?? null,
           liquidConnectivityGroupLabel: hoveredDebugTileStatus?.liquidConnectivityGroupLabel ?? null,
           liquidCardinalMask: hoveredDebugTileStatus?.liquidCardinalMask ?? null,
           liquidAnimationFrameIndex: hoveredDebugTileStatus?.liquidAnimationFrameIndex ?? null,
@@ -2116,6 +2162,8 @@ const bootstrap = async (): Promise<void> => {
           blocksLight: pinnedDebugTileStatus.blocksLight,
           liquidKind: pinnedDebugTileStatus.liquidKind,
           liquidLevel: pinnedDebugTileStatus.liquidLevel ?? null,
+          liquidSurfaceTopLeft: pinnedDebugTileStatus.liquidSurfaceTopLeft ?? null,
+          liquidSurfaceTopRight: pinnedDebugTileStatus.liquidSurfaceTopRight ?? null,
           liquidConnectivityGroupLabel: pinnedDebugTileStatus.liquidConnectivityGroupLabel ?? null,
           liquidCardinalMask: pinnedDebugTileStatus.liquidCardinalMask ?? null,
           liquidAnimationFrameIndex: pinnedDebugTileStatus.liquidAnimationFrameIndex ?? null,
