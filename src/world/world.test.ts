@@ -177,7 +177,7 @@ describe('TileWorld', () => {
     expect(world.getActiveLiquidChunkBounds()).toBeNull();
   });
 
-  it('records liquid-step scan, horizontal-pair, and applied-transfer counts for the last fixed step', () => {
+  it('records liquid-step scan, bounded horizontal-pair, and applied-transfer counts for the last fixed step', () => {
     const world = new TileWorld(0);
     const worldTileX = 4;
     const worldTileY = -20;
@@ -189,7 +189,7 @@ describe('TileWorld', () => {
     expect(world.stepLiquidSimulation()).toBe(true);
     expect(world.getLastLiquidSimulationStats()).toEqual({
       residentChunksScanned: 2,
-      horizontalPairsTested: 1024,
+      horizontalPairsTested: 512,
       transfersApplied: 1
     });
   });
@@ -267,6 +267,25 @@ describe('TileWorld', () => {
     expect(world.pruneChunksOutside({ minChunkX: -1, minChunkY: -1, maxChunkX: 0, maxChunkY: 0 })).toBeGreaterThan(0);
     expect(world.getTile(worldTileX + 1, worldTileY)).toBe(WATER_TILE_ID);
     expect(world.getLiquidLevel(worldTileX + 1, worldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
+  });
+
+  it('spreads loaded liquid sideways back into the left neighboring chunk when the active liquid starts on the right side of the boundary pair', () => {
+    const world = new TileWorld(1);
+    const worldTileX = CHUNK_SIZE;
+    const worldTileY = -20;
+
+    expect(world.setTile(worldTileX - 1, worldTileY + 1, 1)).toBe(true);
+    expect(world.setTile(worldTileX, worldTileY + 1, 1)).toBe(true);
+    expect(world.setTile(worldTileX + 1, worldTileY, 1)).toBe(true);
+    expect(world.setTile(worldTileX, worldTileY, WATER_TILE_ID)).toBe(true);
+
+    expect(world.stepLiquidSimulation()).toBe(false);
+    expect(world.stepLiquidSimulation()).toBe(true);
+
+    expect(world.getTile(worldTileX - 1, worldTileY)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(worldTileX - 1, worldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
+    expect(world.getTile(worldTileX, worldTileY)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(worldTileX, worldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
   });
 
   it('restores active-liquid chunk membership when a pruned liquid chunk streams back in', () => {

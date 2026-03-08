@@ -23,10 +23,10 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Optimize liquids
 
-369. Restrict sideways liquid equalization to active liquid chunks plus immediate neighbor chunks: stop scanning every resident tile pair each tick while preserving deterministic chunk-boundary behavior and adding regressions for cross-boundary flow.
 370. Add liquid chunk sleep or wake rules for settled fluid: remove unchanged chunks from the active set until a local edit or neighboring transfer wakes them, with regressions for settled pools resuming after a disturbance.
 373. Split liquid-step transfer telemetry by phase (`downward` vs `sideways`) so mixed-flow scenes can prove which pass still performs work while the broader liquid optimizations land.
 380. Expose active-liquid chunk bounds in the compact hidden-HUD status strip so mixed-device liquid wake testing can inspect the active region without opening the full debug overlay.
+381. Restrict downward liquid transfer scanning to active liquid chunks only: stop scanning dry resident chunks during the first liquid phase while preserving same-tick downward-to-sideways behavior and adding regressions for loaded chunk-boundary falls.
 
 ## Refine, Extract, Refactor, Restructure
 

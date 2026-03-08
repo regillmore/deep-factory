@@ -108,6 +108,32 @@ const collectActiveLiquidChunkKeys = (chunks: ReadonlyMap<string, Chunk>): Set<s
   return activeLiquidChunkKeys;
 };
 
+const collectSidewaysLiquidCandidateChunkKeys = (
+  chunks: ReadonlyMap<string, Chunk>,
+  activeLiquidChunkKeys: ReadonlySet<string>
+): Set<string> => {
+  const candidateChunkKeys = new Set<string>();
+  for (const key of activeLiquidChunkKeys) {
+    const activeChunk = chunks.get(key);
+    if (!activeChunk) {
+      continue;
+    }
+
+    for (
+      let candidateChunkX = activeChunk.coord.x - 1;
+      candidateChunkX <= activeChunk.coord.x + 1;
+      candidateChunkX += 1
+    ) {
+      const candidateKey = chunkKey(candidateChunkX, activeChunk.coord.y);
+      if (chunks.has(candidateKey)) {
+        candidateChunkKeys.add(candidateKey);
+      }
+    }
+  }
+
+  return candidateChunkKeys;
+};
+
 const compareChunkCoords = (left: ChunkCoord, right: ChunkCoord): number => left.y - right.y || left.x - right.x;
 
 const parseChunkCoordFromKey = (key: string): ChunkCoord => {
@@ -756,8 +782,16 @@ export class TileWorld {
       changed = applied || changed;
     }
 
+    const sidewaysCandidateChunkKeys = collectSidewaysLiquidCandidateChunkKeys(
+      this.chunks,
+      this.activeLiquidChunkKeys
+    );
     const horizontalPairParity = this.liquidSimulationTick & 1;
-    for (const chunk of this.chunks.values()) {
+    for (const [key, chunk] of this.chunks) {
+      if (!sidewaysCandidateChunkKeys.has(key)) {
+        continue;
+      }
+
       for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
         for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
           const worldTileX = chunk.coord.x * CHUNK_SIZE + localX;

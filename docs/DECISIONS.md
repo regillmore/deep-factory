@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Sideways liquid equalization only scans the active chunk band
+
+- Decision: The sideways half-step in `src/world/world.ts` now snapshots resident candidate chunks from the current active-liquid chunk set plus immediate left and right neighbors after downward transfers, instead of testing every resident horizontal pair each tick.
+- Reason: Whole-world pair scans waste work in large dry resident regions, while cross-boundary equalization still needs inactive neighbor chunks on both sides of the active band to preserve deterministic seam behavior.
+- Consequence: Future liquid optimizations and telemetry should treat sideways equalization as an active-band operation and keep candidate collection aligned to the post-downward active set rather than falling back to full resident-world pair scans.
+
 ### 2026-03-08: Active-liquid chunk membership stays resident runtime state
 
 - Decision: `TileWorld` now keeps a resident active-liquid chunk-key set that is rebuilt from resident chunks on snapshot load or stream-back, updated on tile commits, liquid transfers, and prune, and used to early-out the liquid step when no resident chunk currently contains liquid.
