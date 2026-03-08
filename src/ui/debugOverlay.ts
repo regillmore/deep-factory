@@ -55,6 +55,10 @@ export interface DebugOverlayPointerInspect {
   liquidBottomRightV?: number | null;
   liquidBottomLeftPixelY?: number | null;
   liquidBottomRightPixelY?: number | null;
+  liquidVisibleLeftV?: number | null;
+  liquidVisibleRightV?: number | null;
+  liquidVisibleLeftPixelHeight?: number | null;
+  liquidVisibleRightPixelHeight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -95,6 +99,10 @@ export interface DebugOverlayTileInspect {
   liquidBottomRightV?: number | null;
   liquidBottomLeftPixelY?: number | null;
   liquidBottomRightPixelY?: number | null;
+  liquidVisibleLeftV?: number | null;
+  liquidVisibleRightV?: number | null;
+  liquidVisibleLeftPixelHeight?: number | null;
+  liquidVisibleRightPixelHeight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -373,6 +381,14 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
   const liquidBottomRightV = formatLiquidSurfaceHeight(tileInspect.liquidBottomRightV);
   const liquidBottomLeftPixelY = formatAtlasPixelCoordinate(tileInspect.liquidBottomLeftPixelY);
   const liquidBottomRightPixelY = formatAtlasPixelCoordinate(tileInspect.liquidBottomRightPixelY);
+  const liquidVisibleLeftV = formatLiquidSurfaceHeight(tileInspect.liquidVisibleLeftV);
+  const liquidVisibleRightV = formatLiquidSurfaceHeight(tileInspect.liquidVisibleRightV);
+  const liquidVisibleLeftPixelHeight = formatAtlasPixelCoordinate(
+    tileInspect.liquidVisibleLeftPixelHeight
+  );
+  const liquidVisibleRightPixelHeight = formatAtlasPixelCoordinate(
+    tileInspect.liquidVisibleRightPixelHeight
+  );
   const liquidAnimationFrame = formatLiquidAnimationFrame(
     tileInspect.liquidAnimationFrameIndex,
     tileInspect.liquidAnimationFrameCount
@@ -403,6 +419,12 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     (liquidBottomRightV ? ` | liquidBottomRightV:${liquidBottomRightV}` : '') +
     (liquidBottomLeftPixelY ? ` | liquidBottomLeftPxY:${liquidBottomLeftPixelY}` : '') +
     (liquidBottomRightPixelY ? ` | liquidBottomRightPxY:${liquidBottomRightPixelY}` : '') +
+    (liquidVisibleLeftV ? ` | liquidVisibleLeftV:${liquidVisibleLeftV}` : '') +
+    (liquidVisibleRightV ? ` | liquidVisibleRightV:${liquidVisibleRightV}` : '') +
+    (liquidVisibleLeftPixelHeight ? ` | liquidVisibleLeftPxH:${liquidVisibleLeftPixelHeight}` : '') +
+    (liquidVisibleRightPixelHeight
+      ? ` | liquidVisibleRightPxH:${liquidVisibleRightPixelHeight}`
+      : '') +
     (typeof tileInspect.liquidConnectivityGroupLabel === 'string' &&
     tileInspect.liquidConnectivityGroupLabel.length > 0
       ? ` | liquidGroup:${tileInspect.liquidConnectivityGroupLabel}`

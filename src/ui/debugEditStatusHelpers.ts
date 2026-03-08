@@ -113,6 +113,10 @@ export interface DebugEditHoveredTileState {
   liquidBottomRightV?: number | null;
   liquidBottomLeftPixelY?: number | null;
   liquidBottomRightPixelY?: number | null;
+  liquidVisibleLeftV?: number | null;
+  liquidVisibleRightV?: number | null;
+  liquidVisibleLeftPixelHeight?: number | null;
+  liquidVisibleRightPixelHeight?: number | null;
   liquidConnectivityGroupLabel?: string | null;
   liquidCardinalMask?: number | null;
   liquidAnimationFrameIndex?: number | null;
@@ -579,6 +583,12 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
   const liquidBottomRightV = formatLiquidSurfaceHeight(tile.liquidBottomRightV);
   const liquidBottomLeftPixelY = formatAtlasPixelCoordinate(tile.liquidBottomLeftPixelY);
   const liquidBottomRightPixelY = formatAtlasPixelCoordinate(tile.liquidBottomRightPixelY);
+  const liquidVisibleLeftV = formatLiquidSurfaceHeight(tile.liquidVisibleLeftV);
+  const liquidVisibleRightV = formatLiquidSurfaceHeight(tile.liquidVisibleRightV);
+  const liquidVisibleLeftPixelHeight = formatAtlasPixelCoordinate(tile.liquidVisibleLeftPixelHeight);
+  const liquidVisibleRightPixelHeight = formatAtlasPixelCoordinate(
+    tile.liquidVisibleRightPixelHeight
+  );
   const liquidAnimationFrame = formatLiquidAnimationFrame(
     tile.liquidAnimationFrameIndex,
     tile.liquidAnimationFrameCount
@@ -612,6 +622,12 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     (liquidBottomRightV ? ` | liquidBottomRightV:${liquidBottomRightV}` : '') +
     (liquidBottomLeftPixelY ? ` | liquidBottomLeftPxY:${liquidBottomLeftPixelY}` : '') +
     (liquidBottomRightPixelY ? ` | liquidBottomRightPxY:${liquidBottomRightPixelY}` : '') +
+    (liquidVisibleLeftV ? ` | liquidVisibleLeftV:${liquidVisibleLeftV}` : '') +
+    (liquidVisibleRightV ? ` | liquidVisibleRightV:${liquidVisibleRightV}` : '') +
+    (liquidVisibleLeftPixelHeight ? ` | liquidVisibleLeftPxH:${liquidVisibleLeftPixelHeight}` : '') +
+    (liquidVisibleRightPixelHeight
+      ? ` | liquidVisibleRightPxH:${liquidVisibleRightPixelHeight}`
+      : '') +
     (typeof tile.liquidConnectivityGroupLabel === 'string' && tile.liquidConnectivityGroupLabel.length > 0
       ? ` | liquidGroup:${tile.liquidConnectivityGroupLabel}`
       : '') +

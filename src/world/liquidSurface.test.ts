@@ -6,6 +6,8 @@ import {
   resolveLiquidSurfaceBottomAtlasPixelRows,
   resolveLiquidSurfaceBottomVCrops,
   resolveLiquidSurfaceBranchKind,
+  resolveLiquidSurfaceVisibleFrameAtlasPixelHeights,
+  resolveLiquidSurfaceVisibleFrameHeights,
   resolveLiquidSurfaceTopHeights
 } from './liquidSurface';
 
@@ -197,6 +199,84 @@ describe('resolveLiquidSurfaceBottomAtlasPixelRows', () => {
     ).toEqual({
       bottomLeftPixelY: 64,
       bottomRightPixelY: 0
+    });
+  });
+});
+
+describe('resolveLiquidSurfaceVisibleFrameHeights', () => {
+  it('resolves per-side visible frame-height deltas from the current variant top edge', () => {
+    expect(
+      resolveLiquidSurfaceVisibleFrameHeights(
+        {
+          v0: 0.75,
+          v1: 0.875
+        },
+        {
+          bottomLeftV: 0.8125,
+          bottomRightV: 0.796875
+        }
+      )
+    ).toEqual({
+      visibleLeftV: 0.0625,
+      visibleRightV: 0.046875
+    });
+  });
+
+  it('clamps invalid frame and crop inputs before resolving visible frame heights', () => {
+    expect(
+      resolveLiquidSurfaceVisibleFrameHeights(
+        {
+          v0: 0.5,
+          v1: 0.75
+        },
+        {
+          bottomLeftV: 4,
+          bottomRightV: -2
+        }
+      )
+    ).toEqual({
+      visibleLeftV: 0.25,
+      visibleRightV: 0
+    });
+  });
+});
+
+describe('resolveLiquidSurfaceVisibleFrameAtlasPixelHeights', () => {
+  it('maps visible frame-height deltas onto atlas-pixel heights', () => {
+    expect(
+      resolveLiquidSurfaceVisibleFrameAtlasPixelHeights(
+        64,
+        {
+          v0: 0.75,
+          v1: 0.875
+        },
+        {
+          bottomLeftV: 0.8125,
+          bottomRightV: 0.796875
+        }
+      )
+    ).toEqual({
+      visibleLeftPixelHeight: 4,
+      visibleRightPixelHeight: 3
+    });
+  });
+
+  it('reuses clamped bottom-pixel rows when resolving visible frame pixel heights', () => {
+    expect(
+      resolveLiquidSurfaceVisibleFrameAtlasPixelHeights(
+        64,
+        {
+          v0: 0.5,
+          v1: 0.75
+        },
+        {
+          bottomLeftV: 4,
+          bottomRightV: -2
+        }
+      )
+    ).toEqual({
+      visibleLeftPixelHeight: 16,
+      visibleRightPixelHeight: 0
     });
   });
 });

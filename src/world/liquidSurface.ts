@@ -23,9 +23,19 @@ export interface LiquidSurfaceBottomVCrops {
   bottomRightV: number;
 }
 
+export interface LiquidSurfaceVisibleFrameHeights {
+  visibleLeftV: number;
+  visibleRightV: number;
+}
+
 export interface LiquidSurfaceBottomAtlasPixelRows {
   bottomLeftPixelY: number;
   bottomRightPixelY: number;
+}
+
+export interface LiquidSurfaceVisibleFrameAtlasPixelHeights {
+  visibleLeftPixelHeight: number;
+  visibleRightPixelHeight: number;
 }
 
 export type LiquidSurfaceBranchKind = 'empty' | 'north-covered' | 'exposed';
@@ -109,6 +119,25 @@ export const resolveLiquidSurfaceBottomVCrops = (
     uvRect.v0 + (uvRect.v1 - uvRect.v0) * clampNormalizedLiquidHeight(topHeights.topRight)
 });
 
+export const resolveLiquidSurfaceVisibleFrameHeights = (
+  uvRect: Pick<TileUvRect, 'v0' | 'v1'>,
+  bottomVCrops: LiquidSurfaceBottomVCrops
+): LiquidSurfaceVisibleFrameHeights => {
+  const topV = clampNormalizedLiquidHeight(uvRect.v0);
+  const frameHeightV = Math.max(0, clampNormalizedLiquidHeight(uvRect.v1) - topV);
+
+  return {
+    visibleLeftV: Math.min(
+      frameHeightV,
+      Math.max(0, clampNormalizedLiquidHeight(bottomVCrops.bottomLeftV) - topV)
+    ),
+    visibleRightV: Math.min(
+      frameHeightV,
+      Math.max(0, clampNormalizedLiquidHeight(bottomVCrops.bottomRightV) - topV)
+    )
+  };
+};
+
 export const resolveLiquidSurfaceBottomAtlasPixelRows = (
   atlasHeight: number,
   bottomVCrops: LiquidSurfaceBottomVCrops
@@ -116,6 +145,27 @@ export const resolveLiquidSurfaceBottomAtlasPixelRows = (
   bottomLeftPixelY: clampNormalizedLiquidHeight(bottomVCrops.bottomLeftV) * atlasHeight,
   bottomRightPixelY: clampNormalizedLiquidHeight(bottomVCrops.bottomRightV) * atlasHeight
 });
+
+export const resolveLiquidSurfaceVisibleFrameAtlasPixelHeights = (
+  atlasHeight: number,
+  uvRect: Pick<TileUvRect, 'v0' | 'v1'>,
+  bottomVCrops: LiquidSurfaceBottomVCrops
+): LiquidSurfaceVisibleFrameAtlasPixelHeights => {
+  const bottomPixelRows = resolveLiquidSurfaceBottomAtlasPixelRows(atlasHeight, bottomVCrops);
+  const topPixelY = clampNormalizedLiquidHeight(uvRect.v0) * atlasHeight;
+  const framePixelHeight = Math.max(0, clampNormalizedLiquidHeight(uvRect.v1) * atlasHeight - topPixelY);
+
+  return {
+    visibleLeftPixelHeight: Math.min(
+      framePixelHeight,
+      Math.max(0, bottomPixelRows.bottomLeftPixelY - topPixelY)
+    ),
+    visibleRightPixelHeight: Math.min(
+      framePixelHeight,
+      Math.max(0, bottomPixelRows.bottomRightPixelY - topPixelY)
+    )
+  };
+};
 
 export const resolveConnectedLiquidNeighborLevel = (
   centerTileId: number,

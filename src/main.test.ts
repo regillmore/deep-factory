@@ -3078,7 +3078,7 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
-  it('surfaces resolved liquid surface heights through hovered and pinned inspect telemetry', async () => {
+  it('surfaces resolved liquid surface and visible frame heights through hovered and pinned inspect telemetry', async () => {
     await import('./main');
     await flushBootstrap();
 
@@ -3093,14 +3093,13 @@ describe('main.ts shell state orchestration', () => {
         worldTileY: 6
       }
     ];
+    testRuntime.performanceNow = 240;
     testRuntime.rendererTileId = 0;
     testRuntime.rendererLiquidLevel = 0;
-    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, 6), 7);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, 6), 8);
     testRuntime.rendererLiquidLevelsByWorldKey.set(worldTileKey(4, 6), 3);
-    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(3, 6), 7);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(3, 6), 8);
     testRuntime.rendererLiquidLevelsByWorldKey.set(worldTileKey(3, 6), 5);
-    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(5, 6), 9);
-    testRuntime.rendererLiquidLevelsByWorldKey.set(worldTileKey(5, 6), 8);
     testRuntime.rendererLiquidRenderCardinalMask = 11;
     testRuntime.rendererTelemetry.atlasWidth = 96;
     testRuntime.rendererTelemetry.atlasHeight = 64;
@@ -3116,8 +3115,8 @@ describe('main.ts shell state orchestration', () => {
 
     expect(testRuntime.latestDebugOverlayInspectState.pointer).toMatchObject({
       tile: { x: 4, y: 6 },
-      tileId: 7,
-      liquidKind: 'water',
+      tileId: 8,
+      liquidKind: 'lava',
       liquidLevel: 3,
       liquidSurfaceNorthLevel: 0,
       liquidSurfaceWestLevel: 5,
@@ -3126,15 +3125,19 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceBranch: 'exposed',
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375,
-      liquidBottomLeftV: 0.125,
-      liquidBottomRightV: 0.09375,
-      liquidBottomLeftPixelY: 8,
-      liquidBottomRightPixelY: 6
+      liquidBottomLeftV: 0.8125,
+      liquidBottomRightV: 0.796875,
+      liquidBottomLeftPixelY: 52,
+      liquidBottomRightPixelY: 51,
+      liquidVisibleLeftV: 0.0625,
+      liquidVisibleRightV: 0.046875,
+      liquidVisibleLeftPixelHeight: 4,
+      liquidVisibleRightPixelHeight: 3
     });
     expect(testRuntime.latestDebugOverlayInspectState.pinned).toMatchObject({
       tile: { x: 4, y: 6 },
-      tileId: 7,
-      liquidKind: 'water',
+      tileId: 8,
+      liquidKind: 'lava',
       liquidLevel: 3,
       liquidSurfaceNorthLevel: 0,
       liquidSurfaceWestLevel: 5,
@@ -3143,16 +3146,20 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceBranch: 'exposed',
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375,
-      liquidBottomLeftV: 0.125,
-      liquidBottomRightV: 0.09375,
-      liquidBottomLeftPixelY: 8,
-      liquidBottomRightPixelY: 6
+      liquidBottomLeftV: 0.8125,
+      liquidBottomRightV: 0.796875,
+      liquidBottomLeftPixelY: 52,
+      liquidBottomRightPixelY: 51,
+      liquidVisibleLeftV: 0.0625,
+      liquidVisibleRightV: 0.046875,
+      liquidVisibleLeftPixelHeight: 4,
+      liquidVisibleRightPixelHeight: 3
     });
     expect(testRuntime.latestDebugEditStatusStripState.hoveredTile).toMatchObject({
       tileX: 4,
       tileY: 6,
-      tileId: 7,
-      liquidKind: 'water',
+      tileId: 8,
+      liquidKind: 'lava',
       liquidLevel: 3,
       liquidSurfaceNorthLevel: 0,
       liquidSurfaceWestLevel: 5,
@@ -3161,16 +3168,20 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceBranch: 'exposed',
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375,
-      liquidBottomLeftV: 0.125,
-      liquidBottomRightV: 0.09375,
-      liquidBottomLeftPixelY: 8,
-      liquidBottomRightPixelY: 6
+      liquidBottomLeftV: 0.8125,
+      liquidBottomRightV: 0.796875,
+      liquidBottomLeftPixelY: 52,
+      liquidBottomRightPixelY: 51,
+      liquidVisibleLeftV: 0.0625,
+      liquidVisibleRightV: 0.046875,
+      liquidVisibleLeftPixelHeight: 4,
+      liquidVisibleRightPixelHeight: 3
     });
     expect(testRuntime.latestDebugEditStatusStripState.pinnedTile).toMatchObject({
       tileX: 4,
       tileY: 6,
-      tileId: 7,
-      liquidKind: 'water',
+      tileId: 8,
+      liquidKind: 'lava',
       liquidLevel: 3,
       liquidSurfaceNorthLevel: 0,
       liquidSurfaceWestLevel: 5,
@@ -3179,10 +3190,14 @@ describe('main.ts shell state orchestration', () => {
       liquidSurfaceBranch: 'exposed',
       liquidSurfaceTopLeft: 0.5,
       liquidSurfaceTopRight: 0.375,
-      liquidBottomLeftV: 0.125,
-      liquidBottomRightV: 0.09375,
-      liquidBottomLeftPixelY: 8,
-      liquidBottomRightPixelY: 6
+      liquidBottomLeftV: 0.8125,
+      liquidBottomRightV: 0.796875,
+      liquidBottomLeftPixelY: 52,
+      liquidBottomRightPixelY: 51,
+      liquidVisibleLeftV: 0.0625,
+      liquidVisibleRightV: 0.046875,
+      liquidVisibleLeftPixelHeight: 4,
+      liquidVisibleRightPixelHeight: 3
     });
   });
 

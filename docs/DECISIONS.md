@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Partial-liquid visible-height inspect telemetry should resolve from shared frame-origin helpers
+
+- Decision: Hovered and pinned inspect telemetry now resolves `liquidVisibleLeftV` and `liquidVisibleRightV` from the current liquid variant frame's `v0` plus the shared bottom-edge crop output in `src/world/liquidSurface.ts`, and resolves `liquidVisibleLeftPixelHeight` and `liquidVisibleRightPixelHeight` through the shared crop-to-pixel helper there.
+- Reason: Visible-height deltas need to stay numerically aligned with the exact frame origin and bottom-edge crop values the renderer and inspect telemetry already share, especially when animated liquid variants move onto non-zero `v0` ranges.
+- Consequence: Future partial-liquid inspect deltas or frame-origin telemetry should extend those shared visible-height helpers instead of subtracting `liquidUv` or `liquidPx` strings in `src/main.ts` or UI formatting code.
+
 ### 2026-03-08: Partial-liquid bottom-edge atlas-pixel inspect telemetry should reuse the shared crop-to-pixel helper
 
 - Decision: Hovered and pinned inspect telemetry now resolves `liquidBottomLeftPixelY` and `liquidBottomRightPixelY` through `resolveLiquidSurfaceBottomAtlasPixelRows()` in `src/world/liquidSurface.ts`, fed by the same shared bottom-edge `v` crop output that inspect telemetry already exposes as `liquidBottomLeftV` and `liquidBottomRightV`.
