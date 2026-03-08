@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Add a shared entity render-snapshot interpolation helper that resolves blended world position from `previous/current` snapshots before the separate entity pass lands.
+- Changes: Added [src/world/entityRenderInterpolation.ts](../src/world/entityRenderInterpolation.ts) with a shared `resolveInterpolatedEntityWorldPosition()` helper that clamps render alpha and blends snapshot `position.x/y` from registry `previous/current` render states, added focused coverage in [src/world/entityRenderInterpolation.test.ts](../src/world/entityRenderInterpolation.test.ts), removed completed task `353` from [docs/NEXT.md](docs/NEXT.md), added replacement task `354`, and updated [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/entityRenderInterpolation.test.ts src/world/entityRegistry.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Move the standalone player onto the entity layer once the standalone controller works.
 - Changes: Updated [src/main.ts](../src/main.ts) so the standalone player now spawns into the shared [src/world/entityRegistry.ts](../src/world/entityRegistry.ts), advances through that entity's fixed-step hook, and routes spawn refresh, lava or embedded respawn recovery, camera follow, preview rendering, and render-frame telemetry through registry-backed player state instead of a parallel top-level variable; added detached player-state snapshot cloning in [src/world/playerState.ts](../src/world/playerState.ts) with focused coverage in [src/world/playerState.test.ts](../src/world/playerState.test.ts), removed completed task `17` from [docs/NEXT.md](docs/NEXT.md), added replacement task `353`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/playerState.test.ts src/world/entityRegistry.test.ts src/main.test.ts`.

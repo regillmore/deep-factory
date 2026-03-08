@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Entity render-position interpolation should clamp render alpha and blend from registry snapshots
+
+- Decision: Shared entity render-position interpolation now lives in `src/world/entityRenderInterpolation.ts`, reads `previous/current` registry snapshots, clamps render alpha into `0..1`, and returns a detached blended world position from snapshot `position.x/y`.
+- Reason: Upcoming entity rendering needs one reusable interpolation rule for world-space placement, and allowing ad hoc extrapolation or duplicated blend math across `main.ts` and the renderer would make later pose and telemetry migration easier to drift.
+- Consequence: Future interpolated entity drawing should reuse the shared helper for world position and layer any non-position presentation rules on top of that result instead of reimplementing per-call-site snapshot lerp logic.
+
 ### 2026-03-08: Standalone-player authority should live in the entity registry before interpolated entity rendering lands
 
 - Decision: `src/main.ts` now spawns the standalone player into `src/world/entityRegistry.ts` as a `standalone-player` entity, drives fixed-step movement through that entity hook, and reads or replaces the authoritative player state through the registry during spawn refresh, respawn recovery, camera follow, preview rendering, and render-frame telemetry while the placeholder renderer still consumes the current state directly.
