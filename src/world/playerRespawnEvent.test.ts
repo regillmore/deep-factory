@@ -37,6 +37,8 @@ describe('createEmbeddedPlayerRespawnEvent', () => {
     expect(event).toEqual({
       kind: 'embedded',
       spawnTile: { x: 3, y: -2 },
+      supportChunk: { x: 0, y: -1 },
+      supportLocal: { x: 3, y: 31 },
       position: { x: 56, y: -32 },
       velocity: { x: 0, y: 0 }
     });
@@ -76,6 +78,8 @@ describe('createLavaPlayerRespawnEvent', () => {
     expect(event).toEqual({
       kind: 'lava',
       spawnTile: { x: -1, y: 0 },
+      supportChunk: { x: -1, y: 0 },
+      supportLocal: { x: 31, y: 1 },
       position: { x: -8, y: 0 },
       velocity: { x: 0, y: 0 }
     });

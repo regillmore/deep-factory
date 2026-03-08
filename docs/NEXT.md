@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Collision and player foundation
 
-334. Surface the latest resolved spawn support chunk and chunk-local tile coordinates in standalone-player respawn event telemetry so cross-chunk lava and embedded recovery stays debuggable, with focused runtime regressions.
+336. Surface the latest resolved spawn support tile ID in standalone-player respawn event telemetry so lava and embedded recovery can be cross-checked against support-material changes, with focused runtime regressions.
 
 ## Liquid rendering
 

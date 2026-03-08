@@ -129,6 +129,8 @@ export interface DebugEditHoveredTileState {
 export interface DebugEditStatusStripPlayerRespawnTelemetry {
   kind: PlayerRespawnEventKind;
   spawnTile: { x: number; y: number };
+  supportChunk: { x: number; y: number };
+  supportLocal: { x: number; y: number };
   position: { x: number; y: number };
   velocity: { x: number; y: number };
 }
@@ -640,6 +642,14 @@ const formatRespawnEventText = (
   return (
     `Respawn: ${playerRespawn.kind} | ` +
     `spawn ${formatTileCoordinatePair(playerRespawn.spawnTile.x, playerRespawn.spawnTile.y)} | ` +
+    `supportCh ${formatTileCoordinatePair(
+      playerRespawn.supportChunk.x,
+      playerRespawn.supportChunk.y
+    )} | ` +
+    `supportL ${formatTileCoordinatePair(
+      playerRespawn.supportLocal.x,
+      playerRespawn.supportLocal.y
+    )} | ` +
     `pos ${playerRespawn.position.x.toFixed(2)},${playerRespawn.position.y.toFixed(2)} | ` +
     `vel ${playerRespawn.velocity.x.toFixed(2)},${playerRespawn.velocity.y.toFixed(2)}`
   );

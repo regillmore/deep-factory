@@ -179,6 +179,8 @@ export interface DebugOverlayPlayerFacingTransitionTelemetry {
 export interface DebugOverlayPlayerRespawnTelemetry {
   kind: PlayerRespawnEventKind;
   spawnTile: { x: number; y: number };
+  supportChunk: { x: number; y: number };
+  supportLocal: { x: number; y: number };
   position: { x: number; y: number };
   velocity: { x: number; y: number };
 }
@@ -636,6 +638,8 @@ const formatPlayerRespawnLine = (
   return (
     `RespawnEvt: ${playerRespawn.kind} | ` +
     `SpawnT:${playerRespawn.spawnTile.x},${playerRespawn.spawnTile.y} | ` +
+    `SupportCh:${playerRespawn.supportChunk.x},${playerRespawn.supportChunk.y} | ` +
+    `SupportL:${playerRespawn.supportLocal.x},${playerRespawn.supportLocal.y} | ` +
     `Pos:${formatFloat(playerRespawn.position.x, 2)},` +
     `${formatFloat(playerRespawn.position.y, 2)} | ` +
     `Vel:${formatFloat(playerRespawn.velocity.x, 2)},` +

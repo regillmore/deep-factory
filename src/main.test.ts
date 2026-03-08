@@ -1905,6 +1905,15 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('routes bootstrap spawn initialization, lava respawn, and embedded respawn recovery through one shared standalone-player transition-reset helper', async () => {
+    testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 0,
+      standingTileY: -1,
+      x: 8,
+      y: -16,
+      supportTileX: 0,
+      supportTileY: 0
+    });
+
     await import('./main');
     await flushBootstrap();
 
@@ -2027,13 +2036,36 @@ describe('main.ts shell state orchestration', () => {
       kind: 'lava',
       spawnTile: {
         x: 0,
+        y: -1
+      },
+      supportChunk: {
+        x: 0,
+        y: 0
+      },
+      supportLocal: {
+        x: 0,
         y: 0
       },
       position: {
         x: 8,
-        y: 0
+        y: -16
       },
       velocity: {
+        x: 0,
+        y: 0
+      }
+    });
+    expect(testRuntime.latestDebugOverlayInspectState?.playerRespawn).toMatchObject({
+      kind: 'lava',
+      spawnTile: {
+        x: 0,
+        y: -1
+      },
+      supportChunk: {
+        x: 0,
+        y: 0
+      },
+      supportLocal: {
         x: 0,
         y: 0
       }
@@ -2041,7 +2073,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
 
     const respawnedPlayerState = {
-      position: { x: 96, y: 80 },
+      position: { x: 104, y: 496 },
       velocity: { x: 0, y: 0 },
       size: { width: 12, height: 28 },
       grounded: true,
@@ -2049,9 +2081,11 @@ describe('main.ts shell state orchestration', () => {
     };
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
       anchorTileX: 6,
-      standingTileY: 5,
-      x: 96,
-      y: 80
+      standingTileY: 31,
+      x: 104,
+      y: 496,
+      supportTileX: 6,
+      supportTileY: 32
     });
     testRuntime.debugTileEdits = [
       {
@@ -2082,10 +2116,33 @@ describe('main.ts shell state orchestration', () => {
       kind: 'embedded',
       spawnTile: {
         x: 6,
-        y: 5
+        y: 31
+      },
+      supportChunk: {
+        x: 0,
+        y: 1
+      },
+      supportLocal: {
+        x: 6,
+        y: 0
       },
       position: respawnedPlayerState.position,
       velocity: respawnedPlayerState.velocity
+    });
+    expect(testRuntime.latestDebugOverlayInspectState?.playerRespawn).toMatchObject({
+      kind: 'embedded',
+      spawnTile: {
+        x: 6,
+        y: 31
+      },
+      supportChunk: {
+        x: 0,
+        y: 1
+      },
+      supportLocal: {
+        x: 6,
+        y: 0
+      }
     });
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
   });
