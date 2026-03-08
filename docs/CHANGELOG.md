@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Expose resident active-liquid chunk bounds in the compact hidden-HUD status strip.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so the compact strip now formats hidden-HUD `LiquidActiveNow` lines from resident active-liquid count plus chunk-bounds telemetry, threaded the existing renderer telemetry through [src/main.ts](../src/main.ts) beside the prior hidden-HUD dirty-light fields, expanded [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused formatting and runtime visibility regressions, removed completed task `380` from [docs/NEXT.md](docs/NEXT.md), added replacement task `383`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/debugEditStatusHelpers.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Restrict downward liquid transfer scanning to resident active-liquid chunks only.
 - Changes: Updated [src/world/world.ts](../src/world/world.ts) so the downward liquid pass now snapshots the active-liquid chunk set at the start of the step and only scans those chunks before the existing post-fall sideways pass runs, which removes dry resident chunk tile walks without changing the downward-then-sideways order; expanded [src/world/world.test.ts](../src/world/world.test.ts) with the reduced downward scan-count expectation and a same-step loaded chunk-boundary fall regression; removed completed task `381` from [docs/NEXT.md](docs/NEXT.md), added replacement task `382`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

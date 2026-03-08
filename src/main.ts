@@ -2726,6 +2726,15 @@ const bootstrap = async (): Promise<void> => {
       playerCameraFollowOffset: debugStatusStripPlayerTelemetry.playerCameraFollowOffset,
       playerCameraZoom: debugStatusStripPlayerTelemetry.playerCameraZoom,
       residentDirtyLightChunks: debugOverlayVisible ? null : renderer.telemetry.residentDirtyLightChunks,
+      residentActiveLiquidChunks: debugOverlayVisible ? null : renderer.telemetry.residentActiveLiquidChunks,
+      residentActiveLiquidMinChunkX:
+        debugOverlayVisible ? null : renderer.telemetry.residentActiveLiquidMinChunkX,
+      residentActiveLiquidMinChunkY:
+        debugOverlayVisible ? null : renderer.telemetry.residentActiveLiquidMinChunkY,
+      residentActiveLiquidMaxChunkX:
+        debugOverlayVisible ? null : renderer.telemetry.residentActiveLiquidMaxChunkX,
+      residentActiveLiquidMaxChunkY:
+        debugOverlayVisible ? null : renderer.telemetry.residentActiveLiquidMaxChunkY,
       playerNearbyLightLevel: debugStatusStripPlayerTelemetry.playerNearbyLightLevel,
       playerNearbyLightFactor: debugStatusStripPlayerTelemetry.playerNearbyLightFactor,
       playerNearbyLightSourceTile: debugStatusStripPlayerTelemetry.playerNearbyLightSourceTile,

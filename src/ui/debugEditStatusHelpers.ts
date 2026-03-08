@@ -50,6 +50,11 @@ export interface DebugEditStatusStripState {
   playerCameraFollowOffset?: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null;
   playerCameraZoom?: number | null;
   residentDirtyLightChunks?: number | null;
+  residentActiveLiquidChunks?: number | null;
+  residentActiveLiquidMinChunkX?: number | null;
+  residentActiveLiquidMinChunkY?: number | null;
+  residentActiveLiquidMaxChunkX?: number | null;
+  residentActiveLiquidMaxChunkY?: number | null;
   playerNearbyLightLevel?: number | null;
   playerNearbyLightFactor?: number | null;
   playerNearbyLightSourceTile?: { x: number; y: number } | null;
@@ -1075,6 +1080,49 @@ const formatLiveResidentDirtyLightChunksText = (
   return `LightDirtyNow: ${Math.round(residentDirtyLightChunks)}`;
 };
 
+const formatResidentActiveLiquidBoundsText = (
+  residentActiveLiquidMinChunkX: number | null,
+  residentActiveLiquidMinChunkY: number | null,
+  residentActiveLiquidMaxChunkX: number | null,
+  residentActiveLiquidMaxChunkY: number | null
+): string => {
+  if (
+    residentActiveLiquidMinChunkX === null ||
+    residentActiveLiquidMinChunkY === null ||
+    residentActiveLiquidMaxChunkX === null ||
+    residentActiveLiquidMaxChunkY === null
+  ) {
+    return 'none';
+  }
+
+  return (
+    `${Math.round(residentActiveLiquidMinChunkX)},${Math.round(residentActiveLiquidMinChunkY)}` +
+    `..${Math.round(residentActiveLiquidMaxChunkX)},${Math.round(residentActiveLiquidMaxChunkY)}`
+  );
+};
+
+const formatLiveResidentActiveLiquidChunksText = (
+  residentActiveLiquidChunks: number | null,
+  residentActiveLiquidMinChunkX: number | null,
+  residentActiveLiquidMinChunkY: number | null,
+  residentActiveLiquidMaxChunkX: number | null,
+  residentActiveLiquidMaxChunkY: number | null
+): string | null => {
+  if (residentActiveLiquidChunks === null) {
+    return null;
+  }
+
+  return (
+    `LiquidActiveNow: ${Math.round(residentActiveLiquidChunks)} | ` +
+    `bounds:${formatResidentActiveLiquidBoundsText(
+      residentActiveLiquidMinChunkX,
+      residentActiveLiquidMinChunkY,
+      residentActiveLiquidMaxChunkX,
+      residentActiveLiquidMaxChunkY
+    )}`
+  );
+};
+
 const formatLiveNearbyLightText = (
   playerNearbyLightLevel: number | null,
   playerNearbyLightFactor: number | null,
@@ -1211,6 +1259,11 @@ const buildPlayerText = (
   playerCameraFollowOffset: DebugEditStatusStripPlayerCameraFollowOffsetTelemetry | null,
   playerCameraZoom: number | null,
   residentDirtyLightChunks: number | null,
+  residentActiveLiquidChunks: number | null,
+  residentActiveLiquidMinChunkX: number | null,
+  residentActiveLiquidMinChunkY: number | null,
+  residentActiveLiquidMaxChunkX: number | null,
+  residentActiveLiquidMaxChunkY: number | null,
   playerNearbyLightLevel: number | null,
   playerNearbyLightFactor: number | null,
   playerNearbyLightSourceTile: { x: number; y: number } | null,
@@ -1248,6 +1301,13 @@ const buildPlayerText = (
     formatLiveCameraFollowOffsetText(playerCameraFollowOffset),
     formatLiveCameraZoomText(playerCameraZoom),
     formatLiveResidentDirtyLightChunksText(residentDirtyLightChunks),
+    formatLiveResidentActiveLiquidChunksText(
+      residentActiveLiquidChunks,
+      residentActiveLiquidMinChunkX,
+      residentActiveLiquidMinChunkY,
+      residentActiveLiquidMaxChunkX,
+      residentActiveLiquidMaxChunkY
+    ),
     formatLiveNearbyLightText(
       playerNearbyLightLevel,
       playerNearbyLightFactor,
@@ -1766,6 +1826,11 @@ export const buildDebugEditStatusStripModel = (
   const playerCameraFollowOffset = state.playerCameraFollowOffset ?? null;
   const playerCameraZoom = state.playerCameraZoom ?? null;
   const residentDirtyLightChunks = state.residentDirtyLightChunks ?? null;
+  const residentActiveLiquidChunks = state.residentActiveLiquidChunks ?? null;
+  const residentActiveLiquidMinChunkX = state.residentActiveLiquidMinChunkX ?? null;
+  const residentActiveLiquidMinChunkY = state.residentActiveLiquidMinChunkY ?? null;
+  const residentActiveLiquidMaxChunkX = state.residentActiveLiquidMaxChunkX ?? null;
+  const residentActiveLiquidMaxChunkY = state.residentActiveLiquidMaxChunkY ?? null;
   const playerNearbyLightLevel = state.playerNearbyLightLevel ?? null;
   const playerNearbyLightFactor = state.playerNearbyLightFactor ?? null;
   const playerNearbyLightSourceTile = state.playerNearbyLightSourceTile ?? null;
@@ -1810,6 +1875,11 @@ export const buildDebugEditStatusStripModel = (
       playerCameraFollowOffset,
       playerCameraZoom,
       residentDirtyLightChunks,
+      residentActiveLiquidChunks,
+      residentActiveLiquidMinChunkX,
+      residentActiveLiquidMinChunkY,
+      residentActiveLiquidMaxChunkX,
+      residentActiveLiquidMaxChunkY,
       playerNearbyLightLevel,
       playerNearbyLightFactor,
       playerNearbyLightSourceTile,

@@ -235,6 +235,11 @@ const testRuntime = vi.hoisted(() => {
       atlasWidth: null as number | null,
       atlasHeight: null as number | null,
       residentDirtyLightChunks: 0,
+      residentActiveLiquidChunks: 0,
+      residentActiveLiquidMinChunkX: null as number | null,
+      residentActiveLiquidMinChunkY: null as number | null,
+      residentActiveLiquidMaxChunkX: null as number | null,
+      residentActiveLiquidMaxChunkY: null as number | null,
       standalonePlayerNearbyLightLevel: null as number | null,
       standalonePlayerNearbyLightFactor: null as number | null,
       standalonePlayerNearbyLightSourceTileX: null as number | null,
@@ -4237,6 +4242,11 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceChunkY = -1;
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceLocalTileX = 6;
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceLocalTileY = 29;
+    testRuntime.rendererTelemetry.residentActiveLiquidChunks = 3;
+    testRuntime.rendererTelemetry.residentActiveLiquidMinChunkX = -1;
+    testRuntime.rendererTelemetry.residentActiveLiquidMinChunkY = -2;
+    testRuntime.rendererTelemetry.residentActiveLiquidMaxChunkX = 2;
+    testRuntime.rendererTelemetry.residentActiveLiquidMaxChunkY = 1;
     testRuntime.rendererStepPlayerStateImpl = () => steppedPlayerState;
     testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, renderContacts];
 
@@ -4265,6 +4275,11 @@ describe('main.ts shell state orchestration', () => {
       x: 6,
       y: -3
     });
+    expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidChunks).toBe(3);
+    expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMinChunkX).toBe(-1);
+    expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMinChunkY).toBe(-2);
+    expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMaxChunkX).toBe(2);
+    expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMaxChunkY).toBe(1);
 
     testRuntime.shellInstance?.options.onToggleDebugOverlay('in-world');
     expect(testRuntime.debugOverlayInstance?.visible).toBe(true);
@@ -4294,6 +4309,11 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightSourceTile).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightSourceChunk).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightSourceLocalTile).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidChunks).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMinChunkX).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMinChunkY).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMaxChunkX).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMaxChunkY).toBeNull();
   });
 
   it('routes compact status-strip player-event telemetry through one shared overlay-visibility selector', async () => {

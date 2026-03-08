@@ -486,6 +486,42 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats resident active-liquid chunk counts and bounds for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      residentActiveLiquidChunks: 4,
+      residentActiveLiquidMinChunkX: -2,
+      residentActiveLiquidMinChunkY: -1,
+      residentActiveLiquidMaxChunkX: 3,
+      residentActiveLiquidMaxChunkY: 5,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('LiquidActiveNow: 4 | bounds:-2,-1..3,5');
+    expect(model.eventText).toBeNull();
+  });
+
+  it('shows dry-world active-liquid telemetry with a none bounds label in the compact strip', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      residentActiveLiquidChunks: 0,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('LiquidActiveNow: 0 | bounds:none');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats standalone-player nearby-light sampling for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -1041,6 +1077,27 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.playerText).toBe('Pose: grounded-idle\nLightDirtyNow: 14');
+    expect(model.eventText).toBeNull();
+  });
+
+  it('keeps pose and resident active-liquid telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'grounded-idle',
+      residentActiveLiquidChunks: 2,
+      residentActiveLiquidMinChunkX: -1,
+      residentActiveLiquidMinChunkY: 0,
+      residentActiveLiquidMaxChunkX: 1,
+      residentActiveLiquidMaxChunkY: 0,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: grounded-idle\nLiquidActiveNow: 2 | bounds:-1,0..1,0');
     expect(model.eventText).toBeNull();
   });
 
