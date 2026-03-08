@@ -8,8 +8,10 @@ import {
   resolveLiquidSurfaceBranchKind,
   resolveLiquidSurfaceCroppedFrameAtlasPixelHeights,
   resolveLiquidSurfaceCroppedFrameRemainders,
+  resolveLiquidSurfaceFrameAtlasPixelHeight,
   resolveLiquidSurfaceFrameBottomAtlasPixelRow,
   resolveLiquidSurfaceFrameBottomV,
+  resolveLiquidSurfaceFrameHeightV,
   resolveLiquidSurfaceFrameTopAtlasPixelRow,
   resolveLiquidSurfaceFrameTopV,
   resolveLiquidSurfaceVisibleFrameAtlasPixelHeights,
@@ -272,6 +274,58 @@ describe('resolveLiquidSurfaceFrameBottomAtlasPixelRow', () => {
         v1: 3
       })
     ).toBe(64);
+  });
+});
+
+describe('resolveLiquidSurfaceFrameHeightV', () => {
+  it('resolves the clamped current liquid-variant frame height in normalized v units', () => {
+    expect(
+      resolveLiquidSurfaceFrameHeightV({
+        v0: 0.75,
+        v1: 0.875
+      })
+    ).toBe(0.125);
+  });
+
+  it('clamps invalid frame bounds before resolving frame height', () => {
+    expect(
+      resolveLiquidSurfaceFrameHeightV({
+        v0: -2,
+        v1: 3
+      })
+    ).toBe(1);
+    expect(
+      resolveLiquidSurfaceFrameHeightV({
+        v0: 4,
+        v1: -2
+      })
+    ).toBe(0);
+  });
+});
+
+describe('resolveLiquidSurfaceFrameAtlasPixelHeight', () => {
+  it('maps the clamped current liquid-variant frame height onto atlas pixels', () => {
+    expect(
+      resolveLiquidSurfaceFrameAtlasPixelHeight(64, {
+        v0: 0.75,
+        v1: 0.875
+      })
+    ).toBe(8);
+  });
+
+  it('clamps invalid frame bounds before resolving atlas-pixel frame height', () => {
+    expect(
+      resolveLiquidSurfaceFrameAtlasPixelHeight(64, {
+        v0: -2,
+        v1: 3
+      })
+    ).toBe(64);
+    expect(
+      resolveLiquidSurfaceFrameAtlasPixelHeight(64, {
+        v0: 4,
+        v1: -2
+      })
+    ).toBe(0);
   });
 });
 

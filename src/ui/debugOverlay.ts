@@ -55,6 +55,8 @@ export interface DebugOverlayPointerInspect {
   liquidFrameTopPixelY?: number | null;
   liquidFrameBottomV?: number | null;
   liquidFrameBottomPixelY?: number | null;
+  liquidFrameHeightV?: number | null;
+  liquidFramePixelHeight?: number | null;
   liquidBottomLeftV?: number | null;
   liquidBottomRightV?: number | null;
   liquidBottomLeftPixelY?: number | null;
@@ -107,6 +109,8 @@ export interface DebugOverlayTileInspect {
   liquidFrameTopPixelY?: number | null;
   liquidFrameBottomV?: number | null;
   liquidFrameBottomPixelY?: number | null;
+  liquidFrameHeightV?: number | null;
+  liquidFramePixelHeight?: number | null;
   liquidBottomLeftV?: number | null;
   liquidBottomRightV?: number | null;
   liquidBottomLeftPixelY?: number | null;
@@ -397,6 +401,8 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
   const liquidFrameTopPixelY = formatAtlasPixelCoordinate(tileInspect.liquidFrameTopPixelY);
   const liquidFrameBottomV = formatLiquidSurfaceHeight(tileInspect.liquidFrameBottomV);
   const liquidFrameBottomPixelY = formatAtlasPixelCoordinate(tileInspect.liquidFrameBottomPixelY);
+  const liquidFrameHeightV = formatLiquidSurfaceHeight(tileInspect.liquidFrameHeightV);
+  const liquidFramePixelHeight = formatAtlasPixelCoordinate(tileInspect.liquidFramePixelHeight);
   const liquidBottomLeftV = formatLiquidSurfaceHeight(tileInspect.liquidBottomLeftV);
   const liquidBottomRightV = formatLiquidSurfaceHeight(tileInspect.liquidBottomRightV);
   const liquidBottomLeftPixelY = formatAtlasPixelCoordinate(tileInspect.liquidBottomLeftPixelY);
@@ -447,6 +453,8 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     (liquidFrameTopPixelY !== null ? ` | liquidFrameTopPxY:${liquidFrameTopPixelY}` : '') +
     (liquidFrameBottomV !== null ? ` | liquidFrameBottomV:${liquidFrameBottomV}` : '') +
     (liquidFrameBottomPixelY !== null ? ` | liquidFrameBottomPxY:${liquidFrameBottomPixelY}` : '') +
+    (liquidFrameHeightV !== null ? ` | liquidFrameHeightV:${liquidFrameHeightV}` : '') +
+    (liquidFramePixelHeight !== null ? ` | liquidFramePxH:${liquidFramePixelHeight}` : '') +
     (liquidBottomLeftV !== null ? ` | liquidBottomLeftV:${liquidBottomLeftV}` : '') +
     (liquidBottomRightV !== null ? ` | liquidBottomRightV:${liquidBottomRightV}` : '') +
     (liquidBottomLeftPixelY !== null ? ` | liquidBottomLeftPxY:${liquidBottomLeftPixelY}` : '') +

@@ -102,8 +102,10 @@ import {
   resolveLiquidSurfaceBranchKind,
   resolveLiquidSurfaceCroppedFrameAtlasPixelHeights,
   resolveLiquidSurfaceCroppedFrameRemainders,
+  resolveLiquidSurfaceFrameAtlasPixelHeight,
   resolveLiquidSurfaceFrameBottomAtlasPixelRow,
   resolveLiquidSurfaceFrameBottomV,
+  resolveLiquidSurfaceFrameHeightV,
   resolveLiquidSurfaceFrameTopAtlasPixelRow,
   resolveLiquidSurfaceFrameTopV,
   resolveLiquidSurfaceVisibleFrameAtlasPixelHeights,
@@ -1738,6 +1740,16 @@ const bootstrap = async (): Promise<void> => {
       atlasHeight > 0
         ? resolveLiquidSurfaceFrameBottomAtlasPixelRow(atlasHeight, liquidVariantUvRect)
         : null;
+    const liquidFrameHeightV = liquidVariantUvRect
+      ? resolveLiquidSurfaceFrameHeightV(liquidVariantUvRect)
+      : null;
+    const liquidFramePixelHeight =
+      liquidVariantUvRect &&
+      typeof atlasHeight === 'number' &&
+      Number.isFinite(atlasHeight) &&
+      atlasHeight > 0
+        ? resolveLiquidSurfaceFrameAtlasPixelHeight(atlasHeight, liquidVariantUvRect)
+        : null;
     const liquidBottomVCrops =
       liquidSurfaceTopHeights && liquidVariantUvRect
         ? resolveLiquidSurfaceBottomVCrops(liquidVariantUvRect, liquidSurfaceTopHeights)
@@ -1792,6 +1804,8 @@ const bootstrap = async (): Promise<void> => {
       liquidFrameTopPixelY,
       liquidFrameBottomV,
       liquidFrameBottomPixelY,
+      liquidFrameHeightV,
+      liquidFramePixelHeight,
       liquidBottomLeftV: liquidBottomVCrops?.bottomLeftV ?? null,
       liquidBottomRightV: liquidBottomVCrops?.bottomRightV ?? null,
       liquidBottomLeftPixelY: liquidBottomPixelRows?.bottomLeftPixelY ?? null,
@@ -2347,6 +2361,8 @@ const bootstrap = async (): Promise<void> => {
           liquidFrameTopPixelY: hoveredDebugTileStatus?.liquidFrameTopPixelY ?? null,
           liquidFrameBottomV: hoveredDebugTileStatus?.liquidFrameBottomV ?? null,
           liquidFrameBottomPixelY: hoveredDebugTileStatus?.liquidFrameBottomPixelY ?? null,
+          liquidFrameHeightV: hoveredDebugTileStatus?.liquidFrameHeightV ?? null,
+          liquidFramePixelHeight: hoveredDebugTileStatus?.liquidFramePixelHeight ?? null,
           liquidBottomLeftV: hoveredDebugTileStatus?.liquidBottomLeftV ?? null,
           liquidBottomRightV: hoveredDebugTileStatus?.liquidBottomRightV ?? null,
           liquidBottomLeftPixelY: hoveredDebugTileStatus?.liquidBottomLeftPixelY ?? null,
@@ -2404,6 +2420,8 @@ const bootstrap = async (): Promise<void> => {
           liquidFrameTopPixelY: pinnedDebugTileStatus.liquidFrameTopPixelY ?? null,
           liquidFrameBottomV: pinnedDebugTileStatus.liquidFrameBottomV ?? null,
           liquidFrameBottomPixelY: pinnedDebugTileStatus.liquidFrameBottomPixelY ?? null,
+          liquidFrameHeightV: pinnedDebugTileStatus.liquidFrameHeightV ?? null,
+          liquidFramePixelHeight: pinnedDebugTileStatus.liquidFramePixelHeight ?? null,
           liquidBottomLeftV: pinnedDebugTileStatus.liquidBottomLeftV ?? null,
           liquidBottomRightV: pinnedDebugTileStatus.liquidBottomRightV ?? null,
           liquidBottomLeftPixelY: pinnedDebugTileStatus.liquidBottomLeftPixelY ?? null,

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Partial-liquid full-frame-height inspect telemetry should reuse shared frame-bound helpers
+
+- Decision: Hovered and pinned inspect telemetry now resolves `liquidFrameHeightV` and `liquidFramePixelHeight` through shared frame-height helpers in `src/world/liquidSurface.ts`, and the existing visible-height and cropped-remainder helpers there reuse those same frame-height helpers instead of subtracting frame endpoints inline.
+- Reason: Direct total-frame-height debug readouts need to stay numerically aligned with the current liquid variant bounds for animated and non-zero-origin frames without duplicating endpoint subtraction in `src/main.ts` or UI formatting code.
+- Consequence: Future visible or cropped liquid percentage telemetry should extend the shared frame-height helpers instead of re-deriving frame-height math from `v0`, `v1`, or atlas pixel rows in runtime assembly or UI formatting code.
+
 ### 2026-03-08: Partial-liquid cropped-remainder inspect telemetry should resolve from shared frame-bottom helpers
 
 - Decision: Hovered and pinned inspect telemetry now resolves `liquidRemainderLeftV` and `liquidRemainderRightV` from the current liquid variant frame's `v1` plus the shared bottom-edge crop output in `src/world/liquidSurface.ts`, and resolves `liquidRemainderLeftPixelHeight` and `liquidRemainderRightPixelHeight` through the shared atlas-pixel helper there.

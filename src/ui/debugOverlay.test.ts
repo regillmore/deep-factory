@@ -241,6 +241,8 @@ describe('formatDebugOverlayText', () => {
         liquidFrameTopPixelY: 0,
         liquidFrameBottomV: 0.25,
         liquidFrameBottomPixelY: 16,
+        liquidFrameHeightV: 0.25,
+        liquidFramePixelHeight: 16,
         liquidBottomLeftV: 0.125,
         liquidBottomRightV: 0.09375,
         liquidBottomLeftPixelY: 8,
@@ -284,6 +286,8 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidFrameTopPxY:0');
     expect(text).toContain('liquidFrameBottomV:0.25');
     expect(text).toContain('liquidFrameBottomPxY:16');
+    expect(text).toContain('liquidFrameHeightV:0.25');
+    expect(text).toContain('liquidFramePxH:16');
     expect(text).toContain('liquidBottomLeftV:0.125');
     expect(text).toContain('liquidBottomRightV:0.094');
     expect(text).toContain('liquidBottomLeftPxY:8');
@@ -323,6 +327,8 @@ describe('formatDebugOverlayText', () => {
         liquidFrameTopPixelY: 0,
         liquidFrameBottomV: 0.25,
         liquidFrameBottomPixelY: 16,
+        liquidFrameHeightV: 0.25,
+        liquidFramePixelHeight: 16,
         liquidBottomLeftV: 0.15625,
         liquidBottomRightV: 0.0625,
         liquidBottomLeftPixelY: 10,
@@ -373,6 +379,8 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidFrameTopPxY:0');
     expect(text).toContain('liquidFrameBottomV:0.25');
     expect(text).toContain('liquidFrameBottomPxY:16');
+    expect(text).toContain('liquidFrameHeightV:0.25');
+    expect(text).toContain('liquidFramePxH:16');
     expect(text).toContain('liquidBottomLeftV:0.156');
     expect(text).toContain('liquidBottomRightV:0.063');
     expect(text).toContain('liquidBottomLeftPxY:10');
@@ -629,6 +637,8 @@ describe('formatDebugOverlayText', () => {
         liquidFrameTopPixelY: 32,
         liquidFrameBottomV: 0.75,
         liquidFrameBottomPixelY: 48,
+        liquidFrameHeightV: 0.25,
+        liquidFramePixelHeight: 16,
         liquidBottomLeftV: 0.6875,
         liquidBottomRightV: 0.65625,
         liquidBottomLeftPixelY: 44,
@@ -665,6 +675,8 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidFrameTopPxY:32');
     expect(text).toContain('liquidFrameBottomV:0.75');
     expect(text).toContain('liquidFrameBottomPxY:48');
+    expect(text).toContain('liquidFrameHeightV:0.25');
+    expect(text).toContain('liquidFramePxH:16');
     expect(text).toContain('liquidBottomLeftV:0.688');
     expect(text).toContain('liquidBottomRightV:0.656');
     expect(text).toContain('liquidBottomLeftPxY:44');
