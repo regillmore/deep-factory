@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-08
 
+- Task: Add a renderer regression where streamed-back emissive boundary-air falloff still drives standalone-player nearby-light telemetry on the first resumed draw when the source chunk stays clean.
+- Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with mirrored left-to-right and right-to-left resumed-draw regressions that place the standalone player so streamed-back boundary air is the brightest nearby sampled tile, assert nearby-light telemetry stays at emissive falloff instead of `MAX_LIGHT_LEVEL`, removed completed task `351` from [docs/NEXT.md](docs/NEXT.md), and because that closes the current streamed-back emissive boundary-lighting regression pattern, added ambitious replacement task `352`.
+- Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts -t "keeps streamed-back emissive boundary-air nearby-light telemetry"`, `cmd /c npx vitest run src/gl/renderer.test.ts`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a renderer regression where a clean boundary emissive source does not horizontal-transport `MAX_LIGHT_LEVEL` into streamed-back dirty neighboring boundary air on the first resumed draw.
 - Changes: Expanded [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with mirrored left-to-right and right-to-left emissive stream-back regressions that assert the first resumed near-camera draw invalidates only the reloaded boundary-air chunk and keeps streamed-back boundary plus interior air at emissive falloff instead of `MAX_LIGHT_LEVEL`, removed completed task `322` from [docs/NEXT.md](docs/NEXT.md), and added replacement task `351`.
 - Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts -t "keeps streamed-back dirty neighboring x-boundary air at emissive falloff"`, `cmd /c npx vitest run src/gl/renderer.test.ts`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

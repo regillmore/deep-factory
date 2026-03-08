@@ -2,10 +2,6 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-## Lighting
-
-351. Add a renderer regression where streamed-back emissive boundary-air falloff still drives standalone-player nearby-light telemetry on the first resumed draw when the source chunk stays clean.
-
 ## Entities and interpolation
 
 17. Move the player onto the entity layer once the standalone controller works.
@@ -47,5 +43,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 338. Add a bed-checkpoint respawn slice after inventory basics (`214`) and save/load (`19-21`): placeable bed items, mixed-device checkpoint claim and respawn interactions, obstructed-checkpoint fallback to world spawn, and snapshot regressions for claimed checkpoint state.
 349. Add a platform traversal slice after inventory basics (`214`): stackable platform hotbar slots, mixed-device one-way placement plus drop-through movement, and save/load regressions for placed platform runs.
 350. Add a chest-storage slice after inventory basics (`214`) and save/load (`19-21`): placeable chest items, mixed-device open or close interactions, fixed-slot storage transfer rules, and snapshot regressions for chest contents plus chest placement state.
+352. Add a door utility slice after starter building-block placement (`308`) and save/load (`19-21`): stackable door hotbar slots, mixed-device two-tile doorway placement plus open/close collision swapping, and snapshot regressions for placed door state.
 
 ## Refine, Extract, Refactor, Restructure
