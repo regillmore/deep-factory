@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Standalone-player spawn search rejects liquid-overlapped standing AABBs
+
+- Decision: `src/world/playerSpawn.ts` now skips any grounded spawn candidate whose standing AABB intersects non-zero liquid fill, which currently covers both water and lava tiles.
+- Reason: Lava-death respawns and debug-edit embedded recovery should resolve to the latest survivable standing spawn instead of immediately placing the player back into fluid.
+- Consequence: Future spawn placement, checkpoint, or teleport-safety work should preserve this liquid-overlap rejection rule rather than treating solid-free headroom alone as a safe spawn.
+
 ### 2026-03-08: Standalone-player liquid interaction resolves from overlapped liquid fill area inside the shared player step
 
 - Decision: `src/world/playerState.ts` now samples overlapped water and lava fill area from resident world liquid levels during the shared fixed-step player update, applies water buoyancy and drag there, and advances lava damage through player-owned health plus cooldown state before `src/main.ts` optionally respawns from the latest resolved spawn.

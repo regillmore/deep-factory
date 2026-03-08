@@ -1,11 +1,11 @@
-import { TILE_SIZE } from './constants';
+import { MAX_LIQUID_LEVEL, TILE_SIZE } from './constants';
 import {
   doesAabbOverlapSolid,
   sweepAabbAlongAxis,
   type SolidTileCollision,
   type WorldAabb
 } from './collision';
-import { TILE_METADATA } from './tileMetadata';
+import { getTileLiquidKind, TILE_METADATA } from './tileMetadata';
 import type { TileMetadataRegistry } from './tileMetadata';
 import type { TileWorld } from './world';
 
@@ -31,6 +31,7 @@ const DEFAULT_ORIGIN_TILE_X = 0;
 const DEFAULT_ORIGIN_TILE_Y = 0;
 const DEFAULT_MAX_HORIZONTAL_OFFSET_TILES = 8;
 const DEFAULT_MAX_VERTICAL_OFFSET_TILES = 8;
+const AABB_INTERSECTION_EPSILON = 1e-6;
 
 const expectPositiveFiniteNumber = (value: number, label: string): number => {
   if (!Number.isFinite(value) || value <= 0) {
@@ -82,6 +83,46 @@ const buildSpawnCandidateAabb = (
     maxX,
     maxY
   };
+};
+
+const doesAabbOverlapLiquid = (
+  world: TileWorld,
+  aabb: WorldAabb,
+  registry: TileMetadataRegistry
+): boolean => {
+  const minTileX = Math.floor(aabb.minX / TILE_SIZE);
+  const maxTileX = Math.floor((aabb.maxX - AABB_INTERSECTION_EPSILON) / TILE_SIZE);
+  const minTileY = Math.floor(aabb.minY / TILE_SIZE);
+  const maxTileY = Math.floor((aabb.maxY - AABB_INTERSECTION_EPSILON) / TILE_SIZE);
+
+  for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
+    const tileWorldMinY = tileY * TILE_SIZE;
+    const tileWorldMaxY = tileWorldMinY + TILE_SIZE;
+
+    for (let tileX = minTileX; tileX <= maxTileX; tileX += 1) {
+      const tileId = world.getTile(tileX, tileY);
+      if (getTileLiquidKind(tileId, registry) === null) {
+        continue;
+      }
+
+      const liquidLevel = world.getLiquidLevel(tileX, tileY);
+      if (liquidLevel <= 0) {
+        continue;
+      }
+
+      const tileWorldMinX = tileX * TILE_SIZE;
+      const tileWorldMaxX = tileWorldMinX + TILE_SIZE;
+      const liquidFillHeight = (liquidLevel / MAX_LIQUID_LEVEL) * TILE_SIZE;
+      const liquidWorldMinY = tileWorldMaxY - liquidFillHeight;
+      const overlapWidth = Math.min(aabb.maxX, tileWorldMaxX) - Math.max(aabb.minX, tileWorldMinX);
+      const overlapHeight = Math.min(aabb.maxY, tileWorldMaxY) - Math.max(aabb.minY, liquidWorldMinY);
+      if (overlapWidth > 0 && overlapHeight > 0) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 };
 
 const getGroundSupport = (
@@ -143,6 +184,10 @@ export const findPlayerSpawnPoint = (
     const aabb = buildSpawnCandidateAabb(anchorTileX, standingTileY, width, height);
 
     if (doesAabbOverlapSolid(world, aabb, registry)) {
+      continue;
+    }
+
+    if (doesAabbOverlapLiquid(world, aabb, registry)) {
       continue;
     }
 

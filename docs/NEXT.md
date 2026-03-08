@@ -4,11 +4,12 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Collision and player foundation
 
+331. Surface the latest resolved spawn's liquid-safety status in the debug overlay and compact status strip so fluid-driven spawn fallback stays debuggable, with focused runtime regressions.
+
 ## Liquid rendering
 
 328. Surface resolved partial-liquid bottom-edge `v` crop values in hovered and pinned inspect telemetry so top-aligned liquid frame mapping stays debuggable without reading chunk meshes.
 329. Surface liquid-surface branch classification (`empty`, `north-covered`, or `exposed`) in hovered and pinned inspect telemetry so full-height versus exposed-top decisions stay debuggable without stepping through the resolver.
-330. Exclude water and lava overlap from standalone-player spawn resolution so liquid deaths and debug-edit recovery do not respawn straight back into fluid, with focused spawn-search regressions.
 
 ## Lighting
 

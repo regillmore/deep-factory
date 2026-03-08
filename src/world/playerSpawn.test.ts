@@ -6,6 +6,8 @@ import { TileWorld } from './world';
 
 const PLAYER_WIDTH = 12;
 const PLAYER_HEIGHT = 28;
+const WATER_TILE_ID = 7;
+const LAVA_TILE_ID = 8;
 
 const setTiles = (
   world: TileWorld,
@@ -86,6 +88,56 @@ describe('findPlayerSpawnPoint', () => {
         tileId: 3
       }
     });
+  });
+
+  it('skips grounded candidates whose standing AABB overlaps water and falls back to the nearest dry column', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -3, -6, 3, 3, 0);
+    setTiles(world, -1, 0, 1, 0, 3);
+    world.setTile(0, -1, WATER_TILE_ID);
+
+    const spawn = findPlayerSpawnPoint(world, {
+      width: PLAYER_WIDTH,
+      height: PLAYER_HEIGHT,
+      maxHorizontalOffsetTiles: 2,
+      maxVerticalOffsetTiles: 2
+    });
+
+    expect(spawn).toEqual({
+      anchorTileX: -1,
+      standingTileY: 0,
+      x: -8,
+      y: 0,
+      aabb: {
+        minX: -14,
+        minY: -28,
+        maxX: -2,
+        maxY: 0
+      },
+      support: {
+        tileX: -1,
+        tileY: 0,
+        tileId: 3
+      }
+    });
+  });
+
+  it('returns null when every grounded candidate within the search bounds overlaps lava', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -6, 2, 3, 0);
+    world.setTile(0, 0, 3);
+    world.setTile(0, -1, LAVA_TILE_ID);
+
+    const spawn = findPlayerSpawnPoint(world, {
+      width: PLAYER_WIDTH,
+      height: PLAYER_HEIGHT,
+      maxHorizontalOffsetTiles: 0,
+      maxVerticalOffsetTiles: 1
+    });
+
+    expect(spawn).toBeNull();
   });
 
   it('returns null when no grounded standing headroom exists within the search bounds', () => {
