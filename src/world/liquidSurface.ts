@@ -119,11 +119,19 @@ export const resolveLiquidSurfaceBottomVCrops = (
     uvRect.v0 + (uvRect.v1 - uvRect.v0) * clampNormalizedLiquidHeight(topHeights.topRight)
 });
 
+export const resolveLiquidSurfaceFrameTopV = (uvRect: Pick<TileUvRect, 'v0'>): number =>
+  clampNormalizedLiquidHeight(uvRect.v0);
+
+export const resolveLiquidSurfaceFrameTopAtlasPixelRow = (
+  atlasHeight: number,
+  uvRect: Pick<TileUvRect, 'v0'>
+): number => resolveLiquidSurfaceFrameTopV(uvRect) * atlasHeight;
+
 export const resolveLiquidSurfaceVisibleFrameHeights = (
   uvRect: Pick<TileUvRect, 'v0' | 'v1'>,
   bottomVCrops: LiquidSurfaceBottomVCrops
 ): LiquidSurfaceVisibleFrameHeights => {
-  const topV = clampNormalizedLiquidHeight(uvRect.v0);
+  const topV = resolveLiquidSurfaceFrameTopV(uvRect);
   const frameHeightV = Math.max(0, clampNormalizedLiquidHeight(uvRect.v1) - topV);
 
   return {
@@ -152,7 +160,7 @@ export const resolveLiquidSurfaceVisibleFrameAtlasPixelHeights = (
   bottomVCrops: LiquidSurfaceBottomVCrops
 ): LiquidSurfaceVisibleFrameAtlasPixelHeights => {
   const bottomPixelRows = resolveLiquidSurfaceBottomAtlasPixelRows(atlasHeight, bottomVCrops);
-  const topPixelY = clampNormalizedLiquidHeight(uvRect.v0) * atlasHeight;
+  const topPixelY = resolveLiquidSurfaceFrameTopAtlasPixelRow(atlasHeight, uvRect);
   const framePixelHeight = Math.max(0, clampNormalizedLiquidHeight(uvRect.v1) * atlasHeight - topPixelY);
 
   return {

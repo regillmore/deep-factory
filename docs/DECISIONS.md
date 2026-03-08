@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Partial-liquid frame-top inspect telemetry should reuse shared frame-origin helpers
+
+- Decision: Hovered and pinned inspect telemetry now resolves `liquidFrameTopV` and `liquidFrameTopPixelY` through shared frame-origin helpers in `src/world/liquidSurface.ts`, and the existing visible-height helpers there reuse the same helpers instead of reading `uvRect.v0` inline.
+- Reason: Frame-origin debug readouts need to stay numerically aligned with visible-height deltas for both zero-valued water origins and non-zero animated-liquid frame offsets, without parsing `liquidUv` or `liquidPx` strings in `src/main.ts` or formatter code.
+- Consequence: Future liquid frame-origin or frame-bound inspect telemetry should extend the shared frame-origin helpers rather than re-deriving `v0` or atlas-row math in runtime assembly or UI formatting.
+
 ### 2026-03-08: Partial-liquid visible-height inspect telemetry should resolve from shared frame-origin helpers
 
 - Decision: Hovered and pinned inspect telemetry now resolves `liquidVisibleLeftV` and `liquidVisibleRightV` from the current liquid variant frame's `v0` plus the shared bottom-edge crop output in `src/world/liquidSurface.ts`, and resolves `liquidVisibleLeftPixelHeight` and `liquidVisibleRightPixelHeight` through the shared crop-to-pixel helper there.

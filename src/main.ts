@@ -100,6 +100,8 @@ import {
   resolveConnectedLiquidNeighborLevel,
   resolveLiquidSurfaceBottomVCrops,
   resolveLiquidSurfaceBranchKind,
+  resolveLiquidSurfaceFrameTopAtlasPixelRow,
+  resolveLiquidSurfaceFrameTopV,
   resolveLiquidSurfaceVisibleFrameAtlasPixelHeights,
   resolveLiquidSurfaceVisibleFrameHeights,
   resolveLiquidSurfaceTopHeights
@@ -1712,12 +1714,20 @@ const bootstrap = async (): Promise<void> => {
       typeof liquidCardinalMask === 'number'
         ? resolveLiquidRenderVariantUvRectAtElapsedMs(tileId, liquidCardinalMask, elapsedMs)
         : null;
+    const atlasWidth = renderer.telemetry.atlasWidth;
+    const atlasHeight = renderer.telemetry.atlasHeight;
+    const liquidFrameTopV = liquidVariantUvRect ? resolveLiquidSurfaceFrameTopV(liquidVariantUvRect) : null;
+    const liquidFrameTopPixelY =
+      liquidVariantUvRect &&
+      typeof atlasHeight === 'number' &&
+      Number.isFinite(atlasHeight) &&
+      atlasHeight > 0
+        ? resolveLiquidSurfaceFrameTopAtlasPixelRow(atlasHeight, liquidVariantUvRect)
+        : null;
     const liquidBottomVCrops =
       liquidSurfaceTopHeights && liquidVariantUvRect
         ? resolveLiquidSurfaceBottomVCrops(liquidVariantUvRect, liquidSurfaceTopHeights)
         : null;
-    const atlasWidth = renderer.telemetry.atlasWidth;
-    const atlasHeight = renderer.telemetry.atlasHeight;
     const liquidBottomPixelRows =
       liquidBottomVCrops && typeof atlasHeight === 'number' && Number.isFinite(atlasHeight) && atlasHeight > 0
         ? resolveLiquidSurfaceBottomAtlasPixelRows(atlasHeight, liquidBottomVCrops)
@@ -1748,6 +1758,8 @@ const bootstrap = async (): Promise<void> => {
       liquidSurfaceBranch,
       liquidSurfaceTopLeft: liquidSurfaceTopHeights?.topLeft ?? null,
       liquidSurfaceTopRight: liquidSurfaceTopHeights?.topRight ?? null,
+      liquidFrameTopV,
+      liquidFrameTopPixelY,
       liquidBottomLeftV: liquidBottomVCrops?.bottomLeftV ?? null,
       liquidBottomRightV: liquidBottomVCrops?.bottomRightV ?? null,
       liquidBottomLeftPixelY: liquidBottomPixelRows?.bottomLeftPixelY ?? null,
@@ -2294,6 +2306,8 @@ const bootstrap = async (): Promise<void> => {
           liquidSurfaceBranch: hoveredDebugTileStatus?.liquidSurfaceBranch ?? null,
           liquidSurfaceTopLeft: hoveredDebugTileStatus?.liquidSurfaceTopLeft ?? null,
           liquidSurfaceTopRight: hoveredDebugTileStatus?.liquidSurfaceTopRight ?? null,
+          liquidFrameTopV: hoveredDebugTileStatus?.liquidFrameTopV ?? null,
+          liquidFrameTopPixelY: hoveredDebugTileStatus?.liquidFrameTopPixelY ?? null,
           liquidBottomLeftV: hoveredDebugTileStatus?.liquidBottomLeftV ?? null,
           liquidBottomRightV: hoveredDebugTileStatus?.liquidBottomRightV ?? null,
           liquidBottomLeftPixelY: hoveredDebugTileStatus?.liquidBottomLeftPixelY ?? null,
@@ -2341,6 +2355,8 @@ const bootstrap = async (): Promise<void> => {
           liquidSurfaceBranch: pinnedDebugTileStatus.liquidSurfaceBranch ?? null,
           liquidSurfaceTopLeft: pinnedDebugTileStatus.liquidSurfaceTopLeft ?? null,
           liquidSurfaceTopRight: pinnedDebugTileStatus.liquidSurfaceTopRight ?? null,
+          liquidFrameTopV: pinnedDebugTileStatus.liquidFrameTopV ?? null,
+          liquidFrameTopPixelY: pinnedDebugTileStatus.liquidFrameTopPixelY ?? null,
           liquidBottomLeftV: pinnedDebugTileStatus.liquidBottomLeftV ?? null,
           liquidBottomRightV: pinnedDebugTileStatus.liquidBottomRightV ?? null,
           liquidBottomLeftPixelY: pinnedDebugTileStatus.liquidBottomLeftPixelY ?? null,

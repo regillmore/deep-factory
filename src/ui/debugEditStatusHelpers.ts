@@ -109,6 +109,8 @@ export interface DebugEditHoveredTileState {
   liquidSurfaceBranch?: LiquidSurfaceBranchKind | null;
   liquidSurfaceTopLeft?: number | null;
   liquidSurfaceTopRight?: number | null;
+  liquidFrameTopV?: number | null;
+  liquidFrameTopPixelY?: number | null;
   liquidBottomLeftV?: number | null;
   liquidBottomRightV?: number | null;
   liquidBottomLeftPixelY?: number | null;
@@ -579,6 +581,8 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
   const liquidSurfaceBranch = formatLiquidSurfaceBranch(tile.liquidSurfaceBranch);
   const liquidSurfaceTopLeft = formatLiquidSurfaceHeight(tile.liquidSurfaceTopLeft);
   const liquidSurfaceTopRight = formatLiquidSurfaceHeight(tile.liquidSurfaceTopRight);
+  const liquidFrameTopV = formatLiquidSurfaceHeight(tile.liquidFrameTopV);
+  const liquidFrameTopPixelY = formatAtlasPixelCoordinate(tile.liquidFrameTopPixelY);
   const liquidBottomLeftV = formatLiquidSurfaceHeight(tile.liquidBottomLeftV);
   const liquidBottomRightV = formatLiquidSurfaceHeight(tile.liquidBottomRightV);
   const liquidBottomLeftPixelY = formatAtlasPixelCoordinate(tile.liquidBottomLeftPixelY);
@@ -616,16 +620,20 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     (liquidLevel ? ` | liquidLevel:${liquidLevel}` : '') +
     (liquidSurfaceInputs ? ` | liquidSurfaceIn:${liquidSurfaceInputs}` : '') +
     (liquidSurfaceBranch ? ` | liquidSurfaceBranch:${liquidSurfaceBranch}` : '') +
-    (liquidSurfaceTopLeft ? ` | liquidTopLeft:${liquidSurfaceTopLeft}` : '') +
-    (liquidSurfaceTopRight ? ` | liquidTopRight:${liquidSurfaceTopRight}` : '') +
-    (liquidBottomLeftV ? ` | liquidBottomLeftV:${liquidBottomLeftV}` : '') +
-    (liquidBottomRightV ? ` | liquidBottomRightV:${liquidBottomRightV}` : '') +
-    (liquidBottomLeftPixelY ? ` | liquidBottomLeftPxY:${liquidBottomLeftPixelY}` : '') +
-    (liquidBottomRightPixelY ? ` | liquidBottomRightPxY:${liquidBottomRightPixelY}` : '') +
-    (liquidVisibleLeftV ? ` | liquidVisibleLeftV:${liquidVisibleLeftV}` : '') +
-    (liquidVisibleRightV ? ` | liquidVisibleRightV:${liquidVisibleRightV}` : '') +
-    (liquidVisibleLeftPixelHeight ? ` | liquidVisibleLeftPxH:${liquidVisibleLeftPixelHeight}` : '') +
-    (liquidVisibleRightPixelHeight
+    (liquidSurfaceTopLeft !== null ? ` | liquidTopLeft:${liquidSurfaceTopLeft}` : '') +
+    (liquidSurfaceTopRight !== null ? ` | liquidTopRight:${liquidSurfaceTopRight}` : '') +
+    (liquidFrameTopV !== null ? ` | liquidFrameTopV:${liquidFrameTopV}` : '') +
+    (liquidFrameTopPixelY !== null ? ` | liquidFrameTopPxY:${liquidFrameTopPixelY}` : '') +
+    (liquidBottomLeftV !== null ? ` | liquidBottomLeftV:${liquidBottomLeftV}` : '') +
+    (liquidBottomRightV !== null ? ` | liquidBottomRightV:${liquidBottomRightV}` : '') +
+    (liquidBottomLeftPixelY !== null ? ` | liquidBottomLeftPxY:${liquidBottomLeftPixelY}` : '') +
+    (liquidBottomRightPixelY !== null ? ` | liquidBottomRightPxY:${liquidBottomRightPixelY}` : '') +
+    (liquidVisibleLeftV !== null ? ` | liquidVisibleLeftV:${liquidVisibleLeftV}` : '') +
+    (liquidVisibleRightV !== null ? ` | liquidVisibleRightV:${liquidVisibleRightV}` : '') +
+    (liquidVisibleLeftPixelHeight !== null
+      ? ` | liquidVisibleLeftPxH:${liquidVisibleLeftPixelHeight}`
+      : '') +
+    (liquidVisibleRightPixelHeight !== null
       ? ` | liquidVisibleRightPxH:${liquidVisibleRightPixelHeight}`
       : '') +
     (typeof tile.liquidConnectivityGroupLabel === 'string' && tile.liquidConnectivityGroupLabel.length > 0
