@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { findPlayerSpawnPoint } from './playerSpawn';
 import {
+  clonePlayerState,
   createPlayerState,
   createPlayerStateFromSpawn,
   DEFAULT_PLAYER_AIR_ACCELERATION,
@@ -166,6 +167,26 @@ describe('playerState', () => {
       x: 24,
       y: -18
     });
+  });
+
+  it('clones player state into detached nested vectors for entity render snapshots', () => {
+    const state = createPlayerState({
+      position: { x: 24, y: -8 },
+      velocity: { x: -12, y: 36 },
+      size: { width: 10, height: 20 },
+      grounded: true,
+      facing: 'left',
+      health: 75,
+      lavaDamageTickSecondsRemaining: 0.125
+    });
+
+    const cloned = clonePlayerState(state);
+
+    expect(cloned).toEqual(state);
+    expect(cloned).not.toBe(state);
+    expect(cloned.position).not.toBe(state.position);
+    expect(cloned.velocity).not.toBe(state.velocity);
+    expect(cloned.size).not.toBe(state.size);
   });
 
   it('reports support, wall, and ceiling contacts adjacent to the current player AABB', () => {

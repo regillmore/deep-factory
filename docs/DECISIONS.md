@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-08: Standalone-player authority should live in the entity registry before interpolated entity rendering lands
+
+- Decision: `src/main.ts` now spawns the standalone player into `src/world/entityRegistry.ts` as a `standalone-player` entity, drives fixed-step movement through that entity hook, and reads or replaces the authoritative player state through the registry during spawn refresh, respawn recovery, camera follow, preview rendering, and render-frame telemetry while the placeholder renderer still consumes the current state directly.
+- Reason: Task `17` needs one ownership path for player simulation before task `18` adds interpolated entity rendering, and keeping a parallel standalone-player variable would make respawn, reset, and later render-snapshot behavior drift from the entity layer.
+- Consequence: Future player simulation, interpolation, or networking work should treat the standalone player as an entity-registry resident and extend registry-backed selectors or render snapshots instead of reintroducing duplicate standalone state outside the entity layer.
+
 ### 2026-03-08: Partial-liquid paired coverage totals should resolve from shared liquid-surface helpers
 
 - Decision: Hovered and pinned inspect telemetry now resolves `liquidCoverageLeftTotalPercentage`, `liquidCoverageRightTotalPercentage`, `liquidCoverageLeftTotalPixelHeight`, and `liquidCoverageRightTotalPixelHeight` through shared helpers in `src/world/liquidSurface.ts` that sum the existing visible and cropped per-side deltas.

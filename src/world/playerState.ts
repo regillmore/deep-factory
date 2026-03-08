@@ -399,6 +399,25 @@ export const createPlayerStateFromSpawn = (
     grounded: true
   });
 
+export const clonePlayerState = (state: PlayerState): PlayerState => ({
+  position: {
+    x: state.position.x,
+    y: state.position.y
+  },
+  velocity: {
+    x: state.velocity.x,
+    y: state.velocity.y
+  },
+  size: {
+    width: state.size.width,
+    height: state.size.height
+  },
+  grounded: state.grounded,
+  facing: state.facing,
+  health: state.health,
+  lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining
+});
+
 export const respawnPlayerStateAtSpawnIfEmbeddedInSolid = (
   world: TileWorld,
   state: PlayerState,

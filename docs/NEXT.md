@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Entities and interpolation
 
-17. Move the player onto the entity layer once the standalone controller works.
 18. Render entities in a separate pass with interpolation between fixed updates.
 228. Re-route standalone-player placeholder pose selection and nearby-light telemetry through the entity render-snapshot path once tasks `17-18` land, with focused renderer regression coverage.
+353. Add a shared entity render-snapshot interpolation helper that resolves blended world position from `previous/current` snapshots with focused unit coverage before task `18` expands the separate entity pass.
 
 ## Save/load
 

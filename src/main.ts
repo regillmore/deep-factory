@@ -75,7 +75,7 @@ import {
 } from './ui/touchDebugEditControls';
 import { TouchPlayerControls } from './ui/touchPlayerControls';
 import { CHUNK_SIZE } from './world/constants';
-import { EntityRegistry } from './world/entityRegistry';
+import { EntityRegistry, type EntityId } from './world/entityRegistry';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
 import {
   resolvePlayerCeilingContactTransitionEvent,
@@ -121,6 +121,7 @@ import {
   type PlayerWallContactTransitionEvent
 } from './world/playerWallContactTransition';
 import {
+  clonePlayerState,
   createPlayerStateFromSpawn,
   DEFAULT_PLAYER_HEIGHT,
   DEFAULT_PLAYER_WIDTH,
@@ -152,6 +153,7 @@ import {
 
 const DEBUG_TILE_BREAK_ID = 0;
 const PREFERRED_INITIAL_DEBUG_BRUSH_TILE_NAME = 'debug_brick';
+const STANDALONE_PLAYER_ENTITY_KIND = 'standalone-player';
 type MainMenuShellActionType =
   | 'enter-or-resume-world-session'
   | 'start-fresh-world-session'
@@ -256,10 +258,6 @@ type StandalonePlayerFixedStepResultOptions = {
   previousPlayerState: PlayerState;
   fixedDt: number;
   playerMovementIntent: PlayerMovementIntent;
-};
-type StandalonePlayerFixedStepUpdateOptions = {
-  previousPlayerState: PlayerState;
-  fixedDt: number;
 };
 type StandalonePlayerFixedStepTransitionSnapshotOptions = {
   previousPlayerState: PlayerState;
@@ -682,10 +680,12 @@ const bootstrap = async (): Promise<void> => {
       case 'return-to-main-menu':
         returnToMainMenuFromInWorld();
         return true;
-      case 'recenter-camera':
+      case 'recenter-camera': {
+        const standalonePlayerState = getStandalonePlayerState();
         if (!canApplyInWorldRecenterCameraAction(standalonePlayerState)) return false;
         centerCameraOnStandalonePlayer(standalonePlayerState);
         return true;
+      }
     }
   };
   const applyMainMenuShellAction = (actionType: MainMenuShellActionType): boolean => {
@@ -895,8 +895,9 @@ const bootstrap = async (): Promise<void> => {
   let suppressDebugEditControlPersistence = false;
   let pinnedDebugTileInspect: PinnedDebugTileInspectState | null = null;
   let resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
-  const entityRegistry = new EntityRegistry();
-  let standalonePlayerState: PlayerState | null = null;
+  let entityRegistry = new EntityRegistry();
+  let standalonePlayerEntityId: EntityId | null = null;
+  let pendingStandalonePlayerFixedStepResult: StandalonePlayerFixedStepResult | null = null;
   let playerSpawnNeedsRefresh = false;
   let cameraFollowOffset: CameraFollowOffset = { x: 0, y: 0 };
   let lastAppliedPlayerFollowCameraPosition: CameraFollowPoint | null = null;
@@ -907,8 +908,49 @@ const bootstrap = async (): Promise<void> => {
   let lastPlayerCeilingContactTransitionEvent: PlayerCeilingContactTransitionEvent | null = null;
   let standalonePlayerCeilingBonkHoldUntilTimeMs: number | null = null;
 
+  const getStandalonePlayerState = (): PlayerState | null => {
+    if (standalonePlayerEntityId === null) {
+      return null;
+    }
+    return entityRegistry.getEntityState<PlayerState>(standalonePlayerEntityId);
+  };
+  const replaceWorldSessionEntityRegistry = (): void => {
+    entityRegistry = new EntityRegistry();
+    standalonePlayerEntityId = null;
+    pendingStandalonePlayerFixedStepResult = null;
+  };
+  const setStandalonePlayerState = (nextPlayerState: PlayerState): void => {
+    if (standalonePlayerEntityId === null) {
+      throw new Error('Cannot replace standalone player state before the entity is spawned');
+    }
+    entityRegistry.setEntityState(standalonePlayerEntityId, nextPlayerState);
+  };
+  const spawnStandalonePlayerEntity = (initialPlayerState: PlayerState): PlayerState => {
+    standalonePlayerEntityId = entityRegistry.spawn({
+      kind: STANDALONE_PLAYER_ENTITY_KIND,
+      initialState: initialPlayerState,
+      captureRenderState: clonePlayerState,
+      fixedUpdate: (playerState, fixedDt) => {
+        const playerMovementIntent = input.getPlayerMovementIntent();
+        const playerFixedStepResult = createStandalonePlayerFixedStepResult({
+          previousPlayerState: playerState,
+          fixedDt,
+          playerMovementIntent
+        });
+        pendingStandalonePlayerFixedStepResult = playerFixedStepResult;
+        return playerFixedStepResult.nextPlayerState;
+      }
+    });
+    const spawnedPlayerState = getStandalonePlayerState();
+    if (spawnedPlayerState === null) {
+      throw new Error('Failed to read standalone player entity state after spawn');
+    }
+    return spawnedPlayerState;
+  };
+
   const applyStandalonePlayerCameraFollow = (): void => {
-    if (!standalonePlayerState) {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (standalonePlayerState === null) {
       lastAppliedPlayerFollowCameraPosition = null;
       return;
     }
@@ -1033,7 +1075,6 @@ const bootstrap = async (): Promise<void> => {
   const applyStandalonePlayerFixedStepResult = (
     playerFixedStepResult: StandalonePlayerFixedStepResult
   ): void => {
-    standalonePlayerState = playerFixedStepResult.nextPlayerState;
     if (playerFixedStepResult.respawnEvent !== null) {
       resetStandalonePlayerTransitionState(playerFixedStepResult.respawnEvent);
     } else {
@@ -1041,16 +1082,13 @@ const bootstrap = async (): Promise<void> => {
     }
     applyStandalonePlayerCameraFollow();
   };
-  const updateStandalonePlayerFixedStep = ({
-    previousPlayerState,
-    fixedDt
-  }: StandalonePlayerFixedStepUpdateOptions): void => {
-    const playerMovementIntent = input.getPlayerMovementIntent();
-    const playerFixedStepResult = createStandalonePlayerFixedStepResult({
-      previousPlayerState,
-      fixedDt,
-      playerMovementIntent
-    });
+  const flushStandalonePlayerFixedStepResult = (): void => {
+    if (pendingStandalonePlayerFixedStepResult === null) {
+      return;
+    }
+
+    const playerFixedStepResult = pendingStandalonePlayerFixedStepResult;
+    pendingStandalonePlayerFixedStepResult = null;
     applyStandalonePlayerFixedStepResult(playerFixedStepResult);
   };
   const commitStandalonePlayerFixedStepTransitions = ({
@@ -1080,10 +1118,13 @@ const bootstrap = async (): Promise<void> => {
   const refreshResolvedPlayerSpawn = (): void => {
     resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
     playerSpawnNeedsRefresh = false;
+    const standalonePlayerState = getStandalonePlayerState();
     if (standalonePlayerState === null && resolvedPlayerSpawn) {
-      standalonePlayerState = createPlayerStateFromSpawn(resolvedPlayerSpawn);
+      const spawnedPlayerState = spawnStandalonePlayerEntity(
+        createPlayerStateFromSpawn(resolvedPlayerSpawn)
+      );
       resetStandalonePlayerTransitionState();
-      centerCameraOnStandalonePlayer(standalonePlayerState);
+      centerCameraOnStandalonePlayer(spawnedPlayerState);
       return;
     }
 
@@ -1103,7 +1144,7 @@ const bootstrap = async (): Promise<void> => {
               )
         );
       }
-      standalonePlayerState = nextPlayerState;
+      setStandalonePlayerState(nextPlayerState);
     }
   };
   const createResolvedPlayerSpawnTelemetrySnapshot = (): ResolvedPlayerSpawnTelemetrySnapshot => {
@@ -1942,7 +1983,7 @@ const bootstrap = async (): Promise<void> => {
     cameraFollowOffset = { x: 0, y: 0 };
     lastAppliedPlayerFollowCameraPosition = null;
     resetStandalonePlayerTransitionState();
-    standalonePlayerState = null;
+    replaceWorldSessionEntityRegistry();
     resolvedPlayerSpawn = null;
     playerSpawnNeedsRefresh = false;
     refreshResolvedPlayerSpawn();
@@ -2037,7 +2078,7 @@ const bootstrap = async (): Promise<void> => {
   const createStandalonePlayerRenderFrameTelemetrySnapshot = (
     renderTimeMs: number
   ): StandalonePlayerRenderFrameTelemetrySnapshot => {
-    const playerState = standalonePlayerState;
+    const playerState = getStandalonePlayerState();
     const standalonePlayerContacts = playerState
       ? renderer.getPlayerCollisionContacts(playerState)
       : null;
@@ -2269,7 +2310,7 @@ const bootstrap = async (): Promise<void> => {
   };
   const createStandalonePlayerRenderFrameNearbyLightTelemetrySnapshot =
     (): StandalonePlayerRenderFrameNearbyLightTelemetry => {
-      if (standalonePlayerState === null) {
+      if (getStandalonePlayerState() === null) {
         return {
           playerNearbyLightLevel: null,
           playerNearbyLightFactor: null,
@@ -2533,6 +2574,7 @@ const bootstrap = async (): Promise<void> => {
     const standalonePlayerRenderFrameTelemetry =
       createStandalonePlayerRenderFrameTelemetrySnapshot(renderTimeMs);
     const standalonePlayerStatusStripPlayerTelemetry = standalonePlayerRenderFrameTelemetry.debugStatusStrip;
+    const standalonePlayerState = getStandalonePlayerState();
     renderer.resize();
     renderer.render(camera, {
       standalonePlayer: standalonePlayerState,
@@ -2652,6 +2694,7 @@ const bootstrap = async (): Promise<void> => {
   };
 
   const renderWorldPreview = (): void => {
+    const standalonePlayerState = getStandalonePlayerState();
     const standalonePlayerContacts = standalonePlayerState
       ? renderer.getPlayerCollisionContacts(standalonePlayerState)
       : null;
@@ -2769,7 +2812,8 @@ const bootstrap = async (): Promise<void> => {
         syncDebugEditHistoryControls();
       }
 
-      if (standalonePlayerState) {
+      const standalonePlayerState = getStandalonePlayerState();
+      if (standalonePlayerState !== null) {
         cameraFollowOffset = absorbManualCameraDeltaIntoFollowOffset(
           cameraFollowOffset,
           lastAppliedPlayerFollowCameraPosition,
@@ -2786,15 +2830,8 @@ const bootstrap = async (): Promise<void> => {
 
       renderer.stepLiquidSimulation();
 
-      if (standalonePlayerState) {
-        updateStandalonePlayerFixedStep({
-          previousPlayerState: standalonePlayerState,
-          fixedDt
-        });
-      }
-
-      // Non-player entities step here until the standalone player moves onto the entity layer.
       entityRegistry.fixedUpdateAll(fixedDt);
+      flushStandalonePlayerFixedStepResult();
     },
     (_alpha, frameDtMs) => {
       if (currentScreen !== 'in-world') {
