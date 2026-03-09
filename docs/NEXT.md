@@ -4,8 +4,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Save/load
 
-396. Add paused-menu import-picker-start-failure copy that surfaces when the browser JSON picker throws before any selection result, with app-shell and main regressions.
 397. Add paused-menu clear-saved-world-failure copy that surfaces when deleting the browser-resume world save fails, with app-shell and main regressions.
+400. Add paused-menu reset-shell-toggles-result copy that confirms shell visibility preferences were cleared for the next resume, with app-shell and main regressions.
 
 ## Networking scaffolding
 

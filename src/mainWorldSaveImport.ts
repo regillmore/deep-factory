@@ -19,6 +19,11 @@ export interface CancelledWorldSaveEnvelopeImportResult {
   status: 'cancelled';
 }
 
+export interface PickerStartFailedWorldSaveEnvelopeImportResult {
+  status: 'picker-start-failed';
+  reason: string;
+}
+
 export interface RejectedWorldSaveEnvelopeImportResult {
   status: 'rejected';
   fileName: string | null;
@@ -28,6 +33,7 @@ export interface RejectedWorldSaveEnvelopeImportResult {
 export type WorldSaveEnvelopeImportResult =
   | SelectedWorldSaveEnvelopeImportResult
   | CancelledWorldSaveEnvelopeImportResult
+  | PickerStartFailedWorldSaveEnvelopeImportResult
   | RejectedWorldSaveEnvelopeImportResult;
 
 const WINDOW_FOCUS_PICKER_CANCEL_SETTLE_DELAY_MS = 250;
@@ -121,7 +127,15 @@ export interface PickWorldSaveEnvelopeFromJsonPickerOptions {
 export const pickWorldSaveEnvelopeFromJsonPicker = async ({
   browser = resolveWorldSaveImportBrowser()
 }: PickWorldSaveEnvelopeFromJsonPickerOptions = {}): Promise<WorldSaveEnvelopeImportResult> => {
-  const file = await browser.pickJsonFile();
+  let file: WorldSaveImportFile | null;
+  try {
+    file = await browser.pickJsonFile();
+  } catch (error) {
+    return {
+      status: 'picker-start-failed',
+      reason: resolveWorldSaveImportFailureReason(error)
+    };
+  }
   if (file === null) {
     return {
       status: 'cancelled'

@@ -64,8 +64,14 @@ export interface PausedMainMenuCancelledImportResult {
   status: 'cancelled';
 }
 
+export interface PausedMainMenuPickerStartFailedImportResult {
+  status: 'picker-start-failed';
+  reason: string;
+}
+
 export type PausedMainMenuImportResult =
   | PausedMainMenuCancelledImportResult
+  | PausedMainMenuPickerStartFailedImportResult
   | PausedMainMenuAcceptedImportResult
   | PausedMainMenuRejectedImportResult
   | PausedMainMenuRestoreFailedImportResult
@@ -276,6 +282,24 @@ const createPausedMainMenuImportMenuSection = (
           }
         ]
       };
+    case 'picker-start-failed':
+      return {
+        title: 'Import Result',
+        lines: [
+          'The paused session stayed unchanged because the browser JSON picker failed before any world save file could be selected.'
+        ],
+        metadataRows: [
+          {
+            label: 'Status',
+            value: 'Picker failed'
+          },
+          {
+            label: 'Reason',
+            value: resolvePausedMainMenuResultReasonValue(importResult.reason)
+          }
+        ],
+        tone: 'warning'
+      };
     case 'accepted':
       return {
         title: 'Import Result',
@@ -423,7 +447,7 @@ export const createPausedMainMenuMenuSections = (
         {
           label: 'Consequence',
           value:
-            'Validated imports replace the paused session only when runtime restore succeeds; canceled, invalid, or failed restores do not.'
+            'Validated imports replace the paused session only when runtime restore succeeds; canceled picks, picker failures, invalid saves, or failed restores do not.'
         }
       ]
     },

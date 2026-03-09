@@ -135,6 +135,19 @@ describe('pickWorldSaveEnvelopeFromJsonPicker', () => {
     });
   });
 
+  it('returns a picker-start-failed result when the browser picker throws before any file is selected', async () => {
+    const browser: WorldSaveImportBrowser = {
+      pickJsonFile: async () => {
+        throw new Error('picker blocked');
+      }
+    };
+
+    await expect(pickWorldSaveEnvelopeFromJsonPicker({ browser })).resolves.toEqual({
+      status: 'picker-start-failed',
+      reason: 'picker blocked'
+    });
+  });
+
   it('decodes a selected json file into a validated top-level world-save envelope', async () => {
     const envelope = createTestEnvelope();
     const browser: WorldSaveImportBrowser = {

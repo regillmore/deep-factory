@@ -80,6 +80,9 @@ const FAILED_PAUSED_MAIN_MENU_EXPORT_RESULT_LINES = [
 const CANCELLED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
   'The paused session stayed unchanged because the JSON picker closed without selecting a world save file.'
 ] as const;
+const PICKER_START_FAILED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
+  'The paused session stayed unchanged because the browser JSON picker failed before any world save file could be selected.'
+] as const;
 const REJECTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
   'The paused session stayed unchanged because the selected JSON world save did not pass top-level envelope validation.'
 ] as const;
@@ -272,7 +275,7 @@ describe('resolveAppShellViewModel', () => {
           {
             label: 'Consequence',
             value:
-              'Validated imports replace the paused session only when runtime restore succeeds; canceled, invalid, or failed restores do not.'
+              'Validated imports replace the paused session only when runtime restore succeeds; canceled picks, picker failures, invalid saves, or failed restores do not.'
           }
         ]
       },
@@ -472,6 +475,37 @@ describe('resolveAppShellViewModel', () => {
           value: 'Canceled'
         }
       ]
+    });
+  });
+
+  it('adds a paused-menu import-result card when the browser json picker fails before any file is selected', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        {
+          status: 'picker-start-failed',
+          reason: 'picker blocked'
+        }
+      )
+    );
+
+    expect(viewModel.menuSections[3]).toEqual({
+      title: 'Import Result',
+      lines: [...PICKER_START_FAILED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES],
+      metadataRows: [
+        {
+          label: 'Status',
+          value: 'Picker failed'
+        },
+        {
+          label: 'Reason',
+          value: 'picker blocked'
+        }
+      ],
+      tone: 'warning'
     });
   });
 
@@ -1180,7 +1214,7 @@ describe('createPausedMainMenuShellState', () => {
             {
               label: 'Consequence',
               value:
-                'Validated imports replace the paused session only when runtime restore succeeds; canceled, invalid, or failed restores do not.'
+                'Validated imports replace the paused session only when runtime restore succeeds; canceled picks, picker failures, invalid saves, or failed restores do not.'
             }
           ]
         },
@@ -1329,7 +1363,7 @@ describe('createPausedMainMenuShellState', () => {
             {
               label: 'Consequence',
               value:
-                'Validated imports replace the paused session only when runtime restore succeeds; canceled, invalid, or failed restores do not.'
+                'Validated imports replace the paused session only when runtime restore succeeds; canceled picks, picker failures, invalid saves, or failed restores do not.'
             }
           ]
         },

@@ -5227,6 +5227,43 @@ describe('main.ts shell state orchestration', () => {
     );
   });
 
+  it('shows paused-menu import picker-start failure copy when the browser picker throws before any selection result', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const restoreModule = await import('./mainWorldSessionRestore');
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    testRuntime.queuedWorldSaveImportResults = [
+      {
+        status: 'picker-start-failed',
+        reason: 'picker blocked'
+      }
+    ];
+
+    testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
+    await flushBootstrap();
+
+    expect(testRuntime.worldSaveImportCallCount).toBe(1);
+    expect(restoreModule.restoreWorldSessionFromSaveEnvelope).not.toHaveBeenCalled();
+    expect(testRuntime.rendererLoadWorldSnapshotCallCount).toBe(0);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        importResult: {
+          status: 'picker-start-failed',
+          reason: 'picker blocked'
+        }
+      })
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Failed to start world-save import picker.',
+      'picker blocked'
+    );
+    warnSpy.mockRestore();
+  });
+
   it('rejects invalid paused-menu imported world saves without mutating the current session', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const restoreModule = await import('./mainWorldSessionRestore');

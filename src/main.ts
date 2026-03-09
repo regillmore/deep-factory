@@ -1107,6 +1107,14 @@ const bootstrap = async (): Promise<void> => {
           };
           showMainMenuShellState();
           return false;
+        case 'picker-start-failed':
+          pausedMainMenuImportResult = {
+            status: 'picker-start-failed',
+            reason: result.reason
+          };
+          console.warn('Failed to start world-save import picker.', result.reason);
+          showMainMenuShellState();
+          return false;
         case 'rejected':
           pausedMainMenuImportResult = {
             status: 'rejected',
