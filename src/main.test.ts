@@ -19,6 +19,7 @@ import {
   createMainMenuShellState,
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState,
+  type PausedMainMenuClearSavedWorldResult,
   type PausedMainMenuExportResult,
   type PausedMainMenuImportResult,
   type PausedMainMenuSavedWorldStatus
@@ -296,6 +297,7 @@ const testRuntime = vi.hoisted(() => {
     gameLoopStartCount: 0,
     storageValues: new Map<string, string>(),
     storageSetItemErrorsByKey: new Map<string, Error>(),
+    storageRemoveItemErrorsByKey: new Map<string, Error>(),
     downloadedWorldSaveEnvelopes: [] as unknown[],
     downloadWorldSaveFilename: 'deep-factory-world-save-2026-03-08T05-06-07Z.json',
     downloadWorldSaveError: null as Error | null,
@@ -1300,6 +1302,7 @@ const createExpectedPausedMainMenuState = (
     persistenceAvailable: boolean;
     exportResult: PausedMainMenuExportResult;
     importResult: PausedMainMenuImportResult;
+    clearSavedWorldResult: PausedMainMenuClearSavedWorldResult;
     worldSaveCleared: boolean;
     savedWorldStatus: PausedMainMenuSavedWorldStatus;
   }> = {}
@@ -1320,7 +1323,8 @@ const createExpectedPausedMainMenuState = (
     shellActionKeybindingLoad.defaultedFromPersistedState,
     options.importResult ?? null,
     options.savedWorldStatus ?? (options.worldSaveCleared ? 'cleared' : null),
-    options.exportResult ?? null
+    options.exportResult ?? null,
+    options.clearSavedWorldResult ?? null
   );
 };
 
@@ -1474,6 +1478,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.gameLoopStartCount = 0;
     testRuntime.storageValues.clear();
     testRuntime.storageSetItemErrorsByKey.clear();
+    testRuntime.storageRemoveItemErrorsByKey.clear();
     testRuntime.downloadedWorldSaveEnvelopes = [];
     testRuntime.downloadWorldSaveFilename = 'deep-factory-world-save-2026-03-08T05-06-07Z.json';
     testRuntime.downloadWorldSaveError = null;
@@ -1497,6 +1502,10 @@ describe('main.ts shell state orchestration', () => {
           testRuntime.storageValues.set(key, value);
         },
         removeItem: (key: string) => {
+          const removeError = testRuntime.storageRemoveItemErrorsByKey.get(key);
+          if (removeError) {
+            throw removeError;
+          }
           testRuntime.storageValues.delete(key);
         }
       },
@@ -5143,6 +5152,47 @@ describe('main.ts shell state orchestration', () => {
     expect(dispatchKeydown('q').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
     expect(testRuntime.storageValues.has(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY)).toBe(true);
+  });
+
+  it('shows paused-menu clear-saved-world failure copy when deleting browser resume data fails', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(testRuntime.storageValues.has(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY)).toBe(true);
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    testRuntime.storageRemoveItemErrorsByKey.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      new Error('remove blocked')
+    );
+
+    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
+
+    expect(testRuntime.storageValues.has(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY)).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        clearSavedWorldResult: {
+          status: 'failed',
+          reason: 'Browser resume data was not deleted.'
+        }
+      })
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Failed to clear persisted world save.',
+      'Browser resume data was not deleted.'
+    );
+
+    dispatchWindowEvent('pagehide');
+
+    expect(testRuntime.storageValues.has(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY)).toBe(true);
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+
+    warnSpy.mockRestore();
   });
 
   it('routes a paused-menu imported world save through the shared picker and restore action', async () => {

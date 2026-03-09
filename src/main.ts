@@ -72,6 +72,7 @@ import {
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState,
   type AppShellScreen,
+  type PausedMainMenuClearSavedWorldResult,
   type PausedMainMenuExportResult,
   type PausedMainMenuImportResult,
   type PausedMainMenuSavedWorldStatus
@@ -520,6 +521,7 @@ const bootstrap = async (): Promise<void> => {
   let pausedMainMenuSavedWorldStatus: PausedMainMenuSavedWorldStatus | null = null;
   let pausedMainMenuExportResult: PausedMainMenuExportResult | null = null;
   let pausedMainMenuImportResult: PausedMainMenuImportResult | null = null;
+  let pausedMainMenuClearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null;
   let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
   let worldSessionShellPersistenceAvailable = true;
@@ -682,7 +684,8 @@ const bootstrap = async (): Promise<void> => {
         shellActionKeybindingsDefaultedFromPersistedState,
         pausedMainMenuImportResult,
         pausedMainMenuSavedWorldStatus,
-        pausedMainMenuExportResult
+        pausedMainMenuExportResult,
+        pausedMainMenuClearSavedWorldResult
       )
     );
     syncWorldScreenShellVisibility();
@@ -1077,6 +1080,10 @@ const bootstrap = async (): Promise<void> => {
     persistCurrentWorldSessionWithResult().status === 'persisted';
   const clearPersistedCurrentWorldSession = (): boolean =>
     clearPersistedWorldSaveEnvelope(worldSessionShellStateStorage);
+  const resolveClearPersistedCurrentWorldSessionFailureReason = (): string =>
+    worldSessionShellStateStorage === null
+      ? 'Browser storage is unavailable.'
+      : 'Browser resume data was not deleted.';
   const exportPausedMainMenuWorldSave = (): boolean => {
     try {
       pausedMainMenuExportResult = {
@@ -2344,6 +2351,7 @@ const bootstrap = async (): Promise<void> => {
     pausedMainMenuWorldSaveCleared = false;
     pausedMainMenuExportResult = null;
     pausedMainMenuImportResult = null;
+    pausedMainMenuClearSavedWorldResult = null;
     applyPausedMainMenuWorldSessionShellTransition('resume-paused-world-session');
     enterInWorldShellState();
     if (!worldSessionStarted) {
@@ -2358,6 +2366,7 @@ const bootstrap = async (): Promise<void> => {
     pausedMainMenuSavedWorldStatus = null;
     pausedMainMenuExportResult = null;
     pausedMainMenuImportResult = null;
+    pausedMainMenuClearSavedWorldResult = null;
     clearPersistedCurrentWorldSession();
     applyPausedMainMenuWorldSessionShellTransition('start-fresh-world-session');
     resetFreshWorldSessionRuntimeState();
@@ -2368,8 +2377,18 @@ const bootstrap = async (): Promise<void> => {
   const clearPausedMainMenuPersistedWorldSession = (): boolean => {
     if (loop === null || !worldSessionStarted) return false;
     if (!clearPersistedCurrentWorldSession()) {
+      pausedMainMenuClearSavedWorldResult = {
+        status: 'failed',
+        reason: resolveClearPersistedCurrentWorldSessionFailureReason()
+      };
+      console.warn(
+        'Failed to clear persisted world save.',
+        pausedMainMenuClearSavedWorldResult.reason
+      );
+      showMainMenuShellState();
       return false;
     }
+    pausedMainMenuClearSavedWorldResult = null;
     pausedMainMenuWorldSaveCleared = true;
     pausedMainMenuSavedWorldStatus = 'cleared';
     showMainMenuShellState();
@@ -3101,6 +3120,7 @@ const bootstrap = async (): Promise<void> => {
       pausedMainMenuSavedWorldStatus = null;
       pausedMainMenuExportResult = null;
       pausedMainMenuImportResult = null;
+      pausedMainMenuClearSavedWorldResult = null;
       resetFreshWorldSessionDebugEditState();
       clearPinnedDebugTileInspect();
       resolveCurrentWorldPlayerSpawn();

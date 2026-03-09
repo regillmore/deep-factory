@@ -86,6 +86,10 @@ const PICKER_START_FAILED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
 const REJECTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
   'The paused session stayed unchanged because the selected JSON world save did not pass top-level envelope validation.'
 ] as const;
+const FAILED_PAUSED_MAIN_MENU_CLEAR_SAVED_WORLD_RESULT_LINES = [
+  'The paused session stayed browser-saved because Clear Saved World could not delete its local resume envelope.',
+  'Resume World and reload still use the last browser-saved session until deletion succeeds.'
+] as const;
 const CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_STATUS_LINES = [
   'This paused session is no longer browser-saved because Clear Saved World removed its local resume envelope.',
   'Resume World or a replacement save path writes a new browser save for the current session.'
@@ -640,6 +644,40 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'Saved again by',
           value: 'Resume World, Import World Save, New World'
+        }
+      ],
+      tone: 'warning'
+    });
+  });
+
+  it('adds a paused-menu clear-saved-world result card when deleting browser resume data fails', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        null,
+        null,
+        {
+          status: 'failed',
+          reason: 'Browser resume data was not deleted.'
+        }
+      )
+    );
+
+    expect(viewModel.menuSections[4]).toEqual({
+      title: 'Clear Saved World Result',
+      lines: [...FAILED_PAUSED_MAIN_MENU_CLEAR_SAVED_WORLD_RESULT_LINES],
+      metadataRows: [
+        {
+          label: 'Status',
+          value: 'Failed'
+        },
+        {
+          label: 'Reason',
+          value: 'Browser resume data was not deleted.'
         }
       ],
       tone: 'warning'
