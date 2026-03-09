@@ -579,31 +579,14 @@ export class Renderer {
     return this.world.createSnapshot();
   }
 
+  loadWorldSnapshot(snapshot: TileWorldSnapshot): void {
+    const world = new TileWorld(0);
+    world.loadSnapshot(snapshot);
+    this.replaceWorld(world);
+  }
+
   resetWorld(): void {
-    this.clearMeshCaches();
-    this.attachWorld(new TileWorld());
-    this.telemetry.meshBuildQueueLength = 0;
-    this.telemetry.residentWorldChunks = this.world.getChunkCount();
-    this.telemetry.cachedChunkMeshes = 0;
-    this.telemetry.residentDirtyLightChunks = this.world.getDirtyLightChunkCount();
-    this.updateLiquidStepTelemetry();
-    this.telemetry.standalonePlayerNearbyLightLevel = null;
-    this.telemetry.standalonePlayerNearbyLightFactor = null;
-    this.telemetry.standalonePlayerNearbyLightSourceTileX = null;
-    this.telemetry.standalonePlayerNearbyLightSourceTileY = null;
-    this.telemetry.standalonePlayerNearbyLightSourceChunkX = null;
-    this.telemetry.standalonePlayerNearbyLightSourceChunkY = null;
-    this.telemetry.standalonePlayerNearbyLightSourceLocalTileX = null;
-    this.telemetry.standalonePlayerNearbyLightSourceLocalTileY = null;
-    this.telemetry.evictedWorldChunks = 0;
-    this.telemetry.evictedMeshEntries = 0;
-    this.telemetry.residentAnimatedChunkMeshes = 0;
-    this.telemetry.residentAnimatedChunkQuadCount = 0;
-    this.telemetry.residentAnimatedLiquidChunkQuadCount = 0;
-    this.telemetry.animatedChunkUvUploadCount = 0;
-    this.telemetry.animatedChunkUvUploadQuadCount = 0;
-    this.telemetry.animatedChunkUvUploadLiquidQuadCount = 0;
-    this.telemetry.animatedChunkUvUploadBytes = 0;
+    this.replaceWorld(new TileWorld());
   }
 
   findPlayerSpawnPoint(options: PlayerSpawnSearchOptions): PlayerSpawnPoint | null {
@@ -663,6 +646,33 @@ export class Renderer {
         this.invalidateChunkMesh(coord.x, coord.y);
       }
     });
+  }
+
+  private replaceWorld(world: TileWorld): void {
+    this.clearMeshCaches();
+    this.attachWorld(world);
+    this.telemetry.meshBuildQueueLength = 0;
+    this.telemetry.residentWorldChunks = this.world.getChunkCount();
+    this.telemetry.cachedChunkMeshes = 0;
+    this.telemetry.residentDirtyLightChunks = this.world.getDirtyLightChunkCount();
+    this.updateLiquidStepTelemetry();
+    this.telemetry.standalonePlayerNearbyLightLevel = null;
+    this.telemetry.standalonePlayerNearbyLightFactor = null;
+    this.telemetry.standalonePlayerNearbyLightSourceTileX = null;
+    this.telemetry.standalonePlayerNearbyLightSourceTileY = null;
+    this.telemetry.standalonePlayerNearbyLightSourceChunkX = null;
+    this.telemetry.standalonePlayerNearbyLightSourceChunkY = null;
+    this.telemetry.standalonePlayerNearbyLightSourceLocalTileX = null;
+    this.telemetry.standalonePlayerNearbyLightSourceLocalTileY = null;
+    this.telemetry.evictedWorldChunks = 0;
+    this.telemetry.evictedMeshEntries = 0;
+    this.telemetry.residentAnimatedChunkMeshes = 0;
+    this.telemetry.residentAnimatedChunkQuadCount = 0;
+    this.telemetry.residentAnimatedLiquidChunkQuadCount = 0;
+    this.telemetry.animatedChunkUvUploadCount = 0;
+    this.telemetry.animatedChunkUvUploadQuadCount = 0;
+    this.telemetry.animatedChunkUvUploadLiquidQuadCount = 0;
+    this.telemetry.animatedChunkUvUploadBytes = 0;
   }
 
   private updateActiveLiquidTelemetry(): void {

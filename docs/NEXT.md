@@ -5,8 +5,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Save/load
 
 21. Add a local persistence adapter (`localStorage` or downloadable JSON) on top of the snapshot format.
-375. Add a session-owned world-restore helper that swaps `TileWorld` from a loaded top-level world-save envelope while preserving existing renderer and input wiring after the save-envelope contract (`374`) lands.
-385. Add a paused-menu JSON world-save import picker that validates a selected top-level save envelope and hands it to the session-owned restore helper from task `375`, with regressions for canceled picks and rejected envelopes.
+385. Add a paused-menu JSON world-save import picker that validates a selected top-level save envelope and hands it to the paused-session restore runtime action from task `386`, with regressions for canceled picks and rejected envelopes.
+386. Add a paused-session runtime restore action in `src/main.ts` that routes decoded world-save envelopes through the shared session restore helper without rebuilding renderer or input state, with focused session-reset regressions.
 
 ## Networking scaffolding
 

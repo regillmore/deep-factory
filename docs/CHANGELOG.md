@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-09
+
+- Task: Add a session-owned world-restore helper for top-level world-save envelopes.
+- Changes: Added [src/mainWorldSessionRestore.ts](../src/mainWorldSessionRestore.ts) so decoded `deep-factory.world-save` envelopes can re-normalize and restore world plus session data through a shared target seam, updated [src/gl/renderer.ts](../src/gl/renderer.ts) with `loadWorldSnapshot()` so the renderer can swap its owned `TileWorld` without rebuilding renderer state, expanded [src/mainWorldSessionRestore.test.ts](../src/mainWorldSessionRestore.test.ts) and [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with focused restore regressions, removed completed task `375` from [docs/NEXT.md](docs/NEXT.md), added replacement task `386`, refined task `385`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/mainWorldSessionRestore.test.ts src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-08
 
 - Task: Add a paused-menu downloadable JSON world-save export action.

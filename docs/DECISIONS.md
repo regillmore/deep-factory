@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-09: Session restore should flow through a shared helper and renderer snapshot-load seam
+
+- Decision: Decoded `deep-factory.world-save` envelopes now restore through `src/mainWorldSessionRestore.ts`, which re-normalizes the envelope and loads the nested `TileWorld` snapshot through `Renderer.loadWorldSnapshot()` before forwarding cloned standalone-player and camera-follow session state to a session-owned restore target.
+- Reason: Import and local-persistence work need one restore path that preserves the existing renderer and input wiring instead of rebuilding runtime ownership ad hoc in `src/main.ts` or leaking mutable `TileWorld` instances across subsystem boundaries.
+- Consequence: Future world-save import, browser persistence, or resume wiring should call the shared session restore helper and renderer snapshot-load API instead of constructing replacement worlds directly in main-runtime code.
+
 ### 2026-03-08: Liquid-step transfer telemetry stays split by phase
 
 - Decision: `TileWorld` last-step liquid stats and renderer telemetry now expose separate `downwardTransfersApplied` and `sidewaysTransfersApplied` counters instead of one aggregate transfer total.

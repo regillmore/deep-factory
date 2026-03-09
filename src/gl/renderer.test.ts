@@ -534,6 +534,49 @@ describe('Renderer atlas telemetry', () => {
     expect(restoredSnapshotWorld.getTile(worldTileX, worldTileY)).toBe(6);
   });
 
+  it('loads a provided world snapshot into the active renderer session and clears cached animated meshes', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    renderer.setTile(0, 0, 5);
+    const camera = new Camera2D();
+    camera.zoom = 16;
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
+
+    const deleteBuffer = vi.mocked(gl.deleteBuffer);
+    const deleteVertexArray = vi.mocked(gl.deleteVertexArray);
+    deleteBuffer.mockClear();
+    deleteVertexArray.mockClear();
+
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setTile(0, 0, 0)).toBe(true);
+    const snapshot = savedWorld.createSnapshot();
+
+    renderer.loadWorldSnapshot(snapshot);
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+
+    expect(renderer.getTile(0, 0)).toBe(0);
+    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(0);
+    expect(deleteBuffer).toHaveBeenCalled();
+    expect(deleteVertexArray).toHaveBeenCalled();
+
+    renderer.setTile(0, 0, 6);
+
+    const restoredSnapshotWorld = new TileWorld(0);
+    restoredSnapshotWorld.loadSnapshot(snapshot);
+    expect(restoredSnapshotWorld.getTile(0, 0)).toBe(0);
+  });
+
   it('invalidates lower-row chunk meshes when a roof edit changes lighting across the y=-1/0 seam', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));
