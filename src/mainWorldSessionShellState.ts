@@ -20,6 +20,12 @@ export interface WorldSessionShellStateLoadResult {
   persistenceAvailable: boolean;
 }
 
+export interface WorldSessionShellStateClearResult {
+  cleared: boolean;
+  persistenceAvailable: boolean;
+  reason: string | null;
+}
+
 interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
@@ -56,7 +62,11 @@ const WORLD_SESSION_SHELL_STATE_PERSISTENCE_STATUS_SESSION_ONLY_FALLBACK =
 const WORLD_SESSION_SHELL_STATE_PERSISTENCE_DESCRIPTION_BROWSER_SAVED =
   'Saved in-world shell visibility resumes with the paused session until a reset path clears it.';
 const WORLD_SESSION_SHELL_STATE_PERSISTENCE_DESCRIPTION_SESSION_ONLY_FALLBACK =
-  'Browser shell storage is unavailable, so this paused session keeps the current shell layout only until a reset path or reload clears it.';
+  'Browser shell storage is unavailable or could not be updated, so this paused session keeps the current shell layout only until a reset path or reload clears it.';
+const WORLD_SESSION_SHELL_STATE_CLEAR_FAILURE_REASON_UNAVAILABLE =
+  'Browser shell storage is unavailable.';
+const WORLD_SESSION_SHELL_STATE_CLEAR_FAILURE_REASON_NOT_DELETED =
+  'Browser shell visibility preferences were not deleted.';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -204,13 +214,36 @@ export const saveWorldSessionShellState = (
 };
 
 export const clearWorldSessionShellState = (storage: StorageLike | null | undefined): boolean => {
-  if (!storage || typeof storage.removeItem !== 'function') return false;
+  return clearWorldSessionShellStateWithResult(storage).cleared;
+};
+
+export const clearWorldSessionShellStateWithResult = (
+  storage: StorageLike | null | undefined
+): WorldSessionShellStateClearResult => {
+  if (!storage || typeof storage.removeItem !== 'function') {
+    return {
+      cleared: false,
+      persistenceAvailable: false,
+      reason: WORLD_SESSION_SHELL_STATE_CLEAR_FAILURE_REASON_UNAVAILABLE
+    };
+  }
 
   try {
     storage.removeItem(STORAGE_KEY);
-    return true;
-  } catch {
-    return false;
+    return {
+      cleared: true,
+      persistenceAvailable: true,
+      reason: null
+    };
+  } catch (error) {
+    return {
+      cleared: false,
+      persistenceAvailable: false,
+      reason:
+        error instanceof Error && error.message.trim().length > 0
+          ? error.message.trim()
+          : WORLD_SESSION_SHELL_STATE_CLEAR_FAILURE_REASON_NOT_DELETED
+    };
   }
 };
 

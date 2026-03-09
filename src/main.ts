@@ -52,7 +52,7 @@ import {
   savePersistedWorldSaveEnvelope
 } from './mainWorldSaveLocalPersistence';
 import {
-  clearWorldSessionShellState,
+  clearWorldSessionShellStateWithResult,
   createDefaultWorldSessionShellState,
   loadWorldSessionShellStateWithPersistenceAvailability,
   saveWorldSessionShellState,
@@ -555,10 +555,10 @@ const bootstrap = async (): Promise<void> => {
       readWorldSessionShellState()
     );
   };
-  const clearPersistedWorldSessionShellState = (): void => {
-    worldSessionShellPersistenceAvailable = clearWorldSessionShellState(
-      worldSessionShellStateStorage
-    );
+  const clearPersistedWorldSessionShellState = () => {
+    const result = clearWorldSessionShellStateWithResult(worldSessionShellStateStorage);
+    worldSessionShellPersistenceAvailable = result.persistenceAvailable;
+    return result;
   };
   const applyWorldSessionShellState = (
     state: ReturnType<typeof createDefaultWorldSessionShellState>
@@ -574,15 +574,15 @@ const bootstrap = async (): Promise<void> => {
   const applyPausedMainMenuWorldSessionShellTransition = (
     transition: Parameters<typeof resolveWorldSessionShellStateAfterPausedMainMenuTransition>[1],
     persistence: 'save' | 'clear' = 'save'
-  ): void => {
+  ) => {
     applyWorldSessionShellState(
       resolveWorldSessionShellStateAfterPausedMainMenuTransition(readWorldSessionShellState(), transition)
     );
     if (persistence === 'clear') {
-      clearPersistedWorldSessionShellState();
-      return;
+      return clearPersistedWorldSessionShellState();
     }
     persistWorldSessionShellState();
+    return null;
   };
   const returnToMainMenuFromInWorld = (): void => {
     if (currentScreen !== 'in-world') return;
@@ -2401,10 +2401,25 @@ const bootstrap = async (): Promise<void> => {
   };
   const resetPausedMainMenuShellTogglePreferences = (): void => {
     if (loop === null || !worldSessionStarted) return;
-    applyPausedMainMenuWorldSessionShellTransition('reset-shell-toggle-preferences', 'clear');
-    pausedMainMenuResetShellTogglesResult = {
-      status: 'cleared'
-    };
+    const clearResult = applyPausedMainMenuWorldSessionShellTransition(
+      'reset-shell-toggle-preferences',
+      'clear'
+    );
+    pausedMainMenuResetShellTogglesResult =
+      clearResult?.cleared === false
+        ? {
+            status: 'persistence-failed',
+            reason: clearResult.reason ?? 'Browser shell visibility preferences were not deleted.'
+          }
+        : {
+            status: 'cleared'
+          };
+    if (clearResult?.cleared === false) {
+      console.warn(
+        'Failed to clear persisted shell toggle preferences.',
+        clearResult.reason ?? 'Browser shell visibility preferences were not deleted.'
+      );
+    }
     showMainMenuShellState();
   };
 

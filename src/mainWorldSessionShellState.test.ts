@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   clearWorldSessionShellState,
+  clearWorldSessionShellStateWithResult,
   createDefaultWorldSessionShellState,
   createWorldSessionShellStatePersistenceSummary,
   loadWorldSessionShellState,
@@ -151,7 +152,7 @@ describe('createWorldSessionShellStatePersistenceSummary', () => {
     ).toEqual({
       statusValue: 'Session-only fallback',
       descriptionLine:
-        'Browser shell storage is unavailable, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
+        'Browser shell storage is unavailable or could not be updated, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
       resumedToggleLabels: ['Debug HUD', 'Edit Panel', 'Edit Overlays', 'Spawn Marker', 'Shortcuts'],
       savedOnToggleLabels: ['Debug HUD', 'Edit Overlays', 'Shortcuts'],
       savedOffToggleLabels: ['Edit Panel', 'Spawn Marker'],
@@ -326,5 +327,52 @@ describe('clearWorldSessionShellState', () => {
       }
     };
     expect(clearWorldSessionShellState(throwingStorage)).toBe(false);
+  });
+});
+
+describe('clearWorldSessionShellStateWithResult', () => {
+  it('reports a cleared result when persisted shell-toggle storage is removed', () => {
+    const storage = createMemoryStorage(JSON.stringify(createDefaultWorldSessionShellState()));
+
+    expect(clearWorldSessionShellStateWithResult(storage)).toEqual({
+      cleared: true,
+      persistenceAvailable: true,
+      reason: null
+    });
+    expect(storage.values.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)).toBe(false);
+  });
+
+  it('reports an unavailable-browser-storage reason when clear support is missing', () => {
+    expect(clearWorldSessionShellStateWithResult(null)).toEqual({
+      cleared: false,
+      persistenceAvailable: false,
+      reason: 'Browser shell storage is unavailable.'
+    });
+
+    const storageWithoutRemove: FakeStorage = {
+      getItem: () => null,
+      setItem: () => {}
+    };
+    expect(clearWorldSessionShellStateWithResult(storageWithoutRemove)).toEqual({
+      cleared: false,
+      persistenceAvailable: false,
+      reason: 'Browser shell storage is unavailable.'
+    });
+  });
+
+  it('surfaces the thrown clear reason when removing persisted shell-toggle storage fails', () => {
+    const throwingStorage: FakeStorage = {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {
+        throw new Error('remove blocked');
+      }
+    };
+
+    expect(clearWorldSessionShellStateWithResult(throwingStorage)).toEqual({
+      cleared: false,
+      persistenceAvailable: false,
+      reason: 'remove blocked'
+    });
   });
 });

@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: An imported session can be unsaved in browser storage even though autosave should still be allowed on later pause or page-hide paths, so one boolean cannot safely represent both warning copy and persistence suppression.
 - Consequence: Future paused-menu save-status warnings should extend the shared saved-world-status cause state, while only explicit clear-save flows should suppress paused-menu autosave.
 
+### 2026-03-09: Reset-shell-toggle clear failures should keep the live paused-session reset while warning that browser storage was not cleared
+
+- Decision: When paused-menu `Reset Shell Toggles` reapplies the default-off shell layout in memory but clearing browser shell storage fails, the current paused session keeps that reset live and surfaces warning copy instead of restoring the previous browser-saved layout.
+- Reason: The live paused session has already switched to the reset layout by that point, and silently rolling it back because browser persistence could not be cleared would contradict the behavior the player just requested in the current tab.
+- Consequence: Future shell-toggle persistence failure handling should treat reset-clear failures as current-session-only warnings until a later successful shell save rewrites browser storage.
+
 ### 2026-03-09: Import persistence failures should keep the restored paused session live while warning that browser resume was not rewritten
 
 - Decision: When a paused-menu import successfully restores world and session state in memory but the follow-up browser-resume save rewrite fails, the current tab keeps the restored paused session active and surfaces warning copy instead of rolling the runtime back.

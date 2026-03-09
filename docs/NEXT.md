@@ -2,10 +2,6 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-## Save/load
-
-402. Add paused-menu reset-shell-toggles warning copy when browser shell storage cannot be cleared and the reset applies only to the current paused session, with app-shell and main regressions.
-
 ## Networking scaffolding
 
 22. Define serializable message shapes for player input, chunk tile diffs, and entity snapshots.
@@ -50,3 +46,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 372. Add a bucket liquid-transfer utility slice after inventory basics (`214`) and save/load (`19-21`): stackable empty, water, and lava bucket hotbar slots, mixed-device source pickup plus nearby-tile pour placement, deterministic liquid-volume regressions, and snapshot regressions for bucket contents plus resident liquid state.
 399. Add a fall-damage survival slice after entity scaffolding (`17-18`): fixed-step landing-speed thresholds, player health loss plus brief recovery invulnerability, and save/load regressions for post-fall health state.
 401. Add a passive-bunny ambient-entity slice after entity scaffolding (`17-18`): deterministic surface spawn rules near the player, hop-and-turn movement with ledge avoidance, and fixed-step spawn/despawn regressions.
+403. Add a starter boomerang combat slice after hostile-slime combat (`213`) and inventory basics (`214`): a non-stackable boomerang hotbar slot, mixed-device aimed throw-and-return rules, terrain/slime hit detection, and deterministic return regressions.

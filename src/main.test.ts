@@ -6146,4 +6146,68 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
     expect(testRuntime.gameLoopStartCount).toBe(1);
   });
+
+  it('shows paused-menu reset-shell-toggles warning copy when browser shell storage could not be cleared', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    dispatchKeydown('h');
+    dispatchKeydown('g');
+    dispatchKeydown('v');
+    dispatchKeydown('m');
+    dispatchKeydown('?', 'Slash');
+
+    expect(readPersistedShellState()).toEqual({
+      debugOverlayVisible: true,
+      debugEditControlsVisible: true,
+      debugEditOverlaysVisible: true,
+      playerSpawnMarkerVisible: true,
+      shortcutsOverlayVisible: true
+    });
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    testRuntime.storageRemoveItemErrorsByKey.set(
+      WORLD_SESSION_SHELL_STATE_STORAGE_KEY,
+      new Error('remove blocked')
+    );
+
+    testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
+
+    expect(readPersistedShellState()).toEqual({
+      debugOverlayVisible: true,
+      debugEditControlsVisible: true,
+      debugEditOverlaysVisible: true,
+      playerSpawnMarkerVisible: true,
+      shortcutsOverlayVisible: true
+    });
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        worldSessionShellState: createDefaultWorldSessionShellState(),
+        persistenceAvailable: false,
+        resetShellTogglesResult: {
+          status: 'persistence-failed',
+          reason: 'remove blocked'
+        }
+      })
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Failed to clear persisted shell toggle preferences.',
+      'remove blocked'
+    );
+
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+    expect(readPersistedShellState()).toEqual({
+      debugOverlayVisible: false,
+      debugEditControlsVisible: false,
+      debugEditOverlaysVisible: false,
+      playerSpawnMarkerVisible: false,
+      shortcutsOverlayVisible: false
+    });
+
+    warnSpy.mockRestore();
+  });
 });

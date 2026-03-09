@@ -94,6 +94,10 @@ const CLEARED_PAUSED_MAIN_MENU_RESET_SHELL_TOGGLES_RESULT_LINES = [
   'This paused session now resumes from the default-off shell layout because its saved shell visibility preferences were cleared.',
   'The next Resume World starts with Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden.'
 ] as const;
+const PERSISTENCE_FAILED_PAUSED_MAIN_MENU_RESET_SHELL_TOGGLES_RESULT_LINES = [
+  'This paused session still resumes from the default-off shell layout in this tab, but browser shell storage could not be cleared.',
+  'Resume World keeps the reset live here, but reload may still restore the last browser-saved shell layout until a later shell save succeeds.'
+] as const;
 const CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_STATUS_LINES = [
   'This paused session is no longer browser-saved because Clear Saved World removed its local resume envelope.',
   'Resume World or a replacement save path writes a new browser save for the current session.'
@@ -103,7 +107,7 @@ const IMPORTED_SESSION_PERSISTENCE_FAILED_SAVED_WORLD_STATUS_LINES = [
   'This warning clears after a later browser-save rewrite succeeds for the current session.'
 ] as const;
 const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
-  'Browser shell storage is unavailable, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
+  'Browser shell storage is unavailable or could not be updated, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
 ] as const;
 
@@ -1674,6 +1678,178 @@ describe('createPausedMainMenuShellState', () => {
       senaryActionLabel: 'New World',
       pausedMainMenuResetShellTogglesResult: {
         status: 'cleared'
+      }
+    });
+  });
+
+  it('adds reset-shell-toggles warning guidance when browser shell storage could not be cleared', () => {
+    expect(
+      createPausedMainMenuShellState(
+        undefined,
+        false,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        null,
+        null,
+        null,
+        {
+          status: 'persistence-failed',
+          reason: 'remove blocked'
+        }
+      )
+    ).toEqual({
+      screen: 'main-menu',
+      statusText: 'World session paused.',
+      detailLines: [],
+      menuSections: [
+        {
+          title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
+          lines: ['Continue with the current world, player state, and debug edits intact.'],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: getDesktopResumeWorldHotkeyLabel()
+            },
+            {
+              label: 'Consequence',
+              value: 'Keeps current world, player, camera, and edits.'
+            }
+          ],
+          tone: 'accent'
+        },
+        {
+          title: 'Export World Save',
+          lines: [
+            'Download a JSON save file for the current world, player, and camera session state without changing the paused session.'
+          ],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Consequence',
+              value: 'Keeps the current paused session unchanged.'
+            }
+          ]
+        },
+        {
+          title: 'Import World Save',
+          lines: [
+            'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates and runtime restore succeeds.'
+          ],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Consequence',
+              value:
+                'Validated imports replace the paused session only when runtime restore succeeds; canceled picks, picker failures, invalid saves, or failed restores do not.'
+            }
+          ]
+        },
+        {
+          title: 'Clear Saved World',
+          lines: [
+            'Delete the browser-saved world, player, and camera envelope while keeping this paused session active in the current tab until it is saved again.'
+          ],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Consequence',
+              value: 'Keeps the session but clears browser resume.'
+            }
+          ]
+        },
+        {
+          title: 'Reset Shell Toggles',
+          lines: [
+            `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
+          ],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Consequence',
+              value: 'Keeps the session but clears saved shell visibility.'
+            }
+          ]
+        },
+        {
+          title: 'Reset Shell Toggles Result',
+          lines: [...PERSISTENCE_FAILED_PAUSED_MAIN_MENU_RESET_SHELL_TOGGLES_RESULT_LINES],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Current session only'
+            },
+            {
+              label: 'Reason',
+              value: 'remove blocked'
+            }
+          ],
+          tone: 'warning'
+        },
+        {
+          title: 'Persistence Summary',
+          lines: [...SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Session-only fallback'
+            },
+            {
+              label: 'Resumes',
+              value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+            },
+            {
+              label: 'Saved On',
+              value: 'None'
+            },
+            {
+              label: 'Saved Off',
+              value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+            },
+            {
+              label: 'Cleared by',
+              value: 'Reset Shell Toggles, New World'
+            },
+            ...createPausedMainMenuShellActionKeybindingSummaryRows()
+          ]
+        },
+        {
+          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
+          lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: getDesktopFreshWorldHotkeyLabel()
+            },
+            {
+              label: 'Consequence',
+              value: 'Replaces the current world, player, camera, and undo state.'
+            }
+          ],
+          tone: 'warning'
+        }
+      ],
+      primaryActionLabel: 'Resume World',
+      secondaryActionLabel: 'Export World Save',
+      tertiaryActionLabel: 'Import World Save',
+      quaternaryActionLabel: 'Clear Saved World',
+      quinaryActionLabel: 'Reset Shell Toggles',
+      senaryActionLabel: 'New World',
+      pausedMainMenuResetShellTogglesResult: {
+        status: 'persistence-failed',
+        reason: 'remove blocked'
       }
     });
   });

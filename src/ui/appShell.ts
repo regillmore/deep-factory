@@ -104,8 +104,14 @@ export interface PausedMainMenuClearedResetShellTogglesResult {
   status: 'cleared';
 }
 
+export interface PausedMainMenuPersistenceFailedResetShellTogglesResult {
+  status: 'persistence-failed';
+  reason: string;
+}
+
 export type PausedMainMenuResetShellTogglesResult =
-  PausedMainMenuClearedResetShellTogglesResult;
+  | PausedMainMenuClearedResetShellTogglesResult
+  | PausedMainMenuPersistenceFailedResetShellTogglesResult;
 
 export interface AppShellState {
   screen: AppShellScreen;
@@ -296,6 +302,25 @@ const createPausedMainMenuResetShellTogglesResultMenuSection = (
           }
         ],
         tone: 'accent'
+      };
+    case 'persistence-failed':
+      return {
+        title: 'Reset Shell Toggles Result',
+        lines: [
+          'This paused session still resumes from the default-off shell layout in this tab, but browser shell storage could not be cleared.',
+          'Resume World keeps the reset live here, but reload may still restore the last browser-saved shell layout until a later shell save succeeds.'
+        ],
+        metadataRows: [
+          {
+            label: 'Status',
+            value: 'Current session only'
+          },
+          {
+            label: 'Reason',
+            value: resolvePausedMainMenuResultReasonValue(resetShellTogglesResult.reason)
+          }
+        ],
+        tone: 'warning'
       };
   }
 };
