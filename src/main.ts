@@ -639,7 +639,8 @@ const bootstrap = async (): Promise<void> => {
         worldSessionShellPersistenceAvailable,
         shellActionKeybindings,
         shellActionKeybindingsDefaultedFromPersistedState,
-        pausedMainMenuImportResult
+        pausedMainMenuImportResult,
+        pausedMainMenuWorldSaveCleared
       )
     );
     syncWorldScreenShellVisibility();

@@ -1291,6 +1291,7 @@ const createExpectedPausedMainMenuState = (
     worldSessionShellState: ReturnType<typeof createDefaultWorldSessionShellState>;
     persistenceAvailable: boolean;
     importResult: PausedMainMenuImportResult;
+    worldSaveCleared: boolean;
   }> = {}
 ) => {
   const shellActionKeybindingLoad = loadShellActionKeybindingStateWithDefaultFallbackStatus({
@@ -1307,7 +1308,8 @@ const createExpectedPausedMainMenuState = (
     options.persistenceAvailable ?? true,
     shellActionKeybindingLoad.state,
     shellActionKeybindingLoad.defaultedFromPersistedState,
-    options.importResult ?? null
+    options.importResult ?? null,
+    options.worldSaveCleared ?? false
   );
 };
 
@@ -5046,12 +5048,20 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
 
     expect(testRuntime.storageValues.has(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY)).toBe(false);
-    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        worldSaveCleared: true
+      })
+    );
 
     dispatchWindowEvent('pagehide');
 
     expect(testRuntime.storageValues.has(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY)).toBe(false);
-    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        worldSaveCleared: true
+      })
+    );
 
     expect(dispatchKeydown('Enter').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());

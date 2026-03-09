@@ -67,6 +67,10 @@ const ACCEPTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
 const REJECTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
   'The paused session stayed unchanged because the selected JSON world save did not pass top-level envelope validation.'
 ] as const;
+const CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_STATUS_LINES = [
+  'This paused session is no longer browser-saved because Clear Saved World removed its local resume envelope.',
+  'Resume World or a replacement save path writes a new browser save for the current session.'
+] as const;
 const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Browser shell storage is unavailable, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
@@ -389,6 +393,35 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'Reason',
           value: 'world save envelope kind must be "deep-factory.world-save"'
+        }
+      ],
+      tone: 'warning'
+    });
+  });
+
+  it('adds a paused-menu saved-world-status card when Clear Saved World removed browser resume data', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        true
+      )
+    );
+
+    expect(viewModel.menuSections[4]).toEqual({
+      title: 'Saved World Status',
+      lines: [...CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_STATUS_LINES],
+      metadataRows: [
+        {
+          label: 'Status',
+          value: 'Not browser saved'
+        },
+        {
+          label: 'Saved again by',
+          value: 'Resume World, Import World Save, New World'
         }
       ],
       tone: 'warning'
@@ -974,6 +1007,167 @@ describe('createPausedMainMenuShellState', () => {
           lines: [
             ...DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES
           ],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Browser saved'
+            },
+            {
+              label: 'Resumes',
+              value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+            },
+            {
+              label: 'Saved On',
+              value: 'None'
+            },
+            {
+              label: 'Saved Off',
+              value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+            },
+            {
+              label: 'Cleared by',
+              value: 'Reset Shell Toggles, New World'
+            },
+            ...createPausedMainMenuShellActionKeybindingSummaryRows()
+          ]
+        },
+        {
+          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
+          lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: getDesktopFreshWorldHotkeyLabel()
+            },
+            {
+              label: 'Consequence',
+              value: 'Replaces the current world, player, camera, and undo state.'
+            }
+          ],
+          tone: 'warning'
+        }
+      ],
+      primaryActionLabel: 'Resume World',
+      secondaryActionLabel: 'Export World Save',
+      tertiaryActionLabel: 'Import World Save',
+      quaternaryActionLabel: 'Clear Saved World',
+      quinaryActionLabel: 'Reset Shell Toggles',
+      senaryActionLabel: 'New World'
+    });
+  });
+
+  it('adds saved-world status guidance after Clear Saved World removes browser resume data', () => {
+    expect(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        true
+      )
+    ).toEqual({
+      screen: 'main-menu',
+      statusText: 'World session paused.',
+      detailLines: [],
+      menuSections: [
+        {
+          title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
+          lines: ['Continue with the current world, player state, and debug edits intact.'],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: getDesktopResumeWorldHotkeyLabel()
+            },
+            {
+              label: 'Consequence',
+              value: 'Keeps current world, player, camera, and edits.'
+            }
+          ],
+          tone: 'accent'
+        },
+        {
+          title: 'Export World Save',
+          lines: [
+            'Download a JSON save file for the current world, player, and camera session state without changing the paused session.'
+          ],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Consequence',
+              value: 'Keeps the current paused session unchanged.'
+            }
+          ]
+        },
+        {
+          title: 'Import World Save',
+          lines: [
+            'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates.'
+          ],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Consequence',
+              value: 'Valid imports replace the paused session; canceled or invalid picks do not.'
+            }
+          ]
+        },
+        {
+          title: 'Clear Saved World',
+          lines: [
+            'Delete the browser-saved world, player, and camera envelope while keeping this paused session active in the current tab until it is saved again.'
+          ],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Consequence',
+              value: 'Keeps the session but clears browser resume.'
+            }
+          ]
+        },
+        {
+          title: 'Saved World Status',
+          lines: [...CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_STATUS_LINES],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Not browser saved'
+            },
+            {
+              label: 'Saved again by',
+              value: 'Resume World, Import World Save, New World'
+            }
+          ],
+          tone: 'warning'
+        },
+        {
+          title: 'Reset Shell Toggles',
+          lines: [
+            `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
+          ],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Consequence',
+              value: 'Keeps the session but clears saved shell visibility.'
+            }
+          ]
+        },
+        {
+          title: 'Persistence Summary',
+          lines: [...DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
           metadataRows: [
             {
               label: 'Status',

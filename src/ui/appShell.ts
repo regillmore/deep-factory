@@ -101,6 +101,24 @@ const resolvePausedMainMenuImportFileNameValue = (fileName: string | null): stri
   const trimmedFileName = fileName?.trim() ?? '';
   return trimmedFileName.length > 0 ? trimmedFileName : 'Unknown file';
 };
+const createPausedMainMenuClearedWorldSaveStatusMenuSection = (): AppShellMenuSection => ({
+  title: 'Saved World Status',
+  lines: [
+    'This paused session is no longer browser-saved because Clear Saved World removed its local resume envelope.',
+    'Resume World or a replacement save path writes a new browser save for the current session.'
+  ],
+  metadataRows: [
+    {
+      label: 'Status',
+      value: 'Not browser saved'
+    },
+    {
+      label: 'Saved again by',
+      value: 'Resume World, Import World Save, New World'
+    }
+  ],
+  tone: 'warning'
+});
 const createPausedMainMenuShellActionKeybindingSummaryRows = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ): readonly AppShellMenuSectionMetadataRow[] => [
@@ -185,7 +203,8 @@ export const createPausedMainMenuMenuSections = (
   worldSessionShellPersistenceAvailable = true,
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
   shellActionKeybindingsDefaultedFromPersistedState = false,
-  importResult: PausedMainMenuImportResult | null = null
+  importResult: PausedMainMenuImportResult | null = null,
+  worldSaveCleared = false
 ): readonly AppShellMenuSection[] => {
   const persistenceSummary = createWorldSessionShellStatePersistenceSummary(
     worldSessionShellState,
@@ -256,6 +275,7 @@ export const createPausedMainMenuMenuSections = (
         }
       ]
     },
+    ...(worldSaveCleared ? [createPausedMainMenuClearedWorldSaveStatusMenuSection()] : []),
     {
       title: 'Reset Shell Toggles',
       lines: [
@@ -329,7 +349,8 @@ export const createPausedMainMenuShellState = (
   worldSessionShellPersistenceAvailable = true,
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
   shellActionKeybindingsDefaultedFromPersistedState = false,
-  importResult: PausedMainMenuImportResult | null = null
+  importResult: PausedMainMenuImportResult | null = null,
+  worldSaveCleared = false
 ): AppShellState => ({
   screen: 'main-menu',
   statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
@@ -339,7 +360,8 @@ export const createPausedMainMenuShellState = (
     worldSessionShellPersistenceAvailable,
     shellActionKeybindings,
     shellActionKeybindingsDefaultedFromPersistedState,
-    importResult
+    importResult,
+    worldSaveCleared
   ),
   primaryActionLabel: 'Resume World',
   secondaryActionLabel: 'Export World Save',
@@ -440,7 +462,8 @@ export const createMainMenuShellState = (
   worldSessionShellPersistenceAvailable = true,
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
   shellActionKeybindingsDefaultedFromPersistedState = false,
-  importResult: PausedMainMenuImportResult | null = null
+  importResult: PausedMainMenuImportResult | null = null,
+  worldSaveCleared = false
 ): AppShellState =>
   hasResumableWorldSession
     ? createPausedMainMenuShellState(
@@ -448,7 +471,8 @@ export const createMainMenuShellState = (
         worldSessionShellPersistenceAvailable,
         shellActionKeybindings,
         shellActionKeybindingsDefaultedFromPersistedState,
-        importResult
+        importResult,
+        worldSaveCleared
       )
     : createFirstLaunchMainMenuShellState();
 
