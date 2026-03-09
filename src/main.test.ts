@@ -18,7 +18,8 @@ import {
   createInWorldShellState,
   createMainMenuShellState,
   createRendererInitializationFailedBootShellState,
-  createWebGlUnavailableBootShellState
+  createWebGlUnavailableBootShellState,
+  type PausedMainMenuRejectedImportResult
 } from './ui/appShell';
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
@@ -1289,6 +1290,7 @@ const createExpectedPausedMainMenuState = (
   options: Partial<{
     worldSessionShellState: ReturnType<typeof createDefaultWorldSessionShellState>;
     persistenceAvailable: boolean;
+    rejectedImportResult: PausedMainMenuRejectedImportResult;
   }> = {}
 ) => {
   const shellActionKeybindingLoad = loadShellActionKeybindingStateWithDefaultFallbackStatus({
@@ -1304,7 +1306,8 @@ const createExpectedPausedMainMenuState = (
         : createDefaultWorldSessionShellState()),
     options.persistenceAvailable ?? true,
     shellActionKeybindingLoad.state,
-    shellActionKeybindingLoad.defaultedFromPersistedState
+    shellActionKeybindingLoad.defaultedFromPersistedState,
+    options.rejectedImportResult ?? null
   );
 };
 
@@ -5131,7 +5134,6 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
     expect(dispatchKeydown('q').prevented).toBe(true);
-    const pausedState = createExpectedPausedMainMenuState();
     testRuntime.queuedWorldSaveImportResults = [
       {
         status: 'rejected',
@@ -5146,7 +5148,14 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.worldSaveImportCallCount).toBe(1);
     expect(restoreModule.restoreWorldSessionFromSaveEnvelope).not.toHaveBeenCalled();
     expect(testRuntime.rendererLoadWorldSnapshotCallCount).toBe(0);
-    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        rejectedImportResult: {
+          fileName: 'broken.json',
+          reason: 'world save envelope kind must be "deep-factory.world-save"'
+        }
+      })
+    );
     expect(warnSpy).toHaveBeenCalledWith(
       'Rejected imported world save.',
       'world save envelope kind must be "deep-factory.world-save"'

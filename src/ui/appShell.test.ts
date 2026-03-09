@@ -61,6 +61,9 @@ const DEFAULTED_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Saved in-world shell visibility resumes with the paused session until a reset path clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_DEFAULTED_SUMMARY_LINE
 ] as const;
+const REJECTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
+  'The paused session stayed unchanged because the selected JSON world save did not pass top-level envelope validation.'
+] as const;
 const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Browser shell storage is unavailable, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
@@ -320,6 +323,41 @@ describe('resolveAppShellViewModel', () => {
         tone: 'warning'
       }
     ]);
+  });
+
+  it('adds a paused-menu import-result card when the last selected world save was rejected', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        {
+          fileName: 'broken.json',
+          reason: 'world save envelope kind must be "deep-factory.world-save"'
+        }
+      )
+    );
+
+    expect(viewModel.menuSections[3]).toEqual({
+      title: 'Import Result',
+      lines: [...REJECTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES],
+      metadataRows: [
+        {
+          label: 'Status',
+          value: 'Rejected'
+        },
+        {
+          label: 'File',
+          value: 'broken.json'
+        },
+        {
+          label: 'Reason',
+          value: 'world save envelope kind must be "deep-factory.world-save"'
+        }
+      ],
+      tone: 'warning'
+    });
   });
 
   it('adds a paused-menu persistence-summary card that inventories resumed toggles plus the saved on and off layout preview', () => {

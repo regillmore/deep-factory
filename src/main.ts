@@ -71,7 +71,8 @@ import {
   createMainMenuShellState,
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState,
-  type AppShellScreen
+  type AppShellScreen,
+  type PausedMainMenuRejectedImportResult
 } from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
@@ -477,6 +478,7 @@ const bootstrap = async (): Promise<void> => {
   let worldSessionStarted = false;
   let worldSessionLoopStarted = false;
   let pausedMainMenuWorldSaveCleared = false;
+  let pausedMainMenuRejectedImportResult: PausedMainMenuRejectedImportResult | null = null;
   let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
   let worldSessionShellPersistenceAvailable = true;
@@ -636,7 +638,8 @@ const bootstrap = async (): Promise<void> => {
         readWorldSessionShellState(),
         worldSessionShellPersistenceAvailable,
         shellActionKeybindings,
-        shellActionKeybindingsDefaultedFromPersistedState
+        shellActionKeybindingsDefaultedFromPersistedState,
+        pausedMainMenuRejectedImportResult
       )
     );
     syncWorldScreenShellVisibility();
@@ -1017,7 +1020,12 @@ const bootstrap = async (): Promise<void> => {
         case 'cancelled':
           return false;
         case 'rejected':
+          pausedMainMenuRejectedImportResult = {
+            fileName: result.fileName,
+            reason: result.reason
+          };
           console.warn('Rejected imported world save.', result.reason);
+          showMainMenuShellState();
           return false;
         case 'selected':
           return restorePausedWorldSessionFromSaveEnvelope(result.envelope);
@@ -2212,6 +2220,7 @@ const bootstrap = async (): Promise<void> => {
   const enterOrResumeWorldSessionFromMainMenu = (): void => {
     if (loop === null) return;
     pausedMainMenuWorldSaveCleared = false;
+    pausedMainMenuRejectedImportResult = null;
     applyPausedMainMenuWorldSessionShellTransition('resume-paused-world-session');
     enterInWorldShellState();
     if (!worldSessionStarted) {
@@ -2223,6 +2232,7 @@ const bootstrap = async (): Promise<void> => {
   const startFreshWorldSessionFromMainMenu = (): void => {
     if (loop === null || !worldSessionStarted) return;
     pausedMainMenuWorldSaveCleared = false;
+    pausedMainMenuRejectedImportResult = null;
     clearPersistedCurrentWorldSession();
     applyPausedMainMenuWorldSessionShellTransition('start-fresh-world-session');
     resetFreshWorldSessionRuntimeState();
@@ -2957,6 +2967,7 @@ const bootstrap = async (): Promise<void> => {
         }
       });
       pausedMainMenuWorldSaveCleared = false;
+      pausedMainMenuRejectedImportResult = null;
       resetFreshWorldSessionDebugEditState();
       clearPinnedDebugTileInspect();
       resolveCurrentWorldPlayerSpawn();

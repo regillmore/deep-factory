@@ -37,6 +37,11 @@ export interface AppShellMenuSection {
   tone?: AppShellMenuSectionTone;
 }
 
+export interface PausedMainMenuRejectedImportResult {
+  fileName: string | null;
+  reason: string;
+}
+
 export interface AppShellState {
   screen: AppShellScreen;
   statusText?: string;
@@ -54,6 +59,7 @@ export interface AppShellState {
   playerSpawnMarkerVisible?: boolean;
   shortcutsOverlayVisible?: boolean;
   shellActionKeybindings?: ShellActionKeybindingState;
+  pausedMainMenuRejectedImportResult?: PausedMainMenuRejectedImportResult;
 }
 
 export interface InWorldShellStateOptions {
@@ -81,6 +87,10 @@ const resolvePausedMainMenuShellActionKeybindingSetValue = (
   matchesDefaultShellActionKeybindingState(shellActionKeybindings)
     ? 'Default set'
     : 'Custom set';
+const resolvePausedMainMenuRejectedImportFileNameValue = (fileName: string | null): string => {
+  const trimmedFileName = fileName?.trim() ?? '';
+  return trimmedFileName.length > 0 ? trimmedFileName : 'Unknown file';
+};
 const createPausedMainMenuShellActionKeybindingSummaryRows = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ): readonly AppShellMenuSectionMetadataRow[] => [
@@ -113,12 +123,36 @@ const createPausedMainMenuShellActionKeybindingSummaryRows = (
     value: getDesktopPlayerSpawnMarkerHotkeyLabel(shellActionKeybindings)
   }
 ] as const;
+const createPausedMainMenuRejectedImportMenuSection = (
+  rejectedImportResult: PausedMainMenuRejectedImportResult
+): AppShellMenuSection => ({
+  title: 'Import Result',
+  lines: [
+    'The paused session stayed unchanged because the selected JSON world save did not pass top-level envelope validation.'
+  ],
+  metadataRows: [
+    {
+      label: 'Status',
+      value: 'Rejected'
+    },
+    {
+      label: 'File',
+      value: resolvePausedMainMenuRejectedImportFileNameValue(rejectedImportResult.fileName)
+    },
+    {
+      label: 'Reason',
+      value: rejectedImportResult.reason
+    }
+  ],
+  tone: 'warning'
+});
 
 export const createPausedMainMenuMenuSections = (
   worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
   worldSessionShellPersistenceAvailable = true,
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
-  shellActionKeybindingsDefaultedFromPersistedState = false
+  shellActionKeybindingsDefaultedFromPersistedState = false,
+  rejectedImportResult: PausedMainMenuRejectedImportResult | null = null
 ): readonly AppShellMenuSection[] => {
   const persistenceSummary = createWorldSessionShellStatePersistenceSummary(
     worldSessionShellState,
@@ -172,6 +206,9 @@ export const createPausedMainMenuMenuSections = (
         }
       ]
     },
+    ...(rejectedImportResult === null
+      ? []
+      : [createPausedMainMenuRejectedImportMenuSection(rejectedImportResult)]),
     {
       title: 'Clear Saved World',
       lines: [
@@ -260,7 +297,8 @@ export const createPausedMainMenuShellState = (
   worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
   worldSessionShellPersistenceAvailable = true,
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
-  shellActionKeybindingsDefaultedFromPersistedState = false
+  shellActionKeybindingsDefaultedFromPersistedState = false,
+  rejectedImportResult: PausedMainMenuRejectedImportResult | null = null
 ): AppShellState => ({
   screen: 'main-menu',
   statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
@@ -269,14 +307,18 @@ export const createPausedMainMenuShellState = (
     worldSessionShellState,
     worldSessionShellPersistenceAvailable,
     shellActionKeybindings,
-    shellActionKeybindingsDefaultedFromPersistedState
+    shellActionKeybindingsDefaultedFromPersistedState,
+    rejectedImportResult
   ),
   primaryActionLabel: 'Resume World',
   secondaryActionLabel: 'Export World Save',
   tertiaryActionLabel: 'Import World Save',
   quaternaryActionLabel: 'Clear Saved World',
   quinaryActionLabel: 'Reset Shell Toggles',
-  senaryActionLabel: 'New World'
+  senaryActionLabel: 'New World',
+  ...(rejectedImportResult === null
+    ? {}
+    : { pausedMainMenuRejectedImportResult: rejectedImportResult })
 });
 
 export interface AppShellViewModel {
@@ -368,14 +410,16 @@ export const createMainMenuShellState = (
   worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
   worldSessionShellPersistenceAvailable = true,
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
-  shellActionKeybindingsDefaultedFromPersistedState = false
+  shellActionKeybindingsDefaultedFromPersistedState = false,
+  rejectedImportResult: PausedMainMenuRejectedImportResult | null = null
 ): AppShellState =>
   hasResumableWorldSession
     ? createPausedMainMenuShellState(
         worldSessionShellState,
         worldSessionShellPersistenceAvailable,
         shellActionKeybindings,
-        shellActionKeybindingsDefaultedFromPersistedState
+        shellActionKeybindingsDefaultedFromPersistedState,
+        rejectedImportResult
       )
     : createFirstLaunchMainMenuShellState();
 

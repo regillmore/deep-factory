@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-09
 
+- Task: Add paused-menu import-result copy for rejected world-save envelopes.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused sessions can render a warning `Import Result` card with the last rejected file and validation reason beside the existing import guidance, updated [src/main.ts](../src/main.ts) so paused-menu rejected imports remember that feedback until the session resumes or a replacement session loads, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused regressions, removed completed task `387` from [docs/NEXT.md](docs/NEXT.md), added replacement task `391`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a paused-menu `Clear Saved World` action for persisted session envelopes.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused sessions now expose a `Clear Saved World` action card, button label, and tooltip beside export, import, reset, and fresh-world flows; updated [src/main.ts](../src/main.ts) so that paused-menu action deletes the persisted top-level world-save envelope without discarding the live paused session and keeps paused-menu `pagehide` autosave suppressed until that session resumes or is replaced; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused regressions; removed completed task `388` from [docs/NEXT.md](docs/NEXT.md), added replacement task `390`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
