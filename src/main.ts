@@ -479,6 +479,7 @@ const bootstrap = async (): Promise<void> => {
   let worldSessionLoopStarted = false;
   let pausedMainMenuWorldSaveCleared = false;
   let pausedMainMenuImportResult: PausedMainMenuImportResult | null = null;
+  let pausedMainMenuLastExportedWorldSaveFileName: string | null = null;
   let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
   let worldSessionShellPersistenceAvailable = true;
@@ -640,7 +641,8 @@ const bootstrap = async (): Promise<void> => {
         shellActionKeybindings,
         shellActionKeybindingsDefaultedFromPersistedState,
         pausedMainMenuImportResult,
-        pausedMainMenuWorldSaveCleared
+        pausedMainMenuWorldSaveCleared,
+        pausedMainMenuLastExportedWorldSaveFileName
       )
     );
     syncWorldScreenShellVisibility();
@@ -1005,9 +1007,10 @@ const bootstrap = async (): Promise<void> => {
     clearPersistedWorldSaveEnvelope(worldSessionShellStateStorage);
   const exportPausedMainMenuWorldSave = (): boolean => {
     try {
-      downloadWorldSaveEnvelope({
+      pausedMainMenuLastExportedWorldSaveFileName = downloadWorldSaveEnvelope({
         envelope: createCurrentWorldSessionSaveEnvelope()
       });
+      showMainMenuShellState();
       return true;
     } catch (error) {
       console.warn('Failed to export world save.', error);
@@ -2237,6 +2240,7 @@ const bootstrap = async (): Promise<void> => {
     if (loop === null) return;
     pausedMainMenuWorldSaveCleared = false;
     pausedMainMenuImportResult = null;
+    pausedMainMenuLastExportedWorldSaveFileName = null;
     applyPausedMainMenuWorldSessionShellTransition('resume-paused-world-session');
     enterInWorldShellState();
     if (!worldSessionStarted) {
@@ -2249,6 +2253,7 @@ const bootstrap = async (): Promise<void> => {
     if (loop === null || !worldSessionStarted) return;
     pausedMainMenuWorldSaveCleared = false;
     pausedMainMenuImportResult = null;
+    pausedMainMenuLastExportedWorldSaveFileName = null;
     clearPersistedCurrentWorldSession();
     applyPausedMainMenuWorldSessionShellTransition('start-fresh-world-session');
     resetFreshWorldSessionRuntimeState();
@@ -2984,6 +2989,7 @@ const bootstrap = async (): Promise<void> => {
       });
       pausedMainMenuWorldSaveCleared = false;
       pausedMainMenuImportResult = null;
+      pausedMainMenuLastExportedWorldSaveFileName = null;
       resetFreshWorldSessionDebugEditState();
       clearPinnedDebugTileInspect();
       resolveCurrentWorldPlayerSpawn();

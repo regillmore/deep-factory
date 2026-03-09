@@ -102,10 +102,29 @@ const resolvePausedMainMenuShellActionKeybindingSetValue = (
   matchesDefaultShellActionKeybindingState(shellActionKeybindings)
     ? 'Default set'
     : 'Custom set';
-const resolvePausedMainMenuImportFileNameValue = (fileName: string | null): string => {
+const resolvePausedMainMenuResultFileNameValue = (fileName: string | null): string => {
   const trimmedFileName = fileName?.trim() ?? '';
   return trimmedFileName.length > 0 ? trimmedFileName : 'Unknown file';
 };
+const createPausedMainMenuExportResultMenuSection = (
+  fileName: string | null
+): AppShellMenuSection => ({
+  title: 'Export Result',
+  lines: [
+    'The paused session stayed unchanged, and the last JSON world-save download used the filename below.'
+  ],
+  metadataRows: [
+    {
+      label: 'Status',
+      value: 'Downloaded'
+    },
+    {
+      label: 'File',
+      value: resolvePausedMainMenuResultFileNameValue(fileName)
+    }
+  ],
+  tone: 'accent'
+});
 const createPausedMainMenuClearedWorldSaveStatusMenuSection = (): AppShellMenuSection => ({
   title: 'Saved World Status',
   lines: [
@@ -186,7 +205,7 @@ const createPausedMainMenuImportMenuSection = (
           },
           {
             label: 'File',
-            value: resolvePausedMainMenuImportFileNameValue(importResult.fileName)
+            value: resolvePausedMainMenuResultFileNameValue(importResult.fileName)
           }
         ],
         tone: 'accent'
@@ -204,7 +223,7 @@ const createPausedMainMenuImportMenuSection = (
           },
           {
             label: 'File',
-            value: resolvePausedMainMenuImportFileNameValue(importResult.fileName)
+            value: resolvePausedMainMenuResultFileNameValue(importResult.fileName)
           },
           {
             label: 'Reason',
@@ -222,7 +241,8 @@ export const createPausedMainMenuMenuSections = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
   shellActionKeybindingsDefaultedFromPersistedState = false,
   importResult: PausedMainMenuImportResult | null = null,
-  worldSaveCleared = false
+  worldSaveCleared = false,
+  lastExportedWorldSaveFileName: string | null = null
 ): readonly AppShellMenuSection[] => {
   const persistenceSummary = createWorldSessionShellStatePersistenceSummary(
     worldSessionShellState,
@@ -260,6 +280,9 @@ export const createPausedMainMenuMenuSections = (
         }
       ]
     },
+    ...(lastExportedWorldSaveFileName === null
+      ? []
+      : [createPausedMainMenuExportResultMenuSection(lastExportedWorldSaveFileName)]),
     {
       title: 'Import World Save',
       lines: [
@@ -368,7 +391,8 @@ export const createPausedMainMenuShellState = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
   shellActionKeybindingsDefaultedFromPersistedState = false,
   importResult: PausedMainMenuImportResult | null = null,
-  worldSaveCleared = false
+  worldSaveCleared = false,
+  lastExportedWorldSaveFileName: string | null = null
 ): AppShellState => ({
   screen: 'main-menu',
   statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
@@ -379,7 +403,8 @@ export const createPausedMainMenuShellState = (
     shellActionKeybindings,
     shellActionKeybindingsDefaultedFromPersistedState,
     importResult,
-    worldSaveCleared
+    worldSaveCleared,
+    lastExportedWorldSaveFileName
   ),
   primaryActionLabel: 'Resume World',
   secondaryActionLabel: 'Export World Save',
@@ -481,7 +506,8 @@ export const createMainMenuShellState = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
   shellActionKeybindingsDefaultedFromPersistedState = false,
   importResult: PausedMainMenuImportResult | null = null,
-  worldSaveCleared = false
+  worldSaveCleared = false,
+  lastExportedWorldSaveFileName: string | null = null
 ): AppShellState =>
   hasResumableWorldSession
     ? createPausedMainMenuShellState(
@@ -490,7 +516,8 @@ export const createMainMenuShellState = (
         shellActionKeybindings,
         shellActionKeybindingsDefaultedFromPersistedState,
         importResult,
-        worldSaveCleared
+        worldSaveCleared,
+        lastExportedWorldSaveFileName
       )
     : createFirstLaunchMainMenuShellState();
 

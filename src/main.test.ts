@@ -294,6 +294,8 @@ const testRuntime = vi.hoisted(() => {
     gameLoopStartCount: 0,
     storageValues: new Map<string, string>(),
     downloadedWorldSaveEnvelopes: [] as unknown[],
+    downloadWorldSaveFilename: 'deep-factory-world-save-2026-03-08T05-06-07Z.json',
+    downloadWorldSaveError: null as Error | null,
     queuedWorldSaveImportResults: [] as unknown[],
     worldSaveImportCallCount: 0,
     inputControllerConstructCount: 0
@@ -866,8 +868,11 @@ vi.mock('./ui/appShell', async () => {
 
 vi.mock('./mainWorldSaveDownload', () => ({
   downloadWorldSaveEnvelope: vi.fn(({ envelope }: { envelope: unknown }) => {
+    if (testRuntime.downloadWorldSaveError !== null) {
+      throw testRuntime.downloadWorldSaveError;
+    }
     testRuntime.downloadedWorldSaveEnvelopes.push(envelope);
-    return 'deep-factory-world-save-2026-03-08T05-06-07Z.json';
+    return testRuntime.downloadWorldSaveFilename;
   })
 }));
 
@@ -1292,6 +1297,7 @@ const createExpectedPausedMainMenuState = (
     persistenceAvailable: boolean;
     importResult: PausedMainMenuImportResult;
     worldSaveCleared: boolean;
+    lastExportedWorldSaveFileName: string | null;
   }> = {}
 ) => {
   const shellActionKeybindingLoad = loadShellActionKeybindingStateWithDefaultFallbackStatus({
@@ -1309,7 +1315,8 @@ const createExpectedPausedMainMenuState = (
     shellActionKeybindingLoad.state,
     shellActionKeybindingLoad.defaultedFromPersistedState,
     options.importResult ?? null,
-    options.worldSaveCleared ?? false
+    options.worldSaveCleared ?? false,
+    options.lastExportedWorldSaveFileName ?? null
   );
 };
 
@@ -1463,6 +1470,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.gameLoopStartCount = 0;
     testRuntime.storageValues.clear();
     testRuntime.downloadedWorldSaveEnvelopes = [];
+    testRuntime.downloadWorldSaveFilename = 'deep-factory-world-save-2026-03-08T05-06-07Z.json';
+    testRuntime.downloadWorldSaveError = null;
     testRuntime.queuedWorldSaveImportResults = [];
     testRuntime.worldSaveImportCallCount = 0;
 
@@ -4988,6 +4997,7 @@ describe('main.ts shell state orchestration', () => {
     const savedWorld = new TileWorld(0);
     expect(savedWorld.setTile(5, -20, 6)).toBe(true);
     testRuntime.rendererWorldSnapshot = savedWorld.createSnapshot();
+    testRuntime.downloadWorldSaveFilename = 'deep-factory-world-save-2026-03-09T05-46-40Z.json';
 
     await import('./main');
     await flushBootstrap();
@@ -5004,7 +5014,11 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
 
     expect(testRuntime.downloadedWorldSaveEnvelopes).toHaveLength(1);
-    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        lastExportedWorldSaveFileName: 'deep-factory-world-save-2026-03-09T05-46-40Z.json'
+      })
+    );
     expect(testRuntime.gameLoopStartCount).toBe(1);
     expect(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null).toBe(
       persistedShellStateBeforeExport
@@ -5031,6 +5045,11 @@ describe('main.ts shell state orchestration', () => {
     expect(downloadedEnvelope.session.cameraFollowOffset).toEqual({ x: 0, y: 0 });
     expect(downloadedEnvelope.session.standalonePlayerState).not.toBeNull();
     expect(downloadedEnvelope.session.standalonePlayerState?.position).toEqual({ x: 8, y: 0 });
+
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
   });
 
   it('clears the persisted paused-session world save without discarding the live paused session', async () => {
