@@ -53,6 +53,8 @@ import {
   saveWorldSessionShellState,
   resolveWorldSessionShellStateAfterPausedMainMenuTransition
 } from './mainWorldSessionShellState';
+import { downloadWorldSaveEnvelope } from './mainWorldSaveDownload';
+import { createWorldSessionSaveEnvelope } from './mainWorldSessionSave';
 import { DebugOverlay, type DebugOverlayInspectState } from './ui/debugOverlay';
 import {
   AppShell,
@@ -167,6 +169,7 @@ const PREFERRED_INITIAL_DEBUG_BRUSH_TILE_NAME = 'debug_brick';
 const STANDALONE_PLAYER_ENTITY_KIND = 'standalone-player';
 type MainMenuShellActionType =
   | 'enter-or-resume-world-session'
+  | 'export-world-save'
   | 'start-fresh-world-session'
   | 'reset-shell-toggle-preferences';
 type DebugHistoryActionType = 'undo' | 'redo';
@@ -533,10 +536,13 @@ const bootstrap = async (): Promise<void> => {
       handleMainMenuShellAction(screen, 'enter-or-resume-world-session');
     },
     onSecondaryAction: (screen) => {
-      handleMainMenuShellAction(screen, 'start-fresh-world-session');
+      handleMainMenuShellAction(screen, 'export-world-save');
     },
     onTertiaryAction: (screen) => {
       handleMainMenuShellAction(screen, 'reset-shell-toggle-preferences');
+    },
+    onQuaternaryAction: (screen) => {
+      handleMainMenuShellAction(screen, 'start-fresh-world-session');
     },
     onReturnToMainMenu: (screen) => {
       handleInWorldShellAction(screen, 'return-to-main-menu');
@@ -704,7 +710,8 @@ const bootstrap = async (): Promise<void> => {
     if (currentScreen !== 'main-menu' || loop === null) return false;
 
     if (
-      (actionType === 'start-fresh-world-session' ||
+      (actionType === 'export-world-save' ||
+        actionType === 'start-fresh-world-session' ||
         actionType === 'reset-shell-toggle-preferences') &&
       !worldSessionStarted
     ) {
@@ -715,6 +722,8 @@ const bootstrap = async (): Promise<void> => {
       case 'enter-or-resume-world-session':
         enterOrResumeWorldSessionFromMainMenu();
         return true;
+      case 'export-world-save':
+        return exportPausedMainMenuWorldSave();
       case 'start-fresh-world-session':
         startFreshWorldSessionFromMainMenu();
         return true;
@@ -925,6 +934,23 @@ const bootstrap = async (): Promise<void> => {
       return null;
     }
     return entityRegistry.getEntityState<PlayerState>(standalonePlayerEntityId);
+  };
+  const exportPausedMainMenuWorldSave = (): boolean => {
+    try {
+      downloadWorldSaveEnvelope({
+        envelope: createWorldSessionSaveEnvelope({
+          source: {
+            createWorldSnapshot: () => renderer.createWorldSnapshot(),
+            getStandalonePlayerState,
+            getCameraFollowOffset: () => cameraFollowOffset
+          }
+        })
+      });
+      return true;
+    } catch (error) {
+      console.warn('Failed to export world save.', error);
+      return false;
+    }
   };
   const getStandalonePlayerRenderStateSnapshot =
     (): EntityRenderStateSnapshot<StandalonePlayerRenderState> | null => {

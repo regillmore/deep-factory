@@ -20,6 +20,7 @@ import {
 } from './ui/appShell';
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
+import { TileWorld } from './world/world';
 
 const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
   'return-to-main-menu': 'X',
@@ -264,6 +265,7 @@ const testRuntime = vi.hoisted(() => {
     },
     latestDebugOverlayInspectState: null as DebugOverlayInspectState | null,
     latestDebugEditStatusStripState: null as DebugEditStatusStripState | null,
+    rendererWorldSnapshot: null as ReturnType<TileWorld['createSnapshot']> | null,
     rendererPlayerSpawnLiquidSafetyStatus: 'safe' as 'safe' | 'overlap',
     playerSpawnPoint: null as null | {
       anchorTileX: number;
@@ -283,7 +285,8 @@ const testRuntime = vi.hoisted(() => {
       };
     },
     gameLoopStartCount: 0,
-    storageValues: new Map<string, string>()
+    storageValues: new Map<string, string>(),
+    downloadedWorldSaveEnvelopes: [] as unknown[]
   };
 });
 
@@ -521,6 +524,13 @@ vi.mock('./gl/renderer', () => ({
 
     getLiquidRenderCardinalMask(): number | null {
       return testRuntime.rendererLiquidRenderCardinalMask;
+    }
+
+    createWorldSnapshot() {
+      if (testRuntime.rendererWorldSnapshot === null) {
+        throw new Error('expected renderer world snapshot');
+      }
+      return testRuntime.rendererWorldSnapshot;
     }
 
     resetWorld(): void {}
@@ -820,6 +830,13 @@ vi.mock('./ui/appShell', async () => {
     }
   };
 });
+
+vi.mock('./mainWorldSaveDownload', () => ({
+  downloadWorldSaveEnvelope: vi.fn(({ envelope }: { envelope: unknown }) => {
+    testRuntime.downloadedWorldSaveEnvelopes.push(envelope);
+    return 'deep-factory-world-save-2026-03-08T05-06-07Z.json';
+  })
+}));
 
 vi.mock('./ui/debugOverlay', () => ({
   DebugOverlay: class {
@@ -1363,11 +1380,13 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.latestRendererRenderFrameState = null;
     testRuntime.latestDebugOverlayInspectState = null;
     testRuntime.latestDebugEditStatusStripState = null;
+    testRuntime.rendererWorldSnapshot = new TileWorld(0).createSnapshot();
     testRuntime.rendererPlayerSpawnLiquidSafetyStatus = 'safe';
     testRuntime.debugTileInspectPinRequests = [];
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint();
     testRuntime.gameLoopStartCount = 0;
     testRuntime.storageValues.clear();
+    testRuntime.downloadedWorldSaveEnvelopes = [];
 
     vi.stubGlobal('HTMLElement', testRuntime.FakeHTMLElement);
     vi.stubGlobal('navigator', { maxTouchPoints: 0 });
@@ -1950,7 +1969,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
     testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
-    testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
+    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
 
     expect(testRuntime.debugTileEditHistoryConstructCount).toBe(historyConstructCountBeforeReset + 1);
     expect(testRuntime.debugEditControlsSetHistoryStateCallCount).toBe(historySyncCountBeforeReset + 1);
@@ -1998,7 +2017,7 @@ describe('main.ts shell state orchestration', () => {
     });
 
     testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
-    testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
+    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
 
     expect(testRuntime.cameraInstance.x).toBe(88);
     expect(testRuntime.cameraInstance.y).toBe(50);
@@ -2050,7 +2069,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
     testRuntime.latestRendererRenderFrameState = null;
-    testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
+    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
     runRenderFrame(1000 / 60, 0.5);
 
     expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
@@ -2164,7 +2183,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
     testRuntime.rendererPlayerCollisionContactsQueue = [noContacts];
     testRuntime.latestRendererRenderFrameState = null;
-    testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
+    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
     runRenderFrame(1000 / 60, 0.5);
 
     expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
@@ -4795,6 +4814,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
     testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
+    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
 
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
     expect(testRuntime.gameLoopStartCount).toBe(0);
@@ -4842,6 +4862,55 @@ describe('main.ts shell state orchestration', () => {
     expect(dispatchKeydown('n').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
     expect(testRuntime.gameLoopStartCount).toBe(1);
+  });
+
+  it('downloads the current paused-session world save without mutating the active session', async () => {
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setTile(5, -20, 6)).toBe(true);
+    testRuntime.rendererWorldSnapshot = savedWorld.createSnapshot();
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    const pausedState = createExpectedPausedMainMenuState();
+    const persistedShellStateBeforeExport =
+      testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null;
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+
+    testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
+
+    expect(testRuntime.downloadedWorldSaveEnvelopes).toHaveLength(1);
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+    expect(testRuntime.gameLoopStartCount).toBe(1);
+    expect(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null).toBe(
+      persistedShellStateBeforeExport
+    );
+
+    const downloadedEnvelope = testRuntime.downloadedWorldSaveEnvelopes[0] as {
+      kind: string;
+      version: number;
+      session: {
+        standalonePlayerState: {
+          position: { x: number; y: number };
+        } | null;
+        cameraFollowOffset: {
+          x: number;
+          y: number;
+        };
+      };
+      worldSnapshot: unknown;
+    };
+
+    expect(downloadedEnvelope.kind).toBe('deep-factory.world-save');
+    expect(downloadedEnvelope.version).toBe(1);
+    expect(downloadedEnvelope.worldSnapshot).toEqual(testRuntime.rendererWorldSnapshot);
+    expect(downloadedEnvelope.session.cameraFollowOffset).toEqual({ x: 0, y: 0 });
+    expect(downloadedEnvelope.session.standalonePlayerState).not.toBeNull();
+    expect(downloadedEnvelope.session.standalonePlayerState?.position).toEqual({ x: 8, y: 0 });
   });
 
   it('keeps non-shortcuts shell overlay visibility synchronized through shell-driven enter, pause, and resume transitions', async () => {
