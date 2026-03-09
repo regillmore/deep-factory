@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-09: Unsaved paused-session warning state should stay separate from clear-saved-world autosave suppression
+
+- Decision: The paused menu now tracks `Saved World Status` warning cause separately from the explicit `Clear Saved World` autosave-suppression flag, so imported sessions that failed to rewrite browser resume data can keep warning copy visible until a later save succeeds without inheriting clear-save suppression behavior.
+- Reason: An imported session can be unsaved in browser storage even though autosave should still be allowed on later pause or page-hide paths, so one boolean cannot safely represent both warning copy and persistence suppression.
+- Consequence: Future paused-menu save-status warnings should extend the shared saved-world-status cause state, while only explicit clear-save flows should suppress paused-menu autosave.
+
 ### 2026-03-09: Import persistence failures should keep the restored paused session live while warning that browser resume was not rewritten
 
 - Decision: When a paused-menu import successfully restores world and session state in memory but the follow-up browser-resume save rewrite fails, the current tab keeps the restored paused session active and surfaces warning copy instead of rolling the runtime back.

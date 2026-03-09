@@ -73,7 +73,8 @@ import {
   createWebGlUnavailableBootShellState,
   type AppShellScreen,
   type PausedMainMenuExportResult,
-  type PausedMainMenuImportResult
+  type PausedMainMenuImportResult,
+  type PausedMainMenuSavedWorldStatus
 } from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
@@ -516,6 +517,7 @@ const bootstrap = async (): Promise<void> => {
   let worldSessionStarted = false;
   let worldSessionLoopStarted = false;
   let pausedMainMenuWorldSaveCleared = false;
+  let pausedMainMenuSavedWorldStatus: PausedMainMenuSavedWorldStatus | null = null;
   let pausedMainMenuExportResult: PausedMainMenuExportResult | null = null;
   let pausedMainMenuImportResult: PausedMainMenuImportResult | null = null;
   let currentScreen: AppShellScreen = 'boot';
@@ -679,7 +681,7 @@ const bootstrap = async (): Promise<void> => {
         shellActionKeybindings,
         shellActionKeybindingsDefaultedFromPersistedState,
         pausedMainMenuImportResult,
-        pausedMainMenuWorldSaveCleared,
+        pausedMainMenuSavedWorldStatus,
         pausedMainMenuExportResult
       )
     );
@@ -1050,6 +1052,8 @@ const bootstrap = async (): Promise<void> => {
         createCurrentWorldSessionSaveEnvelope()
       );
       if (persisted) {
+        pausedMainMenuWorldSaveCleared = false;
+        pausedMainMenuSavedWorldStatus = null;
         return {
           status: 'persisted'
         };
@@ -2343,6 +2347,7 @@ const bootstrap = async (): Promise<void> => {
   const startFreshWorldSessionFromMainMenu = (): void => {
     if (loop === null || !worldSessionStarted) return;
     pausedMainMenuWorldSaveCleared = false;
+    pausedMainMenuSavedWorldStatus = null;
     pausedMainMenuExportResult = null;
     pausedMainMenuImportResult = null;
     clearPersistedCurrentWorldSession();
@@ -2358,6 +2363,7 @@ const bootstrap = async (): Promise<void> => {
       return false;
     }
     pausedMainMenuWorldSaveCleared = true;
+    pausedMainMenuSavedWorldStatus = 'cleared';
     showMainMenuShellState();
     return true;
   };
@@ -3084,6 +3090,7 @@ const bootstrap = async (): Promise<void> => {
         }
       });
       pausedMainMenuWorldSaveCleared = false;
+      pausedMainMenuSavedWorldStatus = null;
       pausedMainMenuExportResult = null;
       pausedMainMenuImportResult = null;
       resetFreshWorldSessionDebugEditState();
@@ -3093,6 +3100,7 @@ const bootstrap = async (): Promise<void> => {
       const persistenceResult = persistCurrentWorldSessionWithResult();
       renderWorldPreview();
       if (persistenceResult.status !== 'persisted') {
+        pausedMainMenuSavedWorldStatus = 'import-persistence-failed';
         console.warn('Failed to persist restored world save.', persistenceResult.reason);
         return {
           status: 'persistence-failed',

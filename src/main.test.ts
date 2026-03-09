@@ -20,7 +20,8 @@ import {
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState,
   type PausedMainMenuExportResult,
-  type PausedMainMenuImportResult
+  type PausedMainMenuImportResult,
+  type PausedMainMenuSavedWorldStatus
 } from './ui/appShell';
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
@@ -1300,6 +1301,7 @@ const createExpectedPausedMainMenuState = (
     exportResult: PausedMainMenuExportResult;
     importResult: PausedMainMenuImportResult;
     worldSaveCleared: boolean;
+    savedWorldStatus: PausedMainMenuSavedWorldStatus;
   }> = {}
 ) => {
   const shellActionKeybindingLoad = loadShellActionKeybindingStateWithDefaultFallbackStatus({
@@ -1317,7 +1319,7 @@ const createExpectedPausedMainMenuState = (
     shellActionKeybindingLoad.state,
     shellActionKeybindingLoad.defaultedFromPersistedState,
     options.importResult ?? null,
-    options.worldSaveCleared ?? false,
+    options.savedWorldStatus ?? (options.worldSaveCleared ? 'cleared' : null),
     options.exportResult ?? null
   );
 };
@@ -5376,13 +5378,32 @@ describe('main.ts shell state orchestration', () => {
           status: 'persistence-failed',
           fileName: 'restore.json',
           reason: 'Browser resume data was not updated.'
-        }
+        },
+        savedWorldStatus: 'import-persistence-failed'
       })
     );
     expect(warnSpy).toHaveBeenCalledWith(
       'Failed to persist restored world save.',
       'Browser resume data was not updated.'
     );
+
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(readPersistedWorldSaveEnvelope()).toBeNull();
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        savedWorldStatus: 'import-persistence-failed'
+      })
+    );
+
+    testRuntime.storageSetItemErrorsByKey.delete(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY);
+
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(readPersistedWorldSaveEnvelope()).not.toBeNull();
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
     warnSpy.mockRestore();
   });
 

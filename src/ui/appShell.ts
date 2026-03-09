@@ -71,6 +71,8 @@ export type PausedMainMenuImportResult =
   | PausedMainMenuRestoreFailedImportResult
   | PausedMainMenuPersistenceFailedImportResult;
 
+export type PausedMainMenuSavedWorldStatus = 'cleared' | 'import-persistence-failed';
+
 export interface PausedMainMenuDownloadedExportResult {
   status: 'downloaded';
   fileName: string | null;
@@ -181,24 +183,50 @@ const createPausedMainMenuExportResultMenuSection = (
       };
   }
 };
-const createPausedMainMenuClearedWorldSaveStatusMenuSection = (): AppShellMenuSection => ({
-  title: 'Saved World Status',
-  lines: [
-    'This paused session is no longer browser-saved because Clear Saved World removed its local resume envelope.',
-    'Resume World or a replacement save path writes a new browser save for the current session.'
-  ],
-  metadataRows: [
-    {
-      label: 'Status',
-      value: 'Not browser saved'
-    },
-    {
-      label: 'Saved again by',
-      value: 'Resume World, Import World Save, New World'
-    }
-  ],
-  tone: 'warning'
-});
+const createPausedMainMenuSavedWorldStatusMenuSection = (
+  savedWorldStatus: PausedMainMenuSavedWorldStatus
+): AppShellMenuSection => {
+  switch (savedWorldStatus) {
+    case 'cleared':
+      return {
+        title: 'Saved World Status',
+        lines: [
+          'This paused session is no longer browser-saved because Clear Saved World removed its local resume envelope.',
+          'Resume World or a replacement save path writes a new browser save for the current session.'
+        ],
+        metadataRows: [
+          {
+            label: 'Status',
+            value: 'Not browser saved'
+          },
+          {
+            label: 'Saved again by',
+            value: 'Resume World, Import World Save, New World'
+          }
+        ],
+        tone: 'warning'
+      };
+    case 'import-persistence-failed':
+      return {
+        title: 'Saved World Status',
+        lines: [
+          'This imported paused session is still live in the current tab, but it is not browser-saved because rewriting its local resume envelope failed after restore.',
+          'This warning clears after a later browser-save rewrite succeeds for the current session.'
+        ],
+        metadataRows: [
+          {
+            label: 'Status',
+            value: 'Not browser saved'
+          },
+          {
+            label: 'Saved again by',
+            value: 'Later pause or page hide, Import World Save, New World'
+          }
+        ],
+        tone: 'warning'
+      };
+  }
+};
 const createPausedMainMenuShellActionKeybindingSummaryRows = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ): readonly AppShellMenuSectionMetadataRow[] => [
@@ -342,7 +370,7 @@ export const createPausedMainMenuMenuSections = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
   shellActionKeybindingsDefaultedFromPersistedState = false,
   importResult: PausedMainMenuImportResult | null = null,
-  worldSaveCleared = false,
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null = null,
   exportResult: PausedMainMenuExportResult | null = null
 ): readonly AppShellMenuSection[] => {
   const persistenceSummary = createWorldSessionShellStatePersistenceSummary(
@@ -416,7 +444,9 @@ export const createPausedMainMenuMenuSections = (
         }
       ]
     },
-    ...(worldSaveCleared ? [createPausedMainMenuClearedWorldSaveStatusMenuSection()] : []),
+    ...(savedWorldStatus === null
+      ? []
+      : [createPausedMainMenuSavedWorldStatusMenuSection(savedWorldStatus)]),
     {
       title: 'Reset Shell Toggles',
       lines: [
@@ -491,7 +521,7 @@ export const createPausedMainMenuShellState = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
   shellActionKeybindingsDefaultedFromPersistedState = false,
   importResult: PausedMainMenuImportResult | null = null,
-  worldSaveCleared = false,
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null = null,
   exportResult: PausedMainMenuExportResult | null = null
 ): AppShellState => ({
   screen: 'main-menu',
@@ -503,7 +533,7 @@ export const createPausedMainMenuShellState = (
     shellActionKeybindings,
     shellActionKeybindingsDefaultedFromPersistedState,
     importResult,
-    worldSaveCleared,
+    savedWorldStatus,
     exportResult
   ),
   primaryActionLabel: 'Resume World',
@@ -607,7 +637,7 @@ export const createMainMenuShellState = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
   shellActionKeybindingsDefaultedFromPersistedState = false,
   importResult: PausedMainMenuImportResult | null = null,
-  worldSaveCleared = false,
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null = null,
   exportResult: PausedMainMenuExportResult | null = null
 ): AppShellState =>
   hasResumableWorldSession
@@ -617,7 +647,7 @@ export const createMainMenuShellState = (
         shellActionKeybindings,
         shellActionKeybindingsDefaultedFromPersistedState,
         importResult,
-        worldSaveCleared,
+        savedWorldStatus,
         exportResult
       )
     : createFirstLaunchMainMenuShellState();

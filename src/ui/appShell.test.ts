@@ -87,6 +87,10 @@ const CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_STATUS_LINES = [
   'This paused session is no longer browser-saved because Clear Saved World removed its local resume envelope.',
   'Resume World or a replacement save path writes a new browser save for the current session.'
 ] as const;
+const IMPORTED_SESSION_PERSISTENCE_FAILED_SAVED_WORLD_STATUS_LINES = [
+  'This imported paused session is still live in the current tab, but it is not browser-saved because rewriting its local resume envelope failed after restore.',
+  'This warning clears after a later browser-save rewrite succeeds for the current session.'
+] as const;
 const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Browser shell storage is unavailable, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
@@ -388,7 +392,7 @@ describe('resolveAppShellViewModel', () => {
         createDefaultShellActionKeybindingState(),
         false,
         null,
-        false,
+        null,
         {
           status: 'downloaded',
           fileName: 'deep-factory-world-save-2026-03-09T05-46-40Z.json'
@@ -421,7 +425,7 @@ describe('resolveAppShellViewModel', () => {
         createDefaultShellActionKeybindingState(),
         false,
         null,
-        false,
+        null,
         {
           status: 'failed',
           reason: 'blocked download'
@@ -587,7 +591,7 @@ describe('resolveAppShellViewModel', () => {
         createDefaultShellActionKeybindingState(),
         false,
         null,
-        true
+        'cleared'
       )
     );
 
@@ -602,6 +606,35 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'Saved again by',
           value: 'Resume World, Import World Save, New World'
+        }
+      ],
+      tone: 'warning'
+    });
+  });
+
+  it('adds a paused-menu saved-world-status card when an imported session is still not browser-saved after restore persistence failure', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        'import-persistence-failed'
+      )
+    );
+
+    expect(viewModel.menuSections[4]).toEqual({
+      title: 'Saved World Status',
+      lines: [...IMPORTED_SESSION_PERSISTENCE_FAILED_SAVED_WORLD_STATUS_LINES],
+      metadataRows: [
+        {
+          label: 'Status',
+          value: 'Not browser saved'
+        },
+        {
+          label: 'Saved again by',
+          value: 'Later pause or page hide, Import World Save, New World'
         }
       ],
       tone: 'warning'
@@ -1245,7 +1278,7 @@ describe('createPausedMainMenuShellState', () => {
         createDefaultShellActionKeybindingState(),
         false,
         null,
-        true
+        'cleared'
       )
     ).toEqual({
       screen: 'main-menu',

@@ -6,7 +6,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 396. Add paused-menu import-picker-start-failure copy that surfaces when the browser JSON picker throws before any selection result, with app-shell and main regressions.
 397. Add paused-menu clear-saved-world-failure copy that surfaces when deleting the browser-resume world save fails, with app-shell and main regressions.
-398. Add paused-menu imported-session saved-world-status copy that persists after an import rewrite failure until a later browser-save rewrite succeeds, with app-shell and main regressions.
 
 ## Networking scaffolding
 
@@ -50,3 +49,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 363. Add a bomb-demolition combat slice after hostile-slime combat (`213`) and inventory basics (`214`): stackable bomb hotbar slots, mixed-device throw aiming with fixed-step fuse timing, terrain blast edits plus player/slime damage falloff, and save/load regressions for cratered terrain plus remaining bomb stacks.
 364. Add a recall-mirror recovery slice after inventory basics (`214`) and bed-checkpoint respawn (`338`): a non-stackable mirror hotbar slot, mixed-device use input with fixed-step channel/cancel rules, teleport to the latest valid checkpoint or world spawn, and deterministic cooldown regressions.
 372. Add a bucket liquid-transfer utility slice after inventory basics (`214`) and save/load (`19-21`): stackable empty, water, and lava bucket hotbar slots, mixed-device source pickup plus nearby-tile pour placement, deterministic liquid-volume regressions, and snapshot regressions for bucket contents plus resident liquid state.
+399. Add a fall-damage survival slice after entity scaffolding (`17-18`): fixed-step landing-speed thresholds, player health loss plus brief recovery invulnerability, and save/load regressions for post-fall health state.
