@@ -53,7 +53,9 @@ import {
   saveWorldSessionShellState,
   resolveWorldSessionShellStateAfterPausedMainMenuTransition
 } from './mainWorldSessionShellState';
+import type { WorldSaveEnvelope } from './mainWorldSave';
 import { downloadWorldSaveEnvelope } from './mainWorldSaveDownload';
+import { restoreWorldSessionFromSaveEnvelope } from './mainWorldSessionRestore';
 import { createWorldSessionSaveEnvelope } from './mainWorldSessionSave';
 import { DebugOverlay, type DebugOverlayInspectState } from './ui/debugOverlay';
 import {
@@ -439,7 +441,16 @@ type InWorldShellActionType =
   | 'recenter-camera';
 type InWorldShellNonToggleActionType = Exclude<InWorldShellActionType, InWorldShellToggleActionType>;
 
+let restorePausedWorldSessionFromSaveEnvelopeAction:
+  | ((envelope: WorldSaveEnvelope) => boolean)
+  | null = null;
+
+export const restorePausedWorldSessionFromSaveEnvelope = (
+  envelope: WorldSaveEnvelope
+): boolean => restorePausedWorldSessionFromSaveEnvelopeAction?.(envelope) ?? false;
+
 const bootstrap = async (): Promise<void> => {
+  restorePausedWorldSessionFromSaveEnvelopeAction = null;
   const touchControlsAvailable = supportsTouchPlayerControls();
   const worldSessionShellStateStorage = (() => {
     try {
@@ -1014,6 +1025,16 @@ const bootstrap = async (): Promise<void> => {
     pendingStandalonePlayerFixedStepResult = null;
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
   };
+  const restoreStandalonePlayerSessionState = (playerState: PlayerState | null): void => {
+    replaceWorldSessionEntityRegistry();
+    resetStandalonePlayerTransitionState();
+    lastAppliedPlayerFollowCameraPosition = null;
+    if (playerState === null) {
+      return;
+    }
+
+    spawnStandalonePlayerEntity(playerState);
+  };
   const setStandalonePlayerState = (nextPlayerState: PlayerState): void => {
     if (standalonePlayerEntityId === null) {
       throw new Error('Cannot replace standalone player state before the entity is spawned');
@@ -1234,9 +1255,12 @@ const bootstrap = async (): Promise<void> => {
     }
   };
 
-  const refreshResolvedPlayerSpawn = (): void => {
+  const resolveCurrentWorldPlayerSpawn = (): void => {
     resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
     playerSpawnNeedsRefresh = false;
+  };
+  const refreshResolvedPlayerSpawn = (): void => {
+    resolveCurrentWorldPlayerSpawn();
     const standalonePlayerState = getStandalonePlayerState();
     if (standalonePlayerState === null && resolvedPlayerSpawn) {
       const spawnedPlayerState = spawnStandalonePlayerEntity(
@@ -2819,6 +2843,40 @@ const bootstrap = async (): Promise<void> => {
       entities: rendererEntityFrameStates,
       renderAlpha: 1
     });
+  };
+
+  restorePausedWorldSessionFromSaveEnvelopeAction = (envelope: WorldSaveEnvelope): boolean => {
+    if (currentScreen !== 'main-menu' || loop === null || !worldSessionStarted) {
+      return false;
+    }
+
+    try {
+      restoreWorldSessionFromSaveEnvelope({
+        envelope,
+        target: {
+          loadWorldSnapshot: (snapshot) => {
+            renderer.loadWorldSnapshot(snapshot);
+          },
+          restoreStandalonePlayerState: (playerState) => {
+            restoreStandalonePlayerSessionState(playerState);
+          },
+          restoreCameraFollowOffset: (nextCameraFollowOffset) => {
+            cameraFollowOffset = {
+              x: nextCameraFollowOffset.x,
+              y: nextCameraFollowOffset.y
+            };
+          }
+        }
+      });
+      resetFreshWorldSessionDebugEditState();
+      clearPinnedDebugTileInspect();
+      resolveCurrentWorldPlayerSpawn();
+      renderWorldPreview();
+      return true;
+    } catch (error) {
+      console.warn('Failed to restore world save.', error);
+      return false;
+    }
   };
 
   loop = new GameLoop(

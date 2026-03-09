@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-09: Paused-session restore should reset session-only edit interaction state while reusing renderer and input
+
+- Decision: `src/main.ts` now applies decoded paused-session restore envelopes through the shared restore helper while keeping the existing renderer and input instances alive, then clears debug-edit history, armed tools, pinned inspect state, and player-transition presentation before rerendering the paused preview.
+- Reason: Importing or resuming saved world state should replace world-owned and session-owned runtime data without dragging old-world undo stacks, armed edit tools, or placeholder transition latches across the restore boundary, and rebuilding renderer or input would duplicate bootstrap work unnecessarily.
+- Consequence: Future paused-session import or persistence restore wiring should extend this runtime restore action and its reset scope instead of rebuilding renderer/input or preserving old-world interaction state across a restore.
+
 ### 2026-03-09: Session restore should flow through a shared helper and renderer snapshot-load seam
 
 - Decision: Decoded `deep-factory.world-save` envelopes now restore through `src/mainWorldSessionRestore.ts`, which re-normalizes the envelope and loads the nested `TileWorld` snapshot through `Renderer.loadWorldSnapshot()` before forwarding cloned standalone-player and camera-follow session state to a session-owned restore target.

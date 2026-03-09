@@ -5,8 +5,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Save/load
 
 21. Add a local persistence adapter (`localStorage` or downloadable JSON) on top of the snapshot format.
-385. Add a paused-menu JSON world-save import picker that validates a selected top-level save envelope and hands it to the paused-session restore runtime action from task `386`, with regressions for canceled picks and rejected envelopes.
-386. Add a paused-session runtime restore action in `src/main.ts` that routes decoded world-save envelopes through the shared session restore helper without rebuilding renderer or input state, with focused session-reset regressions.
+385. Add a paused-menu JSON world-save import picker that validates a selected top-level save envelope and hands it to the paused-session restore runtime action in `src/main.ts`, with regressions for canceled picks and rejected envelopes.
+387. Add paused-menu import-result copy that surfaces the last rejected world-save envelope reason after task `385` wires the JSON picker into runtime restore, with app-shell regressions.
 
 ## Networking scaffolding
 

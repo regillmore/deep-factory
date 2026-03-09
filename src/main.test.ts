@@ -11,6 +11,7 @@ import {
   createDefaultWorldSessionShellState,
   WORLD_SESSION_SHELL_STATE_STORAGE_KEY
 } from './mainWorldSessionShellState';
+import { createWorldSaveEnvelope } from './mainWorldSave';
 import {
   createDefaultBootShellState,
   createInWorldShellState,
@@ -20,6 +21,7 @@ import {
 } from './ui/appShell';
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
+import { createPlayerState, getPlayerCameraFocusPoint } from './world/playerState';
 import { TileWorld } from './world/world';
 
 const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
@@ -163,6 +165,9 @@ const testRuntime = vi.hoisted(() => {
     playerSpawnMarkerInstance: null as null | { visible: boolean },
     rendererConstructorError: null as unknown,
     rendererInitializeError: null as unknown,
+    rendererConstructCount: 0,
+    rendererInstance: null as object | null,
+    rendererLoadWorldSnapshotCallCount: 0,
     gameLoopFixedUpdate: null as null | ((fixedDt: number) => void),
     gameLoopRender: null as null | ((alpha: number, frameDtMs: number) => void),
     performanceNow: 1000,
@@ -286,7 +291,8 @@ const testRuntime = vi.hoisted(() => {
     },
     gameLoopStartCount: 0,
     storageValues: new Map<string, string>(),
-    downloadedWorldSaveEnvelopes: [] as unknown[]
+    downloadedWorldSaveEnvelopes: [] as unknown[],
+    inputControllerConstructCount: 0
   };
 });
 
@@ -324,6 +330,8 @@ vi.mock('./core/gameLoop', () => ({
 vi.mock('./gl/renderer', () => ({
   Renderer: class {
     constructor() {
+      testRuntime.rendererConstructCount += 1;
+      testRuntime.rendererInstance = this;
       if (testRuntime.rendererConstructorError !== null) {
         throw testRuntime.rendererConstructorError;
       }
@@ -533,6 +541,11 @@ vi.mock('./gl/renderer', () => ({
       return testRuntime.rendererWorldSnapshot;
     }
 
+    loadWorldSnapshot(snapshot: ReturnType<TileWorld['createSnapshot']>): void {
+      testRuntime.rendererLoadWorldSnapshotCallCount += 1;
+      testRuntime.rendererWorldSnapshot = snapshot;
+    }
+
     resetWorld(): void {}
 
     stepPlayerState<T>(state: T, fixedDt: number, intent: unknown): T {
@@ -592,6 +605,7 @@ vi.mock('./input/controller', () => ({
       testRuntime.initialArmedToolKinds.ellipseOutlineKind;
 
     constructor() {
+      testRuntime.inputControllerConstructCount += 1;
       testRuntime.inputControllerInstance = this;
     }
 
@@ -837,6 +851,16 @@ vi.mock('./mainWorldSaveDownload', () => ({
     return 'deep-factory-world-save-2026-03-08T05-06-07Z.json';
   })
 }));
+
+vi.mock('./mainWorldSessionRestore', async () => {
+  const actual =
+    await vi.importActual<typeof import('./mainWorldSessionRestore')>('./mainWorldSessionRestore');
+
+  return {
+    ...actual,
+    restoreWorldSessionFromSaveEnvelope: vi.fn(actual.restoreWorldSessionFromSaveEnvelope)
+  };
+});
 
 vi.mock('./ui/debugOverlay', () => ({
   DebugOverlay: class {
@@ -1316,6 +1340,7 @@ describe('main.ts shell state orchestration', () => {
       ellipseOutlineKind: null
     };
     testRuntime.inputControllerInstance = null;
+    testRuntime.inputControllerConstructCount = 0;
     testRuntime.pointerInspect = null;
     testRuntime.debugOverlayInstance = null;
     testRuntime.debugEditControlsInitialPreferenceSnapshot = null;
@@ -1333,6 +1358,9 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.playerSpawnMarkerInstance = null;
     testRuntime.rendererConstructorError = null;
     testRuntime.rendererInitializeError = null;
+    testRuntime.rendererConstructCount = 0;
+    testRuntime.rendererInstance = null;
+    testRuntime.rendererLoadWorldSnapshotCallCount = 0;
     testRuntime.gameLoopFixedUpdate = null;
     testRuntime.gameLoopRender = null;
     testRuntime.performanceNow = 1000;
@@ -4911,6 +4939,99 @@ describe('main.ts shell state orchestration', () => {
     expect(downloadedEnvelope.session.cameraFollowOffset).toEqual({ x: 0, y: 0 });
     expect(downloadedEnvelope.session.standalonePlayerState).not.toBeNull();
     expect(downloadedEnvelope.session.standalonePlayerState?.position).toEqual({ x: 8, y: 0 });
+  });
+
+  it('restores a paused session through the shared restore helper without rebuilding renderer or input state', async () => {
+    testRuntime.debugTileEditHistoryConstructorStatuses = [
+      {
+        undoStrokeCount: 4,
+        redoStrokeCount: 1
+      },
+      {
+        undoStrokeCount: 0,
+        redoStrokeCount: 0
+      }
+    ];
+    const restoredWorld = new TileWorld(0);
+    expect(restoredWorld.setTile(5, -20, 6)).toBe(true);
+    const restoredPlayerState = createPlayerState({
+      position: { x: 72, y: 96 },
+      velocity: { x: -14, y: 28 },
+      grounded: false,
+      facing: 'left',
+      health: 62,
+      lavaDamageTickSecondsRemaining: 0.5
+    });
+    const restoredCameraFollowOffset = { x: 18, y: -12 };
+    const restoreEnvelope = createWorldSaveEnvelope({
+      worldSnapshot: restoredWorld.createSnapshot(),
+      standalonePlayerState: restoredPlayerState,
+      cameraFollowOffset: restoredCameraFollowOffset
+    });
+
+    const mainModule = await import('./main');
+    const restoreModule = await import('./mainWorldSessionRestore');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('f', 'KeyF').prevented).toBe(true);
+    expect(readArmedToolKinds().floodFillKind).toBe('place');
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    const pausedState = createExpectedPausedMainMenuState();
+    const rendererInstanceBeforeRestore = testRuntime.rendererInstance;
+    const inputControllerBeforeRestore = testRuntime.inputControllerInstance;
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+    expect(rendererInstanceBeforeRestore).not.toBeNull();
+    expect(inputControllerBeforeRestore).not.toBeNull();
+
+    expect(mainModule.restorePausedWorldSessionFromSaveEnvelope(restoreEnvelope)).toBe(true);
+
+    expect(restoreModule.restoreWorldSessionFromSaveEnvelope).toHaveBeenCalledTimes(1);
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+    expect(testRuntime.gameLoopStartCount).toBe(1);
+    expect(testRuntime.rendererConstructCount).toBe(1);
+    expect(testRuntime.inputControllerConstructCount).toBe(1);
+    expect(testRuntime.rendererInstance).toBe(rendererInstanceBeforeRestore);
+    expect(testRuntime.inputControllerInstance).toBe(inputControllerBeforeRestore);
+    expect(testRuntime.rendererLoadWorldSnapshotCallCount).toBe(1);
+    expect(testRuntime.debugTileEditHistoryConstructCount).toBe(2);
+    expect(testRuntime.debugEditControlsLatestHistoryState).toEqual({
+      undoStrokeCount: 0,
+      redoStrokeCount: 0
+    });
+    expect(testRuntime.cancelArmedDebugToolsCallCount).toBe(1);
+    expect(readArmedToolKinds()).toEqual({
+      floodFillKind: null,
+      lineKind: null,
+      rectKind: null,
+      rectOutlineKind: null,
+      ellipseKind: null,
+      ellipseOutlineKind: null
+    });
+
+    const loadedWorld = new TileWorld(0);
+    loadedWorld.loadSnapshot(testRuntime.rendererWorldSnapshot!);
+    expect(loadedWorld.getTile(5, -20)).toBe(6);
+    expect(testRuntime.latestRendererRenderFrameState?.standalonePlayerCurrentPosition).toEqual({
+      x: 72,
+      y: 96
+    });
+    expect(testRuntime.latestRendererRenderFrameState?.standalonePlayerPreviousPosition).toEqual({
+      x: 72,
+      y: 96
+    });
+    expect(testRuntime.latestRendererRenderFrameState?.standalonePlayerInterpolatedPosition).toEqual({
+      x: 72,
+      y: 96
+    });
+
+    const expectedCameraFocus = getPlayerCameraFocusPoint(restoredPlayerState);
+    expect(testRuntime.cameraInstance).toMatchObject({
+      x: expectedCameraFocus.x + restoredCameraFollowOffset.x,
+      y: expectedCameraFocus.y + restoredCameraFollowOffset.y
+    });
   });
 
   it('keeps non-shortcuts shell overlay visibility synchronized through shell-driven enter, pause, and resume transitions', async () => {
