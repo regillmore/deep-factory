@@ -12,6 +12,7 @@ import {
   WORLD_SESSION_SHELL_STATE_STORAGE_KEY
 } from './mainWorldSessionShellState';
 import { createWorldSaveEnvelope } from './mainWorldSave';
+import { PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY } from './mainWorldSaveLocalPersistence';
 import {
   createDefaultBootShellState,
   createInWorldShellState,
@@ -582,7 +583,22 @@ vi.mock('./gl/renderer', () => ({
         }
       });
       if (testRuntime.rendererStepPlayerStateImpl) {
-        return testRuntime.rendererStepPlayerStateImpl(state, fixedDt, intent) as T;
+        const steppedState = testRuntime.rendererStepPlayerStateImpl(state, fixedDt, intent);
+        if (
+          steppedState &&
+          typeof steppedState === 'object' &&
+          state &&
+          typeof state === 'object' &&
+          !Array.isArray(steppedState) &&
+          !Array.isArray(state)
+        ) {
+          return {
+            ...(state as Record<string, unknown>),
+            ...(steppedState as Record<string, unknown>)
+          } as T;
+        }
+
+        return steppedState as T;
       }
       return state;
     }
@@ -1192,6 +1208,10 @@ const readPersistedShellState = (): ReturnType<typeof createDefaultWorldSessionS
     testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ??
       JSON.stringify(createDefaultWorldSessionShellState())
   );
+const readPersistedWorldSaveEnvelope = (): ReturnType<typeof createWorldSaveEnvelope> | null => {
+  const rawEnvelope = testRuntime.storageValues.get(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY) ?? null;
+  return rawEnvelope === null ? null : JSON.parse(rawEnvelope);
+};
 const readPersistedDebugEditControlState = (): Record<string, unknown> =>
   JSON.parse(testRuntime.storageValues.get(DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY) ?? '{}');
 
@@ -1482,6 +1502,46 @@ describe('main.ts shell state orchestration', () => {
       createRendererInitializationFailedBootShellState(new Error('GPU device lost'))
     );
     expect(testRuntime.gameLoopStartCount).toBe(0);
+  });
+
+  it('boots into the paused main menu when a persisted world-session save exists', async () => {
+    const persistedWorld = new TileWorld(0);
+    expect(persistedWorld.setTile(5, -20, 6)).toBe(true);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: persistedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 72, y: 96 },
+            velocity: { x: -14, y: 28 },
+            grounded: false,
+            facing: 'left',
+            health: 62,
+            lavaDamageTickSecondsRemaining: 0.5
+          }),
+          cameraFollowOffset: { x: 18, y: -12 }
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+    expect(testRuntime.rendererLoadWorldSnapshotCallCount).toBe(1);
+    expect(testRuntime.gameLoopStartCount).toBe(0);
+
+    const loadedWorld = new TileWorld(0);
+    loadedWorld.loadSnapshot(testRuntime.rendererWorldSnapshot!);
+    expect(loadedWorld.getTile(5, -20)).toBe(6);
+    expect(testRuntime.latestRendererRenderFrameState?.standalonePlayerCurrentPosition).toEqual({
+      x: 72,
+      y: 96
+    });
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(testRuntime.gameLoopStartCount).toBe(1);
   });
 
   it('hydrates persisted shell toggles on the first Enter World transition before in-world input changes them', async () => {
@@ -4939,6 +4999,33 @@ describe('main.ts shell state orchestration', () => {
     expect(downloadedEnvelope.session.cameraFollowOffset).toEqual({ x: 0, y: 0 });
     expect(downloadedEnvelope.session.standalonePlayerState).not.toBeNull();
     expect(downloadedEnvelope.session.standalonePlayerState?.position).toEqual({ x: 8, y: 0 });
+  });
+
+  it('persists the latest paused-session world save envelope when returning to the main menu', async () => {
+    const initialWorld = new TileWorld(0);
+    expect(initialWorld.setTile(1, -20, 4)).toBe(true);
+    testRuntime.rendererWorldSnapshot = initialWorld.createSnapshot();
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const pausedWorld = new TileWorld(0);
+    expect(pausedWorld.setTile(5, -20, 6)).toBe(true);
+    testRuntime.rendererWorldSnapshot = pausedWorld.createSnapshot();
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    expect(persistedEnvelope).not.toBeNull();
+    expect(persistedEnvelope?.session.cameraFollowOffset).toEqual({ x: 0, y: 0 });
+    expect(persistedEnvelope?.session.standalonePlayerState?.position).toEqual({ x: 8, y: 0 });
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+    expect(restoredWorld.getTile(5, -20)).toBe(6);
   });
 
   it('restores a paused session through the shared restore helper without rebuilding renderer or input state', async () => {

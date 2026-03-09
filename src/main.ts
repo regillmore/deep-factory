@@ -47,6 +47,11 @@ import {
   type ShellActionKeybindingState
 } from './input/shellActionKeybindings';
 import {
+  clearPersistedWorldSaveEnvelope,
+  loadPersistedWorldSaveEnvelope,
+  savePersistedWorldSaveEnvelope
+} from './mainWorldSaveLocalPersistence';
+import {
   clearWorldSessionShellState,
   createDefaultWorldSessionShellState,
   loadWorldSessionShellStateWithPersistenceAvailability,
@@ -467,9 +472,11 @@ const bootstrap = async (): Promise<void> => {
     initialShellActionKeybindingLoad.defaultedFromPersistedState;
   const defaultWorldSessionShellState = createDefaultWorldSessionShellState();
   let worldSessionStarted = false;
+  let worldSessionLoopStarted = false;
   let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
   let worldSessionShellPersistenceAvailable = true;
+  const persistedWorldSaveEnvelope = loadPersistedWorldSaveEnvelope(worldSessionShellStateStorage);
   const initialWorldSessionShellStateLoad =
     loadWorldSessionShellStateWithPersistenceAvailability(
       worldSessionShellStateStorage,
@@ -529,6 +536,7 @@ const bootstrap = async (): Promise<void> => {
   const returnToMainMenuFromInWorld = (): void => {
     if (currentScreen !== 'in-world') return;
     applyPausedMainMenuWorldSessionShellTransition('pause-to-main-menu');
+    persistCurrentWorldSession();
     showMainMenuShellState();
   };
   const handleMainMenuShellAction = (
@@ -946,16 +954,36 @@ const bootstrap = async (): Promise<void> => {
     }
     return entityRegistry.getEntityState<PlayerState>(standalonePlayerEntityId);
   };
+  const createCurrentWorldSessionSaveEnvelope = (): WorldSaveEnvelope =>
+    createWorldSessionSaveEnvelope({
+      source: {
+        createWorldSnapshot: () => renderer.createWorldSnapshot(),
+        getStandalonePlayerState,
+        getCameraFollowOffset: () => cameraFollowOffset
+      }
+    });
+  const persistCurrentWorldSession = (): boolean => {
+    if (!worldSessionStarted) {
+      return false;
+    }
+
+    try {
+      return savePersistedWorldSaveEnvelope(
+        worldSessionShellStateStorage,
+        createCurrentWorldSessionSaveEnvelope()
+      );
+    } catch (error) {
+      console.warn('Failed to persist world session.', error);
+      return false;
+    }
+  };
+  const clearPersistedCurrentWorldSession = (): void => {
+    clearPersistedWorldSaveEnvelope(worldSessionShellStateStorage);
+  };
   const exportPausedMainMenuWorldSave = (): boolean => {
     try {
       downloadWorldSaveEnvelope({
-        envelope: createWorldSessionSaveEnvelope({
-          source: {
-            createWorldSnapshot: () => renderer.createWorldSnapshot(),
-            getStandalonePlayerState,
-            getCameraFollowOffset: () => cameraFollowOffset
-          }
-        })
+        envelope: createCurrentWorldSessionSaveEnvelope()
       });
       return true;
     } catch (error) {
@@ -2137,19 +2165,32 @@ const bootstrap = async (): Promise<void> => {
     clearPinnedDebugTileInspect();
     resetFreshWorldSessionCameraAndPlayerState();
   };
+  const ensureWorldSessionLoopStarted = (): void => {
+    if (loop === null || worldSessionLoopStarted) {
+      return;
+    }
+
+    loop.start();
+    worldSessionLoopStarted = true;
+  };
   const enterOrResumeWorldSessionFromMainMenu = (): void => {
     if (loop === null) return;
     applyPausedMainMenuWorldSessionShellTransition('resume-paused-world-session');
     enterInWorldShellState();
-    if (worldSessionStarted) return;
-    worldSessionStarted = true;
-    loop.start();
+    if (!worldSessionStarted) {
+      worldSessionStarted = true;
+      persistCurrentWorldSession();
+    }
+    ensureWorldSessionLoopStarted();
   };
   const startFreshWorldSessionFromMainMenu = (): void => {
     if (loop === null || !worldSessionStarted) return;
+    clearPersistedCurrentWorldSession();
     applyPausedMainMenuWorldSessionShellTransition('start-fresh-world-session');
     resetFreshWorldSessionRuntimeState();
+    persistCurrentWorldSession();
     enterInWorldShellState();
+    ensureWorldSessionLoopStarted();
   };
   const resetPausedMainMenuShellTogglePreferences = (): void => {
     if (loop === null || !worldSessionStarted) return;
@@ -2871,6 +2912,8 @@ const bootstrap = async (): Promise<void> => {
       resetFreshWorldSessionDebugEditState();
       clearPinnedDebugTileInspect();
       resolveCurrentWorldPlayerSpawn();
+      clearPersistedCurrentWorldSession();
+      persistCurrentWorldSession();
       renderWorldPreview();
       return true;
     } catch (error) {
@@ -3023,9 +3066,41 @@ const bootstrap = async (): Promise<void> => {
   }
 
   renderer.resize();
-  refreshResolvedPlayerSpawn();
+  if (persistedWorldSaveEnvelope === null) {
+    refreshResolvedPlayerSpawn();
+  } else {
+    try {
+      restoreWorldSessionFromSaveEnvelope({
+        envelope: persistedWorldSaveEnvelope,
+        target: {
+          loadWorldSnapshot: (snapshot) => {
+            renderer.loadWorldSnapshot(snapshot);
+          },
+          restoreStandalonePlayerState: (playerState) => {
+            restoreStandalonePlayerSessionState(playerState);
+          },
+          restoreCameraFollowOffset: (nextCameraFollowOffset) => {
+            cameraFollowOffset = {
+              x: nextCameraFollowOffset.x,
+              y: nextCameraFollowOffset.y
+            };
+          }
+        }
+      });
+      worldSessionStarted = true;
+      resolveCurrentWorldPlayerSpawn();
+    } catch (error) {
+      console.warn('Failed to restore persisted world session.', error);
+      clearPersistedCurrentWorldSession();
+      refreshResolvedPlayerSpawn();
+    }
+  }
   renderWorldPreview();
   showMainMenuShellState();
+
+  window.addEventListener('pagehide', () => {
+    persistCurrentWorldSession();
+  });
 
   window.addEventListener('resize', () => {
     renderer.resize();

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-09: Local persisted world sessions should store the same top-level save envelope and restore through the shared runtime seam
+
+- Decision: Browser-saved world sessions now write the same `deep-factory.world-save` envelope through `src/mainWorldSaveLocalPersistence.ts`, and both boot-time session resume and paused-session replacement restore that envelope through `src/mainWorldSessionRestore.ts` plus `Renderer.loadWorldSnapshot()`.
+- Reason: Download export, local persistence, and restore should share one validated payload and one runtime swap path instead of drifting into separate storage shapes or boot-only world replacement logic.
+- Consequence: Future autosave, clear-saved-session UI, or import work should reuse the persisted-envelope helper and shared session-restore seam instead of inventing a second local-storage format or bypassing the existing restore path.
+
 ### 2026-03-09: Paused-session restore should reset session-only edit interaction state while reusing renderer and input
 
 - Decision: `src/main.ts` now applies decoded paused-session restore envelopes through the shared restore helper while keeping the existing renderer and input instances alive, then clears debug-edit history, armed tools, pinned inspect state, and player-transition presentation before rerendering the paused preview.
