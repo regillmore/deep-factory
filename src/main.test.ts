@@ -293,6 +293,8 @@ const testRuntime = vi.hoisted(() => {
     gameLoopStartCount: 0,
     storageValues: new Map<string, string>(),
     downloadedWorldSaveEnvelopes: [] as unknown[],
+    queuedWorldSaveImportResults: [] as unknown[],
+    worldSaveImportCallCount: 0,
     inputControllerConstructCount: 0
   };
 });
@@ -868,6 +870,20 @@ vi.mock('./mainWorldSaveDownload', () => ({
   })
 }));
 
+vi.mock('./mainWorldSaveImport', async () => {
+  const actual = await vi.importActual<typeof import('./mainWorldSaveImport')>('./mainWorldSaveImport');
+
+  return {
+    ...actual,
+    pickWorldSaveEnvelopeFromJsonPicker: vi.fn(async () => {
+      testRuntime.worldSaveImportCallCount += 1;
+      return (testRuntime.queuedWorldSaveImportResults.shift() ?? {
+        status: 'cancelled'
+      }) as Awaited<ReturnType<typeof actual.pickWorldSaveEnvelopeFromJsonPicker>>;
+    })
+  };
+});
+
 vi.mock('./mainWorldSessionRestore', async () => {
   const actual =
     await vi.importActual<typeof import('./mainWorldSessionRestore')>('./mainWorldSessionRestore');
@@ -1435,6 +1451,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.gameLoopStartCount = 0;
     testRuntime.storageValues.clear();
     testRuntime.downloadedWorldSaveEnvelopes = [];
+    testRuntime.queuedWorldSaveImportResults = [];
+    testRuntime.worldSaveImportCallCount = 0;
 
     vi.stubGlobal('HTMLElement', testRuntime.FakeHTMLElement);
     vi.stubGlobal('navigator', { maxTouchPoints: 0 });
@@ -2057,7 +2075,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
     testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
-    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
+    testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
 
     expect(testRuntime.debugTileEditHistoryConstructCount).toBe(historyConstructCountBeforeReset + 1);
     expect(testRuntime.debugEditControlsSetHistoryStateCallCount).toBe(historySyncCountBeforeReset + 1);
@@ -2105,7 +2123,7 @@ describe('main.ts shell state orchestration', () => {
     });
 
     testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
-    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
+    testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
 
     expect(testRuntime.cameraInstance.x).toBe(88);
     expect(testRuntime.cameraInstance.y).toBe(50);
@@ -2157,7 +2175,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
     testRuntime.latestRendererRenderFrameState = null;
-    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
+    testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
     runRenderFrame(1000 / 60, 0.5);
 
     expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
@@ -2271,7 +2289,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
     testRuntime.rendererPlayerCollisionContactsQueue = [noContacts];
     testRuntime.latestRendererRenderFrameState = null;
-    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
+    testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
     runRenderFrame(1000 / 60, 0.5);
 
     expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
@@ -4903,6 +4921,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
     testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
     testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
+    testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
 
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
     expect(testRuntime.gameLoopStartCount).toBe(0);
@@ -4931,7 +4950,7 @@ describe('main.ts shell state orchestration', () => {
     expect(dispatchKeydown('q').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
 
-    testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
+    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
 
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
     expect(testRuntime.storageValues.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)).toBe(false);
@@ -4999,6 +5018,103 @@ describe('main.ts shell state orchestration', () => {
     expect(downloadedEnvelope.session.cameraFollowOffset).toEqual({ x: 0, y: 0 });
     expect(downloadedEnvelope.session.standalonePlayerState).not.toBeNull();
     expect(downloadedEnvelope.session.standalonePlayerState?.position).toEqual({ x: 8, y: 0 });
+  });
+
+  it('routes a paused-menu imported world save through the shared picker and restore action', async () => {
+    const restoredWorld = new TileWorld(0);
+    expect(restoredWorld.setTile(5, -20, 6)).toBe(true);
+    const restoreEnvelope = createWorldSaveEnvelope({
+      worldSnapshot: restoredWorld.createSnapshot(),
+      standalonePlayerState: createPlayerState({
+        position: { x: 72, y: 96 },
+        velocity: { x: -14, y: 28 },
+        grounded: false,
+        facing: 'left',
+        health: 62,
+        lavaDamageTickSecondsRemaining: 0.5
+      }),
+      cameraFollowOffset: { x: 18, y: -12 }
+    });
+
+    const restoreModule = await import('./mainWorldSessionRestore');
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    const pausedState = createExpectedPausedMainMenuState();
+    testRuntime.queuedWorldSaveImportResults = [
+      {
+        status: 'selected',
+        fileName: 'restore.json',
+        envelope: restoreEnvelope
+      }
+    ];
+
+    testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
+    await flushBootstrap();
+
+    expect(testRuntime.worldSaveImportCallCount).toBe(1);
+    expect(restoreModule.restoreWorldSessionFromSaveEnvelope).toHaveBeenCalledTimes(1);
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+    expect(testRuntime.rendererLoadWorldSnapshotCallCount).toBe(1);
+  });
+
+  it('keeps the paused session unchanged when the world-save import picker is canceled', async () => {
+    const restoreModule = await import('./mainWorldSessionRestore');
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    const pausedState = createExpectedPausedMainMenuState();
+    testRuntime.queuedWorldSaveImportResults = [
+      {
+        status: 'cancelled'
+      }
+    ];
+
+    testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
+    await flushBootstrap();
+
+    expect(testRuntime.worldSaveImportCallCount).toBe(1);
+    expect(restoreModule.restoreWorldSessionFromSaveEnvelope).not.toHaveBeenCalled();
+    expect(testRuntime.rendererLoadWorldSnapshotCallCount).toBe(0);
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+  });
+
+  it('rejects invalid paused-menu imported world saves without mutating the current session', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const restoreModule = await import('./mainWorldSessionRestore');
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    const pausedState = createExpectedPausedMainMenuState();
+    testRuntime.queuedWorldSaveImportResults = [
+      {
+        status: 'rejected',
+        fileName: 'broken.json',
+        reason: 'world save envelope kind must be "deep-factory.world-save"'
+      }
+    ];
+
+    testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
+    await flushBootstrap();
+
+    expect(testRuntime.worldSaveImportCallCount).toBe(1);
+    expect(restoreModule.restoreWorldSessionFromSaveEnvelope).not.toHaveBeenCalled();
+    expect(testRuntime.rendererLoadWorldSnapshotCallCount).toBe(0);
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Rejected imported world save.',
+      'world save envelope kind must be "deep-factory.world-save"'
+    );
+    warnSpy.mockRestore();
   });
 
   it('persists the latest paused-session world save envelope when returning to the main menu', async () => {
@@ -5614,7 +5730,7 @@ describe('main.ts shell state orchestration', () => {
     expect(dispatchKeydown('q').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
 
-    testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
+    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
 
     expect(testRuntime.storageValues.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)).toBe(false);
 

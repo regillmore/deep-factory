@@ -46,6 +46,7 @@ export interface AppShellState {
   secondaryActionLabel?: string | null;
   tertiaryActionLabel?: string | null;
   quaternaryActionLabel?: string | null;
+  quinaryActionLabel?: string | null;
   debugOverlayVisible?: boolean;
   debugEditControlsVisible?: boolean;
   debugEditOverlaysVisible?: boolean;
@@ -155,6 +156,22 @@ export const createPausedMainMenuMenuSections = (
       ]
     },
     {
+      title: 'Import World Save',
+      lines: [
+        'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates.'
+      ],
+      metadataRows: [
+        {
+          label: 'Shortcut',
+          value: 'Button only'
+        },
+        {
+          label: 'Consequence',
+          value: 'Valid imports replace the paused session; canceled or invalid picks do not.'
+        }
+      ]
+    },
+    {
       title: 'Reset Shell Toggles',
       lines: [
         `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
@@ -239,8 +256,9 @@ export const createPausedMainMenuShellState = (
   ),
   primaryActionLabel: 'Resume World',
   secondaryActionLabel: 'Export World Save',
-  tertiaryActionLabel: 'Reset Shell Toggles',
-  quaternaryActionLabel: 'New World'
+  tertiaryActionLabel: 'Import World Save',
+  quaternaryActionLabel: 'Reset Shell Toggles',
+  quinaryActionLabel: 'New World'
 });
 
 export interface AppShellViewModel {
@@ -256,6 +274,7 @@ export interface AppShellViewModel {
   secondaryActionLabel: string | null;
   tertiaryActionLabel: string | null;
   quaternaryActionLabel: string | null;
+  quinaryActionLabel: string | null;
   returnToMainMenuActionLabel: string | null;
   recenterCameraActionLabel: string | null;
   debugOverlayToggleLabel: string | null;
@@ -276,6 +295,7 @@ interface AppShellOptions {
   onSecondaryAction?: (screen: AppShellScreen) => void;
   onTertiaryAction?: (screen: AppShellScreen) => void;
   onQuaternaryAction?: (screen: AppShellScreen) => void;
+  onQuinaryAction?: (screen: AppShellScreen) => void;
   onReturnToMainMenu?: (screen: AppShellScreen) => void;
   onRecenterCamera?: (screen: AppShellScreen) => void;
   onToggleDebugOverlay?: (screen: AppShellScreen) => void;
@@ -392,11 +412,16 @@ const resolveMainMenuSecondaryActionLabel = (label: string): string => label;
 
 const resolveMainMenuTertiaryActionLabel = (label: string): string => label;
 
-const resolveMainMenuQuaternaryActionLabel = (label: string): string =>
+const resolveMainMenuQuaternaryActionLabel = (label: string): string => label;
+
+const resolveMainMenuQuinaryActionLabel = (label: string): string =>
   label === 'New World' ? `${label} (${getDesktopFreshWorldHotkeyLabel()})` : label;
 
 export const resolvePausedMainMenuExportWorldSaveTitle = (): string =>
   'Download a JSON world-save copy of the paused session without changing the current world, player, or camera state';
+
+export const resolvePausedMainMenuImportWorldSaveTitle = (): string =>
+  'Choose a JSON world-save file and replace the paused session only when its top-level envelope validates';
 
 export const resolvePausedMainMenuFreshWorldTitle = (): string =>
   `Discard the paused session, camera state, and undo history, then boot a fresh world (${getDesktopFreshWorldHotkeyLabel()})`;
@@ -418,12 +443,17 @@ export const resolveMainMenuSecondaryActionTitle = (state: AppShellState): strin
     : '';
 
 export const resolveMainMenuTertiaryActionTitle = (state: AppShellState): string =>
-  state.screen === 'main-menu' && state.tertiaryActionLabel === 'Reset Shell Toggles'
-    ? resolvePausedMainMenuResetShellTogglesTitle()
+  state.screen === 'main-menu' && state.tertiaryActionLabel === 'Import World Save'
+    ? resolvePausedMainMenuImportWorldSaveTitle()
     : '';
 
 export const resolveMainMenuQuaternaryActionTitle = (state: AppShellState): string =>
-  state.screen === 'main-menu' && state.quaternaryActionLabel === 'New World'
+  state.screen === 'main-menu' && state.quaternaryActionLabel === 'Reset Shell Toggles'
+    ? resolvePausedMainMenuResetShellTogglesTitle()
+    : '';
+
+export const resolveMainMenuQuinaryActionTitle = (state: AppShellState): string =>
+  state.screen === 'main-menu' && state.quinaryActionLabel === 'New World'
     ? resolvePausedMainMenuFreshWorldTitle()
     : '';
 
@@ -587,6 +617,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         secondaryActionLabel: state.secondaryActionLabel ?? null,
         tertiaryActionLabel: state.tertiaryActionLabel ?? null,
         quaternaryActionLabel: state.quaternaryActionLabel ?? null,
+        quinaryActionLabel: state.quinaryActionLabel ?? null,
         returnToMainMenuActionLabel: null,
         recenterCameraActionLabel: null,
         debugOverlayToggleLabel: null,
@@ -636,6 +667,12 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
                   firstLaunchMainMenuState.quaternaryActionLabel ??
                   ''
               ),
+        quinaryActionLabel:
+          (state.quinaryActionLabel ?? firstLaunchMainMenuState.quinaryActionLabel) == null
+            ? null
+            : resolveMainMenuQuinaryActionLabel(
+                state.quinaryActionLabel ?? firstLaunchMainMenuState.quinaryActionLabel ?? ''
+              ),
         returnToMainMenuActionLabel: null,
         recenterCameraActionLabel: null,
         debugOverlayToggleLabel: null,
@@ -673,6 +710,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         secondaryActionLabel: null,
         tertiaryActionLabel: null,
         quaternaryActionLabel: null,
+        quinaryActionLabel: null,
         returnToMainMenuActionLabel: resolveInWorldReturnToMainMenuActionLabel(
           inWorldState.shellActionKeybindings
         ),
@@ -731,10 +769,12 @@ export class AppShell {
   private secondaryButton: HTMLButtonElement;
   private tertiaryButton: HTMLButtonElement;
   private quaternaryButton: HTMLButtonElement;
+  private quinaryButton: HTMLButtonElement;
   private onPrimaryAction: (screen: AppShellScreen) => void;
   private onSecondaryAction: (screen: AppShellScreen) => void;
   private onTertiaryAction: (screen: AppShellScreen) => void;
   private onQuaternaryAction: (screen: AppShellScreen) => void;
+  private onQuinaryAction: (screen: AppShellScreen) => void;
   private onReturnToMainMenu: (screen: AppShellScreen) => void;
   private onRecenterCamera: (screen: AppShellScreen) => void;
   private onToggleDebugOverlay: (screen: AppShellScreen) => void;
@@ -749,6 +789,7 @@ export class AppShell {
     this.onSecondaryAction = options.onSecondaryAction ?? (() => {});
     this.onTertiaryAction = options.onTertiaryAction ?? (() => {});
     this.onQuaternaryAction = options.onQuaternaryAction ?? (() => {});
+    this.onQuinaryAction = options.onQuinaryAction ?? (() => {});
     this.onReturnToMainMenu = options.onReturnToMainMenu ?? (() => {});
     this.onRecenterCamera = options.onRecenterCamera ?? (() => {});
     this.onToggleDebugOverlay = options.onToggleDebugOverlay ?? (() => {});
@@ -918,6 +959,13 @@ export class AppShell {
     installPointerClickFocusRelease(this.quaternaryButton);
     this.overlayActions.append(this.quaternaryButton);
 
+    this.quinaryButton = document.createElement('button');
+    this.quinaryButton.type = 'button';
+    this.quinaryButton.className = 'app-shell__secondary';
+    this.quinaryButton.addEventListener('click', () => this.onQuinaryAction(this.currentState.screen));
+    installPointerClickFocusRelease(this.quinaryButton);
+    this.overlayActions.append(this.quinaryButton);
+
     container.replaceChildren(this.root);
     this.setState(this.currentState);
   }
@@ -973,11 +1021,15 @@ export class AppShell {
     this.quaternaryButton.textContent = viewModel.quaternaryActionLabel ?? '';
     this.quaternaryButton.hidden = viewModel.quaternaryActionLabel === null;
     this.quaternaryButton.title = resolveMainMenuQuaternaryActionTitle(state);
+    this.quinaryButton.textContent = viewModel.quinaryActionLabel ?? '';
+    this.quinaryButton.hidden = viewModel.quinaryActionLabel === null;
+    this.quinaryButton.title = resolveMainMenuQuinaryActionTitle(state);
     const overlayActionsVisible =
       viewModel.primaryActionLabel !== null ||
       viewModel.secondaryActionLabel !== null ||
       viewModel.tertiaryActionLabel !== null ||
-      viewModel.quaternaryActionLabel !== null;
+      viewModel.quaternaryActionLabel !== null ||
+      viewModel.quinaryActionLabel !== null;
     this.overlayActions.hidden = !overlayActionsVisible;
     this.overlayActions.style.display = resolveAppShellRegionDisplay(overlayActionsVisible, 'flex');
     this.returnToMainMenuActionButton.textContent = viewModel.returnToMainMenuActionLabel ?? '';

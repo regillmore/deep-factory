@@ -59,6 +59,7 @@ import {
   resolveWorldSessionShellStateAfterPausedMainMenuTransition
 } from './mainWorldSessionShellState';
 import type { WorldSaveEnvelope } from './mainWorldSave';
+import { pickWorldSaveEnvelopeFromJsonPicker } from './mainWorldSaveImport';
 import { downloadWorldSaveEnvelope } from './mainWorldSaveDownload';
 import { restoreWorldSessionFromSaveEnvelope } from './mainWorldSessionRestore';
 import { createWorldSessionSaveEnvelope } from './mainWorldSessionSave';
@@ -177,6 +178,7 @@ const STANDALONE_PLAYER_ENTITY_KIND = 'standalone-player';
 type MainMenuShellActionType =
   | 'enter-or-resume-world-session'
   | 'export-world-save'
+  | 'import-world-save'
   | 'start-fresh-world-session'
   | 'reset-shell-toggle-preferences';
 type DebugHistoryActionType = 'undo' | 'redo';
@@ -558,9 +560,12 @@ const bootstrap = async (): Promise<void> => {
       handleMainMenuShellAction(screen, 'export-world-save');
     },
     onTertiaryAction: (screen) => {
-      handleMainMenuShellAction(screen, 'reset-shell-toggle-preferences');
+      handleMainMenuShellAction(screen, 'import-world-save');
     },
     onQuaternaryAction: (screen) => {
+      handleMainMenuShellAction(screen, 'reset-shell-toggle-preferences');
+    },
+    onQuinaryAction: (screen) => {
       handleMainMenuShellAction(screen, 'start-fresh-world-session');
     },
     onReturnToMainMenu: (screen) => {
@@ -730,6 +735,7 @@ const bootstrap = async (): Promise<void> => {
 
     if (
       (actionType === 'export-world-save' ||
+        actionType === 'import-world-save' ||
         actionType === 'start-fresh-world-session' ||
         actionType === 'reset-shell-toggle-preferences') &&
       !worldSessionStarted
@@ -743,6 +749,9 @@ const bootstrap = async (): Promise<void> => {
         return true;
       case 'export-world-save':
         return exportPausedMainMenuWorldSave();
+      case 'import-world-save':
+        void importPausedMainMenuWorldSave();
+        return true;
       case 'start-fresh-world-session':
         startFreshWorldSessionFromMainMenu();
         return true;
@@ -988,6 +997,23 @@ const bootstrap = async (): Promise<void> => {
       return true;
     } catch (error) {
       console.warn('Failed to export world save.', error);
+      return false;
+    }
+  };
+  const importPausedMainMenuWorldSave = async (): Promise<boolean> => {
+    try {
+      const result = await pickWorldSaveEnvelopeFromJsonPicker();
+      switch (result.status) {
+        case 'cancelled':
+          return false;
+        case 'rejected':
+          console.warn('Rejected imported world save.', result.reason);
+          return false;
+        case 'selected':
+          return restorePausedWorldSessionFromSaveEnvelope(result.envelope);
+      }
+    } catch (error) {
+      console.warn('Failed to import world save.', error);
       return false;
     }
   };

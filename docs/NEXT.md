@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Save/load
 
-385. Add a paused-menu JSON world-save import picker that validates a selected top-level save envelope and hands it to the paused-session restore runtime action in `src/main.ts`, with regressions for canceled picks and rejected envelopes.
-387. Add paused-menu import-result copy that surfaces the last rejected world-save envelope reason after task `385` wires the JSON picker into runtime restore, with app-shell regressions.
+387. Add paused-menu import-result copy that surfaces the last rejected world-save envelope reason after the JSON picker restore flow, with app-shell regressions.
 388. Add a paused-menu `Clear Saved World` action that deletes the persisted local world-session envelope without discarding the currently paused session, with runtime and app-shell regressions.
+389. Add paused-menu import-success copy that surfaces the last accepted world-save filename after a valid restore, with app-shell regressions.
 
 ## Networking scaffolding
 
