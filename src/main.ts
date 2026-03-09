@@ -1019,6 +1019,10 @@ const bootstrap = async (): Promise<void> => {
       const result = await pickWorldSaveEnvelopeFromJsonPicker();
       switch (result.status) {
         case 'cancelled':
+          pausedMainMenuImportResult = {
+            status: 'cancelled'
+          };
+          showMainMenuShellState();
           return false;
         case 'rejected':
           pausedMainMenuImportResult = {

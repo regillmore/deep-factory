@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-09
 
+- Task: Add paused-menu import-cancel copy and fix file-picker selection races.
+- Changes: Updated [src/mainWorldSaveImport.ts](../src/mainWorldSaveImport.ts) so the browser picker no longer resolves `cancelled` immediately on window refocus before a valid file-input `change` event arrives, updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/main.ts](../src/main.ts) so paused-menu canceled imports now surface an `Import Result` card instead of failing silently, expanded [src/mainWorldSaveImport.test.ts](../src/mainWorldSaveImport.test.ts), [src/ui/appShell.test.ts](../src/ui/appShell.test.ts), and [src/main.test.ts](../src/main.test.ts) with focused regressions, removed completed task `391` from [docs/NEXT.md](docs/NEXT.md), added replacement task `394`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/mainWorldSaveImport.test.ts src/ui/appShell.test.ts src/main.test.ts` (outside the sandbox after the expected Vitest `spawn EPERM` startup failure in-sandbox) and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu clear-saved-world status copy for unsaved paused sessions.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused sessions now render a warning `Saved World Status` card after `Clear Saved World`, updated [src/main.ts](../src/main.ts) so the paused-menu shell receives that cleared-save state until resume or a replacement save rewrites browser storage, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused regressions, removed completed task `390` from [docs/NEXT.md](docs/NEXT.md), added replacement task `393`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -30,6 +30,8 @@ export type WorldSaveEnvelopeImportResult =
   | CancelledWorldSaveEnvelopeImportResult
   | RejectedWorldSaveEnvelopeImportResult;
 
+const WINDOW_FOCUS_PICKER_CANCEL_SETTLE_DELAY_MS = 250;
+
 const resolveWorldSaveImportFailureReason = (error: unknown): string => {
   if (error instanceof Error) {
     const trimmedMessage = error.message.trim();
@@ -92,7 +94,7 @@ const resolveWorldSaveImportBrowser = (): WorldSaveImportBrowser => {
               return;
             }
             resolveOnce(null);
-          }, 0);
+          }, WINDOW_FOCUS_PICKER_CANCEL_SETTLE_DELAY_MS);
         };
 
         input.addEventListener('change', () => {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createWorldSaveEnvelope } from './mainWorldSave';
 import {
@@ -24,6 +24,105 @@ const createTestEnvelope = () => {
     cameraFollowOffset: { x: 18, y: -12 }
   });
 };
+
+type TestEventListener = () => void;
+
+class TestEventTarget {
+  private readonly listeners = new Map<string, TestEventListener[]>();
+
+  addEventListener(type: string, listener: TestEventListener): void {
+    const listeners = this.listeners.get(type) ?? [];
+    listeners.push(listener);
+    this.listeners.set(type, listeners);
+  }
+
+  removeEventListener(type: string, listener: TestEventListener): void {
+    const listeners = this.listeners.get(type);
+    if (!listeners) {
+      return;
+    }
+
+    const index = listeners.indexOf(listener);
+    if (index >= 0) {
+      listeners.splice(index, 1);
+    }
+  }
+
+  dispatch(type: string): void {
+    for (const listener of [...(this.listeners.get(type) ?? [])]) {
+      listener();
+    }
+  }
+}
+
+class TestWindow extends TestEventTarget {
+  private nextTimerId = 1;
+  private readonly timers: Array<{ id: number; delayMs: number; callback: () => void }> = [];
+
+  setTimeout(callback: () => void, delayMs = 0): number {
+    const id = this.nextTimerId++;
+    this.timers.push({
+      id,
+      delayMs,
+      callback
+    });
+    return id;
+  }
+
+  advanceTimersBy(delayMs: number): void {
+    for (const timer of this.timers) {
+      timer.delayMs -= delayMs;
+    }
+
+    let readyTimers = this.timers.filter((timer) => timer.delayMs <= 0);
+    while (readyTimers.length > 0) {
+      this.timers.splice(
+        0,
+        this.timers.length,
+        ...this.timers.filter((timer) => timer.delayMs > 0)
+      );
+      for (const timer of readyTimers) {
+        timer.callback();
+      }
+      readyTimers = this.timers.filter((timer) => timer.delayMs <= 0);
+    }
+  }
+}
+
+class TestFileList {
+  constructor(private readonly fileProvider: () => { name: string; text(): Promise<string> } | null) {}
+
+  item(index: number) {
+    return index === 0 ? this.fileProvider() : null;
+  }
+}
+
+class TestInputElement extends TestEventTarget {
+  type = '';
+  accept = '';
+  multiple = false;
+  style = {
+    display: ''
+  };
+  private selectedFile: { name: string; text(): Promise<string> } | null = null;
+  readonly files = new TestFileList(() => this.selectedFile);
+
+  clickHandler: (() => void) | null = null;
+
+  click(): void {
+    this.clickHandler?.();
+  }
+
+  remove(): void {}
+
+  setSelectedFile(file: { name: string; text(): Promise<string> } | null): void {
+    this.selectedFile = file;
+  }
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('pickWorldSaveEnvelopeFromJsonPicker', () => {
   it('returns cancelled when the browser picker closes without a selected file', async () => {
@@ -75,6 +174,41 @@ describe('pickWorldSaveEnvelopeFromJsonPicker', () => {
       status: 'rejected',
       fileName: 'broken.json',
       reason: 'world save envelope kind must be "deep-factory.world-save"'
+    });
+  });
+
+  it('does not resolve as cancelled when the window refocuses before the file input change event arrives', async () => {
+    const envelope = createTestEnvelope();
+    const input = new TestInputElement();
+    const testWindow = new TestWindow();
+    vi.stubGlobal('document', {
+      body: {
+        append: () => {}
+      },
+      createElement: (tagName: string) => {
+        if (tagName !== 'input') {
+          throw new Error(`unexpected element request: ${tagName}`);
+        }
+        return input;
+      }
+    });
+    vi.stubGlobal('window', testWindow);
+
+    input.clickHandler = () => {
+      testWindow.dispatch('focus');
+      testWindow.advanceTimersBy(0);
+      input.setSelectedFile({
+        name: 'restore.json',
+        text: async () => JSON.stringify(envelope)
+      });
+      input.dispatch('change');
+      testWindow.advanceTimersBy(1000);
+    };
+
+    await expect(pickWorldSaveEnvelopeFromJsonPicker()).resolves.toEqual({
+      status: 'selected',
+      fileName: 'restore.json',
+      envelope
     });
   });
 });

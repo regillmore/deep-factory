@@ -5131,7 +5131,6 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
     expect(dispatchKeydown('q').prevented).toBe(true);
-    const pausedState = createExpectedPausedMainMenuState();
     testRuntime.queuedWorldSaveImportResults = [
       {
         status: 'cancelled'
@@ -5144,7 +5143,13 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.worldSaveImportCallCount).toBe(1);
     expect(restoreModule.restoreWorldSessionFromSaveEnvelope).not.toHaveBeenCalled();
     expect(testRuntime.rendererLoadWorldSnapshotCallCount).toBe(0);
-    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        importResult: {
+          status: 'cancelled'
+        }
+      })
+    );
   });
 
   it('rejects invalid paused-menu imported world saves without mutating the current session', async () => {

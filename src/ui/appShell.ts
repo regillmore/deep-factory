@@ -48,7 +48,12 @@ export interface PausedMainMenuRejectedImportResult {
   reason: string;
 }
 
+export interface PausedMainMenuCancelledImportResult {
+  status: 'cancelled';
+}
+
 export type PausedMainMenuImportResult =
+  | PausedMainMenuCancelledImportResult
   | PausedMainMenuAcceptedImportResult
   | PausedMainMenuRejectedImportResult;
 
@@ -155,6 +160,19 @@ const createPausedMainMenuImportMenuSection = (
   importResult: PausedMainMenuImportResult
 ): AppShellMenuSection => {
   switch (importResult.status) {
+    case 'cancelled':
+      return {
+        title: 'Import Result',
+        lines: [
+          'The paused session stayed unchanged because the JSON picker closed without selecting a world save file.'
+        ],
+        metadataRows: [
+          {
+            label: 'Status',
+            value: 'Canceled'
+          }
+        ]
+      };
     case 'accepted':
       return {
         title: 'Import Result',
