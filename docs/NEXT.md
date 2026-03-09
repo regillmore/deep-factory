@@ -5,8 +5,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Save/load
 
 387. Add paused-menu import-result copy that surfaces the last rejected world-save envelope reason after the JSON picker restore flow, with app-shell regressions.
-388. Add a paused-menu `Clear Saved World` action that deletes the persisted local world-session envelope without discarding the currently paused session, with runtime and app-shell regressions.
 389. Add paused-menu import-success copy that surfaces the last accepted world-save filename after a valid restore, with app-shell regressions.
+390. Add paused-menu clear-saved-world status copy that surfaces when the current paused session is no longer browser-saved until a resume or replacement save rewrites it, with app-shell regressions.
 
 ## Networking scaffolding
 

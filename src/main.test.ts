@@ -1269,6 +1269,13 @@ const dispatchKeydown = (
   };
 };
 
+const dispatchWindowEvent = (type: string, event: unknown = {}): void => {
+  const listeners = testRuntime.windowListeners.get(type) ?? [];
+  for (const listener of listeners) {
+    listener(event);
+  }
+};
+
 const readArmedToolKinds = () => ({
   floodFillKind: testRuntime.inputControllerInstance?.getArmedDebugFloodFillKind() ?? null,
   lineKind: testRuntime.inputControllerInstance?.getArmedDebugLineKind() ?? null,
@@ -2075,7 +2082,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
     testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
-    testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
+    testRuntime.shellInstance?.options.onSenaryAction('main-menu');
 
     expect(testRuntime.debugTileEditHistoryConstructCount).toBe(historyConstructCountBeforeReset + 1);
     expect(testRuntime.debugEditControlsSetHistoryStateCallCount).toBe(historySyncCountBeforeReset + 1);
@@ -2123,7 +2130,7 @@ describe('main.ts shell state orchestration', () => {
     });
 
     testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
-    testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
+    testRuntime.shellInstance?.options.onSenaryAction('main-menu');
 
     expect(testRuntime.cameraInstance.x).toBe(88);
     expect(testRuntime.cameraInstance.y).toBe(50);
@@ -2175,7 +2182,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
     testRuntime.latestRendererRenderFrameState = null;
-    testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
+    testRuntime.shellInstance?.options.onSenaryAction('main-menu');
     runRenderFrame(1000 / 60, 0.5);
 
     expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
@@ -2289,7 +2296,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
     testRuntime.rendererPlayerCollisionContactsQueue = [noContacts];
     testRuntime.latestRendererRenderFrameState = null;
-    testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
+    testRuntime.shellInstance?.options.onSenaryAction('main-menu');
     runRenderFrame(1000 / 60, 0.5);
 
     expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
@@ -4922,6 +4929,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
     testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
     testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
+    testRuntime.shellInstance?.options.onSenaryAction('main-menu');
 
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
     expect(testRuntime.gameLoopStartCount).toBe(0);
@@ -4950,7 +4958,7 @@ describe('main.ts shell state orchestration', () => {
     expect(dispatchKeydown('q').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
 
-    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
+    testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
 
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
     expect(testRuntime.storageValues.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)).toBe(false);
@@ -5018,6 +5026,35 @@ describe('main.ts shell state orchestration', () => {
     expect(downloadedEnvelope.session.cameraFollowOffset).toEqual({ x: 0, y: 0 });
     expect(downloadedEnvelope.session.standalonePlayerState).not.toBeNull();
     expect(downloadedEnvelope.session.standalonePlayerState?.position).toEqual({ x: 8, y: 0 });
+  });
+
+  it('clears the persisted paused-session world save without discarding the live paused session', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(testRuntime.storageValues.has(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY)).toBe(true);
+    expect(dispatchKeydown('q').prevented).toBe(true);
+
+    const pausedState = createExpectedPausedMainMenuState();
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+
+    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
+
+    expect(testRuntime.storageValues.has(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY)).toBe(false);
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+
+    dispatchWindowEvent('pagehide');
+
+    expect(testRuntime.storageValues.has(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY)).toBe(false);
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+    expect(testRuntime.storageValues.has(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY)).toBe(true);
   });
 
   it('routes a paused-menu imported world save through the shared picker and restore action', async () => {
@@ -5730,7 +5767,7 @@ describe('main.ts shell state orchestration', () => {
     expect(dispatchKeydown('q').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
 
-    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
+    testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
 
     expect(testRuntime.storageValues.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)).toBe(false);
 

@@ -179,6 +179,7 @@ type MainMenuShellActionType =
   | 'enter-or-resume-world-session'
   | 'export-world-save'
   | 'import-world-save'
+  | 'clear-persisted-world-session'
   | 'start-fresh-world-session'
   | 'reset-shell-toggle-preferences';
 type DebugHistoryActionType = 'undo' | 'redo';
@@ -475,6 +476,7 @@ const bootstrap = async (): Promise<void> => {
   const defaultWorldSessionShellState = createDefaultWorldSessionShellState();
   let worldSessionStarted = false;
   let worldSessionLoopStarted = false;
+  let pausedMainMenuWorldSaveCleared = false;
   let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
   let worldSessionShellPersistenceAvailable = true;
@@ -563,9 +565,12 @@ const bootstrap = async (): Promise<void> => {
       handleMainMenuShellAction(screen, 'import-world-save');
     },
     onQuaternaryAction: (screen) => {
-      handleMainMenuShellAction(screen, 'reset-shell-toggle-preferences');
+      handleMainMenuShellAction(screen, 'clear-persisted-world-session');
     },
     onQuinaryAction: (screen) => {
+      handleMainMenuShellAction(screen, 'reset-shell-toggle-preferences');
+    },
+    onSenaryAction: (screen) => {
       handleMainMenuShellAction(screen, 'start-fresh-world-session');
     },
     onReturnToMainMenu: (screen) => {
@@ -736,6 +741,7 @@ const bootstrap = async (): Promise<void> => {
     if (
       (actionType === 'export-world-save' ||
         actionType === 'import-world-save' ||
+        actionType === 'clear-persisted-world-session' ||
         actionType === 'start-fresh-world-session' ||
         actionType === 'reset-shell-toggle-preferences') &&
       !worldSessionStarted
@@ -752,6 +758,8 @@ const bootstrap = async (): Promise<void> => {
       case 'import-world-save':
         void importPausedMainMenuWorldSave();
         return true;
+      case 'clear-persisted-world-session':
+        return clearPausedMainMenuPersistedWorldSession();
       case 'start-fresh-world-session':
         startFreshWorldSessionFromMainMenu();
         return true;
@@ -975,6 +983,9 @@ const bootstrap = async (): Promise<void> => {
     if (!worldSessionStarted) {
       return false;
     }
+    if (currentScreen === 'main-menu' && pausedMainMenuWorldSaveCleared) {
+      return false;
+    }
 
     try {
       return savePersistedWorldSaveEnvelope(
@@ -986,9 +997,8 @@ const bootstrap = async (): Promise<void> => {
       return false;
     }
   };
-  const clearPersistedCurrentWorldSession = (): void => {
+  const clearPersistedCurrentWorldSession = (): boolean =>
     clearPersistedWorldSaveEnvelope(worldSessionShellStateStorage);
-  };
   const exportPausedMainMenuWorldSave = (): boolean => {
     try {
       downloadWorldSaveEnvelope({
@@ -2201,6 +2211,7 @@ const bootstrap = async (): Promise<void> => {
   };
   const enterOrResumeWorldSessionFromMainMenu = (): void => {
     if (loop === null) return;
+    pausedMainMenuWorldSaveCleared = false;
     applyPausedMainMenuWorldSessionShellTransition('resume-paused-world-session');
     enterInWorldShellState();
     if (!worldSessionStarted) {
@@ -2211,12 +2222,22 @@ const bootstrap = async (): Promise<void> => {
   };
   const startFreshWorldSessionFromMainMenu = (): void => {
     if (loop === null || !worldSessionStarted) return;
+    pausedMainMenuWorldSaveCleared = false;
     clearPersistedCurrentWorldSession();
     applyPausedMainMenuWorldSessionShellTransition('start-fresh-world-session');
     resetFreshWorldSessionRuntimeState();
     persistCurrentWorldSession();
     enterInWorldShellState();
     ensureWorldSessionLoopStarted();
+  };
+  const clearPausedMainMenuPersistedWorldSession = (): boolean => {
+    if (loop === null || !worldSessionStarted) return false;
+    if (!clearPersistedCurrentWorldSession()) {
+      return false;
+    }
+    pausedMainMenuWorldSaveCleared = true;
+    showMainMenuShellState();
+    return true;
   };
   const resetPausedMainMenuShellTogglePreferences = (): void => {
     if (loop === null || !worldSessionStarted) return;
@@ -2935,6 +2956,7 @@ const bootstrap = async (): Promise<void> => {
           }
         }
       });
+      pausedMainMenuWorldSaveCleared = false;
       resetFreshWorldSessionDebugEditState();
       clearPinnedDebugTileInspect();
       resolveCurrentWorldPlayerSpawn();

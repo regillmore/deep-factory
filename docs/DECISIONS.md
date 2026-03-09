@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-09: Clearing a paused saved world should survive browser exit until the session resumes or is replaced
+
+- Decision: The paused-menu `Clear Saved World` action now removes the persisted `deep-factory.world-save` envelope immediately and suppresses paused-menu `pagehide` autosave for that same paused session until the player resumes it or another save-replacing path such as import or fresh-world reset runs.
+- Reason: Clearing the saved paused session would be ineffective if the browser rewrote the same envelope during the next paused `pagehide`, and the action still needs to leave the live paused runtime session intact in the current tab.
+- Consequence: Future paused-menu save actions should explicitly decide whether they re-arm browser persistence for the current session, instead of assuming every page-hide or paused-state transition can blindly rewrite the local save envelope.
+
 ### 2026-03-09: Local persisted world sessions should store the same top-level save envelope and restore through the shared runtime seam
 
 - Decision: Browser-saved world sessions now write the same `deep-factory.world-save` envelope through `src/mainWorldSaveLocalPersistence.ts`, and both boot-time session resume and paused-session replacement restore that envelope through `src/mainWorldSessionRestore.ts` plus `Renderer.loadWorldSnapshot()`.

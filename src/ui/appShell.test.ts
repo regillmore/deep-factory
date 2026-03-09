@@ -27,9 +27,11 @@ import {
   resolveMainMenuPrimaryActionTitle,
   resolveMainMenuQuinaryActionTitle,
   resolveMainMenuQuaternaryActionTitle,
+  resolveMainMenuSenaryActionTitle,
   resolveMainMenuSecondaryActionTitle,
   resolveMainMenuTertiaryActionTitle,
   resolveAppShellRegionDisplay,
+  resolvePausedMainMenuClearSavedWorldTitle,
   resolvePausedMainMenuExportWorldSaveTitle,
   resolvePausedMainMenuFreshWorldTitle,
   resolvePausedMainMenuImportWorldSaveTitle,
@@ -123,6 +125,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.tertiaryActionLabel).toBeNull();
     expect(viewModel.quaternaryActionLabel).toBeNull();
     expect(viewModel.quinaryActionLabel).toBeNull();
+    expect(viewModel.senaryActionLabel).toBeNull();
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
     expect(viewModel.recenterCameraActionLabel).toBeNull();
     expect(viewModel.debugOverlayToggleLabel).toBeNull();
@@ -151,6 +154,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.tertiaryActionLabel).toBeNull();
     expect(viewModel.quaternaryActionLabel).toBeNull();
     expect(viewModel.quinaryActionLabel).toBeNull();
+    expect(viewModel.senaryActionLabel).toBeNull();
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
     expect(viewModel.recenterCameraActionLabel).toBeNull();
     expect(viewModel.debugOverlayToggleLabel).toBeNull();
@@ -187,8 +191,9 @@ describe('resolveAppShellViewModel', () => {
     );
     expect(viewModel.secondaryActionLabel).toBe('Export World Save');
     expect(viewModel.tertiaryActionLabel).toBe('Import World Save');
-    expect(viewModel.quaternaryActionLabel).toBe('Reset Shell Toggles');
-    expect(viewModel.quinaryActionLabel).toBe(`New World (${getDesktopFreshWorldHotkeyLabel()})`);
+    expect(viewModel.quaternaryActionLabel).toBe('Clear Saved World');
+    expect(viewModel.quinaryActionLabel).toBe('Reset Shell Toggles');
+    expect(viewModel.senaryActionLabel).toBe(`New World (${getDesktopFreshWorldHotkeyLabel()})`);
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
     expect(viewModel.statusText).toBe('World session paused.');
     expect(viewModel.detailLines).toEqual([]);
@@ -237,6 +242,22 @@ describe('resolveAppShellViewModel', () => {
           {
             label: 'Consequence',
             value: 'Valid imports replace the paused session; canceled or invalid picks do not.'
+          }
+        ]
+      },
+      {
+        title: 'Clear Saved World',
+        lines: [
+          'Delete the browser-saved world, player, and camera envelope while keeping this paused session active in the current tab until it is saved again.'
+        ],
+        metadataRows: [
+          {
+            label: 'Shortcut',
+            value: 'Button only'
+          },
+          {
+            label: 'Consequence',
+            value: 'Keeps the session but clears browser resume.'
           }
         ]
       },
@@ -304,7 +325,7 @@ describe('resolveAppShellViewModel', () => {
   it('adds a paused-menu persistence-summary card that inventories resumed toggles plus the saved on and off layout preview', () => {
     const viewModel = resolveAppShellViewModel(createPausedMainMenuShellState());
 
-    expect(viewModel.menuSections[4]).toEqual({
+    expect(viewModel.menuSections[5]).toEqual({
       title: 'Persistence Summary',
       lines: [...DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
       metadataRows: [
@@ -344,7 +365,7 @@ describe('resolveAppShellViewModel', () => {
       })
     );
 
-    expect(viewModel.menuSections[4]).toEqual({
+    expect(viewModel.menuSections[5]).toEqual({
       title: 'Persistence Summary',
       lines: [...DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
       metadataRows: [
@@ -378,7 +399,7 @@ describe('resolveAppShellViewModel', () => {
       createPausedMainMenuShellState(undefined, true, CUSTOM_SHELL_ACTION_KEYBINDINGS)
     );
 
-    expect(viewModel.menuSections[4]).toEqual({
+    expect(viewModel.menuSections[5]).toEqual({
       title: 'Persistence Summary',
       lines: [...DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
       metadataRows: [
@@ -412,7 +433,7 @@ describe('resolveAppShellViewModel', () => {
       createPausedMainMenuShellState(undefined, true, createDefaultShellActionKeybindingState(), true)
     );
 
-    expect(viewModel.menuSections[4]).toEqual({
+    expect(viewModel.menuSections[5]).toEqual({
       title: 'Persistence Summary',
       lines: [...DEFAULTED_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
       metadataRows: [
@@ -455,7 +476,7 @@ describe('resolveAppShellViewModel', () => {
       )
     );
 
-    expect(viewModel.menuSections[4]).toEqual({
+    expect(viewModel.menuSections[5]).toEqual({
       title: 'Persistence Summary',
       lines: [...SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
       metadataRows: [
@@ -495,6 +516,7 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.tertiaryActionLabel).toBeNull();
     expect(viewModel.quaternaryActionLabel).toBeNull();
     expect(viewModel.quinaryActionLabel).toBeNull();
+    expect(viewModel.senaryActionLabel).toBeNull();
     expect(viewModel.returnToMainMenuActionLabel).toBe(
       `Main Menu (${getDesktopReturnToMainMenuHotkeyLabel()})`
     );
@@ -843,6 +865,22 @@ describe('createPausedMainMenuShellState', () => {
           ]
         },
         {
+          title: 'Clear Saved World',
+          lines: [
+            'Delete the browser-saved world, player, and camera envelope while keeping this paused session active in the current tab until it is saved again.'
+          ],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Consequence',
+              value: 'Keeps the session but clears browser resume.'
+            }
+          ]
+        },
+        {
           title: 'Reset Shell Toggles',
           lines: [
             `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
@@ -906,8 +944,9 @@ describe('createPausedMainMenuShellState', () => {
       primaryActionLabel: 'Resume World',
       secondaryActionLabel: 'Export World Save',
       tertiaryActionLabel: 'Import World Save',
-      quaternaryActionLabel: 'Reset Shell Toggles',
-      quinaryActionLabel: 'New World'
+      quaternaryActionLabel: 'Clear Saved World',
+      quinaryActionLabel: 'Reset Shell Toggles',
+      senaryActionLabel: 'New World'
     });
   });
 });
@@ -948,6 +987,14 @@ describe('resolvePausedMainMenuImportWorldSaveTitle', () => {
   });
 });
 
+describe('resolvePausedMainMenuClearSavedWorldTitle', () => {
+  it('explains that paused-menu clear removes the browser save without discarding the current paused session', () => {
+    expect(resolvePausedMainMenuClearSavedWorldTitle()).toBe(
+      'Delete the browser-saved paused session while keeping the current world open in this tab until it is saved again'
+    );
+  });
+});
+
 describe('resolvePausedMainMenuFreshWorldTitle', () => {
   it('includes the paused-menu New World desktop shortcut in the destructive tooltip copy', () => {
     expect(resolvePausedMainMenuFreshWorldTitle()).toBe(
@@ -973,7 +1020,7 @@ describe('resolvePausedMainMenuResetShellTogglesTitle', () => {
 });
 
 describe('paused main-menu tooltip-title resolution', () => {
-  it('uses paused-session tooltip titles when resume, export, import, reset-shell, and fresh-world actions are active', () => {
+  it('uses paused-session tooltip titles when resume, export, import, clear-saved-world, reset-shell, and fresh-world actions are active', () => {
     const pausedState = createPausedMainMenuShellState();
 
     expect(resolveMainMenuPrimaryActionTitle(pausedState)).toBe(
@@ -986,9 +1033,12 @@ describe('paused main-menu tooltip-title resolution', () => {
       resolvePausedMainMenuImportWorldSaveTitle()
     );
     expect(resolveMainMenuQuaternaryActionTitle(pausedState)).toBe(
-      resolvePausedMainMenuResetShellTogglesTitle()
+      resolvePausedMainMenuClearSavedWorldTitle()
     );
     expect(resolveMainMenuQuinaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuResetShellTogglesTitle()
+    );
+    expect(resolveMainMenuSenaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuFreshWorldTitle()
     );
   });
@@ -1006,9 +1056,12 @@ describe('paused main-menu tooltip-title resolution', () => {
       resolvePausedMainMenuImportWorldSaveTitle()
     );
     expect(resolveMainMenuQuaternaryActionTitle(pausedState)).toBe(
-      resolvePausedMainMenuResetShellTogglesTitle()
+      resolvePausedMainMenuClearSavedWorldTitle()
     );
     expect(resolveMainMenuQuinaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuResetShellTogglesTitle()
+    );
+    expect(resolveMainMenuSenaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuFreshWorldTitle()
     );
 
@@ -1018,6 +1071,7 @@ describe('paused main-menu tooltip-title resolution', () => {
     expect(resolveMainMenuTertiaryActionTitle(firstLaunchState)).toBe('');
     expect(resolveMainMenuQuaternaryActionTitle(firstLaunchState)).toBe('');
     expect(resolveMainMenuQuinaryActionTitle(firstLaunchState)).toBe('');
+    expect(resolveMainMenuSenaryActionTitle(firstLaunchState)).toBe('');
   });
 
   it('restores paused-session tooltip titles after first-launch main-menu copy transitions back to a resumable session', () => {
@@ -1033,9 +1087,12 @@ describe('paused main-menu tooltip-title resolution', () => {
       resolvePausedMainMenuImportWorldSaveTitle()
     );
     expect(resolveMainMenuQuaternaryActionTitle(pausedState)).toBe(
-      resolvePausedMainMenuResetShellTogglesTitle()
+      resolvePausedMainMenuClearSavedWorldTitle()
     );
     expect(resolveMainMenuQuinaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuResetShellTogglesTitle()
+    );
+    expect(resolveMainMenuSenaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuFreshWorldTitle()
     );
 
@@ -1045,6 +1102,7 @@ describe('paused main-menu tooltip-title resolution', () => {
     expect(resolveMainMenuTertiaryActionTitle(firstLaunchState)).toBe('');
     expect(resolveMainMenuQuaternaryActionTitle(firstLaunchState)).toBe('');
     expect(resolveMainMenuQuinaryActionTitle(firstLaunchState)).toBe('');
+    expect(resolveMainMenuSenaryActionTitle(firstLaunchState)).toBe('');
 
     expect(resolveMainMenuPrimaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuResumeWorldTitle()
@@ -1056,9 +1114,12 @@ describe('paused main-menu tooltip-title resolution', () => {
       resolvePausedMainMenuImportWorldSaveTitle()
     );
     expect(resolveMainMenuQuaternaryActionTitle(pausedState)).toBe(
-      resolvePausedMainMenuResetShellTogglesTitle()
+      resolvePausedMainMenuClearSavedWorldTitle()
     );
     expect(resolveMainMenuQuinaryActionTitle(pausedState)).toBe(
+      resolvePausedMainMenuResetShellTogglesTitle()
+    );
+    expect(resolveMainMenuSenaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuFreshWorldTitle()
     );
   });
