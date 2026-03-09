@@ -212,8 +212,9 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMaxChunkY).toBeNull();
-    expect(renderer.telemetry.liquidStepResidentChunksScanned).toBe(0);
-    expect(renderer.telemetry.liquidStepHorizontalPairsTested).toBe(0);
+    expect(renderer.telemetry.liquidStepDownwardActiveChunksScanned).toBe(0);
+    expect(renderer.telemetry.liquidStepSidewaysCandidateChunksScanned).toBe(0);
+    expect(renderer.telemetry.liquidStepSidewaysPairsTested).toBe(0);
     expect(renderer.telemetry.liquidStepDownwardTransfersApplied).toBe(0);
     expect(renderer.telemetry.liquidStepSidewaysTransfersApplied).toBe(0);
     expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBeNull();
@@ -254,8 +255,9 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMaxChunkY).toBeNull();
-    expect(renderer.telemetry.liquidStepResidentChunksScanned).toBe(0);
-    expect(renderer.telemetry.liquidStepHorizontalPairsTested).toBe(0);
+    expect(renderer.telemetry.liquidStepDownwardActiveChunksScanned).toBe(0);
+    expect(renderer.telemetry.liquidStepSidewaysCandidateChunksScanned).toBe(0);
+    expect(renderer.telemetry.liquidStepSidewaysPairsTested).toBe(0);
     expect(renderer.telemetry.liquidStepDownwardTransfersApplied).toBe(0);
     expect(renderer.telemetry.liquidStepSidewaysTransfersApplied).toBe(0);
   });

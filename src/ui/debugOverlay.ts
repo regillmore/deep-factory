@@ -37,8 +37,9 @@ export interface DebugOverlayStats {
   residentActiveLiquidMinChunkY: number | null;
   residentActiveLiquidMaxChunkX: number | null;
   residentActiveLiquidMaxChunkY: number | null;
-  liquidStepResidentChunksScanned: number;
-  liquidStepHorizontalPairsTested: number;
+  liquidStepDownwardActiveChunksScanned: number;
+  liquidStepSidewaysCandidateChunksScanned: number;
+  liquidStepSidewaysPairsTested: number;
   liquidStepDownwardTransfersApplied: number;
   liquidStepSidewaysTransfersApplied: number;
   evictedWorldChunks: number;
@@ -931,8 +932,9 @@ const formatActiveLiquidBounds = (stats: DebugOverlayStats): string => {
 const formatLiquidStepLine = (stats: DebugOverlayStats): string =>
   `LiquidStep: active:${stats.residentActiveLiquidChunks} | ` +
   `bounds:${formatActiveLiquidBounds(stats)} | ` +
-  `chunks:${stats.liquidStepResidentChunksScanned} | ` +
-  `pairs:${stats.liquidStepHorizontalPairsTested} | ` +
+  `downChunks:${stats.liquidStepDownwardActiveChunksScanned} | ` +
+  `sideChunks:${stats.liquidStepSidewaysCandidateChunksScanned} | ` +
+  `sidePairs:${stats.liquidStepSidewaysPairsTested} | ` +
   `downTransfers:${stats.liquidStepDownwardTransfersApplied} | ` +
   `sideTransfers:${stats.liquidStepSidewaysTransfersApplied}`;
 

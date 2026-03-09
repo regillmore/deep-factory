@@ -121,8 +121,9 @@ export interface RenderTelemetry {
   residentActiveLiquidMinChunkY: number | null;
   residentActiveLiquidMaxChunkX: number | null;
   residentActiveLiquidMaxChunkY: number | null;
-  liquidStepResidentChunksScanned: number;
-  liquidStepHorizontalPairsTested: number;
+  liquidStepDownwardActiveChunksScanned: number;
+  liquidStepSidewaysCandidateChunksScanned: number;
+  liquidStepSidewaysPairsTested: number;
   liquidStepDownwardTransfersApplied: number;
   liquidStepSidewaysTransfersApplied: number;
   standalonePlayerNearbyLightLevel: number | null;
@@ -199,8 +200,9 @@ export class Renderer {
     residentActiveLiquidMinChunkY: null,
     residentActiveLiquidMaxChunkX: null,
     residentActiveLiquidMaxChunkY: null,
-    liquidStepResidentChunksScanned: 0,
-    liquidStepHorizontalPairsTested: 0,
+    liquidStepDownwardActiveChunksScanned: 0,
+    liquidStepSidewaysCandidateChunksScanned: 0,
+    liquidStepSidewaysPairsTested: 0,
     liquidStepDownwardTransfersApplied: 0,
     liquidStepSidewaysTransfersApplied: 0,
     standalonePlayerNearbyLightLevel: null,
@@ -687,8 +689,9 @@ export class Renderer {
   private updateLiquidStepTelemetry(): void {
     this.updateActiveLiquidTelemetry();
     const stats = this.world.getLastLiquidSimulationStats();
-    this.telemetry.liquidStepResidentChunksScanned = stats.residentChunksScanned;
-    this.telemetry.liquidStepHorizontalPairsTested = stats.horizontalPairsTested;
+    this.telemetry.liquidStepDownwardActiveChunksScanned = stats.downwardActiveChunksScanned;
+    this.telemetry.liquidStepSidewaysCandidateChunksScanned = stats.sidewaysCandidateChunksScanned;
+    this.telemetry.liquidStepSidewaysPairsTested = stats.sidewaysPairsTested;
     this.telemetry.liquidStepDownwardTransfersApplied = stats.downwardTransfersApplied;
     this.telemetry.liquidStepSidewaysTransfersApplied = stats.sidewaysTransfersApplied;
   }

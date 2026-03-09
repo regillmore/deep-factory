@@ -177,7 +177,7 @@ describe('TileWorld', () => {
     expect(world.getActiveLiquidChunkBounds()).toBeNull();
   });
 
-  it('records active downward-chunk scan, bounded horizontal-pair, and applied-transfer counts for the last fixed step', () => {
+  it('records phase-owned liquid scan coverage and transfer counts for the last fixed step', () => {
     const world = new TileWorld(0);
     const worldTileX = 4;
     const worldTileY = -20;
@@ -188,8 +188,9 @@ describe('TileWorld', () => {
 
     expect(world.stepLiquidSimulation()).toBe(true);
     expect(world.getLastLiquidSimulationStats()).toEqual({
-      residentChunksScanned: 1,
-      horizontalPairsTested: 512,
+      downwardActiveChunksScanned: 1,
+      sidewaysCandidateChunksScanned: 1,
+      sidewaysPairsTested: 512,
       downwardTransfersApplied: 1,
       sidewaysTransfersApplied: 0
     });
@@ -202,8 +203,9 @@ describe('TileWorld', () => {
     expect(world.getActiveLiquidChunkBounds()).toBeNull();
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.getLastLiquidSimulationStats()).toEqual({
-      residentChunksScanned: 0,
-      horizontalPairsTested: 0,
+      downwardActiveChunksScanned: 0,
+      sidewaysCandidateChunksScanned: 0,
+      sidewaysPairsTested: 0,
       downwardTransfersApplied: 0,
       sidewaysTransfersApplied: 0
     });
@@ -232,7 +234,7 @@ describe('TileWorld', () => {
     expect(world.getActiveLiquidChunkCount()).toBe(1);
 
     expect(world.stepLiquidSimulation()).toBe(false);
-    expect(world.getLastLiquidSimulationStats().residentChunksScanned).toBeGreaterThan(0);
+    expect(world.getLastLiquidSimulationStats().downwardActiveChunksScanned).toBeGreaterThan(0);
   });
 
   it('preserves same-step downward-then-sideways flow when liquid falls into a loaded chunk across a chunk boundary', () => {
@@ -255,8 +257,9 @@ describe('TileWorld', () => {
     expect(world.getTile(worldTileX + 1, targetWorldTileY)).toBe(WATER_TILE_ID);
     expect(world.getLiquidLevel(worldTileX + 1, targetWorldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
     expect(world.getLastLiquidSimulationStats()).toEqual({
-      residentChunksScanned: 1,
-      horizontalPairsTested: 512,
+      downwardActiveChunksScanned: 1,
+      sidewaysCandidateChunksScanned: 1,
+      sidewaysPairsTested: 512,
       downwardTransfersApplied: 1,
       sidewaysTransfersApplied: 1
     });
@@ -275,8 +278,9 @@ describe('TileWorld', () => {
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.stepLiquidSimulation()).toBe(true);
     expect(world.getLastLiquidSimulationStats()).toEqual({
-      residentChunksScanned: 1,
-      horizontalPairsTested: 1504,
+      downwardActiveChunksScanned: 1,
+      sidewaysCandidateChunksScanned: 3,
+      sidewaysPairsTested: 1504,
       downwardTransfersApplied: 0,
       sidewaysTransfersApplied: 1
     });
@@ -346,8 +350,9 @@ describe('TileWorld', () => {
     expect(world.getActiveLiquidChunkBounds()).toBeNull();
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.getLastLiquidSimulationStats()).toEqual({
-      residentChunksScanned: 0,
-      horizontalPairsTested: 0,
+      downwardActiveChunksScanned: 0,
+      sidewaysCandidateChunksScanned: 0,
+      sidewaysPairsTested: 0,
       downwardTransfersApplied: 0,
       sidewaysTransfersApplied: 0
     });
@@ -361,7 +366,7 @@ describe('TileWorld', () => {
       maxChunkY: -1
     });
     expect(world.stepLiquidSimulation()).toBe(false);
-    expect(world.getLastLiquidSimulationStats().residentChunksScanned).toBeGreaterThan(0);
+    expect(world.getLastLiquidSimulationStats().downwardActiveChunksScanned).toBeGreaterThan(0);
   });
 
   it('loads snapshots back into resident chunks, sparse edited overrides, and liquid parity', () => {

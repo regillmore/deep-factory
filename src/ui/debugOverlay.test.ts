@@ -30,8 +30,9 @@ const baseStats: DebugOverlayStats = {
   residentActiveLiquidMinChunkY: null,
   residentActiveLiquidMaxChunkX: null,
   residentActiveLiquidMaxChunkY: null,
-  liquidStepResidentChunksScanned: 0,
-  liquidStepHorizontalPairsTested: 0,
+  liquidStepDownwardActiveChunksScanned: 0,
+  liquidStepSidewaysCandidateChunksScanned: 0,
+  liquidStepSidewaysPairsTested: 0,
   liquidStepDownwardTransfersApplied: 0,
   liquidStepSidewaysTransfersApplied: 0,
   evictedWorldChunks: 1,
@@ -64,7 +65,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nAnimMesh: chunks:0 | quads:0 | nonLiquid:0 | liquid:0');
     expect(text).toContain('\nAnimUV: uploads:0 | quads:0 | nonLiquid:0 | liquid:0 | bytes:0');
     expect(text).toContain(
-      '\nLiquidStep: active:0 | bounds:none | chunks:0 | pairs:0 | downTransfers:0 | sideTransfers:0'
+      '\nLiquidStep: active:0 | bounds:none | downChunks:0 | sideChunks:0 | sidePairs:0 | downTransfers:0 | sideTransfers:0'
     );
     expect(text).toContain('LightDirty: 20');
     expect(text).toContain('Draws: 4/256 (OK)');
@@ -81,8 +82,9 @@ describe('formatDebugOverlayText', () => {
         residentActiveLiquidMinChunkY: -2,
         residentActiveLiquidMaxChunkX: 4,
         residentActiveLiquidMaxChunkY: 5,
-        liquidStepResidentChunksScanned: 80,
-        liquidStepHorizontalPairsTested: 40960,
+        liquidStepDownwardActiveChunksScanned: 80,
+        liquidStepSidewaysCandidateChunksScanned: 82,
+        liquidStepSidewaysPairsTested: 40960,
         liquidStepDownwardTransfersApplied: 2,
         liquidStepSidewaysTransfersApplied: 3
       },
@@ -90,7 +92,7 @@ describe('formatDebugOverlayText', () => {
     );
 
     expect(text).toContain(
-      '\nLiquidStep: active:3 | bounds:-1,-2..4,5 | chunks:80 | pairs:40960 | downTransfers:2 | sideTransfers:3'
+      '\nLiquidStep: active:3 | bounds:-1,-2..4,5 | downChunks:80 | sideChunks:82 | sidePairs:40960 | downTransfers:2 | sideTransfers:3'
     );
   });
 

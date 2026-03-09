@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-09: Liquid-step scan telemetry should stay phase-owned
+
+- Decision: `TileWorld` last-step liquid stats and renderer telemetry now keep separate downward active-chunk scan counts, sideways candidate-chunk scan counts, and sideways pair counts instead of generic scan totals.
+- Reason: Chunk-sleep and wake work needs to inspect downward active coverage separately from sideways candidate-band coverage without inferring phase ownership from ambiguous field names.
+- Consequence: Future liquid telemetry and HUD surfaces should preserve these phase-owned scan counters instead of collapsing them back into generic chunk or pair totals.
+
 ### 2026-03-09: Unsaved paused-session warning state should stay separate from clear-saved-world autosave suppression
 
 - Decision: The paused menu now tracks `Saved World Status` warning cause separately from the explicit `Clear Saved World` autosave-suppression flag, so imported sessions that failed to rewrite browser resume data can keep warning copy visible until a later save succeeds without inheriting clear-save suppression behavior.

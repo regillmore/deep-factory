@@ -56,8 +56,9 @@ export interface TileNeighborhood {
 }
 
 export interface LiquidSimulationStats {
-  residentChunksScanned: number;
-  horizontalPairsTested: number;
+  downwardActiveChunksScanned: number;
+  sidewaysCandidateChunksScanned: number;
+  sidewaysPairsTested: number;
   downwardTransfersApplied: number;
   sidewaysTransfersApplied: number;
 }
@@ -83,8 +84,9 @@ const createTileNeighborhood = (): TileNeighborhood => ({
 });
 
 const createLiquidSimulationStats = (): LiquidSimulationStats => ({
-  residentChunksScanned: 0,
-  horizontalPairsTested: 0,
+  downwardActiveChunksScanned: 0,
+  sidewaysCandidateChunksScanned: 0,
+  sidewaysPairsTested: 0,
   downwardTransfersApplied: 0,
   sidewaysTransfersApplied: 0
 });
@@ -740,7 +742,7 @@ export class TileWorld {
         continue;
       }
 
-      stats.residentChunksScanned += 1;
+      stats.downwardActiveChunksScanned += 1;
       for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
         for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
           const tileIndex = toTileIndex(localX, localY);
@@ -799,6 +801,7 @@ export class TileWorld {
         continue;
       }
 
+      stats.sidewaysCandidateChunksScanned += 1;
       for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
         for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
           const worldTileX = chunk.coord.x * CHUNK_SIZE + localX;
@@ -820,7 +823,7 @@ export class TileWorld {
             continue;
           }
 
-          stats.horizontalPairsTested += 1;
+          stats.sidewaysPairsTested += 1;
 
           const leftLiquidKind = getTileLiquidKind(leftTileId);
           const rightLiquidKind = getTileLiquidKind(rightTileId);
