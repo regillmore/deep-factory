@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Save/load
 
-400. Add paused-menu reset-shell-toggles-result copy that confirms shell visibility preferences were cleared for the next resume, with app-shell and main regressions.
+402. Add paused-menu reset-shell-toggles warning copy when browser shell storage cannot be cleared and the reset applies only to the current paused session, with app-shell and main regressions.
 
 ## Networking scaffolding
 

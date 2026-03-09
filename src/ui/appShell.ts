@@ -100,6 +100,13 @@ export interface PausedMainMenuFailedClearSavedWorldResult {
 
 export type PausedMainMenuClearSavedWorldResult = PausedMainMenuFailedClearSavedWorldResult;
 
+export interface PausedMainMenuClearedResetShellTogglesResult {
+  status: 'cleared';
+}
+
+export type PausedMainMenuResetShellTogglesResult =
+  PausedMainMenuClearedResetShellTogglesResult;
+
 export interface AppShellState {
   screen: AppShellScreen;
   statusText?: string;
@@ -120,6 +127,7 @@ export interface AppShellState {
   pausedMainMenuExportResult?: PausedMainMenuExportResult;
   pausedMainMenuImportResult?: PausedMainMenuImportResult;
   pausedMainMenuClearSavedWorldResult?: PausedMainMenuClearSavedWorldResult;
+  pausedMainMenuResetShellTogglesResult?: PausedMainMenuResetShellTogglesResult;
 }
 
 export interface InWorldShellStateOptions {
@@ -263,6 +271,31 @@ const createPausedMainMenuClearSavedWorldResultMenuSection = (
           }
         ],
         tone: 'warning'
+      };
+  }
+};
+const createPausedMainMenuResetShellTogglesResultMenuSection = (
+  resetShellTogglesResult: PausedMainMenuResetShellTogglesResult
+): AppShellMenuSection => {
+  switch (resetShellTogglesResult.status) {
+    case 'cleared':
+      return {
+        title: 'Reset Shell Toggles Result',
+        lines: [
+          'This paused session now resumes from the default-off shell layout because its saved shell visibility preferences were cleared.',
+          'The next Resume World starts with Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden.'
+        ],
+        metadataRows: [
+          {
+            label: 'Status',
+            value: 'Cleared for next resume'
+          },
+          {
+            label: 'Next Resume',
+            value: 'Default-off shell layout'
+          }
+        ],
+        tone: 'accent'
       };
   }
 };
@@ -429,7 +462,8 @@ export const createPausedMainMenuMenuSections = (
   importResult: PausedMainMenuImportResult | null = null,
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null = null,
   exportResult: PausedMainMenuExportResult | null = null,
-  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null
+  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null,
+  resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null
 ): readonly AppShellMenuSection[] => {
   const persistenceSummary = createWorldSessionShellStatePersistenceSummary(
     worldSessionShellState,
@@ -524,6 +558,9 @@ export const createPausedMainMenuMenuSections = (
         }
       ]
     },
+    ...(resetShellTogglesResult === null
+      ? []
+      : [createPausedMainMenuResetShellTogglesResultMenuSection(resetShellTogglesResult)]),
     {
       title: 'Persistence Summary',
       lines: [
@@ -584,7 +621,8 @@ export const createPausedMainMenuShellState = (
   importResult: PausedMainMenuImportResult | null = null,
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null = null,
   exportResult: PausedMainMenuExportResult | null = null,
-  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null
+  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null,
+  resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null
 ): AppShellState => ({
   screen: 'main-menu',
   statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
@@ -597,7 +635,8 @@ export const createPausedMainMenuShellState = (
     importResult,
     savedWorldStatus,
     exportResult,
-    clearSavedWorldResult
+    clearSavedWorldResult,
+    resetShellTogglesResult
   ),
   primaryActionLabel: 'Resume World',
   secondaryActionLabel: 'Export World Save',
@@ -609,7 +648,10 @@ export const createPausedMainMenuShellState = (
   ...(importResult === null ? {} : { pausedMainMenuImportResult: importResult }),
   ...(clearSavedWorldResult === null
     ? {}
-    : { pausedMainMenuClearSavedWorldResult: clearSavedWorldResult })
+    : { pausedMainMenuClearSavedWorldResult: clearSavedWorldResult }),
+  ...(resetShellTogglesResult === null
+    ? {}
+    : { pausedMainMenuResetShellTogglesResult: resetShellTogglesResult })
 });
 
 export interface AppShellViewModel {
@@ -705,7 +747,8 @@ export const createMainMenuShellState = (
   importResult: PausedMainMenuImportResult | null = null,
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null = null,
   exportResult: PausedMainMenuExportResult | null = null,
-  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null
+  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null,
+  resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null
 ): AppShellState =>
   hasResumableWorldSession
     ? createPausedMainMenuShellState(
@@ -716,7 +759,8 @@ export const createMainMenuShellState = (
         importResult,
         savedWorldStatus,
         exportResult,
-        clearSavedWorldResult
+        clearSavedWorldResult,
+        resetShellTogglesResult
       )
     : createFirstLaunchMainMenuShellState();
 

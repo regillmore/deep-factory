@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-09
 
+- Task: Add paused-menu reset-shell-toggles-result copy that confirms shell visibility preferences were cleared for the next resume.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused sessions now render an accent `Reset Shell Toggles Result` card after the reset action confirms the next resume uses the default-off shell layout, updated [src/main.ts](../src/main.ts) so paused-menu reset actions store and clear that result state alongside the existing paused-menu result lifecycle, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused regressions, removed completed task `400` from [docs/NEXT.md](docs/NEXT.md), added replacement task `402`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu clear-saved-world-failure copy when deleting browser resume data fails.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused sessions now render a warning `Clear Saved World Result` card with the surfaced failure reason when browser resume deletion fails, updated [src/main.ts](../src/main.ts) so paused-menu clear failures keep the current session browser-saved and autosave-eligible while surfacing that failed-clear result instead of silently returning, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused regressions, removed completed task `397` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical-slice task `401`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

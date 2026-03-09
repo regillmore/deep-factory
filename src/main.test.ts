@@ -22,6 +22,7 @@ import {
   type PausedMainMenuClearSavedWorldResult,
   type PausedMainMenuExportResult,
   type PausedMainMenuImportResult,
+  type PausedMainMenuResetShellTogglesResult,
   type PausedMainMenuSavedWorldStatus
 } from './ui/appShell';
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
@@ -1303,6 +1304,7 @@ const createExpectedPausedMainMenuState = (
     exportResult: PausedMainMenuExportResult;
     importResult: PausedMainMenuImportResult;
     clearSavedWorldResult: PausedMainMenuClearSavedWorldResult;
+    resetShellTogglesResult: PausedMainMenuResetShellTogglesResult;
     worldSaveCleared: boolean;
     savedWorldStatus: PausedMainMenuSavedWorldStatus;
   }> = {}
@@ -1324,7 +1326,8 @@ const createExpectedPausedMainMenuState = (
     options.importResult ?? null,
     options.savedWorldStatus ?? (options.worldSaveCleared ? 'cleared' : null),
     options.exportResult ?? null,
-    options.clearSavedWorldResult ?? null
+    options.clearSavedWorldResult ?? null,
+    options.resetShellTogglesResult ?? null
   );
 };
 
@@ -4992,7 +4995,14 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
 
-    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        worldSessionShellState: createDefaultWorldSessionShellState(),
+        resetShellTogglesResult: {
+          status: 'cleared'
+        }
+      })
+    );
     expect(testRuntime.storageValues.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)).toBe(false);
 
     expect(dispatchKeydown('Enter').prevented).toBe(true);
@@ -6109,6 +6119,14 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
 
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        worldSessionShellState: createDefaultWorldSessionShellState(),
+        resetShellTogglesResult: {
+          status: 'cleared'
+        }
+      })
+    );
     expect(testRuntime.storageValues.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)).toBe(false);
 
     expect(dispatchKeydown('Enter').prevented).toBe(true);

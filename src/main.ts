@@ -75,6 +75,7 @@ import {
   type PausedMainMenuClearSavedWorldResult,
   type PausedMainMenuExportResult,
   type PausedMainMenuImportResult,
+  type PausedMainMenuResetShellTogglesResult,
   type PausedMainMenuSavedWorldStatus
 } from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
@@ -522,6 +523,7 @@ const bootstrap = async (): Promise<void> => {
   let pausedMainMenuExportResult: PausedMainMenuExportResult | null = null;
   let pausedMainMenuImportResult: PausedMainMenuImportResult | null = null;
   let pausedMainMenuClearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null;
+  let pausedMainMenuResetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null;
   let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
   let worldSessionShellPersistenceAvailable = true;
@@ -685,7 +687,8 @@ const bootstrap = async (): Promise<void> => {
         pausedMainMenuImportResult,
         pausedMainMenuSavedWorldStatus,
         pausedMainMenuExportResult,
-        pausedMainMenuClearSavedWorldResult
+        pausedMainMenuClearSavedWorldResult,
+        pausedMainMenuResetShellTogglesResult
       )
     );
     syncWorldScreenShellVisibility();
@@ -2352,6 +2355,7 @@ const bootstrap = async (): Promise<void> => {
     pausedMainMenuExportResult = null;
     pausedMainMenuImportResult = null;
     pausedMainMenuClearSavedWorldResult = null;
+    pausedMainMenuResetShellTogglesResult = null;
     applyPausedMainMenuWorldSessionShellTransition('resume-paused-world-session');
     enterInWorldShellState();
     if (!worldSessionStarted) {
@@ -2367,6 +2371,7 @@ const bootstrap = async (): Promise<void> => {
     pausedMainMenuExportResult = null;
     pausedMainMenuImportResult = null;
     pausedMainMenuClearSavedWorldResult = null;
+    pausedMainMenuResetShellTogglesResult = null;
     clearPersistedCurrentWorldSession();
     applyPausedMainMenuWorldSessionShellTransition('start-fresh-world-session');
     resetFreshWorldSessionRuntimeState();
@@ -2397,6 +2402,9 @@ const bootstrap = async (): Promise<void> => {
   const resetPausedMainMenuShellTogglePreferences = (): void => {
     if (loop === null || !worldSessionStarted) return;
     applyPausedMainMenuWorldSessionShellTransition('reset-shell-toggle-preferences', 'clear');
+    pausedMainMenuResetShellTogglesResult = {
+      status: 'cleared'
+    };
     showMainMenuShellState();
   };
 
@@ -3121,6 +3129,7 @@ const bootstrap = async (): Promise<void> => {
       pausedMainMenuExportResult = null;
       pausedMainMenuImportResult = null;
       pausedMainMenuClearSavedWorldResult = null;
+      pausedMainMenuResetShellTogglesResult = null;
       resetFreshWorldSessionDebugEditState();
       clearPinnedDebugTileInspect();
       resolveCurrentWorldPlayerSpawn();
