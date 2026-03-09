@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Save/load
 
-394. Add paused-menu import-restore-failure copy that surfaces when a selected world save still fails during runtime restore, with app-shell and main regressions.
-395. Add paused-menu import-persistence-failure copy that surfaces when a selected world save restores in memory but browser-resume persistence rewrite still fails, with app-shell and main regressions.
 396. Add paused-menu import-picker-start-failure copy that surfaces when the browser JSON picker throws before any selection result, with app-shell and main regressions.
+397. Add paused-menu clear-saved-world-failure copy that surfaces when deleting the browser-resume world save fails, with app-shell and main regressions.
+398. Add paused-menu imported-session saved-world-status copy that persists after an import rewrite failure until a later browser-save rewrite succeeds, with app-shell and main regressions.
 
 ## Networking scaffolding
 

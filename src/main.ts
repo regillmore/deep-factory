@@ -461,13 +461,40 @@ type InWorldShellActionType =
   | 'recenter-camera';
 type InWorldShellNonToggleActionType = Exclude<InWorldShellActionType, InWorldShellToggleActionType>;
 
+interface RestoredPausedWorldSessionFromSaveEnvelopeResult {
+  status: 'restored';
+}
+
+interface FailedPausedWorldSessionFromSaveEnvelopeResult {
+  status: 'restore-failed';
+  reason: string;
+}
+
+interface PersistenceFailedPausedWorldSessionFromSaveEnvelopeResult {
+  status: 'persistence-failed';
+  reason: string;
+}
+
+type RestorePausedWorldSessionFromSaveEnvelopeResult =
+  | RestoredPausedWorldSessionFromSaveEnvelopeResult
+  | FailedPausedWorldSessionFromSaveEnvelopeResult
+  | PersistenceFailedPausedWorldSessionFromSaveEnvelopeResult;
+
 let restorePausedWorldSessionFromSaveEnvelopeAction:
-  | ((envelope: WorldSaveEnvelope) => boolean)
+  | ((envelope: WorldSaveEnvelope) => RestorePausedWorldSessionFromSaveEnvelopeResult)
   | null = null;
+
+const restorePausedWorldSessionFromSaveEnvelopeWithResult = (
+  envelope: WorldSaveEnvelope
+): RestorePausedWorldSessionFromSaveEnvelopeResult =>
+  restorePausedWorldSessionFromSaveEnvelopeAction?.(envelope) ?? {
+    status: 'restore-failed',
+    reason: 'Paused world-session restore is unavailable.'
+  };
 
 export const restorePausedWorldSessionFromSaveEnvelope = (
   envelope: WorldSaveEnvelope
-): boolean => restorePausedWorldSessionFromSaveEnvelopeAction?.(envelope) ?? false;
+): boolean => restorePausedWorldSessionFromSaveEnvelopeWithResult(envelope).status !== 'restore-failed';
 
 const bootstrap = async (): Promise<void> => {
   restorePausedWorldSessionFromSaveEnvelopeAction = null;
@@ -996,24 +1023,54 @@ const bootstrap = async (): Promise<void> => {
         getCameraFollowOffset: () => cameraFollowOffset
       }
     });
-  const persistCurrentWorldSession = (): boolean => {
+  const persistCurrentWorldSessionWithResult = ():
+    | {
+        status: 'persisted';
+      }
+    | {
+        status: 'failed';
+        reason: string;
+      } => {
     if (!worldSessionStarted) {
-      return false;
+      return {
+        status: 'failed',
+        reason: 'World session has not started.'
+      };
     }
     if (currentScreen === 'main-menu' && pausedMainMenuWorldSaveCleared) {
-      return false;
+      return {
+        status: 'failed',
+        reason: 'Browser resume save is intentionally cleared for this paused session.'
+      };
     }
 
     try {
-      return savePersistedWorldSaveEnvelope(
+      const persisted = savePersistedWorldSaveEnvelope(
         worldSessionShellStateStorage,
         createCurrentWorldSessionSaveEnvelope()
       );
+      if (persisted) {
+        return {
+          status: 'persisted'
+        };
+      }
+      return {
+        status: 'failed',
+        reason:
+          worldSessionShellStateStorage === null
+            ? 'Browser storage is unavailable.'
+            : 'Browser resume data was not updated.'
+      };
     } catch (error) {
       console.warn('Failed to persist world session.', error);
-      return false;
+      return {
+        status: 'failed',
+        reason: resolveThrownErrorReason(error)
+      };
     }
   };
+  const persistCurrentWorldSession = (): boolean =>
+    persistCurrentWorldSessionWithResult().status === 'persisted';
   const clearPersistedCurrentWorldSession = (): boolean =>
     clearPersistedWorldSaveEnvelope(worldSessionShellStateStorage);
   const exportPausedMainMenuWorldSave = (): boolean => {
@@ -1056,9 +1113,24 @@ const bootstrap = async (): Promise<void> => {
           showMainMenuShellState();
           return false;
         case 'selected': {
-          const restored = restorePausedWorldSessionFromSaveEnvelope(result.envelope);
-          if (!restored) {
+          const restoreResult = restorePausedWorldSessionFromSaveEnvelopeWithResult(result.envelope);
+          if (restoreResult.status === 'restore-failed') {
+            pausedMainMenuImportResult = {
+              status: 'restore-failed',
+              fileName: result.fileName,
+              reason: restoreResult.reason
+            };
+            showMainMenuShellState();
             return false;
+          }
+          if (restoreResult.status === 'persistence-failed') {
+            pausedMainMenuImportResult = {
+              status: 'persistence-failed',
+              fileName: result.fileName,
+              reason: restoreResult.reason
+            };
+            showMainMenuShellState();
+            return true;
           }
           pausedMainMenuImportResult = {
             status: 'accepted',
@@ -2983,9 +3055,14 @@ const bootstrap = async (): Promise<void> => {
     });
   };
 
-  restorePausedWorldSessionFromSaveEnvelopeAction = (envelope: WorldSaveEnvelope): boolean => {
+  restorePausedWorldSessionFromSaveEnvelopeAction = (
+    envelope: WorldSaveEnvelope
+  ): RestorePausedWorldSessionFromSaveEnvelopeResult => {
     if (currentScreen !== 'main-menu' || loop === null || !worldSessionStarted) {
-      return false;
+      return {
+        status: 'restore-failed',
+        reason: 'Paused world-session restore is unavailable.'
+      };
     }
 
     try {
@@ -3013,12 +3090,24 @@ const bootstrap = async (): Promise<void> => {
       clearPinnedDebugTileInspect();
       resolveCurrentWorldPlayerSpawn();
       clearPersistedCurrentWorldSession();
-      persistCurrentWorldSession();
+      const persistenceResult = persistCurrentWorldSessionWithResult();
       renderWorldPreview();
-      return true;
+      if (persistenceResult.status !== 'persisted') {
+        console.warn('Failed to persist restored world save.', persistenceResult.reason);
+        return {
+          status: 'persistence-failed',
+          reason: persistenceResult.reason
+        };
+      }
+      return {
+        status: 'restored'
+      };
     } catch (error) {
       console.warn('Failed to restore world save.', error);
-      return false;
+      return {
+        status: 'restore-failed',
+        reason: resolveThrownErrorReason(error)
+      };
     }
   };
 

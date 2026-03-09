@@ -48,6 +48,18 @@ export interface PausedMainMenuRejectedImportResult {
   reason: string;
 }
 
+export interface PausedMainMenuRestoreFailedImportResult {
+  status: 'restore-failed';
+  fileName: string | null;
+  reason: string;
+}
+
+export interface PausedMainMenuPersistenceFailedImportResult {
+  status: 'persistence-failed';
+  fileName: string | null;
+  reason: string;
+}
+
 export interface PausedMainMenuCancelledImportResult {
   status: 'cancelled';
 }
@@ -55,7 +67,9 @@ export interface PausedMainMenuCancelledImportResult {
 export type PausedMainMenuImportResult =
   | PausedMainMenuCancelledImportResult
   | PausedMainMenuAcceptedImportResult
-  | PausedMainMenuRejectedImportResult;
+  | PausedMainMenuRejectedImportResult
+  | PausedMainMenuRestoreFailedImportResult
+  | PausedMainMenuPersistenceFailedImportResult;
 
 export interface PausedMainMenuDownloadedExportResult {
   status: 'downloaded';
@@ -269,7 +283,52 @@ const createPausedMainMenuImportMenuSection = (
           },
           {
             label: 'Reason',
-            value: importResult.reason
+            value: resolvePausedMainMenuResultReasonValue(importResult.reason)
+          }
+        ],
+        tone: 'warning'
+      };
+    case 'restore-failed':
+      return {
+        title: 'Import Result',
+        lines: [
+          'The selected JSON world save passed top-level envelope validation, but runtime restore still failed.'
+        ],
+        metadataRows: [
+          {
+            label: 'Status',
+            value: 'Restore failed'
+          },
+          {
+            label: 'File',
+            value: resolvePausedMainMenuResultFileNameValue(importResult.fileName)
+          },
+          {
+            label: 'Reason',
+            value: resolvePausedMainMenuResultReasonValue(importResult.reason)
+          }
+        ],
+        tone: 'warning'
+      };
+    case 'persistence-failed':
+      return {
+        title: 'Import Result',
+        lines: [
+          'The paused session now reflects the selected JSON world save in this tab, but browser-resume persistence failed after restore.',
+          'Resume World keeps the imported session live here, but reload may not restore it until a later save succeeds.'
+        ],
+        metadataRows: [
+          {
+            label: 'Status',
+            value: 'Restored, not browser saved'
+          },
+          {
+            label: 'File',
+            value: resolvePausedMainMenuResultFileNameValue(importResult.fileName)
+          },
+          {
+            label: 'Reason',
+            value: resolvePausedMainMenuResultReasonValue(importResult.reason)
           }
         ],
         tone: 'warning'
@@ -326,7 +385,7 @@ export const createPausedMainMenuMenuSections = (
     {
       title: 'Import World Save',
       lines: [
-        'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates.'
+        'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates and runtime restore succeeds.'
       ],
       metadataRows: [
         {
@@ -335,7 +394,8 @@ export const createPausedMainMenuMenuSections = (
         },
         {
           label: 'Consequence',
-          value: 'Valid imports replace the paused session; canceled or invalid picks do not.'
+          value:
+            'Validated imports replace the paused session only when runtime restore succeeds; canceled, invalid, or failed restores do not.'
         }
       ]
     },
@@ -626,7 +686,7 @@ export const resolvePausedMainMenuExportWorldSaveTitle = (): string =>
   'Download a JSON world-save copy of the paused session without changing the current world, player, or camera state';
 
 export const resolvePausedMainMenuImportWorldSaveTitle = (): string =>
-  'Choose a JSON world-save file and replace the paused session only when its top-level envelope validates';
+  'Choose a JSON world-save file and replace the paused session only when its top-level envelope validates and runtime restore succeeds';
 
 export const resolvePausedMainMenuClearSavedWorldTitle = (): string =>
   'Delete the browser-saved paused session while keeping the current world open in this tab until it is saved again';

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-09: Import persistence failures should keep the restored paused session live while warning that browser resume was not rewritten
+
+- Decision: When a paused-menu import successfully restores world and session state in memory but the follow-up browser-resume save rewrite fails, the current tab keeps the restored paused session active and surfaces warning copy instead of rolling the runtime back.
+- Reason: Runtime restore has already replaced world-owned and session-owned state by that point, and forcing a rollback would require a transactional restore path that does not exist yet.
+- Consequence: Future paused-menu import or persistence work should treat browser-resume rewrite as a second-stage warning after in-memory restore unless a deliberate transactional rollback seam is added.
+
 ### 2026-03-09: Clearing a paused saved world should survive browser exit until the session resumes or is replaced
 
 - Decision: The paused-menu `Clear Saved World` action now removes the persisted `deep-factory.world-save` envelope immediately and suppresses paused-menu `pagehide` autosave for that same paused session until the player resumes it or another save-replacing path such as import or fresh-world reset runs.

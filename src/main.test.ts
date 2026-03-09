@@ -294,6 +294,7 @@ const testRuntime = vi.hoisted(() => {
     },
     gameLoopStartCount: 0,
     storageValues: new Map<string, string>(),
+    storageSetItemErrorsByKey: new Map<string, Error>(),
     downloadedWorldSaveEnvelopes: [] as unknown[],
     downloadWorldSaveFilename: 'deep-factory-world-save-2026-03-08T05-06-07Z.json',
     downloadWorldSaveError: null as Error | null,
@@ -1470,6 +1471,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint();
     testRuntime.gameLoopStartCount = 0;
     testRuntime.storageValues.clear();
+    testRuntime.storageSetItemErrorsByKey.clear();
     testRuntime.downloadedWorldSaveEnvelopes = [];
     testRuntime.downloadWorldSaveFilename = 'deep-factory-world-save-2026-03-08T05-06-07Z.json';
     testRuntime.downloadWorldSaveError = null;
@@ -1486,6 +1488,10 @@ describe('main.ts shell state orchestration', () => {
       localStorage: {
         getItem: (key: string) => testRuntime.storageValues.get(key) ?? null,
         setItem: (key: string, value: string) => {
+          const writeError = testRuntime.storageSetItemErrorsByKey.get(key);
+          if (writeError) {
+            throw writeError;
+          }
           testRuntime.storageValues.set(key, value);
         },
         removeItem: (key: string) => {
@@ -5254,6 +5260,128 @@ describe('main.ts shell state orchestration', () => {
     expect(warnSpy).toHaveBeenCalledWith(
       'Rejected imported world save.',
       'world save envelope kind must be "deep-factory.world-save"'
+    );
+    warnSpy.mockRestore();
+  });
+
+  it('shows paused-menu import restore failure copy when runtime restore throws after selection', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const restoredWorld = new TileWorld(0);
+    expect(restoredWorld.setTile(5, -20, 6)).toBe(true);
+    const restoreEnvelope = createWorldSaveEnvelope({
+      worldSnapshot: restoredWorld.createSnapshot(),
+      standalonePlayerState: createPlayerState({
+        position: { x: 72, y: 96 },
+        velocity: { x: -14, y: 28 },
+        grounded: false,
+        facing: 'left',
+        health: 62,
+        lavaDamageTickSecondsRemaining: 0.5
+      }),
+      cameraFollowOffset: { x: 18, y: -12 }
+    });
+
+    const restoreModule = await import('./mainWorldSessionRestore');
+    vi.mocked(restoreModule.restoreWorldSessionFromSaveEnvelope).mockImplementationOnce(() => {
+      throw new Error('renderer load failed');
+    });
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    const persistedEnvelopeBeforeImport = readPersistedWorldSaveEnvelope();
+    testRuntime.queuedWorldSaveImportResults = [
+      {
+        status: 'selected',
+        fileName: 'restore.json',
+        envelope: restoreEnvelope
+      }
+    ];
+
+    testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
+    await flushBootstrap();
+
+    expect(testRuntime.worldSaveImportCallCount).toBe(1);
+    expect(restoreModule.restoreWorldSessionFromSaveEnvelope).toHaveBeenCalledTimes(1);
+    expect(testRuntime.rendererLoadWorldSnapshotCallCount).toBe(0);
+    expect(readPersistedWorldSaveEnvelope()).toEqual(persistedEnvelopeBeforeImport);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        importResult: {
+          status: 'restore-failed',
+          fileName: 'restore.json',
+          reason: 'renderer load failed'
+        }
+      })
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Failed to restore world save.',
+      expect.objectContaining({
+        message: 'renderer load failed'
+      })
+    );
+    warnSpy.mockRestore();
+  });
+
+  it('shows paused-menu import persistence failure copy when runtime restore succeeds but browser resume rewrite fails', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const restoredWorld = new TileWorld(0);
+    expect(restoredWorld.setTile(5, -20, 6)).toBe(true);
+    const restoreEnvelope = createWorldSaveEnvelope({
+      worldSnapshot: restoredWorld.createSnapshot(),
+      standalonePlayerState: createPlayerState({
+        position: { x: 72, y: 96 },
+        velocity: { x: -14, y: 28 },
+        grounded: false,
+        facing: 'left',
+        health: 62,
+        lavaDamageTickSecondsRemaining: 0.5
+      }),
+      cameraFollowOffset: { x: 18, y: -12 }
+    });
+
+    const restoreModule = await import('./mainWorldSessionRestore');
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(readPersistedWorldSaveEnvelope()).not.toBeNull();
+    testRuntime.storageSetItemErrorsByKey.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      new Error('write blocked')
+    );
+    testRuntime.queuedWorldSaveImportResults = [
+      {
+        status: 'selected',
+        fileName: 'restore.json',
+        envelope: restoreEnvelope
+      }
+    ];
+
+    testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
+    await flushBootstrap();
+
+    expect(testRuntime.worldSaveImportCallCount).toBe(1);
+    expect(restoreModule.restoreWorldSessionFromSaveEnvelope).toHaveBeenCalledTimes(1);
+    expect(testRuntime.rendererLoadWorldSnapshotCallCount).toBe(1);
+    expect(testRuntime.rendererWorldSnapshot).toEqual(restoreEnvelope.worldSnapshot);
+    expect(readPersistedWorldSaveEnvelope()).toBeNull();
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        importResult: {
+          status: 'persistence-failed',
+          fileName: 'restore.json',
+          reason: 'Browser resume data was not updated.'
+        }
+      })
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Failed to persist restored world save.',
+      'Browser resume data was not updated.'
     );
     warnSpy.mockRestore();
   });

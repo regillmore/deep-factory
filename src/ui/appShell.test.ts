@@ -64,6 +64,13 @@ const DEFAULTED_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
 const ACCEPTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
   'The paused session now reflects the selected JSON world save because its top-level envelope validated and restored successfully.'
 ] as const;
+const RESTORE_FAILED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
+  'The selected JSON world save passed top-level envelope validation, but runtime restore still failed.'
+] as const;
+const PERSISTENCE_FAILED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
+  'The paused session now reflects the selected JSON world save in this tab, but browser-resume persistence failed after restore.',
+  'Resume World keeps the imported session live here, but reload may not restore it until a later save succeeds.'
+] as const;
 const DOWNLOADED_PAUSED_MAIN_MENU_EXPORT_RESULT_LINES = [
   'The paused session stayed unchanged, and the last JSON world-save download used the filename below.'
 ] as const;
@@ -251,7 +258,7 @@ describe('resolveAppShellViewModel', () => {
       {
         title: 'Import World Save',
         lines: [
-          'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates.'
+          'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates and runtime restore succeeds.'
         ],
         metadataRows: [
           {
@@ -260,7 +267,8 @@ describe('resolveAppShellViewModel', () => {
           },
           {
             label: 'Consequence',
-            value: 'Valid imports replace the paused session; canceled or invalid picks do not.'
+            value:
+              'Validated imports replace the paused session only when runtime restore succeeds; canceled, invalid, or failed restores do not.'
           }
         ]
       },
@@ -493,6 +501,78 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'Reason',
           value: 'world save envelope kind must be "deep-factory.world-save"'
+        }
+      ],
+      tone: 'warning'
+    });
+  });
+
+  it('adds a paused-menu import-result card when the selected world save validated but runtime restore failed', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        {
+          status: 'restore-failed',
+          fileName: 'restore.json',
+          reason: 'renderer load failed'
+        }
+      )
+    );
+
+    expect(viewModel.menuSections[3]).toEqual({
+      title: 'Import Result',
+      lines: [...RESTORE_FAILED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES],
+      metadataRows: [
+        {
+          label: 'Status',
+          value: 'Restore failed'
+        },
+        {
+          label: 'File',
+          value: 'restore.json'
+        },
+        {
+          label: 'Reason',
+          value: 'renderer load failed'
+        }
+      ],
+      tone: 'warning'
+    });
+  });
+
+  it('adds a paused-menu import-result card when the selected world save restored but browser persistence rewrite failed', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        {
+          status: 'persistence-failed',
+          fileName: 'restore.json',
+          reason: 'Browser resume data was not updated.'
+        }
+      )
+    );
+
+    expect(viewModel.menuSections[3]).toEqual({
+      title: 'Import Result',
+      lines: [...PERSISTENCE_FAILED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES],
+      metadataRows: [
+        {
+          label: 'Status',
+          value: 'Restored, not browser saved'
+        },
+        {
+          label: 'File',
+          value: 'restore.json'
+        },
+        {
+          label: 'Reason',
+          value: 'Browser resume data was not updated.'
         }
       ],
       tone: 'warning'
@@ -1057,7 +1137,7 @@ describe('createPausedMainMenuShellState', () => {
         {
           title: 'Import World Save',
           lines: [
-            'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates.'
+            'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates and runtime restore succeeds.'
           ],
           metadataRows: [
             {
@@ -1066,7 +1146,8 @@ describe('createPausedMainMenuShellState', () => {
             },
             {
               label: 'Consequence',
-              value: 'Valid imports replace the paused session; canceled or invalid picks do not.'
+              value:
+                'Validated imports replace the paused session only when runtime restore succeeds; canceled, invalid, or failed restores do not.'
             }
           ]
         },
@@ -1205,7 +1286,7 @@ describe('createPausedMainMenuShellState', () => {
         {
           title: 'Import World Save',
           lines: [
-            'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates.'
+            'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates and runtime restore succeeds.'
           ],
           metadataRows: [
             {
@@ -1214,7 +1295,8 @@ describe('createPausedMainMenuShellState', () => {
             },
             {
               label: 'Consequence',
-              value: 'Valid imports replace the paused session; canceled or invalid picks do not.'
+              value:
+                'Validated imports replace the paused session only when runtime restore succeeds; canceled, invalid, or failed restores do not.'
             }
           ]
         },
@@ -1347,9 +1429,9 @@ describe('resolvePausedMainMenuExportWorldSaveTitle', () => {
 });
 
 describe('resolvePausedMainMenuImportWorldSaveTitle', () => {
-  it('explains that paused-menu import replaces the session only after the selected envelope validates', () => {
+  it('explains that paused-menu import replaces the session only after the selected envelope validates and restore succeeds', () => {
     expect(resolvePausedMainMenuImportWorldSaveTitle()).toBe(
-      'Choose a JSON world-save file and replace the paused session only when its top-level envelope validates'
+      'Choose a JSON world-save file and replace the paused session only when its top-level envelope validates and runtime restore succeeds'
     );
   });
 });
