@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Save/load
 
-389. Add paused-menu import-success copy that surfaces the last accepted world-save filename after a valid restore, with app-shell regressions.
 390. Add paused-menu clear-saved-world status copy that surfaces when the current paused session is no longer browser-saved until a resume or replacement save rewrites it, with app-shell regressions.
 391. Add paused-menu import-cancel copy that surfaces when the JSON picker closes without changing the paused session, with app-shell regressions.
+392. Add paused-menu export-success copy that surfaces the last downloaded world-save filename after export, with app-shell regressions.
 
 ## Networking scaffolding
 

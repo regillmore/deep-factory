@@ -61,6 +61,9 @@ const DEFAULTED_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Saved in-world shell visibility resumes with the paused session until a reset path clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_DEFAULTED_SUMMARY_LINE
 ] as const;
+const ACCEPTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
+  'The paused session now reflects the selected JSON world save because its top-level envelope validated and restored successfully.'
+] as const;
 const REJECTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
   'The paused session stayed unchanged because the selected JSON world save did not pass top-level envelope validation.'
 ] as const;
@@ -325,6 +328,37 @@ describe('resolveAppShellViewModel', () => {
     ]);
   });
 
+  it('adds a paused-menu import-result card when the last selected world save was accepted', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        {
+          status: 'accepted',
+          fileName: 'restore.json'
+        }
+      )
+    );
+
+    expect(viewModel.menuSections[3]).toEqual({
+      title: 'Import Result',
+      lines: [...ACCEPTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES],
+      metadataRows: [
+        {
+          label: 'Status',
+          value: 'Accepted'
+        },
+        {
+          label: 'File',
+          value: 'restore.json'
+        }
+      ],
+      tone: 'accent'
+    });
+  });
+
   it('adds a paused-menu import-result card when the last selected world save was rejected', () => {
     const viewModel = resolveAppShellViewModel(
       createPausedMainMenuShellState(
@@ -333,6 +367,7 @@ describe('resolveAppShellViewModel', () => {
         createDefaultShellActionKeybindingState(),
         false,
         {
+          status: 'rejected',
           fileName: 'broken.json',
           reason: 'world save envelope kind must be "deep-factory.world-save"'
         }

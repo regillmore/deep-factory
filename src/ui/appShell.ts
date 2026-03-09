@@ -37,10 +37,20 @@ export interface AppShellMenuSection {
   tone?: AppShellMenuSectionTone;
 }
 
+export interface PausedMainMenuAcceptedImportResult {
+  status: 'accepted';
+  fileName: string | null;
+}
+
 export interface PausedMainMenuRejectedImportResult {
+  status: 'rejected';
   fileName: string | null;
   reason: string;
 }
+
+export type PausedMainMenuImportResult =
+  | PausedMainMenuAcceptedImportResult
+  | PausedMainMenuRejectedImportResult;
 
 export interface AppShellState {
   screen: AppShellScreen;
@@ -59,7 +69,7 @@ export interface AppShellState {
   playerSpawnMarkerVisible?: boolean;
   shortcutsOverlayVisible?: boolean;
   shellActionKeybindings?: ShellActionKeybindingState;
-  pausedMainMenuRejectedImportResult?: PausedMainMenuRejectedImportResult;
+  pausedMainMenuImportResult?: PausedMainMenuImportResult;
 }
 
 export interface InWorldShellStateOptions {
@@ -87,7 +97,7 @@ const resolvePausedMainMenuShellActionKeybindingSetValue = (
   matchesDefaultShellActionKeybindingState(shellActionKeybindings)
     ? 'Default set'
     : 'Custom set';
-const resolvePausedMainMenuRejectedImportFileNameValue = (fileName: string | null): string => {
+const resolvePausedMainMenuImportFileNameValue = (fileName: string | null): string => {
   const trimmedFileName = fileName?.trim() ?? '';
   return trimmedFileName.length > 0 ? trimmedFileName : 'Unknown file';
 };
@@ -123,36 +133,59 @@ const createPausedMainMenuShellActionKeybindingSummaryRows = (
     value: getDesktopPlayerSpawnMarkerHotkeyLabel(shellActionKeybindings)
   }
 ] as const;
-const createPausedMainMenuRejectedImportMenuSection = (
-  rejectedImportResult: PausedMainMenuRejectedImportResult
-): AppShellMenuSection => ({
-  title: 'Import Result',
-  lines: [
-    'The paused session stayed unchanged because the selected JSON world save did not pass top-level envelope validation.'
-  ],
-  metadataRows: [
-    {
-      label: 'Status',
-      value: 'Rejected'
-    },
-    {
-      label: 'File',
-      value: resolvePausedMainMenuRejectedImportFileNameValue(rejectedImportResult.fileName)
-    },
-    {
-      label: 'Reason',
-      value: rejectedImportResult.reason
-    }
-  ],
-  tone: 'warning'
-});
+const createPausedMainMenuImportMenuSection = (
+  importResult: PausedMainMenuImportResult
+): AppShellMenuSection => {
+  switch (importResult.status) {
+    case 'accepted':
+      return {
+        title: 'Import Result',
+        lines: [
+          'The paused session now reflects the selected JSON world save because its top-level envelope validated and restored successfully.'
+        ],
+        metadataRows: [
+          {
+            label: 'Status',
+            value: 'Accepted'
+          },
+          {
+            label: 'File',
+            value: resolvePausedMainMenuImportFileNameValue(importResult.fileName)
+          }
+        ],
+        tone: 'accent'
+      };
+    case 'rejected':
+      return {
+        title: 'Import Result',
+        lines: [
+          'The paused session stayed unchanged because the selected JSON world save did not pass top-level envelope validation.'
+        ],
+        metadataRows: [
+          {
+            label: 'Status',
+            value: 'Rejected'
+          },
+          {
+            label: 'File',
+            value: resolvePausedMainMenuImportFileNameValue(importResult.fileName)
+          },
+          {
+            label: 'Reason',
+            value: importResult.reason
+          }
+        ],
+        tone: 'warning'
+      };
+  }
+};
 
 export const createPausedMainMenuMenuSections = (
   worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
   worldSessionShellPersistenceAvailable = true,
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
   shellActionKeybindingsDefaultedFromPersistedState = false,
-  rejectedImportResult: PausedMainMenuRejectedImportResult | null = null
+  importResult: PausedMainMenuImportResult | null = null
 ): readonly AppShellMenuSection[] => {
   const persistenceSummary = createWorldSessionShellStatePersistenceSummary(
     worldSessionShellState,
@@ -206,9 +239,7 @@ export const createPausedMainMenuMenuSections = (
         }
       ]
     },
-    ...(rejectedImportResult === null
-      ? []
-      : [createPausedMainMenuRejectedImportMenuSection(rejectedImportResult)]),
+    ...(importResult === null ? [] : [createPausedMainMenuImportMenuSection(importResult)]),
     {
       title: 'Clear Saved World',
       lines: [
@@ -298,7 +329,7 @@ export const createPausedMainMenuShellState = (
   worldSessionShellPersistenceAvailable = true,
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
   shellActionKeybindingsDefaultedFromPersistedState = false,
-  rejectedImportResult: PausedMainMenuRejectedImportResult | null = null
+  importResult: PausedMainMenuImportResult | null = null
 ): AppShellState => ({
   screen: 'main-menu',
   statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
@@ -308,7 +339,7 @@ export const createPausedMainMenuShellState = (
     worldSessionShellPersistenceAvailable,
     shellActionKeybindings,
     shellActionKeybindingsDefaultedFromPersistedState,
-    rejectedImportResult
+    importResult
   ),
   primaryActionLabel: 'Resume World',
   secondaryActionLabel: 'Export World Save',
@@ -316,9 +347,7 @@ export const createPausedMainMenuShellState = (
   quaternaryActionLabel: 'Clear Saved World',
   quinaryActionLabel: 'Reset Shell Toggles',
   senaryActionLabel: 'New World',
-  ...(rejectedImportResult === null
-    ? {}
-    : { pausedMainMenuRejectedImportResult: rejectedImportResult })
+  ...(importResult === null ? {} : { pausedMainMenuImportResult: importResult })
 });
 
 export interface AppShellViewModel {
@@ -411,7 +440,7 @@ export const createMainMenuShellState = (
   worldSessionShellPersistenceAvailable = true,
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
   shellActionKeybindingsDefaultedFromPersistedState = false,
-  rejectedImportResult: PausedMainMenuRejectedImportResult | null = null
+  importResult: PausedMainMenuImportResult | null = null
 ): AppShellState =>
   hasResumableWorldSession
     ? createPausedMainMenuShellState(
@@ -419,7 +448,7 @@ export const createMainMenuShellState = (
         worldSessionShellPersistenceAvailable,
         shellActionKeybindings,
         shellActionKeybindingsDefaultedFromPersistedState,
-        rejectedImportResult
+        importResult
       )
     : createFirstLaunchMainMenuShellState();
 

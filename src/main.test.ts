@@ -19,7 +19,7 @@ import {
   createMainMenuShellState,
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState,
-  type PausedMainMenuRejectedImportResult
+  type PausedMainMenuImportResult
 } from './ui/appShell';
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
@@ -1290,7 +1290,7 @@ const createExpectedPausedMainMenuState = (
   options: Partial<{
     worldSessionShellState: ReturnType<typeof createDefaultWorldSessionShellState>;
     persistenceAvailable: boolean;
-    rejectedImportResult: PausedMainMenuRejectedImportResult;
+    importResult: PausedMainMenuImportResult;
   }> = {}
 ) => {
   const shellActionKeybindingLoad = loadShellActionKeybindingStateWithDefaultFallbackStatus({
@@ -1307,7 +1307,7 @@ const createExpectedPausedMainMenuState = (
     options.persistenceAvailable ?? true,
     shellActionKeybindingLoad.state,
     shellActionKeybindingLoad.defaultedFromPersistedState,
-    options.rejectedImportResult ?? null
+    options.importResult ?? null
   );
 };
 
@@ -5097,8 +5097,20 @@ describe('main.ts shell state orchestration', () => {
 
     expect(testRuntime.worldSaveImportCallCount).toBe(1);
     expect(restoreModule.restoreWorldSessionFromSaveEnvelope).toHaveBeenCalledTimes(1);
-    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        importResult: {
+          status: 'accepted',
+          fileName: 'restore.json'
+        }
+      })
+    );
     expect(testRuntime.rendererLoadWorldSnapshotCallCount).toBe(1);
+
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
   });
 
   it('keeps the paused session unchanged when the world-save import picker is canceled', async () => {
@@ -5150,7 +5162,8 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.rendererLoadWorldSnapshotCallCount).toBe(0);
     expect(testRuntime.shellInstance?.currentState).toEqual(
       createExpectedPausedMainMenuState({
-        rejectedImportResult: {
+        importResult: {
+          status: 'rejected',
           fileName: 'broken.json',
           reason: 'world save envelope kind must be "deep-factory.world-save"'
         }

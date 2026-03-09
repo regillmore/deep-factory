@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-09
 
+- Task: Add paused-menu import-success copy for accepted world-save restores.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused sessions now render a shared `Import Result` card for accepted or rejected imports, with successful restores surfacing the last accepted filename; updated [src/main.ts](../src/main.ts) so valid paused-menu imports store that accepted result and rerender the paused shell while resume or replacement paths still clear stale import feedback; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused accepted-import regressions; removed completed task `389` from [docs/NEXT.md](docs/NEXT.md), added replacement task `392`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu import-result copy for rejected world-save envelopes.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused sessions can render a warning `Import Result` card with the last rejected file and validation reason beside the existing import guidance, updated [src/main.ts](../src/main.ts) so paused-menu rejected imports remember that feedback until the session resumes or a replacement session loads, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused regressions, removed completed task `387` from [docs/NEXT.md](docs/NEXT.md), added replacement task `391`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

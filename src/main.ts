@@ -72,7 +72,7 @@ import {
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState,
   type AppShellScreen,
-  type PausedMainMenuRejectedImportResult
+  type PausedMainMenuImportResult
 } from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
@@ -478,7 +478,7 @@ const bootstrap = async (): Promise<void> => {
   let worldSessionStarted = false;
   let worldSessionLoopStarted = false;
   let pausedMainMenuWorldSaveCleared = false;
-  let pausedMainMenuRejectedImportResult: PausedMainMenuRejectedImportResult | null = null;
+  let pausedMainMenuImportResult: PausedMainMenuImportResult | null = null;
   let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
   let worldSessionShellPersistenceAvailable = true;
@@ -639,7 +639,7 @@ const bootstrap = async (): Promise<void> => {
         worldSessionShellPersistenceAvailable,
         shellActionKeybindings,
         shellActionKeybindingsDefaultedFromPersistedState,
-        pausedMainMenuRejectedImportResult
+        pausedMainMenuImportResult
       )
     );
     syncWorldScreenShellVisibility();
@@ -1020,15 +1020,26 @@ const bootstrap = async (): Promise<void> => {
         case 'cancelled':
           return false;
         case 'rejected':
-          pausedMainMenuRejectedImportResult = {
+          pausedMainMenuImportResult = {
+            status: 'rejected',
             fileName: result.fileName,
             reason: result.reason
           };
           console.warn('Rejected imported world save.', result.reason);
           showMainMenuShellState();
           return false;
-        case 'selected':
-          return restorePausedWorldSessionFromSaveEnvelope(result.envelope);
+        case 'selected': {
+          const restored = restorePausedWorldSessionFromSaveEnvelope(result.envelope);
+          if (!restored) {
+            return false;
+          }
+          pausedMainMenuImportResult = {
+            status: 'accepted',
+            fileName: result.fileName
+          };
+          showMainMenuShellState();
+          return true;
+        }
       }
     } catch (error) {
       console.warn('Failed to import world save.', error);
@@ -2220,7 +2231,7 @@ const bootstrap = async (): Promise<void> => {
   const enterOrResumeWorldSessionFromMainMenu = (): void => {
     if (loop === null) return;
     pausedMainMenuWorldSaveCleared = false;
-    pausedMainMenuRejectedImportResult = null;
+    pausedMainMenuImportResult = null;
     applyPausedMainMenuWorldSessionShellTransition('resume-paused-world-session');
     enterInWorldShellState();
     if (!worldSessionStarted) {
@@ -2232,7 +2243,7 @@ const bootstrap = async (): Promise<void> => {
   const startFreshWorldSessionFromMainMenu = (): void => {
     if (loop === null || !worldSessionStarted) return;
     pausedMainMenuWorldSaveCleared = false;
-    pausedMainMenuRejectedImportResult = null;
+    pausedMainMenuImportResult = null;
     clearPersistedCurrentWorldSession();
     applyPausedMainMenuWorldSessionShellTransition('start-fresh-world-session');
     resetFreshWorldSessionRuntimeState();
@@ -2967,7 +2978,7 @@ const bootstrap = async (): Promise<void> => {
         }
       });
       pausedMainMenuWorldSaveCleared = false;
-      pausedMainMenuRejectedImportResult = null;
+      pausedMainMenuImportResult = null;
       resetFreshWorldSessionDebugEditState();
       clearPinnedDebugTileInspect();
       resolveCurrentWorldPlayerSpawn();
