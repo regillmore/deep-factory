@@ -57,6 +57,20 @@ export type PausedMainMenuImportResult =
   | PausedMainMenuAcceptedImportResult
   | PausedMainMenuRejectedImportResult;
 
+export interface PausedMainMenuDownloadedExportResult {
+  status: 'downloaded';
+  fileName: string | null;
+}
+
+export interface PausedMainMenuFailedExportResult {
+  status: 'failed';
+  reason: string;
+}
+
+export type PausedMainMenuExportResult =
+  | PausedMainMenuDownloadedExportResult
+  | PausedMainMenuFailedExportResult;
+
 export interface AppShellState {
   screen: AppShellScreen;
   statusText?: string;
@@ -74,6 +88,7 @@ export interface AppShellState {
   playerSpawnMarkerVisible?: boolean;
   shortcutsOverlayVisible?: boolean;
   shellActionKeybindings?: ShellActionKeybindingState;
+  pausedMainMenuExportResult?: PausedMainMenuExportResult;
   pausedMainMenuImportResult?: PausedMainMenuImportResult;
 }
 
@@ -106,25 +121,52 @@ const resolvePausedMainMenuResultFileNameValue = (fileName: string | null): stri
   const trimmedFileName = fileName?.trim() ?? '';
   return trimmedFileName.length > 0 ? trimmedFileName : 'Unknown file';
 };
+const resolvePausedMainMenuResultReasonValue = (reason: string): string => {
+  const trimmedReason = reason.trim();
+  return trimmedReason.length > 0 ? trimmedReason : 'Unknown error';
+};
 const createPausedMainMenuExportResultMenuSection = (
-  fileName: string | null
-): AppShellMenuSection => ({
-  title: 'Export Result',
-  lines: [
-    'The paused session stayed unchanged, and the last JSON world-save download used the filename below.'
-  ],
-  metadataRows: [
-    {
-      label: 'Status',
-      value: 'Downloaded'
-    },
-    {
-      label: 'File',
-      value: resolvePausedMainMenuResultFileNameValue(fileName)
-    }
-  ],
-  tone: 'accent'
-});
+  exportResult: PausedMainMenuExportResult
+): AppShellMenuSection => {
+  switch (exportResult.status) {
+    case 'downloaded':
+      return {
+        title: 'Export Result',
+        lines: [
+          'The paused session stayed unchanged, and the last JSON world-save download used the filename below.'
+        ],
+        metadataRows: [
+          {
+            label: 'Status',
+            value: 'Downloaded'
+          },
+          {
+            label: 'File',
+            value: resolvePausedMainMenuResultFileNameValue(exportResult.fileName)
+          }
+        ],
+        tone: 'accent'
+      };
+    case 'failed':
+      return {
+        title: 'Export Result',
+        lines: [
+          'The paused session stayed unchanged because the JSON world-save download failed before the browser accepted it.'
+        ],
+        metadataRows: [
+          {
+            label: 'Status',
+            value: 'Failed'
+          },
+          {
+            label: 'Reason',
+            value: resolvePausedMainMenuResultReasonValue(exportResult.reason)
+          }
+        ],
+        tone: 'warning'
+      };
+  }
+};
 const createPausedMainMenuClearedWorldSaveStatusMenuSection = (): AppShellMenuSection => ({
   title: 'Saved World Status',
   lines: [
@@ -242,7 +284,7 @@ export const createPausedMainMenuMenuSections = (
   shellActionKeybindingsDefaultedFromPersistedState = false,
   importResult: PausedMainMenuImportResult | null = null,
   worldSaveCleared = false,
-  lastExportedWorldSaveFileName: string | null = null
+  exportResult: PausedMainMenuExportResult | null = null
 ): readonly AppShellMenuSection[] => {
   const persistenceSummary = createWorldSessionShellStatePersistenceSummary(
     worldSessionShellState,
@@ -280,9 +322,7 @@ export const createPausedMainMenuMenuSections = (
         }
       ]
     },
-    ...(lastExportedWorldSaveFileName === null
-      ? []
-      : [createPausedMainMenuExportResultMenuSection(lastExportedWorldSaveFileName)]),
+    ...(exportResult === null ? [] : [createPausedMainMenuExportResultMenuSection(exportResult)]),
     {
       title: 'Import World Save',
       lines: [
@@ -392,7 +432,7 @@ export const createPausedMainMenuShellState = (
   shellActionKeybindingsDefaultedFromPersistedState = false,
   importResult: PausedMainMenuImportResult | null = null,
   worldSaveCleared = false,
-  lastExportedWorldSaveFileName: string | null = null
+  exportResult: PausedMainMenuExportResult | null = null
 ): AppShellState => ({
   screen: 'main-menu',
   statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
@@ -404,7 +444,7 @@ export const createPausedMainMenuShellState = (
     shellActionKeybindingsDefaultedFromPersistedState,
     importResult,
     worldSaveCleared,
-    lastExportedWorldSaveFileName
+    exportResult
   ),
   primaryActionLabel: 'Resume World',
   secondaryActionLabel: 'Export World Save',
@@ -412,6 +452,7 @@ export const createPausedMainMenuShellState = (
   quaternaryActionLabel: 'Clear Saved World',
   quinaryActionLabel: 'Reset Shell Toggles',
   senaryActionLabel: 'New World',
+  ...(exportResult === null ? {} : { pausedMainMenuExportResult: exportResult }),
   ...(importResult === null ? {} : { pausedMainMenuImportResult: importResult })
 });
 
@@ -507,7 +548,7 @@ export const createMainMenuShellState = (
   shellActionKeybindingsDefaultedFromPersistedState = false,
   importResult: PausedMainMenuImportResult | null = null,
   worldSaveCleared = false,
-  lastExportedWorldSaveFileName: string | null = null
+  exportResult: PausedMainMenuExportResult | null = null
 ): AppShellState =>
   hasResumableWorldSession
     ? createPausedMainMenuShellState(
@@ -517,7 +558,7 @@ export const createMainMenuShellState = (
         shellActionKeybindingsDefaultedFromPersistedState,
         importResult,
         worldSaveCleared,
-        lastExportedWorldSaveFileName
+        exportResult
       )
     : createFirstLaunchMainMenuShellState();
 

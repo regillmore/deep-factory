@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-09
 
+- Task: Add paused-menu export-failure copy for thrown JSON downloads.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused-menu `Export Result` card now covers both successful downloads and failed export attempts with warning copy plus a surfaced reason, updated [src/main.ts](../src/main.ts) so thrown paused-menu export downloads store that failed result without mutating the paused session and still clear on resume or session replacement, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused regressions, removed completed task `393` from [docs/NEXT.md](docs/NEXT.md), added replacement task `396`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu export-success copy for downloaded world-save filenames.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused sessions now render an `Export Result` card with the last downloaded world-save filename after successful exports, updated [src/main.ts](../src/main.ts) so paused-menu exports store that filename and clear it on resume or session-replacement paths, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused regressions, removed completed task `392` from [docs/NEXT.md](docs/NEXT.md), added replacement task `395`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

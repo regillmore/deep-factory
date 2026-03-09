@@ -19,6 +19,7 @@ import {
   createMainMenuShellState,
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState,
+  type PausedMainMenuExportResult,
   type PausedMainMenuImportResult
 } from './ui/appShell';
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
@@ -1295,9 +1296,9 @@ const createExpectedPausedMainMenuState = (
   options: Partial<{
     worldSessionShellState: ReturnType<typeof createDefaultWorldSessionShellState>;
     persistenceAvailable: boolean;
+    exportResult: PausedMainMenuExportResult;
     importResult: PausedMainMenuImportResult;
     worldSaveCleared: boolean;
-    lastExportedWorldSaveFileName: string | null;
   }> = {}
 ) => {
   const shellActionKeybindingLoad = loadShellActionKeybindingStateWithDefaultFallbackStatus({
@@ -1316,7 +1317,7 @@ const createExpectedPausedMainMenuState = (
     shellActionKeybindingLoad.defaultedFromPersistedState,
     options.importResult ?? null,
     options.worldSaveCleared ?? false,
-    options.lastExportedWorldSaveFileName ?? null
+    options.exportResult ?? null
   );
 };
 
@@ -5016,7 +5017,10 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.downloadedWorldSaveEnvelopes).toHaveLength(1);
     expect(testRuntime.shellInstance?.currentState).toEqual(
       createExpectedPausedMainMenuState({
-        lastExportedWorldSaveFileName: 'deep-factory-world-save-2026-03-09T05-46-40Z.json'
+        exportResult: {
+          status: 'downloaded',
+          fileName: 'deep-factory-world-save-2026-03-09T05-46-40Z.json'
+        }
       })
     );
     expect(testRuntime.gameLoopStartCount).toBe(1);
@@ -5050,6 +5054,50 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
     expect(dispatchKeydown('q').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+  });
+
+  it('shows paused-menu export failure copy when the json download throws without mutating the paused session', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setTile(5, -20, 6)).toBe(true);
+    testRuntime.rendererWorldSnapshot = savedWorld.createSnapshot();
+    testRuntime.downloadWorldSaveError = new Error('blocked download');
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    const pausedState = createExpectedPausedMainMenuState();
+    const persistedShellStateBeforeExport =
+      testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null;
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+
+    testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
+
+    expect(testRuntime.downloadedWorldSaveEnvelopes).toHaveLength(0);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        exportResult: {
+          status: 'failed',
+          reason: 'blocked download'
+        }
+      })
+    );
+    expect(testRuntime.gameLoopStartCount).toBe(1);
+    expect(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null).toBe(
+      persistedShellStateBeforeExport
+    );
+    expect(warnSpy).toHaveBeenCalledWith('Failed to export world save.', testRuntime.downloadWorldSaveError);
+
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+
+    warnSpy.mockRestore();
   });
 
   it('clears the persisted paused-session world save without discarding the live paused session', async () => {

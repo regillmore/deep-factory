@@ -72,6 +72,7 @@ import {
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState,
   type AppShellScreen,
+  type PausedMainMenuExportResult,
   type PausedMainMenuImportResult
 } from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
@@ -389,6 +390,16 @@ const createClearedTouchDebugArmedToolSnapshot = (): TouchDebugArmedToolSnapshot
   ellipseOutlineKind: null
 });
 const formatDebugBrushLabel = (tileName: string): string => tileName.replace(/_/g, ' ');
+const resolveThrownErrorReason = (error: unknown): string => {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+  if (typeof error === 'string' && error.trim().length > 0) {
+    return error;
+  }
+
+  return 'Unknown error';
+};
 const isEditableKeyboardShortcutTarget = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) return false;
   const tagName = target.tagName;
@@ -478,8 +489,8 @@ const bootstrap = async (): Promise<void> => {
   let worldSessionStarted = false;
   let worldSessionLoopStarted = false;
   let pausedMainMenuWorldSaveCleared = false;
+  let pausedMainMenuExportResult: PausedMainMenuExportResult | null = null;
   let pausedMainMenuImportResult: PausedMainMenuImportResult | null = null;
-  let pausedMainMenuLastExportedWorldSaveFileName: string | null = null;
   let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
   let worldSessionShellPersistenceAvailable = true;
@@ -642,7 +653,7 @@ const bootstrap = async (): Promise<void> => {
         shellActionKeybindingsDefaultedFromPersistedState,
         pausedMainMenuImportResult,
         pausedMainMenuWorldSaveCleared,
-        pausedMainMenuLastExportedWorldSaveFileName
+        pausedMainMenuExportResult
       )
     );
     syncWorldScreenShellVisibility();
@@ -1007,13 +1018,21 @@ const bootstrap = async (): Promise<void> => {
     clearPersistedWorldSaveEnvelope(worldSessionShellStateStorage);
   const exportPausedMainMenuWorldSave = (): boolean => {
     try {
-      pausedMainMenuLastExportedWorldSaveFileName = downloadWorldSaveEnvelope({
-        envelope: createCurrentWorldSessionSaveEnvelope()
-      });
+      pausedMainMenuExportResult = {
+        status: 'downloaded',
+        fileName: downloadWorldSaveEnvelope({
+          envelope: createCurrentWorldSessionSaveEnvelope()
+        })
+      };
       showMainMenuShellState();
       return true;
     } catch (error) {
       console.warn('Failed to export world save.', error);
+      pausedMainMenuExportResult = {
+        status: 'failed',
+        reason: resolveThrownErrorReason(error)
+      };
+      showMainMenuShellState();
       return false;
     }
   };
@@ -2239,8 +2258,8 @@ const bootstrap = async (): Promise<void> => {
   const enterOrResumeWorldSessionFromMainMenu = (): void => {
     if (loop === null) return;
     pausedMainMenuWorldSaveCleared = false;
+    pausedMainMenuExportResult = null;
     pausedMainMenuImportResult = null;
-    pausedMainMenuLastExportedWorldSaveFileName = null;
     applyPausedMainMenuWorldSessionShellTransition('resume-paused-world-session');
     enterInWorldShellState();
     if (!worldSessionStarted) {
@@ -2252,8 +2271,8 @@ const bootstrap = async (): Promise<void> => {
   const startFreshWorldSessionFromMainMenu = (): void => {
     if (loop === null || !worldSessionStarted) return;
     pausedMainMenuWorldSaveCleared = false;
+    pausedMainMenuExportResult = null;
     pausedMainMenuImportResult = null;
-    pausedMainMenuLastExportedWorldSaveFileName = null;
     clearPersistedCurrentWorldSession();
     applyPausedMainMenuWorldSessionShellTransition('start-fresh-world-session');
     resetFreshWorldSessionRuntimeState();
@@ -2988,8 +3007,8 @@ const bootstrap = async (): Promise<void> => {
         }
       });
       pausedMainMenuWorldSaveCleared = false;
+      pausedMainMenuExportResult = null;
       pausedMainMenuImportResult = null;
-      pausedMainMenuLastExportedWorldSaveFileName = null;
       resetFreshWorldSessionDebugEditState();
       clearPinnedDebugTileInspect();
       resolveCurrentWorldPlayerSpawn();

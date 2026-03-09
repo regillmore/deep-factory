@@ -67,6 +67,9 @@ const ACCEPTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
 const DOWNLOADED_PAUSED_MAIN_MENU_EXPORT_RESULT_LINES = [
   'The paused session stayed unchanged, and the last JSON world-save download used the filename below.'
 ] as const;
+const FAILED_PAUSED_MAIN_MENU_EXPORT_RESULT_LINES = [
+  'The paused session stayed unchanged because the JSON world-save download failed before the browser accepted it.'
+] as const;
 const CANCELLED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
   'The paused session stayed unchanged because the JSON picker closed without selecting a world save file.'
 ] as const;
@@ -378,7 +381,10 @@ describe('resolveAppShellViewModel', () => {
         false,
         null,
         false,
-        'deep-factory-world-save-2026-03-09T05-46-40Z.json'
+        {
+          status: 'downloaded',
+          fileName: 'deep-factory-world-save-2026-03-09T05-46-40Z.json'
+        }
       )
     );
 
@@ -396,6 +402,39 @@ describe('resolveAppShellViewModel', () => {
         }
       ],
       tone: 'accent'
+    });
+  });
+
+  it('adds a paused-menu export-result card when the last world-save download failed', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        false,
+        {
+          status: 'failed',
+          reason: 'blocked download'
+        }
+      )
+    );
+
+    expect(viewModel.menuSections[2]).toEqual({
+      title: 'Export Result',
+      lines: [...FAILED_PAUSED_MAIN_MENU_EXPORT_RESULT_LINES],
+      metadataRows: [
+        {
+          label: 'Status',
+          value: 'Failed'
+        },
+        {
+          label: 'Reason',
+          value: 'blocked download'
+        }
+      ],
+      tone: 'warning'
     });
   });
 
