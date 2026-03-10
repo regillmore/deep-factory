@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Replication diagnostics logger factories should short-circuit to null before cadence creation
+
+- Decision: `src/network/replicationDiagnosticsLoggerFactory.ts` now returns `null` when text, line, and payload logger callbacks are all omitted, and only builds the cadence, bundle, and runner stack when at least one logger callback is configured.
+- Reason: Transport code needs one narrow seam that can disable periodic diagnostics cleanly without carrying an unused silent runner or forcing callers to satisfy cadence validation for logging that will never poll.
+- Consequence: Future nullable polling and reconfiguration helpers should treat `null` as the disabled diagnostics state and should rebuild active logging through this factory instead of instantiating empty bundles or cadences directly.
+
 ### 2026-03-10: Mixed replication diagnostics logger runners should reuse the shared sink wrapper
 
 - Decision: `src/network/replicationDiagnosticsLoggerRunner.ts` now builds a dedicated ready-to-poll runner by wrapping one existing cadence plus one existing mixed logger bundle inside `AuthoritativeClientReplicationDiagnosticsLogSink`.
