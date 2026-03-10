@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-432. Add a transport-facing periodic replication diagnostics emission helper that snapshots the registry, builds task `430`'s summary, formats it through task `431`, and returns the next due tick plus emitted log text.
 433. Extract task `431`'s internal per-client text-section formatter into a transport-facing helper that renders one task `430` client entry into deterministic labeled lines for alternative log sinks.
 434. Extract task `431`'s aggregate text-section formatter into a transport-facing helper that renders task `430`'s shared totals into deterministic labeled lines for reusable log headers.
+435. Add a transport-facing replication diagnostics cadence helper that tracks one next-due tick, invokes task `432` only when a fixed-step tick reaches that boundary, and returns silent non-due results with schedule regressions.
 
 ## App shell
 

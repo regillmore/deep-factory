@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Periodic replication diagnostics emissions should snapshot once and schedule from the emitted tick
+
+- Decision: `src/network/replicationDiagnosticsLogEmission.ts` now snapshots the per-client diagnostics registry once per emission, builds and formats the log from that frozen snapshot, and returns `nextDueTick` as `tick + intervalTicks`.
+- Reason: Transport polling loops need one deterministic log text that cannot mix aggregate and per-client data from different registry states, while still receiving one simple cadence result without reimplementing the next-boundary math themselves.
+- Consequence: Future transport sinks or cadence wrappers should call this helper once per due emission and forward its returned `logText` plus `nextDueTick` instead of separately snapshotting the registry or recomputing the next periodic boundary.
+
 ### 2026-03-10: Replication diagnostics text logs should emit aggregate lines first and use explicit n-a placeholders for missing client metadata
 
 - Decision: `src/network/replicationDiagnosticsLogFormatter.ts` now formats periodic replication diagnostics as fixed aggregate lines first, then ordered client sections, and renders missing per-client `lastProcessed`, `lastStaged`, and `lastAppliedBaseline` metadata as explicit `n/a` text.
