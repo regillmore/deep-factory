@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Authoritative entity replay replaces the full replicated snapshot set while chunk replay stays delta-based
+
+- Decision: `src/network/stateReplay.ts` now applies chunk-tile-diff messages incrementally through a liquid-aware `setTileState()` seam, while each entity-snapshot message replaces the full local replicated-entity snapshot store for the current interest-scoped view.
+- Reason: Chunk messages already describe sparse terrain deltas, but entity snapshots describe the authoritative visible entity set at one tick, so omitted entity ids need to disappear locally instead of lingering as stale replicated actors.
+- Consequence: Future client replication should feed terrain through the tile-state replay seam and treat each entity-snapshot payload as the complete current replicated set unless the protocol intentionally changes to a delta model.
+
 ### 2026-03-10: Liquid-step phase summary should describe applied flow, not scan coverage
 
 - Decision: Derived `liquidStepPhaseSummary` telemetry now maps `none`, `downward`, `sideways`, and `both` from split downward-versus-sideways transfer counts rather than from the phase scan counters.

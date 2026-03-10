@@ -560,6 +560,10 @@ export class Renderer {
     return this.world.setTile(worldTileX, worldTileY, tileId);
   }
 
+  setTileState(worldTileX: number, worldTileY: number, tileId: number, liquidLevel: number): boolean {
+    return this.world.setTileState(worldTileX, worldTileY, tileId, liquidLevel);
+  }
+
   getTile(worldTileX: number, worldTileY: number): number {
     return this.world.getTile(worldTileX, worldTileY);
   }

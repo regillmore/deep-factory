@@ -105,6 +105,36 @@ describe('TileWorld', () => {
     ]);
   });
 
+  it('applies explicit tile state and still emits edit metadata when only liquid changes', () => {
+    const world = new TileWorld(0);
+    const events: TileEditEvent[] = [];
+
+    world.onTileEdited((event) => {
+      events.push(event);
+    });
+
+    expect(world.setTileState(0, 0, WATER_TILE_ID, MAX_LIQUID_LEVEL)).toBe(true);
+    events.length = 0;
+
+    expect(world.setTileState(0, 0, WATER_TILE_ID, MAX_LIQUID_LEVEL / 2)).toBe(true);
+    expect(world.getTile(0, 0)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(0, 0)).toBe(MAX_LIQUID_LEVEL / 2);
+    expect(events).toEqual([
+      {
+        worldTileX: 0,
+        worldTileY: 0,
+        chunkX: 0,
+        chunkY: 0,
+        localX: 0,
+        localY: 0,
+        previousTileId: WATER_TILE_ID,
+        tileId: WATER_TILE_ID
+      }
+    ]);
+
+    expect(world.setTileState(0, 0, WATER_TILE_ID, MAX_LIQUID_LEVEL / 2)).toBe(false);
+  });
+
   it('reapplies edited tiles when a pruned chunk streams back in', () => {
     const world = new TileWorld(0);
     const editedTileId = 5;

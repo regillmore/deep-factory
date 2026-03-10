@@ -582,22 +582,22 @@ export class TileWorld {
         previousTileId,
         tileId
       );
+    }
 
-      if (emitTileEditEvent) {
-        const event: TileEditEvent = {
-          worldTileX,
-          worldTileY,
-          chunkX,
-          chunkY,
-          localX,
-          localY,
-          previousTileId,
-          tileId
-        };
+    if (emitTileEditEvent) {
+      const event: TileEditEvent = {
+        worldTileX,
+        worldTileY,
+        chunkX,
+        chunkY,
+        localX,
+        localY,
+        previousTileId,
+        tileId
+      };
 
-        for (const listener of this.tileEditListeners) {
-          listener(event);
-        }
+      for (const listener of this.tileEditListeners) {
+        listener(event);
       }
     }
 
@@ -820,13 +820,11 @@ export class TileWorld {
     }
 
     const liquidKind = getTileLiquidKind(tileId);
-    const changed = this.commitTileState(
-      worldTileX,
-      worldTileY,
-      tileId,
-      liquidKind === null ? 0 : MAX_LIQUID_LEVEL,
-      true
-    ).changed;
+    return this.setTileState(worldTileX, worldTileY, tileId, liquidKind === null ? 0 : MAX_LIQUID_LEVEL);
+  }
+
+  setTileState(worldTileX: number, worldTileY: number, tileId: number, liquidLevel: number): boolean {
+    const changed = this.commitTileState(worldTileX, worldTileY, tileId, liquidLevel, true).changed;
     if (changed) {
       this.wakeNearbyResidentLiquidChunks(worldTileX, worldTileY);
     }

@@ -630,6 +630,36 @@ describe('Renderer atlas telemetry', () => {
     expect(restoredSnapshotWorld.getTile(worldTileX, worldTileY)).toBe(6);
   });
 
+  it('invalidates chunk meshes when explicit tile-state replay changes only liquid level', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    expect(renderer.setTileState(1, 1, WATER_TILE_ID, MAX_LIQUID_LEVEL)).toBe(true);
+
+    const invalidateChunkMeshSpy = vi.spyOn(
+      renderer as unknown as {
+        invalidateChunkMesh: (chunkX: number, chunkY: number) => void;
+      },
+      'invalidateChunkMesh'
+    );
+    invalidateChunkMeshSpy.mockClear();
+
+    expect(renderer.setTileState(1, 1, WATER_TILE_ID, MAX_LIQUID_LEVEL / 2)).toBe(true);
+
+    expect(renderer.getTile(1, 1)).toBe(WATER_TILE_ID);
+    expect(renderer.getLiquidLevel(1, 1)).toBe(MAX_LIQUID_LEVEL / 2);
+    expect(invalidateChunkMeshSpy.mock.calls).toEqual([[0, 0]]);
+  });
+
   it('loads a provided world snapshot into the active renderer session and clears cached animated meshes', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));
