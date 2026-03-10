@@ -40,7 +40,9 @@ export interface TileEditEvent {
   localX: number;
   localY: number;
   previousTileId: number;
+  previousLiquidLevel: number;
   tileId: number;
+  liquidLevel: number;
 }
 
 export interface TileNeighborhood {
@@ -593,7 +595,9 @@ export class TileWorld {
         localX,
         localY,
         previousTileId,
-        tileId
+        previousLiquidLevel,
+        tileId,
+        liquidLevel: normalizedLiquidLevel
       };
 
       for (const listener of this.tileEditListeners) {

@@ -100,7 +100,9 @@ describe('TileWorld', () => {
         localX: CHUNK_SIZE - 1,
         localY: 0,
         previousTileId,
-        tileId: 3
+        previousLiquidLevel: 0,
+        tileId: 3,
+        liquidLevel: 0
       }
     ]);
   });
@@ -128,7 +130,9 @@ describe('TileWorld', () => {
         localX: 0,
         localY: 0,
         previousTileId: WATER_TILE_ID,
-        tileId: WATER_TILE_ID
+        previousLiquidLevel: MAX_LIQUID_LEVEL,
+        tileId: WATER_TILE_ID,
+        liquidLevel: MAX_LIQUID_LEVEL / 2
       }
     ]);
 

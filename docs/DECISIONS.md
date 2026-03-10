@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Authoritative tile-edit capture should snapshot full tile-plus-liquid state at notification time
+
+- Decision: `TileWorld` edit notifications now include previous and next liquid levels beside tile ids, and `src/network/tileEditCapture.ts` records detached notification snapshots before draining them through same-tick chunk-diff batching.
+- Reason: Authoritative replication batching needs coherent previous/next tile state even when later same-tick edits mutate the same tile again, and networking should not reread mutable `TileWorld` or renderer-owned state to reconstruct that history.
+- Consequence: Future authoritative transport code should subscribe to world edit notifications and drain the capture helper per tick instead of walking world diffs ad hoc or querying tile state again after notification delivery.
+
 ### 2026-03-10: Interest filtering should drop chunk deltas but preserve empty entity replacements
 
 - Decision: `src/network/snapshotFilter.ts` now returns `null` for chunk-tile-diff messages whose chunk lies outside the current client chunk interest, but always returns an entity-snapshot message for the current tick even when entity-id filtering removes every entry.
