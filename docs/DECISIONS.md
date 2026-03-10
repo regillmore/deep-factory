@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Client networking interest should derive from viewport bounds with separate chunk and entity padding
+
+- Decision: `src/network/interestSet.ts` now derives client interest from the camera-centered viewport world rect, expands chunk relevance in chunk space and entity relevance in world space, and keeps chunk/entity membership plus enter/exit diffs deterministic via y-major chunk ordering and ascending entity ids.
+- Reason: Replication needs view-aligned client relevance without tying transport code to renderer internals, while chunks and entities need independent buffering because chunk streaming is coarser than entity movement.
+- Consequence: Future client replication or snapshot filtering should reuse this module and tune its padding inputs rather than inventing separate unsorted chunk-frustum or entity-distance filters.
+
 ### 2026-03-10: Networking scaffolding uses versioned discriminated JSON messages with deterministic chunk and entity ordering
 
 - Decision: `src/network/protocol.ts` now owns the shared wire contract for player-input, chunk-tile-diff, and entity-snapshot messages; each message carries a discriminating `kind`, protocol `version`, fixed-step `tick`, chunk diffs address tiles by row-major `tileIndex`, and entity snapshots keep shared `position`/`velocity` fields plus a flat scalar `state` bag.

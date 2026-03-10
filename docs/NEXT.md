@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-23. Add a client-side interest set calculator for chunk and entity relevance.
 24. Stub a snapshot/delta application path that can replay remote state into the local world/entity layers.
 405. Add authoritative chunk-diff batching helpers that collapse same-tick tile edits into task `22`'s chunk-tile-diff protocol messages without resending unchanged tiles.
+406. Add a network snapshot-filter helper that trims chunk-diff and entity-snapshot payloads against the current client interest set before task `24` replays them locally.
 
 ## App shell
 

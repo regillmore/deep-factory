@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Task: Add a client-side interest set calculator for chunk and entity relevance.
+- Changes: Added [src/network/interestSet.ts](../src/network/interestSet.ts) with viewport-world bounds resolution, deterministic chunk/entity interest calculation, and enter/exit diff helpers, added focused coverage in [src/network/interestSet.test.ts](../src/network/interestSet.test.ts), removed completed task `23` from [docs/NEXT.md](docs/NEXT.md), added replacement task `406`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/network/interestSet.test.ts` (outside the sandbox after the expected Vitest `spawn EPERM` startup failure in-sandbox) and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Define serializable message shapes for player input, chunk tile diffs, and entity snapshots.
 - Changes: Added [src/network/protocol.ts](../src/network/protocol.ts) with versioned networking message contracts plus create/decode helpers for player-input, chunk-tile-diff, and entity-snapshot payloads, added focused coverage in [src/network/protocol.test.ts](../src/network/protocol.test.ts), removed completed task `22` from [docs/NEXT.md](docs/NEXT.md), added replacement task `405`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/network/protocol.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
