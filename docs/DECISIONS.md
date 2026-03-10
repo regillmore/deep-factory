@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Replication diagnostics logger holders should own callback reconfiguration and poll through it
+
+- Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now stores the current diagnostics logger reconfiguration result, exposes `poll(tick)` by calling the current nullable fixed-step callback when present, and refreshes that stored state only through `src/network/replicationDiagnosticsLoggerReconfiguration.ts`.
+- Reason: Transport wiring needs one mutable owner for diagnostics logger enablement and callback swaps, but duplicating runner-plus-callback state transitions outside the shared reconfiguration helper would risk stale callback retention.
+- Consequence: Future holder-oriented diagnostics helpers should treat this state holder as the owner of the current logging callback state, should call `reconfigure(...)` instead of mutating runner or callback pieces independently, and can treat disabled polling as a silent no-op through the absent callback state.
+
 ### 2026-03-10: Replication diagnostics logger reconfiguration should rebuild runner and poll callback together
 
 - Decision: `src/network/replicationDiagnosticsLoggerReconfiguration.ts` now rebuilds both the nullable diagnostics logger runner and the matching nullable fixed-step poll callback from one set of cadence settings plus optional text, line, and payload logger callbacks.
