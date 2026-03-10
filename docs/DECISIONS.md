@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: First-launch main-menu guidance should preview entry controls through its own card
+
+- Decision: The first-launch `main menu` now includes a dedicated `Controls Preview` section card that lists desktop movement and jump bindings plus when the touch player pad appears after `Enter World`.
+- Reason: New players need one pre-launch control summary without opening the in-world shortcuts overlay, and keeping that summary in its own card preserves the existing menu-section guidance pattern.
+- Consequence: Future first-launch onboarding copy should extend dedicated section cards for entry controls or other runtime previews instead of expanding the headline or flat detail text.
+
 ### 2026-03-10: Enabled replication diagnostics holder callback refreshes should preserve the current due tick
 
 - Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now retains its current registry, interval, and logger callback configuration, and `refreshCallbacks(...)` reuses `getScheduleSnapshot()` to swap callbacks on enabled holders without changing the current `nextDueTick`.

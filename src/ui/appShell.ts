@@ -755,6 +755,23 @@ const DEFAULT_FIRST_LAUNCH_MAIN_MENU_MENU_SECTIONS: readonly AppShellMenuSection
     tone: 'accent'
   },
   {
+    title: 'Controls Preview',
+    lines: [
+      'Desktop: move with A or D, or Left or Right Arrow; jump with W, Up Arrow, or Space.',
+      'Touch: the in-world player pad appears after Enter World with Left, Right, and Jump buttons.'
+    ],
+    metadataRows: [
+      {
+        label: 'Desktop',
+        value: 'Movement + jump use the keyboard.'
+      },
+      {
+        label: 'Touch',
+        value: 'Player pad appears after Enter World.'
+      }
+    ]
+  },
+  {
     title: 'Mixed-Device Runtime',
     lines: [
       'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',

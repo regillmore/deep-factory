@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Task: Add a first-launch main-menu controls-preview card.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the first-launch main menu now includes a dedicated `Controls Preview` card listing desktop movement and jump bindings plus when the touch player pad appears, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with matching shell-guidance regressions, removed completed task `423` from [docs/NEXT.md](docs/NEXT.md), added replacement task `424`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a replication diagnostics logger callback-refresh helper.
 - Changes: Updated [src/network/replicationDiagnosticsLoggerStateHolder.ts](../src/network/replicationDiagnosticsLoggerStateHolder.ts) so the holder now retains its current non-schedule diagnostics settings and exposes `refreshCallbacks(...)`, which swaps text, line, and payload logger callbacks on an enabled holder while preserving the holder's current `nextDueTick`; expanded [src/network/replicationDiagnosticsLoggerStateHolder.test.ts](../src/network/replicationDiagnosticsLoggerStateHolder.test.ts) with pre-due and post-emission schedule-preservation regressions plus disabled and empty-callback guard coverage, removed completed task `452` from [docs/NEXT.md](docs/NEXT.md), added replacement task `455`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/network/replicationDiagnosticsLoggerStateHolder.test.ts src/network/replicationDiagnosticsLoggerReconfiguration.test.ts src/network/replicationDiagnosticsLoggerFactory.test.ts src/network/replicationDiagnosticsLoggerPoll.test.ts src/network/replicationDiagnosticsLoggerRunner.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -187,7 +187,7 @@ describe('resolveAppShellViewModel', () => {
     ]);
   });
 
-  it('shows the first-launch main menu with structured enter-world and mixed-device guidance cards', () => {
+  it('shows the first-launch main menu with structured enter-world, controls-preview, and mixed-device guidance cards', () => {
     const viewModel = resolveAppShellViewModel(createFirstLaunchMainMenuShellState());
 
     expect(viewModel.overlayVisible).toBe(true);
@@ -225,6 +225,23 @@ describe('resolveAppShellViewModel', () => {
           }
         ],
         tone: 'accent'
+      },
+      {
+        title: 'Controls Preview',
+        lines: [
+          'Desktop: move with A or D, or Left or Right Arrow; jump with W, Up Arrow, or Space.',
+          'Touch: the in-world player pad appears after Enter World with Left, Right, and Jump buttons.'
+        ],
+        metadataRows: [
+          {
+            label: 'Desktop',
+            value: 'Movement + jump use the keyboard.'
+          },
+          {
+            label: 'Touch',
+            value: 'Player pad appears after Enter World.'
+          }
+        ]
       },
       {
         title: 'Mixed-Device Runtime',
@@ -1181,6 +1198,23 @@ describe('createFirstLaunchMainMenuShellState', () => {
             }
           ],
           tone: 'accent'
+        },
+        {
+          title: 'Controls Preview',
+          lines: [
+            'Desktop: move with A or D, or Left or Right Arrow; jump with W, Up Arrow, or Space.',
+            'Touch: the in-world player pad appears after Enter World with Left, Right, and Jump buttons.'
+          ],
+          metadataRows: [
+            {
+              label: 'Desktop',
+              value: 'Movement + jump use the keyboard.'
+            },
+            {
+              label: 'Touch',
+              value: 'Player pad appears after Enter World.'
+            }
+          ]
         },
         {
           title: 'Mixed-Device Runtime',
