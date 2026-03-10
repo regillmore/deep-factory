@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Per-client resync diagnostics should accumulate totals separately from the latest applied baseline metadata
+
+- Decision: `src/network/replicationResyncDiagnostics.ts` now keeps running spawned, updated, and removed totals under `totals` while storing only the latest applied baseline tick and entity-count metadata under separate `lastAppliedBaseline`.
+- Reason: Transport resync logs need long-lived replacement counters across many baselines, but operators still need the most recent accepted baseline boundary without overloading or resetting those totals.
+- Consequence: Future transport resync or combined replication diagnostics should add new baseline summaries through this accumulator and keep later metadata additions beside `lastAppliedBaseline` rather than embedding per-baseline state into the running totals.
+
 ### 2026-03-10: Send-batch filter summaries should count forwarded payloads separately from trimmed payloads
 
 - Decision: `src/network/replicationBatchFilterSummary.ts` now reduces one staged client send batch into `staged.tick` metadata plus chunk and entity `dropped`, `trimmed`, and `forwarded` counters, where `forwarded` includes both fully kept and trimmed payloads.

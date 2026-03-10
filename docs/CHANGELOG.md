@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Task: Add an authoritative resync diagnostics accumulator.
+- Changes: Added [src/network/replicationResyncDiagnostics.ts](../src/network/replicationResyncDiagnostics.ts) so transport code can accumulate [src/network/replicationBaselineSummary.ts](../src/network/replicationBaselineSummary.ts) results into running spawned, updated, and removed totals while preserving separate `lastAppliedBaseline` metadata, added focused coverage in [src/network/replicationResyncDiagnostics.test.ts](../src/network/replicationResyncDiagnostics.test.ts), removed completed task `422` from [docs/NEXT.md](docs/NEXT.md), added replacement task `426`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/network/replicationResyncDiagnostics.test.ts src/network/replicationBaselineSummary.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an authoritative batch-filter summary helper.
 - Changes: Added [src/network/replicationBatchFilterSummary.ts](../src/network/replicationBatchFilterSummary.ts) so transport code can reduce [src/network/replicationBatchFilter.ts](../src/network/replicationBatchFilter.ts) diagnostics into one staged tick plus chunk and entity `dropped`/`trimmed`/`forwarded` counts for a client send batch, added focused coverage in [src/network/replicationBatchFilterSummary.test.ts](../src/network/replicationBatchFilterSummary.test.ts), removed completed task `421` from [docs/NEXT.md](docs/NEXT.md), added replacement task `425`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/network/replicationBatchFilterSummary.test.ts src/network/replicationBatchFilter.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
