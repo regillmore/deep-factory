@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Line-array replication diagnostics loggers should consume detached emitted lines through a sink adapter
+
+- Decision: `src/network/replicationDiagnosticsLineLogger.ts` now adapts one injected `(logLines) => void` callback into an `AuthoritativeClientReplicationDiagnosticsLogSinkCallback` by forwarding only `emission.logLines`.
+- Reason: Line-oriented transport logging should reuse the existing due-only sink path and should not split joined text when later text or structured loggers may still need `logText`.
+- Consequence: Future line-oriented diagnostics loggers should compose through this helper, should treat the received `logLines` array as their sink-owned copy, and should leave joined `logText` available for separate logger adapters.
+
 ### 2026-03-10: Console-style replication diagnostics loggers should consume joined emitted text through a sink adapter
 
 - Decision: `src/network/replicationDiagnosticsTextLogger.ts` now adapts one injected `(logText) => void` callback into an `AuthoritativeClientReplicationDiagnosticsLogSinkCallback` by forwarding only `emission.logText`.
