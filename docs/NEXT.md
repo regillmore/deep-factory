@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-427. Add a transport-facing per-client replication diagnostics registry helper that stores task `425` snapshots by client id and supports reset or removal on reconnect/disconnect flows.
 428. Add a transport-facing replication diagnostics registry snapshot helper that returns task `427`'s stored combined client snapshots in deterministic client-id order for periodic multi-client logging.
 429. Add a transport-facing replication diagnostics aggregate helper that reduces task `428`'s deterministic client snapshot list into client-count plus replay/send/resync totals for periodic multi-client log headers.
+430. Add a transport-facing replication diagnostics log-payload helper that combines task `428`'s ordered per-client snapshots with task `429`'s aggregate totals into one JSON-safe periodic multi-client summary.
 
 ## App shell
 

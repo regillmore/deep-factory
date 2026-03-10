@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Per-client replication diagnostics registry reset should upsert a zeroed client snapshot
+
+- Decision: `src/network/replicationDiagnosticsRegistry.ts` now stores detached combined diagnostics snapshots by client id, and `reset(clientId)` always replaces that client entry with a zeroed snapshot even when the client id was not already present.
+- Reason: Reconnect or client-replacement flows need one registry operation that can both clear stale diagnostics for an existing client and initialize a fresh client slot without requiring transport code to special-case missing entries or share mutable snapshot objects.
+- Consequence: Future ordered-snapshot or aggregate helpers should treat registry reset as a zeroed upserted client entry and should read or replace registry state through the registry accessors rather than mutating stored snapshot objects directly.
+
 ### 2026-03-10: Combined per-client replication diagnostics resets should clear every section together
 
 - Decision: `src/network/replicationDiagnosticsReset.ts` now resets combined per-client diagnostics by clearing replay, send, and resync totals plus their latest-tick metadata together while returning a detached snapshot instead of mutating the stored one in place.
