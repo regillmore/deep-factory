@@ -1,6 +1,5 @@
 import {
-  createAuthoritativeClientReplicationDiagnosticsLogEmission,
-  type AuthoritativeClientReplicationDiagnosticsLogEmission
+  createAuthoritativeClientReplicationDiagnosticsLogEmission
 } from './replicationDiagnosticsLogEmission';
 import { AuthoritativeClientReplicationDiagnosticsRegistry } from './replicationDiagnosticsRegistry';
 
@@ -20,9 +19,10 @@ export interface SilentAuthoritativeClientReplicationDiagnosticsLogCadenceResult
   logText: null;
 }
 
-export interface EmittedAuthoritativeClientReplicationDiagnosticsLogCadenceResult
-  extends AuthoritativeClientReplicationDiagnosticsLogEmission {
+export interface EmittedAuthoritativeClientReplicationDiagnosticsLogCadenceResult {
   emitted: true;
+  nextDueTick: number;
+  logText: string;
 }
 
 export type AuthoritativeClientReplicationDiagnosticsLogCadenceResult =
@@ -96,7 +96,8 @@ export class AuthoritativeClientReplicationDiagnosticsLogCadence {
 
     return {
       emitted: true,
-      ...emission
+      nextDueTick: emission.nextDueTick,
+      logText: emission.logText
     };
   }
 }
