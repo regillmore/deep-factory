@@ -14,6 +14,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Text and line logger adapters need to share one cadence emission without one sink's mutation of its received line array leaking into the next sink or forcing every caller to reimplement ordered fan-out.
 - Consequence: Future mixed diagnostics logger wiring should compose multiple sinks through this helper, should rely on declaration order for side effects, and should treat each sink callback as receiving its own isolated emission copy.
 
+### 2026-03-10: Structured replication diagnostics loggers should consume detached payloads through a sink adapter
+
+- Decision: `src/network/replicationDiagnosticsPayloadLogger.ts` now adapts one injected `(payload) => void` callback into an `AuthoritativeClientReplicationDiagnosticsLogSinkCallback` by forwarding only `emission.payload`.
+- Reason: Structured transport logging should reuse the existing due-only sink path and should not rebuild payload data when joined text and detached lines may still be needed by other loggers.
+- Consequence: Future payload-oriented diagnostics loggers should compose through this helper, should treat the received payload as their sink-owned copy, and should leave text and line output available for separate adapters.
+
 ### 2026-03-10: Line-array replication diagnostics loggers should consume detached emitted lines through a sink adapter
 
 - Decision: `src/network/replicationDiagnosticsLineLogger.ts` now adapts one injected `(logLines) => void` callback into an `AuthoritativeClientReplicationDiagnosticsLogSinkCallback` by forwarding only `emission.logLines`.

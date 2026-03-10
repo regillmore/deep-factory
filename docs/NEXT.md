@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-444. Add a transport-facing structured diagnostics payload logger helper after task `443` lands that forwards one due frozen log payload through one injected payload sink while preserving text and line output for other loggers, with payload-logger regressions.
 445. Add a transport-facing mixed diagnostics logger bundle helper after tasks `442-444` land that composes optional text, line, and payload logger adapters through one due-only fan-out sink, with mixed-logger wiring regressions.
 446. Add a transport-facing diagnostics logger runner helper after task `445` lands that composes cadence with the mixed text, line, and payload logger bundle into one ready-to-poll helper, with bundle-runner regressions.
+447. Add a transport-facing diagnostics logger factory helper after task `446` lands that accepts optional text, line, and payload logger callbacks plus cadence settings, returns `null` when no logger is configured, and otherwise builds one ready-to-poll runner, with factory regressions.
 
 ## App shell
 
