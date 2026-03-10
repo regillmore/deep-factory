@@ -91,6 +91,10 @@ export interface AuthoritativeReplicatedNetworkStateReplayTarget {
   entities: ReplicatedEntitySnapshotStore;
 }
 
+export type AuthoritativeReplicatedStateBaselineReplacement<T> = (
+  target: AuthoritativeReplicatedNetworkStateReplayTarget
+) => T;
+
 const resolveAuthoritativeReplaySkipReason = (
   lastAppliedTick: number | null,
   nextTick: number
@@ -247,6 +251,14 @@ export class AuthoritativeReplicatedNetworkStateReplayer {
   private lastAppliedChunkTickByKey = new Map<string, number>();
 
   constructor(private readonly target: AuthoritativeReplicatedNetworkStateReplayTarget) {}
+
+  replaceAuthoritativeBaseline<T>(
+    replaceBaseline: AuthoritativeReplicatedStateBaselineReplacement<T>
+  ): T {
+    const result = replaceBaseline(this.target);
+    this.resetReplayGuards();
+    return result;
+  }
 
   resetReplayGuards(): void {
     this.lastAppliedChunkTickByKey.clear();

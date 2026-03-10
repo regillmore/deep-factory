@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Task: Add an authoritative replay baseline replacement helper.
+- Changes: Updated [src/network/stateReplay.ts](../src/network/stateReplay.ts) with [AuthoritativeReplicatedNetworkStateReplayer.replaceAuthoritativeBaseline()](../src/network/stateReplay.ts) so one callback can replace replicated world and entity baseline state before the replayer clears chunk and entity replay guards together, expanded [src/network/stateReplay.test.ts](../src/network/stateReplay.test.ts) with success and failure-path regressions for baseline replacement ordering, removed completed task `413` from [docs/NEXT.md](docs/NEXT.md), added replacement task `416`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/network/stateReplay.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an authoritative tile-edit capture helper for same-tick chunk-diff batching.
 - Changes: Expanded [src/world/world.ts](../src/world/world.ts) tile-edit notifications to carry previous and next liquid levels, added [src/network/tileEditCapture.ts](../src/network/tileEditCapture.ts) so networking can record detached world edit notifications and drain them through [src/network/chunkDiffBatching.ts](../src/network/chunkDiffBatching.ts) at tick boundaries, added focused coverage in [src/network/tileEditCapture.test.ts](../src/network/tileEditCapture.test.ts) and updated [src/world/world.test.ts](../src/world/world.test.ts), removed completed task `411` from [docs/NEXT.md](docs/NEXT.md), added replacement task `415`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/network/tileEditCapture.test.ts src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

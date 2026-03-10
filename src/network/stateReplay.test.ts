@@ -831,4 +831,258 @@ describe('AuthoritativeReplicatedNetworkStateReplayer', () => {
       }
     ]);
   });
+
+  it('can replace a replicated baseline and then clear chunk and entity replay guards together', () => {
+    const world = new TileWorld(0);
+    const store = new ReplicatedEntitySnapshotStore();
+    const replayer = new AuthoritativeReplicatedNetworkStateReplayer({
+      world,
+      entities: store
+    });
+
+    expect(
+      replayer.applyMessage(
+        createChunkTileDiffMessage({
+          tick: 5,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          tiles: [
+            {
+              tileIndex: 0,
+              tileId: WATER_TILE_ID,
+              liquidLevel: MAX_LIQUID_LEVEL
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_TILE_DIFF_MESSAGE_KIND,
+      tick: 5,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      appliedTileCount: 1,
+      changedTileCount: 1
+    });
+    expect(
+      replayer.applyMessage(
+        createEntitySnapshotMessage({
+          tick: 6,
+          entities: [
+            {
+              id: 5,
+              kind: 'slime',
+              position: { x: 2, y: 3 },
+              velocity: { x: 0, y: 0 },
+              state: {}
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
+      tick: 6,
+      entityCount: 1,
+      spawnedEntityIds: [5],
+      updatedEntityIds: [],
+      removedEntityIds: []
+    });
+
+    expect(
+      replayer.replaceAuthoritativeBaseline((target) => {
+        expect(target.world).toBe(world);
+        expect(target.entities).toBe(store);
+        expect(replayer.getLastAppliedChunkTick({ x: 0, y: 0 })).toBe(5);
+        expect(replayer.getLastAppliedEntityTick()).toBe(6);
+
+        expect(
+          applyChunkTileDiffMessage(
+            world,
+            createChunkTileDiffMessage({
+              tick: 2,
+              chunk: {
+                x: 0,
+                y: 0
+              },
+              tiles: [
+                {
+                  tileIndex: 0,
+                  tileId: 4,
+                  liquidLevel: 0
+                }
+              ]
+            })
+          )
+        ).toEqual({
+          kind: CHUNK_TILE_DIFF_MESSAGE_KIND,
+          tick: 2,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          appliedTileCount: 1,
+          changedTileCount: 1
+        });
+        expect(
+          target.entities.applyEntitySnapshotMessage(
+            createEntitySnapshotMessage({
+              tick: 2,
+              entities: [
+                {
+                  id: 9,
+                  kind: 'bunny',
+                  position: { x: -1, y: 6 },
+                  velocity: { x: 0, y: 0 },
+                  state: {}
+                }
+              ]
+            })
+          )
+        ).toEqual({
+          kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
+          tick: 2,
+          entityCount: 1,
+          spawnedEntityIds: [9],
+          updatedEntityIds: [],
+          removedEntityIds: [5]
+        });
+
+        return {
+          baselineTileId: world.getTile(0, 0),
+          entityTickBeforeReset: target.entities.getLastAppliedTick()
+        };
+      })
+    ).toEqual({
+      baselineTileId: 4,
+      entityTickBeforeReset: 2
+    });
+
+    expect(replayer.getLastAppliedChunkTick({ x: 0, y: 0 })).toBeNull();
+    expect(replayer.getLastAppliedEntityTick()).toBeNull();
+    expect(world.getTile(0, 0)).toBe(4);
+    expect(world.getLiquidLevel(0, 0)).toBe(0);
+    expect(store.getEntities()).toEqual([
+      {
+        id: 9,
+        kind: 'bunny',
+        position: { x: -1, y: 6 },
+        velocity: { x: 0, y: 0 },
+        state: {}
+      }
+    ]);
+
+    expect(
+      replayer.applyMessage(
+        createChunkTileDiffMessage({
+          tick: 1,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          tiles: [
+            {
+              tileIndex: 0,
+              tileId: 3,
+              liquidLevel: 0
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_TILE_DIFF_MESSAGE_KIND,
+      tick: 1,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      appliedTileCount: 1,
+      changedTileCount: 1
+    });
+    expect(
+      replayer.applyMessage(
+        createEntitySnapshotMessage({
+          tick: 1,
+          entities: [
+            {
+              id: 10,
+              kind: 'slime',
+              position: { x: 1, y: 2 },
+              velocity: { x: 0, y: 0 },
+              state: {}
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
+      tick: 1,
+      entityCount: 1,
+      spawnedEntityIds: [10],
+      updatedEntityIds: [],
+      removedEntityIds: [9]
+    });
+  });
+
+  it('leaves replay guards unchanged when baseline replacement throws before success', () => {
+    const world = new TileWorld(0);
+    const store = new ReplicatedEntitySnapshotStore();
+    const replayer = new AuthoritativeReplicatedNetworkStateReplayer({
+      world,
+      entities: store
+    });
+
+    replayer.applyMessage(
+      createChunkTileDiffMessage({
+        tick: 5,
+        chunk: {
+          x: 0,
+          y: 0
+        },
+        tiles: [
+          {
+            tileIndex: 0,
+            tileId: WATER_TILE_ID,
+            liquidLevel: MAX_LIQUID_LEVEL
+          }
+        ]
+      })
+    );
+    replayer.applyMessage(
+      createEntitySnapshotMessage({
+        tick: 6,
+        entities: [
+          {
+            id: 5,
+            kind: 'slime',
+            position: { x: 2, y: 3 },
+            velocity: { x: 0, y: 0 },
+            state: {}
+          }
+        ]
+      })
+    );
+
+    expect(() =>
+      replayer.replaceAuthoritativeBaseline(() => {
+        throw new Error('baseline replacement failed');
+      })
+    ).toThrow('baseline replacement failed');
+
+    expect(replayer.getLastAppliedChunkTick({ x: 0, y: 0 })).toBe(5);
+    expect(replayer.getLastAppliedEntityTick()).toBe(6);
+    expect(world.getTile(0, 0)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(0, 0)).toBe(MAX_LIQUID_LEVEL);
+    expect(store.getEntities()).toEqual([
+      {
+        id: 5,
+        kind: 'slime',
+        position: { x: 2, y: 3 },
+        velocity: { x: 0, y: 0 },
+        state: {}
+      }
+    ]);
+  });
 });

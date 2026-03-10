@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Baseline replacement clears replay guards only after replacement succeeds
+
+- Decision: `AuthoritativeReplicatedNetworkStateReplayer.replaceAuthoritativeBaseline()` now runs one caller-supplied replicated-state replacement callback and clears chunk and entity replay guards only after that callback returns successfully.
+- Reason: Resync code needs one seam that cannot forget to clear both guard sets, while a failed replacement callback should not silently discard existing replay tick bookkeeping before a new baseline is actually in place.
+- Consequence: Future transport resync or out-of-band baseline replacement should route world plus entity replacement through this helper, and replacement callbacks may use `ReplicatedEntitySnapshotStore.applyEntitySnapshotMessage()` internally because the helper clears its tick guard after the replacement finishes.
+
 ### 2026-03-10: Authoritative tile-edit capture should snapshot full tile-plus-liquid state at notification time
 
 - Decision: `TileWorld` edit notifications now include previous and next liquid levels beside tile ids, and `src/network/tileEditCapture.ts` records detached notification snapshots before draining them through same-tick chunk-diff batching.
