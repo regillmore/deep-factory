@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-455. Add a transport-facing diagnostics logger schedule-refresh helper that reconfigures one enabled logger state holder with an updated explicit `nextDueTick` value while preserving its current `intervalTicks` and logger callbacks, with schedule-refresh regressions.
 456. Add a transport-facing diagnostics logger schedule-and-callback refresh helper that reapplies one enabled logger state holder's updated explicit `nextDueTick` plus text, line, and payload callbacks while preserving its current `intervalTicks`, with schedule-and-callback regressions.
 457. Add a transport-facing diagnostics logger schedule-and-cadence refresh helper that reapplies one enabled logger state holder's updated explicit `nextDueTick` plus `intervalTicks` while preserving its current logger callbacks, with schedule-and-cadence regressions.
+458. Add a transport-facing diagnostics logger schedule-cadence-and-callback refresh helper that reapplies one enabled logger state holder's updated explicit `nextDueTick`, `intervalTicks`, plus text, line, and payload callbacks together, with combined schedule-refresh regressions.
 
 ## App shell
 
