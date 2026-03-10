@@ -10,6 +10,33 @@ export interface CreateAuthoritativeClientReplicationDiagnosticsLoggerStateHolde
 export interface ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerStateHolderOptions
   extends ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerOptions {}
 
+export interface DisabledAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot {
+  disabled: true;
+  nextDueTick: null;
+}
+
+export interface EnabledAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot {
+  disabled: false;
+  nextDueTick: number;
+}
+
+export type AuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot =
+  | DisabledAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot
+  | EnabledAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot;
+
+const createAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot = (
+  reconfiguration: AuthoritativeClientReplicationDiagnosticsLoggerReconfiguration
+): AuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot =>
+  reconfiguration.loggerRunner === null
+    ? {
+        disabled: true,
+        nextDueTick: null
+      }
+    : {
+        disabled: false,
+        nextDueTick: reconfiguration.loggerRunner.getNextDueTick()
+      };
+
 export class AuthoritativeClientReplicationDiagnosticsLoggerStateHolder {
   private currentReconfiguration: AuthoritativeClientReplicationDiagnosticsLoggerReconfiguration =
     {
@@ -37,6 +64,12 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerStateHolder {
 
   poll(tick: number): void {
     this.currentReconfiguration.loggerPollCallback?.(tick);
+  }
+
+  getScheduleSnapshot(): AuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot {
+    return createAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot(
+      this.currentReconfiguration
+    );
   }
 
   reconfigure({

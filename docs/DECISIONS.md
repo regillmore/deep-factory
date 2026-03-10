@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Replication diagnostics logger holder schedule snapshots should stay narrow
+
+- Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now exposes `getScheduleSnapshot()` as a narrow union that reports either `{ disabled: true, nextDueTick: null }` or `{ disabled: false, nextDueTick }` based on the holder-owned runner state.
+- Reason: Upcoming holder refresh helpers need to preserve current schedule state without reading the runner directly or widening the holder API beyond transport-facing lifecycle details.
+- Consequence: Future holder refresh helpers should reuse `getScheduleSnapshot()` to detect disabled logging and carry forward active `nextDueTick` values instead of reaching into runner or cadence instances.
+
 ### 2026-03-10: Replication diagnostics logger holders should own callback reconfiguration and poll through it
 
 - Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now stores the current diagnostics logger reconfiguration result, exposes `poll(tick)` by calling the current nullable fixed-step callback when present, and refreshes that stored state only through `src/network/replicationDiagnosticsLoggerReconfiguration.ts`.

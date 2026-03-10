@@ -100,6 +100,10 @@ describe('AuthoritativeClientReplicationDiagnosticsLoggerStateHolder', () => {
       nextDueTick: -1
     });
 
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: true,
+      nextDueTick: null
+    });
     expect(() => holder.poll(-1)).not.toThrow();
     expect(textLogger).not.toHaveBeenCalled();
 
@@ -110,18 +114,39 @@ describe('AuthoritativeClientReplicationDiagnosticsLoggerStateHolder', () => {
       textLogger
     });
 
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 12
+    });
+
     holder.poll(11);
     expect(textLogger).not.toHaveBeenCalled();
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 12
+    });
 
     holder.poll(12);
     expect(textLogger).toHaveBeenCalledTimes(1);
     expect(textLogger).toHaveBeenCalledWith(createExpectedText(5));
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 22
+    });
 
     holder.poll(21);
     expect(textLogger).toHaveBeenCalledTimes(1);
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 22
+    });
 
     holder.poll(22);
     expect(textLogger).toHaveBeenCalledTimes(2);
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 32
+    });
   });
 
   it('replaces the active poll callback when reconfigured between enabled logger setups', () => {
@@ -146,13 +171,26 @@ describe('AuthoritativeClientReplicationDiagnosticsLoggerStateHolder', () => {
       lineLogger: secondLineLogger
     });
 
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 9
+    });
+
     holder.poll(8);
     expect(secondLineLogger).not.toHaveBeenCalled();
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 9
+    });
 
     holder.poll(9);
     expect(secondLineLogger).toHaveBeenCalledTimes(1);
     expect(secondLineLogger.mock.calls[0]![0][0]).toBe('ReplicationDiagnostics');
     expect(firstTextLogger).toHaveBeenCalledTimes(1);
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 16
+    });
   });
 
   it('clears the active callback when reconfigured back to disabled logging', () => {
@@ -175,9 +213,17 @@ describe('AuthoritativeClientReplicationDiagnosticsLoggerStateHolder', () => {
       nextDueTick: -1
     });
 
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: true,
+      nextDueTick: null
+    });
     expect(() => holder.poll(-1)).not.toThrow();
     holder.poll(99);
     expect(textLogger).toHaveBeenCalledTimes(1);
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: true,
+      nextDueTick: null
+    });
   });
 
   it('surfaces cadence validation errors when reconfiguration enables logging', () => {

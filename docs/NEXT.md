@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-451. Add a transport-facing diagnostics logger schedule snapshot helper after task `450` lands that reports whether one logger state holder is disabled or, when enabled, its next due tick, with holder snapshot regressions.
 452. Add a transport-facing diagnostics logger callback-refresh helper after task `451` lands that reconfigures one enabled logger state holder with updated text, line, and payload callbacks while preserving its current next-due tick, with schedule-preservation regressions.
 453. Add a transport-facing diagnostics logger cadence-refresh helper after task `452` lands that reconfigures one enabled logger state holder with an updated `intervalTicks` value while preserving its current next-due tick, with cadence-refresh regressions.
+454. Add a transport-facing diagnostics logger combined-refresh helper after task `453` lands that reapplies one enabled logger state holder's updated `intervalTicks` plus text, line, and payload callbacks together while preserving its current next-due tick, with combined-refresh regressions.
 
 ## App shell
 
