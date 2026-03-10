@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-435. Add a transport-facing replication diagnostics cadence helper that tracks one next-due tick, invokes task `432` only when a fixed-step tick reaches that boundary, and returns silent non-due results with schedule regressions.
 436. Extract task `431`'s root line-array assembly after task `434` lands so transports can consume deterministic aggregate-plus-client diagnostics lines before final string joining, with log-order regressions.
 437. Extend task `432`'s emission helper after task `436` lands to return detached diagnostics line arrays beside joined `logText` so alternate sinks can reuse the emission output without string splitting, with emission-detach regressions.
+438. Extend task `435` after task `437` lands so due cadence results return detached diagnostics line arrays beside joined `logText` while non-due polls stay line-free, with cadence-line regressions.
 
 ## App shell
 

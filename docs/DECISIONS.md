@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Replication diagnostics cadence should stay silent before the due tick and reschedule from the emitted tick
+
+- Decision: `src/network/replicationDiagnosticsLogCadence.ts` now tracks one mutable `nextDueTick`, returns a silent non-due result while `tick < nextDueTick`, and emits at most once per poll by delegating due ticks to `createAuthoritativeClientReplicationDiagnosticsLogEmission()` before resetting `nextDueTick` to that emitted tick plus the interval.
+- Reason: Transport fixed-step loops need one narrow polling seam that avoids formatting logs on non-due ticks and does not burst through every missed interval after schedule slippage.
+- Consequence: Future transport logging should poll this cadence helper once per fixed tick and treat a late poll as one current emission plus one new `tick + intervalTicks` boundary rather than replaying backlogged diagnostics intervals.
+
 ### 2026-03-10: Aggregate replication diagnostics log headers should be reusable as labeled line arrays
 
 - Decision: `src/network/replicationDiagnosticsLogLineFormatting.ts` now exposes a transport-facing helper that formats one aggregate diagnostics summary into the same fixed client-count, replay, send, and resync labeled header lines used by the integrated text formatter.
