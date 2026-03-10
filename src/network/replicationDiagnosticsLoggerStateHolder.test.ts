@@ -661,6 +661,86 @@ describe('AuthoritativeClientReplicationDiagnosticsLoggerStateHolder', () => {
     });
   });
 
+  it('refreshes schedule and cadence before the due tick while preserving callbacks', () => {
+    const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+    registry.setSnapshot('client-alpha', createPopulatedSnapshot(5));
+    const textLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsTextLogger>();
+    const holder = createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+      registry,
+      intervalTicks: 10,
+      nextDueTick: 12,
+      textLogger
+    });
+
+    holder.refreshScheduleAndCadence({
+      nextDueTick: 6,
+      intervalTicks: 4
+    });
+
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 6
+    });
+
+    holder.poll(5);
+    expect(textLogger).not.toHaveBeenCalled();
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 6
+    });
+
+    holder.poll(6);
+    expect(textLogger).toHaveBeenCalledTimes(1);
+    expect(textLogger).toHaveBeenCalledWith(createExpectedText(5));
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 10
+    });
+  });
+
+  it('refreshes schedule and cadence after an emission while preserving callbacks', () => {
+    const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+    registry.setSnapshot('client-alpha', createPopulatedSnapshot(3));
+    const textLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsTextLogger>();
+    const holder = createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+      registry,
+      intervalTicks: 5,
+      nextDueTick: 3,
+      textLogger
+    });
+
+    holder.poll(3);
+    expect(textLogger).toHaveBeenCalledTimes(1);
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 8
+    });
+
+    holder.refreshScheduleAndCadence({
+      nextDueTick: 11,
+      intervalTicks: 9
+    });
+
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 11
+    });
+
+    holder.poll(10);
+    expect(textLogger).toHaveBeenCalledTimes(1);
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 11
+    });
+
+    holder.poll(11);
+    expect(textLogger).toHaveBeenCalledTimes(2);
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 20
+    });
+  });
+
   it('rejects cadence refresh while disabled and preserves the current schedule when cadence validation fails', () => {
     const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
     const textLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsTextLogger>();
@@ -690,6 +770,54 @@ describe('AuthoritativeClientReplicationDiagnosticsLoggerStateHolder', () => {
         intervalTicks: 0
       })
     ).toThrowError('intervalTicks must be greater than 0');
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 4
+    });
+  });
+
+  it('rejects schedule-and-cadence refresh while disabled and preserves the current schedule when schedule or cadence validation fails', () => {
+    const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+    const textLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsTextLogger>();
+    const holder = createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+      registry,
+      intervalTicks: 0,
+      nextDueTick: -1
+    });
+
+    expect(() =>
+      holder.refreshScheduleAndCadence({
+        nextDueTick: 5,
+        intervalTicks: 5
+      })
+    ).toThrowError(
+      'cannot refresh replication diagnostics logger schedule and cadence while logging is disabled'
+    );
+
+    holder.reconfigure({
+      registry,
+      intervalTicks: 6,
+      nextDueTick: 4,
+      textLogger
+    });
+
+    expect(() =>
+      holder.refreshScheduleAndCadence({
+        nextDueTick: 4,
+        intervalTicks: 0
+      })
+    ).toThrowError('intervalTicks must be greater than 0');
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 4
+    });
+
+    expect(() =>
+      holder.refreshScheduleAndCadence({
+        nextDueTick: -1,
+        intervalTicks: 7
+      })
+    ).toThrowError('nextDueTick must be a non-negative integer');
     expect(holder.getScheduleSnapshot()).toEqual({
       disabled: false,
       nextDueTick: 4

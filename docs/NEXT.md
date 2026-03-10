@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-457. Add a transport-facing diagnostics logger schedule-and-cadence refresh helper that reapplies one enabled logger state holder's updated explicit `nextDueTick` plus `intervalTicks` while preserving its current logger callbacks, with schedule-and-cadence regressions.
 458. Add a transport-facing diagnostics logger schedule-cadence-and-callback refresh helper that reapplies one enabled logger state holder's updated explicit `nextDueTick`, `intervalTicks`, plus text, line, and payload callbacks together, with combined schedule-refresh regressions.
 459. Add a transport-facing diagnostics logger callback-presence snapshot helper that reports configured text, line, and payload logger types without widening `getScheduleSnapshot()`, with callback-snapshot regressions.
+460. Add a transport-facing diagnostics logger configuration snapshot helper after task `459` that combines one enabled logger state holder's schedule snapshot plus callback-presence snapshot into one JSON-safe export without exposing runner internals, with configuration-snapshot regressions.
 
 ## App shell
 
