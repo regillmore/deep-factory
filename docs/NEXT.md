@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-424. Add a transport-facing per-client send diagnostics accumulator that folds task `421`'s batch-filter summaries into running chunk/entity `dropped`/`trimmed`/`forwarded` totals plus last-staged tick metadata.
 425. Add a transport-facing combined per-client replication diagnostics snapshot helper that merges tasks `420`, `422`, and `424` into one JSON-safe replay/send/resync summary for logging.
 426. Add a transport-facing combined per-client replication diagnostics reset helper that clears task `425`'s replay/send/resync totals plus last-tick metadata for reconnect or client replacement flows.
+427. Add a transport-facing per-client replication diagnostics registry helper that stores task `425` snapshots by client id and supports reset or removal on reconnect/disconnect flows.
 
 ## App shell
 

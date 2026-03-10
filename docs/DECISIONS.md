@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Per-client send diagnostics should accumulate totals separately from the latest staged tick metadata
+
+- Decision: `src/network/replicationSendDiagnostics.ts` now keeps running chunk and entity `dropped`, `trimmed`, and `forwarded` totals under `totals` while storing only the latest staged tick under separate `lastStaged` metadata, and empty summaries leave that metadata unchanged because they do not represent a new staged batch.
+- Reason: Long-lived transport send diagnostics need cumulative send counters across many staged batches, but operators still need the most recent batch boundary, and idle summaries should not erase the last meaningful staged tick.
+- Consequence: Future send-side or combined replication diagnostics should add new batch-filter summaries through this accumulator and keep later send metadata beside `lastStaged` rather than embedding per-batch state into the running totals.
+
 ### 2026-03-10: Per-client resync diagnostics should accumulate totals separately from the latest applied baseline metadata
 
 - Decision: `src/network/replicationResyncDiagnostics.ts` now keeps running spawned, updated, and removed totals under `totals` while storing only the latest applied baseline tick and entity-count metadata under separate `lastAppliedBaseline`.

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Task: Add a per-client send diagnostics accumulator.
+- Changes: Added [src/network/replicationSendDiagnostics.ts](../src/network/replicationSendDiagnostics.ts) so transport code can accumulate [src/network/replicationBatchFilterSummary.ts](../src/network/replicationBatchFilterSummary.ts) results into running chunk and entity `dropped`/`trimmed`/`forwarded` totals while preserving separate `lastStaged` metadata, added focused coverage in [src/network/replicationSendDiagnostics.test.ts](../src/network/replicationSendDiagnostics.test.ts), removed completed task `424` from [docs/NEXT.md](docs/NEXT.md), added replacement task `427`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/network/replicationSendDiagnostics.test.ts src/network/replicationBatchFilterSummary.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an authoritative resync diagnostics accumulator.
 - Changes: Added [src/network/replicationResyncDiagnostics.ts](../src/network/replicationResyncDiagnostics.ts) so transport code can accumulate [src/network/replicationBaselineSummary.ts](../src/network/replicationBaselineSummary.ts) results into running spawned, updated, and removed totals while preserving separate `lastAppliedBaseline` metadata, added focused coverage in [src/network/replicationResyncDiagnostics.test.ts](../src/network/replicationResyncDiagnostics.test.ts), removed completed task `422` from [docs/NEXT.md](docs/NEXT.md), added replacement task `426`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/network/replicationResyncDiagnostics.test.ts src/network/replicationBaselineSummary.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
