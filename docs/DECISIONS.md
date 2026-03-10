@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Active-liquid chunks sleep only after two quiet steps and active telemetry now reflects awake work
+
+- Decision: `TileWorld` now keeps `activeLiquidChunkKeys` as the awake subset of resident liquid chunks, sleeps unchanged chunks only after two quiet fixed steps, and wakes nearby resident liquid chunks again on local edits or liquid transfers.
+- Reason: Sideways equalization alternates horizontal-pair parity every tick, so sleeping after one quiet step can skip valid opposite-parity flow, while settled pools still need to disappear from active-scan telemetry until a disturbance reintroduces work.
+- Consequence: Future liquid telemetry and wake-debug surfaces should treat active chunk counts and bounds as awake-work indicators, not as a census of every resident chunk that still contains liquid.
+
 ### 2026-03-10: Client networking interest should derive from viewport bounds with separate chunk and entity padding
 
 - Decision: `src/network/interestSet.ts` now derives client interest from the camera-centered viewport world rect, expands chunk relevance in chunk space and entity relevance in world space, and keeps chunk/entity membership plus enter/exit diffs deterministic via y-major chunk ordering and ascending entity ids.

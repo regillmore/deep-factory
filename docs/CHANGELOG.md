@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Task: Add liquid chunk sleep and wake rules for settled fluid.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts) so active liquid chunks now sleep after two quiet fixed steps, wake again on nearby edits or liquid transfers, and keep renderer-facing active-liquid telemetry aligned with awake resident chunks; expanded [src/world/world.test.ts](../src/world/world.test.ts) and [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) with settled-pool sleep and wake regressions; removed completed task `370` from [docs/NEXT.md](docs/NEXT.md), added replacement task `407`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/world.test.ts`, `cmd /c npx vitest run src/gl/renderer.test.ts`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a client-side interest set calculator for chunk and entity relevance.
 - Changes: Added [src/network/interestSet.ts](../src/network/interestSet.ts) with viewport-world bounds resolution, deterministic chunk/entity interest calculation, and enter/exit diff helpers, added focused coverage in [src/network/interestSet.test.ts](../src/network/interestSet.test.ts), removed completed task `23` from [docs/NEXT.md](docs/NEXT.md), added replacement task `406`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/network/interestSet.test.ts` (outside the sandbox after the expected Vitest `spawn EPERM` startup failure in-sandbox) and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

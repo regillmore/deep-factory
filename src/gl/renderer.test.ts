@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Camera2D } from '../core/camera2d';
-import { CHUNK_SIZE, MAX_LIGHT_LEVEL, TILE_SIZE } from '../world/constants';
+import { CHUNK_SIZE, MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL, TILE_SIZE } from '../world/constants';
 import {
   createPlayerState,
   type PlayerCollisionContacts,
@@ -298,6 +298,46 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBe(-1);
     expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBe(-1);
     expect(renderer.telemetry.residentActiveLiquidMaxChunkY).toBe(-1);
+  });
+
+  it('drops active-liquid telemetry after a settled pool sleeps and raises it again when a nearby edit wakes it', async () => {
+    const renderer = new Renderer(createMockCanvas(createMockGl()));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const camera = new Camera2D();
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+
+    expect(renderer.setTile(3, -20, 1)).toBe(true);
+    expect(renderer.setTile(5, -20, 1)).toBe(true);
+    expect(renderer.setTile(4, -19, 1)).toBe(true);
+    expect(renderer.setTile(5, -19, 1)).toBe(true);
+    expect(renderer.setTile(4, -20, WATER_TILE_ID)).toBe(true);
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+
+    expect(renderer.telemetry.residentActiveLiquidChunks).toBe(1);
+    expect(renderer.stepLiquidSimulation()).toBe(false);
+    expect(renderer.telemetry.residentActiveLiquidChunks).toBe(1);
+    expect(renderer.stepLiquidSimulation()).toBe(false);
+    expect(renderer.telemetry.residentActiveLiquidChunks).toBe(0);
+    expect(renderer.telemetry.residentActiveLiquidMinChunkX).toBeNull();
+    expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBeNull();
+    expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBeNull();
+    expect(renderer.telemetry.residentActiveLiquidMaxChunkY).toBeNull();
+
+    expect(renderer.setTile(5, -20, 0)).toBe(true);
+    renderer.render(camera, { timeMs: 0 });
+    expect(renderer.telemetry.residentActiveLiquidChunks).toBe(1);
+    expect(renderer.stepLiquidSimulation()).toBe(true);
+    expect(renderer.getLiquidLevel(4, -20)).toBe(MAX_LIQUID_LEVEL / 2);
+    expect(renderer.getLiquidLevel(5, -20)).toBe(MAX_LIQUID_LEVEL / 2);
   });
 
   it('flips placeholder shader uv.y so pose rectangles stay upright with top-to-bottom quad UVs', () => {

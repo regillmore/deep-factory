@@ -212,7 +212,7 @@ describe('TileWorld', () => {
     expect(world.createSnapshot().liquidSimulationTick).toBe(1);
   });
 
-  it('keeps active-liquid chunk membership aligned after liquid transfers move fluid into a new chunk', () => {
+  it('keeps active-liquid chunk membership aligned after liquid transfers move fluid into a new chunk and sleeps it after two quiet ticks', () => {
     const world = new TileWorld(0);
     const worldTileX = 4;
     const sourceWorldTileY = -33;
@@ -235,6 +235,53 @@ describe('TileWorld', () => {
 
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.getLastLiquidSimulationStats().downwardActiveChunksScanned).toBeGreaterThan(0);
+    expect(world.getActiveLiquidChunkCount()).toBe(1);
+
+    expect(world.stepLiquidSimulation()).toBe(false);
+    expect(world.getActiveLiquidChunkCount()).toBe(0);
+    expect(world.getActiveLiquidChunkBounds()).toBeNull();
+
+    expect(world.stepLiquidSimulation()).toBe(false);
+    expect(world.getLastLiquidSimulationStats()).toEqual({
+      downwardActiveChunksScanned: 0,
+      sidewaysCandidateChunksScanned: 0,
+      sidewaysPairsTested: 0,
+      downwardTransfersApplied: 0,
+      sidewaysTransfersApplied: 0
+    });
+  });
+
+  it('wakes a settled liquid chunk when a nearby edit reopens sideways flow', () => {
+    const world = new TileWorld(0);
+    const worldTileX = 4;
+    const worldTileY = -20;
+
+    world.ensureChunk(0, -1);
+    expect(world.setTile(worldTileX - 1, worldTileY, 1)).toBe(true);
+    expect(world.setTile(worldTileX + 1, worldTileY, 1)).toBe(true);
+    expect(world.setTile(worldTileX, worldTileY + 1, 1)).toBe(true);
+    expect(world.setTile(worldTileX + 1, worldTileY + 1, 1)).toBe(true);
+    expect(world.setTile(worldTileX, worldTileY, WATER_TILE_ID)).toBe(true);
+
+    expect(world.stepLiquidSimulation()).toBe(false);
+    expect(world.stepLiquidSimulation()).toBe(false);
+    expect(world.getActiveLiquidChunkCount()).toBe(0);
+    expect(world.getActiveLiquidChunkBounds()).toBeNull();
+
+    expect(world.setTile(worldTileX + 1, worldTileY, 0)).toBe(true);
+    expect(world.getActiveLiquidChunkCount()).toBe(1);
+    expect(world.getActiveLiquidChunkBounds()).toEqual({
+      minChunkX: 0,
+      minChunkY: -1,
+      maxChunkX: 0,
+      maxChunkY: -1
+    });
+
+    expect(world.stepLiquidSimulation()).toBe(true);
+    expect(world.getTile(worldTileX, worldTileY)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(worldTileX, worldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
+    expect(world.getTile(worldTileX + 1, worldTileY)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(worldTileX + 1, worldTileY)).toBe(MAX_LIQUID_LEVEL / 2);
   });
 
   it('preserves same-step downward-then-sideways flow when liquid falls into a loaded chunk across a chunk boundary', () => {

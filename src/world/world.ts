@@ -91,6 +91,10 @@ const createLiquidSimulationStats = (): LiquidSimulationStats => ({
   sidewaysTransfersApplied: 0
 });
 
+// Sideways equalization alternates horizontal-pair parity every tick, so liquid chunks
+// need two quiet steps before they can safely sleep without skipping the opposite parity.
+const LIQUID_CHUNK_SLEEP_QUIET_STEP_THRESHOLD = 2;
+
 const chunkContainsLiquid = (chunk: Chunk): boolean => {
   for (let index = 0; index < chunk.liquidLevels.length; index += 1) {
     if ((chunk.liquidLevels[index] ?? 0) > 0) {
@@ -341,6 +345,7 @@ export class TileWorld {
   private tileEditListeners = new Set<TileEditListener>();
   private dirtyLightChunkKeys = new Set<string>();
   private activeLiquidChunkKeys = new Set<string>();
+  private liquidChunkQuietStepCounts = new Map<string, number>();
   private liquidSimulationTick = 0;
   private lastLiquidSimulationStats = createLiquidSimulationStats();
 
@@ -590,16 +595,84 @@ export class TileWorld {
     nextLiquidLevel: number
   ): void {
     if (nextLiquidLevel > 0) {
-      this.activeLiquidChunkKeys.add(key);
+      this.activateLiquidChunk(key);
       return;
     }
 
     if (previousLiquidLevel > 0 && !chunkContainsLiquid(chunk)) {
-      this.activeLiquidChunkKeys.delete(key);
+      this.deactivateLiquidChunk(key);
     }
   }
 
-  private applyLiquidTransfer(transfer: LiquidTransfer): boolean {
+  private activateLiquidChunk(key: string): void {
+    this.activeLiquidChunkKeys.add(key);
+    this.liquidChunkQuietStepCounts.set(key, 0);
+  }
+
+  private deactivateLiquidChunk(key: string): void {
+    this.activeLiquidChunkKeys.delete(key);
+    this.liquidChunkQuietStepCounts.delete(key);
+  }
+
+  private wakeResidentLiquidChunk(
+    chunkX: number,
+    chunkY: number,
+    disturbedChunkKeys?: Set<string>
+  ): void {
+    const key = chunkKey(chunkX, chunkY);
+    const chunk = this.chunks.get(key);
+    if (!chunk || !chunkContainsLiquid(chunk)) {
+      return;
+    }
+
+    this.activateLiquidChunk(key);
+    disturbedChunkKeys?.add(key);
+  }
+
+  private wakeNearbyResidentLiquidChunks(
+    worldTileX: number,
+    worldTileY: number,
+    disturbedChunkKeys?: Set<string>
+  ): void {
+    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+    this.wakeResidentLiquidChunk(chunkX, chunkY, disturbedChunkKeys);
+    this.wakeResidentLiquidChunk(chunkX - 1, chunkY, disturbedChunkKeys);
+    this.wakeResidentLiquidChunk(chunkX + 1, chunkY, disturbedChunkKeys);
+    this.wakeResidentLiquidChunk(chunkX, chunkY - 1, disturbedChunkKeys);
+    this.wakeResidentLiquidChunk(chunkX, chunkY + 1, disturbedChunkKeys);
+  }
+
+  private updateActiveLiquidChunkSleepState(
+    startingActiveChunkKeys: ReadonlySet<string>,
+    disturbedChunkKeys: ReadonlySet<string>
+  ): void {
+    for (const key of startingActiveChunkKeys) {
+      const chunk = this.chunks.get(key);
+      if (!chunk || !chunkContainsLiquid(chunk)) {
+        this.deactivateLiquidChunk(key);
+        continue;
+      }
+
+      if (disturbedChunkKeys.has(key)) {
+        this.activateLiquidChunk(key);
+        continue;
+      }
+
+      const nextQuietStepCount = (this.liquidChunkQuietStepCounts.get(key) ?? 0) + 1;
+      if (nextQuietStepCount >= LIQUID_CHUNK_SLEEP_QUIET_STEP_THRESHOLD) {
+        this.deactivateLiquidChunk(key);
+        continue;
+      }
+
+      this.activeLiquidChunkKeys.add(key);
+      this.liquidChunkQuietStepCounts.set(key, nextQuietStepCount);
+    }
+  }
+
+  private applyLiquidTransfer(
+    transfer: LiquidTransfer,
+    disturbedChunkKeys?: Set<string>
+  ): boolean {
     const sourceTileId = this.getResidentTileId(transfer.fromWorldTileX, transfer.fromWorldTileY);
     const sourceLiquidLevel = this.getResidentLiquidLevel(transfer.fromWorldTileX, transfer.fromWorldTileY);
     const targetTileId = this.getResidentTileId(transfer.toWorldTileX, transfer.toWorldTileY);
@@ -633,6 +706,18 @@ export class TileWorld {
       nextTargetLiquidLevel,
       true
     ).changed;
+    if (sourceChanged || targetChanged) {
+      this.wakeNearbyResidentLiquidChunks(
+        transfer.fromWorldTileX,
+        transfer.fromWorldTileY,
+        disturbedChunkKeys
+      );
+      this.wakeNearbyResidentLiquidChunks(
+        transfer.toWorldTileX,
+        transfer.toWorldTileY,
+        disturbedChunkKeys
+      );
+    }
     return sourceChanged || targetChanged;
   }
 
@@ -692,7 +777,7 @@ export class TileWorld {
     this.chunks.set(key, chunk);
     this.dirtyLightChunkKeys.add(key);
     if (chunkContainsLiquid(chunk)) {
-      this.activeLiquidChunkKeys.add(key);
+      this.activateLiquidChunk(key);
     }
     return chunk;
   }
@@ -710,13 +795,18 @@ export class TileWorld {
     }
 
     const liquidKind = getTileLiquidKind(tileId);
-    return this.commitTileState(
+    const changed = this.commitTileState(
       worldTileX,
       worldTileY,
       tileId,
       liquidKind === null ? 0 : MAX_LIQUID_LEVEL,
       true
     ).changed;
+    if (changed) {
+      this.wakeNearbyResidentLiquidChunks(worldTileX, worldTileY);
+    }
+
+    return changed;
   }
 
   getLiquidLevel(worldTileX: number, worldTileY: number): number {
@@ -734,7 +824,9 @@ export class TileWorld {
       return false;
     }
 
-    const downwardCandidateChunkKeys = new Set(this.activeLiquidChunkKeys);
+    const startingActiveChunkKeys = new Set(this.activeLiquidChunkKeys);
+    const disturbedChunkKeys = new Set<string>();
+    const downwardCandidateChunkKeys = new Set(startingActiveChunkKeys);
     const downwardTransfers: LiquidTransfer[] = [];
 
     for (const [key, chunk] of this.chunks) {
@@ -784,7 +876,7 @@ export class TileWorld {
 
     let changed = false;
     for (const transfer of downwardTransfers) {
-      const applied = this.applyLiquidTransfer(transfer);
+      const applied = this.applyLiquidTransfer(transfer, disturbedChunkKeys);
       if (applied) {
         stats.downwardTransfersApplied += 1;
       }
@@ -882,6 +974,8 @@ export class TileWorld {
                   tileId: donorTileId,
                   liquidLevel: transferLevel
                 }
+            ,
+            disturbedChunkKeys
           );
           if (applied) {
             stats.sidewaysTransfersApplied += 1;
@@ -891,6 +985,7 @@ export class TileWorld {
       }
     }
 
+    this.updateActiveLiquidChunkSleepState(startingActiveChunkKeys, disturbedChunkKeys);
     this.lastLiquidSimulationStats = stats;
     this.liquidSimulationTick = (this.liquidSimulationTick + 1) >>> 0;
     return changed;
@@ -1125,6 +1220,9 @@ export class TileWorld {
     this.editedChunkLiquidLevels = nextEditedChunkLiquidLevels;
     this.dirtyLightChunkKeys = nextDirtyLightChunkKeys;
     this.activeLiquidChunkKeys = collectActiveLiquidChunkKeys(nextChunks);
+    this.liquidChunkQuietStepCounts = new Map(
+      Array.from(this.activeLiquidChunkKeys, (key): [string, number] => [key, 0])
+    );
     this.liquidSimulationTick = expectLiquidSimulationTick(snapshot.liquidSimulationTick);
     this.lastLiquidSimulationStats = createLiquidSimulationStats();
   }
@@ -1170,7 +1268,7 @@ export class TileWorld {
       if (chunkBoundsContains(bounds, chunk.coord.x, chunk.coord.y)) continue;
       this.chunks.delete(key);
       this.dirtyLightChunkKeys.delete(key);
-      this.activeLiquidChunkKeys.delete(key);
+      this.deactivateLiquidChunk(key);
       removed += 1;
     }
     return removed;
