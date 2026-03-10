@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Networking scaffolding uses versioned discriminated JSON messages with deterministic chunk and entity ordering
+
+- Decision: `src/network/protocol.ts` now owns the shared wire contract for player-input, chunk-tile-diff, and entity-snapshot messages; each message carries a discriminating `kind`, protocol `version`, fixed-step `tick`, chunk diffs address tiles by row-major `tileIndex`, and entity snapshots keep shared `position`/`velocity` fields plus a flat scalar `state` bag.
+- Reason: Future interest-set, replication, and transport work needs one transport-agnostic JSON-safe contract that matches the current fixed-step loop and chunk snapshot conventions without rediscovering message shapes at each call site.
+- Consequence: Future networking work should extend or version this protocol module instead of inventing ad hoc socket payloads, and chunk/entity message producers should preserve the deterministic tile-index and entity-id ordering that the shared decoders now require.
+
 ### 2026-03-09: Liquid-step scan telemetry should stay phase-owned
 
 - Decision: `TileWorld` last-step liquid stats and renderer telemetry now keep separate downward active-chunk scan counts, sideways candidate-chunk scan counts, and sideways pair counts instead of generic scan totals.
