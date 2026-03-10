@@ -1,5 +1,6 @@
 import {
-  createAuthoritativeClientReplicationDiagnosticsLogEmission
+  createAuthoritativeClientReplicationDiagnosticsLogEmission,
+  type AuthoritativeClientReplicationDiagnosticsLogEmission
 } from './replicationDiagnosticsLogEmission';
 import { AuthoritativeClientReplicationDiagnosticsRegistry } from './replicationDiagnosticsRegistry';
 
@@ -16,13 +17,13 @@ export interface PollAuthoritativeClientReplicationDiagnosticsLogCadenceOptions 
 export interface SilentAuthoritativeClientReplicationDiagnosticsLogCadenceResult {
   emitted: false;
   nextDueTick: number;
+  logLines: null;
   logText: null;
 }
 
-export interface EmittedAuthoritativeClientReplicationDiagnosticsLogCadenceResult {
+export interface EmittedAuthoritativeClientReplicationDiagnosticsLogCadenceResult
+  extends AuthoritativeClientReplicationDiagnosticsLogEmission {
   emitted: true;
-  nextDueTick: number;
-  logText: string;
 }
 
 export type AuthoritativeClientReplicationDiagnosticsLogCadenceResult =
@@ -83,6 +84,7 @@ export class AuthoritativeClientReplicationDiagnosticsLogCadence {
       return {
         emitted: false,
         nextDueTick: this.nextDueTick,
+        logLines: null,
         logText: null
       };
     }
@@ -96,8 +98,7 @@ export class AuthoritativeClientReplicationDiagnosticsLogCadence {
 
     return {
       emitted: true,
-      nextDueTick: emission.nextDueTick,
-      logText: emission.logText
+      ...emission
     };
   }
 }

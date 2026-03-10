@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-438. Extend task `435` after task `437` lands so due cadence results return detached diagnostics line arrays beside joined `logText` while non-due polls stay line-free, with cadence-line regressions.
 439. Add a transport-facing replication diagnostics sink helper after task `438` lands that polls cadence and invokes one callback only on due ticks with joined text plus detached lines, with sink-call regressions.
 440. Add a transport-facing console-style diagnostics logger helper after task `439` lands that forwards only due emissions through one injected text logger while preserving detached line access for other sinks, with logger-call regressions.
+441. Add a transport-facing line-array diagnostics logger helper after task `439` lands that forwards only due detached `logLines` through one injected line sink while leaving joined text available for other loggers, with line-logger regressions.
 
 ## App shell
 

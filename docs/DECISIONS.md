@@ -2,11 +2,17 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Replication diagnostics cadence should forward due lines but keep non-due polls explicitly line-free
+
+- Decision: `src/network/replicationDiagnosticsLogCadence.ts` now returns due results by forwarding the full emission contract, including detached `logLines`, while non-due polls return both `logLines: null` and `logText: null`.
+- Reason: Transport polling code needs one cadence seam that can pass line-oriented diagnostics through without recomputing them, while idle ticks should remain unambiguous no-output results instead of exposing stale or empty line arrays.
+- Consequence: Future cadence consumers should read `logLines` only when `emitted === true` and should preserve the current explicit null contract for non-due polls rather than inventing empty-array silent results.
+
 ### 2026-03-10: Replication diagnostics emissions should expose detached lines beside joined text
 
-- Decision: `src/network/replicationDiagnosticsLogEmission.ts` now returns detached `logLines` beside joined `logText` for the same frozen registry snapshot, while the current cadence helper still forwards only `logText` until its own follow-up task lands.
-- Reason: Alternate sinks need the exact emitted line ordering without splitting newline-joined text, but widening cadence at the same time would collapse a separate roadmap step and make that contract harder to test independently.
-- Consequence: Future transport sinks should consume emission `logLines` directly when they need line-oriented output, and later cadence work should opt in explicitly when it is ready to forward those same detached lines.
+- Decision: `src/network/replicationDiagnosticsLogEmission.ts` now returns detached `logLines` beside joined `logText` for the same frozen registry snapshot.
+- Reason: Alternate sinks need the exact emitted line ordering without splitting newline-joined text.
+- Consequence: Future transport sinks and cadence helpers should forward emission `logLines` directly when they need line-oriented output instead of rebuilding or re-splitting the same diagnostics text.
 
 ### 2026-03-10: Whole replication diagnostics logs should expose detached line arrays before joining
 

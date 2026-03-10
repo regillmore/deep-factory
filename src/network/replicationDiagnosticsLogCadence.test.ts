@@ -77,6 +77,7 @@ describe('AuthoritativeClientReplicationDiagnosticsLogCadence', () => {
     expect(cadence.poll({ tick: 11 })).toEqual({
       emitted: false,
       nextDueTick: 12,
+      logLines: null,
       logText: null
     });
     expect(cadence.getNextDueTick()).toBe(12);
@@ -90,29 +91,31 @@ describe('AuthoritativeClientReplicationDiagnosticsLogCadence', () => {
       intervalTicks: 10,
       nextDueTick: 12
     });
+    const expectedLines = [
+      'ReplicationDiagnostics',
+      'Aggregate: clients=1',
+      'AggregateReplayChunks: dropped=5 | trimmed=6 | applied=7 | skipped=8',
+      'AggregateReplayEntities: dropped=9 | trimmed=10 | applied=11 | skipped=12',
+      'AggregateSendChunks: dropped=13 | trimmed=14 | forwarded=15',
+      'AggregateSendEntities: dropped=16 | trimmed=17 | forwarded=18',
+      'AggregateResync: spawned=19 | updated=20 | removed=21',
+      'Clients:',
+      'Client: client-alpha',
+      '  ReplayLastProcessed: 5',
+      '  ReplayChunks: dropped=5 | trimmed=6 | applied=7 | skipped=8',
+      '  ReplayEntities: dropped=9 | trimmed=10 | applied=11 | skipped=12',
+      '  SendLastStaged: 15',
+      '  SendChunks: dropped=13 | trimmed=14 | forwarded=15',
+      '  SendEntities: dropped=16 | trimmed=17 | forwarded=18',
+      '  ResyncLastAppliedBaseline: tick=25 | entityCount=26',
+      '  ResyncTotals: spawned=19 | updated=20 | removed=21'
+    ];
 
     expect(cadence.poll({ tick: 12 })).toEqual({
       emitted: true,
       nextDueTick: 22,
-      logText: [
-        'ReplicationDiagnostics',
-        'Aggregate: clients=1',
-        'AggregateReplayChunks: dropped=5 | trimmed=6 | applied=7 | skipped=8',
-        'AggregateReplayEntities: dropped=9 | trimmed=10 | applied=11 | skipped=12',
-        'AggregateSendChunks: dropped=13 | trimmed=14 | forwarded=15',
-        'AggregateSendEntities: dropped=16 | trimmed=17 | forwarded=18',
-        'AggregateResync: spawned=19 | updated=20 | removed=21',
-        'Clients:',
-        'Client: client-alpha',
-        '  ReplayLastProcessed: 5',
-        '  ReplayChunks: dropped=5 | trimmed=6 | applied=7 | skipped=8',
-        '  ReplayEntities: dropped=9 | trimmed=10 | applied=11 | skipped=12',
-        '  SendLastStaged: 15',
-        '  SendChunks: dropped=13 | trimmed=14 | forwarded=15',
-        '  SendEntities: dropped=16 | trimmed=17 | forwarded=18',
-        '  ResyncLastAppliedBaseline: tick=25 | entityCount=26',
-        '  ResyncTotals: spawned=19 | updated=20 | removed=21'
-      ].join('\n')
+      logLines: expectedLines,
+      logText: expectedLines.join('\n')
     });
     expect(cadence.getNextDueTick()).toBe(22);
   });
@@ -125,16 +128,79 @@ describe('AuthoritativeClientReplicationDiagnosticsLogCadence', () => {
       intervalTicks: 6,
       nextDueTick: 10
     });
+    const expectedLines = [
+      'ReplicationDiagnostics',
+      'Aggregate: clients=1',
+      'AggregateReplayChunks: dropped=7 | trimmed=8 | applied=9 | skipped=10',
+      'AggregateReplayEntities: dropped=11 | trimmed=12 | applied=13 | skipped=14',
+      'AggregateSendChunks: dropped=15 | trimmed=16 | forwarded=17',
+      'AggregateSendEntities: dropped=18 | trimmed=19 | forwarded=20',
+      'AggregateResync: spawned=21 | updated=22 | removed=23',
+      'Clients:',
+      'Client: client-alpha',
+      '  ReplayLastProcessed: 7',
+      '  ReplayChunks: dropped=7 | trimmed=8 | applied=9 | skipped=10',
+      '  ReplayEntities: dropped=11 | trimmed=12 | applied=13 | skipped=14',
+      '  SendLastStaged: 17',
+      '  SendChunks: dropped=15 | trimmed=16 | forwarded=17',
+      '  SendEntities: dropped=18 | trimmed=19 | forwarded=20',
+      '  ResyncLastAppliedBaseline: tick=27 | entityCount=28',
+      '  ResyncTotals: spawned=21 | updated=22 | removed=23'
+    ];
 
     const lateEmission = cadence.poll({ tick: 14 });
 
-    expect(lateEmission.emitted).toBe(true);
-    expect(lateEmission.nextDueTick).toBe(20);
+    expect(lateEmission).toEqual({
+      emitted: true,
+      nextDueTick: 20,
+      logLines: expectedLines,
+      logText: expectedLines.join('\n')
+    });
     expect(cadence.getNextDueTick()).toBe(20);
     expect(cadence.poll({ tick: 19 })).toEqual({
       emitted: false,
       nextDueTick: 20,
+      logLines: null,
       logText: null
+    });
+  });
+
+  it('keeps due log lines detached from later registry mutations', () => {
+    const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+    registry.setSnapshot('client-alpha', createPopulatedSnapshot(4));
+    const cadence = new AuthoritativeClientReplicationDiagnosticsLogCadence({
+      registry,
+      intervalTicks: 5,
+      nextDueTick: 8
+    });
+    const expectedLines = [
+      'ReplicationDiagnostics',
+      'Aggregate: clients=1',
+      'AggregateReplayChunks: dropped=4 | trimmed=5 | applied=6 | skipped=7',
+      'AggregateReplayEntities: dropped=8 | trimmed=9 | applied=10 | skipped=11',
+      'AggregateSendChunks: dropped=12 | trimmed=13 | forwarded=14',
+      'AggregateSendEntities: dropped=15 | trimmed=16 | forwarded=17',
+      'AggregateResync: spawned=18 | updated=19 | removed=20',
+      'Clients:',
+      'Client: client-alpha',
+      '  ReplayLastProcessed: 4',
+      '  ReplayChunks: dropped=4 | trimmed=5 | applied=6 | skipped=7',
+      '  ReplayEntities: dropped=8 | trimmed=9 | applied=10 | skipped=11',
+      '  SendLastStaged: 14',
+      '  SendChunks: dropped=12 | trimmed=13 | forwarded=14',
+      '  SendEntities: dropped=15 | trimmed=16 | forwarded=17',
+      '  ResyncLastAppliedBaseline: tick=24 | entityCount=25',
+      '  ResyncTotals: spawned=18 | updated=19 | removed=20'
+    ];
+
+    const emission = cadence.poll({ tick: 8 });
+    registry.reset('client-alpha');
+
+    expect(emission).toEqual({
+      emitted: true,
+      nextDueTick: 13,
+      logLines: expectedLines,
+      logText: expectedLines.join('\n')
     });
   });
 
