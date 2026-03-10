@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Registry snapshot exports should sort by ascending client id instead of insertion order
+
+- Decision: `src/network/replicationDiagnosticsRegistrySnapshot.ts` now exports per-client diagnostics registry entries by sorting client ids in ascending string order before reading detached snapshots.
+- Reason: Periodic multi-client logging needs deterministic output across reconnects, resets, and differing insertion order, while relying on `Map` iteration would couple log order to mutation history instead of client identity.
+- Consequence: Future aggregate, payload, or text-log helpers should consume this ordered registry snapshot helper rather than iterating registry client ids directly or assuming insertion order is stable enough for logs.
+
 ### 2026-03-10: Per-client replication diagnostics registry reset should upsert a zeroed client snapshot
 
 - Decision: `src/network/replicationDiagnosticsRegistry.ts` now stores detached combined diagnostics snapshots by client id, and `reset(clientId)` always replaces that client entry with a zeroed snapshot even when the client id was not already present.
