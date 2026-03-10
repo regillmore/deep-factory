@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Enabled replication diagnostics holder cadence refreshes should preserve the current due tick
+
+- Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now retains its current registry and logger callback configuration, and `refreshCadence(...)` reuses `getScheduleSnapshot()` to swap `intervalTicks` on enabled holders without changing the current `nextDueTick`.
+- Reason: Transport lifecycle code needs to adjust periodic diagnostics cadence without forcing callers to track and resupply an already-counting-down due tick or unchanged logger callbacks.
+- Consequence: Future combined cadence-plus-callback or schedule refresh helpers should reuse the holder-owned configuration plus schedule snapshot instead of rebuilding cadence state outside the holder.
+
 ### 2026-03-10: First-launch main-menu guidance should preview entry controls through its own card
 
 - Decision: The first-launch `main menu` now includes a dedicated `Controls Preview` section card that lists desktop movement and jump bindings plus when the touch player pad appears after `Enter World`.

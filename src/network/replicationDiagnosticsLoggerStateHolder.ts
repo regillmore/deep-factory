@@ -19,6 +19,10 @@ export interface RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHold
     ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerOptions['payloadLogger'];
 }
 
+export interface RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHolderCadenceOptions {
+  intervalTicks: number;
+}
+
 export interface DisabledAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot {
   disabled: true;
   nextDueTick: null;
@@ -106,6 +110,23 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerStateHolder {
     return createAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot(
       this.currentReconfiguration
     );
+  }
+
+  refreshCadence({
+    intervalTicks
+  }: RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHolderCadenceOptions): void {
+    const scheduleSnapshot = this.getScheduleSnapshot();
+    if (scheduleSnapshot.disabled) {
+      throw new Error(
+        'cannot refresh replication diagnostics logger cadence while logging is disabled'
+      );
+    }
+
+    this.reconfigure({
+      ...this.currentConfiguration,
+      intervalTicks,
+      nextDueTick: scheduleSnapshot.nextDueTick
+    });
   }
 
   refreshCallbacks({
