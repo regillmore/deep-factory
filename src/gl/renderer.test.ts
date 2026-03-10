@@ -218,6 +218,7 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.liquidStepSidewaysPairsTested).toBe(0);
     expect(renderer.telemetry.liquidStepDownwardTransfersApplied).toBe(0);
     expect(renderer.telemetry.liquidStepSidewaysTransfersApplied).toBe(0);
+    expect(renderer.telemetry.liquidStepPhaseSummary).toBe('none');
     expect(renderer.telemetry.standalonePlayerNearbyLightLevel).toBeNull();
     expect(renderer.telemetry.standalonePlayerNearbyLightFactor).toBeNull();
     expect(renderer.telemetry.standalonePlayerNearbyLightSourceTileX).toBeNull();
@@ -263,6 +264,49 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.liquidStepSidewaysPairsTested).toBe(0);
     expect(renderer.telemetry.liquidStepDownwardTransfersApplied).toBe(0);
     expect(renderer.telemetry.liquidStepSidewaysTransfersApplied).toBe(0);
+    expect(renderer.telemetry.liquidStepPhaseSummary).toBe('none');
+  });
+
+  it('derives liquid-step phase summary telemetry from applied downward and sideways transfers', async () => {
+    const renderer = new Renderer(createMockCanvas(createMockGl()));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    expect(renderer.stepLiquidSimulation()).toBe(false);
+    expect(renderer.telemetry.liquidStepPhaseSummary).toBe('none');
+
+    renderer.resetWorld();
+    expect(renderer.setTile(5, -19, 1)).toBe(true);
+    expect(renderer.setTile(4, -20, WATER_TILE_ID)).toBe(true);
+    expect(renderer.stepLiquidSimulation()).toBe(true);
+    expect(renderer.telemetry.liquidStepPhaseSummary).toBe('downward');
+
+    renderer.resetWorld();
+    const boundaryTileX = CHUNK_SIZE - 1;
+    const boundaryTileY = -20;
+    expect(renderer.setTile(boundaryTileX - 1, boundaryTileY, 1)).toBe(true);
+    expect(renderer.setTile(boundaryTileX, boundaryTileY + 1, 1)).toBe(true);
+    expect(renderer.setTile(boundaryTileX + 1, boundaryTileY + 1, 1)).toBe(true);
+    expect(renderer.setTile(boundaryTileX, boundaryTileY, WATER_TILE_ID)).toBe(true);
+    expect(renderer.stepLiquidSimulation()).toBe(false);
+    expect(renderer.stepLiquidSimulation()).toBe(true);
+    expect(renderer.telemetry.liquidStepPhaseSummary).toBe('sideways');
+
+    renderer.resetWorld();
+    const sourceWorldTileY = -33;
+    const targetWorldTileY = sourceWorldTileY + 1;
+    expect(renderer.setTile(4, targetWorldTileY + 1, 1)).toBe(true);
+    expect(renderer.setTile(5, targetWorldTileY + 1, 1)).toBe(true);
+    expect(renderer.setTile(4, sourceWorldTileY, WATER_TILE_ID)).toBe(true);
+    expect(renderer.stepLiquidSimulation()).toBe(true);
+    expect(renderer.telemetry.liquidStepPhaseSummary).toBe('both');
   });
 
   it('tracks resident active-liquid chunk counts and bounds in renderer telemetry after liquid edits', async () => {

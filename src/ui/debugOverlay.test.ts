@@ -36,6 +36,7 @@ const baseStats: DebugOverlayStats = {
   liquidStepSidewaysPairsTested: 0,
   liquidStepDownwardTransfersApplied: 0,
   liquidStepSidewaysTransfersApplied: 0,
+  liquidStepPhaseSummary: 'none',
   evictedWorldChunks: 1,
   evictedMeshEntries: 1
 };
@@ -66,7 +67,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nAnimMesh: chunks:0 | quads:0 | nonLiquid:0 | liquid:0');
     expect(text).toContain('\nAnimUV: uploads:0 | quads:0 | nonLiquid:0 | liquid:0 | bytes:0');
     expect(text).toContain(
-      '\nLiquidStep: awake:0 | sleeping:0 | bounds:none | downChunks:0 | sideChunks:0 | sidePairs:0 | downTransfers:0 | sideTransfers:0'
+      '\nLiquidStep: awake:0 | sleeping:0 | bounds:none | phase:none | downChunks:0 | sideChunks:0 | sidePairs:0 | downTransfers:0 | sideTransfers:0'
     );
     expect(text).toContain('LightDirty: 20');
     expect(text).toContain('Draws: 4/256 (OK)');
@@ -88,13 +89,34 @@ describe('formatDebugOverlayText', () => {
         liquidStepSidewaysCandidateChunksScanned: 82,
         liquidStepSidewaysPairsTested: 40960,
         liquidStepDownwardTransfersApplied: 2,
-        liquidStepSidewaysTransfersApplied: 3
+        liquidStepSidewaysTransfersApplied: 3,
+        liquidStepPhaseSummary: 'both'
       },
       null
     );
 
     expect(text).toContain(
-      '\nLiquidStep: awake:3 | sleeping:2 | bounds:-1,-2..4,5 | downChunks:80 | sideChunks:82 | sidePairs:40960 | downTransfers:2 | sideTransfers:3'
+      '\nLiquidStep: awake:3 | sleeping:2 | bounds:-1,-2..4,5 | phase:both | downChunks:80 | sideChunks:82 | sidePairs:40960 | downTransfers:2 | sideTransfers:3'
+    );
+  });
+
+  it('shows the derived liquid-step phase summary without hiding the split counters', () => {
+    const text = formatDebugOverlayText(
+      60,
+      {
+        ...baseStats,
+        liquidStepDownwardActiveChunksScanned: 1,
+        liquidStepSidewaysCandidateChunksScanned: 3,
+        liquidStepSidewaysPairsTested: 1504,
+        liquidStepDownwardTransfersApplied: 0,
+        liquidStepSidewaysTransfersApplied: 1,
+        liquidStepPhaseSummary: 'sideways'
+      },
+      null
+    );
+
+    expect(text).toContain(
+      '\nLiquidStep: awake:0 | sleeping:0 | bounds:none | phase:sideways | downChunks:1 | sideChunks:3 | sidePairs:1504 | downTransfers:0 | sideTransfers:1'
     );
   });
 

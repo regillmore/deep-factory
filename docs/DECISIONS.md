@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Liquid-step phase summary should describe applied flow, not scan coverage
+
+- Decision: Derived `liquidStepPhaseSummary` telemetry now maps `none`, `downward`, `sideways`, and `both` from split downward-versus-sideways transfer counts rather than from the phase scan counters.
+- Reason: Wake testing needs one quick label for whether liquid actually moved in the last fixed step, while the scan counters remain available separately for coverage and candidate-band analysis.
+- Consequence: Future HUD or telemetry surfaces should keep the phase summary transfer-based and rely on the existing scan counters when they need phase coverage detail instead of movement state.
+
 ### 2026-03-10: Active-liquid chunks sleep only after two quiet steps and active telemetry now reflects awake work
 
 - Decision: `TileWorld` now keeps `activeLiquidChunkKeys` as the awake subset of resident liquid chunks, sleeps unchanged chunks only after two quiet fixed steps, and wakes nearby resident liquid chunks again on local edits or liquid transfers.

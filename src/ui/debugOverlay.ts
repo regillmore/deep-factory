@@ -8,6 +8,7 @@ import type { PlayerRespawnEventKind } from '../world/playerRespawnEvent';
 import type { PlayerSpawnLiquidSafetyStatus } from '../world/playerSpawn';
 import type { PlayerWallContactTransitionKind } from '../world/playerWallContactTransition';
 import type { TileLiquidKind } from '../world/tileMetadata';
+import type { LiquidStepPhaseSummary } from '../world/world';
 
 export interface DebugOverlayStats {
   atlasSourceKind: 'pending' | 'authored' | 'placeholder';
@@ -43,6 +44,7 @@ export interface DebugOverlayStats {
   liquidStepSidewaysPairsTested: number;
   liquidStepDownwardTransfersApplied: number;
   liquidStepSidewaysTransfersApplied: number;
+  liquidStepPhaseSummary: LiquidStepPhaseSummary;
   evictedWorldChunks: number;
   evictedMeshEntries: number;
 }
@@ -934,6 +936,7 @@ const formatLiquidStepLine = (stats: DebugOverlayStats): string =>
   `LiquidStep: awake:${stats.residentActiveLiquidChunks} | ` +
   `sleeping:${stats.residentSleepingLiquidChunks} | ` +
   `bounds:${formatActiveLiquidBounds(stats)} | ` +
+  `phase:${stats.liquidStepPhaseSummary} | ` +
   `downChunks:${stats.liquidStepDownwardActiveChunksScanned} | ` +
   `sideChunks:${stats.liquidStepSidewaysCandidateChunksScanned} | ` +
   `sidePairs:${stats.liquidStepSidewaysPairsTested} | ` +

@@ -57,7 +57,12 @@ import {
   type StandalonePlayerRenderState
 } from '../world/standalonePlayerRenderState';
 import { recomputeSunlightFromExposedChunkTops } from '../world/sunlight';
-import { TileWorld, type TileWorldSnapshot } from '../world/world';
+import {
+  resolveLiquidStepPhaseSummary,
+  TileWorld,
+  type LiquidStepPhaseSummary,
+  type TileWorldSnapshot
+} from '../world/world';
 
 interface ChunkGpuMesh {
   buffer: WebGLBuffer;
@@ -127,6 +132,7 @@ export interface RenderTelemetry {
   liquidStepSidewaysPairsTested: number;
   liquidStepDownwardTransfersApplied: number;
   liquidStepSidewaysTransfersApplied: number;
+  liquidStepPhaseSummary: LiquidStepPhaseSummary;
   standalonePlayerNearbyLightLevel: number | null;
   standalonePlayerNearbyLightFactor: number | null;
   standalonePlayerNearbyLightSourceTileX: number | null;
@@ -207,6 +213,7 @@ export class Renderer {
     liquidStepSidewaysPairsTested: 0,
     liquidStepDownwardTransfersApplied: 0,
     liquidStepSidewaysTransfersApplied: 0,
+    liquidStepPhaseSummary: 'none',
     standalonePlayerNearbyLightLevel: null,
     standalonePlayerNearbyLightFactor: null,
     standalonePlayerNearbyLightSourceTileX: null,
@@ -697,6 +704,7 @@ export class Renderer {
     this.telemetry.liquidStepSidewaysPairsTested = stats.sidewaysPairsTested;
     this.telemetry.liquidStepDownwardTransfersApplied = stats.downwardTransfersApplied;
     this.telemetry.liquidStepSidewaysTransfersApplied = stats.sidewaysTransfersApplied;
+    this.telemetry.liquidStepPhaseSummary = resolveLiquidStepPhaseSummary(stats);
   }
 
   private getReadyChunkMesh(chunkX: number, chunkY: number): ChunkGpuMesh | null {

@@ -5,7 +5,7 @@ import { CHUNK_SIZE, MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL } from './constants';
 import type { ChunkBounds } from './chunkMath';
 import { toTileIndex } from './chunkMath';
 import { getTileEmissiveLightLevel, parseTileMetadataRegistry } from './tileMetadata';
-import { didTileLightingStateChange, TileWorld } from './world';
+import { didTileLightingStateChange, resolveLiquidStepPhaseSummary, TileWorld } from './world';
 import type { TileEditEvent } from './world';
 
 const ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK = 0xffffffff >>> 0;
@@ -19,6 +19,50 @@ const localLightColumnRangeMask = (startLocalX: number, endLocalX: number): numb
   }
   return mask;
 };
+
+describe('resolveLiquidStepPhaseSummary', () => {
+  it('derives none, downward, sideways, and both from split transfer counts', () => {
+    expect(
+      resolveLiquidStepPhaseSummary({
+        downwardActiveChunksScanned: 3,
+        sidewaysCandidateChunksScanned: 5,
+        sidewaysPairsTested: 2048,
+        downwardTransfersApplied: 0,
+        sidewaysTransfersApplied: 0
+      })
+    ).toBe('none');
+
+    expect(
+      resolveLiquidStepPhaseSummary({
+        downwardActiveChunksScanned: 1,
+        sidewaysCandidateChunksScanned: 1,
+        sidewaysPairsTested: 512,
+        downwardTransfersApplied: 1,
+        sidewaysTransfersApplied: 0
+      })
+    ).toBe('downward');
+
+    expect(
+      resolveLiquidStepPhaseSummary({
+        downwardActiveChunksScanned: 1,
+        sidewaysCandidateChunksScanned: 3,
+        sidewaysPairsTested: 1504,
+        downwardTransfersApplied: 0,
+        sidewaysTransfersApplied: 1
+      })
+    ).toBe('sideways');
+
+    expect(
+      resolveLiquidStepPhaseSummary({
+        downwardActiveChunksScanned: 1,
+        sidewaysCandidateChunksScanned: 1,
+        sidewaysPairsTested: 512,
+        downwardTransfersApplied: 1,
+        sidewaysTransfersApplied: 1
+      })
+    ).toBe('both');
+  });
+});
 
 describe('TileWorld', () => {
   it('prunes chunks outside retained bounds', () => {

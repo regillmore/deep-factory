@@ -63,6 +63,8 @@ export interface LiquidSimulationStats {
   sidewaysTransfersApplied: number;
 }
 
+export type LiquidStepPhaseSummary = 'none' | 'downward' | 'sideways' | 'both';
+
 export interface TileWorldSnapshot {
   liquidSimulationTick: number;
   residentChunks: ResidentChunkSnapshot[];
@@ -90,6 +92,24 @@ const createLiquidSimulationStats = (): LiquidSimulationStats => ({
   downwardTransfersApplied: 0,
   sidewaysTransfersApplied: 0
 });
+
+export const resolveLiquidStepPhaseSummary = (
+  stats: LiquidSimulationStats
+): LiquidStepPhaseSummary => {
+  const hadDownwardTransfer = stats.downwardTransfersApplied > 0;
+  const hadSidewaysTransfer = stats.sidewaysTransfersApplied > 0;
+
+  if (hadDownwardTransfer && hadSidewaysTransfer) {
+    return 'both';
+  }
+  if (hadDownwardTransfer) {
+    return 'downward';
+  }
+  if (hadSidewaysTransfer) {
+    return 'sideways';
+  }
+  return 'none';
+};
 
 // Sideways equalization alternates horizontal-pair parity every tick, so liquid chunks
 // need two quiet steps before they can safely sleep without skipping the opposite parity.
