@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Fixed-step replication diagnostics polling should no-op only when the runner is absent
+
+- Decision: `src/network/replicationDiagnosticsLoggerPoll.ts` now lifts one nullable diagnostics logger runner into a raw-`tick` fixed-step callback that returns a silent no-op only when the runner is `null`, and otherwise delegates directly to `runner.poll({ tick })`.
+- Reason: Update-loop wiring needs one narrow callback shape for diagnostics polling, but active logging should keep the runner's existing cadence behavior and tick validation instead of introducing a second polling contract that can drift from the runner.
+- Consequence: Future diagnostics callback reconfiguration or state-holder helpers should rebuild and store this callback shape for fixed-step wiring, and should keep `null` confined to the runner-or-callback disabled state rather than adding more special-case branches at poll call sites.
+
 ### 2026-03-10: Replication diagnostics logger factories should short-circuit to null before cadence creation
 
 - Decision: `src/network/replicationDiagnosticsLoggerFactory.ts` now returns `null` when text, line, and payload logger callbacks are all omitted, and only builds the cadence, bundle, and runner stack when at least one logger callback is configured.
