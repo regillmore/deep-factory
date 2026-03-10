@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Send-batch filter summaries should count forwarded payloads separately from trimmed payloads
+
+- Decision: `src/network/replicationBatchFilterSummary.ts` now reduces one staged client send batch into `staged.tick` metadata plus chunk and entity `dropped`, `trimmed`, and `forwarded` counters, where `forwarded` includes both fully kept and trimmed payloads.
+- Reason: Transport send diagnostics need to know how many messages were actually sent in one batch while still exposing how many of those forwarded payloads were trimmed by interest filtering before send.
+- Consequence: Future send-side diagnostics and accumulators should consume this summary helper, treat `trimmed` as a subset of `forwarded`, and preserve the one-staged-tick invariant instead of inferring batch totals directly from raw per-message diagnostics.
+
 ### 2026-03-10: Per-client replication diagnostics should accumulate totals separately from the latest processed tick
 
 - Decision: `src/network/replicationDiagnostics.ts` now keeps running chunk and entity `dropped`, `trimmed`, `applied`, and `skipped` totals under `totals` while storing only the latest processed fixed-step tick under separate `lastProcessed` metadata.
