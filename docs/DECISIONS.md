@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Mixed replication diagnostics logger bundles should compose optional adapters in a fixed order
+
+- Decision: `src/network/replicationDiagnosticsLoggerBundle.ts` now adapts any configured text, line, and payload logger callbacks into one due-only sink by wiring the existing adapters through the fan-out sink in text, line, then payload order.
+- Reason: Transport code needs one narrow mixed-logger seam above the individual adapters so later runner and factory helpers do not rebuild optional sink lists by hand or drift in side-effect ordering.
+- Consequence: Future diagnostics logger runner and factory helpers should build mixed logging through this bundle helper, should treat omitted callbacks as omitted sinks rather than ad hoc conditionals, and should leave the "no logger configured" null short-circuit to higher-level factory layers instead of special-casing it here.
+
 ### 2026-03-10: Periodic replication diagnostics emissions should expose frozen payloads beside text and lines
 
 - Decision: `src/network/replicationDiagnosticsLogEmission.ts` now returns the frozen structured log `payload` beside detached `logLines`, joined `logText`, and `nextDueTick`, and the cadence plus sink layers forward that payload with explicit `null` on silent polls.
