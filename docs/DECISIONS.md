@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Authoritative replication dispatch should keep filter and replay diagnostics separate
+
+- Decision: `src/network/replicationDispatch.ts` now reports interest filtering as `dropped`/`kept`/`trimmed` and guarded replay as `applied`/`skipped` for each authoritative chunk or entity payload instead of flattening them into one status.
+- Reason: A payload can be trimmed by client interest and still skip as stale or duplicate during replay, so transport diagnostics need to distinguish interest culling from replay-guard rejection.
+- Consequence: Future transport batching or telemetry should consume both dispatch fields and avoid assuming every trimmed payload was applied or every skipped payload was unfiltered.
+
 ### 2026-03-10: Baseline replacement clears replay guards only after replacement succeeds
 
 - Decision: `AuthoritativeReplicatedNetworkStateReplayer.replaceAuthoritativeBaseline()` now runs one caller-supplied replicated-state replacement callback and clears chunk and entity replay guards only after that callback returns successfully.

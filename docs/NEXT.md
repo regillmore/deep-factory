@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-414. Add an authoritative replication dispatch helper that applies task `406`'s client-interest snapshot filter before replay, then reports whether each chunk/entity payload was dropped, trimmed, skipped, or applied.
 415. Add a per-tick authoritative replication staging helper that drains task `411`'s captured tile edits into chunk-diff messages and appends one caller-supplied entity-snapshot message so later transports can emit one deterministic replicated-state batch.
 416. Add a transport-facing authoritative baseline apply helper that runs one caller-supplied world replacement callback plus one entity-snapshot baseline through task `413`'s replay seam and reports the applied entity replacement summary for resync diagnostics.
+417. Add a deterministic authoritative replication dispatch summary helper that reduces task `414`'s per-message results into dropped/trimmed/skipped/applied chunk and entity counters for per-client transport diagnostics.
 
 ## App shell
 

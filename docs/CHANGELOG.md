@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Task: Add an authoritative replication dispatch helper.
+- Changes: Added [src/network/replicationDispatch.ts](../src/network/replicationDispatch.ts) so client replication can batch authoritative chunk and entity messages through interest filtering plus guarded replay while receiving per-message filter and replay diagnostics, added focused coverage in [src/network/replicationDispatch.test.ts](../src/network/replicationDispatch.test.ts), removed completed task `414` from [docs/NEXT.md](docs/NEXT.md), added replacement task `417`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/network/replicationDispatch.test.ts src/network/snapshotFilter.test.ts src/network/stateReplay.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an authoritative replay baseline replacement helper.
 - Changes: Updated [src/network/stateReplay.ts](../src/network/stateReplay.ts) with [AuthoritativeReplicatedNetworkStateReplayer.replaceAuthoritativeBaseline()](../src/network/stateReplay.ts) so one callback can replace replicated world and entity baseline state before the replayer clears chunk and entity replay guards together, expanded [src/network/stateReplay.test.ts](../src/network/stateReplay.test.ts) with success and failure-path regressions for baseline replacement ordering, removed completed task `413` from [docs/NEXT.md](docs/NEXT.md), added replacement task `416`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/network/stateReplay.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
