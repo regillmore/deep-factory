@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Task: Add a transport-facing authoritative baseline apply helper.
+- Changes: Added [src/network/replicationBaseline.ts](../src/network/replicationBaseline.ts) so transport resync code can wrap one world replacement callback plus one entity-snapshot baseline through [AuthoritativeReplicatedNetworkStateReplayer.replaceAuthoritativeBaseline()](../src/network/stateReplay.ts) and receive the applied entity replacement summary, added focused coverage in [src/network/replicationBaseline.test.ts](../src/network/replicationBaseline.test.ts), removed completed task `416` from [docs/NEXT.md](docs/NEXT.md), added replacement task `419`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/network/replicationBaseline.test.ts src/network/stateReplay.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a per-tick authoritative replication staging helper.
 - Changes: Added [src/network/replicationStaging.ts](../src/network/replicationStaging.ts) so networking can validate one same-tick entity snapshot before draining [src/network/tileEditCapture.ts](../src/network/tileEditCapture.ts), then emit one deterministic chunk-first/entity-last replicated-state batch; added focused coverage in [src/network/replicationStaging.test.ts](../src/network/replicationStaging.test.ts); removed completed task `415` from [docs/NEXT.md](docs/NEXT.md), added replacement task `418`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/network/replicationStaging.test.ts src/network/tileEditCapture.test.ts src/network/chunkDiffBatching.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

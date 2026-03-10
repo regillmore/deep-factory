@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Transport resync baseline application should wrap one world callback plus one entity baseline in the replay replacement seam
+
+- Decision: `src/network/replicationBaseline.ts` now routes one caller-supplied world replacement callback plus one entity-snapshot baseline through `AuthoritativeReplicatedNetworkStateReplayer.replaceAuthoritativeBaseline()` and returns the applied entity replacement summary from inside that callback.
+- Reason: Transport resync needs a narrower helper than the generic replay replacement seam so callers do not have to remember how to pair world replacement, entity baseline application, and post-success replay-guard clearing by hand.
+- Consequence: Future transport resync code should replace world state through this helper when it also needs one entity baseline, and should consume the returned entity replacement summary instead of re-deriving spawned, updated, or removed ids after the guard reset.
+
 ### 2026-03-10: Per-tick authoritative replication staging should validate once and emit chunk diffs before the entity snapshot
 
 - Decision: `src/network/replicationStaging.ts` now validates that the caller-supplied entity snapshot already uses the staged tick before draining captured tile edits, then stages one deterministic batch whose chunk-diff messages precede one cloned entity-snapshot message for that same tick.

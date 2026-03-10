@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-416. Add a transport-facing authoritative baseline apply helper that runs one caller-supplied world replacement callback plus one entity-snapshot baseline through task `413`'s replay seam and reports the applied entity replacement summary for resync diagnostics.
 417. Add a deterministic authoritative replication dispatch summary helper that reduces task `414`'s per-message results into dropped/trimmed/skipped/applied chunk and entity counters for per-client transport diagnostics.
 418. Add an interest-scoped authoritative replication batch filter helper that maps task `415`'s staged chunk/entity batch through task `406`'s filter and returns only forwarded messages plus per-message drop/trim diagnostics for one client tick.
+419. Add a transport-facing authoritative baseline apply summary helper that reduces task `416`'s returned entity replacement ids into spawned/updated/removed counts plus baseline tick metadata for resync logs.
 
 ## App shell
 
