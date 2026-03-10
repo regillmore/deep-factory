@@ -3,6 +3,7 @@ import {
   type AuthoritativeClientReplicationDiagnosticsLogCadenceResult
 } from './replicationDiagnosticsLogCadence';
 import type { AuthoritativeClientReplicationDiagnosticsLogEmission } from './replicationDiagnosticsLogEmission';
+import { cloneAuthoritativeClientReplicationDiagnosticsLogPayload } from './replicationDiagnosticsLogPayload';
 
 export interface CreateAuthoritativeClientReplicationDiagnosticsLogSinkOptions {
   cadence: AuthoritativeClientReplicationDiagnosticsLogCadence;
@@ -21,6 +22,7 @@ const cloneEmissionForSink = (
   emission: AuthoritativeClientReplicationDiagnosticsLogEmission
 ): AuthoritativeClientReplicationDiagnosticsLogEmission => ({
   nextDueTick: emission.nextDueTick,
+  payload: cloneAuthoritativeClientReplicationDiagnosticsLogPayload(emission.payload),
   logLines: [...emission.logLines],
   logText: emission.logText
 });

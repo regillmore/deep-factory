@@ -17,6 +17,7 @@ export interface PollAuthoritativeClientReplicationDiagnosticsLogCadenceOptions 
 export interface SilentAuthoritativeClientReplicationDiagnosticsLogCadenceResult {
   emitted: false;
   nextDueTick: number;
+  payload: null;
   logLines: null;
   logText: null;
 }
@@ -84,6 +85,7 @@ export class AuthoritativeClientReplicationDiagnosticsLogCadence {
       return {
         emitted: false,
         nextDueTick: this.nextDueTick,
+        payload: null,
         logLines: null,
         logText: null
       };

@@ -4,6 +4,7 @@ import {
   accumulateAuthoritativeClientReplicationDiagnostics
 } from './replicationDiagnostics';
 import { AuthoritativeClientReplicationDiagnosticsLogCadence } from './replicationDiagnosticsLogCadence';
+import { createAuthoritativeClientReplicationDiagnosticsLogPayload } from './replicationDiagnosticsLogPayload';
 import {
   AuthoritativeClientReplicationDiagnosticsLogSink,
   type AuthoritativeClientReplicationDiagnosticsLogSinkCallback
@@ -85,6 +86,7 @@ describe('AuthoritativeClientReplicationDiagnosticsLogSink', () => {
     expect(logSink.poll({ tick: 11 })).toEqual({
       emitted: false,
       nextDueTick: 12,
+      payload: null,
       logLines: null,
       logText: null
     });
@@ -123,11 +125,18 @@ describe('AuthoritativeClientReplicationDiagnosticsLogSink', () => {
       '  ResyncLastAppliedBaseline: tick=25 | entityCount=26',
       '  ResyncTotals: spawned=19 | updated=20 | removed=21'
     ];
+    const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
+      {
+        clientId: 'client-alpha',
+        snapshot: createPopulatedSnapshot(5)
+      }
+    ]);
     const result = logSink.poll({ tick: 12 });
 
     expect(result).toEqual({
       emitted: true,
       nextDueTick: 22,
+      payload: expectedPayload,
       logLines: expectedLines,
       logText: expectedLines.join('\n')
     });
@@ -135,16 +144,19 @@ describe('AuthoritativeClientReplicationDiagnosticsLogSink', () => {
     expect(sink).toHaveBeenCalledTimes(1);
     expect(sink).toHaveBeenCalledWith({
       nextDueTick: 22,
+      payload: expectedPayload,
       logLines: expectedLines,
       logText: expectedLines.join('\n')
     });
   });
 
-  it('keeps sink line mutations detached from the returned cadence result', () => {
+  it('keeps sink line and payload mutations detached from the returned cadence result', () => {
     const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
     registry.setSnapshot('client-alpha', createPopulatedSnapshot(4));
     const sink = vi.fn<AuthoritativeClientReplicationDiagnosticsLogSinkCallback>((emission) => {
       emission.logLines[0] = 'mutated';
+      emission.payload.aggregate.clientCount = 99;
+      emission.payload.clients[0]!.snapshot.replay.totals.chunks.applied = 0;
     });
     const logSink = new AuthoritativeClientReplicationDiagnosticsLogSink({
       cadence: new AuthoritativeClientReplicationDiagnosticsLogCadence({
@@ -173,19 +185,28 @@ describe('AuthoritativeClientReplicationDiagnosticsLogSink', () => {
       '  ResyncLastAppliedBaseline: tick=24 | entityCount=25',
       '  ResyncTotals: spawned=18 | updated=19 | removed=20'
     ];
+    const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
+      {
+        clientId: 'client-alpha',
+        snapshot: createPopulatedSnapshot(4)
+      }
+    ]);
     const result = logSink.poll({ tick: 8 });
 
     expect(result).toEqual({
       emitted: true,
       nextDueTick: 13,
+      payload: expectedPayload,
       logLines: expectedLines,
       logText: expectedLines.join('\n')
     });
-    expect(sink).toHaveBeenCalledWith({
-      nextDueTick: 13,
-      logLines: ['mutated', ...expectedLines.slice(1)],
-      logText: expectedLines.join('\n')
-    });
+    expect(sink).toHaveBeenCalledTimes(1);
+    const sinkEmission = sink.mock.calls[0]![0];
+    expect(sinkEmission.nextDueTick).toBe(13);
+    expect(sinkEmission.logLines).toEqual(['mutated', ...expectedLines.slice(1)]);
+    expect(sinkEmission.logText).toBe(expectedLines.join('\n'));
+    expect(sinkEmission.payload.aggregate.clientCount).toBe(99);
+    expect(sinkEmission.payload.clients[0]!.snapshot.replay.totals.chunks.applied).toBe(0);
   });
 
   it('reuses cadence rescheduling so late polls still emit once and stay quiet until the next due tick', () => {
@@ -219,10 +240,17 @@ describe('AuthoritativeClientReplicationDiagnosticsLogSink', () => {
       '  ResyncLastAppliedBaseline: tick=27 | entityCount=28',
       '  ResyncTotals: spawned=21 | updated=22 | removed=23'
     ];
+    const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
+      {
+        clientId: 'client-alpha',
+        snapshot: createPopulatedSnapshot(7)
+      }
+    ]);
 
     expect(logSink.poll({ tick: 14 })).toEqual({
       emitted: true,
       nextDueTick: 20,
+      payload: expectedPayload,
       logLines: expectedLines,
       logText: expectedLines.join('\n')
     });
@@ -230,6 +258,7 @@ describe('AuthoritativeClientReplicationDiagnosticsLogSink', () => {
     expect(logSink.poll({ tick: 19 })).toEqual({
       emitted: false,
       nextDueTick: 20,
+      payload: null,
       logLines: null,
       logText: null
     });

@@ -4,6 +4,7 @@ import {
   accumulateAuthoritativeClientReplicationDiagnostics
 } from './replicationDiagnostics';
 import { AuthoritativeClientReplicationDiagnosticsLogCadence } from './replicationDiagnosticsLogCadence';
+import { createAuthoritativeClientReplicationDiagnosticsLogPayload } from './replicationDiagnosticsLogPayload';
 import { AuthoritativeClientReplicationDiagnosticsRegistry } from './replicationDiagnosticsRegistry';
 import { createAuthoritativeClientReplicationDiagnosticsSnapshot } from './replicationDiagnosticsSnapshot';
 import {
@@ -77,6 +78,7 @@ describe('AuthoritativeClientReplicationDiagnosticsLogCadence', () => {
     expect(cadence.poll({ tick: 11 })).toEqual({
       emitted: false,
       nextDueTick: 12,
+      payload: null,
       logLines: null,
       logText: null
     });
@@ -110,10 +112,17 @@ describe('AuthoritativeClientReplicationDiagnosticsLogCadence', () => {
       '  ResyncLastAppliedBaseline: tick=25 | entityCount=26',
       '  ResyncTotals: spawned=19 | updated=20 | removed=21'
     ];
+    const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
+      {
+        clientId: 'client-alpha',
+        snapshot: createPopulatedSnapshot(5)
+      }
+    ]);
 
     expect(cadence.poll({ tick: 12 })).toEqual({
       emitted: true,
       nextDueTick: 22,
+      payload: expectedPayload,
       logLines: expectedLines,
       logText: expectedLines.join('\n')
     });
@@ -147,12 +156,19 @@ describe('AuthoritativeClientReplicationDiagnosticsLogCadence', () => {
       '  ResyncLastAppliedBaseline: tick=27 | entityCount=28',
       '  ResyncTotals: spawned=21 | updated=22 | removed=23'
     ];
+    const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
+      {
+        clientId: 'client-alpha',
+        snapshot: createPopulatedSnapshot(7)
+      }
+    ]);
 
     const lateEmission = cadence.poll({ tick: 14 });
 
     expect(lateEmission).toEqual({
       emitted: true,
       nextDueTick: 20,
+      payload: expectedPayload,
       logLines: expectedLines,
       logText: expectedLines.join('\n')
     });
@@ -160,6 +176,7 @@ describe('AuthoritativeClientReplicationDiagnosticsLogCadence', () => {
     expect(cadence.poll({ tick: 19 })).toEqual({
       emitted: false,
       nextDueTick: 20,
+      payload: null,
       logLines: null,
       logText: null
     });
@@ -192,6 +209,12 @@ describe('AuthoritativeClientReplicationDiagnosticsLogCadence', () => {
       '  ResyncLastAppliedBaseline: tick=24 | entityCount=25',
       '  ResyncTotals: spawned=18 | updated=19 | removed=20'
     ];
+    const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
+      {
+        clientId: 'client-alpha',
+        snapshot: createPopulatedSnapshot(4)
+      }
+    ]);
 
     const emission = cadence.poll({ tick: 8 });
     registry.reset('client-alpha');
@@ -199,6 +222,7 @@ describe('AuthoritativeClientReplicationDiagnosticsLogCadence', () => {
     expect(emission).toEqual({
       emitted: true,
       nextDueTick: 13,
+      payload: expectedPayload,
       logLines: expectedLines,
       logText: expectedLines.join('\n')
     });

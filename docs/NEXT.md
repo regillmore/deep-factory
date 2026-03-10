@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-443. Extend periodic replication diagnostics emissions after task `442` lands so they also return the frozen log payload beside `logLines` and `logText` for structured transport sinks, with payload-detachment regressions.
 444. Add a transport-facing structured diagnostics payload logger helper after task `443` lands that forwards one due frozen log payload through one injected payload sink while preserving text and line output for other loggers, with payload-logger regressions.
 445. Add a transport-facing mixed diagnostics logger bundle helper after tasks `442-444` land that composes optional text, line, and payload logger adapters through one due-only fan-out sink, with mixed-logger wiring regressions.
+446. Add a transport-facing diagnostics logger runner helper after task `445` lands that composes cadence with the mixed text, line, and payload logger bundle into one ready-to-poll helper, with bundle-runner regressions.
 
 ## App shell
 

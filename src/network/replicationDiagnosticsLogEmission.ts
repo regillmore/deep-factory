@@ -1,5 +1,8 @@
 import { formatAuthoritativeClientReplicationDiagnosticsLogLines } from './replicationDiagnosticsLogLineFormatting';
-import { createAuthoritativeClientReplicationDiagnosticsLogPayload } from './replicationDiagnosticsLogPayload';
+import {
+  createAuthoritativeClientReplicationDiagnosticsLogPayload,
+  type AuthoritativeClientReplicationDiagnosticsLogPayload
+} from './replicationDiagnosticsLogPayload';
 import { AuthoritativeClientReplicationDiagnosticsRegistry } from './replicationDiagnosticsRegistry';
 import { createAuthoritativeClientReplicationDiagnosticsRegistrySnapshot } from './replicationDiagnosticsRegistrySnapshot';
 
@@ -11,6 +14,7 @@ export interface CreateAuthoritativeClientReplicationDiagnosticsLogEmissionOptio
 
 export interface AuthoritativeClientReplicationDiagnosticsLogEmission {
   nextDueTick: number;
+  payload: AuthoritativeClientReplicationDiagnosticsLogPayload;
   logLines: string[];
   logText: string;
 }
@@ -54,6 +58,7 @@ export const createAuthoritativeClientReplicationDiagnosticsLogEmission = ({
 
   return {
     nextDueTick: normalizedTick + normalizedIntervalTicks,
+    payload,
     logLines,
     logText: logLines.join('\n')
   };

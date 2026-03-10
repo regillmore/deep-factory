@@ -4,6 +4,7 @@ import {
   accumulateAuthoritativeClientReplicationDiagnostics
 } from './replicationDiagnostics';
 import { createAuthoritativeClientReplicationDiagnosticsLogEmission } from './replicationDiagnosticsLogEmission';
+import { createAuthoritativeClientReplicationDiagnosticsLogPayload } from './replicationDiagnosticsLogPayload';
 import { AuthoritativeClientReplicationDiagnosticsRegistry } from './replicationDiagnosticsRegistry';
 import { createAuthoritativeClientReplicationDiagnosticsSnapshot } from './replicationDiagnosticsSnapshot';
 import {
@@ -77,6 +78,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLogEmission', () => {
       'AggregateResync: spawned=0 | updated=0 | removed=0',
       'Clients: none'
     ];
+    const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload();
 
     expect(
       createAuthoritativeClientReplicationDiagnosticsLogEmission({
@@ -86,6 +88,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLogEmission', () => {
       })
     ).toEqual({
       nextDueTick: 42,
+      payload: expectedPayload,
       logLines: expectedLines,
       logText: expectedLines.join('\n')
     });
@@ -97,6 +100,20 @@ describe('createAuthoritativeClientReplicationDiagnosticsLogEmission', () => {
     registry.setSnapshot('client-zulu', createPopulatedSnapshot(30));
     registry.setSnapshot('client-alpha', createPopulatedSnapshot(10));
     registry.reset('client-bravo');
+    const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
+      {
+        clientId: 'client-alpha',
+        snapshot: createPopulatedSnapshot(10)
+      },
+      {
+        clientId: 'client-bravo',
+        snapshot: createAuthoritativeClientReplicationDiagnosticsSnapshot()
+      },
+      {
+        clientId: 'client-zulu',
+        snapshot: createPopulatedSnapshot(30)
+      }
+    ]);
     const expectedLines = [
       'ReplicationDiagnostics',
       'Aggregate: clients=3',
@@ -143,6 +160,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLogEmission', () => {
       })
     ).toEqual({
       nextDueTick: 90,
+      payload: expectedPayload,
       logLines: expectedLines,
       logText: expectedLines.join('\n')
     });
@@ -170,6 +188,12 @@ describe('createAuthoritativeClientReplicationDiagnosticsLogEmission', () => {
       '  ResyncLastAppliedBaseline: tick=25 | entityCount=26',
       '  ResyncTotals: spawned=19 | updated=20 | removed=21'
     ];
+    const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
+      {
+        clientId: 'client-alpha',
+        snapshot: createPopulatedSnapshot(5)
+      }
+    ]);
 
     const emission = createAuthoritativeClientReplicationDiagnosticsLogEmission({
       registry,
@@ -181,12 +205,13 @@ describe('createAuthoritativeClientReplicationDiagnosticsLogEmission', () => {
 
     expect(emission).toEqual({
       nextDueTick: 13,
+      payload: expectedPayload,
       logLines: expectedLines,
       logText: expectedLines.join('\n')
     });
   });
 
-  it('returns detached line arrays so caller mutation does not affect joined text or later emissions', () => {
+  it('returns detached lines and payload so caller mutation does not affect joined text or later emissions', () => {
     const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
     registry.setSnapshot('client-alpha', createPopulatedSnapshot(3));
     const expectedLines = [
@@ -208,6 +233,12 @@ describe('createAuthoritativeClientReplicationDiagnosticsLogEmission', () => {
       '  ResyncLastAppliedBaseline: tick=23 | entityCount=24',
       '  ResyncTotals: spawned=17 | updated=18 | removed=19'
     ];
+    const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
+      {
+        clientId: 'client-alpha',
+        snapshot: createPopulatedSnapshot(3)
+      }
+    ]);
 
     const emission = createAuthoritativeClientReplicationDiagnosticsLogEmission({
       registry,
@@ -216,6 +247,8 @@ describe('createAuthoritativeClientReplicationDiagnosticsLogEmission', () => {
     });
 
     emission.logLines[0] = 'mutated';
+    emission.payload.aggregate.clientCount = 0;
+    emission.payload.clients[0]!.snapshot.replay.totals.chunks.applied = 0;
 
     expect(emission.logText).toBe(expectedLines.join('\n'));
 
@@ -227,6 +260,9 @@ describe('createAuthoritativeClientReplicationDiagnosticsLogEmission', () => {
 
     expect(laterEmission.logLines).toEqual(expectedLines);
     expect(laterEmission.logLines).not.toBe(emission.logLines);
+    expect(laterEmission.payload).toEqual(expectedPayload);
+    expect(laterEmission.payload).not.toBe(emission.payload);
+    expect(laterEmission.payload.clients).not.toBe(emission.payload.clients);
   });
 
   it('rejects invalid tick and interval inputs', () => {

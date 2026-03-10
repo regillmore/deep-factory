@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Periodic replication diagnostics emissions should expose frozen payloads beside text and lines
+
+- Decision: `src/network/replicationDiagnosticsLogEmission.ts` now returns the frozen structured log `payload` beside detached `logLines`, joined `logText`, and `nextDueTick`, and the cadence plus sink layers forward that payload with explicit `null` on silent polls.
+- Reason: Structured transport sinks need the same detached per-emission aggregate and client snapshot data that text and line loggers already reuse, and that payload should travel through the existing due-only logging seam instead of being recomputed downstream.
+- Consequence: Future payload-oriented diagnostics loggers should consume the emission-owned `payload` through cadence or sink results, and any sink or fan-out helper that clones emissions should clone the payload together with `logLines`.
+
 ### 2026-03-10: Replication diagnostics fan-out sinks should clone each downstream emission
 
 - Decision: `src/network/replicationDiagnosticsFanOutSink.ts` now forwards one due diagnostics emission to multiple sink callbacks in declaration order while cloning the emission, including `logLines`, for each downstream sink.

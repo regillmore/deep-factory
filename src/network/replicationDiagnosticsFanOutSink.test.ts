@@ -4,7 +4,11 @@ import {
   createAuthoritativeClientReplicationDiagnosticsFanOutSink
 } from './replicationDiagnosticsFanOutSink';
 import { AuthoritativeClientReplicationDiagnosticsLogCadence } from './replicationDiagnosticsLogCadence';
-import { AuthoritativeClientReplicationDiagnosticsLogSink } from './replicationDiagnosticsLogSink';
+import { createAuthoritativeClientReplicationDiagnosticsLogPayload } from './replicationDiagnosticsLogPayload';
+import {
+  AuthoritativeClientReplicationDiagnosticsLogSink,
+  type AuthoritativeClientReplicationDiagnosticsLogSinkCallback
+} from './replicationDiagnosticsLogSink';
 import { AuthoritativeClientReplicationDiagnosticsRegistry } from './replicationDiagnosticsRegistry';
 import { createAuthoritativeClientReplicationDiagnosticsSnapshot } from './replicationDiagnosticsSnapshot';
 import {
@@ -103,6 +107,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsFanOutSink', () => {
     expect(logSink.poll({ tick: 11 })).toEqual({
       emitted: false,
       nextDueTick: 12,
+      payload: null,
       logLines: null,
       logText: null
     });
@@ -156,10 +161,17 @@ describe('createAuthoritativeClientReplicationDiagnosticsFanOutSink', () => {
       '  ResyncLastAppliedBaseline: tick=25 | entityCount=26',
       '  ResyncTotals: spawned=19 | updated=20 | removed=21'
     ];
+    const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
+      {
+        clientId: 'client-alpha',
+        snapshot: createPopulatedSnapshot(5)
+      }
+    ]);
 
     expect(logSink.poll({ tick: 12 })).toEqual({
       emitted: true,
       nextDueTick: 22,
+      payload: expectedPayload,
       logLines: expectedLines,
       logText: expectedLines.join('\n')
     });
@@ -171,11 +183,15 @@ describe('createAuthoritativeClientReplicationDiagnosticsFanOutSink', () => {
     ]);
   });
 
-  it('isolates per-sink line mutations while leaving the returned cadence result unchanged', () => {
+  it('isolates per-sink line and payload mutations while leaving the returned cadence result unchanged', () => {
     const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
     registry.setSnapshot('client-alpha', createPopulatedSnapshot(4));
     const firstLineLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsLineLogger>((logLines) => {
       logLines[0] = 'mutated';
+    });
+    const payloadSink = vi.fn<AuthoritativeClientReplicationDiagnosticsLogSinkCallback>((emission) => {
+      emission.payload.aggregate.clientCount = 99;
+      emission.payload.clients[0]!.snapshot.replay.totals.chunks.applied = 0;
     });
     const secondLineLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsLineLogger>();
     const logSink = new AuthoritativeClientReplicationDiagnosticsLogSink({
@@ -189,6 +205,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsFanOutSink', () => {
           createAuthoritativeClientReplicationDiagnosticsLineLogger({
             logger: firstLineLogger
           }),
+          payloadSink,
           createAuthoritativeClientReplicationDiagnosticsLineLogger({
             logger: secondLineLogger
           })
@@ -214,15 +231,26 @@ describe('createAuthoritativeClientReplicationDiagnosticsFanOutSink', () => {
       '  ResyncLastAppliedBaseline: tick=24 | entityCount=25',
       '  ResyncTotals: spawned=18 | updated=19 | removed=20'
     ];
+    const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
+      {
+        clientId: 'client-alpha',
+        snapshot: createPopulatedSnapshot(4)
+      }
+    ]);
     const result = logSink.poll({ tick: 8 });
 
     expect(result).toEqual({
       emitted: true,
       nextDueTick: 13,
+      payload: expectedPayload,
       logLines: expectedLines,
       logText: expectedLines.join('\n')
     });
     expect(firstLineLogger).toHaveBeenCalledWith(['mutated', ...expectedLines.slice(1)]);
+    expect(payloadSink).toHaveBeenCalledTimes(1);
+    const payloadEmission = payloadSink.mock.calls[0]![0];
+    expect(payloadEmission.payload.aggregate.clientCount).toBe(99);
+    expect(payloadEmission.payload.clients[0]!.snapshot.replay.totals.chunks.applied).toBe(0);
     expect(secondLineLogger).toHaveBeenCalledWith(expectedLines);
   });
 
@@ -267,16 +295,24 @@ describe('createAuthoritativeClientReplicationDiagnosticsFanOutSink', () => {
       '  ResyncLastAppliedBaseline: tick=27 | entityCount=28',
       '  ResyncTotals: spawned=21 | updated=22 | removed=23'
     ];
+    const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
+      {
+        clientId: 'client-alpha',
+        snapshot: createPopulatedSnapshot(7)
+      }
+    ]);
 
     expect(logSink.poll({ tick: 14 })).toEqual({
       emitted: true,
       nextDueTick: 20,
+      payload: expectedPayload,
       logLines: expectedLines,
       logText: expectedLines.join('\n')
     });
     expect(logSink.poll({ tick: 19 })).toEqual({
       emitted: false,
       nextDueTick: 20,
+      payload: null,
       logLines: null,
       logText: null
     });

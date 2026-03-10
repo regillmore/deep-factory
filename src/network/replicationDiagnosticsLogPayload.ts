@@ -45,3 +45,8 @@ export const createAuthoritativeClientReplicationDiagnosticsLogPayload = (
     clients
   };
 };
+
+export const cloneAuthoritativeClientReplicationDiagnosticsLogPayload = (
+  payload: AuthoritativeClientReplicationDiagnosticsLogPayload
+): AuthoritativeClientReplicationDiagnosticsLogPayload =>
+  createAuthoritativeClientReplicationDiagnosticsLogPayload(payload.clients);
