@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Whole replication diagnostics logs should expose detached line arrays before joining
+
+- Decision: `src/network/replicationDiagnosticsLogLineFormatting.ts` now exposes a transport-facing helper that assembles the fixed diagnostics header, aggregate lines, client divider, and ordered per-client sections into one detached string array before `src/network/replicationDiagnosticsLogFormatter.ts` joins it with newlines.
+- Reason: Alternate transport sinks need the shared log ordering without depending on a newline-joined formatter output and then splitting that text back into lines.
+- Consequence: Future emission or cadence helpers that need reusable diagnostics lines should consume this whole-log line helper and preserve its aggregate-first, payload-order client layout instead of rebuilding root log assembly independently.
+
 ### 2026-03-10: Replication diagnostics cadence should stay silent before the due tick and reschedule from the emitted tick
 
 - Decision: `src/network/replicationDiagnosticsLogCadence.ts` now tracks one mutable `nextDueTick`, returns a silent non-due result while `tick < nextDueTick`, and emits at most once per poll by delegating due ticks to `createAuthoritativeClientReplicationDiagnosticsLogEmission()` before resetting `nextDueTick` to that emitted tick plus the interval.

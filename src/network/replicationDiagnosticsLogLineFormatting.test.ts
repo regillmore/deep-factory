@@ -7,9 +7,11 @@ import {
   accumulateAuthoritativeClientReplicationDiagnostics
 } from './replicationDiagnostics';
 import {
+  formatAuthoritativeClientReplicationDiagnosticsLogLines,
   formatAuthoritativeClientReplicationDiagnosticsLogAggregateLines,
   formatAuthoritativeClientReplicationDiagnosticsLogClientLines
 } from './replicationDiagnosticsLogLineFormatting';
+import { createAuthoritativeClientReplicationDiagnosticsLogPayload } from './replicationDiagnosticsLogPayload';
 import { createAuthoritativeClientReplicationDiagnosticsSnapshot } from './replicationDiagnosticsSnapshot';
 import {
   accumulateAuthoritativeClientResyncDiagnostics
@@ -144,6 +146,76 @@ describe('formatAuthoritativeClientReplicationDiagnosticsLogClientLines', () => 
       '  SendEntities: dropped=23 | trimmed=24 | forwarded=25',
       '  ResyncLastAppliedBaseline: tick=32 | entityCount=33',
       '  ResyncTotals: spawned=26 | updated=27 | removed=28'
+    ]);
+  });
+});
+
+describe('formatAuthoritativeClientReplicationDiagnosticsLogLines', () => {
+  it('renders the root log lines with an explicit no-clients line when no payload was provided', () => {
+    expect(formatAuthoritativeClientReplicationDiagnosticsLogLines()).toEqual([
+      'ReplicationDiagnostics',
+      'Aggregate: clients=0',
+      'AggregateReplayChunks: dropped=0 | trimmed=0 | applied=0 | skipped=0',
+      'AggregateReplayEntities: dropped=0 | trimmed=0 | applied=0 | skipped=0',
+      'AggregateSendChunks: dropped=0 | trimmed=0 | forwarded=0',
+      'AggregateSendEntities: dropped=0 | trimmed=0 | forwarded=0',
+      'AggregateResync: spawned=0 | updated=0 | removed=0',
+      'Clients: none'
+    ]);
+  });
+
+  it('renders aggregate lines first and then appends client sections in payload order', () => {
+    const payload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
+      {
+        clientId: 'client-charlie',
+        snapshot: createPopulatedSnapshot(30)
+      },
+      {
+        clientId: 'client-alpha',
+        snapshot: createPopulatedSnapshot(10)
+      },
+      {
+        clientId: 'client-bravo',
+        snapshot: createAuthoritativeClientReplicationDiagnosticsSnapshot()
+      }
+    ]);
+
+    expect(formatAuthoritativeClientReplicationDiagnosticsLogLines(payload)).toEqual([
+      'ReplicationDiagnostics',
+      'Aggregate: clients=3',
+      'AggregateReplayChunks: dropped=40 | trimmed=42 | applied=44 | skipped=46',
+      'AggregateReplayEntities: dropped=48 | trimmed=50 | applied=52 | skipped=54',
+      'AggregateSendChunks: dropped=56 | trimmed=58 | forwarded=60',
+      'AggregateSendEntities: dropped=62 | trimmed=64 | forwarded=66',
+      'AggregateResync: spawned=68 | updated=70 | removed=72',
+      'Clients:',
+      'Client: client-charlie',
+      '  ReplayLastProcessed: 30',
+      '  ReplayChunks: dropped=30 | trimmed=31 | applied=32 | skipped=33',
+      '  ReplayEntities: dropped=34 | trimmed=35 | applied=36 | skipped=37',
+      '  SendLastStaged: 40',
+      '  SendChunks: dropped=38 | trimmed=39 | forwarded=40',
+      '  SendEntities: dropped=41 | trimmed=42 | forwarded=43',
+      '  ResyncLastAppliedBaseline: tick=50 | entityCount=51',
+      '  ResyncTotals: spawned=44 | updated=45 | removed=46',
+      'Client: client-alpha',
+      '  ReplayLastProcessed: 10',
+      '  ReplayChunks: dropped=10 | trimmed=11 | applied=12 | skipped=13',
+      '  ReplayEntities: dropped=14 | trimmed=15 | applied=16 | skipped=17',
+      '  SendLastStaged: 20',
+      '  SendChunks: dropped=18 | trimmed=19 | forwarded=20',
+      '  SendEntities: dropped=21 | trimmed=22 | forwarded=23',
+      '  ResyncLastAppliedBaseline: tick=30 | entityCount=31',
+      '  ResyncTotals: spawned=24 | updated=25 | removed=26',
+      'Client: client-bravo',
+      '  ReplayLastProcessed: n/a',
+      '  ReplayChunks: dropped=0 | trimmed=0 | applied=0 | skipped=0',
+      '  ReplayEntities: dropped=0 | trimmed=0 | applied=0 | skipped=0',
+      '  SendLastStaged: n/a',
+      '  SendChunks: dropped=0 | trimmed=0 | forwarded=0',
+      '  SendEntities: dropped=0 | trimmed=0 | forwarded=0',
+      '  ResyncLastAppliedBaseline: n/a',
+      '  ResyncTotals: spawned=0 | updated=0 | removed=0'
     ]);
   });
 });

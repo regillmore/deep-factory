@@ -4,6 +4,10 @@ import {
 } from './replicationDiagnosticsAggregate';
 import type { AuthoritativeReplicationBaselineApplyEntityCounts } from './replicationBaselineSummary';
 import type { AuthoritativeReplicationBatchFilterStatusCounters } from './replicationBatchFilterSummary';
+import {
+  createAuthoritativeClientReplicationDiagnosticsLogPayload,
+  type AuthoritativeClientReplicationDiagnosticsLogPayload
+} from './replicationDiagnosticsLogPayload';
 import type { AuthoritativeClientReplicationDiagnosticsRegistrySnapshotEntry } from './replicationDiagnosticsRegistrySnapshot';
 import type { AuthoritativeReplicationDispatchStatusCounters } from './replicationDispatchSummary';
 
@@ -60,3 +64,19 @@ export const formatAuthoritativeClientReplicationDiagnosticsLogClientLines = (
   `  ResyncLastAppliedBaseline: ${formatAuthoritativeClientReplicationDiagnosticsLastAppliedBaseline(entry)}`,
   `  ResyncTotals: ${formatAuthoritativeClientReplicationDiagnosticsResyncCounters(entry.snapshot.resync.totals)}`
 ];
+
+export const formatAuthoritativeClientReplicationDiagnosticsLogLines = (
+  payload: AuthoritativeClientReplicationDiagnosticsLogPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload()
+): string[] => {
+  const lines = [
+    'ReplicationDiagnostics',
+    ...formatAuthoritativeClientReplicationDiagnosticsLogAggregateLines(payload.aggregate),
+    payload.clients.length === 0 ? 'Clients: none' : 'Clients:'
+  ];
+
+  for (const client of payload.clients) {
+    lines.push(...formatAuthoritativeClientReplicationDiagnosticsLogClientLines(client));
+  }
+
+  return lines;
+};
