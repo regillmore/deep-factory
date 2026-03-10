@@ -6,7 +6,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 406. Add a network snapshot-filter helper that trims chunk-diff and entity-snapshot payloads against the current client interest set before the replay helpers apply them locally.
 411. Add a tile-edit capture helper that records authoritative previous/next tile state from world edit notifications and feeds task `405`'s same-tick chunk-diff batching without coupling transport code to `TileWorld` or renderer internals.
-412. Add a replay-guard reset helper that clears authoritative chunk/entity last-applied tick state when a transport resync or full replicated-session replacement intentionally establishes a fresh baseline.
+413. Add an authoritative replay baseline helper that atomically resets replay guards and runs one caller-supplied replicated-state replacement callback so transport resync code cannot forget to clear chunk and entity guard state together.
 
 ## App shell
 

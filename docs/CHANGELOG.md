@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Task: Add a replay-guard reset helper for authoritative chunk/entity replay.
+- Changes: Updated [src/network/stateReplay.ts](../src/network/stateReplay.ts) with [ReplicatedEntitySnapshotStore.resetReplayGuard()](../src/network/stateReplay.ts) and [AuthoritativeReplicatedNetworkStateReplayer.resetReplayGuards()](../src/network/stateReplay.ts) so resync code can clear last-applied tick bookkeeping without wiping current replicated contents, expanded [src/network/stateReplay.test.ts](../src/network/stateReplay.test.ts) with post-reset lower-tick baseline regressions, removed completed task `412` from [docs/NEXT.md](docs/NEXT.md), added replacement task `413`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/network/stateReplay.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add tick-order guards for authoritative chunk-diff and entity-snapshot replay.
 - Changes: Updated [src/network/stateReplay.ts](../src/network/stateReplay.ts) with duplicate/stale skip results, guarded entity-snapshot replay on [ReplicatedEntitySnapshotStore](../src/network/stateReplay.ts), and an [AuthoritativeReplicatedNetworkStateReplayer](../src/network/stateReplay.ts) that tracks last-applied chunk ticks per chunk before replaying diffs into local targets; expanded [src/network/stateReplay.test.ts](../src/network/stateReplay.test.ts); removed completed task `410` from [docs/NEXT.md](docs/NEXT.md), added replacement task `412`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/network/stateReplay.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

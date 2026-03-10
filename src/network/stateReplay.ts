@@ -125,6 +125,10 @@ export class ReplicatedEntitySnapshotStore implements EntitySnapshotReplayTarget
   private entities = new Map<number, EntitySnapshotEntry>();
   private lastAppliedTick: number | null = null;
 
+  resetReplayGuard(): void {
+    this.lastAppliedTick = null;
+  }
+
   getLastAppliedTick(): number | null {
     return this.lastAppliedTick;
   }
@@ -243,6 +247,11 @@ export class AuthoritativeReplicatedNetworkStateReplayer {
   private lastAppliedChunkTickByKey = new Map<string, number>();
 
   constructor(private readonly target: AuthoritativeReplicatedNetworkStateReplayTarget) {}
+
+  resetReplayGuards(): void {
+    this.lastAppliedChunkTickByKey.clear();
+    this.target.entities.resetReplayGuard();
+  }
 
   getLastAppliedChunkTick(chunk: ChunkTileDiffMessage['chunk']): number | null {
     return this.lastAppliedChunkTickByKey.get(chunkKey(chunk.x, chunk.y)) ?? null;

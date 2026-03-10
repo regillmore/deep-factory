@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Replay-guard resets clear tick memory without clearing replicated contents
+
+- Decision: `ReplicatedEntitySnapshotStore.resetReplayGuard()` and `AuthoritativeReplicatedNetworkStateReplayer.resetReplayGuards()` now clear only authoritative replay tick bookkeeping; they do not clear the current replicated entity set or any already-applied local world state.
+- Reason: Transport resync and full replicated-session replacement may need to accept an older baseline tick again, but those flows should decide state replacement explicitly instead of having a guard reset silently discard current replicated contents.
+- Consequence: Future transport resync code should pair any explicit replicated-state replacement with the guard-reset helper deliberately, and should not assume that clearing replay guards also wipes the existing replicated baseline in memory.
+
 ### 2026-03-10: Authoritative replay guards chunk diffs per chunk and entity snapshots per stream
 
 - Decision: `src/network/stateReplay.ts` now guards authoritative replay by tracking last-applied ticks per chunk for chunk-tile-diff messages and one last-applied tick for the replicated entity-snapshot stream, skipping duplicate or older messages instead of mutating local replicated state.
