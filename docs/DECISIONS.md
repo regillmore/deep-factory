@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Combined per-client replication diagnostics resets should clear every section together
+
+- Decision: `src/network/replicationDiagnosticsReset.ts` now resets combined per-client diagnostics by clearing replay, send, and resync totals plus their latest-tick metadata together while returning a detached snapshot instead of mutating the stored one in place.
+- Reason: Reconnect or client-replacement flows need one reset seam for the whole sectioned diagnostics shape so transport code does not partially zero one section, leave stale metadata behind, or couple registry state to in-place mutation.
+- Consequence: Future registry or logging helpers should treat combined diagnostics resets as whole-snapshot replacement and should reuse this helper instead of manually zeroing replay, send, or resync sections.
+
 ### 2026-03-10: Combined per-client replication diagnostics snapshots should preserve replay, send, and resync as separate sections
 
 - Decision: `src/network/replicationDiagnosticsSnapshot.ts` now produces one detached JSON-safe per-client diagnostics snapshot with explicit `replay`, `send`, and `resync` sections instead of flattening the three accumulator outputs into one mixed counter bag.

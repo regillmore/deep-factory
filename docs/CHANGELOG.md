@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Task: Add a combined per-client replication diagnostics reset helper.
+- Changes: Added [src/network/replicationDiagnosticsReset.ts](../src/network/replicationDiagnosticsReset.ts) so transport reconnect or client-replacement flows can clear one combined replay/send/resync diagnostics snapshot back to zeroed totals plus null metadata without mutating the stored snapshot, added focused coverage in [src/network/replicationDiagnosticsReset.test.ts](../src/network/replicationDiagnosticsReset.test.ts), removed completed task `426` from [docs/NEXT.md](docs/NEXT.md), added replacement task `429`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/network/replicationDiagnosticsReset.test.ts src/network/replicationDiagnosticsSnapshot.test.ts src/network/replicationDiagnostics.test.ts src/network/replicationSendDiagnostics.test.ts src/network/replicationResyncDiagnostics.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a combined per-client replication diagnostics snapshot helper.
 - Changes: Added [src/network/replicationDiagnosticsSnapshot.ts](../src/network/replicationDiagnosticsSnapshot.ts) so transport code can merge per-client replay, send, and resync diagnostics into one detached JSON-safe summary for logging, added focused coverage in [src/network/replicationDiagnosticsSnapshot.test.ts](../src/network/replicationDiagnosticsSnapshot.test.ts), removed completed task `425` from [docs/NEXT.md](docs/NEXT.md), added replacement task `428`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/network/replicationDiagnosticsSnapshot.test.ts src/network/replicationDiagnostics.test.ts src/network/replicationSendDiagnostics.test.ts src/network/replicationResyncDiagnostics.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
