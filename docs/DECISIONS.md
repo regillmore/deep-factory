@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Replication diagnostics text logs should emit aggregate lines first and use explicit n-a placeholders for missing client metadata
+
+- Decision: `src/network/replicationDiagnosticsLogFormatter.ts` now formats periodic replication diagnostics as fixed aggregate lines first, then ordered client sections, and renders missing per-client `lastProcessed`, `lastStaged`, and `lastAppliedBaseline` metadata as explicit `n/a` text.
+- Reason: Operators need one stable multi-line console shape that stays diff-friendly across idle ticks, reconnect resets, and mixed client activity, while omitted or blank metadata fields would make it harder to distinguish "zero totals" from "metadata not observed yet."
+- Consequence: Future extracted aggregate or per-client formatter helpers should preserve this line ordering and `n/a` placeholder convention rather than suppressing missing-metadata lines or moving client sections ahead of the aggregate header.
+
 ### 2026-03-10: Multi-client replication diagnostics log payloads should keep aggregate totals and ordered client snapshots as sibling fields
 
 - Decision: `src/network/replicationDiagnosticsLogPayload.ts` now returns one periodic summary object with top-level `aggregate` totals plus a top-level ordered `clients` list, rather than nesting aggregate counters inside each client entry or flattening every client snapshot into one shared counter bag.
