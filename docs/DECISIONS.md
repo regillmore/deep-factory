@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Replication diagnostics sink callbacks should receive due-only cloned line arrays beside joined text
+
+- Decision: `src/network/replicationDiagnosticsLogSink.ts` now wraps `AuthoritativeClientReplicationDiagnosticsLogCadence` and invokes its injected sink only when cadence emits, forwarding `nextDueTick`, joined `logText`, and a cloned `logLines` array.
+- Reason: Transport logger adapters need one side-effect seam above cadence that forwards both text and line output without duplicating due-tick checks or letting sink mutation leak back into the returned poll result.
+- Consequence: Future diagnostics loggers should compose through this sink helper, should not expect sink calls on non-due polls, and should treat the sink's `logLines` array as its own isolated copy.
+
 ### 2026-03-10: Replication diagnostics cadence should forward due lines but keep non-due polls explicitly line-free
 
 - Decision: `src/network/replicationDiagnosticsLogCadence.ts` now returns due results by forwarding the full emission contract, including detached `logLines`, while non-due polls return both `logLines: null` and `logText: null`.
