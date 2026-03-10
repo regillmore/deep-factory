@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-405. Add authoritative chunk-diff batching helpers that collapse same-tick tile edits into task `22`'s chunk-tile-diff protocol messages without resending unchanged tiles.
 406. Add a network snapshot-filter helper that trims chunk-diff and entity-snapshot payloads against the current client interest set before the replay helpers apply them locally.
 410. Add tick-order guards for authoritative chunk-diff and entity-snapshot replay so stale or duplicate messages do not roll local world or replicated entity state backward.
+411. Add a tile-edit capture helper that records authoritative previous/next tile state from world edit notifications and feeds task `405`'s same-tick chunk-diff batching without coupling transport code to `TileWorld` or renderer internals.
 
 ## App shell
 

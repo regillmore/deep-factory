@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Task: Add authoritative chunk-diff batching helpers for same-tick tile edits.
+- Changes: Added [src/network/chunkDiffBatching.ts](../src/network/chunkDiffBatching.ts) with deterministic y-major chunk batching, repeated-tile collapse, net no-op omission, and coherent previous-state validation; added focused coverage in [src/network/chunkDiffBatching.test.ts](../src/network/chunkDiffBatching.test.ts); removed completed task `405` from [docs/NEXT.md](docs/NEXT.md), added replacement task `411`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/network/chunkDiffBatching.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Stub a snapshot/delta application path that can replay remote state into the local world/entity layers.
 - Changes: Added [src/network/stateReplay.ts](../src/network/stateReplay.ts) with authoritative chunk-diff replay helpers, a replicated entity snapshot store, and a combined authoritative-state dispatcher; updated [src/world/world.ts](../src/world/world.ts) and [src/gl/renderer.ts](../src/gl/renderer.ts) with explicit liquid-aware `setTileState()` seams and liquid-only tile-edit invalidation; added focused coverage in [src/network/stateReplay.test.ts](../src/network/stateReplay.test.ts), [src/world/world.test.ts](../src/world/world.test.ts), and [src/gl/renderer.test.ts](../src/gl/renderer.test.ts); removed completed task `24` from [docs/NEXT.md](docs/NEXT.md), added replacement task `410`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/network/stateReplay.test.ts src/world/world.test.ts src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Same-tick chunk-diff batching keeps the first previous state and the last resulting state per tile
+
+- Decision: `src/network/chunkDiffBatching.ts` now batches authoritative tile edits by y-major chunk order, retains the first previous tile state seen for each tile in a tick, updates that tile's outgoing diff to the last same-tick result, and omits the tile entirely when the final state matches the same-tick starting state.
+- Reason: Replication needs one deterministic chunk-diff message set per tick without resending transient intermediate writes or net no-op edits, and the batching path still needs enough state to reject incoherent same-tick edit chains.
+- Consequence: Future authoritative terrain replication should feed coherent same-tick tile edits through this helper instead of emitting ad hoc per-edit chunk messages or treating temporary within-tick states as wire-visible.
+
 ### 2026-03-10: Authoritative entity replay replaces the full replicated snapshot set while chunk replay stays delta-based
 
 - Decision: `src/network/stateReplay.ts` now applies chunk-tile-diff messages incrementally through a liquid-aware `setTileState()` seam, while each entity-snapshot message replaces the full local replicated-entity snapshot store for the current interest-scoped view.
