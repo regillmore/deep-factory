@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Replication diagnostics callback-presence snapshots should stay separate from schedule snapshots
+
+- Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now exposes `getCallbackPresenceSnapshot()` as a separate `{ hasTextLogger, hasLineLogger, hasPayloadLogger }` snapshot instead of widening `getScheduleSnapshot()`.
+- Reason: Transport lifecycle code needs callback-presence introspection for later configuration export work, but the existing schedule snapshot should stay focused on disabled-versus-next-due state.
+- Consequence: Future holder configuration helpers should compose schedule and callback-presence snapshots together when they need a fuller view, rather than expanding the schedule snapshot contract.
+
 ### 2026-03-10: Enabled replication diagnostics holder schedule-cadence-and-callback refreshes should preserve only the registry
 
 - Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now retains its current registry, and `refreshScheduleAndCadenceAndCallbacks(...)` reapplies explicit `nextDueTick`, `intervalTicks`, plus logger callbacks on enabled holders without re-reading runner internals.

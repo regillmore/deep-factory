@@ -150,6 +150,150 @@ describe('AuthoritativeClientReplicationDiagnosticsLoggerStateHolder', () => {
     });
   });
 
+  it('reports no configured callback types while logging is disabled', () => {
+    const holder = createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+      registry: new AuthoritativeClientReplicationDiagnosticsRegistry(),
+      intervalTicks: 0,
+      nextDueTick: -1
+    });
+
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: true,
+      nextDueTick: null
+    });
+    expect(holder.getCallbackPresenceSnapshot()).toEqual({
+      hasTextLogger: false,
+      hasLineLogger: false,
+      hasPayloadLogger: false
+    });
+  });
+
+  it('reports configured callback types across reconfigure transitions', () => {
+    const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+    const textLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsTextLogger>();
+    const lineLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsLineLogger>();
+    const payloadLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsPayloadLogger>();
+    const holder = createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+      registry,
+      intervalTicks: 5,
+      nextDueTick: 3,
+      textLogger
+    });
+
+    expect(holder.getCallbackPresenceSnapshot()).toEqual({
+      hasTextLogger: true,
+      hasLineLogger: false,
+      hasPayloadLogger: false
+    });
+
+    holder.reconfigure({
+      registry,
+      intervalTicks: 7,
+      nextDueTick: 9,
+      lineLogger,
+      payloadLogger
+    });
+
+    expect(holder.getCallbackPresenceSnapshot()).toEqual({
+      hasTextLogger: false,
+      hasLineLogger: true,
+      hasPayloadLogger: true
+    });
+
+    holder.reconfigure({
+      registry,
+      intervalTicks: 0,
+      nextDueTick: -1
+    });
+
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: true,
+      nextDueTick: null
+    });
+    expect(holder.getCallbackPresenceSnapshot()).toEqual({
+      hasTextLogger: false,
+      hasLineLogger: false,
+      hasPayloadLogger: false
+    });
+  });
+
+  it('preserves callback presence across schedule-only refreshes and updates it on callback refreshes', () => {
+    const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+    const textLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsTextLogger>();
+    const lineLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsLineLogger>();
+    const payloadLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsPayloadLogger>();
+    const holder = createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+      registry,
+      intervalTicks: 5,
+      nextDueTick: 3,
+      textLogger
+    });
+
+    expect(holder.getCallbackPresenceSnapshot()).toEqual({
+      hasTextLogger: true,
+      hasLineLogger: false,
+      hasPayloadLogger: false
+    });
+
+    holder.refreshSchedule({
+      nextDueTick: 4
+    });
+    holder.refreshCadence({
+      intervalTicks: 6
+    });
+    holder.refreshScheduleAndCadence({
+      nextDueTick: 5,
+      intervalTicks: 7
+    });
+
+    expect(holder.getCallbackPresenceSnapshot()).toEqual({
+      hasTextLogger: true,
+      hasLineLogger: false,
+      hasPayloadLogger: false
+    });
+
+    holder.refreshCallbacks({
+      lineLogger
+    });
+    expect(holder.getCallbackPresenceSnapshot()).toEqual({
+      hasTextLogger: false,
+      hasLineLogger: true,
+      hasPayloadLogger: false
+    });
+
+    holder.refreshScheduleAndCallbacks({
+      nextDueTick: 6,
+      payloadLogger
+    });
+    expect(holder.getCallbackPresenceSnapshot()).toEqual({
+      hasTextLogger: false,
+      hasLineLogger: false,
+      hasPayloadLogger: true
+    });
+
+    holder.refreshCadenceAndCallbacks({
+      intervalTicks: 8,
+      textLogger
+    });
+    expect(holder.getCallbackPresenceSnapshot()).toEqual({
+      hasTextLogger: true,
+      hasLineLogger: false,
+      hasPayloadLogger: false
+    });
+
+    holder.refreshScheduleAndCadenceAndCallbacks({
+      nextDueTick: 7,
+      intervalTicks: 9,
+      lineLogger,
+      payloadLogger
+    });
+    expect(holder.getCallbackPresenceSnapshot()).toEqual({
+      hasTextLogger: false,
+      hasLineLogger: true,
+      hasPayloadLogger: true
+    });
+  });
+
   it('replaces the active poll callback when reconfigured between enabled logger setups', () => {
     const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
     registry.setSnapshot('client-alpha', createPopulatedSnapshot(3));

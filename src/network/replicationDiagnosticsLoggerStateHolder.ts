@@ -58,6 +58,12 @@ export type AuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot =
   | DisabledAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot
   | EnabledAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot;
 
+export interface AuthoritativeClientReplicationDiagnosticsLoggerCallbackPresenceSnapshot {
+  hasTextLogger: boolean;
+  hasLineLogger: boolean;
+  hasPayloadLogger: boolean;
+}
+
 type AuthoritativeClientReplicationDiagnosticsLoggerStateHolderConfiguration = Omit<
   ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerStateHolderOptions,
   'nextDueTick'
@@ -88,6 +94,16 @@ const createAuthoritativeClientReplicationDiagnosticsLoggerStateHolderConfigurat
   textLogger,
   lineLogger,
   payloadLogger
+});
+
+const createAuthoritativeClientReplicationDiagnosticsLoggerCallbackPresenceSnapshot = ({
+  textLogger,
+  lineLogger,
+  payloadLogger
+}: AuthoritativeClientReplicationDiagnosticsLoggerStateHolderConfiguration): AuthoritativeClientReplicationDiagnosticsLoggerCallbackPresenceSnapshot => ({
+  hasTextLogger: textLogger !== undefined,
+  hasLineLogger: lineLogger !== undefined,
+  hasPayloadLogger: payloadLogger !== undefined
 });
 
 const hasConfiguredAuthoritativeClientReplicationDiagnosticsLoggerCallback = ({
@@ -130,6 +146,12 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerStateHolder {
   getScheduleSnapshot(): AuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot {
     return createAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot(
       this.currentReconfiguration
+    );
+  }
+
+  getCallbackPresenceSnapshot(): AuthoritativeClientReplicationDiagnosticsLoggerCallbackPresenceSnapshot {
+    return createAuthoritativeClientReplicationDiagnosticsLoggerCallbackPresenceSnapshot(
+      this.currentConfiguration
     );
   }
 
