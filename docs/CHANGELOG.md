@@ -4,6 +4,14 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Follow-up: Sync main runtime shell-state expectations with first-launch card metadata.
+- Changes: Updated [src/main.test.ts](../src/main.test.ts) so first-launch runtime expectations reuse the shared main-menu shell factory instead of duplicating stale card data after task `239`.
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
+- Task: Add first-launch main-menu shortcut and readiness metadata rows.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the first-launch `Enter World` and `Mixed-Device Runtime` cards surface visible shortcut and readiness metadata, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with matching shell-state regressions, removed completed task `239` from [docs/NEXT.md](docs/NEXT.md), added replacement task `423`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add an authoritative baseline apply summary helper.
 - Changes: Added [src/network/replicationBaselineSummary.ts](../src/network/replicationBaselineSummary.ts) so transport resync code can reduce [src/network/replicationBaseline.ts](../src/network/replicationBaseline.ts) results into baseline tick plus entity-count metadata and spawned, updated, and removed entity counts without carrying raw id arrays, added focused coverage in [src/network/replicationBaselineSummary.test.ts](../src/network/replicationBaselineSummary.test.ts), removed completed task `419` from [docs/NEXT.md](docs/NEXT.md), added replacement task `422`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/network/replicationBaselineSummary.test.ts src/network/replicationBaseline.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

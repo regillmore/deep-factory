@@ -214,6 +214,16 @@ describe('resolveAppShellViewModel', () => {
       {
         title: 'Enter World',
         lines: ['Start the fixed-step simulation, standalone player, and live in-world controls.'],
+        metadataRows: [
+          {
+            label: 'Shortcut',
+            value: 'Button only'
+          },
+          {
+            label: 'Readiness',
+            value: 'Renderer ready; starts on click.'
+          }
+        ],
         tone: 'accent'
       },
       {
@@ -221,6 +231,12 @@ describe('resolveAppShellViewModel', () => {
         lines: [
           'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
           'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
+        ],
+        metadataRows: [
+          {
+            label: 'Readiness',
+            value: 'Desktop and touch share one live session.'
+          }
         ]
       }
     ]);
@@ -1154,6 +1170,16 @@ describe('createFirstLaunchMainMenuShellState', () => {
         {
           title: 'Enter World',
           lines: ['Start the fixed-step simulation, standalone player, and live in-world controls.'],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Readiness',
+              value: 'Renderer ready; starts on click.'
+            }
+          ],
           tone: 'accent'
         },
         {
@@ -1161,6 +1187,12 @@ describe('createFirstLaunchMainMenuShellState', () => {
           lines: [
             'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
             'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
+          ],
+          metadataRows: [
+            {
+              label: 'Readiness',
+              value: 'Desktop and touch share one live session.'
+            }
           ]
         }
       ],

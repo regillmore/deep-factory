@@ -1332,28 +1332,7 @@ const createExpectedPausedMainMenuState = (
   );
 };
 
-const createExpectedFirstLaunchMainMenuState = () => ({
-  screen: 'main-menu',
-  statusText: 'Renderer ready.',
-  detailLines: [],
-  menuSections: [
-    {
-      title: 'Enter World',
-      lines: ['Start the fixed-step simulation, standalone player, and live in-world controls.'],
-      tone: 'accent'
-    },
-    {
-      title: 'Mixed-Device Runtime',
-      lines: [
-        'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
-        'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
-      ]
-    }
-  ],
-  primaryActionLabel: 'Enter World',
-  secondaryActionLabel: null,
-  tertiaryActionLabel: null
-});
+const createExpectedFirstLaunchMainMenuState = () => createMainMenuShellState(false);
 const createTestPlayerSpawnPoint = ({
   anchorTileX = 0,
   standingTileY = 0,
