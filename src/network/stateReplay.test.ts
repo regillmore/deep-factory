@@ -10,6 +10,9 @@ import {
   createPlayerInputMessage
 } from './protocol';
 import {
+  AUTHORITATIVE_REPLAY_SKIP_REASON_DUPLICATE_TICK,
+  AUTHORITATIVE_REPLAY_SKIP_REASON_STALE_TICK,
+  AuthoritativeReplicatedNetworkStateReplayer,
   ReplicatedEntitySnapshotStore,
   applyChunkTileDiffMessage,
   applyReplicatedNetworkStateMessage,
@@ -172,6 +175,111 @@ describe('ReplicatedEntitySnapshotStore', () => {
     ]);
     expect(store.getEntity(2)).toBeNull();
   });
+
+  it('skips duplicate and stale authoritative entity snapshots without mutating local state', () => {
+    const store = new ReplicatedEntitySnapshotStore();
+
+    expect(
+      store.replayEntitySnapshotMessage(
+        createEntitySnapshotMessage({
+          tick: 8,
+          entities: [
+            {
+              id: 2,
+              kind: 'bunny',
+              position: { x: -3, y: 6 },
+              velocity: { x: 0, y: 0 },
+              state: {
+                facing: 'left'
+              }
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
+      tick: 8,
+      entityCount: 1,
+      spawnedEntityIds: [2],
+      updatedEntityIds: [],
+      removedEntityIds: []
+    });
+    expect(store.getLastAppliedTick()).toBe(8);
+    expect(store.getEntities()).toEqual([
+      {
+        id: 2,
+        kind: 'bunny',
+        position: { x: -3, y: 6 },
+        velocity: { x: 0, y: 0 },
+        state: {
+          facing: 'left'
+        }
+      }
+    ]);
+
+    expect(
+      store.replayEntitySnapshotMessage(
+        createEntitySnapshotMessage({
+          tick: 8,
+          entities: [
+            {
+              id: 2,
+              kind: 'bunny',
+              position: { x: 50, y: 50 },
+              velocity: { x: 3, y: 4 },
+              state: {
+                facing: 'right'
+              }
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
+      tick: 8,
+      skipped: true,
+      reason: AUTHORITATIVE_REPLAY_SKIP_REASON_DUPLICATE_TICK,
+      lastAppliedTick: 8,
+      receivedEntityCount: 1
+    });
+
+    expect(
+      store.replayEntitySnapshotMessage(
+        createEntitySnapshotMessage({
+          tick: 7,
+          entities: [
+            {
+              id: 9,
+              kind: 'slime',
+              position: { x: 4, y: 4 },
+              velocity: { x: 0, y: 0 },
+              state: {}
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
+      tick: 7,
+      skipped: true,
+      reason: AUTHORITATIVE_REPLAY_SKIP_REASON_STALE_TICK,
+      lastAppliedTick: 8,
+      receivedEntityCount: 1
+    });
+
+    expect(store.getLastAppliedTick()).toBe(8);
+    expect(store.getEntities()).toEqual([
+      {
+        id: 2,
+        kind: 'bunny',
+        position: { x: -3, y: 6 },
+        velocity: { x: 0, y: 0 },
+        state: {
+          facing: 'left'
+        }
+      }
+    ]);
+  });
 });
 
 describe('applyReplicatedNetworkStateMessage', () => {
@@ -261,6 +369,245 @@ describe('applyReplicatedNetworkStateMessage', () => {
           entities: store
         },
         playerInputMessage
+      )
+    ).toThrow('player-input messages do not replay authoritative world or entity state');
+  });
+});
+
+describe('AuthoritativeReplicatedNetworkStateReplayer', () => {
+  it('skips duplicate and stale chunk diffs per chunk while allowing older ticks on other chunks', () => {
+    const world = new TileWorld(0);
+    const store = new ReplicatedEntitySnapshotStore();
+    const replayer = new AuthoritativeReplicatedNetworkStateReplayer({
+      world,
+      entities: store
+    });
+
+    expect(
+      replayer.applyMessage(
+        createChunkTileDiffMessage({
+          tick: 3,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          tiles: [
+            {
+              tileIndex: 0,
+              tileId: WATER_TILE_ID,
+              liquidLevel: MAX_LIQUID_LEVEL
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_TILE_DIFF_MESSAGE_KIND,
+      tick: 3,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      appliedTileCount: 1,
+      changedTileCount: 1
+    });
+    expect(replayer.getLastAppliedChunkTick({ x: 0, y: 0 })).toBe(3);
+    expect(world.getTile(0, 0)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(0, 0)).toBe(MAX_LIQUID_LEVEL);
+
+    expect(
+      replayer.applyMessage(
+        createChunkTileDiffMessage({
+          tick: 3,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          tiles: [
+            {
+              tileIndex: 0,
+              tileId: 2,
+              liquidLevel: 0
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_TILE_DIFF_MESSAGE_KIND,
+      tick: 3,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      skipped: true,
+      reason: AUTHORITATIVE_REPLAY_SKIP_REASON_DUPLICATE_TICK,
+      lastAppliedTick: 3,
+      receivedTileCount: 1
+    });
+    expect(world.getTile(0, 0)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(0, 0)).toBe(MAX_LIQUID_LEVEL);
+
+    expect(
+      replayer.applyMessage(
+        createChunkTileDiffMessage({
+          tick: 2,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          tiles: [
+            {
+              tileIndex: 0,
+              tileId: 4,
+              liquidLevel: 0
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_TILE_DIFF_MESSAGE_KIND,
+      tick: 2,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      skipped: true,
+      reason: AUTHORITATIVE_REPLAY_SKIP_REASON_STALE_TICK,
+      lastAppliedTick: 3,
+      receivedTileCount: 1
+    });
+
+    expect(
+      replayer.applyMessage(
+        createChunkTileDiffMessage({
+          tick: 2,
+          chunk: {
+            x: 1,
+            y: 0
+          },
+          tiles: [
+            {
+              tileIndex: 1,
+              tileId: 9,
+              liquidLevel: 0
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_TILE_DIFF_MESSAGE_KIND,
+      tick: 2,
+      chunk: {
+        x: 1,
+        y: 0
+      },
+      appliedTileCount: 1,
+      changedTileCount: 1
+    });
+    expect(replayer.getLastAppliedChunkTick({ x: 1, y: 0 })).toBe(2);
+    expect(world.getTile(CHUNK_SIZE + 1, 0)).toBe(9);
+  });
+
+  it('skips duplicate and stale entity snapshots and still rejects player input messages', () => {
+    const world = new TileWorld(0);
+    const store = new ReplicatedEntitySnapshotStore();
+    const replayer = new AuthoritativeReplicatedNetworkStateReplayer({
+      world,
+      entities: store
+    });
+
+    expect(
+      replayer.applyMessage(
+        createEntitySnapshotMessage({
+          tick: 4,
+          entities: [
+            {
+              id: 5,
+              kind: 'slime',
+              position: { x: 2, y: 3 },
+              velocity: { x: 0, y: 0 },
+              state: {}
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
+      tick: 4,
+      entityCount: 1,
+      spawnedEntityIds: [5],
+      updatedEntityIds: [],
+      removedEntityIds: []
+    });
+    expect(replayer.getLastAppliedEntityTick()).toBe(4);
+
+    expect(
+      replayer.applyMessage(
+        createEntitySnapshotMessage({
+          tick: 4,
+          entities: [
+            {
+              id: 5,
+              kind: 'slime',
+              position: { x: 12, y: 13 },
+              velocity: { x: 1, y: 2 },
+              state: {
+                grounded: true
+              }
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
+      tick: 4,
+      skipped: true,
+      reason: AUTHORITATIVE_REPLAY_SKIP_REASON_DUPLICATE_TICK,
+      lastAppliedTick: 4,
+      receivedEntityCount: 1
+    });
+    expect(store.getEntity(5)).toEqual({
+      id: 5,
+      kind: 'slime',
+      position: { x: 2, y: 3 },
+      velocity: { x: 0, y: 0 },
+      state: {}
+    });
+
+    expect(
+      replayer.applyMessage(
+        createEntitySnapshotMessage({
+          tick: 3,
+          entities: [
+            {
+              id: 9,
+              kind: 'bunny',
+              position: { x: -1, y: 6 },
+              velocity: { x: 0, y: 0 },
+              state: {}
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
+      tick: 3,
+      skipped: true,
+      reason: AUTHORITATIVE_REPLAY_SKIP_REASON_STALE_TICK,
+      lastAppliedTick: 4,
+      receivedEntityCount: 1
+    });
+    expect(store.getEntityCount()).toBe(1);
+    expect(replayer.getLastAppliedEntityTick()).toBe(4);
+
+    expect(() =>
+      replayer.applyMessage(
+        createPlayerInputMessage({
+          tick: 5,
+          intent: {
+            moveX: 1,
+            jumpPressed: true
+          }
+        })
       )
     ).toThrow('player-input messages do not replay authoritative world or entity state');
   });

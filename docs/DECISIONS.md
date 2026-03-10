@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Authoritative replay guards chunk diffs per chunk and entity snapshots per stream
+
+- Decision: `src/network/stateReplay.ts` now guards authoritative replay by tracking last-applied ticks per chunk for chunk-tile-diff messages and one last-applied tick for the replicated entity-snapshot stream, skipping duplicate or older messages instead of mutating local replicated state.
+- Reason: Chunk diffs can arrive independently across different chunks, while entity snapshots replace the whole visible replicated set at one tick, so a single global guard would reject valid chunk updates and no guard would let stale packets roll local state backward.
+- Consequence: Future client replication should route remote authoritative updates through the guarded replay helper, and any transport resync or full replicated-state replacement must reset or replace that guard state deliberately instead of replaying older packets through it.
+
 ### 2026-03-10: Same-tick chunk-diff batching keeps the first previous state and the last resulting state per tile
 
 - Decision: `src/network/chunkDiffBatching.ts` now batches authoritative tile edits by y-major chunk order, retains the first previous tile state seen for each tile in a tick, updates that tile's outgoing diff to the last same-tick result, and omits the tile entirely when the final state matches the same-tick starting state.
