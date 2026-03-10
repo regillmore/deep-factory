@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Enabled replication diagnostics holder cadence-plus-callback refreshes should preserve the current due tick
+
+- Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now retains its current registry and logger callback configuration, and `refreshCadenceAndCallbacks(...)` reuses `getScheduleSnapshot()` to swap `intervalTicks` plus logger callbacks on enabled holders without changing the current `nextDueTick`.
+- Reason: Transport lifecycle code needs one narrow holder-owned path for simultaneous cadence and sink updates without forcing callers to thread the countdown state or unchanged registry back in manually.
+- Consequence: Future holder refresh helpers that change multiple diagnostics settings together should reuse the holder-owned configuration snapshot plus schedule snapshot instead of rebuilding partial state outside the holder.
+
 ### 2026-03-10: Enabled replication diagnostics holder cadence refreshes should preserve the current due tick
 
 - Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now retains its current registry and logger callback configuration, and `refreshCadence(...)` reuses `getScheduleSnapshot()` to swap `intervalTicks` on enabled holders without changing the current `nextDueTick`.

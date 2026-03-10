@@ -23,6 +23,10 @@ export interface RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHold
   intervalTicks: number;
 }
 
+export interface RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHolderCadenceAndCallbacksOptions
+  extends RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHolderCadenceOptions,
+    RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHolderCallbacksOptions {}
+
 export interface DisabledAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot {
   disabled: true;
   nextDueTick: null;
@@ -155,6 +159,41 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerStateHolder {
 
     this.reconfigure({
       ...this.currentConfiguration,
+      nextDueTick: scheduleSnapshot.nextDueTick,
+      textLogger,
+      lineLogger,
+      payloadLogger
+    });
+  }
+
+  refreshCadenceAndCallbacks({
+    intervalTicks,
+    textLogger,
+    lineLogger,
+    payloadLogger
+  }: RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHolderCadenceAndCallbacksOptions): void {
+    if (
+      !hasConfiguredAuthoritativeClientReplicationDiagnosticsLoggerCallback({
+        textLogger,
+        lineLogger,
+        payloadLogger
+      })
+    ) {
+      throw new Error(
+        'cadence and callback refresh requires at least one replication diagnostics logger callback'
+      );
+    }
+
+    const scheduleSnapshot = this.getScheduleSnapshot();
+    if (scheduleSnapshot.disabled) {
+      throw new Error(
+        'cannot refresh replication diagnostics logger cadence and callbacks while logging is disabled'
+      );
+    }
+
+    this.reconfigure({
+      ...this.currentConfiguration,
+      intervalTicks,
       nextDueTick: scheduleSnapshot.nextDueTick,
       textLogger,
       lineLogger,
