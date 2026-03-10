@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-429. Add a transport-facing replication diagnostics aggregate helper that reduces task `428`'s deterministic client snapshot list into client-count plus replay/send/resync totals for periodic multi-client log headers.
 430. Add a transport-facing replication diagnostics log-payload helper that combines task `428`'s ordered per-client snapshots with task `429`'s aggregate totals into one JSON-safe periodic multi-client summary.
 431. Add a transport-facing replication diagnostics text-log formatter that renders task `430`'s aggregate plus ordered per-client data into deterministic multi-line console output.
+432. Add a transport-facing periodic replication diagnostics emission helper that snapshots the registry, builds task `430`'s summary, formats it through task `431`, and returns the next due tick plus emitted log text.
 
 ## App shell
 

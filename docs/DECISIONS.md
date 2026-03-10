@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Multi-client replication diagnostics aggregates should sum totals without merging per-client last-tick metadata
+
+- Decision: `src/network/replicationDiagnosticsAggregate.ts` now reduces ordered per-client diagnostics snapshots into `clientCount` plus aggregate replay, send, and resync totals only; it does not invent merged `lastProcessed`, `lastStaged`, or `lastAppliedBaseline` metadata.
+- Reason: Periodic multi-client log headers need one stable fleet-wide counter view, but the per-client latest-tick fields have no single meaningful cross-client merge and remain more useful on the ordered client entries themselves.
+- Consequence: Future replication log-payload or text-format helpers should consume this aggregate for shared totals and keep latest tick or baseline detail sourced from the per-client snapshot list instead of trying to collapse those metadata fields again.
+
 ### 2026-03-10: Registry snapshot exports should sort by ascending client id instead of insertion order
 
 - Decision: `src/network/replicationDiagnosticsRegistrySnapshot.ts` now exports per-client diagnostics registry entries by sorting client ids in ascending string order before reading detached snapshots.
