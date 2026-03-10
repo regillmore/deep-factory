@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Multi-client replication diagnostics log payloads should keep aggregate totals and ordered client snapshots as sibling fields
+
+- Decision: `src/network/replicationDiagnosticsLogPayload.ts` now returns one periodic summary object with top-level `aggregate` totals plus a top-level ordered `clients` list, rather than nesting aggregate counters inside each client entry or flattening every client snapshot into one shared counter bag.
+- Reason: Periodic transport logging needs one JSON-safe payload that exposes fleet-wide totals beside still-ordered per-client detail, and keeping those views as siblings lets later text formatting or emission helpers read both without reconstructing either one.
+- Consequence: Future text-format and emission helpers should consume `payload.aggregate` for shared headers and iterate `payload.clients` for per-client detail instead of trying to recompute totals from client rows or duplicate aggregate counters into each client section.
+
 ### 2026-03-10: Multi-client replication diagnostics aggregates should sum totals without merging per-client last-tick metadata
 
 - Decision: `src/network/replicationDiagnosticsAggregate.ts` now reduces ordered per-client diagnostics snapshots into `clientCount` plus aggregate replay, send, and resync totals only; it does not invent merged `lastProcessed`, `lastStaged`, or `lastAppliedBaseline` metadata.
