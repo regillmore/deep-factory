@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Replication diagnostics logger reconfiguration should rebuild runner and poll callback together
+
+- Decision: `src/network/replicationDiagnosticsLoggerReconfiguration.ts` now rebuilds both the nullable diagnostics logger runner and the matching nullable fixed-step poll callback from one set of cadence settings plus optional text, line, and payload logger callbacks.
+- Reason: Later transport holders need one shared reconfiguration seam that keeps schedule ownership and fixed-step polling composition aligned instead of recreating runners and callbacks through separate code paths.
+- Consequence: Future diagnostics logger holders should swap active logging through this helper, and should treat the returned `null` runner-and-callback pair as the only disabled state instead of caching stale callbacks across reconfiguration.
+
 ### 2026-03-10: Fixed-step replication diagnostics polling should no-op only when the runner is absent
 
 - Decision: `src/network/replicationDiagnosticsLoggerPoll.ts` now lifts one nullable diagnostics logger runner into a raw-`tick` fixed-step callback that returns a silent no-op only when the runner is `null`, and otherwise delegates directly to `runner.poll({ tick })`.

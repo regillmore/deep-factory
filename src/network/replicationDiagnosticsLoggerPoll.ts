@@ -8,6 +8,9 @@ export type AuthoritativeClientReplicationDiagnosticsLoggerPollCallback = (
   tick: number
 ) => void;
 
+export type NullableAuthoritativeClientReplicationDiagnosticsLoggerPollCallback =
+  AuthoritativeClientReplicationDiagnosticsLoggerPollCallback | null;
+
 export const createAuthoritativeClientReplicationDiagnosticsLoggerPollCallback = ({
   loggerRunner
 }: CreateAuthoritativeClientReplicationDiagnosticsLoggerPollCallbackOptions): AuthoritativeClientReplicationDiagnosticsLoggerPollCallback => {

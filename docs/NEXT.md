@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-449. Add a transport-facing diagnostics logger reconfiguration helper after task `448` lands that rebuilds one nullable fixed-step diagnostics poll callback from updated optional logger callbacks and cadence settings, with reconfiguration regressions.
 450. Add a transport-facing diagnostics logger state holder after task `449` lands that owns one nullable fixed-step diagnostics poll callback, exposes `poll(tick)` plus callback reconfiguration through the shared helper, and includes disabled-to-enabled lifecycle regressions.
 451. Add a transport-facing diagnostics logger schedule snapshot helper after task `450` lands that reports whether one logger state holder is disabled or, when enabled, its next due tick, with holder snapshot regressions.
+452. Add a transport-facing diagnostics logger callback-refresh helper after task `451` lands that reconfigures one enabled logger state holder with updated text, line, and payload callbacks while preserving its current next-due tick, with schedule-preservation regressions.
 
 ## App shell
 
