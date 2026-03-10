@@ -1,3 +1,7 @@
+import {
+  createAuthoritativeClientReplicationDiagnosticsAggregate,
+  type AuthoritativeClientReplicationDiagnosticsAggregate
+} from './replicationDiagnosticsAggregate';
 import type { AuthoritativeReplicationBaselineApplyEntityCounts } from './replicationBaselineSummary';
 import type { AuthoritativeReplicationBatchFilterStatusCounters } from './replicationBatchFilterSummary';
 import type { AuthoritativeClientReplicationDiagnosticsRegistrySnapshotEntry } from './replicationDiagnosticsRegistrySnapshot';
@@ -24,6 +28,17 @@ export const formatAuthoritativeClientReplicationDiagnosticsResyncCounters = ({
   removed
 }: AuthoritativeReplicationBaselineApplyEntityCounts): string =>
   `spawned=${spawned} | updated=${updated} | removed=${removed}`;
+
+export const formatAuthoritativeClientReplicationDiagnosticsLogAggregateLines = (
+  aggregate: AuthoritativeClientReplicationDiagnosticsAggregate = createAuthoritativeClientReplicationDiagnosticsAggregate()
+): string[] => [
+  `Aggregate: clients=${aggregate.clientCount}`,
+  `AggregateReplayChunks: ${formatAuthoritativeClientReplicationDiagnosticsReplayCounters(aggregate.replay.chunks)}`,
+  `AggregateReplayEntities: ${formatAuthoritativeClientReplicationDiagnosticsReplayCounters(aggregate.replay.entities)}`,
+  `AggregateSendChunks: ${formatAuthoritativeClientReplicationDiagnosticsSendCounters(aggregate.send.chunks)}`,
+  `AggregateSendEntities: ${formatAuthoritativeClientReplicationDiagnosticsSendCounters(aggregate.send.entities)}`,
+  `AggregateResync: ${formatAuthoritativeClientReplicationDiagnosticsResyncCounters(aggregate.resync)}`
+];
 
 const formatAuthoritativeClientReplicationDiagnosticsLastAppliedBaseline = (
   entry: AuthoritativeClientReplicationDiagnosticsRegistrySnapshotEntry

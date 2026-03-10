@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  createAuthoritativeClientReplicationDiagnosticsAggregate
+} from './replicationDiagnosticsAggregate';
+import {
   accumulateAuthoritativeClientReplicationDiagnostics
 } from './replicationDiagnostics';
 import {
+  formatAuthoritativeClientReplicationDiagnosticsLogAggregateLines,
   formatAuthoritativeClientReplicationDiagnosticsLogClientLines
 } from './replicationDiagnosticsLogLineFormatting';
 import { createAuthoritativeClientReplicationDiagnosticsSnapshot } from './replicationDiagnosticsSnapshot';
@@ -64,6 +68,45 @@ const createPopulatedSnapshot = (seed: number) =>
       }
     })
   });
+
+describe('formatAuthoritativeClientReplicationDiagnosticsLogAggregateLines', () => {
+  it('renders zeroed aggregate totals when no aggregate was provided', () => {
+    expect(formatAuthoritativeClientReplicationDiagnosticsLogAggregateLines()).toEqual([
+      'Aggregate: clients=0',
+      'AggregateReplayChunks: dropped=0 | trimmed=0 | applied=0 | skipped=0',
+      'AggregateReplayEntities: dropped=0 | trimmed=0 | applied=0 | skipped=0',
+      'AggregateSendChunks: dropped=0 | trimmed=0 | forwarded=0',
+      'AggregateSendEntities: dropped=0 | trimmed=0 | forwarded=0',
+      'AggregateResync: spawned=0 | updated=0 | removed=0'
+    ]);
+  });
+
+  it('renders one aggregate summary into deterministic labeled header lines', () => {
+    const aggregate = createAuthoritativeClientReplicationDiagnosticsAggregate([
+      {
+        clientId: 'client-zulu',
+        snapshot: createPopulatedSnapshot(30)
+      },
+      {
+        clientId: 'client-alpha',
+        snapshot: createPopulatedSnapshot(10)
+      },
+      {
+        clientId: 'client-bravo',
+        snapshot: createAuthoritativeClientReplicationDiagnosticsSnapshot()
+      }
+    ]);
+
+    expect(formatAuthoritativeClientReplicationDiagnosticsLogAggregateLines(aggregate)).toEqual([
+      'Aggregate: clients=3',
+      'AggregateReplayChunks: dropped=40 | trimmed=42 | applied=44 | skipped=46',
+      'AggregateReplayEntities: dropped=48 | trimmed=50 | applied=52 | skipped=54',
+      'AggregateSendChunks: dropped=56 | trimmed=58 | forwarded=60',
+      'AggregateSendEntities: dropped=62 | trimmed=64 | forwarded=66',
+      'AggregateResync: spawned=68 | updated=70 | removed=72'
+    ]);
+  });
+});
 
 describe('formatAuthoritativeClientReplicationDiagnosticsLogClientLines', () => {
   it('renders zeroed sections with explicit n/a metadata placeholders', () => {

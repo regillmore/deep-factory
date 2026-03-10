@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Aggregate replication diagnostics log headers should be reusable as labeled line arrays
+
+- Decision: `src/network/replicationDiagnosticsLogLineFormatting.ts` now exposes a transport-facing helper that formats one aggregate diagnostics summary into the same fixed client-count, replay, send, and resync labeled header lines used by the integrated text formatter.
+- Reason: Alternative transport sinks may need to reuse the shared multi-client diagnostics header without coupling themselves to the full newline-joined formatter or rebuilding its header ordering by hand.
+- Consequence: Future aggregate diagnostics sinks should consume this helper for header lines and preserve its current aggregate line order instead of hand-formatting payload totals again.
+
 ### 2026-03-10: Per-client replication diagnostics log sections should be reusable as labeled line arrays
 
 - Decision: `src/network/replicationDiagnosticsLogLineFormatting.ts` now exposes a transport-facing helper that formats one ordered client diagnostics entry into the same fixed replay, send, and resync labeled lines plus explicit `n/a` metadata placeholders used by the integrated text formatter.

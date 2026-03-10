@@ -3,10 +3,8 @@ import {
   type AuthoritativeClientReplicationDiagnosticsLogPayload
 } from './replicationDiagnosticsLogPayload';
 import {
+  formatAuthoritativeClientReplicationDiagnosticsLogAggregateLines,
   formatAuthoritativeClientReplicationDiagnosticsLogClientLines,
-  formatAuthoritativeClientReplicationDiagnosticsReplayCounters,
-  formatAuthoritativeClientReplicationDiagnosticsResyncCounters,
-  formatAuthoritativeClientReplicationDiagnosticsSendCounters
 } from './replicationDiagnosticsLogLineFormatting';
 
 export const formatAuthoritativeClientReplicationDiagnosticsLogPayload = (
@@ -14,12 +12,7 @@ export const formatAuthoritativeClientReplicationDiagnosticsLogPayload = (
 ): string => {
   const lines = [
     'ReplicationDiagnostics',
-    `Aggregate: clients=${payload.aggregate.clientCount}`,
-    `AggregateReplayChunks: ${formatAuthoritativeClientReplicationDiagnosticsReplayCounters(payload.aggregate.replay.chunks)}`,
-    `AggregateReplayEntities: ${formatAuthoritativeClientReplicationDiagnosticsReplayCounters(payload.aggregate.replay.entities)}`,
-    `AggregateSendChunks: ${formatAuthoritativeClientReplicationDiagnosticsSendCounters(payload.aggregate.send.chunks)}`,
-    `AggregateSendEntities: ${formatAuthoritativeClientReplicationDiagnosticsSendCounters(payload.aggregate.send.entities)}`,
-    `AggregateResync: ${formatAuthoritativeClientReplicationDiagnosticsResyncCounters(payload.aggregate.resync)}`,
+    ...formatAuthoritativeClientReplicationDiagnosticsLogAggregateLines(payload.aggregate),
     payload.clients.length === 0 ? 'Clients: none' : 'Clients:'
   ];
 
