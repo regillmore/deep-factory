@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Console-style replication diagnostics loggers should consume joined emitted text through a sink adapter
+
+- Decision: `src/network/replicationDiagnosticsTextLogger.ts` now adapts one injected `(logText) => void` callback into an `AuthoritativeClientReplicationDiagnosticsLogSinkCallback` by forwarding only `emission.logText`.
+- Reason: Text-oriented transport logging should reuse the existing due-only sink path and should not rejoin detached lines when other sinks may still need the original `logLines`.
+- Consequence: Future console-style diagnostics loggers should compose through this helper, should treat joined `logText` as the source of truth for text output, and should leave detached `logLines` available for separate line-oriented or fan-out sinks.
+
 ### 2026-03-10: Replication diagnostics sink callbacks should receive due-only cloned line arrays beside joined text
 
 - Decision: `src/network/replicationDiagnosticsLogSink.ts` now wraps `AuthoritativeClientReplicationDiagnosticsLogCadence` and invokes its injected sink only when cadence emits, forwarding `nextDueTick`, joined `logText`, and a cloned `logLines` array.

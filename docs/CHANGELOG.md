@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Task: Add a replication diagnostics text logger helper.
+- Changes: Added [src/network/replicationDiagnosticsTextLogger.ts](../src/network/replicationDiagnosticsTextLogger.ts) so transport code can adapt one joined-text logger into [src/network/replicationDiagnosticsLogSink.ts](../src/network/replicationDiagnosticsLogSink.ts)'s due-only sink contract without rejoining detached lines, added focused coverage in [src/network/replicationDiagnosticsTextLogger.test.ts](../src/network/replicationDiagnosticsTextLogger.test.ts), removed completed task `440` from [docs/NEXT.md](docs/NEXT.md), added replacement task `443`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/network/replicationDiagnosticsTextLogger.test.ts src/network/replicationDiagnosticsLogSink.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a replication diagnostics sink helper.
 - Changes: Added [src/network/replicationDiagnosticsLogSink.ts](../src/network/replicationDiagnosticsLogSink.ts) so transport code can wrap [src/network/replicationDiagnosticsLogCadence.ts](../src/network/replicationDiagnosticsLogCadence.ts) and invoke one due-only callback with `nextDueTick`, joined `logText`, and cloned detached `logLines`, added focused coverage in [src/network/replicationDiagnosticsLogSink.test.ts](../src/network/replicationDiagnosticsLogSink.test.ts), removed completed task `439` from [docs/NEXT.md](docs/NEXT.md), added replacement task `442`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/network/replicationDiagnosticsLogSink.test.ts src/network/replicationDiagnosticsLogCadence.test.ts src/network/replicationDiagnosticsLogEmission.test.ts src/network/replicationDiagnosticsLogLineFormatting.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

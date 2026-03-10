@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-440. Add a transport-facing console-style diagnostics logger helper after task `439` lands that forwards only due emissions through one injected text logger while preserving detached line access for other sinks, with logger-call regressions.
 441. Add a transport-facing line-array diagnostics logger helper after task `439` lands that forwards only due detached `logLines` through one injected line sink while leaving joined text available for other loggers, with line-logger regressions.
 442. Add a transport-facing replication diagnostics fan-out sink helper after tasks `440-441` land that forwards one due emission to multiple injected sinks in declaration order while isolating per-sink `logLines` mutations, with multi-sink regressions.
+443. Extend periodic replication diagnostics emissions after task `442` lands so they also return the frozen log payload beside `logLines` and `logText` for structured transport sinks, with payload-detachment regressions.
 
 ## App shell
 
