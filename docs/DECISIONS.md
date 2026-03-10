@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Combined per-client replication diagnostics snapshots should preserve replay, send, and resync as separate sections
+
+- Decision: `src/network/replicationDiagnosticsSnapshot.ts` now produces one detached JSON-safe per-client diagnostics snapshot with explicit `replay`, `send`, and `resync` sections instead of flattening the three accumulator outputs into one mixed counter bag.
+- Reason: Replay, send, and resync diagnostics use different counter meanings and metadata shapes (`applied/skipped`, `forwarded`, and baseline entity counts), so flattening them would either lose semantics or force awkward field renaming in every transport log consumer.
+- Consequence: Future reset, registry, or transport logging helpers should accept and return this sectioned snapshot shape directly, and should extend a named section when they add new metadata rather than merging unlike counters together.
+
 ### 2026-03-10: Per-client send diagnostics should accumulate totals separately from the latest staged tick metadata
 
 - Decision: `src/network/replicationSendDiagnostics.ts` now keeps running chunk and entity `dropped`, `trimmed`, and `forwarded` totals under `totals` while storing only the latest staged tick under separate `lastStaged` metadata, and empty summaries leave that metadata unchanged because they do not represent a new staged batch.
