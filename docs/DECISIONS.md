@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Mixed replication diagnostics logger runners should reuse the shared sink wrapper
+
+- Decision: `src/network/replicationDiagnosticsLoggerRunner.ts` now builds a dedicated ready-to-poll runner by wrapping one existing cadence plus one existing mixed logger bundle inside `AuthoritativeClientReplicationDiagnosticsLogSink`.
+- Reason: The runner layer needs a transport-facing type above the mixed bundle, but reusing the existing sink wrapper preserves its due-only polling and emission-cloning behavior instead of duplicating that logic.
+- Consequence: Future nullable factories and poll helpers should build on this runner helper rather than bypassing it or reconstructing cadence-plus-sink composition by hand.
+
 ### 2026-03-10: Mixed replication diagnostics logger bundles should compose optional adapters in a fixed order
 
 - Decision: `src/network/replicationDiagnosticsLoggerBundle.ts` now adapts any configured text, line, and payload logger callbacks into one due-only sink by wiring the existing adapters through the fan-out sink in text, line, then payload order.

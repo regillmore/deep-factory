@@ -21,11 +21,14 @@ export interface CreateAuthoritativeClientReplicationDiagnosticsLoggerBundleOpti
   payloadLogger?: AuthoritativeClientReplicationDiagnosticsPayloadLogger;
 }
 
+export type AuthoritativeClientReplicationDiagnosticsLoggerBundle =
+  AuthoritativeClientReplicationDiagnosticsLogSinkCallback;
+
 export const createAuthoritativeClientReplicationDiagnosticsLoggerBundle = ({
   textLogger,
   lineLogger,
   payloadLogger
-}: CreateAuthoritativeClientReplicationDiagnosticsLoggerBundleOptions): AuthoritativeClientReplicationDiagnosticsLogSinkCallback => {
+}: CreateAuthoritativeClientReplicationDiagnosticsLoggerBundleOptions): AuthoritativeClientReplicationDiagnosticsLoggerBundle => {
   const sinks: AuthoritativeClientReplicationDiagnosticsLogSinkCallback[] = [];
 
   if (textLogger !== undefined) {
