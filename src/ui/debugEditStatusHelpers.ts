@@ -51,6 +51,7 @@ export interface DebugEditStatusStripState {
   playerCameraZoom?: number | null;
   residentDirtyLightChunks?: number | null;
   residentActiveLiquidChunks?: number | null;
+  residentSleepingLiquidChunks?: number | null;
   residentActiveLiquidMinChunkX?: number | null;
   residentActiveLiquidMinChunkY?: number | null;
   residentActiveLiquidMaxChunkX?: number | null;
@@ -1103,6 +1104,7 @@ const formatResidentActiveLiquidBoundsText = (
 
 const formatLiveResidentActiveLiquidChunksText = (
   residentActiveLiquidChunks: number | null,
+  residentSleepingLiquidChunks: number | null,
   residentActiveLiquidMinChunkX: number | null,
   residentActiveLiquidMinChunkY: number | null,
   residentActiveLiquidMaxChunkX: number | null,
@@ -1113,7 +1115,8 @@ const formatLiveResidentActiveLiquidChunksText = (
   }
 
   return (
-    `LiquidActiveNow: ${Math.round(residentActiveLiquidChunks)} | ` +
+    `LiquidChunksNow: awake:${Math.round(residentActiveLiquidChunks)} | ` +
+    `sleeping:${Math.round(residentSleepingLiquidChunks ?? 0)} | ` +
     `bounds:${formatResidentActiveLiquidBoundsText(
       residentActiveLiquidMinChunkX,
       residentActiveLiquidMinChunkY,
@@ -1260,6 +1263,7 @@ const buildPlayerText = (
   playerCameraZoom: number | null,
   residentDirtyLightChunks: number | null,
   residentActiveLiquidChunks: number | null,
+  residentSleepingLiquidChunks: number | null,
   residentActiveLiquidMinChunkX: number | null,
   residentActiveLiquidMinChunkY: number | null,
   residentActiveLiquidMaxChunkX: number | null,
@@ -1303,6 +1307,7 @@ const buildPlayerText = (
     formatLiveResidentDirtyLightChunksText(residentDirtyLightChunks),
     formatLiveResidentActiveLiquidChunksText(
       residentActiveLiquidChunks,
+      residentSleepingLiquidChunks,
       residentActiveLiquidMinChunkX,
       residentActiveLiquidMinChunkY,
       residentActiveLiquidMaxChunkX,
@@ -1827,6 +1832,7 @@ export const buildDebugEditStatusStripModel = (
   const playerCameraZoom = state.playerCameraZoom ?? null;
   const residentDirtyLightChunks = state.residentDirtyLightChunks ?? null;
   const residentActiveLiquidChunks = state.residentActiveLiquidChunks ?? null;
+  const residentSleepingLiquidChunks = state.residentSleepingLiquidChunks ?? null;
   const residentActiveLiquidMinChunkX = state.residentActiveLiquidMinChunkX ?? null;
   const residentActiveLiquidMinChunkY = state.residentActiveLiquidMinChunkY ?? null;
   const residentActiveLiquidMaxChunkX = state.residentActiveLiquidMaxChunkX ?? null;
@@ -1876,6 +1882,7 @@ export const buildDebugEditStatusStripModel = (
       playerCameraZoom,
       residentDirtyLightChunks,
       residentActiveLiquidChunks,
+      residentSleepingLiquidChunks,
       residentActiveLiquidMinChunkX,
       residentActiveLiquidMinChunkY,
       residentActiveLiquidMaxChunkX,

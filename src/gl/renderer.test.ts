@@ -208,6 +208,7 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.animatedChunkUvUploadBytes).toBe(0);
     expect(renderer.telemetry.residentDirtyLightChunks).toBe(0);
     expect(renderer.telemetry.residentActiveLiquidChunks).toBe(0);
+    expect(renderer.telemetry.residentSleepingLiquidChunks).toBe(0);
     expect(renderer.telemetry.residentActiveLiquidMinChunkX).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBeNull();
@@ -245,12 +246,14 @@ describe('Renderer atlas telemetry', () => {
 
     expect(renderer.telemetry.residentWorldChunks).toBe(224);
     expect(renderer.telemetry.residentActiveLiquidChunks).toBe(0);
+    expect(renderer.telemetry.residentSleepingLiquidChunks).toBe(0);
     expect(renderer.telemetry.residentActiveLiquidMinChunkX).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMaxChunkY).toBeNull();
     expect(renderer.stepLiquidSimulation()).toBe(false);
     expect(renderer.telemetry.residentActiveLiquidChunks).toBe(0);
+    expect(renderer.telemetry.residentSleepingLiquidChunks).toBe(0);
     expect(renderer.telemetry.residentActiveLiquidMinChunkX).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBeNull();
@@ -277,6 +280,7 @@ describe('Renderer atlas telemetry', () => {
     const camera = new Camera2D();
     renderUntilMeshBuildQueueDrains(renderer, camera);
     expect(renderer.telemetry.residentActiveLiquidChunks).toBe(0);
+    expect(renderer.telemetry.residentSleepingLiquidChunks).toBe(0);
     expect(renderer.telemetry.residentActiveLiquidMinChunkX).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBeNull();
@@ -286,6 +290,7 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.setTile(CHUNK_SIZE + 4, 4, WATER_TILE_ID)).toBe(true);
     renderUntilMeshBuildQueueDrains(renderer, camera);
     expect(renderer.telemetry.residentActiveLiquidChunks).toBe(2);
+    expect(renderer.telemetry.residentSleepingLiquidChunks).toBe(0);
     expect(renderer.telemetry.residentActiveLiquidMinChunkX).toBe(-1);
     expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBe(-1);
     expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBe(1);
@@ -294,6 +299,7 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.setTile(CHUNK_SIZE + 4, 4, 0)).toBe(true);
     renderUntilMeshBuildQueueDrains(renderer, camera);
     expect(renderer.telemetry.residentActiveLiquidChunks).toBe(1);
+    expect(renderer.telemetry.residentSleepingLiquidChunks).toBe(0);
     expect(renderer.telemetry.residentActiveLiquidMinChunkX).toBe(-1);
     expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBe(-1);
     expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBe(-1);
@@ -323,10 +329,13 @@ describe('Renderer atlas telemetry', () => {
     renderUntilMeshBuildQueueDrains(renderer, camera);
 
     expect(renderer.telemetry.residentActiveLiquidChunks).toBe(1);
+    expect(renderer.telemetry.residentSleepingLiquidChunks).toBe(0);
     expect(renderer.stepLiquidSimulation()).toBe(false);
     expect(renderer.telemetry.residentActiveLiquidChunks).toBe(1);
+    expect(renderer.telemetry.residentSleepingLiquidChunks).toBe(0);
     expect(renderer.stepLiquidSimulation()).toBe(false);
     expect(renderer.telemetry.residentActiveLiquidChunks).toBe(0);
+    expect(renderer.telemetry.residentSleepingLiquidChunks).toBe(1);
     expect(renderer.telemetry.residentActiveLiquidMinChunkX).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBeNull();
@@ -335,6 +344,7 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.setTile(5, -20, 0)).toBe(true);
     renderer.render(camera, { timeMs: 0 });
     expect(renderer.telemetry.residentActiveLiquidChunks).toBe(1);
+    expect(renderer.telemetry.residentSleepingLiquidChunks).toBe(0);
     expect(renderer.stepLiquidSimulation()).toBe(true);
     expect(renderer.getLiquidLevel(4, -20)).toBe(MAX_LIQUID_LEVEL / 2);
     expect(renderer.getLiquidLevel(5, -20)).toBe(MAX_LIQUID_LEVEL / 2);

@@ -105,15 +105,15 @@ const chunkContainsLiquid = (chunk: Chunk): boolean => {
   return false;
 };
 
-const collectActiveLiquidChunkKeys = (chunks: ReadonlyMap<string, Chunk>): Set<string> => {
-  const activeLiquidChunkKeys = new Set<string>();
+const collectResidentLiquidChunkKeys = (chunks: ReadonlyMap<string, Chunk>): Set<string> => {
+  const residentLiquidChunkKeys = new Set<string>();
   for (const [key, chunk] of chunks) {
     if (chunkContainsLiquid(chunk)) {
-      activeLiquidChunkKeys.add(key);
+      residentLiquidChunkKeys.add(key);
     }
   }
 
-  return activeLiquidChunkKeys;
+  return residentLiquidChunkKeys;
 };
 
 const collectSidewaysLiquidCandidateChunkKeys = (
@@ -344,6 +344,7 @@ export class TileWorld {
   private editedChunkLiquidLevels = new Map<string, Map<number, number>>();
   private tileEditListeners = new Set<TileEditListener>();
   private dirtyLightChunkKeys = new Set<string>();
+  private residentLiquidChunkKeys = new Set<string>();
   private activeLiquidChunkKeys = new Set<string>();
   private liquidChunkQuietStepCounts = new Map<string, number>();
   private liquidSimulationTick = 0;
@@ -595,11 +596,13 @@ export class TileWorld {
     nextLiquidLevel: number
   ): void {
     if (nextLiquidLevel > 0) {
+      this.residentLiquidChunkKeys.add(key);
       this.activateLiquidChunk(key);
       return;
     }
 
     if (previousLiquidLevel > 0 && !chunkContainsLiquid(chunk)) {
+      this.residentLiquidChunkKeys.delete(key);
       this.deactivateLiquidChunk(key);
     }
   }
@@ -621,7 +624,7 @@ export class TileWorld {
   ): void {
     const key = chunkKey(chunkX, chunkY);
     const chunk = this.chunks.get(key);
-    if (!chunk || !chunkContainsLiquid(chunk)) {
+    if (!chunk || !this.residentLiquidChunkKeys.has(key)) {
       return;
     }
 
@@ -648,7 +651,8 @@ export class TileWorld {
   ): void {
     for (const key of startingActiveChunkKeys) {
       const chunk = this.chunks.get(key);
-      if (!chunk || !chunkContainsLiquid(chunk)) {
+      if (!chunk || !this.residentLiquidChunkKeys.has(key)) {
+        this.residentLiquidChunkKeys.delete(key);
         this.deactivateLiquidChunk(key);
         continue;
       }
@@ -777,6 +781,7 @@ export class TileWorld {
     this.chunks.set(key, chunk);
     this.dirtyLightChunkKeys.add(key);
     if (chunkContainsLiquid(chunk)) {
+      this.residentLiquidChunkKeys.add(key);
       this.activateLiquidChunk(key);
     }
     return chunk;
@@ -1219,7 +1224,8 @@ export class TileWorld {
     this.editedChunkTiles = nextEditedChunkTiles;
     this.editedChunkLiquidLevels = nextEditedChunkLiquidLevels;
     this.dirtyLightChunkKeys = nextDirtyLightChunkKeys;
-    this.activeLiquidChunkKeys = collectActiveLiquidChunkKeys(nextChunks);
+    this.residentLiquidChunkKeys = collectResidentLiquidChunkKeys(nextChunks);
+    this.activeLiquidChunkKeys = new Set(this.residentLiquidChunkKeys);
     this.liquidChunkQuietStepCounts = new Map(
       Array.from(this.activeLiquidChunkKeys, (key): [string, number] => [key, 0])
     );
@@ -1237,6 +1243,10 @@ export class TileWorld {
 
   getActiveLiquidChunkCount(): number {
     return this.activeLiquidChunkKeys.size;
+  }
+
+  getSleepingLiquidChunkCount(): number {
+    return Math.max(0, this.residentLiquidChunkKeys.size - this.activeLiquidChunkKeys.size);
   }
 
   getActiveLiquidChunkBounds(): ChunkBounds | null {
@@ -1268,6 +1278,7 @@ export class TileWorld {
       if (chunkBoundsContains(bounds, chunk.coord.x, chunk.coord.y)) continue;
       this.chunks.delete(key);
       this.dirtyLightChunkKeys.delete(key);
+      this.residentLiquidChunkKeys.delete(key);
       this.deactivateLiquidChunk(key);
       removed += 1;
     }

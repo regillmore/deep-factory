@@ -117,6 +117,7 @@ export interface RenderTelemetry {
   cachedChunkMeshes: number;
   residentDirtyLightChunks: number;
   residentActiveLiquidChunks: number;
+  residentSleepingLiquidChunks: number;
   residentActiveLiquidMinChunkX: number | null;
   residentActiveLiquidMinChunkY: number | null;
   residentActiveLiquidMaxChunkX: number | null;
@@ -196,6 +197,7 @@ export class Renderer {
     cachedChunkMeshes: 0,
     residentDirtyLightChunks: 0,
     residentActiveLiquidChunks: 0,
+    residentSleepingLiquidChunks: 0,
     residentActiveLiquidMinChunkX: null,
     residentActiveLiquidMinChunkY: null,
     residentActiveLiquidMaxChunkX: null,
@@ -680,6 +682,7 @@ export class Renderer {
   private updateActiveLiquidTelemetry(): void {
     const activeLiquidBounds = this.world.getActiveLiquidChunkBounds();
     this.telemetry.residentActiveLiquidChunks = this.world.getActiveLiquidChunkCount();
+    this.telemetry.residentSleepingLiquidChunks = this.world.getSleepingLiquidChunkCount();
     this.telemetry.residentActiveLiquidMinChunkX = activeLiquidBounds?.minChunkX ?? null;
     this.telemetry.residentActiveLiquidMinChunkY = activeLiquidBounds?.minChunkY ?? null;
     this.telemetry.residentActiveLiquidMaxChunkX = activeLiquidBounds?.maxChunkX ?? null;

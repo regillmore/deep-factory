@@ -226,22 +226,27 @@ describe('TileWorld', () => {
     expect(world.setTile(worldTileX, sourceWorldTileY, WATER_TILE_ID)).toBe(true);
 
     expect(world.getActiveLiquidChunkCount()).toBe(1);
+    expect(world.getSleepingLiquidChunkCount()).toBe(0);
     expect(world.stepLiquidSimulation()).toBe(true);
     expect(world.getTile(worldTileX, sourceWorldTileY)).toBe(0);
     expect(world.getLiquidLevel(worldTileX, sourceWorldTileY)).toBe(0);
     expect(world.getTile(worldTileX, targetWorldTileY)).toBe(WATER_TILE_ID);
     expect(world.getLiquidLevel(worldTileX, targetWorldTileY)).toBe(MAX_LIQUID_LEVEL);
     expect(world.getActiveLiquidChunkCount()).toBe(1);
+    expect(world.getSleepingLiquidChunkCount()).toBe(0);
 
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.getLastLiquidSimulationStats().downwardActiveChunksScanned).toBeGreaterThan(0);
     expect(world.getActiveLiquidChunkCount()).toBe(1);
+    expect(world.getSleepingLiquidChunkCount()).toBe(0);
 
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.getActiveLiquidChunkCount()).toBe(0);
+    expect(world.getSleepingLiquidChunkCount()).toBe(1);
     expect(world.getActiveLiquidChunkBounds()).toBeNull();
 
     expect(world.stepLiquidSimulation()).toBe(false);
+    expect(world.getSleepingLiquidChunkCount()).toBe(1);
     expect(world.getLastLiquidSimulationStats()).toEqual({
       downwardActiveChunksScanned: 0,
       sidewaysCandidateChunksScanned: 0,
@@ -266,10 +271,12 @@ describe('TileWorld', () => {
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.getActiveLiquidChunkCount()).toBe(0);
+    expect(world.getSleepingLiquidChunkCount()).toBe(1);
     expect(world.getActiveLiquidChunkBounds()).toBeNull();
 
     expect(world.setTile(worldTileX + 1, worldTileY, 0)).toBe(true);
     expect(world.getActiveLiquidChunkCount()).toBe(1);
+    expect(world.getSleepingLiquidChunkCount()).toBe(0);
     expect(world.getActiveLiquidChunkBounds()).toEqual({
       minChunkX: 0,
       minChunkY: -1,

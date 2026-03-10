@@ -33,6 +33,7 @@ export interface DebugOverlayStats {
   cachedChunkMeshes: number;
   residentDirtyLightChunks: number;
   residentActiveLiquidChunks: number;
+  residentSleepingLiquidChunks: number;
   residentActiveLiquidMinChunkX: number | null;
   residentActiveLiquidMinChunkY: number | null;
   residentActiveLiquidMaxChunkX: number | null;
@@ -930,7 +931,8 @@ const formatActiveLiquidBounds = (stats: DebugOverlayStats): string => {
 };
 
 const formatLiquidStepLine = (stats: DebugOverlayStats): string =>
-  `LiquidStep: active:${stats.residentActiveLiquidChunks} | ` +
+  `LiquidStep: awake:${stats.residentActiveLiquidChunks} | ` +
+  `sleeping:${stats.residentSleepingLiquidChunks} | ` +
   `bounds:${formatActiveLiquidBounds(stats)} | ` +
   `downChunks:${stats.liquidStepDownwardActiveChunksScanned} | ` +
   `sideChunks:${stats.liquidStepSidewaysCandidateChunksScanned} | ` +

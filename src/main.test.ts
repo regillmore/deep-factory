@@ -248,6 +248,7 @@ const testRuntime = vi.hoisted(() => {
       atlasHeight: null as number | null,
       residentDirtyLightChunks: 0,
       residentActiveLiquidChunks: 0,
+      residentSleepingLiquidChunks: 0,
       residentActiveLiquidMinChunkX: null as number | null,
       residentActiveLiquidMinChunkY: null as number | null,
       residentActiveLiquidMaxChunkX: null as number | null,
@@ -1463,6 +1464,12 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTelemetry.atlasWidth = null;
     testRuntime.rendererTelemetry.atlasHeight = null;
     testRuntime.rendererTelemetry.residentDirtyLightChunks = 0;
+    testRuntime.rendererTelemetry.residentActiveLiquidChunks = 0;
+    testRuntime.rendererTelemetry.residentActiveLiquidMinChunkX = null;
+    testRuntime.rendererTelemetry.residentActiveLiquidMinChunkY = null;
+    testRuntime.rendererTelemetry.residentActiveLiquidMaxChunkX = null;
+    testRuntime.rendererTelemetry.residentActiveLiquidMaxChunkY = null;
+    testRuntime.rendererTelemetry.residentSleepingLiquidChunks = 0;
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightLevel = null;
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightFactor = null;
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceTileX = null;
@@ -4410,6 +4417,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceLocalTileX = 6;
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceLocalTileY = 29;
     testRuntime.rendererTelemetry.residentActiveLiquidChunks = 3;
+    testRuntime.rendererTelemetry.residentSleepingLiquidChunks = 2;
     testRuntime.rendererTelemetry.residentActiveLiquidMinChunkX = -1;
     testRuntime.rendererTelemetry.residentActiveLiquidMinChunkY = -2;
     testRuntime.rendererTelemetry.residentActiveLiquidMaxChunkX = 2;
@@ -4443,6 +4451,7 @@ describe('main.ts shell state orchestration', () => {
       y: -3
     });
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidChunks).toBe(3);
+    expect(testRuntime.latestDebugEditStatusStripState.residentSleepingLiquidChunks).toBe(2);
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMinChunkX).toBe(-1);
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMinChunkY).toBe(-2);
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMaxChunkX).toBe(2);
@@ -4477,6 +4486,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightSourceChunk).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightSourceLocalTile).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidChunks).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.residentSleepingLiquidChunks).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMinChunkX).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMinChunkY).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMaxChunkX).toBeNull();

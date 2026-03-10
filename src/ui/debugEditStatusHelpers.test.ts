@@ -486,7 +486,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('formats resident active-liquid chunk counts and bounds for the compact strip when provided', () => {
+  it('formats awake and sleeping liquid chunk counts plus awake bounds for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -495,6 +495,7 @@ describe('buildDebugEditStatusStripModel', () => {
       pinnedTile: null,
       desktopInspectPinArmed: false,
       residentActiveLiquidChunks: 4,
+      residentSleepingLiquidChunks: 2,
       residentActiveLiquidMinChunkX: -2,
       residentActiveLiquidMinChunkY: -1,
       residentActiveLiquidMaxChunkX: 3,
@@ -502,7 +503,7 @@ describe('buildDebugEditStatusStripModel', () => {
       preview: createEmptyPreviewState()
     });
 
-    expect(model.playerText).toBe('LiquidActiveNow: 4 | bounds:-2,-1..3,5');
+    expect(model.playerText).toBe('LiquidChunksNow: awake:4 | sleeping:2 | bounds:-2,-1..3,5');
     expect(model.eventText).toBeNull();
   });
 
@@ -518,7 +519,7 @@ describe('buildDebugEditStatusStripModel', () => {
       preview: createEmptyPreviewState()
     });
 
-    expect(model.playerText).toBe('LiquidActiveNow: 0 | bounds:none');
+    expect(model.playerText).toBe('LiquidChunksNow: awake:0 | sleeping:0 | bounds:none');
     expect(model.eventText).toBeNull();
   });
 
@@ -1090,6 +1091,7 @@ describe('buildDebugEditStatusStripModel', () => {
       desktopInspectPinArmed: false,
       playerPlaceholderPoseLabel: 'grounded-idle',
       residentActiveLiquidChunks: 2,
+      residentSleepingLiquidChunks: 1,
       residentActiveLiquidMinChunkX: -1,
       residentActiveLiquidMinChunkY: 0,
       residentActiveLiquidMaxChunkX: 1,
@@ -1097,7 +1099,9 @@ describe('buildDebugEditStatusStripModel', () => {
       preview: createEmptyPreviewState()
     });
 
-    expect(model.playerText).toBe('Pose: grounded-idle\nLiquidActiveNow: 2 | bounds:-1,0..1,0');
+    expect(model.playerText).toBe(
+      'Pose: grounded-idle\nLiquidChunksNow: awake:2 | sleeping:1 | bounds:-1,0..1,0'
+    );
     expect(model.eventText).toBeNull();
   });
 

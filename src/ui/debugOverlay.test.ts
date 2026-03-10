@@ -26,6 +26,7 @@ const baseStats: DebugOverlayStats = {
   cachedChunkMeshes: 18,
   residentDirtyLightChunks: 20,
   residentActiveLiquidChunks: 0,
+  residentSleepingLiquidChunks: 0,
   residentActiveLiquidMinChunkX: null,
   residentActiveLiquidMinChunkY: null,
   residentActiveLiquidMaxChunkX: null,
@@ -65,7 +66,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nAnimMesh: chunks:0 | quads:0 | nonLiquid:0 | liquid:0');
     expect(text).toContain('\nAnimUV: uploads:0 | quads:0 | nonLiquid:0 | liquid:0 | bytes:0');
     expect(text).toContain(
-      '\nLiquidStep: active:0 | bounds:none | downChunks:0 | sideChunks:0 | sidePairs:0 | downTransfers:0 | sideTransfers:0'
+      '\nLiquidStep: awake:0 | sleeping:0 | bounds:none | downChunks:0 | sideChunks:0 | sidePairs:0 | downTransfers:0 | sideTransfers:0'
     );
     expect(text).toContain('LightDirty: 20');
     expect(text).toContain('Draws: 4/256 (OK)');
@@ -78,6 +79,7 @@ describe('formatDebugOverlayText', () => {
       {
         ...baseStats,
         residentActiveLiquidChunks: 3,
+        residentSleepingLiquidChunks: 2,
         residentActiveLiquidMinChunkX: -1,
         residentActiveLiquidMinChunkY: -2,
         residentActiveLiquidMaxChunkX: 4,
@@ -92,7 +94,7 @@ describe('formatDebugOverlayText', () => {
     );
 
     expect(text).toContain(
-      '\nLiquidStep: active:3 | bounds:-1,-2..4,5 | downChunks:80 | sideChunks:82 | sidePairs:40960 | downTransfers:2 | sideTransfers:3'
+      '\nLiquidStep: awake:3 | sleeping:2 | bounds:-1,-2..4,5 | downChunks:80 | sideChunks:82 | sidePairs:40960 | downTransfers:2 | sideTransfers:3'
     );
   });
 

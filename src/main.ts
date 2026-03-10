@@ -3043,6 +3043,8 @@ const bootstrap = async (): Promise<void> => {
       playerCameraZoom: debugStatusStripPlayerTelemetry.playerCameraZoom,
       residentDirtyLightChunks: debugOverlayVisible ? null : renderer.telemetry.residentDirtyLightChunks,
       residentActiveLiquidChunks: debugOverlayVisible ? null : renderer.telemetry.residentActiveLiquidChunks,
+      residentSleepingLiquidChunks:
+        debugOverlayVisible ? null : renderer.telemetry.residentSleepingLiquidChunks,
       residentActiveLiquidMinChunkX:
         debugOverlayVisible ? null : renderer.telemetry.residentActiveLiquidMinChunkX,
       residentActiveLiquidMinChunkY:
