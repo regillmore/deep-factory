@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Per-client replication diagnostics should accumulate totals separately from the latest processed tick
+
+- Decision: `src/network/replicationDiagnostics.ts` now keeps running chunk and entity `dropped`, `trimmed`, `applied`, and `skipped` totals under `totals` while storing only the latest processed fixed-step tick under separate `lastProcessed` metadata.
+- Reason: Long-lived transport diagnostics need cumulative status counters across many dispatch batches, but operators still need to know which tick those totals were last updated from without resetting or overloading the counters themselves.
+- Consequence: Future transport diagnostics should add new per-client batches through this accumulator and keep later metadata additions beside `lastProcessed` rather than embedding batch-boundary state into the running totals.
+
 ### 2026-03-10: Transport baseline summaries should keep baseline tick metadata but collapse raw entity ids to counts
 
 - Decision: `src/network/replicationBaselineSummary.ts` now reduces `applyAuthoritativeReplicatedStateBaseline()` results into `baseline.tick`, `baseline.entityCount`, and `entities.spawned`, `entities.updated`, and `entities.removed` counts instead of preserving the raw spawned, updated, and removed entity-id arrays in downstream diagnostics.

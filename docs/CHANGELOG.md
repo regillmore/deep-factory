@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Task: Add a per-client authoritative replication diagnostics accumulator.
+- Changes: Added [src/network/replicationDiagnostics.ts](../src/network/replicationDiagnostics.ts) so transport code can accumulate [src/network/replicationDispatchSummary.ts](../src/network/replicationDispatchSummary.ts) results into running chunk and entity status totals while preserving separate `lastProcessed.tick` metadata, added focused coverage in [src/network/replicationDiagnostics.test.ts](../src/network/replicationDiagnostics.test.ts), removed completed task `420` from [docs/NEXT.md](docs/NEXT.md), added replacement task `424`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/network/replicationDiagnostics.test.ts src/network/replicationDispatchSummary.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Follow-up: Sync main runtime shell-state expectations with first-launch card metadata.
 - Changes: Updated [src/main.test.ts](../src/main.test.ts) so first-launch runtime expectations reuse the shared main-menu shell factory instead of duplicating stale card data after task `239`.
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
