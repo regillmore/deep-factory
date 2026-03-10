@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Task: Add an authoritative replication dispatch summary helper.
+- Changes: Added [src/network/replicationDispatchSummary.ts](../src/network/replicationDispatchSummary.ts) so per-message results from [src/network/replicationDispatch.ts](../src/network/replicationDispatch.ts) can be reduced into deterministic chunk and entity `dropped`/`trimmed`/`applied`/`skipped` counters for per-client transport diagnostics, added focused coverage in [src/network/replicationDispatchSummary.test.ts](../src/network/replicationDispatchSummary.test.ts), removed completed task `417` from [docs/NEXT.md](docs/NEXT.md), added replacement task `420`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/network/replicationDispatchSummary.test.ts src/network/replicationDispatch.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a transport-facing authoritative baseline apply helper.
 - Changes: Added [src/network/replicationBaseline.ts](../src/network/replicationBaseline.ts) so transport resync code can wrap one world replacement callback plus one entity-snapshot baseline through [AuthoritativeReplicatedNetworkStateReplayer.replaceAuthoritativeBaseline()](../src/network/stateReplay.ts) and receive the applied entity replacement summary, added focused coverage in [src/network/replicationBaseline.test.ts](../src/network/replicationBaseline.test.ts), removed completed task `416` from [docs/NEXT.md](docs/NEXT.md), added replacement task `419`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/network/replicationBaseline.test.ts src/network/stateReplay.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

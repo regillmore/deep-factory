@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-417. Add a deterministic authoritative replication dispatch summary helper that reduces task `414`'s per-message results into dropped/trimmed/skipped/applied chunk and entity counters for per-client transport diagnostics.
 418. Add an interest-scoped authoritative replication batch filter helper that maps task `415`'s staged chunk/entity batch through task `406`'s filter and returns only forwarded messages plus per-message drop/trim diagnostics for one client tick.
 419. Add a transport-facing authoritative baseline apply summary helper that reduces task `416`'s returned entity replacement ids into spawned/updated/removed counts plus baseline tick metadata for resync logs.
+420. Add a transport-facing per-client replication diagnostics accumulator that folds task `417`'s dispatch summaries into running chunk/entity status totals plus last-processed tick metadata.
 
 ## App shell
 

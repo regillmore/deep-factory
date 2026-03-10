@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Authoritative replication dispatch summaries should keep separate chunk and entity status buckets
+
+- Decision: `src/network/replicationDispatchSummary.ts` now reduces dispatch results into separate `chunks` and `entities` buckets with `dropped`, `trimmed`, `applied`, and `skipped` counters instead of flattening all authoritative replay outcomes into one total.
+- Reason: Per-client transport diagnostics need to distinguish terrain replication health from entity replication health, and the existing filter/replay result model already exposes those status dimensions independently.
+- Consequence: Future transport logging or running diagnostics should consume this shared summary helper and preserve separate chunk/entity status counters rather than merging dispatch outcomes into one aggregate figure.
+
 ### 2026-03-10: Transport resync baseline application should wrap one world callback plus one entity baseline in the replay replacement seam
 
 - Decision: `src/network/replicationBaseline.ts` now routes one caller-supplied world replacement callback plus one entity-snapshot baseline through `AuthoritativeReplicatedNetworkStateReplayer.replaceAuthoritativeBaseline()` and returns the applied entity replacement summary from inside that callback.
