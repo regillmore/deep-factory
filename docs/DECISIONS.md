@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Interest filtering should drop chunk deltas but preserve empty entity replacements
+
+- Decision: `src/network/snapshotFilter.ts` now returns `null` for chunk-tile-diff messages whose chunk lies outside the current client chunk interest, but always returns an entity-snapshot message for the current tick even when entity-id filtering removes every entry.
+- Reason: Chunk diffs are already isolated per chunk and can be skipped wholesale, while entity snapshots replace the entire local replicated entity set for one tick and still need an empty replacement to clear stale entities after client interest moves away.
+- Consequence: Future client replication should filter authoritative payloads through this helper before replay, drop uninterested chunk diffs outright, and avoid suppressing fully trimmed entity snapshots.
+
 ### 2026-03-10: Replay-guard resets clear tick memory without clearing replicated contents
 
 - Decision: `ReplicatedEntitySnapshotStore.resetReplayGuard()` and `AuthoritativeReplicatedNetworkStateReplayer.resetReplayGuards()` now clear only authoritative replay tick bookkeeping; they do not clear the current replicated entity set or any already-applied local world state.
