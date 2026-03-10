@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Enabled replication diagnostics holder callback refreshes should preserve the current due tick
+
+- Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now retains its current registry, interval, and logger callback configuration, and `refreshCallbacks(...)` reuses `getScheduleSnapshot()` to swap callbacks on enabled holders without changing the current `nextDueTick`.
+- Reason: Transport lifecycle code needs an ergonomic way to replace logger sinks after boot without forcing callers to track and resupply the holder's current schedule boundary.
+- Consequence: Future cadence-refresh and combined-refresh holder helpers should reuse the holder-owned configuration snapshot plus schedule snapshot instead of asking callers to thread unchanged cadence or callback settings back in manually.
+
 ### 2026-03-10: Replication diagnostics logger holder schedule snapshots should stay narrow
 
 - Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now exposes `getScheduleSnapshot()` as a narrow union that reports either `{ disabled: true, nextDueTick: null }` or `{ disabled: false, nextDueTick }` based on the holder-owned runner state.

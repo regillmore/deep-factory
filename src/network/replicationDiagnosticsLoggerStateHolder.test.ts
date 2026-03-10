@@ -15,6 +15,7 @@ import {
   accumulateAuthoritativeClientSendDiagnostics
 } from './replicationSendDiagnostics';
 import type { AuthoritativeClientReplicationDiagnosticsLineLogger } from './replicationDiagnosticsLineLogger';
+import type { AuthoritativeClientReplicationDiagnosticsPayloadLogger } from './replicationDiagnosticsPayloadLogger';
 import type { AuthoritativeClientReplicationDiagnosticsTextLogger } from './replicationDiagnosticsTextLogger';
 
 const createPopulatedSnapshot = (seed: number) =>
@@ -243,5 +244,124 @@ describe('AuthoritativeClientReplicationDiagnosticsLoggerStateHolder', () => {
         textLogger
       })
     ).toThrowError('intervalTicks must be greater than 0');
+  });
+
+  it('refreshes callbacks before the due tick without resetting the holder schedule', () => {
+    const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+    registry.setSnapshot('client-alpha', createPopulatedSnapshot(5));
+    const firstTextLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsTextLogger>();
+    const secondLineLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsLineLogger>();
+    const holder = createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+      registry,
+      intervalTicks: 10,
+      nextDueTick: 12,
+      textLogger: firstTextLogger
+    });
+
+    holder.refreshCallbacks({
+      lineLogger: secondLineLogger
+    });
+
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 12
+    });
+
+    holder.poll(11);
+    expect(firstTextLogger).not.toHaveBeenCalled();
+    expect(secondLineLogger).not.toHaveBeenCalled();
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 12
+    });
+
+    holder.poll(12);
+    expect(firstTextLogger).not.toHaveBeenCalled();
+    expect(secondLineLogger).toHaveBeenCalledTimes(1);
+    expect(secondLineLogger.mock.calls[0]![0][0]).toBe('ReplicationDiagnostics');
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 22
+    });
+  });
+
+  it('refreshes callbacks after an emission while preserving the next due tick', () => {
+    const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+    registry.setSnapshot('client-alpha', createPopulatedSnapshot(3));
+    const firstTextLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsTextLogger>();
+    const secondPayloadLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsPayloadLogger>();
+    const holder = createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+      registry,
+      intervalTicks: 5,
+      nextDueTick: 3,
+      textLogger: firstTextLogger
+    });
+
+    holder.poll(3);
+    expect(firstTextLogger).toHaveBeenCalledTimes(1);
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 8
+    });
+
+    holder.refreshCallbacks({
+      payloadLogger: secondPayloadLogger
+    });
+
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 8
+    });
+
+    holder.poll(7);
+    expect(secondPayloadLogger).not.toHaveBeenCalled();
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 8
+    });
+
+    holder.poll(8);
+    expect(firstTextLogger).toHaveBeenCalledTimes(1);
+    expect(secondPayloadLogger).toHaveBeenCalledTimes(1);
+    expect(secondPayloadLogger.mock.calls[0]![0].aggregate.clientCount).toBe(1);
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 13
+    });
+  });
+
+  it('rejects callback refresh when the holder is disabled or no new callbacks were configured', () => {
+    const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+    const textLogger = vi.fn<AuthoritativeClientReplicationDiagnosticsTextLogger>();
+    const holder = createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+      registry,
+      intervalTicks: 0,
+      nextDueTick: -1
+    });
+
+    expect(() =>
+      holder.refreshCallbacks({
+        textLogger
+      })
+    ).toThrowError(
+      'cannot refresh replication diagnostics logger callbacks while logging is disabled'
+    );
+
+    holder.reconfigure({
+      registry,
+      intervalTicks: 6,
+      nextDueTick: 4,
+      textLogger
+    });
+
+    expect(() =>
+      holder.refreshCallbacks({})
+    ).toThrowError(
+      'callback refresh requires at least one replication diagnostics logger callback'
+    );
+    expect(holder.getScheduleSnapshot()).toEqual({
+      disabled: false,
+      nextDueTick: 4
+    });
   });
 });

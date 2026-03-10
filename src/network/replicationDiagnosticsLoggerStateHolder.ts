@@ -10,6 +10,15 @@ export interface CreateAuthoritativeClientReplicationDiagnosticsLoggerStateHolde
 export interface ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerStateHolderOptions
   extends ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerOptions {}
 
+export interface RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHolderCallbacksOptions {
+  textLogger?:
+    ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerOptions['textLogger'];
+  lineLogger?:
+    ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerOptions['lineLogger'];
+  payloadLogger?:
+    ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerOptions['payloadLogger'];
+}
+
 export interface DisabledAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot {
   disabled: true;
   nextDueTick: null;
@@ -24,6 +33,11 @@ export type AuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot =
   | DisabledAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot
   | EnabledAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot;
 
+type AuthoritativeClientReplicationDiagnosticsLoggerStateHolderConfiguration = Omit<
+  ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerStateHolderOptions,
+  'nextDueTick'
+>;
+
 const createAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot = (
   reconfiguration: AuthoritativeClientReplicationDiagnosticsLoggerReconfiguration
 ): AuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot =>
@@ -37,7 +51,29 @@ const createAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot = (
         nextDueTick: reconfiguration.loggerRunner.getNextDueTick()
       };
 
+const createAuthoritativeClientReplicationDiagnosticsLoggerStateHolderConfiguration = ({
+  registry,
+  intervalTicks,
+  textLogger,
+  lineLogger,
+  payloadLogger
+}: AuthoritativeClientReplicationDiagnosticsLoggerStateHolderConfiguration): AuthoritativeClientReplicationDiagnosticsLoggerStateHolderConfiguration => ({
+  registry,
+  intervalTicks,
+  textLogger,
+  lineLogger,
+  payloadLogger
+});
+
+const hasConfiguredAuthoritativeClientReplicationDiagnosticsLoggerCallback = ({
+  textLogger,
+  lineLogger,
+  payloadLogger
+}: RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHolderCallbacksOptions): boolean =>
+  textLogger !== undefined || lineLogger !== undefined || payloadLogger !== undefined;
+
 export class AuthoritativeClientReplicationDiagnosticsLoggerStateHolder {
+  private currentConfiguration!: AuthoritativeClientReplicationDiagnosticsLoggerStateHolderConfiguration;
   private currentReconfiguration: AuthoritativeClientReplicationDiagnosticsLoggerReconfiguration =
     {
       loggerRunner: null,
@@ -72,6 +108,39 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerStateHolder {
     );
   }
 
+  refreshCallbacks({
+    textLogger,
+    lineLogger,
+    payloadLogger
+  }: RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHolderCallbacksOptions): void {
+    if (
+      !hasConfiguredAuthoritativeClientReplicationDiagnosticsLoggerCallback({
+        textLogger,
+        lineLogger,
+        payloadLogger
+      })
+    ) {
+      throw new Error(
+        'callback refresh requires at least one replication diagnostics logger callback'
+      );
+    }
+
+    const scheduleSnapshot = this.getScheduleSnapshot();
+    if (scheduleSnapshot.disabled) {
+      throw new Error(
+        'cannot refresh replication diagnostics logger callbacks while logging is disabled'
+      );
+    }
+
+    this.reconfigure({
+      ...this.currentConfiguration,
+      nextDueTick: scheduleSnapshot.nextDueTick,
+      textLogger,
+      lineLogger,
+      payloadLogger
+    });
+  }
+
   reconfigure({
     registry,
     intervalTicks,
@@ -80,7 +149,15 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerStateHolder {
     lineLogger,
     payloadLogger
   }: ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerStateHolderOptions): void {
-    this.currentReconfiguration =
+    const nextConfiguration =
+      createAuthoritativeClientReplicationDiagnosticsLoggerStateHolderConfiguration({
+        registry,
+        intervalTicks,
+        textLogger,
+        lineLogger,
+        payloadLogger
+      });
+    const nextReconfiguration =
       reconfigureAuthoritativeClientReplicationDiagnosticsLogger({
         registry,
         intervalTicks,
@@ -89,6 +166,9 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerStateHolder {
         lineLogger,
         payloadLogger
       });
+
+    this.currentConfiguration = nextConfiguration;
+    this.currentReconfiguration = nextReconfiguration;
   }
 }
 
