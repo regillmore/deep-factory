@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Transport baseline summaries should keep baseline tick metadata but collapse raw entity ids to counts
+
+- Decision: `src/network/replicationBaselineSummary.ts` now reduces `applyAuthoritativeReplicatedStateBaseline()` results into `baseline.tick`, `baseline.entityCount`, and `entities.spawned`, `entities.updated`, and `entities.removed` counts instead of preserving the raw spawned, updated, and removed entity-id arrays in downstream diagnostics.
+- Reason: Transport resync logs and future diagnostic accumulators need concise applied-baseline metadata, while carrying full replacement id arrays past the baseline apply result adds noise without helping the common logging path.
+- Consequence: Future transport resync diagnostics should consume this shared summary helper for log-ready baseline outcomes and keep the raw replacement ids only when a workflow explicitly needs per-entity detail.
+
 ### 2026-03-10: Authoritative replication dispatch summaries should keep separate chunk and entity status buckets
 
 - Decision: `src/network/replicationDispatchSummary.ts` now reduces dispatch results into separate `chunks` and `entities` buckets with `dropped`, `trimmed`, `applied`, and `skipped` counters instead of flattening all authoritative replay outcomes into one total.
