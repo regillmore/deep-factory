@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Per-client transport diagnostics need to distinguish terrain replication health from entity replication health, and the existing filter/replay result model already exposes those status dimensions independently.
 - Consequence: Future transport logging or running diagnostics should consume this shared summary helper and preserve separate chunk/entity status counters rather than merging dispatch outcomes into one aggregate figure.
 
+### 2026-03-10: Transport-side authoritative batch filtering should separate forwarded payloads from filter diagnostics
+
+- Decision: `src/network/replicationBatchFilter.ts` now maps staged authoritative chunk/entity batches through the existing interest filter, returns only the forwarded messages that should be sent to one client, and reports per-message `dropped`/`kept`/`trimmed` diagnostics beside that filtered batch.
+- Reason: Authoritative transport code needs to send only client-relevant payloads while still logging or summarizing which staged messages were culled or trimmed, and reconstructing that from the forwarded payload alone would lose dropped-chunk information.
+- Consequence: Future authoritative send loops should filter staged per-tick batches through this helper and consume its diagnostics directly instead of mutating staged arrays in place or inferring filter outcomes after the fact.
+
 ### 2026-03-10: Transport resync baseline application should wrap one world callback plus one entity baseline in the replay replacement seam
 
 - Decision: `src/network/replicationBaseline.ts` now routes one caller-supplied world replacement callback plus one entity-snapshot baseline through `AuthoritativeReplicatedNetworkStateReplayer.replaceAuthoritativeBaseline()` and returns the applied entity replacement summary from inside that callback.

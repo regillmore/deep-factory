@@ -4,6 +4,12 @@ import {
 } from './protocol';
 import type { ChunkTileDiffMessage, EntitySnapshotMessage } from './protocol';
 import {
+  AUTHORITATIVE_REPLICATION_FILTER_STATUS_DROPPED,
+  AUTHORITATIVE_REPLICATION_FILTER_STATUS_KEPT,
+  AUTHORITATIVE_REPLICATION_FILTER_STATUS_TRIMMED,
+  type AuthoritativeReplicationFilterStatus
+} from './replicationBatchFilter';
+import {
   filterChunkTileDiffMessageByInterestSet,
   filterEntitySnapshotMessageByInterestSet,
   type ClientInterestMessageFilterInterestSet,
@@ -15,16 +21,15 @@ import type {
   AuthoritativeEntitySnapshotReplayResult
 } from './stateReplay';
 
-export const AUTHORITATIVE_REPLICATION_FILTER_STATUS_DROPPED = 'dropped' as const;
-export const AUTHORITATIVE_REPLICATION_FILTER_STATUS_KEPT = 'kept' as const;
-export const AUTHORITATIVE_REPLICATION_FILTER_STATUS_TRIMMED = 'trimmed' as const;
 export const AUTHORITATIVE_REPLICATION_REPLAY_STATUS_APPLIED = 'applied' as const;
 export const AUTHORITATIVE_REPLICATION_REPLAY_STATUS_SKIPPED = 'skipped' as const;
+export {
+  AUTHORITATIVE_REPLICATION_FILTER_STATUS_DROPPED,
+  AUTHORITATIVE_REPLICATION_FILTER_STATUS_KEPT,
+  AUTHORITATIVE_REPLICATION_FILTER_STATUS_TRIMMED
+} from './replicationBatchFilter';
 
-export type AuthoritativeReplicationDispatchFilterStatus =
-  | typeof AUTHORITATIVE_REPLICATION_FILTER_STATUS_DROPPED
-  | typeof AUTHORITATIVE_REPLICATION_FILTER_STATUS_KEPT
-  | typeof AUTHORITATIVE_REPLICATION_FILTER_STATUS_TRIMMED;
+export type AuthoritativeReplicationDispatchFilterStatus = AuthoritativeReplicationFilterStatus;
 
 export type AuthoritativeReplicationDispatchReplayStatus =
   | typeof AUTHORITATIVE_REPLICATION_REPLAY_STATUS_APPLIED
