@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Per-client replication diagnostics log sections should be reusable as labeled line arrays
+
+- Decision: `src/network/replicationDiagnosticsLogLineFormatting.ts` now exposes a transport-facing helper that formats one ordered client diagnostics entry into the same fixed replay, send, and resync labeled lines plus explicit `n/a` metadata placeholders used by the integrated text formatter.
+- Reason: Alternative transport sinks may need to reuse per-client diagnostics sections without coupling themselves to the full multi-client string formatter or rebuilding the same label ordering and placeholder rules.
+- Consequence: Future per-client diagnostics sinks should consume this helper for client sections and preserve its current line order plus `n/a` placeholder convention instead of hand-formatting client snapshots again.
+
 ### 2026-03-10: Periodic replication diagnostics emissions should snapshot once and schedule from the emitted tick
 
 - Decision: `src/network/replicationDiagnosticsLogEmission.ts` now snapshots the per-client diagnostics registry once per emission, builds and formats the log from that frozen snapshot, and returns `nextDueTick` as `tick + intervalTicks`.
