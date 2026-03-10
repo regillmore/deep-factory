@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Replication diagnostics fan-out sinks should clone each downstream emission
+
+- Decision: `src/network/replicationDiagnosticsFanOutSink.ts` now forwards one due diagnostics emission to multiple sink callbacks in declaration order while cloning the emission, including `logLines`, for each downstream sink.
+- Reason: Text and line logger adapters need to share one cadence emission without one sink's mutation of its received line array leaking into the next sink or forcing every caller to reimplement ordered fan-out.
+- Consequence: Future mixed diagnostics logger wiring should compose multiple sinks through this helper, should rely on declaration order for side effects, and should treat each sink callback as receiving its own isolated emission copy.
+
 ### 2026-03-10: Line-array replication diagnostics loggers should consume detached emitted lines through a sink adapter
 
 - Decision: `src/network/replicationDiagnosticsLineLogger.ts` now adapts one injected `(logLines) => void` callback into an `AuthoritativeClientReplicationDiagnosticsLogSinkCallback` by forwarding only `emission.logLines`.

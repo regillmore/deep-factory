@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-10
 
+- Task: Add a replication diagnostics fan-out sink helper.
+- Changes: Added [src/network/replicationDiagnosticsFanOutSink.ts](../src/network/replicationDiagnosticsFanOutSink.ts) so transport code can forward one due diagnostics emission to multiple sink callbacks in declaration order while isolating per-sink `logLines` mutation, added focused coverage in [src/network/replicationDiagnosticsFanOutSink.test.ts](../src/network/replicationDiagnosticsFanOutSink.test.ts), removed completed task `442` from [docs/NEXT.md](docs/NEXT.md), added replacement task `445`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/network/replicationDiagnosticsFanOutSink.test.ts src/network/replicationDiagnosticsTextLogger.test.ts src/network/replicationDiagnosticsLineLogger.test.ts src/network/replicationDiagnosticsLogSink.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a replication diagnostics line logger helper.
 - Changes: Added [src/network/replicationDiagnosticsLineLogger.ts](../src/network/replicationDiagnosticsLineLogger.ts) so transport code can adapt one detached-line logger into [src/network/replicationDiagnosticsLogSink.ts](../src/network/replicationDiagnosticsLogSink.ts)'s due-only sink contract without splitting joined text, added focused coverage in [src/network/replicationDiagnosticsLineLogger.test.ts](../src/network/replicationDiagnosticsLineLogger.test.ts), removed completed task `441` from [docs/NEXT.md](docs/NEXT.md), added replacement task `444`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/network/replicationDiagnosticsLineLogger.test.ts src/network/replicationDiagnosticsLogSink.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
