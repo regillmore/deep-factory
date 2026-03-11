@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-485. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder presence-change summary helper after task `484` that compares detached holder-presence snapshots into stable changed flags, with restore-holder-presence-change regressions.
 486. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder presence-change line formatter after task `485` that renders detached holder-presence diffs into deterministic restore-wiring lifecycle lines, with restore-holder-presence-line regressions.
 487. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder presence-change text formatter after task `486` that joins detached restore-wiring lifecycle lines into deterministic console text, with restore-holder-presence-text regressions.
+488. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder presence-change text logger helper after task `487` that forwards deterministic restore-wiring lifecycle text to one injected callback, with restore-holder-presence-text-logger regressions.
 
 ## App shell
 

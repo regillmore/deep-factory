@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore callback holder presence diffs should compare detached install-state snapshots
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeSummary.ts` now summarizes previous-versus-next detached `{ hasRestoreCallback }` snapshots into `changed` and `hasRestoreCallbackChanged` flags.
+- Reason: Upcoming restore-wiring lifecycle formatters need one stable diff seam that keys off detached holder presence state, and enabled-to-enabled logger refreshes should not be mistaken for restore-wiring churn.
+- Consequence: Future restore-holder presence line or text formatters should consume this summary helper instead of comparing holder internals, callback identity, or restore-lifecycle logger sets directly.
+
 ### 2026-03-11: Replication diagnostics restore callback presence snapshots should decide install state while filtering extra lifecycle loggers
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder.ts` now exposes `reconfigureFromPresenceSnapshot(...)`, and the transport-facing presence reconfigure helper resolves detached `{ hasRestoreCallback }` flags into either enabled restore wiring with supplied restore-lifecycle loggers or a disabled restore seam that clears any previously installed restore-lifecycle loggers.
