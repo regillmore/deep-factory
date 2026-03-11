@@ -146,10 +146,16 @@ export type PausedMainMenuShellProfilePreviewClearResult =
   | PausedMainMenuClearedShellProfilePreviewClearResult
   | PausedMainMenuFailedShellProfilePreviewClearResult;
 
+export type PausedMainMenuShellProfileApplyChangeCategory =
+  | 'none'
+  | 'toggle-only'
+  | 'hotkey-only'
+  | 'mixed';
+
 export interface PausedMainMenuAppliedShellProfileImportResult {
   status: 'applied';
   fileName: string | null;
-  changed: boolean;
+  changeCategory: PausedMainMenuShellProfileApplyChangeCategory;
 }
 
 export interface PausedMainMenuPreviewedShellProfileImportResult {
@@ -161,7 +167,7 @@ export interface PausedMainMenuPersistenceFailedShellProfileImportResult {
   status: 'persistence-failed';
   fileName: string | null;
   reason: string;
-  changed: boolean;
+  changeCategory: PausedMainMenuShellProfileApplyChangeCategory;
 }
 
 export interface PausedMainMenuRejectedShellProfileImportResult {
@@ -1162,49 +1168,68 @@ export const resolvePausedMainMenuClearShellProfilePreviewTitle = (): string =>
 export const resolvePausedMainMenuExportShellProfileTitle = (): string =>
   'Download a JSON shell-profile copy of the current shell visibility toggles and shell hotkeys without changing the paused session';
 
+const resolvePausedMainMenuShellProfileApplyResultSubject = (fileName: string): string =>
+  fileName === 'Unknown file' ? 'Shell profile' : `Shell profile from ${fileName}`;
+
+const resolvePausedMainMenuShellProfileApplySuccessText = (
+  fileName: string,
+  changeCategory: PausedMainMenuShellProfileApplyChangeCategory
+): string => {
+  const subject = resolvePausedMainMenuShellProfileApplyResultSubject(fileName);
+  switch (changeCategory) {
+    case 'none':
+      return `${subject} already matched the paused session, so no shell toggles or hotkeys changed.`;
+    case 'toggle-only':
+      return `${subject} applied to the paused session with shell visibility toggle changes only.`;
+    case 'hotkey-only':
+      return `${subject} applied to the paused session with shell hotkey changes only.`;
+    case 'mixed':
+      return `${subject} applied to the paused session with both shell visibility toggle and hotkey changes.`;
+  }
+};
+
+const resolvePausedMainMenuShellProfileApplyPersistenceFailedText = (
+  fileName: string,
+  changeCategory: PausedMainMenuShellProfileApplyChangeCategory,
+  reason: string
+): string => {
+  const subject = resolvePausedMainMenuShellProfileApplyResultSubject(fileName);
+  switch (changeCategory) {
+    case 'none':
+      return `${subject} already matched this paused session, so no shell toggles or hotkeys changed, but browser storage still was not updated: ${reason}`;
+    case 'toggle-only':
+      return `${subject} applied for this paused session only with shell visibility toggle changes: ${reason}`;
+    case 'hotkey-only':
+      return `${subject} applied for this paused session only with shell hotkey changes: ${reason}`;
+    case 'mixed':
+      return `${subject} applied for this paused session only with both shell visibility toggle and hotkey changes: ${reason}`;
+  }
+};
+
 export const resolvePausedMainMenuApplyShellProfileEditorStatus = (
   importResult: PausedMainMenuShellProfileImportResult
 ): { tone: 'accent' | 'warning'; text: string } => {
   switch (importResult.status) {
     case 'applied': {
       const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
-      if (!importResult.changed) {
-        return {
-          tone: 'accent',
-          text:
-            fileName === 'Unknown file'
-              ? 'Shell profile already matched the paused session, so no shell toggles or hotkeys changed.'
-              : `Shell profile from ${fileName} already matched the paused session, so no shell toggles or hotkeys changed.`
-        };
-      }
-
       return {
         tone: 'accent',
-        text:
-          fileName === 'Unknown file'
-            ? 'Shell profile applied to the paused session.'
-            : `Shell profile applied from ${fileName}.`
+        text: resolvePausedMainMenuShellProfileApplySuccessText(
+          fileName,
+          importResult.changeCategory
+        )
       };
     }
     case 'persistence-failed': {
       const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
       const reason = resolvePausedMainMenuResultReasonValue(importResult.reason);
-      if (!importResult.changed) {
-        return {
-          tone: 'warning',
-          text:
-            fileName === 'Unknown file'
-              ? `Shell profile already matched this paused session, so no shell toggles or hotkeys changed, but browser storage still was not updated: ${reason}`
-              : `Shell profile from ${fileName} already matched this paused session, so no shell toggles or hotkeys changed, but browser storage still was not updated: ${reason}`
-        };
-      }
-
       return {
         tone: 'warning',
-        text:
-          fileName === 'Unknown file'
-            ? `Shell profile applied for this paused session only: ${reason}`
-            : `Shell profile from ${fileName} applied for this paused session only: ${reason}`
+        text: resolvePausedMainMenuShellProfileApplyPersistenceFailedText(
+          fileName,
+          importResult.changeCategory,
+          reason
+        )
       };
     }
     case 'failed':

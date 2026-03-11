@@ -88,6 +88,7 @@ import {
   type PausedMainMenuImportResult,
   type PausedMainMenuResetShellTogglesResult,
   type PausedMainMenuShellProfilePreviewClearResult,
+  type PausedMainMenuShellProfileApplyChangeCategory,
   type PausedMainMenuShellProfileExportResult,
   type PausedMainMenuShellProfileImportResult,
   type PausedMainMenuShellProfilePreview,
@@ -1249,6 +1250,22 @@ const bootstrap = async (): Promise<void> => {
 
     return 'Browser shell storage is unavailable.';
   };
+  const resolvePausedMainMenuShellProfileApplyChangeCategory = (
+    shellStateChanged: boolean,
+    shellActionKeybindingsChanged: boolean
+  ): PausedMainMenuShellProfileApplyChangeCategory => {
+    if (shellStateChanged && shellActionKeybindingsChanged) {
+      return 'mixed';
+    }
+    if (shellStateChanged) {
+      return 'toggle-only';
+    }
+    if (shellActionKeybindingsChanged) {
+      return 'hotkey-only';
+    }
+
+    return 'none';
+  };
   const applyImportedPausedMainMenuShellProfile = (
     envelope: WorldSessionShellProfileEnvelope
   ): PausedMainMenuShellProfileImportResult => {
@@ -1258,7 +1275,10 @@ const bootstrap = async (): Promise<void> => {
     const shellActionKeybindingsChanged = IN_WORLD_SHELL_ACTION_KEYBINDING_IDS.some(
       (actionType) => shellActionKeybindings[actionType] !== envelope.shellActionKeybindings[actionType]
     );
-    const changed = shellStateChanged || shellActionKeybindingsChanged;
+    const changeCategory = resolvePausedMainMenuShellProfileApplyChangeCategory(
+      shellStateChanged,
+      shellActionKeybindingsChanged
+    );
 
     if (shellStateChanged) {
       applyWorldSessionShellState(envelope.shellState);
@@ -1282,14 +1302,14 @@ const bootstrap = async (): Promise<void> => {
       return {
         status: 'applied',
         fileName: null,
-        changed
+        changeCategory
       };
     }
 
     return {
       status: 'persistence-failed',
       fileName: null,
-      changed,
+      changeCategory,
       reason: resolveShellProfileImportPersistenceFailureReason(
         shellStatePersisted,
         shellActionKeybindingsPersisted
@@ -1313,7 +1333,7 @@ const bootstrap = async (): Promise<void> => {
       return {
         status: 'persistence-failed',
         fileName: preview.fileName,
-        changed: importResult.changed,
+        changeCategory: importResult.changeCategory,
         reason: importResult.reason
       };
     }
@@ -1321,7 +1341,7 @@ const bootstrap = async (): Promise<void> => {
       return {
         status: 'applied',
         fileName: preview.fileName,
-        changed: importResult.changed
+        changeCategory: importResult.changeCategory
       };
     }
 

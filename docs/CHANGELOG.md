@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-11
 
+- Task: Add paused-menu `Apply Shell Profile` change-category result copy.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/main.ts](../src/main.ts) so paused-menu shell-profile applies now return explicit `none`, `toggle-only`, `hotkey-only`, or `mixed` categories and surface matching result copy for both browser-saved and current-tab-only apply outcomes; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused change-category regressions, removed completed task `436` from [docs/NEXT.md](docs/NEXT.md), added replacement task `437`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts`, `cmd /c npx vitest run src/main.test.ts`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu `Apply Shell Profile` no-op result copy.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/main.ts](../src/main.ts) so paused-menu shell-profile applies now report whether a preview changed live shell toggles or hotkeys or already matched the paused session, while still surfacing current-tab-only persistence failures separately; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with no-op apply regressions, removed completed task `435` from [docs/NEXT.md](docs/NEXT.md), added replacement task `436`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

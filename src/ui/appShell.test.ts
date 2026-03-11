@@ -2284,7 +2284,7 @@ describe('resolvePausedMainMenuApplyShellProfileEditorStatus', () => {
       resolvePausedMainMenuApplyShellProfileEditorStatus({
         status: 'applied',
         fileName: 'matching-shell-profile.json',
-        changed: false
+        changeCategory: 'none'
       })
     ).toEqual({
       tone: 'accent',
@@ -2293,12 +2293,41 @@ describe('resolvePausedMainMenuApplyShellProfileEditorStatus', () => {
     });
   });
 
+  it.each([
+    [
+      'toggle-only',
+      'Shell profile from matching-shell-profile.json applied to the paused session with shell visibility toggle changes only.'
+    ],
+    [
+      'hotkey-only',
+      'Shell profile from matching-shell-profile.json applied to the paused session with shell hotkey changes only.'
+    ],
+    [
+      'mixed',
+      'Shell profile from matching-shell-profile.json applied to the paused session with both shell visibility toggle and hotkey changes.'
+    ]
+  ] as const)(
+    'distinguishes %s live changes in applied shell-profile result copy',
+    (changeCategory, text) => {
+      expect(
+        resolvePausedMainMenuApplyShellProfileEditorStatus({
+          status: 'applied',
+          fileName: 'matching-shell-profile.json',
+          changeCategory
+        })
+      ).toEqual({
+        tone: 'accent',
+        text
+      });
+    }
+  );
+
   it('keeps persistence-failure copy explicit when a no-op apply still could not rewrite browser storage', () => {
     expect(
       resolvePausedMainMenuApplyShellProfileEditorStatus({
         status: 'persistence-failed',
         fileName: 'matching-shell-profile.json',
-        changed: false,
+        changeCategory: 'none',
         reason: 'Browser shell visibility preferences and hotkeys were not updated.'
       })
     ).toEqual({
@@ -2307,6 +2336,36 @@ describe('resolvePausedMainMenuApplyShellProfileEditorStatus', () => {
         'Shell profile from matching-shell-profile.json already matched this paused session, so no shell toggles or hotkeys changed, but browser storage still was not updated: Browser shell visibility preferences and hotkeys were not updated.'
     });
   });
+
+  it.each([
+    [
+      'toggle-only',
+      'Shell profile from matching-shell-profile.json applied for this paused session only with shell visibility toggle changes: Browser shell visibility preferences and hotkeys were not updated.'
+    ],
+    [
+      'hotkey-only',
+      'Shell profile from matching-shell-profile.json applied for this paused session only with shell hotkey changes: Browser shell visibility preferences and hotkeys were not updated.'
+    ],
+    [
+      'mixed',
+      'Shell profile from matching-shell-profile.json applied for this paused session only with both shell visibility toggle and hotkey changes: Browser shell visibility preferences and hotkeys were not updated.'
+    ]
+  ] as const)(
+    'distinguishes %s live changes in session-only shell-profile apply copy',
+    (changeCategory, text) => {
+      expect(
+        resolvePausedMainMenuApplyShellProfileEditorStatus({
+          status: 'persistence-failed',
+          fileName: 'matching-shell-profile.json',
+          changeCategory,
+          reason: 'Browser shell visibility preferences and hotkeys were not updated.'
+        })
+      ).toEqual({
+        tone: 'warning',
+        text
+      });
+    }
+  );
 });
 
 describe('resolvePausedMainMenuClearShellProfilePreviewTitle', () => {
