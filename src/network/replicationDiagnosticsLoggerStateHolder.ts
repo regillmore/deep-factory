@@ -3,6 +3,9 @@ import {
   type AuthoritativeClientReplicationDiagnosticsLoggerReconfiguration,
   type ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerOptions
 } from './replicationDiagnosticsLoggerReconfiguration';
+import {
+  validateAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotCallbacks
+} from './replicationDiagnosticsLoggerConfigurationSnapshotCallbackValidation';
 
 export interface CreateAuthoritativeClientReplicationDiagnosticsLoggerStateHolderOptions
   extends ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerOptions {}
@@ -185,51 +188,6 @@ const hasEnabledAuthoritativeClientReplicationDiagnosticsLoggerCallbackInConfigu
 }: AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshot): boolean =>
   callbacks.hasTextLogger || callbacks.hasLineLogger || callbacks.hasPayloadLogger;
 
-const resolveAuthoritativeClientReplicationDiagnosticsLoggerCallbacksFromConfigurationSnapshot = ({
-  configurationSnapshot,
-  textLogger,
-  lineLogger,
-  payloadLogger
-}: ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerStateHolderFromConfigurationSnapshotOptions): RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHolderCallbacksOptions => {
-  if (
-    configurationSnapshot.callbacks.hasTextLogger &&
-    textLogger === undefined
-  ) {
-    throw new Error(
-      'configuration snapshot requires a text replication diagnostics logger callback'
-    );
-  }
-
-  if (
-    configurationSnapshot.callbacks.hasLineLogger &&
-    lineLogger === undefined
-  ) {
-    throw new Error(
-      'configuration snapshot requires a line replication diagnostics logger callback'
-    );
-  }
-
-  if (
-    configurationSnapshot.callbacks.hasPayloadLogger &&
-    payloadLogger === undefined
-  ) {
-    throw new Error(
-      'configuration snapshot requires a payload replication diagnostics logger callback'
-    );
-  }
-
-  return {
-    textLogger:
-      configurationSnapshot.callbacks.hasTextLogger ? textLogger : undefined,
-    lineLogger:
-      configurationSnapshot.callbacks.hasLineLogger ? lineLogger : undefined,
-    payloadLogger:
-      configurationSnapshot.callbacks.hasPayloadLogger
-        ? payloadLogger
-        : undefined
-  };
-};
-
 export class AuthoritativeClientReplicationDiagnosticsLoggerStateHolder {
   private currentConfiguration!: AuthoritativeClientReplicationDiagnosticsLoggerStateHolderConfiguration;
   private currentReconfiguration: AuthoritativeClientReplicationDiagnosticsLoggerReconfiguration =
@@ -310,9 +268,8 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerStateHolder {
     }
 
     const resolvedCallbacks =
-      resolveAuthoritativeClientReplicationDiagnosticsLoggerCallbacksFromConfigurationSnapshot(
+      validateAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotCallbacks(
         {
-          registry,
           configurationSnapshot,
           textLogger,
           lineLogger,

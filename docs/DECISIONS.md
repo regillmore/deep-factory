@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics configuration snapshot callback checks should reuse one transport-facing validator
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotCallbackValidation.ts` now validates and filters one supplied text, line, and payload logger callback set against detached configuration-snapshot callback-presence flags, throwing only when a required callback type is missing while ignoring extra supplied callbacks that the snapshot does not enable.
+- Reason: Transport restore and reapply flows need one reusable pre-reapply seam for callback-presence enforcement, and scattering those checks across holders or restore helpers would risk drift from the detached snapshot contract.
+- Consequence: Future diagnostics logger restore helpers should validate supplied live callbacks through this helper before reapply instead of open-coding snapshot flag checks or attaching every supplied callback unconditionally.
+
 ### 2026-03-11: Replication diagnostics configuration snapshot decoding should reject impossible disabled and enabled states
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotDecode.ts` now decodes unknown diagnostics logger `{ schedule, callbacks }` payloads by requiring disabled snapshots to keep `intervalTicks` and `nextDueTick` null with all callback-presence flags false, while enabled snapshots must provide a positive `intervalTicks`, a non-negative `nextDueTick`, and at least one callback-presence flag.
