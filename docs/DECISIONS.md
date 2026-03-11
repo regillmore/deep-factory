@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Shell-profile imports should validate explicitly and still apply as session-only fallback when persistence fails
+
+- Decision: Paused-menu `Import Shell Profile` now accepts only versioned `deep-factory.shell-profile` envelopes whose shell-toggle booleans and shell hotkeys validate exactly, and once such a profile validates it reapplies those toggles plus hotkeys to the live paused session even if browser shell storage cannot be rewritten.
+- Reason: Imported preference bundles are explicit user-selected artifacts, so silently defaulting malformed fields would hide what actually loaded, while refusing to apply a valid profile just because browser storage is unavailable would make profile-sharing less useful in constrained browser contexts.
+- Consequence: Future shell or preference-profile imports should reject malformed payloads with surfaced validation reasons instead of partially defaulting them, and may preserve valid imports as current-session-only state when persistence writes fail.
+
 ### 2026-03-11: Shell-profile export should snapshot live paused-session shell state instead of storage
 
 - Decision: Paused-menu `Export Shell Profile` now builds a versioned `deep-factory.shell-profile` envelope from the live paused-session shell-toggle state plus the current in-world shell-action hotkey set owned by `src/main.ts`, then downloads that detached snapshot through dedicated shell-profile helpers.

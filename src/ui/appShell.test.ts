@@ -35,6 +35,7 @@ import {
   resolvePausedMainMenuExportWorldSaveTitle,
   resolvePausedMainMenuExportShellProfileTitle,
   resolvePausedMainMenuFreshWorldTitle,
+  resolvePausedMainMenuImportShellProfileTitle,
   resolvePausedMainMenuImportWorldSaveTitle,
   resolvePausedMainMenuResetShellTogglesTitle,
   resolvePausedMainMenuResumeWorldTitle,
@@ -2127,6 +2128,14 @@ describe('resolvePausedMainMenuExportShellProfileTitle', () => {
   it('explains that paused-menu shell-profile export downloads shell toggles and hotkeys without mutating the session', () => {
     expect(resolvePausedMainMenuExportShellProfileTitle()).toBe(
       'Download a JSON shell-profile copy of the current shell visibility toggles and shell hotkeys without changing the paused session'
+    );
+  });
+});
+
+describe('resolvePausedMainMenuImportShellProfileTitle', () => {
+  it('explains that paused-menu shell-profile import validates and reapplies shell toggles and hotkeys without rebuilding the session', () => {
+    expect(resolvePausedMainMenuImportShellProfileTitle()).toBe(
+      'Choose a JSON shell-profile file, validate its shell toggles and shell hotkeys, and reapply them to the current paused session without rebuilding it'
     );
   });
 });

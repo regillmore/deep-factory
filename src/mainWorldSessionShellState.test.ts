@@ -5,6 +5,7 @@ import {
   clearWorldSessionShellStateWithResult,
   createDefaultWorldSessionShellState,
   createWorldSessionShellStatePersistenceSummary,
+  decodeWorldSessionShellState,
   loadWorldSessionShellState,
   loadWorldSessionShellStateWithPersistenceAvailability,
   resolveWorldSessionShellStateAfterPausedMainMenuTransition,
@@ -158,6 +159,42 @@ describe('createWorldSessionShellStatePersistenceSummary', () => {
       savedOffToggleLabels: ['Edit Panel', 'Spawn Marker'],
       clearedByActionLabels: ['Reset Shell Toggles', 'New World']
     });
+  });
+});
+
+describe('decodeWorldSessionShellState', () => {
+  it('returns a detached validated shell-state snapshot for shell-profile imports', () => {
+    expect(
+      decodeWorldSessionShellState({
+        debugOverlayVisible: true,
+        debugEditControlsVisible: false,
+        debugEditOverlaysVisible: true,
+        playerSpawnMarkerVisible: false,
+        shortcutsOverlayVisible: true
+      })
+    ).toEqual({
+      debugOverlayVisible: true,
+      debugEditControlsVisible: false,
+      debugEditOverlaysVisible: true,
+      playerSpawnMarkerVisible: false,
+      shortcutsOverlayVisible: true
+    });
+  });
+
+  it('rejects malformed shell-profile shell-state payloads', () => {
+    expect(() => decodeWorldSessionShellState(null)).toThrow(
+      'shell-profile shell state must be an object'
+    );
+
+    expect(() =>
+      decodeWorldSessionShellState({
+        debugOverlayVisible: 'yes',
+        debugEditControlsVisible: false,
+        debugEditOverlaysVisible: true,
+        playerSpawnMarkerVisible: false,
+        shortcutsOverlayVisible: true
+      })
+    ).toThrow('shell-profile shell state field "debugOverlayVisible" must be boolean');
   });
 });
 

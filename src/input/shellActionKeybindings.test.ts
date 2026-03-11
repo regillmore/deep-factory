@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createDefaultShellActionKeybindingState,
+  decodeShellActionKeybindingState,
   getDesktopDebugEditControlsHotkeyLabel,
   getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopDebugOverlayHotkeyLabel,
@@ -145,6 +146,63 @@ describe('loadShellActionKeybindingState', () => {
       'toggle-debug-edit-overlays': 'V',
       'toggle-player-spawn-marker': 'Y'
     });
+  });
+});
+
+describe('decodeShellActionKeybindingState', () => {
+  it('normalizes a strict shell-profile hotkey set into a detached validated state', () => {
+    expect(
+      decodeShellActionKeybindingState({
+        'return-to-main-menu': 'x',
+        'recenter-camera': 'z',
+        'toggle-debug-overlay': 'u',
+        'toggle-debug-edit-controls': 'j',
+        'toggle-debug-edit-overlays': 'k',
+        'toggle-player-spawn-marker': 'y'
+      })
+    ).toEqual({
+      'return-to-main-menu': 'X',
+      'recenter-camera': 'Z',
+      'toggle-debug-overlay': 'U',
+      'toggle-debug-edit-controls': 'J',
+      'toggle-debug-edit-overlays': 'K',
+      'toggle-player-spawn-marker': 'Y'
+    });
+  });
+
+  it('rejects malformed, reserved, or duplicate shell-profile hotkeys', () => {
+    expect(() =>
+      decodeShellActionKeybindingState({
+        'return-to-main-menu': 'x',
+        'recenter-camera': '11',
+        'toggle-debug-overlay': 'u',
+        'toggle-debug-edit-controls': 'j',
+        'toggle-debug-edit-overlays': 'k',
+        'toggle-player-spawn-marker': 'y'
+      })
+    ).toThrow('shell-profile shell hotkey for Recenter Camera must use one letter A-Z');
+
+    expect(() =>
+      decodeShellActionKeybindingState({
+        'return-to-main-menu': 'x',
+        'recenter-camera': 'f',
+        'toggle-debug-overlay': 'u',
+        'toggle-debug-edit-controls': 'j',
+        'toggle-debug-edit-overlays': 'k',
+        'toggle-player-spawn-marker': 'y'
+      })
+    ).toThrow('shell-profile shell hotkey for Recenter Camera must not use reserved key "F"');
+
+    expect(() =>
+      decodeShellActionKeybindingState({
+        'return-to-main-menu': 'x',
+        'recenter-camera': 'x',
+        'toggle-debug-overlay': 'u',
+        'toggle-debug-edit-controls': 'j',
+        'toggle-debug-edit-overlays': 'k',
+        'toggle-player-spawn-marker': 'y'
+      })
+    ).toThrow('shell-profile shell hotkey "X" is assigned to both Main Menu and Recenter Camera');
   });
 });
 

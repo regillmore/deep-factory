@@ -66,6 +66,7 @@ import { pickWorldSaveEnvelopeFromJsonPicker } from './mainWorldSaveImport';
 import { downloadWorldSaveEnvelope } from './mainWorldSaveDownload';
 import { createWorldSessionShellProfileEnvelope } from './mainWorldSessionShellProfile';
 import { downloadWorldSessionShellProfileEnvelope } from './mainWorldSessionShellProfileDownload';
+import { pickWorldSessionShellProfileEnvelopeFromJsonPicker } from './mainWorldSessionShellProfileImport';
 import { restoreWorldSessionFromSaveEnvelope } from './mainWorldSessionRestore';
 import { createWorldSessionSaveEnvelope } from './mainWorldSessionSave';
 import { DebugOverlay, type DebugOverlayInspectState } from './ui/debugOverlay';
@@ -82,6 +83,7 @@ import {
   type PausedMainMenuImportResult,
   type PausedMainMenuResetShellTogglesResult,
   type PausedMainMenuShellProfileExportResult,
+  type PausedMainMenuShellProfileImportResult,
   type PausedMainMenuSavedWorldStatus
 } from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
@@ -663,6 +665,16 @@ const bootstrap = async (): Promise<void> => {
         createDefaultShellActionKeybindingState()
       );
     },
+    onImportShellProfile: (screen) => {
+      if (screen !== 'main-menu' || !worldSessionStarted) {
+        return {
+          status: 'failed',
+          reason: 'Shell-profile import is unavailable.'
+        };
+      }
+
+      return importPausedMainMenuShellProfile();
+    },
     onExportShellProfile: (screen) => {
       if (screen !== 'main-menu' || !worldSessionStarted) {
         return {
@@ -726,6 +738,19 @@ const bootstrap = async (): Promise<void> => {
     );
     syncWorldScreenShellVisibility();
   };
+  const applyShellActionKeybindingState = (nextKeybindings: ShellActionKeybindingState): void => {
+    shellActionKeybindings = nextKeybindings;
+    shellActionKeybindingsDefaultedFromPersistedState = false;
+    debugEditControls?.setShellActionKeybindings(shellActionKeybindings);
+  };
+  const refreshShellStateAfterShellPreferenceChange = (): void => {
+    if (currentScreen === 'in-world') {
+      syncInWorldShellState();
+      return;
+    }
+
+    showMainMenuShellState();
+  };
   function persistShellActionKeybindingStateAndRefresh(
     nextKeybindings: ShellActionKeybindingState
   ): boolean {
@@ -733,14 +758,8 @@ const bootstrap = async (): Promise<void> => {
       return false;
     }
 
-    shellActionKeybindings = nextKeybindings;
-    shellActionKeybindingsDefaultedFromPersistedState = false;
-    debugEditControls?.setShellActionKeybindings(shellActionKeybindings);
-    if (currentScreen === 'in-world') {
-      syncInWorldShellState();
-    } else {
-      showMainMenuShellState();
-    }
+    applyShellActionKeybindingState(nextKeybindings);
+    refreshShellStateAfterShellPreferenceChange();
     return true;
   }
   const syncDebugOverlayVisibility = (): void => {
@@ -1155,6 +1174,108 @@ const bootstrap = async (): Promise<void> => {
       };
     } catch (error) {
       console.warn('Failed to export shell profile.', error);
+      return {
+        status: 'failed',
+        reason: resolveThrownErrorReason(error)
+      };
+    }
+  };
+  const resolveShellProfileImportPersistenceFailureReason = (
+    shellStatePersisted: boolean,
+    shellActionKeybindingsPersisted: boolean
+  ): string => {
+    if (!shellStatePersisted && !shellActionKeybindingsPersisted) {
+      return worldSessionShellStateStorage === null
+        ? 'Browser shell storage is unavailable.'
+        : 'Browser shell visibility preferences and hotkeys were not updated.';
+    }
+    if (!shellStatePersisted) {
+      return worldSessionShellStateStorage === null
+        ? 'Browser shell storage is unavailable.'
+        : 'Browser shell visibility preferences were not updated.';
+    }
+    if (!shellActionKeybindingsPersisted) {
+      return worldSessionShellStateStorage === null
+        ? 'Browser shell storage is unavailable.'
+        : 'Browser shell hotkeys were not updated.';
+    }
+
+    return 'Browser shell storage is unavailable.';
+  };
+  const applyImportedPausedMainMenuShellProfile = (
+    envelope: ReturnType<typeof createCurrentWorldSessionShellProfile>
+  ): PausedMainMenuShellProfileImportResult => {
+    applyWorldSessionShellState(envelope.shellState);
+    applyShellActionKeybindingState(envelope.shellActionKeybindings);
+
+    const shellStatePersisted = saveWorldSessionShellState(
+      worldSessionShellStateStorage,
+      readWorldSessionShellState()
+    );
+    const shellActionKeybindingsPersisted = saveShellActionKeybindingState(
+      worldSessionShellStateStorage,
+      shellActionKeybindings
+    );
+    worldSessionShellPersistenceAvailable =
+      shellStatePersisted && shellActionKeybindingsPersisted;
+
+    showMainMenuShellState();
+
+    if (shellStatePersisted && shellActionKeybindingsPersisted) {
+      return {
+        status: 'applied',
+        fileName: null
+      };
+    }
+
+    return {
+      status: 'persistence-failed',
+      fileName: null,
+      reason: resolveShellProfileImportPersistenceFailureReason(
+        shellStatePersisted,
+        shellActionKeybindingsPersisted
+      )
+    };
+  };
+  const importPausedMainMenuShellProfile = async (): Promise<PausedMainMenuShellProfileImportResult> => {
+    try {
+      const result = await pickWorldSessionShellProfileEnvelopeFromJsonPicker();
+      switch (result.status) {
+        case 'cancelled':
+          return {
+            status: 'cancelled'
+          };
+        case 'picker-start-failed':
+          console.warn('Failed to start shell-profile import picker.', result.reason);
+          return {
+            status: 'picker-start-failed',
+            reason: result.reason
+          };
+        case 'rejected':
+          console.warn('Rejected imported shell profile.', result.reason);
+          return {
+            status: 'rejected',
+            fileName: result.fileName,
+            reason: result.reason
+          };
+        case 'selected': {
+          const importResult = applyImportedPausedMainMenuShellProfile(result.envelope);
+          if (importResult.status === 'persistence-failed') {
+            console.warn('Failed to persist imported shell profile.', importResult.reason);
+            return {
+              status: 'persistence-failed',
+              fileName: result.fileName,
+              reason: importResult.reason
+            };
+          }
+          return {
+            status: 'applied',
+            fileName: result.fileName
+          };
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to import shell profile.', error);
       return {
         status: 'failed',
         reason: resolveThrownErrorReason(error)

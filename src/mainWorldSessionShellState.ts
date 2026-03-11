@@ -72,6 +72,13 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
 const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
+const WORLD_SESSION_SHELL_STATE_KEYS: readonly (keyof WorldSessionShellState)[] = [
+  'debugOverlayVisible',
+  'debugEditControlsVisible',
+  'debugEditOverlaysVisible',
+  'playerSpawnMarkerVisible',
+  'shortcutsOverlayVisible'
+];
 
 const isWorldSessionShellStateRecord = (
   value: unknown
@@ -90,6 +97,23 @@ export const createDefaultWorldSessionShellState = (): WorldSessionShellState =>
   playerSpawnMarkerVisible: false,
   shortcutsOverlayVisible: false
 });
+
+export const decodeWorldSessionShellState = (value: unknown): WorldSessionShellState => {
+  if (!isRecord(value)) {
+    throw new Error('shell-profile shell state must be an object');
+  }
+
+  const nextState = createDefaultWorldSessionShellState();
+  for (const key of WORLD_SESSION_SHELL_STATE_KEYS) {
+    const nextValue = value[key];
+    if (!isBoolean(nextValue)) {
+      throw new Error(`shell-profile shell state field "${key}" must be boolean`);
+    }
+    nextState[key] = nextValue;
+  }
+
+  return nextState;
+};
 
 export const createWorldSessionShellStatePersistenceSummary =
   (

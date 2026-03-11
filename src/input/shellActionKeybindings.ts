@@ -200,6 +200,64 @@ export const remapShellActionKeybinding = (
   };
 };
 
+const decodeShellActionKeybindingLabel = (
+  value: unknown,
+  actionType: InWorldShellActionKeybindingActionType
+): string => {
+  const normalizedKey = normalizeShellActionKeybindingLabel(value);
+  const actionLabel = getInWorldShellActionKeybindingActionLabel(actionType);
+  if (normalizedKey === null) {
+    throw new Error(`shell-profile shell hotkey for ${actionLabel} must use one letter A-Z`);
+  }
+  if (RESERVED_NON_SHELL_IN_WORLD_KEYBINDING_LABELS.has(normalizedKey)) {
+    throw new Error(
+      `shell-profile shell hotkey for ${actionLabel} must not use reserved key "${normalizedKey}"`
+    );
+  }
+
+  return normalizedKey;
+};
+
+export const decodeShellActionKeybindingState = (
+  value: unknown
+): ShellActionKeybindingState => {
+  if (!isRecord(value)) {
+    throw new Error('shell-profile shell hotkeys must be an object');
+  }
+
+  const nextState = createDefaultShellActionKeybindingState();
+  for (const actionType of IN_WORLD_SHELL_ACTION_KEYBINDING_IDS) {
+    nextState[actionType] = decodeShellActionKeybindingLabel(value[actionType], actionType);
+  }
+
+  const duplicateLabels = collectDuplicateShellActionKeybindingLabels(nextState);
+  if (duplicateLabels.size === 0) {
+    return nextState;
+  }
+
+  for (const actionType of IN_WORLD_SHELL_ACTION_KEYBINDING_IDS) {
+    const duplicatedKey = nextState[actionType];
+    if (!duplicateLabels.has(duplicatedKey)) {
+      continue;
+    }
+
+    const conflictingActionType = findShellActionKeybindingConflict(
+      nextState,
+      actionType,
+      duplicatedKey
+    );
+    if (conflictingActionType === null) {
+      continue;
+    }
+
+    throw new Error(
+      `shell-profile shell hotkey "${duplicatedKey}" is assigned to both ${getInWorldShellActionKeybindingActionLabel(actionType)} and ${getInWorldShellActionKeybindingActionLabel(conflictingActionType)}`
+    );
+  }
+
+  throw new Error('shell-profile shell hotkeys must use unique letters');
+};
+
 export const loadShellActionKeybindingState = (
   storage: StorageLike | null | undefined,
   fallbackState: ShellActionKeybindingState = createDefaultShellActionKeybindingState()

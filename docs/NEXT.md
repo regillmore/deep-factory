@@ -5,7 +5,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## App shell
 
 200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
-430. Add a paused-menu `Import Shell Profile` action for task `200` that validates a selected shell-profile JSON file and reapplies shell-toggle visibility plus shell-hotkey bindings without rebuilding the current session, with shell-profile-import regressions.
+431. Add paused-menu shell-profile import preview copy that summarizes the selected profile's saved-on shell toggles plus hotkey set before apply, with shell-profile-preview regressions.
 318. Add paused-menu persistence-summary copy that surfaces when some persisted in-world shell-action keybindings were rejected during load while a mixed custom/default binding set still remains, with shell-action storage regressions.
 426. Add paused-menu `Reset Shell Hotkeys` result copy that distinguishes stale load-fallback recovery from ordinary custom-set resets, with hotkey-reset regressions.
 427. Add paused-menu shell-hotkey remap result copy that distinguishes browser-saved updates from session-only fallback updates when storage writes fail, with hotkey-remap persistence regressions.

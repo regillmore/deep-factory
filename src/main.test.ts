@@ -312,6 +312,8 @@ const testRuntime = vi.hoisted(() => {
     downloadedShellProfileEnvelopes: [] as unknown[],
     downloadShellProfileFilename: 'deep-factory-shell-profile-2026-03-11T05-06-07Z.json',
     downloadShellProfileError: null as Error | null,
+    queuedShellProfileImportResults: [] as unknown[],
+    shellProfileImportCallCount: 0,
     queuedWorldSaveImportResults: [] as unknown[],
     worldSaveImportCallCount: 0,
     inputControllerConstructCount: 0
@@ -902,6 +904,23 @@ vi.mock('./mainWorldSessionShellProfileDownload', () => ({
   })
 }));
 
+vi.mock('./mainWorldSessionShellProfileImport', async () => {
+  const actual =
+    await vi.importActual<typeof import('./mainWorldSessionShellProfileImport')>(
+      './mainWorldSessionShellProfileImport'
+    );
+
+  return {
+    ...actual,
+    pickWorldSessionShellProfileEnvelopeFromJsonPicker: vi.fn(async () => {
+      testRuntime.shellProfileImportCallCount += 1;
+      return (testRuntime.queuedShellProfileImportResults.shift() ?? {
+        status: 'cancelled'
+      }) as Awaited<ReturnType<typeof actual.pickWorldSessionShellProfileEnvelopeFromJsonPicker>>;
+    })
+  };
+});
+
 vi.mock('./mainWorldSaveImport', async () => {
   const actual = await vi.importActual<typeof import('./mainWorldSaveImport')>('./mainWorldSaveImport');
 
@@ -1328,6 +1347,8 @@ const createExpectedPausedMainMenuState = (
   options: Partial<{
     worldSessionShellState: ReturnType<typeof createDefaultWorldSessionShellState>;
     persistenceAvailable: boolean;
+    shellActionKeybindings: ShellActionKeybindingState;
+    shellActionKeybindingsDefaultedFromPersistedState: boolean;
     exportResult: PausedMainMenuExportResult;
     importResult: PausedMainMenuImportResult;
     clearSavedWorldResult: PausedMainMenuClearSavedWorldResult;
@@ -1348,8 +1369,9 @@ const createExpectedPausedMainMenuState = (
         ? readPersistedShellState()
         : createDefaultWorldSessionShellState()),
     options.persistenceAvailable ?? true,
-    shellActionKeybindingLoad.state,
-    shellActionKeybindingLoad.defaultedFromPersistedState,
+    options.shellActionKeybindings ?? shellActionKeybindingLoad.state,
+    options.shellActionKeybindingsDefaultedFromPersistedState ??
+      shellActionKeybindingLoad.defaultedFromPersistedState,
     options.importResult ?? null,
     options.savedWorldStatus ?? (options.worldSaveCleared ? 'cleared' : null),
     options.exportResult ?? null,
@@ -1503,6 +1525,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.downloadedShellProfileEnvelopes = [];
     testRuntime.downloadShellProfileFilename = 'deep-factory-shell-profile-2026-03-11T05-06-07Z.json';
     testRuntime.downloadShellProfileError = null;
+    testRuntime.queuedShellProfileImportResults = [];
+    testRuntime.shellProfileImportCallCount = 0;
     testRuntime.queuedWorldSaveImportResults = [];
     testRuntime.worldSaveImportCallCount = 0;
 
@@ -5253,6 +5277,219 @@ describe('main.ts shell state orchestration', () => {
     expect(warnSpy).toHaveBeenCalledWith(
       'Failed to export shell profile.',
       testRuntime.downloadShellProfileError
+    );
+
+    warnSpy.mockRestore();
+  });
+
+  it('imports a paused-menu shell profile and reapplies shell toggles plus hotkeys without rebuilding the current session', async () => {
+    const importedShellState = {
+      debugOverlayVisible: true,
+      debugEditControlsVisible: true,
+      debugEditOverlaysVisible: false,
+      playerSpawnMarkerVisible: true,
+      shortcutsOverlayVisible: false
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('q').prevented).toBe(true);
+
+    const importShellProfile = testRuntime.shellInstance?.options.onImportShellProfile;
+    if (!importShellProfile) {
+      throw new Error('expected shell-profile import callback');
+    }
+
+    testRuntime.queuedShellProfileImportResults = [
+      {
+        status: 'selected',
+        fileName: 'import-shell-profile.json',
+        envelope: createWorldSessionShellProfileEnvelope({
+          shellState: importedShellState,
+          shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+        })
+      }
+    ];
+
+    await expect(importShellProfile('main-menu')).resolves.toEqual({
+      status: 'applied',
+      fileName: 'import-shell-profile.json'
+    });
+
+    expect(testRuntime.shellProfileImportCallCount).toBe(1);
+    expect(readPersistedShellState()).toEqual(importedShellState);
+    expect(testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY)).toBe(
+      JSON.stringify(CUSTOM_SHELL_ACTION_KEYBINDINGS)
+    );
+    expect(testRuntime.debugEditControlsShellActionKeybindings).toEqual(
+      CUSTOM_SHELL_ACTION_KEYBINDINGS
+    );
+    expect(testRuntime.debugEditControlsSetShellActionKeybindingsCallCount).toBe(1);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        worldSessionShellState: importedShellState,
+        shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+      })
+    );
+    expect(testRuntime.gameLoopStartCount).toBe(1);
+
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({
+        ...importedShellState,
+        shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+      })
+    );
+    expect(dispatchKeydown('u').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({
+        debugOverlayVisible: false,
+        debugEditControlsVisible: true,
+        debugEditOverlaysVisible: false,
+        playerSpawnMarkerVisible: true,
+        shortcutsOverlayVisible: false,
+        shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+      })
+    );
+  });
+
+  it('rejects invalid paused-menu imported shell profiles without mutating the current session', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('q').prevented).toBe(true);
+
+    const importShellProfile = testRuntime.shellInstance?.options.onImportShellProfile;
+    if (!importShellProfile) {
+      throw new Error('expected shell-profile import callback');
+    }
+
+    const pausedState = createExpectedPausedMainMenuState();
+    const persistedShellStateBeforeImport =
+      testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null;
+    const persistedShellHotkeysBeforeImport =
+      testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY) ?? null;
+    testRuntime.queuedShellProfileImportResults = [
+      {
+        status: 'rejected',
+        fileName: 'broken-shell-profile.json',
+        reason: 'shell profile envelope kind must be "deep-factory.shell-profile"'
+      }
+    ];
+
+    await expect(importShellProfile('main-menu')).resolves.toEqual({
+      status: 'rejected',
+      fileName: 'broken-shell-profile.json',
+      reason: 'shell profile envelope kind must be "deep-factory.shell-profile"'
+    });
+
+    expect(testRuntime.shellProfileImportCallCount).toBe(1);
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+    expect(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null).toBe(
+      persistedShellStateBeforeImport
+    );
+    expect(testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY) ?? null).toBe(
+      persistedShellHotkeysBeforeImport
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Rejected imported shell profile.',
+      'shell profile envelope kind must be "deep-factory.shell-profile"'
+    );
+
+    warnSpy.mockRestore();
+  });
+
+  it('applies imported shell profiles to the live paused session even when browser shell storage cannot be rewritten', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const importedShellState = {
+      debugOverlayVisible: true,
+      debugEditControlsVisible: false,
+      debugEditOverlaysVisible: true,
+      playerSpawnMarkerVisible: true,
+      shortcutsOverlayVisible: true
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('q').prevented).toBe(true);
+
+    const importShellProfile = testRuntime.shellInstance?.options.onImportShellProfile;
+    if (!importShellProfile) {
+      throw new Error('expected shell-profile import callback');
+    }
+
+    const persistedShellStateBeforeImport =
+      testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null;
+    const persistedShellHotkeysBeforeImport =
+      testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY) ?? null;
+    testRuntime.storageSetItemErrorsByKey.set(
+      WORLD_SESSION_SHELL_STATE_STORAGE_KEY,
+      new Error('shell state write blocked')
+    );
+    testRuntime.storageSetItemErrorsByKey.set(
+      SHELL_ACTION_KEYBINDING_STORAGE_KEY,
+      new Error('shell hotkey write blocked')
+    );
+    testRuntime.queuedShellProfileImportResults = [
+      {
+        status: 'selected',
+        fileName: 'session-only-shell-profile.json',
+        envelope: createWorldSessionShellProfileEnvelope({
+          shellState: importedShellState,
+          shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+        })
+      }
+    ];
+
+    await expect(importShellProfile('main-menu')).resolves.toEqual({
+      status: 'persistence-failed',
+      fileName: 'session-only-shell-profile.json',
+      reason: 'Browser shell visibility preferences and hotkeys were not updated.'
+    });
+
+    expect(testRuntime.shellProfileImportCallCount).toBe(1);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        worldSessionShellState: importedShellState,
+        persistenceAvailable: false,
+        shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+      })
+    );
+    expect(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null).toBe(
+      persistedShellStateBeforeImport
+    );
+    expect(testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY) ?? null).toBe(
+      persistedShellHotkeysBeforeImport
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Failed to persist imported shell profile.',
+      'Browser shell visibility preferences and hotkeys were not updated.'
+    );
+
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({
+        ...importedShellState,
+        shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+      })
+    );
+    expect(dispatchKeydown('u').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({
+        debugOverlayVisible: false,
+        debugEditControlsVisible: false,
+        debugEditOverlaysVisible: true,
+        playerSpawnMarkerVisible: true,
+        shortcutsOverlayVisible: true,
+        shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+      })
     );
 
     warnSpy.mockRestore();
