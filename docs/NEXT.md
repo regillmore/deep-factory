@@ -4,9 +4,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-489. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder presence-change line logger helper after task `486` that forwards detached restore-wiring lifecycle lines to one injected callback, with restore-holder-presence-line-logger regressions.
-490. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder presence-change mixed logger bundle helper after tasks `488-489` that composes optional restore-wiring text and line loggers through one shared sink, with restore-holder-presence-logger-bundle regressions.
 491. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder presence-change reconfigure-and-log helper after task `490` that summarizes previous-versus-next detached restore wiring around one holder presence reconfigure and optionally forwards the resulting restore-wiring lines through one logger bundle, with restore-holder-presence-reconfigure-and-log regressions.
+492. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder presence-change callback factory after task `491` that captures one holder plus restore-wiring logger bundle into a reusable detached presence reconfigure-and-log function, with restore-holder-presence-callback-factory regressions.
 
 ## App shell
 
@@ -47,3 +46,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 399. Add a fall-damage survival slice after entity scaffolding (`17-18`): fixed-step landing-speed thresholds, player health loss plus brief recovery invulnerability, and save/load regressions for post-fall health state.
 401. Add a passive-bunny ambient-entity slice after entity scaffolding (`17-18`): deterministic surface spawn rules near the player, hop-and-turn movement with ledge avoidance, and fixed-step spawn/despawn regressions.
 403. Add a starter boomerang combat slice after hostile-slime combat (`213`) and inventory basics (`214`): a non-stackable boomerang hotbar slot, mixed-device aimed throw-and-return rules, terrain/slime hit detection, and deterministic return regressions.
+411. Add an umbrella fall-control utility slice after inventory basics (`214`) and fall-damage survival (`399`): a non-stackable umbrella hotbar slot, mixed-device hold-to-glide input, fixed-step fall-speed clamp plus early-release rules, and deterministic glide regressions.

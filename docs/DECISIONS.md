@@ -2,6 +2,18 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore-holder presence bundles should compose text before line through one shared sink
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeLoggerBundle.ts` now composes optional restore-holder presence text and line loggers in `text`, then `line` order through one shared sink.
+- Reason: The upcoming reconfigure-and-log helper needs one reusable restore-wiring bundle seam with deterministic callback order and shared input handling instead of branching over text/line combinations at each callsite.
+- Consequence: Future restore-holder presence logging flows should accept one optional bundle or build one through this helper rather than wiring text and line callbacks independently.
+
+### 2026-03-11: Replication diagnostics restore-holder presence line loggers should clone line arrays before callback invocation
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeLineLogger.ts` now forwards restore-holder presence line arrays by cloning the supplied lines before invoking the injected callback.
+- Reason: Restore-holder presence line loggers need mutation isolation before the upcoming shared bundle wiring, and sharing one mutable restore-wiring line array across sibling callbacks would let one sink corrupt the others.
+- Consequence: Future restore-holder presence fan-out or bundle helpers should treat cloned line-array views as the per-sink boundary instead of sharing one mutable restore-wiring line array across callbacks.
+
 ### 2026-03-11: Replication diagnostics restore-holder presence text sinks should format shared line arrays at call time
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeTextLogger.ts` now forwards restore-holder presence text by formatting the supplied restore-wiring line arrays when the sink is invoked instead of requiring callers to prejoin text first.
