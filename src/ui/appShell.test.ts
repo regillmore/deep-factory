@@ -36,6 +36,7 @@ import {
   resolvePausedMainMenuExportWorldSaveTitle,
   resolvePausedMainMenuExportShellProfileTitle,
   resolvePausedMainMenuFreshWorldTitle,
+  resolvePausedMainMenuApplyShellProfileEditorStatus,
   resolvePausedMainMenuApplyShellProfileTitle,
   resolvePausedMainMenuImportShellProfileTitle,
   resolvePausedMainMenuImportWorldSaveTitle,
@@ -2274,6 +2275,37 @@ describe('resolvePausedMainMenuApplyShellProfileTitle', () => {
     expect(resolvePausedMainMenuApplyShellProfileTitle()).toBe(
       'Apply the currently previewed shell-profile toggles and hotkeys to the current paused session'
     );
+  });
+});
+
+describe('resolvePausedMainMenuApplyShellProfileEditorStatus', () => {
+  it('uses explicit no-op copy when an applied shell profile already matches the paused session', () => {
+    expect(
+      resolvePausedMainMenuApplyShellProfileEditorStatus({
+        status: 'applied',
+        fileName: 'matching-shell-profile.json',
+        changed: false
+      })
+    ).toEqual({
+      tone: 'accent',
+      text:
+        'Shell profile from matching-shell-profile.json already matched the paused session, so no shell toggles or hotkeys changed.'
+    });
+  });
+
+  it('keeps persistence-failure copy explicit when a no-op apply still could not rewrite browser storage', () => {
+    expect(
+      resolvePausedMainMenuApplyShellProfileEditorStatus({
+        status: 'persistence-failed',
+        fileName: 'matching-shell-profile.json',
+        changed: false,
+        reason: 'Browser shell visibility preferences and hotkeys were not updated.'
+      })
+    ).toEqual({
+      tone: 'warning',
+      text:
+        'Shell profile from matching-shell-profile.json already matched this paused session, so no shell toggles or hotkeys changed, but browser storage still was not updated: Browser shell visibility preferences and hotkeys were not updated.'
+    });
   });
 });
 

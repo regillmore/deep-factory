@@ -5363,7 +5363,8 @@ describe('main.ts shell state orchestration', () => {
 
     expect(applyShellProfilePreview('main-menu')).toEqual({
       status: 'applied',
-      fileName: 'import-shell-profile.json'
+      fileName: 'import-shell-profile.json',
+      changed: true
     });
 
     expect(readPersistedShellState()).toEqual(importedShellState);
@@ -5400,6 +5401,83 @@ describe('main.ts shell state orchestration', () => {
         shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
       })
     );
+  });
+
+  it('reports paused-menu shell-profile applies as no-ops when the preview already matches the current session', async () => {
+    const matchingShellState = createDefaultWorldSessionShellState();
+    const matchingShellActionKeybindings = createDefaultShellActionKeybindingState();
+
+    testRuntime.storageValues.set(
+      WORLD_SESSION_SHELL_STATE_STORAGE_KEY,
+      JSON.stringify(matchingShellState)
+    );
+    testRuntime.storageValues.set(
+      SHELL_ACTION_KEYBINDING_STORAGE_KEY,
+      JSON.stringify(matchingShellActionKeybindings)
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('q').prevented).toBe(true);
+
+    const importShellProfile = testRuntime.shellInstance?.options.onImportShellProfile;
+    if (!importShellProfile) {
+      throw new Error('expected shell-profile import callback');
+    }
+    const applyShellProfilePreview = testRuntime.shellInstance?.options.onApplyShellProfilePreview;
+    if (!applyShellProfilePreview) {
+      throw new Error('expected shell-profile apply callback');
+    }
+    const persistedShellStateBeforeApply =
+      testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null;
+    const persistedShellHotkeysBeforeApply =
+      testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY) ?? null;
+
+    testRuntime.queuedShellProfileImportResults = [
+      {
+        status: 'selected',
+        fileName: 'matching-shell-profile.json',
+        envelope: createWorldSessionShellProfileEnvelope({
+          shellState: matchingShellState,
+          shellActionKeybindings: matchingShellActionKeybindings
+        })
+      }
+    ];
+
+    await expect(importShellProfile('main-menu')).resolves.toEqual({
+      status: 'previewed',
+      fileName: 'matching-shell-profile.json'
+    });
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        shellProfilePreview: {
+          fileName: 'matching-shell-profile.json',
+          worldSessionShellState: matchingShellState,
+          shellActionKeybindings: matchingShellActionKeybindings
+        }
+      })
+    );
+
+    expect(applyShellProfilePreview('main-menu')).toEqual({
+      status: 'applied',
+      fileName: 'matching-shell-profile.json',
+      changed: false
+    });
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+    expect(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null).toBe(
+      persistedShellStateBeforeApply
+    );
+    expect(testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY) ?? null).toBe(
+      persistedShellHotkeysBeforeApply
+    );
+    expect(testRuntime.debugEditControlsSetShellActionKeybindingsCallCount).toBe(0);
+
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
   });
 
   it('clears a paused-menu shell-profile preview without applying its toggles or hotkeys', async () => {
@@ -5591,6 +5669,7 @@ describe('main.ts shell state orchestration', () => {
     expect(applyShellProfilePreview('main-menu')).toEqual({
       status: 'persistence-failed',
       fileName: 'session-only-shell-profile.json',
+      changed: true,
       reason: 'Browser shell visibility preferences and hotkeys were not updated.'
     });
 

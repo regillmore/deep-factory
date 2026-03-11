@@ -149,6 +149,7 @@ export type PausedMainMenuShellProfilePreviewClearResult =
 export interface PausedMainMenuAppliedShellProfileImportResult {
   status: 'applied';
   fileName: string | null;
+  changed: boolean;
 }
 
 export interface PausedMainMenuPreviewedShellProfileImportResult {
@@ -160,6 +161,7 @@ export interface PausedMainMenuPersistenceFailedShellProfileImportResult {
   status: 'persistence-failed';
   fileName: string | null;
   reason: string;
+  changed: boolean;
 }
 
 export interface PausedMainMenuRejectedShellProfileImportResult {
@@ -1159,6 +1161,90 @@ export const resolvePausedMainMenuClearShellProfilePreviewTitle = (): string =>
 
 export const resolvePausedMainMenuExportShellProfileTitle = (): string =>
   'Download a JSON shell-profile copy of the current shell visibility toggles and shell hotkeys without changing the paused session';
+
+export const resolvePausedMainMenuApplyShellProfileEditorStatus = (
+  importResult: PausedMainMenuShellProfileImportResult
+): { tone: 'accent' | 'warning'; text: string } => {
+  switch (importResult.status) {
+    case 'applied': {
+      const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
+      if (!importResult.changed) {
+        return {
+          tone: 'accent',
+          text:
+            fileName === 'Unknown file'
+              ? 'Shell profile already matched the paused session, so no shell toggles or hotkeys changed.'
+              : `Shell profile from ${fileName} already matched the paused session, so no shell toggles or hotkeys changed.`
+        };
+      }
+
+      return {
+        tone: 'accent',
+        text:
+          fileName === 'Unknown file'
+            ? 'Shell profile applied to the paused session.'
+            : `Shell profile applied from ${fileName}.`
+      };
+    }
+    case 'persistence-failed': {
+      const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
+      const reason = resolvePausedMainMenuResultReasonValue(importResult.reason);
+      if (!importResult.changed) {
+        return {
+          tone: 'warning',
+          text:
+            fileName === 'Unknown file'
+              ? `Shell profile already matched this paused session, so no shell toggles or hotkeys changed, but browser storage still was not updated: ${reason}`
+              : `Shell profile from ${fileName} already matched this paused session, so no shell toggles or hotkeys changed, but browser storage still was not updated: ${reason}`
+        };
+      }
+
+      return {
+        tone: 'warning',
+        text:
+          fileName === 'Unknown file'
+            ? `Shell profile applied for this paused session only: ${reason}`
+            : `Shell profile from ${fileName} applied for this paused session only: ${reason}`
+      };
+    }
+    case 'failed':
+      return {
+        tone: 'warning',
+        text: `Shell-profile apply failed: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
+      };
+    case 'previewed': {
+      const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
+      return {
+        tone: 'accent',
+        text:
+          fileName === 'Unknown file'
+            ? 'Shell profile preview stayed ready. Review the saved-on toggles and hotkeys below before applying it.'
+            : `Shell profile preview from ${fileName} stayed ready. Review the saved-on toggles and hotkeys below before applying it.`
+      };
+    }
+    case 'rejected': {
+      const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
+      return {
+        tone: 'warning',
+        text:
+          fileName === 'Unknown file'
+            ? `Shell profile apply was blocked: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
+            : `Shell profile ${fileName} could not be applied: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
+      };
+    }
+    case 'cancelled':
+      return {
+        tone: 'warning',
+        text: 'Shell-profile apply was canceled before any previewed profile was applied.'
+      };
+    case 'picker-start-failed':
+      return {
+        tone: 'warning',
+        text: `Shell-profile apply failed: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
+      };
+  }
+};
+
 const isPausedMainMenuState = (state: AppShellState): boolean =>
   state.screen === 'main-menu' && state.primaryActionLabel === 'Resume World';
 
@@ -2085,70 +2171,9 @@ export class AppShell {
 
   private async tryApplyShellProfilePreview(): Promise<void> {
     const importResult = await this.onApplyShellProfilePreview(this.currentState.screen);
-    switch (importResult.status) {
-      case 'applied': {
-        const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
-        this.setShellActionKeybindingEditorStatus({
-          tone: 'accent',
-          text:
-            fileName === 'Unknown file'
-              ? 'Shell profile applied to the paused session.'
-              : `Shell profile applied from ${fileName}.`
-        });
-        return;
-      }
-      case 'persistence-failed': {
-        const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
-        this.setShellActionKeybindingEditorStatus({
-          tone: 'warning',
-          text:
-            fileName === 'Unknown file'
-              ? `Shell profile applied for this paused session only: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
-              : `Shell profile from ${fileName} applied for this paused session only: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
-        });
-        return;
-      }
-      case 'failed':
-        this.setShellActionKeybindingEditorStatus({
-          tone: 'warning',
-          text: `Shell-profile apply failed: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
-        });
-        return;
-      case 'previewed': {
-        const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
-        this.setShellActionKeybindingEditorStatus({
-          tone: 'accent',
-          text:
-            fileName === 'Unknown file'
-              ? 'Shell profile preview stayed ready. Review the saved-on toggles and hotkeys below before applying it.'
-              : `Shell profile preview from ${fileName} stayed ready. Review the saved-on toggles and hotkeys below before applying it.`
-        });
-        return;
-      }
-      case 'rejected': {
-        const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
-        this.setShellActionKeybindingEditorStatus({
-          tone: 'warning',
-          text:
-            fileName === 'Unknown file'
-              ? `Shell profile apply was blocked: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
-              : `Shell profile ${fileName} could not be applied: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
-        });
-        return;
-      }
-      case 'cancelled':
-        this.setShellActionKeybindingEditorStatus({
-          tone: 'warning',
-          text: 'Shell-profile apply was canceled before any previewed profile was applied.'
-        });
-        return;
-      case 'picker-start-failed':
-        this.setShellActionKeybindingEditorStatus({
-          tone: 'warning',
-          text: `Shell-profile apply failed: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
-        });
-        return;
-    }
+    this.setShellActionKeybindingEditorStatus(
+      resolvePausedMainMenuApplyShellProfileEditorStatus(importResult)
+    );
   }
 
   private tryClearShellProfilePreview(): void {

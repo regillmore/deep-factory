@@ -44,6 +44,7 @@ import {
 } from './input/debugEditShortcuts';
 import {
   createDefaultShellActionKeybindingState,
+  IN_WORLD_SHELL_ACTION_KEYBINDING_IDS,
   loadShellActionKeybindingStateWithDefaultFallbackStatus,
   remapShellActionKeybinding,
   saveShellActionKeybindingState,
@@ -57,6 +58,7 @@ import {
 import {
   clearWorldSessionShellStateWithResult,
   createDefaultWorldSessionShellState,
+  createWorldSessionShellStateToggleChanges,
   loadWorldSessionShellStateWithPersistenceAvailability,
   saveWorldSessionShellState,
   resolveWorldSessionShellStateAfterPausedMainMenuTransition
@@ -1250,8 +1252,20 @@ const bootstrap = async (): Promise<void> => {
   const applyImportedPausedMainMenuShellProfile = (
     envelope: WorldSessionShellProfileEnvelope
   ): PausedMainMenuShellProfileImportResult => {
-    applyWorldSessionShellState(envelope.shellState);
-    applyShellActionKeybindingState(envelope.shellActionKeybindings);
+    const shellStateChanged =
+      createWorldSessionShellStateToggleChanges(readWorldSessionShellState(), envelope.shellState)
+        .length > 0;
+    const shellActionKeybindingsChanged = IN_WORLD_SHELL_ACTION_KEYBINDING_IDS.some(
+      (actionType) => shellActionKeybindings[actionType] !== envelope.shellActionKeybindings[actionType]
+    );
+    const changed = shellStateChanged || shellActionKeybindingsChanged;
+
+    if (shellStateChanged) {
+      applyWorldSessionShellState(envelope.shellState);
+    }
+    if (shellActionKeybindingsChanged) {
+      applyShellActionKeybindingState(envelope.shellActionKeybindings);
+    }
 
     const shellStatePersisted = saveWorldSessionShellState(
       worldSessionShellStateStorage,
@@ -1267,13 +1281,15 @@ const bootstrap = async (): Promise<void> => {
     if (shellStatePersisted && shellActionKeybindingsPersisted) {
       return {
         status: 'applied',
-        fileName: null
+        fileName: null,
+        changed
       };
     }
 
     return {
       status: 'persistence-failed',
       fileName: null,
+      changed,
       reason: resolveShellProfileImportPersistenceFailureReason(
         shellStatePersisted,
         shellActionKeybindingsPersisted
@@ -1297,14 +1313,19 @@ const bootstrap = async (): Promise<void> => {
       return {
         status: 'persistence-failed',
         fileName: preview.fileName,
+        changed: importResult.changed,
         reason: importResult.reason
       };
     }
+    if (importResult.status === 'applied') {
+      return {
+        status: 'applied',
+        fileName: preview.fileName,
+        changed: importResult.changed
+      };
+    }
 
-    return {
-      status: 'applied',
-      fileName: preview.fileName
-    };
+    throw new Error(`Unexpected shell-profile apply result status: ${importResult.status}`);
   };
   const clearPausedMainMenuShellProfilePreview = (): PausedMainMenuShellProfilePreviewClearResult => {
     if (pausedMainMenuShellProfilePreview === null) {

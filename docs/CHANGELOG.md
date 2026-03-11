@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-11
 
+- Task: Add paused-menu `Apply Shell Profile` no-op result copy.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/main.ts](../src/main.ts) so paused-menu shell-profile applies now report whether a preview changed live shell toggles or hotkeys or already matched the paused session, while still surfacing current-tab-only persistence failures separately; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with no-op apply regressions, removed completed task `435` from [docs/NEXT.md](docs/NEXT.md), added replacement task `436`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu `Shell Profile Preview` change-summary rows.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/mainWorldSessionShellState.ts](../src/mainWorldSessionShellState.ts), [src/ui/appShell.test.ts](../src/ui/appShell.test.ts), and [src/mainWorldSessionShellState.test.ts](../src/mainWorldSessionShellState.test.ts) so the paused-menu `Shell Profile Preview` card now shows `Toggle Changes` and `Hotkey Changes` rows derived from the live paused session before apply, including explicit `None` states when a validated profile already matches the current layout; removed completed task `434` from [docs/NEXT.md](docs/NEXT.md), added replacement task `435`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/mainWorldSessionShellState.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
