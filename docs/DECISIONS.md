@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore-lifecycle line loggers should clone line arrays before callback invocation
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationRestoreLifecycleLineLogger.ts` now forwards restore-lifecycle line arrays by cloning the emitted `configurationChangeLines` and `configurationRestoreLines` before invoking the injected callback.
+- Reason: Restore-lifecycle line loggers need the same mutation isolation as payload loggers, but the restore-lifecycle adapter path still does not have a shared fan-out wrapper that detaches mutable line arrays for each sink.
+- Consequence: Future restore-lifecycle fan-out or mixed-logger helpers should treat cloned line-array views as the per-sink boundary instead of sharing one mutable lifecycle-lines object across sibling callbacks.
+
 ### 2026-03-11: Replication diagnostics restore-lifecycle payload loggers should clone payloads before callback invocation
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationRestoreLifecyclePayloadLogger.ts` now forwards restore-lifecycle payloads by cloning the emitted payload before invoking the injected callback.
