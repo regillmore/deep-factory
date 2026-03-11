@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Paused-menu help text should collapse independently from action metadata
+
+- Decision: Paused-menu action cards now hide their descriptive paragraphs behind a local `Show Help Text` toggle by default, while titles and metadata rows stay visible.
+- Reason: The paused menu is vertically dense, but shortcut, consequence, and result status data still need to stay scannable without reopening every card's longer guidance.
+- Consequence: Future paused-menu cards should keep critical action state in titles or metadata rows instead of relying only on paragraph copy, and longer guidance can assume the help toggle may stay collapsed.
+
 ### 2026-03-11: Shell-profile previews should be dismissible without mutating the paused session
 
 - Decision: Paused-menu shell-profile previews can now be explicitly cleared, which removes the staged preview state and preview card without applying any of that profile's shell toggles or hotkeys to the live paused session.

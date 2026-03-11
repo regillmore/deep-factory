@@ -50,6 +50,14 @@ export interface PausedMainMenuShellSettingsSectionState {
   editorVisible: boolean;
 }
 
+export interface PausedMainMenuHelpCopySectionState {
+  visible: boolean;
+  expanded: boolean;
+  summaryLine: string | null;
+  toggleLabel: string | null;
+  showMenuSectionLines: boolean;
+}
+
 export interface PausedMainMenuAcceptedImportResult {
   status: 'accepted';
   fileName: string | null;
@@ -288,6 +296,8 @@ export interface InWorldShellStateOptions {
 
 export const DEFAULT_PAUSED_MAIN_MENU_STATUS = 'World session paused.';
 export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [] as const;
+const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
+  'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
 const formatMenuSectionMetadataRowValue = (labels: readonly string[]): string =>
   labels.length > 0 ? labels.join(', ') : 'None';
 const formatMenuSectionSummaryListValue = (labels: readonly string[]): string => {
@@ -380,6 +390,22 @@ export const resolvePausedMainMenuShellSettingsSectionState = (
     summaryLine: visible ? resolvePausedMainMenuShellSettingsSummaryLine(state.menuSections ?? []) : null,
     toggleLabel: visible ? resolvePausedMainMenuShellSettingsToggleLabel(expanded) : null,
     editorVisible: visible && expanded
+  };
+};
+export const resolvePausedMainMenuHelpCopyToggleLabel = (expanded = false): string =>
+  expanded ? 'Hide Help Text' : 'Show Help Text';
+export const resolvePausedMainMenuHelpCopySectionState = (
+  state: AppShellState,
+  expanded = false
+): PausedMainMenuHelpCopySectionState => {
+  const visible = isPausedMainMenuState(state);
+
+  return {
+    visible,
+    expanded: visible && expanded,
+    summaryLine: visible ? DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE : null,
+    toggleLabel: visible ? resolvePausedMainMenuHelpCopyToggleLabel(expanded) : null,
+    showMenuSectionLines: !visible || expanded
   };
 };
 const resolvePausedMainMenuShellActionKeybindingSummaryLine = (
@@ -1596,7 +1622,10 @@ const createShortcutsSectionElement = (section: InWorldShortcutsSection): HTMLEl
   return sectionElement;
 };
 
-const createMenuSectionElement = (section: AppShellMenuSection): HTMLElement => {
+const createMenuSectionElement = (
+  section: AppShellMenuSection,
+  showLines = true
+): HTMLElement => {
   const sectionElement = document.createElement('section');
   sectionElement.className = 'app-shell__menu-section';
   sectionElement.setAttribute('data-tone', section.tone ?? 'default');
@@ -1606,16 +1635,18 @@ const createMenuSectionElement = (section: AppShellMenuSection): HTMLElement => 
   heading.textContent = section.title;
   sectionElement.append(heading);
 
-  const lines = document.createElement('div');
-  lines.className = 'app-shell__menu-section-lines';
-  lines.replaceChildren(
-    ...section.lines.map((line) => {
-      const paragraph = document.createElement('p');
-      paragraph.textContent = line;
-      return paragraph;
-    })
-  );
-  sectionElement.append(lines);
+  if (showLines && section.lines.length > 0) {
+    const lines = document.createElement('div');
+    lines.className = 'app-shell__menu-section-lines';
+    lines.replaceChildren(
+      ...section.lines.map((line) => {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = line;
+        return paragraph;
+      })
+    );
+    sectionElement.append(lines);
+  }
 
   const metadataRows = section.metadataRows ?? [];
   if (metadataRows.length > 0) {
@@ -1816,6 +1847,9 @@ export class AppShell {
   private stageLabel: HTMLSpanElement;
   private title: HTMLHeadingElement;
   private status: HTMLParagraphElement;
+  private pausedMainMenuHelpCopySection: HTMLDivElement;
+  private pausedMainMenuHelpCopySummary: HTMLParagraphElement;
+  private pausedMainMenuHelpCopyToggleButton: HTMLButtonElement;
   private menuSections: HTMLDivElement;
   private shellSettingsSection: HTMLElement;
   private shellSettingsSummary: HTMLParagraphElement;
@@ -1871,6 +1905,7 @@ export class AppShell {
   private onExportShellProfile: (screen: AppShellScreen) => PausedMainMenuShellProfileExportResult;
   private currentShellActionKeybindingEditorStatus: AppShellShellActionKeybindingEditorStatus | null =
     null;
+  private pausedMainMenuHelpCopyExpanded = false;
   private pausedMainMenuShellSettingsExpanded = false;
   private currentState: AppShellState = createDefaultBootShellState();
 
@@ -2037,6 +2072,23 @@ export class AppShell {
     this.status = document.createElement('p');
     this.status.className = 'app-shell__status';
     panel.append(this.status);
+
+    this.pausedMainMenuHelpCopySection = document.createElement('div');
+    this.pausedMainMenuHelpCopySection.className = 'app-shell__menu-help';
+    panel.append(this.pausedMainMenuHelpCopySection);
+
+    this.pausedMainMenuHelpCopySummary = document.createElement('p');
+    this.pausedMainMenuHelpCopySummary.className = 'app-shell__menu-help-summary';
+    this.pausedMainMenuHelpCopySection.append(this.pausedMainMenuHelpCopySummary);
+
+    this.pausedMainMenuHelpCopyToggleButton = document.createElement('button');
+    this.pausedMainMenuHelpCopyToggleButton.type = 'button';
+    this.pausedMainMenuHelpCopyToggleButton.className = 'app-shell__menu-help-toggle';
+    this.pausedMainMenuHelpCopyToggleButton.addEventListener('click', () =>
+      this.togglePausedMainMenuHelpCopy()
+    );
+    installPointerClickFocusRelease(this.pausedMainMenuHelpCopyToggleButton);
+    this.pausedMainMenuHelpCopySection.append(this.pausedMainMenuHelpCopyToggleButton);
 
     this.menuSections = document.createElement('div');
     this.menuSections.className = 'app-shell__menu-sections';
@@ -2312,6 +2364,15 @@ export class AppShell {
     this.setState(this.currentState);
   }
 
+  private togglePausedMainMenuHelpCopy(): void {
+    if (!isPausedMainMenuState(this.currentState)) {
+      return;
+    }
+
+    this.pausedMainMenuHelpCopyExpanded = !this.pausedMainMenuHelpCopyExpanded;
+    this.setState(this.currentState);
+  }
+
   private tryRemapShellActionKeybinding(
     actionType: InWorldShellActionKeybindingActionType,
     nextValue: string
@@ -2523,6 +2584,7 @@ export class AppShell {
         : defaultShellActionKeybindings;
     const pausedMainMenuVisible = isPausedMainMenuState(state);
     if (!pausedMainMenuVisible || !wasPausedMainMenuVisible) {
+      this.pausedMainMenuHelpCopyExpanded = false;
       this.pausedMainMenuShellSettingsExpanded = false;
     }
     const pausedMainMenuShellActionKeybindings = pausedMainMenuVisible
@@ -2532,6 +2594,10 @@ export class AppShell {
       pausedMainMenuVisible ? state.worldSessionShellPersistenceAvailable !== false : true;
     const pausedMainMenuHasShellProfilePreview =
       pausedMainMenuVisible && state.pausedMainMenuShellProfilePreview != null;
+    const pausedMainMenuHelpCopySection = resolvePausedMainMenuHelpCopySectionState(
+      state,
+      this.pausedMainMenuHelpCopyExpanded
+    );
     const pausedMainMenuShellSettingsSection = resolvePausedMainMenuShellSettingsSectionState(
       state,
       this.pausedMainMenuShellSettingsExpanded
@@ -2545,8 +2611,29 @@ export class AppShell {
     this.stageLabel.textContent = viewModel.stageLabel;
     this.title.textContent = viewModel.title;
     this.status.textContent = viewModel.statusText;
+    this.pausedMainMenuHelpCopySection.hidden = !pausedMainMenuHelpCopySection.visible;
+    this.pausedMainMenuHelpCopySection.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuHelpCopySection.visible,
+      'flex'
+    );
+    this.pausedMainMenuHelpCopySection.dataset.expanded = pausedMainMenuHelpCopySection.expanded
+      ? 'true'
+      : 'false';
+    this.pausedMainMenuHelpCopySummary.textContent = pausedMainMenuHelpCopySection.summaryLine ?? '';
+    this.pausedMainMenuHelpCopyToggleButton.textContent =
+      pausedMainMenuHelpCopySection.toggleLabel ?? '';
+    this.pausedMainMenuHelpCopyToggleButton.hidden = !pausedMainMenuHelpCopySection.visible;
+    this.pausedMainMenuHelpCopyToggleButton.title = pausedMainMenuHelpCopySection.expanded
+      ? 'Hide paused-menu card help text while keeping titles and metadata visible.'
+      : 'Show the longer paused-menu card help text.';
+    this.pausedMainMenuHelpCopyToggleButton.setAttribute(
+      'aria-expanded',
+      pausedMainMenuHelpCopySection.expanded ? 'true' : 'false'
+    );
     this.menuSections.replaceChildren(
-      ...viewModel.menuSections.map((section) => createMenuSectionElement(section))
+      ...viewModel.menuSections.map((section) =>
+        createMenuSectionElement(section, pausedMainMenuHelpCopySection.showMenuSectionLines)
+      )
     );
     this.menuSections.hidden = viewModel.menuSections.length === 0;
     this.menuSections.style.display = resolveAppShellRegionDisplay(

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-11
 
+- Task: Collapse paused-menu action-card help text behind a toggle.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused sessions now hide their action-card help paragraphs behind a paused-menu `Show Help Text` toggle by default while keeping card titles and metadata rows visible, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused paused-help-collapse regressions, removed stale task `437` from [docs/NEXT.md](docs/NEXT.md), added replacement task `444`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu Shell Settings summary copy for staged shell-profile previews.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the collapsed paused-menu `Shell Settings` summary now surfaces when a validated shell-profile preview is staged while still describing the live paused-session shell visibility that `Resume World` will keep until apply, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused shell-summary-preview regressions, removed completed task `442` from [docs/NEXT.md](docs/NEXT.md), added replacement task `443`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

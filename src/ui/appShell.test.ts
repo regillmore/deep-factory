@@ -37,6 +37,8 @@ import {
   resolvePausedMainMenuExportShellProfileTitle,
   resolvePausedMainMenuFreshWorldTitle,
   resolvePausedMainMenuApplyShellProfileEditorStatus,
+  resolvePausedMainMenuHelpCopySectionState,
+  resolvePausedMainMenuHelpCopyToggleLabel,
   resolvePausedMainMenuShellSettingsSectionState,
   resolvePausedMainMenuShellSettingsSummaryLine,
   resolvePausedMainMenuShellSettingsToggleLabel,
@@ -123,6 +125,8 @@ const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
 ] as const;
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden.';
+const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
+  'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
 const PREVIEWED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Shell profile preview from preview-shell-profile.json is ready to apply. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden.';
 const MIXED_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
@@ -2585,6 +2589,49 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
         ).menuSections ?? []
       )
     ).toBe(PREVIEWED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+  });
+});
+
+describe('resolvePausedMainMenuHelpCopyToggleLabel', () => {
+  it('switches the paused-menu help button label between collapsed and expanded copy', () => {
+    expect(resolvePausedMainMenuHelpCopyToggleLabel()).toBe('Show Help Text');
+    expect(resolvePausedMainMenuHelpCopyToggleLabel(true)).toBe('Hide Help Text');
+  });
+});
+
+describe('resolvePausedMainMenuHelpCopySectionState', () => {
+  it('defaults paused-menu help text to a collapsed metadata-first view', () => {
+    expect(resolvePausedMainMenuHelpCopySectionState(createPausedMainMenuShellState())).toEqual({
+      visible: true,
+      expanded: false,
+      summaryLine: DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE,
+      toggleLabel: 'Show Help Text',
+      showMenuSectionLines: false
+    });
+  });
+
+  it('reveals paused-menu section help text only after the help toggle expands', () => {
+    expect(
+      resolvePausedMainMenuHelpCopySectionState(createPausedMainMenuShellState(), true)
+    ).toEqual({
+      visible: true,
+      expanded: true,
+      summaryLine: DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE,
+      toggleLabel: 'Hide Help Text',
+      showMenuSectionLines: true
+    });
+  });
+
+  it('keeps paused-menu help controls hidden outside the paused main menu', () => {
+    expect(
+      resolvePausedMainMenuHelpCopySectionState(createFirstLaunchMainMenuShellState(), true)
+    ).toEqual({
+      visible: false,
+      expanded: false,
+      summaryLine: null,
+      toggleLabel: null,
+      showMenuSectionLines: true
+    });
   });
 });
 
