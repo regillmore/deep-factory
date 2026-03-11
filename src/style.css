@@ -269,8 +269,13 @@ canvas {
   line-height: 1.5;
 }
 
-.app-shell__shell-keybindings-reset {
-  justify-self: start;
+.app-shell__shell-keybindings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.app-shell__shell-keybindings-button {
   padding: 8px 12px;
   border: 1px solid rgba(159, 221, 255, 0.28);
   border-radius: 999px;
@@ -285,11 +290,11 @@ canvas {
   cursor: pointer;
 }
 
-.app-shell__shell-keybindings-reset:hover {
+.app-shell__shell-keybindings-button:hover {
   border-color: rgba(159, 221, 255, 0.42);
 }
 
-.app-shell__shell-keybindings-reset:focus-visible {
+.app-shell__shell-keybindings-button:focus-visible {
   outline: 2px solid #9fddff;
   outline-offset: 3px;
 }

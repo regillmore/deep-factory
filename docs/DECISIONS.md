@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Shell-profile export should snapshot live paused-session shell state instead of storage
+
+- Decision: Paused-menu `Export Shell Profile` now builds a versioned `deep-factory.shell-profile` envelope from the live paused-session shell-toggle state plus the current in-world shell-action hotkey set owned by `src/main.ts`, then downloads that detached snapshot through dedicated shell-profile helpers.
+- Reason: Browser shell storage can be unavailable, stale, or intentionally bypassed while the current paused session still has the exact shell layout and hotkeys that will resume in this tab, so export should preserve the live runtime state without mutating it.
+- Consequence: Future shell-profile import/export or broader preference-profile work should reuse the versioned shell-profile helper and runtime-owned shell state instead of serializing raw browser storage payloads directly.
+
 ### 2026-03-11: Replication diagnostics restore-holder presence callback target refreshes should reuse holder-owned logger-bundle state
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolder.ts` now retains its current optional restore-wiring logger bundle and exposes `refreshHolder(...)`, which rebuilds the detached presence reconfigure-and-log callback only from updated restore-holder target state while keeping the holder-owned public callback seam stable.

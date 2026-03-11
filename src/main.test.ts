@@ -12,6 +12,7 @@ import {
   createDefaultWorldSessionShellState,
   WORLD_SESSION_SHELL_STATE_STORAGE_KEY
 } from './mainWorldSessionShellState';
+import { createWorldSessionShellProfileEnvelope } from './mainWorldSessionShellProfile';
 import { createWorldSaveEnvelope } from './mainWorldSave';
 import { PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY } from './mainWorldSaveLocalPersistence';
 import {
@@ -308,6 +309,9 @@ const testRuntime = vi.hoisted(() => {
     downloadedWorldSaveEnvelopes: [] as unknown[],
     downloadWorldSaveFilename: 'deep-factory-world-save-2026-03-08T05-06-07Z.json',
     downloadWorldSaveError: null as Error | null,
+    downloadedShellProfileEnvelopes: [] as unknown[],
+    downloadShellProfileFilename: 'deep-factory-shell-profile-2026-03-11T05-06-07Z.json',
+    downloadShellProfileError: null as Error | null,
     queuedWorldSaveImportResults: [] as unknown[],
     worldSaveImportCallCount: 0,
     inputControllerConstructCount: 0
@@ -885,6 +889,16 @@ vi.mock('./mainWorldSaveDownload', () => ({
     }
     testRuntime.downloadedWorldSaveEnvelopes.push(envelope);
     return testRuntime.downloadWorldSaveFilename;
+  })
+}));
+
+vi.mock('./mainWorldSessionShellProfileDownload', () => ({
+  downloadWorldSessionShellProfileEnvelope: vi.fn(({ envelope }: { envelope: unknown }) => {
+    if (testRuntime.downloadShellProfileError !== null) {
+      throw testRuntime.downloadShellProfileError;
+    }
+    testRuntime.downloadedShellProfileEnvelopes.push(envelope);
+    return testRuntime.downloadShellProfileFilename;
   })
 }));
 
@@ -1486,6 +1500,9 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.downloadedWorldSaveEnvelopes = [];
     testRuntime.downloadWorldSaveFilename = 'deep-factory-world-save-2026-03-08T05-06-07Z.json';
     testRuntime.downloadWorldSaveError = null;
+    testRuntime.downloadedShellProfileEnvelopes = [];
+    testRuntime.downloadShellProfileFilename = 'deep-factory-shell-profile-2026-03-11T05-06-07Z.json';
+    testRuntime.downloadShellProfileError = null;
     testRuntime.queuedWorldSaveImportResults = [];
     testRuntime.worldSaveImportCallCount = 0;
 
@@ -5129,6 +5146,114 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
     expect(dispatchKeydown('q').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+
+    warnSpy.mockRestore();
+  });
+
+  it('downloads the live paused-menu shell profile without mutating the active session', async () => {
+    const remappedShellActionKeybindings: ShellActionKeybindingState = {
+      'return-to-main-menu': 'Q',
+      'recenter-camera': 'C',
+      'toggle-debug-overlay': 'U',
+      'toggle-debug-edit-controls': 'G',
+      'toggle-debug-edit-overlays': 'V',
+      'toggle-player-spawn-marker': 'M'
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onToggleDebugOverlay('in-world');
+    testRuntime.shellInstance?.options.onToggleShortcutsOverlay('in-world');
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(
+      testRuntime.shellInstance?.options.onRemapShellActionKeybinding?.(
+        'toggle-debug-overlay',
+        'u'
+      )
+    ).toBe(true);
+
+    const pausedState = createExpectedPausedMainMenuState({
+      worldSessionShellState: {
+        debugOverlayVisible: true,
+        debugEditControlsVisible: false,
+        debugEditOverlaysVisible: false,
+        playerSpawnMarkerVisible: false,
+        shortcutsOverlayVisible: true
+      }
+    });
+    const persistedShellStateBeforeExport =
+      testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null;
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+
+    expect(testRuntime.shellInstance?.options.onExportShellProfile?.('main-menu')).toEqual({
+      status: 'downloaded',
+      fileName: 'deep-factory-shell-profile-2026-03-11T05-06-07Z.json'
+    });
+
+    expect(testRuntime.downloadedShellProfileEnvelopes).toHaveLength(1);
+    expect(testRuntime.downloadedShellProfileEnvelopes[0]).toEqual(
+      createWorldSessionShellProfileEnvelope({
+        shellState: {
+          debugOverlayVisible: true,
+          debugEditControlsVisible: false,
+          debugEditOverlaysVisible: false,
+          playerSpawnMarkerVisible: false,
+          shortcutsOverlayVisible: true
+        },
+        shellActionKeybindings: remappedShellActionKeybindings
+      })
+    );
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+    expect(testRuntime.gameLoopStartCount).toBe(1);
+    expect(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null).toBe(
+      persistedShellStateBeforeExport
+    );
+  });
+
+  it('surfaces paused-menu shell-profile export failures without mutating the paused session', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    testRuntime.downloadShellProfileError = new Error('blocked download');
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onToggleDebugOverlay('in-world');
+    testRuntime.shellInstance?.options.onToggleShortcutsOverlay('in-world');
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    const pausedState = createExpectedPausedMainMenuState({
+      worldSessionShellState: {
+        debugOverlayVisible: true,
+        debugEditControlsVisible: false,
+        debugEditOverlaysVisible: false,
+        playerSpawnMarkerVisible: false,
+        shortcutsOverlayVisible: true
+      }
+    });
+    const persistedShellStateBeforeExport =
+      testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null;
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+
+    expect(testRuntime.shellInstance?.options.onExportShellProfile?.('main-menu')).toEqual({
+      status: 'failed',
+      reason: 'blocked download'
+    });
+
+    expect(testRuntime.downloadedShellProfileEnvelopes).toHaveLength(0);
+    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+    expect(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null).toBe(
+      persistedShellStateBeforeExport
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Failed to export shell profile.',
+      testRuntime.downloadShellProfileError
+    );
 
     warnSpy.mockRestore();
   });

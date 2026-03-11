@@ -117,6 +117,20 @@ export type PausedMainMenuResetShellTogglesResult =
   | PausedMainMenuClearedResetShellTogglesResult
   | PausedMainMenuPersistenceFailedResetShellTogglesResult;
 
+export interface PausedMainMenuDownloadedShellProfileExportResult {
+  status: 'downloaded';
+  fileName: string | null;
+}
+
+export interface PausedMainMenuFailedShellProfileExportResult {
+  status: 'failed';
+  reason: string;
+}
+
+export type PausedMainMenuShellProfileExportResult =
+  | PausedMainMenuDownloadedShellProfileExportResult
+  | PausedMainMenuFailedShellProfileExportResult;
+
 export interface AppShellState {
   screen: AppShellScreen;
   statusText?: string;
@@ -740,6 +754,7 @@ interface AppShellOptions {
     nextKey: string
   ) => boolean;
   onResetShellActionKeybindings?: () => boolean;
+  onExportShellProfile?: (screen: AppShellScreen) => PausedMainMenuShellProfileExportResult;
 }
 
 const DEFAULT_BOOT_STATUS = 'Preparing renderer, controls, and spawn state.';
@@ -964,6 +979,9 @@ export const resolvePausedMainMenuResumeWorldTitle = (): string =>
 
 export const resolvePausedMainMenuResetShellTogglesTitle = (): string =>
   'Clear saved in-world shell visibility preferences and restore the paused session to the default-off shell layout before the next resume';
+
+export const resolvePausedMainMenuExportShellProfileTitle = (): string =>
+  'Download a JSON shell-profile copy of the current shell visibility toggles and shell hotkeys without changing the paused session';
 const isPausedMainMenuState = (state: AppShellState): boolean =>
   state.screen === 'main-menu' && state.primaryActionLabel === 'Resume World';
 
@@ -1317,7 +1335,9 @@ export class AppShell {
     InWorldShellActionKeybindingActionType,
     HTMLInputElement
   >();
+  private shellActionKeybindingEditorActions: HTMLDivElement;
   private resetShellActionKeybindingsButton: HTMLButtonElement;
+  private exportShellProfileButton: HTMLButtonElement;
   private shellActionKeybindingEditorStatus: HTMLParagraphElement;
   private detailList: HTMLUListElement;
   private primaryButton: HTMLButtonElement;
@@ -1344,6 +1364,7 @@ export class AppShell {
     nextKey: string
   ) => boolean;
   private onResetShellActionKeybindings: () => boolean;
+  private onExportShellProfile: (screen: AppShellScreen) => PausedMainMenuShellProfileExportResult;
   private currentShellActionKeybindingEditorStatus: AppShellShellActionKeybindingEditorStatus | null =
     null;
   private currentState: AppShellState = createDefaultBootShellState();
@@ -1364,6 +1385,12 @@ export class AppShell {
     this.onToggleShortcutsOverlay = options.onToggleShortcutsOverlay ?? (() => {});
     this.onRemapShellActionKeybinding = options.onRemapShellActionKeybinding ?? (() => false);
     this.onResetShellActionKeybindings = options.onResetShellActionKeybindings ?? (() => false);
+    this.onExportShellProfile =
+      options.onExportShellProfile ??
+      (() => ({
+        status: 'failed',
+        reason: 'Shell-profile export is unavailable.'
+      }));
 
     this.root = document.createElement('div');
     this.root.className = 'app-shell';
@@ -1503,9 +1530,13 @@ export class AppShell {
       'Use unique A-Z letters for the in-world shell actions. Changes save immediately when browser storage is available.';
     this.shellActionKeybindingEditor.append(shellActionKeybindingEditorIntro);
 
+    this.shellActionKeybindingEditorActions = document.createElement('div');
+    this.shellActionKeybindingEditorActions.className = 'app-shell__shell-keybindings-actions';
+    this.shellActionKeybindingEditor.append(this.shellActionKeybindingEditorActions);
+
     this.resetShellActionKeybindingsButton = document.createElement('button');
     this.resetShellActionKeybindingsButton.type = 'button';
-    this.resetShellActionKeybindingsButton.className = 'app-shell__shell-keybindings-reset';
+    this.resetShellActionKeybindingsButton.className = 'app-shell__shell-keybindings-button';
     this.resetShellActionKeybindingsButton.textContent = 'Reset Shell Hotkeys';
     this.resetShellActionKeybindingsButton.title =
       'Rewrite the default in-world shell hotkeys as Q, C, H, G, V, and M';
@@ -1513,7 +1544,16 @@ export class AppShell {
       this.tryResetShellActionKeybindings()
     );
     installPointerClickFocusRelease(this.resetShellActionKeybindingsButton);
-    this.shellActionKeybindingEditor.append(this.resetShellActionKeybindingsButton);
+    this.shellActionKeybindingEditorActions.append(this.resetShellActionKeybindingsButton);
+
+    this.exportShellProfileButton = document.createElement('button');
+    this.exportShellProfileButton.type = 'button';
+    this.exportShellProfileButton.className = 'app-shell__shell-keybindings-button';
+    this.exportShellProfileButton.textContent = 'Export Shell Profile';
+    this.exportShellProfileButton.title = resolvePausedMainMenuExportShellProfileTitle();
+    this.exportShellProfileButton.addEventListener('click', () => this.tryExportShellProfile());
+    installPointerClickFocusRelease(this.exportShellProfileButton);
+    this.shellActionKeybindingEditorActions.append(this.exportShellProfileButton);
 
     const shellActionKeybindingEditorGrid = document.createElement('div');
     shellActionKeybindingEditorGrid.className = 'app-shell__shell-keybindings-grid';
@@ -1715,6 +1755,29 @@ export class AppShell {
       tone: 'accent',
       text: 'Shell hotkeys reset to Q, C, H, G, V, and M.'
     });
+  }
+
+  private tryExportShellProfile(): void {
+    const exportResult = this.onExportShellProfile(this.currentState.screen);
+    switch (exportResult.status) {
+      case 'downloaded': {
+        const fileName = resolvePausedMainMenuResultFileNameValue(exportResult.fileName);
+        this.setShellActionKeybindingEditorStatus({
+          tone: 'accent',
+          text:
+            fileName === 'Unknown file'
+              ? 'Shell profile downloaded.'
+              : `Shell profile downloaded as ${fileName}.`
+        });
+        return;
+      }
+      case 'failed':
+        this.setShellActionKeybindingEditorStatus({
+          tone: 'warning',
+          text: `Shell profile export failed: ${resolvePausedMainMenuResultReasonValue(exportResult.reason)}`
+        });
+        return;
+    }
   }
 
   getWorldHost(): HTMLDivElement {

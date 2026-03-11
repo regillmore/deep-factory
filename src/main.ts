@@ -64,6 +64,8 @@ import {
 import type { WorldSaveEnvelope } from './mainWorldSave';
 import { pickWorldSaveEnvelopeFromJsonPicker } from './mainWorldSaveImport';
 import { downloadWorldSaveEnvelope } from './mainWorldSaveDownload';
+import { createWorldSessionShellProfileEnvelope } from './mainWorldSessionShellProfile';
+import { downloadWorldSessionShellProfileEnvelope } from './mainWorldSessionShellProfileDownload';
 import { restoreWorldSessionFromSaveEnvelope } from './mainWorldSessionRestore';
 import { createWorldSessionSaveEnvelope } from './mainWorldSessionSave';
 import { DebugOverlay, type DebugOverlayInspectState } from './ui/debugOverlay';
@@ -79,6 +81,7 @@ import {
   type PausedMainMenuExportResult,
   type PausedMainMenuImportResult,
   type PausedMainMenuResetShellTogglesResult,
+  type PausedMainMenuShellProfileExportResult,
   type PausedMainMenuSavedWorldStatus
 } from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
@@ -659,6 +662,16 @@ const bootstrap = async (): Promise<void> => {
       return persistShellActionKeybindingStateAndRefresh(
         createDefaultShellActionKeybindingState()
       );
+    },
+    onExportShellProfile: (screen) => {
+      if (screen !== 'main-menu' || !worldSessionStarted) {
+        return {
+          status: 'failed',
+          reason: 'Shell-profile export is unavailable.'
+        };
+      }
+
+      return exportPausedMainMenuShellProfile();
     }
   });
   shell.setState(createDefaultBootShellState());
@@ -1060,6 +1073,11 @@ const bootstrap = async (): Promise<void> => {
     }
     return entityRegistry.getEntityState<PlayerState>(standalonePlayerEntityId);
   };
+  const createCurrentWorldSessionShellProfile = () =>
+    createWorldSessionShellProfileEnvelope({
+      shellState: readWorldSessionShellState(),
+      shellActionKeybindings
+    });
   const createCurrentWorldSessionSaveEnvelope = (): WorldSaveEnvelope =>
     createWorldSessionSaveEnvelope({
       source: {
@@ -1127,6 +1145,22 @@ const bootstrap = async (): Promise<void> => {
     worldSessionShellStateStorage === null
       ? 'Browser storage is unavailable.'
       : 'Browser resume data was not deleted.';
+  const exportPausedMainMenuShellProfile = (): PausedMainMenuShellProfileExportResult => {
+    try {
+      return {
+        status: 'downloaded',
+        fileName: downloadWorldSessionShellProfileEnvelope({
+          envelope: createCurrentWorldSessionShellProfile()
+        })
+      };
+    } catch (error) {
+      console.warn('Failed to export shell profile.', error);
+      return {
+        status: 'failed',
+        reason: resolveThrownErrorReason(error)
+      };
+    }
+  };
   const exportPausedMainMenuWorldSave = (): boolean => {
     try {
       pausedMainMenuExportResult = {

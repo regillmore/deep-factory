@@ -33,6 +33,7 @@ import {
   resolveAppShellRegionDisplay,
   resolvePausedMainMenuClearSavedWorldTitle,
   resolvePausedMainMenuExportWorldSaveTitle,
+  resolvePausedMainMenuExportShellProfileTitle,
   resolvePausedMainMenuFreshWorldTitle,
   resolvePausedMainMenuImportWorldSaveTitle,
   resolvePausedMainMenuResetShellTogglesTitle,
@@ -2118,6 +2119,14 @@ describe('resolvePausedMainMenuResetShellTogglesTitle', () => {
   it('explains that paused-menu reset clears saved shell visibility and reapplies default-off layout', () => {
     expect(resolvePausedMainMenuResetShellTogglesTitle()).toBe(
       'Clear saved in-world shell visibility preferences and restore the paused session to the default-off shell layout before the next resume'
+    );
+  });
+});
+
+describe('resolvePausedMainMenuExportShellProfileTitle', () => {
+  it('explains that paused-menu shell-profile export downloads shell toggles and hotkeys without mutating the session', () => {
+    expect(resolvePausedMainMenuExportShellProfileTitle()).toBe(
+      'Download a JSON shell-profile copy of the current shell visibility toggles and shell hotkeys without changing the paused session'
     );
   });
 });
