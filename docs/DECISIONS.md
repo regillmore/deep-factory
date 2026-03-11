@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore-lifecycle fan-out sinks should clone payloads and line arrays per sink
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationRestoreLifecycleFanOutSink.ts` now forwards restore-lifecycle emissions to each downstream sink through cloned payload data plus cloned lifecycle line arrays while reusing the emission-owned `lifecycleText`.
+- Reason: Multiple restore-lifecycle sinks need the same mutation isolation as the periodic diagnostics fan-out path, but the joined lifecycle text is already immutable and should stay the shared text source of truth.
+- Consequence: Future restore-lifecycle mixed logger bundles should compose through this helper instead of cloning payloads or lifecycle line arrays ad hoc around each callback.
+
 ### 2026-03-11: Replication diagnostics restore-lifecycle text loggers should consume emission-owned joined text
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationRestoreLifecycleTextLogger.ts` now forwards `emission.lifecycleText` directly to the injected callback.
