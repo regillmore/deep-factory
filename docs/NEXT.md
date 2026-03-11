@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-467. Add a transport-facing diagnostics logger configuration-restore line formatter after tasks `465-466` that renders one decoded-and-reapplied snapshot plus its change labels into deterministic lifecycle log lines, with restore-line regressions.
 468. Add a transport-facing diagnostics logger lifecycle text formatter after tasks `465` and `467` that joins configuration-change and restore line arrays into deterministic multi-line console text, with lifecycle-text regressions.
 469. Add a transport-facing diagnostics logger lifecycle sink helper after task `468` that forwards formatted configuration lifecycle text through one injected callback while preserving detached line arrays for sibling loggers, with lifecycle-sink regressions.
+470. Add a transport-facing diagnostics logger restore-lifecycle emission helper after tasks `466-469` that decodes, reapplies, diffs, formats, and returns one detached configuration lifecycle payload for caller-owned logging, with restore-lifecycle regressions.
 
 ## App shell
 

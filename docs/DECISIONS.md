@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore logs should inline diff labels beside restored values
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationRestoreLineFormatting.ts` now renders restore lifecycle lines as `ConfigurationRestore`, `ConfigurationRestoreSchedule`, and `ConfigurationRestoreCallbacks`, placing restored schedule and callback values beside inline diff labels while disabled cadence values render as `n/a`.
+- Reason: Restore logging needs to show both the reapplied detached snapshot and the already-computed configuration drift in one stable line array so later lifecycle text helpers do not have to merge raw snapshot fields and diff labels ad hoc.
+- Consequence: Future diagnostics logger restore or lifecycle text formatters should reuse this restore-line helper instead of formatting restored snapshot fields and diff labels separately.
+
 ### 2026-03-11: Replication diagnostics configuration diff logs should use fixed label order
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationChangeLineFormatting.ts` now renders lifecycle diff lines as `ConfigurationChange`, `ConfigurationScheduleDiff`, and `ConfigurationCallbackDiff`, listing only changed schedule fields in `disabled`, `intervalTicks`, `nextDueTick` order and changed callback fields in `hasTextLogger`, `hasLineLogger`, `hasPayloadLogger` order while unchanged groups emit `none`.
