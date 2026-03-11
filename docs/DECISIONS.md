@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore-holder presence reconfigure-and-log helpers should log cloned line snapshots
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLog.ts` now snapshots previous and next detached `{ hasRestoreCallback }` state around one holder presence reconfigure, returns detached summary plus restore-wiring line and text output, and forwards only a cloned line-array view through the optional presence-change logger bundle.
+- Reason: The upcoming reusable presence reconfigure callback factory needs one source of truth for returned restore-wiring diffs that does not let sink-side mutation rewrite the helper's result.
+- Consequence: Future restore-holder presence callbacks should build on this helper instead of recomputing holder diffs manually or passing returned line arrays directly into logger bundles.
+
 ### 2026-03-11: Replication diagnostics restore-holder presence bundles should compose text before line through one shared sink
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeLoggerBundle.ts` now composes optional restore-holder presence text and line loggers in `text`, then `line` order through one shared sink.

@@ -4,8 +4,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-491. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder presence-change reconfigure-and-log helper after task `490` that summarizes previous-versus-next detached restore wiring around one holder presence reconfigure and optionally forwards the resulting restore-wiring lines through one logger bundle, with restore-holder-presence-reconfigure-and-log regressions.
 492. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder presence-change callback factory after task `491` that captures one holder plus restore-wiring logger bundle into a reusable detached presence reconfigure-and-log function, with restore-holder-presence-callback-factory regressions.
+493. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder presence-change callback reconfiguration helper after task `492` that rebuilds one reusable detached presence reconfigure-and-log callback from updated holder wiring plus restore-wiring logger-bundle state, with restore-holder-presence-callback-reconfiguration regressions.
 
 ## App shell
 
