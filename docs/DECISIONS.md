@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore-holder presence text sinks should format shared line arrays at call time
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeTextLogger.ts` now forwards restore-holder presence text by formatting the supplied restore-wiring line arrays when the sink is invoked instead of requiring callers to prejoin text first.
+- Reason: Restore-holder presence text logging needs to share detached line arrays with sibling sinks, and rebuilding joined text outside the sink would duplicate the shared ordering and separator rules from the restore-holder presence text formatter.
+- Consequence: Future restore-holder presence bundles or reconfigure-and-log helpers should pass shared line arrays through this sink helper instead of assembling ad hoc restore-wiring console text before callback fan-out.
+
 ### 2026-03-11: Replication diagnostics restore-holder presence text should join provided lines without reordering
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeTextFormatting.ts` now formats restore-holder presence text by joining the provided `RestoreCallbackPresenceChange` and `RestoreCallbackPresenceDiff` lines with newline separators and no extra framing.
