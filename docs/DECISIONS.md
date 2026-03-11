@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics configuration diff logs should use fixed label order
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationChangeLineFormatting.ts` now renders lifecycle diff lines as `ConfigurationChange`, `ConfigurationScheduleDiff`, and `ConfigurationCallbackDiff`, listing only changed schedule fields in `disabled`, `intervalTicks`, `nextDueTick` order and changed callback fields in `hasTextLogger`, `hasLineLogger`, `hasPayloadLogger` order while unchanged groups emit `none`.
+- Reason: The upcoming restore-line and lifecycle-text helpers need one deterministic label vocabulary and field order so transport lifecycle logging stays stable across summary-only and restore-aware formatting paths.
+- Consequence: Future diagnostics logger lifecycle formatters should reuse this helper and label order instead of assembling ad hoc diff strings from configuration snapshots.
+
 ### 2026-03-11: Replication diagnostics configuration snapshot restores should compose decode and holder reapply
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestore.ts` now restores unknown diagnostics logger configuration payloads through one transport-facing helper that decodes the detached snapshot and reapplies it onto one existing holder using the supplied registry and live callbacks.
