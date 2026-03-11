@@ -10,7 +10,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 437. Add paused-menu `Shell Profile Preview` saved-off visibility rows so imported toggle-off states stay visible before apply, with preview-metadata regressions.
 440. Add a collapsed paused-menu Shell Settings summary line that includes shell-persistence mode plus binding-set status after task `439` lands, with shell-summary regressions.
 441. Add paused-menu persistence-summary copy that surfaces when hotkey remaps are currently live only in-session because browser storage rejected the latest rewrite, with remap-session-summary regressions.
-442. Add paused-menu Shell Settings summary copy that surfaces when a validated shell-profile preview is staged while the section is collapsed, with shell-summary-preview regressions.
+443. Add paused-menu Shell Settings summary copy that distinguishes whether a staged shell-profile preview would change shell toggles, hotkeys, or both while the section is collapsed, with shell-summary-preview regressions.
 
 ## Optimize liquids
 

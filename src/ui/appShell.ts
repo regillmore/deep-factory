@@ -321,6 +321,23 @@ const findMenuSectionMetadataRowValue = (
   menuSections
     .find((section) => section.title === sectionTitle)
     ?.metadataRows?.find((row) => row.label === rowLabel)?.value;
+const resolvePausedMainMenuShellProfilePreviewSummaryLine = (
+  menuSections: readonly AppShellMenuSection[] = []
+): string | null => {
+  const previewFileValue = findMenuSectionMetadataRowValue(
+    menuSections,
+    'Shell Profile Preview',
+    'File'
+  );
+
+  if (previewFileValue === undefined) {
+    return null;
+  }
+
+  return previewFileValue === 'Unknown file'
+    ? 'A validated shell profile preview is ready to apply.'
+    : `Shell profile preview from ${previewFileValue} is ready to apply.`;
+};
 export const resolvePausedMainMenuShellSettingsSummaryLine = (
   menuSections: readonly AppShellMenuSection[] = []
 ): string => {
@@ -330,20 +347,24 @@ export const resolvePausedMainMenuShellSettingsSummaryLine = (
   const savedOffToggleLabels = parseMenuSectionMetadataRowValue(
     findMenuSectionMetadataRowValue(menuSections, 'Persistence Summary', 'Saved Off')
   );
+  let visibilitySummaryLine: string;
 
   if (savedOnToggleLabels.length === 0 && savedOffToggleLabels.length === 0) {
-    return 'Review the paused session shell visibility, hotkeys, and profile controls.';
+    visibilitySummaryLine = 'Review the paused session shell visibility, hotkeys, and profile controls.';
+  } else if (savedOnToggleLabels.length === 0) {
+    visibilitySummaryLine = `Resume World keeps ${formatMenuSectionSummaryListValue(savedOffToggleLabels)} hidden.`;
+  } else if (savedOffToggleLabels.length === 0) {
+    visibilitySummaryLine = `Resume World shows ${formatMenuSectionSummaryListValue(savedOnToggleLabels)}.`;
+  } else {
+    visibilitySummaryLine = `Resume World shows ${formatMenuSectionSummaryListValue(savedOnToggleLabels)}, while ${formatMenuSectionSummaryListValue(savedOffToggleLabels)} stay hidden.`;
   }
 
-  if (savedOnToggleLabels.length === 0) {
-    return `Resume World keeps ${formatMenuSectionSummaryListValue(savedOffToggleLabels)} hidden.`;
-  }
+  const shellProfilePreviewSummaryLine =
+    resolvePausedMainMenuShellProfilePreviewSummaryLine(menuSections);
 
-  if (savedOffToggleLabels.length === 0) {
-    return `Resume World shows ${formatMenuSectionSummaryListValue(savedOnToggleLabels)}.`;
-  }
-
-  return `Resume World shows ${formatMenuSectionSummaryListValue(savedOnToggleLabels)}, while ${formatMenuSectionSummaryListValue(savedOffToggleLabels)} stay hidden.`;
+  return shellProfilePreviewSummaryLine === null
+    ? visibilitySummaryLine
+    : `${shellProfilePreviewSummaryLine} ${visibilitySummaryLine}`;
 };
 export const resolvePausedMainMenuShellSettingsToggleLabel = (expanded = false): string =>
   expanded ? 'Hide Shell Settings' : 'Show Shell Settings';

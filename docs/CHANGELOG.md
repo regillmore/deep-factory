@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-11
 
+- Task: Add paused-menu Shell Settings summary copy for staged shell-profile previews.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the collapsed paused-menu `Shell Settings` summary now surfaces when a validated shell-profile preview is staged while still describing the live paused-session shell visibility that `Resume World` will keep until apply, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused shell-summary-preview regressions, removed completed task `442` from [docs/NEXT.md](docs/NEXT.md), added replacement task `443`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a collapsed paused-menu Shell Settings section.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused sessions now show a collapsed `Shell Settings` section with a one-line shell-visibility summary by default and reveal the existing shell hotkey editor plus shell-profile controls only when expanded, while preserving the expanded state across paused-menu rerenders; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused shell-summary and section-state regressions, removed completed task `439` from [docs/NEXT.md](docs/NEXT.md), added replacement task `442`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

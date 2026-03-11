@@ -123,6 +123,8 @@ const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
 ] as const;
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden.';
+const PREVIEWED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
+  'Shell profile preview from preview-shell-profile.json is ready to apply. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden.';
 const MIXED_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Resume World shows Debug HUD and Edit Overlays, while Edit Panel, Spawn Marker, and Shortcuts stay hidden.';
 const FULLY_VISIBLE_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
@@ -2555,6 +2557,35 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
       )
     ).toBe(FULLY_VISIBLE_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
   });
+
+  it('surfaces a staged shell-profile preview while keeping the current paused-session summary', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSummaryLine(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          null,
+          null,
+          null,
+          null,
+          null,
+          {
+            fileName: 'preview-shell-profile.json',
+            shellState: {
+              debugOverlayVisible: true,
+              debugEditControlsVisible: false,
+              debugEditOverlaysVisible: true,
+              playerSpawnMarkerVisible: true,
+              shortcutsOverlayVisible: false
+            },
+            shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+          }
+        ).menuSections ?? []
+      )
+    ).toBe(PREVIEWED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+  });
 });
 
 describe('resolvePausedMainMenuShellSettingsToggleLabel', () => {
@@ -2584,6 +2615,41 @@ describe('resolvePausedMainMenuShellSettingsSectionState', () => {
       summaryLine: DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
       toggleLabel: 'Hide Shell Settings',
       editorVisible: true
+    });
+  });
+
+  it('keeps staged shell-profile preview copy in the collapsed shell-settings summary', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          null,
+          null,
+          null,
+          null,
+          null,
+          {
+            fileName: 'preview-shell-profile.json',
+            shellState: {
+              debugOverlayVisible: true,
+              debugEditControlsVisible: false,
+              debugEditOverlaysVisible: true,
+              playerSpawnMarkerVisible: true,
+              shortcutsOverlayVisible: false
+            },
+            shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+          }
+        )
+      )
+    ).toEqual({
+      visible: true,
+      expanded: false,
+      summaryLine: PREVIEWED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
+      toggleLabel: 'Show Shell Settings',
+      editorVisible: false
     });
   });
 
