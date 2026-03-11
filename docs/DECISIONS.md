@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Replication diagnostics logger configuration snapshots should null disabled schedule cadence
+
+- Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now exposes `getConfigurationSnapshot()` as a detached `{ schedule, callbacks }` export where disabled holders report `schedule: { disabled: true, intervalTicks: null, nextDueTick: null }`, while enabled holders report the active `intervalTicks` and current `nextDueTick` beside the separate callback-presence flags.
+- Reason: Transport lifecycle code needs one JSON-safe diagnostics logger configuration export for later reapply and diff helpers, and disabled holders should not present inert cadence numbers as if they were still active schedule state.
+- Consequence: Future diagnostics logger snapshot reconfigure or diff helpers should consume this detached configuration shape instead of reading runner state or raw holder configuration directly.
+
 ### 2026-03-10: Replication diagnostics callback-presence snapshots should stay separate from schedule snapshots
 
 - Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now exposes `getCallbackPresenceSnapshot()` as a separate `{ hasTextLogger, hasLineLogger, hasPayloadLogger }` snapshot instead of widening `getScheduleSnapshot()`.

@@ -64,6 +64,27 @@ export interface AuthoritativeClientReplicationDiagnosticsLoggerCallbackPresence
   hasPayloadLogger: boolean;
 }
 
+export interface DisabledAuthoritativeClientReplicationDiagnosticsLoggerConfigurationScheduleSnapshot {
+  disabled: true;
+  intervalTicks: null;
+  nextDueTick: null;
+}
+
+export interface EnabledAuthoritativeClientReplicationDiagnosticsLoggerConfigurationScheduleSnapshot {
+  disabled: false;
+  intervalTicks: number;
+  nextDueTick: number;
+}
+
+export type AuthoritativeClientReplicationDiagnosticsLoggerConfigurationScheduleSnapshot =
+  | DisabledAuthoritativeClientReplicationDiagnosticsLoggerConfigurationScheduleSnapshot
+  | EnabledAuthoritativeClientReplicationDiagnosticsLoggerConfigurationScheduleSnapshot;
+
+export interface AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshot {
+  schedule: AuthoritativeClientReplicationDiagnosticsLoggerConfigurationScheduleSnapshot;
+  callbacks: AuthoritativeClientReplicationDiagnosticsLoggerCallbackPresenceSnapshot;
+}
+
 type AuthoritativeClientReplicationDiagnosticsLoggerStateHolderConfiguration = Omit<
   ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerStateHolderOptions,
   'nextDueTick'
@@ -104,6 +125,46 @@ const createAuthoritativeClientReplicationDiagnosticsLoggerCallbackPresenceSnaps
   hasTextLogger: textLogger !== undefined,
   hasLineLogger: lineLogger !== undefined,
   hasPayloadLogger: payloadLogger !== undefined
+});
+
+const createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationScheduleSnapshot = ({
+  intervalTicks,
+  scheduleSnapshot
+}: {
+  intervalTicks: number;
+  scheduleSnapshot: AuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot;
+}): AuthoritativeClientReplicationDiagnosticsLoggerConfigurationScheduleSnapshot =>
+  scheduleSnapshot.disabled
+    ? {
+        disabled: true,
+        intervalTicks: null,
+        nextDueTick: null
+      }
+    : {
+        disabled: false,
+        intervalTicks,
+        nextDueTick: scheduleSnapshot.nextDueTick
+      };
+
+const createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshot = ({
+  intervalTicks,
+  scheduleSnapshot,
+  callbackPresenceSnapshot
+}: {
+  intervalTicks: number;
+  scheduleSnapshot: AuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot;
+  callbackPresenceSnapshot: AuthoritativeClientReplicationDiagnosticsLoggerCallbackPresenceSnapshot;
+}): AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshot => ({
+  schedule:
+    createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationScheduleSnapshot({
+      intervalTicks,
+      scheduleSnapshot
+    }),
+  callbacks: {
+    hasTextLogger: callbackPresenceSnapshot.hasTextLogger,
+    hasLineLogger: callbackPresenceSnapshot.hasLineLogger,
+    hasPayloadLogger: callbackPresenceSnapshot.hasPayloadLogger
+  }
 });
 
 const hasConfiguredAuthoritativeClientReplicationDiagnosticsLoggerCallback = ({
@@ -153,6 +214,17 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerStateHolder {
     return createAuthoritativeClientReplicationDiagnosticsLoggerCallbackPresenceSnapshot(
       this.currentConfiguration
     );
+  }
+
+  getConfigurationSnapshot(): AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshot {
+    const scheduleSnapshot = this.getScheduleSnapshot();
+    const callbackPresenceSnapshot = this.getCallbackPresenceSnapshot();
+
+    return createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshot({
+      intervalTicks: this.currentConfiguration.intervalTicks,
+      scheduleSnapshot,
+      callbackPresenceSnapshot
+    });
   }
 
   refreshSchedule({
