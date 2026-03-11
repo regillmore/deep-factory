@@ -43,6 +43,7 @@ import {
   type DebugEditShortcutAction
 } from './input/debugEditShortcuts';
 import {
+  createDefaultShellActionKeybindingState,
   loadShellActionKeybindingStateWithDefaultFallbackStatus,
   remapShellActionKeybinding,
   saveShellActionKeybindingState,
@@ -649,19 +650,12 @@ const bootstrap = async (): Promise<void> => {
         return false;
       }
 
-      if (!saveShellActionKeybindingState(worldSessionShellStateStorage, remapResult.state)) {
-        return false;
-      }
-
-      shellActionKeybindings = remapResult.state;
-      shellActionKeybindingsDefaultedFromPersistedState = false;
-      debugEditControls?.setShellActionKeybindings(shellActionKeybindings);
-      if (currentScreen === 'in-world') {
-        syncInWorldShellState();
-      } else {
-        showMainMenuShellState();
-      }
-      return true;
+      return persistShellActionKeybindingStateAndRefresh(remapResult.state);
+    },
+    onResetShellActionKeybindings: () => {
+      return persistShellActionKeybindingStateAndRefresh(
+        createDefaultShellActionKeybindingState()
+      );
     }
   });
   shell.setState(createDefaultBootShellState());
@@ -715,6 +709,23 @@ const bootstrap = async (): Promise<void> => {
     );
     syncWorldScreenShellVisibility();
   };
+  function persistShellActionKeybindingStateAndRefresh(
+    nextKeybindings: ShellActionKeybindingState
+  ): boolean {
+    if (!saveShellActionKeybindingState(worldSessionShellStateStorage, nextKeybindings)) {
+      return false;
+    }
+
+    shellActionKeybindings = nextKeybindings;
+    shellActionKeybindingsDefaultedFromPersistedState = false;
+    debugEditControls?.setShellActionKeybindings(shellActionKeybindings);
+    if (currentScreen === 'in-world') {
+      syncInWorldShellState();
+    } else {
+      showMainMenuShellState();
+    }
+    return true;
+  }
   const syncDebugOverlayVisibility = (): void => {
     debug.setVisible(currentScreen === 'in-world' && debugOverlayVisible);
   };

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS } from './gl/standalonePlayerPlaceholder';
 import { DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY } from './input/debugEditControlStatePersistence';
 import {
+  createDefaultShellActionKeybindingState,
   loadShellActionKeybindingStateWithDefaultFallbackStatus,
   SHELL_ACTION_KEYBINDING_STORAGE_KEY,
   type ShellActionKeybindingState
@@ -5950,6 +5951,34 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
   });
 
+  it('resets paused-menu shell hotkeys back to the default set through the shared persistence path', async () => {
+    const defaultShellActionKeybindings = createDefaultShellActionKeybindingState();
+
+    testRuntime.storageValues.set(
+      SHELL_ACTION_KEYBINDING_STORAGE_KEY,
+      JSON.stringify(CUSTOM_SHELL_ACTION_KEYBINDINGS)
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+
+    expect(testRuntime.shellInstance?.options.onResetShellActionKeybindings?.()).toBe(true);
+    expect(testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY)).toBe(
+      JSON.stringify(defaultShellActionKeybindings)
+    );
+    expect(testRuntime.debugEditControlsShellActionKeybindings).toEqual(defaultShellActionKeybindings);
+    expect(testRuntime.debugEditControlsSetShellActionKeybindingsCallCount).toBe(1);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+  });
+
   it('explains paused-menu default bindings as a load fallback when saved shell-action keybindings were rejected', async () => {
     testRuntime.storageValues.set(
       SHELL_ACTION_KEYBINDING_STORAGE_KEY,
@@ -5971,6 +6000,37 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
 
     expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+  });
+
+  it('clears paused-menu shell hotkey fallback warnings after resetting the default set', async () => {
+    const defaultShellActionKeybindings = createDefaultShellActionKeybindingState();
+
+    testRuntime.storageValues.set(
+      SHELL_ACTION_KEYBINDING_STORAGE_KEY,
+      JSON.stringify({
+        'return-to-main-menu': 'F',
+        'recenter-camera': 'Q',
+        'toggle-debug-overlay': 'Q',
+        'toggle-debug-edit-controls': '11',
+        'toggle-debug-edit-overlays': '?',
+        'toggle-player-spawn-marker': '1'
+      })
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+
+    expect(testRuntime.shellInstance?.options.onResetShellActionKeybindings?.()).toBe(true);
+    expect(testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY)).toBe(
+      JSON.stringify(defaultShellActionKeybindings)
+    );
+    expect(testRuntime.debugEditControlsShellActionKeybindings).toEqual(defaultShellActionKeybindings);
+    expect(testRuntime.debugEditControlsSetShellActionKeybindingsCallCount).toBe(1);
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
   });
 

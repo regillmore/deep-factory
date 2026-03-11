@@ -739,6 +739,7 @@ interface AppShellOptions {
     actionType: InWorldShellActionKeybindingActionType,
     nextKey: string
   ) => boolean;
+  onResetShellActionKeybindings?: () => boolean;
 }
 
 const DEFAULT_BOOT_STATUS = 'Preparing renderer, controls, and spawn state.';
@@ -1268,6 +1269,7 @@ export class AppShell {
     InWorldShellActionKeybindingActionType,
     HTMLInputElement
   >();
+  private resetShellActionKeybindingsButton: HTMLButtonElement;
   private shellActionKeybindingEditorStatus: HTMLParagraphElement;
   private detailList: HTMLUListElement;
   private primaryButton: HTMLButtonElement;
@@ -1293,6 +1295,7 @@ export class AppShell {
     actionType: InWorldShellActionKeybindingActionType,
     nextKey: string
   ) => boolean;
+  private onResetShellActionKeybindings: () => boolean;
   private currentShellActionKeybindingEditorStatus: AppShellShellActionKeybindingEditorStatus | null =
     null;
   private currentState: AppShellState = createDefaultBootShellState();
@@ -1312,6 +1315,7 @@ export class AppShell {
     this.onTogglePlayerSpawnMarker = options.onTogglePlayerSpawnMarker ?? (() => {});
     this.onToggleShortcutsOverlay = options.onToggleShortcutsOverlay ?? (() => {});
     this.onRemapShellActionKeybinding = options.onRemapShellActionKeybinding ?? (() => false);
+    this.onResetShellActionKeybindings = options.onResetShellActionKeybindings ?? (() => false);
 
     this.root = document.createElement('div');
     this.root.className = 'app-shell';
@@ -1450,6 +1454,18 @@ export class AppShell {
     shellActionKeybindingEditorIntro.textContent =
       'Use unique A-Z letters for the in-world shell actions. Changes save immediately when browser storage is available.';
     this.shellActionKeybindingEditor.append(shellActionKeybindingEditorIntro);
+
+    this.resetShellActionKeybindingsButton = document.createElement('button');
+    this.resetShellActionKeybindingsButton.type = 'button';
+    this.resetShellActionKeybindingsButton.className = 'app-shell__shell-keybindings-reset';
+    this.resetShellActionKeybindingsButton.textContent = 'Reset Shell Hotkeys';
+    this.resetShellActionKeybindingsButton.title =
+      'Rewrite the default in-world shell hotkeys as Q, C, H, G, V, and M';
+    this.resetShellActionKeybindingsButton.addEventListener('click', () =>
+      this.tryResetShellActionKeybindings()
+    );
+    installPointerClickFocusRelease(this.resetShellActionKeybindingsButton);
+    this.shellActionKeybindingEditor.append(this.resetShellActionKeybindingsButton);
 
     const shellActionKeybindingEditorGrid = document.createElement('div');
     shellActionKeybindingEditorGrid.className = 'app-shell__shell-keybindings-grid';
@@ -1632,6 +1648,24 @@ export class AppShell {
       text: remapResult.changed
         ? `${actionLabel} now uses ${remapResult.normalizedKey}.`
         : `${actionLabel} stayed on ${remapResult.normalizedKey}, and the current shell hotkey set was saved.`
+    });
+  }
+
+  private tryResetShellActionKeybindings(): void {
+    const defaultShellActionKeybindings = createDefaultShellActionKeybindingState();
+    if (!this.onResetShellActionKeybindings()) {
+      this.syncShellActionKeybindingEditorInputs();
+      this.setShellActionKeybindingEditorStatus({
+        tone: 'warning',
+        text: 'Browser storage rejected the default shell hotkey reset, so the current set stayed active.'
+      });
+      return;
+    }
+
+    this.syncShellActionKeybindingEditorInputs(defaultShellActionKeybindings);
+    this.setShellActionKeybindingEditorStatus({
+      tone: 'accent',
+      text: 'Shell hotkeys reset to Q, C, H, G, V, and M.'
     });
   }
 
