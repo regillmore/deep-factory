@@ -44,6 +44,12 @@ export interface RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHold
     RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHolderCadenceOptions,
     RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHolderCallbacksOptions {}
 
+export interface ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerStateHolderFromConfigurationSnapshotOptions
+  extends RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHolderCallbacksOptions {
+  registry: ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerOptions['registry'];
+  configurationSnapshot: AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshot;
+}
+
 export interface DisabledAuthoritativeClientReplicationDiagnosticsLoggerScheduleSnapshot {
   disabled: true;
   nextDueTick: null;
@@ -174,6 +180,56 @@ const hasConfiguredAuthoritativeClientReplicationDiagnosticsLoggerCallback = ({
 }: RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHolderCallbacksOptions): boolean =>
   textLogger !== undefined || lineLogger !== undefined || payloadLogger !== undefined;
 
+const hasEnabledAuthoritativeClientReplicationDiagnosticsLoggerCallbackInConfigurationSnapshot = ({
+  callbacks
+}: AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshot): boolean =>
+  callbacks.hasTextLogger || callbacks.hasLineLogger || callbacks.hasPayloadLogger;
+
+const resolveAuthoritativeClientReplicationDiagnosticsLoggerCallbacksFromConfigurationSnapshot = ({
+  configurationSnapshot,
+  textLogger,
+  lineLogger,
+  payloadLogger
+}: ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerStateHolderFromConfigurationSnapshotOptions): RefreshAuthoritativeClientReplicationDiagnosticsLoggerStateHolderCallbacksOptions => {
+  if (
+    configurationSnapshot.callbacks.hasTextLogger &&
+    textLogger === undefined
+  ) {
+    throw new Error(
+      'configuration snapshot requires a text replication diagnostics logger callback'
+    );
+  }
+
+  if (
+    configurationSnapshot.callbacks.hasLineLogger &&
+    lineLogger === undefined
+  ) {
+    throw new Error(
+      'configuration snapshot requires a line replication diagnostics logger callback'
+    );
+  }
+
+  if (
+    configurationSnapshot.callbacks.hasPayloadLogger &&
+    payloadLogger === undefined
+  ) {
+    throw new Error(
+      'configuration snapshot requires a payload replication diagnostics logger callback'
+    );
+  }
+
+  return {
+    textLogger:
+      configurationSnapshot.callbacks.hasTextLogger ? textLogger : undefined,
+    lineLogger:
+      configurationSnapshot.callbacks.hasLineLogger ? lineLogger : undefined,
+    payloadLogger:
+      configurationSnapshot.callbacks.hasPayloadLogger
+        ? payloadLogger
+        : undefined
+  };
+};
+
 export class AuthoritativeClientReplicationDiagnosticsLoggerStateHolder {
   private currentConfiguration!: AuthoritativeClientReplicationDiagnosticsLoggerStateHolderConfiguration;
   private currentReconfiguration: AuthoritativeClientReplicationDiagnosticsLoggerReconfiguration =
@@ -224,6 +280,51 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerStateHolder {
       intervalTicks: this.currentConfiguration.intervalTicks,
       scheduleSnapshot,
       callbackPresenceSnapshot
+    });
+  }
+
+  reconfigureFromConfigurationSnapshot({
+    registry,
+    configurationSnapshot,
+    textLogger,
+    lineLogger,
+    payloadLogger
+  }: ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerStateHolderFromConfigurationSnapshotOptions): void {
+    if (configurationSnapshot.schedule.disabled) {
+      this.reconfigure({
+        registry,
+        intervalTicks: 0,
+        nextDueTick: -1
+      });
+      return;
+    }
+
+    if (
+      !hasEnabledAuthoritativeClientReplicationDiagnosticsLoggerCallbackInConfigurationSnapshot(
+        configurationSnapshot
+      )
+    ) {
+      throw new Error(
+        'enabled configuration snapshot requires at least one replication diagnostics logger callback'
+      );
+    }
+
+    const resolvedCallbacks =
+      resolveAuthoritativeClientReplicationDiagnosticsLoggerCallbacksFromConfigurationSnapshot(
+        {
+          registry,
+          configurationSnapshot,
+          textLogger,
+          lineLogger,
+          payloadLogger
+        }
+      );
+
+    this.reconfigure({
+      registry,
+      intervalTicks: configurationSnapshot.schedule.intervalTicks,
+      nextDueTick: configurationSnapshot.schedule.nextDueTick,
+      ...resolvedCallbacks
     });
   }
 

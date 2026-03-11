@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-10: Replication diagnostics configuration snapshots should reapply through live callbacks, not serialized functions
+
+- Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now reapplies detached configuration snapshots through `reconfigureFromConfigurationSnapshot(...)`, which accepts a registry plus live text, line, and payload logger callbacks separately, keeps disabled snapshots disabled, and uses snapshot callback-presence flags to choose which supplied callbacks become active.
+- Reason: The detached configuration snapshot is intentionally JSON-safe and cannot own function references, but transport lifecycle code still needs one holder-owned path to restore enabled or disabled logger state without bypassing the existing reconfiguration validation path.
+- Consequence: Future diagnostics logger snapshot restore helpers should pass live callbacks beside the detached snapshot and let snapshot callback-presence flags control which callback types are reattached, rather than widening the snapshot shape to contain functions.
+
 ### 2026-03-10: Replication diagnostics logger configuration snapshots should null disabled schedule cadence
 
 - Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now exposes `getConfigurationSnapshot()` as a detached `{ schedule, callbacks }` export where disabled holders report `schedule: { disabled: true, intervalTicks: null, nextDueTick: null }`, while enabled holders report the active `intervalTicks` and current `nextDueTick` beside the separate callback-presence flags.
