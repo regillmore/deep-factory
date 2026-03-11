@@ -30,6 +30,11 @@ export interface AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSna
   hasRestoreCallback: boolean;
 }
 
+export interface ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderFromPresenceSnapshotOptions
+  extends RefreshAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderLoggersOptions {
+  presenceSnapshot: AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshot;
+}
+
 type AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderConfiguration =
   ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderOptions;
 
@@ -110,6 +115,65 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapsho
     return createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshot(
       this.currentReconfiguration
     );
+  }
+
+  reconfigureFromPresenceSnapshot({
+    presenceSnapshot,
+    textLogger,
+    lineLogger,
+    payloadLogger,
+    restoreLifecycleTextLogger,
+    restoreLifecycleLineLogger,
+    restoreLifecyclePayloadLogger
+  }: ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderFromPresenceSnapshotOptions): void {
+    if (presenceSnapshot.hasRestoreCallback) {
+      if (
+        !hasConfiguredAuthoritativeClientReplicationDiagnosticsRestoreLifecycleLogger(
+          {
+            restoreLifecycleTextLogger,
+            restoreLifecycleLineLogger,
+            restoreLifecyclePayloadLogger
+          }
+        )
+      ) {
+        throw new Error(
+          'restore callback presence snapshot reconfigure requires at least one restore-lifecycle replication diagnostics logger callback'
+        );
+      }
+
+      if (this.getPresenceSnapshot().hasRestoreCallback) {
+        this.refreshLoggers({
+          textLogger,
+          lineLogger,
+          payloadLogger,
+          restoreLifecycleTextLogger,
+          restoreLifecycleLineLogger,
+          restoreLifecyclePayloadLogger
+        });
+        return;
+      }
+
+      this.reconfigure({
+        ...this.currentConfiguration,
+        textLogger,
+        lineLogger,
+        payloadLogger,
+        restoreLifecycleTextLogger,
+        restoreLifecycleLineLogger,
+        restoreLifecyclePayloadLogger
+      });
+      return;
+    }
+
+    this.reconfigure({
+      ...this.currentConfiguration,
+      textLogger,
+      lineLogger,
+      payloadLogger,
+      restoreLifecycleTextLogger: undefined,
+      restoreLifecycleLineLogger: undefined,
+      restoreLifecyclePayloadLogger: undefined
+    });
   }
 
   refreshLoggers({

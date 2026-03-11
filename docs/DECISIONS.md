@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore callback presence snapshots should decide install state while filtering extra lifecycle loggers
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder.ts` now exposes `reconfigureFromPresenceSnapshot(...)`, and the transport-facing presence reconfigure helper resolves detached `{ hasRestoreCallback }` flags into either enabled restore wiring with supplied restore-lifecycle loggers or a disabled restore seam that clears any previously installed restore-lifecycle loggers.
+- Reason: Transport lifecycle code needs one detached installed-state contract that can drive enable, disable, and enabled-to-enabled refresh flows without inferring intent from optional callback presence or accidentally leaving stale lifecycle loggers attached after a `false` snapshot.
+- Consequence: Future restore-holder presence diff or formatting helpers should treat the detached presence snapshot as the source of truth for wiring state and should ignore extra supplied restore-lifecycle loggers whenever that snapshot is disabled.
+
 ### 2026-03-11: Replication diagnostics restore callback holder refreshes should reuse holder-owned target state
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder.ts` now retains its current target holder plus registry configuration and exposes `refreshLoggers(...)`, which reapplies live runtime and restore-lifecycle loggers onto the existing holder-owned restore seam while requiring restore wiring to already be enabled.
