@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore-lifecycle text loggers should consume emission-owned joined text
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationRestoreLifecycleTextLogger.ts` now forwards `emission.lifecycleText` directly to the injected callback.
+- Reason: Restore-lifecycle emissions already carry joined text beside detached payload and lifecycle line arrays, so rebuilding text inside the adapter would duplicate lifecycle formatting rules and risk drift from the shared emission contract.
+- Consequence: Future restore-lifecycle fan-out or mixed-logger helpers should treat emitted `lifecycleText` as the text source of truth and leave payload or line detachment to the sibling adapters.
+
 ### 2026-03-11: Replication diagnostics restore-lifecycle line loggers should clone line arrays before callback invocation
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationRestoreLifecycleLineLogger.ts` now forwards restore-lifecycle line arrays by cloning the emitted `configurationChangeLines` and `configurationRestoreLines` before invoking the injected callback.
