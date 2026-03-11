@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics configuration snapshot restores should compose decode and holder reapply
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestore.ts` now restores unknown diagnostics logger configuration payloads through one transport-facing helper that decodes the detached snapshot and reapplies it onto one existing holder using the supplied registry and live callbacks.
+- Reason: Transport lifecycle code needs one restore seam for unknown payloads so callers do not hand-roll decode, callback-validation, and holder-reapply ordering or drift from the detached snapshot contract.
+- Consequence: Future diagnostics logger persistence or lifecycle restore flows should call this helper instead of decoding unknown payloads and invoking holder snapshot reconfigure separately.
+
 ### 2026-03-11: Replication diagnostics configuration snapshot callback checks should reuse one transport-facing validator
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotCallbackValidation.ts` now validates and filters one supplied text, line, and payload logger callback set against detached configuration-snapshot callback-presence flags, throwing only when a required callback type is missing while ignoring extra supplied callbacks that the snapshot does not enable.
