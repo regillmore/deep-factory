@@ -41,6 +41,10 @@ export interface AuthoritativeClientReplicationDiagnosticsLoggerConfigurationRes
   lifecycleText: string;
 }
 
+export type AuthoritativeClientReplicationDiagnosticsLoggerConfigurationRestoreLifecycleSinkCallback = (
+  emission: AuthoritativeClientReplicationDiagnosticsLoggerConfigurationRestoreLifecycleEmission
+) => void;
+
 export interface RestoreAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotWithLifecycleEmissionOptions
   extends RestoreAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotOptions {}
 

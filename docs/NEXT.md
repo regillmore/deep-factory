@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-471. Add a transport-facing diagnostics logger restore-lifecycle payload logger helper after task `470` that forwards one detached configuration lifecycle payload through an injected callback while preserving joined text and line arrays for sibling loggers, with restore-lifecycle payload-logger regressions.
 472. Add a transport-facing diagnostics logger restore-lifecycle line logger helper after task `470` that forwards detached configuration lifecycle line arrays through one injected callback while preserving joined text and payload data for sibling loggers, with restore-lifecycle line-logger regressions.
 473. Add a transport-facing diagnostics logger restore-lifecycle text logger helper after task `470` that forwards joined lifecycle text through one injected callback while preserving detached payload data and line arrays for sibling loggers, with restore-lifecycle text-logger regressions.
+474. Add a transport-facing diagnostics logger restore-lifecycle fan-out sink helper after tasks `471-473` that forwards one restore-lifecycle emission to multiple downstream sinks while cloning per-sink payload and line-array views, with restore-lifecycle fan-out regressions.
 
 ## App shell
 

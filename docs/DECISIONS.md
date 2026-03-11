@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore-lifecycle payload loggers should clone payloads before callback invocation
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationRestoreLifecyclePayloadLogger.ts` now forwards restore-lifecycle payloads by cloning the emitted payload before invoking the injected callback.
+- Reason: Restore-lifecycle payload loggers need the same mutation isolation that the periodic diagnostics sink stack already provides, but the restore-lifecycle adapter path does not yet have a shared fan-out sink cloning wrapper.
+- Consequence: Future restore-lifecycle line, text, or fan-out helpers should preserve this per-sink detachment rule instead of sharing one mutable emitted payload object across sibling callbacks.
+
 ### 2026-03-11: Replication diagnostics restore-lifecycle emissions should carry both snapshots plus shared formatted output
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationRestoreLifecycleEmission.ts` now emits restore-lifecycle data as one detached payload containing the previous and restored configuration snapshots plus their change summary, alongside separately detached lifecycle line arrays and joined text.
