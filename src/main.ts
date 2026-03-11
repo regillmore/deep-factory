@@ -64,7 +64,10 @@ import {
 import type { WorldSaveEnvelope } from './mainWorldSave';
 import { pickWorldSaveEnvelopeFromJsonPicker } from './mainWorldSaveImport';
 import { downloadWorldSaveEnvelope } from './mainWorldSaveDownload';
-import { createWorldSessionShellProfileEnvelope } from './mainWorldSessionShellProfile';
+import {
+  createWorldSessionShellProfileEnvelope,
+  type WorldSessionShellProfileEnvelope
+} from './mainWorldSessionShellProfile';
 import { downloadWorldSessionShellProfileEnvelope } from './mainWorldSessionShellProfileDownload';
 import { pickWorldSessionShellProfileEnvelopeFromJsonPicker } from './mainWorldSessionShellProfileImport';
 import { restoreWorldSessionFromSaveEnvelope } from './mainWorldSessionRestore';
@@ -84,6 +87,7 @@ import {
   type PausedMainMenuResetShellTogglesResult,
   type PausedMainMenuShellProfileExportResult,
   type PausedMainMenuShellProfileImportResult,
+  type PausedMainMenuShellProfilePreview,
   type PausedMainMenuSavedWorldStatus
 } from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
@@ -491,6 +495,11 @@ type RestorePausedWorldSessionFromSaveEnvelopeResult =
   | FailedPausedWorldSessionFromSaveEnvelopeResult
   | PersistenceFailedPausedWorldSessionFromSaveEnvelopeResult;
 
+type PendingPausedMainMenuShellProfilePreview = {
+  fileName: string | null;
+  envelope: WorldSessionShellProfileEnvelope;
+};
+
 let restorePausedWorldSessionFromSaveEnvelopeAction:
   | ((envelope: WorldSaveEnvelope) => RestorePausedWorldSessionFromSaveEnvelopeResult)
   | null = null;
@@ -532,6 +541,7 @@ const bootstrap = async (): Promise<void> => {
   let pausedMainMenuImportResult: PausedMainMenuImportResult | null = null;
   let pausedMainMenuClearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null;
   let pausedMainMenuResetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null;
+  let pausedMainMenuShellProfilePreview: PendingPausedMainMenuShellProfilePreview | null = null;
   let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
   let worldSessionShellPersistenceAvailable = true;
@@ -560,6 +570,19 @@ const bootstrap = async (): Promise<void> => {
     playerSpawnMarkerVisible,
     shortcutsOverlayVisible
   });
+  const readPausedMainMenuShellProfilePreview =
+    (): PausedMainMenuShellProfilePreview | null =>
+      pausedMainMenuShellProfilePreview === null
+        ? null
+        : {
+            fileName: pausedMainMenuShellProfilePreview.fileName,
+            shellState: {
+              ...pausedMainMenuShellProfilePreview.envelope.shellState
+            },
+            shellActionKeybindings: {
+              ...pausedMainMenuShellProfilePreview.envelope.shellActionKeybindings
+            }
+          };
   const persistWorldSessionShellState = (): void => {
     worldSessionShellPersistenceAvailable = saveWorldSessionShellState(
       worldSessionShellStateStorage,
@@ -675,6 +698,16 @@ const bootstrap = async (): Promise<void> => {
 
       return importPausedMainMenuShellProfile();
     },
+    onApplyShellProfilePreview: (screen) => {
+      if (screen !== 'main-menu' || !worldSessionStarted) {
+        return {
+          status: 'failed',
+          reason: 'Shell-profile apply is unavailable.'
+        };
+      }
+
+      return applyPausedMainMenuShellProfilePreview();
+    },
     onExportShellProfile: (screen) => {
       if (screen !== 'main-menu' || !worldSessionStarted) {
         return {
@@ -733,7 +766,8 @@ const bootstrap = async (): Promise<void> => {
         pausedMainMenuExportResult,
         pausedMainMenuClearSavedWorldResult,
         pausedMainMenuResetShellTogglesResult,
-        worldSavePersistenceAvailable
+        worldSavePersistenceAvailable,
+        readPausedMainMenuShellProfilePreview()
       )
     );
     syncWorldScreenShellVisibility();
@@ -1203,7 +1237,7 @@ const bootstrap = async (): Promise<void> => {
     return 'Browser shell storage is unavailable.';
   };
   const applyImportedPausedMainMenuShellProfile = (
-    envelope: ReturnType<typeof createCurrentWorldSessionShellProfile>
+    envelope: WorldSessionShellProfileEnvelope
   ): PausedMainMenuShellProfileImportResult => {
     applyWorldSessionShellState(envelope.shellState);
     applyShellActionKeybindingState(envelope.shellActionKeybindings);
@@ -1219,8 +1253,6 @@ const bootstrap = async (): Promise<void> => {
     worldSessionShellPersistenceAvailable =
       shellStatePersisted && shellActionKeybindingsPersisted;
 
-    showMainMenuShellState();
-
     if (shellStatePersisted && shellActionKeybindingsPersisted) {
       return {
         status: 'applied',
@@ -1235,6 +1267,32 @@ const bootstrap = async (): Promise<void> => {
         shellStatePersisted,
         shellActionKeybindingsPersisted
       )
+    };
+  };
+  const applyPausedMainMenuShellProfilePreview = (): PausedMainMenuShellProfileImportResult => {
+    if (pausedMainMenuShellProfilePreview === null) {
+      return {
+        status: 'failed',
+        reason: 'No shell-profile preview is ready to apply.'
+      };
+    }
+
+    const preview = pausedMainMenuShellProfilePreview;
+    pausedMainMenuShellProfilePreview = null;
+    const importResult = applyImportedPausedMainMenuShellProfile(preview.envelope);
+    showMainMenuShellState();
+    if (importResult.status === 'persistence-failed') {
+      console.warn('Failed to persist imported shell profile.', importResult.reason);
+      return {
+        status: 'persistence-failed',
+        fileName: preview.fileName,
+        reason: importResult.reason
+      };
+    }
+
+    return {
+      status: 'applied',
+      fileName: preview.fileName
     };
   };
   const importPausedMainMenuShellProfile = async (): Promise<PausedMainMenuShellProfileImportResult> => {
@@ -1259,17 +1317,13 @@ const bootstrap = async (): Promise<void> => {
             reason: result.reason
           };
         case 'selected': {
-          const importResult = applyImportedPausedMainMenuShellProfile(result.envelope);
-          if (importResult.status === 'persistence-failed') {
-            console.warn('Failed to persist imported shell profile.', importResult.reason);
-            return {
-              status: 'persistence-failed',
-              fileName: result.fileName,
-              reason: importResult.reason
-            };
-          }
+          pausedMainMenuShellProfilePreview = {
+            fileName: result.fileName,
+            envelope: result.envelope
+          };
+          showMainMenuShellState();
           return {
-            status: 'applied',
+            status: 'previewed',
             fileName: result.fileName
           };
         }

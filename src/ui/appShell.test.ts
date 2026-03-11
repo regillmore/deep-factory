@@ -35,6 +35,7 @@ import {
   resolvePausedMainMenuExportWorldSaveTitle,
   resolvePausedMainMenuExportShellProfileTitle,
   resolvePausedMainMenuFreshWorldTitle,
+  resolvePausedMainMenuApplyShellProfileTitle,
   resolvePausedMainMenuImportShellProfileTitle,
   resolvePausedMainMenuImportWorldSaveTitle,
   resolvePausedMainMenuShellActionKeybindingEditorIntro,
@@ -112,6 +113,10 @@ const IMPORTED_SESSION_PERSISTENCE_FAILED_SAVED_WORLD_STATUS_LINES = [
 const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Browser shell storage is unavailable or could not be updated, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
+] as const;
+const PAUSED_MAIN_MENU_SHELL_PROFILE_PREVIEW_LINES = [
+  'The selected shell profile validated successfully and is ready to apply to this paused session.',
+  'Review its saved-on shell visibility and replacement hotkey set below before applying it.'
 ] as const;
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO =
   'Use unique A-Z letters for the in-world shell actions. Changes save immediately when browser storage is available.';
@@ -962,6 +967,54 @@ describe('resolveAppShellViewModel', () => {
         },
         ...createPausedMainMenuShellActionKeybindingSummaryRows()
       ]
+    });
+  });
+
+  it('adds a paused-menu shell-profile preview card that summarizes the selected profile before apply', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        null,
+        null,
+        null,
+        null,
+        {
+          fileName: 'preview-shell-profile.json',
+          shellState: {
+            debugOverlayVisible: true,
+            debugEditControlsVisible: false,
+            debugEditOverlaysVisible: true,
+            playerSpawnMarkerVisible: true,
+            shortcutsOverlayVisible: false
+          },
+          shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+        }
+      )
+    );
+
+    expect(viewModel.menuSections[6]).toEqual({
+      title: 'Shell Profile Preview',
+      lines: [...PAUSED_MAIN_MENU_SHELL_PROFILE_PREVIEW_LINES],
+      metadataRows: [
+        {
+          label: 'File',
+          value: 'preview-shell-profile.json'
+        },
+        {
+          label: 'Saved On',
+          value: 'Debug HUD, Edit Overlays, Spawn Marker'
+        },
+        {
+          label: 'Saved Off',
+          value: 'Edit Panel, Shortcuts'
+        },
+        ...createPausedMainMenuShellActionKeybindingSummaryRows(CUSTOM_SHELL_ACTION_KEYBINDINGS)
+      ],
+      tone: 'accent'
     });
   });
 
@@ -2142,9 +2195,17 @@ describe('resolvePausedMainMenuExportShellProfileTitle', () => {
 });
 
 describe('resolvePausedMainMenuImportShellProfileTitle', () => {
-  it('explains that paused-menu shell-profile import validates and reapplies shell toggles and hotkeys without rebuilding the session', () => {
+  it('explains that paused-menu shell-profile import validates and previews shell toggles and hotkeys before apply', () => {
     expect(resolvePausedMainMenuImportShellProfileTitle()).toBe(
-      'Choose a JSON shell-profile file, validate its shell toggles and shell hotkeys, and reapply them to the current paused session without rebuilding it'
+      'Choose a JSON shell-profile file, validate its shell toggles and shell hotkeys, and preview them before applying the profile to the current paused session'
+    );
+  });
+});
+
+describe('resolvePausedMainMenuApplyShellProfileTitle', () => {
+  it('explains that paused-menu shell-profile apply commits the current preview into the paused session', () => {
+    expect(resolvePausedMainMenuApplyShellProfileTitle()).toBe(
+      'Apply the currently previewed shell-profile toggles and hotkeys to the current paused session'
     );
   });
 });

@@ -136,6 +136,11 @@ export interface PausedMainMenuAppliedShellProfileImportResult {
   fileName: string | null;
 }
 
+export interface PausedMainMenuPreviewedShellProfileImportResult {
+  status: 'previewed';
+  fileName: string | null;
+}
+
 export interface PausedMainMenuPersistenceFailedShellProfileImportResult {
   status: 'persistence-failed';
   fileName: string | null;
@@ -163,12 +168,19 @@ export interface PausedMainMenuFailedShellProfileImportResult {
 }
 
 export type PausedMainMenuShellProfileImportResult =
+  | PausedMainMenuPreviewedShellProfileImportResult
   | PausedMainMenuAppliedShellProfileImportResult
   | PausedMainMenuPersistenceFailedShellProfileImportResult
   | PausedMainMenuRejectedShellProfileImportResult
   | PausedMainMenuCancelledShellProfileImportResult
   | PausedMainMenuPickerStartFailedShellProfileImportResult
   | PausedMainMenuFailedShellProfileImportResult;
+
+export interface PausedMainMenuShellProfilePreview {
+  fileName: string | null;
+  shellState: WorldSessionShellState;
+  shellActionKeybindings: ShellActionKeybindingState;
+}
 
 export interface AppShellState {
   screen: AppShellScreen;
@@ -192,6 +204,7 @@ export interface AppShellState {
   pausedMainMenuImportResult?: PausedMainMenuImportResult;
   pausedMainMenuClearSavedWorldResult?: PausedMainMenuClearSavedWorldResult;
   pausedMainMenuResetShellTogglesResult?: PausedMainMenuResetShellTogglesResult;
+  pausedMainMenuShellProfilePreview?: PausedMainMenuShellProfilePreview;
 }
 
 export interface InWorldShellStateOptions {
@@ -392,6 +405,39 @@ const createPausedMainMenuResetShellTogglesResultMenuSection = (
       };
   }
 };
+const createPausedMainMenuShellProfilePreviewMenuSection = (
+  shellProfilePreview: PausedMainMenuShellProfilePreview
+): AppShellMenuSection => {
+  const shellStateSummary = createWorldSessionShellStatePersistenceSummary(
+    shellProfilePreview.shellState
+  );
+
+  return {
+    title: 'Shell Profile Preview',
+    lines: [
+      'The selected shell profile validated successfully and is ready to apply to this paused session.',
+      'Review its saved-on shell visibility and replacement hotkey set below before applying it.'
+    ],
+    metadataRows: [
+      {
+        label: 'File',
+        value: resolvePausedMainMenuResultFileNameValue(shellProfilePreview.fileName)
+      },
+      {
+        label: 'Saved On',
+        value: formatMenuSectionMetadataRowValue(shellStateSummary.savedOnToggleLabels)
+      },
+      {
+        label: 'Saved Off',
+        value: formatMenuSectionMetadataRowValue(shellStateSummary.savedOffToggleLabels)
+      },
+      ...createPausedMainMenuShellActionKeybindingSummaryRows(
+        shellProfilePreview.shellActionKeybindings
+      )
+    ],
+    tone: 'accent'
+  };
+};
 const createPausedMainMenuShellActionKeybindingSummaryRows = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ): readonly AppShellMenuSectionMetadataRow[] => [
@@ -556,7 +602,8 @@ export const createPausedMainMenuMenuSections = (
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null = null,
   exportResult: PausedMainMenuExportResult | null = null,
   clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null,
-  resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null
+  resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null,
+  shellProfilePreview: PausedMainMenuShellProfilePreview | null = null
 ): readonly AppShellMenuSection[] => {
   const persistenceSummary = createWorldSessionShellStatePersistenceSummary(
     worldSessionShellState,
@@ -686,6 +733,9 @@ export const createPausedMainMenuMenuSections = (
         ...createPausedMainMenuShellActionKeybindingSummaryRows(shellActionKeybindings)
       ]
     },
+    ...(shellProfilePreview === null
+      ? []
+      : [createPausedMainMenuShellProfilePreviewMenuSection(shellProfilePreview)]),
     {
       title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
       lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
@@ -715,7 +765,8 @@ export const createPausedMainMenuShellState = (
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null = null,
   exportResult: PausedMainMenuExportResult | null = null,
   clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null,
-  resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null
+  resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null,
+  shellProfilePreview: PausedMainMenuShellProfilePreview | null = null
 ): AppShellState => ({
   screen: 'main-menu',
   statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
@@ -729,7 +780,8 @@ export const createPausedMainMenuShellState = (
     savedWorldStatus,
     exportResult,
     clearSavedWorldResult,
-    resetShellTogglesResult
+    resetShellTogglesResult,
+    shellProfilePreview
   ),
   primaryActionLabel: 'Resume World',
   secondaryActionLabel: 'Export World Save',
@@ -746,7 +798,10 @@ export const createPausedMainMenuShellState = (
     : { pausedMainMenuClearSavedWorldResult: clearSavedWorldResult }),
   ...(resetShellTogglesResult === null
     ? {}
-    : { pausedMainMenuResetShellTogglesResult: resetShellTogglesResult })
+    : { pausedMainMenuResetShellTogglesResult: resetShellTogglesResult }),
+  ...(shellProfilePreview === null
+    ? {}
+    : { pausedMainMenuShellProfilePreview: shellProfilePreview })
 });
 
 export interface AppShellViewModel {
@@ -806,6 +861,9 @@ interface AppShellOptions {
   ) => boolean;
   onResetShellActionKeybindings?: () => boolean;
   onImportShellProfile?: (
+    screen: AppShellScreen
+  ) => Promise<PausedMainMenuShellProfileImportResult> | PausedMainMenuShellProfileImportResult;
+  onApplyShellProfilePreview?: (
     screen: AppShellScreen
   ) => Promise<PausedMainMenuShellProfileImportResult> | PausedMainMenuShellProfileImportResult;
   onExportShellProfile?: (screen: AppShellScreen) => PausedMainMenuShellProfileExportResult;
@@ -940,7 +998,8 @@ export const createMainMenuShellState = (
   exportResult: PausedMainMenuExportResult | null = null,
   clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null,
   resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null,
-  firstLaunchWorldSavePersistenceAvailable = true
+  firstLaunchWorldSavePersistenceAvailable = true,
+  shellProfilePreview: PausedMainMenuShellProfilePreview | null = null
 ): AppShellState =>
   hasResumableWorldSession
     ? createPausedMainMenuShellState(
@@ -952,7 +1011,8 @@ export const createMainMenuShellState = (
         savedWorldStatus,
         exportResult,
         clearSavedWorldResult,
-        resetShellTogglesResult
+        resetShellTogglesResult,
+        shellProfilePreview
       )
     : createFirstLaunchMainMenuShellState(firstLaunchWorldSavePersistenceAvailable);
 
@@ -1035,7 +1095,10 @@ export const resolvePausedMainMenuResetShellTogglesTitle = (): string =>
   'Clear saved in-world shell visibility preferences and restore the paused session to the default-off shell layout before the next resume';
 
 export const resolvePausedMainMenuImportShellProfileTitle = (): string =>
-  'Choose a JSON shell-profile file, validate its shell toggles and shell hotkeys, and reapply them to the current paused session without rebuilding it';
+  'Choose a JSON shell-profile file, validate its shell toggles and shell hotkeys, and preview them before applying the profile to the current paused session';
+
+export const resolvePausedMainMenuApplyShellProfileTitle = (): string =>
+  'Apply the currently previewed shell-profile toggles and hotkeys to the current paused session';
 
 export const resolvePausedMainMenuExportShellProfileTitle = (): string =>
   'Download a JSON shell-profile copy of the current shell visibility toggles and shell hotkeys without changing the paused session';
@@ -1396,6 +1459,7 @@ export class AppShell {
   private shellActionKeybindingEditorActions: HTMLDivElement;
   private resetShellActionKeybindingsButton: HTMLButtonElement;
   private importShellProfileButton: HTMLButtonElement;
+  private applyShellProfilePreviewButton: HTMLButtonElement;
   private exportShellProfileButton: HTMLButtonElement;
   private shellActionKeybindingEditorStatus: HTMLParagraphElement;
   private detailList: HTMLUListElement;
@@ -1426,6 +1490,9 @@ export class AppShell {
   private onImportShellProfile: (
     screen: AppShellScreen
   ) => Promise<PausedMainMenuShellProfileImportResult> | PausedMainMenuShellProfileImportResult;
+  private onApplyShellProfilePreview: (
+    screen: AppShellScreen
+  ) => Promise<PausedMainMenuShellProfileImportResult> | PausedMainMenuShellProfileImportResult;
   private onExportShellProfile: (screen: AppShellScreen) => PausedMainMenuShellProfileExportResult;
   private currentShellActionKeybindingEditorStatus: AppShellShellActionKeybindingEditorStatus | null =
     null;
@@ -1453,6 +1520,13 @@ export class AppShell {
         Promise.resolve({
           status: 'failed',
           reason: 'Shell-profile import is unavailable.'
+        }));
+    this.onApplyShellProfilePreview =
+      options.onApplyShellProfilePreview ??
+      (() =>
+        Promise.resolve({
+          status: 'failed',
+          reason: 'Shell-profile apply is unavailable.'
         }));
     this.onExportShellProfile =
       options.onExportShellProfile ??
@@ -1625,6 +1699,17 @@ export class AppShell {
     });
     installPointerClickFocusRelease(this.importShellProfileButton);
     this.shellActionKeybindingEditorActions.append(this.importShellProfileButton);
+
+    this.applyShellProfilePreviewButton = document.createElement('button');
+    this.applyShellProfilePreviewButton.type = 'button';
+    this.applyShellProfilePreviewButton.className = 'app-shell__shell-keybindings-button';
+    this.applyShellProfilePreviewButton.textContent = 'Apply Shell Profile';
+    this.applyShellProfilePreviewButton.title = resolvePausedMainMenuApplyShellProfileTitle();
+    this.applyShellProfilePreviewButton.addEventListener('click', () => {
+      void this.tryApplyShellProfilePreview();
+    });
+    installPointerClickFocusRelease(this.applyShellProfilePreviewButton);
+    this.shellActionKeybindingEditorActions.append(this.applyShellProfilePreviewButton);
 
     this.exportShellProfileButton = document.createElement('button');
     this.exportShellProfileButton.type = 'button';
@@ -1855,14 +1940,25 @@ export class AppShell {
   private async tryImportShellProfile(): Promise<void> {
     const importResult = await this.onImportShellProfile(this.currentState.screen);
     switch (importResult.status) {
+      case 'previewed': {
+        const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
+        this.setShellActionKeybindingEditorStatus({
+          tone: 'accent',
+          text:
+            fileName === 'Unknown file'
+              ? 'Shell profile preview ready. Review the saved-on toggles and hotkeys below, then apply it.'
+              : `Shell profile preview ready from ${fileName}. Review the saved-on toggles and hotkeys below, then apply it.`
+        });
+        return;
+      }
       case 'applied': {
         const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
         this.setShellActionKeybindingEditorStatus({
           tone: 'accent',
           text:
             fileName === 'Unknown file'
-              ? 'Shell profile imported into the paused session.'
-              : `Shell profile imported from ${fileName}.`
+              ? 'Shell profile applied to the paused session.'
+              : `Shell profile applied from ${fileName}.`
         });
         return;
       }
@@ -1872,8 +1968,8 @@ export class AppShell {
           tone: 'warning',
           text:
             fileName === 'Unknown file'
-              ? `Shell profile imported for this paused session only: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
-              : `Shell profile from ${fileName} imported for this paused session only: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
+              ? `Shell profile applied for this paused session only: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
+              : `Shell profile from ${fileName} applied for this paused session only: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
         });
         return;
       }
@@ -1891,7 +1987,7 @@ export class AppShell {
       case 'cancelled':
         this.setShellActionKeybindingEditorStatus({
           tone: 'warning',
-          text: 'Shell-profile import canceled before any profile was applied.'
+          text: 'Shell-profile import canceled before any preview was loaded.'
         });
         return;
       case 'picker-start-failed':
@@ -1904,6 +2000,74 @@ export class AppShell {
         this.setShellActionKeybindingEditorStatus({
           tone: 'warning',
           text: `Shell-profile import failed: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
+        });
+        return;
+    }
+  }
+
+  private async tryApplyShellProfilePreview(): Promise<void> {
+    const importResult = await this.onApplyShellProfilePreview(this.currentState.screen);
+    switch (importResult.status) {
+      case 'applied': {
+        const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
+        this.setShellActionKeybindingEditorStatus({
+          tone: 'accent',
+          text:
+            fileName === 'Unknown file'
+              ? 'Shell profile applied to the paused session.'
+              : `Shell profile applied from ${fileName}.`
+        });
+        return;
+      }
+      case 'persistence-failed': {
+        const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
+        this.setShellActionKeybindingEditorStatus({
+          tone: 'warning',
+          text:
+            fileName === 'Unknown file'
+              ? `Shell profile applied for this paused session only: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
+              : `Shell profile from ${fileName} applied for this paused session only: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
+        });
+        return;
+      }
+      case 'failed':
+        this.setShellActionKeybindingEditorStatus({
+          tone: 'warning',
+          text: `Shell-profile apply failed: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
+        });
+        return;
+      case 'previewed': {
+        const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
+        this.setShellActionKeybindingEditorStatus({
+          tone: 'accent',
+          text:
+            fileName === 'Unknown file'
+              ? 'Shell profile preview stayed ready. Review the saved-on toggles and hotkeys below before applying it.'
+              : `Shell profile preview from ${fileName} stayed ready. Review the saved-on toggles and hotkeys below before applying it.`
+        });
+        return;
+      }
+      case 'rejected': {
+        const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
+        this.setShellActionKeybindingEditorStatus({
+          tone: 'warning',
+          text:
+            fileName === 'Unknown file'
+              ? `Shell profile apply was blocked: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
+              : `Shell profile ${fileName} could not be applied: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
+        });
+        return;
+      }
+      case 'cancelled':
+        this.setShellActionKeybindingEditorStatus({
+          tone: 'warning',
+          text: 'Shell-profile apply was canceled before any previewed profile was applied.'
+        });
+        return;
+      case 'picker-start-failed':
+        this.setShellActionKeybindingEditorStatus({
+          tone: 'warning',
+          text: `Shell-profile apply failed: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
         });
         return;
     }
@@ -1952,6 +2116,8 @@ export class AppShell {
       : defaultShellActionKeybindings;
     const pausedMainMenuShellPersistenceAvailable =
       pausedMainMenuVisible ? state.worldSessionShellPersistenceAvailable !== false : true;
+    const pausedMainMenuHasShellProfilePreview =
+      pausedMainMenuVisible && state.pausedMainMenuShellProfilePreview != null;
 
     this.root.dataset.screen = viewModel.screen;
     this.overlay.hidden = !viewModel.overlayVisible;
@@ -1976,6 +2142,7 @@ export class AppShell {
     );
     this.syncShellActionKeybindingEditorIntro(pausedMainMenuShellPersistenceAvailable);
     this.syncShellActionKeybindingEditorInputs(pausedMainMenuShellActionKeybindings);
+    this.applyShellProfilePreviewButton.hidden = !pausedMainMenuHasShellProfilePreview;
     if (!pausedMainMenuVisible) {
       this.setShellActionKeybindingEditorStatus(null);
     } else {

@@ -1355,6 +1355,11 @@ const createExpectedPausedMainMenuState = (
     resetShellTogglesResult: PausedMainMenuResetShellTogglesResult;
     worldSaveCleared: boolean;
     savedWorldStatus: PausedMainMenuSavedWorldStatus;
+    shellProfilePreview: {
+      fileName: string | null;
+      worldSessionShellState: ReturnType<typeof createDefaultWorldSessionShellState>;
+      shellActionKeybindings: ShellActionKeybindingState;
+    };
   }> = {}
 ) => {
   const shellActionKeybindingLoad = loadShellActionKeybindingStateWithDefaultFallbackStatus({
@@ -1376,7 +1381,15 @@ const createExpectedPausedMainMenuState = (
     options.savedWorldStatus ?? (options.worldSaveCleared ? 'cleared' : null),
     options.exportResult ?? null,
     options.clearSavedWorldResult ?? null,
-    options.resetShellTogglesResult ?? null
+    options.resetShellTogglesResult ?? null,
+    true,
+    options.shellProfilePreview
+      ? {
+          fileName: options.shellProfilePreview.fileName,
+          shellState: options.shellProfilePreview.worldSessionShellState,
+          shellActionKeybindings: options.shellProfilePreview.shellActionKeybindings
+        }
+      : null
   );
 };
 
@@ -5282,7 +5295,7 @@ describe('main.ts shell state orchestration', () => {
     warnSpy.mockRestore();
   });
 
-  it('imports a paused-menu shell profile and reapplies shell toggles plus hotkeys without rebuilding the current session', async () => {
+  it('previews a paused-menu shell profile before applying its toggles and hotkeys to the current session', async () => {
     const importedShellState = {
       debugOverlayVisible: true,
       debugEditControlsVisible: true,
@@ -5301,6 +5314,15 @@ describe('main.ts shell state orchestration', () => {
     if (!importShellProfile) {
       throw new Error('expected shell-profile import callback');
     }
+    const applyShellProfilePreview = testRuntime.shellInstance?.options.onApplyShellProfilePreview;
+    if (!applyShellProfilePreview) {
+      throw new Error('expected shell-profile apply callback');
+    }
+    const persistedShellStateBeforePreview =
+      testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null;
+    const persistedShellHotkeysBeforePreview =
+      testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY) ?? null;
+    const debugEditControlsHotkeysBeforePreview = testRuntime.debugEditControlsShellActionKeybindings;
 
     testRuntime.queuedShellProfileImportResults = [
       {
@@ -5314,11 +5336,36 @@ describe('main.ts shell state orchestration', () => {
     ];
 
     await expect(importShellProfile('main-menu')).resolves.toEqual({
-      status: 'applied',
+      status: 'previewed',
       fileName: 'import-shell-profile.json'
     });
 
     expect(testRuntime.shellProfileImportCallCount).toBe(1);
+    expect(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null).toBe(
+      persistedShellStateBeforePreview
+    );
+    expect(testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY) ?? null).toBe(
+      persistedShellHotkeysBeforePreview
+    );
+    expect(testRuntime.debugEditControlsShellActionKeybindings).toEqual(
+      debugEditControlsHotkeysBeforePreview
+    );
+    expect(testRuntime.debugEditControlsSetShellActionKeybindingsCallCount).toBe(0);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        shellProfilePreview: {
+          fileName: 'import-shell-profile.json',
+          worldSessionShellState: importedShellState,
+          shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+        }
+      })
+    );
+
+    expect(applyShellProfilePreview('main-menu')).toEqual({
+      status: 'applied',
+      fileName: 'import-shell-profile.json'
+    });
+
     expect(readPersistedShellState()).toEqual(importedShellState);
     expect(testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY)).toBe(
       JSON.stringify(CUSTOM_SHELL_ACTION_KEYBINDINGS)
@@ -5404,7 +5451,7 @@ describe('main.ts shell state orchestration', () => {
     warnSpy.mockRestore();
   });
 
-  it('applies imported shell profiles to the live paused session even when browser shell storage cannot be rewritten', async () => {
+  it('applies previewed shell profiles to the live paused session even when browser shell storage cannot be rewritten', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const importedShellState = {
       debugOverlayVisible: true,
@@ -5423,6 +5470,10 @@ describe('main.ts shell state orchestration', () => {
     const importShellProfile = testRuntime.shellInstance?.options.onImportShellProfile;
     if (!importShellProfile) {
       throw new Error('expected shell-profile import callback');
+    }
+    const applyShellProfilePreview = testRuntime.shellInstance?.options.onApplyShellProfilePreview;
+    if (!applyShellProfilePreview) {
+      throw new Error('expected shell-profile apply callback');
     }
 
     const persistedShellStateBeforeImport =
@@ -5449,12 +5500,27 @@ describe('main.ts shell state orchestration', () => {
     ];
 
     await expect(importShellProfile('main-menu')).resolves.toEqual({
+      status: 'previewed',
+      fileName: 'session-only-shell-profile.json'
+    });
+
+    expect(testRuntime.shellProfileImportCallCount).toBe(1);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        shellProfilePreview: {
+          fileName: 'session-only-shell-profile.json',
+          worldSessionShellState: importedShellState,
+          shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+        }
+      })
+    );
+
+    expect(applyShellProfilePreview('main-menu')).toEqual({
       status: 'persistence-failed',
       fileName: 'session-only-shell-profile.json',
       reason: 'Browser shell visibility preferences and hotkeys were not updated.'
     });
 
-    expect(testRuntime.shellProfileImportCallCount).toBe(1);
     expect(testRuntime.shellInstance?.currentState).toEqual(
       createExpectedPausedMainMenuState({
         worldSessionShellState: importedShellState,

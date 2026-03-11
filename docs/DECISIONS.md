@@ -2,11 +2,11 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
-### 2026-03-11: Shell-profile imports should validate explicitly and still apply as session-only fallback when persistence fails
+### 2026-03-11: Shell-profile imports should preview validated changes before apply and still support session-only fallback
 
-- Decision: Paused-menu `Import Shell Profile` now accepts only versioned `deep-factory.shell-profile` envelopes whose shell-toggle booleans and shell hotkeys validate exactly, and once such a profile validates it reapplies those toggles plus hotkeys to the live paused session even if browser shell storage cannot be rewritten.
-- Reason: Imported preference bundles are explicit user-selected artifacts, so silently defaulting malformed fields would hide what actually loaded, while refusing to apply a valid profile just because browser storage is unavailable would make profile-sharing less useful in constrained browser contexts.
-- Consequence: Future shell or preference-profile imports should reject malformed payloads with surfaced validation reasons instead of partially defaulting them, and may preserve valid imports as current-session-only state when persistence writes fail.
+- Decision: Paused-menu `Import Shell Profile` now accepts only versioned `deep-factory.shell-profile` envelopes whose shell-toggle booleans and shell hotkeys validate exactly, stores the validated selection as a paused-menu preview, and leaves `Apply Shell Profile` as the step that reapplies those toggles plus hotkeys to the live paused session even if browser shell storage cannot be rewritten.
+- Reason: Imported preference bundles are explicit user-selected artifacts, so malformed fields should still fail loudly, but previewing a valid profile before mutating live paused-session bindings makes hotkey and toggle changes easier to inspect and less surprising.
+- Consequence: Future shell or preference-profile imports should keep validation-plus-preview separate from runtime mutation, reject malformed payloads with surfaced validation reasons instead of partially defaulting them, and may preserve valid applies as current-session-only state when persistence writes fail.
 
 ### 2026-03-11: Shell-profile export should snapshot live paused-session shell state instead of storage
 

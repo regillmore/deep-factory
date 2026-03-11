@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-11
 
+- Task: Add paused-menu shell-profile preview copy before apply.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/main.ts](../src/main.ts), [src/ui/appShell.test.ts](../src/ui/appShell.test.ts), and [src/main.test.ts](../src/main.test.ts) so `Import Shell Profile` now validates and previews a selected `deep-factory.shell-profile` before mutating the paused session, the paused menu surfaces a `Shell Profile Preview` card with saved-on toggle and hotkey summaries, and a new `Apply Shell Profile` action commits that preview while still falling back to current-tab-only state when browser shell persistence fails; removed completed task `431` from [docs/NEXT.md](docs/NEXT.md), added replacement task `433`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu `Shell Hotkeys` helper copy for session-only fallback remap mode.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so the paused-menu `Shell Hotkeys` editor now swaps its helper copy into a warning-toned session-only fallback explanation when browser shell storage is unavailable, while browser-saved sessions keep the normal immediate-save guidance; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused helper-copy and paused-state regressions, removed completed task `428` from [docs/NEXT.md](docs/NEXT.md), added replacement task `432`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
