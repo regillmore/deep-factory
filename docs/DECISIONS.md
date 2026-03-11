@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore-holder presence callback bundle refreshes should reuse holder-owned target state
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolder.ts` now retains its current restore-holder target and exposes `refreshLoggerBundle(...)`, which rebuilds the detached presence reconfigure-and-log callback only from updated restore-wiring logger-bundle state while keeping the holder-owned public callback seam stable.
+- Reason: Transport lifecycle code needs one narrow refresh path for swapped presence loggers without repeatedly threading unchanged restore-holder targets back through integration-owned wiring or rebinding downstream callback consumers.
+- Consequence: Future restore-holder presence callback refresh helpers should use this holder-owned bundle refresh path when only restore-wiring logger sinks change, and reserve full `reconfigure(...)` for target-holder changes.
+
 ### 2026-03-11: Replication diagnostics restore-holder presence callback holders should own the stable detached public reconfigure seam
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolder.ts` now stores the current detached presence reconfigure-and-log callback reconfiguration internally and exposes one holder-owned detached `reconfigureAndLogFromPresenceSnapshot(...)` seam while `reconfigure(...)` swaps the restore-holder target and optional restore-wiring logger bundle underneath it.

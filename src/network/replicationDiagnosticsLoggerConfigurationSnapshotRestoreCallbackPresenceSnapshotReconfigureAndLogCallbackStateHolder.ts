@@ -16,7 +16,25 @@ export interface CreateAuthoritativeClientReplicationDiagnosticsLoggerConfigurat
 export interface ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolderOptions
   extends ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackOptions {}
 
+export interface RefreshAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolderLoggerBundleOptions {
+  loggerBundle?:
+    ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackOptions['loggerBundle'];
+}
+
+type AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolderConfiguration =
+  ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackOptions;
+
+const createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolderConfiguration =
+  ({
+    holder,
+    loggerBundle
+  }: AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolderConfiguration): AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolderConfiguration => ({
+    holder,
+    loggerBundle
+  });
+
 export class AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolder {
+  private currentConfiguration!: AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolderConfiguration;
   private currentReconfiguration!: AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackReconfiguration;
 
   readonly reconfigureAndLogFromPresenceSnapshot = (
@@ -34,10 +52,28 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapsho
     });
   }
 
+  refreshLoggerBundle({
+    loggerBundle
+  }: RefreshAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolderLoggerBundleOptions): void {
+    this.reconfigure({
+      ...this.currentConfiguration,
+      loggerBundle
+    });
+  }
+
   reconfigure({
     holder,
     loggerBundle
   }: ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolderOptions): void {
+    const nextConfiguration =
+      createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolderConfiguration(
+        {
+          holder,
+          loggerBundle
+        }
+      );
+
+    this.currentConfiguration = nextConfiguration;
     this.currentReconfiguration =
       reconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallback(
         {

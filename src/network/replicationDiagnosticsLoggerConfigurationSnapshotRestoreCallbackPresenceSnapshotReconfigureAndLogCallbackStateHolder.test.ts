@@ -284,6 +284,201 @@ describe(
       expect(secondRuntimeLineLogger).toHaveBeenCalledTimes(1);
     });
 
+    it('refreshes only the restore-wiring logger bundle while keeping the stored restore-holder target and detached callback seam stable', () => {
+      const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+      const firstRuntimeTextLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsTextLogger>();
+      const secondRuntimeLineLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLineLogger>();
+      const firstRestoreLifecycleTextLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLoggerConfigurationRestoreLifecycleTextLogger>();
+      const secondRestoreLifecyclePayloadLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLoggerConfigurationRestoreLifecyclePayloadLogger>();
+      const firstPresenceTextLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeTextLogger>();
+      const secondPresenceLineLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeLineLogger>();
+      const firstSourceHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+          registry,
+          intervalTicks: 6,
+          nextDueTick: 4,
+          textLogger: firstRuntimeTextLogger
+        });
+      const secondSourceHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+          registry,
+          intervalTicks: 7,
+          nextDueTick: 9,
+          lineLogger: secondRuntimeLineLogger
+        });
+      const targetHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+          registry,
+          intervalTicks: 5,
+          nextDueTick: 3,
+          payloadLogger:
+            vi.fn<AuthoritativeClientReplicationDiagnosticsPayloadLogger>()
+        });
+      const restoreCallbackHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder(
+          {
+            holder: targetHolder,
+            registry
+          }
+        );
+      const callbackStateHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolder(
+          {
+            holder: restoreCallbackHolder,
+            loggerBundle:
+              createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeLoggerBundle(
+                {
+                  textLogger: firstPresenceTextLogger
+                }
+              )
+          }
+        );
+      const detachedCallback =
+        callbackStateHolder.reconfigureAndLogFromPresenceSnapshot;
+
+      const firstResult = detachedCallback({
+        presenceSnapshot: {
+          hasRestoreCallback: true
+        },
+        textLogger: firstRuntimeTextLogger,
+        restoreLifecycleTextLogger: firstRestoreLifecycleTextLogger
+      });
+      const firstEmission = restoreCallbackHolder.restoreConfigurationSnapshot(
+        cloneAsUnknown(firstSourceHolder.getConfigurationSnapshot())
+      );
+
+      callbackStateHolder.refreshLoggerBundle({
+        loggerBundle:
+          createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeLoggerBundle(
+            {
+              lineLogger: secondPresenceLineLogger
+            }
+          )
+      });
+
+      expect(callbackStateHolder.reconfigureAndLogFromPresenceSnapshot).toBe(
+        detachedCallback
+      );
+
+      const secondResult = detachedCallback({
+        presenceSnapshot: {
+          hasRestoreCallback: true
+        },
+        lineLogger: secondRuntimeLineLogger,
+        restoreLifecyclePayloadLogger: secondRestoreLifecyclePayloadLogger
+      });
+
+      expect(firstResult.nextPresenceSnapshot).toEqual({
+        hasRestoreCallback: true
+      });
+      expect(secondResult.nextPresenceSnapshot).toEqual({
+        hasRestoreCallback: true
+      });
+      expect(firstPresenceTextLogger).toHaveBeenCalledTimes(1);
+      expect(secondPresenceLineLogger).toHaveBeenCalledTimes(1);
+      expect(firstPresenceTextLogger.mock.calls[0]![0]).toBe(
+        firstResult.restoreCallbackPresenceChangeText
+      );
+      expect(secondPresenceLineLogger.mock.calls[0]![0]).toEqual(
+        secondResult.restoreCallbackPresenceChangeLines
+      );
+
+      const secondEmission = restoreCallbackHolder.restoreConfigurationSnapshot(
+        cloneAsUnknown(secondSourceHolder.getConfigurationSnapshot())
+      );
+
+      expect(firstEmission?.payload.restoredConfigurationSnapshot).toEqual(
+        firstSourceHolder.getConfigurationSnapshot()
+      );
+      expect(secondEmission?.payload.restoredConfigurationSnapshot).toEqual(
+        secondSourceHolder.getConfigurationSnapshot()
+      );
+      expect(firstRestoreLifecycleTextLogger).toHaveBeenCalledTimes(1);
+      expect(secondRestoreLifecyclePayloadLogger).toHaveBeenCalledTimes(1);
+
+      targetHolder.poll(8);
+      expect(secondRuntimeLineLogger).not.toHaveBeenCalled();
+      targetHolder.poll(9);
+      expect(firstRuntimeTextLogger).not.toHaveBeenCalled();
+      expect(secondRuntimeLineLogger).toHaveBeenCalledTimes(1);
+    });
+
+    it('can clear the optional restore-wiring logger bundle while keeping the holder-owned detached callback seam stable', () => {
+      const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+      const runtimeLineLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLineLogger>();
+      const restoreLifecycleTextLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLoggerConfigurationRestoreLifecycleTextLogger>();
+      const presenceTextLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeTextLogger>();
+      const targetHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+          registry,
+          intervalTicks: 5,
+          nextDueTick: 3,
+          payloadLogger:
+            vi.fn<AuthoritativeClientReplicationDiagnosticsPayloadLogger>()
+        });
+      const restoreCallbackHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder(
+          {
+            holder: targetHolder,
+            registry
+          }
+        );
+      const callbackStateHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolder(
+          {
+            holder: restoreCallbackHolder,
+            loggerBundle:
+              createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeLoggerBundle(
+                {
+                  textLogger: presenceTextLogger
+                }
+              )
+          }
+        );
+      const detachedCallback =
+        callbackStateHolder.reconfigureAndLogFromPresenceSnapshot;
+
+      detachedCallback({
+        presenceSnapshot: {
+          hasRestoreCallback: true
+        },
+        lineLogger: runtimeLineLogger,
+        restoreLifecycleTextLogger
+      });
+
+      expect(presenceTextLogger).toHaveBeenCalledTimes(1);
+
+      callbackStateHolder.refreshLoggerBundle({
+        loggerBundle: undefined
+      });
+
+      expect(callbackStateHolder.reconfigureAndLogFromPresenceSnapshot).toBe(
+        detachedCallback
+      );
+
+      detachedCallback({
+        presenceSnapshot: {
+          hasRestoreCallback: true
+        },
+        lineLogger: runtimeLineLogger,
+        restoreLifecycleTextLogger
+      });
+
+      expect(presenceTextLogger).toHaveBeenCalledTimes(1);
+      expect(restoreCallbackHolder.getPresenceSnapshot()).toEqual({
+        hasRestoreCallback: true
+      });
+    });
+
     it('preserves presence reconfigure validation errors while keeping the holder-owned detached callback seam active', () => {
       const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
       const runtimeTextLogger =

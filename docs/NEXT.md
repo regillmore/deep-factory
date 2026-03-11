@@ -4,7 +4,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-495. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder presence-change callback logger-bundle refresh helper after task `494` that reapplies one stored restore-holder target against updated restore-wiring logger-bundle state while keeping the holder-owned public callback seam stable, with restore-holder-presence-callback-logger-refresh regressions.
 496. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder presence-change callback target-holder refresh helper after task `495` that reapplies one stored restore-wiring logger bundle against updated restore-holder target state while keeping the holder-owned public callback seam stable, with restore-holder-presence-callback-holder-refresh regressions.
 
 ## App shell
@@ -13,6 +12,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 318. Add paused-menu persistence-summary copy that surfaces when some persisted in-world shell-action keybindings were rejected during load while a mixed custom/default binding set still remains, with shell-action storage regressions.
 425. Add first-launch main-menu persistence-preview warning copy for unavailable browser storage so `resume after first pause` guidance is distinguished from `resume cannot persist here` states, with shell guidance regressions.
 426. Add paused-menu `Reset Shell Hotkeys` result copy that distinguishes stale load-fallback recovery from ordinary custom-set resets, with hotkey-reset regressions.
+427. Add paused-menu shell-hotkey remap result copy that distinguishes browser-saved updates from session-only fallback updates when storage writes fail, with hotkey-remap persistence regressions.
 
 ## Optimize liquids
 
