@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore callback reconfiguration should rebuild the nullable callback and public invoker together
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackReconfiguration.ts` now returns both the nullable restore callback and the matching no-op-safe restore invoker in one reconfiguration result.
+- Reason: Transport lifecycle wiring needs one rebuild seam that keeps the internal optional callback and the always-callable public restore entrypoint synchronized when live runtime or restore-lifecycle loggers change.
+- Consequence: Future restore-callback holders should store and refresh this paired reconfiguration result together instead of rebuilding the invoker separately from holder-owned callback state.
+
 ### 2026-03-11: Replication diagnostics restore callback invokers should stay branch-free while preserving active callback behavior
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackInvoker.ts` now wraps one nullable restore callback into an always-callable restore entrypoint that returns `null` when no callback is installed and otherwise forwards the active callback result and errors unchanged.

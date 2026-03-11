@@ -4,9 +4,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Networking scaffolding
 
-480. Add a transport-facing diagnostics logger configuration-snapshot restore callback reconfiguration helper after task `479` that rebuilds one nullable restore callback from updated holder, registry, live runtime callbacks, and optional restore-lifecycle loggers, with restore-reconfiguration regressions.
 481. Add a transport-facing diagnostics logger configuration-snapshot restore callback state holder after task `480` that owns one nullable restore callback plus a no-op-safe restore entrypoint across reconfiguration, with restore-callback-holder regressions.
 482. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder-presence snapshot after task `481` that reports whether restore-lifecycle restore wiring is currently installed without exposing function identity, with restore-holder-presence regressions.
+483. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder refresh helper after task `482` that reapplies updated live runtime and restore-lifecycle loggers onto the same holder-owned restore seam, with restore-holder-refresh regressions.
 
 ## App shell
 
