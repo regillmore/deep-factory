@@ -330,6 +330,200 @@ describe(
       expect(secondRuntimeLineLogger).toHaveBeenCalledTimes(1);
     });
 
+    it('refreshes runtime and restore-lifecycle loggers while keeping the holder-owned restore seam active', () => {
+      const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+      const firstRuntimeTextLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsTextLogger>();
+      const secondRuntimeLineLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLineLogger>();
+      const firstRestoreLifecycleTextLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLoggerConfigurationRestoreLifecycleTextLogger>();
+      const secondRestoreLifecyclePayloadLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLoggerConfigurationRestoreLifecyclePayloadLogger>();
+      const firstSourceHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+          registry,
+          intervalTicks: 6,
+          nextDueTick: 4,
+          textLogger: firstRuntimeTextLogger
+        });
+      const secondSourceHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+          registry,
+          intervalTicks: 7,
+          nextDueTick: 9,
+          lineLogger: secondRuntimeLineLogger
+        });
+      const targetHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+          registry,
+          intervalTicks: 5,
+          nextDueTick: 3,
+          payloadLogger:
+            vi.fn<AuthoritativeClientReplicationDiagnosticsPayloadLogger>()
+        });
+      const restoreCallbackHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder(
+          {
+            holder: targetHolder,
+            registry,
+            textLogger: firstRuntimeTextLogger,
+            restoreLifecycleTextLogger: firstRestoreLifecycleTextLogger
+          }
+        );
+
+      const firstEmission = restoreCallbackHolder.restoreConfigurationSnapshot(
+        cloneAsUnknown(firstSourceHolder.getConfigurationSnapshot())
+      );
+
+      expect(restoreCallbackHolder.getPresenceSnapshot()).toEqual({
+        hasRestoreCallback: true
+      });
+      expect(firstEmission?.payload.restoredConfigurationSnapshot).toEqual(
+        firstSourceHolder.getConfigurationSnapshot()
+      );
+      expect(firstRestoreLifecycleTextLogger).toHaveBeenCalledTimes(1);
+
+      targetHolder.poll(4);
+      expect(firstRuntimeTextLogger).toHaveBeenCalledTimes(1);
+      const targetSnapshotBeforeRefresh = targetHolder.getConfigurationSnapshot();
+
+      restoreCallbackHolder.refreshLoggers({
+        lineLogger: secondRuntimeLineLogger,
+        restoreLifecyclePayloadLogger: secondRestoreLifecyclePayloadLogger
+      });
+
+      expect(restoreCallbackHolder.getPresenceSnapshot()).toEqual({
+        hasRestoreCallback: true
+      });
+      expect(targetHolder.getConfigurationSnapshot()).toEqual(
+        targetSnapshotBeforeRefresh
+      );
+
+      const secondEmission = restoreCallbackHolder.restoreConfigurationSnapshot(
+        cloneAsUnknown(secondSourceHolder.getConfigurationSnapshot())
+      );
+
+      expect(secondEmission?.payload.restoredConfigurationSnapshot).toEqual(
+        secondSourceHolder.getConfigurationSnapshot()
+      );
+      expect(targetHolder.getConfigurationSnapshot()).toEqual(
+        secondSourceHolder.getConfigurationSnapshot()
+      );
+      expect(firstRestoreLifecycleTextLogger).toHaveBeenCalledTimes(1);
+      expect(secondRestoreLifecyclePayloadLogger).toHaveBeenCalledTimes(1);
+      expect(
+        secondRestoreLifecyclePayloadLogger.mock.calls[0]![0].changeSummary.changed
+      ).toBe(true);
+
+      targetHolder.poll(8);
+      expect(secondRuntimeLineLogger).not.toHaveBeenCalled();
+
+      targetHolder.poll(9);
+      expect(firstRuntimeTextLogger).toHaveBeenCalledTimes(1);
+      expect(secondRuntimeLineLogger).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects logger refresh without restore-lifecycle loggers and preserves active restore wiring', () => {
+      const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+      const runtimeTextLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsTextLogger>();
+      const runtimeLineLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLineLogger>();
+      const restoreLifecycleTextLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLoggerConfigurationRestoreLifecycleTextLogger>();
+      const sourceHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+          registry,
+          intervalTicks: 6,
+          nextDueTick: 4,
+          textLogger: runtimeTextLogger
+        });
+      const targetHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+          registry,
+          intervalTicks: 5,
+          nextDueTick: 3,
+          payloadLogger:
+            vi.fn<AuthoritativeClientReplicationDiagnosticsPayloadLogger>()
+        });
+      const restoreCallbackHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder(
+          {
+            holder: targetHolder,
+            registry,
+            textLogger: runtimeTextLogger,
+            restoreLifecycleTextLogger
+          }
+        );
+
+      expect(() =>
+        restoreCallbackHolder.refreshLoggers({
+          lineLogger: runtimeLineLogger
+        })
+      ).toThrowError(
+        'restore callback logger refresh requires at least one restore-lifecycle replication diagnostics logger callback'
+      );
+
+      expect(restoreCallbackHolder.getPresenceSnapshot()).toEqual({
+        hasRestoreCallback: true
+      });
+
+      const emission = restoreCallbackHolder.restoreConfigurationSnapshot(
+        cloneAsUnknown(sourceHolder.getConfigurationSnapshot())
+      );
+
+      expect(emission?.payload.restoredConfigurationSnapshot).toEqual(
+        sourceHolder.getConfigurationSnapshot()
+      );
+      targetHolder.poll(4);
+      expect(runtimeTextLogger).toHaveBeenCalledTimes(1);
+      expect(runtimeLineLogger).not.toHaveBeenCalled();
+      expect(restoreLifecycleTextLogger).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects logger refresh while restore wiring is disabled and preserves the holder state', () => {
+      const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+      const runtimeLineLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLineLogger>();
+      const restoreLifecycleTextLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLoggerConfigurationRestoreLifecycleTextLogger>();
+      const targetHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+          registry,
+          intervalTicks: 5,
+          nextDueTick: 3,
+          payloadLogger:
+            vi.fn<AuthoritativeClientReplicationDiagnosticsPayloadLogger>()
+        });
+      const restoreCallbackHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder(
+          {
+            holder: targetHolder,
+            registry
+          }
+        );
+      const initialTargetSnapshot = targetHolder.getConfigurationSnapshot();
+
+      expect(() =>
+        restoreCallbackHolder.refreshLoggers({
+          lineLogger: runtimeLineLogger,
+          restoreLifecycleTextLogger
+        })
+      ).toThrowError(
+        'cannot refresh replication diagnostics logger configuration snapshot restore callback loggers while restore callback wiring is disabled'
+      );
+
+      expect(restoreCallbackHolder.getPresenceSnapshot()).toEqual({
+        hasRestoreCallback: false
+      });
+      expect(targetHolder.getConfigurationSnapshot()).toEqual(
+        initialTargetSnapshot
+      );
+      expect(restoreLifecycleTextLogger).not.toHaveBeenCalled();
+      expect(runtimeLineLogger).not.toHaveBeenCalled();
+    });
+
     it('preserves restore validation errors when the holder-owned restore seam is active', () => {
       const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
       const sourceTextLogger =

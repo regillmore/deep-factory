@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore callback holder refreshes should reuse holder-owned target state
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder.ts` now retains its current target holder plus registry configuration and exposes `refreshLoggers(...)`, which reapplies live runtime and restore-lifecycle loggers onto the existing holder-owned restore seam while requiring restore wiring to already be enabled.
+- Reason: Transport lifecycle code needs one narrow refresh path for swapped live logger functions without repeatedly threading unchanged holder or registry state back through transport-owned wiring or accidentally turning refreshes into enable or disable transitions.
+- Consequence: Future presence-snapshot reconfigure helpers should use this holder-owned refresh path when restore wiring stays enabled, and should reserve `reconfigure(...)` for full target-holder or enabled-state changes.
+
 ### 2026-03-11: Replication diagnostics restore callback holder presence snapshots should expose installed state only
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder.ts` now reports restore wiring through a detached `{ hasRestoreCallback }` snapshot instead of exposing the live restore callback or invoker identities.

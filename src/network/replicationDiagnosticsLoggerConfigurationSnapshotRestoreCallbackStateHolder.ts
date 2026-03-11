@@ -11,9 +11,27 @@ export interface CreateAuthoritativeClientReplicationDiagnosticsLoggerConfigurat
 export interface ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderOptions
   extends ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackOptions {}
 
+export interface RefreshAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderLoggersOptions {
+  textLogger?:
+    ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackOptions['textLogger'];
+  lineLogger?:
+    ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackOptions['lineLogger'];
+  payloadLogger?:
+    ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackOptions['payloadLogger'];
+  restoreLifecycleTextLogger?:
+    ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackOptions['restoreLifecycleTextLogger'];
+  restoreLifecycleLineLogger?:
+    ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackOptions['restoreLifecycleLineLogger'];
+  restoreLifecyclePayloadLogger?:
+    ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackOptions['restoreLifecyclePayloadLogger'];
+}
+
 export interface AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshot {
   hasRestoreCallback: boolean;
 }
+
+type AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderConfiguration =
+  ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderOptions;
 
 const createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshot = ({
   restoreCallback
@@ -21,7 +39,37 @@ const createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshot
   hasRestoreCallback: restoreCallback !== null
 });
 
+const createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderConfiguration = ({
+  holder,
+  registry,
+  textLogger,
+  lineLogger,
+  payloadLogger,
+  restoreLifecycleTextLogger,
+  restoreLifecycleLineLogger,
+  restoreLifecyclePayloadLogger
+}: AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderConfiguration): AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderConfiguration => ({
+  holder,
+  registry,
+  textLogger,
+  lineLogger,
+  payloadLogger,
+  restoreLifecycleTextLogger,
+  restoreLifecycleLineLogger,
+  restoreLifecyclePayloadLogger
+});
+
+const hasConfiguredAuthoritativeClientReplicationDiagnosticsRestoreLifecycleLogger = ({
+  restoreLifecycleTextLogger,
+  restoreLifecycleLineLogger,
+  restoreLifecyclePayloadLogger
+}: RefreshAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderLoggersOptions): boolean =>
+  restoreLifecycleTextLogger !== undefined ||
+  restoreLifecycleLineLogger !== undefined ||
+  restoreLifecyclePayloadLogger !== undefined;
+
 export class AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder {
+  private currentConfiguration!: AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderConfiguration;
   private currentReconfiguration: AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackReconfiguration =
     {
       restoreCallback: null,
@@ -64,6 +112,45 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapsho
     );
   }
 
+  refreshLoggers({
+    textLogger,
+    lineLogger,
+    payloadLogger,
+    restoreLifecycleTextLogger,
+    restoreLifecycleLineLogger,
+    restoreLifecyclePayloadLogger
+  }: RefreshAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderLoggersOptions): void {
+    if (
+      !hasConfiguredAuthoritativeClientReplicationDiagnosticsRestoreLifecycleLogger(
+        {
+          restoreLifecycleTextLogger,
+          restoreLifecycleLineLogger,
+          restoreLifecyclePayloadLogger
+        }
+      )
+    ) {
+      throw new Error(
+        'restore callback logger refresh requires at least one restore-lifecycle replication diagnostics logger callback'
+      );
+    }
+
+    if (!this.getPresenceSnapshot().hasRestoreCallback) {
+      throw new Error(
+        'cannot refresh replication diagnostics logger configuration snapshot restore callback loggers while restore callback wiring is disabled'
+      );
+    }
+
+    this.reconfigure({
+      ...this.currentConfiguration,
+      textLogger,
+      lineLogger,
+      payloadLogger,
+      restoreLifecycleTextLogger,
+      restoreLifecycleLineLogger,
+      restoreLifecyclePayloadLogger
+    });
+  }
+
   reconfigure({
     holder,
     registry,
@@ -74,7 +161,20 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapsho
     restoreLifecycleLineLogger,
     restoreLifecyclePayloadLogger
   }: ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderOptions): void {
-    this.currentReconfiguration =
+    const nextConfiguration =
+      createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderConfiguration(
+        {
+          holder,
+          registry,
+          textLogger,
+          lineLogger,
+          payloadLogger,
+          restoreLifecycleTextLogger,
+          restoreLifecycleLineLogger,
+          restoreLifecyclePayloadLogger
+        }
+      );
+    const nextReconfiguration =
       reconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallback(
         {
           holder,
@@ -87,6 +187,9 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapsho
           restoreLifecyclePayloadLogger
         }
       );
+
+    this.currentConfiguration = nextConfiguration;
+    this.currentReconfiguration = nextReconfiguration;
   }
 }
 
