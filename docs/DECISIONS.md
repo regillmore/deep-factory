@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics configuration snapshot decoding should reject impossible disabled and enabled states
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotDecode.ts` now decodes unknown diagnostics logger `{ schedule, callbacks }` payloads by requiring disabled snapshots to keep `intervalTicks` and `nextDueTick` null with all callback-presence flags false, while enabled snapshots must provide a positive `intervalTicks`, a non-negative `nextDueTick`, and at least one callback-presence flag.
+- Reason: Persistence and transport handoff need one canonical validation seam before detached configuration JSON is diffed or reapplied, and accepting impossible snapshot shapes would let later holder lifecycle code observe states that no live holder can emit.
+- Consequence: Future diagnostics logger configuration import or restore helpers should decode unknown payloads through this helper instead of casting JSON directly to the snapshot type or revalidating enabled-versus-disabled invariants ad hoc.
+
 ### 2026-03-11: Replication diagnostics configuration diffs should compare detached snapshot fields
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationChangeSummary.ts` now summarizes previous-versus-next detached diagnostics logger configuration snapshots by comparing schedule `disabled`, `intervalTicks`, and `nextDueTick` fields plus callback-presence booleans, returning grouped change flags instead of diffing holder internals or live callback references.

@@ -5,8 +5,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Networking scaffolding
 
 463. Add a transport-facing diagnostics logger configuration-snapshot callback validator after task `461` that checks supplied text, line, and payload logger callbacks against one detached snapshot's callback-presence flags before reapply, with callback-validation regressions.
-464. Add a transport-facing diagnostics logger configuration-snapshot JSON decoder after tasks `460-461` that validates detached schedule-plus-callback payloads for persistence or transport handoff, with snapshot-decode regressions.
 465. Add a transport-facing diagnostics logger configuration-change line formatter after task `462` that renders one detached configuration-diff summary into deterministic schedule and callback diff labels for lifecycle logging, with change-format regressions.
+466. Add a transport-facing diagnostics logger configuration-snapshot restore helper after tasks `463-464` that decodes unknown schedule-plus-callback payloads, validates the supplied live callbacks against the snapshot's callback-presence flags, and reapplies the result onto one existing holder, with snapshot-restore regressions.
 
 ## App shell
 
