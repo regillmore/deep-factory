@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore-holder presence callback target refreshes should reuse holder-owned logger-bundle state
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolder.ts` now retains its current optional restore-wiring logger bundle and exposes `refreshHolder(...)`, which rebuilds the detached presence reconfigure-and-log callback only from updated restore-holder target state while keeping the holder-owned public callback seam stable.
+- Reason: Transport lifecycle code needs one narrow refresh path for swapped restore-holder wiring without repeatedly threading unchanged restore-wiring logger bundles back through integration-owned wiring or rebinding downstream callback consumers.
+- Consequence: Future restore-holder presence callback refresh helpers should use this holder-owned target refresh path when only restore-holder wiring changes, and reserve full `reconfigure(...)` for combined holder-plus-bundle changes.
+
 ### 2026-03-11: First-launch persistence preview should follow world-save storage availability
 
 - Decision: `createFirstLaunchMainMenuShellState(...)` now accepts persisted world-save storage availability and switches its `Persistence Preview` card from `resume after first pause` guidance to a storage-unavailable warning when browser resume storage cannot be opened during boot.

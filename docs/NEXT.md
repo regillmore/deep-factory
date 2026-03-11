@@ -2,13 +2,10 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-## Networking scaffolding
-
-496. Add a transport-facing diagnostics logger configuration-snapshot restore callback holder presence-change callback target-holder refresh helper after task `495` that reapplies one stored restore-wiring logger bundle against updated restore-holder target state while keeping the holder-owned public callback seam stable, with restore-holder-presence-callback-holder-refresh regressions.
-
 ## App shell
 
 200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
+429. Add a paused-menu `Export Shell Profile` action for task `200` that downloads the current shell-toggle visibility plus shell-hotkey bindings as JSON without mutating the active session, with shell-profile-export regressions.
 318. Add paused-menu persistence-summary copy that surfaces when some persisted in-world shell-action keybindings were rejected during load while a mixed custom/default binding set still remains, with shell-action storage regressions.
 426. Add paused-menu `Reset Shell Hotkeys` result copy that distinguishes stale load-fallback recovery from ordinary custom-set resets, with hotkey-reset regressions.
 427. Add paused-menu shell-hotkey remap result copy that distinguishes browser-saved updates from session-only fallback updates when storage writes fail, with hotkey-remap persistence regressions.

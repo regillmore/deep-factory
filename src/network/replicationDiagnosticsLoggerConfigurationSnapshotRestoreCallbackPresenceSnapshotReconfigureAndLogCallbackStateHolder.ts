@@ -21,6 +21,11 @@ export interface RefreshAuthoritativeClientReplicationDiagnosticsLoggerConfigura
     ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackOptions['loggerBundle'];
 }
 
+export interface RefreshAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolderHolderOptions {
+  holder:
+    ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackOptions['holder'];
+}
+
 type AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolderConfiguration =
   ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackOptions;
 
@@ -58,6 +63,15 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapsho
     this.reconfigure({
       ...this.currentConfiguration,
       loggerBundle
+    });
+  }
+
+  refreshHolder({
+    holder
+  }: RefreshAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolderHolderOptions): void {
+    this.reconfigure({
+      ...this.currentConfiguration,
+      holder
     });
   }
 
