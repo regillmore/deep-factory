@@ -187,7 +187,7 @@ describe('resolveAppShellViewModel', () => {
     ]);
   });
 
-  it('shows the first-launch main menu with structured enter-world, controls-preview, and mixed-device guidance cards', () => {
+  it('shows the first-launch main menu with structured enter-world, controls-preview, mixed-device, and persistence-preview guidance cards', () => {
     const viewModel = resolveAppShellViewModel(createFirstLaunchMainMenuShellState());
 
     expect(viewModel.overlayVisible).toBe(true);
@@ -253,6 +253,23 @@ describe('resolveAppShellViewModel', () => {
           {
             label: 'Readiness',
             value: 'Desktop and touch share one live session.'
+          }
+        ]
+      },
+      {
+        title: 'Persistence Preview',
+        lines: [
+          'Browser resume is not available yet because no paused world session has been saved yet.',
+          'After Enter World starts the first session, returning to the main menu creates the paused browser save that later boot can resume.'
+        ],
+        metadataRows: [
+          {
+            label: 'Current Resume',
+            value: 'Not available until the first pause.'
+          },
+          {
+            label: 'Created by',
+            value: 'Enter World, then return to main menu.'
           }
         ]
       }
@@ -1226,6 +1243,23 @@ describe('createFirstLaunchMainMenuShellState', () => {
             {
               label: 'Readiness',
               value: 'Desktop and touch share one live session.'
+            }
+          ]
+        },
+        {
+          title: 'Persistence Preview',
+          lines: [
+            'Browser resume is not available yet because no paused world session has been saved yet.',
+            'After Enter World starts the first session, returning to the main menu creates the paused browser save that later boot can resume.'
+          ],
+          metadataRows: [
+            {
+              label: 'Current Resume',
+              value: 'Not available until the first pause.'
+            },
+            {
+              label: 'Created by',
+              value: 'Enter World, then return to main menu.'
             }
           ]
         }
