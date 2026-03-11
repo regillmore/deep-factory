@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics configuration diffs should compare detached snapshot fields
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationChangeSummary.ts` now summarizes previous-versus-next detached diagnostics logger configuration snapshots by comparing schedule `disabled`, `intervalTicks`, and `nextDueTick` fields plus callback-presence booleans, returning grouped change flags instead of diffing holder internals or live callback references.
+- Reason: Transport lifecycle and persistence code needs one JSON-safe way to detect diagnostics logger configuration drift between exports, restores, and reconfigurations without depending on runner state or function identity.
+- Consequence: Future diagnostics logger configuration restore or logging helpers should diff detached `{ schedule, callbacks }` snapshots through this summary helper and should treat its flags as the source of truth for configuration change detection.
+
 ### 2026-03-10: Replication diagnostics configuration snapshots should reapply through live callbacks, not serialized functions
 
 - Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now reapplies detached configuration snapshots through `reconfigureFromConfigurationSnapshot(...)`, which accepts a registry plus live text, line, and payload logger callbacks separately, keeps disabled snapshots disabled, and uses snapshot callback-presence flags to choose which supplied callbacks become active.

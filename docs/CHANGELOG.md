@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-11
+
+- Task: Add a replication diagnostics logger configuration-change summary helper.
+- Changes: Added [src/network/replicationDiagnosticsLoggerConfigurationChangeSummary.ts](../src/network/replicationDiagnosticsLoggerConfigurationChangeSummary.ts) so transport code can compare two detached diagnostics logger configuration snapshots and get grouped schedule-plus-callback change flags without reading holder internals or comparing live callbacks; added focused coverage in [src/network/replicationDiagnosticsLoggerConfigurationChangeSummary.test.ts](../src/network/replicationDiagnosticsLoggerConfigurationChangeSummary.test.ts), removed completed task `462` from [docs/NEXT.md](docs/NEXT.md), added replacement task `465`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/network/replicationDiagnosticsLoggerConfigurationChangeSummary.test.ts src/network/replicationDiagnosticsLoggerConfigurationSnapshot.test.ts src/network/replicationDiagnosticsLoggerConfigurationSnapshotReconfigure.test.ts src/network/replicationDiagnosticsLoggerStateHolder.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-10
 
 - Task: Add a replication diagnostics logger configuration-snapshot reconfigure helper.
