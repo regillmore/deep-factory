@@ -269,6 +269,10 @@ canvas {
   line-height: 1.5;
 }
 
+.app-shell__shell-keybindings-intro[data-tone='warning'] {
+  color: #f3cd87;
+}
+
 .app-shell__shell-keybindings-actions {
   display: flex;
   flex-wrap: wrap;

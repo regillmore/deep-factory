@@ -37,6 +37,7 @@ import {
   resolvePausedMainMenuFreshWorldTitle,
   resolvePausedMainMenuImportShellProfileTitle,
   resolvePausedMainMenuImportWorldSaveTitle,
+  resolvePausedMainMenuShellActionKeybindingEditorIntro,
   resolvePausedMainMenuResetShellTogglesTitle,
   resolvePausedMainMenuResumeWorldTitle,
   resolveInWorldDebugEditControlsToggleTitle,
@@ -112,6 +113,10 @@ const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Browser shell storage is unavailable or could not be updated, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
 ] as const;
+const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO =
+  'Use unique A-Z letters for the in-world shell actions. Changes save immediately when browser storage is available.';
+const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO =
+  'Use unique A-Z letters for the in-world shell actions. Browser shell storage is unavailable, so remaps only affect this paused session until reload or a reset path clears them.';
 const STORAGE_UNAVAILABLE_FIRST_LAUNCH_PERSISTENCE_PREVIEW_LINES = [
   'Browser resume is unavailable here because browser storage could not be opened during boot.',
   'Enter World still starts a live session in this tab, but returning to the main menu cannot create a browser resume save until storage access works again.'
@@ -1544,7 +1549,8 @@ describe('createPausedMainMenuShellState', () => {
       quaternaryActionLabel: 'Clear Saved World',
       quinaryActionLabel: 'Reset Shell Toggles',
       senaryActionLabel: 'New World',
-      shellActionKeybindings: createDefaultShellActionKeybindingState()
+      shellActionKeybindings: createDefaultShellActionKeybindingState(),
+      worldSessionShellPersistenceAvailable: true
     });
   });
 
@@ -1707,7 +1713,8 @@ describe('createPausedMainMenuShellState', () => {
       quaternaryActionLabel: 'Clear Saved World',
       quinaryActionLabel: 'Reset Shell Toggles',
       senaryActionLabel: 'New World',
-      shellActionKeybindings: createDefaultShellActionKeybindingState()
+      shellActionKeybindings: createDefaultShellActionKeybindingState(),
+      worldSessionShellPersistenceAvailable: true
     });
   });
 
@@ -1876,6 +1883,7 @@ describe('createPausedMainMenuShellState', () => {
       quinaryActionLabel: 'Reset Shell Toggles',
       senaryActionLabel: 'New World',
       shellActionKeybindings: createDefaultShellActionKeybindingState(),
+      worldSessionShellPersistenceAvailable: true,
       pausedMainMenuResetShellTogglesResult: {
         status: 'cleared'
       }
@@ -2048,6 +2056,7 @@ describe('createPausedMainMenuShellState', () => {
       quinaryActionLabel: 'Reset Shell Toggles',
       senaryActionLabel: 'New World',
       shellActionKeybindings: createDefaultShellActionKeybindingState(),
+      worldSessionShellPersistenceAvailable: false,
       pausedMainMenuResetShellTogglesResult: {
         status: 'persistence-failed',
         reason: 'remove blocked'
@@ -2136,6 +2145,17 @@ describe('resolvePausedMainMenuImportShellProfileTitle', () => {
   it('explains that paused-menu shell-profile import validates and reapplies shell toggles and hotkeys without rebuilding the session', () => {
     expect(resolvePausedMainMenuImportShellProfileTitle()).toBe(
       'Choose a JSON shell-profile file, validate its shell toggles and shell hotkeys, and reapply them to the current paused session without rebuilding it'
+    );
+  });
+});
+
+describe('resolvePausedMainMenuShellActionKeybindingEditorIntro', () => {
+  it('switches between browser-saved and session-only helper copy for the paused-menu shell-hotkey editor', () => {
+    expect(resolvePausedMainMenuShellActionKeybindingEditorIntro()).toBe(
+      DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO
+    );
+    expect(resolvePausedMainMenuShellActionKeybindingEditorIntro(false)).toBe(
+      SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO
     );
   });
 });

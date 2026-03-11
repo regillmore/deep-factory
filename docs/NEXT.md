@@ -9,7 +9,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 318. Add paused-menu persistence-summary copy that surfaces when some persisted in-world shell-action keybindings were rejected during load while a mixed custom/default binding set still remains, with shell-action storage regressions.
 426. Add paused-menu `Reset Shell Hotkeys` result copy that distinguishes stale load-fallback recovery from ordinary custom-set resets, with hotkey-reset regressions.
 427. Add paused-menu shell-hotkey remap result copy that distinguishes browser-saved updates from session-only fallback updates when storage writes fail, with hotkey-remap persistence regressions.
-428. Add paused-menu `Shell Hotkeys` helper copy that surfaces session-only remap mode before any edit attempt when browser shell storage is unavailable, with hotkey-editor guidance regressions.
+432. Add paused-menu `Shell Hotkeys` helper copy that surfaces when the editor is showing a recovered safe-set fallback after invalid saved bindings were rejected during load, with hotkey-editor fallback regressions.
 
 ## Optimize liquids
 

@@ -187,6 +187,7 @@ export interface AppShellState {
   playerSpawnMarkerVisible?: boolean;
   shortcutsOverlayVisible?: boolean;
   shellActionKeybindings?: ShellActionKeybindingState;
+  worldSessionShellPersistenceAvailable?: boolean;
   pausedMainMenuExportResult?: PausedMainMenuExportResult;
   pausedMainMenuImportResult?: PausedMainMenuImportResult;
   pausedMainMenuClearSavedWorldResult?: PausedMainMenuClearSavedWorldResult;
@@ -212,6 +213,16 @@ const resolvePausedMainMenuShellActionKeybindingSummaryLine = (
   shellActionKeybindingsDefaultedFromPersistedState
     ? 'Saved in-world shell-action keybindings fell back to a recovered safe set during load. Review or remap the rows below before resuming.'
     : 'Current in-world shell hotkeys preview the active binding set and can be remapped below.';
+const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO =
+  'Use unique A-Z letters for the in-world shell actions. Changes save immediately when browser storage is available.';
+const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO =
+  'Use unique A-Z letters for the in-world shell actions. Browser shell storage is unavailable, so remaps only affect this paused session until reload or a reset path clears them.';
+export const resolvePausedMainMenuShellActionKeybindingEditorIntro = (
+  worldSessionShellPersistenceAvailable = true
+): string =>
+  worldSessionShellPersistenceAvailable
+    ? DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO
+    : SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO;
 const resolvePausedMainMenuShellActionKeybindingSetValue = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ): string =>
@@ -727,6 +738,7 @@ export const createPausedMainMenuShellState = (
   quinaryActionLabel: 'Reset Shell Toggles',
   senaryActionLabel: 'New World',
   shellActionKeybindings,
+  worldSessionShellPersistenceAvailable,
   ...(exportResult === null ? {} : { pausedMainMenuExportResult: exportResult }),
   ...(importResult === null ? {} : { pausedMainMenuImportResult: importResult }),
   ...(clearSavedWorldResult === null
@@ -1376,6 +1388,7 @@ export class AppShell {
   private status: HTMLParagraphElement;
   private menuSections: HTMLDivElement;
   private shellActionKeybindingEditor: HTMLDivElement;
+  private shellActionKeybindingEditorIntro: HTMLParagraphElement;
   private shellActionKeybindingInputs = new Map<
     InWorldShellActionKeybindingActionType,
     HTMLInputElement
@@ -1580,11 +1593,11 @@ export class AppShell {
     shellActionKeybindingEditorTitle.textContent = 'Shell Hotkeys';
     this.shellActionKeybindingEditor.append(shellActionKeybindingEditorTitle);
 
-    const shellActionKeybindingEditorIntro = document.createElement('p');
-    shellActionKeybindingEditorIntro.className = 'app-shell__shell-keybindings-intro';
-    shellActionKeybindingEditorIntro.textContent =
-      'Use unique A-Z letters for the in-world shell actions. Changes save immediately when browser storage is available.';
-    this.shellActionKeybindingEditor.append(shellActionKeybindingEditorIntro);
+    this.shellActionKeybindingEditorIntro = document.createElement('p');
+    this.shellActionKeybindingEditorIntro.className = 'app-shell__shell-keybindings-intro';
+    this.shellActionKeybindingEditorIntro.textContent =
+      resolvePausedMainMenuShellActionKeybindingEditorIntro();
+    this.shellActionKeybindingEditor.append(this.shellActionKeybindingEditorIntro);
 
     this.shellActionKeybindingEditorActions = document.createElement('div');
     this.shellActionKeybindingEditorActions.className = 'app-shell__shell-keybindings-actions';
@@ -1745,6 +1758,21 @@ export class AppShell {
       if (!input) continue;
       input.value = shellActionKeybindings[actionType];
     }
+  }
+
+  private syncShellActionKeybindingEditorIntro(
+    worldSessionShellPersistenceAvailable = true
+  ): void {
+    this.shellActionKeybindingEditorIntro.textContent =
+      resolvePausedMainMenuShellActionKeybindingEditorIntro(
+        worldSessionShellPersistenceAvailable
+      );
+    if (worldSessionShellPersistenceAvailable) {
+      delete this.shellActionKeybindingEditorIntro.dataset.tone;
+      return;
+    }
+
+    this.shellActionKeybindingEditorIntro.dataset.tone = 'warning';
   }
 
   private setShellActionKeybindingEditorStatus(
@@ -1922,6 +1950,8 @@ export class AppShell {
     const pausedMainMenuShellActionKeybindings = pausedMainMenuVisible
       ? state.shellActionKeybindings ?? defaultShellActionKeybindings
       : defaultShellActionKeybindings;
+    const pausedMainMenuShellPersistenceAvailable =
+      pausedMainMenuVisible ? state.worldSessionShellPersistenceAvailable !== false : true;
 
     this.root.dataset.screen = viewModel.screen;
     this.overlay.hidden = !viewModel.overlayVisible;
@@ -1944,6 +1974,7 @@ export class AppShell {
       pausedMainMenuVisible,
       'grid'
     );
+    this.syncShellActionKeybindingEditorIntro(pausedMainMenuShellPersistenceAvailable);
     this.syncShellActionKeybindingEditorInputs(pausedMainMenuShellActionKeybindings);
     if (!pausedMainMenuVisible) {
       this.setShellActionKeybindingEditorStatus(null);
