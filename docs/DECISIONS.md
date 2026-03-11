@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore-holder presence callbacks should capture holder and bundle, not live logger inputs
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallback.ts` now creates reusable restore-holder presence callbacks by closing over one holder plus optional restore-wiring logger bundle while accepting presence snapshots and live logger inputs per call.
+- Reason: The upcoming presence-callback reconfiguration helper should only need to rebuild callback identity when holder or bundle state changes, not when each call supplies different live runtime or restore-lifecycle loggers.
+- Consequence: Future restore-holder presence callback layers should pass live logger inputs through the callback invocation contract instead of closing over them at callback-construction time.
+
 ### 2026-03-11: Replication diagnostics restore-holder presence reconfigure-and-log helpers should log cloned line snapshots
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLog.ts` now snapshots previous and next detached `{ hasRestoreCallback }` state around one holder presence reconfigure, returns detached summary plus restore-wiring line and text output, and forwards only a cloned line-array view through the optional presence-change logger bundle.
