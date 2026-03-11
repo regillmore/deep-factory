@@ -135,6 +135,10 @@ const FULLY_VISIBLE_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Resume World shows Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are in session-only fallback. Current shell hotkeys use the custom set.';
+const DEFAULTED_DEFAULT_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
+  'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set. The current default-looking hotkeys are a recovered safe-set fallback because invalid saved bindings were rejected during load.';
+const CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
+  'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the custom set. Current shell hotkeys are live only in this paused session because the latest browser hotkey save failed.';
 const PAUSED_MAIN_MENU_SHELL_PROFILE_PREVIEW_LINES = [
   'The selected shell profile validated successfully and is ready to apply to this paused session.',
   'Review its live change summary, saved-on shell visibility, and replacement hotkey set below before applying it.'
@@ -2576,6 +2580,40 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
     ).toBe(SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
   });
 
+  it('warns in the collapsed summary when saved hotkeys resumed from the recovered safe-set fallback', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSummaryLine(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          true
+        ).menuSections ?? []
+      )
+    ).toBe(DEFAULTED_DEFAULT_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+  });
+
+  it('surfaces when the current hotkey set is live only for this session after the latest hotkey save failed', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSummaryLine(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          CUSTOM_SHELL_ACTION_KEYBINDINGS,
+          false,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          true
+        ).menuSections ?? [],
+        true
+      )
+    ).toBe(CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+  });
+
   it('surfaces a staged shell-profile preview while keeping the current paused-session summary', () => {
     expect(
       resolvePausedMainMenuShellSettingsSummaryLine(
@@ -2709,6 +2747,32 @@ describe('resolvePausedMainMenuShellSettingsSectionState', () => {
       visible: true,
       expanded: false,
       summaryLine: PREVIEWED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
+      toggleLabel: 'Show Shell Settings',
+      editorVisible: false
+    });
+  });
+
+  it('keeps current-session-only hotkey persistence warning in the collapsed shell-settings section state', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          CUSTOM_SHELL_ACTION_KEYBINDINGS,
+          false,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          true
+        )
+      )
+    ).toEqual({
+      visible: true,
+      expanded: false,
+      summaryLine: CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
       toggleLabel: 'Show Shell Settings',
       editorVisible: false
     });

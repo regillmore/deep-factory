@@ -1349,6 +1349,7 @@ const createExpectedPausedMainMenuState = (
     persistenceAvailable: boolean;
     shellActionKeybindings: ShellActionKeybindingState;
     shellActionKeybindingsDefaultedFromPersistedState: boolean;
+    shellActionKeybindingsCurrentSessionOnly: boolean;
     exportResult: PausedMainMenuExportResult;
     importResult: PausedMainMenuImportResult;
     clearSavedWorldResult: PausedMainMenuClearSavedWorldResult;
@@ -1389,7 +1390,8 @@ const createExpectedPausedMainMenuState = (
           shellState: options.shellProfilePreview.worldSessionShellState,
           shellActionKeybindings: options.shellProfilePreview.shellActionKeybindings
         }
-      : null
+      : null,
+    options.shellActionKeybindingsCurrentSessionOnly ?? false
   );
 };
 
@@ -5795,7 +5797,8 @@ describe('main.ts shell state orchestration', () => {
       createExpectedPausedMainMenuState({
         worldSessionShellState: importedShellState,
         persistenceAvailable: false,
-        shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+        shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS,
+        shellActionKeybindingsCurrentSessionOnly: true
       })
     );
     expect(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null).toBe(
@@ -6691,7 +6694,8 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(
       createExpectedPausedMainMenuState({
         persistenceAvailable: false,
-        shellActionKeybindings: remappedShellActionKeybindings
+        shellActionKeybindings: remappedShellActionKeybindings,
+        shellActionKeybindingsCurrentSessionOnly: true
       })
     );
 
@@ -6708,6 +6712,64 @@ describe('main.ts shell state orchestration', () => {
       createInWorldShellState({
         debugOverlayVisible: true,
         shellActionKeybindings: remappedShellActionKeybindings
+      })
+    );
+  });
+
+  it('keeps paused-menu hotkeys marked as current-session-only after later shell-toggle saves succeed', async () => {
+    const remappedShellActionKeybindings: ShellActionKeybindingState = {
+      'return-to-main-menu': 'Q',
+      'recenter-camera': 'C',
+      'toggle-debug-overlay': 'U',
+      'toggle-debug-edit-controls': 'G',
+      'toggle-debug-edit-overlays': 'V',
+      'toggle-player-spawn-marker': 'M'
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+    testRuntime.storageSetItemErrorsByKey.set(
+      SHELL_ACTION_KEYBINDING_STORAGE_KEY,
+      new Error('write blocked')
+    );
+
+    expect(
+      testRuntime.shellInstance?.options.onRemapShellActionKeybinding?.(
+        'toggle-debug-overlay',
+        'u'
+      )
+    ).toEqual({
+      status: 'session-only'
+    });
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onToggleDebugOverlay('in-world');
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+
+    expect(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)).toBe(
+      JSON.stringify({
+        debugOverlayVisible: true,
+        debugEditControlsVisible: false,
+        debugEditOverlaysVisible: false,
+        playerSpawnMarkerVisible: false,
+        shortcutsOverlayVisible: false
+      })
+    );
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        worldSessionShellState: {
+          debugOverlayVisible: true,
+          debugEditControlsVisible: false,
+          debugEditOverlaysVisible: false,
+          playerSpawnMarkerVisible: false,
+          shortcutsOverlayVisible: false
+        },
+        persistenceAvailable: true,
+        shellActionKeybindings: remappedShellActionKeybindings,
+        shellActionKeybindingsCurrentSessionOnly: true
       })
     );
   });

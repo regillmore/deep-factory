@@ -539,6 +539,7 @@ const bootstrap = async (): Promise<void> => {
   let shellActionKeybindings = initialShellActionKeybindingLoad.state;
   let shellActionKeybindingsDefaultedFromPersistedState =
     initialShellActionKeybindingLoad.defaultedFromPersistedState;
+  let shellActionKeybindingsCurrentSessionOnly = false;
   const defaultWorldSessionShellState = createDefaultWorldSessionShellState();
   let worldSessionStarted = false;
   let worldSessionLoopStarted = false;
@@ -809,7 +810,8 @@ const bootstrap = async (): Promise<void> => {
         pausedMainMenuClearSavedWorldResult,
         pausedMainMenuResetShellTogglesResult,
         worldSavePersistenceAvailable,
-        readPausedMainMenuShellProfilePreview()
+        readPausedMainMenuShellProfilePreview(),
+        shellActionKeybindingsCurrentSessionOnly
       )
     );
     syncWorldScreenShellVisibility();
@@ -837,6 +839,7 @@ const bootstrap = async (): Promise<void> => {
     }
 
     applyShellActionKeybindingState(nextKeybindings);
+    shellActionKeybindingsCurrentSessionOnly = false;
     refreshShellStateAfterShellPreferenceChange();
     return true;
   }
@@ -846,6 +849,7 @@ const bootstrap = async (): Promise<void> => {
     const persisted = saveShellActionKeybindingState(worldSessionShellStateStorage, nextKeybindings);
     worldSessionShellPersistenceAvailable = persisted;
     applyShellActionKeybindingState(nextKeybindings);
+    shellActionKeybindingsCurrentSessionOnly = !persisted;
     refreshShellStateAfterShellPreferenceChange();
     return {
       status: persisted ? 'saved' : 'session-only'
@@ -1336,6 +1340,9 @@ const bootstrap = async (): Promise<void> => {
       worldSessionShellStateStorage,
       shellActionKeybindings
     );
+    if (shellActionKeybindingsChanged) {
+      shellActionKeybindingsCurrentSessionOnly = !shellActionKeybindingsPersisted;
+    }
     worldSessionShellPersistenceAvailable =
       shellStatePersisted && shellActionKeybindingsPersisted;
 

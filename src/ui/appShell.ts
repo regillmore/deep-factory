@@ -278,6 +278,7 @@ export interface AppShellState {
   shortcutsOverlayVisible?: boolean;
   shellActionKeybindings?: ShellActionKeybindingState;
   worldSessionShellPersistenceAvailable?: boolean;
+  shellActionKeybindingsCurrentSessionOnly?: boolean;
   pausedMainMenuExportResult?: PausedMainMenuExportResult;
   pausedMainMenuImportResult?: PausedMainMenuImportResult;
   pausedMainMenuClearSavedWorldResult?: PausedMainMenuClearSavedWorldResult;
@@ -298,6 +299,10 @@ export const DEFAULT_PAUSED_MAIN_MENU_STATUS = 'World session paused.';
 export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [] as const;
 const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
   'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
+const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE =
+  'Current in-world shell hotkeys preview the active binding set and can be remapped below.';
+const DEFAULTED_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE =
+  'Saved in-world shell-action keybindings fell back to a recovered safe set during load. Review or remap the rows below before resuming.';
 const formatMenuSectionMetadataRowValue = (labels: readonly string[]): string =>
   labels.length > 0 ? labels.join(', ') : 'None';
 const formatMenuSectionSummaryListValue = (labels: readonly string[]): string => {
@@ -331,6 +336,11 @@ const findMenuSectionMetadataRowValue = (
   menuSections
     .find((section) => section.title === sectionTitle)
     ?.metadataRows?.find((row) => row.label === rowLabel)?.value;
+const findMenuSectionLines = (
+  menuSections: readonly AppShellMenuSection[],
+  sectionTitle: string
+): readonly string[] =>
+  menuSections.find((section) => section.title === sectionTitle)?.lines ?? [];
 const resolvePausedMainMenuShellProfilePreviewSummaryLine = (
   menuSections: readonly AppShellMenuSection[] = []
 ): string | null => {
@@ -377,8 +387,23 @@ const resolvePausedMainMenuShellSettingsPersistenceSummaryLine = (
 
   return summaryLines.length > 0 ? summaryLines.join(' ') : null;
 };
-export const resolvePausedMainMenuShellSettingsSummaryLine = (
+const resolvePausedMainMenuShellSettingsFallbackSummaryLine = (
   menuSections: readonly AppShellMenuSection[] = []
+): string | null =>
+  findMenuSectionLines(menuSections, 'Persistence Summary').includes(
+    DEFAULTED_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE
+  )
+    ? 'The current default-looking hotkeys are a recovered safe-set fallback because invalid saved bindings were rejected during load.'
+    : null;
+const resolvePausedMainMenuShellSettingsCurrentSessionOnlySummaryLine = (
+  shellActionKeybindingsCurrentSessionOnly = false
+): string | null =>
+  shellActionKeybindingsCurrentSessionOnly
+    ? 'Current shell hotkeys are live only in this paused session because the latest browser hotkey save failed.'
+    : null;
+export const resolvePausedMainMenuShellSettingsSummaryLine = (
+  menuSections: readonly AppShellMenuSection[] = [],
+  shellActionKeybindingsCurrentSessionOnly = false
 ): string => {
   const savedOnToggleLabels = parseMenuSectionMetadataRowValue(
     findMenuSectionMetadataRowValue(menuSections, 'Persistence Summary', 'Saved On')
@@ -402,11 +427,19 @@ export const resolvePausedMainMenuShellSettingsSummaryLine = (
     resolvePausedMainMenuShellProfilePreviewSummaryLine(menuSections);
   const shellSettingsPersistenceSummaryLine =
     resolvePausedMainMenuShellSettingsPersistenceSummaryLine(menuSections);
+  const shellSettingsFallbackSummaryLine =
+    resolvePausedMainMenuShellSettingsFallbackSummaryLine(menuSections);
+  const shellSettingsCurrentSessionOnlySummaryLine =
+    resolvePausedMainMenuShellSettingsCurrentSessionOnlySummaryLine(
+      shellActionKeybindingsCurrentSessionOnly
+    );
 
   return [
     shellProfilePreviewSummaryLine,
     visibilitySummaryLine,
-    shellSettingsPersistenceSummaryLine
+    shellSettingsPersistenceSummaryLine,
+    shellSettingsFallbackSummaryLine,
+    shellSettingsCurrentSessionOnlySummaryLine
   ]
     .filter((line): line is string => line !== null)
     .join(' ');
@@ -422,7 +455,12 @@ export const resolvePausedMainMenuShellSettingsSectionState = (
   return {
     visible,
     expanded: visible && expanded,
-    summaryLine: visible ? resolvePausedMainMenuShellSettingsSummaryLine(state.menuSections ?? []) : null,
+    summaryLine: visible
+      ? resolvePausedMainMenuShellSettingsSummaryLine(
+          state.menuSections ?? [],
+          state.shellActionKeybindingsCurrentSessionOnly === true
+        )
+      : null,
     toggleLabel: visible ? resolvePausedMainMenuShellSettingsToggleLabel(expanded) : null,
     editorVisible: visible && expanded
   };
@@ -447,8 +485,8 @@ const resolvePausedMainMenuShellActionKeybindingSummaryLine = (
   shellActionKeybindingsDefaultedFromPersistedState = false
 ): string =>
   shellActionKeybindingsDefaultedFromPersistedState
-    ? 'Saved in-world shell-action keybindings fell back to a recovered safe set during load. Review or remap the rows below before resuming.'
-    : 'Current in-world shell hotkeys preview the active binding set and can be remapped below.';
+    ? DEFAULTED_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE
+    : DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE;
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO =
   'Use unique A-Z letters for the in-world shell actions. Changes save immediately when browser storage is available.';
 const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO =
@@ -1060,7 +1098,8 @@ export const createPausedMainMenuShellState = (
   exportResult: PausedMainMenuExportResult | null = null,
   clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null,
   resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null,
-  shellProfilePreview: PausedMainMenuShellProfilePreview | null = null
+  shellProfilePreview: PausedMainMenuShellProfilePreview | null = null,
+  shellActionKeybindingsCurrentSessionOnly = false
 ): AppShellState => ({
   screen: 'main-menu',
   statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
@@ -1085,6 +1124,9 @@ export const createPausedMainMenuShellState = (
   senaryActionLabel: 'New World',
   shellActionKeybindings,
   worldSessionShellPersistenceAvailable,
+  ...(shellActionKeybindingsCurrentSessionOnly
+    ? { shellActionKeybindingsCurrentSessionOnly: true }
+    : {}),
   ...(exportResult === null ? {} : { pausedMainMenuExportResult: exportResult }),
   ...(importResult === null ? {} : { pausedMainMenuImportResult: importResult }),
   ...(clearSavedWorldResult === null
@@ -1296,7 +1338,8 @@ export const createMainMenuShellState = (
   clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null,
   resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null,
   firstLaunchWorldSavePersistenceAvailable = true,
-  shellProfilePreview: PausedMainMenuShellProfilePreview | null = null
+  shellProfilePreview: PausedMainMenuShellProfilePreview | null = null,
+  shellActionKeybindingsCurrentSessionOnly = false
 ): AppShellState =>
   hasResumableWorldSession
     ? createPausedMainMenuShellState(
@@ -1309,7 +1352,8 @@ export const createMainMenuShellState = (
         exportResult,
         clearSavedWorldResult,
         resetShellTogglesResult,
-        shellProfilePreview
+        shellProfilePreview,
+        shellActionKeybindingsCurrentSessionOnly
       )
     : createFirstLaunchMainMenuShellState(firstLaunchWorldSavePersistenceAvailable);
 

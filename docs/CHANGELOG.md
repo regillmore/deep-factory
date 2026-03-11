@@ -4,6 +4,14 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-11
 
+- Task: Add current-session-only hotkey warning copy to the collapsed paused-menu Shell Settings summary.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the collapsed paused-menu `Shell Settings` summary now appends a dedicated warning when active shell hotkeys are live only in the current paused session because the latest browser hotkey save failed, threaded that detached hotkey-session-only state through [src/main.ts](../src/main.ts) so it survives later shell-toggle saves until a hotkey persistence path succeeds, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused shell-summary and runtime-state regressions, removed completed task `446` from [docs/NEXT.md](docs/NEXT.md), added replacement task `447`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts`, `cmd /c npx vitest run src/main.test.ts`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
+- Task: Add recovered-safe-set fallback warning copy to the collapsed paused-menu Shell Settings summary.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the collapsed paused-menu `Shell Settings` summary now reuses the existing shell-hotkey load-fallback signal from `Persistence Summary` and warns when the current default-looking hotkeys are only the recovered safe set after invalid saved bindings were rejected during load, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused shell-summary fallback regressions, removed completed task `445` from [docs/NEXT.md](docs/NEXT.md), added replacement task `446`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add shell-persistence and binding-set status to the collapsed paused-menu Shell Settings summary.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the collapsed paused-menu `Shell Settings` summary now appends the live shell-persistence mode plus whether the current in-world hotkeys are using the default or custom set, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused shell-summary regressions for browser-saved/default and session-only/custom states, removed completed task `440` from [docs/NEXT.md](docs/NEXT.md), added replacement task `445`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
