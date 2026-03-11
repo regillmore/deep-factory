@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore-holder presence text should join provided lines without reordering
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeTextFormatting.ts` now formats restore-holder presence text by joining the provided `RestoreCallbackPresenceChange` and `RestoreCallbackPresenceDiff` lines with newline separators and no extra framing.
+- Reason: The upcoming restore-wiring text logger and bundle helpers need one text source of truth that preserves the shared line order and keeps empty input stable without inventing new section rules.
+- Consequence: Future restore-holder presence text or text-logger helpers should reuse this formatter instead of rebuilding joined console text from summaries or relabeling the line section.
+
 ### 2026-03-11: Replication diagnostics restore-holder presence diff logs should use fixed restore-wiring labels
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeLineFormatting.ts` now renders detached restore-holder presence summaries as `RestoreCallbackPresenceChange` and `RestoreCallbackPresenceDiff`, with the diff line listing only `hasRestoreCallback` or the explicit placeholder `none`.

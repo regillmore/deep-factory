@@ -1,0 +1,14 @@
+import {
+  formatAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeLines
+} from './replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeLineFormatting';
+
+export interface FormatAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeTextOptions {
+  restoreCallbackPresenceChangeLines?: string[];
+}
+
+export const formatAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeText =
+  ({
+    restoreCallbackPresenceChangeLines =
+      formatAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeLines()
+  }: FormatAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeTextOptions = {}): string =>
+    restoreCallbackPresenceChangeLines.join('\n');
