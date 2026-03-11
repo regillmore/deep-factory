@@ -86,6 +86,7 @@ import {
   type PausedMainMenuClearSavedWorldResult,
   type PausedMainMenuExportResult,
   type PausedMainMenuImportResult,
+  type PausedMainMenuResetShellActionKeybindingsResult,
   type PausedMainMenuResetShellTogglesResult,
   type PausedMainMenuShellProfilePreviewClearResult,
   type PausedMainMenuShellProfileApplyChangeCategory,
@@ -687,10 +688,22 @@ const bootstrap = async (): Promise<void> => {
 
       return persistShellActionKeybindingStateAndRefresh(remapResult.state);
     },
-    onResetShellActionKeybindings: () => {
-      return persistShellActionKeybindingStateAndRefresh(
-        createDefaultShellActionKeybindingState()
-      );
+    onResetShellActionKeybindings: (): PausedMainMenuResetShellActionKeybindingsResult => {
+      const resetCategory = shellActionKeybindingsDefaultedFromPersistedState
+        ? 'load-fallback-recovery'
+        : 'default-set-reset';
+      if (
+        !persistShellActionKeybindingStateAndRefresh(createDefaultShellActionKeybindingState())
+      ) {
+        return {
+          status: 'failed'
+        };
+      }
+
+      return {
+        status: 'reset',
+        category: resetCategory
+      };
     },
     onImportShellProfile: (screen) => {
       if (screen !== 'main-menu' || !worldSessionStarted) {

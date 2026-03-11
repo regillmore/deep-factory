@@ -118,6 +118,23 @@ export type PausedMainMenuResetShellTogglesResult =
   | PausedMainMenuClearedResetShellTogglesResult
   | PausedMainMenuPersistenceFailedResetShellTogglesResult;
 
+export type PausedMainMenuResetShellActionKeybindingsResultCategory =
+  | 'default-set-reset'
+  | 'load-fallback-recovery';
+
+export interface PausedMainMenuResetShellActionKeybindingsResetResult {
+  status: 'reset';
+  category: PausedMainMenuResetShellActionKeybindingsResultCategory;
+}
+
+export interface PausedMainMenuResetShellActionKeybindingsFailedResult {
+  status: 'failed';
+}
+
+export type PausedMainMenuResetShellActionKeybindingsResult =
+  | PausedMainMenuResetShellActionKeybindingsResetResult
+  | PausedMainMenuResetShellActionKeybindingsFailedResult;
+
 export interface PausedMainMenuDownloadedShellProfileExportResult {
   status: 'downloaded';
   fileName: string | null;
@@ -918,7 +935,7 @@ interface AppShellOptions {
     actionType: InWorldShellActionKeybindingActionType,
     nextKey: string
   ) => boolean;
-  onResetShellActionKeybindings?: () => boolean;
+  onResetShellActionKeybindings?: () => PausedMainMenuResetShellActionKeybindingsResult;
   onImportShellProfile?: (
     screen: AppShellScreen
   ) => Promise<PausedMainMenuShellProfileImportResult> | PausedMainMenuShellProfileImportResult;
@@ -1266,6 +1283,26 @@ export const resolvePausedMainMenuApplyShellProfileEditorStatus = (
       return {
         tone: 'warning',
         text: `Shell-profile apply failed: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`
+      };
+  }
+};
+
+export const resolvePausedMainMenuResetShellActionKeybindingsEditorStatus = (
+  result: PausedMainMenuResetShellActionKeybindingsResult
+): { tone: 'accent' | 'warning'; text: string } => {
+  switch (result.status) {
+    case 'failed':
+      return {
+        tone: 'warning',
+        text: 'Browser storage rejected the default shell hotkey reset, so the current set stayed active.'
+      };
+    case 'reset':
+      return {
+        tone: 'accent',
+        text:
+          result.category === 'load-fallback-recovery'
+            ? 'Recovered safe-set fallback saved as the default Q, C, H, G, V, and M hotkeys, clearing the stale load warning.'
+            : 'Shell hotkeys reset to the default Q, C, H, G, V, and M set.'
       };
   }
 };
@@ -1655,7 +1692,7 @@ export class AppShell {
     actionType: InWorldShellActionKeybindingActionType,
     nextKey: string
   ) => boolean;
-  private onResetShellActionKeybindings: () => boolean;
+  private onResetShellActionKeybindings: () => PausedMainMenuResetShellActionKeybindingsResult;
   private onImportShellProfile: (
     screen: AppShellScreen
   ) => Promise<PausedMainMenuShellProfileImportResult> | PausedMainMenuShellProfileImportResult;
@@ -1685,7 +1722,8 @@ export class AppShell {
     this.onTogglePlayerSpawnMarker = options.onTogglePlayerSpawnMarker ?? (() => {});
     this.onToggleShortcutsOverlay = options.onToggleShortcutsOverlay ?? (() => {});
     this.onRemapShellActionKeybinding = options.onRemapShellActionKeybinding ?? (() => false);
-    this.onResetShellActionKeybindings = options.onResetShellActionKeybindings ?? (() => false);
+    this.onResetShellActionKeybindings =
+      options.onResetShellActionKeybindings ?? (() => ({ status: 'failed' }));
     this.onImportShellProfile =
       options.onImportShellProfile ??
       (() =>
@@ -2110,20 +2148,19 @@ export class AppShell {
 
   private tryResetShellActionKeybindings(): void {
     const defaultShellActionKeybindings = createDefaultShellActionKeybindingState();
-    if (!this.onResetShellActionKeybindings()) {
+    const resetResult = this.onResetShellActionKeybindings();
+    if (resetResult.status === 'failed') {
       this.syncShellActionKeybindingEditorInputs();
-      this.setShellActionKeybindingEditorStatus({
-        tone: 'warning',
-        text: 'Browser storage rejected the default shell hotkey reset, so the current set stayed active.'
-      });
+      this.setShellActionKeybindingEditorStatus(
+        resolvePausedMainMenuResetShellActionKeybindingsEditorStatus(resetResult)
+      );
       return;
     }
 
     this.syncShellActionKeybindingEditorInputs(defaultShellActionKeybindings);
-    this.setShellActionKeybindingEditorStatus({
-      tone: 'accent',
-      text: 'Shell hotkeys reset to Q, C, H, G, V, and M.'
-    });
+    this.setShellActionKeybindingEditorStatus(
+      resolvePausedMainMenuResetShellActionKeybindingsEditorStatus(resetResult)
+    );
   }
 
   private async tryImportShellProfile(): Promise<void> {

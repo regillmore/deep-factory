@@ -37,6 +37,7 @@ import {
   resolvePausedMainMenuExportShellProfileTitle,
   resolvePausedMainMenuFreshWorldTitle,
   resolvePausedMainMenuApplyShellProfileEditorStatus,
+  resolvePausedMainMenuResetShellActionKeybindingsEditorStatus,
   resolvePausedMainMenuApplyShellProfileTitle,
   resolvePausedMainMenuImportShellProfileTitle,
   resolvePausedMainMenuImportWorldSaveTitle,
@@ -2366,6 +2367,44 @@ describe('resolvePausedMainMenuApplyShellProfileEditorStatus', () => {
       });
     }
   );
+});
+
+describe('resolvePausedMainMenuResetShellActionKeybindingsEditorStatus', () => {
+  it('uses distinct success copy when reset saves the recovered safe set back to the default hotkeys', () => {
+    expect(
+      resolvePausedMainMenuResetShellActionKeybindingsEditorStatus({
+        status: 'reset',
+        category: 'load-fallback-recovery'
+      })
+    ).toEqual({
+      tone: 'accent',
+      text:
+        'Recovered safe-set fallback saved as the default Q, C, H, G, V, and M hotkeys, clearing the stale load warning.'
+    });
+  });
+
+  it('uses the ordinary default-reset copy when reset rewrites the standard hotkey set', () => {
+    expect(
+      resolvePausedMainMenuResetShellActionKeybindingsEditorStatus({
+        status: 'reset',
+        category: 'default-set-reset'
+      })
+    ).toEqual({
+      tone: 'accent',
+      text: 'Shell hotkeys reset to the default Q, C, H, G, V, and M set.'
+    });
+  });
+
+  it('keeps the existing warning copy when browser storage rejects the reset', () => {
+    expect(
+      resolvePausedMainMenuResetShellActionKeybindingsEditorStatus({
+        status: 'failed'
+      })
+    ).toEqual({
+      tone: 'warning',
+      text: 'Browser storage rejected the default shell hotkey reset, so the current set stayed active.'
+    });
+  });
 });
 
 describe('resolvePausedMainMenuClearShellProfilePreviewTitle', () => {

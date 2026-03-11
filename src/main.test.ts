@@ -6665,7 +6665,10 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
     testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
 
-    expect(testRuntime.shellInstance?.options.onResetShellActionKeybindings?.()).toBe(true);
+    expect(testRuntime.shellInstance?.options.onResetShellActionKeybindings?.()).toEqual({
+      status: 'reset',
+      category: 'default-set-reset'
+    });
     expect(testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY)).toBe(
       JSON.stringify(defaultShellActionKeybindings)
     );
@@ -6725,7 +6728,10 @@ describe('main.ts shell state orchestration', () => {
     expect(dispatchKeydown('q').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
 
-    expect(testRuntime.shellInstance?.options.onResetShellActionKeybindings?.()).toBe(true);
+    expect(testRuntime.shellInstance?.options.onResetShellActionKeybindings?.()).toEqual({
+      status: 'reset',
+      category: 'load-fallback-recovery'
+    });
     expect(testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY)).toBe(
       JSON.stringify(defaultShellActionKeybindings)
     );
