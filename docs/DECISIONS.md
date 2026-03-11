@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore-holder presence callback reconfiguration should rebuild only the detached callback seam
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackReconfiguration.ts` now returns a fresh detached `reconfigureAndLogCallback` built only from the current restore-holder plus optional restore-wiring logger bundle.
+- Reason: The upcoming presence-callback state holder needs one narrow rebuild seam when holder wiring or shared bundle state changes, while live runtime and restore-lifecycle loggers already belong to the callback invocation contract.
+- Consequence: Future restore-holder presence callback holders should rebuild callback identity through this reconfiguration helper instead of calling the factory directly or mixing holder-plus-bundle rebuild logic into their public methods.
+
 ### 2026-03-11: Replication diagnostics restore-holder presence callbacks should capture holder and bundle, not live logger inputs
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallback.ts` now creates reusable restore-holder presence callbacks by closing over one holder plus optional restore-wiring logger bundle while accepting presence snapshots and live logger inputs per call.
