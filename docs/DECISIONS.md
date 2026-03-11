@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore-lifecycle mixed logger bundles should compose through the shared restore sink order
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationRestoreLifecycleLoggerBundle.ts` now composes optional restore-lifecycle text, line, and payload loggers in `text`, `line`, then `payload` order through the shared restore-lifecycle fan-out sink.
+- Reason: Restore-aware caller code needs one reusable logger bundle seam with deterministic callback order and shared sink-side mutation isolation instead of branching over every callback combination.
+- Consequence: Future restore-and-log helpers should accept one optional restore-lifecycle mixed logger bundle or build one through this helper rather than wiring text, line, and payload callbacks independently.
+
 ### 2026-03-11: Replication diagnostics restore-lifecycle fan-out sinks should clone payloads and line arrays per sink
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationRestoreLifecycleFanOutSink.ts` now forwards restore-lifecycle emissions to each downstream sink through cloned payload data plus cloned lifecycle line arrays while reusing the emission-owned `lifecycleText`.
