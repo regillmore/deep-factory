@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore-lifecycle emissions should carry both snapshots plus shared formatted output
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationRestoreLifecycleEmission.ts` now emits restore-lifecycle data as one detached payload containing the previous and restored configuration snapshots plus their change summary, alongside separately detached lifecycle line arrays and joined text.
+- Reason: Transport lifecycle logging needs one source of truth that captures both sides of a restore and the shared formatting derived from that restore, without requiring later sinks to re-read holder state or recompute diffs after mutation-sensitive reapply steps.
+- Consequence: Future restore-lifecycle payload, line, or text logger helpers should consume this emission object instead of rebuilding previous-versus-restored snapshot comparisons or lifecycle strings ad hoc.
+
 ### 2026-03-11: Replication diagnostics lifecycle text sinks should format shared line arrays at call time
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationLifecycleTextLogger.ts` now forwards lifecycle text by formatting the supplied configuration-change and configuration-restore line arrays when the sink is invoked instead of requiring callers to prejoin text first.
