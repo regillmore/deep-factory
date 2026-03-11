@@ -5,6 +5,7 @@ import {
   clearWorldSessionShellStateWithResult,
   createDefaultWorldSessionShellState,
   createWorldSessionShellStatePersistenceSummary,
+  createWorldSessionShellStateToggleChanges,
   decodeWorldSessionShellState,
   loadWorldSessionShellState,
   loadWorldSessionShellStateWithPersistenceAvailability,
@@ -159,6 +160,66 @@ describe('createWorldSessionShellStatePersistenceSummary', () => {
       savedOffToggleLabels: ['Edit Panel', 'Spawn Marker'],
       clearedByActionLabels: ['Reset Shell Toggles', 'New World']
     });
+  });
+});
+
+describe('createWorldSessionShellStateToggleChanges', () => {
+  it('lists ordered shell-toggle visibility changes between the live and previewed paused-session states', () => {
+    expect(
+      createWorldSessionShellStateToggleChanges(
+        {
+          debugOverlayVisible: false,
+          debugEditControlsVisible: true,
+          debugEditOverlaysVisible: false,
+          playerSpawnMarkerVisible: false,
+          shortcutsOverlayVisible: true
+        },
+        {
+          debugOverlayVisible: true,
+          debugEditControlsVisible: false,
+          debugEditOverlaysVisible: true,
+          playerSpawnMarkerVisible: false,
+          shortcutsOverlayVisible: false
+        }
+      )
+    ).toEqual([
+      {
+        key: 'debugOverlayVisible',
+        label: 'Debug HUD',
+        previousVisible: false,
+        nextVisible: true
+      },
+      {
+        key: 'debugEditControlsVisible',
+        label: 'Edit Panel',
+        previousVisible: true,
+        nextVisible: false
+      },
+      {
+        key: 'debugEditOverlaysVisible',
+        label: 'Edit Overlays',
+        previousVisible: false,
+        nextVisible: true
+      },
+      {
+        key: 'shortcutsOverlayVisible',
+        label: 'Shortcuts',
+        previousVisible: true,
+        nextVisible: false
+      }
+    ]);
+  });
+
+  it('returns no toggle changes when the preview matches the live paused-session shell state', () => {
+    const currentState = {
+      debugOverlayVisible: true,
+      debugEditControlsVisible: false,
+      debugEditOverlaysVisible: true,
+      playerSpawnMarkerVisible: true,
+      shortcutsOverlayVisible: false
+    };
+
+    expect(createWorldSessionShellStateToggleChanges(currentState, currentState)).toEqual([]);
   });
 });
 

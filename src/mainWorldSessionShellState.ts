@@ -15,6 +15,13 @@ export interface WorldSessionShellStatePersistenceSummary {
   clearedByActionLabels: readonly string[];
 }
 
+export interface WorldSessionShellStateToggleChange {
+  key: keyof WorldSessionShellState;
+  label: string;
+  previousVisible: boolean;
+  nextVisible: boolean;
+}
+
 export interface WorldSessionShellStateLoadResult {
   state: WorldSessionShellState;
   persistenceAvailable: boolean;
@@ -145,6 +152,30 @@ export const createWorldSessionShellStatePersistenceSummary =
       clearedByActionLabels: WORLD_SESSION_SHELL_STATE_CLEAR_ACTION_LABELS
     };
   };
+
+export const createWorldSessionShellStateToggleChanges = (
+  currentState: WorldSessionShellState = createDefaultWorldSessionShellState(),
+  nextState: WorldSessionShellState = createDefaultWorldSessionShellState()
+): readonly WorldSessionShellStateToggleChange[] => {
+  const changes: WorldSessionShellStateToggleChange[] = [];
+
+  for (const [key, label] of PERSISTED_WORLD_SESSION_SHELL_TOGGLE_LABELS_BY_KEY) {
+    const previousVisible = currentState[key];
+    const nextVisible = nextState[key];
+    if (previousVisible === nextVisible) {
+      continue;
+    }
+
+    changes.push({
+      key,
+      label,
+      previousVisible,
+      nextVisible
+    });
+  }
+
+  return changes;
+};
 
 export const resolveWorldSessionShellStateAfterPausedMainMenuTransition = (
   currentState: WorldSessionShellState,

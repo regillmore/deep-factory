@@ -22,6 +22,7 @@ import {
 import {
   createDefaultWorldSessionShellState,
   createWorldSessionShellStatePersistenceSummary,
+  createWorldSessionShellStateToggleChanges,
   type WorldSessionShellState
 } from '../mainWorldSessionShellState';
 
@@ -420,6 +421,8 @@ const createPausedMainMenuResetShellTogglesResultMenuSection = (
   }
 };
 const createPausedMainMenuShellProfilePreviewMenuSection = (
+  worldSessionShellState: WorldSessionShellState,
+  liveShellActionKeybindings: ShellActionKeybindingState,
   shellProfilePreview: PausedMainMenuShellProfilePreview
 ): AppShellMenuSection => {
   const shellStateSummary = createWorldSessionShellStatePersistenceSummary(
@@ -430,12 +433,40 @@ const createPausedMainMenuShellProfilePreviewMenuSection = (
     title: 'Shell Profile Preview',
     lines: [
       'The selected shell profile validated successfully and is ready to apply to this paused session.',
-      'Review its saved-on shell visibility and replacement hotkey set below before applying it.'
+      'Review its live change summary, saved-on shell visibility, and replacement hotkey set below before applying it.'
     ],
     metadataRows: [
       {
         label: 'File',
         value: resolvePausedMainMenuResultFileNameValue(shellProfilePreview.fileName)
+      },
+      {
+        label: 'Toggle Changes',
+        value: formatMenuSectionMetadataRowValue(
+          createWorldSessionShellStateToggleChanges(
+            worldSessionShellState,
+            shellProfilePreview.shellState
+          ).map(
+            ({ label, previousVisible, nextVisible }) =>
+              `${label} ${previousVisible ? 'on' : 'off'} -> ${nextVisible ? 'on' : 'off'}`
+          )
+        )
+      },
+      {
+        label: 'Hotkey Changes',
+        value: formatMenuSectionMetadataRowValue(
+          IN_WORLD_SHELL_ACTION_KEYBINDING_IDS.flatMap((actionType) => {
+            const previousHotkey = liveShellActionKeybindings[actionType];
+            const nextHotkey = shellProfilePreview.shellActionKeybindings[actionType];
+            if (previousHotkey === nextHotkey) {
+              return [];
+            }
+
+            return [
+              `${getInWorldShellActionKeybindingActionLabel(actionType)} ${previousHotkey} -> ${nextHotkey}`
+            ];
+          })
+        )
       },
       {
         label: 'Saved On',
@@ -749,7 +780,13 @@ export const createPausedMainMenuMenuSections = (
     },
     ...(shellProfilePreview === null
       ? []
-      : [createPausedMainMenuShellProfilePreviewMenuSection(shellProfilePreview)]),
+      : [
+          createPausedMainMenuShellProfilePreviewMenuSection(
+            worldSessionShellState,
+            shellActionKeybindings,
+            shellProfilePreview
+          )
+        ]),
     {
       title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
       lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
