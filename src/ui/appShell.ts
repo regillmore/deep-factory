@@ -131,6 +131,20 @@ export type PausedMainMenuShellProfileExportResult =
   | PausedMainMenuDownloadedShellProfileExportResult
   | PausedMainMenuFailedShellProfileExportResult;
 
+export interface PausedMainMenuClearedShellProfilePreviewClearResult {
+  status: 'cleared';
+  fileName: string | null;
+}
+
+export interface PausedMainMenuFailedShellProfilePreviewClearResult {
+  status: 'failed';
+  reason: string;
+}
+
+export type PausedMainMenuShellProfilePreviewClearResult =
+  | PausedMainMenuClearedShellProfilePreviewClearResult
+  | PausedMainMenuFailedShellProfilePreviewClearResult;
+
 export interface PausedMainMenuAppliedShellProfileImportResult {
   status: 'applied';
   fileName: string | null;
@@ -866,6 +880,9 @@ interface AppShellOptions {
   onApplyShellProfilePreview?: (
     screen: AppShellScreen
   ) => Promise<PausedMainMenuShellProfileImportResult> | PausedMainMenuShellProfileImportResult;
+  onClearShellProfilePreview?: (
+    screen: AppShellScreen
+  ) => PausedMainMenuShellProfilePreviewClearResult;
   onExportShellProfile?: (screen: AppShellScreen) => PausedMainMenuShellProfileExportResult;
 }
 
@@ -1099,6 +1116,9 @@ export const resolvePausedMainMenuImportShellProfileTitle = (): string =>
 
 export const resolvePausedMainMenuApplyShellProfileTitle = (): string =>
   'Apply the currently previewed shell-profile toggles and hotkeys to the current paused session';
+
+export const resolvePausedMainMenuClearShellProfilePreviewTitle = (): string =>
+  'Dismiss the currently previewed shell-profile toggles and hotkeys without applying them to the paused session';
 
 export const resolvePausedMainMenuExportShellProfileTitle = (): string =>
   'Download a JSON shell-profile copy of the current shell visibility toggles and shell hotkeys without changing the paused session';
@@ -1460,6 +1480,7 @@ export class AppShell {
   private resetShellActionKeybindingsButton: HTMLButtonElement;
   private importShellProfileButton: HTMLButtonElement;
   private applyShellProfilePreviewButton: HTMLButtonElement;
+  private clearShellProfilePreviewButton: HTMLButtonElement;
   private exportShellProfileButton: HTMLButtonElement;
   private shellActionKeybindingEditorStatus: HTMLParagraphElement;
   private detailList: HTMLUListElement;
@@ -1493,6 +1514,9 @@ export class AppShell {
   private onApplyShellProfilePreview: (
     screen: AppShellScreen
   ) => Promise<PausedMainMenuShellProfileImportResult> | PausedMainMenuShellProfileImportResult;
+  private onClearShellProfilePreview: (
+    screen: AppShellScreen
+  ) => PausedMainMenuShellProfilePreviewClearResult;
   private onExportShellProfile: (screen: AppShellScreen) => PausedMainMenuShellProfileExportResult;
   private currentShellActionKeybindingEditorStatus: AppShellShellActionKeybindingEditorStatus | null =
     null;
@@ -1528,6 +1552,12 @@ export class AppShell {
           status: 'failed',
           reason: 'Shell-profile apply is unavailable.'
         }));
+    this.onClearShellProfilePreview =
+      options.onClearShellProfilePreview ??
+      (() => ({
+        status: 'failed',
+        reason: 'Shell-profile preview clear is unavailable.'
+      }));
     this.onExportShellProfile =
       options.onExportShellProfile ??
       (() => ({
@@ -1710,6 +1740,17 @@ export class AppShell {
     });
     installPointerClickFocusRelease(this.applyShellProfilePreviewButton);
     this.shellActionKeybindingEditorActions.append(this.applyShellProfilePreviewButton);
+
+    this.clearShellProfilePreviewButton = document.createElement('button');
+    this.clearShellProfilePreviewButton.type = 'button';
+    this.clearShellProfilePreviewButton.className = 'app-shell__shell-keybindings-button';
+    this.clearShellProfilePreviewButton.textContent = 'Clear Shell Profile Preview';
+    this.clearShellProfilePreviewButton.title = resolvePausedMainMenuClearShellProfilePreviewTitle();
+    this.clearShellProfilePreviewButton.addEventListener('click', () => {
+      this.tryClearShellProfilePreview();
+    });
+    installPointerClickFocusRelease(this.clearShellProfilePreviewButton);
+    this.shellActionKeybindingEditorActions.append(this.clearShellProfilePreviewButton);
 
     this.exportShellProfileButton = document.createElement('button');
     this.exportShellProfileButton.type = 'button';
@@ -2073,6 +2114,29 @@ export class AppShell {
     }
   }
 
+  private tryClearShellProfilePreview(): void {
+    const clearResult = this.onClearShellProfilePreview(this.currentState.screen);
+    switch (clearResult.status) {
+      case 'cleared': {
+        const fileName = resolvePausedMainMenuResultFileNameValue(clearResult.fileName);
+        this.setShellActionKeybindingEditorStatus({
+          tone: 'accent',
+          text:
+            fileName === 'Unknown file'
+              ? 'Shell profile preview cleared without changing the paused session.'
+              : `Shell profile preview from ${fileName} cleared without changing the paused session.`
+        });
+        return;
+      }
+      case 'failed':
+        this.setShellActionKeybindingEditorStatus({
+          tone: 'warning',
+          text: `Shell-profile preview clear failed: ${resolvePausedMainMenuResultReasonValue(clearResult.reason)}`
+        });
+        return;
+    }
+  }
+
   private tryExportShellProfile(): void {
     const exportResult = this.onExportShellProfile(this.currentState.screen);
     switch (exportResult.status) {
@@ -2143,6 +2207,7 @@ export class AppShell {
     this.syncShellActionKeybindingEditorIntro(pausedMainMenuShellPersistenceAvailable);
     this.syncShellActionKeybindingEditorInputs(pausedMainMenuShellActionKeybindings);
     this.applyShellProfilePreviewButton.hidden = !pausedMainMenuHasShellProfilePreview;
+    this.clearShellProfilePreviewButton.hidden = !pausedMainMenuHasShellProfilePreview;
     if (!pausedMainMenuVisible) {
       this.setShellActionKeybindingEditorStatus(null);
     } else {

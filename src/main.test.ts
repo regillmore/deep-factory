@@ -5402,6 +5402,79 @@ describe('main.ts shell state orchestration', () => {
     );
   });
 
+  it('clears a paused-menu shell-profile preview without applying its toggles or hotkeys', async () => {
+    const importedShellState = {
+      debugOverlayVisible: true,
+      debugEditControlsVisible: true,
+      debugEditOverlaysVisible: false,
+      playerSpawnMarkerVisible: true,
+      shortcutsOverlayVisible: false
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('q').prevented).toBe(true);
+
+    const importShellProfile = testRuntime.shellInstance?.options.onImportShellProfile;
+    if (!importShellProfile) {
+      throw new Error('expected shell-profile import callback');
+    }
+    const clearShellProfilePreview = testRuntime.shellInstance?.options.onClearShellProfilePreview;
+    if (!clearShellProfilePreview) {
+      throw new Error('expected shell-profile preview clear callback');
+    }
+    const persistedShellStateBeforePreview =
+      testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null;
+    const persistedShellHotkeysBeforePreview =
+      testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY) ?? null;
+    const debugEditControlsHotkeysBeforePreview = testRuntime.debugEditControlsShellActionKeybindings;
+
+    testRuntime.queuedShellProfileImportResults = [
+      {
+        status: 'selected',
+        fileName: 'preview-only-shell-profile.json',
+        envelope: createWorldSessionShellProfileEnvelope({
+          shellState: importedShellState,
+          shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+        })
+      }
+    ];
+
+    await expect(importShellProfile('main-menu')).resolves.toEqual({
+      status: 'previewed',
+      fileName: 'preview-only-shell-profile.json'
+    });
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        shellProfilePreview: {
+          fileName: 'preview-only-shell-profile.json',
+          worldSessionShellState: importedShellState,
+          shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+        }
+      })
+    );
+
+    expect(clearShellProfilePreview('main-menu')).toEqual({
+      status: 'cleared',
+      fileName: 'preview-only-shell-profile.json'
+    });
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+    expect(testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ?? null).toBe(
+      persistedShellStateBeforePreview
+    );
+    expect(testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY) ?? null).toBe(
+      persistedShellHotkeysBeforePreview
+    );
+    expect(testRuntime.debugEditControlsShellActionKeybindings).toEqual(
+      debugEditControlsHotkeysBeforePreview
+    );
+    expect(testRuntime.debugEditControlsSetShellActionKeybindingsCallCount).toBe(0);
+  });
+
   it('rejects invalid paused-menu imported shell profiles without mutating the current session', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 

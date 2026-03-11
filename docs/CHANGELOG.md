@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-11
 
+- Task: Add paused-menu `Clear Shell Profile Preview`.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/main.ts](../src/main.ts), [src/ui/appShell.test.ts](../src/ui/appShell.test.ts), and [src/main.test.ts](../src/main.test.ts) so the paused-menu `Shell Hotkeys` editor now exposes a `Clear Shell Profile Preview` action, imported shell-profile previews can be dismissed without applying them, and the paused session plus persisted shell state stay unchanged when that preview is cleared; removed completed task `433` from [docs/NEXT.md](docs/NEXT.md), added replacement task `434`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu shell-profile preview copy before apply.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/main.ts](../src/main.ts), [src/ui/appShell.test.ts](../src/ui/appShell.test.ts), and [src/main.test.ts](../src/main.test.ts) so `Import Shell Profile` now validates and previews a selected `deep-factory.shell-profile` before mutating the paused session, the paused menu surfaces a `Shell Profile Preview` card with saved-on toggle and hotkey summaries, and a new `Apply Shell Profile` action commits that preview while still falling back to current-tab-only state when browser shell persistence fails; removed completed task `431` from [docs/NEXT.md](docs/NEXT.md), added replacement task `433`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

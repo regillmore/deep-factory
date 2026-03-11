@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Shell-profile previews should be dismissible without mutating the paused session
+
+- Decision: Paused-menu shell-profile previews can now be explicitly cleared, which removes the staged preview state and preview card without applying any of that profile's shell toggles or hotkeys to the live paused session.
+- Reason: Preview state is an imported candidate, not a tentative runtime mutation, so users need a direct way to abandon it without applying or replacing it with another import.
+- Consequence: Future shell or preference-profile preview flows should keep preview dismissal separate from apply and should leave live session state unchanged when a preview is discarded.
+
 ### 2026-03-11: Shell-profile imports should preview validated changes before apply and still support session-only fallback
 
 - Decision: Paused-menu `Import Shell Profile` now accepts only versioned `deep-factory.shell-profile` envelopes whose shell-toggle booleans and shell hotkeys validate exactly, stores the validated selection as a paused-menu preview, and leaves `Apply Shell Profile` as the step that reapplies those toggles plus hotkeys to the live paused session even if browser shell storage cannot be rewritten.

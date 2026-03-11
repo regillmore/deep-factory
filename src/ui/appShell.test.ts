@@ -32,6 +32,7 @@ import {
   resolveMainMenuTertiaryActionTitle,
   resolveAppShellRegionDisplay,
   resolvePausedMainMenuClearSavedWorldTitle,
+  resolvePausedMainMenuClearShellProfilePreviewTitle,
   resolvePausedMainMenuExportWorldSaveTitle,
   resolvePausedMainMenuExportShellProfileTitle,
   resolvePausedMainMenuFreshWorldTitle,
@@ -2206,6 +2207,14 @@ describe('resolvePausedMainMenuApplyShellProfileTitle', () => {
   it('explains that paused-menu shell-profile apply commits the current preview into the paused session', () => {
     expect(resolvePausedMainMenuApplyShellProfileTitle()).toBe(
       'Apply the currently previewed shell-profile toggles and hotkeys to the current paused session'
+    );
+  });
+});
+
+describe('resolvePausedMainMenuClearShellProfilePreviewTitle', () => {
+  it('explains that paused-menu shell-profile preview clear dismisses the preview without applying it', () => {
+    expect(resolvePausedMainMenuClearShellProfilePreviewTitle()).toBe(
+      'Dismiss the currently previewed shell-profile toggles and hotkeys without applying them to the paused session'
     );
   });
 });

@@ -85,6 +85,7 @@ import {
   type PausedMainMenuExportResult,
   type PausedMainMenuImportResult,
   type PausedMainMenuResetShellTogglesResult,
+  type PausedMainMenuShellProfilePreviewClearResult,
   type PausedMainMenuShellProfileExportResult,
   type PausedMainMenuShellProfileImportResult,
   type PausedMainMenuShellProfilePreview,
@@ -708,6 +709,16 @@ const bootstrap = async (): Promise<void> => {
 
       return applyPausedMainMenuShellProfilePreview();
     },
+    onClearShellProfilePreview: (screen) => {
+      if (screen !== 'main-menu' || !worldSessionStarted) {
+        return {
+          status: 'failed',
+          reason: 'Shell-profile preview clear is unavailable.'
+        };
+      }
+
+      return clearPausedMainMenuShellProfilePreview();
+    },
     onExportShellProfile: (screen) => {
       if (screen !== 'main-menu' || !worldSessionStarted) {
         return {
@@ -1292,6 +1303,22 @@ const bootstrap = async (): Promise<void> => {
 
     return {
       status: 'applied',
+      fileName: preview.fileName
+    };
+  };
+  const clearPausedMainMenuShellProfilePreview = (): PausedMainMenuShellProfilePreviewClearResult => {
+    if (pausedMainMenuShellProfilePreview === null) {
+      return {
+        status: 'failed',
+        reason: 'No shell-profile preview is ready to clear.'
+      };
+    }
+
+    const preview = pausedMainMenuShellProfilePreview;
+    pausedMainMenuShellProfilePreview = null;
+    showMainMenuShellState();
+    return {
+      status: 'cleared',
       fileName: preview.fileName
     };
   };

@@ -9,7 +9,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 426. Add paused-menu `Reset Shell Hotkeys` result copy that distinguishes stale load-fallback recovery from ordinary custom-set resets, with hotkey-reset regressions.
 427. Add paused-menu shell-hotkey remap result copy that distinguishes browser-saved updates from session-only fallback updates when storage writes fail, with hotkey-remap persistence regressions.
 432. Add paused-menu `Shell Hotkeys` helper copy that surfaces when the editor is showing a recovered safe-set fallback after invalid saved bindings were rejected during load, with hotkey-editor fallback regressions.
-433. Add paused-menu `Clear Shell Profile Preview` so selected profiles can be dismissed without applying them, with shell-profile-preview-clear regressions.
+434. Add paused-menu `Shell Profile Preview` change-summary rows that surface which live shell toggles or hotkeys would change on apply, with shell-profile-preview-diff regressions.
 
 ## Optimize liquids
 
