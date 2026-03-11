@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-11
 
+- Task: Add a collapsed paused-menu Shell Settings section.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused sessions now show a collapsed `Shell Settings` section with a one-line shell-visibility summary by default and reveal the existing shell hotkey editor plus shell-profile controls only when expanded, while preserving the expanded state across paused-menu rerenders; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused shell-summary and section-state regressions, removed completed task `439` from [docs/NEXT.md](docs/NEXT.md), added replacement task `442`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu shell-hotkey remap saved-versus-session-only result copy.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/main.ts](../src/main.ts) so valid paused-menu shell-hotkey remaps now stay live in the current paused session even when browser storage rejects the latest write, and the editor status copy now distinguishes browser-saved remaps from session-only fallback remaps; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused remap-copy and remap-fallback regressions, removed completed task `427` from [docs/NEXT.md](docs/NEXT.md), added replacement task `441`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts`, `cmd /c npx vitest run src/main.test.ts`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

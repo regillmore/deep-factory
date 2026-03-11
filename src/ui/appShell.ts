@@ -42,6 +42,14 @@ export interface AppShellMenuSection {
   tone?: AppShellMenuSectionTone;
 }
 
+export interface PausedMainMenuShellSettingsSectionState {
+  visible: boolean;
+  expanded: boolean;
+  summaryLine: string | null;
+  toggleLabel: string | null;
+  editorVisible: boolean;
+}
+
 export interface PausedMainMenuAcceptedImportResult {
   status: 'accepted';
   fileName: string | null;
@@ -282,6 +290,77 @@ export const DEFAULT_PAUSED_MAIN_MENU_STATUS = 'World session paused.';
 export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [] as const;
 const formatMenuSectionMetadataRowValue = (labels: readonly string[]): string =>
   labels.length > 0 ? labels.join(', ') : 'None';
+const formatMenuSectionSummaryListValue = (labels: readonly string[]): string => {
+  if (labels.length === 0) {
+    return 'None';
+  }
+
+  if (labels.length === 1) {
+    return labels[0];
+  }
+
+  if (labels.length === 2) {
+    return `${labels[0]} and ${labels[1]}`;
+  }
+
+  return `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`;
+};
+const parseMenuSectionMetadataRowValue = (value: string | undefined): readonly string[] => {
+  const trimmedValue = value?.trim() ?? '';
+  if (trimmedValue.length === 0 || trimmedValue === 'None') {
+    return [];
+  }
+
+  return trimmedValue.split(', ');
+};
+const findMenuSectionMetadataRowValue = (
+  menuSections: readonly AppShellMenuSection[],
+  sectionTitle: string,
+  rowLabel: string
+): string | undefined =>
+  menuSections
+    .find((section) => section.title === sectionTitle)
+    ?.metadataRows?.find((row) => row.label === rowLabel)?.value;
+export const resolvePausedMainMenuShellSettingsSummaryLine = (
+  menuSections: readonly AppShellMenuSection[] = []
+): string => {
+  const savedOnToggleLabels = parseMenuSectionMetadataRowValue(
+    findMenuSectionMetadataRowValue(menuSections, 'Persistence Summary', 'Saved On')
+  );
+  const savedOffToggleLabels = parseMenuSectionMetadataRowValue(
+    findMenuSectionMetadataRowValue(menuSections, 'Persistence Summary', 'Saved Off')
+  );
+
+  if (savedOnToggleLabels.length === 0 && savedOffToggleLabels.length === 0) {
+    return 'Review the paused session shell visibility, hotkeys, and profile controls.';
+  }
+
+  if (savedOnToggleLabels.length === 0) {
+    return `Resume World keeps ${formatMenuSectionSummaryListValue(savedOffToggleLabels)} hidden.`;
+  }
+
+  if (savedOffToggleLabels.length === 0) {
+    return `Resume World shows ${formatMenuSectionSummaryListValue(savedOnToggleLabels)}.`;
+  }
+
+  return `Resume World shows ${formatMenuSectionSummaryListValue(savedOnToggleLabels)}, while ${formatMenuSectionSummaryListValue(savedOffToggleLabels)} stay hidden.`;
+};
+export const resolvePausedMainMenuShellSettingsToggleLabel = (expanded = false): string =>
+  expanded ? 'Hide Shell Settings' : 'Show Shell Settings';
+export const resolvePausedMainMenuShellSettingsSectionState = (
+  state: AppShellState,
+  expanded = false
+): PausedMainMenuShellSettingsSectionState => {
+  const visible = isPausedMainMenuState(state);
+
+  return {
+    visible,
+    expanded: visible && expanded,
+    summaryLine: visible ? resolvePausedMainMenuShellSettingsSummaryLine(state.menuSections ?? []) : null,
+    toggleLabel: visible ? resolvePausedMainMenuShellSettingsToggleLabel(expanded) : null,
+    editorVisible: visible && expanded
+  };
+};
 const resolvePausedMainMenuShellActionKeybindingSummaryLine = (
   shellActionKeybindingsDefaultedFromPersistedState = false
 ): string =>
@@ -1717,6 +1796,10 @@ export class AppShell {
   private title: HTMLHeadingElement;
   private status: HTMLParagraphElement;
   private menuSections: HTMLDivElement;
+  private shellSettingsSection: HTMLElement;
+  private shellSettingsSummary: HTMLParagraphElement;
+  private shellSettingsToggleButton: HTMLButtonElement;
+  private shellSettingsBody: HTMLDivElement;
   private shellActionKeybindingEditor: HTMLDivElement;
   private shellActionKeybindingEditorIntro: HTMLParagraphElement;
   private shellActionKeybindingInputs = new Map<
@@ -1767,6 +1850,7 @@ export class AppShell {
   private onExportShellProfile: (screen: AppShellScreen) => PausedMainMenuShellProfileExportResult;
   private currentShellActionKeybindingEditorStatus: AppShellShellActionKeybindingEditorStatus | null =
     null;
+  private pausedMainMenuShellSettingsExpanded = false;
   private currentState: AppShellState = createDefaultBootShellState();
 
   constructor(container: HTMLElement, options: AppShellOptions = {}) {
@@ -1937,9 +2021,43 @@ export class AppShell {
     this.menuSections.className = 'app-shell__menu-sections';
     panel.append(this.menuSections);
 
+    this.shellSettingsSection = document.createElement('section');
+    this.shellSettingsSection.className = 'app-shell__shell-settings';
+    panel.append(this.shellSettingsSection);
+
+    const shellSettingsHeader = document.createElement('div');
+    shellSettingsHeader.className = 'app-shell__shell-settings-header';
+    this.shellSettingsSection.append(shellSettingsHeader);
+
+    const shellSettingsCopy = document.createElement('div');
+    shellSettingsCopy.className = 'app-shell__shell-settings-copy';
+    shellSettingsHeader.append(shellSettingsCopy);
+
+    const shellSettingsTitle = document.createElement('h2');
+    shellSettingsTitle.className = 'app-shell__shell-settings-title';
+    shellSettingsTitle.textContent = 'Shell Settings';
+    shellSettingsCopy.append(shellSettingsTitle);
+
+    this.shellSettingsSummary = document.createElement('p');
+    this.shellSettingsSummary.className = 'app-shell__shell-settings-summary';
+    shellSettingsCopy.append(this.shellSettingsSummary);
+
+    this.shellSettingsToggleButton = document.createElement('button');
+    this.shellSettingsToggleButton.type = 'button';
+    this.shellSettingsToggleButton.className = 'app-shell__shell-settings-toggle';
+    this.shellSettingsToggleButton.addEventListener('click', () => this.togglePausedMainMenuShellSettings());
+    installPointerClickFocusRelease(this.shellSettingsToggleButton);
+    shellSettingsHeader.append(this.shellSettingsToggleButton);
+
+    this.shellSettingsBody = document.createElement('div');
+    this.shellSettingsBody.className = 'app-shell__shell-settings-body';
+    this.shellSettingsBody.id = 'app-shell-shell-settings-body';
+    this.shellSettingsSection.append(this.shellSettingsBody);
+    this.shellSettingsToggleButton.setAttribute('aria-controls', this.shellSettingsBody.id);
+
     this.shellActionKeybindingEditor = document.createElement('div');
     this.shellActionKeybindingEditor.className = 'app-shell__shell-keybindings';
-    panel.append(this.shellActionKeybindingEditor);
+    this.shellSettingsBody.append(this.shellActionKeybindingEditor);
 
     const shellActionKeybindingEditorTitle = document.createElement('h2');
     shellActionKeybindingEditorTitle.className = 'app-shell__shell-keybindings-title';
@@ -2164,6 +2282,15 @@ export class AppShell {
     this.shellActionKeybindingEditorStatus.dataset.tone = status.tone;
   }
 
+  private togglePausedMainMenuShellSettings(): void {
+    if (!isPausedMainMenuState(this.currentState)) {
+      return;
+    }
+
+    this.pausedMainMenuShellSettingsExpanded = !this.pausedMainMenuShellSettingsExpanded;
+    this.setState(this.currentState);
+  }
+
   private tryRemapShellActionKeybinding(
     actionType: InWorldShellActionKeybindingActionType,
     nextValue: string
@@ -2363,6 +2490,7 @@ export class AppShell {
   }
 
   setState(state: AppShellState): void {
+    const wasPausedMainMenuVisible = isPausedMainMenuState(this.currentState);
     this.currentState = state;
     const viewModel = resolveAppShellViewModel(state);
     const defaultShellActionKeybindings = createDefaultShellActionKeybindingState();
@@ -2373,6 +2501,9 @@ export class AppShell {
           }).shellActionKeybindings
         : defaultShellActionKeybindings;
     const pausedMainMenuVisible = isPausedMainMenuState(state);
+    if (!pausedMainMenuVisible || !wasPausedMainMenuVisible) {
+      this.pausedMainMenuShellSettingsExpanded = false;
+    }
     const pausedMainMenuShellActionKeybindings = pausedMainMenuVisible
       ? state.shellActionKeybindings ?? defaultShellActionKeybindings
       : defaultShellActionKeybindings;
@@ -2380,6 +2511,10 @@ export class AppShell {
       pausedMainMenuVisible ? state.worldSessionShellPersistenceAvailable !== false : true;
     const pausedMainMenuHasShellProfilePreview =
       pausedMainMenuVisible && state.pausedMainMenuShellProfilePreview != null;
+    const pausedMainMenuShellSettingsSection = resolvePausedMainMenuShellSettingsSectionState(
+      state,
+      this.pausedMainMenuShellSettingsExpanded
+    );
 
     this.root.dataset.screen = viewModel.screen;
     this.overlay.hidden = !viewModel.overlayVisible;
@@ -2397,9 +2532,33 @@ export class AppShell {
       viewModel.menuSections.length > 0,
       'grid'
     );
-    this.shellActionKeybindingEditor.hidden = !pausedMainMenuVisible;
+    this.shellSettingsSection.hidden = !pausedMainMenuShellSettingsSection.visible;
+    this.shellSettingsSection.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuShellSettingsSection.visible,
+      'grid'
+    );
+    this.shellSettingsSection.dataset.expanded = pausedMainMenuShellSettingsSection.expanded
+      ? 'true'
+      : 'false';
+    this.shellSettingsSummary.textContent = pausedMainMenuShellSettingsSection.summaryLine ?? '';
+    this.shellSettingsToggleButton.textContent =
+      pausedMainMenuShellSettingsSection.toggleLabel ?? '';
+    this.shellSettingsToggleButton.hidden = !pausedMainMenuShellSettingsSection.visible;
+    this.shellSettingsToggleButton.title = pausedMainMenuShellSettingsSection.expanded
+      ? 'Hide the Shell Hotkeys editor and shell-profile controls.'
+      : 'Show the Shell Hotkeys editor and shell-profile controls.';
+    this.shellSettingsToggleButton.setAttribute(
+      'aria-expanded',
+      pausedMainMenuShellSettingsSection.expanded ? 'true' : 'false'
+    );
+    this.shellSettingsBody.hidden = !pausedMainMenuShellSettingsSection.editorVisible;
+    this.shellSettingsBody.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuShellSettingsSection.editorVisible,
+      'grid'
+    );
+    this.shellActionKeybindingEditor.hidden = !pausedMainMenuShellSettingsSection.editorVisible;
     this.shellActionKeybindingEditor.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuVisible,
+      pausedMainMenuShellSettingsSection.editorVisible,
       'grid'
     );
     this.syncShellActionKeybindingEditorIntro(pausedMainMenuShellPersistenceAvailable);

@@ -37,6 +37,9 @@ import {
   resolvePausedMainMenuExportShellProfileTitle,
   resolvePausedMainMenuFreshWorldTitle,
   resolvePausedMainMenuApplyShellProfileEditorStatus,
+  resolvePausedMainMenuShellSettingsSectionState,
+  resolvePausedMainMenuShellSettingsSummaryLine,
+  resolvePausedMainMenuShellSettingsToggleLabel,
   resolvePausedMainMenuShellActionKeybindingRemapEditorStatus,
   resolvePausedMainMenuResetShellActionKeybindingsEditorStatus,
   resolvePausedMainMenuApplyShellProfileTitle,
@@ -118,6 +121,12 @@ const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Browser shell storage is unavailable or could not be updated, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
 ] as const;
+const DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
+  'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden.';
+const MIXED_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
+  'Resume World shows Debug HUD and Edit Overlays, while Edit Panel, Spawn Marker, and Shortcuts stay hidden.';
+const FULLY_VISIBLE_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
+  'Resume World shows Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts.';
 const PAUSED_MAIN_MENU_SHELL_PROFILE_PREVIEW_LINES = [
   'The selected shell profile validated successfully and is ready to apply to this paused session.',
   'Review its live change summary, saved-on shell visibility, and replacement hotkey set below before applying it.'
@@ -2507,6 +2516,87 @@ describe('resolvePausedMainMenuShellActionKeybindingEditorIntro', () => {
     expect(resolvePausedMainMenuShellActionKeybindingEditorIntro(false)).toBe(
       SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO
     );
+  });
+});
+
+describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
+  it('summarizes fully hidden paused-session shell toggles in one line', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSummaryLine(
+        createPausedMainMenuShellState().menuSections ?? []
+      )
+    ).toBe(DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+  });
+
+  it('summarizes mixed paused-session shell visibility in one line', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSummaryLine(
+        createPausedMainMenuShellState({
+          debugOverlayVisible: true,
+          debugEditControlsVisible: false,
+          debugEditOverlaysVisible: true,
+          playerSpawnMarkerVisible: false,
+          shortcutsOverlayVisible: false
+        }).menuSections ?? []
+      )
+    ).toBe(MIXED_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+  });
+
+  it('summarizes fully visible paused-session shell toggles in one line', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSummaryLine(
+        createPausedMainMenuShellState({
+          debugOverlayVisible: true,
+          debugEditControlsVisible: true,
+          debugEditOverlaysVisible: true,
+          playerSpawnMarkerVisible: true,
+          shortcutsOverlayVisible: true
+        }).menuSections ?? []
+      )
+    ).toBe(FULLY_VISIBLE_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+  });
+});
+
+describe('resolvePausedMainMenuShellSettingsToggleLabel', () => {
+  it('switches the paused-menu shell-settings button label between collapsed and expanded copy', () => {
+    expect(resolvePausedMainMenuShellSettingsToggleLabel()).toBe('Show Shell Settings');
+    expect(resolvePausedMainMenuShellSettingsToggleLabel(true)).toBe('Hide Shell Settings');
+  });
+});
+
+describe('resolvePausedMainMenuShellSettingsSectionState', () => {
+  it('defaults paused-menu shell settings to a collapsed summary-only section', () => {
+    expect(resolvePausedMainMenuShellSettingsSectionState(createPausedMainMenuShellState())).toEqual({
+      visible: true,
+      expanded: false,
+      summaryLine: DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
+      toggleLabel: 'Show Shell Settings',
+      editorVisible: false
+    });
+  });
+
+  it('reveals the shell editor only after the paused-menu shell-settings section expands', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSectionState(createPausedMainMenuShellState(), true)
+    ).toEqual({
+      visible: true,
+      expanded: true,
+      summaryLine: DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
+      toggleLabel: 'Hide Shell Settings',
+      editorVisible: true
+    });
+  });
+
+  it('keeps shell settings hidden outside the paused main menu', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSectionState(createFirstLaunchMainMenuShellState(), true)
+    ).toEqual({
+      visible: false,
+      expanded: false,
+      summaryLine: null,
+      toggleLabel: null,
+      editorVisible: false
+    });
   });
 });
 
