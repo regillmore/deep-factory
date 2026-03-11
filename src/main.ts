@@ -51,7 +51,7 @@ import {
 } from './input/shellActionKeybindings';
 import {
   clearPersistedWorldSaveEnvelope,
-  loadPersistedWorldSaveEnvelope,
+  loadPersistedWorldSaveEnvelopeWithPersistenceAvailability,
   savePersistedWorldSaveEnvelope
 } from './mainWorldSaveLocalPersistence';
 import {
@@ -530,7 +530,10 @@ const bootstrap = async (): Promise<void> => {
   let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
   let worldSessionShellPersistenceAvailable = true;
-  const persistedWorldSaveEnvelope = loadPersistedWorldSaveEnvelope(worldSessionShellStateStorage);
+  const initialPersistedWorldSaveEnvelopeLoad =
+    loadPersistedWorldSaveEnvelopeWithPersistenceAvailability(worldSessionShellStateStorage);
+  let worldSavePersistenceAvailable = initialPersistedWorldSaveEnvelopeLoad.persistenceAvailable;
+  const persistedWorldSaveEnvelope = initialPersistedWorldSaveEnvelopeLoad.envelope;
   const initialWorldSessionShellStateLoad =
     loadWorldSessionShellStateWithPersistenceAvailability(
       worldSessionShellStateStorage,
@@ -704,7 +707,8 @@ const bootstrap = async (): Promise<void> => {
         pausedMainMenuSavedWorldStatus,
         pausedMainMenuExportResult,
         pausedMainMenuClearSavedWorldResult,
-        pausedMainMenuResetShellTogglesResult
+        pausedMainMenuResetShellTogglesResult,
+        worldSavePersistenceAvailable
       )
     );
     syncWorldScreenShellVisibility();
@@ -1090,6 +1094,7 @@ const bootstrap = async (): Promise<void> => {
         worldSessionShellStateStorage,
         createCurrentWorldSessionSaveEnvelope()
       );
+      worldSavePersistenceAvailable = persisted;
       if (persisted) {
         pausedMainMenuWorldSaveCleared = false;
         pausedMainMenuSavedWorldStatus = null;
@@ -1114,8 +1119,10 @@ const bootstrap = async (): Promise<void> => {
   };
   const persistCurrentWorldSession = (): boolean =>
     persistCurrentWorldSessionWithResult().status === 'persisted';
-  const clearPersistedCurrentWorldSession = (): boolean =>
-    clearPersistedWorldSaveEnvelope(worldSessionShellStateStorage);
+  const clearPersistedCurrentWorldSession = (): boolean => {
+    worldSavePersistenceAvailable = clearPersistedWorldSaveEnvelope(worldSessionShellStateStorage);
+    return worldSavePersistenceAvailable;
+  };
   const resolveClearPersistedCurrentWorldSessionFailureReason = (): string =>
     worldSessionShellStateStorage === null
       ? 'Browser storage is unavailable.'

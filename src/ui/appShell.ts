@@ -755,76 +755,106 @@ const DEFAULT_RENDERER_INITIALIZATION_FAILED_BOOT_DETAIL_LINE =
   'Reload the page after confirming WebGL2 is available.';
 const DEFAULT_FIRST_LAUNCH_MAIN_MENU_STATUS = 'Renderer ready.';
 const DEFAULT_FIRST_LAUNCH_MAIN_MENU_DETAIL_LINES = [] as const;
-const DEFAULT_FIRST_LAUNCH_MAIN_MENU_MENU_SECTIONS: readonly AppShellMenuSection[] = [
-  {
-    title: 'Enter World',
-    lines: ['Start the fixed-step simulation, standalone player, and live in-world controls.'],
-    metadataRows: [
-      {
-        label: 'Shortcut',
-        value: 'Button only'
-      },
-      {
-        label: 'Readiness',
-        value: 'Renderer ready; starts on click.'
-      }
-    ],
-    tone: 'accent'
-  },
-  {
-    title: 'Controls Preview',
-    lines: [
-      'Desktop: move with A or D, or Left or Right Arrow; jump with W, Up Arrow, or Space.',
-      'Touch: the in-world player pad appears after Enter World with Left, Right, and Jump buttons.'
-    ],
-    metadataRows: [
-      {
-        label: 'Desktop',
-        value: 'Movement + jump use the keyboard.'
-      },
-      {
-        label: 'Touch',
-        value: 'Player pad appears after Enter World.'
-      }
-    ]
-  },
-  {
-    title: 'Mixed-Device Runtime',
-    lines: [
-      'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
-      'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
-    ],
-    metadataRows: [
-      {
-        label: 'Readiness',
-        value: 'Desktop and touch share one live session.'
-      }
-    ]
-  },
-  {
-    title: 'Persistence Preview',
-    lines: [
-      'Browser resume is not available yet because no paused world session has been saved yet.',
-      'After Enter World starts the first session, returning to the main menu creates the paused browser save that later boot can resume.'
-    ],
-    metadataRows: [
-      {
-        label: 'Current Resume',
-        value: 'Not available until the first pause.'
-      },
-      {
-        label: 'Created by',
-        value: 'Enter World, then return to main menu.'
-      }
-    ]
-  }
-] as const;
 
-export const createFirstLaunchMainMenuShellState = (): AppShellState => ({
+const createFirstLaunchMainMenuPersistencePreviewSection = (
+  worldSavePersistenceAvailable = true
+): AppShellMenuSection =>
+  worldSavePersistenceAvailable
+    ? {
+        title: 'Persistence Preview',
+        lines: [
+          'Browser resume is not available yet because no paused world session has been saved yet.',
+          'After Enter World starts the first session, returning to the main menu creates the paused browser save that later boot can resume.'
+        ],
+        metadataRows: [
+          {
+            label: 'Current Resume',
+            value: 'Not available until the first pause.'
+          },
+          {
+            label: 'Created by',
+            value: 'Enter World, then return to main menu.'
+          }
+        ]
+      }
+    : {
+        title: 'Persistence Preview',
+        lines: [
+          'Browser resume is unavailable here because browser storage could not be opened during boot.',
+          'Enter World still starts a live session in this tab, but returning to the main menu cannot create a browser resume save until storage access works again.'
+        ],
+        metadataRows: [
+          {
+            label: 'Current Resume',
+            value: 'Unavailable in this browser context.'
+          },
+          {
+            label: 'Requires',
+            value: 'Working browser storage access.'
+          }
+        ],
+        tone: 'warning'
+      };
+
+const createFirstLaunchMainMenuMenuSections = (
+  worldSavePersistenceAvailable = true
+): readonly AppShellMenuSection[] =>
+  [
+    {
+      title: 'Enter World',
+      lines: ['Start the fixed-step simulation, standalone player, and live in-world controls.'],
+      metadataRows: [
+        {
+          label: 'Shortcut',
+          value: 'Button only'
+        },
+        {
+          label: 'Readiness',
+          value: 'Renderer ready; starts on click.'
+        }
+      ],
+      tone: 'accent'
+    },
+    {
+      title: 'Controls Preview',
+      lines: [
+        'Desktop: move with A or D, or Left or Right Arrow; jump with W, Up Arrow, or Space.',
+        'Touch: the in-world player pad appears after Enter World with Left, Right, and Jump buttons.'
+      ],
+      metadataRows: [
+        {
+          label: 'Desktop',
+          value: 'Movement + jump use the keyboard.'
+        },
+        {
+          label: 'Touch',
+          value: 'Player pad appears after Enter World.'
+        }
+      ]
+    },
+    {
+      title: 'Mixed-Device Runtime',
+      lines: [
+        'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
+        'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
+      ],
+      metadataRows: [
+        {
+          label: 'Readiness',
+          value: 'Desktop and touch share one live session.'
+        }
+      ]
+    },
+    createFirstLaunchMainMenuPersistencePreviewSection(worldSavePersistenceAvailable)
+  ] as const;
+
+export const createFirstLaunchMainMenuShellState = (
+  worldSavePersistenceAvailable = true
+): AppShellState => ({
   screen: 'main-menu',
   statusText: DEFAULT_FIRST_LAUNCH_MAIN_MENU_STATUS,
   detailLines: DEFAULT_FIRST_LAUNCH_MAIN_MENU_DETAIL_LINES,
-  menuSections: DEFAULT_FIRST_LAUNCH_MAIN_MENU_MENU_SECTIONS,
+  menuSections: createFirstLaunchMainMenuMenuSections(worldSavePersistenceAvailable),
   primaryActionLabel: 'Enter World',
   secondaryActionLabel: null,
   tertiaryActionLabel: null
@@ -840,7 +870,8 @@ export const createMainMenuShellState = (
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null = null,
   exportResult: PausedMainMenuExportResult | null = null,
   clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null,
-  resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null
+  resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null,
+  firstLaunchWorldSavePersistenceAvailable = true
 ): AppShellState =>
   hasResumableWorldSession
     ? createPausedMainMenuShellState(
@@ -854,7 +885,7 @@ export const createMainMenuShellState = (
         clearSavedWorldResult,
         resetShellTogglesResult
       )
-    : createFirstLaunchMainMenuShellState();
+    : createFirstLaunchMainMenuShellState(firstLaunchWorldSavePersistenceAvailable);
 
 export const createDefaultBootShellState = (): AppShellState => ({
   screen: 'boot',

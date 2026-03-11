@@ -16,6 +16,7 @@ import { createWorldSaveEnvelope } from './mainWorldSave';
 import { PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY } from './mainWorldSaveLocalPersistence';
 import {
   createDefaultBootShellState,
+  createFirstLaunchMainMenuShellState,
   createInWorldShellState,
   createMainMenuShellState,
   createRendererInitializationFailedBootShellState,
@@ -1343,7 +1344,8 @@ const createExpectedPausedMainMenuState = (
   );
 };
 
-const createExpectedFirstLaunchMainMenuState = () => createMainMenuShellState(false);
+const createExpectedFirstLaunchMainMenuState = (persistenceAvailable = true) =>
+  createFirstLaunchMainMenuShellState(persistenceAvailable);
 const createTestPlayerSpawnPoint = ({
   anchorTileX = 0,
   standingTileY = 0,
@@ -1669,7 +1671,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.gameLoopStartCount).toBe(1);
   });
 
-  it('boots the first Enter World transition with all shell overlays hidden when shell-toggle local storage is inaccessible', async () => {
+  it('shows storage-unavailable first-launch persistence guidance when local storage is inaccessible before the first session starts', async () => {
     Object.defineProperty(window, 'localStorage', {
       configurable: true,
       get: () => {
@@ -1680,7 +1682,9 @@ describe('main.ts shell state orchestration', () => {
     await import('./main');
     await flushBootstrap();
 
-    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedFirstLaunchMainMenuState(false)
+    );
     expect(testRuntime.storageValues.size).toBe(0);
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');

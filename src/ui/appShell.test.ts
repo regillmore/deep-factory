@@ -110,6 +110,10 @@ const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Browser shell storage is unavailable or could not be updated, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
 ] as const;
+const STORAGE_UNAVAILABLE_FIRST_LAUNCH_PERSISTENCE_PREVIEW_LINES = [
+  'Browser resume is unavailable here because browser storage could not be opened during boot.',
+  'Enter World still starts a live session in this tab, but returning to the main menu cannot create a browser resume save until storage access works again.'
+] as const;
 
 const createPausedMainMenuShellActionKeybindingSummaryRows = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
@@ -1269,11 +1273,102 @@ describe('createFirstLaunchMainMenuShellState', () => {
       tertiaryActionLabel: null
     });
   });
+
+  it('returns warning persistence-preview guidance when browser resume storage is unavailable during boot', () => {
+    expect(createFirstLaunchMainMenuShellState(false)).toEqual({
+      screen: 'main-menu',
+      statusText: 'Renderer ready.',
+      detailLines: [],
+      menuSections: [
+        {
+          title: 'Enter World',
+          lines: ['Start the fixed-step simulation, standalone player, and live in-world controls.'],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Readiness',
+              value: 'Renderer ready; starts on click.'
+            }
+          ],
+          tone: 'accent'
+        },
+        {
+          title: 'Controls Preview',
+          lines: [
+            'Desktop: move with A or D, or Left or Right Arrow; jump with W, Up Arrow, or Space.',
+            'Touch: the in-world player pad appears after Enter World with Left, Right, and Jump buttons.'
+          ],
+          metadataRows: [
+            {
+              label: 'Desktop',
+              value: 'Movement + jump use the keyboard.'
+            },
+            {
+              label: 'Touch',
+              value: 'Player pad appears after Enter World.'
+            }
+          ]
+        },
+        {
+          title: 'Mixed-Device Runtime',
+          lines: [
+            'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
+            'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
+          ],
+          metadataRows: [
+            {
+              label: 'Readiness',
+              value: 'Desktop and touch share one live session.'
+            }
+          ]
+        },
+        {
+          title: 'Persistence Preview',
+          lines: [...STORAGE_UNAVAILABLE_FIRST_LAUNCH_PERSISTENCE_PREVIEW_LINES],
+          metadataRows: [
+            {
+              label: 'Current Resume',
+              value: 'Unavailable in this browser context.'
+            },
+            {
+              label: 'Requires',
+              value: 'Working browser storage access.'
+            }
+          ],
+          tone: 'warning'
+        }
+      ],
+      primaryActionLabel: 'Enter World',
+      secondaryActionLabel: null,
+      tertiaryActionLabel: null
+    });
+  });
 });
 
 describe('createMainMenuShellState', () => {
   it('returns the first-launch main menu when no resumable world session exists', () => {
     expect(createMainMenuShellState(false)).toEqual(createFirstLaunchMainMenuShellState());
+  });
+
+  it('returns the storage-unavailable first-launch main menu when resume persistence is unavailable', () => {
+    expect(
+      createMainMenuShellState(
+        false,
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false
+      )
+    ).toEqual(createFirstLaunchMainMenuShellState(false));
   });
 
   it('returns the paused main menu when a resumable world session exists', () => {

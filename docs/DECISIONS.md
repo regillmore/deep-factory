@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: First-launch persistence preview should follow world-save storage availability
+
+- Decision: `createFirstLaunchMainMenuShellState(...)` now accepts persisted world-save storage availability and switches its `Persistence Preview` card from `resume after first pause` guidance to a storage-unavailable warning when browser resume storage cannot be opened during boot.
+- Reason: First-launch shell guidance should only promise resumable browser saves when the top-level world-save persistence path is actually available; otherwise the menu needs to set expectations before the first session starts.
+- Consequence: Future first-launch resume or persistence-preview UI should consume persisted world-save availability instead of assuming browser resume can always be created after the first pause.
+
 ### 2026-03-11: Replication diagnostics restore-holder presence callback bundle refreshes should reuse holder-owned target state
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshotReconfigureAndLogCallbackStateHolder.ts` now retains its current restore-holder target and exposes `refreshLoggerBundle(...)`, which rebuilds the detached presence reconfigure-and-log callback only from updated restore-wiring logger-bundle state while keeping the holder-owned public callback seam stable.
