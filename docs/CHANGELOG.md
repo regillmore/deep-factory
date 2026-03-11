@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-11
 
+- Task: Add paused-menu shell-hotkey remap saved-versus-session-only result copy.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/main.ts](../src/main.ts) so valid paused-menu shell-hotkey remaps now stay live in the current paused session even when browser storage rejects the latest write, and the editor status copy now distinguishes browser-saved remaps from session-only fallback remaps; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused remap-copy and remap-fallback regressions, removed completed task `427` from [docs/NEXT.md](docs/NEXT.md), added replacement task `441`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts`, `cmd /c npx vitest run src/main.test.ts`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu `Reset Shell Hotkeys` no-op result copy.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/main.ts](../src/main.ts) so paused-menu shell-hotkey resets now return a distinct no-op result when the default `Q/C/H/G/V/M` set is already active and no stale load-fallback recovery still needs to be saved; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with focused no-op reset regressions, removed completed task `438` from [docs/NEXT.md](docs/NEXT.md), added replacement task `440`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts`, `cmd /c npx vitest run src/main.test.ts`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -226,9 +226,9 @@ Record only durable design decisions here. Keep each entry short: date, decision
 
 ### 2026-03-11: Paused-menu shell hotkey remaps should reuse the shared keybinding validator and save path
 
-- Decision: The paused main-menu shell hotkey editor now routes each attempted `Main Menu`, `Recenter Camera`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, and `Spawn Marker` remap through `src/input/shellActionKeybindings.ts` and only commits the change when `src/main.ts` successfully rewrites browser storage; valid no-op re-saves are allowed so a recovered safe set can replace previously invalid persisted payloads.
+- Decision: The paused main-menu shell hotkey editor now routes each attempted `Main Menu`, `Recenter Camera`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, and `Spawn Marker` remap through `src/input/shellActionKeybindings.ts`, applies valid results immediately to the live paused session through `src/main.ts`, and treats browser-storage write failures as session-only fallback instead of discarding the valid remap; valid no-op re-saves are still allowed so a recovered safe set can replace previously invalid persisted payloads.
 - Reason: The paused summary, in-world shell chrome, shortcuts overlay, touch keyboard reference, and keyboard shortcut resolver all consume the same binding set, so ad hoc UI-side mutation or raw storage writes would drift those surfaces and leave stale invalid payloads behind.
-- Consequence: Future shell hotkey reset, import/export, or fallback-clearing flows should reuse the shared remap-plus-save path instead of mutating stored keybinding JSON directly or bypassing the runtime refresh path.
+- Consequence: Future shell hotkey reset, import/export, or fallback-clearing flows should reuse the shared remap-plus-save-or-session-fallback path instead of mutating stored keybinding JSON directly or bypassing the runtime refresh path.
 
 ### 2026-03-10: Replication diagnostics configuration snapshots should reapply through live callbacks, not serialized functions
 

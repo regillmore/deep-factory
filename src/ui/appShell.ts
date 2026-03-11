@@ -118,6 +118,23 @@ export type PausedMainMenuResetShellTogglesResult =
   | PausedMainMenuClearedResetShellTogglesResult
   | PausedMainMenuPersistenceFailedResetShellTogglesResult;
 
+export interface PausedMainMenuSavedShellActionKeybindingRemapResult {
+  status: 'saved';
+}
+
+export interface PausedMainMenuSessionOnlyShellActionKeybindingRemapResult {
+  status: 'session-only';
+}
+
+export interface PausedMainMenuRejectedShellActionKeybindingRemapResult {
+  status: 'rejected';
+}
+
+export type PausedMainMenuShellActionKeybindingRemapResult =
+  | PausedMainMenuSavedShellActionKeybindingRemapResult
+  | PausedMainMenuSessionOnlyShellActionKeybindingRemapResult
+  | PausedMainMenuRejectedShellActionKeybindingRemapResult;
+
 export type PausedMainMenuResetShellActionKeybindingsResultCategory =
   | 'default-set-reset'
   | 'load-fallback-recovery';
@@ -281,6 +298,41 @@ export const resolvePausedMainMenuShellActionKeybindingEditorIntro = (
   worldSessionShellPersistenceAvailable
     ? DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO
     : SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO;
+export const resolvePausedMainMenuShellActionKeybindingRemapEditorStatus = ({
+  result,
+  actionLabel,
+  currentKey,
+  nextKey,
+  changed
+}: {
+  result: PausedMainMenuShellActionKeybindingRemapResult;
+  actionLabel: string;
+  currentKey: string;
+  nextKey: string;
+  changed: boolean;
+}): { tone: 'accent' | 'warning'; text: string } => {
+  switch (result.status) {
+    case 'saved':
+      return {
+        tone: 'accent',
+        text: changed
+          ? `${actionLabel} now uses ${nextKey}, and the current shell hotkey set was saved.`
+          : `${actionLabel} stayed on ${nextKey}, and the current shell hotkey set was saved.`
+      };
+    case 'session-only':
+      return {
+        tone: 'warning',
+        text: changed
+          ? `${actionLabel} now uses ${nextKey} for this paused session only because browser storage was not updated.`
+          : `${actionLabel} stayed on ${nextKey} for this paused session only because browser storage was not updated.`
+      };
+    case 'rejected':
+      return {
+        tone: 'warning',
+        text: `That hotkey change could not be applied, so ${actionLabel} stayed on ${currentKey}.`
+      };
+  }
+};
 const resolvePausedMainMenuShellActionKeybindingSetValue = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ): string =>
@@ -939,7 +991,7 @@ interface AppShellOptions {
   onRemapShellActionKeybinding?: (
     actionType: InWorldShellActionKeybindingActionType,
     nextKey: string
-  ) => boolean;
+  ) => PausedMainMenuShellActionKeybindingRemapResult;
   onResetShellActionKeybindings?: () => PausedMainMenuResetShellActionKeybindingsResult;
   onImportShellProfile?: (
     screen: AppShellScreen
@@ -1701,7 +1753,7 @@ export class AppShell {
   private onRemapShellActionKeybinding: (
     actionType: InWorldShellActionKeybindingActionType,
     nextKey: string
-  ) => boolean;
+  ) => PausedMainMenuShellActionKeybindingRemapResult;
   private onResetShellActionKeybindings: () => PausedMainMenuResetShellActionKeybindingsResult;
   private onImportShellProfile: (
     screen: AppShellScreen
@@ -1731,7 +1783,8 @@ export class AppShell {
     this.onToggleDebugEditOverlays = options.onToggleDebugEditOverlays ?? (() => {});
     this.onTogglePlayerSpawnMarker = options.onTogglePlayerSpawnMarker ?? (() => {});
     this.onToggleShortcutsOverlay = options.onToggleShortcutsOverlay ?? (() => {});
-    this.onRemapShellActionKeybinding = options.onRemapShellActionKeybinding ?? (() => false);
+    this.onRemapShellActionKeybinding =
+      options.onRemapShellActionKeybinding ?? (() => ({ status: 'rejected' }));
     this.onResetShellActionKeybindings =
       options.onResetShellActionKeybindings ?? (() => ({ status: 'failed' }));
     this.onImportShellProfile =
@@ -2137,23 +2190,34 @@ export class AppShell {
       return;
     }
 
-    const persisted = this.onRemapShellActionKeybinding(actionType, remapResult.normalizedKey);
-    if (!persisted) {
+    const remapPersistenceResult = this.onRemapShellActionKeybinding(
+      actionType,
+      remapResult.normalizedKey
+    );
+    if (remapPersistenceResult.status === 'rejected') {
       this.syncShellActionKeybindingEditorInputs(currentShellActionKeybindings);
-      this.setShellActionKeybindingEditorStatus({
-        tone: 'warning',
-        text: `Browser storage rejected that hotkey change, so ${actionLabel} stayed on ${currentShellActionKeybindings[actionType]}.`
-      });
+      this.setShellActionKeybindingEditorStatus(
+        resolvePausedMainMenuShellActionKeybindingRemapEditorStatus({
+          result: remapPersistenceResult,
+          actionLabel,
+          currentKey: currentShellActionKeybindings[actionType],
+          nextKey: remapResult.normalizedKey,
+          changed: remapResult.changed
+        })
+      );
       return;
     }
 
     this.syncShellActionKeybindingEditorInputs(remapResult.state);
-    this.setShellActionKeybindingEditorStatus({
-      tone: 'accent',
-      text: remapResult.changed
-        ? `${actionLabel} now uses ${remapResult.normalizedKey}.`
-        : `${actionLabel} stayed on ${remapResult.normalizedKey}, and the current shell hotkey set was saved.`
-    });
+    this.setShellActionKeybindingEditorStatus(
+      resolvePausedMainMenuShellActionKeybindingRemapEditorStatus({
+        result: remapPersistenceResult,
+        actionLabel,
+        currentKey: currentShellActionKeybindings[actionType],
+        nextKey: remapResult.normalizedKey,
+        changed: remapResult.changed
+      })
+    );
   }
 
   private tryResetShellActionKeybindings(): void {

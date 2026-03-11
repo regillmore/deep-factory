@@ -5210,7 +5210,9 @@ describe('main.ts shell state orchestration', () => {
         'toggle-debug-overlay',
         'u'
       )
-    ).toBe(true);
+    ).toEqual({
+      status: 'saved'
+    });
 
     const pausedState = createExpectedPausedMainMenuState({
       worldSessionShellState: {
@@ -6608,7 +6610,9 @@ describe('main.ts shell state orchestration', () => {
         'toggle-debug-overlay',
         'u'
       )
-    ).toBe(true);
+    ).toEqual({
+      status: 'saved'
+    });
     expect(testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY)).toBe(
       JSON.stringify(remappedShellActionKeybindings)
     );
@@ -6645,10 +6649,67 @@ describe('main.ts shell state orchestration', () => {
         'toggle-debug-overlay',
         'c'
       )
-    ).toBe(false);
+    ).toEqual({
+      status: 'rejected'
+    });
     expect(testRuntime.storageValues.has(SHELL_ACTION_KEYBINDING_STORAGE_KEY)).toBe(false);
     expect(testRuntime.debugEditControlsSetShellActionKeybindingsCallCount).toBe(0);
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+  });
+
+  it('keeps valid paused-menu shell-action remaps as session-only fallback when storage writes fail', async () => {
+    const remappedShellActionKeybindings: ShellActionKeybindingState = {
+      'return-to-main-menu': 'Q',
+      'recenter-camera': 'C',
+      'toggle-debug-overlay': 'U',
+      'toggle-debug-edit-controls': 'G',
+      'toggle-debug-edit-overlays': 'V',
+      'toggle-player-spawn-marker': 'M'
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+    testRuntime.storageSetItemErrorsByKey.set(
+      SHELL_ACTION_KEYBINDING_STORAGE_KEY,
+      new Error('write blocked')
+    );
+
+    expect(
+      testRuntime.shellInstance?.options.onRemapShellActionKeybinding?.(
+        'toggle-debug-overlay',
+        'u'
+      )
+    ).toEqual({
+      status: 'session-only'
+    });
+    expect(testRuntime.storageValues.has(SHELL_ACTION_KEYBINDING_STORAGE_KEY)).toBe(false);
+    expect(testRuntime.debugEditControlsShellActionKeybindings).toEqual(remappedShellActionKeybindings);
+    expect(testRuntime.debugEditControlsSetShellActionKeybindingsCallCount).toBe(1);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        persistenceAvailable: false,
+        shellActionKeybindings: remappedShellActionKeybindings
+      })
+    );
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({
+        shellActionKeybindings: remappedShellActionKeybindings
+      })
+    );
+    expect(dispatchKeydown('h').prevented).toBe(false);
+    expect(dispatchKeydown('u').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({
+        debugOverlayVisible: true,
+        shellActionKeybindings: remappedShellActionKeybindings
+      })
+    );
   });
 
   it('resets paused-menu shell hotkeys back to the default set through the shared persistence path', async () => {

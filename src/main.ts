@@ -87,6 +87,7 @@ import {
   type PausedMainMenuClearSavedWorldResult,
   type PausedMainMenuExportResult,
   type PausedMainMenuImportResult,
+  type PausedMainMenuShellActionKeybindingRemapResult,
   type PausedMainMenuResetShellActionKeybindingsResult,
   type PausedMainMenuResetShellTogglesResult,
   type PausedMainMenuShellProfilePreviewClearResult,
@@ -684,10 +685,12 @@ const bootstrap = async (): Promise<void> => {
     onRemapShellActionKeybinding: (actionType, nextKey) => {
       const remapResult = remapShellActionKeybinding(shellActionKeybindings, actionType, nextKey);
       if (!remapResult.ok) {
-        return false;
+        return {
+          status: 'rejected'
+        };
       }
 
-      return persistShellActionKeybindingStateAndRefresh(remapResult.state);
+      return applyShellActionKeybindingStateAndRefreshWithPersistenceFallback(remapResult.state);
     },
     onResetShellActionKeybindings: (): PausedMainMenuResetShellActionKeybindingsResult => {
       const defaultShellActionKeybindings = createDefaultShellActionKeybindingState();
@@ -827,13 +830,26 @@ const bootstrap = async (): Promise<void> => {
   function persistShellActionKeybindingStateAndRefresh(
     nextKeybindings: ShellActionKeybindingState
   ): boolean {
-    if (!saveShellActionKeybindingState(worldSessionShellStateStorage, nextKeybindings)) {
+    const persisted = saveShellActionKeybindingState(worldSessionShellStateStorage, nextKeybindings);
+    worldSessionShellPersistenceAvailable = persisted;
+    if (!persisted) {
       return false;
     }
 
     applyShellActionKeybindingState(nextKeybindings);
     refreshShellStateAfterShellPreferenceChange();
     return true;
+  }
+  function applyShellActionKeybindingStateAndRefreshWithPersistenceFallback(
+    nextKeybindings: ShellActionKeybindingState
+  ): PausedMainMenuShellActionKeybindingRemapResult {
+    const persisted = saveShellActionKeybindingState(worldSessionShellStateStorage, nextKeybindings);
+    worldSessionShellPersistenceAvailable = persisted;
+    applyShellActionKeybindingState(nextKeybindings);
+    refreshShellStateAfterShellPreferenceChange();
+    return {
+      status: persisted ? 'saved' : 'session-only'
+    };
   }
   const syncDebugOverlayVisibility = (): void => {
     debug.setVisible(currentScreen === 'in-world' && debugOverlayVisible);

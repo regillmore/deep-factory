@@ -37,6 +37,7 @@ import {
   resolvePausedMainMenuExportShellProfileTitle,
   resolvePausedMainMenuFreshWorldTitle,
   resolvePausedMainMenuApplyShellProfileEditorStatus,
+  resolvePausedMainMenuShellActionKeybindingRemapEditorStatus,
   resolvePausedMainMenuResetShellActionKeybindingsEditorStatus,
   resolvePausedMainMenuApplyShellProfileTitle,
   resolvePausedMainMenuImportShellProfileTitle,
@@ -2367,6 +2368,78 @@ describe('resolvePausedMainMenuApplyShellProfileEditorStatus', () => {
       });
     }
   );
+});
+
+describe('resolvePausedMainMenuShellActionKeybindingRemapEditorStatus', () => {
+  it('uses saved-result copy when a remapped shell hotkey was browser-saved', () => {
+    expect(
+      resolvePausedMainMenuShellActionKeybindingRemapEditorStatus({
+        result: {
+          status: 'saved'
+        },
+        actionLabel: 'Debug HUD',
+        currentKey: 'H',
+        nextKey: 'U',
+        changed: true
+      })
+    ).toEqual({
+      tone: 'accent',
+      text: 'Debug HUD now uses U, and the current shell hotkey set was saved.'
+    });
+  });
+
+  it('uses session-only fallback copy when a remapped shell hotkey could not be browser-saved', () => {
+    expect(
+      resolvePausedMainMenuShellActionKeybindingRemapEditorStatus({
+        result: {
+          status: 'session-only'
+        },
+        actionLabel: 'Debug HUD',
+        currentKey: 'H',
+        nextKey: 'U',
+        changed: true
+      })
+    ).toEqual({
+      tone: 'warning',
+      text:
+        'Debug HUD now uses U for this paused session only because browser storage was not updated.'
+    });
+  });
+
+  it('keeps no-op remap saves explicit when the current hotkey was re-saved successfully', () => {
+    expect(
+      resolvePausedMainMenuShellActionKeybindingRemapEditorStatus({
+        result: {
+          status: 'saved'
+        },
+        actionLabel: 'Debug HUD',
+        currentKey: 'U',
+        nextKey: 'U',
+        changed: false
+      })
+    ).toEqual({
+      tone: 'accent',
+      text: 'Debug HUD stayed on U, and the current shell hotkey set was saved.'
+    });
+  });
+
+  it('keeps no-op session-only remaps explicit when storage still could not be updated', () => {
+    expect(
+      resolvePausedMainMenuShellActionKeybindingRemapEditorStatus({
+        result: {
+          status: 'session-only'
+        },
+        actionLabel: 'Debug HUD',
+        currentKey: 'U',
+        nextKey: 'U',
+        changed: false
+      })
+    ).toEqual({
+      tone: 'warning',
+      text:
+        'Debug HUD stayed on U for this paused session only because browser storage was not updated.'
+    });
+  });
 });
 
 describe('resolvePausedMainMenuResetShellActionKeybindingsEditorStatus', () => {
