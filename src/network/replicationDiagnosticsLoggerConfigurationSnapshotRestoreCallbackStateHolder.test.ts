@@ -19,6 +19,37 @@ const cloneAsUnknown = (value: unknown): unknown => JSON.parse(JSON.stringify(va
 describe(
   'AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder',
   () => {
+    it('reports detached restore-callback presence snapshots while restore wiring is disabled', () => {
+      const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+      const targetHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+          registry,
+          intervalTicks: 5,
+          nextDueTick: 3,
+          payloadLogger:
+            vi.fn<AuthoritativeClientReplicationDiagnosticsPayloadLogger>()
+        });
+      const restoreCallbackHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder(
+          {
+            holder: targetHolder,
+            registry
+          }
+        );
+
+      const firstPresenceSnapshot = restoreCallbackHolder.getPresenceSnapshot();
+      const secondPresenceSnapshot = restoreCallbackHolder.getPresenceSnapshot();
+
+      expect(firstPresenceSnapshot).toEqual({
+        hasRestoreCallback: false
+      });
+      expect(secondPresenceSnapshot).toEqual({
+        hasRestoreCallback: false
+      });
+      expect(firstPresenceSnapshot).not.toBe(secondPresenceSnapshot);
+      expect(Object.keys(firstPresenceSnapshot)).toEqual(['hasRestoreCallback']);
+    });
+
     it('returns null through the holder-owned restore seam when no restore-lifecycle loggers are configured', () => {
       const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
       const targetHolder =
@@ -45,6 +76,58 @@ describe(
         restoreCallbackHolder.restoreConfigurationSnapshot(Number.NaN)
       ).toBeNull();
       expect(targetHolder.getConfigurationSnapshot()).toEqual(initialSnapshot);
+    });
+
+    it('reports restore-callback presence without exposing active callback identity across reconfigure transitions', () => {
+      const registry = new AuthoritativeClientReplicationDiagnosticsRegistry();
+      const firstRestoreLifecycleTextLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLoggerConfigurationRestoreLifecycleTextLogger>();
+      const secondRestoreLifecyclePayloadLogger =
+        vi.fn<AuthoritativeClientReplicationDiagnosticsLoggerConfigurationRestoreLifecyclePayloadLogger>();
+      const targetHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerStateHolder({
+          registry,
+          intervalTicks: 5,
+          nextDueTick: 3,
+          payloadLogger:
+            vi.fn<AuthoritativeClientReplicationDiagnosticsPayloadLogger>()
+        });
+      const restoreCallbackHolder =
+        createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder(
+          {
+            holder: targetHolder,
+            registry,
+            restoreLifecycleTextLogger: firstRestoreLifecycleTextLogger
+          }
+        );
+
+      const firstActivePresenceSnapshot =
+        restoreCallbackHolder.getPresenceSnapshot();
+
+      restoreCallbackHolder.reconfigure({
+        holder: targetHolder,
+        registry,
+        restoreLifecyclePayloadLogger: secondRestoreLifecyclePayloadLogger
+      });
+
+      const secondActivePresenceSnapshot =
+        restoreCallbackHolder.getPresenceSnapshot();
+
+      restoreCallbackHolder.reconfigure({
+        holder: targetHolder,
+        registry
+      });
+
+      expect(firstActivePresenceSnapshot).toEqual({
+        hasRestoreCallback: true
+      });
+      expect(secondActivePresenceSnapshot).toEqual({
+        hasRestoreCallback: true
+      });
+      expect(firstActivePresenceSnapshot).not.toBe(secondActivePresenceSnapshot);
+      expect(restoreCallbackHolder.getPresenceSnapshot()).toEqual({
+        hasRestoreCallback: false
+      });
     });
 
     it('restores one unknown snapshot through the holder-owned seam when restore wiring is configured', () => {
@@ -99,6 +182,10 @@ describe(
             restoreLifecyclePayloadLogger
           }
         );
+
+      expect(restoreCallbackHolder.getPresenceSnapshot()).toEqual({
+        hasRestoreCallback: true
+      });
 
       const emission = restoreCallbackHolder.restoreConfigurationSnapshot(
         cloneAsUnknown(sourceHolder.getConfigurationSnapshot())
@@ -180,9 +267,17 @@ describe(
       const secondTargetInitialSnapshot =
         secondTargetHolder.getConfigurationSnapshot();
 
+      expect(restoreCallbackHolder.getPresenceSnapshot()).toEqual({
+        hasRestoreCallback: true
+      });
+
       restoreCallbackHolder.reconfigure({
         holder: secondTargetHolder,
         registry
+      });
+
+      expect(restoreCallbackHolder.getPresenceSnapshot()).toEqual({
+        hasRestoreCallback: false
       });
 
       expect(
@@ -199,6 +294,10 @@ describe(
         registry,
         lineLogger: secondRuntimeLineLogger,
         restoreLifecyclePayloadLogger: secondRestoreLifecyclePayloadLogger
+      });
+
+      expect(restoreCallbackHolder.getPresenceSnapshot()).toEqual({
+        hasRestoreCallback: true
       });
 
       const secondEmission = restoreCallbackHolder.restoreConfigurationSnapshot(
@@ -261,6 +360,10 @@ describe(
           }
         );
       const initialSnapshot = targetHolder.getConfigurationSnapshot();
+
+      expect(restoreCallbackHolder.getPresenceSnapshot()).toEqual({
+        hasRestoreCallback: true
+      });
 
       expect(() =>
         restoreCallbackHolder.restoreConfigurationSnapshot(

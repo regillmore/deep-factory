@@ -11,6 +11,16 @@ export interface CreateAuthoritativeClientReplicationDiagnosticsLoggerConfigurat
 export interface ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolderOptions
   extends ReconfigureAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackOptions {}
 
+export interface AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshot {
+  hasRestoreCallback: boolean;
+}
+
+const createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshot = ({
+  restoreCallback
+}: AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackReconfiguration): AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshot => ({
+  hasRestoreCallback: restoreCallback !== null
+});
+
 export class AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder {
   private currentReconfiguration: AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackReconfiguration =
     {
@@ -45,6 +55,12 @@ export class AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapsho
   ): AuthoritativeClientReplicationDiagnosticsLoggerConfigurationRestoreLifecycleEmission | null {
     return this.currentReconfiguration.restoreCallbackInvoker(
       unknownConfigurationSnapshot
+    );
+  }
+
+  getPresenceSnapshot(): AuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshot {
+    return createAuthoritativeClientReplicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceSnapshot(
+      this.currentReconfiguration
     );
   }
 

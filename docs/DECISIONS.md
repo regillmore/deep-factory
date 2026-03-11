@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore callback holder presence snapshots should expose installed state only
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder.ts` now reports restore wiring through a detached `{ hasRestoreCallback }` snapshot instead of exposing the live restore callback or invoker identities.
+- Reason: Transport lifecycle code needs stable introspection that survives active-to-active reconfiguration without leaking function references or making downstream callers compare implementation identity.
+- Consequence: Future restore-holder refresh or reconfigure helpers should consume this detached presence snapshot as the source of truth for installed restore wiring rather than reading holder internals or comparing callback references.
+
 ### 2026-03-11: Replication diagnostics restore callback holders should own the stable public restore seam
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder.ts` now stores the current restore-callback reconfiguration internally and exposes one holder-owned `restoreConfigurationSnapshot(...)` entrypoint while `reconfigure(...)` swaps the underlying nullable callback-plus-invoker pair.
