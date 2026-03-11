@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore callback invokers should stay branch-free while preserving active callback behavior
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackInvoker.ts` now wraps one nullable restore callback into an always-callable restore entrypoint that returns `null` when no callback is installed and otherwise forwards the active callback result and errors unchanged.
+- Reason: Transport lifecycle wiring needs one stable restore seam that callers can invoke without branching on nullable callback installation, but enabled restore flows still need the shared lifecycle-emission contract and validation failures from the active callback.
+- Consequence: Future restore-callback reconfiguration and holder helpers should build their public restore entrypoint through this invoker instead of exposing the nullable callback directly or swallowing active restore errors.
+
 ### 2026-03-11: Replication diagnostics restore callbacks should only be installed through the nullable factory when restore-lifecycle logging is configured
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackFactory.ts` now returns `null` when no restore-lifecycle text, line, or payload logger is configured and otherwise builds the shared restore-lifecycle logger bundle plus reusable restore callback through the existing callback creator.
