@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore callbacks should only be installed through the nullable factory when restore-lifecycle logging is configured
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackFactory.ts` now returns `null` when no restore-lifecycle text, line, or payload logger is configured and otherwise builds the shared restore-lifecycle logger bundle plus reusable restore callback through the existing callback creator.
+- Reason: Transport lifecycle wiring needs one stable way to skip unused restore-lifecycle callback installation while still reusing the shared restore-lifecycle bundle and restore callback composition when any lifecycle sink is enabled.
+- Consequence: Future restore-callback invoker, reconfiguration, and holder helpers should treat `null` from this factory as the disabled restore-lifecycle state instead of rebuilding the bundle-or-null branching ad hoc.
+
 ### 2026-03-11: Replication diagnostics restore-lifecycle mixed logger bundles should compose through the shared restore sink order
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationRestoreLifecycleLoggerBundle.ts` now composes optional restore-lifecycle text, line, and payload loggers in `text`, `line`, then `payload` order through the shared restore-lifecycle fan-out sink.
