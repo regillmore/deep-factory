@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-11
 
+- Task: Add shell-persistence and binding-set status to the collapsed paused-menu Shell Settings summary.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the collapsed paused-menu `Shell Settings` summary now appends the live shell-persistence mode plus whether the current in-world hotkeys are using the default or custom set, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused shell-summary regressions for browser-saved/default and session-only/custom states, removed completed task `440` from [docs/NEXT.md](docs/NEXT.md), added replacement task `445`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Collapse paused-menu action-card help text behind a toggle.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused sessions now hide their action-card help paragraphs behind a paused-menu `Show Help Text` toggle by default while keeping card titles and metadata rows visible, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused paused-help-collapse regressions, removed stale task `437` from [docs/NEXT.md](docs/NEXT.md), added replacement task `444`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

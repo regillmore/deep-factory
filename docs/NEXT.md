@@ -7,10 +7,10 @@ These items are intentionally scoped to fit a focused implementation pass with t
 200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
 318. Add paused-menu persistence-summary copy that surfaces when some persisted in-world shell-action keybindings were rejected during load while a mixed custom/default binding set still remains, with shell-action storage regressions.
 432. Add paused-menu `Shell Hotkeys` helper copy that surfaces when the editor is showing a recovered safe-set fallback after invalid saved bindings were rejected during load, with hotkey-editor fallback regressions.
-440. Add a collapsed paused-menu Shell Settings summary line that includes shell-persistence mode plus binding-set status after task `439` lands, with shell-summary regressions.
 441. Add paused-menu persistence-summary copy that surfaces when hotkey remaps are currently live only in-session because browser storage rejected the latest rewrite, with remap-session-summary regressions.
 443. Add paused-menu Shell Settings summary copy that distinguishes whether a staged shell-profile preview would change shell toggles, hotkeys, or both while the section is collapsed, with shell-summary-preview regressions.
 444. Add a collapsed paused-menu Results section that groups transient import/export/reset feedback cards behind one toggle while keeping status rows visible, with paused-results-collapse regressions.
+445. Add collapsed paused-menu Shell Settings summary copy that warns when the active hotkey set is a recovered safe-set fallback after invalid saved bindings were rejected during load, with shell-summary-fallback regressions.
 
 ## Optimize liquids
 

@@ -124,15 +124,17 @@ const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
 ] as const;
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden.';
+  'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
   'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
 const PREVIEWED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Shell profile preview from preview-shell-profile.json is ready to apply. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden.';
+  'Shell profile preview from preview-shell-profile.json is ready to apply. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const MIXED_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Resume World shows Debug HUD and Edit Overlays, while Edit Panel, Spawn Marker, and Shortcuts stay hidden.';
+  'Resume World shows Debug HUD and Edit Overlays, while Edit Panel, Spawn Marker, and Shortcuts stay hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const FULLY_VISIBLE_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Resume World shows Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts.';
+  'Resume World shows Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts. Shell settings are browser saved. Current shell hotkeys use the default set.';
+const SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
+  'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are in session-only fallback. Current shell hotkeys use the custom set.';
 const PAUSED_MAIN_MENU_SHELL_PROFILE_PREVIEW_LINES = [
   'The selected shell profile validated successfully and is ready to apply to this paused session.',
   'Review its live change summary, saved-on shell visibility, and replacement hotkey set below before applying it.'
@@ -2560,6 +2562,18 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
         }).menuSections ?? []
       )
     ).toBe(FULLY_VISIBLE_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+  });
+
+  it('surfaces paused-session shell persistence mode and binding-set status in the collapsed summary', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSummaryLine(
+        createPausedMainMenuShellState(
+          undefined,
+          false,
+          CUSTOM_SHELL_ACTION_KEYBINDINGS
+        ).menuSections ?? []
+      )
+    ).toBe(SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
   });
 
   it('surfaces a staged shell-profile preview while keeping the current paused-session summary', () => {

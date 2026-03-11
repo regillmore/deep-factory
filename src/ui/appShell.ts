@@ -348,6 +348,35 @@ const resolvePausedMainMenuShellProfilePreviewSummaryLine = (
     ? 'A validated shell profile preview is ready to apply.'
     : `Shell profile preview from ${previewFileValue} is ready to apply.`;
 };
+const resolvePausedMainMenuShellSettingsPersistenceSummaryLine = (
+  menuSections: readonly AppShellMenuSection[] = []
+): string | null => {
+  const persistenceStatusValue = findMenuSectionMetadataRowValue(
+    menuSections,
+    'Persistence Summary',
+    'Status'
+  );
+  const bindingSetValue = findMenuSectionMetadataRowValue(
+    menuSections,
+    'Persistence Summary',
+    'Binding Set'
+  );
+  const summaryLines: string[] = [];
+
+  if (persistenceStatusValue !== undefined) {
+    summaryLines.push(
+      persistenceStatusValue === 'Session-only fallback'
+        ? 'Shell settings are in session-only fallback.'
+        : `Shell settings are ${persistenceStatusValue.toLowerCase()}.`
+    );
+  }
+
+  if (bindingSetValue !== undefined) {
+    summaryLines.push(`Current shell hotkeys use the ${bindingSetValue.toLowerCase()}.`);
+  }
+
+  return summaryLines.length > 0 ? summaryLines.join(' ') : null;
+};
 export const resolvePausedMainMenuShellSettingsSummaryLine = (
   menuSections: readonly AppShellMenuSection[] = []
 ): string => {
@@ -371,10 +400,16 @@ export const resolvePausedMainMenuShellSettingsSummaryLine = (
 
   const shellProfilePreviewSummaryLine =
     resolvePausedMainMenuShellProfilePreviewSummaryLine(menuSections);
+  const shellSettingsPersistenceSummaryLine =
+    resolvePausedMainMenuShellSettingsPersistenceSummaryLine(menuSections);
 
-  return shellProfilePreviewSummaryLine === null
-    ? visibilitySummaryLine
-    : `${shellProfilePreviewSummaryLine} ${visibilitySummaryLine}`;
+  return [
+    shellProfilePreviewSummaryLine,
+    visibilitySummaryLine,
+    shellSettingsPersistenceSummaryLine
+  ]
+    .filter((line): line is string => line !== null)
+    .join(' ');
 };
 export const resolvePausedMainMenuShellSettingsToggleLabel = (expanded = false): string =>
   expanded ? 'Hide Shell Settings' : 'Show Shell Settings';
