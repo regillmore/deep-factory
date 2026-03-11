@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore callback holders should own the stable public restore seam
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackStateHolder.ts` now stores the current restore-callback reconfiguration internally and exposes one holder-owned `restoreConfigurationSnapshot(...)` entrypoint while `reconfigure(...)` swaps the underlying nullable callback-plus-invoker pair.
+- Reason: Transport lifecycle wiring needs one persistent object seam that callers can keep invoking while restore-lifecycle logging is enabled, disabled, or later rebuilt from different live runtime callbacks.
+- Consequence: Future restore-callback presence snapshots and refresh helpers should extend this holder instead of passing raw callback or invoker functions around as transport-owned mutable state.
+
 ### 2026-03-11: Replication diagnostics restore callback reconfiguration should rebuild the nullable callback and public invoker together
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackReconfiguration.ts` now returns both the nullable restore callback and the matching no-op-safe restore invoker in one reconfiguration result.
