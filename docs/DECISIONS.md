@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics lifecycle text sinks should format shared line arrays at call time
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationLifecycleTextLogger.ts` now forwards lifecycle text by formatting the supplied configuration-change and configuration-restore line arrays when the sink is invoked instead of requiring callers to prejoin text first.
+- Reason: Lifecycle text sinks need to share detached line arrays with sibling loggers, and rebuilding joined text outside the sink would duplicate the shared ordering and separator rules from the lifecycle text formatter.
+- Consequence: Future lifecycle fan-out, restore-emission, or text-only logger helpers should pass shared line arrays through this sink helper instead of assembling ad hoc configuration lifecycle console text before callback fan-out.
+
 ### 2026-03-11: Replication diagnostics lifecycle text should keep diff lines ahead of restore lines
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationLifecycleTextFormatting.ts` now formats lifecycle console text by joining the full `ConfigurationChange` section before the full `ConfigurationRestore` section while otherwise preserving the provided line order inside each section.
