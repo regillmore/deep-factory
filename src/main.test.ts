@@ -88,7 +88,7 @@ const testRuntime = vi.hoisted(() => {
     shellInstance: null as null | {
       currentState: unknown;
       stateHistory: unknown[];
-      options: Record<string, (screen: string) => void>;
+      options: Record<string, (...args: unknown[]) => unknown>;
     },
     initialArmedToolKinds: {
       floodFillKind: null as 'place' | 'break' | null,
@@ -130,7 +130,9 @@ const testRuntime = vi.hoisted(() => {
     },
     debugEditControlsSetVisibleCallCount: 0,
     debugEditControlsSetHistoryStateCallCount: 0,
+    debugEditControlsSetShellActionKeybindingsCallCount: 0,
     debugEditControlsArmedToolSetterCallCount: 0,
+    debugEditControlsShellActionKeybindings: null as ShellActionKeybindingState | null,
     debugEditControlsInitialArmedToolSnapshot: null as null | {
       floodFillKind: 'place' | 'break' | null;
       lineKind: 'place' | 'break' | null;
@@ -164,6 +166,7 @@ const testRuntime = vi.hoisted(() => {
       triggerUndo(): void;
       triggerRedo(): void;
       triggerResetPrefs(): void;
+      setShellActionKeybindings(keybindings: ShellActionKeybindingState): void;
     },
     hoveredTileCursorInstance: null as null | { visible: boolean },
     armedDebugToolPreviewInstance: null as null | { visible: boolean },
@@ -853,10 +856,10 @@ vi.mock('./ui/appShell', async () => {
     AppShell: class {
       stateHistory: unknown[] = [];
       currentState: unknown = null;
-      options: Record<string, (screen: string) => void>;
+      options: Record<string, (...args: unknown[]) => unknown>;
       private worldHost = new testRuntime.FakeHTMLElement('div');
 
-      constructor(_root: unknown, options: Record<string, (screen: string) => void>) {
+      constructor(_root: unknown, options: Record<string, (...args: unknown[]) => unknown>) {
         this.options = options;
         testRuntime.shellInstance = this;
       }
@@ -1061,6 +1064,7 @@ vi.mock('./ui/touchDebugEditControls', () => ({
       onUndo?: () => void;
       onRedo?: () => void;
       onResetPrefs?: () => void;
+      shellActionKeybindings?: ShellActionKeybindingState;
     }) {
       this.brushTileId = options.initialBrushTileId ?? 0;
       this.mode = options.initialMode ?? 'pan';
@@ -1092,6 +1096,7 @@ vi.mock('./ui/touchDebugEditControls', () => ({
         undoStrokeCount: options.initialHistoryState?.undoStrokeCount ?? 0,
         redoStrokeCount: options.initialHistoryState?.redoStrokeCount ?? 0
       };
+      testRuntime.debugEditControlsShellActionKeybindings = options.shellActionKeybindings ?? null;
       testRuntime.debugEditControlsInitialArmedToolSnapshot = {
         floodFillKind: this.armedFloodFillKind,
         lineKind: this.armedLineKind,
@@ -1180,6 +1185,11 @@ vi.mock('./ui/touchDebugEditControls', () => ({
         undoStrokeCount: historyState.undoStrokeCount,
         redoStrokeCount: historyState.redoStrokeCount
       };
+    }
+
+    setShellActionKeybindings(keybindings: ShellActionKeybindingState): void {
+      testRuntime.debugEditControlsShellActionKeybindings = keybindings;
+      testRuntime.debugEditControlsSetShellActionKeybindingsCallCount += 1;
     }
 
     setArmedFloodFillKind(kind: 'place' | 'break' | null): void {
@@ -1394,7 +1404,9 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugEditControlsLatestHistoryState = null;
     testRuntime.debugEditControlsSetVisibleCallCount = 0;
     testRuntime.debugEditControlsSetHistoryStateCallCount = 0;
+    testRuntime.debugEditControlsSetShellActionKeybindingsCallCount = 0;
     testRuntime.debugEditControlsArmedToolSetterCallCount = 0;
+    testRuntime.debugEditControlsShellActionKeybindings = null;
     testRuntime.debugEditControlsInitialArmedToolSnapshot = null;
     testRuntime.debugEditControlsArmedToolKinds = null;
     testRuntime.debugEditControlsInstance = null;
@@ -5871,6 +5883,70 @@ describe('main.ts shell state orchestration', () => {
 
     expect(dispatchKeydown('q').prevented).toBe(false);
     expect(dispatchKeydown('x').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+  });
+
+  it('persists paused-menu shell-action remaps and refreshes shell-dependent hotkey references', async () => {
+    const remappedShellActionKeybindings: ShellActionKeybindingState = {
+      'return-to-main-menu': 'Q',
+      'recenter-camera': 'C',
+      'toggle-debug-overlay': 'U',
+      'toggle-debug-edit-controls': 'G',
+      'toggle-debug-edit-overlays': 'V',
+      'toggle-player-spawn-marker': 'M'
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+
+    expect(
+      testRuntime.shellInstance?.options.onRemapShellActionKeybinding?.(
+        'toggle-debug-overlay',
+        'u'
+      )
+    ).toBe(true);
+    expect(testRuntime.storageValues.get(SHELL_ACTION_KEYBINDING_STORAGE_KEY)).toBe(
+      JSON.stringify(remappedShellActionKeybindings)
+    );
+    expect(testRuntime.debugEditControlsShellActionKeybindings).toEqual(remappedShellActionKeybindings);
+    expect(testRuntime.debugEditControlsSetShellActionKeybindingsCallCount).toBe(1);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({
+        shellActionKeybindings: remappedShellActionKeybindings
+      })
+    );
+    expect(dispatchKeydown('h').prevented).toBe(false);
+    expect(dispatchKeydown('u').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createInWorldShellState({
+        debugOverlayVisible: true,
+        shellActionKeybindings: remappedShellActionKeybindings
+      })
+    );
+  });
+
+  it('rejects invalid runtime shell-action remaps before persisting them', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+
+    expect(
+      testRuntime.shellInstance?.options.onRemapShellActionKeybinding?.(
+        'toggle-debug-overlay',
+        'c'
+      )
+    ).toBe(false);
+    expect(testRuntime.storageValues.has(SHELL_ACTION_KEYBINDING_STORAGE_KEY)).toBe(false);
+    expect(testRuntime.debugEditControlsSetShellActionKeybindingsCallCount).toBe(0);
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
   });
 

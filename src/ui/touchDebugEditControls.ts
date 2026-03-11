@@ -115,6 +115,7 @@ export class TouchDebugEditControls {
   private collapsedSummary: HTMLDivElement;
   private content: HTMLDivElement;
   private collapseToggleButton: HTMLButtonElement;
+  private keyboardShortcutSection: HTMLDivElement;
   private buttons = new Map<TouchDebugEditMode, HTMLButtonElement>();
   private brushButtons = new Map<number, HTMLButtonElement>();
   private visible: boolean;
@@ -122,6 +123,7 @@ export class TouchDebugEditControls {
   private brushTileId: number;
   private collapsed: boolean;
   private brushOptions: readonly DebugBrushOption[];
+  private shellActionKeybindings: ShellActionKeybindingState;
   private activeBrushIndicator: HTMLDivElement;
   private undoButton: HTMLButtonElement;
   private redoButton: HTMLButtonElement;
@@ -185,6 +187,8 @@ export class TouchDebugEditControls {
     this.onResetPrefs = options.onResetPrefs ?? (() => {});
     this.undoStrokeCount = Math.max(0, options.initialHistoryState?.undoStrokeCount ?? 0);
     this.redoStrokeCount = Math.max(0, options.initialHistoryState?.redoStrokeCount ?? 0);
+    this.shellActionKeybindings =
+      options.shellActionKeybindings ?? createDefaultShellActionKeybindingState();
 
     this.root = document.createElement('div');
     this.root.style.position = 'fixed';
@@ -728,6 +732,7 @@ export class TouchDebugEditControls {
     shortcutSection.style.display = 'flex';
     shortcutSection.style.flexDirection = 'column';
     shortcutSection.style.gap = '4px';
+    this.keyboardShortcutSection = shortcutSection;
     this.content.append(shortcutSection);
 
     const shortcutTitle = document.createElement('div');
@@ -736,17 +741,7 @@ export class TouchDebugEditControls {
     shortcutTitle.style.fontSize = '11px';
     shortcutSection.append(shortcutTitle);
 
-    for (const line of resolveTouchDebugKeyboardShortcutLines(
-      panelToggleHotkeyLabel,
-      options.shellActionKeybindings
-    )) {
-      const lineElement = document.createElement('div');
-      lineElement.textContent = line;
-      lineElement.style.color = '#d6dde8';
-      lineElement.style.fontSize = '11px';
-      lineElement.style.lineHeight = '1.35';
-      shortcutSection.append(lineElement);
-    }
+    this.refreshKeyboardShortcutLines(panelToggleHotkeyLabel);
 
     const brushSection = document.createElement('div');
     brushSection.style.display = 'flex';
@@ -828,6 +823,27 @@ export class TouchDebugEditControls {
     document.body.append(this.root);
   }
 
+  private refreshKeyboardShortcutLines(
+    panelToggleHotkeyLabel = getDebugEditPanelToggleHotkeyLabel()
+  ): void {
+    const shortcutTitle = this.keyboardShortcutSection.firstElementChild;
+    const shortcutLineElements = resolveTouchDebugKeyboardShortcutLines(
+      panelToggleHotkeyLabel,
+      this.shellActionKeybindings
+    ).map((line) => {
+      const lineElement = document.createElement('div');
+      lineElement.textContent = line;
+      lineElement.style.color = '#d6dde8';
+      lineElement.style.fontSize = '11px';
+      lineElement.style.lineHeight = '1.35';
+      return lineElement;
+    });
+
+    this.keyboardShortcutSection.replaceChildren(
+      ...(shortcutTitle ? [shortcutTitle, ...shortcutLineElements] : shortcutLineElements)
+    );
+  }
+
   setMode(mode: TouchDebugEditMode): void {
     if (this.mode === mode) return;
     this.mode = mode;
@@ -872,6 +888,11 @@ export class TouchDebugEditControls {
     this.undoStrokeCount = Math.max(0, historyState.undoStrokeCount);
     this.redoStrokeCount = Math.max(0, historyState.redoStrokeCount);
     this.syncHistoryState();
+  }
+
+  setShellActionKeybindings(keybindings: ShellActionKeybindingState): void {
+    this.shellActionKeybindings = keybindings;
+    this.refreshKeyboardShortcutLines();
   }
 
   setArmedFloodFillKind(kind: 'place' | 'break' | null): void {

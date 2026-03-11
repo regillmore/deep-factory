@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Transport lifecycle and persistence code needs one JSON-safe way to detect diagnostics logger configuration drift between exports, restores, and reconfigurations without depending on runner state or function identity.
 - Consequence: Future diagnostics logger configuration restore or logging helpers should diff detached `{ schedule, callbacks }` snapshots through this summary helper and should treat its flags as the source of truth for configuration change detection.
 
+### 2026-03-11: Paused-menu shell hotkey remaps should reuse the shared keybinding validator and save path
+
+- Decision: The paused main-menu shell hotkey editor now routes each attempted `Main Menu`, `Recenter Camera`, `Debug HUD`, `Edit Panel`, `Edit Overlays`, and `Spawn Marker` remap through `src/input/shellActionKeybindings.ts` and only commits the change when `src/main.ts` successfully rewrites browser storage; valid no-op re-saves are allowed so a recovered safe set can replace previously invalid persisted payloads.
+- Reason: The paused summary, in-world shell chrome, shortcuts overlay, touch keyboard reference, and keyboard shortcut resolver all consume the same binding set, so ad hoc UI-side mutation or raw storage writes would drift those surfaces and leave stale invalid payloads behind.
+- Consequence: Future shell hotkey reset, import/export, or fallback-clearing flows should reuse the shared remap-plus-save path instead of mutating stored keybinding JSON directly or bypassing the runtime refresh path.
+
 ### 2026-03-10: Replication diagnostics configuration snapshots should reapply through live callbacks, not serialized functions
 
 - Decision: `src/network/replicationDiagnosticsLoggerStateHolder.ts` now reapplies detached configuration snapshots through `reconfigureFromConfigurationSnapshot(...)`, which accepts a registry plus live text, line, and payload logger callbacks separately, keeps disabled snapshots disabled, and uses snapshot callback-presence flags to choose which supplied callbacks become active.

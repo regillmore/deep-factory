@@ -50,9 +50,9 @@ const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
   'toggle-player-spawn-marker': 'Y'
 };
 const PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE =
-  'Current in-world shell hotkeys preview the active binding set until remap settings land.';
+  'Current in-world shell hotkeys preview the active binding set and can be remapped below.';
 const PAUSED_MAIN_MENU_KEYBINDING_DEFAULTED_SUMMARY_LINE =
-  'Saved in-world shell-action keybindings fell back to the default set during load, so the rows below show the safe defaults until remap settings land.';
+  'Saved in-world shell-action keybindings fell back to a recovered safe set during load. Review or remap the rows below before resuming.';
 const DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Saved in-world shell visibility resumes with the paused session until a reset path clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
@@ -1412,7 +1412,8 @@ describe('createPausedMainMenuShellState', () => {
       tertiaryActionLabel: 'Import World Save',
       quaternaryActionLabel: 'Clear Saved World',
       quinaryActionLabel: 'Reset Shell Toggles',
-      senaryActionLabel: 'New World'
+      senaryActionLabel: 'New World',
+      shellActionKeybindings: createDefaultShellActionKeybindingState()
     });
   });
 
@@ -1574,7 +1575,8 @@ describe('createPausedMainMenuShellState', () => {
       tertiaryActionLabel: 'Import World Save',
       quaternaryActionLabel: 'Clear Saved World',
       quinaryActionLabel: 'Reset Shell Toggles',
-      senaryActionLabel: 'New World'
+      senaryActionLabel: 'New World',
+      shellActionKeybindings: createDefaultShellActionKeybindingState()
     });
   });
 
@@ -1742,6 +1744,7 @@ describe('createPausedMainMenuShellState', () => {
       quaternaryActionLabel: 'Clear Saved World',
       quinaryActionLabel: 'Reset Shell Toggles',
       senaryActionLabel: 'New World',
+      shellActionKeybindings: createDefaultShellActionKeybindingState(),
       pausedMainMenuResetShellTogglesResult: {
         status: 'cleared'
       }
@@ -1913,6 +1916,7 @@ describe('createPausedMainMenuShellState', () => {
       quaternaryActionLabel: 'Clear Saved World',
       quinaryActionLabel: 'Reset Shell Toggles',
       senaryActionLabel: 'New World',
+      shellActionKeybindings: createDefaultShellActionKeybindingState(),
       pausedMainMenuResetShellTogglesResult: {
         status: 'persistence-failed',
         reason: 'remove blocked'

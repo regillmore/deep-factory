@@ -11,6 +11,7 @@ import {
   loadShellActionKeybindingState,
   loadShellActionKeybindingStateWithDefaultFallbackStatus,
   matchesDefaultShellActionKeybindingState,
+  remapShellActionKeybinding,
   resolveInWorldShellActionKeybindingAction,
   saveShellActionKeybindingState,
   SHELL_ACTION_KEYBINDING_STORAGE_KEY,
@@ -257,6 +258,77 @@ describe('saveShellActionKeybindingState', () => {
     expect(
       saveShellActionKeybindingState(throwingStorage, createDefaultShellActionKeybindingState())
     ).toBe(false);
+  });
+});
+
+describe('remapShellActionKeybinding', () => {
+  it('normalizes lowercase remap input and returns an updated keybinding state', () => {
+    expect(
+      remapShellActionKeybinding(
+        createDefaultShellActionKeybindingState(),
+        'toggle-debug-overlay',
+        'u'
+      )
+    ).toEqual({
+      ok: true,
+      changed: true,
+      normalizedKey: 'U',
+      state: {
+        'return-to-main-menu': 'Q',
+        'recenter-camera': 'C',
+        'toggle-debug-overlay': 'U',
+        'toggle-debug-edit-controls': 'G',
+        'toggle-debug-edit-overlays': 'V',
+        'toggle-player-spawn-marker': 'M'
+      }
+    });
+  });
+
+  it('keeps valid no-op remaps saveable without changing the current key', () => {
+    expect(
+      remapShellActionKeybinding(
+        createDefaultShellActionKeybindingState(),
+        'toggle-debug-overlay',
+        'H'
+      )
+    ).toEqual({
+      ok: true,
+      changed: false,
+      normalizedKey: 'H',
+      state: createDefaultShellActionKeybindingState()
+    });
+  });
+
+  it('rejects reserved remap keys', () => {
+    expect(
+      remapShellActionKeybinding(
+        createDefaultShellActionKeybindingState(),
+        'toggle-debug-overlay',
+        'f'
+      )
+    ).toEqual({
+      ok: false,
+      reason: 'reserved-key',
+      normalizedKey: 'F',
+      conflictingActionType: null,
+      state: createDefaultShellActionKeybindingState()
+    });
+  });
+
+  it('rejects duplicate remap keys and reports the conflicting action', () => {
+    expect(
+      remapShellActionKeybinding(
+        createDefaultShellActionKeybindingState(),
+        'toggle-debug-overlay',
+        'c'
+      )
+    ).toEqual({
+      ok: false,
+      reason: 'duplicate-key',
+      normalizedKey: 'C',
+      conflictingActionType: 'recenter-camera',
+      state: createDefaultShellActionKeybindingState()
+    });
   });
 });
 

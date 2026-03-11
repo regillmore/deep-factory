@@ -238,6 +238,93 @@ canvas {
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 
+.app-shell__shell-keybindings {
+  margin-top: 18px;
+  padding: 15px 16px 16px;
+  border: 1px solid rgba(150, 184, 197, 0.18);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(18, 24, 33, 0.92), rgba(11, 16, 22, 0.86)),
+    linear-gradient(135deg, rgba(110, 178, 207, 0.08), rgba(255, 225, 169, 0.04));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 16px 32px rgba(0, 0, 0, 0.16);
+  display: grid;
+  gap: 12px;
+}
+
+.app-shell__shell-keybindings-title {
+  margin: 0;
+  color: #fff0cc;
+  font:
+    700 11px/1.1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.app-shell__shell-keybindings-intro {
+  margin: 0;
+  color: #d6e3e7;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.app-shell__shell-keybindings-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.app-shell__shell-keybindings-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.app-shell__shell-keybindings-label {
+  color: #9fddff;
+  font:
+    700 10px/1.1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-shell__shell-keybindings-input {
+  width: 3.4rem;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid rgba(140, 220, 255, 0.24);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(17, 25, 35, 0.92), rgba(10, 16, 23, 0.9)),
+    linear-gradient(135deg, rgba(120, 210, 255, 0.08), rgba(243, 205, 135, 0.05));
+  color: #f3ebdc;
+  font:
+    700 1rem/1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.app-shell__shell-keybindings-input:focus-visible {
+  outline: 2px solid #9fddff;
+  outline-offset: 3px;
+}
+
+.app-shell__shell-keybindings-status {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.app-shell__shell-keybindings-status[data-tone='accent'] {
+  color: #d8f3ff;
+}
+
+.app-shell__shell-keybindings-status[data-tone='warning'] {
+  color: #f3cd87;
+}
+
 .app-shell__menu-section {
   padding: 15px 16px 16px;
   border: 1px solid rgba(150, 184, 197, 0.18);
@@ -408,6 +495,10 @@ canvas {
 
   .app-shell__menu-sections {
     grid-template-columns: 1fr;
+  }
+
+  .app-shell__shell-keybindings-row {
+    grid-template-columns: minmax(0, 1fr) 3.4rem;
   }
 
   .app-shell__menu-section-lines {

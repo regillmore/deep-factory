@@ -44,6 +44,8 @@ import {
 } from './input/debugEditShortcuts';
 import {
   loadShellActionKeybindingStateWithDefaultFallbackStatus,
+  remapShellActionKeybinding,
+  saveShellActionKeybindingState,
   type ShellActionKeybindingState
 } from './input/shellActionKeybindings';
 import {
@@ -512,8 +514,8 @@ const bootstrap = async (): Promise<void> => {
   const initialShellActionKeybindingLoad = loadShellActionKeybindingStateWithDefaultFallbackStatus(
     worldSessionShellStateStorage
   );
-  const shellActionKeybindings = initialShellActionKeybindingLoad.state;
-  const shellActionKeybindingsDefaultedFromPersistedState =
+  let shellActionKeybindings = initialShellActionKeybindingLoad.state;
+  let shellActionKeybindingsDefaultedFromPersistedState =
     initialShellActionKeybindingLoad.defaultedFromPersistedState;
   const defaultWorldSessionShellState = createDefaultWorldSessionShellState();
   let worldSessionStarted = false;
@@ -640,6 +642,26 @@ const bootstrap = async (): Promise<void> => {
     },
     onToggleShortcutsOverlay: (screen) => {
       handleInWorldShellAction(screen, 'toggle-shortcuts-overlay');
+    },
+    onRemapShellActionKeybinding: (actionType, nextKey) => {
+      const remapResult = remapShellActionKeybinding(shellActionKeybindings, actionType, nextKey);
+      if (!remapResult.ok) {
+        return false;
+      }
+
+      if (!saveShellActionKeybindingState(worldSessionShellStateStorage, remapResult.state)) {
+        return false;
+      }
+
+      shellActionKeybindings = remapResult.state;
+      shellActionKeybindingsDefaultedFromPersistedState = false;
+      debugEditControls?.setShellActionKeybindings(shellActionKeybindings);
+      if (currentScreen === 'in-world') {
+        syncInWorldShellState();
+      } else {
+        showMainMenuShellState();
+      }
+      return true;
     }
   });
   shell.setState(createDefaultBootShellState());

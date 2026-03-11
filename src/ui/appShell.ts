@@ -12,7 +12,11 @@ import {
 } from '../input/debugEditShortcuts';
 import {
   createDefaultShellActionKeybindingState,
+  getInWorldShellActionKeybindingActionLabel,
+  IN_WORLD_SHELL_ACTION_KEYBINDING_IDS,
   matchesDefaultShellActionKeybindingState,
+  remapShellActionKeybinding,
+  type InWorldShellActionKeybindingActionType,
   type ShellActionKeybindingState
 } from '../input/shellActionKeybindings';
 import {
@@ -153,8 +157,8 @@ const resolvePausedMainMenuShellActionKeybindingSummaryLine = (
   shellActionKeybindingsDefaultedFromPersistedState = false
 ): string =>
   shellActionKeybindingsDefaultedFromPersistedState
-    ? 'Saved in-world shell-action keybindings fell back to the default set during load, so the rows below show the safe defaults until remap settings land.'
-    : 'Current in-world shell hotkeys preview the active binding set until remap settings land.';
+    ? 'Saved in-world shell-action keybindings fell back to a recovered safe set during load. Review or remap the rows below before resuming.'
+    : 'Current in-world shell hotkeys preview the active binding set and can be remapped below.';
 const resolvePausedMainMenuShellActionKeybindingSetValue = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ): string =>
@@ -669,6 +673,7 @@ export const createPausedMainMenuShellState = (
   quaternaryActionLabel: 'Clear Saved World',
   quinaryActionLabel: 'Reset Shell Toggles',
   senaryActionLabel: 'New World',
+  shellActionKeybindings,
   ...(exportResult === null ? {} : { pausedMainMenuExportResult: exportResult }),
   ...(importResult === null ? {} : { pausedMainMenuImportResult: importResult }),
   ...(clearSavedWorldResult === null
@@ -709,6 +714,13 @@ export interface AppShellViewModel {
   shortcutsOverlayVisible: boolean;
 }
 
+type AppShellShellActionKeybindingEditorStatusTone = 'accent' | 'warning';
+
+interface AppShellShellActionKeybindingEditorStatus {
+  tone: AppShellShellActionKeybindingEditorStatusTone;
+  text: string;
+}
+
 interface AppShellOptions {
   onPrimaryAction?: (screen: AppShellScreen) => void;
   onSecondaryAction?: (screen: AppShellScreen) => void;
@@ -723,6 +735,10 @@ interface AppShellOptions {
   onToggleDebugEditOverlays?: (screen: AppShellScreen) => void;
   onTogglePlayerSpawnMarker?: (screen: AppShellScreen) => void;
   onToggleShortcutsOverlay?: (screen: AppShellScreen) => void;
+  onRemapShellActionKeybinding?: (
+    actionType: InWorldShellActionKeybindingActionType,
+    nextKey: string
+  ) => boolean;
 }
 
 const DEFAULT_BOOT_STATUS = 'Preparing renderer, controls, and spawn state.';
@@ -899,6 +915,8 @@ export const resolvePausedMainMenuResumeWorldTitle = (): string =>
 
 export const resolvePausedMainMenuResetShellTogglesTitle = (): string =>
   'Clear saved in-world shell visibility preferences and restore the paused session to the default-off shell layout before the next resume';
+const isPausedMainMenuState = (state: AppShellState): boolean =>
+  state.screen === 'main-menu' && state.primaryActionLabel === 'Resume World';
 
 export const resolveMainMenuPrimaryActionTitle = (state: AppShellState): string =>
   state.screen === 'main-menu' && state.primaryActionLabel === 'Resume World'
@@ -1245,6 +1263,12 @@ export class AppShell {
   private title: HTMLHeadingElement;
   private status: HTMLParagraphElement;
   private menuSections: HTMLDivElement;
+  private shellActionKeybindingEditor: HTMLDivElement;
+  private shellActionKeybindingInputs = new Map<
+    InWorldShellActionKeybindingActionType,
+    HTMLInputElement
+  >();
+  private shellActionKeybindingEditorStatus: HTMLParagraphElement;
   private detailList: HTMLUListElement;
   private primaryButton: HTMLButtonElement;
   private secondaryButton: HTMLButtonElement;
@@ -1265,6 +1289,12 @@ export class AppShell {
   private onToggleDebugEditOverlays: (screen: AppShellScreen) => void;
   private onTogglePlayerSpawnMarker: (screen: AppShellScreen) => void;
   private onToggleShortcutsOverlay: (screen: AppShellScreen) => void;
+  private onRemapShellActionKeybinding: (
+    actionType: InWorldShellActionKeybindingActionType,
+    nextKey: string
+  ) => boolean;
+  private currentShellActionKeybindingEditorStatus: AppShellShellActionKeybindingEditorStatus | null =
+    null;
   private currentState: AppShellState = createDefaultBootShellState();
 
   constructor(container: HTMLElement, options: AppShellOptions = {}) {
@@ -1281,6 +1311,7 @@ export class AppShell {
     this.onToggleDebugEditOverlays = options.onToggleDebugEditOverlays ?? (() => {});
     this.onTogglePlayerSpawnMarker = options.onTogglePlayerSpawnMarker ?? (() => {});
     this.onToggleShortcutsOverlay = options.onToggleShortcutsOverlay ?? (() => {});
+    this.onRemapShellActionKeybinding = options.onRemapShellActionKeybinding ?? (() => false);
 
     this.root = document.createElement('div');
     this.root.className = 'app-shell';
@@ -1405,6 +1436,72 @@ export class AppShell {
     this.menuSections.className = 'app-shell__menu-sections';
     panel.append(this.menuSections);
 
+    this.shellActionKeybindingEditor = document.createElement('div');
+    this.shellActionKeybindingEditor.className = 'app-shell__shell-keybindings';
+    panel.append(this.shellActionKeybindingEditor);
+
+    const shellActionKeybindingEditorTitle = document.createElement('h2');
+    shellActionKeybindingEditorTitle.className = 'app-shell__shell-keybindings-title';
+    shellActionKeybindingEditorTitle.textContent = 'Shell Hotkeys';
+    this.shellActionKeybindingEditor.append(shellActionKeybindingEditorTitle);
+
+    const shellActionKeybindingEditorIntro = document.createElement('p');
+    shellActionKeybindingEditorIntro.className = 'app-shell__shell-keybindings-intro';
+    shellActionKeybindingEditorIntro.textContent =
+      'Use unique A-Z letters for the in-world shell actions. Changes save immediately when browser storage is available.';
+    this.shellActionKeybindingEditor.append(shellActionKeybindingEditorIntro);
+
+    const shellActionKeybindingEditorGrid = document.createElement('div');
+    shellActionKeybindingEditorGrid.className = 'app-shell__shell-keybindings-grid';
+    this.shellActionKeybindingEditor.append(shellActionKeybindingEditorGrid);
+
+    for (const actionType of IN_WORLD_SHELL_ACTION_KEYBINDING_IDS) {
+      const row = document.createElement('div');
+      row.className = 'app-shell__shell-keybindings-row';
+      shellActionKeybindingEditorGrid.append(row);
+
+      const inputId = `app-shell-shell-keybinding-${actionType}`;
+      const label = document.createElement('label');
+      label.className = 'app-shell__shell-keybindings-label';
+      label.htmlFor = inputId;
+      label.textContent = getInWorldShellActionKeybindingActionLabel(actionType);
+      row.append(label);
+
+      const input = document.createElement('input');
+      input.id = inputId;
+      input.className = 'app-shell__shell-keybindings-input';
+      input.type = 'text';
+      input.inputMode = 'text';
+      input.maxLength = 1;
+      input.autocomplete = 'off';
+      input.spellcheck = false;
+      input.setAttribute('autocapitalize', 'characters');
+      input.setAttribute('aria-label', `${getInWorldShellActionKeybindingActionLabel(actionType)} hotkey`);
+      input.addEventListener('focus', () => {
+        input.select();
+      });
+      input.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        input.value = this.resolvePausedMainMenuShellActionKeybindings()[actionType];
+        input.blur();
+      });
+      input.addEventListener('input', () => {
+        const nextValue = input.value.trim();
+        if (nextValue.length === 0) {
+          input.value = this.resolvePausedMainMenuShellActionKeybindings()[actionType];
+          return;
+        }
+
+        this.tryRemapShellActionKeybinding(actionType, nextValue);
+      });
+      row.append(input);
+      this.shellActionKeybindingInputs.set(actionType, input);
+    }
+
+    this.shellActionKeybindingEditorStatus = document.createElement('p');
+    this.shellActionKeybindingEditorStatus.className = 'app-shell__shell-keybindings-status';
+    this.shellActionKeybindingEditor.append(this.shellActionKeybindingEditorStatus);
+
     this.detailList = document.createElement('ul');
     this.detailList.className = 'app-shell__detail-list';
     panel.append(this.detailList);
@@ -1461,6 +1558,83 @@ export class AppShell {
     this.setState(this.currentState);
   }
 
+  private resolvePausedMainMenuShellActionKeybindings(): ShellActionKeybindingState {
+    if (isPausedMainMenuState(this.currentState) && this.currentState.shellActionKeybindings) {
+      return this.currentState.shellActionKeybindings;
+    }
+
+    return createDefaultShellActionKeybindingState();
+  }
+
+  private syncShellActionKeybindingEditorInputs(
+    shellActionKeybindings: ShellActionKeybindingState = this.resolvePausedMainMenuShellActionKeybindings()
+  ): void {
+    for (const actionType of IN_WORLD_SHELL_ACTION_KEYBINDING_IDS) {
+      const input = this.shellActionKeybindingInputs.get(actionType);
+      if (!input) continue;
+      input.value = shellActionKeybindings[actionType];
+    }
+  }
+
+  private setShellActionKeybindingEditorStatus(
+    status: AppShellShellActionKeybindingEditorStatus | null
+  ): void {
+    this.currentShellActionKeybindingEditorStatus = status;
+    this.shellActionKeybindingEditorStatus.hidden = status === null;
+    this.shellActionKeybindingEditorStatus.textContent = status?.text ?? '';
+    if (status === null) {
+      delete this.shellActionKeybindingEditorStatus.dataset.tone;
+      return;
+    }
+
+    this.shellActionKeybindingEditorStatus.dataset.tone = status.tone;
+  }
+
+  private tryRemapShellActionKeybinding(
+    actionType: InWorldShellActionKeybindingActionType,
+    nextValue: string
+  ): void {
+    const currentShellActionKeybindings = this.resolvePausedMainMenuShellActionKeybindings();
+    const actionLabel = getInWorldShellActionKeybindingActionLabel(actionType);
+    const remapResult = remapShellActionKeybinding(currentShellActionKeybindings, actionType, nextValue);
+    if (!remapResult.ok) {
+      const nextStatusText = (() => {
+        switch (remapResult.reason) {
+          case 'invalid-key':
+            return `Use one letter A-Z for ${actionLabel}.`;
+          case 'reserved-key':
+            return `${remapResult.normalizedKey} is reserved by gameplay or debug-edit shortcuts. Choose another letter for ${actionLabel}.`;
+          case 'duplicate-key':
+            return `${remapResult.normalizedKey} already controls ${getInWorldShellActionKeybindingActionLabel(remapResult.conflictingActionType ?? actionType)}. Choose a unique letter for ${actionLabel}.`;
+        }
+      })();
+      this.syncShellActionKeybindingEditorInputs(currentShellActionKeybindings);
+      this.setShellActionKeybindingEditorStatus({
+        tone: 'warning',
+        text: nextStatusText
+      });
+      return;
+    }
+
+    const persisted = this.onRemapShellActionKeybinding(actionType, remapResult.normalizedKey);
+    if (!persisted) {
+      this.syncShellActionKeybindingEditorInputs(currentShellActionKeybindings);
+      this.setShellActionKeybindingEditorStatus({
+        tone: 'warning',
+        text: `Browser storage rejected that hotkey change, so ${actionLabel} stayed on ${currentShellActionKeybindings[actionType]}.`
+      });
+      return;
+    }
+
+    this.syncShellActionKeybindingEditorInputs(remapResult.state);
+    this.setShellActionKeybindingEditorStatus({
+      tone: 'accent',
+      text: remapResult.changed
+        ? `${actionLabel} now uses ${remapResult.normalizedKey}.`
+        : `${actionLabel} stayed on ${remapResult.normalizedKey}, and the current shell hotkey set was saved.`
+    });
+  }
+
   getWorldHost(): HTMLDivElement {
     return this.worldHost;
   }
@@ -1468,12 +1642,17 @@ export class AppShell {
   setState(state: AppShellState): void {
     this.currentState = state;
     const viewModel = resolveAppShellViewModel(state);
+    const defaultShellActionKeybindings = createDefaultShellActionKeybindingState();
     const shellActionKeybindings =
       state.screen === 'in-world'
         ? createInWorldShellState({
             shellActionKeybindings: state.shellActionKeybindings
           }).shellActionKeybindings
-        : createDefaultShellActionKeybindingState();
+        : defaultShellActionKeybindings;
+    const pausedMainMenuVisible = isPausedMainMenuState(state);
+    const pausedMainMenuShellActionKeybindings = pausedMainMenuVisible
+      ? state.shellActionKeybindings ?? defaultShellActionKeybindings
+      : defaultShellActionKeybindings;
 
     this.root.dataset.screen = viewModel.screen;
     this.overlay.hidden = !viewModel.overlayVisible;
@@ -1491,6 +1670,17 @@ export class AppShell {
       viewModel.menuSections.length > 0,
       'grid'
     );
+    this.shellActionKeybindingEditor.hidden = !pausedMainMenuVisible;
+    this.shellActionKeybindingEditor.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuVisible,
+      'grid'
+    );
+    this.syncShellActionKeybindingEditorInputs(pausedMainMenuShellActionKeybindings);
+    if (!pausedMainMenuVisible) {
+      this.setShellActionKeybindingEditorStatus(null);
+    } else {
+      this.setShellActionKeybindingEditorStatus(this.currentShellActionKeybindingEditorStatus);
+    }
     this.detailList.replaceChildren(
       ...viewModel.detailLines.map((line) => {
         const item = document.createElement('li');
