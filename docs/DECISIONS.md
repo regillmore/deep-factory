@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics lifecycle text should keep diff lines ahead of restore lines
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationLifecycleTextFormatting.ts` now formats lifecycle console text by joining the full `ConfigurationChange` section before the full `ConfigurationRestore` section while otherwise preserving the provided line order inside each section.
+- Reason: Transport lifecycle logging needs one stable text order that explains configuration drift before the reapplied snapshot, and later sink or emission helpers should not have to guess how to concatenate those preformatted line arrays.
+- Consequence: Future diagnostics logger lifecycle sinks or restore-emission helpers should reuse this formatter instead of manually joining or reordering configuration lifecycle line arrays.
+
 ### 2026-03-11: Replication diagnostics restore logs should inline diff labels beside restored values
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationRestoreLineFormatting.ts` now renders restore lifecycle lines as `ConfigurationRestore`, `ConfigurationRestoreSchedule`, and `ConfigurationRestoreCallbacks`, placing restored schedule and callback values beside inline diff labels while disabled cadence values render as `n/a`.
