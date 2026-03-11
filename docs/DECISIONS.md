@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Replication diagnostics restore-holder presence diff logs should use fixed restore-wiring labels
+
+- Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeLineFormatting.ts` now renders detached restore-holder presence summaries as `RestoreCallbackPresenceChange` and `RestoreCallbackPresenceDiff`, with the diff line listing only `hasRestoreCallback` or the explicit placeholder `none`.
+- Reason: The upcoming restore-wiring text and logger helpers need one stable label vocabulary that distinguishes wiring transitions from enabled-to-enabled logger refreshes without reinterpreting the detached presence summary.
+- Consequence: Future restore-holder presence text or line logger helpers should reuse this formatter and label order instead of assembling ad hoc restore-wiring diff strings.
+
 ### 2026-03-11: Replication diagnostics restore callback holder presence diffs should compare detached install-state snapshots
 
 - Decision: `src/network/replicationDiagnosticsLoggerConfigurationSnapshotRestoreCallbackPresenceChangeSummary.ts` now summarizes previous-versus-next detached `{ hasRestoreCallback }` snapshots into `changed` and `hasRestoreCallbackChanged` flags.
