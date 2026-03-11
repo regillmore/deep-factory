@@ -46,6 +46,7 @@ import {
   createDefaultShellActionKeybindingState,
   IN_WORLD_SHELL_ACTION_KEYBINDING_IDS,
   loadShellActionKeybindingStateWithDefaultFallbackStatus,
+  matchesDefaultShellActionKeybindingState,
   remapShellActionKeybinding,
   saveShellActionKeybindingState,
   type ShellActionKeybindingState
@@ -689,12 +690,23 @@ const bootstrap = async (): Promise<void> => {
       return persistShellActionKeybindingStateAndRefresh(remapResult.state);
     },
     onResetShellActionKeybindings: (): PausedMainMenuResetShellActionKeybindingsResult => {
+      const defaultShellActionKeybindings = createDefaultShellActionKeybindingState();
+      if (
+        !shellActionKeybindingsDefaultedFromPersistedState &&
+        matchesDefaultShellActionKeybindingState(
+          shellActionKeybindings,
+          defaultShellActionKeybindings
+        )
+      ) {
+        return {
+          status: 'noop'
+        };
+      }
+
       const resetCategory = shellActionKeybindingsDefaultedFromPersistedState
         ? 'load-fallback-recovery'
         : 'default-set-reset';
-      if (
-        !persistShellActionKeybindingStateAndRefresh(createDefaultShellActionKeybindingState())
-      ) {
+      if (!persistShellActionKeybindingStateAndRefresh(defaultShellActionKeybindings)) {
         return {
           status: 'failed'
         };

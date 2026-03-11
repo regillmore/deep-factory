@@ -2370,6 +2370,17 @@ describe('resolvePausedMainMenuApplyShellProfileEditorStatus', () => {
 });
 
 describe('resolvePausedMainMenuResetShellActionKeybindingsEditorStatus', () => {
+  it('uses explicit no-op copy when the default shell hotkey set is already active', () => {
+    expect(
+      resolvePausedMainMenuResetShellActionKeybindingsEditorStatus({
+        status: 'noop'
+      })
+    ).toEqual({
+      tone: 'accent',
+      text: 'Default Q, C, H, G, V, and M shell hotkeys were already active, so nothing changed.'
+    });
+  });
+
   it('uses distinct success copy when reset saves the recovered safe set back to the default hotkeys', () => {
     expect(
       resolvePausedMainMenuResetShellActionKeybindingsEditorStatus({

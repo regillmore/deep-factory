@@ -127,12 +127,17 @@ export interface PausedMainMenuResetShellActionKeybindingsResetResult {
   category: PausedMainMenuResetShellActionKeybindingsResultCategory;
 }
 
+export interface PausedMainMenuResetShellActionKeybindingsNoopResult {
+  status: 'noop';
+}
+
 export interface PausedMainMenuResetShellActionKeybindingsFailedResult {
   status: 'failed';
 }
 
 export type PausedMainMenuResetShellActionKeybindingsResult =
   | PausedMainMenuResetShellActionKeybindingsResetResult
+  | PausedMainMenuResetShellActionKeybindingsNoopResult
   | PausedMainMenuResetShellActionKeybindingsFailedResult;
 
 export interface PausedMainMenuDownloadedShellProfileExportResult {
@@ -1291,6 +1296,11 @@ export const resolvePausedMainMenuResetShellActionKeybindingsEditorStatus = (
   result: PausedMainMenuResetShellActionKeybindingsResult
 ): { tone: 'accent' | 'warning'; text: string } => {
   switch (result.status) {
+    case 'noop':
+      return {
+        tone: 'accent',
+        text: 'Default Q, C, H, G, V, and M shell hotkeys were already active, so nothing changed.'
+      };
     case 'failed':
       return {
         tone: 'warning',

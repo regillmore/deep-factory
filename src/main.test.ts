@@ -6682,6 +6682,21 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
   });
 
+  it('treats paused-menu shell hotkey reset as a no-op when the default set is already active', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+
+    expect(testRuntime.shellInstance?.options.onResetShellActionKeybindings?.()).toEqual({
+      status: 'noop'
+    });
+    expect(testRuntime.storageValues.has(SHELL_ACTION_KEYBINDING_STORAGE_KEY)).toBe(false);
+    expect(testRuntime.debugEditControlsSetShellActionKeybindingsCallCount).toBe(0);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+  });
+
   it('explains paused-menu default bindings as a load fallback when saved shell-action keybindings were rejected', async () => {
     testRuntime.storageValues.set(
       SHELL_ACTION_KEYBINDING_STORAGE_KEY,
