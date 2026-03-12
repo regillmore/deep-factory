@@ -461,6 +461,11 @@ const readDetailGroups = (
     };
   }) ?? [];
 
+const readEmptyBadgeTexts = (element: FakeElement | null): string[] =>
+  findElementsByClass(element ?? new FakeElement('div'), 'app-shell__menu-section-group-empty-badge').map(
+    (badge) => badge.textContent
+  );
+
 const createPausedMainMenuShellActionKeybindingSummaryRows = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ) => [
@@ -1095,9 +1100,75 @@ describe('paused main-menu dashboard layout', () => {
       {
         title: 'Matching Live',
         items: [],
-        emptyText: 'None'
+        emptyText: 'All hotkeys changed'
       }
     ]);
+    expect(readEmptyBadgeTexts(previewGroups)).toEqual(['All hotkeys changed']);
+  });
+
+  it('renders a compact empty-state badge when the shell-profile preview matches live hotkeys', () => {
+    const matchingShellState = {
+      debugOverlayVisible: true,
+      debugEditControlsVisible: false,
+      debugEditOverlaysVisible: true,
+      playerSpawnMarkerVisible: false,
+      shortcutsOverlayVisible: true
+    };
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(
+      createPausedMainMenuShellState(
+        matchingShellState,
+        true,
+        CUSTOM_SHELL_ACTION_KEYBINDINGS,
+        false,
+        null,
+        null,
+        null,
+        null,
+        null,
+        {
+          fileName: 'matching-shell-profile.json',
+          shellState: matchingShellState,
+          shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+        }
+      )
+    );
+
+    const root = container.children[0] ?? null;
+    const shellToggleButton =
+      root === null ? null : findElementByClass(root, 'app-shell__shell-toggle');
+    shellToggleButton?.click();
+
+    const previewRoot = root === null ? null : findElementByClass(root, 'app-shell__shell-preview');
+    const previewCard =
+      previewRoot === null ? null : findElementByClass(previewRoot, 'app-shell__menu-section');
+    const previewGroups =
+      previewCard === null
+        ? null
+        : findElementByClass(previewCard, 'app-shell__menu-section-detail-groups');
+
+    expect(readDetailGroups(previewGroups)).toEqual([
+      {
+        title: 'Changed From Live',
+        items: [],
+        emptyText: 'No hotkey changes'
+      },
+      {
+        title: 'Matching Live',
+        items: [
+          'Main Menu: X',
+          'Recenter Camera: Z',
+          'Debug HUD: U',
+          'Edit Panel: J',
+          'Edit Overlays: K',
+          'Spawn Marker: Y'
+        ],
+        emptyText: null
+      }
+    ]);
+    expect(readEmptyBadgeTexts(previewGroups)).toEqual(['No hotkey changes']);
   });
 
   it('adds an expanded-shell top-jump link that returns focus to Overview', () => {
@@ -1234,6 +1305,7 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-detail-groups');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-detail-group');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-group-list');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-group-empty-badge');
     expect(APP_SHELL_STYLE_SOURCE).toContain(".app-shell__shell-keybindings-button[data-busy='true']");
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-keybindings-button[disabled]');
     expect(APP_SHELL_STYLE_SOURCE).toContain('@media (min-width: 960px)');
@@ -2152,12 +2224,12 @@ describe('resolveAppShellViewModel', () => {
             'Edit Overlays: V -> K',
             'Spawn Marker: M -> Y'
           ],
-          emptyText: 'No hotkey changes'
+          emptyText: undefined
         },
         {
           title: 'Matching Live',
           items: [],
-          emptyText: 'None'
+          emptyText: 'All hotkeys changed'
         }
       ],
       tone: 'accent'
@@ -2232,7 +2304,7 @@ describe('resolveAppShellViewModel', () => {
             'Edit Overlays: K',
             'Spawn Marker: Y'
           ],
-          emptyText: 'None'
+          emptyText: undefined
         }
       ],
       tone: 'accent'

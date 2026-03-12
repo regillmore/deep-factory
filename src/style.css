@@ -897,6 +897,21 @@ canvas {
   color: #b7c4ca;
 }
 
+.app-shell__menu-section-group-empty-badge {
+  justify-self: start;
+  padding: 4px 8px;
+  border: 1px solid rgba(159, 221, 255, 0.18);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(17, 25, 35, 0.92), rgba(10, 16, 23, 0.9)),
+    linear-gradient(135deg, rgba(120, 210, 255, 0.08), rgba(243, 205, 135, 0.04));
+  color: #b7c4ca;
+  font:
+    700 0.72rem/1.1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .app-shell__detail-list {
   margin: 18px 0 0;
   padding: 0;

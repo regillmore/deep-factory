@@ -32,11 +32,11 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: The help toggle added another control to an already dense paused menu, while the default cards still needed to communicate their state and consequence immediately on both desktop and touch layouts.
 - Consequence: Future default paused-menu cards should prefer terse metadata labels such as `Session`, `Reload`, `Replaces`, or `Next Resume`; longer explanatory prose should stay out of the default paused state unless a later task introduces a more targeted presentation.
 
-### 2026-03-12: Shell-profile previews should show hotkeys as grouped diffs, not prose lists
+### 2026-03-12: Shell-profile previews should show hotkeys as grouped diffs with badge empty states
 
-- Decision: Expanded paused-menu `Shell Profile Preview` details now keep file, toggle, and saved-on or saved-off state in metadata rows and render hotkeys as grouped `Changed From Live` and `Matching Live` diff lists instead of prose lines plus one long replacement-hotkey metadata dump.
-- Reason: Once the paused dashboard removed default help paragraphs, long comma-separated hotkey summaries became harder to scan quickly, especially on touch-width layouts where users need to separate actual diffs from unchanged bindings at a glance.
-- Consequence: Future shell or preference preview details should default to terse metadata rows for state summary and grouped diff lists for per-binding inspection rather than reintroducing paragraph help copy or flattened binding dumps.
+- Decision: Expanded paused-menu `Shell Profile Preview` details now keep file, toggle, and saved-on or saved-off state in metadata rows, render hotkeys as grouped `Changed From Live` and `Matching Live` diff lists, and collapse no-row diff groups into compact badge-style empty states instead of prose lines plus one long replacement-hotkey metadata dump.
+- Reason: Once the paused dashboard removed default help paragraphs, long comma-separated hotkey summaries became harder to scan quickly, especially on touch-width layouts where users need to separate actual diffs from unchanged bindings at a glance and still understand all-changed or no-change previews immediately.
+- Consequence: Future shell or preference preview details should default to terse metadata rows for state summary, grouped diff lists for per-binding inspection, and compact empty badges when one diff group has no entries rather than reintroducing paragraph help copy or flattened binding dumps.
 
 ### 2026-03-12: Recent Activity should show only the latest paused-menu outcome plus required follow-up warnings
 

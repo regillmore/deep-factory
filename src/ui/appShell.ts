@@ -1384,14 +1384,14 @@ const createPausedMainMenuShellProfilePreviewMenuSection = (
           ({ actionLabel, previousHotkey, nextHotkey }) =>
             `${actionLabel}: ${previousHotkey} -> ${nextHotkey}`
         ),
-        emptyText: 'No hotkey changes'
+        emptyText: changedHotkeyDiffs.length === 0 ? 'No hotkey changes' : undefined
       },
       {
         title: 'Matching Live',
         items: matchingHotkeyDiffs.map(
           ({ actionLabel, nextHotkey }) => `${actionLabel}: ${nextHotkey}`
         ),
-        emptyText: 'None'
+        emptyText: matchingHotkeyDiffs.length === 0 ? 'All hotkeys changed' : undefined
       }
     ],
     tone: 'accent'
@@ -2613,8 +2613,9 @@ const createMenuSectionDetailGroupsElement = (
         );
         groupElement.append(list);
       } else if (group.emptyText !== undefined) {
-        const emptyState = document.createElement('p');
-        emptyState.className = 'app-shell__menu-section-group-empty';
+        const emptyState = document.createElement('span');
+        emptyState.className =
+          'app-shell__menu-section-group-empty app-shell__menu-section-group-empty-badge';
         emptyState.textContent = group.emptyText;
         groupElement.append(emptyState);
       }
