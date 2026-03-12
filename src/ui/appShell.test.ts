@@ -123,6 +123,13 @@ const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Browser shell storage is unavailable or could not be updated, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
 ] as const;
+const DEFAULT_PAUSED_MAIN_MENU_OVERVIEW_LINES = [
+  'Continue with the current world, player state, camera, and debug edits intact.'
+] as const;
+const CLEARED_PAUSED_MAIN_MENU_OVERVIEW_ATTENTION_VALUE =
+  'Resume World or another save path must rewrite browser resume.';
+const IMPORT_PERSISTENCE_FAILED_PAUSED_MAIN_MENU_OVERVIEW_ATTENTION_VALUE =
+  'Reload will miss the imported session until a later browser save succeeds.';
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
@@ -741,6 +748,96 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'Saved again by',
           value: 'Later pause or page hide, Import World Save, New World'
+        }
+      ],
+      tone: 'warning'
+    });
+  });
+
+  it('keeps resume, session-save state, and attention metadata together in the paused-menu overview by default', () => {
+    const viewModel = resolveAppShellViewModel(createPausedMainMenuShellState());
+
+    expect(viewModel.pausedMainMenuSections?.overview.resumeWorld).toEqual({
+      title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
+      lines: [...DEFAULT_PAUSED_MAIN_MENU_OVERVIEW_LINES],
+      metadataRows: [
+        {
+          label: 'Session Save',
+          value: 'Browser saved'
+        },
+        {
+          label: 'Needs Attention',
+          value: 'None'
+        },
+        {
+          label: 'Shortcut',
+          value: getDesktopResumeWorldHotkeyLabel()
+        }
+      ],
+      tone: 'accent'
+    });
+  });
+
+  it('surfaces cleared browser-resume warnings in the paused-menu overview', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        'cleared'
+      )
+    );
+
+    expect(viewModel.pausedMainMenuSections?.overview.resumeWorld).toEqual({
+      title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
+      lines: [...DEFAULT_PAUSED_MAIN_MENU_OVERVIEW_LINES],
+      metadataRows: [
+        {
+          label: 'Session Save',
+          value: 'Not browser saved'
+        },
+        {
+          label: 'Needs Attention',
+          value: CLEARED_PAUSED_MAIN_MENU_OVERVIEW_ATTENTION_VALUE
+        },
+        {
+          label: 'Shortcut',
+          value: getDesktopResumeWorldHotkeyLabel()
+        }
+      ],
+      tone: 'warning'
+    });
+  });
+
+  it('distinguishes imported-session persistence failures in the paused-menu overview attention row', () => {
+    const viewModel = resolveAppShellViewModel(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        'import-persistence-failed'
+      )
+    );
+
+    expect(viewModel.pausedMainMenuSections?.overview.resumeWorld).toEqual({
+      title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
+      lines: [...DEFAULT_PAUSED_MAIN_MENU_OVERVIEW_LINES],
+      metadataRows: [
+        {
+          label: 'Session Save',
+          value: 'Not browser saved'
+        },
+        {
+          label: 'Needs Attention',
+          value: IMPORT_PERSISTENCE_FAILED_PAUSED_MAIN_MENU_OVERVIEW_ATTENTION_VALUE
+        },
+        {
+          label: 'Shortcut',
+          value: getDesktopResumeWorldHotkeyLabel()
         }
       ],
       tone: 'warning'
@@ -2266,18 +2363,22 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
       overviewSections: [
         {
           title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
-          lines: ['Continue with the current world, player state, and debug edits intact.'],
+          lines: [...DEFAULT_PAUSED_MAIN_MENU_OVERVIEW_LINES],
           metadataRows: [
+            {
+              label: 'Session Save',
+              value: 'Not browser saved'
+            },
+            {
+              label: 'Needs Attention',
+              value: CLEARED_PAUSED_MAIN_MENU_OVERVIEW_ATTENTION_VALUE
+            },
             {
               label: 'Shortcut',
               value: getDesktopResumeWorldHotkeyLabel()
-            },
-            {
-              label: 'Consequence',
-              value: 'Keeps current world, player, camera, and edits.'
             }
           ],
-          tone: 'accent'
+          tone: 'warning'
         }
       ],
       worldSaveSections: [
@@ -2443,18 +2544,22 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
       primarySections: [
         {
           title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
-          lines: ['Continue with the current world, player state, and debug edits intact.'],
+          lines: [...DEFAULT_PAUSED_MAIN_MENU_OVERVIEW_LINES],
           metadataRows: [
+            {
+              label: 'Session Save',
+              value: 'Not browser saved'
+            },
+            {
+              label: 'Needs Attention',
+              value: CLEARED_PAUSED_MAIN_MENU_OVERVIEW_ATTENTION_VALUE
+            },
             {
               label: 'Shortcut',
               value: getDesktopResumeWorldHotkeyLabel()
-            },
-            {
-              label: 'Consequence',
-              value: 'Keeps current world, player, camera, and edits.'
             }
           ],
-          tone: 'accent'
+          tone: 'warning'
         },
         {
           title: 'Export World Save',

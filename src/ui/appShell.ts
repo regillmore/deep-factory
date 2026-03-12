@@ -993,6 +993,24 @@ const createPausedMainMenuSavedWorldStatusMenuSection = (
       };
   }
 };
+const resolvePausedMainMenuOverviewSessionSaveValue = (
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null
+): string => (savedWorldStatus === null ? 'Browser saved' : 'Not browser saved');
+const resolvePausedMainMenuOverviewAttentionValue = (
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null
+): string => {
+  switch (savedWorldStatus) {
+    case null:
+      return 'None';
+    case 'cleared':
+      return 'Resume World or another save path must rewrite browser resume.';
+    case 'import-persistence-failed':
+      return 'Reload will miss the imported session until a later browser save succeeds.';
+  }
+};
+const resolvePausedMainMenuOverviewResumeWorldTone = (
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null
+): AppShellMenuSectionTone => (savedWorldStatus === null ? 'accent' : 'warning');
 const createPausedMainMenuClearSavedWorldResultMenuSection = (
   clearSavedWorldResult: PausedMainMenuClearSavedWorldResult
 ): AppShellMenuSection => {
@@ -1299,19 +1317,23 @@ export const createPausedMainMenuSectionViewModel = (
   return {
     overview: {
       resumeWorld: {
-      title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
-      lines: ['Continue with the current world, player state, and debug edits intact.'],
-      metadataRows: [
-        {
-          label: 'Shortcut',
-          value: getDesktopResumeWorldHotkeyLabel()
-        },
-        {
-          label: 'Consequence',
-          value: 'Keeps current world, player, camera, and edits.'
-        }
-      ],
-      tone: 'accent'
+        title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
+        lines: ['Continue with the current world, player state, camera, and debug edits intact.'],
+        metadataRows: [
+          {
+            label: 'Session Save',
+            value: resolvePausedMainMenuOverviewSessionSaveValue(savedWorldStatus)
+          },
+          {
+            label: 'Needs Attention',
+            value: resolvePausedMainMenuOverviewAttentionValue(savedWorldStatus)
+          },
+          {
+            label: 'Shortcut',
+            value: getDesktopResumeWorldHotkeyLabel()
+          }
+        ],
+        tone: resolvePausedMainMenuOverviewResumeWorldTone(savedWorldStatus)
       }
     },
     worldSave: {
@@ -2345,6 +2367,8 @@ export class AppShell {
   private pausedMainMenuHelpCopySection: HTMLDivElement;
   private pausedMainMenuHelpCopySummary: HTMLParagraphElement;
   private pausedMainMenuHelpCopyToggleButton: HTMLButtonElement;
+  private overviewSection: HTMLElement;
+  private overviewBody: HTMLDivElement;
   private menuSections: HTMLDivElement;
   private resultsSection: HTMLElement;
   private resultsSummary: HTMLParagraphElement;
@@ -2589,6 +2613,23 @@ export class AppShell {
     );
     installPointerClickFocusRelease(this.pausedMainMenuHelpCopyToggleButton);
     this.pausedMainMenuHelpCopySection.append(this.pausedMainMenuHelpCopyToggleButton);
+
+    this.overviewSection = document.createElement('section');
+    this.overviewSection.className = 'app-shell__overview';
+    panel.append(this.overviewSection);
+
+    const overviewHeader = document.createElement('div');
+    overviewHeader.className = 'app-shell__overview-header';
+    this.overviewSection.append(overviewHeader);
+
+    const overviewTitle = document.createElement('h2');
+    overviewTitle.className = 'app-shell__overview-title';
+    overviewTitle.textContent = 'Overview';
+    overviewHeader.append(overviewTitle);
+
+    this.overviewBody = document.createElement('div');
+    this.overviewBody.className = 'app-shell__overview-body';
+    this.overviewSection.append(this.overviewBody);
 
     this.menuSections = document.createElement('div');
     this.menuSections.className = 'app-shell__menu-sections';
@@ -3153,6 +3194,13 @@ export class AppShell {
       pausedMainMenuHelpCopySection.showMenuSectionLines
     );
     const pausedMainMenuMenuSectionGroups = resolvePausedMainMenuMenuSectionGroups(state);
+    const pausedMainMenuSecondarySections = pausedMainMenuVisible
+      ? [
+          ...pausedMainMenuMenuSectionGroups.worldSaveSections,
+          ...pausedMainMenuMenuSectionGroups.shellSections,
+          ...pausedMainMenuMenuSectionGroups.dangerZoneSections
+        ]
+      : viewModel.menuSections;
 
     this.root.dataset.screen = viewModel.screen;
     this.overlay.hidden = !viewModel.overlayVisible;
@@ -3181,14 +3229,29 @@ export class AppShell {
       'aria-expanded',
       pausedMainMenuHelpCopySection.expanded ? 'true' : 'false'
     );
-    this.menuSections.replaceChildren(
-      ...pausedMainMenuMenuSectionGroups.primarySections.map((section) =>
+    this.overviewSection.hidden = pausedMainMenuMenuSectionGroups.overviewSections.length === 0;
+    this.overviewSection.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuMenuSectionGroups.overviewSections.length > 0,
+      'grid'
+    );
+    this.overviewBody.replaceChildren(
+      ...pausedMainMenuMenuSectionGroups.overviewSections.map((section) =>
         createMenuSectionElement(section, pausedMainMenuHelpCopySection.showMenuSectionLines)
       )
     );
-    this.menuSections.hidden = pausedMainMenuMenuSectionGroups.primarySections.length === 0;
+    this.overviewBody.hidden = pausedMainMenuMenuSectionGroups.overviewSections.length === 0;
+    this.overviewBody.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuMenuSectionGroups.overviewSections.length > 0,
+      'grid'
+    );
+    this.menuSections.replaceChildren(
+      ...pausedMainMenuSecondarySections.map((section) =>
+        createMenuSectionElement(section, pausedMainMenuHelpCopySection.showMenuSectionLines)
+      )
+    );
+    this.menuSections.hidden = pausedMainMenuSecondarySections.length === 0;
     this.menuSections.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuMenuSectionGroups.primarySections.length > 0,
+      pausedMainMenuSecondarySections.length > 0,
       'grid'
     );
     this.resultsSection.hidden = !pausedMainMenuResultsSection.visible;

@@ -280,6 +280,31 @@ canvas {
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 
+.app-shell__overview {
+  margin-top: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.app-shell__overview-header {
+  display: flex;
+  align-items: center;
+}
+
+.app-shell__overview-title {
+  margin: 0;
+  color: #fff0cc;
+  font:
+    700 11px/1.1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.app-shell__overview-body {
+  display: grid;
+  gap: 12px;
+}
+
 .app-shell__results,
 .app-shell__shell-settings {
   margin-top: 18px;
