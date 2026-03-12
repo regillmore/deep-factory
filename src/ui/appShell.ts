@@ -394,6 +394,19 @@ const resolvePausedMainMenuShellProfilePreviewSummaryLine = (
       return `${subject} already matches the paused session, so applying it would not change shell visibility toggles or hotkeys.`;
   }
 };
+const resolvePausedMainMenuShellProfilePreviewBindingSetSummaryLine = (
+  menuSections: readonly AppShellMenuSection[] = []
+): string | null => {
+  const previewBindingSetValue = findMenuSectionMetadataRowValue(
+    menuSections,
+    'Shell Profile Preview',
+    'Binding Set'
+  );
+
+  return previewBindingSetValue === undefined
+    ? null
+    : `If applied, that preview would use the ${previewBindingSetValue.toLowerCase()}.`;
+};
 const resolvePausedMainMenuShellSettingsPersistenceSummaryLine = (
   menuSections: readonly AppShellMenuSection[] = []
 ): string | null => {
@@ -461,6 +474,8 @@ export const resolvePausedMainMenuShellSettingsSummaryLine = (
 
   const shellProfilePreviewSummaryLine =
     resolvePausedMainMenuShellProfilePreviewSummaryLine(menuSections);
+  const shellProfilePreviewBindingSetSummaryLine =
+    resolvePausedMainMenuShellProfilePreviewBindingSetSummaryLine(menuSections);
   const shellSettingsPersistenceSummaryLine =
     resolvePausedMainMenuShellSettingsPersistenceSummaryLine(menuSections);
   const shellSettingsFallbackSummaryLine =
@@ -472,6 +487,7 @@ export const resolvePausedMainMenuShellSettingsSummaryLine = (
 
   return [
     shellProfilePreviewSummaryLine,
+    shellProfilePreviewBindingSetSummaryLine,
     visibilitySummaryLine,
     shellSettingsPersistenceSummaryLine,
     shellSettingsFallbackSummaryLine,

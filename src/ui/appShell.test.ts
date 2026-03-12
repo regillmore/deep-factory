@@ -128,13 +128,15 @@ const DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
 const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
   'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
 const PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Shell profile preview from preview-shell-profile.json is ready to apply with both shell visibility toggle and hotkey changes. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
+  'Shell profile preview from preview-shell-profile.json is ready to apply with both shell visibility toggle and hotkey changes. If applied, that preview would use the custom set. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const PREVIEWED_TOGGLE_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Shell profile preview from toggle-only-shell-profile.json is ready to apply with shell visibility toggle changes only. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
+  'Shell profile preview from toggle-only-shell-profile.json is ready to apply with shell visibility toggle changes only. If applied, that preview would use the default set. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const PREVIEWED_HOTKEY_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Shell profile preview from hotkey-only-shell-profile.json is ready to apply with shell hotkey changes only. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
+  'Shell profile preview from hotkey-only-shell-profile.json is ready to apply with shell hotkey changes only. If applied, that preview would use the custom set. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const PREVIEWED_NOOP_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Shell profile preview from matching-shell-profile.json already matches the paused session, so applying it would not change shell visibility toggles or hotkeys. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
+  'Shell profile preview from matching-shell-profile.json already matches the paused session, so applying it would not change shell visibility toggles or hotkeys. If applied, that preview would use the default set. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
+const PREVIEWED_DEFAULT_SET_WHILE_LIVE_CUSTOM_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
+  'Shell profile preview from reset-to-default-shell-profile.json is ready to apply with shell hotkey changes only. If applied, that preview would use the default set. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the custom set.';
 const MIXED_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Resume World shows Debug HUD and Edit Overlays, while Edit Panel, Spawn Marker, and Shortcuts stay hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const FULLY_VISIBLE_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
@@ -2735,6 +2737,35 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
       )
     ).toBe(PREVIEWED_NOOP_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
   });
+
+  it('surfaces the previewed default-set hotkeys even when the live paused session currently uses a custom set', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSummaryLine(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          CUSTOM_SHELL_ACTION_KEYBINDINGS,
+          false,
+          null,
+          null,
+          null,
+          null,
+          null,
+          {
+            fileName: 'reset-to-default-shell-profile.json',
+            shellState: {
+              debugOverlayVisible: false,
+              debugEditControlsVisible: false,
+              debugEditOverlaysVisible: false,
+              playerSpawnMarkerVisible: false,
+              shortcutsOverlayVisible: false
+            },
+            shellActionKeybindings: createDefaultShellActionKeybindingState()
+          }
+        ).menuSections ?? []
+      )
+    ).toBe(PREVIEWED_DEFAULT_SET_WHILE_LIVE_CUSTOM_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+  });
 });
 
 describe('resolvePausedMainMenuHelpCopyToggleLabel', () => {
@@ -2875,6 +2906,41 @@ describe('resolvePausedMainMenuShellSettingsSectionState', () => {
       visible: true,
       expanded: false,
       summaryLine: PREVIEWED_NOOP_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
+      toggleLabel: 'Show Shell Settings',
+      editorVisible: false
+    });
+  });
+
+  it('keeps preview binding-set copy in the collapsed shell-settings summary when the staged profile differs from the live hotkey set', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          CUSTOM_SHELL_ACTION_KEYBINDINGS,
+          false,
+          null,
+          null,
+          null,
+          null,
+          null,
+          {
+            fileName: 'reset-to-default-shell-profile.json',
+            shellState: {
+              debugOverlayVisible: false,
+              debugEditControlsVisible: false,
+              debugEditOverlaysVisible: false,
+              playerSpawnMarkerVisible: false,
+              shortcutsOverlayVisible: false
+            },
+            shellActionKeybindings: createDefaultShellActionKeybindingState()
+          }
+        )
+      )
+    ).toEqual({
+      visible: true,
+      expanded: false,
+      summaryLine: PREVIEWED_DEFAULT_SET_WHILE_LIVE_CUSTOM_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
       toggleLabel: 'Show Shell Settings',
       editorVisible: false
     });
