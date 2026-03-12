@@ -8,9 +8,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 318. Add paused-menu persistence-summary copy that surfaces when some persisted in-world shell-action keybindings were rejected during load while a mixed custom/default binding set still remains, with shell-action storage regressions.
 432. Add paused-menu `Shell Hotkeys` helper copy that surfaces when the editor is showing a recovered safe-set fallback after invalid saved bindings were rejected during load, with hotkey-editor fallback regressions.
 441. Add paused-menu persistence-summary copy that surfaces when hotkey remaps are currently live only in-session because browser storage rejected the latest rewrite, with remap-session-summary regressions.
-443. Add paused-menu Shell Settings summary copy that distinguishes whether a staged shell-profile preview would change shell toggles, hotkeys, or both while the section is collapsed, with shell-summary-preview regressions.
 444. Add a collapsed paused-menu Results section that groups transient import/export/reset feedback cards behind one toggle while keeping status rows visible, with paused-results-collapse regressions.
 447. Add a paused-menu `Persistence Summary` metadata row that surfaces when active hotkeys are current-session-only even though shell visibility is browser-saved, with hotkey-persistence-row regressions.
+448. Add paused-menu Shell Settings summary copy that surfaces when a staged shell-profile preview already matches the live paused session while the section is collapsed, with shell-summary-preview-noop regressions.
 
 ## Optimize liquids
 

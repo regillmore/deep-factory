@@ -341,6 +341,30 @@ const findMenuSectionLines = (
   sectionTitle: string
 ): readonly string[] =>
   menuSections.find((section) => section.title === sectionTitle)?.lines ?? [];
+const resolvePausedMainMenuShellProfilePreviewChangeCategory = (
+  menuSections: readonly AppShellMenuSection[] = []
+): PausedMainMenuShellProfileApplyChangeCategory => {
+  const toggleChanges = parseMenuSectionMetadataRowValue(
+    findMenuSectionMetadataRowValue(menuSections, 'Shell Profile Preview', 'Toggle Changes')
+  );
+  const hotkeyChanges = parseMenuSectionMetadataRowValue(
+    findMenuSectionMetadataRowValue(menuSections, 'Shell Profile Preview', 'Hotkey Changes')
+  );
+
+  if (toggleChanges.length === 0 && hotkeyChanges.length === 0) {
+    return 'none';
+  }
+
+  if (toggleChanges.length === 0) {
+    return 'hotkey-only';
+  }
+
+  if (hotkeyChanges.length === 0) {
+    return 'toggle-only';
+  }
+
+  return 'mixed';
+};
 const resolvePausedMainMenuShellProfilePreviewSummaryLine = (
   menuSections: readonly AppShellMenuSection[] = []
 ): string | null => {
@@ -354,9 +378,21 @@ const resolvePausedMainMenuShellProfilePreviewSummaryLine = (
     return null;
   }
 
-  return previewFileValue === 'Unknown file'
-    ? 'A validated shell profile preview is ready to apply.'
-    : `Shell profile preview from ${previewFileValue} is ready to apply.`;
+  const subject =
+    previewFileValue === 'Unknown file'
+      ? 'A validated shell profile preview'
+      : `Shell profile preview from ${previewFileValue}`;
+
+  switch (resolvePausedMainMenuShellProfilePreviewChangeCategory(menuSections)) {
+    case 'toggle-only':
+      return `${subject} is ready to apply with shell visibility toggle changes only.`;
+    case 'hotkey-only':
+      return `${subject} is ready to apply with shell hotkey changes only.`;
+    case 'mixed':
+      return `${subject} is ready to apply with both shell visibility toggle and hotkey changes.`;
+    case 'none':
+      return `${subject} is ready to apply.`;
+  }
 };
 const resolvePausedMainMenuShellSettingsPersistenceSummaryLine = (
   menuSections: readonly AppShellMenuSection[] = []

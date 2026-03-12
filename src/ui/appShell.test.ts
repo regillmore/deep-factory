@@ -127,8 +127,12 @@ const DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
   'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
-const PREVIEWED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Shell profile preview from preview-shell-profile.json is ready to apply. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
+const PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
+  'Shell profile preview from preview-shell-profile.json is ready to apply with both shell visibility toggle and hotkey changes. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
+const PREVIEWED_TOGGLE_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
+  'Shell profile preview from toggle-only-shell-profile.json is ready to apply with shell visibility toggle changes only. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
+const PREVIEWED_HOTKEY_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
+  'Shell profile preview from hotkey-only-shell-profile.json is ready to apply with shell hotkey changes only. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const MIXED_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Resume World shows Debug HUD and Edit Overlays, while Edit Panel, Spawn Marker, and Shortcuts stay hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const FULLY_VISIBLE_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
@@ -2640,7 +2644,65 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
           }
         ).menuSections ?? []
       )
-    ).toBe(PREVIEWED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+    ).toBe(PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+  });
+
+  it('distinguishes toggle-only staged shell-profile previews in the collapsed summary', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSummaryLine(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          null,
+          null,
+          null,
+          null,
+          null,
+          {
+            fileName: 'toggle-only-shell-profile.json',
+            shellState: {
+              debugOverlayVisible: true,
+              debugEditControlsVisible: false,
+              debugEditOverlaysVisible: false,
+              playerSpawnMarkerVisible: false,
+              shortcutsOverlayVisible: false
+            },
+            shellActionKeybindings: createDefaultShellActionKeybindingState()
+          }
+        ).menuSections ?? []
+      )
+    ).toBe(PREVIEWED_TOGGLE_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+  });
+
+  it('distinguishes hotkey-only staged shell-profile previews in the collapsed summary', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSummaryLine(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          null,
+          null,
+          null,
+          null,
+          null,
+          {
+            fileName: 'hotkey-only-shell-profile.json',
+            shellState: {
+              debugOverlayVisible: false,
+              debugEditControlsVisible: false,
+              debugEditOverlaysVisible: false,
+              playerSpawnMarkerVisible: false,
+              shortcutsOverlayVisible: false
+            },
+            shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+          }
+        ).menuSections ?? []
+      )
+    ).toBe(PREVIEWED_HOTKEY_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
   });
 });
 
@@ -2746,7 +2808,7 @@ describe('resolvePausedMainMenuShellSettingsSectionState', () => {
     ).toEqual({
       visible: true,
       expanded: false,
-      summaryLine: PREVIEWED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
+      summaryLine: PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
       toggleLabel: 'Show Shell Settings',
       editorVisible: false
     });
