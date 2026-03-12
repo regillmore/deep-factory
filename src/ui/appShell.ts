@@ -407,6 +407,28 @@ const resolvePausedMainMenuShellProfilePreviewBindingSetSummaryLine = (
     ? null
     : `If applied, that preview would use the ${previewBindingSetValue.toLowerCase()}.`;
 };
+const resolvePausedMainMenuShellProfilePreviewSavedOnSummaryLine = (
+  menuSections: readonly AppShellMenuSection[] = []
+): string | null => {
+  const previewSavedOnToggleLabels = parseMenuSectionMetadataRowValue(
+    findMenuSectionMetadataRowValue(menuSections, 'Shell Profile Preview', 'Saved On')
+  );
+  const previewSavedOffValue = findMenuSectionMetadataRowValue(
+    menuSections,
+    'Shell Profile Preview',
+    'Saved Off'
+  );
+
+  if (previewSavedOffValue === undefined && previewSavedOnToggleLabels.length === 0) {
+    return null;
+  }
+
+  if (previewSavedOnToggleLabels.length === 0) {
+    return 'If applied, that preview would resume with all shell toggles hidden.';
+  }
+
+  return `If applied, that preview would resume with ${formatMenuSectionSummaryListValue(previewSavedOnToggleLabels)} shown.`;
+};
 const resolvePausedMainMenuShellSettingsPersistenceSummaryLine = (
   menuSections: readonly AppShellMenuSection[] = []
 ): string | null => {
@@ -476,6 +498,8 @@ export const resolvePausedMainMenuShellSettingsSummaryLine = (
     resolvePausedMainMenuShellProfilePreviewSummaryLine(menuSections);
   const shellProfilePreviewBindingSetSummaryLine =
     resolvePausedMainMenuShellProfilePreviewBindingSetSummaryLine(menuSections);
+  const shellProfilePreviewSavedOnSummaryLine =
+    resolvePausedMainMenuShellProfilePreviewSavedOnSummaryLine(menuSections);
   const shellSettingsPersistenceSummaryLine =
     resolvePausedMainMenuShellSettingsPersistenceSummaryLine(menuSections);
   const shellSettingsFallbackSummaryLine =
@@ -488,6 +512,7 @@ export const resolvePausedMainMenuShellSettingsSummaryLine = (
   return [
     shellProfilePreviewSummaryLine,
     shellProfilePreviewBindingSetSummaryLine,
+    shellProfilePreviewSavedOnSummaryLine,
     visibilitySummaryLine,
     shellSettingsPersistenceSummaryLine,
     shellSettingsFallbackSummaryLine,
