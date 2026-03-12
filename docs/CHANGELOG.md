@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Add section-owned busy states to paused-menu import actions.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/main.ts](../src/main.ts), and [src/style.css](../src/style.css) so paused-menu `Import World Save` and expanded-shell `Import Shell Profile` now enter local waiting states, disable repeat activation while their browser picker promises are active, and restore their normal controls once the picker flow settles; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with paused-section-busy regressions, removed completed task `481` from [docs/NEXT.md](docs/NEXT.md), added replacement task `485`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add matching paused-dashboard top-jump links to secondary paused sections.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so visible paused-menu `Recent Activity` and `Danger Zone` sections now reuse the same `Jump to Overview` affordance as the expanded `Shell` editor, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with paused-dashboard-secondary-top-link regressions, removed completed task `484` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical slice `412`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -8,9 +8,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 476. Add compact status badges to paused-menu `Recent Activity` cards after task `469` so success and attention states stay scannable once help-text paragraphs are removed, with recent-activity-badge regressions.
 478. Add compact warning badges to paused-menu `Danger Zone` action cards after task `470` so `Reset Shell Toggles` and `New World` stay scannable once the dashboard layout lands, with danger-zone-badge regressions.
 480. Preserve keyboard focus on the current paused-dashboard section anchor when `Shell` expands or collapses after task `472` so hotkey editing does not drop keyboard users back into the broader overlay flow, with shell-section-focus regressions.
-481. Add section-owned busy states to paused-menu `Import World Save` and `Import Shell Profile` actions after task `473` so repeated taps stay debounced while browser pickers are active, with paused-section-busy regressions.
 482. Add compact `Button only` affordance badges to paused-menu `World Save` action cards after task `474` so pointer-only actions stay visually consistent beside the new inline keyboard shortcut badges, with world-save-button-badge regressions.
 483. Add compact persistence badges to expanded paused-menu `Shell Hotkeys` editor metadata after task `477` so browser-saved versus session-only remap scope stays scannable beside inline result copy, with shell-editor-persistence-badge regressions.
+485. Add a busy state to paused-menu `Apply Shell Profile` so repeated taps stay debounced while preview applies are in flight, with shell-apply-busy regressions.
 
 ## Optimize liquids
 

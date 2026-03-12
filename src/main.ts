@@ -655,6 +655,13 @@ const bootstrap = async (): Promise<void> => {
     onTertiaryAction: (screen) => {
       handleMainMenuShellAction(screen, 'import-world-save');
     },
+    onImportWorldSave: (screen) => {
+      if (screen !== 'main-menu' || !worldSessionStarted) {
+        return false;
+      }
+
+      return importPausedMainMenuWorldSave();
+    },
     onQuaternaryAction: (screen) => {
       handleMainMenuShellAction(screen, 'clear-persisted-world-session');
     },

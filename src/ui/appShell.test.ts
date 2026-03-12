@@ -241,6 +241,10 @@ const PAUSED_MAIN_MENU_SHELL_PROFILE_PREVIEW_LINES = [
 const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT = 'Jump to Overview';
 const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE =
   'Move focus back to the Overview section at the top of the paused dashboard.';
+const PAUSED_MAIN_MENU_BUSY_IMPORT_WORLD_SAVE_TITLE =
+  'Wait for the current world-save file picker to finish before starting another paused-session import.';
+const PAUSED_MAIN_MENU_BUSY_IMPORT_SHELL_PROFILE_TITLE =
+  'Wait for the current shell-profile file picker to finish before starting another import.';
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS = [
   {
     label: 'Keys',
@@ -300,6 +304,7 @@ class FakeElement {
   autocomplete = '';
   spellcheck = false;
   htmlFor = '';
+  disabled = false;
   focusCallCount = 0;
   scrollIntoViewCallCount = 0;
   classList = new FakeClassList(this);
@@ -332,6 +337,12 @@ class FakeElement {
     if (name === 'id') {
       this.id = value;
     }
+    if (name.startsWith('data-')) {
+      const datasetKey = name
+        .slice(5)
+        .replace(/-([a-z])/g, (_match: string, letter: string) => letter.toUpperCase());
+      this.dataset[datasetKey] = value;
+    }
   }
 
   getAttribute(name: string): string | null {
@@ -345,6 +356,10 @@ class FakeElement {
   }
 
   click(): void {
+    if (this.disabled) {
+      return;
+    }
+
     const event = {
       type: 'click',
       currentTarget: this,
@@ -411,6 +426,13 @@ const findElementById = (root: FakeElement, id: string): FakeElement | null => {
 
   return null;
 };
+
+const findButtonByTextContent = (
+  root: FakeElement,
+  className: string,
+  textContent: string
+): FakeElement | null =>
+  findElementsByClass(root, className).find((element) => element.textContent === textContent) ?? null;
 
 const listChildClassNames = (element: FakeElement | null): string[] =>
   element?.children.map((child) => child.className) ?? [];
@@ -628,6 +650,153 @@ describe('paused main-menu dashboard layout', () => {
         (button) => findElementByClass(button, 'app-shell__section-action-shortcut-badge') === null
       )
     ).toBe(true);
+  });
+
+  it('debounces paused-menu Import World Save while its browser picker promise is active', async () => {
+    let finishImportWorldSave = () => {};
+    let importWorldSaveCallCount = 0;
+    const pendingImportWorldSave = new Promise<void>((resolve) => {
+      finishImportWorldSave = () => resolve();
+    });
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement, {
+      onImportWorldSave: () => {
+        importWorldSaveCallCount += 1;
+        return pendingImportWorldSave;
+      }
+    });
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const root = container.children[0] ?? null;
+    expect(root).not.toBeNull();
+    if (root === null) {
+      return;
+    }
+
+    const initialImportButton = findElementsByClass(root, 'app-shell__world-save-action')[1] ?? null;
+    initialImportButton?.click();
+
+    const busyImportButton = findElementsByClass(root, 'app-shell__world-save-action')[1] ?? null;
+    const busyImportMetadata =
+      busyImportButton === null
+        ? null
+        : findElementByClass(busyImportButton, 'app-shell__world-save-action-metadata');
+
+    expect(importWorldSaveCallCount).toBe(1);
+    expect(busyImportButton?.disabled).toBe(true);
+    expect(busyImportButton?.dataset.busy).toBe('true');
+    expect(busyImportButton?.getAttribute('aria-busy')).toBe('true');
+    expect(busyImportButton?.title).toBe(PAUSED_MAIN_MENU_BUSY_IMPORT_WORLD_SAVE_TITLE);
+    expect(readMetadataRows(busyImportMetadata)).toEqual([
+      {
+        label: 'Status',
+        value: 'Waiting for file picker'
+      },
+      {
+        label: 'Shortcut',
+        value: 'Button only'
+      },
+      {
+        label: 'Replaces',
+        value: 'Current session only after validation and restore'
+      }
+    ]);
+
+    busyImportButton?.click();
+    expect(importWorldSaveCallCount).toBe(1);
+
+    finishImportWorldSave();
+    await pendingImportWorldSave;
+    await Promise.resolve();
+
+    const restoredImportButton =
+      findElementsByClass(root, 'app-shell__world-save-action')[1] ?? null;
+    const restoredImportMetadata =
+      restoredImportButton === null
+        ? null
+        : findElementByClass(restoredImportButton, 'app-shell__world-save-action-metadata');
+
+    expect(restoredImportButton?.disabled).toBe(false);
+    expect(restoredImportButton?.dataset.busy).toBe('false');
+    expect(restoredImportButton?.getAttribute('aria-busy')).toBe('false');
+    expect(restoredImportButton?.title).toBe(resolvePausedMainMenuImportWorldSaveTitle());
+    expect(readMetadataRows(restoredImportMetadata)).toEqual([
+      {
+        label: 'Shortcut',
+        value: 'Button only'
+      },
+      {
+        label: 'Replaces',
+        value: 'Current session only after validation and restore'
+      }
+    ]);
+  });
+
+  it('debounces paused-menu Import Shell Profile while its browser picker promise is active', async () => {
+    let finishImportShellProfile = () => {};
+    let importShellProfileCallCount = 0;
+    const pendingImportShellProfile = new Promise<{ status: 'cancelled' }>((resolve) => {
+      finishImportShellProfile = () =>
+        resolve({
+          status: 'cancelled'
+        });
+    });
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement, {
+      onImportShellProfile: () => {
+        importShellProfileCallCount += 1;
+        return pendingImportShellProfile;
+      }
+    });
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const root = container.children[0] ?? null;
+    expect(root).not.toBeNull();
+    if (root === null) {
+      return;
+    }
+
+    const shellToggleButton = findElementByClass(root, 'app-shell__shell-toggle');
+    shellToggleButton?.click();
+
+    const initialImportButton = findButtonByTextContent(
+      root,
+      'app-shell__shell-keybindings-button',
+      'Import Shell Profile'
+    );
+    initialImportButton?.click();
+
+    const busyImportButton = findButtonByTextContent(
+      root,
+      'app-shell__shell-keybindings-button',
+      'Import Shell Profile...'
+    );
+
+    expect(importShellProfileCallCount).toBe(1);
+    expect(busyImportButton?.disabled).toBe(true);
+    expect(busyImportButton?.dataset.busy).toBe('true');
+    expect(busyImportButton?.getAttribute('aria-busy')).toBe('true');
+    expect(busyImportButton?.title).toBe(PAUSED_MAIN_MENU_BUSY_IMPORT_SHELL_PROFILE_TITLE);
+
+    busyImportButton?.click();
+    expect(importShellProfileCallCount).toBe(1);
+
+    finishImportShellProfile();
+    await pendingImportShellProfile;
+    await Promise.resolve();
+
+    const restoredImportButton = findButtonByTextContent(
+      root,
+      'app-shell__shell-keybindings-button',
+      'Import Shell Profile'
+    );
+
+    expect(restoredImportButton?.disabled).toBe(false);
+    expect(restoredImportButton?.dataset.busy).toBe('false');
+    expect(restoredImportButton?.getAttribute('aria-busy')).toBe('false');
+    expect(restoredImportButton?.title).toBe(resolvePausedMainMenuImportShellProfileTitle());
   });
 
   it('hides the paused dashboard wrappers for the first-launch main menu layout', () => {
@@ -848,10 +1017,15 @@ describe('paused main-menu dashboard layout styling', () => {
       '.app-shell__danger-zone-action .app-shell__section-action-shortcut-badge'
     );
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-keybindings-metadata');
+    expect(APP_SHELL_STYLE_SOURCE).toContain(".app-shell__section-action-button[data-busy='true']");
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-button[disabled]');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-button[disabled]:hover');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-top-jump-link');
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__shell-keybindings-metadata[data-tone='warning'] .app-shell__menu-section-metadata-value"
     );
+    expect(APP_SHELL_STYLE_SOURCE).toContain(".app-shell__shell-keybindings-button[data-busy='true']");
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-keybindings-button[disabled]');
     expect(APP_SHELL_STYLE_SOURCE).toContain('@media (min-width: 960px)');
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__panel[data-layout='paused-dashboard'] .app-shell__paused-secondary"
