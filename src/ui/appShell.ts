@@ -317,6 +317,8 @@ const HIDDEN_PAUSED_MAIN_MENU_RESULTS_HELP_COPY_SUMMARY_LINE =
   'Result-card paragraphs are hidden until Show Help Text is enabled.';
 const WORLD_SAVE_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Only world-save feedback is currently available here.';
+const SHELL_SETTING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Only shell-setting feedback is currently available here.';
 const resolvePausedMainMenuResultsDensitySummaryLine = (resultCount: number): string | null =>
   resultCount >= 3 ? `${resultCount} result cards are currently grouped here.` : null;
 const WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
@@ -413,6 +415,7 @@ const resolvePausedMainMenuResultsSectionSummaryLine = (
   const containsWarningResults = menuSections.some((section) => section.tone === 'warning');
   const containsConfirmationResults = menuSections.some((section) => section.tone === 'accent');
   const worldSaveOnly = menuSections.length > 1 && resultCategories.every((category) => category === 'world-save');
+  const shellSettingOnly = resultCategories.every((category) => category === 'shell-settings');
   const warningOnly = menuSections.every((section) => section.tone === 'warning');
   const confirmationOnly = menuSections.every((section) => section.tone === 'accent');
   const mixedWarningAndConfirmation = containsWarningResults && containsConfirmationResults;
@@ -422,7 +425,9 @@ const resolvePausedMainMenuResultsSectionSummaryLine = (
     ? MIXED_WORLD_SAVE_AND_SHELL_SETTINGS_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
     : worldSaveOnly
       ? WORLD_SAVE_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
-    : null;
+      : shellSettingOnly
+        ? SHELL_SETTING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
+        : null;
   const toneSummaryLine = warningOnly
     ? WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
     : confirmationOnly
