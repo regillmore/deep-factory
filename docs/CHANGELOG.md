@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-11
 
+- Task: Add paused-menu Results warning-only summary copy.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused-menu `Results` summary now says when the collapsed feedback group contains warning-toned cards only while leaving mixed or confirmation-toned groups on the existing neutral copy, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused warning-only versus mixed-tone summary regressions, removed completed task `455` from [docs/NEXT.md](docs/NEXT.md), added replacement task `456`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu Results header copy for hidden help text.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused-menu `Results` summary now warns when `Hide Help Text` is active and result cards below are showing only titles plus metadata rows, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused hidden-help results-header regressions, removed completed task `454` from [docs/NEXT.md](docs/NEXT.md), added replacement task `455`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

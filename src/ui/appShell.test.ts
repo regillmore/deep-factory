@@ -131,9 +131,13 @@ const DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
 const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
   'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
 const IMPORT_RESULT_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Import World Save.';
+  'Recent paused-menu feedback is available for Import World Save. Only warning feedback is currently available here.';
 const IMPORT_RESULT_ONLY_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Import World Save. Result-card paragraphs are hidden until Show Help Text is enabled.';
+  'Recent paused-menu feedback is available for Import World Save. Only warning feedback is currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
+const IMPORT_AND_CLEAR_WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Recent paused-menu feedback is available for Import World Save and Clear Saved World. Only warning feedback is currently available here.';
+const EXPORT_AND_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Recent paused-menu feedback is available for Export World Save and Import World Save.';
 const EXPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Export World Save and Reset Shell Toggles.';
 const PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
@@ -3173,6 +3177,63 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
           tone: 'warning'
         }
       ]
+    });
+  });
+
+  it('adds warning-only header copy when every paused-menu result card is warning toned', () => {
+    expect(
+      resolvePausedMainMenuResultsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          {
+            status: 'rejected',
+            fileName: 'broken.json',
+            reason: 'world save envelope kind must be "deep-factory.world-save"'
+          },
+          null,
+          null,
+          {
+            status: 'failed',
+            reason: 'local resume envelope could not be deleted'
+          }
+        )
+      )
+    ).toMatchObject({
+      visible: true,
+      expanded: false,
+      summaryLine: IMPORT_AND_CLEAR_WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
+      toggleLabel: 'Show Results'
+    });
+  });
+
+  it('keeps neutral results header copy when accent and warning feedback are mixed', () => {
+    expect(
+      resolvePausedMainMenuResultsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          {
+            status: 'rejected',
+            fileName: 'broken.json',
+            reason: 'world save envelope kind must be "deep-factory.world-save"'
+          },
+          null,
+          {
+            status: 'downloaded',
+            fileName: 'paused-session.json'
+          }
+        )
+      )
+    ).toMatchObject({
+      visible: true,
+      expanded: false,
+      summaryLine: EXPORT_AND_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
+      toggleLabel: 'Show Results'
     });
   });
 

@@ -315,6 +315,8 @@ const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
   'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
 const HIDDEN_PAUSED_MAIN_MENU_RESULTS_HELP_COPY_SUMMARY_LINE =
   'Result-card paragraphs are hidden until Show Help Text is enabled.';
+const WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Only warning feedback is currently available here.';
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE =
   'Current in-world shell hotkeys preview the active binding set and can be remapped below.';
 const DEFAULTED_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE =
@@ -385,8 +387,9 @@ const resolvePausedMainMenuResultsSectionSummaryLine = (
   const resultActionLabels = menuSections.map(
     (section) => PAUSED_MAIN_MENU_RESULT_SECTION_ACTION_LABELS[section.title] ?? section.title
   );
+  const warningOnly = menuSections.every((section) => section.tone === 'warning');
 
-  const summaryLine = `Recent paused-menu feedback is available for ${formatMenuSectionSummaryListValue(resultActionLabels)}.`;
+  const summaryLine = `Recent paused-menu feedback is available for ${formatMenuSectionSummaryListValue(resultActionLabels)}.${warningOnly ? ` ${WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE}` : ''}`;
   return showMenuSectionLines
     ? summaryLine
     : `${summaryLine} ${HIDDEN_PAUSED_MAIN_MENU_RESULTS_HELP_COPY_SUMMARY_LINE}`;
