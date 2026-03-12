@@ -53,7 +53,7 @@ import {
   resolvePausedMainMenuApplyShellProfileTitle,
   resolvePausedMainMenuImportShellProfileTitle,
   resolvePausedMainMenuImportWorldSaveTitle,
-  resolvePausedMainMenuShellActionKeybindingEditorIntro,
+  createPausedMainMenuShellActionKeybindingEditorMetadataRows,
   resolvePausedMainMenuResetShellTogglesTitle,
   resolvePausedMainMenuResumeWorldTitle,
   resolveInWorldDebugEditControlsToggleTitle,
@@ -238,10 +238,26 @@ const PAUSED_MAIN_MENU_SHELL_PROFILE_PREVIEW_LINES = [
   'The selected shell profile validated successfully and is ready to apply to this paused session.',
   'Review its live change summary, saved-on shell visibility, and replacement hotkey set below before applying it.'
 ] as const;
-const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO =
-  'Use unique A-Z letters for the in-world shell actions. Changes save immediately when browser storage is available.';
-const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO =
-  'Use unique A-Z letters for the in-world shell actions. Browser shell storage is unavailable, so remaps only affect this paused session until reload or a reset path clears them.';
+const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS = [
+  {
+    label: 'Keys',
+    value: 'Unique A-Z letters'
+  },
+  {
+    label: 'Persistence',
+    value: 'Browser saved on change'
+  }
+] as const;
+const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS = [
+  {
+    label: 'Keys',
+    value: 'Unique A-Z letters'
+  },
+  {
+    label: 'Persistence',
+    value: 'Current session only until reload or reset'
+  }
+] as const;
 const STORAGE_UNAVAILABLE_FIRST_LAUNCH_PERSISTENCE_PREVIEW_LINES = [
   'Browser resume is unavailable here because browser storage could not be opened during boot.',
   'Enter World still starts a live session in this tab, but returning to the main menu cannot create a browser resume save until storage access works again.'
@@ -385,6 +401,14 @@ const findElementById = (root: FakeElement, id: string): FakeElement | null => {
 
 const listChildClassNames = (element: FakeElement | null): string[] =>
   element?.children.map((child) => child.className) ?? [];
+
+const readMetadataRows = (
+  element: FakeElement | null
+): Array<{ label: string; value: string }> =>
+  element?.children.map((row) => ({
+    label: row.children[0]?.textContent ?? '',
+    value: row.children[1]?.textContent ?? ''
+  })) ?? [];
 
 const createPausedMainMenuShellActionKeybindingSummaryRows = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
@@ -664,6 +688,48 @@ describe('paused main-menu dashboard layout', () => {
       expect(heading?.textContent).toBe(sectionExpectation.title);
     }
   });
+
+  it('renders compact shell-hotkey metadata rows instead of a prose intro when the shell editor expands', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const root = container.children[0] ?? null;
+    const shellToggleButton =
+      root === null ? null : findElementByClass(root, 'app-shell__shell-toggle');
+    shellToggleButton?.click();
+
+    const shellEditorMetadata =
+      root === null ? null : findElementByClass(root, 'app-shell__shell-keybindings-metadata');
+    const shellEditorIntro =
+      root === null ? null : findElementByClass(root, 'app-shell__shell-keybindings-intro');
+
+    expect(readMetadataRows(shellEditorMetadata)).toEqual(
+      DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS
+    );
+    expect(shellEditorIntro).toBeNull();
+  });
+
+  it('switches the expanded shell-hotkey metadata rows into warning-toned session-only copy when browser persistence is unavailable', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(createPausedMainMenuShellState(undefined, false));
+
+    const root = container.children[0] ?? null;
+    const shellToggleButton =
+      root === null ? null : findElementByClass(root, 'app-shell__shell-toggle');
+    shellToggleButton?.click();
+
+    const shellEditorMetadata =
+      root === null ? null : findElementByClass(root, 'app-shell__shell-keybindings-metadata');
+
+    expect(shellEditorMetadata?.dataset.tone).toBe('warning');
+    expect(readMetadataRows(shellEditorMetadata)).toEqual(
+      SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS
+    );
+  });
 });
 
 describe('paused main-menu dashboard layout styling', () => {
@@ -678,6 +744,10 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__overview-action');
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       '.app-shell__danger-zone-action .app-shell__section-action-shortcut-badge'
+    );
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-keybindings-metadata');
+    expect(APP_SHELL_STYLE_SOURCE).toContain(
+      ".app-shell__shell-keybindings-metadata[data-tone='warning'] .app-shell__menu-section-metadata-value"
     );
     expect(APP_SHELL_STYLE_SOURCE).toContain('@media (min-width: 960px)');
     expect(APP_SHELL_STYLE_SOURCE).toContain(
@@ -2575,13 +2645,13 @@ describe('resolvePausedMainMenuClearShellProfilePreviewTitle', () => {
   });
 });
 
-describe('resolvePausedMainMenuShellActionKeybindingEditorIntro', () => {
-  it('switches between browser-saved and session-only helper copy for the paused-menu shell-hotkey editor', () => {
-    expect(resolvePausedMainMenuShellActionKeybindingEditorIntro()).toBe(
-      DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO
+describe('createPausedMainMenuShellActionKeybindingEditorMetadataRows', () => {
+  it('switches between browser-saved and session-only metadata rows for the paused-menu shell-hotkey editor', () => {
+    expect(createPausedMainMenuShellActionKeybindingEditorMetadataRows()).toEqual(
+      DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS
     );
-    expect(resolvePausedMainMenuShellActionKeybindingEditorIntro(false)).toBe(
-      SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO
+    expect(createPausedMainMenuShellActionKeybindingEditorMetadataRows(false)).toEqual(
+      SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS
     );
   });
 });

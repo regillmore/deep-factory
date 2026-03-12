@@ -933,16 +933,32 @@ const resolvePausedMainMenuShellActionKeybindingSummaryLine = (
   shellActionKeybindingsDefaultedFromPersistedState
     ? DEFAULTED_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE
     : DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE;
-const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO =
-  'Use unique A-Z letters for the in-world shell actions. Changes save immediately when browser storage is available.';
-const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO =
-  'Use unique A-Z letters for the in-world shell actions. Browser shell storage is unavailable, so remaps only affect this paused session until reload or a reset path clears them.';
-export const resolvePausedMainMenuShellActionKeybindingEditorIntro = (
+const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS = [
+  {
+    label: 'Keys',
+    value: 'Unique A-Z letters'
+  },
+  {
+    label: 'Persistence',
+    value: 'Browser saved on change'
+  }
+] as const satisfies readonly AppShellMenuSectionMetadataRow[];
+const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS = [
+  {
+    label: 'Keys',
+    value: 'Unique A-Z letters'
+  },
+  {
+    label: 'Persistence',
+    value: 'Current session only until reload or reset'
+  }
+] as const satisfies readonly AppShellMenuSectionMetadataRow[];
+export const createPausedMainMenuShellActionKeybindingEditorMetadataRows = (
   worldSessionShellPersistenceAvailable = true
-): string =>
+): readonly AppShellMenuSectionMetadataRow[] =>
   worldSessionShellPersistenceAvailable
-    ? DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO
-    : SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_INTRO;
+    ? DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS
+    : SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS;
 export const resolvePausedMainMenuShellActionKeybindingRemapEditorStatus = ({
   result,
   actionLabel,
@@ -2825,7 +2841,7 @@ export class AppShell {
   private shellToggleButton: HTMLButtonElement;
   private shellBody: HTMLDivElement;
   private shellActionKeybindingEditor: HTMLDivElement;
-  private shellActionKeybindingEditorIntro: HTMLParagraphElement;
+  private shellActionKeybindingEditorMetadata: HTMLDListElement;
   private shellActionKeybindingInputs = new Map<
     InWorldShellActionKeybindingActionType,
     HTMLInputElement
@@ -3162,11 +3178,11 @@ export class AppShell {
     shellActionKeybindingEditorTitle.textContent = 'Shell Hotkeys';
     this.shellActionKeybindingEditor.append(shellActionKeybindingEditorTitle);
 
-    this.shellActionKeybindingEditorIntro = document.createElement('p');
-    this.shellActionKeybindingEditorIntro.className = 'app-shell__shell-keybindings-intro';
-    this.shellActionKeybindingEditorIntro.textContent =
-      resolvePausedMainMenuShellActionKeybindingEditorIntro();
-    this.shellActionKeybindingEditor.append(this.shellActionKeybindingEditorIntro);
+    this.shellActionKeybindingEditorMetadata = createMenuSectionMetadataElement(
+      createPausedMainMenuShellActionKeybindingEditorMetadataRows()
+    );
+    this.shellActionKeybindingEditorMetadata.classList.add('app-shell__shell-keybindings-metadata');
+    this.shellActionKeybindingEditor.append(this.shellActionKeybindingEditorMetadata);
 
     this.shellProfilePreviewDetails = document.createElement('div');
     this.shellProfilePreviewDetails.className = 'app-shell__shell-preview';
@@ -3419,19 +3435,21 @@ export class AppShell {
     }
   }
 
-  private syncShellActionKeybindingEditorIntro(
+  private syncShellActionKeybindingEditorMetadata(
     worldSessionShellPersistenceAvailable = true
   ): void {
-    this.shellActionKeybindingEditorIntro.textContent =
-      resolvePausedMainMenuShellActionKeybindingEditorIntro(
-        worldSessionShellPersistenceAvailable
-      );
+    const metadataRows = createPausedMainMenuShellActionKeybindingEditorMetadataRows(
+      worldSessionShellPersistenceAvailable
+    );
+    this.shellActionKeybindingEditorMetadata.replaceChildren(
+      ...createMenuSectionMetadataElement(metadataRows).childNodes
+    );
     if (worldSessionShellPersistenceAvailable) {
-      delete this.shellActionKeybindingEditorIntro.dataset.tone;
+      delete this.shellActionKeybindingEditorMetadata.dataset.tone;
       return;
     }
 
-    this.shellActionKeybindingEditorIntro.dataset.tone = 'warning';
+    this.shellActionKeybindingEditorMetadata.dataset.tone = 'warning';
   }
 
   private setShellActionKeybindingEditorStatus(
@@ -3810,11 +3828,7 @@ export class AppShell {
       pausedMainMenuShellSection.editorVisible,
       'grid'
     );
-    this.syncShellActionKeybindingEditorIntro(pausedMainMenuShellPersistenceAvailable);
-    this.shellActionKeybindingEditorIntro.hidden = !pausedMainMenuShellSection.editorVisible;
-    this.shellActionKeybindingEditorIntro.style.display = pausedMainMenuShellSection.editorVisible
-      ? ''
-      : 'none';
+    this.syncShellActionKeybindingEditorMetadata(pausedMainMenuShellPersistenceAvailable);
     this.shellProfilePreviewDetails.replaceChildren(
       ...(pausedMainMenuShellSection.previewSection === null
         ? []

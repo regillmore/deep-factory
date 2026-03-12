@@ -625,14 +625,15 @@ canvas {
   text-transform: uppercase;
 }
 
-.app-shell__shell-keybindings-intro {
+.app-shell__shell-keybindings-metadata {
   margin: 0;
-  color: #d6e3e7;
-  font-size: 0.9rem;
-  line-height: 1.5;
+  padding-top: 0;
+  border-top: 0;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 14px;
 }
 
-.app-shell__shell-keybindings-intro[data-tone='warning'] {
+.app-shell__shell-keybindings-metadata[data-tone='warning'] .app-shell__menu-section-metadata-value {
   color: #f3cd87;
 }
 
