@@ -2669,6 +2669,7 @@ export class AppShell {
   private root: HTMLDivElement;
   private worldHost: HTMLDivElement;
   private overlay: HTMLDivElement;
+  private overlayPanel: HTMLElement;
   private overlayActions: HTMLDivElement;
   private chrome: HTMLDivElement;
   private returnToMainMenuActionButton: HTMLButtonElement;
@@ -2683,6 +2684,9 @@ export class AppShell {
   private stageLabel: HTMLSpanElement;
   private title: HTMLHeadingElement;
   private status: HTMLParagraphElement;
+  private pausedMainMenuDashboard: HTMLDivElement;
+  private pausedMainMenuPrimarySections: HTMLDivElement;
+  private pausedMainMenuSecondarySections: HTMLDivElement;
   private overviewSection: HTMLElement;
   private overviewBody: HTMLDivElement;
   private worldSaveSection: HTMLElement;
@@ -2902,25 +2906,33 @@ export class AppShell {
     this.overlay.className = 'app-shell__overlay';
     this.root.append(this.overlay);
 
-    const panel = document.createElement('section');
-    panel.className = 'app-shell__panel';
-    this.overlay.append(panel);
+    this.overlayPanel = document.createElement('section');
+    this.overlayPanel.className = 'app-shell__panel';
+    this.overlay.append(this.overlayPanel);
 
     this.stageLabel = document.createElement('span');
     this.stageLabel.className = 'app-shell__stage';
-    panel.append(this.stageLabel);
+    this.overlayPanel.append(this.stageLabel);
 
     this.title = document.createElement('h1');
     this.title.className = 'app-shell__title';
-    panel.append(this.title);
+    this.overlayPanel.append(this.title);
 
     this.status = document.createElement('p');
     this.status.className = 'app-shell__status';
-    panel.append(this.status);
+    this.overlayPanel.append(this.status);
+
+    this.pausedMainMenuDashboard = document.createElement('div');
+    this.pausedMainMenuDashboard.className = 'app-shell__paused-dashboard';
+    this.overlayPanel.append(this.pausedMainMenuDashboard);
+
+    this.pausedMainMenuPrimarySections = document.createElement('div');
+    this.pausedMainMenuPrimarySections.className = 'app-shell__paused-primary';
+    this.pausedMainMenuDashboard.append(this.pausedMainMenuPrimarySections);
 
     this.overviewSection = document.createElement('section');
     this.overviewSection.className = 'app-shell__overview';
-    panel.append(this.overviewSection);
+    this.pausedMainMenuPrimarySections.append(this.overviewSection);
 
     const overviewHeader = document.createElement('div');
     overviewHeader.className = 'app-shell__overview-header';
@@ -2937,7 +2949,7 @@ export class AppShell {
 
     this.worldSaveSection = document.createElement('section');
     this.worldSaveSection.className = 'app-shell__world-save';
-    panel.append(this.worldSaveSection);
+    this.pausedMainMenuPrimarySections.append(this.worldSaveSection);
 
     const worldSaveHeader = document.createElement('div');
     worldSaveHeader.className = 'app-shell__world-save-header';
@@ -2968,9 +2980,13 @@ export class AppShell {
     this.worldSaveActions.className = 'app-shell__world-save-actions';
     worldSaveBody.append(this.worldSaveActions);
 
+    this.pausedMainMenuSecondarySections = document.createElement('div');
+    this.pausedMainMenuSecondarySections.className = 'app-shell__paused-secondary';
+    this.pausedMainMenuDashboard.append(this.pausedMainMenuSecondarySections);
+
     this.shellSection = document.createElement('section');
     this.shellSection.className = 'app-shell__shell';
-    panel.append(this.shellSection);
+    this.pausedMainMenuSecondarySections.append(this.shellSection);
 
     const shellHeader = document.createElement('div');
     shellHeader.className = 'app-shell__shell-header';
@@ -3132,7 +3148,7 @@ export class AppShell {
 
     this.recentActivitySection = document.createElement('section');
     this.recentActivitySection.className = 'app-shell__recent-activity';
-    panel.append(this.recentActivitySection);
+    this.pausedMainMenuSecondarySections.append(this.recentActivitySection);
 
     const recentActivityHeader = document.createElement('div');
     recentActivityHeader.className = 'app-shell__recent-activity-header';
@@ -3157,7 +3173,7 @@ export class AppShell {
 
     this.dangerZoneSection = document.createElement('section');
     this.dangerZoneSection.className = 'app-shell__danger-zone';
-    panel.append(this.dangerZoneSection);
+    this.pausedMainMenuSecondarySections.append(this.dangerZoneSection);
 
     const dangerZoneHeader = document.createElement('div');
     dangerZoneHeader.className = 'app-shell__danger-zone-header';
@@ -3182,15 +3198,15 @@ export class AppShell {
 
     this.menuSections = document.createElement('div');
     this.menuSections.className = 'app-shell__menu-sections';
-    panel.append(this.menuSections);
+    this.overlayPanel.append(this.menuSections);
 
     this.detailList = document.createElement('ul');
     this.detailList.className = 'app-shell__detail-list';
-    panel.append(this.detailList);
+    this.overlayPanel.append(this.detailList);
 
     this.overlayActions = document.createElement('div');
     this.overlayActions.className = 'app-shell__actions';
-    panel.append(this.overlayActions);
+    this.overlayPanel.append(this.overlayActions);
 
     this.primaryButton = document.createElement('button');
     this.primaryButton.type = 'button';
@@ -3529,6 +3545,7 @@ export class AppShell {
     const pausedMainMenuSecondarySections = pausedMainMenuVisible ? [] : viewModel.menuSections;
 
     this.root.dataset.screen = viewModel.screen;
+    this.overlayPanel.dataset.layout = pausedMainMenuVisible ? 'paused-dashboard' : 'default';
     this.overlay.hidden = !viewModel.overlayVisible;
     this.overlay.style.display = resolveAppShellRegionDisplay(viewModel.overlayVisible, 'grid');
     this.chrome.hidden = !viewModel.chromeVisible;
@@ -3536,6 +3553,21 @@ export class AppShell {
     this.stageLabel.textContent = viewModel.stageLabel;
     this.title.textContent = viewModel.title;
     this.status.textContent = viewModel.statusText;
+    this.pausedMainMenuDashboard.hidden = !pausedMainMenuVisible;
+    this.pausedMainMenuDashboard.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuVisible,
+      'grid'
+    );
+    this.pausedMainMenuPrimarySections.hidden = !pausedMainMenuVisible;
+    this.pausedMainMenuPrimarySections.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuVisible,
+      'grid'
+    );
+    this.pausedMainMenuSecondarySections.hidden = !pausedMainMenuVisible;
+    this.pausedMainMenuSecondarySections.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuVisible,
+      'grid'
+    );
     this.overviewSection.hidden = pausedMainMenuMenuSectionGroups.overviewSections.length === 0;
     this.overviewSection.style.display = resolveAppShellRegionDisplay(
       pausedMainMenuMenuSectionGroups.overviewSections.length > 0,

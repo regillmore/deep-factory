@@ -26,6 +26,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: The current paused menu has accumulated too many flat cards, summary sentences, and cross-cutting toggles, which makes it long, verbose, and hard to scan on both desktop and touch-sized layouts.
 - Consequence: Future paused-menu tasks should reduce section sprawl, keep one-off outcomes scoped to `Recent Activity`, and avoid adding new copy-only summary branches to the legacy card stack unless they directly support the redesign.
 
+### 2026-03-12: Paused-menu dashboard should keep primary sections first on touch and secondary sections multicolumn on desktop
+
+- Decision: The paused-menu dashboard now keeps `Overview` and `World Save` as the leading stacked sections on touch-sized layouts, while desktop reflows `Shell`, `Recent Activity`, and `Danger Zone` into a separate two-column secondary grid and leaves the footer action row in place until section-owned actions land.
+- Reason: Resume-state and save-state context need to stay visible at the top of the paused menu on smaller screens, while desktop has enough width to make secondary tools and feedback scannable side-by-side without moving button ownership prematurely.
+- Consequence: Future paused-menu layout work should preserve `Overview` plus `World Save` as the primary top stack and treat multicolumn layout as belonging to the secondary section area unless a later task intentionally changes that dashboard contract.
+
 ### 2026-03-11: Paused-menu transient feedback should collapse separately from persistent status cards
 
 - Decision: One-off paused-menu `* Result` cards now live inside a local `Results` section that stays collapsed by default, while persistent cards such as `Saved World Status`, `Persistence Summary`, and `Shell Profile Preview` remain visible in the main grid.

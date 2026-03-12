@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   createDefaultShellActionKeybindingState,
@@ -17,6 +19,7 @@ import {
   getDesktopReturnToMainMenuHotkeyLabel
 } from '../input/debugEditShortcuts';
 import {
+  AppShell,
   type AppShellState,
   createDefaultBootShellState,
   createFirstLaunchMainMenuShellState,
@@ -243,6 +246,106 @@ const STORAGE_UNAVAILABLE_FIRST_LAUNCH_PERSISTENCE_PREVIEW_LINES = [
   'Browser resume is unavailable here because browser storage could not be opened during boot.',
   'Enter World still starts a live session in this tab, but returning to the main menu cannot create a browser resume save until storage access works again.'
 ] as const;
+const APP_SHELL_STYLE_SOURCE = readFileSync(new URL('../style.css', import.meta.url), 'utf8');
+
+class FakeClassList {
+  constructor(private readonly element: FakeElement) {}
+
+  add(...tokens: string[]): void {
+    const nextTokens = new Set(this.element.className.split(/\s+/).filter(Boolean));
+    for (const token of tokens) {
+      nextTokens.add(token);
+    }
+    this.element.className = [...nextTokens].join(' ');
+  }
+
+  contains(token: string): boolean {
+    return this.element.className.split(/\s+/).includes(token);
+  }
+}
+
+class FakeElement {
+  tagName: string;
+  style: Record<string, string> = {};
+  dataset: Record<string, string> = {};
+  children: FakeElement[] = [];
+  hidden = false;
+  className = '';
+  textContent = '';
+  title = '';
+  id = '';
+  type = '';
+  value = '';
+  inputMode = '';
+  maxLength = 0;
+  autocomplete = '';
+  spellcheck = false;
+  htmlFor = '';
+  classList = new FakeClassList(this);
+  private readonly attributes = new Map<string, string>();
+
+  constructor(tagName: string) {
+    this.tagName = tagName.toUpperCase();
+  }
+
+  get childNodes(): FakeElement[] {
+    return this.children;
+  }
+
+  append(...children: unknown[]): void {
+    for (const child of children) {
+      if (child instanceof FakeElement) {
+        this.children.push(child);
+      }
+    }
+  }
+
+  replaceChildren(...children: unknown[]): void {
+    this.children = [];
+    this.append(...children);
+  }
+
+  setAttribute(name: string, value: string): void {
+    this.attributes.set(name, value);
+    if (name === 'id') {
+      this.id = value;
+    }
+  }
+
+  getAttribute(name: string): string | null {
+    return this.attributes.get(name) ?? null;
+  }
+
+  addEventListener(_type: string, _listener: (...args: unknown[]) => void): void {}
+
+  blur(): void {}
+
+  focus(): void {}
+
+  select(): void {}
+}
+
+const createFakeDocument = () => ({
+  createElement: (tagName: string) => new FakeElement(tagName)
+});
+
+const findElementByClass = (root: FakeElement, className: string): FakeElement | null => {
+  if (root.classList.contains(className)) {
+    return root;
+  }
+
+  for (const child of root.children) {
+    const match = findElementByClass(child, className);
+    if (match !== null) {
+      return match;
+    }
+  }
+
+  return null;
+};
+
+const listChildClassNames = (element: FakeElement | null): string[] =>
+  element?.children.map((child) => child.className) ?? [];
 
 const createPausedMainMenuShellActionKeybindingSummaryRows = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
@@ -291,6 +394,99 @@ const createPausedMainMenuMenuSectionsFromViewModel = (
 
   return [...primarySections, ...recentActivitySections];
 };
+
+describe('paused main-menu dashboard layout', () => {
+  beforeEach(() => {
+    vi.stubGlobal('document', createFakeDocument());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('groups paused-menu sections into primary and secondary dashboard wrappers while keeping footer actions separate', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        null,
+        {
+          status: 'downloaded',
+          fileName: 'paused-session.json'
+        },
+        null,
+        null,
+        null,
+        false,
+        'export-world-save'
+      )
+    );
+
+    const root = container.children[0] ?? null;
+    const panel = root === null ? null : findElementByClass(root, 'app-shell__panel');
+    const dashboard = panel === null ? null : findElementByClass(panel, 'app-shell__paused-dashboard');
+    const primary = dashboard === null ? null : findElementByClass(dashboard, 'app-shell__paused-primary');
+    const secondary =
+      dashboard === null ? null : findElementByClass(dashboard, 'app-shell__paused-secondary');
+    const menuSections = panel === null ? null : findElementByClass(panel, 'app-shell__menu-sections');
+    const footerActions = panel === null ? null : findElementByClass(panel, 'app-shell__actions');
+
+    expect(panel?.dataset.layout).toBe('paused-dashboard');
+    expect(dashboard?.hidden).toBe(false);
+    expect(dashboard?.style.display).toBe('grid');
+    expect(listChildClassNames(primary)).toEqual(['app-shell__overview', 'app-shell__world-save']);
+    expect(listChildClassNames(secondary)).toEqual([
+      'app-shell__shell',
+      'app-shell__recent-activity',
+      'app-shell__danger-zone'
+    ]);
+    expect(menuSections?.hidden).toBe(true);
+    expect(menuSections?.style.display).toBe('none');
+    expect(footerActions?.hidden).toBe(false);
+    expect(footerActions?.style.display).toBe('flex');
+  });
+
+  it('hides the paused dashboard wrappers for the first-launch main menu layout', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(createFirstLaunchMainMenuShellState());
+
+    const root = container.children[0] ?? null;
+    const panel = root === null ? null : findElementByClass(root, 'app-shell__panel');
+    const dashboard = panel === null ? null : findElementByClass(panel, 'app-shell__paused-dashboard');
+    const menuSections = panel === null ? null : findElementByClass(panel, 'app-shell__menu-sections');
+
+    expect(panel?.dataset.layout).toBe('default');
+    expect(dashboard?.hidden).toBe(true);
+    expect(dashboard?.style.display).toBe('none');
+    expect(menuSections?.hidden).toBe(false);
+    expect(menuSections?.style.display).toBe('grid');
+  });
+});
+
+describe('paused main-menu dashboard layout styling', () => {
+  it('keeps dedicated paused-dashboard and desktop secondary-grid rules in style.css', () => {
+    expect(APP_SHELL_STYLE_SOURCE).toContain(".app-shell__panel[data-layout='paused-dashboard']");
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-dashboard');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-primary');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-secondary');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('@media (min-width: 960px)');
+    expect(APP_SHELL_STYLE_SOURCE).toContain(
+      ".app-shell__panel[data-layout='paused-dashboard'] .app-shell__paused-secondary"
+    );
+    expect(APP_SHELL_STYLE_SOURCE).toContain('grid-template-columns: repeat(2, minmax(0, 1fr));');
+    expect(APP_SHELL_STYLE_SOURCE).toContain(
+      ".app-shell__panel[data-layout='paused-dashboard'] .app-shell__shell[data-expanded='true']"
+    );
+  });
+});
 
 describe('resolveAppShellRegionDisplay', () => {
   it('returns the requested visible display mode when the shell region should be shown', () => {

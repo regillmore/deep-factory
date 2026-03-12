@@ -4,7 +4,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## App shell
 
-471. Rework the paused-menu DOM and CSS after tasks `465-470` into a responsive dashboard that keeps `Overview` and `World Save` above the fold on touch while supporting a two-column desktop layout for secondary sections, with app-shell layout regressions.
 472. Add section-level landmark labels and keyboard-focus anchors after task `471` so `Overview`, `World Save`, `Shell`, `Recent Activity`, and `Danger Zone` can be targeted consistently across desktop and touch accessibility flows, with paused-section-landmark regressions.
 473. Move paused-menu action buttons into their owning sections after tasks `471-472` so `Overview`, `World Save`, `Shell`, and `Danger Zone` no longer duplicate the footer action row, with section-action regressions.
 474. Add inline desktop shortcut badges to section-owned paused-menu actions after task `473` so moved `Resume World` and `New World` controls keep `Enter` and `N` discoverable without the footer row, with section-shortcut-badge regressions.
@@ -12,6 +11,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 476. Add compact status badges to paused-menu `Recent Activity` cards after task `469` so success and attention states stay scannable once help-text paragraphs are removed, with recent-activity-badge regressions.
 477. Convert the expanded paused-menu `Shell Hotkeys` helper paragraph into compact metadata or inline status copy after task `469` so the editor no longer depends on a prose intro block, with shell-editor-intro regressions.
 478. Add compact warning badges to paused-menu `Danger Zone` action cards after task `470` so `Reset Shell Toggles` and `New World` stay scannable once the dashboard layout lands, with danger-zone-badge regressions.
+479. Add a paused-dashboard top-jump link after task `472` so long `Shell` editor sessions can return to `Overview` quickly on touch and desktop, with paused-dashboard-top-link regressions.
 
 ## Optimize liquids
 

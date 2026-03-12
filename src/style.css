@@ -200,6 +200,13 @@ canvas {
   backdrop-filter: blur(18px);
 }
 
+.app-shell__panel[data-layout='paused-dashboard'] {
+  width: min(760px, 100%);
+  max-height: min(calc(100vh - clamp(36px, 8vw, 84px)), 860px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
 .app-shell__stage {
   display: inline-flex;
   align-items: center;
@@ -238,8 +245,20 @@ canvas {
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 
-.app-shell__overview {
+.app-shell__paused-dashboard {
   margin-top: 18px;
+  display: grid;
+  gap: 18px;
+}
+
+.app-shell__paused-primary,
+.app-shell__paused-secondary {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+}
+
+.app-shell__overview {
   display: grid;
   gap: 12px;
 }
@@ -267,7 +286,6 @@ canvas {
 .app-shell__recent-activity,
 .app-shell__shell,
 .app-shell__danger-zone {
-  margin-top: 18px;
   padding: 15px 16px 16px;
   border: 1px solid rgba(150, 184, 197, 0.18);
   border-radius: 18px;
@@ -745,6 +763,12 @@ canvas {
   margin-top: 22px;
 }
 
+.app-shell__panel[data-layout='paused-dashboard'] .app-shell__actions {
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 240, 204, 0.12);
+}
+
 .app-shell__primary {
   padding: 12px 18px;
   border: 1px solid rgba(255, 225, 169, 0.28);
@@ -795,9 +819,36 @@ canvas {
   outline-offset: 3px;
 }
 
+@media (min-width: 960px) {
+  .app-shell__panel[data-layout='paused-dashboard'] {
+    width: min(1080px, 100%);
+  }
+
+  .app-shell__panel[data-layout='paused-dashboard'] .app-shell__paused-primary {
+    grid-template-columns: minmax(240px, 0.82fr) minmax(0, 1.18fr);
+  }
+
+  .app-shell__panel[data-layout='paused-dashboard'] .app-shell__paused-secondary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-shell__panel[data-layout='paused-dashboard'] .app-shell__shell[data-expanded='true'] {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 640px) {
   .app-shell__panel {
     border-radius: 20px;
+  }
+
+  .app-shell__paused-dashboard {
+    gap: 16px;
+  }
+
+  .app-shell__paused-primary,
+  .app-shell__paused-secondary {
+    gap: 14px;
   }
 
   .app-shell__menu-sections {
