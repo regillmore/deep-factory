@@ -137,7 +137,9 @@ const IMPORT_RESULT_ONLY_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
 const IMPORT_AND_CLEAR_WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Import World Save and Clear Saved World. Only warning feedback is currently available here.';
 const EXPORT_AND_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Export World Save and Import World Save.';
+  'Recent paused-menu feedback is available for Export World Save and Import World Save. Warning and confirmation feedback are both currently available here.';
+const EXPORT_AND_IMPORT_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Recent paused-menu feedback is available for Export World Save and Import World Save. Warning and confirmation feedback are both currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
 const EXPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Export World Save and Reset Shell Toggles.';
 const PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
@@ -3209,7 +3211,7 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
     });
   });
 
-  it('keeps neutral results header copy when accent and warning feedback are mixed', () => {
+  it('adds mixed results header copy when accent and warning feedback are both present', () => {
     expect(
       resolvePausedMainMenuResultsSectionState(
         createPausedMainMenuShellState(
@@ -3233,6 +3235,36 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
       visible: true,
       expanded: false,
       summaryLine: EXPORT_AND_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
+      toggleLabel: 'Show Results'
+    });
+  });
+
+  it('keeps mixed results header copy when help text is hidden', () => {
+    expect(
+      resolvePausedMainMenuResultsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          {
+            status: 'rejected',
+            fileName: 'broken.json',
+            reason: 'world save envelope kind must be "deep-factory.world-save"'
+          },
+          null,
+          {
+            status: 'downloaded',
+            fileName: 'paused-session.json'
+          }
+        ),
+        false,
+        false
+      )
+    ).toMatchObject({
+      visible: true,
+      expanded: false,
+      summaryLine: EXPORT_AND_IMPORT_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
       toggleLabel: 'Show Results'
     });
   });

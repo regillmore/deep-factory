@@ -317,6 +317,8 @@ const HIDDEN_PAUSED_MAIN_MENU_RESULTS_HELP_COPY_SUMMARY_LINE =
   'Result-card paragraphs are hidden until Show Help Text is enabled.';
 const WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Only warning feedback is currently available here.';
+const MIXED_WARNING_AND_CONFIRMATION_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Warning and confirmation feedback are both currently available here.';
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE =
   'Current in-world shell hotkeys preview the active binding set and can be remapped below.';
 const DEFAULTED_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE =
@@ -387,9 +389,18 @@ const resolvePausedMainMenuResultsSectionSummaryLine = (
   const resultActionLabels = menuSections.map(
     (section) => PAUSED_MAIN_MENU_RESULT_SECTION_ACTION_LABELS[section.title] ?? section.title
   );
+  const containsWarningResults = menuSections.some((section) => section.tone === 'warning');
+  const containsConfirmationResults = menuSections.some((section) => section.tone === 'accent');
   const warningOnly = menuSections.every((section) => section.tone === 'warning');
+  const mixedWarningAndConfirmation = containsWarningResults && containsConfirmationResults;
 
-  const summaryLine = `Recent paused-menu feedback is available for ${formatMenuSectionSummaryListValue(resultActionLabels)}.${warningOnly ? ` ${WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE}` : ''}`;
+  const toneSummaryLine = warningOnly
+    ? WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
+    : mixedWarningAndConfirmation
+      ? MIXED_WARNING_AND_CONFIRMATION_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
+      : null;
+
+  const summaryLine = `Recent paused-menu feedback is available for ${formatMenuSectionSummaryListValue(resultActionLabels)}.${toneSummaryLine === null ? '' : ` ${toneSummaryLine}`}`;
   return showMenuSectionLines
     ? summaryLine
     : `${summaryLine} ${HIDDEN_PAUSED_MAIN_MENU_RESULTS_HELP_COPY_SUMMARY_LINE}`;
