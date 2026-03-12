@@ -39,6 +39,7 @@ import {
   resolvePausedMainMenuExportShellProfileTitle,
   resolvePausedMainMenuFreshWorldTitle,
   resolvePausedMainMenuApplyShellProfileEditorStatus,
+  resolvePausedMainMenuDangerZoneSectionState,
   resolvePausedMainMenuRecentActivitySectionState,
   createPausedMainMenuShellSummaryRows,
   resolvePausedMainMenuShellSectionState,
@@ -91,6 +92,8 @@ const CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
   'Browser resume was cleared for this paused session. Resume World or another save path must rewrite it before reload can restore the session.';
 const IMPORT_PERSISTENCE_FAILED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
   'The imported paused session stays live in this tab, but reload will miss it until a later browser-save rewrite succeeds.';
+const DEFAULT_PAUSED_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE =
+  'Use these only when you want to clear shell layout state or discard the current paused session.';
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
   {
     label: 'Active Layout',
@@ -2572,6 +2575,65 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
   });
 });
 
+describe('resolvePausedMainMenuDangerZoneSectionState', () => {
+  it('collects Reset Shell Toggles and New World into one warning-toned danger zone', () => {
+    expect(resolvePausedMainMenuDangerZoneSectionState(createPausedMainMenuShellState())).toEqual({
+      visible: true,
+      summaryLine: DEFAULT_PAUSED_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE,
+      actionSections: [
+        {
+          title: 'Reset Shell Toggles',
+          lines: [],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Session',
+              value: 'Kept unchanged'
+            },
+            {
+              label: 'Next Resume',
+              value: 'Default-off shell layout'
+            }
+          ],
+          tone: 'warning'
+        },
+        {
+          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
+          lines: [],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: getDesktopFreshWorldHotkeyLabel()
+            },
+            {
+              label: 'Replaces',
+              value: 'Paused session with a fresh world'
+            },
+            {
+              label: 'Resets',
+              value: 'Player, camera, undo, and shell layout'
+            }
+          ],
+          tone: 'warning'
+        }
+      ],
+      tone: 'warning'
+    });
+  });
+
+  it('keeps the danger zone hidden outside the paused main menu', () => {
+    expect(resolvePausedMainMenuDangerZoneSectionState(createFirstLaunchMainMenuShellState())).toEqual({
+      visible: false,
+      summaryLine: null,
+      actionSections: [],
+      tone: 'default'
+    });
+  });
+});
+
 describe('resolvePausedMainMenuMenuSectionGroups', () => {
   it('routes paused-menu cards into explicit overview, world-save, shell, recent-activity, and danger-zone groups', () => {
     const pausedState = createPausedMainMenuShellState(
@@ -2668,26 +2730,7 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
           ]
         }
       ],
-      shellSections: [
-        {
-          title: 'Reset Shell Toggles',
-          lines: [],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: 'Button only'
-            },
-            {
-              label: 'Session',
-              value: 'Kept unchanged'
-            },
-            {
-              label: 'Next Resume',
-              value: 'Default-off shell layout'
-            }
-          ]
-        }
-      ],
+      shellSections: [],
       recentActivitySections: [
         {
           title: 'Clear Saved World',
@@ -2726,6 +2769,25 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
       ],
       dangerZoneSections: [
         {
+          title: 'Reset Shell Toggles',
+          lines: [],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Session',
+              value: 'Kept unchanged'
+            },
+            {
+              label: 'Next Resume',
+              value: 'Default-off shell layout'
+            }
+          ],
+          tone: 'warning'
+        },
+        {
           title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
           lines: [],
           metadataRows: [
@@ -2735,7 +2797,11 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
             },
             {
               label: 'Replaces',
-              value: 'World, player, camera, and undo state'
+              value: 'Paused session with a fresh world'
+            },
+            {
+              label: 'Resets',
+              value: 'Player, camera, undo, and shell layout'
             }
           ],
           tone: 'warning'
@@ -2781,7 +2847,8 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
               label: 'Next Resume',
               value: 'Default-off shell layout'
             }
-          ]
+          ],
+          tone: 'warning'
         },
         {
           title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
@@ -2793,7 +2860,11 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
             },
             {
               label: 'Replaces',
-              value: 'World, player, camera, and undo state'
+              value: 'Paused session with a fresh world'
+            },
+            {
+              label: 'Resets',
+              value: 'Player, camera, undo, and shell layout'
             }
           ],
           tone: 'warning'

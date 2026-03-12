@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-12: Destructive paused-menu actions should live together in Danger Zone
+
+- Decision: The paused menu now keeps `Reset Shell Toggles` and `New World` together inside the dedicated warning-toned `Danger Zone` section instead of splitting shell reset into the shell tools area or leaving fresh-world guidance in a generic secondary card grid.
+- Reason: Resetting shell layout and replacing the active session are both destructive or recovery-oriented actions, so grouping them makes the shell editor easier to scan and keeps consequence-heavy controls under one explicit warning label.
+- Consequence: Future paused-menu actions that clear layout state, discard the current session, or otherwise act as destructive recovery paths should default to `Danger Zone` instead of `Shell`, `Overview`, or ad hoc secondary-card placement.
+
 ### 2026-03-12: Default paused-menu cards should be metadata-first without a global help toggle
 
 - Decision: The paused menu now removes the global `Show Help Text` toggle and keeps its default `Overview`, `World Save`, `Recent Activity`, and secondary action cards readable through concise titles plus metadata rows instead of paragraph-style help copy.

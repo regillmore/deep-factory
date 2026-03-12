@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Isolate paused-menu destructive actions into a dedicated Danger Zone section.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused sessions now render a warning-toned `Danger Zone` section with shared consequence copy plus `Reset Shell Toggles` and `New World` action cards, keeping the shell editor focused on hotkeys and shell-profile flows; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with danger-zone section and grouping regressions, removed completed task `470` from [docs/NEXT.md](docs/NEXT.md), added replacement task `478`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Remove paused-menu help-toggle copy in favor of metadata-first cards.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused-menu `Overview`, `World Save`, `Recent Activity`, and secondary action cards no longer depend on paragraph help copy or a `Show Help Text` toggle, and instead surface concise metadata-first default cards while leaving the expanded `Shell` editor flow intact; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with help-toggle-removal regressions, removed completed task `469` from [docs/NEXT.md](docs/NEXT.md), added replacement task `477`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

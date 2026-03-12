@@ -265,7 +265,8 @@ canvas {
 
 .app-shell__world-save,
 .app-shell__recent-activity,
-.app-shell__shell {
+.app-shell__shell,
+.app-shell__danger-zone {
   margin-top: 18px;
   padding: 15px 16px 16px;
   border: 1px solid rgba(150, 184, 197, 0.18);
@@ -287,9 +288,17 @@ canvas {
     linear-gradient(135deg, rgba(230, 165, 92, 0.18), rgba(111, 45, 21, 0.08));
 }
 
+.app-shell__danger-zone[data-tone='warning'] {
+  border-color: rgba(214, 112, 92, 0.38);
+  background:
+    linear-gradient(180deg, rgba(38, 20, 18, 0.97), rgba(28, 14, 13, 0.9)),
+    linear-gradient(135deg, rgba(214, 112, 92, 0.22), rgba(122, 34, 25, 0.12));
+}
+
 .app-shell__world-save-header,
 .app-shell__recent-activity-header,
-.app-shell__shell-header {
+.app-shell__shell-header,
+.app-shell__danger-zone-header {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -299,7 +308,8 @@ canvas {
 
 .app-shell__world-save-copy,
 .app-shell__recent-activity-copy,
-.app-shell__shell-copy {
+.app-shell__shell-copy,
+.app-shell__danger-zone-copy {
   min-width: 0;
   display: grid;
   gap: 8px;
@@ -307,7 +317,8 @@ canvas {
 
 .app-shell__world-save-title,
 .app-shell__recent-activity-title,
-.app-shell__shell-title {
+.app-shell__shell-title,
+.app-shell__danger-zone-title {
   margin: 0;
   color: #fff0cc;
   font:
@@ -317,7 +328,8 @@ canvas {
 }
 
 .app-shell__world-save-summary,
-.app-shell__recent-activity-summary {
+.app-shell__recent-activity-summary,
+.app-shell__danger-zone-summary {
   margin: 0;
   color: #d6e3e7;
   font-size: 0.92rem;
@@ -350,7 +362,8 @@ canvas {
 
 .app-shell__world-save-body,
 .app-shell__recent-activity-body,
-.app-shell__shell-body {
+.app-shell__shell-body,
+.app-shell__danger-zone-body {
   padding-top: 14px;
   border-top: 1px solid rgba(255, 240, 204, 0.1);
   display: grid;
@@ -392,6 +405,17 @@ canvas {
   gap: 10px;
 }
 
+.app-shell__danger-zone-action {
+  padding: 12px 14px;
+  border: 1px solid rgba(214, 112, 92, 0.26);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(25, 17, 19, 0.9), rgba(16, 12, 14, 0.84)),
+    linear-gradient(135deg, rgba(214, 112, 92, 0.12), rgba(122, 34, 25, 0.08));
+  display: grid;
+  gap: 10px;
+}
+
 .app-shell__world-save-action[data-tone='warning'] {
   border-color: rgba(230, 165, 92, 0.28);
 }
@@ -400,7 +424,20 @@ canvas {
   border-color: rgba(131, 219, 242, 0.24);
 }
 
+.app-shell__danger-zone-action[data-tone='warning'] {
+  border-color: rgba(214, 112, 92, 0.34);
+}
+
 .app-shell__world-save-action-title {
+  margin: 0;
+  color: #fff0cc;
+  font:
+    700 10px/1.1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-shell__danger-zone-action-title {
   margin: 0;
   color: #fff0cc;
   font:
@@ -417,11 +454,27 @@ canvas {
   line-height: 1.5;
 }
 
+.app-shell__danger-zone-action-lines {
+  display: grid;
+  gap: 8px;
+  color: #d6e3e7;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
 .app-shell__world-save-action-lines p {
   margin: 0;
 }
 
+.app-shell__danger-zone-action-lines p {
+  margin: 0;
+}
+
 .app-shell__world-save-action-metadata {
+  margin: 0;
+}
+
+.app-shell__danger-zone-action-metadata {
   margin: 0;
 }
 
@@ -434,6 +487,10 @@ canvas {
 
 .app-shell__recent-activity-body {
   gap: 12px;
+}
+
+.app-shell__danger-zone-body {
+  gap: 10px;
 }
 
 .app-shell__shell-body {
@@ -749,7 +806,8 @@ canvas {
 
   .app-shell__world-save-header,
   .app-shell__recent-activity-header,
-  .app-shell__shell-header {
+  .app-shell__shell-header,
+  .app-shell__danger-zone-header {
     flex-direction: column;
   }
 
