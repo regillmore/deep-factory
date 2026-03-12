@@ -280,6 +280,7 @@ canvas {
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 
+.app-shell__results,
 .app-shell__shell-settings {
   margin-top: 18px;
   padding: 15px 16px 16px;
@@ -295,6 +296,7 @@ canvas {
   gap: 14px;
 }
 
+.app-shell__results-header,
 .app-shell__shell-settings-header {
   display: flex;
   flex-wrap: wrap;
@@ -303,12 +305,14 @@ canvas {
   align-items: start;
 }
 
+.app-shell__results-copy,
 .app-shell__shell-settings-copy {
   min-width: 0;
   display: grid;
   gap: 8px;
 }
 
+.app-shell__results-title,
 .app-shell__shell-settings-title {
   margin: 0;
   color: #fff0cc;
@@ -318,6 +322,7 @@ canvas {
   text-transform: uppercase;
 }
 
+.app-shell__results-summary,
 .app-shell__shell-settings-summary {
   margin: 0;
   color: #d6e3e7;
@@ -325,6 +330,7 @@ canvas {
   line-height: 1.5;
 }
 
+.app-shell__results-toggle,
 .app-shell__shell-settings-toggle {
   padding: 8px 12px;
   border: 1px solid rgba(159, 221, 255, 0.28);
@@ -340,19 +346,26 @@ canvas {
   cursor: pointer;
 }
 
+.app-shell__results-toggle:hover,
 .app-shell__shell-settings-toggle:hover {
   border-color: rgba(159, 221, 255, 0.42);
 }
 
+.app-shell__results-toggle:focus-visible,
 .app-shell__shell-settings-toggle:focus-visible {
   outline: 2px solid #9fddff;
   outline-offset: 3px;
 }
 
+.app-shell__results-body,
 .app-shell__shell-settings-body {
   padding-top: 14px;
   border-top: 1px solid rgba(255, 240, 204, 0.1);
   display: grid;
+}
+
+.app-shell__results-body {
+  gap: 12px;
 }
 
 .app-shell__shell-settings .app-shell__shell-keybindings {
@@ -666,10 +679,12 @@ canvas {
     width: 100%;
   }
 
+  .app-shell__results-header,
   .app-shell__shell-settings-header {
     flex-direction: column;
   }
 
+  .app-shell__results-toggle,
   .app-shell__shell-settings-toggle {
     width: 100%;
   }

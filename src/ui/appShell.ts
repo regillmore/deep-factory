@@ -59,6 +59,19 @@ export interface PausedMainMenuHelpCopySectionState {
   showMenuSectionLines: boolean;
 }
 
+export interface PausedMainMenuResultsSectionState {
+  visible: boolean;
+  expanded: boolean;
+  summaryLine: string | null;
+  toggleLabel: string | null;
+  menuSections: readonly AppShellMenuSection[];
+}
+
+export interface PausedMainMenuMenuSectionGroups {
+  primarySections: readonly AppShellMenuSection[];
+  resultsSections: readonly AppShellMenuSection[];
+}
+
 export interface PausedMainMenuAcceptedImportResult {
   status: 'accepted';
   fileName: string | null;
@@ -304,6 +317,14 @@ const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE =
   'Current in-world shell hotkeys preview the active binding set and can be remapped below.';
 const DEFAULTED_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE =
   'Saved in-world shell-action keybindings fell back to a recovered safe set during load. Review or remap the rows below before resuming.';
+const PAUSED_MAIN_MENU_RESULT_SECTION_ACTION_LABELS: Partial<
+  Record<AppShellMenuSection['title'], string>
+> = {
+  'Export Result': 'Export World Save',
+  'Import Result': 'Import World Save',
+  'Clear Saved World Result': 'Clear Saved World',
+  'Reset Shell Toggles Result': 'Reset Shell Toggles'
+};
 const formatMenuSectionMetadataRowValue = (labels: readonly string[]): string =>
   labels.length > 0 ? labels.join(', ') : 'None';
 const formatMenuSectionSummaryListValue = (labels: readonly string[]): string => {
@@ -342,6 +363,48 @@ const findMenuSectionLines = (
   sectionTitle: string
 ): readonly string[] =>
   menuSections.find((section) => section.title === sectionTitle)?.lines ?? [];
+const isPausedMainMenuTransientResultMenuSection = (
+  section: AppShellMenuSection
+): boolean => section.title.endsWith('Result');
+export const splitPausedMainMenuMenuSections = (
+  menuSections: readonly AppShellMenuSection[] = []
+): PausedMainMenuMenuSectionGroups => ({
+  primarySections: menuSections.filter((section) => !isPausedMainMenuTransientResultMenuSection(section)),
+  resultsSections: menuSections.filter(isPausedMainMenuTransientResultMenuSection)
+});
+const resolvePausedMainMenuResultsSectionSummaryLine = (
+  menuSections: readonly AppShellMenuSection[] = []
+): string | null => {
+  if (menuSections.length === 0) {
+    return null;
+  }
+
+  const resultActionLabels = menuSections.map(
+    (section) => PAUSED_MAIN_MENU_RESULT_SECTION_ACTION_LABELS[section.title] ?? section.title
+  );
+
+  return `Recent paused-menu feedback is available for ${formatMenuSectionSummaryListValue(resultActionLabels)}.`;
+};
+export const resolvePausedMainMenuResultsToggleLabel = (expanded = false): string =>
+  expanded ? 'Hide Results' : 'Show Results';
+export const resolvePausedMainMenuResultsSectionState = (
+  state: AppShellState,
+  expanded = false
+): PausedMainMenuResultsSectionState => {
+  const visible = isPausedMainMenuState(state);
+  const { resultsSections } = splitPausedMainMenuMenuSections(state.menuSections ?? []);
+  const hasResultsSections = visible && resultsSections.length > 0;
+
+  return {
+    visible: hasResultsSections,
+    expanded: hasResultsSections && expanded,
+    summaryLine: hasResultsSections
+      ? resolvePausedMainMenuResultsSectionSummaryLine(resultsSections)
+      : null,
+    toggleLabel: hasResultsSections ? resolvePausedMainMenuResultsToggleLabel(expanded) : null,
+    menuSections: hasResultsSections ? resultsSections : []
+  };
+};
 const resolvePausedMainMenuShellProfilePreviewChangeCategory = (
   menuSections: readonly AppShellMenuSection[] = []
 ): PausedMainMenuShellProfileApplyChangeCategory => {
@@ -2011,6 +2074,10 @@ export class AppShell {
   private pausedMainMenuHelpCopySummary: HTMLParagraphElement;
   private pausedMainMenuHelpCopyToggleButton: HTMLButtonElement;
   private menuSections: HTMLDivElement;
+  private resultsSection: HTMLElement;
+  private resultsSummary: HTMLParagraphElement;
+  private resultsToggleButton: HTMLButtonElement;
+  private resultsBody: HTMLDivElement;
   private shellSettingsSection: HTMLElement;
   private shellSettingsSummary: HTMLParagraphElement;
   private shellSettingsToggleButton: HTMLButtonElement;
@@ -2066,6 +2133,7 @@ export class AppShell {
   private currentShellActionKeybindingEditorStatus: AppShellShellActionKeybindingEditorStatus | null =
     null;
   private pausedMainMenuHelpCopyExpanded = false;
+  private pausedMainMenuResultsExpanded = false;
   private pausedMainMenuShellSettingsExpanded = false;
   private currentState: AppShellState = createDefaultBootShellState();
 
@@ -2253,6 +2321,40 @@ export class AppShell {
     this.menuSections = document.createElement('div');
     this.menuSections.className = 'app-shell__menu-sections';
     panel.append(this.menuSections);
+
+    this.resultsSection = document.createElement('section');
+    this.resultsSection.className = 'app-shell__results';
+    panel.append(this.resultsSection);
+
+    const resultsHeader = document.createElement('div');
+    resultsHeader.className = 'app-shell__results-header';
+    this.resultsSection.append(resultsHeader);
+
+    const resultsCopy = document.createElement('div');
+    resultsCopy.className = 'app-shell__results-copy';
+    resultsHeader.append(resultsCopy);
+
+    const resultsTitle = document.createElement('h2');
+    resultsTitle.className = 'app-shell__results-title';
+    resultsTitle.textContent = 'Results';
+    resultsCopy.append(resultsTitle);
+
+    this.resultsSummary = document.createElement('p');
+    this.resultsSummary.className = 'app-shell__results-summary';
+    resultsCopy.append(this.resultsSummary);
+
+    this.resultsToggleButton = document.createElement('button');
+    this.resultsToggleButton.type = 'button';
+    this.resultsToggleButton.className = 'app-shell__results-toggle';
+    this.resultsToggleButton.addEventListener('click', () => this.togglePausedMainMenuResults());
+    installPointerClickFocusRelease(this.resultsToggleButton);
+    resultsHeader.append(this.resultsToggleButton);
+
+    this.resultsBody = document.createElement('div');
+    this.resultsBody.className = 'app-shell__results-body';
+    this.resultsBody.id = 'app-shell-results-body';
+    this.resultsSection.append(this.resultsBody);
+    this.resultsToggleButton.setAttribute('aria-controls', this.resultsBody.id);
 
     this.shellSettingsSection = document.createElement('section');
     this.shellSettingsSection.className = 'app-shell__shell-settings';
@@ -2533,6 +2635,15 @@ export class AppShell {
     this.setState(this.currentState);
   }
 
+  private togglePausedMainMenuResults(): void {
+    if (!isPausedMainMenuState(this.currentState)) {
+      return;
+    }
+
+    this.pausedMainMenuResultsExpanded = !this.pausedMainMenuResultsExpanded;
+    this.setState(this.currentState);
+  }
+
   private tryRemapShellActionKeybinding(
     actionType: InWorldShellActionKeybindingActionType,
     nextValue: string
@@ -2745,6 +2856,7 @@ export class AppShell {
     const pausedMainMenuVisible = isPausedMainMenuState(state);
     if (!pausedMainMenuVisible || !wasPausedMainMenuVisible) {
       this.pausedMainMenuHelpCopyExpanded = false;
+      this.pausedMainMenuResultsExpanded = false;
       this.pausedMainMenuShellSettingsExpanded = false;
     }
     const pausedMainMenuShellActionKeybindings = pausedMainMenuVisible
@@ -2758,11 +2870,16 @@ export class AppShell {
       state,
       this.pausedMainMenuHelpCopyExpanded
     );
+    const pausedMainMenuResultsSection = resolvePausedMainMenuResultsSectionState(
+      state,
+      this.pausedMainMenuResultsExpanded
+    );
     const pausedMainMenuShellSettingsSection = resolvePausedMainMenuShellSettingsSectionState(
       state,
       this.pausedMainMenuShellSettingsExpanded,
       pausedMainMenuHelpCopySection.showMenuSectionLines
     );
+    const pausedMainMenuMenuSectionGroups = splitPausedMainMenuMenuSections(viewModel.menuSections);
 
     this.root.dataset.screen = viewModel.screen;
     this.overlay.hidden = !viewModel.overlayVisible;
@@ -2792,13 +2909,39 @@ export class AppShell {
       pausedMainMenuHelpCopySection.expanded ? 'true' : 'false'
     );
     this.menuSections.replaceChildren(
-      ...viewModel.menuSections.map((section) =>
+      ...pausedMainMenuMenuSectionGroups.primarySections.map((section) =>
         createMenuSectionElement(section, pausedMainMenuHelpCopySection.showMenuSectionLines)
       )
     );
-    this.menuSections.hidden = viewModel.menuSections.length === 0;
+    this.menuSections.hidden = pausedMainMenuMenuSectionGroups.primarySections.length === 0;
     this.menuSections.style.display = resolveAppShellRegionDisplay(
-      viewModel.menuSections.length > 0,
+      pausedMainMenuMenuSectionGroups.primarySections.length > 0,
+      'grid'
+    );
+    this.resultsSection.hidden = !pausedMainMenuResultsSection.visible;
+    this.resultsSection.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuResultsSection.visible,
+      'grid'
+    );
+    this.resultsSection.dataset.expanded = pausedMainMenuResultsSection.expanded ? 'true' : 'false';
+    this.resultsSummary.textContent = pausedMainMenuResultsSection.summaryLine ?? '';
+    this.resultsToggleButton.textContent = pausedMainMenuResultsSection.toggleLabel ?? '';
+    this.resultsToggleButton.hidden = !pausedMainMenuResultsSection.visible;
+    this.resultsToggleButton.title = pausedMainMenuResultsSection.expanded
+      ? 'Hide the latest paused-menu feedback cards.'
+      : 'Show the latest paused-menu feedback cards.';
+    this.resultsToggleButton.setAttribute(
+      'aria-expanded',
+      pausedMainMenuResultsSection.expanded ? 'true' : 'false'
+    );
+    this.resultsBody.replaceChildren(
+      ...pausedMainMenuResultsSection.menuSections.map((section) =>
+        createMenuSectionElement(section, pausedMainMenuHelpCopySection.showMenuSectionLines)
+      )
+    );
+    this.resultsBody.hidden = !pausedMainMenuResultsSection.expanded;
+    this.resultsBody.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuResultsSection.expanded,
       'grid'
     );
     this.shellSettingsSection.hidden = !pausedMainMenuShellSettingsSection.visible;

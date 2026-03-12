@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-11: Paused-menu transient feedback should collapse separately from persistent status cards
+
+- Decision: One-off paused-menu `* Result` cards now live inside a local `Results` section that stays collapsed by default, while persistent cards such as `Saved World Status`, `Persistence Summary`, and `Shell Profile Preview` remain visible in the main grid.
+- Reason: Recent export, import, and reset outcomes are useful to revisit, but leaving every transient feedback card inline makes the paused menu harder to scan for current session state and active controls.
+- Consequence: Future paused-menu cards that report the latest one-off action outcome should usually join the `Results` section, while ongoing state or warning cards should stay outside it.
+
 ### 2026-03-11: Paused-menu help text should collapse independently from action metadata
 
 - Decision: Paused-menu action cards now hide their descriptive paragraphs behind a local `Show Help Text` toggle by default, while titles and metadata rows stay visible.

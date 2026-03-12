@@ -39,6 +39,8 @@ import {
   resolvePausedMainMenuApplyShellProfileEditorStatus,
   resolvePausedMainMenuHelpCopySectionState,
   resolvePausedMainMenuHelpCopyToggleLabel,
+  resolvePausedMainMenuResultsSectionState,
+  resolvePausedMainMenuResultsToggleLabel,
   resolvePausedMainMenuShellSettingsSectionState,
   resolvePausedMainMenuShellSettingsSummaryLine,
   resolvePausedMainMenuShellSettingsToggleLabel,
@@ -51,7 +53,8 @@ import {
   resolvePausedMainMenuResetShellTogglesTitle,
   resolvePausedMainMenuResumeWorldTitle,
   resolveInWorldDebugEditControlsToggleTitle,
-  resolveAppShellViewModel
+  resolveAppShellViewModel,
+  splitPausedMainMenuMenuSections
 } from './appShell';
 
 const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
@@ -127,6 +130,10 @@ const DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
   'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
+const IMPORT_RESULT_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Recent paused-menu feedback is available for Import World Save.';
+const EXPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Recent paused-menu feedback is available for Export World Save and Reset Shell Toggles.';
 const PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Shell profile preview from preview-shell-profile.json is ready to apply with both shell visibility toggle and hotkey changes. If applied, that preview would use the custom set. If applied, that preview would resume with Debug HUD, Edit Overlays, and Spawn Marker shown. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const PREVIEWED_TOGGLE_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
@@ -2807,6 +2814,337 @@ describe('resolvePausedMainMenuHelpCopySectionState', () => {
       summaryLine: null,
       toggleLabel: null,
       showMenuSectionLines: true
+    });
+  });
+});
+
+describe('splitPausedMainMenuMenuSections', () => {
+  it('groups transient paused-menu result cards separately from visible status and action cards', () => {
+    expect(
+      splitPausedMainMenuMenuSections(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          null,
+          'cleared',
+          {
+            status: 'downloaded',
+            fileName: 'paused-session.json'
+          },
+          null,
+          {
+            status: 'cleared'
+          }
+        ).menuSections ?? []
+      )
+    ).toEqual({
+      primarySections: [
+        {
+          title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
+          lines: ['Continue with the current world, player state, and debug edits intact.'],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: getDesktopResumeWorldHotkeyLabel()
+            },
+            {
+              label: 'Consequence',
+              value: 'Keeps current world, player, camera, and edits.'
+            }
+          ],
+          tone: 'accent'
+        },
+        {
+          title: 'Export World Save',
+          lines: [
+            'Download a JSON save file for the current world, player, and camera session state without changing the paused session.'
+          ],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Consequence',
+              value: 'Keeps the current paused session unchanged.'
+            }
+          ]
+        },
+        {
+          title: 'Import World Save',
+          lines: [
+            'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates and runtime restore succeeds.'
+          ],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Consequence',
+              value:
+                'Validated imports replace the paused session only when runtime restore succeeds; canceled picks, picker failures, invalid saves, or failed restores do not.'
+            }
+          ]
+        },
+        {
+          title: 'Clear Saved World',
+          lines: [
+            'Delete the browser-saved world, player, and camera envelope while keeping this paused session active in the current tab until it is saved again.'
+          ],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Consequence',
+              value: 'Keeps the session but clears browser resume.'
+            }
+          ]
+        },
+        {
+          title: 'Saved World Status',
+          lines: [...CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_STATUS_LINES],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Not browser saved'
+            },
+            {
+              label: 'Saved again by',
+              value: 'Resume World, Import World Save, New World'
+            }
+          ],
+          tone: 'warning'
+        },
+        {
+          title: 'Reset Shell Toggles',
+          lines: [
+            `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
+          ],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Consequence',
+              value: 'Keeps the session but clears saved shell visibility.'
+            }
+          ]
+        },
+        {
+          title: 'Persistence Summary',
+          lines: [...DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Browser saved'
+            },
+            {
+              label: 'Resumes',
+              value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+            },
+            {
+              label: 'Saved On',
+              value: 'None'
+            },
+            {
+              label: 'Saved Off',
+              value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
+            },
+            {
+              label: 'Cleared by',
+              value: 'Reset Shell Toggles, New World'
+            },
+            ...createPausedMainMenuShellActionKeybindingSummaryRows()
+          ]
+        },
+        {
+          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
+          lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: getDesktopFreshWorldHotkeyLabel()
+            },
+            {
+              label: 'Consequence',
+              value: 'Replaces the current world, player, camera, and undo state.'
+            }
+          ],
+          tone: 'warning'
+        }
+      ],
+      resultsSections: [
+        {
+          title: 'Export Result',
+          lines: [...DOWNLOADED_PAUSED_MAIN_MENU_EXPORT_RESULT_LINES],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Downloaded'
+            },
+            {
+              label: 'File',
+              value: 'paused-session.json'
+            }
+          ],
+          tone: 'accent'
+        },
+        {
+          title: 'Reset Shell Toggles Result',
+          lines: [...CLEARED_PAUSED_MAIN_MENU_RESET_SHELL_TOGGLES_RESULT_LINES],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Cleared for next resume'
+            },
+            {
+              label: 'Next Resume',
+              value: 'Default-off shell layout'
+            }
+          ],
+          tone: 'accent'
+        }
+      ]
+    });
+  });
+});
+
+describe('resolvePausedMainMenuResultsToggleLabel', () => {
+  it('switches the paused-menu results button label between collapsed and expanded copy', () => {
+    expect(resolvePausedMainMenuResultsToggleLabel()).toBe('Show Results');
+    expect(resolvePausedMainMenuResultsToggleLabel(true)).toBe('Hide Results');
+  });
+});
+
+describe('resolvePausedMainMenuResultsSectionState', () => {
+  it('keeps paused-menu results collapsed by default while summarizing the available feedback cards', () => {
+    expect(
+      resolvePausedMainMenuResultsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          {
+            status: 'rejected',
+            fileName: 'broken.json',
+            reason: 'world save envelope kind must be "deep-factory.world-save"'
+          }
+        )
+      )
+    ).toEqual({
+      visible: true,
+      expanded: false,
+      summaryLine: IMPORT_RESULT_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
+      toggleLabel: 'Show Results',
+      menuSections: [
+        {
+          title: 'Import Result',
+          lines: [...REJECTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Rejected'
+            },
+            {
+              label: 'File',
+              value: 'broken.json'
+            },
+            {
+              label: 'Reason',
+              value: 'world save envelope kind must be "deep-factory.world-save"'
+            }
+          ],
+          tone: 'warning'
+        }
+      ]
+    });
+  });
+
+  it('reveals grouped paused-menu feedback cards only after the results section expands', () => {
+    expect(
+      resolvePausedMainMenuResultsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          null,
+          null,
+          {
+            status: 'downloaded',
+            fileName: 'paused-session.json'
+          },
+          null,
+          {
+            status: 'cleared'
+          }
+        ),
+        true
+      )
+    ).toEqual({
+      visible: true,
+      expanded: true,
+      summaryLine: EXPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
+      toggleLabel: 'Hide Results',
+      menuSections: [
+        {
+          title: 'Export Result',
+          lines: [...DOWNLOADED_PAUSED_MAIN_MENU_EXPORT_RESULT_LINES],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Downloaded'
+            },
+            {
+              label: 'File',
+              value: 'paused-session.json'
+            }
+          ],
+          tone: 'accent'
+        },
+        {
+          title: 'Reset Shell Toggles Result',
+          lines: [...CLEARED_PAUSED_MAIN_MENU_RESET_SHELL_TOGGLES_RESULT_LINES],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Cleared for next resume'
+            },
+            {
+              label: 'Next Resume',
+              value: 'Default-off shell layout'
+            }
+          ],
+          tone: 'accent'
+        }
+      ]
+    });
+  });
+
+  it('keeps the paused-menu results section hidden when no transient feedback cards are present', () => {
+    expect(resolvePausedMainMenuResultsSectionState(createPausedMainMenuShellState(), true)).toEqual({
+      visible: false,
+      expanded: false,
+      summaryLine: null,
+      toggleLabel: null,
+      menuSections: []
+    });
+  });
+
+  it('keeps paused-menu results hidden outside the paused main menu', () => {
+    expect(resolvePausedMainMenuResultsSectionState(createFirstLaunchMainMenuShellState(), true)).toEqual({
+      visible: false,
+      expanded: false,
+      summaryLine: null,
+      toggleLabel: null,
+      menuSections: []
     });
   });
 });
