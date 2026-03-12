@@ -307,7 +307,7 @@ canvas {
 
 .app-shell__world-save,
 .app-shell__results,
-.app-shell__shell-settings {
+.app-shell__shell {
   margin-top: 18px;
   padding: 15px 16px 16px;
   border: 1px solid rgba(150, 184, 197, 0.18);
@@ -331,7 +331,7 @@ canvas {
 
 .app-shell__world-save-header,
 .app-shell__results-header,
-.app-shell__shell-settings-header {
+.app-shell__shell-header {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -341,7 +341,7 @@ canvas {
 
 .app-shell__world-save-copy,
 .app-shell__results-copy,
-.app-shell__shell-settings-copy {
+.app-shell__shell-copy {
   min-width: 0;
   display: grid;
   gap: 8px;
@@ -349,7 +349,7 @@ canvas {
 
 .app-shell__world-save-title,
 .app-shell__results-title,
-.app-shell__shell-settings-title {
+.app-shell__shell-title {
   margin: 0;
   color: #fff0cc;
   font:
@@ -359,8 +359,7 @@ canvas {
 }
 
 .app-shell__world-save-summary,
-.app-shell__results-summary,
-.app-shell__shell-settings-summary {
+.app-shell__results-summary {
   margin: 0;
   color: #d6e3e7;
   font-size: 0.92rem;
@@ -368,7 +367,7 @@ canvas {
 }
 
 .app-shell__results-toggle,
-.app-shell__shell-settings-toggle {
+.app-shell__shell-toggle {
   padding: 8px 12px;
   border: 1px solid rgba(159, 221, 255, 0.28);
   border-radius: 999px;
@@ -384,19 +383,19 @@ canvas {
 }
 
 .app-shell__results-toggle:hover,
-.app-shell__shell-settings-toggle:hover {
+.app-shell__shell-toggle:hover {
   border-color: rgba(159, 221, 255, 0.42);
 }
 
 .app-shell__results-toggle:focus-visible,
-.app-shell__shell-settings-toggle:focus-visible {
+.app-shell__shell-toggle:focus-visible {
   outline: 2px solid #9fddff;
   outline-offset: 3px;
 }
 
 .app-shell__world-save-body,
 .app-shell__results-body,
-.app-shell__shell-settings-body {
+.app-shell__shell-body {
   padding-top: 14px;
   border-top: 1px solid rgba(255, 240, 204, 0.1);
   display: grid;
@@ -407,6 +406,14 @@ canvas {
 }
 
 .app-shell__world-save-metadata {
+  margin: 0;
+  padding-top: 0;
+  border-top: 0;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 14px;
+}
+
+.app-shell__shell-metadata {
   margin: 0;
   padding-top: 0;
   border-top: 0;
@@ -467,13 +474,22 @@ canvas {
   gap: 12px;
 }
 
-.app-shell__shell-settings .app-shell__shell-keybindings {
+.app-shell__shell-body {
+  gap: 14px;
+}
+
+.app-shell__shell .app-shell__shell-keybindings {
   margin-top: 0;
   padding: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+}
+
+.app-shell__shell-preview {
+  display: grid;
+  gap: 12px;
 }
 
 .app-shell__shell-keybindings {
@@ -780,16 +796,17 @@ canvas {
 
   .app-shell__world-save-header,
   .app-shell__results-header,
-  .app-shell__shell-settings-header {
+  .app-shell__shell-header {
     flex-direction: column;
   }
 
-  .app-shell__world-save-metadata {
+  .app-shell__world-save-metadata,
+  .app-shell__shell-metadata {
     grid-template-columns: 1fr;
   }
 
   .app-shell__results-toggle,
-  .app-shell__shell-settings-toggle {
+  .app-shell__shell-toggle {
     width: 100%;
   }
 

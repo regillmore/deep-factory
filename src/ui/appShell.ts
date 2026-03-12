@@ -86,13 +86,14 @@ export interface PausedMainMenuSectionViewModel {
   dangerZone: PausedMainMenuDangerZoneSectionViewModel;
 }
 
-export interface PausedMainMenuShellSettingsSectionState {
+export interface PausedMainMenuShellSectionState {
   visible: boolean;
   expanded: boolean;
-  summaryLine: string | null;
+  metadataRows: readonly AppShellMenuSectionMetadataRow[];
   toggleLabel: string | null;
   editorVisible: boolean;
   editorHelpVisible: boolean;
+  previewSection: AppShellMenuSection | null;
 }
 
 export interface PausedMainMenuHelpCopySectionState {
@@ -441,13 +442,7 @@ const resolvePausedMainMenuWorldSaveMenuSections = (
 ];
 const resolvePausedMainMenuShellMenuSections = (
   sectionViewModel: PausedMainMenuSectionViewModel
-): readonly AppShellMenuSection[] => [
-  sectionViewModel.shell.resetShellToggles,
-  sectionViewModel.shell.persistenceSummary,
-  ...(sectionViewModel.shell.shellProfilePreview === null
-    ? []
-    : [sectionViewModel.shell.shellProfilePreview])
-];
+): readonly AppShellMenuSection[] => [sectionViewModel.shell.resetShellToggles];
 const resolvePausedMainMenuRecentActivityMenuSections = (
   sectionViewModel: PausedMainMenuSectionViewModel
 ): readonly AppShellMenuSection[] => [
@@ -694,180 +689,135 @@ const resolvePausedMainMenuShellProfilePreviewChangeCategory = (
 
   return 'mixed';
 };
-const resolvePausedMainMenuShellProfilePreviewSummaryLine = (
+const resolvePausedMainMenuShellLayoutSummaryValue = (
   sectionViewModel: PausedMainMenuSectionViewModel | null
-): string | null => {
+): string => {
+  const savedOnToggleLabels = parseMenuSectionMetadataRowValue(
+    findMenuSectionMetadataRowValue(sectionViewModel?.shell.persistenceSummary, 'Saved On')
+  );
+  const persistenceStatusValue = findMenuSectionMetadataRowValue(
+    sectionViewModel?.shell.persistenceSummary,
+    'Status'
+  );
+  let layoutValue = 'Unavailable';
+
+  if (savedOnToggleLabels.length === 0) {
+    layoutValue = 'All hidden';
+  } else if (savedOnToggleLabels.length === 5) {
+    layoutValue = 'All shown';
+  } else {
+    layoutValue = `${formatMenuSectionSummaryListValue(savedOnToggleLabels)} shown`;
+  }
+
+  if (persistenceStatusValue === 'Session-only fallback') {
+    return `${layoutValue} (session only)`;
+  }
+
+  if (persistenceStatusValue === 'Browser saved') {
+    return `${layoutValue} (browser saved)`;
+  }
+
+  return layoutValue;
+};
+const resolvePausedMainMenuShellBindingSetSummaryValue = (
+  sectionViewModel: PausedMainMenuSectionViewModel | null,
+  shellActionKeybindingsCurrentSessionOnly = false
+): string => {
+  const bindingSetValue =
+    findMenuSectionMetadataRowValue(sectionViewModel?.shell.persistenceSummary, 'Binding Set') ??
+    'Unavailable';
+  const qualifiers: string[] = [];
+
+  if (
+    menuSectionIncludesLine(
+      sectionViewModel?.shell.persistenceSummary,
+      DEFAULTED_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE
+    )
+  ) {
+    qualifiers.push('recovered safe-set fallback');
+  }
+
+  if (shellActionKeybindingsCurrentSessionOnly) {
+    qualifiers.push('current session only');
+  }
+
+  return qualifiers.length > 0 ? `${bindingSetValue} (${qualifiers.join(', ')})` : bindingSetValue;
+};
+const resolvePausedMainMenuShellPreviewSummaryValue = (
+  sectionViewModel: PausedMainMenuSectionViewModel | null
+): string => {
   const previewFileValue = findMenuSectionMetadataRowValue(
     sectionViewModel?.shell.shellProfilePreview,
     'File'
   );
 
   if (previewFileValue === undefined) {
-    return null;
+    return 'No staged preview';
   }
 
-  const subject =
-    previewFileValue === 'Unknown file'
-      ? 'A validated shell profile preview'
-      : `Shell profile preview from ${previewFileValue}`;
+  const previewLabel =
+    previewFileValue === 'Unknown file' ? 'Validated preview' : previewFileValue;
 
   switch (resolvePausedMainMenuShellProfilePreviewChangeCategory(sectionViewModel)) {
     case 'toggle-only':
-      return `${subject} is ready to apply with shell visibility toggle changes only.`;
+      return `${previewLabel}: Layout changes only`;
     case 'hotkey-only':
-      return `${subject} is ready to apply with shell hotkey changes only.`;
+      return `${previewLabel}: Hotkey changes only`;
     case 'mixed':
-      return `${subject} is ready to apply with both shell visibility toggle and hotkey changes.`;
+      return `${previewLabel}: Layout + hotkey changes`;
     case 'none':
-      return `${subject} already matches the paused session, so applying it would not change shell visibility toggles or hotkeys.`;
+      return `${previewLabel}: No live changes`;
   }
 };
-const resolvePausedMainMenuShellProfilePreviewBindingSetSummaryLine = (
-  sectionViewModel: PausedMainMenuSectionViewModel | null
-): string | null => {
-  const previewBindingSetValue = findMenuSectionMetadataRowValue(
-    sectionViewModel?.shell.shellProfilePreview,
-    'Binding Set'
-  );
-
-  return previewBindingSetValue === undefined
-    ? null
-    : `If applied, that preview would use the ${previewBindingSetValue.toLowerCase()}.`;
-};
-const resolvePausedMainMenuShellProfilePreviewSavedOnSummaryLine = (
-  sectionViewModel: PausedMainMenuSectionViewModel | null
-): string | null => {
-  const previewSavedOnToggleLabels = parseMenuSectionMetadataRowValue(
-    findMenuSectionMetadataRowValue(sectionViewModel?.shell.shellProfilePreview, 'Saved On')
-  );
-  const previewSavedOffValue = findMenuSectionMetadataRowValue(
-    sectionViewModel?.shell.shellProfilePreview,
-    'Saved Off'
-  );
-
-  if (previewSavedOffValue === undefined && previewSavedOnToggleLabels.length === 0) {
-    return null;
-  }
-
-  if (previewSavedOnToggleLabels.length === 0) {
-    return 'If applied, that preview would resume with all shell toggles hidden.';
-  }
-
-  return `If applied, that preview would resume with ${formatMenuSectionSummaryListValue(previewSavedOnToggleLabels)} shown.`;
-};
-const resolvePausedMainMenuShellSettingsPersistenceSummaryLine = (
-  sectionViewModel: PausedMainMenuSectionViewModel | null
-): string | null => {
-  const persistenceStatusValue = findMenuSectionMetadataRowValue(
-    sectionViewModel?.shell.persistenceSummary,
-    'Status'
-  );
-  const bindingSetValue = findMenuSectionMetadataRowValue(
-    sectionViewModel?.shell.persistenceSummary,
-    'Binding Set'
-  );
-  const summaryLines: string[] = [];
-
-  if (persistenceStatusValue !== undefined) {
-    summaryLines.push(
-      persistenceStatusValue === 'Session-only fallback'
-        ? 'Shell settings are in session-only fallback.'
-        : `Shell settings are ${persistenceStatusValue.toLowerCase()}.`
-    );
-  }
-
-  if (bindingSetValue !== undefined) {
-    summaryLines.push(`Current shell hotkeys use the ${bindingSetValue.toLowerCase()}.`);
-  }
-
-  return summaryLines.length > 0 ? summaryLines.join(' ') : null;
-};
-const resolvePausedMainMenuShellSettingsFallbackSummaryLine = (
-  sectionViewModel: PausedMainMenuSectionViewModel | null
-): string | null =>
-  menuSectionIncludesLine(
-    sectionViewModel?.shell.persistenceSummary,
-    DEFAULTED_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE
-  )
-    ? 'The current default-looking hotkeys are a recovered safe-set fallback because invalid saved bindings were rejected during load.'
-    : null;
-const resolvePausedMainMenuShellSettingsCurrentSessionOnlySummaryLine = (
-  shellActionKeybindingsCurrentSessionOnly = false
-): string | null =>
-  shellActionKeybindingsCurrentSessionOnly
-    ? 'Current shell hotkeys are live only in this paused session because the latest browser hotkey save failed.'
-    : null;
-export const resolvePausedMainMenuShellSettingsSummaryLine = (
+export const createPausedMainMenuShellSummaryRows = (
   sectionViewModel: PausedMainMenuSectionViewModel | null,
   shellActionKeybindingsCurrentSessionOnly = false
-): string => {
-  const savedOnToggleLabels = parseMenuSectionMetadataRowValue(
-    findMenuSectionMetadataRowValue(sectionViewModel?.shell.persistenceSummary, 'Saved On')
-  );
-  const savedOffToggleLabels = parseMenuSectionMetadataRowValue(
-    findMenuSectionMetadataRowValue(sectionViewModel?.shell.persistenceSummary, 'Saved Off')
-  );
-  let visibilitySummaryLine: string;
-
-  if (savedOnToggleLabels.length === 0 && savedOffToggleLabels.length === 0) {
-    visibilitySummaryLine = 'Review the paused session shell visibility, hotkeys, and profile controls.';
-  } else if (savedOnToggleLabels.length === 0) {
-    visibilitySummaryLine = `Resume World keeps ${formatMenuSectionSummaryListValue(savedOffToggleLabels)} hidden.`;
-  } else if (savedOffToggleLabels.length === 0) {
-    visibilitySummaryLine = `Resume World shows ${formatMenuSectionSummaryListValue(savedOnToggleLabels)}.`;
-  } else {
-    visibilitySummaryLine = `Resume World shows ${formatMenuSectionSummaryListValue(savedOnToggleLabels)}, while ${formatMenuSectionSummaryListValue(savedOffToggleLabels)} stay hidden.`;
-  }
-
-  const shellProfilePreviewSummaryLine =
-    resolvePausedMainMenuShellProfilePreviewSummaryLine(sectionViewModel);
-  const shellProfilePreviewBindingSetSummaryLine =
-    resolvePausedMainMenuShellProfilePreviewBindingSetSummaryLine(sectionViewModel);
-  const shellProfilePreviewSavedOnSummaryLine =
-    resolvePausedMainMenuShellProfilePreviewSavedOnSummaryLine(sectionViewModel);
-  const shellSettingsPersistenceSummaryLine =
-    resolvePausedMainMenuShellSettingsPersistenceSummaryLine(sectionViewModel);
-  const shellSettingsFallbackSummaryLine =
-    resolvePausedMainMenuShellSettingsFallbackSummaryLine(sectionViewModel);
-  const shellSettingsCurrentSessionOnlySummaryLine =
-    resolvePausedMainMenuShellSettingsCurrentSessionOnlySummaryLine(
+): readonly AppShellMenuSectionMetadataRow[] => [
+  {
+    label: 'Active Layout',
+    value: resolvePausedMainMenuShellLayoutSummaryValue(sectionViewModel)
+  },
+  {
+    label: 'Binding Set',
+    value: resolvePausedMainMenuShellBindingSetSummaryValue(
+      sectionViewModel,
       shellActionKeybindingsCurrentSessionOnly
-    );
-
-  return [
-    shellProfilePreviewSummaryLine,
-    shellProfilePreviewBindingSetSummaryLine,
-    shellProfilePreviewSavedOnSummaryLine,
-    visibilitySummaryLine,
-    shellSettingsPersistenceSummaryLine,
-    shellSettingsFallbackSummaryLine,
-    shellSettingsCurrentSessionOnlySummaryLine
-  ]
-    .filter((line): line is string => line !== null)
-    .join(' ');
-};
-export const resolvePausedMainMenuShellSettingsToggleLabel = (expanded = false): string =>
-  expanded ? 'Hide Shell Settings' : 'Show Shell Settings';
-export const resolvePausedMainMenuShellSettingsSectionState = (
+    )
+  },
+  {
+    label: 'Staged Preview',
+    value: resolvePausedMainMenuShellPreviewSummaryValue(sectionViewModel)
+  }
+] as const;
+export const resolvePausedMainMenuShellToggleLabel = (expanded = false): string =>
+  expanded ? 'Hide Shell' : 'Show Shell';
+export const resolvePausedMainMenuShellSectionState = (
   state: AppShellState,
   expanded = false,
   showEditorHelpText = true
-): PausedMainMenuShellSettingsSectionState => {
+): PausedMainMenuShellSectionState => {
   const visible = isPausedMainMenuState(state);
-  const editorVisible = visible && expanded;
+  const sectionViewModel = resolvePausedMainMenuSectionViewModel(state);
+  const editorVisible = visible && expanded && sectionViewModel !== null;
 
   return {
-    visible,
+    visible: visible && sectionViewModel !== null,
     expanded: editorVisible,
-    summaryLine: visible
-      ? resolvePausedMainMenuShellSettingsSummaryLine(
-          resolvePausedMainMenuSectionViewModel(state),
-          state.shellActionKeybindingsCurrentSessionOnly === true
-        )
-      : null,
-    toggleLabel: visible ? resolvePausedMainMenuShellSettingsToggleLabel(expanded) : null,
+    metadataRows:
+      visible && sectionViewModel !== null
+        ? createPausedMainMenuShellSummaryRows(
+            sectionViewModel,
+            state.shellActionKeybindingsCurrentSessionOnly === true
+          )
+        : [],
+    toggleLabel:
+      visible && sectionViewModel !== null ? resolvePausedMainMenuShellToggleLabel(expanded) : null,
     editorVisible,
-    editorHelpVisible: editorVisible && showEditorHelpText
+    editorHelpVisible: editorVisible && showEditorHelpText,
+    previewSection:
+      visible && sectionViewModel !== null
+        ? sectionViewModel.shell.shellProfilePreview
+        : null
   };
 };
 export const resolvePausedMainMenuHelpCopyToggleLabel = (expanded = false): string =>
@@ -2591,10 +2541,10 @@ export class AppShell {
   private resultsSummary: HTMLParagraphElement;
   private resultsToggleButton: HTMLButtonElement;
   private resultsBody: HTMLDivElement;
-  private shellSettingsSection: HTMLElement;
-  private shellSettingsSummary: HTMLParagraphElement;
-  private shellSettingsToggleButton: HTMLButtonElement;
-  private shellSettingsBody: HTMLDivElement;
+  private shellSection: HTMLElement;
+  private shellMetadata: HTMLDListElement;
+  private shellToggleButton: HTMLButtonElement;
+  private shellBody: HTMLDivElement;
   private shellActionKeybindingEditor: HTMLDivElement;
   private shellActionKeybindingEditorIntro: HTMLParagraphElement;
   private shellActionKeybindingInputs = new Map<
@@ -2602,6 +2552,7 @@ export class AppShell {
     HTMLInputElement
   >();
   private shellActionKeybindingEditorActions: HTMLDivElement;
+  private shellProfilePreviewDetails: HTMLDivElement;
   private resetShellActionKeybindingsButton: HTMLButtonElement;
   private importShellProfileButton: HTMLButtonElement;
   private applyShellProfilePreviewButton: HTMLButtonElement;
@@ -2647,7 +2598,7 @@ export class AppShell {
     null;
   private pausedMainMenuHelpCopyExpanded = false;
   private pausedMainMenuResultsExpanded = false;
-  private pausedMainMenuShellSettingsExpanded = false;
+  private pausedMainMenuShellExpanded = false;
   private currentState: AppShellState = createDefaultBootShellState();
 
   constructor(container: HTMLElement, options: AppShellOptions = {}) {
@@ -2881,81 +2832,43 @@ export class AppShell {
     this.worldSaveActions.className = 'app-shell__world-save-actions';
     worldSaveBody.append(this.worldSaveActions);
 
-    this.menuSections = document.createElement('div');
-    this.menuSections.className = 'app-shell__menu-sections';
-    panel.append(this.menuSections);
+    this.shellSection = document.createElement('section');
+    this.shellSection.className = 'app-shell__shell';
+    panel.append(this.shellSection);
 
-    this.resultsSection = document.createElement('section');
-    this.resultsSection.className = 'app-shell__results';
-    panel.append(this.resultsSection);
+    const shellHeader = document.createElement('div');
+    shellHeader.className = 'app-shell__shell-header';
+    this.shellSection.append(shellHeader);
 
-    const resultsHeader = document.createElement('div');
-    resultsHeader.className = 'app-shell__results-header';
-    this.resultsSection.append(resultsHeader);
+    const shellCopy = document.createElement('div');
+    shellCopy.className = 'app-shell__shell-copy';
+    shellHeader.append(shellCopy);
 
-    const resultsCopy = document.createElement('div');
-    resultsCopy.className = 'app-shell__results-copy';
-    resultsHeader.append(resultsCopy);
+    const shellTitle = document.createElement('h2');
+    shellTitle.className = 'app-shell__shell-title';
+    shellTitle.textContent = 'Shell';
+    shellCopy.append(shellTitle);
 
-    const resultsTitle = document.createElement('h2');
-    resultsTitle.className = 'app-shell__results-title';
-    resultsTitle.textContent = 'Results';
-    resultsCopy.append(resultsTitle);
+    this.shellToggleButton = document.createElement('button');
+    this.shellToggleButton.type = 'button';
+    this.shellToggleButton.className = 'app-shell__shell-toggle';
+    this.shellToggleButton.addEventListener('click', () => this.togglePausedMainMenuShell());
+    installPointerClickFocusRelease(this.shellToggleButton);
+    shellHeader.append(this.shellToggleButton);
 
-    this.resultsSummary = document.createElement('p');
-    this.resultsSummary.className = 'app-shell__results-summary';
-    resultsCopy.append(this.resultsSummary);
+    this.shellBody = document.createElement('div');
+    this.shellBody.className = 'app-shell__shell-body';
+    this.shellBody.id = 'app-shell-shell-body';
+    this.shellSection.append(this.shellBody);
+    this.shellToggleButton.setAttribute('aria-controls', this.shellBody.id);
 
-    this.resultsToggleButton = document.createElement('button');
-    this.resultsToggleButton.type = 'button';
-    this.resultsToggleButton.className = 'app-shell__results-toggle';
-    this.resultsToggleButton.addEventListener('click', () => this.togglePausedMainMenuResults());
-    installPointerClickFocusRelease(this.resultsToggleButton);
-    resultsHeader.append(this.resultsToggleButton);
-
-    this.resultsBody = document.createElement('div');
-    this.resultsBody.className = 'app-shell__results-body';
-    this.resultsBody.id = 'app-shell-results-body';
-    this.resultsSection.append(this.resultsBody);
-    this.resultsToggleButton.setAttribute('aria-controls', this.resultsBody.id);
-
-    this.shellSettingsSection = document.createElement('section');
-    this.shellSettingsSection.className = 'app-shell__shell-settings';
-    panel.append(this.shellSettingsSection);
-
-    const shellSettingsHeader = document.createElement('div');
-    shellSettingsHeader.className = 'app-shell__shell-settings-header';
-    this.shellSettingsSection.append(shellSettingsHeader);
-
-    const shellSettingsCopy = document.createElement('div');
-    shellSettingsCopy.className = 'app-shell__shell-settings-copy';
-    shellSettingsHeader.append(shellSettingsCopy);
-
-    const shellSettingsTitle = document.createElement('h2');
-    shellSettingsTitle.className = 'app-shell__shell-settings-title';
-    shellSettingsTitle.textContent = 'Shell Settings';
-    shellSettingsCopy.append(shellSettingsTitle);
-
-    this.shellSettingsSummary = document.createElement('p');
-    this.shellSettingsSummary.className = 'app-shell__shell-settings-summary';
-    shellSettingsCopy.append(this.shellSettingsSummary);
-
-    this.shellSettingsToggleButton = document.createElement('button');
-    this.shellSettingsToggleButton.type = 'button';
-    this.shellSettingsToggleButton.className = 'app-shell__shell-settings-toggle';
-    this.shellSettingsToggleButton.addEventListener('click', () => this.togglePausedMainMenuShellSettings());
-    installPointerClickFocusRelease(this.shellSettingsToggleButton);
-    shellSettingsHeader.append(this.shellSettingsToggleButton);
-
-    this.shellSettingsBody = document.createElement('div');
-    this.shellSettingsBody.className = 'app-shell__shell-settings-body';
-    this.shellSettingsBody.id = 'app-shell-shell-settings-body';
-    this.shellSettingsSection.append(this.shellSettingsBody);
-    this.shellSettingsToggleButton.setAttribute('aria-controls', this.shellSettingsBody.id);
+    this.shellMetadata = document.createElement('dl');
+    this.shellMetadata.className = 'app-shell__menu-section-metadata app-shell__shell-metadata';
+    this.shellBody.append(this.shellMetadata);
 
     this.shellActionKeybindingEditor = document.createElement('div');
     this.shellActionKeybindingEditor.className = 'app-shell__shell-keybindings';
-    this.shellSettingsBody.append(this.shellActionKeybindingEditor);
+    this.shellBody.append(this.shellActionKeybindingEditor);
 
     const shellActionKeybindingEditorTitle = document.createElement('h2');
     shellActionKeybindingEditorTitle.className = 'app-shell__shell-keybindings-title';
@@ -2967,6 +2880,10 @@ export class AppShell {
     this.shellActionKeybindingEditorIntro.textContent =
       resolvePausedMainMenuShellActionKeybindingEditorIntro();
     this.shellActionKeybindingEditor.append(this.shellActionKeybindingEditorIntro);
+
+    this.shellProfilePreviewDetails = document.createElement('div');
+    this.shellProfilePreviewDetails.className = 'app-shell__shell-preview';
+    this.shellActionKeybindingEditor.append(this.shellProfilePreviewDetails);
 
     this.shellActionKeybindingEditorActions = document.createElement('div');
     this.shellActionKeybindingEditorActions.className = 'app-shell__shell-keybindings-actions';
@@ -3077,6 +2994,44 @@ export class AppShell {
     this.shellActionKeybindingEditorStatus.className = 'app-shell__shell-keybindings-status';
     this.shellActionKeybindingEditor.append(this.shellActionKeybindingEditorStatus);
 
+    this.resultsSection = document.createElement('section');
+    this.resultsSection.className = 'app-shell__results';
+    panel.append(this.resultsSection);
+
+    const resultsHeader = document.createElement('div');
+    resultsHeader.className = 'app-shell__results-header';
+    this.resultsSection.append(resultsHeader);
+
+    const resultsCopy = document.createElement('div');
+    resultsCopy.className = 'app-shell__results-copy';
+    resultsHeader.append(resultsCopy);
+
+    const resultsTitle = document.createElement('h2');
+    resultsTitle.className = 'app-shell__results-title';
+    resultsTitle.textContent = 'Results';
+    resultsCopy.append(resultsTitle);
+
+    this.resultsSummary = document.createElement('p');
+    this.resultsSummary.className = 'app-shell__results-summary';
+    resultsCopy.append(this.resultsSummary);
+
+    this.resultsToggleButton = document.createElement('button');
+    this.resultsToggleButton.type = 'button';
+    this.resultsToggleButton.className = 'app-shell__results-toggle';
+    this.resultsToggleButton.addEventListener('click', () => this.togglePausedMainMenuResults());
+    installPointerClickFocusRelease(this.resultsToggleButton);
+    resultsHeader.append(this.resultsToggleButton);
+
+    this.resultsBody = document.createElement('div');
+    this.resultsBody.className = 'app-shell__results-body';
+    this.resultsBody.id = 'app-shell-results-body';
+    this.resultsSection.append(this.resultsBody);
+    this.resultsToggleButton.setAttribute('aria-controls', this.resultsBody.id);
+
+    this.menuSections = document.createElement('div');
+    this.menuSections.className = 'app-shell__menu-sections';
+    panel.append(this.menuSections);
+
     this.detailList = document.createElement('ul');
     this.detailList.className = 'app-shell__detail-list';
     panel.append(this.detailList);
@@ -3180,12 +3135,12 @@ export class AppShell {
     this.shellActionKeybindingEditorStatus.dataset.tone = status.tone;
   }
 
-  private togglePausedMainMenuShellSettings(): void {
+  private togglePausedMainMenuShell(): void {
     if (!isPausedMainMenuState(this.currentState)) {
       return;
     }
 
-    this.pausedMainMenuShellSettingsExpanded = !this.pausedMainMenuShellSettingsExpanded;
+    this.pausedMainMenuShellExpanded = !this.pausedMainMenuShellExpanded;
     this.setState(this.currentState);
   }
 
@@ -3420,7 +3375,7 @@ export class AppShell {
     if (!pausedMainMenuVisible || !wasPausedMainMenuVisible) {
       this.pausedMainMenuHelpCopyExpanded = false;
       this.pausedMainMenuResultsExpanded = false;
-      this.pausedMainMenuShellSettingsExpanded = false;
+      this.pausedMainMenuShellExpanded = false;
     }
     const pausedMainMenuShellActionKeybindings = pausedMainMenuVisible
       ? state.shellActionKeybindings ?? defaultShellActionKeybindings
@@ -3438,9 +3393,9 @@ export class AppShell {
       this.pausedMainMenuResultsExpanded,
       pausedMainMenuHelpCopySection.showMenuSectionLines
     );
-    const pausedMainMenuShellSettingsSection = resolvePausedMainMenuShellSettingsSectionState(
+    const pausedMainMenuShellSection = resolvePausedMainMenuShellSectionState(
       state,
-      this.pausedMainMenuShellSettingsExpanded,
+      this.pausedMainMenuShellExpanded,
       pausedMainMenuHelpCopySection.showMenuSectionLines
     );
     const pausedMainMenuWorldSaveSection = resolvePausedMainMenuWorldSaveSectionState(state);
@@ -3509,16 +3464,59 @@ export class AppShell {
         createWorldSaveActionElement(section, pausedMainMenuHelpCopySection.showMenuSectionLines)
       )
     );
-    this.menuSections.replaceChildren(
-      ...pausedMainMenuSecondarySections.map((section) =>
-        createMenuSectionElement(section, pausedMainMenuHelpCopySection.showMenuSectionLines)
-      )
-    );
-    this.menuSections.hidden = pausedMainMenuSecondarySections.length === 0;
-    this.menuSections.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuSecondarySections.length > 0,
+    this.shellSection.hidden = !pausedMainMenuShellSection.visible;
+    this.shellSection.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuShellSection.visible,
       'grid'
     );
+    this.shellSection.dataset.expanded = pausedMainMenuShellSection.expanded ? 'true' : 'false';
+    this.shellMetadata.replaceChildren(
+      ...createMenuSectionMetadataElement(pausedMainMenuShellSection.metadataRows).childNodes
+    );
+    this.shellToggleButton.textContent = pausedMainMenuShellSection.toggleLabel ?? '';
+    this.shellToggleButton.hidden = !pausedMainMenuShellSection.visible;
+    this.shellToggleButton.title = pausedMainMenuShellSection.expanded
+      ? 'Hide shell hotkeys and shell-profile tools.'
+      : 'Show shell hotkeys and shell-profile tools.';
+    this.shellToggleButton.setAttribute(
+      'aria-expanded',
+      pausedMainMenuShellSection.expanded ? 'true' : 'false'
+    );
+    this.shellBody.hidden = !pausedMainMenuShellSection.visible;
+    this.shellBody.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuShellSection.visible,
+      'grid'
+    );
+    this.shellActionKeybindingEditor.hidden = !pausedMainMenuShellSection.editorVisible;
+    this.shellActionKeybindingEditor.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuShellSection.editorVisible,
+      'grid'
+    );
+    this.syncShellActionKeybindingEditorIntro(pausedMainMenuShellPersistenceAvailable);
+    this.shellActionKeybindingEditorIntro.hidden = !pausedMainMenuShellSection.editorHelpVisible;
+    this.shellActionKeybindingEditorIntro.style.display =
+      pausedMainMenuShellSection.editorHelpVisible ? '' : 'none';
+    this.shellProfilePreviewDetails.replaceChildren(
+      ...(pausedMainMenuShellSection.previewSection === null
+        ? []
+        : [
+            createMenuSectionElement(
+              pausedMainMenuShellSection.previewSection,
+              pausedMainMenuHelpCopySection.showMenuSectionLines
+            )
+          ])
+    );
+    this.shellProfilePreviewDetails.hidden =
+      !pausedMainMenuShellSection.editorVisible ||
+      pausedMainMenuShellSection.previewSection === null;
+    this.shellProfilePreviewDetails.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuShellSection.editorVisible &&
+        pausedMainMenuShellSection.previewSection !== null,
+      'grid'
+    );
+    this.syncShellActionKeybindingEditorInputs(pausedMainMenuShellActionKeybindings);
+    this.applyShellProfilePreviewButton.hidden = !pausedMainMenuHasShellProfilePreview;
+    this.clearShellProfilePreviewButton.hidden = !pausedMainMenuHasShellProfilePreview;
     this.resultsSection.hidden = !pausedMainMenuResultsSection.visible;
     this.resultsSection.style.display = resolveAppShellRegionDisplay(
       pausedMainMenuResultsSection.visible,
@@ -3545,43 +3543,16 @@ export class AppShell {
       pausedMainMenuResultsSection.expanded,
       'grid'
     );
-    this.shellSettingsSection.hidden = !pausedMainMenuShellSettingsSection.visible;
-    this.shellSettingsSection.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuShellSettingsSection.visible,
+    this.menuSections.replaceChildren(
+      ...pausedMainMenuSecondarySections.map((section) =>
+        createMenuSectionElement(section, pausedMainMenuHelpCopySection.showMenuSectionLines)
+      )
+    );
+    this.menuSections.hidden = pausedMainMenuSecondarySections.length === 0;
+    this.menuSections.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuSecondarySections.length > 0,
       'grid'
     );
-    this.shellSettingsSection.dataset.expanded = pausedMainMenuShellSettingsSection.expanded
-      ? 'true'
-      : 'false';
-    this.shellSettingsSummary.textContent = pausedMainMenuShellSettingsSection.summaryLine ?? '';
-    this.shellSettingsToggleButton.textContent =
-      pausedMainMenuShellSettingsSection.toggleLabel ?? '';
-    this.shellSettingsToggleButton.hidden = !pausedMainMenuShellSettingsSection.visible;
-    this.shellSettingsToggleButton.title = pausedMainMenuShellSettingsSection.expanded
-      ? 'Hide the Shell Hotkeys editor and shell-profile controls.'
-      : 'Show the Shell Hotkeys editor and shell-profile controls.';
-    this.shellSettingsToggleButton.setAttribute(
-      'aria-expanded',
-      pausedMainMenuShellSettingsSection.expanded ? 'true' : 'false'
-    );
-    this.shellSettingsBody.hidden = !pausedMainMenuShellSettingsSection.editorVisible;
-    this.shellSettingsBody.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuShellSettingsSection.editorVisible,
-      'grid'
-    );
-    this.shellActionKeybindingEditor.hidden = !pausedMainMenuShellSettingsSection.editorVisible;
-    this.shellActionKeybindingEditor.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuShellSettingsSection.editorVisible,
-      'grid'
-    );
-    this.syncShellActionKeybindingEditorIntro(pausedMainMenuShellPersistenceAvailable);
-    this.shellActionKeybindingEditorIntro.hidden =
-      !pausedMainMenuShellSettingsSection.editorHelpVisible;
-    this.shellActionKeybindingEditorIntro.style.display =
-      pausedMainMenuShellSettingsSection.editorHelpVisible ? '' : 'none';
-    this.syncShellActionKeybindingEditorInputs(pausedMainMenuShellActionKeybindings);
-    this.applyShellProfilePreviewButton.hidden = !pausedMainMenuHasShellProfilePreview;
-    this.clearShellProfilePreviewButton.hidden = !pausedMainMenuHasShellProfilePreview;
     if (!pausedMainMenuVisible) {
       this.setShellActionKeybindingEditorStatus(null);
     } else {

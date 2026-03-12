@@ -42,9 +42,9 @@ import {
   resolvePausedMainMenuHelpCopyToggleLabel,
   resolvePausedMainMenuResultsSectionState,
   resolvePausedMainMenuResultsToggleLabel,
-  resolvePausedMainMenuShellSettingsSectionState,
-  resolvePausedMainMenuShellSettingsSummaryLine,
-  resolvePausedMainMenuShellSettingsToggleLabel,
+  createPausedMainMenuShellSummaryRows,
+  resolvePausedMainMenuShellSectionState,
+  resolvePausedMainMenuShellToggleLabel,
   resolvePausedMainMenuWorldSaveSectionState,
   resolvePausedMainMenuShellActionKeybindingRemapEditorStatus,
   resolvePausedMainMenuResetShellActionKeybindingsEditorStatus,
@@ -137,8 +137,20 @@ const CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
   'Browser resume was cleared for this paused session. Resume World or another save path must rewrite it before reload can restore the session.';
 const IMPORT_PERSISTENCE_FAILED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
   'The imported paused session stays live in this tab, but reload will miss it until a later browser-save rewrite succeeds.';
-const DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
+const DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
+  {
+    label: 'Active Layout',
+    value: 'All hidden (browser saved)'
+  },
+  {
+    label: 'Binding Set',
+    value: 'Default set'
+  },
+  {
+    label: 'Staged Preview',
+    value: 'No staged preview'
+  }
+] as const;
 const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
   'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
 const appendPausedMainMenuResultsDensitySummaryLine = (
@@ -174,26 +186,118 @@ const EXPORT_IMPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Export World Save, Import World Save, and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Warning and confirmation feedback are both currently available here.';
 const EXPORT_IMPORT_CLEAR_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Export World Save, Import World Save, Clear Saved World, and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Warning and confirmation feedback are both currently available here.';
-const PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Shell profile preview from preview-shell-profile.json is ready to apply with both shell visibility toggle and hotkey changes. If applied, that preview would use the custom set. If applied, that preview would resume with Debug HUD, Edit Overlays, and Spawn Marker shown. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
-const PREVIEWED_TOGGLE_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Shell profile preview from toggle-only-shell-profile.json is ready to apply with shell visibility toggle changes only. If applied, that preview would use the default set. If applied, that preview would resume with Debug HUD shown. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
-const PREVIEWED_HOTKEY_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Shell profile preview from hotkey-only-shell-profile.json is ready to apply with shell hotkey changes only. If applied, that preview would use the custom set. If applied, that preview would resume with all shell toggles hidden. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
-const PREVIEWED_NOOP_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Shell profile preview from matching-shell-profile.json already matches the paused session, so applying it would not change shell visibility toggles or hotkeys. If applied, that preview would use the default set. If applied, that preview would resume with all shell toggles hidden. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
-const PREVIEWED_DEFAULT_SET_WHILE_LIVE_CUSTOM_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Shell profile preview from reset-to-default-shell-profile.json is ready to apply with shell hotkey changes only. If applied, that preview would use the default set. If applied, that preview would resume with all shell toggles hidden. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the custom set.';
-const MIXED_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Resume World shows Debug HUD and Edit Overlays, while Edit Panel, Spawn Marker, and Shortcuts stay hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
-const FULLY_VISIBLE_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Resume World shows Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts. Shell settings are browser saved. Current shell hotkeys use the default set.';
-const SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are in session-only fallback. Current shell hotkeys use the custom set.';
-const DEFAULTED_DEFAULT_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set. The current default-looking hotkeys are a recovered safe-set fallback because invalid saved bindings were rejected during load.';
-const CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
-  'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the custom set. Current shell hotkeys are live only in this paused session because the latest browser hotkey save failed.';
+const PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
+  ...DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS.slice(0, 2),
+  {
+    label: 'Staged Preview',
+    value: 'preview-shell-profile.json: Layout + hotkey changes'
+  }
+] as const;
+const PREVIEWED_TOGGLE_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
+  ...DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS.slice(0, 2),
+  {
+    label: 'Staged Preview',
+    value: 'toggle-only-shell-profile.json: Layout changes only'
+  }
+] as const;
+const PREVIEWED_HOTKEY_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
+  ...DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS.slice(0, 2),
+  {
+    label: 'Staged Preview',
+    value: 'hotkey-only-shell-profile.json: Hotkey changes only'
+  }
+] as const;
+const PREVIEWED_NOOP_DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
+  ...DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS.slice(0, 2),
+  {
+    label: 'Staged Preview',
+    value: 'matching-shell-profile.json: No live changes'
+  }
+] as const;
+const PREVIEWED_DEFAULT_SET_WHILE_LIVE_CUSTOM_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
+  {
+    label: 'Active Layout',
+    value: 'All hidden (browser saved)'
+  },
+  {
+    label: 'Binding Set',
+    value: 'Custom set'
+  },
+  {
+    label: 'Staged Preview',
+    value: 'reset-to-default-shell-profile.json: Hotkey changes only'
+  }
+] as const;
+const MIXED_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
+  {
+    label: 'Active Layout',
+    value: 'Debug HUD and Edit Overlays shown (browser saved)'
+  },
+  {
+    label: 'Binding Set',
+    value: 'Default set'
+  },
+  {
+    label: 'Staged Preview',
+    value: 'No staged preview'
+  }
+] as const;
+const FULLY_VISIBLE_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
+  {
+    label: 'Active Layout',
+    value: 'All shown (browser saved)'
+  },
+  {
+    label: 'Binding Set',
+    value: 'Default set'
+  },
+  {
+    label: 'Staged Preview',
+    value: 'No staged preview'
+  }
+] as const;
+const SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
+  {
+    label: 'Active Layout',
+    value: 'All hidden (session only)'
+  },
+  {
+    label: 'Binding Set',
+    value: 'Custom set'
+  },
+  {
+    label: 'Staged Preview',
+    value: 'No staged preview'
+  }
+] as const;
+const DEFAULTED_DEFAULT_SET_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
+  {
+    label: 'Active Layout',
+    value: 'All hidden (browser saved)'
+  },
+  {
+    label: 'Binding Set',
+    value: 'Default set (recovered safe-set fallback)'
+  },
+  {
+    label: 'Staged Preview',
+    value: 'No staged preview'
+  }
+] as const;
+const CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
+  {
+    label: 'Active Layout',
+    value: 'All hidden (browser saved)'
+  },
+  {
+    label: 'Binding Set',
+    value: 'Custom set (current session only)'
+  },
+  {
+    label: 'Staged Preview',
+    value: 'No staged preview'
+  }
+] as const;
 const PAUSED_MAIN_MENU_SHELL_PROFILE_PREVIEW_LINES = [
   'The selected shell profile validated successfully and is ready to apply to this paused session.',
   'Review its live change summary, saved-on shell visibility, and replacement hotkey set below before applying it.'
@@ -2076,18 +2180,16 @@ describe('resolvePausedMainMenuShellActionKeybindingEditorIntro', () => {
   });
 });
 
-describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
-  it('summarizes fully hidden paused-session shell toggles in one line', () => {
+describe('createPausedMainMenuShellSummaryRows', () => {
+  it('summarizes a fully hidden browser-saved shell layout in three compact rows', () => {
     expect(
-      resolvePausedMainMenuShellSettingsSummaryLine(
-        createPausedMainMenuShellState().pausedMainMenuSections ?? null
-      )
-    ).toBe(DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+      createPausedMainMenuShellSummaryRows(createPausedMainMenuShellState().pausedMainMenuSections ?? null)
+    ).toEqual(DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS);
   });
 
-  it('summarizes mixed paused-session shell visibility in one line', () => {
+  it('summarizes mixed and fully visible shell layouts through the active-layout row', () => {
     expect(
-      resolvePausedMainMenuShellSettingsSummaryLine(
+      createPausedMainMenuShellSummaryRows(
         createPausedMainMenuShellState({
           debugOverlayVisible: true,
           debugEditControlsVisible: false,
@@ -2096,12 +2198,10 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
           shortcutsOverlayVisible: false
         }).pausedMainMenuSections ?? null
       )
-    ).toBe(MIXED_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
-  });
+    ).toEqual(MIXED_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS);
 
-  it('summarizes fully visible paused-session shell toggles in one line', () => {
     expect(
-      resolvePausedMainMenuShellSettingsSummaryLine(
+      createPausedMainMenuShellSummaryRows(
         createPausedMainMenuShellState({
           debugOverlayVisible: true,
           debugEditControlsVisible: true,
@@ -2110,24 +2210,22 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
           shortcutsOverlayVisible: true
         }).pausedMainMenuSections ?? null
       )
-    ).toBe(FULLY_VISIBLE_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+    ).toEqual(FULLY_VISIBLE_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS);
   });
 
-  it('surfaces paused-session shell persistence mode and binding-set status in the collapsed summary', () => {
+  it('surfaces persistence, fallback, and current-session binding-set status in the binding row', () => {
     expect(
-      resolvePausedMainMenuShellSettingsSummaryLine(
+      createPausedMainMenuShellSummaryRows(
         createPausedMainMenuShellState(
           undefined,
           false,
           CUSTOM_SHELL_ACTION_KEYBINDINGS
         ).pausedMainMenuSections ?? null
       )
-    ).toBe(SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
-  });
+    ).toEqual(SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS);
 
-  it('warns in the collapsed summary when saved hotkeys resumed from the recovered safe-set fallback', () => {
     expect(
-      resolvePausedMainMenuShellSettingsSummaryLine(
+      createPausedMainMenuShellSummaryRows(
         createPausedMainMenuShellState(
           undefined,
           true,
@@ -2135,12 +2233,10 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
           true
         ).pausedMainMenuSections ?? null
       )
-    ).toBe(DEFAULTED_DEFAULT_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
-  });
+    ).toEqual(DEFAULTED_DEFAULT_SET_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS);
 
-  it('surfaces when the current hotkey set is live only for this session after the latest hotkey save failed', () => {
     expect(
-      resolvePausedMainMenuShellSettingsSummaryLine(
+      createPausedMainMenuShellSummaryRows(
         createPausedMainMenuShellState(
           undefined,
           true,
@@ -2156,12 +2252,12 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
         ).pausedMainMenuSections ?? null,
         true
       )
-    ).toBe(CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+    ).toEqual(CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS);
   });
 
-  it('surfaces a staged shell-profile preview while keeping the current paused-session summary', () => {
+  it('summarizes staged shell-profile preview deltas without expanding the editor', () => {
     expect(
-      resolvePausedMainMenuShellSettingsSummaryLine(
+      createPausedMainMenuShellSummaryRows(
         createPausedMainMenuShellState(
           undefined,
           true,
@@ -2185,12 +2281,10 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
           }
         ).pausedMainMenuSections ?? null
       )
-    ).toBe(PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
-  });
+    ).toEqual(PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS);
 
-  it('distinguishes toggle-only staged shell-profile previews in the collapsed summary', () => {
     expect(
-      resolvePausedMainMenuShellSettingsSummaryLine(
+      createPausedMainMenuShellSummaryRows(
         createPausedMainMenuShellState(
           undefined,
           true,
@@ -2214,12 +2308,10 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
           }
         ).pausedMainMenuSections ?? null
       )
-    ).toBe(PREVIEWED_TOGGLE_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
-  });
+    ).toEqual(PREVIEWED_TOGGLE_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS);
 
-  it('distinguishes hotkey-only staged shell-profile previews in the collapsed summary', () => {
     expect(
-      resolvePausedMainMenuShellSettingsSummaryLine(
+      createPausedMainMenuShellSummaryRows(
         createPausedMainMenuShellState(
           undefined,
           true,
@@ -2243,12 +2335,10 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
           }
         ).pausedMainMenuSections ?? null
       )
-    ).toBe(PREVIEWED_HOTKEY_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
-  });
+    ).toEqual(PREVIEWED_HOTKEY_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS);
 
-  it('surfaces when a staged shell-profile preview already matches the paused session in the collapsed summary', () => {
     expect(
-      resolvePausedMainMenuShellSettingsSummaryLine(
+      createPausedMainMenuShellSummaryRows(
         createPausedMainMenuShellState(
           undefined,
           true,
@@ -2272,12 +2362,10 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
           }
         ).pausedMainMenuSections ?? null
       )
-    ).toBe(PREVIEWED_NOOP_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
-  });
+    ).toEqual(PREVIEWED_NOOP_DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS);
 
-  it('surfaces the previewed default-set hotkeys even when the live paused session currently uses a custom set', () => {
     expect(
-      resolvePausedMainMenuShellSettingsSummaryLine(
+      createPausedMainMenuShellSummaryRows(
         createPausedMainMenuShellState(
           undefined,
           true,
@@ -2301,7 +2389,7 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
           }
         ).pausedMainMenuSections ?? null
       )
-    ).toBe(PREVIEWED_DEFAULT_SET_WHILE_LIVE_CUSTOM_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+    ).toEqual(PREVIEWED_DEFAULT_SET_WHILE_LIVE_CUSTOM_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS);
   });
 });
 
@@ -2639,33 +2727,6 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
               value: 'Keeps the session but clears saved shell visibility.'
             }
           ]
-        },
-        {
-          title: 'Persistence Summary',
-          lines: [...DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
-          metadataRows: [
-            {
-              label: 'Status',
-              value: 'Browser saved'
-            },
-            {
-              label: 'Resumes',
-              value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
-            },
-            {
-              label: 'Saved On',
-              value: 'None'
-            },
-            {
-              label: 'Saved Off',
-              value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
-            },
-            {
-              label: 'Cleared by',
-              value: 'Reset Shell Toggles, New World'
-            },
-            ...createPausedMainMenuShellActionKeybindingSummaryRows()
-          ]
         }
       ],
       recentActivitySections: [
@@ -2751,33 +2812,6 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
               label: 'Consequence',
               value: 'Keeps the session but clears saved shell visibility.'
             }
-          ]
-        },
-        {
-          title: 'Persistence Summary',
-          lines: [...DEFAULT_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES],
-          metadataRows: [
-            {
-              label: 'Status',
-              value: 'Browser saved'
-            },
-            {
-              label: 'Resumes',
-              value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
-            },
-            {
-              label: 'Saved On',
-              value: 'None'
-            },
-            {
-              label: 'Saved Off',
-              value: 'Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, Shortcuts'
-            },
-            {
-              label: 'Cleared by',
-              value: 'Reset Shell Toggles, New World'
-            },
-            ...createPausedMainMenuShellActionKeybindingSummaryRows()
           ]
         },
         {
@@ -3339,54 +3373,53 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
   });
 });
 
-describe('resolvePausedMainMenuShellSettingsToggleLabel', () => {
-  it('switches the paused-menu shell-settings button label between collapsed and expanded copy', () => {
-    expect(resolvePausedMainMenuShellSettingsToggleLabel()).toBe('Show Shell Settings');
-    expect(resolvePausedMainMenuShellSettingsToggleLabel(true)).toBe('Hide Shell Settings');
+describe('resolvePausedMainMenuShellToggleLabel', () => {
+  it('switches the paused-menu shell button label between collapsed and expanded copy', () => {
+    expect(resolvePausedMainMenuShellToggleLabel()).toBe('Show Shell');
+    expect(resolvePausedMainMenuShellToggleLabel(true)).toBe('Hide Shell');
   });
 });
 
-describe('resolvePausedMainMenuShellSettingsSectionState', () => {
-  it('defaults paused-menu shell settings to a collapsed summary-only section', () => {
-    expect(resolvePausedMainMenuShellSettingsSectionState(createPausedMainMenuShellState())).toEqual({
+describe('resolvePausedMainMenuShellSectionState', () => {
+  it('defaults paused-menu shell to a collapsed summary-row section', () => {
+    expect(resolvePausedMainMenuShellSectionState(createPausedMainMenuShellState())).toEqual({
       visible: true,
       expanded: false,
-      summaryLine: DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
-      toggleLabel: 'Show Shell Settings',
+      metadataRows: DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
+      toggleLabel: 'Show Shell',
       editorVisible: false,
-      editorHelpVisible: false
+      editorHelpVisible: false,
+      previewSection: null
     });
   });
 
-  it('reveals the shell editor only after the paused-menu shell-settings section expands', () => {
-    expect(
-      resolvePausedMainMenuShellSettingsSectionState(createPausedMainMenuShellState(), true)
-    ).toEqual({
+  it('reveals the shell editor only after the paused-menu shell section expands', () => {
+    expect(resolvePausedMainMenuShellSectionState(createPausedMainMenuShellState(), true)).toEqual({
       visible: true,
       expanded: true,
-      summaryLine: DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
-      toggleLabel: 'Hide Shell Settings',
+      metadataRows: DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
+      toggleLabel: 'Hide Shell',
       editorVisible: true,
-      editorHelpVisible: true
+      editorHelpVisible: true,
+      previewSection: null
     });
   });
 
-  it('hides shell-settings help copy when the paused-menu help toggle is collapsed', () => {
-    expect(
-      resolvePausedMainMenuShellSettingsSectionState(createPausedMainMenuShellState(), true, false)
-    ).toEqual({
+  it('hides shell help copy when the paused-menu help toggle is collapsed', () => {
+    expect(resolvePausedMainMenuShellSectionState(createPausedMainMenuShellState(), true, false)).toEqual({
       visible: true,
       expanded: true,
-      summaryLine: DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
-      toggleLabel: 'Hide Shell Settings',
+      metadataRows: DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
+      toggleLabel: 'Hide Shell',
       editorVisible: true,
-      editorHelpVisible: false
+      editorHelpVisible: false,
+      previewSection: null
     });
   });
 
-  it('keeps staged shell-profile preview copy in the collapsed shell-settings summary', () => {
+  it('keeps staged shell-profile details ready for the expanded shell editor while summary rows stay compact', () => {
     expect(
-      resolvePausedMainMenuShellSettingsSectionState(
+      resolvePausedMainMenuShellSectionState(
         createPausedMainMenuShellState(
           undefined,
           true,
@@ -3408,93 +3441,27 @@ describe('resolvePausedMainMenuShellSettingsSectionState', () => {
             },
             shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
           }
-        )
+        ),
+        true
       )
-    ).toEqual({
+    ).toMatchObject({
       visible: true,
-      expanded: false,
-      summaryLine: PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
-      toggleLabel: 'Show Shell Settings',
-      editorVisible: false,
-      editorHelpVisible: false
+      expanded: true,
+      metadataRows: PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
+      toggleLabel: 'Hide Shell',
+      editorVisible: true,
+      editorHelpVisible: true,
+      previewSection: {
+        title: 'Shell Profile Preview',
+        lines: [...PAUSED_MAIN_MENU_SHELL_PROFILE_PREVIEW_LINES],
+        tone: 'accent'
+      }
     });
   });
 
-  it('keeps no-op staged shell-profile preview copy in the collapsed shell-settings summary', () => {
+  it('keeps current-session-only hotkey persistence warning in the collapsed shell section state', () => {
     expect(
-      resolvePausedMainMenuShellSettingsSectionState(
-        createPausedMainMenuShellState(
-          undefined,
-          true,
-          createDefaultShellActionKeybindingState(),
-          false,
-          null,
-          null,
-          null,
-          null,
-          null,
-          {
-            fileName: 'matching-shell-profile.json',
-            shellState: {
-              debugOverlayVisible: false,
-              debugEditControlsVisible: false,
-              debugEditOverlaysVisible: false,
-              playerSpawnMarkerVisible: false,
-              shortcutsOverlayVisible: false
-            },
-            shellActionKeybindings: createDefaultShellActionKeybindingState()
-          }
-        )
-      )
-    ).toEqual({
-      visible: true,
-      expanded: false,
-      summaryLine: PREVIEWED_NOOP_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
-      toggleLabel: 'Show Shell Settings',
-      editorVisible: false,
-      editorHelpVisible: false
-    });
-  });
-
-  it('keeps preview binding-set copy in the collapsed shell-settings summary when the staged profile differs from the live hotkey set', () => {
-    expect(
-      resolvePausedMainMenuShellSettingsSectionState(
-        createPausedMainMenuShellState(
-          undefined,
-          true,
-          CUSTOM_SHELL_ACTION_KEYBINDINGS,
-          false,
-          null,
-          null,
-          null,
-          null,
-          null,
-          {
-            fileName: 'reset-to-default-shell-profile.json',
-            shellState: {
-              debugOverlayVisible: false,
-              debugEditControlsVisible: false,
-              debugEditOverlaysVisible: false,
-              playerSpawnMarkerVisible: false,
-              shortcutsOverlayVisible: false
-            },
-            shellActionKeybindings: createDefaultShellActionKeybindingState()
-          }
-        )
-      )
-    ).toEqual({
-      visible: true,
-      expanded: false,
-      summaryLine: PREVIEWED_DEFAULT_SET_WHILE_LIVE_CUSTOM_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
-      toggleLabel: 'Show Shell Settings',
-      editorVisible: false,
-      editorHelpVisible: false
-    });
-  });
-
-  it('keeps current-session-only hotkey persistence warning in the collapsed shell-settings section state', () => {
-    expect(
-      resolvePausedMainMenuShellSettingsSectionState(
+      resolvePausedMainMenuShellSectionState(
         createPausedMainMenuShellState(
           undefined,
           true,
@@ -3512,23 +3479,23 @@ describe('resolvePausedMainMenuShellSettingsSectionState', () => {
     ).toEqual({
       visible: true,
       expanded: false,
-      summaryLine: CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
-      toggleLabel: 'Show Shell Settings',
+      metadataRows: CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
+      toggleLabel: 'Show Shell',
       editorVisible: false,
-      editorHelpVisible: false
+      editorHelpVisible: false,
+      previewSection: null
     });
   });
 
-  it('keeps shell settings hidden outside the paused main menu', () => {
-    expect(
-      resolvePausedMainMenuShellSettingsSectionState(createFirstLaunchMainMenuShellState(), true)
-    ).toEqual({
+  it('keeps shell hidden outside the paused main menu', () => {
+    expect(resolvePausedMainMenuShellSectionState(createFirstLaunchMainMenuShellState(), true)).toEqual({
       visible: false,
       expanded: false,
-      summaryLine: null,
+      metadataRows: [],
       toggleLabel: null,
       editorVisible: false,
-      editorHelpVisible: false
+      editorHelpVisible: false,
+      previewSection: null
     });
   });
 });

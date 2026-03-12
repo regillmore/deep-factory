@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Consolidate paused-menu shell flows into one section.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused sessions now render a dedicated collapsed `Shell` section with compact `Active Layout`, `Binding Set`, and `Staged Preview` rows, keep the shell hotkey editor plus shell-profile controls behind a `Show Shell` toggle, and move staged preview details into the expanded shell editor instead of the generic paused-menu card grid; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with shell-section regressions, removed completed task `467` from [docs/NEXT.md](docs/NEXT.md), added replacement task `475`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Consolidate paused-menu world-save guidance into one section.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused sessions now render a dedicated `World Save` section with shared browser-resume and latest-action summary rows plus grouped `Export World Save`, `Import World Save`, and `Clear Saved World` entries instead of leaving those items on the generic card grid, wired [src/style.css](../src/style.css) for the new section layout, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with world-save-section regressions, removed completed task `466` from [docs/NEXT.md](docs/NEXT.md), added replacement task `474`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
