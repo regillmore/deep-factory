@@ -39,8 +39,6 @@ import {
   resolvePausedMainMenuExportShellProfileTitle,
   resolvePausedMainMenuFreshWorldTitle,
   resolvePausedMainMenuApplyShellProfileEditorStatus,
-  resolvePausedMainMenuHelpCopySectionState,
-  resolvePausedMainMenuHelpCopyToggleLabel,
   resolvePausedMainMenuRecentActivitySectionState,
   createPausedMainMenuShellSummaryRows,
   resolvePausedMainMenuShellSectionState,
@@ -79,53 +77,9 @@ const DEFAULTED_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Saved in-world shell visibility resumes with the paused session until a reset path clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_DEFAULTED_SUMMARY_LINE
 ] as const;
-const ACCEPTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
-  'The paused session now reflects the selected JSON world save because its top-level envelope validated and restored successfully.'
-] as const;
-const RESTORE_FAILED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
-  'The selected JSON world save passed top-level envelope validation, but runtime restore still failed.'
-] as const;
-const PERSISTENCE_FAILED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
-  'The paused session now reflects the selected JSON world save in this tab, but browser-resume persistence failed after restore.',
-  'Resume World keeps the imported session live here, but reload may not restore it until a later save succeeds.'
-] as const;
-const DOWNLOADED_PAUSED_MAIN_MENU_EXPORT_RESULT_LINES = [
-  'The paused session stayed unchanged, and the last JSON world-save download used the filename below.'
-] as const;
-const FAILED_PAUSED_MAIN_MENU_EXPORT_RESULT_LINES = [
-  'The paused session stayed unchanged because the JSON world-save download failed before the browser accepted it.'
-] as const;
-const CANCELLED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
-  'The paused session stayed unchanged because the JSON picker closed without selecting a world save file.'
-] as const;
-const PICKER_START_FAILED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
-  'The paused session stayed unchanged because the browser JSON picker failed before any world save file could be selected.'
-] as const;
-const REJECTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES = [
-  'The paused session stayed unchanged because the selected JSON world save did not pass top-level envelope validation.'
-] as const;
-const FAILED_PAUSED_MAIN_MENU_CLEAR_SAVED_WORLD_RESULT_LINES = [
-  'The paused session stayed browser-saved because Clear Saved World could not delete its local resume envelope.',
-  'Resume World and reload still use the last browser-saved session until deletion succeeds.'
-] as const;
-const CLEARED_PAUSED_MAIN_MENU_RESET_SHELL_TOGGLES_RESULT_LINES = [
-  'This paused session now resumes from the default-off shell layout because its saved shell visibility preferences were cleared.',
-  'The next Resume World starts with Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden.'
-] as const;
-const CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_STATUS_LINES = [
-  'This paused session is no longer browser-saved because Clear Saved World removed its local resume envelope.',
-  'Resume World or a replacement save path writes a new browser save for the current session.'
-] as const;
-const IMPORTED_SESSION_PERSISTENCE_FAILED_SAVED_WORLD_STATUS_LINES = [
-  'This imported paused session is still live in the current tab, but it is not browser-saved because rewriting its local resume envelope failed after restore.',
-  'This warning clears after a later browser-save rewrite succeeds for the current session.'
-] as const;
 const SESSION_ONLY_FALLBACK_PAUSED_MAIN_MENU_PERSISTENCE_SUMMARY_LINES = [
   'Browser shell storage is unavailable or could not be updated, so this paused session keeps the current shell layout only until a reset path or reload clears it.',
   PAUSED_MAIN_MENU_KEYBINDING_SUMMARY_LINE
-] as const;
-const DEFAULT_PAUSED_MAIN_MENU_OVERVIEW_LINES = [
-  'Continue with the current world, player state, camera, and debug edits intact.'
 ] as const;
 const CLEARED_PAUSED_MAIN_MENU_OVERVIEW_ATTENTION_VALUE =
   'Resume World or another save path must rewrite browser resume.';
@@ -151,8 +105,6 @@ const DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
     value: 'No staged preview'
   }
 ] as const;
-const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
-  'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
 const REJECTED_IMPORT_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE =
   'Latest world-save activity: Import World Save was rejected during envelope validation.';
 const CLEARED_SAVED_WORLD_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE =
@@ -508,7 +460,7 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.recentActivity.importResult).toEqual({
       title: 'Import Result',
-      lines: [...ACCEPTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES],
+      lines: [],
       metadataRows: [
         {
           label: 'Status',
@@ -517,6 +469,10 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'File',
           value: 'restore.json'
+        },
+        {
+          label: 'Session',
+          value: 'Replaced'
         }
       ],
       tone: 'accent'
@@ -541,7 +497,7 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.recentActivity.exportResult).toEqual({
       title: 'Export Result',
-      lines: [...DOWNLOADED_PAUSED_MAIN_MENU_EXPORT_RESULT_LINES],
+      lines: [],
       metadataRows: [
         {
           label: 'Status',
@@ -550,6 +506,10 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'File',
           value: 'deep-factory-world-save-2026-03-09T05-46-40Z.json'
+        },
+        {
+          label: 'Session',
+          value: 'Kept unchanged'
         }
       ],
       tone: 'accent'
@@ -574,11 +534,15 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.recentActivity.exportResult).toEqual({
       title: 'Export Result',
-      lines: [...FAILED_PAUSED_MAIN_MENU_EXPORT_RESULT_LINES],
+      lines: [],
       metadataRows: [
         {
           label: 'Status',
           value: 'Failed'
+        },
+        {
+          label: 'Session',
+          value: 'Kept unchanged'
         },
         {
           label: 'Reason',
@@ -604,11 +568,15 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.recentActivity.importResult).toEqual({
       title: 'Import Result',
-      lines: [...CANCELLED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES],
+      lines: [],
       metadataRows: [
         {
           label: 'Status',
           value: 'Canceled'
+        },
+        {
+          label: 'Session',
+          value: 'Kept unchanged'
         }
       ]
     });
@@ -630,11 +598,15 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.recentActivity.importResult).toEqual({
       title: 'Import Result',
-      lines: [...PICKER_START_FAILED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES],
+      lines: [],
       metadataRows: [
         {
           label: 'Status',
           value: 'Picker failed'
+        },
+        {
+          label: 'Session',
+          value: 'Kept unchanged'
         },
         {
           label: 'Reason',
@@ -662,7 +634,7 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.recentActivity.importResult).toEqual({
       title: 'Import Result',
-      lines: [...REJECTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES],
+      lines: [],
       metadataRows: [
         {
           label: 'Status',
@@ -671,6 +643,10 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'File',
           value: 'broken.json'
+        },
+        {
+          label: 'Session',
+          value: 'Kept unchanged'
         },
         {
           label: 'Reason',
@@ -698,7 +674,7 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.recentActivity.importResult).toEqual({
       title: 'Import Result',
-      lines: [...RESTORE_FAILED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES],
+      lines: [],
       metadataRows: [
         {
           label: 'Status',
@@ -707,6 +683,10 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'File',
           value: 'restore.json'
+        },
+        {
+          label: 'Session',
+          value: 'Kept unchanged'
         },
         {
           label: 'Reason',
@@ -734,7 +714,7 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.recentActivity.importResult).toEqual({
       title: 'Import Result',
-      lines: [...PERSISTENCE_FAILED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES],
+      lines: [],
       metadataRows: [
         {
           label: 'Status',
@@ -743,6 +723,10 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'File',
           value: 'restore.json'
+        },
+        {
+          label: 'Reload',
+          value: 'Later browser save required'
         },
         {
           label: 'Reason',
@@ -767,11 +751,15 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.worldSave.savedWorldStatus).toEqual({
       title: 'Saved World Status',
-      lines: [...CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_STATUS_LINES],
+      lines: [],
       metadataRows: [
         {
           label: 'Status',
           value: 'Not browser saved'
+        },
+        {
+          label: 'Reload',
+          value: 'Rewrite browser resume before reload'
         },
         {
           label: 'Saved again by',
@@ -801,11 +789,15 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.recentActivity.clearSavedWorldResult).toEqual({
       title: 'Clear Saved World Result',
-      lines: [...FAILED_PAUSED_MAIN_MENU_CLEAR_SAVED_WORLD_RESULT_LINES],
+      lines: [],
       metadataRows: [
         {
           label: 'Status',
           value: 'Failed'
+        },
+        {
+          label: 'Session',
+          value: 'Still browser saved'
         },
         {
           label: 'Reason',
@@ -830,11 +822,15 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.worldSave.savedWorldStatus).toEqual({
       title: 'Saved World Status',
-      lines: [...IMPORTED_SESSION_PERSISTENCE_FAILED_SAVED_WORLD_STATUS_LINES],
+      lines: [],
       metadataRows: [
         {
           label: 'Status',
           value: 'Not browser saved'
+        },
+        {
+          label: 'Reload',
+          value: 'Later browser save required'
         },
         {
           label: 'Saved again by',
@@ -850,8 +846,12 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.overview.resumeWorld).toEqual({
       title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
-      lines: [...DEFAULT_PAUSED_MAIN_MENU_OVERVIEW_LINES],
+      lines: [],
       metadataRows: [
+        {
+          label: 'Keeps',
+          value: 'World, player, camera, and debug edits intact'
+        },
         {
           label: 'Session Save',
           value: 'Browser saved'
@@ -883,8 +883,12 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.overview.resumeWorld).toEqual({
       title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
-      lines: [...DEFAULT_PAUSED_MAIN_MENU_OVERVIEW_LINES],
+      lines: [],
       metadataRows: [
+        {
+          label: 'Keeps',
+          value: 'World, player, camera, and debug edits intact'
+        },
         {
           label: 'Session Save',
           value: 'Not browser saved'
@@ -916,8 +920,12 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.overview.resumeWorld).toEqual({
       title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
-      lines: [...DEFAULT_PAUSED_MAIN_MENU_OVERVIEW_LINES],
+      lines: [],
       metadataRows: [
+        {
+          label: 'Keeps',
+          value: 'World, player, camera, and debug edits intact'
+        },
         {
           label: 'Session Save',
           value: 'Not browser saved'
@@ -2384,49 +2392,6 @@ describe('createPausedMainMenuShellSummaryRows', () => {
   });
 });
 
-describe('resolvePausedMainMenuHelpCopyToggleLabel', () => {
-  it('switches the paused-menu help button label between collapsed and expanded copy', () => {
-    expect(resolvePausedMainMenuHelpCopyToggleLabel()).toBe('Show Help Text');
-    expect(resolvePausedMainMenuHelpCopyToggleLabel(true)).toBe('Hide Help Text');
-  });
-});
-
-describe('resolvePausedMainMenuHelpCopySectionState', () => {
-  it('defaults paused-menu help text to a collapsed metadata-first view', () => {
-    expect(resolvePausedMainMenuHelpCopySectionState(createPausedMainMenuShellState())).toEqual({
-      visible: true,
-      expanded: false,
-      summaryLine: DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE,
-      toggleLabel: 'Show Help Text',
-      showMenuSectionLines: false
-    });
-  });
-
-  it('reveals paused-menu section help text only after the help toggle expands', () => {
-    expect(
-      resolvePausedMainMenuHelpCopySectionState(createPausedMainMenuShellState(), true)
-    ).toEqual({
-      visible: true,
-      expanded: true,
-      summaryLine: DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE,
-      toggleLabel: 'Hide Help Text',
-      showMenuSectionLines: true
-    });
-  });
-
-  it('keeps paused-menu help controls hidden outside the paused main menu', () => {
-    expect(
-      resolvePausedMainMenuHelpCopySectionState(createFirstLaunchMainMenuShellState(), true)
-    ).toEqual({
-      visible: false,
-      expanded: false,
-      summaryLine: null,
-      toggleLabel: null,
-      showMenuSectionLines: true
-    });
-  });
-});
-
 describe('resolvePausedMainMenuWorldSaveSectionState', () => {
   it('defaults the paused-menu world-save section to shared summary rows plus grouped actions', () => {
     expect(resolvePausedMainMenuWorldSaveSectionState(createPausedMainMenuShellState())).toEqual({
@@ -2457,50 +2422,47 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
       actionSections: [
         {
           title: 'Export World Save',
-          lines: [
-            'Download a JSON save file for the current world, player, and camera session state without changing the paused session.'
-          ],
+          lines: [],
           metadataRows: [
             {
               label: 'Shortcut',
               value: 'Button only'
             },
             {
-              label: 'Consequence',
-              value: 'Keeps the current paused session unchanged.'
+              label: 'Session',
+              value: 'Kept unchanged'
             }
           ]
         },
         {
           title: 'Import World Save',
-          lines: [
-            'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates and runtime restore succeeds.'
-          ],
+          lines: [],
           metadataRows: [
             {
               label: 'Shortcut',
               value: 'Button only'
             },
             {
-              label: 'Consequence',
-              value:
-                'Validated imports replace the paused session only when runtime restore succeeds; canceled picks, picker failures, invalid saves, or failed restores do not.'
+              label: 'Replaces',
+              value: 'Current session only after validation and restore'
             }
           ]
         },
         {
           title: 'Clear Saved World',
-          lines: [
-            'Delete the browser-saved world, player, and camera envelope while keeping this paused session active in the current tab until it is saved again.'
-          ],
+          lines: [],
           metadataRows: [
             {
               label: 'Shortcut',
               value: 'Button only'
             },
             {
-              label: 'Consequence',
-              value: 'Keeps the session but clears browser resume.'
+              label: 'Session',
+              value: 'Kept in this tab'
+            },
+            {
+              label: 'Reload',
+              value: 'Clears browser resume'
             }
           ]
         }
@@ -2636,8 +2598,12 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
       overviewSections: [
         {
           title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
-          lines: [...DEFAULT_PAUSED_MAIN_MENU_OVERVIEW_LINES],
+          lines: [],
           metadataRows: [
+            {
+              label: 'Keeps',
+              value: 'World, player, camera, and debug edits intact'
+            },
             {
               label: 'Session Save',
               value: 'Not browser saved'
@@ -2657,50 +2623,47 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
       worldSaveSections: [
         {
           title: 'Export World Save',
-          lines: [
-            'Download a JSON save file for the current world, player, and camera session state without changing the paused session.'
-          ],
+          lines: [],
           metadataRows: [
             {
               label: 'Shortcut',
               value: 'Button only'
             },
             {
-              label: 'Consequence',
-              value: 'Keeps the current paused session unchanged.'
+              label: 'Session',
+              value: 'Kept unchanged'
             }
           ]
         },
         {
           title: 'Import World Save',
-          lines: [
-            'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates and runtime restore succeeds.'
-          ],
+          lines: [],
           metadataRows: [
             {
               label: 'Shortcut',
               value: 'Button only'
             },
             {
-              label: 'Consequence',
-              value:
-                'Validated imports replace the paused session only when runtime restore succeeds; canceled picks, picker failures, invalid saves, or failed restores do not.'
+              label: 'Replaces',
+              value: 'Current session only after validation and restore'
             }
           ]
         },
         {
           title: 'Clear Saved World',
-          lines: [
-            'Delete the browser-saved world, player, and camera envelope while keeping this paused session active in the current tab until it is saved again.'
-          ],
+          lines: [],
           metadataRows: [
             {
               label: 'Shortcut',
               value: 'Button only'
             },
             {
-              label: 'Consequence',
-              value: 'Keeps the session but clears browser resume.'
+              label: 'Session',
+              value: 'Kept in this tab'
+            },
+            {
+              label: 'Reload',
+              value: 'Clears browser resume'
             }
           ]
         }
@@ -2708,17 +2671,19 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
       shellSections: [
         {
           title: 'Reset Shell Toggles',
-          lines: [
-            `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
-          ],
+          lines: [],
           metadataRows: [
             {
               label: 'Shortcut',
               value: 'Button only'
             },
             {
-              label: 'Consequence',
-              value: 'Keeps the session but clears saved shell visibility.'
+              label: 'Session',
+              value: 'Kept unchanged'
+            },
+            {
+              label: 'Next Resume',
+              value: 'Default-off shell layout'
             }
           ]
         }
@@ -2741,11 +2706,15 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
         },
         {
           title: 'Saved World Status',
-          lines: [...CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_STATUS_LINES],
+          lines: [],
           metadataRows: [
             {
               label: 'Status',
               value: 'Not browser saved'
+            },
+            {
+              label: 'Reload',
+              value: 'Rewrite browser resume before reload'
             },
             {
               label: 'Saved again by',
@@ -2758,15 +2727,15 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
       dangerZoneSections: [
         {
           title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
-          lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
+          lines: [],
           metadataRows: [
             {
               label: 'Shortcut',
               value: getDesktopFreshWorldHotkeyLabel()
             },
             {
-              label: 'Consequence',
-              value: 'Replaces the current world, player, camera, and undo state.'
+              label: 'Replaces',
+              value: 'World, player, camera, and undo state'
             }
           ],
           tone: 'warning'
@@ -2775,8 +2744,12 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
       primarySections: [
         {
           title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
-          lines: [...DEFAULT_PAUSED_MAIN_MENU_OVERVIEW_LINES],
+          lines: [],
           metadataRows: [
+            {
+              label: 'Keeps',
+              value: 'World, player, camera, and debug edits intact'
+            },
             {
               label: 'Session Save',
               value: 'Not browser saved'
@@ -2794,31 +2767,33 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
         },
         {
           title: 'Reset Shell Toggles',
-          lines: [
-            `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
-          ],
+          lines: [],
           metadataRows: [
             {
               label: 'Shortcut',
               value: 'Button only'
             },
             {
-              label: 'Consequence',
-              value: 'Keeps the session but clears saved shell visibility.'
+              label: 'Session',
+              value: 'Kept unchanged'
+            },
+            {
+              label: 'Next Resume',
+              value: 'Default-off shell layout'
             }
           ]
         },
         {
           title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
-          lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
+          lines: [],
           metadataRows: [
             {
               label: 'Shortcut',
               value: getDesktopFreshWorldHotkeyLabel()
             },
             {
-              label: 'Consequence',
-              value: 'Replaces the current world, player, camera, and undo state.'
+              label: 'Replaces',
+              value: 'World, player, camera, and undo state'
             }
           ],
           tone: 'warning'
@@ -2851,7 +2826,7 @@ describe('resolvePausedMainMenuRecentActivitySectionState', () => {
       menuSections: [
         {
           title: 'Import Result',
-          lines: [...REJECTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES],
+          lines: [],
           metadataRows: [
             {
               label: 'Status',
@@ -2860,6 +2835,10 @@ describe('resolvePausedMainMenuRecentActivitySectionState', () => {
             {
               label: 'File',
               value: 'broken.json'
+            },
+            {
+              label: 'Session',
+              value: 'Kept unchanged'
             },
             {
               label: 'Reason',
@@ -2917,11 +2896,15 @@ describe('resolvePausedMainMenuRecentActivitySectionState', () => {
         },
         {
           title: 'Saved World Status',
-          lines: [...CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_STATUS_LINES],
+          lines: [],
           metadataRows: [
             {
               label: 'Status',
               value: 'Not browser saved'
+            },
+            {
+              label: 'Reload',
+              value: 'Rewrite browser resume before reload'
             },
             {
               label: 'Saved again by',
@@ -2962,7 +2945,7 @@ describe('resolvePausedMainMenuRecentActivitySectionState', () => {
       menuSections: [
         {
           title: 'Export Result',
-          lines: [...DOWNLOADED_PAUSED_MAIN_MENU_EXPORT_RESULT_LINES],
+          lines: [],
           metadataRows: [
             {
               label: 'Status',
@@ -2971,17 +2954,25 @@ describe('resolvePausedMainMenuRecentActivitySectionState', () => {
             {
               label: 'File',
               value: 'paused-session.json'
+            },
+            {
+              label: 'Session',
+              value: 'Kept unchanged'
             }
           ],
           tone: 'accent'
         },
         {
           title: 'Saved World Status',
-          lines: [...CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_STATUS_LINES],
+          lines: [],
           metadataRows: [
             {
               label: 'Status',
               value: 'Not browser saved'
+            },
+            {
+              label: 'Reload',
+              value: 'Rewrite browser resume before reload'
             },
             {
               label: 'Saved again by',
@@ -3028,7 +3019,7 @@ describe('resolvePausedMainMenuRecentActivitySectionState', () => {
       menuSections: [
         {
           title: 'Reset Shell Toggles Result',
-          lines: [...CLEARED_PAUSED_MAIN_MENU_RESET_SHELL_TOGGLES_RESULT_LINES],
+          lines: [],
           metadataRows: [
             {
               label: 'Status',
@@ -3079,7 +3070,6 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       metadataRows: DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
       toggleLabel: 'Show Shell',
       editorVisible: false,
-      editorHelpVisible: false,
       previewSection: null
     });
   });
@@ -3091,19 +3081,6 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       metadataRows: DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
       toggleLabel: 'Hide Shell',
       editorVisible: true,
-      editorHelpVisible: true,
-      previewSection: null
-    });
-  });
-
-  it('hides shell help copy when the paused-menu help toggle is collapsed', () => {
-    expect(resolvePausedMainMenuShellSectionState(createPausedMainMenuShellState(), true, false)).toEqual({
-      visible: true,
-      expanded: true,
-      metadataRows: DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
-      toggleLabel: 'Hide Shell',
-      editorVisible: true,
-      editorHelpVisible: false,
       previewSection: null
     });
   });
@@ -3141,7 +3118,6 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       metadataRows: PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
       toggleLabel: 'Hide Shell',
       editorVisible: true,
-      editorHelpVisible: true,
       previewSection: {
         title: 'Shell Profile Preview',
         lines: [...PAUSED_MAIN_MENU_SHELL_PROFILE_PREVIEW_LINES],
@@ -3173,7 +3149,6 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       metadataRows: CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
       toggleLabel: 'Show Shell',
       editorVisible: false,
-      editorHelpVisible: false,
       previewSection: null
     });
   });
@@ -3185,7 +3160,6 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       metadataRows: [],
       toggleLabel: null,
       editorVisible: false,
-      editorHelpVisible: false,
       previewSection: null
     });
   });

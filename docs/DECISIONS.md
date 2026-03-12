@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-12: Default paused-menu cards should be metadata-first without a global help toggle
+
+- Decision: The paused menu now removes the global `Show Help Text` toggle and keeps its default `Overview`, `World Save`, `Recent Activity`, and secondary action cards readable through concise titles plus metadata rows instead of paragraph-style help copy.
+- Reason: The help toggle added another control to an already dense paused menu, while the default cards still needed to communicate their state and consequence immediately on both desktop and touch layouts.
+- Consequence: Future default paused-menu cards should prefer terse metadata labels such as `Session`, `Reload`, `Replaces`, or `Next Resume`; longer explanatory prose should stay out of the default paused state unless a later task introduces a more targeted presentation.
+
 ### 2026-03-12: Recent Activity should show only the latest paused-menu outcome plus required follow-up warnings
 
 - Decision: The paused menu now keeps world-save and shell-setting feedback in `Recent Activity`, showing only the latest related outcome together with any still-relevant follow-up warning such as missing browser resume after a clear or import persistence failure.

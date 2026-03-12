@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Remove paused-menu help-toggle copy in favor of metadata-first cards.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused-menu `Overview`, `World Save`, `Recent Activity`, and secondary action cards no longer depend on paragraph help copy or a `Show Help Text` toggle, and instead surface concise metadata-first default cards while leaving the expanded `Shell` editor flow intact; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with help-toggle-removal regressions, removed completed task `469` from [docs/NEXT.md](docs/NEXT.md), added replacement task `477`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Replace paused-menu Results with compact Recent Activity.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/style.css](../src/style.css), and [src/main.ts](../src/main.ts) so paused sessions now track the latest world-save or shell-setting action explicitly, render a non-collapsible `Recent Activity` section instead of the old `Results` accordion, and show only that latest outcome plus any required follow-up warning such as `Saved World Status`; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) and [src/main.test.ts](../src/main.test.ts) with recent-activity coverage, removed completed task `468` from [docs/NEXT.md](docs/NEXT.md), added replacement task `476`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts`, `cmd /c npx vitest run src/main.test.ts`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

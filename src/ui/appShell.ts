@@ -92,16 +92,7 @@ export interface PausedMainMenuShellSectionState {
   metadataRows: readonly AppShellMenuSectionMetadataRow[];
   toggleLabel: string | null;
   editorVisible: boolean;
-  editorHelpVisible: boolean;
   previewSection: AppShellMenuSection | null;
-}
-
-export interface PausedMainMenuHelpCopySectionState {
-  visible: boolean;
-  expanded: boolean;
-  summaryLine: string | null;
-  toggleLabel: string | null;
-  showMenuSectionLines: boolean;
 }
 
 export interface PausedMainMenuRecentActivitySectionState {
@@ -368,8 +359,6 @@ export interface InWorldShellStateOptions {
 
 export const DEFAULT_PAUSED_MAIN_MENU_STATUS = 'World session paused.';
 export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [] as const;
-const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
-  'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
 const DEFAULT_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
   'Manage downloads, imports, and browser-resume storage for the current paused session.';
 const CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
@@ -877,8 +866,7 @@ export const resolvePausedMainMenuShellToggleLabel = (expanded = false): string 
   expanded ? 'Hide Shell' : 'Show Shell';
 export const resolvePausedMainMenuShellSectionState = (
   state: AppShellState,
-  expanded = false,
-  showEditorHelpText = true
+  expanded = false
 ): PausedMainMenuShellSectionState => {
   const visible = isPausedMainMenuState(state);
   const sectionViewModel = resolvePausedMainMenuSectionViewModel(state);
@@ -897,27 +885,10 @@ export const resolvePausedMainMenuShellSectionState = (
     toggleLabel:
       visible && sectionViewModel !== null ? resolvePausedMainMenuShellToggleLabel(expanded) : null,
     editorVisible,
-    editorHelpVisible: editorVisible && showEditorHelpText,
     previewSection:
       visible && sectionViewModel !== null
         ? sectionViewModel.shell.shellProfilePreview
         : null
-  };
-};
-export const resolvePausedMainMenuHelpCopyToggleLabel = (expanded = false): string =>
-  expanded ? 'Hide Help Text' : 'Show Help Text';
-export const resolvePausedMainMenuHelpCopySectionState = (
-  state: AppShellState,
-  expanded = false
-): PausedMainMenuHelpCopySectionState => {
-  const visible = isPausedMainMenuState(state);
-
-  return {
-    visible,
-    expanded: visible && expanded,
-    summaryLine: visible ? DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE : null,
-    toggleLabel: visible ? resolvePausedMainMenuHelpCopyToggleLabel(expanded) : null,
-    showMenuSectionLines: !visible || expanded
   };
 };
 const resolvePausedMainMenuShellActionKeybindingSummaryLine = (
@@ -992,9 +963,7 @@ const createPausedMainMenuExportResultMenuSection = (
     case 'downloaded':
       return {
         title: 'Export Result',
-        lines: [
-          'The paused session stayed unchanged, and the last JSON world-save download used the filename below.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Status',
@@ -1003,6 +972,10 @@ const createPausedMainMenuExportResultMenuSection = (
           {
             label: 'File',
             value: resolvePausedMainMenuResultFileNameValue(exportResult.fileName)
+          },
+          {
+            label: 'Session',
+            value: 'Kept unchanged'
           }
         ],
         tone: 'accent'
@@ -1010,13 +983,15 @@ const createPausedMainMenuExportResultMenuSection = (
     case 'failed':
       return {
         title: 'Export Result',
-        lines: [
-          'The paused session stayed unchanged because the JSON world-save download failed before the browser accepted it.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Status',
             value: 'Failed'
+          },
+          {
+            label: 'Session',
+            value: 'Kept unchanged'
           },
           {
             label: 'Reason',
@@ -1034,14 +1009,15 @@ const createPausedMainMenuSavedWorldStatusMenuSection = (
     case 'cleared':
       return {
         title: 'Saved World Status',
-        lines: [
-          'This paused session is no longer browser-saved because Clear Saved World removed its local resume envelope.',
-          'Resume World or a replacement save path writes a new browser save for the current session.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Status',
             value: 'Not browser saved'
+          },
+          {
+            label: 'Reload',
+            value: 'Rewrite browser resume before reload'
           },
           {
             label: 'Saved again by',
@@ -1053,14 +1029,15 @@ const createPausedMainMenuSavedWorldStatusMenuSection = (
     case 'import-persistence-failed':
       return {
         title: 'Saved World Status',
-        lines: [
-          'This imported paused session is still live in the current tab, but it is not browser-saved because rewriting its local resume envelope failed after restore.',
-          'This warning clears after a later browser-save rewrite succeeds for the current session.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Status',
             value: 'Not browser saved'
+          },
+          {
+            label: 'Reload',
+            value: 'Later browser save required'
           },
           {
             label: 'Saved again by',
@@ -1223,14 +1200,15 @@ const createPausedMainMenuClearSavedWorldResultMenuSection = (
     case 'failed':
       return {
         title: 'Clear Saved World Result',
-        lines: [
-          'The paused session stayed browser-saved because Clear Saved World could not delete its local resume envelope.',
-          'Resume World and reload still use the last browser-saved session until deletion succeeds.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Status',
             value: 'Failed'
+          },
+          {
+            label: 'Session',
+            value: 'Still browser saved'
           },
           {
             label: 'Reason',
@@ -1248,10 +1226,7 @@ const createPausedMainMenuResetShellTogglesResultMenuSection = (
     case 'cleared':
       return {
         title: 'Reset Shell Toggles Result',
-        lines: [
-          'This paused session now resumes from the default-off shell layout because its saved shell visibility preferences were cleared.',
-          'The next Resume World starts with Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Status',
@@ -1267,14 +1242,15 @@ const createPausedMainMenuResetShellTogglesResultMenuSection = (
     case 'persistence-failed':
       return {
         title: 'Reset Shell Toggles Result',
-        lines: [
-          'This paused session still resumes from the default-off shell layout in this tab, but browser shell storage could not be cleared.',
-          'Resume World keeps the reset live here, but reload may still restore the last browser-saved shell layout until a later shell save succeeds.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Status',
             value: 'Current session only'
+          },
+          {
+            label: 'Reload',
+            value: 'Later shell save required'
           },
           {
             label: 'Reason',
@@ -1387,26 +1363,30 @@ const createPausedMainMenuImportMenuSection = (
     case 'cancelled':
       return {
         title: 'Import Result',
-        lines: [
-          'The paused session stayed unchanged because the JSON picker closed without selecting a world save file.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Status',
             value: 'Canceled'
+          },
+          {
+            label: 'Session',
+            value: 'Kept unchanged'
           }
         ]
       };
     case 'picker-start-failed':
       return {
         title: 'Import Result',
-        lines: [
-          'The paused session stayed unchanged because the browser JSON picker failed before any world save file could be selected.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Status',
             value: 'Picker failed'
+          },
+          {
+            label: 'Session',
+            value: 'Kept unchanged'
           },
           {
             label: 'Reason',
@@ -1418,9 +1398,7 @@ const createPausedMainMenuImportMenuSection = (
     case 'accepted':
       return {
         title: 'Import Result',
-        lines: [
-          'The paused session now reflects the selected JSON world save because its top-level envelope validated and restored successfully.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Status',
@@ -1429,6 +1407,10 @@ const createPausedMainMenuImportMenuSection = (
           {
             label: 'File',
             value: resolvePausedMainMenuResultFileNameValue(importResult.fileName)
+          },
+          {
+            label: 'Session',
+            value: 'Replaced'
           }
         ],
         tone: 'accent'
@@ -1436,9 +1418,7 @@ const createPausedMainMenuImportMenuSection = (
     case 'rejected':
       return {
         title: 'Import Result',
-        lines: [
-          'The paused session stayed unchanged because the selected JSON world save did not pass top-level envelope validation.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Status',
@@ -1447,6 +1427,10 @@ const createPausedMainMenuImportMenuSection = (
           {
             label: 'File',
             value: resolvePausedMainMenuResultFileNameValue(importResult.fileName)
+          },
+          {
+            label: 'Session',
+            value: 'Kept unchanged'
           },
           {
             label: 'Reason',
@@ -1458,9 +1442,7 @@ const createPausedMainMenuImportMenuSection = (
     case 'restore-failed':
       return {
         title: 'Import Result',
-        lines: [
-          'The selected JSON world save passed top-level envelope validation, but runtime restore still failed.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Status',
@@ -1469,6 +1451,10 @@ const createPausedMainMenuImportMenuSection = (
           {
             label: 'File',
             value: resolvePausedMainMenuResultFileNameValue(importResult.fileName)
+          },
+          {
+            label: 'Session',
+            value: 'Kept unchanged'
           },
           {
             label: 'Reason',
@@ -1480,10 +1466,7 @@ const createPausedMainMenuImportMenuSection = (
     case 'persistence-failed':
       return {
         title: 'Import Result',
-        lines: [
-          'The paused session now reflects the selected JSON world save in this tab, but browser-resume persistence failed after restore.',
-          'Resume World keeps the imported session live here, but reload may not restore it until a later save succeeds.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Status',
@@ -1492,6 +1475,10 @@ const createPausedMainMenuImportMenuSection = (
           {
             label: 'File',
             value: resolvePausedMainMenuResultFileNameValue(importResult.fileName)
+          },
+          {
+            label: 'Reload',
+            value: 'Later browser save required'
           },
           {
             label: 'Reason',
@@ -1523,8 +1510,12 @@ export const createPausedMainMenuSectionViewModel = (
     overview: {
       resumeWorld: {
         title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
-        lines: ['Continue with the current world, player state, camera, and debug edits intact.'],
+        lines: [],
         metadataRows: [
+          {
+            label: 'Keeps',
+            value: 'World, player, camera, and debug edits intact'
+          },
           {
             label: 'Session Save',
             value: resolvePausedMainMenuOverviewSessionSaveValue(savedWorldStatus)
@@ -1544,50 +1535,47 @@ export const createPausedMainMenuSectionViewModel = (
     worldSave: {
       exportWorldSave: {
         title: 'Export World Save',
-        lines: [
-          'Download a JSON save file for the current world, player, and camera session state without changing the paused session.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Shortcut',
             value: 'Button only'
           },
           {
-            label: 'Consequence',
-            value: 'Keeps the current paused session unchanged.'
+            label: 'Session',
+            value: 'Kept unchanged'
           }
         ]
       },
       importWorldSave: {
         title: 'Import World Save',
-        lines: [
-          'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates and runtime restore succeeds.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Shortcut',
             value: 'Button only'
           },
           {
-            label: 'Consequence',
-            value:
-              'Validated imports replace the paused session only when runtime restore succeeds; canceled picks, picker failures, invalid saves, or failed restores do not.'
+            label: 'Replaces',
+            value: 'Current session only after validation and restore'
           }
         ]
       },
       clearSavedWorld: {
         title: 'Clear Saved World',
-        lines: [
-          'Delete the browser-saved world, player, and camera envelope while keeping this paused session active in the current tab until it is saved again.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Shortcut',
             value: 'Button only'
           },
           {
-            label: 'Consequence',
-            value: 'Keeps the session but clears browser resume.'
+            label: 'Session',
+            value: 'Kept in this tab'
+          },
+          {
+            label: 'Reload',
+            value: 'Clears browser resume'
           }
         ]
       },
@@ -1599,17 +1587,19 @@ export const createPausedMainMenuSectionViewModel = (
     shell: {
       resetShellToggles: {
         title: 'Reset Shell Toggles',
-        lines: [
-          `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Shortcut',
             value: 'Button only'
           },
           {
-            label: 'Consequence',
-            value: 'Keeps the session but clears saved shell visibility.'
+            label: 'Session',
+            value: 'Kept unchanged'
+          },
+          {
+            label: 'Next Resume',
+            value: 'Default-off shell layout'
           }
         ]
       },
@@ -1671,17 +1661,15 @@ export const createPausedMainMenuSectionViewModel = (
     dangerZone: {
       newWorld: {
         title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
-        lines: [
-          'Discard the paused session, camera state, and undo history before a fresh world boots.'
-        ],
+        lines: [],
         metadataRows: [
           {
             label: 'Shortcut',
             value: getDesktopFreshWorldHotkeyLabel()
           },
           {
-            label: 'Consequence',
-            value: 'Replaces the current world, player, camera, and undo state.'
+            label: 'Replaces',
+            value: 'World, player, camera, and undo state'
           }
         ],
         tone: 'warning'
@@ -2382,10 +2370,7 @@ const createShortcutsSectionElement = (section: InWorldShortcutsSection): HTMLEl
   return sectionElement;
 };
 
-const createMenuSectionElement = (
-  section: AppShellMenuSection,
-  showLines = true
-): HTMLElement => {
+const createMenuSectionElement = (section: AppShellMenuSection): HTMLElement => {
   const sectionElement = document.createElement('section');
   sectionElement.className = 'app-shell__menu-section';
   sectionElement.setAttribute('data-tone', section.tone ?? 'default');
@@ -2395,7 +2380,7 @@ const createMenuSectionElement = (
   heading.textContent = section.title;
   sectionElement.append(heading);
 
-  if (showLines && section.lines.length > 0) {
+  if (section.lines.length > 0) {
     const lines = document.createElement('div');
     lines.className = 'app-shell__menu-section-lines';
     lines.replaceChildren(
@@ -2441,10 +2426,7 @@ const createMenuSectionMetadataElement = (
 
   return metadata;
 };
-const createWorldSaveActionElement = (
-  section: AppShellMenuSection,
-  showLines = true
-): HTMLElement => {
+const createWorldSaveActionElement = (section: AppShellMenuSection): HTMLElement => {
   const actionElement = document.createElement('article');
   actionElement.className = 'app-shell__world-save-action';
   actionElement.setAttribute('data-tone', section.tone ?? 'default');
@@ -2454,7 +2436,7 @@ const createWorldSaveActionElement = (
   heading.textContent = section.title;
   actionElement.append(heading);
 
-  if (showLines && section.lines.length > 0) {
+  if (section.lines.length > 0) {
     const lines = document.createElement('div');
     lines.className = 'app-shell__world-save-action-lines';
     lines.replaceChildren(
@@ -2651,9 +2633,6 @@ export class AppShell {
   private stageLabel: HTMLSpanElement;
   private title: HTMLHeadingElement;
   private status: HTMLParagraphElement;
-  private pausedMainMenuHelpCopySection: HTMLDivElement;
-  private pausedMainMenuHelpCopySummary: HTMLParagraphElement;
-  private pausedMainMenuHelpCopyToggleButton: HTMLButtonElement;
   private overviewSection: HTMLElement;
   private overviewBody: HTMLDivElement;
   private worldSaveSection: HTMLElement;
@@ -2719,7 +2698,6 @@ export class AppShell {
   private onExportShellProfile: (screen: AppShellScreen) => PausedMainMenuShellProfileExportResult;
   private currentShellActionKeybindingEditorStatus: AppShellShellActionKeybindingEditorStatus | null =
     null;
-  private pausedMainMenuHelpCopyExpanded = false;
   private pausedMainMenuShellExpanded = false;
   private currentState: AppShellState = createDefaultBootShellState();
 
@@ -2886,23 +2864,6 @@ export class AppShell {
     this.status = document.createElement('p');
     this.status.className = 'app-shell__status';
     panel.append(this.status);
-
-    this.pausedMainMenuHelpCopySection = document.createElement('div');
-    this.pausedMainMenuHelpCopySection.className = 'app-shell__menu-help';
-    panel.append(this.pausedMainMenuHelpCopySection);
-
-    this.pausedMainMenuHelpCopySummary = document.createElement('p');
-    this.pausedMainMenuHelpCopySummary.className = 'app-shell__menu-help-summary';
-    this.pausedMainMenuHelpCopySection.append(this.pausedMainMenuHelpCopySummary);
-
-    this.pausedMainMenuHelpCopyToggleButton = document.createElement('button');
-    this.pausedMainMenuHelpCopyToggleButton.type = 'button';
-    this.pausedMainMenuHelpCopyToggleButton.className = 'app-shell__menu-help-toggle';
-    this.pausedMainMenuHelpCopyToggleButton.addEventListener('click', () =>
-      this.togglePausedMainMenuHelpCopy()
-    );
-    installPointerClickFocusRelease(this.pausedMainMenuHelpCopyToggleButton);
-    this.pausedMainMenuHelpCopySection.append(this.pausedMainMenuHelpCopyToggleButton);
 
     this.overviewSection = document.createElement('section');
     this.overviewSection.className = 'app-shell__overview';
@@ -3257,15 +3218,6 @@ export class AppShell {
     this.setState(this.currentState);
   }
 
-  private togglePausedMainMenuHelpCopy(): void {
-    if (!isPausedMainMenuState(this.currentState)) {
-      return;
-    }
-
-    this.pausedMainMenuHelpCopyExpanded = !this.pausedMainMenuHelpCopyExpanded;
-    this.setState(this.currentState);
-  }
-
   private tryRemapShellActionKeybinding(
     actionType: InWorldShellActionKeybindingActionType,
     nextValue: string
@@ -3477,7 +3429,6 @@ export class AppShell {
         : defaultShellActionKeybindings;
     const pausedMainMenuVisible = isPausedMainMenuState(state);
     if (!pausedMainMenuVisible || !wasPausedMainMenuVisible) {
-      this.pausedMainMenuHelpCopyExpanded = false;
       this.pausedMainMenuShellExpanded = false;
     }
     const pausedMainMenuShellActionKeybindings = pausedMainMenuVisible
@@ -3487,17 +3438,12 @@ export class AppShell {
       pausedMainMenuVisible ? state.worldSessionShellPersistenceAvailable !== false : true;
     const pausedMainMenuHasShellProfilePreview =
       pausedMainMenuVisible && state.pausedMainMenuShellProfilePreview != null;
-    const pausedMainMenuHelpCopySection = resolvePausedMainMenuHelpCopySectionState(
-      state,
-      this.pausedMainMenuHelpCopyExpanded
-    );
     const pausedMainMenuRecentActivitySection = resolvePausedMainMenuRecentActivitySectionState(
       state
     );
     const pausedMainMenuShellSection = resolvePausedMainMenuShellSectionState(
       state,
-      this.pausedMainMenuShellExpanded,
-      pausedMainMenuHelpCopySection.showMenuSectionLines
+      this.pausedMainMenuShellExpanded
     );
     const pausedMainMenuWorldSaveSection = resolvePausedMainMenuWorldSaveSectionState(state);
     const pausedMainMenuMenuSectionGroups = resolvePausedMainMenuMenuSectionGroups(state);
@@ -3516,25 +3462,6 @@ export class AppShell {
     this.stageLabel.textContent = viewModel.stageLabel;
     this.title.textContent = viewModel.title;
     this.status.textContent = viewModel.statusText;
-    this.pausedMainMenuHelpCopySection.hidden = !pausedMainMenuHelpCopySection.visible;
-    this.pausedMainMenuHelpCopySection.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuHelpCopySection.visible,
-      'flex'
-    );
-    this.pausedMainMenuHelpCopySection.dataset.expanded = pausedMainMenuHelpCopySection.expanded
-      ? 'true'
-      : 'false';
-    this.pausedMainMenuHelpCopySummary.textContent = pausedMainMenuHelpCopySection.summaryLine ?? '';
-    this.pausedMainMenuHelpCopyToggleButton.textContent =
-      pausedMainMenuHelpCopySection.toggleLabel ?? '';
-    this.pausedMainMenuHelpCopyToggleButton.hidden = !pausedMainMenuHelpCopySection.visible;
-    this.pausedMainMenuHelpCopyToggleButton.title = pausedMainMenuHelpCopySection.expanded
-      ? 'Hide paused-menu card help text while keeping titles and metadata visible.'
-      : 'Show the longer paused-menu card help text.';
-    this.pausedMainMenuHelpCopyToggleButton.setAttribute(
-      'aria-expanded',
-      pausedMainMenuHelpCopySection.expanded ? 'true' : 'false'
-    );
     this.overviewSection.hidden = pausedMainMenuMenuSectionGroups.overviewSections.length === 0;
     this.overviewSection.style.display = resolveAppShellRegionDisplay(
       pausedMainMenuMenuSectionGroups.overviewSections.length > 0,
@@ -3542,7 +3469,7 @@ export class AppShell {
     );
     this.overviewBody.replaceChildren(
       ...pausedMainMenuMenuSectionGroups.overviewSections.map((section) =>
-        createMenuSectionElement(section, pausedMainMenuHelpCopySection.showMenuSectionLines)
+        createMenuSectionElement(section)
       )
     );
     this.overviewBody.hidden = pausedMainMenuMenuSectionGroups.overviewSections.length === 0;
@@ -3562,7 +3489,7 @@ export class AppShell {
     );
     this.worldSaveActions.replaceChildren(
       ...pausedMainMenuWorldSaveSection.actionSections.map((section) =>
-        createWorldSaveActionElement(section, pausedMainMenuHelpCopySection.showMenuSectionLines)
+        createWorldSaveActionElement(section)
       )
     );
     this.shellSection.hidden = !pausedMainMenuShellSection.visible;
@@ -3594,18 +3521,14 @@ export class AppShell {
       'grid'
     );
     this.syncShellActionKeybindingEditorIntro(pausedMainMenuShellPersistenceAvailable);
-    this.shellActionKeybindingEditorIntro.hidden = !pausedMainMenuShellSection.editorHelpVisible;
-    this.shellActionKeybindingEditorIntro.style.display =
-      pausedMainMenuShellSection.editorHelpVisible ? '' : 'none';
+    this.shellActionKeybindingEditorIntro.hidden = !pausedMainMenuShellSection.editorVisible;
+    this.shellActionKeybindingEditorIntro.style.display = pausedMainMenuShellSection.editorVisible
+      ? ''
+      : 'none';
     this.shellProfilePreviewDetails.replaceChildren(
       ...(pausedMainMenuShellSection.previewSection === null
         ? []
-        : [
-            createMenuSectionElement(
-              pausedMainMenuShellSection.previewSection,
-              pausedMainMenuHelpCopySection.showMenuSectionLines
-            )
-          ])
+        : [createMenuSectionElement(pausedMainMenuShellSection.previewSection)])
     );
     this.shellProfilePreviewDetails.hidden =
       !pausedMainMenuShellSection.editorVisible ||
@@ -3627,7 +3550,7 @@ export class AppShell {
     this.recentActivitySummary.textContent = pausedMainMenuRecentActivitySection.summaryLine ?? '';
     this.recentActivityBody.replaceChildren(
       ...pausedMainMenuRecentActivitySection.menuSections.map((section) =>
-        createMenuSectionElement(section, pausedMainMenuHelpCopySection.showMenuSectionLines)
+        createMenuSectionElement(section)
       )
     );
     this.recentActivityBody.hidden = !pausedMainMenuRecentActivitySection.visible;
@@ -3636,9 +3559,7 @@ export class AppShell {
       'grid'
     );
     this.menuSections.replaceChildren(
-      ...pausedMainMenuSecondarySections.map((section) =>
-        createMenuSectionElement(section, pausedMainMenuHelpCopySection.showMenuSectionLines)
-      )
+      ...pausedMainMenuSecondarySections.map((section) => createMenuSectionElement(section))
     );
     this.menuSections.hidden = pausedMainMenuSecondarySections.length === 0;
     this.menuSections.style.display = resolveAppShellRegionDisplay(

@@ -231,48 +231,6 @@ canvas {
   line-height: 1.55;
 }
 
-.app-shell__menu-help {
-  margin-top: 14px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.app-shell__menu-help-summary {
-  margin: 0;
-  min-width: 0;
-  flex: 1 1 220px;
-  color: #c7d6dc;
-  font-size: 0.86rem;
-  line-height: 1.45;
-}
-
-.app-shell__menu-help-toggle {
-  padding: 8px 12px;
-  border: 1px solid rgba(159, 221, 255, 0.28);
-  border-radius: 999px;
-  background:
-    linear-gradient(180deg, rgba(16, 28, 38, 0.96), rgba(11, 18, 25, 0.92)),
-    linear-gradient(135deg, rgba(120, 210, 255, 0.1), rgba(243, 205, 135, 0.05));
-  color: #d8f3ff;
-  font:
-    700 0.78rem/1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.app-shell__menu-help-toggle:hover {
-  border-color: rgba(159, 221, 255, 0.42);
-}
-
-.app-shell__menu-help-toggle:focus-visible {
-  outline: 2px solid #9fddff;
-  outline-offset: 3px;
-}
-
 .app-shell__menu-sections {
   margin-top: 18px;
   display: grid;
@@ -787,15 +745,6 @@ canvas {
 
   .app-shell__menu-sections {
     grid-template-columns: 1fr;
-  }
-
-  .app-shell__menu-help {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .app-shell__menu-help-toggle {
-    width: 100%;
   }
 
   .app-shell__world-save-header,
