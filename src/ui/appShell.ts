@@ -319,6 +319,8 @@ const WORLD_SAVE_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Only world-save feedback is currently available here.';
 const SHELL_SETTING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Only shell-setting feedback is currently available here.';
+const RESET_SHELL_TOGGLES_CURRENT_SESSION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'This reset is current-session-only because browser shell storage could not be cleared.';
 const resolvePausedMainMenuResultsDensitySummaryLine = (resultCount: number): string | null =>
   resultCount >= 3 ? `${resultCount} result cards are currently grouped here.` : null;
 const WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
@@ -420,6 +422,9 @@ const resolvePausedMainMenuResultsSectionSummaryLine = (
   const confirmationOnly = menuSections.every((section) => section.tone === 'accent');
   const mixedWarningAndConfirmation = containsWarningResults && containsConfirmationResults;
   const mixedWorldSaveAndShellSettings = containsWorldSaveResults && containsShellSettingResults;
+  const resetShellTogglesCurrentSessionOnly =
+    findMenuSectionMetadataRowValue(menuSections, 'Reset Shell Toggles Result', 'Status') ===
+    'Current session only';
 
   const categorySummaryLine = mixedWorldSaveAndShellSettings
     ? MIXED_WORLD_SAVE_AND_SHELL_SETTINGS_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
@@ -435,10 +440,16 @@ const resolvePausedMainMenuResultsSectionSummaryLine = (
       : mixedWarningAndConfirmation
         ? MIXED_WARNING_AND_CONFIRMATION_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
         : null;
+  const resetShellTogglesCurrentSessionOnlySummaryLine = resetShellTogglesCurrentSessionOnly
+    ? RESET_SHELL_TOGGLES_CURRENT_SESSION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
+    : null;
   const densitySummaryLine = resolvePausedMainMenuResultsDensitySummaryLine(menuSections.length);
-  const summarySegments = [categorySummaryLine, toneSummaryLine, densitySummaryLine].filter(
-    (segment): segment is string => segment !== null
-  );
+  const summarySegments = [
+    categorySummaryLine,
+    toneSummaryLine,
+    resetShellTogglesCurrentSessionOnlySummaryLine,
+    densitySummaryLine
+  ].filter((segment): segment is string => segment !== null);
 
   const summaryLine = `Recent paused-menu feedback is available for ${formatMenuSectionSummaryListValue(resultActionLabels)}.${summarySegments.length === 0 ? '' : ` ${summarySegments.join(' ')}`}`;
   return showMenuSectionLines

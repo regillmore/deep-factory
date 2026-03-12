@@ -140,10 +140,13 @@ const IMPORT_RESULT_ONLY_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Import World Save. Only warning feedback is currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
 const RESET_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Reset Shell Toggles. Only shell-setting feedback is currently available here. Only confirmation feedback is currently available here.';
-const RESET_ONLY_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Reset Shell Toggles. Only shell-setting feedback is currently available here. Only warning feedback is currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
+const RESET_SESSION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Recent paused-menu feedback is available for Reset Shell Toggles. Only shell-setting feedback is currently available here. Only warning feedback is currently available here. This reset is current-session-only because browser shell storage could not be cleared.';
+const RESET_SESSION_ONLY_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE = `${RESET_SESSION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE} Result-card paragraphs are hidden until Show Help Text is enabled.`;
 const IMPORT_AND_CLEAR_WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Import World Save and Clear Saved World. Only world-save feedback is currently available here. Only warning feedback is currently available here.';
+const IMPORT_AND_RESET_SESSION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Recent paused-menu feedback is available for Import World Save and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Only warning feedback is currently available here. This reset is current-session-only because browser shell storage could not be cleared.';
 const EXPORT_AND_ACCEPTED_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Export World Save and Import World Save. Only world-save feedback is currently available here. Only confirmation feedback is currently available here.';
 const EXPORT_AND_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
@@ -3234,7 +3237,37 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
     });
   });
 
-  it('keeps shell-setting-only category copy when help text is hidden', () => {
+  it('adds current-session-only reset warning copy when mixed paused-menu results include reset-shell feedback', () => {
+    expect(
+      resolvePausedMainMenuResultsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          {
+            status: 'rejected',
+            fileName: 'broken.json',
+            reason: 'world save envelope kind must be "deep-factory.world-save"'
+          },
+          null,
+          null,
+          null,
+          {
+            status: 'persistence-failed',
+            reason: 'browser shell storage could not be cleared'
+          }
+        )
+      )
+    ).toMatchObject({
+      visible: true,
+      expanded: false,
+      summaryLine: IMPORT_AND_RESET_SESSION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
+      toggleLabel: 'Show Results'
+    });
+  });
+
+  it('keeps current-session-only reset warning copy when help text is hidden', () => {
     expect(
       resolvePausedMainMenuResultsSectionState(
         createPausedMainMenuShellState(
@@ -3257,7 +3290,7 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
     ).toMatchObject({
       visible: true,
       expanded: false,
-      summaryLine: RESET_ONLY_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
+      summaryLine: RESET_SESSION_ONLY_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
       toggleLabel: 'Show Results'
     });
   });
