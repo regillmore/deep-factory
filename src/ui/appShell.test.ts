@@ -130,6 +130,10 @@ const DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
   'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
+const appendPausedMainMenuResultsDensitySummaryLine = (
+  summaryLine: string,
+  resultCount: number
+): string => `${summaryLine} ${resultCount} result cards are currently grouped here.`;
 const IMPORT_RESULT_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Import World Save. Only warning feedback is currently available here.';
 const IMPORT_RESULT_ONLY_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
@@ -148,6 +152,10 @@ const EXPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Export World Save and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Only confirmation feedback is currently available here.';
 const EXPORT_AND_RESET_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Export World Save and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Only confirmation feedback is currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
+const EXPORT_IMPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Recent paused-menu feedback is available for Export World Save, Import World Save, and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Warning and confirmation feedback are both currently available here.';
+const EXPORT_IMPORT_CLEAR_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Recent paused-menu feedback is available for Export World Save, Import World Save, Clear Saved World, and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Warning and confirmation feedback are both currently available here.';
 const PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Shell profile preview from preview-shell-profile.json is ready to apply with both shell visibility toggle and hotkey changes. If applied, that preview would use the custom set. If applied, that preview would resume with Debug HUD, Edit Overlays, and Spawn Marker shown. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const PREVIEWED_TOGGLE_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
@@ -3193,6 +3201,81 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
       visible: true,
       expanded: false,
       summaryLine: EXPORT_AND_ACCEPTED_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
+      toggleLabel: 'Show Results'
+    });
+  });
+
+  it('adds density copy when three paused-menu result cards are grouped at once', () => {
+    expect(
+      resolvePausedMainMenuResultsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          {
+            status: 'rejected',
+            fileName: 'broken.json',
+            reason: 'world save envelope kind must be "deep-factory.world-save"'
+          },
+          null,
+          {
+            status: 'downloaded',
+            fileName: 'paused-session.json'
+          },
+          null,
+          {
+            status: 'cleared'
+          }
+        )
+      )
+    ).toMatchObject({
+      visible: true,
+      expanded: false,
+      summaryLine: appendPausedMainMenuResultsDensitySummaryLine(
+        EXPORT_IMPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
+        3
+      ),
+      toggleLabel: 'Show Results'
+    });
+  });
+
+  it('keeps density copy when four paused-menu result cards are grouped and help text is hidden', () => {
+    expect(
+      resolvePausedMainMenuResultsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          {
+            status: 'rejected',
+            fileName: 'broken.json',
+            reason: 'world save envelope kind must be "deep-factory.world-save"'
+          },
+          null,
+          {
+            status: 'downloaded',
+            fileName: 'paused-session.json'
+          },
+          {
+            status: 'failed',
+            reason: 'local resume envelope could not be deleted'
+          },
+          {
+            status: 'cleared'
+          }
+        ),
+        false,
+        false
+      )
+    ).toMatchObject({
+      visible: true,
+      expanded: false,
+      summaryLine: `${appendPausedMainMenuResultsDensitySummaryLine(
+        EXPORT_IMPORT_CLEAR_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
+        4
+      )} Result-card paragraphs are hidden until Show Help Text is enabled.`,
       toggleLabel: 'Show Results'
     });
   });

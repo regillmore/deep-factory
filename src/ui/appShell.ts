@@ -317,6 +317,8 @@ const HIDDEN_PAUSED_MAIN_MENU_RESULTS_HELP_COPY_SUMMARY_LINE =
   'Result-card paragraphs are hidden until Show Help Text is enabled.';
 const WORLD_SAVE_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Only world-save feedback is currently available here.';
+const resolvePausedMainMenuResultsDensitySummaryLine = (resultCount: number): string | null =>
+  resultCount >= 3 ? `${resultCount} result cards are currently grouped here.` : null;
 const WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Only warning feedback is currently available here.';
 const CONFIRMATION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
@@ -425,10 +427,11 @@ const resolvePausedMainMenuResultsSectionSummaryLine = (
     ? WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
     : confirmationOnly
       ? CONFIRMATION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
-    : mixedWarningAndConfirmation
-      ? MIXED_WARNING_AND_CONFIRMATION_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
-      : null;
-  const summarySegments = [categorySummaryLine, toneSummaryLine].filter(
+      : mixedWarningAndConfirmation
+        ? MIXED_WARNING_AND_CONFIRMATION_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
+        : null;
+  const densitySummaryLine = resolvePausedMainMenuResultsDensitySummaryLine(menuSections.length);
+  const summarySegments = [categorySummaryLine, toneSummaryLine, densitySummaryLine].filter(
     (segment): segment is string => segment !== null
   );
 

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Add paused-menu Results three-card density summary copy.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused-menu `Results` summary now says when three or more collapsed result cards are grouped at once, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused three-card and four-card density regressions, removed completed task `460` from [docs/NEXT.md](docs/NEXT.md), added replacement task `461`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu Results world-save-only category summary copy.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused-menu `Results` summary now says when multiple collapsed result cards are all world-save feedback, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused world-save-only category regressions across warning-only, confirmation-only, and hidden-help compositions, removed completed task `459` from [docs/NEXT.md](docs/NEXT.md), added replacement task `460`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

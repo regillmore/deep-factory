@@ -11,7 +11,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 447. Add a paused-menu `Persistence Summary` metadata row that surfaces when active hotkeys are current-session-only even though shell visibility is browser-saved, with hotkey-persistence-row regressions.
 451. Add paused-menu Shell Settings summary copy that surfaces which shell toggles a staged shell-profile preview would resume off while the section is collapsed, with shell-summary-preview-saved-off regressions.
 453. Add paused-menu `Shell Settings` header copy that surfaces when the global help toggle is hiding the hotkey-editor helper paragraph, with shell-settings-help-hidden regressions.
-460. Add paused-menu `Results` summary copy that surfaces when the collapsed section contains three or more result cards at once, with paused-results-three-card-density regressions.
+461. Add paused-menu `Results` summary copy that surfaces when the collapsed section contains shell-setting feedback only, with paused-results-shell-settings-only regressions.
 
 ## Optimize liquids
 
