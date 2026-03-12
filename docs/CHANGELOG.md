@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Add matching paused-dashboard top-jump links to secondary paused sections.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so visible paused-menu `Recent Activity` and `Danger Zone` sections now reuse the same `Jump to Overview` affordance as the expanded `Shell` editor, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with paused-dashboard-secondary-top-link regressions, removed completed task `484` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical slice `412`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a paused-dashboard top-jump link for expanded Shell sessions.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so the expanded paused-menu `Shell` editor now exposes a `Jump to Overview` link that focuses the existing `Overview` section anchor and scrolls it into view, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with paused-dashboard-top-link DOM and CSS regressions, removed completed task `479` from [docs/NEXT.md](docs/NEXT.md), added replacement task `484`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -2478,6 +2478,19 @@ const focusPausedMainMenuSectionAnchor = (sectionElement: HTMLElement): void => 
   });
 };
 
+const createPausedMainMenuTopJumpLink = (overviewSection: HTMLElement): HTMLAnchorElement => {
+  const jumpLink = document.createElement('a');
+  jumpLink.className = 'app-shell__section-top-jump-link';
+  jumpLink.textContent = PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT;
+  jumpLink.title = PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE;
+  jumpLink.setAttribute('href', `#${PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS.overview.sectionId}`);
+  jumpLink.addEventListener('click', (event) => {
+    event.preventDefault();
+    focusPausedMainMenuSectionAnchor(overviewSection);
+  });
+  return jumpLink;
+};
+
 const createMenuSectionElement = (section: AppShellMenuSection): HTMLElement => {
   const sectionElement = document.createElement('section');
   sectionElement.className = 'app-shell__menu-section';
@@ -2844,9 +2857,11 @@ export class AppShell {
   private recentActivitySection: HTMLElement;
   private recentActivitySummary: HTMLParagraphElement;
   private recentActivityBody: HTMLDivElement;
+  private recentActivityTopJumpLink: HTMLAnchorElement;
   private dangerZoneSection: HTMLElement;
   private dangerZoneSummary: HTMLParagraphElement;
   private dangerZoneBody: HTMLDivElement;
+  private dangerZoneTopJumpLink: HTMLAnchorElement;
   private shellSection: HTMLElement;
   private shellMetadata: HTMLDListElement;
   private shellToggleButton: HTMLButtonElement;
@@ -3309,22 +3324,7 @@ export class AppShell {
     this.shellActionKeybindingEditorStatus.className = 'app-shell__shell-keybindings-status';
     this.shellActionKeybindingEditor.append(this.shellActionKeybindingEditorStatus);
 
-    this.shellTopJumpLink = document.createElement('a');
-    this.shellTopJumpLink.className = 'app-shell__section-top-jump-link';
-    this.shellTopJumpLink.textContent = PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT;
-    this.shellTopJumpLink.title = PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE;
-    this.shellTopJumpLink.setAttribute(
-      'href',
-      `#${PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS.overview.sectionId}`
-    );
-    this.shellTopJumpLink.addEventListener('click', (event) => {
-      event.preventDefault();
-      if (!isPausedMainMenuState(this.currentState)) {
-        return;
-      }
-
-      focusPausedMainMenuSectionAnchor(this.overviewSection);
-    });
+    this.shellTopJumpLink = createPausedMainMenuTopJumpLink(this.overviewSection);
     this.shellActionKeybindingEditor.append(this.shellTopJumpLink);
 
     this.recentActivitySection = document.createElement('section');
@@ -3357,6 +3357,9 @@ export class AppShell {
     this.recentActivityBody.className = 'app-shell__recent-activity-body';
     this.recentActivitySection.append(this.recentActivityBody);
 
+    this.recentActivityTopJumpLink = createPausedMainMenuTopJumpLink(this.overviewSection);
+    this.recentActivitySection.append(this.recentActivityTopJumpLink);
+
     this.dangerZoneSection = document.createElement('section');
     this.dangerZoneSection.className = 'app-shell__danger-zone';
     this.pausedMainMenuSecondarySections.append(this.dangerZoneSection);
@@ -3386,6 +3389,9 @@ export class AppShell {
     this.dangerZoneBody = document.createElement('div');
     this.dangerZoneBody.className = 'app-shell__danger-zone-body';
     this.dangerZoneSection.append(this.dangerZoneBody);
+
+    this.dangerZoneTopJumpLink = createPausedMainMenuTopJumpLink(this.overviewSection);
+    this.dangerZoneSection.append(this.dangerZoneTopJumpLink);
 
     this.menuSections = document.createElement('div');
     this.menuSections.className = 'app-shell__menu-sections';
@@ -3896,6 +3902,10 @@ export class AppShell {
       pausedMainMenuRecentActivitySection.visible,
       'grid'
     );
+    this.recentActivityTopJumpLink.hidden = !pausedMainMenuRecentActivitySection.visible;
+    this.recentActivityTopJumpLink.style.display = pausedMainMenuRecentActivitySection.visible
+      ? 'inline-flex'
+      : 'none';
     this.dangerZoneSection.hidden = !pausedMainMenuDangerZoneSection.visible;
     this.dangerZoneSection.style.display = resolveAppShellRegionDisplay(
       pausedMainMenuDangerZoneSection.visible,
@@ -3909,6 +3919,10 @@ export class AppShell {
       pausedMainMenuDangerZoneSection.visible,
       'grid'
     );
+    this.dangerZoneTopJumpLink.hidden = !pausedMainMenuDangerZoneSection.visible;
+    this.dangerZoneTopJumpLink.style.display = pausedMainMenuDangerZoneSection.visible
+      ? 'inline-flex'
+      : 'none';
     this.menuSections.replaceChildren(
       ...pausedMainMenuSecondarySections.map((section) => createMenuSectionElement(section))
     );

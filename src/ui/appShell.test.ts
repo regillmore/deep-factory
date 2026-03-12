@@ -731,18 +731,23 @@ describe('paused main-menu dashboard layout', () => {
     shell.setState(createPausedMainMenuShellState());
 
     const root = container.children[0] ?? null;
+    const shellSection = root === null ? null : findElementByClass(root, 'app-shell__shell');
     const shellToggleButton =
-      root === null ? null : findElementByClass(root, 'app-shell__shell-toggle');
+      shellSection === null ? null : findElementByClass(shellSection, 'app-shell__shell-toggle');
     const overviewSection = root === null ? null : findElementByClass(root, 'app-shell__overview');
     const jumpLinkCollapsed =
-      root === null ? null : findElementByClass(root, 'app-shell__section-top-jump-link');
+      shellSection === null
+        ? null
+        : findElementByClass(shellSection, 'app-shell__section-top-jump-link');
 
     expect(jumpLinkCollapsed?.hidden).toBe(true);
 
     shellToggleButton?.click();
 
     const jumpLink =
-      root === null ? null : findElementByClass(root, 'app-shell__section-top-jump-link');
+      shellSection === null
+        ? null
+        : findElementByClass(shellSection, 'app-shell__section-top-jump-link');
 
     expect(jumpLink?.textContent).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT);
     expect(jumpLink?.title).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE);
@@ -753,6 +758,59 @@ describe('paused main-menu dashboard layout', () => {
 
     expect(overviewSection?.focusCallCount).toBe(1);
     expect(overviewSection?.scrollIntoViewCallCount).toBe(1);
+  });
+
+  it('adds recent-activity and danger-zone top-jump links that return focus to Overview', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        null,
+        {
+          status: 'downloaded',
+          fileName: 'paused-session.json'
+        },
+        null,
+        null,
+        null,
+        false,
+        'export-world-save'
+      )
+    );
+
+    const root = container.children[0] ?? null;
+    const overviewSection = root === null ? null : findElementByClass(root, 'app-shell__overview');
+    const recentActivitySection =
+      root === null ? null : findElementByClass(root, 'app-shell__recent-activity');
+    const dangerZoneSection =
+      root === null ? null : findElementByClass(root, 'app-shell__danger-zone');
+    const recentActivityJumpLink =
+      recentActivitySection === null
+        ? null
+        : findElementByClass(recentActivitySection, 'app-shell__section-top-jump-link');
+    const dangerZoneJumpLink =
+      dangerZoneSection === null
+        ? null
+        : findElementByClass(dangerZoneSection, 'app-shell__section-top-jump-link');
+
+    expect(recentActivityJumpLink?.textContent).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT);
+    expect(recentActivityJumpLink?.title).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE);
+    expect(recentActivityJumpLink?.hidden).toBe(false);
+    expect(dangerZoneJumpLink?.textContent).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT);
+    expect(dangerZoneJumpLink?.title).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE);
+    expect(dangerZoneJumpLink?.hidden).toBe(false);
+
+    recentActivityJumpLink?.click();
+    dangerZoneJumpLink?.click();
+
+    expect(overviewSection?.focusCallCount).toBe(2);
+    expect(overviewSection?.scrollIntoViewCallCount).toBe(2);
   });
 
   it('switches the expanded shell-hotkey metadata rows into warning-toned session-only copy when browser persistence is unavailable', () => {
