@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-12: Recent Activity should show only the latest paused-menu outcome plus required follow-up warnings
+
+- Decision: The paused menu now keeps world-save and shell-setting feedback in `Recent Activity`, showing only the latest related outcome together with any still-relevant follow-up warning such as missing browser resume after a clear or import persistence failure.
+- Reason: Accumulating every stored result made the paused menu longer and hid the activity most likely to matter next, while persistent follow-up warnings still need to stay visible when the latest action leaves unfinished attention items behind.
+- Consequence: Future paused-menu feedback should update the latest-activity slot instead of growing a multi-result history, and ongoing warnings should only join `Recent Activity` when they directly explain the latest outcome's remaining consequence.
+
 ### 2026-03-12: Paused-menu cleanup should converge on a compact sectioned dashboard
 
 - Decision: Future paused-menu cleanup work should consolidate the current card-heavy layout into stable `Overview`, `World Save`, `Shell`, `Recent Activity`, and `Danger Zone` sections, with terse metadata-first summaries in the default state and deeper controls or detail only inside the owning section.

@@ -25,6 +25,7 @@ import {
   type PausedMainMenuClearSavedWorldResult,
   type PausedMainMenuExportResult,
   type PausedMainMenuImportResult,
+  type PausedMainMenuRecentActivityAction,
   type PausedMainMenuResetShellTogglesResult,
   type PausedMainMenuSavedWorldStatus
 } from './ui/appShell';
@@ -1356,6 +1357,7 @@ const createExpectedPausedMainMenuState = (
     resetShellTogglesResult: PausedMainMenuResetShellTogglesResult;
     worldSaveCleared: boolean;
     savedWorldStatus: PausedMainMenuSavedWorldStatus;
+    recentActivityAction: PausedMainMenuRecentActivityAction;
     shellProfilePreview: {
       fileName: string | null;
       worldSessionShellState: ReturnType<typeof createDefaultWorldSessionShellState>;
@@ -1367,6 +1369,19 @@ const createExpectedPausedMainMenuState = (
     getItem: (key) => testRuntime.storageValues.get(key) ?? null,
     setItem: () => {}
   });
+  const resolvedSavedWorldStatus =
+    options.savedWorldStatus ?? (options.worldSaveCleared ? 'cleared' : null);
+  const resolvedRecentActivityAction =
+    options.recentActivityAction ??
+    (options.resetShellTogglesResult
+      ? 'reset-shell-toggles'
+      : options.clearSavedWorldResult || resolvedSavedWorldStatus === 'cleared'
+        ? 'clear-saved-world'
+        : options.importResult
+          ? 'import-world-save'
+          : options.exportResult
+            ? 'export-world-save'
+            : null);
 
   return createMainMenuShellState(
     true,
@@ -1379,7 +1394,7 @@ const createExpectedPausedMainMenuState = (
     options.shellActionKeybindingsDefaultedFromPersistedState ??
       shellActionKeybindingLoad.defaultedFromPersistedState,
     options.importResult ?? null,
-    options.savedWorldStatus ?? (options.worldSaveCleared ? 'cleared' : null),
+    resolvedSavedWorldStatus,
     options.exportResult ?? null,
     options.clearSavedWorldResult ?? null,
     options.resetShellTogglesResult ?? null,
@@ -1391,7 +1406,8 @@ const createExpectedPausedMainMenuState = (
           shellActionKeybindings: options.shellProfilePreview.shellActionKeybindings
         }
       : null,
-    options.shellActionKeybindingsCurrentSessionOnly ?? false
+    options.shellActionKeybindingsCurrentSessionOnly ?? false,
+    resolvedRecentActivityAction
   );
 };
 

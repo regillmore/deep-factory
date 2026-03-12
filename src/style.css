@@ -306,7 +306,7 @@ canvas {
 }
 
 .app-shell__world-save,
-.app-shell__results,
+.app-shell__recent-activity,
 .app-shell__shell {
   margin-top: 18px;
   padding: 15px 16px 16px;
@@ -330,7 +330,7 @@ canvas {
 }
 
 .app-shell__world-save-header,
-.app-shell__results-header,
+.app-shell__recent-activity-header,
 .app-shell__shell-header {
   display: flex;
   flex-wrap: wrap;
@@ -340,7 +340,7 @@ canvas {
 }
 
 .app-shell__world-save-copy,
-.app-shell__results-copy,
+.app-shell__recent-activity-copy,
 .app-shell__shell-copy {
   min-width: 0;
   display: grid;
@@ -348,7 +348,7 @@ canvas {
 }
 
 .app-shell__world-save-title,
-.app-shell__results-title,
+.app-shell__recent-activity-title,
 .app-shell__shell-title {
   margin: 0;
   color: #fff0cc;
@@ -359,14 +359,13 @@ canvas {
 }
 
 .app-shell__world-save-summary,
-.app-shell__results-summary {
+.app-shell__recent-activity-summary {
   margin: 0;
   color: #d6e3e7;
   font-size: 0.92rem;
   line-height: 1.5;
 }
 
-.app-shell__results-toggle,
 .app-shell__shell-toggle {
   padding: 8px 12px;
   border: 1px solid rgba(159, 221, 255, 0.28);
@@ -382,19 +381,17 @@ canvas {
   cursor: pointer;
 }
 
-.app-shell__results-toggle:hover,
 .app-shell__shell-toggle:hover {
   border-color: rgba(159, 221, 255, 0.42);
 }
 
-.app-shell__results-toggle:focus-visible,
 .app-shell__shell-toggle:focus-visible {
   outline: 2px solid #9fddff;
   outline-offset: 3px;
 }
 
 .app-shell__world-save-body,
-.app-shell__results-body,
+.app-shell__recent-activity-body,
 .app-shell__shell-body {
   padding-top: 14px;
   border-top: 1px solid rgba(255, 240, 204, 0.1);
@@ -470,7 +467,14 @@ canvas {
   margin: 0;
 }
 
-.app-shell__results-body {
+.app-shell__recent-activity[data-tone='warning'] {
+  border-color: rgba(230, 165, 92, 0.32);
+  background:
+    linear-gradient(180deg, rgba(34, 22, 18, 0.96), rgba(24, 15, 12, 0.88)),
+    linear-gradient(135deg, rgba(230, 165, 92, 0.18), rgba(111, 45, 21, 0.08));
+}
+
+.app-shell__recent-activity-body {
   gap: 12px;
 }
 
@@ -795,7 +799,7 @@ canvas {
   }
 
   .app-shell__world-save-header,
-  .app-shell__results-header,
+  .app-shell__recent-activity-header,
   .app-shell__shell-header {
     flex-direction: column;
   }
@@ -805,7 +809,6 @@ canvas {
     grid-template-columns: 1fr;
   }
 
-  .app-shell__results-toggle,
   .app-shell__shell-toggle {
     width: 100%;
   }

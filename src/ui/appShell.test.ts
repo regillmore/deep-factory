@@ -17,6 +17,7 @@ import {
   getDesktopReturnToMainMenuHotkeyLabel
 } from '../input/debugEditShortcuts';
 import {
+  type AppShellState,
   createDefaultBootShellState,
   createFirstLaunchMainMenuShellState,
   createInWorldShellState,
@@ -40,8 +41,7 @@ import {
   resolvePausedMainMenuApplyShellProfileEditorStatus,
   resolvePausedMainMenuHelpCopySectionState,
   resolvePausedMainMenuHelpCopyToggleLabel,
-  resolvePausedMainMenuResultsSectionState,
-  resolvePausedMainMenuResultsToggleLabel,
+  resolvePausedMainMenuRecentActivitySectionState,
   createPausedMainMenuShellSummaryRows,
   resolvePausedMainMenuShellSectionState,
   resolvePausedMainMenuShellToggleLabel,
@@ -153,39 +153,17 @@ const DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
 ] as const;
 const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
   'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
-const appendPausedMainMenuResultsDensitySummaryLine = (
-  summaryLine: string,
-  resultCount: number
-): string => `${summaryLine} ${resultCount} result cards are currently grouped here.`;
-const IMPORT_RESULT_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Import World Save. Only warning feedback is currently available here.';
-const IMPORT_RESULT_ONLY_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Import World Save. Only warning feedback is currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
-const RESET_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Reset Shell Toggles. Only shell-setting feedback is currently available here. Only confirmation feedback is currently available here.';
-const RESET_SESSION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Reset Shell Toggles. Only shell-setting feedback is currently available here. Only warning feedback is currently available here. This reset is current-session-only because browser shell storage could not be cleared.';
-const RESET_SESSION_ONLY_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE = `${RESET_SESSION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE} Result-card paragraphs are hidden until Show Help Text is enabled.`;
-const IMPORT_AND_CLEAR_WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Import World Save and Clear Saved World. Only world-save feedback is currently available here. Only warning feedback is currently available here.';
-const IMPORT_AND_RESET_SESSION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Import World Save and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Only warning feedback is currently available here. This reset is current-session-only because browser shell storage could not be cleared.';
-const EXPORT_AND_ACCEPTED_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Export World Save and Import World Save. Only world-save feedback is currently available here. Only confirmation feedback is currently available here.';
-const EXPORT_AND_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Export World Save and Import World Save. Only world-save feedback is currently available here. Warning and confirmation feedback are both currently available here.';
-const EXPORT_AND_IMPORT_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Export World Save and Import World Save. Only world-save feedback is currently available here. Warning and confirmation feedback are both currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
-const IMPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Import World Save and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Warning and confirmation feedback are both currently available here.';
-const EXPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Export World Save and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Only confirmation feedback is currently available here.';
-const EXPORT_AND_RESET_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Export World Save and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Only confirmation feedback is currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
-const EXPORT_IMPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Export World Save, Import World Save, and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Warning and confirmation feedback are both currently available here.';
-const EXPORT_IMPORT_CLEAR_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Export World Save, Import World Save, Clear Saved World, and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Warning and confirmation feedback are both currently available here.';
+const REJECTED_IMPORT_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE =
+  'Latest world-save activity: Import World Save was rejected during envelope validation.';
+const CLEARED_SAVED_WORLD_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE =
+  'Latest world-save activity: Clear Saved World removed browser resume for this paused session. A follow-up warning still needs attention below.';
+const DOWNLOADED_EXPORT_WITH_FOLLOW_UP_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE =
+  'Latest world-save activity: Export World Save downloaded successfully. A follow-up warning still needs attention below.';
+const RESET_CLEARED_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE =
+  'Latest shell-setting activity: Reset Shell Toggles cleared saved shell visibility for the next resume.';
+const CLEARED_PAUSED_MAIN_MENU_CLEAR_SAVED_WORLD_ACTIVITY_LINES = [
+  'Clear Saved World removed the browser-resume envelope while keeping this paused session open in the current tab.'
+] as const;
 const PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
   ...DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS.slice(0, 2),
   {
@@ -346,12 +324,14 @@ const createPausedMainMenuShellActionKeybindingSummaryRows = (
   }
 ];
 const createPausedMainMenuMenuSectionsFromViewModel = (
-  pausedMainMenuSections: ReturnType<typeof createPausedMainMenuSectionViewModel>
+  pausedMainMenuSections: ReturnType<typeof createPausedMainMenuSectionViewModel>,
+  stateOverrides: Partial<AppShellState> = {}
 ) => {
   const { primarySections, recentActivitySections } = resolvePausedMainMenuMenuSectionGroups({
     screen: 'main-menu',
     primaryActionLabel: 'Resume World',
-    pausedMainMenuSections
+    pausedMainMenuSections,
+    ...stateOverrides
   });
 
   return [...primarySections, ...recentActivitySections];
@@ -1742,7 +1722,9 @@ describe('createPausedMainMenuShellState', () => {
       screen: 'main-menu',
       statusText: 'World session paused.',
       detailLines: [],
-      menuSections: createPausedMainMenuMenuSectionsFromViewModel(pausedMainMenuSections),
+      menuSections: createPausedMainMenuMenuSectionsFromViewModel(pausedMainMenuSections, {
+        pausedMainMenuSavedWorldStatus: 'cleared'
+      }),
       pausedMainMenuSections,
       pausedMainMenuSavedWorldStatus: 'cleared',
       primaryActionLabel: 'Resume World',
@@ -1789,7 +1771,11 @@ describe('createPausedMainMenuShellState', () => {
       screen: 'main-menu',
       statusText: 'World session paused.',
       detailLines: [],
-      menuSections: createPausedMainMenuMenuSectionsFromViewModel(pausedMainMenuSections),
+      menuSections: createPausedMainMenuMenuSectionsFromViewModel(pausedMainMenuSections, {
+        pausedMainMenuResetShellTogglesResult: {
+          status: 'cleared'
+        }
+      }),
       pausedMainMenuSections,
       primaryActionLabel: 'Resume World',
       secondaryActionLabel: 'Export World Save',
@@ -1840,7 +1826,12 @@ describe('createPausedMainMenuShellState', () => {
       screen: 'main-menu',
       statusText: 'World session paused.',
       detailLines: [],
-      menuSections: createPausedMainMenuMenuSectionsFromViewModel(pausedMainMenuSections),
+      menuSections: createPausedMainMenuMenuSectionsFromViewModel(pausedMainMenuSections, {
+        pausedMainMenuResetShellTogglesResult: {
+          status: 'persistence-failed',
+          reason: 'remove blocked'
+        }
+      }),
       pausedMainMenuSections,
       primaryActionLabel: 'Resume World',
       secondaryActionLabel: 'Export World Save',
@@ -2635,7 +2626,10 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
       null,
       {
         status: 'cleared'
-      }
+      },
+      null,
+      false,
+      'clear-saved-world'
     );
 
     expect(resolvePausedMainMenuMenuSectionGroups(pausedState)).toEqual({
@@ -2731,34 +2725,34 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
       ],
       recentActivitySections: [
         {
-          title: 'Export Result',
-          lines: [...DOWNLOADED_PAUSED_MAIN_MENU_EXPORT_RESULT_LINES],
+          title: 'Clear Saved World',
+          lines: [...CLEARED_PAUSED_MAIN_MENU_CLEAR_SAVED_WORLD_ACTIVITY_LINES],
           metadataRows: [
             {
               label: 'Status',
-              value: 'Downloaded'
+              value: 'Cleared from browser storage'
             },
             {
-              label: 'File',
-              value: 'paused-session.json'
+              label: 'Session',
+              value: 'Still open in this tab'
             }
           ],
           tone: 'accent'
         },
         {
-          title: 'Reset Shell Toggles Result',
-          lines: [...CLEARED_PAUSED_MAIN_MENU_RESET_SHELL_TOGGLES_RESULT_LINES],
+          title: 'Saved World Status',
+          lines: [...CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_STATUS_LINES],
           metadataRows: [
             {
               label: 'Status',
-              value: 'Cleared for next resume'
+              value: 'Not browser saved'
             },
             {
-              label: 'Next Resume',
-              value: 'Default-off shell layout'
+              label: 'Saved again by',
+              value: 'Resume World, Import World Save, New World'
             }
           ],
-          tone: 'accent'
+          tone: 'warning'
         }
       ],
       dangerZoneSections: [
@@ -2834,17 +2828,10 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
   });
 });
 
-describe('resolvePausedMainMenuResultsToggleLabel', () => {
-  it('switches the paused-menu results button label between collapsed and expanded copy', () => {
-    expect(resolvePausedMainMenuResultsToggleLabel()).toBe('Show Results');
-    expect(resolvePausedMainMenuResultsToggleLabel(true)).toBe('Hide Results');
-  });
-});
-
-describe('resolvePausedMainMenuResultsSectionState', () => {
-  it('keeps paused-menu results collapsed by default while summarizing the available feedback cards', () => {
+describe('resolvePausedMainMenuRecentActivitySectionState', () => {
+  it('falls back to the only available paused-menu activity when no explicit latest action is stored', () => {
     expect(
-      resolvePausedMainMenuResultsSectionState(
+      resolvePausedMainMenuRecentActivitySectionState(
         createPausedMainMenuShellState(
           undefined,
           true,
@@ -2859,9 +2846,8 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
       )
     ).toEqual({
       visible: true,
-      expanded: false,
-      summaryLine: IMPORT_RESULT_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
-      toggleLabel: 'Show Results',
+      summaryLine: REJECTED_IMPORT_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE,
+      tone: 'warning',
       menuSections: [
         {
           title: 'Import Result',
@@ -2886,16 +2872,16 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
     });
   });
 
-  it('reveals grouped paused-menu feedback cards only after the results section expands', () => {
+  it('shows only the latest clear-saved-world outcome plus its follow-up warning', () => {
     expect(
-      resolvePausedMainMenuResultsSectionState(
+      resolvePausedMainMenuRecentActivitySectionState(
         createPausedMainMenuShellState(
           undefined,
           true,
           createDefaultShellActionKeybindingState(),
           false,
           null,
-          null,
+          'cleared',
           {
             status: 'downloaded',
             fileName: 'paused-session.json'
@@ -2903,15 +2889,76 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
           null,
           {
             status: 'cleared'
-          }
-        ),
-        true
+          },
+          null,
+          false,
+          'clear-saved-world'
+        )
       )
     ).toEqual({
       visible: true,
-      expanded: true,
-      summaryLine: EXPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
-      toggleLabel: 'Hide Results',
+      summaryLine: CLEARED_SAVED_WORLD_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE,
+      tone: 'warning',
+      menuSections: [
+        {
+          title: 'Clear Saved World',
+          lines: [...CLEARED_PAUSED_MAIN_MENU_CLEAR_SAVED_WORLD_ACTIVITY_LINES],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Cleared from browser storage'
+            },
+            {
+              label: 'Session',
+              value: 'Still open in this tab'
+            }
+          ],
+          tone: 'accent'
+        },
+        {
+          title: 'Saved World Status',
+          lines: [...CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_STATUS_LINES],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Not browser saved'
+            },
+            {
+              label: 'Saved again by',
+              value: 'Resume World, Import World Save, New World'
+            }
+          ],
+          tone: 'warning'
+        }
+      ]
+    });
+  });
+
+  it('keeps the latest export result visible while preserving an active world-save follow-up warning', () => {
+    expect(
+      resolvePausedMainMenuRecentActivitySectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          null,
+          'cleared',
+          {
+            status: 'downloaded',
+            fileName: 'paused-session.json'
+          },
+          null,
+          null,
+          null,
+          false,
+          'export-world-save'
+        )
+      )
+    ).toEqual({
+      visible: true,
+      summaryLine: DOWNLOADED_EXPORT_WITH_FOLLOW_UP_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE,
+      tone: 'warning',
       menuSections: [
         {
           title: 'Export Result',
@@ -2928,6 +2975,57 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
           ],
           tone: 'accent'
         },
+        {
+          title: 'Saved World Status',
+          lines: [...CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_STATUS_LINES],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Not browser saved'
+            },
+            {
+              label: 'Saved again by',
+              value: 'Resume World, Import World Save, New World'
+            }
+          ],
+          tone: 'warning'
+        }
+      ]
+    });
+  });
+
+  it('keeps recent activity scoped to the latest shell-setting outcome when reset happened most recently', () => {
+    expect(
+      resolvePausedMainMenuRecentActivitySectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          {
+            status: 'rejected',
+            fileName: 'broken.json',
+            reason: 'world save envelope kind must be "deep-factory.world-save"'
+          },
+          null,
+          {
+            status: 'downloaded',
+            fileName: 'paused-session.json'
+          },
+          null,
+          {
+            status: 'cleared'
+          },
+          null,
+          false,
+          'reset-shell-toggles'
+        )
+      )
+    ).toEqual({
+      visible: true,
+      summaryLine: RESET_CLEARED_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE,
+      tone: 'default',
+      menuSections: [
         {
           title: 'Reset Shell Toggles Result',
           lines: [...CLEARED_PAUSED_MAIN_MENU_RESET_SHELL_TOGGLES_RESULT_LINES],
@@ -2947,427 +3045,20 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
     });
   });
 
-  it('adds confirmation-only header copy when every paused-menu result card is confirmation toned', () => {
-    expect(
-      resolvePausedMainMenuResultsSectionState(
-        createPausedMainMenuShellState(
-          undefined,
-          true,
-          createDefaultShellActionKeybindingState(),
-          false,
-          null,
-          null,
-          {
-            status: 'downloaded',
-            fileName: 'paused-session.json'
-          },
-          null,
-          {
-            status: 'cleared'
-          }
-        )
-      )
-    ).toMatchObject({
-      visible: true,
-      expanded: false,
-      summaryLine: EXPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
-      toggleLabel: 'Show Results'
-    });
-  });
-
-  it('adds world-save-only category copy when multiple paused-menu result cards are all world-save feedback', () => {
-    expect(
-      resolvePausedMainMenuResultsSectionState(
-        createPausedMainMenuShellState(
-          undefined,
-          true,
-          createDefaultShellActionKeybindingState(),
-          false,
-          {
-            status: 'accepted',
-            fileName: 'restore.json'
-          },
-          null,
-          {
-            status: 'downloaded',
-            fileName: 'paused-session.json'
-          }
-        )
-      )
-    ).toMatchObject({
-      visible: true,
-      expanded: false,
-      summaryLine: EXPORT_AND_ACCEPTED_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
-      toggleLabel: 'Show Results'
-    });
-  });
-
-  it('adds shell-setting-only category copy when reset-shell feedback is the only paused-menu result', () => {
-    expect(
-      resolvePausedMainMenuResultsSectionState(
-        createPausedMainMenuShellState(
-          undefined,
-          true,
-          createDefaultShellActionKeybindingState(),
-          false,
-          null,
-          null,
-          null,
-          null,
-          {
-            status: 'cleared'
-          }
-        )
-      )
-    ).toMatchObject({
-      visible: true,
-      expanded: false,
-      summaryLine: RESET_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
-      toggleLabel: 'Show Results'
-    });
-  });
-
-  it('adds current-session-only reset warning copy when mixed paused-menu results include reset-shell feedback', () => {
-    expect(
-      resolvePausedMainMenuResultsSectionState(
-        createPausedMainMenuShellState(
-          undefined,
-          true,
-          createDefaultShellActionKeybindingState(),
-          false,
-          {
-            status: 'rejected',
-            fileName: 'broken.json',
-            reason: 'world save envelope kind must be "deep-factory.world-save"'
-          },
-          null,
-          null,
-          null,
-          {
-            status: 'persistence-failed',
-            reason: 'browser shell storage could not be cleared'
-          }
-        )
-      )
-    ).toMatchObject({
-      visible: true,
-      expanded: false,
-      summaryLine: IMPORT_AND_RESET_SESSION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
-      toggleLabel: 'Show Results'
-    });
-  });
-
-  it('keeps current-session-only reset warning copy when help text is hidden', () => {
-    expect(
-      resolvePausedMainMenuResultsSectionState(
-        createPausedMainMenuShellState(
-          undefined,
-          true,
-          createDefaultShellActionKeybindingState(),
-          false,
-          null,
-          null,
-          null,
-          null,
-          {
-            status: 'persistence-failed',
-            reason: 'browser shell storage could not be cleared'
-          }
-        ),
-        false,
-        false
-      )
-    ).toMatchObject({
-      visible: true,
-      expanded: false,
-      summaryLine: RESET_SESSION_ONLY_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
-      toggleLabel: 'Show Results'
-    });
-  });
-
-  it('adds density copy when three paused-menu result cards are grouped at once', () => {
-    expect(
-      resolvePausedMainMenuResultsSectionState(
-        createPausedMainMenuShellState(
-          undefined,
-          true,
-          createDefaultShellActionKeybindingState(),
-          false,
-          {
-            status: 'rejected',
-            fileName: 'broken.json',
-            reason: 'world save envelope kind must be "deep-factory.world-save"'
-          },
-          null,
-          {
-            status: 'downloaded',
-            fileName: 'paused-session.json'
-          },
-          null,
-          {
-            status: 'cleared'
-          }
-        )
-      )
-    ).toMatchObject({
-      visible: true,
-      expanded: false,
-      summaryLine: appendPausedMainMenuResultsDensitySummaryLine(
-        EXPORT_IMPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
-        3
-      ),
-      toggleLabel: 'Show Results'
-    });
-  });
-
-  it('keeps density copy when four paused-menu result cards are grouped and help text is hidden', () => {
-    expect(
-      resolvePausedMainMenuResultsSectionState(
-        createPausedMainMenuShellState(
-          undefined,
-          true,
-          createDefaultShellActionKeybindingState(),
-          false,
-          {
-            status: 'rejected',
-            fileName: 'broken.json',
-            reason: 'world save envelope kind must be "deep-factory.world-save"'
-          },
-          null,
-          {
-            status: 'downloaded',
-            fileName: 'paused-session.json'
-          },
-          {
-            status: 'failed',
-            reason: 'local resume envelope could not be deleted'
-          },
-          {
-            status: 'cleared'
-          }
-        ),
-        false,
-        false
-      )
-    ).toMatchObject({
-      visible: true,
-      expanded: false,
-      summaryLine: `${appendPausedMainMenuResultsDensitySummaryLine(
-        EXPORT_IMPORT_CLEAR_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
-        4
-      )} Result-card paragraphs are hidden until Show Help Text is enabled.`,
-      toggleLabel: 'Show Results'
-    });
-  });
-
-  it('adds header copy when the paused-menu help toggle hides result-card paragraphs', () => {
-    expect(
-      resolvePausedMainMenuResultsSectionState(
-        createPausedMainMenuShellState(
-          undefined,
-          true,
-          createDefaultShellActionKeybindingState(),
-          false,
-          {
-            status: 'rejected',
-            fileName: 'broken.json',
-            reason: 'world save envelope kind must be "deep-factory.world-save"'
-          }
-        ),
-        true,
-        false
-      )
-    ).toEqual({
-      visible: true,
-      expanded: true,
-      summaryLine: IMPORT_RESULT_ONLY_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
-      toggleLabel: 'Hide Results',
-      menuSections: [
-        {
-          title: 'Import Result',
-          lines: [...REJECTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES],
-          metadataRows: [
-            {
-              label: 'Status',
-              value: 'Rejected'
-            },
-            {
-              label: 'File',
-              value: 'broken.json'
-            },
-            {
-              label: 'Reason',
-              value: 'world save envelope kind must be "deep-factory.world-save"'
-            }
-          ],
-          tone: 'warning'
-        }
-      ]
-    });
-  });
-
-  it('keeps confirmation-only header copy when help text is hidden', () => {
-    expect(
-      resolvePausedMainMenuResultsSectionState(
-        createPausedMainMenuShellState(
-          undefined,
-          true,
-          createDefaultShellActionKeybindingState(),
-          false,
-          null,
-          null,
-          {
-            status: 'downloaded',
-            fileName: 'paused-session.json'
-          },
-          null,
-          {
-            status: 'cleared'
-          }
-        ),
-        false,
-        false
-      )
-    ).toMatchObject({
-      visible: true,
-      expanded: false,
-      summaryLine: EXPORT_AND_RESET_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
-      toggleLabel: 'Show Results'
-    });
-  });
-
-  it('adds warning-only header copy when every paused-menu result card is warning toned', () => {
-    expect(
-      resolvePausedMainMenuResultsSectionState(
-        createPausedMainMenuShellState(
-          undefined,
-          true,
-          createDefaultShellActionKeybindingState(),
-          false,
-          {
-            status: 'rejected',
-            fileName: 'broken.json',
-            reason: 'world save envelope kind must be "deep-factory.world-save"'
-          },
-          null,
-          null,
-          {
-            status: 'failed',
-            reason: 'local resume envelope could not be deleted'
-          }
-        )
-      )
-    ).toMatchObject({
-      visible: true,
-      expanded: false,
-      summaryLine: IMPORT_AND_CLEAR_WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
-      toggleLabel: 'Show Results'
-    });
-  });
-
-  it('adds category header copy when world-save and shell-setting feedback are both present', () => {
-    expect(
-      resolvePausedMainMenuResultsSectionState(
-        createPausedMainMenuShellState(
-          undefined,
-          true,
-          createDefaultShellActionKeybindingState(),
-          false,
-          {
-            status: 'rejected',
-            fileName: 'broken.json',
-            reason: 'world save envelope kind must be "deep-factory.world-save"'
-          },
-          null,
-          null,
-          null,
-          {
-            status: 'cleared'
-          }
-        )
-      )
-    ).toMatchObject({
-      visible: true,
-      expanded: false,
-      summaryLine: IMPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
-      toggleLabel: 'Show Results'
-    });
-  });
-
-  it('adds mixed results header copy when accent and warning feedback are both present', () => {
-    expect(
-      resolvePausedMainMenuResultsSectionState(
-        createPausedMainMenuShellState(
-          undefined,
-          true,
-          createDefaultShellActionKeybindingState(),
-          false,
-          {
-            status: 'rejected',
-            fileName: 'broken.json',
-            reason: 'world save envelope kind must be "deep-factory.world-save"'
-          },
-          null,
-          {
-            status: 'downloaded',
-            fileName: 'paused-session.json'
-          }
-        )
-      )
-    ).toMatchObject({
-      visible: true,
-      expanded: false,
-      summaryLine: EXPORT_AND_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
-      toggleLabel: 'Show Results'
-    });
-  });
-
-  it('keeps mixed results header copy when help text is hidden', () => {
-    expect(
-      resolvePausedMainMenuResultsSectionState(
-        createPausedMainMenuShellState(
-          undefined,
-          true,
-          createDefaultShellActionKeybindingState(),
-          false,
-          {
-            status: 'rejected',
-            fileName: 'broken.json',
-            reason: 'world save envelope kind must be "deep-factory.world-save"'
-          },
-          null,
-          {
-            status: 'downloaded',
-            fileName: 'paused-session.json'
-          }
-        ),
-        false,
-        false
-      )
-    ).toMatchObject({
-      visible: true,
-      expanded: false,
-      summaryLine: EXPORT_AND_IMPORT_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
-      toggleLabel: 'Show Results'
-    });
-  });
-
-  it('keeps the paused-menu results section hidden when no transient feedback cards are present', () => {
-    expect(resolvePausedMainMenuResultsSectionState(createPausedMainMenuShellState(), true)).toEqual({
+  it('keeps recent activity hidden when no paused-menu world-save or shell-setting outcome is available', () => {
+    expect(resolvePausedMainMenuRecentActivitySectionState(createPausedMainMenuShellState())).toEqual({
       visible: false,
-      expanded: false,
       summaryLine: null,
-      toggleLabel: null,
+      tone: 'default',
       menuSections: []
     });
   });
 
-  it('keeps paused-menu results hidden outside the paused main menu', () => {
-    expect(resolvePausedMainMenuResultsSectionState(createFirstLaunchMainMenuShellState(), true)).toEqual({
+  it('keeps recent activity hidden outside the paused main menu', () => {
+    expect(resolvePausedMainMenuRecentActivitySectionState(createFirstLaunchMainMenuShellState())).toEqual({
       visible: false,
-      expanded: false,
       summaryLine: null,
-      toggleLabel: null,
+      tone: 'default',
       menuSections: []
     });
   });

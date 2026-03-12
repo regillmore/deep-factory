@@ -87,6 +87,7 @@ import {
   type PausedMainMenuClearSavedWorldResult,
   type PausedMainMenuExportResult,
   type PausedMainMenuImportResult,
+  type PausedMainMenuRecentActivityAction,
   type PausedMainMenuShellActionKeybindingRemapResult,
   type PausedMainMenuResetShellActionKeybindingsResult,
   type PausedMainMenuResetShellTogglesResult,
@@ -549,6 +550,7 @@ const bootstrap = async (): Promise<void> => {
   let pausedMainMenuImportResult: PausedMainMenuImportResult | null = null;
   let pausedMainMenuClearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null;
   let pausedMainMenuResetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null;
+  let pausedMainMenuRecentActivityAction: PausedMainMenuRecentActivityAction | null = null;
   let pausedMainMenuShellProfilePreview: PendingPausedMainMenuShellProfilePreview | null = null;
   let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
@@ -811,7 +813,8 @@ const bootstrap = async (): Promise<void> => {
         pausedMainMenuResetShellTogglesResult,
         worldSavePersistenceAvailable,
         readPausedMainMenuShellProfilePreview(),
-        shellActionKeybindingsCurrentSessionOnly
+        shellActionKeybindingsCurrentSessionOnly,
+        pausedMainMenuRecentActivityAction
       )
     );
     syncWorldScreenShellVisibility();
@@ -1460,6 +1463,7 @@ const bootstrap = async (): Promise<void> => {
           envelope: createCurrentWorldSessionSaveEnvelope()
         })
       };
+      pausedMainMenuRecentActivityAction = 'export-world-save';
       showMainMenuShellState();
       return true;
     } catch (error) {
@@ -1468,6 +1472,7 @@ const bootstrap = async (): Promise<void> => {
         status: 'failed',
         reason: resolveThrownErrorReason(error)
       };
+      pausedMainMenuRecentActivityAction = 'export-world-save';
       showMainMenuShellState();
       return false;
     }
@@ -1480,6 +1485,7 @@ const bootstrap = async (): Promise<void> => {
           pausedMainMenuImportResult = {
             status: 'cancelled'
           };
+          pausedMainMenuRecentActivityAction = 'import-world-save';
           showMainMenuShellState();
           return false;
         case 'picker-start-failed':
@@ -1487,6 +1493,7 @@ const bootstrap = async (): Promise<void> => {
             status: 'picker-start-failed',
             reason: result.reason
           };
+          pausedMainMenuRecentActivityAction = 'import-world-save';
           console.warn('Failed to start world-save import picker.', result.reason);
           showMainMenuShellState();
           return false;
@@ -1496,6 +1503,7 @@ const bootstrap = async (): Promise<void> => {
             fileName: result.fileName,
             reason: result.reason
           };
+          pausedMainMenuRecentActivityAction = 'import-world-save';
           console.warn('Rejected imported world save.', result.reason);
           showMainMenuShellState();
           return false;
@@ -1507,6 +1515,7 @@ const bootstrap = async (): Promise<void> => {
               fileName: result.fileName,
               reason: restoreResult.reason
             };
+            pausedMainMenuRecentActivityAction = 'import-world-save';
             showMainMenuShellState();
             return false;
           }
@@ -1516,6 +1525,7 @@ const bootstrap = async (): Promise<void> => {
               fileName: result.fileName,
               reason: restoreResult.reason
             };
+            pausedMainMenuRecentActivityAction = 'import-world-save';
             showMainMenuShellState();
             return true;
           }
@@ -1523,6 +1533,7 @@ const bootstrap = async (): Promise<void> => {
             status: 'accepted',
             fileName: result.fileName
           };
+          pausedMainMenuRecentActivityAction = 'import-world-save';
           showMainMenuShellState();
           return true;
         }
@@ -2721,6 +2732,7 @@ const bootstrap = async (): Promise<void> => {
     pausedMainMenuImportResult = null;
     pausedMainMenuClearSavedWorldResult = null;
     pausedMainMenuResetShellTogglesResult = null;
+    pausedMainMenuRecentActivityAction = null;
     applyPausedMainMenuWorldSessionShellTransition('resume-paused-world-session');
     enterInWorldShellState();
     if (!worldSessionStarted) {
@@ -2737,6 +2749,7 @@ const bootstrap = async (): Promise<void> => {
     pausedMainMenuImportResult = null;
     pausedMainMenuClearSavedWorldResult = null;
     pausedMainMenuResetShellTogglesResult = null;
+    pausedMainMenuRecentActivityAction = null;
     clearPersistedCurrentWorldSession();
     applyPausedMainMenuWorldSessionShellTransition('start-fresh-world-session');
     resetFreshWorldSessionRuntimeState();
@@ -2751,6 +2764,7 @@ const bootstrap = async (): Promise<void> => {
         status: 'failed',
         reason: resolveClearPersistedCurrentWorldSessionFailureReason()
       };
+      pausedMainMenuRecentActivityAction = 'clear-saved-world';
       console.warn(
         'Failed to clear persisted world save.',
         pausedMainMenuClearSavedWorldResult.reason
@@ -2761,6 +2775,7 @@ const bootstrap = async (): Promise<void> => {
     pausedMainMenuClearSavedWorldResult = null;
     pausedMainMenuWorldSaveCleared = true;
     pausedMainMenuSavedWorldStatus = 'cleared';
+    pausedMainMenuRecentActivityAction = 'clear-saved-world';
     showMainMenuShellState();
     return true;
   };
@@ -2779,6 +2794,7 @@ const bootstrap = async (): Promise<void> => {
         : {
             status: 'cleared'
           };
+    pausedMainMenuRecentActivityAction = 'reset-shell-toggles';
     if (clearResult?.cleared === false) {
       console.warn(
         'Failed to clear persisted shell toggle preferences.',
@@ -3512,6 +3528,7 @@ const bootstrap = async (): Promise<void> => {
       pausedMainMenuImportResult = null;
       pausedMainMenuClearSavedWorldResult = null;
       pausedMainMenuResetShellTogglesResult = null;
+      pausedMainMenuRecentActivityAction = null;
       resetFreshWorldSessionDebugEditState();
       clearPinnedDebugTileInspect();
       resolveCurrentWorldPlayerSpawn();
