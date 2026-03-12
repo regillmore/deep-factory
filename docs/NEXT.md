@@ -4,7 +4,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## App shell
 
-466. Consolidate `Export World Save`, `Import World Save`, and `Clear Saved World` into one paused-menu `World Save` section after task `464`, with shared summary rows and grouped actions instead of separate status/result cards, plus world-save-section regressions.
 467. Consolidate shell visibility, hotkey, and shell-profile preview/apply flows into one paused-menu `Shell` section after task `464`, with a collapsed summary that shows only active layout, binding-set, and staged-preview delta rows, plus shell-section regressions.
 468. Replace the paused-menu `Results` accordion after tasks `466-467` with a compact `Recent Activity` section that shows only the latest world-save or shell-settings outcome plus any required follow-up warning, with recent-activity regressions.
 469. Remove paragraph-style paused-menu help copy and the `Show Help Text` toggle after tasks `465-468`, replacing them with concise titles, button text, and metadata rows that stay readable in the default state, with help-toggle-removal regressions.
@@ -12,6 +11,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 471. Rework the paused-menu DOM and CSS after tasks `465-470` into a responsive dashboard that keeps `Overview` and `World Save` above the fold on touch while supporting a two-column desktop layout for secondary sections, with app-shell layout regressions.
 472. Add section-level landmark labels and keyboard-focus anchors after task `471` so `Overview`, `World Save`, `Shell`, `Recent Activity`, and `Danger Zone` can be targeted consistently across desktop and touch accessibility flows, with paused-section-landmark regressions.
 473. Move paused-menu action buttons into their owning sections after tasks `471-472` so `Overview`, `World Save`, `Shell`, and `Danger Zone` no longer duplicate the footer action row, with section-action regressions.
+474. Add inline desktop shortcut badges to section-owned paused-menu actions after task `473` so moved `Resume World` and `New World` controls keep `Enter` and `N` discoverable without the footer row, with section-shortcut-badge regressions.
 
 ## Optimize liquids
 

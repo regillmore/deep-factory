@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Consolidate paused-menu world-save guidance into one section.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused sessions now render a dedicated `World Save` section with shared browser-resume and latest-action summary rows plus grouped `Export World Save`, `Import World Save`, and `Clear Saved World` entries instead of leaving those items on the generic card grid, wired [src/style.css](../src/style.css) for the new section layout, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with world-save-section regressions, removed completed task `466` from [docs/NEXT.md](docs/NEXT.md), added replacement task `474`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a compact paused-menu Overview section.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused-session `Overview` card now carries `Session Save` plus `Needs Attention` metadata, renders inside its own top-level paused-menu `Overview` section above the secondary card grid, and keeps first-launch menu sections flowing through the non-paused path; updated [src/style.css](../src/style.css) with dedicated overview-section styling, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with paused-overview regressions, removed completed task `465` from [docs/NEXT.md](docs/NEXT.md), added replacement task `473`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -53,6 +53,14 @@ export interface PausedMainMenuWorldSaveSectionViewModel {
   savedWorldStatus: AppShellMenuSection | null;
 }
 
+export interface PausedMainMenuWorldSaveSectionState {
+  visible: boolean;
+  summaryLine: string | null;
+  metadataRows: readonly AppShellMenuSectionMetadataRow[];
+  actionSections: readonly AppShellMenuSection[];
+  tone: AppShellMenuSectionTone;
+}
+
 export interface PausedMainMenuShellSectionViewModel {
   resetShellToggles: AppShellMenuSection;
   persistenceSummary: AppShellMenuSection;
@@ -336,6 +344,7 @@ export interface AppShellState {
   shellActionKeybindingsCurrentSessionOnly?: boolean;
   pausedMainMenuExportResult?: PausedMainMenuExportResult;
   pausedMainMenuImportResult?: PausedMainMenuImportResult;
+  pausedMainMenuSavedWorldStatus?: PausedMainMenuSavedWorldStatus;
   pausedMainMenuClearSavedWorldResult?: PausedMainMenuClearSavedWorldResult;
   pausedMainMenuResetShellTogglesResult?: PausedMainMenuResetShellTogglesResult;
   pausedMainMenuShellProfilePreview?: PausedMainMenuShellProfilePreview;
@@ -354,6 +363,12 @@ export const DEFAULT_PAUSED_MAIN_MENU_STATUS = 'World session paused.';
 export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [] as const;
 const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
   'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
+const DEFAULT_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
+  'Manage downloads, imports, and browser-resume storage for the current paused session.';
+const CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
+  'Browser resume was cleared for this paused session. Resume World or another save path must rewrite it before reload can restore the session.';
+const IMPORT_PERSISTENCE_FAILED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
+  'The imported paused session stays live in this tab, but reload will miss it until a later browser-save rewrite succeeds.';
 const HIDDEN_PAUSED_MAIN_MENU_RESULTS_HELP_COPY_SUMMARY_LINE =
   'Result-card paragraphs are hidden until Show Help Text is enabled.';
 const WORLD_SAVE_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
@@ -422,10 +437,7 @@ const resolvePausedMainMenuWorldSaveMenuSections = (
 ): readonly AppShellMenuSection[] => [
   sectionViewModel.worldSave.exportWorldSave,
   sectionViewModel.worldSave.importWorldSave,
-  sectionViewModel.worldSave.clearSavedWorld,
-  ...(sectionViewModel.worldSave.savedWorldStatus === null
-    ? []
-    : [sectionViewModel.worldSave.savedWorldStatus])
+  sectionViewModel.worldSave.clearSavedWorld
 ];
 const resolvePausedMainMenuShellMenuSections = (
   sectionViewModel: PausedMainMenuSectionViewModel
@@ -472,7 +484,6 @@ const resolvePausedMainMenuMenuSectionGroupsFromViewModel = (
     dangerZoneSections,
     primarySections: [
       ...overviewSections,
-      ...worldSaveSections,
       ...shellSections,
       ...dangerZoneSections
     ]
@@ -494,6 +505,39 @@ export const resolvePausedMainMenuMenuSectionGroups = (
   }
 
   return resolvePausedMainMenuMenuSectionGroupsFromViewModel(sectionViewModel);
+};
+export const resolvePausedMainMenuWorldSaveSectionState = (
+  state: AppShellState
+): PausedMainMenuWorldSaveSectionState => {
+  const visible = isPausedMainMenuState(state);
+  const sectionViewModel = resolvePausedMainMenuSectionViewModel(state);
+  if (!visible || sectionViewModel === null) {
+    return {
+      visible: false,
+      summaryLine: null,
+      metadataRows: [],
+      actionSections: [],
+      tone: 'default'
+    };
+  }
+
+  return {
+    visible: true,
+    summaryLine: resolvePausedMainMenuWorldSaveSummaryLine(state.pausedMainMenuSavedWorldStatus ?? null),
+    metadataRows: createPausedMainMenuWorldSaveSummaryRows(
+      state.pausedMainMenuImportResult ?? null,
+      state.pausedMainMenuSavedWorldStatus ?? null,
+      state.pausedMainMenuExportResult ?? null,
+      state.pausedMainMenuClearSavedWorldResult ?? null
+    ),
+    actionSections: resolvePausedMainMenuWorldSaveMenuSections(sectionViewModel),
+    tone: resolvePausedMainMenuWorldSaveSectionTone(
+      state.pausedMainMenuImportResult ?? null,
+      state.pausedMainMenuSavedWorldStatus ?? null,
+      state.pausedMainMenuExportResult ?? null,
+      state.pausedMainMenuClearSavedWorldResult ?? null
+    )
+  };
 };
 type PausedMainMenuRecentActivityResultCategory = 'world-save' | 'shell-settings';
 
@@ -993,6 +1037,133 @@ const createPausedMainMenuSavedWorldStatusMenuSection = (
       };
   }
 };
+const resolvePausedMainMenuWorldSaveSummaryLine = (
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null
+): string => {
+  switch (savedWorldStatus) {
+    case null:
+      return DEFAULT_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE;
+    case 'cleared':
+      return CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE;
+    case 'import-persistence-failed':
+      return IMPORT_PERSISTENCE_FAILED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE;
+  }
+};
+const resolvePausedMainMenuWorldSaveBrowserResumeValue = (
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null
+): string => (savedWorldStatus === null ? 'Available' : 'Missing');
+const resolvePausedMainMenuWorldSaveSavedAgainByValue = (
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null
+): string => {
+  switch (savedWorldStatus) {
+    case null:
+      return 'None needed';
+    case 'cleared':
+      return 'Resume World, Import World Save, New World';
+    case 'import-persistence-failed':
+      return 'Later pause or page hide, Import World Save, New World';
+  }
+};
+const resolvePausedMainMenuWorldSaveExportStatusValue = (
+  exportResult: PausedMainMenuExportResult | null
+): string => {
+  if (exportResult === null) {
+    return 'No recent export';
+  }
+
+  switch (exportResult.status) {
+    case 'downloaded':
+      return `Downloaded ${resolvePausedMainMenuResultFileNameValue(exportResult.fileName)}`;
+    case 'failed':
+      return `Failed: ${resolvePausedMainMenuResultReasonValue(exportResult.reason)}`;
+  }
+};
+const resolvePausedMainMenuWorldSaveImportStatusValue = (
+  importResult: PausedMainMenuImportResult | null,
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null
+): string => {
+  if (importResult === null) {
+    return savedWorldStatus === 'import-persistence-failed'
+      ? 'Restored in this tab only'
+      : 'No recent import';
+  }
+
+  switch (importResult.status) {
+    case 'cancelled':
+      return 'Canceled';
+    case 'picker-start-failed':
+      return `Picker failed: ${resolvePausedMainMenuResultReasonValue(importResult.reason)}`;
+    case 'accepted':
+      return `Accepted ${resolvePausedMainMenuResultFileNameValue(importResult.fileName)}`;
+    case 'rejected':
+      return `Rejected ${resolvePausedMainMenuResultFileNameValue(importResult.fileName)}`;
+    case 'restore-failed':
+      return `Restore failed for ${resolvePausedMainMenuResultFileNameValue(importResult.fileName)}`;
+    case 'persistence-failed':
+      return `Restored in this tab only from ${resolvePausedMainMenuResultFileNameValue(importResult.fileName)}`;
+  }
+};
+const resolvePausedMainMenuWorldSaveClearStatusValue = (
+  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null,
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null
+): string => {
+  if (clearSavedWorldResult !== null) {
+    return `Failed: ${resolvePausedMainMenuResultReasonValue(clearSavedWorldResult.reason)}`;
+  }
+
+  return savedWorldStatus === 'cleared' ? 'Cleared from browser storage' : 'No recent clear';
+};
+const resolvePausedMainMenuWorldSaveSectionTone = (
+  importResult: PausedMainMenuImportResult | null,
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null,
+  exportResult: PausedMainMenuExportResult | null,
+  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null
+): AppShellMenuSectionTone => {
+  if (savedWorldStatus !== null || clearSavedWorldResult !== null) {
+    return 'warning';
+  }
+
+  if (exportResult?.status === 'failed') {
+    return 'warning';
+  }
+
+  switch (importResult?.status) {
+    case 'picker-start-failed':
+    case 'rejected':
+    case 'restore-failed':
+    case 'persistence-failed':
+      return 'warning';
+    default:
+      return 'default';
+  }
+};
+const createPausedMainMenuWorldSaveSummaryRows = (
+  importResult: PausedMainMenuImportResult | null,
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null,
+  exportResult: PausedMainMenuExportResult | null,
+  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null
+): readonly AppShellMenuSectionMetadataRow[] => [
+  {
+    label: 'Browser Resume',
+    value: resolvePausedMainMenuWorldSaveBrowserResumeValue(savedWorldStatus)
+  },
+  {
+    label: 'Saved Again By',
+    value: resolvePausedMainMenuWorldSaveSavedAgainByValue(savedWorldStatus)
+  },
+  {
+    label: 'Last Export',
+    value: resolvePausedMainMenuWorldSaveExportStatusValue(exportResult)
+  },
+  {
+    label: 'Last Import',
+    value: resolvePausedMainMenuWorldSaveImportStatusValue(importResult, savedWorldStatus)
+  },
+  {
+    label: 'Last Clear',
+    value: resolvePausedMainMenuWorldSaveClearStatusValue(clearSavedWorldResult, savedWorldStatus)
+  }
+] as const;
 const resolvePausedMainMenuOverviewSessionSaveValue = (
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null
 ): string => (savedWorldStatus === null ? 'Browser saved' : 'Not browser saved');
@@ -1562,6 +1733,7 @@ export const createPausedMainMenuShellState = (
       : {}),
     ...(exportResult === null ? {} : { pausedMainMenuExportResult: exportResult }),
     ...(importResult === null ? {} : { pausedMainMenuImportResult: importResult }),
+    ...(savedWorldStatus === null ? {} : { pausedMainMenuSavedWorldStatus: savedWorldStatus }),
     ...(clearSavedWorldResult === null
       ? {}
       : { pausedMainMenuClearSavedWorldResult: clearSavedWorldResult }),
@@ -2164,30 +2336,71 @@ const createMenuSectionElement = (
 
   const metadataRows = section.metadataRows ?? [];
   if (metadataRows.length > 0) {
-    const metadata = document.createElement('dl');
-    metadata.className = 'app-shell__menu-section-metadata';
-    metadata.replaceChildren(
-      ...metadataRows.map((row) => {
-        const rowElement = document.createElement('div');
-        rowElement.className = 'app-shell__menu-section-metadata-row';
-
-        const label = document.createElement('dt');
-        label.className = 'app-shell__menu-section-metadata-label';
-        label.textContent = row.label;
-        rowElement.append(label);
-
-        const value = document.createElement('dd');
-        value.className = 'app-shell__menu-section-metadata-value';
-        value.textContent = row.value;
-        rowElement.append(value);
-
-        return rowElement;
-      })
-    );
-    sectionElement.append(metadata);
+    sectionElement.append(createMenuSectionMetadataElement(metadataRows));
   }
 
   return sectionElement;
+};
+const createMenuSectionMetadataElement = (
+  metadataRows: readonly AppShellMenuSectionMetadataRow[]
+): HTMLDListElement => {
+  const metadata = document.createElement('dl');
+  metadata.className = 'app-shell__menu-section-metadata';
+  metadata.replaceChildren(
+    ...metadataRows.map((row) => {
+      const rowElement = document.createElement('div');
+      rowElement.className = 'app-shell__menu-section-metadata-row';
+
+      const label = document.createElement('dt');
+      label.className = 'app-shell__menu-section-metadata-label';
+      label.textContent = row.label;
+      rowElement.append(label);
+
+      const value = document.createElement('dd');
+      value.className = 'app-shell__menu-section-metadata-value';
+      value.textContent = row.value;
+      rowElement.append(value);
+
+      return rowElement;
+    })
+  );
+
+  return metadata;
+};
+const createWorldSaveActionElement = (
+  section: AppShellMenuSection,
+  showLines = true
+): HTMLElement => {
+  const actionElement = document.createElement('article');
+  actionElement.className = 'app-shell__world-save-action';
+  actionElement.setAttribute('data-tone', section.tone ?? 'default');
+
+  const heading = document.createElement('h3');
+  heading.className = 'app-shell__world-save-action-title';
+  heading.textContent = section.title;
+  actionElement.append(heading);
+
+  if (showLines && section.lines.length > 0) {
+    const lines = document.createElement('div');
+    lines.className = 'app-shell__world-save-action-lines';
+    lines.replaceChildren(
+      ...section.lines.map((line) => {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = line;
+        return paragraph;
+      })
+    );
+    actionElement.append(lines);
+  }
+
+  const metadataRows = section.metadataRows ?? [];
+  if (metadataRows.length > 0) {
+    const metadata = createMenuSectionMetadataElement(metadataRows);
+    metadata.classList.add('app-shell__world-save-action-metadata');
+    actionElement.append(metadata);
+  }
+
+  return actionElement;
 };
 
 export const resolveAppShellViewModel = (state: AppShellState): AppShellViewModel => {
@@ -2369,6 +2582,10 @@ export class AppShell {
   private pausedMainMenuHelpCopyToggleButton: HTMLButtonElement;
   private overviewSection: HTMLElement;
   private overviewBody: HTMLDivElement;
+  private worldSaveSection: HTMLElement;
+  private worldSaveSummary: HTMLParagraphElement;
+  private worldSaveMetadata: HTMLDListElement;
+  private worldSaveActions: HTMLDivElement;
   private menuSections: HTMLDivElement;
   private resultsSection: HTMLElement;
   private resultsSummary: HTMLParagraphElement;
@@ -2630,6 +2847,39 @@ export class AppShell {
     this.overviewBody = document.createElement('div');
     this.overviewBody.className = 'app-shell__overview-body';
     this.overviewSection.append(this.overviewBody);
+
+    this.worldSaveSection = document.createElement('section');
+    this.worldSaveSection.className = 'app-shell__world-save';
+    panel.append(this.worldSaveSection);
+
+    const worldSaveHeader = document.createElement('div');
+    worldSaveHeader.className = 'app-shell__world-save-header';
+    this.worldSaveSection.append(worldSaveHeader);
+
+    const worldSaveCopy = document.createElement('div');
+    worldSaveCopy.className = 'app-shell__world-save-copy';
+    worldSaveHeader.append(worldSaveCopy);
+
+    const worldSaveTitle = document.createElement('h2');
+    worldSaveTitle.className = 'app-shell__world-save-title';
+    worldSaveTitle.textContent = 'World Save';
+    worldSaveCopy.append(worldSaveTitle);
+
+    this.worldSaveSummary = document.createElement('p');
+    this.worldSaveSummary.className = 'app-shell__world-save-summary';
+    worldSaveCopy.append(this.worldSaveSummary);
+
+    const worldSaveBody = document.createElement('div');
+    worldSaveBody.className = 'app-shell__world-save-body';
+    this.worldSaveSection.append(worldSaveBody);
+
+    this.worldSaveMetadata = document.createElement('dl');
+    this.worldSaveMetadata.className = 'app-shell__menu-section-metadata app-shell__world-save-metadata';
+    worldSaveBody.append(this.worldSaveMetadata);
+
+    this.worldSaveActions = document.createElement('div');
+    this.worldSaveActions.className = 'app-shell__world-save-actions';
+    worldSaveBody.append(this.worldSaveActions);
 
     this.menuSections = document.createElement('div');
     this.menuSections.className = 'app-shell__menu-sections';
@@ -3193,10 +3443,10 @@ export class AppShell {
       this.pausedMainMenuShellSettingsExpanded,
       pausedMainMenuHelpCopySection.showMenuSectionLines
     );
+    const pausedMainMenuWorldSaveSection = resolvePausedMainMenuWorldSaveSectionState(state);
     const pausedMainMenuMenuSectionGroups = resolvePausedMainMenuMenuSectionGroups(state);
     const pausedMainMenuSecondarySections = pausedMainMenuVisible
       ? [
-          ...pausedMainMenuMenuSectionGroups.worldSaveSections,
           ...pausedMainMenuMenuSectionGroups.shellSections,
           ...pausedMainMenuMenuSectionGroups.dangerZoneSections
         ]
@@ -3243,6 +3493,21 @@ export class AppShell {
     this.overviewBody.style.display = resolveAppShellRegionDisplay(
       pausedMainMenuMenuSectionGroups.overviewSections.length > 0,
       'grid'
+    );
+    this.worldSaveSection.hidden = !pausedMainMenuWorldSaveSection.visible;
+    this.worldSaveSection.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuWorldSaveSection.visible,
+      'grid'
+    );
+    this.worldSaveSection.dataset.tone = pausedMainMenuWorldSaveSection.tone;
+    this.worldSaveSummary.textContent = pausedMainMenuWorldSaveSection.summaryLine ?? '';
+    this.worldSaveMetadata.replaceChildren(
+      ...createMenuSectionMetadataElement(pausedMainMenuWorldSaveSection.metadataRows).childNodes
+    );
+    this.worldSaveActions.replaceChildren(
+      ...pausedMainMenuWorldSaveSection.actionSections.map((section) =>
+        createWorldSaveActionElement(section, pausedMainMenuHelpCopySection.showMenuSectionLines)
+      )
     );
     this.menuSections.replaceChildren(
       ...pausedMainMenuSecondarySections.map((section) =>

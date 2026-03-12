@@ -305,6 +305,7 @@ canvas {
   gap: 12px;
 }
 
+.app-shell__world-save,
 .app-shell__results,
 .app-shell__shell-settings {
   margin-top: 18px;
@@ -321,6 +322,14 @@ canvas {
   gap: 14px;
 }
 
+.app-shell__world-save[data-tone='warning'] {
+  border-color: rgba(230, 165, 92, 0.32);
+  background:
+    linear-gradient(180deg, rgba(34, 22, 18, 0.96), rgba(24, 15, 12, 0.88)),
+    linear-gradient(135deg, rgba(230, 165, 92, 0.18), rgba(111, 45, 21, 0.08));
+}
+
+.app-shell__world-save-header,
 .app-shell__results-header,
 .app-shell__shell-settings-header {
   display: flex;
@@ -330,6 +339,7 @@ canvas {
   align-items: start;
 }
 
+.app-shell__world-save-copy,
 .app-shell__results-copy,
 .app-shell__shell-settings-copy {
   min-width: 0;
@@ -337,6 +347,7 @@ canvas {
   gap: 8px;
 }
 
+.app-shell__world-save-title,
 .app-shell__results-title,
 .app-shell__shell-settings-title {
   margin: 0;
@@ -347,6 +358,7 @@ canvas {
   text-transform: uppercase;
 }
 
+.app-shell__world-save-summary,
 .app-shell__results-summary,
 .app-shell__shell-settings-summary {
   margin: 0;
@@ -382,11 +394,73 @@ canvas {
   outline-offset: 3px;
 }
 
+.app-shell__world-save-body,
 .app-shell__results-body,
 .app-shell__shell-settings-body {
   padding-top: 14px;
   border-top: 1px solid rgba(255, 240, 204, 0.1);
   display: grid;
+}
+
+.app-shell__world-save-body {
+  gap: 14px;
+}
+
+.app-shell__world-save-metadata {
+  margin: 0;
+  padding-top: 0;
+  border-top: 0;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 14px;
+}
+
+.app-shell__world-save-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.app-shell__world-save-action {
+  padding: 12px 14px;
+  border: 1px solid rgba(159, 221, 255, 0.16);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(14, 21, 29, 0.88), rgba(10, 15, 22, 0.82)),
+    linear-gradient(135deg, rgba(120, 210, 255, 0.06), rgba(243, 205, 135, 0.04));
+  display: grid;
+  gap: 10px;
+}
+
+.app-shell__world-save-action[data-tone='warning'] {
+  border-color: rgba(230, 165, 92, 0.28);
+}
+
+.app-shell__world-save-action[data-tone='accent'] {
+  border-color: rgba(131, 219, 242, 0.24);
+}
+
+.app-shell__world-save-action-title {
+  margin: 0;
+  color: #fff0cc;
+  font:
+    700 10px/1.1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-shell__world-save-action-lines {
+  display: grid;
+  gap: 8px;
+  color: #d6e3e7;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.app-shell__world-save-action-lines p {
+  margin: 0;
+}
+
+.app-shell__world-save-action-metadata {
+  margin: 0;
 }
 
 .app-shell__results-body {
@@ -704,9 +778,14 @@ canvas {
     width: 100%;
   }
 
+  .app-shell__world-save-header,
   .app-shell__results-header,
   .app-shell__shell-settings-header {
     flex-direction: column;
+  }
+
+  .app-shell__world-save-metadata {
+    grid-template-columns: 1fr;
   }
 
   .app-shell__results-toggle,
