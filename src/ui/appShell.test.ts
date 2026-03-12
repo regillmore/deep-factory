@@ -141,7 +141,9 @@ const EXPORT_AND_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
 const EXPORT_AND_IMPORT_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Export World Save and Import World Save. Warning and confirmation feedback are both currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
 const EXPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Export World Save and Reset Shell Toggles.';
+  'Recent paused-menu feedback is available for Export World Save and Reset Shell Toggles. Only confirmation feedback is currently available here.';
+const EXPORT_AND_RESET_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Recent paused-menu feedback is available for Export World Save and Reset Shell Toggles. Only confirmation feedback is currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
 const PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Shell profile preview from preview-shell-profile.json is ready to apply with both shell visibility toggle and hotkey changes. If applied, that preview would use the custom set. If applied, that preview would resume with Debug HUD, Edit Overlays, and Spawn Marker shown. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const PREVIEWED_TOGGLE_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
@@ -3136,6 +3138,34 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
     });
   });
 
+  it('adds confirmation-only header copy when every paused-menu result card is confirmation toned', () => {
+    expect(
+      resolvePausedMainMenuResultsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          null,
+          null,
+          {
+            status: 'downloaded',
+            fileName: 'paused-session.json'
+          },
+          null,
+          {
+            status: 'cleared'
+          }
+        )
+      )
+    ).toMatchObject({
+      visible: true,
+      expanded: false,
+      summaryLine: EXPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
+      toggleLabel: 'Show Results'
+    });
+  });
+
   it('adds header copy when the paused-menu help toggle hides result-card paragraphs', () => {
     expect(
       resolvePausedMainMenuResultsSectionState(
@@ -3179,6 +3209,36 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
           tone: 'warning'
         }
       ]
+    });
+  });
+
+  it('keeps confirmation-only header copy when help text is hidden', () => {
+    expect(
+      resolvePausedMainMenuResultsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          null,
+          null,
+          {
+            status: 'downloaded',
+            fileName: 'paused-session.json'
+          },
+          null,
+          {
+            status: 'cleared'
+          }
+        ),
+        false,
+        false
+      )
+    ).toMatchObject({
+      visible: true,
+      expanded: false,
+      summaryLine: EXPORT_AND_RESET_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
+      toggleLabel: 'Show Results'
     });
   });
 

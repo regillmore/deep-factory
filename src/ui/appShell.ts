@@ -317,6 +317,8 @@ const HIDDEN_PAUSED_MAIN_MENU_RESULTS_HELP_COPY_SUMMARY_LINE =
   'Result-card paragraphs are hidden until Show Help Text is enabled.';
 const WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Only warning feedback is currently available here.';
+const CONFIRMATION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Only confirmation feedback is currently available here.';
 const MIXED_WARNING_AND_CONFIRMATION_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Warning and confirmation feedback are both currently available here.';
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE =
@@ -392,10 +394,13 @@ const resolvePausedMainMenuResultsSectionSummaryLine = (
   const containsWarningResults = menuSections.some((section) => section.tone === 'warning');
   const containsConfirmationResults = menuSections.some((section) => section.tone === 'accent');
   const warningOnly = menuSections.every((section) => section.tone === 'warning');
+  const confirmationOnly = menuSections.every((section) => section.tone === 'accent');
   const mixedWarningAndConfirmation = containsWarningResults && containsConfirmationResults;
 
   const toneSummaryLine = warningOnly
     ? WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
+    : confirmationOnly
+      ? CONFIRMATION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
     : mixedWarningAndConfirmation
       ? MIXED_WARNING_AND_CONFIRMATION_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
       : null;
