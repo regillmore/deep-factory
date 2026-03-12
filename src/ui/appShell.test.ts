@@ -344,6 +344,21 @@ const findElementByClass = (root: FakeElement, className: string): FakeElement |
   return null;
 };
 
+const findElementById = (root: FakeElement, id: string): FakeElement | null => {
+  if (root.id === id) {
+    return root;
+  }
+
+  for (const child of root.children) {
+    const match = findElementById(child, id);
+    if (match !== null) {
+      return match;
+    }
+  }
+
+  return null;
+};
+
 const listChildClassNames = (element: FakeElement | null): string[] =>
   element?.children.map((child) => child.className) ?? [];
 
@@ -469,6 +484,60 @@ describe('paused main-menu dashboard layout', () => {
     expect(menuSections?.hidden).toBe(false);
     expect(menuSections?.style.display).toBe('grid');
   });
+
+  it('adds stable labelled region landmarks and focus anchors to paused-dashboard sections', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const root = container.children[0] ?? null;
+    const sectionExpectations = [
+      {
+        className: 'app-shell__overview',
+        sectionId: 'app-shell-paused-overview-section',
+        headingId: 'app-shell-paused-overview-title',
+        title: 'Overview'
+      },
+      {
+        className: 'app-shell__world-save',
+        sectionId: 'app-shell-paused-world-save-section',
+        headingId: 'app-shell-paused-world-save-title',
+        title: 'World Save'
+      },
+      {
+        className: 'app-shell__shell',
+        sectionId: 'app-shell-paused-shell-section',
+        headingId: 'app-shell-paused-shell-title',
+        title: 'Shell'
+      },
+      {
+        className: 'app-shell__recent-activity',
+        sectionId: 'app-shell-paused-recent-activity-section',
+        headingId: 'app-shell-paused-recent-activity-title',
+        title: 'Recent Activity'
+      },
+      {
+        className: 'app-shell__danger-zone',
+        sectionId: 'app-shell-paused-danger-zone-section',
+        headingId: 'app-shell-paused-danger-zone-title',
+        title: 'Danger Zone'
+      }
+    ] as const;
+
+    for (const sectionExpectation of sectionExpectations) {
+      const section =
+        root === null ? null : findElementByClass(root, sectionExpectation.className);
+      const heading = section === null ? null : findElementById(section, sectionExpectation.headingId);
+
+      expect(section?.id).toBe(sectionExpectation.sectionId);
+      expect(section?.getAttribute('role')).toBe('region');
+      expect(section?.getAttribute('aria-labelledby')).toBe(sectionExpectation.headingId);
+      expect(section?.getAttribute('tabindex')).toBe('-1');
+      expect(heading?.tagName).toBe('H2');
+      expect(heading?.textContent).toBe(sectionExpectation.title);
+    }
+  });
 });
 
 describe('paused main-menu dashboard layout styling', () => {
@@ -485,6 +554,14 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__panel[data-layout='paused-dashboard'] .app-shell__shell[data-expanded='true']"
     );
+  });
+
+  it('keeps paused-section focus-anchor rules in style.css', () => {
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__overview:focus-visible');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__world-save:focus-visible');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__recent-activity:focus-visible');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell:focus-visible');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__danger-zone:focus-visible');
   });
 });
 

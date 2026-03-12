@@ -2411,6 +2411,46 @@ const createShortcutsSectionElement = (section: InWorldShortcutsSection): HTMLEl
   return sectionElement;
 };
 
+interface PausedMainMenuSectionLandmarkTarget {
+  sectionId: string;
+  headingId: string;
+}
+
+const PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS = {
+  overview: {
+    sectionId: 'app-shell-paused-overview-section',
+    headingId: 'app-shell-paused-overview-title'
+  },
+  worldSave: {
+    sectionId: 'app-shell-paused-world-save-section',
+    headingId: 'app-shell-paused-world-save-title'
+  },
+  shell: {
+    sectionId: 'app-shell-paused-shell-section',
+    headingId: 'app-shell-paused-shell-title'
+  },
+  recentActivity: {
+    sectionId: 'app-shell-paused-recent-activity-section',
+    headingId: 'app-shell-paused-recent-activity-title'
+  },
+  dangerZone: {
+    sectionId: 'app-shell-paused-danger-zone-section',
+    headingId: 'app-shell-paused-danger-zone-title'
+  }
+} as const satisfies Record<string, PausedMainMenuSectionLandmarkTarget>;
+
+const applyPausedMainMenuSectionLandmarkTarget = (
+  sectionElement: HTMLElement,
+  headingElement: HTMLHeadingElement,
+  target: PausedMainMenuSectionLandmarkTarget
+): void => {
+  sectionElement.setAttribute('id', target.sectionId);
+  sectionElement.setAttribute('role', 'region');
+  sectionElement.setAttribute('aria-labelledby', target.headingId);
+  sectionElement.setAttribute('tabindex', '-1');
+  headingElement.setAttribute('id', target.headingId);
+};
+
 const createMenuSectionElement = (section: AppShellMenuSection): HTMLElement => {
   const sectionElement = document.createElement('section');
   sectionElement.className = 'app-shell__menu-section';
@@ -2942,6 +2982,11 @@ export class AppShell {
     overviewTitle.className = 'app-shell__overview-title';
     overviewTitle.textContent = 'Overview';
     overviewHeader.append(overviewTitle);
+    applyPausedMainMenuSectionLandmarkTarget(
+      this.overviewSection,
+      overviewTitle,
+      PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS.overview
+    );
 
     this.overviewBody = document.createElement('div');
     this.overviewBody.className = 'app-shell__overview-body';
@@ -2963,6 +3008,11 @@ export class AppShell {
     worldSaveTitle.className = 'app-shell__world-save-title';
     worldSaveTitle.textContent = 'World Save';
     worldSaveCopy.append(worldSaveTitle);
+    applyPausedMainMenuSectionLandmarkTarget(
+      this.worldSaveSection,
+      worldSaveTitle,
+      PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS.worldSave
+    );
 
     this.worldSaveSummary = document.createElement('p');
     this.worldSaveSummary.className = 'app-shell__world-save-summary';
@@ -3000,6 +3050,11 @@ export class AppShell {
     shellTitle.className = 'app-shell__shell-title';
     shellTitle.textContent = 'Shell';
     shellCopy.append(shellTitle);
+    applyPausedMainMenuSectionLandmarkTarget(
+      this.shellSection,
+      shellTitle,
+      PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS.shell
+    );
 
     this.shellToggleButton = document.createElement('button');
     this.shellToggleButton.type = 'button';
@@ -3162,6 +3217,11 @@ export class AppShell {
     recentActivityTitle.className = 'app-shell__recent-activity-title';
     recentActivityTitle.textContent = 'Recent Activity';
     recentActivityCopy.append(recentActivityTitle);
+    applyPausedMainMenuSectionLandmarkTarget(
+      this.recentActivitySection,
+      recentActivityTitle,
+      PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS.recentActivity
+    );
 
     this.recentActivitySummary = document.createElement('p');
     this.recentActivitySummary.className = 'app-shell__recent-activity-summary';
@@ -3187,6 +3247,11 @@ export class AppShell {
     dangerZoneTitle.className = 'app-shell__danger-zone-title';
     dangerZoneTitle.textContent = 'Danger Zone';
     dangerZoneCopy.append(dangerZoneTitle);
+    applyPausedMainMenuSectionLandmarkTarget(
+      this.dangerZoneSection,
+      dangerZoneTitle,
+      PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS.dangerZone
+    );
 
     this.dangerZoneSummary = document.createElement('p');
     this.dangerZoneSummary.className = 'app-shell__danger-zone-summary';

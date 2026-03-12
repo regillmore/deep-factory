@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Add paused-menu section landmarks and focus anchors.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused-dashboard `Overview`, `World Save`, `Shell`, `Recent Activity`, and `Danger Zone` sections now expose stable labelled region ids plus keyboard-focus anchors for later jump-link and accessibility flows; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with paused-section-landmark DOM and CSS regressions, removed completed task `472` from [docs/NEXT.md](docs/NEXT.md), added replacement task `480`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Rework the paused menu into a responsive dashboard layout.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused sessions now render through explicit dashboard wrappers that keep `Overview` and `World Save` first on touch, widen the paused panel into a scroll-safe dashboard layout, and reflow `Shell`, `Recent Activity`, and `Danger Zone` into a two-column desktop secondary grid while leaving the existing footer action row in place for later tasks; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with paused-dashboard DOM and CSS regressions, removed completed task `471` from [docs/NEXT.md](docs/NEXT.md), added replacement task `479`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

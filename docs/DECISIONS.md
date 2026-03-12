@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Resetting shell layout and replacing the active session are both destructive or recovery-oriented actions, so grouping them makes the shell editor easier to scan and keeps consequence-heavy controls under one explicit warning label.
 - Consequence: Future paused-menu actions that clear layout state, discard the current session, or otherwise act as destructive recovery paths should default to `Danger Zone` instead of `Shell`, `Overview`, or ad hoc secondary-card placement.
 
+### 2026-03-12: Paused-dashboard sections should keep stable named region anchors
+
+- Decision: The paused dashboard now gives `Overview`, `World Save`, `Shell`, `Recent Activity`, and `Danger Zone` stable section ids, labelled region semantics, and keyboard-focus anchors on their section wrappers.
+- Reason: Upcoming jump-link, section-owned action, and accessibility work needs one consistent target contract on both desktop and touch layouts instead of ad hoc title lookups or card-order assumptions.
+- Consequence: Future paused-menu navigation or focus-management work should target these existing section anchors and keep their ids and heading labels stable unless the same pass updates the related links, tests, and docs together.
+
 ### 2026-03-12: Default paused-menu cards should be metadata-first without a global help toggle
 
 - Decision: The paused menu now removes the global `Show Help Text` toggle and keeps its default `Overview`, `World Save`, `Recent Activity`, and secondary action cards readable through concise titles plus metadata rows instead of paragraph-style help copy.

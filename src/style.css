@@ -313,6 +313,15 @@ canvas {
     linear-gradient(135deg, rgba(214, 112, 92, 0.22), rgba(122, 34, 25, 0.12));
 }
 
+.app-shell__overview:focus-visible,
+.app-shell__world-save:focus-visible,
+.app-shell__recent-activity:focus-visible,
+.app-shell__shell:focus-visible,
+.app-shell__danger-zone:focus-visible {
+  outline: 2px solid #9fddff;
+  outline-offset: 4px;
+}
+
 .app-shell__world-save-header,
 .app-shell__recent-activity-header,
 .app-shell__shell-header,
