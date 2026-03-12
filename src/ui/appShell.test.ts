@@ -234,10 +234,6 @@ const CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
     value: 'No staged preview'
   }
 ] as const;
-const PAUSED_MAIN_MENU_SHELL_PROFILE_PREVIEW_LINES = [
-  'The selected shell profile validated successfully and is ready to apply to this paused session.',
-  'Review its live change summary, saved-on shell visibility, and replacement hotkey set below before applying it.'
-] as const;
 const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT = 'Jump to Overview';
 const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE =
   'Move focus back to the Overview section at the top of the paused dashboard.';
@@ -446,6 +442,24 @@ const readMetadataRows = (
     label: row.children[0]?.textContent ?? '',
     value: row.children[1]?.textContent ?? ''
   })) ?? [];
+
+const readDetailGroups = (
+  element: FakeElement | null
+): Array<{ title: string; items: string[]; emptyText: string | null }> =>
+  element?.children.map((group) => {
+    const list = group.children.find((child) =>
+      child.classList.contains('app-shell__menu-section-group-list')
+    );
+    const empty = group.children.find((child) =>
+      child.classList.contains('app-shell__menu-section-group-empty')
+    );
+
+    return {
+      title: group.children[0]?.textContent ?? '',
+      items: list?.children.map((item) => item.textContent) ?? [],
+      emptyText: empty?.textContent ?? null
+    };
+  }) ?? [];
 
 const createPausedMainMenuShellActionKeybindingSummaryRows = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
@@ -994,6 +1008,98 @@ describe('paused main-menu dashboard layout', () => {
     expect(shellEditorIntro).toBeNull();
   });
 
+  it('renders metadata-first shell-profile preview groups inside the expanded shell editor', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        null,
+        null,
+        null,
+        null,
+        {
+          fileName: 'preview-shell-profile.json',
+          shellState: {
+            debugOverlayVisible: true,
+            debugEditControlsVisible: false,
+            debugEditOverlaysVisible: true,
+            playerSpawnMarkerVisible: true,
+            shortcutsOverlayVisible: false
+          },
+          shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+        }
+      )
+    );
+
+    const root = container.children[0] ?? null;
+    const shellToggleButton =
+      root === null ? null : findElementByClass(root, 'app-shell__shell-toggle');
+    shellToggleButton?.click();
+
+    const previewRoot = root === null ? null : findElementByClass(root, 'app-shell__shell-preview');
+    const previewCard =
+      previewRoot === null ? null : findElementByClass(previewRoot, 'app-shell__menu-section');
+    const previewLines =
+      previewCard === null ? null : findElementByClass(previewCard, 'app-shell__menu-section-lines');
+    const previewMetadata =
+      previewCard === null
+        ? null
+        : findElementByClass(previewCard, 'app-shell__menu-section-metadata');
+    const previewGroups =
+      previewCard === null
+        ? null
+        : findElementByClass(previewCard, 'app-shell__menu-section-detail-groups');
+
+    expect(previewLines).toBeNull();
+    expect(readMetadataRows(previewMetadata)).toEqual([
+      {
+        label: 'File',
+        value: 'preview-shell-profile.json'
+      },
+      {
+        label: 'Toggle Changes',
+        value: 'Debug HUD off -> on, Edit Overlays off -> on, Spawn Marker off -> on'
+      },
+      {
+        label: 'Hotkey Changes',
+        value: 'Main Menu, Recenter Camera, Debug HUD, Edit Panel, Edit Overlays, Spawn Marker'
+      },
+      {
+        label: 'Saved On',
+        value: 'Debug HUD, Edit Overlays, Spawn Marker'
+      },
+      {
+        label: 'Saved Off',
+        value: 'Edit Panel, Shortcuts'
+      }
+    ]);
+    expect(readDetailGroups(previewGroups)).toEqual([
+      {
+        title: 'Changed From Live',
+        items: [
+          'Main Menu: Q -> X',
+          'Recenter Camera: C -> Z',
+          'Debug HUD: H -> U',
+          'Edit Panel: G -> J',
+          'Edit Overlays: V -> K',
+          'Spawn Marker: M -> Y'
+        ],
+        emptyText: null
+      },
+      {
+        title: 'Matching Live',
+        items: [],
+        emptyText: 'None'
+      }
+    ]);
+  });
+
   it('adds an expanded-shell top-jump link that returns focus to Overview', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
@@ -1125,6 +1231,9 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__shell-keybindings-metadata[data-tone='warning'] .app-shell__menu-section-metadata-value"
     );
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-detail-groups');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-detail-group');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-group-list');
     expect(APP_SHELL_STYLE_SOURCE).toContain(".app-shell__shell-keybindings-button[data-busy='true']");
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-keybindings-button[disabled]');
     expect(APP_SHELL_STYLE_SOURCE).toContain('@media (min-width: 960px)');
@@ -2009,7 +2118,7 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.shell.shellProfilePreview).toEqual({
       title: 'Shell Profile Preview',
-      lines: [...PAUSED_MAIN_MENU_SHELL_PROFILE_PREVIEW_LINES],
+      lines: [],
       metadataRows: [
         {
           label: 'File',
@@ -2021,8 +2130,7 @@ describe('resolveAppShellViewModel', () => {
         },
         {
           label: 'Hotkey Changes',
-          value:
-            'Main Menu Q -> X, Recenter Camera C -> Z, Debug HUD H -> U, Edit Panel G -> J, Edit Overlays V -> K, Spawn Marker M -> Y'
+          value: 'Main Menu, Recenter Camera, Debug HUD, Edit Panel, Edit Overlays, Spawn Marker'
         },
         {
           label: 'Saved On',
@@ -2031,8 +2139,26 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'Saved Off',
           value: 'Edit Panel, Shortcuts'
+        }
+      ],
+      detailGroups: [
+        {
+          title: 'Changed From Live',
+          items: [
+            'Main Menu: Q -> X',
+            'Recenter Camera: C -> Z',
+            'Debug HUD: H -> U',
+            'Edit Panel: G -> J',
+            'Edit Overlays: V -> K',
+            'Spawn Marker: M -> Y'
+          ],
+          emptyText: 'No hotkey changes'
         },
-        ...createPausedMainMenuShellActionKeybindingSummaryRows(CUSTOM_SHELL_ACTION_KEYBINDINGS)
+        {
+          title: 'Matching Live',
+          items: [],
+          emptyText: 'None'
+        }
       ],
       tone: 'accent'
     });
@@ -2067,7 +2193,7 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.pausedMainMenuSections?.shell.shellProfilePreview).toEqual({
       title: 'Shell Profile Preview',
-      lines: [...PAUSED_MAIN_MENU_SHELL_PROFILE_PREVIEW_LINES],
+      lines: [],
       metadataRows: [
         {
           label: 'File',
@@ -2088,8 +2214,26 @@ describe('resolveAppShellViewModel', () => {
         {
           label: 'Saved Off',
           value: 'Edit Panel, Spawn Marker'
+        }
+      ],
+      detailGroups: [
+        {
+          title: 'Changed From Live',
+          items: [],
+          emptyText: 'No hotkey changes'
         },
-        ...createPausedMainMenuShellActionKeybindingSummaryRows(CUSTOM_SHELL_ACTION_KEYBINDINGS)
+        {
+          title: 'Matching Live',
+          items: [
+            'Main Menu: X',
+            'Recenter Camera: Z',
+            'Debug HUD: U',
+            'Edit Panel: J',
+            'Edit Overlays: K',
+            'Spawn Marker: Y'
+          ],
+          emptyText: 'None'
+        }
       ],
       tone: 'accent'
     });
@@ -4043,7 +4187,15 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       editorVisible: true,
       previewSection: {
         title: 'Shell Profile Preview',
-        lines: [...PAUSED_MAIN_MENU_SHELL_PROFILE_PREVIEW_LINES],
+        lines: [],
+        detailGroups: [
+          {
+            title: 'Changed From Live'
+          },
+          {
+            title: 'Matching Live'
+          }
+        ],
         tone: 'accent'
       }
     });

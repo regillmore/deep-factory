@@ -848,6 +848,55 @@ canvas {
   line-height: 1.45;
 }
 
+.app-shell__menu-section-detail-groups {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.app-shell__menu-section-detail-group {
+  padding: 10px 12px 12px;
+  border: 1px solid rgba(159, 221, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(9, 16, 22, 0.42);
+  display: grid;
+  gap: 8px;
+}
+
+.app-shell__menu-section[data-tone='accent'] .app-shell__menu-section-detail-group {
+  border-color: rgba(131, 219, 242, 0.18);
+  background: rgba(11, 22, 30, 0.5);
+}
+
+.app-shell__menu-section-group-title {
+  margin: 0;
+  color: #9fddff;
+  font:
+    700 10px/1.1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-shell__menu-section-group-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.app-shell__menu-section-group-item,
+.app-shell__menu-section-group-empty {
+  margin: 0;
+  color: #f1e7d5;
+  font:
+    700 0.78rem/1.45 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+}
+
+.app-shell__menu-section-group-empty {
+  color: #b7c4ca;
+}
+
 .app-shell__detail-list {
   margin: 18px 0 0;
   padding: 0;

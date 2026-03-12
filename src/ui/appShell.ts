@@ -35,10 +35,17 @@ export interface AppShellMenuSectionMetadataRow {
   value: string;
 }
 
+export interface AppShellMenuSectionDetailGroup {
+  title: string;
+  items: readonly string[];
+  emptyText?: string;
+}
+
 export interface AppShellMenuSection {
   title: string;
   lines: readonly string[];
   metadataRows?: readonly AppShellMenuSectionMetadataRow[];
+  detailGroups?: readonly AppShellMenuSectionDetailGroup[];
   tone?: AppShellMenuSectionTone;
 }
 
@@ -1321,13 +1328,31 @@ const createPausedMainMenuShellProfilePreviewMenuSection = (
   const shellStateSummary = createWorldSessionShellStatePersistenceSummary(
     shellProfilePreview.shellState
   );
+  const toggleChangeLabels = createWorldSessionShellStateToggleChanges(
+    worldSessionShellState,
+    shellProfilePreview.shellState
+  ).map(
+    ({ label, previousVisible, nextVisible }) =>
+      `${label} ${previousVisible ? 'on' : 'off'} -> ${nextVisible ? 'on' : 'off'}`
+  );
+  const hotkeyDiffs = IN_WORLD_SHELL_ACTION_KEYBINDING_IDS.map((actionType) => {
+    const actionLabel = getInWorldShellActionKeybindingActionLabel(actionType);
+    const previousHotkey = liveShellActionKeybindings[actionType];
+    const nextHotkey = shellProfilePreview.shellActionKeybindings[actionType];
+
+    return {
+      actionLabel,
+      previousHotkey,
+      nextHotkey,
+      changed: previousHotkey !== nextHotkey
+    };
+  });
+  const changedHotkeyDiffs = hotkeyDiffs.filter(({ changed }) => changed);
+  const matchingHotkeyDiffs = hotkeyDiffs.filter(({ changed }) => !changed);
 
   return {
     title: 'Shell Profile Preview',
-    lines: [
-      'The selected shell profile validated successfully and is ready to apply to this paused session.',
-      'Review its live change summary, saved-on shell visibility, and replacement hotkey set below before applying it.'
-    ],
+    lines: [],
     metadataRows: [
       {
         label: 'File',
@@ -1335,30 +1360,12 @@ const createPausedMainMenuShellProfilePreviewMenuSection = (
       },
       {
         label: 'Toggle Changes',
-        value: formatMenuSectionMetadataRowValue(
-          createWorldSessionShellStateToggleChanges(
-            worldSessionShellState,
-            shellProfilePreview.shellState
-          ).map(
-            ({ label, previousVisible, nextVisible }) =>
-              `${label} ${previousVisible ? 'on' : 'off'} -> ${nextVisible ? 'on' : 'off'}`
-          )
-        )
+        value: formatMenuSectionMetadataRowValue(toggleChangeLabels)
       },
       {
         label: 'Hotkey Changes',
         value: formatMenuSectionMetadataRowValue(
-          IN_WORLD_SHELL_ACTION_KEYBINDING_IDS.flatMap((actionType) => {
-            const previousHotkey = liveShellActionKeybindings[actionType];
-            const nextHotkey = shellProfilePreview.shellActionKeybindings[actionType];
-            if (previousHotkey === nextHotkey) {
-              return [];
-            }
-
-            return [
-              `${getInWorldShellActionKeybindingActionLabel(actionType)} ${previousHotkey} -> ${nextHotkey}`
-            ];
-          })
+          changedHotkeyDiffs.map(({ actionLabel }) => actionLabel)
         )
       },
       {
@@ -1368,10 +1375,24 @@ const createPausedMainMenuShellProfilePreviewMenuSection = (
       {
         label: 'Saved Off',
         value: formatMenuSectionMetadataRowValue(shellStateSummary.savedOffToggleLabels)
+      }
+    ],
+    detailGroups: [
+      {
+        title: 'Changed From Live',
+        items: changedHotkeyDiffs.map(
+          ({ actionLabel, previousHotkey, nextHotkey }) =>
+            `${actionLabel}: ${previousHotkey} -> ${nextHotkey}`
+        ),
+        emptyText: 'No hotkey changes'
       },
-      ...createPausedMainMenuShellActionKeybindingSummaryRows(
-        shellProfilePreview.shellActionKeybindings
-      )
+      {
+        title: 'Matching Live',
+        items: matchingHotkeyDiffs.map(
+          ({ actionLabel, nextHotkey }) => `${actionLabel}: ${nextHotkey}`
+        ),
+        emptyText: 'None'
+      }
     ],
     tone: 'accent'
   };
@@ -2529,6 +2550,11 @@ const createMenuSectionElement = (section: AppShellMenuSection): HTMLElement => 
     sectionElement.append(createMenuSectionMetadataElement(metadataRows));
   }
 
+  const detailGroups = section.detailGroups ?? [];
+  if (detailGroups.length > 0) {
+    sectionElement.append(createMenuSectionDetailGroupsElement(detailGroups));
+  }
+
   return sectionElement;
 };
 
@@ -2557,6 +2583,47 @@ const createMenuSectionMetadataElement = (
   );
 
   return metadata;
+};
+
+const createMenuSectionDetailGroupsElement = (
+  detailGroups: readonly AppShellMenuSectionDetailGroup[]
+): HTMLDivElement => {
+  const groups = document.createElement('div');
+  groups.className = 'app-shell__menu-section-detail-groups';
+  groups.replaceChildren(
+    ...detailGroups.map((group) => {
+      const groupElement = document.createElement('section');
+      groupElement.className = 'app-shell__menu-section-detail-group';
+
+      const title = document.createElement('h4');
+      title.className = 'app-shell__menu-section-group-title';
+      title.textContent = group.title;
+      groupElement.append(title);
+
+      if (group.items.length > 0) {
+        const list = document.createElement('ul');
+        list.className = 'app-shell__menu-section-group-list';
+        list.replaceChildren(
+          ...group.items.map((item) => {
+            const listItem = document.createElement('li');
+            listItem.className = 'app-shell__menu-section-group-item';
+            listItem.textContent = item;
+            return listItem;
+          })
+        );
+        groupElement.append(list);
+      } else if (group.emptyText !== undefined) {
+        const emptyState = document.createElement('p');
+        emptyState.className = 'app-shell__menu-section-group-empty';
+        emptyState.textContent = group.emptyText;
+        groupElement.append(emptyState);
+      }
+
+      return groupElement;
+    })
+  );
+
+  return groups;
 };
 
 interface MenuSectionActionHeadingContent {

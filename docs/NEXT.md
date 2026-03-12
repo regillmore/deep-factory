@@ -4,12 +4,12 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## App shell
 
-475. Convert the expanded paused-menu `Shell` profile preview into metadata-first layout and hotkey diff groups after task `467` so preview details stay scannable once help-text paragraphs are removed, with shell-preview-diff regressions.
 476. Add compact status badges to paused-menu `Recent Activity` cards after task `469` so success and attention states stay scannable once help-text paragraphs are removed, with recent-activity-badge regressions.
 478. Add compact warning badges to paused-menu `Danger Zone` action cards after task `470` so `Reset Shell Toggles` and `New World` stay scannable once the dashboard layout lands, with danger-zone-badge regressions.
 480. Preserve keyboard focus on the current paused-dashboard section anchor when `Shell` expands or collapses after task `472` so hotkey editing does not drop keyboard users back into the broader overlay flow, with shell-section-focus regressions.
 482. Add compact `Button only` affordance badges to paused-menu `World Save` action cards after task `474` so pointer-only actions stay visually consistent beside the new inline keyboard shortcut badges, with world-save-button-badge regressions.
 483. Add compact persistence badges to expanded paused-menu `Shell Hotkeys` editor metadata after task `477` so browser-saved versus session-only remap scope stays scannable beside inline result copy, with shell-editor-persistence-badge regressions.
+487. Add compact empty-state badges to expanded paused-menu `Shell` preview diff groups after task `475` so no-op previews and full-replacement previews stay scannable when one diff group has no rows, with shell-preview-diff-empty regressions.
 
 ## Optimize liquids
 
