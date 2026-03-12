@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Move paused-menu actions into their owning dashboard sections.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused `Overview`, `World Save`, and `Danger Zone` now render real section-owned action buttons while the legacy paused footer row stays hidden, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with section-action callback regressions, removed completed task `473` from [docs/NEXT.md](docs/NEXT.md), added replacement task `481`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu section landmarks and focus anchors.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused-dashboard `Overview`, `World Save`, `Shell`, `Recent Activity`, and `Danger Zone` sections now expose stable labelled region ids plus keyboard-focus anchors for later jump-link and accessibility flows; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with paused-section-landmark DOM and CSS regressions, removed completed task `472` from [docs/NEXT.md](docs/NEXT.md), added replacement task `480`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

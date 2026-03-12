@@ -283,6 +283,7 @@ class FakeElement {
   htmlFor = '';
   classList = new FakeClassList(this);
   private readonly attributes = new Map<string, string>();
+  private readonly listeners = new Map<string, Array<(...args: unknown[]) => void>>();
 
   constructor(tagName: string) {
     this.tagName = tagName.toUpperCase();
@@ -316,7 +317,21 @@ class FakeElement {
     return this.attributes.get(name) ?? null;
   }
 
-  addEventListener(_type: string, _listener: (...args: unknown[]) => void): void {}
+  addEventListener(type: string, listener: (...args: unknown[]) => void): void {
+    const listeners = this.listeners.get(type) ?? [];
+    listeners.push(listener);
+    this.listeners.set(type, listeners);
+  }
+
+  click(): void {
+    for (const listener of this.listeners.get('click') ?? []) {
+      listener({
+        type: 'click',
+        currentTarget: this,
+        target: this
+      });
+    }
+  }
 
   blur(): void {}
 
@@ -342,6 +357,15 @@ const findElementByClass = (root: FakeElement, className: string): FakeElement |
   }
 
   return null;
+};
+
+const findElementsByClass = (root: FakeElement, className: string): FakeElement[] => {
+  const matches = root.classList.contains(className) ? [root] : [];
+  for (const child of root.children) {
+    matches.push(...findElementsByClass(child, className));
+  }
+
+  return matches;
 };
 
 const findElementById = (root: FakeElement, id: string): FakeElement | null => {
@@ -419,7 +443,7 @@ describe('paused main-menu dashboard layout', () => {
     vi.unstubAllGlobals();
   });
 
-  it('groups paused-menu sections into primary and secondary dashboard wrappers while keeping footer actions separate', () => {
+  it('groups paused-menu sections into primary and secondary dashboard wrappers while hiding the legacy footer actions', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
 
@@ -463,8 +487,64 @@ describe('paused main-menu dashboard layout', () => {
     ]);
     expect(menuSections?.hidden).toBe(true);
     expect(menuSections?.style.display).toBe('none');
-    expect(footerActions?.hidden).toBe(false);
-    expect(footerActions?.style.display).toBe('flex');
+    expect(footerActions?.hidden).toBe(true);
+    expect(footerActions?.style.display).toBe('none');
+  });
+
+  it('renders paused section-owned action buttons and routes them through the shared main-menu handlers', () => {
+    const handledActions: string[] = [];
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement, {
+      onPrimaryAction: () => handledActions.push('resume-world'),
+      onSecondaryAction: () => handledActions.push('export-world-save'),
+      onTertiaryAction: () => handledActions.push('import-world-save'),
+      onQuaternaryAction: () => handledActions.push('clear-saved-world'),
+      onQuinaryAction: () => handledActions.push('reset-shell-toggles'),
+      onSenaryAction: () => handledActions.push('new-world')
+    });
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const root = container.children[0] ?? null;
+    expect(root).not.toBeNull();
+    if (root === null) {
+      return;
+    }
+
+    const overviewButtons = findElementsByClass(root, 'app-shell__overview-action');
+    const worldSaveButtons = findElementsByClass(root, 'app-shell__world-save-action');
+    const dangerZoneButtons = findElementsByClass(root, 'app-shell__danger-zone-action');
+
+    expect(overviewButtons).toHaveLength(1);
+    expect(worldSaveButtons).toHaveLength(3);
+    expect(dangerZoneButtons).toHaveLength(2);
+    expect(overviewButtons[0]?.title).toBe(resolvePausedMainMenuResumeWorldTitle());
+    expect(worldSaveButtons.map((button) => button.title)).toEqual([
+      resolvePausedMainMenuExportWorldSaveTitle(),
+      resolvePausedMainMenuImportWorldSaveTitle(),
+      resolvePausedMainMenuClearSavedWorldTitle()
+    ]);
+    expect(dangerZoneButtons.map((button) => button.title)).toEqual([
+      resolvePausedMainMenuResetShellTogglesTitle(),
+      resolvePausedMainMenuFreshWorldTitle()
+    ]);
+
+    overviewButtons[0]?.click();
+    for (const button of worldSaveButtons) {
+      button.click();
+    }
+    for (const button of dangerZoneButtons) {
+      button.click();
+    }
+
+    expect(handledActions).toEqual([
+      'resume-world',
+      'export-world-save',
+      'import-world-save',
+      'clear-saved-world',
+      'reset-shell-toggles',
+      'new-world'
+    ]);
   });
 
   it('hides the paused dashboard wrappers for the first-launch main menu layout', () => {
@@ -546,6 +626,8 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-dashboard');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-primary');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-secondary');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-button');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__overview-action');
     expect(APP_SHELL_STYLE_SOURCE).toContain('@media (min-width: 960px)');
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__panel[data-layout='paused-dashboard'] .app-shell__paused-secondary"
@@ -703,14 +785,12 @@ describe('resolveAppShellViewModel', () => {
 
     expect(viewModel.overlayVisible).toBe(true);
     expect(viewModel.chromeVisible).toBe(false);
-    expect(viewModel.primaryActionLabel).toBe(
-      `Resume World (${getDesktopResumeWorldHotkeyLabel()})`
-    );
-    expect(viewModel.secondaryActionLabel).toBe('Export World Save');
-    expect(viewModel.tertiaryActionLabel).toBe('Import World Save');
-    expect(viewModel.quaternaryActionLabel).toBe('Clear Saved World');
-    expect(viewModel.quinaryActionLabel).toBe('Reset Shell Toggles');
-    expect(viewModel.senaryActionLabel).toBe(`New World (${getDesktopFreshWorldHotkeyLabel()})`);
+    expect(viewModel.primaryActionLabel).toBeNull();
+    expect(viewModel.secondaryActionLabel).toBeNull();
+    expect(viewModel.tertiaryActionLabel).toBeNull();
+    expect(viewModel.quaternaryActionLabel).toBeNull();
+    expect(viewModel.quinaryActionLabel).toBeNull();
+    expect(viewModel.senaryActionLabel).toBeNull();
     expect(viewModel.returnToMainMenuActionLabel).toBeNull();
     expect(viewModel.statusText).toBe('World session paused.');
     expect(viewModel.detailLines).toEqual([]);

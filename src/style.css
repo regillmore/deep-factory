@@ -421,6 +421,30 @@ canvas {
   gap: 10px;
 }
 
+.app-shell__section-action-button {
+  width: 100%;
+  box-sizing: border-box;
+  appearance: none;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.app-shell__section-action-button:hover {
+  transform: translateY(-1px);
+}
+
+.app-shell__section-action-button:focus-visible {
+  outline: 2px solid #9fddff;
+  outline-offset: 3px;
+}
+
+.app-shell__overview-action,
 .app-shell__world-save-action {
   padding: 12px 14px;
   border: 1px solid rgba(159, 221, 255, 0.16);
@@ -443,10 +467,12 @@ canvas {
   gap: 10px;
 }
 
+.app-shell__overview-action[data-tone='warning'],
 .app-shell__world-save-action[data-tone='warning'] {
   border-color: rgba(230, 165, 92, 0.28);
 }
 
+.app-shell__overview-action[data-tone='accent'],
 .app-shell__world-save-action[data-tone='accent'] {
   border-color: rgba(131, 219, 242, 0.24);
 }
@@ -455,6 +481,7 @@ canvas {
   border-color: rgba(214, 112, 92, 0.34);
 }
 
+.app-shell__overview-action-title,
 .app-shell__world-save-action-title {
   margin: 0;
   color: #fff0cc;
@@ -473,6 +500,7 @@ canvas {
   text-transform: uppercase;
 }
 
+.app-shell__overview-action-lines,
 .app-shell__world-save-action-lines {
   display: grid;
   gap: 8px;
@@ -489,6 +517,7 @@ canvas {
   line-height: 1.5;
 }
 
+.app-shell__overview-action-lines p,
 .app-shell__world-save-action-lines p {
   margin: 0;
 }
@@ -497,6 +526,7 @@ canvas {
   margin: 0;
 }
 
+.app-shell__overview-action-metadata,
 .app-shell__world-save-action-metadata {
   margin: 0;
 }

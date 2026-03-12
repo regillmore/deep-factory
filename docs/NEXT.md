@@ -4,7 +4,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## App shell
 
-473. Move paused-menu action buttons into their owning sections after tasks `471-472` so `Overview`, `World Save`, `Shell`, and `Danger Zone` no longer duplicate the footer action row, with section-action regressions.
 474. Add inline desktop shortcut badges to section-owned paused-menu actions after task `473` so moved `Resume World` and `New World` controls keep `Enter` and `N` discoverable without the footer row, with section-shortcut-badge regressions.
 475. Convert the expanded paused-menu `Shell` profile preview into metadata-first layout and hotkey diff groups after task `467` so preview details stay scannable once help-text paragraphs are removed, with shell-preview-diff regressions.
 476. Add compact status badges to paused-menu `Recent Activity` cards after task `469` so success and attention states stay scannable once help-text paragraphs are removed, with recent-activity-badge regressions.
@@ -12,6 +11,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 478. Add compact warning badges to paused-menu `Danger Zone` action cards after task `470` so `Reset Shell Toggles` and `New World` stay scannable once the dashboard layout lands, with danger-zone-badge regressions.
 479. Add a paused-dashboard top-jump link after task `472` so long `Shell` editor sessions can return to `Overview` quickly on touch and desktop, with paused-dashboard-top-link regressions.
 480. Preserve keyboard focus on the current paused-dashboard section anchor when `Shell` expands or collapses after task `472` so hotkey editing does not drop keyboard users back into the broader overlay flow, with shell-section-focus regressions.
+481. Add section-owned busy states to paused-menu `Import World Save` and `Import Shell Profile` actions after task `473` so repeated taps stay debounced while browser pickers are active, with paused-section-busy regressions.
 
 ## Optimize liquids
 

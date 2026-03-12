@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-12: Paused-dashboard actions should live inside their owning sections
+
+- Decision: The paused menu now renders `Resume World`, the three `World Save` actions, and the destructive `Danger Zone` actions as section-owned buttons inside `Overview`, `World Save`, and `Danger Zone`, while the shared footer action row stays first-launch-only.
+- Reason: Once the paused overlay has stable dashboard sections, keeping actions in a shared footer duplicates controls, separates each action from its status metadata, and makes touch scanning worse.
+- Consequence: Future paused-menu actions should be added to the owning dashboard section instead of the shared overlay footer unless the same pass intentionally changes the first-launch main-menu action model too.
+
 ### 2026-03-12: Destructive paused-menu actions should live together in Danger Zone
 
 - Decision: The paused menu now keeps `Reset Shell Toggles` and `New World` together inside the dedicated warning-toned `Danger Zone` section instead of splitting shell reset into the shell tools area or leaving fresh-world guidance in a generic secondary card grid.
