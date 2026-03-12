@@ -4,14 +4,14 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## App shell
 
-200. Add import/export actions for shell and debug-edit preference profiles so keybinding and toggle setups can be shared or restored across browser sessions.
-318. Add paused-menu persistence-summary copy that surfaces when some persisted in-world shell-action keybindings were rejected during load while a mixed custom/default binding set still remains, with shell-action storage regressions.
-432. Add paused-menu `Shell Hotkeys` helper copy that surfaces when the editor is showing a recovered safe-set fallback after invalid saved bindings were rejected during load, with hotkey-editor fallback regressions.
-441. Add paused-menu persistence-summary copy that surfaces when hotkey remaps are currently live only in-session because browser storage rejected the latest rewrite, with remap-session-summary regressions.
-447. Add a paused-menu `Persistence Summary` metadata row that surfaces when active hotkeys are current-session-only even though shell visibility is browser-saved, with hotkey-persistence-row regressions.
-451. Add paused-menu Shell Settings summary copy that surfaces which shell toggles a staged shell-profile preview would resume off while the section is collapsed, with shell-summary-preview-saved-off regressions.
-453. Add paused-menu `Shell Settings` header copy that surfaces when the global help toggle is hiding the hotkey-editor helper paragraph, with shell-settings-help-hidden regressions.
-463. Add paused-menu `Results` summary copy that surfaces when collapsed reset-shell feedback already restored the next resume to the default-off shell layout, with paused-results-reset-default-off regressions.
+464. Introduce explicit paused-menu `Overview`, `World Save`, `Shell`, `Recent Activity`, and `Danger Zone` section view models in `src/ui/appShell.ts` so the overlay no longer relies on one flat menu-section list plus title-based filtering, with paused-menu section-routing regressions.
+465. Add a compact paused-menu `Overview` section after task `464` that keeps `Resume World`, current session-save state, and any blocking or warning status visible in one scan above secondary controls, with paused-overview regressions.
+466. Consolidate `Export World Save`, `Import World Save`, and `Clear Saved World` into one paused-menu `World Save` section after task `464`, with shared summary rows and grouped actions instead of separate status/result cards, plus world-save-section regressions.
+467. Consolidate shell visibility, hotkey, and shell-profile preview/apply flows into one paused-menu `Shell` section after task `464`, with a collapsed summary that shows only active layout, binding-set, and staged-preview delta rows, plus shell-section regressions.
+468. Replace the paused-menu `Results` accordion after tasks `466-467` with a compact `Recent Activity` section that shows only the latest world-save or shell-settings outcome plus any required follow-up warning, with recent-activity regressions.
+469. Remove paragraph-style paused-menu help copy and the `Show Help Text` toggle after tasks `465-468`, replacing them with concise titles, button text, and metadata rows that stay readable in the default state, with help-toggle-removal regressions.
+470. Isolate `Reset Shell Toggles` and `New World` into a dedicated paused-menu `Danger Zone` section after task `464`, with concise consequence copy and desktop-shortcut coverage, plus danger-zone regressions.
+471. Rework the paused-menu DOM and CSS after tasks `465-470` into a responsive dashboard that keeps `Overview` and `World Save` above the fold on touch while supporting a two-column desktop layout for secondary sections, with app-shell layout regressions.
 
 ## Optimize liquids
 

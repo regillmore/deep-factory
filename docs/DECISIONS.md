@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-12: Paused-menu cleanup should converge on a compact sectioned dashboard
+
+- Decision: Future paused-menu cleanup work should consolidate the current card-heavy layout into stable `Overview`, `World Save`, `Shell`, `Recent Activity`, and `Danger Zone` sections, with terse metadata-first summaries in the default state and deeper controls or detail only inside the owning section.
+- Reason: The current paused menu has accumulated too many flat cards, summary sentences, and cross-cutting toggles, which makes it long, verbose, and hard to scan on both desktop and touch-sized layouts.
+- Consequence: Future paused-menu tasks should reduce section sprawl, keep one-off outcomes scoped to `Recent Activity`, and avoid adding new copy-only summary branches to the legacy card stack unless they directly support the redesign.
+
 ### 2026-03-11: Paused-menu transient feedback should collapse separately from persistent status cards
 
 - Decision: One-off paused-menu `* Result` cards now live inside a local `Results` section that stays collapsed by default, while persistent cards such as `Saved World Status`, `Persistence Summary`, and `Shell Profile Preview` remain visible in the main grid.
