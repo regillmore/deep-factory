@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-11
 
+- Task: Hide paused-menu Shell Settings help text with the global help toggle.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the expanded paused-menu `Shell Settings` editor now hides its `Shell Hotkeys` helper paragraph whenever `Hide Help Text` is active while keeping the section summary and controls visible, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused shell-settings help-visibility regressions, removed completed task `452` from [docs/NEXT.md](docs/NEXT.md), added replacement task `453`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add preview saved-on toggle copy to the collapsed paused-menu Shell Settings summary.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the collapsed paused-menu `Shell Settings` summary now includes which shell toggles a staged shell-profile preview would resume with shown, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) by updating preview-summary regressions for both shown-toggle and all-hidden preview states, removed completed task `450` from [docs/NEXT.md](docs/NEXT.md), added replacement task `451`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

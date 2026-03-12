@@ -2825,7 +2825,8 @@ describe('resolvePausedMainMenuShellSettingsSectionState', () => {
       expanded: false,
       summaryLine: DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
       toggleLabel: 'Show Shell Settings',
-      editorVisible: false
+      editorVisible: false,
+      editorHelpVisible: false
     });
   });
 
@@ -2837,7 +2838,21 @@ describe('resolvePausedMainMenuShellSettingsSectionState', () => {
       expanded: true,
       summaryLine: DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
       toggleLabel: 'Hide Shell Settings',
-      editorVisible: true
+      editorVisible: true,
+      editorHelpVisible: true
+    });
+  });
+
+  it('hides shell-settings help copy when the paused-menu help toggle is collapsed', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSectionState(createPausedMainMenuShellState(), true, false)
+    ).toEqual({
+      visible: true,
+      expanded: true,
+      summaryLine: DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
+      toggleLabel: 'Hide Shell Settings',
+      editorVisible: true,
+      editorHelpVisible: false
     });
   });
 
@@ -2872,7 +2887,8 @@ describe('resolvePausedMainMenuShellSettingsSectionState', () => {
       expanded: false,
       summaryLine: PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
       toggleLabel: 'Show Shell Settings',
-      editorVisible: false
+      editorVisible: false,
+      editorHelpVisible: false
     });
   });
 
@@ -2907,7 +2923,8 @@ describe('resolvePausedMainMenuShellSettingsSectionState', () => {
       expanded: false,
       summaryLine: PREVIEWED_NOOP_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
       toggleLabel: 'Show Shell Settings',
-      editorVisible: false
+      editorVisible: false,
+      editorHelpVisible: false
     });
   });
 
@@ -2942,7 +2959,8 @@ describe('resolvePausedMainMenuShellSettingsSectionState', () => {
       expanded: false,
       summaryLine: PREVIEWED_DEFAULT_SET_WHILE_LIVE_CUSTOM_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
       toggleLabel: 'Show Shell Settings',
-      editorVisible: false
+      editorVisible: false,
+      editorHelpVisible: false
     });
   });
 
@@ -2968,7 +2986,8 @@ describe('resolvePausedMainMenuShellSettingsSectionState', () => {
       expanded: false,
       summaryLine: CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
       toggleLabel: 'Show Shell Settings',
-      editorVisible: false
+      editorVisible: false,
+      editorHelpVisible: false
     });
   });
 
@@ -2980,7 +2999,8 @@ describe('resolvePausedMainMenuShellSettingsSectionState', () => {
       expanded: false,
       summaryLine: null,
       toggleLabel: null,
-      editorVisible: false
+      editorVisible: false,
+      editorHelpVisible: false
     });
   });
 });

@@ -11,7 +11,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 444. Add a collapsed paused-menu Results section that groups transient import/export/reset feedback cards behind one toggle while keeping status rows visible, with paused-results-collapse regressions.
 447. Add a paused-menu `Persistence Summary` metadata row that surfaces when active hotkeys are current-session-only even though shell visibility is browser-saved, with hotkey-persistence-row regressions.
 451. Add paused-menu Shell Settings summary copy that surfaces which shell toggles a staged shell-profile preview would resume off while the section is collapsed, with shell-summary-preview-saved-off regressions.
-452. Hide the Shell Settings help text with the Hide Help Text button.
+453. Add paused-menu `Shell Settings` header copy that surfaces when the global help toggle is hiding the hotkey-editor helper paragraph, with shell-settings-help-hidden regressions.
 
 ## Optimize liquids
 

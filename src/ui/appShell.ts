@@ -48,6 +48,7 @@ export interface PausedMainMenuShellSettingsSectionState {
   summaryLine: string | null;
   toggleLabel: string | null;
   editorVisible: boolean;
+  editorHelpVisible: boolean;
 }
 
 export interface PausedMainMenuHelpCopySectionState {
@@ -525,13 +526,15 @@ export const resolvePausedMainMenuShellSettingsToggleLabel = (expanded = false):
   expanded ? 'Hide Shell Settings' : 'Show Shell Settings';
 export const resolvePausedMainMenuShellSettingsSectionState = (
   state: AppShellState,
-  expanded = false
+  expanded = false,
+  showEditorHelpText = true
 ): PausedMainMenuShellSettingsSectionState => {
   const visible = isPausedMainMenuState(state);
+  const editorVisible = visible && expanded;
 
   return {
     visible,
-    expanded: visible && expanded,
+    expanded: editorVisible,
     summaryLine: visible
       ? resolvePausedMainMenuShellSettingsSummaryLine(
           state.menuSections ?? [],
@@ -539,7 +542,8 @@ export const resolvePausedMainMenuShellSettingsSectionState = (
         )
       : null,
     toggleLabel: visible ? resolvePausedMainMenuShellSettingsToggleLabel(expanded) : null,
-    editorVisible: visible && expanded
+    editorVisible,
+    editorHelpVisible: editorVisible && showEditorHelpText
   };
 };
 export const resolvePausedMainMenuHelpCopyToggleLabel = (expanded = false): string =>
@@ -2756,7 +2760,8 @@ export class AppShell {
     );
     const pausedMainMenuShellSettingsSection = resolvePausedMainMenuShellSettingsSectionState(
       state,
-      this.pausedMainMenuShellSettingsExpanded
+      this.pausedMainMenuShellSettingsExpanded,
+      pausedMainMenuHelpCopySection.showMenuSectionLines
     );
 
     this.root.dataset.screen = viewModel.screen;
@@ -2826,6 +2831,10 @@ export class AppShell {
       'grid'
     );
     this.syncShellActionKeybindingEditorIntro(pausedMainMenuShellPersistenceAvailable);
+    this.shellActionKeybindingEditorIntro.hidden =
+      !pausedMainMenuShellSettingsSection.editorHelpVisible;
+    this.shellActionKeybindingEditorIntro.style.display =
+      pausedMainMenuShellSettingsSection.editorHelpVisible ? '' : 'none';
     this.syncShellActionKeybindingEditorInputs(pausedMainMenuShellActionKeybindings);
     this.applyShellProfilePreviewButton.hidden = !pausedMainMenuHasShellProfilePreview;
     this.clearShellProfilePreviewButton.hidden = !pausedMainMenuHasShellProfilePreview;
