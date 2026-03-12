@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Add a busy state to paused-menu `Apply Shell Profile`.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused-menu `Apply Shell Profile` now keeps a local waiting state, ignores repeated taps while an apply promise is in flight, and restores the normal button state once that promise settles; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with shell-apply-busy regressions, removed completed task `485` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical slice `486`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add section-owned busy states to paused-menu import actions.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/main.ts](../src/main.ts), and [src/style.css](../src/style.css) so paused-menu `Import World Save` and expanded-shell `Import Shell Profile` now enter local waiting states, disable repeat activation while their browser picker promises are active, and restore their normal controls once the picker flow settles; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with paused-section-busy regressions, removed completed task `481` from [docs/NEXT.md](docs/NEXT.md), added replacement task `485`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

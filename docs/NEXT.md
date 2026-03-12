@@ -10,7 +10,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 480. Preserve keyboard focus on the current paused-dashboard section anchor when `Shell` expands or collapses after task `472` so hotkey editing does not drop keyboard users back into the broader overlay flow, with shell-section-focus regressions.
 482. Add compact `Button only` affordance badges to paused-menu `World Save` action cards after task `474` so pointer-only actions stay visually consistent beside the new inline keyboard shortcut badges, with world-save-button-badge regressions.
 483. Add compact persistence badges to expanded paused-menu `Shell Hotkeys` editor metadata after task `477` so browser-saved versus session-only remap scope stays scannable beside inline result copy, with shell-editor-persistence-badge regressions.
-485. Add a busy state to paused-menu `Apply Shell Profile` so repeated taps stay debounced while preview applies are in flight, with shell-apply-busy regressions.
 
 ## Optimize liquids
 
@@ -46,3 +45,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 403. Add a starter boomerang combat slice after hostile-slime combat (`213`) and inventory basics (`214`): a non-stackable boomerang hotbar slot, mixed-device aimed throw-and-return rules, terrain/slime hit detection, and deterministic return regressions.
 411. Add an umbrella fall-control utility slice after inventory basics (`214`) and fall-damage survival (`399`): a non-stackable umbrella hotbar slot, mixed-device hold-to-glide input, fixed-step fall-speed clamp plus early-release rules, and deterministic glide regressions.
 412. Add a death-and-respawn recovery slice after hostile-slime combat (`213`): fixed-step player death state, short respawn countdown plus camera hold, respawn at the latest valid spawn with restored invulnerability, and deterministic death/respawn regressions.
+486. Add a starter spear combat slice after hostile-slime combat (`213`) and inventory basics (`214`): a non-stackable spear hotbar slot, mixed-device directional thrust timing with reach clamp, slime hit detection plus knockback, and deterministic active-window regressions.

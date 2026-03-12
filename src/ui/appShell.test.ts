@@ -245,6 +245,8 @@ const PAUSED_MAIN_MENU_BUSY_IMPORT_WORLD_SAVE_TITLE =
   'Wait for the current world-save file picker to finish before starting another paused-session import.';
 const PAUSED_MAIN_MENU_BUSY_IMPORT_SHELL_PROFILE_TITLE =
   'Wait for the current shell-profile file picker to finish before starting another import.';
+const PAUSED_MAIN_MENU_BUSY_APPLY_SHELL_PROFILE_TITLE =
+  'Wait for the current shell-profile preview apply to finish before applying it again.';
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS = [
   {
     label: 'Keys',
@@ -797,6 +799,105 @@ describe('paused main-menu dashboard layout', () => {
     expect(restoredImportButton?.dataset.busy).toBe('false');
     expect(restoredImportButton?.getAttribute('aria-busy')).toBe('false');
     expect(restoredImportButton?.title).toBe(resolvePausedMainMenuImportShellProfileTitle());
+  });
+
+  it('debounces paused-menu Apply Shell Profile while a preview apply promise is active', async () => {
+    let finishApplyShellProfilePreview = () => {};
+    let applyShellProfilePreviewCallCount = 0;
+    const pendingApplyShellProfilePreview =
+      new Promise<{ status: 'applied'; fileName: string | null; changeCategory: 'mixed' }>(
+        (resolve) => {
+          finishApplyShellProfilePreview = () =>
+            resolve({
+              status: 'applied',
+              fileName: 'preview-shell-profile.json',
+              changeCategory: 'mixed'
+            });
+        }
+      );
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement, {
+      onApplyShellProfilePreview: () => {
+        applyShellProfilePreviewCallCount += 1;
+        return pendingApplyShellProfilePreview;
+      }
+    });
+
+    shell.setState(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        null,
+        null,
+        null,
+        null,
+        {
+          fileName: 'preview-shell-profile.json',
+          shellState: {
+            debugOverlayVisible: true,
+            debugEditControlsVisible: false,
+            debugEditOverlaysVisible: true,
+            playerSpawnMarkerVisible: true,
+            shortcutsOverlayVisible: false
+          },
+          shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
+        }
+      )
+    );
+
+    const root = container.children[0] ?? null;
+    expect(root).not.toBeNull();
+    if (root === null) {
+      return;
+    }
+
+    const shellToggleButton = findElementByClass(root, 'app-shell__shell-toggle');
+    shellToggleButton?.click();
+
+    const initialApplyButton = findButtonByTextContent(
+      root,
+      'app-shell__shell-keybindings-button',
+      'Apply Shell Profile'
+    );
+    initialApplyButton?.click();
+
+    const busyApplyButton = findButtonByTextContent(
+      root,
+      'app-shell__shell-keybindings-button',
+      'Apply Shell Profile...'
+    );
+
+    expect(applyShellProfilePreviewCallCount).toBe(1);
+    expect(busyApplyButton?.disabled).toBe(true);
+    expect(busyApplyButton?.dataset.busy).toBe('true');
+    expect(busyApplyButton?.getAttribute('aria-busy')).toBe('true');
+    expect(busyApplyButton?.title).toBe(PAUSED_MAIN_MENU_BUSY_APPLY_SHELL_PROFILE_TITLE);
+
+    busyApplyButton?.click();
+    expect(applyShellProfilePreviewCallCount).toBe(1);
+
+    finishApplyShellProfilePreview();
+    await pendingApplyShellProfilePreview;
+    await Promise.resolve();
+
+    const restoredApplyButton = findButtonByTextContent(
+      root,
+      'app-shell__shell-keybindings-button',
+      'Apply Shell Profile'
+    );
+    const statusText =
+      root === null ? null : findElementByClass(root, 'app-shell__shell-keybindings-status');
+
+    expect(restoredApplyButton?.disabled).toBe(false);
+    expect(restoredApplyButton?.dataset.busy).toBe('false');
+    expect(restoredApplyButton?.getAttribute('aria-busy')).toBe('false');
+    expect(restoredApplyButton?.title).toBe(resolvePausedMainMenuApplyShellProfileTitle());
+    expect(statusText?.textContent).toBe(
+      'Shell profile from preview-shell-profile.json applied to the paused session with both shell visibility toggle and hotkey changes.'
+    );
   });
 
   it('hides the paused dashboard wrappers for the first-launch main menu layout', () => {

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-12: Paused-menu async section actions should self-debounce locally
+
+- Decision: Paused-menu `Import World Save`, `Import Shell Profile`, and `Apply Shell Profile` now keep their waiting state on the owning section button instead of locking the full overlay or relying on runtime-only guards.
+- Reason: File pickers and preview applies need duplicate-activation protection, but the paused dashboard should keep surrounding context readable and avoid collapsing into a global busy mode for one section-owned async action.
+- Consequence: Future paused-menu async actions should default to local button-level busy states and repeated-tap debouncing inside the owning section unless the same pass intentionally introduces a broader overlay transaction model.
+
 ### 2026-03-12: Paused-dashboard actions should live inside their owning sections
 
 - Decision: The paused menu now renders `Resume World`, the three `World Save` actions, and the destructive `Danger Zone` actions as section-owned buttons inside `Overview`, `World Save`, and `Danger Zone`, while the shared footer action row stays first-launch-only.

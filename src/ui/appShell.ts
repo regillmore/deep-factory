@@ -2169,6 +2169,9 @@ export const resolvePausedMainMenuImportShellProfileTitle = (): string =>
 const PAUSED_MAIN_MENU_BUSY_IMPORT_SHELL_PROFILE_TITLE =
   'Wait for the current shell-profile file picker to finish before starting another import.';
 
+const PAUSED_MAIN_MENU_BUSY_APPLY_SHELL_PROFILE_TITLE =
+  'Wait for the current shell-profile preview apply to finish before applying it again.';
+
 export const resolvePausedMainMenuApplyShellProfileTitle = (): string =>
   'Apply the currently previewed shell-profile toggles and hotkeys to the current paused session';
 
@@ -2953,6 +2956,7 @@ export class AppShell {
   private pausedMainMenuShellExpanded = false;
   private pausedMainMenuImportWorldSaveBusy = false;
   private pausedMainMenuImportShellProfileBusy = false;
+  private pausedMainMenuApplyShellProfileBusy = false;
   private currentState: AppShellState = createDefaultBootShellState();
 
   constructor(container: HTMLElement, options: AppShellOptions = {}) {
@@ -3555,6 +3559,15 @@ export class AppShell {
     this.setState(this.currentState);
   }
 
+  private setPausedMainMenuApplyShellProfileBusy(busy: boolean): void {
+    if (this.pausedMainMenuApplyShellProfileBusy === busy) {
+      return;
+    }
+
+    this.pausedMainMenuApplyShellProfileBusy = busy;
+    this.setState(this.currentState);
+  }
+
   private togglePausedMainMenuShell(): void {
     if (!isPausedMainMenuState(this.currentState)) {
       return;
@@ -3728,10 +3741,19 @@ export class AppShell {
   }
 
   private async tryApplyShellProfilePreview(): Promise<void> {
-    const importResult = await this.onApplyShellProfilePreview(this.currentState.screen);
-    this.setShellActionKeybindingEditorStatus(
-      resolvePausedMainMenuApplyShellProfileEditorStatus(importResult)
-    );
+    if (this.pausedMainMenuApplyShellProfileBusy) {
+      return;
+    }
+
+    this.setPausedMainMenuApplyShellProfileBusy(true);
+    try {
+      const importResult = await this.onApplyShellProfilePreview(this.currentState.screen);
+      this.setShellActionKeybindingEditorStatus(
+        resolvePausedMainMenuApplyShellProfileEditorStatus(importResult)
+      );
+    } finally {
+      this.setPausedMainMenuApplyShellProfileBusy(false);
+    }
   }
 
   private tryClearShellProfilePreview(): void {
@@ -3984,6 +4006,21 @@ export class AppShell {
     this.importShellProfileButton.setAttribute(
       'aria-busy',
       this.pausedMainMenuImportShellProfileBusy ? 'true' : 'false'
+    );
+    this.applyShellProfilePreviewButton.disabled = this.pausedMainMenuApplyShellProfileBusy;
+    this.applyShellProfilePreviewButton.textContent = this.pausedMainMenuApplyShellProfileBusy
+      ? 'Apply Shell Profile...'
+      : 'Apply Shell Profile';
+    this.applyShellProfilePreviewButton.title = this.pausedMainMenuApplyShellProfileBusy
+      ? PAUSED_MAIN_MENU_BUSY_APPLY_SHELL_PROFILE_TITLE
+      : resolvePausedMainMenuApplyShellProfileTitle();
+    this.applyShellProfilePreviewButton.setAttribute(
+      'data-busy',
+      this.pausedMainMenuApplyShellProfileBusy ? 'true' : 'false'
+    );
+    this.applyShellProfilePreviewButton.setAttribute(
+      'aria-busy',
+      this.pausedMainMenuApplyShellProfileBusy ? 'true' : 'false'
     );
     this.applyShellProfilePreviewButton.hidden = !pausedMainMenuHasShellProfilePreview;
     this.clearShellProfilePreviewButton.hidden = !pausedMainMenuHasShellProfilePreview;
