@@ -133,6 +133,8 @@ const PREVIEWED_TOGGLE_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE
   'Shell profile preview from toggle-only-shell-profile.json is ready to apply with shell visibility toggle changes only. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const PREVIEWED_HOTKEY_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Shell profile preview from hotkey-only-shell-profile.json is ready to apply with shell hotkey changes only. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
+const PREVIEWED_NOOP_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
+  'Shell profile preview from matching-shell-profile.json already matches the paused session, so applying it would not change shell visibility toggles or hotkeys. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const MIXED_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Resume World shows Debug HUD and Edit Overlays, while Edit Panel, Spawn Marker, and Shortcuts stay hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const FULLY_VISIBLE_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
@@ -2704,6 +2706,35 @@ describe('resolvePausedMainMenuShellSettingsSummaryLine', () => {
       )
     ).toBe(PREVIEWED_HOTKEY_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
   });
+
+  it('surfaces when a staged shell-profile preview already matches the paused session in the collapsed summary', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSummaryLine(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          null,
+          null,
+          null,
+          null,
+          null,
+          {
+            fileName: 'matching-shell-profile.json',
+            shellState: {
+              debugOverlayVisible: false,
+              debugEditControlsVisible: false,
+              debugEditOverlaysVisible: false,
+              playerSpawnMarkerVisible: false,
+              shortcutsOverlayVisible: false
+            },
+            shellActionKeybindings: createDefaultShellActionKeybindingState()
+          }
+        ).menuSections ?? []
+      )
+    ).toBe(PREVIEWED_NOOP_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE);
+  });
 });
 
 describe('resolvePausedMainMenuHelpCopyToggleLabel', () => {
@@ -2809,6 +2840,41 @@ describe('resolvePausedMainMenuShellSettingsSectionState', () => {
       visible: true,
       expanded: false,
       summaryLine: PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
+      toggleLabel: 'Show Shell Settings',
+      editorVisible: false
+    });
+  });
+
+  it('keeps no-op staged shell-profile preview copy in the collapsed shell-settings summary', () => {
+    expect(
+      resolvePausedMainMenuShellSettingsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          null,
+          null,
+          null,
+          null,
+          null,
+          {
+            fileName: 'matching-shell-profile.json',
+            shellState: {
+              debugOverlayVisible: false,
+              debugEditControlsVisible: false,
+              debugEditOverlaysVisible: false,
+              playerSpawnMarkerVisible: false,
+              shortcutsOverlayVisible: false
+            },
+            shellActionKeybindings: createDefaultShellActionKeybindingState()
+          }
+        )
+      )
+    ).toEqual({
+      visible: true,
+      expanded: false,
+      summaryLine: PREVIEWED_NOOP_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE,
       toggleLabel: 'Show Shell Settings',
       editorVisible: false
     });

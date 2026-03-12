@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-11
 
+- Task: Add no-op preview copy to the collapsed paused-menu Shell Settings summary.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the collapsed paused-menu `Shell Settings` summary now says when a staged shell-profile preview already matches the live paused session and would not change shell visibility toggles or hotkeys if applied, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused no-op preview regressions, removed completed task `448` from [docs/NEXT.md](docs/NEXT.md), added replacement task `449`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add preview change-category copy to the collapsed paused-menu Shell Settings summary.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the collapsed paused-menu `Shell Settings` summary now distinguishes whether a staged shell-profile preview would change shell visibility toggles only, shell hotkeys only, or both before apply while still describing the live paused-session state, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused preview-category regressions, removed completed task `443` from [docs/NEXT.md](docs/NEXT.md), added replacement task `448`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

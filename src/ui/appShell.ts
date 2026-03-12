@@ -391,7 +391,7 @@ const resolvePausedMainMenuShellProfilePreviewSummaryLine = (
     case 'mixed':
       return `${subject} is ready to apply with both shell visibility toggle and hotkey changes.`;
     case 'none':
-      return `${subject} is ready to apply.`;
+      return `${subject} already matches the paused session, so applying it would not change shell visibility toggles or hotkeys.`;
   }
 };
 const resolvePausedMainMenuShellSettingsPersistenceSummaryLine = (
