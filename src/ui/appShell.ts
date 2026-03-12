@@ -313,6 +313,8 @@ export const DEFAULT_PAUSED_MAIN_MENU_STATUS = 'World session paused.';
 export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [] as const;
 const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
   'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
+const HIDDEN_PAUSED_MAIN_MENU_RESULTS_HELP_COPY_SUMMARY_LINE =
+  'Result-card paragraphs are hidden until Show Help Text is enabled.';
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE =
   'Current in-world shell hotkeys preview the active binding set and can be remapped below.';
 const DEFAULTED_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE =
@@ -373,7 +375,8 @@ export const splitPausedMainMenuMenuSections = (
   resultsSections: menuSections.filter(isPausedMainMenuTransientResultMenuSection)
 });
 const resolvePausedMainMenuResultsSectionSummaryLine = (
-  menuSections: readonly AppShellMenuSection[] = []
+  menuSections: readonly AppShellMenuSection[] = [],
+  showMenuSectionLines = true
 ): string | null => {
   if (menuSections.length === 0) {
     return null;
@@ -383,13 +386,17 @@ const resolvePausedMainMenuResultsSectionSummaryLine = (
     (section) => PAUSED_MAIN_MENU_RESULT_SECTION_ACTION_LABELS[section.title] ?? section.title
   );
 
-  return `Recent paused-menu feedback is available for ${formatMenuSectionSummaryListValue(resultActionLabels)}.`;
+  const summaryLine = `Recent paused-menu feedback is available for ${formatMenuSectionSummaryListValue(resultActionLabels)}.`;
+  return showMenuSectionLines
+    ? summaryLine
+    : `${summaryLine} ${HIDDEN_PAUSED_MAIN_MENU_RESULTS_HELP_COPY_SUMMARY_LINE}`;
 };
 export const resolvePausedMainMenuResultsToggleLabel = (expanded = false): string =>
   expanded ? 'Hide Results' : 'Show Results';
 export const resolvePausedMainMenuResultsSectionState = (
   state: AppShellState,
-  expanded = false
+  expanded = false,
+  showMenuSectionLines = true
 ): PausedMainMenuResultsSectionState => {
   const visible = isPausedMainMenuState(state);
   const { resultsSections } = splitPausedMainMenuMenuSections(state.menuSections ?? []);
@@ -399,7 +406,7 @@ export const resolvePausedMainMenuResultsSectionState = (
     visible: hasResultsSections,
     expanded: hasResultsSections && expanded,
     summaryLine: hasResultsSections
-      ? resolvePausedMainMenuResultsSectionSummaryLine(resultsSections)
+      ? resolvePausedMainMenuResultsSectionSummaryLine(resultsSections, showMenuSectionLines)
       : null,
     toggleLabel: hasResultsSections ? resolvePausedMainMenuResultsToggleLabel(expanded) : null,
     menuSections: hasResultsSections ? resultsSections : []
@@ -2872,7 +2879,8 @@ export class AppShell {
     );
     const pausedMainMenuResultsSection = resolvePausedMainMenuResultsSectionState(
       state,
-      this.pausedMainMenuResultsExpanded
+      this.pausedMainMenuResultsExpanded,
+      pausedMainMenuHelpCopySection.showMenuSectionLines
     );
     const pausedMainMenuShellSettingsSection = resolvePausedMainMenuShellSettingsSectionState(
       state,

@@ -132,6 +132,8 @@ const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
   'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
 const IMPORT_RESULT_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Import World Save.';
+const IMPORT_RESULT_ONLY_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Recent paused-menu feedback is available for Import World Save. Result-card paragraphs are hidden until Show Help Text is enabled.';
 const EXPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Export World Save and Reset Shell Toggles.';
 const PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
@@ -3123,6 +3125,52 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
             }
           ],
           tone: 'accent'
+        }
+      ]
+    });
+  });
+
+  it('adds header copy when the paused-menu help toggle hides result-card paragraphs', () => {
+    expect(
+      resolvePausedMainMenuResultsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          {
+            status: 'rejected',
+            fileName: 'broken.json',
+            reason: 'world save envelope kind must be "deep-factory.world-save"'
+          }
+        ),
+        true,
+        false
+      )
+    ).toEqual({
+      visible: true,
+      expanded: true,
+      summaryLine: IMPORT_RESULT_ONLY_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
+      toggleLabel: 'Hide Results',
+      menuSections: [
+        {
+          title: 'Import Result',
+          lines: [...REJECTED_PAUSED_MAIN_MENU_IMPORT_RESULT_LINES],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Rejected'
+            },
+            {
+              label: 'File',
+              value: 'broken.json'
+            },
+            {
+              label: 'Reason',
+              value: 'world save envelope kind must be "deep-factory.world-save"'
+            }
+          ],
+          tone: 'warning'
         }
       ]
     });
