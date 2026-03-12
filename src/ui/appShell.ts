@@ -2509,15 +2509,58 @@ const createMenuSectionMetadataElement = (
   return metadata;
 };
 
+interface MenuSectionActionHeadingContent {
+  titleText: string;
+  shortcutBadgeText: string | null;
+}
+
+const PAUSED_MAIN_MENU_SECTION_ACTION_SHORTCUT_BADGES = new Map<string, string>([
+  [
+    `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
+    getDesktopResumeWorldHotkeyLabel()
+  ],
+  [`New World (${getDesktopFreshWorldHotkeyLabel()})`, getDesktopFreshWorldHotkeyLabel()]
+]);
+
+const resolveMenuSectionActionHeadingContent = (
+  title: string
+): MenuSectionActionHeadingContent => {
+  const shortcutBadgeText = PAUSED_MAIN_MENU_SECTION_ACTION_SHORTCUT_BADGES.get(title) ?? null;
+  if (shortcutBadgeText === null) {
+    return {
+      titleText: title,
+      shortcutBadgeText: null
+    };
+  }
+
+  const shortcutSuffix = ` (${shortcutBadgeText})`;
+  return {
+    titleText: title.endsWith(shortcutSuffix) ? title.slice(0, -shortcutSuffix.length) : title,
+    shortcutBadgeText
+  };
+};
+
 const appendMenuSectionActionContent = (
   actionElement: HTMLElement,
   section: AppShellMenuSection,
   className: string
 ): void => {
+  const headingContent = resolveMenuSectionActionHeadingContent(section.title);
+  const headingRow = document.createElement('div');
+  headingRow.className = 'app-shell__section-action-heading';
+  actionElement.append(headingRow);
+
   const heading = document.createElement('h3');
   heading.className = `${className}-title`;
-  heading.textContent = section.title;
-  actionElement.append(heading);
+  heading.textContent = headingContent.titleText;
+  headingRow.append(heading);
+
+  if (headingContent.shortcutBadgeText !== null) {
+    const shortcutBadge = document.createElement('span');
+    shortcutBadge.className = 'app-shell__section-action-shortcut-badge';
+    shortcutBadge.textContent = headingContent.shortcutBadgeText;
+    headingRow.append(shortcutBadge);
+  }
 
   if (section.lines.length > 0) {
     const lines = document.createElement('div');

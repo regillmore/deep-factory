@@ -547,6 +547,52 @@ describe('paused main-menu dashboard layout', () => {
     ]);
   });
 
+  it('shows inline shortcut badges on paused Resume World and New World action cards', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const root = container.children[0] ?? null;
+    expect(root).not.toBeNull();
+    if (root === null) {
+      return;
+    }
+
+    const overviewButtons = findElementsByClass(root, 'app-shell__overview-action');
+    const worldSaveButtons = findElementsByClass(root, 'app-shell__world-save-action');
+    const dangerZoneButtons = findElementsByClass(root, 'app-shell__danger-zone-action');
+
+    const resumeTitle = findElementByClass(overviewButtons[0]!, 'app-shell__overview-action-title');
+    const resumeBadge = findElementByClass(
+      overviewButtons[0]!,
+      'app-shell__section-action-shortcut-badge'
+    );
+    const resetShellTogglesBadge = findElementByClass(
+      dangerZoneButtons[0]!,
+      'app-shell__section-action-shortcut-badge'
+    );
+    const newWorldTitle = findElementByClass(
+      dangerZoneButtons[1]!,
+      'app-shell__danger-zone-action-title'
+    );
+    const newWorldBadge = findElementByClass(
+      dangerZoneButtons[1]!,
+      'app-shell__section-action-shortcut-badge'
+    );
+
+    expect(resumeTitle?.textContent).toBe('Resume World');
+    expect(resumeBadge?.textContent).toBe(getDesktopResumeWorldHotkeyLabel());
+    expect(newWorldTitle?.textContent).toBe('New World');
+    expect(newWorldBadge?.textContent).toBe(getDesktopFreshWorldHotkeyLabel());
+    expect(resetShellTogglesBadge).toBeNull();
+    expect(
+      worldSaveButtons.every(
+        (button) => findElementByClass(button, 'app-shell__section-action-shortcut-badge') === null
+      )
+    ).toBe(true);
+  });
+
   it('hides the paused dashboard wrappers for the first-launch main menu layout', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
@@ -627,7 +673,12 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-primary');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-secondary');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-button');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-heading');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-shortcut-badge');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__overview-action');
+    expect(APP_SHELL_STYLE_SOURCE).toContain(
+      '.app-shell__danger-zone-action .app-shell__section-action-shortcut-badge'
+    );
     expect(APP_SHELL_STYLE_SOURCE).toContain('@media (min-width: 960px)');
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__panel[data-layout='paused-dashboard'] .app-shell__paused-secondary"

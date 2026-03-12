@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Add inline shortcut badges to paused section-owned actions.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused `Resume World` and `New World` action cards now render inline desktop shortcut badges without changing the shared paused-menu action handlers, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with section-shortcut-badge DOM and CSS regressions, removed completed task `474` from [docs/NEXT.md](docs/NEXT.md), added replacement task `482`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Move paused-menu actions into their owning dashboard sections.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused `Overview`, `World Save`, and `Danger Zone` now render real section-owned action buttons while the legacy paused footer row stays hidden, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with section-action callback regressions, removed completed task `473` from [docs/NEXT.md](docs/NEXT.md), added replacement task `481`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
