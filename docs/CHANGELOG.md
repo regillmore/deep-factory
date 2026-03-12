@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Add explicit paused-menu section view models.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused main-menu state now carries explicit `Overview`, `World Save`, `Shell`, `Recent Activity`, and `Danger Zone` section view models, rewired paused-menu rendering and summary helpers to use those explicit groups instead of flat title-based routing, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with section-routing regressions, removed completed task `464` from [docs/NEXT.md](docs/NEXT.md), added replacement task `472`, and updated [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Replace the app-shell backlog with a tidy paused-menu redesign plan.
 - Changes: Replaced the [docs/NEXT.md](docs/NEXT.md) `App shell` micro-copy backlog with a sequenced pause-menu redesign plan centered on `Overview`, `World Save`, `Shell`, `Recent Activity`, and `Danger Zone`, and recorded that direction in [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Reviewed the updated roadmap and decision log locally; no build or tests were run because this pass only changed docs.

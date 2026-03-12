@@ -42,6 +42,42 @@ export interface AppShellMenuSection {
   tone?: AppShellMenuSectionTone;
 }
 
+export interface PausedMainMenuOverviewSectionViewModel {
+  resumeWorld: AppShellMenuSection;
+}
+
+export interface PausedMainMenuWorldSaveSectionViewModel {
+  exportWorldSave: AppShellMenuSection;
+  importWorldSave: AppShellMenuSection;
+  clearSavedWorld: AppShellMenuSection;
+  savedWorldStatus: AppShellMenuSection | null;
+}
+
+export interface PausedMainMenuShellSectionViewModel {
+  resetShellToggles: AppShellMenuSection;
+  persistenceSummary: AppShellMenuSection;
+  shellProfilePreview: AppShellMenuSection | null;
+}
+
+export interface PausedMainMenuRecentActivitySectionViewModel {
+  exportResult: AppShellMenuSection | null;
+  importResult: AppShellMenuSection | null;
+  clearSavedWorldResult: AppShellMenuSection | null;
+  resetShellTogglesResult: AppShellMenuSection | null;
+}
+
+export interface PausedMainMenuDangerZoneSectionViewModel {
+  newWorld: AppShellMenuSection;
+}
+
+export interface PausedMainMenuSectionViewModel {
+  overview: PausedMainMenuOverviewSectionViewModel;
+  worldSave: PausedMainMenuWorldSaveSectionViewModel;
+  shell: PausedMainMenuShellSectionViewModel;
+  recentActivity: PausedMainMenuRecentActivitySectionViewModel;
+  dangerZone: PausedMainMenuDangerZoneSectionViewModel;
+}
+
 export interface PausedMainMenuShellSettingsSectionState {
   visible: boolean;
   expanded: boolean;
@@ -68,8 +104,12 @@ export interface PausedMainMenuResultsSectionState {
 }
 
 export interface PausedMainMenuMenuSectionGroups {
+  overviewSections: readonly AppShellMenuSection[];
+  worldSaveSections: readonly AppShellMenuSection[];
+  shellSections: readonly AppShellMenuSection[];
+  recentActivitySections: readonly AppShellMenuSection[];
+  dangerZoneSections: readonly AppShellMenuSection[];
   primarySections: readonly AppShellMenuSection[];
-  resultsSections: readonly AppShellMenuSection[];
 }
 
 export interface PausedMainMenuAcceptedImportResult {
@@ -279,6 +319,7 @@ export interface AppShellState {
   statusText?: string;
   detailLines?: readonly string[];
   menuSections?: readonly AppShellMenuSection[];
+  pausedMainMenuSections?: PausedMainMenuSectionViewModel;
   primaryActionLabel?: string | null;
   secondaryActionLabel?: string | null;
   tertiaryActionLabel?: string | null;
@@ -335,22 +376,6 @@ const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE =
   'Current in-world shell hotkeys preview the active binding set and can be remapped below.';
 const DEFAULTED_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE =
   'Saved in-world shell-action keybindings fell back to a recovered safe set during load. Review or remap the rows below before resuming.';
-const PAUSED_MAIN_MENU_RESULT_SECTION_ACTION_LABELS: Partial<
-  Record<AppShellMenuSection['title'], string>
-> = {
-  'Export Result': 'Export World Save',
-  'Import Result': 'Import World Save',
-  'Clear Saved World Result': 'Clear Saved World',
-  'Reset Shell Toggles Result': 'Reset Shell Toggles'
-};
-const PAUSED_MAIN_MENU_RESULT_SECTION_CATEGORY_LABELS: Partial<
-  Record<AppShellMenuSection['title'], 'world-save' | 'shell-settings'>
-> = {
-  'Export Result': 'world-save',
-  'Import Result': 'world-save',
-  'Clear Saved World Result': 'world-save',
-  'Reset Shell Toggles Result': 'shell-settings'
-};
 const formatMenuSectionMetadataRowValue = (labels: readonly string[]): string =>
   labels.length > 0 ? labels.join(', ') : 'None';
 const formatMenuSectionSummaryListValue = (labels: readonly string[]): string => {
@@ -377,53 +402,174 @@ const parseMenuSectionMetadataRowValue = (value: string | undefined): readonly s
   return trimmedValue.split(', ');
 };
 const findMenuSectionMetadataRowValue = (
-  menuSections: readonly AppShellMenuSection[],
-  sectionTitle: string,
+  menuSection: AppShellMenuSection | null | undefined,
   rowLabel: string
 ): string | undefined =>
-  menuSections
-    .find((section) => section.title === sectionTitle)
-    ?.metadataRows?.find((row) => row.label === rowLabel)?.value;
-const findMenuSectionLines = (
-  menuSections: readonly AppShellMenuSection[],
-  sectionTitle: string
-): readonly string[] =>
-  menuSections.find((section) => section.title === sectionTitle)?.lines ?? [];
-const isPausedMainMenuTransientResultMenuSection = (
-  section: AppShellMenuSection
-): boolean => section.title.endsWith('Result');
-export const splitPausedMainMenuMenuSections = (
-  menuSections: readonly AppShellMenuSection[] = []
-): PausedMainMenuMenuSectionGroups => ({
-  primarySections: menuSections.filter((section) => !isPausedMainMenuTransientResultMenuSection(section)),
-  resultsSections: menuSections.filter(isPausedMainMenuTransientResultMenuSection)
-});
+  menuSection?.metadataRows?.find((row) => row.label === rowLabel)?.value;
+const menuSectionIncludesLine = (
+  menuSection: AppShellMenuSection | null | undefined,
+  line: string
+): boolean => menuSection?.lines.includes(line) ?? false;
+const resolvePausedMainMenuSectionViewModel = (
+  state: AppShellState
+): PausedMainMenuSectionViewModel | null =>
+  isPausedMainMenuState(state) ? state.pausedMainMenuSections ?? null : null;
+const resolvePausedMainMenuOverviewMenuSections = (
+  sectionViewModel: PausedMainMenuSectionViewModel
+): readonly AppShellMenuSection[] => [sectionViewModel.overview.resumeWorld];
+const resolvePausedMainMenuWorldSaveMenuSections = (
+  sectionViewModel: PausedMainMenuSectionViewModel
+): readonly AppShellMenuSection[] => [
+  sectionViewModel.worldSave.exportWorldSave,
+  sectionViewModel.worldSave.importWorldSave,
+  sectionViewModel.worldSave.clearSavedWorld,
+  ...(sectionViewModel.worldSave.savedWorldStatus === null
+    ? []
+    : [sectionViewModel.worldSave.savedWorldStatus])
+];
+const resolvePausedMainMenuShellMenuSections = (
+  sectionViewModel: PausedMainMenuSectionViewModel
+): readonly AppShellMenuSection[] => [
+  sectionViewModel.shell.resetShellToggles,
+  sectionViewModel.shell.persistenceSummary,
+  ...(sectionViewModel.shell.shellProfilePreview === null
+    ? []
+    : [sectionViewModel.shell.shellProfilePreview])
+];
+const resolvePausedMainMenuRecentActivityMenuSections = (
+  sectionViewModel: PausedMainMenuSectionViewModel
+): readonly AppShellMenuSection[] => [
+  ...(sectionViewModel.recentActivity.exportResult === null
+    ? []
+    : [sectionViewModel.recentActivity.exportResult]),
+  ...(sectionViewModel.recentActivity.importResult === null
+    ? []
+    : [sectionViewModel.recentActivity.importResult]),
+  ...(sectionViewModel.recentActivity.clearSavedWorldResult === null
+    ? []
+    : [sectionViewModel.recentActivity.clearSavedWorldResult]),
+  ...(sectionViewModel.recentActivity.resetShellTogglesResult === null
+    ? []
+    : [sectionViewModel.recentActivity.resetShellTogglesResult])
+];
+const resolvePausedMainMenuDangerZoneMenuSections = (
+  sectionViewModel: PausedMainMenuSectionViewModel
+): readonly AppShellMenuSection[] => [sectionViewModel.dangerZone.newWorld];
+const resolvePausedMainMenuMenuSectionGroupsFromViewModel = (
+  sectionViewModel: PausedMainMenuSectionViewModel
+): PausedMainMenuMenuSectionGroups => {
+  const overviewSections = resolvePausedMainMenuOverviewMenuSections(sectionViewModel);
+  const worldSaveSections = resolvePausedMainMenuWorldSaveMenuSections(sectionViewModel);
+  const shellSections = resolvePausedMainMenuShellMenuSections(sectionViewModel);
+  const recentActivitySections = resolvePausedMainMenuRecentActivityMenuSections(sectionViewModel);
+  const dangerZoneSections = resolvePausedMainMenuDangerZoneMenuSections(sectionViewModel);
+
+  return {
+    overviewSections,
+    worldSaveSections,
+    shellSections,
+    recentActivitySections,
+    dangerZoneSections,
+    primarySections: [
+      ...overviewSections,
+      ...worldSaveSections,
+      ...shellSections,
+      ...dangerZoneSections
+    ]
+  };
+};
+export const resolvePausedMainMenuMenuSectionGroups = (
+  state: AppShellState
+): PausedMainMenuMenuSectionGroups => {
+  const sectionViewModel = resolvePausedMainMenuSectionViewModel(state);
+  if (sectionViewModel === null) {
+    return {
+      overviewSections: [],
+      worldSaveSections: [],
+      shellSections: [],
+      recentActivitySections: [],
+      dangerZoneSections: [],
+      primarySections: []
+    };
+  }
+
+  return resolvePausedMainMenuMenuSectionGroupsFromViewModel(sectionViewModel);
+};
+type PausedMainMenuRecentActivityResultCategory = 'world-save' | 'shell-settings';
+
+interface PausedMainMenuRecentActivityEntry {
+  actionLabel: string;
+  category: PausedMainMenuRecentActivityResultCategory;
+  menuSection: AppShellMenuSection;
+}
+
+const resolvePausedMainMenuRecentActivityEntries = (
+  sectionViewModel: PausedMainMenuSectionViewModel
+): readonly PausedMainMenuRecentActivityEntry[] => {
+  const entries: PausedMainMenuRecentActivityEntry[] = [];
+  const registerEntry = (
+    actionLabel: string,
+    category: PausedMainMenuRecentActivityResultCategory,
+    menuSection: AppShellMenuSection | null
+  ): void => {
+    if (menuSection === null) {
+      return;
+    }
+
+    entries.push({
+      actionLabel,
+      category,
+      menuSection
+    });
+  };
+
+  registerEntry('Export World Save', 'world-save', sectionViewModel.recentActivity.exportResult);
+  registerEntry('Import World Save', 'world-save', sectionViewModel.recentActivity.importResult);
+  registerEntry(
+    'Clear Saved World',
+    'world-save',
+    sectionViewModel.recentActivity.clearSavedWorldResult
+  );
+  registerEntry(
+    'Reset Shell Toggles',
+    'shell-settings',
+    sectionViewModel.recentActivity.resetShellTogglesResult
+  );
+
+  return entries;
+};
 const resolvePausedMainMenuResultsSectionSummaryLine = (
-  menuSections: readonly AppShellMenuSection[] = [],
+  sectionViewModel: PausedMainMenuSectionViewModel | null,
   showMenuSectionLines = true
 ): string | null => {
-  if (menuSections.length === 0) {
+  if (sectionViewModel === null) {
     return null;
   }
 
-  const resultActionLabels = menuSections.map(
-    (section) => PAUSED_MAIN_MENU_RESULT_SECTION_ACTION_LABELS[section.title] ?? section.title
-  );
-  const resultCategories = menuSections.map(
-    (section) => PAUSED_MAIN_MENU_RESULT_SECTION_CATEGORY_LABELS[section.title] ?? null
-  );
+  const resultEntries = resolvePausedMainMenuRecentActivityEntries(sectionViewModel);
+  if (resultEntries.length === 0) {
+    return null;
+  }
+
+  const resultActionLabels = resultEntries.map((entry) => entry.actionLabel);
+  const resultCategories = resultEntries.map((entry) => entry.category);
+  const resultSections = resultEntries.map((entry) => entry.menuSection);
   const containsWorldSaveResults = resultCategories.includes('world-save');
   const containsShellSettingResults = resultCategories.includes('shell-settings');
-  const containsWarningResults = menuSections.some((section) => section.tone === 'warning');
-  const containsConfirmationResults = menuSections.some((section) => section.tone === 'accent');
-  const worldSaveOnly = menuSections.length > 1 && resultCategories.every((category) => category === 'world-save');
+  const containsWarningResults = resultSections.some((section) => section.tone === 'warning');
+  const containsConfirmationResults = resultSections.some((section) => section.tone === 'accent');
+  const worldSaveOnly =
+    resultSections.length > 1 && resultCategories.every((category) => category === 'world-save');
   const shellSettingOnly = resultCategories.every((category) => category === 'shell-settings');
-  const warningOnly = menuSections.every((section) => section.tone === 'warning');
-  const confirmationOnly = menuSections.every((section) => section.tone === 'accent');
+  const warningOnly = resultSections.every((section) => section.tone === 'warning');
+  const confirmationOnly = resultSections.every((section) => section.tone === 'accent');
   const mixedWarningAndConfirmation = containsWarningResults && containsConfirmationResults;
   const mixedWorldSaveAndShellSettings = containsWorldSaveResults && containsShellSettingResults;
   const resetShellTogglesCurrentSessionOnly =
-    findMenuSectionMetadataRowValue(menuSections, 'Reset Shell Toggles Result', 'Status') ===
+    findMenuSectionMetadataRowValue(
+      sectionViewModel.recentActivity.resetShellTogglesResult,
+      'Status'
+    ) ===
     'Current session only';
 
   const categorySummaryLine = mixedWorldSaveAndShellSettings
@@ -443,12 +589,11 @@ const resolvePausedMainMenuResultsSectionSummaryLine = (
   const resetShellTogglesCurrentSessionOnlySummaryLine = resetShellTogglesCurrentSessionOnly
     ? RESET_SHELL_TOGGLES_CURRENT_SESSION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
     : null;
-  const densitySummaryLine = resolvePausedMainMenuResultsDensitySummaryLine(menuSections.length);
   const summarySegments = [
     categorySummaryLine,
     toneSummaryLine,
     resetShellTogglesCurrentSessionOnlySummaryLine,
-    densitySummaryLine
+    resolvePausedMainMenuResultsDensitySummaryLine(resultSections.length)
   ].filter((segment): segment is string => segment !== null);
 
   const summaryLine = `Recent paused-menu feedback is available for ${formatMenuSectionSummaryListValue(resultActionLabels)}.${summarySegments.length === 0 ? '' : ` ${summarySegments.join(' ')}`}`;
@@ -464,27 +609,31 @@ export const resolvePausedMainMenuResultsSectionState = (
   showMenuSectionLines = true
 ): PausedMainMenuResultsSectionState => {
   const visible = isPausedMainMenuState(state);
-  const { resultsSections } = splitPausedMainMenuMenuSections(state.menuSections ?? []);
-  const hasResultsSections = visible && resultsSections.length > 0;
+  const pausedMainMenuSections = resolvePausedMainMenuSectionViewModel(state);
+  const { recentActivitySections } = resolvePausedMainMenuMenuSectionGroups(state);
+  const hasResultsSections = visible && recentActivitySections.length > 0;
 
   return {
     visible: hasResultsSections,
     expanded: hasResultsSections && expanded,
     summaryLine: hasResultsSections
-      ? resolvePausedMainMenuResultsSectionSummaryLine(resultsSections, showMenuSectionLines)
+      ? resolvePausedMainMenuResultsSectionSummaryLine(
+          pausedMainMenuSections,
+          showMenuSectionLines
+        )
       : null,
     toggleLabel: hasResultsSections ? resolvePausedMainMenuResultsToggleLabel(expanded) : null,
-    menuSections: hasResultsSections ? resultsSections : []
+    menuSections: hasResultsSections ? recentActivitySections : []
   };
 };
 const resolvePausedMainMenuShellProfilePreviewChangeCategory = (
-  menuSections: readonly AppShellMenuSection[] = []
+  sectionViewModel: PausedMainMenuSectionViewModel | null
 ): PausedMainMenuShellProfileApplyChangeCategory => {
   const toggleChanges = parseMenuSectionMetadataRowValue(
-    findMenuSectionMetadataRowValue(menuSections, 'Shell Profile Preview', 'Toggle Changes')
+    findMenuSectionMetadataRowValue(sectionViewModel?.shell.shellProfilePreview, 'Toggle Changes')
   );
   const hotkeyChanges = parseMenuSectionMetadataRowValue(
-    findMenuSectionMetadataRowValue(menuSections, 'Shell Profile Preview', 'Hotkey Changes')
+    findMenuSectionMetadataRowValue(sectionViewModel?.shell.shellProfilePreview, 'Hotkey Changes')
   );
 
   if (toggleChanges.length === 0 && hotkeyChanges.length === 0) {
@@ -502,11 +651,10 @@ const resolvePausedMainMenuShellProfilePreviewChangeCategory = (
   return 'mixed';
 };
 const resolvePausedMainMenuShellProfilePreviewSummaryLine = (
-  menuSections: readonly AppShellMenuSection[] = []
+  sectionViewModel: PausedMainMenuSectionViewModel | null
 ): string | null => {
   const previewFileValue = findMenuSectionMetadataRowValue(
-    menuSections,
-    'Shell Profile Preview',
+    sectionViewModel?.shell.shellProfilePreview,
     'File'
   );
 
@@ -519,7 +667,7 @@ const resolvePausedMainMenuShellProfilePreviewSummaryLine = (
       ? 'A validated shell profile preview'
       : `Shell profile preview from ${previewFileValue}`;
 
-  switch (resolvePausedMainMenuShellProfilePreviewChangeCategory(menuSections)) {
+  switch (resolvePausedMainMenuShellProfilePreviewChangeCategory(sectionViewModel)) {
     case 'toggle-only':
       return `${subject} is ready to apply with shell visibility toggle changes only.`;
     case 'hotkey-only':
@@ -531,11 +679,10 @@ const resolvePausedMainMenuShellProfilePreviewSummaryLine = (
   }
 };
 const resolvePausedMainMenuShellProfilePreviewBindingSetSummaryLine = (
-  menuSections: readonly AppShellMenuSection[] = []
+  sectionViewModel: PausedMainMenuSectionViewModel | null
 ): string | null => {
   const previewBindingSetValue = findMenuSectionMetadataRowValue(
-    menuSections,
-    'Shell Profile Preview',
+    sectionViewModel?.shell.shellProfilePreview,
     'Binding Set'
   );
 
@@ -544,14 +691,13 @@ const resolvePausedMainMenuShellProfilePreviewBindingSetSummaryLine = (
     : `If applied, that preview would use the ${previewBindingSetValue.toLowerCase()}.`;
 };
 const resolvePausedMainMenuShellProfilePreviewSavedOnSummaryLine = (
-  menuSections: readonly AppShellMenuSection[] = []
+  sectionViewModel: PausedMainMenuSectionViewModel | null
 ): string | null => {
   const previewSavedOnToggleLabels = parseMenuSectionMetadataRowValue(
-    findMenuSectionMetadataRowValue(menuSections, 'Shell Profile Preview', 'Saved On')
+    findMenuSectionMetadataRowValue(sectionViewModel?.shell.shellProfilePreview, 'Saved On')
   );
   const previewSavedOffValue = findMenuSectionMetadataRowValue(
-    menuSections,
-    'Shell Profile Preview',
+    sectionViewModel?.shell.shellProfilePreview,
     'Saved Off'
   );
 
@@ -566,16 +712,14 @@ const resolvePausedMainMenuShellProfilePreviewSavedOnSummaryLine = (
   return `If applied, that preview would resume with ${formatMenuSectionSummaryListValue(previewSavedOnToggleLabels)} shown.`;
 };
 const resolvePausedMainMenuShellSettingsPersistenceSummaryLine = (
-  menuSections: readonly AppShellMenuSection[] = []
+  sectionViewModel: PausedMainMenuSectionViewModel | null
 ): string | null => {
   const persistenceStatusValue = findMenuSectionMetadataRowValue(
-    menuSections,
-    'Persistence Summary',
+    sectionViewModel?.shell.persistenceSummary,
     'Status'
   );
   const bindingSetValue = findMenuSectionMetadataRowValue(
-    menuSections,
-    'Persistence Summary',
+    sectionViewModel?.shell.persistenceSummary,
     'Binding Set'
   );
   const summaryLines: string[] = [];
@@ -595,9 +739,10 @@ const resolvePausedMainMenuShellSettingsPersistenceSummaryLine = (
   return summaryLines.length > 0 ? summaryLines.join(' ') : null;
 };
 const resolvePausedMainMenuShellSettingsFallbackSummaryLine = (
-  menuSections: readonly AppShellMenuSection[] = []
+  sectionViewModel: PausedMainMenuSectionViewModel | null
 ): string | null =>
-  findMenuSectionLines(menuSections, 'Persistence Summary').includes(
+  menuSectionIncludesLine(
+    sectionViewModel?.shell.persistenceSummary,
     DEFAULTED_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE
   )
     ? 'The current default-looking hotkeys are a recovered safe-set fallback because invalid saved bindings were rejected during load.'
@@ -609,14 +754,14 @@ const resolvePausedMainMenuShellSettingsCurrentSessionOnlySummaryLine = (
     ? 'Current shell hotkeys are live only in this paused session because the latest browser hotkey save failed.'
     : null;
 export const resolvePausedMainMenuShellSettingsSummaryLine = (
-  menuSections: readonly AppShellMenuSection[] = [],
+  sectionViewModel: PausedMainMenuSectionViewModel | null,
   shellActionKeybindingsCurrentSessionOnly = false
 ): string => {
   const savedOnToggleLabels = parseMenuSectionMetadataRowValue(
-    findMenuSectionMetadataRowValue(menuSections, 'Persistence Summary', 'Saved On')
+    findMenuSectionMetadataRowValue(sectionViewModel?.shell.persistenceSummary, 'Saved On')
   );
   const savedOffToggleLabels = parseMenuSectionMetadataRowValue(
-    findMenuSectionMetadataRowValue(menuSections, 'Persistence Summary', 'Saved Off')
+    findMenuSectionMetadataRowValue(sectionViewModel?.shell.persistenceSummary, 'Saved Off')
   );
   let visibilitySummaryLine: string;
 
@@ -631,15 +776,15 @@ export const resolvePausedMainMenuShellSettingsSummaryLine = (
   }
 
   const shellProfilePreviewSummaryLine =
-    resolvePausedMainMenuShellProfilePreviewSummaryLine(menuSections);
+    resolvePausedMainMenuShellProfilePreviewSummaryLine(sectionViewModel);
   const shellProfilePreviewBindingSetSummaryLine =
-    resolvePausedMainMenuShellProfilePreviewBindingSetSummaryLine(menuSections);
+    resolvePausedMainMenuShellProfilePreviewBindingSetSummaryLine(sectionViewModel);
   const shellProfilePreviewSavedOnSummaryLine =
-    resolvePausedMainMenuShellProfilePreviewSavedOnSummaryLine(menuSections);
+    resolvePausedMainMenuShellProfilePreviewSavedOnSummaryLine(sectionViewModel);
   const shellSettingsPersistenceSummaryLine =
-    resolvePausedMainMenuShellSettingsPersistenceSummaryLine(menuSections);
+    resolvePausedMainMenuShellSettingsPersistenceSummaryLine(sectionViewModel);
   const shellSettingsFallbackSummaryLine =
-    resolvePausedMainMenuShellSettingsFallbackSummaryLine(menuSections);
+    resolvePausedMainMenuShellSettingsFallbackSummaryLine(sectionViewModel);
   const shellSettingsCurrentSessionOnlySummaryLine =
     resolvePausedMainMenuShellSettingsCurrentSessionOnlySummaryLine(
       shellActionKeybindingsCurrentSessionOnly
@@ -672,7 +817,7 @@ export const resolvePausedMainMenuShellSettingsSectionState = (
     expanded: editorVisible,
     summaryLine: visible
       ? resolvePausedMainMenuShellSettingsSummaryLine(
-          state.menuSections ?? [],
+          resolvePausedMainMenuSectionViewModel(state),
           state.shellActionKeybindingsCurrentSessionOnly === true
         )
       : null,
@@ -1135,7 +1280,7 @@ const createPausedMainMenuImportMenuSection = (
   }
 };
 
-export const createPausedMainMenuMenuSections = (
+export const createPausedMainMenuSectionViewModel = (
   worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
   worldSessionShellPersistenceAvailable = true,
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
@@ -1146,13 +1291,14 @@ export const createPausedMainMenuMenuSections = (
   clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null,
   resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null,
   shellProfilePreview: PausedMainMenuShellProfilePreview | null = null
-): readonly AppShellMenuSection[] => {
+): PausedMainMenuSectionViewModel => {
   const persistenceSummary = createWorldSessionShellStatePersistenceSummary(
     worldSessionShellState,
     worldSessionShellPersistenceAvailable
   );
-  return [
-    {
+  return {
+    overview: {
+      resumeWorld: {
       title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
       lines: ['Continue with the current world, player state, and debug edits intact.'],
       metadataRows: [
@@ -1166,140 +1312,184 @@ export const createPausedMainMenuMenuSections = (
         }
       ],
       tone: 'accent'
+      }
     },
-    {
-      title: 'Export World Save',
-      lines: [
-        'Download a JSON save file for the current world, player, and camera session state without changing the paused session.'
-      ],
-      metadataRows: [
-        {
-          label: 'Shortcut',
-          value: 'Button only'
-        },
-        {
-          label: 'Consequence',
-          value: 'Keeps the current paused session unchanged.'
-        }
-      ]
+    worldSave: {
+      exportWorldSave: {
+        title: 'Export World Save',
+        lines: [
+          'Download a JSON save file for the current world, player, and camera session state without changing the paused session.'
+        ],
+        metadataRows: [
+          {
+            label: 'Shortcut',
+            value: 'Button only'
+          },
+          {
+            label: 'Consequence',
+            value: 'Keeps the current paused session unchanged.'
+          }
+        ]
+      },
+      importWorldSave: {
+        title: 'Import World Save',
+        lines: [
+          'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates and runtime restore succeeds.'
+        ],
+        metadataRows: [
+          {
+            label: 'Shortcut',
+            value: 'Button only'
+          },
+          {
+            label: 'Consequence',
+            value:
+              'Validated imports replace the paused session only when runtime restore succeeds; canceled picks, picker failures, invalid saves, or failed restores do not.'
+          }
+        ]
+      },
+      clearSavedWorld: {
+        title: 'Clear Saved World',
+        lines: [
+          'Delete the browser-saved world, player, and camera envelope while keeping this paused session active in the current tab until it is saved again.'
+        ],
+        metadataRows: [
+          {
+            label: 'Shortcut',
+            value: 'Button only'
+          },
+          {
+            label: 'Consequence',
+            value: 'Keeps the session but clears browser resume.'
+          }
+        ]
+      },
+      savedWorldStatus:
+        savedWorldStatus === null
+          ? null
+          : createPausedMainMenuSavedWorldStatusMenuSection(savedWorldStatus)
     },
-    ...(exportResult === null ? [] : [createPausedMainMenuExportResultMenuSection(exportResult)]),
-    {
-      title: 'Import World Save',
-      lines: [
-        'Choose a JSON world-save file and replace the paused world, player, and camera session only after the top-level envelope validates and runtime restore succeeds.'
-      ],
-      metadataRows: [
-        {
-          label: 'Shortcut',
-          value: 'Button only'
-        },
-        {
-          label: 'Consequence',
-          value:
-            'Validated imports replace the paused session only when runtime restore succeeds; canceled picks, picker failures, invalid saves, or failed restores do not.'
-        }
-      ]
-    },
-    ...(importResult === null ? [] : [createPausedMainMenuImportMenuSection(importResult)]),
-    {
-      title: 'Clear Saved World',
-      lines: [
-        'Delete the browser-saved world, player, and camera envelope while keeping this paused session active in the current tab until it is saved again.'
-      ],
-      metadataRows: [
-        {
-          label: 'Shortcut',
-          value: 'Button only'
-        },
-        {
-          label: 'Consequence',
-          value: 'Keeps the session but clears browser resume.'
-        }
-      ]
-    },
-    ...(clearSavedWorldResult === null
-      ? []
-      : [createPausedMainMenuClearSavedWorldResultMenuSection(clearSavedWorldResult)]),
-    ...(savedWorldStatus === null
-      ? []
-      : [createPausedMainMenuSavedWorldStatusMenuSection(savedWorldStatus)]),
-    {
-      title: 'Reset Shell Toggles',
-      lines: [
-        `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
-      ],
-      metadataRows: [
-        {
-          label: 'Shortcut',
-          value: 'Button only'
-        },
-        {
-          label: 'Consequence',
-          value: 'Keeps the session but clears saved shell visibility.'
-        }
-      ]
-    },
-    ...(resetShellTogglesResult === null
-      ? []
-      : [createPausedMainMenuResetShellTogglesResultMenuSection(resetShellTogglesResult)]),
-    {
-      title: 'Persistence Summary',
-      lines: [
-        persistenceSummary.descriptionLine,
-        resolvePausedMainMenuShellActionKeybindingSummaryLine(
-          shellActionKeybindingsDefaultedFromPersistedState
-        )
-      ],
-      metadataRows: [
-        {
-          label: 'Status',
-          value: persistenceSummary.statusValue
-        },
-        {
-          label: 'Resumes',
-          value: formatMenuSectionMetadataRowValue(persistenceSummary.resumedToggleLabels)
-        },
-        {
-          label: 'Saved On',
-          value: formatMenuSectionMetadataRowValue(persistenceSummary.savedOnToggleLabels)
-        },
-        {
-          label: 'Saved Off',
-          value: formatMenuSectionMetadataRowValue(persistenceSummary.savedOffToggleLabels)
-        },
-        {
-          label: 'Cleared by',
-          value: formatMenuSectionMetadataRowValue(persistenceSummary.clearedByActionLabels)
-        },
-        ...createPausedMainMenuShellActionKeybindingSummaryRows(shellActionKeybindings)
-      ]
-    },
-    ...(shellProfilePreview === null
-      ? []
-      : [
-          createPausedMainMenuShellProfilePreviewMenuSection(
-            worldSessionShellState,
-            shellActionKeybindings,
-            shellProfilePreview
+    shell: {
+      resetShellToggles: {
+        title: 'Reset Shell Toggles',
+        lines: [
+          `Keep the paused session intact while clearing saved shell visibility and restoring the default-off shell layout before the next Resume World (${getDesktopResumeWorldHotkeyLabel()}).`
+        ],
+        metadataRows: [
+          {
+            label: 'Shortcut',
+            value: 'Button only'
+          },
+          {
+            label: 'Consequence',
+            value: 'Keeps the session but clears saved shell visibility.'
+          }
+        ]
+      },
+      persistenceSummary: {
+        title: 'Persistence Summary',
+        lines: [
+          persistenceSummary.descriptionLine,
+          resolvePausedMainMenuShellActionKeybindingSummaryLine(
+            shellActionKeybindingsDefaultedFromPersistedState
           )
-        ]),
-    {
-      title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
-      lines: ['Discard the paused session, camera state, and undo history before a fresh world boots.'],
-      metadataRows: [
-        {
-          label: 'Shortcut',
-          value: getDesktopFreshWorldHotkeyLabel()
-        },
-        {
-          label: 'Consequence',
-          value: 'Replaces the current world, player, camera, and undo state.'
-        }
-      ],
-      tone: 'warning'
+        ],
+        metadataRows: [
+          {
+            label: 'Status',
+            value: persistenceSummary.statusValue
+          },
+          {
+            label: 'Resumes',
+            value: formatMenuSectionMetadataRowValue(persistenceSummary.resumedToggleLabels)
+          },
+          {
+            label: 'Saved On',
+            value: formatMenuSectionMetadataRowValue(persistenceSummary.savedOnToggleLabels)
+          },
+          {
+            label: 'Saved Off',
+            value: formatMenuSectionMetadataRowValue(persistenceSummary.savedOffToggleLabels)
+          },
+          {
+            label: 'Cleared by',
+            value: formatMenuSectionMetadataRowValue(persistenceSummary.clearedByActionLabels)
+          },
+          ...createPausedMainMenuShellActionKeybindingSummaryRows(shellActionKeybindings)
+        ]
+      },
+      shellProfilePreview:
+        shellProfilePreview === null
+          ? null
+          : createPausedMainMenuShellProfilePreviewMenuSection(
+              worldSessionShellState,
+              shellActionKeybindings,
+              shellProfilePreview
+            )
+    },
+    recentActivity: {
+      exportResult:
+        exportResult === null ? null : createPausedMainMenuExportResultMenuSection(exportResult),
+      importResult:
+        importResult === null ? null : createPausedMainMenuImportMenuSection(importResult),
+      clearSavedWorldResult:
+        clearSavedWorldResult === null
+          ? null
+          : createPausedMainMenuClearSavedWorldResultMenuSection(clearSavedWorldResult),
+      resetShellTogglesResult:
+        resetShellTogglesResult === null
+          ? null
+          : createPausedMainMenuResetShellTogglesResultMenuSection(resetShellTogglesResult)
+    },
+    dangerZone: {
+      newWorld: {
+        title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
+        lines: [
+          'Discard the paused session, camera state, and undo history before a fresh world boots.'
+        ],
+        metadataRows: [
+          {
+            label: 'Shortcut',
+            value: getDesktopFreshWorldHotkeyLabel()
+          },
+          {
+            label: 'Consequence',
+            value: 'Replaces the current world, player, camera, and undo state.'
+          }
+        ],
+        tone: 'warning'
+      }
     }
-  ] as const;
+  };
+};
+
+export const createPausedMainMenuMenuSections = (
+  worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
+  worldSessionShellPersistenceAvailable = true,
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
+  shellActionKeybindingsDefaultedFromPersistedState = false,
+  importResult: PausedMainMenuImportResult | null = null,
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null = null,
+  exportResult: PausedMainMenuExportResult | null = null,
+  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null,
+  resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null,
+  shellProfilePreview: PausedMainMenuShellProfilePreview | null = null
+): readonly AppShellMenuSection[] => {
+  const sectionViewModel = createPausedMainMenuSectionViewModel(
+    worldSessionShellState,
+    worldSessionShellPersistenceAvailable,
+    shellActionKeybindings,
+    shellActionKeybindingsDefaultedFromPersistedState,
+    importResult,
+    savedWorldStatus,
+    exportResult,
+    clearSavedWorldResult,
+    resetShellTogglesResult,
+    shellProfilePreview
+  );
+  const menuSectionGroups = resolvePausedMainMenuMenuSectionGroupsFromViewModel(sectionViewModel);
+
+  return [...menuSectionGroups.primarySections, ...menuSectionGroups.recentActivitySections];
 };
 
 export const DEFAULT_PAUSED_MAIN_MENU_MENU_SECTIONS = createPausedMainMenuMenuSections();
@@ -1316,11 +1506,8 @@ export const createPausedMainMenuShellState = (
   resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null,
   shellProfilePreview: PausedMainMenuShellProfilePreview | null = null,
   shellActionKeybindingsCurrentSessionOnly = false
-): AppShellState => ({
-  screen: 'main-menu',
-  statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
-  detailLines: DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES,
-  menuSections: createPausedMainMenuMenuSections(
+): AppShellState => {
+  const pausedMainMenuSections = createPausedMainMenuSectionViewModel(
     worldSessionShellState,
     worldSessionShellPersistenceAvailable,
     shellActionKeybindings,
@@ -1331,30 +1518,39 @@ export const createPausedMainMenuShellState = (
     clearSavedWorldResult,
     resetShellTogglesResult,
     shellProfilePreview
-  ),
-  primaryActionLabel: 'Resume World',
-  secondaryActionLabel: 'Export World Save',
-  tertiaryActionLabel: 'Import World Save',
-  quaternaryActionLabel: 'Clear Saved World',
-  quinaryActionLabel: 'Reset Shell Toggles',
-  senaryActionLabel: 'New World',
-  shellActionKeybindings,
-  worldSessionShellPersistenceAvailable,
-  ...(shellActionKeybindingsCurrentSessionOnly
-    ? { shellActionKeybindingsCurrentSessionOnly: true }
-    : {}),
-  ...(exportResult === null ? {} : { pausedMainMenuExportResult: exportResult }),
-  ...(importResult === null ? {} : { pausedMainMenuImportResult: importResult }),
-  ...(clearSavedWorldResult === null
-    ? {}
-    : { pausedMainMenuClearSavedWorldResult: clearSavedWorldResult }),
-  ...(resetShellTogglesResult === null
-    ? {}
-    : { pausedMainMenuResetShellTogglesResult: resetShellTogglesResult }),
-  ...(shellProfilePreview === null
-    ? {}
-    : { pausedMainMenuShellProfilePreview: shellProfilePreview })
-});
+  );
+  const menuSectionGroups = resolvePausedMainMenuMenuSectionGroupsFromViewModel(pausedMainMenuSections);
+
+  return {
+    screen: 'main-menu',
+    statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
+    detailLines: DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES,
+    menuSections: [...menuSectionGroups.primarySections, ...menuSectionGroups.recentActivitySections],
+    pausedMainMenuSections,
+    primaryActionLabel: 'Resume World',
+    secondaryActionLabel: 'Export World Save',
+    tertiaryActionLabel: 'Import World Save',
+    quaternaryActionLabel: 'Clear Saved World',
+    quinaryActionLabel: 'Reset Shell Toggles',
+    senaryActionLabel: 'New World',
+    shellActionKeybindings,
+    worldSessionShellPersistenceAvailable,
+    ...(shellActionKeybindingsCurrentSessionOnly
+      ? { shellActionKeybindingsCurrentSessionOnly: true }
+      : {}),
+    ...(exportResult === null ? {} : { pausedMainMenuExportResult: exportResult }),
+    ...(importResult === null ? {} : { pausedMainMenuImportResult: importResult }),
+    ...(clearSavedWorldResult === null
+      ? {}
+      : { pausedMainMenuClearSavedWorldResult: clearSavedWorldResult }),
+    ...(resetShellTogglesResult === null
+      ? {}
+      : { pausedMainMenuResetShellTogglesResult: resetShellTogglesResult }),
+    ...(shellProfilePreview === null
+      ? {}
+      : { pausedMainMenuShellProfilePreview: shellProfilePreview })
+  };
+};
 
 export interface AppShellViewModel {
   screen: AppShellScreen;
@@ -1365,6 +1561,7 @@ export interface AppShellViewModel {
   statusText: string;
   detailLines: readonly string[];
   menuSections: readonly AppShellMenuSection[];
+  pausedMainMenuSections: PausedMainMenuSectionViewModel | null;
   primaryActionLabel: string | null;
   secondaryActionLabel: string | null;
   tertiaryActionLabel: string | null;
@@ -1984,6 +2181,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         statusText: state.statusText ?? defaultBootState.statusText ?? '',
         detailLines: state.detailLines ?? defaultBootState.detailLines ?? [],
         menuSections: state.menuSections ?? [],
+        pausedMainMenuSections: null,
         primaryActionLabel: state.primaryActionLabel ?? null,
         secondaryActionLabel: state.secondaryActionLabel ?? null,
         tertiaryActionLabel: state.tertiaryActionLabel ?? null,
@@ -2016,6 +2214,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         statusText: state.statusText ?? firstLaunchMainMenuState.statusText ?? '',
         detailLines: state.detailLines ?? firstLaunchMainMenuState.detailLines ?? [],
         menuSections: state.menuSections ?? firstLaunchMainMenuState.menuSections ?? [],
+        pausedMainMenuSections: state.pausedMainMenuSections ?? null,
         primaryActionLabel: resolveMainMenuPrimaryActionLabel(
           state.primaryActionLabel ?? firstLaunchMainMenuState.primaryActionLabel ?? 'Enter World'
         ),
@@ -2084,6 +2283,7 @@ export const resolveAppShellViewModel = (state: AppShellState): AppShellViewMode
         statusText: state.statusText ?? '',
         detailLines: state.detailLines ?? [],
         menuSections: state.menuSections ?? [],
+        pausedMainMenuSections: null,
         primaryActionLabel: null,
         secondaryActionLabel: null,
         tertiaryActionLabel: null,
@@ -2952,7 +3152,7 @@ export class AppShell {
       this.pausedMainMenuShellSettingsExpanded,
       pausedMainMenuHelpCopySection.showMenuSectionLines
     );
-    const pausedMainMenuMenuSectionGroups = splitPausedMainMenuMenuSections(viewModel.menuSections);
+    const pausedMainMenuMenuSectionGroups = resolvePausedMainMenuMenuSectionGroups(state);
 
     this.root.dataset.screen = viewModel.screen;
     this.overlay.hidden = !viewModel.overlayVisible;
