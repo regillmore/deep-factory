@@ -723,6 +723,27 @@ canvas {
   color: #f3cd87;
 }
 
+.app-shell__section-top-jump-link {
+  justify-self: start;
+  align-items: center;
+  color: #9fddff;
+  font:
+    700 10px/1.1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.app-shell__section-top-jump-link:hover {
+  color: #d8f3ff;
+}
+
+.app-shell__section-top-jump-link:focus-visible {
+  outline: 2px solid #9fddff;
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
 .app-shell__menu-section {
   padding: 15px 16px 16px;
   border: 1px solid rgba(150, 184, 197, 0.18);

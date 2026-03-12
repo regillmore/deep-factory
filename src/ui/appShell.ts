@@ -2455,6 +2455,10 @@ const PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS = {
   }
 } as const satisfies Record<string, PausedMainMenuSectionLandmarkTarget>;
 
+const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT = 'Jump to Overview';
+const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE =
+  'Move focus back to the Overview section at the top of the paused dashboard.';
+
 const applyPausedMainMenuSectionLandmarkTarget = (
   sectionElement: HTMLElement,
   headingElement: HTMLHeadingElement,
@@ -2465,6 +2469,13 @@ const applyPausedMainMenuSectionLandmarkTarget = (
   sectionElement.setAttribute('aria-labelledby', target.headingId);
   sectionElement.setAttribute('tabindex', '-1');
   headingElement.setAttribute('id', target.headingId);
+};
+
+const focusPausedMainMenuSectionAnchor = (sectionElement: HTMLElement): void => {
+  sectionElement.focus();
+  sectionElement.scrollIntoView?.({
+    block: 'start'
+  });
 };
 
 const createMenuSectionElement = (section: AppShellMenuSection): HTMLElement => {
@@ -2842,6 +2853,7 @@ export class AppShell {
   private shellBody: HTMLDivElement;
   private shellActionKeybindingEditor: HTMLDivElement;
   private shellActionKeybindingEditorMetadata: HTMLDListElement;
+  private shellTopJumpLink: HTMLAnchorElement;
   private shellActionKeybindingInputs = new Map<
     InWorldShellActionKeybindingActionType,
     HTMLInputElement
@@ -3296,6 +3308,24 @@ export class AppShell {
     this.shellActionKeybindingEditorStatus = document.createElement('p');
     this.shellActionKeybindingEditorStatus.className = 'app-shell__shell-keybindings-status';
     this.shellActionKeybindingEditor.append(this.shellActionKeybindingEditorStatus);
+
+    this.shellTopJumpLink = document.createElement('a');
+    this.shellTopJumpLink.className = 'app-shell__section-top-jump-link';
+    this.shellTopJumpLink.textContent = PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT;
+    this.shellTopJumpLink.title = PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE;
+    this.shellTopJumpLink.setAttribute(
+      'href',
+      `#${PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS.overview.sectionId}`
+    );
+    this.shellTopJumpLink.addEventListener('click', (event) => {
+      event.preventDefault();
+      if (!isPausedMainMenuState(this.currentState)) {
+        return;
+      }
+
+      focusPausedMainMenuSectionAnchor(this.overviewSection);
+    });
+    this.shellActionKeybindingEditor.append(this.shellTopJumpLink);
 
     this.recentActivitySection = document.createElement('section');
     this.recentActivitySection.className = 'app-shell__recent-activity';
@@ -3828,6 +3858,10 @@ export class AppShell {
       pausedMainMenuShellSection.editorVisible,
       'grid'
     );
+    this.shellTopJumpLink.hidden = !pausedMainMenuShellSection.editorVisible;
+    this.shellTopJumpLink.style.display = pausedMainMenuShellSection.editorVisible
+      ? 'inline-flex'
+      : 'none';
     this.syncShellActionKeybindingEditorMetadata(pausedMainMenuShellPersistenceAvailable);
     this.shellProfilePreviewDetails.replaceChildren(
       ...(pausedMainMenuShellSection.previewSection === null

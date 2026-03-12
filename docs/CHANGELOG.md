@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Add a paused-dashboard top-jump link for expanded Shell sessions.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so the expanded paused-menu `Shell` editor now exposes a `Jump to Overview` link that focuses the existing `Overview` section anchor and scrolls it into view, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with paused-dashboard-top-link DOM and CSS regressions, removed completed task `479` from [docs/NEXT.md](docs/NEXT.md), added replacement task `484`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Convert the paused-menu `Shell Hotkeys` helper paragraph into compact editor metadata.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/style.css](../src/style.css), and [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the expanded paused-menu `Shell Hotkeys` editor now uses compact `Keys` and `Persistence` metadata rows with a warning-toned session-only fallback state instead of a prose helper paragraph; removed completed task `477` from [docs/NEXT.md](docs/NEXT.md), added replacement task `483`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

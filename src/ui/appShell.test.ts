@@ -238,6 +238,9 @@ const PAUSED_MAIN_MENU_SHELL_PROFILE_PREVIEW_LINES = [
   'The selected shell profile validated successfully and is ready to apply to this paused session.',
   'Review its live change summary, saved-on shell visibility, and replacement hotkey set below before applying it.'
 ] as const;
+const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT = 'Jump to Overview';
+const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE =
+  'Move focus back to the Overview section at the top of the paused dashboard.';
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS = [
   {
     label: 'Keys',
@@ -297,6 +300,8 @@ class FakeElement {
   autocomplete = '';
   spellcheck = false;
   htmlFor = '';
+  focusCallCount = 0;
+  scrollIntoViewCallCount = 0;
   classList = new FakeClassList(this);
   private readonly attributes = new Map<string, string>();
   private readonly listeners = new Map<string, Array<(...args: unknown[]) => void>>();
@@ -340,18 +345,26 @@ class FakeElement {
   }
 
   click(): void {
+    const event = {
+      type: 'click',
+      currentTarget: this,
+      target: this,
+      preventDefault: () => {}
+    };
     for (const listener of this.listeners.get('click') ?? []) {
-      listener({
-        type: 'click',
-        currentTarget: this,
-        target: this
-      });
+      listener(event);
     }
   }
 
   blur(): void {}
 
-  focus(): void {}
+  focus(): void {
+    this.focusCallCount += 1;
+  }
+
+  scrollIntoView(): void {
+    this.scrollIntoViewCallCount += 1;
+  }
 
   select(): void {}
 }
@@ -711,6 +724,37 @@ describe('paused main-menu dashboard layout', () => {
     expect(shellEditorIntro).toBeNull();
   });
 
+  it('adds an expanded-shell top-jump link that returns focus to Overview', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const root = container.children[0] ?? null;
+    const shellToggleButton =
+      root === null ? null : findElementByClass(root, 'app-shell__shell-toggle');
+    const overviewSection = root === null ? null : findElementByClass(root, 'app-shell__overview');
+    const jumpLinkCollapsed =
+      root === null ? null : findElementByClass(root, 'app-shell__section-top-jump-link');
+
+    expect(jumpLinkCollapsed?.hidden).toBe(true);
+
+    shellToggleButton?.click();
+
+    const jumpLink =
+      root === null ? null : findElementByClass(root, 'app-shell__section-top-jump-link');
+
+    expect(jumpLink?.textContent).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT);
+    expect(jumpLink?.title).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE);
+    expect(jumpLink?.getAttribute('href')).toBe('#app-shell-paused-overview-section');
+    expect(jumpLink?.hidden).toBe(false);
+
+    jumpLink?.click();
+
+    expect(overviewSection?.focusCallCount).toBe(1);
+    expect(overviewSection?.scrollIntoViewCallCount).toBe(1);
+  });
+
   it('switches the expanded shell-hotkey metadata rows into warning-toned session-only copy when browser persistence is unavailable', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
@@ -746,6 +790,7 @@ describe('paused main-menu dashboard layout styling', () => {
       '.app-shell__danger-zone-action .app-shell__section-action-shortcut-badge'
     );
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-keybindings-metadata');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-top-jump-link');
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__shell-keybindings-metadata[data-tone='warning'] .app-shell__menu-section-metadata-value"
     );
