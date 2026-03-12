@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-11
 
+- Task: Add paused-menu Results category summary copy.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused-menu `Results` summary now says when the collapsed feedback group combines world-save and shell-setting result categories, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused category-summary regressions while preserving the existing tone summaries, removed completed task `458` from [docs/NEXT.md](docs/NEXT.md), added replacement task `459`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add paused-menu Results confirmation-only summary copy.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused-menu `Results` summary now says when the collapsed feedback group contains confirmation-toned cards only, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with focused confirmation-only summary and hidden-help composition regressions, removed completed task `457` from [docs/NEXT.md](docs/NEXT.md), added replacement task `458`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

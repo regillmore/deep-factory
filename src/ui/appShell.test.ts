@@ -140,10 +140,12 @@ const EXPORT_AND_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Export World Save and Import World Save. Warning and confirmation feedback are both currently available here.';
 const EXPORT_AND_IMPORT_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Export World Save and Import World Save. Warning and confirmation feedback are both currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
+const IMPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Recent paused-menu feedback is available for Import World Save and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Warning and confirmation feedback are both currently available here.';
 const EXPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Export World Save and Reset Shell Toggles. Only confirmation feedback is currently available here.';
+  'Recent paused-menu feedback is available for Export World Save and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Only confirmation feedback is currently available here.';
 const EXPORT_AND_RESET_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Export World Save and Reset Shell Toggles. Only confirmation feedback is currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
+  'Recent paused-menu feedback is available for Export World Save and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Only confirmation feedback is currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
 const PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
   'Shell profile preview from preview-shell-profile.json is ready to apply with both shell visibility toggle and hotkey changes. If applied, that preview would use the custom set. If applied, that preview would resume with Debug HUD, Edit Overlays, and Spawn Marker shown. Resume World keeps Debug HUD, Edit Panel, Edit Overlays, Spawn Marker, and Shortcuts hidden. Shell settings are browser saved. Current shell hotkeys use the default set.';
 const PREVIEWED_TOGGLE_ONLY_DEFAULT_PAUSED_MAIN_MENU_SHELL_SETTINGS_SUMMARY_LINE =
@@ -3267,6 +3269,35 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
       visible: true,
       expanded: false,
       summaryLine: IMPORT_AND_CLEAR_WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
+      toggleLabel: 'Show Results'
+    });
+  });
+
+  it('adds category header copy when world-save and shell-setting feedback are both present', () => {
+    expect(
+      resolvePausedMainMenuResultsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          {
+            status: 'rejected',
+            fileName: 'broken.json',
+            reason: 'world save envelope kind must be "deep-factory.world-save"'
+          },
+          null,
+          null,
+          null,
+          {
+            status: 'cleared'
+          }
+        )
+      )
+    ).toMatchObject({
+      visible: true,
+      expanded: false,
+      summaryLine: IMPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
       toggleLabel: 'Show Results'
     });
   });

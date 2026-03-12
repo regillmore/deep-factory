@@ -321,6 +321,8 @@ const CONFIRMATION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Only confirmation feedback is currently available here.';
 const MIXED_WARNING_AND_CONFIRMATION_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Warning and confirmation feedback are both currently available here.';
+const MIXED_WORLD_SAVE_AND_SHELL_SETTINGS_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'World-save and shell-setting feedback are both currently available here.';
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE =
   'Current in-world shell hotkeys preview the active binding set and can be remapped below.';
 const DEFAULTED_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE =
@@ -332,6 +334,14 @@ const PAUSED_MAIN_MENU_RESULT_SECTION_ACTION_LABELS: Partial<
   'Import Result': 'Import World Save',
   'Clear Saved World Result': 'Clear Saved World',
   'Reset Shell Toggles Result': 'Reset Shell Toggles'
+};
+const PAUSED_MAIN_MENU_RESULT_SECTION_CATEGORY_LABELS: Partial<
+  Record<AppShellMenuSection['title'], 'world-save' | 'shell-settings'>
+> = {
+  'Export Result': 'world-save',
+  'Import Result': 'world-save',
+  'Clear Saved World Result': 'world-save',
+  'Reset Shell Toggles Result': 'shell-settings'
 };
 const formatMenuSectionMetadataRowValue = (labels: readonly string[]): string =>
   labels.length > 0 ? labels.join(', ') : 'None';
@@ -391,12 +401,21 @@ const resolvePausedMainMenuResultsSectionSummaryLine = (
   const resultActionLabels = menuSections.map(
     (section) => PAUSED_MAIN_MENU_RESULT_SECTION_ACTION_LABELS[section.title] ?? section.title
   );
+  const resultCategories = menuSections.map(
+    (section) => PAUSED_MAIN_MENU_RESULT_SECTION_CATEGORY_LABELS[section.title] ?? null
+  );
+  const containsWorldSaveResults = resultCategories.includes('world-save');
+  const containsShellSettingResults = resultCategories.includes('shell-settings');
   const containsWarningResults = menuSections.some((section) => section.tone === 'warning');
   const containsConfirmationResults = menuSections.some((section) => section.tone === 'accent');
   const warningOnly = menuSections.every((section) => section.tone === 'warning');
   const confirmationOnly = menuSections.every((section) => section.tone === 'accent');
   const mixedWarningAndConfirmation = containsWarningResults && containsConfirmationResults;
+  const mixedWorldSaveAndShellSettings = containsWorldSaveResults && containsShellSettingResults;
 
+  const categorySummaryLine = mixedWorldSaveAndShellSettings
+    ? MIXED_WORLD_SAVE_AND_SHELL_SETTINGS_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
+    : null;
   const toneSummaryLine = warningOnly
     ? WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
     : confirmationOnly
@@ -404,8 +423,11 @@ const resolvePausedMainMenuResultsSectionSummaryLine = (
     : mixedWarningAndConfirmation
       ? MIXED_WARNING_AND_CONFIRMATION_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
       : null;
+  const summarySegments = [categorySummaryLine, toneSummaryLine].filter(
+    (segment): segment is string => segment !== null
+  );
 
-  const summaryLine = `Recent paused-menu feedback is available for ${formatMenuSectionSummaryListValue(resultActionLabels)}.${toneSummaryLine === null ? '' : ` ${toneSummaryLine}`}`;
+  const summaryLine = `Recent paused-menu feedback is available for ${formatMenuSectionSummaryListValue(resultActionLabels)}.${summarySegments.length === 0 ? '' : ` ${summarySegments.join(' ')}`}`;
   return showMenuSectionLines
     ? summaryLine
     : `${summaryLine} ${HIDDEN_PAUSED_MAIN_MENU_RESULTS_HELP_COPY_SUMMARY_LINE}`;
