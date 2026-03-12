@@ -315,6 +315,8 @@ const DEFAULT_PAUSED_MAIN_MENU_HELP_COPY_SUMMARY_LINE =
   'Pause-menu cards keep shortcuts, consequences, and status rows visible below. Expand help text to read the longer descriptions.';
 const HIDDEN_PAUSED_MAIN_MENU_RESULTS_HELP_COPY_SUMMARY_LINE =
   'Result-card paragraphs are hidden until Show Help Text is enabled.';
+const WORLD_SAVE_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Only world-save feedback is currently available here.';
 const WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Only warning feedback is currently available here.';
 const CONFIRMATION_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
@@ -408,6 +410,7 @@ const resolvePausedMainMenuResultsSectionSummaryLine = (
   const containsShellSettingResults = resultCategories.includes('shell-settings');
   const containsWarningResults = menuSections.some((section) => section.tone === 'warning');
   const containsConfirmationResults = menuSections.some((section) => section.tone === 'accent');
+  const worldSaveOnly = menuSections.length > 1 && resultCategories.every((category) => category === 'world-save');
   const warningOnly = menuSections.every((section) => section.tone === 'warning');
   const confirmationOnly = menuSections.every((section) => section.tone === 'accent');
   const mixedWarningAndConfirmation = containsWarningResults && containsConfirmationResults;
@@ -415,6 +418,8 @@ const resolvePausedMainMenuResultsSectionSummaryLine = (
 
   const categorySummaryLine = mixedWorldSaveAndShellSettings
     ? MIXED_WORLD_SAVE_AND_SHELL_SETTINGS_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
+    : worldSaveOnly
+      ? WORLD_SAVE_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE
     : null;
   const toneSummaryLine = warningOnly
     ? WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE

@@ -135,11 +135,13 @@ const IMPORT_RESULT_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
 const IMPORT_RESULT_ONLY_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Import World Save. Only warning feedback is currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
 const IMPORT_AND_CLEAR_WARNING_ONLY_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Import World Save and Clear Saved World. Only warning feedback is currently available here.';
+  'Recent paused-menu feedback is available for Import World Save and Clear Saved World. Only world-save feedback is currently available here. Only warning feedback is currently available here.';
+const EXPORT_AND_ACCEPTED_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
+  'Recent paused-menu feedback is available for Export World Save and Import World Save. Only world-save feedback is currently available here. Only confirmation feedback is currently available here.';
 const EXPORT_AND_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Export World Save and Import World Save. Warning and confirmation feedback are both currently available here.';
+  'Recent paused-menu feedback is available for Export World Save and Import World Save. Only world-save feedback is currently available here. Warning and confirmation feedback are both currently available here.';
 const EXPORT_AND_IMPORT_HIDDEN_HELP_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
-  'Recent paused-menu feedback is available for Export World Save and Import World Save. Warning and confirmation feedback are both currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
+  'Recent paused-menu feedback is available for Export World Save and Import World Save. Only world-save feedback is currently available here. Warning and confirmation feedback are both currently available here. Result-card paragraphs are hidden until Show Help Text is enabled.';
 const IMPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
   'Recent paused-menu feedback is available for Import World Save and Reset Shell Toggles. World-save and shell-setting feedback are both currently available here. Warning and confirmation feedback are both currently available here.';
 const EXPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE =
@@ -3164,6 +3166,33 @@ describe('resolvePausedMainMenuResultsSectionState', () => {
       visible: true,
       expanded: false,
       summaryLine: EXPORT_AND_RESET_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
+      toggleLabel: 'Show Results'
+    });
+  });
+
+  it('adds world-save-only category copy when multiple paused-menu result cards are all world-save feedback', () => {
+    expect(
+      resolvePausedMainMenuResultsSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          {
+            status: 'accepted',
+            fileName: 'restore.json'
+          },
+          null,
+          {
+            status: 'downloaded',
+            fileName: 'paused-session.json'
+          }
+        )
+      )
+    ).toMatchObject({
+      visible: true,
+      expanded: false,
+      summaryLine: EXPORT_AND_ACCEPTED_IMPORT_PAUSED_MAIN_MENU_RESULTS_SUMMARY_LINE,
       toggleLabel: 'Show Results'
     });
   });
