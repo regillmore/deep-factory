@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Preserve paused-dashboard section focus when `Recent Activity` appears or disappears.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused-menu rerenders now snapshot the focused dashboard section anchor before `Recent Activity` visibility changes and restore either that same anchor or the nearest surviving section anchor afterward, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with paused-recent-activity-focus regressions plus hidden-section fake-DOM focus behavior, removed completed task `494` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical slice `495`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Preserve Shell section focus when the paused-menu shell editor expands or collapses.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so keyboard-triggered paused-menu `Shell` toggles now restore focus to the existing Shell section anchor after the expand or collapse rerender while pointer toggles keep their existing blur behavior, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with shell-section-focus regressions plus fake-document focus tracking, removed completed task `480` from [docs/NEXT.md](docs/NEXT.md), added replacement task `494`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts`.

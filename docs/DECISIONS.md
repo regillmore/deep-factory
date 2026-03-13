@@ -32,6 +32,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: The paused Shell editor rerenders when it opens or closes, and keyboard users need one stable landmark target so hotkey editing and section navigation stay inside the paused dashboard instead of resetting to broader overlay traversal.
 - Consequence: Future paused-dashboard expand, collapse, or section-rerender work should preserve keyboard flow by restoring the owning section anchor unless the same pass intentionally introduces a different documented focus target.
 
+### 2026-03-12: Recent Activity visibility changes should restore the current or nearest surviving paused section anchor
+
+- Decision: When paused-menu `Recent Activity` appears or disappears, the app shell now snapshots the focused paused-dashboard section anchor and restores either that same anchor or, if it just hid, the nearest surviving section anchor after rerender.
+- Reason: Result-card visibility changes can hide the focused `Recent Activity` landmark or shift the secondary dashboard layout, so keyboard users need one explicit focus handoff that keeps navigation inside the paused dashboard instead of dropping focus out of the section flow.
+- Consequence: Future paused-dashboard visibility-driven rerenders should preserve the focused section landmark or route focus to the nearest surviving section anchor rather than letting hidden section anchors silently blur.
+
 ### 2026-03-12: Default paused-menu cards should be metadata-first without a global help toggle
 
 - Decision: The paused menu now removes the global `Show Help Text` toggle and keeps its default `Overview`, `World Save`, `Recent Activity`, and secondary action cards readable through concise titles plus metadata rows instead of paragraph-style help copy.

@@ -7,7 +7,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 478. Add compact warning badges to paused-menu `Danger Zone` action cards after task `470` so `Reset Shell Toggles` and `New World` stay scannable once the dashboard layout lands, with danger-zone-badge regressions.
 482. Add compact `Button only` affordance badges to paused-menu `World Save` action cards after task `474` so pointer-only actions stay visually consistent beside the new inline keyboard shortcut badges, with world-save-button-badge regressions.
 483. Add compact persistence badges to expanded paused-menu `Shell Hotkeys` editor metadata after task `477` so browser-saved versus session-only remap scope stays scannable beside inline result copy, with shell-editor-persistence-badge regressions.
-494. Preserve keyboard focus on the current paused-dashboard section anchor when `Recent Activity` appears or disappears after task `480` so paused-menu result rerenders do not drop keyboard users out of the dashboard flow, with paused-recent-activity-focus regressions.
 
 ## Optimize liquids
 
@@ -46,3 +45,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 486. Add a starter spear combat slice after hostile-slime combat (`213`) and inventory basics (`214`): a non-stackable spear hotbar slot, mixed-device directional thrust timing with reach clamp, slime hit detection plus knockback, and deterministic active-window regressions.
 488. Add a starter wand combat slice after hostile-slime combat (`213`) and inventory basics (`214`): a non-stackable wand hotbar slot, mixed-device aimed cast input, fixed-step firebolt flight plus terrain or slime hit rules, and deterministic cast-cooldown regressions.
 493. Add a starter armor equipment slice after hostile-slime combat (`213`), inventory basics (`214`), and save/load (`19-21`): three equip slots with shell or debug-panel equip or unequip actions, fixed-step defense reduction on slime contact, and snapshot regressions for equipped gear.
+495. Add a water-breathing survival slice after entity scaffolding (`17-18`): fixed-step breath meter in water, drowning damage plus air-recovery rules, and save/load regressions for breath plus health state.

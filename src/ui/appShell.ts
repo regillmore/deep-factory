@@ -2466,6 +2466,8 @@ interface PausedMainMenuSectionLandmarkTarget {
   headingId: string;
 }
 
+type PausedMainMenuSectionAnchorKey = keyof typeof PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS;
+
 const PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS = {
   overview: {
     sectionId: 'app-shell-paused-overview-section',
@@ -2488,6 +2490,14 @@ const PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS = {
     headingId: 'app-shell-paused-danger-zone-title'
   }
 } as const satisfies Record<string, PausedMainMenuSectionLandmarkTarget>;
+
+const PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER = [
+  'overview',
+  'worldSave',
+  'shell',
+  'recentActivity',
+  'dangerZone'
+] as const satisfies readonly PausedMainMenuSectionAnchorKey[];
 
 const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT = 'Jump to Overview';
 const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE =
@@ -3691,6 +3701,87 @@ export class AppShell {
     }
   }
 
+  private resolvePausedMainMenuSectionAnchorElement(
+    sectionKey: PausedMainMenuSectionAnchorKey
+  ): HTMLElement {
+    switch (sectionKey) {
+      case 'overview':
+        return this.overviewSection;
+      case 'worldSave':
+        return this.worldSaveSection;
+      case 'shell':
+        return this.shellSection;
+      case 'recentActivity':
+        return this.recentActivitySection;
+      case 'dangerZone':
+        return this.dangerZoneSection;
+    }
+  }
+
+  private resolveFocusedPausedMainMenuSectionAnchorKey(): PausedMainMenuSectionAnchorKey | null {
+    const activeElement = document.activeElement;
+    for (const sectionKey of PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER) {
+      if (activeElement === this.resolvePausedMainMenuSectionAnchorElement(sectionKey)) {
+        return sectionKey;
+      }
+    }
+
+    return null;
+  }
+
+  private resolveNearestVisiblePausedMainMenuSectionAnchor(
+    sectionKey: PausedMainMenuSectionAnchorKey
+  ): HTMLElement | null {
+    const sectionIndex = PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER.indexOf(sectionKey);
+    if (sectionIndex < 0) {
+      return null;
+    }
+
+    for (let offset = 0; offset < PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER.length; offset += 1) {
+      const forwardIndex = sectionIndex + offset;
+      if (forwardIndex < PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER.length) {
+        const forwardSection = this.resolvePausedMainMenuSectionAnchorElement(
+          PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER[forwardIndex]
+        );
+        if (!forwardSection.hidden) {
+          return forwardSection;
+        }
+      }
+
+      if (offset === 0) {
+        continue;
+      }
+
+      const backwardIndex = sectionIndex - offset;
+      if (backwardIndex >= 0) {
+        const backwardSection = this.resolvePausedMainMenuSectionAnchorElement(
+          PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER[backwardIndex]
+        );
+        if (!backwardSection.hidden) {
+          return backwardSection;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private restorePausedMainMenuSectionAnchorAfterRecentActivityVisibilityChange(
+    focusedSectionKey: PausedMainMenuSectionAnchorKey | null,
+    recentActivityVisibilityChanged: boolean
+  ): void {
+    if (!recentActivityVisibilityChanged || focusedSectionKey === null) {
+      return;
+    }
+
+    const targetSection = this.resolveNearestVisiblePausedMainMenuSectionAnchor(focusedSectionKey);
+    if (targetSection === null) {
+      return;
+    }
+
+    focusPausedMainMenuSectionAnchor(targetSection);
+  }
+
   private tryRemapShellActionKeybinding(
     actionType: InWorldShellActionKeybindingActionType,
     nextValue: string
@@ -3922,6 +4013,10 @@ export class AppShell {
 
   setState(state: AppShellState): void {
     const wasPausedMainMenuVisible = isPausedMainMenuState(this.currentState);
+    const focusedPausedMainMenuSectionKey = wasPausedMainMenuVisible
+      ? this.resolveFocusedPausedMainMenuSectionAnchorKey()
+      : null;
+    const wasRecentActivityVisible = !this.recentActivitySection.hidden;
     this.currentState = state;
     const viewModel = resolveAppShellViewModel(state);
     const defaultShellActionKeybindings = createDefaultShellActionKeybindingState();
@@ -4292,5 +4387,9 @@ export class AppShell {
       'grid'
     );
     this.shortcutsOverlay.setAttribute('aria-hidden', viewModel.shortcutsOverlayVisible ? 'false' : 'true');
+    this.restorePausedMainMenuSectionAnchorAfterRecentActivityVisibilityChange(
+      pausedMainMenuVisible ? focusedPausedMainMenuSectionKey : null,
+      wasRecentActivityVisible !== pausedMainMenuRecentActivitySection.visible
+    );
   }
 }

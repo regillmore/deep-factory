@@ -298,7 +298,6 @@ class FakeElement {
   style: Record<string, string> = {};
   dataset: Record<string, string> = {};
   children: FakeElement[] = [];
-  hidden = false;
   className = '';
   textContent = '';
   title = '';
@@ -315,6 +314,7 @@ class FakeElement {
   scrollIntoViewCallCount = 0;
   classList = new FakeClassList(this);
   parentElement: FakeElement | null = null;
+  private hiddenState = false;
   private readonly attributes = new Map<string, string>();
   private readonly listeners = new Map<string, Array<(...args: unknown[]) => void>>();
 
@@ -327,6 +327,22 @@ class FakeElement {
 
   get childNodes(): FakeElement[] {
     return this.children;
+  }
+
+  get hidden(): boolean {
+    return this.hiddenState;
+  }
+
+  set hidden(value: boolean) {
+    this.hiddenState = value;
+    if (!value) {
+      return;
+    }
+
+    const activeElement = this.ownerDocument?.activeElement ?? null;
+    if (this.contains(activeElement)) {
+      this.ownerDocument!.activeElement = null;
+    }
   }
 
   append(...children: unknown[]): void {
@@ -393,6 +409,10 @@ class FakeElement {
   }
 
   focus(): void {
+    if (this.isHiddenFromLayout()) {
+      return;
+    }
+
     this.focusCallCount += 1;
     if (this.ownerDocument !== null) {
       this.ownerDocument.activeElement = this;
@@ -414,6 +434,18 @@ class FakeElement {
     }
 
     return this.children.some((child) => child.contains(target));
+  }
+
+  private isHiddenFromLayout(): boolean {
+    let current: FakeElement | null = this;
+    while (current !== null) {
+      if (current.hidden) {
+        return true;
+      }
+      current = current.parentElement;
+    }
+
+    return false;
   }
 }
 
@@ -1097,6 +1129,83 @@ describe('paused main-menu dashboard layout', () => {
 
     expect(shellSection?.focusCallCount).toBe(0);
     expect(shellSection?.scrollIntoViewCallCount).toBe(0);
+  });
+
+  it('returns focus to the current paused-dashboard section anchor when Recent Activity appears', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const fakeDocument = document as unknown as FakeDocument;
+    const root = container.children[0] ?? null;
+    const dangerZoneSection =
+      root === null ? null : findElementByClass(root, 'app-shell__danger-zone');
+
+    dangerZoneSection?.focus();
+    shell.setState(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        'cleared',
+        {
+          status: 'downloaded',
+          fileName: 'paused-session.json'
+        },
+        null,
+        null,
+        null,
+        false,
+        'export-world-save'
+      )
+    );
+
+    expect(dangerZoneSection?.focusCallCount).toBe(2);
+    expect(dangerZoneSection?.scrollIntoViewCallCount).toBe(1);
+    expect(fakeDocument.activeElement).toBe(dangerZoneSection);
+  });
+
+  it('falls forward to the nearest visible paused-dashboard section anchor when Recent Activity disappears', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        'cleared',
+        {
+          status: 'downloaded',
+          fileName: 'paused-session.json'
+        },
+        null,
+        null,
+        null,
+        false,
+        'export-world-save'
+      )
+    );
+
+    const fakeDocument = document as unknown as FakeDocument;
+    const root = container.children[0] ?? null;
+    const recentActivitySection =
+      root === null ? null : findElementByClass(root, 'app-shell__recent-activity');
+    const dangerZoneSection =
+      root === null ? null : findElementByClass(root, 'app-shell__danger-zone');
+
+    recentActivitySection?.focus();
+    shell.setState(createPausedMainMenuShellState());
+
+    expect(recentActivitySection?.focusCallCount).toBe(1);
+    expect(dangerZoneSection?.focusCallCount).toBe(1);
+    expect(dangerZoneSection?.scrollIntoViewCallCount).toBe(1);
+    expect(fakeDocument.activeElement).toBe(dangerZoneSection);
   });
 
   it('renders metadata-first shell-profile preview groups inside the expanded shell editor', () => {
