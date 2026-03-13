@@ -60,7 +60,8 @@ describe('hostileSlimeLocomotion', () => {
       size: { width: 20, height: 12 },
       grounded: true,
       facing: 'right',
-      hopCooldownTicksRemaining: 1
+      hopCooldownTicksRemaining: 1,
+      launchKind: null
     });
 
     const launchedState = stepHostileSlimeState(
@@ -79,6 +80,7 @@ describe('hostileSlimeLocomotion', () => {
     expect(launchedState.grounded).toBe(false);
     expect(launchedState.facing).toBe('right');
     expect(launchedState.hopCooldownTicksRemaining).toBe(DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS);
+    expect(launchedState.launchKind).toBe('standard-hop');
   });
 
   it('keeps the committed hop direction while airborne even if the player crosses behind it', () => {
@@ -133,6 +135,7 @@ describe('hostileSlimeLocomotion', () => {
     expect(nextState.grounded).toBe(false);
     expect(nextState.facing).toBe('right');
     expect(nextState.hopCooldownTicksRemaining).toBe(DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS);
+    expect(nextState.launchKind).toBe('step-hop');
   });
 
   it('does not select the step-up hop against walls taller than the lift allowance', () => {
@@ -245,7 +248,8 @@ describe('hostileSlimeLocomotion', () => {
       size: { width: 20, height: 12 },
       grounded: true,
       facing: 'left',
-      hopCooldownTicksRemaining: 7
+      hopCooldownTicksRemaining: 7,
+      launchKind: null
     });
   });
 

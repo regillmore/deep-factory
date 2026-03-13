@@ -25,7 +25,8 @@ describe('hostileSlimeState', () => {
       },
       grounded: true,
       facing: 'left',
-      hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
+      hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
+      launchKind: null
     });
   });
 
@@ -62,7 +63,8 @@ describe('hostileSlimeState', () => {
       },
       grounded: true,
       facing: 'right',
-      hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
+      hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
+      launchKind: null
     });
     expect(getHostileSlimeAabb(state)).toEqual({
       minX: 190,
@@ -79,7 +81,8 @@ describe('hostileSlimeState', () => {
       size: { width: 22, height: 14 },
       grounded: false,
       facing: 'right',
-      hopCooldownTicksRemaining: 6
+      hopCooldownTicksRemaining: 6,
+      launchKind: 'step-hop'
     });
 
     const cloned = cloneHostileSlimeState(state);

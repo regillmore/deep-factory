@@ -11,6 +11,7 @@ import {
   DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
   getHostileSlimeAabb,
   type HostileSlimeFacing,
+  type HostileSlimeLaunchKind,
   type HostileSlimeState
 } from './hostileSlimeState';
 
@@ -197,7 +198,8 @@ const moveHostileSlimeStateWithCollisions = (
       },
       grounded: groundSupport !== null,
       facing: state.facing,
-      hopCooldownTicksRemaining: state.hopCooldownTicksRemaining
+      hopCooldownTicksRemaining: state.hopCooldownTicksRemaining,
+      launchKind: state.launchKind
     },
     horizontalWallHitSide:
       horizontalSweep.hit === null ? null : horizontalSweep.attemptedDelta < 0 ? 'left' : 'right'
@@ -259,8 +261,10 @@ export const stepHostileSlimeState = (
     state.hopCooldownTicksRemaining,
     'state.hopCooldownTicksRemaining'
   );
+  let launchKind: HostileSlimeLaunchKind | null = state.launchKind;
 
   if (grounded) {
+    launchKind = null;
     facing = resolveFacingTowardsPlayer(
       facing,
       expectFiniteNumber(state.position.x, 'state.position.x'),
@@ -289,7 +293,8 @@ export const stepHostileSlimeState = (
         },
         grounded: true,
         facing,
-        hopCooldownTicksRemaining
+        hopCooldownTicksRemaining,
+        launchKind
       });
       const stepHopHorizontalDelta = facingSign * stepHopHorizontalSpeed * dt;
       const stepHopLaunchLift = resolveStepHopLaunchLift(
@@ -305,9 +310,11 @@ export const stepHostileSlimeState = (
         positionY -= stepHopLaunchLift;
         velocityX = facingSign * stepHopHorizontalSpeed;
         velocityY = -stepHopVerticalSpeed;
+        launchKind = 'step-hop';
       } else {
         velocityX = facingSign * hopHorizontalSpeed;
         velocityY = -hopVerticalSpeed;
+        launchKind = 'standard-hop';
       }
       hopCooldownTicksRemaining = hopIntervalTicks;
     }
@@ -334,14 +341,16 @@ export const stepHostileSlimeState = (
       },
       grounded,
       facing,
-      hopCooldownTicksRemaining
+      hopCooldownTicksRemaining,
+      launchKind
     },
     dt,
     registry
   );
   const nextState: HostileSlimeState = {
     ...movedState.nextState,
-    hopCooldownTicksRemaining
+    hopCooldownTicksRemaining,
+    launchKind
   };
 
   if (movedState.horizontalWallHitSide !== null) {
@@ -360,6 +369,7 @@ export const stepHostileSlimeState = (
       turnDeadZoneDistance
     );
     nextState.hopCooldownTicksRemaining = hopIntervalTicks;
+    nextState.launchKind = null;
   }
 
   return nextState;

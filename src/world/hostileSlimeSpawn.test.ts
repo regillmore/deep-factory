@@ -77,7 +77,8 @@ describe('hostileSlimeSpawn', () => {
       },
       grounded: true,
       facing: 'left',
-      hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
+      hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
+      launchKind: null
     });
     expect(secondStep.despawnIds).toEqual([]);
     expect(secondStep.nextSpawnerState).toEqual({

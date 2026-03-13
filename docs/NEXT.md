@@ -2,9 +2,6 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-523. Add a hostile-slime proximity-and-hop-telemetry follow-up after hostile-slime locomotion telemetry: show the nearest tracked slime world tile plus current velocity and whether its current launch is a standard hop or short step-hop in the debug HUD or compact status strip, and add deterministic telemetry regressions.
-524. Add a hostile-slime spawn-window telemetry follow-up after hostile-slime spawn telemetry: show the next deterministic spawn-window index plus tile-offset target in the debug HUD or compact status strip, and add deterministic telemetry regressions.
-525. Add a hostile-contact source-telemetry follow-up after hostile-contact hit-event telemetry: show the latest overlapping slime world tile plus facing direction for the last hostile-contact event in the debug HUD or compact status strip, and add deterministic event regressions.
 214. Add a dropped-item + hotbar inventory slice after entity scaffolding: stackable world pickups with proximity pickup rules, hotbar assignment and selection, and save/load snapshot regressions for item stacks.
 215. Add a placeable-workbench crafting slice after inventory basics: recipe registry for a minimal starter set, in-world station-range gating, shell or debug panel crafting actions, and recipe resolution regressions.
 221. Add a starter melee-weapon follow-up after hostile-slime jump-chase locomotion: fixed-step swing windup/active/recovery timing, slime hit detection plus knockback, and deterministic hit-cooldown regressions.
@@ -39,3 +36,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 515. Add a landing-damage telemetry slice after fall-damage survival: show latest hard-landing damage plus current fall-recovery cooldown in the debug HUD or compact status strip, and add fixed-step landing telemetry regressions.
 516. Add a breath-telemetry follow-up after water-breathing survival: show current breath plus drowning-cooldown state in the debug HUD or compact status strip, and add fixed-step telemetry regressions.
 526. Start a pause-menu telemetry control card with a hierarchichal list interface to describe and activate available telemetry collections and individual telemetry types. Create a new group of followup tasks as necessary to define and move each collection to a flexible unified debug overlay.
+524. Add a hostile-slime spawn-window telemetry follow-up after the telemetry control card: show the next deterministic spawn-window index plus tile-offset target in the debug HUD or compact status strip, and add deterministic telemetry regressions.
+525. Add a hostile-contact source-telemetry follow-up after the telemetry control card: show the latest overlapping slime world tile plus facing direction for the last hostile-contact event in the debug HUD or compact status strip, and add deterministic event regressions.
+527. Add a hostile-slime chase-offset telemetry follow-up after the telemetry control card: show the tracked slime's horizontal and vertical offset from the player in the debug HUD or compact status strip, and add deterministic telemetry regressions.

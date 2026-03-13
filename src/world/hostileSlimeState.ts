@@ -2,6 +2,7 @@ import type { WorldAabb } from './collision';
 import type { PlayerSpawnPoint } from './playerSpawn';
 
 export type HostileSlimeFacing = 'left' | 'right';
+export type HostileSlimeLaunchKind = 'standard-hop' | 'step-hop';
 
 export interface HostileSlimeVector {
   x: number;
@@ -20,6 +21,7 @@ export interface HostileSlimeState {
   grounded: boolean;
   facing: HostileSlimeFacing;
   hopCooldownTicksRemaining: number;
+  launchKind: HostileSlimeLaunchKind | null;
 }
 
 export interface CreateHostileSlimeStateOptions {
@@ -29,6 +31,7 @@ export interface CreateHostileSlimeStateOptions {
   grounded?: boolean;
   facing?: HostileSlimeFacing;
   hopCooldownTicksRemaining?: number;
+  launchKind?: HostileSlimeLaunchKind | null;
 }
 
 export interface CreateHostileSlimeStateFromSpawnOptions {
@@ -83,6 +86,19 @@ const buildHopCooldownTicksRemaining = (value: number | undefined): number =>
     'hopCooldownTicksRemaining'
   );
 
+const buildLaunchKind = (
+  launchKind: HostileSlimeLaunchKind | null | undefined
+): HostileSlimeLaunchKind | null => {
+  if (launchKind === undefined || launchKind === null) {
+    return null;
+  }
+  if (launchKind === 'standard-hop' || launchKind === 'step-hop') {
+    return launchKind;
+  }
+
+  throw new Error('launchKind must be "standard-hop", "step-hop", or null');
+};
+
 const buildSpawnSize = (aabb: WorldAabb): HostileSlimeSize => ({
   width: expectPositiveFiniteNumber(aabb.maxX - aabb.minX, 'spawn.aabb.width'),
   height: expectPositiveFiniteNumber(aabb.maxY - aabb.minY, 'spawn.aabb.height')
@@ -96,7 +112,8 @@ export const createHostileSlimeState = (
   size: buildSize(options.size),
   grounded: options.grounded ?? true,
   facing: options.facing ?? DEFAULT_HOSTILE_SLIME_FACING,
-  hopCooldownTicksRemaining: buildHopCooldownTicksRemaining(options.hopCooldownTicksRemaining)
+  hopCooldownTicksRemaining: buildHopCooldownTicksRemaining(options.hopCooldownTicksRemaining),
+  launchKind: buildLaunchKind(options.launchKind)
 });
 
 export const createHostileSlimeStateFromSpawn = (
@@ -119,7 +136,8 @@ export const cloneHostileSlimeState = (state: HostileSlimeState): HostileSlimeSt
   size: { ...state.size },
   grounded: state.grounded,
   facing: state.facing,
-  hopCooldownTicksRemaining: state.hopCooldownTicksRemaining
+  hopCooldownTicksRemaining: state.hopCooldownTicksRemaining,
+  launchKind: state.launchKind
 });
 
 export const getHostileSlimeAabb = (state: HostileSlimeState): WorldAabb => {

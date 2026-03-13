@@ -3946,7 +3946,8 @@ describe('main.ts shell state orchestration', () => {
           velocity: { x: -20, y: 30 },
           grounded: true,
           facing: 'right' as const,
-          hopCooldownTicksRemaining: 19
+          hopCooldownTicksRemaining: 19,
+          launchKind: null
         };
       }
 
@@ -3956,7 +3957,8 @@ describe('main.ts shell state orchestration', () => {
           velocity: { x: 35, y: -60 },
           grounded: false,
           facing: 'left' as const,
-          hopCooldownTicksRemaining: 7
+          hopCooldownTicksRemaining: 7,
+          launchKind: 'step-hop' as const
         };
       }
 
@@ -3969,17 +3971,29 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugOverlayInspectState?.hostileSlime).toEqual({
       activeCount: 2,
       nextSpawnTicksRemaining: DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS - 1,
+      worldTile: { x: 3, y: -1 },
+      velocity: { x: 35, y: -60 },
       grounded: false,
       facing: 'left',
-      hopCooldownTicksRemaining: 7
+      hopCooldownTicksRemaining: 7,
+      launchKind: 'step-hop'
     });
     expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeActiveCount).toBe(2);
     expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeNextSpawnTicksRemaining).toBe(
       DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS - 1
     );
+    expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeWorldTile).toEqual({
+      x: 3,
+      y: -1
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeVelocity).toEqual({
+      x: 35,
+      y: -60
+    });
     expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeGrounded).toBe(false);
     expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeFacing).toBe('left');
     expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeHopCooldownTicksRemaining).toBe(7);
+    expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeLaunchKind).toBe('step-hop');
   });
 
   it('tracks hostile-contact hit events through damage and invulnerability-blocked overlap', async () => {
@@ -5015,6 +5029,9 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.playerHealth).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeActiveCount).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeNextSpawnTicksRemaining).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeWorldTile).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeVelocity).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeLaunchKind).toBeNull();
     expect(
       testRuntime.latestDebugEditStatusStripState.playerHostileContactInvulnerabilitySecondsRemaining
     ).toBeNull();

@@ -16,7 +16,7 @@ import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
 import type { PlayerRespawnEventKind } from '../world/playerRespawnEvent';
 import type { PlayerSpawnLiquidSafetyStatus } from '../world/playerSpawn';
-import type { HostileSlimeFacing } from '../world/hostileSlimeState';
+import type { HostileSlimeFacing, HostileSlimeLaunchKind } from '../world/hostileSlimeState';
 import type { PlayerFacing } from '../world/playerState';
 import type { PlayerWallContactTransitionKind } from '../world/playerWallContactTransition';
 import type { TileLiquidKind } from '../world/tileMetadata';
@@ -82,9 +82,12 @@ export interface DebugEditStatusStripState {
   playerHostileContactInvulnerabilitySecondsRemaining?: number | null;
   hostileSlimeActiveCount?: number | null;
   hostileSlimeNextSpawnTicksRemaining?: number | null;
+  hostileSlimeWorldTile?: { x: number; y: number } | null;
+  hostileSlimeVelocity?: { x: number; y: number } | null;
   hostileSlimeGrounded?: boolean | null;
   hostileSlimeFacing?: HostileSlimeFacing | null;
   hostileSlimeHopCooldownTicksRemaining?: number | null;
+  hostileSlimeLaunchKind?: HostileSlimeLaunchKind | null;
   playerGrounded?: boolean | null;
   playerFacing?: PlayerFacing | null;
   playerMoveX?: -1 | 0 | 1 | null;
@@ -1414,6 +1417,26 @@ const formatLiveHostileSlimeNextSpawnText = (
   return `SlimeSpawnCooldownNow: ${Math.max(0, Math.round(hostileSlimeNextSpawnTicksRemaining))}t`;
 };
 
+const formatLiveHostileSlimeWorldTileText = (
+  hostileSlimeWorldTile: { x: number; y: number } | null
+): string | null => {
+  if (hostileSlimeWorldTile === null) {
+    return null;
+  }
+
+  return `SlimeTileNow: ${formatTileCoordinatePair(hostileSlimeWorldTile.x, hostileSlimeWorldTile.y)}`;
+};
+
+const formatLiveHostileSlimeVelocityText = (
+  hostileSlimeVelocity: { x: number; y: number } | null
+): string | null => {
+  if (hostileSlimeVelocity === null) {
+    return null;
+  }
+
+  return `SlimeVelNow: ${hostileSlimeVelocity.x.toFixed(2)},${hostileSlimeVelocity.y.toFixed(2)}`;
+};
+
 const formatLiveHostileSlimeFacingText = (
   hostileSlimeFacing: HostileSlimeFacing | null
 ): string | null => {
@@ -1432,6 +1455,16 @@ const formatLiveHostileSlimeHopCooldownText = (
   }
 
   return `SlimeHopCooldownNow: ${Math.max(0, Math.round(hostileSlimeHopCooldownTicksRemaining))}t`;
+};
+
+const formatLiveHostileSlimeLaunchKindText = (
+  hostileSlimeLaunchKind: HostileSlimeLaunchKind | null
+): string | null => {
+  if (hostileSlimeLaunchKind === null) {
+    return null;
+  }
+
+  return `SlimeLaunchNow: ${hostileSlimeLaunchKind}`;
 };
 
 const formatLiveCeilingContactText = (
@@ -1494,9 +1527,12 @@ const buildPlayerText = (
   playerHostileContactInvulnerabilitySecondsRemaining: number | null,
   hostileSlimeActiveCount: number | null,
   hostileSlimeNextSpawnTicksRemaining: number | null,
+  hostileSlimeWorldTile: { x: number; y: number } | null,
+  hostileSlimeVelocity: { x: number; y: number } | null,
   hostileSlimeGrounded: boolean | null,
   hostileSlimeFacing: HostileSlimeFacing | null,
   hostileSlimeHopCooldownTicksRemaining: number | null,
+  hostileSlimeLaunchKind: HostileSlimeLaunchKind | null,
   playerGrounded: boolean | null,
   playerFacing: PlayerFacing | null,
   playerMoveX: -1 | 0 | 1 | null,
@@ -1566,9 +1602,12 @@ const buildPlayerText = (
     ),
     formatLiveHostileSlimeActiveCountText(hostileSlimeActiveCount),
     formatLiveHostileSlimeNextSpawnText(hostileSlimeNextSpawnTicksRemaining),
+    formatLiveHostileSlimeWorldTileText(hostileSlimeWorldTile),
+    formatLiveHostileSlimeVelocityText(hostileSlimeVelocity),
     formatLiveHostileSlimeGroundedText(hostileSlimeGrounded),
     formatLiveHostileSlimeFacingText(hostileSlimeFacing),
     formatLiveHostileSlimeHopCooldownText(hostileSlimeHopCooldownTicksRemaining),
+    formatLiveHostileSlimeLaunchKindText(hostileSlimeLaunchKind),
     formatLiveGroundedText(playerGrounded),
     formatLiveFacingText(playerFacing),
     formatLiveMoveXText(playerMoveX),
@@ -2127,10 +2166,13 @@ export const buildDebugEditStatusStripModel = (
     state.playerHostileContactInvulnerabilitySecondsRemaining ?? null;
   const hostileSlimeActiveCount = state.hostileSlimeActiveCount ?? null;
   const hostileSlimeNextSpawnTicksRemaining = state.hostileSlimeNextSpawnTicksRemaining ?? null;
+  const hostileSlimeWorldTile = state.hostileSlimeWorldTile ?? null;
+  const hostileSlimeVelocity = state.hostileSlimeVelocity ?? null;
   const hostileSlimeGrounded = state.hostileSlimeGrounded ?? null;
   const hostileSlimeFacing = state.hostileSlimeFacing ?? null;
   const hostileSlimeHopCooldownTicksRemaining =
     state.hostileSlimeHopCooldownTicksRemaining ?? null;
+  const hostileSlimeLaunchKind = state.hostileSlimeLaunchKind ?? null;
   const playerGrounded = state.playerGrounded ?? null;
   const playerFacing = state.playerFacing ?? null;
   const playerMoveX = state.playerMoveX ?? null;
@@ -2200,9 +2242,12 @@ export const buildDebugEditStatusStripModel = (
       playerHostileContactInvulnerabilitySecondsRemaining,
       hostileSlimeActiveCount,
       hostileSlimeNextSpawnTicksRemaining,
+      hostileSlimeWorldTile,
+      hostileSlimeVelocity,
       hostileSlimeGrounded,
       hostileSlimeFacing,
       hostileSlimeHopCooldownTicksRemaining,
+      hostileSlimeLaunchKind,
       playerGrounded,
       playerFacing,
       playerMoveX,

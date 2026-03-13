@@ -712,9 +712,12 @@ describe('formatDebugOverlayText', () => {
       hostileSlime: {
         activeCount: 2,
         nextSpawnTicksRemaining: 119,
+        worldTile: { x: 3, y: -1 },
+        velocity: { x: 35, y: -60 },
         grounded: true,
         facing: 'left',
-        hopCooldownTicksRemaining: 17
+        hopCooldownTicksRemaining: 17,
+        launchKind: 'step-hop'
       },
       playerPlaceholderPoseLabel: null,
       playerCeilingBonkHoldActive: null,
@@ -730,7 +733,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain(
-      '\nSlime: active:2 | nextSpawn:119t | grounded:on | facing:left | hopCooldown:17t'
+      '\nSlime: active:2 | nextSpawn:119t | tile:3,-1 | vel:35.00,-60.00 | grounded:on | facing:left | hopCooldown:17t | launch:step-hop'
     );
   });
 
@@ -741,9 +744,12 @@ describe('formatDebugOverlayText', () => {
       hostileSlime: {
         activeCount: 0,
         nextSpawnTicksRemaining: 120,
+        worldTile: null,
+        velocity: null,
         grounded: null,
         facing: null,
-        hopCooldownTicksRemaining: null
+        hopCooldownTicksRemaining: null,
+        launchKind: null
       },
       playerPlaceholderPoseLabel: null,
       playerCeilingBonkHoldActive: null,

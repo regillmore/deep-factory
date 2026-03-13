@@ -167,6 +167,7 @@ import {
 } from './world/hostileSlimeSpawn';
 import {
   cloneHostileSlimeState,
+  type HostileSlimeLaunchKind,
   type HostileSlimeState
 } from './world/hostileSlimeState';
 import {
@@ -412,9 +413,12 @@ type TrackedHostileSlimeRenderFrameStatusStripTelemetry = Pick<
   DebugEditStatusStripState,
   | 'hostileSlimeActiveCount'
   | 'hostileSlimeNextSpawnTicksRemaining'
+  | 'hostileSlimeWorldTile'
+  | 'hostileSlimeVelocity'
   | 'hostileSlimeGrounded'
   | 'hostileSlimeFacing'
   | 'hostileSlimeHopCooldownTicksRemaining'
+  | 'hostileSlimeLaunchKind'
 >;
 type TrackedHostileSlimeRenderFrameStatusStripTelemetrySelectionOptions = {
   debugOverlayVisible: boolean;
@@ -3307,24 +3311,46 @@ const bootstrap = async (): Promise<void> => {
         getStandalonePlayerState(),
         activeHostileSlimes
       );
+      const trackedHostileSlimeWorldTile =
+        trackedHostileSlimeState === null
+          ? null
+          : worldToTilePoint(
+              trackedHostileSlimeState.position.x,
+              trackedHostileSlimeState.position.y
+            );
+      const trackedHostileSlimeVelocity =
+        trackedHostileSlimeState === null
+          ? null
+          : {
+              x: trackedHostileSlimeState.velocity.x,
+              y: trackedHostileSlimeState.velocity.y
+            };
+      const trackedHostileSlimeLaunchKind: HostileSlimeLaunchKind | null =
+        trackedHostileSlimeState?.launchKind ?? null;
       return {
         debugOverlay: {
           hostileSlime: {
             activeCount: activeHostileSlimes.length,
             nextSpawnTicksRemaining: hostileSlimeSpawnerState.ticksUntilNextSpawn,
+            worldTile: trackedHostileSlimeWorldTile,
+            velocity: trackedHostileSlimeVelocity,
             grounded: trackedHostileSlimeState?.grounded ?? null,
             facing: trackedHostileSlimeState?.facing ?? null,
             hopCooldownTicksRemaining:
-              trackedHostileSlimeState?.hopCooldownTicksRemaining ?? null
+              trackedHostileSlimeState?.hopCooldownTicksRemaining ?? null,
+            launchKind: trackedHostileSlimeLaunchKind
           }
         },
         debugStatusStrip: {
           hostileSlimeActiveCount: activeHostileSlimes.length,
           hostileSlimeNextSpawnTicksRemaining: hostileSlimeSpawnerState.ticksUntilNextSpawn,
+          hostileSlimeWorldTile: trackedHostileSlimeWorldTile,
+          hostileSlimeVelocity: trackedHostileSlimeVelocity,
           hostileSlimeGrounded: trackedHostileSlimeState?.grounded ?? null,
           hostileSlimeFacing: trackedHostileSlimeState?.facing ?? null,
           hostileSlimeHopCooldownTicksRemaining:
-            trackedHostileSlimeState?.hopCooldownTicksRemaining ?? null
+            trackedHostileSlimeState?.hopCooldownTicksRemaining ?? null,
+          hostileSlimeLaunchKind: trackedHostileSlimeLaunchKind
         }
       };
     };
@@ -3420,9 +3446,12 @@ const bootstrap = async (): Promise<void> => {
     (): TrackedHostileSlimeRenderFrameStatusStripTelemetry => ({
       hostileSlimeActiveCount: null,
       hostileSlimeNextSpawnTicksRemaining: null,
+      hostileSlimeWorldTile: null,
+      hostileSlimeVelocity: null,
       hostileSlimeGrounded: null,
       hostileSlimeFacing: null,
-      hostileSlimeHopCooldownTicksRemaining: null
+      hostileSlimeHopCooldownTicksRemaining: null,
+      hostileSlimeLaunchKind: null
     });
   const selectTrackedHostileSlimeRenderFrameStatusStripTelemetry = ({
     debugOverlayVisible,
@@ -3736,10 +3765,13 @@ const bootstrap = async (): Promise<void> => {
       hostileSlimeActiveCount: debugStatusStripHostileSlimeTelemetry.hostileSlimeActiveCount,
       hostileSlimeNextSpawnTicksRemaining:
         debugStatusStripHostileSlimeTelemetry.hostileSlimeNextSpawnTicksRemaining,
+      hostileSlimeWorldTile: debugStatusStripHostileSlimeTelemetry.hostileSlimeWorldTile,
+      hostileSlimeVelocity: debugStatusStripHostileSlimeTelemetry.hostileSlimeVelocity,
       hostileSlimeGrounded: debugStatusStripHostileSlimeTelemetry.hostileSlimeGrounded,
       hostileSlimeFacing: debugStatusStripHostileSlimeTelemetry.hostileSlimeFacing,
       hostileSlimeHopCooldownTicksRemaining:
         debugStatusStripHostileSlimeTelemetry.hostileSlimeHopCooldownTicksRemaining,
+      hostileSlimeLaunchKind: debugStatusStripHostileSlimeTelemetry.hostileSlimeLaunchKind,
       playerGrounded: debugStatusStripPlayerTelemetry.playerGrounded,
       playerFacing: debugStatusStripPlayerTelemetry.playerFacing,
       playerMoveX: debugStatusStripPlayerTelemetry.playerMoveX,

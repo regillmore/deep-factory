@@ -1435,7 +1435,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBe('SlimeHit: damage 0 | blocked on');
   });
 
-  it('keeps hostile-slime grounded, facing, and hop-cooldown telemetry on separate player lines', () => {
+  it('keeps hostile-slime tile, velocity, locomotion, and launch telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -1443,14 +1443,22 @@ describe('buildDebugEditStatusStripModel', () => {
       hoveredTile: null,
       pinnedTile: null,
       desktopInspectPinArmed: false,
+      hostileSlimeWorldTile: { x: 3, y: -1 },
+      hostileSlimeVelocity: { x: 35, y: -60 },
       hostileSlimeGrounded: false,
       hostileSlimeFacing: 'right',
       hostileSlimeHopCooldownTicksRemaining: 7,
+      hostileSlimeLaunchKind: 'step-hop',
       preview: createEmptyPreviewState()
     });
 
     expect(model.playerText).toBe(
-      'SlimeGroundedNow: off\nSlimeFacingNow: right\nSlimeHopCooldownNow: 7t'
+      'SlimeTileNow: 3,-1\n' +
+        'SlimeVelNow: 35.00,-60.00\n' +
+        'SlimeGroundedNow: off\n' +
+        'SlimeFacingNow: right\n' +
+        'SlimeHopCooldownNow: 7t\n' +
+        'SlimeLaunchNow: step-hop'
     );
     expect(model.eventText).toBeNull();
   });

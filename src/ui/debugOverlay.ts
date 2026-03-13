@@ -1,5 +1,6 @@
 import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
 import { MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL, TILE_SIZE } from '../world/constants';
+import type { HostileSlimeLaunchKind } from '../world/hostileSlimeState';
 import type { LiquidSurfaceBranchKind } from '../world/liquidSurface';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
@@ -222,9 +223,12 @@ export interface DebugOverlayPlayerTelemetry {
 export interface DebugOverlayHostileSlimeTelemetry {
   activeCount: number;
   nextSpawnTicksRemaining: number;
+  worldTile: { x: number; y: number } | null;
+  velocity: { x: number; y: number } | null;
   grounded: boolean | null;
   facing: 'left' | 'right' | null;
   hopCooldownTicksRemaining: number | null;
+  launchKind: HostileSlimeLaunchKind | null;
 }
 
 export interface DebugOverlayPlayerIntentTelemetry {
@@ -746,6 +750,16 @@ const formatPlayerHostileContactEventLine = (
   );
 };
 
+const formatHostileSlimeLaunchKind = (
+  hostileSlimeLaunchKind: HostileSlimeLaunchKind | null
+): string | null => {
+  if (hostileSlimeLaunchKind === null) {
+    return null;
+  }
+
+  return hostileSlimeLaunchKind;
+};
+
 const formatHostileSlimeLine = (
   hostileSlime: DebugOverlayHostileSlimeTelemetry | null
 ): string | null => {
@@ -753,9 +767,16 @@ const formatHostileSlimeLine = (
     return null;
   }
 
+  const launchKindText = formatHostileSlimeLaunchKind(hostileSlime.launchKind);
   const segments = [
     `active:${Math.max(0, Math.round(hostileSlime.activeCount))}`,
     `nextSpawn:${Math.max(0, Math.round(hostileSlime.nextSpawnTicksRemaining))}t`,
+    hostileSlime.worldTile === null
+      ? null
+      : `tile:${formatInt(hostileSlime.worldTile.x)},${formatInt(hostileSlime.worldTile.y)}`,
+    hostileSlime.velocity === null
+      ? null
+      : `vel:${formatFloat(hostileSlime.velocity.x, 2)},${formatFloat(hostileSlime.velocity.y, 2)}`,
     typeof hostileSlime.grounded === 'boolean'
       ? `grounded:${formatGameplayFlag(hostileSlime.grounded)}`
       : null,
@@ -765,7 +786,8 @@ const formatHostileSlimeLine = (
     typeof hostileSlime.hopCooldownTicksRemaining === 'number' &&
     Number.isFinite(hostileSlime.hopCooldownTicksRemaining)
       ? `hopCooldown:${Math.max(0, Math.round(hostileSlime.hopCooldownTicksRemaining))}t`
-      : null
+      : null,
+    launchKindText === null ? null : `launch:${launchKindText}`
   ].filter((segment): segment is string => segment !== null);
 
   return `Slime: ${segments.join(' | ')}`;
