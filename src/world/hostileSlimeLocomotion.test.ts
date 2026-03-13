@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_HOSTILE_SLIME_HOP_HORIZONTAL_SPEED,
   DEFAULT_HOSTILE_SLIME_HOP_VERTICAL_SPEED,
+  DEFAULT_HOSTILE_SLIME_STEP_HOP_HORIZONTAL_SPEED,
+  DEFAULT_HOSTILE_SLIME_STEP_HOP_VERTICAL_SPEED,
   stepHostileSlimeState
 } from './hostileSlimeLocomotion';
 import { createPlayerState } from './playerState';
@@ -105,7 +107,7 @@ describe('hostileSlimeLocomotion', () => {
     expect(nextState.grounded).toBe(false);
   });
 
-  it('steps up a one-tile rise when a hop starts too close to the ledge face', () => {
+  it('launches a short-range step-up hop when grounded against a one-tile rise', () => {
     const world = createFlatSurfaceWorld();
     world.setTile(1, -1, 3);
 
@@ -113,9 +115,8 @@ describe('hostileSlimeLocomotion', () => {
       world,
       createHostileSlimeState({
         position: { x: 6, y: 0 },
-        velocity: { x: DEFAULT_HOSTILE_SLIME_HOP_HORIZONTAL_SPEED, y: -60 },
-        grounded: false,
-        facing: 'right'
+        facing: 'right',
+        hopCooldownTicksRemaining: 1
       }),
       FIXED_DT_SECONDS,
       createPlayerState({
@@ -123,19 +124,47 @@ describe('hostileSlimeLocomotion', () => {
       })
     );
 
-    expect(nextState.position.x).toBeCloseTo(8);
-    expect(nextState.position.y).toBeCloseTo(-16.5);
+    expect(nextState.position.x).toBeCloseTo(6 + DEFAULT_HOSTILE_SLIME_STEP_HOP_HORIZONTAL_SPEED * FIXED_DT_SECONDS);
+    expect(nextState.position.y).toBeCloseTo(-19.5);
     expect(nextState.velocity).toEqual({
-      x: DEFAULT_HOSTILE_SLIME_HOP_HORIZONTAL_SPEED,
-      y: -30
+      x: DEFAULT_HOSTILE_SLIME_STEP_HOP_HORIZONTAL_SPEED,
+      y: -(DEFAULT_HOSTILE_SLIME_STEP_HOP_VERTICAL_SPEED - 30)
     });
     expect(nextState.grounded).toBe(false);
     expect(nextState.facing).toBe('right');
+    expect(nextState.hopCooldownTicksRemaining).toBe(DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS);
   });
 
-  it('flips away from walls that are taller than the one-tile step-up allowance', () => {
+  it('does not select the step-up hop against walls taller than the lift allowance', () => {
     const world = createFlatSurfaceWorld();
     setTiles(world, 1, -2, 1, -1, 3);
+
+    const nextState = stepHostileSlimeState(
+      world,
+      createHostileSlimeState({
+        position: { x: 6, y: 0 },
+        facing: 'right',
+        hopCooldownTicksRemaining: 1
+      }),
+      FIXED_DT_SECONDS,
+      createPlayerState({
+        position: { x: 96, y: 0 }
+      })
+    );
+
+    expect(nextState.position.x).toBe(6);
+    expect(nextState.position.y).toBeCloseTo(-5.5);
+    expect(nextState.velocity).toEqual({
+      x: 0,
+      y: -330
+    });
+    expect(nextState.grounded).toBe(false);
+    expect(nextState.facing).toBe('left');
+  });
+
+  it('does not auto-step a normal airborne hop onto a one-tile rise anymore', () => {
+    const world = createFlatSurfaceWorld();
+    world.setTile(1, -1, 3);
 
     const nextState = stepHostileSlimeState(
       world,
