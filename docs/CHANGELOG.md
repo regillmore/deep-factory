@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-13
 
+- Task: Split the oversized hostile-slime combat roadmap item into smaller chapters.
+- Changes: Replaced task `213` in [docs/NEXT.md](docs/NEXT.md) with task-sized hostile-slime spawn-and-presentation, jump-chase locomotion, and player-contact combat chapters (`216`-`218`), and retargeted downstream slime-dependent tasks so combat tools now depend on locomotion while health and defense follow-ups depend on player-contact combat.
+- Verification: Docs-only roadmap update; no code tests were run.
+
 - Task: Add a water-breathing survival slice after entity scaffolding.
 - Changes: Updated [src/world/playerState.ts](../src/world/playerState.ts) and [src/world/playerState.test.ts](../src/world/playerState.test.ts) so player state now tracks breath plus drowning cooldown, drains breath only while the head region is underwater, recovers air when surfacing, and applies fixed-step nonlethal drowning damage after breath runs out; updated [src/mainWorldSave.ts](../src/mainWorldSave.ts), [src/mainWorldSave.test.ts](../src/mainWorldSave.test.ts), [src/mainWorldSessionSave.test.ts](../src/mainWorldSessionSave.test.ts), and [src/mainWorldSessionRestore.test.ts](../src/mainWorldSessionRestore.test.ts) so breath and drowning state survive world-save snapshot round-trips with legacy-save defaults; removed completed task `495` from [docs/NEXT.md](docs/NEXT.md), added replacement follow-up task `516`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/playerState.test.ts src/mainWorldSave.test.ts src/mainWorldSessionSave.test.ts src/mainWorldSessionRestore.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
