@@ -1117,6 +1117,27 @@ const formatLiquidChunkBoundsText = (
   );
 };
 
+const formatSidewaysPairDensityText = (
+  liquidStepSidewaysCandidateChunksScanned: number | null,
+  liquidStepSidewaysPairsTested: number | null
+): string => {
+  if (
+    liquidStepSidewaysCandidateChunksScanned === null ||
+    liquidStepSidewaysPairsTested === null
+  ) {
+    return 'n/a';
+  }
+
+  const roundedChunkCount = Math.round(liquidStepSidewaysCandidateChunksScanned);
+  const roundedPairCount = Math.round(liquidStepSidewaysPairsTested);
+  if (roundedChunkCount <= 0) {
+    return roundedPairCount <= 0 ? '0/chunk' : 'n/a';
+  }
+
+  const density = Math.round((roundedPairCount / roundedChunkCount) * 10) / 10;
+  return Number.isInteger(density) ? `${density.toFixed(0)}/chunk` : `${density.toFixed(1)}/chunk`;
+};
+
 const formatLiveResidentActiveLiquidChunksText = (
   residentActiveLiquidChunks: number | null,
   residentSleepingLiquidChunks: number | null,
@@ -1205,6 +1226,10 @@ const formatLiveLiquidStepSummaryText = (
       : `${Math.round(liquidStepSidewaysCandidateChunksScanned)}`;
   const sidewaysPairsText =
     liquidStepSidewaysPairsTested === null ? 'n/a' : `${Math.round(liquidStepSidewaysPairsTested)}`;
+  const sidewaysPairDensityText = formatSidewaysPairDensityText(
+    liquidStepSidewaysCandidateChunksScanned,
+    liquidStepSidewaysPairsTested
+  );
   const downwardTransfersText =
     liquidStepDownwardTransfersApplied === null
       ? 'n/a'
@@ -1219,6 +1244,7 @@ const formatLiveLiquidStepSummaryText = (
     `downChunks:${downwardChunksText} | ` +
     `sideChunks:${sidewaysCandidateChunksText} | ` +
     `sidePairs:${sidewaysPairsText} | ` +
+    `sideDensity:${sidewaysPairDensityText} | ` +
     `downTransfers:${downwardTransfersText} | ` +
     `sideTransfers:${sidewaysTransfersText}`
   );

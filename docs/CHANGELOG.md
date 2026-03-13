@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-13
 
+- Task: Expose a derived sideways pair-density metric in the compact hidden-HUD status strip.
+- Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) and [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so hidden-HUD `LiquidStepNow` now derives and formats `sideDensity:<pairs-per-chunk>` from the existing sideways candidate-chunk and tested-pair counts without adding new runtime telemetry, removed completed task `512` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical-slice task `513`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/debugEditStatusHelpers.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Expose the sideways candidate-chunk scan count in the compact hidden-HUD status strip.
 - Changes: Updated [src/main.ts](../src/main.ts), [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/main.test.ts](../src/main.test.ts) so hidden-HUD `LiquidStepNow` telemetry now includes `sideChunks:<count>` beside the existing sideways bounds, phase, downward scan count, tested-pair count, and split-transfer summary, removed completed task `508` from [docs/NEXT.md](docs/NEXT.md), added replacement task `512`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/debugEditStatusHelpers.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -2,10 +2,6 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-## Optimize liquids
-
-512. Expose a derived sideways pair-density metric in the compact hidden-HUD status strip after task `508` lands so wake testing can compare candidate-band coverage against tested-pair pressure without opening the full debug HUD.
-
 ## Refine, Extract, Refactor, Restructure
 
 ## Ambitious vertical slices
@@ -43,3 +39,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 507. Add a starter axe woodcutting slice after inventory basics (`214`) and acorn tree-growth (`503`): a non-stackable axe hotbar slot, mixed-device aimed small-tree chopping with fixed-step swing timing, wood-item drops, and deterministic tree-break regressions.
 509. Add a heart-crystal health-upgrade slice after hostile-slime combat (`213`) and inventory basics (`214`): a non-stackable heart-crystal inventory item, mixed-device consume input, fixed-step max-health increase with current-health fill and cap rules, and save/load regressions for upgraded health state.
 511. Add a mana-resource magic slice after starter wand combat (`488`) and save/load (`19-21`): fixed-step current and max mana state, wand cast-time mana spend-or-fail rules, passive regen delay plus refill cadence, and snapshot regressions for mana state.
+513. Add a bug-net critter-capture slice after passive-bunny ambient-entity (`401`) and inventory basics (`214`): a non-stackable bug-net hotbar slot, mixed-device swing timing with bunny capture-on-hit rules, bunny item stacks into inventory, and deterministic capture regressions.

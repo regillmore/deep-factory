@@ -551,7 +551,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.playerText).toBe(
-      'LiquidStepNow: sideBounds:-2,-1..4,0 | phase:sideways | downChunks:80 | sideChunks:7 | sidePairs:1504 | downTransfers:0 | sideTransfers:1'
+      'LiquidStepNow: sideBounds:-2,-1..4,0 | phase:sideways | downChunks:80 | sideChunks:7 | sidePairs:1504 | sideDensity:214.9/chunk | downTransfers:0 | sideTransfers:1'
     );
     expect(model.eventText).toBeNull();
   });
@@ -576,7 +576,7 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.playerText).toBe(
       'LiquidChunksNow: awake:0 | sleeping:0 | bounds:none | sleepBounds:none\n' +
-        'LiquidStepNow: sideBounds:none | phase:none | downChunks:0 | sideChunks:0 | sidePairs:0 | downTransfers:0 | sideTransfers:0'
+        'LiquidStepNow: sideBounds:none | phase:none | downChunks:0 | sideChunks:0 | sidePairs:0 | sideDensity:0/chunk | downTransfers:0 | sideTransfers:0'
     );
     expect(model.eventText).toBeNull();
   });
@@ -1210,7 +1210,7 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.playerText).toBe(
       'Pose: grounded-idle\n' +
-        'LiquidStepNow: sideBounds:-1,0..2,0 | phase:both | downChunks:80 | sideChunks:3 | sidePairs:1504 | downTransfers:2 | sideTransfers:3'
+        'LiquidStepNow: sideBounds:-1,0..2,0 | phase:both | downChunks:80 | sideChunks:3 | sidePairs:1504 | sideDensity:501.3/chunk | downTransfers:2 | sideTransfers:3'
     );
     expect(model.eventText).toBeNull();
   });
