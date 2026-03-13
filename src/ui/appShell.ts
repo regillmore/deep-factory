@@ -1169,6 +1169,26 @@ const resolvePausedMainMenuWorldSaveExportStatusValue = (
       return `Failed: ${resolvePausedMainMenuResultReasonValue(exportResult.reason)}`;
   }
 };
+const createPausedMainMenuWorldSaveExportStatusBadge = (
+  exportResult: PausedMainMenuExportResult | null
+): AppShellMenuSectionMetadataBadge | undefined => {
+  if (exportResult === null) {
+    return undefined;
+  }
+
+  switch (exportResult.status) {
+    case 'downloaded':
+      return {
+        text: 'Downloaded',
+        tone: 'accent'
+      };
+    case 'failed':
+      return {
+        text: 'Failed',
+        tone: 'warning'
+      };
+  }
+};
 const resolvePausedMainMenuWorldSaveImportStatusValue = (
   importResult: PausedMainMenuImportResult | null,
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null
@@ -1194,6 +1214,47 @@ const resolvePausedMainMenuWorldSaveImportStatusValue = (
       return `Restored in this tab only from ${resolvePausedMainMenuResultFileNameValue(importResult.fileName)}`;
   }
 };
+const createPausedMainMenuWorldSaveImportStatusBadge = (
+  importResult: PausedMainMenuImportResult | null,
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null
+): AppShellMenuSectionMetadataBadge | undefined => {
+  if (importResult === null) {
+    return savedWorldStatus === 'import-persistence-failed'
+      ? {
+          text: 'Session only',
+          tone: 'warning'
+        }
+      : undefined;
+  }
+
+  switch (importResult.status) {
+    case 'cancelled':
+      return {
+        text: 'Canceled'
+      };
+    case 'picker-start-failed':
+    case 'restore-failed':
+      return {
+        text: 'Failed',
+        tone: 'warning'
+      };
+    case 'accepted':
+      return {
+        text: 'Restored',
+        tone: 'accent'
+      };
+    case 'rejected':
+      return {
+        text: 'Rejected',
+        tone: 'warning'
+      };
+    case 'persistence-failed':
+      return {
+        text: 'Session only',
+        tone: 'warning'
+      };
+  }
+};
 const resolvePausedMainMenuWorldSaveClearStatusValue = (
   clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null,
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null
@@ -1203,6 +1264,24 @@ const resolvePausedMainMenuWorldSaveClearStatusValue = (
   }
 
   return savedWorldStatus === 'cleared' ? 'Cleared from browser storage' : 'No recent clear';
+};
+const createPausedMainMenuWorldSaveClearStatusBadge = (
+  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null,
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null
+): AppShellMenuSectionMetadataBadge | undefined => {
+  if (clearSavedWorldResult !== null) {
+    return {
+      text: 'Failed',
+      tone: 'warning'
+    };
+  }
+
+  return savedWorldStatus === 'cleared'
+    ? {
+        text: 'Cleared',
+        tone: 'warning'
+      }
+    : undefined;
 };
 const resolvePausedMainMenuWorldSaveSectionTone = (
   importResult: PausedMainMenuImportResult | null,
@@ -1245,15 +1324,18 @@ const createPausedMainMenuWorldSaveSummaryRows = (
   },
   {
     label: 'Last Export',
-    value: resolvePausedMainMenuWorldSaveExportStatusValue(exportResult)
+    value: resolvePausedMainMenuWorldSaveExportStatusValue(exportResult),
+    badge: createPausedMainMenuWorldSaveExportStatusBadge(exportResult)
   },
   {
     label: 'Last Import',
-    value: resolvePausedMainMenuWorldSaveImportStatusValue(importResult, savedWorldStatus)
+    value: resolvePausedMainMenuWorldSaveImportStatusValue(importResult, savedWorldStatus),
+    badge: createPausedMainMenuWorldSaveImportStatusBadge(importResult, savedWorldStatus)
   },
   {
     label: 'Last Clear',
-    value: resolvePausedMainMenuWorldSaveClearStatusValue(clearSavedWorldResult, savedWorldStatus)
+    value: resolvePausedMainMenuWorldSaveClearStatusValue(clearSavedWorldResult, savedWorldStatus),
+    badge: createPausedMainMenuWorldSaveClearStatusBadge(clearSavedWorldResult, savedWorldStatus)
   }
 ] as const;
 const resolvePausedMainMenuOverviewSessionSaveValue = (

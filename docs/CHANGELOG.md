@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-13
+
+- Task: Add compact outcome badges to paused-menu `World Save` summary rows.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused `World Save` summary metadata now adds compact inline outcome badges for recent export, import, and clear states such as `Downloaded`, `Session only`, `Cleared`, and `Failed` while preserving the existing summary-row copy, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with world-save-summary-outcome-badge DOM and state regressions, removed completed task `499` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical slice `500`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-12
 
 - Task: Add compact browser-resume status badges to paused-menu `World Save` summary rows.

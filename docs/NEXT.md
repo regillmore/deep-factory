@@ -6,7 +6,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 483. Add compact persistence badges to expanded paused-menu `Shell Hotkeys` editor metadata after task `477` so browser-saved versus session-only remap scope stays scannable beside inline result copy, with shell-editor-persistence-badge regressions.
 497. Add compact saved-vs-session-only result badges to inline paused-menu `Shell Hotkeys` remap feedback after task `483` so remap outcome scope stays scannable after repeated edits, with shell-editor-remap-result-badge regressions.
-499. Add compact outcome badges to paused-menu `World Save` summary rows so latest export, import, and clear result states stay scannable above the section actions, with world-save-summary-outcome-badge regressions.
 
 ## Optimize liquids
 
@@ -46,3 +45,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 488. Add a starter wand combat slice after hostile-slime combat (`213`) and inventory basics (`214`): a non-stackable wand hotbar slot, mixed-device aimed cast input, fixed-step firebolt flight plus terrain or slime hit rules, and deterministic cast-cooldown regressions.
 493. Add a starter armor equipment slice after hostile-slime combat (`213`), inventory basics (`214`), and save/load (`19-21`): three equip slots with shell or debug-panel equip or unequip actions, fixed-step defense reduction on slime contact, and snapshot regressions for equipped gear.
 495. Add a water-breathing survival slice after entity scaffolding (`17-18`): fixed-step breath meter in water, drowning damage plus air-recovery rules, and save/load regressions for breath plus health state.
+500. Add a starter yoyo combat slice after hostile-slime combat (`213`) and inventory basics (`214`): a non-stackable yoyo hotbar slot, mixed-device aimed hold-to-extend plus release-return rules, fixed-step tether reach and retract timing, slime hit detection, and deterministic tether regressions.

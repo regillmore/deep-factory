@@ -872,6 +872,62 @@ describe('paused main-menu dashboard layout', () => {
       },
       {
         label: 'Last Clear',
+        badge: 'Cleared',
+        tone: 'warning'
+      }
+    ]);
+  });
+
+  it('shows compact outcome badges on paused World Save summary rows after export and import results', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        {
+          status: 'persistence-failed',
+          fileName: 'imported-session.json',
+          reason: 'local resume envelope could not be rewritten'
+        },
+        'import-persistence-failed',
+        {
+          status: 'downloaded',
+          fileName: 'paused-session.json'
+        }
+      )
+    );
+
+    const root = container.children[0] ?? null;
+    const metadata =
+      root === null ? null : findElementByClass(root, 'app-shell__world-save-metadata');
+
+    expect(readMetadataRowBadges(metadata)).toEqual([
+      {
+        label: 'Browser Resume',
+        badge: 'Missing',
+        tone: 'warning'
+      },
+      {
+        label: 'Saved Again By',
+        badge: null,
+        tone: null
+      },
+      {
+        label: 'Last Export',
+        badge: 'Downloaded',
+        tone: 'accent'
+      },
+      {
+        label: 'Last Import',
+        badge: 'Session only',
+        tone: 'warning'
+      },
+      {
+        label: 'Last Clear',
         badge: null,
         tone: null
       }
@@ -4049,7 +4105,11 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
         },
         {
           label: 'Last Clear',
-          value: 'Cleared from browser storage'
+          value: 'Cleared from browser storage',
+          badge: {
+            text: 'Cleared',
+            tone: 'warning'
+          }
         }
       ],
       tone: 'warning'
@@ -4094,15 +4154,91 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
         },
         {
           label: 'Last Export',
-          value: 'Downloaded paused-session.json'
+          value: 'Downloaded paused-session.json',
+          badge: {
+            text: 'Downloaded',
+            tone: 'accent'
+          }
         },
         {
           label: 'Last Import',
-          value: 'Restored in this tab only from imported-session.json'
+          value: 'Restored in this tab only from imported-session.json',
+          badge: {
+            text: 'Session only',
+            tone: 'warning'
+          }
         },
         {
           label: 'Last Clear',
           value: 'No recent clear'
+        }
+      ],
+      tone: 'warning'
+    });
+  });
+
+  it('surfaces failed export, import, and clear outcomes through warning summary badges', () => {
+    expect(
+      resolvePausedMainMenuWorldSaveSectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          {
+            status: 'rejected',
+            fileName: 'broken-save.json',
+            reason: 'unknown envelope version'
+          },
+          null,
+          {
+            status: 'failed',
+            reason: 'browser blocked the download'
+          },
+          {
+            status: 'failed',
+            reason: 'browser storage remained locked'
+          }
+        )
+      )
+    ).toMatchObject({
+      visible: true,
+      metadataRows: [
+        {
+          label: 'Browser Resume',
+          value: 'Available',
+          badge: {
+            text: 'Saved',
+            tone: 'accent'
+          }
+        },
+        {
+          label: 'Saved Again By',
+          value: 'None needed'
+        },
+        {
+          label: 'Last Export',
+          value: 'Failed: browser blocked the download',
+          badge: {
+            text: 'Failed',
+            tone: 'warning'
+          }
+        },
+        {
+          label: 'Last Import',
+          value: 'Rejected broken-save.json',
+          badge: {
+            text: 'Rejected',
+            tone: 'warning'
+          }
+        },
+        {
+          label: 'Last Clear',
+          value: 'Failed: browser storage remained locked',
+          badge: {
+            text: 'Failed',
+            tone: 'warning'
+          }
         }
       ],
       tone: 'warning'
