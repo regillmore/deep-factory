@@ -1308,7 +1308,7 @@ describe('paused main-menu dashboard layout', () => {
     ]);
   });
 
-  it('keeps neutral paused-menu Recent Activity cards without status badges', () => {
+  it('renders compact neutral info badges on paused-menu Recent Activity cards', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
 
@@ -1331,7 +1331,7 @@ describe('paused main-menu dashboard layout', () => {
     expect(readMenuSectionStatusBadges(recentActivityBody)).toEqual([
       {
         title: 'Import Result',
-        badge: null
+        badge: 'Info'
       }
     ]);
   });
@@ -1380,6 +1380,9 @@ describe('paused main-menu dashboard layout styling', () => {
     );
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-heading');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-status-badge');
+    expect(APP_SHELL_STYLE_SOURCE).toContain(
+      ".app-shell__menu-section-status-badge[data-tone='accent']"
+    );
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__menu-section-status-badge[data-tone='warning']"
     );

@@ -2535,12 +2535,12 @@ const resolveMenuSectionStatusBadgeText = (
   }
 
   switch (section.tone ?? 'default') {
+    case 'default':
+      return 'Info';
     case 'accent':
       return 'Success';
     case 'warning':
       return 'Attention';
-    default:
-      return null;
   }
 };
 

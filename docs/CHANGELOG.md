@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Add neutral badges to paused-menu Recent Activity cards.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/style.css](../src/style.css), and [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so paused-menu `Recent Activity` cards now complete the badge pattern with compact neutral `Info` badges on default-tone outcomes while success and attention badges keep distinct tone-specific styling; removed completed task `489` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical slice `493`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add status badges to paused-menu Recent Activity cards.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused-menu `Recent Activity` cards now render compact `Success` or `Attention` badges for accent and warning outcomes while leaving neutral results unbadged; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with recent-activity-badge DOM and CSS regressions, removed completed task `476` from [docs/NEXT.md](docs/NEXT.md), added replacement task `489`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

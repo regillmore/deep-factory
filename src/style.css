@@ -815,17 +815,25 @@ canvas {
   display: inline-flex;
   align-items: center;
   padding: 4px 8px;
-  border: 1px solid rgba(131, 219, 242, 0.22);
+  border: 1px solid rgba(183, 196, 202, 0.2);
   border-radius: 999px;
   background:
-    linear-gradient(180deg, rgba(16, 30, 41, 0.94), rgba(11, 18, 25, 0.9)),
-    linear-gradient(135deg, rgba(120, 210, 255, 0.16), rgba(243, 205, 135, 0.08));
-  color: #d8f3ff;
+    linear-gradient(180deg, rgba(23, 27, 34, 0.94), rgba(15, 18, 24, 0.9)),
+    linear-gradient(135deg, rgba(183, 196, 202, 0.08), rgba(243, 205, 135, 0.04));
+  color: #dce5e9;
   font:
     700 10px/1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.app-shell__menu-section-status-badge[data-tone='accent'] {
+  border-color: rgba(131, 219, 242, 0.22);
+  background:
+    linear-gradient(180deg, rgba(16, 30, 41, 0.94), rgba(11, 18, 25, 0.9)),
+    linear-gradient(135deg, rgba(120, 210, 255, 0.16), rgba(243, 205, 135, 0.08));
+  color: #d8f3ff;
 }
 
 .app-shell__menu-section-status-badge[data-tone='warning'] {
