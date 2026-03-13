@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Multiple slimes can stay active at once, and the locomotion telemetry slice needs one deterministic, player-relevant target without expanding into a multi-entity HUD list before broader hostile telemetry work lands.
 - Consequence: Future hostile-slime telemetry follow-ups should extend this nearest-slime tracking contract unless the same pass intentionally broadens the HUD to summarize multiple slimes at once.
 
+### 2026-03-13: Hostile-contact telemetry keeps the latest overlap result, including invulnerability blocks
+
+- Decision: The debug HUD and hidden-HUD compact status strip now retain the latest hostile-slime overlap event, reporting the actual applied damage after nonlethal clamping or `0` damage when the overlap was blocked by hostile-contact invulnerability.
+- Reason: Debugging contact cadence needs to distinguish a fresh hit from a still-overlapping slime that correctly failed to deal damage during the invulnerability window, and live health alone cannot explain that difference.
+- Consequence: Future hostile-contact telemetry follow-ups should treat invulnerability-blocked overlaps as reportable events and extend the same applied-damage event contract instead of inferring contact results only from current health or cooldown state.
+
 ### 2026-03-13: Hostile-slime contact damage stays nonlethal until the dedicated death slice lands
 
 - Decision: Hostile-slime player-contact hits now clamp at `1` health while still starting a fixed-step hostile-contact invulnerability window instead of triggering immediate death or respawn.

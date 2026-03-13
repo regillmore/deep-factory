@@ -270,6 +270,11 @@ export interface DebugOverlayPlayerRespawnTelemetry {
   velocity: { x: number; y: number };
 }
 
+export interface DebugOverlayPlayerHostileContactEventTelemetry {
+  damageApplied: number;
+  blockedByInvulnerability: boolean;
+}
+
 export interface DebugOverlayPlayerWallContactTransitionTelemetry {
   kind: PlayerWallContactTransitionKind;
   tile: { x: number; y: number; id: number; side: 'left' | 'right' };
@@ -302,6 +307,7 @@ export interface DebugOverlayInspectState {
   playerGroundedTransition: DebugOverlayPlayerGroundedTransitionTelemetry | null;
   playerFacingTransition: DebugOverlayPlayerFacingTransitionTelemetry | null;
   playerRespawn: DebugOverlayPlayerRespawnTelemetry | null;
+  playerHostileContactEvent?: DebugOverlayPlayerHostileContactEventTelemetry | null;
   playerWallContactTransition: DebugOverlayPlayerWallContactTransitionTelemetry | null;
   playerCeilingContactTransition: DebugOverlayPlayerCeilingContactTransitionTelemetry | null;
 }
@@ -727,6 +733,19 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
   return `Combat: health:${healthText} | contactInvuln:${hostileContactInvulnerabilityText}`;
 };
 
+const formatPlayerHostileContactEventLine = (
+  playerHostileContactEvent: DebugOverlayPlayerHostileContactEventTelemetry | null
+): string => {
+  if (!playerHostileContactEvent) {
+    return 'ContactEvt: none';
+  }
+
+  return (
+    `ContactEvt: damage:${Math.max(0, Math.round(playerHostileContactEvent.damageApplied))} | ` +
+    `blocked:${formatGameplayFlag(playerHostileContactEvent.blockedByInvulnerability)}`
+  );
+};
+
 const formatHostileSlimeLine = (
   hostileSlime: DebugOverlayHostileSlimeTelemetry | null
 ): string | null => {
@@ -1074,6 +1093,7 @@ export const formatDebugOverlayText = (
   const playerGroundedTransition = inspect?.playerGroundedTransition ?? null;
   const playerFacingTransition = inspect?.playerFacingTransition ?? null;
   const playerRespawn = inspect?.playerRespawn ?? null;
+  const playerHostileContactEvent = inspect?.playerHostileContactEvent ?? null;
   const playerWallContactTransition = inspect?.playerWallContactTransition ?? null;
   const playerCeilingContactTransition = inspect?.playerCeilingContactTransition ?? null;
   const lines = [
@@ -1087,6 +1107,7 @@ export const formatDebugOverlayText = (
     formatPlayerPlaceholderPoseLine(playerPlaceholderPoseLabel),
     formatPlayerCeilingBonkHoldLine(playerCeilingBonkHoldActive),
     formatPlayerCombatLine(player),
+    formatPlayerHostileContactEventLine(playerHostileContactEvent),
     formatHostileSlimeLine(hostileSlime),
     formatPlayerNearbyLightLine(
       playerNearbyLightLevel,

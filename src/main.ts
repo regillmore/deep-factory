@@ -158,7 +158,8 @@ import {
   resolveLiquidSurfaceTopHeights
 } from './world/liquidSurface';
 import {
-  resolveHostileSlimePlayerContact
+  resolveHostileSlimePlayerContactWithEvent,
+  type HostileSlimePlayerContactEvent
 } from './world/hostileSlimeCombat';
 import {
   createHostileSlimeSpawnerState,
@@ -395,6 +396,7 @@ type StandalonePlayerRenderFrameStatusStripPlayerEventTelemetry = Pick<
   | 'playerGroundedTransition'
   | 'playerFacingTransition'
   | 'playerRespawn'
+  | 'playerHostileContactEvent'
   | 'playerWallContactTransition'
   | 'playerCeilingContactTransition'
 >;
@@ -1222,6 +1224,7 @@ const bootstrap = async (): Promise<void> => {
   let lastPlayerGroundedTransitionEvent: PlayerGroundedTransitionEvent | null = null;
   let lastPlayerFacingTransitionEvent: PlayerFacingTransitionEvent | null = null;
   let lastPlayerRespawnEvent: PlayerRespawnEvent | null = null;
+  let lastHostileSlimePlayerContactEvent: HostileSlimePlayerContactEvent | null = null;
   let lastPlayerWallContactTransitionEvent: PlayerWallContactTransitionEvent | null = null;
   let lastPlayerCeilingContactTransitionEvent: PlayerCeilingContactTransitionEvent | null = null;
   let standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
@@ -1739,7 +1742,13 @@ const bootstrap = async (): Promise<void> => {
       return;
     }
 
-    const nextPlayerState = resolveHostileSlimePlayerContact(standalonePlayerState, [slimeState]);
+    const { nextPlayerState, event } = resolveHostileSlimePlayerContactWithEvent(
+      standalonePlayerState,
+      [slimeState]
+    );
+    if (event !== null) {
+      lastHostileSlimePlayerContactEvent = event;
+    }
     if (nextPlayerState === standalonePlayerState) {
       return;
     }
@@ -1852,6 +1861,7 @@ const bootstrap = async (): Promise<void> => {
     lastPlayerGroundedTransitionEvent = null;
     lastPlayerFacingTransitionEvent = null;
     lastPlayerRespawnEvent = respawnEvent;
+    lastHostileSlimePlayerContactEvent = null;
     lastPlayerWallContactTransitionEvent = null;
     lastPlayerCeilingContactTransitionEvent = null;
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
@@ -3425,6 +3435,7 @@ const bootstrap = async (): Promise<void> => {
       playerGroundedTransition: null,
       playerFacingTransition: null,
       playerRespawn: null,
+      playerHostileContactEvent: null,
       playerWallContactTransition: null,
       playerCeilingContactTransition: null
     });
@@ -3629,6 +3640,7 @@ const bootstrap = async (): Promise<void> => {
           playerGroundedTransition: lastPlayerGroundedTransitionEvent,
           playerFacingTransition: lastPlayerFacingTransitionEvent,
           playerRespawn: lastPlayerRespawnEvent,
+          playerHostileContactEvent: lastHostileSlimePlayerContactEvent,
           playerWallContactTransition: lastPlayerWallContactTransitionEvent,
           playerCeilingContactTransition: lastPlayerCeilingContactTransitionEvent
         }
@@ -3741,6 +3753,7 @@ const bootstrap = async (): Promise<void> => {
       playerGroundedTransition: debugStatusStripPlayerEventTelemetry.playerGroundedTransition,
       playerFacingTransition: debugStatusStripPlayerEventTelemetry.playerFacingTransition,
       playerRespawn: debugStatusStripPlayerEventTelemetry.playerRespawn,
+      playerHostileContactEvent: debugStatusStripPlayerEventTelemetry.playerHostileContactEvent,
       playerWallContactTransition: debugStatusStripPlayerEventTelemetry.playerWallContactTransition,
       playerCeilingContactTransition: debugStatusStripPlayerEventTelemetry.playerCeilingContactTransition
     });
@@ -3767,6 +3780,7 @@ const bootstrap = async (): Promise<void> => {
       playerGroundedTransition: lastPlayerGroundedTransitionEvent,
       playerFacingTransition: lastPlayerFacingTransitionEvent,
       playerRespawn: lastPlayerRespawnEvent,
+      playerHostileContactEvent: lastHostileSlimePlayerContactEvent,
       playerWallContactTransition: lastPlayerWallContactTransitionEvent,
       playerCeilingContactTransition: lastPlayerCeilingContactTransitionEvent
     });

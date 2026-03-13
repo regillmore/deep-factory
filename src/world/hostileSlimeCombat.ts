@@ -8,6 +8,16 @@ export interface ResolveHostileSlimePlayerContactOptions {
   minimumHealth?: number;
 }
 
+export interface HostileSlimePlayerContactEvent {
+  damageApplied: number;
+  blockedByInvulnerability: boolean;
+}
+
+export interface HostileSlimePlayerContactResolution {
+  nextPlayerState: PlayerState;
+  event: HostileSlimePlayerContactEvent | null;
+}
+
 export const DEFAULT_HOSTILE_SLIME_CONTACT_DAMAGE = 15;
 export const DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS = 0.75;
 export const DEFAULT_HOSTILE_SLIME_CONTACT_MINIMUM_HEALTH = 1;
@@ -35,7 +45,14 @@ export const resolveHostileSlimePlayerContact = (
   playerState: PlayerState,
   hostileSlimes: readonly HostileSlimeState[],
   options: ResolveHostileSlimePlayerContactOptions = {}
-): PlayerState => {
+): PlayerState =>
+  resolveHostileSlimePlayerContactWithEvent(playerState, hostileSlimes, options).nextPlayerState;
+
+export const resolveHostileSlimePlayerContactWithEvent = (
+  playerState: PlayerState,
+  hostileSlimes: readonly HostileSlimeState[],
+  options: ResolveHostileSlimePlayerContactOptions = {}
+): HostileSlimePlayerContactResolution => {
   const contactDamage = expectNonNegativeFiniteNumber(
     options.contactDamage ?? DEFAULT_HOSTILE_SLIME_CONTACT_DAMAGE,
     'options.contactDamage'
@@ -53,21 +70,36 @@ export const resolveHostileSlimePlayerContact = (
     'playerState.hostileContactInvulnerabilitySecondsRemaining'
   );
   const health = expectNonNegativeFiniteNumber(playerState.health, 'playerState.health');
-
-  if (hostileContactInvulnerabilitySecondsRemaining > 0) {
-    return playerState;
-  }
-
   const playerAabb = getPlayerAabb(playerState);
   const isOverlappingAnySlime = hostileSlimes.some((slimeState) =>
     doesAabbOverlap(playerAabb, getHostileSlimeAabb(slimeState))
   );
+
   if (!isOverlappingAnySlime) {
-    return playerState;
+    return {
+      nextPlayerState: playerState,
+      event: null
+    };
+  }
+
+  if (hostileContactInvulnerabilitySecondsRemaining > 0) {
+    return {
+      nextPlayerState: playerState,
+      event: {
+        damageApplied: 0,
+        blockedByInvulnerability: true
+      }
+    };
   }
 
   const nextPlayerState = clonePlayerState(playerState);
   nextPlayerState.health = Math.max(Math.min(health, minimumHealth), health - contactDamage);
   nextPlayerState.hostileContactInvulnerabilitySecondsRemaining = invulnerabilitySeconds;
-  return nextPlayerState;
+  return {
+    nextPlayerState,
+    event: {
+      damageApplied: Math.max(0, health - nextPlayerState.health),
+      blockedByInvulnerability: false
+    }
+  };
 };

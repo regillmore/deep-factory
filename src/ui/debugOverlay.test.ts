@@ -657,6 +657,54 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nCombat: health:100 | contactInvuln:0.00s');
   });
 
+  it('shows the latest hostile-contact hit event when damage is applied', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      spawn: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerHostileContactEvent: {
+        damageApplied: 15,
+        blockedByInvulnerability: false
+      },
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: null,
+      player: null,
+      pinned: null
+    });
+
+    expect(text).toContain('\nContactEvt: damage:15 | blocked:off');
+  });
+
+  it('shows the latest hostile-contact event when overlap is blocked by invulnerability', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      spawn: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerHostileContactEvent: {
+        damageApplied: 0,
+        blockedByInvulnerability: true
+      },
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: null,
+      player: null,
+      pinned: null
+    });
+
+    expect(text).toContain('\nContactEvt: damage:0 | blocked:on');
+  });
+
   it('shows hostile-slime spawn and locomotion telemetry when a tracked slime is available', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: null,

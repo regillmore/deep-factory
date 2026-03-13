@@ -1397,6 +1397,44 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('shows the latest hostile-contact hit event on its own event line', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerHostileContactEvent: {
+        damageApplied: 15,
+        blockedByInvulnerability: false
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBeNull();
+    expect(model.eventText).toBe('SlimeHit: damage 15 | blocked off');
+  });
+
+  it('shows when the latest hostile-contact overlap was blocked by invulnerability', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerHostileContactEvent: {
+        damageApplied: 0,
+        blockedByInvulnerability: true
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBeNull();
+    expect(model.eventText).toBe('SlimeHit: damage 0 | blocked on');
+  });
+
   it('keeps hostile-slime grounded, facing, and hop-cooldown telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',

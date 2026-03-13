@@ -98,6 +98,7 @@ export interface DebugEditStatusStripState {
   playerGroundedTransition?: DebugEditStatusStripPlayerGroundedTransitionTelemetry | null;
   playerFacingTransition?: DebugEditStatusStripPlayerFacingTransitionTelemetry | null;
   playerRespawn?: DebugEditStatusStripPlayerRespawnTelemetry | null;
+  playerHostileContactEvent?: DebugEditStatusStripPlayerHostileContactEventTelemetry | null;
   playerWallContactTransition?: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null;
   playerCeilingContactTransition?: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null;
 }
@@ -190,6 +191,11 @@ export interface DebugEditStatusStripPlayerRespawnTelemetry {
   liquidSafetyStatus: PlayerSpawnLiquidSafetyStatus;
   position: { x: number; y: number };
   velocity: { x: number; y: number };
+}
+
+export interface DebugEditStatusStripPlayerHostileContactEventTelemetry {
+  damageApplied: number;
+  blockedByInvulnerability: boolean;
 }
 
 export interface DebugEditStatusStripPlayerSpawnTelemetry {
@@ -1607,6 +1613,19 @@ const formatFacingTransitionEventText = (
   );
 };
 
+const formatHostileContactEventText = (
+  playerHostileContactEvent: DebugEditStatusStripPlayerHostileContactEventTelemetry | null
+): string | null => {
+  if (!playerHostileContactEvent) {
+    return null;
+  }
+
+  return (
+    `SlimeHit: damage ${Math.max(0, Math.round(playerHostileContactEvent.damageApplied))} | ` +
+    `blocked ${formatGameplayFlag(playerHostileContactEvent.blockedByInvulnerability)}`
+  );
+};
+
 const formatWallContactTransitionEventText = (
   playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null
 ): string | null => {
@@ -1647,6 +1666,7 @@ const buildEventText = (
   playerGroundedTransition: DebugEditStatusStripPlayerGroundedTransitionTelemetry | null,
   playerFacingTransition: DebugEditStatusStripPlayerFacingTransitionTelemetry | null,
   playerRespawn: DebugEditStatusStripPlayerRespawnTelemetry | null,
+  playerHostileContactEvent: DebugEditStatusStripPlayerHostileContactEventTelemetry | null,
   playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null,
   playerCeilingContactTransition: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null
 ): string | null => {
@@ -1654,6 +1674,7 @@ const buildEventText = (
     formatGroundedTransitionEventText(playerGroundedTransition),
     formatFacingTransitionEventText(playerFacingTransition),
     formatRespawnEventText(playerRespawn),
+    formatHostileContactEventText(playerHostileContactEvent),
     formatWallContactTransitionEventText(playerWallContactTransition),
     formatCeilingContactTransitionEventText(playerCeilingContactTransition)
   ].filter((line): line is string => line !== null);
@@ -2123,6 +2144,7 @@ export const buildDebugEditStatusStripModel = (
   const playerGroundedTransition = state.playerGroundedTransition ?? null;
   const playerFacingTransition = state.playerFacingTransition ?? null;
   const playerRespawn = state.playerRespawn ?? null;
+  const playerHostileContactEvent = state.playerHostileContactEvent ?? null;
   const playerWallContactTransition = state.playerWallContactTransition ?? null;
   const playerCeilingContactTransition = state.playerCeilingContactTransition ?? null;
 
@@ -2196,6 +2218,7 @@ export const buildDebugEditStatusStripModel = (
       playerGroundedTransition,
       playerFacingTransition,
       playerRespawn,
+      playerHostileContactEvent,
       playerWallContactTransition,
       playerCeilingContactTransition
     ),

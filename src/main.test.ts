@@ -3982,7 +3982,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeHopCooldownTicksRemaining).toBe(7);
   });
 
-  it('persists hostile-slime contact damage with player invulnerability after fixed-step overlap', async () => {
+  it('tracks hostile-contact hit events through damage and invulnerability-blocked overlap', async () => {
     await import('./main');
     await flushBootstrap();
 
@@ -4012,9 +4012,36 @@ describe('main.ts shell state orchestration', () => {
     }
 
     runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.playerHostileContactEvent).toEqual({
+      damageApplied: 15,
+      blockedByInvulnerability: false
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.playerHostileContactEvent).toEqual({
+      damageApplied: 15,
+      blockedByInvulnerability: false
+    });
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(85);
+    expect(
+      testRuntime.latestDebugOverlayInspectState?.player?.hostileContactInvulnerabilitySecondsRemaining
+    ).toBe(DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerHealth).toBe(85);
+    expect(
+      testRuntime.latestDebugEditStatusStripState?.playerHostileContactInvulnerabilitySecondsRemaining
+    ).toBe(DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS);
+
     runFixedUpdate();
     runRenderFrame();
 
+    expect(testRuntime.latestDebugOverlayInspectState?.playerHostileContactEvent).toEqual({
+      damageApplied: 0,
+      blockedByInvulnerability: true
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.playerHostileContactEvent).toEqual({
+      damageApplied: 0,
+      blockedByInvulnerability: true
+    });
     expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(85);
     expect(
       testRuntime.latestDebugOverlayInspectState?.player?.hostileContactInvulnerabilitySecondsRemaining
@@ -5147,6 +5174,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerFacingTransition).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerRespawn).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerHostileContactEvent).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerWallContactTransition).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContactTransition).toBeNull();
   });
