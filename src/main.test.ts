@@ -260,6 +260,10 @@ const testRuntime = vi.hoisted(() => {
       residentActiveLiquidMinChunkY: null as number | null,
       residentActiveLiquidMaxChunkX: null as number | null,
       residentActiveLiquidMaxChunkY: null as number | null,
+      residentSleepingLiquidMinChunkX: null as number | null,
+      residentSleepingLiquidMinChunkY: null as number | null,
+      residentSleepingLiquidMaxChunkX: null as number | null,
+      residentSleepingLiquidMaxChunkY: null as number | null,
       liquidStepSidewaysCandidateMinChunkX: null as number | null,
       liquidStepSidewaysCandidateMinChunkY: null as number | null,
       liquidStepSidewaysCandidateMaxChunkX: null as number | null,
@@ -1540,6 +1544,10 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTelemetry.residentActiveLiquidMaxChunkX = null;
     testRuntime.rendererTelemetry.residentActiveLiquidMaxChunkY = null;
     testRuntime.rendererTelemetry.residentSleepingLiquidChunks = 0;
+    testRuntime.rendererTelemetry.residentSleepingLiquidMinChunkX = null;
+    testRuntime.rendererTelemetry.residentSleepingLiquidMinChunkY = null;
+    testRuntime.rendererTelemetry.residentSleepingLiquidMaxChunkX = null;
+    testRuntime.rendererTelemetry.residentSleepingLiquidMaxChunkY = null;
     testRuntime.rendererTelemetry.liquidStepPhaseSummary = 'none';
     testRuntime.rendererTelemetry.liquidStepDownwardActiveChunksScanned = 0;
     testRuntime.rendererTelemetry.liquidStepSidewaysPairsTested = 0;
@@ -4504,6 +4512,10 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTelemetry.residentActiveLiquidMinChunkY = -2;
     testRuntime.rendererTelemetry.residentActiveLiquidMaxChunkX = 2;
     testRuntime.rendererTelemetry.residentActiveLiquidMaxChunkY = 1;
+    testRuntime.rendererTelemetry.residentSleepingLiquidMinChunkX = -4;
+    testRuntime.rendererTelemetry.residentSleepingLiquidMinChunkY = -3;
+    testRuntime.rendererTelemetry.residentSleepingLiquidMaxChunkX = 0;
+    testRuntime.rendererTelemetry.residentSleepingLiquidMaxChunkY = 2;
     testRuntime.rendererTelemetry.liquidStepSidewaysCandidateMinChunkX = -2;
     testRuntime.rendererTelemetry.liquidStepSidewaysCandidateMinChunkY = -2;
     testRuntime.rendererTelemetry.liquidStepSidewaysCandidateMaxChunkX = 3;
@@ -4547,6 +4559,10 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMinChunkY).toBe(-2);
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMaxChunkX).toBe(2);
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMaxChunkY).toBe(1);
+    expect(testRuntime.latestDebugEditStatusStripState.residentSleepingLiquidMinChunkX).toBe(-4);
+    expect(testRuntime.latestDebugEditStatusStripState.residentSleepingLiquidMinChunkY).toBe(-3);
+    expect(testRuntime.latestDebugEditStatusStripState.residentSleepingLiquidMaxChunkX).toBe(0);
+    expect(testRuntime.latestDebugEditStatusStripState.residentSleepingLiquidMaxChunkY).toBe(2);
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysCandidateMinChunkX).toBe(-2);
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysCandidateMinChunkY).toBe(-2);
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysCandidateMaxChunkX).toBe(3);
@@ -4591,6 +4607,10 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMinChunkY).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMaxChunkX).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMaxChunkY).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.residentSleepingLiquidMinChunkX).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.residentSleepingLiquidMinChunkY).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.residentSleepingLiquidMaxChunkX).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.residentSleepingLiquidMaxChunkY).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysCandidateMinChunkX).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysCandidateMinChunkY).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysCandidateMaxChunkX).toBeNull();

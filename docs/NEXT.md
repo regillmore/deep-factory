@@ -5,7 +5,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Optimize liquids
 
 508. Expose the sideways candidate-chunk scan count in the compact hidden-HUD status strip after task `505` lands so wake testing can compare band coverage, tested pair counts, and actual transfers without opening the full debug HUD.
-510. Expose sleeping-liquid chunk bounds in the compact hidden-HUD status strip after task `408` lands so wake testing can localize settled pools without opening the full debug HUD.
 
 ## Refine, Extract, Refactor, Restructure
 
@@ -43,3 +42,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 503. Add an acorn tree-growth slice after inventory basics (`214`) and save/load (`19-21`): stackable acorn hotbar slots, mixed-device grass-only planting, fixed-step sapling growth into small tree tiles under deterministic windows, and snapshot regressions for planted saplings or trees plus remaining acorn stacks.
 507. Add a starter axe woodcutting slice after inventory basics (`214`) and acorn tree-growth (`503`): a non-stackable axe hotbar slot, mixed-device aimed small-tree chopping with fixed-step swing timing, wood-item drops, and deterministic tree-break regressions.
 509. Add a heart-crystal health-upgrade slice after hostile-slime combat (`213`) and inventory basics (`214`): a non-stackable heart-crystal inventory item, mixed-device consume input, fixed-step max-health increase with current-health fill and cap rules, and save/load regressions for upgraded health state.
+511. Add a mana-resource magic slice after starter wand combat (`488`) and save/load (`19-21`): fixed-step current and max mana state, wand cast-time mana spend-or-fail rules, passive regen delay plus refill cadence, and snapshot regressions for mana state.

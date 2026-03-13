@@ -3441,6 +3441,14 @@ const bootstrap = async (): Promise<void> => {
         debugOverlayVisible ? null : renderer.telemetry.residentActiveLiquidMaxChunkX,
       residentActiveLiquidMaxChunkY:
         debugOverlayVisible ? null : renderer.telemetry.residentActiveLiquidMaxChunkY,
+      residentSleepingLiquidMinChunkX:
+        debugOverlayVisible ? null : renderer.telemetry.residentSleepingLiquidMinChunkX,
+      residentSleepingLiquidMinChunkY:
+        debugOverlayVisible ? null : renderer.telemetry.residentSleepingLiquidMinChunkY,
+      residentSleepingLiquidMaxChunkX:
+        debugOverlayVisible ? null : renderer.telemetry.residentSleepingLiquidMaxChunkX,
+      residentSleepingLiquidMaxChunkY:
+        debugOverlayVisible ? null : renderer.telemetry.residentSleepingLiquidMaxChunkY,
       liquidStepSidewaysCandidateMinChunkX:
         debugOverlayVisible ? null : renderer.telemetry.liquidStepSidewaysCandidateMinChunkX,
       liquidStepSidewaysCandidateMinChunkY:

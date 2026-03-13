@@ -57,6 +57,10 @@ export interface DebugEditStatusStripState {
   residentActiveLiquidMinChunkY?: number | null;
   residentActiveLiquidMaxChunkX?: number | null;
   residentActiveLiquidMaxChunkY?: number | null;
+  residentSleepingLiquidMinChunkX?: number | null;
+  residentSleepingLiquidMinChunkY?: number | null;
+  residentSleepingLiquidMaxChunkX?: number | null;
+  residentSleepingLiquidMaxChunkY?: number | null;
   liquidStepSidewaysCandidateMinChunkX?: number | null;
   liquidStepSidewaysCandidateMinChunkY?: number | null;
   liquidStepSidewaysCandidateMaxChunkX?: number | null;
@@ -1118,7 +1122,11 @@ const formatLiveResidentActiveLiquidChunksText = (
   residentActiveLiquidMinChunkX: number | null,
   residentActiveLiquidMinChunkY: number | null,
   residentActiveLiquidMaxChunkX: number | null,
-  residentActiveLiquidMaxChunkY: number | null
+  residentActiveLiquidMaxChunkY: number | null,
+  residentSleepingLiquidMinChunkX: number | null,
+  residentSleepingLiquidMinChunkY: number | null,
+  residentSleepingLiquidMaxChunkX: number | null,
+  residentSleepingLiquidMaxChunkY: number | null
 ): string | null => {
   if (residentActiveLiquidChunks === null) {
     return null;
@@ -1132,6 +1140,12 @@ const formatLiveResidentActiveLiquidChunksText = (
       residentActiveLiquidMinChunkY,
       residentActiveLiquidMaxChunkX,
       residentActiveLiquidMaxChunkY
+    )} | ` +
+    `sleepBounds:${formatLiquidChunkBoundsText(
+      residentSleepingLiquidMinChunkX,
+      residentSleepingLiquidMinChunkY,
+      residentSleepingLiquidMaxChunkX,
+      residentSleepingLiquidMaxChunkY
     )}`
   );
 };
@@ -1343,6 +1357,10 @@ const buildPlayerText = (
   residentActiveLiquidMinChunkY: number | null,
   residentActiveLiquidMaxChunkX: number | null,
   residentActiveLiquidMaxChunkY: number | null,
+  residentSleepingLiquidMinChunkX: number | null,
+  residentSleepingLiquidMinChunkY: number | null,
+  residentSleepingLiquidMaxChunkX: number | null,
+  residentSleepingLiquidMaxChunkY: number | null,
   liquidStepSidewaysCandidateMinChunkX: number | null,
   liquidStepSidewaysCandidateMinChunkY: number | null,
   liquidStepSidewaysCandidateMaxChunkX: number | null,
@@ -1395,7 +1413,11 @@ const buildPlayerText = (
       residentActiveLiquidMinChunkX,
       residentActiveLiquidMinChunkY,
       residentActiveLiquidMaxChunkX,
-      residentActiveLiquidMaxChunkY
+      residentActiveLiquidMaxChunkY,
+      residentSleepingLiquidMinChunkX,
+      residentSleepingLiquidMinChunkY,
+      residentSleepingLiquidMaxChunkX,
+      residentSleepingLiquidMaxChunkY
     ),
     formatLiveLiquidStepSummaryText(
       liquidStepSidewaysCandidateMinChunkX,
@@ -1932,6 +1954,10 @@ export const buildDebugEditStatusStripModel = (
   const residentActiveLiquidMinChunkY = state.residentActiveLiquidMinChunkY ?? null;
   const residentActiveLiquidMaxChunkX = state.residentActiveLiquidMaxChunkX ?? null;
   const residentActiveLiquidMaxChunkY = state.residentActiveLiquidMaxChunkY ?? null;
+  const residentSleepingLiquidMinChunkX = state.residentSleepingLiquidMinChunkX ?? null;
+  const residentSleepingLiquidMinChunkY = state.residentSleepingLiquidMinChunkY ?? null;
+  const residentSleepingLiquidMaxChunkX = state.residentSleepingLiquidMaxChunkX ?? null;
+  const residentSleepingLiquidMaxChunkY = state.residentSleepingLiquidMaxChunkY ?? null;
   const liquidStepSidewaysCandidateMinChunkX = state.liquidStepSidewaysCandidateMinChunkX ?? null;
   const liquidStepSidewaysCandidateMinChunkY = state.liquidStepSidewaysCandidateMinChunkY ?? null;
   const liquidStepSidewaysCandidateMaxChunkX = state.liquidStepSidewaysCandidateMaxChunkX ?? null;
@@ -1992,6 +2018,10 @@ export const buildDebugEditStatusStripModel = (
       residentActiveLiquidMinChunkY,
       residentActiveLiquidMaxChunkX,
       residentActiveLiquidMaxChunkY,
+      residentSleepingLiquidMinChunkX,
+      residentSleepingLiquidMinChunkY,
+      residentSleepingLiquidMaxChunkX,
+      residentSleepingLiquidMaxChunkY,
       liquidStepSidewaysCandidateMinChunkX,
       liquidStepSidewaysCandidateMinChunkY,
       liquidStepSidewaysCandidateMaxChunkX,
