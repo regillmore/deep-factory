@@ -7,6 +7,7 @@ import {
   matchesDefaultShellActionKeybindingState,
   type ShellActionKeybindingState
 } from '../input/shellActionKeybindings';
+import { type WorldSessionTelemetryState } from '../mainWorldSessionTelemetryState';
 import {
   getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopDebugOverlayHotkeyLabel,
@@ -27,6 +28,7 @@ import {
   createMainMenuShellState,
   createPausedMainMenuSectionViewModel,
   createPausedMainMenuShellState,
+  createPausedMainMenuShellTelemetryControlsViewModel,
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState,
   resolveMainMenuPrimaryActionTitle,
@@ -111,6 +113,24 @@ const DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
     value: 'No staged preview'
   }
 ] as const;
+const PARTIAL_WORLD_SESSION_TELEMETRY_STATE: WorldSessionTelemetryState = {
+  collections: {
+    player: true,
+    'hostile-slime': false,
+    world: true
+  },
+  types: {
+    'player-motion': true,
+    'player-presentation': true,
+    'player-combat': false,
+    'player-camera': true,
+    'player-collision': false,
+    'player-events': true,
+    'hostile-slime-tracker': true,
+    'world-lighting': false,
+    'world-liquid': true
+  }
+};
 const REJECTED_IMPORT_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE =
   'Latest world-save activity: Import World Save was rejected during envelope validation.';
 const CLEARED_SAVED_WORLD_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE =
@@ -1450,6 +1470,167 @@ describe('paused main-menu dashboard layout', () => {
     expect(shellEditorIntro).toBeNull();
   });
 
+  it('builds telemetry controls with saved collection and type visibility summaries', () => {
+    expect(
+      createPausedMainMenuShellTelemetryControlsViewModel(
+        PARTIAL_WORLD_SESSION_TELEMETRY_STATE,
+        false
+      )
+    ).toMatchObject({
+      summaryLine:
+        'Choose which runtime telemetry stays visible in the full debug HUD or compact status strip while this tab stays open.',
+      metadataRows: [
+        {
+          label: 'Persistence',
+          value: 'Session-only fallback'
+        },
+        {
+          label: 'Collections',
+          value: 'Player, Hostile Slime, World'
+        },
+        {
+          label: 'Collections On',
+          value: 'Player, World'
+        },
+        {
+          label: 'Collections Off',
+          value: 'Hostile Slime'
+        },
+        {
+          label: 'Types On',
+          value: '6/9'
+        }
+      ],
+      collections: [
+        {
+          id: 'player',
+          toggleLabel: 'Collection On'
+        },
+        {
+          id: 'hostile-slime',
+          toggleLabel: 'Collection Off'
+        },
+        {
+          id: 'world',
+          toggleLabel: 'Collection On'
+        }
+      ]
+    });
+  });
+
+  it('reveals telemetry controls in the expanded shell editor and routes collection plus type toggles through callbacks', () => {
+    const collectionToggles: Array<{ screen: string; id: string }> = [];
+    const typeToggles: Array<{ screen: string; id: string }> = [];
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement, {
+      onToggleShellTelemetryCollection: (screen, collectionId) => {
+        collectionToggles.push({
+          screen,
+          id: collectionId
+        });
+      },
+      onToggleShellTelemetryType: (screen, typeId) => {
+        typeToggles.push({
+          screen,
+          id: typeId
+        });
+      }
+    });
+
+    shell.setState(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false,
+        null,
+        PARTIAL_WORLD_SESSION_TELEMETRY_STATE,
+        false
+      )
+    );
+
+    const root = container.children[0] ?? null;
+    expect(root).not.toBeNull();
+    if (root === null) {
+      return;
+    }
+
+    const shellToggleButton = findElementByClass(root, 'app-shell__shell-toggle');
+    const telemetryControlsBeforeExpand =
+      root === null ? null : findElementByClass(root, 'app-shell__shell-telemetry');
+
+    expect(telemetryControlsBeforeExpand?.hidden).toBe(true);
+
+    shellToggleButton?.click();
+
+    const telemetryControls =
+      root === null ? null : findElementByClass(root, 'app-shell__shell-telemetry');
+    const telemetryMetadata =
+      telemetryControls === null
+        ? null
+        : findElementByClass(telemetryControls, 'app-shell__shell-keybindings-metadata');
+    const collectionToggleButton = findButtonByTextContent(
+      telemetryControls ?? new FakeElement('div'),
+      'app-shell__shell-telemetry-button--collection',
+      'Collection Off'
+    );
+    const combatToggleButton = findButtonByTextContent(
+      telemetryControls ?? new FakeElement('div'),
+      'app-shell__shell-telemetry-button',
+      'Combat'
+    );
+
+    expect(telemetryControls?.hidden).toBe(false);
+    expect(telemetryControls?.style.display).toBe('grid');
+    expect(readMetadataRows(telemetryMetadata)).toEqual([
+      {
+        label: 'Persistence',
+        value: 'Session-only fallback'
+      },
+      {
+        label: 'Collections',
+        value: 'Player, Hostile Slime, World'
+      },
+      {
+        label: 'Collections On',
+        value: 'Player, World'
+      },
+      {
+        label: 'Collections Off',
+        value: 'Hostile Slime'
+      },
+      {
+        label: 'Types On',
+        value: '6/9'
+      }
+    ]);
+    expect(collectionToggleButton?.getAttribute('aria-pressed')).toBe('false');
+    expect(combatToggleButton?.getAttribute('aria-pressed')).toBe('false');
+
+    collectionToggleButton?.click();
+    combatToggleButton?.click();
+
+    expect(collectionToggles).toEqual([
+      {
+        screen: 'main-menu',
+        id: 'hostile-slime'
+      }
+    ]);
+    expect(typeToggles).toEqual([
+      {
+        screen: 'main-menu',
+        id: 'player-combat'
+      }
+    ]);
+  });
+
   it('returns keyboard-triggered shell expand and collapse focus to the Shell section anchor', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
@@ -1933,6 +2114,11 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       '.app-shell__danger-zone-action .app-shell__section-action-shortcut-badge'
     );
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-telemetry');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-telemetry-summary');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-telemetry-collection');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-telemetry-button');
+    expect(APP_SHELL_STYLE_SOURCE).toContain(".app-shell__shell-telemetry-button[aria-pressed='true']");
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-keybindings-metadata');
     expect(APP_SHELL_STYLE_SOURCE).toContain(".app-shell__section-action-button[data-busy='true']");
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-button[disabled]');
@@ -4990,6 +5176,7 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       metadataRows: DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
       toggleLabel: 'Show Shell',
       editorVisible: false,
+      telemetryControls: createPausedMainMenuShellTelemetryControlsViewModel(),
       previewSection: null
     });
   });
@@ -5001,6 +5188,7 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       metadataRows: DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
       toggleLabel: 'Hide Shell',
       editorVisible: true,
+      telemetryControls: createPausedMainMenuShellTelemetryControlsViewModel(),
       previewSection: null
     });
   });
@@ -5038,6 +5226,7 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       metadataRows: PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
       toggleLabel: 'Hide Shell',
       editorVisible: true,
+      telemetryControls: createPausedMainMenuShellTelemetryControlsViewModel(),
       previewSection: {
         title: 'Shell Profile Preview',
         lines: [],
@@ -5077,6 +5266,7 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       metadataRows: CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
       toggleLabel: 'Show Shell',
       editorVisible: false,
+      telemetryControls: createPausedMainMenuShellTelemetryControlsViewModel(),
       previewSection: null
     });
   });
@@ -5088,6 +5278,7 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       metadataRows: [],
       toggleLabel: null,
       editorVisible: false,
+      telemetryControls: null,
       previewSection: null
     });
   });

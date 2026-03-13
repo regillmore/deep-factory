@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-13: Telemetry catalog storage defaults missing entries to enabled
+
+- Decision: The persisted world-session telemetry catalog now treats any missing collection or type key in stored state as enabled when decoding older saved payloads.
+- Reason: The telemetry-control rollout will keep growing the catalog over multiple agent passes, and older saved preferences should not silently hide newly added diagnostics just because the stored payload predates those keys.
+- Consequence: Future telemetry-catalog expansions should add new collections or types with default-on semantics and rely on the shared decoder for backward compatibility instead of version-bumping storage solely to seed new keys.
+
 ### 2026-03-13: Hostile-slime locomotion telemetry tracks the nearest active slime
 
 - Decision: The debug HUD and hidden-HUD compact status strip now sample hostile-slime locomotion telemetry from the nearest active slime to the player, breaking distance ties by lower entity id.

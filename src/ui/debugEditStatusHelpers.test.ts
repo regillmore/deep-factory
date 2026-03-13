@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ArmedDebugToolPreviewState } from '../input/controller';
+import type { WorldSessionTelemetryState } from '../mainWorldSessionTelemetryState';
 import {
   buildActiveDebugToolPreviewBadgeText,
   buildDebugEditStatusStripModel,
@@ -93,6 +94,64 @@ describe('buildDebugEditStatusStripModel', () => {
         'Desktop: left paint | right break | Shift-drag pan | wheel zoom | Pin Click arms inspect pinning\n' +
         'Desktop one-shot: F fill | N line | R rect fill | T rect outline | E ellipse fill | O ellipse outline | Shift = break | Esc cancels one-shot tools'
     );
+  });
+
+  it('omits gated player-combat, hostile-slime, and world-liquid lines when telemetry visibility hides them', () => {
+    const telemetryState: WorldSessionTelemetryState = {
+      collections: {
+        player: true,
+        'hostile-slime': false,
+        world: true
+      },
+      types: {
+        'player-motion': true,
+        'player-presentation': true,
+        'player-combat': false,
+        'player-camera': true,
+        'player-collision': true,
+        'player-events': true,
+        'hostile-slime-tracker': true,
+        'world-lighting': true,
+        'world-liquid': false
+      }
+    };
+
+    const model = buildDebugEditStatusStripModel({
+      mode: 'place',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      preview: createEmptyPreviewState(),
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerCameraWorldPosition: { x: 90.5, y: -54.25 },
+      playerNearbyLightLevel: 9,
+      playerNearbyLightFactor: 0.6,
+      playerNearbyLightSourceTile: { x: 2, y: 2 },
+      playerNearbyLightSourceChunk: { x: 0, y: 0 },
+      playerNearbyLightSourceLocalTile: { x: 2, y: 2 },
+      playerHealth: 62,
+      hostileSlimeActiveCount: 2,
+      residentActiveLiquidChunks: 4,
+      residentSleepingLiquidChunks: 2,
+      residentActiveLiquidMinChunkX: -2,
+      residentActiveLiquidMinChunkY: -1,
+      residentActiveLiquidMaxChunkX: 3,
+      residentActiveLiquidMaxChunkY: 5,
+      residentSleepingLiquidMinChunkX: -4,
+      residentSleepingLiquidMinChunkY: 0,
+      residentSleepingLiquidMaxChunkX: -1,
+      residentSleepingLiquidMaxChunkY: 2,
+      telemetryState
+    });
+
+    expect(model.playerText).toBe(
+      'CamPosNow: 90.50,-54.25\n' +
+        'LightSampleNow: 9/15 | factor:0.60 | source:2,2 | sourceChunk:0,0 | sourceLocal:2,2'
+    );
+    expect(model.playerText).not.toContain('HealthNow');
+    expect(model.playerText).not.toContain('SlimeActiveNow');
+    expect(model.playerText).not.toContain('LiquidChunksNow');
   });
 
   it('surfaces active flood-fill guidance directly in the status-strip model', () => {

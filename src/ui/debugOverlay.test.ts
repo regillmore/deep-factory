@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { WorldSessionTelemetryState } from '../mainWorldSessionTelemetryState';
 import { formatDebugOverlayText, type DebugOverlayStats } from './debugOverlay';
 
 const baseStats: DebugOverlayStats = {
@@ -81,6 +82,102 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('LightDirty: 20');
     expect(text).toContain('Draws: 4/256 (OK)');
     expect(text).toContain('\nPtr: n/a');
+  });
+
+  it('omits gated telemetry families when the saved telemetry catalog hides them', () => {
+    const telemetryState: WorldSessionTelemetryState = {
+      collections: {
+        player: true,
+        'hostile-slime': false,
+        world: true
+      },
+      types: {
+        'player-motion': true,
+        'player-presentation': true,
+        'player-combat': false,
+        'player-camera': true,
+        'player-collision': true,
+        'player-events': true,
+        'hostile-slime-tracker': true,
+        'world-lighting': true,
+        'world-liquid': false
+      }
+    };
+
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      pinned: null,
+      spawn: null,
+      player: {
+        position: { x: 72.5, y: -48.25 },
+        velocity: { x: 3, y: 4 },
+        health: 62,
+        hostileContactInvulnerabilitySecondsRemaining: 0.75,
+        aabb: {
+          min: { x: 18.5, y: -40.25 },
+          max: { x: 30.5, y: -12.25 },
+          size: { x: 12, y: 28 }
+        },
+        grounded: true,
+        facing: 'right',
+        contacts: {
+          support: null,
+          wall: null,
+          ceiling: null
+        }
+      },
+      hostileSlime: {
+        activeCount: 2,
+        nextSpawnTicksRemaining: 119,
+        worldTile: { x: 3, y: -1 },
+        velocity: { x: 35, y: -60 },
+        grounded: true,
+        facing: 'left',
+        hopCooldownTicksRemaining: 17,
+        launchKind: 'step-hop'
+      },
+      playerPlaceholderPoseLabel: 'grounded-idle',
+      playerCeilingBonkHoldActive: false,
+      playerNearbyLightLevel: 9,
+      playerNearbyLightFactor: 0.6,
+      playerNearbyLightSourceTile: { x: 2, y: 2 },
+      playerNearbyLightSourceChunk: { x: 0, y: 0 },
+      playerNearbyLightSourceLocalTile: { x: 2, y: 2 },
+      playerIntent: {
+        moveX: 1,
+        jumpHeld: false,
+        jumpPressed: false
+      },
+      playerCameraFollow: {
+        cameraPosition: { x: 90.5, y: -54.25 },
+        cameraTile: { x: 5, y: -4 },
+        cameraLocal: { x: 31, y: 28 },
+        cameraZoom: 2.5,
+        focus: { x: 72.5, y: -62.25 },
+        focusTile: { x: 4, y: -4 },
+        focusChunk: { x: 0, y: -1 },
+        focusLocal: { x: 4, y: 28 },
+        offset: { x: 18, y: -6 }
+      },
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerHostileContactEvent: {
+        damageApplied: 15,
+        blockedByInvulnerability: false
+      },
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      telemetryState
+    });
+
+    expect(text).toContain('\nPlayer: Pos:72.50,-48.25');
+    expect(text).toContain('\nPose: grounded-idle');
+    expect(text).toContain('\nLightSample: 9/15 | factor:0.60 | source:2,2 | sourceChunk:0,0 | sourceLocal:2,2');
+    expect(text).not.toContain('\nCombat:');
+    expect(text).not.toContain('\nContactEvt:');
+    expect(text).not.toContain('\nSlime:');
+    expect(text).not.toContain('\nLiquidStep:');
   });
 
   it('shows last liquid-step scan and transfer telemetry', () => {

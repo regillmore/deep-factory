@@ -28,6 +28,18 @@ import {
   createWorldSessionShellStateToggleChanges,
   type WorldSessionShellState
 } from '../mainWorldSessionShellState';
+import {
+  WORLD_SESSION_TELEMETRY_COLLECTION_DEFINITIONS,
+  countEnabledWorldSessionTelemetryTypesForCollection,
+  createDefaultWorldSessionTelemetryState,
+  createWorldSessionTelemetryStatePersistenceSummary,
+  getWorldSessionTelemetryTypeDefinitionsForCollection,
+  isWorldSessionTelemetryCollectionEnabled,
+  isWorldSessionTelemetryTypeEnabled,
+  type WorldSessionTelemetryCollectionId,
+  type WorldSessionTelemetryState,
+  type WorldSessionTelemetryTypeId
+} from '../mainWorldSessionTelemetryState';
 
 export type AppShellScreen = 'boot' | 'main-menu' | 'in-world';
 
@@ -79,7 +91,34 @@ export interface PausedMainMenuWorldSaveSectionState {
 
 export interface PausedMainMenuShellSectionViewModel {
   persistenceSummary: AppShellMenuSection;
+  telemetryControls: PausedMainMenuShellTelemetryControlsViewModel;
   shellProfilePreview: AppShellMenuSection | null;
+}
+
+export interface PausedMainMenuShellTelemetryTypeViewModel {
+  id: WorldSessionTelemetryTypeId;
+  label: string;
+  description: string;
+  enabled: boolean;
+  buttonLabel: string;
+  buttonTitle: string;
+}
+
+export interface PausedMainMenuShellTelemetryCollectionViewModel {
+  id: WorldSessionTelemetryCollectionId;
+  label: string;
+  description: string;
+  enabled: boolean;
+  toggleLabel: string;
+  toggleTitle: string;
+  metadataRows: readonly AppShellMenuSectionMetadataRow[];
+  types: readonly PausedMainMenuShellTelemetryTypeViewModel[];
+}
+
+export interface PausedMainMenuShellTelemetryControlsViewModel {
+  summaryLine: string;
+  metadataRows: readonly AppShellMenuSectionMetadataRow[];
+  collections: readonly PausedMainMenuShellTelemetryCollectionViewModel[];
 }
 
 export interface PausedMainMenuRecentActivitySectionViewModel {
@@ -108,6 +147,7 @@ export interface PausedMainMenuShellSectionState {
   metadataRows: readonly AppShellMenuSectionMetadataRow[];
   toggleLabel: string | null;
   editorVisible: boolean;
+  telemetryControls: PausedMainMenuShellTelemetryControlsViewModel | null;
   previewSection: AppShellMenuSection | null;
 }
 
@@ -894,6 +934,156 @@ const resolvePausedMainMenuShellPreviewSummaryValue = (
       return `${previewLabel}: No live changes`;
   }
 };
+const formatPausedMainMenuTelemetryLabelListValue = (
+  labels: readonly string[],
+  totalLabelCount: number
+): string => {
+  if (labels.length === 0) {
+    return 'None';
+  }
+
+  if (labels.length === totalLabelCount) {
+    return 'All';
+  }
+
+  return formatMenuSectionMetadataRowValue(labels);
+};
+const formatPausedMainMenuTelemetryTypeCountValue = (enabledTypeCount: number, totalTypeCount: number): string =>
+  `${enabledTypeCount}/${totalTypeCount}`;
+const resolvePausedMainMenuShellTelemetrySummaryLine = (
+  worldSessionTelemetryPersistenceAvailable = true
+): string =>
+  worldSessionTelemetryPersistenceAvailable
+    ? 'Choose which runtime telemetry stays visible in the full debug HUD or compact status strip.'
+    : 'Choose which runtime telemetry stays visible in the full debug HUD or compact status strip while this tab stays open.';
+const resolvePausedMainMenuShellTelemetryCollectionToggleLabel = (enabled: boolean): string =>
+  enabled ? 'Collection On' : 'Collection Off';
+export const createPausedMainMenuShellTelemetryControlsViewModel = (
+  worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
+  worldSessionTelemetryPersistenceAvailable = true
+): PausedMainMenuShellTelemetryControlsViewModel => {
+  const persistenceSummary = createWorldSessionTelemetryStatePersistenceSummary(
+    worldSessionTelemetryState,
+    worldSessionTelemetryPersistenceAvailable
+  );
+
+  return {
+    summaryLine: resolvePausedMainMenuShellTelemetrySummaryLine(
+      worldSessionTelemetryPersistenceAvailable
+    ),
+    metadataRows: [
+      {
+        label: 'Persistence',
+        value: persistenceSummary.statusValue,
+        badge: {
+          text: worldSessionTelemetryPersistenceAvailable ? 'Saved' : 'Session only',
+          tone: worldSessionTelemetryPersistenceAvailable ? 'accent' : 'warning'
+        }
+      },
+      {
+        label: 'Collections',
+        value: formatMenuSectionMetadataRowValue(persistenceSummary.collectionLabels)
+      },
+      {
+        label: 'Collections On',
+        value: formatMenuSectionMetadataRowValue(persistenceSummary.enabledCollectionLabels)
+      },
+      {
+        label: 'Collections Off',
+        value: formatMenuSectionMetadataRowValue(persistenceSummary.disabledCollectionLabels)
+      },
+      {
+        label: 'Types On',
+        value: formatPausedMainMenuTelemetryTypeCountValue(
+          persistenceSummary.enabledTypeCount,
+          persistenceSummary.totalTypeCount
+        )
+      }
+    ],
+    collections: WORLD_SESSION_TELEMETRY_COLLECTION_DEFINITIONS.map((collectionDefinition) => {
+      const enabled = isWorldSessionTelemetryCollectionEnabled(
+        worldSessionTelemetryState,
+        collectionDefinition.id
+      );
+      const typeDefinitions = getWorldSessionTelemetryTypeDefinitionsForCollection(
+        collectionDefinition.id
+      );
+      const enabledTypeLabels = typeDefinitions
+        .filter((typeDefinition) =>
+          isWorldSessionTelemetryTypeEnabled(worldSessionTelemetryState, typeDefinition.id)
+        )
+        .map((typeDefinition) => typeDefinition.label);
+      const disabledTypeLabels = typeDefinitions
+        .filter(
+          (typeDefinition) =>
+            !isWorldSessionTelemetryTypeEnabled(worldSessionTelemetryState, typeDefinition.id)
+        )
+        .map((typeDefinition) => typeDefinition.label);
+      const enabledTypeCount = countEnabledWorldSessionTelemetryTypesForCollection(
+        worldSessionTelemetryState,
+        collectionDefinition.id
+      );
+
+      return {
+        id: collectionDefinition.id,
+        label: collectionDefinition.label,
+        description: collectionDefinition.description,
+        enabled,
+        toggleLabel: resolvePausedMainMenuShellTelemetryCollectionToggleLabel(enabled),
+        toggleTitle: enabled
+          ? `Hide every ${collectionDefinition.label.toLowerCase()} telemetry readout.`
+          : `Show every ${collectionDefinition.label.toLowerCase()} telemetry readout whose type toggle stays enabled.`,
+        metadataRows: [
+          {
+            label: 'Collection',
+            value: enabled ? 'Visible' : 'Hidden',
+            badge: {
+              text: enabled ? 'On' : 'Off',
+              tone: enabled ? 'accent' : 'warning'
+            }
+          },
+          {
+            label: 'Types On',
+            value: formatPausedMainMenuTelemetryLabelListValue(
+              enabledTypeLabels,
+              typeDefinitions.length
+            )
+          },
+          {
+            label: 'Types Off',
+            value: formatPausedMainMenuTelemetryLabelListValue(
+              disabledTypeLabels,
+              typeDefinitions.length
+            )
+          },
+          {
+            label: 'Visible Types',
+            value: formatPausedMainMenuTelemetryTypeCountValue(
+              enabledTypeCount,
+              typeDefinitions.length
+            )
+          }
+        ],
+        types: typeDefinitions.map((typeDefinition) => {
+          const typeEnabled = isWorldSessionTelemetryTypeEnabled(
+            worldSessionTelemetryState,
+            typeDefinition.id
+          );
+          return {
+            id: typeDefinition.id,
+            label: typeDefinition.label,
+            description: typeDefinition.description,
+            enabled: typeEnabled,
+            buttonLabel: typeDefinition.label,
+            buttonTitle: typeEnabled
+              ? `Hide ${collectionDefinition.label.toLowerCase()} ${typeDefinition.label.toLowerCase()} telemetry.`
+              : `Show ${collectionDefinition.label.toLowerCase()} ${typeDefinition.label.toLowerCase()} telemetry.`
+          };
+        })
+      };
+    })
+  };
+};
 export const createPausedMainMenuShellSummaryRows = (
   sectionViewModel: PausedMainMenuSectionViewModel | null,
   shellActionKeybindingsCurrentSessionOnly = false
@@ -937,6 +1127,8 @@ export const resolvePausedMainMenuShellSectionState = (
     toggleLabel:
       visible && sectionViewModel !== null ? resolvePausedMainMenuShellToggleLabel(expanded) : null,
     editorVisible,
+    telemetryControls:
+      visible && sectionViewModel !== null ? sectionViewModel.shell.telemetryControls : null,
     previewSection:
       visible && sectionViewModel !== null
         ? sectionViewModel.shell.shellProfilePreview
@@ -1693,7 +1885,9 @@ export const createPausedMainMenuSectionViewModel = (
   exportResult: PausedMainMenuExportResult | null = null,
   clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null,
   resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null,
-  shellProfilePreview: PausedMainMenuShellProfilePreview | null = null
+  shellProfilePreview: PausedMainMenuShellProfilePreview | null = null,
+  worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
+  worldSessionTelemetryPersistenceAvailable = true
 ): PausedMainMenuSectionViewModel => {
   const persistenceSummary = createWorldSessionShellStatePersistenceSummary(
     worldSessionShellState,
@@ -1810,6 +2004,10 @@ export const createPausedMainMenuSectionViewModel = (
           ...createPausedMainMenuShellActionKeybindingSummaryRows(shellActionKeybindings)
         ]
       },
+      telemetryControls: createPausedMainMenuShellTelemetryControlsViewModel(
+        worldSessionTelemetryState,
+        worldSessionTelemetryPersistenceAvailable
+      ),
       shellProfilePreview:
         shellProfilePreview === null
           ? null
@@ -1888,7 +2086,9 @@ export const createPausedMainMenuMenuSections = (
   resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null,
   shellProfilePreview: PausedMainMenuShellProfilePreview | null = null,
   shellActionKeybindingsCurrentSessionOnly = false,
-  recentActivityAction: PausedMainMenuRecentActivityAction | null = null
+  recentActivityAction: PausedMainMenuRecentActivityAction | null = null,
+  worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
+  worldSessionTelemetryPersistenceAvailable = true
 ): readonly AppShellMenuSection[] =>
   createPausedMainMenuShellState(
     worldSessionShellState,
@@ -1902,7 +2102,9 @@ export const createPausedMainMenuMenuSections = (
     resetShellTogglesResult,
     shellProfilePreview,
     shellActionKeybindingsCurrentSessionOnly,
-    recentActivityAction
+    recentActivityAction,
+    worldSessionTelemetryState,
+    worldSessionTelemetryPersistenceAvailable
   ).menuSections ?? [];
 
 const createPausedMainMenuBaseShellState = (
@@ -1917,7 +2119,9 @@ const createPausedMainMenuBaseShellState = (
   resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null,
   shellProfilePreview: PausedMainMenuShellProfilePreview | null = null,
   shellActionKeybindingsCurrentSessionOnly = false,
-  recentActivityAction: PausedMainMenuRecentActivityAction | null = null
+  recentActivityAction: PausedMainMenuRecentActivityAction | null = null,
+  worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
+  worldSessionTelemetryPersistenceAvailable = true
 ): AppShellState => {
   const pausedMainMenuSections = createPausedMainMenuSectionViewModel(
     worldSessionShellState,
@@ -1929,7 +2133,9 @@ const createPausedMainMenuBaseShellState = (
     exportResult,
     clearSavedWorldResult,
     resetShellTogglesResult,
-    shellProfilePreview
+    shellProfilePreview,
+    worldSessionTelemetryState,
+    worldSessionTelemetryPersistenceAvailable
   );
 
   return {
@@ -1978,7 +2184,9 @@ export const createPausedMainMenuShellState = (
   resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null,
   shellProfilePreview: PausedMainMenuShellProfilePreview | null = null,
   shellActionKeybindingsCurrentSessionOnly = false,
-  recentActivityAction: PausedMainMenuRecentActivityAction | null = null
+  recentActivityAction: PausedMainMenuRecentActivityAction | null = null,
+  worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
+  worldSessionTelemetryPersistenceAvailable = true
 ): AppShellState => {
   const baseState = createPausedMainMenuBaseShellState(
     worldSessionShellState,
@@ -1992,7 +2200,9 @@ export const createPausedMainMenuShellState = (
     resetShellTogglesResult,
     shellProfilePreview,
     shellActionKeybindingsCurrentSessionOnly,
-    recentActivityAction
+    recentActivityAction,
+    worldSessionTelemetryState,
+    worldSessionTelemetryPersistenceAvailable
   );
   const menuSectionGroups = resolvePausedMainMenuMenuSectionGroups(baseState);
 
@@ -2071,6 +2281,14 @@ interface AppShellOptions {
     screen: AppShellScreen
   ) => PausedMainMenuShellProfilePreviewClearResult;
   onExportShellProfile?: (screen: AppShellScreen) => PausedMainMenuShellProfileExportResult;
+  onToggleShellTelemetryCollection?: (
+    screen: AppShellScreen,
+    collectionId: WorldSessionTelemetryCollectionId
+  ) => void;
+  onToggleShellTelemetryType?: (
+    screen: AppShellScreen,
+    typeId: WorldSessionTelemetryTypeId
+  ) => void;
 }
 
 const DEFAULT_BOOT_STATUS = 'Preparing renderer, controls, and spawn state.';
@@ -2205,7 +2423,9 @@ export const createMainMenuShellState = (
   firstLaunchWorldSavePersistenceAvailable = true,
   shellProfilePreview: PausedMainMenuShellProfilePreview | null = null,
   shellActionKeybindingsCurrentSessionOnly = false,
-  recentActivityAction: PausedMainMenuRecentActivityAction | null = null
+  recentActivityAction: PausedMainMenuRecentActivityAction | null = null,
+  worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
+  worldSessionTelemetryPersistenceAvailable = true
 ): AppShellState =>
   hasResumableWorldSession
     ? createPausedMainMenuShellState(
@@ -2220,7 +2440,9 @@ export const createMainMenuShellState = (
         resetShellTogglesResult,
         shellProfilePreview,
         shellActionKeybindingsCurrentSessionOnly,
-        recentActivityAction
+        recentActivityAction,
+        worldSessionTelemetryState,
+        worldSessionTelemetryPersistenceAvailable
       )
     : createFirstLaunchMainMenuShellState(firstLaunchWorldSavePersistenceAvailable);
 
@@ -2773,6 +2995,70 @@ const createMenuSectionMetadataElement = (
   return metadata;
 };
 
+const createPausedMainMenuShellTelemetryCollectionElement = (
+  collection: PausedMainMenuShellTelemetryCollectionViewModel,
+  onToggleCollection: () => void,
+  onToggleType: (typeId: WorldSessionTelemetryTypeId) => void
+): HTMLElement => {
+  const collectionElement = document.createElement('section');
+  collectionElement.className = 'app-shell__shell-telemetry-collection';
+  collectionElement.dataset.enabled = collection.enabled ? 'true' : 'false';
+
+  const header = document.createElement('div');
+  header.className = 'app-shell__shell-telemetry-collection-header';
+  collectionElement.append(header);
+
+  const copy = document.createElement('div');
+  copy.className = 'app-shell__shell-telemetry-collection-copy';
+  header.append(copy);
+
+  const title = document.createElement('h3');
+  title.className = 'app-shell__shell-telemetry-collection-title';
+  title.textContent = collection.label;
+  copy.append(title);
+
+  const description = document.createElement('p');
+  description.className = 'app-shell__shell-telemetry-collection-description';
+  description.textContent = collection.description;
+  copy.append(description);
+
+  const collectionButton = document.createElement('button');
+  collectionButton.type = 'button';
+  collectionButton.className = 'app-shell__shell-telemetry-button app-shell__shell-telemetry-button--collection';
+  collectionButton.textContent = collection.toggleLabel;
+  collectionButton.title = collection.toggleTitle;
+  collectionButton.setAttribute('aria-pressed', collection.enabled ? 'true' : 'false');
+  collectionButton.addEventListener('click', onToggleCollection);
+  installPointerClickFocusRelease(collectionButton);
+  header.append(collectionButton);
+
+  const metadata = createMenuSectionMetadataElement(collection.metadataRows);
+  metadata.classList.add('app-shell__shell-telemetry-collection-metadata');
+  collectionElement.append(metadata);
+
+  const typeButtons = document.createElement('div');
+  typeButtons.className = 'app-shell__shell-telemetry-types';
+  typeButtons.replaceChildren(
+    ...collection.types.map((type) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'app-shell__shell-telemetry-button';
+      button.textContent = type.buttonLabel;
+      button.title = type.buttonTitle;
+      button.setAttribute('aria-pressed', type.enabled ? 'true' : 'false');
+      button.dataset.enabled = type.enabled ? 'true' : 'false';
+      button.addEventListener('click', () => {
+        onToggleType(type.id);
+      });
+      installPointerClickFocusRelease(button);
+      return button;
+    })
+  );
+  collectionElement.append(typeButtons);
+
+  return collectionElement;
+};
+
 const createMenuSectionDetailGroupsElement = (
   detailGroups: readonly AppShellMenuSectionDetailGroup[]
 ): HTMLDivElement => {
@@ -3239,6 +3525,10 @@ export class AppShell {
   private shellBody: HTMLDivElement;
   private shellActionKeybindingEditor: HTMLDivElement;
   private shellActionKeybindingEditorMetadata: HTMLDListElement;
+  private shellTelemetryControls: HTMLDivElement;
+  private shellTelemetrySummary: HTMLParagraphElement;
+  private shellTelemetryMetadata: HTMLDListElement;
+  private shellTelemetryCollections: HTMLDivElement;
   private shellTopJumpLink: HTMLAnchorElement;
   private shellActionKeybindingInputs = new Map<
     InWorldShellActionKeybindingActionType,
@@ -3288,6 +3578,14 @@ export class AppShell {
     screen: AppShellScreen
   ) => PausedMainMenuShellProfilePreviewClearResult;
   private onExportShellProfile: (screen: AppShellScreen) => PausedMainMenuShellProfileExportResult;
+  private onToggleShellTelemetryCollection: (
+    screen: AppShellScreen,
+    collectionId: WorldSessionTelemetryCollectionId
+  ) => void;
+  private onToggleShellTelemetryType: (
+    screen: AppShellScreen,
+    typeId: WorldSessionTelemetryTypeId
+  ) => void;
   private currentShellActionKeybindingEditorStatus: AppShellShellActionKeybindingEditorStatus | null =
     null;
   private pausedMainMenuShellExpanded = false;
@@ -3341,6 +3639,9 @@ export class AppShell {
         status: 'failed',
         reason: 'Shell-profile export is unavailable.'
       }));
+    this.onToggleShellTelemetryCollection =
+      options.onToggleShellTelemetryCollection ?? (() => {});
+    this.onToggleShellTelemetryType = options.onToggleShellTelemetryType ?? (() => {});
 
     this.root = document.createElement('div');
     this.root.className = 'app-shell';
@@ -3702,6 +4003,28 @@ export class AppShell {
     this.shellActionKeybindingEditorStatus.className = 'app-shell__shell-keybindings-status';
     this.shellActionKeybindingEditor.append(this.shellActionKeybindingEditorStatus);
 
+    this.shellTelemetryControls = document.createElement('div');
+    this.shellTelemetryControls.className = 'app-shell__shell-keybindings app-shell__shell-telemetry';
+    this.shellBody.append(this.shellTelemetryControls);
+
+    const shellTelemetryTitle = document.createElement('h2');
+    shellTelemetryTitle.className = 'app-shell__shell-keybindings-title';
+    shellTelemetryTitle.textContent = 'Telemetry Controls';
+    this.shellTelemetryControls.append(shellTelemetryTitle);
+
+    this.shellTelemetrySummary = document.createElement('p');
+    this.shellTelemetrySummary.className = 'app-shell__shell-telemetry-summary';
+    this.shellTelemetryControls.append(this.shellTelemetrySummary);
+
+    this.shellTelemetryMetadata = document.createElement('dl');
+    this.shellTelemetryMetadata.className =
+      'app-shell__menu-section-metadata app-shell__shell-keybindings-metadata';
+    this.shellTelemetryControls.append(this.shellTelemetryMetadata);
+
+    this.shellTelemetryCollections = document.createElement('div');
+    this.shellTelemetryCollections.className = 'app-shell__shell-telemetry-collections';
+    this.shellTelemetryControls.append(this.shellTelemetryCollections);
+
     this.shellTopJumpLink = createPausedMainMenuTopJumpLink(this.overviewSection);
     this.shellActionKeybindingEditor.append(this.shellTopJumpLink);
 
@@ -3864,6 +4187,39 @@ export class AppShell {
     }
 
     this.shellActionKeybindingEditorMetadata.dataset.tone = 'warning';
+  }
+
+  private syncShellTelemetryControls(
+    telemetryControls: PausedMainMenuShellTelemetryControlsViewModel | null,
+    visible: boolean
+  ): void {
+    const controlsVisible = visible && telemetryControls !== null;
+    this.shellTelemetryControls.hidden = !controlsVisible;
+    this.shellTelemetryControls.style.display = resolveAppShellRegionDisplay(
+      controlsVisible,
+      'grid'
+    );
+    if (!controlsVisible || telemetryControls === null) {
+      this.shellTelemetrySummary.textContent = '';
+      this.shellTelemetryMetadata.replaceChildren();
+      this.shellTelemetryCollections.replaceChildren();
+      return;
+    }
+
+    this.shellTelemetrySummary.textContent = telemetryControls.summaryLine;
+    this.shellTelemetryMetadata.replaceChildren(
+      ...createMenuSectionMetadataElement(telemetryControls.metadataRows).childNodes
+    );
+    this.shellTelemetryCollections.replaceChildren(
+      ...telemetryControls.collections.map((collection) =>
+        createPausedMainMenuShellTelemetryCollectionElement(
+          collection,
+          () =>
+            this.onToggleShellTelemetryCollection(this.currentState.screen, collection.id),
+          (typeId) => this.onToggleShellTelemetryType(this.currentState.screen, typeId)
+        )
+      )
+    );
   }
 
   private setShellActionKeybindingEditorStatus(
@@ -4417,6 +4773,10 @@ export class AppShell {
     this.shellActionKeybindingEditor.style.display = resolveAppShellRegionDisplay(
       pausedMainMenuShellSection.editorVisible,
       'grid'
+    );
+    this.syncShellTelemetryControls(
+      pausedMainMenuShellSection.telemetryControls,
+      pausedMainMenuShellSection.editorVisible
     );
     this.shellTopJumpLink.hidden = !pausedMainMenuShellSection.editorVisible;
     this.shellTopJumpLink.style.display = pausedMainMenuShellSection.editorVisible

@@ -1,5 +1,9 @@
 import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
 import { MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL, TILE_SIZE } from '../world/constants';
+import {
+  isWorldSessionTelemetryTypeVisible,
+  type WorldSessionTelemetryState
+} from '../mainWorldSessionTelemetryState';
 import type { HostileSlimeLaunchKind } from '../world/hostileSlimeState';
 import type { LiquidSurfaceBranchKind } from '../world/liquidSurface';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
@@ -314,6 +318,7 @@ export interface DebugOverlayInspectState {
   playerHostileContactEvent?: DebugOverlayPlayerHostileContactEventTelemetry | null;
   playerWallContactTransition: DebugOverlayPlayerWallContactTransitionTelemetry | null;
   playerCeilingContactTransition: DebugOverlayPlayerCeilingContactTransitionTelemetry | null;
+  telemetryState?: WorldSessionTelemetryState | null;
 }
 
 const formatFloat = (value: number, digits: number): string => value.toFixed(digits);
@@ -1118,6 +1123,9 @@ export const formatDebugOverlayText = (
   const playerHostileContactEvent = inspect?.playerHostileContactEvent ?? null;
   const playerWallContactTransition = inspect?.playerWallContactTransition ?? null;
   const playerCeilingContactTransition = inspect?.playerCeilingContactTransition ?? null;
+  const telemetryState = inspect?.telemetryState ?? null;
+  const telemetryVisible = (typeId: Parameters<typeof isWorldSessionTelemetryTypeVisible>[1]): boolean =>
+    telemetryState === null || isWorldSessionTelemetryTypeVisible(telemetryState, typeId);
   const lines = [
     summaryLine,
     formatAtlasLine(stats),
@@ -1125,31 +1133,47 @@ export const formatDebugOverlayText = (
     formatSpawnLine(spawn),
     formatSpawnSupportLine(spawn),
     formatSpawnLiquidSafetyLine(spawn),
-    formatPlayerLine(player),
-    formatPlayerPlaceholderPoseLine(playerPlaceholderPoseLabel),
-    formatPlayerCeilingBonkHoldLine(playerCeilingBonkHoldActive),
-    formatPlayerCombatLine(player),
-    formatPlayerHostileContactEventLine(playerHostileContactEvent),
-    formatHostileSlimeLine(hostileSlime),
-    formatPlayerNearbyLightLine(
-      playerNearbyLightLevel,
-      playerNearbyLightFactor,
-      playerNearbyLightSourceTile,
-      playerNearbyLightSourceChunk,
-      playerNearbyLightSourceLocalTile
-    ),
-    formatPlayerGroundedTransitionLine(playerGroundedTransition),
-    formatPlayerFacingTransitionLine(playerFacingTransition),
-    formatPlayerRespawnLine(playerRespawn),
-    formatPlayerWallContactTransitionLine(playerWallContactTransition),
-    formatPlayerCeilingContactTransitionLine(playerCeilingContactTransition),
-    formatPlayerAabbLine(player),
-    formatPlayerCameraFollowLine(playerCameraFollow),
-    formatPlayerContactsLine(player),
-    formatPlayerIntentLine(playerIntent),
+    telemetryVisible('player-motion') ? formatPlayerLine(player) : null,
+    telemetryVisible('player-presentation')
+      ? formatPlayerPlaceholderPoseLine(playerPlaceholderPoseLabel)
+      : null,
+    telemetryVisible('player-presentation')
+      ? formatPlayerCeilingBonkHoldLine(playerCeilingBonkHoldActive)
+      : null,
+    telemetryVisible('player-combat') ? formatPlayerCombatLine(player) : null,
+    telemetryVisible('player-combat')
+      ? formatPlayerHostileContactEventLine(playerHostileContactEvent)
+      : null,
+    telemetryVisible('hostile-slime-tracker') ? formatHostileSlimeLine(hostileSlime) : null,
+    telemetryVisible('world-lighting')
+      ? formatPlayerNearbyLightLine(
+          playerNearbyLightLevel,
+          playerNearbyLightFactor,
+          playerNearbyLightSourceTile,
+          playerNearbyLightSourceChunk,
+          playerNearbyLightSourceLocalTile
+        )
+      : null,
+    telemetryVisible('player-events')
+      ? formatPlayerGroundedTransitionLine(playerGroundedTransition)
+      : null,
+    telemetryVisible('player-events')
+      ? formatPlayerFacingTransitionLine(playerFacingTransition)
+      : null,
+    telemetryVisible('player-events') ? formatPlayerRespawnLine(playerRespawn) : null,
+    telemetryVisible('player-events')
+      ? formatPlayerWallContactTransitionLine(playerWallContactTransition)
+      : null,
+    telemetryVisible('player-events')
+      ? formatPlayerCeilingContactTransitionLine(playerCeilingContactTransition)
+      : null,
+    telemetryVisible('player-collision') ? formatPlayerAabbLine(player) : null,
+    telemetryVisible('player-camera') ? formatPlayerCameraFollowLine(playerCameraFollow) : null,
+    telemetryVisible('player-collision') ? formatPlayerContactsLine(player) : null,
+    telemetryVisible('player-motion') ? formatPlayerIntentLine(playerIntent) : null,
     formatAnimatedChunkResidencyLine(stats),
     formatAnimatedChunkUvUploadLine(stats),
-    formatLiquidStepLine(stats)
+    telemetryVisible('world-liquid') ? formatLiquidStepLine(stats) : null
   ].filter((line): line is string => line !== null);
 
   if (!pointerInspect) {

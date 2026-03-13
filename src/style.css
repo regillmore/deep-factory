@@ -660,6 +660,10 @@ canvas {
   gap: 12px;
 }
 
+.app-shell__shell-telemetry {
+  margin-top: 0;
+}
+
 .app-shell__shell-keybindings {
   margin-top: 18px;
   padding: 15px 16px 16px;
@@ -673,6 +677,13 @@ canvas {
     0 16px 32px rgba(0, 0, 0, 0.16);
   display: grid;
   gap: 12px;
+}
+
+.app-shell__shell-telemetry-summary {
+  margin: 0;
+  color: #d6e3e7;
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 .app-shell__shell-keybindings-title {
@@ -702,7 +713,8 @@ canvas {
   gap: 10px;
 }
 
-.app-shell__shell-keybindings-button {
+.app-shell__shell-keybindings-button,
+.app-shell__shell-telemetry-button {
   padding: 8px 12px;
   border: 1px solid rgba(159, 221, 255, 0.28);
   border-radius: 999px;
@@ -717,7 +729,8 @@ canvas {
   cursor: pointer;
 }
 
-.app-shell__shell-keybindings-button[disabled] {
+.app-shell__shell-keybindings-button[disabled],
+.app-shell__shell-telemetry-button[disabled] {
   opacity: 0.82;
 }
 
@@ -727,13 +740,83 @@ canvas {
   cursor: wait;
 }
 
-.app-shell__shell-keybindings-button:hover {
+.app-shell__shell-keybindings-button:hover,
+.app-shell__shell-telemetry-button:hover {
   border-color: rgba(159, 221, 255, 0.42);
 }
 
-.app-shell__shell-keybindings-button:focus-visible {
+.app-shell__shell-keybindings-button:focus-visible,
+.app-shell__shell-telemetry-button:focus-visible {
   outline: 2px solid #9fddff;
   outline-offset: 3px;
+}
+
+.app-shell__shell-telemetry-collections {
+  display: grid;
+  gap: 12px;
+}
+
+.app-shell__shell-telemetry-collection {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(150, 184, 197, 0.16);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(16, 22, 31, 0.8), rgba(9, 14, 20, 0.76)),
+    linear-gradient(135deg, rgba(120, 210, 255, 0.07), rgba(243, 205, 135, 0.03));
+}
+
+.app-shell__shell-telemetry-collection-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.app-shell__shell-telemetry-collection-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.app-shell__shell-telemetry-collection-title {
+  margin: 0;
+  color: #fff0cc;
+  font:
+    700 10px/1.1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-shell__shell-telemetry-collection-description {
+  margin: 0;
+  color: #d6e3e7;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.app-shell__shell-telemetry-collection-metadata {
+  margin: 0;
+  padding-top: 0;
+  border-top: 0;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.app-shell__shell-telemetry-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.app-shell__shell-telemetry-button[aria-pressed='true'] {
+  border-color: rgba(131, 219, 242, 0.42);
+  color: #fff0cc;
+}
+
+.app-shell__shell-telemetry-button[aria-pressed='false'] {
+  border-color: rgba(214, 112, 92, 0.28);
+  color: #d6e3e7;
 }
 
 .app-shell__shell-keybindings-grid {

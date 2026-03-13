@@ -12,6 +12,10 @@ import {
   createDefaultWorldSessionShellState,
   WORLD_SESSION_SHELL_STATE_STORAGE_KEY
 } from './mainWorldSessionShellState';
+import {
+  createDefaultWorldSessionTelemetryState,
+  WORLD_SESSION_TELEMETRY_STATE_STORAGE_KEY
+} from './mainWorldSessionTelemetryState';
 import { createWorldSessionShellProfileEnvelope } from './mainWorldSessionShellProfile';
 import { createWorldSaveEnvelope } from './mainWorldSave';
 import { PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY } from './mainWorldSaveLocalPersistence';
@@ -1419,6 +1423,11 @@ const readPersistedShellState = (): ReturnType<typeof createDefaultWorldSessionS
     testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ??
       JSON.stringify(createDefaultWorldSessionShellState())
   );
+const readPersistedTelemetryState = (): ReturnType<typeof createDefaultWorldSessionTelemetryState> =>
+  JSON.parse(
+    testRuntime.storageValues.get(WORLD_SESSION_TELEMETRY_STATE_STORAGE_KEY) ??
+      JSON.stringify(createDefaultWorldSessionTelemetryState())
+  );
 const readPersistedWorldSaveEnvelope = (): ReturnType<typeof createWorldSaveEnvelope> | null => {
   const rawEnvelope = testRuntime.storageValues.get(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY) ?? null;
   return rawEnvelope === null ? null : JSON.parse(rawEnvelope);
@@ -1487,6 +1496,8 @@ const createExpectedPausedMainMenuState = (
     shellActionKeybindings: ShellActionKeybindingState;
     shellActionKeybindingsDefaultedFromPersistedState: boolean;
     shellActionKeybindingsCurrentSessionOnly: boolean;
+    worldSessionTelemetryState: ReturnType<typeof createDefaultWorldSessionTelemetryState>;
+    worldSessionTelemetryPersistenceAvailable: boolean;
     exportResult: PausedMainMenuExportResult;
     importResult: PausedMainMenuImportResult;
     clearSavedWorldResult: PausedMainMenuClearSavedWorldResult;
@@ -1517,7 +1528,7 @@ const createExpectedPausedMainMenuState = (
           ? 'import-world-save'
           : options.exportResult
             ? 'export-world-save'
-            : null);
+      : null);
 
   return createMainMenuShellState(
     true,
@@ -1543,7 +1554,12 @@ const createExpectedPausedMainMenuState = (
         }
       : null,
     options.shellActionKeybindingsCurrentSessionOnly ?? false,
-    resolvedRecentActivityAction
+    resolvedRecentActivityAction,
+    options.worldSessionTelemetryState ??
+      (testRuntime.storageValues.has(WORLD_SESSION_TELEMETRY_STATE_STORAGE_KEY)
+        ? readPersistedTelemetryState()
+        : createDefaultWorldSessionTelemetryState()),
+    options.worldSessionTelemetryPersistenceAvailable ?? true
   );
 };
 
@@ -1951,7 +1967,8 @@ describe('main.ts shell state orchestration', () => {
           playerSpawnMarkerVisible: false,
           shortcutsOverlayVisible: true
         },
-        persistenceAvailable: false
+        persistenceAvailable: false,
+        worldSessionTelemetryPersistenceAvailable: false
       })
     );
   });
@@ -6948,6 +6965,65 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(true);
     expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(true);
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(true);
+  });
+
+  it('persists paused-menu telemetry collection and type toggles without disturbing shell visibility state', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+
+    testRuntime.shellInstance?.options.onToggleShellTelemetryCollection?.(
+      'main-menu',
+      'hostile-slime'
+    );
+    testRuntime.shellInstance?.options.onToggleShellTelemetryType?.(
+      'main-menu',
+      'player-combat'
+    );
+
+    expect(readPersistedShellState()).toEqual(createDefaultWorldSessionShellState());
+    expect(readPersistedTelemetryState()).toEqual({
+      collections: {
+        player: true,
+        'hostile-slime': false,
+        world: true
+      },
+      types: {
+        'player-motion': true,
+        'player-presentation': true,
+        'player-combat': false,
+        'player-camera': true,
+        'player-collision': true,
+        'player-events': true,
+        'hostile-slime-tracker': true,
+        'world-lighting': true,
+        'world-liquid': true
+      }
+    });
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        worldSessionTelemetryState: {
+          collections: {
+            player: true,
+            'hostile-slime': false,
+            world: true
+          },
+          types: {
+            'player-motion': true,
+            'player-presentation': true,
+            'player-combat': false,
+            'player-camera': true,
+            'player-collision': true,
+            'player-events': true,
+            'hostile-slime-tracker': true,
+            'world-lighting': true,
+            'world-liquid': true
+          }
+        }
+      })
+    );
   });
 
   it('routes overlay-backed in-world shell toggles through one shared visibility sync path while shortcuts stay shell-state only', async () => {

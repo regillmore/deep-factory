@@ -64,6 +64,15 @@ import {
   saveWorldSessionShellState,
   resolveWorldSessionShellStateAfterPausedMainMenuTransition
 } from './mainWorldSessionShellState';
+import {
+  cloneWorldSessionTelemetryState,
+  createDefaultWorldSessionTelemetryState,
+  loadWorldSessionTelemetryStateWithPersistenceAvailability,
+  saveWorldSessionTelemetryState,
+  toggleWorldSessionTelemetryCollection,
+  toggleWorldSessionTelemetryType,
+  type WorldSessionTelemetryState
+} from './mainWorldSessionTelemetryState';
 import type { WorldSaveEnvelope } from './mainWorldSave';
 import { pickWorldSaveEnvelopeFromJsonPicker } from './mainWorldSaveImport';
 import { downloadWorldSaveEnvelope } from './mainWorldSaveDownload';
@@ -593,6 +602,7 @@ const bootstrap = async (): Promise<void> => {
     initialShellActionKeybindingLoad.defaultedFromPersistedState;
   let shellActionKeybindingsCurrentSessionOnly = false;
   const defaultWorldSessionShellState = createDefaultWorldSessionShellState();
+  const defaultWorldSessionTelemetryState = createDefaultWorldSessionTelemetryState();
   let worldSessionStarted = false;
   let worldSessionLoopStarted = false;
   let pausedMainMenuWorldSaveCleared = false;
@@ -606,6 +616,7 @@ const bootstrap = async (): Promise<void> => {
   let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
   let worldSessionShellPersistenceAvailable = true;
+  let worldSessionTelemetryPersistenceAvailable = true;
   const initialPersistedWorldSaveEnvelopeLoad =
     loadPersistedWorldSaveEnvelopeWithPersistenceAvailability(worldSessionShellStateStorage);
   let worldSavePersistenceAvailable = initialPersistedWorldSaveEnvelopeLoad.persistenceAvailable;
@@ -615,8 +626,15 @@ const bootstrap = async (): Promise<void> => {
       worldSessionShellStateStorage,
       defaultWorldSessionShellState
     );
+  const initialWorldSessionTelemetryStateLoad =
+    loadWorldSessionTelemetryStateWithPersistenceAvailability(
+      worldSessionShellStateStorage,
+      defaultWorldSessionTelemetryState
+    );
   worldSessionShellPersistenceAvailable =
     initialWorldSessionShellStateLoad.persistenceAvailable;
+  worldSessionTelemetryPersistenceAvailable =
+    initialWorldSessionTelemetryStateLoad.persistenceAvailable;
   let {
     debugOverlayVisible,
     debugEditControlsVisible,
@@ -624,6 +642,7 @@ const bootstrap = async (): Promise<void> => {
     playerSpawnMarkerVisible,
     shortcutsOverlayVisible
   } = initialWorldSessionShellStateLoad.state;
+  let worldSessionTelemetryState = initialWorldSessionTelemetryStateLoad.state;
   const readWorldSessionShellState = () => ({
     debugOverlayVisible,
     debugEditControlsVisible,
@@ -631,6 +650,8 @@ const bootstrap = async (): Promise<void> => {
     playerSpawnMarkerVisible,
     shortcutsOverlayVisible
   });
+  const readWorldSessionTelemetryState = (): WorldSessionTelemetryState =>
+    cloneWorldSessionTelemetryState(worldSessionTelemetryState);
   const readPausedMainMenuShellProfilePreview =
     (): PausedMainMenuShellProfilePreview | null =>
       pausedMainMenuShellProfilePreview === null
@@ -665,6 +686,18 @@ const bootstrap = async (): Promise<void> => {
       playerSpawnMarkerVisible,
       shortcutsOverlayVisible
     } = state);
+  };
+  const applyWorldSessionTelemetryState = (state: WorldSessionTelemetryState): void => {
+    worldSessionTelemetryState = cloneWorldSessionTelemetryState(state);
+  };
+  const persistWorldSessionTelemetryState = (
+    state: WorldSessionTelemetryState = readWorldSessionTelemetryState()
+  ): boolean => {
+    worldSessionTelemetryPersistenceAvailable = saveWorldSessionTelemetryState(
+      worldSessionShellStateStorage,
+      state
+    );
+    return worldSessionTelemetryPersistenceAvailable;
   };
   const applyPausedMainMenuWorldSessionShellTransition = (
     transition: Parameters<typeof resolveWorldSessionShellStateAfterPausedMainMenuTransition>[1],
@@ -820,6 +853,24 @@ const bootstrap = async (): Promise<void> => {
       }
 
       return exportPausedMainMenuShellProfile();
+    },
+    onToggleShellTelemetryCollection: (screen, collectionId) => {
+      if (screen !== 'main-menu' || !worldSessionStarted) {
+        return;
+      }
+
+      applyWorldSessionTelemetryStateAndRefreshWithPersistenceFallback(
+        toggleWorldSessionTelemetryCollection(readWorldSessionTelemetryState(), collectionId)
+      );
+    },
+    onToggleShellTelemetryType: (screen, typeId) => {
+      if (screen !== 'main-menu' || !worldSessionStarted) {
+        return;
+      }
+
+      applyWorldSessionTelemetryStateAndRefreshWithPersistenceFallback(
+        toggleWorldSessionTelemetryType(readWorldSessionTelemetryState(), typeId)
+      );
     }
   });
   shell.setState(createDefaultBootShellState());
@@ -872,7 +923,9 @@ const bootstrap = async (): Promise<void> => {
         worldSavePersistenceAvailable,
         readPausedMainMenuShellProfilePreview(),
         shellActionKeybindingsCurrentSessionOnly,
-        pausedMainMenuRecentActivityAction
+        pausedMainMenuRecentActivityAction,
+        readWorldSessionTelemetryState(),
+        worldSessionTelemetryPersistenceAvailable
       )
     );
     syncWorldScreenShellVisibility();
@@ -889,6 +942,13 @@ const bootstrap = async (): Promise<void> => {
     }
 
     showMainMenuShellState();
+  };
+  const applyWorldSessionTelemetryStateAndRefreshWithPersistenceFallback = (
+    nextState: WorldSessionTelemetryState
+  ): void => {
+    applyWorldSessionTelemetryState(nextState);
+    persistWorldSessionTelemetryState(nextState);
+    refreshShellStateAfterShellPreferenceChange();
   };
   function persistShellActionKeybindingStateAndRefresh(
     nextKeybindings: ShellActionKeybindingState
@@ -3800,12 +3860,13 @@ const bootstrap = async (): Promise<void> => {
           }
         : null,
       pinned: pinnedDebugTileInspect
-        ? {
-            tileX: pinnedDebugTileInspect.tileX,
-            tileY: pinnedDebugTileInspect.tileY
-          }
-        : null
+      ? {
+          tileX: pinnedDebugTileInspect.tileX,
+          tileY: pinnedDebugTileInspect.tileY
+        }
+      : null
     });
+    const worldSessionTelemetryStateSnapshot = readWorldSessionTelemetryState();
     playerSpawnMarker.update(camera, resolvedPlayerSpawn);
     armedDebugToolPreview.update(camera, pointerInspect, armedDebugToolPreviewState);
     debugEditStatusStrip.update({
@@ -3905,7 +3966,9 @@ const bootstrap = async (): Promise<void> => {
       playerRespawn: debugStatusStripPlayerEventTelemetry.playerRespawn,
       playerHostileContactEvent: debugStatusStripPlayerEventTelemetry.playerHostileContactEvent,
       playerWallContactTransition: debugStatusStripPlayerEventTelemetry.playerWallContactTransition,
-      playerCeilingContactTransition: debugStatusStripPlayerEventTelemetry.playerCeilingContactTransition
+      playerCeilingContactTransition:
+        debugStatusStripPlayerEventTelemetry.playerCeilingContactTransition,
+      telemetryState: worldSessionTelemetryStateSnapshot
     });
     debug.update(frameDtMs, renderer.telemetry, {
       pointer: debugOverlayPointerInspect,
@@ -3932,7 +3995,8 @@ const bootstrap = async (): Promise<void> => {
       playerRespawn: lastPlayerRespawnEvent,
       playerHostileContactEvent: lastHostileSlimePlayerContactEvent,
       playerWallContactTransition: lastPlayerWallContactTransitionEvent,
-      playerCeilingContactTransition: lastPlayerCeilingContactTransitionEvent
+      playerCeilingContactTransition: lastPlayerCeilingContactTransitionEvent,
+      telemetryState: worldSessionTelemetryStateSnapshot
     });
   };
 

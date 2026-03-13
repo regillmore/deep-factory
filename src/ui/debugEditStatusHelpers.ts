@@ -8,6 +8,11 @@ import {
   type DebugTileEditKind,
   type TouchDebugEditMode
 } from '../input/controller';
+import {
+  isWorldSessionTelemetryTypeVisible,
+  type WorldSessionTelemetryState,
+  type WorldSessionTelemetryTypeId
+} from '../mainWorldSessionTelemetryState';
 import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
 import { MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL } from '../world/constants';
 import type { LiquidSurfaceBranchKind } from '../world/liquidSurface';
@@ -104,6 +109,7 @@ export interface DebugEditStatusStripState {
   playerHostileContactEvent?: DebugEditStatusStripPlayerHostileContactEventTelemetry | null;
   playerWallContactTransition?: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null;
   playerCeilingContactTransition?: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null;
+  telemetryState?: WorldSessionTelemetryState | null;
 }
 
 export interface DebugEditStatusStripModel {
@@ -1480,6 +1486,8 @@ const formatLiveCeilingContactText = (
   );
 };
 
+type TelemetryVisibilityResolver = (typeId: WorldSessionTelemetryTypeId) => boolean;
+
 const buildPlayerText = (
   playerPlaceholderPoseLabel: string | null,
   playerWorldPosition: { x: number; y: number } | null,
@@ -1542,83 +1550,138 @@ const buildPlayerText = (
   playerJumpPressed: boolean | null,
   playerSupportContact: DebugEditStatusStripPlayerSupportContactTelemetry | null,
   playerWallContact: DebugEditStatusStripPlayerWallContactTelemetry | null,
-  playerCeilingContact: DebugEditStatusStripPlayerCeilingContactTelemetry | null
+  playerCeilingContact: DebugEditStatusStripPlayerCeilingContactTelemetry | null,
+  telemetryVisible: TelemetryVisibilityResolver
 ): string | null => {
   const playerLines = [
-    playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : null,
-    formatLiveWorldPositionText(playerWorldPosition),
-    formatLiveWorldTileText(playerWorldTile),
-    formatLiveWorldChunkText(playerWorldTile),
-    formatLiveWorldChunkLocalTileText(playerWorldTile),
+    telemetryVisible('player-presentation')
+      ? playerPlaceholderPoseLabel
+        ? `Pose: ${playerPlaceholderPoseLabel}`
+        : null
+      : null,
+    telemetryVisible('player-motion') ? formatLiveWorldPositionText(playerWorldPosition) : null,
+    telemetryVisible('player-motion') ? formatLiveWorldTileText(playerWorldTile) : null,
+    telemetryVisible('player-motion') ? formatLiveWorldChunkText(playerWorldTile) : null,
+    telemetryVisible('player-motion')
+      ? formatLiveWorldChunkLocalTileText(playerWorldTile)
+      : null,
     formatLivePlayerSpawnText(playerSpawn),
     formatLivePlayerSpawnSupportText(playerSpawn),
-    formatLiveAabbText(playerAabb),
-    formatLiveCameraWorldPositionText(playerCameraWorldPosition),
-    formatLiveCameraWorldTileText(playerCameraWorldTile),
-    formatLiveCameraWorldChunkText(playerCameraWorldChunk),
-    formatLiveCameraWorldChunkLocalTileText(playerCameraWorldLocalTile),
-    formatLiveCameraFocusPointText(playerCameraFocusPoint),
-    formatLiveCameraFocusTileText(playerCameraFocusTile),
-    formatLiveCameraFocusChunkText(playerCameraFocusChunk),
-    formatLiveCameraFocusChunkLocalTileText(playerCameraFocusLocalTile),
-    formatLiveCameraFollowOffsetText(playerCameraFollowOffset),
-    formatLiveCameraZoomText(playerCameraZoom),
-    formatLiveResidentDirtyLightChunksText(residentDirtyLightChunks),
-    formatLiveResidentActiveLiquidChunksText(
-      residentActiveLiquidChunks,
-      residentSleepingLiquidChunks,
-      residentActiveLiquidMinChunkX,
-      residentActiveLiquidMinChunkY,
-      residentActiveLiquidMaxChunkX,
-      residentActiveLiquidMaxChunkY,
-      residentSleepingLiquidMinChunkX,
-      residentSleepingLiquidMinChunkY,
-      residentSleepingLiquidMaxChunkX,
-      residentSleepingLiquidMaxChunkY
-    ),
-    formatLiveLiquidStepSummaryText(
-      liquidStepSidewaysCandidateMinChunkX,
-      liquidStepSidewaysCandidateMinChunkY,
-      liquidStepSidewaysCandidateMaxChunkX,
-      liquidStepSidewaysCandidateMaxChunkY,
-      liquidStepPhaseSummary,
-      liquidStepDownwardActiveChunksScanned,
-      liquidStepSidewaysCandidateChunksScanned,
-      liquidStepSidewaysPairsTested,
-      liquidStepDownwardTransfersApplied,
-      liquidStepSidewaysTransfersApplied
-    ),
-    formatLiveNearbyLightText(
-      playerNearbyLightLevel,
-      playerNearbyLightFactor,
-      playerNearbyLightSourceTile,
-      playerNearbyLightSourceChunk,
-      playerNearbyLightSourceLocalTile
-    ),
-    formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive),
-    formatLiveHealthText(playerHealth),
-    formatLiveHostileContactInvulnerabilityText(
-      playerHostileContactInvulnerabilitySecondsRemaining
-    ),
-    formatLiveHostileSlimeActiveCountText(hostileSlimeActiveCount),
-    formatLiveHostileSlimeNextSpawnText(hostileSlimeNextSpawnTicksRemaining),
-    formatLiveHostileSlimeWorldTileText(hostileSlimeWorldTile),
-    formatLiveHostileSlimeVelocityText(hostileSlimeVelocity),
-    formatLiveHostileSlimeGroundedText(hostileSlimeGrounded),
-    formatLiveHostileSlimeFacingText(hostileSlimeFacing),
-    formatLiveHostileSlimeHopCooldownText(hostileSlimeHopCooldownTicksRemaining),
-    formatLiveHostileSlimeLaunchKindText(hostileSlimeLaunchKind),
-    formatLiveGroundedText(playerGrounded),
-    formatLiveFacingText(playerFacing),
-    formatLiveMoveXText(playerMoveX),
-    formatLiveVelocityXText(playerVelocityX),
-    formatLiveVelocityYText(playerVelocityY),
-    formatLiveSpeedMagnitudeText(playerVelocityX, playerVelocityY),
-    formatLiveJumpHeldText(playerJumpHeld),
-    formatLiveJumpPressedText(playerJumpPressed),
-    formatLiveSupportContactText(playerSupportContact),
-    formatLiveWallContactText(playerWallContact),
-    formatLiveCeilingContactText(playerCeilingContact)
+    telemetryVisible('player-collision') ? formatLiveAabbText(playerAabb) : null,
+    telemetryVisible('player-camera')
+      ? formatLiveCameraWorldPositionText(playerCameraWorldPosition)
+      : null,
+    telemetryVisible('player-camera') ? formatLiveCameraWorldTileText(playerCameraWorldTile) : null,
+    telemetryVisible('player-camera')
+      ? formatLiveCameraWorldChunkText(playerCameraWorldChunk)
+      : null,
+    telemetryVisible('player-camera')
+      ? formatLiveCameraWorldChunkLocalTileText(playerCameraWorldLocalTile)
+      : null,
+    telemetryVisible('player-camera')
+      ? formatLiveCameraFocusPointText(playerCameraFocusPoint)
+      : null,
+    telemetryVisible('player-camera') ? formatLiveCameraFocusTileText(playerCameraFocusTile) : null,
+    telemetryVisible('player-camera')
+      ? formatLiveCameraFocusChunkText(playerCameraFocusChunk)
+      : null,
+    telemetryVisible('player-camera')
+      ? formatLiveCameraFocusChunkLocalTileText(playerCameraFocusLocalTile)
+      : null,
+    telemetryVisible('player-camera')
+      ? formatLiveCameraFollowOffsetText(playerCameraFollowOffset)
+      : null,
+    telemetryVisible('player-camera') ? formatLiveCameraZoomText(playerCameraZoom) : null,
+    telemetryVisible('world-lighting')
+      ? formatLiveResidentDirtyLightChunksText(residentDirtyLightChunks)
+      : null,
+    telemetryVisible('world-liquid')
+      ? formatLiveResidentActiveLiquidChunksText(
+          residentActiveLiquidChunks,
+          residentSleepingLiquidChunks,
+          residentActiveLiquidMinChunkX,
+          residentActiveLiquidMinChunkY,
+          residentActiveLiquidMaxChunkX,
+          residentActiveLiquidMaxChunkY,
+          residentSleepingLiquidMinChunkX,
+          residentSleepingLiquidMinChunkY,
+          residentSleepingLiquidMaxChunkX,
+          residentSleepingLiquidMaxChunkY
+        )
+      : null,
+    telemetryVisible('world-liquid')
+      ? formatLiveLiquidStepSummaryText(
+          liquidStepSidewaysCandidateMinChunkX,
+          liquidStepSidewaysCandidateMinChunkY,
+          liquidStepSidewaysCandidateMaxChunkX,
+          liquidStepSidewaysCandidateMaxChunkY,
+          liquidStepPhaseSummary,
+          liquidStepDownwardActiveChunksScanned,
+          liquidStepSidewaysCandidateChunksScanned,
+          liquidStepSidewaysPairsTested,
+          liquidStepDownwardTransfersApplied,
+          liquidStepSidewaysTransfersApplied
+        )
+      : null,
+    telemetryVisible('world-lighting')
+      ? formatLiveNearbyLightText(
+          playerNearbyLightLevel,
+          playerNearbyLightFactor,
+          playerNearbyLightSourceTile,
+          playerNearbyLightSourceChunk,
+          playerNearbyLightSourceLocalTile
+        )
+      : null,
+    telemetryVisible('player-presentation')
+      ? formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive)
+      : null,
+    telemetryVisible('player-combat') ? formatLiveHealthText(playerHealth) : null,
+    telemetryVisible('player-combat')
+      ? formatLiveHostileContactInvulnerabilityText(
+          playerHostileContactInvulnerabilitySecondsRemaining
+        )
+      : null,
+    telemetryVisible('hostile-slime-tracker')
+      ? formatLiveHostileSlimeActiveCountText(hostileSlimeActiveCount)
+      : null,
+    telemetryVisible('hostile-slime-tracker')
+      ? formatLiveHostileSlimeNextSpawnText(hostileSlimeNextSpawnTicksRemaining)
+      : null,
+    telemetryVisible('hostile-slime-tracker')
+      ? formatLiveHostileSlimeWorldTileText(hostileSlimeWorldTile)
+      : null,
+    telemetryVisible('hostile-slime-tracker')
+      ? formatLiveHostileSlimeVelocityText(hostileSlimeVelocity)
+      : null,
+    telemetryVisible('hostile-slime-tracker')
+      ? formatLiveHostileSlimeGroundedText(hostileSlimeGrounded)
+      : null,
+    telemetryVisible('hostile-slime-tracker')
+      ? formatLiveHostileSlimeFacingText(hostileSlimeFacing)
+      : null,
+    telemetryVisible('hostile-slime-tracker')
+      ? formatLiveHostileSlimeHopCooldownText(hostileSlimeHopCooldownTicksRemaining)
+      : null,
+    telemetryVisible('hostile-slime-tracker')
+      ? formatLiveHostileSlimeLaunchKindText(hostileSlimeLaunchKind)
+      : null,
+    telemetryVisible('player-motion') ? formatLiveGroundedText(playerGrounded) : null,
+    telemetryVisible('player-motion') ? formatLiveFacingText(playerFacing) : null,
+    telemetryVisible('player-motion') ? formatLiveMoveXText(playerMoveX) : null,
+    telemetryVisible('player-motion') ? formatLiveVelocityXText(playerVelocityX) : null,
+    telemetryVisible('player-motion') ? formatLiveVelocityYText(playerVelocityY) : null,
+    telemetryVisible('player-motion')
+      ? formatLiveSpeedMagnitudeText(playerVelocityX, playerVelocityY)
+      : null,
+    telemetryVisible('player-motion') ? formatLiveJumpHeldText(playerJumpHeld) : null,
+    telemetryVisible('player-motion') ? formatLiveJumpPressedText(playerJumpPressed) : null,
+    telemetryVisible('player-collision')
+      ? formatLiveSupportContactText(playerSupportContact)
+      : null,
+    telemetryVisible('player-collision') ? formatLiveWallContactText(playerWallContact) : null,
+    telemetryVisible('player-collision')
+      ? formatLiveCeilingContactText(playerCeilingContact)
+      : null
   ].filter((line): line is string => line !== null);
 
   return playerLines.length > 0 ? playerLines.join('\n') : null;
@@ -1707,15 +1770,20 @@ const buildEventText = (
   playerRespawn: DebugEditStatusStripPlayerRespawnTelemetry | null,
   playerHostileContactEvent: DebugEditStatusStripPlayerHostileContactEventTelemetry | null,
   playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null,
-  playerCeilingContactTransition: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null
+  playerCeilingContactTransition: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null,
+  telemetryVisible: TelemetryVisibilityResolver
 ): string | null => {
   const eventLines = [
-    formatGroundedTransitionEventText(playerGroundedTransition),
-    formatFacingTransitionEventText(playerFacingTransition),
-    formatRespawnEventText(playerRespawn),
-    formatHostileContactEventText(playerHostileContactEvent),
-    formatWallContactTransitionEventText(playerWallContactTransition),
-    formatCeilingContactTransitionEventText(playerCeilingContactTransition)
+    telemetryVisible('player-events') ? formatGroundedTransitionEventText(playerGroundedTransition) : null,
+    telemetryVisible('player-events') ? formatFacingTransitionEventText(playerFacingTransition) : null,
+    telemetryVisible('player-events') ? formatRespawnEventText(playerRespawn) : null,
+    telemetryVisible('player-combat') ? formatHostileContactEventText(playerHostileContactEvent) : null,
+    telemetryVisible('player-events')
+      ? formatWallContactTransitionEventText(playerWallContactTransition)
+      : null,
+    telemetryVisible('player-events')
+      ? formatCeilingContactTransitionEventText(playerCeilingContactTransition)
+      : null
   ].filter((line): line is string => line !== null);
 
   return eventLines.length > 0 ? eventLines.join('\n') : null;
@@ -2189,6 +2257,9 @@ export const buildDebugEditStatusStripModel = (
   const playerHostileContactEvent = state.playerHostileContactEvent ?? null;
   const playerWallContactTransition = state.playerWallContactTransition ?? null;
   const playerCeilingContactTransition = state.playerCeilingContactTransition ?? null;
+  const telemetryState = state.telemetryState ?? null;
+  const telemetryVisible: TelemetryVisibilityResolver = (typeId) =>
+    telemetryState === null || isWorldSessionTelemetryTypeVisible(telemetryState, typeId);
 
   return {
     modeText: `Mode: ${formatTouchDebugEditModeLabel(state.mode)}`,
@@ -2257,7 +2328,8 @@ export const buildDebugEditStatusStripModel = (
       playerJumpPressed,
       playerSupportContact,
       playerWallContact,
-      playerCeilingContact
+      playerCeilingContact,
+      telemetryVisible
     ),
     eventText: buildEventText(
       playerGroundedTransition,
@@ -2265,7 +2337,8 @@ export const buildDebugEditStatusStripModel = (
       playerRespawn,
       playerHostileContactEvent,
       playerWallContactTransition,
-      playerCeilingContactTransition
+      playerCeilingContactTransition,
+      telemetryVisible
     ),
     inspectText: buildInspectText(state),
     hoverText: buildHoveredTileText(state.hoveredTile, state.pinnedTile),
