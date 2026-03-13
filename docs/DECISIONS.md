@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-13: Hostile-slime locomotion telemetry tracks the nearest active slime
+
+- Decision: The debug HUD and hidden-HUD compact status strip now sample hostile-slime locomotion telemetry from the nearest active slime to the player, breaking distance ties by lower entity id.
+- Reason: Multiple slimes can stay active at once, and the locomotion telemetry slice needs one deterministic, player-relevant target without expanding into a multi-entity HUD list before broader hostile telemetry work lands.
+- Consequence: Future hostile-slime telemetry follow-ups should extend this nearest-slime tracking contract unless the same pass intentionally broadens the HUD to summarize multiple slimes at once.
+
 ### 2026-03-13: Hostile-slime contact damage stays nonlethal until the dedicated death slice lands
 
 - Decision: Hostile-slime player-contact hits now clamp at `1` health while still starting a fixed-step hostile-contact invulnerability window instead of triggering immediate death or respawn.

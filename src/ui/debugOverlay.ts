@@ -219,6 +219,12 @@ export interface DebugOverlayPlayerTelemetry {
   };
 }
 
+export interface DebugOverlayHostileSlimeTelemetry {
+  grounded: boolean;
+  facing: 'left' | 'right';
+  hopCooldownTicksRemaining: number;
+}
+
 export interface DebugOverlayPlayerIntentTelemetry {
   moveX: number;
   jumpHeld: boolean;
@@ -281,6 +287,7 @@ export interface DebugOverlayInspectState {
   pinned: DebugOverlayTileInspect | null;
   spawn: DebugOverlayPlayerSpawn | null;
   player: DebugOverlayPlayerTelemetry | null;
+  hostileSlime?: DebugOverlayHostileSlimeTelemetry | null;
   playerPlaceholderPoseLabel: string | null;
   playerCeilingBonkHoldActive: boolean | null;
   playerNearbyLightLevel?: number | null;
@@ -718,6 +725,20 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
   return `Combat: health:${healthText} | contactInvuln:${hostileContactInvulnerabilityText}`;
 };
 
+const formatHostileSlimeLine = (
+  hostileSlime: DebugOverlayHostileSlimeTelemetry | null
+): string | null => {
+  if (!hostileSlime) {
+    return null;
+  }
+
+  return (
+    `Slime: grounded:${formatGameplayFlag(hostileSlime.grounded)} | ` +
+    `facing:${hostileSlime.facing} | ` +
+    `hopCooldown:${formatInt(hostileSlime.hopCooldownTicksRemaining)}t`
+  );
+};
+
 const formatPlayerPlaceholderPoseLine = (playerPlaceholderPoseLabel: string | null): string =>
   playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : 'Pose: n/a';
 
@@ -1027,6 +1048,7 @@ export const formatDebugOverlayText = (
   const pinnedInspect = inspect?.pinned ?? null;
   const spawn = inspect?.spawn ?? null;
   const player = inspect?.player ?? null;
+  const hostileSlime = inspect?.hostileSlime ?? null;
   const playerPlaceholderPoseLabel = inspect?.playerPlaceholderPoseLabel ?? null;
   const playerCeilingBonkHoldActive = inspect?.playerCeilingBonkHoldActive ?? null;
   const playerNearbyLightLevel = inspect?.playerNearbyLightLevel ?? null;
@@ -1052,6 +1074,7 @@ export const formatDebugOverlayText = (
     formatPlayerPlaceholderPoseLine(playerPlaceholderPoseLabel),
     formatPlayerCeilingBonkHoldLine(playerCeilingBonkHoldActive),
     formatPlayerCombatLine(player),
+    formatHostileSlimeLine(hostileSlime),
     formatPlayerNearbyLightLine(
       playerNearbyLightLevel,
       playerNearbyLightFactor,
@@ -1071,7 +1094,7 @@ export const formatDebugOverlayText = (
     formatAnimatedChunkResidencyLine(stats),
     formatAnimatedChunkUvUploadLine(stats),
     formatLiquidStepLine(stats)
-  ];
+  ].filter((line): line is string => line !== null);
 
   if (!pointerInspect) {
     lines.push('Ptr: n/a');

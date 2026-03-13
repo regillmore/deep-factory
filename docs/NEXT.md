@@ -3,8 +3,8 @@
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
 517. Add a hostile-slime spawn-telemetry follow-up after hostile-slime spawn-and-presentation: show active slime count plus next spawn cooldown in the debug HUD or compact status strip, and add deterministic telemetry regressions.
-520. Add a hostile-slime locomotion-telemetry follow-up after hostile-slime jump-chase locomotion: show grounded hop cooldown plus chase-facing state in the debug HUD or compact status strip, and add deterministic telemetry regressions.
 522. Add a hostile-contact hit-event telemetry follow-up after hostile-contact combat telemetry: show the latest slime-contact damage result plus whether overlap was blocked by invulnerability in the debug HUD or compact status strip, and add deterministic event regressions.
+523. Add a hostile-slime proximity-telemetry follow-up after hostile-slime locomotion telemetry: show the nearest tracked slime world tile plus current velocity in the debug HUD or compact status strip, and add deterministic telemetry regressions.
 214. Add a dropped-item + hotbar inventory slice after entity scaffolding: stackable world pickups with proximity pickup rules, hotbar assignment and selection, and save/load snapshot regressions for item stacks.
 215. Add a placeable-workbench crafting slice after inventory basics: recipe registry for a minimal starter set, in-world station-range gating, shell or debug panel crafting actions, and recipe resolution regressions.
 221. Add a starter melee-weapon follow-up after hostile-slime jump-chase locomotion: fixed-step swing windup/active/recovery timing, slime hit detection plus knockback, and deterministic hit-cooldown regressions.

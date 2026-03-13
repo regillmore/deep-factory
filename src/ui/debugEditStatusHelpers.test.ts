@@ -1397,6 +1397,26 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('keeps hostile-slime grounded, facing, and hop-cooldown telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      hostileSlimeGrounded: false,
+      hostileSlimeFacing: 'right',
+      hostileSlimeHopCooldownTicksRemaining: 7,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe(
+      'SlimeGroundedNow: off\nSlimeFacingNow: right\nSlimeHopCooldownNow: 7t'
+    );
+    expect(model.eventText).toBeNull();
+  });
+
   it('keeps pose, live wall-contact, and live ceiling-contact telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',

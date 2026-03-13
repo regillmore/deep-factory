@@ -402,6 +402,22 @@ type StandalonePlayerRenderFrameStatusStripPlayerEventTelemetrySelectionOptions 
   debugOverlayVisible: boolean;
   eventTelemetry: StandalonePlayerRenderFrameStatusStripPlayerEventTelemetry;
 };
+type TrackedHostileSlimeRenderFrameDebugOverlayTelemetry = Pick<
+  DebugOverlayInspectState,
+  'hostileSlime'
+>;
+type TrackedHostileSlimeRenderFrameStatusStripTelemetry = Pick<
+  DebugEditStatusStripState,
+  'hostileSlimeGrounded' | 'hostileSlimeFacing' | 'hostileSlimeHopCooldownTicksRemaining'
+>;
+type TrackedHostileSlimeRenderFrameStatusStripTelemetrySelectionOptions = {
+  debugOverlayVisible: boolean;
+  telemetry: TrackedHostileSlimeRenderFrameStatusStripTelemetry;
+};
+type TrackedHostileSlimeRenderFrameTelemetrySnapshot = {
+  debugOverlay: TrackedHostileSlimeRenderFrameDebugOverlayTelemetry;
+  debugStatusStrip: TrackedHostileSlimeRenderFrameStatusStripTelemetry;
+};
 type StandalonePlayerRenderFrameTelemetrySnapshot = {
   standalonePlayerContacts: PlayerCollisionContacts | null;
   debugOverlay: StandalonePlayerRenderFrameDebugOverlayTelemetry;
@@ -1228,6 +1244,31 @@ const bootstrap = async (): Promise<void> => {
     }
     hostileSlimeEntityIds = nextHostileSlimeEntityIds;
     return activeHostileSlimes;
+  };
+  const resolveTrackedHostileSlimeState = (
+    playerState: PlayerState | null
+  ): HostileSlimeState | null => {
+    if (playerState === null) {
+      return null;
+    }
+
+    let trackedHostileSlime: { id: EntityId; state: HostileSlimeState } | null = null;
+    let trackedDistanceSquared = Number.POSITIVE_INFINITY;
+    for (const hostileSlime of getHostileSlimeEntityStates()) {
+      const dx = hostileSlime.state.position.x - playerState.position.x;
+      const dy = hostileSlime.state.position.y - playerState.position.y;
+      const distanceSquared = dx * dx + dy * dy;
+      if (
+        trackedHostileSlime === null ||
+        distanceSquared < trackedDistanceSquared ||
+        (distanceSquared === trackedDistanceSquared && hostileSlime.id < trackedHostileSlime.id)
+      ) {
+        trackedHostileSlime = hostileSlime;
+        trackedDistanceSquared = distanceSquared;
+      }
+    }
+
+    return trackedHostileSlime?.state ?? null;
   };
   const createCurrentWorldSessionShellProfile = () =>
     createWorldSessionShellProfileEnvelope({
@@ -3244,6 +3285,29 @@ const bootstrap = async (): Promise<void> => {
       }
     };
   };
+  const createTrackedHostileSlimeRenderFrameTelemetrySnapshot =
+    (): TrackedHostileSlimeRenderFrameTelemetrySnapshot => {
+      const trackedHostileSlimeState = resolveTrackedHostileSlimeState(getStandalonePlayerState());
+      return {
+        debugOverlay: {
+          hostileSlime:
+            trackedHostileSlimeState === null
+              ? null
+              : {
+                  grounded: trackedHostileSlimeState.grounded,
+                  facing: trackedHostileSlimeState.facing,
+                  hopCooldownTicksRemaining:
+                    trackedHostileSlimeState.hopCooldownTicksRemaining
+                }
+        },
+        debugStatusStrip: {
+          hostileSlimeGrounded: trackedHostileSlimeState?.grounded ?? null,
+          hostileSlimeFacing: trackedHostileSlimeState?.facing ?? null,
+          hostileSlimeHopCooldownTicksRemaining:
+            trackedHostileSlimeState?.hopCooldownTicksRemaining ?? null
+        }
+      };
+    };
   const createStandalonePlayerRenderFrameNearbyLightTelemetrySnapshot =
     (): StandalonePlayerRenderFrameNearbyLightTelemetry => {
       if (getStandalonePlayerState() === null) {
@@ -3332,6 +3396,18 @@ const bootstrap = async (): Promise<void> => {
           ...playerTelemetry,
           ...nearbyLightTelemetry
         };
+  const createClearedTrackedHostileSlimeRenderFrameStatusStripTelemetry =
+    (): TrackedHostileSlimeRenderFrameStatusStripTelemetry => ({
+      hostileSlimeGrounded: null,
+      hostileSlimeFacing: null,
+      hostileSlimeHopCooldownTicksRemaining: null
+    });
+  const selectTrackedHostileSlimeRenderFrameStatusStripTelemetry = ({
+    debugOverlayVisible,
+    telemetry
+  }: TrackedHostileSlimeRenderFrameStatusStripTelemetrySelectionOptions):
+    TrackedHostileSlimeRenderFrameStatusStripTelemetry =>
+    debugOverlayVisible ? createClearedTrackedHostileSlimeRenderFrameStatusStripTelemetry() : telemetry;
   const createClearedStandalonePlayerRenderFrameStatusStripPlayerEventTelemetry =
     (): StandalonePlayerRenderFrameStatusStripPlayerEventTelemetry => ({
       playerGroundedTransition: null,
@@ -3512,6 +3588,8 @@ const bootstrap = async (): Promise<void> => {
     const debugOverlaySpawn = resolvedPlayerSpawnTelemetry.debugOverlaySpawn;
     const standalonePlayerRenderFrameTelemetry =
       createStandalonePlayerRenderFrameTelemetrySnapshot(renderTimeMs);
+    const trackedHostileSlimeRenderFrameTelemetry =
+      createTrackedHostileSlimeRenderFrameTelemetrySnapshot();
     const standalonePlayerStatusStripPlayerTelemetry = standalonePlayerRenderFrameTelemetry.debugStatusStrip;
     const rendererEntityFrameStates = createRendererEntityFrameStates();
     renderer.resize();
@@ -3527,6 +3605,11 @@ const bootstrap = async (): Promise<void> => {
       playerTelemetry: standalonePlayerStatusStripPlayerTelemetry,
       nearbyLightTelemetry: standalonePlayerNearbyLightTelemetry
     });
+    const debugStatusStripHostileSlimeTelemetry =
+      selectTrackedHostileSlimeRenderFrameStatusStripTelemetry({
+        debugOverlayVisible,
+        telemetry: trackedHostileSlimeRenderFrameTelemetry.debugStatusStrip
+      });
     const debugStatusStripPlayerEventTelemetry =
       selectStandalonePlayerRenderFrameStatusStripPlayerEventTelemetry({
         debugOverlayVisible,
@@ -3626,6 +3709,10 @@ const bootstrap = async (): Promise<void> => {
       playerHealth: debugStatusStripPlayerTelemetry.playerHealth,
       playerHostileContactInvulnerabilitySecondsRemaining:
         debugStatusStripPlayerTelemetry.playerHostileContactInvulnerabilitySecondsRemaining,
+      hostileSlimeGrounded: debugStatusStripHostileSlimeTelemetry.hostileSlimeGrounded,
+      hostileSlimeFacing: debugStatusStripHostileSlimeTelemetry.hostileSlimeFacing,
+      hostileSlimeHopCooldownTicksRemaining:
+        debugStatusStripHostileSlimeTelemetry.hostileSlimeHopCooldownTicksRemaining,
       playerGrounded: debugStatusStripPlayerTelemetry.playerGrounded,
       playerFacing: debugStatusStripPlayerTelemetry.playerFacing,
       playerMoveX: debugStatusStripPlayerTelemetry.playerMoveX,
@@ -3647,6 +3734,7 @@ const bootstrap = async (): Promise<void> => {
       pinned: debugOverlayPinnedInspect,
       spawn: debugOverlaySpawn,
       player: standalonePlayerRenderFrameTelemetry.debugOverlay.player,
+      hostileSlime: trackedHostileSlimeRenderFrameTelemetry.debugOverlay.hostileSlime,
       playerPlaceholderPoseLabel:
         standalonePlayerRenderFrameTelemetry.debugOverlay.playerPlaceholderPoseLabel,
       playerCeilingBonkHoldActive:

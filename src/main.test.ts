@@ -3893,6 +3893,89 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
+  it('routes nearest hostile-slime locomotion telemetry through the overlay and hidden status strip', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    const farSlimeSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 14,
+      x: 232,
+      y: 0,
+      width: DEFAULT_HOSTILE_SLIME_WIDTH,
+      height: DEFAULT_HOSTILE_SLIME_HEIGHT,
+      supportTileId: 3
+    });
+    const nearSlimeSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 4,
+      x: 56,
+      y: 0,
+      width: DEFAULT_HOSTILE_SLIME_WIDTH,
+      height: DEFAULT_HOSTILE_SLIME_HEIGHT,
+      supportTileId: 3
+    });
+    let hostileSlimeSpawnQueryCount = 0;
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_HOSTILE_SLIME_WIDTH &&
+        search?.height === DEFAULT_HOSTILE_SLIME_HEIGHT
+      ) {
+        hostileSlimeSpawnQueryCount += 1;
+        return hostileSlimeSpawnQueryCount === 1 ? farSlimeSpawnPoint : nearSlimeSpawnPoint;
+      }
+
+      return testRuntime.playerSpawnPoint;
+    };
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
+
+    testRuntime.rendererStepHostileSlimeStateImpl = (state) => {
+      const slimeState = state as {
+        position?: { x?: number; y?: number };
+      };
+      if (slimeState.position?.x === farSlimeSpawnPoint.x) {
+        return {
+          position: { x: farSlimeSpawnPoint.x + 4, y: -2 },
+          velocity: { x: -20, y: 30 },
+          grounded: true,
+          facing: 'right' as const,
+          hopCooldownTicksRemaining: 19
+        };
+      }
+
+      if (slimeState.position?.x === nearSlimeSpawnPoint.x) {
+        return {
+          position: { x: nearSlimeSpawnPoint.x - 2, y: -3 },
+          velocity: { x: 35, y: -60 },
+          grounded: false,
+          facing: 'left' as const,
+          hopCooldownTicksRemaining: 7
+        };
+      }
+
+      return state;
+    };
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.hostileSlime).toEqual({
+      grounded: false,
+      facing: 'left',
+      hopCooldownTicksRemaining: 7
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeGrounded).toBe(false);
+    expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeFacing).toBe('left');
+    expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeHopCooldownTicksRemaining).toBe(7);
+  });
+
   it('persists hostile-slime contact damage with player invulnerability after fixed-step overlap', async () => {
     await import('./main');
     await flushBootstrap();

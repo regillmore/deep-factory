@@ -16,6 +16,7 @@ import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
 import type { PlayerRespawnEventKind } from '../world/playerRespawnEvent';
 import type { PlayerSpawnLiquidSafetyStatus } from '../world/playerSpawn';
+import type { HostileSlimeFacing } from '../world/hostileSlimeState';
 import type { PlayerFacing } from '../world/playerState';
 import type { PlayerWallContactTransitionKind } from '../world/playerWallContactTransition';
 import type { TileLiquidKind } from '../world/tileMetadata';
@@ -79,6 +80,9 @@ export interface DebugEditStatusStripState {
   playerCeilingBonkHoldActive?: boolean | null;
   playerHealth?: number | null;
   playerHostileContactInvulnerabilitySecondsRemaining?: number | null;
+  hostileSlimeGrounded?: boolean | null;
+  hostileSlimeFacing?: HostileSlimeFacing | null;
+  hostileSlimeHopCooldownTicksRemaining?: number | null;
   playerGrounded?: boolean | null;
   playerFacing?: PlayerFacing | null;
   playerMoveX?: -1 | 0 | 1 | null;
@@ -1376,6 +1380,34 @@ const formatLiveHostileContactInvulnerabilityText = (
   return `ContactInvulnNow: ${playerHostileContactInvulnerabilitySecondsRemaining.toFixed(2)}s`;
 };
 
+const formatLiveHostileSlimeGroundedText = (hostileSlimeGrounded: boolean | null): string | null => {
+  if (hostileSlimeGrounded === null) {
+    return null;
+  }
+
+  return `SlimeGroundedNow: ${formatGameplayFlag(hostileSlimeGrounded)}`;
+};
+
+const formatLiveHostileSlimeFacingText = (
+  hostileSlimeFacing: HostileSlimeFacing | null
+): string | null => {
+  if (hostileSlimeFacing === null) {
+    return null;
+  }
+
+  return `SlimeFacingNow: ${hostileSlimeFacing}`;
+};
+
+const formatLiveHostileSlimeHopCooldownText = (
+  hostileSlimeHopCooldownTicksRemaining: number | null
+): string | null => {
+  if (hostileSlimeHopCooldownTicksRemaining === null) {
+    return null;
+  }
+
+  return `SlimeHopCooldownNow: ${Math.max(0, Math.round(hostileSlimeHopCooldownTicksRemaining))}t`;
+};
+
 const formatLiveCeilingContactText = (
   playerCeilingContact: DebugEditStatusStripPlayerCeilingContactTelemetry | null
 ): string | null => {
@@ -1434,6 +1466,9 @@ const buildPlayerText = (
   playerCeilingBonkHoldActive: boolean | null,
   playerHealth: number | null,
   playerHostileContactInvulnerabilitySecondsRemaining: number | null,
+  hostileSlimeGrounded: boolean | null,
+  hostileSlimeFacing: HostileSlimeFacing | null,
+  hostileSlimeHopCooldownTicksRemaining: number | null,
   playerGrounded: boolean | null,
   playerFacing: PlayerFacing | null,
   playerMoveX: -1 | 0 | 1 | null,
@@ -1501,6 +1536,9 @@ const buildPlayerText = (
     formatLiveHostileContactInvulnerabilityText(
       playerHostileContactInvulnerabilitySecondsRemaining
     ),
+    formatLiveHostileSlimeGroundedText(hostileSlimeGrounded),
+    formatLiveHostileSlimeFacingText(hostileSlimeFacing),
+    formatLiveHostileSlimeHopCooldownText(hostileSlimeHopCooldownTicksRemaining),
     formatLiveGroundedText(playerGrounded),
     formatLiveFacingText(playerFacing),
     formatLiveMoveXText(playerMoveX),
@@ -2042,6 +2080,10 @@ export const buildDebugEditStatusStripModel = (
   const playerHealth = state.playerHealth ?? null;
   const playerHostileContactInvulnerabilitySecondsRemaining =
     state.playerHostileContactInvulnerabilitySecondsRemaining ?? null;
+  const hostileSlimeGrounded = state.hostileSlimeGrounded ?? null;
+  const hostileSlimeFacing = state.hostileSlimeFacing ?? null;
+  const hostileSlimeHopCooldownTicksRemaining =
+    state.hostileSlimeHopCooldownTicksRemaining ?? null;
   const playerGrounded = state.playerGrounded ?? null;
   const playerFacing = state.playerFacing ?? null;
   const playerMoveX = state.playerMoveX ?? null;
@@ -2108,6 +2150,9 @@ export const buildDebugEditStatusStripModel = (
       playerCeilingBonkHoldActive,
       playerHealth,
       playerHostileContactInvulnerabilitySecondsRemaining,
+      hostileSlimeGrounded,
+      hostileSlimeFacing,
+      hostileSlimeHopCooldownTicksRemaining,
       playerGrounded,
       playerFacing,
       playerMoveX,
