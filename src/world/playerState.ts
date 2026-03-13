@@ -24,7 +24,9 @@ export interface PlayerState {
   grounded: boolean;
   facing: PlayerFacing;
   health: number;
+  breathSecondsRemaining: number;
   lavaDamageTickSecondsRemaining: number;
+  drowningDamageTickSecondsRemaining: number;
   fallDamageRecoverySecondsRemaining: number;
 }
 
@@ -51,7 +53,9 @@ export interface CreatePlayerStateOptions {
   grounded?: boolean;
   facing?: PlayerFacing;
   health?: number;
+  breathSecondsRemaining?: number;
   lavaDamageTickSecondsRemaining?: number;
+  drowningDamageTickSecondsRemaining?: number;
   fallDamageRecoverySecondsRemaining?: number;
 }
 
@@ -71,9 +75,13 @@ export interface StepPlayerStateOptions extends StepPlayerStateWithGravityOption
   airAcceleration?: number;
   groundDeceleration?: number;
   jumpSpeed?: number;
+  maxBreathSeconds?: number;
+  breathRecoveryPerSecond?: number;
   waterBuoyancyAcceleration?: number;
   waterHorizontalDragPerSecond?: number;
   waterVerticalDragPerSecond?: number;
+  drowningDamagePerTick?: number;
+  drowningDamageTickIntervalSeconds?: number;
   lavaDamagePerTick?: number;
   lavaDamageTickIntervalSeconds?: number;
   fallDamageSafeLandingSpeed?: number;
@@ -91,9 +99,13 @@ export const DEFAULT_PLAYER_AIR_ACCELERATION = 900;
 export const DEFAULT_PLAYER_GROUND_DECELERATION = 2400;
 export const DEFAULT_PLAYER_JUMP_SPEED = 520;
 export const DEFAULT_PLAYER_MAX_HEALTH = 100;
+export const DEFAULT_PLAYER_MAX_BREATH_SECONDS = 8;
+export const DEFAULT_PLAYER_BREATH_RECOVERY_PER_SECOND = 4;
 export const DEFAULT_PLAYER_WATER_BUOYANCY_ACCELERATION = 2400;
 export const DEFAULT_PLAYER_WATER_HORIZONTAL_DRAG_PER_SECOND = 4;
 export const DEFAULT_PLAYER_WATER_VERTICAL_DRAG_PER_SECOND = 2;
+export const DEFAULT_PLAYER_DROWNING_DAMAGE_PER_TICK = 10;
+export const DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS = 1;
 export const DEFAULT_PLAYER_LAVA_DAMAGE_PER_TICK = 25;
 export const DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS = 0.5;
 export const DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED = 600;
@@ -102,10 +114,13 @@ export const DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS = 0.35;
 const DEFAULT_PLAYER_FACING: PlayerFacing = 'right';
 const COLLISION_CONTACT_PROBE_DISTANCE = 1;
 const AABB_INTERSECTION_EPSILON = 1e-6;
+const PLAYER_BREATH_SAMPLE_HEIGHT_RATIO = 0.25;
+const DROWNING_DAMAGE_MIN_HEALTH = 1;
 const FALL_DAMAGE_MIN_HEALTH = 1;
 
 interface PlayerLiquidOverlapState {
   waterSubmergedFraction: number;
+  waterBreathSubmergedFraction: number;
   lavaSubmergedFraction: number;
 }
 
@@ -146,10 +161,19 @@ const buildSize = (size: Partial<PlayerSize> | undefined): PlayerSize => ({
 const buildHealth = (health: number | undefined): number =>
   expectNonNegativeFiniteNumber(health ?? DEFAULT_PLAYER_MAX_HEALTH, 'health');
 
+const buildBreathSecondsRemaining = (value: number | undefined): number =>
+  expectNonNegativeFiniteNumber(value ?? DEFAULT_PLAYER_MAX_BREATH_SECONDS, 'breathSecondsRemaining');
+
 const buildLavaDamageTickSecondsRemaining = (value: number | undefined): number =>
   expectNonNegativeFiniteNumber(
     value ?? DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
     'lavaDamageTickSecondsRemaining'
+  );
+
+const buildDrowningDamageTickSecondsRemaining = (value: number | undefined): number =>
+  expectNonNegativeFiniteNumber(
+    value ?? DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
+    'drowningDamageTickSecondsRemaining'
   );
 
 const buildFallDamageRecoverySecondsRemaining = (value: number | undefined): number =>
@@ -190,6 +214,18 @@ const resolveFacingFromHorizontalVelocity = (
   }
 
   return currentFacing;
+};
+
+const getPlayerBreathSampleAabb = (state: PlayerState): WorldAabb => {
+  const aabb = getPlayerAabb(state);
+  const sampleHeight = state.size.height * PLAYER_BREATH_SAMPLE_HEIGHT_RATIO;
+
+  return {
+    minX: aabb.minX,
+    minY: aabb.minY,
+    maxX: aabb.maxX,
+    maxY: Math.min(aabb.maxY, aabb.minY + sampleHeight)
+  };
 };
 
 const buildSpawnSize = (aabb: WorldAabb): PlayerSize => ({
@@ -287,10 +323,15 @@ const samplePlayerLiquidOverlapState = (
   registry: TileMetadataRegistry
 ): PlayerLiquidOverlapState => {
   const aabb = getPlayerAabb(state);
+  const breathSampleAabb = getPlayerBreathSampleAabb(state);
   const playerArea = state.size.width * state.size.height;
+  const breathSampleArea =
+    Math.max(0, breathSampleAabb.maxX - breathSampleAabb.minX) *
+    Math.max(0, breathSampleAabb.maxY - breathSampleAabb.minY);
   if (playerArea <= 0) {
     return {
       waterSubmergedFraction: 0,
+      waterBreathSubmergedFraction: 0,
       lavaSubmergedFraction: 0
     };
   }
@@ -300,6 +341,7 @@ const samplePlayerLiquidOverlapState = (
   const minTileY = Math.floor(aabb.minY / TILE_SIZE);
   const maxTileY = Math.floor((aabb.maxY - AABB_INTERSECTION_EPSILON) / TILE_SIZE);
   let waterOverlapArea = 0;
+  let waterBreathOverlapArea = 0;
   let lavaOverlapArea = 0;
 
   for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
@@ -331,6 +373,17 @@ const samplePlayerLiquidOverlapState = (
       const overlapArea = overlapWidth * overlapHeight;
       if (liquidKind === 'water') {
         waterOverlapArea += overlapArea;
+        if (breathSampleArea > 0) {
+          const breathOverlapWidth =
+            Math.min(breathSampleAabb.maxX, tileWorldMaxX) -
+            Math.max(breathSampleAabb.minX, tileWorldMinX);
+          const breathOverlapHeight =
+            Math.min(breathSampleAabb.maxY, tileWorldMaxY) -
+            Math.max(breathSampleAabb.minY, liquidWorldMinY);
+          if (breathOverlapWidth > 0 && breathOverlapHeight > 0) {
+            waterBreathOverlapArea += breathOverlapWidth * breathOverlapHeight;
+          }
+        }
       } else {
         lavaOverlapArea += overlapArea;
       }
@@ -339,7 +392,86 @@ const samplePlayerLiquidOverlapState = (
 
   return {
     waterSubmergedFraction: clampNumber(waterOverlapArea / playerArea, 0, 1),
+    waterBreathSubmergedFraction:
+      breathSampleArea <= 0 ? 0 : clampNumber(waterBreathOverlapArea / breathSampleArea, 0, 1),
     lavaSubmergedFraction: clampNumber(lavaOverlapArea / playerArea, 0, 1)
+  };
+};
+
+const recoverBreathSecondsRemaining = (
+  breathSecondsRemaining: number,
+  fixedDtSeconds: number,
+  maxBreathSeconds: number,
+  breathRecoveryPerSecond: number
+): number =>
+  Math.min(maxBreathSeconds, breathSecondsRemaining + breathRecoveryPerSecond * fixedDtSeconds);
+
+const resolveBreathStepState = ({
+  health,
+  breathSecondsRemaining,
+  drowningDamageTickSecondsRemaining,
+  waterBreathSubmergedFraction,
+  fixedDtSeconds,
+  maxBreathSeconds,
+  breathRecoveryPerSecond,
+  drowningDamagePerTick,
+  drowningDamageTickIntervalSeconds
+}: {
+  health: number;
+  breathSecondsRemaining: number;
+  drowningDamageTickSecondsRemaining: number;
+  waterBreathSubmergedFraction: number;
+  fixedDtSeconds: number;
+  maxBreathSeconds: number;
+  breathRecoveryPerSecond: number;
+  drowningDamagePerTick: number;
+  drowningDamageTickIntervalSeconds: number;
+}): Pick<PlayerState, 'health' | 'breathSecondsRemaining' | 'drowningDamageTickSecondsRemaining'> => {
+  if (waterBreathSubmergedFraction <= 0) {
+    return {
+      health,
+      breathSecondsRemaining: recoverBreathSecondsRemaining(
+        breathSecondsRemaining,
+        fixedDtSeconds,
+        maxBreathSeconds,
+        breathRecoveryPerSecond
+      ),
+      drowningDamageTickSecondsRemaining: drowningDamageTickIntervalSeconds
+    };
+  }
+
+  const remainingBreathSeconds = Math.max(0, breathSecondsRemaining - fixedDtSeconds);
+  if (remainingBreathSeconds > 0) {
+    return {
+      health,
+      breathSecondsRemaining: remainingBreathSeconds,
+      drowningDamageTickSecondsRemaining: drowningDamageTickIntervalSeconds
+    };
+  }
+
+  let remainingHealth = health;
+  let remainingTickSeconds =
+    breathSecondsRemaining > 0
+      ? drowningDamageTickIntervalSeconds
+      : drowningDamageTickSecondsRemaining;
+  let remainingDt = Math.max(0, fixedDtSeconds - Math.max(0, breathSecondsRemaining));
+
+  while (remainingDt > 0 && remainingHealth > DROWNING_DAMAGE_MIN_HEALTH) {
+    if (remainingTickSeconds > remainingDt) {
+      remainingTickSeconds -= remainingDt;
+      remainingDt = 0;
+      continue;
+    }
+
+    remainingDt -= remainingTickSeconds;
+    remainingHealth = Math.max(DROWNING_DAMAGE_MIN_HEALTH, remainingHealth - drowningDamagePerTick);
+    remainingTickSeconds = drowningDamageTickIntervalSeconds;
+  }
+
+  return {
+    health: remainingHealth,
+    breathSecondsRemaining: 0,
+    drowningDamageTickSecondsRemaining: remainingTickSeconds
   };
 };
 
@@ -441,8 +573,12 @@ export const createPlayerState = (options: CreatePlayerStateOptions = {}): Playe
     grounded: (options.grounded ?? false) && velocity.y === 0,
     facing,
     health: buildHealth(options.health),
+    breathSecondsRemaining: buildBreathSecondsRemaining(options.breathSecondsRemaining),
     lavaDamageTickSecondsRemaining: buildLavaDamageTickSecondsRemaining(
       options.lavaDamageTickSecondsRemaining
+    ),
+    drowningDamageTickSecondsRemaining: buildDrowningDamageTickSecondsRemaining(
+      options.drowningDamageTickSecondsRemaining
     ),
     fallDamageRecoverySecondsRemaining: buildFallDamageRecoverySecondsRemaining(
       options.fallDamageRecoverySecondsRemaining
@@ -480,7 +616,9 @@ export const clonePlayerState = (state: PlayerState): PlayerState => ({
   grounded: state.grounded,
   facing: state.facing,
   health: state.health,
+  breathSecondsRemaining: state.breathSecondsRemaining,
   lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
+  drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
   fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining
 });
 
@@ -497,7 +635,9 @@ export const respawnPlayerStateAtSpawnIfEmbeddedInSolid = (
   return createPlayerStateFromSpawn(spawn, {
     facing: state.facing,
     health: state.health,
+    breathSecondsRemaining: state.breathSecondsRemaining,
     lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
+    drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
     fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining
   });
 };
@@ -554,7 +694,9 @@ export const integratePlayerState = (state: PlayerState, fixedDtSeconds: number)
     grounded: state.grounded && state.velocity.y === 0,
     facing,
     health: state.health,
+    breathSecondsRemaining: state.breathSecondsRemaining,
     lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
+    drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
     fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining
   };
 };
@@ -590,7 +732,9 @@ export const movePlayerStateWithCollisions = (
     grounded: groundSupport !== null,
     facing,
     health: state.health,
+    breathSecondsRemaining: state.breathSecondsRemaining,
     lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
+    drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
     fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining
   };
 };
@@ -630,6 +774,14 @@ export const stepPlayerState = (
     'options.groundDeceleration'
   );
   const jumpSpeed = expectNonNegativeFiniteNumber(options.jumpSpeed ?? DEFAULT_PLAYER_JUMP_SPEED, 'options.jumpSpeed');
+  const maxBreathSeconds = expectPositiveFiniteNumber(
+    options.maxBreathSeconds ?? DEFAULT_PLAYER_MAX_BREATH_SECONDS,
+    'options.maxBreathSeconds'
+  );
+  const breathRecoveryPerSecond = expectNonNegativeFiniteNumber(
+    options.breathRecoveryPerSecond ?? DEFAULT_PLAYER_BREATH_RECOVERY_PER_SECOND,
+    'options.breathRecoveryPerSecond'
+  );
   const waterBuoyancyAcceleration = expectNonNegativeFiniteNumber(
     options.waterBuoyancyAcceleration ?? DEFAULT_PLAYER_WATER_BUOYANCY_ACCELERATION,
     'options.waterBuoyancyAcceleration'
@@ -641,6 +793,14 @@ export const stepPlayerState = (
   const waterVerticalDragPerSecond = expectNonNegativeFiniteNumber(
     options.waterVerticalDragPerSecond ?? DEFAULT_PLAYER_WATER_VERTICAL_DRAG_PER_SECOND,
     'options.waterVerticalDragPerSecond'
+  );
+  const drowningDamagePerTick = expectNonNegativeFiniteNumber(
+    options.drowningDamagePerTick ?? DEFAULT_PLAYER_DROWNING_DAMAGE_PER_TICK,
+    'options.drowningDamagePerTick'
+  );
+  const drowningDamageTickIntervalSeconds = expectPositiveFiniteNumber(
+    options.drowningDamageTickIntervalSeconds ?? DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
+    'options.drowningDamageTickIntervalSeconds'
   );
   const lavaDamagePerTick = expectNonNegativeFiniteNumber(
     options.lavaDamagePerTick ?? DEFAULT_PLAYER_LAVA_DAMAGE_PER_TICK,
@@ -706,6 +866,17 @@ export const stepPlayerState = (
     lavaDamagePerTick,
     lavaDamageTickIntervalSeconds
   );
+  const breathStepState = resolveBreathStepState({
+    health: lavaDamageStepState.health,
+    breathSecondsRemaining: state.breathSecondsRemaining,
+    drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
+    waterBreathSubmergedFraction: liquidOverlapState.waterBreathSubmergedFraction,
+    fixedDtSeconds: dt,
+    maxBreathSeconds,
+    breathRecoveryPerSecond,
+    drowningDamagePerTick,
+    drowningDamageTickIntervalSeconds
+  });
 
   const steppedPlayerState = movePlayerStateWithCollisions(
     world,
@@ -724,8 +895,10 @@ export const stepPlayerState = (
       },
       grounded,
       facing: state.facing,
-      health: lavaDamageStepState.health,
+      health: breathStepState.health,
+      breathSecondsRemaining: breathStepState.breathSecondsRemaining,
       lavaDamageTickSecondsRemaining: lavaDamageStepState.lavaDamageTickSecondsRemaining,
+      drowningDamageTickSecondsRemaining: breathStepState.drowningDamageTickSecondsRemaining,
       fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining
     },
     dt,

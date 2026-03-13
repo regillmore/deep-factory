@@ -1,5 +1,10 @@
 import type { CameraFollowOffset } from './core/cameraFollow';
-import { clonePlayerState, type PlayerState } from './world/playerState';
+import {
+  clonePlayerState,
+  DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
+  DEFAULT_PLAYER_MAX_BREATH_SECONDS,
+  type PlayerState
+} from './world/playerState';
 import { TileWorld, type TileWorldSnapshot } from './world/world';
 
 export const WORLD_SAVE_ENVELOPE_KIND = 'deep-factory.world-save';
@@ -126,9 +131,17 @@ const normalizePlayerState = (value: unknown, label: string): PlayerState => {
     grounded: expectBoolean(value.grounded, `${label}.grounded`),
     facing,
     health: expectNonNegativeFiniteNumber(value.health, `${label}.health`),
+    breathSecondsRemaining: expectNonNegativeFiniteNumber(
+      value.breathSecondsRemaining ?? DEFAULT_PLAYER_MAX_BREATH_SECONDS,
+      `${label}.breathSecondsRemaining`
+    ),
     lavaDamageTickSecondsRemaining: expectNonNegativeFiniteNumber(
       value.lavaDamageTickSecondsRemaining,
       `${label}.lavaDamageTickSecondsRemaining`
+    ),
+    drowningDamageTickSecondsRemaining: expectNonNegativeFiniteNumber(
+      value.drowningDamageTickSecondsRemaining ?? DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
+      `${label}.drowningDamageTickSecondsRemaining`
     ),
     fallDamageRecoverySecondsRemaining: expectNonNegativeFiniteNumber(
       value.fallDamageRecoverySecondsRemaining ?? 0,

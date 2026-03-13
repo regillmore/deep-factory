@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { CHUNK_SIZE } from './world/constants';
 import { encodeResidentChunkSnapshot } from './world/chunkSnapshot';
-import { createPlayerState } from './world/playerState';
+import {
+  createPlayerState,
+  DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
+  DEFAULT_PLAYER_MAX_BREATH_SECONDS
+} from './world/playerState';
 import { TileWorld } from './world/world';
 import {
   createDefaultWorldSaveEnvelopeMigrationMetadata,
@@ -23,7 +27,9 @@ describe('createWorldSaveEnvelope', () => {
       grounded: false,
       facing: 'left',
       health: 75,
+      breathSecondsRemaining: 5.5,
       lavaDamageTickSecondsRemaining: 0.25,
+      drowningDamageTickSecondsRemaining: 0.3,
       fallDamageRecoverySecondsRemaining: 0.2
     });
     const cameraFollowOffset = { x: 24, y: -12 };
@@ -81,7 +87,7 @@ describe('decodeWorldSaveEnvelope', () => {
     expect(decoded.worldSnapshot).not.toBe(envelope.worldSnapshot);
   });
 
-  it('round-trips post-fall standalone-player health and recovery state through save decode', () => {
+  it('round-trips standalone-player breath, health, and recovery state through save decode', () => {
     const world = new TileWorld(0);
     expect(world.setTile(1, 0, 3)).toBe(true);
     const standalonePlayerState = createPlayerState({
@@ -89,6 +95,8 @@ describe('decodeWorldSaveEnvelope', () => {
       velocity: { x: 0, y: 0 },
       grounded: true,
       health: 37,
+      breathSecondsRemaining: 1.5,
+      drowningDamageTickSecondsRemaining: 0.4,
       fallDamageRecoverySecondsRemaining: 0.2
     });
 
@@ -107,7 +115,7 @@ describe('decodeWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerState).toEqual(standalonePlayerState);
   });
 
-  it('defaults missing fall-recovery state on older standalone-player save payloads', () => {
+  it('defaults missing breath and fall-recovery state on older standalone-player save payloads', () => {
     const world = new TileWorld(0);
     const standalonePlayerState = createPlayerState({
       position: { x: 72, y: 96 },
@@ -115,10 +123,15 @@ describe('decodeWorldSaveEnvelope', () => {
       grounded: false,
       facing: 'left',
       health: 62,
+      breathSecondsRemaining: 3,
       lavaDamageTickSecondsRemaining: 0.5
     });
-    const { fallDamageRecoverySecondsRemaining: _omitted, ...legacyStandalonePlayerState } =
-      standalonePlayerState;
+    const {
+      breathSecondsRemaining: _omittedBreath,
+      drowningDamageTickSecondsRemaining: _omittedDrowningTick,
+      fallDamageRecoverySecondsRemaining: _omittedFallRecovery,
+      ...legacyStandalonePlayerState
+    } = standalonePlayerState;
 
     const decoded = decodeWorldSaveEnvelope({
       kind: WORLD_SAVE_ENVELOPE_KIND,
@@ -133,6 +146,8 @@ describe('decodeWorldSaveEnvelope', () => {
 
     expect(decoded.session.standalonePlayerState).toEqual({
       ...standalonePlayerState,
+      breathSecondsRemaining: DEFAULT_PLAYER_MAX_BREATH_SECONDS,
+      drowningDamageTickSecondsRemaining: DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
       fallDamageRecoverySecondsRemaining: 0
     });
   });

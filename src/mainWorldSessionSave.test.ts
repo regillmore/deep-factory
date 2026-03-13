@@ -18,7 +18,9 @@ describe('createWorldSessionSaveEnvelope', () => {
       grounded: false,
       facing: 'left',
       health: 62,
+      breathSecondsRemaining: 2.5,
       lavaDamageTickSecondsRemaining: 0.5,
+      drowningDamageTickSecondsRemaining: 0.15,
       fallDamageRecoverySecondsRemaining: 0.2
     });
     const cameraFollowOffset = { x: 18, y: -12 };

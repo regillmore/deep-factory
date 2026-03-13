@@ -6,6 +6,9 @@ import {
   createPlayerState,
   createPlayerStateFromSpawn,
   DEFAULT_PLAYER_AIR_ACCELERATION,
+  DEFAULT_PLAYER_BREATH_RECOVERY_PER_SECOND,
+  DEFAULT_PLAYER_DROWNING_DAMAGE_PER_TICK,
+  DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
   DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
   DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED,
   DEFAULT_PLAYER_FALL_DAMAGE_SPEED_PER_HEALTH,
@@ -16,6 +19,7 @@ import {
   DEFAULT_PLAYER_JUMP_SPEED,
   DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
   DEFAULT_PLAYER_LAVA_DAMAGE_PER_TICK,
+  DEFAULT_PLAYER_MAX_BREATH_SECONDS,
   DEFAULT_PLAYER_MAX_HEALTH,
   DEFAULT_PLAYER_MAX_FALL_SPEED,
   DEFAULT_PLAYER_MAX_WALK_SPEED,
@@ -51,12 +55,16 @@ const setTiles = (
 
 const withDefaultPlayerVitals = <T extends object>(state: T): T & {
   health: number;
+  breathSecondsRemaining: number;
   lavaDamageTickSecondsRemaining: number;
+  drowningDamageTickSecondsRemaining: number;
   fallDamageRecoverySecondsRemaining: number;
 } => ({
   ...state,
   health: DEFAULT_PLAYER_MAX_HEALTH,
+  breathSecondsRemaining: DEFAULT_PLAYER_MAX_BREATH_SECONDS,
   lavaDamageTickSecondsRemaining: DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
+  drowningDamageTickSecondsRemaining: DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
   fallDamageRecoverySecondsRemaining: 0
 });
 
@@ -182,7 +190,9 @@ describe('playerState', () => {
       grounded: true,
       facing: 'left',
       health: 75,
+      breathSecondsRemaining: 3.5,
       lavaDamageTickSecondsRemaining: 0.125,
+      drowningDamageTickSecondsRemaining: 0.4,
       fallDamageRecoverySecondsRemaining: 0.2
     });
 
@@ -818,13 +828,16 @@ describe('playerState', () => {
       }
     );
 
-    expect(stepped).toEqual(withDefaultPlayerVitals({
-      position: { x: 8, y: -2.5 },
-      velocity: { x: 0, y: -10 },
-      size: { width: 12, height: 12 },
-      grounded: false,
-      facing: 'right'
-    }));
+    expect(stepped).toEqual({
+      ...withDefaultPlayerVitals({
+        position: { x: 8, y: -2.5 },
+        velocity: { x: 0, y: -10 },
+        size: { width: 12, height: 12 },
+        grounded: false,
+        facing: 'right'
+      }),
+      breathSecondsRemaining: 7.75
+    });
   });
 
   it('applies water drag to horizontal and vertical velocity while submerged', () => {
@@ -872,6 +885,228 @@ describe('playerState', () => {
     expect(stepped.fallDamageRecoverySecondsRemaining).toBe(0);
   });
 
+  it('drains breath only when the player head sample is underwater', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -4, 2, 2, 0);
+    world.setTile(0, 0, WATER_TILE_ID);
+
+    const feetOnlySubmerged = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 8 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        breathSecondsRemaining: 4
+      }),
+      0.5,
+      {},
+      {
+        gravityAcceleration: 0,
+        maxFallSpeed: 200,
+        maxWalkSpeed: 40,
+        groundAcceleration: 0,
+        airAcceleration: 0,
+        groundDeceleration: 0,
+        jumpSpeed: 0,
+        maxBreathSeconds: 8,
+        breathRecoveryPerSecond: 2,
+        waterBuoyancyAcceleration: 0,
+        waterHorizontalDragPerSecond: 0,
+        waterVerticalDragPerSecond: 0,
+        drowningDamagePerTick: 5,
+        drowningDamageTickIntervalSeconds: 0.5,
+        lavaDamagePerTick: 0,
+        lavaDamageTickIntervalSeconds: 0.5
+      }
+    );
+
+    expect(feetOnlySubmerged.breathSecondsRemaining).toBe(5);
+    expect(feetOnlySubmerged.drowningDamageTickSecondsRemaining).toBe(0.5);
+
+    world.setTile(0, -1, WATER_TILE_ID);
+
+    const headSubmerged = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 8 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        breathSecondsRemaining: 4
+      }),
+      0.5,
+      {},
+      {
+        gravityAcceleration: 0,
+        maxFallSpeed: 200,
+        maxWalkSpeed: 40,
+        groundAcceleration: 0,
+        airAcceleration: 0,
+        groundDeceleration: 0,
+        jumpSpeed: 0,
+        maxBreathSeconds: 8,
+        breathRecoveryPerSecond: 2,
+        waterBuoyancyAcceleration: 0,
+        waterHorizontalDragPerSecond: 0,
+        waterVerticalDragPerSecond: 0,
+        drowningDamagePerTick: 5,
+        drowningDamageTickIntervalSeconds: 0.5,
+        lavaDamagePerTick: 0,
+        lavaDamageTickIntervalSeconds: 0.5
+      }
+    );
+
+    expect(headSubmerged.breathSecondsRemaining).toBe(3.5);
+    expect(headSubmerged.drowningDamageTickSecondsRemaining).toBe(0.5);
+  });
+
+  it('applies nonlethal drowning damage on a fixed cadence after breath runs out', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -4, 2, 2, 0);
+    world.setTile(0, -1, WATER_TILE_ID);
+
+    const drainedBreath = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 8 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        health: 12,
+        breathSecondsRemaining: 0.25,
+        drowningDamageTickSecondsRemaining: 0.5
+      }),
+      0.5,
+      {},
+      {
+        gravityAcceleration: 0,
+        maxFallSpeed: 200,
+        maxWalkSpeed: 40,
+        groundAcceleration: 0,
+        airAcceleration: 0,
+        groundDeceleration: 0,
+        jumpSpeed: 0,
+        maxBreathSeconds: 8,
+        breathRecoveryPerSecond: 2,
+        waterBuoyancyAcceleration: 0,
+        waterHorizontalDragPerSecond: 0,
+        waterVerticalDragPerSecond: 0,
+        drowningDamagePerTick: 5,
+        drowningDamageTickIntervalSeconds: 0.5,
+        lavaDamagePerTick: 0,
+        lavaDamageTickIntervalSeconds: 0.5
+      }
+    );
+
+    expect(drainedBreath.health).toBe(12);
+    expect(drainedBreath.breathSecondsRemaining).toBe(0);
+    expect(drainedBreath.drowningDamageTickSecondsRemaining).toBe(0.25);
+
+    const firstDrownTick = stepPlayerState(
+      world,
+      drainedBreath,
+      0.25,
+      {},
+      {
+        gravityAcceleration: 0,
+        maxFallSpeed: 200,
+        maxWalkSpeed: 40,
+        groundAcceleration: 0,
+        airAcceleration: 0,
+        groundDeceleration: 0,
+        jumpSpeed: 0,
+        maxBreathSeconds: 8,
+        breathRecoveryPerSecond: 2,
+        waterBuoyancyAcceleration: 0,
+        waterHorizontalDragPerSecond: 0,
+        waterVerticalDragPerSecond: 0,
+        drowningDamagePerTick: 5,
+        drowningDamageTickIntervalSeconds: 0.5,
+        lavaDamagePerTick: 0,
+        lavaDamageTickIntervalSeconds: 0.5
+      }
+    );
+
+    expect(firstDrownTick.health).toBe(7);
+    expect(firstDrownTick.drowningDamageTickSecondsRemaining).toBe(0.5);
+
+    const clampedDrownTick = stepPlayerState(
+      world,
+      {
+        ...firstDrownTick,
+        health: 3
+      },
+      0.5,
+      {},
+      {
+        gravityAcceleration: 0,
+        maxFallSpeed: 200,
+        maxWalkSpeed: 40,
+        groundAcceleration: 0,
+        airAcceleration: 0,
+        groundDeceleration: 0,
+        jumpSpeed: 0,
+        maxBreathSeconds: 8,
+        breathRecoveryPerSecond: 2,
+        waterBuoyancyAcceleration: 0,
+        waterHorizontalDragPerSecond: 0,
+        waterVerticalDragPerSecond: 0,
+        drowningDamagePerTick: 5,
+        drowningDamageTickIntervalSeconds: 0.5,
+        lavaDamagePerTick: 0,
+        lavaDamageTickIntervalSeconds: 0.5
+      }
+    );
+
+    expect(clampedDrownTick.health).toBe(1);
+    expect(clampedDrownTick.breathSecondsRemaining).toBe(0);
+    expect(clampedDrownTick.drowningDamageTickSecondsRemaining).toBe(0.5);
+  });
+
+  it('recovers breath and resets drowning cadence once the player surfaces', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -4, 2, 2, 0);
+
+    const surfaced = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 8 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        health: 47,
+        breathSecondsRemaining: 0,
+        drowningDamageTickSecondsRemaining: 0.1
+      }),
+      0.5,
+      {},
+      {
+        gravityAcceleration: 0,
+        maxFallSpeed: 200,
+        maxWalkSpeed: 40,
+        groundAcceleration: 0,
+        airAcceleration: 0,
+        groundDeceleration: 0,
+        jumpSpeed: 0,
+        maxBreathSeconds: DEFAULT_PLAYER_MAX_BREATH_SECONDS,
+        breathRecoveryPerSecond: DEFAULT_PLAYER_BREATH_RECOVERY_PER_SECOND,
+        waterBuoyancyAcceleration: 0,
+        waterHorizontalDragPerSecond: 0,
+        waterVerticalDragPerSecond: 0,
+        drowningDamagePerTick: DEFAULT_PLAYER_DROWNING_DAMAGE_PER_TICK,
+        drowningDamageTickIntervalSeconds: DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
+        lavaDamagePerTick: 0,
+        lavaDamageTickIntervalSeconds: 0.5
+      }
+    );
+
+    expect(surfaced.health).toBe(47);
+    expect(surfaced.breathSecondsRemaining).toBe(2);
+    expect(surfaced.drowningDamageTickSecondsRemaining).toBe(
+      DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS
+    );
+  });
+
   it('applies periodic lava contact damage inside the shared fixed-step player update', () => {
     const world = new TileWorld(0);
 
@@ -912,7 +1147,9 @@ describe('playerState', () => {
       grounded: false,
       facing: 'right',
       health: 40,
+      breathSecondsRemaining: DEFAULT_PLAYER_MAX_BREATH_SECONDS,
       lavaDamageTickSecondsRemaining: 0.25,
+      drowningDamageTickSecondsRemaining: DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
       fallDamageRecoverySecondsRemaining: 0
     });
   });
@@ -930,9 +1167,19 @@ describe('playerState', () => {
     ).toThrowError(/health must be a non-negative finite number/);
     expect(() =>
       createPlayerState({
+        breathSecondsRemaining: -0.1
+      })
+    ).toThrowError(/breathSecondsRemaining must be a non-negative finite number/);
+    expect(() =>
+      createPlayerState({
         lavaDamageTickSecondsRemaining: -0.1
       })
     ).toThrowError(/lavaDamageTickSecondsRemaining must be a non-negative finite number/);
+    expect(() =>
+      createPlayerState({
+        drowningDamageTickSecondsRemaining: -0.1
+      })
+    ).toThrowError(/drowningDamageTickSecondsRemaining must be a non-negative finite number/);
     expect(() =>
       createPlayerState({
         fallDamageRecoverySecondsRemaining: -0.1
@@ -987,6 +1234,16 @@ describe('playerState', () => {
     ).toThrowError(/options\.jumpSpeed must be a non-negative finite number/);
     expect(() =>
       stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        maxBreathSeconds: 0
+      })
+    ).toThrowError(/options\.maxBreathSeconds must be a positive finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        breathRecoveryPerSecond: -DEFAULT_PLAYER_BREATH_RECOVERY_PER_SECOND
+      })
+    ).toThrowError(/options\.breathRecoveryPerSecond must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
         waterBuoyancyAcceleration: -DEFAULT_PLAYER_WATER_BUOYANCY_ACCELERATION
       })
     ).toThrowError(/options\.waterBuoyancyAcceleration must be a non-negative finite number/);
@@ -1000,6 +1257,16 @@ describe('playerState', () => {
         waterVerticalDragPerSecond: -DEFAULT_PLAYER_WATER_VERTICAL_DRAG_PER_SECOND
       })
     ).toThrowError(/options\.waterVerticalDragPerSecond must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        drowningDamagePerTick: -DEFAULT_PLAYER_DROWNING_DAMAGE_PER_TICK
+      })
+    ).toThrowError(/options\.drowningDamagePerTick must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        drowningDamageTickIntervalSeconds: 0
+      })
+    ).toThrowError(/options\.drowningDamageTickIntervalSeconds must be a positive finite number/);
     expect(() =>
       stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
         lavaDamagePerTick: -DEFAULT_PLAYER_LAVA_DAMAGE_PER_TICK

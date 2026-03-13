@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-13: Water survival uses head-region overlap and stays nonlethal until death work lands
+
+- Decision: Breath now drains only when water overlaps the player's top head-region sample, and drowning damage clamps at `1` health while using its own fixed-step damage cadence instead of triggering an immediate death or respawn.
+- Reason: Body-overlap water checks would drain breath while wading, and the current zero-health recovery plumbing still reports lethal environmental deaths as lava-specific respawns, so lethal drowning would couple this survival slice to unfinished death semantics.
+- Consequence: Future water or breath systems should treat head-region submersion as the breath trigger and keep drowning nonlethal unless the same pass intentionally updates both the breath rule and the shared death/respawn handling together.
+
 ### 2026-03-13: Fall damage stays nonlethal until a dedicated death slice replaces that rule
 
 - Decision: Hard-landing damage now clamps at `1` health and uses a short fall-recovery cooldown instead of driving immediate death or respawn.
