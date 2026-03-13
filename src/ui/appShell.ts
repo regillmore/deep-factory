@@ -33,9 +33,15 @@ export type AppShellScreen = 'boot' | 'main-menu' | 'in-world';
 
 export type AppShellMenuSectionTone = 'default' | 'accent' | 'warning';
 
+export interface AppShellMenuSectionMetadataBadge {
+  text: string;
+  tone?: AppShellMenuSectionTone;
+}
+
 export interface AppShellMenuSectionMetadataRow {
   label: string;
   value: string;
+  badge?: AppShellMenuSectionMetadataBadge;
 }
 
 export interface AppShellMenuSectionDetailGroup {
@@ -1125,6 +1131,18 @@ const resolvePausedMainMenuWorldSaveSummaryLine = (
 const resolvePausedMainMenuWorldSaveBrowserResumeValue = (
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null
 ): string => (savedWorldStatus === null ? 'Available' : 'Missing');
+const createPausedMainMenuWorldSaveBrowserResumeBadge = (
+  savedWorldStatus: PausedMainMenuSavedWorldStatus | null
+): AppShellMenuSectionMetadataBadge =>
+  savedWorldStatus === null
+    ? {
+        text: 'Saved',
+        tone: 'accent'
+      }
+    : {
+        text: 'Missing',
+        tone: 'warning'
+      };
 const resolvePausedMainMenuWorldSaveSavedAgainByValue = (
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null
 ): string => {
@@ -1218,7 +1236,8 @@ const createPausedMainMenuWorldSaveSummaryRows = (
 ): readonly AppShellMenuSectionMetadataRow[] => [
   {
     label: 'Browser Resume',
-    value: resolvePausedMainMenuWorldSaveBrowserResumeValue(savedWorldStatus)
+    value: resolvePausedMainMenuWorldSaveBrowserResumeValue(savedWorldStatus),
+    badge: createPausedMainMenuWorldSaveBrowserResumeBadge(savedWorldStatus)
   },
   {
     label: 'Saved Again By',
@@ -2626,7 +2645,20 @@ const createMenuSectionMetadataElement = (
 
       const value = document.createElement('dd');
       value.className = 'app-shell__menu-section-metadata-value';
-      value.textContent = row.value;
+
+      const valueText = document.createElement('span');
+      valueText.className = 'app-shell__menu-section-metadata-value-text';
+      valueText.textContent = row.value;
+      value.append(valueText);
+
+      if (row.badge !== undefined) {
+        const badge = document.createElement('span');
+        badge.className = 'app-shell__menu-section-metadata-status-badge';
+        badge.dataset.tone = row.badge.tone ?? 'default';
+        badge.textContent = row.badge.text;
+        value.append(badge);
+      }
+
       rowElement.append(value);
 
       return rowElement;

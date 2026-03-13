@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Add compact browser-resume status badges to paused-menu `World Save` summary rows.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so the paused `World Save` summary metadata now renders an inline `Saved` or `Missing` badge on the `Browser Resume` row while keeping the existing row copy and shared metadata layout intact, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with world-save-summary-status-badge DOM, state, and CSS regressions, removed completed task `498` from [docs/NEXT.md](docs/NEXT.md), added replacement task `499`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a compact busy badge to paused-menu `Import World Save`.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so the paused `Import World Save` action now adds a compact accent `Busy` heading badge while its local picker wait state is active, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with world-save-busy-badge DOM and CSS regressions, removed completed task `496` from [docs/NEXT.md](docs/NEXT.md), added replacement task `498`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

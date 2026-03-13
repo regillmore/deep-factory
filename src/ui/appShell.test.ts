@@ -505,8 +505,23 @@ const readMetadataRows = (
 ): Array<{ label: string; value: string }> =>
   element?.children.map((row) => ({
     label: row.children[0]?.textContent ?? '',
-    value: row.children[1]?.textContent ?? ''
+    value:
+      findElementByClass(row, 'app-shell__menu-section-metadata-value-text')?.textContent ??
+      row.children[1]?.textContent ??
+      ''
   })) ?? [];
+
+const readMetadataRowBadges = (
+  element: FakeElement | null
+): Array<{ label: string; badge: string | null; tone: string | null }> =>
+  element?.children.map((row) => {
+    const badge = findElementByClass(row, 'app-shell__menu-section-metadata-status-badge');
+    return {
+      label: row.children[0]?.textContent ?? '',
+      badge: badge?.textContent ?? null,
+      tone: badge?.dataset.tone ?? null
+    };
+  }) ?? [];
 
 const readDetailGroups = (
   element: FakeElement | null
@@ -779,6 +794,88 @@ describe('paused main-menu dashboard layout', () => {
         (button) => findElementByClass(button, 'app-shell__section-action-affordance-badge') === null
       )
     ).toBe(true);
+  });
+
+  it('shows compact browser-resume status badges on paused World Save summary rows', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const initialRoot = container.children[0] ?? null;
+    const initialMetadata =
+      initialRoot === null ? null : findElementByClass(initialRoot, 'app-shell__world-save-metadata');
+
+    expect(readMetadataRowBadges(initialMetadata)).toEqual([
+      {
+        label: 'Browser Resume',
+        badge: 'Saved',
+        tone: 'accent'
+      },
+      {
+        label: 'Saved Again By',
+        badge: null,
+        tone: null
+      },
+      {
+        label: 'Last Export',
+        badge: null,
+        tone: null
+      },
+      {
+        label: 'Last Import',
+        badge: null,
+        tone: null
+      },
+      {
+        label: 'Last Clear',
+        badge: null,
+        tone: null
+      }
+    ]);
+
+    shell.setState(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        'cleared'
+      )
+    );
+
+    const warningRoot = container.children[0] ?? null;
+    const warningMetadata =
+      warningRoot === null ? null : findElementByClass(warningRoot, 'app-shell__world-save-metadata');
+
+    expect(readMetadataRowBadges(warningMetadata)).toEqual([
+      {
+        label: 'Browser Resume',
+        badge: 'Missing',
+        tone: 'warning'
+      },
+      {
+        label: 'Saved Again By',
+        badge: null,
+        tone: null
+      },
+      {
+        label: 'Last Export',
+        badge: null,
+        tone: null
+      },
+      {
+        label: 'Last Import',
+        badge: null,
+        tone: null
+      },
+      {
+        label: 'Last Clear',
+        badge: null,
+        tone: null
+      }
+    ]);
   });
 
   it('shows compact warning badges on paused Danger Zone action cards', () => {
@@ -1661,6 +1758,14 @@ describe('paused main-menu dashboard layout styling', () => {
     );
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__menu-section-status-badge[data-tone='warning']"
+    );
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-metadata-value-text');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-metadata-status-badge');
+    expect(APP_SHELL_STYLE_SOURCE).toContain(
+      ".app-shell__menu-section-metadata-status-badge[data-tone='accent']"
+    );
+    expect(APP_SHELL_STYLE_SOURCE).toContain(
+      ".app-shell__menu-section-metadata-status-badge[data-tone='warning']"
     );
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-detail-groups');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-detail-group');
@@ -3831,7 +3936,11 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
       metadataRows: [
         {
           label: 'Browser Resume',
-          value: 'Available'
+          value: 'Available',
+          badge: {
+            text: 'Saved',
+            tone: 'accent'
+          }
         },
         {
           label: 'Saved Again By',
@@ -3920,7 +4029,11 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
       metadataRows: [
         {
           label: 'Browser Resume',
-          value: 'Missing'
+          value: 'Missing',
+          badge: {
+            text: 'Missing',
+            tone: 'warning'
+          }
         },
         {
           label: 'Saved Again By',
@@ -3969,7 +4082,11 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
       metadataRows: [
         {
           label: 'Browser Resume',
-          value: 'Missing'
+          value: 'Missing',
+          badge: {
+            text: 'Missing',
+            tone: 'warning'
+          }
         },
         {
           label: 'Saved Again By',

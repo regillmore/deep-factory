@@ -6,7 +6,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 483. Add compact persistence badges to expanded paused-menu `Shell Hotkeys` editor metadata after task `477` so browser-saved versus session-only remap scope stays scannable beside inline result copy, with shell-editor-persistence-badge regressions.
 497. Add compact saved-vs-session-only result badges to inline paused-menu `Shell Hotkeys` remap feedback after task `483` so remap outcome scope stays scannable after repeated edits, with shell-editor-remap-result-badge regressions.
-498. Add compact browser-resume status badges to paused-menu `World Save` summary rows so saved versus missing-resume state stays scannable above the section actions, with world-save-summary-status-badge regressions.
+499. Add compact outcome badges to paused-menu `World Save` summary rows so latest export, import, and clear result states stay scannable above the section actions, with world-save-summary-outcome-badge regressions.
 
 ## Optimize liquids
 
