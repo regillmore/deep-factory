@@ -255,6 +255,41 @@ describe('TileWorld', () => {
     expect(world.getActiveLiquidChunkBounds()).toBeNull();
   });
 
+  it('reports last-step sideways candidate-band bounds separately from awake-liquid bounds', () => {
+    const world = new TileWorld(0);
+    const worldTileX = 4;
+    const worldTileY = -20;
+
+    world.ensureChunk(-1, -1);
+    world.ensureChunk(0, -1);
+    world.ensureChunk(1, -1);
+    expect(world.setTile(worldTileX - 1, worldTileY, 1)).toBe(true);
+    expect(world.setTile(worldTileX + 1, worldTileY, 1)).toBe(true);
+    expect(world.setTile(worldTileX, worldTileY + 1, 1)).toBe(true);
+    expect(world.setTile(worldTileX, worldTileY, WATER_TILE_ID)).toBe(true);
+
+    expect(world.getActiveLiquidChunkBounds()).toEqual({
+      minChunkX: 0,
+      minChunkY: -1,
+      maxChunkX: 0,
+      maxChunkY: -1
+    });
+
+    expect(world.stepLiquidSimulation()).toBe(false);
+    expect(world.getLastSidewaysLiquidCandidateChunkBounds()).toEqual({
+      minChunkX: -1,
+      minChunkY: -1,
+      maxChunkX: 1,
+      maxChunkY: -1
+    });
+    expect(world.getActiveLiquidChunkBounds()).toEqual({
+      minChunkX: 0,
+      minChunkY: -1,
+      maxChunkX: 0,
+      maxChunkY: -1
+    });
+  });
+
   it('records phase-owned liquid scan coverage and transfer counts for the last fixed step', () => {
     const world = new TileWorld(0);
     const worldTileX = 4;
@@ -280,6 +315,7 @@ describe('TileWorld', () => {
     expect(world.getActiveLiquidChunkCount()).toBe(0);
     expect(world.getActiveLiquidChunkBounds()).toBeNull();
     expect(world.stepLiquidSimulation()).toBe(false);
+    expect(world.getLastSidewaysLiquidCandidateChunkBounds()).toBeNull();
     expect(world.getLastLiquidSimulationStats()).toEqual({
       downwardActiveChunksScanned: 0,
       sidewaysCandidateChunksScanned: 0,

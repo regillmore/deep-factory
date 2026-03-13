@@ -181,6 +181,29 @@ const parseChunkCoordFromKey = (key: string): ChunkCoord => {
   return { x, y };
 };
 
+const resolveChunkBoundsFromKeys = (chunkKeys: Iterable<string>): ChunkBounds | null => {
+  let bounds: ChunkBounds | null = null;
+  for (const key of chunkKeys) {
+    const coord = parseChunkCoordFromKey(key);
+    if (!bounds) {
+      bounds = {
+        minChunkX: coord.x,
+        minChunkY: coord.y,
+        maxChunkX: coord.x,
+        maxChunkY: coord.y
+      };
+      continue;
+    }
+
+    if (coord.x < bounds.minChunkX) bounds.minChunkX = coord.x;
+    if (coord.y < bounds.minChunkY) bounds.minChunkY = coord.y;
+    if (coord.x > bounds.maxChunkX) bounds.maxChunkX = coord.x;
+    if (coord.y > bounds.maxChunkY) bounds.maxChunkY = coord.y;
+  }
+
+  return bounds;
+};
+
 const createChunkLiquidLevels = (): Uint8Array => new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
 const createChunkLightLevels = (): Uint8Array => new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
 const ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK = CHUNK_SIZE >= 32 ? 0xffffffff >>> 0 : ((1 << CHUNK_SIZE) - 1) >>> 0;
@@ -371,6 +394,7 @@ export class TileWorld {
   private liquidChunkQuietStepCounts = new Map<string, number>();
   private liquidSimulationTick = 0;
   private lastLiquidSimulationStats = createLiquidSimulationStats();
+  private lastSidewaysLiquidCandidateChunkBounds: ChunkBounds | null = null;
 
   private getResidentChunk(chunkX: number, chunkY: number): Chunk | null {
     return this.chunks.get(chunkKey(chunkX, chunkY)) ?? null;
@@ -847,6 +871,7 @@ export class TileWorld {
     const stats = createLiquidSimulationStats();
     if (this.activeLiquidChunkKeys.size === 0) {
       this.lastLiquidSimulationStats = stats;
+      this.lastSidewaysLiquidCandidateChunkBounds = null;
       this.liquidSimulationTick = (this.liquidSimulationTick + 1) >>> 0;
       return false;
     }
@@ -914,6 +939,7 @@ export class TileWorld {
       this.chunks,
       this.activeLiquidChunkKeys
     );
+    this.lastSidewaysLiquidCandidateChunkBounds = resolveChunkBoundsFromKeys(sidewaysCandidateChunkKeys);
     const horizontalPairParity = this.liquidSimulationTick & 1;
     for (const [key, chunk] of this.chunks) {
       if (!sidewaysCandidateChunkKeys.has(key)) {
@@ -1020,6 +1046,12 @@ export class TileWorld {
 
   getLastLiquidSimulationStats(): LiquidSimulationStats {
     return { ...this.lastLiquidSimulationStats };
+  }
+
+  getLastSidewaysLiquidCandidateChunkBounds(): ChunkBounds | null {
+    return this.lastSidewaysLiquidCandidateChunkBounds === null
+      ? null
+      : { ...this.lastSidewaysLiquidCandidateChunkBounds };
   }
 
   getLightLevel(worldTileX: number, worldTileY: number): number {
@@ -1253,6 +1285,7 @@ export class TileWorld {
     );
     this.liquidSimulationTick = expectLiquidSimulationTick(snapshot.liquidSimulationTick);
     this.lastLiquidSimulationStats = createLiquidSimulationStats();
+    this.lastSidewaysLiquidCandidateChunkBounds = null;
   }
 
   getChunks(): IterableIterator<Chunk> {
@@ -1272,26 +1305,7 @@ export class TileWorld {
   }
 
   getActiveLiquidChunkBounds(): ChunkBounds | null {
-    let bounds: ChunkBounds | null = null;
-    for (const key of this.activeLiquidChunkKeys) {
-      const coord = parseChunkCoordFromKey(key);
-      if (!bounds) {
-        bounds = {
-          minChunkX: coord.x,
-          minChunkY: coord.y,
-          maxChunkX: coord.x,
-          maxChunkY: coord.y
-        };
-        continue;
-      }
-
-      if (coord.x < bounds.minChunkX) bounds.minChunkX = coord.x;
-      if (coord.y < bounds.minChunkY) bounds.minChunkY = coord.y;
-      if (coord.x > bounds.maxChunkX) bounds.maxChunkX = coord.x;
-      if (coord.y > bounds.maxChunkY) bounds.maxChunkY = coord.y;
-    }
-
-    return bounds;
+    return resolveChunkBoundsFromKeys(this.activeLiquidChunkKeys);
   }
 
   pruneChunksOutside(bounds: ChunkBounds): number {

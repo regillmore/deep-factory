@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-13: Sideways candidate-band bounds should stay separate from current awake-liquid bounds
+
+- Decision: `TileWorld`, renderer telemetry, and the debug HUD now expose last-step sideways candidate-band chunk bounds separately from the current awake active-liquid chunk bounds.
+- Reason: The sideways band describes where equalization coverage expanded for the last fixed step, while awake-liquid bounds describe only chunks that are currently awake, so wake testing needs both envelopes without conflating scan coverage and awake-state ownership.
+- Consequence: Future liquid telemetry or HUD work should keep candidate-band bounds as last-step scan-coverage telemetry and leave awake or sleeping bounds as current-state telemetry instead of substituting one envelope for another.
+
 ### 2026-03-12: Paused-menu async section actions should self-debounce locally
 
 - Decision: Paused-menu `Import World Save`, `Import Shell Profile`, and `Apply Shell Profile` now keep their waiting state on the owning section button instead of locking the full overlay or relying on runtime-only guards.

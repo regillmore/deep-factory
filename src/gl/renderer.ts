@@ -127,6 +127,10 @@ export interface RenderTelemetry {
   residentActiveLiquidMinChunkY: number | null;
   residentActiveLiquidMaxChunkX: number | null;
   residentActiveLiquidMaxChunkY: number | null;
+  liquidStepSidewaysCandidateMinChunkX: number | null;
+  liquidStepSidewaysCandidateMinChunkY: number | null;
+  liquidStepSidewaysCandidateMaxChunkX: number | null;
+  liquidStepSidewaysCandidateMaxChunkY: number | null;
   liquidStepDownwardActiveChunksScanned: number;
   liquidStepSidewaysCandidateChunksScanned: number;
   liquidStepSidewaysPairsTested: number;
@@ -208,6 +212,10 @@ export class Renderer {
     residentActiveLiquidMinChunkY: null,
     residentActiveLiquidMaxChunkX: null,
     residentActiveLiquidMaxChunkY: null,
+    liquidStepSidewaysCandidateMinChunkX: null,
+    liquidStepSidewaysCandidateMinChunkY: null,
+    liquidStepSidewaysCandidateMaxChunkX: null,
+    liquidStepSidewaysCandidateMaxChunkY: null,
     liquidStepDownwardActiveChunksScanned: 0,
     liquidStepSidewaysCandidateChunksScanned: 0,
     liquidStepSidewaysPairsTested: 0,
@@ -703,6 +711,11 @@ export class Renderer {
   private updateLiquidStepTelemetry(): void {
     this.updateActiveLiquidTelemetry();
     const stats = this.world.getLastLiquidSimulationStats();
+    const sidewaysCandidateBounds = this.world.getLastSidewaysLiquidCandidateChunkBounds();
+    this.telemetry.liquidStepSidewaysCandidateMinChunkX = sidewaysCandidateBounds?.minChunkX ?? null;
+    this.telemetry.liquidStepSidewaysCandidateMinChunkY = sidewaysCandidateBounds?.minChunkY ?? null;
+    this.telemetry.liquidStepSidewaysCandidateMaxChunkX = sidewaysCandidateBounds?.maxChunkX ?? null;
+    this.telemetry.liquidStepSidewaysCandidateMaxChunkY = sidewaysCandidateBounds?.maxChunkY ?? null;
     this.telemetry.liquidStepDownwardActiveChunksScanned = stats.downwardActiveChunksScanned;
     this.telemetry.liquidStepSidewaysCandidateChunksScanned = stats.sidewaysCandidateChunksScanned;
     this.telemetry.liquidStepSidewaysPairsTested = stats.sidewaysPairsTested;

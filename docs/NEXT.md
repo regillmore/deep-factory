@@ -4,10 +4,10 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Optimize liquids
 
-404. Expose sideways candidate-band chunk bounds in renderer telemetry and the debug HUD after task `382` lands so chunk-sleep wake testing can compare neighbor-band expansion against active-liquid bounds.
 408. Expose sleeping-liquid chunk bounds in renderer telemetry and the debug HUD so wake testing can localize settled pools after awake bounds disappear.
 504. Expose the sideways-tested liquid-pair count in the compact hidden-HUD status strip after task `383` lands so wake testing can distinguish broad candidate scans from actual transfer counts without opening the full debug HUD.
 505. Expose the downward active-chunk scan count in the compact hidden-HUD status strip after task `383` lands so wake testing can compare downward coverage against split transfer counts without opening the full debug HUD.
+506. Expose sideways candidate-band chunk bounds in the compact hidden-HUD status strip after task `404` lands so wake testing can compare band expansion without opening the full debug HUD.
 
 ## Refine, Extract, Refactor, Restructure
 

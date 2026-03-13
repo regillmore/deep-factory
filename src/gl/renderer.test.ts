@@ -350,6 +350,39 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.residentActiveLiquidMaxChunkY).toBe(-1);
   });
 
+  it('tracks last-step sideways candidate-band bounds in renderer telemetry', async () => {
+    const renderer = new Renderer(createMockCanvas(createMockGl()));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const worldTileX = 4;
+    const worldTileY = -20;
+
+    expect(renderer.setTile(-4, worldTileY, 1)).toBe(true);
+    expect(renderer.setTile(CHUNK_SIZE + 4, worldTileY, 1)).toBe(true);
+    expect(renderer.setTile(worldTileX - 1, worldTileY, 1)).toBe(true);
+    expect(renderer.setTile(worldTileX + 1, worldTileY, 1)).toBe(true);
+    expect(renderer.setTile(worldTileX, worldTileY + 1, 1)).toBe(true);
+    expect(renderer.setTile(worldTileX, worldTileY, WATER_TILE_ID)).toBe(true);
+
+    expect(renderer.stepLiquidSimulation()).toBe(false);
+    expect(renderer.telemetry.residentActiveLiquidMinChunkX).toBe(0);
+    expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBe(-1);
+    expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBe(0);
+    expect(renderer.telemetry.residentActiveLiquidMaxChunkY).toBe(-1);
+    expect(renderer.telemetry.liquidStepSidewaysCandidateMinChunkX).toBe(-1);
+    expect(renderer.telemetry.liquidStepSidewaysCandidateMinChunkY).toBe(-1);
+    expect(renderer.telemetry.liquidStepSidewaysCandidateMaxChunkX).toBe(1);
+    expect(renderer.telemetry.liquidStepSidewaysCandidateMaxChunkY).toBe(-1);
+  });
+
   it('drops active-liquid telemetry after a settled pool sleeps and raises it again when a nearby edit wakes it', async () => {
     const renderer = new Renderer(createMockCanvas(createMockGl()));
     const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;

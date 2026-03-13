@@ -31,6 +31,10 @@ const baseStats: DebugOverlayStats = {
   residentActiveLiquidMinChunkY: null,
   residentActiveLiquidMaxChunkX: null,
   residentActiveLiquidMaxChunkY: null,
+  liquidStepSidewaysCandidateMinChunkX: null,
+  liquidStepSidewaysCandidateMinChunkY: null,
+  liquidStepSidewaysCandidateMaxChunkX: null,
+  liquidStepSidewaysCandidateMaxChunkY: null,
   liquidStepDownwardActiveChunksScanned: 0,
   liquidStepSidewaysCandidateChunksScanned: 0,
   liquidStepSidewaysPairsTested: 0,
@@ -67,7 +71,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nAnimMesh: chunks:0 | quads:0 | nonLiquid:0 | liquid:0');
     expect(text).toContain('\nAnimUV: uploads:0 | quads:0 | nonLiquid:0 | liquid:0 | bytes:0');
     expect(text).toContain(
-      '\nLiquidStep: awake:0 | sleeping:0 | bounds:none | phase:none | downChunks:0 | sideChunks:0 | sidePairs:0 | downTransfers:0 | sideTransfers:0'
+      '\nLiquidStep: awake:0 | sleeping:0 | bounds:none | sideBounds:none | phase:none | downChunks:0 | sideChunks:0 | sidePairs:0 | downTransfers:0 | sideTransfers:0'
     );
     expect(text).toContain('LightDirty: 20');
     expect(text).toContain('Draws: 4/256 (OK)');
@@ -85,6 +89,10 @@ describe('formatDebugOverlayText', () => {
         residentActiveLiquidMinChunkY: -2,
         residentActiveLiquidMaxChunkX: 4,
         residentActiveLiquidMaxChunkY: 5,
+        liquidStepSidewaysCandidateMinChunkX: -2,
+        liquidStepSidewaysCandidateMinChunkY: -2,
+        liquidStepSidewaysCandidateMaxChunkX: 5,
+        liquidStepSidewaysCandidateMaxChunkY: 5,
         liquidStepDownwardActiveChunksScanned: 80,
         liquidStepSidewaysCandidateChunksScanned: 82,
         liquidStepSidewaysPairsTested: 40960,
@@ -96,7 +104,7 @@ describe('formatDebugOverlayText', () => {
     );
 
     expect(text).toContain(
-      '\nLiquidStep: awake:3 | sleeping:2 | bounds:-1,-2..4,5 | phase:both | downChunks:80 | sideChunks:82 | sidePairs:40960 | downTransfers:2 | sideTransfers:3'
+      '\nLiquidStep: awake:3 | sleeping:2 | bounds:-1,-2..4,5 | sideBounds:-2,-2..5,5 | phase:both | downChunks:80 | sideChunks:82 | sidePairs:40960 | downTransfers:2 | sideTransfers:3'
     );
   });
 
@@ -116,7 +124,7 @@ describe('formatDebugOverlayText', () => {
     );
 
     expect(text).toContain(
-      '\nLiquidStep: awake:0 | sleeping:0 | bounds:none | phase:sideways | downChunks:1 | sideChunks:3 | sidePairs:1504 | downTransfers:0 | sideTransfers:1'
+      '\nLiquidStep: awake:0 | sleeping:0 | bounds:none | sideBounds:none | phase:sideways | downChunks:1 | sideChunks:3 | sidePairs:1504 | downTransfers:0 | sideTransfers:1'
     );
   });
 
