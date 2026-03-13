@@ -2,11 +2,6 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-## App shell
-
-497. Add compact saved-vs-session-only result badges to inline paused-menu `Shell Hotkeys` remap feedback after task `483` so remap outcome scope stays scannable after repeated edits, with shell-editor-remap-result-badge regressions.
-501. Add compact saved-vs-session-only result badges to inline paused-menu `Apply Shell Profile` feedback after task `497` so apply persistence scope stays scannable after repeated shell-profile commits, with shell-profile-apply-result-badge regressions.
-
 ## Optimize liquids
 
 383. Expose split downward-vs-sideways liquid-step counters in the compact hidden-HUD status strip after task `382` lands so mixed-device wake testing can stay off the full debug HUD.
@@ -46,3 +41,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 493. Add a starter armor equipment slice after hostile-slime combat (`213`), inventory basics (`214`), and save/load (`19-21`): three equip slots with shell or debug-panel equip or unequip actions, fixed-step defense reduction on slime contact, and snapshot regressions for equipped gear.
 495. Add a water-breathing survival slice after entity scaffolding (`17-18`): fixed-step breath meter in water, drowning damage plus air-recovery rules, and save/load regressions for breath plus health state.
 500. Add a starter yoyo combat slice after hostile-slime combat (`213`) and inventory basics (`214`): a non-stackable yoyo hotbar slot, mixed-device aimed hold-to-extend plus release-return rules, fixed-step tether reach and retract timing, slime hit detection, and deterministic tether regressions.
+502. Add a fishing utility slice after inventory basics (`214`) and save/load (`19-21`): a non-stackable fishing rod hotbar slot, mixed-device water casting plus bite timing, fish-item catches into inventory, and deterministic bite/catch regressions.
+503. Add an acorn tree-growth slice after inventory basics (`214`) and save/load (`19-21`): stackable acorn hotbar slots, mixed-device grass-only planting, fixed-step sapling growth into small tree tiles under deterministic windows, and snapshot regressions for planted saplings or trees plus remaining acorn stacks.

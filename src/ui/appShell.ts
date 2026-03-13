@@ -949,6 +949,14 @@ const resolvePausedMainMenuShellActionKeybindingSummaryLine = (
   shellActionKeybindingsDefaultedFromPersistedState
     ? DEFAULTED_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE
     : DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_SUMMARY_LINE;
+const PAUSED_MAIN_MENU_SAVED_RESULT_BADGE = {
+  text: 'Saved',
+  tone: 'accent'
+} as const satisfies AppShellMenuSectionMetadataBadge;
+const PAUSED_MAIN_MENU_SESSION_ONLY_RESULT_BADGE = {
+  text: 'Session only',
+  tone: 'warning'
+} as const satisfies AppShellMenuSectionMetadataBadge;
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS = [
   {
     label: 'Keys',
@@ -957,10 +965,7 @@ const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS = [
   {
     label: 'Persistence',
     value: 'Browser saved on change',
-    badge: {
-      text: 'Saved',
-      tone: 'accent'
-    }
+    badge: PAUSED_MAIN_MENU_SAVED_RESULT_BADGE
   }
 ] as const satisfies readonly AppShellMenuSectionMetadataRow[];
 const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS = [
@@ -971,10 +976,7 @@ const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS
   {
     label: 'Persistence',
     value: 'Current session only until reload or reset',
-    badge: {
-      text: 'Session only',
-      tone: 'warning'
-    }
+    badge: PAUSED_MAIN_MENU_SESSION_ONLY_RESULT_BADGE
   }
 ] as const satisfies readonly AppShellMenuSectionMetadataRow[];
 export const createPausedMainMenuShellActionKeybindingEditorMetadataRows = (
@@ -995,11 +997,16 @@ export const resolvePausedMainMenuShellActionKeybindingRemapEditorStatus = ({
   currentKey: string;
   nextKey: string;
   changed: boolean;
-}): { tone: 'accent' | 'warning'; text: string } => {
+}): {
+  tone: 'accent' | 'warning';
+  text: string;
+  badge?: AppShellMenuSectionMetadataBadge;
+} => {
   switch (result.status) {
     case 'saved':
       return {
         tone: 'accent',
+        badge: PAUSED_MAIN_MENU_SAVED_RESULT_BADGE,
         text: changed
           ? `${actionLabel} now uses ${nextKey}, and the current shell hotkey set was saved.`
           : `${actionLabel} stayed on ${nextKey}, and the current shell hotkey set was saved.`
@@ -1007,6 +1014,7 @@ export const resolvePausedMainMenuShellActionKeybindingRemapEditorStatus = ({
     case 'session-only':
       return {
         tone: 'warning',
+        badge: PAUSED_MAIN_MENU_SESSION_ONLY_RESULT_BADGE,
         text: changed
           ? `${actionLabel} now uses ${nextKey} for this paused session only because browser storage was not updated.`
           : `${actionLabel} stayed on ${nextKey} for this paused session only because browser storage was not updated.`
@@ -2030,6 +2038,7 @@ type AppShellShellActionKeybindingEditorStatusTone = 'accent' | 'warning';
 interface AppShellShellActionKeybindingEditorStatus {
   tone: AppShellShellActionKeybindingEditorStatusTone;
   text: string;
+  badge?: AppShellMenuSectionMetadataBadge;
 }
 
 interface AppShellOptions {
@@ -2354,12 +2363,17 @@ const resolvePausedMainMenuShellProfileApplyPersistenceFailedText = (
 
 export const resolvePausedMainMenuApplyShellProfileEditorStatus = (
   importResult: PausedMainMenuShellProfileImportResult
-): { tone: 'accent' | 'warning'; text: string } => {
+): {
+  tone: 'accent' | 'warning';
+  text: string;
+  badge?: AppShellMenuSectionMetadataBadge;
+} => {
   switch (importResult.status) {
     case 'applied': {
       const fileName = resolvePausedMainMenuResultFileNameValue(importResult.fileName);
       return {
         tone: 'accent',
+        badge: PAUSED_MAIN_MENU_SAVED_RESULT_BADGE,
         text: resolvePausedMainMenuShellProfileApplySuccessText(
           fileName,
           importResult.changeCategory
@@ -2371,6 +2385,7 @@ export const resolvePausedMainMenuApplyShellProfileEditorStatus = (
       const reason = resolvePausedMainMenuResultReasonValue(importResult.reason);
       return {
         tone: 'warning',
+        badge: PAUSED_MAIN_MENU_SESSION_ONLY_RESULT_BADGE,
         text: resolvePausedMainMenuShellProfileApplyPersistenceFailedText(
           fileName,
           importResult.changeCategory,
@@ -3857,12 +3872,27 @@ export class AppShell {
     this.currentShellActionKeybindingEditorStatus = status;
     this.shellActionKeybindingEditorStatus.hidden = status === null;
     this.shellActionKeybindingEditorStatus.textContent = status?.text ?? '';
+    this.shellActionKeybindingEditorStatus.replaceChildren();
     if (status === null) {
       delete this.shellActionKeybindingEditorStatus.dataset.tone;
       return;
     }
 
     this.shellActionKeybindingEditorStatus.dataset.tone = status.tone;
+    const children: HTMLElement[] = [];
+    if (status.badge !== undefined) {
+      const badge = document.createElement('span');
+      badge.className = 'app-shell__shell-keybindings-status-badge';
+      badge.dataset.tone = status.badge.tone ?? status.tone;
+      badge.textContent = status.badge.text;
+      children.push(badge);
+    }
+
+    const text = document.createElement('span');
+    text.className = 'app-shell__shell-keybindings-status-text';
+    text.textContent = status.text;
+    children.push(text);
+    this.shellActionKeybindingEditorStatus.replaceChildren(...children);
   }
 
   private setPausedMainMenuImportWorldSaveBusy(busy: boolean): void {

@@ -780,8 +780,16 @@ canvas {
 
 .app-shell__shell-keybindings-status {
   margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   font-size: 0.84rem;
   line-height: 1.45;
+}
+
+.app-shell__shell-keybindings-status-text {
+  min-width: 0;
 }
 
 .app-shell__shell-keybindings-status[data-tone='accent'] {
@@ -942,7 +950,8 @@ canvas {
   min-width: 0;
 }
 
-.app-shell__menu-section-metadata-status-badge {
+.app-shell__menu-section-metadata-status-badge,
+.app-shell__shell-keybindings-status-badge {
   display: inline-flex;
   align-items: center;
   padding: 3px 7px;
@@ -959,7 +968,8 @@ canvas {
   white-space: nowrap;
 }
 
-.app-shell__menu-section-metadata-status-badge[data-tone='accent'] {
+.app-shell__menu-section-metadata-status-badge[data-tone='accent'],
+.app-shell__shell-keybindings-status-badge[data-tone='accent'] {
   border-color: rgba(131, 219, 242, 0.22);
   background:
     linear-gradient(180deg, rgba(16, 30, 41, 0.94), rgba(11, 18, 25, 0.9)),
@@ -967,7 +977,8 @@ canvas {
   color: #d8f3ff;
 }
 
-.app-shell__menu-section-metadata-status-badge[data-tone='warning'] {
+.app-shell__menu-section-metadata-status-badge[data-tone='warning'],
+.app-shell__shell-keybindings-status-badge[data-tone='warning'] {
   border-color: rgba(230, 165, 92, 0.3);
   background:
     linear-gradient(180deg, rgba(41, 28, 20, 0.96), rgba(25, 17, 12, 0.9)),

@@ -454,6 +454,23 @@ class FakeElement {
     }
   }
 
+  dispatch(type: string, eventInit: Record<string, unknown> = {}): void {
+    if (this.disabled) {
+      return;
+    }
+
+    const event = {
+      type,
+      currentTarget: this,
+      target: this,
+      preventDefault: () => {},
+      ...eventInit
+    };
+    for (const listener of this.listeners.get(type) ?? []) {
+      listener(event);
+    }
+  }
+
   blur(): void {
     if (this.ownerDocument?.activeElement === this) {
       this.ownerDocument.activeElement = null;
@@ -574,6 +591,22 @@ const readMetadataRowBadges = (
       tone: badge?.dataset.tone ?? null
     };
   }) ?? [];
+
+const readShellKeybindingEditorStatus = (
+  element: FakeElement | null
+): { text: string; tone: string | null; badge: string | null; badgeTone: string | null } => {
+  const badge = findElementByClass(element ?? new FakeElement('div'), 'app-shell__shell-keybindings-status-badge');
+  const text = findElementByClass(
+    element ?? new FakeElement('div'),
+    'app-shell__shell-keybindings-status-text'
+  );
+  return {
+    text: text?.textContent ?? element?.textContent ?? '',
+    tone: element?.dataset.tone ?? null,
+    badge: badge?.textContent ?? null,
+    badgeTone: badge?.dataset.tone ?? null
+  };
+};
 
 const readDetailGroups = (
   element: FakeElement | null
@@ -1265,16 +1298,59 @@ describe('paused main-menu dashboard layout', () => {
       'app-shell__shell-keybindings-button',
       'Apply Shell Profile'
     );
-    const statusText =
+    const status =
       root === null ? null : findElementByClass(root, 'app-shell__shell-keybindings-status');
 
     expect(restoredApplyButton?.disabled).toBe(false);
     expect(restoredApplyButton?.dataset.busy).toBe('false');
     expect(restoredApplyButton?.getAttribute('aria-busy')).toBe('false');
     expect(restoredApplyButton?.title).toBe(resolvePausedMainMenuApplyShellProfileTitle());
-    expect(statusText?.textContent).toBe(
-      'Shell profile from preview-shell-profile.json applied to the paused session with both shell visibility toggle and hotkey changes.'
-    );
+    expect(readShellKeybindingEditorStatus(status)).toEqual({
+      text:
+        'Shell profile from preview-shell-profile.json applied to the paused session with both shell visibility toggle and hotkey changes.',
+      tone: 'accent',
+      badge: 'Saved',
+      badgeTone: 'accent'
+    });
+  });
+
+  it('shows compact session-only badges on inline shell-hotkey remap feedback when browser storage is not updated', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement, {
+      onRemapShellActionKeybinding: () => ({
+        status: 'session-only'
+      })
+    });
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const root = container.children[0] ?? null;
+    const shellToggleButton =
+      root === null ? null : findElementByClass(root, 'app-shell__shell-toggle');
+    shellToggleButton?.click();
+
+    const debugHudInput =
+      root === null
+        ? null
+        : findElementById(root, 'app-shell-shell-keybinding-toggle-debug-overlay');
+    const status =
+      root === null ? null : findElementByClass(root, 'app-shell__shell-keybindings-status');
+
+    expect(debugHudInput).not.toBeNull();
+    if (debugHudInput === null) {
+      return;
+    }
+
+    debugHudInput.value = 'u';
+    debugHudInput.dispatch('input');
+
+    expect(readShellKeybindingEditorStatus(status)).toEqual({
+      text:
+        'Debug HUD now uses U for this paused session only because browser storage was not updated.',
+      tone: 'warning',
+      badge: 'Session only',
+      badgeTone: 'warning'
+    });
   });
 
   it('hides the paused dashboard wrappers for the first-launch main menu layout', () => {
@@ -1881,6 +1957,8 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__menu-section-metadata-status-badge[data-tone='warning']"
     );
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-keybindings-status-badge');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-keybindings-status-text');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-detail-groups');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-detail-group');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-group-list');
@@ -3609,6 +3687,10 @@ describe('resolvePausedMainMenuApplyShellProfileEditorStatus', () => {
       })
     ).toEqual({
       tone: 'accent',
+      badge: {
+        text: 'Saved',
+        tone: 'accent'
+      },
       text:
         'Shell profile from matching-shell-profile.json already matched the paused session, so no shell toggles or hotkeys changed.'
     });
@@ -3638,6 +3720,10 @@ describe('resolvePausedMainMenuApplyShellProfileEditorStatus', () => {
         })
       ).toEqual({
         tone: 'accent',
+        badge: {
+          text: 'Saved',
+          tone: 'accent'
+        },
         text
       });
     }
@@ -3653,6 +3739,10 @@ describe('resolvePausedMainMenuApplyShellProfileEditorStatus', () => {
       })
     ).toEqual({
       tone: 'warning',
+      badge: {
+        text: 'Session only',
+        tone: 'warning'
+      },
       text:
         'Shell profile from matching-shell-profile.json already matched this paused session, so no shell toggles or hotkeys changed, but browser storage still was not updated: Browser shell visibility preferences and hotkeys were not updated.'
     });
@@ -3683,6 +3773,10 @@ describe('resolvePausedMainMenuApplyShellProfileEditorStatus', () => {
         })
       ).toEqual({
         tone: 'warning',
+        badge: {
+          text: 'Session only',
+          tone: 'warning'
+        },
         text
       });
     }
@@ -3703,6 +3797,10 @@ describe('resolvePausedMainMenuShellActionKeybindingRemapEditorStatus', () => {
       })
     ).toEqual({
       tone: 'accent',
+      badge: {
+        text: 'Saved',
+        tone: 'accent'
+      },
       text: 'Debug HUD now uses U, and the current shell hotkey set was saved.'
     });
   });
@@ -3720,6 +3818,10 @@ describe('resolvePausedMainMenuShellActionKeybindingRemapEditorStatus', () => {
       })
     ).toEqual({
       tone: 'warning',
+      badge: {
+        text: 'Session only',
+        tone: 'warning'
+      },
       text:
         'Debug HUD now uses U for this paused session only because browser storage was not updated.'
     });
@@ -3738,6 +3840,10 @@ describe('resolvePausedMainMenuShellActionKeybindingRemapEditorStatus', () => {
       })
     ).toEqual({
       tone: 'accent',
+      badge: {
+        text: 'Saved',
+        tone: 'accent'
+      },
       text: 'Debug HUD stayed on U, and the current shell hotkey set was saved.'
     });
   });
@@ -3755,6 +3861,10 @@ describe('resolvePausedMainMenuShellActionKeybindingRemapEditorStatus', () => {
       })
     ).toEqual({
       tone: 'warning',
+      badge: {
+        text: 'Session only',
+        tone: 'warning'
+      },
       text:
         'Debug HUD stayed on U for this paused session only because browser storage was not updated.'
     });
