@@ -956,7 +956,11 @@ const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS = [
   },
   {
     label: 'Persistence',
-    value: 'Browser saved on change'
+    value: 'Browser saved on change',
+    badge: {
+      text: 'Saved',
+      tone: 'accent'
+    }
   }
 ] as const satisfies readonly AppShellMenuSectionMetadataRow[];
 const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS = [
@@ -966,7 +970,11 @@ const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS
   },
   {
     label: 'Persistence',
-    value: 'Current session only until reload or reset'
+    value: 'Current session only until reload or reset',
+    badge: {
+      text: 'Session only',
+      tone: 'warning'
+    }
   }
 ] as const satisfies readonly AppShellMenuSectionMetadataRow[];
 export const createPausedMainMenuShellActionKeybindingEditorMetadataRows = (

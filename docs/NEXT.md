@@ -4,8 +4,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## App shell
 
-483. Add compact persistence badges to expanded paused-menu `Shell Hotkeys` editor metadata after task `477` so browser-saved versus session-only remap scope stays scannable beside inline result copy, with shell-editor-persistence-badge regressions.
 497. Add compact saved-vs-session-only result badges to inline paused-menu `Shell Hotkeys` remap feedback after task `483` so remap outcome scope stays scannable after repeated edits, with shell-editor-remap-result-badge regressions.
+501. Add compact saved-vs-session-only result badges to inline paused-menu `Apply Shell Profile` feedback after task `497` so apply persistence scope stays scannable after repeated shell-profile commits, with shell-profile-apply-result-badge regressions.
 
 ## Optimize liquids
 

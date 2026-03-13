@@ -253,6 +253,32 @@ const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS = [
     value: 'Browser saved on change'
   }
 ] as const;
+const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_BADGES = [
+  {
+    label: 'Keys',
+    badge: null,
+    tone: null
+  },
+  {
+    label: 'Persistence',
+    badge: 'Saved',
+    tone: 'accent'
+  }
+] as const;
+const DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_VIEW_MODEL_ROWS = [
+  {
+    label: 'Keys',
+    value: 'Unique A-Z letters'
+  },
+  {
+    label: 'Persistence',
+    value: 'Browser saved on change',
+    badge: {
+      text: 'Saved',
+      tone: 'accent'
+    }
+  }
+] as const;
 const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS = [
   {
     label: 'Keys',
@@ -261,6 +287,32 @@ const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS
   {
     label: 'Persistence',
     value: 'Current session only until reload or reset'
+  }
+] as const;
+const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_BADGES = [
+  {
+    label: 'Keys',
+    badge: null,
+    tone: null
+  },
+  {
+    label: 'Persistence',
+    badge: 'Session only',
+    tone: 'warning'
+  }
+] as const;
+const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_VIEW_MODEL_ROWS = [
+  {
+    label: 'Keys',
+    value: 'Unique A-Z letters'
+  },
+  {
+    label: 'Persistence',
+    value: 'Current session only until reload or reset',
+    badge: {
+      text: 'Session only',
+      tone: 'warning'
+    }
   }
 ] as const;
 const STORAGE_UNAVAILABLE_FIRST_LAUNCH_PERSISTENCE_PREVIEW_LINES = [
@@ -1316,6 +1368,9 @@ describe('paused main-menu dashboard layout', () => {
     expect(readMetadataRows(shellEditorMetadata)).toEqual(
       DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS
     );
+    expect(readMetadataRowBadges(shellEditorMetadata)).toEqual(
+      DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_BADGES
+    );
     expect(shellEditorIntro).toBeNull();
   });
 
@@ -1773,6 +1828,9 @@ describe('paused main-menu dashboard layout', () => {
     expect(shellEditorMetadata?.dataset.tone).toBe('warning');
     expect(readMetadataRows(shellEditorMetadata)).toEqual(
       SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS
+    );
+    expect(readMetadataRowBadges(shellEditorMetadata)).toEqual(
+      SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_BADGES
     );
   });
 });
@@ -3763,10 +3821,10 @@ describe('resolvePausedMainMenuClearShellProfilePreviewTitle', () => {
 describe('createPausedMainMenuShellActionKeybindingEditorMetadataRows', () => {
   it('switches between browser-saved and session-only metadata rows for the paused-menu shell-hotkey editor', () => {
     expect(createPausedMainMenuShellActionKeybindingEditorMetadataRows()).toEqual(
-      DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS
+      DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_VIEW_MODEL_ROWS
     );
     expect(createPausedMainMenuShellActionKeybindingEditorMetadataRows(false)).toEqual(
-      SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS
+      SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_VIEW_MODEL_ROWS
     );
   });
 });

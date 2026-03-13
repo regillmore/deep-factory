@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-13
 
+- Task: Add compact persistence badges to expanded paused-menu `Shell Hotkeys` editor metadata.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the expanded paused-menu `Shell Hotkeys` metadata now renders an inline `Saved` or `Session only` badge on the `Persistence` row while preserving the existing copy, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with shell-editor-persistence-badge DOM and metadata-row regressions, removed completed task `483` from [docs/NEXT.md](docs/NEXT.md), added replacement task `501`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add compact outcome badges to paused-menu `World Save` summary rows.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so the paused `World Save` summary metadata now adds compact inline outcome badges for recent export, import, and clear states such as `Downloaded`, `Session only`, `Cleared`, and `Failed` while preserving the existing summary-row copy, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with world-save-summary-outcome-badge DOM and state regressions, removed completed task `499` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical slice `500`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
