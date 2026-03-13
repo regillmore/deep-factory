@@ -77,6 +77,8 @@ export interface DebugEditStatusStripState {
   playerNearbyLightSourceChunk?: { x: number; y: number } | null;
   playerNearbyLightSourceLocalTile?: { x: number; y: number } | null;
   playerCeilingBonkHoldActive?: boolean | null;
+  playerHealth?: number | null;
+  playerHostileContactInvulnerabilitySecondsRemaining?: number | null;
   playerGrounded?: boolean | null;
   playerFacing?: PlayerFacing | null;
   playerMoveX?: -1 | 0 | 1 | null;
@@ -1356,6 +1358,24 @@ const formatLiveCeilingBonkHoldText = (playerCeilingBonkHoldActive: boolean | nu
   return `BonkHold: ${formatGameplayFlag(playerCeilingBonkHoldActive)}`;
 };
 
+const formatLiveHealthText = (playerHealth: number | null): string | null => {
+  if (playerHealth === null) {
+    return null;
+  }
+
+  return `HealthNow: ${Math.round(playerHealth)}`;
+};
+
+const formatLiveHostileContactInvulnerabilityText = (
+  playerHostileContactInvulnerabilitySecondsRemaining: number | null
+): string | null => {
+  if (playerHostileContactInvulnerabilitySecondsRemaining === null) {
+    return null;
+  }
+
+  return `ContactInvulnNow: ${playerHostileContactInvulnerabilitySecondsRemaining.toFixed(2)}s`;
+};
+
 const formatLiveCeilingContactText = (
   playerCeilingContact: DebugEditStatusStripPlayerCeilingContactTelemetry | null
 ): string | null => {
@@ -1412,6 +1432,8 @@ const buildPlayerText = (
   playerNearbyLightSourceChunk: { x: number; y: number } | null,
   playerNearbyLightSourceLocalTile: { x: number; y: number } | null,
   playerCeilingBonkHoldActive: boolean | null,
+  playerHealth: number | null,
+  playerHostileContactInvulnerabilitySecondsRemaining: number | null,
   playerGrounded: boolean | null,
   playerFacing: PlayerFacing | null,
   playerMoveX: -1 | 0 | 1 | null,
@@ -1475,6 +1497,10 @@ const buildPlayerText = (
       playerNearbyLightSourceLocalTile
     ),
     formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive),
+    formatLiveHealthText(playerHealth),
+    formatLiveHostileContactInvulnerabilityText(
+      playerHostileContactInvulnerabilitySecondsRemaining
+    ),
     formatLiveGroundedText(playerGrounded),
     formatLiveFacingText(playerFacing),
     formatLiveMoveXText(playerMoveX),
@@ -2013,6 +2039,9 @@ export const buildDebugEditStatusStripModel = (
   const playerNearbyLightSourceChunk = state.playerNearbyLightSourceChunk ?? null;
   const playerNearbyLightSourceLocalTile = state.playerNearbyLightSourceLocalTile ?? null;
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
+  const playerHealth = state.playerHealth ?? null;
+  const playerHostileContactInvulnerabilitySecondsRemaining =
+    state.playerHostileContactInvulnerabilitySecondsRemaining ?? null;
   const playerGrounded = state.playerGrounded ?? null;
   const playerFacing = state.playerFacing ?? null;
   const playerMoveX = state.playerMoveX ?? null;
@@ -2077,6 +2106,8 @@ export const buildDebugEditStatusStripModel = (
       playerNearbyLightSourceChunk,
       playerNearbyLightSourceLocalTile,
       playerCeilingBonkHoldActive,
+      playerHealth,
+      playerHostileContactInvulnerabilitySecondsRemaining,
       playerGrounded,
       playerFacing,
       playerMoveX,

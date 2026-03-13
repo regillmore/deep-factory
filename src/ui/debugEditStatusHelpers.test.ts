@@ -1377,6 +1377,26 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('keeps pose, live health, and hostile-contact invulnerability telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'grounded-idle',
+      playerHealth: 85,
+      playerHostileContactInvulnerabilitySecondsRemaining: 0.75,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe(
+      'Pose: grounded-idle\nHealthNow: 85\nContactInvulnNow: 0.75s'
+    );
+    expect(model.eventText).toBeNull();
+  });
+
   it('keeps pose, live wall-contact, and live ceiling-contact telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',

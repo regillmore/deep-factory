@@ -62,6 +62,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nPlayer: n/a');
     expect(text).toContain('\nPose: n/a');
     expect(text).toContain('\nBonkHold: n/a');
+    expect(text).toContain('\nCombat: n/a');
     expect(text).toContain('\nLightSample: n/a');
     expect(text).toContain('\nGroundEvt: none');
     expect(text).toContain('\nFaceEvt: none');
@@ -575,6 +576,8 @@ describe('formatDebugOverlayText', () => {
       player: {
         position: { x: 24.5, y: -12.25 },
         velocity: { x: -180, y: 60 },
+        health: 62,
+        hostileContactInvulnerabilitySecondsRemaining: 0.75,
         aabb: {
           min: { x: 18.5, y: -40.25 },
           max: { x: 30.5, y: -12.25 },
@@ -596,6 +599,7 @@ describe('formatDebugOverlayText', () => {
     );
     expect(text).toContain('\nPose: wall-slide');
     expect(text).toContain('\nBonkHold: off');
+    expect(text).toContain('\nCombat: health:62 | contactInvuln:0.75s');
     expect(text).toContain('\nGroundEvt: jump | Pos:24.50,-12.25 | Vel:-180.00,-220.00');
     expect(text).toContain('\nFaceEvt: right->left | Pos:24.50,-12.25 | Vel:-180.00,60.00');
     expect(text).toContain(
@@ -629,6 +633,8 @@ describe('formatDebugOverlayText', () => {
       player: {
         position: { x: -0.1, y: -16.01 },
         velocity: { x: 0, y: 0 },
+        health: 100,
+        hostileContactInvulnerabilitySecondsRemaining: 0,
         aabb: {
           min: { x: -6.1, y: -44.01 },
           max: { x: 5.9, y: -16.01 },
@@ -648,6 +654,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain(
       '\nPlayer: Pos:-0.10,-16.01 | Tile:-1,-2 | Chunk:-1,-1 | Local:31,30 | Vel:0.00,0.00 | grounded:off | facing:right'
     );
+    expect(text).toContain('\nCombat: health:100 | contactInvuln:0.00s');
   });
 
   it('derives negative-world camera chunk coordinates from the live camera tile telemetry', () => {
@@ -956,6 +963,8 @@ describe('formatDebugOverlayText', () => {
       player: {
         position: { x: 12, y: -8 },
         velocity: { x: 0, y: 24 },
+        health: 85,
+        hostileContactInvulnerabilitySecondsRemaining: 0.5,
         aabb: {
           min: { x: 6, y: -36 },
           max: { x: 18, y: -8 },
@@ -986,6 +995,7 @@ describe('formatDebugOverlayText', () => {
 
     expect(text).toContain('\nPose: ceiling-bonk');
     expect(text).toContain('\nBonkHold: on');
+    expect(text).toContain('\nCombat: health:85 | contactInvuln:0.50s');
     expect(text).toContain('\nContact: support:none | wall:none | ceiling:none');
   });
 });

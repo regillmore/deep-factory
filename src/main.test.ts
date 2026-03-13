@@ -3924,6 +3924,16 @@ describe('main.ts shell state orchestration', () => {
 
     runFixedUpdate();
     runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(85);
+    expect(
+      testRuntime.latestDebugOverlayInspectState?.player?.hostileContactInvulnerabilitySecondsRemaining
+    ).toBe(DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerHealth).toBe(85);
+    expect(
+      testRuntime.latestDebugEditStatusStripState?.playerHostileContactInvulnerabilitySecondsRemaining
+    ).toBe(DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS);
 
     expect(dispatchKeydown('q').prevented).toBe(true);
 
@@ -4886,6 +4896,10 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.playerPlaceholderPoseLabel).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerWorldPosition).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerCameraWorldPosition).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerHealth).toBeNull();
+    expect(
+      testRuntime.latestDebugEditStatusStripState.playerHostileContactInvulnerabilitySecondsRemaining
+    ).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerSupportContact).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightLevel).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerNearbyLightFactor).toBeNull();

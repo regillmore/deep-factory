@@ -354,6 +354,8 @@ type StandalonePlayerRenderFrameStatusStripTelemetry = Pick<
   | 'playerCameraFollowOffset'
   | 'playerCameraZoom'
   | 'playerCeilingBonkHoldActive'
+  | 'playerHealth'
+  | 'playerHostileContactInvulnerabilitySecondsRemaining'
   | 'playerGrounded'
   | 'playerFacing'
   | 'playerMoveX'
@@ -1808,6 +1810,8 @@ const bootstrap = async (): Promise<void> => {
     lastPlayerCeilingContactTransitionEvent = null;
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
   };
+  const readOptionalFiniteNumber = (value: unknown): number | null =>
+    typeof value === 'number' && Number.isFinite(value) ? value : null;
   const readStandalonePlayerHealthForRespawnDetection = (playerState: PlayerState): number => {
     const health = (playerState as { health?: unknown }).health;
     return typeof health === 'number' && Number.isFinite(health) ? health : 1;
@@ -3009,6 +3013,18 @@ const bootstrap = async (): Promise<void> => {
       playerRenderState !== null
         ? isStandalonePlayerRenderStateCeilingBonkActive(playerRenderState, renderTimeMs)
         : false;
+    const playerHealth =
+      playerState === null ? null : readOptionalFiniteNumber((playerState as { health?: unknown }).health);
+    const playerHostileContactInvulnerabilitySecondsRemaining =
+      playerState === null
+        ? null
+        : readOptionalFiniteNumber(
+            (
+              playerState as {
+                hostileContactInvulnerabilitySecondsRemaining?: unknown;
+              }
+            ).hostileContactInvulnerabilitySecondsRemaining
+          );
     const playerWorldPosition =
       playerState === null
         ? null
@@ -3115,6 +3131,9 @@ const bootstrap = async (): Promise<void> => {
                 },
                 grounded: playerState.grounded,
                 facing: playerState.facing,
+                health: playerHealth,
+                hostileContactInvulnerabilitySecondsRemaining:
+                  playerHostileContactInvulnerabilitySecondsRemaining,
                 contacts: {
                   support: standalonePlayerContacts?.support ?? null,
                   wall: standalonePlayerContacts?.wall ?? null,
@@ -3185,6 +3204,8 @@ const bootstrap = async (): Promise<void> => {
         playerCameraZoom: playerState === null ? null : camera.zoom,
         playerCeilingBonkHoldActive:
           playerState === null ? null : standalonePlayerCeilingBonkActive,
+        playerHealth,
+        playerHostileContactInvulnerabilitySecondsRemaining,
         playerGrounded: playerState?.grounded ?? null,
         playerFacing: playerState?.facing ?? null,
         playerMoveX: playerState === null ? null : playerIntent.moveX,
@@ -3286,6 +3307,8 @@ const bootstrap = async (): Promise<void> => {
       playerNearbyLightSourceChunk: null,
       playerNearbyLightSourceLocalTile: null,
       playerCeilingBonkHoldActive: null,
+      playerHealth: null,
+      playerHostileContactInvulnerabilitySecondsRemaining: null,
       playerGrounded: null,
       playerFacing: null,
       playerMoveX: null,
@@ -3600,6 +3623,9 @@ const bootstrap = async (): Promise<void> => {
       playerNearbyLightSourceLocalTile:
         debugStatusStripPlayerTelemetry.playerNearbyLightSourceLocalTile,
       playerCeilingBonkHoldActive: debugStatusStripPlayerTelemetry.playerCeilingBonkHoldActive,
+      playerHealth: debugStatusStripPlayerTelemetry.playerHealth,
+      playerHostileContactInvulnerabilitySecondsRemaining:
+        debugStatusStripPlayerTelemetry.playerHostileContactInvulnerabilitySecondsRemaining,
       playerGrounded: debugStatusStripPlayerTelemetry.playerGrounded,
       playerFacing: debugStatusStripPlayerTelemetry.playerFacing,
       playerMoveX: debugStatusStripPlayerTelemetry.playerMoveX,

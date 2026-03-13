@@ -203,6 +203,8 @@ interface DebugOverlayWallContact extends DebugOverlayTileContact {
 export interface DebugOverlayPlayerTelemetry {
   position: { x: number; y: number };
   velocity: { x: number; y: number };
+  health?: number | null;
+  hostileContactInvulnerabilitySecondsRemaining?: number | null;
   aabb: {
     min: { x: number; y: number };
     max: { x: number; y: number };
@@ -696,6 +698,26 @@ const formatPlayerLine = (player: DebugOverlayPlayerTelemetry | null): string =>
   );
 };
 
+const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): string => {
+  if (!player) {
+    return 'Combat: n/a';
+  }
+
+  const healthText =
+    typeof player.health === 'number' && Number.isFinite(player.health)
+      ? `${Math.round(player.health)}`
+      : 'n/a';
+  const hostileContactInvulnerabilityText =
+    typeof player.hostileContactInvulnerabilitySecondsRemaining === 'number' &&
+    Number.isFinite(player.hostileContactInvulnerabilitySecondsRemaining)
+      ? `${player.hostileContactInvulnerabilitySecondsRemaining.toFixed(2)}s`
+      : 'n/a';
+  if (healthText === 'n/a' && hostileContactInvulnerabilityText === 'n/a') {
+    return 'Combat: n/a';
+  }
+  return `Combat: health:${healthText} | contactInvuln:${hostileContactInvulnerabilityText}`;
+};
+
 const formatPlayerPlaceholderPoseLine = (playerPlaceholderPoseLabel: string | null): string =>
   playerPlaceholderPoseLabel ? `Pose: ${playerPlaceholderPoseLabel}` : 'Pose: n/a';
 
@@ -1029,6 +1051,7 @@ export const formatDebugOverlayText = (
     formatPlayerLine(player),
     formatPlayerPlaceholderPoseLine(playerPlaceholderPoseLabel),
     formatPlayerCeilingBonkHoldLine(playerCeilingBonkHoldActive),
+    formatPlayerCombatLine(player),
     formatPlayerNearbyLightLine(
       playerNearbyLightLevel,
       playerNearbyLightFactor,
