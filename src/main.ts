@@ -408,7 +408,11 @@ type TrackedHostileSlimeRenderFrameDebugOverlayTelemetry = Pick<
 >;
 type TrackedHostileSlimeRenderFrameStatusStripTelemetry = Pick<
   DebugEditStatusStripState,
-  'hostileSlimeGrounded' | 'hostileSlimeFacing' | 'hostileSlimeHopCooldownTicksRemaining'
+  | 'hostileSlimeActiveCount'
+  | 'hostileSlimeNextSpawnTicksRemaining'
+  | 'hostileSlimeGrounded'
+  | 'hostileSlimeFacing'
+  | 'hostileSlimeHopCooldownTicksRemaining'
 >;
 type TrackedHostileSlimeRenderFrameStatusStripTelemetrySelectionOptions = {
   debugOverlayVisible: boolean;
@@ -1246,7 +1250,8 @@ const bootstrap = async (): Promise<void> => {
     return activeHostileSlimes;
   };
   const resolveTrackedHostileSlimeState = (
-    playerState: PlayerState | null
+    playerState: PlayerState | null,
+    activeHostileSlimes = getHostileSlimeEntityStates()
   ): HostileSlimeState | null => {
     if (playerState === null) {
       return null;
@@ -1254,7 +1259,7 @@ const bootstrap = async (): Promise<void> => {
 
     let trackedHostileSlime: { id: EntityId; state: HostileSlimeState } | null = null;
     let trackedDistanceSquared = Number.POSITIVE_INFINITY;
-    for (const hostileSlime of getHostileSlimeEntityStates()) {
+    for (const hostileSlime of activeHostileSlimes) {
       const dx = hostileSlime.state.position.x - playerState.position.x;
       const dy = hostileSlime.state.position.y - playerState.position.y;
       const distanceSquared = dx * dx + dy * dy;
@@ -3287,20 +3292,25 @@ const bootstrap = async (): Promise<void> => {
   };
   const createTrackedHostileSlimeRenderFrameTelemetrySnapshot =
     (): TrackedHostileSlimeRenderFrameTelemetrySnapshot => {
-      const trackedHostileSlimeState = resolveTrackedHostileSlimeState(getStandalonePlayerState());
+      const activeHostileSlimes = getHostileSlimeEntityStates();
+      const trackedHostileSlimeState = resolveTrackedHostileSlimeState(
+        getStandalonePlayerState(),
+        activeHostileSlimes
+      );
       return {
         debugOverlay: {
-          hostileSlime:
-            trackedHostileSlimeState === null
-              ? null
-              : {
-                  grounded: trackedHostileSlimeState.grounded,
-                  facing: trackedHostileSlimeState.facing,
-                  hopCooldownTicksRemaining:
-                    trackedHostileSlimeState.hopCooldownTicksRemaining
-                }
+          hostileSlime: {
+            activeCount: activeHostileSlimes.length,
+            nextSpawnTicksRemaining: hostileSlimeSpawnerState.ticksUntilNextSpawn,
+            grounded: trackedHostileSlimeState?.grounded ?? null,
+            facing: trackedHostileSlimeState?.facing ?? null,
+            hopCooldownTicksRemaining:
+              trackedHostileSlimeState?.hopCooldownTicksRemaining ?? null
+          }
         },
         debugStatusStrip: {
+          hostileSlimeActiveCount: activeHostileSlimes.length,
+          hostileSlimeNextSpawnTicksRemaining: hostileSlimeSpawnerState.ticksUntilNextSpawn,
           hostileSlimeGrounded: trackedHostileSlimeState?.grounded ?? null,
           hostileSlimeFacing: trackedHostileSlimeState?.facing ?? null,
           hostileSlimeHopCooldownTicksRemaining:
@@ -3398,6 +3408,8 @@ const bootstrap = async (): Promise<void> => {
         };
   const createClearedTrackedHostileSlimeRenderFrameStatusStripTelemetry =
     (): TrackedHostileSlimeRenderFrameStatusStripTelemetry => ({
+      hostileSlimeActiveCount: null,
+      hostileSlimeNextSpawnTicksRemaining: null,
       hostileSlimeGrounded: null,
       hostileSlimeFacing: null,
       hostileSlimeHopCooldownTicksRemaining: null
@@ -3709,6 +3721,9 @@ const bootstrap = async (): Promise<void> => {
       playerHealth: debugStatusStripPlayerTelemetry.playerHealth,
       playerHostileContactInvulnerabilitySecondsRemaining:
         debugStatusStripPlayerTelemetry.playerHostileContactInvulnerabilitySecondsRemaining,
+      hostileSlimeActiveCount: debugStatusStripHostileSlimeTelemetry.hostileSlimeActiveCount,
+      hostileSlimeNextSpawnTicksRemaining:
+        debugStatusStripHostileSlimeTelemetry.hostileSlimeNextSpawnTicksRemaining,
       hostileSlimeGrounded: debugStatusStripHostileSlimeTelemetry.hostileSlimeGrounded,
       hostileSlimeFacing: debugStatusStripHostileSlimeTelemetry.hostileSlimeFacing,
       hostileSlimeHopCooldownTicksRemaining:

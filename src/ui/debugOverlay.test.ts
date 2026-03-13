@@ -657,11 +657,13 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nCombat: health:100 | contactInvuln:0.00s');
   });
 
-  it('shows hostile-slime locomotion telemetry when a tracked slime is available', () => {
+  it('shows hostile-slime spawn and locomotion telemetry when a tracked slime is available', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: null,
       spawn: null,
       hostileSlime: {
+        activeCount: 2,
+        nextSpawnTicksRemaining: 119,
         grounded: true,
         facing: 'left',
         hopCooldownTicksRemaining: 17
@@ -679,7 +681,36 @@ describe('formatDebugOverlayText', () => {
       pinned: null
     });
 
-    expect(text).toContain('\nSlime: grounded:on | facing:left | hopCooldown:17t');
+    expect(text).toContain(
+      '\nSlime: active:2 | nextSpawn:119t | grounded:on | facing:left | hopCooldown:17t'
+    );
+  });
+
+  it('shows hostile-slime spawn telemetry even when no tracked locomotion target is available', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      spawn: null,
+      hostileSlime: {
+        activeCount: 0,
+        nextSpawnTicksRemaining: 120,
+        grounded: null,
+        facing: null,
+        hopCooldownTicksRemaining: null
+      },
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: null,
+      player: null,
+      pinned: null
+    });
+
+    expect(text).toContain('\nSlime: active:0 | nextSpawn:120t');
   });
 
   it('derives negative-world camera chunk coordinates from the live camera tile telemetry', () => {

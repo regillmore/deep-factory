@@ -1417,6 +1417,23 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('keeps hostile-slime spawn telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      hostileSlimeActiveCount: 2,
+      hostileSlimeNextSpawnTicksRemaining: 119,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('SlimeActiveNow: 2\nSlimeSpawnCooldownNow: 119t');
+    expect(model.eventText).toBeNull();
+  });
+
   it('keeps pose, live wall-contact, and live ceiling-contact telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',

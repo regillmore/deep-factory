@@ -80,6 +80,8 @@ export interface DebugEditStatusStripState {
   playerCeilingBonkHoldActive?: boolean | null;
   playerHealth?: number | null;
   playerHostileContactInvulnerabilitySecondsRemaining?: number | null;
+  hostileSlimeActiveCount?: number | null;
+  hostileSlimeNextSpawnTicksRemaining?: number | null;
   hostileSlimeGrounded?: boolean | null;
   hostileSlimeFacing?: HostileSlimeFacing | null;
   hostileSlimeHopCooldownTicksRemaining?: number | null;
@@ -1388,6 +1390,24 @@ const formatLiveHostileSlimeGroundedText = (hostileSlimeGrounded: boolean | null
   return `SlimeGroundedNow: ${formatGameplayFlag(hostileSlimeGrounded)}`;
 };
 
+const formatLiveHostileSlimeActiveCountText = (hostileSlimeActiveCount: number | null): string | null => {
+  if (hostileSlimeActiveCount === null) {
+    return null;
+  }
+
+  return `SlimeActiveNow: ${Math.max(0, Math.round(hostileSlimeActiveCount))}`;
+};
+
+const formatLiveHostileSlimeNextSpawnText = (
+  hostileSlimeNextSpawnTicksRemaining: number | null
+): string | null => {
+  if (hostileSlimeNextSpawnTicksRemaining === null) {
+    return null;
+  }
+
+  return `SlimeSpawnCooldownNow: ${Math.max(0, Math.round(hostileSlimeNextSpawnTicksRemaining))}t`;
+};
+
 const formatLiveHostileSlimeFacingText = (
   hostileSlimeFacing: HostileSlimeFacing | null
 ): string | null => {
@@ -1466,6 +1486,8 @@ const buildPlayerText = (
   playerCeilingBonkHoldActive: boolean | null,
   playerHealth: number | null,
   playerHostileContactInvulnerabilitySecondsRemaining: number | null,
+  hostileSlimeActiveCount: number | null,
+  hostileSlimeNextSpawnTicksRemaining: number | null,
   hostileSlimeGrounded: boolean | null,
   hostileSlimeFacing: HostileSlimeFacing | null,
   hostileSlimeHopCooldownTicksRemaining: number | null,
@@ -1536,6 +1558,8 @@ const buildPlayerText = (
     formatLiveHostileContactInvulnerabilityText(
       playerHostileContactInvulnerabilitySecondsRemaining
     ),
+    formatLiveHostileSlimeActiveCountText(hostileSlimeActiveCount),
+    formatLiveHostileSlimeNextSpawnText(hostileSlimeNextSpawnTicksRemaining),
     formatLiveHostileSlimeGroundedText(hostileSlimeGrounded),
     formatLiveHostileSlimeFacingText(hostileSlimeFacing),
     formatLiveHostileSlimeHopCooldownText(hostileSlimeHopCooldownTicksRemaining),
@@ -2080,6 +2104,8 @@ export const buildDebugEditStatusStripModel = (
   const playerHealth = state.playerHealth ?? null;
   const playerHostileContactInvulnerabilitySecondsRemaining =
     state.playerHostileContactInvulnerabilitySecondsRemaining ?? null;
+  const hostileSlimeActiveCount = state.hostileSlimeActiveCount ?? null;
+  const hostileSlimeNextSpawnTicksRemaining = state.hostileSlimeNextSpawnTicksRemaining ?? null;
   const hostileSlimeGrounded = state.hostileSlimeGrounded ?? null;
   const hostileSlimeFacing = state.hostileSlimeFacing ?? null;
   const hostileSlimeHopCooldownTicksRemaining =
@@ -2150,6 +2176,8 @@ export const buildDebugEditStatusStripModel = (
       playerCeilingBonkHoldActive,
       playerHealth,
       playerHostileContactInvulnerabilitySecondsRemaining,
+      hostileSlimeActiveCount,
+      hostileSlimeNextSpawnTicksRemaining,
       hostileSlimeGrounded,
       hostileSlimeFacing,
       hostileSlimeHopCooldownTicksRemaining,

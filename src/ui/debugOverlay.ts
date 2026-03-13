@@ -220,9 +220,11 @@ export interface DebugOverlayPlayerTelemetry {
 }
 
 export interface DebugOverlayHostileSlimeTelemetry {
-  grounded: boolean;
-  facing: 'left' | 'right';
-  hopCooldownTicksRemaining: number;
+  activeCount: number;
+  nextSpawnTicksRemaining: number;
+  grounded: boolean | null;
+  facing: 'left' | 'right' | null;
+  hopCooldownTicksRemaining: number | null;
 }
 
 export interface DebugOverlayPlayerIntentTelemetry {
@@ -732,11 +734,22 @@ const formatHostileSlimeLine = (
     return null;
   }
 
-  return (
-    `Slime: grounded:${formatGameplayFlag(hostileSlime.grounded)} | ` +
-    `facing:${hostileSlime.facing} | ` +
-    `hopCooldown:${formatInt(hostileSlime.hopCooldownTicksRemaining)}t`
-  );
+  const segments = [
+    `active:${Math.max(0, Math.round(hostileSlime.activeCount))}`,
+    `nextSpawn:${Math.max(0, Math.round(hostileSlime.nextSpawnTicksRemaining))}t`,
+    typeof hostileSlime.grounded === 'boolean'
+      ? `grounded:${formatGameplayFlag(hostileSlime.grounded)}`
+      : null,
+    hostileSlime.facing === 'left' || hostileSlime.facing === 'right'
+      ? `facing:${hostileSlime.facing}`
+      : null,
+    typeof hostileSlime.hopCooldownTicksRemaining === 'number' &&
+    Number.isFinite(hostileSlime.hopCooldownTicksRemaining)
+      ? `hopCooldown:${Math.max(0, Math.round(hostileSlime.hopCooldownTicksRemaining))}t`
+      : null
+  ].filter((segment): segment is string => segment !== null);
+
+  return `Slime: ${segments.join(' | ')}`;
 };
 
 const formatPlayerPlaceholderPoseLine = (playerPlaceholderPoseLabel: string | null): string =>

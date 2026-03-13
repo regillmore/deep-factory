@@ -3893,7 +3893,7 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
-  it('routes nearest hostile-slime locomotion telemetry through the overlay and hidden status strip', async () => {
+  it('routes hostile-slime spawn telemetry plus nearest locomotion telemetry through the overlay and hidden status strip', async () => {
     await import('./main');
     await flushBootstrap();
 
@@ -3967,10 +3967,16 @@ describe('main.ts shell state orchestration', () => {
     runRenderFrame();
 
     expect(testRuntime.latestDebugOverlayInspectState?.hostileSlime).toEqual({
+      activeCount: 2,
+      nextSpawnTicksRemaining: DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS - 1,
       grounded: false,
       facing: 'left',
       hopCooldownTicksRemaining: 7
     });
+    expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeActiveCount).toBe(2);
+    expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeNextSpawnTicksRemaining).toBe(
+      DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS - 1
+    );
     expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeGrounded).toBe(false);
     expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeFacing).toBe('left');
     expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeHopCooldownTicksRemaining).toBe(7);
@@ -4980,6 +4986,8 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.playerWorldPosition).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerCameraWorldPosition).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerHealth).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeActiveCount).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeNextSpawnTicksRemaining).toBeNull();
     expect(
       testRuntime.latestDebugEditStatusStripState.playerHostileContactInvulnerabilitySecondsRemaining
     ).toBeNull();
