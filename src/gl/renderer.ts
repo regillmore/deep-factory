@@ -127,6 +127,10 @@ export interface RenderTelemetry {
   residentActiveLiquidMinChunkY: number | null;
   residentActiveLiquidMaxChunkX: number | null;
   residentActiveLiquidMaxChunkY: number | null;
+  residentSleepingLiquidMinChunkX: number | null;
+  residentSleepingLiquidMinChunkY: number | null;
+  residentSleepingLiquidMaxChunkX: number | null;
+  residentSleepingLiquidMaxChunkY: number | null;
   liquidStepSidewaysCandidateMinChunkX: number | null;
   liquidStepSidewaysCandidateMinChunkY: number | null;
   liquidStepSidewaysCandidateMaxChunkX: number | null;
@@ -212,6 +216,10 @@ export class Renderer {
     residentActiveLiquidMinChunkY: null,
     residentActiveLiquidMaxChunkX: null,
     residentActiveLiquidMaxChunkY: null,
+    residentSleepingLiquidMinChunkX: null,
+    residentSleepingLiquidMinChunkY: null,
+    residentSleepingLiquidMaxChunkX: null,
+    residentSleepingLiquidMaxChunkY: null,
     liquidStepSidewaysCandidateMinChunkX: null,
     liquidStepSidewaysCandidateMinChunkY: null,
     liquidStepSidewaysCandidateMaxChunkX: null,
@@ -700,12 +708,17 @@ export class Renderer {
 
   private updateActiveLiquidTelemetry(): void {
     const activeLiquidBounds = this.world.getActiveLiquidChunkBounds();
+    const sleepingLiquidBounds = this.world.getSleepingLiquidChunkBounds();
     this.telemetry.residentActiveLiquidChunks = this.world.getActiveLiquidChunkCount();
     this.telemetry.residentSleepingLiquidChunks = this.world.getSleepingLiquidChunkCount();
     this.telemetry.residentActiveLiquidMinChunkX = activeLiquidBounds?.minChunkX ?? null;
     this.telemetry.residentActiveLiquidMinChunkY = activeLiquidBounds?.minChunkY ?? null;
     this.telemetry.residentActiveLiquidMaxChunkX = activeLiquidBounds?.maxChunkX ?? null;
     this.telemetry.residentActiveLiquidMaxChunkY = activeLiquidBounds?.maxChunkY ?? null;
+    this.telemetry.residentSleepingLiquidMinChunkX = sleepingLiquidBounds?.minChunkX ?? null;
+    this.telemetry.residentSleepingLiquidMinChunkY = sleepingLiquidBounds?.minChunkY ?? null;
+    this.telemetry.residentSleepingLiquidMaxChunkX = sleepingLiquidBounds?.maxChunkX ?? null;
+    this.telemetry.residentSleepingLiquidMaxChunkY = sleepingLiquidBounds?.maxChunkY ?? null;
   }
 
   private updateLiquidStepTelemetry(): void {

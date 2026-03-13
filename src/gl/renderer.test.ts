@@ -329,6 +329,10 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMaxChunkY).toBeNull();
+    expect(renderer.telemetry.residentSleepingLiquidMinChunkX).toBeNull();
+    expect(renderer.telemetry.residentSleepingLiquidMinChunkY).toBeNull();
+    expect(renderer.telemetry.residentSleepingLiquidMaxChunkX).toBeNull();
+    expect(renderer.telemetry.residentSleepingLiquidMaxChunkY).toBeNull();
 
     expect(renderer.setTile(-4, -20, WATER_TILE_ID)).toBe(true);
     expect(renderer.setTile(CHUNK_SIZE + 4, 4, WATER_TILE_ID)).toBe(true);
@@ -339,6 +343,10 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBe(-1);
     expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBe(1);
     expect(renderer.telemetry.residentActiveLiquidMaxChunkY).toBe(0);
+    expect(renderer.telemetry.residentSleepingLiquidMinChunkX).toBeNull();
+    expect(renderer.telemetry.residentSleepingLiquidMinChunkY).toBeNull();
+    expect(renderer.telemetry.residentSleepingLiquidMaxChunkX).toBeNull();
+    expect(renderer.telemetry.residentSleepingLiquidMaxChunkY).toBeNull();
 
     expect(renderer.setTile(CHUNK_SIZE + 4, 4, 0)).toBe(true);
     renderUntilMeshBuildQueueDrains(renderer, camera);
@@ -348,6 +356,10 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBe(-1);
     expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBe(-1);
     expect(renderer.telemetry.residentActiveLiquidMaxChunkY).toBe(-1);
+    expect(renderer.telemetry.residentSleepingLiquidMinChunkX).toBeNull();
+    expect(renderer.telemetry.residentSleepingLiquidMinChunkY).toBeNull();
+    expect(renderer.telemetry.residentSleepingLiquidMaxChunkX).toBeNull();
+    expect(renderer.telemetry.residentSleepingLiquidMaxChunkY).toBeNull();
   });
 
   it('tracks last-step sideways candidate-band bounds in renderer telemetry', async () => {
@@ -417,11 +429,19 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.residentActiveLiquidMinChunkY).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMaxChunkX).toBeNull();
     expect(renderer.telemetry.residentActiveLiquidMaxChunkY).toBeNull();
+    expect(renderer.telemetry.residentSleepingLiquidMinChunkX).toBe(0);
+    expect(renderer.telemetry.residentSleepingLiquidMinChunkY).toBe(-1);
+    expect(renderer.telemetry.residentSleepingLiquidMaxChunkX).toBe(0);
+    expect(renderer.telemetry.residentSleepingLiquidMaxChunkY).toBe(-1);
 
     expect(renderer.setTile(5, -20, 0)).toBe(true);
     renderer.render(camera, { timeMs: 0 });
     expect(renderer.telemetry.residentActiveLiquidChunks).toBe(1);
     expect(renderer.telemetry.residentSleepingLiquidChunks).toBe(0);
+    expect(renderer.telemetry.residentSleepingLiquidMinChunkX).toBeNull();
+    expect(renderer.telemetry.residentSleepingLiquidMinChunkY).toBeNull();
+    expect(renderer.telemetry.residentSleepingLiquidMaxChunkX).toBeNull();
+    expect(renderer.telemetry.residentSleepingLiquidMaxChunkY).toBeNull();
     expect(renderer.stepLiquidSimulation()).toBe(true);
     expect(renderer.getLiquidLevel(4, -20)).toBe(MAX_LIQUID_LEVEL / 2);
     expect(renderer.getLiquidLevel(5, -20)).toBe(MAX_LIQUID_LEVEL / 2);

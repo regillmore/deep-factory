@@ -39,6 +39,10 @@ export interface DebugOverlayStats {
   residentActiveLiquidMinChunkY: number | null;
   residentActiveLiquidMaxChunkX: number | null;
   residentActiveLiquidMaxChunkY: number | null;
+  residentSleepingLiquidMinChunkX: number | null;
+  residentSleepingLiquidMinChunkY: number | null;
+  residentSleepingLiquidMaxChunkX: number | null;
+  residentSleepingLiquidMaxChunkY: number | null;
   liquidStepSidewaysCandidateMinChunkX: number | null;
   liquidStepSidewaysCandidateMinChunkY: number | null;
   liquidStepSidewaysCandidateMaxChunkX: number | null;
@@ -952,10 +956,27 @@ const formatSidewaysCandidateBounds = (stats: DebugOverlayStats): string => {
   );
 };
 
+const formatSleepingLiquidBounds = (stats: DebugOverlayStats): string => {
+  if (
+    stats.residentSleepingLiquidMinChunkX === null ||
+    stats.residentSleepingLiquidMinChunkY === null ||
+    stats.residentSleepingLiquidMaxChunkX === null ||
+    stats.residentSleepingLiquidMaxChunkY === null
+  ) {
+    return 'none';
+  }
+
+  return (
+    `${stats.residentSleepingLiquidMinChunkX},${stats.residentSleepingLiquidMinChunkY}` +
+    `..${stats.residentSleepingLiquidMaxChunkX},${stats.residentSleepingLiquidMaxChunkY}`
+  );
+};
+
 const formatLiquidStepLine = (stats: DebugOverlayStats): string =>
   `LiquidStep: awake:${stats.residentActiveLiquidChunks} | ` +
   `sleeping:${stats.residentSleepingLiquidChunks} | ` +
   `bounds:${formatActiveLiquidBounds(stats)} | ` +
+  `sleepBounds:${formatSleepingLiquidBounds(stats)} | ` +
   `sideBounds:${formatSidewaysCandidateBounds(stats)} | ` +
   `phase:${stats.liquidStepPhaseSummary} | ` +
   `downChunks:${stats.liquidStepDownwardActiveChunksScanned} | ` +

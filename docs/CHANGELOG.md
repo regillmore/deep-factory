@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-13
 
+- Task: Expose sleeping-liquid chunk bounds in renderer telemetry and the debug HUD.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts) so `TileWorld` now derives sleeping-liquid chunk bounds from resident-versus-awake liquid membership, threaded those nullable bounds through [src/gl/renderer.ts](../src/gl/renderer.ts) telemetry and [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts) so the HUD `LiquidStep` line now shows `sleepBounds:minX,minY..maxX,maxY` or `sleepBounds:none`, expanded [src/world/world.test.ts](../src/world/world.test.ts), [src/gl/renderer.test.ts](../src/gl/renderer.test.ts), and [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts) with focused regressions, removed completed task `408` from [docs/NEXT.md](docs/NEXT.md), added replacement task `510`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/world.test.ts src/gl/renderer.test.ts src/ui/debugOverlay.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Expose the downward active-chunk scan count in the compact hidden-HUD status strip.
 - Changes: Updated [src/main.ts](../src/main.ts), [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/main.test.ts](../src/main.test.ts) so hidden-HUD `LiquidStepNow` telemetry now includes `downChunks:<count>` beside the existing sideways bounds, tested-pair count, phase, and split-transfer summary, removed completed task `505` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical-slice task `509`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/debugEditStatusHelpers.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

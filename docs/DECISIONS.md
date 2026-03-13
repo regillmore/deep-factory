@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-13: Sleeping-liquid bounds should stay resident-state telemetry
+
+- Decision: `TileWorld`, renderer telemetry, and the debug HUD now expose sleeping-liquid chunk bounds as the current resident-liquid minus awake-liquid envelope.
+- Reason: Wake testing needs the present footprint of settled pools after awake bounds disappear, so sleeping bounds should reflect current settled residency rather than a last-step scan or transfer artifact.
+- Consequence: Future liquid telemetry and HUD work should treat sleeping bounds as current-state settled-pool ownership and refresh them from resident-versus-awake membership changes instead of inferring them from phase counters or candidate-band coverage.
+
 ### 2026-03-13: Sideways candidate-band bounds should stay separate from current awake-liquid bounds
 
 - Decision: `TileWorld`, renderer telemetry, and the debug HUD now expose last-step sideways candidate-band chunk bounds separately from the current awake active-liquid chunk bounds.

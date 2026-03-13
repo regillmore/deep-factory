@@ -204,6 +204,36 @@ const resolveChunkBoundsFromKeys = (chunkKeys: Iterable<string>): ChunkBounds | 
   return bounds;
 };
 
+const resolveSleepingLiquidChunkBoundsFromKeys = (
+  residentLiquidChunkKeys: ReadonlySet<string>,
+  activeLiquidChunkKeys: ReadonlySet<string>
+): ChunkBounds | null => {
+  let bounds: ChunkBounds | null = null;
+  for (const key of residentLiquidChunkKeys) {
+    if (activeLiquidChunkKeys.has(key)) {
+      continue;
+    }
+
+    const coord = parseChunkCoordFromKey(key);
+    if (!bounds) {
+      bounds = {
+        minChunkX: coord.x,
+        minChunkY: coord.y,
+        maxChunkX: coord.x,
+        maxChunkY: coord.y
+      };
+      continue;
+    }
+
+    if (coord.x < bounds.minChunkX) bounds.minChunkX = coord.x;
+    if (coord.y < bounds.minChunkY) bounds.minChunkY = coord.y;
+    if (coord.x > bounds.maxChunkX) bounds.maxChunkX = coord.x;
+    if (coord.y > bounds.maxChunkY) bounds.maxChunkY = coord.y;
+  }
+
+  return bounds;
+};
+
 const createChunkLiquidLevels = (): Uint8Array => new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
 const createChunkLightLevels = (): Uint8Array => new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
 const ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK = CHUNK_SIZE >= 32 ? 0xffffffff >>> 0 : ((1 << CHUNK_SIZE) - 1) >>> 0;
@@ -1306,6 +1336,13 @@ export class TileWorld {
 
   getActiveLiquidChunkBounds(): ChunkBounds | null {
     return resolveChunkBoundsFromKeys(this.activeLiquidChunkKeys);
+  }
+
+  getSleepingLiquidChunkBounds(): ChunkBounds | null {
+    return resolveSleepingLiquidChunkBoundsFromKeys(
+      this.residentLiquidChunkKeys,
+      this.activeLiquidChunkKeys
+    );
   }
 
   pruneChunksOutside(bounds: ChunkBounds): number {

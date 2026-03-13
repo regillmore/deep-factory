@@ -341,6 +341,7 @@ describe('TileWorld', () => {
 
     expect(world.getActiveLiquidChunkCount()).toBe(1);
     expect(world.getSleepingLiquidChunkCount()).toBe(0);
+    expect(world.getSleepingLiquidChunkBounds()).toBeNull();
     expect(world.stepLiquidSimulation()).toBe(true);
     expect(world.getTile(worldTileX, sourceWorldTileY)).toBe(0);
     expect(world.getLiquidLevel(worldTileX, sourceWorldTileY)).toBe(0);
@@ -358,9 +359,21 @@ describe('TileWorld', () => {
     expect(world.getActiveLiquidChunkCount()).toBe(0);
     expect(world.getSleepingLiquidChunkCount()).toBe(1);
     expect(world.getActiveLiquidChunkBounds()).toBeNull();
+    expect(world.getSleepingLiquidChunkBounds()).toEqual({
+      minChunkX: 0,
+      minChunkY: -1,
+      maxChunkX: 0,
+      maxChunkY: -1
+    });
 
     expect(world.stepLiquidSimulation()).toBe(false);
     expect(world.getSleepingLiquidChunkCount()).toBe(1);
+    expect(world.getSleepingLiquidChunkBounds()).toEqual({
+      minChunkX: 0,
+      minChunkY: -1,
+      maxChunkX: 0,
+      maxChunkY: -1
+    });
     expect(world.getLastLiquidSimulationStats()).toEqual({
       downwardActiveChunksScanned: 0,
       sidewaysCandidateChunksScanned: 0,
@@ -387,10 +400,17 @@ describe('TileWorld', () => {
     expect(world.getActiveLiquidChunkCount()).toBe(0);
     expect(world.getSleepingLiquidChunkCount()).toBe(1);
     expect(world.getActiveLiquidChunkBounds()).toBeNull();
+    expect(world.getSleepingLiquidChunkBounds()).toEqual({
+      minChunkX: 0,
+      minChunkY: -1,
+      maxChunkX: 0,
+      maxChunkY: -1
+    });
 
     expect(world.setTile(worldTileX + 1, worldTileY, 0)).toBe(true);
     expect(world.getActiveLiquidChunkCount()).toBe(1);
     expect(world.getSleepingLiquidChunkCount()).toBe(0);
+    expect(world.getSleepingLiquidChunkBounds()).toBeNull();
     expect(world.getActiveLiquidChunkBounds()).toEqual({
       minChunkX: 0,
       minChunkY: -1,
