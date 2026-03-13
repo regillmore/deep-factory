@@ -26,6 +26,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Upcoming jump-link, section-owned action, and accessibility work needs one consistent target contract on both desktop and touch layouts instead of ad hoc title lookups or card-order assumptions.
 - Consequence: Future paused-menu navigation or focus-management work should target these existing section anchors and keep their ids and heading labels stable unless the same pass updates the related links, tests, and docs together.
 
+### 2026-03-12: Keyboard-driven paused Shell toggles should restore the Shell section anchor
+
+- Decision: Expanding or collapsing the paused-menu `Shell` section from its toggle button now returns keyboard focus to the existing Shell section anchor after rerender instead of leaving focus on the toggle or dropping it out of the dashboard flow.
+- Reason: The paused Shell editor rerenders when it opens or closes, and keyboard users need one stable landmark target so hotkey editing and section navigation stay inside the paused dashboard instead of resetting to broader overlay traversal.
+- Consequence: Future paused-dashboard expand, collapse, or section-rerender work should preserve keyboard flow by restoring the owning section anchor unless the same pass intentionally introduces a different documented focus target.
+
 ### 2026-03-12: Default paused-menu cards should be metadata-first without a global help toggle
 
 - Decision: The paused menu now removes the global `Show Help Text` toggle and keeps its default `Overview`, `World Save`, `Recent Activity`, and secondary action cards readable through concise titles plus metadata rows instead of paragraph-style help copy.

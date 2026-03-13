@@ -269,6 +269,14 @@ const STORAGE_UNAVAILABLE_FIRST_LAUNCH_PERSISTENCE_PREVIEW_LINES = [
 ] as const;
 const APP_SHELL_STYLE_SOURCE = readFileSync(new URL('../style.css', import.meta.url), 'utf8');
 
+class FakeDocument {
+  activeElement: FakeElement | null = null;
+
+  createElement(tagName: string): FakeElement {
+    return new FakeElement(tagName, this);
+  }
+}
+
 class FakeClassList {
   constructor(private readonly element: FakeElement) {}
 
@@ -306,10 +314,14 @@ class FakeElement {
   focusCallCount = 0;
   scrollIntoViewCallCount = 0;
   classList = new FakeClassList(this);
+  parentElement: FakeElement | null = null;
   private readonly attributes = new Map<string, string>();
   private readonly listeners = new Map<string, Array<(...args: unknown[]) => void>>();
 
-  constructor(tagName: string) {
+  constructor(
+    tagName: string,
+    private readonly ownerDocument: FakeDocument | null = null
+  ) {
     this.tagName = tagName.toUpperCase();
   }
 
@@ -320,12 +332,16 @@ class FakeElement {
   append(...children: unknown[]): void {
     for (const child of children) {
       if (child instanceof FakeElement) {
+        child.parentElement = this;
         this.children.push(child);
       }
     }
   }
 
   replaceChildren(...children: unknown[]): void {
+    for (const child of this.children) {
+      child.parentElement = null;
+    }
     this.children = [];
     this.append(...children);
   }
@@ -353,13 +369,14 @@ class FakeElement {
     this.listeners.set(type, listeners);
   }
 
-  click(): void {
+  click(detail = 0): void {
     if (this.disabled) {
       return;
     }
 
     const event = {
       type: 'click',
+      detail,
       currentTarget: this,
       target: this,
       preventDefault: () => {}
@@ -369,10 +386,17 @@ class FakeElement {
     }
   }
 
-  blur(): void {}
+  blur(): void {
+    if (this.ownerDocument?.activeElement === this) {
+      this.ownerDocument.activeElement = null;
+    }
+  }
 
   focus(): void {
     this.focusCallCount += 1;
+    if (this.ownerDocument !== null) {
+      this.ownerDocument.activeElement = this;
+    }
   }
 
   scrollIntoView(): void {
@@ -380,11 +404,20 @@ class FakeElement {
   }
 
   select(): void {}
+
+  contains(target: FakeElement | null): boolean {
+    if (target === null) {
+      return false;
+    }
+    if (target === this) {
+      return true;
+    }
+
+    return this.children.some((child) => child.contains(target));
+  }
 }
 
-const createFakeDocument = () => ({
-  createElement: (tagName: string) => new FakeElement(tagName)
-});
+const createFakeDocument = () => new FakeDocument();
 
 const findElementByClass = (root: FakeElement, className: string): FakeElement | null => {
   if (root.classList.contains(className)) {
@@ -1019,6 +1052,51 @@ describe('paused main-menu dashboard layout', () => {
       DEFAULT_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_ROWS
     );
     expect(shellEditorIntro).toBeNull();
+  });
+
+  it('returns keyboard-triggered shell expand and collapse focus to the Shell section anchor', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const fakeDocument = document as unknown as FakeDocument;
+    const root = container.children[0] ?? null;
+    const shellSection = root === null ? null : findElementByClass(root, 'app-shell__shell');
+    const shellToggleButton =
+      shellSection === null ? null : findElementByClass(shellSection, 'app-shell__shell-toggle');
+
+    shellToggleButton?.focus();
+    shellToggleButton?.click();
+
+    expect(shellSection?.focusCallCount).toBe(1);
+    expect(shellSection?.scrollIntoViewCallCount).toBe(1);
+    expect(fakeDocument.activeElement).toBe(shellSection);
+
+    shellToggleButton?.focus();
+    shellToggleButton?.click();
+
+    expect(shellSection?.focusCallCount).toBe(2);
+    expect(shellSection?.scrollIntoViewCallCount).toBe(2);
+    expect(fakeDocument.activeElement).toBe(shellSection);
+  });
+
+  it('keeps pointer-triggered shell expand from forcing focus onto the Shell section anchor', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const root = container.children[0] ?? null;
+    const shellSection = root === null ? null : findElementByClass(root, 'app-shell__shell');
+    const shellToggleButton =
+      shellSection === null ? null : findElementByClass(shellSection, 'app-shell__shell-toggle');
+
+    shellToggleButton?.focus();
+    shellToggleButton?.click(1);
+
+    expect(shellSection?.focusCallCount).toBe(0);
+    expect(shellSection?.scrollIntoViewCallCount).toBe(0);
   });
 
   it('renders metadata-first shell-profile preview groups inside the expanded shell editor', () => {

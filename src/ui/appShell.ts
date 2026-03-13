@@ -1,4 +1,7 @@
-import { installPointerClickFocusRelease } from './buttonFocus';
+import {
+  installPointerClickFocusRelease,
+  shouldReleaseButtonFocusAfterClick
+} from './buttonFocus';
 import {
   getDesktopDebugOverlayHotkeyLabel,
   getDesktopDebugEditControlsHotkeyLabel,
@@ -3327,7 +3330,9 @@ export class AppShell {
     this.shellToggleButton = document.createElement('button');
     this.shellToggleButton.type = 'button';
     this.shellToggleButton.className = 'app-shell__shell-toggle';
-    this.shellToggleButton.addEventListener('click', () => this.togglePausedMainMenuShell());
+    this.shellToggleButton.addEventListener('click', (event) =>
+      this.togglePausedMainMenuShell(!shouldReleaseButtonFocusAfterClick(event.detail))
+    );
     installPointerClickFocusRelease(this.shellToggleButton);
     shellHeader.append(this.shellToggleButton);
 
@@ -3674,13 +3679,16 @@ export class AppShell {
     this.setState(this.currentState);
   }
 
-  private togglePausedMainMenuShell(): void {
+  private togglePausedMainMenuShell(preserveSectionFocus = false): void {
     if (!isPausedMainMenuState(this.currentState)) {
       return;
     }
 
     this.pausedMainMenuShellExpanded = !this.pausedMainMenuShellExpanded;
     this.setState(this.currentState);
+    if (preserveSectionFocus) {
+      focusPausedMainMenuSectionAnchor(this.shellSection);
+    }
   }
 
   private tryRemapShellActionKeybinding(
