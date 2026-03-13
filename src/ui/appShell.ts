@@ -2681,6 +2681,7 @@ const createMenuSectionDetailGroupsElement = (
 interface MenuSectionActionHeadingContent {
   titleText: string;
   shortcutBadgeText: string | null;
+  affordanceBadgeText: string | null;
 }
 
 interface MenuSectionActionButtonOptions {
@@ -2696,21 +2697,38 @@ const PAUSED_MAIN_MENU_SECTION_ACTION_SHORTCUT_BADGES = new Map<string, string>(
   [`New World (${getDesktopFreshWorldHotkeyLabel()})`, getDesktopFreshWorldHotkeyLabel()]
 ]);
 
+const resolveMenuSectionActionAffordanceBadgeText = (
+  section: AppShellMenuSection,
+  className: string
+): string | null => {
+  if (className !== 'app-shell__world-save-action') {
+    return null;
+  }
+
+  const shortcutMetadataRow =
+    section.metadataRows?.find((row) => row.label === 'Shortcut') ?? null;
+  return shortcutMetadataRow?.value === 'Button only' ? 'Button only' : null;
+};
+
 const resolveMenuSectionActionHeadingContent = (
-  title: string
+  section: AppShellMenuSection,
+  className: string
 ): MenuSectionActionHeadingContent => {
+  const title = section.title;
   const shortcutBadgeText = PAUSED_MAIN_MENU_SECTION_ACTION_SHORTCUT_BADGES.get(title) ?? null;
   if (shortcutBadgeText === null) {
     return {
       titleText: title,
-      shortcutBadgeText: null
+      shortcutBadgeText: null,
+      affordanceBadgeText: resolveMenuSectionActionAffordanceBadgeText(section, className)
     };
   }
 
   const shortcutSuffix = ` (${shortcutBadgeText})`;
   return {
     titleText: title.endsWith(shortcutSuffix) ? title.slice(0, -shortcutSuffix.length) : title,
-    shortcutBadgeText
+    shortcutBadgeText,
+    affordanceBadgeText: resolveMenuSectionActionAffordanceBadgeText(section, className)
   };
 };
 
@@ -2719,7 +2737,7 @@ const appendMenuSectionActionContent = (
   section: AppShellMenuSection,
   className: string
 ): void => {
-  const headingContent = resolveMenuSectionActionHeadingContent(section.title);
+  const headingContent = resolveMenuSectionActionHeadingContent(section, className);
   const headingRow = document.createElement('div');
   headingRow.className = 'app-shell__section-action-heading';
   actionElement.append(headingRow);
@@ -2734,6 +2752,13 @@ const appendMenuSectionActionContent = (
     shortcutBadge.className = 'app-shell__section-action-shortcut-badge';
     shortcutBadge.textContent = headingContent.shortcutBadgeText;
     headingRow.append(shortcutBadge);
+  }
+
+  if (headingContent.affordanceBadgeText !== null) {
+    const affordanceBadge = document.createElement('span');
+    affordanceBadge.className = 'app-shell__section-action-affordance-badge';
+    affordanceBadge.textContent = headingContent.affordanceBadgeText;
+    headingRow.append(affordanceBadge);
   }
 
   if (section.lines.length > 0) {

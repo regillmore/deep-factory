@@ -746,6 +746,41 @@ describe('paused main-menu dashboard layout', () => {
     ).toBe(true);
   });
 
+  it('shows compact Button only badges on paused World Save action cards', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const root = container.children[0] ?? null;
+    expect(root).not.toBeNull();
+    if (root === null) {
+      return;
+    }
+
+    const overviewButtons = findElementsByClass(root, 'app-shell__overview-action');
+    const worldSaveButtons = findElementsByClass(root, 'app-shell__world-save-action');
+    const dangerZoneButtons = findElementsByClass(root, 'app-shell__danger-zone-action');
+
+    expect(
+      worldSaveButtons.map(
+        (button) =>
+          findElementByClass(button, 'app-shell__section-action-affordance-badge')?.textContent ??
+          null
+      )
+    ).toEqual(['Button only', 'Button only', 'Button only']);
+    expect(
+      overviewButtons.every(
+        (button) => findElementByClass(button, 'app-shell__section-action-affordance-badge') === null
+      )
+    ).toBe(true);
+    expect(
+      dangerZoneButtons.every(
+        (button) => findElementByClass(button, 'app-shell__section-action-affordance-badge') === null
+      )
+    ).toBe(true);
+  });
+
   it('debounces paused-menu Import World Save while its browser picker promise is active', async () => {
     let finishImportWorldSave = () => {};
     let importWorldSaveCallCount = 0;
@@ -1553,6 +1588,7 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-button');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-heading');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-shortcut-badge');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-affordance-badge');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__overview-action');
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       '.app-shell__danger-zone-action .app-shell__section-action-shortcut-badge'

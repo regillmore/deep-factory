@@ -503,21 +503,33 @@ canvas {
   gap: 10px;
 }
 
-.app-shell__section-action-shortcut-badge {
+.app-shell__section-action-shortcut-badge,
+.app-shell__section-action-affordance-badge {
   display: inline-flex;
   align-items: center;
   padding: 4px 9px;
-  border: 1px solid rgba(159, 221, 255, 0.22);
   border-radius: 999px;
-  background:
-    linear-gradient(180deg, rgba(16, 30, 41, 0.94), rgba(11, 18, 25, 0.9)),
-    linear-gradient(135deg, rgba(120, 210, 255, 0.16), rgba(243, 205, 135, 0.08));
-  color: #d8f3ff;
   font:
     700 10px/1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.app-shell__section-action-shortcut-badge {
+  border: 1px solid rgba(159, 221, 255, 0.22);
+  background:
+    linear-gradient(180deg, rgba(16, 30, 41, 0.94), rgba(11, 18, 25, 0.9)),
+    linear-gradient(135deg, rgba(120, 210, 255, 0.16), rgba(243, 205, 135, 0.08));
+  color: #d8f3ff;
+}
+
+.app-shell__section-action-affordance-badge {
+  border: 1px solid rgba(183, 196, 202, 0.2);
+  background:
+    linear-gradient(180deg, rgba(23, 27, 34, 0.94), rgba(15, 18, 24, 0.9)),
+    linear-gradient(135deg, rgba(183, 196, 202, 0.08), rgba(243, 205, 135, 0.04));
+  color: #dce5e9;
 }
 
 .app-shell__danger-zone-action .app-shell__section-action-shortcut-badge {

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Add compact `Button only` badges to paused-menu `World Save` action cards.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused `World Save` action cards now render compact heading badges for their existing pointer-only affordance without changing the shared section view-model shape, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with world-save-button-badge DOM and CSS regressions, removed completed task `482` from [docs/NEXT.md](docs/NEXT.md), added replacement task `496`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Preserve paused-dashboard section focus when `Recent Activity` appears or disappears.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) so paused-menu rerenders now snapshot the focused dashboard section anchor before `Recent Activity` visibility changes and restore either that same anchor or the nearest surviving section anchor afterward, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with paused-recent-activity-focus regressions plus hidden-section fake-DOM focus behavior, removed completed task `494` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical slice `495`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

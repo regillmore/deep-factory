@@ -5,8 +5,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## App shell
 
 478. Add compact warning badges to paused-menu `Danger Zone` action cards after task `470` so `Reset Shell Toggles` and `New World` stay scannable once the dashboard layout lands, with danger-zone-badge regressions.
-482. Add compact `Button only` affordance badges to paused-menu `World Save` action cards after task `474` so pointer-only actions stay visually consistent beside the new inline keyboard shortcut badges, with world-save-button-badge regressions.
 483. Add compact persistence badges to expanded paused-menu `Shell Hotkeys` editor metadata after task `477` so browser-saved versus session-only remap scope stays scannable beside inline result copy, with shell-editor-persistence-badge regressions.
+496. Add a compact busy badge to paused-menu `Import World Save` while its local picker wait state is active after task `481` so the in-flight section action stays scannable from the action heading, with world-save-busy-badge regressions.
 
 ## Optimize liquids
 
