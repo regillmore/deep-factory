@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Body-overlap water checks would drain breath while wading, and the current zero-health recovery plumbing still reports lethal environmental deaths as lava-specific respawns, so lethal drowning would couple this survival slice to unfinished death semantics.
 - Consequence: Future water or breath systems should treat head-region submersion as the breath trigger and keep drowning nonlethal unless the same pass intentionally updates both the breath rule and the shared death/respawn handling together.
 
+### 2026-03-13: Hostile slime ambient spawn uses deterministic round-robin surface windows
+
+- Decision: Hostile slimes now spawn from fixed-step round-robin grounded-search windows at fixed horizontal offsets from the player, reset their cooldown on every attempt, and despawn once they leave a broader keep band.
+- Reason: The first hostile-entity slice needs regression-friendly spawn behavior that is easy to exercise from mixed-device play without introducing probabilistic ambient rules or a second non-registry entity lifecycle.
+- Consequence: Future hostile-slime locomotion, combat, or telemetry work should preserve the deterministic spawn-window order and keep-band ownership unless the same pass intentionally revisits the broader enemy spawning model.
+
 ### 2026-03-13: Fall damage stays nonlethal until a dedicated death slice replaces that rule
 
 - Decision: Hard-landing damage now clamps at `1` health and uses a short fall-recovery cooldown instead of driving immediate death or respawn.

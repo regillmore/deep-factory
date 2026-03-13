@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-13
 
+- Task: Add a hostile-slime spawn-and-presentation slice after entity scaffolding.
+- Changes: Added [src/world/hostileSlimeState.ts](../src/world/hostileSlimeState.ts), [src/world/hostileSlimeSpawn.ts](../src/world/hostileSlimeSpawn.ts), and [src/gl/hostileSlimePlaceholder.ts](../src/gl/hostileSlimePlaceholder.ts) plus focused regressions so fixed-step hostile slimes now spawn from deterministic round-robin surface windows near the player, despawn outside a keep band, and render through the shared entity pass; updated [src/gl/renderer.ts](../src/gl/renderer.ts), [src/main.ts](../src/main.ts), [src/gl/renderer.test.ts](../src/gl/renderer.test.ts), and [src/main.test.ts](../src/main.test.ts) to wire slime draw submission and runtime spawn/despawn orchestration; removed completed task `216` from [docs/NEXT.md](docs/NEXT.md), added replacement task `517`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/hostileSlimeState.test.ts src/world/hostileSlimeSpawn.test.ts src/gl/hostileSlimePlaceholder.test.ts src/gl/renderer.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Split the oversized hostile-slime combat roadmap item into smaller chapters.
 - Changes: Replaced task `213` in [docs/NEXT.md](docs/NEXT.md) with task-sized hostile-slime spawn-and-presentation, jump-chase locomotion, and player-contact combat chapters (`216`-`218`), and retargeted downstream slime-dependent tasks so combat tools now depend on locomotion while health and defense follow-ups depend on player-contact combat.
 - Verification: Docs-only roadmap update; no code tests were run.

@@ -3,6 +3,13 @@ import { createStaticVertexBuffer, createVertexArray } from './buffer';
 import { createProgram } from './shader';
 import { applyAnimatedChunkMeshFrameAtElapsedMs, createAnimatedChunkMeshState } from './animatedChunkMesh';
 import {
+  buildHostileSlimePlaceholderVertices,
+  getHostileSlimePlaceholderFacingSign,
+  getHostileSlimePlaceholderNearbyLightSample,
+  HOSTILE_SLIME_PLACEHOLDER_VERTEX_FLOAT_COUNT,
+  HOSTILE_SLIME_PLACEHOLDER_VERTEX_COUNT
+} from './hostileSlimePlaceholder';
+import {
   buildStandalonePlayerPlaceholderVertices,
   getStandalonePlayerPlaceholderNearbyLightSample,
   getStandalonePlayerPlaceholderRenderFacingSign,
@@ -52,6 +59,7 @@ import {
 } from '../world/playerState';
 import type { EntityId, EntityRenderStateSnapshot } from '../world/entityRegistry';
 import { resolveInterpolatedEntityWorldPosition } from '../world/entityRenderInterpolation';
+import { type HostileSlimeState } from '../world/hostileSlimeState';
 import {
   isStandalonePlayerRenderStateCeilingBonkActive,
   type StandalonePlayerRenderState
@@ -96,7 +104,13 @@ export interface StandalonePlayerEntityFrameState {
   snapshot: EntityRenderStateSnapshot<StandalonePlayerRenderState>;
 }
 
-export type RendererEntityFrameState = StandalonePlayerEntityFrameState;
+export interface HostileSlimeEntityFrameState {
+  id: EntityId;
+  kind: 'slime';
+  snapshot: EntityRenderStateSnapshot<HostileSlimeState>;
+}
+
+export type RendererEntityFrameState = StandalonePlayerEntityFrameState | HostileSlimeEntityFrameState;
 
 export interface RenderTelemetry {
   atlasSourceKind: AtlasImageLoadResult['sourceKind'] | 'pending';
@@ -174,6 +188,7 @@ export class Renderer {
   private gl: WebGL2RenderingContext;
   private program: WebGLProgram;
   private playerProgram: WebGLProgram;
+  private slimeProgram: WebGLProgram;
   private world!: TileWorld;
   private detachWorldTileEditListener: (() => void) | null = null;
   private meshes = new Map<string, CachedChunkMesh>();
@@ -183,9 +198,14 @@ export class Renderer {
   private uPlayerFacingSign: WebGLUniformLocation;
   private uPlayerPoseIndex: WebGLUniformLocation;
   private uPlayerLight: WebGLUniformLocation;
+  private uSlimeMatrix: WebGLUniformLocation;
+  private uSlimeFacingSign: WebGLUniformLocation;
+  private uSlimeLight: WebGLUniformLocation;
   private texture: WebGLTexture | null = null;
   private standalonePlayerBuffer: WebGLBuffer;
   private standalonePlayerVao: WebGLVertexArrayObject;
+  private hostileSlimeBuffer: WebGLBuffer;
+  private hostileSlimeVao: WebGLVertexArrayObject;
 
   readonly telemetry: RenderTelemetry = {
     atlasSourceKind: 'pending',
@@ -454,11 +474,102 @@ export class Renderer {
     if (!playerLight) throw new Error('Missing uniform u_light');
     this.uPlayerLight = playerLight;
 
+    this.slimeProgram = createProgram(
+      gl,
+      `#version 300 es
+      precision mediump float;
+      layout(location = 0) in vec2 a_position;
+      layout(location = 1) in vec2 a_uv;
+      uniform mat4 u_matrix;
+      out vec2 v_uv;
+      void main() {
+        v_uv = a_uv;
+        gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);
+      }`,
+      `#version 300 es
+      precision mediump float;
+      in vec2 v_uv;
+      uniform float u_facingSign;
+      uniform float u_light;
+      out vec4 outColor;
+
+      bool inRect(vec2 uv, vec4 rect) {
+        return uv.x >= rect.x && uv.x <= rect.z && uv.y >= rect.y && uv.y <= rect.w;
+      }
+
+      bool inEllipse(vec2 uv, vec2 center, vec2 radius) {
+        vec2 normalized = (uv - center) / radius;
+        return dot(normalized, normalized) <= 1.0;
+      }
+
+      bool inSlimeBody(vec2 uv, float inset) {
+        vec2 domeCenter = vec2(0.50, 0.46 + inset * 0.25);
+        vec2 domeRadius = vec2(max(0.01, 0.44 - inset), max(0.01, 0.34 - inset));
+        vec4 base = vec4(0.08 + inset, 0.08 + inset, 0.92 - inset, 0.44);
+        return inEllipse(uv, domeCenter, domeRadius) || inRect(uv, base);
+      }
+
+      void main() {
+        vec2 uv = v_uv;
+        if (u_facingSign < 0.0) {
+          uv.x = 1.0 - uv.x;
+        }
+        uv.y = 1.0 - uv.y;
+
+        bool insideBody = inSlimeBody(uv, 0.0);
+        if (!insideBody) {
+          discard;
+        }
+
+        bool insideOutline = insideBody && !inSlimeBody(uv, 0.035);
+        bool insideHighlight = inEllipse(uv, vec2(0.34, 0.62), vec2(0.16, 0.10));
+        bool insideLeftEye = inEllipse(uv, vec2(0.38, 0.42), vec2(0.05, 0.08));
+        bool insideRightEye = inEllipse(uv, vec2(0.62, 0.42), vec2(0.05, 0.08));
+        bool insideMouth =
+          inEllipse(uv, vec2(0.50, 0.24), vec2(0.12, 0.05)) &&
+          uv.y <= 0.24;
+        bool insideShadow = inRect(uv, vec4(0.18, 0.06, 0.82, 0.16));
+
+        vec3 color = vec3(0.18, 0.66, 0.26);
+        if (insideHighlight) {
+          color = vec3(0.46, 0.90, 0.50);
+        }
+        if (insideShadow) {
+          color = vec3(0.12, 0.44, 0.18);
+        }
+        if (insideLeftEye || insideRightEye || insideMouth) {
+          color = vec3(0.06, 0.10, 0.08);
+        }
+        if (insideOutline) {
+          color = vec3(0.08, 0.28, 0.12);
+        }
+
+        outColor = vec4(color * clamp(u_light, 0.0, 1.0), 1.0);
+      }`
+    );
+
+    const slimeMatrix = gl.getUniformLocation(this.slimeProgram, 'u_matrix');
+    if (!slimeMatrix) throw new Error('Missing uniform u_matrix');
+    this.uSlimeMatrix = slimeMatrix;
+
+    const slimeFacingSign = gl.getUniformLocation(this.slimeProgram, 'u_facingSign');
+    if (!slimeFacingSign) throw new Error('Missing uniform u_facingSign');
+    this.uSlimeFacingSign = slimeFacingSign;
+
+    const slimeLight = gl.getUniformLocation(this.slimeProgram, 'u_light');
+    if (!slimeLight) throw new Error('Missing uniform u_light');
+    this.uSlimeLight = slimeLight;
+
     this.standalonePlayerBuffer = createDynamicVertexBuffer(
       gl,
       new Float32Array(STANDALONE_PLAYER_PLACEHOLDER_VERTEX_FLOAT_COUNT)
     );
     this.standalonePlayerVao = createVertexArray(gl, this.standalonePlayerBuffer, 4);
+    this.hostileSlimeBuffer = createDynamicVertexBuffer(
+      gl,
+      new Float32Array(HOSTILE_SLIME_PLACEHOLDER_VERTEX_FLOAT_COUNT)
+    );
+    this.hostileSlimeVao = createVertexArray(gl, this.hostileSlimeBuffer, 4);
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -907,6 +1018,9 @@ export class Renderer {
         case 'standalone-player':
           this.drawStandalonePlayer(entity, renderAlpha, worldToClipMatrix, timeMs);
           break;
+        case 'slime':
+          this.drawHostileSlime(entity, renderAlpha, worldToClipMatrix);
+          break;
       }
     }
   }
@@ -965,6 +1079,34 @@ export class Renderer {
     );
     gl.bindVertexArray(this.standalonePlayerVao);
     gl.drawArrays(gl.TRIANGLES, 0, STANDALONE_PLAYER_PLACEHOLDER_VERTEX_COUNT);
+    this.telemetry.drawCalls += 1;
+  }
+
+  private drawHostileSlime(
+    entity: HostileSlimeEntityFrameState,
+    renderAlpha: number,
+    worldToClipMatrix: Float32Array
+  ): void {
+    const state = entity.snapshot.current;
+    const renderPosition = resolveInterpolatedEntityWorldPosition(entity.snapshot, renderAlpha);
+    const gl = this.gl;
+    gl.useProgram(this.slimeProgram);
+    gl.uniformMatrix4fv(this.uSlimeMatrix, false, worldToClipMatrix);
+    gl.uniform1f(this.uSlimeFacingSign, getHostileSlimePlaceholderFacingSign(state));
+    const nearbyLightSample = getHostileSlimePlaceholderNearbyLightSample(
+      this.world,
+      state,
+      renderPosition
+    );
+    gl.uniform1f(this.uSlimeLight, nearbyLightSample.level / MAX_LIGHT_LEVEL);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.hostileSlimeBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      buildHostileSlimePlaceholderVertices(state, renderPosition),
+      gl.DYNAMIC_DRAW
+    );
+    gl.bindVertexArray(this.hostileSlimeVao);
+    gl.drawArrays(gl.TRIANGLES, 0, HOSTILE_SLIME_PLACEHOLDER_VERTEX_COUNT);
     this.telemetry.drawCalls += 1;
   }
 

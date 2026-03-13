@@ -157,6 +157,14 @@ import {
   resolveLiquidSurfaceTopHeights
 } from './world/liquidSurface';
 import {
+  createHostileSlimeSpawnerState,
+  stepHostileSlimeSpawner
+} from './world/hostileSlimeSpawn';
+import {
+  cloneHostileSlimeState,
+  type HostileSlimeState
+} from './world/hostileSlimeState';
+import {
   resolvePlayerWallContactTransitionEvent,
   type PlayerWallContactTransitionEvent
 } from './world/playerWallContactTransition';
@@ -200,6 +208,7 @@ import {
 const DEBUG_TILE_BREAK_ID = 0;
 const PREFERRED_INITIAL_DEBUG_BRUSH_TILE_NAME = 'debug_brick';
 const STANDALONE_PLAYER_ENTITY_KIND = 'standalone-player';
+const HOSTILE_SLIME_ENTITY_KIND = 'slime';
 type MainMenuShellActionType =
   | 'enter-or-resume-world-session'
   | 'export-world-save'
@@ -1178,6 +1187,8 @@ const bootstrap = async (): Promise<void> => {
   let resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
   let entityRegistry = new EntityRegistry();
   let standalonePlayerEntityId: EntityId | null = null;
+  let hostileSlimeEntityIds: EntityId[] = [];
+  let hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
   let pendingStandalonePlayerFixedStepResult: StandalonePlayerFixedStepResult | null = null;
   let playerSpawnNeedsRefresh = false;
   let cameraFollowOffset: CameraFollowOffset = { x: 0, y: 0 };
@@ -1194,6 +1205,23 @@ const bootstrap = async (): Promise<void> => {
       return null;
     }
     return entityRegistry.getEntityState<PlayerState>(standalonePlayerEntityId);
+  };
+  const getHostileSlimeEntityStates = (): Array<{ id: EntityId; state: HostileSlimeState }> => {
+    const activeHostileSlimes: Array<{ id: EntityId; state: HostileSlimeState }> = [];
+    const nextHostileSlimeEntityIds: EntityId[] = [];
+    for (const entityId of hostileSlimeEntityIds) {
+      const state = entityRegistry.getEntityState<HostileSlimeState>(entityId);
+      if (state === null) {
+        continue;
+      }
+      nextHostileSlimeEntityIds.push(entityId);
+      activeHostileSlimes.push({
+        id: entityId,
+        state
+      });
+    }
+    hostileSlimeEntityIds = nextHostileSlimeEntityIds;
+    return activeHostileSlimes;
   };
   const createCurrentWorldSessionShellProfile = () =>
     createWorldSessionShellProfileEnvelope({
@@ -1590,25 +1618,37 @@ const bootstrap = async (): Promise<void> => {
   };
   const createRendererEntityFrameStates = (): RendererEntityFrameState[] => {
     const entityFrameStates: RendererEntityFrameState[] = [];
-    for (const snapshotEntry of entityRegistry.getRenderStateSnapshots<StandalonePlayerRenderState>()) {
-      if (snapshotEntry.kind !== STANDALONE_PLAYER_ENTITY_KIND) {
-        continue;
+    for (const snapshotEntry of entityRegistry.getRenderStateSnapshots()) {
+      switch (snapshotEntry.kind) {
+        case STANDALONE_PLAYER_ENTITY_KIND:
+          entityFrameStates.push({
+            id: snapshotEntry.id,
+            kind: STANDALONE_PLAYER_ENTITY_KIND,
+            snapshot: {
+              previous: snapshotEntry.previous as StandalonePlayerRenderState,
+              current: snapshotEntry.current as StandalonePlayerRenderState
+            }
+          });
+          break;
+        case HOSTILE_SLIME_ENTITY_KIND:
+          entityFrameStates.push({
+            id: snapshotEntry.id,
+            kind: HOSTILE_SLIME_ENTITY_KIND,
+            snapshot: {
+              previous: snapshotEntry.previous as HostileSlimeState,
+              current: snapshotEntry.current as HostileSlimeState
+            }
+          });
+          break;
       }
-
-      entityFrameStates.push({
-        id: snapshotEntry.id,
-        kind: STANDALONE_PLAYER_ENTITY_KIND,
-        snapshot: {
-          previous: snapshotEntry.previous,
-          current: snapshotEntry.current
-        }
-      });
     }
     return entityFrameStates;
   };
   const replaceWorldSessionEntityRegistry = (): void => {
     entityRegistry = new EntityRegistry();
     standalonePlayerEntityId = null;
+    hostileSlimeEntityIds = [];
+    hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
     pendingStandalonePlayerFixedStepResult = null;
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
   };
@@ -1652,6 +1692,48 @@ const bootstrap = async (): Promise<void> => {
       throw new Error('Failed to read standalone player entity state after spawn');
     }
     return spawnedPlayerState;
+  };
+  const spawnHostileSlimeEntity = (initialSlimeState: HostileSlimeState): EntityId => {
+    const entityId = entityRegistry.spawn({
+      kind: HOSTILE_SLIME_ENTITY_KIND,
+      initialState: initialSlimeState,
+      captureRenderState: cloneHostileSlimeState
+    });
+    hostileSlimeEntityIds.push(entityId);
+    return entityId;
+  };
+  const despawnHostileSlimeEntities = (entityIds: readonly EntityId[]): void => {
+    if (entityIds.length === 0) {
+      return;
+    }
+
+    const removedEntityIds = new Set(entityIds);
+    hostileSlimeEntityIds = hostileSlimeEntityIds.filter((entityId) => {
+      if (!removedEntityIds.has(entityId)) {
+        return true;
+      }
+
+      entityRegistry.despawn(entityId);
+      return false;
+    });
+  };
+  const stepHostileSlimeSpawnAndDespawn = (): void => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (standalonePlayerState === null) {
+      return;
+    }
+
+    const spawnResult = stepHostileSlimeSpawner({
+      playerState: standalonePlayerState,
+      activeSlimes: getHostileSlimeEntityStates(),
+      spawnerState: hostileSlimeSpawnerState,
+      findSpawnPoint: (options) => renderer.findPlayerSpawnPoint(options)
+    });
+    hostileSlimeSpawnerState = spawnResult.nextSpawnerState;
+    despawnHostileSlimeEntities(spawnResult.despawnIds);
+    if (spawnResult.spawnState !== null) {
+      spawnHostileSlimeEntity(spawnResult.spawnState);
+    }
   };
 
   const applyStandalonePlayerCameraFollow = (): void => {
@@ -3714,6 +3796,7 @@ const bootstrap = async (): Promise<void> => {
 
       entityRegistry.fixedUpdateAll(fixedDt);
       flushStandalonePlayerFixedStepResult();
+      stepHostileSlimeSpawnAndDespawn();
     },
     (alpha, frameDtMs) => {
       if (currentScreen !== 'in-world') {

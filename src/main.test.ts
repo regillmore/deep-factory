@@ -32,6 +32,13 @@ import {
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
 import { createPlayerState, getPlayerCameraFocusPoint } from './world/playerState';
+import {
+  DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS
+} from './world/hostileSlimeSpawn';
+import {
+  DEFAULT_HOSTILE_SLIME_HEIGHT,
+  DEFAULT_HOSTILE_SLIME_WIDTH
+} from './world/hostileSlimeState';
 import { TileWorld } from './world/world';
 
 const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
@@ -181,6 +188,7 @@ const testRuntime = vi.hoisted(() => {
     rendererConstructCount: 0,
     rendererInstance: null as object | null,
     rendererLoadWorldSnapshotCallCount: 0,
+    rendererFindPlayerSpawnPointImpl: null as null | ((options: unknown) => unknown),
     gameLoopFixedUpdate: null as null | ((fixedDt: number) => void),
     gameLoopRender: null as null | ((alpha: number, frameDtMs: number) => void),
     performanceNow: 1000,
@@ -293,6 +301,7 @@ const testRuntime = vi.hoisted(() => {
         | null;
       standalonePlayerCeilingContact: { tileX: number; tileY: number; tileId: number } | null;
       standalonePlayerCeilingBonkHoldUntilTimeMs: number | null;
+      slimeCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       renderAlpha: number | null;
       timeMs: number | null;
     },
@@ -395,6 +404,7 @@ vi.mock('./gl/renderer', () => ({
       const renderState = frameState as {
         entities?:
           | Array<{
+              id?: number;
               kind?: string;
               snapshot?: {
                 previous?: {
@@ -422,6 +432,31 @@ vi.mock('./gl/renderer', () => ({
       const standalonePlayerEntity = Array.isArray(renderState.entities)
         ? renderState.entities.find((entity) => entity?.kind === 'standalone-player') ?? null
         : null;
+      const slimeCurrentPositions = Array.isArray(renderState.entities)
+        ? renderState.entities
+            .filter((entity) => entity?.kind === 'slime')
+            .flatMap((entity) => {
+              const snapshot = entity?.snapshot?.current;
+              if (
+                !snapshot?.position ||
+                typeof entity?.id !== 'number' ||
+                typeof snapshot.position.x !== 'number' ||
+                typeof snapshot.position.y !== 'number'
+              ) {
+                return [];
+              }
+
+              return [
+                {
+                  id: entity.id,
+                  position: {
+                    x: snapshot.position.x,
+                    y: snapshot.position.y
+                  }
+                }
+              ];
+            })
+        : [];
       const standalonePlayerPreviousPosition =
         standalonePlayerEntity?.snapshot?.previous?.position &&
         typeof standalonePlayerEntity.snapshot.previous.position.x === 'number' &&
@@ -470,12 +505,16 @@ vi.mock('./gl/renderer', () => ({
           standalonePlayerEntity?.snapshot?.current?.ceilingContact ?? null,
         standalonePlayerCeilingBonkHoldUntilTimeMs:
           standalonePlayerEntity?.snapshot?.current?.ceilingBonkHoldUntilTimeMs ?? null,
+        slimeCurrentPositions,
         renderAlpha: typeof renderState.renderAlpha === 'number' ? renderState.renderAlpha : null,
         timeMs: renderState.timeMs ?? null
       };
     }
 
-    findPlayerSpawnPoint() {
+    findPlayerSpawnPoint(options?: unknown) {
+      if (testRuntime.rendererFindPlayerSpawnPointImpl !== null) {
+        return testRuntime.rendererFindPlayerSpawnPointImpl(options);
+      }
       return testRuntime.playerSpawnPoint;
     }
 
@@ -1432,6 +1471,8 @@ const createTestPlayerSpawnPoint = ({
   standingTileY = 0,
   x = 8,
   y = 0,
+  width = 12,
+  height = 28,
   supportTileX = anchorTileX,
   supportTileY = standingTileY,
   supportTileId = 1
@@ -1440,6 +1481,8 @@ const createTestPlayerSpawnPoint = ({
   standingTileY: number;
   x: number;
   y: number;
+  width: number;
+  height: number;
   supportTileX: number;
   supportTileY: number;
   supportTileId: number;
@@ -1449,9 +1492,9 @@ const createTestPlayerSpawnPoint = ({
   x,
   y,
   aabb: {
-    minX: x - 6,
-    minY: y - 28,
-    maxX: x + 6,
+    minX: x - width * 0.5,
+    minY: y - height,
+    maxX: x + width * 0.5,
     maxY: y
   },
   support: {
@@ -1503,6 +1546,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererConstructCount = 0;
     testRuntime.rendererInstance = null;
     testRuntime.rendererLoadWorldSnapshotCallCount = 0;
+    testRuntime.rendererFindPlayerSpawnPointImpl = null;
     testRuntime.gameLoopFixedUpdate = null;
     testRuntime.gameLoopRender = null;
     testRuntime.performanceNow = 1000;
@@ -3646,6 +3690,57 @@ describe('main.ts shell state orchestration', () => {
       x: 16,
       y: -6
     });
+  });
+
+  it('spawns hostile slimes on the fixed-step cadence and despawns them once the player leaves the keep band', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    const slimeSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 12,
+      x: 200,
+      y: 0,
+      width: DEFAULT_HOSTILE_SLIME_WIDTH,
+      height: DEFAULT_HOSTILE_SLIME_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_HOSTILE_SLIME_WIDTH &&
+        search?.height === DEFAULT_HOSTILE_SLIME_HEIGHT
+      ) {
+        return slimeSpawnPoint;
+      }
+
+      return testRuntime.playerSpawnPoint;
+    };
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toEqual([
+      {
+        id: 2,
+        position: { x: 200, y: 0 }
+      }
+    ]);
+
+    testRuntime.rendererStepPlayerStateImpl = () =>
+      createPlayerState({
+        position: { x: 720, y: 0 },
+        grounded: true,
+        facing: 'right'
+      });
+
+    runFixedUpdate();
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toEqual([]);
   });
 
   it('submits standalone-player wall, ceiling, and bonk presentation through the current entity snapshot', async () => {

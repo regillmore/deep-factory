@@ -6,6 +6,7 @@ import {
   type PlayerCollisionContacts,
   type PlayerState
 } from '../world/playerState';
+import { createHostileSlimeState, type HostileSlimeState } from '../world/hostileSlimeState';
 import {
   cloneStandalonePlayerRenderState,
   createStandalonePlayerRenderPresentationState
@@ -120,6 +121,19 @@ const expectStandalonePlayerUniformValues = (
   }
 };
 
+const expectHostileSlimeUniformValues = (
+  uniformCalls: Array<[WebGLUniformLocation | null, number]>,
+  expectedFacingSigns: number[]
+): void => {
+  expect(uniformCalls).toHaveLength(expectedFacingSigns.length * 2);
+  for (let index = 0; index < expectedFacingSigns.length; index += 1) {
+    const base = index * 2;
+    expect(uniformCalls[base]?.[1]).toBe(expectedFacingSigns[index]);
+    expect(uniformCalls[base + 1]?.[1]).toBeGreaterThanOrEqual(0);
+    expect(uniformCalls[base + 1]?.[1]).toBeLessThanOrEqual(1);
+  }
+};
+
 const createStandalonePlayerEntityFrameState = (
   currentState: PlayerState,
   options: {
@@ -156,6 +170,21 @@ const createStandalonePlayerEntityFrameState = (
         options.ceilingBonkHoldUntilTimeMs ?? null
       )
     )
+  }
+});
+
+const createHostileSlimeEntityFrameState = (
+  currentState: HostileSlimeState,
+  options: {
+    id?: number;
+    previousState?: HostileSlimeState;
+  } = {}
+): RendererEntityFrameState => ({
+  id: options.id ?? 1,
+  kind: 'slime',
+  snapshot: {
+    previous: options.previousState ?? currentState,
+    current: currentState
   }
 });
 
@@ -2207,6 +2236,180 @@ describe('Renderer atlas telemetry', () => {
         { facing: 1, pose: STANDALONE_PLAYER_PLACEHOLDER_POSE_GROUNDED_WALK_A }
       ]
     );
+  });
+
+  it('draws hostile slime placeholders from interpolated entity snapshots', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const drawArrays = vi.mocked(gl.drawArrays);
+    const bufferData = vi.mocked(gl.bufferData);
+    const uniform1f = vi.mocked(gl.uniform1f);
+    drawArrays.mockClear();
+    bufferData.mockClear();
+    uniform1f.mockClear();
+
+    const currentState = createHostileSlimeState({
+      position: { x: 80, y: 48 },
+      facing: 'right'
+    });
+    const previousState = createHostileSlimeState({
+      position: { x: 64, y: 32 },
+      facing: 'right'
+    });
+
+    renderer.render(new Camera2D(), {
+      entities: [
+        createHostileSlimeEntityFrameState(currentState, {
+          id: 21,
+          previousState
+        })
+      ],
+      renderAlpha: 0.25,
+      timeMs: 0
+    });
+
+    expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
+    expect(renderer.telemetry.drawCalls).toBe(renderer.telemetry.renderedChunks + 1);
+
+    const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
+    expect(dynamicUploads).toHaveLength(1);
+    expect(Array.from((dynamicUploads[0]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      58,
+      24,
+      0,
+      0,
+      78,
+      24,
+      1,
+      0,
+      78,
+      36,
+      1,
+      1,
+      58,
+      24,
+      0,
+      0,
+      78,
+      36,
+      1,
+      1,
+      58,
+      36,
+      0,
+      1
+    ]);
+    expectHostileSlimeUniformValues(
+      uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
+      [1]
+    );
+  });
+
+  it('preserves supported-entry submission order when slime and standalone-player entries are interleaved', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const drawArrays = vi.mocked(gl.drawArrays);
+    const bufferData = vi.mocked(gl.bufferData);
+    drawArrays.mockClear();
+    bufferData.mockClear();
+
+    const slimeState = createHostileSlimeState({
+      position: { x: -24, y: 16 },
+      facing: 'left'
+    });
+    const playerState = createPlayerState({
+      position: { x: 24, y: 36 },
+      size: { width: 12, height: 28 },
+      grounded: true,
+      velocity: { x: -60, y: 0 },
+      facing: 'left'
+    });
+
+    renderer.render(new Camera2D(), {
+      entities: [
+        createHostileSlimeEntityFrameState(slimeState, { id: 31 }),
+        createStandalonePlayerEntityFrameState(playerState, { id: 32 })
+      ],
+      timeMs: 0
+    });
+
+    expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
+    expect(renderer.telemetry.drawCalls).toBe(renderer.telemetry.renderedChunks + 2);
+
+    const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
+    expect(dynamicUploads).toHaveLength(2);
+    expect(Array.from((dynamicUploads[0]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      -34,
+      4,
+      0,
+      0,
+      -14,
+      4,
+      1,
+      0,
+      -14,
+      16,
+      1,
+      1,
+      -34,
+      4,
+      0,
+      0,
+      -14,
+      16,
+      1,
+      1,
+      -34,
+      16,
+      0,
+      1
+    ]);
+    expect(Array.from((dynamicUploads[1]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      18,
+      8,
+      0,
+      0,
+      30,
+      8,
+      1,
+      0,
+      30,
+      36,
+      1,
+      1,
+      18,
+      8,
+      0,
+      0,
+      30,
+      36,
+      1,
+      1,
+      18,
+      36,
+      0,
+      1
+    ]);
   });
 
   it('ignores unknown future entity-pass kinds without preventing later supported entries from drawing', async () => {
