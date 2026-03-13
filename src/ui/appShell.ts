@@ -2678,8 +2678,14 @@ const createMenuSectionDetailGroupsElement = (
   return groups;
 };
 
+interface MenuSectionActionStatusBadgeContent {
+  text: string;
+  tone: AppShellMenuSectionTone;
+}
+
 interface MenuSectionActionHeadingContent {
   titleText: string;
+  statusBadge: MenuSectionActionStatusBadgeContent | null;
   shortcutBadgeText: string | null;
   affordanceBadgeText: string | null;
 }
@@ -2710,15 +2716,31 @@ const resolveMenuSectionActionAffordanceBadgeText = (
   return shortcutMetadataRow?.value === 'Button only' ? 'Button only' : null;
 };
 
+const resolveMenuSectionActionStatusBadge = (
+  section: AppShellMenuSection,
+  className: string
+): MenuSectionActionStatusBadgeContent | null => {
+  if (className !== 'app-shell__danger-zone-action') {
+    return null;
+  }
+
+  return {
+    text: 'Warning',
+    tone: section.tone ?? 'warning'
+  };
+};
+
 const resolveMenuSectionActionHeadingContent = (
   section: AppShellMenuSection,
   className: string
 ): MenuSectionActionHeadingContent => {
   const title = section.title;
+  const statusBadge = resolveMenuSectionActionStatusBadge(section, className);
   const shortcutBadgeText = PAUSED_MAIN_MENU_SECTION_ACTION_SHORTCUT_BADGES.get(title) ?? null;
   if (shortcutBadgeText === null) {
     return {
       titleText: title,
+      statusBadge,
       shortcutBadgeText: null,
       affordanceBadgeText: resolveMenuSectionActionAffordanceBadgeText(section, className)
     };
@@ -2727,6 +2749,7 @@ const resolveMenuSectionActionHeadingContent = (
   const shortcutSuffix = ` (${shortcutBadgeText})`;
   return {
     titleText: title.endsWith(shortcutSuffix) ? title.slice(0, -shortcutSuffix.length) : title,
+    statusBadge,
     shortcutBadgeText,
     affordanceBadgeText: resolveMenuSectionActionAffordanceBadgeText(section, className)
   };
@@ -2747,18 +2770,37 @@ const appendMenuSectionActionContent = (
   heading.textContent = headingContent.titleText;
   headingRow.append(heading);
 
-  if (headingContent.shortcutBadgeText !== null) {
-    const shortcutBadge = document.createElement('span');
-    shortcutBadge.className = 'app-shell__section-action-shortcut-badge';
-    shortcutBadge.textContent = headingContent.shortcutBadgeText;
-    headingRow.append(shortcutBadge);
-  }
+  const hasBadgeGroup =
+    headingContent.statusBadge !== null ||
+    headingContent.shortcutBadgeText !== null ||
+    headingContent.affordanceBadgeText !== null;
 
-  if (headingContent.affordanceBadgeText !== null) {
-    const affordanceBadge = document.createElement('span');
-    affordanceBadge.className = 'app-shell__section-action-affordance-badge';
-    affordanceBadge.textContent = headingContent.affordanceBadgeText;
-    headingRow.append(affordanceBadge);
+  if (hasBadgeGroup) {
+    const badgeGroup = document.createElement('div');
+    badgeGroup.className = 'app-shell__section-action-badges';
+    headingRow.append(badgeGroup);
+
+    if (headingContent.statusBadge !== null) {
+      const statusBadge = document.createElement('span');
+      statusBadge.className = 'app-shell__section-action-status-badge';
+      statusBadge.setAttribute('data-tone', headingContent.statusBadge.tone);
+      statusBadge.textContent = headingContent.statusBadge.text;
+      badgeGroup.append(statusBadge);
+    }
+
+    if (headingContent.shortcutBadgeText !== null) {
+      const shortcutBadge = document.createElement('span');
+      shortcutBadge.className = 'app-shell__section-action-shortcut-badge';
+      shortcutBadge.textContent = headingContent.shortcutBadgeText;
+      badgeGroup.append(shortcutBadge);
+    }
+
+    if (headingContent.affordanceBadgeText !== null) {
+      const affordanceBadge = document.createElement('span');
+      affordanceBadge.className = 'app-shell__section-action-affordance-badge';
+      affordanceBadge.textContent = headingContent.affordanceBadgeText;
+      badgeGroup.append(affordanceBadge);
+    }
   }
 
   if (section.lines.length > 0) {

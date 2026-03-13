@@ -503,8 +503,17 @@ canvas {
   gap: 10px;
 }
 
+.app-shell__section-action-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .app-shell__section-action-shortcut-badge,
-.app-shell__section-action-affordance-badge {
+.app-shell__section-action-affordance-badge,
+.app-shell__section-action-status-badge {
   display: inline-flex;
   align-items: center;
   padding: 4px 9px;
@@ -530,6 +539,22 @@ canvas {
     linear-gradient(180deg, rgba(23, 27, 34, 0.94), rgba(15, 18, 24, 0.9)),
     linear-gradient(135deg, rgba(183, 196, 202, 0.08), rgba(243, 205, 135, 0.04));
   color: #dce5e9;
+}
+
+.app-shell__section-action-status-badge {
+  border: 1px solid rgba(183, 196, 202, 0.2);
+  background:
+    linear-gradient(180deg, rgba(23, 27, 34, 0.94), rgba(15, 18, 24, 0.9)),
+    linear-gradient(135deg, rgba(183, 196, 202, 0.08), rgba(243, 205, 135, 0.04));
+  color: #dce5e9;
+}
+
+.app-shell__section-action-status-badge[data-tone='warning'] {
+  border-color: rgba(214, 112, 92, 0.34);
+  background:
+    linear-gradient(180deg, rgba(34, 17, 18, 0.96), rgba(21, 12, 13, 0.9)),
+    linear-gradient(135deg, rgba(214, 112, 92, 0.16), rgba(243, 205, 135, 0.06));
+  color: #ffd9d1;
 }
 
 .app-shell__danger-zone-action .app-shell__section-action-shortcut-badge {
