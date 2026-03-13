@@ -5,8 +5,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## App shell
 
 483. Add compact persistence badges to expanded paused-menu `Shell Hotkeys` editor metadata after task `477` so browser-saved versus session-only remap scope stays scannable beside inline result copy, with shell-editor-persistence-badge regressions.
-496. Add a compact busy badge to paused-menu `Import World Save` while its local picker wait state is active after task `481` so the in-flight section action stays scannable from the action heading, with world-save-busy-badge regressions.
 497. Add compact saved-vs-session-only result badges to inline paused-menu `Shell Hotkeys` remap feedback after task `483` so remap outcome scope stays scannable after repeated edits, with shell-editor-remap-result-badge regressions.
+498. Add compact browser-resume status badges to paused-menu `World Save` summary rows so saved versus missing-resume state stays scannable above the section actions, with world-save-summary-status-badge regressions.
 
 ## Optimize liquids
 

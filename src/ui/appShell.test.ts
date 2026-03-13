@@ -815,7 +815,7 @@ describe('paused main-menu dashboard layout', () => {
     ).toBe(true);
   });
 
-  it('debounces paused-menu Import World Save while its browser picker promise is active', async () => {
+  it('shows a busy badge and debounces paused-menu Import World Save while its browser picker promise is active', async () => {
     let finishImportWorldSave = () => {};
     let importWorldSaveCallCount = 0;
     const pendingImportWorldSave = new Promise<void>((resolve) => {
@@ -841,6 +841,10 @@ describe('paused main-menu dashboard layout', () => {
     initialImportButton?.click();
 
     const busyImportButton = findElementsByClass(root, 'app-shell__world-save-action')[1] ?? null;
+    const busyImportBadge =
+      busyImportButton === null
+        ? null
+        : findElementByClass(busyImportButton, 'app-shell__section-action-status-badge');
     const busyImportMetadata =
       busyImportButton === null
         ? null
@@ -851,6 +855,8 @@ describe('paused main-menu dashboard layout', () => {
     expect(busyImportButton?.dataset.busy).toBe('true');
     expect(busyImportButton?.getAttribute('aria-busy')).toBe('true');
     expect(busyImportButton?.title).toBe(PAUSED_MAIN_MENU_BUSY_IMPORT_WORLD_SAVE_TITLE);
+    expect(busyImportBadge?.textContent).toBe('Busy');
+    expect(busyImportBadge?.dataset.tone).toBe('accent');
     expect(readMetadataRows(busyImportMetadata)).toEqual([
       {
         label: 'Status',
@@ -875,6 +881,10 @@ describe('paused main-menu dashboard layout', () => {
 
     const restoredImportButton =
       findElementsByClass(root, 'app-shell__world-save-action')[1] ?? null;
+    const restoredImportBadge =
+      restoredImportButton === null
+        ? null
+        : findElementByClass(restoredImportButton, 'app-shell__section-action-status-badge');
     const restoredImportMetadata =
       restoredImportButton === null
         ? null
@@ -884,6 +894,7 @@ describe('paused main-menu dashboard layout', () => {
     expect(restoredImportButton?.dataset.busy).toBe('false');
     expect(restoredImportButton?.getAttribute('aria-busy')).toBe('false');
     expect(restoredImportButton?.title).toBe(resolvePausedMainMenuImportWorldSaveTitle());
+    expect(restoredImportBadge).toBeNull();
     expect(readMetadataRows(restoredImportMetadata)).toEqual([
       {
         label: 'Shortcut',
@@ -1627,6 +1638,9 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-status-badge');
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__section-action-status-badge[data-tone='warning']"
+    );
+    expect(APP_SHELL_STYLE_SOURCE).toContain(
+      ".app-shell__section-action-status-badge[data-tone='accent']"
     );
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__overview-action');
     expect(APP_SHELL_STYLE_SOURCE).toContain(

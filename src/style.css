@@ -557,6 +557,14 @@ canvas {
   color: #ffd9d1;
 }
 
+.app-shell__section-action-status-badge[data-tone='accent'] {
+  border-color: rgba(131, 219, 242, 0.3);
+  background:
+    linear-gradient(180deg, rgba(16, 30, 41, 0.94), rgba(11, 18, 25, 0.9)),
+    linear-gradient(135deg, rgba(120, 210, 255, 0.18), rgba(243, 205, 135, 0.06));
+  color: #d8f3ff;
+}
+
 .app-shell__danger-zone-action .app-shell__section-action-shortcut-badge {
   border-color: rgba(214, 112, 92, 0.34);
   background:

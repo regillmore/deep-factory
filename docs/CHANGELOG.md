@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Add a compact busy badge to paused-menu `Import World Save`.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so the paused `Import World Save` action now adds a compact accent `Busy` heading badge while its local picker wait state is active, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with world-save-busy-badge DOM and CSS regressions, removed completed task `496` from [docs/NEXT.md](docs/NEXT.md), added replacement task `498`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add compact warning badges to paused-menu `Danger Zone` action cards.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused `Danger Zone` action cards now render compact `Warning` heading badges beside their destructive action labels while preserving the existing shortcut and pointer-affordance badge patterns, expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with danger-zone-badge DOM and CSS regressions, removed completed task `478` from [docs/NEXT.md](docs/NEXT.md), added replacement task `497`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

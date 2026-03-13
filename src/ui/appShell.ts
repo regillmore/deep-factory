@@ -2693,6 +2693,7 @@ interface MenuSectionActionHeadingContent {
 interface MenuSectionActionButtonOptions {
   busy?: boolean;
   disabled?: boolean;
+  headingStatusBadge?: MenuSectionActionStatusBadgeContent | null;
 }
 
 const PAUSED_MAIN_MENU_SECTION_ACTION_SHORTCUT_BADGES = new Map<string, string>([
@@ -2718,8 +2719,14 @@ const resolveMenuSectionActionAffordanceBadgeText = (
 
 const resolveMenuSectionActionStatusBadge = (
   section: AppShellMenuSection,
-  className: string
+  className: string,
+  options: MenuSectionActionButtonOptions = {}
 ): MenuSectionActionStatusBadgeContent | null => {
+  const headingStatusBadge = options.headingStatusBadge ?? null;
+  if (headingStatusBadge !== null) {
+    return headingStatusBadge;
+  }
+
   if (className !== 'app-shell__danger-zone-action') {
     return null;
   }
@@ -2732,10 +2739,11 @@ const resolveMenuSectionActionStatusBadge = (
 
 const resolveMenuSectionActionHeadingContent = (
   section: AppShellMenuSection,
-  className: string
+  className: string,
+  options: MenuSectionActionButtonOptions = {}
 ): MenuSectionActionHeadingContent => {
   const title = section.title;
-  const statusBadge = resolveMenuSectionActionStatusBadge(section, className);
+  const statusBadge = resolveMenuSectionActionStatusBadge(section, className, options);
   const shortcutBadgeText = PAUSED_MAIN_MENU_SECTION_ACTION_SHORTCUT_BADGES.get(title) ?? null;
   if (shortcutBadgeText === null) {
     return {
@@ -2758,9 +2766,10 @@ const resolveMenuSectionActionHeadingContent = (
 const appendMenuSectionActionContent = (
   actionElement: HTMLElement,
   section: AppShellMenuSection,
-  className: string
+  className: string,
+  options: MenuSectionActionButtonOptions = {}
 ): void => {
-  const headingContent = resolveMenuSectionActionHeadingContent(section, className);
+  const headingContent = resolveMenuSectionActionHeadingContent(section, className, options);
   const headingRow = document.createElement('div');
   headingRow.className = 'app-shell__section-action-heading';
   actionElement.append(headingRow);
@@ -2841,7 +2850,7 @@ const createMenuSectionActionButton = (
   actionButton.setAttribute('aria-busy', options.busy === true ? 'true' : 'false');
   actionButton.addEventListener('click', onClick);
   installPointerClickFocusRelease(actionButton);
-  appendMenuSectionActionContent(actionButton, section, className);
+  appendMenuSectionActionContent(actionButton, section, className, options);
   return actionButton;
 };
 
@@ -2880,6 +2889,11 @@ const createBusyPausedMainMenuImportWorldSaveActionSection = (
   ],
   tone: 'accent'
 });
+
+const PAUSED_MAIN_MENU_BUSY_IMPORT_WORLD_SAVE_HEADING_BADGE = {
+  text: 'Busy',
+  tone: 'accent'
+} as const satisfies MenuSectionActionStatusBadgeContent;
 
 export const resolveAppShellViewModel = (state: AppShellState): AppShellViewModel => {
   switch (state.screen) {
@@ -4150,7 +4164,10 @@ export class AppShell {
               },
               {
                 busy: this.pausedMainMenuImportWorldSaveBusy,
-                disabled: this.pausedMainMenuImportWorldSaveBusy
+                disabled: this.pausedMainMenuImportWorldSaveBusy,
+                headingStatusBadge: this.pausedMainMenuImportWorldSaveBusy
+                  ? PAUSED_MAIN_MENU_BUSY_IMPORT_WORLD_SAVE_HEADING_BADGE
+                  : null
               }
             ),
             createWorldSaveActionButton(
