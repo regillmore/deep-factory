@@ -1,4 +1,9 @@
-import { sweepAabbAlongAxis, type SolidTileCollision, type WorldAabb } from './collision';
+import {
+  sweepAabbAlongAxis,
+  type AxisSweepCollisionResult,
+  type SolidTileCollision,
+  type WorldAabb
+} from './collision';
 import { TILE_SIZE } from './constants';
 import type { PlayerState } from './playerState';
 import { TILE_METADATA, type TileMetadataRegistry } from './tileMetadata';
@@ -16,6 +21,7 @@ export interface StepHostileSlimeStateOptions {
   hopHorizontalSpeed?: number;
   hopVerticalSpeed?: number;
   hopIntervalTicks?: number;
+  maxStepUpHeight?: number;
   turnDeadZoneDistance?: number;
 }
 
@@ -23,6 +29,7 @@ export const DEFAULT_HOSTILE_SLIME_GRAVITY_ACCELERATION = 1800;
 export const DEFAULT_HOSTILE_SLIME_MAX_FALL_SPEED = 720;
 export const DEFAULT_HOSTILE_SLIME_HOP_HORIZONTAL_SPEED = 120;
 export const DEFAULT_HOSTILE_SLIME_HOP_VERTICAL_SPEED = 360;
+export const DEFAULT_HOSTILE_SLIME_MAX_STEP_UP_HEIGHT = TILE_SIZE;
 export const DEFAULT_HOSTILE_SLIME_TURN_DEAD_ZONE_DISTANCE = TILE_SIZE * 0.5;
 
 const COLLISION_CONTACT_PROBE_DISTANCE = 1;
@@ -30,6 +37,11 @@ const COLLISION_CONTACT_PROBE_DISTANCE = 1;
 interface MoveHostileSlimeStateResult {
   nextState: HostileSlimeState;
   horizontalWallHitSide: HostileSlimeFacing | null;
+}
+
+interface ResolvedHorizontalMove {
+  afterHorizontalAabb: WorldAabb;
+  horizontalSweep: AxisSweepCollisionResult;
 }
 
 const expectFiniteNumber = (value: number, label: string): number => {
@@ -108,16 +120,80 @@ const resolveFacingTowardsPlayer = (
   return currentFacing;
 };
 
+const resolveHorizontalMoveWithOptionalStepUp = (
+  world: TileWorld,
+  initialAabb: WorldAabb,
+  state: HostileSlimeState,
+  horizontalDelta: number,
+  maxStepUpHeight: number,
+  registry: TileMetadataRegistry
+): ResolvedHorizontalMove => {
+  const horizontalSweep = sweepAabbAlongAxis(world, initialAabb, 'x', horizontalDelta, registry);
+  if (
+    horizontalSweep.hit === null ||
+    state.grounded ||
+    state.velocity.y > 0 ||
+    horizontalDelta === 0 ||
+    maxStepUpHeight <= 0
+  ) {
+    return {
+      afterHorizontalAabb: offsetAabb(initialAabb, horizontalSweep.allowedDelta, 0),
+      horizontalSweep
+    };
+  }
+
+  const upwardClearanceSweep = sweepAabbAlongAxis(
+    world,
+    initialAabb,
+    'y',
+    -maxStepUpHeight,
+    registry
+  );
+  const maxClearancePixels = Math.max(0, Math.floor(-upwardClearanceSweep.allowedDelta));
+
+  for (let stepUpHeight = 1; stepUpHeight <= maxClearancePixels; stepUpHeight += 1) {
+    const raisedAabb = offsetAabb(initialAabb, 0, -stepUpHeight);
+    const retryHorizontalSweep = sweepAabbAlongAxis(
+      world,
+      raisedAabb,
+      'x',
+      horizontalDelta,
+      registry
+    );
+    if (retryHorizontalSweep.hit !== null) {
+      continue;
+    }
+
+    return {
+      afterHorizontalAabb: offsetAabb(raisedAabb, retryHorizontalSweep.allowedDelta, 0),
+      horizontalSweep: retryHorizontalSweep
+    };
+  }
+
+  return {
+    afterHorizontalAabb: offsetAabb(initialAabb, horizontalSweep.allowedDelta, 0),
+    horizontalSweep
+  };
+};
+
 const moveHostileSlimeStateWithCollisions = (
   world: TileWorld,
   state: HostileSlimeState,
   fixedDtSeconds: number,
+  maxStepUpHeight: number,
   registry: TileMetadataRegistry
 ): MoveHostileSlimeStateResult => {
   const dt = expectNonNegativeFiniteNumber(fixedDtSeconds, 'fixedDtSeconds');
   const initialAabb = getHostileSlimeAabb(state);
-  const horizontalSweep = sweepAabbAlongAxis(world, initialAabb, 'x', state.velocity.x * dt, registry);
-  const afterHorizontalAabb = offsetAabb(initialAabb, horizontalSweep.allowedDelta, 0);
+  const resolvedHorizontalMove = resolveHorizontalMoveWithOptionalStepUp(
+    world,
+    initialAabb,
+    state,
+    state.velocity.x * dt,
+    maxStepUpHeight,
+    registry
+  );
+  const { afterHorizontalAabb, horizontalSweep } = resolvedHorizontalMove;
   const verticalSweep = sweepAabbAlongAxis(world, afterHorizontalAabb, 'y', state.velocity.y * dt, registry);
   const finalAabb = offsetAabb(afterHorizontalAabb, 0, verticalSweep.allowedDelta);
   const groundSupport = getGroundSupport(world, finalAabb, registry);
@@ -173,6 +249,10 @@ export const stepHostileSlimeState = (
   const hopIntervalTicks = expectPositiveInteger(
     options.hopIntervalTicks ?? DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
     'options.hopIntervalTicks'
+  );
+  const maxStepUpHeight = expectNonNegativeFiniteNumber(
+    options.maxStepUpHeight ?? DEFAULT_HOSTILE_SLIME_MAX_STEP_UP_HEIGHT,
+    'options.maxStepUpHeight'
   );
   const turnDeadZoneDistance = expectNonNegativeFiniteNumber(
     options.turnDeadZoneDistance ?? DEFAULT_HOSTILE_SLIME_TURN_DEAD_ZONE_DISTANCE,
@@ -232,6 +312,7 @@ export const stepHostileSlimeState = (
       hopCooldownTicksRemaining
     },
     dt,
+    maxStepUpHeight,
     registry
   );
   const nextState: HostileSlimeState = {

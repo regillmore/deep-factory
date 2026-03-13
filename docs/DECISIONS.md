@@ -10,9 +10,9 @@ Record only durable design decisions here. Keep each entry short: date, decision
 
 ### 2026-03-13: Hostile slime chase movement commits to grounded retargets and airborne hops
 
-- Decision: Hostile slimes now face toward the player only while grounded, launch movement as discrete hop impulses on a fixed grounded cooldown, keep that hop direction while airborne, and only flip early when a blocking wall cancels horizontal movement.
-- Reason: This keeps slime locomotion deterministic and slime-like without introducing continuous airborne steering, pathfinding, or a second collision-recovery state machine before combat lands.
-- Consequence: Future slime combat, hit-reaction, or telemetry work should treat grounded retargeting plus committed airborne hops as the chase model unless the same pass intentionally revisits hostile locomotion.
+- Decision: Hostile slimes now face toward the player only while grounded, launch movement as discrete hop impulses on a fixed grounded cooldown, keep that hop direction while airborne, retry blocked rising-hop movement with a constrained one-tile step-up assist, and only flip early when a remaining blocking wall cancels horizontal movement.
+- Reason: This keeps slime locomotion deterministic and slime-like while letting close stair faces behave like climbable terrain instead of fake walls, without introducing continuous airborne steering, pathfinding, or a second collision-recovery state machine before combat lands.
+- Consequence: Future slime combat, hit-reaction, or telemetry work should treat grounded retargeting, committed airborne hops, and rising-only one-tile step-up assists as the chase model unless the same pass intentionally revisits hostile locomotion.
 
 ### 2026-03-13: Hostile slime ambient spawn uses deterministic round-robin surface windows
 

@@ -105,15 +105,43 @@ describe('hostileSlimeLocomotion', () => {
     expect(nextState.grounded).toBe(false);
   });
 
-  it('flips away from blocking walls during a hop and drops vertically after the collision', () => {
+  it('steps up a one-tile rise when a hop starts too close to the ledge face', () => {
     const world = createFlatSurfaceWorld();
-    world.setTile(1, -2, 3);
+    world.setTile(1, -1, 3);
 
     const nextState = stepHostileSlimeState(
       world,
       createHostileSlimeState({
-        position: { x: 6, y: -16 },
-        velocity: { x: DEFAULT_HOSTILE_SLIME_HOP_HORIZONTAL_SPEED, y: 0 },
+        position: { x: 6, y: 0 },
+        velocity: { x: DEFAULT_HOSTILE_SLIME_HOP_HORIZONTAL_SPEED, y: -60 },
+        grounded: false,
+        facing: 'right'
+      }),
+      FIXED_DT_SECONDS,
+      createPlayerState({
+        position: { x: 96, y: 0 }
+      })
+    );
+
+    expect(nextState.position.x).toBeCloseTo(8);
+    expect(nextState.position.y).toBeCloseTo(-16.5);
+    expect(nextState.velocity).toEqual({
+      x: DEFAULT_HOSTILE_SLIME_HOP_HORIZONTAL_SPEED,
+      y: -30
+    });
+    expect(nextState.grounded).toBe(false);
+    expect(nextState.facing).toBe('right');
+  });
+
+  it('flips away from walls that are taller than the one-tile step-up allowance', () => {
+    const world = createFlatSurfaceWorld();
+    setTiles(world, 1, -2, 1, -1, 3);
+
+    const nextState = stepHostileSlimeState(
+      world,
+      createHostileSlimeState({
+        position: { x: 6, y: 0 },
+        velocity: { x: DEFAULT_HOSTILE_SLIME_HOP_HORIZONTAL_SPEED, y: -60 },
         grounded: false,
         facing: 'right'
       }),
@@ -124,10 +152,38 @@ describe('hostileSlimeLocomotion', () => {
     );
 
     expect(nextState.position.x).toBe(6);
-    expect(nextState.position.y).toBeCloseTo(-15.5);
+    expect(nextState.position.y).toBeCloseTo(-0.5);
     expect(nextState.velocity).toEqual({
       x: 0,
-      y: 30
+      y: -30
+    });
+    expect(nextState.grounded).toBe(false);
+    expect(nextState.facing).toBe('left');
+  });
+
+  it('does not step up onto a rise while falling into the ledge face', () => {
+    const world = createFlatSurfaceWorld();
+    world.setTile(1, -1, 3);
+
+    const nextState = stepHostileSlimeState(
+      world,
+      createHostileSlimeState({
+        position: { x: 6, y: -10 },
+        velocity: { x: DEFAULT_HOSTILE_SLIME_HOP_HORIZONTAL_SPEED, y: 60 },
+        grounded: false,
+        facing: 'right'
+      }),
+      FIXED_DT_SECONDS,
+      createPlayerState({
+        position: { x: 96, y: 0 }
+      })
+    );
+
+    expect(nextState.position.x).toBe(6);
+    expect(nextState.position.y).toBeCloseTo(-8.5);
+    expect(nextState.velocity).toEqual({
+      x: 0,
+      y: 90
     });
     expect(nextState.grounded).toBe(false);
     expect(nextState.facing).toBe('left');
