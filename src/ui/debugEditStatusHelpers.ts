@@ -62,6 +62,8 @@ export interface DebugEditStatusStripState {
   liquidStepSidewaysCandidateMaxChunkX?: number | null;
   liquidStepSidewaysCandidateMaxChunkY?: number | null;
   liquidStepPhaseSummary?: LiquidStepPhaseSummary | null;
+  liquidStepDownwardActiveChunksScanned?: number | null;
+  liquidStepSidewaysPairsTested?: number | null;
   liquidStepDownwardTransfersApplied?: number | null;
   liquidStepSidewaysTransfersApplied?: number | null;
   playerNearbyLightLevel?: number | null;
@@ -1140,6 +1142,8 @@ const formatLiveLiquidStepSummaryText = (
   liquidStepSidewaysCandidateMaxChunkX: number | null,
   liquidStepSidewaysCandidateMaxChunkY: number | null,
   liquidStepPhaseSummary: LiquidStepPhaseSummary | null,
+  liquidStepDownwardActiveChunksScanned: number | null,
+  liquidStepSidewaysPairsTested: number | null,
   liquidStepDownwardTransfersApplied: number | null,
   liquidStepSidewaysTransfersApplied: number | null
 ): string | null => {
@@ -1149,6 +1153,8 @@ const formatLiveLiquidStepSummaryText = (
     liquidStepSidewaysCandidateMaxChunkX === null &&
     liquidStepSidewaysCandidateMaxChunkY === null &&
     liquidStepPhaseSummary === null &&
+    liquidStepDownwardActiveChunksScanned === null &&
+    liquidStepSidewaysPairsTested === null &&
     liquidStepDownwardTransfersApplied === null &&
     liquidStepSidewaysTransfersApplied === null
   ) {
@@ -1163,12 +1169,20 @@ const formatLiveLiquidStepSummaryText = (
   );
   const phaseText = liquidStepPhaseSummary ?? 'n/a';
   if (
+    liquidStepDownwardActiveChunksScanned === null &&
+    liquidStepSidewaysPairsTested === null &&
     liquidStepDownwardTransfersApplied === null &&
     liquidStepSidewaysTransfersApplied === null
   ) {
     return `LiquidStepNow: sideBounds:${sidewaysBoundsText} | phase:${phaseText}`;
   }
 
+  const downwardChunksText =
+    liquidStepDownwardActiveChunksScanned === null
+      ? 'n/a'
+      : `${Math.round(liquidStepDownwardActiveChunksScanned)}`;
+  const sidewaysPairsText =
+    liquidStepSidewaysPairsTested === null ? 'n/a' : `${Math.round(liquidStepSidewaysPairsTested)}`;
   const downwardTransfersText =
     liquidStepDownwardTransfersApplied === null
       ? 'n/a'
@@ -1180,6 +1194,8 @@ const formatLiveLiquidStepSummaryText = (
   return (
     `LiquidStepNow: sideBounds:${sidewaysBoundsText} | ` +
     `phase:${phaseText} | ` +
+    `downChunks:${downwardChunksText} | ` +
+    `sidePairs:${sidewaysPairsText} | ` +
     `downTransfers:${downwardTransfersText} | ` +
     `sideTransfers:${sidewaysTransfersText}`
   );
@@ -1332,6 +1348,8 @@ const buildPlayerText = (
   liquidStepSidewaysCandidateMaxChunkX: number | null,
   liquidStepSidewaysCandidateMaxChunkY: number | null,
   liquidStepPhaseSummary: LiquidStepPhaseSummary | null,
+  liquidStepDownwardActiveChunksScanned: number | null,
+  liquidStepSidewaysPairsTested: number | null,
   liquidStepDownwardTransfersApplied: number | null,
   liquidStepSidewaysTransfersApplied: number | null,
   playerNearbyLightLevel: number | null,
@@ -1385,6 +1403,8 @@ const buildPlayerText = (
       liquidStepSidewaysCandidateMaxChunkX,
       liquidStepSidewaysCandidateMaxChunkY,
       liquidStepPhaseSummary,
+      liquidStepDownwardActiveChunksScanned,
+      liquidStepSidewaysPairsTested,
       liquidStepDownwardTransfersApplied,
       liquidStepSidewaysTransfersApplied
     ),
@@ -1917,6 +1937,9 @@ export const buildDebugEditStatusStripModel = (
   const liquidStepSidewaysCandidateMaxChunkX = state.liquidStepSidewaysCandidateMaxChunkX ?? null;
   const liquidStepSidewaysCandidateMaxChunkY = state.liquidStepSidewaysCandidateMaxChunkY ?? null;
   const liquidStepPhaseSummary = state.liquidStepPhaseSummary ?? null;
+  const liquidStepDownwardActiveChunksScanned =
+    state.liquidStepDownwardActiveChunksScanned ?? null;
+  const liquidStepSidewaysPairsTested = state.liquidStepSidewaysPairsTested ?? null;
   const liquidStepDownwardTransfersApplied = state.liquidStepDownwardTransfersApplied ?? null;
   const liquidStepSidewaysTransfersApplied = state.liquidStepSidewaysTransfersApplied ?? null;
   const playerNearbyLightLevel = state.playerNearbyLightLevel ?? null;
@@ -1974,6 +1997,8 @@ export const buildDebugEditStatusStripModel = (
       liquidStepSidewaysCandidateMaxChunkX,
       liquidStepSidewaysCandidateMaxChunkY,
       liquidStepPhaseSummary,
+      liquidStepDownwardActiveChunksScanned,
+      liquidStepSidewaysPairsTested,
       liquidStepDownwardTransfersApplied,
       liquidStepSidewaysTransfersApplied,
       playerNearbyLightLevel,

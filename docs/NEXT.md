@@ -5,8 +5,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Optimize liquids
 
 408. Expose sleeping-liquid chunk bounds in renderer telemetry and the debug HUD so wake testing can localize settled pools after awake bounds disappear.
-504. Expose the sideways-tested liquid-pair count in the compact hidden-HUD status strip after task `383` lands so wake testing can distinguish broad candidate scans from actual transfer counts without opening the full debug HUD.
-505. Expose the downward active-chunk scan count in the compact hidden-HUD status strip after task `383` lands so wake testing can compare downward coverage against split transfer counts without opening the full debug HUD.
+508. Expose the sideways candidate-chunk scan count in the compact hidden-HUD status strip after task `505` lands so wake testing can compare band coverage, tested pair counts, and actual transfers without opening the full debug HUD.
 
 ## Refine, Extract, Refactor, Restructure
 
@@ -43,3 +42,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 502. Add a fishing utility slice after inventory basics (`214`) and save/load (`19-21`): a non-stackable fishing rod hotbar slot, mixed-device water casting plus bite timing, fish-item catches into inventory, and deterministic bite/catch regressions.
 503. Add an acorn tree-growth slice after inventory basics (`214`) and save/load (`19-21`): stackable acorn hotbar slots, mixed-device grass-only planting, fixed-step sapling growth into small tree tiles under deterministic windows, and snapshot regressions for planted saplings or trees plus remaining acorn stacks.
 507. Add a starter axe woodcutting slice after inventory basics (`214`) and acorn tree-growth (`503`): a non-stackable axe hotbar slot, mixed-device aimed small-tree chopping with fixed-step swing timing, wood-item drops, and deterministic tree-break regressions.
+509. Add a heart-crystal health-upgrade slice after hostile-slime combat (`213`) and inventory basics (`214`): a non-stackable heart-crystal inventory item, mixed-device consume input, fixed-step max-health increase with current-health fill and cap rules, and save/load regressions for upgraded health state.

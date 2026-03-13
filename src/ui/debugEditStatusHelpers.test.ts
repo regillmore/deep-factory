@@ -536,13 +536,15 @@ describe('buildDebugEditStatusStripModel', () => {
       liquidStepSidewaysCandidateMaxChunkX: 4,
       liquidStepSidewaysCandidateMaxChunkY: 0,
       liquidStepPhaseSummary: 'sideways',
+      liquidStepDownwardActiveChunksScanned: 80,
+      liquidStepSidewaysPairsTested: 1504,
       liquidStepDownwardTransfersApplied: 0,
       liquidStepSidewaysTransfersApplied: 1,
       preview: createEmptyPreviewState()
     });
 
     expect(model.playerText).toBe(
-      'LiquidStepNow: sideBounds:-2,-1..4,0 | phase:sideways | downTransfers:0 | sideTransfers:1'
+      'LiquidStepNow: sideBounds:-2,-1..4,0 | phase:sideways | downChunks:80 | sidePairs:1504 | downTransfers:0 | sideTransfers:1'
     );
     expect(model.eventText).toBeNull();
   });
@@ -557,6 +559,8 @@ describe('buildDebugEditStatusStripModel', () => {
       desktopInspectPinArmed: false,
       residentActiveLiquidChunks: 0,
       liquidStepPhaseSummary: 'none',
+      liquidStepDownwardActiveChunksScanned: 0,
+      liquidStepSidewaysPairsTested: 0,
       liquidStepDownwardTransfersApplied: 0,
       liquidStepSidewaysTransfersApplied: 0,
       preview: createEmptyPreviewState()
@@ -564,7 +568,7 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.playerText).toBe(
       'LiquidChunksNow: awake:0 | sleeping:0 | bounds:none\n' +
-        'LiquidStepNow: sideBounds:none | phase:none | downTransfers:0 | sideTransfers:0'
+        'LiquidStepNow: sideBounds:none | phase:none | downChunks:0 | sidePairs:0 | downTransfers:0 | sideTransfers:0'
     );
     expect(model.eventText).toBeNull();
   });
@@ -1184,6 +1188,8 @@ describe('buildDebugEditStatusStripModel', () => {
       liquidStepSidewaysCandidateMaxChunkX: 2,
       liquidStepSidewaysCandidateMaxChunkY: 0,
       liquidStepPhaseSummary: 'both',
+      liquidStepDownwardActiveChunksScanned: 80,
+      liquidStepSidewaysPairsTested: 1504,
       liquidStepDownwardTransfersApplied: 2,
       liquidStepSidewaysTransfersApplied: 3,
       preview: createEmptyPreviewState()
@@ -1191,7 +1197,7 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.playerText).toBe(
       'Pose: grounded-idle\n' +
-        'LiquidStepNow: sideBounds:-1,0..2,0 | phase:both | downTransfers:2 | sideTransfers:3'
+        'LiquidStepNow: sideBounds:-1,0..2,0 | phase:both | downChunks:80 | sidePairs:1504 | downTransfers:2 | sideTransfers:3'
     );
     expect(model.eventText).toBeNull();
   });

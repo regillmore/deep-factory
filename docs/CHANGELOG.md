@@ -4,6 +4,14 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-13
 
+- Task: Expose the downward active-chunk scan count in the compact hidden-HUD status strip.
+- Changes: Updated [src/main.ts](../src/main.ts), [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/main.test.ts](../src/main.test.ts) so hidden-HUD `LiquidStepNow` telemetry now includes `downChunks:<count>` beside the existing sideways bounds, tested-pair count, phase, and split-transfer summary, removed completed task `505` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical-slice task `509`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/debugEditStatusHelpers.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
+- Task: Expose the sideways-tested liquid-pair count in the compact hidden-HUD status strip.
+- Changes: Updated [src/main.ts](../src/main.ts), [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/main.test.ts](../src/main.test.ts) so hidden-HUD `LiquidStepNow` telemetry now includes `sidePairs:<count>` beside the existing sideways bounds, phase, and split-transfer summary, removed completed task `504` from [docs/NEXT.md](docs/NEXT.md), added replacement task `508`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/debugEditStatusHelpers.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Expose sideways candidate-band chunk bounds in the compact hidden-HUD status strip.
 - Changes: Updated [src/main.ts](../src/main.ts), [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/main.test.ts](../src/main.test.ts) so hidden-HUD `LiquidStepNow` telemetry now includes `sideBounds:minX,minY..maxX,maxY` or `sideBounds:none` beside the existing phase and split-transfer summary, removed completed task `506` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical-slice task `507`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/debugEditStatusHelpers.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
