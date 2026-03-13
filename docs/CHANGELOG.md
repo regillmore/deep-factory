@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-13
 
+- Task: Expose split downward-vs-sideways liquid-step counters in the compact hidden-HUD status strip.
+- Changes: Updated [src/main.ts](../src/main.ts), [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/main.test.ts](../src/main.test.ts) so hidden-HUD `LiquidStepNow` telemetry now includes `downTransfers` and `sideTransfers` beside the existing phase summary; removed completed task `383` from [docs/NEXT.md](docs/NEXT.md), added replacement task `505`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/debugEditStatusHelpers.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Expose the derived liquid-step phase summary in the compact hidden-HUD status strip.
 - Changes: Updated [src/main.ts](../src/main.ts), [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/main.test.ts](../src/main.test.ts) so the hidden-HUD compact status strip now receives and formats the renderer-derived `LiquidStepNow: phase:...` summary alongside existing awake and sleeping liquid chunk telemetry; removed completed task `409` from [docs/NEXT.md](docs/NEXT.md), added replacement task `504`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/debugEditStatusHelpers.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

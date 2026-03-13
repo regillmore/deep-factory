@@ -3442,6 +3442,10 @@ const bootstrap = async (): Promise<void> => {
       residentActiveLiquidMaxChunkY:
         debugOverlayVisible ? null : renderer.telemetry.residentActiveLiquidMaxChunkY,
       liquidStepPhaseSummary: debugOverlayVisible ? null : renderer.telemetry.liquidStepPhaseSummary,
+      liquidStepDownwardTransfersApplied:
+        debugOverlayVisible ? null : renderer.telemetry.liquidStepDownwardTransfersApplied,
+      liquidStepSidewaysTransfersApplied:
+        debugOverlayVisible ? null : renderer.telemetry.liquidStepSidewaysTransfersApplied,
       playerNearbyLightLevel: debugStatusStripPlayerTelemetry.playerNearbyLightLevel,
       playerNearbyLightFactor: debugStatusStripPlayerTelemetry.playerNearbyLightFactor,
       playerNearbyLightSourceTile: debugStatusStripPlayerTelemetry.playerNearbyLightSourceTile,

@@ -58,6 +58,8 @@ export interface DebugEditStatusStripState {
   residentActiveLiquidMaxChunkX?: number | null;
   residentActiveLiquidMaxChunkY?: number | null;
   liquidStepPhaseSummary?: LiquidStepPhaseSummary | null;
+  liquidStepDownwardTransfersApplied?: number | null;
+  liquidStepSidewaysTransfersApplied?: number | null;
   playerNearbyLightLevel?: number | null;
   playerNearbyLightFactor?: number | null;
   playerNearbyLightSourceTile?: { x: number; y: number } | null;
@@ -1128,14 +1130,40 @@ const formatLiveResidentActiveLiquidChunksText = (
   );
 };
 
-const formatLiveLiquidStepPhaseSummaryText = (
-  liquidStepPhaseSummary: LiquidStepPhaseSummary | null
+const formatLiveLiquidStepSummaryText = (
+  liquidStepPhaseSummary: LiquidStepPhaseSummary | null,
+  liquidStepDownwardTransfersApplied: number | null,
+  liquidStepSidewaysTransfersApplied: number | null
 ): string | null => {
-  if (liquidStepPhaseSummary === null) {
+  if (
+    liquidStepPhaseSummary === null &&
+    liquidStepDownwardTransfersApplied === null &&
+    liquidStepSidewaysTransfersApplied === null
+  ) {
     return null;
   }
 
-  return `LiquidStepNow: phase:${liquidStepPhaseSummary}`;
+  const phaseText = liquidStepPhaseSummary ?? 'n/a';
+  if (
+    liquidStepDownwardTransfersApplied === null &&
+    liquidStepSidewaysTransfersApplied === null
+  ) {
+    return `LiquidStepNow: phase:${phaseText}`;
+  }
+
+  const downwardTransfersText =
+    liquidStepDownwardTransfersApplied === null
+      ? 'n/a'
+      : `${Math.round(liquidStepDownwardTransfersApplied)}`;
+  const sidewaysTransfersText =
+    liquidStepSidewaysTransfersApplied === null
+      ? 'n/a'
+      : `${Math.round(liquidStepSidewaysTransfersApplied)}`;
+  return (
+    `LiquidStepNow: phase:${phaseText} | ` +
+    `downTransfers:${downwardTransfersText} | ` +
+    `sideTransfers:${sidewaysTransfersText}`
+  );
 };
 
 const formatLiveNearbyLightText = (
@@ -1281,6 +1309,8 @@ const buildPlayerText = (
   residentActiveLiquidMaxChunkX: number | null,
   residentActiveLiquidMaxChunkY: number | null,
   liquidStepPhaseSummary: LiquidStepPhaseSummary | null,
+  liquidStepDownwardTransfersApplied: number | null,
+  liquidStepSidewaysTransfersApplied: number | null,
   playerNearbyLightLevel: number | null,
   playerNearbyLightFactor: number | null,
   playerNearbyLightSourceTile: { x: number; y: number } | null,
@@ -1326,7 +1356,11 @@ const buildPlayerText = (
       residentActiveLiquidMaxChunkX,
       residentActiveLiquidMaxChunkY
     ),
-    formatLiveLiquidStepPhaseSummaryText(liquidStepPhaseSummary),
+    formatLiveLiquidStepSummaryText(
+      liquidStepPhaseSummary,
+      liquidStepDownwardTransfersApplied,
+      liquidStepSidewaysTransfersApplied
+    ),
     formatLiveNearbyLightText(
       playerNearbyLightLevel,
       playerNearbyLightFactor,
@@ -1852,6 +1886,8 @@ export const buildDebugEditStatusStripModel = (
   const residentActiveLiquidMaxChunkX = state.residentActiveLiquidMaxChunkX ?? null;
   const residentActiveLiquidMaxChunkY = state.residentActiveLiquidMaxChunkY ?? null;
   const liquidStepPhaseSummary = state.liquidStepPhaseSummary ?? null;
+  const liquidStepDownwardTransfersApplied = state.liquidStepDownwardTransfersApplied ?? null;
+  const liquidStepSidewaysTransfersApplied = state.liquidStepSidewaysTransfersApplied ?? null;
   const playerNearbyLightLevel = state.playerNearbyLightLevel ?? null;
   const playerNearbyLightFactor = state.playerNearbyLightFactor ?? null;
   const playerNearbyLightSourceTile = state.playerNearbyLightSourceTile ?? null;
@@ -1903,6 +1939,8 @@ export const buildDebugEditStatusStripModel = (
       residentActiveLiquidMaxChunkX,
       residentActiveLiquidMaxChunkY,
       liquidStepPhaseSummary,
+      liquidStepDownwardTransfersApplied,
+      liquidStepSidewaysTransfersApplied,
       playerNearbyLightLevel,
       playerNearbyLightFactor,
       playerNearbyLightSourceTile,

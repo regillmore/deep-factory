@@ -261,6 +261,8 @@ const testRuntime = vi.hoisted(() => {
       residentActiveLiquidMaxChunkX: null as number | null,
       residentActiveLiquidMaxChunkY: null as number | null,
       liquidStepPhaseSummary: 'none' as 'none' | 'downward' | 'sideways' | 'both',
+      liquidStepDownwardTransfersApplied: 0,
+      liquidStepSidewaysTransfersApplied: 0,
       standalonePlayerNearbyLightLevel: null as number | null,
       standalonePlayerNearbyLightFactor: null as number | null,
       standalonePlayerNearbyLightSourceTileX: null as number | null,
@@ -1533,6 +1535,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTelemetry.residentActiveLiquidMaxChunkY = null;
     testRuntime.rendererTelemetry.residentSleepingLiquidChunks = 0;
     testRuntime.rendererTelemetry.liquidStepPhaseSummary = 'none';
+    testRuntime.rendererTelemetry.liquidStepDownwardTransfersApplied = 0;
+    testRuntime.rendererTelemetry.liquidStepSidewaysTransfersApplied = 0;
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightLevel = null;
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightFactor = null;
     testRuntime.rendererTelemetry.standalonePlayerNearbyLightSourceTileX = null;
@@ -4493,6 +4497,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTelemetry.residentActiveLiquidMaxChunkX = 2;
     testRuntime.rendererTelemetry.residentActiveLiquidMaxChunkY = 1;
     testRuntime.rendererTelemetry.liquidStepPhaseSummary = 'sideways';
+    testRuntime.rendererTelemetry.liquidStepDownwardTransfersApplied = 0;
+    testRuntime.rendererTelemetry.liquidStepSidewaysTransfersApplied = 1;
     testRuntime.rendererStepPlayerStateImpl = () => steppedPlayerState;
     testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, renderContacts];
 
@@ -4528,6 +4534,8 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMaxChunkX).toBe(2);
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMaxChunkY).toBe(1);
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepPhaseSummary).toBe('sideways');
+    expect(testRuntime.latestDebugEditStatusStripState.liquidStepDownwardTransfersApplied).toBe(0);
+    expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysTransfersApplied).toBe(1);
 
     testRuntime.shellInstance?.options.onToggleDebugOverlay('in-world');
     expect(testRuntime.debugOverlayInstance?.visible).toBe(true);
@@ -4564,6 +4572,8 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMaxChunkX).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.residentActiveLiquidMaxChunkY).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepPhaseSummary).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.liquidStepDownwardTransfersApplied).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysTransfersApplied).toBeNull();
   });
 
   it('routes compact status-strip player-event telemetry through one shared overlay-visibility selector', async () => {

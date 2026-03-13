@@ -523,7 +523,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('formats the derived liquid-step phase summary for the compact strip when provided', () => {
+  it('formats split liquid-step transfer counters alongside the phase summary for the compact strip', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -532,14 +532,18 @@ describe('buildDebugEditStatusStripModel', () => {
       pinnedTile: null,
       desktopInspectPinArmed: false,
       liquidStepPhaseSummary: 'sideways',
+      liquidStepDownwardTransfersApplied: 0,
+      liquidStepSidewaysTransfersApplied: 1,
       preview: createEmptyPreviewState()
     });
 
-    expect(model.playerText).toBe('LiquidStepNow: phase:sideways');
+    expect(model.playerText).toBe(
+      'LiquidStepNow: phase:sideways | downTransfers:0 | sideTransfers:1'
+    );
     expect(model.eventText).toBeNull();
   });
 
-  it('shows dry-world active-liquid telemetry plus a none phase summary in the compact strip', () => {
+  it('shows dry-world active-liquid telemetry plus split zero-transfer liquid-step summary in the compact strip', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -549,11 +553,14 @@ describe('buildDebugEditStatusStripModel', () => {
       desktopInspectPinArmed: false,
       residentActiveLiquidChunks: 0,
       liquidStepPhaseSummary: 'none',
+      liquidStepDownwardTransfersApplied: 0,
+      liquidStepSidewaysTransfersApplied: 0,
       preview: createEmptyPreviewState()
     });
 
     expect(model.playerText).toBe(
-      'LiquidChunksNow: awake:0 | sleeping:0 | bounds:none\nLiquidStepNow: phase:none'
+      'LiquidChunksNow: awake:0 | sleeping:0 | bounds:none\n' +
+        'LiquidStepNow: phase:none | downTransfers:0 | sideTransfers:0'
     );
     expect(model.eventText).toBeNull();
   });
@@ -1140,7 +1147,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose and liquid-step phase summary telemetry on separate player lines', () => {
+  it('keeps pose and split liquid-step summary telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -1150,10 +1157,14 @@ describe('buildDebugEditStatusStripModel', () => {
       desktopInspectPinArmed: false,
       playerPlaceholderPoseLabel: 'grounded-idle',
       liquidStepPhaseSummary: 'both',
+      liquidStepDownwardTransfersApplied: 2,
+      liquidStepSidewaysTransfersApplied: 3,
       preview: createEmptyPreviewState()
     });
 
-    expect(model.playerText).toBe('Pose: grounded-idle\nLiquidStepNow: phase:both');
+    expect(model.playerText).toBe(
+      'Pose: grounded-idle\nLiquidStepNow: phase:both | downTransfers:2 | sideTransfers:3'
+    );
     expect(model.eventText).toBeNull();
   });
 
