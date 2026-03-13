@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CHUNK_SIZE } from './world/constants';
 import { encodeResidentChunkSnapshot } from './world/chunkSnapshot';
+import { createPlayerDeathState } from './world/playerDeathState';
 import {
   createPlayerState,
   DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
@@ -33,11 +34,13 @@ describe('createWorldSaveEnvelope', () => {
       drowningDamageTickSecondsRemaining: 0.3,
       fallDamageRecoverySecondsRemaining: 0.2
     });
+    const standalonePlayerDeathState = createPlayerDeathState(0.5);
     const cameraFollowOffset = { x: 24, y: -12 };
 
     const envelope = createWorldSaveEnvelope({
       worldSnapshot,
       standalonePlayerState,
+      standalonePlayerDeathState,
       cameraFollowOffset
     });
 
@@ -46,16 +49,19 @@ describe('createWorldSaveEnvelope', () => {
     expect(envelope.migration).toEqual(createDefaultWorldSaveEnvelopeMigrationMetadata());
     expect(envelope.session).toEqual({
       standalonePlayerState,
+      standalonePlayerDeathState,
       cameraFollowOffset
     });
     expect(envelope.worldSnapshot).toEqual(worldSnapshot);
 
     worldSnapshot.residentChunks[0]!.payload.tiles[0] = 99;
     standalonePlayerState.position.x = 512;
+    standalonePlayerDeathState.respawnSecondsRemaining = 999;
     cameraFollowOffset.x = 128;
 
     expect(envelope.worldSnapshot.residentChunks[0]!.payload.tiles[0]).not.toBe(99);
     expect(envelope.session.standalonePlayerState?.position.x).toBe(64);
+    expect(envelope.session.standalonePlayerDeathState?.respawnSecondsRemaining).toBe(0.5);
     expect(envelope.session.cameraFollowOffset.x).toBe(24);
   });
 });
@@ -73,6 +79,7 @@ describe('decodeWorldSaveEnvelope', () => {
       },
       session: {
         standalonePlayerState: null,
+        standalonePlayerDeathState: null,
         cameraFollowOffset: {
           x: -18,
           y: 9
@@ -100,6 +107,7 @@ describe('decodeWorldSaveEnvelope', () => {
       drowningDamageTickSecondsRemaining: 0.4,
       fallDamageRecoverySecondsRemaining: 0.2
     });
+    const standalonePlayerDeathState = createPlayerDeathState(0.25);
 
     const decoded = decodeWorldSaveEnvelope(
       JSON.parse(
@@ -107,6 +115,7 @@ describe('decodeWorldSaveEnvelope', () => {
           createWorldSaveEnvelope({
             worldSnapshot: world.createSnapshot(),
             standalonePlayerState,
+            standalonePlayerDeathState,
             cameraFollowOffset: { x: 0, y: 0 }
           })
         )
@@ -114,9 +123,10 @@ describe('decodeWorldSaveEnvelope', () => {
     );
 
     expect(decoded.session.standalonePlayerState).toEqual(standalonePlayerState);
+    expect(decoded.session.standalonePlayerDeathState).toEqual(standalonePlayerDeathState);
   });
 
-  it('defaults missing breath, hostile-contact invulnerability, and fall-recovery state on older standalone-player save payloads', () => {
+  it('defaults missing breath, hostile-contact invulnerability, fall-recovery, and death state on older standalone-player save payloads', () => {
     const world = new TileWorld(0);
     const standalonePlayerState = createPlayerState({
       position: { x: 72, y: 96 },
@@ -141,6 +151,7 @@ describe('decodeWorldSaveEnvelope', () => {
       migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
       session: {
         standalonePlayerState: legacyStandalonePlayerState,
+        standalonePlayerDeathState: undefined,
         cameraFollowOffset: { x: 0, y: 0 }
       },
       worldSnapshot: world.createSnapshot()
@@ -154,6 +165,7 @@ describe('decodeWorldSaveEnvelope', () => {
       hostileContactInvulnerabilitySecondsRemaining:
         DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS
     });
+    expect(decoded.session.standalonePlayerDeathState).toBeNull();
   });
 
   it('rejects invalid standalone-player session state', () => {
@@ -170,6 +182,7 @@ describe('decodeWorldSaveEnvelope', () => {
             ...playerState,
             facing: 'up'
           },
+          standalonePlayerDeathState: null,
           cameraFollowOffset: { x: 0, y: 0 }
         },
         worldSnapshot: world.createSnapshot()
@@ -190,6 +203,7 @@ describe('decodeWorldSaveEnvelope', () => {
         },
         session: {
           standalonePlayerState: null,
+          standalonePlayerDeathState: null,
           cameraFollowOffset: { x: 0, y: 0 }
         },
         worldSnapshot: world.createSnapshot()
@@ -208,6 +222,7 @@ describe('decodeWorldSaveEnvelope', () => {
         migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
         session: {
           standalonePlayerState: null,
+          standalonePlayerDeathState: null,
           cameraFollowOffset: { x: 0, y: 0 }
         },
         worldSnapshot: {
@@ -217,5 +232,27 @@ describe('decodeWorldSaveEnvelope', () => {
         }
       })
     ).toThrowError(/residentChunks must not contain duplicate chunk coord 0,0/);
+  });
+
+  it('rejects invalid standalone-player death state payloads', () => {
+    const world = new TileWorld(0);
+
+    expect(() =>
+      decodeWorldSaveEnvelope({
+        kind: WORLD_SAVE_ENVELOPE_KIND,
+        version: WORLD_SAVE_ENVELOPE_VERSION,
+        migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
+        session: {
+          standalonePlayerState: null,
+          standalonePlayerDeathState: {
+            respawnSecondsRemaining: -0.1
+          },
+          cameraFollowOffset: { x: 0, y: 0 }
+        },
+        worldSnapshot: world.createSnapshot()
+      })
+    ).toThrowError(
+      /session\.standalonePlayerDeathState\.respawnSecondsRemaining must be a non-negative finite number/
+    );
   });
 });

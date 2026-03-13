@@ -14,6 +14,7 @@ const createTestEnvelope = (): WorldSaveEnvelope => ({
   migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
   session: {
     standalonePlayerState: null,
+    standalonePlayerDeathState: null,
     cameraFollowOffset: {
       x: 12,
       y: -6

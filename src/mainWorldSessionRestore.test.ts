@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createWorldSaveEnvelope } from './mainWorldSave';
 import { restoreWorldSessionFromSaveEnvelope } from './mainWorldSessionRestore';
+import { createPlayerDeathState, type PlayerDeathState } from './world/playerDeathState';
 import { createPlayerState, type PlayerState } from './world/playerState';
 import { TileWorld } from './world/world';
 
@@ -20,20 +21,27 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       drowningDamageTickSecondsRemaining: 0.15,
       fallDamageRecoverySecondsRemaining: 0.2
     });
+    const standalonePlayerDeathState = createPlayerDeathState(0.5);
     const cameraFollowOffset = { x: 18, y: -12 };
     const envelope = createWorldSaveEnvelope({
       worldSnapshot: world.createSnapshot(),
       standalonePlayerState,
+      standalonePlayerDeathState,
       cameraFollowOffset
     });
     const callOrder: string[] = [];
     let restoredWorldSnapshot: ReturnType<TileWorld['createSnapshot']> | null = null;
     let restoredPlayerState: PlayerState | null = null;
+    let restoredPlayerDeathState: PlayerDeathState | null = null;
     let restoredCameraFollowOffset: typeof cameraFollowOffset | null = null;
     const target = {
       loadWorldSnapshot: vi.fn((snapshot) => {
         callOrder.push('world');
         restoredWorldSnapshot = snapshot;
+      }),
+      restoreStandalonePlayerDeathState: vi.fn((deathState) => {
+        callOrder.push('death');
+        restoredPlayerDeathState = deathState;
       }),
       restoreStandalonePlayerState: vi.fn((playerState) => {
         callOrder.push('player');
@@ -50,13 +58,15 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       envelope
     });
 
-    expect(callOrder).toEqual(['world', 'player', 'camera']);
+    expect(callOrder).toEqual(['world', 'death', 'player', 'camera']);
     expect(target.loadWorldSnapshot).toHaveBeenCalledTimes(1);
     expect(target.restoreStandalonePlayerState).toHaveBeenCalledTimes(1);
+    expect(target.restoreStandalonePlayerDeathState).toHaveBeenCalledTimes(1);
     expect(target.restoreCameraFollowOffset).toHaveBeenCalledTimes(1);
 
     envelope.worldSnapshot.residentChunks[0]!.payload.tiles[0] = 99;
     envelope.session.standalonePlayerState!.position.x = 999;
+    envelope.session.standalonePlayerDeathState!.respawnSecondsRemaining = 999;
     envelope.session.cameraFollowOffset.x = 999;
 
     const restoredWorld = new TileWorld(0);
@@ -67,6 +77,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       throw new Error('expected restored standalone-player state');
     }
     expect((restoredPlayerState as PlayerState).position.x).toBe(72);
+    expect(restoredPlayerDeathState).toEqual(standalonePlayerDeathState);
     expect(restoredCameraFollowOffset).toEqual({ x: 18, y: -12 });
   });
 
@@ -76,11 +87,13 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     const envelope = createWorldSaveEnvelope({
       worldSnapshot: world.createSnapshot(),
       standalonePlayerState: null,
+      standalonePlayerDeathState: null,
       cameraFollowOffset: { x: -24, y: 10 }
     });
     const target = {
       loadWorldSnapshot: vi.fn(),
       restoreStandalonePlayerState: vi.fn(),
+      restoreStandalonePlayerDeathState: vi.fn(),
       restoreCameraFollowOffset: vi.fn()
     };
 
@@ -91,6 +104,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
 
     expect(target.loadWorldSnapshot).toHaveBeenCalledTimes(1);
     expect(target.restoreStandalonePlayerState).toHaveBeenCalledWith(null);
+    expect(target.restoreStandalonePlayerDeathState).toHaveBeenCalledWith(null);
     expect(target.restoreCameraFollowOffset).toHaveBeenCalledWith({ x: -24, y: 10 });
   });
 });

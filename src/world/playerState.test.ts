@@ -706,7 +706,7 @@ describe('playerState', () => {
     expect(stepped.grounded).toBe(true);
   });
 
-  it('applies hard-landing damage, clamps nonlethal falls to one health, and starts fall recovery', () => {
+  it('applies lethal hard-landing damage and starts fall recovery', () => {
     const world = new TileWorld(0);
 
     setTiles(world, -2, -3, 2, 2, 0);
@@ -733,7 +733,7 @@ describe('playerState', () => {
       }
     );
 
-    expect(stepped.health).toBe(1);
+    expect(stepped.health).toBe(0);
     expect(stepped.fallDamageRecoverySecondsRemaining).toBe(
       DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS
     );
@@ -964,7 +964,7 @@ describe('playerState', () => {
     expect(headSubmerged.drowningDamageTickSecondsRemaining).toBe(0.5);
   });
 
-  it('applies nonlethal drowning damage on a fixed cadence after breath runs out', () => {
+  it('applies lethal drowning damage on a fixed cadence after breath runs out', () => {
     const world = new TileWorld(0);
 
     setTiles(world, -2, -4, 2, 2, 0);
@@ -1034,7 +1034,7 @@ describe('playerState', () => {
     expect(firstDrownTick.health).toBe(7);
     expect(firstDrownTick.drowningDamageTickSecondsRemaining).toBe(0.5);
 
-    const clampedDrownTick = stepPlayerState(
+    const lethalDrownTick = stepPlayerState(
       world,
       {
         ...firstDrownTick,
@@ -1062,9 +1062,9 @@ describe('playerState', () => {
       }
     );
 
-    expect(clampedDrownTick.health).toBe(1);
-    expect(clampedDrownTick.breathSecondsRemaining).toBe(0);
-    expect(clampedDrownTick.drowningDamageTickSecondsRemaining).toBe(0.5);
+    expect(lethalDrownTick.health).toBe(0);
+    expect(lethalDrownTick.breathSecondsRemaining).toBe(0);
+    expect(lethalDrownTick.drowningDamageTickSecondsRemaining).toBe(0.5);
   });
 
   it('recovers breath and resets drowning cadence once the player surfaces', () => {

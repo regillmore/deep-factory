@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createEmbeddedPlayerRespawnEvent, createLavaPlayerRespawnEvent } from './playerRespawnEvent';
+import { createDeathPlayerRespawnEvent, createEmbeddedPlayerRespawnEvent } from './playerRespawnEvent';
 import type { PlayerSpawnPoint } from './playerSpawn';
 import { createPlayerState } from './playerState';
 
@@ -48,8 +48,8 @@ describe('createEmbeddedPlayerRespawnEvent', () => {
   });
 });
 
-describe('createLavaPlayerRespawnEvent', () => {
-  it('captures the resolved spawn tile plus lava-respawned player state', () => {
+describe('createDeathPlayerRespawnEvent', () => {
+  it('captures the resolved spawn tile plus death-respawned player state', () => {
     const spawn: PlayerSpawnPoint = {
       anchorTileX: -1,
       standingTileY: 0,
@@ -68,7 +68,7 @@ describe('createLavaPlayerRespawnEvent', () => {
       }
     };
 
-    const event = createLavaPlayerRespawnEvent(
+    const event = createDeathPlayerRespawnEvent(
       createPlayerState({
         position: { x: -8, y: 0 },
         velocity: { x: 0, y: 0 },
@@ -80,7 +80,7 @@ describe('createLavaPlayerRespawnEvent', () => {
     );
 
     expect(event).toEqual({
-      kind: 'lava',
+      kind: 'death',
       spawnTile: { x: -1, y: 0 },
       supportChunk: { x: -1, y: 0 },
       supportLocal: { x: 31, y: 1 },

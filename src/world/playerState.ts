@@ -118,8 +118,8 @@ const DEFAULT_PLAYER_FACING: PlayerFacing = 'right';
 const COLLISION_CONTACT_PROBE_DISTANCE = 1;
 const AABB_INTERSECTION_EPSILON = 1e-6;
 const PLAYER_BREATH_SAMPLE_HEIGHT_RATIO = 0.25;
-const DROWNING_DAMAGE_MIN_HEALTH = 1;
-const FALL_DAMAGE_MIN_HEALTH = 1;
+const DROWNING_DAMAGE_MIN_HEALTH = 0;
+const FALL_DAMAGE_MIN_HEALTH = 0;
 
 interface PlayerLiquidOverlapState {
   waterSubmergedFraction: number;

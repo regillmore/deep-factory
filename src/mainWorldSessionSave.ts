@@ -4,12 +4,14 @@ import {
   type WorldSaveEnvelope,
   type WorldSaveEnvelopeMigrationMetadata
 } from './mainWorldSave';
+import type { PlayerDeathState } from './world/playerDeathState';
 import type { PlayerState } from './world/playerState';
 import type { TileWorldSnapshot } from './world/world';
 
 export interface WorldSessionSaveSource {
   createWorldSnapshot(): TileWorldSnapshot;
   getStandalonePlayerState(): PlayerState | null;
+  getStandalonePlayerDeathState(): PlayerDeathState | null;
   getCameraFollowOffset(): CameraFollowOffset;
 }
 
@@ -25,6 +27,7 @@ export const createWorldSessionSaveEnvelope = ({
   createWorldSaveEnvelope({
     worldSnapshot: source.createWorldSnapshot(),
     standalonePlayerState: source.getStandalonePlayerState(),
+    standalonePlayerDeathState: source.getStandalonePlayerDeathState(),
     cameraFollowOffset: source.getCameraFollowOffset(),
     ...(migration === undefined ? {} : { migration })
   });

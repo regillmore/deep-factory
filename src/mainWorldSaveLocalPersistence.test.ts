@@ -101,6 +101,7 @@ describe('loadPersistedWorldSaveEnvelopeWithPersistenceAvailability', () => {
         },
         session: {
           standalonePlayerState: null,
+          standalonePlayerDeathState: null,
           cameraFollowOffset: { x: 0, y: 0 }
         },
         worldSnapshot: {
@@ -161,6 +162,7 @@ describe('savePersistedWorldSaveEnvelope', () => {
       },
       session: {
         standalonePlayerState: null,
+        standalonePlayerDeathState: null,
         cameraFollowOffset: { x: 0, y: 0 }
       },
       worldSnapshot: {

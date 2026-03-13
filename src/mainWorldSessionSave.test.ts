@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { CHUNK_SIZE } from './world/constants';
+import { createPlayerDeathState } from './world/playerDeathState';
 import { createPlayerState } from './world/playerState';
 import { TileWorld } from './world/world';
 import { createWorldSessionSaveEnvelope } from './mainWorldSessionSave';
@@ -23,10 +24,12 @@ describe('createWorldSessionSaveEnvelope', () => {
       drowningDamageTickSecondsRemaining: 0.15,
       fallDamageRecoverySecondsRemaining: 0.2
     });
+    const standalonePlayerDeathState = createPlayerDeathState(0.5);
     const cameraFollowOffset = { x: 18, y: -12 };
     const source = {
       createWorldSnapshot: vi.fn(() => world.createSnapshot()),
       getStandalonePlayerState: vi.fn(() => standalonePlayerState),
+      getStandalonePlayerDeathState: vi.fn(() => standalonePlayerDeathState),
       getCameraFollowOffset: vi.fn(() => cameraFollowOffset)
     };
 
@@ -34,9 +37,11 @@ describe('createWorldSessionSaveEnvelope', () => {
 
     expect(source.createWorldSnapshot).toHaveBeenCalledTimes(1);
     expect(source.getStandalonePlayerState).toHaveBeenCalledTimes(1);
+    expect(source.getStandalonePlayerDeathState).toHaveBeenCalledTimes(1);
     expect(source.getCameraFollowOffset).toHaveBeenCalledTimes(1);
     expect(envelope.session).toEqual({
       standalonePlayerState,
+      standalonePlayerDeathState,
       cameraFollowOffset
     });
 
@@ -52,6 +57,7 @@ describe('createWorldSessionSaveEnvelope', () => {
     restoredEnvelopeWorld.loadSnapshot(envelope.worldSnapshot);
     expect(restoredEnvelopeWorld.getTile(worldTileX, worldTileY)).toBe(6);
     expect(envelope.session.standalonePlayerState?.position.x).toBe(72);
+    expect(envelope.session.standalonePlayerDeathState?.respawnSecondsRemaining).toBe(0.5);
     expect(envelope.session.cameraFollowOffset.x).toBe(18);
   });
 
@@ -59,6 +65,7 @@ describe('createWorldSessionSaveEnvelope', () => {
     const source = {
       createWorldSnapshot: vi.fn(() => new TileWorld(0).createSnapshot()),
       getStandalonePlayerState: vi.fn(() => null),
+      getStandalonePlayerDeathState: vi.fn(() => null),
       getCameraFollowOffset: vi.fn(() => ({ x: -24, y: 10 }))
     };
     const migration = {
@@ -72,6 +79,7 @@ describe('createWorldSessionSaveEnvelope', () => {
     });
 
     expect(envelope.session.standalonePlayerState).toBeNull();
+    expect(envelope.session.standalonePlayerDeathState).toBeNull();
     expect(envelope.session.cameraFollowOffset).toEqual({ x: -24, y: 10 });
     expect(envelope.migration).toEqual(migration);
   });

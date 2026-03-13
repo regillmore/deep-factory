@@ -10,21 +10,27 @@ Record only durable design decisions here. Keep each entry short: date, decision
 
 ### 2026-03-13: Hostile-contact telemetry keeps the latest overlap result, including invulnerability blocks
 
-- Decision: The debug HUD and hidden-HUD compact status strip now retain the latest hostile-slime overlap event, reporting the actual applied damage after nonlethal clamping or `0` damage when the overlap was blocked by hostile-contact invulnerability.
+- Decision: The debug HUD and hidden-HUD compact status strip now retain the latest hostile-slime overlap event, reporting the actual applied damage after lethal-or-survived resolution or `0` damage when the overlap was blocked by hostile-contact invulnerability.
 - Reason: Debugging contact cadence needs to distinguish a fresh hit from a still-overlapping slime that correctly failed to deal damage during the invulnerability window, and live health alone cannot explain that difference.
 - Consequence: Future hostile-contact telemetry follow-ups should treat invulnerability-blocked overlaps as reportable events and extend the same applied-damage event contract instead of inferring contact results only from current health or cooldown state.
 
-### 2026-03-13: Hostile-slime contact damage stays nonlethal until the dedicated death slice lands
+### 2026-03-13: Zero-health damage enters a shared death hold before respawn
 
-- Decision: Hostile-slime player-contact hits now clamp at `1` health while still starting a fixed-step hostile-contact invulnerability window instead of triggering immediate death or respawn.
-- Reason: Task `218` is scoped as a combat-contact slice, and the current lethal recovery path is still the older immediate lava-style respawn flow rather than the later dedicated death-and-respawn chapter.
-- Consequence: Future hostile combat, armor, or death-and-respawn work should treat slime contact damage as nonlethal unless the same pass intentionally updates both this damage rule and the shared death handling together.
+- Decision: Hostile contact, drowning, hard landings, and lava can now reduce the player to `0` health, and that zero-health state now holds the player at the fatal position through a short fixed-step respawn countdown before respawning from the latest resolved spawn with restored hostile-contact invulnerability.
+- Reason: The dedicated death-and-respawn slice needs one shared recovery rule across existing damage sources instead of mixing old nonlethal clamps with the older immediate lava-only reset path.
+- Consequence: Future combat, survival, checkpoint, or respawn work should treat zero health as a countdown-based death state rather than reviving immediately or reintroducing source-specific nonlethal clamps unless the same pass intentionally revisits the shared death model.
 
-### 2026-03-13: Water survival uses head-region overlap and stays nonlethal until death work lands
+### 2026-03-13: Death countdown persists beside PlayerState as detached session state
 
-- Decision: Breath now drains only when water overlaps the player's top head-region sample, and drowning damage clamps at `1` health while using its own fixed-step damage cadence instead of triggering an immediate death or respawn.
-- Reason: Body-overlap water checks would drain breath while wading, and the current zero-health recovery plumbing still reports lethal environmental deaths as lava-specific respawns, so lethal drowning would couple this survival slice to unfinished death semantics.
-- Consequence: Future water or breath systems should treat head-region submersion as the breath trigger and keep drowning nonlethal unless the same pass intentionally updates both the breath rule and the shared death/respawn handling together.
+- Decision: The short respawn countdown now persists in save or restore flow as its own session field instead of becoming another property on `PlayerState`.
+- Reason: The countdown is orchestration-owned recovery state rather than part of the fixed-step movement or collision model, and keeping it detached avoids widening every player-state clone, render snapshot, and helper for a timer that only matters while dead.
+- Consequence: Future death, checkpoint, or save/load work should treat the respawn countdown as session-owned state that is restored alongside the player, not as a permanent `PlayerState` field unless the same pass intentionally collapses those ownership boundaries.
+
+### 2026-03-13: Water survival uses head-region overlap for breath
+
+- Decision: Breath continues to drain only when water overlaps the player's top head-region sample, while drowning now participates in the shared zero-health death handling instead of a separate nonlethal clamp.
+- Reason: Body-overlap water checks would still drain breath while merely wading, and the new death slice removes the earlier need for a survival-specific nonlethal exception.
+- Consequence: Future water, breath, or drowning work should keep head-region submersion as the breath trigger unless the same pass intentionally broadens the underwater rules together.
 
 ### 2026-03-13: Hostile slime chase movement commits to grounded retargets and airborne hops
 
@@ -37,12 +43,6 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Decision: Hostile slimes now spawn from fixed-step round-robin grounded-search windows at fixed horizontal offsets from the player, reset their cooldown on every attempt, and despawn once they leave a broader keep band.
 - Reason: The first hostile-entity slice needs regression-friendly spawn behavior that is easy to exercise from mixed-device play without introducing probabilistic ambient rules or a second non-registry entity lifecycle.
 - Consequence: Future hostile-slime locomotion, combat, or telemetry work should preserve the deterministic spawn-window order and keep-band ownership unless the same pass intentionally revisits the broader enemy spawning model.
-
-### 2026-03-13: Fall damage stays nonlethal until a dedicated death slice replaces that rule
-
-- Decision: Hard-landing damage now clamps at `1` health and uses a short fall-recovery cooldown instead of driving immediate death or respawn.
-- Reason: Task `399` is scoped as a survival-only slice, and the current zero-health respawn plumbing still reports lethal damage as lava-specific recovery, so lethal falls would couple this pass to unfinished death semantics.
-- Consequence: Future combat or death-and-respawn work should treat fall damage as nonlethal unless that pass intentionally updates both the rule and the shared respawn/event handling together.
 
 ### 2026-03-13: Sleeping-liquid bounds should stay resident-state telemetry
 
@@ -916,7 +916,7 @@ Record only durable design decisions here. Keep each entry short: date, decision
 
 ### 2026-03-08: Standalone-player liquid interaction resolves from overlapped liquid fill area inside the shared player step
 
-- Decision: `src/world/playerState.ts` now samples overlapped water and lava fill area from resident world liquid levels during the shared fixed-step player update, applies water buoyancy and drag there, and advances lava damage through player-owned health plus cooldown state before `src/main.ts` optionally respawns from the latest resolved spawn.
+- Decision: `src/world/playerState.ts` now samples overlapped water and lava fill area from resident world liquid levels during the shared fixed-step player update, applies water buoyancy and drag there, and advances lava damage through player-owned health plus cooldown state before `src/main.ts` resolves any later death-hold or respawn behavior.
 - Reason: Water motion, lava damage timing, and future player-liquid behavior need one deterministic world-backed rule instead of ad hoc checks split between render code, input code, and runtime orchestration.
 - Consequence: Future swim controls, liquid immunity, liquid HUD telemetry, or other player-liquid mechanics should extend the shared player-state liquid overlap and damage path instead of bypassing it from `src/main.ts` or renderer-only code.
 

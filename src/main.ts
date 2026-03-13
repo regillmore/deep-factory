@@ -132,9 +132,16 @@ import {
 } from './world/playerGroundedTransition';
 import {
   createEmbeddedPlayerRespawnEvent,
-  createLavaPlayerRespawnEvent,
+  createDeathPlayerRespawnEvent,
   type PlayerRespawnEvent
 } from './world/playerRespawnEvent';
+import {
+  createPlayerDeathState,
+  DEFAULT_PLAYER_RESPAWN_INVULNERABILITY_SECONDS,
+  isPlayerDeathStateRespawnReady,
+  stepPlayerDeathState,
+  type PlayerDeathState
+} from './world/playerDeathState';
 import {
   type LiquidSurfaceLevelNeighborhood,
   resolveLiquidSurfaceBottomAtlasPixelRows,
@@ -309,7 +316,9 @@ type StandalonePlayerFixedStepContactSnapshot = {
   nextPlayerContacts: PlayerCollisionContacts;
 };
 type StandalonePlayerFixedStepResult = {
+  previousPlayerState: PlayerState;
   nextPlayerState: PlayerState;
+  nextDeathState: PlayerDeathState | null;
   contactSnapshot: StandalonePlayerFixedStepContactSnapshot;
   transitionSnapshot: StandalonePlayerFixedStepTransitionSnapshot;
   respawnEvent: PlayerRespawnEvent | null;
@@ -321,6 +330,7 @@ type StandalonePlayerFixedStepContactSnapshotOptions = {
 };
 type StandalonePlayerFixedStepResultOptions = {
   previousPlayerState: PlayerState;
+  currentPlayerDeathState: PlayerDeathState | null;
   fixedDt: number;
   playerMovementIntent: PlayerMovementIntent;
 };
@@ -1219,6 +1229,7 @@ const bootstrap = async (): Promise<void> => {
   let resolvedPlayerSpawn = renderer.findPlayerSpawnPoint(DEBUG_PLAYER_SPAWN_SEARCH_OPTIONS);
   let entityRegistry = new EntityRegistry();
   let standalonePlayerEntityId: EntityId | null = null;
+  let standalonePlayerDeathState: PlayerDeathState | null = null;
   let hostileSlimeEntityIds: EntityId[] = [];
   let hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
   let pendingStandalonePlayerFixedStepResult: StandalonePlayerFixedStepResult | null = null;
@@ -1239,6 +1250,12 @@ const bootstrap = async (): Promise<void> => {
     }
     return entityRegistry.getEntityState<PlayerState>(standalonePlayerEntityId);
   };
+  const getStandalonePlayerDeathState = (): PlayerDeathState | null =>
+    standalonePlayerDeathState === null
+      ? null
+      : {
+          respawnSecondsRemaining: standalonePlayerDeathState.respawnSecondsRemaining
+        };
   const getHostileSlimeEntityStates = (): Array<{ id: EntityId; state: HostileSlimeState }> => {
     const activeHostileSlimes: Array<{ id: EntityId; state: HostileSlimeState }> = [];
     const nextHostileSlimeEntityIds: EntityId[] = [];
@@ -1292,6 +1309,7 @@ const bootstrap = async (): Promise<void> => {
       source: {
         createWorldSnapshot: () => renderer.createWorldSnapshot(),
         getStandalonePlayerState,
+        getStandalonePlayerDeathState,
         getCameraFollowOffset: () => cameraFollowOffset
       }
     });
@@ -1706,20 +1724,28 @@ const bootstrap = async (): Promise<void> => {
   const replaceWorldSessionEntityRegistry = (): void => {
     entityRegistry = new EntityRegistry();
     standalonePlayerEntityId = null;
+    standalonePlayerDeathState = null;
     hostileSlimeEntityIds = [];
     hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
     pendingStandalonePlayerFixedStepResult = null;
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
   };
-  const restoreStandalonePlayerSessionState = (playerState: PlayerState | null): void => {
+  const restoreStandalonePlayerSessionState = (
+    playerState: PlayerState | null,
+    deathState: PlayerDeathState | null
+  ): void => {
     replaceWorldSessionEntityRegistry();
     resetStandalonePlayerTransitionState();
     lastAppliedPlayerFollowCameraPosition = null;
+    standalonePlayerDeathState = deathState;
     if (playerState === null) {
       return;
     }
 
     spawnStandalonePlayerEntity(playerState);
+  };
+  const setStandalonePlayerDeathState = (nextDeathState: PlayerDeathState | null): void => {
+    standalonePlayerDeathState = nextDeathState;
   };
   const setStandalonePlayerState = (
     nextPlayerState: PlayerState,
@@ -1735,14 +1761,41 @@ const bootstrap = async (): Promise<void> => {
       return;
     }
 
+    const previousHealth = readStandalonePlayerHealthForRespawnDetection(
+      pendingStandalonePlayerFixedStepResult.previousPlayerState
+    );
+    const nextHealth = readStandalonePlayerHealthForRespawnDetection(nextPlayerState);
+    const startsDeathStateThisTick =
+      standalonePlayerDeathState === null &&
+      pendingStandalonePlayerFixedStepResult.nextDeathState === null &&
+      previousHealth > 0 &&
+      nextHealth <= 0;
+
     pendingStandalonePlayerFixedStepResult = {
       ...pendingStandalonePlayerFixedStepResult,
-      nextPlayerState
+      nextPlayerState: startsDeathStateThisTick
+        ? createStandalonePlayerDeathHoldState(nextPlayerState)
+        : nextPlayerState,
+      nextDeathState: startsDeathStateThisTick
+        ? createPlayerDeathState()
+        : pendingStandalonePlayerFixedStepResult.nextDeathState,
+      transitionSnapshot: startsDeathStateThisTick
+        ? createEmptyStandalonePlayerFixedStepTransitionSnapshot()
+        : pendingStandalonePlayerFixedStepResult.transitionSnapshot,
+      renderPresentationState: startsDeathStateThisTick
+        ? createStandalonePlayerRenderPresentationState()
+        : pendingStandalonePlayerFixedStepResult.renderPresentationState
     };
   };
+  const isStandalonePlayerDead = (playerState: PlayerState | null): boolean =>
+    playerState !== null && readStandalonePlayerHealthForRespawnDetection(playerState) <= 0;
   const applyHostileSlimePlayerContactDuringFixedStep = (slimeState: HostileSlimeState): void => {
     const standalonePlayerState = getStandalonePlayerState();
-    if (standalonePlayerState === null) {
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
       return;
     }
 
@@ -1773,6 +1826,7 @@ const bootstrap = async (): Promise<void> => {
         const playerMovementIntent = input.getPlayerMovementIntent();
         const playerFixedStepResult = createStandalonePlayerFixedStepResult({
           previousPlayerState: playerState,
+          currentPlayerDeathState: standalonePlayerDeathState,
           fixedDt,
           playerMovementIntent
         });
@@ -1870,34 +1924,79 @@ const bootstrap = async (): Promise<void> => {
     lastPlayerCeilingContactTransitionEvent = null;
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
   };
+  const clearStandalonePlayerMovementTransitionState = (): void => {
+    lastPlayerGroundedTransitionEvent = null;
+    lastPlayerFacingTransitionEvent = null;
+    lastPlayerWallContactTransitionEvent = null;
+    lastPlayerCeilingContactTransitionEvent = null;
+    standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
+  };
   const readOptionalFiniteNumber = (value: unknown): number | null =>
     typeof value === 'number' && Number.isFinite(value) ? value : null;
   const readStandalonePlayerHealthForRespawnDetection = (playerState: PlayerState): number => {
     const health = (playerState as { health?: unknown }).health;
     return typeof health === 'number' && Number.isFinite(health) ? health : 1;
   };
-  const resolveStandalonePlayerFixedStepRespawn = (
+  const createStandalonePlayerDeathHoldState = (playerState: PlayerState): PlayerState => ({
+    ...playerState,
+    velocity: {
+      x: 0,
+      y: 0
+    }
+  });
+  const createEmptyStandalonePlayerFixedStepTransitionSnapshot =
+    (): StandalonePlayerFixedStepTransitionSnapshot => ({
+      groundedTransitionEvent: null,
+      facingTransitionEvent: null,
+      wallContactTransitionEvent: null,
+      ceilingContactTransitionEvent: null
+    });
+  const resolveStandalonePlayerFixedStepDeathRespawn = (
     previousPlayerState: PlayerState,
-    nextPlayerState: PlayerState
-  ): Pick<StandalonePlayerFixedStepResult, 'nextPlayerState' | 'respawnEvent'> => {
+    nextPlayerState: PlayerState,
+    currentPlayerDeathState: PlayerDeathState | null,
+    fixedDt: number
+  ): Pick<StandalonePlayerFixedStepResult, 'nextPlayerState' | 'nextDeathState' | 'respawnEvent'> => {
     const previousHealth = readStandalonePlayerHealthForRespawnDetection(previousPlayerState);
     const nextHealth = readStandalonePlayerHealthForRespawnDetection(nextPlayerState);
-    if (previousHealth > 0 && nextHealth <= 0 && resolvedPlayerSpawn !== null) {
-      const respawnedPlayerState = createPlayerStateFromSpawn(resolvedPlayerSpawn, {
-        facing: nextPlayerState.facing
-      });
+    if (currentPlayerDeathState !== null) {
+      const nextDeathState = stepPlayerDeathState(currentPlayerDeathState, fixedDt);
+      const heldPlayerState = createStandalonePlayerDeathHoldState(nextPlayerState);
+      if (isPlayerDeathStateRespawnReady(nextDeathState) && resolvedPlayerSpawn !== null) {
+        const respawnedPlayerState = createPlayerStateFromSpawn(resolvedPlayerSpawn, {
+          facing: nextPlayerState.facing,
+          hostileContactInvulnerabilitySecondsRemaining:
+            DEFAULT_PLAYER_RESPAWN_INVULNERABILITY_SECONDS
+        });
+        return {
+          nextPlayerState: respawnedPlayerState,
+          nextDeathState: null,
+          respawnEvent: createDeathPlayerRespawnEvent(
+            respawnedPlayerState,
+            resolvedPlayerSpawn,
+            renderer.resolvePlayerSpawnLiquidSafetyStatus(resolvedPlayerSpawn)
+          )
+        };
+      }
+
       return {
-        nextPlayerState: respawnedPlayerState,
-        respawnEvent: createLavaPlayerRespawnEvent(
-          respawnedPlayerState,
-          resolvedPlayerSpawn,
-          renderer.resolvePlayerSpawnLiquidSafetyStatus(resolvedPlayerSpawn)
-        )
+        nextPlayerState: heldPlayerState,
+        nextDeathState,
+        respawnEvent: null
+      };
+    }
+
+    if (previousHealth > 0 && nextHealth <= 0) {
+      return {
+        nextPlayerState: createStandalonePlayerDeathHoldState(nextPlayerState),
+        nextDeathState: createPlayerDeathState(),
+        respawnEvent: null
       };
     }
 
     return {
       nextPlayerState,
+      nextDeathState: null,
       respawnEvent: null
     };
   };
@@ -1935,11 +2034,12 @@ const bootstrap = async (): Promise<void> => {
   const createStandalonePlayerRenderPresentationStateForFixedStepResult = (
     nextPlayerContacts: PlayerCollisionContacts,
     transitionSnapshot: StandalonePlayerFixedStepTransitionSnapshot,
+    nextDeathState: PlayerDeathState | null,
     respawnEvent: PlayerRespawnEvent | null,
     timeMs: number
   ): StandalonePlayerRenderPresentationState => {
     const ceilingBonkHoldUntilTimeMs =
-      respawnEvent !== null
+      respawnEvent !== null || nextDeathState !== null
         ? null
         : transitionSnapshot.ceilingContactTransitionEvent?.kind === 'blocked'
           ? timeMs + STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS
@@ -1955,37 +2055,46 @@ const bootstrap = async (): Promise<void> => {
   };
   const createStandalonePlayerFixedStepResult = ({
     previousPlayerState,
+    currentPlayerDeathState,
     fixedDt,
     playerMovementIntent
   }: StandalonePlayerFixedStepResultOptions): StandalonePlayerFixedStepResult => {
-    const steppedPlayerState = renderer.stepPlayerState(
+    const steppedPlayerState =
+      currentPlayerDeathState === null
+        ? renderer.stepPlayerState(previousPlayerState, fixedDt, playerMovementIntent)
+        : createStandalonePlayerDeathHoldState(previousPlayerState);
+    const { nextPlayerState, nextDeathState, respawnEvent } =
+      resolveStandalonePlayerFixedStepDeathRespawn(
       previousPlayerState,
-      fixedDt,
-      playerMovementIntent
-    );
-    const { nextPlayerState, respawnEvent } = resolveStandalonePlayerFixedStepRespawn(
-      previousPlayerState,
-      steppedPlayerState
+      steppedPlayerState,
+      currentPlayerDeathState,
+      fixedDt
     );
     const contactSnapshot = createStandalonePlayerFixedStepContactSnapshot({
       previousPlayerState,
       nextPlayerState
     });
-    const transitionSnapshot = createStandalonePlayerFixedStepTransitionSnapshot({
+    const transitionSnapshot =
+      currentPlayerDeathState !== null || nextDeathState !== null || respawnEvent !== null
+        ? createEmptyStandalonePlayerFixedStepTransitionSnapshot()
+        : createStandalonePlayerFixedStepTransitionSnapshot({
+            previousPlayerState,
+            nextPlayerState,
+            previousPlayerContacts: contactSnapshot.previousPlayerContacts,
+            nextPlayerContacts: contactSnapshot.nextPlayerContacts,
+            playerMovementIntent
+          });
+    return {
       previousPlayerState,
       nextPlayerState,
-      previousPlayerContacts: contactSnapshot.previousPlayerContacts,
-      nextPlayerContacts: contactSnapshot.nextPlayerContacts,
-      playerMovementIntent
-    });
-    return {
-      nextPlayerState,
+      nextDeathState,
       contactSnapshot,
       respawnEvent,
       transitionSnapshot,
       renderPresentationState: createStandalonePlayerRenderPresentationStateForFixedStepResult(
         contactSnapshot.nextPlayerContacts,
         transitionSnapshot,
+        nextDeathState,
         respawnEvent,
         performance.now()
       )
@@ -1996,8 +2105,14 @@ const bootstrap = async (): Promise<void> => {
   ): void => {
     if (playerFixedStepResult.respawnEvent !== null) {
       resetStandalonePlayerTransitionState(playerFixedStepResult.respawnEvent);
+      setStandalonePlayerDeathState(null);
+      setStandalonePlayerState(playerFixedStepResult.nextPlayerState);
+    } else if (playerFixedStepResult.nextDeathState !== null) {
+      clearStandalonePlayerMovementTransitionState();
+      setStandalonePlayerDeathState(playerFixedStepResult.nextDeathState);
       setStandalonePlayerState(playerFixedStepResult.nextPlayerState);
     } else {
+      setStandalonePlayerDeathState(null);
       commitStandalonePlayerFixedStepTransitions(playerFixedStepResult.transitionSnapshot);
     }
     applyStandalonePlayerCameraFollow();
@@ -2048,6 +2163,9 @@ const bootstrap = async (): Promise<void> => {
     }
 
     if (standalonePlayerState !== null) {
+      if (standalonePlayerDeathState !== null || isStandalonePlayerDead(standalonePlayerState)) {
+        return;
+      }
       const nextPlayerState = renderer.respawnPlayerStateAtSpawnIfEmbeddedInSolid(
         standalonePlayerState,
         resolvedPlayerSpawn
@@ -3845,8 +3963,11 @@ const bootstrap = async (): Promise<void> => {
           loadWorldSnapshot: (snapshot) => {
             renderer.loadWorldSnapshot(snapshot);
           },
+          restoreStandalonePlayerDeathState: (deathState) => {
+            standalonePlayerDeathState = deathState;
+          },
           restoreStandalonePlayerState: (playerState) => {
-            restoreStandalonePlayerSessionState(playerState);
+            restoreStandalonePlayerSessionState(playerState, standalonePlayerDeathState);
           },
           restoreCameraFollowOffset: (nextCameraFollowOffset) => {
             cameraFollowOffset = {
@@ -4044,8 +4165,11 @@ const bootstrap = async (): Promise<void> => {
           loadWorldSnapshot: (snapshot) => {
             renderer.loadWorldSnapshot(snapshot);
           },
+          restoreStandalonePlayerDeathState: (deathState) => {
+            standalonePlayerDeathState = deathState;
+          },
           restoreStandalonePlayerState: (playerState) => {
-            restoreStandalonePlayerSessionState(playerState);
+            restoreStandalonePlayerSessionState(playerState, standalonePlayerDeathState);
           },
           restoreCameraFollowOffset: (nextCameraFollowOffset) => {
             cameraFollowOffset = {

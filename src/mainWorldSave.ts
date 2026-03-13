@@ -6,6 +6,7 @@ import {
   DEFAULT_PLAYER_MAX_BREATH_SECONDS,
   type PlayerState
 } from './world/playerState';
+import { createPlayerDeathState, type PlayerDeathState } from './world/playerDeathState';
 import { TileWorld, type TileWorldSnapshot } from './world/world';
 
 export const WORLD_SAVE_ENVELOPE_KIND = 'deep-factory.world-save';
@@ -18,6 +19,7 @@ export interface WorldSaveEnvelopeMigrationMetadata {
 
 export interface WorldSaveSessionState {
   standalonePlayerState: PlayerState | null;
+  standalonePlayerDeathState: PlayerDeathState | null;
   cameraFollowOffset: CameraFollowOffset;
 }
 
@@ -32,6 +34,7 @@ export interface WorldSaveEnvelope {
 export interface CreateWorldSaveEnvelopeOptions {
   worldSnapshot: TileWorldSnapshot;
   standalonePlayerState?: PlayerState | null;
+  standalonePlayerDeathState?: PlayerDeathState | null;
   cameraFollowOffset?: CameraFollowOffset;
   migration?: WorldSaveEnvelopeMigrationMetadata;
 }
@@ -159,6 +162,21 @@ const normalizePlayerState = (value: unknown, label: string): PlayerState => {
 const normalizeStandalonePlayerState = (value: unknown, label: string): PlayerState | null =>
   value === null ? null : normalizePlayerState(value, label);
 
+const normalizePlayerDeathState = (value: unknown, label: string): PlayerDeathState => {
+  if (!isRecord(value)) {
+    throw new Error(`${label} must be an object`);
+  }
+
+  return createPlayerDeathState(
+    expectNonNegativeFiniteNumber(value.respawnSecondsRemaining, `${label}.respawnSecondsRemaining`)
+  );
+};
+
+const normalizeStandalonePlayerDeathState = (
+  value: unknown,
+  label: string
+): PlayerDeathState | null => (value === null ? null : normalizePlayerDeathState(value, label));
+
 export const createDefaultWorldSaveEnvelopeMigrationMetadata =
   (): WorldSaveEnvelopeMigrationMetadata => ({
     migratedFromVersion: null,
@@ -206,6 +224,7 @@ const normalizeWorldSnapshot = (snapshot: unknown, label: string): TileWorldSnap
 export const createWorldSaveEnvelope = ({
   worldSnapshot,
   standalonePlayerState = null,
+  standalonePlayerDeathState = null,
   cameraFollowOffset = { x: 0, y: 0 },
   migration = createDefaultWorldSaveEnvelopeMigrationMetadata()
 }: CreateWorldSaveEnvelopeOptions): WorldSaveEnvelope => ({
@@ -216,6 +235,10 @@ export const createWorldSaveEnvelope = ({
     standalonePlayerState: normalizeStandalonePlayerState(
       standalonePlayerState,
       'standalonePlayerState'
+    ),
+    standalonePlayerDeathState: normalizeStandalonePlayerDeathState(
+      standalonePlayerDeathState,
+      'standalonePlayerDeathState'
     ),
     cameraFollowOffset: normalizeCameraFollowOffset(cameraFollowOffset, 'cameraFollowOffset')
   },
@@ -244,6 +267,10 @@ export const decodeWorldSaveEnvelope = (value: unknown): WorldSaveEnvelope => {
       standalonePlayerState: normalizeStandalonePlayerState(
         value.session.standalonePlayerState,
         'session.standalonePlayerState'
+      ),
+      standalonePlayerDeathState: normalizeStandalonePlayerDeathState(
+        value.session.standalonePlayerDeathState ?? null,
+        'session.standalonePlayerDeathState'
       ),
       cameraFollowOffset: normalizeCameraFollowOffset(
         value.session.cameraFollowOffset,

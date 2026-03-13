@@ -2594,7 +2594,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
   });
 
-  it('routes bootstrap spawn initialization, lava respawn, and embedded respawn recovery through one shared standalone-player transition-reset helper', async () => {
+  it('routes bootstrap spawn initialization, death countdown respawn, and embedded respawn recovery through one shared standalone-player transition-reset helper', async () => {
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
       anchorTileX: 0,
       standingTileY: -1,
@@ -2711,12 +2711,34 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererPlayerSpawnLiquidSafetyStatus = 'overlap';
     testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, noContacts];
 
-    runFixedUpdate();
+    runFixedUpdate(0.1);
     runRenderFrame();
 
     expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
     if (!testRuntime.latestDebugEditStatusStripState) {
-      throw new Error('expected latest debug status strip state after lava respawn');
+      throw new Error('expected latest debug status strip state after death start');
+    }
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerFacingTransition ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerHealth).toBe(0);
+    expect(testRuntime.latestDebugEditStatusStripState.playerVelocityX).toBe(0);
+    expect(testRuntime.latestDebugEditStatusStripState.playerVelocityY).toBe(0);
+    expect(testRuntime.latestDebugEditStatusStripState.playerRespawn ?? null).toBeNull();
+    expect(testRuntime.latestDebugOverlayInspectState?.playerRespawn ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
+
+    runFixedUpdate(0.5);
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerRespawn ?? null).toBeNull();
+
+    runFixedUpdate(0.5);
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest debug status strip state after death respawn');
     }
 
     expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition ?? null).toBeNull();
@@ -2724,7 +2746,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.playerWallContactTransition ?? null).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingContactTransition ?? null).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerRespawn).toMatchObject({
-      kind: 'lava',
+      kind: 'death',
       spawnTile: {
         x: 0,
         y: -1
@@ -2748,8 +2770,11 @@ describe('main.ts shell state orchestration', () => {
         y: 0
       }
     });
+    expect(
+      testRuntime.latestDebugEditStatusStripState.playerHostileContactInvulnerabilitySecondsRemaining
+    ).toBeCloseTo(1, 6);
     expect(testRuntime.latestDebugOverlayInspectState?.playerRespawn).toMatchObject({
-      kind: 'lava',
+      kind: 'death',
       spawnTile: {
         x: 0,
         y: -1
@@ -2848,7 +2873,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
   });
 
-  it('keeps standalone-player render snapshots snapped to the new spawn across lava respawn and embedded recovery interpolation resets', async () => {
+  it('keeps standalone-player render snapshots snapped to the death hold and the later respawn spawn across interpolation resets', async () => {
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint({
       anchorTileX: 0,
       standingTileY: -1,
@@ -2894,12 +2919,35 @@ describe('main.ts shell state orchestration', () => {
     });
     testRuntime.rendererPlayerCollisionContactsQueue = [noContacts, noContacts, noContacts];
 
-    runFixedUpdate();
+    runFixedUpdate(0.1);
     runRenderFrame(1000 / 60, 0.5);
 
     expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
     if (!testRuntime.latestRendererRenderFrameState) {
-      throw new Error('expected renderer frame state after lava respawn');
+      throw new Error('expected renderer frame state after death hold');
+    }
+
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerPreviousPosition).toEqual({
+      x: 56,
+      y: 28
+    });
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerCurrentPosition).toEqual({
+      x: 56,
+      y: 28
+    });
+    expect(testRuntime.latestRendererRenderFrameState.standalonePlayerInterpolatedPosition).toEqual({
+      x: 56,
+      y: 28
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.playerRespawn ?? null).toBeNull();
+
+    runFixedUpdate(0.5);
+    runFixedUpdate(0.5);
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.latestRendererRenderFrameState).not.toBeNull();
+    if (!testRuntime.latestRendererRenderFrameState) {
+      throw new Error('expected renderer frame state after death respawn');
     }
 
     expect(testRuntime.latestRendererRenderFrameState.standalonePlayerPreviousPosition).toEqual({
@@ -2914,7 +2962,7 @@ describe('main.ts shell state orchestration', () => {
       x: 8,
       y: -16
     });
-    expect(testRuntime.latestDebugEditStatusStripState?.playerRespawn?.kind).toBe('lava');
+    expect(testRuntime.latestDebugEditStatusStripState?.playerRespawn?.kind).toBe('death');
 
     const movedRecoveredPlayerState = {
       position: { x: 144, y: 80 },

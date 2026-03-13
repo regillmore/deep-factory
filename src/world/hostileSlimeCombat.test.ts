@@ -55,7 +55,7 @@ describe('hostileSlimeCombat', () => {
     expect(damagedPlayerState).not.toBe(playerState);
   });
 
-  it('reports blocked overlap during invulnerability and still measures clamped nonlethal damage', () => {
+  it('reports blocked overlap during invulnerability and allows lethal overlap damage once death work is active', () => {
     const slimeState = createHostileSlimeState({
       position: { x: 8, y: 0 }
     });
@@ -90,14 +90,14 @@ describe('hostileSlimeCombat', () => {
       })
     ]);
 
-    expect(clampedPlayerState.health).toBe(1);
+    expect(clampedPlayerState.health).toBe(0);
     expect(clampedPlayerState.hostileContactInvulnerabilitySecondsRemaining).toBe(
       DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS
     );
     expect(clampedResolution).toEqual({
       nextPlayerState: clampedPlayerState,
       event: {
-        damageApplied: 2,
+        damageApplied: 3,
         blockedByInvulnerability: false
       }
     });

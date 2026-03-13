@@ -20,7 +20,7 @@ export interface HostileSlimePlayerContactResolution {
 
 export const DEFAULT_HOSTILE_SLIME_CONTACT_DAMAGE = 15;
 export const DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS = 0.75;
-export const DEFAULT_HOSTILE_SLIME_CONTACT_MINIMUM_HEALTH = 1;
+export const DEFAULT_HOSTILE_SLIME_CONTACT_MINIMUM_HEALTH = 0;
 
 const expectNonNegativeFiniteNumber = (value: number, label: string): number => {
   if (!Number.isFinite(value) || value < 0) {

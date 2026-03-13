@@ -2,7 +2,7 @@ import { worldToChunkCoord, worldToLocalTile } from './chunkMath';
 import type { PlayerSpawnLiquidSafetyStatus, PlayerSpawnPoint } from './playerSpawn';
 import type { PlayerState } from './playerState';
 
-export type PlayerRespawnEventKind = 'embedded' | 'lava';
+export type PlayerRespawnEventKind = 'embedded' | 'death';
 
 export interface PlayerRespawnEvent {
   kind: PlayerRespawnEventKind;
@@ -57,8 +57,8 @@ export const createEmbeddedPlayerRespawnEvent = (
   liquidSafetyStatus: PlayerSpawnLiquidSafetyStatus
 ): PlayerRespawnEvent => createPlayerRespawnEvent('embedded', nextState, spawn, liquidSafetyStatus);
 
-export const createLavaPlayerRespawnEvent = (
+export const createDeathPlayerRespawnEvent = (
   nextState: PlayerState,
   spawn: PlayerSpawnPoint,
   liquidSafetyStatus: PlayerSpawnLiquidSafetyStatus
-): PlayerRespawnEvent => createPlayerRespawnEvent('lava', nextState, spawn, liquidSafetyStatus);
+): PlayerRespawnEvent => createPlayerRespawnEvent('death', nextState, spawn, liquidSafetyStatus);
