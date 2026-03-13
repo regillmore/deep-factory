@@ -3460,6 +3460,8 @@ const bootstrap = async (): Promise<void> => {
       liquidStepPhaseSummary: debugOverlayVisible ? null : renderer.telemetry.liquidStepPhaseSummary,
       liquidStepDownwardActiveChunksScanned:
         debugOverlayVisible ? null : renderer.telemetry.liquidStepDownwardActiveChunksScanned,
+      liquidStepSidewaysCandidateChunksScanned:
+        debugOverlayVisible ? null : renderer.telemetry.liquidStepSidewaysCandidateChunksScanned,
       liquidStepSidewaysPairsTested:
         debugOverlayVisible ? null : renderer.telemetry.liquidStepSidewaysPairsTested,
       liquidStepDownwardTransfersApplied:

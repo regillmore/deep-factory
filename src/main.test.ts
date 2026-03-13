@@ -270,6 +270,7 @@ const testRuntime = vi.hoisted(() => {
       liquidStepSidewaysCandidateMaxChunkY: null as number | null,
       liquidStepPhaseSummary: 'none' as 'none' | 'downward' | 'sideways' | 'both',
       liquidStepDownwardActiveChunksScanned: 0,
+      liquidStepSidewaysCandidateChunksScanned: 0,
       liquidStepSidewaysPairsTested: 0,
       liquidStepDownwardTransfersApplied: 0,
       liquidStepSidewaysTransfersApplied: 0,
@@ -1550,6 +1551,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTelemetry.residentSleepingLiquidMaxChunkY = null;
     testRuntime.rendererTelemetry.liquidStepPhaseSummary = 'none';
     testRuntime.rendererTelemetry.liquidStepDownwardActiveChunksScanned = 0;
+    testRuntime.rendererTelemetry.liquidStepSidewaysCandidateChunksScanned = 0;
     testRuntime.rendererTelemetry.liquidStepSidewaysPairsTested = 0;
     testRuntime.rendererTelemetry.liquidStepDownwardTransfersApplied = 0;
     testRuntime.rendererTelemetry.liquidStepSidewaysTransfersApplied = 0;
@@ -4522,6 +4524,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTelemetry.liquidStepSidewaysCandidateMaxChunkY = 1;
     testRuntime.rendererTelemetry.liquidStepPhaseSummary = 'sideways';
     testRuntime.rendererTelemetry.liquidStepDownwardActiveChunksScanned = 80;
+    testRuntime.rendererTelemetry.liquidStepSidewaysCandidateChunksScanned = 7;
     testRuntime.rendererTelemetry.liquidStepSidewaysPairsTested = 1504;
     testRuntime.rendererTelemetry.liquidStepDownwardTransfersApplied = 0;
     testRuntime.rendererTelemetry.liquidStepSidewaysTransfersApplied = 1;
@@ -4569,6 +4572,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysCandidateMaxChunkY).toBe(1);
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepPhaseSummary).toBe('sideways');
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepDownwardActiveChunksScanned).toBe(80);
+    expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysCandidateChunksScanned).toBe(7);
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysPairsTested).toBe(1504);
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepDownwardTransfersApplied).toBe(0);
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysTransfersApplied).toBe(1);
@@ -4617,6 +4621,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysCandidateMaxChunkY).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepPhaseSummary).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepDownwardActiveChunksScanned).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysCandidateChunksScanned).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysPairsTested).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepDownwardTransfersApplied).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysTransfersApplied).toBeNull();

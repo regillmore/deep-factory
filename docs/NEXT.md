@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Optimize liquids
 
-508. Expose the sideways candidate-chunk scan count in the compact hidden-HUD status strip after task `505` lands so wake testing can compare band coverage, tested pair counts, and actual transfers without opening the full debug HUD.
+512. Expose a derived sideways pair-density metric in the compact hidden-HUD status strip after task `508` lands so wake testing can compare candidate-band coverage against tested-pair pressure without opening the full debug HUD.
 
 ## Refine, Extract, Refactor, Restructure
 
