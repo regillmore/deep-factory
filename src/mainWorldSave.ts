@@ -129,6 +129,10 @@ const normalizePlayerState = (value: unknown, label: string): PlayerState => {
     lavaDamageTickSecondsRemaining: expectNonNegativeFiniteNumber(
       value.lavaDamageTickSecondsRemaining,
       `${label}.lavaDamageTickSecondsRemaining`
+    ),
+    fallDamageRecoverySecondsRemaining: expectNonNegativeFiniteNumber(
+      value.fallDamageRecoverySecondsRemaining ?? 0,
+      `${label}.fallDamageRecoverySecondsRemaining`
     )
   });
 };

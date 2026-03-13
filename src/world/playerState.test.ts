@@ -6,6 +6,9 @@ import {
   createPlayerState,
   createPlayerStateFromSpawn,
   DEFAULT_PLAYER_AIR_ACCELERATION,
+  DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
+  DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED,
+  DEFAULT_PLAYER_FALL_DAMAGE_SPEED_PER_HEALTH,
   DEFAULT_PLAYER_GROUND_ACCELERATION,
   DEFAULT_PLAYER_GROUND_DECELERATION,
   DEFAULT_PLAYER_GRAVITY_ACCELERATION,
@@ -49,10 +52,12 @@ const setTiles = (
 const withDefaultPlayerVitals = <T extends object>(state: T): T & {
   health: number;
   lavaDamageTickSecondsRemaining: number;
+  fallDamageRecoverySecondsRemaining: number;
 } => ({
   ...state,
   health: DEFAULT_PLAYER_MAX_HEALTH,
-  lavaDamageTickSecondsRemaining: DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS
+  lavaDamageTickSecondsRemaining: DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
+  fallDamageRecoverySecondsRemaining: 0
 });
 
 const WATER_TILE_ID = 7;
@@ -177,7 +182,8 @@ describe('playerState', () => {
       grounded: true,
       facing: 'left',
       health: 75,
-      lavaDamageTickSecondsRemaining: 0.125
+      lavaDamageTickSecondsRemaining: 0.125,
+      fallDamageRecoverySecondsRemaining: 0.2
     });
 
     const cloned = clonePlayerState(state);
@@ -660,6 +666,127 @@ describe('playerState', () => {
     }));
   });
 
+  it('does not apply fall damage when the landing speed stays at or below the safe threshold', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -3, 2, 2, 0);
+    world.setTile(0, 0, 3);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -20 },
+        velocity: { x: 0, y: DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED },
+        size: { width: 12, height: 12 }
+      }),
+      0.1,
+      {},
+      {
+        gravityAcceleration: 0,
+        maxFallSpeed: DEFAULT_PLAYER_MAX_FALL_SPEED
+      }
+    );
+
+    expect(stepped.health).toBe(DEFAULT_PLAYER_MAX_HEALTH);
+    expect(stepped.fallDamageRecoverySecondsRemaining).toBe(0);
+    expect(stepped.grounded).toBe(true);
+  });
+
+  it('applies hard-landing damage, clamps nonlethal falls to one health, and starts fall recovery', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -3, 2, 2, 0);
+    world.setTile(0, 0, 3);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -20 },
+        velocity: {
+          x: 0,
+          y:
+            DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED +
+            DEFAULT_PLAYER_FALL_DAMAGE_SPEED_PER_HEALTH * 3
+        },
+        size: { width: 12, height: 12 },
+        health: 2
+      }),
+      0.1,
+      {},
+      {
+        gravityAcceleration: 0,
+        maxFallSpeed: DEFAULT_PLAYER_MAX_FALL_SPEED
+      }
+    );
+
+    expect(stepped.health).toBe(1);
+    expect(stepped.fallDamageRecoverySecondsRemaining).toBe(
+      DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS
+    );
+    expect(stepped.grounded).toBe(true);
+  });
+
+  it('skips repeated hard-landing damage while fall recovery is still active, then damages again after it expires', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -3, 2, 2, 0);
+    world.setTile(0, 0, 3);
+
+    const invulnerableLanding = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -20 },
+        velocity: {
+          x: 0,
+          y:
+            DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED +
+            DEFAULT_PLAYER_FALL_DAMAGE_SPEED_PER_HEALTH
+        },
+        size: { width: 12, height: 12 },
+        grounded: false,
+        health: 80,
+        fallDamageRecoverySecondsRemaining: 0.2
+      }),
+      0.1,
+      {},
+      {
+        gravityAcceleration: 0,
+        maxFallSpeed: DEFAULT_PLAYER_MAX_FALL_SPEED
+      }
+    );
+
+    expect(invulnerableLanding.health).toBe(80);
+    expect(invulnerableLanding.fallDamageRecoverySecondsRemaining).toBeCloseTo(0.1, 6);
+
+    const vulnerableLanding = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -20 },
+        velocity: {
+          x: 0,
+          y:
+            DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED +
+            DEFAULT_PLAYER_FALL_DAMAGE_SPEED_PER_HEALTH
+        },
+        size: { width: 12, height: 12 },
+        grounded: false,
+        health: invulnerableLanding.health,
+        fallDamageRecoverySecondsRemaining: 0.05
+      }),
+      0.1,
+      {},
+      {
+        gravityAcceleration: 0,
+        maxFallSpeed: DEFAULT_PLAYER_MAX_FALL_SPEED
+      }
+    );
+
+    expect(vulnerableLanding.health).toBe(79);
+    expect(vulnerableLanding.fallDamageRecoverySecondsRemaining).toBe(
+      DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS
+    );
+  });
+
   it('applies water buoyancy before collision stepping when the player is submerged', () => {
     const world = new TileWorld(0);
 
@@ -742,6 +869,7 @@ describe('playerState', () => {
     expect(stepped.lavaDamageTickSecondsRemaining).toBe(
       DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS
     );
+    expect(stepped.fallDamageRecoverySecondsRemaining).toBe(0);
   });
 
   it('applies periodic lava contact damage inside the shared fixed-step player update', () => {
@@ -784,7 +912,8 @@ describe('playerState', () => {
       grounded: false,
       facing: 'right',
       health: 40,
-      lavaDamageTickSecondsRemaining: 0.25
+      lavaDamageTickSecondsRemaining: 0.25,
+      fallDamageRecoverySecondsRemaining: 0
     });
   });
 
@@ -804,6 +933,11 @@ describe('playerState', () => {
         lavaDamageTickSecondsRemaining: -0.1
       })
     ).toThrowError(/lavaDamageTickSecondsRemaining must be a non-negative finite number/);
+    expect(() =>
+      createPlayerState({
+        fallDamageRecoverySecondsRemaining: -0.1
+      })
+    ).toThrowError(/fallDamageRecoverySecondsRemaining must be a non-negative finite number/);
 
     expect(() => integratePlayerState(createPlayerState(), -1 / 60)).toThrowError(
       /fixedDtSeconds must be a non-negative finite number/
@@ -876,5 +1010,20 @@ describe('playerState', () => {
         lavaDamageTickIntervalSeconds: 0
       })
     ).toThrowError(/options\.lavaDamageTickIntervalSeconds must be a positive finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        fallDamageSafeLandingSpeed: -DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED
+      })
+    ).toThrowError(/options\.fallDamageSafeLandingSpeed must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        fallDamageSpeedPerHealth: 0
+      })
+    ).toThrowError(/options\.fallDamageSpeedPerHealth must be a positive finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        fallDamageRecoverySeconds: -DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS
+      })
+    ).toThrowError(/options\.fallDamageRecoverySeconds must be a non-negative finite number/);
   });
 });

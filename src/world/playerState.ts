@@ -25,6 +25,7 @@ export interface PlayerState {
   facing: PlayerFacing;
   health: number;
   lavaDamageTickSecondsRemaining: number;
+  fallDamageRecoverySecondsRemaining: number;
 }
 
 export interface PlayerCollisionContacts {
@@ -51,6 +52,7 @@ export interface CreatePlayerStateOptions {
   facing?: PlayerFacing;
   health?: number;
   lavaDamageTickSecondsRemaining?: number;
+  fallDamageRecoverySecondsRemaining?: number;
 }
 
 export interface PlayerMovementIntent {
@@ -74,6 +76,9 @@ export interface StepPlayerStateOptions extends StepPlayerStateWithGravityOption
   waterVerticalDragPerSecond?: number;
   lavaDamagePerTick?: number;
   lavaDamageTickIntervalSeconds?: number;
+  fallDamageSafeLandingSpeed?: number;
+  fallDamageSpeedPerHealth?: number;
+  fallDamageRecoverySeconds?: number;
 }
 
 export const DEFAULT_PLAYER_WIDTH = 12;
@@ -91,9 +96,13 @@ export const DEFAULT_PLAYER_WATER_HORIZONTAL_DRAG_PER_SECOND = 4;
 export const DEFAULT_PLAYER_WATER_VERTICAL_DRAG_PER_SECOND = 2;
 export const DEFAULT_PLAYER_LAVA_DAMAGE_PER_TICK = 25;
 export const DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS = 0.5;
+export const DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED = 600;
+export const DEFAULT_PLAYER_FALL_DAMAGE_SPEED_PER_HEALTH = 4;
+export const DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS = 0.35;
 const DEFAULT_PLAYER_FACING: PlayerFacing = 'right';
 const COLLISION_CONTACT_PROBE_DISTANCE = 1;
 const AABB_INTERSECTION_EPSILON = 1e-6;
+const FALL_DAMAGE_MIN_HEALTH = 1;
 
 interface PlayerLiquidOverlapState {
   waterSubmergedFraction: number;
@@ -142,6 +151,9 @@ const buildLavaDamageTickSecondsRemaining = (value: number | undefined): number 
     value ?? DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
     'lavaDamageTickSecondsRemaining'
   );
+
+const buildFallDamageRecoverySecondsRemaining = (value: number | undefined): number =>
+  expectNonNegativeFiniteNumber(value ?? 0, 'fallDamageRecoverySecondsRemaining');
 
 const clampNumber = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
@@ -368,6 +380,56 @@ const resolveLavaDamageStepState = (
   };
 };
 
+const advanceFallDamageRecoverySecondsRemaining = (
+  fallDamageRecoverySecondsRemaining: number,
+  fixedDtSeconds: number
+): number => Math.max(0, fallDamageRecoverySecondsRemaining - fixedDtSeconds);
+
+const resolveFallDamageStepState = ({
+  previousGrounded,
+  nextGrounded,
+  impactSpeed,
+  health,
+  fallDamageRecoverySecondsRemaining,
+  fixedDtSeconds,
+  fallDamageSafeLandingSpeed,
+  fallDamageSpeedPerHealth,
+  fallDamageRecoverySeconds
+}: {
+  previousGrounded: boolean;
+  nextGrounded: boolean;
+  impactSpeed: number;
+  health: number;
+  fallDamageRecoverySecondsRemaining: number;
+  fixedDtSeconds: number;
+  fallDamageSafeLandingSpeed: number;
+  fallDamageSpeedPerHealth: number;
+  fallDamageRecoverySeconds: number;
+}): Pick<PlayerState, 'health' | 'fallDamageRecoverySecondsRemaining'> => {
+  const nextRecoverySecondsRemaining = advanceFallDamageRecoverySecondsRemaining(
+    fallDamageRecoverySecondsRemaining,
+    fixedDtSeconds
+  );
+  if (
+    previousGrounded ||
+    !nextGrounded ||
+    impactSpeed <= fallDamageSafeLandingSpeed ||
+    nextRecoverySecondsRemaining > 0 ||
+    health <= FALL_DAMAGE_MIN_HEALTH
+  ) {
+    return {
+      health,
+      fallDamageRecoverySecondsRemaining: nextRecoverySecondsRemaining
+    };
+  }
+
+  const damage = Math.max(1, Math.ceil((impactSpeed - fallDamageSafeLandingSpeed) / fallDamageSpeedPerHealth));
+  return {
+    health: Math.max(FALL_DAMAGE_MIN_HEALTH, health - damage),
+    fallDamageRecoverySecondsRemaining: fallDamageRecoverySeconds
+  };
+};
+
 export const createPlayerState = (options: CreatePlayerStateOptions = {}): PlayerState => {
   const velocity = buildVector(options.velocity, 'velocity');
   const facing = options.facing ?? resolveFacingFromHorizontalVelocity(DEFAULT_PLAYER_FACING, velocity.x);
@@ -381,6 +443,9 @@ export const createPlayerState = (options: CreatePlayerStateOptions = {}): Playe
     health: buildHealth(options.health),
     lavaDamageTickSecondsRemaining: buildLavaDamageTickSecondsRemaining(
       options.lavaDamageTickSecondsRemaining
+    ),
+    fallDamageRecoverySecondsRemaining: buildFallDamageRecoverySecondsRemaining(
+      options.fallDamageRecoverySecondsRemaining
     )
   };
 };
@@ -415,7 +480,8 @@ export const clonePlayerState = (state: PlayerState): PlayerState => ({
   grounded: state.grounded,
   facing: state.facing,
   health: state.health,
-  lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining
+  lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
+  fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining
 });
 
 export const respawnPlayerStateAtSpawnIfEmbeddedInSolid = (
@@ -431,7 +497,8 @@ export const respawnPlayerStateAtSpawnIfEmbeddedInSolid = (
   return createPlayerStateFromSpawn(spawn, {
     facing: state.facing,
     health: state.health,
-    lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining
+    lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
+    fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining
   });
 };
 
@@ -487,7 +554,8 @@ export const integratePlayerState = (state: PlayerState, fixedDtSeconds: number)
     grounded: state.grounded && state.velocity.y === 0,
     facing,
     health: state.health,
-    lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining
+    lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
+    fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining
   };
 };
 
@@ -522,7 +590,8 @@ export const movePlayerStateWithCollisions = (
     grounded: groundSupport !== null,
     facing,
     health: state.health,
-    lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining
+    lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
+    fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining
   };
 };
 
@@ -581,6 +650,18 @@ export const stepPlayerState = (
     options.lavaDamageTickIntervalSeconds ?? DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
     'options.lavaDamageTickIntervalSeconds'
   );
+  const fallDamageSafeLandingSpeed = expectNonNegativeFiniteNumber(
+    options.fallDamageSafeLandingSpeed ?? DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED,
+    'options.fallDamageSafeLandingSpeed'
+  );
+  const fallDamageSpeedPerHealth = expectPositiveFiniteNumber(
+    options.fallDamageSpeedPerHealth ?? DEFAULT_PLAYER_FALL_DAMAGE_SPEED_PER_HEALTH,
+    'options.fallDamageSpeedPerHealth'
+  );
+  const fallDamageRecoverySeconds = expectNonNegativeFiniteNumber(
+    options.fallDamageRecoverySeconds ?? DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
+    'options.fallDamageRecoverySeconds'
+  );
   const liquidOverlapState = samplePlayerLiquidOverlapState(world, state, registry);
   let velocityX = resolveHorizontalVelocityFromIntent(
     state.velocity.x,
@@ -626,7 +707,7 @@ export const stepPlayerState = (
     lavaDamageTickIntervalSeconds
   );
 
-  return movePlayerStateWithCollisions(
+  const steppedPlayerState = movePlayerStateWithCollisions(
     world,
     {
       position: {
@@ -644,11 +725,29 @@ export const stepPlayerState = (
       grounded,
       facing: state.facing,
       health: lavaDamageStepState.health,
-      lavaDamageTickSecondsRemaining: lavaDamageStepState.lavaDamageTickSecondsRemaining
+      lavaDamageTickSecondsRemaining: lavaDamageStepState.lavaDamageTickSecondsRemaining,
+      fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining
     },
     dt,
     registry
   );
+  const fallDamageStepState = resolveFallDamageStepState({
+    previousGrounded: state.grounded,
+    nextGrounded: steppedPlayerState.grounded,
+    impactSpeed: Math.max(0, velocityY),
+    health: steppedPlayerState.health,
+    fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining,
+    fixedDtSeconds: dt,
+    fallDamageSafeLandingSpeed,
+    fallDamageSpeedPerHealth,
+    fallDamageRecoverySeconds
+  });
+
+  return {
+    ...steppedPlayerState,
+    health: fallDamageStepState.health,
+    fallDamageRecoverySecondsRemaining: fallDamageStepState.fallDamageRecoverySecondsRemaining
+  };
 };
 
 export const stepPlayerStateWithGravity = (

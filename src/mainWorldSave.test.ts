@@ -23,7 +23,8 @@ describe('createWorldSaveEnvelope', () => {
       grounded: false,
       facing: 'left',
       health: 75,
-      lavaDamageTickSecondsRemaining: 0.25
+      lavaDamageTickSecondsRemaining: 0.25,
+      fallDamageRecoverySecondsRemaining: 0.2
     });
     const cameraFollowOffset = { x: 24, y: -12 };
 
@@ -78,6 +79,62 @@ describe('decodeWorldSaveEnvelope', () => {
     expect(decoded).toEqual(envelope);
     expect(decoded).not.toBe(envelope);
     expect(decoded.worldSnapshot).not.toBe(envelope.worldSnapshot);
+  });
+
+  it('round-trips post-fall standalone-player health and recovery state through save decode', () => {
+    const world = new TileWorld(0);
+    expect(world.setTile(1, 0, 3)).toBe(true);
+    const standalonePlayerState = createPlayerState({
+      position: { x: 72, y: 96 },
+      velocity: { x: 0, y: 0 },
+      grounded: true,
+      health: 37,
+      fallDamageRecoverySecondsRemaining: 0.2
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState,
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    expect(decoded.session.standalonePlayerState).toEqual(standalonePlayerState);
+  });
+
+  it('defaults missing fall-recovery state on older standalone-player save payloads', () => {
+    const world = new TileWorld(0);
+    const standalonePlayerState = createPlayerState({
+      position: { x: 72, y: 96 },
+      velocity: { x: -14, y: 28 },
+      grounded: false,
+      facing: 'left',
+      health: 62,
+      lavaDamageTickSecondsRemaining: 0.5
+    });
+    const { fallDamageRecoverySecondsRemaining: _omitted, ...legacyStandalonePlayerState } =
+      standalonePlayerState;
+
+    const decoded = decodeWorldSaveEnvelope({
+      kind: WORLD_SAVE_ENVELOPE_KIND,
+      version: WORLD_SAVE_ENVELOPE_VERSION,
+      migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
+      session: {
+        standalonePlayerState: legacyStandalonePlayerState,
+        cameraFollowOffset: { x: 0, y: 0 }
+      },
+      worldSnapshot: world.createSnapshot()
+    });
+
+    expect(decoded.session.standalonePlayerState).toEqual({
+      ...standalonePlayerState,
+      fallDamageRecoverySecondsRemaining: 0
+    });
   });
 
   it('rejects invalid standalone-player session state', () => {

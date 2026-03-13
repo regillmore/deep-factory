@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-13
 
+- Task: Add a fall-damage survival slice after entity scaffolding.
+- Changes: Updated [src/world/playerState.ts](../src/world/playerState.ts) and [src/world/playerState.test.ts](../src/world/playerState.test.ts) so hard landings now apply fixed-step nonlethal fall damage above a safe landing-speed threshold, start a short fall-recovery cooldown, and preserve that new recovery field through shared player cloning and collision paths; updated [src/mainWorldSave.ts](../src/mainWorldSave.ts), [src/mainWorldSave.test.ts](../src/mainWorldSave.test.ts), [src/mainWorldSessionSave.test.ts](../src/mainWorldSessionSave.test.ts), and [src/mainWorldSessionRestore.test.ts](../src/mainWorldSessionRestore.test.ts) so post-fall health plus recovery state survive world-save snapshot round-trips; removed completed task `399` from [docs/NEXT.md](docs/NEXT.md), added replacement follow-up task `515`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/playerState.test.ts src/mainWorldSave.test.ts src/mainWorldSessionSave.test.ts src/mainWorldSessionRestore.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Expose a derived sideways pair-density metric in the compact hidden-HUD status strip.
 - Changes: Updated [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) and [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts) so hidden-HUD `LiquidStepNow` now derives and formats `sideDensity:<pairs-per-chunk>` from the existing sideways candidate-chunk and tested-pair counts without adding new runtime telemetry, removed completed task `512` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical-slice task `513`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/debugEditStatusHelpers.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-13: Fall damage stays nonlethal until a dedicated death slice replaces that rule
+
+- Decision: Hard-landing damage now clamps at `1` health and uses a short fall-recovery cooldown instead of driving immediate death or respawn.
+- Reason: Task `399` is scoped as a survival-only slice, and the current zero-health respawn plumbing still reports lethal damage as lava-specific recovery, so lethal falls would couple this pass to unfinished death semantics.
+- Consequence: Future combat or death-and-respawn work should treat fall damage as nonlethal unless that pass intentionally updates both the rule and the shared respawn/event handling together.
+
 ### 2026-03-13: Sleeping-liquid bounds should stay resident-state telemetry
 
 - Decision: `TileWorld`, renderer telemetry, and the debug HUD now expose sleeping-liquid chunk bounds as the current resident-liquid minus awake-liquid envelope.
