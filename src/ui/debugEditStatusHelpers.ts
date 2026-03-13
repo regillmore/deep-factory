@@ -57,6 +57,10 @@ export interface DebugEditStatusStripState {
   residentActiveLiquidMinChunkY?: number | null;
   residentActiveLiquidMaxChunkX?: number | null;
   residentActiveLiquidMaxChunkY?: number | null;
+  liquidStepSidewaysCandidateMinChunkX?: number | null;
+  liquidStepSidewaysCandidateMinChunkY?: number | null;
+  liquidStepSidewaysCandidateMaxChunkX?: number | null;
+  liquidStepSidewaysCandidateMaxChunkY?: number | null;
   liquidStepPhaseSummary?: LiquidStepPhaseSummary | null;
   liquidStepDownwardTransfersApplied?: number | null;
   liquidStepSidewaysTransfersApplied?: number | null;
@@ -1085,24 +1089,24 @@ const formatLiveResidentDirtyLightChunksText = (
   return `LightDirtyNow: ${Math.round(residentDirtyLightChunks)}`;
 };
 
-const formatResidentActiveLiquidBoundsText = (
-  residentActiveLiquidMinChunkX: number | null,
-  residentActiveLiquidMinChunkY: number | null,
-  residentActiveLiquidMaxChunkX: number | null,
-  residentActiveLiquidMaxChunkY: number | null
+const formatLiquidChunkBoundsText = (
+  minChunkX: number | null,
+  minChunkY: number | null,
+  maxChunkX: number | null,
+  maxChunkY: number | null
 ): string => {
   if (
-    residentActiveLiquidMinChunkX === null ||
-    residentActiveLiquidMinChunkY === null ||
-    residentActiveLiquidMaxChunkX === null ||
-    residentActiveLiquidMaxChunkY === null
+    minChunkX === null ||
+    minChunkY === null ||
+    maxChunkX === null ||
+    maxChunkY === null
   ) {
     return 'none';
   }
 
   return (
-    `${Math.round(residentActiveLiquidMinChunkX)},${Math.round(residentActiveLiquidMinChunkY)}` +
-    `..${Math.round(residentActiveLiquidMaxChunkX)},${Math.round(residentActiveLiquidMaxChunkY)}`
+    `${Math.round(minChunkX)},${Math.round(minChunkY)}` +
+    `..${Math.round(maxChunkX)},${Math.round(maxChunkY)}`
   );
 };
 
@@ -1121,7 +1125,7 @@ const formatLiveResidentActiveLiquidChunksText = (
   return (
     `LiquidChunksNow: awake:${Math.round(residentActiveLiquidChunks)} | ` +
     `sleeping:${Math.round(residentSleepingLiquidChunks ?? 0)} | ` +
-    `bounds:${formatResidentActiveLiquidBoundsText(
+    `bounds:${formatLiquidChunkBoundsText(
       residentActiveLiquidMinChunkX,
       residentActiveLiquidMinChunkY,
       residentActiveLiquidMaxChunkX,
@@ -1131,11 +1135,19 @@ const formatLiveResidentActiveLiquidChunksText = (
 };
 
 const formatLiveLiquidStepSummaryText = (
+  liquidStepSidewaysCandidateMinChunkX: number | null,
+  liquidStepSidewaysCandidateMinChunkY: number | null,
+  liquidStepSidewaysCandidateMaxChunkX: number | null,
+  liquidStepSidewaysCandidateMaxChunkY: number | null,
   liquidStepPhaseSummary: LiquidStepPhaseSummary | null,
   liquidStepDownwardTransfersApplied: number | null,
   liquidStepSidewaysTransfersApplied: number | null
 ): string | null => {
   if (
+    liquidStepSidewaysCandidateMinChunkX === null &&
+    liquidStepSidewaysCandidateMinChunkY === null &&
+    liquidStepSidewaysCandidateMaxChunkX === null &&
+    liquidStepSidewaysCandidateMaxChunkY === null &&
     liquidStepPhaseSummary === null &&
     liquidStepDownwardTransfersApplied === null &&
     liquidStepSidewaysTransfersApplied === null
@@ -1143,12 +1155,18 @@ const formatLiveLiquidStepSummaryText = (
     return null;
   }
 
+  const sidewaysBoundsText = formatLiquidChunkBoundsText(
+    liquidStepSidewaysCandidateMinChunkX,
+    liquidStepSidewaysCandidateMinChunkY,
+    liquidStepSidewaysCandidateMaxChunkX,
+    liquidStepSidewaysCandidateMaxChunkY
+  );
   const phaseText = liquidStepPhaseSummary ?? 'n/a';
   if (
     liquidStepDownwardTransfersApplied === null &&
     liquidStepSidewaysTransfersApplied === null
   ) {
-    return `LiquidStepNow: phase:${phaseText}`;
+    return `LiquidStepNow: sideBounds:${sidewaysBoundsText} | phase:${phaseText}`;
   }
 
   const downwardTransfersText =
@@ -1160,7 +1178,8 @@ const formatLiveLiquidStepSummaryText = (
       ? 'n/a'
       : `${Math.round(liquidStepSidewaysTransfersApplied)}`;
   return (
-    `LiquidStepNow: phase:${phaseText} | ` +
+    `LiquidStepNow: sideBounds:${sidewaysBoundsText} | ` +
+    `phase:${phaseText} | ` +
     `downTransfers:${downwardTransfersText} | ` +
     `sideTransfers:${sidewaysTransfersText}`
   );
@@ -1308,6 +1327,10 @@ const buildPlayerText = (
   residentActiveLiquidMinChunkY: number | null,
   residentActiveLiquidMaxChunkX: number | null,
   residentActiveLiquidMaxChunkY: number | null,
+  liquidStepSidewaysCandidateMinChunkX: number | null,
+  liquidStepSidewaysCandidateMinChunkY: number | null,
+  liquidStepSidewaysCandidateMaxChunkX: number | null,
+  liquidStepSidewaysCandidateMaxChunkY: number | null,
   liquidStepPhaseSummary: LiquidStepPhaseSummary | null,
   liquidStepDownwardTransfersApplied: number | null,
   liquidStepSidewaysTransfersApplied: number | null,
@@ -1357,6 +1380,10 @@ const buildPlayerText = (
       residentActiveLiquidMaxChunkY
     ),
     formatLiveLiquidStepSummaryText(
+      liquidStepSidewaysCandidateMinChunkX,
+      liquidStepSidewaysCandidateMinChunkY,
+      liquidStepSidewaysCandidateMaxChunkX,
+      liquidStepSidewaysCandidateMaxChunkY,
       liquidStepPhaseSummary,
       liquidStepDownwardTransfersApplied,
       liquidStepSidewaysTransfersApplied
@@ -1885,6 +1912,10 @@ export const buildDebugEditStatusStripModel = (
   const residentActiveLiquidMinChunkY = state.residentActiveLiquidMinChunkY ?? null;
   const residentActiveLiquidMaxChunkX = state.residentActiveLiquidMaxChunkX ?? null;
   const residentActiveLiquidMaxChunkY = state.residentActiveLiquidMaxChunkY ?? null;
+  const liquidStepSidewaysCandidateMinChunkX = state.liquidStepSidewaysCandidateMinChunkX ?? null;
+  const liquidStepSidewaysCandidateMinChunkY = state.liquidStepSidewaysCandidateMinChunkY ?? null;
+  const liquidStepSidewaysCandidateMaxChunkX = state.liquidStepSidewaysCandidateMaxChunkX ?? null;
+  const liquidStepSidewaysCandidateMaxChunkY = state.liquidStepSidewaysCandidateMaxChunkY ?? null;
   const liquidStepPhaseSummary = state.liquidStepPhaseSummary ?? null;
   const liquidStepDownwardTransfersApplied = state.liquidStepDownwardTransfersApplied ?? null;
   const liquidStepSidewaysTransfersApplied = state.liquidStepSidewaysTransfersApplied ?? null;
@@ -1938,6 +1969,10 @@ export const buildDebugEditStatusStripModel = (
       residentActiveLiquidMinChunkY,
       residentActiveLiquidMaxChunkX,
       residentActiveLiquidMaxChunkY,
+      liquidStepSidewaysCandidateMinChunkX,
+      liquidStepSidewaysCandidateMinChunkY,
+      liquidStepSidewaysCandidateMaxChunkX,
+      liquidStepSidewaysCandidateMaxChunkY,
       liquidStepPhaseSummary,
       liquidStepDownwardTransfersApplied,
       liquidStepSidewaysTransfersApplied,

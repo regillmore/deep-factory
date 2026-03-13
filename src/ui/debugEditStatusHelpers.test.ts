@@ -531,6 +531,10 @@ describe('buildDebugEditStatusStripModel', () => {
       hoveredTile: null,
       pinnedTile: null,
       desktopInspectPinArmed: false,
+      liquidStepSidewaysCandidateMinChunkX: -2,
+      liquidStepSidewaysCandidateMinChunkY: -1,
+      liquidStepSidewaysCandidateMaxChunkX: 4,
+      liquidStepSidewaysCandidateMaxChunkY: 0,
       liquidStepPhaseSummary: 'sideways',
       liquidStepDownwardTransfersApplied: 0,
       liquidStepSidewaysTransfersApplied: 1,
@@ -538,7 +542,7 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.playerText).toBe(
-      'LiquidStepNow: phase:sideways | downTransfers:0 | sideTransfers:1'
+      'LiquidStepNow: sideBounds:-2,-1..4,0 | phase:sideways | downTransfers:0 | sideTransfers:1'
     );
     expect(model.eventText).toBeNull();
   });
@@ -560,8 +564,27 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.playerText).toBe(
       'LiquidChunksNow: awake:0 | sleeping:0 | bounds:none\n' +
-        'LiquidStepNow: phase:none | downTransfers:0 | sideTransfers:0'
+        'LiquidStepNow: sideBounds:none | phase:none | downTransfers:0 | sideTransfers:0'
     );
+    expect(model.eventText).toBeNull();
+  });
+
+  it('formats sideways candidate-band bounds even when the compact strip only has liquid-step coverage telemetry', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      liquidStepSidewaysCandidateMinChunkX: -3,
+      liquidStepSidewaysCandidateMinChunkY: -2,
+      liquidStepSidewaysCandidateMaxChunkX: 5,
+      liquidStepSidewaysCandidateMaxChunkY: 1,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('LiquidStepNow: sideBounds:-3,-2..5,1 | phase:n/a');
     expect(model.eventText).toBeNull();
   });
 
@@ -1156,6 +1179,10 @@ describe('buildDebugEditStatusStripModel', () => {
       pinnedTile: null,
       desktopInspectPinArmed: false,
       playerPlaceholderPoseLabel: 'grounded-idle',
+      liquidStepSidewaysCandidateMinChunkX: -1,
+      liquidStepSidewaysCandidateMinChunkY: 0,
+      liquidStepSidewaysCandidateMaxChunkX: 2,
+      liquidStepSidewaysCandidateMaxChunkY: 0,
       liquidStepPhaseSummary: 'both',
       liquidStepDownwardTransfersApplied: 2,
       liquidStepSidewaysTransfersApplied: 3,
@@ -1163,7 +1190,8 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.playerText).toBe(
-      'Pose: grounded-idle\nLiquidStepNow: phase:both | downTransfers:2 | sideTransfers:3'
+      'Pose: grounded-idle\n' +
+        'LiquidStepNow: sideBounds:-1,0..2,0 | phase:both | downTransfers:2 | sideTransfers:3'
     );
     expect(model.eventText).toBeNull();
   });
