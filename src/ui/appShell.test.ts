@@ -466,6 +466,14 @@ const readEmptyBadgeTexts = (element: FakeElement | null): string[] =>
     (badge) => badge.textContent
   );
 
+const readMenuSectionStatusBadges = (
+  element: FakeElement | null
+): Array<{ title: string; badge: string | null }> =>
+  findElementsByClass(element ?? new FakeElement('div'), 'app-shell__menu-section').map((section) => ({
+    title: findElementByClass(section, 'app-shell__menu-section-title')?.textContent ?? '',
+    badge: findElementByClass(section, 'app-shell__menu-section-status-badge')?.textContent ?? null
+  }));
+
 const createPausedMainMenuShellActionKeybindingSummaryRows = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ) => [
@@ -1260,6 +1268,74 @@ describe('paused main-menu dashboard layout', () => {
     expect(overviewSection?.scrollIntoViewCallCount).toBe(2);
   });
 
+  it('renders compact success and attention badges on paused-menu Recent Activity cards', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        'cleared',
+        {
+          status: 'downloaded',
+          fileName: 'paused-session.json'
+        },
+        null,
+        null,
+        null,
+        false,
+        'export-world-save'
+      )
+    );
+
+    const root = container.children[0] ?? null;
+    const recentActivityBody =
+      root === null ? null : findElementByClass(root, 'app-shell__recent-activity-body');
+
+    expect(readMenuSectionStatusBadges(recentActivityBody)).toEqual([
+      {
+        title: 'Export Result',
+        badge: 'Success'
+      },
+      {
+        title: 'Saved World Status',
+        badge: 'Attention'
+      }
+    ]);
+  });
+
+  it('keeps neutral paused-menu Recent Activity cards without status badges', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        {
+          status: 'cancelled'
+        }
+      )
+    );
+
+    const root = container.children[0] ?? null;
+    const recentActivityBody =
+      root === null ? null : findElementByClass(root, 'app-shell__recent-activity-body');
+
+    expect(readMenuSectionStatusBadges(recentActivityBody)).toEqual([
+      {
+        title: 'Import Result',
+        badge: null
+      }
+    ]);
+  });
+
   it('switches the expanded shell-hotkey metadata rows into warning-toned session-only copy when browser persistence is unavailable', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
@@ -1301,6 +1377,11 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-top-jump-link');
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__shell-keybindings-metadata[data-tone='warning'] .app-shell__menu-section-metadata-value"
+    );
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-heading');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-status-badge');
+    expect(APP_SHELL_STYLE_SOURCE).toContain(
+      ".app-shell__menu-section-status-badge[data-tone='warning']"
     );
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-detail-groups');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__menu-section-detail-group');

@@ -794,6 +794,14 @@ canvas {
     linear-gradient(135deg, rgba(230, 165, 92, 0.18), rgba(111, 45, 21, 0.08));
 }
 
+.app-shell__menu-section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .app-shell__menu-section-title {
   margin: 0;
   color: #fff0cc;
@@ -801,6 +809,31 @@ canvas {
     700 11px/1.1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+.app-shell__menu-section-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid rgba(131, 219, 242, 0.22);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(16, 30, 41, 0.94), rgba(11, 18, 25, 0.9)),
+    linear-gradient(135deg, rgba(120, 210, 255, 0.16), rgba(243, 205, 135, 0.08));
+  color: #d8f3ff;
+  font:
+    700 10px/1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.app-shell__menu-section-status-badge[data-tone='warning'] {
+  border-color: rgba(230, 165, 92, 0.3);
+  background:
+    linear-gradient(180deg, rgba(41, 28, 20, 0.96), rgba(25, 17, 12, 0.9)),
+    linear-gradient(135deg, rgba(230, 165, 92, 0.18), rgba(111, 45, 21, 0.08));
+  color: #ffe2bd;
 }
 
 .app-shell__menu-section-lines {

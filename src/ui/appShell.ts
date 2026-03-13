@@ -2522,15 +2522,53 @@ const createPausedMainMenuTopJumpLink = (overviewSection: HTMLElement): HTMLAnch
   return jumpLink;
 };
 
-const createMenuSectionElement = (section: AppShellMenuSection): HTMLElement => {
+interface MenuSectionElementOptions {
+  showStatusBadge?: boolean;
+}
+
+const resolveMenuSectionStatusBadgeText = (
+  section: AppShellMenuSection,
+  options: MenuSectionElementOptions
+): string | null => {
+  if (options.showStatusBadge !== true) {
+    return null;
+  }
+
+  switch (section.tone ?? 'default') {
+    case 'accent':
+      return 'Success';
+    case 'warning':
+      return 'Attention';
+    default:
+      return null;
+  }
+};
+
+const createMenuSectionElement = (
+  section: AppShellMenuSection,
+  options: MenuSectionElementOptions = {}
+): HTMLElement => {
   const sectionElement = document.createElement('section');
   sectionElement.className = 'app-shell__menu-section';
   sectionElement.setAttribute('data-tone', section.tone ?? 'default');
 
+  const headingRow = document.createElement('div');
+  headingRow.className = 'app-shell__menu-section-heading';
+  sectionElement.append(headingRow);
+
   const heading = document.createElement('h3');
   heading.className = 'app-shell__menu-section-title';
   heading.textContent = section.title;
-  sectionElement.append(heading);
+  headingRow.append(heading);
+
+  const statusBadgeText = resolveMenuSectionStatusBadgeText(section, options);
+  if (statusBadgeText !== null) {
+    const statusBadge = document.createElement('span');
+    statusBadge.className = 'app-shell__menu-section-status-badge';
+    statusBadge.setAttribute('data-tone', section.tone ?? 'default');
+    statusBadge.textContent = statusBadgeText;
+    headingRow.append(statusBadge);
+  }
 
   if (section.lines.length > 0) {
     const lines = document.createElement('div');
@@ -4101,7 +4139,9 @@ export class AppShell {
     this.recentActivitySummary.textContent = pausedMainMenuRecentActivitySection.summaryLine ?? '';
     this.recentActivityBody.replaceChildren(
       ...pausedMainMenuRecentActivitySection.menuSections.map((section) =>
-        createMenuSectionElement(section)
+        createMenuSectionElement(section, {
+          showStatusBadge: true
+        })
       )
     );
     this.recentActivityBody.hidden = !pausedMainMenuRecentActivitySection.visible;

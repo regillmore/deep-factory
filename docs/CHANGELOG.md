@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-12
 
+- Task: Add status badges to paused-menu Recent Activity cards.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/style.css](../src/style.css) so paused-menu `Recent Activity` cards now render compact `Success` or `Attention` badges for accent and warning outcomes while leaving neutral results unbadged; expanded [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) with recent-activity-badge DOM and CSS regressions, removed completed task `476` from [docs/NEXT.md](docs/NEXT.md), added replacement task `489`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add empty-state badges to paused-menu shell preview diff groups.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/style.css](../src/style.css), and [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so expanded paused-menu `Shell Profile Preview` diff groups now render compact empty-state badges with explicit `No hotkey changes` and `All hotkeys changed` copy when one side of the grouped hotkey diff has no rows; removed completed task `487` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical slice `488`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
