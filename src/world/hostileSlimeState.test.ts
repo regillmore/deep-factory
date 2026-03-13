@@ -5,6 +5,7 @@ import {
   createHostileSlimeState,
   createHostileSlimeStateFromSpawn,
   DEFAULT_HOSTILE_SLIME_HEIGHT,
+  DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
   DEFAULT_HOSTILE_SLIME_WIDTH,
   getHostileSlimeAabb
 } from './hostileSlimeState';
@@ -23,7 +24,8 @@ describe('hostileSlimeState', () => {
         height: DEFAULT_HOSTILE_SLIME_HEIGHT
       },
       grounded: true,
-      facing: 'left'
+      facing: 'left',
+      hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
     });
   });
 
@@ -59,7 +61,8 @@ describe('hostileSlimeState', () => {
         height: DEFAULT_HOSTILE_SLIME_HEIGHT
       },
       grounded: true,
-      facing: 'right'
+      facing: 'right',
+      hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
     });
     expect(getHostileSlimeAabb(state)).toEqual({
       minX: 190,
@@ -75,7 +78,8 @@ describe('hostileSlimeState', () => {
       velocity: { x: 18, y: -42 },
       size: { width: 22, height: 14 },
       grounded: false,
-      facing: 'right'
+      facing: 'right',
+      hopCooldownTicksRemaining: 6
     });
 
     const cloned = cloneHostileSlimeState(state);

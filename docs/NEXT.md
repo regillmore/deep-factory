@@ -2,9 +2,9 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-217. Add a hostile-slime jump-chase locomotion slice after hostile-slime spawn-and-presentation: grounded hop timing, player-biased turn-and-chase rules, collision-aware wall or landing behavior, and deterministic movement regressions.
 218. Add a hostile-slime player-contact combat slice after hostile-slime jump-chase locomotion: player contact damage, invulnerability cooldown, and fixed-step combat regressions.
 517. Add a hostile-slime spawn-telemetry follow-up after hostile-slime spawn-and-presentation: show active slime count plus next spawn cooldown in the debug HUD or compact status strip, and add deterministic telemetry regressions.
+518. Add a hostile-slime locomotion-telemetry follow-up after hostile-slime jump-chase locomotion: show grounded hop cooldown plus chase-facing state in the debug HUD or compact status strip, and add deterministic telemetry regressions.
 214. Add a dropped-item + hotbar inventory slice after entity scaffolding: stackable world pickups with proximity pickup rules, hotbar assignment and selection, and save/load snapshot regressions for item stacks.
 215. Add a placeable-workbench crafting slice after inventory basics: recipe registry for a minimal starter set, in-world station-range gating, shell or debug panel crafting actions, and recipe resolution regressions.
 221. Add a starter melee-weapon follow-up after hostile-slime jump-chase locomotion: fixed-step swing windup/active/recovery timing, slime hit detection plus knockback, and deterministic hit-cooldown regressions.

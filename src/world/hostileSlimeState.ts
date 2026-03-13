@@ -19,6 +19,7 @@ export interface HostileSlimeState {
   size: HostileSlimeSize;
   grounded: boolean;
   facing: HostileSlimeFacing;
+  hopCooldownTicksRemaining: number;
 }
 
 export interface CreateHostileSlimeStateOptions {
@@ -27,6 +28,7 @@ export interface CreateHostileSlimeStateOptions {
   size?: Partial<HostileSlimeSize>;
   grounded?: boolean;
   facing?: HostileSlimeFacing;
+  hopCooldownTicksRemaining?: number;
 }
 
 export interface CreateHostileSlimeStateFromSpawnOptions {
@@ -35,6 +37,7 @@ export interface CreateHostileSlimeStateFromSpawnOptions {
 
 export const DEFAULT_HOSTILE_SLIME_WIDTH = 20;
 export const DEFAULT_HOSTILE_SLIME_HEIGHT = 12;
+export const DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS = 24;
 const DEFAULT_HOSTILE_SLIME_FACING: HostileSlimeFacing = 'left';
 
 const expectFiniteNumber = (value: number, label: string): number => {
@@ -53,6 +56,14 @@ const expectPositiveFiniteNumber = (value: number, label: string): number => {
   return value;
 };
 
+const expectNonNegativeInteger = (value: number, label: string): number => {
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error(`${label} must be a non-negative integer`);
+  }
+
+  return value;
+};
+
 const buildVector = (
   vector: Partial<HostileSlimeVector> | undefined,
   label: string
@@ -66,6 +77,12 @@ const buildSize = (size: Partial<HostileSlimeSize> | undefined): HostileSlimeSiz
   height: expectPositiveFiniteNumber(size?.height ?? DEFAULT_HOSTILE_SLIME_HEIGHT, 'size.height')
 });
 
+const buildHopCooldownTicksRemaining = (value: number | undefined): number =>
+  expectNonNegativeInteger(
+    value ?? DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
+    'hopCooldownTicksRemaining'
+  );
+
 const buildSpawnSize = (aabb: WorldAabb): HostileSlimeSize => ({
   width: expectPositiveFiniteNumber(aabb.maxX - aabb.minX, 'spawn.aabb.width'),
   height: expectPositiveFiniteNumber(aabb.maxY - aabb.minY, 'spawn.aabb.height')
@@ -78,7 +95,8 @@ export const createHostileSlimeState = (
   velocity: buildVector(options.velocity, 'velocity'),
   size: buildSize(options.size),
   grounded: options.grounded ?? true,
-  facing: options.facing ?? DEFAULT_HOSTILE_SLIME_FACING
+  facing: options.facing ?? DEFAULT_HOSTILE_SLIME_FACING,
+  hopCooldownTicksRemaining: buildHopCooldownTicksRemaining(options.hopCooldownTicksRemaining)
 });
 
 export const createHostileSlimeStateFromSpawn = (
@@ -100,7 +118,8 @@ export const cloneHostileSlimeState = (state: HostileSlimeState): HostileSlimeSt
   velocity: { ...state.velocity },
   size: { ...state.size },
   grounded: state.grounded,
-  facing: state.facing
+  facing: state.facing,
+  hopCooldownTicksRemaining: state.hopCooldownTicksRemaining
 });
 
 export const getHostileSlimeAabb = (state: HostileSlimeState): WorldAabb => {

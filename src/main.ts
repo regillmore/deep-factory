@@ -1697,7 +1697,15 @@ const bootstrap = async (): Promise<void> => {
     const entityId = entityRegistry.spawn({
       kind: HOSTILE_SLIME_ENTITY_KIND,
       initialState: initialSlimeState,
-      captureRenderState: cloneHostileSlimeState
+      captureRenderState: cloneHostileSlimeState,
+      fixedUpdate: (slimeState, fixedDt) => {
+        const standalonePlayerState = getStandalonePlayerState();
+        if (standalonePlayerState === null) {
+          return slimeState;
+        }
+
+        return renderer.stepHostileSlimeState(slimeState, fixedDt, standalonePlayerState);
+      }
     });
     hostileSlimeEntityIds.push(entityId);
     return entityId;

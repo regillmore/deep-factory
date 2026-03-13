@@ -37,6 +37,7 @@ import {
 } from './world/hostileSlimeSpawn';
 import {
   DEFAULT_HOSTILE_SLIME_HEIGHT,
+  DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
   DEFAULT_HOSTILE_SLIME_WIDTH
 } from './world/hostileSlimeState';
 import { TileWorld } from './world/world';
@@ -242,6 +243,22 @@ const testRuntime = vi.hoisted(() => {
         moveX: number | null;
         jumpPressed: boolean | null;
       };
+    }>,
+    rendererStepHostileSlimeStateImpl: null as null | ((
+      state: unknown,
+      fixedDt: number,
+      playerState: unknown
+    ) => unknown),
+    rendererStepHostileSlimeStateRequests: [] as Array<{
+      state: {
+        position: { x: number; y: number } | null;
+        velocity: { x: number; y: number } | null;
+        grounded: boolean | null;
+        facing: 'left' | 'right' | null;
+        hopCooldownTicksRemaining: number | null;
+      };
+      fixedDt: number;
+      playerPosition: { x: number; y: number } | null;
     }>,
     rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl: null as null | ((
       state: unknown,
@@ -661,6 +678,71 @@ vi.mock('./gl/renderer', () => ({
       });
       if (testRuntime.rendererStepPlayerStateImpl) {
         const steppedState = testRuntime.rendererStepPlayerStateImpl(state, fixedDt, intent);
+        if (
+          steppedState &&
+          typeof steppedState === 'object' &&
+          state &&
+          typeof state === 'object' &&
+          !Array.isArray(steppedState) &&
+          !Array.isArray(state)
+        ) {
+          return {
+            ...(state as Record<string, unknown>),
+            ...(steppedState as Record<string, unknown>)
+          } as T;
+        }
+
+        return steppedState as T;
+      }
+      return state;
+    }
+
+    stepHostileSlimeState<T>(state: T, fixedDt: number, playerState: unknown): T {
+      testRuntime.fixedStepWorldUpdateOrder.push('slime');
+      const slimeState = state as {
+        position?: { x?: number; y?: number };
+        velocity?: { x?: number; y?: number };
+        grounded?: boolean;
+        facing?: 'left' | 'right';
+        hopCooldownTicksRemaining?: number;
+      };
+      const targetPlayerState = playerState as {
+        position?: { x?: number; y?: number };
+      };
+      testRuntime.rendererStepHostileSlimeStateRequests.push({
+        state: {
+          position:
+            slimeState.position &&
+            typeof slimeState.position.x === 'number' &&
+            typeof slimeState.position.y === 'number'
+              ? { x: slimeState.position.x, y: slimeState.position.y }
+              : null,
+          velocity:
+            slimeState.velocity &&
+            typeof slimeState.velocity.x === 'number' &&
+            typeof slimeState.velocity.y === 'number'
+              ? { x: slimeState.velocity.x, y: slimeState.velocity.y }
+              : null,
+          grounded: typeof slimeState.grounded === 'boolean' ? slimeState.grounded : null,
+          facing: slimeState.facing ?? null,
+          hopCooldownTicksRemaining:
+            typeof slimeState.hopCooldownTicksRemaining === 'number'
+              ? slimeState.hopCooldownTicksRemaining
+              : null
+        },
+        fixedDt,
+        playerPosition:
+          targetPlayerState.position &&
+          typeof targetPlayerState.position.x === 'number' &&
+          typeof targetPlayerState.position.y === 'number'
+            ? {
+                x: targetPlayerState.position.x,
+                y: targetPlayerState.position.y
+              }
+            : null
+      });
+      if (testRuntime.rendererStepHostileSlimeStateImpl) {
+        const steppedState = testRuntime.rendererStepHostileSlimeStateImpl(state, fixedDt, playerState);
         if (
           steppedState &&
           typeof steppedState === 'object' &&
@@ -1577,6 +1659,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererStepLiquidSimulationCallCount = 0;
     testRuntime.rendererStepPlayerStateImpl = null;
     testRuntime.rendererStepPlayerStateRequests = [];
+    testRuntime.rendererStepHostileSlimeStateImpl = null;
+    testRuntime.rendererStepHostileSlimeStateRequests = [];
     testRuntime.rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl = null;
     testRuntime.rendererPlayerCollisionContactsQueue = [];
     testRuntime.rendererPlayerCollisionContactRequestStates = [];
@@ -3741,6 +3825,71 @@ describe('main.ts shell state orchestration', () => {
     runRenderFrame(1000 / 60, 0.5);
 
     expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toEqual([]);
+  });
+
+  it('steps hostile slime locomotion through the renderer world query after spawning', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    const slimeSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 12,
+      x: 200,
+      y: 0,
+      width: DEFAULT_HOSTILE_SLIME_WIDTH,
+      height: DEFAULT_HOSTILE_SLIME_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_HOSTILE_SLIME_WIDTH &&
+        search?.height === DEFAULT_HOSTILE_SLIME_HEIGHT
+      ) {
+        return slimeSpawnPoint;
+      }
+
+      return testRuntime.playerSpawnPoint;
+    };
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
+
+    testRuntime.rendererStepHostileSlimeStateImpl = () => ({
+      position: { x: 204, y: -4 },
+      velocity: { x: 120, y: -90 },
+      grounded: false,
+      facing: 'right' as const,
+      hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
+    });
+    testRuntime.rendererStepHostileSlimeStateRequests = [];
+    testRuntime.fixedStepWorldUpdateOrder = [];
+
+    runFixedUpdate();
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.fixedStepWorldUpdateOrder).toEqual(['liquids', 'player', 'slime']);
+    expect(testRuntime.rendererStepHostileSlimeStateRequests).toEqual([
+      {
+        state: {
+          position: { x: 200, y: 0 },
+          velocity: { x: 0, y: 0 },
+          grounded: true,
+          facing: 'left',
+          hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
+        },
+        fixedDt: 1000 / 60,
+        playerPosition: { x: 8, y: 0 }
+      }
+    ]);
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toEqual([
+      {
+        id: 2,
+        position: { x: 204, y: -4 }
+      }
+    ]);
   });
 
   it('submits standalone-player wall, ceiling, and bonk presentation through the current entity snapshot', async () => {

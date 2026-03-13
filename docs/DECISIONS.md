@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Body-overlap water checks would drain breath while wading, and the current zero-health recovery plumbing still reports lethal environmental deaths as lava-specific respawns, so lethal drowning would couple this survival slice to unfinished death semantics.
 - Consequence: Future water or breath systems should treat head-region submersion as the breath trigger and keep drowning nonlethal unless the same pass intentionally updates both the breath rule and the shared death/respawn handling together.
 
+### 2026-03-13: Hostile slime chase movement commits to grounded retargets and airborne hops
+
+- Decision: Hostile slimes now face toward the player only while grounded, launch movement as discrete hop impulses on a fixed grounded cooldown, keep that hop direction while airborne, and only flip early when a blocking wall cancels horizontal movement.
+- Reason: This keeps slime locomotion deterministic and slime-like without introducing continuous airborne steering, pathfinding, or a second collision-recovery state machine before combat lands.
+- Consequence: Future slime combat, hit-reaction, or telemetry work should treat grounded retargeting plus committed airborne hops as the chase model unless the same pass intentionally revisits hostile locomotion.
+
 ### 2026-03-13: Hostile slime ambient spawn uses deterministic round-robin surface windows
 
 - Decision: Hostile slimes now spawn from fixed-step round-robin grounded-search windows at fixed horizontal offsets from the player, reset their cooldown on every attempt, and despawn once they leave a broader keep band.

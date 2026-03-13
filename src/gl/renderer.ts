@@ -59,6 +59,7 @@ import {
 } from '../world/playerState';
 import type { EntityId, EntityRenderStateSnapshot } from '../world/entityRegistry';
 import { resolveInterpolatedEntityWorldPosition } from '../world/entityRenderInterpolation';
+import { stepHostileSlimeState as stepWorldHostileSlimeState } from '../world/hostileSlimeLocomotion';
 import { type HostileSlimeState } from '../world/hostileSlimeState';
 import {
   isStandalonePlayerRenderStateCeilingBonkActive,
@@ -749,6 +750,14 @@ export class Renderer {
 
   stepPlayerState(state: PlayerState, fixedDtSeconds: number, intent: PlayerMovementIntent): PlayerState {
     return stepWorldPlayerState(this.world, state, fixedDtSeconds, intent);
+  }
+
+  stepHostileSlimeState(
+    state: HostileSlimeState,
+    fixedDtSeconds: number,
+    playerState: Pick<PlayerState, 'position'>
+  ): HostileSlimeState {
+    return stepWorldHostileSlimeState(this.world, state, fixedDtSeconds, playerState);
   }
 
   respawnPlayerStateAtSpawnIfEmbeddedInSolid(

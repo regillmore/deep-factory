@@ -11,6 +11,7 @@ import {
 import {
   createHostileSlimeState,
   DEFAULT_HOSTILE_SLIME_HEIGHT,
+  DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
   DEFAULT_HOSTILE_SLIME_WIDTH
 } from './hostileSlimeState';
 
@@ -75,7 +76,8 @@ describe('hostileSlimeSpawn', () => {
         height: DEFAULT_HOSTILE_SLIME_HEIGHT
       },
       grounded: true,
-      facing: 'left'
+      facing: 'left',
+      hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
     });
     expect(secondStep.despawnIds).toEqual([]);
     expect(secondStep.nextSpawnerState).toEqual({
