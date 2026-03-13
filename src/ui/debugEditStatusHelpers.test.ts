@@ -523,6 +523,41 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats the derived liquid-step phase summary for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      liquidStepPhaseSummary: 'sideways',
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('LiquidStepNow: phase:sideways');
+    expect(model.eventText).toBeNull();
+  });
+
+  it('shows dry-world active-liquid telemetry plus a none phase summary in the compact strip', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      residentActiveLiquidChunks: 0,
+      liquidStepPhaseSummary: 'none',
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe(
+      'LiquidChunksNow: awake:0 | sleeping:0 | bounds:none\nLiquidStepNow: phase:none'
+    );
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats standalone-player nearby-light sampling for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
@@ -1102,6 +1137,23 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.playerText).toBe(
       'Pose: grounded-idle\nLiquidChunksNow: awake:2 | sleeping:1 | bounds:-1,0..1,0'
     );
+    expect(model.eventText).toBeNull();
+  });
+
+  it('keeps pose and liquid-step phase summary telemetry on separate player lines', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerPlaceholderPoseLabel: 'grounded-idle',
+      liquidStepPhaseSummary: 'both',
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('Pose: grounded-idle\nLiquidStepNow: phase:both');
     expect(model.eventText).toBeNull();
   });
 

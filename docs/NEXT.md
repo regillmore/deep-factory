@@ -7,7 +7,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 383. Expose split downward-vs-sideways liquid-step counters in the compact hidden-HUD status strip after task `382` lands so mixed-device wake testing can stay off the full debug HUD.
 404. Expose sideways candidate-band chunk bounds in renderer telemetry and the debug HUD after task `382` lands so chunk-sleep wake testing can compare neighbor-band expansion against active-liquid bounds.
 408. Expose sleeping-liquid chunk bounds in renderer telemetry and the debug HUD so wake testing can localize settled pools after awake bounds disappear.
-409. Expose the derived liquid-step phase summary in the compact hidden-HUD status strip after task `384` lands so wake testing can confirm last-step flow state without opening the full debug HUD.
+504. Expose the sideways-tested liquid-pair count in the compact hidden-HUD status strip after task `383` lands so wake testing can distinguish broad candidate scans from actual transfer counts without opening the full debug HUD.
 
 ## Refine, Extract, Refactor, Restructure
 

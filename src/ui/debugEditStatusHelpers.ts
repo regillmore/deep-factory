@@ -19,6 +19,7 @@ import type { PlayerSpawnLiquidSafetyStatus } from '../world/playerSpawn';
 import type { PlayerFacing } from '../world/playerState';
 import type { PlayerWallContactTransitionKind } from '../world/playerWallContactTransition';
 import type { TileLiquidKind } from '../world/tileMetadata';
+import type { LiquidStepPhaseSummary } from '../world/world';
 
 export interface ActiveDebugToolStatus {
   title: string;
@@ -56,6 +57,7 @@ export interface DebugEditStatusStripState {
   residentActiveLiquidMinChunkY?: number | null;
   residentActiveLiquidMaxChunkX?: number | null;
   residentActiveLiquidMaxChunkY?: number | null;
+  liquidStepPhaseSummary?: LiquidStepPhaseSummary | null;
   playerNearbyLightLevel?: number | null;
   playerNearbyLightFactor?: number | null;
   playerNearbyLightSourceTile?: { x: number; y: number } | null;
@@ -1126,6 +1128,16 @@ const formatLiveResidentActiveLiquidChunksText = (
   );
 };
 
+const formatLiveLiquidStepPhaseSummaryText = (
+  liquidStepPhaseSummary: LiquidStepPhaseSummary | null
+): string | null => {
+  if (liquidStepPhaseSummary === null) {
+    return null;
+  }
+
+  return `LiquidStepNow: phase:${liquidStepPhaseSummary}`;
+};
+
 const formatLiveNearbyLightText = (
   playerNearbyLightLevel: number | null,
   playerNearbyLightFactor: number | null,
@@ -1268,6 +1280,7 @@ const buildPlayerText = (
   residentActiveLiquidMinChunkY: number | null,
   residentActiveLiquidMaxChunkX: number | null,
   residentActiveLiquidMaxChunkY: number | null,
+  liquidStepPhaseSummary: LiquidStepPhaseSummary | null,
   playerNearbyLightLevel: number | null,
   playerNearbyLightFactor: number | null,
   playerNearbyLightSourceTile: { x: number; y: number } | null,
@@ -1313,6 +1326,7 @@ const buildPlayerText = (
       residentActiveLiquidMaxChunkX,
       residentActiveLiquidMaxChunkY
     ),
+    formatLiveLiquidStepPhaseSummaryText(liquidStepPhaseSummary),
     formatLiveNearbyLightText(
       playerNearbyLightLevel,
       playerNearbyLightFactor,
@@ -1837,6 +1851,7 @@ export const buildDebugEditStatusStripModel = (
   const residentActiveLiquidMinChunkY = state.residentActiveLiquidMinChunkY ?? null;
   const residentActiveLiquidMaxChunkX = state.residentActiveLiquidMaxChunkX ?? null;
   const residentActiveLiquidMaxChunkY = state.residentActiveLiquidMaxChunkY ?? null;
+  const liquidStepPhaseSummary = state.liquidStepPhaseSummary ?? null;
   const playerNearbyLightLevel = state.playerNearbyLightLevel ?? null;
   const playerNearbyLightFactor = state.playerNearbyLightFactor ?? null;
   const playerNearbyLightSourceTile = state.playerNearbyLightSourceTile ?? null;
@@ -1887,6 +1902,7 @@ export const buildDebugEditStatusStripModel = (
       residentActiveLiquidMinChunkY,
       residentActiveLiquidMaxChunkX,
       residentActiveLiquidMaxChunkY,
+      liquidStepPhaseSummary,
       playerNearbyLightLevel,
       playerNearbyLightFactor,
       playerNearbyLightSourceTile,

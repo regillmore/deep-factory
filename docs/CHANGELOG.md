@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-13
 
+- Task: Expose the derived liquid-step phase summary in the compact hidden-HUD status strip.
+- Changes: Updated [src/main.ts](../src/main.ts), [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/main.test.ts](../src/main.test.ts) so the hidden-HUD compact status strip now receives and formats the renderer-derived `LiquidStepNow: phase:...` summary alongside existing awake and sleeping liquid chunk telemetry; removed completed task `409` from [docs/NEXT.md](docs/NEXT.md), added replacement task `504`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/debugEditStatusHelpers.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add compact saved-vs-session-only result badges to inline paused-menu shell editor feedback.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/style.css](../src/style.css), and [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so paused-menu `Shell Hotkeys` remap feedback and `Apply Shell Profile` feedback now render compact inline `Saved` or `Session only` badges beside their existing result copy through the shared shell-editor status path; removed completed tasks `497` and `501` from [docs/NEXT.md](docs/NEXT.md), added replacement ambitious vertical slices `502` and `503`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
