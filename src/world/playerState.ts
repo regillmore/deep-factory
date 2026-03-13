@@ -28,6 +28,7 @@ export interface PlayerState {
   lavaDamageTickSecondsRemaining: number;
   drowningDamageTickSecondsRemaining: number;
   fallDamageRecoverySecondsRemaining: number;
+  hostileContactInvulnerabilitySecondsRemaining: number;
 }
 
 export interface PlayerCollisionContacts {
@@ -57,6 +58,7 @@ export interface CreatePlayerStateOptions {
   lavaDamageTickSecondsRemaining?: number;
   drowningDamageTickSecondsRemaining?: number;
   fallDamageRecoverySecondsRemaining?: number;
+  hostileContactInvulnerabilitySecondsRemaining?: number;
 }
 
 export interface PlayerMovementIntent {
@@ -111,6 +113,7 @@ export const DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS = 0.5;
 export const DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED = 600;
 export const DEFAULT_PLAYER_FALL_DAMAGE_SPEED_PER_HEALTH = 4;
 export const DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS = 0.35;
+export const DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS = 0;
 const DEFAULT_PLAYER_FACING: PlayerFacing = 'right';
 const COLLISION_CONTACT_PROBE_DISTANCE = 1;
 const AABB_INTERSECTION_EPSILON = 1e-6;
@@ -178,6 +181,12 @@ const buildDrowningDamageTickSecondsRemaining = (value: number | undefined): num
 
 const buildFallDamageRecoverySecondsRemaining = (value: number | undefined): number =>
   expectNonNegativeFiniteNumber(value ?? 0, 'fallDamageRecoverySecondsRemaining');
+
+const buildHostileContactInvulnerabilitySecondsRemaining = (value: number | undefined): number =>
+  expectNonNegativeFiniteNumber(
+    value ?? DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS,
+    'hostileContactInvulnerabilitySecondsRemaining'
+  );
 
 const clampNumber = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
@@ -517,6 +526,18 @@ const advanceFallDamageRecoverySecondsRemaining = (
   fixedDtSeconds: number
 ): number => Math.max(0, fallDamageRecoverySecondsRemaining - fixedDtSeconds);
 
+const advanceHostileContactInvulnerabilitySecondsRemaining = (
+  hostileContactInvulnerabilitySecondsRemaining: number,
+  fixedDtSeconds: number
+): number =>
+  Math.max(
+    0,
+    expectNonNegativeFiniteNumber(
+      hostileContactInvulnerabilitySecondsRemaining,
+      'state.hostileContactInvulnerabilitySecondsRemaining'
+    ) - fixedDtSeconds
+  );
+
 const resolveFallDamageStepState = ({
   previousGrounded,
   nextGrounded,
@@ -582,7 +603,11 @@ export const createPlayerState = (options: CreatePlayerStateOptions = {}): Playe
     ),
     fallDamageRecoverySecondsRemaining: buildFallDamageRecoverySecondsRemaining(
       options.fallDamageRecoverySecondsRemaining
-    )
+    ),
+    hostileContactInvulnerabilitySecondsRemaining:
+      buildHostileContactInvulnerabilitySecondsRemaining(
+        options.hostileContactInvulnerabilitySecondsRemaining
+      )
   };
 };
 
@@ -619,7 +644,8 @@ export const clonePlayerState = (state: PlayerState): PlayerState => ({
   breathSecondsRemaining: state.breathSecondsRemaining,
   lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
   drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
-  fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining
+  fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining,
+  hostileContactInvulnerabilitySecondsRemaining: state.hostileContactInvulnerabilitySecondsRemaining
 });
 
 export const respawnPlayerStateAtSpawnIfEmbeddedInSolid = (
@@ -638,7 +664,8 @@ export const respawnPlayerStateAtSpawnIfEmbeddedInSolid = (
     breathSecondsRemaining: state.breathSecondsRemaining,
     lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
     drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
-    fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining
+    fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining,
+    hostileContactInvulnerabilitySecondsRemaining: state.hostileContactInvulnerabilitySecondsRemaining
   });
 };
 
@@ -697,7 +724,8 @@ export const integratePlayerState = (state: PlayerState, fixedDtSeconds: number)
     breathSecondsRemaining: state.breathSecondsRemaining,
     lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
     drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
-    fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining
+    fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining,
+    hostileContactInvulnerabilitySecondsRemaining: state.hostileContactInvulnerabilitySecondsRemaining
   };
 };
 
@@ -735,7 +763,8 @@ export const movePlayerStateWithCollisions = (
     breathSecondsRemaining: state.breathSecondsRemaining,
     lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
     drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
-    fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining
+    fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining,
+    hostileContactInvulnerabilitySecondsRemaining: state.hostileContactInvulnerabilitySecondsRemaining
   };
 };
 
@@ -822,6 +851,11 @@ export const stepPlayerState = (
     options.fallDamageRecoverySeconds ?? DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
     'options.fallDamageRecoverySeconds'
   );
+  const hostileContactInvulnerabilitySecondsRemaining =
+    advanceHostileContactInvulnerabilitySecondsRemaining(
+      state.hostileContactInvulnerabilitySecondsRemaining,
+      dt
+    );
   const liquidOverlapState = samplePlayerLiquidOverlapState(world, state, registry);
   let velocityX = resolveHorizontalVelocityFromIntent(
     state.velocity.x,
@@ -899,7 +933,8 @@ export const stepPlayerState = (
       breathSecondsRemaining: breathStepState.breathSecondsRemaining,
       lavaDamageTickSecondsRemaining: lavaDamageStepState.lavaDamageTickSecondsRemaining,
       drowningDamageTickSecondsRemaining: breathStepState.drowningDamageTickSecondsRemaining,
-      fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining
+      fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining,
+      hostileContactInvulnerabilitySecondsRemaining
     },
     dt,
     registry

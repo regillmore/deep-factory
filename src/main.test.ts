@@ -32,6 +32,7 @@ import {
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
 import { createPlayerState, getPlayerCameraFocusPoint } from './world/playerState';
+import { DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS } from './world/hostileSlimeCombat';
 import {
   DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS
 } from './world/hostileSlimeSpawn';
@@ -3890,6 +3891,48 @@ describe('main.ts shell state orchestration', () => {
         position: { x: 204, y: -4 }
       }
     ]);
+  });
+
+  it('persists hostile-slime contact damage with player invulnerability after fixed-step overlap', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    const slimeSpawnPoint = createTestPlayerSpawnPoint({
+      x: 8,
+      y: 0,
+      width: DEFAULT_HOSTILE_SLIME_WIDTH,
+      height: DEFAULT_HOSTILE_SLIME_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_HOSTILE_SLIME_WIDTH &&
+        search?.height === DEFAULT_HOSTILE_SLIME_HEIGHT
+      ) {
+        return slimeSpawnPoint;
+      }
+
+      return testRuntime.playerSpawnPoint;
+    };
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
+
+    runFixedUpdate();
+    runFixedUpdate();
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+
+    expect(persistedEnvelope?.session.standalonePlayerState?.health).toBe(85);
+    expect(
+      persistedEnvelope?.session.standalonePlayerState?.hostileContactInvulnerabilitySecondsRemaining
+    ).toBe(DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS);
   });
 
   it('submits standalone-player wall, ceiling, and bonk presentation through the current entity snapshot', async () => {

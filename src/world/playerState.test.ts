@@ -16,6 +16,7 @@ import {
   DEFAULT_PLAYER_GROUND_DECELERATION,
   DEFAULT_PLAYER_GRAVITY_ACCELERATION,
   DEFAULT_PLAYER_HEIGHT,
+  DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS,
   DEFAULT_PLAYER_JUMP_SPEED,
   DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
   DEFAULT_PLAYER_LAVA_DAMAGE_PER_TICK,
@@ -59,13 +60,16 @@ const withDefaultPlayerVitals = <T extends object>(state: T): T & {
   lavaDamageTickSecondsRemaining: number;
   drowningDamageTickSecondsRemaining: number;
   fallDamageRecoverySecondsRemaining: number;
+  hostileContactInvulnerabilitySecondsRemaining: number;
 } => ({
   ...state,
   health: DEFAULT_PLAYER_MAX_HEALTH,
   breathSecondsRemaining: DEFAULT_PLAYER_MAX_BREATH_SECONDS,
   lavaDamageTickSecondsRemaining: DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
   drowningDamageTickSecondsRemaining: DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
-  fallDamageRecoverySecondsRemaining: 0
+  fallDamageRecoverySecondsRemaining: 0,
+  hostileContactInvulnerabilitySecondsRemaining:
+    DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS
 });
 
 const WATER_TILE_ID = 7;
@@ -1150,8 +1154,34 @@ describe('playerState', () => {
       breathSecondsRemaining: DEFAULT_PLAYER_MAX_BREATH_SECONDS,
       lavaDamageTickSecondsRemaining: 0.25,
       drowningDamageTickSecondsRemaining: DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
-      fallDamageRecoverySecondsRemaining: 0
+      fallDamageRecoverySecondsRemaining: 0,
+      hostileContactInvulnerabilitySecondsRemaining:
+        DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS
     });
+  });
+
+  it('counts down hostile-contact invulnerability during shared fixed-step player updates', () => {
+    const world = new TileWorld(0);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        hostileContactInvulnerabilitySecondsRemaining: 0.2
+      }),
+      0.05
+    );
+
+    expect(stepped.hostileContactInvulnerabilitySecondsRemaining).toBeCloseTo(0.15, 6);
+
+    const expired = stepPlayerState(
+      world,
+      createPlayerState({
+        hostileContactInvulnerabilitySecondsRemaining: 0.04
+      }),
+      0.05
+    );
+
+    expect(expired.hostileContactInvulnerabilitySecondsRemaining).toBe(0);
   });
 
   it('rejects invalid size and fixed-step durations', () => {
@@ -1185,6 +1215,11 @@ describe('playerState', () => {
         fallDamageRecoverySecondsRemaining: -0.1
       })
     ).toThrowError(/fallDamageRecoverySecondsRemaining must be a non-negative finite number/);
+    expect(() =>
+      createPlayerState({
+        hostileContactInvulnerabilitySecondsRemaining: -0.1
+      })
+    ).toThrowError(/hostileContactInvulnerabilitySecondsRemaining must be a non-negative finite number/);
 
     expect(() => integratePlayerState(createPlayerState(), -1 / 60)).toThrowError(
       /fixedDtSeconds must be a non-negative finite number/

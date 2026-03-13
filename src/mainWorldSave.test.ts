@@ -5,6 +5,7 @@ import { encodeResidentChunkSnapshot } from './world/chunkSnapshot';
 import {
   createPlayerState,
   DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
+  DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS,
   DEFAULT_PLAYER_MAX_BREATH_SECONDS
 } from './world/playerState';
 import { TileWorld } from './world/world';
@@ -115,7 +116,7 @@ describe('decodeWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerState).toEqual(standalonePlayerState);
   });
 
-  it('defaults missing breath and fall-recovery state on older standalone-player save payloads', () => {
+  it('defaults missing breath, hostile-contact invulnerability, and fall-recovery state on older standalone-player save payloads', () => {
     const world = new TileWorld(0);
     const standalonePlayerState = createPlayerState({
       position: { x: 72, y: 96 },
@@ -130,6 +131,7 @@ describe('decodeWorldSaveEnvelope', () => {
       breathSecondsRemaining: _omittedBreath,
       drowningDamageTickSecondsRemaining: _omittedDrowningTick,
       fallDamageRecoverySecondsRemaining: _omittedFallRecovery,
+      hostileContactInvulnerabilitySecondsRemaining: _omittedHostileContactInvulnerability,
       ...legacyStandalonePlayerState
     } = standalonePlayerState;
 
@@ -148,7 +150,9 @@ describe('decodeWorldSaveEnvelope', () => {
       ...standalonePlayerState,
       breathSecondsRemaining: DEFAULT_PLAYER_MAX_BREATH_SECONDS,
       drowningDamageTickSecondsRemaining: DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
-      fallDamageRecoverySecondsRemaining: 0
+      fallDamageRecoverySecondsRemaining: 0,
+      hostileContactInvulnerabilitySecondsRemaining:
+        DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS
     });
   });
 

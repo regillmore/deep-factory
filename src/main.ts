@@ -113,7 +113,8 @@ import { CHUNK_SIZE } from './world/constants';
 import {
   EntityRegistry,
   type EntityId,
-  type EntityRenderStateSnapshot
+  type EntityRenderStateSnapshot,
+  type SetEntityStateOptions
 } from './world/entityRegistry';
 import { resolveInterpolatedEntityWorldPosition } from './world/entityRenderInterpolation';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
@@ -156,6 +157,9 @@ import {
   resolveLiquidSurfaceVisibleFramePercentages,
   resolveLiquidSurfaceTopHeights
 } from './world/liquidSurface';
+import {
+  resolveHostileSlimePlayerContact
+} from './world/hostileSlimeCombat';
 import {
   createHostileSlimeSpawnerState,
   stepHostileSlimeSpawner
@@ -1662,11 +1666,40 @@ const bootstrap = async (): Promise<void> => {
 
     spawnStandalonePlayerEntity(playerState);
   };
-  const setStandalonePlayerState = (nextPlayerState: PlayerState): void => {
+  const setStandalonePlayerState = (
+    nextPlayerState: PlayerState,
+    options: SetEntityStateOptions = {}
+  ): void => {
     if (standalonePlayerEntityId === null) {
       throw new Error('Cannot replace standalone player state before the entity is spawned');
     }
-    entityRegistry.setEntityState(standalonePlayerEntityId, nextPlayerState);
+    entityRegistry.setEntityState(standalonePlayerEntityId, nextPlayerState, options);
+  };
+  const replacePendingStandalonePlayerFixedStepNextState = (nextPlayerState: PlayerState): void => {
+    if (pendingStandalonePlayerFixedStepResult === null) {
+      return;
+    }
+
+    pendingStandalonePlayerFixedStepResult = {
+      ...pendingStandalonePlayerFixedStepResult,
+      nextPlayerState
+    };
+  };
+  const applyHostileSlimePlayerContactDuringFixedStep = (slimeState: HostileSlimeState): void => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (standalonePlayerState === null) {
+      return;
+    }
+
+    const nextPlayerState = resolveHostileSlimePlayerContact(standalonePlayerState, [slimeState]);
+    if (nextPlayerState === standalonePlayerState) {
+      return;
+    }
+
+    setStandalonePlayerState(nextPlayerState, {
+      resetRenderStateSnapshots: false
+    });
+    replacePendingStandalonePlayerFixedStepNextState(nextPlayerState);
   };
   const spawnStandalonePlayerEntity = (initialPlayerState: PlayerState): PlayerState => {
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
@@ -1704,7 +1737,9 @@ const bootstrap = async (): Promise<void> => {
           return slimeState;
         }
 
-        return renderer.stepHostileSlimeState(slimeState, fixedDt, standalonePlayerState);
+        const nextSlimeState = renderer.stepHostileSlimeState(slimeState, fixedDt, standalonePlayerState);
+        applyHostileSlimePlayerContactDuringFixedStep(nextSlimeState);
+        return nextSlimeState;
       }
     });
     hostileSlimeEntityIds.push(entityId);

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-13: Hostile-slime contact damage stays nonlethal until the dedicated death slice lands
+
+- Decision: Hostile-slime player-contact hits now clamp at `1` health while still starting a fixed-step hostile-contact invulnerability window instead of triggering immediate death or respawn.
+- Reason: Task `218` is scoped as a combat-contact slice, and the current lethal recovery path is still the older immediate lava-style respawn flow rather than the later dedicated death-and-respawn chapter.
+- Consequence: Future hostile combat, armor, or death-and-respawn work should treat slime contact damage as nonlethal unless the same pass intentionally updates both this damage rule and the shared death handling together.
+
 ### 2026-03-13: Water survival uses head-region overlap and stays nonlethal until death work lands
 
 - Decision: Breath now drains only when water overlaps the player's top head-region sample, and drowning damage clamps at `1` health while using its own fixed-step damage cadence instead of triggering an immediate death or respawn.

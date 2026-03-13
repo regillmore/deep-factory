@@ -2,6 +2,7 @@ import type { CameraFollowOffset } from './core/cameraFollow';
 import {
   clonePlayerState,
   DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
+  DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS,
   DEFAULT_PLAYER_MAX_BREATH_SECONDS,
   type PlayerState
 } from './world/playerState';
@@ -146,6 +147,11 @@ const normalizePlayerState = (value: unknown, label: string): PlayerState => {
     fallDamageRecoverySecondsRemaining: expectNonNegativeFiniteNumber(
       value.fallDamageRecoverySecondsRemaining ?? 0,
       `${label}.fallDamageRecoverySecondsRemaining`
+    ),
+    hostileContactInvulnerabilitySecondsRemaining: expectNonNegativeFiniteNumber(
+      value.hostileContactInvulnerabilitySecondsRemaining ??
+        DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS,
+      `${label}.hostileContactInvulnerabilitySecondsRemaining`
     )
   });
 };
