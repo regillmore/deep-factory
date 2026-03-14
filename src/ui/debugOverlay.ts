@@ -1126,13 +1126,18 @@ export const formatDebugOverlayText = (
   const telemetryState = inspect?.telemetryState ?? null;
   const telemetryVisible = (typeId: Parameters<typeof isWorldSessionTelemetryTypeVisible>[1]): boolean =>
     telemetryState === null || isWorldSessionTelemetryTypeVisible(telemetryState, typeId);
+  const atlasTelemetryVisible = telemetryVisible('world-atlas');
+  const animatedMeshTelemetryVisible = telemetryVisible('world-animated-mesh');
+  const spawnTelemetryVisible = telemetryVisible('player-spawn');
+  const pointerInspectTelemetryVisible = telemetryVisible('inspect-pointer');
+  const pinnedInspectTelemetryVisible = telemetryVisible('inspect-pinned');
   const lines = [
     summaryLine,
-    formatAtlasLine(stats),
-    formatAtlasValidationLine(stats),
-    formatSpawnLine(spawn),
-    formatSpawnSupportLine(spawn),
-    formatSpawnLiquidSafetyLine(spawn),
+    atlasTelemetryVisible ? formatAtlasLine(stats) : null,
+    atlasTelemetryVisible ? formatAtlasValidationLine(stats) : null,
+    spawnTelemetryVisible ? formatSpawnLine(spawn) : null,
+    spawnTelemetryVisible ? formatSpawnSupportLine(spawn) : null,
+    spawnTelemetryVisible ? formatSpawnLiquidSafetyLine(spawn) : null,
     telemetryVisible('player-motion') ? formatPlayerLine(player) : null,
     telemetryVisible('player-presentation')
       ? formatPlayerPlaceholderPoseLine(playerPlaceholderPoseLabel)
@@ -1171,25 +1176,29 @@ export const formatDebugOverlayText = (
     telemetryVisible('player-camera') ? formatPlayerCameraFollowLine(playerCameraFollow) : null,
     telemetryVisible('player-collision') ? formatPlayerContactsLine(player) : null,
     telemetryVisible('player-motion') ? formatPlayerIntentLine(playerIntent) : null,
-    formatAnimatedChunkResidencyLine(stats),
-    formatAnimatedChunkUvUploadLine(stats),
+    animatedMeshTelemetryVisible ? formatAnimatedChunkResidencyLine(stats) : null,
+    animatedMeshTelemetryVisible ? formatAnimatedChunkUvUploadLine(stats) : null,
     telemetryVisible('world-liquid') ? formatLiquidStepLine(stats) : null
   ].filter((line): line is string => line !== null);
 
-  if (!pointerInspect) {
-    lines.push('Ptr: n/a');
-  } else {
-    lines.push(
-      `Ptr(${pointerInspect.pointerType}) ` +
-        `C:${formatInt(pointerInspect.client.x)},${formatInt(pointerInspect.client.y)} | ` +
-        `Cv:${formatInt(pointerInspect.canvas.x)},${formatInt(pointerInspect.canvas.y)} | ` +
-        `W:${formatFloat(pointerInspect.world.x, 2)},${formatFloat(pointerInspect.world.y, 2)} | ` +
-        formatTileLocation(pointerInspect)
-    );
+  if (pointerInspectTelemetryVisible) {
+    if (!pointerInspect) {
+      lines.push('Ptr: n/a');
+    } else {
+      lines.push(
+        `Ptr(${pointerInspect.pointerType}) ` +
+          `C:${formatInt(pointerInspect.client.x)},${formatInt(pointerInspect.client.y)} | ` +
+          `Cv:${formatInt(pointerInspect.canvas.x)},${formatInt(pointerInspect.canvas.y)} | ` +
+          `W:${formatFloat(pointerInspect.world.x, 2)},${formatFloat(pointerInspect.world.y, 2)} | ` +
+          formatTileLocation(pointerInspect)
+      );
+    }
   }
 
-  if (pinnedInspect) {
-    lines.push(`Pin: ${formatTileLocation(pinnedInspect)}`);
+  if (pinnedInspectTelemetryVisible && pinnedInspect) {
+    lines.push(
+      `Pin: ${formatTileLocation(pinnedInspect)}`
+    );
   }
 
   return lines.join('\n');

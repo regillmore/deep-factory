@@ -1,7 +1,8 @@
 export const WORLD_SESSION_TELEMETRY_COLLECTION_IDS = [
   'player',
   'hostile-slime',
-  'world'
+  'world',
+  'inspect'
 ] as const;
 
 export type WorldSessionTelemetryCollectionId =
@@ -14,9 +15,14 @@ export const WORLD_SESSION_TELEMETRY_TYPE_IDS = [
   'player-camera',
   'player-collision',
   'player-events',
+  'player-spawn',
   'hostile-slime-tracker',
+  'world-atlas',
+  'world-animated-mesh',
   'world-lighting',
-  'world-liquid'
+  'world-liquid',
+  'inspect-pointer',
+  'inspect-pinned'
 ] as const;
 
 export type WorldSessionTelemetryTypeId = (typeof WORLD_SESSION_TELEMETRY_TYPE_IDS)[number];
@@ -113,16 +119,46 @@ export const WORLD_SESSION_TELEMETRY_TYPE_DEFINITIONS = [
     description: 'Latest grounded, facing, respawn, wall, and ceiling transition events.'
   },
   {
+    id: 'player-spawn',
+    collectionId: 'player',
+    label: 'Spawn',
+    description: 'Resolved player spawn tile, support, and liquid-safety readouts.'
+  },
+  {
     id: 'hostile-slime-tracker',
     collectionId: 'hostile-slime',
     label: 'Tracker',
     description: 'Tracked hostile-slime spawn, movement, and launch readouts.'
   },
   {
+    id: 'world-atlas',
+    collectionId: 'world',
+    label: 'Atlas',
+    description: 'Atlas source, size, and validation warning readouts.'
+  },
+  {
+    id: 'world-animated-mesh',
+    collectionId: 'world',
+    label: 'Animated Mesh',
+    description: 'Animated chunk mesh residency and UV upload readouts.'
+  },
+  {
     id: 'world-lighting',
     collectionId: 'world',
     label: 'Lighting',
     description: 'Nearby-light sample and dirty-light chunk readouts.'
+  },
+  {
+    id: 'inspect-pointer',
+    collectionId: 'inspect',
+    label: 'Pointer',
+    description: 'Hovered pointer-position and tile-inspect readouts.'
+  },
+  {
+    id: 'inspect-pinned',
+    collectionId: 'inspect',
+    label: 'Pinned',
+    description: 'Pinned tile-inspect readouts.'
   },
   {
     id: 'world-liquid',
@@ -143,7 +179,8 @@ export const WORLD_SESSION_TELEMETRY_COLLECTION_DEFINITIONS = [
       'player-combat',
       'player-camera',
       'player-collision',
-      'player-events'
+      'player-events',
+      'player-spawn'
     ]
   },
   {
@@ -155,8 +192,14 @@ export const WORLD_SESSION_TELEMETRY_COLLECTION_DEFINITIONS = [
   {
     id: 'world',
     label: 'World',
-    description: 'World-lighting and liquid-simulation telemetry.',
-    typeIds: ['world-lighting', 'world-liquid']
+    description: 'Atlas, animated-mesh, lighting, and liquid-simulation telemetry.',
+    typeIds: ['world-atlas', 'world-animated-mesh', 'world-lighting', 'world-liquid']
+  },
+  {
+    id: 'inspect',
+    label: 'Inspect',
+    description: 'Pointer-hover and pinned tile-inspect telemetry.',
+    typeIds: ['inspect-pointer', 'inspect-pinned']
   }
 ] as const satisfies readonly WorldSessionTelemetryCollectionDefinition[];
 
@@ -177,7 +220,8 @@ const cloneWorldSessionTelemetryCollections = (
 ): WorldSessionTelemetryState['collections'] => ({
   player: collections.player,
   'hostile-slime': collections['hostile-slime'],
-  world: collections.world
+  world: collections.world,
+  inspect: collections.inspect
 });
 
 const cloneWorldSessionTelemetryTypes = (
@@ -189,9 +233,14 @@ const cloneWorldSessionTelemetryTypes = (
   'player-camera': types['player-camera'],
   'player-collision': types['player-collision'],
   'player-events': types['player-events'],
+  'player-spawn': types['player-spawn'],
   'hostile-slime-tracker': types['hostile-slime-tracker'],
+  'world-atlas': types['world-atlas'],
+  'world-animated-mesh': types['world-animated-mesh'],
   'world-lighting': types['world-lighting'],
-  'world-liquid': types['world-liquid']
+  'world-liquid': types['world-liquid'],
+  'inspect-pointer': types['inspect-pointer'],
+  'inspect-pinned': types['inspect-pinned']
 });
 
 export const cloneWorldSessionTelemetryState = (
@@ -205,7 +254,8 @@ export const createDefaultWorldSessionTelemetryState = (): WorldSessionTelemetry
   collections: {
     player: true,
     'hostile-slime': true,
-    world: true
+    world: true,
+    inspect: true
   },
   types: {
     'player-motion': true,
@@ -214,9 +264,14 @@ export const createDefaultWorldSessionTelemetryState = (): WorldSessionTelemetry
     'player-camera': true,
     'player-collision': true,
     'player-events': true,
+    'player-spawn': true,
     'hostile-slime-tracker': true,
+    'world-atlas': true,
+    'world-animated-mesh': true,
     'world-lighting': true,
-    'world-liquid': true
+    'world-liquid': true,
+    'inspect-pointer': true,
+    'inspect-pinned': true
   }
 });
 

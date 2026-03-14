@@ -89,7 +89,8 @@ describe('formatDebugOverlayText', () => {
       collections: {
         player: true,
         'hostile-slime': false,
-        world: true
+        world: true,
+        inspect: true
       },
       types: {
         'player-motion': true,
@@ -98,16 +99,50 @@ describe('formatDebugOverlayText', () => {
         'player-camera': true,
         'player-collision': true,
         'player-events': true,
+        'player-spawn': false,
         'hostile-slime-tracker': true,
+        'world-atlas': false,
+        'world-animated-mesh': false,
         'world-lighting': true,
-        'world-liquid': false
+        'world-liquid': false,
+        'inspect-pointer': false,
+        'inspect-pinned': false
       }
     };
 
     const text = formatDebugOverlayText(60, baseStats, {
-      pointer: null,
-      pinned: null,
-      spawn: null,
+      pointer: {
+        client: { x: 48, y: 80 },
+        canvas: { x: 96, y: 160 },
+        world: { x: 32, y: -16 },
+        tile: { x: 2, y: -1 },
+        pointerType: 'mouse',
+        tileId: 7,
+        tileLabel: 'water',
+        solid: false,
+        blocksLight: false,
+        liquidKind: 'water'
+      },
+      pinned: {
+        tile: { x: 8, y: -3 },
+        tileId: 2,
+        tileLabel: 'dirt',
+        solid: true,
+        blocksLight: true,
+        liquidKind: null
+      },
+      spawn: {
+        tile: { x: 4, y: -2 },
+        world: { x: 72, y: -32 },
+        supportTile: {
+          x: 4,
+          y: -1,
+          id: 3,
+          chunk: { x: 0, y: -1 },
+          local: { x: 4, y: 31 }
+        },
+        liquidSafetyStatus: 'safe'
+      },
       player: {
         position: { x: 72.5, y: -48.25 },
         velocity: { x: 3, y: 4 },
@@ -174,10 +209,19 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nPlayer: Pos:72.50,-48.25');
     expect(text).toContain('\nPose: grounded-idle');
     expect(text).toContain('\nLightSample: 9/15 | factor:0.60 | source:2,2 | sourceChunk:0,0 | sourceLocal:2,2');
+    expect(text).not.toContain('\nAtlas:');
+    expect(text).not.toContain('\nAtlasWarn:');
+    expect(text).not.toContain('\nSpawn:');
+    expect(text).not.toContain('\nSpawnSupport:');
+    expect(text).not.toContain('\nSpawnLiquid:');
     expect(text).not.toContain('\nCombat:');
     expect(text).not.toContain('\nContactEvt:');
     expect(text).not.toContain('\nSlime:');
+    expect(text).not.toContain('\nAnimMesh:');
+    expect(text).not.toContain('\nAnimUV:');
     expect(text).not.toContain('\nLiquidStep:');
+    expect(text).not.toContain('\nPtr(');
+    expect(text).not.toContain('\nPin:');
   });
 
   it('shows last liquid-step scan and transfer telemetry', () => {

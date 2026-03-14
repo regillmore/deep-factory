@@ -6982,13 +6982,18 @@ describe('main.ts shell state orchestration', () => {
       'main-menu',
       'player-combat'
     );
+    testRuntime.shellInstance?.options.onToggleShellTelemetryType?.(
+      'main-menu',
+      'inspect-pointer'
+    );
 
     expect(readPersistedShellState()).toEqual(createDefaultWorldSessionShellState());
     expect(readPersistedTelemetryState()).toEqual({
       collections: {
         player: true,
         'hostile-slime': false,
-        world: true
+        world: true,
+        inspect: true
       },
       types: {
         'player-motion': true,
@@ -6997,9 +7002,14 @@ describe('main.ts shell state orchestration', () => {
         'player-camera': true,
         'player-collision': true,
         'player-events': true,
+        'player-spawn': true,
         'hostile-slime-tracker': true,
+        'world-atlas': true,
+        'world-animated-mesh': true,
         'world-lighting': true,
-        'world-liquid': true
+        'world-liquid': true,
+        'inspect-pointer': false,
+        'inspect-pinned': true
       }
     });
     expect(testRuntime.shellInstance?.currentState).toEqual(
@@ -7008,7 +7018,8 @@ describe('main.ts shell state orchestration', () => {
           collections: {
             player: true,
             'hostile-slime': false,
-            world: true
+            world: true,
+            inspect: true
           },
           types: {
             'player-motion': true,
@@ -7017,9 +7028,14 @@ describe('main.ts shell state orchestration', () => {
             'player-camera': true,
             'player-collision': true,
             'player-events': true,
+            'player-spawn': true,
             'hostile-slime-tracker': true,
+            'world-atlas': true,
+            'world-animated-mesh': true,
             'world-lighting': true,
-            'world-liquid': true
+            'world-liquid': true,
+            'inspect-pointer': false,
+            'inspect-pinned': true
           }
         }
       })

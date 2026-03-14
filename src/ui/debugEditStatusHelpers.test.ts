@@ -96,12 +96,13 @@ describe('buildDebugEditStatusStripModel', () => {
     );
   });
 
-  it('omits gated player-combat, hostile-slime, and world-liquid lines when telemetry visibility hides them', () => {
+  it('omits gated spawn, combat, hostile-slime, world-liquid, and inspect lines when telemetry visibility hides them', () => {
     const telemetryState: WorldSessionTelemetryState = {
       collections: {
         player: true,
         'hostile-slime': false,
-        world: true
+        world: true,
+        inspect: true
       },
       types: {
         'player-motion': true,
@@ -110,9 +111,14 @@ describe('buildDebugEditStatusStripModel', () => {
         'player-camera': true,
         'player-collision': true,
         'player-events': true,
+        'player-spawn': false,
         'hostile-slime-tracker': true,
+        'world-atlas': true,
+        'world-animated-mesh': true,
         'world-lighting': true,
-        'world-liquid': false
+        'world-liquid': false,
+        'inspect-pointer': false,
+        'inspect-pinned': false
       }
     };
 
@@ -121,9 +127,45 @@ describe('buildDebugEditStatusStripModel', () => {
       brushLabel: 'debug brick',
       brushTileId: 3,
       preview: createEmptyPreviewState(),
-      hoveredTile: null,
-      pinnedTile: null,
+      hoveredTile: {
+        tileX: 12,
+        tileY: -4,
+        chunkX: 0,
+        chunkY: -1,
+        localX: 12,
+        localY: 28,
+        tileId: 9,
+        tileLabel: 'lava pool',
+        solid: false,
+        blocksLight: true,
+        liquidKind: 'lava'
+      },
+      pinnedTile: {
+        tileX: 8,
+        tileY: -6,
+        chunkX: 0,
+        chunkY: -1,
+        localX: 8,
+        localY: 26,
+        tileId: 2,
+        tileLabel: 'dirt',
+        solid: true,
+        blocksLight: true,
+        liquidKind: null
+      },
       desktopInspectPinArmed: false,
+      playerSpawn: {
+        liquidSafetyStatus: 'safe',
+        tile: { x: 4, y: -2 },
+        world: { x: 72, y: -32 },
+        supportTile: {
+          x: 4,
+          y: -1,
+          id: 3,
+          chunk: { x: 0, y: -1 },
+          local: { x: 4, y: 31 }
+        }
+      },
       playerCameraWorldPosition: { x: 90.5, y: -54.25 },
       playerNearbyLightLevel: 9,
       playerNearbyLightFactor: 0.6,
@@ -149,7 +191,11 @@ describe('buildDebugEditStatusStripModel', () => {
       'CamPosNow: 90.50,-54.25\n' +
         'LightSampleNow: 9/15 | factor:0.60 | source:2,2 | sourceChunk:0,0 | sourceLocal:2,2'
     );
+    expect(model.hoverText).toBe('Inspect details hidden by telemetry controls');
+    expect(model.inspectText).toBe('Inspect: Pinned @ 8,-6');
     expect(model.playerText).not.toContain('HealthNow');
+    expect(model.playerText).not.toContain('SpawnNow');
+    expect(model.playerText).not.toContain('SpawnSupportNow');
     expect(model.playerText).not.toContain('SlimeActiveNow');
     expect(model.playerText).not.toContain('LiquidChunksNow');
   });

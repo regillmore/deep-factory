@@ -1565,8 +1565,8 @@ const buildPlayerText = (
     telemetryVisible('player-motion')
       ? formatLiveWorldChunkLocalTileText(playerWorldTile)
       : null,
-    formatLivePlayerSpawnText(playerSpawn),
-    formatLivePlayerSpawnSupportText(playerSpawn),
+    telemetryVisible('player-spawn') ? formatLivePlayerSpawnText(playerSpawn) : null,
+    telemetryVisible('player-spawn') ? formatLivePlayerSpawnSupportText(playerSpawn) : null,
     telemetryVisible('player-collision') ? formatLiveAabbText(playerAabb) : null,
     telemetryVisible('player-camera')
       ? formatLiveCameraWorldPositionText(playerCameraWorldPosition)
@@ -2113,27 +2113,35 @@ const formatInspectOffsetLine = (
   `Offset: Hover->Pinned x:${formatSignedOffset(pinnedTile.tileX - hoveredTile.tileX)}` +
   ` y:${formatSignedOffset(pinnedTile.tileY - hoveredTile.tileY)}`;
 
-const buildHoveredTileText = (
-  hoveredTile: DebugEditHoveredTileState | null,
-  pinnedTile: DebugEditHoveredTileState | null
+const buildInspectTelemetryHiddenText = (
+  pointerInspectVisible: boolean,
+  pinnedInspectVisible: boolean,
+  hasHoveredTile: boolean,
+  hasPinnedTile: boolean
+): string | null => {
+  const hasHiddenHoveredTile = hasHoveredTile && !pointerInspectVisible;
+  const hasHiddenPinnedTile = hasPinnedTile && !pinnedInspectVisible;
+
+  if (hasHiddenHoveredTile && hasHiddenPinnedTile) {
+    return 'Inspect details hidden by telemetry controls';
+  }
+
+  if (hasHiddenPinnedTile) {
+    return 'Pinned inspect hidden by telemetry controls';
+  }
+
+  if (hasHiddenHoveredTile) {
+    return 'Hover inspect hidden by telemetry controls';
+  }
+
+  return null;
+};
+
+const buildEmptyInspectHintText = (
+  pointerInspectVisible: boolean,
+  pinnedInspectVisible: boolean
 ): string => {
-  if (pinnedTile && hoveredTile && !hasSameInspectTarget(hoveredTile, pinnedTile)) {
-    return [
-      formatInspectTileLine('Pinned', pinnedTile),
-      formatInspectTileLine('Hover', hoveredTile),
-      formatInspectOffsetLine(hoveredTile, pinnedTile)
-    ].join('\n');
-  }
-
-  if (pinnedTile && hoveredTile) {
-    return formatInspectTileLine('Shared', pinnedTile);
-  }
-
-  if (pinnedTile) {
-    return formatInspectTileLine('Pinned', pinnedTile);
-  }
-
-  if (!hoveredTile) {
+  if (pointerInspectVisible && pinnedInspectVisible) {
     return joinHintSegments(
       'Hover: move cursor',
       'touch a world tile',
@@ -2142,7 +2150,66 @@ const buildHoveredTileText = (
     );
   }
 
-  return formatInspectTileLine('Hover', hoveredTile);
+  if (pointerInspectVisible) {
+    return joinHintSegments(
+      'Hover: move cursor',
+      'touch a world tile',
+      'inspect gameplay flags',
+      'Pinned inspect hidden'
+    );
+  }
+
+  if (pinnedInspectVisible) {
+    return joinHintSegments('Inspect: hover hidden', 'Pin Click shows pinned metadata');
+  }
+
+  return 'Inspect details hidden by telemetry controls';
+};
+
+const buildHoveredTileText = (
+  hoveredTile: DebugEditHoveredTileState | null,
+  pinnedTile: DebugEditHoveredTileState | null,
+  pointerInspectVisible: boolean,
+  pinnedInspectVisible: boolean
+): string => {
+  const visibleHoveredTile = pointerInspectVisible ? hoveredTile : null;
+  const visiblePinnedTile = pinnedInspectVisible ? pinnedTile : null;
+
+  if (
+    visiblePinnedTile &&
+    visibleHoveredTile &&
+    !hasSameInspectTarget(visibleHoveredTile, visiblePinnedTile)
+  ) {
+    return [
+      formatInspectTileLine('Pinned', visiblePinnedTile),
+      formatInspectTileLine('Hover', visibleHoveredTile),
+      formatInspectOffsetLine(visibleHoveredTile, visiblePinnedTile)
+    ].join('\n');
+  }
+
+  if (visiblePinnedTile && visibleHoveredTile) {
+    return formatInspectTileLine('Shared', visiblePinnedTile);
+  }
+
+  if (visiblePinnedTile) {
+    return formatInspectTileLine('Pinned', visiblePinnedTile);
+  }
+
+  if (visibleHoveredTile) {
+    return formatInspectTileLine('Hover', visibleHoveredTile);
+  }
+
+  const hiddenInspectText = buildInspectTelemetryHiddenText(
+    pointerInspectVisible,
+    pinnedInspectVisible,
+    hoveredTile !== null,
+    pinnedTile !== null
+  );
+  if (hiddenInspectText !== null) {
+    return hiddenInspectText;
+  }
+
+  return buildEmptyInspectHintText(pointerInspectVisible, pinnedInspectVisible);
 };
 
 const buildInspectText = (state: DebugEditStatusStripState): string => {
@@ -2260,6 +2327,8 @@ export const buildDebugEditStatusStripModel = (
   const telemetryState = state.telemetryState ?? null;
   const telemetryVisible: TelemetryVisibilityResolver = (typeId) =>
     telemetryState === null || isWorldSessionTelemetryTypeVisible(telemetryState, typeId);
+  const pointerInspectVisible = telemetryVisible('inspect-pointer');
+  const pinnedInspectVisible = telemetryVisible('inspect-pinned');
 
   return {
     modeText: `Mode: ${formatTouchDebugEditModeLabel(state.mode)}`,
@@ -2341,7 +2410,12 @@ export const buildDebugEditStatusStripModel = (
       telemetryVisible
     ),
     inspectText: buildInspectText(state),
-    hoverText: buildHoveredTileText(state.hoveredTile, state.pinnedTile),
+    hoverText: buildHoveredTileText(
+      state.hoveredTile,
+      state.pinnedTile,
+      pointerInspectVisible,
+      pinnedInspectVisible
+    ),
     hintText: activeToolStatus
       ? activeToolStatus.detail
       : state.desktopInspectPinArmed

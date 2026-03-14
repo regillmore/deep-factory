@@ -117,7 +117,8 @@ const PARTIAL_WORLD_SESSION_TELEMETRY_STATE: WorldSessionTelemetryState = {
   collections: {
     player: true,
     'hostile-slime': false,
-    world: true
+    world: true,
+    inspect: true
   },
   types: {
     'player-motion': true,
@@ -126,9 +127,14 @@ const PARTIAL_WORLD_SESSION_TELEMETRY_STATE: WorldSessionTelemetryState = {
     'player-camera': true,
     'player-collision': false,
     'player-events': true,
+    'player-spawn': false,
     'hostile-slime-tracker': true,
+    'world-atlas': true,
+    'world-animated-mesh': false,
     'world-lighting': false,
-    'world-liquid': true
+    'world-liquid': true,
+    'inspect-pointer': true,
+    'inspect-pinned': false
   }
 };
 const REJECTED_IMPORT_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE =
@@ -1486,11 +1492,11 @@ describe('paused main-menu dashboard layout', () => {
         },
         {
           label: 'Collections',
-          value: 'Player, Hostile Slime, World'
+          value: 'Player, Hostile Slime, World, Inspect'
         },
         {
           label: 'Collections On',
-          value: 'Player, World'
+          value: 'Player, World, Inspect'
         },
         {
           label: 'Collections Off',
@@ -1498,7 +1504,7 @@ describe('paused main-menu dashboard layout', () => {
         },
         {
           label: 'Types On',
-          value: '6/9'
+          value: '8/14'
         }
       ],
       collections: [
@@ -1512,6 +1518,10 @@ describe('paused main-menu dashboard layout', () => {
         },
         {
           id: 'world',
+          toggleLabel: 'Collection On'
+        },
+        {
+          id: 'inspect',
           toggleLabel: 'Collection On'
         }
       ]
@@ -1586,6 +1596,11 @@ describe('paused main-menu dashboard layout', () => {
       'app-shell__shell-telemetry-button',
       'Combat'
     );
+    const pointerToggleButton = findButtonByTextContent(
+      telemetryControls ?? new FakeElement('div'),
+      'app-shell__shell-telemetry-button',
+      'Pointer'
+    );
 
     expect(telemetryControls?.hidden).toBe(false);
     expect(telemetryControls?.style.display).toBe('grid');
@@ -1596,11 +1611,11 @@ describe('paused main-menu dashboard layout', () => {
       },
       {
         label: 'Collections',
-        value: 'Player, Hostile Slime, World'
+        value: 'Player, Hostile Slime, World, Inspect'
       },
       {
         label: 'Collections On',
-        value: 'Player, World'
+        value: 'Player, World, Inspect'
       },
       {
         label: 'Collections Off',
@@ -1608,11 +1623,12 @@ describe('paused main-menu dashboard layout', () => {
       },
       {
         label: 'Types On',
-        value: '6/9'
+        value: '8/14'
       }
     ]);
     expect(collectionToggleButton?.getAttribute('aria-pressed')).toBe('false');
     expect(combatToggleButton?.getAttribute('aria-pressed')).toBe('false');
+    expect(pointerToggleButton?.getAttribute('aria-pressed')).toBe('true');
 
     collectionToggleButton?.click();
     combatToggleButton?.click();

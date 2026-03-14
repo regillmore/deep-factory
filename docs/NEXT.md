@@ -36,8 +36,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Telemetry Controls
 
-530. Move the remaining current diagnostics into the telemetry catalog after the pause-menu telemetry-control foundation: atlas, animated-mesh, spawn, pointer-inspect, and pinned-inspect readouts with matching toggle regressions.
 531. Add a paused-menu telemetry-reset follow-up after the telemetry catalog rollout: restore all telemetry collections and types to their default enabled state from the `Shell` editor, persist that reset, and add paused-menu plus overlay gating regressions.
+532. Add a collapsed-shell telemetry-summary follow-up after the telemetry catalog rollout: surface enabled collection and type counts in the paused `Shell` summary rows, keep that summary synced with live telemetry toggles, and add paused-menu summary regressions.
 515. Add a landing-damage telemetry slice after the unified telemetry overlay: show latest hard-landing damage plus current fall-recovery cooldown in the debug HUD or compact status strip, and add fixed-step landing telemetry regressions.
 516. Add a breath-telemetry follow-up after the unified telemetry overlay: show current breath plus drowning-cooldown state in the debug HUD or compact status strip, and add fixed-step telemetry regressions.
 524. Add a hostile-slime spawn-window telemetry follow-up after the unified telemetry overlay: show the next deterministic spawn-window index plus tile-offset target in the debug HUD or compact status strip, and add deterministic telemetry regressions.

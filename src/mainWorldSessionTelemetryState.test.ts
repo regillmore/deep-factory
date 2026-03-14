@@ -42,7 +42,8 @@ describe('createDefaultWorldSessionTelemetryState', () => {
       collections: {
         player: true,
         'hostile-slime': true,
-        world: true
+        world: true,
+        inspect: true
       },
       types: {
         'player-motion': true,
@@ -51,9 +52,14 @@ describe('createDefaultWorldSessionTelemetryState', () => {
         'player-camera': true,
         'player-collision': true,
         'player-events': true,
+        'player-spawn': true,
         'hostile-slime-tracker': true,
+        'world-atlas': true,
+        'world-animated-mesh': true,
         'world-lighting': true,
-        'world-liquid': true
+        'world-liquid': true,
+        'inspect-pointer': true,
+        'inspect-pinned': true
       }
     });
   });
@@ -66,7 +72,8 @@ describe('decodeWorldSessionTelemetryState', () => {
         collections: {
           player: false,
           'hostile-slime': true,
-          world: false
+          world: false,
+          inspect: true
         },
         types: {
           'player-motion': false,
@@ -75,16 +82,22 @@ describe('decodeWorldSessionTelemetryState', () => {
           'player-camera': true,
           'player-collision': false,
           'player-events': true,
+          'player-spawn': false,
           'hostile-slime-tracker': false,
+          'world-atlas': true,
+          'world-animated-mesh': false,
           'world-lighting': true,
-          'world-liquid': false
+          'world-liquid': false,
+          'inspect-pointer': true,
+          'inspect-pinned': false
         }
       })
     ).toEqual({
       collections: {
         player: false,
         'hostile-slime': true,
-        world: false
+        world: false,
+        inspect: true
       },
       types: {
         'player-motion': false,
@@ -93,9 +106,14 @@ describe('decodeWorldSessionTelemetryState', () => {
         'player-camera': true,
         'player-collision': false,
         'player-events': true,
+        'player-spawn': false,
         'hostile-slime-tracker': false,
+        'world-atlas': true,
+        'world-animated-mesh': false,
         'world-lighting': true,
-        'world-liquid': false
+        'world-liquid': false,
+        'inspect-pointer': true,
+        'inspect-pinned': false
       }
     });
   });
@@ -115,7 +133,8 @@ describe('decodeWorldSessionTelemetryState', () => {
       collections: {
         player: false,
         'hostile-slime': true,
-        world: true
+        world: true,
+        inspect: true
       },
       types: {
         'player-motion': false,
@@ -124,9 +143,14 @@ describe('decodeWorldSessionTelemetryState', () => {
         'player-camera': true,
         'player-collision': true,
         'player-events': true,
+        'player-spawn': true,
         'hostile-slime-tracker': true,
+        'world-atlas': true,
+        'world-animated-mesh': true,
         'world-lighting': true,
-        'world-liquid': false
+        'world-liquid': false,
+        'inspect-pointer': true,
+        'inspect-pinned': true
       }
     });
   });
@@ -169,10 +193,10 @@ describe('createWorldSessionTelemetryStatePersistenceSummary', () => {
       collectionLabels: WORLD_SESSION_TELEMETRY_COLLECTION_DEFINITIONS.map(
         (definition) => definition.label
       ),
-      enabledCollectionLabels: ['Player', 'Hostile Slime', 'World'],
+      enabledCollectionLabels: ['Player', 'Hostile Slime', 'World', 'Inspect'],
       disabledCollectionLabels: [],
-      enabledTypeCount: 9,
-      totalTypeCount: 9
+      enabledTypeCount: 14,
+      totalTypeCount: 14
     });
   });
 
@@ -183,7 +207,8 @@ describe('createWorldSessionTelemetryStatePersistenceSummary', () => {
           collections: {
             player: true,
             'hostile-slime': false,
-            world: false
+            world: false,
+            inspect: true
           },
           types: {
             'player-motion': true,
@@ -192,9 +217,14 @@ describe('createWorldSessionTelemetryStatePersistenceSummary', () => {
             'player-camera': false,
             'player-collision': false,
             'player-events': true,
+            'player-spawn': false,
             'hostile-slime-tracker': false,
+            'world-atlas': false,
+            'world-animated-mesh': false,
             'world-lighting': false,
-            'world-liquid': false
+            'world-liquid': false,
+            'inspect-pointer': true,
+            'inspect-pinned': false
           }
         },
         false
@@ -203,11 +233,11 @@ describe('createWorldSessionTelemetryStatePersistenceSummary', () => {
       statusValue: 'Session-only fallback',
       descriptionLine:
         'Browser telemetry storage is unavailable or could not be updated, so this paused session keeps the current telemetry visibility only until a reload clears it.',
-      collectionLabels: ['Player', 'Hostile Slime', 'World'],
-      enabledCollectionLabels: ['Player'],
+      collectionLabels: ['Player', 'Hostile Slime', 'World', 'Inspect'],
+      enabledCollectionLabels: ['Player', 'Inspect'],
       disabledCollectionLabels: ['Hostile Slime', 'World'],
-      enabledTypeCount: 3,
-      totalTypeCount: 9
+      enabledTypeCount: 4,
+      totalTypeCount: 14
     });
   });
 });
@@ -220,7 +250,8 @@ describe('toggle helpers and visibility', () => {
       collections: {
         player: true,
         'hostile-slime': false,
-        world: true
+        world: true,
+        inspect: true
       },
       types: baseState.types
     });
@@ -243,7 +274,7 @@ describe('toggle helpers and visibility', () => {
 
   it('counts enabled types within a collection', () => {
     const state = toggleWorldSessionTelemetryType(baseState, 'player-events');
-    expect(countEnabledWorldSessionTelemetryTypesForCollection(state, 'player')).toBe(5);
+    expect(countEnabledWorldSessionTelemetryTypesForCollection(state, 'player')).toBe(6);
   });
 });
 
@@ -299,7 +330,8 @@ describe('loadWorldSessionTelemetryStateWithPersistenceAvailability', () => {
         collections: {
           player: true,
           'hostile-slime': true,
-          world: false
+          world: false,
+          inspect: true
         },
         types: {
           'player-motion': false,
@@ -308,9 +340,14 @@ describe('loadWorldSessionTelemetryStateWithPersistenceAvailability', () => {
           'player-camera': true,
           'player-collision': true,
           'player-events': true,
+          'player-spawn': true,
           'hostile-slime-tracker': true,
+          'world-atlas': true,
+          'world-animated-mesh': true,
           'world-lighting': true,
-          'world-liquid': true
+          'world-liquid': true,
+          'inspect-pointer': true,
+          'inspect-pinned': true
         }
       },
       persistenceAvailable: true
@@ -346,7 +383,8 @@ describe('loadWorldSessionTelemetryState', () => {
       collections: {
         player: false,
         'hostile-slime': true,
-        world: true
+        world: true,
+        inspect: true
       },
       types: {
         'player-motion': true,
@@ -355,9 +393,14 @@ describe('loadWorldSessionTelemetryState', () => {
         'player-camera': false,
         'player-collision': true,
         'player-events': true,
+        'player-spawn': true,
         'hostile-slime-tracker': true,
+        'world-atlas': true,
+        'world-animated-mesh': true,
         'world-lighting': true,
-        'world-liquid': true
+        'world-liquid': true,
+        'inspect-pointer': true,
+        'inspect-pinned': true
       }
     });
   });
