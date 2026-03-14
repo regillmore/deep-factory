@@ -2775,6 +2775,7 @@ const resolveInWorldShortcutsSections = (
       `Session: ${getDesktopReturnToMainMenuHotkeyLabel(shellActionKeybindings)} return to main menu; ${getDesktopResumeWorldHotkeyLabel()} resume paused world; ${getDesktopFreshWorldHotkeyLabel()} new world from paused menu`,
       `Camera + shell: ${getDesktopRecenterCameraHotkeyLabel(shellActionKeybindings)} recenter, ${getDesktopDebugOverlayHotkeyLabel(shellActionKeybindings)} HUD, ${getDesktopDebugEditControlsHotkeyLabel(shellActionKeybindings)} edit panel, ${getDesktopDebugEditOverlaysHotkeyLabel(shellActionKeybindings)} edit overlays, ${getDesktopPlayerSpawnMarkerHotkeyLabel(shellActionKeybindings)} spawn marker`,
       'Hotbar: 1-0 select slots while the full Debug Edit panel is hidden, or click a slot',
+      'Build: left-click an empty tile with a solid neighbor while the full Debug Edit panel is hidden',
       `Brush + tools: 1-0 brush slots while the full Debug Edit panel is open, [ and ] cycle brush, Esc cancel armed tools`,
       'History: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo'
     ]
@@ -2784,6 +2785,7 @@ const resolveInWorldShortcutsSections = (
     lines: [
       'Player: hold Left, Right, and Jump on the touch player pad',
       'Hotbar: tap a bottom hotbar slot to select it',
+      'Build: tap an empty tile with a solid neighbor while the full Debug Edit panel is hidden',
       'Pan mode: one-finger drag camera, two-finger tap undo, three-finger tap redo',
       'Place and Break modes: one-finger drag paints or breaks tiles',
       'Pinch: two-finger pinch zoom while editing stays active',

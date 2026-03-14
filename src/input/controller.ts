@@ -26,6 +26,7 @@ export interface PlayerInputTelemetry {
   jumpPressed: boolean;
 }
 
+export type CanvasInteractionMode = 'debug-edit' | 'play';
 export type DebugTileEditKind = 'place' | 'break';
 export type TouchDebugEditMode = 'pan' | DebugTileEditKind;
 
@@ -39,6 +40,14 @@ export interface DebugBrushEyedropperRequest {
   worldTileX: number;
   worldTileY: number;
   pointerType: 'touch';
+}
+
+export interface PlayerItemUseRequest {
+  worldTileX: number;
+  worldTileY: number;
+  worldX: number;
+  worldY: number;
+  pointerType: 'mouse' | 'touch';
 }
 
 export interface DebugTileInspectPinRequest {
@@ -236,6 +245,24 @@ interface ActiveMouseInspectPinClickCandidate {
   maxPointerTravelPx: number;
 }
 
+interface ActiveTouchPlayerItemUseTapCandidate {
+  pointerId: number;
+  startedAtMs: number;
+  startClientX: number;
+  startClientY: number;
+  maxPointerTravelPx: number;
+}
+
+interface ActiveMousePlayerItemUseClickCandidate {
+  pointerId: number;
+  button: number;
+  shiftKey: boolean;
+  startedAtMs: number;
+  startClientX: number;
+  startClientY: number;
+  maxPointerTravelPx: number;
+}
+
 export const buildDebugTileEditRequest = (
   pointerInspect: PointerInspectSnapshot | null,
   kind: DebugTileEditKind
@@ -270,6 +297,46 @@ export const getTouchDebugPaintKindForPointerDown = (
 ): DebugTileEditKind | null => {
   if (pointerType !== 'touch' || touchDebugEditMode === 'pan') return null;
   return touchDebugEditMode;
+};
+
+export interface ActiveDesktopPlayerItemUseClickSample {
+  durationMs: number;
+  maxPointerTravelPx: number;
+  gesturesEnabled: boolean;
+  button: number;
+  shiftKey: boolean;
+}
+
+export interface ActiveTouchPlayerItemUseTapSample {
+  durationMs: number;
+  maxPointerTravelPx: number;
+  gesturesEnabled: boolean;
+}
+
+export const DESKTOP_PLAYER_ITEM_USE_MOUSE_BUTTON = 0;
+export const DESKTOP_PLAYER_ITEM_USE_CLICK_MAX_DURATION_MS = 260;
+export const DESKTOP_PLAYER_ITEM_USE_CLICK_MAX_POINTER_TRAVEL_PX = 6;
+export const TOUCH_PLAYER_ITEM_USE_TAP_MAX_DURATION_MS = 260;
+export const TOUCH_PLAYER_ITEM_USE_TAP_MAX_POINTER_TRAVEL_PX = 14;
+
+export const resolveDesktopPlayerItemUseActionForClick = (
+  sample: ActiveDesktopPlayerItemUseClickSample
+): 'use-item' | null => {
+  if (!sample.gesturesEnabled) return null;
+  if (sample.button !== DESKTOP_PLAYER_ITEM_USE_MOUSE_BUTTON) return null;
+  if (sample.shiftKey) return null;
+  if (sample.durationMs > DESKTOP_PLAYER_ITEM_USE_CLICK_MAX_DURATION_MS) return null;
+  if (sample.maxPointerTravelPx > DESKTOP_PLAYER_ITEM_USE_CLICK_MAX_POINTER_TRAVEL_PX) return null;
+  return 'use-item';
+};
+
+export const resolveTouchPlayerItemUseActionForTap = (
+  sample: ActiveTouchPlayerItemUseTapSample
+): 'use-item' | null => {
+  if (!sample.gesturesEnabled) return null;
+  if (sample.durationMs > TOUCH_PLAYER_ITEM_USE_TAP_MAX_DURATION_MS) return null;
+  if (sample.maxPointerTravelPx > TOUCH_PLAYER_ITEM_USE_TAP_MAX_POINTER_TRAVEL_PX) return null;
+  return 'use-item';
 };
 
 export const isPlayerMoveLeftControlKey = (key: string): boolean => key === 'a' || key === 'arrowleft';
@@ -503,6 +570,7 @@ export const walkEllipseOutlineTileArea = (
 
 export class InputController {
   private keys = new Set<string>();
+  private canvasInteractionMode: CanvasInteractionMode = 'debug-edit';
   private pointerActive = false;
   private pointerId: number | null = null;
   private lastX = 0;
@@ -510,6 +578,7 @@ export class InputController {
   private pinchDistance = 0;
   private pointers = new Map<number, PointerEvent>();
   private pointerInspect: PointerInspectSnapshot | null = null;
+  private playerItemUseQueue: PlayerItemUseRequest[] = [];
   private debugTileEditQueue: DebugTileStrokeEditRequest[] = [];
   private debugFloodFillQueue: DebugFloodFillRequest[] = [];
   private debugLineQueue: DebugLineRequest[] = [];
@@ -537,6 +606,8 @@ export class InputController {
   private activeTouchEyedropperLongPressCandidate: ActiveTouchEyedropperLongPressCandidate | null = null;
   private activeTouchInspectPinTapCandidate: ActiveTouchInspectPinTapCandidate | null = null;
   private activeMouseInspectPinClickCandidate: ActiveMouseInspectPinClickCandidate | null = null;
+  private activeTouchPlayerItemUseTapCandidate: ActiveTouchPlayerItemUseTapCandidate | null = null;
+  private activeMousePlayerItemUseClickCandidate: ActiveMousePlayerItemUseClickCandidate | null = null;
   private lastTouchHistoryTapGestureTimeMs = Number.NEGATIVE_INFINITY;
   private touchDebugEditMode: TouchDebugEditMode = 'pan';
   private armedDesktopDebugInspectPin = false;
@@ -585,6 +656,20 @@ export class InputController {
     this.previousPlayerJumpHeld = jumpHeld;
   }
 
+  getCanvasInteractionMode(): CanvasInteractionMode {
+    return this.canvasInteractionMode;
+  }
+
+  setCanvasInteractionMode(mode: CanvasInteractionMode): void {
+    this.canvasInteractionMode = mode;
+    this.activeTouchHistoryTapGestureCandidate = null;
+    this.activeTouchEyedropperLongPressCandidate = null;
+    this.activeTouchInspectPinTapCandidate = null;
+    this.activeMouseInspectPinClickCandidate = null;
+    this.activeTouchPlayerItemUseTapCandidate = null;
+    this.activeMousePlayerItemUseClickCandidate = null;
+  }
+
   getPointerInspect(): PointerInspectSnapshot | null {
     if (this.pointerInspect) {
       this.updatePointerInspect(
@@ -598,6 +683,13 @@ export class InputController {
 
   retainPointerInspectWhenLeavingToElement(element: HTMLElement): void {
     this.pointerInspectRetainers.push((candidate) => candidate instanceof Node && element.contains(candidate));
+  }
+
+  consumePlayerItemUseRequests(): PlayerItemUseRequest[] {
+    if (this.playerItemUseQueue.length === 0) return [];
+    const requests = this.playerItemUseQueue;
+    this.playerItemUseQueue = [];
+    return requests;
   }
 
   consumeDebugTileEdits(): DebugTileStrokeEditRequest[] {
@@ -975,6 +1067,12 @@ export class InputController {
     window.addEventListener('blur', () => {
       this.keys.clear();
       this.clearPlayerControlState();
+      this.activeTouchHistoryTapGestureCandidate = null;
+      this.activeTouchEyedropperLongPressCandidate = null;
+      this.activeTouchInspectPinTapCandidate = null;
+      this.activeMouseInspectPinClickCandidate = null;
+      this.activeTouchPlayerItemUseTapCandidate = null;
+      this.activeMousePlayerItemUseClickCandidate = null;
     });
 
     this.canvas.addEventListener('wheel', (event) => {
@@ -1026,10 +1124,9 @@ export class InputController {
         this.activeTouchEyedropperLongPressCandidate = null;
         this.activeTouchInspectPinTapCandidate = null;
         this.activeMouseInspectPinClickCandidate = null;
+        this.activeTouchPlayerItemUseTapCandidate = null;
+        this.activeMousePlayerItemUseClickCandidate = null;
       } else {
-        this.refreshTouchHistoryTapGestureCandidateOnPointerDown(event);
-        this.refreshTouchEyedropperLongPressCandidateOnPointerDown(event);
-        this.refreshTouchInspectPinTapCandidateOnPointerDown(event);
         this.refreshMouseInspectPinClickCandidateOnPointerDown(event);
       }
       const startedMouseDebugPaint =
@@ -1050,6 +1147,30 @@ export class InputController {
         handledArmedDebugEllipseOutline
         ? false
         : this.tryStartTouchDebugPaintStroke(event);
+      if (
+        !queuedArmedDebugFloodFill &&
+        !handledArmedDebugLine &&
+        !handledArmedDebugRect &&
+        !handledArmedDebugRectOutline &&
+        !handledArmedDebugEllipse &&
+        !handledArmedDebugEllipseOutline &&
+        !startedMouseDebugPaint &&
+        !startedTouchDebugPaint
+      ) {
+        if (this.canvasInteractionMode === 'debug-edit') {
+          this.refreshTouchHistoryTapGestureCandidateOnPointerDown(event);
+          this.refreshTouchEyedropperLongPressCandidateOnPointerDown(event);
+          this.refreshTouchInspectPinTapCandidateOnPointerDown(event);
+          this.activeTouchPlayerItemUseTapCandidate = null;
+          this.activeMousePlayerItemUseClickCandidate = null;
+        } else {
+          this.refreshTouchPlayerItemUseTapCandidateOnPointerDown(event);
+          this.refreshMousePlayerItemUseClickCandidateOnPointerDown(event);
+          this.activeTouchHistoryTapGestureCandidate = null;
+          this.activeTouchEyedropperLongPressCandidate = null;
+          this.activeTouchInspectPinTapCandidate = null;
+        }
+      }
       if (this.pointers.size === 1) {
         if (
           queuedArmedDebugFloodFill ||
@@ -1086,6 +1207,10 @@ export class InputController {
       this.updateTouchEyedropperLongPressCandidateMetrics(event);
       this.updateTouchInspectPinTapCandidateMetrics(event);
       this.updateMouseInspectPinClickCandidateMetrics(event);
+      this.updateTouchPlayerItemUseTapCandidateMetrics(event);
+      this.updateMousePlayerItemUseClickCandidateMetrics(event);
+      this.updateTouchPlayerItemUseTapCandidateMetrics(event);
+      this.updateMousePlayerItemUseClickCandidateMetrics(event);
 
       const activeMouseDebugPaintStroke = this.activeMouseDebugPaintStroke;
       const activeTouchDebugPaintStroke = this.activeTouchDebugPaintStroke;
@@ -1218,6 +1343,8 @@ export class InputController {
       this.maybeQueueMouseInspectPinClickOnPointerRelease(event, canceled);
       this.maybeQueueTouchInspectPinTapOnPointerRelease(event, canceled);
       this.maybeQueueTouchHistoryTapGestureShortcutOnPointerRelease(event, canceled);
+      this.maybeQueueMousePlayerItemUseClickOnPointerRelease(event, canceled);
+      this.maybeQueueTouchPlayerItemUseTapOnPointerRelease(event, canceled);
     };
 
     this.canvas.addEventListener('pointerup', (event) => release(event, false));
@@ -1236,18 +1363,23 @@ export class InputController {
         this.activeMouseDebugEllipseDrag = null;
         this.activeMouseDebugEllipseOutlineDrag = null;
         this.activeMouseInspectPinClickCandidate = null;
+        this.activeMousePlayerItemUseClickCandidate = null;
         if (!retainPointerInspect) {
           this.pointerInspect = null;
         }
       } else if (event.pointerType === 'touch' && this.pointers.size === 0) {
         this.completeDebugPaintStroke(this.activeTouchDebugPaintStroke);
         this.activeTouchDebugPaintStroke = null;
+        this.activeTouchPlayerItemUseTapCandidate = null;
       }
     });
     this.canvas.style.touchAction = 'none';
   }
 
   private tryStartMouseDebugPaintStroke(event: PointerEvent): boolean {
+    if (this.canvasInteractionMode !== 'debug-edit') {
+      return false;
+    }
     if (this.armedDesktopDebugInspectPin && event.pointerType === 'mouse' && !event.shiftKey) {
       return false;
     }
@@ -1269,6 +1401,9 @@ export class InputController {
   }
 
   private tryStartTouchDebugPaintStroke(event: PointerEvent): boolean {
+    if (this.canvasInteractionMode !== 'debug-edit') {
+      return false;
+    }
     const kind = getTouchDebugPaintKindForPointerDown(event.pointerType, this.touchDebugEditMode);
     if (!kind || this.pointers.size !== 1) return false;
 
@@ -1596,6 +1731,139 @@ export class InputController {
 
     this.lastTouchHistoryTapGestureTimeMs = event.timeStamp;
     this.debugEditHistoryShortcutQueue.push(action);
+  }
+
+  private refreshTouchPlayerItemUseTapCandidateOnPointerDown(event: PointerEvent): void {
+    if (event.pointerType !== 'touch') return;
+
+    if (this.canvasInteractionMode !== 'play' || this.pointers.size !== 1) {
+      this.activeTouchPlayerItemUseTapCandidate = null;
+      return;
+    }
+
+    this.activeTouchPlayerItemUseTapCandidate = {
+      pointerId: event.pointerId,
+      startedAtMs: event.timeStamp,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      maxPointerTravelPx: 0
+    };
+  }
+
+  private updateTouchPlayerItemUseTapCandidateMetrics(event: PointerEvent): void {
+    if (event.pointerType !== 'touch') return;
+
+    const candidate = this.activeTouchPlayerItemUseTapCandidate;
+    if (!candidate || candidate.pointerId !== event.pointerId) return;
+
+    const pointerTravelPx = Math.hypot(
+      event.clientX - candidate.startClientX,
+      event.clientY - candidate.startClientY
+    );
+    if (pointerTravelPx > candidate.maxPointerTravelPx) {
+      candidate.maxPointerTravelPx = pointerTravelPx;
+    }
+  }
+
+  private maybeQueueTouchPlayerItemUseTapOnPointerRelease(event: PointerEvent, canceled: boolean): void {
+    if (event.pointerType !== 'touch') return;
+
+    const candidate = this.activeTouchPlayerItemUseTapCandidate;
+    if (!candidate || candidate.pointerId !== event.pointerId) return;
+
+    this.activeTouchPlayerItemUseTapCandidate = null;
+    if (canceled) return;
+
+    const action = resolveTouchPlayerItemUseActionForTap({
+      durationMs: Math.max(0, event.timeStamp - candidate.startedAtMs),
+      maxPointerTravelPx: candidate.maxPointerTravelPx,
+      gesturesEnabled: this.canvasInteractionMode === 'play'
+    });
+    if (action !== 'use-item') return;
+
+    this.queuePlayerItemUseRequest(event.clientX, event.clientY, 'touch');
+  }
+
+  private refreshMousePlayerItemUseClickCandidateOnPointerDown(event: PointerEvent): void {
+    if (event.pointerType !== 'mouse') return;
+
+    if (
+      this.canvasInteractionMode !== 'play' ||
+      this.armedDesktopDebugInspectPin ||
+      this.pointers.size !== 1
+    ) {
+      this.activeMousePlayerItemUseClickCandidate = null;
+      return;
+    }
+
+    this.activeMousePlayerItemUseClickCandidate = {
+      pointerId: event.pointerId,
+      button: event.button,
+      shiftKey: event.shiftKey,
+      startedAtMs: event.timeStamp,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      maxPointerTravelPx: 0
+    };
+  }
+
+  private updateMousePlayerItemUseClickCandidateMetrics(event: PointerEvent): void {
+    if (event.pointerType !== 'mouse') return;
+
+    const candidate = this.activeMousePlayerItemUseClickCandidate;
+    if (!candidate || candidate.pointerId !== event.pointerId) return;
+
+    const pointerTravelPx = Math.hypot(
+      event.clientX - candidate.startClientX,
+      event.clientY - candidate.startClientY
+    );
+    if (pointerTravelPx > candidate.maxPointerTravelPx) {
+      candidate.maxPointerTravelPx = pointerTravelPx;
+    }
+  }
+
+  private maybeQueueMousePlayerItemUseClickOnPointerRelease(
+    event: PointerEvent,
+    canceled: boolean
+  ): void {
+    if (event.pointerType !== 'mouse') return;
+
+    const candidate = this.activeMousePlayerItemUseClickCandidate;
+    if (!candidate || candidate.pointerId !== event.pointerId) return;
+
+    this.activeMousePlayerItemUseClickCandidate = null;
+    if (canceled) return;
+
+    const action = resolveDesktopPlayerItemUseActionForClick({
+      durationMs: Math.max(0, event.timeStamp - candidate.startedAtMs),
+      maxPointerTravelPx: candidate.maxPointerTravelPx,
+      gesturesEnabled: this.canvasInteractionMode === 'play',
+      button: candidate.button,
+      shiftKey: candidate.shiftKey
+    });
+    if (action !== 'use-item') return;
+
+    this.queuePlayerItemUseRequest(event.clientX, event.clientY, 'mouse');
+  }
+
+  private queuePlayerItemUseRequest(
+    clientX: number,
+    clientY: number,
+    pointerType: 'mouse' | 'touch'
+  ): void {
+    this.updatePointerInspect(clientX, clientY, pointerType);
+    const pointerInspect = this.pointerInspect;
+    if (pointerInspect?.pointerType !== pointerType) {
+      return;
+    }
+
+    this.playerItemUseQueue.push({
+      worldTileX: pointerInspect.tile.x,
+      worldTileY: pointerInspect.tile.y,
+      worldX: pointerInspect.world.x,
+      worldY: pointerInspect.world.y,
+      pointerType
+    });
   }
 
   private getTrackedTouchPointers(): PointerEvent[] {

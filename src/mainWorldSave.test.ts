@@ -73,6 +73,35 @@ describe('createWorldSaveEnvelope', () => {
     });
     expect(envelope.session.cameraFollowOffset.x).toBe(24);
   });
+
+  it('preserves a placed starter dirt block together with the consumed hotbar stack count', () => {
+    const world = new TileWorld(0);
+    expect(world.setTile(1, -1, 9)).toBe(true);
+    const standalonePlayerInventoryState = createDefaultPlayerInventoryState();
+    standalonePlayerInventoryState.hotbar[0]!.amount = 63;
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(decoded.worldSnapshot);
+    expect(restoredWorld.getTile(1, -1)).toBe(9);
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+      itemId: 'dirt-block',
+      amount: 63
+    });
+  });
 });
 
 describe('decodeWorldSaveEnvelope', () => {

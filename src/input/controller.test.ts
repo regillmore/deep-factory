@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildDebugTileEditRequest,
+  resolveDesktopPlayerItemUseActionForClick,
+  resolveTouchPlayerItemUseActionForTap,
   getDesktopDebugPaintKindForPointerDown,
   getTouchDebugPaintKindForPointerDown,
   isPlayerJumpControlKey,
@@ -176,6 +178,67 @@ describe('getTouchDebugPaintKindForPointerDown', () => {
 
   it('ignores non-touch pointerdown events', () => {
     expect(getTouchDebugPaintKindForPointerDown('mouse', 'place')).toBeNull();
+  });
+});
+
+describe('player item use gestures', () => {
+  it('accepts a short unmodified left click for desktop play item use', () => {
+    expect(
+      resolveDesktopPlayerItemUseActionForClick({
+        durationMs: 120,
+        maxPointerTravelPx: 4,
+        gesturesEnabled: true,
+        button: 0,
+        shiftKey: false
+      })
+    ).toBe('use-item');
+  });
+
+  it('rejects modified, long, or drifting desktop clicks for item use', () => {
+    expect(
+      resolveDesktopPlayerItemUseActionForClick({
+        durationMs: 300,
+        maxPointerTravelPx: 4,
+        gesturesEnabled: true,
+        button: 0,
+        shiftKey: false
+      })
+    ).toBeNull();
+    expect(
+      resolveDesktopPlayerItemUseActionForClick({
+        durationMs: 120,
+        maxPointerTravelPx: 7,
+        gesturesEnabled: true,
+        button: 0,
+        shiftKey: false
+      })
+    ).toBeNull();
+    expect(
+      resolveDesktopPlayerItemUseActionForClick({
+        durationMs: 120,
+        maxPointerTravelPx: 4,
+        gesturesEnabled: true,
+        button: 0,
+        shiftKey: true
+      })
+    ).toBeNull();
+  });
+
+  it('accepts a short low-drift touch tap for play item use and rejects drags', () => {
+    expect(
+      resolveTouchPlayerItemUseActionForTap({
+        durationMs: 180,
+        maxPointerTravelPx: 10,
+        gesturesEnabled: true
+      })
+    ).toBe('use-item');
+    expect(
+      resolveTouchPlayerItemUseActionForTap({
+        durationMs: 180,
+        maxPointerTravelPx: 15,
+        gesturesEnabled: true
+      })
+    ).toBeNull();
   });
 });
 

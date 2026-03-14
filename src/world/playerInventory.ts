@@ -30,6 +30,11 @@ export interface AddPlayerInventoryItemStackResult {
   remainingAmount: number;
 }
 
+export interface ConsumePlayerInventoryHotbarSlotItemResult {
+  state: PlayerInventoryState;
+  consumed: boolean;
+}
+
 const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
   Record<PlayerInventoryItemId, PlayerInventoryItemDefinition>
 > = {
@@ -232,5 +237,31 @@ export const addPlayerInventoryItemStack = (
     state: nextState,
     addedAmount: amount - remainingAmount,
     remainingAmount
+  };
+};
+
+export const consumePlayerInventoryHotbarSlotItem = (
+  state: PlayerInventoryState,
+  slotIndex: number
+): ConsumePlayerInventoryHotbarSlotItemResult => {
+  validateHotbarSlotIndex(slotIndex, 'slotIndex');
+  const stack = state.hotbar[slotIndex] ?? null;
+  if (stack === null) {
+    return {
+      state: clonePlayerInventoryState(state),
+      consumed: false
+    };
+  }
+
+  const nextAmount = stack.amount - 1;
+  return {
+    state:
+      nextAmount > 0
+        ? setPlayerInventoryHotbarSlot(state, slotIndex, {
+            itemId: stack.itemId,
+            amount: nextAmount
+          })
+        : setPlayerInventoryHotbarSlot(state, slotIndex, null),
+    consumed: true
   };
 };

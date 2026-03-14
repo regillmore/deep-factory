@@ -15,6 +15,7 @@ import {
   STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS
 } from './gl/standalonePlayerPlaceholder';
 import {
+  type PlayerItemUseRequest,
   InputController,
   walkEllipseOutlineTileArea,
   walkFilledEllipseTileArea,
@@ -190,10 +191,16 @@ import {
 } from './world/hostileSlimeState';
 import {
   clonePlayerInventoryState,
+  consumePlayerInventoryHotbarSlotItem,
   createDefaultPlayerInventoryState,
   setPlayerInventorySelectedHotbarSlot,
   type PlayerInventoryState
 } from './world/playerInventory';
+import {
+  evaluateStarterBlockPlacement,
+  STARTER_BUILDING_BLOCK_ITEM_ID,
+  STARTER_BUILDING_BLOCK_TILE_ID
+} from './world/starterBlockPlacement';
 import {
   resolvePlayerWallContactTransitionEvent,
   type PlayerWallContactTransitionEvent
@@ -1009,8 +1016,14 @@ const bootstrap = async (): Promise<void> => {
     armedDebugToolPreview.setVisible(visible);
     debugEditStatusStrip.setVisible(visible);
   };
+  const syncCanvasInteractionMode = (): void => {
+    input.setCanvasInteractionMode(
+      currentScreen === 'in-world' && !debugEditControlsVisible ? 'play' : 'debug-edit'
+    );
+  };
   const syncDebugEditControlsVisibility = (): void => {
     debugEditControls?.setVisible(currentScreen === 'in-world' && debugEditControlsVisible);
+    syncCanvasInteractionMode();
   };
   const syncPlayerSpawnMarkerVisibility = (): void => {
     playerSpawnMarker.setVisible(currentScreen === 'in-world' && playerSpawnMarkerVisible);
@@ -1024,6 +1037,7 @@ const bootstrap = async (): Promise<void> => {
     syncDebugEditOverlayVisibility();
     syncPlayerSpawnMarkerVisibility();
     syncHotbarOverlayVisibility();
+    syncCanvasInteractionMode();
   };
   const syncInWorldShellOverlayVisibility = (actionType: InWorldShellOverlaySyncActionType): void => {
     switch (actionType) {
@@ -1350,6 +1364,18 @@ const bootstrap = async (): Promise<void> => {
   const applyStandalonePlayerInventoryState = (inventoryState: PlayerInventoryState): void => {
     standalonePlayerInventoryState = clonePlayerInventoryState(inventoryState);
     hotbarOverlay.update(standalonePlayerInventoryState);
+  };
+  const applySelectedStandalonePlayerHotbarSlotConsumption = (): boolean => {
+    const consumeResult = consumePlayerInventoryHotbarSlotItem(
+      standalonePlayerInventoryState,
+      standalonePlayerInventoryState.selectedHotbarSlotIndex
+    );
+    if (!consumeResult.consumed) {
+      return false;
+    }
+
+    applyStandalonePlayerInventoryState(consumeResult.state);
+    return true;
   };
   const selectStandalonePlayerHotbarSlot = (slotIndex: number): void => {
     applyStandalonePlayerInventoryState(
@@ -2359,6 +2385,50 @@ const bootstrap = async (): Promise<void> => {
       previousTileId,
       changed
     };
+  };
+  const applySelectedStandalonePlayerItemUse = (request: PlayerItemUseRequest): boolean => {
+    if (debugEditControlsVisible) {
+      return false;
+    }
+
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return false;
+    }
+
+    const selectedStack =
+      standalonePlayerInventoryState.hotbar[standalonePlayerInventoryState.selectedHotbarSlotIndex] ??
+      null;
+    if (selectedStack?.itemId !== STARTER_BUILDING_BLOCK_ITEM_ID) {
+      return false;
+    }
+
+    const placement = evaluateStarterBlockPlacement(
+      {
+        getTile: (worldTileX, worldTileY) => renderer.getTile(worldTileX, worldTileY)
+      },
+      standalonePlayerState,
+      request.worldTileX,
+      request.worldTileY
+    );
+    if (!placement.canPlace) {
+      return false;
+    }
+
+    const editResult = applyWorldTileEdit(
+      request.worldTileX,
+      request.worldTileY,
+      STARTER_BUILDING_BLOCK_TILE_ID
+    );
+    if (!editResult.changed) {
+      return false;
+    }
+
+    return applySelectedStandalonePlayerHotbarSlotConsumption();
   };
 
   const readDebugEditControlPreferenceSnapshot = (): DebugEditControlState => ({
@@ -4136,6 +4206,9 @@ const bootstrap = async (): Promise<void> => {
     (fixedDt) => {
       if (currentScreen !== 'in-world') return;
       input.update(fixedDt);
+      for (const playerItemUseRequest of input.consumePlayerItemUseRequests()) {
+        applySelectedStandalonePlayerItemUse(playerItemUseRequest);
+      }
       for (const edit of input.consumeDebugTileEdits()) {
         const tileId = edit.kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
         const { previousTileId, changed } = applyWorldTileEdit(edit.worldTileX, edit.worldTileY, tileId);

@@ -57,6 +57,12 @@ describe('resolveTouchDebugKeyboardShortcutLines', () => {
     );
   });
 
+  it('lists the panel-hidden block placement shortcut in the keyboard reference', () => {
+    expect(resolveTouchDebugKeyboardShortcutLines()).toContain(
+      'Build: click or tap an empty tile with a solid neighbor while the full Debug Edit panel is hidden'
+    );
+  });
+
   it('lists the in-world edit-panel shortcut in the keyboard reference', () => {
     expect(resolveTouchDebugKeyboardShortcutLines()).toContain(
       `Edit panel: ${getDesktopDebugEditControlsHotkeyLabel()} toggle the full in-world Debug Edit panel`

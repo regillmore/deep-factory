@@ -2,6 +2,18 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-13: Hidden Debug Edit panel routes canvas clicks and taps to play item use
+
+- Decision: While the in-world full `Debug Edit` panel is hidden, canvas input now switches from debug paint to queued play-mode item-use requests, while the visible panel keeps existing debug paint, brush-slot, and tool-shortcut behavior.
+- Reason: The starter inventory items need a mixed-device placement path without adding a second on-canvas control layer or breaking the established debug-edit workflow.
+- Consequence: Future hotbar item interactions should plug into the shared play-mode item-use queue and respect the same panel-visible routing split instead of bypassing controller mode handoff.
+
+### 2026-03-13: Starter solid-block placement requires support and must not overlap the player
+
+- Decision: Starter dirt blocks now place only onto empty tiles that share a cardinal face with a solid tile and whose tile AABB does not overlap the standalone player's body.
+- Reason: The first building slice needs simple deterministic placement that preserves terrain attachment and avoids trapping the player inside a newly placed solid tile.
+- Consequence: Future placeable solid tiles should reuse or intentionally extend this validation contract rather than defaulting to unsupported placement or allowing solid placement through the player.
+
 ### 2026-03-13: Missing hotbar inventory in older saves defaults to the starter loadout
 
 - Decision: Standalone-player hotbar inventory now persists as session-owned save data beside player, death-countdown, and camera state, and older world-save payloads that lack inventory decode to the current starter dirt/torch/rope loadout.

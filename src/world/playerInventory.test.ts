@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addPlayerInventoryItemStack,
   clonePlayerInventoryState,
+  consumePlayerInventoryHotbarSlotItem,
   createDefaultPlayerInventoryState,
   createEmptyPlayerInventoryState,
   createPlayerInventoryItemStack,
@@ -121,6 +122,68 @@ describe('playerInventory', () => {
 
     expect(nextState.hotbar[2]).toEqual({ itemId: 'torch', amount: 8 });
     expect(state.hotbar[2]).toBeNull();
+  });
+
+  it('consumes one item from a populated hotbar slot and clears depleted stacks', () => {
+    const state = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'dirt-block', amount: 2 },
+        { itemId: 'torch', amount: 1 },
+        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 2 }, () => null)
+      ]
+    });
+
+    const firstConsume = consumePlayerInventoryHotbarSlotItem(state, 0);
+    const secondConsume = consumePlayerInventoryHotbarSlotItem(firstConsume.state, 1);
+
+    expect(firstConsume).toEqual({
+      state: {
+        hotbar: [
+          { itemId: 'dirt-block', amount: 1 },
+          { itemId: 'torch', amount: 1 },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        selectedHotbarSlotIndex: 0
+      },
+      consumed: true
+    });
+    expect(secondConsume).toEqual({
+      state: {
+        hotbar: [
+          { itemId: 'dirt-block', amount: 1 },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        selectedHotbarSlotIndex: 0
+      },
+      consumed: true
+    });
+  });
+
+  it('returns an unchanged clone when consuming from an empty hotbar slot', () => {
+    const state = createEmptyPlayerInventoryState();
+
+    const result = consumePlayerInventoryHotbarSlotItem(state, 4);
+
+    expect(result).toEqual({
+      state,
+      consumed: false
+    });
+    expect(result.state).not.toBe(state);
   });
 
   it('exposes per-item labels for hotbar presentation', () => {

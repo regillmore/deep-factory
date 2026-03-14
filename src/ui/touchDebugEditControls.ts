@@ -93,6 +93,7 @@ export const resolveTouchDebugKeyboardShortcutLines = (
 ): readonly string[] => [
   `Modes: ${getTouchDebugEditModeHotkeyLabel('pan')} pan, ${getTouchDebugEditModeHotkeyLabel('place')} place, ${getTouchDebugEditModeHotkeyLabel('break')} break`,
   'Hotbar: 1-0 select slots while the full Debug Edit panel is hidden',
+  'Build: click or tap an empty tile with a solid neighbor while the full Debug Edit panel is hidden',
   'Brush: [ / ] cycle, 1-0 slots while the full Debug Edit panel is open',
   'History: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo',
   `Camera: ${getDesktopRecenterCameraHotkeyLabel(shellActionKeybindings)} recenter on the standalone player`,

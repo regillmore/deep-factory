@@ -217,7 +217,15 @@ const testRuntime = vi.hoisted(() => {
       jumpHeld: false,
       jumpPressed: false
     },
+    canvasInteractionMode: 'debug-edit' as 'debug-edit' | 'play',
     fixedStepWorldUpdateOrder: [] as string[],
+    playerItemUseRequests: [] as Array<{
+      worldTileX: number;
+      worldTileY: number;
+      worldX?: number;
+      worldY?: number;
+      pointerType: 'mouse' | 'touch';
+    }>,
     debugTileEdits: [] as Array<{
       strokeId: number;
       worldTileX: number;
@@ -230,6 +238,11 @@ const testRuntime = vi.hoisted(() => {
     rendererLiquidLevelsByWorldKey: new Map<string, number>(),
     rendererLiquidRenderCardinalMask: null as number | null,
     rendererSetTileResult: false,
+    rendererSetTileCalls: [] as Array<{
+      worldTileX: number;
+      worldTileY: number;
+      tileId: number;
+    }>,
     rendererStepLiquidSimulationCallCount: 0,
     rendererStepPlayerStateImpl: null as null | ((
       state: unknown,
@@ -609,7 +622,12 @@ vi.mock('./gl/renderer', () => ({
       return testRuntime.rendererLiquidLevel;
     }
 
-    setTile(): boolean {
+    setTile(worldTileX: number, worldTileY: number, tileId: number): boolean {
+      testRuntime.rendererSetTileCalls.push({
+        worldTileX,
+        worldTileY,
+        tileId
+      });
       const result = testRuntime.rendererSetTileResult;
       testRuntime.rendererSetTileResult = false;
       return result;
@@ -791,6 +809,14 @@ vi.mock('./input/controller', () => ({
 
     retainPointerInspectWhenLeavingToElement(): void {}
 
+    getCanvasInteractionMode(): 'debug-edit' | 'play' {
+      return testRuntime.canvasInteractionMode;
+    }
+
+    setCanvasInteractionMode(mode: 'debug-edit' | 'play'): void {
+      testRuntime.canvasInteractionMode = mode;
+    }
+
     getTouchDebugEditMode(): 'pan' | 'place' | 'break' {
       return this.touchMode;
     }
@@ -895,6 +921,12 @@ vi.mock('./input/controller', () => ({
 
     getPlayerInputTelemetry() {
       return { ...testRuntime.playerMovementIntent };
+    }
+
+    consumePlayerItemUseRequests() {
+      const requests = [...testRuntime.playerItemUseRequests];
+      testRuntime.playerItemUseRequests = [];
+      return requests;
     }
 
     consumeDebugTileEdits() {
@@ -1665,7 +1697,9 @@ describe('main.ts shell state orchestration', () => {
       jumpHeld: false,
       jumpPressed: false
     };
+    testRuntime.canvasInteractionMode = 'debug-edit';
     testRuntime.fixedStepWorldUpdateOrder = [];
+    testRuntime.playerItemUseRequests = [];
     testRuntime.debugTileEdits = [];
     testRuntime.rendererTileId = 0;
     testRuntime.rendererTileIdsByWorldKey.clear();
@@ -1673,6 +1707,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererLiquidLevelsByWorldKey.clear();
     testRuntime.rendererLiquidRenderCardinalMask = null;
     testRuntime.rendererSetTileResult = false;
+    testRuntime.rendererSetTileCalls = [];
     testRuntime.rendererStepLiquidSimulationCallCount = 0;
     testRuntime.rendererStepPlayerStateImpl = null;
     testRuntime.rendererStepPlayerStateRequests = [];
@@ -5399,6 +5434,96 @@ describe('main.ts shell state orchestration', () => {
 
     expect(dispatchKeydown('[', 'BracketLeft').prevented).toBe(true);
     expect(readPersistedDebugEditControlState().brushTileId).toBe(3);
+  });
+
+  it('places a starter dirt block from the selected hotbar slot while the full debug-edit panel is hidden', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(testRuntime.canvasInteractionMode).toBe('play');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 1);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        worldX: 24,
+        worldY: -8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        tileId: 9
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+      itemId: 'dirt-block',
+      amount: 63
+    });
+  });
+
+  it('rejects starter dirt block placement when the new block would overlap the player', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: -1,
+        worldX: 8,
+        worldY: -8,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+      itemId: 'dirt-block',
+      amount: 64
+    });
+  });
+
+  it('keeps canvas click and tap input on the debug-edit path while the full panel is open', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    expect(testRuntime.canvasInteractionMode).toBe('debug-edit');
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 1);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        worldX: 24,
+        worldY: -8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([]);
   });
 
   it('routes touch-panel callbacks and keyboard brush mutations through one shared persisted brush-state commit helper', async () => {
