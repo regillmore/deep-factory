@@ -30,7 +30,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 513. Add a bug-net critter-capture slice after passive-bunny ambient-entity and inventory basics: a non-stackable bug-net hotbar slot, mixed-device swing timing with bunny capture-on-hit rules, bunny item stacks into inventory, and deterministic capture regressions.
 535. Add a dropped-item pickup follow-up after hotbar inventory foundation: stackable world pickup entities, proximity pickup rules, auto-merge into matching or empty hotbar slots, and deterministic save/load regressions for collected stacks.
 536. Add a starter background-wall placement slice after starter building-block placement and inventory basics: stackable dirt-wall hotbar slots, mixed-device enclosed-wall placement against solid blocks or existing walls, stack consumption, and save/load regressions for placed walls plus remaining stack counts.
-547. Add a torch-support collapse follow-up after torch-lighting utility slice and starter building-block placement: removing a torch's supporting solid face should clear the placed torch tile, extinguish its emissive light, and add deterministic support-loss regressions.
+548. Add a torch pickup-refund follow-up after dropped-item pickup follow-up and torch-support collapse: removing a placed torch, including support-collapse clears, should spawn one torch pickup entity and add deterministic refund regressions.
 
 ## Telemetry
 

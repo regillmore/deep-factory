@@ -26,6 +26,13 @@ const hasSolidFaceSupport = (
   isTileSolid(world.getTile(worldTileX, worldTileY + 1), registry) ||
   isTileSolid(world.getTile(worldTileX - 1, worldTileY), registry);
 
+export const hasStarterTorchFaceSupport = (
+  world: StarterTorchPlacementWorldView,
+  worldTileX: number,
+  worldTileY: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): boolean => hasSolidFaceSupport(world, worldTileX, worldTileY, registry);
+
 export const evaluateStarterTorchPlacement = (
   world: StarterTorchPlacementWorldView,
   worldTileX: number,
@@ -33,7 +40,7 @@ export const evaluateStarterTorchPlacement = (
   registry: TileMetadataRegistry = TILE_METADATA
 ): StarterTorchPlacementEvaluation => {
   const occupied = world.getTile(worldTileX, worldTileY) !== 0;
-  const solidFaceSupport = !occupied && hasSolidFaceSupport(world, worldTileX, worldTileY, registry);
+  const solidFaceSupport = !occupied && hasStarterTorchFaceSupport(world, worldTileX, worldTileY, registry);
 
   return {
     occupied,

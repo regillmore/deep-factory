@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './constants';
+import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import { recomputeSunlightFromExposedChunkTops } from './sunlight';
 import { getTileEmissiveLightLevel, parseTileMetadataRegistry } from './tileMetadata';
 import { TileWorld } from './world';
@@ -1130,7 +1131,7 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
   it('lights nearby tunnel tiles when a default torch tile is placed against solid support', () => {
     const world = new TileWorld(0);
     const tunnelWorldTileY = 1;
-    const torchTileId = 10;
+    const torchTileId = STARTER_TORCH_TILE_ID;
 
     for (let worldTileX = 0; worldTileX <= 4; worldTileX += 1) {
       world.setTile(worldTileX, tunnelWorldTileY - 1, 1);
@@ -1146,6 +1147,39 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(world.getLightLevel(1, tunnelWorldTileY)).toBe(12);
     expect(world.getLightLevel(2, tunnelWorldTileY)).toBe(11);
     expect(world.getLightLevel(3, tunnelWorldTileY)).toBe(10);
+    expect(world.getDirtyLightChunkCount()).toBe(0);
+  });
+
+  it('extinguishes placed torch lighting when removing its last supporting solid face clears the torch tile', () => {
+    const world = new TileWorld(0);
+    const torchWorldTileY = 1;
+    const torchWorldTileX = 1;
+    const supportWorldTileX = 0;
+    const adjacentAirWorldTileX = 2;
+
+    for (let worldTileX = 0; worldTileX <= 4; worldTileX += 1) {
+      world.setTile(worldTileX, torchWorldTileY - 2, 1);
+      world.setTile(worldTileX, torchWorldTileY - 1, 0);
+      world.setTile(worldTileX, torchWorldTileY, 0);
+      world.setTile(worldTileX, torchWorldTileY + 1, 0);
+    }
+    world.setTile(supportWorldTileX, torchWorldTileY, 1);
+    world.setTile(torchWorldTileX, torchWorldTileY, STARTER_TORCH_TILE_ID);
+
+    recomputeSunlightFromExposedChunkTops(world);
+    expect(world.getLightLevel(torchWorldTileX, torchWorldTileY)).toBe(
+      getTileEmissiveLightLevel(STARTER_TORCH_TILE_ID)
+    );
+    expect(world.getLightLevel(adjacentAirWorldTileX, torchWorldTileY)).toBe(
+      getTileEmissiveLightLevel(STARTER_TORCH_TILE_ID) - 1
+    );
+
+    world.setTile(supportWorldTileX, torchWorldTileY, 0);
+    recomputeSunlightFromExposedChunkTops(world);
+
+    expect(world.getTile(torchWorldTileX, torchWorldTileY)).toBe(0);
+    expect(world.getLightLevel(torchWorldTileX, torchWorldTileY)).toBe(0);
+    expect(world.getLightLevel(adjacentAirWorldTileX, torchWorldTileY)).toBe(0);
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
 

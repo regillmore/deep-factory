@@ -18,7 +18,13 @@ import type {
   EditedChunkSnapshotState,
   ResidentChunkSnapshot
 } from './chunkSnapshot';
-import { doesTileBlockLight, getTileEmissiveLightLevel, getTileLiquidKind } from './tileMetadata';
+import { hasStarterTorchFaceSupport, STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
+import {
+  doesTileBlockLight,
+  getTileEmissiveLightLevel,
+  getTileLiquidKind,
+  isTileSolid
+} from './tileMetadata';
 import type { TileMetadataRegistry } from './tileMetadata';
 import type { Chunk, ChunkCoord } from './types';
 
@@ -94,6 +100,13 @@ const createLiquidSimulationStats = (): LiquidSimulationStats => ({
   downwardTransfersApplied: 0,
   sidewaysTransfersApplied: 0
 });
+
+const CARDINAL_NEIGHBOR_OFFSETS = [
+  { x: 0, y: -1 },
+  { x: 1, y: 0 },
+  { x: 0, y: 1 },
+  { x: -1, y: 0 }
+] as const;
 
 export const resolveLiquidStepPhaseSummary = (
   stats: LiquidSimulationStats
@@ -441,6 +454,19 @@ export class TileWorld {
     return chunk.tiles[toTileIndex(localX, localY)] ?? 0;
   }
 
+  private getResidentOrEditedTileId(worldTileX: number, worldTileY: number): number | null {
+    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+    const key = chunkKey(chunkX, chunkY);
+    const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
+    const tileIndex = toTileIndex(localX, localY);
+    const residentTileId = this.getResidentTileId(worldTileX, worldTileY);
+    if (residentTileId !== null) {
+      return residentTileId;
+    }
+
+    return this.editedChunkTiles.get(key)?.get(tileIndex) ?? null;
+  }
+
   private getResidentLiquidLevel(worldTileX: number, worldTileY: number): number | null {
     const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
     const chunk = this.getResidentChunk(chunkX, chunkY);
@@ -685,6 +711,27 @@ export class TileWorld {
     }
   }
 
+  private clearUnsupportedAdjacentStarterTorches(
+    worldTileX: number,
+    worldTileY: number,
+    emitTileEditEvent: boolean
+  ): void {
+    for (const offset of CARDINAL_NEIGHBOR_OFFSETS) {
+      const adjacentWorldTileX = worldTileX + offset.x;
+      const adjacentWorldTileY = worldTileY + offset.y;
+      if (
+        this.getResidentOrEditedTileId(adjacentWorldTileX, adjacentWorldTileY) !== STARTER_TORCH_TILE_ID
+      ) {
+        continue;
+      }
+      if (hasStarterTorchFaceSupport(this, adjacentWorldTileX, adjacentWorldTileY)) {
+        continue;
+      }
+
+      this.commitTileState(adjacentWorldTileX, adjacentWorldTileY, 0, 0, emitTileEditEvent);
+    }
+  }
+
   private activateLiquidChunk(key: string): void {
     this.activeLiquidChunkKeys.add(key);
     this.liquidChunkQuietStepCounts.set(key, 0);
@@ -882,8 +929,15 @@ export class TileWorld {
   }
 
   setTileState(worldTileX: number, worldTileY: number, tileId: number, liquidLevel: number): boolean {
-    const changed = this.commitTileState(worldTileX, worldTileY, tileId, liquidLevel, true).changed;
+    const result = this.commitTileState(worldTileX, worldTileY, tileId, liquidLevel, true);
+    const changed = result.changed;
     if (changed) {
+      if (
+        result.tileIdChanged &&
+        isTileSolid(result.previousTileId) !== isTileSolid(tileId)
+      ) {
+        this.clearUnsupportedAdjacentStarterTorches(worldTileX, worldTileY, true);
+      }
       this.wakeNearbyResidentLiquidChunks(worldTileX, worldTileY);
     }
 

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Starter torches collapse from authoritative tile edits when support disappears
+
+- Decision: `TileWorld.setTileState()` now automatically clears adjacent starter torch tiles when a solid-face edit leaves them without any remaining solid cardinal support.
+- Reason: Torch attachment needs one authoritative cleanup rule that stays consistent across debug edits, renderer-backed world mutation, and later replay-oriented tile state paths without depending on callers to remember a second pass.
+- Consequence: Future support-bound non-solid placeables should either reuse this world-owned support-collapse pattern or explicitly document a different persistence rule.
+
 ### 2026-03-14: Renderer snapshot loads refresh resident lighting from tile state
 
 - Decision: `Renderer.loadWorldSnapshot()` now invalidates and recomputes resident chunk lighting from the restored tile state before attaching the replacement world.

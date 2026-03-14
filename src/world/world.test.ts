@@ -4,6 +4,7 @@ import { encodeResidentChunkSnapshot } from './chunkSnapshot';
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL } from './constants';
 import type { ChunkBounds } from './chunkMath';
 import { toTileIndex } from './chunkMath';
+import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import { getTileEmissiveLightLevel, parseTileMetadataRegistry } from './tileMetadata';
 import { didTileLightingStateChange, resolveLiquidStepPhaseSummary, TileWorld } from './world';
 import type { TileEditEvent } from './world';
@@ -102,6 +103,52 @@ describe('TileWorld', () => {
         previousTileId,
         previousLiquidLevel: 0,
         tileId: 3,
+        liquidLevel: 0
+      }
+    ]);
+  });
+
+  it('clears a neighboring torch and emits a second edit when its last solid face support is removed', () => {
+    const world = new TileWorld(0);
+    const events: TileEditEvent[] = [];
+
+    world.setTile(1, 0, 0);
+    world.setTile(0, 1, 0);
+    world.setTile(1, 1, 0);
+    world.setTile(2, 1, 0);
+    world.setTile(1, 2, 1);
+    expect(world.setTile(1, 1, STARTER_TORCH_TILE_ID)).toBe(true);
+
+    world.onTileEdited((event) => {
+      events.push(event);
+    });
+
+    expect(world.setTile(1, 2, 0)).toBe(true);
+
+    expect(world.getTile(1, 1)).toBe(0);
+    expect(events).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: 2,
+        chunkX: 0,
+        chunkY: 0,
+        localX: 1,
+        localY: 2,
+        previousTileId: 1,
+        previousLiquidLevel: 0,
+        tileId: 0,
+        liquidLevel: 0
+      },
+      {
+        worldTileX: 1,
+        worldTileY: 1,
+        chunkX: 0,
+        chunkY: 0,
+        localX: 1,
+        localY: 1,
+        previousTileId: STARTER_TORCH_TILE_ID,
+        previousLiquidLevel: 0,
+        tileId: 0,
         liquidLevel: 0
       }
     ]);

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-14
 
+- Task: Add a torch-support collapse follow-up after torch-lighting utility slice and starter building-block placement.
+- Changes: Updated [src/world/starterTorchPlacement.ts](../src/world/starterTorchPlacement.ts) plus [src/world/world.ts](../src/world/world.ts) so starter torch support checks are shared and authoritative tile edits now clear adjacent torches when their last solid face disappears, expanded [src/world/world.test.ts](../src/world/world.test.ts) and [src/world/sunlight.test.ts](../src/world/sunlight.test.ts) with support-loss and extinguished-light regressions, removed completed task `547` from [docs/NEXT.md](docs/NEXT.md), added replacement task `548`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/world.test.ts src/world/sunlight.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a torch-resume lighting follow-up after torch-lighting utility slice and save/load.
 - Changes: Updated [src/gl/renderer.ts](../src/gl/renderer.ts) so renderer world-snapshot loads now invalidate and recompute resident lighting from current tile state before attaching the restored world, added a stale-light-cache regression in [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) that verifies placed torch emissive lighting is restored immediately on snapshot load, removed completed task `546` from [docs/NEXT.md](docs/NEXT.md), added replacement task `547`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
