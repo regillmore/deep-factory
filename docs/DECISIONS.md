@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Default non-debug hotbar placement reach uses a five-tile body-to-cell gap
+
+- Decision: Hidden-panel hotbar tile placement now uses a shared default reach of five tiles (`80px`), measured as the shortest gap from the player's body AABB to the target tile cell.
+- Reason: Measuring from the player body instead of a single anchor point keeps desktop and touch placement reach intuitive near the player's silhouette while leaving one deterministic contract for later out-of-range preview feedback and range halos.
+- Consequence: Future non-debug placement-range bonuses, visuals, and blocked-reason feedback should extend the shared body-to-cell helper instead of inventing item-specific reach math in `main.ts` or individual placement validators.
+
 ### 2026-03-14: Placed-tile refund pickups should follow authoritative tile-edit notifications
 
 - Decision: Torch refund pickups now spawn from renderer-forwarded `TileWorld` edit notifications whenever a placed torch tile is replaced or cleared, including support-collapse edits.

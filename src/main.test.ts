@@ -5783,6 +5783,29 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('shows a blocked hotbar placement preview when the hovered tile is beyond the default placement range', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(20, 0), 1);
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 20, y: -1 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 20,
+      tileY: -1,
+      canPlace: false,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false
+    });
+  });
+
   it('hides the hotbar placement preview for unsupported item slots and while the full debug-edit panel is open', async () => {
     await import('./main');
     await flushBootstrap();
@@ -5874,6 +5897,35 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'torch',
       amount: 19
+    });
+  });
+
+  it('rejects starter hotbar placement requests that target tiles beyond the default placement range', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(20, 0), 1);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 20,
+        worldTileY: -1,
+        worldX: 328,
+        worldY: -8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+      itemId: 'dirt-block',
+      amount: 64
     });
   });
 

@@ -218,6 +218,7 @@ import {
   setPlayerInventorySelectedHotbarSlot,
   type PlayerInventoryState
 } from './world/playerInventory';
+import { evaluatePlayerHotbarTilePlacementRange } from './world/playerHotbarPlacementRange';
 import {
   evaluateStarterBlockPlacement,
   STARTER_BUILDING_BLOCK_ITEM_ID,
@@ -2788,11 +2789,17 @@ const bootstrap = async (): Promise<void> => {
     if (placement === null) {
       return null;
     }
+    const placementRange = evaluatePlayerHotbarTilePlacementRange(
+      standalonePlayerState,
+      worldTileX,
+      worldTileY
+    );
 
     return {
       tileX: worldTileX,
       tileY: worldTileY,
-      ...placement
+      ...placement,
+      canPlace: placement.canPlace && placementRange.withinRange
     };
   };
 

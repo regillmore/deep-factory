@@ -31,9 +31,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 536. Add a starter background-wall placement slice after starter building-block placement and inventory basics: stackable dirt-wall hotbar slots, mixed-device enclosed-wall placement against solid blocks or existing walls, stack consumption, and save/load regressions for placed walls plus remaining stack counts.
 549. Add a same-item dropped-stack merge follow-up after dropped-item pickup: dropping a stack onto a nearby matching world pickup should consolidate into one combined entity stack, and add deterministic merge regressions.
 550. Add a rope pickup-refund follow-up after rope traversal utility slice and dropped-item pickup: removing placed rope tiles should spawn rope pickup entities, and add deterministic refund regressions plus snapshot coverage for the returned rope stacks.
-551. Establish an intial/default maximum non-debug placement range for player-held hotbar tiles.
-552. Update the non-debug hotbar tile placement preview to differentiate when the previewed tile placement is in/out of range.
-553. When a placeable item is selected in the hotbar, indicate the maximum placement range with a subtle halo around the player.
 
 ## Telemetry
 
