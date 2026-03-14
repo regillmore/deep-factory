@@ -84,6 +84,7 @@ export interface DebugEditStatusStripState {
   playerNearbyLightSourceLocalTile?: { x: number; y: number } | null;
   playerCeilingBonkHoldActive?: boolean | null;
   playerHealth?: number | null;
+  playerFallDamageRecoverySecondsRemaining?: number | null;
   playerHostileContactInvulnerabilitySecondsRemaining?: number | null;
   hostileSlimeActiveCount?: number | null;
   hostileSlimeNextSpawnTicksRemaining?: number | null;
@@ -106,6 +107,7 @@ export interface DebugEditStatusStripState {
   playerGroundedTransition?: DebugEditStatusStripPlayerGroundedTransitionTelemetry | null;
   playerFacingTransition?: DebugEditStatusStripPlayerFacingTransitionTelemetry | null;
   playerRespawn?: DebugEditStatusStripPlayerRespawnTelemetry | null;
+  playerLandingDamageEvent?: DebugEditStatusStripPlayerLandingDamageEventTelemetry | null;
   playerHostileContactEvent?: DebugEditStatusStripPlayerHostileContactEventTelemetry | null;
   playerWallContactTransition?: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null;
   playerCeilingContactTransition?: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null;
@@ -205,6 +207,10 @@ export interface DebugEditStatusStripPlayerRespawnTelemetry {
 export interface DebugEditStatusStripPlayerHostileContactEventTelemetry {
   damageApplied: number;
   blockedByInvulnerability: boolean;
+}
+
+export interface DebugEditStatusStripPlayerLandingDamageEventTelemetry {
+  damageApplied: number;
 }
 
 export interface DebugEditStatusStripPlayerSpawnTelemetry {
@@ -1387,6 +1393,16 @@ const formatLiveHealthText = (playerHealth: number | null): string | null => {
   return `HealthNow: ${Math.round(playerHealth)}`;
 };
 
+const formatLiveFallRecoveryText = (
+  playerFallDamageRecoverySecondsRemaining: number | null
+): string | null => {
+  if (playerFallDamageRecoverySecondsRemaining === null) {
+    return null;
+  }
+
+  return `FallRecoveryNow: ${playerFallDamageRecoverySecondsRemaining.toFixed(2)}s`;
+};
+
 const formatLiveHostileContactInvulnerabilityText = (
   playerHostileContactInvulnerabilitySecondsRemaining: number | null
 ): string | null => {
@@ -1532,6 +1548,7 @@ const buildPlayerText = (
   playerNearbyLightSourceLocalTile: { x: number; y: number } | null,
   playerCeilingBonkHoldActive: boolean | null,
   playerHealth: number | null,
+  playerFallDamageRecoverySecondsRemaining: number | null,
   playerHostileContactInvulnerabilitySecondsRemaining: number | null,
   hostileSlimeActiveCount: number | null,
   hostileSlimeNextSpawnTicksRemaining: number | null,
@@ -1637,6 +1654,9 @@ const buildPlayerText = (
       : null,
     telemetryVisible('player-combat') ? formatLiveHealthText(playerHealth) : null,
     telemetryVisible('player-combat')
+      ? formatLiveFallRecoveryText(playerFallDamageRecoverySecondsRemaining)
+      : null,
+    telemetryVisible('player-combat')
       ? formatLiveHostileContactInvulnerabilityText(
           playerHostileContactInvulnerabilitySecondsRemaining
         )
@@ -1728,6 +1748,16 @@ const formatHostileContactEventText = (
   );
 };
 
+const formatLandingDamageEventText = (
+  playerLandingDamageEvent: DebugEditStatusStripPlayerLandingDamageEventTelemetry | null
+): string | null => {
+  if (!playerLandingDamageEvent) {
+    return null;
+  }
+
+  return `LandingHit: damage ${Math.max(0, Math.round(playerLandingDamageEvent.damageApplied))}`;
+};
+
 const formatWallContactTransitionEventText = (
   playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null
 ): string | null => {
@@ -1768,6 +1798,7 @@ const buildEventText = (
   playerGroundedTransition: DebugEditStatusStripPlayerGroundedTransitionTelemetry | null,
   playerFacingTransition: DebugEditStatusStripPlayerFacingTransitionTelemetry | null,
   playerRespawn: DebugEditStatusStripPlayerRespawnTelemetry | null,
+  playerLandingDamageEvent: DebugEditStatusStripPlayerLandingDamageEventTelemetry | null,
   playerHostileContactEvent: DebugEditStatusStripPlayerHostileContactEventTelemetry | null,
   playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null,
   playerCeilingContactTransition: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null,
@@ -1777,6 +1808,9 @@ const buildEventText = (
     telemetryVisible('player-events') ? formatGroundedTransitionEventText(playerGroundedTransition) : null,
     telemetryVisible('player-events') ? formatFacingTransitionEventText(playerFacingTransition) : null,
     telemetryVisible('player-events') ? formatRespawnEventText(playerRespawn) : null,
+    telemetryVisible('player-combat')
+      ? formatLandingDamageEventText(playerLandingDamageEvent)
+      : null,
     telemetryVisible('player-combat') ? formatHostileContactEventText(playerHostileContactEvent) : null,
     telemetryVisible('player-events')
       ? formatWallContactTransitionEventText(playerWallContactTransition)
@@ -2297,6 +2331,8 @@ export const buildDebugEditStatusStripModel = (
   const playerNearbyLightSourceLocalTile = state.playerNearbyLightSourceLocalTile ?? null;
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
   const playerHealth = state.playerHealth ?? null;
+  const playerFallDamageRecoverySecondsRemaining =
+    state.playerFallDamageRecoverySecondsRemaining ?? null;
   const playerHostileContactInvulnerabilitySecondsRemaining =
     state.playerHostileContactInvulnerabilitySecondsRemaining ?? null;
   const hostileSlimeActiveCount = state.hostileSlimeActiveCount ?? null;
@@ -2321,6 +2357,7 @@ export const buildDebugEditStatusStripModel = (
   const playerGroundedTransition = state.playerGroundedTransition ?? null;
   const playerFacingTransition = state.playerFacingTransition ?? null;
   const playerRespawn = state.playerRespawn ?? null;
+  const playerLandingDamageEvent = state.playerLandingDamageEvent ?? null;
   const playerHostileContactEvent = state.playerHostileContactEvent ?? null;
   const playerWallContactTransition = state.playerWallContactTransition ?? null;
   const playerCeilingContactTransition = state.playerCeilingContactTransition ?? null;
@@ -2379,6 +2416,7 @@ export const buildDebugEditStatusStripModel = (
       playerNearbyLightSourceLocalTile,
       playerCeilingBonkHoldActive,
       playerHealth,
+      playerFallDamageRecoverySecondsRemaining,
       playerHostileContactInvulnerabilitySecondsRemaining,
       hostileSlimeActiveCount,
       hostileSlimeNextSpawnTicksRemaining,
@@ -2404,6 +2442,7 @@ export const buildDebugEditStatusStripModel = (
       playerGroundedTransition,
       playerFacingTransition,
       playerRespawn,
+      playerLandingDamageEvent,
       playerHostileContactEvent,
       playerWallContactTransition,
       playerCeilingContactTransition,

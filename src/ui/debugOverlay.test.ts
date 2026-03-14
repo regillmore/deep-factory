@@ -150,6 +150,7 @@ describe('formatDebugOverlayText', () => {
         position: { x: 72.5, y: -48.25 },
         velocity: { x: 3, y: 4 },
         health: 62,
+        fallDamageRecoverySecondsRemaining: 0.35,
         hostileContactInvulnerabilitySecondsRemaining: 0.75,
         aabb: {
           min: { x: 18.5, y: -40.25 },
@@ -200,6 +201,9 @@ describe('formatDebugOverlayText', () => {
       playerGroundedTransition: null,
       playerFacingTransition: null,
       playerRespawn: null,
+      playerLandingDamageEvent: {
+        damageApplied: 3
+      },
       playerHostileContactEvent: {
         damageApplied: 15,
         blockedByInvulnerability: false
@@ -218,6 +222,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).not.toContain('\nSpawnSupport:');
     expect(text).not.toContain('\nSpawnLiquid:');
     expect(text).not.toContain('\nCombat:');
+    expect(text).not.toContain('\nLandingEvt:');
     expect(text).not.toContain('\nContactEvt:');
     expect(text).not.toContain('\nSlime:');
     expect(text).not.toContain('\nAnimMesh:');
@@ -265,6 +270,7 @@ describe('formatDebugOverlayText', () => {
         position: { x: 72.5, y: -48.25 },
         velocity: { x: 3, y: 4 },
         health: 62,
+        fallDamageRecoverySecondsRemaining: 0.35,
         hostileContactInvulnerabilitySecondsRemaining: 0.75,
         aabb: {
           min: { x: 18.5, y: -40.25 },
@@ -315,6 +321,9 @@ describe('formatDebugOverlayText', () => {
       playerGroundedTransition: null,
       playerFacingTransition: null,
       playerRespawn: null,
+      playerLandingDamageEvent: {
+        damageApplied: 3
+      },
       playerHostileContactEvent: {
         damageApplied: 15,
         blockedByInvulnerability: false
@@ -325,7 +334,8 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain('\nSpawn: T:4,-2 | W:72.00,-32.00');
-    expect(text).toContain('\nCombat: health:62');
+    expect(text).toContain('\nCombat: health:62 | fallRecovery:0.35s | contactInvuln:0.75s');
+    expect(text).toContain('\nLandingEvt: damage:3');
     expect(text).toContain('\nContactEvt: damage:15 | blocked:off');
     expect(text).toContain('\nSlime: active:2');
     expect(text).toContain('\nAtlas: authored | 96x64');
@@ -931,6 +941,49 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain('\nContactEvt: damage:15 | blocked:off');
+  });
+
+  it('shows the latest hard-landing event together with the live fall-recovery cooldown', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      spawn: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerLandingDamageEvent: {
+        damageApplied: 3
+      },
+      playerHostileContactEvent: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: null,
+      player: {
+        position: { x: 12, y: 0 },
+        velocity: { x: 0, y: 0 },
+        health: 97,
+        fallDamageRecoverySecondsRemaining: 0.35,
+        hostileContactInvulnerabilitySecondsRemaining: 0,
+        aabb: {
+          min: { x: 6, y: -28 },
+          max: { x: 18, y: 0 },
+          size: { x: 12, y: 28 }
+        },
+        grounded: true,
+        facing: 'right',
+        contacts: {
+          support: null,
+          wall: null,
+          ceiling: null
+        }
+      },
+      pinned: null
+    });
+
+    expect(text).toContain('\nCombat: health:97 | fallRecovery:0.35s | contactInvuln:0.00s');
+    expect(text).toContain('\nLandingEvt: damage:3');
   });
 
   it('shows the latest hostile-contact event when overlap is blocked by invulnerability', () => {

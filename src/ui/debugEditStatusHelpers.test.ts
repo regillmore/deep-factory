@@ -176,6 +176,10 @@ describe('buildDebugEditStatusStripModel', () => {
       playerNearbyLightSourceChunk: { x: 0, y: 0 },
       playerNearbyLightSourceLocalTile: { x: 2, y: 2 },
       playerHealth: 62,
+      playerFallDamageRecoverySecondsRemaining: 0.35,
+      playerLandingDamageEvent: {
+        damageApplied: 3
+      },
       hostileSlimeActiveCount: 2,
       residentActiveLiquidChunks: 4,
       residentSleepingLiquidChunks: 2,
@@ -197,10 +201,12 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.hoverText).toBe('Inspect details hidden by telemetry controls');
     expect(model.inspectText).toBe('Inspect: Pinned @ 8,-6');
     expect(model.playerText).not.toContain('HealthNow');
+    expect(model.playerText).not.toContain('FallRecoveryNow');
     expect(model.playerText).not.toContain('SpawnNow');
     expect(model.playerText).not.toContain('SpawnSupportNow');
     expect(model.playerText).not.toContain('SlimeActiveNow');
     expect(model.playerText).not.toContain('LiquidChunksNow');
+    expect(model.eventText).toBeNull();
   });
 
   it('restores gated spawn, combat, hostile-slime, world-liquid, and inspect lines when telemetry resets to the default catalog', () => {
@@ -255,6 +261,10 @@ describe('buildDebugEditStatusStripModel', () => {
       playerNearbyLightSourceChunk: { x: 0, y: 0 },
       playerNearbyLightSourceLocalTile: { x: 2, y: 2 },
       playerHealth: 62,
+      playerFallDamageRecoverySecondsRemaining: 0.35,
+      playerLandingDamageEvent: {
+        damageApplied: 3
+      },
       hostileSlimeActiveCount: 2,
       residentActiveLiquidChunks: 4,
       residentSleepingLiquidChunks: 2,
@@ -270,10 +280,12 @@ describe('buildDebugEditStatusStripModel', () => {
     });
 
     expect(model.playerText).toContain('HealthNow: 62');
+    expect(model.playerText).toContain('FallRecoveryNow: 0.35s');
     expect(model.playerText).toContain('SpawnNow: safe | tile 4,-2');
     expect(model.playerText).toContain('SpawnSupportNow: tile 4,-1');
     expect(model.playerText).toContain('SlimeActiveNow: 2');
     expect(model.playerText).toContain('LiquidChunksNow: awake:4');
+    expect(model.eventText).toBe('LandingHit: damage 3');
     expect(model.hoverText).toContain('Hover: lava pool (#9)');
     expect(model.inspectText).toBe('Inspect: Pinned @ 8,-6');
   });
@@ -1560,7 +1572,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose, live health, and hostile-contact invulnerability telemetry on separate player lines', () => {
+  it('keeps pose, live health, fall recovery, and hostile-contact invulnerability telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -1570,14 +1582,33 @@ describe('buildDebugEditStatusStripModel', () => {
       desktopInspectPinArmed: false,
       playerPlaceholderPoseLabel: 'grounded-idle',
       playerHealth: 85,
+      playerFallDamageRecoverySecondsRemaining: 0.35,
       playerHostileContactInvulnerabilitySecondsRemaining: 0.75,
       preview: createEmptyPreviewState()
     });
 
     expect(model.playerText).toBe(
-      'Pose: grounded-idle\nHealthNow: 85\nContactInvulnNow: 0.75s'
+      'Pose: grounded-idle\nHealthNow: 85\nFallRecoveryNow: 0.35s\nContactInvulnNow: 0.75s'
     );
     expect(model.eventText).toBeNull();
+  });
+
+  it('shows the latest hard-landing hit on its own event line', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerLandingDamageEvent: {
+        damageApplied: 3
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBeNull();
+    expect(model.eventText).toBe('LandingHit: damage 3');
   });
 
   it('shows the latest hostile-contact hit event on its own event line', () => {

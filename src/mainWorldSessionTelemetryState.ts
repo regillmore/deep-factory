@@ -98,7 +98,7 @@ export const WORLD_SESSION_TELEMETRY_TYPE_DEFINITIONS = [
     id: 'player-combat',
     collectionId: 'player',
     label: 'Combat',
-    description: 'Health, contact-invulnerability, and hostile-contact readouts.'
+    description: 'Health, fall-recovery, contact-invulnerability, and damage-event readouts.'
   },
   {
     id: 'player-camera',

@@ -345,12 +345,16 @@ type StandalonePlayerFixedStepContactSnapshot = {
   previousPlayerContacts: PlayerCollisionContacts;
   nextPlayerContacts: PlayerCollisionContacts;
 };
+type PlayerLandingDamageEvent = {
+  damageApplied: number;
+};
 type StandalonePlayerFixedStepResult = {
   previousPlayerState: PlayerState;
   nextPlayerState: PlayerState;
   nextDeathState: PlayerDeathState | null;
   contactSnapshot: StandalonePlayerFixedStepContactSnapshot;
   transitionSnapshot: StandalonePlayerFixedStepTransitionSnapshot;
+  landingDamageEvent: PlayerLandingDamageEvent | null;
   respawnEvent: PlayerRespawnEvent | null;
   renderPresentationState: StandalonePlayerRenderPresentationState;
 };
@@ -397,6 +401,7 @@ type StandalonePlayerRenderFrameStatusStripTelemetry = Pick<
   | 'playerCameraZoom'
   | 'playerCeilingBonkHoldActive'
   | 'playerHealth'
+  | 'playerFallDamageRecoverySecondsRemaining'
   | 'playerHostileContactInvulnerabilitySecondsRemaining'
   | 'playerGrounded'
   | 'playerFacing'
@@ -437,6 +442,7 @@ type StandalonePlayerRenderFrameStatusStripPlayerEventTelemetry = Pick<
   | 'playerGroundedTransition'
   | 'playerFacingTransition'
   | 'playerRespawn'
+  | 'playerLandingDamageEvent'
   | 'playerHostileContactEvent'
   | 'playerWallContactTransition'
   | 'playerCeilingContactTransition'
@@ -1372,6 +1378,7 @@ const bootstrap = async (): Promise<void> => {
   let lastPlayerGroundedTransitionEvent: PlayerGroundedTransitionEvent | null = null;
   let lastPlayerFacingTransitionEvent: PlayerFacingTransitionEvent | null = null;
   let lastPlayerRespawnEvent: PlayerRespawnEvent | null = null;
+  let lastPlayerLandingDamageEvent: PlayerLandingDamageEvent | null = null;
   let lastHostileSlimePlayerContactEvent: HostileSlimePlayerContactEvent | null = null;
   let lastPlayerWallContactTransitionEvent: PlayerWallContactTransitionEvent | null = null;
   let lastPlayerCeilingContactTransitionEvent: PlayerCeilingContactTransitionEvent | null = null;
@@ -2093,6 +2100,7 @@ const bootstrap = async (): Promise<void> => {
     lastPlayerGroundedTransitionEvent = null;
     lastPlayerFacingTransitionEvent = null;
     lastPlayerRespawnEvent = respawnEvent;
+    lastPlayerLandingDamageEvent = null;
     lastHostileSlimePlayerContactEvent = null;
     lastPlayerWallContactTransitionEvent = null;
     lastPlayerCeilingContactTransitionEvent = null;
@@ -2110,6 +2118,42 @@ const bootstrap = async (): Promise<void> => {
   const readStandalonePlayerHealthForRespawnDetection = (playerState: PlayerState): number => {
     const health = (playerState as { health?: unknown }).health;
     return typeof health === 'number' && Number.isFinite(health) ? health : 1;
+  };
+  const readStandalonePlayerFallDamageRecoverySecondsRemaining = (
+    playerState: PlayerState
+  ): number => {
+    const fallDamageRecoverySecondsRemaining = (
+      playerState as { fallDamageRecoverySecondsRemaining?: unknown }
+    ).fallDamageRecoverySecondsRemaining;
+    return typeof fallDamageRecoverySecondsRemaining === 'number' &&
+      Number.isFinite(fallDamageRecoverySecondsRemaining)
+      ? fallDamageRecoverySecondsRemaining
+      : 0;
+  };
+  const resolveStandalonePlayerLandingDamageEvent = (
+    previousPlayerState: PlayerState,
+    nextPlayerState: PlayerState
+  ): PlayerLandingDamageEvent | null => {
+    if (previousPlayerState.grounded || !nextPlayerState.grounded) {
+      return null;
+    }
+
+    if (readStandalonePlayerFallDamageRecoverySecondsRemaining(nextPlayerState) <= 0) {
+      return null;
+    }
+
+    const damageApplied = Math.max(
+      0,
+      Math.round(
+        readStandalonePlayerHealthForRespawnDetection(previousPlayerState) -
+          readStandalonePlayerHealthForRespawnDetection(nextPlayerState)
+      )
+    );
+    return damageApplied > 0
+      ? {
+          damageApplied
+        }
+      : null;
   };
   const createStandalonePlayerDeathHoldState = (playerState: PlayerState): PlayerState => ({
     ...playerState,
@@ -2244,6 +2288,10 @@ const bootstrap = async (): Promise<void> => {
       currentPlayerDeathState,
       fixedDt
     );
+    const landingDamageEvent = resolveStandalonePlayerLandingDamageEvent(
+      previousPlayerState,
+      nextPlayerState
+    );
     const contactSnapshot = createStandalonePlayerFixedStepContactSnapshot({
       previousPlayerState,
       nextPlayerState
@@ -2265,6 +2313,7 @@ const bootstrap = async (): Promise<void> => {
       contactSnapshot,
       respawnEvent,
       transitionSnapshot,
+      landingDamageEvent,
       renderPresentationState: createStandalonePlayerRenderPresentationStateForFixedStepResult(
         contactSnapshot.nextPlayerContacts,
         transitionSnapshot,
@@ -2277,6 +2326,9 @@ const bootstrap = async (): Promise<void> => {
   const applyStandalonePlayerFixedStepResult = (
     playerFixedStepResult: StandalonePlayerFixedStepResult
   ): void => {
+    if (playerFixedStepResult.landingDamageEvent !== null) {
+      lastPlayerLandingDamageEvent = playerFixedStepResult.landingDamageEvent;
+    }
     if (playerFixedStepResult.respawnEvent !== null) {
       resetStandalonePlayerTransitionState(playerFixedStepResult.respawnEvent);
       setStandalonePlayerDeathState(null);
@@ -3439,6 +3491,16 @@ const bootstrap = async (): Promise<void> => {
         : false;
     const playerHealth =
       playerState === null ? null : readOptionalFiniteNumber((playerState as { health?: unknown }).health);
+    const playerFallDamageRecoverySecondsRemaining =
+      playerState === null
+        ? null
+        : readOptionalFiniteNumber(
+            (
+              playerState as {
+                fallDamageRecoverySecondsRemaining?: unknown;
+              }
+            ).fallDamageRecoverySecondsRemaining
+          );
     const playerHostileContactInvulnerabilitySecondsRemaining =
       playerState === null
         ? null
@@ -3556,6 +3618,7 @@ const bootstrap = async (): Promise<void> => {
                 grounded: playerState.grounded,
                 facing: playerState.facing,
                 health: playerHealth,
+                fallDamageRecoverySecondsRemaining: playerFallDamageRecoverySecondsRemaining,
                 hostileContactInvulnerabilitySecondsRemaining:
                   playerHostileContactInvulnerabilitySecondsRemaining,
                 contacts: {
@@ -3629,6 +3692,7 @@ const bootstrap = async (): Promise<void> => {
         playerCeilingBonkHoldActive:
           playerState === null ? null : standalonePlayerCeilingBonkActive,
         playerHealth,
+        playerFallDamageRecoverySecondsRemaining,
         playerHostileContactInvulnerabilitySecondsRemaining,
         playerGrounded: playerState?.grounded ?? null,
         playerFacing: playerState?.facing ?? null,
@@ -3782,6 +3846,7 @@ const bootstrap = async (): Promise<void> => {
       playerNearbyLightSourceLocalTile: null,
       playerCeilingBonkHoldActive: null,
       playerHealth: null,
+      playerFallDamageRecoverySecondsRemaining: null,
       playerHostileContactInvulnerabilitySecondsRemaining: null,
       playerGrounded: null,
       playerFacing: null,
@@ -3828,6 +3893,7 @@ const bootstrap = async (): Promise<void> => {
       playerGroundedTransition: null,
       playerFacingTransition: null,
       playerRespawn: null,
+      playerLandingDamageEvent: null,
       playerHostileContactEvent: null,
       playerWallContactTransition: null,
       playerCeilingContactTransition: null
@@ -4037,6 +4103,7 @@ const bootstrap = async (): Promise<void> => {
           playerGroundedTransition: lastPlayerGroundedTransitionEvent,
           playerFacingTransition: lastPlayerFacingTransitionEvent,
           playerRespawn: lastPlayerRespawnEvent,
+          playerLandingDamageEvent: lastPlayerLandingDamageEvent,
           playerHostileContactEvent: lastHostileSlimePlayerContactEvent,
           playerWallContactTransition: lastPlayerWallContactTransitionEvent,
           playerCeilingContactTransition: lastPlayerCeilingContactTransitionEvent
@@ -4130,6 +4197,8 @@ const bootstrap = async (): Promise<void> => {
         debugStatusStripPlayerTelemetry.playerNearbyLightSourceLocalTile,
       playerCeilingBonkHoldActive: debugStatusStripPlayerTelemetry.playerCeilingBonkHoldActive,
       playerHealth: debugStatusStripPlayerTelemetry.playerHealth,
+      playerFallDamageRecoverySecondsRemaining:
+        debugStatusStripPlayerTelemetry.playerFallDamageRecoverySecondsRemaining,
       playerHostileContactInvulnerabilitySecondsRemaining:
         debugStatusStripPlayerTelemetry.playerHostileContactInvulnerabilitySecondsRemaining,
       hostileSlimeActiveCount: debugStatusStripHostileSlimeTelemetry.hostileSlimeActiveCount,
@@ -4155,6 +4224,7 @@ const bootstrap = async (): Promise<void> => {
       playerGroundedTransition: debugStatusStripPlayerEventTelemetry.playerGroundedTransition,
       playerFacingTransition: debugStatusStripPlayerEventTelemetry.playerFacingTransition,
       playerRespawn: debugStatusStripPlayerEventTelemetry.playerRespawn,
+      playerLandingDamageEvent: debugStatusStripPlayerEventTelemetry.playerLandingDamageEvent,
       playerHostileContactEvent: debugStatusStripPlayerEventTelemetry.playerHostileContactEvent,
       playerWallContactTransition: debugStatusStripPlayerEventTelemetry.playerWallContactTransition,
       playerCeilingContactTransition:
@@ -4184,6 +4254,7 @@ const bootstrap = async (): Promise<void> => {
       playerGroundedTransition: lastPlayerGroundedTransitionEvent,
       playerFacingTransition: lastPlayerFacingTransitionEvent,
       playerRespawn: lastPlayerRespawnEvent,
+      playerLandingDamageEvent: lastPlayerLandingDamageEvent,
       playerHostileContactEvent: lastHostileSlimePlayerContactEvent,
       playerWallContactTransition: lastPlayerWallContactTransitionEvent,
       playerCeilingContactTransition: lastPlayerCeilingContactTransitionEvent,

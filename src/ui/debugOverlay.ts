@@ -209,6 +209,7 @@ export interface DebugOverlayPlayerTelemetry {
   position: { x: number; y: number };
   velocity: { x: number; y: number };
   health?: number | null;
+  fallDamageRecoverySecondsRemaining?: number | null;
   hostileContactInvulnerabilitySecondsRemaining?: number | null;
   aabb: {
     min: { x: number; y: number };
@@ -283,6 +284,10 @@ export interface DebugOverlayPlayerHostileContactEventTelemetry {
   blockedByInvulnerability: boolean;
 }
 
+export interface DebugOverlayPlayerLandingDamageEventTelemetry {
+  damageApplied: number;
+}
+
 export interface DebugOverlayPlayerWallContactTransitionTelemetry {
   kind: PlayerWallContactTransitionKind;
   tile: { x: number; y: number; id: number; side: 'left' | 'right' };
@@ -315,6 +320,7 @@ export interface DebugOverlayInspectState {
   playerGroundedTransition: DebugOverlayPlayerGroundedTransitionTelemetry | null;
   playerFacingTransition: DebugOverlayPlayerFacingTransitionTelemetry | null;
   playerRespawn: DebugOverlayPlayerRespawnTelemetry | null;
+  playerLandingDamageEvent?: DebugOverlayPlayerLandingDamageEventTelemetry | null;
   playerHostileContactEvent?: DebugOverlayPlayerHostileContactEventTelemetry | null;
   playerWallContactTransition: DebugOverlayPlayerWallContactTransitionTelemetry | null;
   playerCeilingContactTransition: DebugOverlayPlayerCeilingContactTransitionTelemetry | null;
@@ -731,15 +737,29 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
     typeof player.health === 'number' && Number.isFinite(player.health)
       ? `${Math.round(player.health)}`
       : 'n/a';
+  const fallRecoveryText =
+    typeof player.fallDamageRecoverySecondsRemaining === 'number' &&
+    Number.isFinite(player.fallDamageRecoverySecondsRemaining)
+      ? `${player.fallDamageRecoverySecondsRemaining.toFixed(2)}s`
+      : null;
   const hostileContactInvulnerabilityText =
     typeof player.hostileContactInvulnerabilitySecondsRemaining === 'number' &&
     Number.isFinite(player.hostileContactInvulnerabilitySecondsRemaining)
       ? `${player.hostileContactInvulnerabilitySecondsRemaining.toFixed(2)}s`
       : 'n/a';
-  if (healthText === 'n/a' && hostileContactInvulnerabilityText === 'n/a') {
+  if (
+    healthText === 'n/a' &&
+    fallRecoveryText === null &&
+    hostileContactInvulnerabilityText === 'n/a'
+  ) {
     return 'Combat: n/a';
   }
-  return `Combat: health:${healthText} | contactInvuln:${hostileContactInvulnerabilityText}`;
+  const segments = [`health:${healthText}`];
+  if (fallRecoveryText !== null) {
+    segments.push(`fallRecovery:${fallRecoveryText}`);
+  }
+  segments.push(`contactInvuln:${hostileContactInvulnerabilityText}`);
+  return `Combat: ${segments.join(' | ')}`;
 };
 
 const formatPlayerHostileContactEventLine = (
@@ -753,6 +773,16 @@ const formatPlayerHostileContactEventLine = (
     `ContactEvt: damage:${Math.max(0, Math.round(playerHostileContactEvent.damageApplied))} | ` +
     `blocked:${formatGameplayFlag(playerHostileContactEvent.blockedByInvulnerability)}`
   );
+};
+
+const formatPlayerLandingDamageEventLine = (
+  playerLandingDamageEvent: DebugOverlayPlayerLandingDamageEventTelemetry | null
+): string => {
+  if (!playerLandingDamageEvent) {
+    return 'LandingEvt: none';
+  }
+
+  return `LandingEvt: damage:${Math.max(0, Math.round(playerLandingDamageEvent.damageApplied))}`;
 };
 
 const formatHostileSlimeLaunchKind = (
@@ -1120,6 +1150,7 @@ export const formatDebugOverlayText = (
   const playerGroundedTransition = inspect?.playerGroundedTransition ?? null;
   const playerFacingTransition = inspect?.playerFacingTransition ?? null;
   const playerRespawn = inspect?.playerRespawn ?? null;
+  const playerLandingDamageEvent = inspect?.playerLandingDamageEvent ?? null;
   const playerHostileContactEvent = inspect?.playerHostileContactEvent ?? null;
   const playerWallContactTransition = inspect?.playerWallContactTransition ?? null;
   const playerCeilingContactTransition = inspect?.playerCeilingContactTransition ?? null;
@@ -1146,6 +1177,9 @@ export const formatDebugOverlayText = (
       ? formatPlayerCeilingBonkHoldLine(playerCeilingBonkHoldActive)
       : null,
     telemetryVisible('player-combat') ? formatPlayerCombatLine(player) : null,
+    telemetryVisible('player-combat')
+      ? formatPlayerLandingDamageEventLine(playerLandingDamageEvent)
+      : null,
     telemetryVisible('player-combat')
       ? formatPlayerHostileContactEventLine(playerHostileContactEvent)
       : null,

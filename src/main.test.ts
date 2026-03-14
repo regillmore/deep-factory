@@ -37,7 +37,11 @@ import {
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
 import type { PlayerItemPlacementPreviewState } from './ui/playerItemPlacementPreviewOverlay';
-import { createPlayerState, getPlayerCameraFocusPoint } from './world/playerState';
+import {
+  createPlayerState,
+  DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
+  getPlayerCameraFocusPoint
+} from './world/playerState';
 import { DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS } from './world/hostileSlimeCombat';
 import {
   DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS
@@ -4205,6 +4209,79 @@ describe('main.ts shell state orchestration', () => {
     expect(
       persistedEnvelope?.session.standalonePlayerState?.hostileContactInvulnerabilitySecondsRemaining
     ).toBe(DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS);
+  });
+
+  it('tracks hard-landing damage events while keeping fall-recovery cooldown live', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    let stepCount = 0;
+    testRuntime.rendererStepPlayerStateImpl = (_state) => {
+      stepCount += 1;
+      if (stepCount === 1) {
+        return {
+          position: { x: 8, y: -24 },
+          velocity: { x: 0, y: 612 },
+          grounded: false,
+          health: 100,
+          fallDamageRecoverySecondsRemaining: 0
+        };
+      }
+      if (stepCount === 2) {
+        return {
+          position: { x: 8, y: 0 },
+          velocity: { x: 0, y: 0 },
+          grounded: true,
+          health: 97,
+          fallDamageRecoverySecondsRemaining: DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS
+        };
+      }
+
+      return {
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        grounded: true,
+        health: 97,
+        fallDamageRecoverySecondsRemaining: 0.1
+      };
+    };
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    runFixedUpdate();
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.playerLandingDamageEvent).toEqual({
+      damageApplied: 3
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.playerLandingDamageEvent).toEqual({
+      damageApplied: 3
+    });
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(97);
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.fallDamageRecoverySecondsRemaining).toBe(
+      DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS
+    );
+    expect(testRuntime.latestDebugEditStatusStripState?.playerHealth).toBe(97);
+    expect(
+      testRuntime.latestDebugEditStatusStripState?.playerFallDamageRecoverySecondsRemaining
+    ).toBe(DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS);
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.playerLandingDamageEvent).toEqual({
+      damageApplied: 3
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.playerLandingDamageEvent).toEqual({
+      damageApplied: 3
+    });
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.fallDamageRecoverySecondsRemaining).toBe(
+      0.1
+    );
+    expect(
+      testRuntime.latestDebugEditStatusStripState?.playerFallDamageRecoverySecondsRemaining
+    ).toBe(0.1);
   });
 
   it('submits standalone-player wall, ceiling, and bonk presentation through the current entity snapshot', async () => {
