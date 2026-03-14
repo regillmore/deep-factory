@@ -2221,7 +2221,7 @@ describe('paused main-menu dashboard layout', () => {
 });
 
 describe('paused main-menu dashboard layout styling', () => {
-  it('keeps dedicated paused-dashboard and desktop secondary-grid rules in style.css', () => {
+  it('keeps dedicated paused-dashboard and desktop single-column rules in style.css', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain(".app-shell__panel[data-layout='paused-dashboard']");
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-dashboard');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-primary');
@@ -2280,10 +2280,14 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain(".app-shell__shell-keybindings-button[data-busy='true']");
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-keybindings-button[disabled]');
     expect(APP_SHELL_STYLE_SOURCE).toContain('@media (min-width: 960px)');
+    expect(APP_SHELL_STYLE_SOURCE).toContain("width: min(760px, 100%);");
+    expect(APP_SHELL_STYLE_SOURCE).toContain(
+      ".app-shell__panel[data-layout='paused-dashboard'] .app-shell__paused-primary"
+    );
+    expect(APP_SHELL_STYLE_SOURCE).toContain('grid-template-columns: 1fr;');
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__panel[data-layout='paused-dashboard'] .app-shell__paused-secondary"
     );
-    expect(APP_SHELL_STYLE_SOURCE).toContain('grid-template-columns: repeat(2, minmax(0, 1fr));');
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__panel[data-layout='paused-dashboard'] .app-shell__shell[data-expanded='true']"
     );

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-13: Paused-menu dashboard should keep a single reading column on desktop
+
+- Decision: The paused-menu dashboard now keeps `Overview`, `World Save`, `Shell`, `Recent Activity`, and `Danger Zone` in one vertical stack on desktop instead of splitting paused sections across multiple columns.
+- Reason: The one-column paused layout is easier to scan top-to-bottom while reviewing session state, especially once section cards already carry dense metadata and grouped actions.
+- Consequence: Future paused-menu layout work should preserve the single-column desktop reading flow unless the same pass intentionally reintroduces a multicolumn dashboard with updated tests and docs.
+
 ### 2026-03-13: Hidden Debug Edit panel routes canvas clicks and taps to play item use
 
 - Decision: While the in-world full `Debug Edit` panel is hidden, canvas input now switches from debug paint to queued play-mode item-use requests, while the visible panel keeps existing debug paint, brush-slot, and tool-shortcut behavior.

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-13
 
+- Task: Switch the paused-menu dashboard to a one-column desktop layout.
+- Changes: Updated [src/style.css](../src/style.css) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the paused dashboard now keeps both primary and secondary section groups in a single desktop column and narrows the paused panel for readability instead of reflowing into multiple columns; updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md), and left [docs/NEXT.md](docs/NEXT.md) unchanged because this pass was a user-directed layout detour rather than a completed roadmap task.
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts src/mainWorldSessionTelemetryState.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a paused-menu telemetry-reset recent-activity follow-up after telemetry reset button-state gating.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so paused-menu `Recent Activity` now shows `Reset Telemetry Result` cards with saved-versus-session-only feedback, and only when the reset actually changes the live telemetry catalog; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so the runtime records that result only after a catalog-changing reset while no-op resets at the default catalog leave recent activity untouched; removed completed task `534` from [docs/NEXT.md](docs/NEXT.md), added replacement task `537`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts src/mainWorldSessionTelemetryState.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
