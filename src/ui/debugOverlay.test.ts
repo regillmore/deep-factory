@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import type { WorldSessionTelemetryState } from '../mainWorldSessionTelemetryState';
+import {
+  createDefaultWorldSessionTelemetryState,
+  type WorldSessionTelemetryState
+} from '../mainWorldSessionTelemetryState';
 import { formatDebugOverlayText, type DebugOverlayStats } from './debugOverlay';
 
 const baseStats: DebugOverlayStats = {
@@ -222,6 +225,114 @@ describe('formatDebugOverlayText', () => {
     expect(text).not.toContain('\nLiquidStep:');
     expect(text).not.toContain('\nPtr(');
     expect(text).not.toContain('\nPin:');
+  });
+
+  it('restores gated telemetry families when the telemetry catalog resets to the default all-on state', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: {
+        client: { x: 48, y: 80 },
+        canvas: { x: 96, y: 160 },
+        world: { x: 32, y: -16 },
+        tile: { x: 2, y: -1 },
+        pointerType: 'mouse',
+        tileId: 7,
+        tileLabel: 'water',
+        solid: false,
+        blocksLight: false,
+        liquidKind: 'water'
+      },
+      pinned: {
+        tile: { x: 8, y: -3 },
+        tileId: 2,
+        tileLabel: 'dirt',
+        solid: true,
+        blocksLight: true,
+        liquidKind: null
+      },
+      spawn: {
+        tile: { x: 4, y: -2 },
+        world: { x: 72, y: -32 },
+        supportTile: {
+          x: 4,
+          y: -1,
+          id: 3,
+          chunk: { x: 0, y: -1 },
+          local: { x: 4, y: 31 }
+        },
+        liquidSafetyStatus: 'safe'
+      },
+      player: {
+        position: { x: 72.5, y: -48.25 },
+        velocity: { x: 3, y: 4 },
+        health: 62,
+        hostileContactInvulnerabilitySecondsRemaining: 0.75,
+        aabb: {
+          min: { x: 18.5, y: -40.25 },
+          max: { x: 30.5, y: -12.25 },
+          size: { x: 12, y: 28 }
+        },
+        grounded: true,
+        facing: 'right',
+        contacts: {
+          support: null,
+          wall: null,
+          ceiling: null
+        }
+      },
+      hostileSlime: {
+        activeCount: 2,
+        nextSpawnTicksRemaining: 119,
+        worldTile: { x: 3, y: -1 },
+        velocity: { x: 35, y: -60 },
+        grounded: true,
+        facing: 'left',
+        hopCooldownTicksRemaining: 17,
+        launchKind: 'step-hop'
+      },
+      playerPlaceholderPoseLabel: 'grounded-idle',
+      playerCeilingBonkHoldActive: false,
+      playerNearbyLightLevel: 9,
+      playerNearbyLightFactor: 0.6,
+      playerNearbyLightSourceTile: { x: 2, y: 2 },
+      playerNearbyLightSourceChunk: { x: 0, y: 0 },
+      playerNearbyLightSourceLocalTile: { x: 2, y: 2 },
+      playerIntent: {
+        moveX: 1,
+        jumpHeld: false,
+        jumpPressed: false
+      },
+      playerCameraFollow: {
+        cameraPosition: { x: 90.5, y: -54.25 },
+        cameraTile: { x: 5, y: -4 },
+        cameraLocal: { x: 31, y: 28 },
+        cameraZoom: 2.5,
+        focus: { x: 72.5, y: -62.25 },
+        focusTile: { x: 4, y: -4 },
+        focusChunk: { x: 0, y: -1 },
+        focusLocal: { x: 4, y: 28 },
+        offset: { x: 18, y: -6 }
+      },
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerHostileContactEvent: {
+        damageApplied: 15,
+        blockedByInvulnerability: false
+      },
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      telemetryState: createDefaultWorldSessionTelemetryState()
+    });
+
+    expect(text).toContain('\nSpawn: T:4,-2 | W:72.00,-32.00');
+    expect(text).toContain('\nCombat: health:62');
+    expect(text).toContain('\nContactEvt: damage:15 | blocked:off');
+    expect(text).toContain('\nSlime: active:2');
+    expect(text).toContain('\nAtlas: authored | 96x64');
+    expect(text).toContain('\nAnimMesh:');
+    expect(text).toContain('\nLiquidStep: awake:0');
+    expect(text).toContain('\nPtr(mouse) C:48,80');
+    expect(text).toContain('\nPin: Tile:dirt (#2) | T:8,-3');
   });
 
   it('shows last liquid-step scan and transfer telemetry', () => {

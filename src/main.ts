@@ -871,6 +871,15 @@ const bootstrap = async (): Promise<void> => {
       applyWorldSessionTelemetryStateAndRefreshWithPersistenceFallback(
         toggleWorldSessionTelemetryType(readWorldSessionTelemetryState(), typeId)
       );
+    },
+    onResetShellTelemetry: (screen) => {
+      if (screen !== 'main-menu' || !worldSessionStarted) {
+        return;
+      }
+
+      applyWorldSessionTelemetryStateAndRefreshWithPersistenceFallback(
+        createDefaultWorldSessionTelemetryState()
+      );
     }
   });
   shell.setState(createDefaultBootShellState());

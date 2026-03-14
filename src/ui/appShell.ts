@@ -958,6 +958,8 @@ const resolvePausedMainMenuShellTelemetrySummaryLine = (
     : 'Choose which runtime telemetry stays visible in the full debug HUD or compact status strip while this tab stays open.';
 const resolvePausedMainMenuShellTelemetryCollectionToggleLabel = (enabled: boolean): string =>
   enabled ? 'Collection On' : 'Collection Off';
+export const resolvePausedMainMenuResetShellTelemetryTitle = (): string =>
+  'Restore every telemetry collection and type to the default visible state.';
 export const createPausedMainMenuShellTelemetryControlsViewModel = (
   worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
   worldSessionTelemetryPersistenceAvailable = true
@@ -2289,6 +2291,7 @@ interface AppShellOptions {
     screen: AppShellScreen,
     typeId: WorldSessionTelemetryTypeId
   ) => void;
+  onResetShellTelemetry?: (screen: AppShellScreen) => void;
 }
 
 const DEFAULT_BOOT_STATUS = 'Preparing renderer, controls, and spawn state.';
@@ -3586,6 +3589,7 @@ export class AppShell {
     screen: AppShellScreen,
     typeId: WorldSessionTelemetryTypeId
   ) => void;
+  private onResetShellTelemetry: (screen: AppShellScreen) => void;
   private currentShellActionKeybindingEditorStatus: AppShellShellActionKeybindingEditorStatus | null =
     null;
   private pausedMainMenuShellExpanded = false;
@@ -3642,6 +3646,7 @@ export class AppShell {
     this.onToggleShellTelemetryCollection =
       options.onToggleShellTelemetryCollection ?? (() => {});
     this.onToggleShellTelemetryType = options.onToggleShellTelemetryType ?? (() => {});
+    this.onResetShellTelemetry = options.onResetShellTelemetry ?? (() => {});
 
     this.root = document.createElement('div');
     this.root.className = 'app-shell';
@@ -4020,6 +4025,21 @@ export class AppShell {
     this.shellTelemetryMetadata.className =
       'app-shell__menu-section-metadata app-shell__shell-keybindings-metadata';
     this.shellTelemetryControls.append(this.shellTelemetryMetadata);
+
+    const shellTelemetryActions = document.createElement('div');
+    shellTelemetryActions.className = 'app-shell__shell-keybindings-actions';
+    this.shellTelemetryControls.append(shellTelemetryActions);
+
+    const resetShellTelemetryButton = document.createElement('button');
+    resetShellTelemetryButton.type = 'button';
+    resetShellTelemetryButton.className = 'app-shell__shell-keybindings-button';
+    resetShellTelemetryButton.textContent = 'Reset Telemetry';
+    resetShellTelemetryButton.title = resolvePausedMainMenuResetShellTelemetryTitle();
+    resetShellTelemetryButton.addEventListener('click', () =>
+      this.onResetShellTelemetry(this.currentState.screen)
+    );
+    installPointerClickFocusRelease(resetShellTelemetryButton);
+    shellTelemetryActions.append(resetShellTelemetryButton);
 
     this.shellTelemetryCollections = document.createElement('div');
     this.shellTelemetryCollections.className = 'app-shell__shell-telemetry-collections';

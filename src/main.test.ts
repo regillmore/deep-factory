@@ -7042,6 +7042,33 @@ describe('main.ts shell state orchestration', () => {
     );
   });
 
+  it('restores paused-menu telemetry to the default enabled catalog when reset from the shell editor', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+
+    testRuntime.shellInstance?.options.onToggleShellTelemetryCollection?.(
+      'main-menu',
+      'hostile-slime'
+    );
+    testRuntime.shellInstance?.options.onToggleShellTelemetryType?.(
+      'main-menu',
+      'player-combat'
+    );
+    testRuntime.shellInstance?.options.onToggleShellTelemetryType?.(
+      'main-menu',
+      'inspect-pointer'
+    );
+
+    testRuntime.shellInstance?.options.onResetShellTelemetry?.('main-menu');
+
+    expect(readPersistedShellState()).toEqual(createDefaultWorldSessionShellState());
+    expect(readPersistedTelemetryState()).toEqual(createDefaultWorldSessionTelemetryState());
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+  });
+
   it('routes overlay-backed in-world shell toggles through one shared visibility sync path while shortcuts stay shell-state only', async () => {
     await import('./main');
     await flushBootstrap();

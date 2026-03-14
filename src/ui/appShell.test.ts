@@ -56,6 +56,7 @@ import {
   resolvePausedMainMenuImportShellProfileTitle,
   resolvePausedMainMenuImportWorldSaveTitle,
   createPausedMainMenuShellActionKeybindingEditorMetadataRows,
+  resolvePausedMainMenuResetShellTelemetryTitle,
   resolvePausedMainMenuResetShellTogglesTitle,
   resolvePausedMainMenuResumeWorldTitle,
   resolveInWorldDebugEditControlsToggleTitle,
@@ -1528,11 +1529,15 @@ describe('paused main-menu dashboard layout', () => {
     });
   });
 
-  it('reveals telemetry controls in the expanded shell editor and routes collection plus type toggles through callbacks', () => {
+  it('reveals telemetry controls in the expanded shell editor and routes reset, collection, and type actions through callbacks', () => {
+    const telemetryResets: string[] = [];
     const collectionToggles: Array<{ screen: string; id: string }> = [];
     const typeToggles: Array<{ screen: string; id: string }> = [];
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement, {
+      onResetShellTelemetry: (screen) => {
+        telemetryResets.push(screen);
+      },
       onToggleShellTelemetryCollection: (screen, collectionId) => {
         collectionToggles.push({
           screen,
@@ -1591,6 +1596,11 @@ describe('paused main-menu dashboard layout', () => {
       'app-shell__shell-telemetry-button--collection',
       'Collection Off'
     );
+    const resetTelemetryButton = findButtonByTextContent(
+      telemetryControls ?? new FakeElement('div'),
+      'app-shell__shell-keybindings-button',
+      'Reset Telemetry'
+    );
     const combatToggleButton = findButtonByTextContent(
       telemetryControls ?? new FakeElement('div'),
       'app-shell__shell-telemetry-button',
@@ -1626,13 +1636,16 @@ describe('paused main-menu dashboard layout', () => {
         value: '8/14'
       }
     ]);
+    expect(resetTelemetryButton?.title).toBe(resolvePausedMainMenuResetShellTelemetryTitle());
     expect(collectionToggleButton?.getAttribute('aria-pressed')).toBe('false');
     expect(combatToggleButton?.getAttribute('aria-pressed')).toBe('false');
     expect(pointerToggleButton?.getAttribute('aria-pressed')).toBe('true');
 
+    resetTelemetryButton?.click();
     collectionToggleButton?.click();
     combatToggleButton?.click();
 
+    expect(telemetryResets).toEqual(['main-menu']);
     expect(collectionToggles).toEqual([
       {
         screen: 'main-menu',

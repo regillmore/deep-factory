@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ArmedDebugToolPreviewState } from '../input/controller';
-import type { WorldSessionTelemetryState } from '../mainWorldSessionTelemetryState';
+import {
+  createDefaultWorldSessionTelemetryState,
+  type WorldSessionTelemetryState
+} from '../mainWorldSessionTelemetryState';
 import {
   buildActiveDebugToolPreviewBadgeText,
   buildDebugEditStatusStripModel,
@@ -198,6 +201,81 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.playerText).not.toContain('SpawnSupportNow');
     expect(model.playerText).not.toContain('SlimeActiveNow');
     expect(model.playerText).not.toContain('LiquidChunksNow');
+  });
+
+  it('restores gated spawn, combat, hostile-slime, world-liquid, and inspect lines when telemetry resets to the default catalog', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'place',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      preview: createEmptyPreviewState(),
+      hoveredTile: {
+        tileX: 12,
+        tileY: -4,
+        chunkX: 0,
+        chunkY: -1,
+        localX: 12,
+        localY: 28,
+        tileId: 9,
+        tileLabel: 'lava pool',
+        solid: false,
+        blocksLight: true,
+        liquidKind: 'lava'
+      },
+      pinnedTile: {
+        tileX: 8,
+        tileY: -6,
+        chunkX: 0,
+        chunkY: -1,
+        localX: 8,
+        localY: 26,
+        tileId: 2,
+        tileLabel: 'dirt',
+        solid: true,
+        blocksLight: true,
+        liquidKind: null
+      },
+      desktopInspectPinArmed: false,
+      playerSpawn: {
+        liquidSafetyStatus: 'safe',
+        tile: { x: 4, y: -2 },
+        world: { x: 72, y: -32 },
+        supportTile: {
+          x: 4,
+          y: -1,
+          id: 3,
+          chunk: { x: 0, y: -1 },
+          local: { x: 4, y: 31 }
+        }
+      },
+      playerCameraWorldPosition: { x: 90.5, y: -54.25 },
+      playerNearbyLightLevel: 9,
+      playerNearbyLightFactor: 0.6,
+      playerNearbyLightSourceTile: { x: 2, y: 2 },
+      playerNearbyLightSourceChunk: { x: 0, y: 0 },
+      playerNearbyLightSourceLocalTile: { x: 2, y: 2 },
+      playerHealth: 62,
+      hostileSlimeActiveCount: 2,
+      residentActiveLiquidChunks: 4,
+      residentSleepingLiquidChunks: 2,
+      residentActiveLiquidMinChunkX: -2,
+      residentActiveLiquidMinChunkY: -1,
+      residentActiveLiquidMaxChunkX: 3,
+      residentActiveLiquidMaxChunkY: 5,
+      residentSleepingLiquidMinChunkX: -4,
+      residentSleepingLiquidMinChunkY: 0,
+      residentSleepingLiquidMaxChunkX: -1,
+      residentSleepingLiquidMaxChunkY: 2,
+      telemetryState: createDefaultWorldSessionTelemetryState()
+    });
+
+    expect(model.playerText).toContain('HealthNow: 62');
+    expect(model.playerText).toContain('SpawnNow: safe | tile 4,-2');
+    expect(model.playerText).toContain('SpawnSupportNow: tile 4,-1');
+    expect(model.playerText).toContain('SlimeActiveNow: 2');
+    expect(model.playerText).toContain('LiquidChunksNow: awake:4');
+    expect(model.hoverText).toContain('Hover: lava pool (#9)');
+    expect(model.inspectText).toBe('Inspect: Pinned @ 8,-6');
   });
 
   it('surfaces active flood-fill guidance directly in the status-strip model', () => {
