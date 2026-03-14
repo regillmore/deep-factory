@@ -29,6 +29,10 @@ import {
   type WorldSessionShellState
 } from '../mainWorldSessionShellState';
 import {
+  createDefaultWorldSessionGameplayState,
+  type WorldSessionGameplayState
+} from '../mainWorldSessionGameplayState';
+import {
   WORLD_SESSION_TELEMETRY_COLLECTION_DEFINITIONS,
   countEnabledWorldSessionTelemetryTypesForCollection,
   createDefaultWorldSessionTelemetryState,
@@ -92,6 +96,7 @@ export interface PausedMainMenuWorldSaveSectionState {
 
 export interface PausedMainMenuShellSectionViewModel {
   persistenceSummary: AppShellMenuSection;
+  gameplayControls: PausedMainMenuShellGameplayControlsViewModel;
   telemetryControls: PausedMainMenuShellTelemetryControlsViewModel;
   shellProfilePreview: AppShellMenuSection | null;
 }
@@ -123,6 +128,14 @@ export interface PausedMainMenuShellTelemetryControlsViewModel {
   collections: readonly PausedMainMenuShellTelemetryCollectionViewModel[];
 }
 
+export interface PausedMainMenuShellGameplayControlsViewModel {
+  summaryLine: string;
+  metadataRows: readonly AppShellMenuSectionMetadataRow[];
+  toggleButtonLabel: string;
+  toggleButtonTitle: string;
+  toggleButtonPressed: boolean;
+}
+
 export interface PausedMainMenuRecentActivitySectionViewModel {
   exportResult: AppShellMenuSection | null;
   importResult: AppShellMenuSection | null;
@@ -150,6 +163,7 @@ export interface PausedMainMenuShellSectionState {
   metadataRows: readonly AppShellMenuSectionMetadataRow[];
   toggleLabel: string | null;
   editorVisible: boolean;
+  gameplayControls: PausedMainMenuShellGameplayControlsViewModel | null;
   telemetryControls: PausedMainMenuShellTelemetryControlsViewModel | null;
   previewSection: AppShellMenuSection | null;
 }
@@ -989,10 +1003,67 @@ const resolvePausedMainMenuShellTelemetrySummaryLine = (
   worldSessionTelemetryPersistenceAvailable
     ? 'Choose which runtime telemetry stays visible in the full debug HUD or compact status strip.'
     : 'Choose which runtime telemetry stays visible in the full debug HUD or compact status strip while this tab stays open.';
+const resolvePausedMainMenuShellGameplaySummaryLine = (
+  worldSessionGameplayState: WorldSessionGameplayState = createDefaultWorldSessionGameplayState()
+): string =>
+  worldSessionGameplayState.peacefulModeEnabled
+    ? 'Peaceful mode is on, so active slimes clear out and new hostile spawns stay blocked until you turn it off.'
+    : 'Peaceful mode is off, so hostile slimes can still spawn, move, and deal contact damage during play.';
+const resolvePausedMainMenuShellGameplayToggleLabel = (
+  worldSessionGameplayState: WorldSessionGameplayState = createDefaultWorldSessionGameplayState()
+): string =>
+  worldSessionGameplayState.peacefulModeEnabled
+    ? 'Disable Peaceful Mode'
+    : 'Enable Peaceful Mode';
+export const resolvePausedMainMenuTogglePeacefulModeTitle = (
+  worldSessionGameplayState: WorldSessionGameplayState = createDefaultWorldSessionGameplayState()
+): string =>
+  worldSessionGameplayState.peacefulModeEnabled
+    ? 'Return hostile slimes to normal spawning, movement, and contact-damage behavior.'
+    : 'Clear active slimes and block new hostile spawns until peaceful mode is turned off.';
 const resolvePausedMainMenuShellTelemetryCollectionToggleLabel = (enabled: boolean): string =>
   enabled ? 'Collection On' : 'Collection Off';
 export const resolvePausedMainMenuResetShellTelemetryTitle = (): string =>
   'Restore every telemetry collection and type to the default visible state.';
+export const createPausedMainMenuShellGameplayControlsViewModel = (
+  worldSessionGameplayState: WorldSessionGameplayState = createDefaultWorldSessionGameplayState(),
+  worldSessionGameplayPersistenceAvailable = true
+): PausedMainMenuShellGameplayControlsViewModel => ({
+  summaryLine: resolvePausedMainMenuShellGameplaySummaryLine(worldSessionGameplayState),
+  metadataRows: [
+    {
+      label: 'Mode',
+      value: worldSessionGameplayState.peacefulModeEnabled ? 'Peaceful' : 'Normal',
+      badge: {
+        text: worldSessionGameplayState.peacefulModeEnabled ? 'On' : 'Off',
+        tone: worldSessionGameplayState.peacefulModeEnabled ? 'accent' : 'warning'
+      }
+    },
+    {
+      label: 'Hostiles',
+      value: worldSessionGameplayState.peacefulModeEnabled
+        ? 'Active slimes clear and new spawns stay blocked'
+        : 'Spawns, movement, and contact damage stay enabled'
+    },
+    {
+      label: 'Persistence',
+      value: worldSessionGameplayPersistenceAvailable ? 'Browser saved' : 'Session-only fallback',
+      badge: {
+        text: worldSessionGameplayPersistenceAvailable ? 'Saved' : 'Session only',
+        tone: worldSessionGameplayPersistenceAvailable ? 'accent' : 'warning'
+      }
+    },
+    {
+      label: 'Scope',
+      value: worldSessionGameplayPersistenceAvailable
+        ? 'Current paused session and future fresh worlds'
+        : 'Current tab until reload'
+    }
+  ],
+  toggleButtonLabel: resolvePausedMainMenuShellGameplayToggleLabel(worldSessionGameplayState),
+  toggleButtonTitle: resolvePausedMainMenuTogglePeacefulModeTitle(worldSessionGameplayState),
+  toggleButtonPressed: worldSessionGameplayState.peacefulModeEnabled
+});
 export const createPausedMainMenuShellTelemetryControlsViewModel = (
   worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
   worldSessionTelemetryPersistenceAvailable = true
@@ -1163,6 +1234,8 @@ export const resolvePausedMainMenuShellSectionState = (
     toggleLabel:
       visible && sectionViewModel !== null ? resolvePausedMainMenuShellToggleLabel(expanded) : null,
     editorVisible,
+    gameplayControls:
+      visible && sectionViewModel !== null ? sectionViewModel.shell.gameplayControls : null,
     telemetryControls:
       visible && sectionViewModel !== null ? sectionViewModel.shell.telemetryControls : null,
     previewSection:
@@ -1956,7 +2029,9 @@ export const createPausedMainMenuSectionViewModel = (
   shellProfilePreview: PausedMainMenuShellProfilePreview | null = null,
   worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
   worldSessionTelemetryPersistenceAvailable = true,
-  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null
+  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null,
+  worldSessionGameplayState: WorldSessionGameplayState = createDefaultWorldSessionGameplayState(),
+  worldSessionGameplayPersistenceAvailable = true
 ): PausedMainMenuSectionViewModel => {
   const persistenceSummary = createWorldSessionShellStatePersistenceSummary(
     worldSessionShellState,
@@ -2073,6 +2148,10 @@ export const createPausedMainMenuSectionViewModel = (
           ...createPausedMainMenuShellActionKeybindingSummaryRows(shellActionKeybindings)
         ]
       },
+      gameplayControls: createPausedMainMenuShellGameplayControlsViewModel(
+        worldSessionGameplayState,
+        worldSessionGameplayPersistenceAvailable
+      ),
       telemetryControls: createPausedMainMenuShellTelemetryControlsViewModel(
         worldSessionTelemetryState,
         worldSessionTelemetryPersistenceAvailable
@@ -2162,7 +2241,9 @@ export const createPausedMainMenuMenuSections = (
   recentActivityAction: PausedMainMenuRecentActivityAction | null = null,
   worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
   worldSessionTelemetryPersistenceAvailable = true,
-  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null
+  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null,
+  worldSessionGameplayState: WorldSessionGameplayState = createDefaultWorldSessionGameplayState(),
+  worldSessionGameplayPersistenceAvailable = true
 ): readonly AppShellMenuSection[] =>
   createPausedMainMenuShellState(
     worldSessionShellState,
@@ -2179,7 +2260,9 @@ export const createPausedMainMenuMenuSections = (
     recentActivityAction,
     worldSessionTelemetryState,
     worldSessionTelemetryPersistenceAvailable,
-    resetShellTelemetryResult
+    resetShellTelemetryResult,
+    worldSessionGameplayState,
+    worldSessionGameplayPersistenceAvailable
   ).menuSections ?? [];
 
 const createPausedMainMenuBaseShellState = (
@@ -2197,7 +2280,9 @@ const createPausedMainMenuBaseShellState = (
   recentActivityAction: PausedMainMenuRecentActivityAction | null = null,
   worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
   worldSessionTelemetryPersistenceAvailable = true,
-  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null
+  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null,
+  worldSessionGameplayState: WorldSessionGameplayState = createDefaultWorldSessionGameplayState(),
+  worldSessionGameplayPersistenceAvailable = true
 ): AppShellState => {
   const pausedMainMenuSections = createPausedMainMenuSectionViewModel(
     worldSessionShellState,
@@ -2212,7 +2297,9 @@ const createPausedMainMenuBaseShellState = (
     shellProfilePreview,
     worldSessionTelemetryState,
     worldSessionTelemetryPersistenceAvailable,
-    resetShellTelemetryResult
+    resetShellTelemetryResult,
+    worldSessionGameplayState,
+    worldSessionGameplayPersistenceAvailable
   );
 
   return {
@@ -2267,7 +2354,9 @@ export const createPausedMainMenuShellState = (
   recentActivityAction: PausedMainMenuRecentActivityAction | null = null,
   worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
   worldSessionTelemetryPersistenceAvailable = true,
-  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null
+  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null,
+  worldSessionGameplayState: WorldSessionGameplayState = createDefaultWorldSessionGameplayState(),
+  worldSessionGameplayPersistenceAvailable = true
 ): AppShellState => {
   const baseState = createPausedMainMenuBaseShellState(
     worldSessionShellState,
@@ -2284,7 +2373,9 @@ export const createPausedMainMenuShellState = (
     recentActivityAction,
     worldSessionTelemetryState,
     worldSessionTelemetryPersistenceAvailable,
-    resetShellTelemetryResult
+    resetShellTelemetryResult,
+    worldSessionGameplayState,
+    worldSessionGameplayPersistenceAvailable
   );
   const menuSectionGroups = resolvePausedMainMenuMenuSectionGroups(baseState);
 
@@ -2372,6 +2463,7 @@ interface AppShellOptions {
     typeId: WorldSessionTelemetryTypeId
   ) => void;
   onResetShellTelemetry?: (screen: AppShellScreen) => void;
+  onTogglePeacefulMode?: (screen: AppShellScreen) => void;
 }
 
 const DEFAULT_BOOT_STATUS = 'Preparing renderer, controls, and spawn state.';
@@ -2509,7 +2601,9 @@ export const createMainMenuShellState = (
   recentActivityAction: PausedMainMenuRecentActivityAction | null = null,
   worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
   worldSessionTelemetryPersistenceAvailable = true,
-  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null
+  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null,
+  worldSessionGameplayState: WorldSessionGameplayState = createDefaultWorldSessionGameplayState(),
+  worldSessionGameplayPersistenceAvailable = true
 ): AppShellState =>
   hasResumableWorldSession
     ? createPausedMainMenuShellState(
@@ -2527,7 +2621,9 @@ export const createMainMenuShellState = (
         recentActivityAction,
         worldSessionTelemetryState,
         worldSessionTelemetryPersistenceAvailable,
-        resetShellTelemetryResult
+        resetShellTelemetryResult,
+        worldSessionGameplayState,
+        worldSessionGameplayPersistenceAvailable
       )
     : createFirstLaunchMainMenuShellState(firstLaunchWorldSavePersistenceAvailable);
 
@@ -3614,6 +3710,10 @@ export class AppShell {
   private shellBody: HTMLDivElement;
   private shellActionKeybindingEditor: HTMLDivElement;
   private shellActionKeybindingEditorMetadata: HTMLDListElement;
+  private shellGameplayControls: HTMLDivElement;
+  private shellGameplaySummary: HTMLParagraphElement;
+  private shellGameplayMetadata: HTMLDListElement;
+  private shellGameplayToggleButton: HTMLButtonElement;
   private shellTelemetryControls: HTMLDivElement;
   private shellTelemetrySummary: HTMLParagraphElement;
   private shellTelemetryMetadata: HTMLDListElement;
@@ -3677,6 +3777,7 @@ export class AppShell {
     typeId: WorldSessionTelemetryTypeId
   ) => void;
   private onResetShellTelemetry: (screen: AppShellScreen) => void;
+  private onTogglePeacefulMode: (screen: AppShellScreen) => void;
   private currentShellActionKeybindingEditorStatus: AppShellShellActionKeybindingEditorStatus | null =
     null;
   private pausedMainMenuShellExpanded = false;
@@ -3734,6 +3835,7 @@ export class AppShell {
       options.onToggleShellTelemetryCollection ?? (() => {});
     this.onToggleShellTelemetryType = options.onToggleShellTelemetryType ?? (() => {});
     this.onResetShellTelemetry = options.onResetShellTelemetry ?? (() => {});
+    this.onTogglePeacefulMode = options.onTogglePeacefulMode ?? (() => {});
 
     this.root = document.createElement('div');
     this.root.className = 'app-shell';
@@ -4095,6 +4197,37 @@ export class AppShell {
     this.shellActionKeybindingEditorStatus.className = 'app-shell__shell-keybindings-status';
     this.shellActionKeybindingEditor.append(this.shellActionKeybindingEditorStatus);
 
+    this.shellGameplayControls = document.createElement('div');
+    this.shellGameplayControls.className = 'app-shell__shell-keybindings app-shell__shell-gameplay';
+    this.shellBody.append(this.shellGameplayControls);
+
+    const shellGameplayTitle = document.createElement('h2');
+    shellGameplayTitle.className = 'app-shell__shell-keybindings-title';
+    shellGameplayTitle.textContent = 'Gameplay Controls';
+    this.shellGameplayControls.append(shellGameplayTitle);
+
+    this.shellGameplaySummary = document.createElement('p');
+    this.shellGameplaySummary.className = 'app-shell__shell-telemetry-summary';
+    this.shellGameplayControls.append(this.shellGameplaySummary);
+
+    this.shellGameplayMetadata = document.createElement('dl');
+    this.shellGameplayMetadata.className =
+      'app-shell__menu-section-metadata app-shell__shell-keybindings-metadata';
+    this.shellGameplayControls.append(this.shellGameplayMetadata);
+
+    const shellGameplayActions = document.createElement('div');
+    shellGameplayActions.className = 'app-shell__shell-keybindings-actions';
+    this.shellGameplayControls.append(shellGameplayActions);
+
+    this.shellGameplayToggleButton = document.createElement('button');
+    this.shellGameplayToggleButton.type = 'button';
+    this.shellGameplayToggleButton.className = 'app-shell__shell-keybindings-button';
+    this.shellGameplayToggleButton.addEventListener('click', () =>
+      this.onTogglePeacefulMode(this.currentState.screen)
+    );
+    installPointerClickFocusRelease(this.shellGameplayToggleButton);
+    shellGameplayActions.append(this.shellGameplayToggleButton);
+
     this.shellTelemetryControls = document.createElement('div');
     this.shellTelemetryControls.className = 'app-shell__shell-keybindings app-shell__shell-telemetry';
     this.shellBody.append(this.shellTelemetryControls);
@@ -4328,6 +4461,34 @@ export class AppShell {
           (typeId) => this.onToggleShellTelemetryType(this.currentState.screen, typeId)
         )
       )
+    );
+  }
+
+  private syncShellGameplayControls(
+    gameplayControls: PausedMainMenuShellGameplayControlsViewModel | null,
+    visible: boolean
+  ): void {
+    const controlsVisible = visible && gameplayControls !== null;
+    this.shellGameplayControls.hidden = !controlsVisible;
+    this.shellGameplayControls.style.display = resolveAppShellRegionDisplay(controlsVisible, 'grid');
+    if (!controlsVisible || gameplayControls === null) {
+      this.shellGameplaySummary.textContent = '';
+      this.shellGameplayMetadata.replaceChildren();
+      this.shellGameplayToggleButton.textContent = '';
+      this.shellGameplayToggleButton.title = '';
+      this.shellGameplayToggleButton.setAttribute('aria-pressed', 'false');
+      return;
+    }
+
+    this.shellGameplaySummary.textContent = gameplayControls.summaryLine;
+    this.shellGameplayMetadata.replaceChildren(
+      ...createMenuSectionMetadataElement(gameplayControls.metadataRows).childNodes
+    );
+    this.shellGameplayToggleButton.textContent = gameplayControls.toggleButtonLabel;
+    this.shellGameplayToggleButton.title = gameplayControls.toggleButtonTitle;
+    this.shellGameplayToggleButton.setAttribute(
+      'aria-pressed',
+      gameplayControls.toggleButtonPressed ? 'true' : 'false'
     );
   }
 
@@ -4867,8 +5028,8 @@ export class AppShell {
     this.shellToggleButton.textContent = pausedMainMenuShellSection.toggleLabel ?? '';
     this.shellToggleButton.hidden = !pausedMainMenuShellSection.visible;
     this.shellToggleButton.title = pausedMainMenuShellSection.expanded
-      ? 'Hide shell hotkeys and shell-profile tools.'
-      : 'Show shell hotkeys and shell-profile tools.';
+      ? 'Hide shell gameplay, telemetry, hotkey, and shell-profile tools.'
+      : 'Show shell gameplay, telemetry, hotkey, and shell-profile tools.';
     this.shellToggleButton.setAttribute(
       'aria-expanded',
       pausedMainMenuShellSection.expanded ? 'true' : 'false'
@@ -4882,6 +5043,10 @@ export class AppShell {
     this.shellActionKeybindingEditor.style.display = resolveAppShellRegionDisplay(
       pausedMainMenuShellSection.editorVisible,
       'grid'
+    );
+    this.syncShellGameplayControls(
+      pausedMainMenuShellSection.gameplayControls,
+      pausedMainMenuShellSection.editorVisible
     );
     this.syncShellTelemetryControls(
       pausedMainMenuShellSection.telemetryControls,

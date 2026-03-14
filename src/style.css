@@ -664,6 +664,10 @@ canvas {
   margin-top: 0;
 }
 
+.app-shell__shell-gameplay {
+  margin-top: 0;
+}
+
 .app-shell__shell-keybindings {
   margin-top: 18px;
   padding: 15px 16px 16px;
@@ -732,6 +736,16 @@ canvas {
 .app-shell__shell-keybindings-button[disabled],
 .app-shell__shell-telemetry-button[disabled] {
   opacity: 0.82;
+}
+
+.app-shell__shell-keybindings-button[aria-pressed='true'] {
+  border-color: rgba(131, 219, 242, 0.42);
+  color: #fff0cc;
+}
+
+.app-shell__shell-keybindings-button[aria-pressed='false'] {
+  border-color: rgba(214, 112, 92, 0.28);
+  color: #d6e3e7;
 }
 
 .app-shell__shell-keybindings-button[data-busy='true'] {

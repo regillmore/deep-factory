@@ -8,6 +8,9 @@ import {
   type ShellActionKeybindingState
 } from '../input/shellActionKeybindings';
 import {
+  type WorldSessionGameplayState
+} from '../mainWorldSessionGameplayState';
+import {
   createDefaultWorldSessionTelemetryState,
   type WorldSessionTelemetryState
 } from '../mainWorldSessionTelemetryState';
@@ -31,6 +34,7 @@ import {
   createMainMenuShellState,
   createPausedMainMenuSectionViewModel,
   createPausedMainMenuShellState,
+  createPausedMainMenuShellGameplayControlsViewModel,
   createPausedMainMenuShellTelemetryControlsViewModel,
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState,
@@ -61,6 +65,7 @@ import {
   createPausedMainMenuShellActionKeybindingEditorMetadataRows,
   resolvePausedMainMenuResetShellTelemetryTitle,
   resolvePausedMainMenuResetShellTogglesTitle,
+  resolvePausedMainMenuTogglePeacefulModeTitle,
   resolvePausedMainMenuResumeWorldTitle,
   resolveInWorldDebugEditControlsToggleTitle,
   resolveAppShellViewModel,
@@ -117,6 +122,9 @@ const DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
     value: 'No staged preview'
   }
 ] as const;
+const ENABLED_WORLD_SESSION_GAMEPLAY_STATE: WorldSessionGameplayState = {
+  peacefulModeEnabled: true
+};
 const PARTIAL_WORLD_SESSION_TELEMETRY_STATE: WorldSessionTelemetryState = {
   collections: {
     player: true,
@@ -1484,6 +1492,46 @@ describe('paused main-menu dashboard layout', () => {
     expect(shellEditorIntro).toBeNull();
   });
 
+  it('builds peaceful-mode controls with current mode and persistence summaries', () => {
+    expect(
+      createPausedMainMenuShellGameplayControlsViewModel(ENABLED_WORLD_SESSION_GAMEPLAY_STATE, false)
+    ).toEqual({
+      summaryLine:
+        'Peaceful mode is on, so active slimes clear out and new hostile spawns stay blocked until you turn it off.',
+      metadataRows: [
+        {
+          label: 'Mode',
+          value: 'Peaceful',
+          badge: {
+            text: 'On',
+            tone: 'accent'
+          }
+        },
+        {
+          label: 'Hostiles',
+          value: 'Active slimes clear and new spawns stay blocked'
+        },
+        {
+          label: 'Persistence',
+          value: 'Session-only fallback',
+          badge: {
+            text: 'Session only',
+            tone: 'warning'
+          }
+        },
+        {
+          label: 'Scope',
+          value: 'Current tab until reload'
+        }
+      ],
+      toggleButtonLabel: 'Disable Peaceful Mode',
+      toggleButtonTitle: resolvePausedMainMenuTogglePeacefulModeTitle(
+        ENABLED_WORLD_SESSION_GAMEPLAY_STATE
+      ),
+      toggleButtonPressed: true
+    });
+  });
+
   it('builds telemetry controls with saved collection and type visibility summaries', () => {
     expect(
       createPausedMainMenuShellTelemetryControlsViewModel(
@@ -1667,6 +1715,93 @@ describe('paused main-menu dashboard layout', () => {
         id: 'player-combat'
       }
     ]);
+  });
+
+  it('reveals peaceful-mode controls in the expanded shell editor and routes toggle actions through callbacks', () => {
+    const peacefulModeToggles: string[] = [];
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement, {
+      onTogglePeacefulMode: (screen) => {
+        peacefulModeToggles.push(screen);
+      }
+    });
+
+    shell.setState(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false,
+        null,
+        createDefaultWorldSessionTelemetryState(),
+        true,
+        null,
+        ENABLED_WORLD_SESSION_GAMEPLAY_STATE,
+        false
+      )
+    );
+
+    const root = container.children[0] ?? null;
+    expect(root).not.toBeNull();
+    if (root === null) {
+      return;
+    }
+
+    const shellToggleButton = findElementByClass(root, 'app-shell__shell-toggle');
+    const gameplayControlsBeforeExpand =
+      root === null ? null : findElementByClass(root, 'app-shell__shell-gameplay');
+
+    expect(gameplayControlsBeforeExpand?.hidden).toBe(true);
+
+    shellToggleButton?.click();
+
+    const gameplayControls =
+      root === null ? null : findElementByClass(root, 'app-shell__shell-gameplay');
+    const gameplayMetadata =
+      gameplayControls === null
+        ? null
+        : findElementByClass(gameplayControls, 'app-shell__shell-keybindings-metadata');
+    const togglePeacefulModeButton = findButtonByTextContent(
+      gameplayControls ?? new FakeElement('div'),
+      'app-shell__shell-keybindings-button',
+      'Disable Peaceful Mode'
+    );
+
+    expect(gameplayControls?.hidden).toBe(false);
+    expect(gameplayControls?.style.display).toBe('grid');
+    expect(readMetadataRows(gameplayMetadata)).toEqual([
+      {
+        label: 'Mode',
+        value: 'Peaceful'
+      },
+      {
+        label: 'Hostiles',
+        value: 'Active slimes clear and new spawns stay blocked'
+      },
+      {
+        label: 'Persistence',
+        value: 'Session-only fallback'
+      },
+      {
+        label: 'Scope',
+        value: 'Current tab until reload'
+      }
+    ]);
+    expect(togglePeacefulModeButton?.title).toBe(
+      resolvePausedMainMenuTogglePeacefulModeTitle(ENABLED_WORLD_SESSION_GAMEPLAY_STATE)
+    );
+    expect(togglePeacefulModeButton?.getAttribute('aria-pressed')).toBe('true');
+
+    togglePeacefulModeButton?.click();
+
+    expect(peacefulModeToggles).toEqual(['main-menu']);
   });
 
   it('disables Reset Telemetry at the default catalog and re-enables it after collection or type changes', () => {
@@ -2242,11 +2377,13 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       '.app-shell__danger-zone-action .app-shell__section-action-shortcut-badge'
     );
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-gameplay');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-telemetry');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-telemetry-summary');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-telemetry-collection');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-telemetry-button');
     expect(APP_SHELL_STYLE_SOURCE).toContain(".app-shell__shell-telemetry-button[aria-pressed='true']");
+    expect(APP_SHELL_STYLE_SOURCE).toContain(".app-shell__shell-keybindings-button[aria-pressed='true']");
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell-keybindings-metadata');
     expect(APP_SHELL_STYLE_SOURCE).toContain(".app-shell__section-action-button[data-busy='true']");
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-button[disabled]');
@@ -5418,6 +5555,7 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       metadataRows: DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
       toggleLabel: 'Show Shell',
       editorVisible: false,
+      gameplayControls: createPausedMainMenuShellGameplayControlsViewModel(),
       telemetryControls: createPausedMainMenuShellTelemetryControlsViewModel(),
       previewSection: null
     });
@@ -5430,6 +5568,7 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       metadataRows: DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
       toggleLabel: 'Hide Shell',
       editorVisible: true,
+      gameplayControls: createPausedMainMenuShellGameplayControlsViewModel(),
       telemetryControls: createPausedMainMenuShellTelemetryControlsViewModel(),
       previewSection: null
     });
@@ -5468,6 +5607,7 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       metadataRows: PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
       toggleLabel: 'Hide Shell',
       editorVisible: true,
+      gameplayControls: createPausedMainMenuShellGameplayControlsViewModel(),
       telemetryControls: createPausedMainMenuShellTelemetryControlsViewModel(),
       previewSection: {
         title: 'Shell Profile Preview',
@@ -5508,6 +5648,7 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       metadataRows: CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
       toggleLabel: 'Show Shell',
       editorVisible: false,
+      gameplayControls: createPausedMainMenuShellGameplayControlsViewModel(),
       telemetryControls: createPausedMainMenuShellTelemetryControlsViewModel(),
       previewSection: null
     });
@@ -5520,6 +5661,7 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       metadataRows: [],
       toggleLabel: null,
       editorVisible: false,
+      gameplayControls: null,
       telemetryControls: null,
       previewSection: null
     });

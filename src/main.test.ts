@@ -13,6 +13,10 @@ import {
   WORLD_SESSION_SHELL_STATE_STORAGE_KEY
 } from './mainWorldSessionShellState';
 import {
+  createDefaultWorldSessionGameplayState,
+  WORLD_SESSION_GAMEPLAY_STATE_STORAGE_KEY
+} from './mainWorldSessionGameplayState';
+import {
   createDefaultWorldSessionTelemetryState,
   WORLD_SESSION_TELEMETRY_STATE_STORAGE_KEY
 } from './mainWorldSessionTelemetryState';
@@ -1481,6 +1485,11 @@ const readPersistedShellState = (): ReturnType<typeof createDefaultWorldSessionS
     testRuntime.storageValues.get(WORLD_SESSION_SHELL_STATE_STORAGE_KEY) ??
       JSON.stringify(createDefaultWorldSessionShellState())
   );
+const readPersistedGameplayState = (): ReturnType<typeof createDefaultWorldSessionGameplayState> =>
+  JSON.parse(
+    testRuntime.storageValues.get(WORLD_SESSION_GAMEPLAY_STATE_STORAGE_KEY) ??
+      JSON.stringify(createDefaultWorldSessionGameplayState())
+  );
 const readPersistedTelemetryState = (): ReturnType<typeof createDefaultWorldSessionTelemetryState> =>
   JSON.parse(
     testRuntime.storageValues.get(WORLD_SESSION_TELEMETRY_STATE_STORAGE_KEY) ??
@@ -1554,6 +1563,8 @@ const createExpectedPausedMainMenuState = (
     shellActionKeybindings: ShellActionKeybindingState;
     shellActionKeybindingsDefaultedFromPersistedState: boolean;
     shellActionKeybindingsCurrentSessionOnly: boolean;
+    worldSessionGameplayState: ReturnType<typeof createDefaultWorldSessionGameplayState>;
+    worldSessionGameplayPersistenceAvailable: boolean;
     worldSessionTelemetryState: ReturnType<typeof createDefaultWorldSessionTelemetryState>;
     worldSessionTelemetryPersistenceAvailable: boolean;
     exportResult: PausedMainMenuExportResult;
@@ -1621,7 +1632,12 @@ const createExpectedPausedMainMenuState = (
         ? readPersistedTelemetryState()
         : createDefaultWorldSessionTelemetryState()),
     options.worldSessionTelemetryPersistenceAvailable ?? true,
-    options.resetShellTelemetryResult ?? null
+    options.resetShellTelemetryResult ?? null,
+    options.worldSessionGameplayState ??
+      (testRuntime.storageValues.has(WORLD_SESSION_GAMEPLAY_STATE_STORAGE_KEY)
+        ? readPersistedGameplayState()
+        : createDefaultWorldSessionGameplayState()),
+    options.worldSessionGameplayPersistenceAvailable ?? true
   );
 };
 
@@ -2039,6 +2055,7 @@ describe('main.ts shell state orchestration', () => {
           shortcutsOverlayVisible: true
         },
         persistenceAvailable: false,
+        worldSessionGameplayPersistenceAvailable: false,
         worldSessionTelemetryPersistenceAvailable: false
       })
     );
@@ -7484,6 +7501,109 @@ describe('main.ts shell state orchestration', () => {
 
     expect(readPersistedTelemetryState()).toEqual(createDefaultWorldSessionTelemetryState());
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+  });
+
+  it('persists paused-menu peaceful mode without disturbing shell visibility or telemetry state', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+
+    testRuntime.shellInstance?.options.onTogglePeacefulMode?.('main-menu');
+
+    expect(readPersistedShellState()).toEqual(createDefaultWorldSessionShellState());
+    expect(readPersistedTelemetryState()).toEqual(createDefaultWorldSessionTelemetryState());
+    expect(readPersistedGameplayState()).toEqual({
+      peacefulModeEnabled: true
+    });
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        worldSessionGameplayState: {
+          peacefulModeEnabled: true
+        }
+      })
+    );
+
+    testRuntime.shellInstance?.options.onTogglePeacefulMode?.('main-menu');
+
+    expect(readPersistedGameplayState()).toEqual(createDefaultWorldSessionGameplayState());
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+  });
+
+  it('despawns active hostile slimes and blocks new spawns while peaceful mode stays enabled', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    const slimeSpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 12,
+      x: 200,
+      y: 0,
+      width: DEFAULT_HOSTILE_SLIME_WIDTH,
+      height: DEFAULT_HOSTILE_SLIME_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_HOSTILE_SLIME_WIDTH &&
+        search?.height === DEFAULT_HOSTILE_SLIME_HEIGHT
+      ) {
+        return slimeSpawnPoint;
+      }
+
+      return testRuntime.playerSpawnPoint;
+    };
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toEqual([
+      {
+        id: 2,
+        position: { x: 200, y: 0 }
+      }
+    ]);
+
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+    testRuntime.shellInstance?.options.onTogglePeacefulMode?.('main-menu');
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toEqual([]);
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererStepHostileSlimeStateRequests = [];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererStepHostileSlimeStateRequests).toEqual([]);
+
+    for (let step = 1; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS + 1; step += 1) {
+      runFixedUpdate();
+    }
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toEqual([]);
+
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+    testRuntime.shellInstance?.options.onTogglePeacefulMode?.('main-menu');
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toEqual([
+      {
+        id: 3,
+        position: { x: 200, y: 0 }
+      }
+    ]);
   });
 
   it('routes overlay-backed in-world shell toggles through one shared visibility sync path while shortcuts stay shell-state only', async () => {

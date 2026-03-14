@@ -67,6 +67,13 @@ import {
   resolveWorldSessionShellStateAfterPausedMainMenuTransition
 } from './mainWorldSessionShellState';
 import {
+  cloneWorldSessionGameplayState,
+  createDefaultWorldSessionGameplayState,
+  loadWorldSessionGameplayStateWithPersistenceAvailability,
+  saveWorldSessionGameplayState,
+  type WorldSessionGameplayState
+} from './mainWorldSessionGameplayState';
+import {
   cloneWorldSessionTelemetryState,
   createDefaultWorldSessionTelemetryState,
   loadWorldSessionTelemetryStateWithPersistenceAvailability,
@@ -647,6 +654,7 @@ const bootstrap = async (): Promise<void> => {
   let currentScreen: AppShellScreen = 'boot';
   let loop: GameLoop | null = null;
   let worldSessionShellPersistenceAvailable = true;
+  let worldSessionGameplayPersistenceAvailable = true;
   let worldSessionTelemetryPersistenceAvailable = true;
   const initialPersistedWorldSaveEnvelopeLoad =
     loadPersistedWorldSaveEnvelopeWithPersistenceAvailability(worldSessionShellStateStorage);
@@ -662,8 +670,15 @@ const bootstrap = async (): Promise<void> => {
       worldSessionShellStateStorage,
       defaultWorldSessionTelemetryState
     );
+  const initialWorldSessionGameplayStateLoad =
+    loadWorldSessionGameplayStateWithPersistenceAvailability(
+      worldSessionShellStateStorage,
+      createDefaultWorldSessionGameplayState()
+    );
   worldSessionShellPersistenceAvailable =
     initialWorldSessionShellStateLoad.persistenceAvailable;
+  worldSessionGameplayPersistenceAvailable =
+    initialWorldSessionGameplayStateLoad.persistenceAvailable;
   worldSessionTelemetryPersistenceAvailable =
     initialWorldSessionTelemetryStateLoad.persistenceAvailable;
   let {
@@ -673,6 +688,7 @@ const bootstrap = async (): Promise<void> => {
     playerSpawnMarkerVisible,
     shortcutsOverlayVisible
   } = initialWorldSessionShellStateLoad.state;
+  let worldSessionGameplayState = initialWorldSessionGameplayStateLoad.state;
   let worldSessionTelemetryState = initialWorldSessionTelemetryStateLoad.state;
   const readWorldSessionShellState = () => ({
     debugOverlayVisible,
@@ -681,6 +697,8 @@ const bootstrap = async (): Promise<void> => {
     playerSpawnMarkerVisible,
     shortcutsOverlayVisible
   });
+  const readWorldSessionGameplayState = (): WorldSessionGameplayState =>
+    cloneWorldSessionGameplayState(worldSessionGameplayState);
   const readWorldSessionTelemetryState = (): WorldSessionTelemetryState =>
     cloneWorldSessionTelemetryState(worldSessionTelemetryState);
   const readPausedMainMenuShellProfilePreview =
@@ -720,6 +738,18 @@ const bootstrap = async (): Promise<void> => {
   };
   const applyWorldSessionTelemetryState = (state: WorldSessionTelemetryState): void => {
     worldSessionTelemetryState = cloneWorldSessionTelemetryState(state);
+  };
+  const applyWorldSessionGameplayState = (state: WorldSessionGameplayState): void => {
+    worldSessionGameplayState = cloneWorldSessionGameplayState(state);
+  };
+  const persistWorldSessionGameplayState = (
+    state: WorldSessionGameplayState = readWorldSessionGameplayState()
+  ): boolean => {
+    worldSessionGameplayPersistenceAvailable = saveWorldSessionGameplayState(
+      worldSessionShellStateStorage,
+      state
+    );
+    return worldSessionGameplayPersistenceAvailable;
   };
   const persistWorldSessionTelemetryState = (
     state: WorldSessionTelemetryState = readWorldSessionTelemetryState()
@@ -921,6 +951,19 @@ const bootstrap = async (): Promise<void> => {
       };
       pausedMainMenuRecentActivityAction = 'reset-shell-telemetry';
       refreshShellStateAfterShellPreferenceChange();
+    },
+    onTogglePeacefulMode: (screen) => {
+      if (screen !== 'main-menu' || !worldSessionStarted) {
+        return;
+      }
+
+      const nextState: WorldSessionGameplayState = {
+        peacefulModeEnabled: !readWorldSessionGameplayState().peacefulModeEnabled
+      };
+      applyWorldSessionGameplayStateAndRefreshWithPersistenceFallback(nextState);
+      if (nextState.peacefulModeEnabled) {
+        despawnHostileSlimeEntities([...hostileSlimeEntityIds]);
+      }
     }
   });
   shell.setState(createDefaultBootShellState());
@@ -984,7 +1027,9 @@ const bootstrap = async (): Promise<void> => {
         pausedMainMenuRecentActivityAction,
         readWorldSessionTelemetryState(),
         worldSessionTelemetryPersistenceAvailable,
-        pausedMainMenuResetShellTelemetryResult
+        pausedMainMenuResetShellTelemetryResult,
+        readWorldSessionGameplayState(),
+        worldSessionGameplayPersistenceAvailable
       )
     );
     syncWorldScreenShellVisibility();
@@ -1007,6 +1052,19 @@ const bootstrap = async (): Promise<void> => {
   ): boolean => {
     applyWorldSessionTelemetryState(nextState);
     return persistWorldSessionTelemetryState(nextState);
+  };
+  const applyWorldSessionGameplayStateWithPersistenceFallback = (
+    nextState: WorldSessionGameplayState
+  ): boolean => {
+    applyWorldSessionGameplayState(nextState);
+    return persistWorldSessionGameplayState(nextState);
+  };
+  const applyWorldSessionGameplayStateAndRefreshWithPersistenceFallback = (
+    nextState: WorldSessionGameplayState
+  ): boolean => {
+    const persisted = applyWorldSessionGameplayStateWithPersistenceFallback(nextState);
+    refreshShellStateAfterShellPreferenceChange();
+    return persisted;
   };
   const applyWorldSessionTelemetryStateAndRefreshWithPersistenceFallback = (
     nextState: WorldSessionTelemetryState
@@ -2058,7 +2116,18 @@ const bootstrap = async (): Promise<void> => {
       return false;
     });
   };
+  const enforcePeacefulModeHostileSlimeState = (): void => {
+    if (!worldSessionGameplayState.peacefulModeEnabled || hostileSlimeEntityIds.length === 0) {
+      return;
+    }
+
+    despawnHostileSlimeEntities([...hostileSlimeEntityIds]);
+  };
   const stepHostileSlimeSpawnAndDespawn = (): void => {
+    if (worldSessionGameplayState.peacefulModeEnabled) {
+      return;
+    }
+
     const standalonePlayerState = getStandalonePlayerState();
     if (standalonePlayerState === null) {
       return;
@@ -4484,6 +4553,7 @@ const bootstrap = async (): Promise<void> => {
 
       renderer.stepLiquidSimulation();
 
+      enforcePeacefulModeHostileSlimeState();
       entityRegistry.fixedUpdateAll(fixedDt);
       flushStandalonePlayerFixedStepResult();
       stepHostileSlimeSpawnAndDespawn();

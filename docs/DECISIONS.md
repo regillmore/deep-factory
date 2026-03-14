@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Peaceful mode persists as gameplay state and immediately clears hostile slimes
+
+- Decision: Paused-menu `Peaceful Mode` now lives in its own persisted world-session gameplay state, immediately despawns active hostile slimes, and blocks future hostile-slime spawn or locomotion work until toggled off.
+- Reason: The pause-menu recovery mode needs one authoritative hostile-disable gate that survives pause or resume and fresh-world transitions without being folded into world-save payloads or leaving already-spawned hostiles active.
+- Consequence: Future difficulty or enemy-behavior toggles should extend the same gameplay-state ownership path and treat peaceful mode as the runtime authority for hostile suppression unless the same pass intentionally revisits broader rules-state ownership.
+
 ### 2026-03-14: Breath survival telemetry lives under player-combat
 
 - Decision: Current breath and drowning-cooldown readouts now render under the existing `player-combat` telemetry type in both the full debug HUD and the hidden-HUD compact status strip.
