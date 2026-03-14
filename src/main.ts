@@ -114,6 +114,10 @@ import {
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
+import {
+  PlayerItemPlacementPreviewOverlay,
+  type PlayerItemPlacementPreviewState
+} from './ui/playerItemPlacementPreviewOverlay';
 import { PlayerSpawnMarkerOverlay } from './ui/playerSpawnMarkerOverlay';
 import type { DebugEditHoveredTileState, DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
 import {
@@ -930,6 +934,7 @@ const bootstrap = async (): Promise<void> => {
   const debug = new DebugOverlay();
   debug.setVisible(false);
   const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
+  const playerItemPlacementPreview = new PlayerItemPlacementPreviewOverlay(canvas);
   const playerSpawnMarker = new PlayerSpawnMarkerOverlay(canvas);
   const armedDebugToolPreview = new ArmedDebugToolPreviewOverlay(canvas);
   const debugEditStatusStrip = new DebugEditStatusStrip(canvas);
@@ -1037,6 +1042,9 @@ const bootstrap = async (): Promise<void> => {
     armedDebugToolPreview.setVisible(visible);
     debugEditStatusStrip.setVisible(visible);
   };
+  const syncPlayerItemPlacementPreviewVisibility = (): void => {
+    playerItemPlacementPreview.setVisible(currentScreen === 'in-world' && !debugEditControlsVisible);
+  };
   const syncCanvasInteractionMode = (): void => {
     input.setCanvasInteractionMode(
       currentScreen === 'in-world' && !debugEditControlsVisible ? 'play' : 'debug-edit'
@@ -1045,6 +1053,7 @@ const bootstrap = async (): Promise<void> => {
   const syncDebugEditControlsVisibility = (): void => {
     debugEditControls?.setVisible(currentScreen === 'in-world' && debugEditControlsVisible);
     syncCanvasInteractionMode();
+    syncPlayerItemPlacementPreviewVisibility();
   };
   const syncPlayerSpawnMarkerVisibility = (): void => {
     playerSpawnMarker.setVisible(currentScreen === 'in-world' && playerSpawnMarkerVisible);
@@ -2427,31 +2436,11 @@ const bootstrap = async (): Promise<void> => {
       return false;
     }
 
-    const standalonePlayerState = getStandalonePlayerState();
-    if (
-      standalonePlayerState === null ||
-      standalonePlayerDeathState !== null ||
-      isStandalonePlayerDead(standalonePlayerState)
-    ) {
-      return false;
-    }
-
-    const selectedStack =
-      standalonePlayerInventoryState.hotbar[standalonePlayerInventoryState.selectedHotbarSlotIndex] ??
-      null;
-    if (selectedStack?.itemId !== STARTER_BUILDING_BLOCK_ITEM_ID) {
-      return false;
-    }
-
-    const placement = evaluateStarterBlockPlacement(
-      {
-        getTile: (worldTileX, worldTileY) => renderer.getTile(worldTileX, worldTileY)
-      },
-      standalonePlayerState,
+    const placementPreview = getSelectedStandalonePlayerItemPlacementPreviewAtTile(
       request.worldTileX,
       request.worldTileY
     );
-    if (!placement.canPlace) {
+    if (!placementPreview?.canPlace) {
       return false;
     }
 
@@ -2465,6 +2454,41 @@ const bootstrap = async (): Promise<void> => {
     }
 
     return applySelectedStandalonePlayerHotbarSlotConsumption();
+  };
+
+  const getSelectedStandalonePlayerItemPlacementPreviewAtTile = (
+    worldTileX: number,
+    worldTileY: number
+  ): PlayerItemPlacementPreviewState | null => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return null;
+    }
+
+    const selectedStack =
+      standalonePlayerInventoryState.hotbar[standalonePlayerInventoryState.selectedHotbarSlotIndex] ??
+      null;
+    if (selectedStack?.itemId !== STARTER_BUILDING_BLOCK_ITEM_ID) {
+      return null;
+    }
+
+    const placement = evaluateStarterBlockPlacement(
+      {
+        getTile: (worldTileX, worldTileY) => renderer.getTile(worldTileX, worldTileY)
+      },
+      standalonePlayerState,
+      worldTileX,
+      worldTileY
+    );
+    return {
+      tileX: worldTileX,
+      tileY: worldTileY,
+      ...placement
+    };
   };
 
   const readDebugEditControlPreferenceSnapshot = (): DebugEditControlState => ({
@@ -3822,6 +3846,10 @@ const bootstrap = async (): Promise<void> => {
     applyStandalonePlayerRenderFrameCameraFollow(alpha);
     const pointerInspect = input.getPointerInspect();
     const armedDebugToolPreviewState = input.getArmedDebugToolPreviewState();
+    const selectedPlayerItemPlacementPreview =
+      !debugEditControlsVisible && pointerInspect
+        ? getSelectedStandalonePlayerItemPlacementPreviewAtTile(pointerInspect.tile.x, pointerInspect.tile.y)
+        : null;
     const hoveredDebugTileStatus = getHoveredDebugTileStatus(pointerInspect, renderTimeMs);
     const pinnedDebugTileStatus = pinnedDebugTileInspect
       ? getDebugTileStatusAtTile(
@@ -4028,6 +4056,7 @@ const bootstrap = async (): Promise<void> => {
         }
       : null
     });
+    playerItemPlacementPreview.update(camera, selectedPlayerItemPlacementPreview);
     const worldSessionTelemetryStateSnapshot = readWorldSessionTelemetryState();
     playerSpawnMarker.update(camera, resolvedPlayerSpawn);
     armedDebugToolPreview.update(camera, pointerInspect, armedDebugToolPreviewState);

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Play-mode hotbar placement preview stays available with debug overlays hidden
+
+- Decision: The hotbar dirt-placement preview now stays available whenever the in-world full `Debug Edit` panel is hidden, even when the compact debug overlay bundle is toggled off.
+- Reason: Placement legality is core mixed-device play feedback for the hotbar building path, while the `Edit Overlays` toggle is meant to hide debug inspect and one-shot preview chrome rather than remove essential build affordances.
+- Consequence: Future play-mode hotbar placement previews should stay decoupled from the debug overlay visibility toggle unless the same pass intentionally redesigns normal build feedback.
+
 ### 2026-03-13: Paused-menu dashboard should keep a single reading column on desktop
 
 - Decision: The paused-menu dashboard now keeps `Overview`, `World Save`, `Shell`, `Recent Activity`, and `Danger Zone` in one vertical stack on desktop instead of splitting paused sections across multiple columns.

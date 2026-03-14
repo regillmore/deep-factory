@@ -2,7 +2,17 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-14
+
+- Task: Decouple hotbar dirt-placement preview from debug overlay visibility.
+- Changes: Updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so the new hotbar placement preview now stays available whenever the in-world `Debug Edit` panel is hidden, even if `Edit Overlays` is off, while the older debug inspect and one-shot preview overlays still follow the `V` toggle; updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md), and left [docs/NEXT.md](docs/NEXT.md) unchanged because this pass was a user-directed detour rather than a completed roadmap task.
+- Verification: Ran `cmd /c npx vitest run src/ui/playerItemPlacementPreviewOverlay.test.ts src/world/starterBlockPlacement.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-13
+
+- Task: Add a visible hotbar dirt-placement preview while the full debug-edit panel is hidden.
+- Changes: Added [src/ui/playerItemPlacementPreviewOverlay.ts](../src/ui/playerItemPlacementPreviewOverlay.ts) plus [src/ui/playerItemPlacementPreviewOverlay.test.ts](../src/ui/playerItemPlacementPreviewOverlay.test.ts) so the compact overlay layer now projects a green-or-blocked tile preview for hovered hotbar dirt placement targets, updated [src/main.ts](../src/main.ts) and [src/main.test.ts](../src/main.test.ts) so render frames drive that preview from the same dirt-placement validation used by item use and keep it gated behind the existing panel-hidden plus overlay-visible path, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md); left [docs/NEXT.md](docs/NEXT.md) unchanged because this pass was a user-directed detour rather than a completed roadmap task.
+- Verification: Ran `cmd /c npx vitest run src/ui/playerItemPlacementPreviewOverlay.test.ts src/world/starterBlockPlacement.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
 
 - Task: Switch the paused-menu dashboard to a one-column desktop layout.
 - Changes: Updated [src/style.css](../src/style.css) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the paused dashboard now keeps both primary and secondary section groups in a single desktop column and narrows the paused panel for readability instead of reflowing into multiple columns; updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md), and left [docs/NEXT.md](docs/NEXT.md) unchanged because this pass was a user-directed layout detour rather than a completed roadmap task.

@@ -36,6 +36,7 @@ import {
 } from './ui/appShell';
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
+import type { PlayerItemPlacementPreviewState } from './ui/playerItemPlacementPreviewOverlay';
 import { createPlayerState, getPlayerCameraFocusPoint } from './world/playerState';
 import { DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS } from './world/hostileSlimeCombat';
 import {
@@ -187,6 +188,7 @@ const testRuntime = vi.hoisted(() => {
       setShellActionKeybindings(keybindings: ShellActionKeybindingState): void;
     },
     hoveredTileCursorInstance: null as null | { visible: boolean },
+    playerItemPlacementPreviewInstance: null as null | { visible: boolean },
     armedDebugToolPreviewInstance: null as null | { visible: boolean },
     debugEditStatusStripInstance: null as null | { visible: boolean },
     playerSpawnMarkerInstance: null as null | { visible: boolean },
@@ -343,6 +345,7 @@ const testRuntime = vi.hoisted(() => {
     },
     latestDebugOverlayInspectState: null as DebugOverlayInspectState | null,
     latestDebugEditStatusStripState: null as DebugEditStatusStripState | null,
+    latestPlayerItemPlacementPreviewState: null as PlayerItemPlacementPreviewState | null,
     rendererWorldSnapshot: null as ReturnType<TileWorld['createSnapshot']> | null,
     rendererPlayerSpawnLiquidSafetyStatus: 'safe' as 'safe' | 'overlap',
     playerSpawnPoint: null as null | {
@@ -1154,6 +1157,24 @@ vi.mock('./ui/hoveredTileCursor', () => ({
   }
 }));
 
+vi.mock('./ui/playerItemPlacementPreviewOverlay', () => ({
+  PlayerItemPlacementPreviewOverlay: class {
+    visible = false;
+
+    constructor() {
+      testRuntime.playerItemPlacementPreviewInstance = this;
+    }
+
+    setVisible(visible: boolean): void {
+      this.visible = visible;
+    }
+
+    update(_camera: unknown, state: PlayerItemPlacementPreviewState | null): void {
+      testRuntime.latestPlayerItemPlacementPreviewState = state;
+    }
+  }
+}));
+
 vi.mock('./ui/armedDebugToolPreviewOverlay', () => ({
   ArmedDebugToolPreviewOverlay: class {
     visible = false;
@@ -1674,6 +1695,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugEditControlsArmedToolKinds = null;
     testRuntime.debugEditControlsInstance = null;
     testRuntime.hoveredTileCursorInstance = null;
+    testRuntime.playerItemPlacementPreviewInstance = null;
     testRuntime.armedDebugToolPreviewInstance = null;
     testRuntime.debugEditStatusStripInstance = null;
     testRuntime.playerSpawnMarkerInstance = null;
@@ -1751,6 +1773,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.latestRendererRenderFrameState = null;
     testRuntime.latestDebugOverlayInspectState = null;
     testRuntime.latestDebugEditStatusStripState = null;
+    testRuntime.latestPlayerItemPlacementPreviewState = null;
     testRuntime.rendererWorldSnapshot = new TileWorld(0).createSnapshot();
     testRuntime.rendererPlayerSpawnLiquidSafetyStatus = 'safe';
     testRuntime.debugTileInspectPinRequests = [];
@@ -1906,6 +1929,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(false);
     expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
     expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(false);
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
@@ -1917,6 +1941,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugOverlayInstance?.visible).toBe(true);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(true);
+    expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(true);
     expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(true);
     expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(true);
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
@@ -1946,6 +1971,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(true);
     expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
     expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(false);
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
@@ -1974,6 +2000,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(true);
     expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
     expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(false);
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
@@ -5439,6 +5466,75 @@ describe('main.ts shell state orchestration', () => {
 
     expect(dispatchKeydown('[', 'BracketLeft').prevented).toBe(true);
     expect(readPersistedDebugEditControlState().brushTileId).toBe(3);
+  });
+
+  it('shows a valid starter dirt placement preview on the hovered tile while the full debug-edit panel is hidden', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 1);
+    expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(true);
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 1, y: -1 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 1,
+      tileY: -1,
+      canPlace: true,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false
+    });
+  });
+
+  it('shows a blocked starter dirt placement preview when the hovered tile would overlap the player', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    testRuntime.pointerInspect = {
+      pointerType: 'touch',
+      tile: { x: 0, y: -1 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 0,
+      tileY: -1,
+      canPlace: false,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: true
+    });
+  });
+
+  it('hides the starter dirt placement preview for non-dirt slots and while the full debug-edit panel is open', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 1);
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 1, y: -1 }
+    };
+
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    runRenderFrame();
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toBeNull();
+
+    expect(dispatchKeydown('1', 'Digit1').prevented).toBe(true);
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    runRenderFrame();
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toBeNull();
   });
 
   it('places a starter dirt block from the selected hotbar slot while the full debug-edit panel is hidden', async () => {
