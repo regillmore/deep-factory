@@ -30,6 +30,7 @@ import {
   type PausedMainMenuExportResult,
   type PausedMainMenuImportResult,
   type PausedMainMenuRecentActivityAction,
+  type PausedMainMenuResetShellTelemetryResult,
   type PausedMainMenuResetShellTogglesResult,
   type PausedMainMenuSavedWorldStatus
 } from './ui/appShell';
@@ -1534,6 +1535,7 @@ const createExpectedPausedMainMenuState = (
     importResult: PausedMainMenuImportResult;
     clearSavedWorldResult: PausedMainMenuClearSavedWorldResult;
     resetShellTogglesResult: PausedMainMenuResetShellTogglesResult;
+    resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult;
     worldSaveCleared: boolean;
     savedWorldStatus: PausedMainMenuSavedWorldStatus;
     recentActivityAction: PausedMainMenuRecentActivityAction;
@@ -1552,15 +1554,17 @@ const createExpectedPausedMainMenuState = (
     options.savedWorldStatus ?? (options.worldSaveCleared ? 'cleared' : null);
   const resolvedRecentActivityAction =
     options.recentActivityAction ??
-    (options.resetShellTogglesResult
-      ? 'reset-shell-toggles'
-      : options.clearSavedWorldResult || resolvedSavedWorldStatus === 'cleared'
-        ? 'clear-saved-world'
-        : options.importResult
-          ? 'import-world-save'
-          : options.exportResult
-            ? 'export-world-save'
-      : null);
+    (options.resetShellTelemetryResult
+      ? 'reset-shell-telemetry'
+      : options.resetShellTogglesResult
+        ? 'reset-shell-toggles'
+        : options.clearSavedWorldResult || resolvedSavedWorldStatus === 'cleared'
+          ? 'clear-saved-world'
+          : options.importResult
+            ? 'import-world-save'
+            : options.exportResult
+              ? 'export-world-save'
+              : null);
 
   return createMainMenuShellState(
     true,
@@ -1591,7 +1595,8 @@ const createExpectedPausedMainMenuState = (
       (testRuntime.storageValues.has(WORLD_SESSION_TELEMETRY_STATE_STORAGE_KEY)
         ? readPersistedTelemetryState()
         : createDefaultWorldSessionTelemetryState()),
-    options.worldSessionTelemetryPersistenceAvailable ?? true
+    options.worldSessionTelemetryPersistenceAvailable ?? true,
+    options.resetShellTelemetryResult ?? null
   );
 };
 
@@ -7226,6 +7231,25 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onResetShellTelemetry?.('main-menu');
 
     expect(readPersistedShellState()).toEqual(createDefaultWorldSessionShellState());
+    expect(readPersistedTelemetryState()).toEqual(createDefaultWorldSessionTelemetryState());
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        recentActivityAction: 'reset-shell-telemetry',
+        resetShellTelemetryResult: {
+          status: 'saved'
+        }
+      })
+    );
+  });
+
+  it('keeps Reset Telemetry out of recent activity when the catalog is already at the default state', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+    testRuntime.shellInstance?.options.onResetShellTelemetry?.('main-menu');
+
     expect(readPersistedTelemetryState()).toEqual(createDefaultWorldSessionTelemetryState());
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
   });

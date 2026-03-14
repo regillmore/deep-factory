@@ -149,6 +149,10 @@ const DOWNLOADED_EXPORT_WITH_FOLLOW_UP_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_
   'Latest world-save activity: Export World Save downloaded successfully. A follow-up warning still needs attention below.';
 const RESET_CLEARED_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE =
   'Latest shell-setting activity: Reset Shell Toggles cleared saved shell visibility for the next resume.';
+const RESET_TELEMETRY_SAVED_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE =
+  'Latest shell-setting activity: Reset Telemetry restored the default catalog and saved it for future resumes.';
+const RESET_TELEMETRY_SESSION_ONLY_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE =
+  'Latest shell-setting activity: Reset Telemetry restored the default catalog for this paused session only.';
 const CLEARED_PAUSED_MAIN_MENU_CLEAR_SAVED_WORLD_ACTIVITY_LINES = [
   'Clear Saved World removed the browser-resume envelope while keeping this paused session open in the current tab.'
 ] as const;
@@ -5261,6 +5265,116 @@ describe('resolvePausedMainMenuRecentActivitySectionState', () => {
             }
           ],
           tone: 'accent'
+        }
+      ]
+    });
+  });
+
+  it('shows a saved Reset Telemetry result in recent activity after a catalog-changing reset', () => {
+    expect(
+      resolvePausedMainMenuRecentActivitySectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          false,
+          'reset-shell-telemetry',
+          createDefaultWorldSessionTelemetryState(),
+          true,
+          {
+            status: 'saved'
+          }
+        )
+      )
+    ).toEqual({
+      visible: true,
+      summaryLine: RESET_TELEMETRY_SAVED_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE,
+      tone: 'default',
+      menuSections: [
+        {
+          title: 'Reset Telemetry Result',
+          lines: [],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Default catalog restored'
+            },
+            {
+              label: 'Persistence',
+              value: 'Browser saved',
+              badge: {
+                text: 'Saved',
+                tone: 'accent'
+              }
+            },
+            {
+              label: 'Visibility',
+              value: 'All collections and types enabled'
+            }
+          ],
+          tone: 'accent'
+        }
+      ]
+    });
+  });
+
+  it('preserves session-only Reset Telemetry feedback in recent activity even after current persistence recovers', () => {
+    expect(
+      resolvePausedMainMenuRecentActivitySectionState(
+        createPausedMainMenuShellState(
+          undefined,
+          true,
+          createDefaultShellActionKeybindingState(),
+          false,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          false,
+          'reset-shell-telemetry',
+          createDefaultWorldSessionTelemetryState(),
+          true,
+          {
+            status: 'session-only'
+          }
+        )
+      )
+    ).toEqual({
+      visible: true,
+      summaryLine: RESET_TELEMETRY_SESSION_ONLY_PAUSED_MAIN_MENU_RECENT_ACTIVITY_SUMMARY_LINE,
+      tone: 'warning',
+      menuSections: [
+        {
+          title: 'Reset Telemetry Result',
+          lines: [],
+          metadataRows: [
+            {
+              label: 'Status',
+              value: 'Default catalog restored'
+            },
+            {
+              label: 'Persistence',
+              value: 'Session-only fallback',
+              badge: {
+                text: 'Session only',
+                tone: 'warning'
+              }
+            },
+            {
+              label: 'Visibility',
+              value: 'All collections and types enabled'
+            }
+          ],
+          tone: 'warning'
         }
       ]
     });

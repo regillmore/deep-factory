@@ -70,6 +70,7 @@ import {
   cloneWorldSessionTelemetryState,
   createDefaultWorldSessionTelemetryState,
   loadWorldSessionTelemetryStateWithPersistenceAvailability,
+  matchesDefaultWorldSessionTelemetryState,
   saveWorldSessionTelemetryState,
   toggleWorldSessionTelemetryCollection,
   toggleWorldSessionTelemetryType,
@@ -99,6 +100,7 @@ import {
   type PausedMainMenuExportResult,
   type PausedMainMenuImportResult,
   type PausedMainMenuRecentActivityAction,
+  type PausedMainMenuResetShellTelemetryResult,
   type PausedMainMenuShellActionKeybindingRemapResult,
   type PausedMainMenuResetShellActionKeybindingsResult,
   type PausedMainMenuResetShellTogglesResult,
@@ -626,6 +628,8 @@ const bootstrap = async (): Promise<void> => {
   let pausedMainMenuImportResult: PausedMainMenuImportResult | null = null;
   let pausedMainMenuClearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null = null;
   let pausedMainMenuResetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null;
+  let pausedMainMenuResetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null =
+    null;
   let pausedMainMenuRecentActivityAction: PausedMainMenuRecentActivityAction | null = null;
   let pausedMainMenuShellProfilePreview: PendingPausedMainMenuShellProfilePreview | null = null;
   let currentScreen: AppShellScreen = 'boot';
@@ -892,9 +896,19 @@ const bootstrap = async (): Promise<void> => {
         return;
       }
 
-      applyWorldSessionTelemetryStateAndRefreshWithPersistenceFallback(
+      const previousTelemetryState = readWorldSessionTelemetryState();
+      if (matchesDefaultWorldSessionTelemetryState(previousTelemetryState)) {
+        return;
+      }
+
+      const persisted = applyWorldSessionTelemetryStateWithPersistenceFallback(
         createDefaultWorldSessionTelemetryState()
       );
+      pausedMainMenuResetShellTelemetryResult = {
+        status: persisted ? 'saved' : 'session-only'
+      };
+      pausedMainMenuRecentActivityAction = 'reset-shell-telemetry';
+      refreshShellStateAfterShellPreferenceChange();
     }
   });
   shell.setState(createDefaultBootShellState());
@@ -956,7 +970,8 @@ const bootstrap = async (): Promise<void> => {
         shellActionKeybindingsCurrentSessionOnly,
         pausedMainMenuRecentActivityAction,
         readWorldSessionTelemetryState(),
-        worldSessionTelemetryPersistenceAvailable
+        worldSessionTelemetryPersistenceAvailable,
+        pausedMainMenuResetShellTelemetryResult
       )
     );
     syncWorldScreenShellVisibility();
@@ -974,12 +989,18 @@ const bootstrap = async (): Promise<void> => {
 
     showMainMenuShellState();
   };
+  const applyWorldSessionTelemetryStateWithPersistenceFallback = (
+    nextState: WorldSessionTelemetryState
+  ): boolean => {
+    applyWorldSessionTelemetryState(nextState);
+    return persistWorldSessionTelemetryState(nextState);
+  };
   const applyWorldSessionTelemetryStateAndRefreshWithPersistenceFallback = (
     nextState: WorldSessionTelemetryState
-  ): void => {
-    applyWorldSessionTelemetryState(nextState);
-    persistWorldSessionTelemetryState(nextState);
+  ): boolean => {
+    const persisted = applyWorldSessionTelemetryStateWithPersistenceFallback(nextState);
     refreshShellStateAfterShellPreferenceChange();
+    return persisted;
   };
   function persistShellActionKeybindingStateAndRefresh(
     nextKeybindings: ShellActionKeybindingState
@@ -3235,6 +3256,7 @@ const bootstrap = async (): Promise<void> => {
     pausedMainMenuImportResult = null;
     pausedMainMenuClearSavedWorldResult = null;
     pausedMainMenuResetShellTogglesResult = null;
+    pausedMainMenuResetShellTelemetryResult = null;
     pausedMainMenuRecentActivityAction = null;
     applyPausedMainMenuWorldSessionShellTransition('resume-paused-world-session');
     enterInWorldShellState();
@@ -3252,6 +3274,7 @@ const bootstrap = async (): Promise<void> => {
     pausedMainMenuImportResult = null;
     pausedMainMenuClearSavedWorldResult = null;
     pausedMainMenuResetShellTogglesResult = null;
+    pausedMainMenuResetShellTelemetryResult = null;
     pausedMainMenuRecentActivityAction = null;
     clearPersistedCurrentWorldSession();
     applyPausedMainMenuWorldSessionShellTransition('start-fresh-world-session');

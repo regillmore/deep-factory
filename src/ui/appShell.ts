@@ -128,6 +128,7 @@ export interface PausedMainMenuRecentActivitySectionViewModel {
   importResult: AppShellMenuSection | null;
   clearSavedWorldResult: AppShellMenuSection | null;
   resetShellTogglesResult: AppShellMenuSection | null;
+  resetShellTelemetryResult: AppShellMenuSection | null;
 }
 
 export interface PausedMainMenuDangerZoneSectionViewModel {
@@ -252,11 +253,24 @@ export type PausedMainMenuResetShellTogglesResult =
   | PausedMainMenuClearedResetShellTogglesResult
   | PausedMainMenuPersistenceFailedResetShellTogglesResult;
 
+export interface PausedMainMenuSavedResetShellTelemetryResult {
+  status: 'saved';
+}
+
+export interface PausedMainMenuSessionOnlyResetShellTelemetryResult {
+  status: 'session-only';
+}
+
+export type PausedMainMenuResetShellTelemetryResult =
+  | PausedMainMenuSavedResetShellTelemetryResult
+  | PausedMainMenuSessionOnlyResetShellTelemetryResult;
+
 export type PausedMainMenuRecentActivityAction =
   | 'export-world-save'
   | 'import-world-save'
   | 'clear-saved-world'
-  | 'reset-shell-toggles';
+  | 'reset-shell-toggles'
+  | 'reset-shell-telemetry';
 
 export interface PausedMainMenuSavedShellActionKeybindingRemapResult {
   status: 'saved';
@@ -409,6 +423,7 @@ export interface AppShellState {
   pausedMainMenuSavedWorldStatus?: PausedMainMenuSavedWorldStatus;
   pausedMainMenuClearSavedWorldResult?: PausedMainMenuClearSavedWorldResult;
   pausedMainMenuResetShellTogglesResult?: PausedMainMenuResetShellTogglesResult;
+  pausedMainMenuResetShellTelemetryResult?: PausedMainMenuResetShellTelemetryResult;
   pausedMainMenuRecentActivityAction?: PausedMainMenuRecentActivityAction;
   pausedMainMenuShellProfilePreview?: PausedMainMenuShellProfilePreview;
 }
@@ -590,7 +605,9 @@ const createPausedMainMenuClearedSavedWorldRecentActivityMenuSection = (): AppSh
 const resolvePausedMainMenuRecentActivityCategory = (
   action: PausedMainMenuRecentActivityAction
 ): PausedMainMenuRecentActivityResultCategory =>
-  action === 'reset-shell-toggles' ? 'shell-settings' : 'world-save';
+  action === 'reset-shell-toggles' || action === 'reset-shell-telemetry'
+    ? 'shell-settings'
+    : 'world-save';
 
 const hasPausedMainMenuRecentActivityAction = (
   state: AppShellState,
@@ -608,6 +625,8 @@ const hasPausedMainMenuRecentActivityAction = (
       );
     case 'reset-shell-toggles':
       return state.pausedMainMenuResetShellTogglesResult != null;
+    case 'reset-shell-telemetry':
+      return state.pausedMainMenuResetShellTelemetryResult != null;
   }
 };
 
@@ -619,7 +638,8 @@ const resolvePausedMainMenuFallbackRecentActivityAction = (
       'export-world-save',
       'import-world-save',
       'clear-saved-world',
-      'reset-shell-toggles'
+      'reset-shell-toggles',
+      'reset-shell-telemetry'
     ] as const
   ).filter((action) => hasPausedMainMenuRecentActivityAction(state, action));
 
@@ -656,6 +676,8 @@ const resolvePausedMainMenuLatestRecentActivityMenuSection = (
       );
     case 'reset-shell-toggles':
       return sectionViewModel.recentActivity.resetShellTogglesResult;
+    case 'reset-shell-telemetry':
+      return sectionViewModel.recentActivity.resetShellTelemetryResult;
   }
 };
 
@@ -722,6 +744,15 @@ const resolvePausedMainMenuRecentActivitySummaryLine = (
             return 'Latest shell-setting activity: Reset Shell Toggles cleared saved shell visibility for the next resume.';
           case 'persistence-failed':
             return 'Latest shell-setting activity: Reset Shell Toggles applies only to this paused session.';
+          default:
+            return null;
+        }
+      case 'reset-shell-telemetry':
+        switch (state.pausedMainMenuResetShellTelemetryResult?.status) {
+          case 'saved':
+            return 'Latest shell-setting activity: Reset Telemetry restored the default catalog and saved it for future resumes.';
+          case 'session-only':
+            return 'Latest shell-setting activity: Reset Telemetry restored the default catalog for this paused session only.';
           default:
             return null;
         }
@@ -1637,6 +1668,38 @@ const createPausedMainMenuResetShellTogglesResultMenuSection = (
       };
   }
 };
+const createPausedMainMenuResetShellTelemetryResultMenuSection = (
+  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult
+): AppShellMenuSection => {
+  const persistenceAvailable = resetShellTelemetryResult.status === 'saved';
+  const persistenceSummary = createWorldSessionTelemetryStatePersistenceSummary(
+    createDefaultWorldSessionTelemetryState(),
+    persistenceAvailable
+  );
+
+  return {
+    title: 'Reset Telemetry Result',
+    lines: [],
+    metadataRows: [
+      {
+        label: 'Status',
+        value: 'Default catalog restored'
+      },
+      {
+        label: 'Persistence',
+        value: persistenceSummary.statusValue,
+        badge: persistenceAvailable
+          ? PAUSED_MAIN_MENU_SAVED_RESULT_BADGE
+          : PAUSED_MAIN_MENU_SESSION_ONLY_RESULT_BADGE
+      },
+      {
+        label: 'Visibility',
+        value: 'All collections and types enabled'
+      }
+    ],
+    tone: persistenceAvailable ? 'accent' : 'warning'
+  };
+};
 const createPausedMainMenuShellProfilePreviewMenuSection = (
   worldSessionShellState: WorldSessionShellState,
   liveShellActionKeybindings: ShellActionKeybindingState,
@@ -1892,7 +1955,8 @@ export const createPausedMainMenuSectionViewModel = (
   resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null,
   shellProfilePreview: PausedMainMenuShellProfilePreview | null = null,
   worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
-  worldSessionTelemetryPersistenceAvailable = true
+  worldSessionTelemetryPersistenceAvailable = true,
+  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null
 ): PausedMainMenuSectionViewModel => {
   const persistenceSummary = createWorldSessionShellStatePersistenceSummary(
     worldSessionShellState,
@@ -2034,7 +2098,11 @@ export const createPausedMainMenuSectionViewModel = (
       resetShellTogglesResult:
         resetShellTogglesResult === null
           ? null
-          : createPausedMainMenuResetShellTogglesResultMenuSection(resetShellTogglesResult)
+          : createPausedMainMenuResetShellTogglesResultMenuSection(resetShellTogglesResult),
+      resetShellTelemetryResult:
+        resetShellTelemetryResult === null
+          ? null
+          : createPausedMainMenuResetShellTelemetryResultMenuSection(resetShellTelemetryResult)
     },
     dangerZone: {
       resetShellToggles: {
@@ -2093,7 +2161,8 @@ export const createPausedMainMenuMenuSections = (
   shellActionKeybindingsCurrentSessionOnly = false,
   recentActivityAction: PausedMainMenuRecentActivityAction | null = null,
   worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
-  worldSessionTelemetryPersistenceAvailable = true
+  worldSessionTelemetryPersistenceAvailable = true,
+  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null
 ): readonly AppShellMenuSection[] =>
   createPausedMainMenuShellState(
     worldSessionShellState,
@@ -2109,7 +2178,8 @@ export const createPausedMainMenuMenuSections = (
     shellActionKeybindingsCurrentSessionOnly,
     recentActivityAction,
     worldSessionTelemetryState,
-    worldSessionTelemetryPersistenceAvailable
+    worldSessionTelemetryPersistenceAvailable,
+    resetShellTelemetryResult
   ).menuSections ?? [];
 
 const createPausedMainMenuBaseShellState = (
@@ -2126,7 +2196,8 @@ const createPausedMainMenuBaseShellState = (
   shellActionKeybindingsCurrentSessionOnly = false,
   recentActivityAction: PausedMainMenuRecentActivityAction | null = null,
   worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
-  worldSessionTelemetryPersistenceAvailable = true
+  worldSessionTelemetryPersistenceAvailable = true,
+  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null
 ): AppShellState => {
   const pausedMainMenuSections = createPausedMainMenuSectionViewModel(
     worldSessionShellState,
@@ -2140,7 +2211,8 @@ const createPausedMainMenuBaseShellState = (
     resetShellTogglesResult,
     shellProfilePreview,
     worldSessionTelemetryState,
-    worldSessionTelemetryPersistenceAvailable
+    worldSessionTelemetryPersistenceAvailable,
+    resetShellTelemetryResult
   );
 
   return {
@@ -2168,6 +2240,9 @@ const createPausedMainMenuBaseShellState = (
     ...(resetShellTogglesResult === null
       ? {}
       : { pausedMainMenuResetShellTogglesResult: resetShellTogglesResult }),
+    ...(resetShellTelemetryResult === null
+      ? {}
+      : { pausedMainMenuResetShellTelemetryResult: resetShellTelemetryResult }),
     ...(recentActivityAction === null
       ? {}
       : { pausedMainMenuRecentActivityAction: recentActivityAction }),
@@ -2191,7 +2266,8 @@ export const createPausedMainMenuShellState = (
   shellActionKeybindingsCurrentSessionOnly = false,
   recentActivityAction: PausedMainMenuRecentActivityAction | null = null,
   worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
-  worldSessionTelemetryPersistenceAvailable = true
+  worldSessionTelemetryPersistenceAvailable = true,
+  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null
 ): AppShellState => {
   const baseState = createPausedMainMenuBaseShellState(
     worldSessionShellState,
@@ -2207,7 +2283,8 @@ export const createPausedMainMenuShellState = (
     shellActionKeybindingsCurrentSessionOnly,
     recentActivityAction,
     worldSessionTelemetryState,
-    worldSessionTelemetryPersistenceAvailable
+    worldSessionTelemetryPersistenceAvailable,
+    resetShellTelemetryResult
   );
   const menuSectionGroups = resolvePausedMainMenuMenuSectionGroups(baseState);
 
@@ -2431,7 +2508,8 @@ export const createMainMenuShellState = (
   shellActionKeybindingsCurrentSessionOnly = false,
   recentActivityAction: PausedMainMenuRecentActivityAction | null = null,
   worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
-  worldSessionTelemetryPersistenceAvailable = true
+  worldSessionTelemetryPersistenceAvailable = true,
+  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null
 ): AppShellState =>
   hasResumableWorldSession
     ? createPausedMainMenuShellState(
@@ -2448,7 +2526,8 @@ export const createMainMenuShellState = (
         shellActionKeybindingsCurrentSessionOnly,
         recentActivityAction,
         worldSessionTelemetryState,
-        worldSessionTelemetryPersistenceAvailable
+        worldSessionTelemetryPersistenceAvailable,
+        resetShellTelemetryResult
       )
     : createFirstLaunchMainMenuShellState(firstLaunchWorldSavePersistenceAvailable);
 
