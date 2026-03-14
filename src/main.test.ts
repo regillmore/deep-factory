@@ -2827,16 +2827,24 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.playerGroundedTransition ?? null).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerFacingTransition ?? null).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.playerHealth).toBe(0);
+    expect(testRuntime.latestDebugEditStatusStripState.playerRespawnSecondsRemaining).toBe(1);
+    expect(testRuntime.latestDebugEditStatusStripState.playerDeathHoldStatus).toBe('holding');
     expect(testRuntime.latestDebugEditStatusStripState.playerVelocityX).toBe(0);
     expect(testRuntime.latestDebugEditStatusStripState.playerVelocityY).toBe(0);
     expect(testRuntime.latestDebugEditStatusStripState.playerRespawn ?? null).toBeNull();
     expect(testRuntime.latestDebugOverlayInspectState?.playerRespawn ?? null).toBeNull();
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.respawnSecondsRemaining).toBe(1);
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.deathHoldStatus).toBe('holding');
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
 
     runFixedUpdate(0.5);
     runRenderFrame();
 
     expect(testRuntime.latestDebugEditStatusStripState.playerRespawn ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerRespawnSecondsRemaining).toBe(0.5);
+    expect(testRuntime.latestDebugEditStatusStripState.playerDeathHoldStatus).toBe('holding');
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.respawnSecondsRemaining).toBe(0.5);
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.deathHoldStatus).toBe('holding');
 
     runFixedUpdate(0.5);
     runRenderFrame();
@@ -2878,6 +2886,8 @@ describe('main.ts shell state orchestration', () => {
     expect(
       testRuntime.latestDebugEditStatusStripState.playerHostileContactInvulnerabilitySecondsRemaining
     ).toBeCloseTo(1, 6);
+    expect(testRuntime.latestDebugEditStatusStripState.playerRespawnSecondsRemaining ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerDeathHoldStatus).toBe('respawned');
     expect(testRuntime.latestDebugOverlayInspectState?.playerRespawn).toMatchObject({
       kind: 'death',
       spawnTile: {
@@ -2895,6 +2905,8 @@ describe('main.ts shell state orchestration', () => {
       supportTileId: 1,
       liquidSafetyStatus: 'overlap'
     });
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.respawnSecondsRemaining ?? null).toBeNull();
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.deathHoldStatus).toBe('respawned');
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
 
     const respawnedPlayerState = {
@@ -2975,6 +2987,10 @@ describe('main.ts shell state orchestration', () => {
       supportTileId: 9,
       liquidSafetyStatus: 'safe'
     });
+    expect(testRuntime.latestDebugEditStatusStripState.playerRespawnSecondsRemaining ?? null).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerDeathHoldStatus).toBe('respawned');
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.respawnSecondsRemaining ?? null).toBeNull();
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.deathHoldStatus).toBe('respawned');
     expect(testRuntime.latestDebugEditStatusStripState.playerCeilingBonkHoldActive).toBe(false);
   });
 

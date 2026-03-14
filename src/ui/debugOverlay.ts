@@ -209,6 +209,8 @@ export interface DebugOverlayPlayerTelemetry {
   position: { x: number; y: number };
   velocity: { x: number; y: number };
   health?: number | null;
+  respawnSecondsRemaining?: number | null;
+  deathHoldStatus?: 'none' | 'holding' | 'respawned' | null;
   breathSecondsRemaining?: number | null;
   drowningDamageTickSecondsRemaining?: number | null;
   fallDamageRecoverySecondsRemaining?: number | null;
@@ -735,6 +737,17 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
     return 'Combat: n/a';
   }
 
+  const respawnText =
+    typeof player.respawnSecondsRemaining === 'number' &&
+    Number.isFinite(player.respawnSecondsRemaining)
+      ? `${player.respawnSecondsRemaining.toFixed(2)}s`
+      : null;
+  const deathHoldText =
+    player.deathHoldStatus === 'none' ||
+    player.deathHoldStatus === 'holding' ||
+    player.deathHoldStatus === 'respawned'
+      ? player.deathHoldStatus
+      : null;
   const breathText =
     typeof player.breathSecondsRemaining === 'number' && Number.isFinite(player.breathSecondsRemaining)
       ? `${player.breathSecondsRemaining.toFixed(2)}s`
@@ -760,6 +773,8 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
       : 'n/a';
   if (
     healthText === 'n/a' &&
+    respawnText === null &&
+    deathHoldText === null &&
     breathText === null &&
     drowningCooldownText === null &&
     fallRecoveryText === null &&
@@ -768,6 +783,12 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
     return 'Combat: n/a';
   }
   const segments = [`health:${healthText}`];
+  if (respawnText !== null) {
+    segments.push(`respawnIn:${respawnText}`);
+  }
+  if (deathHoldText !== null) {
+    segments.push(`deathHold:${deathHoldText}`);
+  }
   if (breathText !== null) {
     segments.push(`breath:${breathText}`);
   }

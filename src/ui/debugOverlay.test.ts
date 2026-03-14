@@ -345,6 +345,56 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nPin: Tile:dirt (#2) | T:8,-3');
   });
 
+  it('shows death-hold status plus the live respawn countdown in combat telemetry', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      pinned: null,
+      spawn: null,
+      player: {
+        position: { x: 24.5, y: -12.25 },
+        velocity: { x: 0, y: 0 },
+        health: 0,
+        respawnSecondsRemaining: 0.75,
+        deathHoldStatus: 'holding',
+        hostileContactInvulnerabilitySecondsRemaining: 0,
+        aabb: {
+          min: { x: 18.5, y: -40.25 },
+          max: { x: 30.5, y: -12.25 },
+          size: { x: 12, y: 28 }
+        },
+        grounded: false,
+        facing: 'left',
+        contacts: {
+          support: null,
+          wall: null,
+          ceiling: null
+        }
+      },
+      hostileSlime: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerNearbyLightLevel: null,
+      playerNearbyLightFactor: null,
+      playerNearbyLightSourceTile: null,
+      playerNearbyLightSourceChunk: null,
+      playerNearbyLightSourceLocalTile: null,
+      playerIntent: null,
+      playerCameraFollow: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerLandingDamageEvent: null,
+      playerHostileContactEvent: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      telemetryState: createDefaultWorldSessionTelemetryState()
+    });
+
+    expect(text).toContain(
+      '\nCombat: health:0 | respawnIn:0.75s | deathHold:holding | contactInvuln:0.00s'
+    );
+  });
+
   it('shows last liquid-step scan and transfer telemetry', () => {
     const text = formatDebugOverlayText(
       60,

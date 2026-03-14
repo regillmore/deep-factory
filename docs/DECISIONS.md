@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Death-hold telemetry lives under player-combat
+
+- Decision: Current respawn-countdown and death-hold-status readouts now render under the existing `player-combat` telemetry type in both the full debug HUD and the hidden-HUD compact status strip.
+- Reason: The death hold is a short survival timer that explains why the player is frozen and when control returns, so keeping it with health and other recovery timers avoids splitting one survival story across combat and event toggles.
+- Consequence: Future death, revive, or checkpoint countdown readouts should extend `player-combat` unless a later pass intentionally re-slices survival telemetry.
+
 ### 2026-03-14: Peaceful mode persists as gameplay state and immediately clears hostile slimes
 
 - Decision: Paused-menu `Peaceful Mode` now lives in its own persisted world-session gameplay state, immediately despawns active hostile slimes, and blocks future hostile-slime spawn or locomotion work until toggled off.
