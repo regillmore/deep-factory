@@ -22,9 +22,15 @@ Record only durable design decisions here. Keep each entry short: date, decision
 
 ### 2026-03-14: Play-mode hotbar placement preview stays available with debug overlays hidden
 
-- Decision: The hotbar dirt-placement preview now stays available whenever the in-world full `Debug Edit` panel is hidden, even when the compact debug overlay bundle is toggled off.
+- Decision: Play-mode hotbar placement previews now stay available whenever the in-world full `Debug Edit` panel is hidden, even when the compact debug overlay bundle is toggled off.
 - Reason: Placement legality is core mixed-device play feedback for the hotbar building path, while the `Edit Overlays` toggle is meant to hide debug inspect and one-shot preview chrome rather than remove essential build affordances.
 - Consequence: Future play-mode hotbar placement previews should stay decoupled from the debug overlay visibility toggle unless the same pass intentionally redesigns normal build feedback.
+
+### 2026-03-14: Non-solid starter torches use support-only placement checks
+
+- Decision: Starter torches now place only into empty tiles that touch a solid cardinal face, but unlike starter dirt blocks they ignore standalone-player overlap because the placed torch tile is non-solid.
+- Reason: The torch slice needs the same readable mixed-device face-attachment rule as other placeables, while reusing the solid-block anti-trapping check would incorrectly reject harmless overlap cases and make torch placement feel inconsistent.
+- Consequence: Future non-solid face-attached utility tiles should default to support-only placement validation unless a later pass intentionally adds a new occupancy hazard or interaction rule.
 
 ### 2026-03-13: Paused-menu dashboard should keep a single reading column on desktop
 

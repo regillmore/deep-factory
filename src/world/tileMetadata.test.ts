@@ -76,10 +76,16 @@ describe('tile metadata loader', () => {
     expect(areLiquidRenderNeighborsConnected(7, 8)).toBe(false);
     expect(resolveTileGameplayMetadata(0)).toEqual({ solid: false, blocksLight: false });
     expect(resolveTileGameplayMetadata(1)).toEqual({ solid: true, blocksLight: true });
+    expect(resolveTileGameplayMetadata(10)).toEqual({
+      solid: false,
+      blocksLight: false,
+      emissiveLight: 12
+    });
     expect(isTileSolid(1)).toBe(true);
     expect(isTileSolid(4)).toBe(false);
     expect(doesTileBlockLight(1)).toBe(true);
     expect(doesTileBlockLight(4)).toBe(false);
+    expect(getTileEmissiveLightLevel(10)).toBe(12);
     expect(getTileLiquidKind(1)).toBe(null);
     expect(getTileLiquidKind(7)).toBe('water');
     expect(getTileLiquidKind(8)).toBe('lava');
@@ -89,6 +95,7 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileVariantAtlasIndex(2, 6)).toBe(6);
     expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(1, 0)).toBe(0);
     expect(resolveTileRenderUvRect(3)).toEqual(atlasIndexToUvRect(14));
+    expect(resolveTileRenderUvRect(10)).toEqual(atlasIndexToUvRect(15));
     expect(resolveLiquidRenderVariantMetadata(7, 0)).toMatchObject({
       uvRect: { u0: 0.6666666666666666, v0: 0.25, u1: 0.75, v1: 0.5 }
     });

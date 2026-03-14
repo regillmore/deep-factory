@@ -215,6 +215,11 @@ import {
   STARTER_BUILDING_BLOCK_TILE_ID
 } from './world/starterBlockPlacement';
 import {
+  evaluateStarterTorchPlacement,
+  STARTER_TORCH_ITEM_ID,
+  STARTER_TORCH_TILE_ID
+} from './world/starterTorchPlacement';
+import {
   resolvePlayerWallContactTransitionEvent,
   type PlayerWallContactTransitionEvent
 } from './world/playerWallContactTransition';
@@ -1468,6 +1473,8 @@ const bootstrap = async (): Promise<void> => {
     standalonePlayerInventoryState = clonePlayerInventoryState(inventoryState);
     hotbarOverlay.update(standalonePlayerInventoryState);
   };
+  const getSelectedStandalonePlayerInventoryStack = () =>
+    standalonePlayerInventoryState.hotbar[standalonePlayerInventoryState.selectedHotbarSlotIndex] ?? null;
   const applySelectedStandalonePlayerHotbarSlotConsumption = (): boolean => {
     const consumeResult = consumePlayerInventoryHotbarSlotItem(
       standalonePlayerInventoryState,
@@ -2573,6 +2580,11 @@ const bootstrap = async (): Promise<void> => {
       return false;
     }
 
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack === null) {
+      return false;
+    }
+
     const placementPreview = getSelectedStandalonePlayerItemPlacementPreviewAtTile(
       request.worldTileX,
       request.worldTileY
@@ -2581,10 +2593,25 @@ const bootstrap = async (): Promise<void> => {
       return false;
     }
 
+    let placementTileId: number | null = null;
+    switch (selectedStack.itemId) {
+      case STARTER_BUILDING_BLOCK_ITEM_ID:
+        placementTileId = STARTER_BUILDING_BLOCK_TILE_ID;
+        break;
+      case STARTER_TORCH_ITEM_ID:
+        placementTileId = STARTER_TORCH_TILE_ID;
+        break;
+      default:
+        return false;
+    }
+    if (placementTileId === null) {
+      return false;
+    }
+
     const editResult = applyWorldTileEdit(
       request.worldTileX,
       request.worldTileY,
-      STARTER_BUILDING_BLOCK_TILE_ID
+      placementTileId
     );
     if (!editResult.changed) {
       return false;
@@ -2606,21 +2633,39 @@ const bootstrap = async (): Promise<void> => {
       return null;
     }
 
-    const selectedStack =
-      standalonePlayerInventoryState.hotbar[standalonePlayerInventoryState.selectedHotbarSlotIndex] ??
-      null;
-    if (selectedStack?.itemId !== STARTER_BUILDING_BLOCK_ITEM_ID) {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack === null) {
       return null;
     }
 
-    const placement = evaluateStarterBlockPlacement(
-      {
-        getTile: (worldTileX, worldTileY) => renderer.getTile(worldTileX, worldTileY)
-      },
-      standalonePlayerState,
-      worldTileX,
-      worldTileY
-    );
+    let placement: Omit<PlayerItemPlacementPreviewState, 'tileX' | 'tileY'> | null = null;
+    switch (selectedStack.itemId) {
+      case STARTER_BUILDING_BLOCK_ITEM_ID:
+        placement = evaluateStarterBlockPlacement(
+          {
+            getTile: (worldTileX, worldTileY) => renderer.getTile(worldTileX, worldTileY)
+          },
+          standalonePlayerState,
+          worldTileX,
+          worldTileY
+        );
+        break;
+      case STARTER_TORCH_ITEM_ID:
+        placement = evaluateStarterTorchPlacement(
+          {
+            getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+          },
+          worldTileX,
+          worldTileY
+        );
+        break;
+      default:
+        return null;
+    }
+    if (placement === null) {
+      return null;
+    }
+
     return {
       tileX: worldTileX,
       tileY: worldTileY,

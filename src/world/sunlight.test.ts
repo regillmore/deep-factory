@@ -1127,6 +1127,28 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
 
+  it('lights nearby tunnel tiles when a default torch tile is placed against solid support', () => {
+    const world = new TileWorld(0);
+    const tunnelWorldTileY = 1;
+    const torchTileId = 10;
+
+    for (let worldTileX = 0; worldTileX <= 4; worldTileX += 1) {
+      world.setTile(worldTileX, tunnelWorldTileY - 1, 1);
+      world.setTile(worldTileX, tunnelWorldTileY, 0);
+      world.setTile(worldTileX, tunnelWorldTileY + 1, 1);
+    }
+    world.setTile(1, tunnelWorldTileY, torchTileId);
+
+    const recomputedChunkCount = recomputeSunlightFromExposedChunkTops(world);
+
+    expect(getTileEmissiveLightLevel(torchTileId)).toBe(12);
+    expect(recomputedChunkCount).toBe(1);
+    expect(world.getLightLevel(1, tunnelWorldTileY)).toBe(12);
+    expect(world.getLightLevel(2, tunnelWorldTileY)).toBe(11);
+    expect(world.getLightLevel(3, tunnelWorldTileY)).toBe(10);
+    expect(world.getDirtyLightChunkCount()).toBe(0);
+  });
+
   it('keeps blocking tiles beside emissive-lit air visibly lit while blocking emissive propagation behind them', () => {
     const world = new TileWorld(0);
     const tunnelWorldTileY = 1;

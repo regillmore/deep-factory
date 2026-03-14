@@ -5685,7 +5685,30 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
-  it('hides the starter dirt placement preview for non-dirt slots and while the full debug-edit panel is open', async () => {
+  it('shows a valid starter torch placement preview even when the hovered tile overlaps the player', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    testRuntime.pointerInspect = {
+      pointerType: 'touch',
+      tile: { x: 0, y: -1 }
+    };
+
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    runRenderFrame();
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 0,
+      tileY: -1,
+      canPlace: true,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false
+    });
+  });
+
+  it('hides the hotbar placement preview for unsupported item slots and while the full debug-edit panel is open', async () => {
     await import('./main');
     await flushBootstrap();
 
@@ -5696,11 +5719,11 @@ describe('main.ts shell state orchestration', () => {
       tile: { x: 1, y: -1 }
     };
 
-    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
     runRenderFrame();
     expect(testRuntime.latestPlayerItemPlacementPreviewState).toBeNull();
 
-    expect(dispatchKeydown('1', 'Digit1').prevented).toBe(true);
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
     expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
     runRenderFrame();
     expect(testRuntime.latestPlayerItemPlacementPreviewState).toBeNull();
@@ -5739,6 +5762,43 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
       itemId: 'dirt-block',
       amount: 63
+    });
+  });
+
+  it('places a starter torch from the selected hotbar slot while the full debug-edit panel is hidden', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    expect(testRuntime.canvasInteractionMode).toBe('play');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: -1,
+        worldX: 8,
+        worldY: -8,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 0,
+        worldTileY: -1,
+        tileId: 10
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+      itemId: 'torch',
+      amount: 19
     });
   });
 

@@ -5,7 +5,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 215. Add a placeable-workbench crafting slice after inventory basics: recipe registry for a minimal starter set, in-world station-range gating, shell or debug panel crafting actions, and recipe resolution regressions.
 221. Add a starter melee-weapon follow-up after hostile-slime jump-chase locomotion: fixed-step swing windup/active/recovery timing, slime hit detection plus knockback, and deterministic hit-cooldown regressions.
 232. Add a grappling-hook traversal slice after entity scaffolding: mixed-device aimed hook firing, solid-tile latch plus pull-and-release rules, and fixed-step hook-state regressions.
-243. Add a torch-lighting utility slice after inventory basics: stackable torch hotbar slots, mixed-device solid-face placement of light-emitting torch tiles, and lighting regressions for placed torches.
 246. Add a bow-and-arrow ranged-combat slice after hostile-slime jump-chase locomotion and inventory basics: stackable arrow ammo, mixed-device aimed firing, fixed-step projectile flight plus terrain or slime hits, and deterministic ammo-consumption regressions.
 301. Add a healing-potion survival slice after hostile-slime player-contact combat and inventory basics: stackable potion items, mixed-device consume input, fixed-step healing plus overheal clamp and use-cooldown rules, and save/load regressions for health plus consumable stacks.
 313. Add a rope traversal utility slice after inventory basics: stackable rope hotbar slots, mixed-device downward placement from solid anchors, climb-and-descent movement on rope tiles, and save/load regressions for placed rope plus remaining stack counts.
@@ -31,6 +30,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 513. Add a bug-net critter-capture slice after passive-bunny ambient-entity and inventory basics: a non-stackable bug-net hotbar slot, mixed-device swing timing with bunny capture-on-hit rules, bunny item stacks into inventory, and deterministic capture regressions.
 535. Add a dropped-item pickup follow-up after hotbar inventory foundation: stackable world pickup entities, proximity pickup rules, auto-merge into matching or empty hotbar slots, and deterministic save/load regressions for collected stacks.
 536. Add a starter background-wall placement slice after starter building-block placement and inventory basics: stackable dirt-wall hotbar slots, mixed-device enclosed-wall placement against solid blocks or existing walls, stack consumption, and save/load regressions for placed walls plus remaining stack counts.
+546. Add a torch-resume lighting follow-up after torch-lighting utility slice and save/load: imported or browser-resumed placed torch tiles should restore emissive light immediately after world load, and add snapshot-lighting regressions.
 
 ## Telemetry
 
