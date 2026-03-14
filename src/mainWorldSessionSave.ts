@@ -5,6 +5,7 @@ import {
   type WorldSaveEnvelopeMigrationMetadata
 } from './mainWorldSave';
 import type { PlayerDeathState } from './world/playerDeathState';
+import type { PlayerInventoryState } from './world/playerInventory';
 import type { PlayerState } from './world/playerState';
 import type { TileWorldSnapshot } from './world/world';
 
@@ -12,6 +13,7 @@ export interface WorldSessionSaveSource {
   createWorldSnapshot(): TileWorldSnapshot;
   getStandalonePlayerState(): PlayerState | null;
   getStandalonePlayerDeathState(): PlayerDeathState | null;
+  getStandalonePlayerInventoryState(): PlayerInventoryState;
   getCameraFollowOffset(): CameraFollowOffset;
 }
 
@@ -28,6 +30,7 @@ export const createWorldSessionSaveEnvelope = ({
     worldSnapshot: source.createWorldSnapshot(),
     standalonePlayerState: source.getStandalonePlayerState(),
     standalonePlayerDeathState: source.getStandalonePlayerDeathState(),
+    standalonePlayerInventoryState: source.getStandalonePlayerInventoryState(),
     cameraFollowOffset: source.getCameraFollowOffset(),
     ...(migration === undefined ? {} : { migration })
   });

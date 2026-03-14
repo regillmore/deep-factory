@@ -42,6 +42,7 @@ import {
   resolveDebugEditShortcutAction,
   type DebugEditShortcutAction
 } from './input/debugEditShortcuts';
+import { resolveHotbarSlotShortcut } from './input/hotbarShortcuts';
 import {
   createDefaultShellActionKeybindingState,
   IN_WORLD_SHELL_ACTION_KEYBINDING_IDS,
@@ -117,6 +118,7 @@ import {
   type DebugBrushOption,
   type DebugEditHistoryControlState
 } from './ui/touchDebugEditControls';
+import { HotbarOverlay } from './ui/hotbarOverlay';
 import { TouchPlayerControls } from './ui/touchPlayerControls';
 import { CHUNK_SIZE } from './world/constants';
 import {
@@ -186,6 +188,12 @@ import {
   type HostileSlimeLaunchKind,
   type HostileSlimeState
 } from './world/hostileSlimeState';
+import {
+  clonePlayerInventoryState,
+  createDefaultPlayerInventoryState,
+  setPlayerInventorySelectedHotbarSlot,
+  type PlayerInventoryState
+} from './world/playerInventory';
 import {
   resolvePlayerWallContactTransitionEvent,
   type PlayerWallContactTransitionEvent
@@ -884,7 +892,8 @@ const bootstrap = async (): Promise<void> => {
   });
   shell.setState(createDefaultBootShellState());
   const canvas = document.createElement('canvas');
-  shell.getWorldHost().append(canvas);
+  const worldHost = shell.getWorldHost();
+  worldHost.append(canvas);
 
   let renderer: Renderer;
   try {
@@ -903,6 +912,12 @@ const bootstrap = async (): Promise<void> => {
   const playerSpawnMarker = new PlayerSpawnMarkerOverlay(canvas);
   const armedDebugToolPreview = new ArmedDebugToolPreviewOverlay(canvas);
   const debugEditStatusStrip = new DebugEditStatusStrip(canvas);
+  const hotbarOverlay = new HotbarOverlay({
+    host: worldHost,
+    onSelectSlot: (slotIndex) => {
+      selectStandalonePlayerHotbarSlot(slotIndex);
+    }
+  });
   let debugEditControls: TouchDebugEditControls | null = null;
   const syncInWorldShellState = (): void => {
     currentScreen = 'in-world';
@@ -1000,11 +1015,15 @@ const bootstrap = async (): Promise<void> => {
   const syncPlayerSpawnMarkerVisibility = (): void => {
     playerSpawnMarker.setVisible(currentScreen === 'in-world' && playerSpawnMarkerVisible);
   };
+  const syncHotbarOverlayVisibility = (): void => {
+    hotbarOverlay.setVisible(currentScreen === 'in-world');
+  };
   const syncWorldScreenShellVisibility = (): void => {
     syncDebugOverlayVisibility();
     syncDebugEditControlsVisibility();
     syncDebugEditOverlayVisibility();
     syncPlayerSpawnMarkerVisibility();
+    syncHotbarOverlayVisibility();
   };
   const syncInWorldShellOverlayVisibility = (actionType: InWorldShellOverlaySyncActionType): void => {
     switch (actionType) {
@@ -1299,6 +1318,7 @@ const bootstrap = async (): Promise<void> => {
   let entityRegistry = new EntityRegistry();
   let standalonePlayerEntityId: EntityId | null = null;
   let standalonePlayerDeathState: PlayerDeathState | null = null;
+  let standalonePlayerInventoryState = createDefaultPlayerInventoryState();
   let hostileSlimeEntityIds: EntityId[] = [];
   let hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
   let pendingStandalonePlayerFixedStepResult: StandalonePlayerFixedStepResult | null = null;
@@ -1325,6 +1345,19 @@ const bootstrap = async (): Promise<void> => {
       : {
           respawnSecondsRemaining: standalonePlayerDeathState.respawnSecondsRemaining
         };
+  const getStandalonePlayerInventoryState = (): PlayerInventoryState =>
+    clonePlayerInventoryState(standalonePlayerInventoryState);
+  const applyStandalonePlayerInventoryState = (inventoryState: PlayerInventoryState): void => {
+    standalonePlayerInventoryState = clonePlayerInventoryState(inventoryState);
+    hotbarOverlay.update(standalonePlayerInventoryState);
+  };
+  const selectStandalonePlayerHotbarSlot = (slotIndex: number): void => {
+    applyStandalonePlayerInventoryState(
+      setPlayerInventorySelectedHotbarSlot(standalonePlayerInventoryState, slotIndex)
+    );
+  };
+  hotbarOverlay.update(standalonePlayerInventoryState);
+  hotbarOverlay.setVisible(false);
   const getHostileSlimeEntityStates = (): Array<{ id: EntityId; state: HostileSlimeState }> => {
     const activeHostileSlimes: Array<{ id: EntityId; state: HostileSlimeState }> = [];
     const nextHostileSlimeEntityIds: EntityId[] = [];
@@ -1379,6 +1412,7 @@ const bootstrap = async (): Promise<void> => {
         createWorldSnapshot: () => renderer.createWorldSnapshot(),
         getStandalonePlayerState,
         getStandalonePlayerDeathState,
+        getStandalonePlayerInventoryState,
         getCameraFollowOffset: () => cameraFollowOffset
       }
     });
@@ -3099,6 +3133,7 @@ const bootstrap = async (): Promise<void> => {
     resetFreshWorldSessionDebugEditState();
     clearPinnedDebugTileInspect();
     resetFreshWorldSessionCameraAndPlayerState();
+    applyStandalonePlayerInventoryState(createDefaultPlayerInventoryState());
   };
   const ensureWorldSessionLoopStarted = (): void => {
     if (loop === null || worldSessionLoopStarted) {
@@ -3199,6 +3234,16 @@ const bootstrap = async (): Promise<void> => {
   window.addEventListener('keydown', (event) => {
     if (event.defaultPrevented) return;
     if (isEditableKeyboardShortcutTarget(event.target)) return;
+
+    const hotbarSlotIndex =
+      currentScreen === 'in-world' && !debugEditControlsVisible
+        ? resolveHotbarSlotShortcut(event)
+        : null;
+    if (hotbarSlotIndex !== null) {
+      event.preventDefault();
+      selectStandalonePlayerHotbarSlot(hotbarSlotIndex);
+      return;
+    }
 
     const action = resolveDebugEditShortcutAction(
       event,
@@ -4042,6 +4087,9 @@ const bootstrap = async (): Promise<void> => {
           restoreStandalonePlayerState: (playerState) => {
             restoreStandalonePlayerSessionState(playerState, standalonePlayerDeathState);
           },
+          restoreStandalonePlayerInventoryState: (inventoryState) => {
+            applyStandalonePlayerInventoryState(inventoryState);
+          },
           restoreCameraFollowOffset: (nextCameraFollowOffset) => {
             cameraFollowOffset = {
               x: nextCameraFollowOffset.x,
@@ -4243,6 +4291,9 @@ const bootstrap = async (): Promise<void> => {
           },
           restoreStandalonePlayerState: (playerState) => {
             restoreStandalonePlayerSessionState(playerState, standalonePlayerDeathState);
+          },
+          restoreStandalonePlayerInventoryState: (inventoryState) => {
+            applyStandalonePlayerInventoryState(inventoryState);
           },
           restoreCameraFollowOffset: (nextCameraFollowOffset) => {
             cameraFollowOffset = {

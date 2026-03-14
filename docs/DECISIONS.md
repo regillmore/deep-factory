@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-13: Missing hotbar inventory in older saves defaults to the starter loadout
+
+- Decision: Standalone-player hotbar inventory now persists as session-owned save data beside player, death-countdown, and camera state, and older world-save payloads that lack inventory decode to the current starter dirt/torch/rope loadout.
+- Reason: The inventory foundation needs to stay backward-compatible with pre-inventory saves while giving restored sessions the same immediately usable starter hotbar that fresh worlds now receive by default.
+- Consequence: Future inventory expansions should keep save decoding backward-compatible through explicit defaults and continue treating player inventory as detached session-owned state restored alongside the standalone player rather than recomputing it from world state.
+
 ### 2026-03-13: Telemetry catalog storage defaults missing entries to enabled
 
 - Decision: The persisted world-session telemetry catalog now treats any missing collection or type key in stored state as enabled when decoding older saved payloads.

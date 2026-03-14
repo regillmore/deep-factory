@@ -102,6 +102,7 @@ export const savePersistedWorldSaveEnvelope = (
       worldSnapshot: envelope.worldSnapshot,
       standalonePlayerState: envelope.session.standalonePlayerState,
       standalonePlayerDeathState: envelope.session.standalonePlayerDeathState,
+      standalonePlayerInventoryState: envelope.session.standalonePlayerInventoryState,
       cameraFollowOffset: envelope.session.cameraFollowOffset,
       migration: envelope.migration
     });

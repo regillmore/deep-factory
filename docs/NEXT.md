@@ -2,7 +2,6 @@
 
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
-214. Add a dropped-item + hotbar inventory slice after entity scaffolding: stackable world pickups with proximity pickup rules, hotbar assignment and selection, and save/load snapshot regressions for item stacks.
 215. Add a placeable-workbench crafting slice after inventory basics: recipe registry for a minimal starter set, in-world station-range gating, shell or debug panel crafting actions, and recipe resolution regressions.
 221. Add a starter melee-weapon follow-up after hostile-slime jump-chase locomotion: fixed-step swing windup/active/recovery timing, slime hit detection plus knockback, and deterministic hit-cooldown regressions.
 232. Add a grappling-hook traversal slice after entity scaffolding: mixed-device aimed hook firing, solid-tile latch plus pull-and-release rules, and fixed-step hook-state regressions.
@@ -31,6 +30,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 509. Add a heart-crystal health-upgrade slice after hostile-slime player-contact combat and inventory basics: a non-stackable heart-crystal inventory item, mixed-device consume input, fixed-step max-health increase with current-health fill and cap rules, and save/load regressions for upgraded health state.
 511. Add a mana-resource magic slice after starter wand combat and save/load: fixed-step current and max mana state, wand cast-time mana spend-or-fail rules, passive regen delay plus refill cadence, and snapshot regressions for mana state.
 513. Add a bug-net critter-capture slice after passive-bunny ambient-entity and inventory basics: a non-stackable bug-net hotbar slot, mixed-device swing timing with bunny capture-on-hit rules, bunny item stacks into inventory, and deterministic capture regressions.
+535. Add a dropped-item pickup follow-up after hotbar inventory foundation: stackable world pickup entities, proximity pickup rules, auto-merge into matching or empty hotbar slots, and deterministic save/load regressions for collected stacks.
 
 
 ## Telemetry Controls

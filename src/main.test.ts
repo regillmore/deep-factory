@@ -5357,7 +5357,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugEditControlsArmedToolKinds).toEqual(readArmedToolKinds());
   });
 
-  it('routes keyboard brush shortcuts through one shared dispatcher for slot selection, eyedropper, and cycling', async () => {
+  it('routes digit shortcuts to the hotbar while the full debug-edit panel is hidden, then keeps brush slots on the open panel path', async () => {
     await import('./main');
     await flushBootstrap();
 
@@ -5366,6 +5366,15 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedDebugEditControlState().brushTileId).toBe(3);
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    expect(readPersistedDebugEditControlState().brushTileId).toBe(3);
+    dispatchWindowEvent('pagehide');
+    expect(
+      readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.selectedHotbarSlotIndex
+    ).toBe(1);
+
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
 
     expect(dispatchKeydown('1', 'Digit1').prevented).toBe(true);
     expect(readPersistedDebugEditControlState().brushTileId).toBe(1);

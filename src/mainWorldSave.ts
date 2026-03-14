@@ -7,6 +7,14 @@ import {
   type PlayerState
 } from './world/playerState';
 import { createPlayerDeathState, type PlayerDeathState } from './world/playerDeathState';
+import {
+  createDefaultPlayerInventoryState,
+  createPlayerInventoryState,
+  getPlayerInventoryItemDefinition,
+  isPlayerInventoryItemId,
+  PLAYER_INVENTORY_HOTBAR_SLOT_COUNT,
+  type PlayerInventoryState
+} from './world/playerInventory';
 import { TileWorld, type TileWorldSnapshot } from './world/world';
 
 export const WORLD_SAVE_ENVELOPE_KIND = 'deep-factory.world-save';
@@ -20,6 +28,7 @@ export interface WorldSaveEnvelopeMigrationMetadata {
 export interface WorldSaveSessionState {
   standalonePlayerState: PlayerState | null;
   standalonePlayerDeathState: PlayerDeathState | null;
+  standalonePlayerInventoryState: PlayerInventoryState;
   cameraFollowOffset: CameraFollowOffset;
 }
 
@@ -35,6 +44,7 @@ export interface CreateWorldSaveEnvelopeOptions {
   worldSnapshot: TileWorldSnapshot;
   standalonePlayerState?: PlayerState | null;
   standalonePlayerDeathState?: PlayerDeathState | null;
+  standalonePlayerInventoryState?: PlayerInventoryState;
   cameraFollowOffset?: CameraFollowOffset;
   migration?: WorldSaveEnvelopeMigrationMetadata;
 }
@@ -59,10 +69,28 @@ const expectPositiveFiniteNumber = (value: unknown, label: string): number => {
   return normalizedValue;
 };
 
+const expectPositiveInteger = (value: unknown, label: string): number => {
+  const normalizedValue = expectFiniteNumber(value, label);
+  if (!Number.isInteger(normalizedValue) || normalizedValue <= 0) {
+    throw new Error(`${label} must be a positive integer`);
+  }
+
+  return normalizedValue;
+};
+
 const expectNonNegativeFiniteNumber = (value: unknown, label: string): number => {
   const normalizedValue = expectFiniteNumber(value, label);
   if (normalizedValue < 0) {
     throw new Error(`${label} must be a non-negative finite number`);
+  }
+
+  return normalizedValue;
+};
+
+const expectNonNegativeInteger = (value: unknown, label: string): number => {
+  const normalizedValue = expectFiniteNumber(value, label);
+  if (!Number.isInteger(normalizedValue) || normalizedValue < 0) {
+    throw new Error(`${label} must be a non-negative integer`);
   }
 
   return normalizedValue;
@@ -177,6 +205,59 @@ const normalizeStandalonePlayerDeathState = (
   label: string
 ): PlayerDeathState | null => (value === null ? null : normalizePlayerDeathState(value, label));
 
+const normalizePlayerInventoryState = (value: unknown, label: string): PlayerInventoryState => {
+  if (!isRecord(value)) {
+    throw new Error(`${label} must be an object`);
+  }
+  if (!Array.isArray(value.hotbar)) {
+    throw new Error(`${label}.hotbar must be an array`);
+  }
+
+  const selectedHotbarSlotIndex = expectNonNegativeInteger(
+    value.selectedHotbarSlotIndex,
+    `${label}.selectedHotbarSlotIndex`
+  );
+  if (selectedHotbarSlotIndex >= PLAYER_INVENTORY_HOTBAR_SLOT_COUNT) {
+    throw new Error(
+      `${label}.selectedHotbarSlotIndex must be an integer between 0 and ${PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 1}`
+    );
+  }
+
+  return createPlayerInventoryState({
+    hotbar: value.hotbar.map((stack, slotIndex) => {
+      if (stack === null) {
+        return null;
+      }
+      if (!isRecord(stack)) {
+        throw new Error(`${label}.hotbar[${slotIndex}] must be an object or null`);
+      }
+      if (!isPlayerInventoryItemId(stack.itemId)) {
+        throw new Error(`${label}.hotbar[${slotIndex}].itemId must be a known player inventory item id`);
+      }
+
+      const amount = expectPositiveInteger(stack.amount, `${label}.hotbar[${slotIndex}].amount`);
+      const maxStackSize = getPlayerInventoryItemDefinition(stack.itemId).maxStackSize;
+      if (amount > maxStackSize) {
+        throw new Error(
+          `${label}.hotbar[${slotIndex}].amount must be an integer between 1 and ${maxStackSize}`
+        );
+      }
+
+      return {
+        itemId: stack.itemId,
+        amount
+      };
+    }),
+    selectedHotbarSlotIndex
+  });
+};
+
+const normalizeStandalonePlayerInventoryState = (
+  value: unknown,
+  label: string
+): PlayerInventoryState =>
+  value === undefined ? createDefaultPlayerInventoryState() : normalizePlayerInventoryState(value, label);
+
 export const createDefaultWorldSaveEnvelopeMigrationMetadata =
   (): WorldSaveEnvelopeMigrationMetadata => ({
     migratedFromVersion: null,
@@ -225,6 +306,7 @@ export const createWorldSaveEnvelope = ({
   worldSnapshot,
   standalonePlayerState = null,
   standalonePlayerDeathState = null,
+  standalonePlayerInventoryState = createDefaultPlayerInventoryState(),
   cameraFollowOffset = { x: 0, y: 0 },
   migration = createDefaultWorldSaveEnvelopeMigrationMetadata()
 }: CreateWorldSaveEnvelopeOptions): WorldSaveEnvelope => ({
@@ -239,6 +321,10 @@ export const createWorldSaveEnvelope = ({
     standalonePlayerDeathState: normalizeStandalonePlayerDeathState(
       standalonePlayerDeathState,
       'standalonePlayerDeathState'
+    ),
+    standalonePlayerInventoryState: normalizeStandalonePlayerInventoryState(
+      standalonePlayerInventoryState,
+      'standalonePlayerInventoryState'
     ),
     cameraFollowOffset: normalizeCameraFollowOffset(cameraFollowOffset, 'cameraFollowOffset')
   },
@@ -271,6 +357,10 @@ export const decodeWorldSaveEnvelope = (value: unknown): WorldSaveEnvelope => {
       standalonePlayerDeathState: normalizeStandalonePlayerDeathState(
         value.session.standalonePlayerDeathState ?? null,
         'session.standalonePlayerDeathState'
+      ),
+      standalonePlayerInventoryState: normalizeStandalonePlayerInventoryState(
+        value.session.standalonePlayerInventoryState,
+        'session.standalonePlayerInventoryState'
       ),
       cameraFollowOffset: normalizeCameraFollowOffset(
         value.session.cameraFollowOffset,

@@ -7,6 +7,7 @@ import {
   type WorldSaveDownloadBrowser
 } from './mainWorldSaveDownload';
 import { createDefaultWorldSaveEnvelopeMigrationMetadata, type WorldSaveEnvelope } from './mainWorldSave';
+import { createDefaultPlayerInventoryState } from './world/playerInventory';
 
 const createTestEnvelope = (): WorldSaveEnvelope => ({
   kind: 'deep-factory.world-save',
@@ -15,6 +16,7 @@ const createTestEnvelope = (): WorldSaveEnvelope => ({
   session: {
     standalonePlayerState: null,
     standalonePlayerDeathState: null,
+    standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
     cameraFollowOffset: {
       x: 12,
       y: -6

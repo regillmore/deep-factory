@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CHUNK_SIZE } from './world/constants';
 import { createPlayerDeathState } from './world/playerDeathState';
+import { createDefaultPlayerInventoryState } from './world/playerInventory';
 import { createPlayerState } from './world/playerState';
 import { TileWorld } from './world/world';
 import { createWorldSessionSaveEnvelope } from './mainWorldSessionSave';
@@ -25,11 +26,13 @@ describe('createWorldSessionSaveEnvelope', () => {
       fallDamageRecoverySecondsRemaining: 0.2
     });
     const standalonePlayerDeathState = createPlayerDeathState(0.5);
+    const standalonePlayerInventoryState = createDefaultPlayerInventoryState();
     const cameraFollowOffset = { x: 18, y: -12 };
     const source = {
       createWorldSnapshot: vi.fn(() => world.createSnapshot()),
       getStandalonePlayerState: vi.fn(() => standalonePlayerState),
       getStandalonePlayerDeathState: vi.fn(() => standalonePlayerDeathState),
+      getStandalonePlayerInventoryState: vi.fn(() => standalonePlayerInventoryState),
       getCameraFollowOffset: vi.fn(() => cameraFollowOffset)
     };
 
@@ -38,10 +41,12 @@ describe('createWorldSessionSaveEnvelope', () => {
     expect(source.createWorldSnapshot).toHaveBeenCalledTimes(1);
     expect(source.getStandalonePlayerState).toHaveBeenCalledTimes(1);
     expect(source.getStandalonePlayerDeathState).toHaveBeenCalledTimes(1);
+    expect(source.getStandalonePlayerInventoryState).toHaveBeenCalledTimes(1);
     expect(source.getCameraFollowOffset).toHaveBeenCalledTimes(1);
     expect(envelope.session).toEqual({
       standalonePlayerState,
       standalonePlayerDeathState,
+      standalonePlayerInventoryState,
       cameraFollowOffset
     });
 
@@ -51,6 +56,7 @@ describe('createWorldSessionSaveEnvelope', () => {
 
     expect(world.setTile(worldTileX, worldTileY, 5)).toBe(true);
     standalonePlayerState.position.x = 999;
+    standalonePlayerInventoryState.hotbar[0]!.amount = 1;
     cameraFollowOffset.x = 999;
 
     const restoredEnvelopeWorld = new TileWorld(0);
@@ -58,6 +64,10 @@ describe('createWorldSessionSaveEnvelope', () => {
     expect(restoredEnvelopeWorld.getTile(worldTileX, worldTileY)).toBe(6);
     expect(envelope.session.standalonePlayerState?.position.x).toBe(72);
     expect(envelope.session.standalonePlayerDeathState?.respawnSecondsRemaining).toBe(0.5);
+    expect(envelope.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+      itemId: 'dirt-block',
+      amount: 64
+    });
     expect(envelope.session.cameraFollowOffset.x).toBe(18);
   });
 
@@ -66,6 +76,7 @@ describe('createWorldSessionSaveEnvelope', () => {
       createWorldSnapshot: vi.fn(() => new TileWorld(0).createSnapshot()),
       getStandalonePlayerState: vi.fn(() => null),
       getStandalonePlayerDeathState: vi.fn(() => null),
+      getStandalonePlayerInventoryState: vi.fn(() => createDefaultPlayerInventoryState()),
       getCameraFollowOffset: vi.fn(() => ({ x: -24, y: 10 }))
     };
     const migration = {
@@ -80,6 +91,9 @@ describe('createWorldSessionSaveEnvelope', () => {
 
     expect(envelope.session.standalonePlayerState).toBeNull();
     expect(envelope.session.standalonePlayerDeathState).toBeNull();
+    expect(envelope.session.standalonePlayerInventoryState).toEqual(
+      createDefaultPlayerInventoryState()
+    );
     expect(envelope.session.cameraFollowOffset).toEqual({ x: -24, y: 10 });
     expect(envelope.migration).toEqual(migration);
   });

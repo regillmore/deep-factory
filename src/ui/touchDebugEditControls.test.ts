@@ -51,6 +51,12 @@ describe('resolveTouchDebugEditControlsDisplayState', () => {
 });
 
 describe('resolveTouchDebugKeyboardShortcutLines', () => {
+  it('lists the hotbar selection shortcut in the keyboard reference', () => {
+    expect(resolveTouchDebugKeyboardShortcutLines()).toContain(
+      'Hotbar: 1-0 select slots while the full Debug Edit panel is hidden'
+    );
+  });
+
   it('lists the in-world edit-panel shortcut in the keyboard reference', () => {
     expect(resolveTouchDebugKeyboardShortcutLines()).toContain(
       `Edit panel: ${getDesktopDebugEditControlsHotkeyLabel()} toggle the full in-world Debug Edit panel`
