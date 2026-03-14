@@ -78,6 +78,7 @@ import {
   resolveLiquidStepPhaseSummary,
   TileWorld,
   type LiquidStepPhaseSummary,
+  type TileEditEvent,
   type TileWorldSnapshot
 } from '../world/world';
 
@@ -210,6 +211,7 @@ export class Renderer {
   private droppedItemProgram: WebGLProgram;
   private world!: TileWorld;
   private detachWorldTileEditListener: (() => void) | null = null;
+  private tileEditListeners = new Set<(event: TileEditEvent) => void>();
   private meshes = new Map<string, CachedChunkMesh>();
   private meshBuildQueue: MeshBuildRequest[] = [];
   private uMatrix: WebGLUniformLocation;
@@ -805,6 +807,13 @@ export class Renderer {
     return changed;
   }
 
+  onTileEdited(listener: (event: TileEditEvent) => void): () => void {
+    this.tileEditListeners.add(listener);
+    return () => {
+      this.tileEditListeners.delete(listener);
+    };
+  }
+
   getLiquidRenderCardinalMask(worldTileX: number, worldTileY: number): number | null {
     const tileId = this.world.getTile(worldTileX, worldTileY);
     if (!hasLiquidRenderMetadata(tileId, TILE_METADATA)) {
@@ -892,9 +901,13 @@ export class Renderer {
     this.detachWorldTileEditListener?.();
     this.world = world;
     this.updateLiquidStepTelemetry();
-    this.detachWorldTileEditListener = this.world.onTileEdited(({ chunkX, chunkY, localX, localY }) => {
+    this.detachWorldTileEditListener = this.world.onTileEdited((event) => {
+      const { chunkX, chunkY, localX, localY } = event;
       for (const coord of affectedChunkCoordsForLocalTileEdit(chunkX, chunkY, localX, localY)) {
         this.invalidateChunkMesh(coord.x, coord.y);
+      }
+      for (const listener of this.tileEditListeners) {
+        listener(event);
       }
     });
   }

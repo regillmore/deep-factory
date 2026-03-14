@@ -29,8 +29,11 @@ These items are intentionally scoped to fit a focused implementation pass with t
 511. Add a mana-resource magic slice after starter wand combat and save/load: fixed-step current and max mana state, wand cast-time mana spend-or-fail rules, passive regen delay plus refill cadence, and snapshot regressions for mana state.
 513. Add a bug-net critter-capture slice after passive-bunny ambient-entity and inventory basics: a non-stackable bug-net hotbar slot, mixed-device swing timing with bunny capture-on-hit rules, bunny item stacks into inventory, and deterministic capture regressions.
 536. Add a starter background-wall placement slice after starter building-block placement and inventory basics: stackable dirt-wall hotbar slots, mixed-device enclosed-wall placement against solid blocks or existing walls, stack consumption, and save/load regressions for placed walls plus remaining stack counts.
-548. Add a torch pickup-refund follow-up after dropped-item pickup follow-up and torch-support collapse: removing a placed torch, including support-collapse clears, should spawn one torch pickup entity and add deterministic refund regressions.
 549. Add a same-item dropped-stack merge follow-up after dropped-item pickup: dropping a stack onto a nearby matching world pickup should consolidate into one combined entity stack, and add deterministic merge regressions.
+550. Add a rope pickup-refund follow-up after rope traversal utility slice and dropped-item pickup: removing placed rope tiles should spawn rope pickup entities, and add deterministic refund regressions plus snapshot coverage for the returned rope stacks.
+551. Establish an intial/default maximum non-debug placement range for player-held hotbar tiles.
+552. Update the non-debug hotbar tile placement preview to differentiate when the previewed tile placement is in/out of range.
+553. When a placeable item is selected in the hotbar, indicate the maximum placement range with a subtle halo around the player.
 
 ## Telemetry
 

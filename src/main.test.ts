@@ -46,6 +46,7 @@ import {
   DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
   getPlayerCameraFocusPoint
 } from './world/playerState';
+import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
 import { DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS } from './world/hostileSlimeCombat';
 import {
   DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS
@@ -55,7 +56,7 @@ import {
   DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
   DEFAULT_HOSTILE_SLIME_WIDTH
 } from './world/hostileSlimeState';
-import { TileWorld } from './world/world';
+import { TileWorld, type TileEditEvent } from './world/world';
 
 const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
   'return-to-main-menu': 'X',
@@ -67,6 +68,30 @@ const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
 };
 
 const worldTileKey = (worldTileX: number, worldTileY: number): string => `${worldTileX},${worldTileY}`;
+
+const createTileEditEvent = (
+  worldTileX: number,
+  worldTileY: number,
+  previousTileId: number,
+  tileId: number,
+  previousLiquidLevel = 0,
+  liquidLevel = 0
+): TileEditEvent => {
+  const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+  const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
+  return {
+    worldTileX,
+    worldTileY,
+    chunkX,
+    chunkY,
+    localX,
+    localY,
+    previousTileId,
+    previousLiquidLevel,
+    tileId,
+    liquidLevel
+  };
+};
 
 const testRuntime = vi.hoisted(() => {
   class FakeHTMLElement {
@@ -254,6 +279,8 @@ const testRuntime = vi.hoisted(() => {
       worldTileY: number;
       tileId: number;
     }>,
+    rendererTileEditListeners: [] as Array<(event: TileEditEvent) => void>,
+    rendererNextSetTileEditEvents: null as TileEditEvent[] | null,
     rendererStepLiquidSimulationCallCount: 0,
     rendererStepPlayerStateImpl: null as null | ((
       state: unknown,
@@ -634,7 +661,18 @@ vi.mock('./gl/renderer', () => ({
       return testRuntime.rendererLiquidLevel;
     }
 
+    onTileEdited(listener: (event: TileEditEvent) => void): () => void {
+      testRuntime.rendererTileEditListeners.push(listener);
+      return () => {
+        testRuntime.rendererTileEditListeners = testRuntime.rendererTileEditListeners.filter(
+          (registeredListener) => registeredListener !== listener
+        );
+      };
+    }
+
     setTile(worldTileX: number, worldTileY: number, tileId: number): boolean {
+      const previousTileId = this.getTile(worldTileX, worldTileY);
+      const previousLiquidLevel = this.getLiquidLevel(worldTileX, worldTileY);
       testRuntime.rendererSetTileCalls.push({
         worldTileX,
         worldTileY,
@@ -642,6 +680,41 @@ vi.mock('./gl/renderer', () => ({
       });
       const result = testRuntime.rendererSetTileResult;
       testRuntime.rendererSetTileResult = false;
+      if (result) {
+        const editEvents =
+          testRuntime.rendererNextSetTileEditEvents ?? [
+            createTileEditEvent(
+              worldTileX,
+              worldTileY,
+              previousTileId,
+              tileId,
+              previousLiquidLevel,
+              0
+            )
+          ];
+        testRuntime.rendererNextSetTileEditEvents = null;
+        for (const event of editEvents) {
+          testRuntime.rendererTileIdsByWorldKey.set(
+            worldTileKey(event.worldTileX, event.worldTileY),
+            event.tileId
+          );
+          if (event.liquidLevel > 0) {
+            testRuntime.rendererLiquidLevelsByWorldKey.set(
+              worldTileKey(event.worldTileX, event.worldTileY),
+              event.liquidLevel
+            );
+          } else {
+            testRuntime.rendererLiquidLevelsByWorldKey.delete(
+              worldTileKey(event.worldTileX, event.worldTileY)
+            );
+          }
+          for (const listener of testRuntime.rendererTileEditListeners) {
+            listener({ ...event });
+          }
+        }
+      } else {
+        testRuntime.rendererNextSetTileEditEvents = null;
+      }
       return result;
     }
 
@@ -1755,6 +1828,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererLiquidRenderCardinalMask = null;
     testRuntime.rendererSetTileResult = false;
     testRuntime.rendererSetTileCalls = [];
+    testRuntime.rendererTileEditListeners = [];
+    testRuntime.rendererNextSetTileEditEvents = null;
     testRuntime.rendererStepLiquidSimulationCallCount = 0;
     testRuntime.rendererStepPlayerStateImpl = null;
     testRuntime.rendererStepPlayerStateRequests = [];
@@ -5800,6 +5875,88 @@ describe('main.ts shell state orchestration', () => {
       itemId: 'torch',
       amount: 19
     });
+  });
+
+  it('spawns a torch pickup entity when a placed starter torch tile is removed', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const torchWorldTileX = 20;
+    const torchWorldTileY = -20;
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: torchWorldTileX,
+        worldTileY: torchWorldTileY,
+        kind: 'break'
+      }
+    ];
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(torchWorldTileX, torchWorldTileY),
+      10
+    );
+    testRuntime.rendererSetTileResult = true;
+
+    runFixedUpdate();
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+      itemId: 'torch',
+      amount: 20
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 328, y: -312 },
+        itemId: 'torch',
+        amount: 1
+      }
+    ]);
+  });
+
+  it('spawns one torch pickup entity when support removal clears a neighboring starter torch', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const supportWorldTileX = 20;
+    const supportWorldTileY = -20;
+    const torchWorldTileX = 21;
+    const torchWorldTileY = -20;
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: supportWorldTileX,
+        worldTileY: supportWorldTileY,
+        kind: 'break'
+      }
+    ];
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(supportWorldTileX, supportWorldTileY),
+      1
+    );
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(torchWorldTileX, torchWorldTileY),
+      10
+    );
+    testRuntime.rendererNextSetTileEditEvents = [
+      createTileEditEvent(supportWorldTileX, supportWorldTileY, 1, 0),
+      createTileEditEvent(torchWorldTileX, torchWorldTileY, 10, 0)
+    ];
+    testRuntime.rendererSetTileResult = true;
+
+    runFixedUpdate();
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 344, y: -312 },
+        itemId: 'torch',
+        amount: 1
+      }
+    ]);
   });
 
   it('drops the selected hotbar stack into a world pickup and persists the collected stack after proximity pickup', async () => {

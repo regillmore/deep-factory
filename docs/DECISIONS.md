@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Placed-tile refund pickups should follow authoritative tile-edit notifications
+
+- Decision: Torch refund pickups now spawn from renderer-forwarded `TileWorld` edit notifications whenever a placed torch tile is replaced or cleared, including support-collapse edits.
+- Reason: Refund behavior needs to stay aligned with world-owned support-collapse and any later edit source without re-deriving removed tiles from tool-specific input paths in `main.ts`.
+- Consequence: Future placeable refund slices should prefer authoritative tile-edit notifications over inferring refunds only from the initiating action or UI tool.
+
 ### 2026-03-14: Dropped-item world stacks persist as session-owned entity state
 
 - Decision: Active dropped-item stacks now save and restore through the top-level world-session envelope beside standalone-player inventory and camera state instead of being embedded into the `TileWorld` snapshot.

@@ -136,6 +136,21 @@ export const createDroppedItemStateFromPlayerDrop = (
   });
 };
 
+export const createDroppedItemStateFromWorldTile = (
+  worldTileX: number,
+  worldTileY: number,
+  itemId: PlayerInventoryItemId,
+  amount: number
+): DroppedItemState =>
+  createDroppedItemState({
+    position: {
+      x: (worldTileX + 0.5) * TILE_SIZE,
+      y: (worldTileY + 0.5) * TILE_SIZE
+    },
+    itemId,
+    amount
+  });
+
 export const isDroppedItemInPickupRange = (
   droppedItemState: DroppedItemState,
   playerState: PlayerState

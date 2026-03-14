@@ -163,6 +163,7 @@ import {
 } from './world/playerRespawnEvent';
 import {
   cloneDroppedItemState,
+  createDroppedItemStateFromWorldTile,
   createDroppedItemStateFromPlayerDrop,
   resolveDroppedItemPickup,
   type DroppedItemState
@@ -2198,6 +2199,21 @@ const bootstrap = async (): Promise<void> => {
     droppedItemEntityIds.push(droppedItemEntityId);
     return droppedItemEntityId;
   };
+  const refundRemovedStarterTorchTile = (worldTileX: number, worldTileY: number): void => {
+    spawnDroppedItemEntity(
+      createDroppedItemStateFromWorldTile(worldTileX, worldTileY, STARTER_TORCH_ITEM_ID, 1)
+    );
+  };
+  renderer.onTileEdited((event) => {
+    if (
+      event.previousTileId !== STARTER_TORCH_TILE_ID ||
+      event.tileId === STARTER_TORCH_TILE_ID
+    ) {
+      return;
+    }
+
+    refundRemovedStarterTorchTile(event.worldTileX, event.worldTileY);
+  });
   const restoreDroppedItemEntityStates = (droppedItemStates: readonly DroppedItemState[]): void => {
     droppedItemEntityIds = [];
     for (const droppedItemState of droppedItemStates) {

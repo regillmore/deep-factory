@@ -803,6 +803,67 @@ describe('Renderer atlas telemetry', () => {
     expect(restoredSnapshotWorld.getTile(0, 0)).toBe(0);
   });
 
+  it('keeps external tile-edit listeners attached across renderer world replacement', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const events: Array<{
+      worldTileX: number;
+      worldTileY: number;
+      previousTileId: number;
+      tileId: number;
+    }> = [];
+    const detach = renderer.onTileEdited((event) => {
+      events.push({
+        worldTileX: event.worldTileX,
+        worldTileY: event.worldTileY,
+        previousTileId: event.previousTileId,
+        tileId: event.tileId
+      });
+    });
+
+    expect(renderer.setTile(0, -10, 5)).toBe(true);
+
+    renderer.resetWorld();
+    expect(renderer.setTile(1, -10, 6)).toBe(true);
+
+    renderer.loadWorldSnapshot(new TileWorld(0).createSnapshot());
+    expect(renderer.setTile(2, -10, 7)).toBe(true);
+
+    detach();
+    expect(renderer.setTile(3, -10, 8)).toBe(true);
+
+    expect(events).toEqual([
+      {
+        worldTileX: 0,
+        worldTileY: -10,
+        previousTileId: 0,
+        tileId: 5
+      },
+      {
+        worldTileX: 1,
+        worldTileY: -10,
+        previousTileId: 0,
+        tileId: 6
+      },
+      {
+        worldTileX: 2,
+        worldTileY: -10,
+        previousTileId: 0,
+        tileId: 7
+      }
+    ]);
+  });
+
   it('recomputes placed torch lighting immediately when loading a snapshot with stale clean light caches', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));

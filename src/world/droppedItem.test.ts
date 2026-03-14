@@ -4,6 +4,7 @@ import { createPlayerInventoryState } from './playerInventory';
 import { createPlayerState } from './playerState';
 import {
   createDroppedItemState,
+  createDroppedItemStateFromWorldTile,
   createDroppedItemStateFromPlayerDrop,
   isDroppedItemInPickupRange,
   resolveDroppedItemPickup
@@ -27,6 +28,17 @@ describe('droppedItem', () => {
       amount: 20
     });
     expect(isDroppedItemInPickupRange(droppedItemState, playerState)).toBe(false);
+  });
+
+  it('spawns a tile-refund stack at the center of the removed world tile', () => {
+    expect(createDroppedItemStateFromWorldTile(3, -10, 'torch', 1)).toEqual({
+      position: {
+        x: 56,
+        y: -152
+      },
+      itemId: 'torch',
+      amount: 1
+    });
   });
 
   it('does not pick up an out-of-range dropped stack', () => {
