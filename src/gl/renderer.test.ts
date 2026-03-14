@@ -11,6 +11,7 @@ import {
   cloneStandalonePlayerRenderState,
   createStandalonePlayerRenderPresentationState
 } from '../world/standalonePlayerRenderState';
+import { STARTER_TORCH_TILE_ID } from '../world/starterTorchPlacement';
 import { TileWorld } from '../world/world';
 import {
   atlasIndexToUvRect,
@@ -783,6 +784,52 @@ describe('Renderer atlas telemetry', () => {
     const restoredSnapshotWorld = new TileWorld(0);
     restoredSnapshotWorld.loadSnapshot(snapshot);
     expect(restoredSnapshotWorld.getTile(0, 0)).toBe(0);
+  });
+
+  it('recomputes placed torch lighting immediately when loading a snapshot with stale clean light caches', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const tunnelWorldTileY = -20;
+    const torchWorldTileX = 1;
+    const adjacentAirWorldTileX = 2;
+    const sourceWorld = new TileWorld(0);
+    for (let worldTileX = 0; worldTileX <= 4; worldTileX += 1) {
+      sourceWorld.setTile(worldTileX, tunnelWorldTileY - 1, 1);
+      sourceWorld.setTile(worldTileX, tunnelWorldTileY + 1, 1);
+      sourceWorld.setTile(worldTileX, tunnelWorldTileY, worldTileX === 0 || worldTileX === 4 ? 1 : 0);
+    }
+    sourceWorld.setTile(torchWorldTileX, tunnelWorldTileY, STARTER_TORCH_TILE_ID);
+    sourceWorld.fillChunkLight(0, -1, 0);
+    sourceWorld.markChunkLightClean(0, -1);
+    expect(sourceWorld.getLightLevel(torchWorldTileX, tunnelWorldTileY)).toBe(0);
+    expect(sourceWorld.getLightLevel(adjacentAirWorldTileX, tunnelWorldTileY)).toBe(0);
+    expect(sourceWorld.isChunkLightDirty(0, -1)).toBe(false);
+
+    const snapshot = sourceWorld.createSnapshot();
+    const torchLightLevel = getTileEmissiveLightLevel(STARTER_TORCH_TILE_ID);
+
+    renderer.loadWorldSnapshot(snapshot);
+
+    const loadedWorld = (
+      renderer as unknown as {
+        world: TileWorld;
+      }
+    ).world;
+    expect(loadedWorld.getTile(torchWorldTileX, tunnelWorldTileY)).toBe(STARTER_TORCH_TILE_ID);
+    expect(loadedWorld.getLightLevel(torchWorldTileX, tunnelWorldTileY)).toBe(torchLightLevel);
+    expect(loadedWorld.getLightLevel(adjacentAirWorldTileX, tunnelWorldTileY)).toBe(torchLightLevel - 1);
+    expect(loadedWorld.isChunkLightDirty(0, -1)).toBe(false);
+    expect(renderer.telemetry.residentDirtyLightChunks).toBe(0);
   });
 
   it('invalidates lower-row chunk meshes when a roof edit changes lighting across the y=-1/0 seam', async () => {

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Renderer snapshot loads refresh resident lighting from tile state
+
+- Decision: `Renderer.loadWorldSnapshot()` now invalidates and recomputes resident chunk lighting from the restored tile state before attaching the replacement world.
+- Reason: Imported or browser-resumed sessions should not depend on serialized light caches staying perfectly current, especially for emissive torch tiles whose saved light field can be stale or empty.
+- Consequence: Future runtime world-snapshot restore paths should treat tile state as the lighting source of truth and refresh resident lighting on load instead of trusting saved light arrays for first-frame presentation.
+
 ### 2026-03-14: Death-hold telemetry lives under player-combat
 
 - Decision: Current respawn-countdown and death-hold-status readouts now render under the existing `player-combat` telemetry type in both the full debug HUD and the hidden-HUD compact status strip.

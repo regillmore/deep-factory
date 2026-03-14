@@ -725,6 +725,7 @@ export class Renderer {
   loadWorldSnapshot(snapshot: TileWorldSnapshot): void {
     const world = new TileWorld(0);
     world.loadSnapshot(snapshot);
+    this.recomputeLoadedWorldLighting(world);
     this.replaceWorld(world);
   }
 
@@ -797,6 +798,13 @@ export class Renderer {
         this.invalidateChunkMesh(coord.x, coord.y);
       }
     });
+  }
+
+  private recomputeLoadedWorldLighting(world: TileWorld): void {
+    for (const chunk of world.getChunks()) {
+      world.invalidateChunkLight(chunk.coord.x, chunk.coord.y);
+    }
+    recomputeSunlightFromExposedChunkTops(world, TILE_METADATA);
   }
 
   private replaceWorld(world: TileWorld): void {
