@@ -986,6 +986,47 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nLandingEvt: damage:3');
   });
 
+  it('shows live breath and drowning cooldown on the combat line when provided', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      spawn: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: null,
+      player: {
+        position: { x: 12, y: 0 },
+        velocity: { x: 0, y: 0 },
+        health: 95,
+        breathSecondsRemaining: 0.25,
+        drowningDamageTickSecondsRemaining: 0.5,
+        hostileContactInvulnerabilitySecondsRemaining: 0,
+        aabb: {
+          min: { x: 6, y: -28 },
+          max: { x: 18, y: 0 },
+          size: { x: 12, y: 28 }
+        },
+        grounded: true,
+        facing: 'right',
+        contacts: {
+          support: null,
+          wall: null,
+          ceiling: null
+        }
+      },
+      pinned: null
+    });
+
+    expect(text).toContain(
+      '\nCombat: health:95 | breath:0.25s | drownCooldown:0.50s | contactInvuln:0.00s'
+    );
+  });
+
   it('shows the latest hostile-contact event when overlap is blocked by invulnerability', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: null,

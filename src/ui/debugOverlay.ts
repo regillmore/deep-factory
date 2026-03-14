@@ -209,6 +209,8 @@ export interface DebugOverlayPlayerTelemetry {
   position: { x: number; y: number };
   velocity: { x: number; y: number };
   health?: number | null;
+  breathSecondsRemaining?: number | null;
+  drowningDamageTickSecondsRemaining?: number | null;
   fallDamageRecoverySecondsRemaining?: number | null;
   hostileContactInvulnerabilitySecondsRemaining?: number | null;
   aabb: {
@@ -733,6 +735,15 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
     return 'Combat: n/a';
   }
 
+  const breathText =
+    typeof player.breathSecondsRemaining === 'number' && Number.isFinite(player.breathSecondsRemaining)
+      ? `${player.breathSecondsRemaining.toFixed(2)}s`
+      : null;
+  const drowningCooldownText =
+    typeof player.drowningDamageTickSecondsRemaining === 'number' &&
+    Number.isFinite(player.drowningDamageTickSecondsRemaining)
+      ? `${player.drowningDamageTickSecondsRemaining.toFixed(2)}s`
+      : null;
   const healthText =
     typeof player.health === 'number' && Number.isFinite(player.health)
       ? `${Math.round(player.health)}`
@@ -749,12 +760,20 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
       : 'n/a';
   if (
     healthText === 'n/a' &&
+    breathText === null &&
+    drowningCooldownText === null &&
     fallRecoveryText === null &&
     hostileContactInvulnerabilityText === 'n/a'
   ) {
     return 'Combat: n/a';
   }
   const segments = [`health:${healthText}`];
+  if (breathText !== null) {
+    segments.push(`breath:${breathText}`);
+  }
+  if (drowningCooldownText !== null) {
+    segments.push(`drownCooldown:${drowningCooldownText}`);
+  }
   if (fallRecoveryText !== null) {
     segments.push(`fallRecovery:${fallRecoveryText}`);
   }

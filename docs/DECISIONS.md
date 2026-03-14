@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Breath survival telemetry lives under player-combat
+
+- Decision: Current breath and drowning-cooldown readouts now render under the existing `player-combat` telemetry type in both the full debug HUD and the hidden-HUD compact status strip.
+- Reason: Breath depletion and drowning cadence are survival timers that directly explain incoming health loss, so reusing the combat gate keeps the paused-menu telemetry catalog compact without splitting closely related readouts across separate toggles.
+- Consequence: Future player survival timers or damage-setup readouts should extend `player-combat` unless a later pass intentionally introduces a separately toggled survival telemetry family.
+
 ### 2026-03-14: Play-mode hotbar placement preview stays available with debug overlays hidden
 
 - Decision: The hotbar dirt-placement preview now stays available whenever the in-world full `Debug Edit` panel is hidden, even when the compact debug overlay bundle is toggled off.

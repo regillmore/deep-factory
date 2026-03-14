@@ -31,13 +31,14 @@ These items are intentionally scoped to fit a focused implementation pass with t
 513. Add a bug-net critter-capture slice after passive-bunny ambient-entity and inventory basics: a non-stackable bug-net hotbar slot, mixed-device swing timing with bunny capture-on-hit rules, bunny item stacks into inventory, and deterministic capture regressions.
 535. Add a dropped-item pickup follow-up after hotbar inventory foundation: stackable world pickup entities, proximity pickup rules, auto-merge into matching or empty hotbar slots, and deterministic save/load regressions for collected stacks.
 536. Add a starter background-wall placement slice after starter building-block placement and inventory basics: stackable dirt-wall hotbar slots, mixed-device enclosed-wall placement against solid blocks or existing walls, stack consumption, and save/load regressions for placed walls plus remaining stack counts.
+543. Add a persistent peaceful mode toggle to the pause menu.
 
 
 ## Telemetry Controls
 
-516. Add a breath-telemetry follow-up after the telemetry catalog rollout: show current breath plus drowning-cooldown state in the debug HUD or compact status strip, and add fixed-step telemetry regressions.
-524. Add a hostile-slime spawn-window telemetry follow-up after the telemetry catalog rollout: show the next deterministic spawn-window index plus tile-offset target in the debug HUD or compact status strip, and add deterministic telemetry regressions.
-525. Add a hostile-contact source-telemetry follow-up after the telemetry catalog rollout: show the latest overlapping slime world tile plus facing direction for the last hostile-contact event in the debug HUD or compact status strip, and add deterministic event regressions.
-527. Add a hostile-slime chase-offset telemetry follow-up after the telemetry catalog rollout: show the tracked slime's horizontal and vertical offset from the player in the debug HUD or compact status strip, and add deterministic telemetry regressions.
-528. Add a death-state telemetry follow-up after the telemetry catalog rollout: show the current respawn countdown plus latest death-hold status in the debug HUD or compact status strip, and add deterministic death-telemetry regressions.
-538. Add a lava-damage telemetry follow-up after the telemetry catalog rollout: show the latest lava tick damage plus current lava-damage cooldown in the debug HUD or compact status strip, and add fixed-step survival telemetry regressions.
+524. Add a hostile-slime spawn-window telemetry to the telemetry catalog: show the next deterministic spawn-window index plus tile-offset target in the debug HUD or compact status strip, and add deterministic telemetry regressions.
+525. Add a hostile-contact source-telemetry to the telemetry catalog: show the latest overlapping slime world tile plus facing direction for the last hostile-contact event in the debug HUD or compact status strip, and add deterministic event regressions.
+527. Add a hostile-slime chase-offset telemetry to the telemetry catalog: show the tracked slime's horizontal and vertical offset from the player in the debug HUD or compact status strip, and add deterministic telemetry regressions.
+528. Add a death-state telemetry to the telemetry catalog: show the current respawn countdown plus latest death-hold status in the debug HUD or compact status strip, and add deterministic death-telemetry regressions.
+538. Add a lava-damage telemetry to the telemetry catalog: show the latest lava tick damage plus current lava-damage cooldown in the debug HUD or compact status strip, and add fixed-step survival telemetry regressions.
+542. Add a breath-submersion telemetry follow-up to the telemetry catalog: show whether the player's head sample is submerged plus the normalized water-overlap fraction in the debug HUD or compact status strip, and add fixed-step telemetry regressions.

@@ -84,6 +84,8 @@ export interface DebugEditStatusStripState {
   playerNearbyLightSourceLocalTile?: { x: number; y: number } | null;
   playerCeilingBonkHoldActive?: boolean | null;
   playerHealth?: number | null;
+  playerBreathSecondsRemaining?: number | null;
+  playerDrowningDamageTickSecondsRemaining?: number | null;
   playerFallDamageRecoverySecondsRemaining?: number | null;
   playerHostileContactInvulnerabilitySecondsRemaining?: number | null;
   hostileSlimeActiveCount?: number | null;
@@ -1393,6 +1395,24 @@ const formatLiveHealthText = (playerHealth: number | null): string | null => {
   return `HealthNow: ${Math.round(playerHealth)}`;
 };
 
+const formatLiveBreathText = (playerBreathSecondsRemaining: number | null): string | null => {
+  if (playerBreathSecondsRemaining === null) {
+    return null;
+  }
+
+  return `BreathNow: ${playerBreathSecondsRemaining.toFixed(2)}s`;
+};
+
+const formatLiveDrowningCooldownText = (
+  playerDrowningDamageTickSecondsRemaining: number | null
+): string | null => {
+  if (playerDrowningDamageTickSecondsRemaining === null) {
+    return null;
+  }
+
+  return `DrownCooldownNow: ${playerDrowningDamageTickSecondsRemaining.toFixed(2)}s`;
+};
+
 const formatLiveFallRecoveryText = (
   playerFallDamageRecoverySecondsRemaining: number | null
 ): string | null => {
@@ -1548,6 +1568,8 @@ const buildPlayerText = (
   playerNearbyLightSourceLocalTile: { x: number; y: number } | null,
   playerCeilingBonkHoldActive: boolean | null,
   playerHealth: number | null,
+  playerBreathSecondsRemaining: number | null,
+  playerDrowningDamageTickSecondsRemaining: number | null,
   playerFallDamageRecoverySecondsRemaining: number | null,
   playerHostileContactInvulnerabilitySecondsRemaining: number | null,
   hostileSlimeActiveCount: number | null,
@@ -1653,6 +1675,10 @@ const buildPlayerText = (
       ? formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive)
       : null,
     telemetryVisible('player-combat') ? formatLiveHealthText(playerHealth) : null,
+    telemetryVisible('player-combat') ? formatLiveBreathText(playerBreathSecondsRemaining) : null,
+    telemetryVisible('player-combat')
+      ? formatLiveDrowningCooldownText(playerDrowningDamageTickSecondsRemaining)
+      : null,
     telemetryVisible('player-combat')
       ? formatLiveFallRecoveryText(playerFallDamageRecoverySecondsRemaining)
       : null,
@@ -2331,6 +2357,9 @@ export const buildDebugEditStatusStripModel = (
   const playerNearbyLightSourceLocalTile = state.playerNearbyLightSourceLocalTile ?? null;
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
   const playerHealth = state.playerHealth ?? null;
+  const playerBreathSecondsRemaining = state.playerBreathSecondsRemaining ?? null;
+  const playerDrowningDamageTickSecondsRemaining =
+    state.playerDrowningDamageTickSecondsRemaining ?? null;
   const playerFallDamageRecoverySecondsRemaining =
     state.playerFallDamageRecoverySecondsRemaining ?? null;
   const playerHostileContactInvulnerabilitySecondsRemaining =
@@ -2416,6 +2445,8 @@ export const buildDebugEditStatusStripModel = (
       playerNearbyLightSourceLocalTile,
       playerCeilingBonkHoldActive,
       playerHealth,
+      playerBreathSecondsRemaining,
+      playerDrowningDamageTickSecondsRemaining,
       playerFallDamageRecoverySecondsRemaining,
       playerHostileContactInvulnerabilitySecondsRemaining,
       hostileSlimeActiveCount,

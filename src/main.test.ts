@@ -4284,6 +4284,65 @@ describe('main.ts shell state orchestration', () => {
     ).toBe(0.1);
   });
 
+  it('tracks breath and drowning-cooldown telemetry through fixed-step player updates', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    let stepCount = 0;
+    testRuntime.rendererStepPlayerStateImpl = (_state) => {
+      stepCount += 1;
+      if (stepCount === 1) {
+        return {
+          position: { x: 8, y: 0 },
+          velocity: { x: 0, y: 0 },
+          grounded: true,
+          health: 100,
+          breathSecondsRemaining: 0.25,
+          drowningDamageTickSecondsRemaining: 0.5
+        };
+      }
+
+      return {
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        grounded: true,
+        health: 95,
+        breathSecondsRemaining: 0,
+        drowningDamageTickSecondsRemaining: 0.25
+      };
+    };
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(100);
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.breathSecondsRemaining).toBe(0.25);
+    expect(
+      testRuntime.latestDebugOverlayInspectState?.player?.drowningDamageTickSecondsRemaining
+    ).toBe(0.5);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerHealth).toBe(100);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerBreathSecondsRemaining).toBe(0.25);
+    expect(
+      testRuntime.latestDebugEditStatusStripState?.playerDrowningDamageTickSecondsRemaining
+    ).toBe(0.5);
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(95);
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.breathSecondsRemaining).toBe(0);
+    expect(
+      testRuntime.latestDebugOverlayInspectState?.player?.drowningDamageTickSecondsRemaining
+    ).toBe(0.25);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerHealth).toBe(95);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerBreathSecondsRemaining).toBe(0);
+    expect(
+      testRuntime.latestDebugEditStatusStripState?.playerDrowningDamageTickSecondsRemaining
+    ).toBe(0.25);
+  });
+
   it('submits standalone-player wall, ceiling, and bonk presentation through the current entity snapshot', async () => {
     await import('./main');
     await flushBootstrap();

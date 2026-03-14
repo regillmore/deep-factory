@@ -1572,7 +1572,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose, live health, fall recovery, and hostile-contact invulnerability telemetry on separate player lines', () => {
+  it('keeps pose, live health, breath, survival cooldowns, and hostile-contact invulnerability telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -1582,13 +1582,20 @@ describe('buildDebugEditStatusStripModel', () => {
       desktopInspectPinArmed: false,
       playerPlaceholderPoseLabel: 'grounded-idle',
       playerHealth: 85,
+      playerBreathSecondsRemaining: 0.25,
+      playerDrowningDamageTickSecondsRemaining: 0.5,
       playerFallDamageRecoverySecondsRemaining: 0.35,
       playerHostileContactInvulnerabilitySecondsRemaining: 0.75,
       preview: createEmptyPreviewState()
     });
 
     expect(model.playerText).toBe(
-      'Pose: grounded-idle\nHealthNow: 85\nFallRecoveryNow: 0.35s\nContactInvulnNow: 0.75s'
+      'Pose: grounded-idle\n' +
+        'HealthNow: 85\n' +
+        'BreathNow: 0.25s\n' +
+        'DrownCooldownNow: 0.50s\n' +
+        'FallRecoveryNow: 0.35s\n' +
+        'ContactInvulnNow: 0.75s'
     );
     expect(model.eventText).toBeNull();
   });

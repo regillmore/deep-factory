@@ -401,6 +401,8 @@ type StandalonePlayerRenderFrameStatusStripTelemetry = Pick<
   | 'playerCameraZoom'
   | 'playerCeilingBonkHoldActive'
   | 'playerHealth'
+  | 'playerBreathSecondsRemaining'
+  | 'playerDrowningDamageTickSecondsRemaining'
   | 'playerFallDamageRecoverySecondsRemaining'
   | 'playerHostileContactInvulnerabilitySecondsRemaining'
   | 'playerGrounded'
@@ -3491,6 +3493,26 @@ const bootstrap = async (): Promise<void> => {
         : false;
     const playerHealth =
       playerState === null ? null : readOptionalFiniteNumber((playerState as { health?: unknown }).health);
+    const playerBreathSecondsRemaining =
+      playerState === null
+        ? null
+        : readOptionalFiniteNumber(
+            (
+              playerState as {
+                breathSecondsRemaining?: unknown;
+              }
+            ).breathSecondsRemaining
+          );
+    const playerDrowningDamageTickSecondsRemaining =
+      playerState === null
+        ? null
+        : readOptionalFiniteNumber(
+            (
+              playerState as {
+                drowningDamageTickSecondsRemaining?: unknown;
+              }
+            ).drowningDamageTickSecondsRemaining
+          );
     const playerFallDamageRecoverySecondsRemaining =
       playerState === null
         ? null
@@ -3618,6 +3640,8 @@ const bootstrap = async (): Promise<void> => {
                 grounded: playerState.grounded,
                 facing: playerState.facing,
                 health: playerHealth,
+                breathSecondsRemaining: playerBreathSecondsRemaining,
+                drowningDamageTickSecondsRemaining: playerDrowningDamageTickSecondsRemaining,
                 fallDamageRecoverySecondsRemaining: playerFallDamageRecoverySecondsRemaining,
                 hostileContactInvulnerabilitySecondsRemaining:
                   playerHostileContactInvulnerabilitySecondsRemaining,
@@ -3692,6 +3716,8 @@ const bootstrap = async (): Promise<void> => {
         playerCeilingBonkHoldActive:
           playerState === null ? null : standalonePlayerCeilingBonkActive,
         playerHealth,
+        playerBreathSecondsRemaining,
+        playerDrowningDamageTickSecondsRemaining,
         playerFallDamageRecoverySecondsRemaining,
         playerHostileContactInvulnerabilitySecondsRemaining,
         playerGrounded: playerState?.grounded ?? null,
@@ -3846,6 +3872,8 @@ const bootstrap = async (): Promise<void> => {
       playerNearbyLightSourceLocalTile: null,
       playerCeilingBonkHoldActive: null,
       playerHealth: null,
+      playerBreathSecondsRemaining: null,
+      playerDrowningDamageTickSecondsRemaining: null,
       playerFallDamageRecoverySecondsRemaining: null,
       playerHostileContactInvulnerabilitySecondsRemaining: null,
       playerGrounded: null,
@@ -4197,6 +4225,9 @@ const bootstrap = async (): Promise<void> => {
         debugStatusStripPlayerTelemetry.playerNearbyLightSourceLocalTile,
       playerCeilingBonkHoldActive: debugStatusStripPlayerTelemetry.playerCeilingBonkHoldActive,
       playerHealth: debugStatusStripPlayerTelemetry.playerHealth,
+      playerBreathSecondsRemaining: debugStatusStripPlayerTelemetry.playerBreathSecondsRemaining,
+      playerDrowningDamageTickSecondsRemaining:
+        debugStatusStripPlayerTelemetry.playerDrowningDamageTickSecondsRemaining,
       playerFallDamageRecoverySecondsRemaining:
         debugStatusStripPlayerTelemetry.playerFallDamageRecoverySecondsRemaining,
       playerHostileContactInvulnerabilitySecondsRemaining:
