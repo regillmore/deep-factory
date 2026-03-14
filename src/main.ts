@@ -162,10 +162,12 @@ import {
   type PlayerRespawnEvent
 } from './world/playerRespawnEvent';
 import {
+  canDroppedItemStacksMerge,
   cloneDroppedItemState,
   createDroppedItemStateFromWorldTile,
   createDroppedItemStateFromPlayerDrop,
   resolveDroppedItemPickup,
+  resolveDroppedItemStackMerge,
   type DroppedItemState
 } from './world/droppedItem';
 import {
@@ -1545,6 +1547,41 @@ const bootstrap = async (): Promise<void> => {
   };
   const getDroppedItemStates = (): DroppedItemState[] =>
     getDroppedItemEntityStates().map(({ state }) => cloneDroppedItemState(state));
+  const mergeDroppedItemDropIntoNearbyPickup = (
+    droppedItemState: DroppedItemState
+  ): DroppedItemState | null => {
+    let mergeTarget: { id: EntityId; state: DroppedItemState } | null = null;
+    let mergeTargetDistanceSquared = Number.POSITIVE_INFINITY;
+    for (const droppedItem of getDroppedItemEntityStates()) {
+      if (!canDroppedItemStacksMerge(droppedItem.state, droppedItemState)) {
+        continue;
+      }
+
+      const dx = droppedItem.state.position.x - droppedItemState.position.x;
+      const dy = droppedItem.state.position.y - droppedItemState.position.y;
+      const distanceSquared = dx * dx + dy * dy;
+      if (
+        mergeTarget === null ||
+        distanceSquared < mergeTargetDistanceSquared ||
+        (distanceSquared === mergeTargetDistanceSquared && droppedItem.id < mergeTarget.id)
+      ) {
+        mergeTarget = droppedItem;
+        mergeTargetDistanceSquared = distanceSquared;
+      }
+    }
+
+    if (mergeTarget === null) {
+      return droppedItemState;
+    }
+
+    const mergeResult = resolveDroppedItemStackMerge(mergeTarget.state, droppedItemState);
+    if (mergeResult.mergedAmount <= 0) {
+      return droppedItemState;
+    }
+
+    entityRegistry.setEntityState(mergeTarget.id, mergeResult.nextTargetDroppedItemState);
+    return mergeResult.nextSourceDroppedItemState;
+  };
   const resolveTrackedHostileSlimeState = (
     playerState: PlayerState | null,
     activeHostileSlimes = getHostileSlimeEntityStates()
@@ -2240,7 +2277,10 @@ const bootstrap = async (): Promise<void> => {
         null
       )
     );
-    spawnDroppedItemEntity(droppedItemState);
+    const remainingDroppedItemState = mergeDroppedItemDropIntoNearbyPickup(droppedItemState);
+    if (remainingDroppedItemState !== null) {
+      spawnDroppedItemEntity(remainingDroppedItemState);
+    }
     return true;
   };
   const despawnHostileSlimeEntities = (entityIds: readonly EntityId[]): void => {

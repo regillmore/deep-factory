@@ -41,6 +41,8 @@ import {
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
 import type { PlayerItemPlacementPreviewState } from './ui/playerItemPlacementPreviewOverlay';
+import { createDroppedItemState } from './world/droppedItem';
+import { createPlayerInventoryState } from './world/playerInventory';
 import {
   createPlayerState,
   DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
@@ -6041,6 +6043,59 @@ describe('main.ts shell state orchestration', () => {
       amount: 64
     });
     expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([]);
+  });
+
+  it('merges a dropped hotbar stack into a nearby matching world pickup instead of spawning a second entity', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'dirt-block', amount: 8 },
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }),
+          droppedItemStates: [
+            createDroppedItemState({
+              position: { x: 28, y: -14 },
+              itemId: 'dirt-block',
+              amount: 7
+            })
+          ]
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('Backspace', 'Backspace').prevented).toBe(true);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toBeNull();
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 28, y: -14 },
+        itemId: 'dirt-block',
+        amount: 15
+      }
+    ]);
   });
 
   it('rejects starter dirt block placement when the new block would overlap the player', async () => {

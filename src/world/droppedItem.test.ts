@@ -3,11 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { createPlayerInventoryState } from './playerInventory';
 import { createPlayerState } from './playerState';
 import {
+  canDroppedItemStacksMerge,
   createDroppedItemState,
   createDroppedItemStateFromWorldTile,
   createDroppedItemStateFromPlayerDrop,
   isDroppedItemInPickupRange,
-  resolveDroppedItemPickup
+  resolveDroppedItemPickup,
+  resolveDroppedItemStackMerge
 } from './droppedItem';
 
 describe('droppedItem', () => {
@@ -38,6 +40,107 @@ describe('droppedItem', () => {
       },
       itemId: 'torch',
       amount: 1
+    });
+  });
+
+  it('treats overlapping same-item world stacks as merge candidates', () => {
+    expect(
+      canDroppedItemStacksMerge(
+        createDroppedItemState({
+          position: { x: 28, y: -14 },
+          itemId: 'dirt-block',
+          amount: 12
+        }),
+        createDroppedItemState({
+          position: { x: 32, y: -14 },
+          itemId: 'dirt-block',
+          amount: 8
+        })
+      )
+    ).toBe(true);
+
+    expect(
+      canDroppedItemStacksMerge(
+        createDroppedItemState({
+          position: { x: 28, y: -14 },
+          itemId: 'dirt-block',
+          amount: 12
+        }),
+        createDroppedItemState({
+          position: { x: 48, y: -14 },
+          itemId: 'dirt-block',
+          amount: 8
+        })
+      )
+    ).toBe(false);
+
+    expect(
+      canDroppedItemStacksMerge(
+        createDroppedItemState({
+          position: { x: 28, y: -14 },
+          itemId: 'dirt-block',
+          amount: 12
+        }),
+        createDroppedItemState({
+          position: { x: 32, y: -14 },
+          itemId: 'torch',
+          amount: 8
+        })
+      )
+    ).toBe(false);
+  });
+
+  it('merges a matching dropped stack into one world pickup when space remains', () => {
+    const mergeResult = resolveDroppedItemStackMerge(
+      createDroppedItemState({
+        position: { x: 28, y: -14 },
+        itemId: 'torch',
+        amount: 20
+      }),
+      createDroppedItemState({
+        position: { x: 32, y: -14 },
+        itemId: 'torch',
+        amount: 5
+      })
+    );
+
+    expect(mergeResult).toEqual({
+      nextTargetDroppedItemState: {
+        position: { x: 28, y: -14 },
+        itemId: 'torch',
+        amount: 25
+      },
+      nextSourceDroppedItemState: null,
+      mergedAmount: 5
+    });
+  });
+
+  it('leaves a remainder when a matching world pickup reaches its max stack size', () => {
+    const mergeResult = resolveDroppedItemStackMerge(
+      createDroppedItemState({
+        position: { x: 28, y: -14 },
+        itemId: 'dirt-block',
+        amount: 995
+      }),
+      createDroppedItemState({
+        position: { x: 32, y: -14 },
+        itemId: 'dirt-block',
+        amount: 10
+      })
+    );
+
+    expect(mergeResult).toEqual({
+      nextTargetDroppedItemState: {
+        position: { x: 28, y: -14 },
+        itemId: 'dirt-block',
+        amount: 999
+      },
+      nextSourceDroppedItemState: {
+        position: { x: 32, y: -14 },
+        itemId: 'dirt-block',
+        amount: 6
+      },
+      mergedAmount: 4
     });
   });
 

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-14
 
+- Task: Add a same-item dropped-stack merge follow-up after dropped-item pickup.
+- Changes: Updated [src/world/droppedItem.ts](../src/world/droppedItem.ts) plus [src/world/droppedItem.test.ts](../src/world/droppedItem.test.ts) with overlapping same-item world-stack merge helpers and deterministic full-merge plus overflow regressions, updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so hotbar drops now merge into a nearby overlapping matching pickup before spawning a remainder entity, removed completed task `549` from [docs/NEXT.md](docs/NEXT.md), added replacement task `555`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/droppedItem.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Establish an initial/default maximum non-debug placement range for player-held hotbar tiles.
 - Changes: Added [src/world/playerHotbarPlacementRange.ts](../src/world/playerHotbarPlacementRange.ts) plus [src/world/playerHotbarPlacementRange.test.ts](../src/world/playerHotbarPlacementRange.test.ts) to define and regress a shared default five-tile play-mode hotbar placement reach measured from the player body to the target tile cell, updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so hidden-panel hotbar previews and actual dirt or torch placement both reject out-of-range targets through that shared helper, removed completed task `551` from [docs/NEXT.md](docs/NEXT.md), added replacement task `554`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/playerHotbarPlacementRange.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

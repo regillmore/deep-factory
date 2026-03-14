@@ -20,6 +20,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Pickup stacks behave like runtime entities with stack counts and positions, so keeping them in the session-owned envelope preserves their entity-style lifecycle without coupling world-save terrain snapshots to transient actor state.
 - Consequence: Future pickup-producing slices should persist uncollected world items through the same session-owned dropped-item path unless the same pass intentionally replaces broader entity-save ownership.
 
+### 2026-03-14: Player drops should merge into overlapping same-item pickups before spawning new stacks
+
+- Decision: Dropping a hotbar stack now first tries to merge into one overlapping world pickup of the same item, only spawning a second dropped-item entity when merge overflow remains.
+- Reason: Consolidating matching pickups keeps drop behavior readable, avoids piling duplicate entities at the same spot, and preserves one deterministic dropped-stack state when the world can already hold the combined amount.
+- Consequence: Future player-drop and nearby world-pickup follow-ups should preserve this merge-first behavior instead of always spawning a fresh entity for same-item overlaps.
+
 ### 2026-03-14: Starter torches collapse from authoritative tile edits when support disappears
 
 - Decision: `TileWorld.setTileState()` now automatically clears adjacent starter torch tiles when a solid-face edit leaves them without any remaining solid cardinal support.

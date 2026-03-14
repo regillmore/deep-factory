@@ -32,6 +32,12 @@ export interface ResolveDroppedItemPickupResult {
   pickedUpAmount: number;
 }
 
+export interface ResolveDroppedItemStackMergeResult {
+  nextTargetDroppedItemState: DroppedItemState;
+  nextSourceDroppedItemState: DroppedItemState | null;
+  mergedAmount: number;
+}
+
 export const DROPPED_ITEM_WIDTH = 10;
 export const DROPPED_ITEM_HEIGHT = 10;
 export const DROPPED_ITEM_PICKUP_PADDING = 6;
@@ -156,6 +162,55 @@ export const isDroppedItemInPickupRange = (
   playerState: PlayerState
 ): boolean =>
   doAabbsOverlap(getDroppedItemAabb(droppedItemState), getExpandedPlayerPickupAabb(playerState));
+
+export const canDroppedItemStacksMerge = (
+  targetDroppedItemState: DroppedItemState,
+  sourceDroppedItemState: DroppedItemState
+): boolean =>
+  targetDroppedItemState.itemId === sourceDroppedItemState.itemId &&
+  doAabbsOverlap(getDroppedItemAabb(targetDroppedItemState), getDroppedItemAabb(sourceDroppedItemState));
+
+export const resolveDroppedItemStackMerge = (
+  targetDroppedItemState: DroppedItemState,
+  sourceDroppedItemState: DroppedItemState
+): ResolveDroppedItemStackMergeResult => {
+  if (targetDroppedItemState.itemId !== sourceDroppedItemState.itemId) {
+    return {
+      nextTargetDroppedItemState: cloneDroppedItemState(targetDroppedItemState),
+      nextSourceDroppedItemState: cloneDroppedItemState(sourceDroppedItemState),
+      mergedAmount: 0
+    };
+  }
+
+  const maxStackSize = getPlayerInventoryItemDefinition(targetDroppedItemState.itemId).maxStackSize;
+  const targetCapacity = maxStackSize - targetDroppedItemState.amount;
+  if (targetCapacity <= 0) {
+    return {
+      nextTargetDroppedItemState: cloneDroppedItemState(targetDroppedItemState),
+      nextSourceDroppedItemState: cloneDroppedItemState(sourceDroppedItemState),
+      mergedAmount: 0
+    };
+  }
+
+  const mergedAmount = Math.min(targetCapacity, sourceDroppedItemState.amount);
+  const remainingSourceAmount = sourceDroppedItemState.amount - mergedAmount;
+  return {
+    nextTargetDroppedItemState: createDroppedItemState({
+      position: targetDroppedItemState.position,
+      itemId: targetDroppedItemState.itemId,
+      amount: targetDroppedItemState.amount + mergedAmount
+    }),
+    nextSourceDroppedItemState:
+      remainingSourceAmount > 0
+        ? createDroppedItemState({
+            position: sourceDroppedItemState.position,
+            itemId: sourceDroppedItemState.itemId,
+            amount: remainingSourceAmount
+          })
+        : null,
+    mergedAmount
+  };
+};
 
 export const resolveDroppedItemPickup = (
   droppedItemState: DroppedItemState,
