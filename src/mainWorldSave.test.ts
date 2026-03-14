@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { CHUNK_SIZE } from './world/constants';
 import { encodeResidentChunkSnapshot } from './world/chunkSnapshot';
 import { createPlayerDeathState } from './world/playerDeathState';
+import { createDroppedItemState } from './world/droppedItem';
 import { createDefaultPlayerInventoryState } from './world/playerInventory';
 import {
   createPlayerState,
@@ -37,6 +38,13 @@ describe('createWorldSaveEnvelope', () => {
     });
     const standalonePlayerDeathState = createPlayerDeathState(0.5);
     const standalonePlayerInventoryState = createDefaultPlayerInventoryState();
+    const droppedItemStates = [
+      createDroppedItemState({
+        position: { x: 24, y: -14 },
+        itemId: 'torch',
+        amount: 6
+      })
+    ];
     const cameraFollowOffset = { x: 24, y: -12 };
 
     const envelope = createWorldSaveEnvelope({
@@ -44,6 +52,7 @@ describe('createWorldSaveEnvelope', () => {
       standalonePlayerState,
       standalonePlayerDeathState,
       standalonePlayerInventoryState,
+      droppedItemStates,
       cameraFollowOffset
     });
 
@@ -54,6 +63,7 @@ describe('createWorldSaveEnvelope', () => {
       standalonePlayerState,
       standalonePlayerDeathState,
       standalonePlayerInventoryState,
+      droppedItemStates,
       cameraFollowOffset
     });
     expect(envelope.worldSnapshot).toEqual(worldSnapshot);
@@ -62,6 +72,7 @@ describe('createWorldSaveEnvelope', () => {
     standalonePlayerState.position.x = 512;
     standalonePlayerDeathState.respawnSecondsRemaining = 999;
     standalonePlayerInventoryState.hotbar[0]!.amount = 1;
+    droppedItemStates[0]!.amount = 1;
     cameraFollowOffset.x = 128;
 
     expect(envelope.worldSnapshot.residentChunks[0]!.payload.tiles[0]).not.toBe(99);
@@ -70,6 +81,11 @@ describe('createWorldSaveEnvelope', () => {
     expect(envelope.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
       itemId: 'dirt-block',
       amount: 64
+    });
+    expect(envelope.session.droppedItemStates[0]).toEqual({
+      position: { x: 24, y: -14 },
+      itemId: 'torch',
+      amount: 6
     });
     expect(envelope.session.cameraFollowOffset.x).toBe(24);
   });
@@ -88,6 +104,7 @@ describe('createWorldSaveEnvelope', () => {
             standalonePlayerState: createPlayerState(),
             standalonePlayerDeathState: null,
             standalonePlayerInventoryState,
+            droppedItemStates: [],
             cameraFollowOffset: { x: 0, y: 0 }
           })
         )
@@ -101,6 +118,39 @@ describe('createWorldSaveEnvelope', () => {
       itemId: 'dirt-block',
       amount: 63
     });
+  });
+
+  it('round-trips dropped-item entity stacks through save decode', () => {
+    const world = new TileWorld(0);
+    const droppedItemStates = [
+      createDroppedItemState({
+        position: { x: 24, y: -14 },
+        itemId: 'torch',
+        amount: 6
+      }),
+      createDroppedItemState({
+        position: { x: -16, y: -14 },
+        itemId: 'rope',
+        amount: 3
+      })
+    ];
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+            droppedItemStates,
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    expect(decoded.session.droppedItemStates).toEqual(droppedItemStates);
   });
 });
 
@@ -119,6 +169,7 @@ describe('decodeWorldSaveEnvelope', () => {
         standalonePlayerState: null,
         standalonePlayerDeathState: null,
         standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+        droppedItemStates: [],
         cameraFollowOffset: {
           x: -18,
           y: 9
@@ -189,13 +240,14 @@ describe('decodeWorldSaveEnvelope', () => {
       kind: WORLD_SAVE_ENVELOPE_KIND,
       version: WORLD_SAVE_ENVELOPE_VERSION,
       migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
-      session: {
-        standalonePlayerState: legacyStandalonePlayerState,
-        standalonePlayerDeathState: undefined,
-        standalonePlayerInventoryState: undefined,
-        cameraFollowOffset: { x: 0, y: 0 }
-      },
-      worldSnapshot: world.createSnapshot()
+        session: {
+          standalonePlayerState: legacyStandalonePlayerState,
+          standalonePlayerDeathState: undefined,
+          standalonePlayerInventoryState: undefined,
+          droppedItemStates: undefined,
+          cameraFollowOffset: { x: 0, y: 0 }
+        },
+        worldSnapshot: world.createSnapshot()
     });
 
     expect(decoded.session.standalonePlayerState).toEqual({
@@ -208,6 +260,7 @@ describe('decodeWorldSaveEnvelope', () => {
     });
     expect(decoded.session.standalonePlayerDeathState).toBeNull();
     expect(decoded.session.standalonePlayerInventoryState).toEqual(createDefaultPlayerInventoryState());
+    expect(decoded.session.droppedItemStates).toEqual([]);
   });
 
   it('rejects invalid standalone-player session state', () => {
@@ -226,6 +279,7 @@ describe('decodeWorldSaveEnvelope', () => {
           },
           standalonePlayerDeathState: null,
           standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+          droppedItemStates: [],
           cameraFollowOffset: { x: 0, y: 0 }
         },
         worldSnapshot: world.createSnapshot()
@@ -248,6 +302,7 @@ describe('decodeWorldSaveEnvelope', () => {
           standalonePlayerState: null,
           standalonePlayerDeathState: null,
           standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+          droppedItemStates: [],
           cameraFollowOffset: { x: 0, y: 0 }
         },
         worldSnapshot: world.createSnapshot()
@@ -268,6 +323,7 @@ describe('decodeWorldSaveEnvelope', () => {
           standalonePlayerState: null,
           standalonePlayerDeathState: null,
           standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+          droppedItemStates: [],
           cameraFollowOffset: { x: 0, y: 0 }
         },
         worldSnapshot: {
@@ -293,6 +349,7 @@ describe('decodeWorldSaveEnvelope', () => {
             respawnSecondsRemaining: -0.1
           },
           standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+          droppedItemStates: [],
           cameraFollowOffset: { x: 0, y: 0 }
         },
         worldSnapshot: world.createSnapshot()
@@ -317,6 +374,7 @@ describe('decodeWorldSaveEnvelope', () => {
             hotbar: Array.from({ length: 10 }, () => null),
             selectedHotbarSlotIndex: 10
           },
+          droppedItemStates: [],
           cameraFollowOffset: { x: 0, y: 0 }
         },
         worldSnapshot: world.createSnapshot()
@@ -324,5 +382,31 @@ describe('decodeWorldSaveEnvelope', () => {
     ).toThrowError(
       /session\.standalonePlayerInventoryState\.selectedHotbarSlotIndex must be an integer between 0 and 9/
     );
+  });
+
+  it('rejects invalid dropped-item payloads', () => {
+    const world = new TileWorld(0);
+
+    expect(() =>
+      decodeWorldSaveEnvelope({
+        kind: WORLD_SAVE_ENVELOPE_KIND,
+        version: WORLD_SAVE_ENVELOPE_VERSION,
+        migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
+        session: {
+          standalonePlayerState: null,
+          standalonePlayerDeathState: null,
+          standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+          droppedItemStates: [
+            {
+              position: { x: 12, y: -4 },
+              itemId: 'torch',
+              amount: 0
+            }
+          ],
+          cameraFollowOffset: { x: 0, y: 0 }
+        },
+        worldSnapshot: world.createSnapshot()
+      })
+    ).toThrowError(/session\.droppedItemStates\[0\]\.amount must be a positive integer/);
   });
 });

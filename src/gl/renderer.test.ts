@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Camera2D } from '../core/camera2d';
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL, TILE_SIZE } from '../world/constants';
+import { createDroppedItemState, type DroppedItemState } from '../world/droppedItem';
 import {
   createPlayerState,
   type PlayerCollisionContacts,
@@ -88,6 +89,7 @@ const createMockGl = (): WebGL2RenderingContext =>
     enableVertexAttribArray: vi.fn(),
     getUniformLocation: vi.fn(() => ({ kind: 'uniform' } as unknown as WebGLUniformLocation)),
     uniform1f: vi.fn(),
+    uniform3f: vi.fn(),
     uniformMatrix4fv: vi.fn(),
     useProgram: vi.fn(),
     vertexAttribPointer: vi.fn(),
@@ -183,6 +185,21 @@ const createHostileSlimeEntityFrameState = (
 ): RendererEntityFrameState => ({
   id: options.id ?? 1,
   kind: 'slime',
+  snapshot: {
+    previous: options.previousState ?? currentState,
+    current: currentState
+  }
+});
+
+const createDroppedItemEntityFrameState = (
+  currentState: DroppedItemState,
+  options: {
+    id?: number;
+    previousState?: DroppedItemState;
+  } = {}
+): RendererEntityFrameState => ({
+  id: options.id ?? 1,
+  kind: 'dropped-item',
   snapshot: {
     previous: options.previousState ?? currentState,
     current: currentState
@@ -2360,6 +2377,79 @@ describe('Renderer atlas telemetry', () => {
       uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
       [1]
     );
+  });
+
+  it('draws dropped-item placeholders from interpolated entity snapshots', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const drawArrays = vi.mocked(gl.drawArrays);
+    const bufferData = vi.mocked(gl.bufferData);
+    drawArrays.mockClear();
+    bufferData.mockClear();
+
+    const currentState = createDroppedItemState({
+      position: { x: 80, y: 48 },
+      itemId: 'torch',
+      amount: 6
+    });
+    const previousState = createDroppedItemState({
+      position: { x: 64, y: 32 },
+      itemId: 'torch',
+      amount: 6
+    });
+
+    renderer.render(new Camera2D(), {
+      entities: [
+        createDroppedItemEntityFrameState(currentState, {
+          id: 41,
+          previousState
+        })
+      ],
+      renderAlpha: 0.25,
+      timeMs: 0
+    });
+
+    expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
+    expect(renderer.telemetry.drawCalls).toBe(renderer.telemetry.renderedChunks + 1);
+
+    const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
+    expect(dynamicUploads).toHaveLength(1);
+    expect(Array.from((dynamicUploads[0]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      63,
+      31,
+      0,
+      0,
+      73,
+      31,
+      1,
+      0,
+      73,
+      41,
+      1,
+      1,
+      63,
+      31,
+      0,
+      0,
+      73,
+      41,
+      1,
+      1,
+      63,
+      41,
+      0,
+      1
+    ]);
   });
 
   it('preserves supported-entry submission order when slime and standalone-player entries are interleaved', async () => {

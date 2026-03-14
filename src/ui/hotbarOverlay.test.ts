@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createDefaultPlayerInventoryState } from '../world/playerInventory';
+import { createDefaultPlayerInventoryState, createPlayerInventoryState } from '../world/playerInventory';
 import { HotbarOverlay } from './hotbarOverlay';
 
 class FakeElement {
@@ -51,6 +51,10 @@ describe('HotbarOverlay', () => {
   });
 
   const createHost = (): HTMLElement => document.createElement('div') as unknown as HTMLElement;
+  const getSlotRow = (overlay: HotbarOverlay): FakeElement =>
+    (overlay.getRootElement() as unknown as FakeElement).children[1]! as FakeElement;
+  const getDropButton = (overlay: HotbarOverlay): FakeElement =>
+    (overlay.getRootElement() as unknown as FakeElement).children[0]! as FakeElement;
 
   it('renders the starter hotbar state and highlights the selected slot', () => {
     const host = createHost();
@@ -60,15 +64,19 @@ describe('HotbarOverlay', () => {
     overlay.update(createDefaultPlayerInventoryState());
 
     const root = overlay.getRootElement() as unknown as FakeElement;
-    const firstSlot = root.children[0]!;
-    const secondSlot = root.children[1]!;
-    const emptySlot = root.children[3]!;
+    const slotRow = getSlotRow(overlay);
+    const firstSlot = slotRow.children[0]!;
+    const secondSlot = slotRow.children[1]!;
+    const emptySlot = slotRow.children[3]!;
+    const dropButton = getDropButton(overlay);
 
     expect(root.style.display).toBe('flex');
     expect(firstSlot.title).toContain('Dirt Block');
     expect(firstSlot.getAttribute('aria-pressed')).toBe('true');
     expect(secondSlot.title).toContain('Torch');
     expect(emptySlot.children[1]!.textContent).toBe('EMPTY');
+    expect(dropButton.title).toContain('Drop Dirt Block stack');
+    expect(dropButton.getAttribute('aria-disabled')).toBe('false');
   });
 
   it('forwards slot clicks through the selection callback', () => {
@@ -77,9 +85,24 @@ describe('HotbarOverlay', () => {
     const overlay = new HotbarOverlay({ host, onSelectSlot });
 
     overlay.update(createDefaultPlayerInventoryState());
-    (overlay.getRootElement() as unknown as FakeElement).children[2]!.click();
+    getSlotRow(overlay).children[2]!.click();
 
     expect(onSelectSlot).toHaveBeenCalledWith(2);
+  });
+
+  it('forwards drop-button clicks only when the selected slot is populated', () => {
+    const host = createHost();
+    const onDropSelectedStack = vi.fn();
+    const overlay = new HotbarOverlay({ host, onDropSelectedStack });
+
+    overlay.update(createDefaultPlayerInventoryState());
+    getDropButton(overlay).click();
+    expect(onDropSelectedStack).toHaveBeenCalledTimes(1);
+
+    overlay.update(createPlayerInventoryState({ hotbar: Array.from({ length: 10 }, () => null) }));
+    getDropButton(overlay).click();
+    expect(onDropSelectedStack).toHaveBeenCalledTimes(1);
+    expect(getDropButton(overlay).getAttribute('aria-disabled')).toBe('true');
   });
 
   it('can hide and show itself without removing the DOM root', () => {

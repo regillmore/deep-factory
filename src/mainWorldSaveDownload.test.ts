@@ -17,6 +17,7 @@ const createTestEnvelope = (): WorldSaveEnvelope => ({
     standalonePlayerState: null,
     standalonePlayerDeathState: null,
     standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+    droppedItemStates: [],
     cameraFollowOffset: {
       x: 12,
       y: -6

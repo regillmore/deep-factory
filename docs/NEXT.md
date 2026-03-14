@@ -28,9 +28,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 509. Add a heart-crystal health-upgrade slice after hostile-slime player-contact combat and inventory basics: a non-stackable heart-crystal inventory item, mixed-device consume input, fixed-step max-health increase with current-health fill and cap rules, and save/load regressions for upgraded health state.
 511. Add a mana-resource magic slice after starter wand combat and save/load: fixed-step current and max mana state, wand cast-time mana spend-or-fail rules, passive regen delay plus refill cadence, and snapshot regressions for mana state.
 513. Add a bug-net critter-capture slice after passive-bunny ambient-entity and inventory basics: a non-stackable bug-net hotbar slot, mixed-device swing timing with bunny capture-on-hit rules, bunny item stacks into inventory, and deterministic capture regressions.
-535. Add a dropped-item pickup follow-up after hotbar inventory foundation: stackable world pickup entities, proximity pickup rules, auto-merge into matching or empty hotbar slots, and deterministic save/load regressions for collected stacks.
 536. Add a starter background-wall placement slice after starter building-block placement and inventory basics: stackable dirt-wall hotbar slots, mixed-device enclosed-wall placement against solid blocks or existing walls, stack consumption, and save/load regressions for placed walls plus remaining stack counts.
 548. Add a torch pickup-refund follow-up after dropped-item pickup follow-up and torch-support collapse: removing a placed torch, including support-collapse clears, should spawn one torch pickup entity and add deterministic refund regressions.
+549. Add a same-item dropped-stack merge follow-up after dropped-item pickup: dropping a stack onto a nearby matching world pickup should consolidate into one combined entity stack, and add deterministic merge regressions.
 
 ## Telemetry
 

@@ -1,4 +1,5 @@
 import { getHotbarSlotShortcutLabel } from '../input/hotbarShortcuts';
+import { getDropSelectedHotbarStackShortcutLabel } from '../input/playerInventoryShortcuts';
 import {
   getPlayerInventoryItemDefinition,
   type PlayerInventoryState
@@ -7,6 +8,7 @@ import {
 interface HotbarOverlayOptions {
   host: HTMLElement;
   onSelectSlot?: (slotIndex: number) => void;
+  onDropSelectedStack?: () => void;
 }
 
 interface HotbarSlotElements {
@@ -31,6 +33,9 @@ const applySlotSelectionStyles = (button: HTMLButtonElement, selected: boolean, 
 
 export class HotbarOverlay {
   private root: HTMLDivElement;
+  private slotRow: HTMLDivElement;
+  private dropButton: HTMLButtonElement;
+  private dropEnabled = false;
   private slots: HotbarSlotElements[] = [];
 
   constructor(options: HotbarOverlayOptions) {
@@ -41,10 +46,44 @@ export class HotbarOverlay {
     this.root.style.transform = 'translateX(-50%)';
     this.root.style.zIndex = '22';
     this.root.style.display = 'none';
-    this.root.style.alignItems = 'flex-end';
+    this.root.style.flexDirection = 'column';
+    this.root.style.alignItems = 'center';
     this.root.style.gap = '6px';
     this.root.style.pointerEvents = 'none';
     this.root.style.maxWidth = 'calc(100vw - 24px)';
+
+    this.dropButton = document.createElement('button');
+    this.dropButton.type = 'button';
+    this.dropButton.textContent = 'DROP';
+    this.dropButton.style.minWidth = '92px';
+    this.dropButton.style.height = '32px';
+    this.dropButton.style.padding = '0 12px';
+    this.dropButton.style.borderRadius = '999px';
+    this.dropButton.style.border = '1px solid rgba(255, 255, 255, 0.18)';
+    this.dropButton.style.background = 'rgba(10, 14, 20, 0.72)';
+    this.dropButton.style.color = '#f5f7fa';
+    this.dropButton.style.font = '700 12px/1 system-ui, sans-serif';
+    this.dropButton.style.letterSpacing = '0.08em';
+    this.dropButton.style.cursor = 'pointer';
+    this.dropButton.style.backdropFilter = 'blur(8px)';
+    this.dropButton.style.pointerEvents = 'auto';
+    this.dropButton.style.transition =
+      'transform 120ms ease, border-color 120ms ease, background 120ms ease, opacity 120ms ease';
+    this.dropButton.addEventListener('click', () => {
+      if (!this.dropEnabled) {
+        return;
+      }
+      options.onDropSelectedStack?.();
+    });
+    this.root.append(this.dropButton);
+
+    this.slotRow = document.createElement('div');
+    this.slotRow.style.display = 'flex';
+    this.slotRow.style.alignItems = 'flex-end';
+    this.slotRow.style.gap = '6px';
+    this.slotRow.style.pointerEvents = 'none';
+    this.slotRow.style.maxWidth = 'calc(100vw - 24px)';
+    this.root.append(this.slotRow);
 
     for (let slotIndex = 0; slotIndex < 10; slotIndex += 1) {
       const button = document.createElement('button');
@@ -88,7 +127,7 @@ export class HotbarOverlay {
         options.onSelectSlot?.(slotIndex);
       });
 
-      this.root.append(button);
+      this.slotRow.append(button);
       this.slots.push({
         button,
         shortcutLabel,
@@ -134,6 +173,22 @@ export class HotbarOverlay {
       slotElements.itemLabel.style.color = '#f5f7fa';
       slotElements.amountLabel.textContent = stack.amount > 1 ? String(stack.amount) : '';
     }
+
+    const selectedStack = state.hotbar[state.selectedHotbarSlotIndex] ?? null;
+    this.dropEnabled = selectedStack !== null;
+    this.dropButton.setAttribute('aria-disabled', this.dropEnabled ? 'false' : 'true');
+    this.dropButton.style.opacity = this.dropEnabled ? '1' : '0.45';
+    this.dropButton.style.transform = this.dropEnabled ? 'translateY(0)' : 'translateY(0)';
+    this.dropButton.style.background = this.dropEnabled
+      ? 'rgba(45, 25, 18, 0.9)'
+      : 'rgba(10, 14, 20, 0.72)';
+    this.dropButton.style.borderColor = this.dropEnabled
+      ? 'rgba(255, 170, 120, 0.5)'
+      : 'rgba(255, 255, 255, 0.18)';
+    this.dropButton.title =
+      selectedStack === null
+        ? 'Selected hotbar slot is empty'
+        : `Drop ${getPlayerInventoryItemDefinition(selectedStack.itemId).label} stack (${getDropSelectedHotbarStackShortcutLabel()})`;
   }
 
   dispose(): void {

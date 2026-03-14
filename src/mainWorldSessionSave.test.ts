@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CHUNK_SIZE } from './world/constants';
 import { createPlayerDeathState } from './world/playerDeathState';
+import { createDroppedItemState } from './world/droppedItem';
 import { createDefaultPlayerInventoryState } from './world/playerInventory';
 import { createPlayerState } from './world/playerState';
 import { TileWorld } from './world/world';
@@ -27,12 +28,20 @@ describe('createWorldSessionSaveEnvelope', () => {
     });
     const standalonePlayerDeathState = createPlayerDeathState(0.5);
     const standalonePlayerInventoryState = createDefaultPlayerInventoryState();
+    const droppedItemStates = [
+      createDroppedItemState({
+        position: { x: 24, y: -14 },
+        itemId: 'torch',
+        amount: 6
+      })
+    ];
     const cameraFollowOffset = { x: 18, y: -12 };
     const source = {
       createWorldSnapshot: vi.fn(() => world.createSnapshot()),
       getStandalonePlayerState: vi.fn(() => standalonePlayerState),
       getStandalonePlayerDeathState: vi.fn(() => standalonePlayerDeathState),
       getStandalonePlayerInventoryState: vi.fn(() => standalonePlayerInventoryState),
+      getDroppedItemStates: vi.fn(() => droppedItemStates),
       getCameraFollowOffset: vi.fn(() => cameraFollowOffset)
     };
 
@@ -42,11 +51,13 @@ describe('createWorldSessionSaveEnvelope', () => {
     expect(source.getStandalonePlayerState).toHaveBeenCalledTimes(1);
     expect(source.getStandalonePlayerDeathState).toHaveBeenCalledTimes(1);
     expect(source.getStandalonePlayerInventoryState).toHaveBeenCalledTimes(1);
+    expect(source.getDroppedItemStates).toHaveBeenCalledTimes(1);
     expect(source.getCameraFollowOffset).toHaveBeenCalledTimes(1);
     expect(envelope.session).toEqual({
       standalonePlayerState,
       standalonePlayerDeathState,
       standalonePlayerInventoryState,
+      droppedItemStates,
       cameraFollowOffset
     });
 
@@ -68,6 +79,7 @@ describe('createWorldSessionSaveEnvelope', () => {
       itemId: 'dirt-block',
       amount: 64
     });
+    expect(envelope.session.droppedItemStates).toEqual(droppedItemStates);
     expect(envelope.session.cameraFollowOffset.x).toBe(18);
   });
 
@@ -77,6 +89,7 @@ describe('createWorldSessionSaveEnvelope', () => {
       getStandalonePlayerState: vi.fn(() => null),
       getStandalonePlayerDeathState: vi.fn(() => null),
       getStandalonePlayerInventoryState: vi.fn(() => createDefaultPlayerInventoryState()),
+      getDroppedItemStates: vi.fn(() => []),
       getCameraFollowOffset: vi.fn(() => ({ x: -24, y: 10 }))
     };
     const migration = {
@@ -94,6 +107,7 @@ describe('createWorldSessionSaveEnvelope', () => {
     expect(envelope.session.standalonePlayerInventoryState).toEqual(
       createDefaultPlayerInventoryState()
     );
+    expect(envelope.session.droppedItemStates).toEqual([]);
     expect(envelope.session.cameraFollowOffset).toEqual({ x: -24, y: 10 });
     expect(envelope.migration).toEqual(migration);
   });

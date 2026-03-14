@@ -7,6 +7,7 @@ import {
   type PlayerState
 } from './world/playerState';
 import { createPlayerDeathState, type PlayerDeathState } from './world/playerDeathState';
+import { createDroppedItemState, type DroppedItemState } from './world/droppedItem';
 import {
   createDefaultPlayerInventoryState,
   createPlayerInventoryState,
@@ -29,6 +30,7 @@ export interface WorldSaveSessionState {
   standalonePlayerState: PlayerState | null;
   standalonePlayerDeathState: PlayerDeathState | null;
   standalonePlayerInventoryState: PlayerInventoryState;
+  droppedItemStates: DroppedItemState[];
   cameraFollowOffset: CameraFollowOffset;
 }
 
@@ -45,6 +47,7 @@ export interface CreateWorldSaveEnvelopeOptions {
   standalonePlayerState?: PlayerState | null;
   standalonePlayerDeathState?: PlayerDeathState | null;
   standalonePlayerInventoryState?: PlayerInventoryState;
+  droppedItemStates?: readonly DroppedItemState[];
   cameraFollowOffset?: CameraFollowOffset;
   migration?: WorldSaveEnvelopeMigrationMetadata;
 }
@@ -258,6 +261,33 @@ const normalizeStandalonePlayerInventoryState = (
 ): PlayerInventoryState =>
   value === undefined ? createDefaultPlayerInventoryState() : normalizePlayerInventoryState(value, label);
 
+const normalizeDroppedItemStates = (value: unknown, label: string): DroppedItemState[] => {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    throw new Error(`${label} must be an array`);
+  }
+
+  return value.map((droppedItemState, index) => {
+    if (!isRecord(droppedItemState)) {
+      throw new Error(`${label}[${index}] must be an object`);
+    }
+    if (!isRecord(droppedItemState.position)) {
+      throw new Error(`${label}[${index}].position must be an object`);
+    }
+
+    return createDroppedItemState({
+      position: {
+        x: expectFiniteNumber(droppedItemState.position.x, `${label}[${index}].position.x`),
+        y: expectFiniteNumber(droppedItemState.position.y, `${label}[${index}].position.y`)
+      },
+      itemId: droppedItemState.itemId as DroppedItemState['itemId'],
+      amount: expectPositiveInteger(droppedItemState.amount, `${label}[${index}].amount`)
+    });
+  });
+};
+
 export const createDefaultWorldSaveEnvelopeMigrationMetadata =
   (): WorldSaveEnvelopeMigrationMetadata => ({
     migratedFromVersion: null,
@@ -307,6 +337,7 @@ export const createWorldSaveEnvelope = ({
   standalonePlayerState = null,
   standalonePlayerDeathState = null,
   standalonePlayerInventoryState = createDefaultPlayerInventoryState(),
+  droppedItemStates = [],
   cameraFollowOffset = { x: 0, y: 0 },
   migration = createDefaultWorldSaveEnvelopeMigrationMetadata()
 }: CreateWorldSaveEnvelopeOptions): WorldSaveEnvelope => ({
@@ -326,6 +357,7 @@ export const createWorldSaveEnvelope = ({
       standalonePlayerInventoryState,
       'standalonePlayerInventoryState'
     ),
+    droppedItemStates: normalizeDroppedItemStates(droppedItemStates, 'droppedItemStates'),
     cameraFollowOffset: normalizeCameraFollowOffset(cameraFollowOffset, 'cameraFollowOffset')
   },
   worldSnapshot: normalizeWorldSnapshot(worldSnapshot, 'worldSnapshot')
@@ -361,6 +393,10 @@ export const decodeWorldSaveEnvelope = (value: unknown): WorldSaveEnvelope => {
       standalonePlayerInventoryState: normalizeStandalonePlayerInventoryState(
         value.session.standalonePlayerInventoryState,
         'session.standalonePlayerInventoryState'
+      ),
+      droppedItemStates: normalizeDroppedItemStates(
+        value.session.droppedItemStates,
+        'session.droppedItemStates'
       ),
       cameraFollowOffset: normalizeCameraFollowOffset(
         value.session.cameraFollowOffset,

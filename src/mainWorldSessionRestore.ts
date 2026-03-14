@@ -1,6 +1,7 @@
 import type { CameraFollowOffset } from './core/cameraFollow';
 import { createWorldSaveEnvelope, type WorldSaveEnvelope } from './mainWorldSave';
 import type { PlayerDeathState } from './world/playerDeathState';
+import type { DroppedItemState } from './world/droppedItem';
 import type { PlayerInventoryState } from './world/playerInventory';
 import type { PlayerState } from './world/playerState';
 import type { TileWorldSnapshot } from './world/world';
@@ -10,6 +11,7 @@ export interface WorldSessionRestoreTarget {
   restoreStandalonePlayerState(playerState: PlayerState | null): void;
   restoreStandalonePlayerDeathState(deathState: PlayerDeathState | null): void;
   restoreStandalonePlayerInventoryState(inventoryState: PlayerInventoryState): void;
+  restoreDroppedItemStates(droppedItemStates: DroppedItemState[]): void;
   restoreCameraFollowOffset(cameraFollowOffset: CameraFollowOffset): void;
 }
 
@@ -27,6 +29,7 @@ export const restoreWorldSessionFromSaveEnvelope = ({
     standalonePlayerState: envelope.session.standalonePlayerState,
     standalonePlayerDeathState: envelope.session.standalonePlayerDeathState,
     standalonePlayerInventoryState: envelope.session.standalonePlayerInventoryState,
+    droppedItemStates: envelope.session.droppedItemStates,
     cameraFollowOffset: envelope.session.cameraFollowOffset,
     migration: envelope.migration
   });
@@ -37,5 +40,6 @@ export const restoreWorldSessionFromSaveEnvelope = ({
   target.restoreStandalonePlayerInventoryState(
     normalizedEnvelope.session.standalonePlayerInventoryState
   );
+  target.restoreDroppedItemStates(normalizedEnvelope.session.droppedItemStates);
   target.restoreCameraFollowOffset(normalizedEnvelope.session.cameraFollowOffset);
 };

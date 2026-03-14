@@ -133,6 +133,31 @@ describe('EntityRegistry', () => {
     });
   });
 
+  it('allows an entity to despawn itself during its own fixed-step update', () => {
+    const registry = new EntityRegistry();
+    let entityId: number | null = null;
+
+    entityId = registry.spawn({
+      kind: 'ephemeral',
+      initialState: { ticks: 0 },
+      fixedUpdate: (state) => {
+        if (entityId !== null) {
+          registry.despawn(entityId);
+        }
+        return {
+          ticks: state.ticks + 1
+        };
+      },
+      captureRenderState: (state) => state.ticks
+    });
+
+    registry.fixedUpdateAll(1 / 60);
+
+    expect(registry.has(entityId)).toBe(false);
+    expect(registry.getEntityState(entityId)).toBeNull();
+    expect(registry.getRenderStateSnapshots()).toEqual([]);
+  });
+
   it('removes entities from state and snapshot queries when they are despawned', () => {
     const registry = new EntityRegistry();
     const entityId = registry.spawn({

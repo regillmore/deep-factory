@@ -3,6 +3,13 @@ import { createStaticVertexBuffer, createVertexArray } from './buffer';
 import { createProgram } from './shader';
 import { applyAnimatedChunkMeshFrameAtElapsedMs, createAnimatedChunkMeshState } from './animatedChunkMesh';
 import {
+  buildDroppedItemPlaceholderVertices,
+  getDroppedItemPlaceholderNearbyLightSample,
+  getDroppedItemPlaceholderPalette,
+  DROPPED_ITEM_PLACEHOLDER_VERTEX_COUNT,
+  DROPPED_ITEM_PLACEHOLDER_VERTEX_FLOAT_COUNT
+} from './droppedItemPlaceholder';
+import {
   buildHostileSlimePlaceholderVertices,
   getHostileSlimePlaceholderFacingSign,
   getHostileSlimePlaceholderNearbyLightSample,
@@ -61,6 +68,7 @@ import type { EntityId, EntityRenderStateSnapshot } from '../world/entityRegistr
 import { resolveInterpolatedEntityWorldPosition } from '../world/entityRenderInterpolation';
 import { stepHostileSlimeState as stepWorldHostileSlimeState } from '../world/hostileSlimeLocomotion';
 import { type HostileSlimeState } from '../world/hostileSlimeState';
+import { type DroppedItemState } from '../world/droppedItem';
 import {
   isStandalonePlayerRenderStateCeilingBonkActive,
   type StandalonePlayerRenderState
@@ -111,7 +119,16 @@ export interface HostileSlimeEntityFrameState {
   snapshot: EntityRenderStateSnapshot<HostileSlimeState>;
 }
 
-export type RendererEntityFrameState = StandalonePlayerEntityFrameState | HostileSlimeEntityFrameState;
+export interface DroppedItemEntityFrameState {
+  id: EntityId;
+  kind: 'dropped-item';
+  snapshot: EntityRenderStateSnapshot<DroppedItemState>;
+}
+
+export type RendererEntityFrameState =
+  | StandalonePlayerEntityFrameState
+  | HostileSlimeEntityFrameState
+  | DroppedItemEntityFrameState;
 
 export interface RenderTelemetry {
   atlasSourceKind: AtlasImageLoadResult['sourceKind'] | 'pending';
@@ -190,6 +207,7 @@ export class Renderer {
   private program: WebGLProgram;
   private playerProgram: WebGLProgram;
   private slimeProgram: WebGLProgram;
+  private droppedItemProgram: WebGLProgram;
   private world!: TileWorld;
   private detachWorldTileEditListener: (() => void) | null = null;
   private meshes = new Map<string, CachedChunkMesh>();
@@ -202,11 +220,17 @@ export class Renderer {
   private uSlimeMatrix: WebGLUniformLocation;
   private uSlimeFacingSign: WebGLUniformLocation;
   private uSlimeLight: WebGLUniformLocation;
+  private uDroppedItemMatrix: WebGLUniformLocation;
+  private uDroppedItemLight: WebGLUniformLocation;
+  private uDroppedItemBaseColor: WebGLUniformLocation;
+  private uDroppedItemAccentColor: WebGLUniformLocation;
   private texture: WebGLTexture | null = null;
   private standalonePlayerBuffer: WebGLBuffer;
   private standalonePlayerVao: WebGLVertexArrayObject;
   private hostileSlimeBuffer: WebGLBuffer;
   private hostileSlimeVao: WebGLVertexArrayObject;
+  private droppedItemBuffer: WebGLBuffer;
+  private droppedItemVao: WebGLVertexArrayObject;
 
   readonly telemetry: RenderTelemetry = {
     atlasSourceKind: 'pending',
@@ -561,6 +585,76 @@ export class Renderer {
     if (!slimeLight) throw new Error('Missing uniform u_light');
     this.uSlimeLight = slimeLight;
 
+    this.droppedItemProgram = createProgram(
+      gl,
+      `#version 300 es
+      precision mediump float;
+      layout(location = 0) in vec2 a_position;
+      layout(location = 1) in vec2 a_uv;
+      uniform mat4 u_matrix;
+      out vec2 v_uv;
+      void main() {
+        v_uv = a_uv;
+        gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);
+      }`,
+      `#version 300 es
+      precision mediump float;
+      in vec2 v_uv;
+      uniform float u_light;
+      uniform vec3 u_baseColor;
+      uniform vec3 u_accentColor;
+      out vec4 outColor;
+
+      bool inRect(vec2 uv, vec4 rect) {
+        return uv.x >= rect.x && uv.x <= rect.z && uv.y >= rect.y && uv.y <= rect.w;
+      }
+
+      bool inDiamond(vec2 uv, vec2 center, vec2 radius) {
+        vec2 normalized = abs((uv - center) / radius);
+        return normalized.x + normalized.y <= 1.0;
+      }
+
+      void main() {
+        vec2 uv = v_uv;
+        uv.y = 1.0 - uv.y;
+
+        bool insideBody = inDiamond(uv, vec2(0.50, 0.54), vec2(0.28, 0.34));
+        if (!insideBody) {
+          discard;
+        }
+
+        bool insideInner = inDiamond(uv, vec2(0.50, 0.54), vec2(0.22, 0.28));
+        bool insideBand = inRect(uv, vec4(0.34, 0.28, 0.66, 0.40)) && insideInner;
+        bool insideHighlight = inDiamond(uv, vec2(0.42, 0.66), vec2(0.10, 0.12)) && insideInner;
+
+        vec3 color = insideInner ? u_baseColor : u_baseColor * 0.42;
+        if (insideBand) {
+          color = mix(color, u_accentColor, 0.65);
+        }
+        if (insideHighlight) {
+          color = u_accentColor;
+        }
+
+        outColor = vec4(color * clamp(u_light, 0.0, 1.0), 1.0);
+      }`
+    );
+
+    const droppedItemMatrix = gl.getUniformLocation(this.droppedItemProgram, 'u_matrix');
+    if (!droppedItemMatrix) throw new Error('Missing uniform u_matrix');
+    this.uDroppedItemMatrix = droppedItemMatrix;
+
+    const droppedItemLight = gl.getUniformLocation(this.droppedItemProgram, 'u_light');
+    if (!droppedItemLight) throw new Error('Missing uniform u_light');
+    this.uDroppedItemLight = droppedItemLight;
+
+    const droppedItemBaseColor = gl.getUniformLocation(this.droppedItemProgram, 'u_baseColor');
+    if (!droppedItemBaseColor) throw new Error('Missing uniform u_baseColor');
+    this.uDroppedItemBaseColor = droppedItemBaseColor;
+
+    const droppedItemAccentColor = gl.getUniformLocation(this.droppedItemProgram, 'u_accentColor');
+    if (!droppedItemAccentColor) throw new Error('Missing uniform u_accentColor');
+    this.uDroppedItemAccentColor = droppedItemAccentColor;
+
     this.standalonePlayerBuffer = createDynamicVertexBuffer(
       gl,
       new Float32Array(STANDALONE_PLAYER_PLACEHOLDER_VERTEX_FLOAT_COUNT)
@@ -571,6 +665,11 @@ export class Renderer {
       new Float32Array(HOSTILE_SLIME_PLACEHOLDER_VERTEX_FLOAT_COUNT)
     );
     this.hostileSlimeVao = createVertexArray(gl, this.hostileSlimeBuffer, 4);
+    this.droppedItemBuffer = createDynamicVertexBuffer(
+      gl,
+      new Float32Array(DROPPED_ITEM_PLACEHOLDER_VERTEX_FLOAT_COUNT)
+    );
+    this.droppedItemVao = createVertexArray(gl, this.droppedItemBuffer, 4);
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -1038,6 +1137,9 @@ export class Renderer {
         case 'slime':
           this.drawHostileSlime(entity, renderAlpha, worldToClipMatrix);
           break;
+        case 'dropped-item':
+          this.drawDroppedItem(entity, renderAlpha, worldToClipMatrix);
+          break;
       }
     }
   }
@@ -1124,6 +1226,46 @@ export class Renderer {
     );
     gl.bindVertexArray(this.hostileSlimeVao);
     gl.drawArrays(gl.TRIANGLES, 0, HOSTILE_SLIME_PLACEHOLDER_VERTEX_COUNT);
+    this.telemetry.drawCalls += 1;
+  }
+
+  private drawDroppedItem(
+    entity: DroppedItemEntityFrameState,
+    renderAlpha: number,
+    worldToClipMatrix: Float32Array
+  ): void {
+    const state = entity.snapshot.current;
+    const renderPosition = resolveInterpolatedEntityWorldPosition(entity.snapshot, renderAlpha);
+    const gl = this.gl;
+    const nearbyLightSample = getDroppedItemPlaceholderNearbyLightSample(
+      this.world,
+      state,
+      renderPosition
+    );
+    const palette = getDroppedItemPlaceholderPalette(state.itemId);
+    gl.useProgram(this.droppedItemProgram);
+    gl.uniformMatrix4fv(this.uDroppedItemMatrix, false, worldToClipMatrix);
+    gl.uniform1f(this.uDroppedItemLight, nearbyLightSample.level / MAX_LIGHT_LEVEL);
+    gl.uniform3f(
+      this.uDroppedItemBaseColor,
+      palette.baseColor[0],
+      palette.baseColor[1],
+      palette.baseColor[2]
+    );
+    gl.uniform3f(
+      this.uDroppedItemAccentColor,
+      palette.accentColor[0],
+      palette.accentColor[1],
+      palette.accentColor[2]
+    );
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.droppedItemBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      buildDroppedItemPlaceholderVertices(state, renderPosition),
+      gl.DYNAMIC_DRAW
+    );
+    gl.bindVertexArray(this.droppedItemVao);
+    gl.drawArrays(gl.TRIANGLES, 0, DROPPED_ITEM_PLACEHOLDER_VERTEX_COUNT);
     this.telemetry.drawCalls += 1;
   }
 

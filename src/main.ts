@@ -44,6 +44,7 @@ import {
   type DebugEditShortcutAction
 } from './input/debugEditShortcuts';
 import { resolveHotbarSlotShortcut } from './input/hotbarShortcuts';
+import { resolveDropSelectedHotbarStackShortcut } from './input/playerInventoryShortcuts';
 import {
   createDefaultShellActionKeybindingState,
   IN_WORLD_SHELL_ACTION_KEYBINDING_IDS,
@@ -161,6 +162,12 @@ import {
   type PlayerRespawnEvent
 } from './world/playerRespawnEvent';
 import {
+  cloneDroppedItemState,
+  createDroppedItemStateFromPlayerDrop,
+  resolveDroppedItemPickup,
+  type DroppedItemState
+} from './world/droppedItem';
+import {
   createPlayerDeathState,
   DEFAULT_PLAYER_RESPAWN_INVULNERABILITY_SECONDS,
   isPlayerDeathStateRespawnReady,
@@ -206,6 +213,7 @@ import {
   clonePlayerInventoryState,
   consumePlayerInventoryHotbarSlotItem,
   createDefaultPlayerInventoryState,
+  setPlayerInventoryHotbarSlot,
   setPlayerInventorySelectedHotbarSlot,
   type PlayerInventoryState
 } from './world/playerInventory';
@@ -264,6 +272,7 @@ const DEBUG_TILE_BREAK_ID = 0;
 const PREFERRED_INITIAL_DEBUG_BRUSH_TILE_NAME = 'debug_brick';
 const STANDALONE_PLAYER_ENTITY_KIND = 'standalone-player';
 const HOSTILE_SLIME_ENTITY_KIND = 'slime';
+const DROPPED_ITEM_ENTITY_KIND = 'dropped-item';
 type MainMenuShellActionType =
   | 'enter-or-resume-world-session'
   | 'export-world-save'
@@ -1003,6 +1012,9 @@ const bootstrap = async (): Promise<void> => {
     host: worldHost,
     onSelectSlot: (slotIndex) => {
       selectStandalonePlayerHotbarSlot(slotIndex);
+    },
+    onDropSelectedStack: () => {
+      dropSelectedStandalonePlayerHotbarStack();
     }
   });
   let debugEditControls: TouchDebugEditControls | null = null;
@@ -1440,6 +1452,7 @@ const bootstrap = async (): Promise<void> => {
   let standalonePlayerDeathState: PlayerDeathState | null = null;
   let standalonePlayerInventoryState = createDefaultPlayerInventoryState();
   let hostileSlimeEntityIds: EntityId[] = [];
+  let droppedItemEntityIds: EntityId[] = [];
   let hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
   let pendingStandalonePlayerFixedStepResult: StandalonePlayerFixedStepResult | null = null;
   let playerSpawnNeedsRefresh = false;
@@ -1511,6 +1524,25 @@ const bootstrap = async (): Promise<void> => {
     hostileSlimeEntityIds = nextHostileSlimeEntityIds;
     return activeHostileSlimes;
   };
+  const getDroppedItemEntityStates = (): Array<{ id: EntityId; state: DroppedItemState }> => {
+    const activeDroppedItems: Array<{ id: EntityId; state: DroppedItemState }> = [];
+    const nextDroppedItemEntityIds: EntityId[] = [];
+    for (const entityId of droppedItemEntityIds) {
+      const state = entityRegistry.getEntityState<DroppedItemState>(entityId);
+      if (state === null) {
+        continue;
+      }
+      nextDroppedItemEntityIds.push(entityId);
+      activeDroppedItems.push({
+        id: entityId,
+        state
+      });
+    }
+    droppedItemEntityIds = nextDroppedItemEntityIds;
+    return activeDroppedItems;
+  };
+  const getDroppedItemStates = (): DroppedItemState[] =>
+    getDroppedItemEntityStates().map(({ state }) => cloneDroppedItemState(state));
   const resolveTrackedHostileSlimeState = (
     playerState: PlayerState | null,
     activeHostileSlimes = getHostileSlimeEntityStates()
@@ -1550,6 +1582,7 @@ const bootstrap = async (): Promise<void> => {
         getStandalonePlayerState,
         getStandalonePlayerDeathState,
         getStandalonePlayerInventoryState,
+        getDroppedItemStates,
         getCameraFollowOffset: () => cameraFollowOffset
       }
     });
@@ -1971,6 +2004,16 @@ const bootstrap = async (): Promise<void> => {
             }
           });
           break;
+        case DROPPED_ITEM_ENTITY_KIND:
+          entityFrameStates.push({
+            id: snapshotEntry.id,
+            kind: DROPPED_ITEM_ENTITY_KIND,
+            snapshot: {
+              previous: snapshotEntry.previous as DroppedItemState,
+              current: snapshotEntry.current as DroppedItemState
+            }
+          });
+          break;
       }
     }
     return entityFrameStates;
@@ -1980,6 +2023,7 @@ const bootstrap = async (): Promise<void> => {
     standalonePlayerEntityId = null;
     standalonePlayerDeathState = null;
     hostileSlimeEntityIds = [];
+    droppedItemEntityIds = [];
     hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
     pendingStandalonePlayerFixedStepResult = null;
     latestStandalonePlayerDeathHoldStatus = 'none';
@@ -2118,6 +2162,69 @@ const bootstrap = async (): Promise<void> => {
     });
     hostileSlimeEntityIds.push(entityId);
     return entityId;
+  };
+  const spawnDroppedItemEntity = (initialDroppedItemState: DroppedItemState): EntityId => {
+    let droppedItemEntityId: EntityId | null = null;
+    droppedItemEntityId = entityRegistry.spawn({
+      kind: DROPPED_ITEM_ENTITY_KIND,
+      initialState: initialDroppedItemState,
+      captureRenderState: cloneDroppedItemState,
+      fixedUpdate: (droppedItemState) => {
+        const standalonePlayerState = getStandalonePlayerState();
+        if (standalonePlayerState === null) {
+          return droppedItemState;
+        }
+
+        const pickupResult = resolveDroppedItemPickup(
+          droppedItemState,
+          standalonePlayerState,
+          standalonePlayerInventoryState
+        );
+        if (pickupResult.pickedUpAmount <= 0) {
+          return pickupResult.nextDroppedItemState ?? droppedItemState;
+        }
+
+        applyStandalonePlayerInventoryState(pickupResult.nextInventoryState);
+        if (pickupResult.nextDroppedItemState === null) {
+          if (droppedItemEntityId !== null) {
+            entityRegistry.despawn(droppedItemEntityId);
+          }
+          return droppedItemState;
+        }
+
+        return pickupResult.nextDroppedItemState;
+      }
+    });
+    droppedItemEntityIds.push(droppedItemEntityId);
+    return droppedItemEntityId;
+  };
+  const restoreDroppedItemEntityStates = (droppedItemStates: readonly DroppedItemState[]): void => {
+    droppedItemEntityIds = [];
+    for (const droppedItemState of droppedItemStates) {
+      spawnDroppedItemEntity(droppedItemState);
+    }
+  };
+  const dropSelectedStandalonePlayerHotbarStack = (): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (standalonePlayerState === null || selectedStack === null) {
+      return false;
+    }
+
+    const droppedItemState = createDroppedItemStateFromPlayerDrop(
+      standalonePlayerState,
+      selectedStack.itemId,
+      selectedStack.amount
+    );
+    applyStandalonePlayerInventoryState(
+      setPlayerInventoryHotbarSlot(
+        standalonePlayerInventoryState,
+        standalonePlayerInventoryState.selectedHotbarSlotIndex,
+        null
+      )
+    );
+    spawnDroppedItemEntity(droppedItemState);
+    return true;
   };
   const despawnHostileSlimeEntities = (entityIds: readonly EntityId[]): void => {
     if (entityIds.length === 0) {
@@ -3549,6 +3656,15 @@ const bootstrap = async (): Promise<void> => {
     if (event.defaultPrevented) return;
     if (isEditableKeyboardShortcutTarget(event.target)) return;
 
+    const dropSelectedHotbarStackShortcut = currentScreen === 'in-world'
+      ? resolveDropSelectedHotbarStackShortcut(event)
+      : false;
+    if (dropSelectedHotbarStackShortcut) {
+      event.preventDefault();
+      dropSelectedStandalonePlayerHotbarStack();
+      return;
+    }
+
     const hotbarSlotIndex =
       currentScreen === 'in-world' && !debugEditControlsVisible
         ? resolveHotbarSlotShortcut(event)
@@ -4475,6 +4591,9 @@ const bootstrap = async (): Promise<void> => {
           restoreStandalonePlayerInventoryState: (inventoryState) => {
             applyStandalonePlayerInventoryState(inventoryState);
           },
+          restoreDroppedItemStates: (droppedItemStates) => {
+            restoreDroppedItemEntityStates(droppedItemStates);
+          },
           restoreCameraFollowOffset: (nextCameraFollowOffset) => {
             cameraFollowOffset = {
               x: nextCameraFollowOffset.x,
@@ -4671,6 +4790,9 @@ const bootstrap = async (): Promise<void> => {
           },
           restoreStandalonePlayerInventoryState: (inventoryState) => {
             applyStandalonePlayerInventoryState(inventoryState);
+          },
+          restoreDroppedItemStates: (droppedItemStates) => {
+            restoreDroppedItemEntityStates(droppedItemStates);
           },
           restoreCameraFollowOffset: (nextCameraFollowOffset) => {
             cameraFollowOffset = {

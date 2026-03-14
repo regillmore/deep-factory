@@ -5802,6 +5802,38 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('drops the selected hotbar stack into a world pickup and persists the collected stack after proximity pickup', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('Backspace', 'Backspace').prevented).toBe(true);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toBeNull();
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 28, y: -14 },
+        itemId: 'dirt-block',
+        amount: 64
+      }
+    ]);
+
+    testRuntime.rendererStepPlayerStateImpl = () => ({
+      position: { x: 28, y: 0 }
+    });
+
+    runFixedUpdate();
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+      itemId: 'dirt-block',
+      amount: 64
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([]);
+  });
+
   it('rejects starter dirt block placement when the new block would overlap the player', async () => {
     await import('./main');
     await flushBootstrap();

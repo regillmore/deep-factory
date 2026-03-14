@@ -55,6 +55,9 @@ describe('resolveTouchDebugKeyboardShortcutLines', () => {
     expect(resolveTouchDebugKeyboardShortcutLines()).toContain(
       'Hotbar: 1-0 select slots while the full Debug Edit panel is hidden'
     );
+    expect(resolveTouchDebugKeyboardShortcutLines()).toContain(
+      'Inventory: Backspace drops the selected hotbar stack'
+    );
   });
 
   it('lists the panel-hidden block placement shortcut in the keyboard reference', () => {

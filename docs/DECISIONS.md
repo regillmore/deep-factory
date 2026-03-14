@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Dropped-item world stacks persist as session-owned entity state
+
+- Decision: Active dropped-item stacks now save and restore through the top-level world-session envelope beside standalone-player inventory and camera state instead of being embedded into the `TileWorld` snapshot.
+- Reason: Pickup stacks behave like runtime entities with stack counts and positions, so keeping them in the session-owned envelope preserves their entity-style lifecycle without coupling world-save terrain snapshots to transient actor state.
+- Consequence: Future pickup-producing slices should persist uncollected world items through the same session-owned dropped-item path unless the same pass intentionally replaces broader entity-save ownership.
+
 ### 2026-03-14: Starter torches collapse from authoritative tile edits when support disappears
 
 - Decision: `TileWorld.setTileState()` now automatically clears adjacent starter torch tiles when a solid-face edit leaves them without any remaining solid cardinal support.
