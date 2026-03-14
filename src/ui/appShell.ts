@@ -36,6 +36,7 @@ import {
   getWorldSessionTelemetryTypeDefinitionsForCollection,
   isWorldSessionTelemetryCollectionEnabled,
   isWorldSessionTelemetryTypeEnabled,
+  matchesDefaultWorldSessionTelemetryState,
   type WorldSessionTelemetryCollectionId,
   type WorldSessionTelemetryState,
   type WorldSessionTelemetryTypeId
@@ -118,6 +119,7 @@ export interface PausedMainMenuShellTelemetryCollectionViewModel {
 export interface PausedMainMenuShellTelemetryControlsViewModel {
   summaryLine: string;
   metadataRows: readonly AppShellMenuSectionMetadataRow[];
+  resetButtonDisabled: boolean;
   collections: readonly PausedMainMenuShellTelemetryCollectionViewModel[];
 }
 
@@ -1002,6 +1004,7 @@ export const createPausedMainMenuShellTelemetryControlsViewModel = (
         )
       }
     ],
+    resetButtonDisabled: matchesDefaultWorldSessionTelemetryState(worldSessionTelemetryState),
     collections: WORLD_SESSION_TELEMETRY_COLLECTION_DEFINITIONS.map((collectionDefinition) => {
       const enabled = isWorldSessionTelemetryCollectionEnabled(
         worldSessionTelemetryState,
@@ -3531,6 +3534,7 @@ export class AppShell {
   private shellTelemetryControls: HTMLDivElement;
   private shellTelemetrySummary: HTMLParagraphElement;
   private shellTelemetryMetadata: HTMLDListElement;
+  private shellTelemetryResetButton: HTMLButtonElement;
   private shellTelemetryCollections: HTMLDivElement;
   private shellTopJumpLink: HTMLAnchorElement;
   private shellActionKeybindingInputs = new Map<
@@ -4030,16 +4034,16 @@ export class AppShell {
     shellTelemetryActions.className = 'app-shell__shell-keybindings-actions';
     this.shellTelemetryControls.append(shellTelemetryActions);
 
-    const resetShellTelemetryButton = document.createElement('button');
-    resetShellTelemetryButton.type = 'button';
-    resetShellTelemetryButton.className = 'app-shell__shell-keybindings-button';
-    resetShellTelemetryButton.textContent = 'Reset Telemetry';
-    resetShellTelemetryButton.title = resolvePausedMainMenuResetShellTelemetryTitle();
-    resetShellTelemetryButton.addEventListener('click', () =>
+    this.shellTelemetryResetButton = document.createElement('button');
+    this.shellTelemetryResetButton.type = 'button';
+    this.shellTelemetryResetButton.className = 'app-shell__shell-keybindings-button';
+    this.shellTelemetryResetButton.textContent = 'Reset Telemetry';
+    this.shellTelemetryResetButton.title = resolvePausedMainMenuResetShellTelemetryTitle();
+    this.shellTelemetryResetButton.addEventListener('click', () =>
       this.onResetShellTelemetry(this.currentState.screen)
     );
-    installPointerClickFocusRelease(resetShellTelemetryButton);
-    shellTelemetryActions.append(resetShellTelemetryButton);
+    installPointerClickFocusRelease(this.shellTelemetryResetButton);
+    shellTelemetryActions.append(this.shellTelemetryResetButton);
 
     this.shellTelemetryCollections = document.createElement('div');
     this.shellTelemetryCollections.className = 'app-shell__shell-telemetry-collections';
@@ -4222,6 +4226,7 @@ export class AppShell {
     if (!controlsVisible || telemetryControls === null) {
       this.shellTelemetrySummary.textContent = '';
       this.shellTelemetryMetadata.replaceChildren();
+      this.shellTelemetryResetButton.disabled = false;
       this.shellTelemetryCollections.replaceChildren();
       return;
     }
@@ -4230,6 +4235,7 @@ export class AppShell {
     this.shellTelemetryMetadata.replaceChildren(
       ...createMenuSectionMetadataElement(telemetryControls.metadataRows).childNodes
     );
+    this.shellTelemetryResetButton.disabled = telemetryControls.resetButtonDisabled;
     this.shellTelemetryCollections.replaceChildren(
       ...telemetryControls.collections.map((collection) =>
         createPausedMainMenuShellTelemetryCollectionElement(

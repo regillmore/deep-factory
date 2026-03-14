@@ -36,7 +36,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Telemetry Controls
 
 532. Add a collapsed-shell telemetry-summary follow-up after the telemetry catalog rollout: surface enabled collection and type counts in the paused `Shell` summary rows, keep that summary synced with live telemetry toggles, and add paused-menu summary regressions.
-533. Add a paused-menu telemetry-reset button-state follow-up after telemetry reset: disable `Reset Telemetry` when the catalog already matches defaults, re-enable it after any collection or type change, and add paused-menu button-state regressions.
+534. Add a paused-menu telemetry-reset recent-activity follow-up after telemetry reset button-state gating: surface the last reset result in `Recent Activity` only when `Reset Telemetry` actually changes the catalog, preserve saved-versus-session-only feedback, and add paused-menu recent-activity regressions.
 515. Add a landing-damage telemetry slice after the unified telemetry overlay: show latest hard-landing damage plus current fall-recovery cooldown in the debug HUD or compact status strip, and add fixed-step landing telemetry regressions.
 516. Add a breath-telemetry follow-up after the unified telemetry overlay: show current breath plus drowning-cooldown state in the debug HUD or compact status strip, and add fixed-step telemetry regressions.
 524. Add a hostile-slime spawn-window telemetry follow-up after the unified telemetry overlay: show the next deterministic spawn-window index plus tile-offset target in the debug HUD or compact status strip, and add deterministic telemetry regressions.

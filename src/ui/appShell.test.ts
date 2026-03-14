@@ -7,7 +7,10 @@ import {
   matchesDefaultShellActionKeybindingState,
   type ShellActionKeybindingState
 } from '../input/shellActionKeybindings';
-import { type WorldSessionTelemetryState } from '../mainWorldSessionTelemetryState';
+import {
+  createDefaultWorldSessionTelemetryState,
+  type WorldSessionTelemetryState
+} from '../mainWorldSessionTelemetryState';
 import {
   getDesktopDebugEditOverlaysHotkeyLabel,
   getDesktopDebugOverlayHotkeyLabel,
@@ -1508,6 +1511,7 @@ describe('paused main-menu dashboard layout', () => {
           value: '8/14'
         }
       ],
+      resetButtonDisabled: false,
       collections: [
         {
           id: 'player',
@@ -1637,6 +1641,7 @@ describe('paused main-menu dashboard layout', () => {
       }
     ]);
     expect(resetTelemetryButton?.title).toBe(resolvePausedMainMenuResetShellTelemetryTitle());
+    expect(resetTelemetryButton?.disabled).toBe(false);
     expect(collectionToggleButton?.getAttribute('aria-pressed')).toBe('false');
     expect(combatToggleButton?.getAttribute('aria-pressed')).toBe('false');
     expect(pointerToggleButton?.getAttribute('aria-pressed')).toBe('true');
@@ -1658,6 +1663,96 @@ describe('paused main-menu dashboard layout', () => {
         id: 'player-combat'
       }
     ]);
+  });
+
+  it('disables Reset Telemetry at the default catalog and re-enables it after collection or type changes', () => {
+    const telemetryResets: string[] = [];
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement, {
+      onResetShellTelemetry: (screen) => {
+        telemetryResets.push(screen);
+      }
+    });
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const root = container.children[0] ?? null;
+    expect(root).not.toBeNull();
+    if (root === null) {
+      return;
+    }
+
+    const shellToggleButton = findElementByClass(root, 'app-shell__shell-toggle');
+    shellToggleButton?.click();
+
+    const findResetTelemetryButton = (): FakeElement | null =>
+      findButtonByTextContent(
+        root,
+        'app-shell__shell-keybindings-button',
+        'Reset Telemetry'
+      );
+
+    const resetTelemetryButton = findResetTelemetryButton();
+    expect(resetTelemetryButton?.disabled).toBe(true);
+
+    resetTelemetryButton?.click();
+    expect(telemetryResets).toEqual([]);
+
+    shell.setState(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false,
+        null,
+        {
+          collections: {
+            ...createDefaultWorldSessionTelemetryState().collections,
+            world: false
+          },
+          types: createDefaultWorldSessionTelemetryState().types
+        }
+      )
+    );
+    expect(findResetTelemetryButton()?.disabled).toBe(false);
+
+    shell.setState(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false,
+        null,
+        {
+          collections: createDefaultWorldSessionTelemetryState().collections,
+          types: {
+            ...createDefaultWorldSessionTelemetryState().types,
+            'player-camera': false
+          }
+        }
+      )
+    );
+    expect(findResetTelemetryButton()?.disabled).toBe(false);
+
+    findResetTelemetryButton()?.click();
+    expect(telemetryResets).toEqual(['main-menu']);
+
+    shell.setState(createPausedMainMenuShellState());
+    expect(findResetTelemetryButton()?.disabled).toBe(true);
   });
 
   it('returns keyboard-triggered shell expand and collapse focus to the Shell section anchor', () => {

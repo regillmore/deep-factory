@@ -10,6 +10,7 @@ import {
   isWorldSessionTelemetryTypeVisible,
   loadWorldSessionTelemetryState,
   loadWorldSessionTelemetryStateWithPersistenceAvailability,
+  matchesDefaultWorldSessionTelemetryState,
   saveWorldSessionTelemetryState,
   toggleWorldSessionTelemetryCollection,
   toggleWorldSessionTelemetryType,
@@ -275,6 +276,20 @@ describe('toggle helpers and visibility', () => {
   it('counts enabled types within a collection', () => {
     const state = toggleWorldSessionTelemetryType(baseState, 'player-events');
     expect(countEnabledWorldSessionTelemetryTypesForCollection(state, 'player')).toBe(6);
+  });
+
+  it('detects when the telemetry catalog still matches the default visible state', () => {
+    expect(matchesDefaultWorldSessionTelemetryState(baseState)).toBe(true);
+    expect(
+      matchesDefaultWorldSessionTelemetryState(
+        toggleWorldSessionTelemetryCollection(baseState, 'hostile-slime')
+      )
+    ).toBe(false);
+    expect(
+      matchesDefaultWorldSessionTelemetryState(
+        toggleWorldSessionTelemetryType(baseState, 'player-camera')
+      )
+    ).toBe(false);
   });
 });
 

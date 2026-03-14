@@ -342,6 +342,25 @@ export const countEnabledWorldSessionTelemetryTypesForCollection = (
     (definition) => state.types[definition.id]
   ).length;
 
+export const matchesDefaultWorldSessionTelemetryState = (
+  state: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
+  defaultState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState()
+): boolean => {
+  for (const collectionId of WORLD_SESSION_TELEMETRY_COLLECTION_IDS) {
+    if (state.collections[collectionId] !== defaultState.collections[collectionId]) {
+      return false;
+    }
+  }
+
+  for (const typeId of WORLD_SESSION_TELEMETRY_TYPE_IDS) {
+    if (state.types[typeId] !== defaultState.types[typeId]) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 export const decodeWorldSessionTelemetryState = (value: unknown): WorldSessionTelemetryState => {
   if (!isRecord(value)) {
     throw new Error('telemetry state must be an object');
