@@ -4,7 +4,8 @@ import {
   absorbManualCameraDeltaIntoFollowOffset,
   createCameraFollowOffset,
   recenterCameraOnFollowTarget,
-  resolveCameraPositionFromFollowTarget
+  resolveCameraPositionFromFollowTarget,
+  syncManualCameraDeltaIntoFollowState
 } from './cameraFollow';
 
 describe('cameraFollow', () => {
@@ -34,6 +35,42 @@ describe('cameraFollow', () => {
     ).toEqual({
       x: 4,
       y: 6
+    });
+  });
+
+  it('syncs manual camera deltas into follow state without double-counting repeated reads', () => {
+    const synced = syncManualCameraDeltaIntoFollowState(
+      { x: 12, y: -8 },
+      { x: 100, y: 50 },
+      { x: 124, y: 36 }
+    );
+
+    expect(synced).toEqual({
+      offset: {
+        x: 36,
+        y: -22
+      },
+      lastAppliedCameraPosition: {
+        x: 124,
+        y: 36
+      }
+    });
+
+    expect(
+      syncManualCameraDeltaIntoFollowState(
+        synced.offset,
+        synced.lastAppliedCameraPosition,
+        { x: 124, y: 36 }
+      )
+    ).toEqual({
+      offset: {
+        x: 36,
+        y: -22
+      },
+      lastAppliedCameraPosition: {
+        x: 124,
+        y: 36
+      }
     });
   });
 

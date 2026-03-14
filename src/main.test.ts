@@ -6956,6 +6956,33 @@ describe('main.ts shell state orchestration', () => {
     expect(restoredWorld.getTile(5, -20)).toBe(6);
   });
 
+  it('preserves a live manual camera drag across render follow and persists the synced follow offset on pause', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(testRuntime.cameraInstance).not.toBeNull();
+    expect(testRuntime.gameLoopRender).not.toBeNull();
+
+    const initialCameraX = testRuntime.cameraInstance!.x;
+    const initialCameraY = testRuntime.cameraInstance!.y;
+    testRuntime.cameraInstance!.x = initialCameraX + 18;
+    testRuntime.cameraInstance!.y = initialCameraY - 12;
+
+    testRuntime.gameLoopRender?.(1, 16);
+
+    expect(testRuntime.cameraInstance).toMatchObject({
+      x: initialCameraX + 18,
+      y: initialCameraY - 12
+    });
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    expect(persistedEnvelope?.session.cameraFollowOffset).toEqual({ x: 18, y: -12 });
+  });
+
   it('restores a paused session through the shared restore helper without rebuilding renderer or input state', async () => {
     testRuntime.debugTileEditHistoryConstructorStatuses = [
       {

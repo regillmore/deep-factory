@@ -13,6 +13,11 @@ export interface RecenteredCameraFollowState {
   offset: CameraFollowOffset;
 }
 
+export interface SyncedManualCameraFollowState {
+  offset: CameraFollowOffset;
+  lastAppliedCameraPosition: CameraFollowPoint | null;
+}
+
 export const createCameraFollowOffset = (
   cameraPosition: CameraFollowPoint,
   targetPosition: CameraFollowPoint
@@ -38,6 +43,25 @@ export const absorbManualCameraDeltaIntoFollowOffset = (
     y: offset.y + (currentCameraPosition.y - lastAppliedCameraPosition.y)
   };
 };
+
+export const syncManualCameraDeltaIntoFollowState = (
+  offset: CameraFollowOffset,
+  lastAppliedCameraPosition: CameraFollowPoint | null,
+  currentCameraPosition: CameraFollowPoint
+): SyncedManualCameraFollowState => ({
+  offset: absorbManualCameraDeltaIntoFollowOffset(
+    offset,
+    lastAppliedCameraPosition,
+    currentCameraPosition
+  ),
+  lastAppliedCameraPosition:
+    lastAppliedCameraPosition === null
+      ? null
+      : {
+          x: currentCameraPosition.x,
+          y: currentCameraPosition.y
+        }
+});
 
 export const resolveCameraPositionFromFollowTarget = (
   targetPosition: CameraFollowPoint,

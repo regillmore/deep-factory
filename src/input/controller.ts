@@ -6,7 +6,13 @@ import {
 } from './debugTouchHistoryShortcuts';
 import { resolveTouchDebugEyedropperShortcutActionForLongPress } from './debugTouchEyedropperShortcuts';
 import { resolveTouchDebugInspectPinShortcutActionForTap } from './debugTouchInspectPinShortcuts';
-import { clientToWorldPoint, pickScreenWorldTileFromCanvas } from './picking';
+import {
+  clientDeltaToCanvasDelta,
+  clientToWorldPoint,
+  type CanvasSizeLike,
+  type ClientRectLike,
+  pickScreenWorldTileFromCanvas
+} from './picking';
 import type { PlayerMovementIntent } from '../world/playerState';
 
 const DEBUG_TILE_PLACE_MOUSE_BUTTON = 0;
@@ -273,6 +279,17 @@ export const buildDebugTileEditRequest = (
     worldTileY: pointerInspect.tile.y,
     kind
   };
+};
+
+export const resolveCameraPanWorldDeltaFromClientDelta = (
+  clientDeltaX: number,
+  clientDeltaY: number,
+  canvas: CanvasSizeLike,
+  rect: ClientRectLike,
+  camera: Camera2D
+): { x: number; y: number } => {
+  const canvasDelta = clientDeltaToCanvasDelta(clientDeltaX, clientDeltaY, canvas, rect);
+  return camera.screenDeltaToWorld(canvasDelta.x, canvasDelta.y);
 };
 
 export const shouldRetainPointerInspectOnPointerLeave = (
@@ -1264,7 +1281,13 @@ export class InputController {
       } else if (this.pointers.size === 1 && this.pointerActive && this.pointerId === event.pointerId) {
         const dx = event.clientX - this.lastX;
         const dy = event.clientY - this.lastY;
-        const worldDelta = this.camera.screenDeltaToWorld(dx, dy);
+        const worldDelta = resolveCameraPanWorldDeltaFromClientDelta(
+          dx,
+          dy,
+          this.canvas,
+          this.canvas.getBoundingClientRect(),
+          this.camera
+        );
         this.camera.pan(-worldDelta.x, -worldDelta.y);
         this.lastX = event.clientX;
         this.lastY = event.clientY;

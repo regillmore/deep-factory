@@ -2,9 +2,9 @@ import './style.css';
 
 import { Camera2D } from './core/camera2d';
 import {
-  absorbManualCameraDeltaIntoFollowOffset,
   recenterCameraOnFollowTarget,
   resolveCameraPositionFromFollowTarget,
+  syncManualCameraDeltaIntoFollowState,
   type CameraFollowOffset,
   type CameraFollowPoint
 } from './core/cameraFollow';
@@ -1432,8 +1432,9 @@ const bootstrap = async (): Promise<void> => {
       shellState: readWorldSessionShellState(),
       shellActionKeybindings
     });
-  const createCurrentWorldSessionSaveEnvelope = (): WorldSaveEnvelope =>
-    createWorldSessionSaveEnvelope({
+  const createCurrentWorldSessionSaveEnvelope = (): WorldSaveEnvelope => {
+    syncManualCameraFollowStateFromLiveCamera();
+    return createWorldSessionSaveEnvelope({
       source: {
         createWorldSnapshot: () => renderer.createWorldSnapshot(),
         getStandalonePlayerState,
@@ -1442,6 +1443,7 @@ const bootstrap = async (): Promise<void> => {
         getCameraFollowOffset: () => cameraFollowOffset
       }
     });
+  };
   const persistCurrentWorldSessionWithResult = ():
     | {
         status: 'persisted';
@@ -1793,12 +1795,25 @@ const bootstrap = async (): Promise<void> => {
         standalonePlayerEntityId
       );
     };
+  const syncManualCameraFollowStateFromLiveCamera = (): void => {
+    const syncedManualCameraFollow = syncManualCameraDeltaIntoFollowState(
+      cameraFollowOffset,
+      lastAppliedPlayerFollowCameraPosition,
+      {
+        x: camera.x,
+        y: camera.y
+      }
+    );
+    cameraFollowOffset = syncedManualCameraFollow.offset;
+    lastAppliedPlayerFollowCameraPosition = syncedManualCameraFollow.lastAppliedCameraPosition;
+  };
   const applyStandalonePlayerCameraFollowTarget = (focusPoint: CameraFollowPoint | null): void => {
     if (focusPoint === null) {
       lastAppliedPlayerFollowCameraPosition = null;
       return;
     }
 
+    syncManualCameraFollowStateFromLiveCamera();
     const cameraPosition = resolveCameraPositionFromFollowTarget(focusPoint, cameraFollowOffset);
     camera.x = cameraPosition.x;
     camera.y = cameraPosition.y;
@@ -4307,18 +4322,6 @@ const bootstrap = async (): Promise<void> => {
 
       if (historyChanged) {
         syncDebugEditHistoryControls();
-      }
-
-      const standalonePlayerState = getStandalonePlayerState();
-      if (standalonePlayerState !== null) {
-        cameraFollowOffset = absorbManualCameraDeltaIntoFollowOffset(
-          cameraFollowOffset,
-          lastAppliedPlayerFollowCameraPosition,
-          {
-            x: camera.x,
-            y: camera.y
-          }
-        );
       }
 
       if (playerSpawnNeedsRefresh) {

@@ -34,18 +34,39 @@ export interface ScreenWorldTilePick {
   tile: TilePoint;
 }
 
+const resolveClientToCanvasScale = (
+  canvas: CanvasSizeLike,
+  rect: ClientRectLike
+): { x: number; y: number } => ({
+  x: rect.width > 0 ? canvas.width / rect.width : 1,
+  y: rect.height > 0 ? canvas.height / rect.height : 1
+});
+
 export const clientToCanvasPoint = (
   clientX: number,
   clientY: number,
   canvas: CanvasSizeLike,
   rect: ClientRectLike
 ): CanvasPoint => {
-  const dprScaleX = rect.width > 0 ? canvas.width / rect.width : 1;
-  const dprScaleY = rect.height > 0 ? canvas.height / rect.height : 1;
+  const scale = resolveClientToCanvasScale(canvas, rect);
 
   return {
-    x: (clientX - rect.left) * dprScaleX,
-    y: (clientY - rect.top) * dprScaleY
+    x: (clientX - rect.left) * scale.x,
+    y: (clientY - rect.top) * scale.y
+  };
+};
+
+export const clientDeltaToCanvasDelta = (
+  clientDeltaX: number,
+  clientDeltaY: number,
+  canvas: CanvasSizeLike,
+  rect: ClientRectLike
+): CanvasPoint => {
+  const scale = resolveClientToCanvasScale(canvas, rect);
+
+  return {
+    x: clientDeltaX * scale.x,
+    y: clientDeltaY * scale.y
   };
 };
 

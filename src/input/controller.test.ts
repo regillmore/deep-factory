@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { Camera2D } from '../core/camera2d';
 import {
   buildDebugTileEditRequest,
   resolveDesktopPlayerItemUseActionForClick,
@@ -10,6 +11,7 @@ import {
   isPlayerMoveLeftControlKey,
   isPlayerMoveRightControlKey,
   markDebugPaintTileSeen,
+  resolveCameraPanWorldDeltaFromClientDelta,
   resolvePlayerInputTelemetry,
   resolvePlayerMovementIntent,
   resolvePlayerMoveXIntent,
@@ -118,6 +120,26 @@ describe('buildDebugTileEditRequest', () => {
         'break'
       )
     ).toBeNull();
+  });
+});
+
+describe('resolveCameraPanWorldDeltaFromClientDelta', () => {
+  it('scales client drag deltas through the canvas backbuffer before converting to world space', () => {
+    const camera = new Camera2D();
+    camera.zoom = 4;
+
+    expect(
+      resolveCameraPanWorldDeltaFromClientDelta(
+        12,
+        -6,
+        { width: 1600, height: 900 },
+        { left: 100, top: 50, width: 800, height: 450 },
+        camera
+      )
+    ).toEqual({
+      x: 6,
+      y: -3
+    });
   });
 });
 

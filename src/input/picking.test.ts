@@ -4,6 +4,7 @@ import { Camera2D } from '../core/camera2d';
 import { TILE_SIZE } from '../world/constants';
 import {
   canvasToWorldPoint,
+  clientDeltaToCanvasDelta,
   clientToCanvasPoint,
   clientToWorldPoint,
   pickScreenWorldTile,
@@ -23,6 +24,13 @@ describe('picking', () => {
     const rect = { left: 10, top: 20, width: 0, height: 0 };
 
     expect(clientToCanvasPoint(14, 29, canvas, rect)).toEqual({ x: 4, y: 9 });
+  });
+
+  it('converts client drag deltas into canvas-space deltas with DPR scaling', () => {
+    const canvas = { width: 1600, height: 900 };
+    const rect = { left: 100, top: 50, width: 800, height: 450 };
+
+    expect(clientDeltaToCanvasDelta(12, -6, canvas, rect)).toEqual({ x: 24, y: -12 });
   });
 
   it('converts canvas pixels to world coordinates using the camera viewport transform', () => {
