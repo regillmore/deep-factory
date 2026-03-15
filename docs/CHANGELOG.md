@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-14
 
+- Task: Add a dropped-item restore consolidation follow-up after same-item dropped-stack merge and save/load.
+- Changes: Updated [src/world/droppedItem.ts](../src/world/droppedItem.ts) plus [src/world/droppedItem.test.ts](../src/world/droppedItem.test.ts) with a shared restore-time consolidation helper for overlapping same-item world pickups, updated [src/mainWorldSessionRestore.ts](../src/mainWorldSessionRestore.ts), [src/mainWorldSessionRestore.test.ts](../src/mainWorldSessionRestore.test.ts), and [src/main.test.ts](../src/main.test.ts) so browser-resumed or imported sessions collapse overlapping matching dropped-item stacks before entities respawn, removed completed task `558` from [docs/NEXT.md](docs/NEXT.md), added replacement task `559`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/droppedItem.test.ts src/mainWorldSessionRestore.test.ts src/main.test.ts` (outside the sandbox after the expected Vitest `spawn EPERM` startup failure in-sandbox) and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a same-item torch-refund pickup merge follow-up after multi-pickup dropped-stack cascade.
 - Changes: Updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so removed starter torches now route through the shared nearby matching dropped-item merge cascade before spawning a refund entity, added deterministic refund-cascade and full-stack fallback regressions, removed completed task `556` from [docs/NEXT.md](docs/NEXT.md), added replacement task `558`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

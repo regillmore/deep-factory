@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Restore-time dropped-item consolidation preserves earlier save-order anchors
+
+- Decision: Session restore now consolidates overlapping same-item dropped-item stacks in save-array order, preserving earlier stack positions as anchors and only carrying any overflow into later remainder entries.
+- Reason: Browser-resumed or imported saves can contain redundant overlapping pickups, and restoring them raw would recreate avoidable duplicates instead of the deterministic stack set the live runtime already prefers.
+- Consequence: Future save import or resume paths should reuse the shared dropped-item consolidation helper before spawning pickup entities rather than restoring overlapping same-item stacks directly.
+
 ### 2026-03-14: Default non-debug hotbar placement reach uses a five-tile body-to-cell gap
 
 - Decision: Hidden-panel hotbar tile placement now uses a shared default reach of five tiles (`80px`), measured as the shortest gap from the player's body AABB to the target tile cell.

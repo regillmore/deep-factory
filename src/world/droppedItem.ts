@@ -289,6 +289,32 @@ export const resolveDroppedItemStackMergeCascade = (
   };
 };
 
+export const consolidateDroppedItemStates = (
+  droppedItemStates: readonly DroppedItemState[]
+): DroppedItemState[] => {
+  const consolidatedDroppedItemStates: DroppedItemState[] = [];
+
+  for (const droppedItemState of droppedItemStates) {
+    const mergeCascadeResult = resolveDroppedItemStackMergeCascade(
+      consolidatedDroppedItemStates,
+      droppedItemState
+    );
+
+    if (mergeCascadeResult.totalMergedAmount > 0) {
+      for (const targetResult of mergeCascadeResult.targetResults) {
+        consolidatedDroppedItemStates[targetResult.targetIndex] =
+          targetResult.nextTargetDroppedItemState;
+      }
+    }
+
+    if (mergeCascadeResult.nextSourceDroppedItemState !== null) {
+      consolidatedDroppedItemStates.push(mergeCascadeResult.nextSourceDroppedItemState);
+    }
+  }
+
+  return consolidatedDroppedItemStates;
+};
+
 export const resolveDroppedItemPickup = (
   droppedItemState: DroppedItemState,
   playerState: PlayerState,

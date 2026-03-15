@@ -4,6 +4,7 @@ import { createPlayerInventoryState } from './playerInventory';
 import { createPlayerState } from './playerState';
 import {
   canDroppedItemStacksMerge,
+  consolidateDroppedItemStates,
   createDroppedItemState,
   createDroppedItemStateFromWorldTile,
   createDroppedItemStateFromPlayerDrop,
@@ -282,6 +283,81 @@ describe('droppedItem', () => {
       nextSourceDroppedItemState: null,
       totalMergedAmount: 3
     });
+  });
+
+  it('consolidates overlapping same-item restore pickups while preserving earlier anchors', () => {
+    const consolidatedDroppedItemStates = consolidateDroppedItemStates([
+      createDroppedItemState({
+        position: { x: 24, y: -14 },
+        itemId: 'torch',
+        amount: 600
+      }),
+      createDroppedItemState({
+        position: { x: 28, y: -14 },
+        itemId: 'rope',
+        amount: 3
+      }),
+      createDroppedItemState({
+        position: { x: 28, y: -14 },
+        itemId: 'torch',
+        amount: 500
+      }),
+      createDroppedItemState({
+        position: { x: 32, y: -14 },
+        itemId: 'torch',
+        amount: 200
+      }),
+      createDroppedItemState({
+        position: { x: 96, y: -14 },
+        itemId: 'torch',
+        amount: 12
+      })
+    ]);
+
+    expect(consolidatedDroppedItemStates).toEqual([
+      {
+        position: { x: 24, y: -14 },
+        itemId: 'torch',
+        amount: 999
+      },
+      {
+        position: { x: 28, y: -14 },
+        itemId: 'rope',
+        amount: 3
+      },
+      {
+        position: { x: 28, y: -14 },
+        itemId: 'torch',
+        amount: 301
+      },
+      {
+        position: { x: 96, y: -14 },
+        itemId: 'torch',
+        amount: 12
+      }
+    ]);
+  });
+
+  it('returns cloned dropped-item states when restore consolidation finds no matching overlaps', () => {
+    const originalDroppedItemStates = [
+      createDroppedItemState({
+        position: { x: 24, y: -14 },
+        itemId: 'torch',
+        amount: 6
+      }),
+      createDroppedItemState({
+        position: { x: 48, y: -14 },
+        itemId: 'torch',
+        amount: 4
+      })
+    ];
+
+    const consolidatedDroppedItemStates = consolidateDroppedItemStates(originalDroppedItemStates);
+
+    expect(consolidatedDroppedItemStates).toEqual(originalDroppedItemStates);
+    expect(consolidatedDroppedItemStates).not.toBe(originalDroppedItemStates);
+    expect(consolidatedDroppedItemStates[0]).not.toBe(originalDroppedItemStates[0]);
+    expect(consolidatedDroppedItemStates[1]).not.toBe(originalDroppedItemStates[1]);
   });
 
   it('does not pick up an out-of-range dropped stack', () => {

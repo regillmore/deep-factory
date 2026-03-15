@@ -141,4 +141,67 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     expect(target.restoreDroppedItemStates).toHaveBeenCalledWith([]);
     expect(target.restoreCameraFollowOffset).toHaveBeenCalledWith({ x: -24, y: 10 });
   });
+
+  it('consolidates overlapping matching dropped-item restore payloads before applying them to the session target', () => {
+    const world = new TileWorld(0);
+    const envelope = createWorldSaveEnvelope({
+      worldSnapshot: world.createSnapshot(),
+      standalonePlayerState: createPlayerState(),
+      standalonePlayerDeathState: null,
+      standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+      droppedItemStates: [
+        createDroppedItemState({
+          position: { x: 24, y: -14 },
+          itemId: 'torch',
+          amount: 600
+        }),
+        createDroppedItemState({
+          position: { x: 28, y: -14 },
+          itemId: 'torch',
+          amount: 500
+        }),
+        createDroppedItemState({
+          position: { x: 28, y: -14 },
+          itemId: 'rope',
+          amount: 3
+        })
+      ],
+      cameraFollowOffset: { x: 0, y: 0 }
+    });
+    let restoredDroppedItemStates: DroppedItemState[] | null = null;
+    const target = {
+      loadWorldSnapshot: vi.fn(),
+      restoreStandalonePlayerState: vi.fn(),
+      restoreStandalonePlayerDeathState: vi.fn(),
+      restoreStandalonePlayerInventoryState: vi.fn(),
+      restoreDroppedItemStates: vi.fn((nextDroppedItemStates) => {
+        restoredDroppedItemStates = nextDroppedItemStates;
+      }),
+      restoreCameraFollowOffset: vi.fn()
+    };
+
+    restoreWorldSessionFromSaveEnvelope({
+      target,
+      envelope
+    });
+
+    expect(target.restoreDroppedItemStates).toHaveBeenCalledWith([
+      {
+        position: { x: 24, y: -14 },
+        itemId: 'torch',
+        amount: 999
+      },
+      {
+        position: { x: 28, y: -14 },
+        itemId: 'torch',
+        amount: 101
+      },
+      {
+        position: { x: 28, y: -14 },
+        itemId: 'rope',
+        amount: 3
+      }
+    ]);
+    expect(restoredDroppedItemStates).not.toBe(envelope.session.droppedItemStates);
+  });
 });

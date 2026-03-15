@@ -7892,6 +7892,60 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('consolidates overlapping matching dropped-item pickups when browser resume restores a saved session', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 }
+          }),
+          droppedItemStates: [
+            createDroppedItemState({
+              position: { x: 24, y: -14 },
+              itemId: 'torch',
+              amount: 600
+            }),
+            createDroppedItemState({
+              position: { x: 28, y: -14 },
+              itemId: 'torch',
+              amount: 500
+            }),
+            createDroppedItemState({
+              position: { x: 28, y: -14 },
+              itemId: 'rope',
+              amount: 3
+            })
+          ]
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    dispatchWindowEvent('pagehide');
+
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 24, y: -14 },
+        itemId: 'torch',
+        amount: 999
+      },
+      {
+        position: { x: 28, y: -14 },
+        itemId: 'torch',
+        amount: 101
+      },
+      {
+        position: { x: 28, y: -14 },
+        itemId: 'rope',
+        amount: 3
+      }
+    ]);
+  });
+
   it('keeps non-shortcuts shell overlay visibility synchronized through shell-driven enter, pause, and resume transitions', async () => {
     await import('./main');
     await flushBootstrap();
