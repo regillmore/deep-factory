@@ -33,7 +33,8 @@ describe('hostileSlimeCombat', () => {
       health: 80
     });
     const slimeState = createHostileSlimeState({
-      position: { x: 8, y: 0 }
+      position: { x: 8, y: 0 },
+      facing: 'right'
     });
 
     const resolution = resolveHostileSlimePlayerContactWithEvent(playerState, [slimeState]);
@@ -48,7 +49,9 @@ describe('hostileSlimeCombat', () => {
       },
       event: {
         damageApplied: DEFAULT_HOSTILE_SLIME_CONTACT_DAMAGE,
-        blockedByInvulnerability: false
+        blockedByInvulnerability: false,
+        sourceWorldTile: { x: 0, y: 0 },
+        sourceFacing: 'right'
       }
     });
     expect(damagedPlayerState).toEqual(resolution.nextPlayerState);
@@ -57,7 +60,8 @@ describe('hostileSlimeCombat', () => {
 
   it('reports blocked overlap during invulnerability and allows lethal overlap damage once death work is active', () => {
     const slimeState = createHostileSlimeState({
-      position: { x: 8, y: 0 }
+      position: { x: 8, y: 0 },
+      facing: 'right'
     });
     const invulnerablePlayerState = createPlayerState({
       position: { x: 8, y: 0 },
@@ -69,7 +73,9 @@ describe('hostileSlimeCombat', () => {
       nextPlayerState: invulnerablePlayerState,
       event: {
         damageApplied: 0,
-        blockedByInvulnerability: true
+        blockedByInvulnerability: true,
+        sourceWorldTile: { x: 0, y: 0 },
+        sourceFacing: 'right'
       }
     });
 
@@ -98,8 +104,37 @@ describe('hostileSlimeCombat', () => {
       nextPlayerState: clampedPlayerState,
       event: {
         damageApplied: 3,
-        blockedByInvulnerability: false
+        blockedByInvulnerability: false,
+        sourceWorldTile: { x: 0, y: 0 },
+        sourceFacing: 'right'
       }
+    });
+  });
+
+  it('uses the first overlapping slime in caller order as the deterministic event source', () => {
+    const playerState = createPlayerState({
+      position: { x: 8, y: 0 },
+      health: 100
+    });
+    const leadingOverlap = createHostileSlimeState({
+      position: { x: 23, y: 0 },
+      facing: 'right'
+    });
+    const trailingOverlap = createHostileSlimeState({
+      position: { x: 8, y: 0 },
+      facing: 'left'
+    });
+
+    const resolution = resolveHostileSlimePlayerContactWithEvent(playerState, [
+      leadingOverlap,
+      trailingOverlap
+    ]);
+
+    expect(resolution.event).toEqual({
+      damageApplied: DEFAULT_HOSTILE_SLIME_CONTACT_DAMAGE,
+      blockedByInvulnerability: false,
+      sourceWorldTile: { x: 1, y: 0 },
+      sourceFacing: 'right'
     });
   });
 });

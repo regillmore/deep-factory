@@ -1,5 +1,10 @@
 import type { WorldAabb } from './collision';
-import { getHostileSlimeAabb, type HostileSlimeState } from './hostileSlimeState';
+import { TILE_SIZE } from './constants';
+import {
+  getHostileSlimeAabb,
+  type HostileSlimeFacing,
+  type HostileSlimeState
+} from './hostileSlimeState';
 import { clonePlayerState, getPlayerAabb, type PlayerState } from './playerState';
 
 export interface ResolveHostileSlimePlayerContactOptions {
@@ -11,6 +16,8 @@ export interface ResolveHostileSlimePlayerContactOptions {
 export interface HostileSlimePlayerContactEvent {
   damageApplied: number;
   blockedByInvulnerability: boolean;
+  sourceWorldTile: { x: number; y: number };
+  sourceFacing: HostileSlimeFacing;
 }
 
 export interface HostileSlimePlayerContactResolution {
@@ -35,6 +42,22 @@ const doesAabbOverlap = (aabb: WorldAabb, other: WorldAabb): boolean =>
   aabb.maxX > other.minX &&
   aabb.minY < other.maxY &&
   aabb.maxY > other.minY;
+
+const worldToTileCoordinate = (world: number): number => Math.floor(world / TILE_SIZE);
+
+const createHostileSlimePlayerContactEvent = (
+  slimeState: HostileSlimeState,
+  damageApplied: number,
+  blockedByInvulnerability: boolean
+): HostileSlimePlayerContactEvent => ({
+  damageApplied,
+  blockedByInvulnerability,
+  sourceWorldTile: {
+    x: worldToTileCoordinate(slimeState.position.x),
+    y: worldToTileCoordinate(slimeState.position.y)
+  },
+  sourceFacing: slimeState.facing
+});
 
 export const doesHostileSlimeOverlapPlayer = (
   playerState: PlayerState,
@@ -71,11 +94,12 @@ export const resolveHostileSlimePlayerContactWithEvent = (
   );
   const health = expectNonNegativeFiniteNumber(playerState.health, 'playerState.health');
   const playerAabb = getPlayerAabb(playerState);
-  const isOverlappingAnySlime = hostileSlimes.some((slimeState) =>
-    doesAabbOverlap(playerAabb, getHostileSlimeAabb(slimeState))
-  );
+  // Preserve caller order when more than one overlap exists so the event source stays deterministic.
+  const overlappingSlimeState =
+    hostileSlimes.find((slimeState) => doesAabbOverlap(playerAabb, getHostileSlimeAabb(slimeState))) ??
+    null;
 
-  if (!isOverlappingAnySlime) {
+  if (overlappingSlimeState === null) {
     return {
       nextPlayerState: playerState,
       event: null
@@ -85,10 +109,7 @@ export const resolveHostileSlimePlayerContactWithEvent = (
   if (hostileContactInvulnerabilitySecondsRemaining > 0) {
     return {
       nextPlayerState: playerState,
-      event: {
-        damageApplied: 0,
-        blockedByInvulnerability: true
-      }
+      event: createHostileSlimePlayerContactEvent(overlappingSlimeState, 0, true)
     };
   }
 
@@ -97,9 +118,10 @@ export const resolveHostileSlimePlayerContactWithEvent = (
   nextPlayerState.hostileContactInvulnerabilitySecondsRemaining = invulnerabilitySeconds;
   return {
     nextPlayerState,
-    event: {
-      damageApplied: Math.max(0, health - nextPlayerState.health),
-      blockedByInvulnerability: false
-    }
+    event: createHostileSlimePlayerContactEvent(
+      overlappingSlimeState,
+      Math.max(0, health - nextPlayerState.health),
+      false
+    )
   };
 };

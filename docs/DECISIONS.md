@@ -26,6 +26,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Those readouts describe the player's current traversal input and rope-movement availability, not combat recovery or one-off event history.
 - Consequence: Future climbable quick-descend telemetry should extend `player-motion` unless a later pass intentionally revisits the telemetry catalog split.
 
+### 2026-03-14: Hostile-contact source telemetry lives under player-combat
+
+- Decision: The latest hostile-contact source tile and facing readout now extends the existing `player-combat` telemetry in both the full debug HUD and the hidden-HUD compact status strip.
+- Reason: That source data explains the latest damage or blocked-contact combat event, so keeping it beside health, invulnerability, and contact-hit readouts is more coherent than splitting it into the tracked hostile-slime locomotion telemetry.
+- Consequence: Future hostile-contact source follow-ups should extend `player-combat` unless a later pass intentionally redesigns the combat-versus-tracker telemetry split.
+
 ### 2026-03-14: Rope contact uses grounded-style braking for neutral horizontal inertia
 
 - Decision: While the player overlaps a rope and left/right input is neutral, rope traversal now applies the same horizontal braking used for grounded movement before rope hold and centering resolve.

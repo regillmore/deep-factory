@@ -215,6 +215,8 @@ export interface DebugEditStatusStripPlayerRespawnTelemetry {
 export interface DebugEditStatusStripPlayerHostileContactEventTelemetry {
   damageApplied: number;
   blockedByInvulnerability: boolean;
+  sourceWorldTile: { x: number; y: number };
+  sourceFacing: HostileSlimeFacing;
 }
 
 export interface DebugEditStatusStripPlayerLandingDamageEventTelemetry {
@@ -1860,7 +1862,12 @@ const formatHostileContactEventText = (
 
   return (
     `SlimeHit: damage ${Math.max(0, Math.round(playerHostileContactEvent.damageApplied))} | ` +
-    `blocked ${formatGameplayFlag(playerHostileContactEvent.blockedByInvulnerability)}`
+    `blocked ${formatGameplayFlag(playerHostileContactEvent.blockedByInvulnerability)} | ` +
+    `tile ${formatTileCoordinatePair(
+      playerHostileContactEvent.sourceWorldTile.x,
+      playerHostileContactEvent.sourceWorldTile.y
+    )} | ` +
+    `facing ${playerHostileContactEvent.sourceFacing}`
   );
 };
 

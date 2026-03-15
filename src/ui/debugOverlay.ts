@@ -290,6 +290,8 @@ export interface DebugOverlayPlayerRespawnTelemetry {
 export interface DebugOverlayPlayerHostileContactEventTelemetry {
   damageApplied: number;
   blockedByInvulnerability: boolean;
+  sourceWorldTile: { x: number; y: number };
+  sourceFacing: 'left' | 'right';
 }
 
 export interface DebugOverlayPlayerLandingDamageEventTelemetry {
@@ -815,7 +817,9 @@ const formatPlayerHostileContactEventLine = (
 
   return (
     `ContactEvt: damage:${Math.max(0, Math.round(playerHostileContactEvent.damageApplied))} | ` +
-    `blocked:${formatGameplayFlag(playerHostileContactEvent.blockedByInvulnerability)}`
+    `blocked:${formatGameplayFlag(playerHostileContactEvent.blockedByInvulnerability)} | ` +
+    `tile:${playerHostileContactEvent.sourceWorldTile.x},${playerHostileContactEvent.sourceWorldTile.y} | ` +
+    `facing:${playerHostileContactEvent.sourceFacing}`
   );
 };
 

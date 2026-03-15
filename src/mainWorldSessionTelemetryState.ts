@@ -98,7 +98,8 @@ export const WORLD_SESSION_TELEMETRY_TYPE_DEFINITIONS = [
     id: 'player-combat',
     collectionId: 'player',
     label: 'Combat',
-    description: 'Health, death-hold, respawn countdown, breath, survival cooldown, and damage-event readouts.'
+    description:
+      'Health, death-hold, respawn countdown, breath, survival cooldown, and damage-event source readouts.'
   },
   {
     id: 'player-camera',

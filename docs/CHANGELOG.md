@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-14
 
+- Task: Add hostile-contact source telemetry to the debug HUD and compact status strip.
+- Changes: Updated [src/world/hostileSlimeCombat.ts](../src/world/hostileSlimeCombat.ts) plus [src/world/hostileSlimeCombat.test.ts](../src/world/hostileSlimeCombat.test.ts) so hostile-contact events now keep deterministic source tile and facing details from the overlapping slime, extended [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts), [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/main.test.ts](../src/main.test.ts) so both telemetry surfaces render that source information beside the existing contact-hit result, updated [src/mainWorldSessionTelemetryState.ts](../src/mainWorldSessionTelemetryState.ts) copy for the combat telemetry catalog entry, removed completed task `525` from [docs/NEXT.md](docs/NEXT.md), added replacement task `573`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/hostileSlimeCombat.test.ts src/ui/debugEditStatusHelpers.test.ts src/ui/debugOverlay.test.ts src/main.test.ts`.
+
 - Task: Fix hotbar button focus so pointer clicks do not cause later `Space` presses to retrigger the same action.
 - Changes: Updated [src/ui/hotbarOverlay.ts](../src/ui/hotbarOverlay.ts) to install the shared pointer-click focus-release helper on hotbar slot and drop buttons, and expanded [src/ui/hotbarOverlay.test.ts](../src/ui/hotbarOverlay.test.ts) with a regression that verifies those buttons blur after pointer clicks.
 - Verification: Ran `cmd /c npx vitest run src/ui/hotbarOverlay.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

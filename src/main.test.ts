@@ -4295,11 +4295,15 @@ describe('main.ts shell state orchestration', () => {
 
     expect(testRuntime.latestDebugOverlayInspectState?.playerHostileContactEvent).toEqual({
       damageApplied: 15,
-      blockedByInvulnerability: false
+      blockedByInvulnerability: false,
+      sourceWorldTile: { x: 0, y: 0 },
+      sourceFacing: 'right'
     });
     expect(testRuntime.latestDebugEditStatusStripState?.playerHostileContactEvent).toEqual({
       damageApplied: 15,
-      blockedByInvulnerability: false
+      blockedByInvulnerability: false,
+      sourceWorldTile: { x: 0, y: 0 },
+      sourceFacing: 'right'
     });
     expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(85);
     expect(
@@ -4315,11 +4319,15 @@ describe('main.ts shell state orchestration', () => {
 
     expect(testRuntime.latestDebugOverlayInspectState?.playerHostileContactEvent).toEqual({
       damageApplied: 0,
-      blockedByInvulnerability: true
+      blockedByInvulnerability: true,
+      sourceWorldTile: { x: 0, y: 0 },
+      sourceFacing: 'right'
     });
     expect(testRuntime.latestDebugEditStatusStripState?.playerHostileContactEvent).toEqual({
       damageApplied: 0,
-      blockedByInvulnerability: true
+      blockedByInvulnerability: true,
+      sourceWorldTile: { x: 0, y: 0 },
+      sourceFacing: 'right'
     });
     expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(85);
     expect(

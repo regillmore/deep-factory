@@ -208,7 +208,9 @@ describe('formatDebugOverlayText', () => {
       },
       playerHostileContactEvent: {
         damageApplied: 15,
-        blockedByInvulnerability: false
+        blockedByInvulnerability: false,
+        sourceWorldTile: { x: 3, y: -1 },
+        sourceFacing: 'left'
       },
       playerWallContactTransition: null,
       playerCeilingContactTransition: null,
@@ -330,7 +332,9 @@ describe('formatDebugOverlayText', () => {
       },
       playerHostileContactEvent: {
         damageApplied: 15,
-        blockedByInvulnerability: false
+        blockedByInvulnerability: false,
+        sourceWorldTile: { x: 3, y: -1 },
+        sourceFacing: 'left'
       },
       playerWallContactTransition: null,
       playerCeilingContactTransition: null,
@@ -340,7 +344,7 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nSpawn: T:4,-2 | W:72.00,-32.00');
     expect(text).toContain('\nCombat: health:62 | fallRecovery:0.35s | contactInvuln:0.75s');
     expect(text).toContain('\nLandingEvt: damage:3');
-    expect(text).toContain('\nContactEvt: damage:15 | blocked:off');
+    expect(text).toContain('\nContactEvt: damage:15 | blocked:off | tile:3,-1 | facing:left');
     expect(text).toContain('\nSlime: active:2');
     expect(text).toContain('\nAtlas: authored | 96x64');
     expect(text).toContain('\nAnimMesh:');
@@ -1021,7 +1025,9 @@ describe('formatDebugOverlayText', () => {
       playerRespawn: null,
       playerHostileContactEvent: {
         damageApplied: 15,
-        blockedByInvulnerability: false
+        blockedByInvulnerability: false,
+        sourceWorldTile: { x: 3, y: -1 },
+        sourceFacing: 'left'
       },
       playerWallContactTransition: null,
       playerCeilingContactTransition: null,
@@ -1030,7 +1036,7 @@ describe('formatDebugOverlayText', () => {
       pinned: null
     });
 
-    expect(text).toContain('\nContactEvt: damage:15 | blocked:off');
+    expect(text).toContain('\nContactEvt: damage:15 | blocked:off | tile:3,-1 | facing:left');
   });
 
   it('shows the latest hard-landing event together with the live fall-recovery cooldown', () => {
@@ -1129,7 +1135,9 @@ describe('formatDebugOverlayText', () => {
       playerRespawn: null,
       playerHostileContactEvent: {
         damageApplied: 0,
-        blockedByInvulnerability: true
+        blockedByInvulnerability: true,
+        sourceWorldTile: { x: -2, y: 4 },
+        sourceFacing: 'right'
       },
       playerWallContactTransition: null,
       playerCeilingContactTransition: null,
@@ -1138,7 +1146,7 @@ describe('formatDebugOverlayText', () => {
       pinned: null
     });
 
-    expect(text).toContain('\nContactEvt: damage:0 | blocked:on');
+    expect(text).toContain('\nContactEvt: damage:0 | blocked:on | tile:-2,4 | facing:right');
   });
 
   it('shows hostile-slime spawn and locomotion telemetry when a tracked slime is available', () => {

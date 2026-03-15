@@ -1649,13 +1649,15 @@ describe('buildDebugEditStatusStripModel', () => {
       desktopInspectPinArmed: false,
       playerHostileContactEvent: {
         damageApplied: 15,
-        blockedByInvulnerability: false
+        blockedByInvulnerability: false,
+        sourceWorldTile: { x: 3, y: -1 },
+        sourceFacing: 'left'
       },
       preview: createEmptyPreviewState()
     });
 
     expect(model.playerText).toBeNull();
-    expect(model.eventText).toBe('SlimeHit: damage 15 | blocked off');
+    expect(model.eventText).toBe('SlimeHit: damage 15 | blocked off | tile 3,-1 | facing left');
   });
 
   it('shows when the latest hostile-contact overlap was blocked by invulnerability', () => {
@@ -1668,13 +1670,15 @@ describe('buildDebugEditStatusStripModel', () => {
       desktopInspectPinArmed: false,
       playerHostileContactEvent: {
         damageApplied: 0,
-        blockedByInvulnerability: true
+        blockedByInvulnerability: true,
+        sourceWorldTile: { x: -2, y: 4 },
+        sourceFacing: 'right'
       },
       preview: createEmptyPreviewState()
     });
 
     expect(model.playerText).toBeNull();
-    expect(model.eventText).toBe('SlimeHit: damage 0 | blocked on');
+    expect(model.eventText).toBe('SlimeHit: damage 0 | blocked on | tile -2,4 | facing right');
   });
 
   it('keeps hostile-slime tile, velocity, locomotion, and launch telemetry on separate player lines', () => {
