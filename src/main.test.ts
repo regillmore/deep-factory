@@ -5826,6 +5826,67 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedDebugEditControlState().brushTileId).toBe(3);
   });
 
+  it('reorders the selected hotbar slot with Shift+[ and Shift+] while the full debug-edit panel is hidden, then persists that order through pause and export', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('}', 'BracketRight', { shiftKey: true }).prevented).toBe(true);
+    expect(dispatchKeydown('}', 'BracketRight', { shiftKey: true }).prevented).toBe(true);
+    expect(readPersistedDebugEditControlState().brushTileId).toBe(3);
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState).toEqual(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          { itemId: 'dirt-block', amount: 64 },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        selectedHotbarSlotIndex: 2
+      })
+    );
+
+    testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
+
+    const downloadedEnvelope = testRuntime.downloadedWorldSaveEnvelopes[0] as {
+      session: {
+        standalonePlayerInventoryState: ReturnType<typeof createPlayerInventoryState>;
+      };
+    };
+    expect(downloadedEnvelope.session.standalonePlayerInventoryState).toEqual(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          { itemId: 'dirt-block', amount: 64 },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        selectedHotbarSlotIndex: 2
+      })
+    );
+
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    expect(dispatchKeydown('}', 'BracketRight', { shiftKey: true }).prevented).toBe(false);
+    expect(readPersistedDebugEditControlState().brushTileId).toBe(3);
+  });
+
   it('shows a valid starter dirt placement preview on the hovered tile while the full debug-edit panel is hidden', async () => {
     await import('./main');
     await flushBootstrap();

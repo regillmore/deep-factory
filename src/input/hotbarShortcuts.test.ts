@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { getHotbarSlotShortcutLabel, resolveHotbarSlotShortcut } from './hotbarShortcuts';
+import {
+  getHotbarSlotShortcutLabel,
+  getMoveSelectedHotbarSlotLeftShortcutLabel,
+  getMoveSelectedHotbarSlotRightShortcutLabel,
+  resolveHotbarSlotShortcut,
+  resolveMoveSelectedHotbarSlotShortcut
+} from './hotbarShortcuts';
 
 describe('hotbarShortcuts', () => {
   it('maps top-row digits into hotbar slot indices', () => {
@@ -61,9 +67,57 @@ describe('hotbarShortcuts', () => {
     ).toBeNull();
   });
 
+  it('maps Shift+[ and Shift+] into selected-slot move directions', () => {
+    expect(
+      resolveMoveSelectedHotbarSlotShortcut({
+        key: '{',
+        code: 'BracketLeft',
+        ctrlKey: false,
+        metaKey: false,
+        shiftKey: true,
+        altKey: false
+      })
+    ).toBe(-1);
+    expect(
+      resolveMoveSelectedHotbarSlotShortcut({
+        key: '}',
+        code: 'BracketRight',
+        ctrlKey: false,
+        metaKey: false,
+        shiftKey: true,
+        altKey: false
+      })
+    ).toBe(1);
+  });
+
+  it('ignores unmodified or command-modified bracket keys for hotbar reordering', () => {
+    expect(
+      resolveMoveSelectedHotbarSlotShortcut({
+        key: '[',
+        code: 'BracketLeft',
+        ctrlKey: false,
+        metaKey: false,
+        shiftKey: false,
+        altKey: false
+      })
+    ).toBeNull();
+    expect(
+      resolveMoveSelectedHotbarSlotShortcut({
+        key: '{',
+        code: 'BracketLeft',
+        ctrlKey: true,
+        metaKey: false,
+        shiftKey: true,
+        altKey: false
+      })
+    ).toBeNull();
+  });
+
   it('exposes stable shortcut labels for the hotbar overlay', () => {
     expect(getHotbarSlotShortcutLabel(0)).toBe('1');
     expect(getHotbarSlotShortcutLabel(9)).toBe('0');
     expect(getHotbarSlotShortcutLabel(10)).toBeNull();
+    expect(getMoveSelectedHotbarSlotLeftShortcutLabel()).toBe('Shift+[');
+    expect(getMoveSelectedHotbarSlotRightShortcutLabel()).toBe('Shift+]');
   });
 });

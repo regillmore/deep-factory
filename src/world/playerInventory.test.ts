@@ -9,8 +9,10 @@ import {
   createPlayerInventoryItemStack,
   createPlayerInventoryState,
   getPlayerInventoryItemDefinition,
+  movePlayerInventorySelectedHotbarSlot,
   setPlayerInventoryHotbarSlot,
   setPlayerInventorySelectedHotbarSlot,
+  swapPlayerInventoryHotbarSlots,
   PLAYER_INVENTORY_HOTBAR_SLOT_COUNT
 } from './playerInventory';
 
@@ -124,6 +126,106 @@ describe('playerInventory', () => {
     expect(state.hotbar[2]).toBeNull();
   });
 
+  it('swaps two hotbar slots and keeps the selection attached to the moved slot', () => {
+    const state = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 2 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 0
+    });
+
+    const nextState = swapPlayerInventoryHotbarSlots(state, 0, 1);
+
+    expect(nextState).toEqual({
+      hotbar: [
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'dirt-block', amount: 64 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      selectedHotbarSlotIndex: 1
+    });
+    expect(state.selectedHotbarSlotIndex).toBe(0);
+    expect(state.hotbar[0]).toEqual({ itemId: 'dirt-block', amount: 64 });
+  });
+
+  it('moves the selected hotbar slot one step within bounds and leaves edge moves unchanged', () => {
+    const state = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 3 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 1
+    });
+
+    const movedLeft = movePlayerInventorySelectedHotbarSlot(state, -1);
+    const movedRight = movePlayerInventorySelectedHotbarSlot(state, 1);
+    const blockedAtLeft = movePlayerInventorySelectedHotbarSlot(
+      createPlayerInventoryState({
+        hotbar: state.hotbar,
+        selectedHotbarSlotIndex: 0
+      }),
+      -1
+    );
+
+    expect(movedLeft).toEqual({
+      hotbar: [
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'rope', amount: 24 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      selectedHotbarSlotIndex: 0
+    });
+    expect(movedRight).toEqual({
+      hotbar: [
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'torch', amount: 20 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      selectedHotbarSlotIndex: 2
+    });
+    expect(blockedAtLeft).toEqual({
+      hotbar: [
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      selectedHotbarSlotIndex: 0
+    });
+    expect(blockedAtLeft).not.toBe(state);
+  });
+
   it('consumes one item from a populated hotbar slot and clears depleted stacks', () => {
     const state = createPlayerInventoryState({
       hotbar: [
@@ -214,5 +316,11 @@ describe('playerInventory', () => {
         ]
       })
     ).toThrowError(/hotbar\[0\]\.amount must be an integer between 1 and 999/);
+    expect(() =>
+      swapPlayerInventoryHotbarSlots(createEmptyPlayerInventoryState(), 0, 10)
+    ).toThrowError(/targetSlotIndex must be an integer between 0 and 9/);
+    expect(() =>
+      movePlayerInventorySelectedHotbarSlot(createEmptyPlayerInventoryState(), 0 as -1 | 1)
+    ).toThrowError(/direction must be -1 or 1/);
   });
 });

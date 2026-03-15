@@ -18,6 +18,10 @@ import {
   getDropSelectedHotbarStackShortcutLabel
 } from '../input/playerInventoryShortcuts';
 import {
+  getMoveSelectedHotbarSlotLeftShortcutLabel,
+  getMoveSelectedHotbarSlotRightShortcutLabel
+} from '../input/hotbarShortcuts';
+import {
   createDefaultShellActionKeybindingState,
   getInWorldShellActionKeybindingActionLabel,
   IN_WORLD_SHELL_ACTION_KEYBINDING_IDS,
@@ -2953,7 +2957,7 @@ const resolveInWorldShortcutsSections = (
       'Jump or climb up: W, Up Arrow, or Space; descend ropes: S or Down Arrow; double tap and hold S or Down Arrow on a rope to drop to the bottom; jump off ropes: Jump plus Left or Right',
       `Session: ${getDesktopReturnToMainMenuHotkeyLabel(shellActionKeybindings)} return to main menu; ${getDesktopResumeWorldHotkeyLabel()} resume paused world; ${getDesktopFreshWorldHotkeyLabel()} new world from paused menu`,
       `Camera + shell: ${getDesktopRecenterCameraHotkeyLabel(shellActionKeybindings)} recenter, ${getDesktopDebugOverlayHotkeyLabel(shellActionKeybindings)} HUD, ${getDesktopDebugEditControlsHotkeyLabel(shellActionKeybindings)} edit panel, ${getDesktopDebugEditOverlaysHotkeyLabel(shellActionKeybindings)} edit overlays, ${getDesktopPlayerSpawnMarkerHotkeyLabel(shellActionKeybindings)} spawn marker`,
-      `Hotbar: 1-0 select slots while the full Debug Edit panel is hidden, click a slot, click Drop 1 or Drop, press ${getDropOneSelectedHotbarItemShortcutLabel()} to drop one item, or press ${getDropSelectedHotbarStackShortcutLabel()} to drop the selected stack`,
+      `Hotbar: 1-0 select slots while the full Debug Edit panel is hidden, click a slot, click Left or Right to reorder the selected slot, press ${getMoveSelectedHotbarSlotLeftShortcutLabel()} or ${getMoveSelectedHotbarSlotRightShortcutLabel()} to move it from the keyboard, click Drop 1 or Drop, press ${getDropOneSelectedHotbarItemShortcutLabel()} to drop one item, or press ${getDropSelectedHotbarStackShortcutLabel()} to drop the selected stack`,
       'Build: left-click an empty tile with a solid neighbor while the full Debug Edit panel is hidden',
       `Brush + tools: 1-0 brush slots while the full Debug Edit panel is open, [ and ] cycle brush, Esc cancel armed tools`,
       'History: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo'
@@ -2963,7 +2967,7 @@ const resolveInWorldShortcutsSections = (
     title: 'Touch',
     lines: [
       'Player: hold Left, Down, Right, and Jump on the touch player pad; double tap and hold Down on a rope to drop to the bottom; combine Jump with Left or Right to jump off ropes',
-      'Hotbar: tap a bottom hotbar slot to select it, then tap Drop 1 to toss one item or Drop to toss the selected stack',
+      'Hotbar: tap a bottom hotbar slot to select it, then tap Left or Right to reorder that slot or tap Drop 1 or Drop to toss items',
       'Build: tap an empty tile with a solid neighbor while the full Debug Edit panel is hidden',
       'Pan mode: one-finger drag camera, two-finger tap undo, three-finger tap redo',
       'Place and Break modes: one-finger drag paints or breaks tiles',

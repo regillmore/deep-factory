@@ -364,6 +364,19 @@ describe('resolveDebugEditShortcutAction', () => {
     ).toEqual({ type: 'cycle-brush', delta: 1 });
   });
 
+  it('leaves Shift+[ and Shift+] free for non-brush shortcuts', () => {
+    expect(
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: '{', code: 'BracketLeft', shiftKey: true })
+      )
+    ).toBeNull();
+    expect(
+      resolveDebugEditShortcutAction(
+        keyboardEventLike({ key: '}', code: 'BracketRight', shiftKey: true })
+      )
+    ).toBeNull();
+  });
+
   it('maps backslash to the debug-edit panel collapse toggle', () => {
     expect(
       resolveDebugEditShortcutAction(keyboardEventLike({ key: '\\', code: 'Backslash' }))

@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-15
+
+- Task: Add a hotbar slot reordering follow-up after inventory basics and save/load.
+- Changes: Updated [src/world/playerInventory.ts](../src/world/playerInventory.ts), [src/input/hotbarShortcuts.ts](../src/input/hotbarShortcuts.ts), [src/ui/hotbarOverlay.ts](../src/ui/hotbarOverlay.ts), and [src/main.ts](../src/main.ts) so the selected hotbar slot can swap left or right through shared overlay buttons plus desktop `Shift+[` / `Shift+]` while the full `Debug Edit` panel is hidden, with selection following the moved slot and reordered hotbars persisting through browser resume plus world-save export/import; expanded [src/world/playerInventory.test.ts](../src/world/playerInventory.test.ts), [src/input/hotbarShortcuts.test.ts](../src/input/hotbarShortcuts.test.ts), [src/input/debugEditShortcuts.test.ts](../src/input/debugEditShortcuts.test.ts), [src/ui/hotbarOverlay.test.ts](../src/ui/hotbarOverlay.test.ts), [src/ui/touchDebugEditControls.test.ts](../src/ui/touchDebugEditControls.test.ts), [src/mainWorldSave.test.ts](../src/mainWorldSave.test.ts), [src/mainWorldSessionSave.test.ts](../src/mainWorldSessionSave.test.ts), [src/mainWorldSessionRestore.test.ts](../src/mainWorldSessionRestore.test.ts), and [src/main.test.ts](../src/main.test.ts) with deterministic slot-swap, shortcut, overlay, and persistence regressions; removed completed task `572` from [docs/NEXT.md](docs/NEXT.md), added replacement task `576`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/playerInventory.test.ts src/input/hotbarShortcuts.test.ts src/input/debugEditShortcuts.test.ts src/ui/hotbarOverlay.test.ts src/ui/touchDebugEditControls.test.ts src/mainWorldSave.test.ts src/mainWorldSessionSave.test.ts src/mainWorldSessionRestore.test.ts src/main.test.ts` (outside the sandbox after the expected Vitest `spawn EPERM` startup restriction in-sandbox).
+
 ## 2026-03-14
 
 - Task: Fix rope atlas placement so the in-game mesh no longer stretches the sprite width.

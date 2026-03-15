@@ -43,7 +43,10 @@ import {
   resolveDebugEditShortcutAction,
   type DebugEditShortcutAction
 } from './input/debugEditShortcuts';
-import { resolveHotbarSlotShortcut } from './input/hotbarShortcuts';
+import {
+  resolveHotbarSlotShortcut,
+  resolveMoveSelectedHotbarSlotShortcut
+} from './input/hotbarShortcuts';
 import {
   resolveDropOneSelectedHotbarItemShortcut,
   resolveDropSelectedHotbarStackShortcut
@@ -219,6 +222,7 @@ import {
   clonePlayerInventoryState,
   consumePlayerInventoryHotbarSlotItem,
   createDefaultPlayerInventoryState,
+  movePlayerInventorySelectedHotbarSlot,
   setPlayerInventoryHotbarSlot,
   setPlayerInventorySelectedHotbarSlot,
   type PlayerInventoryState
@@ -1032,6 +1036,12 @@ const bootstrap = async (): Promise<void> => {
     onSelectSlot: (slotIndex) => {
       selectStandalonePlayerHotbarSlot(slotIndex);
     },
+    onMoveSelectedLeft: () => {
+      moveSelectedStandalonePlayerHotbarSlot(-1);
+    },
+    onMoveSelectedRight: () => {
+      moveSelectedStandalonePlayerHotbarSlot(1);
+    },
     onDropSelectedOne: () => {
       dropSelectedStandalonePlayerHotbarItem();
     },
@@ -1525,6 +1535,11 @@ const bootstrap = async (): Promise<void> => {
   const selectStandalonePlayerHotbarSlot = (slotIndex: number): void => {
     applyStandalonePlayerInventoryState(
       setPlayerInventorySelectedHotbarSlot(standalonePlayerInventoryState, slotIndex)
+    );
+  };
+  const moveSelectedStandalonePlayerHotbarSlot = (direction: -1 | 1): void => {
+    applyStandalonePlayerInventoryState(
+      movePlayerInventorySelectedHotbarSlot(standalonePlayerInventoryState, direction)
     );
   };
   hotbarOverlay.update(standalonePlayerInventoryState);
@@ -3795,6 +3810,16 @@ const bootstrap = async (): Promise<void> => {
     if (dropSelectedHotbarStackShortcut) {
       event.preventDefault();
       dropSelectedStandalonePlayerHotbarStack();
+      return;
+    }
+
+    const moveSelectedHotbarSlotDirection =
+      currentScreen === 'in-world' && !debugEditControlsVisible
+        ? resolveMoveSelectedHotbarSlotShortcut(event)
+        : null;
+    if (moveSelectedHotbarSlotDirection !== null) {
+      event.preventDefault();
+      moveSelectedStandalonePlayerHotbarSlot(moveSelectedHotbarSlotDirection);
       return;
     }
 

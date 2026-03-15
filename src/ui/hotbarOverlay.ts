@@ -1,4 +1,8 @@
-import { getHotbarSlotShortcutLabel } from '../input/hotbarShortcuts';
+import {
+  getHotbarSlotShortcutLabel,
+  getMoveSelectedHotbarSlotLeftShortcutLabel,
+  getMoveSelectedHotbarSlotRightShortcutLabel
+} from '../input/hotbarShortcuts';
 import {
   getDropOneSelectedHotbarItemShortcutLabel,
   getDropSelectedHotbarStackShortcutLabel
@@ -12,6 +16,8 @@ import { installPointerClickFocusRelease } from './buttonFocus';
 interface HotbarOverlayOptions {
   host: HTMLElement;
   onSelectSlot?: (slotIndex: number) => void;
+  onMoveSelectedLeft?: () => void;
+  onMoveSelectedRight?: () => void;
   onDropSelectedOne?: () => void;
   onDropSelectedStack?: () => void;
 }
@@ -40,9 +46,13 @@ export class HotbarOverlay {
   private root: HTMLDivElement;
   private actionRow: HTMLDivElement;
   private slotRow: HTMLDivElement;
+  private moveLeftButton: HTMLButtonElement;
   private dropOneButton: HTMLButtonElement;
   private dropStackButton: HTMLButtonElement;
+  private moveRightButton: HTMLButtonElement;
   private dropEnabled = false;
+  private moveSelectedLeftEnabled = false;
+  private moveSelectedRightEnabled = false;
   private slots: HotbarSlotElements[] = [];
 
   constructor(options: HotbarOverlayOptions) {
@@ -61,16 +71,22 @@ export class HotbarOverlay {
 
     this.actionRow = document.createElement('div');
     this.actionRow.style.display = 'flex';
+    this.actionRow.style.flexWrap = 'wrap';
+    this.actionRow.style.justifyContent = 'center';
     this.actionRow.style.alignItems = 'center';
     this.actionRow.style.gap = '6px';
     this.actionRow.style.pointerEvents = 'none';
     this.root.append(this.actionRow);
 
-    const createActionButton = (label: string, onClick?: () => void): HTMLButtonElement => {
+    const createActionButton = (
+      label: string,
+      isEnabled: () => boolean,
+      onClick?: () => void
+    ): HTMLButtonElement => {
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = label;
-      button.style.minWidth = '92px';
+      button.style.minWidth = '76px';
       button.style.height = '32px';
       button.style.padding = '0 12px';
       button.style.borderRadius = '999px';
@@ -85,7 +101,7 @@ export class HotbarOverlay {
       button.style.transition =
         'transform 120ms ease, border-color 120ms ease, background 120ms ease, opacity 120ms ease';
       button.addEventListener('click', () => {
-        if (!this.dropEnabled) {
+        if (!isEnabled()) {
           return;
         }
         onClick?.();
@@ -94,11 +110,33 @@ export class HotbarOverlay {
       return button;
     };
 
-    this.dropOneButton = createActionButton('DROP 1', options.onDropSelectedOne);
+    this.moveLeftButton = createActionButton(
+      'LEFT',
+      () => this.moveSelectedLeftEnabled,
+      options.onMoveSelectedLeft
+    );
+    this.actionRow.append(this.moveLeftButton);
+
+    this.dropOneButton = createActionButton(
+      'DROP 1',
+      () => this.dropEnabled,
+      options.onDropSelectedOne
+    );
     this.actionRow.append(this.dropOneButton);
 
-    this.dropStackButton = createActionButton('DROP', options.onDropSelectedStack);
+    this.dropStackButton = createActionButton(
+      'DROP',
+      () => this.dropEnabled,
+      options.onDropSelectedStack
+    );
     this.actionRow.append(this.dropStackButton);
+
+    this.moveRightButton = createActionButton(
+      'RIGHT',
+      () => this.moveSelectedRightEnabled,
+      options.onMoveSelectedRight
+    );
+    this.actionRow.append(this.moveRightButton);
 
     this.slotRow = document.createElement('div');
     this.slotRow.style.display = 'flex';
@@ -200,21 +238,53 @@ export class HotbarOverlay {
 
     const selectedStack = state.hotbar[state.selectedHotbarSlotIndex] ?? null;
     this.dropEnabled = selectedStack !== null;
+    this.moveSelectedLeftEnabled = state.selectedHotbarSlotIndex > 0;
+    this.moveSelectedRightEnabled = state.selectedHotbarSlotIndex < this.slots.length - 1;
 
     const syncActionButton = (
       button: HTMLButtonElement,
+      enabled: boolean,
       activeBackground: string,
       activeBorderColor: string
     ): void => {
-      button.setAttribute('aria-disabled', this.dropEnabled ? 'false' : 'true');
-      button.style.opacity = this.dropEnabled ? '1' : '0.45';
+      button.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+      button.style.opacity = enabled ? '1' : '0.45';
       button.style.transform = 'translateY(0)';
-      button.style.background = this.dropEnabled ? activeBackground : 'rgba(10, 14, 20, 0.72)';
-      button.style.borderColor = this.dropEnabled ? activeBorderColor : 'rgba(255, 255, 255, 0.18)';
+      button.style.background = enabled ? activeBackground : 'rgba(10, 14, 20, 0.72)';
+      button.style.borderColor = enabled ? activeBorderColor : 'rgba(255, 255, 255, 0.18)';
     };
 
-    syncActionButton(this.dropOneButton, 'rgba(18, 42, 55, 0.9)', 'rgba(120, 220, 255, 0.52)');
-    syncActionButton(this.dropStackButton, 'rgba(45, 25, 18, 0.9)', 'rgba(255, 170, 120, 0.5)');
+    syncActionButton(
+      this.moveLeftButton,
+      this.moveSelectedLeftEnabled,
+      'rgba(25, 35, 56, 0.9)',
+      'rgba(150, 190, 255, 0.52)'
+    );
+    syncActionButton(
+      this.dropOneButton,
+      this.dropEnabled,
+      'rgba(18, 42, 55, 0.9)',
+      'rgba(120, 220, 255, 0.52)'
+    );
+    syncActionButton(
+      this.dropStackButton,
+      this.dropEnabled,
+      'rgba(45, 25, 18, 0.9)',
+      'rgba(255, 170, 120, 0.5)'
+    );
+    syncActionButton(
+      this.moveRightButton,
+      this.moveSelectedRightEnabled,
+      'rgba(25, 35, 56, 0.9)',
+      'rgba(150, 190, 255, 0.52)'
+    );
+
+    this.moveLeftButton.title = this.moveSelectedLeftEnabled
+      ? `Move selected hotbar slot left (${getMoveSelectedHotbarSlotLeftShortcutLabel()})`
+      : 'Selected hotbar slot is already the leftmost slot';
+    this.moveRightButton.title = this.moveSelectedRightEnabled
+      ? `Move selected hotbar slot right (${getMoveSelectedHotbarSlotRightShortcutLabel()})`
+      : 'Selected hotbar slot is already the rightmost slot';
 
     this.dropOneButton.title =
       selectedStack === null

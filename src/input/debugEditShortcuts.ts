@@ -291,10 +291,10 @@ export const resolveDebugEditShortcutAction = (
     return { type: 'arm-ellipse-outline', kind: event.shiftKey ? 'break' : 'place' };
   }
 
-  if (code === 'BracketLeft' || (!code && event.key === '[')) {
+  if (!event.shiftKey && (code === 'BracketLeft' || (!code && event.key === '['))) {
     return { type: 'cycle-brush', delta: -1 };
   }
-  if (code === 'BracketRight' || (!code && event.key === ']')) {
+  if (!event.shiftKey && (code === 'BracketRight' || (!code && event.key === ']'))) {
     return { type: 'cycle-brush', delta: 1 };
   }
 

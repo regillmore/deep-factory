@@ -30,8 +30,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 536. Add a starter background-wall placement slice after starter building-block placement and inventory basics: stackable dirt-wall hotbar slots, mixed-device enclosed-wall placement against solid blocks or existing walls, stack consumption, and save/load regressions for placed walls plus remaining stack counts.
 550. Add a rope pickup-refund follow-up after rope traversal utility slice and dropped-item pickup: removing placed rope tiles should spawn rope pickup entities, and add deterministic refund regressions plus snapshot coverage for the returned rope stacks.
 559. Add a browser-resume save-normalization follow-up after dropped-item restore consolidation: when boot-time restore collapses overlapping matching world pickups, rewrite the persisted world save immediately instead of waiting for the next pause or pagehide, and add persistence regressions for the normalized pickup set.
-572. Add a hotbar slot reordering follow-up after inventory basics and save/load: mixed-device move-left/right selected-slot controls, persistent slot order through browser resume plus export/import, and deterministic slot-swap regressions.
 575. Add a torch tile mesh to public/atlas/tile-atlas.png after the rope full-square atlas fix: carve or grow a dedicated authored torch region that preserves the spare unused slot and exterior padding, repoint torch render metadata away from lava art, and add atlas regressions.
+576. Add a pointer-drag hotbar reorder follow-up after hotbar slot reordering and inventory basics: let desktop and touch drag one hotbar slot onto another in the overlay, preserve selection with the moved slot, and add deterministic drag-swap regressions plus save coverage.
 
 ## Telemetry
 

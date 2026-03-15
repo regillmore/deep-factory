@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-15: Hotbar reordering keeps selection attached to the moved slot
+
+- Decision: One-step hotbar reordering now swaps the selected slot with its immediate left or right neighbor and moves `selectedHotbarSlotIndex` onto that destination, even when the selected slot is empty.
+- Reason: Treating reordering as moving the selected slot keeps overlay buttons, keyboard shortcuts, persistence, and future drag-reorder work aligned around one consistent model instead of splitting slot movement from selection movement.
+- Consequence: Future hotbar swap or drag-reorder follow-ups should preserve selection with the moved slot unless the same pass explicitly introduces a separate cursor-only action.
+
 ### 2026-03-14: Rope art uses a full tile atlas square because default tile quads render full width
 
 - Decision: Rope render metadata now points at authored atlas region `19`, a full `16x16` square whose visible strand is centered inside transparent padding, while the narrow utility slot at region `20` stays intentionally unused and the right-side exterior padding strip remains transparent.

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { CHUNK_SIZE } from './world/constants';
 import { createPlayerDeathState } from './world/playerDeathState';
 import { createDroppedItemState } from './world/droppedItem';
-import { createDefaultPlayerInventoryState } from './world/playerInventory';
+import { createPlayerInventoryState } from './world/playerInventory';
 import { createPlayerState } from './world/playerState';
 import { TileWorld } from './world/world';
 import { createWorldSessionSaveEnvelope } from './mainWorldSessionSave';
@@ -27,7 +27,15 @@ describe('createWorldSessionSaveEnvelope', () => {
       fallDamageRecoverySecondsRemaining: 0.2
     });
     const standalonePlayerDeathState = createPlayerDeathState(0.5);
-    const standalonePlayerInventoryState = createDefaultPlayerInventoryState();
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'dirt-block', amount: 64 },
+        ...Array.from({ length: 7 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 2
+    });
     const droppedItemStates = [
       createDroppedItemState({
         position: { x: 24, y: -14 },
@@ -75,10 +83,23 @@ describe('createWorldSessionSaveEnvelope', () => {
     expect(restoredEnvelopeWorld.getTile(worldTileX, worldTileY)).toBe(6);
     expect(envelope.session.standalonePlayerState?.position.x).toBe(72);
     expect(envelope.session.standalonePlayerDeathState?.respawnSecondsRemaining).toBe(0.5);
-    expect(envelope.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
-      itemId: 'dirt-block',
-      amount: 64
-    });
+    expect(envelope.session.standalonePlayerInventoryState).toEqual(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          { itemId: 'dirt-block', amount: 64 },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        selectedHotbarSlotIndex: 2
+      })
+    );
     expect(envelope.session.droppedItemStates).toEqual(droppedItemStates);
     expect(envelope.session.cameraFollowOffset.x).toBe(18);
   });
@@ -88,7 +109,7 @@ describe('createWorldSessionSaveEnvelope', () => {
       createWorldSnapshot: vi.fn(() => new TileWorld(0).createSnapshot()),
       getStandalonePlayerState: vi.fn(() => null),
       getStandalonePlayerDeathState: vi.fn(() => null),
-      getStandalonePlayerInventoryState: vi.fn(() => createDefaultPlayerInventoryState()),
+      getStandalonePlayerInventoryState: vi.fn(() => createPlayerInventoryState()),
       getDroppedItemStates: vi.fn(() => []),
       getCameraFollowOffset: vi.fn(() => ({ x: -24, y: 10 }))
     };
@@ -104,9 +125,7 @@ describe('createWorldSessionSaveEnvelope', () => {
 
     expect(envelope.session.standalonePlayerState).toBeNull();
     expect(envelope.session.standalonePlayerDeathState).toBeNull();
-    expect(envelope.session.standalonePlayerInventoryState).toEqual(
-      createDefaultPlayerInventoryState()
-    );
+    expect(envelope.session.standalonePlayerInventoryState).toEqual(createPlayerInventoryState());
     expect(envelope.session.droppedItemStates).toEqual([]);
     expect(envelope.session.cameraFollowOffset).toEqual({ x: -24, y: 10 });
     expect(envelope.migration).toEqual(migration);

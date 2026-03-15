@@ -4,7 +4,11 @@ import { createWorldSaveEnvelope } from './mainWorldSave';
 import { restoreWorldSessionFromSaveEnvelope } from './mainWorldSessionRestore';
 import { createPlayerDeathState, type PlayerDeathState } from './world/playerDeathState';
 import { createDroppedItemState, type DroppedItemState } from './world/droppedItem';
-import { createDefaultPlayerInventoryState, type PlayerInventoryState } from './world/playerInventory';
+import {
+  createDefaultPlayerInventoryState,
+  createPlayerInventoryState,
+  type PlayerInventoryState
+} from './world/playerInventory';
 import { createPlayerState, type PlayerState } from './world/playerState';
 import { TileWorld } from './world/world';
 
@@ -24,7 +28,15 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       fallDamageRecoverySecondsRemaining: 0.2
     });
     const standalonePlayerDeathState = createPlayerDeathState(0.5);
-    const standalonePlayerInventoryState = createDefaultPlayerInventoryState();
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'dirt-block', amount: 64 },
+        ...Array.from({ length: 7 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 2
+    });
     const droppedItemStates = [
       createDroppedItemState({
         position: { x: 24, y: -14 },
@@ -148,7 +160,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       worldSnapshot: world.createSnapshot(),
       standalonePlayerState: createPlayerState(),
       standalonePlayerDeathState: null,
-      standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+      standalonePlayerInventoryState: createPlayerInventoryState(),
       droppedItemStates: [
         createDroppedItemState({
           position: { x: 24, y: -14 },

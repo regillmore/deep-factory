@@ -35,6 +35,8 @@ export interface ConsumePlayerInventoryHotbarSlotItemResult {
   consumed: boolean;
 }
 
+export type MovePlayerInventorySelectedHotbarSlotDirection = -1 | 1;
+
 const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
   Record<PlayerInventoryItemId, PlayerInventoryItemDefinition>
 > = {
@@ -189,6 +191,55 @@ export const setPlayerInventoryHotbarSlot = (
     hotbar: nextHotbar,
     selectedHotbarSlotIndex: state.selectedHotbarSlotIndex
   });
+};
+
+export const swapPlayerInventoryHotbarSlots = (
+  state: PlayerInventoryState,
+  sourceSlotIndex: number,
+  targetSlotIndex: number
+): PlayerInventoryState => {
+  validateHotbarSlotIndex(sourceSlotIndex, 'sourceSlotIndex');
+  validateHotbarSlotIndex(targetSlotIndex, 'targetSlotIndex');
+  if (sourceSlotIndex === targetSlotIndex) {
+    return clonePlayerInventoryState(state);
+  }
+
+  const nextHotbar = state.hotbar.map((entry) => clonePlayerInventoryItemStack(entry));
+  const sourceStack = nextHotbar[sourceSlotIndex] ?? null;
+  nextHotbar[sourceSlotIndex] = nextHotbar[targetSlotIndex] ?? null;
+  nextHotbar[targetSlotIndex] = sourceStack;
+
+  let selectedHotbarSlotIndex = state.selectedHotbarSlotIndex;
+  if (selectedHotbarSlotIndex === sourceSlotIndex) {
+    selectedHotbarSlotIndex = targetSlotIndex;
+  } else if (selectedHotbarSlotIndex === targetSlotIndex) {
+    selectedHotbarSlotIndex = sourceSlotIndex;
+  }
+
+  return createPlayerInventoryState({
+    hotbar: nextHotbar,
+    selectedHotbarSlotIndex
+  });
+};
+
+export const movePlayerInventorySelectedHotbarSlot = (
+  state: PlayerInventoryState,
+  direction: MovePlayerInventorySelectedHotbarSlotDirection
+): PlayerInventoryState => {
+  if (direction !== -1 && direction !== 1) {
+    throw new Error('direction must be -1 or 1');
+  }
+
+  const targetSlotIndex = state.selectedHotbarSlotIndex + direction;
+  if (targetSlotIndex < 0 || targetSlotIndex >= PLAYER_INVENTORY_HOTBAR_SLOT_COUNT) {
+    return clonePlayerInventoryState(state);
+  }
+
+  return swapPlayerInventoryHotbarSlots(
+    state,
+    state.selectedHotbarSlotIndex,
+    targetSlotIndex
+  );
 };
 
 export const addPlayerInventoryItemStack = (

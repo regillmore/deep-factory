@@ -4,7 +4,7 @@ import { CHUNK_SIZE } from './world/constants';
 import { encodeResidentChunkSnapshot } from './world/chunkSnapshot';
 import { createPlayerDeathState } from './world/playerDeathState';
 import { createDroppedItemState } from './world/droppedItem';
-import { createDefaultPlayerInventoryState } from './world/playerInventory';
+import { createDefaultPlayerInventoryState, createPlayerInventoryState } from './world/playerInventory';
 import {
   createPlayerState,
   DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
@@ -149,6 +149,36 @@ describe('createWorldSaveEnvelope', () => {
       itemId: 'rope',
       amount: 23
     });
+  });
+
+  it('round-trips reordered hotbar slot order and selection through save decode', () => {
+    const world = new TileWorld(0);
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'dirt-block', amount: 64 },
+        ...Array.from({ length: 7 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 2
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    expect(decoded.session.standalonePlayerInventoryState).toEqual(standalonePlayerInventoryState);
   });
 
   it('round-trips dropped-item entity stacks through save decode', () => {
