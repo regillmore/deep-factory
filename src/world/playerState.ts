@@ -79,6 +79,7 @@ export interface StepPlayerStateOptions extends StepPlayerStateWithGravityOption
   groundDeceleration?: number;
   jumpSpeed?: number;
   ropeClimbSpeed?: number;
+  ropeCenteringSpeed?: number;
   maxBreathSeconds?: number;
   breathRecoveryPerSecond?: number;
   waterBuoyancyAcceleration?: number;
@@ -103,6 +104,7 @@ export const DEFAULT_PLAYER_AIR_ACCELERATION = 900;
 export const DEFAULT_PLAYER_GROUND_DECELERATION = 2400;
 export const DEFAULT_PLAYER_JUMP_SPEED = 520;
 export const DEFAULT_PLAYER_ROPE_CLIMB_SPEED = 120;
+export const DEFAULT_PLAYER_ROPE_CENTERING_SPEED = 24;
 export const DEFAULT_PLAYER_MAX_HEALTH = 100;
 export const DEFAULT_PLAYER_MAX_BREATH_SECONDS = 8;
 export const DEFAULT_PLAYER_BREATH_RECOVERY_PER_SECOND = 4;
@@ -413,23 +415,29 @@ const samplePlayerLiquidOverlapState = (
   };
 };
 
-const isAabbOverlappingClimbableTile = (
+const getAabbOverlappingClimbableTileCenterX = (
   world: TileWorld,
   aabb: WorldAabb,
   registry: TileMetadataRegistry
-): boolean => {
+): number | null => {
   const climbTileX = Math.floor(((aabb.minX + aabb.maxX) * 0.5) / TILE_SIZE);
   const minTileY = Math.floor(aabb.minY / TILE_SIZE);
   const maxTileY = Math.floor((aabb.maxY - AABB_INTERSECTION_EPSILON) / TILE_SIZE);
 
   for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
     if (isTileClimbable(world.getTile(climbTileX, tileY), registry)) {
-      return true;
+      return climbTileX * TILE_SIZE + TILE_SIZE * 0.5;
     }
   }
 
-  return false;
+  return null;
 };
+
+const isAabbOverlappingClimbableTile = (
+  world: TileWorld,
+  aabb: WorldAabb,
+  registry: TileMetadataRegistry
+): boolean => getAabbOverlappingClimbableTileCenterX(world, aabb, registry) !== null;
 
 const isPlayerOverlappingClimbableTile = (
   world: TileWorld,
@@ -838,6 +846,10 @@ export const stepPlayerState = (
     options.ropeClimbSpeed ?? DEFAULT_PLAYER_ROPE_CLIMB_SPEED,
     'options.ropeClimbSpeed'
   );
+  const ropeCenteringSpeed = expectNonNegativeFiniteNumber(
+    options.ropeCenteringSpeed ?? DEFAULT_PLAYER_ROPE_CENTERING_SPEED,
+    'options.ropeCenteringSpeed'
+  );
   const maxBreathSeconds = expectPositiveFiniteNumber(
     options.maxBreathSeconds ?? DEFAULT_PLAYER_MAX_BREATH_SECONDS,
     'options.maxBreathSeconds'
@@ -906,6 +918,7 @@ export const stepPlayerState = (
   let velocityY = state.velocity.y;
   let grounded = state.grounded;
   let activelyOverlappingClimbableTile = overlappingClimbableTile;
+  let ropeCenteringApplied = false;
   const shouldJumpOffRope =
     overlappingClimbableTile && intent.jumpPressed === true && moveX !== 0;
 
@@ -913,14 +926,25 @@ export const stepPlayerState = (
     const initialAabb = getPlayerAabb(state);
     const horizontalSweep = sweepAabbAlongAxis(world, initialAabb, 'x', velocityX * dt, registry);
     const afterHorizontalAabb = offsetAabb(initialAabb, horizontalSweep.allowedDelta, 0);
-
-    // Check rope overlap after the same horizontal sweep order used by collisions so sideways
-    // detaches resume gravity immediately instead of holding for one sticky extra tick.
-    activelyOverlappingClimbableTile = isAabbOverlappingClimbableTile(
+    const activelyOverlappingClimbableTileCenterX = getAabbOverlappingClimbableTileCenterX(
       world,
       afterHorizontalAabb,
       registry
     );
+
+    // Check rope overlap after the same horizontal sweep order used by collisions so sideways
+    // detaches resume gravity immediately instead of holding for one sticky extra tick.
+    activelyOverlappingClimbableTile = activelyOverlappingClimbableTileCenterX !== null;
+
+    if (activelyOverlappingClimbableTile && moveX === 0 && activelyOverlappingClimbableTileCenterX !== null) {
+      const centeredPositionX = moveTowards(
+        (afterHorizontalAabb.minX + afterHorizontalAabb.maxX) * 0.5,
+        activelyOverlappingClimbableTileCenterX,
+        ropeCenteringSpeed * dt
+      );
+      velocityX = (centeredPositionX - state.position.x) / dt;
+      ropeCenteringApplied = centeredPositionX !== state.position.x;
+    }
   }
 
   if (shouldJumpOffRope) {
@@ -1023,6 +1047,7 @@ export const stepPlayerState = (
 
   return {
     ...steppedPlayerState,
+    facing: ropeCenteringApplied ? state.facing : steppedPlayerState.facing,
     health: fallDamageStepState.health,
     fallDamageRecoverySecondsRemaining: fallDamageStepState.fallDamageRecoverySecondsRemaining
   };

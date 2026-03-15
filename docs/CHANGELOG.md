@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-14
 
+- Task: Apply a gentle horizontal self-centering when a player is over a rope tile.
+- Changes: Updated [src/world/playerState.ts](../src/world/playerState.ts) so neutral horizontal input on a rope now applies a bounded horizontal nudge back toward the rope column without flipping player facing, expanded [src/world/playerState.test.ts](../src/world/playerState.test.ts) with deterministic rope-centering and option-validation regressions, removed completed task `561` from [docs/NEXT.md](docs/NEXT.md), added replacement task `565`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/playerState.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a rope jump-off follow-up after rope traversal utility slice.
 - Changes: Updated [src/world/playerState.ts](../src/world/playerState.ts) so a fresh jump press with left or right input now releases rope hold into the normal jump path even when the same fixed step has not yet moved the player out of the rope column, expanded [src/world/playerState.test.ts](../src/world/playerState.test.ts) with deterministic rope jump-off and held-climb regressions, updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the controls preview and in-world shortcuts reference now mention rope jump-off, removed completed task `563` from [docs/NEXT.md](docs/NEXT.md), added replacement task `564`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/playerState.test.ts src/ui/appShell.test.ts` (outside the sandbox after the expected Vitest `spawn EPERM` startup restriction in-sandbox) and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

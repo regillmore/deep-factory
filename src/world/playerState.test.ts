@@ -25,6 +25,7 @@ import {
   DEFAULT_PLAYER_MAX_HEALTH,
   DEFAULT_PLAYER_MAX_FALL_SPEED,
   DEFAULT_PLAYER_ROPE_CLIMB_SPEED,
+  DEFAULT_PLAYER_ROPE_CENTERING_SPEED,
   DEFAULT_PLAYER_MAX_WALK_SPEED,
   DEFAULT_PLAYER_WATER_BUOYANCY_ACCELERATION,
   DEFAULT_PLAYER_WATER_HORIZONTAL_DRAG_PER_SECOND,
@@ -654,6 +655,38 @@ describe('playerState', () => {
     expect(stepped).toEqual(withDefaultPlayerVitals({
       position: { x: 8, y: -16 },
       velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    }));
+  });
+
+  it('gently recenters neutral rope hold toward the rope column without flipping facing', () => {
+    const world = new TileWorld(0);
+    setTiles(world, -2, -4, 2, 2, 0);
+    world.setTile(0, -2, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -1, STARTER_ROPE_TILE_ID);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 12, y: -16 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        facing: 'right'
+      }),
+      1 / 60,
+      {},
+      {
+        ropeCenteringSpeed: 24,
+        gravityAcceleration: 80,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual(withDefaultPlayerVitals({
+      position: { x: 11.600000000000001, y: -16 },
+      velocity: { x: -24.00000000000002, y: 0 },
       size: { width: 12, height: 12 },
       grounded: false,
       facing: 'right'
@@ -1506,6 +1539,11 @@ describe('playerState', () => {
         ropeClimbSpeed: -DEFAULT_PLAYER_ROPE_CLIMB_SPEED
       })
     ).toThrowError(/options\.ropeClimbSpeed must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        ropeCenteringSpeed: -DEFAULT_PLAYER_ROPE_CENTERING_SPEED
+      })
+    ).toThrowError(/options\.ropeCenteringSpeed must be a non-negative finite number/);
     expect(() =>
       stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
         maxBreathSeconds: 0

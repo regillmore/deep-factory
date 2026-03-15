@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Rope self-centering only nudges during neutral horizontal input
+
+- Decision: While the player still overlaps a rope after the horizontal sweep, rope traversal now applies a bounded horizontal nudge back toward the rope column only when left/right input is neutral, and that assist preserves the prior facing.
+- Reason: Neutral-input centering makes rope navigation easier after small drift without fighting deliberate detach input or flipping the placeholder sprite because of an auto-centering correction.
+- Consequence: Future rope, vine, ladder, or other climbable follow-ups should treat self-centering as a neutral-input assist and keep facing driven by player intent or actual traversal, not by the assist itself.
+
 ### 2026-03-14: Starter rope extends downward from the tile above and reuses shared climb intent
 
 - Decision: Starter rope placement now allows empty target tiles only when the direct tile above is solid or already climbable, and rope traversal now flows through one shared vertical climb intent where `W`/`Up`/`Space` climbs up and `S`/`Down` climbs down.
