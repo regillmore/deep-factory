@@ -2524,8 +2524,8 @@ describe('resolveAppShellViewModel', () => {
       {
         title: 'Controls Preview',
         lines: [
-          'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow; press Jump plus Left or Right on a rope to jump off.',
-          'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons.'
+          'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow; double tap and hold S or Down Arrow on a rope to drop to the bottom; press Jump plus Left or Right on a rope to jump off.',
+          'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons; double tap and hold Down on a rope to drop to the bottom.'
         ],
         metadataRows: [
           {
@@ -3688,8 +3688,8 @@ describe('createFirstLaunchMainMenuShellState', () => {
         {
         title: 'Controls Preview',
         lines: [
-            'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow; press Jump plus Left or Right on a rope to jump off.',
-            'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons.'
+            'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow; double tap and hold S or Down Arrow on a rope to drop to the bottom; press Jump plus Left or Right on a rope to jump off.',
+            'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons; double tap and hold Down on a rope to drop to the bottom.'
         ],
         metadataRows: [
             {
@@ -3763,8 +3763,8 @@ describe('createFirstLaunchMainMenuShellState', () => {
         {
         title: 'Controls Preview',
         lines: [
-            'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow; press Jump plus Left or Right on a rope to jump off.',
-            'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons.'
+            'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow; double tap and hold S or Down Arrow on a rope to drop to the bottom; press Jump plus Left or Right on a rope to jump off.',
+            'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons; double tap and hold Down on a rope to drop to the bottom.'
         ],
         metadataRows: [
             {

@@ -754,6 +754,117 @@ describe('playerState', () => {
     }));
   });
 
+  it('releases rope hold into a faster drop while ropeDropHeld stays active', () => {
+    const world = new TileWorld(0);
+    setTiles(world, -2, -6, 2, 2, 0);
+    world.setTile(0, -4, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -3, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -2, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -1, STARTER_ROPE_TILE_ID);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -48 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      { climbY: 1, ropeDropHeld: true },
+      {
+        ropeClimbSpeed: 60,
+        gravityAcceleration: 320,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual(withDefaultPlayerVitals({
+      position: { x: 8, y: -28 },
+      velocity: { x: 0, y: 80 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    }));
+  });
+
+  it('regrabs the rope as soon as ropeDropHeld is released while still overlapping the column', () => {
+    const world = new TileWorld(0);
+    setTiles(world, -2, -6, 2, 2, 0);
+    world.setTile(0, -4, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -3, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -2, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -1, STARTER_ROPE_TILE_ID);
+
+    const dropped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -48 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      { climbY: 1, ropeDropHeld: true },
+      {
+        ropeClimbSpeed: 60,
+        gravityAcceleration: 320,
+        maxFallSpeed: 200
+      }
+    );
+
+    const regrabbed = stepPlayerState(
+      world,
+      dropped,
+      0.25,
+      {},
+      {
+        ropeClimbSpeed: 60,
+        gravityAcceleration: 320,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(regrabbed).toEqual(withDefaultPlayerVitals({
+      position: { x: 8, y: -28 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    }));
+  });
+
+  it('auto-catches at the rope bottom instead of falling past the last segment during a rope drop', () => {
+    const world = new TileWorld(0);
+    setTiles(world, -2, -6, 2, 2, 0);
+    world.setTile(0, -4, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -3, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -2, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -1, STARTER_ROPE_TILE_ID);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -4 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      { climbY: 1, ropeDropHeld: true },
+      {
+        ropeClimbSpeed: 60,
+        gravityAcceleration: 320,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual(withDefaultPlayerVitals({
+      position: { x: 8, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    }));
+  });
+
   it('jumps off a rope on a fresh jump press with horizontal input even before leaving the rope column', () => {
     const world = new TileWorld(0);
     world.setTile(0, -2, STARTER_ROPE_TILE_ID);

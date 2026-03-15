@@ -65,6 +65,7 @@ export interface PlayerMovementIntent {
   moveX?: number;
   jumpPressed?: boolean;
   climbY?: number;
+  ropeDropHeld?: boolean;
 }
 
 export interface StepPlayerStateWithGravityOptions {
@@ -130,6 +131,13 @@ interface PlayerLiquidOverlapState {
   waterSubmergedFraction: number;
   waterBreathSubmergedFraction: number;
   lavaSubmergedFraction: number;
+}
+
+interface AabbOverlappingClimbableTileInfo {
+  tileX: number;
+  highestTileY: number;
+  lowestTileY: number;
+  centerX: number;
 }
 
 const expectFiniteNumber = (value: number, label: string): number => {
@@ -415,22 +423,43 @@ const samplePlayerLiquidOverlapState = (
   };
 };
 
+const getAabbOverlappingClimbableTileInfo = (
+  world: TileWorld,
+  aabb: WorldAabb,
+  registry: TileMetadataRegistry
+): AabbOverlappingClimbableTileInfo | null => {
+  const climbTileX = Math.floor(((aabb.minX + aabb.maxX) * 0.5) / TILE_SIZE);
+  const minTileY = Math.floor(aabb.minY / TILE_SIZE);
+  const maxTileY = Math.floor((aabb.maxY - AABB_INTERSECTION_EPSILON) / TILE_SIZE);
+  let highestTileY: number | null = null;
+  let lowestTileY: number | null = null;
+
+  for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
+    if (isTileClimbable(world.getTile(climbTileX, tileY), registry)) {
+      highestTileY ??= tileY;
+      lowestTileY = tileY;
+    }
+  }
+
+  if (highestTileY === null || lowestTileY === null) {
+    return null;
+  }
+
+  return {
+    tileX: climbTileX,
+    highestTileY,
+    lowestTileY,
+    centerX: climbTileX * TILE_SIZE + TILE_SIZE * 0.5
+  };
+};
+
 const getAabbOverlappingClimbableTileCenterX = (
   world: TileWorld,
   aabb: WorldAabb,
   registry: TileMetadataRegistry
 ): number | null => {
-  const climbTileX = Math.floor(((aabb.minX + aabb.maxX) * 0.5) / TILE_SIZE);
-  const minTileY = Math.floor(aabb.minY / TILE_SIZE);
-  const maxTileY = Math.floor((aabb.maxY - AABB_INTERSECTION_EPSILON) / TILE_SIZE);
-
-  for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
-    if (isTileClimbable(world.getTile(climbTileX, tileY), registry)) {
-      return climbTileX * TILE_SIZE + TILE_SIZE * 0.5;
-    }
-  }
-
-  return null;
+  const climbableTileInfo = getAabbOverlappingClimbableTileInfo(world, aabb, registry);
+  return climbableTileInfo?.centerX ?? null;
 };
 
 const isAabbOverlappingClimbableTile = (
@@ -444,6 +473,23 @@ const isPlayerOverlappingClimbableTile = (
   state: PlayerState,
   registry: TileMetadataRegistry
 ): boolean => isAabbOverlappingClimbableTile(world, getPlayerAabb(state), registry);
+
+const resolveRopeDropCatchBottomY = (
+  world: TileWorld,
+  climbableTileInfo: AabbOverlappingClimbableTileInfo | null,
+  registry: TileMetadataRegistry
+): number | null => {
+  if (climbableTileInfo === null) {
+    return null;
+  }
+
+  const nextTileY = climbableTileInfo.lowestTileY + 1;
+  if (isTileClimbable(world.getTile(climbableTileInfo.tileX, nextTileY), registry)) {
+    return null;
+  }
+
+  return nextTileY * TILE_SIZE;
+};
 
 const recoverBreathSecondsRemaining = (
   breathSecondsRemaining: number,
@@ -817,6 +863,7 @@ export const stepPlayerState = (
   const dt = expectNonNegativeFiniteNumber(fixedDtSeconds, 'fixedDtSeconds');
   const moveX = normalizeMoveXIntent(intent.moveX);
   const climbY = normalizeClimbYIntent(intent.climbY);
+  const ropeDropHeld = intent.ropeDropHeld === true;
   const gravityAcceleration = expectNonNegativeFiniteNumber(
     options.gravityAcceleration ?? DEFAULT_PLAYER_GRAVITY_ACCELERATION,
     'options.gravityAcceleration'
@@ -905,7 +952,7 @@ export const stepPlayerState = (
     );
   const liquidOverlapState = samplePlayerLiquidOverlapState(world, state, registry);
   const overlappingClimbableTile = isPlayerOverlappingClimbableTile(world, state, registry);
-  const applyRopeHorizontalBraking = overlappingClimbableTile && moveX === 0;
+  const applyRopeHorizontalBraking = overlappingClimbableTile && moveX === 0 && !ropeDropHeld;
   let velocityX = resolveHorizontalVelocityFromIntent(
     state.velocity.x,
     moveX,
@@ -920,14 +967,15 @@ export const stepPlayerState = (
   let grounded = state.grounded;
   let activelyOverlappingClimbableTile = overlappingClimbableTile;
   let ropeCenteringApplied = false;
+  let ropeDropCatchBottomY: number | null = null;
   const shouldJumpOffRope =
-    overlappingClimbableTile && intent.jumpPressed === true && moveX !== 0;
+    overlappingClimbableTile && !ropeDropHeld && intent.jumpPressed === true && moveX !== 0;
 
   if (overlappingClimbableTile) {
     const initialAabb = getPlayerAabb(state);
     const horizontalSweep = sweepAabbAlongAxis(world, initialAabb, 'x', velocityX * dt, registry);
     const afterHorizontalAabb = offsetAabb(initialAabb, horizontalSweep.allowedDelta, 0);
-    const activelyOverlappingClimbableTileCenterX = getAabbOverlappingClimbableTileCenterX(
+    const activelyOverlappingClimbableTileInfo = getAabbOverlappingClimbableTileInfo(
       world,
       afterHorizontalAabb,
       registry
@@ -935,16 +983,29 @@ export const stepPlayerState = (
 
     // Check rope overlap after the same horizontal sweep order used by collisions so sideways
     // detaches resume gravity immediately instead of holding for one sticky extra tick.
-    activelyOverlappingClimbableTile = activelyOverlappingClimbableTileCenterX !== null;
+    activelyOverlappingClimbableTile = activelyOverlappingClimbableTileInfo !== null;
 
-    if (activelyOverlappingClimbableTile && moveX === 0 && activelyOverlappingClimbableTileCenterX !== null) {
+    if (
+      activelyOverlappingClimbableTile &&
+      moveX === 0 &&
+      activelyOverlappingClimbableTileInfo !== null &&
+      !ropeDropHeld
+    ) {
       const centeredPositionX = moveTowards(
         (afterHorizontalAabb.minX + afterHorizontalAabb.maxX) * 0.5,
-        activelyOverlappingClimbableTileCenterX,
+        activelyOverlappingClimbableTileInfo.centerX,
         ropeCenteringSpeed * dt
       );
       velocityX = (centeredPositionX - state.position.x) / dt;
       ropeCenteringApplied = centeredPositionX !== state.position.x;
+    }
+
+    if (ropeDropHeld) {
+      ropeDropCatchBottomY = resolveRopeDropCatchBottomY(
+        world,
+        activelyOverlappingClimbableTileInfo,
+        registry
+      );
     }
   }
 
@@ -959,7 +1020,7 @@ export const stepPlayerState = (
     grounded = false;
   }
 
-  if (activelyOverlappingClimbableTile) {
+  if (activelyOverlappingClimbableTile && !ropeDropHeld) {
     grounded = false;
     if (climbY < 0) {
       velocityY = -ropeClimbSpeed;
@@ -1007,7 +1068,7 @@ export const stepPlayerState = (
     drowningDamageTickIntervalSeconds
   });
 
-  const steppedPlayerState = movePlayerStateWithCollisions(
+  let steppedPlayerState = movePlayerStateWithCollisions(
     world,
     {
       position: {
@@ -1034,6 +1095,21 @@ export const stepPlayerState = (
     dt,
     registry
   );
+
+  if (ropeDropCatchBottomY !== null && steppedPlayerState.position.y > ropeDropCatchBottomY) {
+    steppedPlayerState = {
+      ...steppedPlayerState,
+      position: {
+        x: steppedPlayerState.position.x,
+        y: ropeDropCatchBottomY
+      },
+      velocity: {
+        x: steppedPlayerState.velocity.x,
+        y: 0
+      }
+    };
+  }
+
   const fallDamageStepState = resolveFallDamageStepState({
     previousGrounded: state.grounded,
     nextGrounded: steppedPlayerState.grounded,

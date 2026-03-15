@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Rope quick-drop uses a short down tap followed by a held second press
+
+- Decision: Rope quick-drop now activates only when one short down press or tap is released and a second down press stays held within the shared double-tap window, and once active it ignores ordinary rope hold until that held input releases or the rope bottom catches the player.
+- Reason: Ordinary held down input already owns readable slow rope descent on both desktop and touch, so fast drop needs a deliberate shared gesture instead of overloading the default climb-down hold.
+- Consequence: Future rope, vine, ladder, or other climbable quick-descend follow-ups should preserve this deliberate arm-and-hold gesture with bottom catch rather than turning ordinary climb-down hold into the fast-drop path.
+
 ### 2026-03-14: Rope contact uses grounded-style braking for neutral horizontal inertia
 
 - Decision: While the player overlaps a rope and left/right input is neutral, rope traversal now applies the same horizontal braking used for grounded movement before rope hold and centering resolve.

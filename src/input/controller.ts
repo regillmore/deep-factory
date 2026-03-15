@@ -366,6 +366,65 @@ export const isPlayerJumpControlKey = (key: string): boolean =>
 export const isPlayerClimbDownControlKey = (key: string): boolean =>
   key === 's' || key === 'arrowdown';
 
+export const PLAYER_ROPE_DROP_DOUBLE_TAP_WINDOW_MS = 300;
+export const PLAYER_ROPE_DROP_MAX_TAP_DURATION_MS = 250;
+
+export interface PlayerRopeDropInputState {
+  climbDownHeld: boolean;
+  ropeDropHeld: boolean;
+  lastTapReleasedAtMs: number | null;
+  pressStartedAtMs: number | null;
+}
+
+export const createDefaultPlayerRopeDropInputState = (): PlayerRopeDropInputState => ({
+  climbDownHeld: false,
+  ropeDropHeld: false,
+  lastTapReleasedAtMs: null,
+  pressStartedAtMs: null
+});
+
+const normalizePlayerInputTimeMs = (value: number): number => {
+  if (!Number.isFinite(value) || value < 0) {
+    throw new Error('nowMs must be a non-negative finite number');
+  }
+
+  return value;
+};
+
+export const advancePlayerRopeDropInputState = (
+  state: PlayerRopeDropInputState,
+  climbDownHeld: boolean,
+  nowMs: number
+): PlayerRopeDropInputState => {
+  const normalizedNowMs = normalizePlayerInputTimeMs(nowMs);
+
+  if (state.climbDownHeld === climbDownHeld) {
+    return state;
+  }
+
+  if (climbDownHeld) {
+    return {
+      climbDownHeld: true,
+      ropeDropHeld:
+        state.lastTapReleasedAtMs !== null &&
+        normalizedNowMs - state.lastTapReleasedAtMs <= PLAYER_ROPE_DROP_DOUBLE_TAP_WINDOW_MS,
+      lastTapReleasedAtMs: state.lastTapReleasedAtMs,
+      pressStartedAtMs: normalizedNowMs
+    };
+  }
+
+  const wasTap =
+    state.pressStartedAtMs !== null &&
+    normalizedNowMs - state.pressStartedAtMs <= PLAYER_ROPE_DROP_MAX_TAP_DURATION_MS;
+
+  return {
+    climbDownHeld: false,
+    ropeDropHeld: false,
+    lastTapReleasedAtMs: wasTap ? normalizedNowMs : null,
+    pressStartedAtMs: null
+  };
+};
+
 export const resolvePlayerMoveXIntent = (moveLeftPressed: boolean, moveRightPressed: boolean): -1 | 0 | 1 => {
   if (moveLeftPressed === moveRightPressed) return 0;
   return moveLeftPressed ? -1 : 1;
@@ -655,6 +714,7 @@ export class InputController {
   private touchPlayerJumpHeld = false;
   private touchPlayerClimbDownHeld = false;
   private previousPlayerJumpHeld = false;
+  private playerRopeDropInputState = createDefaultPlayerRopeDropInputState();
   private playerInputTelemetry: PlayerInputTelemetry = {
     moveX: 0,
     jumpHeld: false,
@@ -672,7 +732,9 @@ export class InputController {
   }
 
   update(_dtSeconds: number): void {
-    this.maybeQueueTouchEyedropperLongPressShortcut(performance.now());
+    const nowMs = performance.now();
+    this.maybeQueueTouchEyedropperLongPressShortcut(nowMs);
+    this.syncPlayerClimbDownState(nowMs);
     const moveLeftPressed =
       this.touchPlayerMoveLeftHeld ||
       Array.from(this.keys).some((key) => isPlayerMoveLeftControlKey(key));
@@ -682,16 +744,13 @@ export class InputController {
     const jumpHeld =
       this.touchPlayerJumpHeld ||
       Array.from(this.keys).some((key) => isPlayerJumpControlKey(key));
-    const climbDownHeld =
-      this.touchPlayerClimbDownHeld ||
-      Array.from(this.keys).some((key) => isPlayerClimbDownControlKey(key));
     this.playerInputTelemetry = resolvePlayerInputTelemetry(
       moveLeftPressed,
       moveRightPressed,
       jumpHeld,
       this.previousPlayerJumpHeld
     );
-    this.playerClimbYIntent = resolvePlayerClimbYIntent(jumpHeld, climbDownHeld);
+    this.playerClimbYIntent = resolvePlayerClimbYIntent(jumpHeld, this.playerRopeDropInputState.climbDownHeld);
     this.previousPlayerJumpHeld = jumpHeld;
   }
 
@@ -829,11 +888,15 @@ export class InputController {
   }
 
   getPlayerMovementIntent(): PlayerMovementIntent {
-    return {
+    const intent: PlayerMovementIntent = {
       moveX: this.playerInputTelemetry.moveX,
       jumpPressed: this.playerInputTelemetry.jumpPressed,
       climbY: this.playerClimbYIntent
     };
+    if (this.playerRopeDropInputState.ropeDropHeld) {
+      intent.ropeDropHeld = true;
+    }
+    return intent;
   }
 
   getPlayerInputTelemetry(): PlayerInputTelemetry {
@@ -858,6 +921,7 @@ export class InputController {
 
   setTouchPlayerClimbDownHeld(held: boolean): void {
     this.touchPlayerClimbDownHeld = held;
+    this.syncPlayerClimbDownState(performance.now());
   }
 
   getArmedDebugFloodFillKind(): DebugTileEditKind | null {
@@ -1106,8 +1170,14 @@ export class InputController {
   }
 
   private bind(): void {
-    window.addEventListener('keydown', (event) => this.keys.add(event.key.toLowerCase()));
-    window.addEventListener('keyup', (event) => this.keys.delete(event.key.toLowerCase()));
+    window.addEventListener('keydown', (event) => {
+      this.keys.add(event.key.toLowerCase());
+      this.syncPlayerClimbDownState(event.timeStamp);
+    });
+    window.addEventListener('keyup', (event) => {
+      this.keys.delete(event.key.toLowerCase());
+      this.syncPlayerClimbDownState(event.timeStamp);
+    });
     window.addEventListener('blur', () => {
       this.keys.clear();
       this.clearPlayerControlState();
@@ -1926,12 +1996,22 @@ export class InputController {
     return touchPointers;
   }
 
+  private syncPlayerClimbDownState(nowMs: number): void {
+    this.playerRopeDropInputState = advancePlayerRopeDropInputState(
+      this.playerRopeDropInputState,
+      this.touchPlayerClimbDownHeld ||
+        Array.from(this.keys).some((key) => isPlayerClimbDownControlKey(key)),
+      nowMs
+    );
+  }
+
   private clearPlayerControlState(): void {
     this.touchPlayerMoveLeftHeld = false;
     this.touchPlayerMoveRightHeld = false;
     this.touchPlayerJumpHeld = false;
     this.touchPlayerClimbDownHeld = false;
     this.previousPlayerJumpHeld = false;
+    this.playerRopeDropInputState = createDefaultPlayerRopeDropInputState();
     this.playerInputTelemetry = {
       moveX: 0,
       jumpHeld: false,

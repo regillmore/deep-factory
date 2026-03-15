@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { Camera2D } from '../core/camera2d';
 import {
+  advancePlayerRopeDropInputState,
   buildDebugTileEditRequest,
+  createDefaultPlayerRopeDropInputState,
   resolveDesktopPlayerItemUseActionForClick,
   resolveTouchPlayerItemUseActionForTap,
   getDesktopDebugPaintKindForPointerDown,
@@ -11,6 +13,8 @@ import {
   isPlayerJumpControlKey,
   isPlayerMoveLeftControlKey,
   isPlayerMoveRightControlKey,
+  PLAYER_ROPE_DROP_DOUBLE_TAP_WINDOW_MS,
+  PLAYER_ROPE_DROP_MAX_TAP_DURATION_MS,
   resolvePlayerClimbYIntent,
   markDebugPaintTileSeen,
   resolveCameraPanWorldDeltaFromClientDelta,
@@ -346,6 +350,59 @@ describe('player control key resolution', () => {
       moveX: 0,
       jumpHeld: false,
       jumpPressed: false
+    });
+  });
+
+  it('arms ropeDropHeld only when a short climb-down tap is followed by a held second press within the double-tap window', () => {
+    const firstPress = advancePlayerRopeDropInputState(
+      createDefaultPlayerRopeDropInputState(),
+      true,
+      100
+    );
+    const firstRelease = advancePlayerRopeDropInputState(
+      firstPress,
+      false,
+      100 + PLAYER_ROPE_DROP_MAX_TAP_DURATION_MS
+    );
+    const secondPress = advancePlayerRopeDropInputState(
+      firstRelease,
+      true,
+      100 + PLAYER_ROPE_DROP_MAX_TAP_DURATION_MS + PLAYER_ROPE_DROP_DOUBLE_TAP_WINDOW_MS - 1
+    );
+
+    expect(secondPress).toEqual({
+      climbDownHeld: true,
+      ropeDropHeld: true,
+      lastTapReleasedAtMs: 100 + PLAYER_ROPE_DROP_MAX_TAP_DURATION_MS,
+      pressStartedAtMs:
+        100 + PLAYER_ROPE_DROP_MAX_TAP_DURATION_MS + PLAYER_ROPE_DROP_DOUBLE_TAP_WINDOW_MS - 1
+    });
+  });
+
+  it('does not arm ropeDropHeld after a long first hold or keep it once climb-down is released', () => {
+    const longFirstPress = advancePlayerRopeDropInputState(
+      createDefaultPlayerRopeDropInputState(),
+      true,
+      50
+    );
+    const longFirstRelease = advancePlayerRopeDropInputState(
+      longFirstPress,
+      false,
+      50 + PLAYER_ROPE_DROP_MAX_TAP_DURATION_MS + 1
+    );
+    const secondPress = advancePlayerRopeDropInputState(
+      longFirstRelease,
+      true,
+      50 + PLAYER_ROPE_DROP_MAX_TAP_DURATION_MS + 100
+    );
+    const secondRelease = advancePlayerRopeDropInputState(secondPress, false, 500);
+
+    expect(secondPress.ropeDropHeld).toBe(false);
+    expect(secondRelease).toEqual({
+      climbDownHeld: false,
+      ropeDropHeld: false,
+      lastTapReleasedAtMs: 500,
+      pressStartedAtMs: null
     });
   });
 });

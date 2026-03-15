@@ -100,7 +100,7 @@ export class TouchPlayerControls {
     leftButton.style.gridRow = '2';
     this.root.append(leftButton);
 
-    const downButton = createControlButton('v', 'Hold to climb down ropes');
+    const downButton = createControlButton('v', 'Hold to climb down ropes; double tap and hold to drop to the bottom');
     downButton.style.gridColumn = '1';
     downButton.style.gridRow = '1';
     this.root.append(downButton);
