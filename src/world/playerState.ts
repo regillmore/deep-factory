@@ -1,6 +1,6 @@
 import { MAX_LIQUID_LEVEL, TILE_SIZE } from './constants';
 import { doesAabbOverlapSolid, sweepAabbAlongAxis, type SolidTileCollision, type WorldAabb } from './collision';
-import { getTileLiquidKind, TILE_METADATA } from './tileMetadata';
+import { getTileLiquidKind, isTileClimbable, TILE_METADATA } from './tileMetadata';
 import type { TileMetadataRegistry } from './tileMetadata';
 import type { TileWorld } from './world';
 
@@ -64,6 +64,7 @@ export interface CreatePlayerStateOptions {
 export interface PlayerMovementIntent {
   moveX?: number;
   jumpPressed?: boolean;
+  climbY?: number;
 }
 
 export interface StepPlayerStateWithGravityOptions {
@@ -77,6 +78,7 @@ export interface StepPlayerStateOptions extends StepPlayerStateWithGravityOption
   airAcceleration?: number;
   groundDeceleration?: number;
   jumpSpeed?: number;
+  ropeClimbSpeed?: number;
   maxBreathSeconds?: number;
   breathRecoveryPerSecond?: number;
   waterBuoyancyAcceleration?: number;
@@ -100,6 +102,7 @@ export const DEFAULT_PLAYER_GROUND_ACCELERATION = 1800;
 export const DEFAULT_PLAYER_AIR_ACCELERATION = 900;
 export const DEFAULT_PLAYER_GROUND_DECELERATION = 2400;
 export const DEFAULT_PLAYER_JUMP_SPEED = 520;
+export const DEFAULT_PLAYER_ROPE_CLIMB_SPEED = 120;
 export const DEFAULT_PLAYER_MAX_HEALTH = 100;
 export const DEFAULT_PLAYER_MAX_BREATH_SECONDS = 8;
 export const DEFAULT_PLAYER_BREATH_RECOVERY_PER_SECOND = 4;
@@ -210,6 +213,9 @@ const moveTowards = (current: number, target: number, maxDelta: number): number 
 
 const normalizeMoveXIntent = (moveX: number | undefined): number =>
   clampNumber(expectFiniteNumber(moveX ?? 0, 'intent.moveX'), -1, 1);
+
+const normalizeClimbYIntent = (climbY: number | undefined): number =>
+  clampNumber(expectFiniteNumber(climbY ?? 0, 'intent.climbY'), -1, 1);
 
 const resolveFacingFromHorizontalVelocity = (
   currentFacing: PlayerFacing,
@@ -405,6 +411,25 @@ const samplePlayerLiquidOverlapState = (
       breathSampleArea <= 0 ? 0 : clampNumber(waterBreathOverlapArea / breathSampleArea, 0, 1),
     lavaSubmergedFraction: clampNumber(lavaOverlapArea / playerArea, 0, 1)
   };
+};
+
+const isPlayerOverlappingClimbableTile = (
+  world: TileWorld,
+  state: PlayerState,
+  registry: TileMetadataRegistry
+): boolean => {
+  const aabb = getPlayerAabb(state);
+  const climbTileX = Math.floor(state.position.x / TILE_SIZE);
+  const minTileY = Math.floor(aabb.minY / TILE_SIZE);
+  const maxTileY = Math.floor((aabb.maxY - AABB_INTERSECTION_EPSILON) / TILE_SIZE);
+
+  for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
+    if (isTileClimbable(world.getTile(climbTileX, tileY), registry)) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 const recoverBreathSecondsRemaining = (
@@ -778,6 +803,7 @@ export const stepPlayerState = (
 ): PlayerState => {
   const dt = expectNonNegativeFiniteNumber(fixedDtSeconds, 'fixedDtSeconds');
   const moveX = normalizeMoveXIntent(intent.moveX);
+  const climbY = normalizeClimbYIntent(intent.climbY);
   const gravityAcceleration = expectNonNegativeFiniteNumber(
     options.gravityAcceleration ?? DEFAULT_PLAYER_GRAVITY_ACCELERATION,
     'options.gravityAcceleration'
@@ -803,6 +829,10 @@ export const stepPlayerState = (
     'options.groundDeceleration'
   );
   const jumpSpeed = expectNonNegativeFiniteNumber(options.jumpSpeed ?? DEFAULT_PLAYER_JUMP_SPEED, 'options.jumpSpeed');
+  const ropeClimbSpeed = expectNonNegativeFiniteNumber(
+    options.ropeClimbSpeed ?? DEFAULT_PLAYER_ROPE_CLIMB_SPEED,
+    'options.ropeClimbSpeed'
+  );
   const maxBreathSeconds = expectPositiveFiniteNumber(
     options.maxBreathSeconds ?? DEFAULT_PLAYER_MAX_BREATH_SECONDS,
     'options.maxBreathSeconds'
@@ -857,6 +887,7 @@ export const stepPlayerState = (
       dt
     );
   const liquidOverlapState = samplePlayerLiquidOverlapState(world, state, registry);
+  const overlappingClimbableTile = isPlayerOverlappingClimbableTile(world, state, registry);
   let velocityX = resolveHorizontalVelocityFromIntent(
     state.velocity.x,
     moveX,
@@ -870,26 +901,37 @@ export const stepPlayerState = (
   let velocityY = state.velocity.y;
   let grounded = state.grounded;
 
-  if (intent.jumpPressed === true && grounded) {
+  if (intent.jumpPressed === true && grounded && !(overlappingClimbableTile && climbY < 0)) {
     velocityY = -jumpSpeed;
     grounded = false;
   }
 
-  velocityY = Math.min(velocityY + gravityAcceleration * dt, maxFallSpeed);
-  if (liquidOverlapState.waterSubmergedFraction > 0) {
-    velocityY -= waterBuoyancyAcceleration * liquidOverlapState.waterSubmergedFraction * dt;
-    velocityX = applyLinearDrag(
-      velocityX,
-      waterHorizontalDragPerSecond,
-      liquidOverlapState.waterSubmergedFraction,
-      dt
-    );
-    velocityY = applyLinearDrag(
-      velocityY,
-      waterVerticalDragPerSecond,
-      liquidOverlapState.waterSubmergedFraction,
-      dt
-    );
+  if (overlappingClimbableTile) {
+    grounded = false;
+    if (climbY < 0) {
+      velocityY = -ropeClimbSpeed;
+    } else if (climbY > 0) {
+      velocityY = ropeClimbSpeed;
+    } else {
+      velocityY = 0;
+    }
+  } else {
+    velocityY = Math.min(velocityY + gravityAcceleration * dt, maxFallSpeed);
+    if (liquidOverlapState.waterSubmergedFraction > 0) {
+      velocityY -= waterBuoyancyAcceleration * liquidOverlapState.waterSubmergedFraction * dt;
+      velocityX = applyLinearDrag(
+        velocityX,
+        waterHorizontalDragPerSecond,
+        liquidOverlapState.waterSubmergedFraction,
+        dt
+      );
+      velocityY = applyLinearDrag(
+        velocityY,
+        waterVerticalDragPerSecond,
+        liquidOverlapState.waterSubmergedFraction,
+        dt
+      );
+    }
   }
 
   const lavaDamageStepState = resolveLavaDamageStepState(

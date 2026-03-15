@@ -232,6 +232,11 @@ import {
   STARTER_TORCH_TILE_ID
 } from './world/starterTorchPlacement';
 import {
+  evaluateStarterRopePlacement,
+  STARTER_ROPE_ITEM_ID,
+  STARTER_ROPE_TILE_ID
+} from './world/starterRopePlacement';
+import {
   resolvePlayerWallContactTransitionEvent,
   type PlayerWallContactTransitionEvent
 } from './world/playerWallContactTransition';
@@ -2754,6 +2759,9 @@ const bootstrap = async (): Promise<void> => {
       case STARTER_TORCH_ITEM_ID:
         placementTileId = STARTER_TORCH_TILE_ID;
         break;
+      case STARTER_ROPE_ITEM_ID:
+        placementTileId = STARTER_ROPE_TILE_ID;
+        break;
       default:
         return false;
     }
@@ -2805,6 +2813,15 @@ const bootstrap = async (): Promise<void> => {
         break;
       case STARTER_TORCH_ITEM_ID:
         placement = evaluateStarterTorchPlacement(
+          {
+            getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+          },
+          worldTileX,
+          worldTileY
+        );
+        break;
+      case STARTER_ROPE_ITEM_ID:
+        placement = evaluateStarterRopePlacement(
           {
             getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
           },
@@ -3247,6 +3264,9 @@ const bootstrap = async (): Promise<void> => {
       },
       onJumpHeldChange: (held) => {
         input.setTouchPlayerJumpHeld(held);
+      },
+      onClimbDownHeldChange: (held) => {
+        input.setTouchPlayerClimbDownHeld(held);
       }
     });
   }

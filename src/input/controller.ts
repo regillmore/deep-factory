@@ -363,16 +363,31 @@ export const isPlayerMoveRightControlKey = (key: string): boolean => key === 'd'
 export const isPlayerJumpControlKey = (key: string): boolean =>
   key === ' ' || key === 'spacebar' || key === 'w' || key === 'arrowup';
 
+export const isPlayerClimbDownControlKey = (key: string): boolean =>
+  key === 's' || key === 'arrowdown';
+
 export const resolvePlayerMoveXIntent = (moveLeftPressed: boolean, moveRightPressed: boolean): -1 | 0 | 1 => {
   if (moveLeftPressed === moveRightPressed) return 0;
   return moveLeftPressed ? -1 : 1;
+};
+
+export const resolvePlayerClimbYIntent = (
+  climbUpHeld: boolean,
+  climbDownHeld: boolean
+): -1 | 0 | 1 => {
+  if (climbUpHeld === climbDownHeld) {
+    return 0;
+  }
+
+  return climbUpHeld ? -1 : 1;
 };
 
 export const resolvePlayerMovementIntent = (
   moveLeftPressed: boolean,
   moveRightPressed: boolean,
   jumpHeld: boolean,
-  previousJumpHeld: boolean
+  previousJumpHeld: boolean,
+  climbDownHeld = false
 ): PlayerMovementIntent => {
   const telemetry = resolvePlayerInputTelemetry(
     moveLeftPressed,
@@ -382,7 +397,8 @@ export const resolvePlayerMovementIntent = (
   );
   return {
     moveX: telemetry.moveX,
-    jumpPressed: telemetry.jumpPressed
+    jumpPressed: telemetry.jumpPressed,
+    climbY: resolvePlayerClimbYIntent(jumpHeld, climbDownHeld)
   };
 };
 
@@ -637,12 +653,14 @@ export class InputController {
   private touchPlayerMoveLeftHeld = false;
   private touchPlayerMoveRightHeld = false;
   private touchPlayerJumpHeld = false;
+  private touchPlayerClimbDownHeld = false;
   private previousPlayerJumpHeld = false;
   private playerInputTelemetry: PlayerInputTelemetry = {
     moveX: 0,
     jumpHeld: false,
     jumpPressed: false
   };
+  private playerClimbYIntent: -1 | 0 | 1 = 0;
   private pointerInspectRetainers: Array<(candidate: EventTarget | null) => boolean> = [];
   private nextDebugPaintStrokeId = 1;
 
@@ -664,12 +682,16 @@ export class InputController {
     const jumpHeld =
       this.touchPlayerJumpHeld ||
       Array.from(this.keys).some((key) => isPlayerJumpControlKey(key));
+    const climbDownHeld =
+      this.touchPlayerClimbDownHeld ||
+      Array.from(this.keys).some((key) => isPlayerClimbDownControlKey(key));
     this.playerInputTelemetry = resolvePlayerInputTelemetry(
       moveLeftPressed,
       moveRightPressed,
       jumpHeld,
       this.previousPlayerJumpHeld
     );
+    this.playerClimbYIntent = resolvePlayerClimbYIntent(jumpHeld, climbDownHeld);
     this.previousPlayerJumpHeld = jumpHeld;
   }
 
@@ -809,7 +831,8 @@ export class InputController {
   getPlayerMovementIntent(): PlayerMovementIntent {
     return {
       moveX: this.playerInputTelemetry.moveX,
-      jumpPressed: this.playerInputTelemetry.jumpPressed
+      jumpPressed: this.playerInputTelemetry.jumpPressed,
+      climbY: this.playerClimbYIntent
     };
   }
 
@@ -831,6 +854,10 @@ export class InputController {
 
   setTouchPlayerJumpHeld(held: boolean): void {
     this.touchPlayerJumpHeld = held;
+  }
+
+  setTouchPlayerClimbDownHeld(held: boolean): void {
+    this.touchPlayerClimbDownHeld = held;
   }
 
   getArmedDebugFloodFillKind(): DebugTileEditKind | null {
@@ -1903,12 +1930,14 @@ export class InputController {
     this.touchPlayerMoveLeftHeld = false;
     this.touchPlayerMoveRightHeld = false;
     this.touchPlayerJumpHeld = false;
+    this.touchPlayerClimbDownHeld = false;
     this.previousPlayerJumpHeld = false;
     this.playerInputTelemetry = {
       moveX: 0,
       jumpHeld: false,
       jumpPressed: false
     };
+    this.playerClimbYIntent = 0;
   }
 
   private currentPinchDistance(): number {

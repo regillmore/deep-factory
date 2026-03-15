@@ -7,7 +7,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 232. Add a grappling-hook traversal slice after entity scaffolding: mixed-device aimed hook firing, solid-tile latch plus pull-and-release rules, and fixed-step hook-state regressions.
 246. Add a bow-and-arrow ranged-combat slice after hostile-slime jump-chase locomotion and inventory basics: stackable arrow ammo, mixed-device aimed firing, fixed-step projectile flight plus terrain or slime hits, and deterministic ammo-consumption regressions.
 301. Add a healing-potion survival slice after hostile-slime player-contact combat and inventory basics: stackable potion items, mixed-device consume input, fixed-step healing plus overheal clamp and use-cooldown rules, and save/load regressions for health plus consumable stacks.
-313. Add a rope traversal utility slice after inventory basics: stackable rope hotbar slots, mixed-device downward placement from solid anchors, climb-and-descent movement on rope tiles, and save/load regressions for placed rope plus remaining stack counts.
 321. Add a starter pickaxe mining slice after inventory basics: a non-stackable pickaxe hotbar slot, mixed-device aimed tile mining with fixed-step swing timing, terrain break progress and completion rules, and deterministic break regressions.
 338. Add a bed-checkpoint respawn slice after inventory basics and save/load: placeable bed items, mixed-device checkpoint claim and respawn interactions, obstructed-checkpoint fallback to world spawn, and snapshot regressions for claimed checkpoint state.
 349. Add a platform traversal slice after inventory basics: stackable platform hotbar slots, mixed-device one-way placement plus drop-through movement, and save/load regressions for placed platform runs.
@@ -31,6 +30,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 536. Add a starter background-wall placement slice after starter building-block placement and inventory basics: stackable dirt-wall hotbar slots, mixed-device enclosed-wall placement against solid blocks or existing walls, stack consumption, and save/load regressions for placed walls plus remaining stack counts.
 550. Add a rope pickup-refund follow-up after rope traversal utility slice and dropped-item pickup: removing placed rope tiles should spawn rope pickup entities, and add deterministic refund regressions plus snapshot coverage for the returned rope stacks.
 559. Add a browser-resume save-normalization follow-up after dropped-item restore consolidation: when boot-time restore collapses overlapping matching world pickups, rewrite the persisted world save immediately instead of waiting for the next pause or pagehide, and add persistence regressions for the normalized pickup set.
+560. Add a rope detachment follow-up after rope traversal utility slice: moving sideways off a rope should resume gravity immediately without a sticky one-tick regrab, and add deterministic detach regressions.
 
 ## Telemetry
 

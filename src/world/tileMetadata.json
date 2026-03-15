@@ -503,6 +503,18 @@
       "render": {
         "atlasIndex": 15
       }
+    },
+    {
+      "id": 11,
+      "name": "rope",
+      "gameplay": {
+        "solid": false,
+        "blocksLight": false,
+        "climbable": true
+      },
+      "render": {
+        "atlasIndex": 17
+      }
     }
   ]
 }

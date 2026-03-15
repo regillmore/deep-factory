@@ -2524,13 +2524,13 @@ describe('resolveAppShellViewModel', () => {
       {
         title: 'Controls Preview',
         lines: [
-          'Desktop: move with A or D, or Left or Right Arrow; jump with W, Up Arrow, or Space.',
-          'Touch: the in-world player pad appears after Enter World with Left, Right, and Jump buttons.'
+          'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow.',
+          'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons.'
         ],
         metadataRows: [
           {
             label: 'Desktop',
-            value: 'Movement + jump use the keyboard.'
+            value: 'Movement + rope climb use the keyboard.'
           },
           {
             label: 'Touch',
@@ -3686,15 +3686,15 @@ describe('createFirstLaunchMainMenuShellState', () => {
           tone: 'accent'
         },
         {
-          title: 'Controls Preview',
-          lines: [
-            'Desktop: move with A or D, or Left or Right Arrow; jump with W, Up Arrow, or Space.',
-            'Touch: the in-world player pad appears after Enter World with Left, Right, and Jump buttons.'
-          ],
-          metadataRows: [
+        title: 'Controls Preview',
+        lines: [
+            'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow.',
+            'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons.'
+        ],
+        metadataRows: [
             {
               label: 'Desktop',
-              value: 'Movement + jump use the keyboard.'
+              value: 'Movement + rope climb use the keyboard.'
             },
             {
               label: 'Touch',
@@ -3761,15 +3761,15 @@ describe('createFirstLaunchMainMenuShellState', () => {
           tone: 'accent'
         },
         {
-          title: 'Controls Preview',
-          lines: [
-            'Desktop: move with A or D, or Left or Right Arrow; jump with W, Up Arrow, or Space.',
-            'Touch: the in-world player pad appears after Enter World with Left, Right, and Jump buttons.'
-          ],
-          metadataRows: [
+        title: 'Controls Preview',
+        lines: [
+            'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow.',
+            'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons.'
+        ],
+        metadataRows: [
             {
               label: 'Desktop',
-              value: 'Movement + jump use the keyboard.'
+              value: 'Movement + rope climb use the keyboard.'
             },
             {
               label: 'Touch',

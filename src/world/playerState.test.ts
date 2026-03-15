@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { findPlayerSpawnPoint } from './playerSpawn';
+import { STARTER_ROPE_TILE_ID } from './starterRopePlacement';
 import {
   clonePlayerState,
   createPlayerState,
@@ -23,6 +24,7 @@ import {
   DEFAULT_PLAYER_MAX_BREATH_SECONDS,
   DEFAULT_PLAYER_MAX_HEALTH,
   DEFAULT_PLAYER_MAX_FALL_SPEED,
+  DEFAULT_PLAYER_ROPE_CLIMB_SPEED,
   DEFAULT_PLAYER_MAX_WALK_SPEED,
   DEFAULT_PLAYER_WATER_BUOYANCY_ACCELERATION,
   DEFAULT_PLAYER_WATER_HORIZONTAL_DRAG_PER_SECOND,
@@ -586,6 +588,102 @@ describe('playerState', () => {
     expect(stepped).toEqual(withDefaultPlayerVitals({
       position: { x: 8, y: -35 },
       velocity: { x: 0, y: -60 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    }));
+  });
+
+  it('climbs upward on rope tiles instead of applying a grounded jump impulse', () => {
+    const world = new TileWorld(0);
+    setTiles(world, -3, 0, 5, 0, 3);
+    world.setTile(0, -1, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -2, STARTER_ROPE_TILE_ID);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        grounded: true
+      }),
+      0.25,
+      { jumpPressed: true, climbY: -1 },
+      {
+        maxWalkSpeed: 40,
+        groundAcceleration: 160,
+        airAcceleration: 80,
+        groundDeceleration: 80,
+        jumpSpeed: 100,
+        ropeClimbSpeed: 60,
+        gravityAcceleration: 80,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual(withDefaultPlayerVitals({
+      position: { x: 8, y: -15 },
+      velocity: { x: 0, y: -60 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    }));
+  });
+
+  it('holds the player in place on rope tiles when there is no vertical climb intent', () => {
+    const world = new TileWorld(0);
+    world.setTile(0, -2, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -1, STARTER_ROPE_TILE_ID);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -16 },
+        velocity: { x: 0, y: 40 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      {},
+      {
+        gravityAcceleration: 80,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual(withDefaultPlayerVitals({
+      position: { x: 8, y: -16 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    }));
+  });
+
+  it('moves downward on rope tiles when climb-down intent is held', () => {
+    const world = new TileWorld(0);
+    world.setTile(0, -2, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -1, STARTER_ROPE_TILE_ID);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -16 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      { climbY: 1 },
+      {
+        ropeClimbSpeed: 60,
+        gravityAcceleration: 80,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual(withDefaultPlayerVitals({
+      position: { x: 8, y: -1 },
+      velocity: { x: 0, y: 60 },
       size: { width: 12, height: 12 },
       grounded: false,
       facing: 'right'
@@ -1243,6 +1341,11 @@ describe('playerState', () => {
       })
     ).toThrowError(/intent\.moveX must be a finite number/);
     expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {
+        climbY: Number.NaN
+      })
+    ).toThrowError(/intent\.climbY must be a finite number/);
+    expect(() =>
       stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
         maxWalkSpeed: -DEFAULT_PLAYER_MAX_WALK_SPEED
       })
@@ -1267,6 +1370,11 @@ describe('playerState', () => {
         jumpSpeed: -DEFAULT_PLAYER_JUMP_SPEED
       })
     ).toThrowError(/options\.jumpSpeed must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        ropeClimbSpeed: -DEFAULT_PLAYER_ROPE_CLIMB_SPEED
+      })
+    ).toThrowError(/options\.ropeClimbSpeed must be a non-negative finite number/);
     expect(() =>
       stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
         maxBreathSeconds: 0

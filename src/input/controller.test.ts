@@ -7,9 +7,11 @@ import {
   resolveTouchPlayerItemUseActionForTap,
   getDesktopDebugPaintKindForPointerDown,
   getTouchDebugPaintKindForPointerDown,
+  isPlayerClimbDownControlKey,
   isPlayerJumpControlKey,
   isPlayerMoveLeftControlKey,
   isPlayerMoveRightControlKey,
+  resolvePlayerClimbYIntent,
   markDebugPaintTileSeen,
   resolveCameraPanWorldDeltaFromClientDelta,
   resolvePlayerInputTelemetry,
@@ -293,21 +295,40 @@ describe('player control key resolution', () => {
     expect(isPlayerJumpControlKey('v')).toBe(false);
     expect(isPlayerJumpControlKey('m')).toBe(false);
     expect(isPlayerJumpControlKey('s')).toBe(false);
+    expect(isPlayerClimbDownControlKey('s')).toBe(true);
+    expect(isPlayerClimbDownControlKey('arrowdown')).toBe(true);
+    expect(isPlayerClimbDownControlKey('w')).toBe(false);
+    expect(isPlayerClimbDownControlKey('space')).toBe(false);
   });
 
   it('emits jumpPressed only on the rising edge of the held jump state', () => {
     expect(resolvePlayerMovementIntent(true, false, true, false)).toEqual({
       moveX: -1,
-      jumpPressed: true
+      jumpPressed: true,
+      climbY: -1
     });
     expect(resolvePlayerMovementIntent(true, false, true, true)).toEqual({
       moveX: -1,
-      jumpPressed: false
+      jumpPressed: false,
+      climbY: -1
     });
     expect(resolvePlayerMovementIntent(false, true, false, true)).toEqual({
       moveX: 1,
-      jumpPressed: false
+      jumpPressed: false,
+      climbY: 0
     });
+    expect(resolvePlayerMovementIntent(false, false, false, false, true)).toEqual({
+      moveX: 0,
+      jumpPressed: false,
+      climbY: 1
+    });
+  });
+
+  it('collapses simultaneous climb-up and climb-down input into a neutral rope intent', () => {
+    expect(resolvePlayerClimbYIntent(true, false)).toBe(-1);
+    expect(resolvePlayerClimbYIntent(false, true)).toBe(1);
+    expect(resolvePlayerClimbYIntent(false, false)).toBe(0);
+    expect(resolvePlayerClimbYIntent(true, true)).toBe(0);
   });
 
   it('captures move, jumpHeld, and jumpPressed telemetry for the current input sample', () => {

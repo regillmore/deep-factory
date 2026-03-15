@@ -47,6 +47,7 @@ export type TileLiquidKind = 'water' | 'lava';
 export interface TileGameplayMetadata {
   solid: boolean;
   blocksLight: boolean;
+  climbable?: boolean;
   liquidKind?: TileLiquidKind;
   emissiveLight?: number;
 }
@@ -304,6 +305,10 @@ const parseTileGameplayMetadata = (value: unknown, tileId: number): TileGameplay
 
   const solid = expectBoolean(value.solid, `tiles[${tileId}].gameplay.solid`);
   const blocksLight = expectBoolean(value.blocksLight, `tiles[${tileId}].gameplay.blocksLight`);
+  const climbable =
+    value.climbable === undefined
+      ? undefined
+      : expectBoolean(value.climbable, `tiles[${tileId}].gameplay.climbable`);
   const emissiveLight =
     value.emissiveLight === undefined
       ? undefined
@@ -323,6 +328,7 @@ const parseTileGameplayMetadata = (value: unknown, tileId: number): TileGameplay
   return {
     solid,
     blocksLight,
+    ...(climbable === undefined ? {} : { climbable }),
     ...(liquidKind === undefined ? {} : { liquidKind }),
     ...(emissiveLight === undefined ? {} : { emissiveLight })
   };
@@ -448,6 +454,7 @@ const parseLiquidRenderMetadata = (
 
 const TILE_GAMEPLAY_PROPERTY_FLAG_SOLID = 1 << 0;
 const TILE_GAMEPLAY_PROPERTY_FLAG_BLOCKS_LIGHT = 1 << 1;
+const TILE_GAMEPLAY_PROPERTY_FLAG_CLIMBABLE = 1 << 2;
 
 const TILE_LIQUID_KIND_CODE_NONE = -1;
 const TILE_LIQUID_KIND_CODE_WATER = 0;
@@ -504,6 +511,9 @@ const buildTileGameplayPropertyLookup = (
     }
     if (gameplay.blocksLight) {
       flags |= TILE_GAMEPLAY_PROPERTY_FLAG_BLOCKS_LIGHT;
+    }
+    if (gameplay.climbable) {
+      flags |= TILE_GAMEPLAY_PROPERTY_FLAG_CLIMBABLE;
     }
 
     propertyFlagsByTileId[tile.id] = flags;
@@ -1299,14 +1309,16 @@ export const resolveTileGameplayMetadata = (
   const emissiveLight = getTileEmissiveLightLevelFromLookup(tileId, registry);
   const solid = (flags & TILE_GAMEPLAY_PROPERTY_FLAG_SOLID) !== 0;
   const blocksLight = (flags & TILE_GAMEPLAY_PROPERTY_FLAG_BLOCKS_LIGHT) !== 0;
+  const climbable = (flags & TILE_GAMEPLAY_PROPERTY_FLAG_CLIMBABLE) !== 0;
 
-  if (!solid && !blocksLight && liquidKind === null && emissiveLight === 0) {
+  if (!solid && !blocksLight && !climbable && liquidKind === null && emissiveLight === 0) {
     return DEFAULT_TILE_GAMEPLAY_METADATA;
   }
 
   return {
     solid,
     blocksLight,
+    ...(climbable ? { climbable } : {}),
     ...(liquidKind === null ? {} : { liquidKind }),
     ...(emissiveLight === 0 ? {} : { emissiveLight })
   };
@@ -1323,6 +1335,12 @@ export const doesTileBlockLight = (
   registry: TileMetadataRegistry = TILE_METADATA
 ): boolean =>
   (getTileGameplayPropertyFlags(tileId, registry) & TILE_GAMEPLAY_PROPERTY_FLAG_BLOCKS_LIGHT) !== 0;
+
+export const isTileClimbable = (
+  tileId: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): boolean =>
+  (getTileGameplayPropertyFlags(tileId, registry) & TILE_GAMEPLAY_PROPERTY_FLAG_CLIMBABLE) !== 0;
 
 export const getTileLiquidKind = (
   tileId: number,

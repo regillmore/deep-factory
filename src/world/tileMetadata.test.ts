@@ -32,6 +32,7 @@ import {
   hasAnimatedTileRenderMetadata,
   hasLiquidRenderMetadata,
   hasTerrainAutotileMetadata,
+  isTileClimbable,
   isTileSolid,
   parseTileMetadataRegistry,
   resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs,
@@ -81,8 +82,15 @@ describe('tile metadata loader', () => {
       blocksLight: false,
       emissiveLight: 12
     });
+    expect(resolveTileGameplayMetadata(11)).toEqual({
+      solid: false,
+      blocksLight: false,
+      climbable: true
+    });
     expect(isTileSolid(1)).toBe(true);
     expect(isTileSolid(4)).toBe(false);
+    expect(isTileClimbable(11)).toBe(true);
+    expect(isTileClimbable(10)).toBe(false);
     expect(doesTileBlockLight(1)).toBe(true);
     expect(doesTileBlockLight(4)).toBe(false);
     expect(getTileEmissiveLightLevel(10)).toBe(12);
@@ -96,6 +104,7 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(1, 0)).toBe(0);
     expect(resolveTileRenderUvRect(3)).toEqual(atlasIndexToUvRect(14));
     expect(resolveTileRenderUvRect(10)).toEqual(atlasIndexToUvRect(15));
+    expect(resolveTileRenderUvRect(11)).toEqual(atlasIndexToUvRect(17));
     expect(resolveLiquidRenderVariantMetadata(7, 0)).toMatchObject({
       uvRect: { u0: 0.6666666666666666, v0: 0.25, u1: 0.75, v1: 0.5 }
     });
@@ -513,7 +522,13 @@ describe('tile metadata loader', () => {
         {
           id: 12,
           name: 'torch_lava',
-          gameplay: { solid: false, blocksLight: true, liquidKind: 'lava', emissiveLight: 9 },
+          gameplay: {
+            solid: false,
+            blocksLight: true,
+            climbable: true,
+            liquidKind: 'lava',
+            emissiveLight: 9
+          },
           render: { atlasIndex: 1 }
         }
       ]
@@ -528,7 +543,15 @@ describe('tile metadata loader', () => {
 
     expect(resolveTileGameplayMetadata(7, registry)).toEqual({ solid: false, blocksLight: false });
     expect(resolveTileGameplayMetadata(999, registry)).toEqual({ solid: false, blocksLight: false });
+    expect(resolveTileGameplayMetadata(12, registry)).toEqual({
+      solid: false,
+      blocksLight: true,
+      climbable: true,
+      liquidKind: 'lava',
+      emissiveLight: 9
+    });
     expect(isTileSolid(12, registry)).toBe(false);
+    expect(isTileClimbable(12, registry)).toBe(true);
     expect(doesTileBlockLight(12, registry)).toBe(true);
     expect(getTileEmissiveLightLevel(12, registry)).toBe(9);
     expect(getTileLiquidKind(12, registry)).toBe('lava');

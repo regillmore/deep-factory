@@ -11,6 +11,7 @@ import {
   DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS,
   DEFAULT_PLAYER_MAX_BREATH_SECONDS
 } from './world/playerState';
+import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
 import { TileWorld } from './world/world';
 import {
   createDefaultWorldSaveEnvelopeMigrationMetadata,
@@ -117,6 +118,36 @@ describe('createWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
       itemId: 'dirt-block',
       amount: 63
+    });
+  });
+
+  it('preserves a placed rope tile together with the consumed rope stack count', () => {
+    const world = new TileWorld(0);
+    expect(world.setTile(1, -1, STARTER_ROPE_TILE_ID)).toBe(true);
+    const standalonePlayerInventoryState = createDefaultPlayerInventoryState();
+    standalonePlayerInventoryState.hotbar[2]!.amount = 23;
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(decoded.worldSnapshot);
+    expect(restoredWorld.getTile(1, -1)).toBe(STARTER_ROPE_TILE_ID);
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[2]).toEqual({
+      itemId: 'rope',
+      amount: 23
     });
   });
 

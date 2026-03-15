@@ -2,6 +2,7 @@ interface TouchPlayerControlsOptions {
   onMoveLeftHeldChange?: (held: boolean) => void;
   onMoveRightHeldChange?: (held: boolean) => void;
   onJumpHeldChange?: (held: boolean) => void;
+  onClimbDownHeldChange?: (held: boolean) => void;
 }
 
 interface HoldButtonBinding {
@@ -99,6 +100,11 @@ export class TouchPlayerControls {
     leftButton.style.gridRow = '2';
     this.root.append(leftButton);
 
+    const downButton = createControlButton('v', 'Hold to climb down ropes');
+    downButton.style.gridColumn = '1';
+    downButton.style.gridRow = '1';
+    this.root.append(downButton);
+
     const rightButton = createControlButton('>', 'Hold to move right');
     rightButton.style.gridColumn = '2';
     rightButton.style.gridRow = '2';
@@ -111,6 +117,11 @@ export class TouchPlayerControls {
 
     this.bindings = [
       bindHoldButton(leftButton, options.onMoveLeftHeldChange ?? (() => {}), 'rgba(80, 170, 255, 0.42)'),
+      bindHoldButton(
+        downButton,
+        options.onClimbDownHeldChange ?? (() => {}),
+        'rgba(255, 150, 100, 0.42)'
+      ),
       bindHoldButton(rightButton, options.onMoveRightHeldChange ?? (() => {}), 'rgba(80, 170, 255, 0.42)'),
       bindHoldButton(jumpButton, options.onJumpHeldChange ?? (() => {}), 'rgba(255, 190, 80, 0.42)')
     ];

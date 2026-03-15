@@ -2543,13 +2543,13 @@ const createFirstLaunchMainMenuMenuSections = (
     {
       title: 'Controls Preview',
       lines: [
-        'Desktop: move with A or D, or Left or Right Arrow; jump with W, Up Arrow, or Space.',
-        'Touch: the in-world player pad appears after Enter World with Left, Right, and Jump buttons.'
+        'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow.',
+        'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons.'
       ],
       metadataRows: [
         {
           label: 'Desktop',
-          value: 'Movement + jump use the keyboard.'
+          value: 'Movement + rope climb use the keyboard.'
         },
         {
           label: 'Touch',
@@ -2947,7 +2947,7 @@ const resolveInWorldShortcutsSections = (
     title: 'Desktop',
     lines: [
       `Move: A or D, or Left or Right Arrow`,
-      'Jump: W, Up Arrow, or Space',
+      'Jump or climb up: W, Up Arrow, or Space; descend ropes: S or Down Arrow',
       `Session: ${getDesktopReturnToMainMenuHotkeyLabel(shellActionKeybindings)} return to main menu; ${getDesktopResumeWorldHotkeyLabel()} resume paused world; ${getDesktopFreshWorldHotkeyLabel()} new world from paused menu`,
       `Camera + shell: ${getDesktopRecenterCameraHotkeyLabel(shellActionKeybindings)} recenter, ${getDesktopDebugOverlayHotkeyLabel(shellActionKeybindings)} HUD, ${getDesktopDebugEditControlsHotkeyLabel(shellActionKeybindings)} edit panel, ${getDesktopDebugEditOverlaysHotkeyLabel(shellActionKeybindings)} edit overlays, ${getDesktopPlayerSpawnMarkerHotkeyLabel(shellActionKeybindings)} spawn marker`,
       `Hotbar: 1-0 select slots while the full Debug Edit panel is hidden, click a slot, or press ${getDropSelectedHotbarStackShortcutLabel()} to drop the selected stack`,
@@ -2959,7 +2959,7 @@ const resolveInWorldShortcutsSections = (
   {
     title: 'Touch',
     lines: [
-      'Player: hold Left, Right, and Jump on the touch player pad',
+      'Player: hold Left, Down, Right, and Jump on the touch player pad',
       'Hotbar: tap a bottom hotbar slot to select it, then tap Drop to toss the selected stack',
       'Build: tap an empty tile with a solid neighbor while the full Debug Edit panel is hidden',
       'Pan mode: one-finger drag camera, two-finger tap undo, three-finger tap redo',

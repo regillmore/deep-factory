@@ -996,6 +996,8 @@ vi.mock('./input/controller', () => ({
 
     setTouchPlayerJumpHeld(): void {}
 
+    setTouchPlayerClimbDownHeld(): void {}
+
     update(): void {}
 
     getPointerInspect() {
@@ -5816,6 +5818,29 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('shows a valid rope placement preview when the selected stack hangs below a solid anchor', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    testRuntime.pointerInspect = {
+      pointerType: 'touch',
+      tile: { x: 0, y: 1 }
+    };
+
+    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
+    runRenderFrame();
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 0,
+      tileY: 1,
+      canPlace: true,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false
+    });
+  });
+
   it('hides the hotbar placement preview for unsupported item slots and while the full debug-edit panel is open', async () => {
     await import('./main');
     await flushBootstrap();
@@ -5827,7 +5852,7 @@ describe('main.ts shell state orchestration', () => {
       tile: { x: 1, y: -1 }
     };
 
-    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
+    expect(dispatchKeydown('4', 'Digit4').prevented).toBe(true);
     runRenderFrame();
     expect(testRuntime.latestPlayerItemPlacementPreviewState).toBeNull();
 
@@ -5907,6 +5932,43 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'torch',
       amount: 19
+    });
+  });
+
+  it('places a rope segment from the selected hotbar slot while the full debug-edit panel is hidden', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
+    expect(testRuntime.canvasInteractionMode).toBe('play');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: 1,
+        worldX: 8,
+        worldY: 24,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 0,
+        worldTileY: 1,
+        tileId: 11
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[2]).toEqual({
+      itemId: 'rope',
+      amount: 23
     });
   });
 
