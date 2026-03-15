@@ -1589,7 +1589,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose, live death-hold, breath, survival cooldowns, and hostile-contact invulnerability telemetry on separate player lines', () => {
+  it('keeps pose, live death-hold, breath, submersion, survival cooldowns, and hostile-contact invulnerability telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -1602,6 +1602,8 @@ describe('buildDebugEditStatusStripModel', () => {
       playerRespawnSecondsRemaining: 0.75,
       playerDeathHoldStatus: 'holding',
       playerBreathSecondsRemaining: 0.25,
+      playerHeadSubmergedInWater: true,
+      playerWaterSubmergedFraction: 1,
       playerDrowningDamageTickSecondsRemaining: 0.5,
       playerFallDamageRecoverySecondsRemaining: 0.35,
       playerHostileContactInvulnerabilitySecondsRemaining: 0.75,
@@ -1614,6 +1616,8 @@ describe('buildDebugEditStatusStripModel', () => {
         'RespawnIn: 0.75s\n' +
         'DeathHold: holding\n' +
         'BreathNow: 0.25s\n' +
+        'HeadSubmergedNow: on\n' +
+        'WaterOverlapNow: 1.00\n' +
         'DrownCooldownNow: 0.50s\n' +
         'FallRecoveryNow: 0.35s\n' +
         'ContactInvulnNow: 0.75s'

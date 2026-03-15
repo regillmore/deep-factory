@@ -31,6 +31,11 @@ export interface PlayerState {
   hostileContactInvulnerabilitySecondsRemaining: number;
 }
 
+export interface PlayerWaterSubmersionTelemetry {
+  headSubmergedInWater: boolean;
+  waterSubmergedFraction: number;
+}
+
 export interface PlayerCollisionContacts {
   support: SolidTileCollision | null;
   wall: PlayerWallCollision | null;
@@ -430,6 +435,18 @@ const samplePlayerLiquidOverlapState = (
     waterBreathSubmergedFraction:
       breathSampleArea <= 0 ? 0 : clampNumber(waterBreathOverlapArea / breathSampleArea, 0, 1),
     lavaSubmergedFraction: clampNumber(lavaOverlapArea / playerArea, 0, 1)
+  };
+};
+
+export const getPlayerWaterSubmersionTelemetry = (
+  world: TileWorld,
+  state: PlayerState,
+  registry: TileMetadataRegistry = TILE_METADATA
+): PlayerWaterSubmersionTelemetry => {
+  const liquidOverlapState = samplePlayerLiquidOverlapState(world, state, registry);
+  return {
+    headSubmergedInWater: liquidOverlapState.waterBreathSubmergedFraction > 0,
+    waterSubmergedFraction: liquidOverlapState.waterSubmergedFraction
   };
 };
 

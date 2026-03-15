@@ -212,6 +212,8 @@ export interface DebugOverlayPlayerTelemetry {
   respawnSecondsRemaining?: number | null;
   deathHoldStatus?: 'none' | 'holding' | 'respawned' | null;
   breathSecondsRemaining?: number | null;
+  headSubmergedInWater?: boolean | null;
+  waterSubmergedFraction?: number | null;
   drowningDamageTickSecondsRemaining?: number | null;
   fallDamageRecoverySecondsRemaining?: number | null;
   hostileContactInvulnerabilitySecondsRemaining?: number | null;
@@ -761,6 +763,14 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
     typeof player.breathSecondsRemaining === 'number' && Number.isFinite(player.breathSecondsRemaining)
       ? `${player.breathSecondsRemaining.toFixed(2)}s`
       : null;
+  const headSubmergedText =
+    typeof player.headSubmergedInWater === 'boolean'
+      ? formatGameplayFlag(player.headSubmergedInWater)
+      : null;
+  const waterOverlapText =
+    typeof player.waterSubmergedFraction === 'number' && Number.isFinite(player.waterSubmergedFraction)
+      ? player.waterSubmergedFraction.toFixed(2)
+      : null;
   const drowningCooldownText =
     typeof player.drowningDamageTickSecondsRemaining === 'number' &&
     Number.isFinite(player.drowningDamageTickSecondsRemaining)
@@ -785,6 +795,8 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
     respawnText === null &&
     deathHoldText === null &&
     breathText === null &&
+    headSubmergedText === null &&
+    waterOverlapText === null &&
     drowningCooldownText === null &&
     fallRecoveryText === null &&
     hostileContactInvulnerabilityText === 'n/a'
@@ -800,6 +812,12 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
   }
   if (breathText !== null) {
     segments.push(`breath:${breathText}`);
+  }
+  if (headSubmergedText !== null) {
+    segments.push(`headSubmerged:${headSubmergedText}`);
+  }
+  if (waterOverlapText !== null) {
+    segments.push(`waterOverlap:${waterOverlapText}`);
   }
   if (drowningCooldownText !== null) {
     segments.push(`drownCooldown:${drowningCooldownText}`);

@@ -35,5 +35,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Telemetry
 
 538. Add a lava-damage telemetry to the telemetry catalog: show the latest lava tick damage plus current lava-damage cooldown in the debug HUD or compact status strip, and add fixed-step survival telemetry regressions.
-542. Add a breath-submersion telemetry follow-up to the telemetry catalog: show whether the player's head sample is submerged plus the normalized water-overlap fraction in the debug HUD or compact status strip, and add fixed-step telemetry regressions.
 545. Add a death-cause telemetry follow-up to the telemetry catalog: show the latest lethal damage source plus applied damage in the debug HUD or compact status strip, and add deterministic death-cause regressions.
+584. Add a lava-submersion telemetry follow-up to the telemetry catalog: show whether the player currently overlaps lava plus the normalized lava-overlap fraction in the debug HUD or compact status strip, and add fixed-step telemetry regressions.

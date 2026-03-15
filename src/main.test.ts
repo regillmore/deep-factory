@@ -658,6 +658,28 @@ vi.mock('./gl/renderer', () => ({
       };
     }
 
+    getPlayerWaterSubmersionTelemetry(state?: unknown) {
+      if (!state || typeof state !== 'object') {
+        return {
+          headSubmergedInWater: false,
+          waterSubmergedFraction: 0
+        };
+      }
+
+      const playerState = state as {
+        headSubmergedInWater?: unknown;
+        waterSubmergedFraction?: unknown;
+      };
+      return {
+        headSubmergedInWater: playerState.headSubmergedInWater === true,
+        waterSubmergedFraction:
+          typeof playerState.waterSubmergedFraction === 'number' &&
+          Number.isFinite(playerState.waterSubmergedFraction)
+            ? playerState.waterSubmergedFraction
+            : 0
+      };
+    }
+
     getTile(worldTileX?: number, worldTileY?: number): number {
       if (typeof worldTileX === 'number' && typeof worldTileY === 'number') {
         const mappedTileId = testRuntime.rendererTileIdsByWorldKey.get(worldTileKey(worldTileX, worldTileY));
@@ -4468,6 +4490,8 @@ describe('main.ts shell state orchestration', () => {
           grounded: true,
           health: 100,
           breathSecondsRemaining: 0.25,
+          headSubmergedInWater: false,
+          waterSubmergedFraction: 2 / 3,
           drowningDamageTickSecondsRemaining: 0.5
         };
       }
@@ -4478,6 +4502,8 @@ describe('main.ts shell state orchestration', () => {
         grounded: true,
         health: 95,
         breathSecondsRemaining: 0,
+        headSubmergedInWater: true,
+        waterSubmergedFraction: 1,
         drowningDamageTickSecondsRemaining: 0.25
       };
     };
@@ -4489,11 +4515,21 @@ describe('main.ts shell state orchestration', () => {
 
     expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(100);
     expect(testRuntime.latestDebugOverlayInspectState?.player?.breathSecondsRemaining).toBe(0.25);
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.headSubmergedInWater).toBe(false);
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.waterSubmergedFraction).toBeCloseTo(
+      2 / 3,
+      5
+    );
     expect(
       testRuntime.latestDebugOverlayInspectState?.player?.drowningDamageTickSecondsRemaining
     ).toBe(0.5);
     expect(testRuntime.latestDebugEditStatusStripState?.playerHealth).toBe(100);
     expect(testRuntime.latestDebugEditStatusStripState?.playerBreathSecondsRemaining).toBe(0.25);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerHeadSubmergedInWater).toBe(false);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerWaterSubmergedFraction).toBeCloseTo(
+      2 / 3,
+      5
+    );
     expect(
       testRuntime.latestDebugEditStatusStripState?.playerDrowningDamageTickSecondsRemaining
     ).toBe(0.5);
@@ -4503,11 +4539,15 @@ describe('main.ts shell state orchestration', () => {
 
     expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(95);
     expect(testRuntime.latestDebugOverlayInspectState?.player?.breathSecondsRemaining).toBe(0);
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.headSubmergedInWater).toBe(true);
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.waterSubmergedFraction).toBe(1);
     expect(
       testRuntime.latestDebugOverlayInspectState?.player?.drowningDamageTickSecondsRemaining
     ).toBe(0.25);
     expect(testRuntime.latestDebugEditStatusStripState?.playerHealth).toBe(95);
     expect(testRuntime.latestDebugEditStatusStripState?.playerBreathSecondsRemaining).toBe(0);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerHeadSubmergedInWater).toBe(true);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerWaterSubmergedFraction).toBe(1);
     expect(
       testRuntime.latestDebugEditStatusStripState?.playerDrowningDamageTickSecondsRemaining
     ).toBe(0.25);

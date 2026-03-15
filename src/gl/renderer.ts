@@ -57,12 +57,14 @@ import {
 } from '../world/playerSpawn';
 import {
   getPlayerCollisionContacts as getWorldPlayerCollisionContacts,
+  getPlayerWaterSubmersionTelemetry as getWorldPlayerWaterSubmersionTelemetry,
   respawnPlayerStateAtSpawnIfEmbeddedInSolid as respawnWorldPlayerStateAtSpawnIfEmbeddedInSolid,
   stepPlayerState as stepWorldPlayerState,
   stepPlayerStateWithGravity as stepWorldPlayerStateWithGravity,
   type PlayerCollisionContacts,
   type PlayerMovementIntent,
-  type PlayerState
+  type PlayerState,
+  type PlayerWaterSubmersionTelemetry
 } from '../world/playerState';
 import type { EntityId, EntityRenderStateSnapshot } from '../world/entityRegistry';
 import { resolveInterpolatedEntityWorldPosition } from '../world/entityRenderInterpolation';
@@ -851,6 +853,10 @@ export class Renderer {
 
   getPlayerCollisionContacts(state: PlayerState): PlayerCollisionContacts {
     return getWorldPlayerCollisionContacts(this.world, state);
+  }
+
+  getPlayerWaterSubmersionTelemetry(state: PlayerState): PlayerWaterSubmersionTelemetry {
+    return getWorldPlayerWaterSubmersionTelemetry(this.world, state);
   }
 
   stepPlayerStateWithGravity(state: PlayerState, fixedDtSeconds: number): PlayerState {

@@ -1102,6 +1102,8 @@ describe('formatDebugOverlayText', () => {
         velocity: { x: 0, y: 0 },
         health: 95,
         breathSecondsRemaining: 0.25,
+        headSubmergedInWater: true,
+        waterSubmergedFraction: 1,
         drowningDamageTickSecondsRemaining: 0.5,
         hostileContactInvulnerabilitySecondsRemaining: 0,
         aabb: {
@@ -1121,7 +1123,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain(
-      '\nCombat: health:95 | breath:0.25s | drownCooldown:0.50s | contactInvuln:0.00s'
+      '\nCombat: health:95 | breath:0.25s | headSubmerged:on | waterOverlap:1.00 | drownCooldown:0.50s | contactInvuln:0.00s'
     );
   });
 

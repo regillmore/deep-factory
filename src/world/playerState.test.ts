@@ -33,6 +33,7 @@ import {
   DEFAULT_PLAYER_WIDTH,
   getPlayerCameraFocusPoint,
   getPlayerCollisionContacts,
+  getPlayerWaterSubmersionTelemetry,
   getPlayerAabb,
   integratePlayerState,
   isPlayerRopeDropActive,
@@ -1490,6 +1491,39 @@ describe('playerState', () => {
 
     expect(headSubmerged.breathSecondsRemaining).toBe(3.5);
     expect(headSubmerged.drowningDamageTickSecondsRemaining).toBe(0.5);
+  });
+
+  it('reports head submersion separately from the normalized water-overlap fraction', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -4, 2, 2, 0);
+    world.setTile(0, 0, WATER_TILE_ID);
+
+    const feetOnlyTelemetry = getPlayerWaterSubmersionTelemetry(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 8 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 }
+      })
+    );
+
+    expect(feetOnlyTelemetry.headSubmergedInWater).toBe(false);
+    expect(feetOnlyTelemetry.waterSubmergedFraction).toBeCloseTo(2 / 3, 5);
+
+    world.setTile(0, -1, WATER_TILE_ID);
+
+    const headSubmergedTelemetry = getPlayerWaterSubmersionTelemetry(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 8 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 }
+      })
+    );
+
+    expect(headSubmergedTelemetry.headSubmergedInWater).toBe(true);
+    expect(headSubmergedTelemetry.waterSubmergedFraction).toBe(1);
   });
 
   it('applies lethal drowning damage on a fixed cadence after breath runs out', () => {

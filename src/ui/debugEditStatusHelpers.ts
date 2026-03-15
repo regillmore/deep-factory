@@ -87,6 +87,8 @@ export interface DebugEditStatusStripState {
   playerRespawnSecondsRemaining?: number | null;
   playerDeathHoldStatus?: 'none' | 'holding' | 'respawned' | null;
   playerBreathSecondsRemaining?: number | null;
+  playerHeadSubmergedInWater?: boolean | null;
+  playerWaterSubmergedFraction?: number | null;
   playerDrowningDamageTickSecondsRemaining?: number | null;
   playerFallDamageRecoverySecondsRemaining?: number | null;
   playerHostileContactInvulnerabilitySecondsRemaining?: number | null;
@@ -1452,6 +1454,22 @@ const formatLiveBreathText = (playerBreathSecondsRemaining: number | null): stri
   return `BreathNow: ${playerBreathSecondsRemaining.toFixed(2)}s`;
 };
 
+const formatLiveHeadSubmergedText = (playerHeadSubmergedInWater: boolean | null): string | null => {
+  if (playerHeadSubmergedInWater === null) {
+    return null;
+  }
+
+  return `HeadSubmergedNow: ${formatGameplayFlag(playerHeadSubmergedInWater)}`;
+};
+
+const formatLiveWaterOverlapText = (playerWaterSubmergedFraction: number | null): string | null => {
+  if (playerWaterSubmergedFraction === null) {
+    return null;
+  }
+
+  return `WaterOverlapNow: ${playerWaterSubmergedFraction.toFixed(2)}`;
+};
+
 const formatLiveDrowningCooldownText = (
   playerDrowningDamageTickSecondsRemaining: number | null
 ): string | null => {
@@ -1653,6 +1671,8 @@ const buildPlayerText = (
   playerRespawnSecondsRemaining: number | null,
   playerDeathHoldStatus: DebugEditStatusStripState['playerDeathHoldStatus'],
   playerBreathSecondsRemaining: number | null,
+  playerHeadSubmergedInWater: boolean | null,
+  playerWaterSubmergedFraction: number | null,
   playerDrowningDamageTickSecondsRemaining: number | null,
   playerFallDamageRecoverySecondsRemaining: number | null,
   playerHostileContactInvulnerabilitySecondsRemaining: number | null,
@@ -1771,6 +1791,12 @@ const buildPlayerText = (
       ? formatLiveDeathHoldStatusText(playerDeathHoldStatus)
       : null,
     telemetryVisible('player-combat') ? formatLiveBreathText(playerBreathSecondsRemaining) : null,
+    telemetryVisible('player-combat')
+      ? formatLiveHeadSubmergedText(playerHeadSubmergedInWater)
+      : null,
+    telemetryVisible('player-combat')
+      ? formatLiveWaterOverlapText(playerWaterSubmergedFraction)
+      : null,
     telemetryVisible('player-combat')
       ? formatLiveDrowningCooldownText(playerDrowningDamageTickSecondsRemaining)
       : null,
@@ -2475,6 +2501,8 @@ export const buildDebugEditStatusStripModel = (
   const playerRespawnSecondsRemaining = state.playerRespawnSecondsRemaining ?? null;
   const playerDeathHoldStatus = state.playerDeathHoldStatus ?? null;
   const playerBreathSecondsRemaining = state.playerBreathSecondsRemaining ?? null;
+  const playerHeadSubmergedInWater = state.playerHeadSubmergedInWater ?? null;
+  const playerWaterSubmergedFraction = state.playerWaterSubmergedFraction ?? null;
   const playerDrowningDamageTickSecondsRemaining =
     state.playerDrowningDamageTickSecondsRemaining ?? null;
   const playerFallDamageRecoverySecondsRemaining =
@@ -2571,6 +2599,8 @@ export const buildDebugEditStatusStripModel = (
       playerRespawnSecondsRemaining,
       playerDeathHoldStatus,
       playerBreathSecondsRemaining,
+      playerHeadSubmergedInWater,
+      playerWaterSubmergedFraction,
       playerDrowningDamageTickSecondsRemaining,
       playerFallDamageRecoverySecondsRemaining,
       playerHostileContactInvulnerabilitySecondsRemaining,

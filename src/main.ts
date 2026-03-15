@@ -459,6 +459,8 @@ type StandalonePlayerRenderFrameStatusStripTelemetry = Pick<
   | 'playerRespawnSecondsRemaining'
   | 'playerDeathHoldStatus'
   | 'playerBreathSecondsRemaining'
+  | 'playerHeadSubmergedInWater'
+  | 'playerWaterSubmergedFraction'
   | 'playerDrowningDamageTickSecondsRemaining'
   | 'playerFallDamageRecoverySecondsRemaining'
   | 'playerHostileContactInvulnerabilitySecondsRemaining'
@@ -4105,6 +4107,12 @@ const bootstrap = async (): Promise<void> => {
               }
             ).drowningDamageTickSecondsRemaining
           );
+    const playerWaterSubmersionTelemetry =
+      playerState === null ? null : renderer.getPlayerWaterSubmersionTelemetry(playerState);
+    const playerHeadSubmergedInWater =
+      playerWaterSubmersionTelemetry?.headSubmergedInWater ?? null;
+    const playerWaterSubmergedFraction =
+      playerWaterSubmersionTelemetry?.waterSubmergedFraction ?? null;
     const playerFallDamageRecoverySecondsRemaining =
       playerState === null
         ? null
@@ -4240,6 +4248,8 @@ const bootstrap = async (): Promise<void> => {
                 respawnSecondsRemaining: playerRespawnSecondsRemaining,
                 deathHoldStatus: playerDeathHoldStatus,
                 breathSecondsRemaining: playerBreathSecondsRemaining,
+                headSubmergedInWater: playerHeadSubmergedInWater,
+                waterSubmergedFraction: playerWaterSubmergedFraction,
                 drowningDamageTickSecondsRemaining: playerDrowningDamageTickSecondsRemaining,
                 fallDamageRecoverySecondsRemaining: playerFallDamageRecoverySecondsRemaining,
                 hostileContactInvulnerabilitySecondsRemaining:
@@ -4324,6 +4334,8 @@ const bootstrap = async (): Promise<void> => {
         playerRespawnSecondsRemaining,
         playerDeathHoldStatus,
         playerBreathSecondsRemaining,
+        playerHeadSubmergedInWater,
+        playerWaterSubmergedFraction,
         playerDrowningDamageTickSecondsRemaining,
         playerFallDamageRecoverySecondsRemaining,
         playerHostileContactInvulnerabilitySecondsRemaining,
@@ -4495,14 +4507,16 @@ const bootstrap = async (): Promise<void> => {
       playerNearbyLightFactor: null,
       playerNearbyLightSourceTile: null,
       playerNearbyLightSourceChunk: null,
-        playerNearbyLightSourceLocalTile: null,
-        playerCeilingBonkHoldActive: null,
-        playerHealth: null,
-        playerRespawnSecondsRemaining: null,
-        playerDeathHoldStatus: null,
-        playerBreathSecondsRemaining: null,
-        playerDrowningDamageTickSecondsRemaining: null,
-        playerFallDamageRecoverySecondsRemaining: null,
+      playerNearbyLightSourceLocalTile: null,
+      playerCeilingBonkHoldActive: null,
+      playerHealth: null,
+      playerRespawnSecondsRemaining: null,
+      playerDeathHoldStatus: null,
+      playerBreathSecondsRemaining: null,
+      playerHeadSubmergedInWater: null,
+      playerWaterSubmergedFraction: null,
+      playerDrowningDamageTickSecondsRemaining: null,
+      playerFallDamageRecoverySecondsRemaining: null,
       playerHostileContactInvulnerabilitySecondsRemaining: null,
       playerGrounded: null,
       playerFacing: null,
@@ -4865,6 +4879,8 @@ const bootstrap = async (): Promise<void> => {
       playerRespawnSecondsRemaining: debugStatusStripPlayerTelemetry.playerRespawnSecondsRemaining,
       playerDeathHoldStatus: debugStatusStripPlayerTelemetry.playerDeathHoldStatus,
       playerBreathSecondsRemaining: debugStatusStripPlayerTelemetry.playerBreathSecondsRemaining,
+      playerHeadSubmergedInWater: debugStatusStripPlayerTelemetry.playerHeadSubmergedInWater,
+      playerWaterSubmergedFraction: debugStatusStripPlayerTelemetry.playerWaterSubmergedFraction,
       playerDrowningDamageTickSecondsRemaining:
         debugStatusStripPlayerTelemetry.playerDrowningDamageTickSecondsRemaining,
       playerFallDamageRecoverySecondsRemaining:
