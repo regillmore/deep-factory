@@ -1690,6 +1690,7 @@ describe('buildDebugEditStatusStripModel', () => {
       pinnedTile: null,
       desktopInspectPinArmed: false,
       hostileSlimeWorldTile: { x: 3, y: -1 },
+      hostileSlimeChaseOffset: { x: 46, y: -3 },
       hostileSlimeVelocity: { x: 35, y: -60 },
       hostileSlimeGrounded: false,
       hostileSlimeFacing: 'right',
@@ -1700,6 +1701,7 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.playerText).toBe(
       'SlimeTileNow: 3,-1\n' +
+        'SlimeChaseOffsetNow: x:+46.00 | y:-3.00\n' +
         'SlimeVelNow: 35.00,-60.00\n' +
         'SlimeGroundedNow: off\n' +
         'SlimeFacingNow: right\n' +

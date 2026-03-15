@@ -35,8 +35,8 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Telemetry
 
-527. Add a hostile-slime chase-offset telemetry to the telemetry catalog: show the tracked slime's horizontal and vertical offset from the player in the debug HUD or compact status strip, and add deterministic telemetry regressions.
 538. Add a lava-damage telemetry to the telemetry catalog: show the latest lava tick damage plus current lava-damage cooldown in the debug HUD or compact status strip, and add fixed-step survival telemetry regressions.
 542. Add a breath-submersion telemetry follow-up to the telemetry catalog: show whether the player's head sample is submerged plus the normalized water-overlap fraction in the debug HUD or compact status strip, and add fixed-step telemetry regressions.
 545. Add a death-cause telemetry follow-up to the telemetry catalog: show the latest lethal damage source plus applied damage in the debug HUD or compact status strip, and add deterministic death-cause regressions.
 557. Add a hostile-slime keep-band telemetry follow-up to the telemetry catalog: show the tracked slime's horizontal and vertical despawn-margin versus the current keep-band limits in the debug HUD or compact status strip, and add deterministic telemetry regressions.
+574. Add a hostile-slime spawn-target world-tile telemetry follow-up to the telemetry catalog: show the next spawn window's resolved world tile beside the existing spawn-window index and tile offset in the debug HUD or compact status strip, and add deterministic telemetry regressions.

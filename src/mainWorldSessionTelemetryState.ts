@@ -129,7 +129,7 @@ export const WORLD_SESSION_TELEMETRY_TYPE_DEFINITIONS = [
     id: 'hostile-slime-tracker',
     collectionId: 'hostile-slime',
     label: 'Tracker',
-    description: 'Tracked hostile-slime spawn-window, movement, and launch readouts.'
+    description: 'Tracked hostile-slime spawn-window, chase-offset, movement, and launch readouts.'
   },
   {
     id: 'world-atlas',

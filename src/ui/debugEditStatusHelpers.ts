@@ -95,6 +95,7 @@ export interface DebugEditStatusStripState {
   hostileSlimeNextSpawnWindowIndex?: number | null;
   hostileSlimeNextSpawnWindowOffsetTiles?: number | null;
   hostileSlimeWorldTile?: { x: number; y: number } | null;
+  hostileSlimeChaseOffset?: { x: number; y: number } | null;
   hostileSlimeVelocity?: { x: number; y: number } | null;
   hostileSlimeGrounded?: boolean | null;
   hostileSlimeFacing?: HostileSlimeFacing | null;
@@ -1537,6 +1538,19 @@ const formatLiveHostileSlimeWorldTileText = (
   return `SlimeTileNow: ${formatTileCoordinatePair(hostileSlimeWorldTile.x, hostileSlimeWorldTile.y)}`;
 };
 
+const formatLiveHostileSlimeChaseOffsetText = (
+  hostileSlimeChaseOffset: { x: number; y: number } | null
+): string | null => {
+  if (hostileSlimeChaseOffset === null) {
+    return null;
+  }
+
+  return (
+    `SlimeChaseOffsetNow: x:${formatSignedOffset(hostileSlimeChaseOffset.x.toFixed(2))} | ` +
+    `y:${formatSignedOffset(hostileSlimeChaseOffset.y.toFixed(2))}`
+  );
+};
+
 const formatLiveHostileSlimeVelocityText = (
   hostileSlimeVelocity: { x: number; y: number } | null
 ): string | null => {
@@ -1647,6 +1661,7 @@ const buildPlayerText = (
   hostileSlimeNextSpawnWindowIndex: number | null,
   hostileSlimeNextSpawnWindowOffsetTiles: number | null,
   hostileSlimeWorldTile: { x: number; y: number } | null,
+  hostileSlimeChaseOffset: { x: number; y: number } | null,
   hostileSlimeVelocity: { x: number; y: number } | null,
   hostileSlimeGrounded: boolean | null,
   hostileSlimeFacing: HostileSlimeFacing | null,
@@ -1781,6 +1796,9 @@ const buildPlayerText = (
       : null,
     telemetryVisible('hostile-slime-tracker')
       ? formatLiveHostileSlimeWorldTileText(hostileSlimeWorldTile)
+      : null,
+    telemetryVisible('hostile-slime-tracker')
+      ? formatLiveHostileSlimeChaseOffsetText(hostileSlimeChaseOffset)
       : null,
     telemetryVisible('hostile-slime-tracker')
       ? formatLiveHostileSlimeVelocityText(hostileSlimeVelocity)
@@ -2469,6 +2487,7 @@ export const buildDebugEditStatusStripModel = (
   const hostileSlimeNextSpawnWindowOffsetTiles =
     state.hostileSlimeNextSpawnWindowOffsetTiles ?? null;
   const hostileSlimeWorldTile = state.hostileSlimeWorldTile ?? null;
+  const hostileSlimeChaseOffset = state.hostileSlimeChaseOffset ?? null;
   const hostileSlimeVelocity = state.hostileSlimeVelocity ?? null;
   const hostileSlimeGrounded = state.hostileSlimeGrounded ?? null;
   const hostileSlimeFacing = state.hostileSlimeFacing ?? null;
@@ -2560,6 +2579,7 @@ export const buildDebugEditStatusStripModel = (
       hostileSlimeNextSpawnWindowIndex,
       hostileSlimeNextSpawnWindowOffsetTiles,
       hostileSlimeWorldTile,
+      hostileSlimeChaseOffset,
       hostileSlimeVelocity,
       hostileSlimeGrounded,
       hostileSlimeFacing,

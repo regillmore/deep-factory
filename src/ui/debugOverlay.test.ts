@@ -171,6 +171,7 @@ describe('formatDebugOverlayText', () => {
         nextSpawnWindowIndex: 2,
         nextSpawnWindowOffsetTiles: 18,
         worldTile: { x: 3, y: -1 },
+        chaseOffset: { x: 46, y: -3 },
         velocity: { x: 35, y: -60 },
         grounded: true,
         facing: 'left',
@@ -295,6 +296,7 @@ describe('formatDebugOverlayText', () => {
         nextSpawnWindowIndex: 2,
         nextSpawnWindowOffsetTiles: 18,
         worldTile: { x: 3, y: -1 },
+        chaseOffset: { x: 46, y: -3 },
         velocity: { x: 35, y: -60 },
         grounded: true,
         facing: 'left',
@@ -1159,6 +1161,7 @@ describe('formatDebugOverlayText', () => {
         nextSpawnWindowIndex: 2,
         nextSpawnWindowOffsetTiles: 18,
         worldTile: { x: 3, y: -1 },
+        chaseOffset: { x: 46, y: -3 },
         velocity: { x: 35, y: -60 },
         grounded: true,
         facing: 'left',
@@ -1179,7 +1182,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain(
-      '\nSlime: active:2 | nextSpawn:119t | nextWindow:2 | targetOffset:+18 tiles | tile:3,-1 | vel:35.00,-60.00 | grounded:on | facing:left | hopCooldown:17t | launch:step-hop'
+      '\nSlime: active:2 | nextSpawn:119t | nextWindow:2 | targetOffset:+18 tiles | tile:3,-1 | chaseOffset:x:+46.00,y:-3.00 | vel:35.00,-60.00 | grounded:on | facing:left | hopCooldown:17t | launch:step-hop'
     );
   });
 
@@ -1193,6 +1196,7 @@ describe('formatDebugOverlayText', () => {
         nextSpawnWindowIndex: 1,
         nextSpawnWindowOffsetTiles: -12,
         worldTile: null,
+        chaseOffset: null,
         velocity: null,
         grounded: null,
         facing: null,

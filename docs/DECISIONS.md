@@ -32,6 +32,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: That source data explains the latest damage or blocked-contact combat event, so keeping it beside health, invulnerability, and contact-hit readouts is more coherent than splitting it into the tracked hostile-slime locomotion telemetry.
 - Consequence: Future hostile-contact source follow-ups should extend `player-combat` unless a later pass intentionally redesigns the combat-versus-tracker telemetry split.
 
+### 2026-03-14: Hostile-slime chase-offset telemetry uses player-relative world-space deltas
+
+- Decision: The hostile-slime tracker now reports chase offset as `trackedSlime.position - player.position` on the horizontal and vertical axes, using the same bottom-center world-space anchors that drive fixed-step movement.
+- Reason: Player-relative world-space deltas explain the tracked slime's chase relationship without collapsing that spacing into tile-rounded values or introducing a second position convention just for telemetry.
+- Consequence: Future hostile-slime chase, keep-band, or spacing telemetry should extend this player-relative world-space delta contract unless a later pass intentionally introduces a separate tile-space readout.
+
 ### 2026-03-14: Rope contact uses grounded-style braking for neutral horizontal inertia
 
 - Decision: While the player overlaps a rope and left/right input is neutral, rope traversal now applies the same horizontal braking used for grounded movement before rope hold and centering resolve.

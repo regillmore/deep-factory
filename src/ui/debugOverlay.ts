@@ -235,6 +235,7 @@ export interface DebugOverlayHostileSlimeTelemetry {
   nextSpawnWindowIndex: number;
   nextSpawnWindowOffsetTiles: number;
   worldTile: { x: number; y: number } | null;
+  chaseOffset: { x: number; y: number } | null;
   velocity: { x: number; y: number } | null;
   grounded: boolean | null;
   facing: 'left' | 'right' | null;
@@ -338,6 +339,8 @@ export interface DebugOverlayInspectState {
 }
 
 const formatFloat = (value: number, digits: number): string => value.toFixed(digits);
+const formatSignedFloat = (value: number, digits: number): string =>
+  `${value >= 0 ? '+' : ''}${formatFloat(value, digits)}`;
 const formatInt = (value: number): string => Math.round(value).toString();
 const formatGameplayFlag = (value: boolean): string => (value ? 'on' : 'off');
 const worldToTileCoordinate = (world: number): number => Math.floor(world / TILE_SIZE);
@@ -861,6 +864,9 @@ const formatHostileSlimeLine = (
     hostileSlime.worldTile === null
       ? null
       : `tile:${formatInt(hostileSlime.worldTile.x)},${formatInt(hostileSlime.worldTile.y)}`,
+    hostileSlime.chaseOffset === null
+      ? null
+      : `chaseOffset:x:${formatSignedFloat(hostileSlime.chaseOffset.x, 2)},y:${formatSignedFloat(hostileSlime.chaseOffset.y, 2)}`,
     hostileSlime.velocity === null
       ? null
       : `vel:${formatFloat(hostileSlime.velocity.x, 2)},${formatFloat(hostileSlime.velocity.y, 2)}`,

@@ -4233,6 +4233,7 @@ describe('main.ts shell state orchestration', () => {
       nextSpawnWindowIndex: 2,
       nextSpawnWindowOffsetTiles: 18,
       worldTile: { x: 3, y: -1 },
+      chaseOffset: { x: 46, y: -3 },
       velocity: { x: 35, y: -60 },
       grounded: false,
       facing: 'left',
@@ -4250,6 +4251,10 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeWorldTile).toEqual({
       x: 3,
       y: -1
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeChaseOffset).toEqual({
+      x: 46,
+      y: -3
     });
     expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeVelocity).toEqual({
       x: 35,
@@ -5439,6 +5444,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeNextSpawnWindowIndex).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeNextSpawnWindowOffsetTiles).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeWorldTile).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeChaseOffset).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeVelocity).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeLaunchKind).toBeNull();
     expect(
