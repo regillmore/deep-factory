@@ -11,6 +11,8 @@ const createPreviewState = (
 ): PlayerItemPlacementPreviewState => ({
   tileX: 3,
   tileY: -2,
+  placementTileX: 3,
+  placementTileY: -2,
   canPlace: false,
   occupied: false,
   hasSolidFaceSupport: true,

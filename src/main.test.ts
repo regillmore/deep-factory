@@ -5742,6 +5742,8 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
       tileX: 1,
       tileY: -1,
+      placementTileX: 1,
+      placementTileY: -1,
       canPlace: true,
       occupied: false,
       hasSolidFaceSupport: true,
@@ -5765,6 +5767,8 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
       tileX: 0,
       tileY: -1,
+      placementTileX: 0,
+      placementTileY: -1,
       canPlace: false,
       occupied: false,
       hasSolidFaceSupport: true,
@@ -5788,6 +5792,8 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
       tileX: 0,
       tileY: -1,
+      placementTileX: 0,
+      placementTileY: -1,
       canPlace: true,
       occupied: false,
       hasSolidFaceSupport: true,
@@ -5811,6 +5817,8 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
       tileX: 20,
       tileY: -1,
+      placementTileX: 20,
+      placementTileY: -1,
       canPlace: false,
       occupied: false,
       hasSolidFaceSupport: true,
@@ -5834,6 +5842,88 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
       tileX: 0,
       tileY: 1,
+      placementTileX: 0,
+      placementTileY: 1,
+      canPlace: true,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false
+    });
+  });
+
+  it('shows a valid rope placement preview when the selected stack attaches to the side of a solid tile', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 1, y: 0 }
+    };
+
+    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
+    runRenderFrame();
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 1,
+      tileY: 0,
+      placementTileX: 1,
+      placementTileY: 0,
+      canPlace: true,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false
+    });
+  });
+
+  it('keeps the hovered rope tile highlighted while resolving the bottom extension target', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 1), 11);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 2), 11);
+    testRuntime.pointerInspect = {
+      pointerType: 'touch',
+      tile: { x: 0, y: 1 }
+    };
+
+    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
+    runRenderFrame();
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 0,
+      tileY: 1,
+      placementTileX: 0,
+      placementTileY: 3,
+      canPlace: true,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false
+    });
+  });
+
+  it('keeps rope-column extension placeable when the touched rope segment is in range even if the bottom target is farther away', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    for (let ropeTileY = 1; ropeTileY <= 7; ropeTileY += 1) {
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, ropeTileY), 11);
+    }
+    testRuntime.pointerInspect = {
+      pointerType: 'touch',
+      tile: { x: 0, y: 1 }
+    };
+
+    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
+    runRenderFrame();
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 0,
+      tileY: 1,
+      placementTileX: 0,
+      placementTileY: 8,
       canPlace: true,
       occupied: false,
       hasSolidFaceSupport: true,
@@ -5961,6 +6051,85 @@ describe('main.ts shell state orchestration', () => {
       {
         worldTileX: 0,
         worldTileY: 1,
+        tileId: 11
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[2]).toEqual({
+      itemId: 'rope',
+      amount: 23
+    });
+  });
+
+  it('extends the bottom of an existing rope column when the selected hotbar rope is used on a rope tile', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
+    expect(testRuntime.canvasInteractionMode).toBe('play');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 1), 11);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 2), 11);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: 1,
+        worldX: 8,
+        worldY: 24,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 0,
+        worldTileY: 3,
+        tileId: 11
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[2]).toEqual({
+      itemId: 'rope',
+      amount: 23
+    });
+  });
+
+  it('extends the bottom of an existing rope column from an in-range touched segment even when the resolved target is farther away', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
+    expect(testRuntime.canvasInteractionMode).toBe('play');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    for (let ropeTileY = 1; ropeTileY <= 7; ropeTileY += 1) {
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, ropeTileY), 11);
+    }
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: 1,
+        worldX: 8,
+        worldY: 24,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 0,
+        worldTileY: 8,
         tileId: 11
       }
     ]);

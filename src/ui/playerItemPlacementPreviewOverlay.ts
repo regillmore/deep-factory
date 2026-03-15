@@ -4,6 +4,8 @@ import { computeHoveredTileCursorClientRect, type HoveredTileCursorClientRect } 
 export interface PlayerItemPlacementPreviewState {
   tileX: number;
   tileY: number;
+  placementTileX: number;
+  placementTileY: number;
   canPlace: boolean;
   occupied: boolean;
   hasSolidFaceSupport: boolean;

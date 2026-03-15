@@ -4,6 +4,14 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-14
 
+- Task: Correct rope-column extension so preview and range stay on the touched rope segment.
+- Changes: Updated [src/main.ts](../src/main.ts), [src/ui/playerItemPlacementPreviewOverlay.ts](../src/ui/playerItemPlacementPreviewOverlay.ts), and [src/main.test.ts](../src/main.test.ts) so hotbar rope extension now keeps the hovered or tapped rope segment as the preview and placement-range tile while the actual edit still resolves to the first empty tile below the existing rope column; expanded [src/ui/playerItemPlacementPreviewOverlay.test.ts](../src/ui/playerItemPlacementPreviewOverlay.test.ts) plus [src/main.test.ts](../src/main.test.ts) with regressions for hovered-rope preview targeting and in-range extension even when the bottom target falls beyond the normal reach band; updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md) for the corrected interaction contract.
+- Verification: Ran `cmd /c npx vitest run src/ui/playerItemPlacementPreviewOverlay.test.ts src/main.test.ts` (outside the sandbox) and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
+- Task: Allow hotbar ropes to attach to solid sides and extend downward from existing rope columns.
+- Changes: Updated [src/world/starterRopePlacement.ts](../src/world/starterRopePlacement.ts) plus [src/world/starterRopePlacement.test.ts](../src/world/starterRopePlacement.test.ts) so rope placement now accepts solid left or right side anchors and resolves hovered rope segments to the first non-rope tile below the contiguous column, updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so hidden-panel hotbar previews and use actions target that same resolved rope cell before applying range and placement, removed completed task `562` from [docs/NEXT.md](docs/NEXT.md), added replacement task `567`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/starterRopePlacement.test.ts src/main.test.ts` (outside the sandbox) and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add grounded-style horizontal braking while a player is overlapping a rope.
 - Changes: Updated [src/world/playerState.ts](../src/world/playerState.ts) so rope contact now applies the same neutral-input horizontal braking used on solid ground before rope hold and self-centering resolve, expanded [src/world/playerState.test.ts](../src/world/playerState.test.ts) with a deterministic rope-inertia stall regression, replaced task `565` in [docs/NEXT.md](docs/NEXT.md) with follow-up task `566`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/playerState.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

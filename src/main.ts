@@ -233,6 +233,7 @@ import {
 } from './world/starterTorchPlacement';
 import {
   evaluateStarterRopePlacement,
+  resolveStarterRopePlacementTarget,
   STARTER_ROPE_ITEM_ID,
   STARTER_ROPE_TILE_ID
 } from './world/starterRopePlacement';
@@ -2770,8 +2771,8 @@ const bootstrap = async (): Promise<void> => {
     }
 
     const editResult = applyWorldTileEdit(
-      request.worldTileX,
-      request.worldTileY,
+      placementPreview.placementTileX,
+      placementPreview.placementTileY,
       placementTileId
     );
     if (!editResult.changed) {
@@ -2799,7 +2800,12 @@ const bootstrap = async (): Promise<void> => {
       return null;
     }
 
-    let placement: Omit<PlayerItemPlacementPreviewState, 'tileX' | 'tileY'> | null = null;
+    let placement: Omit<
+      PlayerItemPlacementPreviewState,
+      'tileX' | 'tileY' | 'placementTileX' | 'placementTileY'
+    > | null = null;
+    let placementTileX = worldTileX;
+    let placementTileY = worldTileY;
     switch (selectedStack.itemId) {
       case STARTER_BUILDING_BLOCK_ITEM_ID:
         placement = evaluateStarterBlockPlacement(
@@ -2821,12 +2827,22 @@ const bootstrap = async (): Promise<void> => {
         );
         break;
       case STARTER_ROPE_ITEM_ID:
-        placement = evaluateStarterRopePlacement(
+        ({
+          tileX: placementTileX,
+          tileY: placementTileY
+        } = resolveStarterRopePlacementTarget(
           {
             getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
           },
           worldTileX,
           worldTileY
+        ));
+        placement = evaluateStarterRopePlacement(
+          {
+            getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+          },
+          placementTileX,
+          placementTileY
         );
         break;
       default:
@@ -2844,6 +2860,8 @@ const bootstrap = async (): Promise<void> => {
     return {
       tileX: worldTileX,
       tileY: worldTileY,
+      placementTileX,
+      placementTileY,
       ...placement,
       canPlace: placement.canPlace && placementRange.withinRange
     };

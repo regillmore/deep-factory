@@ -14,11 +14,11 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Neutral-input centering makes rope navigation easier after small drift without fighting deliberate detach input or flipping the placeholder sprite because of an auto-centering correction.
 - Consequence: Future rope, vine, ladder, or other climbable follow-ups should treat self-centering as a neutral-input assist and keep facing driven by player intent or actual traversal, not by the assist itself.
 
-### 2026-03-14: Starter rope extends downward from the tile above and reuses shared climb intent
+### 2026-03-14: Starter rope uses the touched segment for preview and reach, then resolves bottom extension
 
-- Decision: Starter rope placement now allows empty target tiles only when the direct tile above is solid or already climbable, and rope traversal now flows through one shared vertical climb intent where `W`/`Up`/`Space` climbs up and `S`/`Down` climbs down.
-- Reason: A tile-above anchor rule keeps rope extension deterministic and readable for mixed-device play, while one shared climb intent avoids pushing rope-specific movement branches into `main.ts` or device-specific code.
-- Consequence: Future rope, vine, ladder, or other climbable follow-ups should extend the shared climbable-tile metadata plus vertical climb-intent path instead of inventing separate placement or traversal rules per item.
+- Decision: Starter rope placement now treats an empty tile as supported when the direct tile above is solid or already rope or when either horizontal neighbor is solid, and using a hotbar rope on an occupied rope segment keeps that touched segment as the preview and reach-check tile while the actual edit target resolves to the first non-rope tile below the contiguous rope column before support checks run. Rope traversal still flows through one shared vertical climb intent where `W`/`Up`/`Space` climbs up and `S`/`Down` climbs down.
+- Reason: Overhead-or-side support keeps rope placement deterministic and readable for mixed-device play without forcing underside-only targeting, bottom-resolution lets repeated rope use extend an existing column instead of failing on the clicked segment, and keeping preview plus reach on the touched rope segment avoids surprising far-away highlights or false out-of-range failures when the bottom has grown well below the player.
+- Consequence: Future rope, vine, ladder, or other extendable climbable follow-ups should keep interaction preview and range tied to the player-chosen segment while separately resolving the eventual edit target, rather than collapsing both concepts onto the final target cell or inventing device-specific placement logic.
 
 ### 2026-03-14: Rope hold is decided after the horizontal sweep
 
