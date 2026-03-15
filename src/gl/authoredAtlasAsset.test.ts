@@ -1180,14 +1180,14 @@ describe('authored atlas asset', () => {
     const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
     const ropeTile = TILE_METADATA.tiles.find((tile) => tile.name === 'rope');
 
-    expect(ropeTile?.render?.atlasIndex).toBe(20);
+    expect(ropeTile?.render?.atlasIndex).toBe(19);
 
     const ropeRegion = AUTHORED_ATLAS_REGIONS[ropeTile!.render!.atlasIndex!];
     expect(ropeRegion).toBeDefined();
 
     const visibleBounds = findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, ropeRegion!);
     expect(visibleBounds).toEqual({
-      x: ropeRegion!.x + 2,
+      x: ropeRegion!.x + 6,
       y: ropeRegion!.y,
       width: 4,
       height: ropeRegion!.height

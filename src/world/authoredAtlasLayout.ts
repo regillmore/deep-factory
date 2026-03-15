@@ -37,7 +37,7 @@ export const AUTHORED_ATLAS_REGIONS: readonly AuthoredAtlasRegion[] = [
   { x: 64, y: 16, width: 16, height: 16 },
   { x: 64, y: 32, width: 16, height: 16 },
   { x: 64, y: 48, width: 16, height: 16 },
-  // Keep rope in a dedicated slot while preserving both the spare authored region and a right-side padding strip.
+  // Keep a documented spare utility slot while preserving the right-side padding strip.
   { x: 80, y: 48, width: 8, height: 16 }
 ] as const;
 
@@ -46,7 +46,7 @@ export const AUTHORED_ATLAS_REGION_COUNT = AUTHORED_ATLAS_REGIONS.length;
 // Document reserved or blank committed slots here so asset regressions can distinguish drift from intent.
 export const AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS: Readonly<Record<number, string>> =
   Object.freeze({
-    19: 'reserved spare authored slot for unused-region transparency regressions'
+    20: 'reserved spare authored utility slot for unused-region transparency regressions'
   });
 
 export const AUTHORED_ATLAS_UV_RECTS: readonly AuthoredAtlasUvRect[] = AUTHORED_ATLAS_REGIONS.map(

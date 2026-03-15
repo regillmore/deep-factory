@@ -2,11 +2,11 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
-### 2026-03-14: Rope art uses its own narrow utility atlas slot while preserving the spare authored region
+### 2026-03-14: Rope art uses a full tile atlas square because default tile quads render full width
 
-- Decision: Rope render metadata now points at a dedicated `8x16` authored atlas region carved from the lower-right utility strip, while atlas region `19` stays intentionally unused and the right-side exterior padding strip remains transparent.
-- Reason: Rope needed distinct committed art, but spending the documented spare slot or the full padding strip would weaken the authored-atlas unused-region and spill regressions that already protect content drift.
-- Consequence: Future authored utility-tile art can use explicit partial-width atlas regions when needed, but should preserve both the spare unused region and the exterior transparent padding unless a broader atlas-layout migration intentionally revisits those guards.
+- Decision: Rope render metadata now points at authored atlas region `19`, a full `16x16` square whose visible strand is centered inside transparent padding, while the narrow utility slot at region `20` stays intentionally unused and the right-side exterior padding strip remains transparent.
+- Reason: Ordinary tile rendering maps atlas UVs across a full tile-width world quad, so placing rope in a narrower authored region made it render stretched even though the atlas art itself looked correct.
+- Consequence: Future narrow-looking tiles should stay inside full-width authored regions unless the same pass adds non-liquid render bounds that let the mesher shrink world-space quad width intentionally.
 
 ### 2026-03-14: Single-item hotbar drops reuse the nearby-pickup cascade
 
@@ -1706,11 +1706,11 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Direct UV metadata bypasses authored atlas-index ownership, so the exterior blank band only remains a trustworthy spill-detection target if metadata cannot sample it either.
 - Consequence: Future direct-UV authoring should stay within the authored-region span or update the authored layout, committed asset, and related regressions together.
 
-### 2026-03-02: Authored atlas keeps a spare unused region plus exterior padding
+### 2026-03-02: Authored atlas keeps at least one unused region plus exterior padding
 
-- Decision: The committed authored atlas now expands to `96x64`, preserves the original `4x4` used region block, reserves authored region `16` as intentionally unused, and leaves exterior transparent padding beyond the authored-region bounds.
+- Decision: The committed authored atlas now expands to `96x64`, preserves the original `4x4` used region block, keeps at least one authored region intentionally unused as a regression target, and leaves exterior transparent padding beyond the authored-region bounds.
 - Reason: Upcoming committed-asset regressions for unused-region transparency and content spill need real empty atlas space instead of a fully packed image.
-- Consequence: Future atlas edits should preserve equivalent documented spare space or deliberately update the related asset-regression coverage and docs at the same time.
+- Consequence: Future atlas edits should preserve equivalent documented spare space or deliberately update the related asset-regression coverage and docs at the same time, even if the specific spare-region index changes during later repacks.
 
 ### 2026-03-02: Default animated direct `render.uvRect` frames must differ in committed atlas content
 
