@@ -219,6 +219,44 @@ describe('createWorldSaveEnvelope', () => {
 
     expect(decoded.session.droppedItemStates).toEqual(droppedItemStates);
   });
+
+  it('round-trips stone-block inventory stacks and mined stone-block refunds through save decode', () => {
+    const world = new TileWorld(0);
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'stone-block', amount: 12 },
+        { itemId: 'torch', amount: 20 },
+        ...Array.from({ length: 7 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 1
+    });
+    const droppedItemStates = [
+      createDroppedItemState({
+        position: { x: 24, y: 8 },
+        itemId: 'stone-block',
+        amount: 3
+      })
+    ];
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            droppedItemStates,
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    expect(decoded.session.standalonePlayerInventoryState).toEqual(standalonePlayerInventoryState);
+    expect(decoded.session.droppedItemStates).toEqual(droppedItemStates);
+  });
 });
 
 describe('decodeWorldSaveEnvelope', () => {

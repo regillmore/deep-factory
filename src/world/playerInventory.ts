@@ -1,6 +1,11 @@
 export const PLAYER_INVENTORY_HOTBAR_SLOT_COUNT = 10;
 
-export type PlayerInventoryItemId = 'pickaxe' | 'dirt-block' | 'torch' | 'rope';
+export type PlayerInventoryItemId =
+  | 'pickaxe'
+  | 'dirt-block'
+  | 'stone-block'
+  | 'torch'
+  | 'rope';
 
 export interface PlayerInventoryItemDefinition {
   id: PlayerInventoryItemId;
@@ -50,6 +55,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     id: 'dirt-block',
     label: 'Dirt Block',
     hotbarLabel: 'DIRT',
+    maxStackSize: 999
+  },
+  'stone-block': {
+    id: 'stone-block',
+    label: 'Stone Block',
+    hotbarLabel: 'STONE',
     maxStackSize: 999
   },
   torch: {

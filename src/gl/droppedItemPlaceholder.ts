@@ -41,6 +41,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
     baseColor: [0.47, 0.33, 0.18],
     accentColor: [0.68, 0.54, 0.33]
   },
+  'stone-block': {
+    baseColor: [0.41, 0.43, 0.47],
+    accentColor: [0.67, 0.69, 0.74]
+  },
   torch: {
     baseColor: [0.79, 0.55, 0.16],
     accentColor: [0.99, 0.88, 0.46]

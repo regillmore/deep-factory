@@ -13,6 +13,7 @@ import {
 } from './tileMetadata';
 
 export const STARTER_PICKAXE_ITEM_ID: PlayerInventoryItemId = 'pickaxe';
+export const STONE_BLOCK_ITEM_ID: PlayerInventoryItemId = 'stone-block';
 
 export const STARTER_PICKAXE_SWING_WINDUP_SECONDS = 0.1;
 export const STARTER_PICKAXE_SWING_ACTIVE_SECONDS = 0.05;
@@ -145,6 +146,11 @@ export const resolveStarterPickaxeBrokenTileDrop = (
   tileId: number
 ): StarterPickaxeBrokenTileDrop | null => {
   switch (tileId) {
+    case STONE_TILE_ID:
+      return {
+        itemId: STONE_BLOCK_ITEM_ID,
+        amount: 1
+      };
     case GRASS_SURFACE_TILE_ID:
     case STARTER_BUILDING_BLOCK_TILE_ID:
       return {

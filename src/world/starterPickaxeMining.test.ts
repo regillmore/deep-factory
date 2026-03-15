@@ -71,7 +71,11 @@ describe('evaluateStarterPickaxeMiningTarget', () => {
 });
 
 describe('resolveStarterPickaxeBrokenTileDrop', () => {
-  it('returns one dirt-block refund for broken grass-surface and placed dirt tiles only', () => {
+  it('returns one stackable block refund for broken stone, grass-surface, and placed dirt tiles', () => {
+    expect(resolveStarterPickaxeBrokenTileDrop(1)).toEqual({
+      itemId: 'stone-block',
+      amount: 1
+    });
     expect(resolveStarterPickaxeBrokenTileDrop(2)).toEqual({
       itemId: 'dirt-block',
       amount: 1
@@ -80,7 +84,7 @@ describe('resolveStarterPickaxeBrokenTileDrop', () => {
       itemId: 'dirt-block',
       amount: 1
     });
-    expect(resolveStarterPickaxeBrokenTileDrop(1)).toBeNull();
+    expect(resolveStarterPickaxeBrokenTileDrop(10)).toBeNull();
   });
 });
 

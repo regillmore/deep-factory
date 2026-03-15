@@ -298,6 +298,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'DIRT',
       maxStackSize: 999
     });
+    expect(getPlayerInventoryItemDefinition('stone-block')).toEqual({
+      id: 'stone-block',
+      label: 'Stone Block',
+      hotbarLabel: 'STONE',
+      maxStackSize: 999
+    });
     expect(getPlayerInventoryItemDefinition('pickaxe')).toEqual({
       id: 'pickaxe',
       label: 'Starter Pickaxe',
