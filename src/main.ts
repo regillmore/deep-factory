@@ -5177,7 +5177,7 @@ const bootstrap = async (): Promise<void> => {
     refreshResolvedPlayerSpawn();
   } else {
     try {
-      restoreWorldSessionFromSaveEnvelope({
+      const restoreResult = restoreWorldSessionFromSaveEnvelope({
         envelope: persistedWorldSaveEnvelope,
         target: {
           loadWorldSnapshot: (snapshot) => {
@@ -5204,6 +5204,12 @@ const bootstrap = async (): Promise<void> => {
         }
       });
       worldSessionStarted = true;
+      if (restoreResult.didNormalizeDroppedItemStates) {
+        worldSavePersistenceAvailable = savePersistedWorldSaveEnvelope(
+          worldSessionShellStateStorage,
+          restoreResult.restoredEnvelope
+        );
+      }
       resolveCurrentWorldPlayerSpawn();
     } catch (error) {
       console.warn('Failed to restore persisted world session.', error);

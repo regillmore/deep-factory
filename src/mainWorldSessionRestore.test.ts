@@ -88,7 +88,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       })
     };
 
-    restoreWorldSessionFromSaveEnvelope({
+    const restoreResult = restoreWorldSessionFromSaveEnvelope({
       target,
       envelope
     });
@@ -100,6 +100,9 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     expect(target.restoreStandalonePlayerInventoryState).toHaveBeenCalledTimes(1);
     expect(target.restoreDroppedItemStates).toHaveBeenCalledTimes(1);
     expect(target.restoreCameraFollowOffset).toHaveBeenCalledTimes(1);
+    expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.restoredEnvelope).toEqual(envelope);
+    expect(restoreResult.restoredEnvelope).not.toBe(envelope);
 
     envelope.worldSnapshot.residentChunks[0]!.payload.tiles[0] = 99;
     envelope.session.standalonePlayerState!.position.x = 999;
@@ -140,7 +143,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       restoreCameraFollowOffset: vi.fn()
     };
 
-    restoreWorldSessionFromSaveEnvelope({
+    const restoreResult = restoreWorldSessionFromSaveEnvelope({
       target,
       envelope
     });
@@ -153,6 +156,8 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     );
     expect(target.restoreDroppedItemStates).toHaveBeenCalledWith([]);
     expect(target.restoreCameraFollowOffset).toHaveBeenCalledWith({ x: -24, y: 10 });
+    expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.restoredEnvelope).toEqual(envelope);
   });
 
   it('consolidates overlapping matching dropped-item restore payloads before applying them to the session target', () => {
@@ -193,7 +198,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       restoreCameraFollowOffset: vi.fn()
     };
 
-    restoreWorldSessionFromSaveEnvelope({
+    const restoreResult = restoreWorldSessionFromSaveEnvelope({
       target,
       envelope
     });
@@ -216,5 +221,23 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       }
     ]);
     expect(restoredDroppedItemStates).not.toBe(envelope.session.droppedItemStates);
+    expect(restoreResult.didNormalizeDroppedItemStates).toBe(true);
+    expect(restoreResult.restoredEnvelope.session.droppedItemStates).toEqual([
+      {
+        position: { x: 24, y: -14 },
+        itemId: 'torch',
+        amount: 999
+      },
+      {
+        position: { x: 28, y: -14 },
+        itemId: 'torch',
+        amount: 101
+      },
+      {
+        position: { x: 28, y: -14 },
+        itemId: 'rope',
+        amount: 3
+      }
+    ]);
   });
 });

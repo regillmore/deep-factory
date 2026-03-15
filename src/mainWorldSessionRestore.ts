@@ -20,10 +20,41 @@ export interface RestoreWorldSessionFromSaveEnvelopeOptions {
   envelope: WorldSaveEnvelope;
 }
 
+export interface RestoreWorldSessionFromSaveEnvelopeResult {
+  restoredEnvelope: WorldSaveEnvelope;
+  didNormalizeDroppedItemStates: boolean;
+}
+
+const areDroppedItemStatesEqual = (
+  left: readonly DroppedItemState[],
+  right: readonly DroppedItemState[]
+): boolean => {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  for (let index = 0; index < left.length; index += 1) {
+    const leftState = left[index];
+    const rightState = right[index];
+    if (
+      leftState === undefined ||
+      rightState === undefined ||
+      leftState.itemId !== rightState.itemId ||
+      leftState.amount !== rightState.amount ||
+      leftState.position.x !== rightState.position.x ||
+      leftState.position.y !== rightState.position.y
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 export const restoreWorldSessionFromSaveEnvelope = ({
   target,
   envelope
-}: RestoreWorldSessionFromSaveEnvelopeOptions): void => {
+}: RestoreWorldSessionFromSaveEnvelopeOptions): RestoreWorldSessionFromSaveEnvelopeResult => {
   const normalizedEnvelope = createWorldSaveEnvelope({
     worldSnapshot: envelope.worldSnapshot,
     standalonePlayerState: envelope.session.standalonePlayerState,
@@ -33,15 +64,36 @@ export const restoreWorldSessionFromSaveEnvelope = ({
     cameraFollowOffset: envelope.session.cameraFollowOffset,
     migration: envelope.migration
   });
+  const consolidatedDroppedItemStates = consolidateDroppedItemStates(
+    normalizedEnvelope.session.droppedItemStates
+  );
+  const didNormalizeDroppedItemStates = !areDroppedItemStatesEqual(
+    normalizedEnvelope.session.droppedItemStates,
+    consolidatedDroppedItemStates
+  );
+  const restoredEnvelope = didNormalizeDroppedItemStates
+    ? createWorldSaveEnvelope({
+        worldSnapshot: normalizedEnvelope.worldSnapshot,
+        standalonePlayerState: normalizedEnvelope.session.standalonePlayerState,
+        standalonePlayerDeathState: normalizedEnvelope.session.standalonePlayerDeathState,
+        standalonePlayerInventoryState: normalizedEnvelope.session.standalonePlayerInventoryState,
+        droppedItemStates: consolidatedDroppedItemStates,
+        cameraFollowOffset: normalizedEnvelope.session.cameraFollowOffset,
+        migration: normalizedEnvelope.migration
+      })
+    : normalizedEnvelope;
 
-  target.loadWorldSnapshot(normalizedEnvelope.worldSnapshot);
-  target.restoreStandalonePlayerDeathState(normalizedEnvelope.session.standalonePlayerDeathState);
-  target.restoreStandalonePlayerState(normalizedEnvelope.session.standalonePlayerState);
+  target.loadWorldSnapshot(restoredEnvelope.worldSnapshot);
+  target.restoreStandalonePlayerDeathState(restoredEnvelope.session.standalonePlayerDeathState);
+  target.restoreStandalonePlayerState(restoredEnvelope.session.standalonePlayerState);
   target.restoreStandalonePlayerInventoryState(
-    normalizedEnvelope.session.standalonePlayerInventoryState
+    restoredEnvelope.session.standalonePlayerInventoryState
   );
-  target.restoreDroppedItemStates(
-    consolidateDroppedItemStates(normalizedEnvelope.session.droppedItemStates)
-  );
-  target.restoreCameraFollowOffset(normalizedEnvelope.session.cameraFollowOffset);
+  target.restoreDroppedItemStates(restoredEnvelope.session.droppedItemStates);
+  target.restoreCameraFollowOffset(restoredEnvelope.session.cameraFollowOffset);
+
+  return {
+    restoredEnvelope,
+    didNormalizeDroppedItemStates
+  };
 };

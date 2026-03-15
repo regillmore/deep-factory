@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-15: Boot-time dropped-item normalization rewrites browser-resume saves immediately
+
+- Decision: When boot-time browser resume consolidates overlapping same-item dropped-item stacks during restore, the normalized world-save envelope is written back to browser storage immediately instead of waiting for the next pause or `pagehide`.
+- Reason: Leaving the stale overlapping pickup payload in storage until a later save point would make resumed sessions repeatedly pay the same normalization cost and could preserve redundant pickup stacks across an unexpected reload before the next persistence boundary.
+- Consequence: Future boot-time save-normalization passes should rewrite browser-resume storage as soon as they change restored session data, rather than relying on later autosave timing to eventually converge the persisted payload.
+
 ### 2026-03-15: Starter-pickaxe dirt refunds reuse the nearby-pickup cascade
 
 - Decision: When the starter pickaxe breaks `grass_surface` or placed starter dirt, the refunded `dirt-block` first merges into overlapping matching dropped-item stacks before any new pickup entity spawns.

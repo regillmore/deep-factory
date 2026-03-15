@@ -8829,7 +8829,7 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
-  it('consolidates overlapping matching dropped-item pickups when browser resume restores a saved session', async () => {
+  it('rewrites browser-resume save data immediately when boot restore consolidates overlapping matching dropped-item pickups', async () => {
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
       JSON.stringify(
@@ -8861,8 +8861,6 @@ describe('main.ts shell state orchestration', () => {
 
     await import('./main');
     await flushBootstrap();
-
-    dispatchWindowEvent('pagehide');
 
     expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
       {
