@@ -232,6 +232,8 @@ export interface DebugOverlayPlayerTelemetry {
 export interface DebugOverlayHostileSlimeTelemetry {
   activeCount: number;
   nextSpawnTicksRemaining: number;
+  nextSpawnWindowIndex: number;
+  nextSpawnWindowOffsetTiles: number;
   worldTile: { x: number; y: number } | null;
   velocity: { x: number; y: number } | null;
   grounded: boolean | null;
@@ -846,6 +848,10 @@ const formatHostileSlimeLine = (
   const segments = [
     `active:${Math.max(0, Math.round(hostileSlime.activeCount))}`,
     `nextSpawn:${Math.max(0, Math.round(hostileSlime.nextSpawnTicksRemaining))}t`,
+    `nextWindow:${Math.max(0, Math.round(hostileSlime.nextSpawnWindowIndex))}`,
+    `targetOffset:${hostileSlime.nextSpawnWindowOffsetTiles >= 0 ? '+' : ''}${Math.round(
+      hostileSlime.nextSpawnWindowOffsetTiles
+    )} tiles`,
     hostileSlime.worldTile === null
       ? null
       : `tile:${formatInt(hostileSlime.worldTile.x)},${formatInt(hostileSlime.worldTile.y)}`,

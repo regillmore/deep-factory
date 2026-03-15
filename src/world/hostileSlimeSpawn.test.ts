@@ -6,6 +6,8 @@ import { TileWorld } from './world';
 import {
   createHostileSlimeSpawnerState,
   DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS,
+  DEFAULT_HOSTILE_SLIME_WINDOW_OFFSETS_TILES,
+  resolveHostileSlimeSpawnWindowTarget,
   stepHostileSlimeSpawner
 } from './hostileSlimeSpawn';
 import {
@@ -38,6 +40,20 @@ const createFlatSurfaceWorld = (): TileWorld => {
 };
 
 describe('hostileSlimeSpawn', () => {
+  it('normalizes the next deterministic spawn-window index into its tile-offset target', () => {
+    expect(
+      resolveHostileSlimeSpawnWindowTarget(DEFAULT_HOSTILE_SLIME_WINDOW_OFFSETS_TILES.length + 2)
+    ).toEqual({
+      index: 2,
+      offsetTiles: DEFAULT_HOSTILE_SLIME_WINDOW_OFFSETS_TILES[2]
+    });
+
+    expect(resolveHostileSlimeSpawnWindowTarget(5, [9, -4] as const)).toEqual({
+      index: 1,
+      offsetTiles: -4
+    });
+  });
+
   it('spawns from the next deterministic window once the fixed-step cooldown elapses', () => {
     const world = createFlatSurfaceWorld();
     const playerState = createPlayerState({

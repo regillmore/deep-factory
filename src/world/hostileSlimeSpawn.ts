@@ -13,6 +13,11 @@ export interface HostileSlimeSpawnerState {
   nextWindowIndex: number;
 }
 
+export interface HostileSlimeSpawnWindowTarget {
+  index: number;
+  offsetTiles: number;
+}
+
 export interface ActiveHostileSlimeEntry<TId = number> {
   id: TId;
   state: Pick<HostileSlimeState, 'position'>;
@@ -85,6 +90,21 @@ const normalizeWindowOffsetsTiles = (windowOffsetsTiles: ReadonlyArray<number>):
     }
     return offset;
   });
+};
+
+export const resolveHostileSlimeSpawnWindowTarget = (
+  nextWindowIndex: number,
+  windowOffsetsTiles: ReadonlyArray<number> = DEFAULT_HOSTILE_SLIME_WINDOW_OFFSETS_TILES
+): HostileSlimeSpawnWindowTarget => {
+  const normalizedWindowOffsetsTiles = normalizeWindowOffsetsTiles(windowOffsetsTiles);
+  const normalizedIndex =
+    expectNonNegativeInteger(nextWindowIndex, 'nextWindowIndex') %
+    normalizedWindowOffsetsTiles.length;
+
+  return {
+    index: normalizedIndex,
+    offsetTiles: normalizedWindowOffsetsTiles[normalizedIndex] ?? 0
+  };
 };
 
 const resolvePlayerTileX = (playerState: Pick<PlayerState, 'position'>): number =>

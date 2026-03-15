@@ -1698,10 +1698,17 @@ describe('buildDebugEditStatusStripModel', () => {
       desktopInspectPinArmed: false,
       hostileSlimeActiveCount: 2,
       hostileSlimeNextSpawnTicksRemaining: 119,
+      hostileSlimeNextSpawnWindowIndex: 1,
+      hostileSlimeNextSpawnWindowOffsetTiles: -12,
       preview: createEmptyPreviewState()
     });
 
-    expect(model.playerText).toBe('SlimeActiveNow: 2\nSlimeSpawnCooldownNow: 119t');
+    expect(model.playerText).toBe(
+      'SlimeActiveNow: 2\n' +
+        'SlimeSpawnCooldownNow: 119t\n' +
+        'SlimeSpawnWindowNow: 1\n' +
+        'SlimeSpawnOffsetNow: -12 tiles'
+    );
     expect(model.eventText).toBeNull();
   });
 

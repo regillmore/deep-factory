@@ -92,6 +92,8 @@ export interface DebugEditStatusStripState {
   playerHostileContactInvulnerabilitySecondsRemaining?: number | null;
   hostileSlimeActiveCount?: number | null;
   hostileSlimeNextSpawnTicksRemaining?: number | null;
+  hostileSlimeNextSpawnWindowIndex?: number | null;
+  hostileSlimeNextSpawnWindowOffsetTiles?: number | null;
   hostileSlimeWorldTile?: { x: number; y: number } | null;
   hostileSlimeVelocity?: { x: number; y: number } | null;
   hostileSlimeGrounded?: boolean | null;
@@ -1483,6 +1485,26 @@ const formatLiveHostileSlimeNextSpawnText = (
   return `SlimeSpawnCooldownNow: ${Math.max(0, Math.round(hostileSlimeNextSpawnTicksRemaining))}t`;
 };
 
+const formatLiveHostileSlimeNextSpawnWindowIndexText = (
+  hostileSlimeNextSpawnWindowIndex: number | null
+): string | null => {
+  if (hostileSlimeNextSpawnWindowIndex === null) {
+    return null;
+  }
+
+  return `SlimeSpawnWindowNow: ${Math.max(0, Math.round(hostileSlimeNextSpawnWindowIndex))}`;
+};
+
+const formatLiveHostileSlimeNextSpawnWindowOffsetText = (
+  hostileSlimeNextSpawnWindowOffsetTiles: number | null
+): string | null => {
+  if (hostileSlimeNextSpawnWindowOffsetTiles === null) {
+    return null;
+  }
+
+  return `SlimeSpawnOffsetNow: ${formatSignedOffset(Math.round(hostileSlimeNextSpawnWindowOffsetTiles))} tiles`;
+};
+
 const formatLiveHostileSlimeWorldTileText = (
   hostileSlimeWorldTile: { x: number; y: number } | null
 ): string | null => {
@@ -1600,6 +1622,8 @@ const buildPlayerText = (
   playerHostileContactInvulnerabilitySecondsRemaining: number | null,
   hostileSlimeActiveCount: number | null,
   hostileSlimeNextSpawnTicksRemaining: number | null,
+  hostileSlimeNextSpawnWindowIndex: number | null,
+  hostileSlimeNextSpawnWindowOffsetTiles: number | null,
   hostileSlimeWorldTile: { x: number; y: number } | null,
   hostileSlimeVelocity: { x: number; y: number } | null,
   hostileSlimeGrounded: boolean | null,
@@ -1724,6 +1748,12 @@ const buildPlayerText = (
       : null,
     telemetryVisible('hostile-slime-tracker')
       ? formatLiveHostileSlimeNextSpawnText(hostileSlimeNextSpawnTicksRemaining)
+      : null,
+    telemetryVisible('hostile-slime-tracker')
+      ? formatLiveHostileSlimeNextSpawnWindowIndexText(hostileSlimeNextSpawnWindowIndex)
+      : null,
+    telemetryVisible('hostile-slime-tracker')
+      ? formatLiveHostileSlimeNextSpawnWindowOffsetText(hostileSlimeNextSpawnWindowOffsetTiles)
       : null,
     telemetryVisible('hostile-slime-tracker')
       ? formatLiveHostileSlimeWorldTileText(hostileSlimeWorldTile)
@@ -2400,6 +2430,9 @@ export const buildDebugEditStatusStripModel = (
     state.playerHostileContactInvulnerabilitySecondsRemaining ?? null;
   const hostileSlimeActiveCount = state.hostileSlimeActiveCount ?? null;
   const hostileSlimeNextSpawnTicksRemaining = state.hostileSlimeNextSpawnTicksRemaining ?? null;
+  const hostileSlimeNextSpawnWindowIndex = state.hostileSlimeNextSpawnWindowIndex ?? null;
+  const hostileSlimeNextSpawnWindowOffsetTiles =
+    state.hostileSlimeNextSpawnWindowOffsetTiles ?? null;
   const hostileSlimeWorldTile = state.hostileSlimeWorldTile ?? null;
   const hostileSlimeVelocity = state.hostileSlimeVelocity ?? null;
   const hostileSlimeGrounded = state.hostileSlimeGrounded ?? null;
@@ -2487,6 +2520,8 @@ export const buildDebugEditStatusStripModel = (
       playerHostileContactInvulnerabilitySecondsRemaining,
       hostileSlimeActiveCount,
       hostileSlimeNextSpawnTicksRemaining,
+      hostileSlimeNextSpawnWindowIndex,
+      hostileSlimeNextSpawnWindowOffsetTiles,
       hostileSlimeWorldTile,
       hostileSlimeVelocity,
       hostileSlimeGrounded,

@@ -204,6 +204,7 @@ import {
 } from './world/hostileSlimeCombat';
 import {
   createHostileSlimeSpawnerState,
+  resolveHostileSlimeSpawnWindowTarget,
   stepHostileSlimeSpawner
 } from './world/hostileSlimeSpawn';
 import {
@@ -490,6 +491,8 @@ type TrackedHostileSlimeRenderFrameStatusStripTelemetry = Pick<
   DebugEditStatusStripState,
   | 'hostileSlimeActiveCount'
   | 'hostileSlimeNextSpawnTicksRemaining'
+  | 'hostileSlimeNextSpawnWindowIndex'
+  | 'hostileSlimeNextSpawnWindowOffsetTiles'
   | 'hostileSlimeWorldTile'
   | 'hostileSlimeVelocity'
   | 'hostileSlimeGrounded'
@@ -4069,6 +4072,9 @@ const bootstrap = async (): Promise<void> => {
         getStandalonePlayerState(),
         activeHostileSlimes
       );
+      const trackedHostileSlimeSpawnWindow = resolveHostileSlimeSpawnWindowTarget(
+        hostileSlimeSpawnerState.nextWindowIndex
+      );
       const trackedHostileSlimeWorldTile =
         trackedHostileSlimeState === null
           ? null
@@ -4090,6 +4096,8 @@ const bootstrap = async (): Promise<void> => {
           hostileSlime: {
             activeCount: activeHostileSlimes.length,
             nextSpawnTicksRemaining: hostileSlimeSpawnerState.ticksUntilNextSpawn,
+            nextSpawnWindowIndex: trackedHostileSlimeSpawnWindow.index,
+            nextSpawnWindowOffsetTiles: trackedHostileSlimeSpawnWindow.offsetTiles,
             worldTile: trackedHostileSlimeWorldTile,
             velocity: trackedHostileSlimeVelocity,
             grounded: trackedHostileSlimeState?.grounded ?? null,
@@ -4102,6 +4110,8 @@ const bootstrap = async (): Promise<void> => {
         debugStatusStrip: {
           hostileSlimeActiveCount: activeHostileSlimes.length,
           hostileSlimeNextSpawnTicksRemaining: hostileSlimeSpawnerState.ticksUntilNextSpawn,
+          hostileSlimeNextSpawnWindowIndex: trackedHostileSlimeSpawnWindow.index,
+          hostileSlimeNextSpawnWindowOffsetTiles: trackedHostileSlimeSpawnWindow.offsetTiles,
           hostileSlimeWorldTile: trackedHostileSlimeWorldTile,
           hostileSlimeVelocity: trackedHostileSlimeVelocity,
           hostileSlimeGrounded: trackedHostileSlimeState?.grounded ?? null,
@@ -4209,6 +4219,8 @@ const bootstrap = async (): Promise<void> => {
     (): TrackedHostileSlimeRenderFrameStatusStripTelemetry => ({
       hostileSlimeActiveCount: null,
       hostileSlimeNextSpawnTicksRemaining: null,
+      hostileSlimeNextSpawnWindowIndex: null,
+      hostileSlimeNextSpawnWindowOffsetTiles: null,
       hostileSlimeWorldTile: null,
       hostileSlimeVelocity: null,
       hostileSlimeGrounded: null,
@@ -4543,6 +4555,10 @@ const bootstrap = async (): Promise<void> => {
       hostileSlimeActiveCount: debugStatusStripHostileSlimeTelemetry.hostileSlimeActiveCount,
       hostileSlimeNextSpawnTicksRemaining:
         debugStatusStripHostileSlimeTelemetry.hostileSlimeNextSpawnTicksRemaining,
+      hostileSlimeNextSpawnWindowIndex:
+        debugStatusStripHostileSlimeTelemetry.hostileSlimeNextSpawnWindowIndex,
+      hostileSlimeNextSpawnWindowOffsetTiles:
+        debugStatusStripHostileSlimeTelemetry.hostileSlimeNextSpawnWindowOffsetTiles,
       hostileSlimeWorldTile: debugStatusStripHostileSlimeTelemetry.hostileSlimeWorldTile,
       hostileSlimeVelocity: debugStatusStripHostileSlimeTelemetry.hostileSlimeVelocity,
       hostileSlimeGrounded: debugStatusStripHostileSlimeTelemetry.hostileSlimeGrounded,

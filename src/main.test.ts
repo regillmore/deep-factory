@@ -4217,6 +4217,8 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugOverlayInspectState?.hostileSlime).toEqual({
       activeCount: 2,
       nextSpawnTicksRemaining: DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS - 1,
+      nextSpawnWindowIndex: 2,
+      nextSpawnWindowOffsetTiles: 18,
       worldTile: { x: 3, y: -1 },
       velocity: { x: 35, y: -60 },
       grounded: false,
@@ -4227,6 +4229,10 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeActiveCount).toBe(2);
     expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeNextSpawnTicksRemaining).toBe(
       DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS - 1
+    );
+    expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeNextSpawnWindowIndex).toBe(2);
+    expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeNextSpawnWindowOffsetTiles).toBe(
+      18
     );
     expect(testRuntime.latestDebugEditStatusStripState?.hostileSlimeWorldTile).toEqual({
       x: 3,
@@ -5407,6 +5413,8 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.playerHealth).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeActiveCount).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeNextSpawnTicksRemaining).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeNextSpawnWindowIndex).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeNextSpawnWindowOffsetTiles).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeWorldTile).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeVelocity).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.hostileSlimeLaunchKind).toBeNull();

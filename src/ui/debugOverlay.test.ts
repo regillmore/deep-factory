@@ -168,6 +168,8 @@ describe('formatDebugOverlayText', () => {
       hostileSlime: {
         activeCount: 2,
         nextSpawnTicksRemaining: 119,
+        nextSpawnWindowIndex: 2,
+        nextSpawnWindowOffsetTiles: 18,
         worldTile: { x: 3, y: -1 },
         velocity: { x: 35, y: -60 },
         grounded: true,
@@ -288,6 +290,8 @@ describe('formatDebugOverlayText', () => {
       hostileSlime: {
         activeCount: 2,
         nextSpawnTicksRemaining: 119,
+        nextSpawnWindowIndex: 2,
+        nextSpawnWindowOffsetTiles: 18,
         worldTile: { x: 3, y: -1 },
         velocity: { x: 35, y: -60 },
         grounded: true,
@@ -1108,6 +1112,8 @@ describe('formatDebugOverlayText', () => {
       hostileSlime: {
         activeCount: 2,
         nextSpawnTicksRemaining: 119,
+        nextSpawnWindowIndex: 2,
+        nextSpawnWindowOffsetTiles: 18,
         worldTile: { x: 3, y: -1 },
         velocity: { x: 35, y: -60 },
         grounded: true,
@@ -1129,7 +1135,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain(
-      '\nSlime: active:2 | nextSpawn:119t | tile:3,-1 | vel:35.00,-60.00 | grounded:on | facing:left | hopCooldown:17t | launch:step-hop'
+      '\nSlime: active:2 | nextSpawn:119t | nextWindow:2 | targetOffset:+18 tiles | tile:3,-1 | vel:35.00,-60.00 | grounded:on | facing:left | hopCooldown:17t | launch:step-hop'
     );
   });
 
@@ -1140,6 +1146,8 @@ describe('formatDebugOverlayText', () => {
       hostileSlime: {
         activeCount: 0,
         nextSpawnTicksRemaining: 120,
+        nextSpawnWindowIndex: 1,
+        nextSpawnWindowOffsetTiles: -12,
         worldTile: null,
         velocity: null,
         grounded: null,
@@ -1160,7 +1168,7 @@ describe('formatDebugOverlayText', () => {
       pinned: null
     });
 
-    expect(text).toContain('\nSlime: active:0 | nextSpawn:120t');
+    expect(text).toContain('\nSlime: active:0 | nextSpawn:120t | nextWindow:1 | targetOffset:-12 tiles');
   });
 
   it('derives negative-world camera chunk coordinates from the live camera tile telemetry', () => {

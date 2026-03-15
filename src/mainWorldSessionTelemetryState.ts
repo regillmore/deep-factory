@@ -128,7 +128,7 @@ export const WORLD_SESSION_TELEMETRY_TYPE_DEFINITIONS = [
     id: 'hostile-slime-tracker',
     collectionId: 'hostile-slime',
     label: 'Tracker',
-    description: 'Tracked hostile-slime spawn, movement, and launch readouts.'
+    description: 'Tracked hostile-slime spawn-window, movement, and launch readouts.'
   },
   {
     id: 'world-atlas',
@@ -186,7 +186,7 @@ export const WORLD_SESSION_TELEMETRY_COLLECTION_DEFINITIONS = [
   {
     id: 'hostile-slime',
     label: 'Hostile Slime',
-    description: 'Tracked hostile-slime spawn and locomotion telemetry.',
+    description: 'Tracked hostile-slime spawn-window and locomotion telemetry.',
     typeIds: ['hostile-slime-tracker']
   },
   {
