@@ -1104,6 +1104,7 @@ describe('formatDebugOverlayText', () => {
         breathSecondsRemaining: 0.25,
         headSubmergedInWater: true,
         waterSubmergedFraction: 1,
+        lavaSubmergedFraction: 0.5,
         lavaDamageTickSecondsRemaining: 0.25,
         drowningDamageTickSecondsRemaining: 0.5,
         hostileContactInvulnerabilitySecondsRemaining: 0,
@@ -1124,7 +1125,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain(
-      '\nCombat: health:95 | breath:0.25s | headSubmerged:on | waterOverlap:1.00 | drownCooldown:0.50s | lavaCooldown:0.25s | contactInvuln:0.00s'
+      '\nCombat: health:95 | breath:0.25s | headSubmerged:on | waterOverlap:1.00 | lavaOverlap:on | lavaFraction:0.50 | drownCooldown:0.50s | lavaCooldown:0.25s | contactInvuln:0.00s'
     );
   });
 

@@ -471,6 +471,7 @@ type StandalonePlayerRenderFrameStatusStripTelemetry = Pick<
   | 'playerBreathSecondsRemaining'
   | 'playerHeadSubmergedInWater'
   | 'playerWaterSubmergedFraction'
+  | 'playerLavaSubmergedFraction'
   | 'playerLavaDamageTickSecondsRemaining'
   | 'playerDrowningDamageTickSecondsRemaining'
   | 'playerFallDamageRecoverySecondsRemaining'
@@ -4187,6 +4188,8 @@ const bootstrap = async (): Promise<void> => {
       playerWaterSubmersionTelemetry?.headSubmergedInWater ?? null;
     const playerWaterSubmergedFraction =
       playerWaterSubmersionTelemetry?.waterSubmergedFraction ?? null;
+    const playerLavaSubmergedFraction =
+      playerWaterSubmersionTelemetry?.lavaSubmergedFraction ?? null;
     const playerLavaDamageTickSecondsRemaining =
       playerState === null
         ? null
@@ -4334,6 +4337,7 @@ const bootstrap = async (): Promise<void> => {
                 breathSecondsRemaining: playerBreathSecondsRemaining,
                 headSubmergedInWater: playerHeadSubmergedInWater,
                 waterSubmergedFraction: playerWaterSubmergedFraction,
+                lavaSubmergedFraction: playerLavaSubmergedFraction,
                 lavaDamageTickSecondsRemaining: playerLavaDamageTickSecondsRemaining,
                 drowningDamageTickSecondsRemaining: playerDrowningDamageTickSecondsRemaining,
                 fallDamageRecoverySecondsRemaining: playerFallDamageRecoverySecondsRemaining,
@@ -4421,6 +4425,7 @@ const bootstrap = async (): Promise<void> => {
         playerBreathSecondsRemaining,
         playerHeadSubmergedInWater,
         playerWaterSubmergedFraction,
+        playerLavaSubmergedFraction,
         playerLavaDamageTickSecondsRemaining,
         playerDrowningDamageTickSecondsRemaining,
         playerFallDamageRecoverySecondsRemaining,
@@ -4601,6 +4606,7 @@ const bootstrap = async (): Promise<void> => {
       playerBreathSecondsRemaining: null,
       playerHeadSubmergedInWater: null,
       playerWaterSubmergedFraction: null,
+      playerLavaSubmergedFraction: null,
       playerLavaDamageTickSecondsRemaining: null,
       playerDrowningDamageTickSecondsRemaining: null,
       playerFallDamageRecoverySecondsRemaining: null,
@@ -4972,6 +4978,7 @@ const bootstrap = async (): Promise<void> => {
       playerBreathSecondsRemaining: debugStatusStripPlayerTelemetry.playerBreathSecondsRemaining,
       playerHeadSubmergedInWater: debugStatusStripPlayerTelemetry.playerHeadSubmergedInWater,
       playerWaterSubmergedFraction: debugStatusStripPlayerTelemetry.playerWaterSubmergedFraction,
+      playerLavaSubmergedFraction: debugStatusStripPlayerTelemetry.playerLavaSubmergedFraction,
       playerLavaDamageTickSecondsRemaining:
         debugStatusStripPlayerTelemetry.playerLavaDamageTickSecondsRemaining,
       playerDrowningDamageTickSecondsRemaining:

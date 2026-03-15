@@ -89,6 +89,7 @@ export interface DebugEditStatusStripState {
   playerBreathSecondsRemaining?: number | null;
   playerHeadSubmergedInWater?: boolean | null;
   playerWaterSubmergedFraction?: number | null;
+  playerLavaSubmergedFraction?: number | null;
   playerLavaDamageTickSecondsRemaining?: number | null;
   playerDrowningDamageTickSecondsRemaining?: number | null;
   playerFallDamageRecoverySecondsRemaining?: number | null;
@@ -1481,6 +1482,22 @@ const formatLiveWaterOverlapText = (playerWaterSubmergedFraction: number | null)
   return `WaterOverlapNow: ${playerWaterSubmergedFraction.toFixed(2)}`;
 };
 
+const formatLiveLavaOverlapText = (playerLavaSubmergedFraction: number | null): string | null => {
+  if (playerLavaSubmergedFraction === null) {
+    return null;
+  }
+
+  return `LavaOverlapNow: ${formatGameplayFlag(playerLavaSubmergedFraction > 0)}`;
+};
+
+const formatLiveLavaFractionText = (playerLavaSubmergedFraction: number | null): string | null => {
+  if (playerLavaSubmergedFraction === null) {
+    return null;
+  }
+
+  return `LavaFractionNow: ${playerLavaSubmergedFraction.toFixed(2)}`;
+};
+
 const formatLiveLavaCooldownText = (
   playerLavaDamageTickSecondsRemaining: number | null
 ): string | null => {
@@ -1694,6 +1711,7 @@ const buildPlayerText = (
   playerBreathSecondsRemaining: number | null,
   playerHeadSubmergedInWater: boolean | null,
   playerWaterSubmergedFraction: number | null,
+  playerLavaSubmergedFraction: number | null,
   playerLavaDamageTickSecondsRemaining: number | null,
   playerDrowningDamageTickSecondsRemaining: number | null,
   playerFallDamageRecoverySecondsRemaining: number | null,
@@ -1818,6 +1836,12 @@ const buildPlayerText = (
       : null,
     telemetryVisible('player-combat')
       ? formatLiveWaterOverlapText(playerWaterSubmergedFraction)
+      : null,
+    telemetryVisible('player-combat')
+      ? formatLiveLavaOverlapText(playerLavaSubmergedFraction)
+      : null,
+    telemetryVisible('player-combat')
+      ? formatLiveLavaFractionText(playerLavaSubmergedFraction)
       : null,
     telemetryVisible('player-combat')
       ? formatLiveDrowningCooldownText(playerDrowningDamageTickSecondsRemaining)
@@ -2554,6 +2578,7 @@ export const buildDebugEditStatusStripModel = (
   const playerBreathSecondsRemaining = state.playerBreathSecondsRemaining ?? null;
   const playerHeadSubmergedInWater = state.playerHeadSubmergedInWater ?? null;
   const playerWaterSubmergedFraction = state.playerWaterSubmergedFraction ?? null;
+  const playerLavaSubmergedFraction = state.playerLavaSubmergedFraction ?? null;
   const playerLavaDamageTickSecondsRemaining =
     state.playerLavaDamageTickSecondsRemaining ?? null;
   const playerDrowningDamageTickSecondsRemaining =
@@ -2656,6 +2681,7 @@ export const buildDebugEditStatusStripModel = (
       playerBreathSecondsRemaining,
       playerHeadSubmergedInWater,
       playerWaterSubmergedFraction,
+      playerLavaSubmergedFraction,
       playerLavaDamageTickSecondsRemaining,
       playerDrowningDamageTickSecondsRemaining,
       playerFallDamageRecoverySecondsRemaining,

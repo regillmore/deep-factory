@@ -1512,6 +1512,7 @@ describe('playerState', () => {
 
     expect(feetOnlyTelemetry.headSubmergedInWater).toBe(false);
     expect(feetOnlyTelemetry.waterSubmergedFraction).toBeCloseTo(2 / 3, 5);
+    expect(feetOnlyTelemetry.lavaSubmergedFraction).toBe(0);
 
     world.setTile(0, -1, WATER_TILE_ID);
 
@@ -1526,6 +1527,42 @@ describe('playerState', () => {
 
     expect(headSubmergedTelemetry.headSubmergedInWater).toBe(true);
     expect(headSubmergedTelemetry.waterSubmergedFraction).toBe(1);
+    expect(headSubmergedTelemetry.lavaSubmergedFraction).toBe(0);
+  });
+
+  it('reports normalized lava overlap separately from the water head-submersion telemetry', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -4, 2, 2, 0);
+    world.setTile(0, 0, LAVA_TILE_ID);
+
+    const feetOnlyTelemetry = getPlayerWaterSubmersionTelemetry(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 8 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 }
+      })
+    );
+
+    expect(feetOnlyTelemetry.headSubmergedInWater).toBe(false);
+    expect(feetOnlyTelemetry.waterSubmergedFraction).toBe(0);
+    expect(feetOnlyTelemetry.lavaSubmergedFraction).toBeCloseTo(2 / 3, 5);
+
+    world.setTile(0, -1, LAVA_TILE_ID);
+
+    const fullyOverlappingLavaTelemetry = getPlayerWaterSubmersionTelemetry(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 8 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 }
+      })
+    );
+
+    expect(fullyOverlappingLavaTelemetry.headSubmergedInWater).toBe(false);
+    expect(fullyOverlappingLavaTelemetry.waterSubmergedFraction).toBe(0);
+    expect(fullyOverlappingLavaTelemetry.lavaSubmergedFraction).toBe(1);
   });
 
   it('applies lethal drowning damage on a fixed cadence after breath runs out', () => {

@@ -34,6 +34,7 @@ export interface PlayerState {
 export interface PlayerWaterSubmersionTelemetry {
   headSubmergedInWater: boolean;
   waterSubmergedFraction: number;
+  lavaSubmergedFraction: number;
 }
 
 export interface PlayerCollisionContacts {
@@ -448,7 +449,8 @@ export const getPlayerWaterSubmersionTelemetry = (
   const liquidOverlapState = samplePlayerLiquidOverlapState(world, state, registry);
   return {
     headSubmergedInWater: liquidOverlapState.waterBreathSubmergedFraction > 0,
-    waterSubmergedFraction: liquidOverlapState.waterSubmergedFraction
+    waterSubmergedFraction: liquidOverlapState.waterSubmergedFraction,
+    lavaSubmergedFraction: liquidOverlapState.lavaSubmergedFraction
   };
 };
 

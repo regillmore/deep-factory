@@ -1604,6 +1604,7 @@ describe('buildDebugEditStatusStripModel', () => {
       playerBreathSecondsRemaining: 0.25,
       playerHeadSubmergedInWater: true,
       playerWaterSubmergedFraction: 1,
+      playerLavaSubmergedFraction: 0.5,
       playerLavaDamageTickSecondsRemaining: 0.25,
       playerDrowningDamageTickSecondsRemaining: 0.5,
       playerFallDamageRecoverySecondsRemaining: 0.35,
@@ -1619,6 +1620,8 @@ describe('buildDebugEditStatusStripModel', () => {
         'BreathNow: 0.25s\n' +
         'HeadSubmergedNow: on\n' +
         'WaterOverlapNow: 1.00\n' +
+        'LavaOverlapNow: on\n' +
+        'LavaFractionNow: 0.50\n' +
         'DrownCooldownNow: 0.50s\n' +
         'LavaCooldownNow: 0.25s\n' +
         'FallRecoveryNow: 0.35s\n' +

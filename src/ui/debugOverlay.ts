@@ -214,6 +214,7 @@ export interface DebugOverlayPlayerTelemetry {
   breathSecondsRemaining?: number | null;
   headSubmergedInWater?: boolean | null;
   waterSubmergedFraction?: number | null;
+  lavaSubmergedFraction?: number | null;
   lavaDamageTickSecondsRemaining?: number | null;
   drowningDamageTickSecondsRemaining?: number | null;
   fallDamageRecoverySecondsRemaining?: number | null;
@@ -782,6 +783,14 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
     typeof player.waterSubmergedFraction === 'number' && Number.isFinite(player.waterSubmergedFraction)
       ? player.waterSubmergedFraction.toFixed(2)
       : null;
+  const lavaOverlapText =
+    typeof player.lavaSubmergedFraction === 'number' && Number.isFinite(player.lavaSubmergedFraction)
+      ? formatGameplayFlag(player.lavaSubmergedFraction > 0)
+      : null;
+  const lavaFractionText =
+    typeof player.lavaSubmergedFraction === 'number' && Number.isFinite(player.lavaSubmergedFraction)
+      ? player.lavaSubmergedFraction.toFixed(2)
+      : null;
   const drowningCooldownText =
     typeof player.drowningDamageTickSecondsRemaining === 'number' &&
     Number.isFinite(player.drowningDamageTickSecondsRemaining)
@@ -813,6 +822,8 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
     breathText === null &&
     headSubmergedText === null &&
     waterOverlapText === null &&
+    lavaOverlapText === null &&
+    lavaFractionText === null &&
     drowningCooldownText === null &&
     lavaCooldownText === null &&
     fallRecoveryText === null &&
@@ -835,6 +846,12 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
   }
   if (waterOverlapText !== null) {
     segments.push(`waterOverlap:${waterOverlapText}`);
+  }
+  if (lavaOverlapText !== null) {
+    segments.push(`lavaOverlap:${lavaOverlapText}`);
+  }
+  if (lavaFractionText !== null) {
+    segments.push(`lavaFraction:${lavaFractionText}`);
   }
   if (drowningCooldownText !== null) {
     segments.push(`drownCooldown:${drowningCooldownText}`);
