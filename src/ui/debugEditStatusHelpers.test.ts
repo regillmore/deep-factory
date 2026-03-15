@@ -178,7 +178,8 @@ describe('buildDebugEditStatusStripModel', () => {
       playerHealth: 62,
       playerFallDamageRecoverySecondsRemaining: 0.35,
       playerLandingDamageEvent: {
-        damageApplied: 3
+        damageApplied: 3,
+        impactSpeed: 612
       },
       hostileSlimeActiveCount: 2,
       residentActiveLiquidChunks: 4,
@@ -263,7 +264,8 @@ describe('buildDebugEditStatusStripModel', () => {
       playerHealth: 62,
       playerFallDamageRecoverySecondsRemaining: 0.35,
       playerLandingDamageEvent: {
-        damageApplied: 3
+        damageApplied: 3,
+        impactSpeed: 612
       },
       hostileSlimeActiveCount: 2,
       residentActiveLiquidChunks: 4,
@@ -285,7 +287,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.playerText).toContain('SpawnSupportNow: tile 4,-1');
     expect(model.playerText).toContain('SlimeActiveNow: 2');
     expect(model.playerText).toContain('LiquidChunksNow: awake:4');
-    expect(model.eventText).toBe('LandingHit: damage 3');
+    expect(model.eventText).toBe('LandingHit: damage 3 | impact 612px/s');
     expect(model.hoverText).toContain('Hover: lava pool (#9)');
     expect(model.inspectText).toBe('Inspect: Pinned @ 8,-6');
   });
@@ -1639,13 +1641,14 @@ describe('buildDebugEditStatusStripModel', () => {
       pinnedTile: null,
       desktopInspectPinArmed: false,
       playerLandingDamageEvent: {
-        damageApplied: 3
+        damageApplied: 3,
+        impactSpeed: 612
       },
       preview: createEmptyPreviewState()
     });
 
     expect(model.playerText).toBeNull();
-    expect(model.eventText).toBe('LandingHit: damage 3');
+    expect(model.eventText).toBe('LandingHit: damage 3 | impact 612px/s');
   });
 
   it('shows the latest lava-tick hit on its own event line', () => {

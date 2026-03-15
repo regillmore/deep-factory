@@ -101,6 +101,45 @@ export interface StepPlayerStateOptions extends StepPlayerStateWithGravityOption
   fallDamageRecoverySeconds?: number;
 }
 
+interface ResolvedStepPlayerStateInputs {
+  dt: number;
+  moveX: number;
+  jumpPressed: boolean;
+  climbY: number;
+  ropeDropHeld: boolean;
+  gravityAcceleration: number;
+  maxFallSpeed: number;
+  maxWalkSpeed: number;
+  groundAcceleration: number;
+  airAcceleration: number;
+  groundDeceleration: number;
+  jumpSpeed: number;
+  ropeClimbSpeed: number;
+  ropeCenteringSpeed: number;
+  maxBreathSeconds: number;
+  breathRecoveryPerSecond: number;
+  waterBuoyancyAcceleration: number;
+  waterHorizontalDragPerSecond: number;
+  waterVerticalDragPerSecond: number;
+  drowningDamagePerTick: number;
+  drowningDamageTickIntervalSeconds: number;
+  lavaDamagePerTick: number;
+  lavaDamageTickIntervalSeconds: number;
+  fallDamageSafeLandingSpeed: number;
+  fallDamageSpeedPerHealth: number;
+  fallDamageRecoverySeconds: number;
+}
+
+interface ResolvedPlayerStepMotionState {
+  velocityX: number;
+  velocityY: number;
+  grounded: boolean;
+  liquidOverlapState: PlayerLiquidOverlapState;
+  ropeCenteringApplied: boolean;
+  ropeDropCatchInfo: RopeDropCatchInfo | null;
+  hostileContactInvulnerabilitySecondsRemaining: number;
+}
+
 export const DEFAULT_PLAYER_WIDTH = 12;
 export const DEFAULT_PLAYER_HEIGHT = 28;
 export const DEFAULT_PLAYER_GRAVITY_ACCELERATION = 1800;
@@ -810,6 +849,248 @@ const resolveFallDamageStepState = ({
   };
 };
 
+const resolveStepPlayerStateInputs = (
+  fixedDtSeconds: number,
+  intent: PlayerMovementIntent,
+  options: StepPlayerStateOptions
+): ResolvedStepPlayerStateInputs => ({
+  dt: expectNonNegativeFiniteNumber(fixedDtSeconds, 'fixedDtSeconds'),
+  moveX: normalizeMoveXIntent(intent.moveX),
+  jumpPressed: intent.jumpPressed === true,
+  climbY: normalizeClimbYIntent(intent.climbY),
+  ropeDropHeld: intent.ropeDropHeld === true,
+  gravityAcceleration: expectNonNegativeFiniteNumber(
+    options.gravityAcceleration ?? DEFAULT_PLAYER_GRAVITY_ACCELERATION,
+    'options.gravityAcceleration'
+  ),
+  maxFallSpeed: expectNonNegativeFiniteNumber(
+    options.maxFallSpeed ?? DEFAULT_PLAYER_MAX_FALL_SPEED,
+    'options.maxFallSpeed'
+  ),
+  maxWalkSpeed: expectNonNegativeFiniteNumber(
+    options.maxWalkSpeed ?? DEFAULT_PLAYER_MAX_WALK_SPEED,
+    'options.maxWalkSpeed'
+  ),
+  groundAcceleration: expectNonNegativeFiniteNumber(
+    options.groundAcceleration ?? DEFAULT_PLAYER_GROUND_ACCELERATION,
+    'options.groundAcceleration'
+  ),
+  airAcceleration: expectNonNegativeFiniteNumber(
+    options.airAcceleration ?? DEFAULT_PLAYER_AIR_ACCELERATION,
+    'options.airAcceleration'
+  ),
+  groundDeceleration: expectNonNegativeFiniteNumber(
+    options.groundDeceleration ?? DEFAULT_PLAYER_GROUND_DECELERATION,
+    'options.groundDeceleration'
+  ),
+  jumpSpeed: expectNonNegativeFiniteNumber(options.jumpSpeed ?? DEFAULT_PLAYER_JUMP_SPEED, 'options.jumpSpeed'),
+  ropeClimbSpeed: expectNonNegativeFiniteNumber(
+    options.ropeClimbSpeed ?? DEFAULT_PLAYER_ROPE_CLIMB_SPEED,
+    'options.ropeClimbSpeed'
+  ),
+  ropeCenteringSpeed: expectNonNegativeFiniteNumber(
+    options.ropeCenteringSpeed ?? DEFAULT_PLAYER_ROPE_CENTERING_SPEED,
+    'options.ropeCenteringSpeed'
+  ),
+  maxBreathSeconds: expectPositiveFiniteNumber(
+    options.maxBreathSeconds ?? DEFAULT_PLAYER_MAX_BREATH_SECONDS,
+    'options.maxBreathSeconds'
+  ),
+  breathRecoveryPerSecond: expectNonNegativeFiniteNumber(
+    options.breathRecoveryPerSecond ?? DEFAULT_PLAYER_BREATH_RECOVERY_PER_SECOND,
+    'options.breathRecoveryPerSecond'
+  ),
+  waterBuoyancyAcceleration: expectNonNegativeFiniteNumber(
+    options.waterBuoyancyAcceleration ?? DEFAULT_PLAYER_WATER_BUOYANCY_ACCELERATION,
+    'options.waterBuoyancyAcceleration'
+  ),
+  waterHorizontalDragPerSecond: expectNonNegativeFiniteNumber(
+    options.waterHorizontalDragPerSecond ?? DEFAULT_PLAYER_WATER_HORIZONTAL_DRAG_PER_SECOND,
+    'options.waterHorizontalDragPerSecond'
+  ),
+  waterVerticalDragPerSecond: expectNonNegativeFiniteNumber(
+    options.waterVerticalDragPerSecond ?? DEFAULT_PLAYER_WATER_VERTICAL_DRAG_PER_SECOND,
+    'options.waterVerticalDragPerSecond'
+  ),
+  drowningDamagePerTick: expectNonNegativeFiniteNumber(
+    options.drowningDamagePerTick ?? DEFAULT_PLAYER_DROWNING_DAMAGE_PER_TICK,
+    'options.drowningDamagePerTick'
+  ),
+  drowningDamageTickIntervalSeconds: expectPositiveFiniteNumber(
+    options.drowningDamageTickIntervalSeconds ?? DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
+    'options.drowningDamageTickIntervalSeconds'
+  ),
+  lavaDamagePerTick: expectNonNegativeFiniteNumber(
+    options.lavaDamagePerTick ?? DEFAULT_PLAYER_LAVA_DAMAGE_PER_TICK,
+    'options.lavaDamagePerTick'
+  ),
+  lavaDamageTickIntervalSeconds: expectPositiveFiniteNumber(
+    options.lavaDamageTickIntervalSeconds ?? DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
+    'options.lavaDamageTickIntervalSeconds'
+  ),
+  fallDamageSafeLandingSpeed: expectNonNegativeFiniteNumber(
+    options.fallDamageSafeLandingSpeed ?? DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED,
+    'options.fallDamageSafeLandingSpeed'
+  ),
+  fallDamageSpeedPerHealth: expectPositiveFiniteNumber(
+    options.fallDamageSpeedPerHealth ?? DEFAULT_PLAYER_FALL_DAMAGE_SPEED_PER_HEALTH,
+    'options.fallDamageSpeedPerHealth'
+  ),
+  fallDamageRecoverySeconds: expectNonNegativeFiniteNumber(
+    options.fallDamageRecoverySeconds ?? DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
+    'options.fallDamageRecoverySeconds'
+  )
+});
+
+const resolvePlayerStepMotionState = (
+  world: TileWorld,
+  state: PlayerState,
+  stepInputs: ResolvedStepPlayerStateInputs,
+  registry: TileMetadataRegistry
+): ResolvedPlayerStepMotionState => {
+  const hostileContactInvulnerabilitySecondsRemaining =
+    advanceHostileContactInvulnerabilitySecondsRemaining(
+      state.hostileContactInvulnerabilitySecondsRemaining,
+      stepInputs.dt
+    );
+  const liquidOverlapState = samplePlayerLiquidOverlapState(world, state, registry);
+  const overlappingClimbableTile = isPlayerOverlappingClimbableTile(world, state, registry);
+  const applyRopeHorizontalBraking =
+    overlappingClimbableTile && stepInputs.moveX === 0 && !stepInputs.ropeDropHeld;
+  let velocityX = resolveHorizontalVelocityFromIntent(
+    state.velocity.x,
+    stepInputs.moveX,
+    state.grounded || applyRopeHorizontalBraking,
+    stepInputs.dt,
+    stepInputs.maxWalkSpeed,
+    stepInputs.groundAcceleration,
+    stepInputs.airAcceleration,
+    stepInputs.groundDeceleration
+  );
+  let velocityY = state.velocity.y;
+  let grounded = state.grounded;
+  let activelyOverlappingClimbableTile = overlappingClimbableTile;
+  let ropeCenteringApplied = false;
+  let ropeDropCatchInfo: RopeDropCatchInfo | null = null;
+  const shouldJumpOffRope =
+    overlappingClimbableTile &&
+    !stepInputs.ropeDropHeld &&
+    stepInputs.jumpPressed &&
+    stepInputs.moveX !== 0;
+
+  if (overlappingClimbableTile) {
+    const initialAabb = getPlayerAabb(state);
+    const horizontalSweep = sweepAabbAlongAxis(
+      world,
+      initialAabb,
+      'x',
+      velocityX * stepInputs.dt,
+      registry
+    );
+    const afterHorizontalAabb = offsetAabb(initialAabb, horizontalSweep.allowedDelta, 0);
+    const activelyOverlappingClimbableTileInfo = getAabbOverlappingClimbableTileInfo(
+      world,
+      afterHorizontalAabb,
+      registry
+    );
+
+    // Check rope overlap after the same horizontal sweep order used by collisions so sideways
+    // detaches resume gravity immediately instead of holding for one sticky extra tick.
+    activelyOverlappingClimbableTile = activelyOverlappingClimbableTileInfo !== null;
+
+    if (
+      activelyOverlappingClimbableTile &&
+      stepInputs.moveX === 0 &&
+      activelyOverlappingClimbableTileInfo !== null &&
+      !stepInputs.ropeDropHeld
+    ) {
+      const centeredPositionX = moveTowards(
+        (afterHorizontalAabb.minX + afterHorizontalAabb.maxX) * 0.5,
+        activelyOverlappingClimbableTileInfo.centerX,
+        stepInputs.ropeCenteringSpeed * stepInputs.dt
+      );
+      velocityX = (centeredPositionX - state.position.x) / stepInputs.dt;
+      ropeCenteringApplied = centeredPositionX !== state.position.x;
+    }
+
+    if (stepInputs.ropeDropHeld) {
+      ropeDropCatchInfo = resolveRopeDropCatchInfo(
+        world,
+        activelyOverlappingClimbableTileInfo,
+        registry
+      );
+    }
+  }
+
+  if (shouldJumpOffRope) {
+    // A fresh jump press with horizontal input should release rope hold immediately, even when
+    // the same tick's horizontal movement has not yet cleared the rope column.
+    activelyOverlappingClimbableTile = false;
+    velocityY = -stepInputs.jumpSpeed;
+    grounded = false;
+  } else if (
+    stepInputs.jumpPressed &&
+    grounded &&
+    !(activelyOverlappingClimbableTile && stepInputs.climbY < 0)
+  ) {
+    velocityY = -stepInputs.jumpSpeed;
+    grounded = false;
+  }
+
+  if (activelyOverlappingClimbableTile && !stepInputs.ropeDropHeld) {
+    grounded = false;
+    if (stepInputs.climbY < 0) {
+      velocityY = -stepInputs.ropeClimbSpeed;
+    } else if (stepInputs.climbY > 0) {
+      velocityY = stepInputs.ropeClimbSpeed;
+    } else {
+      velocityY = 0;
+    }
+  } else {
+    velocityY = Math.min(velocityY + stepInputs.gravityAcceleration * stepInputs.dt, stepInputs.maxFallSpeed);
+    if (liquidOverlapState.waterSubmergedFraction > 0) {
+      velocityY -=
+        stepInputs.waterBuoyancyAcceleration *
+        liquidOverlapState.waterSubmergedFraction *
+        stepInputs.dt;
+      velocityX = applyLinearDrag(
+        velocityX,
+        stepInputs.waterHorizontalDragPerSecond,
+        liquidOverlapState.waterSubmergedFraction,
+        stepInputs.dt
+      );
+      velocityY = applyLinearDrag(
+        velocityY,
+        stepInputs.waterVerticalDragPerSecond,
+        liquidOverlapState.waterSubmergedFraction,
+        stepInputs.dt
+      );
+    }
+    if (
+      ropeDropCatchInfo?.solidLanding === true &&
+      state.position.y + velocityY * stepInputs.dt > ropeDropCatchInfo.slowdownTopY
+    ) {
+      // Ease through the final rope tile so ground-ending rope drops never convert into
+      // a hard landing when the column reaches solid ground.
+      velocityY = Math.min(
+        velocityY,
+        stepInputs.ropeClimbSpeed,
+        stepInputs.fallDamageSafeLandingSpeed
+      );
+    }
+  }
+
+  return {
+    velocityX,
+    velocityY,
+    grounded,
+    liquidOverlapState,
+    ropeCenteringApplied,
+    ropeDropCatchInfo,
+    hostileContactInvulnerabilitySecondsRemaining
+  };
+};
+
 export const createPlayerState = (options: CreatePlayerStateOptions = {}): PlayerState => {
   const velocity = buildVector(options.velocity, 'velocity');
   const facing = options.facing ?? resolveFacingFromHorizontalVelocity(DEFAULT_PLAYER_FACING, velocity.x);
@@ -1003,220 +1284,27 @@ export const stepPlayerState = (
   options: StepPlayerStateOptions = {},
   registry: TileMetadataRegistry = TILE_METADATA
 ): PlayerState => {
-  const dt = expectNonNegativeFiniteNumber(fixedDtSeconds, 'fixedDtSeconds');
-  const moveX = normalizeMoveXIntent(intent.moveX);
-  const climbY = normalizeClimbYIntent(intent.climbY);
-  const ropeDropHeld = intent.ropeDropHeld === true;
-  const gravityAcceleration = expectNonNegativeFiniteNumber(
-    options.gravityAcceleration ?? DEFAULT_PLAYER_GRAVITY_ACCELERATION,
-    'options.gravityAcceleration'
-  );
-  const maxFallSpeed = expectNonNegativeFiniteNumber(
-    options.maxFallSpeed ?? DEFAULT_PLAYER_MAX_FALL_SPEED,
-    'options.maxFallSpeed'
-  );
-  const maxWalkSpeed = expectNonNegativeFiniteNumber(
-    options.maxWalkSpeed ?? DEFAULT_PLAYER_MAX_WALK_SPEED,
-    'options.maxWalkSpeed'
-  );
-  const groundAcceleration = expectNonNegativeFiniteNumber(
-    options.groundAcceleration ?? DEFAULT_PLAYER_GROUND_ACCELERATION,
-    'options.groundAcceleration'
-  );
-  const airAcceleration = expectNonNegativeFiniteNumber(
-    options.airAcceleration ?? DEFAULT_PLAYER_AIR_ACCELERATION,
-    'options.airAcceleration'
-  );
-  const groundDeceleration = expectNonNegativeFiniteNumber(
-    options.groundDeceleration ?? DEFAULT_PLAYER_GROUND_DECELERATION,
-    'options.groundDeceleration'
-  );
-  const jumpSpeed = expectNonNegativeFiniteNumber(options.jumpSpeed ?? DEFAULT_PLAYER_JUMP_SPEED, 'options.jumpSpeed');
-  const ropeClimbSpeed = expectNonNegativeFiniteNumber(
-    options.ropeClimbSpeed ?? DEFAULT_PLAYER_ROPE_CLIMB_SPEED,
-    'options.ropeClimbSpeed'
-  );
-  const ropeCenteringSpeed = expectNonNegativeFiniteNumber(
-    options.ropeCenteringSpeed ?? DEFAULT_PLAYER_ROPE_CENTERING_SPEED,
-    'options.ropeCenteringSpeed'
-  );
-  const maxBreathSeconds = expectPositiveFiniteNumber(
-    options.maxBreathSeconds ?? DEFAULT_PLAYER_MAX_BREATH_SECONDS,
-    'options.maxBreathSeconds'
-  );
-  const breathRecoveryPerSecond = expectNonNegativeFiniteNumber(
-    options.breathRecoveryPerSecond ?? DEFAULT_PLAYER_BREATH_RECOVERY_PER_SECOND,
-    'options.breathRecoveryPerSecond'
-  );
-  const waterBuoyancyAcceleration = expectNonNegativeFiniteNumber(
-    options.waterBuoyancyAcceleration ?? DEFAULT_PLAYER_WATER_BUOYANCY_ACCELERATION,
-    'options.waterBuoyancyAcceleration'
-  );
-  const waterHorizontalDragPerSecond = expectNonNegativeFiniteNumber(
-    options.waterHorizontalDragPerSecond ?? DEFAULT_PLAYER_WATER_HORIZONTAL_DRAG_PER_SECOND,
-    'options.waterHorizontalDragPerSecond'
-  );
-  const waterVerticalDragPerSecond = expectNonNegativeFiniteNumber(
-    options.waterVerticalDragPerSecond ?? DEFAULT_PLAYER_WATER_VERTICAL_DRAG_PER_SECOND,
-    'options.waterVerticalDragPerSecond'
-  );
-  const drowningDamagePerTick = expectNonNegativeFiniteNumber(
-    options.drowningDamagePerTick ?? DEFAULT_PLAYER_DROWNING_DAMAGE_PER_TICK,
-    'options.drowningDamagePerTick'
-  );
-  const drowningDamageTickIntervalSeconds = expectPositiveFiniteNumber(
-    options.drowningDamageTickIntervalSeconds ?? DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
-    'options.drowningDamageTickIntervalSeconds'
-  );
-  const lavaDamagePerTick = expectNonNegativeFiniteNumber(
-    options.lavaDamagePerTick ?? DEFAULT_PLAYER_LAVA_DAMAGE_PER_TICK,
-    'options.lavaDamagePerTick'
-  );
-  const lavaDamageTickIntervalSeconds = expectPositiveFiniteNumber(
-    options.lavaDamageTickIntervalSeconds ?? DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
-    'options.lavaDamageTickIntervalSeconds'
-  );
-  const fallDamageSafeLandingSpeed = expectNonNegativeFiniteNumber(
-    options.fallDamageSafeLandingSpeed ?? DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED,
-    'options.fallDamageSafeLandingSpeed'
-  );
-  const fallDamageSpeedPerHealth = expectPositiveFiniteNumber(
-    options.fallDamageSpeedPerHealth ?? DEFAULT_PLAYER_FALL_DAMAGE_SPEED_PER_HEALTH,
-    'options.fallDamageSpeedPerHealth'
-  );
-  const fallDamageRecoverySeconds = expectNonNegativeFiniteNumber(
-    options.fallDamageRecoverySeconds ?? DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
-    'options.fallDamageRecoverySeconds'
-  );
-  const hostileContactInvulnerabilitySecondsRemaining =
-    advanceHostileContactInvulnerabilitySecondsRemaining(
-      state.hostileContactInvulnerabilitySecondsRemaining,
-      dt
-    );
-  const liquidOverlapState = samplePlayerLiquidOverlapState(world, state, registry);
-  const overlappingClimbableTile = isPlayerOverlappingClimbableTile(world, state, registry);
-  const applyRopeHorizontalBraking = overlappingClimbableTile && moveX === 0 && !ropeDropHeld;
-  let velocityX = resolveHorizontalVelocityFromIntent(
-    state.velocity.x,
-    moveX,
-    state.grounded || applyRopeHorizontalBraking,
-    dt,
-    maxWalkSpeed,
-    groundAcceleration,
-    airAcceleration,
-    groundDeceleration
-  );
-  let velocityY = state.velocity.y;
-  let grounded = state.grounded;
-  let activelyOverlappingClimbableTile = overlappingClimbableTile;
-  let ropeCenteringApplied = false;
-  let ropeDropCatchInfo: RopeDropCatchInfo | null = null;
-  const shouldJumpOffRope =
-    overlappingClimbableTile && !ropeDropHeld && intent.jumpPressed === true && moveX !== 0;
-
-  if (overlappingClimbableTile) {
-    const initialAabb = getPlayerAabb(state);
-    const horizontalSweep = sweepAabbAlongAxis(world, initialAabb, 'x', velocityX * dt, registry);
-    const afterHorizontalAabb = offsetAabb(initialAabb, horizontalSweep.allowedDelta, 0);
-    const activelyOverlappingClimbableTileInfo = getAabbOverlappingClimbableTileInfo(
-      world,
-      afterHorizontalAabb,
-      registry
-    );
-
-    // Check rope overlap after the same horizontal sweep order used by collisions so sideways
-    // detaches resume gravity immediately instead of holding for one sticky extra tick.
-    activelyOverlappingClimbableTile = activelyOverlappingClimbableTileInfo !== null;
-
-    if (
-      activelyOverlappingClimbableTile &&
-      moveX === 0 &&
-      activelyOverlappingClimbableTileInfo !== null &&
-      !ropeDropHeld
-    ) {
-      const centeredPositionX = moveTowards(
-        (afterHorizontalAabb.minX + afterHorizontalAabb.maxX) * 0.5,
-        activelyOverlappingClimbableTileInfo.centerX,
-        ropeCenteringSpeed * dt
-      );
-      velocityX = (centeredPositionX - state.position.x) / dt;
-      ropeCenteringApplied = centeredPositionX !== state.position.x;
-    }
-
-    if (ropeDropHeld) {
-      ropeDropCatchInfo = resolveRopeDropCatchInfo(
-        world,
-        activelyOverlappingClimbableTileInfo,
-        registry
-      );
-    }
-  }
-
-  if (shouldJumpOffRope) {
-    // A fresh jump press with horizontal input should release rope hold immediately, even when
-    // the same tick's horizontal movement has not yet cleared the rope column.
-    activelyOverlappingClimbableTile = false;
-    velocityY = -jumpSpeed;
-    grounded = false;
-  } else if (intent.jumpPressed === true && grounded && !(activelyOverlappingClimbableTile && climbY < 0)) {
-    velocityY = -jumpSpeed;
-    grounded = false;
-  }
-
-  if (activelyOverlappingClimbableTile && !ropeDropHeld) {
-    grounded = false;
-    if (climbY < 0) {
-      velocityY = -ropeClimbSpeed;
-    } else if (climbY > 0) {
-      velocityY = ropeClimbSpeed;
-    } else {
-      velocityY = 0;
-    }
-  } else {
-    velocityY = Math.min(velocityY + gravityAcceleration * dt, maxFallSpeed);
-    if (liquidOverlapState.waterSubmergedFraction > 0) {
-      velocityY -= waterBuoyancyAcceleration * liquidOverlapState.waterSubmergedFraction * dt;
-      velocityX = applyLinearDrag(
-        velocityX,
-        waterHorizontalDragPerSecond,
-        liquidOverlapState.waterSubmergedFraction,
-        dt
-      );
-      velocityY = applyLinearDrag(
-        velocityY,
-        waterVerticalDragPerSecond,
-        liquidOverlapState.waterSubmergedFraction,
-        dt
-      );
-    }
-    if (
-      ropeDropCatchInfo?.solidLanding === true &&
-      state.position.y + velocityY * dt > ropeDropCatchInfo.slowdownTopY
-    ) {
-      // Ease through the final rope tile so ground-ending rope drops never convert into
-      // a hard landing when the column reaches solid ground.
-      velocityY = Math.min(velocityY, ropeClimbSpeed, fallDamageSafeLandingSpeed);
-    }
-  }
+  const stepInputs = resolveStepPlayerStateInputs(fixedDtSeconds, intent, options);
+  const stepMotionState = resolvePlayerStepMotionState(world, state, stepInputs, registry);
 
   const lavaDamageStepState = resolveLavaDamageStepState(
     state.health,
     state.lavaDamageTickSecondsRemaining,
-    liquidOverlapState.lavaSubmergedFraction,
-    dt,
-    lavaDamagePerTick,
-    lavaDamageTickIntervalSeconds
+    stepMotionState.liquidOverlapState.lavaSubmergedFraction,
+    stepInputs.dt,
+    stepInputs.lavaDamagePerTick,
+    stepInputs.lavaDamageTickIntervalSeconds
   );
   const breathStepState = resolveBreathStepState({
     health: lavaDamageStepState.health,
     breathSecondsRemaining: state.breathSecondsRemaining,
     drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
-    waterBreathSubmergedFraction: liquidOverlapState.waterBreathSubmergedFraction,
-    fixedDtSeconds: dt,
-    maxBreathSeconds,
-    breathRecoveryPerSecond,
-    drowningDamagePerTick,
-    drowningDamageTickIntervalSeconds
+    waterBreathSubmergedFraction: stepMotionState.liquidOverlapState.waterBreathSubmergedFraction,
+    fixedDtSeconds: stepInputs.dt,
+    maxBreathSeconds: stepInputs.maxBreathSeconds,
+    breathRecoveryPerSecond: stepInputs.breathRecoveryPerSecond,
+    drowningDamagePerTick: stepInputs.drowningDamagePerTick,
+    drowningDamageTickIntervalSeconds: stepInputs.drowningDamageTickIntervalSeconds
   });
 
   let steppedPlayerState = movePlayerStateWithCollisions(
@@ -1227,32 +1315,36 @@ export const stepPlayerState = (
         y: state.position.y
       },
       velocity: {
-        x: velocityX,
-        y: velocityY
+        x: stepMotionState.velocityX,
+        y: stepMotionState.velocityY
       },
       size: {
         width: state.size.width,
         height: state.size.height
       },
-      grounded,
+      grounded: stepMotionState.grounded,
       facing: state.facing,
       health: breathStepState.health,
       breathSecondsRemaining: breathStepState.breathSecondsRemaining,
       lavaDamageTickSecondsRemaining: lavaDamageStepState.lavaDamageTickSecondsRemaining,
       drowningDamageTickSecondsRemaining: breathStepState.drowningDamageTickSecondsRemaining,
       fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining,
-      hostileContactInvulnerabilitySecondsRemaining
+      hostileContactInvulnerabilitySecondsRemaining:
+        stepMotionState.hostileContactInvulnerabilitySecondsRemaining
     },
-    dt,
+    stepInputs.dt,
     registry
   );
 
-  if (ropeDropCatchInfo !== null && steppedPlayerState.position.y > ropeDropCatchInfo.bottomY) {
+  if (
+    stepMotionState.ropeDropCatchInfo !== null &&
+    steppedPlayerState.position.y > stepMotionState.ropeDropCatchInfo.bottomY
+  ) {
     steppedPlayerState = {
       ...steppedPlayerState,
       position: {
         x: steppedPlayerState.position.x,
-        y: ropeDropCatchInfo.bottomY
+        y: stepMotionState.ropeDropCatchInfo.bottomY
       },
       velocity: {
         x: steppedPlayerState.velocity.x,
@@ -1264,21 +1356,34 @@ export const stepPlayerState = (
   const fallDamageStepState = resolveFallDamageStepState({
     previousGrounded: state.grounded,
     nextGrounded: steppedPlayerState.grounded,
-    impactSpeed: Math.max(0, velocityY),
+    impactSpeed: Math.max(0, stepMotionState.velocityY),
     health: steppedPlayerState.health,
     fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining,
-    fixedDtSeconds: dt,
-    fallDamageSafeLandingSpeed,
-    fallDamageSpeedPerHealth,
-    fallDamageRecoverySeconds
+    fixedDtSeconds: stepInputs.dt,
+    fallDamageSafeLandingSpeed: stepInputs.fallDamageSafeLandingSpeed,
+    fallDamageSpeedPerHealth: stepInputs.fallDamageSpeedPerHealth,
+    fallDamageRecoverySeconds: stepInputs.fallDamageRecoverySeconds
   });
 
   return {
     ...steppedPlayerState,
-    facing: ropeCenteringApplied ? state.facing : steppedPlayerState.facing,
+    facing: stepMotionState.ropeCenteringApplied ? state.facing : steppedPlayerState.facing,
     health: fallDamageStepState.health,
     fallDamageRecoverySecondsRemaining: fallDamageStepState.fallDamageRecoverySecondsRemaining
   };
+};
+
+export const getPlayerLandingImpactSpeed = (
+  world: TileWorld,
+  state: PlayerState,
+  fixedDtSeconds: number,
+  intent: PlayerMovementIntent = {},
+  options: StepPlayerStateOptions = {},
+  registry: TileMetadataRegistry = TILE_METADATA
+): number => {
+  const stepInputs = resolveStepPlayerStateInputs(fixedDtSeconds, intent, options);
+  const stepMotionState = resolvePlayerStepMotionState(world, state, stepInputs, registry);
+  return Math.max(0, stepMotionState.velocityY);
 };
 
 export const stepPlayerStateWithGravity = (

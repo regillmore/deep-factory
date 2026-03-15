@@ -230,6 +230,7 @@ export interface DebugEditStatusStripPlayerHostileContactEventTelemetry {
 
 export interface DebugEditStatusStripPlayerLandingDamageEventTelemetry {
   damageApplied: number;
+  impactSpeed: number;
 }
 
 export interface DebugEditStatusStripPlayerDrowningDamageEventTelemetry {
@@ -1978,7 +1979,10 @@ const formatLandingDamageEventText = (
     return null;
   }
 
-  return `LandingHit: damage ${Math.max(0, Math.round(playerLandingDamageEvent.damageApplied))}`;
+  return (
+    `LandingHit: damage ${Math.max(0, Math.round(playerLandingDamageEvent.damageApplied))} | ` +
+    `impact ${Math.max(0, Math.round(playerLandingDamageEvent.impactSpeed))}px/s`
+  );
 };
 
 const formatDrowningDamageEventText = (

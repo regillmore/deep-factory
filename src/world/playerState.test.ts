@@ -34,6 +34,7 @@ import {
   getPlayerCameraFocusPoint,
   getPlayerCollisionContacts,
   getPlayerDrowningDamageTickApplied,
+  getPlayerLandingImpactSpeed,
   getPlayerLavaDamageTickApplied,
   getPlayerWaterSubmersionTelemetry,
   getPlayerAabb,
@@ -1269,6 +1270,50 @@ describe('playerState', () => {
       DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS
     );
     expect(stepped.grounded).toBe(true);
+  });
+
+  it('reports the same gravity-adjusted landing impact speed used by hard-landing damage resolution', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -3, 2, 2, 0);
+    world.setTile(0, 0, 3);
+
+    const initialState = createPlayerState({
+      position: { x: 8, y: -20 },
+      velocity: {
+        x: 0,
+        y: DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED - 10
+      },
+      size: { width: 12, height: 12 },
+      health: DEFAULT_PLAYER_MAX_HEALTH
+    });
+
+    const impactSpeed = getPlayerLandingImpactSpeed(
+      world,
+      initialState,
+      0.25,
+      {},
+      {
+        gravityAcceleration: 80,
+        maxFallSpeed: DEFAULT_PLAYER_MAX_FALL_SPEED
+      }
+    );
+    const stepped = stepPlayerState(
+      world,
+      initialState,
+      0.25,
+      {},
+      {
+        gravityAcceleration: 80,
+        maxFallSpeed: DEFAULT_PLAYER_MAX_FALL_SPEED
+      }
+    );
+
+    expect(impactSpeed).toBe(DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED + 10);
+    expect(stepped.health).toBe(DEFAULT_PLAYER_MAX_HEALTH - 3);
+    expect(stepped.fallDamageRecoverySecondsRemaining).toBe(
+      DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS
+    );
   });
 
   it('skips repeated hard-landing damage while fall recovery is still active, then damages again after it expires', () => {

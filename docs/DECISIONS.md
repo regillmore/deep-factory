@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-15: Hard-landing impact telemetry uses the pre-collision fixed-step fall speed
+
+- Decision: The hard-landing telemetry now reports the same pre-collision downward speed that the fixed-step fall-damage rule evaluates, rather than the previous-tick velocity or the post-collision grounded speed.
+- Reason: Landing steps end with `velocity.y = 0`, and the prior tick can miss same-step gravity, buoyancy, or rope-drop slowdown, so only the shared pre-collision impact speed matches the actual damage calculation.
+- Consequence: Future landing-speed or fall-survival telemetry should derive from the shared fixed-step impact-speed helper instead of inferring impact from post-landing state or previous snapshots.
+
 ### 2026-03-15: Lethal damage source telemetry lives under player-combat
 
 - Decision: The latest lethal damage source and applied damage now render under `player-combat` in both the full debug HUD and the hidden-HUD compact status strip.

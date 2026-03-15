@@ -302,6 +302,7 @@ export interface DebugOverlayPlayerHostileContactEventTelemetry {
 
 export interface DebugOverlayPlayerLandingDamageEventTelemetry {
   damageApplied: number;
+  impactSpeed: number;
 }
 
 export interface DebugOverlayPlayerDrowningDamageEventTelemetry {
@@ -895,7 +896,10 @@ const formatPlayerLandingDamageEventLine = (
     return 'LandingEvt: none';
   }
 
-  return `LandingEvt: damage:${Math.max(0, Math.round(playerLandingDamageEvent.damageApplied))}`;
+  return (
+    `LandingEvt: damage:${Math.max(0, Math.round(playerLandingDamageEvent.damageApplied))} | ` +
+    `impact:${Math.max(0, Math.round(playerLandingDamageEvent.impactSpeed))}px/s`
+  );
 };
 
 const formatPlayerDrowningDamageEventLine = (

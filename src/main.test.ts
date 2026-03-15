@@ -853,6 +853,19 @@ vi.mock('./gl/renderer', () => ({
       return state;
     }
 
+    getPlayerLandingImpactSpeed(state?: unknown): number {
+      if (!state || typeof state !== 'object' || Array.isArray(state)) {
+        return 0;
+      }
+
+      const playerState = state as {
+        velocity?: { y?: unknown };
+      };
+      return typeof playerState.velocity?.y === 'number' && Number.isFinite(playerState.velocity.y)
+        ? Math.max(0, Math.round(playerState.velocity.y))
+        : 0;
+    }
+
     stepHostileSlimeState<T>(state: T, fixedDt: number, playerState: unknown): T {
       testRuntime.fixedStepWorldUpdateOrder.push('slime');
       const slimeState = state as {
@@ -4443,7 +4456,8 @@ describe('main.ts shell state orchestration', () => {
           velocity: { x: 0, y: 0 },
           grounded: true,
           health: 97,
-          fallDamageRecoverySecondsRemaining: DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS
+          fallDamageRecoverySecondsRemaining: DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
+          landingImpactSpeed: 612
         };
       }
 
@@ -4463,10 +4477,12 @@ describe('main.ts shell state orchestration', () => {
     runRenderFrame();
 
     expect(testRuntime.latestDebugOverlayInspectState?.playerLandingDamageEvent).toEqual({
-      damageApplied: 3
+      damageApplied: 3,
+      impactSpeed: 612
     });
     expect(testRuntime.latestDebugEditStatusStripState?.playerLandingDamageEvent).toEqual({
-      damageApplied: 3
+      damageApplied: 3,
+      impactSpeed: 612
     });
     expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(97);
     expect(testRuntime.latestDebugOverlayInspectState?.player?.fallDamageRecoverySecondsRemaining).toBe(
@@ -4481,10 +4497,12 @@ describe('main.ts shell state orchestration', () => {
     runRenderFrame();
 
     expect(testRuntime.latestDebugOverlayInspectState?.playerLandingDamageEvent).toEqual({
-      damageApplied: 3
+      damageApplied: 3,
+      impactSpeed: 612
     });
     expect(testRuntime.latestDebugEditStatusStripState?.playerLandingDamageEvent).toEqual({
-      damageApplied: 3
+      damageApplied: 3,
+      impactSpeed: 612
     });
     expect(testRuntime.latestDebugOverlayInspectState?.player?.fallDamageRecoverySecondsRemaining).toBe(
       0.1
@@ -4516,7 +4534,8 @@ describe('main.ts shell state orchestration', () => {
         velocity: { x: 0, y: 0 },
         grounded: true,
         health: 0,
-        fallDamageRecoverySecondsRemaining: DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS
+        fallDamageRecoverySecondsRemaining: DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
+        landingImpactSpeed: 612
       };
     };
 
@@ -4527,14 +4546,16 @@ describe('main.ts shell state orchestration', () => {
     runRenderFrame();
 
     expect(testRuntime.latestDebugOverlayInspectState?.playerLandingDamageEvent).toEqual({
-      damageApplied: 10
+      damageApplied: 10,
+      impactSpeed: 612
     });
     expect(testRuntime.latestDebugOverlayInspectState?.playerDeathCauseEvent).toEqual({
       source: 'fall',
       damageApplied: 10
     });
     expect(testRuntime.latestDebugEditStatusStripState?.playerLandingDamageEvent).toEqual({
-      damageApplied: 10
+      damageApplied: 10,
+      impactSpeed: 612
     });
     expect(testRuntime.latestDebugEditStatusStripState?.playerDeathCauseEvent).toEqual({
       source: 'fall',

@@ -57,6 +57,7 @@ import {
 } from '../world/playerSpawn';
 import {
   getPlayerCollisionContacts as getWorldPlayerCollisionContacts,
+  getPlayerLandingImpactSpeed as getWorldPlayerLandingImpactSpeed,
   getPlayerWaterSubmersionTelemetry as getWorldPlayerWaterSubmersionTelemetry,
   respawnPlayerStateAtSpawnIfEmbeddedInSolid as respawnWorldPlayerStateAtSpawnIfEmbeddedInSolid,
   stepPlayerState as stepWorldPlayerState,
@@ -865,6 +866,14 @@ export class Renderer {
 
   stepPlayerState(state: PlayerState, fixedDtSeconds: number, intent: PlayerMovementIntent): PlayerState {
     return stepWorldPlayerState(this.world, state, fixedDtSeconds, intent);
+  }
+
+  getPlayerLandingImpactSpeed(
+    state: PlayerState,
+    fixedDtSeconds: number,
+    intent: PlayerMovementIntent
+  ): number {
+    return getWorldPlayerLandingImpactSpeed(this.world, state, fixedDtSeconds, intent);
   }
 
   stepHostileSlimeState(

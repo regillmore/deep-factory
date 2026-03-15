@@ -406,6 +406,7 @@ type StandalonePlayerFixedStepContactSnapshot = {
 };
 type PlayerLandingDamageEvent = {
   damageApplied: number;
+  impactSpeed: number;
 };
 type PlayerDrowningDamageEvent = {
   damageApplied: number;
@@ -2512,7 +2513,9 @@ const bootstrap = async (): Promise<void> => {
   };
   const resolveStandalonePlayerLandingDamageEvent = (
     previousPlayerState: PlayerState,
-    nextPlayerState: PlayerState
+    nextPlayerState: PlayerState,
+    fixedDt: number,
+    playerMovementIntent: PlayerMovementIntent
   ): PlayerLandingDamageEvent | null => {
     if (previousPlayerState.grounded || !nextPlayerState.grounded) {
       return null;
@@ -2531,7 +2534,20 @@ const bootstrap = async (): Promise<void> => {
     );
     return damageApplied > 0
       ? {
-          damageApplied
+          damageApplied,
+          impactSpeed: Math.max(
+            0,
+            Math.round(
+              readOptionalFiniteNumber(
+                (nextPlayerState as { landingImpactSpeed?: unknown }).landingImpactSpeed
+              ) ??
+                renderer.getPlayerLandingImpactSpeed(
+                  previousPlayerState,
+                  fixedDt,
+                  playerMovementIntent
+                )
+            )
+          )
         }
       : null;
   };
@@ -2744,7 +2760,9 @@ const bootstrap = async (): Promise<void> => {
     );
     const landingDamageEvent = resolveStandalonePlayerLandingDamageEvent(
       previousPlayerState,
-      nextPlayerState
+      nextPlayerState,
+      fixedDt,
+      playerMovementIntent
     );
     const drowningDamageEvent =
       currentPlayerDeathState === null

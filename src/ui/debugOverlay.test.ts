@@ -205,7 +205,8 @@ describe('formatDebugOverlayText', () => {
       playerFacingTransition: null,
       playerRespawn: null,
       playerLandingDamageEvent: {
-        damageApplied: 3
+        damageApplied: 3,
+        impactSpeed: 612
       },
       playerHostileContactEvent: {
         damageApplied: 15,
@@ -330,7 +331,8 @@ describe('formatDebugOverlayText', () => {
       playerFacingTransition: null,
       playerRespawn: null,
       playerLandingDamageEvent: {
-        damageApplied: 3
+        damageApplied: 3,
+        impactSpeed: 612
       },
       playerHostileContactEvent: {
         damageApplied: 15,
@@ -345,7 +347,7 @@ describe('formatDebugOverlayText', () => {
 
     expect(text).toContain('\nSpawn: T:4,-2 | W:72.00,-32.00');
     expect(text).toContain('\nCombat: health:62 | fallRecovery:0.35s | contactInvuln:0.75s');
-    expect(text).toContain('\nLandingEvt: damage:3');
+    expect(text).toContain('\nLandingEvt: damage:3 | impact:612px/s');
     expect(text).toContain('\nContactEvt: damage:15 | blocked:off | tile:3,-1 | facing:left');
     expect(text).toContain('\nSlime: active:2');
     expect(text).toContain('\nAtlas: authored | 96x64');
@@ -1052,7 +1054,8 @@ describe('formatDebugOverlayText', () => {
       playerFacingTransition: null,
       playerRespawn: null,
       playerLandingDamageEvent: {
-        damageApplied: 3
+        damageApplied: 3,
+        impactSpeed: 612
       },
       playerHostileContactEvent: null,
       playerWallContactTransition: null,
@@ -1081,7 +1084,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain('\nCombat: health:97 | fallRecovery:0.35s | contactInvuln:0.00s');
-    expect(text).toContain('\nLandingEvt: damage:3');
+    expect(text).toContain('\nLandingEvt: damage:3 | impact:612px/s');
   });
 
   it('shows live breath and drowning cooldown on the combat line when provided', () => {
