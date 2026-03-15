@@ -49,6 +49,7 @@ import {
   DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
   getPlayerCameraFocusPoint
 } from './world/playerState';
+import { STARTER_PICKAXE_SWING_WINDUP_SECONDS } from './world/starterPickaxeMining';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
 import { DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS } from './world/hostileSlimeCombat';
@@ -6359,6 +6360,109 @@ describe('main.ts shell state orchestration', () => {
       itemId: 'dirt-block',
       amount: 64
     });
+  });
+
+  it('spawns a dirt-block pickup entity when the starter pickaxe breaks nearby grass terrain', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 2);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        worldX: 24,
+        worldY: 8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        tileId: 0
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+      itemId: 'pickaxe',
+      amount: 1
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 24, y: 8 },
+        itemId: 'dirt-block',
+        amount: 1
+      }
+    ]);
+  });
+
+  it('cascades a mined dirt-block refund across overlapping matching world pickups before spawning a new entity', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState(),
+          droppedItemStates: [
+            createDroppedItemState({
+              position: { x: 40, y: 8 },
+              itemId: 'dirt-block',
+              amount: 999
+            }),
+            createDroppedItemState({
+              position: { x: 44, y: 8 },
+              itemId: 'dirt-block',
+              amount: 998
+            })
+          ]
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(2, 0), 9);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 2,
+        worldTileY: 0,
+        worldX: 40,
+        worldY: 8,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 40, y: 8 },
+        itemId: 'dirt-block',
+        amount: 999
+      },
+      {
+        position: { x: 44, y: 8 },
+        itemId: 'dirt-block',
+        amount: 999
+      }
+    ]);
   });
 
   it('spawns a torch pickup entity when a placed starter torch tile is removed', async () => {

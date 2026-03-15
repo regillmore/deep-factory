@@ -182,9 +182,14 @@ describe('createWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerInventoryState).toEqual(standalonePlayerInventoryState);
   });
 
-  it('round-trips dropped-item entity stacks through save decode', () => {
+  it('round-trips dropped-item entity stacks including mined dirt-block refunds through save decode', () => {
     const world = new TileWorld(0);
     const droppedItemStates = [
+      createDroppedItemState({
+        position: { x: 24, y: 8 },
+        itemId: 'dirt-block',
+        amount: 1
+      }),
       createDroppedItemState({
         position: { x: 24, y: -14 },
         itemId: 'torch',

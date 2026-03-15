@@ -251,6 +251,7 @@ import {
 import {
   createStarterPickaxeMiningState,
   evaluateStarterPickaxeMiningTarget,
+  resolveStarterPickaxeBrokenTileDrop,
   resolveStarterPickaxeBreakProgressNormalized,
   STARTER_PICKAXE_ITEM_ID,
   stepStarterPickaxeMiningState,
@@ -2846,7 +2847,31 @@ const bootstrap = async (): Promise<void> => {
       return;
     }
 
-    applyWorldTileEdit(stepResult.hitEvent.tileX, stepResult.hitEvent.tileY, DEBUG_TILE_BREAK_ID);
+    const editResult = applyWorldTileEdit(
+      stepResult.hitEvent.tileX,
+      stepResult.hitEvent.tileY,
+      DEBUG_TILE_BREAK_ID
+    );
+    if (!editResult.changed) {
+      return;
+    }
+
+    const brokenTileDrop = resolveStarterPickaxeBrokenTileDrop(editResult.previousTileId);
+    if (brokenTileDrop === null) {
+      return;
+    }
+
+    const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(
+      createDroppedItemStateFromWorldTile(
+        stepResult.hitEvent.tileX,
+        stepResult.hitEvent.tileY,
+        brokenTileDrop.itemId,
+        brokenTileDrop.amount
+      )
+    );
+    if (remainingDroppedItemState !== null) {
+      spawnDroppedItemEntity(remainingDroppedItemState);
+    }
   };
   const applySelectedStandalonePlayerItemUse = (request: PlayerItemUseRequest): boolean => {
     if (debugEditControlsVisible) {

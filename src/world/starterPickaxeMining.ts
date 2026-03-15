@@ -2,6 +2,10 @@ import type { PlayerInventoryItemId } from './playerInventory';
 import { evaluatePlayerHotbarTilePlacementRange } from './playerHotbarPlacementRange';
 import type { PlayerState } from './playerState';
 import {
+  STARTER_BUILDING_BLOCK_ITEM_ID,
+  STARTER_BUILDING_BLOCK_TILE_ID
+} from './starterBlockPlacement';
+import {
   hasTerrainAutotileMetadata,
   isTileSolid,
   TILE_METADATA,
@@ -15,6 +19,7 @@ export const STARTER_PICKAXE_SWING_ACTIVE_SECONDS = 0.05;
 export const STARTER_PICKAXE_SWING_RECOVERY_SECONDS = 0.15;
 
 const STONE_TILE_ID = 1;
+const GRASS_SURFACE_TILE_ID = 2;
 
 export type StarterPickaxeSwingPhase = 'windup' | 'active' | 'recovery';
 
@@ -50,6 +55,11 @@ export interface StarterPickaxeBreakProgressState {
 export interface StarterPickaxeMiningState {
   activeSwing: StarterPickaxeSwingState | null;
   breakProgress: StarterPickaxeBreakProgressState | null;
+}
+
+export interface StarterPickaxeBrokenTileDrop {
+  itemId: PlayerInventoryItemId;
+  amount: number;
 }
 
 export interface TryStartStarterPickaxeSwingResult {
@@ -130,6 +140,21 @@ const isBreakableTerrainTile = (
 
 const resolveStarterPickaxeRequiredHitCount = (tileId: number): number =>
   tileId === STONE_TILE_ID ? 2 : 1;
+
+export const resolveStarterPickaxeBrokenTileDrop = (
+  tileId: number
+): StarterPickaxeBrokenTileDrop | null => {
+  switch (tileId) {
+    case GRASS_SURFACE_TILE_ID:
+    case STARTER_BUILDING_BLOCK_TILE_ID:
+      return {
+        itemId: STARTER_BUILDING_BLOCK_ITEM_ID,
+        amount: 1
+      };
+    default:
+      return null;
+  }
+};
 
 export const evaluateStarterPickaxeMiningTarget = (
   world: StarterPickaxeMiningWorldView,

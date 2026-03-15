@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-15: Starter-pickaxe dirt refunds reuse the nearby-pickup cascade
+
+- Decision: When the starter pickaxe breaks `grass_surface` or placed starter dirt, the refunded `dirt-block` first merges into overlapping matching dropped-item stacks before any new pickup entity spawns.
+- Reason: Mining refunds should follow the same deterministic overlap and overflow behavior already used by torch refunds and player drops instead of creating redundant stacked pickups for the same item.
+- Consequence: Future mined-tile refunds should reuse the shared nearby-pickup cascade unless the same pass intentionally changes broader world-drop rules.
+
 ### 2026-03-15: Starter tool rollouts backfill missing pickaxes into the first empty hotbar slot
 
 - Decision: World-save inventory normalization now inserts a starter pickaxe into the first empty hotbar slot whenever an older save payload lacks one.

@@ -4,6 +4,7 @@ import { DEFAULT_PLAYER_HEIGHT, DEFAULT_PLAYER_WIDTH } from './playerState';
 import {
   createStarterPickaxeMiningState,
   evaluateStarterPickaxeMiningTarget,
+  resolveStarterPickaxeBrokenTileDrop,
   resolveStarterPickaxeBreakProgressNormalized,
   STARTER_PICKAXE_SWING_ACTIVE_SECONDS,
   STARTER_PICKAXE_SWING_RECOVERY_SECONDS,
@@ -66,6 +67,20 @@ describe('evaluateStarterPickaxeMiningTarget', () => {
       withinRange: false,
       canMine: false
     });
+  });
+});
+
+describe('resolveStarterPickaxeBrokenTileDrop', () => {
+  it('returns one dirt-block refund for broken grass-surface and placed dirt tiles only', () => {
+    expect(resolveStarterPickaxeBrokenTileDrop(2)).toEqual({
+      itemId: 'dirt-block',
+      amount: 1
+    });
+    expect(resolveStarterPickaxeBrokenTileDrop(9)).toEqual({
+      itemId: 'dirt-block',
+      amount: 1
+    });
+    expect(resolveStarterPickaxeBrokenTileDrop(1)).toBeNull();
   });
 });
 

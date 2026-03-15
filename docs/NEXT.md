@@ -30,7 +30,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 550. Add a rope pickup-refund follow-up after rope traversal utility slice and dropped-item pickup: removing placed rope tiles should spawn rope pickup entities, and add deterministic refund regressions plus snapshot coverage for the returned rope stacks.
 559. Add a browser-resume save-normalization follow-up after dropped-item restore consolidation: when boot-time restore collapses overlapping matching world pickups, rewrite the persisted world save immediately instead of waiting for the next pause or pagehide, and add persistence regressions for the normalized pickup set.
 575. Add a torch tile mesh to public/atlas/tile-atlas.png after the rope full-square atlas fix: carve or grow a dedicated authored torch region that preserves the spare unused slot and exterior padding, repoint torch render metadata away from lava art, and add atlas regressions.
-578. Add mined dirt-block pickup refunds after starter pickaxe mining: breaking grass-surface or placed dirt terrain with the starter pickaxe should spawn merge-aware dirt-block world pickups, and add deterministic mining-drop plus save/load regressions for the returned stacks.
+579. Add mined stone-block pickup refunds after starter pickaxe mining and inventory basics: introduce a stackable stone-block item plus placeholder pickup art, spawn merge-aware stone-block world pickups when the starter pickaxe breaks stone, and add deterministic mining-drop plus save/load regressions.
 
 ## Telemetry
 
