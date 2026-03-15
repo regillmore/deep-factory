@@ -479,6 +479,50 @@ export const getPlayerLavaDamageTickApplied = (
   ).damageApplied;
 };
 
+export const getPlayerDrowningDamageTickApplied = (
+  world: PlayerLiquidQueryWorld,
+  state: PlayerState,
+  fixedDtSeconds: number,
+  options: Pick<
+    StepPlayerStateOptions,
+    | 'maxBreathSeconds'
+    | 'breathRecoveryPerSecond'
+    | 'drowningDamagePerTick'
+    | 'drowningDamageTickIntervalSeconds'
+  > = {},
+  registry: TileMetadataRegistry = TILE_METADATA
+): number => {
+  const dt = expectNonNegativeFiniteNumber(fixedDtSeconds, 'fixedDtSeconds');
+  const maxBreathSeconds = expectPositiveFiniteNumber(
+    options.maxBreathSeconds ?? DEFAULT_PLAYER_MAX_BREATH_SECONDS,
+    'options.maxBreathSeconds'
+  );
+  const breathRecoveryPerSecond = expectNonNegativeFiniteNumber(
+    options.breathRecoveryPerSecond ?? DEFAULT_PLAYER_BREATH_RECOVERY_PER_SECOND,
+    'options.breathRecoveryPerSecond'
+  );
+  const drowningDamagePerTick = expectNonNegativeFiniteNumber(
+    options.drowningDamagePerTick ?? DEFAULT_PLAYER_DROWNING_DAMAGE_PER_TICK,
+    'options.drowningDamagePerTick'
+  );
+  const drowningDamageTickIntervalSeconds = expectPositiveFiniteNumber(
+    options.drowningDamageTickIntervalSeconds ?? DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
+    'options.drowningDamageTickIntervalSeconds'
+  );
+  const liquidOverlapState = samplePlayerLiquidOverlapState(world, state, registry);
+  return resolveBreathStepState({
+    health: state.health,
+    breathSecondsRemaining: state.breathSecondsRemaining,
+    drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
+    waterBreathSubmergedFraction: liquidOverlapState.waterBreathSubmergedFraction,
+    fixedDtSeconds: dt,
+    maxBreathSeconds,
+    breathRecoveryPerSecond,
+    drowningDamagePerTick,
+    drowningDamageTickIntervalSeconds
+  }).damageApplied;
+};
+
 const getAabbOverlappingClimbableTileInfo = (
   world: PlayerClimbableTileQueryWorld,
   aabb: WorldAabb,
@@ -601,7 +645,9 @@ const resolveBreathStepState = ({
   breathRecoveryPerSecond: number;
   drowningDamagePerTick: number;
   drowningDamageTickIntervalSeconds: number;
-}): Pick<PlayerState, 'health' | 'breathSecondsRemaining' | 'drowningDamageTickSecondsRemaining'> => {
+}): Pick<PlayerState, 'health' | 'breathSecondsRemaining' | 'drowningDamageTickSecondsRemaining'> & {
+  damageApplied: number;
+} => {
   if (waterBreathSubmergedFraction <= 0) {
     return {
       health,
@@ -611,7 +657,8 @@ const resolveBreathStepState = ({
         maxBreathSeconds,
         breathRecoveryPerSecond
       ),
-      drowningDamageTickSecondsRemaining: drowningDamageTickIntervalSeconds
+      drowningDamageTickSecondsRemaining: drowningDamageTickIntervalSeconds,
+      damageApplied: 0
     };
   }
 
@@ -620,7 +667,8 @@ const resolveBreathStepState = ({
     return {
       health,
       breathSecondsRemaining: remainingBreathSeconds,
-      drowningDamageTickSecondsRemaining: drowningDamageTickIntervalSeconds
+      drowningDamageTickSecondsRemaining: drowningDamageTickIntervalSeconds,
+      damageApplied: 0
     };
   }
 
@@ -630,6 +678,7 @@ const resolveBreathStepState = ({
       ? drowningDamageTickIntervalSeconds
       : drowningDamageTickSecondsRemaining;
   let remainingDt = Math.max(0, fixedDtSeconds - Math.max(0, breathSecondsRemaining));
+  let damageApplied = 0;
 
   while (remainingDt > 0 && remainingHealth > DROWNING_DAMAGE_MIN_HEALTH) {
     if (remainingTickSeconds > remainingDt) {
@@ -639,14 +688,17 @@ const resolveBreathStepState = ({
     }
 
     remainingDt -= remainingTickSeconds;
-    remainingHealth = Math.max(DROWNING_DAMAGE_MIN_HEALTH, remainingHealth - drowningDamagePerTick);
+    const appliedDamage = Math.min(remainingHealth, drowningDamagePerTick);
+    damageApplied += appliedDamage;
+    remainingHealth = Math.max(DROWNING_DAMAGE_MIN_HEALTH, remainingHealth - appliedDamage);
     remainingTickSeconds = drowningDamageTickIntervalSeconds;
   }
 
   return {
     health: remainingHealth,
     breathSecondsRemaining: 0,
-    drowningDamageTickSecondsRemaining: remainingTickSeconds
+    drowningDamageTickSecondsRemaining: remainingTickSeconds,
+    damageApplied
   };
 };
 

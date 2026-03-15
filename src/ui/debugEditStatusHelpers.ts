@@ -120,6 +120,7 @@ export interface DebugEditStatusStripState {
   playerFacingTransition?: DebugEditStatusStripPlayerFacingTransitionTelemetry | null;
   playerRespawn?: DebugEditStatusStripPlayerRespawnTelemetry | null;
   playerLandingDamageEvent?: DebugEditStatusStripPlayerLandingDamageEventTelemetry | null;
+  playerDrowningDamageEvent?: DebugEditStatusStripPlayerDrowningDamageEventTelemetry | null;
   playerLavaDamageEvent?: DebugEditStatusStripPlayerLavaDamageEventTelemetry | null;
   playerHostileContactEvent?: DebugEditStatusStripPlayerHostileContactEventTelemetry | null;
   playerWallContactTransition?: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null;
@@ -225,6 +226,10 @@ export interface DebugEditStatusStripPlayerHostileContactEventTelemetry {
 }
 
 export interface DebugEditStatusStripPlayerLandingDamageEventTelemetry {
+  damageApplied: number;
+}
+
+export interface DebugEditStatusStripPlayerDrowningDamageEventTelemetry {
   damageApplied: number;
 }
 
@@ -1945,6 +1950,16 @@ const formatLandingDamageEventText = (
   return `LandingHit: damage ${Math.max(0, Math.round(playerLandingDamageEvent.damageApplied))}`;
 };
 
+const formatDrowningDamageEventText = (
+  playerDrowningDamageEvent: DebugEditStatusStripPlayerDrowningDamageEventTelemetry | null
+): string | null => {
+  if (!playerDrowningDamageEvent) {
+    return null;
+  }
+
+  return `DrownHit: damage ${Math.max(0, Math.round(playerDrowningDamageEvent.damageApplied))}`;
+};
+
 const formatLavaDamageEventText = (
   playerLavaDamageEvent: DebugEditStatusStripPlayerLavaDamageEventTelemetry | null
 ): string | null => {
@@ -1996,6 +2011,7 @@ const buildEventText = (
   playerFacingTransition: DebugEditStatusStripPlayerFacingTransitionTelemetry | null,
   playerRespawn: DebugEditStatusStripPlayerRespawnTelemetry | null,
   playerLandingDamageEvent: DebugEditStatusStripPlayerLandingDamageEventTelemetry | null,
+  playerDrowningDamageEvent: DebugEditStatusStripPlayerDrowningDamageEventTelemetry | null,
   playerLavaDamageEvent: DebugEditStatusStripPlayerLavaDamageEventTelemetry | null,
   playerHostileContactEvent: DebugEditStatusStripPlayerHostileContactEventTelemetry | null,
   playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null,
@@ -2008,6 +2024,9 @@ const buildEventText = (
     telemetryVisible('player-events') ? formatRespawnEventText(playerRespawn) : null,
     telemetryVisible('player-combat')
       ? formatLandingDamageEventText(playerLandingDamageEvent)
+      : null,
+    telemetryVisible('player-combat')
+      ? formatDrowningDamageEventText(playerDrowningDamageEvent)
       : null,
     telemetryVisible('player-combat') ? formatLavaDamageEventText(playerLavaDamageEvent) : null,
     telemetryVisible('player-combat') ? formatHostileContactEventText(playerHostileContactEvent) : null,
@@ -2572,6 +2591,7 @@ export const buildDebugEditStatusStripModel = (
   const playerFacingTransition = state.playerFacingTransition ?? null;
   const playerRespawn = state.playerRespawn ?? null;
   const playerLandingDamageEvent = state.playerLandingDamageEvent ?? null;
+  const playerDrowningDamageEvent = state.playerDrowningDamageEvent ?? null;
   const playerLavaDamageEvent = state.playerLavaDamageEvent ?? null;
   const playerHostileContactEvent = state.playerHostileContactEvent ?? null;
   const playerWallContactTransition = state.playerWallContactTransition ?? null;
@@ -2670,6 +2690,7 @@ export const buildDebugEditStatusStripModel = (
       playerFacingTransition,
       playerRespawn,
       playerLandingDamageEvent,
+      playerDrowningDamageEvent,
       playerLavaDamageEvent,
       playerHostileContactEvent,
       playerWallContactTransition,

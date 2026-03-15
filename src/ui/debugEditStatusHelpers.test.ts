@@ -1663,6 +1663,24 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBe('LavaHit: damage 25');
   });
 
+  it('shows the latest drowning-tick hit on its own event line', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerDrowningDamageEvent: {
+        damageApplied: 5
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBeNull();
+    expect(model.eventText).toBe('DrownHit: damage 5');
+  });
+
   it('shows the latest hostile-contact hit event on its own event line', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',

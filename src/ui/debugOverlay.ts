@@ -302,6 +302,10 @@ export interface DebugOverlayPlayerLandingDamageEventTelemetry {
   damageApplied: number;
 }
 
+export interface DebugOverlayPlayerDrowningDamageEventTelemetry {
+  damageApplied: number;
+}
+
 export interface DebugOverlayPlayerLavaDamageEventTelemetry {
   damageApplied: number;
 }
@@ -339,6 +343,7 @@ export interface DebugOverlayInspectState {
   playerFacingTransition: DebugOverlayPlayerFacingTransitionTelemetry | null;
   playerRespawn: DebugOverlayPlayerRespawnTelemetry | null;
   playerLandingDamageEvent?: DebugOverlayPlayerLandingDamageEventTelemetry | null;
+  playerDrowningDamageEvent?: DebugOverlayPlayerDrowningDamageEventTelemetry | null;
   playerLavaDamageEvent?: DebugOverlayPlayerLavaDamageEventTelemetry | null;
   playerHostileContactEvent?: DebugOverlayPlayerHostileContactEventTelemetry | null;
   playerWallContactTransition: DebugOverlayPlayerWallContactTransitionTelemetry | null;
@@ -869,6 +874,16 @@ const formatPlayerLandingDamageEventLine = (
   return `LandingEvt: damage:${Math.max(0, Math.round(playerLandingDamageEvent.damageApplied))}`;
 };
 
+const formatPlayerDrowningDamageEventLine = (
+  playerDrowningDamageEvent: DebugOverlayPlayerDrowningDamageEventTelemetry | null
+): string => {
+  if (!playerDrowningDamageEvent) {
+    return 'DrownEvt: none';
+  }
+
+  return `DrownEvt: damage:${Math.max(0, Math.round(playerDrowningDamageEvent.damageApplied))}`;
+};
+
 const formatPlayerLavaDamageEventLine = (
   playerLavaDamageEvent: DebugOverlayPlayerLavaDamageEventTelemetry | null
 ): string => {
@@ -1259,6 +1274,7 @@ export const formatDebugOverlayText = (
   const playerFacingTransition = inspect?.playerFacingTransition ?? null;
   const playerRespawn = inspect?.playerRespawn ?? null;
   const playerLandingDamageEvent = inspect?.playerLandingDamageEvent ?? null;
+  const playerDrowningDamageEvent = inspect?.playerDrowningDamageEvent ?? null;
   const playerLavaDamageEvent = inspect?.playerLavaDamageEvent ?? null;
   const playerHostileContactEvent = inspect?.playerHostileContactEvent ?? null;
   const playerWallContactTransition = inspect?.playerWallContactTransition ?? null;
@@ -1288,6 +1304,9 @@ export const formatDebugOverlayText = (
     telemetryVisible('player-combat') ? formatPlayerCombatLine(player) : null,
     telemetryVisible('player-combat')
       ? formatPlayerLandingDamageEventLine(playerLandingDamageEvent)
+      : null,
+    telemetryVisible('player-combat')
+      ? formatPlayerDrowningDamageEventLine(playerDrowningDamageEvent)
       : null,
     telemetryVisible('player-combat')
       ? formatPlayerLavaDamageEventLine(playerLavaDamageEvent)

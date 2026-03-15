@@ -4629,6 +4629,70 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('tracks latest drowning-tick damage events plus live drowning cooldown telemetry through fixed-step player updates', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    let stepCount = 0;
+    testRuntime.rendererStepPlayerStateImpl = (_state) => {
+      stepCount += 1;
+      if (stepCount === 1) {
+        return {
+          position: { x: 8, y: 0 },
+          velocity: { x: 0, y: 0 },
+          grounded: true,
+          health: 95,
+          breathSecondsRemaining: 0,
+          drowningDamageTickSecondsRemaining: 0.25,
+          drowningDamageApplied: 5
+        };
+      }
+
+      return {
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        grounded: true,
+        health: 95,
+        breathSecondsRemaining: 0,
+        drowningDamageTickSecondsRemaining: 0.1
+      };
+    };
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(
+      testRuntime.latestDebugOverlayInspectState?.player?.drowningDamageTickSecondsRemaining
+    ).toBe(0.25);
+    expect(testRuntime.latestDebugOverlayInspectState?.playerDrowningDamageEvent).toEqual({
+      damageApplied: 5
+    });
+    expect(
+      testRuntime.latestDebugEditStatusStripState?.playerDrowningDamageTickSecondsRemaining
+    ).toBe(0.25);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerDrowningDamageEvent).toEqual({
+      damageApplied: 5
+    });
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(
+      testRuntime.latestDebugOverlayInspectState?.player?.drowningDamageTickSecondsRemaining
+    ).toBe(0.1);
+    expect(testRuntime.latestDebugOverlayInspectState?.playerDrowningDamageEvent).toEqual({
+      damageApplied: 5
+    });
+    expect(
+      testRuntime.latestDebugEditStatusStripState?.playerDrowningDamageTickSecondsRemaining
+    ).toBe(0.1);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerDrowningDamageEvent).toEqual({
+      damageApplied: 5
+    });
+  });
+
   it('submits standalone-player wall, ceiling, and bonk presentation through the current entity snapshot', async () => {
     await import('./main');
     await flushBootstrap();

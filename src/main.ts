@@ -267,6 +267,7 @@ import {
   DEFAULT_PLAYER_WIDTH,
   getPlayerAabb,
   getPlayerCameraFocusPoint,
+  getPlayerDrowningDamageTickApplied,
   getPlayerLavaDamageTickApplied,
   isPlayerRopeDropActive,
   type PlayerCollisionContacts,
@@ -401,6 +402,9 @@ type StandalonePlayerFixedStepContactSnapshot = {
 type PlayerLandingDamageEvent = {
   damageApplied: number;
 };
+type PlayerDrowningDamageEvent = {
+  damageApplied: number;
+};
 type PlayerLavaDamageEvent = {
   damageApplied: number;
 };
@@ -411,6 +415,7 @@ type StandalonePlayerFixedStepResult = {
   contactSnapshot: StandalonePlayerFixedStepContactSnapshot;
   transitionSnapshot: StandalonePlayerFixedStepTransitionSnapshot;
   landingDamageEvent: PlayerLandingDamageEvent | null;
+  drowningDamageEvent: PlayerDrowningDamageEvent | null;
   lavaDamageEvent: PlayerLavaDamageEvent | null;
   respawnEvent: PlayerRespawnEvent | null;
   renderPresentationState: StandalonePlayerRenderPresentationState;
@@ -512,6 +517,7 @@ type StandalonePlayerRenderFrameStatusStripPlayerEventTelemetry = Pick<
   | 'playerFacingTransition'
   | 'playerRespawn'
   | 'playerLandingDamageEvent'
+  | 'playerDrowningDamageEvent'
   | 'playerLavaDamageEvent'
   | 'playerHostileContactEvent'
   | 'playerWallContactTransition'
@@ -1519,6 +1525,7 @@ const bootstrap = async (): Promise<void> => {
   let lastPlayerFacingTransitionEvent: PlayerFacingTransitionEvent | null = null;
   let lastPlayerRespawnEvent: PlayerRespawnEvent | null = null;
   let lastPlayerLandingDamageEvent: PlayerLandingDamageEvent | null = null;
+  let lastPlayerDrowningDamageEvent: PlayerDrowningDamageEvent | null = null;
   let lastPlayerLavaDamageEvent: PlayerLavaDamageEvent | null = null;
   let lastHostileSlimePlayerContactEvent: HostileSlimePlayerContactEvent | null = null;
   let lastPlayerWallContactTransitionEvent: PlayerWallContactTransitionEvent | null = null;
@@ -2426,6 +2433,7 @@ const bootstrap = async (): Promise<void> => {
     lastPlayerFacingTransitionEvent = null;
     lastPlayerRespawnEvent = respawnEvent;
     lastPlayerLandingDamageEvent = null;
+    lastPlayerDrowningDamageEvent = null;
     lastPlayerLavaDamageEvent = null;
     lastHostileSlimePlayerContactEvent = null;
     lastPlayerWallContactTransitionEvent = null;
@@ -2493,6 +2501,27 @@ const bootstrap = async (): Promise<void> => {
       0,
       Math.round(
         explicitDamageApplied ?? getPlayerLavaDamageTickApplied(renderer, previousPlayerState, fixedDt)
+      )
+    );
+    return damageApplied > 0
+      ? {
+          damageApplied
+        }
+      : null;
+  };
+  const resolveStandalonePlayerDrowningDamageEvent = (
+    previousPlayerState: PlayerState,
+    nextPlayerState: PlayerState,
+    fixedDt: number
+  ): PlayerDrowningDamageEvent | null => {
+    const explicitDamageApplied = readOptionalFiniteNumber(
+      (nextPlayerState as { drowningDamageApplied?: unknown }).drowningDamageApplied
+    );
+    const damageApplied = Math.max(
+      0,
+      Math.round(
+        explicitDamageApplied ??
+          getPlayerDrowningDamageTickApplied(renderer, previousPlayerState, fixedDt)
       )
     );
     return damageApplied > 0
@@ -2638,6 +2667,10 @@ const bootstrap = async (): Promise<void> => {
       previousPlayerState,
       nextPlayerState
     );
+    const drowningDamageEvent =
+      currentPlayerDeathState === null
+        ? resolveStandalonePlayerDrowningDamageEvent(previousPlayerState, nextPlayerState, fixedDt)
+        : null;
     const lavaDamageEvent =
       currentPlayerDeathState === null
         ? resolveStandalonePlayerLavaDamageEvent(previousPlayerState, nextPlayerState, fixedDt)
@@ -2664,6 +2697,7 @@ const bootstrap = async (): Promise<void> => {
       respawnEvent,
       transitionSnapshot,
       landingDamageEvent,
+      drowningDamageEvent,
       lavaDamageEvent,
       renderPresentationState: createStandalonePlayerRenderPresentationStateForFixedStepResult(
         contactSnapshot.nextPlayerContacts,
@@ -2679,6 +2713,9 @@ const bootstrap = async (): Promise<void> => {
   ): void => {
     if (playerFixedStepResult.landingDamageEvent !== null) {
       lastPlayerLandingDamageEvent = playerFixedStepResult.landingDamageEvent;
+    }
+    if (playerFixedStepResult.drowningDamageEvent !== null) {
+      lastPlayerDrowningDamageEvent = playerFixedStepResult.drowningDamageEvent;
     }
     if (playerFixedStepResult.lavaDamageEvent !== null) {
       lastPlayerLavaDamageEvent = playerFixedStepResult.lavaDamageEvent;
@@ -4619,6 +4656,7 @@ const bootstrap = async (): Promise<void> => {
       playerFacingTransition: null,
       playerRespawn: null,
       playerLandingDamageEvent: null,
+      playerDrowningDamageEvent: null,
       playerLavaDamageEvent: null,
       playerHostileContactEvent: null,
       playerWallContactTransition: null,
@@ -4833,6 +4871,7 @@ const bootstrap = async (): Promise<void> => {
           playerFacingTransition: lastPlayerFacingTransitionEvent,
           playerRespawn: lastPlayerRespawnEvent,
           playerLandingDamageEvent: lastPlayerLandingDamageEvent,
+          playerDrowningDamageEvent: lastPlayerDrowningDamageEvent,
           playerLavaDamageEvent: lastPlayerLavaDamageEvent,
           playerHostileContactEvent: lastHostileSlimePlayerContactEvent,
           playerWallContactTransition: lastPlayerWallContactTransitionEvent,
@@ -4972,6 +5011,7 @@ const bootstrap = async (): Promise<void> => {
       playerFacingTransition: debugStatusStripPlayerEventTelemetry.playerFacingTransition,
       playerRespawn: debugStatusStripPlayerEventTelemetry.playerRespawn,
       playerLandingDamageEvent: debugStatusStripPlayerEventTelemetry.playerLandingDamageEvent,
+      playerDrowningDamageEvent: debugStatusStripPlayerEventTelemetry.playerDrowningDamageEvent,
       playerLavaDamageEvent: debugStatusStripPlayerEventTelemetry.playerLavaDamageEvent,
       playerHostileContactEvent: debugStatusStripPlayerEventTelemetry.playerHostileContactEvent,
       playerWallContactTransition: debugStatusStripPlayerEventTelemetry.playerWallContactTransition,
@@ -5003,6 +5043,7 @@ const bootstrap = async (): Promise<void> => {
       playerFacingTransition: lastPlayerFacingTransitionEvent,
       playerRespawn: lastPlayerRespawnEvent,
       playerLandingDamageEvent: lastPlayerLandingDamageEvent,
+      playerDrowningDamageEvent: lastPlayerDrowningDamageEvent,
       playerLavaDamageEvent: lastPlayerLavaDamageEvent,
       playerHostileContactEvent: lastHostileSlimePlayerContactEvent,
       playerWallContactTransition: lastPlayerWallContactTransitionEvent,

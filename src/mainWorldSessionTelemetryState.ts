@@ -99,7 +99,7 @@ export const WORLD_SESSION_TELEMETRY_TYPE_DEFINITIONS = [
     collectionId: 'player',
     label: 'Combat',
     description:
-      'Health, death-hold, respawn countdown, breath, submersion, lava or survival cooldown, and damage-event source readouts.'
+      'Health, death-hold, respawn countdown, breath, submersion, drowning or lava cooldowns, and survival damage-event readouts.'
   },
   {
     id: 'player-camera',

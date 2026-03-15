@@ -33,6 +33,7 @@ import {
   DEFAULT_PLAYER_WIDTH,
   getPlayerCameraFocusPoint,
   getPlayerCollisionContacts,
+  getPlayerDrowningDamageTickApplied,
   getPlayerLavaDamageTickApplied,
   getPlayerWaterSubmersionTelemetry,
   getPlayerAabb,
@@ -1628,6 +1629,58 @@ describe('playerState', () => {
     expect(lethalDrownTick.health).toBe(0);
     expect(lethalDrownTick.breathSecondsRemaining).toBe(0);
     expect(lethalDrownTick.drowningDamageTickSecondsRemaining).toBe(0.5);
+  });
+
+  it('reports the applied drowning tick damage through the shared drowning helper when the timer elapses underwater', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -4, 2, 2, 0);
+    world.setTile(0, -1, WATER_TILE_ID);
+
+    const damageApplied = getPlayerDrowningDamageTickApplied(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 8 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        health: 50,
+        breathSecondsRemaining: 0,
+        drowningDamageTickSecondsRemaining: 0.25
+      }),
+      0.25,
+      {
+        drowningDamagePerTick: 5,
+        drowningDamageTickIntervalSeconds: 0.25
+      }
+    );
+
+    expect(damageApplied).toBe(5);
+  });
+
+  it('reports zero drowning tick damage through the shared drowning helper when only the feet are submerged', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -4, 2, 2, 0);
+    world.setTile(0, 0, WATER_TILE_ID);
+
+    const damageApplied = getPlayerDrowningDamageTickApplied(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 8 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        health: 50,
+        breathSecondsRemaining: 0,
+        drowningDamageTickSecondsRemaining: 0.25
+      }),
+      0.25,
+      {
+        drowningDamagePerTick: 5,
+        drowningDamageTickIntervalSeconds: 0.25
+      }
+    );
+
+    expect(damageApplied).toBe(0);
   });
 
   it('recovers breath and resets drowning cadence once the player surfaces', () => {
