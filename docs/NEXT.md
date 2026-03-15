@@ -32,6 +32,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 559. Add a browser-resume save-normalization follow-up after dropped-item restore consolidation: when boot-time restore collapses overlapping matching world pickups, rewrite the persisted world save immediately instead of waiting for the next pause or pagehide, and add persistence regressions for the normalized pickup set.
 566. Add a rope tile mesh to public/atlas/tile-atlas.png. Rope is currently using one of the water meshes.
 567. Add a single-item hotbar drop follow-up after dropped-item pickup: mixed-device `Drop One` controls that toss one item from the selected stack, fill overlapping matching pickups before spawning overflow, and add deterministic inventory regressions.
+569. Add a one-tile slow-down to the end of safe rope drop so the player stops gently and doesn't take fall damage if the rope reaches the ground.
 
 ## Telemetry
 
