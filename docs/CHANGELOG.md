@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-14
 
+- Task: Add a same-item torch-refund pickup merge follow-up after multi-pickup dropped-stack cascade.
+- Changes: Updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so removed starter torches now route through the shared nearby matching dropped-item merge cascade before spawning a refund entity, added deterministic refund-cascade and full-stack fallback regressions, removed completed task `556` from [docs/NEXT.md](docs/NEXT.md), added replacement task `558`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add hostile-slime spawn-window telemetry to the telemetry catalog.
 - Changes: Updated [src/world/hostileSlimeSpawn.ts](../src/world/hostileSlimeSpawn.ts) plus [src/world/hostileSlimeSpawn.test.ts](../src/world/hostileSlimeSpawn.test.ts) with a shared deterministic spawn-window target helper, updated [src/main.ts](../src/main.ts), [src/ui/debugOverlay.ts](../src/ui/debugOverlay.ts), and [src/ui/debugEditStatusHelpers.ts](../src/ui/debugEditStatusHelpers.ts) so the full debug HUD and hidden-HUD compact status strip now surface the next hostile-slime spawn-window index plus tile-offset target beside the existing spawn cooldown and tracked-slime locomotion readouts, refreshed [src/ui/debugOverlay.test.ts](../src/ui/debugOverlay.test.ts), [src/ui/debugEditStatusHelpers.test.ts](../src/ui/debugEditStatusHelpers.test.ts), and [src/main.test.ts](../src/main.test.ts) with deterministic formatter and fixed-step telemetry regressions, removed completed task `524` from [docs/NEXT.md](docs/NEXT.md), added replacement task `557`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/world/hostileSlimeSpawn.test.ts src/ui/debugOverlay.test.ts src/ui/debugEditStatusHelpers.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

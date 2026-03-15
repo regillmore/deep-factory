@@ -1549,7 +1549,7 @@ const bootstrap = async (): Promise<void> => {
   };
   const getDroppedItemStates = (): DroppedItemState[] =>
     getDroppedItemEntityStates().map(({ state }) => cloneDroppedItemState(state));
-  const mergeDroppedItemDropIntoNearbyPickup = (
+  const mergeDroppedItemIntoNearbyPickup = (
     droppedItemState: DroppedItemState
   ): DroppedItemState | null => {
     const activeDroppedItems = getDroppedItemEntityStates();
@@ -2224,9 +2224,12 @@ const bootstrap = async (): Promise<void> => {
     return droppedItemEntityId;
   };
   const refundRemovedStarterTorchTile = (worldTileX: number, worldTileY: number): void => {
-    spawnDroppedItemEntity(
+    const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(
       createDroppedItemStateFromWorldTile(worldTileX, worldTileY, STARTER_TORCH_ITEM_ID, 1)
     );
+    if (remainingDroppedItemState !== null) {
+      spawnDroppedItemEntity(remainingDroppedItemState);
+    }
   };
   renderer.onTileEdited((event) => {
     if (
@@ -2263,7 +2266,7 @@ const bootstrap = async (): Promise<void> => {
         null
       )
     );
-    const remainingDroppedItemState = mergeDroppedItemDropIntoNearbyPickup(droppedItemState);
+    const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(droppedItemState);
     if (remainingDroppedItemState !== null) {
       spawnDroppedItemEntity(remainingDroppedItemState);
     }

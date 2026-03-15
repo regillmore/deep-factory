@@ -6021,6 +6021,125 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
+  it('cascades a removed starter torch refund across overlapping matching world pickups before spawning a new entity', async () => {
+    const torchWorldTileX = 20;
+    const torchWorldTileY = -20;
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState(),
+          droppedItemStates: [
+            createDroppedItemState({
+              position: { x: 328, y: -312 },
+              itemId: 'torch',
+              amount: 999
+            }),
+            createDroppedItemState({
+              position: { x: 332, y: -312 },
+              itemId: 'torch',
+              amount: 998
+            })
+          ]
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: torchWorldTileX,
+        worldTileY: torchWorldTileY,
+        kind: 'break'
+      }
+    ];
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(torchWorldTileX, torchWorldTileY), 10);
+    testRuntime.rendererSetTileResult = true;
+
+    runFixedUpdate();
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 328, y: -312 },
+        itemId: 'torch',
+        amount: 999
+      },
+      {
+        position: { x: 332, y: -312 },
+        itemId: 'torch',
+        amount: 999
+      }
+    ]);
+  });
+
+  it('spawns a new torch pickup entity when overlapping matching world pickups are already full', async () => {
+    const torchWorldTileX = 20;
+    const torchWorldTileY = -20;
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState(),
+          droppedItemStates: [
+            createDroppedItemState({
+              position: { x: 328, y: -312 },
+              itemId: 'torch',
+              amount: 999
+            })
+          ]
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: torchWorldTileX,
+        worldTileY: torchWorldTileY,
+        kind: 'break'
+      }
+    ];
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(torchWorldTileX, torchWorldTileY), 10);
+    testRuntime.rendererSetTileResult = true;
+
+    runFixedUpdate();
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 328, y: -312 },
+        itemId: 'torch',
+        amount: 999
+      },
+      {
+        position: { x: 328, y: -312 },
+        itemId: 'torch',
+        amount: 1
+      }
+    ]);
+  });
+
   it('drops the selected hotbar stack into a world pickup and persists the collected stack after proximity pickup', async () => {
     await import('./main');
     await flushBootstrap();

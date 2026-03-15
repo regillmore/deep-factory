@@ -30,7 +30,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 513. Add a bug-net critter-capture slice after passive-bunny ambient-entity and inventory basics: a non-stackable bug-net hotbar slot, mixed-device swing timing with bunny capture-on-hit rules, bunny item stacks into inventory, and deterministic capture regressions.
 536. Add a starter background-wall placement slice after starter building-block placement and inventory basics: stackable dirt-wall hotbar slots, mixed-device enclosed-wall placement against solid blocks or existing walls, stack consumption, and save/load regressions for placed walls plus remaining stack counts.
 550. Add a rope pickup-refund follow-up after rope traversal utility slice and dropped-item pickup: removing placed rope tiles should spawn rope pickup entities, and add deterministic refund regressions plus snapshot coverage for the returned rope stacks.
-556. Add a same-item torch-refund pickup merge follow-up after multi-pickup dropped-stack cascade: starter torch refund spawns should consolidate into overlapping matching world pickups before creating a new entity, and add deterministic refund-merge regressions.
+558. Add a dropped-item restore consolidation follow-up after same-item dropped-stack merge and save/load: browser-resumed or imported overlapping matching world pickups should collapse into deterministic same-item stacks during session restore, and add restore regressions for the consolidated pickup set.
 
 ## Telemetry
 

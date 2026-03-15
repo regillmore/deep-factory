@@ -26,6 +26,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Cascading across nearby matching pickups keeps drop behavior readable, avoids unnecessary duplicate entities, and gives multi-pickup overlaps one deterministic merge order instead of whichever target happened to be checked first.
 - Consequence: Future player-drop and nearby world-pickup follow-ups should preserve this nearest-first cascade behavior instead of reverting to one-target-only or always-spawn-new overlap handling.
 
+### 2026-03-14: Tile refund pickups should merge before spawning new overlapping stacks
+
+- Decision: Starter torch refund pickups now route through the same overlapping same-item dropped-stack cascade as player drops before spawning a new dropped-item entity.
+- Reason: Reusing the shared merge path keeps removed-tile torch refunds from spraying redundant overlapping world pickups when a matching torch stack already occupies that spot.
+- Consequence: Future tile-refund pickup slices should reuse the shared nearby-pickup merge cascade and only spawn a new entity for any overflow that remains afterward.
+
 ### 2026-03-14: Starter torches collapse from authoritative tile edits when support disappears
 
 - Decision: `TileWorld.setTileState()` now automatically clears adjacent starter torch tiles when a solid-face edit leaves them without any remaining solid cardinal support.
