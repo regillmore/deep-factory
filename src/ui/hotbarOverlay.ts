@@ -7,6 +7,7 @@ import {
   getPlayerInventoryItemDefinition,
   type PlayerInventoryState
 } from '../world/playerInventory';
+import { installPointerClickFocusRelease } from './buttonFocus';
 
 interface HotbarOverlayOptions {
   host: HTMLElement;
@@ -89,6 +90,7 @@ export class HotbarOverlay {
         }
         onClick?.();
       });
+      installPointerClickFocusRelease(button);
       return button;
     };
 
@@ -147,6 +149,7 @@ export class HotbarOverlay {
       button.addEventListener('click', () => {
         options.onSelectSlot?.(slotIndex);
       });
+      installPointerClickFocusRelease(button);
 
       this.slotRow.append(button);
       this.slots.push({

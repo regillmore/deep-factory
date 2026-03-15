@@ -9,8 +9,9 @@ class FakeElement {
   textContent = '';
   title = '';
   type = '';
+  blurCallCount = 0;
   private attributes = new Map<string, string>();
-  private listeners = new Map<string, Array<() => void>>();
+  private listeners = new Map<string, Array<(event?: { detail: number }) => void>>();
 
   append(...children: FakeElement[]): void {
     this.children.push(...children);
@@ -24,16 +25,20 @@ class FakeElement {
     return this.attributes.get(name) ?? null;
   }
 
-  addEventListener(type: string, listener: () => void): void {
+  addEventListener(type: string, listener: (event?: { detail: number }) => void): void {
     const listeners = this.listeners.get(type) ?? [];
     listeners.push(listener);
     this.listeners.set(type, listeners);
   }
 
-  click(): void {
+  click(detail = 1): void {
     for (const listener of this.listeners.get('click') ?? []) {
-      listener();
+      listener({ detail });
     }
+  }
+
+  blur(): void {
+    this.blurCallCount += 1;
   }
 
   remove(): void {}
@@ -125,6 +130,25 @@ describe('HotbarOverlay', () => {
     getDropOneButton(overlay).click();
     expect(onDropSelectedOne).toHaveBeenCalledTimes(1);
     expect(getDropOneButton(overlay).getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('releases focus after pointer clicks on hotbar buttons so gameplay keys do not retrigger them', () => {
+    const host = createHost();
+    const overlay = new HotbarOverlay({ host });
+
+    overlay.update(createDefaultPlayerInventoryState());
+
+    const dropOneButton = getDropOneButton(overlay);
+    const dropStackButton = getDropStackButton(overlay);
+    const slotButton = getSlotRow(overlay).children[0]!;
+
+    dropOneButton.click(1);
+    dropStackButton.click(1);
+    slotButton.click(1);
+
+    expect(dropOneButton.blurCallCount).toBe(1);
+    expect(dropStackButton.blurCallCount).toBe(1);
+    expect(slotButton.blurCallCount).toBe(1);
   });
 
   it('can hide and show itself without removing the DOM root', () => {
