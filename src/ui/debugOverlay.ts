@@ -7,6 +7,7 @@ import {
 import type { HostileSlimeLaunchKind } from '../world/hostileSlimeState';
 import type { LiquidSurfaceBranchKind } from '../world/liquidSurface';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
+import type { PlayerDeathCauseSource } from '../world/playerDeathCause';
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
 import type { PlayerRespawnEventKind } from '../world/playerRespawnEvent';
@@ -311,6 +312,11 @@ export interface DebugOverlayPlayerLavaDamageEventTelemetry {
   damageApplied: number;
 }
 
+export interface DebugOverlayPlayerDeathCauseEventTelemetry {
+  source: PlayerDeathCauseSource;
+  damageApplied: number;
+}
+
 export interface DebugOverlayPlayerWallContactTransitionTelemetry {
   kind: PlayerWallContactTransitionKind;
   tile: { x: number; y: number; id: number; side: 'left' | 'right' };
@@ -346,6 +352,7 @@ export interface DebugOverlayInspectState {
   playerLandingDamageEvent?: DebugOverlayPlayerLandingDamageEventTelemetry | null;
   playerDrowningDamageEvent?: DebugOverlayPlayerDrowningDamageEventTelemetry | null;
   playerLavaDamageEvent?: DebugOverlayPlayerLavaDamageEventTelemetry | null;
+  playerDeathCauseEvent?: DebugOverlayPlayerDeathCauseEventTelemetry | null;
   playerHostileContactEvent?: DebugOverlayPlayerHostileContactEventTelemetry | null;
   playerWallContactTransition: DebugOverlayPlayerWallContactTransitionTelemetry | null;
   playerCeilingContactTransition: DebugOverlayPlayerCeilingContactTransitionTelemetry | null;
@@ -911,6 +918,19 @@ const formatPlayerLavaDamageEventLine = (
   return `LavaEvt: damage:${Math.max(0, Math.round(playerLavaDamageEvent.damageApplied))}`;
 };
 
+const formatPlayerDeathCauseEventLine = (
+  playerDeathCauseEvent: DebugOverlayPlayerDeathCauseEventTelemetry | null
+): string => {
+  if (!playerDeathCauseEvent) {
+    return 'DeathEvt: none';
+  }
+
+  return (
+    `DeathEvt: source:${playerDeathCauseEvent.source} | ` +
+    `damage:${Math.max(0, Math.round(playerDeathCauseEvent.damageApplied))}`
+  );
+};
+
 const formatHostileSlimeLaunchKind = (
   hostileSlimeLaunchKind: HostileSlimeLaunchKind | null
 ): string | null => {
@@ -1293,6 +1313,7 @@ export const formatDebugOverlayText = (
   const playerLandingDamageEvent = inspect?.playerLandingDamageEvent ?? null;
   const playerDrowningDamageEvent = inspect?.playerDrowningDamageEvent ?? null;
   const playerLavaDamageEvent = inspect?.playerLavaDamageEvent ?? null;
+  const playerDeathCauseEvent = inspect?.playerDeathCauseEvent ?? null;
   const playerHostileContactEvent = inspect?.playerHostileContactEvent ?? null;
   const playerWallContactTransition = inspect?.playerWallContactTransition ?? null;
   const playerCeilingContactTransition = inspect?.playerCeilingContactTransition ?? null;
@@ -1327,6 +1348,9 @@ export const formatDebugOverlayText = (
       : null,
     telemetryVisible('player-combat')
       ? formatPlayerLavaDamageEventLine(playerLavaDamageEvent)
+      : null,
+    telemetryVisible('player-combat')
+      ? formatPlayerDeathCauseEventLine(playerDeathCauseEvent)
       : null,
     telemetryVisible('player-combat')
       ? formatPlayerHostileContactEventLine(playerHostileContactEvent)

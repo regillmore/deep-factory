@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-15: Lethal damage source telemetry lives under player-combat
+
+- Decision: The latest lethal damage source and applied damage now render under `player-combat` in both the full debug HUD and the hidden-HUD compact status strip.
+- Reason: The lethal cause explains the same survival and recovery story as death-hold status, landing damage, drowning ticks, lava ticks, and hostile-contact hits, so it fits the existing combat telemetry slice better than a new separate death-only family.
+- Consequence: Future death-cause or lethal-hit summary telemetry should extend `player-combat` unless a later pass intentionally redesigns the combat-versus-survival telemetry split.
+
 ### 2026-03-15: Boot-time dropped-item normalization rewrites browser-resume saves immediately
 
 - Decision: When boot-time browser resume consolidates overlapping same-item dropped-item stacks during restore, the normalized world-save envelope is written back to browser storage immediately instead of waiting for the next pause or `pagehide`.

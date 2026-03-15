@@ -33,5 +33,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Telemetry
 
-545. Add a death-cause telemetry follow-up to the telemetry catalog: show the latest lethal damage source plus applied damage in the debug HUD or compact status strip, and add deterministic death-cause regressions.
 587. Add a fall-impact telemetry follow-up to the telemetry catalog: show the latest hard-landing impact speed alongside landing damage in the debug HUD or compact status strip, and add fixed-step survival telemetry regressions.
+589. Add a death-location telemetry follow-up to the telemetry catalog: show the latest lethal player world tile alongside death-cause telemetry in the debug HUD or compact status strip, and add deterministic death-location regressions.

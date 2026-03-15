@@ -187,6 +187,11 @@ import {
   type PlayerDeathState
 } from './world/playerDeathState';
 import {
+  resolvePlayerDeathCauseFromDamageSequence,
+  type PlayerDeathCauseCandidate,
+  type PlayerDeathCauseEvent
+} from './world/playerDeathCause';
+import {
   type LiquidSurfaceLevelNeighborhood,
   resolveLiquidSurfaceBottomAtlasPixelRows,
   resolveConnectedLiquidNeighborLevel,
@@ -417,6 +422,7 @@ type StandalonePlayerFixedStepResult = {
   landingDamageEvent: PlayerLandingDamageEvent | null;
   drowningDamageEvent: PlayerDrowningDamageEvent | null;
   lavaDamageEvent: PlayerLavaDamageEvent | null;
+  deathCauseEvent: PlayerDeathCauseEvent | null;
   respawnEvent: PlayerRespawnEvent | null;
   renderPresentationState: StandalonePlayerRenderPresentationState;
 };
@@ -520,6 +526,7 @@ type StandalonePlayerRenderFrameStatusStripPlayerEventTelemetry = Pick<
   | 'playerLandingDamageEvent'
   | 'playerDrowningDamageEvent'
   | 'playerLavaDamageEvent'
+  | 'playerDeathCauseEvent'
   | 'playerHostileContactEvent'
   | 'playerWallContactTransition'
   | 'playerCeilingContactTransition'
@@ -1528,6 +1535,7 @@ const bootstrap = async (): Promise<void> => {
   let lastPlayerLandingDamageEvent: PlayerLandingDamageEvent | null = null;
   let lastPlayerDrowningDamageEvent: PlayerDrowningDamageEvent | null = null;
   let lastPlayerLavaDamageEvent: PlayerLavaDamageEvent | null = null;
+  let lastPlayerDeathCauseEvent: PlayerDeathCauseEvent | null = null;
   let lastHostileSlimePlayerContactEvent: HostileSlimePlayerContactEvent | null = null;
   let lastPlayerWallContactTransitionEvent: PlayerWallContactTransitionEvent | null = null;
   let lastPlayerCeilingContactTransitionEvent: PlayerCeilingContactTransitionEvent | null = null;
@@ -2151,13 +2159,16 @@ const bootstrap = async (): Promise<void> => {
     }
     entityRegistry.setEntityState(standalonePlayerEntityId, nextPlayerState, options);
   };
-  const replacePendingStandalonePlayerFixedStepNextState = (nextPlayerState: PlayerState): void => {
+  const replacePendingStandalonePlayerFixedStepNextState = (
+    nextPlayerState: PlayerState,
+    deathCauseCandidates: readonly PlayerDeathCauseCandidate[] = []
+  ): void => {
     if (pendingStandalonePlayerFixedStepResult === null) {
       return;
     }
 
     const previousHealth = readStandalonePlayerHealthForRespawnDetection(
-      pendingStandalonePlayerFixedStepResult.previousPlayerState
+      pendingStandalonePlayerFixedStepResult.nextPlayerState
     );
     const nextHealth = readStandalonePlayerHealthForRespawnDetection(nextPlayerState);
     const startsDeathStateThisTick =
@@ -2165,6 +2176,11 @@ const bootstrap = async (): Promise<void> => {
       pendingStandalonePlayerFixedStepResult.nextDeathState === null &&
       previousHealth > 0 &&
       nextHealth <= 0;
+    const deathCauseEvent = resolvePlayerDeathCauseFromDamageSequence(
+      previousHealth,
+      nextHealth,
+      deathCauseCandidates
+    );
 
     pendingStandalonePlayerFixedStepResult = {
       ...pendingStandalonePlayerFixedStepResult,
@@ -2177,6 +2193,8 @@ const bootstrap = async (): Promise<void> => {
       transitionSnapshot: startsDeathStateThisTick
         ? createEmptyStandalonePlayerFixedStepTransitionSnapshot()
         : pendingStandalonePlayerFixedStepResult.transitionSnapshot,
+      deathCauseEvent:
+        deathCauseEvent ?? pendingStandalonePlayerFixedStepResult.deathCauseEvent,
       renderPresentationState: startsDeathStateThisTick
         ? createStandalonePlayerRenderPresentationState()
         : pendingStandalonePlayerFixedStepResult.renderPresentationState
@@ -2205,10 +2223,36 @@ const bootstrap = async (): Promise<void> => {
       return;
     }
 
+    const deathCauseEvent = resolvePlayerDeathCauseFromDamageSequence(
+      readStandalonePlayerHealthForRespawnDetection(standalonePlayerState),
+      readStandalonePlayerHealthForRespawnDetection(nextPlayerState),
+      event !== null && !event.blockedByInvulnerability
+        ? [
+            {
+              source: 'hostile-contact',
+              damageApplied: event.damageApplied
+            }
+          ]
+        : []
+    );
+    if (deathCauseEvent !== null) {
+      lastPlayerDeathCauseEvent = deathCauseEvent;
+    }
+
     setStandalonePlayerState(nextPlayerState, {
       resetRenderStateSnapshots: false
     });
-    replacePendingStandalonePlayerFixedStepNextState(nextPlayerState);
+    replacePendingStandalonePlayerFixedStepNextState(
+      nextPlayerState,
+      event !== null && !event.blockedByInvulnerability
+        ? [
+            {
+              source: 'hostile-contact',
+              damageApplied: event.damageApplied
+            }
+          ]
+        : []
+    );
   };
   const spawnStandalonePlayerEntity = (initialPlayerState: PlayerState): PlayerState => {
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
@@ -2436,6 +2480,7 @@ const bootstrap = async (): Promise<void> => {
     lastPlayerLandingDamageEvent = null;
     lastPlayerDrowningDamageEvent = null;
     lastPlayerLavaDamageEvent = null;
+    lastPlayerDeathCauseEvent = null;
     lastHostileSlimePlayerContactEvent = null;
     lastPlayerWallContactTransitionEvent = null;
     lastPlayerCeilingContactTransitionEvent = null;
@@ -2530,6 +2575,39 @@ const bootstrap = async (): Promise<void> => {
           damageApplied
         }
       : null;
+  };
+  const resolveStandalonePlayerDeathCauseEvent = (
+    previousPlayerState: PlayerState,
+    nextPlayerState: PlayerState,
+    landingDamageEvent: PlayerLandingDamageEvent | null,
+    drowningDamageEvent: PlayerDrowningDamageEvent | null,
+    lavaDamageEvent: PlayerLavaDamageEvent | null
+  ): PlayerDeathCauseEvent | null => {
+    const candidates: PlayerDeathCauseCandidate[] = [];
+    if (lavaDamageEvent !== null) {
+      candidates.push({
+        source: 'lava',
+        damageApplied: lavaDamageEvent.damageApplied
+      });
+    }
+    if (drowningDamageEvent !== null) {
+      candidates.push({
+        source: 'drowning',
+        damageApplied: drowningDamageEvent.damageApplied
+      });
+    }
+    if (landingDamageEvent !== null) {
+      candidates.push({
+        source: 'fall',
+        damageApplied: landingDamageEvent.damageApplied
+      });
+    }
+
+    return resolvePlayerDeathCauseFromDamageSequence(
+      readStandalonePlayerHealthForRespawnDetection(previousPlayerState),
+      readStandalonePlayerHealthForRespawnDetection(nextPlayerState),
+      candidates
+    );
   };
   const createStandalonePlayerDeathHoldState = (playerState: PlayerState): PlayerState => ({
     ...playerState,
@@ -2676,6 +2754,16 @@ const bootstrap = async (): Promise<void> => {
       currentPlayerDeathState === null
         ? resolveStandalonePlayerLavaDamageEvent(previousPlayerState, nextPlayerState, fixedDt)
         : null;
+    const deathCauseEvent =
+      currentPlayerDeathState === null
+        ? resolveStandalonePlayerDeathCauseEvent(
+            previousPlayerState,
+            nextPlayerState,
+            landingDamageEvent,
+            drowningDamageEvent,
+            lavaDamageEvent
+          )
+        : null;
     const contactSnapshot = createStandalonePlayerFixedStepContactSnapshot({
       previousPlayerState,
       nextPlayerState
@@ -2700,6 +2788,7 @@ const bootstrap = async (): Promise<void> => {
       landingDamageEvent,
       drowningDamageEvent,
       lavaDamageEvent,
+      deathCauseEvent,
       renderPresentationState: createStandalonePlayerRenderPresentationStateForFixedStepResult(
         contactSnapshot.nextPlayerContacts,
         transitionSnapshot,
@@ -2720,6 +2809,9 @@ const bootstrap = async (): Promise<void> => {
     }
     if (playerFixedStepResult.lavaDamageEvent !== null) {
       lastPlayerLavaDamageEvent = playerFixedStepResult.lavaDamageEvent;
+    }
+    if (playerFixedStepResult.deathCauseEvent !== null) {
+      lastPlayerDeathCauseEvent = playerFixedStepResult.deathCauseEvent;
     }
     if (playerFixedStepResult.respawnEvent !== null) {
       if (playerFixedStepResult.respawnEvent.kind === 'death') {
@@ -4664,6 +4756,7 @@ const bootstrap = async (): Promise<void> => {
       playerLandingDamageEvent: null,
       playerDrowningDamageEvent: null,
       playerLavaDamageEvent: null,
+      playerDeathCauseEvent: null,
       playerHostileContactEvent: null,
       playerWallContactTransition: null,
       playerCeilingContactTransition: null
@@ -4879,6 +4972,7 @@ const bootstrap = async (): Promise<void> => {
           playerLandingDamageEvent: lastPlayerLandingDamageEvent,
           playerDrowningDamageEvent: lastPlayerDrowningDamageEvent,
           playerLavaDamageEvent: lastPlayerLavaDamageEvent,
+          playerDeathCauseEvent: lastPlayerDeathCauseEvent,
           playerHostileContactEvent: lastHostileSlimePlayerContactEvent,
           playerWallContactTransition: lastPlayerWallContactTransitionEvent,
           playerCeilingContactTransition: lastPlayerCeilingContactTransitionEvent
@@ -5020,6 +5114,7 @@ const bootstrap = async (): Promise<void> => {
       playerLandingDamageEvent: debugStatusStripPlayerEventTelemetry.playerLandingDamageEvent,
       playerDrowningDamageEvent: debugStatusStripPlayerEventTelemetry.playerDrowningDamageEvent,
       playerLavaDamageEvent: debugStatusStripPlayerEventTelemetry.playerLavaDamageEvent,
+      playerDeathCauseEvent: debugStatusStripPlayerEventTelemetry.playerDeathCauseEvent,
       playerHostileContactEvent: debugStatusStripPlayerEventTelemetry.playerHostileContactEvent,
       playerWallContactTransition: debugStatusStripPlayerEventTelemetry.playerWallContactTransition,
       playerCeilingContactTransition:
@@ -5052,6 +5147,7 @@ const bootstrap = async (): Promise<void> => {
       playerLandingDamageEvent: lastPlayerLandingDamageEvent,
       playerDrowningDamageEvent: lastPlayerDrowningDamageEvent,
       playerLavaDamageEvent: lastPlayerLavaDamageEvent,
+      playerDeathCauseEvent: lastPlayerDeathCauseEvent,
       playerHostileContactEvent: lastHostileSlimePlayerContactEvent,
       playerWallContactTransition: lastPlayerWallContactTransitionEvent,
       playerCeilingContactTransition: lastPlayerCeilingContactTransitionEvent,

@@ -1666,6 +1666,25 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBe('LavaHit: damage 25');
   });
 
+  it('shows the latest lethal damage source on its own event line', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerDeathCauseEvent: {
+        source: 'hostile-contact',
+        damageApplied: 15
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBeNull();
+    expect(model.eventText).toBe('Death: source hostile-contact | damage 15');
+  });
+
   it('shows the latest drowning-tick hit on its own event line', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',

@@ -17,6 +17,7 @@ import { worldToChunkCoord, worldToLocalTile } from '../world/chunkMath';
 import { MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL } from '../world/constants';
 import type { LiquidSurfaceBranchKind } from '../world/liquidSurface';
 import type { PlayerCeilingContactTransitionKind } from '../world/playerCeilingContactTransition';
+import type { PlayerDeathCauseSource } from '../world/playerDeathCause';
 import type { PlayerFacingTransitionKind } from '../world/playerFacingTransition';
 import type { PlayerGroundedTransitionKind } from '../world/playerGroundedTransition';
 import type { PlayerRespawnEventKind } from '../world/playerRespawnEvent';
@@ -123,6 +124,7 @@ export interface DebugEditStatusStripState {
   playerLandingDamageEvent?: DebugEditStatusStripPlayerLandingDamageEventTelemetry | null;
   playerDrowningDamageEvent?: DebugEditStatusStripPlayerDrowningDamageEventTelemetry | null;
   playerLavaDamageEvent?: DebugEditStatusStripPlayerLavaDamageEventTelemetry | null;
+  playerDeathCauseEvent?: DebugEditStatusStripPlayerDeathCauseEventTelemetry | null;
   playerHostileContactEvent?: DebugEditStatusStripPlayerHostileContactEventTelemetry | null;
   playerWallContactTransition?: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null;
   playerCeilingContactTransition?: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null;
@@ -235,6 +237,11 @@ export interface DebugEditStatusStripPlayerDrowningDamageEventTelemetry {
 }
 
 export interface DebugEditStatusStripPlayerLavaDamageEventTelemetry {
+  damageApplied: number;
+}
+
+export interface DebugEditStatusStripPlayerDeathCauseEventTelemetry {
+  source: PlayerDeathCauseSource;
   damageApplied: number;
 }
 
@@ -1994,6 +2001,19 @@ const formatLavaDamageEventText = (
   return `LavaHit: damage ${Math.max(0, Math.round(playerLavaDamageEvent.damageApplied))}`;
 };
 
+const formatDeathCauseEventText = (
+  playerDeathCauseEvent: DebugEditStatusStripPlayerDeathCauseEventTelemetry | null
+): string | null => {
+  if (!playerDeathCauseEvent) {
+    return null;
+  }
+
+  return (
+    `Death: source ${playerDeathCauseEvent.source} | ` +
+    `damage ${Math.max(0, Math.round(playerDeathCauseEvent.damageApplied))}`
+  );
+};
+
 const formatWallContactTransitionEventText = (
   playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null
 ): string | null => {
@@ -2037,6 +2057,7 @@ const buildEventText = (
   playerLandingDamageEvent: DebugEditStatusStripPlayerLandingDamageEventTelemetry | null,
   playerDrowningDamageEvent: DebugEditStatusStripPlayerDrowningDamageEventTelemetry | null,
   playerLavaDamageEvent: DebugEditStatusStripPlayerLavaDamageEventTelemetry | null,
+  playerDeathCauseEvent: DebugEditStatusStripPlayerDeathCauseEventTelemetry | null,
   playerHostileContactEvent: DebugEditStatusStripPlayerHostileContactEventTelemetry | null,
   playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null,
   playerCeilingContactTransition: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null,
@@ -2053,6 +2074,7 @@ const buildEventText = (
       ? formatDrowningDamageEventText(playerDrowningDamageEvent)
       : null,
     telemetryVisible('player-combat') ? formatLavaDamageEventText(playerLavaDamageEvent) : null,
+    telemetryVisible('player-combat') ? formatDeathCauseEventText(playerDeathCauseEvent) : null,
     telemetryVisible('player-combat') ? formatHostileContactEventText(playerHostileContactEvent) : null,
     telemetryVisible('player-events')
       ? formatWallContactTransitionEventText(playerWallContactTransition)
@@ -2618,6 +2640,7 @@ export const buildDebugEditStatusStripModel = (
   const playerLandingDamageEvent = state.playerLandingDamageEvent ?? null;
   const playerDrowningDamageEvent = state.playerDrowningDamageEvent ?? null;
   const playerLavaDamageEvent = state.playerLavaDamageEvent ?? null;
+  const playerDeathCauseEvent = state.playerDeathCauseEvent ?? null;
   const playerHostileContactEvent = state.playerHostileContactEvent ?? null;
   const playerWallContactTransition = state.playerWallContactTransition ?? null;
   const playerCeilingContactTransition = state.playerCeilingContactTransition ?? null;
@@ -2718,6 +2741,7 @@ export const buildDebugEditStatusStripModel = (
       playerLandingDamageEvent,
       playerDrowningDamageEvent,
       playerLavaDamageEvent,
+      playerDeathCauseEvent,
       playerHostileContactEvent,
       playerWallContactTransition,
       playerCeilingContactTransition,

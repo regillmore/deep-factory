@@ -1152,6 +1152,30 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nLavaEvt: damage:25');
   });
 
+  it('shows the latest lethal damage source on its own combat event line', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      spawn: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerDeathCauseEvent: {
+        source: 'lava',
+        damageApplied: 25
+      },
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: null,
+      player: null,
+      pinned: null
+    });
+
+    expect(text).toContain('\nDeathEvt: source:lava | damage:25');
+  });
+
   it('shows the latest drowning-tick damage on its own combat event line', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: null,

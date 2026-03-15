@@ -1640,6 +1640,17 @@ const readPersistedWorldSaveEnvelope = (): ReturnType<typeof createWorldSaveEnve
   const rawEnvelope = testRuntime.storageValues.get(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY) ?? null;
   return rawEnvelope === null ? null : JSON.parse(rawEnvelope);
 };
+const setPersistedStandalonePlayerState = (playerState: ReturnType<typeof createPlayerState>): void => {
+  testRuntime.storageValues.set(
+    PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+    JSON.stringify(
+      createWorldSaveEnvelope({
+        worldSnapshot: new TileWorld(0).createSnapshot(),
+        standalonePlayerState: playerState
+      })
+    )
+  );
+};
 const readPersistedDebugEditControlState = (): Record<string, unknown> =>
   JSON.parse(testRuntime.storageValues.get(DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY) ?? '{}');
 
@@ -4483,6 +4494,56 @@ describe('main.ts shell state orchestration', () => {
     ).toBe(0.1);
   });
 
+  it('tracks fall damage as the latest lethal death cause when a hard landing reaches zero health', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    let stepCount = 0;
+    testRuntime.rendererStepPlayerStateImpl = (_state) => {
+      stepCount += 1;
+      if (stepCount === 1) {
+        return {
+          position: { x: 8, y: -24 },
+          velocity: { x: 0, y: 612 },
+          grounded: false,
+          health: 10,
+          fallDamageRecoverySecondsRemaining: 0
+        };
+      }
+
+      return {
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        grounded: true,
+        health: 0,
+        fallDamageRecoverySecondsRemaining: DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS
+      };
+    };
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    runFixedUpdate();
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.playerLandingDamageEvent).toEqual({
+      damageApplied: 10
+    });
+    expect(testRuntime.latestDebugOverlayInspectState?.playerDeathCauseEvent).toEqual({
+      source: 'fall',
+      damageApplied: 10
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.playerLandingDamageEvent).toEqual({
+      damageApplied: 10
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.playerDeathCauseEvent).toEqual({
+      source: 'fall',
+      damageApplied: 10
+    });
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(0);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerHealth).toBe(0);
+  });
+
   it('tracks breath and drowning-cooldown telemetry through fixed-step player updates', async () => {
     await import('./main');
     await flushBootstrap();
@@ -4642,6 +4703,51 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('tracks lava as the latest lethal death cause when a lava tick reaches zero health', async () => {
+    setPersistedStandalonePlayerState(
+      createPlayerState({
+        position: { x: 8, y: -16 },
+        grounded: true,
+        health: 25,
+        lavaDamageTickSecondsRemaining: 0.25
+      })
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.rendererStepPlayerStateImpl = (_state) => ({
+      position: { x: 8, y: 0 },
+      velocity: { x: 0, y: 0 },
+      grounded: true,
+      health: 0,
+      lavaDamageTickSecondsRemaining: 0.25,
+      lavaDamageApplied: 25
+    });
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.playerLavaDamageEvent).toEqual({
+      damageApplied: 25
+    });
+    expect(testRuntime.latestDebugOverlayInspectState?.playerDeathCauseEvent).toEqual({
+      source: 'lava',
+      damageApplied: 25
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.playerLavaDamageEvent).toEqual({
+      damageApplied: 25
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.playerDeathCauseEvent).toEqual({
+      source: 'lava',
+      damageApplied: 25
+    });
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(0);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerHealth).toBe(0);
+  });
+
   it('tracks latest drowning-tick damage events plus live drowning cooldown telemetry through fixed-step player updates', async () => {
     await import('./main');
     await flushBootstrap();
@@ -4704,6 +4810,53 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState?.playerDrowningDamageEvent).toEqual({
       damageApplied: 5
     });
+  });
+
+  it('tracks drowning as the latest lethal death cause when a drowning tick reaches zero health', async () => {
+    setPersistedStandalonePlayerState(
+      createPlayerState({
+        position: { x: 8, y: -16 },
+        grounded: true,
+        health: 5,
+        breathSecondsRemaining: 0,
+        drowningDamageTickSecondsRemaining: 0.25
+      })
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.rendererStepPlayerStateImpl = (_state) => ({
+      position: { x: 8, y: 0 },
+      velocity: { x: 0, y: 0 },
+      grounded: true,
+      health: 0,
+      breathSecondsRemaining: 0,
+      drowningDamageTickSecondsRemaining: 0.25,
+      drowningDamageApplied: 5
+    });
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.playerDrowningDamageEvent).toEqual({
+      damageApplied: 5
+    });
+    expect(testRuntime.latestDebugOverlayInspectState?.playerDeathCauseEvent).toEqual({
+      source: 'drowning',
+      damageApplied: 5
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.playerDrowningDamageEvent).toEqual({
+      damageApplied: 5
+    });
+    expect(testRuntime.latestDebugEditStatusStripState?.playerDeathCauseEvent).toEqual({
+      source: 'drowning',
+      damageApplied: 5
+    });
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(0);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerHealth).toBe(0);
   });
 
   it('submits standalone-player wall, ceiling, and bonk presentation through the current entity snapshot', async () => {
