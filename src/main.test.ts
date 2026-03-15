@@ -1633,6 +1633,42 @@ const runFixedUpdate = (fixedDt = 1000 / 60): void => {
 const runRenderFrame = (frameDtMs = 1000 / 60, alpha = 0): void => {
   testRuntime.gameLoopRender?.(alpha, frameDtMs);
 };
+const getWorldHost = (): InstanceType<typeof testRuntime.FakeHTMLElement> => {
+  const shellInstance = testRuntime.shellInstance as
+    | ({
+        getWorldHost(): InstanceType<typeof testRuntime.FakeHTMLElement>;
+      } & NonNullable<typeof testRuntime.shellInstance>)
+    | null;
+  if (shellInstance === null) {
+    throw new Error('expected app shell instance');
+  }
+
+  return shellInstance.getWorldHost();
+};
+const getHotbarOverlayRoot = (): InstanceType<typeof testRuntime.FakeHTMLElement> => {
+  const hotbarOverlayRoot = getWorldHost().children.find(
+    (child): child is InstanceType<typeof testRuntime.FakeHTMLElement> =>
+      child instanceof testRuntime.FakeHTMLElement &&
+      child.style.position === 'fixed' &&
+      child.style.bottom === '18px' &&
+      child.style.zIndex === '22'
+  );
+  if (!hotbarOverlayRoot) {
+    throw new Error('expected hotbar overlay root');
+  }
+
+  return hotbarOverlayRoot;
+};
+const getHotbarOverlaySlotRow = (): InstanceType<typeof testRuntime.FakeHTMLElement> =>
+  getHotbarOverlayRoot().children[1] as InstanceType<typeof testRuntime.FakeHTMLElement>;
+const getHotbarOverlaySlotCooldownFill = (
+  slotIndex: number
+): InstanceType<typeof testRuntime.FakeHTMLElement> => {
+  const slotButton = getHotbarOverlaySlotRow().children[slotIndex] as InstanceType<
+    typeof testRuntime.FakeHTMLElement
+  >;
+  return slotButton.children[3] as InstanceType<typeof testRuntime.FakeHTMLElement>;
+};
 
 const readPersistedShellState = (): ReturnType<typeof createDefaultWorldSessionShellState> =>
   JSON.parse(
@@ -7628,6 +7664,8 @@ describe('main.ts shell state orchestration', () => {
       }
     ];
     runFixedUpdate(1 / 60);
+    expect(getHotbarOverlaySlotCooldownFill(4).style.opacity).toBe('1');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(4).style.height)).toBeCloseTo(99.2, 1);
 
     testRuntime.playerItemUseRequests = [
       {
@@ -7639,9 +7677,13 @@ describe('main.ts shell state orchestration', () => {
       }
     ];
     runFixedUpdate(1);
+    expect(getHotbarOverlaySlotCooldownFill(4).style.opacity).toBe('1');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(4).style.height)).toBeCloseTo(49.2, 1);
 
     testRuntime.playerItemUseRequests = [];
     runFixedUpdate(1.1);
+    expect(getHotbarOverlaySlotCooldownFill(4).style.opacity).toBe('0');
+    expect(getHotbarOverlaySlotCooldownFill(4).style.height).toBe('0.0%');
 
     testRuntime.playerItemUseRequests = [
       {
@@ -7653,6 +7695,8 @@ describe('main.ts shell state orchestration', () => {
       }
     ];
     runFixedUpdate(1 / 60);
+    expect(getHotbarOverlaySlotCooldownFill(4).style.opacity).toBe('1');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(4).style.height)).toBeCloseTo(99.2, 1);
 
     dispatchWindowEvent('pagehide');
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerState?.health).toBe(85);

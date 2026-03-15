@@ -238,6 +238,7 @@ import {
 } from './world/playerInventory';
 import {
   createPlayerHealingPotionCooldownState,
+  DEFAULT_HEALING_POTION_USE_COOLDOWN_SECONDS,
   HEALING_POTION_ITEM_ID,
   stepPlayerHealingPotionCooldownState,
   tryUsePlayerHealingPotion
@@ -1565,12 +1566,32 @@ const bootstrap = async (): Promise<void> => {
         };
   const getStandalonePlayerInventoryState = (): PlayerInventoryState =>
     clonePlayerInventoryState(standalonePlayerInventoryState);
-  const applyStandalonePlayerInventoryState = (inventoryState: PlayerInventoryState): void => {
-    standalonePlayerInventoryState = clonePlayerInventoryState(inventoryState);
-    hotbarOverlay.update(standalonePlayerInventoryState);
-  };
   const getSelectedStandalonePlayerInventoryStack = () =>
     standalonePlayerInventoryState.hotbar[standalonePlayerInventoryState.selectedHotbarSlotIndex] ?? null;
+  const resolveHotbarOverlayHealingPotionCooldownFillNormalized = (): number | null => {
+    if (playerHealingPotionCooldownState.secondsRemaining <= 0) {
+      return null;
+    }
+
+    return Math.max(
+      0,
+      Math.min(
+        1,
+        playerHealingPotionCooldownState.secondsRemaining /
+          DEFAULT_HEALING_POTION_USE_COOLDOWN_SECONDS
+      )
+    );
+  };
+  const syncHotbarOverlayState = (): void => {
+    hotbarOverlay.update(standalonePlayerInventoryState, {
+      healingPotionCooldownFillNormalized:
+        resolveHotbarOverlayHealingPotionCooldownFillNormalized()
+    });
+  };
+  const applyStandalonePlayerInventoryState = (inventoryState: PlayerInventoryState): void => {
+    standalonePlayerInventoryState = clonePlayerInventoryState(inventoryState);
+    syncHotbarOverlayState();
+  };
   const applySelectedStandalonePlayerHotbarSlotConsumption = (): boolean => {
     const consumeResult = consumePlayerInventoryHotbarSlotItem(
       standalonePlayerInventoryState,
@@ -1597,11 +1618,16 @@ const bootstrap = async (): Promise<void> => {
       standalonePlayerState,
       playerHealingPotionCooldownState
     );
-    if (!useResult.consumed || !applySelectedStandalonePlayerHotbarSlotConsumption()) {
+    if (!useResult.consumed) {
+      syncHotbarOverlayState();
+      return false;
+    }
+    if (!applySelectedStandalonePlayerHotbarSlotConsumption()) {
       return false;
     }
 
     playerHealingPotionCooldownState = useResult.nextCooldownState;
+    syncHotbarOverlayState();
     setStandalonePlayerState(useResult.nextPlayerState);
     return true;
   };
@@ -1615,7 +1641,7 @@ const bootstrap = async (): Promise<void> => {
       movePlayerInventorySelectedHotbarSlot(standalonePlayerInventoryState, direction)
     );
   };
-  hotbarOverlay.update(standalonePlayerInventoryState);
+  syncHotbarOverlayState();
   hotbarOverlay.setVisible(false);
   const getHostileSlimeEntityStates = (): Array<{ id: EntityId; state: HostileSlimeState }> => {
     const activeHostileSlimes: Array<{ id: EntityId; state: HostileSlimeState }> = [];
@@ -2159,6 +2185,7 @@ const bootstrap = async (): Promise<void> => {
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
     starterPickaxeMiningState = createStarterPickaxeMiningState();
     playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
+    syncHotbarOverlayState();
   };
   const restoreStandalonePlayerSessionState = (
     playerState: PlayerState | null,
@@ -5405,10 +5432,19 @@ const bootstrap = async (): Promise<void> => {
       flushStandalonePlayerFixedStepResult();
       stepStarterPickaxeMiningFixedUpdate(fixedDt);
       stepHostileSlimeSpawnAndDespawn();
-      playerHealingPotionCooldownState = stepPlayerHealingPotionCooldownState(
+      const nextHealingPotionCooldownState = stepPlayerHealingPotionCooldownState(
         playerHealingPotionCooldownState,
         fixedDt
       );
+      if (
+        nextHealingPotionCooldownState.secondsRemaining !==
+        playerHealingPotionCooldownState.secondsRemaining
+      ) {
+        playerHealingPotionCooldownState = nextHealingPotionCooldownState;
+        syncHotbarOverlayState();
+      } else {
+        playerHealingPotionCooldownState = nextHealingPotionCooldownState;
+      }
     },
     (alpha, frameDtMs) => {
       if (currentScreen !== 'in-world') {

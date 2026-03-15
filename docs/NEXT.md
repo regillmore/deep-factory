@@ -29,7 +29,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 550. Add a rope pickup-refund follow-up after rope traversal utility slice and dropped-item pickup: removing placed rope tiles should spawn rope pickup entities, and add deterministic refund regressions plus snapshot coverage for the returned rope stacks.
 575. Add a torch tile mesh to public/atlas/tile-atlas.png after the rope full-square atlas fix: carve or grow a dedicated authored torch region that preserves the spare unused slot and exterior padding, repoint torch render metadata away from lava art, and add atlas regressions.
 581. Add placeable wood-block building follow-up after starter axe woodcutting and inventory basics: stackable `wood-block` hotbar slots through the shared solid-block placement path, deterministic stack consumption, and placement/save regressions.
-591. Add healing-potion blocked-use feedback after the healing-potion survival slice: surface cooldown in the hotbar overlay, and add deterministic blocked-use regressions.
+592. Add healing-potion selection-feedback follow-up after the in-slot cooldown fill: surface `ready`, `full health`, and `dead` status text in the hotbar overlay when a healing potion is selected without reintroducing a detached cooldown pill, and add deterministic status-label regressions.
 
 ## Telemetry
 

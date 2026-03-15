@@ -22,11 +22,16 @@ interface HotbarOverlayOptions {
   onDropSelectedStack?: () => void;
 }
 
+interface HotbarOverlayUpdateOptions {
+  healingPotionCooldownFillNormalized?: number | null;
+}
+
 interface HotbarSlotElements {
   button: HTMLButtonElement;
   shortcutLabel: HTMLDivElement;
   itemLabel: HTMLDivElement;
   amountLabel: HTMLDivElement;
+  cooldownFill: HTMLDivElement;
 }
 
 const applySlotSelectionStyles = (button: HTMLButtonElement, selected: boolean, empty: boolean): void => {
@@ -40,6 +45,19 @@ const applySlotSelectionStyles = (button: HTMLButtonElement, selected: boolean, 
     ? '0 0 0 1px rgba(255, 214, 120, 0.35), 0 10px 24px rgba(0, 0, 0, 0.34)'
     : '0 8px 18px rgba(0, 0, 0, 0.28)';
   button.style.transform = selected ? 'translateY(-2px)' : 'translateY(0)';
+};
+
+const clampUnitInterval = (value: number): number => Math.max(0, Math.min(1, value));
+
+const applyCooldownFillStyles = (fill: HTMLDivElement, normalized: number | null): void => {
+  if (normalized === null || normalized <= 0) {
+    fill.style.height = '0.0%';
+    fill.style.opacity = '0';
+    return;
+  }
+
+  fill.style.height = `${(clampUnitInterval(normalized) * 100).toFixed(1)}%`;
+  fill.style.opacity = '1';
 };
 
 export class HotbarOverlay {
@@ -152,6 +170,8 @@ export class HotbarOverlay {
       button.style.width = '60px';
       button.style.height = '72px';
       button.style.padding = '8px 6px 6px';
+      button.style.position = 'relative';
+      button.style.overflow = 'hidden';
       button.style.display = 'flex';
       button.style.flexDirection = 'column';
       button.style.justifyContent = 'space-between';
@@ -165,6 +185,8 @@ export class HotbarOverlay {
       button.style.transition = 'transform 120ms ease, border-color 120ms ease, background 120ms ease';
 
       const shortcutLabel = document.createElement('div');
+      shortcutLabel.style.position = 'relative';
+      shortcutLabel.style.zIndex = '1';
       shortcutLabel.style.font = '600 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
       shortcutLabel.style.color = 'rgba(255, 255, 255, 0.76)';
       shortcutLabel.style.textAlign = 'left';
@@ -172,6 +194,8 @@ export class HotbarOverlay {
       button.append(shortcutLabel);
 
       const itemLabel = document.createElement('div');
+      itemLabel.style.position = 'relative';
+      itemLabel.style.zIndex = '1';
       itemLabel.style.font = '700 12px/1.1 system-ui, sans-serif';
       itemLabel.style.letterSpacing = '0.05em';
       itemLabel.style.textAlign = 'center';
@@ -179,10 +203,25 @@ export class HotbarOverlay {
       button.append(itemLabel);
 
       const amountLabel = document.createElement('div');
+      amountLabel.style.position = 'relative';
+      amountLabel.style.zIndex = '1';
       amountLabel.style.font = '600 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
       amountLabel.style.textAlign = 'right';
       amountLabel.style.color = '#ffe7a3';
       button.append(amountLabel);
+
+      const cooldownFill = document.createElement('div');
+      cooldownFill.style.position = 'absolute';
+      cooldownFill.style.left = '0';
+      cooldownFill.style.right = '0';
+      cooldownFill.style.bottom = '0';
+      cooldownFill.style.height = '0.0%';
+      cooldownFill.style.opacity = '0';
+      cooldownFill.style.pointerEvents = 'none';
+      cooldownFill.style.background =
+        'linear-gradient(180deg, rgba(255, 217, 143, 0.04) 0%, rgba(255, 184, 96, 0.22) 35%, rgba(255, 150, 74, 0.62) 100%)';
+      cooldownFill.style.transition = 'height 120ms linear, opacity 120ms ease';
+      button.append(cooldownFill);
 
       button.addEventListener('click', () => {
         options.onSelectSlot?.(slotIndex);
@@ -194,7 +233,8 @@ export class HotbarOverlay {
         button,
         shortcutLabel,
         itemLabel,
-        amountLabel
+        amountLabel,
+        cooldownFill
       });
     }
 
@@ -210,7 +250,11 @@ export class HotbarOverlay {
     this.root.setAttribute('aria-hidden', visible ? 'false' : 'true');
   }
 
-  update(state: PlayerInventoryState): void {
+  update(state: PlayerInventoryState, options: HotbarOverlayUpdateOptions = {}): void {
+    const healingPotionCooldownFillNormalized =
+      typeof options.healingPotionCooldownFillNormalized === 'number'
+        ? clampUnitInterval(options.healingPotionCooldownFillNormalized)
+        : null;
     for (let slotIndex = 0; slotIndex < this.slots.length; slotIndex += 1) {
       const slotElements = this.slots[slotIndex]!;
       const stack = state.hotbar[slotIndex] ?? null;
@@ -226,14 +270,23 @@ export class HotbarOverlay {
         slotElements.itemLabel.textContent = 'EMPTY';
         slotElements.itemLabel.style.color = 'rgba(255, 255, 255, 0.42)';
         slotElements.amountLabel.textContent = '';
+        applyCooldownFillStyles(slotElements.cooldownFill, null);
         continue;
       }
 
       const definition = getPlayerInventoryItemDefinition(stack.itemId);
-      slotElements.button.title = `Select ${definition.label} in hotbar slot ${slotIndex + 1}`;
+      const coolingDown =
+        stack.itemId === 'healing-potion' && healingPotionCooldownFillNormalized !== null;
+      slotElements.button.title = coolingDown
+        ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (cooldown active)`
+        : `Select ${definition.label} in hotbar slot ${slotIndex + 1}`;
       slotElements.itemLabel.textContent = definition.hotbarLabel;
       slotElements.itemLabel.style.color = '#f5f7fa';
       slotElements.amountLabel.textContent = stack.amount > 1 ? String(stack.amount) : '';
+      applyCooldownFillStyles(
+        slotElements.cooldownFill,
+        stack.itemId === 'healing-potion' ? healingPotionCooldownFillNormalized : null
+      );
     }
 
     const selectedStack = state.hotbar[state.selectedHotbarSlotIndex] ?? null;

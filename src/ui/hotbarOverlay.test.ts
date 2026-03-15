@@ -58,6 +58,8 @@ describe('HotbarOverlay', () => {
   const createHost = (): HTMLElement => document.createElement('div') as unknown as HTMLElement;
   const getSlotRow = (overlay: HotbarOverlay): FakeElement =>
     (overlay.getRootElement() as unknown as FakeElement).children[1]! as FakeElement;
+  const getSlotCooldownFill = (overlay: HotbarOverlay, slotIndex: number): FakeElement =>
+    getSlotRow(overlay).children[slotIndex]!.children[3]! as FakeElement;
   const getActionRow = (overlay: HotbarOverlay): FakeElement =>
     (overlay.getRootElement() as unknown as FakeElement).children[0]! as FakeElement;
   const getMoveLeftButton = (overlay: HotbarOverlay): FakeElement =>
@@ -91,6 +93,7 @@ describe('HotbarOverlay', () => {
     expect(firstSlot.getAttribute('aria-pressed')).toBe('true');
     expect(secondSlot.title).toContain('Dirt Block');
     expect(emptySlot.children[1]!.textContent).toBe('EMPTY');
+    expect(getSlotCooldownFill(overlay, 4).style.opacity).toBe('0');
     expect(moveLeftButton.title).toContain('leftmost slot');
     expect(moveLeftButton.getAttribute('aria-disabled')).toBe('true');
     expect(dropOneButton.title).toContain('Drop one Starter Pickaxe');
@@ -193,6 +196,27 @@ describe('HotbarOverlay', () => {
     expect(dropStackButton.blurCallCount).toBe(1);
     expect(slotButton.blurCallCount).toBe(1);
     expect(moveRightButton.blurCallCount).toBe(1);
+  });
+
+  it('shows and clears a healing-potion cooldown fill on potion slots without affecting other tiles', () => {
+    const host = createHost();
+    const overlay = new HotbarOverlay({ host });
+
+    overlay.update(createDefaultPlayerInventoryState(), {
+      healingPotionCooldownFillNormalized: 0.5
+    });
+
+    expect(getSlotCooldownFill(overlay, 4).style.height).toBe('50.0%');
+    expect(getSlotCooldownFill(overlay, 4).style.opacity).toBe('1');
+    expect(getSlotRow(overlay).children[4]!.title).toContain('cooldown active');
+    expect(getSlotCooldownFill(overlay, 0).style.height).toBe('0.0%');
+    expect(getSlotCooldownFill(overlay, 0).style.opacity).toBe('0');
+
+    overlay.update(createDefaultPlayerInventoryState());
+
+    expect(getSlotCooldownFill(overlay, 4).style.height).toBe('0.0%');
+    expect(getSlotCooldownFill(overlay, 4).style.opacity).toBe('0');
+    expect(getSlotRow(overlay).children[4]!.title).not.toContain('cooldown active');
   });
 
   it('can hide and show itself without removing the DOM root', () => {
