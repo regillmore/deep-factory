@@ -6098,6 +6098,69 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
+  it('cascades a dropped hotbar stack across multiple nearby matching world pickups in nearest-first order', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'dirt-block', amount: 4 },
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }),
+          droppedItemStates: [
+            createDroppedItemState({
+              position: { x: 28, y: -14 },
+              itemId: 'dirt-block',
+              amount: 998
+            }),
+            createDroppedItemState({
+              position: { x: 32, y: -14 },
+              itemId: 'dirt-block',
+              amount: 995
+            })
+          ]
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('Backspace', 'Backspace').prevented).toBe(true);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toBeNull();
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 28, y: -14 },
+        itemId: 'dirt-block',
+        amount: 999
+      },
+      {
+        position: { x: 32, y: -14 },
+        itemId: 'dirt-block',
+        amount: 998
+      }
+    ]);
+  });
+
   it('rejects starter dirt block placement when the new block would overlap the player', async () => {
     await import('./main');
     await flushBootstrap();

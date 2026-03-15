@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-14
 
+- Task: Add a multi-pickup dropped-stack cascade follow-up after same-item dropped-stack merge.
+- Changes: Updated [src/world/droppedItem.ts](../src/world/droppedItem.ts) plus [src/world/droppedItem.test.ts](../src/world/droppedItem.test.ts) with deterministic multi-target dropped-stack cascade helpers and nearest-first plus tie-order regressions, updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so hotbar drops now fill multiple nearby matching pickups before spawning any overflow remainder, removed completed task `555` from [docs/NEXT.md](docs/NEXT.md), added replacement task `556`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/droppedItem.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a same-item dropped-stack merge follow-up after dropped-item pickup.
 - Changes: Updated [src/world/droppedItem.ts](../src/world/droppedItem.ts) plus [src/world/droppedItem.test.ts](../src/world/droppedItem.test.ts) with overlapping same-item world-stack merge helpers and deterministic full-merge plus overflow regressions, updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so hotbar drops now merge into a nearby overlapping matching pickup before spawning a remainder entity, removed completed task `549` from [docs/NEXT.md](docs/NEXT.md), added replacement task `555`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/droppedItem.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

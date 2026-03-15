@@ -38,6 +38,18 @@ export interface ResolveDroppedItemStackMergeResult {
   mergedAmount: number;
 }
 
+export interface ResolveDroppedItemStackMergeCascadeTargetResult {
+  targetIndex: number;
+  nextTargetDroppedItemState: DroppedItemState;
+  mergedAmount: number;
+}
+
+export interface ResolveDroppedItemStackMergeCascadeResult {
+  targetResults: ResolveDroppedItemStackMergeCascadeTargetResult[];
+  nextSourceDroppedItemState: DroppedItemState | null;
+  totalMergedAmount: number;
+}
+
 export const DROPPED_ITEM_WIDTH = 10;
 export const DROPPED_ITEM_HEIGHT = 10;
 export const DROPPED_ITEM_PICKUP_PADDING = 6;
@@ -170,6 +182,15 @@ export const canDroppedItemStacksMerge = (
   targetDroppedItemState.itemId === sourceDroppedItemState.itemId &&
   doAabbsOverlap(getDroppedItemAabb(targetDroppedItemState), getDroppedItemAabb(sourceDroppedItemState));
 
+const getDroppedItemDistanceSquared = (
+  targetDroppedItemState: DroppedItemState,
+  sourceDroppedItemState: DroppedItemState
+): number => {
+  const dx = targetDroppedItemState.position.x - sourceDroppedItemState.position.x;
+  const dy = targetDroppedItemState.position.y - sourceDroppedItemState.position.y;
+  return dx * dx + dy * dy;
+};
+
 export const resolveDroppedItemStackMerge = (
   targetDroppedItemState: DroppedItemState,
   sourceDroppedItemState: DroppedItemState
@@ -209,6 +230,62 @@ export const resolveDroppedItemStackMerge = (
           })
         : null,
     mergedAmount
+  };
+};
+
+export const resolveDroppedItemStackMergeCascade = (
+  targetDroppedItemStates: readonly DroppedItemState[],
+  sourceDroppedItemState: DroppedItemState
+): ResolveDroppedItemStackMergeCascadeResult => {
+  const targetOrder = targetDroppedItemStates
+    .map((state, targetIndex) => ({
+      targetIndex,
+      distanceSquared: getDroppedItemDistanceSquared(state, sourceDroppedItemState)
+    }))
+    .sort((left, right) => {
+      if (left.distanceSquared !== right.distanceSquared) {
+        return left.distanceSquared - right.distanceSquared;
+      }
+
+      return left.targetIndex - right.targetIndex;
+    });
+
+  const targetResults: ResolveDroppedItemStackMergeCascadeTargetResult[] = [];
+  let remainingSourceDroppedItemState: DroppedItemState | null =
+    cloneDroppedItemState(sourceDroppedItemState);
+  let totalMergedAmount = 0;
+
+  for (const target of targetOrder) {
+    if (remainingSourceDroppedItemState === null) {
+      break;
+    }
+
+    const targetDroppedItemState = targetDroppedItemStates[target.targetIndex];
+    if (!canDroppedItemStacksMerge(targetDroppedItemState, remainingSourceDroppedItemState)) {
+      continue;
+    }
+
+    const mergeResult = resolveDroppedItemStackMerge(
+      targetDroppedItemState,
+      remainingSourceDroppedItemState
+    );
+    if (mergeResult.mergedAmount <= 0) {
+      continue;
+    }
+
+    targetResults.push({
+      targetIndex: target.targetIndex,
+      nextTargetDroppedItemState: mergeResult.nextTargetDroppedItemState,
+      mergedAmount: mergeResult.mergedAmount
+    });
+    remainingSourceDroppedItemState = mergeResult.nextSourceDroppedItemState;
+    totalMergedAmount += mergeResult.mergedAmount;
+  }
+
+  return {
+    targetResults,
+    nextSourceDroppedItemState: remainingSourceDroppedItemState,
+    totalMergedAmount
   };
 };
 

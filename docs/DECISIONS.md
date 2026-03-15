@@ -20,11 +20,11 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Pickup stacks behave like runtime entities with stack counts and positions, so keeping them in the session-owned envelope preserves their entity-style lifecycle without coupling world-save terrain snapshots to transient actor state.
 - Consequence: Future pickup-producing slices should persist uncollected world items through the same session-owned dropped-item path unless the same pass intentionally replaces broader entity-save ownership.
 
-### 2026-03-14: Player drops should merge into overlapping same-item pickups before spawning new stacks
+### 2026-03-14: Player drops should cascade through overlapping same-item pickups before spawning new stacks
 
-- Decision: Dropping a hotbar stack now first tries to merge into one overlapping world pickup of the same item, only spawning a second dropped-item entity when merge overflow remains.
-- Reason: Consolidating matching pickups keeps drop behavior readable, avoids piling duplicate entities at the same spot, and preserves one deterministic dropped-stack state when the world can already hold the combined amount.
-- Consequence: Future player-drop and nearby world-pickup follow-ups should preserve this merge-first behavior instead of always spawning a fresh entity for same-item overlaps.
+- Decision: Dropping a hotbar stack now fills overlapping same-item world pickups in nearest-first order, preserving existing entity order on equal-distance ties, and only spawns a new dropped-item entity when overflow remains after that cascade.
+- Reason: Cascading across nearby matching pickups keeps drop behavior readable, avoids unnecessary duplicate entities, and gives multi-pickup overlaps one deterministic merge order instead of whichever target happened to be checked first.
+- Consequence: Future player-drop and nearby world-pickup follow-ups should preserve this nearest-first cascade behavior instead of reverting to one-target-only or always-spawn-new overlap handling.
 
 ### 2026-03-14: Starter torches collapse from authoritative tile edits when support disappears
 

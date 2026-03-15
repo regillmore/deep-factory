@@ -162,12 +162,11 @@ import {
   type PlayerRespawnEvent
 } from './world/playerRespawnEvent';
 import {
-  canDroppedItemStacksMerge,
   cloneDroppedItemState,
   createDroppedItemStateFromWorldTile,
   createDroppedItemStateFromPlayerDrop,
   resolveDroppedItemPickup,
-  resolveDroppedItemStackMerge,
+  resolveDroppedItemStackMergeCascade,
   type DroppedItemState
 } from './world/droppedItem';
 import {
@@ -1550,37 +1549,21 @@ const bootstrap = async (): Promise<void> => {
   const mergeDroppedItemDropIntoNearbyPickup = (
     droppedItemState: DroppedItemState
   ): DroppedItemState | null => {
-    let mergeTarget: { id: EntityId; state: DroppedItemState } | null = null;
-    let mergeTargetDistanceSquared = Number.POSITIVE_INFINITY;
-    for (const droppedItem of getDroppedItemEntityStates()) {
-      if (!canDroppedItemStacksMerge(droppedItem.state, droppedItemState)) {
-        continue;
-      }
-
-      const dx = droppedItem.state.position.x - droppedItemState.position.x;
-      const dy = droppedItem.state.position.y - droppedItemState.position.y;
-      const distanceSquared = dx * dx + dy * dy;
-      if (
-        mergeTarget === null ||
-        distanceSquared < mergeTargetDistanceSquared ||
-        (distanceSquared === mergeTargetDistanceSquared && droppedItem.id < mergeTarget.id)
-      ) {
-        mergeTarget = droppedItem;
-        mergeTargetDistanceSquared = distanceSquared;
-      }
-    }
-
-    if (mergeTarget === null) {
+    const activeDroppedItems = getDroppedItemEntityStates();
+    const mergeCascadeResult = resolveDroppedItemStackMergeCascade(
+      activeDroppedItems.map((droppedItem) => droppedItem.state),
+      droppedItemState
+    );
+    if (mergeCascadeResult.totalMergedAmount <= 0) {
       return droppedItemState;
     }
 
-    const mergeResult = resolveDroppedItemStackMerge(mergeTarget.state, droppedItemState);
-    if (mergeResult.mergedAmount <= 0) {
-      return droppedItemState;
+    for (const targetResult of mergeCascadeResult.targetResults) {
+      const mergeTarget = activeDroppedItems[targetResult.targetIndex];
+      entityRegistry.setEntityState(mergeTarget.id, targetResult.nextTargetDroppedItemState);
     }
 
-    entityRegistry.setEntityState(mergeTarget.id, mergeResult.nextTargetDroppedItemState);
-    return mergeResult.nextSourceDroppedItemState;
+    return mergeCascadeResult.nextSourceDroppedItemState;
   };
   const resolveTrackedHostileSlimeState = (
     playerState: PlayerState | null,

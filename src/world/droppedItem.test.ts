@@ -9,7 +9,8 @@ import {
   createDroppedItemStateFromPlayerDrop,
   isDroppedItemInPickupRange,
   resolveDroppedItemPickup,
-  resolveDroppedItemStackMerge
+  resolveDroppedItemStackMerge,
+  resolveDroppedItemStackMergeCascade
 } from './droppedItem';
 
 describe('droppedItem', () => {
@@ -141,6 +142,145 @@ describe('droppedItem', () => {
         amount: 6
       },
       mergedAmount: 4
+    });
+  });
+
+  it('cascades one dropped stack through multiple nearby matching pickups before leaving a remainder', () => {
+    const cascadeResult = resolveDroppedItemStackMergeCascade(
+      [
+        createDroppedItemState({
+          position: { x: 28, y: -14 },
+          itemId: 'dirt-block',
+          amount: 998
+        }),
+        createDroppedItemState({
+          position: { x: 32, y: -14 },
+          itemId: 'dirt-block',
+          amount: 997
+        })
+      ],
+      createDroppedItemState({
+        position: { x: 28, y: -14 },
+        itemId: 'dirt-block',
+        amount: 5
+      })
+    );
+
+    expect(cascadeResult).toEqual({
+      targetResults: [
+        {
+          targetIndex: 0,
+          nextTargetDroppedItemState: {
+            position: { x: 28, y: -14 },
+            itemId: 'dirt-block',
+            amount: 999
+          },
+          mergedAmount: 1
+        },
+        {
+          targetIndex: 1,
+          nextTargetDroppedItemState: {
+            position: { x: 32, y: -14 },
+            itemId: 'dirt-block',
+            amount: 999
+          },
+          mergedAmount: 2
+        }
+      ],
+      nextSourceDroppedItemState: {
+        position: { x: 28, y: -14 },
+        itemId: 'dirt-block',
+        amount: 2
+      },
+      totalMergedAmount: 3
+    });
+  });
+
+  it('uses nearest-first order and preserves caller order for equal-distance cascade ties', () => {
+    const cascadeResult = resolveDroppedItemStackMergeCascade(
+      [
+        createDroppedItemState({
+          position: { x: 32, y: -14 },
+          itemId: 'torch',
+          amount: 998
+        }),
+        createDroppedItemState({
+          position: { x: 24, y: -14 },
+          itemId: 'torch',
+          amount: 997
+        }),
+        createDroppedItemState({
+          position: { x: 28, y: -14 },
+          itemId: 'torch',
+          amount: 995
+        })
+      ],
+      createDroppedItemState({
+        position: { x: 28, y: -14 },
+        itemId: 'torch',
+        amount: 4
+      })
+    );
+
+    expect(cascadeResult).toEqual({
+      targetResults: [
+        {
+          targetIndex: 2,
+          nextTargetDroppedItemState: {
+            position: { x: 28, y: -14 },
+            itemId: 'torch',
+            amount: 999
+          },
+          mergedAmount: 4
+        }
+      ],
+      nextSourceDroppedItemState: null,
+      totalMergedAmount: 4
+    });
+
+    const tiedCascadeResult = resolveDroppedItemStackMergeCascade(
+      [
+        createDroppedItemState({
+          position: { x: 32, y: -14 },
+          itemId: 'torch',
+          amount: 998
+        }),
+        createDroppedItemState({
+          position: { x: 24, y: -14 },
+          itemId: 'torch',
+          amount: 997
+        })
+      ],
+      createDroppedItemState({
+        position: { x: 28, y: -14 },
+        itemId: 'torch',
+        amount: 3
+      })
+    );
+
+    expect(tiedCascadeResult).toEqual({
+      targetResults: [
+        {
+          targetIndex: 0,
+          nextTargetDroppedItemState: {
+            position: { x: 32, y: -14 },
+            itemId: 'torch',
+            amount: 999
+          },
+          mergedAmount: 1
+        },
+        {
+          targetIndex: 1,
+          nextTargetDroppedItemState: {
+            position: { x: 24, y: -14 },
+            itemId: 'torch',
+            amount: 999
+          },
+          mergedAmount: 2
+        }
+      ],
+      nextSourceDroppedItemState: null,
+      totalMergedAmount: 3
     });
   });
 
