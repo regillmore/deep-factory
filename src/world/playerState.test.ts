@@ -690,6 +690,72 @@ describe('playerState', () => {
     }));
   });
 
+  it('jumps off a rope on a fresh jump press with horizontal input even before leaving the rope column', () => {
+    const world = new TileWorld(0);
+    world.setTile(0, -2, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -1, STARTER_ROPE_TILE_ID);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -16 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      { moveX: 1, jumpPressed: true, climbY: -1 },
+      {
+        maxWalkSpeed: 80,
+        airAcceleration: 20,
+        ropeClimbSpeed: 60,
+        jumpSpeed: 100,
+        gravityAcceleration: 80,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual(withDefaultPlayerVitals({
+      position: { x: 9.25, y: -36 },
+      velocity: { x: 5, y: -80 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    }));
+  });
+
+  it('keeps climbing a rope when horizontal input is held without a fresh jump press', () => {
+    const world = new TileWorld(0);
+    world.setTile(0, -2, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -1, STARTER_ROPE_TILE_ID);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -16 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      { moveX: 1, climbY: -1 },
+      {
+        maxWalkSpeed: 80,
+        airAcceleration: 20,
+        ropeClimbSpeed: 60,
+        jumpSpeed: 100,
+        gravityAcceleration: 80,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual(withDefaultPlayerVitals({
+      position: { x: 9.25, y: -31 },
+      velocity: { x: 5, y: -60 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    }));
+  });
+
   it('resumes gravity immediately when sideways movement carries the player off a rope', () => {
     const world = new TileWorld(0);
     setTiles(world, -2, -4, 6, 6, 0);

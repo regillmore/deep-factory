@@ -14,6 +14,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Sampling rope overlap only at tick start caused a sticky extra hold or climb frame after sideways movement had already cleared the rope column for that same fixed step.
 - Consequence: Future rope, vine, ladder, or other climbable follow-ups should preserve this post-horizontal overlap rule whenever climbable movement competes with gravity inside the shared player step.
 
+### 2026-03-14: Rope jump-off uses a fresh jump press plus horizontal input
+
+- Decision: While overlapping a rope, a fresh jump press combined with left or right input now releases rope hold immediately into the shared jump path even if the same fixed step still overlaps the rope column after horizontal sweep prediction.
+- Reason: Treating that input as ordinary climb-up made rope exits feel sticky and prevented a readable lateral jump-off when the player had clearly asked to leave the rope.
+- Consequence: Future climbable traversal follow-ups should preserve this fresh-press plus horizontal-release rule instead of inferring jump-off from held climb input alone.
+
 ### 2026-03-14: Restore-time dropped-item consolidation preserves earlier save-order anchors
 
 - Decision: Session restore now consolidates overlapping same-item dropped-item stacks in save-array order, preserving earlier stack positions as anchors and only carrying any overflow into later remainder entries.

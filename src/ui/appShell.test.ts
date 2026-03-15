@@ -2524,7 +2524,7 @@ describe('resolveAppShellViewModel', () => {
       {
         title: 'Controls Preview',
         lines: [
-          'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow.',
+          'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow; press Jump plus Left or Right on a rope to jump off.',
           'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons.'
         ],
         metadataRows: [
@@ -3688,7 +3688,7 @@ describe('createFirstLaunchMainMenuShellState', () => {
         {
         title: 'Controls Preview',
         lines: [
-            'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow.',
+            'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow; press Jump plus Left or Right on a rope to jump off.',
             'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons.'
         ],
         metadataRows: [
@@ -3763,7 +3763,7 @@ describe('createFirstLaunchMainMenuShellState', () => {
         {
         title: 'Controls Preview',
         lines: [
-            'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow.',
+            'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow; press Jump plus Left or Right on a rope to jump off.',
             'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons.'
         ],
         metadataRows: [

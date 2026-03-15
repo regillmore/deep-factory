@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-14
 
+- Task: Add a rope jump-off follow-up after rope traversal utility slice.
+- Changes: Updated [src/world/playerState.ts](../src/world/playerState.ts) so a fresh jump press with left or right input now releases rope hold into the normal jump path even when the same fixed step has not yet moved the player out of the rope column, expanded [src/world/playerState.test.ts](../src/world/playerState.test.ts) with deterministic rope jump-off and held-climb regressions, updated [src/ui/appShell.ts](../src/ui/appShell.ts) plus [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the controls preview and in-world shortcuts reference now mention rope jump-off, removed completed task `563` from [docs/NEXT.md](docs/NEXT.md), added replacement task `564`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/playerState.test.ts src/ui/appShell.test.ts` (outside the sandbox after the expected Vitest `spawn EPERM` startup restriction in-sandbox) and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a rope detachment follow-up after rope traversal utility slice.
 - Changes: Updated [src/world/playerState.ts](../src/world/playerState.ts) so rope hold and climb now recheck climbable overlap after the same horizontal sweep order used by collisions, which lets sideways movement off a rope resume gravity on that same fixed step instead of sticking for one extra tick; expanded [src/world/playerState.test.ts](../src/world/playerState.test.ts) with deterministic detach regressions for neutral-climb and climb-down release cases, removed completed task `560` from [docs/NEXT.md](docs/NEXT.md), added replacement task `563`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/playerState.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

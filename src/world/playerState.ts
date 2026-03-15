@@ -906,6 +906,8 @@ export const stepPlayerState = (
   let velocityY = state.velocity.y;
   let grounded = state.grounded;
   let activelyOverlappingClimbableTile = overlappingClimbableTile;
+  const shouldJumpOffRope =
+    overlappingClimbableTile && intent.jumpPressed === true && moveX !== 0;
 
   if (overlappingClimbableTile) {
     const initialAabb = getPlayerAabb(state);
@@ -921,7 +923,13 @@ export const stepPlayerState = (
     );
   }
 
-  if (intent.jumpPressed === true && grounded && !(activelyOverlappingClimbableTile && climbY < 0)) {
+  if (shouldJumpOffRope) {
+    // A fresh jump press with horizontal input should release rope hold immediately, even when
+    // the same tick's horizontal movement has not yet cleared the rope column.
+    activelyOverlappingClimbableTile = false;
+    velocityY = -jumpSpeed;
+    grounded = false;
+  } else if (intent.jumpPressed === true && grounded && !(activelyOverlappingClimbableTile && climbY < 0)) {
     velocityY = -jumpSpeed;
     grounded = false;
   }
