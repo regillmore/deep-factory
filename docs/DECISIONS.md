@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Rope contact uses grounded-style braking for neutral horizontal inertia
+
+- Decision: While the player overlaps a rope and left/right input is neutral, rope traversal now applies the same horizontal braking used for grounded movement before rope hold and centering resolve.
+- Reason: Rope catches felt frictionless, which made it too easy to overshoot a neighboring rope and fall even after making contact.
+- Consequence: Future rope, vine, ladder, or other climbable follow-ups should treat neutral-input rope contact as a lateral inertia stall, not as ordinary airborne drift, unless a later traversal redesign intentionally changes that feel.
+
 ### 2026-03-14: Rope self-centering only nudges during neutral horizontal input
 
 - Decision: While the player still overlaps a rope after the horizontal sweep, rope traversal now applies a bounded horizontal nudge back toward the rope column only when left/right input is neutral, and that assist preserves the prior facing.

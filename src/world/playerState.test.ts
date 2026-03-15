@@ -661,6 +661,37 @@ describe('playerState', () => {
     }));
   });
 
+  it('applies grounded-style horizontal braking while a centered player is holding a rope', () => {
+    const world = new TileWorld(0);
+    setTiles(world, -2, -4, 2, 2, 0);
+    world.setTile(0, -2, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -1, STARTER_ROPE_TILE_ID);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -16 },
+        velocity: { x: 40, y: 0 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      {},
+      {
+        groundDeceleration: 160,
+        gravityAcceleration: 80,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual(withDefaultPlayerVitals({
+      position: { x: 8, y: -16 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    }));
+  });
+
   it('gently recenters neutral rope hold toward the rope column without flipping facing', () => {
     const world = new TileWorld(0);
     setTiles(world, -2, -4, 2, 2, 0);

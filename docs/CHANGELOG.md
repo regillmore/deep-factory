@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-14
 
+- Task: Add grounded-style horizontal braking while a player is overlapping a rope.
+- Changes: Updated [src/world/playerState.ts](../src/world/playerState.ts) so rope contact now applies the same neutral-input horizontal braking used on solid ground before rope hold and self-centering resolve, expanded [src/world/playerState.test.ts](../src/world/playerState.test.ts) with a deterministic rope-inertia stall regression, replaced task `565` in [docs/NEXT.md](docs/NEXT.md) with follow-up task `566`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/playerState.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Apply a gentle horizontal self-centering when a player is over a rope tile.
 - Changes: Updated [src/world/playerState.ts](../src/world/playerState.ts) so neutral horizontal input on a rope now applies a bounded horizontal nudge back toward the rope column without flipping player facing, expanded [src/world/playerState.test.ts](../src/world/playerState.test.ts) with deterministic rope-centering and option-validation regressions, removed completed task `561` from [docs/NEXT.md](docs/NEXT.md), added replacement task `565`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/playerState.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

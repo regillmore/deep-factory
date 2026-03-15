@@ -905,10 +905,11 @@ export const stepPlayerState = (
     );
   const liquidOverlapState = samplePlayerLiquidOverlapState(world, state, registry);
   const overlappingClimbableTile = isPlayerOverlappingClimbableTile(world, state, registry);
+  const applyRopeHorizontalBraking = overlappingClimbableTile && moveX === 0;
   let velocityX = resolveHorizontalVelocityFromIntent(
     state.velocity.x,
     moveX,
-    state.grounded,
+    state.grounded || applyRopeHorizontalBraking,
     dt,
     maxWalkSpeed,
     groundAcceleration,
