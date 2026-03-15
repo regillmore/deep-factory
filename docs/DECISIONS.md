@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Single-item hotbar drops reuse the nearby-pickup cascade
+
+- Decision: `Drop 1` now routes one selected hotbar item through the same overlapping same-item dropped-stack cascade used by full stack drops before spawning a new world pickup entity.
+- Reason: Single-item drops should preserve the same deterministic merge order and overlap behavior as full stack drops instead of inventing a second drop rule when a matching pickup already occupies the spawn position.
+- Consequence: Future hotbar drop variants should reuse the shared nearby-pickup cascade unless the same pass intentionally introduces a different world-drop placement contract.
+
 ### 2026-03-14: Rope quick-drop resolves the full rope column and eases through solid-ground endings
 
 - Decision: Rope quick-drop now resolves the first non-rope tile below the full contiguous rope column under the player, and when that column ends on solid ground it caps descent through the final rope tile to the shared rope-landing safe speed before collision and fall-damage resolution.

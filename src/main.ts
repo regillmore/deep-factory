@@ -44,7 +44,10 @@ import {
   type DebugEditShortcutAction
 } from './input/debugEditShortcuts';
 import { resolveHotbarSlotShortcut } from './input/hotbarShortcuts';
-import { resolveDropSelectedHotbarStackShortcut } from './input/playerInventoryShortcuts';
+import {
+  resolveDropOneSelectedHotbarItemShortcut,
+  resolveDropSelectedHotbarStackShortcut
+} from './input/playerInventoryShortcuts';
 import {
   createDefaultShellActionKeybindingState,
   IN_WORLD_SHELL_ACTION_KEYBINDING_IDS,
@@ -1027,6 +1030,9 @@ const bootstrap = async (): Promise<void> => {
     host: worldHost,
     onSelectSlot: (slotIndex) => {
       selectStandalonePlayerHotbarSlot(slotIndex);
+    },
+    onDropSelectedOne: () => {
+      dropSelectedStandalonePlayerHotbarItem();
     },
     onDropSelectedStack: () => {
       dropSelectedStandalonePlayerHotbarStack();
@@ -2255,6 +2261,30 @@ const bootstrap = async (): Promise<void> => {
     for (const droppedItemState of droppedItemStates) {
       spawnDroppedItemEntity(droppedItemState);
     }
+  };
+  const dropSelectedStandalonePlayerHotbarItem = (): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (standalonePlayerState === null || selectedStack === null) {
+      return false;
+    }
+
+    const consumeResult = consumePlayerInventoryHotbarSlotItem(
+      standalonePlayerInventoryState,
+      standalonePlayerInventoryState.selectedHotbarSlotIndex
+    );
+    if (!consumeResult.consumed) {
+      return false;
+    }
+
+    applyStandalonePlayerInventoryState(consumeResult.state);
+    const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(
+      createDroppedItemStateFromPlayerDrop(standalonePlayerState, selectedStack.itemId, 1)
+    );
+    if (remainingDroppedItemState !== null) {
+      spawnDroppedItemEntity(remainingDroppedItemState);
+    }
+    return true;
   };
   const dropSelectedStandalonePlayerHotbarStack = (): boolean => {
     const standalonePlayerState = getStandalonePlayerState();
@@ -3748,6 +3778,15 @@ const bootstrap = async (): Promise<void> => {
   window.addEventListener('keydown', (event) => {
     if (event.defaultPrevented) return;
     if (isEditableKeyboardShortcutTarget(event.target)) return;
+
+    const dropOneSelectedHotbarItemShortcut = currentScreen === 'in-world'
+      ? resolveDropOneSelectedHotbarItemShortcut(event)
+      : false;
+    if (dropOneSelectedHotbarItemShortcut) {
+      event.preventDefault();
+      dropSelectedStandalonePlayerHotbarItem();
+      return;
+    }
 
     const dropSelectedHotbarStackShortcut = currentScreen === 'in-world'
       ? resolveDropSelectedHotbarStackShortcut(event)

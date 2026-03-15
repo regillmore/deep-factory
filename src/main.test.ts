@@ -6491,6 +6491,145 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([]);
   });
 
+  it('drops one item from the selected hotbar stack while keeping the remaining stack in inventory', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('Backspace', 'Backspace', { shiftKey: true }).prevented).toBe(true);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+      itemId: 'dirt-block',
+      amount: 63
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 28, y: -14 },
+        itemId: 'dirt-block',
+        amount: 1
+      }
+    ]);
+  });
+
+  it('merges a dropped single hotbar item into a nearby matching world pickup instead of spawning a second entity', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'dirt-block', amount: 2 },
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }),
+          droppedItemStates: [
+            createDroppedItemState({
+              position: { x: 28, y: -14 },
+              itemId: 'dirt-block',
+              amount: 998
+            })
+          ]
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('Backspace', 'Backspace', { shiftKey: true }).prevented).toBe(true);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+      itemId: 'dirt-block',
+      amount: 1
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 28, y: -14 },
+        itemId: 'dirt-block',
+        amount: 999
+      }
+    ]);
+  });
+
+  it('spawns a new world pickup for a dropped single hotbar item when overlapping matching pickups are already full', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'dirt-block', amount: 2 },
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }),
+          droppedItemStates: [
+            createDroppedItemState({
+              position: { x: 28, y: -14 },
+              itemId: 'dirt-block',
+              amount: 999
+            })
+          ]
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('Backspace', 'Backspace', { shiftKey: true }).prevented).toBe(true);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+      itemId: 'dirt-block',
+      amount: 1
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 28, y: -14 },
+        itemId: 'dirt-block',
+        amount: 999
+      },
+      {
+        position: { x: 28, y: -14 },
+        itemId: 'dirt-block',
+        amount: 1
+      }
+    ]);
+  });
+
   it('merges a dropped hotbar stack into a nearby matching world pickup instead of spawning a second entity', async () => {
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,

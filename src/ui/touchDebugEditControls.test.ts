@@ -56,7 +56,7 @@ describe('resolveTouchDebugKeyboardShortcutLines', () => {
       'Hotbar: 1-0 select slots while the full Debug Edit panel is hidden'
     );
     expect(resolveTouchDebugKeyboardShortcutLines()).toContain(
-      'Inventory: Backspace drops the selected hotbar stack'
+      'Inventory: Shift+Backspace drops one hotbar item; Backspace drops the selected hotbar stack'
     );
   });
 

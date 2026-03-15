@@ -18,7 +18,10 @@ import {
   createDefaultShellActionKeybindingState,
   type ShellActionKeybindingState
 } from '../input/shellActionKeybindings';
-import { getDropSelectedHotbarStackShortcutLabel } from '../input/playerInventoryShortcuts';
+import {
+  getDropOneSelectedHotbarItemShortcutLabel,
+  getDropSelectedHotbarStackShortcutLabel
+} from '../input/playerInventoryShortcuts';
 import { installPointerClickFocusRelease } from './buttonFocus';
 
 export interface DebugBrushOption {
@@ -94,7 +97,7 @@ export const resolveTouchDebugKeyboardShortcutLines = (
 ): readonly string[] => [
   `Modes: ${getTouchDebugEditModeHotkeyLabel('pan')} pan, ${getTouchDebugEditModeHotkeyLabel('place')} place, ${getTouchDebugEditModeHotkeyLabel('break')} break`,
   'Hotbar: 1-0 select slots while the full Debug Edit panel is hidden',
-  `Inventory: ${getDropSelectedHotbarStackShortcutLabel()} drops the selected hotbar stack`,
+  `Inventory: ${getDropOneSelectedHotbarItemShortcutLabel()} drops one hotbar item; ${getDropSelectedHotbarStackShortcutLabel()} drops the selected hotbar stack`,
   'Build: click or tap an empty tile with a solid neighbor while the full Debug Edit panel is hidden',
   'Brush: [ / ] cycle, 1-0 slots while the full Debug Edit panel is open',
   'History: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redo',

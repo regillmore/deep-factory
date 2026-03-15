@@ -1,5 +1,8 @@
 import { getHotbarSlotShortcutLabel } from '../input/hotbarShortcuts';
-import { getDropSelectedHotbarStackShortcutLabel } from '../input/playerInventoryShortcuts';
+import {
+  getDropOneSelectedHotbarItemShortcutLabel,
+  getDropSelectedHotbarStackShortcutLabel
+} from '../input/playerInventoryShortcuts';
 import {
   getPlayerInventoryItemDefinition,
   type PlayerInventoryState
@@ -8,6 +11,7 @@ import {
 interface HotbarOverlayOptions {
   host: HTMLElement;
   onSelectSlot?: (slotIndex: number) => void;
+  onDropSelectedOne?: () => void;
   onDropSelectedStack?: () => void;
 }
 
@@ -33,8 +37,10 @@ const applySlotSelectionStyles = (button: HTMLButtonElement, selected: boolean, 
 
 export class HotbarOverlay {
   private root: HTMLDivElement;
+  private actionRow: HTMLDivElement;
   private slotRow: HTMLDivElement;
-  private dropButton: HTMLButtonElement;
+  private dropOneButton: HTMLButtonElement;
+  private dropStackButton: HTMLButtonElement;
   private dropEnabled = false;
   private slots: HotbarSlotElements[] = [];
 
@@ -52,30 +58,45 @@ export class HotbarOverlay {
     this.root.style.pointerEvents = 'none';
     this.root.style.maxWidth = 'calc(100vw - 24px)';
 
-    this.dropButton = document.createElement('button');
-    this.dropButton.type = 'button';
-    this.dropButton.textContent = 'DROP';
-    this.dropButton.style.minWidth = '92px';
-    this.dropButton.style.height = '32px';
-    this.dropButton.style.padding = '0 12px';
-    this.dropButton.style.borderRadius = '999px';
-    this.dropButton.style.border = '1px solid rgba(255, 255, 255, 0.18)';
-    this.dropButton.style.background = 'rgba(10, 14, 20, 0.72)';
-    this.dropButton.style.color = '#f5f7fa';
-    this.dropButton.style.font = '700 12px/1 system-ui, sans-serif';
-    this.dropButton.style.letterSpacing = '0.08em';
-    this.dropButton.style.cursor = 'pointer';
-    this.dropButton.style.backdropFilter = 'blur(8px)';
-    this.dropButton.style.pointerEvents = 'auto';
-    this.dropButton.style.transition =
-      'transform 120ms ease, border-color 120ms ease, background 120ms ease, opacity 120ms ease';
-    this.dropButton.addEventListener('click', () => {
-      if (!this.dropEnabled) {
-        return;
-      }
-      options.onDropSelectedStack?.();
-    });
-    this.root.append(this.dropButton);
+    this.actionRow = document.createElement('div');
+    this.actionRow.style.display = 'flex';
+    this.actionRow.style.alignItems = 'center';
+    this.actionRow.style.gap = '6px';
+    this.actionRow.style.pointerEvents = 'none';
+    this.root.append(this.actionRow);
+
+    const createActionButton = (label: string, onClick?: () => void): HTMLButtonElement => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = label;
+      button.style.minWidth = '92px';
+      button.style.height = '32px';
+      button.style.padding = '0 12px';
+      button.style.borderRadius = '999px';
+      button.style.border = '1px solid rgba(255, 255, 255, 0.18)';
+      button.style.background = 'rgba(10, 14, 20, 0.72)';
+      button.style.color = '#f5f7fa';
+      button.style.font = '700 12px/1 system-ui, sans-serif';
+      button.style.letterSpacing = '0.08em';
+      button.style.cursor = 'pointer';
+      button.style.backdropFilter = 'blur(8px)';
+      button.style.pointerEvents = 'auto';
+      button.style.transition =
+        'transform 120ms ease, border-color 120ms ease, background 120ms ease, opacity 120ms ease';
+      button.addEventListener('click', () => {
+        if (!this.dropEnabled) {
+          return;
+        }
+        onClick?.();
+      });
+      return button;
+    };
+
+    this.dropOneButton = createActionButton('DROP 1', options.onDropSelectedOne);
+    this.actionRow.append(this.dropOneButton);
+
+    this.dropStackButton = createActionButton('DROP', options.onDropSelectedStack);
+    this.actionRow.append(this.dropStackButton);
 
     this.slotRow = document.createElement('div');
     this.slotRow.style.display = 'flex';
@@ -176,16 +197,27 @@ export class HotbarOverlay {
 
     const selectedStack = state.hotbar[state.selectedHotbarSlotIndex] ?? null;
     this.dropEnabled = selectedStack !== null;
-    this.dropButton.setAttribute('aria-disabled', this.dropEnabled ? 'false' : 'true');
-    this.dropButton.style.opacity = this.dropEnabled ? '1' : '0.45';
-    this.dropButton.style.transform = this.dropEnabled ? 'translateY(0)' : 'translateY(0)';
-    this.dropButton.style.background = this.dropEnabled
-      ? 'rgba(45, 25, 18, 0.9)'
-      : 'rgba(10, 14, 20, 0.72)';
-    this.dropButton.style.borderColor = this.dropEnabled
-      ? 'rgba(255, 170, 120, 0.5)'
-      : 'rgba(255, 255, 255, 0.18)';
-    this.dropButton.title =
+
+    const syncActionButton = (
+      button: HTMLButtonElement,
+      activeBackground: string,
+      activeBorderColor: string
+    ): void => {
+      button.setAttribute('aria-disabled', this.dropEnabled ? 'false' : 'true');
+      button.style.opacity = this.dropEnabled ? '1' : '0.45';
+      button.style.transform = 'translateY(0)';
+      button.style.background = this.dropEnabled ? activeBackground : 'rgba(10, 14, 20, 0.72)';
+      button.style.borderColor = this.dropEnabled ? activeBorderColor : 'rgba(255, 255, 255, 0.18)';
+    };
+
+    syncActionButton(this.dropOneButton, 'rgba(18, 42, 55, 0.9)', 'rgba(120, 220, 255, 0.52)');
+    syncActionButton(this.dropStackButton, 'rgba(45, 25, 18, 0.9)', 'rgba(255, 170, 120, 0.5)');
+
+    this.dropOneButton.title =
+      selectedStack === null
+        ? 'Selected hotbar slot is empty'
+        : `Drop one ${getPlayerInventoryItemDefinition(selectedStack.itemId).label} (${getDropOneSelectedHotbarItemShortcutLabel()})`;
+    this.dropStackButton.title =
       selectedStack === null
         ? 'Selected hotbar slot is empty'
         : `Drop ${getPlayerInventoryItemDefinition(selectedStack.itemId).label} stack (${getDropSelectedHotbarStackShortcutLabel()})`;
