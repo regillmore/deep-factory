@@ -6,7 +6,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 221. Add a starter melee-weapon follow-up after hostile-slime jump-chase locomotion: fixed-step swing windup/active/recovery timing, slime hit detection plus knockback, and deterministic hit-cooldown regressions.
 232. Add a grappling-hook traversal slice after entity scaffolding: mixed-device aimed hook firing, solid-tile latch plus pull-and-release rules, and fixed-step hook-state regressions.
 246. Add a bow-and-arrow ranged-combat slice after hostile-slime jump-chase locomotion and inventory basics: stackable arrow ammo, mixed-device aimed firing, fixed-step projectile flight plus terrain or slime hits, and deterministic ammo-consumption regressions.
-301. Add a healing-potion survival slice after hostile-slime player-contact combat and inventory basics: stackable potion items, mixed-device consume input, fixed-step healing plus overheal clamp and use-cooldown rules, and save/load regressions for health plus consumable stacks.
 338. Add a bed-checkpoint respawn slice after inventory basics and save/load: placeable bed items, mixed-device checkpoint claim and respawn interactions, obstructed-checkpoint fallback to world spawn, and snapshot regressions for claimed checkpoint state.
 349. Add a platform traversal slice after inventory basics: stackable platform hotbar slots, mixed-device one-way placement plus drop-through movement, and save/load regressions for placed platform runs.
 350. Add a chest-storage slice after inventory basics and save/load: placeable chest items, mixed-device open or close interactions, fixed-slot storage transfer rules, and snapshot regressions for chest contents plus chest placement state.
@@ -30,6 +29,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 550. Add a rope pickup-refund follow-up after rope traversal utility slice and dropped-item pickup: removing placed rope tiles should spawn rope pickup entities, and add deterministic refund regressions plus snapshot coverage for the returned rope stacks.
 575. Add a torch tile mesh to public/atlas/tile-atlas.png after the rope full-square atlas fix: carve or grow a dedicated authored torch region that preserves the spare unused slot and exterior padding, repoint torch render metadata away from lava art, and add atlas regressions.
 581. Add placeable wood-block building follow-up after starter axe woodcutting and inventory basics: stackable `wood-block` hotbar slots through the shared solid-block placement path, deterministic stack consumption, and placement/save regressions.
+591. Add healing-potion blocked-use feedback after the healing-potion survival slice: surface cooldown in the hotbar overlay, and add deterministic blocked-use regressions.
 
 ## Telemetry
 

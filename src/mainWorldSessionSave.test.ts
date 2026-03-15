@@ -33,7 +33,8 @@ describe('createWorldSessionSaveEnvelope', () => {
         { itemId: 'torch', amount: 20 },
         { itemId: 'rope', amount: 24 },
         { itemId: 'dirt-block', amount: 64 },
-        ...Array.from({ length: 6 }, () => null)
+        { itemId: 'healing-potion', amount: 3 },
+        ...Array.from({ length: 5 }, () => null)
       ],
       selectedHotbarSlotIndex: 3
     });
@@ -91,7 +92,7 @@ describe('createWorldSessionSaveEnvelope', () => {
           { itemId: 'torch', amount: 20 },
           { itemId: 'rope', amount: 24 },
           { itemId: 'dirt-block', amount: 64 },
-          null,
+          { itemId: 'healing-potion', amount: 3 },
           null,
           null,
           null,
@@ -132,7 +133,11 @@ describe('createWorldSessionSaveEnvelope', () => {
     expect(envelope.session.standalonePlayerDeathState).toBeNull();
     expect(envelope.session.standalonePlayerInventoryState).toEqual(
       createPlayerInventoryState({
-        hotbar: [{ itemId: 'pickaxe', amount: 1 }, ...Array.from({ length: 9 }, () => null)]
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'healing-potion', amount: 3 },
+          ...Array.from({ length: 8 }, () => null)
+        ]
       })
     );
     expect(envelope.session.droppedItemStates).toEqual([]);

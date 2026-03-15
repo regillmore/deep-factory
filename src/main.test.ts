@@ -6240,7 +6240,7 @@ describe('main.ts shell state orchestration', () => {
           { itemId: 'torch', amount: 20 },
           { itemId: 'pickaxe', amount: 1 },
           { itemId: 'rope', amount: 24 },
-          null,
+          { itemId: 'healing-potion', amount: 3 },
           null,
           null,
           null,
@@ -6265,7 +6265,7 @@ describe('main.ts shell state orchestration', () => {
           { itemId: 'torch', amount: 20 },
           { itemId: 'pickaxe', amount: 1 },
           { itemId: 'rope', amount: 24 },
-          null,
+          { itemId: 'healing-potion', amount: 3 },
           null,
           null,
           null,
@@ -7578,6 +7578,87 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'dirt-block',
       amount: 64
+    });
+  });
+
+  it('uses healing potions through the shared hidden-panel item-use path, clamps repeat use behind cooldown, and persists the healed health', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            health: 25
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              ...Array.from({ length: 5 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 4
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: 0,
+        worldX: 8,
+        worldY: 0,
+        pointerType: 'mouse'
+      },
+      {
+        worldTileX: 0,
+        worldTileY: 0,
+        worldX: 8,
+        worldY: 0,
+        pointerType: 'touch'
+      }
+    ];
+    runFixedUpdate(1 / 60);
+
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: 0,
+        worldX: 8,
+        worldY: 0,
+        pointerType: 'touch'
+      }
+    ];
+    runFixedUpdate(1);
+
+    testRuntime.playerItemUseRequests = [];
+    runFixedUpdate(1.1);
+
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: 0,
+        worldX: 8,
+        worldY: 0,
+        pointerType: 'touch'
+      }
+    ];
+    runFixedUpdate(1 / 60);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerState?.health).toBe(85);
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[4]).toEqual({
+      itemId: 'healing-potion',
+      amount: 1
     });
   });
 

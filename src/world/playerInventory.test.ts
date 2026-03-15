@@ -8,6 +8,7 @@ import {
   createEmptyPlayerInventoryState,
   createPlayerInventoryItemStack,
   createPlayerInventoryState,
+  ensurePlayerInventoryHasStarterHealingPotions,
   ensurePlayerInventoryHasStarterPickaxe,
   getPlayerInventoryItemDefinition,
   movePlayerInventorySelectedHotbarSlot,
@@ -32,7 +33,7 @@ describe('playerInventory', () => {
         { itemId: 'dirt-block', amount: 64 },
         { itemId: 'torch', amount: 20 },
         { itemId: 'rope', amount: 24 },
-        null,
+        { itemId: 'healing-potion', amount: 3 },
         null,
         null,
         null,
@@ -310,6 +311,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'PICK',
       maxStackSize: 1
     });
+    expect(getPlayerInventoryItemDefinition('healing-potion')).toEqual({
+      id: 'healing-potion',
+      label: 'Healing Potion',
+      hotbarLabel: 'POTION',
+      maxStackSize: 30
+    });
   });
 
   it('fills the first empty slot with a starter pickaxe when one is missing', () => {
@@ -351,6 +358,36 @@ describe('playerInventory', () => {
 
     expect(ensurePlayerInventoryHasStarterPickaxe(alreadyHasPickaxe)).toEqual(alreadyHasPickaxe);
     expect(ensurePlayerInventoryHasStarterPickaxe(fullWithoutPickaxe)).toEqual(fullWithoutPickaxe);
+  });
+
+  it('fills the first empty slot with starter healing potions when they are missing', () => {
+    const state = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        null,
+        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 5 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 3
+    });
+
+    expect(ensurePlayerInventoryHasStarterHealingPotions(state)).toEqual({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'healing-potion', amount: 3 },
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      selectedHotbarSlotIndex: 3
+    });
   });
 
   it('rejects invalid hotbar lengths, slot indices, and stack amounts', () => {

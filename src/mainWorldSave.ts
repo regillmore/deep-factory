@@ -11,6 +11,7 @@ import { createDroppedItemState, type DroppedItemState } from './world/droppedIt
 import {
   createDefaultPlayerInventoryState,
   createPlayerInventoryState,
+  ensurePlayerInventoryHasStarterHealingPotions,
   ensurePlayerInventoryHasStarterPickaxe,
   getPlayerInventoryItemDefinition,
   isPlayerInventoryItemId,
@@ -260,8 +261,10 @@ const normalizeStandalonePlayerInventoryState = (
   value: unknown,
   label: string
 ): PlayerInventoryState =>
-  ensurePlayerInventoryHasStarterPickaxe(
-    value === undefined ? createDefaultPlayerInventoryState() : normalizePlayerInventoryState(value, label)
+  ensurePlayerInventoryHasStarterHealingPotions(
+    ensurePlayerInventoryHasStarterPickaxe(
+      value === undefined ? createDefaultPlayerInventoryState() : normalizePlayerInventoryState(value, label)
+    )
   );
 
 const normalizeDroppedItemStates = (value: unknown, label: string): DroppedItemState[] => {

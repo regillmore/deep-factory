@@ -197,7 +197,8 @@ describe('createWorldSaveEnvelope', () => {
         { itemId: 'torch', amount: 20 },
         { itemId: 'rope', amount: 24 },
         { itemId: 'dirt-block', amount: 64 },
-        ...Array.from({ length: 6 }, () => null)
+        { itemId: 'healing-potion', amount: 3 },
+        ...Array.from({ length: 5 }, () => null)
       ],
       selectedHotbarSlotIndex: 3
     });
@@ -265,7 +266,8 @@ describe('createWorldSaveEnvelope', () => {
         { itemId: 'pickaxe', amount: 1 },
         { itemId: 'stone-block', amount: 12 },
         { itemId: 'torch', amount: 20 },
-        ...Array.from({ length: 7 }, () => null)
+        { itemId: 'healing-potion', amount: 3 },
+        ...Array.from({ length: 6 }, () => null)
       ],
       selectedHotbarSlotIndex: 1
     });
@@ -360,6 +362,46 @@ describe('decodeWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerDeathState).toEqual(standalonePlayerDeathState);
   });
 
+  it('round-trips healing-potion stacks together with current player health through save decode', () => {
+    const world = new TileWorld(0);
+    const standalonePlayerState = createPlayerState({
+      health: 42,
+      breathSecondsRemaining: 6
+    });
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'healing-potion', amount: 2 },
+        ...Array.from({ length: 5 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 4
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState,
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    expect(decoded.session.standalonePlayerState?.health).toBe(42);
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[4]).toEqual({
+      itemId: 'healing-potion',
+      amount: 2
+    });
+  });
+
   it('defaults missing breath, hostile-contact invulnerability, fall-recovery, and death state on older standalone-player save payloads', () => {
     const world = new TileWorld(0);
     const standalonePlayerState = createPlayerState({
@@ -437,7 +479,7 @@ describe('decodeWorldSaveEnvelope', () => {
         { itemId: 'torch', amount: 20 },
         { itemId: 'rope', amount: 24 },
         { itemId: 'pickaxe', amount: 1 },
-        null,
+        { itemId: 'healing-potion', amount: 3 },
         null,
         null,
         null,
@@ -445,6 +487,39 @@ describe('decodeWorldSaveEnvelope', () => {
         null
       ],
       selectedHotbarSlotIndex: 2
+    });
+  });
+
+  it('adds starter healing potions into the first empty slot when older save payloads lack them', () => {
+    const world = new TileWorld(0);
+
+    const decoded = decodeWorldSaveEnvelope({
+      kind: WORLD_SAVE_ENVELOPE_KIND,
+      version: WORLD_SAVE_ENVELOPE_VERSION,
+      migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
+      session: {
+        standalonePlayerState: createPlayerState(),
+        standalonePlayerDeathState: null,
+        standalonePlayerInventoryState: {
+          hotbar: [
+            { itemId: 'pickaxe', amount: 1 },
+            { itemId: 'dirt-block', amount: 64 },
+            { itemId: 'torch', amount: 20 },
+            { itemId: 'rope', amount: 24 },
+            null,
+            ...Array.from({ length: 5 }, () => null)
+          ],
+          selectedHotbarSlotIndex: 0
+        },
+        droppedItemStates: [],
+        cameraFollowOffset: { x: 0, y: 0 }
+      },
+      worldSnapshot: world.createSnapshot()
+    });
+
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[4]).toEqual({
+      itemId: 'healing-potion',
+      amount: 3
     });
   });
 

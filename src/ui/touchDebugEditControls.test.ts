@@ -60,9 +60,9 @@ describe('resolveTouchDebugKeyboardShortcutLines', () => {
     );
   });
 
-  it('lists the panel-hidden block placement shortcut in the keyboard reference', () => {
+  it('lists the panel-hidden item-use shortcut in the keyboard reference', () => {
     expect(resolveTouchDebugKeyboardShortcutLines()).toContain(
-      'Build: click or tap an empty tile with a solid neighbor while the full Debug Edit panel is hidden'
+      'Item use: click or tap while the full Debug Edit panel is hidden; supported building still targets empty tiles with support'
     );
   });
 

@@ -5,7 +5,8 @@ export type PlayerInventoryItemId =
   | 'dirt-block'
   | 'stone-block'
   | 'torch'
-  | 'rope';
+  | 'rope'
+  | 'healing-potion';
 
 export interface PlayerInventoryItemDefinition {
   id: PlayerInventoryItemId;
@@ -74,6 +75,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     label: 'Rope',
     hotbarLabel: 'ROPE',
     maxStackSize: 999
+  },
+  'healing-potion': {
+    id: 'healing-potion',
+    label: 'Healing Potion',
+    hotbarLabel: 'POTION',
+    maxStackSize: 30
   }
 };
 
@@ -81,7 +88,8 @@ const DEFAULT_STARTER_HOTBAR_STACKS: readonly PlayerInventoryItemStack[] = [
   { itemId: 'pickaxe', amount: 1 },
   { itemId: 'dirt-block', amount: 64 },
   { itemId: 'torch', amount: 20 },
-  { itemId: 'rope', amount: 24 }
+  { itemId: 'rope', amount: 24 },
+  { itemId: 'healing-potion', amount: 3 }
 ];
 
 const createEmptyHotbar = (): Array<PlayerInventoryItemStack | null> =>
@@ -188,12 +196,26 @@ export const createDefaultPlayerInventoryState = (): PlayerInventoryState => {
 
 export const ensurePlayerInventoryHasStarterPickaxe = (
   state: PlayerInventoryState
+): PlayerInventoryState =>
+  ensurePlayerInventoryHasStarterHotbarStack(state, createPlayerInventoryItemStack('pickaxe', 1));
+
+export const ensurePlayerInventoryHasStarterHealingPotions = (
+  state: PlayerInventoryState
+): PlayerInventoryState =>
+  ensurePlayerInventoryHasStarterHotbarStack(
+    state,
+    createPlayerInventoryItemStack('healing-potion', 3)
+  );
+
+const ensurePlayerInventoryHasStarterHotbarStack = (
+  state: PlayerInventoryState,
+  stack: PlayerInventoryItemStack
 ): PlayerInventoryState => {
-  if (state.hotbar.some((stack) => stack?.itemId === 'pickaxe')) {
+  if (state.hotbar.some((entry) => entry?.itemId === stack.itemId)) {
     return clonePlayerInventoryState(state);
   }
 
-  const firstEmptySlotIndex = state.hotbar.findIndex((stack) => stack === null);
+  const firstEmptySlotIndex = state.hotbar.findIndex((entry) => entry === null);
   if (firstEmptySlotIndex < 0) {
     return clonePlayerInventoryState(state);
   }
@@ -201,7 +223,7 @@ export const ensurePlayerInventoryHasStarterPickaxe = (
   return setPlayerInventoryHotbarSlot(
     state,
     firstEmptySlotIndex,
-    createPlayerInventoryItemStack('pickaxe', 1)
+    stack
   );
 };
 

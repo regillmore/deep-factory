@@ -52,6 +52,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
   rope: {
     baseColor: [0.61, 0.49, 0.28],
     accentColor: [0.83, 0.73, 0.50]
+  },
+  'healing-potion': {
+    baseColor: [0.67, 0.18, 0.22],
+    accentColor: [0.98, 0.82, 0.34]
   }
 };
 

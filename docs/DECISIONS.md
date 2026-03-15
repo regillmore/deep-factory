@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-15: Short consumable reuse cooldowns stay in session-owned runtime state
+
+- Decision: The healing-potion reuse cooldown now lives in detached session-owned fixed-step state instead of joining `PlayerState` or the saved world envelope.
+- Reason: The potion lockout is short-lived pacing state, and persisting it across export/import or browser resume would add save complexity without meaningful player value.
+- Consequence: Future short consumable or tool cooldowns should default to session-owned fixed-step state unless the same pass intentionally needs cooldowns to survive save or restore boundaries.
+
 ### 2026-03-15: Hard-landing impact telemetry uses the pre-collision fixed-step fall speed
 
 - Decision: The hard-landing telemetry now reports the same pre-collision downward speed that the fixed-step fall-damage rule evaluates, rather than the previous-tick velocity or the post-collision grounded speed.

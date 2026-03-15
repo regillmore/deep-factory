@@ -236,6 +236,12 @@ import {
   setPlayerInventorySelectedHotbarSlot,
   type PlayerInventoryState
 } from './world/playerInventory';
+import {
+  createPlayerHealingPotionCooldownState,
+  HEALING_POTION_ITEM_ID,
+  stepPlayerHealingPotionCooldownState,
+  tryUsePlayerHealingPotion
+} from './world/playerHealingPotion';
 import { evaluatePlayerHotbarTilePlacementRange } from './world/playerHotbarPlacementRange';
 import {
   evaluateStarterBlockPlacement,
@@ -1543,6 +1549,7 @@ const bootstrap = async (): Promise<void> => {
   let latestStandalonePlayerDeathHoldStatus: StandalonePlayerDeathHoldTelemetryStatus = 'none';
   let standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
   let starterPickaxeMiningState = createStarterPickaxeMiningState();
+  let playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
 
   const getStandalonePlayerState = (): PlayerState | null => {
     if (standalonePlayerEntityId === null) {
@@ -1574,6 +1581,28 @@ const bootstrap = async (): Promise<void> => {
     }
 
     applyStandalonePlayerInventoryState(consumeResult.state);
+    return true;
+  };
+  const tryUseSelectedHealingPotion = (): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return false;
+    }
+
+    const useResult = tryUsePlayerHealingPotion(
+      standalonePlayerState,
+      playerHealingPotionCooldownState
+    );
+    if (!useResult.consumed || !applySelectedStandalonePlayerHotbarSlotConsumption()) {
+      return false;
+    }
+
+    playerHealingPotionCooldownState = useResult.nextCooldownState;
+    setStandalonePlayerState(useResult.nextPlayerState);
     return true;
   };
   const selectStandalonePlayerHotbarSlot = (slotIndex: number): void => {
@@ -2129,6 +2158,7 @@ const bootstrap = async (): Promise<void> => {
     latestStandalonePlayerDeathHoldStatus = 'none';
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
     starterPickaxeMiningState = createStarterPickaxeMiningState();
+    playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
   };
   const restoreStandalonePlayerSessionState = (
     playerState: PlayerState | null,
@@ -3074,6 +3104,9 @@ const bootstrap = async (): Promise<void> => {
         request.worldTileX,
         request.worldTileY
       );
+    }
+    if (selectedStack.itemId === HEALING_POTION_ITEM_ID) {
+      return tryUseSelectedHealingPotion();
     }
 
     const placementPreview = getSelectedStandalonePlayerItemPlacementPreviewAtTile(
@@ -5372,6 +5405,10 @@ const bootstrap = async (): Promise<void> => {
       flushStandalonePlayerFixedStepResult();
       stepStarterPickaxeMiningFixedUpdate(fixedDt);
       stepHostileSlimeSpawnAndDespawn();
+      playerHealingPotionCooldownState = stepPlayerHealingPotionCooldownState(
+        playerHealingPotionCooldownState,
+        fixedDt
+      );
     },
     (alpha, frameDtMs) => {
       if (currentScreen !== 'in-world') {
