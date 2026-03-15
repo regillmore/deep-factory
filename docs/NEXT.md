@@ -32,7 +32,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 559. Add a browser-resume save-normalization follow-up after dropped-item restore consolidation: when boot-time restore collapses overlapping matching world pickups, rewrite the persisted world save immediately instead of waiting for the next pause or pagehide, and add persistence regressions for the normalized pickup set.
 561. Apply a gentle horizontal self-centering when a player is over a rope tile, to make rope navigation easier.
 562. Allow hotbar ropes to attach to the sides of solid tiles, in addition to the bottom. Using a hotbar rope on an existing rope should extend the bottom of the rope if there's room.
-564. Add a rope top-out follow-up after rope traversal utility slice: climbing upward past the top of a rope run should settle the player onto adjacent open support instead of leaving them hanging below the ledge, and add deterministic top-out regressions.
+564. Add a safe rope drop mechanic. If the player is hanging on a rope and double taps and holds s/down, they should release and fall until s/down is released or the end of the rope is reached, where the player will automatically slow and stop.
 
 ## Telemetry
 
