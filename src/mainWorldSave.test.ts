@@ -121,6 +121,44 @@ describe('createWorldSaveEnvelope', () => {
     });
   });
 
+  it('preserves a placed stone block together with the consumed stone-block hotbar stack count', () => {
+    const world = new TileWorld(0);
+    expect(world.setTile(1, -10, 1)).toBe(true);
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'stone-block', amount: 11 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        ...Array.from({ length: 6 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 1
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(decoded.worldSnapshot);
+    expect(restoredWorld.getTile(1, -10)).toBe(1);
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+      itemId: 'stone-block',
+      amount: 11
+    });
+  });
+
   it('preserves a placed rope tile together with the consumed rope stack count', () => {
     const world = new TileWorld(0);
     expect(world.setTile(1, -1, STARTER_ROPE_TILE_ID)).toBe(true);

@@ -4,8 +4,17 @@ import type { PlayerInventoryItemId } from './playerInventory';
 import type { PlayerState } from './playerState';
 import { isTileSolid, TILE_METADATA, type TileMetadataRegistry } from './tileMetadata';
 
-export const STARTER_BUILDING_BLOCK_ITEM_ID: PlayerInventoryItemId = 'dirt-block';
+export type PlaceableSolidBlockItemId = Extract<PlayerInventoryItemId, 'dirt-block' | 'stone-block'>;
+
+export const STARTER_BUILDING_BLOCK_ITEM_ID: PlaceableSolidBlockItemId = 'dirt-block';
 export const STARTER_BUILDING_BLOCK_TILE_ID = 9;
+export const PLACEABLE_STONE_BLOCK_ITEM_ID: PlaceableSolidBlockItemId = 'stone-block';
+export const PLACEABLE_STONE_BLOCK_TILE_ID = 1;
+
+const PLACEABLE_SOLID_BLOCK_TILE_IDS: Readonly<Record<PlaceableSolidBlockItemId, number>> = {
+  'dirt-block': STARTER_BUILDING_BLOCK_TILE_ID,
+  'stone-block': PLACEABLE_STONE_BLOCK_TILE_ID
+};
 
 export interface StarterBlockPlacementWorldView {
   getTile(worldTileX: number, worldTileY: number): number;
@@ -17,6 +26,13 @@ export interface StarterBlockPlacementEvaluation {
   blockedByPlayer: boolean;
   canPlace: boolean;
 }
+
+export const isPlaceableSolidBlockItemId = (
+  itemId: PlayerInventoryItemId
+): itemId is PlaceableSolidBlockItemId => itemId in PLACEABLE_SOLID_BLOCK_TILE_IDS;
+
+export const resolvePlaceableSolidBlockTileId = (itemId: PlaceableSolidBlockItemId): number =>
+  PLACEABLE_SOLID_BLOCK_TILE_IDS[itemId];
 
 const doesAabbOverlap = (aabb: WorldAabb, other: WorldAabb): boolean =>
   aabb.minX < other.maxX &&

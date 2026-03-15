@@ -234,8 +234,8 @@ import {
 import { evaluatePlayerHotbarTilePlacementRange } from './world/playerHotbarPlacementRange';
 import {
   evaluateStarterBlockPlacement,
-  STARTER_BUILDING_BLOCK_ITEM_ID,
-  STARTER_BUILDING_BLOCK_TILE_ID
+  isPlaceableSolidBlockItemId,
+  resolvePlaceableSolidBlockTileId
 } from './world/starterBlockPlacement';
 import {
   evaluateStarterTorchPlacement,
@@ -2898,18 +2898,19 @@ const bootstrap = async (): Promise<void> => {
     }
 
     let placementTileId: number | null = null;
-    switch (selectedStack.itemId) {
-      case STARTER_BUILDING_BLOCK_ITEM_ID:
-        placementTileId = STARTER_BUILDING_BLOCK_TILE_ID;
-        break;
-      case STARTER_TORCH_ITEM_ID:
-        placementTileId = STARTER_TORCH_TILE_ID;
-        break;
-      case STARTER_ROPE_ITEM_ID:
-        placementTileId = STARTER_ROPE_TILE_ID;
-        break;
-      default:
-        return false;
+    if (isPlaceableSolidBlockItemId(selectedStack.itemId)) {
+      placementTileId = resolvePlaceableSolidBlockTileId(selectedStack.itemId);
+    } else {
+      switch (selectedStack.itemId) {
+        case STARTER_TORCH_ITEM_ID:
+          placementTileId = STARTER_TORCH_TILE_ID;
+          break;
+        case STARTER_ROPE_ITEM_ID:
+          placementTileId = STARTER_ROPE_TILE_ID;
+          break;
+        default:
+          return false;
+      }
     }
     if (placementTileId === null) {
       return false;
@@ -2951,47 +2952,48 @@ const bootstrap = async (): Promise<void> => {
     > | null = null;
     let placementTileX = worldTileX;
     let placementTileY = worldTileY;
-    switch (selectedStack.itemId) {
-      case STARTER_BUILDING_BLOCK_ITEM_ID:
-        placement = evaluateStarterBlockPlacement(
-          {
-            getTile: (worldTileX, worldTileY) => renderer.getTile(worldTileX, worldTileY)
-          },
-          standalonePlayerState,
-          worldTileX,
-          worldTileY
-        );
-        break;
-      case STARTER_TORCH_ITEM_ID:
-        placement = evaluateStarterTorchPlacement(
-          {
-            getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
-          },
-          worldTileX,
-          worldTileY
-        );
-        break;
-      case STARTER_ROPE_ITEM_ID:
-        ({
-          tileX: placementTileX,
-          tileY: placementTileY
-        } = resolveStarterRopePlacementTarget(
-          {
-            getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
-          },
-          worldTileX,
-          worldTileY
-        ));
-        placement = evaluateStarterRopePlacement(
-          {
-            getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
-          },
-          placementTileX,
-          placementTileY
-        );
-        break;
-      default:
-        return null;
+    if (isPlaceableSolidBlockItemId(selectedStack.itemId)) {
+      placement = evaluateStarterBlockPlacement(
+        {
+          getTile: (worldTileX, worldTileY) => renderer.getTile(worldTileX, worldTileY)
+        },
+        standalonePlayerState,
+        worldTileX,
+        worldTileY
+      );
+    } else {
+      switch (selectedStack.itemId) {
+        case STARTER_TORCH_ITEM_ID:
+          placement = evaluateStarterTorchPlacement(
+            {
+              getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+            },
+            worldTileX,
+            worldTileY
+          );
+          break;
+        case STARTER_ROPE_ITEM_ID:
+          ({
+            tileX: placementTileX,
+            tileY: placementTileY
+          } = resolveStarterRopePlacementTarget(
+            {
+              getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+            },
+            worldTileX,
+            worldTileY
+          ));
+          placement = evaluateStarterRopePlacement(
+            {
+              getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+            },
+            placementTileX,
+            placementTileY
+          );
+          break;
+        default:
+          return null;
+      }
     }
     if (placement === null) {
       return null;
