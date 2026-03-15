@@ -107,6 +107,8 @@ export interface DebugEditStatusStripState {
   playerVelocityY?: number | null;
   playerJumpHeld?: boolean | null;
   playerJumpPressed?: boolean | null;
+  playerRopeDropActive?: boolean | null;
+  playerRopeDropWindowArmed?: boolean | null;
   playerSupportContact?: DebugEditStatusStripPlayerSupportContactTelemetry | null;
   playerWallContact?: DebugEditStatusStripPlayerWallContactTelemetry | null;
   playerCeilingContact?: DebugEditStatusStripPlayerCeilingContactTelemetry | null;
@@ -1383,6 +1385,24 @@ const formatLiveJumpPressedText = (playerJumpPressed: boolean | null): string | 
   return `JumpPressedNow: ${formatGameplayFlag(playerJumpPressed)}`;
 };
 
+const formatLiveRopeDropActiveText = (playerRopeDropActive: boolean | null): string | null => {
+  if (playerRopeDropActive === null) {
+    return null;
+  }
+
+  return `RopeDropActiveNow: ${formatGameplayFlag(playerRopeDropActive)}`;
+};
+
+const formatLiveRopeDropWindowArmedText = (
+  playerRopeDropWindowArmed: boolean | null
+): string | null => {
+  if (playerRopeDropWindowArmed === null) {
+    return null;
+  }
+
+  return `RopeDropWindowNow: ${formatGameplayFlag(playerRopeDropWindowArmed)}`;
+};
+
 const formatLiveCeilingBonkHoldText = (playerCeilingBonkHoldActive: boolean | null): string | null => {
   if (playerCeilingBonkHoldActive === null) {
     return null;
@@ -1637,6 +1657,8 @@ const buildPlayerText = (
   playerVelocityY: number | null,
   playerJumpHeld: boolean | null,
   playerJumpPressed: boolean | null,
+  playerRopeDropActive: boolean | null,
+  playerRopeDropWindowArmed: boolean | null,
   playerSupportContact: DebugEditStatusStripPlayerSupportContactTelemetry | null,
   playerWallContact: DebugEditStatusStripPlayerWallContactTelemetry | null,
   playerCeilingContact: DebugEditStatusStripPlayerCeilingContactTelemetry | null,
@@ -1783,6 +1805,12 @@ const buildPlayerText = (
       : null,
     telemetryVisible('player-motion') ? formatLiveJumpHeldText(playerJumpHeld) : null,
     telemetryVisible('player-motion') ? formatLiveJumpPressedText(playerJumpPressed) : null,
+    telemetryVisible('player-motion')
+      ? formatLiveRopeDropActiveText(playerRopeDropActive)
+      : null,
+    telemetryVisible('player-motion')
+      ? formatLiveRopeDropWindowArmedText(playerRopeDropWindowArmed)
+      : null,
     telemetryVisible('player-collision')
       ? formatLiveSupportContactText(playerSupportContact)
       : null,
@@ -2447,6 +2475,8 @@ export const buildDebugEditStatusStripModel = (
   const playerVelocityY = state.playerVelocityY ?? null;
   const playerJumpHeld = state.playerJumpHeld ?? null;
   const playerJumpPressed = state.playerJumpPressed ?? null;
+  const playerRopeDropActive = state.playerRopeDropActive ?? null;
+  const playerRopeDropWindowArmed = state.playerRopeDropWindowArmed ?? null;
   const playerSupportContact = state.playerSupportContact ?? null;
   const playerWallContact = state.playerWallContact ?? null;
   const playerCeilingContact = state.playerCeilingContact ?? null;
@@ -2535,6 +2565,8 @@ export const buildDebugEditStatusStripModel = (
       playerVelocityY,
       playerJumpHeld,
       playerJumpPressed,
+      playerRopeDropActive,
+      playerRopeDropWindowArmed,
       playerSupportContact,
       playerWallContact,
       playerCeilingContact,

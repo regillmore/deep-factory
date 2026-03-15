@@ -247,6 +247,7 @@ import {
   DEFAULT_PLAYER_WIDTH,
   getPlayerAabb,
   getPlayerCameraFocusPoint,
+  isPlayerRopeDropActive,
   type PlayerCollisionContacts,
   type PlayerMovementIntent,
   type PlayerState
@@ -448,6 +449,8 @@ type StandalonePlayerRenderFrameStatusStripTelemetry = Pick<
   | 'playerVelocityY'
   | 'playerJumpHeld'
   | 'playerJumpPressed'
+  | 'playerRopeDropActive'
+  | 'playerRopeDropWindowArmed'
   | 'playerSupportContact'
   | 'playerWallContact'
   | 'playerCeilingContact'
@@ -3947,6 +3950,11 @@ const bootstrap = async (): Promise<void> => {
             return { x: localX, y: localY };
           })();
     const playerIntent = input.getPlayerInputTelemetry();
+    const playerRopeDropActive =
+      playerState === null
+        ? false
+        : isPlayerRopeDropActive(renderer, playerState, playerIntent.ropeDropHeld === true);
+    const playerRopeDropWindowArmed = playerIntent.ropeDropWindowArmed === true;
     const playerPlaceholderPoseLabel =
       playerRenderState === null
         ? null
@@ -4001,7 +4009,13 @@ const bootstrap = async (): Promise<void> => {
         playerPlaceholderPoseLabel,
         playerCeilingBonkHoldActive:
           playerState === null ? null : standalonePlayerCeilingBonkActive,
-        playerIntent,
+        playerIntent: {
+          moveX: playerIntent.moveX,
+          jumpHeld: playerIntent.jumpHeld,
+          jumpPressed: playerIntent.jumpPressed,
+          ropeDropActive: playerRopeDropActive,
+          ropeDropWindowArmed: playerRopeDropWindowArmed
+        },
         playerCameraFollow:
           playerCameraWorldPosition &&
           playerCameraWorldTile &&
@@ -4075,6 +4089,8 @@ const bootstrap = async (): Promise<void> => {
         playerVelocityY: playerState === null ? null : playerState.velocity.y,
         playerJumpHeld: playerState === null ? null : playerIntent.jumpHeld,
         playerJumpPressed: playerState === null ? null : playerIntent.jumpPressed,
+        playerRopeDropActive: playerState === null ? null : playerRopeDropActive,
+        playerRopeDropWindowArmed: playerState === null ? null : playerRopeDropWindowArmed,
         playerSupportContact: standalonePlayerContacts?.support
           ? {
               tile: {
@@ -4240,6 +4256,8 @@ const bootstrap = async (): Promise<void> => {
       playerVelocityY: null,
       playerJumpHeld: null,
       playerJumpPressed: null,
+      playerRopeDropActive: null,
+      playerRopeDropWindowArmed: null,
       playerSupportContact: null,
       playerWallContact: null,
       playerCeilingContact: null
@@ -4614,6 +4632,8 @@ const bootstrap = async (): Promise<void> => {
       playerVelocityY: debugStatusStripPlayerTelemetry.playerVelocityY,
       playerJumpHeld: debugStatusStripPlayerTelemetry.playerJumpHeld,
       playerJumpPressed: debugStatusStripPlayerTelemetry.playerJumpPressed,
+      playerRopeDropActive: debugStatusStripPlayerTelemetry.playerRopeDropActive,
+      playerRopeDropWindowArmed: debugStatusStripPlayerTelemetry.playerRopeDropWindowArmed,
       playerSupportContact: debugStatusStripPlayerTelemetry.playerSupportContact,
       playerWallContact: debugStatusStripPlayerTelemetry.playerWallContact,
       playerCeilingContact: debugStatusStripPlayerTelemetry.playerCeilingContact,

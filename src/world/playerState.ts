@@ -133,6 +133,10 @@ interface PlayerLiquidOverlapState {
   lavaSubmergedFraction: number;
 }
 
+interface PlayerClimbableTileQueryWorld {
+  getTile(worldTileX: number, worldTileY: number): number;
+}
+
 interface AabbOverlappingClimbableTileInfo {
   tileX: number;
   highestTileY: number;
@@ -424,7 +428,7 @@ const samplePlayerLiquidOverlapState = (
 };
 
 const getAabbOverlappingClimbableTileInfo = (
-  world: TileWorld,
+  world: PlayerClimbableTileQueryWorld,
   aabb: WorldAabb,
   registry: TileMetadataRegistry
 ): AabbOverlappingClimbableTileInfo | null => {
@@ -454,7 +458,7 @@ const getAabbOverlappingClimbableTileInfo = (
 };
 
 const getAabbOverlappingClimbableTileCenterX = (
-  world: TileWorld,
+  world: PlayerClimbableTileQueryWorld,
   aabb: WorldAabb,
   registry: TileMetadataRegistry
 ): number | null => {
@@ -463,19 +467,19 @@ const getAabbOverlappingClimbableTileCenterX = (
 };
 
 const isAabbOverlappingClimbableTile = (
-  world: TileWorld,
+  world: PlayerClimbableTileQueryWorld,
   aabb: WorldAabb,
   registry: TileMetadataRegistry
 ): boolean => getAabbOverlappingClimbableTileCenterX(world, aabb, registry) !== null;
 
 const isPlayerOverlappingClimbableTile = (
-  world: TileWorld,
+  world: PlayerClimbableTileQueryWorld,
   state: PlayerState,
   registry: TileMetadataRegistry
 ): boolean => isAabbOverlappingClimbableTile(world, getPlayerAabb(state), registry);
 
 const resolveRopeDropCatchBottomY = (
-  world: TileWorld,
+  world: PlayerClimbableTileQueryWorld,
   climbableTileInfo: AabbOverlappingClimbableTileInfo | null,
   registry: TileMetadataRegistry
 ): number | null => {
@@ -489,6 +493,25 @@ const resolveRopeDropCatchBottomY = (
   }
 
   return nextTileY * TILE_SIZE;
+};
+
+export const isPlayerRopeDropActive = (
+  world: PlayerClimbableTileQueryWorld,
+  state: PlayerState,
+  ropeDropHeld: boolean,
+  registry: TileMetadataRegistry = TILE_METADATA
+): boolean => {
+  if (!ropeDropHeld) {
+    return false;
+  }
+
+  const climbableTileInfo = getAabbOverlappingClimbableTileInfo(world, getPlayerAabb(state), registry);
+  if (climbableTileInfo === null) {
+    return false;
+  }
+
+  const ropeDropCatchBottomY = resolveRopeDropCatchBottomY(world, climbableTileInfo, registry);
+  return ropeDropCatchBottomY === null || state.position.y < ropeDropCatchBottomY;
 };
 
 const recoverBreathSecondsRemaining = (

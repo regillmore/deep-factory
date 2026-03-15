@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Ordinary held down input already owns readable slow rope descent on both desktop and touch, so fast drop needs a deliberate shared gesture instead of overloading the default climb-down hold.
 - Consequence: Future rope, vine, ladder, or other climbable quick-descend follow-ups should preserve this deliberate arm-and-hold gesture with bottom catch rather than turning ordinary climb-down hold into the fast-drop path.
 
+### 2026-03-14: Rope-drop telemetry lives under player-motion
+
+- Decision: Rope quick-drop active state and the shared double-tap window armed state now render under `player-motion` in both the full debug HUD and the hidden-HUD compact status strip.
+- Reason: Those readouts describe the player's current traversal input and rope-movement availability, not combat recovery or one-off event history.
+- Consequence: Future climbable quick-descend telemetry should extend `player-motion` unless a later pass intentionally revisits the telemetry catalog split.
+
 ### 2026-03-14: Rope contact uses grounded-style braking for neutral horizontal inertia
 
 - Decision: While the player overlaps a rope and left/right input is neutral, rope traversal now applies the same horizontal braking used for grounded movement before rope hold and centering resolve.

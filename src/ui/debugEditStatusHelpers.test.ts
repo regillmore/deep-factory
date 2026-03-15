@@ -952,6 +952,23 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
+  it('formats live rope-drop active and window-arm telemetry for the compact strip when provided', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerRopeDropActive: true,
+      playerRopeDropWindowArmed: false,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('RopeDropActiveNow: on\nRopeDropWindowNow: off');
+    expect(model.eventText).toBeNull();
+  });
+
   it('formats the renderer-side standalone player ceiling-bonk hold state for the compact strip when provided', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',

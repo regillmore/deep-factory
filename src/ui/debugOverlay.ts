@@ -246,6 +246,8 @@ export interface DebugOverlayPlayerIntentTelemetry {
   moveX: number;
   jumpHeld: boolean;
   jumpPressed: boolean;
+  ropeDropActive?: boolean;
+  ropeDropWindowArmed?: boolean;
 }
 
 export interface DebugOverlayPlayerCameraFollowTelemetry {
@@ -993,11 +995,18 @@ const formatPlayerIntentLine = (playerIntent: DebugOverlayPlayerIntentTelemetry 
     return 'Intent: n/a';
   }
 
-  return (
-    `Intent: move:${playerIntent.moveX} | ` +
-    `jumpHeld:${formatGameplayFlag(playerIntent.jumpHeld)} | ` +
+  const segments = [
+    `move:${playerIntent.moveX}`,
+    `jumpHeld:${formatGameplayFlag(playerIntent.jumpHeld)}`,
     `jumpPressed:${formatGameplayFlag(playerIntent.jumpPressed)}`
-  );
+  ];
+  if (typeof playerIntent.ropeDropActive === 'boolean') {
+    segments.push(`ropeDropActive:${formatGameplayFlag(playerIntent.ropeDropActive)}`);
+  }
+  if (typeof playerIntent.ropeDropWindowArmed === 'boolean') {
+    segments.push(`ropeDropWindow:${formatGameplayFlag(playerIntent.ropeDropWindowArmed)}`);
+  }
+  return `Intent: ${segments.join(' | ')}`;
 };
 
 const formatPlayerGroundedTransitionLine = (

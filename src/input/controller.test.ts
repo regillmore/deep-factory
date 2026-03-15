@@ -15,6 +15,7 @@ import {
   isPlayerMoveRightControlKey,
   PLAYER_ROPE_DROP_DOUBLE_TAP_WINDOW_MS,
   PLAYER_ROPE_DROP_MAX_TAP_DURATION_MS,
+  isPlayerRopeDropDoubleTapWindowArmed,
   resolvePlayerClimbYIntent,
   markDebugPaintTileSeen,
   resolveCameraPanWorldDeltaFromClientDelta,
@@ -339,17 +340,38 @@ describe('player control key resolution', () => {
     expect(resolvePlayerInputTelemetry(true, false, true, false)).toEqual({
       moveX: -1,
       jumpHeld: true,
-      jumpPressed: true
+      jumpPressed: true,
+      ropeDropHeld: false,
+      ropeDropWindowArmed: false
     });
     expect(resolvePlayerInputTelemetry(true, false, true, true)).toEqual({
       moveX: -1,
       jumpHeld: true,
-      jumpPressed: false
+      jumpPressed: false,
+      ropeDropHeld: false,
+      ropeDropWindowArmed: false
     });
     expect(resolvePlayerInputTelemetry(false, false, false, true)).toEqual({
       moveX: 0,
       jumpHeld: false,
-      jumpPressed: false
+      jumpPressed: false,
+      ropeDropHeld: false,
+      ropeDropWindowArmed: false
+    });
+  });
+
+  it('includes rope-drop hold and window telemetry flags in the sampled input telemetry', () => {
+    expect(
+      resolvePlayerInputTelemetry(false, false, false, false, {
+        ropeDropHeld: true,
+        ropeDropWindowArmed: false
+      })
+    ).toEqual({
+      moveX: 0,
+      jumpHeld: false,
+      jumpPressed: false,
+      ropeDropHeld: true,
+      ropeDropWindowArmed: false
     });
   });
 
@@ -404,6 +426,28 @@ describe('player control key resolution', () => {
       lastTapReleasedAtMs: 500,
       pressStartedAtMs: null
     });
+  });
+
+  it('reports the double-tap window as armed only after a short released tap and before the second press begins', () => {
+    const firstPress = advancePlayerRopeDropInputState(
+      createDefaultPlayerRopeDropInputState(),
+      true,
+      100
+    );
+    const firstRelease = advancePlayerRopeDropInputState(firstPress, false, 220);
+    const secondPress = advancePlayerRopeDropInputState(firstRelease, true, 260);
+
+    expect(isPlayerRopeDropDoubleTapWindowArmed(firstRelease, 220)).toBe(true);
+    expect(isPlayerRopeDropDoubleTapWindowArmed(firstRelease, 220 + PLAYER_ROPE_DROP_DOUBLE_TAP_WINDOW_MS)).toBe(
+      true
+    );
+    expect(
+      isPlayerRopeDropDoubleTapWindowArmed(
+        firstRelease,
+        220 + PLAYER_ROPE_DROP_DOUBLE_TAP_WINDOW_MS + 1
+      )
+    ).toBe(false);
+    expect(isPlayerRopeDropDoubleTapWindowArmed(secondPress, 260)).toBe(false);
   });
 });
 

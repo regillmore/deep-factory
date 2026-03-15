@@ -30,6 +30,8 @@ export interface PlayerInputTelemetry {
   moveX: -1 | 0 | 1;
   jumpHeld: boolean;
   jumpPressed: boolean;
+  ropeDropHeld: boolean;
+  ropeDropWindowArmed: boolean;
 }
 
 export type CanvasInteractionMode = 'debug-edit' | 'play';
@@ -425,6 +427,18 @@ export const advancePlayerRopeDropInputState = (
   };
 };
 
+export const isPlayerRopeDropDoubleTapWindowArmed = (
+  state: PlayerRopeDropInputState,
+  nowMs: number
+): boolean => {
+  const normalizedNowMs = normalizePlayerInputTimeMs(nowMs);
+  return (
+    !state.climbDownHeld &&
+    state.lastTapReleasedAtMs !== null &&
+    normalizedNowMs - state.lastTapReleasedAtMs <= PLAYER_ROPE_DROP_DOUBLE_TAP_WINDOW_MS
+  );
+};
+
 export const resolvePlayerMoveXIntent = (moveLeftPressed: boolean, moveRightPressed: boolean): -1 | 0 | 1 => {
   if (moveLeftPressed === moveRightPressed) return 0;
   return moveLeftPressed ? -1 : 1;
@@ -465,11 +479,17 @@ export const resolvePlayerInputTelemetry = (
   moveLeftPressed: boolean,
   moveRightPressed: boolean,
   jumpHeld: boolean,
-  previousJumpHeld: boolean
+  previousJumpHeld: boolean,
+  options: {
+    ropeDropHeld?: boolean;
+    ropeDropWindowArmed?: boolean;
+  } = {}
 ): PlayerInputTelemetry => ({
   moveX: resolvePlayerMoveXIntent(moveLeftPressed, moveRightPressed),
   jumpHeld,
-  jumpPressed: jumpHeld && !previousJumpHeld
+  jumpPressed: jumpHeld && !previousJumpHeld,
+  ropeDropHeld: options.ropeDropHeld === true,
+  ropeDropWindowArmed: options.ropeDropWindowArmed === true
 });
 
 export const markDebugPaintTileSeen = (
@@ -718,7 +738,9 @@ export class InputController {
   private playerInputTelemetry: PlayerInputTelemetry = {
     moveX: 0,
     jumpHeld: false,
-    jumpPressed: false
+    jumpPressed: false,
+    ropeDropHeld: false,
+    ropeDropWindowArmed: false
   };
   private playerClimbYIntent: -1 | 0 | 1 = 0;
   private pointerInspectRetainers: Array<(candidate: EventTarget | null) => boolean> = [];
@@ -748,7 +770,14 @@ export class InputController {
       moveLeftPressed,
       moveRightPressed,
       jumpHeld,
-      this.previousPlayerJumpHeld
+      this.previousPlayerJumpHeld,
+      {
+        ropeDropHeld: this.playerRopeDropInputState.ropeDropHeld,
+        ropeDropWindowArmed: isPlayerRopeDropDoubleTapWindowArmed(
+          this.playerRopeDropInputState,
+          nowMs
+        )
+      }
     );
     this.playerClimbYIntent = resolvePlayerClimbYIntent(jumpHeld, this.playerRopeDropInputState.climbDownHeld);
     this.previousPlayerJumpHeld = jumpHeld;
@@ -903,7 +932,9 @@ export class InputController {
     return {
       moveX: this.playerInputTelemetry.moveX,
       jumpHeld: this.playerInputTelemetry.jumpHeld,
-      jumpPressed: this.playerInputTelemetry.jumpPressed
+      jumpPressed: this.playerInputTelemetry.jumpPressed,
+      ropeDropHeld: this.playerInputTelemetry.ropeDropHeld,
+      ropeDropWindowArmed: this.playerInputTelemetry.ropeDropWindowArmed
     };
   }
 
@@ -2015,7 +2046,9 @@ export class InputController {
     this.playerInputTelemetry = {
       moveX: 0,
       jumpHeld: false,
-      jumpPressed: false
+      jumpPressed: false,
+      ropeDropHeld: false,
+      ropeDropWindowArmed: false
     };
     this.playerClimbYIntent = 0;
   }

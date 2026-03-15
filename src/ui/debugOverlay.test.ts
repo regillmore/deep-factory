@@ -610,6 +610,42 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquid:none');
   });
 
+  it('shows rope-drop active and double-tap window telemetry when player intent includes them', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      pinned: null,
+      spawn: null,
+      player: null,
+      hostileSlime: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerNearbyLightLevel: null,
+      playerNearbyLightFactor: null,
+      playerNearbyLightSourceTile: null,
+      playerNearbyLightSourceChunk: null,
+      playerNearbyLightSourceLocalTile: null,
+      playerIntent: {
+        moveX: 0,
+        jumpHeld: false,
+        jumpPressed: false,
+        ropeDropActive: true,
+        ropeDropWindowArmed: false
+      },
+      playerCameraFollow: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerLandingDamageEvent: null,
+      playerHostileContactEvent: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null
+    });
+
+    expect(text).toContain(
+      'Intent: move:0 | jumpHeld:off | jumpPressed:off | ropeDropActive:on | ropeDropWindow:off'
+    );
+  });
+
   it('shows the resolved liquid cardinal mask for hovered liquid tiles', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: {

@@ -48,6 +48,7 @@ import {
   DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
   getPlayerCameraFocusPoint
 } from './world/playerState';
+import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
 import { DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS } from './world/hostileSlimeCombat';
 import {
@@ -253,7 +254,15 @@ const testRuntime = vi.hoisted(() => {
     playerMovementIntent: {
       moveX: 0,
       jumpHeld: false,
-      jumpPressed: false
+      jumpPressed: false,
+      ropeDropHeld: false,
+      ropeDropWindowArmed: false
+    } as {
+      moveX: number;
+      jumpHeld: boolean;
+      jumpPressed: boolean;
+      ropeDropHeld?: boolean;
+      ropeDropWindowArmed?: boolean;
     },
     canvasInteractionMode: 'debug-edit' as 'debug-edit' | 'play',
     fixedStepWorldUpdateOrder: [] as string[],
@@ -1819,7 +1828,9 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.playerMovementIntent = {
       moveX: 0,
       jumpHeld: false,
-      jumpPressed: false
+      jumpPressed: false,
+      ropeDropHeld: false,
+      ropeDropWindowArmed: false
     };
     testRuntime.canvasInteractionMode = 'debug-edit';
     testRuntime.fixedStepWorldUpdateOrder = [];
@@ -4602,7 +4613,9 @@ describe('main.ts shell state orchestration', () => {
     expect(overlay.playerIntent).toEqual({
       moveX: strip.playerMoveX,
       jumpHeld: strip.playerJumpHeld,
-      jumpPressed: strip.playerJumpPressed
+      jumpPressed: strip.playerJumpPressed,
+      ropeDropActive: strip.playerRopeDropActive,
+      ropeDropWindowArmed: strip.playerRopeDropWindowArmed
     });
     expect(overlay.playerCameraFollow?.cameraPosition).toEqual(strip.playerCameraWorldPosition);
     expect(overlay.playerCameraFollow?.cameraTile).toEqual(strip.playerCameraWorldTile);
@@ -5449,6 +5462,81 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysPairsTested).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepDownwardTransfersApplied).toBeNull();
     expect(testRuntime.latestDebugEditStatusStripState.liquidStepSidewaysTransfersApplied).toBeNull();
+  });
+
+  it('routes rope-drop active and double-tap window telemetry through the overlay and compact status strip', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, -4), STARTER_ROPE_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, -3), STARTER_ROPE_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, -2), STARTER_ROPE_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, -1), STARTER_ROPE_TILE_ID);
+
+    const ropeDropPlayerState = {
+      position: { x: 8, y: -48 },
+      velocity: { x: 0, y: 80 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right' as const
+    };
+
+    testRuntime.playerMovementIntent = {
+      moveX: 0,
+      jumpHeld: false,
+      jumpPressed: false,
+      ropeDropHeld: true,
+      ropeDropWindowArmed: false
+    };
+    testRuntime.rendererStepPlayerStateImpl = () => ropeDropPlayerState;
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest status-strip telemetry');
+    }
+
+    expect(testRuntime.latestDebugEditStatusStripState.playerRopeDropActive).toBe(true);
+    expect(testRuntime.latestDebugEditStatusStripState.playerRopeDropWindowArmed).toBe(false);
+
+    testRuntime.shellInstance?.options.onToggleDebugOverlay('in-world');
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState).not.toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+    if (!testRuntime.latestDebugOverlayInspectState || !testRuntime.latestDebugEditStatusStripState) {
+      throw new Error('expected latest overlay and status-strip telemetry');
+    }
+
+    expect(testRuntime.latestDebugOverlayInspectState.playerIntent).toEqual(
+      expect.objectContaining({
+        ropeDropActive: true,
+        ropeDropWindowArmed: false
+      })
+    );
+    expect(testRuntime.latestDebugEditStatusStripState.playerRopeDropActive).toBeNull();
+    expect(testRuntime.latestDebugEditStatusStripState.playerRopeDropWindowArmed).toBeNull();
+
+    testRuntime.playerMovementIntent = {
+      moveX: 0,
+      jumpHeld: false,
+      jumpPressed: false,
+      ropeDropHeld: false,
+      ropeDropWindowArmed: true
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.playerIntent).toEqual(
+      expect.objectContaining({
+        ropeDropActive: false,
+        ropeDropWindowArmed: true
+      })
+    );
   });
 
   it('routes compact status-strip player-event telemetry through one shared overlay-visibility selector', async () => {
