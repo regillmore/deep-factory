@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Leaving the stale overlapping pickup payload in storage until a later save point would make resumed sessions repeatedly pay the same normalization cost and could preserve redundant pickup stacks across an unexpected reload before the next persistence boundary.
 - Consequence: Future boot-time save-normalization passes should rewrite browser-resume storage as soon as they change restored session data, rather than relying on later autosave timing to eventually converge the persisted payload.
 
+### 2026-03-15: Lava tick telemetry lives under player-combat
+
+- Decision: The latest lava tick damage event and the live lava-damage cooldown now render under `player-combat` in both the full debug HUD and the hidden-HUD compact status strip.
+- Reason: Lava cadence is an environmental survival timer that explains the same incoming-damage story as breath, fall recovery, and hostile-contact invulnerability, so it fits the existing combat telemetry slice better than a new separate family.
+- Consequence: Future lava or related environmental survival telemetry should extend `player-combat` unless a later pass intentionally redesigns the combat-versus-survival telemetry split.
+
 ### 2026-03-15: Starter-pickaxe dirt refunds reuse the nearby-pickup cascade
 
 - Decision: When the starter pickaxe breaks `grass_surface` or placed starter dirt, the refunded `dirt-block` first merges into overlapping matching dropped-item stacks before any new pickup entity spawns.

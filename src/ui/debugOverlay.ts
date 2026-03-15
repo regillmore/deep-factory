@@ -214,6 +214,7 @@ export interface DebugOverlayPlayerTelemetry {
   breathSecondsRemaining?: number | null;
   headSubmergedInWater?: boolean | null;
   waterSubmergedFraction?: number | null;
+  lavaDamageTickSecondsRemaining?: number | null;
   drowningDamageTickSecondsRemaining?: number | null;
   fallDamageRecoverySecondsRemaining?: number | null;
   hostileContactInvulnerabilitySecondsRemaining?: number | null;
@@ -301,6 +302,10 @@ export interface DebugOverlayPlayerLandingDamageEventTelemetry {
   damageApplied: number;
 }
 
+export interface DebugOverlayPlayerLavaDamageEventTelemetry {
+  damageApplied: number;
+}
+
 export interface DebugOverlayPlayerWallContactTransitionTelemetry {
   kind: PlayerWallContactTransitionKind;
   tile: { x: number; y: number; id: number; side: 'left' | 'right' };
@@ -334,6 +339,7 @@ export interface DebugOverlayInspectState {
   playerFacingTransition: DebugOverlayPlayerFacingTransitionTelemetry | null;
   playerRespawn: DebugOverlayPlayerRespawnTelemetry | null;
   playerLandingDamageEvent?: DebugOverlayPlayerLandingDamageEventTelemetry | null;
+  playerLavaDamageEvent?: DebugOverlayPlayerLavaDamageEventTelemetry | null;
   playerHostileContactEvent?: DebugOverlayPlayerHostileContactEventTelemetry | null;
   playerWallContactTransition: DebugOverlayPlayerWallContactTransitionTelemetry | null;
   playerCeilingContactTransition: DebugOverlayPlayerCeilingContactTransitionTelemetry | null;
@@ -776,6 +782,11 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
     Number.isFinite(player.drowningDamageTickSecondsRemaining)
       ? `${player.drowningDamageTickSecondsRemaining.toFixed(2)}s`
       : null;
+  const lavaCooldownText =
+    typeof player.lavaDamageTickSecondsRemaining === 'number' &&
+    Number.isFinite(player.lavaDamageTickSecondsRemaining)
+      ? `${player.lavaDamageTickSecondsRemaining.toFixed(2)}s`
+      : null;
   const healthText =
     typeof player.health === 'number' && Number.isFinite(player.health)
       ? `${Math.round(player.health)}`
@@ -798,6 +809,7 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
     headSubmergedText === null &&
     waterOverlapText === null &&
     drowningCooldownText === null &&
+    lavaCooldownText === null &&
     fallRecoveryText === null &&
     hostileContactInvulnerabilityText === 'n/a'
   ) {
@@ -821,6 +833,9 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
   }
   if (drowningCooldownText !== null) {
     segments.push(`drownCooldown:${drowningCooldownText}`);
+  }
+  if (lavaCooldownText !== null) {
+    segments.push(`lavaCooldown:${lavaCooldownText}`);
   }
   if (fallRecoveryText !== null) {
     segments.push(`fallRecovery:${fallRecoveryText}`);
@@ -852,6 +867,16 @@ const formatPlayerLandingDamageEventLine = (
   }
 
   return `LandingEvt: damage:${Math.max(0, Math.round(playerLandingDamageEvent.damageApplied))}`;
+};
+
+const formatPlayerLavaDamageEventLine = (
+  playerLavaDamageEvent: DebugOverlayPlayerLavaDamageEventTelemetry | null
+): string => {
+  if (!playerLavaDamageEvent) {
+    return 'LavaEvt: none';
+  }
+
+  return `LavaEvt: damage:${Math.max(0, Math.round(playerLavaDamageEvent.damageApplied))}`;
 };
 
 const formatHostileSlimeLaunchKind = (
@@ -1234,6 +1259,7 @@ export const formatDebugOverlayText = (
   const playerFacingTransition = inspect?.playerFacingTransition ?? null;
   const playerRespawn = inspect?.playerRespawn ?? null;
   const playerLandingDamageEvent = inspect?.playerLandingDamageEvent ?? null;
+  const playerLavaDamageEvent = inspect?.playerLavaDamageEvent ?? null;
   const playerHostileContactEvent = inspect?.playerHostileContactEvent ?? null;
   const playerWallContactTransition = inspect?.playerWallContactTransition ?? null;
   const playerCeilingContactTransition = inspect?.playerCeilingContactTransition ?? null;
@@ -1262,6 +1288,9 @@ export const formatDebugOverlayText = (
     telemetryVisible('player-combat') ? formatPlayerCombatLine(player) : null,
     telemetryVisible('player-combat')
       ? formatPlayerLandingDamageEventLine(playerLandingDamageEvent)
+      : null,
+    telemetryVisible('player-combat')
+      ? formatPlayerLavaDamageEventLine(playerLavaDamageEvent)
       : null,
     telemetryVisible('player-combat')
       ? formatPlayerHostileContactEventLine(playerHostileContactEvent)

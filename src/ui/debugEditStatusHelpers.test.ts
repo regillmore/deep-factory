@@ -1589,7 +1589,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose, live death-hold, breath, submersion, survival cooldowns, and hostile-contact invulnerability telemetry on separate player lines', () => {
+  it('keeps pose, live death-hold, breath, submersion, lava and survival cooldowns, and hostile-contact invulnerability telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -1604,6 +1604,7 @@ describe('buildDebugEditStatusStripModel', () => {
       playerBreathSecondsRemaining: 0.25,
       playerHeadSubmergedInWater: true,
       playerWaterSubmergedFraction: 1,
+      playerLavaDamageTickSecondsRemaining: 0.25,
       playerDrowningDamageTickSecondsRemaining: 0.5,
       playerFallDamageRecoverySecondsRemaining: 0.35,
       playerHostileContactInvulnerabilitySecondsRemaining: 0.75,
@@ -1619,6 +1620,7 @@ describe('buildDebugEditStatusStripModel', () => {
         'HeadSubmergedNow: on\n' +
         'WaterOverlapNow: 1.00\n' +
         'DrownCooldownNow: 0.50s\n' +
+        'LavaCooldownNow: 0.25s\n' +
         'FallRecoveryNow: 0.35s\n' +
         'ContactInvulnNow: 0.75s'
     );
@@ -1641,6 +1643,24 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.playerText).toBeNull();
     expect(model.eventText).toBe('LandingHit: damage 3');
+  });
+
+  it('shows the latest lava-tick hit on its own event line', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerLavaDamageEvent: {
+        damageApplied: 25
+      },
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBeNull();
+    expect(model.eventText).toBe('LavaHit: damage 25');
   });
 
   it('shows the latest hostile-contact hit event on its own event line', () => {

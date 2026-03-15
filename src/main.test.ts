@@ -4492,6 +4492,7 @@ describe('main.ts shell state orchestration', () => {
           breathSecondsRemaining: 0.25,
           headSubmergedInWater: false,
           waterSubmergedFraction: 2 / 3,
+          lavaDamageTickSecondsRemaining: 0.5,
           drowningDamageTickSecondsRemaining: 0.5
         };
       }
@@ -4504,6 +4505,7 @@ describe('main.ts shell state orchestration', () => {
         breathSecondsRemaining: 0,
         headSubmergedInWater: true,
         waterSubmergedFraction: 1,
+        lavaDamageTickSecondsRemaining: 0.25,
         drowningDamageTickSecondsRemaining: 0.25
       };
     };
@@ -4523,6 +4525,9 @@ describe('main.ts shell state orchestration', () => {
     expect(
       testRuntime.latestDebugOverlayInspectState?.player?.drowningDamageTickSecondsRemaining
     ).toBe(0.5);
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.lavaDamageTickSecondsRemaining).toBe(
+      0.5
+    );
     expect(testRuntime.latestDebugEditStatusStripState?.playerHealth).toBe(100);
     expect(testRuntime.latestDebugEditStatusStripState?.playerBreathSecondsRemaining).toBe(0.25);
     expect(testRuntime.latestDebugEditStatusStripState?.playerHeadSubmergedInWater).toBe(false);
@@ -4532,6 +4537,9 @@ describe('main.ts shell state orchestration', () => {
     );
     expect(
       testRuntime.latestDebugEditStatusStripState?.playerDrowningDamageTickSecondsRemaining
+    ).toBe(0.5);
+    expect(
+      testRuntime.latestDebugEditStatusStripState?.playerLavaDamageTickSecondsRemaining
     ).toBe(0.5);
 
     runFixedUpdate();
@@ -4544,6 +4552,9 @@ describe('main.ts shell state orchestration', () => {
     expect(
       testRuntime.latestDebugOverlayInspectState?.player?.drowningDamageTickSecondsRemaining
     ).toBe(0.25);
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.lavaDamageTickSecondsRemaining).toBe(
+      0.25
+    );
     expect(testRuntime.latestDebugEditStatusStripState?.playerHealth).toBe(95);
     expect(testRuntime.latestDebugEditStatusStripState?.playerBreathSecondsRemaining).toBe(0);
     expect(testRuntime.latestDebugEditStatusStripState?.playerHeadSubmergedInWater).toBe(true);
@@ -4551,6 +4562,71 @@ describe('main.ts shell state orchestration', () => {
     expect(
       testRuntime.latestDebugEditStatusStripState?.playerDrowningDamageTickSecondsRemaining
     ).toBe(0.25);
+    expect(
+      testRuntime.latestDebugEditStatusStripState?.playerLavaDamageTickSecondsRemaining
+    ).toBe(0.25);
+  });
+
+  it('tracks latest lava-tick damage events plus live lava cooldown telemetry through fixed-step player updates', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    let stepCount = 0;
+    testRuntime.rendererStepPlayerStateImpl = (_state) => {
+      stepCount += 1;
+      if (stepCount === 1) {
+        return {
+          position: { x: 8, y: 0 },
+          velocity: { x: 0, y: 0 },
+          grounded: true,
+          health: 75,
+          lavaDamageTickSecondsRemaining: 0.25,
+          lavaDamageApplied: 25
+        };
+      }
+
+      return {
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        grounded: true,
+        health: 75,
+        lavaDamageTickSecondsRemaining: 0.1
+      };
+    };
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.lavaDamageTickSecondsRemaining).toBe(
+      0.25
+    );
+    expect(testRuntime.latestDebugOverlayInspectState?.playerLavaDamageEvent).toEqual({
+      damageApplied: 25
+    });
+    expect(
+      testRuntime.latestDebugEditStatusStripState?.playerLavaDamageTickSecondsRemaining
+    ).toBe(0.25);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerLavaDamageEvent).toEqual({
+      damageApplied: 25
+    });
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.lavaDamageTickSecondsRemaining).toBe(
+      0.1
+    );
+    expect(testRuntime.latestDebugOverlayInspectState?.playerLavaDamageEvent).toEqual({
+      damageApplied: 25
+    });
+    expect(
+      testRuntime.latestDebugEditStatusStripState?.playerLavaDamageTickSecondsRemaining
+    ).toBe(0.1);
+    expect(testRuntime.latestDebugEditStatusStripState?.playerLavaDamageEvent).toEqual({
+      damageApplied: 25
+    });
   });
 
   it('submits standalone-player wall, ceiling, and bonk presentation through the current entity snapshot', async () => {

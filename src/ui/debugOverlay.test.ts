@@ -1104,6 +1104,7 @@ describe('formatDebugOverlayText', () => {
         breathSecondsRemaining: 0.25,
         headSubmergedInWater: true,
         waterSubmergedFraction: 1,
+        lavaDamageTickSecondsRemaining: 0.25,
         drowningDamageTickSecondsRemaining: 0.5,
         hostileContactInvulnerabilitySecondsRemaining: 0,
         aabb: {
@@ -1123,8 +1124,31 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain(
-      '\nCombat: health:95 | breath:0.25s | headSubmerged:on | waterOverlap:1.00 | drownCooldown:0.50s | contactInvuln:0.00s'
+      '\nCombat: health:95 | breath:0.25s | headSubmerged:on | waterOverlap:1.00 | drownCooldown:0.50s | lavaCooldown:0.25s | contactInvuln:0.00s'
     );
+  });
+
+  it('shows the latest lava-tick damage on its own combat event line', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      spawn: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerLavaDamageEvent: {
+        damageApplied: 25
+      },
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: null,
+      player: null,
+      pinned: null
+    });
+
+    expect(text).toContain('\nLavaEvt: damage:25');
   });
 
   it('shows the latest hostile-contact event when overlap is blocked by invulnerability', () => {

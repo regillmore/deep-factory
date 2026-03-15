@@ -89,6 +89,7 @@ export interface DebugEditStatusStripState {
   playerBreathSecondsRemaining?: number | null;
   playerHeadSubmergedInWater?: boolean | null;
   playerWaterSubmergedFraction?: number | null;
+  playerLavaDamageTickSecondsRemaining?: number | null;
   playerDrowningDamageTickSecondsRemaining?: number | null;
   playerFallDamageRecoverySecondsRemaining?: number | null;
   playerHostileContactInvulnerabilitySecondsRemaining?: number | null;
@@ -119,6 +120,7 @@ export interface DebugEditStatusStripState {
   playerFacingTransition?: DebugEditStatusStripPlayerFacingTransitionTelemetry | null;
   playerRespawn?: DebugEditStatusStripPlayerRespawnTelemetry | null;
   playerLandingDamageEvent?: DebugEditStatusStripPlayerLandingDamageEventTelemetry | null;
+  playerLavaDamageEvent?: DebugEditStatusStripPlayerLavaDamageEventTelemetry | null;
   playerHostileContactEvent?: DebugEditStatusStripPlayerHostileContactEventTelemetry | null;
   playerWallContactTransition?: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null;
   playerCeilingContactTransition?: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null;
@@ -223,6 +225,10 @@ export interface DebugEditStatusStripPlayerHostileContactEventTelemetry {
 }
 
 export interface DebugEditStatusStripPlayerLandingDamageEventTelemetry {
+  damageApplied: number;
+}
+
+export interface DebugEditStatusStripPlayerLavaDamageEventTelemetry {
   damageApplied: number;
 }
 
@@ -1470,6 +1476,16 @@ const formatLiveWaterOverlapText = (playerWaterSubmergedFraction: number | null)
   return `WaterOverlapNow: ${playerWaterSubmergedFraction.toFixed(2)}`;
 };
 
+const formatLiveLavaCooldownText = (
+  playerLavaDamageTickSecondsRemaining: number | null
+): string | null => {
+  if (playerLavaDamageTickSecondsRemaining === null) {
+    return null;
+  }
+
+  return `LavaCooldownNow: ${playerLavaDamageTickSecondsRemaining.toFixed(2)}s`;
+};
+
 const formatLiveDrowningCooldownText = (
   playerDrowningDamageTickSecondsRemaining: number | null
 ): string | null => {
@@ -1673,6 +1689,7 @@ const buildPlayerText = (
   playerBreathSecondsRemaining: number | null,
   playerHeadSubmergedInWater: boolean | null,
   playerWaterSubmergedFraction: number | null,
+  playerLavaDamageTickSecondsRemaining: number | null,
   playerDrowningDamageTickSecondsRemaining: number | null,
   playerFallDamageRecoverySecondsRemaining: number | null,
   playerHostileContactInvulnerabilitySecondsRemaining: number | null,
@@ -1801,6 +1818,9 @@ const buildPlayerText = (
       ? formatLiveDrowningCooldownText(playerDrowningDamageTickSecondsRemaining)
       : null,
     telemetryVisible('player-combat')
+      ? formatLiveLavaCooldownText(playerLavaDamageTickSecondsRemaining)
+      : null,
+    telemetryVisible('player-combat')
       ? formatLiveFallRecoveryText(playerFallDamageRecoverySecondsRemaining)
       : null,
     telemetryVisible('player-combat')
@@ -1925,6 +1945,16 @@ const formatLandingDamageEventText = (
   return `LandingHit: damage ${Math.max(0, Math.round(playerLandingDamageEvent.damageApplied))}`;
 };
 
+const formatLavaDamageEventText = (
+  playerLavaDamageEvent: DebugEditStatusStripPlayerLavaDamageEventTelemetry | null
+): string | null => {
+  if (!playerLavaDamageEvent) {
+    return null;
+  }
+
+  return `LavaHit: damage ${Math.max(0, Math.round(playerLavaDamageEvent.damageApplied))}`;
+};
+
 const formatWallContactTransitionEventText = (
   playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null
 ): string | null => {
@@ -1966,6 +1996,7 @@ const buildEventText = (
   playerFacingTransition: DebugEditStatusStripPlayerFacingTransitionTelemetry | null,
   playerRespawn: DebugEditStatusStripPlayerRespawnTelemetry | null,
   playerLandingDamageEvent: DebugEditStatusStripPlayerLandingDamageEventTelemetry | null,
+  playerLavaDamageEvent: DebugEditStatusStripPlayerLavaDamageEventTelemetry | null,
   playerHostileContactEvent: DebugEditStatusStripPlayerHostileContactEventTelemetry | null,
   playerWallContactTransition: DebugEditStatusStripPlayerWallContactTransitionTelemetry | null,
   playerCeilingContactTransition: DebugEditStatusStripPlayerCeilingContactTransitionTelemetry | null,
@@ -1978,6 +2009,7 @@ const buildEventText = (
     telemetryVisible('player-combat')
       ? formatLandingDamageEventText(playerLandingDamageEvent)
       : null,
+    telemetryVisible('player-combat') ? formatLavaDamageEventText(playerLavaDamageEvent) : null,
     telemetryVisible('player-combat') ? formatHostileContactEventText(playerHostileContactEvent) : null,
     telemetryVisible('player-events')
       ? formatWallContactTransitionEventText(playerWallContactTransition)
@@ -2503,6 +2535,8 @@ export const buildDebugEditStatusStripModel = (
   const playerBreathSecondsRemaining = state.playerBreathSecondsRemaining ?? null;
   const playerHeadSubmergedInWater = state.playerHeadSubmergedInWater ?? null;
   const playerWaterSubmergedFraction = state.playerWaterSubmergedFraction ?? null;
+  const playerLavaDamageTickSecondsRemaining =
+    state.playerLavaDamageTickSecondsRemaining ?? null;
   const playerDrowningDamageTickSecondsRemaining =
     state.playerDrowningDamageTickSecondsRemaining ?? null;
   const playerFallDamageRecoverySecondsRemaining =
@@ -2538,6 +2572,7 @@ export const buildDebugEditStatusStripModel = (
   const playerFacingTransition = state.playerFacingTransition ?? null;
   const playerRespawn = state.playerRespawn ?? null;
   const playerLandingDamageEvent = state.playerLandingDamageEvent ?? null;
+  const playerLavaDamageEvent = state.playerLavaDamageEvent ?? null;
   const playerHostileContactEvent = state.playerHostileContactEvent ?? null;
   const playerWallContactTransition = state.playerWallContactTransition ?? null;
   const playerCeilingContactTransition = state.playerCeilingContactTransition ?? null;
@@ -2601,6 +2636,7 @@ export const buildDebugEditStatusStripModel = (
       playerBreathSecondsRemaining,
       playerHeadSubmergedInWater,
       playerWaterSubmergedFraction,
+      playerLavaDamageTickSecondsRemaining,
       playerDrowningDamageTickSecondsRemaining,
       playerFallDamageRecoverySecondsRemaining,
       playerHostileContactInvulnerabilitySecondsRemaining,
@@ -2634,6 +2670,7 @@ export const buildDebugEditStatusStripModel = (
       playerFacingTransition,
       playerRespawn,
       playerLandingDamageEvent,
+      playerLavaDamageEvent,
       playerHostileContactEvent,
       playerWallContactTransition,
       playerCeilingContactTransition,

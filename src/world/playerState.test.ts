@@ -33,6 +33,7 @@ import {
   DEFAULT_PLAYER_WIDTH,
   getPlayerCameraFocusPoint,
   getPlayerCollisionContacts,
+  getPlayerLavaDamageTickApplied,
   getPlayerWaterSubmersionTelemetry,
   getPlayerAabb,
   integratePlayerState,
@@ -1720,6 +1721,53 @@ describe('playerState', () => {
       hostileContactInvulnerabilitySecondsRemaining:
         DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS
     });
+  });
+
+  it('reports the applied lava tick damage through the shared lava helper when the timer elapses in lava', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -3, 2, 2, 0);
+    world.setTile(0, -1, LAVA_TILE_ID);
+
+    const damageApplied = getPlayerLavaDamageTickApplied(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        health: 50,
+        lavaDamageTickSecondsRemaining: 0.25
+      }),
+      0.25,
+      {
+        lavaDamagePerTick: 10,
+        lavaDamageTickIntervalSeconds: 0.25
+      }
+    );
+
+    expect(damageApplied).toBe(10);
+  });
+
+  it('reports zero lava tick damage through the shared lava helper when the player is dry', () => {
+    const world = new TileWorld(0);
+
+    const damageApplied = getPlayerLavaDamageTickApplied(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        health: 50,
+        lavaDamageTickSecondsRemaining: 0.25
+      }),
+      0.25,
+      {
+        lavaDamagePerTick: 10,
+        lavaDamageTickIntervalSeconds: 0.25
+      }
+    );
+
+    expect(damageApplied).toBe(0);
   });
 
   it('counts down hostile-contact invulnerability during shared fixed-step player updates', () => {

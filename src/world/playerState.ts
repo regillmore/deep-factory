@@ -138,6 +138,8 @@ interface PlayerLiquidOverlapState {
   lavaSubmergedFraction: number;
 }
 
+type PlayerLiquidQueryWorld = Pick<TileWorld, 'getTile' | 'getLiquidLevel'>;
+
 interface PlayerClimbableTileQueryWorld {
   getTile(worldTileX: number, worldTileY: number): number;
 }
@@ -358,7 +360,7 @@ const resolveHorizontalVelocityFromIntent = (
 };
 
 const samplePlayerLiquidOverlapState = (
-  world: TileWorld,
+  world: PlayerLiquidQueryWorld,
   state: PlayerState,
   registry: TileMetadataRegistry
 ): PlayerLiquidOverlapState => {
@@ -448,6 +450,33 @@ export const getPlayerWaterSubmersionTelemetry = (
     headSubmergedInWater: liquidOverlapState.waterBreathSubmergedFraction > 0,
     waterSubmergedFraction: liquidOverlapState.waterSubmergedFraction
   };
+};
+
+export const getPlayerLavaDamageTickApplied = (
+  world: PlayerLiquidQueryWorld,
+  state: PlayerState,
+  fixedDtSeconds: number,
+  options: Pick<StepPlayerStateOptions, 'lavaDamagePerTick' | 'lavaDamageTickIntervalSeconds'> = {},
+  registry: TileMetadataRegistry = TILE_METADATA
+): number => {
+  const dt = expectNonNegativeFiniteNumber(fixedDtSeconds, 'fixedDtSeconds');
+  const lavaDamagePerTick = expectNonNegativeFiniteNumber(
+    options.lavaDamagePerTick ?? DEFAULT_PLAYER_LAVA_DAMAGE_PER_TICK,
+    'options.lavaDamagePerTick'
+  );
+  const lavaDamageTickIntervalSeconds = expectPositiveFiniteNumber(
+    options.lavaDamageTickIntervalSeconds ?? DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
+    'options.lavaDamageTickIntervalSeconds'
+  );
+  const liquidOverlapState = samplePlayerLiquidOverlapState(world, state, registry);
+  return resolveLavaDamageStepState(
+    state.health,
+    state.lavaDamageTickSecondsRemaining,
+    liquidOverlapState.lavaSubmergedFraction,
+    dt,
+    lavaDamagePerTick,
+    lavaDamageTickIntervalSeconds
+  ).damageApplied;
 };
 
 const getAabbOverlappingClimbableTileInfo = (
@@ -628,17 +657,21 @@ const resolveLavaDamageStepState = (
   fixedDtSeconds: number,
   lavaDamagePerTick: number,
   lavaDamageTickIntervalSeconds: number
-): Pick<PlayerState, 'health' | 'lavaDamageTickSecondsRemaining'> => {
+): Pick<PlayerState, 'health' | 'lavaDamageTickSecondsRemaining'> & {
+  damageApplied: number;
+} => {
   if (lavaSubmergedFraction <= 0) {
     return {
       health,
-      lavaDamageTickSecondsRemaining: lavaDamageTickIntervalSeconds
+      lavaDamageTickSecondsRemaining: lavaDamageTickIntervalSeconds,
+      damageApplied: 0
     };
   }
 
   let remainingHealth = health;
   let remainingTickSeconds = lavaDamageTickSecondsRemaining;
   let remainingDt = fixedDtSeconds;
+  let damageApplied = 0;
 
   while (remainingDt > 0 && remainingHealth > 0) {
     if (remainingTickSeconds > remainingDt) {
@@ -648,13 +681,16 @@ const resolveLavaDamageStepState = (
     }
 
     remainingDt -= remainingTickSeconds;
-    remainingHealth = Math.max(0, remainingHealth - lavaDamagePerTick);
+    const appliedDamage = Math.min(remainingHealth, lavaDamagePerTick);
+    damageApplied += appliedDamage;
+    remainingHealth = Math.max(0, remainingHealth - appliedDamage);
     remainingTickSeconds = lavaDamageTickIntervalSeconds;
   }
 
   return {
     health: remainingHealth,
-    lavaDamageTickSecondsRemaining: remainingTickSeconds
+    lavaDamageTickSecondsRemaining: remainingTickSeconds,
+    damageApplied
   };
 };
 
