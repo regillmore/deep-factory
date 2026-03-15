@@ -33,6 +33,10 @@ export interface DroppedItemPlaceholderNearbyLightSample {
 const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
   Record<PlayerInventoryItemId, DroppedItemPlaceholderPalette>
 > = {
+  pickaxe: {
+    baseColor: [0.51, 0.56, 0.62],
+    accentColor: [0.86, 0.68, 0.31]
+  },
   'dirt-block': {
     baseColor: [0.47, 0.33, 0.18],
     accentColor: [0.68, 0.54, 0.33]

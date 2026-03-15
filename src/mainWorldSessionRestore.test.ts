@@ -30,12 +30,13 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     const standalonePlayerDeathState = createPlayerDeathState(0.5);
     const standalonePlayerInventoryState = createPlayerInventoryState({
       hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
         { itemId: 'torch', amount: 20 },
         { itemId: 'rope', amount: 24 },
         { itemId: 'dirt-block', amount: 64 },
-        ...Array.from({ length: 7 }, () => null)
+        ...Array.from({ length: 6 }, () => null)
       ],
-      selectedHotbarSlotIndex: 2
+      selectedHotbarSlotIndex: 3
     });
     const droppedItemStates = [
       createDroppedItemState({

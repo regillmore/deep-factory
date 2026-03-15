@@ -11,6 +11,7 @@ import { createDroppedItemState, type DroppedItemState } from './world/droppedIt
 import {
   createDefaultPlayerInventoryState,
   createPlayerInventoryState,
+  ensurePlayerInventoryHasStarterPickaxe,
   getPlayerInventoryItemDefinition,
   isPlayerInventoryItemId,
   PLAYER_INVENTORY_HOTBAR_SLOT_COUNT,
@@ -259,7 +260,9 @@ const normalizeStandalonePlayerInventoryState = (
   value: unknown,
   label: string
 ): PlayerInventoryState =>
-  value === undefined ? createDefaultPlayerInventoryState() : normalizePlayerInventoryState(value, label);
+  ensurePlayerInventoryHasStarterPickaxe(
+    value === undefined ? createDefaultPlayerInventoryState() : normalizePlayerInventoryState(value, label)
+  );
 
 const normalizeDroppedItemStates = (value: unknown, label: string): DroppedItemState[] => {
   if (value === undefined) {

@@ -8,6 +8,7 @@ import {
   createEmptyPlayerInventoryState,
   createPlayerInventoryItemStack,
   createPlayerInventoryState,
+  ensurePlayerInventoryHasStarterPickaxe,
   getPlayerInventoryItemDefinition,
   movePlayerInventorySelectedHotbarSlot,
   setPlayerInventoryHotbarSlot,
@@ -27,10 +28,10 @@ describe('playerInventory', () => {
   it('creates the default starter hotbar loadout', () => {
     expect(createDefaultPlayerInventoryState()).toEqual({
       hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
         { itemId: 'dirt-block', amount: 64 },
         { itemId: 'torch', amount: 20 },
         { itemId: 'rope', amount: 24 },
-        null,
         null,
         null,
         null,
@@ -48,7 +49,7 @@ describe('playerInventory', () => {
 
     state.hotbar[0]!.amount = 999;
 
-    expect(clone.hotbar[0]).toEqual({ itemId: 'dirt-block', amount: 64 });
+    expect(clone.hotbar[0]).toEqual({ itemId: 'pickaxe', amount: 1 });
   });
 
   it('adds stacks by filling matching slots before empty slots', () => {
@@ -129,9 +130,10 @@ describe('playerInventory', () => {
   it('swaps two hotbar slots and keeps the selection attached to the moved slot', () => {
     const state = createPlayerInventoryState({
       hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
         { itemId: 'dirt-block', amount: 64 },
         { itemId: 'torch', amount: 20 },
-        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 2 }, () => null)
+        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 3 }, () => null)
       ],
       selectedHotbarSlotIndex: 0
     });
@@ -140,9 +142,9 @@ describe('playerInventory', () => {
 
     expect(nextState).toEqual({
       hotbar: [
-        { itemId: 'torch', amount: 20 },
         { itemId: 'dirt-block', amount: 64 },
-        null,
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'torch', amount: 20 },
         null,
         null,
         null,
@@ -154,16 +156,17 @@ describe('playerInventory', () => {
       selectedHotbarSlotIndex: 1
     });
     expect(state.selectedHotbarSlotIndex).toBe(0);
-    expect(state.hotbar[0]).toEqual({ itemId: 'dirt-block', amount: 64 });
+    expect(state.hotbar[0]).toEqual({ itemId: 'pickaxe', amount: 1 });
   });
 
   it('moves the selected hotbar slot one step within bounds and leaves edge moves unchanged', () => {
     const state = createPlayerInventoryState({
       hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
         { itemId: 'dirt-block', amount: 64 },
         { itemId: 'torch', amount: 20 },
         { itemId: 'rope', amount: 24 },
-        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 3 }, () => null)
+        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 4 }, () => null)
       ],
       selectedHotbarSlotIndex: 1
     });
@@ -180,10 +183,10 @@ describe('playerInventory', () => {
 
     expect(movedLeft).toEqual({
       hotbar: [
-        { itemId: 'torch', amount: 20 },
         { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'torch', amount: 20 },
         { itemId: 'rope', amount: 24 },
-        null,
         null,
         null,
         null,
@@ -195,10 +198,10 @@ describe('playerInventory', () => {
     });
     expect(movedRight).toEqual({
       hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'torch', amount: 20 },
         { itemId: 'dirt-block', amount: 64 },
         { itemId: 'rope', amount: 24 },
-        { itemId: 'torch', amount: 20 },
-        null,
         null,
         null,
         null,
@@ -210,10 +213,10 @@ describe('playerInventory', () => {
     });
     expect(blockedAtLeft).toEqual({
       hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
         { itemId: 'dirt-block', amount: 64 },
         { itemId: 'torch', amount: 20 },
         { itemId: 'rope', amount: 24 },
-        null,
         null,
         null,
         null,
@@ -295,6 +298,53 @@ describe('playerInventory', () => {
       hotbarLabel: 'DIRT',
       maxStackSize: 999
     });
+    expect(getPlayerInventoryItemDefinition('pickaxe')).toEqual({
+      id: 'pickaxe',
+      label: 'Starter Pickaxe',
+      hotbarLabel: 'PICK',
+      maxStackSize: 1
+    });
+  });
+
+  it('fills the first empty slot with a starter pickaxe when one is missing', () => {
+    const state = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        null,
+        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 3 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 1
+    });
+
+    expect(ensurePlayerInventoryHasStarterPickaxe(state)).toEqual({
+      hotbar: [
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'pickaxe', amount: 1 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      selectedHotbarSlotIndex: 1
+    });
+  });
+
+  it('leaves inventories unchanged when they already contain a pickaxe or have no empty slot', () => {
+    const alreadyHasPickaxe = createDefaultPlayerInventoryState();
+    const fullWithoutPickaxe = createPlayerInventoryState({
+      hotbar: Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT }, (_, index) => ({
+        itemId: index % 2 === 0 ? ('dirt-block' as const) : ('torch' as const),
+        amount: 1
+      }))
+    });
+
+    expect(ensurePlayerInventoryHasStarterPickaxe(alreadyHasPickaxe)).toEqual(alreadyHasPickaxe);
+    expect(ensurePlayerInventoryHasStarterPickaxe(fullWithoutPickaxe)).toEqual(fullWithoutPickaxe);
   });
 
   it('rejects invalid hotbar lengths, slot indices, and stack amounts', () => {

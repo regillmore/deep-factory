@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-15: Starter tool rollouts backfill missing pickaxes into the first empty hotbar slot
+
+- Decision: World-save inventory normalization now inserts a starter pickaxe into the first empty hotbar slot whenever an older save payload lacks one.
+- Reason: Existing sessions should gain the starter mining slice without requiring a fresh world or a manual inventory reset.
+- Consequence: Future starter-tool additions should prefer backward-compatible inventory normalization or migration over forcing players to abandon older saves.
+
 ### 2026-03-15: Hotbar reordering keeps selection attached to the moved slot
 
 - Decision: One-step hotbar reordering now swaps the selected slot with its immediate left or right neighbor and moves `selectedHotbarSlotIndex` onto that destination, even when the selected slot is empty.

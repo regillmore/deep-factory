@@ -80,8 +80,8 @@ describe('createWorldSaveEnvelope', () => {
     expect(envelope.session.standalonePlayerState?.position.x).toBe(64);
     expect(envelope.session.standalonePlayerDeathState?.respawnSecondsRemaining).toBe(0.5);
     expect(envelope.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
-      itemId: 'dirt-block',
-      amount: 64
+      itemId: 'pickaxe',
+      amount: 1
     });
     expect(envelope.session.droppedItemStates[0]).toEqual({
       position: { x: 24, y: -14 },
@@ -95,7 +95,7 @@ describe('createWorldSaveEnvelope', () => {
     const world = new TileWorld(0);
     expect(world.setTile(1, -1, 9)).toBe(true);
     const standalonePlayerInventoryState = createDefaultPlayerInventoryState();
-    standalonePlayerInventoryState.hotbar[0]!.amount = 63;
+    standalonePlayerInventoryState.hotbar[1]!.amount = 63;
 
     const decoded = decodeWorldSaveEnvelope(
       JSON.parse(
@@ -115,7 +115,7 @@ describe('createWorldSaveEnvelope', () => {
     const restoredWorld = new TileWorld(0);
     restoredWorld.loadSnapshot(decoded.worldSnapshot);
     expect(restoredWorld.getTile(1, -1)).toBe(9);
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'dirt-block',
       amount: 63
     });
@@ -125,7 +125,7 @@ describe('createWorldSaveEnvelope', () => {
     const world = new TileWorld(0);
     expect(world.setTile(1, -1, STARTER_ROPE_TILE_ID)).toBe(true);
     const standalonePlayerInventoryState = createDefaultPlayerInventoryState();
-    standalonePlayerInventoryState.hotbar[2]!.amount = 23;
+    standalonePlayerInventoryState.hotbar[3]!.amount = 23;
 
     const decoded = decodeWorldSaveEnvelope(
       JSON.parse(
@@ -145,7 +145,7 @@ describe('createWorldSaveEnvelope', () => {
     const restoredWorld = new TileWorld(0);
     restoredWorld.loadSnapshot(decoded.worldSnapshot);
     expect(restoredWorld.getTile(1, -1)).toBe(STARTER_ROPE_TILE_ID);
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[2]).toEqual({
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[3]).toEqual({
       itemId: 'rope',
       amount: 23
     });
@@ -155,12 +155,13 @@ describe('createWorldSaveEnvelope', () => {
     const world = new TileWorld(0);
     const standalonePlayerInventoryState = createPlayerInventoryState({
       hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
         { itemId: 'torch', amount: 20 },
         { itemId: 'rope', amount: 24 },
         { itemId: 'dirt-block', amount: 64 },
-        ...Array.from({ length: 7 }, () => null)
+        ...Array.from({ length: 6 }, () => null)
       ],
-      selectedHotbarSlotIndex: 2
+      selectedHotbarSlotIndex: 3
     });
 
     const decoded = decodeWorldSaveEnvelope(
@@ -322,6 +323,48 @@ describe('decodeWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerDeathState).toBeNull();
     expect(decoded.session.standalonePlayerInventoryState).toEqual(createDefaultPlayerInventoryState());
     expect(decoded.session.droppedItemStates).toEqual([]);
+  });
+
+  it('adds a starter pickaxe into the first empty slot when older save payloads lack one', () => {
+    const world = new TileWorld(0);
+
+    const decoded = decodeWorldSaveEnvelope({
+      kind: WORLD_SAVE_ENVELOPE_KIND,
+      version: WORLD_SAVE_ENVELOPE_VERSION,
+      migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
+      session: {
+        standalonePlayerState: createPlayerState(),
+        standalonePlayerDeathState: null,
+        standalonePlayerInventoryState: {
+          hotbar: [
+            { itemId: 'dirt-block', amount: 64 },
+            { itemId: 'torch', amount: 20 },
+            { itemId: 'rope', amount: 24 },
+            ...Array.from({ length: 7 }, () => null)
+          ],
+          selectedHotbarSlotIndex: 2
+        },
+        droppedItemStates: [],
+        cameraFollowOffset: { x: 0, y: 0 }
+      },
+      worldSnapshot: world.createSnapshot()
+    });
+
+    expect(decoded.session.standalonePlayerInventoryState).toEqual({
+      hotbar: [
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'pickaxe', amount: 1 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      selectedHotbarSlotIndex: 2
+    });
   });
 
   it('rejects invalid standalone-player session state', () => {

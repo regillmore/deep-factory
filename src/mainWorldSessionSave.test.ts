@@ -29,12 +29,13 @@ describe('createWorldSessionSaveEnvelope', () => {
     const standalonePlayerDeathState = createPlayerDeathState(0.5);
     const standalonePlayerInventoryState = createPlayerInventoryState({
       hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
         { itemId: 'torch', amount: 20 },
         { itemId: 'rope', amount: 24 },
         { itemId: 'dirt-block', amount: 64 },
-        ...Array.from({ length: 7 }, () => null)
+        ...Array.from({ length: 6 }, () => null)
       ],
-      selectedHotbarSlotIndex: 2
+      selectedHotbarSlotIndex: 3
     });
     const droppedItemStates = [
       createDroppedItemState({
@@ -86,6 +87,7 @@ describe('createWorldSessionSaveEnvelope', () => {
     expect(envelope.session.standalonePlayerInventoryState).toEqual(
       createPlayerInventoryState({
         hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
           { itemId: 'torch', amount: 20 },
           { itemId: 'rope', amount: 24 },
           { itemId: 'dirt-block', amount: 64 },
@@ -94,10 +96,9 @@ describe('createWorldSessionSaveEnvelope', () => {
           null,
           null,
           null,
-          null,
           null
         ],
-        selectedHotbarSlotIndex: 2
+        selectedHotbarSlotIndex: 3
       })
     );
     expect(envelope.session.droppedItemStates).toEqual(droppedItemStates);
@@ -109,7 +110,11 @@ describe('createWorldSessionSaveEnvelope', () => {
       createWorldSnapshot: vi.fn(() => new TileWorld(0).createSnapshot()),
       getStandalonePlayerState: vi.fn(() => null),
       getStandalonePlayerDeathState: vi.fn(() => null),
-      getStandalonePlayerInventoryState: vi.fn(() => createPlayerInventoryState()),
+      getStandalonePlayerInventoryState: vi.fn(() =>
+        createPlayerInventoryState({
+          hotbar: [{ itemId: 'pickaxe', amount: 1 }, ...Array.from({ length: 9 }, () => null)]
+        })
+      ),
       getDroppedItemStates: vi.fn(() => []),
       getCameraFollowOffset: vi.fn(() => ({ x: -24, y: 10 }))
     };
@@ -125,7 +130,11 @@ describe('createWorldSessionSaveEnvelope', () => {
 
     expect(envelope.session.standalonePlayerState).toBeNull();
     expect(envelope.session.standalonePlayerDeathState).toBeNull();
-    expect(envelope.session.standalonePlayerInventoryState).toEqual(createPlayerInventoryState());
+    expect(envelope.session.standalonePlayerInventoryState).toEqual(
+      createPlayerInventoryState({
+        hotbar: [{ itemId: 'pickaxe', amount: 1 }, ...Array.from({ length: 9 }, () => null)]
+      })
+    );
     expect(envelope.session.droppedItemStates).toEqual([]);
     expect(envelope.session.cameraFollowOffset).toEqual({ x: -24, y: 10 });
     expect(envelope.migration).toEqual(migration);

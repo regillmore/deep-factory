@@ -1,6 +1,6 @@
 export const PLAYER_INVENTORY_HOTBAR_SLOT_COUNT = 10;
 
-export type PlayerInventoryItemId = 'dirt-block' | 'torch' | 'rope';
+export type PlayerInventoryItemId = 'pickaxe' | 'dirt-block' | 'torch' | 'rope';
 
 export interface PlayerInventoryItemDefinition {
   id: PlayerInventoryItemId;
@@ -40,6 +40,12 @@ export type MovePlayerInventorySelectedHotbarSlotDirection = -1 | 1;
 const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
   Record<PlayerInventoryItemId, PlayerInventoryItemDefinition>
 > = {
+  pickaxe: {
+    id: 'pickaxe',
+    label: 'Starter Pickaxe',
+    hotbarLabel: 'PICK',
+    maxStackSize: 1
+  },
   'dirt-block': {
     id: 'dirt-block',
     label: 'Dirt Block',
@@ -61,6 +67,7 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
 };
 
 const DEFAULT_STARTER_HOTBAR_STACKS: readonly PlayerInventoryItemStack[] = [
+  { itemId: 'pickaxe', amount: 1 },
   { itemId: 'dirt-block', amount: 64 },
   { itemId: 'torch', amount: 20 },
   { itemId: 'rope', amount: 24 }
@@ -166,6 +173,25 @@ export const createDefaultPlayerInventoryState = (): PlayerInventoryState => {
     inventoryState = addResult.state;
   }
   return inventoryState;
+};
+
+export const ensurePlayerInventoryHasStarterPickaxe = (
+  state: PlayerInventoryState
+): PlayerInventoryState => {
+  if (state.hotbar.some((stack) => stack?.itemId === 'pickaxe')) {
+    return clonePlayerInventoryState(state);
+  }
+
+  const firstEmptySlotIndex = state.hotbar.findIndex((stack) => stack === null);
+  if (firstEmptySlotIndex < 0) {
+    return clonePlayerInventoryState(state);
+  }
+
+  return setPlayerInventoryHotbarSlot(
+    state,
+    firstEmptySlotIndex,
+    createPlayerInventoryItemStack('pickaxe', 1)
+  );
 };
 
 export const setPlayerInventorySelectedHotbarSlot = (

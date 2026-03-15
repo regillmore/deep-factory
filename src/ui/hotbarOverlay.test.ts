@@ -80,22 +80,22 @@ describe('HotbarOverlay', () => {
     const slotRow = getSlotRow(overlay);
     const firstSlot = slotRow.children[0]!;
     const secondSlot = slotRow.children[1]!;
-    const emptySlot = slotRow.children[3]!;
+    const emptySlot = slotRow.children[4]!;
     const moveLeftButton = getMoveLeftButton(overlay);
     const dropOneButton = getDropOneButton(overlay);
     const dropStackButton = getDropStackButton(overlay);
     const moveRightButton = getMoveRightButton(overlay);
 
     expect(root.style.display).toBe('flex');
-    expect(firstSlot.title).toContain('Dirt Block');
+    expect(firstSlot.title).toContain('Starter Pickaxe');
     expect(firstSlot.getAttribute('aria-pressed')).toBe('true');
-    expect(secondSlot.title).toContain('Torch');
+    expect(secondSlot.title).toContain('Dirt Block');
     expect(emptySlot.children[1]!.textContent).toBe('EMPTY');
     expect(moveLeftButton.title).toContain('leftmost slot');
     expect(moveLeftButton.getAttribute('aria-disabled')).toBe('true');
-    expect(dropOneButton.title).toContain('Drop one Dirt Block');
+    expect(dropOneButton.title).toContain('Drop one Starter Pickaxe');
     expect(dropOneButton.getAttribute('aria-disabled')).toBe('false');
-    expect(dropStackButton.title).toContain('Drop Dirt Block stack');
+    expect(dropStackButton.title).toContain('Drop Starter Pickaxe stack');
     expect(dropStackButton.getAttribute('aria-disabled')).toBe('false');
     expect(moveRightButton.title).toContain('Move selected hotbar slot right');
     expect(moveRightButton.getAttribute('aria-disabled')).toBe('false');

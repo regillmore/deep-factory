@@ -129,6 +129,10 @@ import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import {
+  PlayerItemMiningPreviewOverlay,
+  type PlayerItemMiningPreviewState
+} from './ui/playerItemMiningPreviewOverlay';
+import {
   PlayerItemPlacementPreviewOverlay,
   type PlayerItemPlacementPreviewState
 } from './ui/playerItemPlacementPreviewOverlay';
@@ -244,6 +248,14 @@ import {
   STARTER_ROPE_ITEM_ID,
   STARTER_ROPE_TILE_ID
 } from './world/starterRopePlacement';
+import {
+  createStarterPickaxeMiningState,
+  evaluateStarterPickaxeMiningTarget,
+  resolveStarterPickaxeBreakProgressNormalized,
+  STARTER_PICKAXE_ITEM_ID,
+  stepStarterPickaxeMiningState,
+  tryStartStarterPickaxeSwing
+} from './world/starterPickaxeMining';
 import {
   resolvePlayerWallContactTransitionEvent,
   type PlayerWallContactTransitionEvent
@@ -1027,6 +1039,7 @@ const bootstrap = async (): Promise<void> => {
   const debug = new DebugOverlay();
   debug.setVisible(false);
   const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
+  const playerItemMiningPreview = new PlayerItemMiningPreviewOverlay(canvas);
   const playerItemPlacementPreview = new PlayerItemPlacementPreviewOverlay(canvas);
   const playerSpawnMarker = new PlayerSpawnMarkerOverlay(canvas);
   const armedDebugToolPreview = new ArmedDebugToolPreviewOverlay(canvas);
@@ -1163,7 +1176,9 @@ const bootstrap = async (): Promise<void> => {
     debugEditStatusStrip.setVisible(visible);
   };
   const syncPlayerItemPlacementPreviewVisibility = (): void => {
-    playerItemPlacementPreview.setVisible(currentScreen === 'in-world' && !debugEditControlsVisible);
+    const visible = currentScreen === 'in-world' && !debugEditControlsVisible;
+    playerItemMiningPreview.setVisible(visible);
+    playerItemPlacementPreview.setVisible(visible);
   };
   const syncCanvasInteractionMode = (): void => {
     input.setCanvasInteractionMode(
@@ -1499,6 +1514,7 @@ const bootstrap = async (): Promise<void> => {
   let lastPlayerCeilingContactTransitionEvent: PlayerCeilingContactTransitionEvent | null = null;
   let latestStandalonePlayerDeathHoldStatus: StandalonePlayerDeathHoldTelemetryStatus = 'none';
   let standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
+  let starterPickaxeMiningState = createStarterPickaxeMiningState();
 
   const getStandalonePlayerState = (): PlayerState | null => {
     if (standalonePlayerEntityId === null) {
@@ -2084,6 +2100,7 @@ const bootstrap = async (): Promise<void> => {
     pendingStandalonePlayerFixedStepResult = null;
     latestStandalonePlayerDeathHoldStatus = 'none';
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
+    starterPickaxeMiningState = createStarterPickaxeMiningState();
   };
   const restoreStandalonePlayerSessionState = (
     playerState: PlayerState | null,
@@ -2783,6 +2800,54 @@ const bootstrap = async (): Promise<void> => {
       changed
     };
   };
+  const tryStartSelectedStarterPickaxeSwingAtTile = (
+    worldTileX: number,
+    worldTileY: number
+  ): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return false;
+    }
+
+    const startResult = tryStartStarterPickaxeSwing(
+      starterPickaxeMiningState,
+      evaluateStarterPickaxeMiningTarget(
+        {
+          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+        },
+        standalonePlayerState,
+        worldTileX,
+        worldTileY
+      )
+    );
+    starterPickaxeMiningState = startResult.state;
+    return startResult.started;
+  };
+  const stepStarterPickaxeMiningFixedUpdate = (fixedDt: number): void => {
+    const standalonePlayerState = getStandalonePlayerState();
+    const stepResult = stepStarterPickaxeMiningState(starterPickaxeMiningState, {
+      world: {
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+      },
+      playerState:
+        standalonePlayerState === null ||
+        standalonePlayerDeathState !== null ||
+        isStandalonePlayerDead(standalonePlayerState)
+          ? null
+          : standalonePlayerState,
+      fixedDtSeconds: fixedDt
+    });
+    starterPickaxeMiningState = stepResult.state;
+    if (stepResult.hitEvent?.brokeTile !== true) {
+      return;
+    }
+
+    applyWorldTileEdit(stepResult.hitEvent.tileX, stepResult.hitEvent.tileY, DEBUG_TILE_BREAK_ID);
+  };
   const applySelectedStandalonePlayerItemUse = (request: PlayerItemUseRequest): boolean => {
     if (debugEditControlsVisible) {
       return false;
@@ -2791,6 +2856,12 @@ const bootstrap = async (): Promise<void> => {
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
     if (selectedStack === null) {
       return false;
+    }
+    if (selectedStack.itemId === STARTER_PICKAXE_ITEM_ID) {
+      return tryStartSelectedStarterPickaxeSwingAtTile(
+        request.worldTileX,
+        request.worldTileY
+      );
     }
 
     const placementPreview = getSelectedStandalonePlayerItemPlacementPreviewAtTile(
@@ -2914,6 +2985,88 @@ const bootstrap = async (): Promise<void> => {
       ...placement,
       canPlace: placement.canPlace && placementRange.withinRange
     };
+  };
+  const getSelectedStandalonePlayerItemMiningPreviewAtTile = (
+    worldTileX: number,
+    worldTileY: number
+  ): PlayerItemMiningPreviewState | null => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return null;
+    }
+
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== STARTER_PICKAXE_ITEM_ID) {
+      return null;
+    }
+
+    const miningEvaluation = evaluateStarterPickaxeMiningTarget(
+      {
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+      },
+      standalonePlayerState,
+      worldTileX,
+      worldTileY
+    );
+
+    return {
+      tileX: worldTileX,
+      tileY: worldTileY,
+      canMine: miningEvaluation.canMine,
+      occupied: miningEvaluation.occupied,
+      breakableTerrain: miningEvaluation.breakableTerrain,
+      withinRange: miningEvaluation.withinRange,
+      progressNormalized: resolveStarterPickaxeBreakProgressNormalized(
+        starterPickaxeMiningState,
+        {
+          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+        },
+        worldTileX,
+        worldTileY
+      )
+    };
+  };
+  const getSelectedStandalonePlayerItemMiningPreview = (
+    pointerInspect: PointerInspectSnapshot | null
+  ): PlayerItemMiningPreviewState | null => {
+    const activeSwing = starterPickaxeMiningState.activeSwing;
+    if (activeSwing !== null) {
+      return getSelectedStandalonePlayerItemMiningPreviewAtTile(
+        activeSwing.tileX,
+        activeSwing.tileY
+      );
+    }
+
+    if (pointerInspect !== null) {
+      return getSelectedStandalonePlayerItemMiningPreviewAtTile(
+        pointerInspect.tile.x,
+        pointerInspect.tile.y
+      );
+    }
+
+    const breakProgress = starterPickaxeMiningState.breakProgress;
+    if (
+      breakProgress === null ||
+      resolveStarterPickaxeBreakProgressNormalized(
+        starterPickaxeMiningState,
+        {
+          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+        },
+        breakProgress.tileX,
+        breakProgress.tileY
+      ) <= 0
+    ) {
+      return null;
+    }
+
+    return getSelectedStandalonePlayerItemMiningPreviewAtTile(
+      breakProgress.tileX,
+      breakProgress.tileY
+    );
   };
 
   const readDebugEditControlPreferenceSnapshot = (): DebugEditControlState => ({
@@ -4397,6 +4550,9 @@ const bootstrap = async (): Promise<void> => {
       !debugEditControlsVisible && pointerInspect
         ? getSelectedStandalonePlayerItemPlacementPreviewAtTile(pointerInspect.tile.x, pointerInspect.tile.y)
         : null;
+    const selectedPlayerItemMiningPreview = !debugEditControlsVisible
+      ? getSelectedStandalonePlayerItemMiningPreview(pointerInspect)
+      : null;
     const hoveredDebugTileStatus = getHoveredDebugTileStatus(pointerInspect, renderTimeMs);
     const pinnedDebugTileStatus = pinnedDebugTileInspect
       ? getDebugTileStatusAtTile(
@@ -4604,6 +4760,7 @@ const bootstrap = async (): Promise<void> => {
         }
       : null
     });
+    playerItemMiningPreview.update(camera, selectedPlayerItemMiningPreview);
     playerItemPlacementPreview.update(camera, selectedPlayerItemPlacementPreview);
     const worldSessionTelemetryStateSnapshot = readWorldSessionTelemetryState();
     playerSpawnMarker.update(camera, resolvedPlayerSpawn);
@@ -4952,6 +5109,7 @@ const bootstrap = async (): Promise<void> => {
       enforcePeacefulModeHostileSlimeState();
       entityRegistry.fixedUpdateAll(fixedDt);
       flushStandalonePlayerFixedStepResult();
+      stepStarterPickaxeMiningFixedUpdate(fixedDt);
       stepHostileSlimeSpawnAndDespawn();
     },
     (alpha, frameDtMs) => {

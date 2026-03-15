@@ -40,6 +40,7 @@ import {
 } from './ui/appShell';
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
+import type { PlayerItemMiningPreviewState } from './ui/playerItemMiningPreviewOverlay';
 import type { PlayerItemPlacementPreviewState } from './ui/playerItemPlacementPreviewOverlay';
 import { createDroppedItemState } from './world/droppedItem';
 import { createPlayerInventoryState } from './world/playerInventory';
@@ -224,6 +225,7 @@ const testRuntime = vi.hoisted(() => {
       setShellActionKeybindings(keybindings: ShellActionKeybindingState): void;
     },
     hoveredTileCursorInstance: null as null | { visible: boolean },
+    playerItemMiningPreviewInstance: null as null | { visible: boolean },
     playerItemPlacementPreviewInstance: null as null | { visible: boolean },
     armedDebugToolPreviewInstance: null as null | { visible: boolean },
     debugEditStatusStripInstance: null as null | { visible: boolean },
@@ -391,6 +393,7 @@ const testRuntime = vi.hoisted(() => {
     },
     latestDebugOverlayInspectState: null as DebugOverlayInspectState | null,
     latestDebugEditStatusStripState: null as DebugEditStatusStripState | null,
+    latestPlayerItemMiningPreviewState: null as PlayerItemMiningPreviewState | null,
     latestPlayerItemPlacementPreviewState: null as PlayerItemPlacementPreviewState | null,
     rendererWorldSnapshot: null as ReturnType<TileWorld['createSnapshot']> | null,
     rendererPlayerSpawnLiquidSafetyStatus: 'safe' as 'safe' | 'overlap',
@@ -1269,6 +1272,24 @@ vi.mock('./ui/playerItemPlacementPreviewOverlay', () => ({
   }
 }));
 
+vi.mock('./ui/playerItemMiningPreviewOverlay', () => ({
+  PlayerItemMiningPreviewOverlay: class {
+    visible = false;
+
+    constructor() {
+      testRuntime.playerItemMiningPreviewInstance = this;
+    }
+
+    setVisible(visible: boolean): void {
+      this.visible = visible;
+    }
+
+    update(_camera: unknown, state: PlayerItemMiningPreviewState | null): void {
+      testRuntime.latestPlayerItemMiningPreviewState = state;
+    }
+  }
+}));
+
 vi.mock('./ui/armedDebugToolPreviewOverlay', () => ({
   ArmedDebugToolPreviewOverlay: class {
     visible = false;
@@ -1801,6 +1822,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugEditControlsArmedToolKinds = null;
     testRuntime.debugEditControlsInstance = null;
     testRuntime.hoveredTileCursorInstance = null;
+    testRuntime.playerItemMiningPreviewInstance = null;
     testRuntime.playerItemPlacementPreviewInstance = null;
     testRuntime.armedDebugToolPreviewInstance = null;
     testRuntime.debugEditStatusStripInstance = null;
@@ -1883,6 +1905,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.latestRendererRenderFrameState = null;
     testRuntime.latestDebugOverlayInspectState = null;
     testRuntime.latestDebugEditStatusStripState = null;
+    testRuntime.latestPlayerItemMiningPreviewState = null;
     testRuntime.latestPlayerItemPlacementPreviewState = null;
     testRuntime.rendererWorldSnapshot = new TileWorld(0).createSnapshot();
     testRuntime.rendererPlayerSpawnLiquidSafetyStatus = 'safe';
@@ -5841,10 +5864,10 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState).toEqual(
       createPlayerInventoryState({
         hotbar: [
-          { itemId: 'torch', amount: 20 },
-          { itemId: 'rope', amount: 24 },
           { itemId: 'dirt-block', amount: 64 },
-          null,
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'rope', amount: 24 },
           null,
           null,
           null,
@@ -5866,10 +5889,10 @@ describe('main.ts shell state orchestration', () => {
     expect(downloadedEnvelope.session.standalonePlayerInventoryState).toEqual(
       createPlayerInventoryState({
         hotbar: [
-          { itemId: 'torch', amount: 20 },
-          { itemId: 'rope', amount: 24 },
           { itemId: 'dirt-block', amount: 64 },
-          null,
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'rope', amount: 24 },
           null,
           null,
           null,
@@ -5893,6 +5916,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 1);
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
     expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(true);
     testRuntime.pointerInspect = {
@@ -5920,6 +5944,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
     testRuntime.pointerInspect = {
       pointerType: 'touch',
       tile: { x: 0, y: -1 }
@@ -5950,7 +5975,7 @@ describe('main.ts shell state orchestration', () => {
       tile: { x: 0, y: -1 }
     };
 
-    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
     runRenderFrame();
     expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
       tileX: 0,
@@ -5970,6 +5995,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(20, 0), 1);
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
     testRuntime.pointerInspect = {
       pointerType: 'mouse',
       tile: { x: 20, y: -1 }
@@ -6000,7 +6026,7 @@ describe('main.ts shell state orchestration', () => {
       tile: { x: 0, y: 1 }
     };
 
-    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
+    expect(dispatchKeydown('4', 'Digit4').prevented).toBe(true);
     runRenderFrame();
     expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
       tileX: 0,
@@ -6025,7 +6051,7 @@ describe('main.ts shell state orchestration', () => {
       tile: { x: 1, y: 0 }
     };
 
-    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
+    expect(dispatchKeydown('4', 'Digit4').prevented).toBe(true);
     runRenderFrame();
     expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
       tileX: 1,
@@ -6052,7 +6078,7 @@ describe('main.ts shell state orchestration', () => {
       tile: { x: 0, y: 1 }
     };
 
-    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
+    expect(dispatchKeydown('4', 'Digit4').prevented).toBe(true);
     runRenderFrame();
     expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
       tileX: 0,
@@ -6080,7 +6106,7 @@ describe('main.ts shell state orchestration', () => {
       tile: { x: 0, y: 1 }
     };
 
-    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
+    expect(dispatchKeydown('4', 'Digit4').prevented).toBe(true);
     runRenderFrame();
     expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
       tileX: 0,
@@ -6105,7 +6131,7 @@ describe('main.ts shell state orchestration', () => {
       tile: { x: 1, y: -1 }
     };
 
-    expect(dispatchKeydown('4', 'Digit4').prevented).toBe(true);
+    expect(dispatchKeydown('5', 'Digit5').prevented).toBe(true);
     runRenderFrame();
     expect(testRuntime.latestPlayerItemPlacementPreviewState).toBeNull();
 
@@ -6121,6 +6147,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
     expect(testRuntime.canvasInteractionMode).toBe('play');
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 1);
     testRuntime.rendererSetTileResult = true;
@@ -6145,7 +6172,7 @@ describe('main.ts shell state orchestration', () => {
     ]);
 
     dispatchWindowEvent('pagehide');
-    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'dirt-block',
       amount: 63
     });
@@ -6157,7 +6184,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
-    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
     expect(testRuntime.canvasInteractionMode).toBe('play');
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
     testRuntime.rendererSetTileResult = true;
@@ -6182,7 +6209,7 @@ describe('main.ts shell state orchestration', () => {
     ]);
 
     dispatchWindowEvent('pagehide');
-    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[2]).toEqual({
       itemId: 'torch',
       amount: 19
     });
@@ -6194,7 +6221,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
-    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
+    expect(dispatchKeydown('4', 'Digit4').prevented).toBe(true);
     expect(testRuntime.canvasInteractionMode).toBe('play');
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
     testRuntime.rendererSetTileResult = true;
@@ -6219,7 +6246,7 @@ describe('main.ts shell state orchestration', () => {
     ]);
 
     dispatchWindowEvent('pagehide');
-    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[2]).toEqual({
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[3]).toEqual({
       itemId: 'rope',
       amount: 23
     });
@@ -6231,7 +6258,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
-    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
+    expect(dispatchKeydown('4', 'Digit4').prevented).toBe(true);
     expect(testRuntime.canvasInteractionMode).toBe('play');
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 1), 11);
@@ -6258,7 +6285,7 @@ describe('main.ts shell state orchestration', () => {
     ]);
 
     dispatchWindowEvent('pagehide');
-    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[2]).toEqual({
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[3]).toEqual({
       itemId: 'rope',
       amount: 23
     });
@@ -6270,7 +6297,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
-    expect(dispatchKeydown('3', 'Digit3').prevented).toBe(true);
+    expect(dispatchKeydown('4', 'Digit4').prevented).toBe(true);
     expect(testRuntime.canvasInteractionMode).toBe('play');
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
     for (let ropeTileY = 1; ropeTileY <= 7; ropeTileY += 1) {
@@ -6298,7 +6325,7 @@ describe('main.ts shell state orchestration', () => {
     ]);
 
     dispatchWindowEvent('pagehide');
-    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[2]).toEqual({
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[3]).toEqual({
       itemId: 'rope',
       amount: 23
     });
@@ -6310,6 +6337,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(20, 0), 1);
     testRuntime.rendererSetTileResult = true;
     testRuntime.playerItemUseRequests = [
@@ -6327,7 +6355,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.rendererSetTileCalls).toEqual([]);
 
     dispatchWindowEvent('pagehide');
-    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'dirt-block',
       amount: 64
     });
@@ -6358,7 +6386,7 @@ describe('main.ts shell state orchestration', () => {
     runFixedUpdate();
 
     dispatchWindowEvent('pagehide');
-    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[2]).toEqual({
       itemId: 'torch',
       amount: 20
     });
@@ -6540,10 +6568,11 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
     expect(dispatchKeydown('Backspace', 'Backspace').prevented).toBe(true);
 
     dispatchWindowEvent('pagehide');
-    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toBeNull();
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[1]).toBeNull();
     expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
       {
         position: { x: 28, y: -14 },
@@ -6559,7 +6588,7 @@ describe('main.ts shell state orchestration', () => {
     runFixedUpdate();
 
     dispatchWindowEvent('pagehide');
-    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'dirt-block',
       amount: 64
     });
@@ -6572,10 +6601,11 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
     expect(dispatchKeydown('Backspace', 'Backspace', { shiftKey: true }).prevented).toBe(true);
 
     dispatchWindowEvent('pagehide');
-    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'dirt-block',
       amount: 63
     });
@@ -6827,6 +6857,7 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
     testRuntime.rendererSetTileResult = true;
     testRuntime.playerItemUseRequests = [
@@ -6844,7 +6875,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.rendererSetTileCalls).toEqual([]);
 
     dispatchWindowEvent('pagehide');
-    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'dirt-block',
       amount: 64
     });
