@@ -569,6 +569,42 @@ const regionContainsAnyNonTransparentPixel = (
   return false;
 };
 
+const findNonTransparentPixelBoundsInRegion = (
+  rgbaPixels: Uint8Array,
+  pngWidth: number,
+  region: AtlasPixelRegion
+): AtlasPixelRegion | null => {
+  let minX = region.x + region.width;
+  let minY = region.y + region.height;
+  let maxX = region.x - 1;
+  let maxY = region.y - 1;
+
+  for (let y = region.y; y < region.y + region.height; y += 1) {
+    for (let x = region.x; x < region.x + region.width; x += 1) {
+      const alphaIndex = (y * pngWidth + x) * PNG_BYTES_PER_PIXEL_RGBA + 3;
+      if (rgbaPixels[alphaIndex] === 0) {
+        continue;
+      }
+
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+  }
+
+  if (maxX < minX || maxY < minY) {
+    return null;
+  }
+
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX + 1,
+    height: maxY - minY + 1
+  };
+};
+
 const regionsOverlap = (left: AtlasPixelRegion, right: AtlasPixelRegion): boolean =>
   left.x < right.x + right.width &&
   left.x + left.width > right.x &&
@@ -1138,6 +1174,24 @@ describe('authored atlas asset', () => {
       expect(region).toBeDefined();
       expect(regionContainsAnyNonTransparentPixel(rgbaPixels, pngWidth, region!)).toBe(true);
     }
+  });
+
+  it('keeps the rope sprite as a narrow centered strand instead of a liquid-width mesh', () => {
+    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
+    const ropeTile = TILE_METADATA.tiles.find((tile) => tile.name === 'rope');
+
+    expect(ropeTile?.render?.atlasIndex).toBe(20);
+
+    const ropeRegion = AUTHORED_ATLAS_REGIONS[ropeTile!.render!.atlasIndex!];
+    expect(ropeRegion).toBeDefined();
+
+    const visibleBounds = findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, ropeRegion!);
+    expect(visibleBounds).toEqual({
+      x: ropeRegion!.x + 2,
+      y: ropeRegion!.y,
+      width: 4,
+      height: ropeRegion!.height
+    });
   });
 
   it('keeps every default animated atlas-index frame distinct from its prior committed PNG frame', () => {

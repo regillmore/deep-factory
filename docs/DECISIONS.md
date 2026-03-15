@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Rope art uses its own narrow utility atlas slot while preserving the spare authored region
+
+- Decision: Rope render metadata now points at a dedicated `8x16` authored atlas region carved from the lower-right utility strip, while atlas region `19` stays intentionally unused and the right-side exterior padding strip remains transparent.
+- Reason: Rope needed distinct committed art, but spending the documented spare slot or the full padding strip would weaken the authored-atlas unused-region and spill regressions that already protect content drift.
+- Consequence: Future authored utility-tile art can use explicit partial-width atlas regions when needed, but should preserve both the spare unused region and the exterior transparent padding unless a broader atlas-layout migration intentionally revisits those guards.
+
 ### 2026-03-14: Single-item hotbar drops reuse the nearby-pickup cascade
 
 - Decision: `Drop 1` now routes one selected hotbar item through the same overlapping same-item dropped-stack cascade used by full stack drops before spawning a new world pickup entity.

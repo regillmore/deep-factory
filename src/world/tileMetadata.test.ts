@@ -104,7 +104,7 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(1, 0)).toBe(0);
     expect(resolveTileRenderUvRect(3)).toEqual(atlasIndexToUvRect(14));
     expect(resolveTileRenderUvRect(10)).toEqual(atlasIndexToUvRect(15));
-    expect(resolveTileRenderUvRect(11)).toEqual(atlasIndexToUvRect(17));
+    expect(resolveTileRenderUvRect(11)).toEqual(atlasIndexToUvRect(20));
     expect(resolveLiquidRenderVariantMetadata(7, 0)).toMatchObject({
       uvRect: { u0: 0.6666666666666666, v0: 0.25, u1: 0.75, v1: 0.5 }
     });

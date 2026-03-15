@@ -36,7 +36,9 @@ export const AUTHORED_ATLAS_REGIONS: readonly AuthoredAtlasRegion[] = [
   { x: 64, y: 0, width: 16, height: 16 },
   { x: 64, y: 16, width: 16, height: 16 },
   { x: 64, y: 32, width: 16, height: 16 },
-  { x: 64, y: 48, width: 16, height: 16 }
+  { x: 64, y: 48, width: 16, height: 16 },
+  // Keep rope in a dedicated slot while preserving both the spare authored region and a right-side padding strip.
+  { x: 80, y: 48, width: 8, height: 16 }
 ] as const;
 
 export const AUTHORED_ATLAS_REGION_COUNT = AUTHORED_ATLAS_REGIONS.length;
