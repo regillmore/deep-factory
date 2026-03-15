@@ -690,6 +690,71 @@ describe('playerState', () => {
     }));
   });
 
+  it('resumes gravity immediately when sideways movement carries the player off a rope', () => {
+    const world = new TileWorld(0);
+    setTiles(world, -2, -4, 6, 6, 0);
+    world.setTile(0, -2, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -1, STARTER_ROPE_TILE_ID);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -16 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      { moveX: 1 },
+      {
+        maxWalkSpeed: 80,
+        airAcceleration: 320,
+        gravityAcceleration: 80,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual(withDefaultPlayerVitals({
+      position: { x: 28, y: -11 },
+      velocity: { x: 80, y: 20 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    }));
+  });
+
+  it('drops rope climb speed on the same tick that sideways movement detaches from a rope', () => {
+    const world = new TileWorld(0);
+    setTiles(world, -2, -4, 6, 6, 0);
+    world.setTile(0, -2, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -1, STARTER_ROPE_TILE_ID);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -16 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      { moveX: 1, climbY: 1 },
+      {
+        maxWalkSpeed: 80,
+        airAcceleration: 320,
+        ropeClimbSpeed: 60,
+        gravityAcceleration: 80,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual(withDefaultPlayerVitals({
+      position: { x: 28, y: -11 },
+      velocity: { x: 80, y: 20 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    }));
+  });
+
   it('applies grounded braking when no horizontal movement intent is present', () => {
     const world = new TileWorld(0);
 

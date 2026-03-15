@@ -413,13 +413,12 @@ const samplePlayerLiquidOverlapState = (
   };
 };
 
-const isPlayerOverlappingClimbableTile = (
+const isAabbOverlappingClimbableTile = (
   world: TileWorld,
-  state: PlayerState,
+  aabb: WorldAabb,
   registry: TileMetadataRegistry
 ): boolean => {
-  const aabb = getPlayerAabb(state);
-  const climbTileX = Math.floor(state.position.x / TILE_SIZE);
+  const climbTileX = Math.floor(((aabb.minX + aabb.maxX) * 0.5) / TILE_SIZE);
   const minTileY = Math.floor(aabb.minY / TILE_SIZE);
   const maxTileY = Math.floor((aabb.maxY - AABB_INTERSECTION_EPSILON) / TILE_SIZE);
 
@@ -431,6 +430,12 @@ const isPlayerOverlappingClimbableTile = (
 
   return false;
 };
+
+const isPlayerOverlappingClimbableTile = (
+  world: TileWorld,
+  state: PlayerState,
+  registry: TileMetadataRegistry
+): boolean => isAabbOverlappingClimbableTile(world, getPlayerAabb(state), registry);
 
 const recoverBreathSecondsRemaining = (
   breathSecondsRemaining: number,
@@ -900,13 +905,28 @@ export const stepPlayerState = (
   );
   let velocityY = state.velocity.y;
   let grounded = state.grounded;
+  let activelyOverlappingClimbableTile = overlappingClimbableTile;
 
-  if (intent.jumpPressed === true && grounded && !(overlappingClimbableTile && climbY < 0)) {
+  if (overlappingClimbableTile) {
+    const initialAabb = getPlayerAabb(state);
+    const horizontalSweep = sweepAabbAlongAxis(world, initialAabb, 'x', velocityX * dt, registry);
+    const afterHorizontalAabb = offsetAabb(initialAabb, horizontalSweep.allowedDelta, 0);
+
+    // Check rope overlap after the same horizontal sweep order used by collisions so sideways
+    // detaches resume gravity immediately instead of holding for one sticky extra tick.
+    activelyOverlappingClimbableTile = isAabbOverlappingClimbableTile(
+      world,
+      afterHorizontalAabb,
+      registry
+    );
+  }
+
+  if (intent.jumpPressed === true && grounded && !(activelyOverlappingClimbableTile && climbY < 0)) {
     velocityY = -jumpSpeed;
     grounded = false;
   }
 
-  if (overlappingClimbableTile) {
+  if (activelyOverlappingClimbableTile) {
     grounded = false;
     if (climbY < 0) {
       velocityY = -ropeClimbSpeed;

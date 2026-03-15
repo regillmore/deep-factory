@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: A tile-above anchor rule keeps rope extension deterministic and readable for mixed-device play, while one shared climb intent avoids pushing rope-specific movement branches into `main.ts` or device-specific code.
 - Consequence: Future rope, vine, ladder, or other climbable follow-ups should extend the shared climbable-tile metadata plus vertical climb-intent path instead of inventing separate placement or traversal rules per item.
 
+### 2026-03-14: Rope hold is decided after the horizontal sweep
+
+- Decision: Fixed-step rope traversal now keeps rope hold or climb active only when the player's post-horizontal-sweep body-center column still overlaps a climbable tile.
+- Reason: Sampling rope overlap only at tick start caused a sticky extra hold or climb frame after sideways movement had already cleared the rope column for that same fixed step.
+- Consequence: Future rope, vine, ladder, or other climbable follow-ups should preserve this post-horizontal overlap rule whenever climbable movement competes with gravity inside the shared player step.
+
 ### 2026-03-14: Restore-time dropped-item consolidation preserves earlier save-order anchors
 
 - Decision: Session restore now consolidates overlapping same-item dropped-item stacks in save-array order, preserving earlier stack positions as anchors and only carrying any overflow into later remainder entries.
