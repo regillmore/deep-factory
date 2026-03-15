@@ -1,6 +1,6 @@
 import { MAX_LIQUID_LEVEL, TILE_SIZE } from './constants';
 import { doesAabbOverlapSolid, sweepAabbAlongAxis, type SolidTileCollision, type WorldAabb } from './collision';
-import { getTileLiquidKind, isTileClimbable, TILE_METADATA } from './tileMetadata';
+import { getTileLiquidKind, isTileClimbable, isTileSolid, TILE_METADATA } from './tileMetadata';
 import type { TileMetadataRegistry } from './tileMetadata';
 import type { TileWorld } from './world';
 
@@ -142,6 +142,12 @@ interface AabbOverlappingClimbableTileInfo {
   highestTileY: number;
   lowestTileY: number;
   centerX: number;
+}
+
+interface RopeDropCatchInfo {
+  bottomY: number;
+  solidLanding: boolean;
+  slowdownTopY: number;
 }
 
 const expectFiniteNumber = (value: number, label: string): number => {
@@ -478,21 +484,28 @@ const isPlayerOverlappingClimbableTile = (
   registry: TileMetadataRegistry
 ): boolean => isAabbOverlappingClimbableTile(world, getPlayerAabb(state), registry);
 
-const resolveRopeDropCatchBottomY = (
+const resolveRopeDropCatchInfo = (
   world: PlayerClimbableTileQueryWorld,
   climbableTileInfo: AabbOverlappingClimbableTileInfo | null,
   registry: TileMetadataRegistry
-): number | null => {
+): RopeDropCatchInfo | null => {
   if (climbableTileInfo === null) {
     return null;
   }
 
-  const nextTileY = climbableTileInfo.lowestTileY + 1;
-  if (isTileClimbable(world.getTile(climbableTileInfo.tileX, nextTileY), registry)) {
-    return null;
+  let nextTileY = climbableTileInfo.lowestTileY + 1;
+  let nextTileId = world.getTile(climbableTileInfo.tileX, nextTileY);
+  while (isTileClimbable(nextTileId, registry)) {
+    nextTileY += 1;
+    nextTileId = world.getTile(climbableTileInfo.tileX, nextTileY);
   }
 
-  return nextTileY * TILE_SIZE;
+  const bottomY = nextTileY * TILE_SIZE;
+  return {
+    bottomY,
+    solidLanding: isTileSolid(nextTileId, registry),
+    slowdownTopY: bottomY - TILE_SIZE
+  };
 };
 
 export const isPlayerRopeDropActive = (
@@ -510,8 +523,8 @@ export const isPlayerRopeDropActive = (
     return false;
   }
 
-  const ropeDropCatchBottomY = resolveRopeDropCatchBottomY(world, climbableTileInfo, registry);
-  return ropeDropCatchBottomY === null || state.position.y < ropeDropCatchBottomY;
+  const ropeDropCatchInfo = resolveRopeDropCatchInfo(world, climbableTileInfo, registry);
+  return ropeDropCatchInfo === null || state.position.y < ropeDropCatchInfo.bottomY;
 };
 
 const recoverBreathSecondsRemaining = (
@@ -990,7 +1003,7 @@ export const stepPlayerState = (
   let grounded = state.grounded;
   let activelyOverlappingClimbableTile = overlappingClimbableTile;
   let ropeCenteringApplied = false;
-  let ropeDropCatchBottomY: number | null = null;
+  let ropeDropCatchInfo: RopeDropCatchInfo | null = null;
   const shouldJumpOffRope =
     overlappingClimbableTile && !ropeDropHeld && intent.jumpPressed === true && moveX !== 0;
 
@@ -1024,7 +1037,7 @@ export const stepPlayerState = (
     }
 
     if (ropeDropHeld) {
-      ropeDropCatchBottomY = resolveRopeDropCatchBottomY(
+      ropeDropCatchInfo = resolveRopeDropCatchInfo(
         world,
         activelyOverlappingClimbableTileInfo,
         registry
@@ -1068,6 +1081,14 @@ export const stepPlayerState = (
         liquidOverlapState.waterSubmergedFraction,
         dt
       );
+    }
+    if (
+      ropeDropCatchInfo?.solidLanding === true &&
+      state.position.y + velocityY * dt > ropeDropCatchInfo.slowdownTopY
+    ) {
+      // Ease through the final rope tile so ground-ending rope drops never convert into
+      // a hard landing when the column reaches solid ground.
+      velocityY = Math.min(velocityY, ropeClimbSpeed, fallDamageSafeLandingSpeed);
     }
   }
 
@@ -1119,12 +1140,12 @@ export const stepPlayerState = (
     registry
   );
 
-  if (ropeDropCatchBottomY !== null && steppedPlayerState.position.y > ropeDropCatchBottomY) {
+  if (ropeDropCatchInfo !== null && steppedPlayerState.position.y > ropeDropCatchInfo.bottomY) {
     steppedPlayerState = {
       ...steppedPlayerState,
       position: {
         x: steppedPlayerState.position.x,
-        y: ropeDropCatchBottomY
+        y: ropeDropCatchInfo.bottomY
       },
       velocity: {
         x: steppedPlayerState.velocity.x,

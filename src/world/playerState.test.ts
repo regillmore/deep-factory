@@ -866,6 +866,86 @@ describe('playerState', () => {
     }));
   });
 
+  it('slows across the final rope tile before a rope drop reaches solid ground', () => {
+    const world = new TileWorld(0);
+    setTiles(world, -2, -6, 2, 2, 0);
+    world.setTile(0, -4, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -3, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -2, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -1, STARTER_ROPE_TILE_ID);
+    world.setTile(0, 0, 3);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -28 },
+        velocity: { x: 0, y: 80 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      { climbY: 1, ropeDropHeld: true },
+      {
+        ropeClimbSpeed: 60,
+        gravityAcceleration: 320,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(stepped).toEqual(withDefaultPlayerVitals({
+      position: { x: 8, y: -13 },
+      velocity: { x: 0, y: 60 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    }));
+  });
+
+  it('does not apply fall damage when a rope drop lands on solid ground at the rope bottom', () => {
+    const world = new TileWorld(0);
+    setTiles(world, -2, -6, 2, 2, 0);
+    world.setTile(0, -4, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -3, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -2, STARTER_ROPE_TILE_ID);
+    world.setTile(0, -1, STARTER_ROPE_TILE_ID);
+    world.setTile(0, 0, 3);
+
+    const slowed = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -28 },
+        velocity: { x: 0, y: 80 },
+        size: { width: 12, height: 12 }
+      }),
+      0.25,
+      { climbY: 1, ropeDropHeld: true },
+      {
+        ropeClimbSpeed: 60,
+        gravityAcceleration: 320,
+        maxFallSpeed: 200
+      }
+    );
+
+    const landed = stepPlayerState(
+      world,
+      slowed,
+      0.25,
+      { climbY: 1, ropeDropHeld: true },
+      {
+        ropeClimbSpeed: 60,
+        gravityAcceleration: 320,
+        maxFallSpeed: 200
+      }
+    );
+
+    expect(landed).toEqual(withDefaultPlayerVitals({
+      position: { x: 8, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: true,
+      facing: 'right'
+    }));
+  });
+
   it('reports rope-drop active only while the player is still descending within a climbable rope column', () => {
     const world = new TileWorld(0);
     setTiles(world, -2, -6, 2, 2, 0);

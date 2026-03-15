@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-14: Rope quick-drop resolves the full rope column and eases through solid-ground endings
+
+- Decision: Rope quick-drop now resolves the first non-rope tile below the full contiguous rope column under the player, and when that column ends on solid ground it caps descent through the final rope tile to the shared rope-landing safe speed before collision and fall-damage resolution.
+- Reason: Looking only at the currently overlapped rope segment let fast drops reach solid ground as ordinary falls before the rope-bottom safety rules could engage.
+- Consequence: Future rope, vine, ladder, or other climbable quick-drop follow-ups should base end-of-column landing rules on the full connected climbable run, not just the segment currently touching the player.
+
 ### 2026-03-14: Rope quick-drop uses a short down tap followed by a held second press
 
 - Decision: Rope quick-drop now activates only when one short down press or tap is released and a second down press stays held within the shared double-tap window, and once active it ignores ordinary rope hold until that held input releases or the rope bottom catches the player.

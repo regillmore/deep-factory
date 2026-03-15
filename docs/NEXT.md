@@ -32,7 +32,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 559. Add a browser-resume save-normalization follow-up after dropped-item restore consolidation: when boot-time restore collapses overlapping matching world pickups, rewrite the persisted world save immediately instead of waiting for the next pause or pagehide, and add persistence regressions for the normalized pickup set.
 566. Add a rope tile mesh to public/atlas/tile-atlas.png. Rope is currently using one of the water meshes.
 567. Add a single-item hotbar drop follow-up after dropped-item pickup: mixed-device `Drop One` controls that toss one item from the selected stack, fill overlapping matching pickups before spawning overflow, and add deterministic inventory regressions.
-569. Add a one-tile slow-down to the end of safe rope drop so the player stops gently and doesn't take fall damage if the rope reaches the ground.
 
 ## Telemetry
 
@@ -43,3 +42,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 545. Add a death-cause telemetry follow-up to the telemetry catalog: show the latest lethal damage source plus applied damage in the debug HUD or compact status strip, and add deterministic death-cause regressions.
 557. Add a hostile-slime keep-band telemetry follow-up to the telemetry catalog: show the tracked slime's horizontal and vertical despawn-margin versus the current keep-band limits in the debug HUD or compact status strip, and add deterministic telemetry regressions.
 570. Add a rope-drop end-cause telemetry follow-up after rope-drop telemetry: show whether the last rope quick-drop ended because the down input released or the rope bottom caught the player in the debug HUD or compact status strip, and add deterministic telemetry regressions.
+571. Add a rope-drop slow-zone telemetry follow-up after rope-drop telemetry and rope quick-drop ground slowdown: show whether the current rope quick-drop will finish on solid ground and whether the final-tile slowdown is active in the debug HUD or compact status strip, and add deterministic telemetry regressions.
