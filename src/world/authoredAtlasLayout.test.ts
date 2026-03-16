@@ -29,18 +29,19 @@ describe('authored atlas layout', () => {
     }
   });
 
-  it('documents a spare unused region and leaves canvas space outside authored regions', () => {
+  it('documents a spare unused region, torch animation frame space, and leaves canvas space outside authored regions', () => {
     expect(AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS[21]?.trim().length).toBeGreaterThan(0);
 
     expect(AUTHORED_ATLAS_REGIONS[20]).toEqual({ x: 80, y: 32, width: 16, height: 16 });
     expect(AUTHORED_ATLAS_REGIONS[21]).toEqual({ x: 80, y: 48, width: 16, height: 16 });
+    expect(AUTHORED_ATLAS_REGIONS[22]).toEqual({ x: 96, y: 32, width: 16, height: 16 });
 
     const maxRegionRight = AUTHORED_ATLAS_REGIONS.reduce(
       (maxRight, region) => Math.max(maxRight, region.x + region.width),
       0
     );
 
-    expect(maxRegionRight).toBe(96);
+    expect(maxRegionRight).toBe(112);
     expect(maxRegionRight).toBeLessThan(AUTHORED_ATLAS_WIDTH);
   });
 });

@@ -105,9 +105,9 @@ Diagonal neighbors are sampled and normalized for corner-gating, but placeholder
 16 cardinal combinations for now. The current mapping is defined in `src/world/tileMetadata.json` and validated at
 startup by `src/world/tileMetadata.ts`, while the atlas indices themselves resolve through the explicit authored
 region list in `src/world/authoredAtlasLayout.ts`. The current authored layout also reserves one spare documented
-unused region, widens the committed atlas to `128x64`, and keeps transparent exterior padding to the right of the
-authored-region bounds while the torch now occupies a full `16x16` authored square so ordinary tile quads do not
-stretch it.
+unused region beneath the torch, widens the committed atlas to `128x64`, adds a second full `16x16` torch animation
+region to the right, and keeps transparent exterior padding to the right of the authored-region bounds so ordinary
+tile quads do not stretch the torch or rope while the unused-slot regression target remains available.
 
 Non-autotile tiles also resolve UVs through the same metadata registry via explicit render metadata:
 - `render.atlasIndex`: authored atlas region index.

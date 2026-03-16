@@ -1194,28 +1194,49 @@ describe('authored atlas asset', () => {
     });
   });
 
-  it('keeps the torch sprite centered inside its full-width authored square while preserving exterior padding', () => {
+  it('keeps both torch animation frames centered inside full-width authored squares while preserving the spare slot and exterior padding', () => {
     const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
     const torchTile = TILE_METADATA.tiles.find((tile) => tile.name === 'torch');
 
     expect(torchTile?.render?.atlasIndex).toBe(20);
+    expect(torchTile?.render?.frames?.map((frame) => frame.atlasIndex)).toEqual([20, 22]);
 
-    const torchRegion = AUTHORED_ATLAS_REGIONS[torchTile!.render!.atlasIndex!];
-    expect(torchRegion).toEqual({ x: 80, y: 32, width: 16, height: 16 });
+    const torchFrameZeroRegion = AUTHORED_ATLAS_REGIONS[torchTile!.render!.atlasIndex!];
+    const torchFrameOneRegion = AUTHORED_ATLAS_REGIONS[22];
+    expect(torchFrameZeroRegion).toEqual({ x: 80, y: 32, width: 16, height: 16 });
+    expect(torchFrameOneRegion).toEqual({ x: 96, y: 32, width: 16, height: 16 });
 
-    const visibleBounds = findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, torchRegion!);
-    expect(visibleBounds).toEqual({
-      x: torchRegion!.x + 6,
-      y: torchRegion!.y + 1,
+    const frameZeroVisibleBounds = findNonTransparentPixelBoundsInRegion(
+      rgbaPixels,
+      pngWidth,
+      torchFrameZeroRegion!
+    );
+    const frameOneVisibleBounds = findNonTransparentPixelBoundsInRegion(
+      rgbaPixels,
+      pngWidth,
+      torchFrameOneRegion!
+    );
+    expect(frameZeroVisibleBounds).toEqual({
+      x: torchFrameZeroRegion!.x + 6,
+      y: torchFrameZeroRegion!.y + 1,
       width: 4,
       height: 13
     });
+    expect(frameOneVisibleBounds).toEqual({
+      x: torchFrameOneRegion!.x + 6,
+      y: torchFrameOneRegion!.y + 1,
+      width: 4,
+      height: 13
+    });
+    expect(
+      regionsMatchForVisibleContent(rgbaPixels, pngWidth, torchFrameZeroRegion!, torchFrameOneRegion!)
+    ).toBe(false);
 
     const exteriorPaddingStrip = getExteriorPaddingStripRegion(pngWidth, pngHeight);
     expect(exteriorPaddingStrip).toEqual({
-      x: 96,
+      x: 112,
       y: 0,
-      width: pngWidth - 96,
+      width: pngWidth - 112,
       height: pngHeight
     });
   });

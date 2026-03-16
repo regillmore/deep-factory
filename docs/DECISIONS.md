@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-15: Torch atlas animation keeps the spare-slot regression target
+
+- Decision: The starter torch now animates between full-width authored regions `20` and `22`, while authored region `21` stays blank as the documented spare slot and the exterior padding strip now begins at `x=112`.
+- Reason: The torch still needs full-square frames so the shared tile mesh does not stretch it, but consuming the only documented blank slot would weaken the committed-atlas spill and accidental-reference regressions.
+- Consequence: Future authored utility animations should prefer adding new full-width regions while preserving at least one documented blank slot plus some exterior padding, unless the same pass explicitly relocates those regression targets.
+
 ### 2026-03-15: Torch full-square atlas fixes should grow the atlas before consuming spill space
 
 - Decision: The authored atlas now widens to `128x64`, keeps the torch on a centered full `16x16` authored region at index `20`, preserves region `21` as a blank full-width spare slot, and keeps the exterior padding strip blank beyond the authored-region bounds.

@@ -130,6 +130,15 @@ describe('tile metadata loader', () => {
     expect(resolveTileRenderUvRect(3)).toEqual(atlasIndexToUvRect(14));
     expect(resolveTileRenderUvRect(10)).toEqual(atlasIndexToUvRect(20));
     expect(resolveTileRenderUvRect(11)).toEqual(atlasIndexToUvRect(19));
+    expect(hasAnimatedTileRenderMetadata(10)).toBe(true);
+    expect(getAnimatedTileRenderFrameCount(10)).toBe(2);
+    expect(getAnimatedTileRenderFrameDurationMs(10)).toBe(180);
+    expect(resolveAnimatedTileRenderFrameUvRect(10, 0)).toBe(atlasIndexToUvRect(20));
+    expect(resolveAnimatedTileRenderFrameUvRect(10, 1)).toBe(atlasIndexToUvRect(22));
+    expect(resolveAnimatedTileRenderFrameIndexAtElapsedMs(10, 179)).toBe(0);
+    expect(resolveAnimatedTileRenderFrameIndexAtElapsedMs(10, 180)).toBe(1);
+    expect(resolveAnimatedTileRenderFrameIndexAtElapsedMs(10, 360)).toBe(0);
+    expect(resolveAnimatedTileRenderFrameUvRectAtElapsedMs(10, 180)).toBe(atlasIndexToUvRect(22));
     expect(resolveLiquidRenderVariantMetadata(7, 0)).toMatchObject({
       uvRect: authoredUvRectFromPixels(64, 16, 72, 32)
     });

@@ -1097,7 +1097,16 @@
         "emissiveLight": 12
       },
       "render": {
-        "atlasIndex": 20
+        "atlasIndex": 20,
+        "frames": [
+          {
+            "atlasIndex": 20
+          },
+          {
+            "atlasIndex": 22
+          }
+        ],
+        "frameDurationMs": 180
       }
     },
     {

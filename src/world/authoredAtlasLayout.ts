@@ -39,7 +39,8 @@ export const AUTHORED_ATLAS_REGIONS: readonly AuthoredAtlasRegion[] = [
   { x: 64, y: 48, width: 16, height: 16 },
   { x: 80, y: 32, width: 16, height: 16 },
   // Keep a documented spare utility slot while preserving a widened right-side padding strip.
-  { x: 80, y: 48, width: 16, height: 16 }
+  { x: 80, y: 48, width: 16, height: 16 },
+  { x: 96, y: 32, width: 16, height: 16 }
 ] as const;
 
 export const AUTHORED_ATLAS_REGION_COUNT = AUTHORED_ATLAS_REGIONS.length;
