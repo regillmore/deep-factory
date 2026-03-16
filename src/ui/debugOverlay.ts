@@ -316,6 +316,7 @@ export interface DebugOverlayPlayerLavaDamageEventTelemetry {
 export interface DebugOverlayPlayerDeathCauseEventTelemetry {
   source: PlayerDeathCauseSource;
   damageApplied: number;
+  playerWorldTile: { x: number; y: number };
 }
 
 export interface DebugOverlayPlayerWallContactTransitionTelemetry {
@@ -931,7 +932,8 @@ const formatPlayerDeathCauseEventLine = (
 
   return (
     `DeathEvt: source:${playerDeathCauseEvent.source} | ` +
-    `damage:${Math.max(0, Math.round(playerDeathCauseEvent.damageApplied))}`
+    `damage:${Math.max(0, Math.round(playerDeathCauseEvent.damageApplied))} | ` +
+    `tile:${playerDeathCauseEvent.playerWorldTile.x},${playerDeathCauseEvent.playerWorldTile.y}`
   );
 };
 

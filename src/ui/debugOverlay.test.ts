@@ -1167,7 +1167,8 @@ describe('formatDebugOverlayText', () => {
       playerRespawn: null,
       playerDeathCauseEvent: {
         source: 'lava',
-        damageApplied: 25
+        damageApplied: 25,
+        playerWorldTile: { x: -2, y: 4 }
       },
       playerWallContactTransition: null,
       playerCeilingContactTransition: null,
@@ -1176,7 +1177,7 @@ describe('formatDebugOverlayText', () => {
       pinned: null
     });
 
-    expect(text).toContain('\nDeathEvt: source:lava | damage:25');
+    expect(text).toContain('\nDeathEvt: source:lava | damage:25 | tile:-2,4');
   });
 
   it('shows the latest drowning-tick damage on its own combat event line', () => {

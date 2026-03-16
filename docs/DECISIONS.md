@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-15: Death-location telemetry uses the lethal player world tile
+
+- Decision: Latest death-cause telemetry now records the player's world tile from the lethal fixed-step state instead of inferring location later from respawn state or from a hostile-contact source tile.
+- Reason: The death location should identify where the player actually died across fall, lava, drowning, and hostile-contact kills, while hostile-contact source telemetry already covers the attacker's tile separately.
+- Consequence: Future death-location, corpse, or checkpoint follow-ups should reuse the lethal player tile captured with the death-cause event instead of recomputing death position from later runtime state.
+
 ### 2026-03-15: Short consumable reuse cooldowns stay in session-owned runtime state
 
 - Decision: The healing-potion reuse cooldown now lives in detached session-owned fixed-step state instead of joining `PlayerState` or the saved world envelope.

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolvePlayerDeathCauseFromDamageSequence } from './playerDeathCause';
+import {
+  createPlayerDeathCauseEvent,
+  resolvePlayerDeathCauseFromDamageSequence
+} from './playerDeathCause';
 
 describe('resolvePlayerDeathCauseFromDamageSequence', () => {
   it('returns null when the player survives the damage sequence', () => {
@@ -39,6 +42,18 @@ describe('resolvePlayerDeathCauseFromDamageSequence', () => {
     expect(resolvePlayerDeathCauseFromDamageSequence(8, 0, [])).toEqual({
       source: 'unknown',
       damageApplied: 8
+    });
+  });
+
+  it('attaches the lethal player world tile when creating a death-cause event', () => {
+    const resolvedDeathCause = resolvePlayerDeathCauseFromDamageSequence(5, 0, [
+      { source: 'hostile-contact', damageApplied: 15 }
+    ]);
+
+    expect(createPlayerDeathCauseEvent(resolvedDeathCause, { x: -3, y: 7 })).toEqual({
+      source: 'hostile-contact',
+      damageApplied: 15,
+      playerWorldTile: { x: -3, y: 7 }
     });
   });
 });

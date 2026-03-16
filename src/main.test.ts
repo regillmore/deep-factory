@@ -4587,7 +4587,8 @@ describe('main.ts shell state orchestration', () => {
     });
     expect(testRuntime.latestDebugOverlayInspectState?.playerDeathCauseEvent).toEqual({
       source: 'fall',
-      damageApplied: 10
+      damageApplied: 10,
+      playerWorldTile: { x: 0, y: 0 }
     });
     expect(testRuntime.latestDebugEditStatusStripState?.playerLandingDamageEvent).toEqual({
       damageApplied: 10,
@@ -4595,7 +4596,8 @@ describe('main.ts shell state orchestration', () => {
     });
     expect(testRuntime.latestDebugEditStatusStripState?.playerDeathCauseEvent).toEqual({
       source: 'fall',
-      damageApplied: 10
+      damageApplied: 10,
+      playerWorldTile: { x: 0, y: 0 }
     });
     expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(0);
     expect(testRuntime.latestDebugEditStatusStripState?.playerHealth).toBe(0);
@@ -4792,14 +4794,16 @@ describe('main.ts shell state orchestration', () => {
     });
     expect(testRuntime.latestDebugOverlayInspectState?.playerDeathCauseEvent).toEqual({
       source: 'lava',
-      damageApplied: 25
+      damageApplied: 25,
+      playerWorldTile: { x: 0, y: 0 }
     });
     expect(testRuntime.latestDebugEditStatusStripState?.playerLavaDamageEvent).toEqual({
       damageApplied: 25
     });
     expect(testRuntime.latestDebugEditStatusStripState?.playerDeathCauseEvent).toEqual({
       source: 'lava',
-      damageApplied: 25
+      damageApplied: 25,
+      playerWorldTile: { x: 0, y: 0 }
     });
     expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(0);
     expect(testRuntime.latestDebugEditStatusStripState?.playerHealth).toBe(0);
@@ -4903,14 +4907,16 @@ describe('main.ts shell state orchestration', () => {
     });
     expect(testRuntime.latestDebugOverlayInspectState?.playerDeathCauseEvent).toEqual({
       source: 'drowning',
-      damageApplied: 5
+      damageApplied: 5,
+      playerWorldTile: { x: 0, y: 0 }
     });
     expect(testRuntime.latestDebugEditStatusStripState?.playerDrowningDamageEvent).toEqual({
       damageApplied: 5
     });
     expect(testRuntime.latestDebugEditStatusStripState?.playerDeathCauseEvent).toEqual({
       source: 'drowning',
-      damageApplied: 5
+      damageApplied: 5,
+      playerWorldTile: { x: 0, y: 0 }
     });
     expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(0);
     expect(testRuntime.latestDebugEditStatusStripState?.playerHealth).toBe(0);

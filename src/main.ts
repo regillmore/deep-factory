@@ -187,6 +187,7 @@ import {
   type PlayerDeathState
 } from './world/playerDeathState';
 import {
+  createPlayerDeathCauseEvent,
   resolvePlayerDeathCauseFromDamageSequence,
   type PlayerDeathCauseCandidate,
   type PlayerDeathCauseEvent
@@ -2234,9 +2235,9 @@ const bootstrap = async (): Promise<void> => {
       pendingStandalonePlayerFixedStepResult.nextDeathState === null &&
       previousHealth > 0 &&
       nextHealth <= 0;
-    const deathCauseEvent = resolvePlayerDeathCauseFromDamageSequence(
-      previousHealth,
-      nextHealth,
+    const deathCauseEvent = resolveStandalonePlayerDeathCauseEventFromDamageSequence(
+      pendingStandalonePlayerFixedStepResult.nextPlayerState,
+      nextPlayerState,
       deathCauseCandidates
     );
 
@@ -2281,17 +2282,19 @@ const bootstrap = async (): Promise<void> => {
       return;
     }
 
-    const deathCauseEvent = resolvePlayerDeathCauseFromDamageSequence(
-      readStandalonePlayerHealthForRespawnDetection(standalonePlayerState),
-      readStandalonePlayerHealthForRespawnDetection(nextPlayerState),
+    const deathCauseCandidates =
       event !== null && !event.blockedByInvulnerability
         ? [
             {
-              source: 'hostile-contact',
+              source: 'hostile-contact' as const,
               damageApplied: event.damageApplied
             }
           ]
-        : []
+        : [];
+    const deathCauseEvent = resolveStandalonePlayerDeathCauseEventFromDamageSequence(
+      standalonePlayerState,
+      nextPlayerState,
+      deathCauseCandidates
     );
     if (deathCauseEvent !== null) {
       lastPlayerDeathCauseEvent = deathCauseEvent;
@@ -2300,17 +2303,7 @@ const bootstrap = async (): Promise<void> => {
     setStandalonePlayerState(nextPlayerState, {
       resetRenderStateSnapshots: false
     });
-    replacePendingStandalonePlayerFixedStepNextState(
-      nextPlayerState,
-      event !== null && !event.blockedByInvulnerability
-        ? [
-            {
-              source: 'hostile-contact',
-              damageApplied: event.damageApplied
-            }
-          ]
-        : []
-    );
+    replacePendingStandalonePlayerFixedStepNextState(nextPlayerState, deathCauseCandidates);
   };
   const spawnStandalonePlayerEntity = (initialPlayerState: PlayerState): PlayerState => {
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
@@ -2557,6 +2550,19 @@ const bootstrap = async (): Promise<void> => {
     const health = (playerState as { health?: unknown }).health;
     return typeof health === 'number' && Number.isFinite(health) ? health : 1;
   };
+  const resolveStandalonePlayerDeathCauseEventFromDamageSequence = (
+    previousPlayerState: PlayerState,
+    nextPlayerState: PlayerState,
+    candidates: readonly PlayerDeathCauseCandidate[]
+  ): PlayerDeathCauseEvent | null =>
+    createPlayerDeathCauseEvent(
+      resolvePlayerDeathCauseFromDamageSequence(
+        readStandalonePlayerHealthForRespawnDetection(previousPlayerState),
+        readStandalonePlayerHealthForRespawnDetection(nextPlayerState),
+        candidates
+      ),
+      worldToTilePoint(nextPlayerState.position.x, nextPlayerState.position.y)
+    );
   const readStandalonePlayerFallDamageRecoverySecondsRemaining = (
     playerState: PlayerState
   ): number => {
@@ -2676,9 +2682,9 @@ const bootstrap = async (): Promise<void> => {
       });
     }
 
-    return resolvePlayerDeathCauseFromDamageSequence(
-      readStandalonePlayerHealthForRespawnDetection(previousPlayerState),
-      readStandalonePlayerHealthForRespawnDetection(nextPlayerState),
+    return resolveStandalonePlayerDeathCauseEventFromDamageSequence(
+      previousPlayerState,
+      nextPlayerState,
       candidates
     );
   };

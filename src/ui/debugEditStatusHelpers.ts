@@ -244,6 +244,7 @@ export interface DebugEditStatusStripPlayerLavaDamageEventTelemetry {
 export interface DebugEditStatusStripPlayerDeathCauseEventTelemetry {
   source: PlayerDeathCauseSource;
   damageApplied: number;
+  playerWorldTile: { x: number; y: number };
 }
 
 export interface DebugEditStatusStripPlayerSpawnTelemetry {
@@ -2014,7 +2015,11 @@ const formatDeathCauseEventText = (
 
   return (
     `Death: source ${playerDeathCauseEvent.source} | ` +
-    `damage ${Math.max(0, Math.round(playerDeathCauseEvent.damageApplied))}`
+    `damage ${Math.max(0, Math.round(playerDeathCauseEvent.damageApplied))} | ` +
+    `tile ${formatTileCoordinatePair(
+      playerDeathCauseEvent.playerWorldTile.x,
+      playerDeathCauseEvent.playerWorldTile.y
+    )}`
   );
 };
 

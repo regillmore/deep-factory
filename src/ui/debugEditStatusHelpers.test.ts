@@ -1679,13 +1679,14 @@ describe('buildDebugEditStatusStripModel', () => {
       desktopInspectPinArmed: false,
       playerDeathCauseEvent: {
         source: 'hostile-contact',
-        damageApplied: 15
+        damageApplied: 15,
+        playerWorldTile: { x: 3, y: -1 }
       },
       preview: createEmptyPreviewState()
     });
 
     expect(model.playerText).toBeNull();
-    expect(model.eventText).toBe('Death: source hostile-contact | damage 15');
+    expect(model.eventText).toBe('Death: source hostile-contact | damage 15 | tile 3,-1');
   });
 
   it('shows the latest drowning-tick hit on its own event line', () => {

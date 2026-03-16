@@ -10,9 +10,18 @@ export interface PlayerDeathCauseCandidate {
   damageApplied: number;
 }
 
-export interface PlayerDeathCauseEvent {
+export interface ResolvedPlayerDeathCause {
   source: PlayerDeathCauseSource;
   damageApplied: number;
+}
+
+export interface PlayerDeathWorldTile {
+  x: number;
+  y: number;
+}
+
+export interface PlayerDeathCauseEvent extends ResolvedPlayerDeathCause {
+  playerWorldTile: PlayerDeathWorldTile;
 }
 
 const expectNonNegativeFiniteNumber = (value: number, label: string): number => {
@@ -23,14 +32,30 @@ const expectNonNegativeFiniteNumber = (value: number, label: string): number => 
   return value;
 };
 
+const expectFiniteInteger = (value: number, label: string): number => {
+  if (!Number.isFinite(value) || !Number.isInteger(value)) {
+    throw new Error(`${label} must be a finite integer`);
+  }
+
+  return value;
+};
+
 const normalizeDamageApplied = (damageApplied: number, label: string): number =>
   Math.max(0, Math.round(expectNonNegativeFiniteNumber(damageApplied, label)));
+
+const clonePlayerDeathWorldTile = (
+  playerWorldTile: PlayerDeathWorldTile,
+  label: string
+): PlayerDeathWorldTile => ({
+  x: expectFiniteInteger(playerWorldTile.x, `${label}.x`),
+  y: expectFiniteInteger(playerWorldTile.y, `${label}.y`)
+});
 
 export const resolvePlayerDeathCauseFromDamageSequence = (
   previousHealth: number,
   nextHealth: number,
   candidates: readonly PlayerDeathCauseCandidate[]
-): PlayerDeathCauseEvent | null => {
+): ResolvedPlayerDeathCause | null => {
   const startingHealth = expectNonNegativeFiniteNumber(previousHealth, 'previousHealth');
   const endingHealth = expectNonNegativeFiniteNumber(nextHealth, 'nextHealth');
   if (!(startingHealth > 0) || endingHealth > 0) {
@@ -64,5 +89,26 @@ export const resolvePlayerDeathCauseFromDamageSequence = (
   return {
     source: 'unknown',
     damageApplied: totalDamageApplied
+  };
+};
+
+export const createPlayerDeathCauseEvent = (
+  resolvedDeathCause: ResolvedPlayerDeathCause | null,
+  playerWorldTile: PlayerDeathWorldTile | null | undefined
+): PlayerDeathCauseEvent | null => {
+  if (resolvedDeathCause === null) {
+    return null;
+  }
+  if (playerWorldTile === null || playerWorldTile === undefined) {
+    throw new Error('playerWorldTile is required when creating a death cause event');
+  }
+
+  return {
+    source: resolvedDeathCause.source,
+    damageApplied: normalizeDamageApplied(
+      resolvedDeathCause.damageApplied,
+      'resolvedDeathCause.damageApplied'
+    ),
+    playerWorldTile: clonePlayerDeathWorldTile(playerWorldTile, 'playerWorldTile')
   };
 };
