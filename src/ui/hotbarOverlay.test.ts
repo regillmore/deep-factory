@@ -58,6 +58,8 @@ describe('HotbarOverlay', () => {
   const createHost = (): HTMLElement => document.createElement('div') as unknown as HTMLElement;
   const getSlotRow = (overlay: HotbarOverlay): FakeElement =>
     (overlay.getRootElement() as unknown as FakeElement).children[1]! as FakeElement;
+  const getSlotAmountLabel = (overlay: HotbarOverlay, slotIndex: number): FakeElement =>
+    getSlotRow(overlay).children[slotIndex]!.children[2]! as FakeElement;
   const getSlotCooldownFill = (overlay: HotbarOverlay, slotIndex: number): FakeElement =>
     getSlotRow(overlay).children[slotIndex]!.children[3]! as FakeElement;
   const getActionRow = (overlay: HotbarOverlay): FakeElement =>
@@ -222,6 +224,38 @@ describe('HotbarOverlay', () => {
     expect(getSlotCooldownFill(overlay, 4).style.height).toBe('0.0%');
     expect(getSlotCooldownFill(overlay, 4).style.opacity).toBe('0');
     expect(getSlotRow(overlay).children[4]!.title).not.toContain('cooldown active');
+  });
+
+  it('shows and clears visible heart-crystal blocked feedback for dead and max-cap states', () => {
+    const host = createHost();
+    const overlay = new HotbarOverlay({ host });
+
+    overlay.update(createDefaultPlayerInventoryState(), {
+      heartCrystalBlockedReason: 'max-health-cap'
+    });
+
+    expect(getSlotAmountLabel(overlay, 5).textContent).toBe('MAX');
+    expect(getSlotAmountLabel(overlay, 5).style.color).toBe('#cdeaff');
+    expect(getSlotCooldownFill(overlay, 5).style.height).toBe('100.0%');
+    expect(getSlotCooldownFill(overlay, 5).style.opacity).toBe('1');
+    expect(getSlotRow(overlay).children[5]!.title).toContain('already at 400 max health');
+    expect(getSlotCooldownFill(overlay, 0).style.opacity).toBe('0');
+
+    overlay.update(createDefaultPlayerInventoryState(), {
+      heartCrystalBlockedReason: 'dead'
+    });
+
+    expect(getSlotAmountLabel(overlay, 5).textContent).toBe('DEAD');
+    expect(getSlotAmountLabel(overlay, 5).style.color).toBe('#ffd2d2');
+    expect(getSlotRow(overlay).children[5]!.title).toContain('player is dead');
+
+    overlay.update(createDefaultPlayerInventoryState());
+
+    expect(getSlotAmountLabel(overlay, 5).textContent).toBe('');
+    expect(getSlotAmountLabel(overlay, 5).style.color).toBe('#ffe7a3');
+    expect(getSlotCooldownFill(overlay, 5).style.height).toBe('0.0%');
+    expect(getSlotCooldownFill(overlay, 5).style.opacity).toBe('0');
+    expect(getSlotRow(overlay).children[5]!.title).not.toContain('blocked:');
   });
 
   it('can hide and show itself without removing the DOM root', () => {

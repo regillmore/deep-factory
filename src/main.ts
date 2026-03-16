@@ -245,6 +245,7 @@ import {
   tryUsePlayerHealingPotion
 } from './world/playerHealingPotion';
 import {
+  DEFAULT_HEART_CRYSTAL_MAX_HEALTH_CAP,
   HEART_CRYSTAL_ITEM_ID,
   tryUsePlayerHeartCrystal
 } from './world/playerHeartCrystal';
@@ -1590,10 +1591,32 @@ const bootstrap = async (): Promise<void> => {
       )
     );
   };
+  const resolveHotbarOverlayHeartCrystalBlockedReason = (): 'dead' | 'max-health-cap' | null => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== HEART_CRYSTAL_ITEM_ID) {
+      return null;
+    }
+
+    const standalonePlayerState = getStandalonePlayerState();
+    if (standalonePlayerState === null) {
+      return null;
+    }
+    if (
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return 'dead';
+    }
+    if (standalonePlayerState.maxHealth >= DEFAULT_HEART_CRYSTAL_MAX_HEALTH_CAP) {
+      return 'max-health-cap';
+    }
+    return null;
+  };
   const syncHotbarOverlayState = (): void => {
     hotbarOverlay.update(standalonePlayerInventoryState, {
       healingPotionCooldownFillNormalized:
-        resolveHotbarOverlayHealingPotionCooldownFillNormalized()
+        resolveHotbarOverlayHealingPotionCooldownFillNormalized(),
+      heartCrystalBlockedReason: resolveHotbarOverlayHeartCrystalBlockedReason()
     });
   };
   const applyStandalonePlayerInventoryState = (inventoryState: PlayerInventoryState): void => {
@@ -1641,16 +1664,20 @@ const bootstrap = async (): Promise<void> => {
   };
   const tryUseSelectedHeartCrystal = (): boolean => {
     const standalonePlayerState = getStandalonePlayerState();
+    if (standalonePlayerState === null) {
+      return false;
+    }
     if (
-      standalonePlayerState === null ||
       standalonePlayerDeathState !== null ||
       isStandalonePlayerDead(standalonePlayerState)
     ) {
+      syncHotbarOverlayState();
       return false;
     }
 
     const useResult = tryUsePlayerHeartCrystal(standalonePlayerState);
     if (!useResult.consumed) {
+      syncHotbarOverlayState();
       return false;
     }
     if (!applySelectedStandalonePlayerHotbarSlotConsumption()) {

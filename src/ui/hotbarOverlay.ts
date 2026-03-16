@@ -24,6 +24,7 @@ interface HotbarOverlayOptions {
 
 interface HotbarOverlayUpdateOptions {
   healingPotionCooldownFillNormalized?: number | null;
+  heartCrystalBlockedReason?: 'dead' | 'max-health-cap' | null;
 }
 
 interface HotbarSlotElements {
@@ -49,8 +50,35 @@ const applySlotSelectionStyles = (button: HTMLButtonElement, selected: boolean, 
 
 const clampUnitInterval = (value: number): number => Math.max(0, Math.min(1, value));
 
-const applyCooldownFillStyles = (fill: HTMLDivElement, normalized: number | null): void => {
-  if (normalized === null || normalized <= 0) {
+const HEALING_POTION_COOLDOWN_FILL_BACKGROUND =
+  'linear-gradient(180deg, rgba(255, 217, 143, 0.04) 0%, rgba(255, 184, 96, 0.22) 35%, rgba(255, 150, 74, 0.62) 100%)';
+const HEART_CRYSTAL_DEAD_FILL_BACKGROUND =
+  'linear-gradient(180deg, rgba(255, 170, 170, 0.08) 0%, rgba(255, 112, 112, 0.3) 35%, rgba(204, 52, 52, 0.68) 100%)';
+const HEART_CRYSTAL_MAX_HEALTH_CAP_FILL_BACKGROUND =
+  'linear-gradient(180deg, rgba(202, 235, 255, 0.08) 0%, rgba(124, 193, 255, 0.24) 35%, rgba(70, 142, 224, 0.62) 100%)';
+const HEART_CRYSTAL_BLOCKED_TITLE_TEXT: Record<'dead' | 'max-health-cap', string> = {
+  dead: 'blocked: player is dead',
+  'max-health-cap': 'blocked: already at 400 max health'
+};
+const HEART_CRYSTAL_BLOCKED_AMOUNT_TEXT: Record<'dead' | 'max-health-cap', string> = {
+  dead: 'DEAD',
+  'max-health-cap': 'MAX'
+};
+const HEART_CRYSTAL_BLOCKED_AMOUNT_COLOR: Record<'dead' | 'max-health-cap', string> = {
+  dead: '#ffd2d2',
+  'max-health-cap': '#cdeaff'
+};
+const HEART_CRYSTAL_BLOCKED_FILL_BACKGROUND: Record<'dead' | 'max-health-cap', string> = {
+  dead: HEART_CRYSTAL_DEAD_FILL_BACKGROUND,
+  'max-health-cap': HEART_CRYSTAL_MAX_HEALTH_CAP_FILL_BACKGROUND
+};
+
+const applySlotFillStyles = (
+  fill: HTMLDivElement,
+  normalized: number | null,
+  background: string | null
+): void => {
+  if (normalized === null || normalized <= 0 || background === null) {
     fill.style.height = '0.0%';
     fill.style.opacity = '0';
     return;
@@ -58,6 +86,7 @@ const applyCooldownFillStyles = (fill: HTMLDivElement, normalized: number | null
 
   fill.style.height = `${(clampUnitInterval(normalized) * 100).toFixed(1)}%`;
   fill.style.opacity = '1';
+  fill.style.background = background;
 };
 
 export class HotbarOverlay {
@@ -218,8 +247,7 @@ export class HotbarOverlay {
       cooldownFill.style.height = '0.0%';
       cooldownFill.style.opacity = '0';
       cooldownFill.style.pointerEvents = 'none';
-      cooldownFill.style.background =
-        'linear-gradient(180deg, rgba(255, 217, 143, 0.04) 0%, rgba(255, 184, 96, 0.22) 35%, rgba(255, 150, 74, 0.62) 100%)';
+      cooldownFill.style.background = HEALING_POTION_COOLDOWN_FILL_BACKGROUND;
       cooldownFill.style.transition = 'height 120ms linear, opacity 120ms ease';
       button.append(cooldownFill);
 
@@ -255,6 +283,7 @@ export class HotbarOverlay {
       typeof options.healingPotionCooldownFillNormalized === 'number'
         ? clampUnitInterval(options.healingPotionCooldownFillNormalized)
         : null;
+    const heartCrystalBlockedReason = options.heartCrystalBlockedReason ?? null;
     for (let slotIndex = 0; slotIndex < this.slots.length; slotIndex += 1) {
       const slotElements = this.slots[slotIndex]!;
       const stack = state.hotbar[slotIndex] ?? null;
@@ -270,22 +299,42 @@ export class HotbarOverlay {
         slotElements.itemLabel.textContent = 'EMPTY';
         slotElements.itemLabel.style.color = 'rgba(255, 255, 255, 0.42)';
         slotElements.amountLabel.textContent = '';
-        applyCooldownFillStyles(slotElements.cooldownFill, null);
+        applySlotFillStyles(slotElements.cooldownFill, null, null);
         continue;
       }
 
       const definition = getPlayerInventoryItemDefinition(stack.itemId);
+      const blockedHeartCrystal =
+        stack.itemId === 'heart-crystal' && heartCrystalBlockedReason !== null;
       const coolingDown =
         stack.itemId === 'healing-potion' && healingPotionCooldownFillNormalized !== null;
-      slotElements.button.title = coolingDown
-        ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (cooldown active)`
-        : `Select ${definition.label} in hotbar slot ${slotIndex + 1}`;
+      slotElements.button.title = blockedHeartCrystal
+        ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${HEART_CRYSTAL_BLOCKED_TITLE_TEXT[heartCrystalBlockedReason]})`
+        : coolingDown
+          ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (cooldown active)`
+          : `Select ${definition.label} in hotbar slot ${slotIndex + 1}`;
       slotElements.itemLabel.textContent = definition.hotbarLabel;
       slotElements.itemLabel.style.color = '#f5f7fa';
-      slotElements.amountLabel.textContent = stack.amount > 1 ? String(stack.amount) : '';
-      applyCooldownFillStyles(
+      slotElements.amountLabel.textContent = blockedHeartCrystal
+        ? HEART_CRYSTAL_BLOCKED_AMOUNT_TEXT[heartCrystalBlockedReason]
+        : stack.amount > 1
+          ? String(stack.amount)
+          : '';
+      slotElements.amountLabel.style.color = blockedHeartCrystal
+        ? HEART_CRYSTAL_BLOCKED_AMOUNT_COLOR[heartCrystalBlockedReason]
+        : '#ffe7a3';
+      applySlotFillStyles(
         slotElements.cooldownFill,
-        stack.itemId === 'healing-potion' ? healingPotionCooldownFillNormalized : null
+        blockedHeartCrystal
+          ? 1
+          : stack.itemId === 'healing-potion'
+            ? healingPotionCooldownFillNormalized
+            : null,
+        blockedHeartCrystal
+          ? HEART_CRYSTAL_BLOCKED_FILL_BACKGROUND[heartCrystalBlockedReason]
+          : stack.itemId === 'healing-potion'
+            ? HEALING_POTION_COOLDOWN_FILL_BACKGROUND
+            : null
       );
     }
 

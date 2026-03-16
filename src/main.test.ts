@@ -1661,12 +1661,18 @@ const getHotbarOverlayRoot = (): InstanceType<typeof testRuntime.FakeHTMLElement
 };
 const getHotbarOverlaySlotRow = (): InstanceType<typeof testRuntime.FakeHTMLElement> =>
   getHotbarOverlayRoot().children[1] as InstanceType<typeof testRuntime.FakeHTMLElement>;
+const getHotbarOverlaySlotButton = (
+  slotIndex: number
+): InstanceType<typeof testRuntime.FakeHTMLElement> =>
+  getHotbarOverlaySlotRow().children[slotIndex] as InstanceType<typeof testRuntime.FakeHTMLElement>;
+const getHotbarOverlaySlotAmountLabel = (
+  slotIndex: number
+): InstanceType<typeof testRuntime.FakeHTMLElement> =>
+  getHotbarOverlaySlotButton(slotIndex).children[2] as InstanceType<typeof testRuntime.FakeHTMLElement>;
 const getHotbarOverlaySlotCooldownFill = (
   slotIndex: number
 ): InstanceType<typeof testRuntime.FakeHTMLElement> => {
-  const slotButton = getHotbarOverlaySlotRow().children[slotIndex] as InstanceType<
-    typeof testRuntime.FakeHTMLElement
-  >;
+  const slotButton = getHotbarOverlaySlotButton(slotIndex);
   return slotButton.children[3] as InstanceType<typeof testRuntime.FakeHTMLElement>;
 };
 
@@ -7829,6 +7835,123 @@ describe('main.ts shell state orchestration', () => {
       maxHealth: 400
     });
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[5]).toBeNull();
+  });
+
+  it('shows dead heart-crystal blocked feedback through the shared hidden-panel mouse item-use path', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            health: 0
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              ...Array.from({ length: 4 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 5
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: 0,
+        worldX: 8,
+        worldY: 0,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+
+    expect(getHotbarOverlaySlotButton(5).title).toContain('player is dead');
+    expect(getHotbarOverlaySlotAmountLabel(5).textContent).toBe('DEAD');
+    expect(getHotbarOverlaySlotCooldownFill(5).style.opacity).toBe('1');
+    expect(getHotbarOverlaySlotCooldownFill(5).style.height).toBe('100.0%');
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerState).toMatchObject({
+      health: 0,
+      maxHealth: 100
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[5]).toEqual({
+      itemId: 'heart-crystal',
+      amount: 1
+    });
+  });
+
+  it('shows max-cap heart-crystal blocked feedback through the shared hidden-panel touch item-use path', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            maxHealth: 400,
+            health: 360
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              ...Array.from({ length: 4 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 5
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: 0,
+        worldX: 8,
+        worldY: 0,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+
+    expect(getHotbarOverlaySlotButton(5).title).toContain('already at 400 max health');
+    expect(getHotbarOverlaySlotAmountLabel(5).textContent).toBe('MAX');
+    expect(getHotbarOverlaySlotCooldownFill(5).style.opacity).toBe('1');
+    expect(getHotbarOverlaySlotCooldownFill(5).style.height).toBe('100.0%');
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerState).toMatchObject({
+      health: 360,
+      maxHealth: 400
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[5]).toEqual({
+      itemId: 'heart-crystal',
+      amount: 1
+    });
   });
 
   it('keeps canvas click and tap input on the debug-edit path while the full panel is open', async () => {
