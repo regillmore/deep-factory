@@ -7155,6 +7155,44 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
+  it('spawns a rope pickup entity when a placed rope tile is removed', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const ropeWorldTileX = 20;
+    const ropeWorldTileY = -20;
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: ropeWorldTileX,
+        worldTileY: ropeWorldTileY,
+        kind: 'break'
+      }
+    ];
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(ropeWorldTileX, ropeWorldTileY),
+      STARTER_ROPE_TILE_ID
+    );
+    testRuntime.rendererSetTileResult = true;
+
+    runFixedUpdate();
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[3]).toEqual({
+      itemId: 'rope',
+      amount: 24
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 328, y: -312 },
+        itemId: 'rope',
+        amount: 1
+      }
+    ]);
+  });
+
   it('spawns one torch pickup entity when support removal clears a neighboring starter torch', async () => {
     await import('./main');
     await flushBootstrap();
@@ -7256,6 +7294,71 @@ describe('main.ts shell state orchestration', () => {
       {
         position: { x: 332, y: -312 },
         itemId: 'torch',
+        amount: 999
+      }
+    ]);
+  });
+
+  it('cascades a removed rope refund across overlapping matching world pickups before spawning a new entity', async () => {
+    const ropeWorldTileX = 20;
+    const ropeWorldTileY = -20;
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState(),
+          droppedItemStates: [
+            createDroppedItemState({
+              position: { x: 328, y: -312 },
+              itemId: 'rope',
+              amount: 999
+            }),
+            createDroppedItemState({
+              position: { x: 332, y: -312 },
+              itemId: 'rope',
+              amount: 998
+            })
+          ]
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: ropeWorldTileX,
+        worldTileY: ropeWorldTileY,
+        kind: 'break'
+      }
+    ];
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(ropeWorldTileX, ropeWorldTileY),
+      STARTER_ROPE_TILE_ID
+    );
+    testRuntime.rendererSetTileResult = true;
+
+    runFixedUpdate();
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 328, y: -312 },
+        itemId: 'rope',
+        amount: 999
+      },
+      {
+        position: { x: 332, y: -312 },
+        itemId: 'rope',
         amount: 999
       }
     ]);

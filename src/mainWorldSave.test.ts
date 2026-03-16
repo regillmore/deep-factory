@@ -192,6 +192,39 @@ describe('createWorldSaveEnvelope', () => {
     });
   });
 
+  it('round-trips a returned rope pickup stack after a placed rope tile is removed', () => {
+    const world = new TileWorld(0);
+    expect(world.setTile(1, -1, STARTER_ROPE_TILE_ID)).toBe(true);
+    expect(world.setTile(1, -1, 0)).toBe(true);
+    const droppedItemStates = [
+      createDroppedItemState({
+        position: { x: 24, y: -8 },
+        itemId: 'rope',
+        amount: 1
+      })
+    ];
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+            droppedItemStates,
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(decoded.worldSnapshot);
+    expect(restoredWorld.getTile(1, -1)).toBe(0);
+    expect(decoded.session.droppedItemStates).toEqual(droppedItemStates);
+  });
+
   it('round-trips reordered hotbar slot order and selection through save decode', () => {
     const world = new TileWorld(0);
     const standalonePlayerInventoryState = createPlayerInventoryState({

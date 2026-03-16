@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-15
 
+- Task: Add a rope pickup-refund follow-up after rope traversal utility slice and dropped-item pickup.
+- Changes: Updated [src/main.ts](../src/main.ts) so renderer-forwarded tile-edit notifications now refund removed placed rope tiles through the same nearby-pickup merge cascade already used by torch refunds, expanded [src/main.test.ts](../src/main.test.ts) with direct-removal and merge-cascade regressions for returned rope pickups, added explicit save snapshot coverage in [src/mainWorldSave.test.ts](../src/mainWorldSave.test.ts), removed completed task `550` from [docs/NEXT.md](docs/NEXT.md), added replacement task `582`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/main.test.ts src/mainWorldSave.test.ts`.
+
 - Task: Add heart-crystal blocked-use feedback after the heart-crystal health-upgrade slice.
 - Changes: Updated [src/ui/hotbarOverlay.ts](../src/ui/hotbarOverlay.ts), [src/main.ts](../src/main.ts), [src/ui/hotbarOverlay.test.ts](../src/ui/hotbarOverlay.test.ts), and [src/main.test.ts](../src/main.test.ts) so selected heart-crystal slots now show visible `DEAD` or `MAX` blocked feedback when hidden-panel desktop or touch item use is rejected because the player is dead or already at the `400` max-health cap; removed completed task `595` from [docs/NEXT.md](docs/NEXT.md), added replacement task `596`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/ui/hotbarOverlay.test.ts src/main.test.ts`.

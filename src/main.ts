@@ -2441,23 +2441,27 @@ const bootstrap = async (): Promise<void> => {
     droppedItemEntityIds.push(droppedItemEntityId);
     return droppedItemEntityId;
   };
-  const refundRemovedStarterTorchTile = (worldTileX: number, worldTileY: number): void => {
+  const refundRemovedPlacedTile = (
+    worldTileX: number,
+    worldTileY: number,
+    itemId: DroppedItemState['itemId']
+  ): void => {
     const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(
-      createDroppedItemStateFromWorldTile(worldTileX, worldTileY, STARTER_TORCH_ITEM_ID, 1)
+      createDroppedItemStateFromWorldTile(worldTileX, worldTileY, itemId, 1)
     );
     if (remainingDroppedItemState !== null) {
       spawnDroppedItemEntity(remainingDroppedItemState);
     }
   };
   renderer.onTileEdited((event) => {
-    if (
-      event.previousTileId !== STARTER_TORCH_TILE_ID ||
-      event.tileId === STARTER_TORCH_TILE_ID
-    ) {
+    if (event.previousTileId === STARTER_TORCH_TILE_ID && event.tileId !== STARTER_TORCH_TILE_ID) {
+      refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_TORCH_ITEM_ID);
       return;
     }
 
-    refundRemovedStarterTorchTile(event.worldTileX, event.worldTileY);
+    if (event.previousTileId === STARTER_ROPE_TILE_ID && event.tileId !== STARTER_ROPE_TILE_ID) {
+      refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_ROPE_ITEM_ID);
+    }
   });
   const restoreDroppedItemEntityStates = (droppedItemStates: readonly DroppedItemState[]): void => {
     droppedItemEntityIds = [];
