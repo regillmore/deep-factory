@@ -12,7 +12,7 @@ export interface AuthoredAtlasUvRect {
   v1: number;
 }
 
-export const AUTHORED_ATLAS_WIDTH = 96;
+export const AUTHORED_ATLAS_WIDTH = 128;
 export const AUTHORED_ATLAS_HEIGHT = 64;
 
 // Keep authored regions explicit so atlas-index resolution does not depend on a synthetic grid.
@@ -37,8 +37,9 @@ export const AUTHORED_ATLAS_REGIONS: readonly AuthoredAtlasRegion[] = [
   { x: 64, y: 16, width: 16, height: 16 },
   { x: 64, y: 32, width: 16, height: 16 },
   { x: 64, y: 48, width: 16, height: 16 },
-  // Keep a documented spare utility slot while preserving the right-side padding strip.
-  { x: 80, y: 48, width: 8, height: 16 }
+  { x: 80, y: 32, width: 16, height: 16 },
+  // Keep a documented spare utility slot while preserving a widened right-side padding strip.
+  { x: 80, y: 48, width: 16, height: 16 }
 ] as const;
 
 export const AUTHORED_ATLAS_REGION_COUNT = AUTHORED_ATLAS_REGIONS.length;
@@ -46,7 +47,7 @@ export const AUTHORED_ATLAS_REGION_COUNT = AUTHORED_ATLAS_REGIONS.length;
 // Document reserved or blank committed slots here so asset regressions can distinguish drift from intent.
 export const AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS: Readonly<Record<number, string>> =
   Object.freeze({
-    20: 'reserved spare authored utility slot for unused-region transparency regressions'
+    21: 'reserved spare authored utility slot for unused-region transparency regressions'
   });
 
 export const AUTHORED_ATLAS_UV_RECTS: readonly AuthoredAtlasUvRect[] = AUTHORED_ATLAS_REGIONS.map(

@@ -44,6 +44,7 @@ import type { PlayerItemMiningPreviewState } from './ui/playerItemMiningPreviewO
 import type { PlayerItemPlacementPreviewState } from './ui/playerItemPlacementPreviewOverlay';
 import { createDroppedItemState } from './world/droppedItem';
 import { createPlayerInventoryState } from './world/playerInventory';
+import { AUTHORED_ATLAS_HEIGHT, AUTHORED_ATLAS_WIDTH } from './world/authoredAtlasLayout';
 import {
   createPlayerState,
   DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
@@ -55,6 +56,10 @@ import {
   STARTER_PICKAXE_SWING_WINDUP_SECONDS
 } from './world/starterPickaxeMining';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
+import {
+  describeLiquidRenderVariantPixelBoundsAtElapsedMs,
+  describeLiquidRenderVariantUvRectAtElapsedMs
+} from './world/tileMetadata';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
 import { DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS } from './world/hostileSlimeCombat';
 import {
@@ -5393,8 +5398,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(3, 6), 8);
     testRuntime.rendererLiquidLevelsByWorldKey.set(worldTileKey(3, 6), 5);
     testRuntime.rendererLiquidRenderCardinalMask = 11;
-    testRuntime.rendererTelemetry.atlasWidth = 96;
-    testRuntime.rendererTelemetry.atlasHeight = 64;
+    testRuntime.rendererTelemetry.atlasWidth = AUTHORED_ATLAS_WIDTH;
+    testRuntime.rendererTelemetry.atlasHeight = AUTHORED_ATLAS_HEIGHT;
 
     runFixedUpdate();
     runRenderFrame();
@@ -5587,14 +5592,26 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(3, 6), 8);
     testRuntime.rendererLiquidLevelsByWorldKey.set(worldTileKey(3, 6), 5);
     testRuntime.rendererLiquidRenderCardinalMask = 10;
-    testRuntime.rendererTelemetry.atlasWidth = 96;
-    testRuntime.rendererTelemetry.atlasHeight = 64;
+    testRuntime.rendererTelemetry.atlasWidth = AUTHORED_ATLAS_WIDTH;
+    testRuntime.rendererTelemetry.atlasHeight = AUTHORED_ATLAS_HEIGHT;
 
     const expectAnimatedLiquidInspectTelemetry = (
       expectedFrameIndex: number,
-      expectedVariantUvRect: string,
-      expectedVariantPixelBounds: string
+      expectedElapsedMs: number
     ): void => {
+      const expectedVariantUvRect = describeLiquidRenderVariantUvRectAtElapsedMs(
+        8,
+        10,
+        expectedElapsedMs
+      );
+      const expectedVariantPixelBounds = describeLiquidRenderVariantPixelBoundsAtElapsedMs(
+        8,
+        10,
+        expectedElapsedMs,
+        AUTHORED_ATLAS_WIDTH,
+        AUTHORED_ATLAS_HEIGHT
+      );
+
       expect(testRuntime.latestDebugOverlayInspectState).not.toBeNull();
       expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
       if (!testRuntime.latestDebugOverlayInspectState || !testRuntime.latestDebugEditStatusStripState) {
@@ -5749,12 +5766,12 @@ describe('main.ts shell state orchestration', () => {
     runFixedUpdate();
     runRenderFrame();
 
-    expectAnimatedLiquidInspectTelemetry(0, '0.5,0.813..0.667,0.938', '48,52..64,60');
+    expectAnimatedLiquidInspectTelemetry(0, 120);
 
     testRuntime.performanceNow = 240;
     runRenderFrame();
 
-    expectAnimatedLiquidInspectTelemetry(1, '0.333,0.813..0.5,0.938', '32,52..48,60');
+    expectAnimatedLiquidInspectTelemetry(1, 240);
   });
 
   it('routes compact status-strip player and nearby-light telemetry through one shared overlay-visibility selector', async () => {

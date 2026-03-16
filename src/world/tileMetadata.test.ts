@@ -5,7 +5,11 @@ import {
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_BY_NORMALIZED_ADJACENCY_MASK,
   TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT
 } from './autotile';
-import { AUTHORED_ATLAS_REGION_COUNT } from './authoredAtlasLayout';
+import {
+  AUTHORED_ATLAS_HEIGHT,
+  AUTHORED_ATLAS_REGION_COUNT,
+  AUTHORED_ATLAS_WIDTH
+} from './authoredAtlasLayout';
 import {
   describeLiquidConnectivityGroup,
   describeLiquidRenderVariantPixelBounds,
@@ -62,6 +66,27 @@ import {
   resolveTileRenderUvRect
 } from './tileMetadata';
 
+const authoredUvRectFromPixels = (x0: number, y0: number, x1: number, y1: number) => ({
+  u0: x0 / AUTHORED_ATLAS_WIDTH,
+  v0: y0 / AUTHORED_ATLAS_HEIGHT,
+  u1: x1 / AUTHORED_ATLAS_WIDTH,
+  v1: y1 / AUTHORED_ATLAS_HEIGHT
+});
+
+const describeAuthoredUvRectFromPixels = (
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number
+): string => describeTileUvRect(authoredUvRectFromPixels(x0, y0, x1, y1))!;
+
+const describeAuthoredSourceFromPixels = (
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number
+): string => `uvRect ${describeAuthoredUvRectFromPixels(x0, y0, x1, y1)}`;
+
 describe('tile metadata loader', () => {
   it('loads placeholder terrain autotile mappings from JSON', () => {
     expect(TILE_METADATA.tilesById.size).toBeGreaterThanOrEqual(3);
@@ -103,51 +128,96 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileVariantAtlasIndex(2, 6)).toBe(6);
     expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(1, 0)).toBe(0);
     expect(resolveTileRenderUvRect(3)).toEqual(atlasIndexToUvRect(14));
-    expect(resolveTileRenderUvRect(10)).toEqual(atlasIndexToUvRect(15));
+    expect(resolveTileRenderUvRect(10)).toEqual(atlasIndexToUvRect(20));
     expect(resolveTileRenderUvRect(11)).toEqual(atlasIndexToUvRect(19));
     expect(resolveLiquidRenderVariantMetadata(7, 0)).toMatchObject({
-      uvRect: { u0: 0.6666666666666666, v0: 0.25, u1: 0.75, v1: 0.5 }
+      uvRect: authoredUvRectFromPixels(64, 16, 72, 32)
     });
-    expect(describeLiquidRenderVariantSource(7, 0)).toBe('uvRect 0.667,0.25..0.75,0.5');
-    expect(resolveLiquidRenderVariantUvRect(7, 0)).toEqual({
-      u0: 0.6666666666666666,
-      v0: 0.25,
-      u1: 0.75,
-      v1: 0.5
-    });
-    expect(describeLiquidRenderVariantSource(7, 3)).toBe('uvRect 0.667,0.125..0.708,0.25');
-    expect(describeLiquidRenderVariantSource(7, 6)).toBe('uvRect 0.708,0..0.75,0.125');
-    expect(describeLiquidRenderVariantSource(7, 7)).toBe('uvRect 0.667,0.25..0.708,0.5');
-    expect(describeLiquidRenderVariantSource(7, 9)).toBe('uvRect 0.667,0..0.708,0.125');
-    expect(describeLiquidRenderVariantSource(7, 12)).toBe('uvRect 0.708,0.125..0.75,0.25');
-    expect(describeLiquidRenderVariantSource(7, 13)).toBe('uvRect 0.708,0.25..0.75,0.5');
-    expect(describeLiquidRenderVariantSource(7, 14)).toBe('uvRect 0.667,0.375..0.75,0.5');
-    expect(describeLiquidRenderVariantSource(7, 15)).toBe('uvRect 0.667,0..0.75,0.25');
+    expect(describeLiquidRenderVariantSource(7, 0)).toBe(
+      describeAuthoredSourceFromPixels(64, 16, 72, 32)
+    );
+    expect(resolveLiquidRenderVariantUvRect(7, 0)).toEqual(authoredUvRectFromPixels(64, 16, 72, 32));
+    expect(describeLiquidRenderVariantSource(7, 3)).toBe(
+      describeAuthoredSourceFromPixels(64, 8, 68, 16)
+    );
+    expect(describeLiquidRenderVariantSource(7, 6)).toBe(
+      describeAuthoredSourceFromPixels(68, 0, 72, 8)
+    );
+    expect(describeLiquidRenderVariantSource(7, 7)).toBe(
+      describeAuthoredSourceFromPixels(64, 16, 68, 32)
+    );
+    expect(describeLiquidRenderVariantSource(7, 9)).toBe(
+      describeAuthoredSourceFromPixels(64, 0, 68, 8)
+    );
+    expect(describeLiquidRenderVariantSource(7, 12)).toBe(
+      describeAuthoredSourceFromPixels(68, 8, 72, 16)
+    );
+    expect(describeLiquidRenderVariantSource(7, 13)).toBe(
+      describeAuthoredSourceFromPixels(68, 16, 72, 32)
+    );
+    expect(describeLiquidRenderVariantSource(7, 14)).toBe(
+      describeAuthoredSourceFromPixels(64, 24, 72, 32)
+    );
+    expect(describeLiquidRenderVariantSource(7, 15)).toBe(
+      describeAuthoredSourceFromPixels(64, 0, 72, 16)
+    );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(7, 9, 180)).toBe(
-      'uvRect 0.75,0..0.792,0.125'
+      describeAuthoredSourceFromPixels(72, 0, 76, 8)
     );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(7, 7, 180)).toBe(
-      'uvRect 0.75,0.25..0.792,0.5'
+      describeAuthoredSourceFromPixels(72, 16, 76, 32)
     );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(7, 14, 180)).toBe(
-      'uvRect 0.75,0.375..0.833,0.5'
+      describeAuthoredSourceFromPixels(72, 24, 80, 32)
     );
-    expect(describeLiquidRenderVariantSource(8, 0)).toBe('uvRect 0.5,0.75..0.583,1');
-    expect(describeLiquidRenderVariantSource(8, 10)).toBe('uvRect 0.5,0.813..0.667,0.938');
-    expect(describeLiquidRenderVariantSource(8, 1)).toBe('uvRect 0.583,0.75..0.667,0.875');
-    expect(describeLiquidRenderVariantSource(8, 2)).toBe('uvRect 0.5,0.75..0.542,1');
-    expect(describeLiquidRenderVariantSource(8, 3)).toBe('uvRect 0.625,0.75..0.667,0.875');
-    expect(describeLiquidRenderVariantSource(8, 4)).toBe('uvRect 0.542,0.75..0.583,1');
-    expect(describeLiquidRenderVariantSource(8, 5)).toBe('uvRect 0.542,0.75..0.625,1');
-    expect(describeLiquidRenderVariantSource(8, 6)).toBe('uvRect 0.625,0.875..0.667,1');
-    expect(describeLiquidRenderVariantSource(8, 7)).toBe('uvRect 0.625,0.75..0.667,1');
-    expect(describeLiquidRenderVariantSource(8, 8)).toBe('uvRect 0.625,0.75..0.667,1');
-    expect(describeLiquidRenderVariantSource(8, 9)).toBe('uvRect 0.583,0.75..0.625,0.875');
-    expect(describeLiquidRenderVariantSource(8, 12)).toBe('uvRect 0.583,0.875..0.625,1');
-    expect(describeLiquidRenderVariantSource(8, 13)).toBe('uvRect 0.583,0.75..0.625,1');
-    expect(describeLiquidRenderVariantSource(8, 14)).toBe('uvRect 0.583,0.875..0.667,1');
-    expect(describeLiquidRenderVariantSource(8, 11)).toBe('uvRect 0.5,0.75..0.667,0.875');
-    expect(describeLiquidRenderVariantSource(8, 15)).toBe('uvRect 0.5,0.875..0.667,1');
+    expect(describeLiquidRenderVariantSource(8, 0)).toBe(
+      describeAuthoredSourceFromPixels(48, 48, 56, 64)
+    );
+    expect(describeLiquidRenderVariantSource(8, 10)).toBe(
+      describeAuthoredSourceFromPixels(48, 52, 64, 60)
+    );
+    expect(describeLiquidRenderVariantSource(8, 1)).toBe(
+      describeAuthoredSourceFromPixels(56, 48, 64, 56)
+    );
+    expect(describeLiquidRenderVariantSource(8, 2)).toBe(
+      describeAuthoredSourceFromPixels(48, 48, 52, 64)
+    );
+    expect(describeLiquidRenderVariantSource(8, 3)).toBe(
+      describeAuthoredSourceFromPixels(60, 48, 64, 56)
+    );
+    expect(describeLiquidRenderVariantSource(8, 4)).toBe(
+      describeAuthoredSourceFromPixels(52, 48, 56, 64)
+    );
+    expect(describeLiquidRenderVariantSource(8, 5)).toBe(
+      describeAuthoredSourceFromPixels(52, 48, 60, 64)
+    );
+    expect(describeLiquidRenderVariantSource(8, 6)).toBe(
+      describeAuthoredSourceFromPixels(60, 56, 64, 64)
+    );
+    expect(describeLiquidRenderVariantSource(8, 7)).toBe(
+      describeAuthoredSourceFromPixels(60, 48, 64, 64)
+    );
+    expect(describeLiquidRenderVariantSource(8, 8)).toBe(
+      describeAuthoredSourceFromPixels(60, 48, 64, 64)
+    );
+    expect(describeLiquidRenderVariantSource(8, 9)).toBe(
+      describeAuthoredSourceFromPixels(56, 48, 60, 56)
+    );
+    expect(describeLiquidRenderVariantSource(8, 12)).toBe(
+      describeAuthoredSourceFromPixels(56, 56, 60, 64)
+    );
+    expect(describeLiquidRenderVariantSource(8, 13)).toBe(
+      describeAuthoredSourceFromPixels(56, 48, 60, 64)
+    );
+    expect(describeLiquidRenderVariantSource(8, 14)).toBe(
+      describeAuthoredSourceFromPixels(56, 56, 64, 64)
+    );
+    expect(describeLiquidRenderVariantSource(8, 11)).toBe(
+      describeAuthoredSourceFromPixels(48, 48, 64, 56)
+    );
+    expect(describeLiquidRenderVariantSource(8, 15)).toBe(
+      describeAuthoredSourceFromPixels(48, 56, 64, 64)
+    );
     expect(describeLiquidRenderVariantSource(8, 0)).not.toBe(describeLiquidRenderVariantSource(8, 5));
     expect(describeLiquidRenderVariantSource(8, 0)).not.toBe(describeLiquidRenderVariantSource(8, 10));
     expect(describeLiquidRenderVariantSource(8, 1)).not.toBe(describeLiquidRenderVariantSource(8, 0));
@@ -163,59 +233,48 @@ describe('tile metadata loader', () => {
     expect(describeLiquidRenderVariantSource(8, 10)).not.toBe(describeLiquidRenderVariantSource(8, 11));
     expect(describeLiquidRenderVariantSource(8, 10)).not.toBe(describeLiquidRenderVariantSource(8, 15));
     expect(describeLiquidRenderVariantSource(8, 11)).not.toBe(describeLiquidRenderVariantSource(8, 15));
-    expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 0, 180)).toBe('uvRect 0.333,0.75..0.417,1');
-    expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 1, 180)).toBe('uvRect 0.417,0.75..0.5,0.875');
+    expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 0, 180)).toBe(
+      describeAuthoredSourceFromPixels(32, 48, 40, 64)
+    );
+    expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 1, 180)).toBe(
+      describeAuthoredSourceFromPixels(40, 48, 48, 56)
+    );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 2, 180)).toBe(
-      'uvRect 0.333,0.75..0.375,1'
+      describeAuthoredSourceFromPixels(32, 48, 36, 64)
     );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 3, 180)).toBe(
-      'uvRect 0.458,0.75..0.5,0.875'
+      describeAuthoredSourceFromPixels(44, 48, 48, 56)
     );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 4, 180)).toBe(
-      'uvRect 0.375,0.75..0.417,1'
+      describeAuthoredSourceFromPixels(36, 48, 40, 64)
     );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 5, 180)).toBe(
-      'uvRect 0.375,0.75..0.458,1'
+      describeAuthoredSourceFromPixels(36, 48, 44, 64)
     );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 7, 180)).toBe(
-      'uvRect 0.458,0.75..0.5,1'
+      describeAuthoredSourceFromPixels(44, 48, 48, 64)
     );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 8, 180)).toBe(
-      'uvRect 0.458,0.75..0.5,1'
+      describeAuthoredSourceFromPixels(44, 48, 48, 64)
     );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 12, 180)).toBe(
-      'uvRect 0.417,0.875..0.458,1'
+      describeAuthoredSourceFromPixels(40, 56, 44, 64)
     );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 13, 180)).toBe(
-      'uvRect 0.417,0.75..0.458,1'
+      describeAuthoredSourceFromPixels(40, 48, 44, 64)
     );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 14, 180)).toBe(
-      'uvRect 0.417,0.875..0.5,1'
+      describeAuthoredSourceFromPixels(40, 56, 48, 64)
     );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 15, 180)).toBe(
-      'uvRect 0.333,0.875..0.5,1'
+      describeAuthoredSourceFromPixels(32, 56, 48, 64)
     );
     expect(describeLiquidRenderVariantSourceAtElapsedMs(8, 10, 180)).toBe(
-      'uvRect 0.333,0.813..0.5,0.938'
+      describeAuthoredSourceFromPixels(32, 52, 48, 60)
     );
-    expect(resolveLiquidRenderVariantUvRect(8, 14)).toEqual({
-      u0: 0.5833333333333334,
-      v0: 0.875,
-      u1: 0.6666666666666666,
-      v1: 1
-    });
-    expect(resolveLiquidRenderVariantUvRect(8, 15)).toEqual({
-      u0: 0.5,
-      v0: 0.875,
-      u1: 0.6666666666666666,
-      v1: 1
-    });
-    expect(resolveTileRenderUvRect(4)).toEqual({
-      u0: 0.16666666666666666,
-      v0: 0.25,
-      u1: 0.3333333333333333,
-      v1: 0.5
-    });
+    expect(resolveLiquidRenderVariantUvRect(8, 14)).toEqual(authoredUvRectFromPixels(56, 56, 64, 64));
+    expect(resolveLiquidRenderVariantUvRect(8, 15)).toEqual(authoredUvRectFromPixels(48, 56, 64, 64));
+    expect(resolveTileRenderUvRect(4)).toEqual(authoredUvRectFromPixels(16, 16, 32, 32));
     expect(resolveTerrainAutotileVariantUvRect(2, 6)).toEqual(atlasIndexToUvRect(6));
     expect(resolveTerrainAutotileUvRectByNormalizedAdjacencyMask(2, 0)).toEqual(atlasIndexToUvRect(0));
     expect(resolveTerrainAutotileVariantAtlasIndex(1, TERRAIN_AUTOTILE_PLACEHOLDER_VARIANT_COUNT)).toBe(
@@ -684,10 +743,18 @@ describe('tile metadata loader', () => {
     expect(describeLiquidRenderVariantSource(12, 5, registry)).toBe('atlasIndex 5');
     expect(describeLiquidRenderVariantSource(20, 2, registry)).toBe('uvRect 0.125,0.25..0.5,0.75');
     expect(describeLiquidRenderVariantSource(20, LIQUID_RENDER_CARDINAL_MASK_COUNT, registry)).toBe(null);
-    expect(describeLiquidRenderVariantUvRect(12, 5, registry)).toBe('0.167,0.25..0.333,0.5');
+    expect(describeLiquidRenderVariantUvRect(12, 5, registry)).toBe(describeTileUvRect(atlasIndexToUvRect(5)));
     expect(describeLiquidRenderVariantUvRect(20, 2, registry)).toBe('0.125,0.25..0.5,0.75');
     expect(describeLiquidRenderVariantUvRect(20, LIQUID_RENDER_CARDINAL_MASK_COUNT, registry)).toBe(null);
-    expect(describeLiquidRenderVariantPixelBounds(12, 5, 96, 64, registry)).toBe('16,16..32,32');
+    expect(
+      describeLiquidRenderVariantPixelBounds(
+        12,
+        5,
+        AUTHORED_ATLAS_WIDTH,
+        AUTHORED_ATLAS_HEIGHT,
+        registry
+      )
+    ).toBe(describeTileUvRectPixelBounds(atlasIndexToUvRect(5), AUTHORED_ATLAS_WIDTH, AUTHORED_ATLAS_HEIGHT));
     expect(describeLiquidRenderVariantPixelBounds(20, 2, 96, 64, registry)).toBe('12,16..48,48');
     expect(describeLiquidRenderVariantPixelBounds(20, LIQUID_RENDER_CARDINAL_MASK_COUNT, 96, 64, registry)).toBe(
       null
@@ -1069,13 +1136,35 @@ describe('tile metadata loader', () => {
     expect(describeLiquidRenderVariantSourceAtElapsedMs(12, 3, 0, registry)).toBe('atlasIndex 14');
     expect(describeLiquidRenderVariantSourceAtElapsedMs(12, 3, 120, registry)).toBe('atlasIndex 15');
     expect(describeLiquidRenderVariantSourceAtElapsedMs(13, 3, 120, registry)).toBe('atlasIndex 15');
-    expect(describeLiquidRenderVariantUvRectAtElapsedMs(12, 3, 0, registry)).toBe('0.333,0.75..0.5,1');
-    expect(describeLiquidRenderVariantUvRectAtElapsedMs(12, 3, 120, registry)).toBe('0.5,0.75..0.667,1');
-    expect(describeLiquidRenderVariantPixelBoundsAtElapsedMs(12, 3, 0, 96, 64, registry)).toBe(
-      '32,48..48,64'
+    expect(describeLiquidRenderVariantUvRectAtElapsedMs(12, 3, 0, registry)).toBe(
+      describeTileUvRect(atlasIndexToUvRect(14))
     );
-    expect(describeLiquidRenderVariantPixelBoundsAtElapsedMs(12, 3, 120, 96, 64, registry)).toBe(
-      '48,48..64,64'
+    expect(describeLiquidRenderVariantUvRectAtElapsedMs(12, 3, 120, registry)).toBe(
+      describeTileUvRect(atlasIndexToUvRect(15))
+    );
+    expect(
+      describeLiquidRenderVariantPixelBoundsAtElapsedMs(
+        12,
+        3,
+        0,
+        AUTHORED_ATLAS_WIDTH,
+        AUTHORED_ATLAS_HEIGHT,
+        registry
+      )
+    ).toBe(
+      describeTileUvRectPixelBounds(atlasIndexToUvRect(14), AUTHORED_ATLAS_WIDTH, AUTHORED_ATLAS_HEIGHT)
+    );
+    expect(
+      describeLiquidRenderVariantPixelBoundsAtElapsedMs(
+        12,
+        3,
+        120,
+        AUTHORED_ATLAS_WIDTH,
+        AUTHORED_ATLAS_HEIGHT,
+        registry
+      )
+    ).toBe(
+      describeTileUvRectPixelBounds(atlasIndexToUvRect(15), AUTHORED_ATLAS_WIDTH, AUTHORED_ATLAS_HEIGHT)
     );
     expect(resolveAnimatedLiquidRenderVariantFrameUvRectAtElapsedMs(12, 3, 0, registry)).toBe(
       atlasIndexToUvRect(14)

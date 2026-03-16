@@ -8,6 +8,7 @@ import {
   LIQUID_RENDER_CARDINAL_MASK_COUNT,
   atlasIndexToUvRect,
   parseTileMetadataRegistry,
+  resolveTileRenderUvRect,
   resolveTerrainAutotileUvRectByNormalizedAdjacencyMask
 } from './tileMetadata';
 import type { Chunk } from './types';
@@ -369,12 +370,7 @@ describe('buildChunkMesh autotile UV selection', () => {
     const mesh = buildChunkMesh(chunk);
 
     expect(mesh.vertexCount).toBe(6);
-    expectSingleQuadUv(mesh.vertices, {
-      u0: 0.16666666666666666,
-      v0: 0.25,
-      u1: 0.3333333333333333,
-      v1: 0.5
-    });
+    expectSingleQuadUv(mesh.vertices, resolveTileRenderUvRect(4)!);
   });
 
   it('bakes per-tile light levels into each vertex of the emitted quad', () => {

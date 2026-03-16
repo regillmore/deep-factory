@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-15: Torch full-square atlas fixes should grow the atlas before consuming spill space
+
+- Decision: The authored atlas now widens to `128x64`, keeps the torch on a centered full `16x16` authored region at index `20`, preserves region `21` as a blank full-width spare slot, and keeps the exterior padding strip blank beyond the authored-region bounds.
+- Reason: Default tile quads still render full width, so the torch needs a full square like the rope, and growing the atlas preserves spill-detection space while also creating room for later authored slots.
+- Consequence: Future atlas growth should preserve some blank exterior padding and must update direct `render.uvRect` normalization together with the PNG and authored-region layout instead of assuming the old `96x64` atlas width.
+
 ### 2026-03-15: Starter heart-crystal backfill stops once max health is upgraded
 
 - Decision: Save normalization now backfills a missing starter `heart-crystal` only while the saved standalone player still uses the baseline `100` max health.
@@ -76,7 +82,7 @@ Record only durable design decisions here. Keep each entry short: date, decision
 
 ### 2026-03-14: Rope art uses a full tile atlas square because default tile quads render full width
 
-- Decision: Rope render metadata now points at authored atlas region `19`, a full `16x16` square whose visible strand is centered inside transparent padding, while the narrow utility slot at region `20` stays intentionally unused and the right-side exterior padding strip remains transparent.
+- Decision: Rope render metadata now points at authored atlas region `19`, a full `16x16` square whose visible strand is centered inside transparent padding.
 - Reason: Ordinary tile rendering maps atlas UVs across a full tile-width world quad, so placing rope in a narrower authored region made it render stretched even though the atlas art itself looked correct.
 - Consequence: Future narrow-looking tiles should stay inside full-width authored regions unless the same pass adds non-liquid render bounds that let the mesher shrink world-space quad width intentionally.
 

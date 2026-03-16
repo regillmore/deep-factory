@@ -1194,6 +1194,32 @@ describe('authored atlas asset', () => {
     });
   });
 
+  it('keeps the torch sprite centered inside its full-width authored square while preserving exterior padding', () => {
+    const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
+    const torchTile = TILE_METADATA.tiles.find((tile) => tile.name === 'torch');
+
+    expect(torchTile?.render?.atlasIndex).toBe(20);
+
+    const torchRegion = AUTHORED_ATLAS_REGIONS[torchTile!.render!.atlasIndex!];
+    expect(torchRegion).toEqual({ x: 80, y: 32, width: 16, height: 16 });
+
+    const visibleBounds = findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, torchRegion!);
+    expect(visibleBounds).toEqual({
+      x: torchRegion!.x + 6,
+      y: torchRegion!.y + 1,
+      width: 4,
+      height: 13
+    });
+
+    const exteriorPaddingStrip = getExteriorPaddingStripRegion(pngWidth, pngHeight);
+    expect(exteriorPaddingStrip).toEqual({
+      x: 96,
+      y: 0,
+      width: pngWidth - 96,
+      height: pngHeight
+    });
+  });
+
   it('keeps every default animated atlas-index frame distinct from its prior committed PNG frame', () => {
     const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
     const animatedFrameTransitions = collectAnimatedAtlasIndexFrameTransitions();
