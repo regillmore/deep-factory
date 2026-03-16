@@ -9,7 +9,8 @@ import {
   createPlayerState,
   DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
   DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS,
-  DEFAULT_PLAYER_MAX_BREATH_SECONDS
+  DEFAULT_PLAYER_MAX_BREATH_SECONDS,
+  DEFAULT_PLAYER_MAX_HEALTH
 } from './world/playerState';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
 import { TileWorld } from './world/world';
@@ -130,7 +131,9 @@ describe('createWorldSaveEnvelope', () => {
         { itemId: 'stone-block', amount: 11 },
         { itemId: 'torch', amount: 20 },
         { itemId: 'rope', amount: 24 },
-        ...Array.from({ length: 6 }, () => null)
+        { itemId: 'healing-potion', amount: 3 },
+        { itemId: 'heart-crystal', amount: 1 },
+        ...Array.from({ length: 4 }, () => null)
       ],
       selectedHotbarSlotIndex: 1
     });
@@ -198,7 +201,8 @@ describe('createWorldSaveEnvelope', () => {
         { itemId: 'rope', amount: 24 },
         { itemId: 'dirt-block', amount: 64 },
         { itemId: 'healing-potion', amount: 3 },
-        ...Array.from({ length: 5 }, () => null)
+        { itemId: 'heart-crystal', amount: 1 },
+        ...Array.from({ length: 4 }, () => null)
       ],
       selectedHotbarSlotIndex: 3
     });
@@ -267,7 +271,8 @@ describe('createWorldSaveEnvelope', () => {
         { itemId: 'stone-block', amount: 12 },
         { itemId: 'torch', amount: 20 },
         { itemId: 'healing-potion', amount: 3 },
-        ...Array.from({ length: 6 }, () => null)
+        { itemId: 'heart-crystal', amount: 1 },
+        ...Array.from({ length: 5 }, () => null)
       ],
       selectedHotbarSlotIndex: 1
     });
@@ -375,7 +380,8 @@ describe('decodeWorldSaveEnvelope', () => {
         { itemId: 'torch', amount: 20 },
         { itemId: 'rope', amount: 24 },
         { itemId: 'healing-potion', amount: 2 },
-        ...Array.from({ length: 5 }, () => null)
+        { itemId: 'heart-crystal', amount: 1 },
+        ...Array.from({ length: 4 }, () => null)
       ],
       selectedHotbarSlotIndex: 4
     });
@@ -402,7 +408,33 @@ describe('decodeWorldSaveEnvelope', () => {
     });
   });
 
-  it('defaults missing breath, hostile-contact invulnerability, fall-recovery, and death state on older standalone-player save payloads', () => {
+  it('round-trips upgraded player max health through save decode', () => {
+    const world = new TileWorld(0);
+    const standalonePlayerState = createPlayerState({
+      maxHealth: 140,
+      health: 118,
+      breathSecondsRemaining: 6
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState,
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    expect(decoded.session.standalonePlayerState).toEqual(standalonePlayerState);
+  });
+
+  it('defaults missing max health, breath, hostile-contact invulnerability, fall-recovery, and death state on older standalone-player save payloads', () => {
     const world = new TileWorld(0);
     const standalonePlayerState = createPlayerState({
       position: { x: 72, y: 96 },
@@ -414,6 +446,7 @@ describe('decodeWorldSaveEnvelope', () => {
       lavaDamageTickSecondsRemaining: 0.5
     });
     const {
+      maxHealth: _omittedMaxHealth,
       breathSecondsRemaining: _omittedBreath,
       drowningDamageTickSecondsRemaining: _omittedDrowningTick,
       fallDamageRecoverySecondsRemaining: _omittedFallRecovery,
@@ -437,6 +470,7 @@ describe('decodeWorldSaveEnvelope', () => {
 
     expect(decoded.session.standalonePlayerState).toEqual({
       ...standalonePlayerState,
+      maxHealth: DEFAULT_PLAYER_MAX_HEALTH,
       breathSecondsRemaining: DEFAULT_PLAYER_MAX_BREATH_SECONDS,
       drowningDamageTickSecondsRemaining: DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
       fallDamageRecoverySecondsRemaining: 0,
@@ -480,7 +514,7 @@ describe('decodeWorldSaveEnvelope', () => {
         { itemId: 'rope', amount: 24 },
         { itemId: 'pickaxe', amount: 1 },
         { itemId: 'healing-potion', amount: 3 },
-        null,
+        { itemId: 'heart-crystal', amount: 1 },
         null,
         null,
         null,
@@ -520,6 +554,44 @@ describe('decodeWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerInventoryState.hotbar[4]).toEqual({
       itemId: 'healing-potion',
       amount: 3
+    });
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[5]).toEqual({
+      itemId: 'heart-crystal',
+      amount: 1
+    });
+  });
+
+  it('adds a starter heart crystal into the first empty slot when older save payloads lack one', () => {
+    const world = new TileWorld(0);
+
+    const decoded = decodeWorldSaveEnvelope({
+      kind: WORLD_SAVE_ENVELOPE_KIND,
+      version: WORLD_SAVE_ENVELOPE_VERSION,
+      migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
+      session: {
+        standalonePlayerState: createPlayerState(),
+        standalonePlayerDeathState: null,
+        standalonePlayerInventoryState: {
+          hotbar: [
+            { itemId: 'pickaxe', amount: 1 },
+            { itemId: 'dirt-block', amount: 64 },
+            { itemId: 'torch', amount: 20 },
+            { itemId: 'rope', amount: 24 },
+            { itemId: 'healing-potion', amount: 3 },
+            null,
+            ...Array.from({ length: 4 }, () => null)
+          ],
+          selectedHotbarSlotIndex: 0
+        },
+        droppedItemStates: [],
+        cameraFollowOffset: { x: 0, y: 0 }
+      },
+      worldSnapshot: world.createSnapshot()
+    });
+
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[5]).toEqual({
+      itemId: 'heart-crystal',
+      amount: 1
     });
   });
 

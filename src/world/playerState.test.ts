@@ -62,7 +62,30 @@ const setTiles = (
   }
 };
 
-const withDefaultPlayerVitals = <T extends object>(state: T): T & {
+const withDefaultPlayerVitals = <
+  T extends Partial<{
+    maxHealth: number;
+    health: number;
+    breathSecondsRemaining: number;
+    lavaDamageTickSecondsRemaining: number;
+    drowningDamageTickSecondsRemaining: number;
+    fallDamageRecoverySecondsRemaining: number;
+    hostileContactInvulnerabilitySecondsRemaining: number;
+  }> &
+    object
+>(
+  state: T
+): Omit<
+  T,
+  | 'maxHealth'
+  | 'health'
+  | 'breathSecondsRemaining'
+  | 'lavaDamageTickSecondsRemaining'
+  | 'drowningDamageTickSecondsRemaining'
+  | 'fallDamageRecoverySecondsRemaining'
+  | 'hostileContactInvulnerabilitySecondsRemaining'
+> & {
+  maxHealth: number;
   health: number;
   breathSecondsRemaining: number;
   lavaDamageTickSecondsRemaining: number;
@@ -71,12 +94,17 @@ const withDefaultPlayerVitals = <T extends object>(state: T): T & {
   hostileContactInvulnerabilitySecondsRemaining: number;
 } => ({
   ...state,
-  health: DEFAULT_PLAYER_MAX_HEALTH,
-  breathSecondsRemaining: DEFAULT_PLAYER_MAX_BREATH_SECONDS,
-  lavaDamageTickSecondsRemaining: DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
-  drowningDamageTickSecondsRemaining: DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
-  fallDamageRecoverySecondsRemaining: 0,
+  maxHealth: state.maxHealth ?? DEFAULT_PLAYER_MAX_HEALTH,
+  health: state.health ?? state.maxHealth ?? DEFAULT_PLAYER_MAX_HEALTH,
+  breathSecondsRemaining: state.breathSecondsRemaining ?? DEFAULT_PLAYER_MAX_BREATH_SECONDS,
+  lavaDamageTickSecondsRemaining:
+    state.lavaDamageTickSecondsRemaining ?? DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
+  drowningDamageTickSecondsRemaining:
+    state.drowningDamageTickSecondsRemaining ??
+    DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
+  fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining ?? 0,
   hostileContactInvulnerabilitySecondsRemaining:
+    state.hostileContactInvulnerabilitySecondsRemaining ??
     DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS
 });
 
@@ -201,6 +229,7 @@ describe('playerState', () => {
       size: { width: 10, height: 20 },
       grounded: true,
       facing: 'left',
+      maxHealth: 140,
       health: 75,
       breathSecondsRemaining: 3.5,
       lavaDamageTickSecondsRemaining: 0.125,
@@ -215,6 +244,31 @@ describe('playerState', () => {
     expect(cloned.position).not.toBe(state.position);
     expect(cloned.velocity).not.toBe(state.velocity);
     expect(cloned.size).not.toBe(state.size);
+  });
+
+  it('defaults health to maxHealth and rejects health above maxHealth', () => {
+    expect(
+      createPlayerState({
+        maxHealth: 140
+      })
+    ).toEqual(
+      withDefaultPlayerVitals({
+        position: { x: 0, y: 0 },
+        velocity: { x: 0, y: 0 },
+        size: { width: DEFAULT_PLAYER_WIDTH, height: DEFAULT_PLAYER_HEIGHT },
+        grounded: false,
+        facing: 'right',
+        maxHealth: 140,
+        health: 140
+      })
+    );
+
+    expect(() =>
+      createPlayerState({
+        maxHealth: 120,
+        health: 121
+      })
+    ).toThrowError(/health must be less than or equal to maxHealth/);
   });
 
   it('reports support, wall, and ceiling contacts adjacent to the current player AABB', () => {
@@ -1848,6 +1902,7 @@ describe('playerState', () => {
       size: { width: 12, height: 12 },
       grounded: false,
       facing: 'right',
+      maxHealth: DEFAULT_PLAYER_MAX_HEALTH,
       health: 40,
       breathSecondsRemaining: DEFAULT_PLAYER_MAX_BREATH_SECONDS,
       lavaDamageTickSecondsRemaining: 0.25,

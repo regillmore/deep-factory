@@ -76,6 +76,25 @@ describe('playerHealingPotion', () => {
     expect(useAfterCooldown.nextPlayerState.health).toBe(90);
   });
 
+  it('heals against the upgraded player max health instead of the default baseline', () => {
+    const useResult = tryUsePlayerHealingPotion(
+      createPlayerState({
+        maxHealth: 140,
+        health: 118
+      }),
+      createPlayerHealingPotionCooldownState()
+    );
+
+    expect(useResult.consumed).toBe(true);
+    expect(useResult.healedAmount).toBe(22);
+    expect(useResult.nextPlayerState).toEqual(
+      createPlayerState({
+        maxHealth: 140,
+        health: 140
+      })
+    );
+  });
+
   it('blocks potion use on dead players without starting cooldown', () => {
     const useResult = tryUsePlayerHealingPotion(
       createPlayerState({ health: 0 }),

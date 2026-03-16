@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-15: Starter heart-crystal backfill stops once max health is upgraded
+
+- Decision: Save normalization now backfills a missing starter `heart-crystal` only while the saved standalone player still uses the baseline `100` max health.
+- Reason: Existing baseline-health sessions need a backward-compatible on-ramp into the heart-crystal slice, but consumed upgrades must not regenerate the crystal on later saves.
+- Consequence: Future one-time progression-item migrations should gate any starter-item backfill on saved progression state instead of unconditionally re-adding consumed items.
+
 ### 2026-03-15: Current-session death-count telemetry stays in runtime state
 
 - Decision: The standalone-player death counter shown in player-combat telemetry now lives only in current-session runtime state and resets whenever a world session is replaced, restored, or freshly generated.

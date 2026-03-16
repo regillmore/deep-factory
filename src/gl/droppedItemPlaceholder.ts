@@ -56,6 +56,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
   'healing-potion': {
     baseColor: [0.67, 0.18, 0.22],
     accentColor: [0.98, 0.82, 0.34]
+  },
+  'heart-crystal': {
+    baseColor: [0.76, 0.23, 0.31],
+    accentColor: [0.99, 0.73, 0.82]
   }
 };
 

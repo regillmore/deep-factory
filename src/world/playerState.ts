@@ -23,6 +23,7 @@ export interface PlayerState {
   size: PlayerSize;
   grounded: boolean;
   facing: PlayerFacing;
+  maxHealth: number;
   health: number;
   breathSecondsRemaining: number;
   lavaDamageTickSecondsRemaining: number;
@@ -59,6 +60,7 @@ export interface CreatePlayerStateOptions {
   size?: Partial<PlayerSize>;
   grounded?: boolean;
   facing?: PlayerFacing;
+  maxHealth?: number;
   health?: number;
   breathSecondsRemaining?: number;
   lavaDamageTickSecondsRemaining?: number;
@@ -231,8 +233,17 @@ const buildSize = (size: Partial<PlayerSize> | undefined): PlayerSize => ({
   height: expectPositiveFiniteNumber(size?.height ?? DEFAULT_PLAYER_HEIGHT, 'size.height')
 });
 
-const buildHealth = (health: number | undefined): number =>
-  expectNonNegativeFiniteNumber(health ?? DEFAULT_PLAYER_MAX_HEALTH, 'health');
+const buildMaxHealth = (maxHealth: number | undefined): number =>
+  expectPositiveFiniteNumber(maxHealth ?? DEFAULT_PLAYER_MAX_HEALTH, 'maxHealth');
+
+const buildHealth = (health: number | undefined, maxHealth: number): number => {
+  const resolvedHealth = expectNonNegativeFiniteNumber(health ?? maxHealth, 'health');
+  if (resolvedHealth > maxHealth) {
+    throw new Error('health must be less than or equal to maxHealth');
+  }
+
+  return resolvedHealth;
+};
 
 const buildBreathSecondsRemaining = (value: number | undefined): number =>
   expectNonNegativeFiniteNumber(value ?? DEFAULT_PLAYER_MAX_BREATH_SECONDS, 'breathSecondsRemaining');
@@ -1094,6 +1105,7 @@ const resolvePlayerStepMotionState = (
 export const createPlayerState = (options: CreatePlayerStateOptions = {}): PlayerState => {
   const velocity = buildVector(options.velocity, 'velocity');
   const facing = options.facing ?? resolveFacingFromHorizontalVelocity(DEFAULT_PLAYER_FACING, velocity.x);
+  const maxHealth = buildMaxHealth(options.maxHealth);
 
   return {
     position: buildVector(options.position, 'position'),
@@ -1101,7 +1113,8 @@ export const createPlayerState = (options: CreatePlayerStateOptions = {}): Playe
     size: buildSize(options.size),
     grounded: (options.grounded ?? false) && velocity.y === 0,
     facing,
-    health: buildHealth(options.health),
+    maxHealth,
+    health: buildHealth(options.health, maxHealth),
     breathSecondsRemaining: buildBreathSecondsRemaining(options.breathSecondsRemaining),
     lavaDamageTickSecondsRemaining: buildLavaDamageTickSecondsRemaining(
       options.lavaDamageTickSecondsRemaining
@@ -1148,6 +1161,7 @@ export const clonePlayerState = (state: PlayerState): PlayerState => ({
   },
   grounded: state.grounded,
   facing: state.facing,
+  maxHealth: state.maxHealth,
   health: state.health,
   breathSecondsRemaining: state.breathSecondsRemaining,
   lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
@@ -1168,6 +1182,7 @@ export const respawnPlayerStateAtSpawnIfEmbeddedInSolid = (
 
   return createPlayerStateFromSpawn(spawn, {
     facing: state.facing,
+    maxHealth: state.maxHealth,
     health: state.health,
     breathSecondsRemaining: state.breathSecondsRemaining,
     lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
@@ -1228,6 +1243,7 @@ export const integratePlayerState = (state: PlayerState, fixedDtSeconds: number)
     },
     grounded: state.grounded && state.velocity.y === 0,
     facing,
+    maxHealth: state.maxHealth,
     health: state.health,
     breathSecondsRemaining: state.breathSecondsRemaining,
     lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
@@ -1267,6 +1283,7 @@ export const movePlayerStateWithCollisions = (
     },
     grounded: groundSupport !== null,
     facing,
+    maxHealth: state.maxHealth,
     health: state.health,
     breathSecondsRemaining: state.breathSecondsRemaining,
     lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
@@ -1324,6 +1341,7 @@ export const stepPlayerState = (
       },
       grounded: stepMotionState.grounded,
       facing: state.facing,
+      maxHealth: state.maxHealth,
       health: breathStepState.health,
       breathSecondsRemaining: breathStepState.breathSecondsRemaining,
       lavaDamageTickSecondsRemaining: lavaDamageStepState.lavaDamageTickSecondsRemaining,

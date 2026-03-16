@@ -8,6 +8,7 @@ import {
   createEmptyPlayerInventoryState,
   createPlayerInventoryItemStack,
   createPlayerInventoryState,
+  ensurePlayerInventoryHasStarterHeartCrystal,
   ensurePlayerInventoryHasStarterHealingPotions,
   ensurePlayerInventoryHasStarterPickaxe,
   getPlayerInventoryItemDefinition,
@@ -34,7 +35,7 @@ describe('playerInventory', () => {
         { itemId: 'torch', amount: 20 },
         { itemId: 'rope', amount: 24 },
         { itemId: 'healing-potion', amount: 3 },
-        null,
+        { itemId: 'heart-crystal', amount: 1 },
         null,
         null,
         null,
@@ -317,6 +318,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'POTION',
       maxStackSize: 30
     });
+    expect(getPlayerInventoryItemDefinition('heart-crystal')).toEqual({
+      id: 'heart-crystal',
+      label: 'Heart Crystal',
+      hotbarLabel: 'HEART',
+      maxStackSize: 1
+    });
   });
 
   it('fills the first empty slot with a starter pickaxe when one is missing', () => {
@@ -387,6 +394,37 @@ describe('playerInventory', () => {
         null
       ],
       selectedHotbarSlotIndex: 3
+    });
+  });
+
+  it('fills the first empty slot with a starter heart crystal when it is missing', () => {
+    const state = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'healing-potion', amount: 3 },
+        null,
+        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 6 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 4
+    });
+
+    expect(ensurePlayerInventoryHasStarterHeartCrystal(state)).toEqual({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'healing-potion', amount: 3 },
+        { itemId: 'heart-crystal', amount: 1 },
+        null,
+        null,
+        null,
+        null
+      ],
+      selectedHotbarSlotIndex: 4
     });
   });
 

@@ -1,4 +1,4 @@
-import { clonePlayerState, DEFAULT_PLAYER_MAX_HEALTH, type PlayerState } from './playerState';
+import { clonePlayerState, type PlayerState } from './playerState';
 
 export const HEALING_POTION_ITEM_ID = 'healing-potion';
 export const DEFAULT_HEALING_POTION_HEAL_AMOUNT = 30;
@@ -39,7 +39,8 @@ const expectPositiveFiniteNumber = (value: number, label: string): number => {
 };
 
 const resolvePlayerHealingPotionOptions = (
-  options: PlayerHealingPotionOptions
+  options: PlayerHealingPotionOptions,
+  fallbackMaxPlayerHealth: number
 ): Required<PlayerHealingPotionOptions> => ({
   healAmount: expectPositiveFiniteNumber(
     options.healAmount ?? DEFAULT_HEALING_POTION_HEAL_AMOUNT,
@@ -50,7 +51,7 @@ const resolvePlayerHealingPotionOptions = (
     'options.cooldownSeconds'
   ),
   maxPlayerHealth: expectPositiveFiniteNumber(
-    options.maxPlayerHealth ?? DEFAULT_PLAYER_MAX_HEALTH,
+    options.maxPlayerHealth ?? fallbackMaxPlayerHealth,
     'options.maxPlayerHealth'
   )
 });
@@ -82,7 +83,7 @@ export const tryUsePlayerHealingPotion = (
   cooldownState: PlayerHealingPotionCooldownState,
   options: PlayerHealingPotionOptions = {}
 ): TryUsePlayerHealingPotionResult => {
-  const resolvedOptions = resolvePlayerHealingPotionOptions(options);
+  const resolvedOptions = resolvePlayerHealingPotionOptions(options, playerState.maxHealth);
   const nextPlayerState = clonePlayerState(playerState);
   const nextCooldownState = clonePlayerHealingPotionCooldownState(cooldownState);
 

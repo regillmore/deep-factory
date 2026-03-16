@@ -1,6 +1,7 @@
 import type { CameraFollowOffset } from './core/cameraFollow';
 import {
   clonePlayerState,
+  DEFAULT_PLAYER_MAX_HEALTH,
   DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
   DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS,
   DEFAULT_PLAYER_MAX_BREATH_SECONDS,
@@ -11,6 +12,7 @@ import { createDroppedItemState, type DroppedItemState } from './world/droppedIt
 import {
   createDefaultPlayerInventoryState,
   createPlayerInventoryState,
+  ensurePlayerInventoryHasStarterHeartCrystal,
   ensurePlayerInventoryHasStarterHealingPotions,
   ensurePlayerInventoryHasStarterPickaxe,
   getPlayerInventoryItemDefinition,
@@ -151,6 +153,14 @@ const normalizePlayerState = (value: unknown, label: string): PlayerState => {
   if (facing !== 'left' && facing !== 'right') {
     throw new Error(`${label}.facing must be "left" or "right"`);
   }
+  const maxHealth = expectPositiveFiniteNumber(
+    value.maxHealth ?? DEFAULT_PLAYER_MAX_HEALTH,
+    `${label}.maxHealth`
+  );
+  const health = expectNonNegativeFiniteNumber(value.health, `${label}.health`);
+  if (health > maxHealth) {
+    throw new Error(`${label}.health must be less than or equal to ${label}.maxHealth`);
+  }
 
   return clonePlayerState({
     position: {
@@ -167,7 +177,8 @@ const normalizePlayerState = (value: unknown, label: string): PlayerState => {
     },
     grounded: expectBoolean(value.grounded, `${label}.grounded`),
     facing,
-    health: expectNonNegativeFiniteNumber(value.health, `${label}.health`),
+    maxHealth,
+    health,
     breathSecondsRemaining: expectNonNegativeFiniteNumber(
       value.breathSecondsRemaining ?? DEFAULT_PLAYER_MAX_BREATH_SECONDS,
       `${label}.breathSecondsRemaining`
@@ -259,11 +270,16 @@ const normalizePlayerInventoryState = (value: unknown, label: string): PlayerInv
 
 const normalizeStandalonePlayerInventoryState = (
   value: unknown,
-  label: string
+  label: string,
+  standalonePlayerState: PlayerState | null
 ): PlayerInventoryState =>
-  ensurePlayerInventoryHasStarterHealingPotions(
-    ensurePlayerInventoryHasStarterPickaxe(
-      value === undefined ? createDefaultPlayerInventoryState() : normalizePlayerInventoryState(value, label)
+  (standalonePlayerState === null || standalonePlayerState.maxHealth <= DEFAULT_PLAYER_MAX_HEALTH
+    ? ensurePlayerInventoryHasStarterHeartCrystal
+    : (state: PlayerInventoryState) => state)(
+    ensurePlayerInventoryHasStarterHealingPotions(
+      ensurePlayerInventoryHasStarterPickaxe(
+        value === undefined ? createDefaultPlayerInventoryState() : normalizePlayerInventoryState(value, label)
+      )
     )
   );
 
@@ -346,28 +362,33 @@ export const createWorldSaveEnvelope = ({
   droppedItemStates = [],
   cameraFollowOffset = { x: 0, y: 0 },
   migration = createDefaultWorldSaveEnvelopeMigrationMetadata()
-}: CreateWorldSaveEnvelopeOptions): WorldSaveEnvelope => ({
-  kind: WORLD_SAVE_ENVELOPE_KIND,
-  version: WORLD_SAVE_ENVELOPE_VERSION,
-  migration: normalizeMigrationMetadata(migration, 'migration'),
-  session: {
-    standalonePlayerState: normalizeStandalonePlayerState(
-      standalonePlayerState,
-      'standalonePlayerState'
-    ),
-    standalonePlayerDeathState: normalizeStandalonePlayerDeathState(
-      standalonePlayerDeathState,
-      'standalonePlayerDeathState'
-    ),
-    standalonePlayerInventoryState: normalizeStandalonePlayerInventoryState(
-      standalonePlayerInventoryState,
-      'standalonePlayerInventoryState'
-    ),
-    droppedItemStates: normalizeDroppedItemStates(droppedItemStates, 'droppedItemStates'),
-    cameraFollowOffset: normalizeCameraFollowOffset(cameraFollowOffset, 'cameraFollowOffset')
-  },
-  worldSnapshot: normalizeWorldSnapshot(worldSnapshot, 'worldSnapshot')
-});
+}: CreateWorldSaveEnvelopeOptions): WorldSaveEnvelope => {
+  const normalizedStandalonePlayerState = normalizeStandalonePlayerState(
+    standalonePlayerState,
+    'standalonePlayerState'
+  );
+
+  return {
+    kind: WORLD_SAVE_ENVELOPE_KIND,
+    version: WORLD_SAVE_ENVELOPE_VERSION,
+    migration: normalizeMigrationMetadata(migration, 'migration'),
+    session: {
+      standalonePlayerState: normalizedStandalonePlayerState,
+      standalonePlayerDeathState: normalizeStandalonePlayerDeathState(
+        standalonePlayerDeathState,
+        'standalonePlayerDeathState'
+      ),
+      standalonePlayerInventoryState: normalizeStandalonePlayerInventoryState(
+        standalonePlayerInventoryState,
+        'standalonePlayerInventoryState',
+        normalizedStandalonePlayerState
+      ),
+      droppedItemStates: normalizeDroppedItemStates(droppedItemStates, 'droppedItemStates'),
+      cameraFollowOffset: normalizeCameraFollowOffset(cameraFollowOffset, 'cameraFollowOffset')
+    },
+    worldSnapshot: normalizeWorldSnapshot(worldSnapshot, 'worldSnapshot')
+  };
+};
 
 export const decodeWorldSaveEnvelope = (value: unknown): WorldSaveEnvelope => {
   if (!isRecord(value)) {
@@ -383,22 +404,25 @@ export const decodeWorldSaveEnvelope = (value: unknown): WorldSaveEnvelope => {
     throw new Error('session must be an object');
   }
 
+  const normalizedStandalonePlayerState = normalizeStandalonePlayerState(
+    value.session.standalonePlayerState,
+    'session.standalonePlayerState'
+  );
+
   return {
     kind: WORLD_SAVE_ENVELOPE_KIND,
     version: WORLD_SAVE_ENVELOPE_VERSION,
     migration: normalizeMigrationMetadata(value.migration, 'migration'),
     session: {
-      standalonePlayerState: normalizeStandalonePlayerState(
-        value.session.standalonePlayerState,
-        'session.standalonePlayerState'
-      ),
+      standalonePlayerState: normalizedStandalonePlayerState,
       standalonePlayerDeathState: normalizeStandalonePlayerDeathState(
         value.session.standalonePlayerDeathState ?? null,
         'session.standalonePlayerDeathState'
       ),
       standalonePlayerInventoryState: normalizeStandalonePlayerInventoryState(
         value.session.standalonePlayerInventoryState,
-        'session.standalonePlayerInventoryState'
+        'session.standalonePlayerInventoryState',
+        normalizedStandalonePlayerState
       ),
       droppedItemStates: normalizeDroppedItemStates(
         value.session.droppedItemStates,

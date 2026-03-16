@@ -6291,7 +6291,7 @@ describe('main.ts shell state orchestration', () => {
           { itemId: 'pickaxe', amount: 1 },
           { itemId: 'rope', amount: 24 },
           { itemId: 'healing-potion', amount: 3 },
-          null,
+          { itemId: 'heart-crystal', amount: 1 },
           null,
           null,
           null,
@@ -6316,7 +6316,7 @@ describe('main.ts shell state orchestration', () => {
           { itemId: 'pickaxe', amount: 1 },
           { itemId: 'rope', amount: 24 },
           { itemId: 'healing-potion', amount: 3 },
-          null,
+          { itemId: 'heart-crystal', amount: 1 },
           null,
           null,
           null,
@@ -7718,6 +7718,107 @@ describe('main.ts shell state orchestration', () => {
       itemId: 'healing-potion',
       amount: 1
     });
+  });
+
+  it('uses a heart crystal through the shared hidden-panel mouse item-use path and persists the max-health upgrade', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            health: 45
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              ...Array.from({ length: 4 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 5
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: 0,
+        worldX: 8,
+        worldY: 0,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerState).toMatchObject({
+      health: 65,
+      maxHealth: 120
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[5]).toBeNull();
+  });
+
+  it('uses a heart crystal through the shared hidden-panel touch item-use path and clamps the final upgrade at the health cap', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            maxHealth: 390,
+            health: 372
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              ...Array.from({ length: 4 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 5
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: 0,
+        worldX: 8,
+        worldY: 0,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerState).toMatchObject({
+      health: 382,
+      maxHealth: 400
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[5]).toBeNull();
   });
 
   it('keeps canvas click and tap input on the debug-edit path while the full panel is open', async () => {

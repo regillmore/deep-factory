@@ -6,7 +6,8 @@ export type PlayerInventoryItemId =
   | 'stone-block'
   | 'torch'
   | 'rope'
-  | 'healing-potion';
+  | 'healing-potion'
+  | 'heart-crystal';
 
 export interface PlayerInventoryItemDefinition {
   id: PlayerInventoryItemId;
@@ -81,6 +82,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     label: 'Healing Potion',
     hotbarLabel: 'POTION',
     maxStackSize: 30
+  },
+  'heart-crystal': {
+    id: 'heart-crystal',
+    label: 'Heart Crystal',
+    hotbarLabel: 'HEART',
+    maxStackSize: 1
   }
 };
 
@@ -89,7 +96,8 @@ const DEFAULT_STARTER_HOTBAR_STACKS: readonly PlayerInventoryItemStack[] = [
   { itemId: 'dirt-block', amount: 64 },
   { itemId: 'torch', amount: 20 },
   { itemId: 'rope', amount: 24 },
-  { itemId: 'healing-potion', amount: 3 }
+  { itemId: 'healing-potion', amount: 3 },
+  { itemId: 'heart-crystal', amount: 1 }
 ];
 
 const createEmptyHotbar = (): Array<PlayerInventoryItemStack | null> =>
@@ -205,6 +213,14 @@ export const ensurePlayerInventoryHasStarterHealingPotions = (
   ensurePlayerInventoryHasStarterHotbarStack(
     state,
     createPlayerInventoryItemStack('healing-potion', 3)
+  );
+
+export const ensurePlayerInventoryHasStarterHeartCrystal = (
+  state: PlayerInventoryState
+): PlayerInventoryState =>
+  ensurePlayerInventoryHasStarterHotbarStack(
+    state,
+    createPlayerInventoryItemStack('heart-crystal', 1)
   );
 
 const ensurePlayerInventoryHasStarterHotbarStack = (

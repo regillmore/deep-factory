@@ -74,15 +74,18 @@ describe('HotbarOverlay', () => {
   it('renders the starter hotbar state and highlights the selected slot', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });
+    const starterState = createDefaultPlayerInventoryState();
+    const firstEmptySlotIndex = starterState.hotbar.findIndex((stack) => stack === null);
 
     overlay.setVisible(true);
-    overlay.update(createDefaultPlayerInventoryState());
+    overlay.update(starterState);
 
     const root = overlay.getRootElement() as unknown as FakeElement;
     const slotRow = getSlotRow(overlay);
     const firstSlot = slotRow.children[0]!;
     const secondSlot = slotRow.children[1]!;
-    const emptySlot = slotRow.children[5]!;
+    const heartCrystalSlot = slotRow.children[5]!;
+    const emptySlot = slotRow.children[firstEmptySlotIndex]!;
     const moveLeftButton = getMoveLeftButton(overlay);
     const dropOneButton = getDropOneButton(overlay);
     const dropStackButton = getDropStackButton(overlay);
@@ -92,6 +95,8 @@ describe('HotbarOverlay', () => {
     expect(firstSlot.title).toContain('Starter Pickaxe');
     expect(firstSlot.getAttribute('aria-pressed')).toBe('true');
     expect(secondSlot.title).toContain('Dirt Block');
+    expect(heartCrystalSlot.title).toContain('Heart Crystal');
+    expect(heartCrystalSlot.children[1]!.textContent).toBe('HEART');
     expect(emptySlot.children[1]!.textContent).toBe('EMPTY');
     expect(getSlotCooldownFill(overlay, 4).style.opacity).toBe('0');
     expect(moveLeftButton.title).toContain('leftmost slot');

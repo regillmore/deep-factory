@@ -244,6 +244,10 @@ import {
   stepPlayerHealingPotionCooldownState,
   tryUsePlayerHealingPotion
 } from './world/playerHealingPotion';
+import {
+  HEART_CRYSTAL_ITEM_ID,
+  tryUsePlayerHeartCrystal
+} from './world/playerHeartCrystal';
 import { evaluatePlayerHotbarTilePlacementRange } from './world/playerHotbarPlacementRange';
 import {
   evaluateStarterBlockPlacement,
@@ -1634,6 +1638,27 @@ const bootstrap = async (): Promise<void> => {
     setStandalonePlayerState(useResult.nextPlayerState);
     return true;
   };
+  const tryUseSelectedHeartCrystal = (): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return false;
+    }
+
+    const useResult = tryUsePlayerHeartCrystal(standalonePlayerState);
+    if (!useResult.consumed) {
+      return false;
+    }
+    if (!applySelectedStandalonePlayerHotbarSlotConsumption()) {
+      return false;
+    }
+
+    setStandalonePlayerState(useResult.nextPlayerState);
+    return true;
+  };
   const selectStandalonePlayerHotbarSlot = (slotIndex: number): void => {
     applyStandalonePlayerInventoryState(
       setPlayerInventorySelectedHotbarSlot(standalonePlayerInventoryState, slotIndex)
@@ -2719,6 +2744,7 @@ const bootstrap = async (): Promise<void> => {
       if (isPlayerDeathStateRespawnReady(nextDeathState) && resolvedPlayerSpawn !== null) {
         const respawnedPlayerState = createPlayerStateFromSpawn(resolvedPlayerSpawn, {
           facing: nextPlayerState.facing,
+          maxHealth: nextPlayerState.maxHealth,
           hostileContactInvulnerabilitySecondsRemaining:
             DEFAULT_PLAYER_RESPAWN_INVULNERABILITY_SECONDS
         });
@@ -3146,6 +3172,9 @@ const bootstrap = async (): Promise<void> => {
     }
     if (selectedStack.itemId === HEALING_POTION_ITEM_ID) {
       return tryUseSelectedHealingPotion();
+    }
+    if (selectedStack.itemId === HEART_CRYSTAL_ITEM_ID) {
+      return tryUseSelectedHeartCrystal();
     }
 
     const placementPreview = getSelectedStandalonePlayerItemPlacementPreviewAtTile(
