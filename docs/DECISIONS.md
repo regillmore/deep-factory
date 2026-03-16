@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Existing baseline-health sessions need a backward-compatible on-ramp into the heart-crystal slice, but consumed upgrades must not regenerate the crystal on later saves.
 - Consequence: Future one-time progression-item migrations should gate any starter-item backfill on saved progression state instead of unconditionally re-adding consumed items.
 
+### 2026-03-15: Current/max health telemetry stays on the existing player-combat readout
+
+- Decision: The full debug HUD and hidden-HUD compact status strip now render live health as `current/max` when max health is available, falling back to the prior single-value health readout only when older or partial telemetry lacks `maxHealth`.
+- Reason: Heart-crystal upgrades change the player's survivability ceiling, and showing both numbers on the existing combat line keeps that context visible without adding a second health-only telemetry line or a new toggle family.
+- Consequence: Future player-combat telemetry should treat upgraded health capacity as part of the existing health readout and preserve formatter fallbacks for incomplete telemetry snapshots.
+
 ### 2026-03-15: Current-session death-count telemetry stays in runtime state
 
 - Decision: The standalone-player death counter shown in player-combat telemetry now lives only in current-session runtime state and resets whenever a world session is replaced, restored, or freshly generated.

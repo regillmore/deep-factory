@@ -485,6 +485,7 @@ type StandalonePlayerRenderFrameStatusStripTelemetry = Pick<
   | 'playerCameraZoom'
   | 'playerCeilingBonkHoldActive'
   | 'playerHealth'
+  | 'playerMaxHealth'
   | 'playerDeathCount'
   | 'playerRespawnSecondsRemaining'
   | 'playerDeathHoldStatus'
@@ -4363,6 +4364,10 @@ const bootstrap = async (): Promise<void> => {
         : false;
     const playerHealth =
       playerState === null ? null : readOptionalFiniteNumber((playerState as { health?: unknown }).health);
+    const playerMaxHealth =
+      playerState === null
+        ? null
+        : readOptionalFiniteNumber((playerState as { maxHealth?: unknown }).maxHealth);
     const playerDeathCount = playerState === null ? null : standalonePlayerDeathCount;
     const playerRespawnSecondsRemaining =
       standalonePlayerDeathState === null
@@ -4544,6 +4549,7 @@ const bootstrap = async (): Promise<void> => {
                 grounded: playerState.grounded,
                 facing: playerState.facing,
                 health: playerHealth,
+                maxHealth: playerMaxHealth,
                 deathCount: playerDeathCount,
                 respawnSecondsRemaining: playerRespawnSecondsRemaining,
                 deathHoldStatus: playerDeathHoldStatus,
@@ -4633,6 +4639,7 @@ const bootstrap = async (): Promise<void> => {
         playerCeilingBonkHoldActive:
           playerState === null ? null : standalonePlayerCeilingBonkActive,
         playerHealth,
+        playerMaxHealth,
         playerDeathCount,
         playerRespawnSecondsRemaining,
         playerDeathHoldStatus,
@@ -4815,6 +4822,7 @@ const bootstrap = async (): Promise<void> => {
       playerNearbyLightSourceLocalTile: null,
       playerCeilingBonkHoldActive: null,
       playerHealth: null,
+      playerMaxHealth: null,
       playerDeathCount: null,
       playerRespawnSecondsRemaining: null,
       playerDeathHoldStatus: null,
@@ -5190,6 +5198,7 @@ const bootstrap = async (): Promise<void> => {
         debugStatusStripPlayerTelemetry.playerNearbyLightSourceLocalTile,
       playerCeilingBonkHoldActive: debugStatusStripPlayerTelemetry.playerCeilingBonkHoldActive,
       playerHealth: debugStatusStripPlayerTelemetry.playerHealth,
+      playerMaxHealth: debugStatusStripPlayerTelemetry.playerMaxHealth,
       playerDeathCount: debugStatusStripPlayerTelemetry.playerDeathCount,
       playerRespawnSecondsRemaining: debugStatusStripPlayerTelemetry.playerRespawnSecondsRemaining,
       playerDeathHoldStatus: debugStatusStripPlayerTelemetry.playerDeathHoldStatus,

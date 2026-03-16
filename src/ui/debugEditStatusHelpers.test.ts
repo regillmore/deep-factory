@@ -176,6 +176,7 @@ describe('buildDebugEditStatusStripModel', () => {
       playerNearbyLightSourceChunk: { x: 0, y: 0 },
       playerNearbyLightSourceLocalTile: { x: 2, y: 2 },
       playerHealth: 62,
+      playerMaxHealth: 120,
       playerFallDamageRecoverySecondsRemaining: 0.35,
       playerLandingDamageEvent: {
         damageApplied: 3,
@@ -262,6 +263,7 @@ describe('buildDebugEditStatusStripModel', () => {
       playerNearbyLightSourceChunk: { x: 0, y: 0 },
       playerNearbyLightSourceLocalTile: { x: 2, y: 2 },
       playerHealth: 62,
+      playerMaxHealth: 120,
       playerFallDamageRecoverySecondsRemaining: 0.35,
       playerLandingDamageEvent: {
         damageApplied: 3,
@@ -281,7 +283,7 @@ describe('buildDebugEditStatusStripModel', () => {
       telemetryState: createDefaultWorldSessionTelemetryState()
     });
 
-    expect(model.playerText).toContain('HealthNow: 62');
+    expect(model.playerText).toContain('HealthNow: 62/120');
     expect(model.playerText).toContain('FallRecoveryNow: 0.35s');
     expect(model.playerText).toContain('SpawnNow: safe | tile 4,-2');
     expect(model.playerText).toContain('SpawnSupportNow: tile 4,-1');
@@ -1601,6 +1603,7 @@ describe('buildDebugEditStatusStripModel', () => {
       desktopInspectPinArmed: false,
       playerPlaceholderPoseLabel: 'grounded-idle',
       playerHealth: 85,
+      playerMaxHealth: 120,
       playerDeathCount: 3,
       playerRespawnSecondsRemaining: 0.75,
       playerDeathHoldStatus: 'holding',
@@ -1617,7 +1620,7 @@ describe('buildDebugEditStatusStripModel', () => {
 
     expect(model.playerText).toBe(
       'Pose: grounded-idle\n' +
-        'HealthNow: 85\n' +
+        'HealthNow: 85/120\n' +
         'DeathsNow: 3\n' +
         'RespawnIn: 0.75s\n' +
         'DeathHold: holding\n' +
@@ -1631,6 +1634,22 @@ describe('buildDebugEditStatusStripModel', () => {
         'FallRecoveryNow: 0.35s\n' +
         'ContactInvulnNow: 0.75s'
     );
+    expect(model.eventText).toBeNull();
+  });
+
+  it('keeps the compact health line readable when only max health is available', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerMaxHealth: 120,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('HealthNow: n/a/120');
     expect(model.eventText).toBeNull();
   });
 

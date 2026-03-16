@@ -7761,6 +7761,16 @@ describe('main.ts shell state orchestration', () => {
     ];
 
     runFixedUpdate(1 / 60);
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.player).toMatchObject({
+      health: 65,
+      maxHealth: 120
+    });
+    expect(testRuntime.latestDebugEditStatusStripState).toMatchObject({
+      playerHealth: 65,
+      playerMaxHealth: 120
+    });
 
     dispatchWindowEvent('pagehide');
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerState).toMatchObject({

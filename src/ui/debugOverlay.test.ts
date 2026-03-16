@@ -150,6 +150,7 @@ describe('formatDebugOverlayText', () => {
         position: { x: 72.5, y: -48.25 },
         velocity: { x: 3, y: 4 },
         health: 62,
+        maxHealth: 120,
         fallDamageRecoverySecondsRemaining: 0.35,
         hostileContactInvulnerabilitySecondsRemaining: 0.75,
         aabb: {
@@ -276,6 +277,7 @@ describe('formatDebugOverlayText', () => {
         position: { x: 72.5, y: -48.25 },
         velocity: { x: 3, y: 4 },
         health: 62,
+        maxHealth: 120,
         fallDamageRecoverySecondsRemaining: 0.35,
         hostileContactInvulnerabilitySecondsRemaining: 0.75,
         aabb: {
@@ -346,7 +348,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain('\nSpawn: T:4,-2 | W:72.00,-32.00');
-    expect(text).toContain('\nCombat: health:62 | fallRecovery:0.35s | contactInvuln:0.75s');
+    expect(text).toContain('\nCombat: health:62/120 | fallRecovery:0.35s | contactInvuln:0.75s');
     expect(text).toContain('\nLandingEvt: damage:3 | impact:612px/s');
     expect(text).toContain('\nContactEvt: damage:15 | blocked:off | tile:3,-1 | facing:left');
     expect(text).toContain('\nSlime: active:2');
@@ -366,6 +368,7 @@ describe('formatDebugOverlayText', () => {
         position: { x: 24.5, y: -12.25 },
         velocity: { x: 0, y: 0 },
         health: 0,
+        maxHealth: 120,
         deathCount: 3,
         respawnSecondsRemaining: 0.75,
         deathHoldStatus: 'holding',
@@ -404,7 +407,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain(
-      '\nCombat: health:0 | deaths:3 | respawnIn:0.75s | deathHold:holding | contactInvuln:0.00s'
+      '\nCombat: health:0/120 | deaths:3 | respawnIn:0.75s | deathHold:holding | contactInvuln:0.00s'
     );
   });
 
@@ -938,6 +941,7 @@ describe('formatDebugOverlayText', () => {
         position: { x: 24.5, y: -12.25 },
         velocity: { x: -180, y: 60 },
         health: 62,
+        maxHealth: 120,
         hostileContactInvulnerabilitySecondsRemaining: 0.75,
         aabb: {
           min: { x: 18.5, y: -40.25 },
@@ -960,7 +964,7 @@ describe('formatDebugOverlayText', () => {
     );
     expect(text).toContain('\nPose: wall-slide');
     expect(text).toContain('\nBonkHold: off');
-    expect(text).toContain('\nCombat: health:62 | contactInvuln:0.75s');
+    expect(text).toContain('\nCombat: health:62/120 | contactInvuln:0.75s');
     expect(text).toContain('\nGroundEvt: jump | Pos:24.50,-12.25 | Vel:-180.00,-220.00');
     expect(text).toContain('\nFaceEvt: right->left | Pos:24.50,-12.25 | Vel:-180.00,60.00');
     expect(text).toContain(
@@ -995,6 +999,7 @@ describe('formatDebugOverlayText', () => {
         position: { x: -0.1, y: -16.01 },
         velocity: { x: 0, y: 0 },
         health: 100,
+        maxHealth: 120,
         hostileContactInvulnerabilitySecondsRemaining: 0,
         aabb: {
           min: { x: -6.1, y: -44.01 },
@@ -1015,7 +1020,44 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain(
       '\nPlayer: Pos:-0.10,-16.01 | Tile:-1,-2 | Chunk:-1,-1 | Local:31,30 | Vel:0.00,0.00 | grounded:off | facing:right'
     );
-    expect(text).toContain('\nCombat: health:100 | contactInvuln:0.00s');
+    expect(text).toContain('\nCombat: health:100/120 | contactInvuln:0.00s');
+  });
+
+  it('keeps the combat line readable when only max health is available', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      spawn: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: null,
+      player: {
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        maxHealth: 120,
+        hostileContactInvulnerabilitySecondsRemaining: 0,
+        aabb: {
+          min: { x: 2, y: -28 },
+          max: { x: 14, y: 0 },
+          size: { x: 12, y: 28 }
+        },
+        grounded: true,
+        facing: 'right',
+        contacts: {
+          support: null,
+          wall: null,
+          ceiling: null
+        }
+      },
+      pinned: null
+    });
+
+    expect(text).toContain('\nCombat: health:n/a/120 | contactInvuln:0.00s');
   });
 
   it('shows the latest hostile-contact hit event when damage is applied', () => {

@@ -85,6 +85,7 @@ export interface DebugEditStatusStripState {
   playerNearbyLightSourceLocalTile?: { x: number; y: number } | null;
   playerCeilingBonkHoldActive?: boolean | null;
   playerHealth?: number | null;
+  playerMaxHealth?: number | null;
   playerDeathCount?: number | null;
   playerRespawnSecondsRemaining?: number | null;
   playerDeathHoldStatus?: 'none' | 'holding' | 'respawned' | null;
@@ -1438,12 +1439,17 @@ const formatLiveCeilingBonkHoldText = (playerCeilingBonkHoldActive: boolean | nu
   return `BonkHold: ${formatGameplayFlag(playerCeilingBonkHoldActive)}`;
 };
 
-const formatLiveHealthText = (playerHealth: number | null): string | null => {
-  if (playerHealth === null) {
+const formatLiveHealthText = (
+  playerHealth: number | null,
+  playerMaxHealth: number | null
+): string | null => {
+  if (playerHealth === null && playerMaxHealth === null) {
     return null;
   }
 
-  return `HealthNow: ${Math.round(playerHealth)}`;
+  const healthText = playerHealth === null ? 'n/a' : `${Math.round(playerHealth)}`;
+  const maxHealthText = playerMaxHealth === null ? null : `${Math.round(playerMaxHealth)}`;
+  return `HealthNow: ${maxHealthText === null ? healthText : `${healthText}/${maxHealthText}`}`;
 };
 
 const formatLiveDeathCountText = (playerDeathCount: number | null): string | null => {
@@ -1724,6 +1730,7 @@ const buildPlayerText = (
   playerNearbyLightSourceLocalTile: { x: number; y: number } | null,
   playerCeilingBonkHoldActive: boolean | null,
   playerHealth: number | null,
+  playerMaxHealth: number | null,
   playerDeathCount: number | null,
   playerRespawnSecondsRemaining: number | null,
   playerDeathHoldStatus: DebugEditStatusStripState['playerDeathHoldStatus'],
@@ -1842,7 +1849,9 @@ const buildPlayerText = (
     telemetryVisible('player-presentation')
       ? formatLiveCeilingBonkHoldText(playerCeilingBonkHoldActive)
       : null,
-    telemetryVisible('player-combat') ? formatLiveHealthText(playerHealth) : null,
+    telemetryVisible('player-combat')
+      ? formatLiveHealthText(playerHealth, playerMaxHealth)
+      : null,
     telemetryVisible('player-combat') ? formatLiveDeathCountText(playerDeathCount) : null,
     telemetryVisible('player-combat')
       ? formatLiveRespawnCountdownText(playerRespawnSecondsRemaining)
@@ -2615,6 +2624,7 @@ export const buildDebugEditStatusStripModel = (
   const playerNearbyLightSourceLocalTile = state.playerNearbyLightSourceLocalTile ?? null;
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
   const playerHealth = state.playerHealth ?? null;
+  const playerMaxHealth = state.playerMaxHealth ?? null;
   const playerDeathCount = state.playerDeathCount ?? null;
   const playerRespawnSecondsRemaining = state.playerRespawnSecondsRemaining ?? null;
   const playerDeathHoldStatus = state.playerDeathHoldStatus ?? null;
@@ -2720,6 +2730,7 @@ export const buildDebugEditStatusStripModel = (
       playerNearbyLightSourceLocalTile,
       playerCeilingBonkHoldActive,
       playerHealth,
+      playerMaxHealth,
       playerDeathCount,
       playerRespawnSecondsRemaining,
       playerDeathHoldStatus,
