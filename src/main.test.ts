@@ -56,6 +56,7 @@ import {
   STARTER_PICKAXE_SWING_WINDUP_SECONDS
 } from './world/starterPickaxeMining';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
+import { STARTER_TORCH_TILE_ID } from './world/starterTorchPlacement';
 import {
   describeLiquidRenderVariantPixelBoundsAtElapsedMs,
   describeLiquidRenderVariantUvRectAtElapsedMs,
@@ -7141,6 +7142,44 @@ describe('main.ts shell state orchestration', () => {
       {
         position: { x: 24, y: 8 },
         itemId: 'rope',
+        amount: 1
+      }
+    ]);
+  });
+
+  it('spawns one torch pickup entity when the starter pickaxe cuts a nearby placed torch tile', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), STARTER_TORCH_TILE_ID);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        worldX: 24,
+        worldY: 8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        tileId: 0
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 24, y: 8 },
+        itemId: 'torch',
         amount: 1
       }
     ]);

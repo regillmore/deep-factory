@@ -6,6 +6,7 @@ import {
   STARTER_BUILDING_BLOCK_TILE_ID
 } from './starterBlockPlacement';
 import { STARTER_ROPE_TILE_ID } from './starterRopePlacement';
+import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import {
   hasTerrainAutotileMetadata,
   isTileSolid,
@@ -143,7 +144,10 @@ const isBreakableTerrainTile = (
 const isBreakableStarterPickaxeTargetTile = (
   tileId: number,
   registry: TileMetadataRegistry
-): boolean => tileId === STARTER_ROPE_TILE_ID || isBreakableTerrainTile(tileId, registry);
+): boolean =>
+  tileId === STARTER_ROPE_TILE_ID ||
+  tileId === STARTER_TORCH_TILE_ID ||
+  isBreakableTerrainTile(tileId, registry);
 
 const resolveStarterPickaxeRequiredHitCount = (tileId: number): number =>
   tileId === STONE_TILE_ID ? 2 : 1;

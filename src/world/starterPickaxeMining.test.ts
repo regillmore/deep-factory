@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_PLAYER_HEIGHT, DEFAULT_PLAYER_WIDTH } from './playerState';
 import { STARTER_ROPE_TILE_ID } from './starterRopePlacement';
+import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import {
   createStarterPickaxeMiningState,
   evaluateStarterPickaxeMiningTarget,
@@ -27,12 +28,13 @@ const createPlayer = (x = 8, y = 28) => ({
 });
 
 describe('evaluateStarterPickaxeMiningTarget', () => {
-  it('allows nearby solid terrain and rope tiles and rejects empty or non-target tiles', () => {
+  it('allows nearby solid terrain, rope, and torch tiles and rejects empty or non-target tiles', () => {
     const player = createPlayer();
     const world = createWorld({
       '0,0': 9,
       '1,0': STARTER_ROPE_TILE_ID,
-      '2,0': 10
+      '2,0': STARTER_TORCH_TILE_ID,
+      '3,0': 12
     });
 
     expect(evaluateStarterPickaxeMiningTarget(world, player, 0, 0)).toEqual({
@@ -51,7 +53,13 @@ describe('evaluateStarterPickaxeMiningTarget', () => {
       canMine: true
     });
     expect(evaluateStarterPickaxeMiningTarget(world, player, 2, 0)).toMatchObject({
-      tileId: 10,
+      tileId: STARTER_TORCH_TILE_ID,
+      occupied: true,
+      breakableTarget: true,
+      canMine: true
+    });
+    expect(evaluateStarterPickaxeMiningTarget(world, player, 3, 0)).toMatchObject({
+      tileId: 12,
       occupied: true,
       breakableTarget: false,
       canMine: false
@@ -93,11 +101,38 @@ describe('resolveStarterPickaxeBrokenTileDrop', () => {
       amount: 1
     });
     expect(resolveStarterPickaxeBrokenTileDrop(STARTER_ROPE_TILE_ID)).toBeNull();
-    expect(resolveStarterPickaxeBrokenTileDrop(10)).toBeNull();
+    expect(resolveStarterPickaxeBrokenTileDrop(STARTER_TORCH_TILE_ID)).toBeNull();
   });
 });
 
 describe('starterPickaxeMining state', () => {
+  it('breaks a nearby placed torch tile in one hit', () => {
+    const world = createWorld({
+      '0,0': STARTER_TORCH_TILE_ID
+    });
+    const player = createPlayer();
+    const evaluation = evaluateStarterPickaxeMiningTarget(world, player, 0, 0);
+    const started = tryStartStarterPickaxeSwing(createStarterPickaxeMiningState(), evaluation);
+
+    expect(started.started).toBe(true);
+
+    const afterWindup = stepStarterPickaxeMiningState(started.state, {
+      world,
+      playerState: player,
+      fixedDtSeconds: STARTER_PICKAXE_SWING_WINDUP_SECONDS
+    });
+
+    expect(afterWindup.hitEvent).toEqual({
+      tileX: 0,
+      tileY: 0,
+      tileId: STARTER_TORCH_TILE_ID,
+      appliedHitCount: 1,
+      requiredHitCount: 1,
+      brokeTile: true
+    });
+    expect(afterWindup.state.breakProgress).toBeNull();
+  });
+
   it('breaks a nearby placed rope tile in one hit', () => {
     const world = createWorld({
       '0,0': STARTER_ROPE_TILE_ID
