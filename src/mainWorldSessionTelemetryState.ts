@@ -99,7 +99,7 @@ export const WORLD_SESSION_TELEMETRY_TYPE_DEFINITIONS = [
     collectionId: 'player',
     label: 'Combat',
     description:
-      'Health, death-hold, respawn countdown, breath, water or lava overlap, drowning or lava cooldowns, survival damage-event readouts including hard-landing impact speed, and the latest lethal damage source plus player world tile.'
+      'Health, current-session death count, death-hold, respawn countdown, breath, water or lava overlap, drowning or lava cooldowns, survival damage-event readouts including hard-landing impact speed, and the latest lethal damage source plus player world tile.'
   },
   {
     id: 'player-camera',

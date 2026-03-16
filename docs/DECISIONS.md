@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-15: Current-session death-count telemetry stays in runtime state
+
+- Decision: The standalone-player death counter shown in player-combat telemetry now lives only in current-session runtime state and resets whenever a world session is replaced, restored, or freshly generated.
+- Reason: Death totals are useful for the live run, but persisting them through save/import/browser-resume boundaries would blur run-local telemetry with save-owned progression data.
+- Consequence: Future current-session counters should default to runtime ownership unless the same pass explicitly needs them to survive save/load boundaries.
+
 ### 2026-03-15: Death-location telemetry uses the lethal player world tile
 
 - Decision: Latest death-cause telemetry now records the player's world tile from the lethal fixed-step state instead of inferring location later from respawn state or from a hostile-contact source tile.

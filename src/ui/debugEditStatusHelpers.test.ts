@@ -1601,6 +1601,7 @@ describe('buildDebugEditStatusStripModel', () => {
       desktopInspectPinArmed: false,
       playerPlaceholderPoseLabel: 'grounded-idle',
       playerHealth: 85,
+      playerDeathCount: 3,
       playerRespawnSecondsRemaining: 0.75,
       playerDeathHoldStatus: 'holding',
       playerBreathSecondsRemaining: 0.25,
@@ -1617,6 +1618,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.playerText).toBe(
       'Pose: grounded-idle\n' +
         'HealthNow: 85\n' +
+        'DeathsNow: 3\n' +
         'RespawnIn: 0.75s\n' +
         'DeathHold: holding\n' +
         'BreathNow: 0.25s\n' +

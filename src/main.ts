@@ -481,6 +481,7 @@ type StandalonePlayerRenderFrameStatusStripTelemetry = Pick<
   | 'playerCameraZoom'
   | 'playerCeilingBonkHoldActive'
   | 'playerHealth'
+  | 'playerDeathCount'
   | 'playerRespawnSecondsRemaining'
   | 'playerDeathHoldStatus'
   | 'playerBreathSecondsRemaining'
@@ -1549,6 +1550,7 @@ const bootstrap = async (): Promise<void> => {
   let lastPlayerWallContactTransitionEvent: PlayerWallContactTransitionEvent | null = null;
   let lastPlayerCeilingContactTransitionEvent: PlayerCeilingContactTransitionEvent | null = null;
   let latestStandalonePlayerDeathHoldStatus: StandalonePlayerDeathHoldTelemetryStatus = 'none';
+  let standalonePlayerDeathCount = 0;
   let standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
   let starterPickaxeMiningState = createStarterPickaxeMiningState();
   let playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
@@ -2178,6 +2180,7 @@ const bootstrap = async (): Promise<void> => {
     entityRegistry = new EntityRegistry();
     standalonePlayerEntityId = null;
     standalonePlayerDeathState = null;
+    standalonePlayerDeathCount = 0;
     hostileSlimeEntityIds = [];
     droppedItemEntityIds = [];
     hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
@@ -2882,6 +2885,9 @@ const bootstrap = async (): Promise<void> => {
   const applyStandalonePlayerFixedStepResult = (
     playerFixedStepResult: StandalonePlayerFixedStepResult
   ): void => {
+    if (standalonePlayerDeathState === null && playerFixedStepResult.nextDeathState !== null) {
+      standalonePlayerDeathCount += 1;
+    }
     if (playerFixedStepResult.landingDamageEvent !== null) {
       lastPlayerLandingDamageEvent = playerFixedStepResult.landingDamageEvent;
     }
@@ -4328,6 +4334,7 @@ const bootstrap = async (): Promise<void> => {
         : false;
     const playerHealth =
       playerState === null ? null : readOptionalFiniteNumber((playerState as { health?: unknown }).health);
+    const playerDeathCount = playerState === null ? null : standalonePlayerDeathCount;
     const playerRespawnSecondsRemaining =
       standalonePlayerDeathState === null
         ? null
@@ -4508,6 +4515,7 @@ const bootstrap = async (): Promise<void> => {
                 grounded: playerState.grounded,
                 facing: playerState.facing,
                 health: playerHealth,
+                deathCount: playerDeathCount,
                 respawnSecondsRemaining: playerRespawnSecondsRemaining,
                 deathHoldStatus: playerDeathHoldStatus,
                 breathSecondsRemaining: playerBreathSecondsRemaining,
@@ -4596,6 +4604,7 @@ const bootstrap = async (): Promise<void> => {
         playerCeilingBonkHoldActive:
           playerState === null ? null : standalonePlayerCeilingBonkActive,
         playerHealth,
+        playerDeathCount,
         playerRespawnSecondsRemaining,
         playerDeathHoldStatus,
         playerBreathSecondsRemaining,
@@ -4777,6 +4786,7 @@ const bootstrap = async (): Promise<void> => {
       playerNearbyLightSourceLocalTile: null,
       playerCeilingBonkHoldActive: null,
       playerHealth: null,
+      playerDeathCount: null,
       playerRespawnSecondsRemaining: null,
       playerDeathHoldStatus: null,
       playerBreathSecondsRemaining: null,
@@ -5151,6 +5161,7 @@ const bootstrap = async (): Promise<void> => {
         debugStatusStripPlayerTelemetry.playerNearbyLightSourceLocalTile,
       playerCeilingBonkHoldActive: debugStatusStripPlayerTelemetry.playerCeilingBonkHoldActive,
       playerHealth: debugStatusStripPlayerTelemetry.playerHealth,
+      playerDeathCount: debugStatusStripPlayerTelemetry.playerDeathCount,
       playerRespawnSecondsRemaining: debugStatusStripPlayerTelemetry.playerRespawnSecondsRemaining,
       playerDeathHoldStatus: debugStatusStripPlayerTelemetry.playerDeathHoldStatus,
       playerBreathSecondsRemaining: debugStatusStripPlayerTelemetry.playerBreathSecondsRemaining,

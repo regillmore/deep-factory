@@ -366,6 +366,7 @@ describe('formatDebugOverlayText', () => {
         position: { x: 24.5, y: -12.25 },
         velocity: { x: 0, y: 0 },
         health: 0,
+        deathCount: 3,
         respawnSecondsRemaining: 0.75,
         deathHoldStatus: 'holding',
         hostileContactInvulnerabilitySecondsRemaining: 0,
@@ -403,7 +404,7 @@ describe('formatDebugOverlayText', () => {
     });
 
     expect(text).toContain(
-      '\nCombat: health:0 | respawnIn:0.75s | deathHold:holding | contactInvuln:0.00s'
+      '\nCombat: health:0 | deaths:3 | respawnIn:0.75s | deathHold:holding | contactInvuln:0.00s'
     );
   });
 
