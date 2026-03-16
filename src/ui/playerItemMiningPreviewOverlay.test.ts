@@ -13,7 +13,7 @@ const createPreviewState = (
   tileY: -2,
   canMine: false,
   occupied: true,
-  breakableTerrain: true,
+  breakableTarget: true,
   withinRange: true,
   progressNormalized: 0,
   ...overrides
@@ -29,7 +29,7 @@ describe('resolvePlayerItemMiningPreviewTone', () => {
       resolvePlayerItemMiningPreviewTone(
         createPreviewState({
           occupied: false,
-          breakableTerrain: false,
+          breakableTarget: false,
           withinRange: false
         })
       )
@@ -40,7 +40,7 @@ describe('resolvePlayerItemMiningPreviewTone', () => {
     expect(
       resolvePlayerItemMiningPreviewTone(
         createPreviewState({
-          breakableTerrain: false,
+          breakableTarget: false,
           withinRange: false
         })
       )

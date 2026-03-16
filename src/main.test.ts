@@ -7108,6 +7108,44 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
+  it('spawns one rope pickup entity when the starter pickaxe cuts a nearby placed rope tile', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), STARTER_ROPE_TILE_ID);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        worldX: 24,
+        worldY: 8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        tileId: 0
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 24, y: 8 },
+        itemId: 'rope',
+        amount: 1
+      }
+    ]);
+  });
+
   it('cascades a mined dirt-block refund across overlapping matching world pickups before spawning a new entity', async () => {
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,

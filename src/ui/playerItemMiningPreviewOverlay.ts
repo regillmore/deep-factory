@@ -6,7 +6,7 @@ export interface PlayerItemMiningPreviewState {
   tileY: number;
   canMine: boolean;
   occupied: boolean;
-  breakableTerrain: boolean;
+  breakableTarget: boolean;
   withinRange: boolean;
   progressNormalized: number;
 }
@@ -35,7 +35,7 @@ export const resolvePlayerItemMiningPreviewTone = (
   if (!preview.occupied) {
     return 'empty';
   }
-  if (!preview.breakableTerrain) {
+  if (!preview.breakableTarget) {
     return 'unbreakable';
   }
   return 'out-of-range';

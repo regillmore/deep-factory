@@ -3177,6 +3177,8 @@ const bootstrap = async (): Promise<void> => {
 
     const brokenTileDrop = resolveStarterPickaxeBrokenTileDrop(editResult.previousTileId);
     if (brokenTileDrop === null) {
+      // Placeable utility tiles such as rope refund through renderer tile-edit notifications so
+      // every removal path shares the same merge-aware pickup cascade.
       return;
     }
 
@@ -3370,7 +3372,7 @@ const bootstrap = async (): Promise<void> => {
       tileY: worldTileY,
       canMine: miningEvaluation.canMine,
       occupied: miningEvaluation.occupied,
-      breakableTerrain: miningEvaluation.breakableTerrain,
+      breakableTarget: miningEvaluation.breakableTarget,
       withinRange: miningEvaluation.withinRange,
       progressNormalized: resolveStarterPickaxeBreakProgressNormalized(
         starterPickaxeMiningState,

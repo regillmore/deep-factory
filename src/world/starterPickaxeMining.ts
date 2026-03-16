@@ -5,6 +5,7 @@ import {
   STARTER_BUILDING_BLOCK_ITEM_ID,
   STARTER_BUILDING_BLOCK_TILE_ID
 } from './starterBlockPlacement';
+import { STARTER_ROPE_TILE_ID } from './starterRopePlacement';
 import {
   hasTerrainAutotileMetadata,
   isTileSolid,
@@ -33,7 +34,7 @@ export interface StarterPickaxeMiningTargetEvaluation {
   tileY: number;
   tileId: number;
   occupied: boolean;
-  breakableTerrain: boolean;
+  breakableTarget: boolean;
   withinRange: boolean;
   canMine: boolean;
 }
@@ -139,6 +140,11 @@ const isBreakableTerrainTile = (
   registry: TileMetadataRegistry
 ): boolean => tileId !== 0 && isTileSolid(tileId, registry) && hasTerrainAutotileMetadata(tileId, registry);
 
+const isBreakableStarterPickaxeTargetTile = (
+  tileId: number,
+  registry: TileMetadataRegistry
+): boolean => tileId === STARTER_ROPE_TILE_ID || isBreakableTerrainTile(tileId, registry);
+
 const resolveStarterPickaxeRequiredHitCount = (tileId: number): number =>
   tileId === STONE_TILE_ID ? 2 : 1;
 
@@ -171,7 +177,7 @@ export const evaluateStarterPickaxeMiningTarget = (
 ): StarterPickaxeMiningTargetEvaluation => {
   const tileId = world.getTile(worldTileX, worldTileY);
   const occupied = tileId !== 0;
-  const breakableTerrain = isBreakableTerrainTile(tileId, registry);
+  const breakableTarget = isBreakableStarterPickaxeTargetTile(tileId, registry);
   const withinRange =
     playerState === null
       ? false
@@ -182,9 +188,9 @@ export const evaluateStarterPickaxeMiningTarget = (
     tileY: worldTileY,
     tileId,
     occupied,
-    breakableTerrain,
+    breakableTarget,
     withinRange,
-    canMine: breakableTerrain && withinRange
+    canMine: breakableTarget && withinRange
   };
 };
 
@@ -263,7 +269,7 @@ const applyStarterPickaxeHit = (
   breakProgress: StarterPickaxeBreakProgressState | null;
 } => {
   const evaluation = evaluateStarterPickaxeMiningTarget(world, playerState, tileX, tileY, registry);
-  if (!evaluation.breakableTerrain) {
+  if (!evaluation.breakableTarget) {
     return {
       breakProgress: null,
       hitEvent: null
