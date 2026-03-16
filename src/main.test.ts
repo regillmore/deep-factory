@@ -58,7 +58,10 @@ import {
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
 import {
   describeLiquidRenderVariantPixelBoundsAtElapsedMs,
-  describeLiquidRenderVariantUvRectAtElapsedMs
+  describeLiquidRenderVariantUvRectAtElapsedMs,
+  describeTileRenderPixelBoundsAtElapsedMs,
+  describeTileRenderSourceAtElapsedMs,
+  describeTileRenderUvRectAtElapsedMs
 } from './world/tileMetadata';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
 import { DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS } from './world/hostileSlimeCombat';
@@ -5772,6 +5775,102 @@ describe('main.ts shell state orchestration', () => {
     runRenderFrame();
 
     expectAnimatedLiquidInspectTelemetry(1, 240);
+  });
+
+  it('keeps hovered and pinned non-liquid animated inspect telemetry aligned when torch frames advance', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 4, y: 6 }
+    };
+    testRuntime.debugTileInspectPinRequests = [
+      {
+        worldTileX: 4,
+        worldTileY: 6
+      }
+    ];
+    testRuntime.rendererTileId = 0;
+    testRuntime.rendererLiquidLevel = 0;
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, 6), 10);
+    testRuntime.rendererTelemetry.atlasWidth = AUTHORED_ATLAS_WIDTH;
+    testRuntime.rendererTelemetry.atlasHeight = AUTHORED_ATLAS_HEIGHT;
+
+    const expectAnimatedTorchInspectTelemetry = (
+      expectedFrameIndex: number,
+      expectedElapsedMs: number
+    ): void => {
+      const expectedRenderSource = describeTileRenderSourceAtElapsedMs(10, expectedElapsedMs);
+      const expectedRenderUvRect = describeTileRenderUvRectAtElapsedMs(10, expectedElapsedMs);
+      const expectedRenderPixelBounds = describeTileRenderPixelBoundsAtElapsedMs(
+        10,
+        expectedElapsedMs,
+        AUTHORED_ATLAS_WIDTH,
+        AUTHORED_ATLAS_HEIGHT
+      );
+
+      expect(testRuntime.latestDebugOverlayInspectState).not.toBeNull();
+      expect(testRuntime.latestDebugEditStatusStripState).not.toBeNull();
+      if (!testRuntime.latestDebugOverlayInspectState || !testRuntime.latestDebugEditStatusStripState) {
+        throw new Error('expected latest overlay and status-strip inspect telemetry');
+      }
+
+      expect(testRuntime.latestDebugOverlayInspectState.pointer).toMatchObject({
+        tile: { x: 4, y: 6 },
+        tileId: 10,
+        liquidKind: null,
+        tileAnimationFrameIndex: expectedFrameIndex,
+        tileAnimationFrameCount: 2,
+        tileRenderSource: expectedRenderSource,
+        tileRenderUvRect: expectedRenderUvRect,
+        tileRenderPixelBounds: expectedRenderPixelBounds
+      });
+      expect(testRuntime.latestDebugOverlayInspectState.pinned).toMatchObject({
+        tile: { x: 4, y: 6 },
+        tileId: 10,
+        liquidKind: null,
+        tileAnimationFrameIndex: expectedFrameIndex,
+        tileAnimationFrameCount: 2,
+        tileRenderSource: expectedRenderSource,
+        tileRenderUvRect: expectedRenderUvRect,
+        tileRenderPixelBounds: expectedRenderPixelBounds
+      });
+      expect(testRuntime.latestDebugEditStatusStripState.hoveredTile).toMatchObject({
+        tileX: 4,
+        tileY: 6,
+        tileId: 10,
+        liquidKind: null,
+        tileAnimationFrameIndex: expectedFrameIndex,
+        tileAnimationFrameCount: 2,
+        tileRenderSource: expectedRenderSource,
+        tileRenderUvRect: expectedRenderUvRect,
+        tileRenderPixelBounds: expectedRenderPixelBounds
+      });
+      expect(testRuntime.latestDebugEditStatusStripState.pinnedTile).toMatchObject({
+        tileX: 4,
+        tileY: 6,
+        tileId: 10,
+        liquidKind: null,
+        tileAnimationFrameIndex: expectedFrameIndex,
+        tileAnimationFrameCount: 2,
+        tileRenderSource: expectedRenderSource,
+        tileRenderUvRect: expectedRenderUvRect,
+        tileRenderPixelBounds: expectedRenderPixelBounds
+      });
+    };
+
+    testRuntime.performanceNow = 120;
+    runFixedUpdate();
+    runRenderFrame();
+
+    expectAnimatedTorchInspectTelemetry(0, 120);
+
+    testRuntime.performanceNow = 240;
+    runRenderFrame();
+
+    expectAnimatedTorchInspectTelemetry(1, 240);
   });
 
   it('routes compact status-strip player and nearby-light telemetry through one shared overlay-visibility selector', async () => {

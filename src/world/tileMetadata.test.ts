@@ -18,6 +18,9 @@ import {
   describeLiquidRenderVariantUvRectAtElapsedMs,
   describeLiquidRenderVariantSource,
   describeLiquidRenderVariantSourceAtElapsedMs,
+  describeTileRenderPixelBoundsAtElapsedMs,
+  describeTileRenderSourceAtElapsedMs,
+  describeTileRenderUvRectAtElapsedMs,
   getAnimatedLiquidRenderVariantFrameCount,
   getAnimatedLiquidRenderVariantFrameDurationMs,
   describeTileUvRectPixelBounds,
@@ -139,6 +142,22 @@ describe('tile metadata loader', () => {
     expect(resolveAnimatedTileRenderFrameIndexAtElapsedMs(10, 180)).toBe(1);
     expect(resolveAnimatedTileRenderFrameIndexAtElapsedMs(10, 360)).toBe(0);
     expect(resolveAnimatedTileRenderFrameUvRectAtElapsedMs(10, 180)).toBe(atlasIndexToUvRect(22));
+    expect(describeTileRenderSourceAtElapsedMs(10, 0)).toBe('atlasIndex 20');
+    expect(describeTileRenderSourceAtElapsedMs(10, 180)).toBe('atlasIndex 22');
+    expect(describeTileRenderUvRectAtElapsedMs(10, 180)).toBe(describeTileUvRect(atlasIndexToUvRect(22)));
+    expect(
+      describeTileRenderPixelBoundsAtElapsedMs(10, 180, AUTHORED_ATLAS_WIDTH, AUTHORED_ATLAS_HEIGHT)
+    ).toBe(
+      describeTileUvRectPixelBounds(atlasIndexToUvRect(22), AUTHORED_ATLAS_WIDTH, AUTHORED_ATLAS_HEIGHT)
+    );
+    expect(describeTileRenderSourceAtElapsedMs(6, 0)).toBe('uvRect 0.125,0.25..0.25,0.5');
+    expect(describeTileRenderSourceAtElapsedMs(6, 180)).toBe('uvRect 0.375,0.25..0.5,0.5');
+    expect(describeTileRenderUvRectAtElapsedMs(6, 180)).toBe(
+      describeTileUvRect(authoredUvRectFromPixels(48, 16, 64, 32))
+    );
+    expect(
+      describeTileRenderPixelBoundsAtElapsedMs(6, 180, AUTHORED_ATLAS_WIDTH, AUTHORED_ATLAS_HEIGHT)
+    ).toBe('48,16..64,32');
     expect(resolveLiquidRenderVariantMetadata(7, 0)).toMatchObject({
       uvRect: authoredUvRectFromPixels(64, 16, 72, 32)
     });

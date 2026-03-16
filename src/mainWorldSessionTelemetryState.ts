@@ -153,13 +153,15 @@ export const WORLD_SESSION_TELEMETRY_TYPE_DEFINITIONS = [
     id: 'inspect-pointer',
     collectionId: 'inspect',
     label: 'Pointer',
-    description: 'Hovered pointer-position and tile-inspect readouts.'
+    description:
+      'Hovered pointer-position and tile-inspect readouts, including non-liquid animated frame and atlas-source bounds.'
   },
   {
     id: 'inspect-pinned',
     collectionId: 'inspect',
     label: 'Pinned',
-    description: 'Pinned tile-inspect readouts.'
+    description:
+      'Pinned tile-inspect readouts, including non-liquid animated frame and atlas-source bounds.'
   },
   {
     id: 'world-liquid',

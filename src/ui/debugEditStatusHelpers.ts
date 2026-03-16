@@ -210,6 +210,11 @@ export interface DebugEditHoveredTileState {
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
+  tileAnimationFrameIndex?: number | null;
+  tileAnimationFrameCount?: number | null;
+  tileRenderSource?: string | null;
+  tileRenderUvRect?: string | null;
+  tileRenderPixelBounds?: string | null;
 }
 
 export interface DebugEditStatusStripPlayerRespawnTelemetry {
@@ -585,7 +590,7 @@ const formatLiquidCardinalMask = (value: number): string => {
     ` (${mask})`
   );
 };
-const formatLiquidAnimationFrame = (
+const formatAnimationFrame = (
   frameIndex: number | null | undefined,
   frameCount: number | null | undefined
 ): string | null => {
@@ -770,10 +775,11 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     tile.liquidRemainderRightPixelHeight,
     tile.liquidCoverageRightTotalPixelHeight
   );
-  const liquidAnimationFrame = formatLiquidAnimationFrame(
+  const liquidAnimationFrame = formatAnimationFrame(
     tile.liquidAnimationFrameIndex,
     tile.liquidAnimationFrameCount
   );
+  const tileAnimationFrame = formatAnimationFrame(tile.tileAnimationFrameIndex, tile.tileAnimationFrameCount);
   const liquidAnimationFrameDuration = formatDurationMs(tile.liquidAnimationFrameDurationMs);
   const liquidAnimationFrameElapsed = formatDurationMs(tile.liquidAnimationFrameElapsedMs);
   const liquidAnimationFrameProgress = formatProgressPercentage(
@@ -872,6 +878,16 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
       : '') +
     (typeof tile.liquidVariantPixelBounds === 'string' && tile.liquidVariantPixelBounds.length > 0
       ? ` | liquidPx:${tile.liquidVariantPixelBounds}`
+      : '') +
+    (tileAnimationFrame ? ` | tileFrame:${tileAnimationFrame}` : '') +
+    (typeof tile.tileRenderSource === 'string' && tile.tileRenderSource.length > 0
+      ? ` | tileSrc:${tile.tileRenderSource}`
+      : '') +
+    (typeof tile.tileRenderUvRect === 'string' && tile.tileRenderUvRect.length > 0
+      ? ` | tileUv:${tile.tileRenderUvRect}`
+      : '') +
+    (typeof tile.tileRenderPixelBounds === 'string' && tile.tileRenderPixelBounds.length > 0
+      ? ` | tilePx:${tile.tileRenderPixelBounds}`
       : '')
   );
 };

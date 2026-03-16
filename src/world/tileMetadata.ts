@@ -1538,6 +1538,59 @@ export const resolveAnimatedTileRenderFrameUvRectAtElapsedMs = (
   registry: TileMetadataRegistry = TILE_METADATA
 ): TileUvRect | null => getAnimatedTileRenderFrameUvRectAtElapsedMsFromLookup(tileId, elapsedMs, registry);
 
+export const resolveTileRenderFrameMetadataAtElapsedMs = (
+  tileId: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): TileRenderFrameMetadata | null => {
+  const renderMetadata = getTileMetadata(tileId, registry)?.render;
+  if (!renderMetadata) {
+    return null;
+  }
+
+  const frameIndex = resolveAnimatedTileRenderFrameIndexAtElapsedMs(tileId, elapsedMs, registry);
+  if (frameIndex === null) {
+    return renderMetadata;
+  }
+
+  return renderMetadata.frames?.[frameIndex] ?? renderMetadata;
+};
+
+export const resolveTileRenderUvRectAtElapsedMs = (
+  tileId: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): TileUvRect | null => {
+  const frameMetadata = resolveTileRenderFrameMetadataAtElapsedMs(tileId, elapsedMs, registry);
+  return frameMetadata ? resolveTileRenderFrameUvRect(frameMetadata) : null;
+};
+
+export const describeTileRenderSourceAtElapsedMs = (
+  tileId: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): string | null =>
+  describeTileRenderFrameSource(resolveTileRenderFrameMetadataAtElapsedMs(tileId, elapsedMs, registry));
+
+export const describeTileRenderUvRectAtElapsedMs = (
+  tileId: number,
+  elapsedMs: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): string | null => describeTileUvRect(resolveTileRenderUvRectAtElapsedMs(tileId, elapsedMs, registry));
+
+export const describeTileRenderPixelBoundsAtElapsedMs = (
+  tileId: number,
+  elapsedMs: number,
+  atlasWidth: number,
+  atlasHeight: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): string | null =>
+  describeTileUvRectPixelBounds(
+    resolveTileRenderUvRectAtElapsedMs(tileId, elapsedMs, registry),
+    atlasWidth,
+    atlasHeight
+  );
+
 export const hasAnimatedLiquidRenderVariantMetadata = (
   tileId: number,
   cardinalMask: number,

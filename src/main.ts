@@ -304,6 +304,9 @@ import {
   describeLiquidRenderVariantPixelBoundsAtElapsedMs,
   describeLiquidRenderVariantSourceAtElapsedMs,
   describeLiquidRenderVariantUvRectAtElapsedMs,
+  describeTileRenderPixelBoundsAtElapsedMs,
+  describeTileRenderSourceAtElapsedMs,
+  describeTileRenderUvRectAtElapsedMs,
   resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs,
   resolveAnimatedLiquidRenderVariantFrameProgressNormalizedAtElapsedMs,
   resolveAnimatedLiquidRenderVariantFrameRemainingMsAtElapsedMs,
@@ -312,8 +315,10 @@ import {
   resolveAnimatedLiquidRenderVariantLoopRemainingMsAtElapsedMs,
   getAnimatedLiquidRenderVariantFrameCount,
   getAnimatedLiquidRenderVariantFrameDurationMs,
+  getAnimatedTileRenderFrameCount,
   getTileMetadata,
   resolveAnimatedLiquidRenderVariantFrameIndexAtElapsedMs,
+  resolveAnimatedTileRenderFrameIndexAtElapsedMs,
   resolveLiquidRenderVariantUvRectAtElapsedMs,
   resolveTileGameplayMetadata,
   TILE_METADATA
@@ -3911,6 +3916,12 @@ const bootstrap = async (): Promise<void> => {
       ? resolveLiquidSurfaceBranchKind(liquidSurfaceLevelNeighborhood)
       : null;
     const liquidCardinalMask = renderer.getLiquidRenderCardinalMask(tileX, tileY);
+    const isNonLiquidTile = gameplay.liquidKind === undefined || gameplay.liquidKind === null;
+    const tileAnimationFrameCount = isNonLiquidTile ? getAnimatedTileRenderFrameCount(tileId) : 0;
+    const tileAnimationFrameIndex =
+      isNonLiquidTile && tileAnimationFrameCount > 0
+        ? resolveAnimatedTileRenderFrameIndexAtElapsedMs(tileId, elapsedMs)
+        : null;
     const liquidAnimationFrameCount =
       typeof liquidCardinalMask === 'number'
         ? getAnimatedLiquidRenderVariantFrameCount(tileId, liquidCardinalMask)
@@ -3965,6 +3976,18 @@ const bootstrap = async (): Promise<void> => {
         : null;
     const atlasWidth = renderer.telemetry.atlasWidth;
     const atlasHeight = renderer.telemetry.atlasHeight;
+    const tileRenderSource = isNonLiquidTile ? describeTileRenderSourceAtElapsedMs(tileId, elapsedMs) : null;
+    const tileRenderUvRect = isNonLiquidTile ? describeTileRenderUvRectAtElapsedMs(tileId, elapsedMs) : null;
+    const tileRenderPixelBounds =
+      isNonLiquidTile &&
+      typeof atlasWidth === 'number' &&
+      Number.isFinite(atlasWidth) &&
+      atlasWidth > 0 &&
+      typeof atlasHeight === 'number' &&
+      Number.isFinite(atlasHeight) &&
+      atlasHeight > 0
+        ? describeTileRenderPixelBoundsAtElapsedMs(tileId, elapsedMs, atlasWidth, atlasHeight)
+        : null;
     const liquidFrameTopV = liquidVariantUvRect ? resolveLiquidSurfaceFrameTopV(liquidVariantUvRect) : null;
     const liquidFrameTopPixelY =
       liquidVariantUvRect &&
@@ -4131,6 +4154,11 @@ const bootstrap = async (): Promise<void> => {
               atlasHeight
             )
           : null,
+      tileAnimationFrameIndex,
+      tileAnimationFrameCount: tileAnimationFrameCount > 0 ? tileAnimationFrameCount : null,
+      tileRenderSource,
+      tileRenderUvRect,
+      tileRenderPixelBounds,
       tileX,
       tileY,
       chunkX,
@@ -5021,7 +5049,12 @@ const bootstrap = async (): Promise<void> => {
           liquidAnimationLoopRemainingMs: hoveredDebugTileStatus?.liquidAnimationLoopRemainingMs ?? null,
           liquidVariantSource: hoveredDebugTileStatus?.liquidVariantSource ?? null,
           liquidVariantUvRect: hoveredDebugTileStatus?.liquidVariantUvRect ?? null,
-          liquidVariantPixelBounds: hoveredDebugTileStatus?.liquidVariantPixelBounds ?? null
+          liquidVariantPixelBounds: hoveredDebugTileStatus?.liquidVariantPixelBounds ?? null,
+          tileAnimationFrameIndex: hoveredDebugTileStatus?.tileAnimationFrameIndex ?? null,
+          tileAnimationFrameCount: hoveredDebugTileStatus?.tileAnimationFrameCount ?? null,
+          tileRenderSource: hoveredDebugTileStatus?.tileRenderSource ?? null,
+          tileRenderUvRect: hoveredDebugTileStatus?.tileRenderUvRect ?? null,
+          tileRenderPixelBounds: hoveredDebugTileStatus?.tileRenderPixelBounds ?? null
         }
       : null;
     const debugOverlayPinnedInspect = pinnedDebugTileStatus
@@ -5095,7 +5128,12 @@ const bootstrap = async (): Promise<void> => {
           liquidAnimationLoopRemainingMs: pinnedDebugTileStatus.liquidAnimationLoopRemainingMs ?? null,
           liquidVariantSource: pinnedDebugTileStatus.liquidVariantSource ?? null,
           liquidVariantUvRect: pinnedDebugTileStatus.liquidVariantUvRect ?? null,
-          liquidVariantPixelBounds: pinnedDebugTileStatus.liquidVariantPixelBounds ?? null
+          liquidVariantPixelBounds: pinnedDebugTileStatus.liquidVariantPixelBounds ?? null,
+          tileAnimationFrameIndex: pinnedDebugTileStatus.tileAnimationFrameIndex ?? null,
+          tileAnimationFrameCount: pinnedDebugTileStatus.tileAnimationFrameCount ?? null,
+          tileRenderSource: pinnedDebugTileStatus.tileRenderSource ?? null,
+          tileRenderUvRect: pinnedDebugTileStatus.tileRenderUvRect ?? null,
+          tileRenderPixelBounds: pinnedDebugTileStatus.tileRenderPixelBounds ?? null
         }
       : null;
     const resolvedPlayerSpawnTelemetry = createResolvedPlayerSpawnTelemetrySnapshot();

@@ -119,6 +119,11 @@ export interface DebugOverlayPointerInspect {
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
+  tileAnimationFrameIndex?: number | null;
+  tileAnimationFrameCount?: number | null;
+  tileRenderSource?: string | null;
+  tileRenderUvRect?: string | null;
+  tileRenderPixelBounds?: string | null;
   client: { x: number; y: number };
   canvas: { x: number; y: number };
   world: { x: number; y: number };
@@ -181,6 +186,11 @@ export interface DebugOverlayTileInspect {
   liquidVariantSource?: string | null;
   liquidVariantUvRect?: string | null;
   liquidVariantPixelBounds?: string | null;
+  tileAnimationFrameIndex?: number | null;
+  tileAnimationFrameCount?: number | null;
+  tileRenderSource?: string | null;
+  tileRenderUvRect?: string | null;
+  tileRenderPixelBounds?: string | null;
 }
 
 export interface DebugOverlayPlayerSpawn {
@@ -369,7 +379,7 @@ const formatSignedFloat = (value: number, digits: number): string =>
 const formatInt = (value: number): string => Math.round(value).toString();
 const formatGameplayFlag = (value: boolean): string => (value ? 'on' : 'off');
 const worldToTileCoordinate = (world: number): number => Math.floor(world / TILE_SIZE);
-const formatLiquidAnimationFrame = (
+const formatAnimationFrame = (
   frameIndex: number | null | undefined,
   frameCount: number | null | undefined
 ): string | null => {
@@ -597,9 +607,13 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     tileInspect.liquidRemainderRightPixelHeight,
     tileInspect.liquidCoverageRightTotalPixelHeight
   );
-  const liquidAnimationFrame = formatLiquidAnimationFrame(
+  const liquidAnimationFrame = formatAnimationFrame(
     tileInspect.liquidAnimationFrameIndex,
     tileInspect.liquidAnimationFrameCount
+  );
+  const tileAnimationFrame = formatAnimationFrame(
+    tileInspect.tileAnimationFrameIndex,
+    tileInspect.tileAnimationFrameCount
   );
   const liquidAnimationFrameDuration = formatDurationMs(tileInspect.liquidAnimationFrameDurationMs);
   const liquidAnimationFrameElapsed = formatDurationMs(tileInspect.liquidAnimationFrameElapsedMs);
@@ -698,6 +712,17 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     (typeof tileInspect.liquidVariantPixelBounds === 'string' &&
     tileInspect.liquidVariantPixelBounds.length > 0
       ? ` | liquidPx:${tileInspect.liquidVariantPixelBounds}`
+      : '') +
+    (tileAnimationFrame ? ` | tileFrame:${tileAnimationFrame}` : '') +
+    (typeof tileInspect.tileRenderSource === 'string' && tileInspect.tileRenderSource.length > 0
+      ? ` | tileSrc:${tileInspect.tileRenderSource}`
+      : '') +
+    (typeof tileInspect.tileRenderUvRect === 'string' && tileInspect.tileRenderUvRect.length > 0
+      ? ` | tileUv:${tileInspect.tileRenderUvRect}`
+      : '') +
+    (typeof tileInspect.tileRenderPixelBounds === 'string' &&
+    tileInspect.tileRenderPixelBounds.length > 0
+      ? ` | tilePx:${tileInspect.tileRenderPixelBounds}`
       : '')
   );
 };

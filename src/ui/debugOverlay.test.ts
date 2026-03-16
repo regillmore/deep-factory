@@ -881,6 +881,45 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('liquidPx:72,0..80,16');
   });
 
+  it('shows current non-liquid animated tile frame and source bounds for hovered inspect tiles', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: {
+        client: { x: 48, y: 80 },
+        canvas: { x: 96, y: 160 },
+        world: { x: 32, y: -16 },
+        tile: { x: 2, y: -1 },
+        pointerType: 'mouse',
+        tileId: 6,
+        tileLabel: 'debug panel blink',
+        solid: false,
+        blocksLight: false,
+        liquidKind: null,
+        tileAnimationFrameIndex: 1,
+        tileAnimationFrameCount: 2,
+        tileRenderSource: 'uvRect 0.375,0.25..0.5,0.5',
+        tileRenderUvRect: '0.375,0.25..0.5,0.5',
+        tileRenderPixelBounds: '48,16..64,32'
+      },
+      spawn: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: null,
+      player: null,
+      pinned: null
+    });
+
+    expect(text).toContain('tileFrame:1/2');
+    expect(text).toContain('tileSrc:uvRect 0.375,0.25..0.5,0.5');
+    expect(text).toContain('tileUv:0.375,0.25..0.5,0.5');
+    expect(text).toContain('tilePx:48,16..64,32');
+  });
+
   it('shows live standalone player position, velocity, grounded state, and facing', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: null,

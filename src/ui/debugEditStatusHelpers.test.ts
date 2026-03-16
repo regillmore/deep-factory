@@ -2585,6 +2585,39 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.hoverText).toContain('liquidCoverageRightPxH:6+10=16');
   });
 
+  it('shows current non-liquid animated tile frame and source bounds in compact inspect text', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      preview: createEmptyPreviewState(),
+      desktopInspectPinArmed: false,
+      hoveredTile: {
+        tileX: 12,
+        tileY: -4,
+        chunkX: 0,
+        chunkY: -1,
+        localX: 12,
+        localY: 28,
+        tileId: 6,
+        tileLabel: 'debug panel blink',
+        solid: false,
+        blocksLight: false,
+        liquidKind: null,
+        tileAnimationFrameIndex: 1,
+        tileAnimationFrameCount: 2,
+        tileRenderSource: 'uvRect 0.375,0.25..0.5,0.5',
+        tileRenderUvRect: '0.375,0.25..0.5,0.5',
+        tileRenderPixelBounds: '48,16..64,32'
+      },
+      pinnedTile: null
+    });
+
+    expect(model.hoverText).toBe(
+      'Hover: debug panel blink (#6) @ 12,-4 chunk:0,-1 local:12,28 | solid:off | light:off | liquid:none | tileFrame:1/2 | tileSrc:uvRect 0.375,0.25..0.5,0.5 | tileUv:0.375,0.25..0.5,0.5 | tilePx:48,16..64,32'
+    );
+  });
+
   it('shows pinned inspect metadata with a repin hint when no separate hover target is present', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',

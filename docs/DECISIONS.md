@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-15: Non-liquid inspect render telemetry resolves from shared tile-metadata helpers
+
+- Decision: Hovered and pinned inspect telemetry now resolves current non-liquid animated frame sources, UV rects, and atlas-pixel bounds through shared elapsed-time helpers in `src/world/tileMetadata.ts` instead of re-deriving frame selection inside `src/main.ts` or the UI formatters.
+- Reason: Torch and debug-tile inspect readouts need to stay aligned with the same authored render metadata and elapsed-frame selection the renderer already uses, without duplicating atlas-index versus direct-`uvRect` branching in multiple places.
+- Consequence: Future non-liquid inspect or atlas-debug follow-ups should reuse those shared elapsed-time tile-render helpers rather than recomputing current frame sources in runtime assembly or UI formatting code.
+
 ### 2026-03-15: Torch atlas animation keeps the spare-slot regression target
 
 - Decision: The starter torch now animates between full-width authored regions `20` and `22`, while authored region `21` stays blank as the documented spare slot and the exterior padding strip now begins at `x=112`.
