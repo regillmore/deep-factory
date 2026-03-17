@@ -1,0 +1,195 @@
+import { describe, expect, it } from 'vitest';
+
+import { findPlayerSpawnPoint } from './playerSpawn';
+import { createPlayerState } from './playerState';
+import { createPassiveBunnyState, DEFAULT_PASSIVE_BUNNY_HOP_INTERVAL_TICKS } from './passiveBunnyState';
+import { TileWorld } from './world';
+import {
+  createPassiveBunnySpawnerState,
+  DEFAULT_PASSIVE_BUNNY_SPAWN_INTERVAL_TICKS,
+  DEFAULT_PASSIVE_BUNNY_WINDOW_OFFSETS_TILES,
+  resolvePassiveBunnySpawnWindowTarget,
+  stepPassiveBunnySpawner
+} from './passiveBunnySpawn';
+
+const setTiles = (
+  world: TileWorld,
+  minTileX: number,
+  minTileY: number,
+  maxTileX: number,
+  maxTileY: number,
+  tileId: number
+): void => {
+  for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
+    for (let tileX = minTileX; tileX <= maxTileX; tileX += 1) {
+      world.setTile(tileX, tileY, tileId);
+    }
+  }
+};
+
+const createFlatSurfaceWorld = (): TileWorld => {
+  const world = new TileWorld(0);
+  setTiles(world, -48, -16, 48, 16, 0);
+  setTiles(world, -48, 0, 48, 0, 3);
+  return world;
+};
+
+describe('passiveBunnySpawn', () => {
+  it('normalizes the next deterministic spawn-window index into its tile-offset target', () => {
+    expect(
+      resolvePassiveBunnySpawnWindowTarget(DEFAULT_PASSIVE_BUNNY_WINDOW_OFFSETS_TILES.length + 2)
+    ).toEqual({
+      index: 2,
+      offsetTiles: DEFAULT_PASSIVE_BUNNY_WINDOW_OFFSETS_TILES[2]
+    });
+
+    expect(resolvePassiveBunnySpawnWindowTarget(5, [6, -3] as const)).toEqual({
+      index: 1,
+      offsetTiles: -3
+    });
+  });
+
+  it('spawns from the next deterministic surface window once the fixed-step cooldown elapses', () => {
+    const world = createFlatSurfaceWorld();
+    const playerState = createPlayerState({
+      position: { x: 8, y: 0 }
+    });
+    let spawnerState = createPassiveBunnySpawnerState(2);
+
+    const firstStep = stepPassiveBunnySpawner({
+      playerState,
+      spawnerState,
+      findSpawnPoint: (options) => findPlayerSpawnPoint(world, options),
+      spawnIntervalTicks: 2
+    });
+
+    expect(firstStep.spawnState).toBeNull();
+    expect(firstStep.despawnIds).toEqual([]);
+    expect(firstStep.nextSpawnerState).toEqual({
+      ticksUntilNextSpawn: 1,
+      nextWindowIndex: 0
+    });
+
+    spawnerState = firstStep.nextSpawnerState;
+
+    const secondStep = stepPassiveBunnySpawner({
+      playerState,
+      spawnerState,
+      findSpawnPoint: (options) => findPlayerSpawnPoint(world, options),
+      spawnIntervalTicks: 2
+    });
+
+    expect(secondStep.spawnState).toEqual({
+      position: { x: 136, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 14, height: 18 },
+      grounded: true,
+      facing: 'right',
+      hopCooldownTicksRemaining: DEFAULT_PASSIVE_BUNNY_HOP_INTERVAL_TICKS
+    });
+    expect(secondStep.despawnIds).toEqual([]);
+    expect(secondStep.nextSpawnerState).toEqual({
+      ticksUntilNextSpawn: 2,
+      nextWindowIndex: 1
+    });
+  });
+
+  it('falls forward through later windows when the current deterministic window is blocked', () => {
+    const world = createFlatSurfaceWorld();
+    const playerState = createPlayerState({
+      position: { x: 8, y: 0 }
+    });
+
+    setTiles(world, 5, -18, 10, 8, 3);
+
+    const result = stepPassiveBunnySpawner({
+      playerState,
+      spawnerState: {
+        ticksUntilNextSpawn: 1,
+        nextWindowIndex: 0
+      },
+      findSpawnPoint: (options) => findPlayerSpawnPoint(world, options)
+    });
+
+    expect(result.spawnState?.position).toEqual({ x: -120, y: 0 });
+    expect(result.spawnState?.facing).toBe('left');
+    expect(result.nextSpawnerState.nextWindowIndex).toBe(2);
+  });
+
+  it('despawns bunnies outside the keep band while keeping nearby bunnies active', () => {
+    const playerState = createPlayerState({
+      position: { x: 8, y: 0 }
+    });
+
+    const result = stepPassiveBunnySpawner({
+      playerState,
+      activeBunnies: [
+        {
+          id: 1,
+          state: createPassiveBunnyState({
+            position: { x: 8 + 16 * 4, y: 0 }
+          })
+        },
+        {
+          id: 2,
+          state: createPassiveBunnyState({
+            position: { x: 8 + 16 * 32, y: 0 }
+          })
+        },
+        {
+          id: 3,
+          state: createPassiveBunnyState({
+            position: { x: 8, y: 16 * 16 }
+          })
+        }
+      ],
+      spawnerState: createPassiveBunnySpawnerState(DEFAULT_PASSIVE_BUNNY_SPAWN_INTERVAL_TICKS),
+      findSpawnPoint: () => null,
+      spawnIntervalTicks: DEFAULT_PASSIVE_BUNNY_SPAWN_INTERVAL_TICKS
+    });
+
+    expect(result.spawnState).toBeNull();
+    expect(result.despawnIds).toEqual([2, 3]);
+    expect(result.nextSpawnerState).toEqual({
+      ticksUntilNextSpawn: DEFAULT_PASSIVE_BUNNY_SPAWN_INTERVAL_TICKS - 1,
+      nextWindowIndex: 0
+    });
+  });
+
+  it('allows a replacement spawn on the same fixed step after a far bunny is despawned', () => {
+    const world = createFlatSurfaceWorld();
+    const playerState = createPlayerState({
+      position: { x: 8, y: 0 }
+    });
+
+    const result = stepPassiveBunnySpawner({
+      playerState,
+      activeBunnies: [
+        {
+          id: 11,
+          state: createPassiveBunnyState({
+            position: { x: 8 + 16 * 4, y: 0 }
+          })
+        },
+        {
+          id: 12,
+          state: createPassiveBunnyState({
+            position: { x: 8 + 16 * 32, y: 0 }
+          })
+        }
+      ],
+      spawnerState: {
+        ticksUntilNextSpawn: 1,
+        nextWindowIndex: 0
+      },
+      findSpawnPoint: (options) => findPlayerSpawnPoint(world, options)
+    });
+
+    expect(result.despawnIds).toEqual([12]);
+    expect(result.spawnState?.position).toEqual({ x: 136, y: 0 });
+    expect(result.nextSpawnerState).toEqual({
+      ticksUntilNextSpawn: DEFAULT_PASSIVE_BUNNY_SPAWN_INTERVAL_TICKS,
+      nextWindowIndex: 1
+    });
+  });
+});

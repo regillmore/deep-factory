@@ -8,6 +8,7 @@ import {
   type PlayerState
 } from '../world/playerState';
 import { createHostileSlimeState, type HostileSlimeState } from '../world/hostileSlimeState';
+import { createPassiveBunnyState, type PassiveBunnyState } from '../world/passiveBunnyState';
 import {
   cloneStandalonePlayerRenderState,
   createStandalonePlayerRenderPresentationState
@@ -137,6 +138,19 @@ const expectHostileSlimeUniformValues = (
   }
 };
 
+const expectPassiveBunnyUniformValues = (
+  uniformCalls: Array<[WebGLUniformLocation | null, number]>,
+  expectedFacingSigns: number[]
+): void => {
+  expect(uniformCalls).toHaveLength(expectedFacingSigns.length * 2);
+  for (let index = 0; index < expectedFacingSigns.length; index += 1) {
+    const base = index * 2;
+    expect(uniformCalls[base]?.[1]).toBe(expectedFacingSigns[index]);
+    expect(uniformCalls[base + 1]?.[1]).toBeGreaterThanOrEqual(0);
+    expect(uniformCalls[base + 1]?.[1]).toBeLessThanOrEqual(1);
+  }
+};
+
 const createStandalonePlayerEntityFrameState = (
   currentState: PlayerState,
   options: {
@@ -200,6 +214,21 @@ const createDroppedItemEntityFrameState = (
 ): RendererEntityFrameState => ({
   id: options.id ?? 1,
   kind: 'dropped-item',
+  snapshot: {
+    previous: options.previousState ?? currentState,
+    current: currentState
+  }
+});
+
+const createPassiveBunnyEntityFrameState = (
+  currentState: PassiveBunnyState,
+  options: {
+    id?: number;
+    previousState?: PassiveBunnyState;
+  } = {}
+): RendererEntityFrameState => ({
+  id: options.id ?? 1,
+  kind: 'bunny',
   snapshot: {
     previous: options.previousState ?? currentState,
     current: currentState
@@ -2437,6 +2466,83 @@ describe('Renderer atlas telemetry', () => {
     expectHostileSlimeUniformValues(
       uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
       [1]
+    );
+  });
+
+  it('draws passive bunny placeholders from interpolated entity snapshots', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const drawArrays = vi.mocked(gl.drawArrays);
+    const bufferData = vi.mocked(gl.bufferData);
+    const uniform1f = vi.mocked(gl.uniform1f);
+    drawArrays.mockClear();
+    bufferData.mockClear();
+    uniform1f.mockClear();
+
+    const currentState = createPassiveBunnyState({
+      position: { x: 80, y: 48 },
+      facing: 'left'
+    });
+    const previousState = createPassiveBunnyState({
+      position: { x: 64, y: 32 },
+      facing: 'left'
+    });
+
+    renderer.render(new Camera2D(), {
+      entities: [
+        createPassiveBunnyEntityFrameState(currentState, {
+          id: 31,
+          previousState
+        })
+      ],
+      renderAlpha: 0.25,
+      timeMs: 0
+    });
+
+    expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
+    expect(renderer.telemetry.drawCalls).toBe(renderer.telemetry.renderedChunks + 1);
+
+    const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
+    expect(dynamicUploads).toHaveLength(1);
+    expect(Array.from((dynamicUploads[0]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      61,
+      18,
+      0,
+      0,
+      75,
+      18,
+      1,
+      0,
+      75,
+      36,
+      1,
+      1,
+      61,
+      18,
+      0,
+      0,
+      75,
+      36,
+      1,
+      1,
+      61,
+      36,
+      0,
+      1
+    ]);
+    expectPassiveBunnyUniformValues(
+      uniform1f.mock.calls as Array<[WebGLUniformLocation | null, number]>,
+      [-1]
     );
   });
 

@@ -47,7 +47,9 @@ import { createPlayerInventoryState } from './world/playerInventory';
 import { AUTHORED_ATLAS_HEIGHT, AUTHORED_ATLAS_WIDTH } from './world/authoredAtlasLayout';
 import {
   createPlayerState,
+  DEFAULT_PLAYER_HEIGHT,
   DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
+  DEFAULT_PLAYER_WIDTH,
   getPlayerCameraFocusPoint
 } from './world/playerState';
 import {
@@ -74,15 +76,19 @@ import {
 } from './world/tileMetadata';
 import { worldToChunkCoord, worldToLocalTile } from './world/chunkMath';
 import { DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS } from './world/hostileSlimeCombat';
-import {
-  DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS
-} from './world/hostileSlimeSpawn';
+import { DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS } from './world/hostileSlimeSpawn';
 import {
   DEFAULT_HOSTILE_SLIME_HEALTH,
   DEFAULT_HOSTILE_SLIME_HEIGHT,
   DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
   DEFAULT_HOSTILE_SLIME_WIDTH
 } from './world/hostileSlimeState';
+import { DEFAULT_PASSIVE_BUNNY_SPAWN_INTERVAL_TICKS } from './world/passiveBunnySpawn';
+import {
+  DEFAULT_PASSIVE_BUNNY_HEIGHT,
+  DEFAULT_PASSIVE_BUNNY_HOP_INTERVAL_TICKS,
+  DEFAULT_PASSIVE_BUNNY_WIDTH
+} from './world/passiveBunnyState';
 import { TileWorld, type TileEditEvent } from './world/world';
 
 const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
@@ -353,6 +359,17 @@ const testRuntime = vi.hoisted(() => {
       fixedDt: number;
       playerPosition: { x: number; y: number } | null;
     }>,
+    rendererStepPassiveBunnyStateImpl: null as null | ((state: unknown, fixedDt: number) => unknown),
+    rendererStepPassiveBunnyStateRequests: [] as Array<{
+      state: {
+        position: { x: number; y: number } | null;
+        velocity: { x: number; y: number } | null;
+        grounded: boolean | null;
+        facing: 'left' | 'right' | null;
+        hopCooldownTicksRemaining: number | null;
+      };
+      fixedDt: number;
+    }>,
     rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl: null as null | ((
       state: unknown,
       spawn: unknown
@@ -412,6 +429,7 @@ const testRuntime = vi.hoisted(() => {
       standalonePlayerCeilingContact: { tileX: number; tileY: number; tileId: number } | null;
       standalonePlayerCeilingBonkHoldUntilTimeMs: number | null;
       slimeCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
+      bunnyCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       renderAlpha: number | null;
       timeMs: number | null;
     },
@@ -569,6 +587,31 @@ vi.mock('./gl/renderer', () => ({
               ];
             })
         : [];
+      const bunnyCurrentPositions = Array.isArray(renderState.entities)
+        ? renderState.entities
+            .filter((entity) => entity?.kind === 'bunny')
+            .flatMap((entity) => {
+              const snapshot = entity?.snapshot?.current;
+              if (
+                !snapshot?.position ||
+                typeof entity?.id !== 'number' ||
+                typeof snapshot.position.x !== 'number' ||
+                typeof snapshot.position.y !== 'number'
+              ) {
+                return [];
+              }
+
+              return [
+                {
+                  id: entity.id,
+                  position: {
+                    x: snapshot.position.x,
+                    y: snapshot.position.y
+                  }
+                }
+              ];
+            })
+        : [];
       const standalonePlayerPreviousPosition =
         standalonePlayerEntity?.snapshot?.previous?.position &&
         typeof standalonePlayerEntity.snapshot.previous.position.x === 'number' &&
@@ -618,6 +661,7 @@ vi.mock('./gl/renderer', () => ({
         standalonePlayerCeilingBonkHoldUntilTimeMs:
           standalonePlayerEntity?.snapshot?.current?.ceilingBonkHoldUntilTimeMs ?? null,
         slimeCurrentPositions,
+        bunnyCurrentPositions,
         renderAlpha: typeof renderState.renderAlpha === 'number' ? renderState.renderAlpha : null,
         timeMs: renderState.timeMs ?? null
       };
@@ -627,7 +671,14 @@ vi.mock('./gl/renderer', () => ({
       if (testRuntime.rendererFindPlayerSpawnPointImpl !== null) {
         return testRuntime.rendererFindPlayerSpawnPointImpl(options);
       }
-      return testRuntime.playerSpawnPoint;
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_PLAYER_WIDTH &&
+        search?.height === DEFAULT_PLAYER_HEIGHT
+      ) {
+        return testRuntime.playerSpawnPoint;
+      }
+      return null;
     }
 
     resolvePlayerSpawnLiquidSafetyStatus() {
@@ -933,6 +984,59 @@ vi.mock('./gl/renderer', () => ({
       });
       if (testRuntime.rendererStepHostileSlimeStateImpl) {
         const steppedState = testRuntime.rendererStepHostileSlimeStateImpl(state, fixedDt, playerState);
+        if (
+          steppedState &&
+          typeof steppedState === 'object' &&
+          state &&
+          typeof state === 'object' &&
+          !Array.isArray(steppedState) &&
+          !Array.isArray(state)
+        ) {
+          return {
+            ...(state as Record<string, unknown>),
+            ...(steppedState as Record<string, unknown>)
+          } as T;
+        }
+
+        return steppedState as T;
+      }
+      return state;
+    }
+
+    stepPassiveBunnyState<T>(state: T, fixedDt: number): T {
+      testRuntime.fixedStepWorldUpdateOrder.push('bunny');
+      const bunnyState = state as {
+        position?: { x?: number; y?: number };
+        velocity?: { x?: number; y?: number };
+        grounded?: boolean;
+        facing?: 'left' | 'right';
+        hopCooldownTicksRemaining?: number;
+      };
+      testRuntime.rendererStepPassiveBunnyStateRequests.push({
+        state: {
+          position:
+            bunnyState.position &&
+            typeof bunnyState.position.x === 'number' &&
+            typeof bunnyState.position.y === 'number'
+              ? { x: bunnyState.position.x, y: bunnyState.position.y }
+              : null,
+          velocity:
+            bunnyState.velocity &&
+            typeof bunnyState.velocity.x === 'number' &&
+            typeof bunnyState.velocity.y === 'number'
+              ? { x: bunnyState.velocity.x, y: bunnyState.velocity.y }
+              : null,
+          grounded: typeof bunnyState.grounded === 'boolean' ? bunnyState.grounded : null,
+          facing: bunnyState.facing ?? null,
+          hopCooldownTicksRemaining:
+            typeof bunnyState.hopCooldownTicksRemaining === 'number'
+              ? bunnyState.hopCooldownTicksRemaining
+              : null
+        },
+        fixedDt
+      });
+      if (testRuntime.rendererStepPassiveBunnyStateImpl) {
+        const steppedState = testRuntime.rendererStepPassiveBunnyStateImpl(state, fixedDt);
         if (
           steppedState &&
           typeof steppedState === 'object' &&
@@ -1993,6 +2097,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererStepPlayerStateRequests = [];
     testRuntime.rendererStepHostileSlimeStateImpl = null;
     testRuntime.rendererStepHostileSlimeStateRequests = [];
+    testRuntime.rendererStepPassiveBunnyStateImpl = null;
+    testRuntime.rendererStepPassiveBunnyStateRequests = [];
     testRuntime.rendererRespawnPlayerStateAtSpawnIfEmbeddedInSolidImpl = null;
     testRuntime.rendererPlayerCollisionContactsQueue = [];
     testRuntime.rendererPlayerCollisionContactRequestStates = [];
@@ -4301,6 +4407,135 @@ describe('main.ts shell state orchestration', () => {
       {
         id: 2,
         position: { x: 204, y: -4 }
+      }
+    ]);
+  });
+
+  it('spawns passive bunnies on the fixed-step cadence and despawns them once the player leaves the keep band', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    const bunnySpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 8,
+      x: 136,
+      y: 0,
+      width: DEFAULT_PASSIVE_BUNNY_WIDTH,
+      height: DEFAULT_PASSIVE_BUNNY_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_PASSIVE_BUNNY_WIDTH &&
+        search?.height === DEFAULT_PASSIVE_BUNNY_HEIGHT
+      ) {
+        return bunnySpawnPoint;
+      }
+
+      if (
+        search?.width === DEFAULT_PLAYER_WIDTH &&
+        search?.height === DEFAULT_PLAYER_HEIGHT
+      ) {
+        return testRuntime.playerSpawnPoint;
+      }
+
+      return null;
+    };
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    for (let step = 0; step < DEFAULT_PASSIVE_BUNNY_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.latestRendererRenderFrameState?.bunnyCurrentPositions).toEqual([
+      {
+        id: 2,
+        position: { x: 136, y: 0 }
+      }
+    ]);
+
+    testRuntime.rendererStepPlayerStateImpl = () =>
+      createPlayerState({
+        position: { x: 720, y: 0 },
+        grounded: true,
+        facing: 'right'
+      });
+
+    runFixedUpdate();
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.latestRendererRenderFrameState?.bunnyCurrentPositions).toEqual([]);
+  });
+
+  it('steps passive bunny locomotion through the renderer world query after spawning', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    const bunnySpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 8,
+      x: 136,
+      y: 0,
+      width: DEFAULT_PASSIVE_BUNNY_WIDTH,
+      height: DEFAULT_PASSIVE_BUNNY_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_PASSIVE_BUNNY_WIDTH &&
+        search?.height === DEFAULT_PASSIVE_BUNNY_HEIGHT
+      ) {
+        return bunnySpawnPoint;
+      }
+
+      if (
+        search?.width === DEFAULT_PLAYER_WIDTH &&
+        search?.height === DEFAULT_PLAYER_HEIGHT
+      ) {
+        return testRuntime.playerSpawnPoint;
+      }
+
+      return null;
+    };
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    for (let step = 0; step < DEFAULT_PASSIVE_BUNNY_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
+
+    testRuntime.rendererStepPassiveBunnyStateImpl = () => ({
+      position: { x: 132, y: -4 },
+      velocity: { x: -72, y: -60 },
+      grounded: false,
+      facing: 'left' as const,
+      hopCooldownTicksRemaining: DEFAULT_PASSIVE_BUNNY_HOP_INTERVAL_TICKS
+    });
+    testRuntime.rendererStepPassiveBunnyStateRequests = [];
+    testRuntime.fixedStepWorldUpdateOrder = [];
+
+    runFixedUpdate();
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.fixedStepWorldUpdateOrder).toEqual(['liquids', 'player', 'bunny']);
+    expect(testRuntime.rendererStepPassiveBunnyStateRequests).toEqual([
+      {
+        state: {
+          position: { x: 136, y: 0 },
+          velocity: { x: 0, y: 0 },
+          grounded: true,
+          facing: 'right',
+          hopCooldownTicksRemaining: DEFAULT_PASSIVE_BUNNY_HOP_INTERVAL_TICKS
+        },
+        fixedDt: 1000 / 60
+      }
+    ]);
+    expect(testRuntime.latestRendererRenderFrameState?.bunnyCurrentPositions).toEqual([
+      {
+        id: 2,
+        position: { x: 132, y: -4 }
       }
     ]);
   });
@@ -10428,6 +10663,14 @@ describe('main.ts shell state orchestration', () => {
       height: DEFAULT_HOSTILE_SLIME_HEIGHT,
       supportTileId: 3
     });
+    const bunnySpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 8,
+      x: 136,
+      y: 0,
+      width: DEFAULT_PASSIVE_BUNNY_WIDTH,
+      height: DEFAULT_PASSIVE_BUNNY_HEIGHT,
+      supportTileId: 3
+    });
     testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
       const search = options as { width?: number; height?: number } | undefined;
       if (
@@ -10437,7 +10680,18 @@ describe('main.ts shell state orchestration', () => {
         return slimeSpawnPoint;
       }
 
-      return testRuntime.playerSpawnPoint;
+      if (
+        search?.width === DEFAULT_PASSIVE_BUNNY_WIDTH &&
+        search?.height === DEFAULT_PASSIVE_BUNNY_HEIGHT
+      ) {
+        return bunnySpawnPoint;
+      }
+
+      if (search?.width === DEFAULT_PLAYER_WIDTH && search?.height === DEFAULT_PLAYER_HEIGHT) {
+        return testRuntime.playerSpawnPoint;
+      }
+
+      return null;
     };
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
@@ -10463,16 +10717,20 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
     testRuntime.rendererStepHostileSlimeStateRequests = [];
 
-    runFixedUpdate();
+    for (let step = 0; step < DEFAULT_PASSIVE_BUNNY_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
 
     expect(testRuntime.rendererStepHostileSlimeStateRequests).toEqual([]);
 
-    for (let step = 1; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS + 1; step += 1) {
-      runFixedUpdate();
-    }
     runRenderFrame(1000 / 60, 0.5);
 
     expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toEqual([]);
+    expect(testRuntime.latestRendererRenderFrameState?.bunnyCurrentPositions).toHaveLength(1);
+    expect(testRuntime.latestRendererRenderFrameState?.bunnyCurrentPositions?.[0]?.position).toEqual({
+      x: 136,
+      y: 0
+    });
 
     testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
     testRuntime.shellInstance?.options.onTogglePeacefulMode?.('main-menu');
@@ -10483,12 +10741,11 @@ describe('main.ts shell state orchestration', () => {
     }
     runRenderFrame(1000 / 60, 0.5);
 
-    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toEqual([
-      {
-        id: 3,
-        position: { x: 200, y: 0 }
-      }
-    ]);
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toHaveLength(1);
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions?.[0]?.position).toEqual({
+      x: 200,
+      y: 0
+    });
   });
 
   it('routes overlay-backed in-world shell toggles through one shared visibility sync path while shortcuts stay shell-state only', async () => {

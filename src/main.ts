@@ -231,6 +231,14 @@ import {
   type HostileSlimeState
 } from './world/hostileSlimeState';
 import {
+  createPassiveBunnySpawnerState,
+  stepPassiveBunnySpawner
+} from './world/passiveBunnySpawn';
+import {
+  clonePassiveBunnyState,
+  type PassiveBunnyState
+} from './world/passiveBunnyState';
+import {
   clonePlayerInventoryState,
   consumePlayerInventoryHotbarSlotItem,
   createDefaultPlayerInventoryState,
@@ -336,6 +344,7 @@ const DEBUG_TILE_BREAK_ID = 0;
 const PREFERRED_INITIAL_DEBUG_BRUSH_TILE_NAME = 'debug_brick';
 const STANDALONE_PLAYER_ENTITY_KIND = 'standalone-player';
 const HOSTILE_SLIME_ENTITY_KIND = 'slime';
+const PASSIVE_BUNNY_ENTITY_KIND = 'bunny';
 const DROPPED_ITEM_ENTITY_KIND = 'dropped-item';
 const HOSTILE_SLIME_GEL_DROP_ITEM_ID: DroppedItemState['itemId'] = 'gel';
 const HOSTILE_SLIME_GEL_DROP_AMOUNT = 1;
@@ -1554,8 +1563,10 @@ const bootstrap = async (): Promise<void> => {
   let standalonePlayerDeathState: PlayerDeathState | null = null;
   let standalonePlayerInventoryState = createDefaultPlayerInventoryState();
   let hostileSlimeEntityIds: EntityId[] = [];
+  let passiveBunnyEntityIds: EntityId[] = [];
   let droppedItemEntityIds: EntityId[] = [];
   let hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
+  let passiveBunnySpawnerState = createPassiveBunnySpawnerState();
   let pendingStandalonePlayerFixedStepResult: StandalonePlayerFixedStepResult | null = null;
   let playerSpawnNeedsRefresh = false;
   let cameraFollowOffset: CameraFollowOffset = { x: 0, y: 0 };
@@ -1731,6 +1742,23 @@ const bootstrap = async (): Promise<void> => {
     }
     hostileSlimeEntityIds = nextHostileSlimeEntityIds;
     return activeHostileSlimes;
+  };
+  const getPassiveBunnyEntityStates = (): Array<{ id: EntityId; state: PassiveBunnyState }> => {
+    const activePassiveBunnies: Array<{ id: EntityId; state: PassiveBunnyState }> = [];
+    const nextPassiveBunnyEntityIds: EntityId[] = [];
+    for (const entityId of passiveBunnyEntityIds) {
+      const state = entityRegistry.getEntityState<PassiveBunnyState>(entityId);
+      if (state === null) {
+        continue;
+      }
+      nextPassiveBunnyEntityIds.push(entityId);
+      activePassiveBunnies.push({
+        id: entityId,
+        state
+      });
+    }
+    passiveBunnyEntityIds = nextPassiveBunnyEntityIds;
+    return activePassiveBunnies;
   };
   const getDroppedItemEntityStates = (): Array<{ id: EntityId; state: DroppedItemState }> => {
     const activeDroppedItems: Array<{ id: EntityId; state: DroppedItemState }> = [];
@@ -2242,6 +2270,16 @@ const bootstrap = async (): Promise<void> => {
             }
           });
           break;
+        case PASSIVE_BUNNY_ENTITY_KIND:
+          entityFrameStates.push({
+            id: snapshotEntry.id,
+            kind: PASSIVE_BUNNY_ENTITY_KIND,
+            snapshot: {
+              previous: snapshotEntry.previous as PassiveBunnyState,
+              current: snapshotEntry.current as PassiveBunnyState
+            }
+          });
+          break;
         case DROPPED_ITEM_ENTITY_KIND:
           entityFrameStates.push({
             id: snapshotEntry.id,
@@ -2262,8 +2300,10 @@ const bootstrap = async (): Promise<void> => {
     standalonePlayerDeathState = null;
     standalonePlayerDeathCount = 0;
     hostileSlimeEntityIds = [];
+    passiveBunnyEntityIds = [];
     droppedItemEntityIds = [];
     hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
+    passiveBunnySpawnerState = createPassiveBunnySpawnerState();
     pendingStandalonePlayerFixedStepResult = null;
     latestStandalonePlayerDeathHoldStatus = 'none';
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
@@ -2434,6 +2474,17 @@ const bootstrap = async (): Promise<void> => {
     hostileSlimeEntityIds.push(entityId);
     return entityId;
   };
+  const spawnPassiveBunnyEntity = (initialPassiveBunnyState: PassiveBunnyState): EntityId => {
+    const entityId = entityRegistry.spawn({
+      kind: PASSIVE_BUNNY_ENTITY_KIND,
+      initialState: initialPassiveBunnyState,
+      captureRenderState: clonePassiveBunnyState,
+      fixedUpdate: (passiveBunnyState, fixedDt) =>
+        renderer.stepPassiveBunnyState(passiveBunnyState, fixedDt)
+    });
+    passiveBunnyEntityIds.push(entityId);
+    return entityId;
+  };
   const spawnDroppedItemEntity = (initialDroppedItemState: DroppedItemState): EntityId => {
     let droppedItemEntityId: EntityId | null = null;
     droppedItemEntityId = entityRegistry.spawn({
@@ -2561,6 +2612,21 @@ const bootstrap = async (): Promise<void> => {
       return false;
     });
   };
+  const despawnPassiveBunnyEntities = (entityIds: readonly EntityId[]): void => {
+    if (entityIds.length === 0) {
+      return;
+    }
+
+    const removedEntityIds = new Set(entityIds);
+    passiveBunnyEntityIds = passiveBunnyEntityIds.filter((entityId) => {
+      if (!removedEntityIds.has(entityId)) {
+        return true;
+      }
+
+      entityRegistry.despawn(entityId);
+      return false;
+    });
+  };
   const enforcePeacefulModeHostileSlimeState = (): void => {
     if (!worldSessionGameplayState.peacefulModeEnabled || hostileSlimeEntityIds.length === 0) {
       return;
@@ -2588,6 +2654,24 @@ const bootstrap = async (): Promise<void> => {
     despawnHostileSlimeEntities(spawnResult.despawnIds);
     if (spawnResult.spawnState !== null) {
       spawnHostileSlimeEntity(spawnResult.spawnState);
+    }
+  };
+  const stepPassiveBunnySpawnAndDespawn = (): void => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (standalonePlayerState === null) {
+      return;
+    }
+
+    const spawnResult = stepPassiveBunnySpawner({
+      playerState: standalonePlayerState,
+      activeBunnies: getPassiveBunnyEntityStates(),
+      spawnerState: passiveBunnySpawnerState,
+      findSpawnPoint: (options) => renderer.findPlayerSpawnPoint(options)
+    });
+    passiveBunnySpawnerState = spawnResult.nextSpawnerState;
+    despawnPassiveBunnyEntities(spawnResult.despawnIds);
+    if (spawnResult.spawnState !== null) {
+      spawnPassiveBunnyEntity(spawnResult.spawnState);
     }
   };
 
@@ -5665,6 +5749,7 @@ const bootstrap = async (): Promise<void> => {
       stepStarterMeleeWeaponFixedUpdate(fixedDt);
       stepStarterPickaxeMiningFixedUpdate(fixedDt);
       stepHostileSlimeSpawnAndDespawn();
+      stepPassiveBunnySpawnAndDespawn();
       const nextHealingPotionCooldownState = stepPlayerHealingPotionCooldownState(
         playerHealingPotionCooldownState,
         fixedDt

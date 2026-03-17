@@ -17,6 +17,13 @@ import {
   HOSTILE_SLIME_PLACEHOLDER_VERTEX_COUNT
 } from './hostileSlimePlaceholder';
 import {
+  buildPassiveBunnyPlaceholderVertices,
+  getPassiveBunnyPlaceholderFacingSign,
+  getPassiveBunnyPlaceholderNearbyLightSample,
+  PASSIVE_BUNNY_PLACEHOLDER_VERTEX_COUNT,
+  PASSIVE_BUNNY_PLACEHOLDER_VERTEX_FLOAT_COUNT
+} from './passiveBunnyPlaceholder';
+import {
   buildStandalonePlayerPlaceholderVertices,
   getStandalonePlayerPlaceholderNearbyLightSample,
   getStandalonePlayerPlaceholderRenderFacingSign,
@@ -71,6 +78,8 @@ import type { EntityId, EntityRenderStateSnapshot } from '../world/entityRegistr
 import { resolveInterpolatedEntityWorldPosition } from '../world/entityRenderInterpolation';
 import { stepHostileSlimeState as stepWorldHostileSlimeState } from '../world/hostileSlimeLocomotion';
 import { type HostileSlimeState } from '../world/hostileSlimeState';
+import { stepPassiveBunnyState as stepWorldPassiveBunnyState } from '../world/passiveBunnyLocomotion';
+import { type PassiveBunnyState } from '../world/passiveBunnyState';
 import { type DroppedItemState } from '../world/droppedItem';
 import {
   isStandalonePlayerRenderStateCeilingBonkActive,
@@ -123,6 +132,12 @@ export interface HostileSlimeEntityFrameState {
   snapshot: EntityRenderStateSnapshot<HostileSlimeState>;
 }
 
+export interface PassiveBunnyEntityFrameState {
+  id: EntityId;
+  kind: 'bunny';
+  snapshot: EntityRenderStateSnapshot<PassiveBunnyState>;
+}
+
 export interface DroppedItemEntityFrameState {
   id: EntityId;
   kind: 'dropped-item';
@@ -132,6 +147,7 @@ export interface DroppedItemEntityFrameState {
 export type RendererEntityFrameState =
   | StandalonePlayerEntityFrameState
   | HostileSlimeEntityFrameState
+  | PassiveBunnyEntityFrameState
   | DroppedItemEntityFrameState;
 
 export interface RenderTelemetry {
@@ -211,6 +227,7 @@ export class Renderer {
   private program: WebGLProgram;
   private playerProgram: WebGLProgram;
   private slimeProgram: WebGLProgram;
+  private bunnyProgram: WebGLProgram;
   private droppedItemProgram: WebGLProgram;
   private world!: TileWorld;
   private detachWorldTileEditListener: (() => void) | null = null;
@@ -225,6 +242,9 @@ export class Renderer {
   private uSlimeMatrix: WebGLUniformLocation;
   private uSlimeFacingSign: WebGLUniformLocation;
   private uSlimeLight: WebGLUniformLocation;
+  private uBunnyMatrix: WebGLUniformLocation;
+  private uBunnyFacingSign: WebGLUniformLocation;
+  private uBunnyLight: WebGLUniformLocation;
   private uDroppedItemMatrix: WebGLUniformLocation;
   private uDroppedItemLight: WebGLUniformLocation;
   private uDroppedItemBaseColor: WebGLUniformLocation;
@@ -234,6 +254,8 @@ export class Renderer {
   private standalonePlayerVao: WebGLVertexArrayObject;
   private hostileSlimeBuffer: WebGLBuffer;
   private hostileSlimeVao: WebGLVertexArrayObject;
+  private passiveBunnyBuffer: WebGLBuffer;
+  private passiveBunnyVao: WebGLVertexArrayObject;
   private droppedItemBuffer: WebGLBuffer;
   private droppedItemVao: WebGLVertexArrayObject;
 
@@ -590,6 +612,102 @@ export class Renderer {
     if (!slimeLight) throw new Error('Missing uniform u_light');
     this.uSlimeLight = slimeLight;
 
+    this.bunnyProgram = createProgram(
+      gl,
+      `#version 300 es
+      precision mediump float;
+      layout(location = 0) in vec2 a_position;
+      layout(location = 1) in vec2 a_uv;
+      uniform mat4 u_matrix;
+      out vec2 v_uv;
+      void main() {
+        v_uv = a_uv;
+        gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);
+      }`,
+      `#version 300 es
+      precision mediump float;
+      in vec2 v_uv;
+      uniform float u_facingSign;
+      uniform float u_light;
+      out vec4 outColor;
+
+      bool inRect(vec2 uv, vec4 rect) {
+        return uv.x >= rect.x && uv.x <= rect.z && uv.y >= rect.y && uv.y <= rect.w;
+      }
+
+      bool inEllipse(vec2 uv, vec2 center, vec2 radius) {
+        vec2 normalized = (uv - center) / radius;
+        return dot(normalized, normalized) <= 1.0;
+      }
+
+      void main() {
+        vec2 uv = v_uv;
+        if (u_facingSign < 0.0) {
+          uv.x = 1.0 - uv.x;
+        }
+        uv.y = 1.0 - uv.y;
+
+        bool insideBody = inEllipse(uv, vec2(0.44, 0.34), vec2(0.28, 0.22));
+        bool insideHead = inEllipse(uv, vec2(0.68, 0.52), vec2(0.18, 0.16));
+        bool insideBackEar = inRect(uv, vec4(0.56, 0.64, 0.66, 0.92));
+        bool insideFrontEar = inRect(uv, vec4(0.68, 0.66, 0.80, 0.98));
+        bool insideTail = inEllipse(uv, vec2(0.16, 0.42), vec2(0.10, 0.10));
+        bool insideFoot = inRect(uv, vec4(0.38, 0.04, 0.72, 0.14));
+        bool insideAny = insideBody || insideHead || insideBackEar || insideFrontEar || insideTail || insideFoot;
+        if (!insideAny) {
+          discard;
+        }
+
+        bool insideBodyInner = inEllipse(uv, vec2(0.44, 0.34), vec2(0.25, 0.19));
+        bool insideHeadInner = inEllipse(uv, vec2(0.68, 0.52), vec2(0.15, 0.13));
+        bool insideBackEarInner = inRect(uv, vec4(0.58, 0.66, 0.64, 0.88));
+        bool insideFrontEarInner = inRect(uv, vec4(0.70, 0.68, 0.78, 0.94));
+        bool insideTailInner = inEllipse(uv, vec2(0.16, 0.42), vec2(0.07, 0.07));
+        bool insideFootInner = inRect(uv, vec4(0.40, 0.06, 0.70, 0.12));
+        bool insideOutline =
+          (insideBody && !insideBodyInner) ||
+          (insideHead && !insideHeadInner) ||
+          (insideBackEar && !insideBackEarInner) ||
+          (insideFrontEar && !insideFrontEarInner) ||
+          (insideTail && !insideTailInner) ||
+          (insideFoot && !insideFootInner);
+
+        bool insideBelly = inEllipse(uv, vec2(0.50, 0.28), vec2(0.14, 0.10));
+        bool insideEarPink =
+          (inRect(uv, vec4(0.59, 0.70, 0.63, 0.86)) || inRect(uv, vec4(0.71, 0.72, 0.77, 0.92))) &&
+          (insideBackEarInner || insideFrontEarInner);
+        bool insideEye = inEllipse(uv, vec2(0.76, 0.56), vec2(0.03, 0.04));
+
+        vec3 color = vec3(0.58, 0.46, 0.32);
+        if (insideBelly || insideTailInner) {
+          color = vec3(0.88, 0.82, 0.74);
+        }
+        if (insideEarPink) {
+          color = vec3(0.92, 0.68, 0.70);
+        }
+        if (insideEye) {
+          color = vec3(0.12, 0.10, 0.08);
+        }
+        if (insideOutline) {
+          color = vec3(0.28, 0.20, 0.14);
+        }
+
+        outColor = vec4(color * clamp(u_light, 0.0, 1.0), 1.0);
+      }`
+    );
+
+    const bunnyMatrix = gl.getUniformLocation(this.bunnyProgram, 'u_matrix');
+    if (!bunnyMatrix) throw new Error('Missing uniform u_matrix');
+    this.uBunnyMatrix = bunnyMatrix;
+
+    const bunnyFacingSign = gl.getUniformLocation(this.bunnyProgram, 'u_facingSign');
+    if (!bunnyFacingSign) throw new Error('Missing uniform u_facingSign');
+    this.uBunnyFacingSign = bunnyFacingSign;
+
+    const bunnyLight = gl.getUniformLocation(this.bunnyProgram, 'u_light');
+    if (!bunnyLight) throw new Error('Missing uniform u_light');
+    this.uBunnyLight = bunnyLight;
+
     this.droppedItemProgram = createProgram(
       gl,
       `#version 300 es
@@ -670,6 +788,11 @@ export class Renderer {
       new Float32Array(HOSTILE_SLIME_PLACEHOLDER_VERTEX_FLOAT_COUNT)
     );
     this.hostileSlimeVao = createVertexArray(gl, this.hostileSlimeBuffer, 4);
+    this.passiveBunnyBuffer = createDynamicVertexBuffer(
+      gl,
+      new Float32Array(PASSIVE_BUNNY_PLACEHOLDER_VERTEX_FLOAT_COUNT)
+    );
+    this.passiveBunnyVao = createVertexArray(gl, this.passiveBunnyBuffer, 4);
     this.droppedItemBuffer = createDynamicVertexBuffer(
       gl,
       new Float32Array(DROPPED_ITEM_PLACEHOLDER_VERTEX_FLOAT_COUNT)
@@ -882,6 +1005,10 @@ export class Renderer {
     playerState: Pick<PlayerState, 'position'>
   ): HostileSlimeState {
     return stepWorldHostileSlimeState(this.world, state, fixedDtSeconds, playerState);
+  }
+
+  stepPassiveBunnyState(state: PassiveBunnyState, fixedDtSeconds: number): PassiveBunnyState {
+    return stepWorldPassiveBunnyState(this.world, state, fixedDtSeconds);
   }
 
   respawnPlayerStateAtSpawnIfEmbeddedInSolid(
@@ -1165,6 +1292,9 @@ export class Renderer {
         case 'slime':
           this.drawHostileSlime(entity, renderAlpha, worldToClipMatrix);
           break;
+        case 'bunny':
+          this.drawPassiveBunny(entity, renderAlpha, worldToClipMatrix);
+          break;
         case 'dropped-item':
           this.drawDroppedItem(entity, renderAlpha, worldToClipMatrix);
           break;
@@ -1254,6 +1384,34 @@ export class Renderer {
     );
     gl.bindVertexArray(this.hostileSlimeVao);
     gl.drawArrays(gl.TRIANGLES, 0, HOSTILE_SLIME_PLACEHOLDER_VERTEX_COUNT);
+    this.telemetry.drawCalls += 1;
+  }
+
+  private drawPassiveBunny(
+    entity: PassiveBunnyEntityFrameState,
+    renderAlpha: number,
+    worldToClipMatrix: Float32Array
+  ): void {
+    const state = entity.snapshot.current;
+    const renderPosition = resolveInterpolatedEntityWorldPosition(entity.snapshot, renderAlpha);
+    const gl = this.gl;
+    gl.useProgram(this.bunnyProgram);
+    gl.uniformMatrix4fv(this.uBunnyMatrix, false, worldToClipMatrix);
+    gl.uniform1f(this.uBunnyFacingSign, getPassiveBunnyPlaceholderFacingSign(state));
+    const nearbyLightSample = getPassiveBunnyPlaceholderNearbyLightSample(
+      this.world,
+      state,
+      renderPosition
+    );
+    gl.uniform1f(this.uBunnyLight, nearbyLightSample.level / MAX_LIGHT_LEVEL);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.passiveBunnyBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      buildPassiveBunnyPlaceholderVertices(state, renderPosition),
+      gl.DYNAMIC_DRAW
+    );
+    gl.bindVertexArray(this.passiveBunnyVao);
+    gl.drawArrays(gl.TRIANGLES, 0, PASSIVE_BUNNY_PLACEHOLDER_VERTEX_COUNT);
     this.telemetry.drawCalls += 1;
   }
 
