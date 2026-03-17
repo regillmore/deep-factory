@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-16: Starter sword hit cooldowns stay in session-owned weapon state
+
+- Decision: The starter sword now tracks per-slime hit cooldowns in detached session-owned melee state keyed by hostile-slime entity id instead of adding saved cooldown fields onto slime state.
+- Reason: The sword cooldown is short-lived attack pacing state, and keeping it outside hostile-slime state avoids inflating shared slime locomotion data or accidentally persisting transient combat timers through save or restore flows.
+- Consequence: Future short melee or tool hit lockouts should default to session-owned helper state unless the same pass intentionally needs enemy-specific cooldowns to survive save/load or to become part of authoritative entity state.
+
 ### 2026-03-15: Non-liquid inspect render telemetry resolves from shared tile-metadata helpers
 
 - Decision: Hovered and pinned inspect telemetry now resolves current non-liquid animated frame sources, UV rects, and atlas-pixel bounds through shared elapsed-time helpers in `src/world/tileMetadata.ts` instead of re-deriving frame selection inside `src/main.ts` or the UI formatters.

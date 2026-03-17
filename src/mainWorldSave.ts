@@ -15,6 +15,7 @@ import {
   ensurePlayerInventoryHasStarterHeartCrystal,
   ensurePlayerInventoryHasStarterHealingPotions,
   ensurePlayerInventoryHasStarterPickaxe,
+  ensurePlayerInventoryHasStarterSword,
   getPlayerInventoryItemDefinition,
   isPlayerInventoryItemId,
   PLAYER_INVENTORY_HOTBAR_SLOT_COUNT,
@@ -273,13 +274,15 @@ const normalizeStandalonePlayerInventoryState = (
   label: string,
   standalonePlayerState: PlayerState | null
 ): PlayerInventoryState =>
-  (standalonePlayerState === null || standalonePlayerState.maxHealth <= DEFAULT_PLAYER_MAX_HEALTH
-    ? ensurePlayerInventoryHasStarterHeartCrystal
-    : (state: PlayerInventoryState) => state)(
+  ensurePlayerInventoryHasStarterSword(
+    (standalonePlayerState === null || standalonePlayerState.maxHealth <= DEFAULT_PLAYER_MAX_HEALTH
+      ? ensurePlayerInventoryHasStarterHeartCrystal
+      : (state: PlayerInventoryState) => state)(
     ensurePlayerInventoryHasStarterHealingPotions(
       ensurePlayerInventoryHasStarterPickaxe(
         value === undefined ? createDefaultPlayerInventoryState() : normalizePlayerInventoryState(value, label)
       )
+    )
     )
   );
 

@@ -145,7 +145,7 @@ import {
 } from './ui/touchDebugEditControls';
 import { HotbarOverlay } from './ui/hotbarOverlay';
 import { TouchPlayerControls } from './ui/touchPlayerControls';
-import { CHUNK_SIZE } from './world/constants';
+import { CHUNK_SIZE, TILE_SIZE } from './world/constants';
 import {
   EntityRegistry,
   type EntityId,
@@ -275,6 +275,12 @@ import {
   stepStarterPickaxeMiningState,
   tryStartStarterPickaxeSwing
 } from './world/starterPickaxeMining';
+import {
+  createStarterMeleeWeaponState,
+  STARTER_MELEE_WEAPON_ITEM_ID,
+  stepStarterMeleeWeaponState,
+  tryStartStarterMeleeWeaponSwing
+} from './world/starterMeleeWeapon';
 import {
   resolvePlayerWallContactTransitionEvent,
   type PlayerWallContactTransitionEvent
@@ -1563,6 +1569,7 @@ const bootstrap = async (): Promise<void> => {
   let latestStandalonePlayerDeathHoldStatus: StandalonePlayerDeathHoldTelemetryStatus = 'none';
   let standalonePlayerDeathCount = 0;
   let standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
+  let starterMeleeWeaponState = createStarterMeleeWeaponState();
   let starterPickaxeMiningState = createStarterPickaxeMiningState();
   let playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
 
@@ -2245,6 +2252,7 @@ const bootstrap = async (): Promise<void> => {
     pendingStandalonePlayerFixedStepResult = null;
     latestStandalonePlayerDeathHoldStatus = 'none';
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
+    starterMeleeWeaponState = createStarterMeleeWeaponState();
     starterPickaxeMiningState = createStarterPickaxeMiningState();
     playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
     syncHotbarOverlayState();
@@ -3120,6 +3128,41 @@ const bootstrap = async (): Promise<void> => {
       changed
     };
   };
+  const resolveStarterMeleeWeaponSwingFacing = (
+    playerState: PlayerState,
+    request: PlayerItemUseRequest
+  ): 'left' | 'right' => {
+    const targetWorldX =
+      typeof request.worldX === 'number' && Number.isFinite(request.worldX)
+        ? request.worldX
+        : (request.worldTileX + 0.5) * TILE_SIZE;
+    if (targetWorldX < playerState.position.x) {
+      return 'left';
+    }
+    if (targetWorldX > playerState.position.x) {
+      return 'right';
+    }
+    return playerState.facing;
+  };
+  const tryStartSelectedStarterMeleeWeaponSwing = (
+    request: PlayerItemUseRequest
+  ): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return false;
+    }
+
+    const startResult = tryStartStarterMeleeWeaponSwing(
+      starterMeleeWeaponState,
+      resolveStarterMeleeWeaponSwingFacing(standalonePlayerState, request)
+    );
+    starterMeleeWeaponState = startResult.state;
+    return startResult.started;
+  };
   const tryStartSelectedStarterPickaxeSwingAtTile = (
     worldTileX: number,
     worldTileY: number
@@ -3146,6 +3189,33 @@ const bootstrap = async (): Promise<void> => {
     );
     starterPickaxeMiningState = startResult.state;
     return startResult.started;
+  };
+  const stepStarterMeleeWeaponFixedUpdate = (fixedDt: number): void => {
+    const standalonePlayerState = getStandalonePlayerState();
+    const aliveStandalonePlayerState =
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+        ? null
+        : standalonePlayerState;
+    const activeHostileSlimes = getHostileSlimeEntityStates();
+    const stepResult = stepStarterMeleeWeaponState(starterMeleeWeaponState, {
+      playerState: aliveStandalonePlayerState,
+      hostileSlimes: activeHostileSlimes.map((hostileSlime) => ({
+        entityId: hostileSlime.id,
+        state: hostileSlime.state
+      })),
+      fixedDtSeconds: fixedDt
+    });
+    starterMeleeWeaponState = stepResult.state;
+
+    for (const hitEvent of stepResult.hitEvents) {
+      const activeHostileSlimeState = entityRegistry.getEntityState<HostileSlimeState>(hitEvent.entityId);
+      if (activeHostileSlimeState === null) {
+        continue;
+      }
+      entityRegistry.setEntityState(hitEvent.entityId, hitEvent.nextHostileSlimeState);
+    }
   };
   const stepStarterPickaxeMiningFixedUpdate = (fixedDt: number): void => {
     const standalonePlayerState = getStandalonePlayerState();
@@ -3202,6 +3272,9 @@ const bootstrap = async (): Promise<void> => {
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
     if (selectedStack === null) {
       return false;
+    }
+    if (selectedStack.itemId === STARTER_MELEE_WEAPON_ITEM_ID) {
+      return tryStartSelectedStarterMeleeWeaponSwing(request);
     }
     if (selectedStack.itemId === STARTER_PICKAXE_ITEM_ID) {
       return tryStartSelectedStarterPickaxeSwingAtTile(
@@ -5556,6 +5629,7 @@ const bootstrap = async (): Promise<void> => {
       enforcePeacefulModeHostileSlimeState();
       entityRegistry.fixedUpdateAll(fixedDt);
       flushStandalonePlayerFixedStepResult();
+      stepStarterMeleeWeaponFixedUpdate(fixedDt);
       stepStarterPickaxeMiningFixedUpdate(fixedDt);
       stepHostileSlimeSpawnAndDespawn();
       const nextHealingPotionCooldownState = stepPlayerHealingPotionCooldownState(

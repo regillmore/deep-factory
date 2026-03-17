@@ -7,7 +7,8 @@ export type PlayerInventoryItemId =
   | 'torch'
   | 'rope'
   | 'healing-potion'
-  | 'heart-crystal';
+  | 'heart-crystal'
+  | 'sword';
 
 export interface PlayerInventoryItemDefinition {
   id: PlayerInventoryItemId;
@@ -88,6 +89,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     label: 'Heart Crystal',
     hotbarLabel: 'HEART',
     maxStackSize: 1
+  },
+  sword: {
+    id: 'sword',
+    label: 'Starter Sword',
+    hotbarLabel: 'SWORD',
+    maxStackSize: 1
   }
 };
 
@@ -97,7 +104,8 @@ const DEFAULT_STARTER_HOTBAR_STACKS: readonly PlayerInventoryItemStack[] = [
   { itemId: 'torch', amount: 20 },
   { itemId: 'rope', amount: 24 },
   { itemId: 'healing-potion', amount: 3 },
-  { itemId: 'heart-crystal', amount: 1 }
+  { itemId: 'heart-crystal', amount: 1 },
+  { itemId: 'sword', amount: 1 }
 ];
 
 const createEmptyHotbar = (): Array<PlayerInventoryItemStack | null> =>
@@ -222,6 +230,11 @@ export const ensurePlayerInventoryHasStarterHeartCrystal = (
     state,
     createPlayerInventoryItemStack('heart-crystal', 1)
   );
+
+export const ensurePlayerInventoryHasStarterSword = (
+  state: PlayerInventoryState
+): PlayerInventoryState =>
+  ensurePlayerInventoryHasStarterHotbarStack(state, createPlayerInventoryItemStack('sword', 1));
 
 const ensurePlayerInventoryHasStarterHotbarStack = (
   state: PlayerInventoryState,

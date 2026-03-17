@@ -36,7 +36,8 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
         { itemId: 'dirt-block', amount: 64 },
         { itemId: 'healing-potion', amount: 3 },
         { itemId: 'heart-crystal', amount: 1 },
-        ...Array.from({ length: 4 }, () => null)
+        { itemId: 'sword', amount: 1 },
+        ...Array.from({ length: 3 }, () => null)
       ],
       selectedHotbarSlotIndex: 3
     });

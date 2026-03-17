@@ -35,7 +35,8 @@ describe('createWorldSessionSaveEnvelope', () => {
         { itemId: 'dirt-block', amount: 64 },
         { itemId: 'healing-potion', amount: 3 },
         { itemId: 'heart-crystal', amount: 1 },
-        ...Array.from({ length: 4 }, () => null)
+        { itemId: 'sword', amount: 1 },
+        ...Array.from({ length: 3 }, () => null)
       ],
       selectedHotbarSlotIndex: 3
     });
@@ -95,7 +96,7 @@ describe('createWorldSessionSaveEnvelope', () => {
           { itemId: 'dirt-block', amount: 64 },
           { itemId: 'healing-potion', amount: 3 },
           { itemId: 'heart-crystal', amount: 1 },
-          null,
+          { itemId: 'sword', amount: 1 },
           null,
           null,
           null
@@ -138,7 +139,8 @@ describe('createWorldSessionSaveEnvelope', () => {
           { itemId: 'pickaxe', amount: 1 },
           { itemId: 'healing-potion', amount: 3 },
           { itemId: 'heart-crystal', amount: 1 },
-          ...Array.from({ length: 7 }, () => null)
+          { itemId: 'sword', amount: 1 },
+          ...Array.from({ length: 6 }, () => null)
         ]
       })
     );

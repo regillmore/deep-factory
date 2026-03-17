@@ -133,7 +133,8 @@ describe('createWorldSaveEnvelope', () => {
         { itemId: 'rope', amount: 24 },
         { itemId: 'healing-potion', amount: 3 },
         { itemId: 'heart-crystal', amount: 1 },
-        ...Array.from({ length: 4 }, () => null)
+        { itemId: 'sword', amount: 1 },
+        ...Array.from({ length: 3 }, () => null)
       ],
       selectedHotbarSlotIndex: 1
     });
@@ -235,7 +236,8 @@ describe('createWorldSaveEnvelope', () => {
         { itemId: 'dirt-block', amount: 64 },
         { itemId: 'healing-potion', amount: 3 },
         { itemId: 'heart-crystal', amount: 1 },
-        ...Array.from({ length: 4 }, () => null)
+        { itemId: 'sword', amount: 1 },
+        ...Array.from({ length: 3 }, () => null)
       ],
       selectedHotbarSlotIndex: 3
     });
@@ -305,7 +307,8 @@ describe('createWorldSaveEnvelope', () => {
         { itemId: 'torch', amount: 20 },
         { itemId: 'healing-potion', amount: 3 },
         { itemId: 'heart-crystal', amount: 1 },
-        ...Array.from({ length: 5 }, () => null)
+        { itemId: 'sword', amount: 1 },
+        ...Array.from({ length: 4 }, () => null)
       ],
       selectedHotbarSlotIndex: 1
     });
@@ -414,7 +417,8 @@ describe('decodeWorldSaveEnvelope', () => {
         { itemId: 'rope', amount: 24 },
         { itemId: 'healing-potion', amount: 2 },
         { itemId: 'heart-crystal', amount: 1 },
-        ...Array.from({ length: 4 }, () => null)
+        { itemId: 'sword', amount: 1 },
+        ...Array.from({ length: 3 }, () => null)
       ],
       selectedHotbarSlotIndex: 4
     });
@@ -548,7 +552,7 @@ describe('decodeWorldSaveEnvelope', () => {
         { itemId: 'pickaxe', amount: 1 },
         { itemId: 'healing-potion', amount: 3 },
         { itemId: 'heart-crystal', amount: 1 },
-        null,
+        { itemId: 'sword', amount: 1 },
         null,
         null,
         null
@@ -592,6 +596,10 @@ describe('decodeWorldSaveEnvelope', () => {
       itemId: 'heart-crystal',
       amount: 1
     });
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
+      itemId: 'sword',
+      amount: 1
+    });
   });
 
   it('adds a starter heart crystal into the first empty slot when older save payloads lack one', () => {
@@ -624,6 +632,45 @@ describe('decodeWorldSaveEnvelope', () => {
 
     expect(decoded.session.standalonePlayerInventoryState.hotbar[5]).toEqual({
       itemId: 'heart-crystal',
+      amount: 1
+    });
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
+      itemId: 'sword',
+      amount: 1
+    });
+  });
+
+  it('adds a starter sword into the first empty slot when older save payloads lack one', () => {
+    const world = new TileWorld(0);
+
+    const decoded = decodeWorldSaveEnvelope({
+      kind: WORLD_SAVE_ENVELOPE_KIND,
+      version: WORLD_SAVE_ENVELOPE_VERSION,
+      migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
+      session: {
+        standalonePlayerState: createPlayerState(),
+        standalonePlayerDeathState: null,
+        standalonePlayerInventoryState: {
+          hotbar: [
+            { itemId: 'pickaxe', amount: 1 },
+            { itemId: 'dirt-block', amount: 64 },
+            { itemId: 'torch', amount: 20 },
+            { itemId: 'rope', amount: 24 },
+            { itemId: 'healing-potion', amount: 3 },
+            { itemId: 'heart-crystal', amount: 1 },
+            null,
+            ...Array.from({ length: 3 }, () => null)
+          ],
+          selectedHotbarSlotIndex: 0
+        },
+        droppedItemStates: [],
+        cameraFollowOffset: { x: 0, y: 0 }
+      },
+      worldSnapshot: world.createSnapshot()
+    });
+
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
+      itemId: 'sword',
       amount: 1
     });
   });

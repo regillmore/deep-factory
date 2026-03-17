@@ -16,4 +16,11 @@ describe('droppedItemPlaceholder', () => {
       accentColor: [0.99, 0.73, 0.82]
     });
   });
+
+  it('provides a dedicated placeholder palette for starter-sword pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('sword')).toEqual({
+      baseColor: [0.62, 0.64, 0.7],
+      accentColor: [0.97, 0.93, 0.62]
+    });
+  });
 });

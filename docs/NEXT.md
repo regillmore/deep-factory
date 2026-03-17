@@ -3,7 +3,6 @@
 These items are intentionally scoped to fit a focused implementation pass with tests, rather than a full feature pillar.
 
 215. Add a placeable-workbench crafting slice after inventory basics: recipe registry for a minimal starter set, in-world station-range gating, shell or debug panel crafting actions, and recipe resolution regressions.
-221. Add a starter melee-weapon follow-up after hostile-slime jump-chase locomotion: fixed-step swing windup/active/recovery timing, slime hit detection plus knockback, and deterministic hit-cooldown regressions.
 232. Add a grappling-hook traversal slice after entity scaffolding: mixed-device aimed hook firing, solid-tile latch plus pull-and-release rules, and fixed-step hook-state regressions.
 246. Add a bow-and-arrow ranged-combat slice after hostile-slime jump-chase locomotion and inventory basics: stackable arrow ammo, mixed-device aimed firing, fixed-step projectile flight plus terrain or slime hits, and deterministic ammo-consumption regressions.
 338. Add a bed-checkpoint respawn slice after inventory basics and save/load: placeable bed items, mixed-device checkpoint claim and respawn interactions, obstructed-checkpoint fallback to world spawn, and snapshot regressions for claimed checkpoint state.
@@ -26,3 +25,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 513. Add a bug-net critter-capture slice after passive-bunny ambient-entity and inventory basics: a non-stackable bug-net hotbar slot, mixed-device swing timing with bunny capture-on-hit rules, bunny item stacks into inventory, and deterministic capture regressions.
 536. Add a starter background-wall placement slice after starter building-block placement and inventory basics: stackable dirt-wall hotbar slots, mixed-device enclosed-wall placement against solid blocks or existing walls, stack consumption, and save/load regressions for placed walls plus remaining stack counts.
 581. Add placeable wood-block building follow-up after starter axe woodcutting and inventory basics: stackable `wood-block` hotbar slots through the shared solid-block placement path, deterministic stack consumption, and placement/save regressions.
+604. Add a hostile-slime defeat follow-up after starter melee-weapon: per-slime health, sword damage application, and deterministic despawn regressions.

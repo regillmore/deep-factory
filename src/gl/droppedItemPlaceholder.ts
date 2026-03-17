@@ -60,6 +60,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
   'heart-crystal': {
     baseColor: [0.76, 0.23, 0.31],
     accentColor: [0.99, 0.73, 0.82]
+  },
+  sword: {
+    baseColor: [0.62, 0.64, 0.7],
+    accentColor: [0.97, 0.93, 0.62]
   }
 };
 

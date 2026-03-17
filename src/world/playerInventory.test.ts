@@ -11,6 +11,7 @@ import {
   ensurePlayerInventoryHasStarterHeartCrystal,
   ensurePlayerInventoryHasStarterHealingPotions,
   ensurePlayerInventoryHasStarterPickaxe,
+  ensurePlayerInventoryHasStarterSword,
   getPlayerInventoryItemDefinition,
   movePlayerInventorySelectedHotbarSlot,
   setPlayerInventoryHotbarSlot,
@@ -36,7 +37,7 @@ describe('playerInventory', () => {
         { itemId: 'rope', amount: 24 },
         { itemId: 'healing-potion', amount: 3 },
         { itemId: 'heart-crystal', amount: 1 },
-        null,
+        { itemId: 'sword', amount: 1 },
         null,
         null,
         null
@@ -324,6 +325,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'HEART',
       maxStackSize: 1
     });
+    expect(getPlayerInventoryItemDefinition('sword')).toEqual({
+      id: 'sword',
+      label: 'Starter Sword',
+      hotbarLabel: 'SWORD',
+      maxStackSize: 1
+    });
   });
 
   it('fills the first empty slot with a starter pickaxe when one is missing', () => {
@@ -425,6 +432,38 @@ describe('playerInventory', () => {
         null
       ],
       selectedHotbarSlotIndex: 4
+    });
+  });
+
+  it('fills the first empty slot with a starter sword when it is missing', () => {
+    const state = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'healing-potion', amount: 3 },
+        { itemId: 'heart-crystal', amount: 1 },
+        null,
+        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 7 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 5
+    });
+
+    expect(ensurePlayerInventoryHasStarterSword(state)).toEqual({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'healing-potion', amount: 3 },
+        { itemId: 'heart-crystal', amount: 1 },
+        { itemId: 'sword', amount: 1 },
+        null,
+        null,
+        null
+      ],
+      selectedHotbarSlotIndex: 5
     });
   });
 

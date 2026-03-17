@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-16
+
+- Task: Add a starter melee-weapon follow-up after hostile-slime jump-chase locomotion.
+- Changes: Added [src/world/starterMeleeWeapon.ts](../src/world/starterMeleeWeapon.ts) plus [src/world/starterMeleeWeapon.test.ts](../src/world/starterMeleeWeapon.test.ts) for deterministic sword swing timing, front-arc slime hits, knockback, and per-target hit cooldowns; updated [src/world/playerInventory.ts](../src/world/playerInventory.ts), [src/mainWorldSave.ts](../src/mainWorldSave.ts), [src/gl/droppedItemPlaceholder.ts](../src/gl/droppedItemPlaceholder.ts), and [src/main.ts](../src/main.ts) so starter inventories and older saves now backfill a non-stackable `Starter Sword`, dropped sword pickups render through their own placeholder palette, and hidden-panel mouse or touch item use can start fixed-step sword swings that carry knockback into hostile-slime updates; expanded [src/world/playerInventory.test.ts](../src/world/playerInventory.test.ts), [src/gl/droppedItemPlaceholder.test.ts](../src/gl/droppedItemPlaceholder.test.ts), [src/mainWorldSave.test.ts](../src/mainWorldSave.test.ts), and [src/main.test.ts](../src/main.test.ts), removed completed task `221` from [docs/NEXT.md](docs/NEXT.md), added replacement task `604`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/playerInventory.test.ts src/world/starterMeleeWeapon.test.ts src/gl/droppedItemPlaceholder.test.ts src/mainWorldSave.test.ts src/main.test.ts` (outside the sandbox after the expected Vitest `spawn EPERM` startup restriction in-sandbox).
+
 ## 2026-03-15
 
 - Task: Add a starter torch-cut follow-up after the rope-cut utility slice.
