@@ -10,6 +10,7 @@ import {
 import { createPlayerState } from './playerState';
 import {
   createHostileSlimeState,
+  DEFAULT_HOSTILE_SLIME_HEALTH,
   DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
 } from './hostileSlimeState';
 import { TileWorld } from './world';
@@ -58,6 +59,7 @@ describe('hostileSlimeLocomotion', () => {
       position: { x: 0, y: 0 },
       velocity: { x: 0, y: 0 },
       size: { width: 20, height: 12 },
+      health: DEFAULT_HOSTILE_SLIME_HEALTH,
       grounded: true,
       facing: 'right',
       hopCooldownTicksRemaining: 1,
@@ -246,6 +248,7 @@ describe('hostileSlimeLocomotion', () => {
       position: { x: 42, y: 0 },
       velocity: { x: 0, y: 0 },
       size: { width: 20, height: 12 },
+      health: DEFAULT_HOSTILE_SLIME_HEALTH,
       grounded: true,
       facing: 'left',
       hopCooldownTicksRemaining: 7,

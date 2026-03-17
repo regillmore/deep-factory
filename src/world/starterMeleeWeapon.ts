@@ -1,5 +1,6 @@
 import type { WorldAabb } from './collision';
 import {
+  applyHostileSlimeDamage,
   cloneHostileSlimeState,
   getHostileSlimeAabb,
   type HostileSlimeFacing,
@@ -11,6 +12,7 @@ export const STARTER_MELEE_WEAPON_ITEM_ID = 'sword';
 export const STARTER_MELEE_WEAPON_SWING_WINDUP_SECONDS = 0.08;
 export const STARTER_MELEE_WEAPON_SWING_ACTIVE_SECONDS = 0.1;
 export const STARTER_MELEE_WEAPON_SWING_RECOVERY_SECONDS = 0.14;
+export const DEFAULT_STARTER_MELEE_WEAPON_DAMAGE = 10;
 export const DEFAULT_STARTER_MELEE_WEAPON_TARGET_HIT_COOLDOWN_SECONDS = 0.2;
 export const DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_X = 180;
 export const DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_Y = 140;
@@ -55,6 +57,7 @@ export interface StepStarterMeleeWeaponStateOptions {
   playerState: PlayerState | null;
   hostileSlimes: readonly StarterMeleeWeaponHostileSlimeTarget[];
   fixedDtSeconds: number;
+  damage?: number;
   targetHitCooldownSeconds?: number;
   knockbackSpeedX?: number;
   knockbackSpeedY?: number;
@@ -185,11 +188,24 @@ const applyStarterMeleeWeaponKnockback = (
   return nextSlimeState;
 };
 
+const applyStarterMeleeWeaponHit = (
+  slimeState: HostileSlimeState,
+  facing: HostileSlimeFacing,
+  knockbackSpeedX: number,
+  knockbackSpeedY: number,
+  damage: number
+): HostileSlimeState =>
+  applyHostileSlimeDamage(
+    applyStarterMeleeWeaponKnockback(slimeState, facing, knockbackSpeedX, knockbackSpeedY),
+    damage
+  );
+
 const resolveStarterMeleeWeaponHitEvents = (
   playerState: PlayerState,
   facing: HostileSlimeFacing,
   hostileSlimes: readonly StarterMeleeWeaponHostileSlimeTarget[],
   targetHitCooldowns: StarterMeleeWeaponTargetHitCooldownState[],
+  damage: number,
   targetHitCooldownSeconds: number,
   knockbackSpeedX: number,
   knockbackSpeedY: number,
@@ -216,11 +232,12 @@ const resolveStarterMeleeWeaponHitEvents = (
 
     hitEvents.push({
       entityId: hostileSlime.entityId,
-      nextHostileSlimeState: applyStarterMeleeWeaponKnockback(
+      nextHostileSlimeState: applyStarterMeleeWeaponHit(
         hostileSlime.state,
         facing,
         knockbackSpeedX,
-        knockbackSpeedY
+        knockbackSpeedY,
+        damage
       )
     });
     targetHitCooldowns.push({
@@ -271,6 +288,10 @@ export const stepStarterMeleeWeaponState = (
   const fixedDtSeconds = expectNonNegativeFiniteNumber(
     options.fixedDtSeconds,
     'options.fixedDtSeconds'
+  );
+  const damage = expectPositiveFiniteNumber(
+    options.damage ?? DEFAULT_STARTER_MELEE_WEAPON_DAMAGE,
+    'options.damage'
   );
   const targetHitCooldownSeconds = expectPositiveFiniteNumber(
     options.targetHitCooldownSeconds ?? DEFAULT_STARTER_MELEE_WEAPON_TARGET_HIT_COOLDOWN_SECONDS,
@@ -345,6 +366,7 @@ export const stepStarterMeleeWeaponState = (
             activeSwing.facing,
             options.hostileSlimes,
             nextState.targetHitCooldowns,
+            damage,
             targetHitCooldownSeconds,
             knockbackSpeedX,
             knockbackSpeedY,
@@ -395,6 +417,7 @@ export const stepStarterMeleeWeaponState = (
         activeSwing.facing,
         options.hostileSlimes,
         nextState.targetHitCooldowns,
+        damage,
         targetHitCooldownSeconds,
         knockbackSpeedX,
         knockbackSpeedY,

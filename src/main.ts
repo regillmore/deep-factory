@@ -225,6 +225,7 @@ import {
 } from './world/hostileSlimeSpawn';
 import {
   cloneHostileSlimeState,
+  isHostileSlimeDefeated,
   type HostileSlimeLaunchKind,
   type HostileSlimeState
 } from './world/hostileSlimeState';
@@ -3209,12 +3210,20 @@ const bootstrap = async (): Promise<void> => {
     });
     starterMeleeWeaponState = stepResult.state;
 
+    const defeatedHostileSlimeEntityIds: EntityId[] = [];
     for (const hitEvent of stepResult.hitEvents) {
       const activeHostileSlimeState = entityRegistry.getEntityState<HostileSlimeState>(hitEvent.entityId);
       if (activeHostileSlimeState === null) {
         continue;
       }
+      if (isHostileSlimeDefeated(hitEvent.nextHostileSlimeState)) {
+        defeatedHostileSlimeEntityIds.push(hitEvent.entityId);
+        continue;
+      }
       entityRegistry.setEntityState(hitEvent.entityId, hitEvent.nextHostileSlimeState);
+    }
+    if (defeatedHostileSlimeEntityIds.length > 0) {
+      despawnHostileSlimeEntities(defeatedHostileSlimeEntityIds);
     }
   };
   const stepStarterPickaxeMiningFixedUpdate = (fixedDt: number): void => {

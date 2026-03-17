@@ -13,6 +13,7 @@ import {
 import {
   createHostileSlimeState,
   DEFAULT_HOSTILE_SLIME_HEIGHT,
+  DEFAULT_HOSTILE_SLIME_HEALTH,
   DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
   DEFAULT_HOSTILE_SLIME_WIDTH
 } from './hostileSlimeState';
@@ -91,6 +92,7 @@ describe('hostileSlimeSpawn', () => {
         width: DEFAULT_HOSTILE_SLIME_WIDTH,
         height: DEFAULT_HOSTILE_SLIME_HEIGHT
       },
+      health: DEFAULT_HOSTILE_SLIME_HEALTH,
       grounded: true,
       facing: 'left',
       hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,

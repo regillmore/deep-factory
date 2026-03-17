@@ -196,6 +196,7 @@ const moveHostileSlimeStateWithCollisions = (
         width: state.size.width,
         height: state.size.height
       },
+      health: state.health,
       grounded: groundSupport !== null,
       facing: state.facing,
       hopCooldownTicksRemaining: state.hopCooldownTicksRemaining,
@@ -291,6 +292,7 @@ export const stepHostileSlimeState = (
           width: state.size.width,
           height: state.size.height
         },
+        health: state.health,
         grounded: true,
         facing,
         hopCooldownTicksRemaining,
@@ -339,6 +341,7 @@ export const stepHostileSlimeState = (
         width: state.size.width,
         height: state.size.height
       },
+      health: state.health,
       grounded,
       facing,
       hopCooldownTicksRemaining,

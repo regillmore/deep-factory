@@ -56,8 +56,11 @@ import {
   STARTER_PICKAXE_SWING_WINDUP_SECONDS
 } from './world/starterPickaxeMining';
 import {
+  DEFAULT_STARTER_MELEE_WEAPON_DAMAGE,
   DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_X,
   DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_Y,
+  STARTER_MELEE_WEAPON_SWING_ACTIVE_SECONDS,
+  STARTER_MELEE_WEAPON_SWING_RECOVERY_SECONDS,
   STARTER_MELEE_WEAPON_SWING_WINDUP_SECONDS
 } from './world/starterMeleeWeapon';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
@@ -75,6 +78,7 @@ import {
   DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS
 } from './world/hostileSlimeSpawn';
 import {
+  DEFAULT_HOSTILE_SLIME_HEALTH,
   DEFAULT_HOSTILE_SLIME_HEIGHT,
   DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
   DEFAULT_HOSTILE_SLIME_WIDTH
@@ -341,6 +345,7 @@ const testRuntime = vi.hoisted(() => {
       state: {
         position: { x: number; y: number } | null;
         velocity: { x: number; y: number } | null;
+        health: number | null;
         grounded: boolean | null;
         facing: 'left' | 'right' | null;
         hopCooldownTicksRemaining: number | null;
@@ -885,6 +890,7 @@ vi.mock('./gl/renderer', () => ({
       const slimeState = state as {
         position?: { x?: number; y?: number };
         velocity?: { x?: number; y?: number };
+        health?: number;
         grounded?: boolean;
         facing?: 'left' | 'right';
         hopCooldownTicksRemaining?: number;
@@ -906,6 +912,7 @@ vi.mock('./gl/renderer', () => ({
             typeof slimeState.velocity.y === 'number'
               ? { x: slimeState.velocity.x, y: slimeState.velocity.y }
               : null,
+          health: typeof slimeState.health === 'number' ? slimeState.health : null,
           grounded: typeof slimeState.grounded === 'boolean' ? slimeState.grounded : null,
           facing: slimeState.facing ?? null,
           hopCooldownTicksRemaining:
@@ -4281,6 +4288,7 @@ describe('main.ts shell state orchestration', () => {
         state: {
           position: { x: 200, y: 0 },
           velocity: { x: 0, y: 0 },
+          health: DEFAULT_HOSTILE_SLIME_HEALTH,
           grounded: true,
           facing: 'left',
           hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
@@ -7132,6 +7140,7 @@ describe('main.ts shell state orchestration', () => {
           x: DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_X,
           y: -DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_Y
         },
+        health: DEFAULT_HOSTILE_SLIME_HEALTH - DEFAULT_STARTER_MELEE_WEAPON_DAMAGE,
         grounded: false,
         facing: 'right',
         hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
@@ -7154,6 +7163,100 @@ describe('main.ts shell state orchestration', () => {
       itemId: 'sword',
       amount: 1
     });
+  });
+
+  it('despawns a hostile slime immediately after the starter sword lands the defeating hit', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'sword', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    const slimeSpawnPoint = createTestPlayerSpawnPoint({
+      x: 24,
+      y: 0,
+      width: DEFAULT_HOSTILE_SLIME_WIDTH,
+      height: DEFAULT_HOSTILE_SLIME_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_HOSTILE_SLIME_WIDTH &&
+        search?.height === DEFAULT_HOSTILE_SLIME_HEIGHT
+      ) {
+        return slimeSpawnPoint;
+      }
+
+      return testRuntime.playerSpawnPoint;
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
+
+    const swordUseRequest = {
+      worldTileX: 1,
+      worldTileY: 0,
+      worldX: 24,
+      worldY: 0,
+      pointerType: 'mouse' as const
+    };
+
+    testRuntime.playerItemUseRequests = [swordUseRequest];
+    runFixedUpdate(STARTER_MELEE_WEAPON_SWING_WINDUP_SECONDS);
+    runFixedUpdate(STARTER_MELEE_WEAPON_SWING_ACTIVE_SECONDS);
+    runFixedUpdate(STARTER_MELEE_WEAPON_SWING_RECOVERY_SECONDS);
+
+    testRuntime.playerItemUseRequests = [swordUseRequest];
+    testRuntime.rendererStepHostileSlimeStateRequests = [];
+    runFixedUpdate(STARTER_MELEE_WEAPON_SWING_WINDUP_SECONDS);
+    runRenderFrame();
+
+    expect(testRuntime.rendererStepHostileSlimeStateRequests).toEqual([
+      {
+        state: {
+          position: { x: 24, y: 0 },
+          velocity: {
+            x: DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_X,
+            y: -DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_Y
+          },
+          health: DEFAULT_HOSTILE_SLIME_HEALTH - DEFAULT_STARTER_MELEE_WEAPON_DAMAGE,
+          grounded: false,
+          facing: 'right',
+          hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
+        },
+        fixedDt: STARTER_MELEE_WEAPON_SWING_WINDUP_SECONDS,
+        playerPosition: { x: 8, y: 0 }
+      }
+    ]);
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toEqual([]);
   });
 
   it('spawns a dirt-block pickup entity when the starter pickaxe breaks nearby grass terrain', async () => {

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { createHostileSlimeState } from './hostileSlimeState';
+import { createHostileSlimeState, DEFAULT_HOSTILE_SLIME_HEALTH } from './hostileSlimeState';
 import { createPlayerState } from './playerState';
 import {
   createStarterMeleeWeaponState,
+  DEFAULT_STARTER_MELEE_WEAPON_DAMAGE,
   DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_X,
   DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_Y,
   STARTER_MELEE_WEAPON_SWING_ACTIVE_SECONDS,
@@ -128,6 +129,7 @@ describe('starterMeleeWeapon', () => {
             x: DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_X,
             y: -DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_Y
           },
+          health: DEFAULT_HOSTILE_SLIME_HEALTH - DEFAULT_STARTER_MELEE_WEAPON_DAMAGE,
           grounded: false,
           facing: 'right',
           launchKind: null
@@ -215,5 +217,84 @@ describe('starterMeleeWeapon', () => {
     expect(blockedSecondHit.state.targetHitCooldowns[0]?.entityId).toBe(1);
     expect(blockedSecondHit.state.targetHitCooldowns[0]?.secondsRemaining).toBeCloseTo(0.68, 6);
     expect(thirdHit.hitEvents).toHaveLength(1);
+  });
+
+  it('carries hostile-slime health across later swings and clamps defeated targets to zero', () => {
+    const playerState = createPlayerState({
+      position: { x: 8, y: 0 },
+      facing: 'right'
+    });
+    const hostileSlime = {
+      entityId: 1,
+      state: createHostileSlimeState({
+        position: { x: 24, y: 0 },
+        grounded: true,
+        facing: 'left'
+      })
+    };
+    const firstHit = stepStarterMeleeWeaponState(
+      tryStartStarterMeleeWeaponSwing(createStarterMeleeWeaponState(), 'right').state,
+      {
+        playerState,
+        hostileSlimes: [hostileSlime],
+        fixedDtSeconds: STARTER_MELEE_WEAPON_SWING_WINDUP_SECONDS
+      }
+    );
+    const firstHitSlimeState = firstHit.hitEvents[0]?.nextHostileSlimeState;
+    if (!firstHitSlimeState) {
+      throw new Error('expected first sword swing to hit a hostile slime');
+    }
+
+    const finishedActivePhase = stepStarterMeleeWeaponState(firstHit.state, {
+      playerState,
+      hostileSlimes: [
+        {
+          entityId: hostileSlime.entityId,
+          state: firstHitSlimeState
+        }
+      ],
+      fixedDtSeconds: STARTER_MELEE_WEAPON_SWING_ACTIVE_SECONDS
+    });
+    const finishedFirstSwing = stepStarterMeleeWeaponState(finishedActivePhase.state, {
+      playerState,
+      hostileSlimes: [
+        {
+          entityId: hostileSlime.entityId,
+          state: firstHitSlimeState
+        }
+      ],
+      fixedDtSeconds: STARTER_MELEE_WEAPON_SWING_RECOVERY_SECONDS
+    });
+    const secondSwingStart = tryStartStarterMeleeWeaponSwing(finishedFirstSwing.state, 'right');
+    const secondHit = stepStarterMeleeWeaponState(secondSwingStart.state, {
+      playerState,
+      hostileSlimes: [
+        {
+          entityId: hostileSlime.entityId,
+          state: firstHitSlimeState
+        }
+      ],
+      fixedDtSeconds: STARTER_MELEE_WEAPON_SWING_WINDUP_SECONDS
+    });
+
+    expect(firstHitSlimeState.health).toBe(
+      DEFAULT_HOSTILE_SLIME_HEALTH - DEFAULT_STARTER_MELEE_WEAPON_DAMAGE
+    );
+    expect(secondHit.hitEvents).toEqual([
+      {
+        entityId: 1,
+        nextHostileSlimeState: createHostileSlimeState({
+          position: { x: 24, y: 0 },
+          velocity: {
+            x: DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_X,
+            y: -DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_Y
+          },
+          health: 0,
+          grounded: false,
+          facing: 'right',
+          launchKind: null
+        })
+      }
+    ]);
   });
 });

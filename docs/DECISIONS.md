@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-16: Hostile-slime health lives in authoritative slime state
+
+- Decision: Per-slime health now lives directly on authoritative hostile-slime entity state, and starter-sword hits reduce that state before `main.ts` decides whether to keep or despawn the slime.
+- Reason: Slime health must travel with the same fixed-step locomotion and render-snapshot state that survives between sword hits, while defeat should resolve from the entity's own state instead of a parallel runtime damage map.
+- Consequence: Future hostile-specific combat values that need to persist between hits should default to hostile entity state, while short-lived weapon pacing like sword hit cooldowns can keep living in detached session-owned weapon state.
+
 ### 2026-03-16: Starter sword hit cooldowns stay in session-owned weapon state
 
 - Decision: The starter sword now tracks per-slime hit cooldowns in detached session-owned melee state keyed by hostile-slime entity id instead of adding saved cooldown fields onto slime state.

@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  applyHostileSlimeDamage,
   cloneHostileSlimeState,
   createHostileSlimeState,
   createHostileSlimeStateFromSpawn,
   DEFAULT_HOSTILE_SLIME_HEIGHT,
+  DEFAULT_HOSTILE_SLIME_HEALTH,
   DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
   DEFAULT_HOSTILE_SLIME_WIDTH,
-  getHostileSlimeAabb
+  getHostileSlimeAabb,
+  isHostileSlimeDefeated
 } from './hostileSlimeState';
 
 describe('hostileSlimeState', () => {
@@ -23,6 +26,7 @@ describe('hostileSlimeState', () => {
         width: DEFAULT_HOSTILE_SLIME_WIDTH,
         height: DEFAULT_HOSTILE_SLIME_HEIGHT
       },
+      health: DEFAULT_HOSTILE_SLIME_HEALTH,
       grounded: true,
       facing: 'left',
       hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
@@ -61,6 +65,7 @@ describe('hostileSlimeState', () => {
         width: DEFAULT_HOSTILE_SLIME_WIDTH,
         height: DEFAULT_HOSTILE_SLIME_HEIGHT
       },
+      health: DEFAULT_HOSTILE_SLIME_HEALTH,
       grounded: true,
       facing: 'right',
       hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
@@ -79,6 +84,7 @@ describe('hostileSlimeState', () => {
       position: { x: -24, y: -8 },
       velocity: { x: 18, y: -42 },
       size: { width: 22, height: 14 },
+      health: 13,
       grounded: false,
       facing: 'right',
       hopCooldownTicksRemaining: 6,
@@ -92,5 +98,23 @@ describe('hostileSlimeState', () => {
     expect(cloned.position).not.toBe(state.position);
     expect(cloned.velocity).not.toBe(state.velocity);
     expect(cloned.size).not.toBe(state.size);
+  });
+
+  it('applies damage into hostile-slime health and clamps defeated slimes at zero', () => {
+    const state = createHostileSlimeState({
+      health: 12
+    });
+
+    const damaged = applyHostileSlimeDamage(state, 5);
+    const defeated = applyHostileSlimeDamage(damaged, 99);
+
+    expect(damaged).toEqual({
+      ...state,
+      health: 7
+    });
+    expect(damaged).not.toBe(state);
+    expect(isHostileSlimeDefeated(damaged)).toBe(false);
+    expect(defeated.health).toBe(0);
+    expect(isHostileSlimeDefeated(defeated)).toBe(true);
   });
 });
