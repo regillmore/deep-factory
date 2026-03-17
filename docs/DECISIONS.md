@@ -20,6 +20,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: The sword cooldown is short-lived attack pacing state, and keeping it outside hostile-slime state avoids inflating shared slime locomotion data or accidentally persisting transient combat timers through save or restore flows.
 - Consequence: Future short melee or tool hit lockouts should default to session-owned helper state unless the same pass intentionally needs enemy-specific cooldowns to survive save/load or to become part of authoritative entity state.
 
+### 2026-03-16: Hostile-slime loot drops reuse the nearby-pickup cascade
+
+- Decision: Defeated hostile slimes now route their one-stack `gel` reward through the same nearest-first overlapping dropped-item cascade already used by player drops and tile refunds.
+- Reason: Reusing the shared cascade keeps enemy loot deterministic, avoids redundant overlapping pickups when gel already occupies the drop spot, and automatically inherits the existing hotbar pickup flow plus placeholder rendering.
+- Consequence: Future hostile loot drops should reuse the shared dropped-item cascade and generic inventory item definitions unless the same pass intentionally introduces a different pickup contract.
+
 ### 2026-03-15: Non-liquid inspect render telemetry resolves from shared tile-metadata helpers
 
 - Decision: Hovered and pinned inspect telemetry now resolves current non-liquid animated frame sources, UV rects, and atlas-pixel bounds through shared elapsed-time helpers in `src/world/tileMetadata.ts` instead of re-deriving frame selection inside `src/main.ts` or the UI formatters.

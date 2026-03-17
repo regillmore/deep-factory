@@ -17,6 +17,13 @@ describe('droppedItemPlaceholder', () => {
     });
   });
 
+  it('provides a dedicated placeholder palette for gel pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('gel')).toEqual({
+      baseColor: [0.22, 0.58, 0.23],
+      accentColor: [0.72, 0.93, 0.46]
+    });
+  });
+
   it('provides a dedicated placeholder palette for starter-sword pickups', () => {
     expect(getDroppedItemPlaceholderPalette('sword')).toEqual({
       baseColor: [0.62, 0.64, 0.7],

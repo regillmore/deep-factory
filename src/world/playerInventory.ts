@@ -4,6 +4,7 @@ export type PlayerInventoryItemId =
   | 'pickaxe'
   | 'dirt-block'
   | 'stone-block'
+  | 'gel'
   | 'torch'
   | 'rope'
   | 'healing-potion'
@@ -64,6 +65,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     id: 'stone-block',
     label: 'Stone Block',
     hotbarLabel: 'STONE',
+    maxStackSize: 999
+  },
+  gel: {
+    id: 'gel',
+    label: 'Gel',
+    hotbarLabel: 'GEL',
     maxStackSize: 999
   },
   torch: {

@@ -173,6 +173,7 @@ import {
 } from './world/playerRespawnEvent';
 import {
   cloneDroppedItemState,
+  createDroppedItemState,
   createDroppedItemStateFromWorldTile,
   createDroppedItemStateFromPlayerDrop,
   resolveDroppedItemPickup,
@@ -336,6 +337,8 @@ const PREFERRED_INITIAL_DEBUG_BRUSH_TILE_NAME = 'debug_brick';
 const STANDALONE_PLAYER_ENTITY_KIND = 'standalone-player';
 const HOSTILE_SLIME_ENTITY_KIND = 'slime';
 const DROPPED_ITEM_ENTITY_KIND = 'dropped-item';
+const HOSTILE_SLIME_GEL_DROP_ITEM_ID: DroppedItemState['itemId'] = 'gel';
+const HOSTILE_SLIME_GEL_DROP_AMOUNT = 1;
 type MainMenuShellActionType =
   | 'enter-or-resume-world-session'
   | 'export-world-save'
@@ -1748,6 +1751,17 @@ const bootstrap = async (): Promise<void> => {
   };
   const getDroppedItemStates = (): DroppedItemState[] =>
     getDroppedItemEntityStates().map(({ state }) => cloneDroppedItemState(state));
+  const createHostileSlimeDefeatDropState = (
+    slimeState: Pick<HostileSlimeState, 'position' | 'size'>
+  ): DroppedItemState =>
+    createDroppedItemState({
+      position: {
+        x: slimeState.position.x,
+        y: slimeState.position.y - slimeState.size.height * 0.5
+      },
+      itemId: HOSTILE_SLIME_GEL_DROP_ITEM_ID,
+      amount: HOSTILE_SLIME_GEL_DROP_AMOUNT
+    });
   const mergeDroppedItemIntoNearbyPickup = (
     droppedItemState: DroppedItemState
   ): DroppedItemState | null => {
@@ -3211,6 +3225,7 @@ const bootstrap = async (): Promise<void> => {
     starterMeleeWeaponState = stepResult.state;
 
     const defeatedHostileSlimeEntityIds: EntityId[] = [];
+    const defeatedHostileSlimeDropStates: DroppedItemState[] = [];
     for (const hitEvent of stepResult.hitEvents) {
       const activeHostileSlimeState = entityRegistry.getEntityState<HostileSlimeState>(hitEvent.entityId);
       if (activeHostileSlimeState === null) {
@@ -3218,12 +3233,21 @@ const bootstrap = async (): Promise<void> => {
       }
       if (isHostileSlimeDefeated(hitEvent.nextHostileSlimeState)) {
         defeatedHostileSlimeEntityIds.push(hitEvent.entityId);
+        defeatedHostileSlimeDropStates.push(
+          createHostileSlimeDefeatDropState(hitEvent.nextHostileSlimeState)
+        );
         continue;
       }
       entityRegistry.setEntityState(hitEvent.entityId, hitEvent.nextHostileSlimeState);
     }
     if (defeatedHostileSlimeEntityIds.length > 0) {
       despawnHostileSlimeEntities(defeatedHostileSlimeEntityIds);
+      for (const droppedItemState of defeatedHostileSlimeDropStates) {
+        const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(droppedItemState);
+        if (remainingDroppedItemState !== null) {
+          spawnDroppedItemEntity(remainingDroppedItemState);
+        }
+      }
     }
   };
   const stepStarterPickaxeMiningFixedUpdate = (fixedDt: number): void => {

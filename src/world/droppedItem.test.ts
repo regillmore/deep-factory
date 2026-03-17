@@ -415,6 +415,29 @@ describe('droppedItem', () => {
     expect(pickupResult.nextInventoryState.hotbar[1]).toBeNull();
   });
 
+  it('adds a picked-up gel stack into the first empty hotbar slot', () => {
+    const playerState = createPlayerState({
+      position: { x: 8, y: 0 }
+    });
+    const inventoryState = createPlayerInventoryState({
+      hotbar: [null, null, null, null, null, null, null, null, null, null]
+    });
+    const droppedItemState = createDroppedItemState({
+      position: { x: 8, y: -14 },
+      itemId: 'gel',
+      amount: 7
+    });
+
+    const pickupResult = resolveDroppedItemPickup(droppedItemState, playerState, inventoryState);
+
+    expect(pickupResult.pickedUpAmount).toBe(7);
+    expect(pickupResult.nextDroppedItemState).toBeNull();
+    expect(pickupResult.nextInventoryState.hotbar[0]).toEqual({
+      itemId: 'gel',
+      amount: 7
+    });
+  });
+
   it('spills overflow from a matching slot into an empty hotbar slot', () => {
     const playerState = createPlayerState({
       position: { x: 8, y: 0 }

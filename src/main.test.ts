@@ -7165,7 +7165,7 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
-  it('despawns a hostile slime immediately after the starter sword lands the defeating hit', async () => {
+  it('despawns a hostile slime immediately after the starter sword lands the defeating hit and leaves one gel pickup', async () => {
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
       JSON.stringify(
@@ -7257,6 +7257,104 @@ describe('main.ts shell state orchestration', () => {
       }
     ]);
     expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toEqual([]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 24, y: -6 },
+        itemId: 'gel',
+        amount: 1
+      }
+    ]);
+  });
+
+  it('merges a hostile-slime gel drop into a nearby matching pickup instead of spawning a second entity', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'sword', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          }),
+          droppedItemStates: [
+            createDroppedItemState({
+              position: { x: 25, y: -6 },
+              itemId: 'gel',
+              amount: 998
+            })
+          ]
+        })
+      )
+    );
+
+    const slimeSpawnPoint = createTestPlayerSpawnPoint({
+      x: 25,
+      y: 0,
+      width: DEFAULT_HOSTILE_SLIME_WIDTH,
+      height: DEFAULT_HOSTILE_SLIME_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_HOSTILE_SLIME_WIDTH &&
+        search?.height === DEFAULT_HOSTILE_SLIME_HEIGHT
+      ) {
+        return slimeSpawnPoint;
+      }
+
+      return testRuntime.playerSpawnPoint;
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
+
+    const swordUseRequest = {
+      worldTileX: 1,
+      worldTileY: 0,
+      worldX: 25,
+      worldY: 0,
+      pointerType: 'mouse' as const
+    };
+
+    testRuntime.playerItemUseRequests = [swordUseRequest];
+    runFixedUpdate(STARTER_MELEE_WEAPON_SWING_WINDUP_SECONDS);
+    runFixedUpdate(STARTER_MELEE_WEAPON_SWING_ACTIVE_SECONDS);
+    runFixedUpdate(STARTER_MELEE_WEAPON_SWING_RECOVERY_SECONDS);
+
+    testRuntime.playerItemUseRequests = [swordUseRequest];
+    runFixedUpdate(STARTER_MELEE_WEAPON_SWING_WINDUP_SECONDS);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 25, y: -6 },
+        itemId: 'gel',
+        amount: 999
+      }
+    ]);
   });
 
   it('spawns a dirt-block pickup entity when the starter pickaxe breaks nearby grass terrain', async () => {
