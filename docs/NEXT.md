@@ -4,7 +4,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 215. Add a placeable-workbench crafting slice after inventory basics: recipe registry for a minimal starter set, in-world station-range gating, shell or debug panel crafting actions, and recipe resolution regressions.
 232. Add a grappling-hook traversal slice after entity scaffolding: mixed-device aimed hook firing, solid-tile latch plus pull-and-release rules, and fixed-step hook-state regressions.
-246. Add a bow-and-arrow ranged-combat slice after hostile-slime jump-chase locomotion and inventory basics: stackable arrow ammo, mixed-device aimed firing, fixed-step projectile flight plus terrain or slime hits, and deterministic ammo-consumption regressions.
+246. Add a bow-and-arrow ranged-combat slice after hostile-slime jump-chase locomotion and inventory basics: stackable arrow ammo, left-click-or-tap aimed firing through the shared play-mode item-use path, fixed-step projectile flight plus terrain or slime hits, and deterministic ammo-consumption regressions.
 338. Add a bed-checkpoint respawn slice after inventory basics and save/load: placeable bed items, mixed-device checkpoint claim and respawn interactions, obstructed-checkpoint fallback to world spawn, and snapshot regressions for claimed checkpoint state.
 349. Add a platform traversal slice after inventory basics: stackable platform hotbar slots, mixed-device one-way placement plus drop-through movement, and save/load regressions for placed platform runs.
 350. Add a chest-storage slice after inventory basics and save/load: placeable chest items, mixed-device open or close interactions, fixed-slot storage transfer rules, and snapshot regressions for chest contents plus chest placement state.

@@ -5,6 +5,7 @@ import {
   advancePlayerRopeDropInputState,
   buildDebugTileEditRequest,
   createDefaultPlayerRopeDropInputState,
+  DESKTOP_CAMERA_PAN_MOUSE_BUTTON,
   resolveDesktopPlayerItemUseActionForClick,
   resolveTouchPlayerItemUseActionForTap,
   getDesktopDebugPaintKindForPointerDown,
@@ -22,6 +23,7 @@ import {
   resolvePlayerInputTelemetry,
   resolvePlayerMovementIntent,
   resolvePlayerMoveXIntent,
+  shouldStartPointerCameraPanGesture,
   shouldRetainPointerInspectOnPointerLeave,
   walkFilledEllipseTileArea,
   walkEllipseOutlineTileArea,
@@ -147,6 +149,38 @@ describe('resolveCameraPanWorldDeltaFromClientDelta', () => {
       x: 6,
       y: -3
     });
+  });
+});
+
+describe('shouldStartPointerCameraPanGesture', () => {
+  it('keeps play-mode left click free for item use instead of camera panning', () => {
+    expect(
+      shouldStartPointerCameraPanGesture('mouse', 0, false, 'play', 'pan')
+    ).toBe(false);
+  });
+
+  it('allows desktop camera pan from middle mouse in play mode', () => {
+    expect(
+      shouldStartPointerCameraPanGesture(
+        'mouse',
+        DESKTOP_CAMERA_PAN_MOUSE_BUTTON,
+        false,
+        'play',
+        'pan'
+      )
+    ).toBe(true);
+  });
+
+  it('keeps shift-drag camera pan available during desktop debug editing', () => {
+    expect(
+      shouldStartPointerCameraPanGesture('mouse', 0, true, 'debug-edit', 'place')
+    ).toBe(true);
+  });
+
+  it('limits touch camera pan to debug pan mode', () => {
+    expect(shouldStartPointerCameraPanGesture('touch', 0, false, 'debug-edit', 'pan')).toBe(true);
+    expect(shouldStartPointerCameraPanGesture('touch', 0, false, 'debug-edit', 'place')).toBe(false);
+    expect(shouldStartPointerCameraPanGesture('touch', 0, false, 'play', 'pan')).toBe(false);
   });
 });
 

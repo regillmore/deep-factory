@@ -17,6 +17,7 @@ import type { PlayerMovementIntent } from '../world/playerState';
 
 const DEBUG_TILE_PLACE_MOUSE_BUTTON = 0;
 const DEBUG_TILE_BREAK_MOUSE_BUTTON = 2;
+export const DESKTOP_CAMERA_PAN_MOUSE_BUTTON = 1;
 
 export interface PointerInspectSnapshot {
   client: { x: number; y: number };
@@ -356,6 +357,28 @@ export const resolveTouchPlayerItemUseActionForTap = (
   if (sample.durationMs > TOUCH_PLAYER_ITEM_USE_TAP_MAX_DURATION_MS) return null;
   if (sample.maxPointerTravelPx > TOUCH_PLAYER_ITEM_USE_TAP_MAX_POINTER_TRAVEL_PX) return null;
   return 'use-item';
+};
+
+export const shouldStartPointerCameraPanGesture = (
+  pointerType: string,
+  button: number,
+  shiftKey: boolean,
+  canvasInteractionMode: CanvasInteractionMode,
+  touchDebugEditMode: TouchDebugEditMode
+): boolean => {
+  if (pointerType === 'mouse') {
+    if (button === DESKTOP_CAMERA_PAN_MOUSE_BUTTON) {
+      return true;
+    }
+
+    return shiftKey && canvasInteractionMode === 'debug-edit';
+  }
+
+  if (pointerType === 'touch') {
+    return canvasInteractionMode === 'debug-edit' && touchDebugEditMode === 'pan';
+  }
+
+  return false;
 };
 
 export const isPlayerMoveLeftControlKey = (key: string): boolean => key === 'a' || key === 'arrowleft';
@@ -1316,6 +1339,22 @@ export class InputController {
           this.activeTouchInspectPinTapCandidate = null;
         }
       }
+      const shouldStartPointerPan =
+        !queuedArmedDebugFloodFill &&
+        !handledArmedDebugLine &&
+        !handledArmedDebugRect &&
+        !handledArmedDebugRectOutline &&
+        !handledArmedDebugEllipse &&
+        !handledArmedDebugEllipseOutline &&
+        !startedMouseDebugPaint &&
+        !startedTouchDebugPaint &&
+        shouldStartPointerCameraPanGesture(
+          event.pointerType,
+          event.button,
+          event.shiftKey,
+          this.canvasInteractionMode,
+          this.touchDebugEditMode
+        );
       if (this.pointers.size === 1) {
         if (
           queuedArmedDebugFloodFill ||
@@ -1325,7 +1364,8 @@ export class InputController {
           handledArmedDebugEllipse ||
           handledArmedDebugEllipseOutline ||
           startedMouseDebugPaint ||
-          startedTouchDebugPaint
+          startedTouchDebugPaint ||
+          !shouldStartPointerPan
         ) {
           this.pointerActive = false;
           this.pointerId = null;

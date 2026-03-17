@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-16: Play-mode primary click belongs to item use, not camera pan
+
+- Decision: In desktop play mode, ordinary left click now belongs to the shared hotbar item-use path, while camera pan starts only from middle-mouse drag or debug-edit `Shift`-drag; touch camera pan stays limited to touch debug `Pan` mode.
+- Reason: Combat and building actions need reliable access to the shared primary pointer gesture, and reusing that same gesture for camera pan made sword swings and placement feel inconsistent whenever the pointer drifted.
+- Consequence: Future desktop or touch play-mode actions should treat primary click or tap as reserved gameplay input unless the same pass intentionally introduces a new explicit gesture contract for camera movement.
+
 ### 2026-03-16: Hostile-slime health lives in authoritative slime state
 
 - Decision: Per-slime health now lives directly on authoritative hostile-slime entity state, and starter-sword hits reduce that state before `main.ts` decides whether to keep or despawn the slime.
