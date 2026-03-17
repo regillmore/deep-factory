@@ -49,6 +49,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
     baseColor: [0.22, 0.58, 0.23],
     accentColor: [0.72, 0.93, 0.46]
   },
+  workbench: {
+    baseColor: [0.49, 0.34, 0.19],
+    accentColor: [0.77, 0.64, 0.42]
+  },
   torch: {
     baseColor: [0.79, 0.55, 0.16],
     accentColor: [0.99, 0.88, 0.46]

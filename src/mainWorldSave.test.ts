@@ -338,6 +338,41 @@ describe('createWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerInventoryState).toEqual(standalonePlayerInventoryState);
     expect(decoded.session.droppedItemStates).toEqual(droppedItemStates);
   });
+
+  it('round-trips crafted workbench inventory stacks through save decode', () => {
+    const world = new TileWorld(0);
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'dirt-block', amount: 44 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'healing-potion', amount: 3 },
+        { itemId: 'heart-crystal', amount: 1 },
+        { itemId: 'sword', amount: 1 },
+        { itemId: 'workbench', amount: 2 },
+        ...Array.from({ length: 2 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 7
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    expect(decoded.session.standalonePlayerInventoryState).toEqual(standalonePlayerInventoryState);
+  });
 });
 
 describe('decodeWorldSaveEnvelope', () => {

@@ -127,6 +127,7 @@ import {
 } from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
+import { CraftingPanel, type CraftingPanelRecipeViewModel } from './ui/craftingPanel';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import {
   PlayerItemMiningPreviewOverlay,
@@ -242,11 +243,19 @@ import {
   clonePlayerInventoryState,
   consumePlayerInventoryHotbarSlotItem,
   createDefaultPlayerInventoryState,
+  getPlayerInventoryItemDefinition,
   movePlayerInventorySelectedHotbarSlot,
   setPlayerInventoryHotbarSlot,
   setPlayerInventorySelectedHotbarSlot,
   type PlayerInventoryState
 } from './world/playerInventory';
+import {
+  evaluatePlayerCraftingRecipe,
+  findNearestPlayerCraftingStationInRange,
+  getPlayerCraftingRecipeDefinitions,
+  tryCraftPlayerRecipe,
+  type PlayerCraftingRecipeId
+} from './world/playerCrafting';
 import {
   createPlayerHealingPotionCooldownState,
   DEFAULT_HEALING_POTION_USE_COOLDOWN_SECONDS,
@@ -270,6 +279,11 @@ import {
   STARTER_TORCH_ITEM_ID,
   STARTER_TORCH_TILE_ID
 } from './world/starterTorchPlacement';
+import {
+  evaluateStarterWorkbenchPlacement,
+  STARTER_WORKBENCH_ITEM_ID,
+  STARTER_WORKBENCH_TILE_ID
+} from './world/starterWorkbenchPlacement';
 import {
   evaluateStarterRopePlacement,
   resolveStarterRopePlacementTarget,
@@ -1126,6 +1140,14 @@ const bootstrap = async (): Promise<void> => {
       dropSelectedStandalonePlayerHotbarStack();
     }
   });
+  const craftingPanel = new CraftingPanel({
+    host: worldHost,
+    onCraftRecipe: (recipeId) => {
+      if (recipeId === 'workbench' || recipeId === 'healing-potion') {
+        tryCraftSelectedPlayerRecipe(recipeId);
+      }
+    }
+  });
   let debugEditControls: TouchDebugEditControls | null = null;
   const syncInWorldShellState = (): void => {
     currentScreen = 'in-world';
@@ -1251,6 +1273,7 @@ const bootstrap = async (): Promise<void> => {
   };
   const syncDebugEditControlsVisibility = (): void => {
     debugEditControls?.setVisible(currentScreen === 'in-world' && debugEditControlsVisible);
+    syncCraftingPanelVisibility();
     syncCanvasInteractionMode();
     syncPlayerItemPlacementPreviewVisibility();
   };
@@ -1259,6 +1282,13 @@ const bootstrap = async (): Promise<void> => {
   };
   const syncHotbarOverlayVisibility = (): void => {
     hotbarOverlay.setVisible(currentScreen === 'in-world');
+  };
+  const isCraftingPanelVisible = (): boolean =>
+    currentScreen === 'in-world' &&
+    debugEditControlsVisible &&
+    !(debugEditControls?.isCollapsed() ?? false);
+  const syncCraftingPanelVisibility = (): void => {
+    craftingPanel.setVisible(isCraftingPanelVisible());
   };
   const syncWorldScreenShellVisibility = (): void => {
     syncDebugOverlayVisibility();
@@ -1646,9 +1676,82 @@ const bootstrap = async (): Promise<void> => {
       heartCrystalBlockedReason: resolveHotbarOverlayHeartCrystalBlockedReason()
     });
   };
+  const resolveCraftingPanelRecipeDisabledReason = (
+    recipeViewModel: ReturnType<typeof evaluatePlayerCraftingRecipe>
+  ): string | null => {
+    switch (recipeViewModel.blocker) {
+      case 'missing-station':
+        return 'Requires nearby workbench';
+      case 'inventory-full':
+        return 'Inventory full';
+      case 'missing-ingredients':
+        return 'Missing ingredients';
+      default:
+        return null;
+    }
+  };
+  const createCraftingPanelRecipeViewModels = (
+    playerState: Pick<PlayerState, 'position' | 'size'> | null
+  ): CraftingPanelRecipeViewModel[] =>
+    getPlayerCraftingRecipeDefinitions().map((recipe): CraftingPanelRecipeViewModel => {
+      const recipeEvaluation = evaluatePlayerCraftingRecipe({
+        inventoryState: standalonePlayerInventoryState,
+        recipeId: recipe.id,
+        playerState,
+        world: {
+          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+        }
+      });
+      return {
+        recipeId: recipe.id,
+        label: recipe.label,
+        ingredientsLabel: recipe.ingredients
+          .map((ingredient) => `${ingredient.amount} ${getPlayerInventoryItemDefinition(ingredient.itemId).label}`)
+          .join(' + '),
+        outputLabel: `+${recipe.output.amount} ${getPlayerInventoryItemDefinition(recipe.output.itemId).hotbarLabel}`,
+        enabled: recipeEvaluation.craftable,
+        disabledReason: resolveCraftingPanelRecipeDisabledReason(recipeEvaluation)
+      };
+    });
+  const syncCraftingPanelState = (): void => {
+    const standalonePlayerState = getStandalonePlayerState();
+    const nearestWorkbench =
+      standalonePlayerState === null
+        ? null
+        : findNearestPlayerCraftingStationInRange({
+            stationId: 'workbench',
+            world: {
+              getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+            },
+            playerState: standalonePlayerState
+          });
+    craftingPanel.update({
+      stationLabel: 'Workbench',
+      stationInRange: nearestWorkbench !== null,
+      recipes: createCraftingPanelRecipeViewModels(standalonePlayerState)
+    });
+  };
   const applyStandalonePlayerInventoryState = (inventoryState: PlayerInventoryState): void => {
     standalonePlayerInventoryState = clonePlayerInventoryState(inventoryState);
     syncHotbarOverlayState();
+    syncCraftingPanelState();
+  };
+  const tryCraftSelectedPlayerRecipe = (recipeId: PlayerCraftingRecipeId): boolean => {
+    const craftResult = tryCraftPlayerRecipe({
+      inventoryState: standalonePlayerInventoryState,
+      recipeId,
+      playerState: getStandalonePlayerState(),
+      world: {
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+      }
+    });
+    if (!craftResult.crafted) {
+      syncCraftingPanelState();
+      return false;
+    }
+
+    applyStandalonePlayerInventoryState(craftResult.nextInventoryState);
+    return true;
   };
   const applySelectedStandalonePlayerHotbarSlotConsumption = (): boolean => {
     const consumeResult = consumePlayerInventoryHotbarSlotItem(
@@ -1726,6 +1829,8 @@ const bootstrap = async (): Promise<void> => {
   };
   syncHotbarOverlayState();
   hotbarOverlay.setVisible(false);
+  syncCraftingPanelState();
+  craftingPanel.setVisible(false);
   const getHostileSlimeEntityStates = (): Array<{ id: EntityId; state: HostileSlimeState }> => {
     const activeHostileSlimes: Array<{ id: EntityId; state: HostileSlimeState }> = [];
     const nextHostileSlimeEntityIds: EntityId[] = [];
@@ -3419,6 +3524,9 @@ const bootstrap = async (): Promise<void> => {
       placementTileId = resolvePlaceableSolidBlockTileId(selectedStack.itemId);
     } else {
       switch (selectedStack.itemId) {
+        case STARTER_WORKBENCH_ITEM_ID:
+          placementTileId = STARTER_WORKBENCH_TILE_ID;
+          break;
         case STARTER_TORCH_ITEM_ID:
           placementTileId = STARTER_TORCH_TILE_ID;
           break;
@@ -3480,6 +3588,15 @@ const bootstrap = async (): Promise<void> => {
       );
     } else {
       switch (selectedStack.itemId) {
+        case STARTER_WORKBENCH_ITEM_ID:
+          placement = evaluateStarterWorkbenchPlacement(
+            {
+              getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+            },
+            worldTileX,
+            worldTileY
+          );
+          break;
         case STARTER_TORCH_ITEM_ID:
           placement = evaluateStarterTorchPlacement(
             {
@@ -3992,6 +4109,7 @@ const bootstrap = async (): Promise<void> => {
         type: 'set-panel-collapsed',
         collapsed
       });
+      syncCraftingPanelVisibility();
     },
     ...createTouchDebugArmedToolConstructorOptions(armedToolSnapshot),
     initialHistoryState: debugTileEditHistory.getStatus(),
@@ -5164,6 +5282,7 @@ const bootstrap = async (): Promise<void> => {
     const selectedPlayerItemMiningPreview = !debugEditControlsVisible
       ? getSelectedStandalonePlayerItemMiningPreview(pointerInspect)
       : null;
+    syncCraftingPanelState();
     const hoveredDebugTileStatus = getHoveredDebugTileStatus(pointerInspect, renderTimeMs);
     const pinnedDebugTileStatus = pinnedDebugTileInspect
       ? getDebugTileStatusAtTile(

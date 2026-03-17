@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-16: Starter crafting begins with a single-tile placed workbench
+
+- Decision: The first crafting station is a stackable `workbench` inventory item that places a single-tile non-solid floor-supported tile, and station-gated recipes resolve against nearby placed workbench tiles using the same reach distance as hotbar placement.
+- Reason: This delivers a minimal station-gated crafting slice without introducing multi-tile furniture footprints, separate interaction radii, or a second always-visible crafting shell before the shared play-mode item-use loop is more mature.
+- Consequence: Future early crafting follow-ups should reuse the shared recipe registry plus nearby-station lookup, and any move to multi-tile stations or a broader crafting surface should be treated as an explicit design change.
+
 ### 2026-03-16: Play-mode primary click belongs to item use, not camera pan
 
 - Decision: In desktop play mode, ordinary left click now belongs to the shared hotbar item-use path, while camera pan starts only from middle-mouse drag or debug-edit `Shift`-drag; touch camera pan stays limited to touch debug `Pan` mode.

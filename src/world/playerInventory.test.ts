@@ -13,7 +13,9 @@ import {
   ensurePlayerInventoryHasStarterPickaxe,
   ensurePlayerInventoryHasStarterSword,
   getPlayerInventoryItemDefinition,
+  getPlayerInventoryItemAmount,
   movePlayerInventorySelectedHotbarSlot,
+  removePlayerInventoryItemAmount,
   setPlayerInventoryHotbarSlot,
   setPlayerInventorySelectedHotbarSlot,
   swapPlayerInventoryHotbarSlots,
@@ -108,6 +110,74 @@ describe('playerInventory', () => {
     expect(result.remainingAmount).toBe(5);
     expect(result.state).toEqual(full);
     expect(result.state).not.toBe(full);
+  });
+
+  it('counts matching items across the hotbar', () => {
+    const state = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'gel', amount: 4 },
+        { itemId: 'workbench', amount: 2 },
+        { itemId: 'gel', amount: 7 },
+        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 3 }, () => null)
+      ]
+    });
+
+    expect(getPlayerInventoryItemAmount(state, 'gel')).toBe(11);
+    expect(getPlayerInventoryItemAmount(state, 'workbench')).toBe(2);
+    expect(getPlayerInventoryItemAmount(state, 'torch')).toBe(0);
+  });
+
+  it('removes matching items from earlier hotbar slots before later ones', () => {
+    const state = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'gel', amount: 4 },
+        { itemId: 'workbench', amount: 2 },
+        { itemId: 'gel', amount: 7 },
+        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 3 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 2
+    });
+
+    const result = removePlayerInventoryItemAmount(state, 'gel', 6);
+
+    expect(result).toEqual({
+      state: {
+        hotbar: [
+          null,
+          { itemId: 'workbench', amount: 2 },
+          { itemId: 'gel', amount: 5 },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        selectedHotbarSlotIndex: 2
+      },
+      removedAmount: 6,
+      remainingAmount: 0
+    });
+    expect(state.hotbar[0]).toEqual({ itemId: 'gel', amount: 4 });
+  });
+
+  it('reports a remaining amount when removal exhausts all matching stacks', () => {
+    const state = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'workbench', amount: 2 },
+        null,
+        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 2 }, () => null)
+      ]
+    });
+
+    const result = removePlayerInventoryItemAmount(state, 'workbench', 5);
+
+    expect(result).toEqual({
+      state: createPlayerInventoryState(),
+      removedAmount: 2,
+      remainingAmount: 3
+    });
   });
 
   it('updates the selected hotbar slot without mutating the source state', () => {
@@ -312,6 +382,12 @@ describe('playerInventory', () => {
       label: 'Gel',
       hotbarLabel: 'GEL',
       maxStackSize: 999
+    });
+    expect(getPlayerInventoryItemDefinition('workbench')).toEqual({
+      id: 'workbench',
+      label: 'Workbench',
+      hotbarLabel: 'BENCH',
+      maxStackSize: 99
     });
     expect(getPlayerInventoryItemDefinition('pickaxe')).toEqual({
       id: 'pickaxe',

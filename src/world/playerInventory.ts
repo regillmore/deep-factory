@@ -5,6 +5,7 @@ export type PlayerInventoryItemId =
   | 'dirt-block'
   | 'stone-block'
   | 'gel'
+  | 'workbench'
   | 'torch'
   | 'rope'
   | 'healing-potion'
@@ -44,6 +45,12 @@ export interface ConsumePlayerInventoryHotbarSlotItemResult {
   consumed: boolean;
 }
 
+export interface RemovePlayerInventoryItemAmountResult {
+  state: PlayerInventoryState;
+  removedAmount: number;
+  remainingAmount: number;
+}
+
 export type MovePlayerInventorySelectedHotbarSlotDirection = -1 | 1;
 
 const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
@@ -72,6 +79,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     label: 'Gel',
     hotbarLabel: 'GEL',
     maxStackSize: 999
+  },
+  workbench: {
+    id: 'workbench',
+    label: 'Workbench',
+    hotbarLabel: 'BENCH',
+    maxStackSize: 99
   },
   torch: {
     id: 'torch',
@@ -382,6 +395,52 @@ export const addPlayerInventoryItemStack = (
   return {
     state: nextState,
     addedAmount: amount - remainingAmount,
+    remainingAmount
+  };
+};
+
+export const getPlayerInventoryItemAmount = (
+  state: PlayerInventoryState,
+  itemId: PlayerInventoryItemId
+): number =>
+  state.hotbar.reduce((total, stack) => total + (stack?.itemId === itemId ? stack.amount : 0), 0);
+
+export const removePlayerInventoryItemAmount = (
+  state: PlayerInventoryState,
+  itemId: PlayerInventoryItemId,
+  amount: number
+): RemovePlayerInventoryItemAmountResult => {
+  if (!Number.isInteger(amount) || amount <= 0) {
+    throw new Error('amount must be a positive integer');
+  }
+
+  const nextState = clonePlayerInventoryState(state);
+  let remainingAmount = amount;
+
+  for (let slotIndex = 0; slotIndex < nextState.hotbar.length; slotIndex += 1) {
+    const stack = nextState.hotbar[slotIndex];
+    if (stack === null || stack.itemId !== itemId) {
+      continue;
+    }
+
+    const removedAmount = Math.min(stack.amount, remainingAmount);
+    const nextAmount = stack.amount - removedAmount;
+    nextState.hotbar[slotIndex] =
+      nextAmount > 0
+        ? {
+            itemId: stack.itemId,
+            amount: nextAmount
+          }
+        : null;
+    remainingAmount -= removedAmount;
+    if (remainingAmount === 0) {
+      break;
+    }
+  }
+
+  return {
+    state: nextState,
+    removedAmount: amount - remainingAmount,
     remainingAmount
   };
 };

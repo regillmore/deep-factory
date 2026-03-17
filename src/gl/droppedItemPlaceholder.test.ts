@@ -24,6 +24,13 @@ describe('droppedItemPlaceholder', () => {
     });
   });
 
+  it('provides a dedicated placeholder palette for workbench pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('workbench')).toEqual({
+      baseColor: [0.49, 0.34, 0.19],
+      accentColor: [0.77, 0.64, 0.42]
+    });
+  });
+
   it('provides a dedicated placeholder palette for starter-sword pickups', () => {
     expect(getDroppedItemPlaceholderPalette('sword')).toEqual({
       baseColor: [0.62, 0.64, 0.7],

@@ -45,6 +45,7 @@ import type { PlayerItemPlacementPreviewState } from './ui/playerItemPlacementPr
 import { createDroppedItemState } from './world/droppedItem';
 import { createPlayerInventoryState } from './world/playerInventory';
 import { AUTHORED_ATLAS_HEIGHT, AUTHORED_ATLAS_WIDTH } from './world/authoredAtlasLayout';
+import { CHUNK_SIZE } from './world/constants';
 import {
   createPlayerState,
   DEFAULT_PLAYER_HEIGHT,
@@ -67,6 +68,7 @@ import {
 } from './world/starterMeleeWeapon';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
 import { STARTER_TORCH_TILE_ID } from './world/starterTorchPlacement';
+import { STARTER_WORKBENCH_TILE_ID } from './world/starterWorkbenchPlacement';
 import {
   describeLiquidRenderVariantPixelBoundsAtElapsedMs,
   describeLiquidRenderVariantUvRectAtElapsedMs,
@@ -101,6 +103,56 @@ const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
 };
 
 const worldTileKey = (worldTileX: number, worldTileY: number): string => `${worldTileX},${worldTileY}`;
+const chunkCoordKey = (chunkX: number, chunkY: number): string => `${chunkX},${chunkY}`;
+
+const syncRendererMapsFromWorldSnapshot = (snapshot: ReturnType<TileWorld['createSnapshot']>): void => {
+  testRuntime.rendererTileIdsByWorldKey.clear();
+  testRuntime.rendererLiquidLevelsByWorldKey.clear();
+
+  const world = new TileWorld(0);
+  world.loadSnapshot(snapshot);
+
+  const chunkKeys = new Set<string>();
+  for (const residentChunk of snapshot.residentChunks) {
+    chunkKeys.add(chunkCoordKey(residentChunk.coord.x, residentChunk.coord.y));
+  }
+  for (const editedChunk of snapshot.editedChunks) {
+    chunkKeys.add(chunkCoordKey(editedChunk.coord.x, editedChunk.coord.y));
+  }
+
+  for (const key of chunkKeys) {
+    const [rawChunkX, rawChunkY] = key.split(',');
+    const chunkX = Number(rawChunkX);
+    const chunkY = Number(rawChunkY);
+    for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
+      for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
+        const worldTileX = chunkX * CHUNK_SIZE + localX;
+        const worldTileY = chunkY * CHUNK_SIZE + localY;
+        const tileId = world.getTile(worldTileX, worldTileY);
+        if (tileId !== 0) {
+          testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(worldTileX, worldTileY), tileId);
+        }
+
+        const liquidLevel = world.getLiquidLevel(worldTileX, worldTileY);
+        if (liquidLevel > 0) {
+          testRuntime.rendererLiquidLevelsByWorldKey.set(
+            worldTileKey(worldTileX, worldTileY),
+            liquidLevel
+          );
+        }
+      }
+    }
+  }
+};
+
+const applyRendererTileEditsToWorldSnapshot = (editEvents: readonly TileEditEvent[]): void => {
+  const world = new TileWorld(0);
+  world.loadSnapshot(testRuntime.rendererWorldSnapshot ?? new TileWorld(0).createSnapshot());
+  for (const event of editEvents) {
+    world.setTileState(event.worldTileX, event.worldTileY, event.tileId, event.liquidLevel);
+  }
+  testRuntime.rendererWorldSnapshot = world.createSnapshot();
+};
 
 const createTileEditEvent = (
   worldTileX: number,
@@ -218,6 +270,22 @@ const testRuntime = vi.hoisted(() => {
     debugEditControlsSetShellActionKeybindingsCallCount: 0,
     debugEditControlsArmedToolSetterCallCount: 0,
     debugEditControlsShellActionKeybindings: null as ShellActionKeybindingState | null,
+    craftingPanelInstance: null as null | {
+      visible: boolean;
+      triggerCraftRecipe(recipeId: string): void;
+    },
+    latestCraftingPanelState: null as null | {
+      stationLabel: string;
+      stationInRange: boolean;
+      recipes: Array<{
+        recipeId: string;
+        label: string;
+        ingredientsLabel: string;
+        outputLabel: string;
+        enabled: boolean;
+        disabledReason?: string | null;
+      }>;
+    },
     debugEditControlsInitialArmedToolSnapshot: null as null | {
       floodFillKind: 'place' | 'break' | null;
       lineKind: 'place' | 'break' | null;
@@ -830,6 +898,7 @@ vi.mock('./gl/renderer', () => ({
             listener({ ...event });
           }
         }
+        applyRendererTileEditsToWorldSnapshot(editEvents);
       } else {
         testRuntime.rendererNextSetTileEditEvents = null;
       }
@@ -865,6 +934,7 @@ vi.mock('./gl/renderer', () => ({
     loadWorldSnapshot(snapshot: ReturnType<TileWorld['createSnapshot']>): void {
       testRuntime.rendererLoadWorldSnapshotCallCount += 1;
       testRuntime.rendererWorldSnapshot = snapshot;
+      syncRendererMapsFromWorldSnapshot(snapshot);
     }
 
     resetWorld(): void {}
@@ -1478,6 +1548,45 @@ vi.mock('./ui/armedDebugToolPreviewOverlay', () => ({
   }
 }));
 
+vi.mock('./ui/craftingPanel', () => ({
+  CraftingPanel: class {
+    visible = false;
+    private onCraftRecipe: (recipeId: string) => void;
+
+    constructor(options: { onCraftRecipe?: (recipeId: string) => void }) {
+      this.onCraftRecipe = options.onCraftRecipe ?? (() => {});
+      testRuntime.craftingPanelInstance = this;
+    }
+
+    setVisible(visible: boolean): void {
+      this.visible = visible;
+    }
+
+    update(state: {
+      stationLabel: string;
+      stationInRange: boolean;
+      recipes: Array<{
+        recipeId: string;
+        label: string;
+        ingredientsLabel: string;
+        outputLabel: string;
+        enabled: boolean;
+        disabledReason?: string | null;
+      }>;
+    }): void {
+      testRuntime.latestCraftingPanelState = {
+        stationLabel: state.stationLabel,
+        stationInRange: state.stationInRange,
+        recipes: state.recipes.map((recipe) => ({ ...recipe }))
+      };
+    }
+
+    triggerCraftRecipe(recipeId: string): void {
+      this.onCraftRecipe(recipeId);
+    }
+  }
+}));
+
 vi.mock('./ui/playerSpawnMarkerOverlay', () => ({
   PlayerSpawnMarkerOverlay: class {
     visible = false;
@@ -2043,6 +2152,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugEditControlsSetShellActionKeybindingsCallCount = 0;
     testRuntime.debugEditControlsArmedToolSetterCallCount = 0;
     testRuntime.debugEditControlsShellActionKeybindings = null;
+    testRuntime.craftingPanelInstance = null;
+    testRuntime.latestCraftingPanelState = null;
     testRuntime.debugEditControlsInitialArmedToolSnapshot = null;
     testRuntime.debugEditControlsArmedToolKinds = null;
     testRuntime.debugEditControlsInstance = null;
@@ -6960,6 +7071,164 @@ describe('main.ts shell state orchestration', () => {
       hasSolidFaceSupport: true,
       blockedByPlayer: false
     });
+  });
+
+  it('gates workbench-only recipes on nearby placed workbench tiles in the crafting panel', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'sword', amount: 1 },
+              { itemId: 'gel', amount: 2 },
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 0
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+
+    runRenderFrame();
+
+    expect(testRuntime.craftingPanelInstance?.visible).toBe(true);
+    expect(testRuntime.latestCraftingPanelState).toMatchObject({
+      stationLabel: 'Workbench',
+      stationInRange: false
+    });
+    expect(
+      testRuntime.latestCraftingPanelState?.recipes.find((recipe) => recipe.recipeId === 'workbench')
+    ).toMatchObject({
+      enabled: true
+    });
+    expect(
+      testRuntime.latestCraftingPanelState?.recipes.find(
+        (recipe) => recipe.recipeId === 'healing-potion'
+      )
+    ).toMatchObject({
+      enabled: false,
+      disabledReason: 'Requires nearby workbench'
+    });
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, -1), STARTER_WORKBENCH_TILE_ID);
+    runRenderFrame();
+
+    expect(testRuntime.latestCraftingPanelState).toMatchObject({
+      stationLabel: 'Workbench',
+      stationInRange: true
+    });
+    expect(
+      testRuntime.latestCraftingPanelState?.recipes.find(
+        (recipe) => recipe.recipeId === 'healing-potion'
+      )
+    ).toMatchObject({
+      enabled: true,
+      disabledReason: null
+    });
+  });
+
+  it('crafts a workbench from the panel, then places it through the shared hidden-panel item-use path', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    runRenderFrame();
+
+    expect(
+      testRuntime.latestCraftingPanelState?.recipes.find((recipe) => recipe.recipeId === 'workbench')
+    ).toMatchObject({
+      enabled: true
+    });
+
+    testRuntime.craftingPanelInstance?.triggerCraftRecipe('workbench');
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState).toEqual(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'dirt-block', amount: 44 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          { itemId: 'healing-potion', amount: 3 },
+          { itemId: 'heart-crystal', amount: 1 },
+          { itemId: 'sword', amount: 1 },
+          { itemId: 'workbench', amount: 1 },
+          null,
+          null
+        ],
+        selectedHotbarSlotIndex: 0
+      })
+    );
+
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 1);
+    expect(dispatchKeydown('8', 'Digit8').prevented).toBe(true);
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 1, y: -1 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 1,
+      tileY: -1,
+      placementTileX: 1,
+      placementTileY: -1,
+      canPlace: true,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false
+    });
+
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        worldX: 24,
+        worldY: -8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        tileId: STARTER_WORKBENCH_TILE_ID
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    expect(persistedEnvelope?.session.standalonePlayerInventoryState.hotbar[7]).toBeNull();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+    expect(restoredWorld.getTile(1, -1)).toBe(STARTER_WORKBENCH_TILE_ID);
   });
 
   it('hides the hotbar placement preview for unsupported item slots and while the full debug-edit panel is open', async () => {
