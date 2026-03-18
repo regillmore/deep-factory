@@ -37,4 +37,11 @@ describe('droppedItemPlaceholder', () => {
       accentColor: [0.97, 0.93, 0.62]
     });
   });
+
+  it('provides a dedicated placeholder palette for starter-spear pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('spear')).toEqual({
+      baseColor: [0.58, 0.49, 0.33],
+      accentColor: [0.88, 0.82, 0.66]
+    });
+  });
 });

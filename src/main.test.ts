@@ -66,6 +66,11 @@ import {
   STARTER_MELEE_WEAPON_SWING_RECOVERY_SECONDS,
   STARTER_MELEE_WEAPON_SWING_WINDUP_SECONDS
 } from './world/starterMeleeWeapon';
+import {
+  DEFAULT_STARTER_SPEAR_DAMAGE,
+  DEFAULT_STARTER_SPEAR_KNOCKBACK_SPEED,
+  STARTER_SPEAR_THRUST_WINDUP_SECONDS
+} from './world/starterSpear';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
 import { STARTER_TORCH_TILE_ID } from './world/starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './world/starterWorkbenchPlacement';
@@ -6777,7 +6782,7 @@ describe('main.ts shell state orchestration', () => {
           { itemId: 'sword', amount: 1 },
           null,
           null,
-          null
+          { itemId: 'spear', amount: 1 }
         ],
         selectedHotbarSlotIndex: 2
       })
@@ -6802,7 +6807,7 @@ describe('main.ts shell state orchestration', () => {
           { itemId: 'sword', amount: 1 },
           null,
           null,
-          null
+          { itemId: 'spear', amount: 1 }
         ],
         selectedHotbarSlotIndex: 2
       })
@@ -7175,7 +7180,7 @@ describe('main.ts shell state orchestration', () => {
           { itemId: 'sword', amount: 1 },
           { itemId: 'workbench', amount: 1 },
           null,
-          null
+          { itemId: 'spear', amount: 1 }
         ],
         selectedHotbarSlotIndex: 0
       })
@@ -7665,6 +7670,139 @@ describe('main.ts shell state orchestration', () => {
     dispatchWindowEvent('pagehide');
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
       itemId: 'sword',
+      amount: 1
+    });
+  });
+
+  it('uses the starter spear through the shared hidden-panel item-use path and carries aimed knockback into the next slime fixed step', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'sword', amount: 1 },
+              null,
+              null,
+              { itemId: 'spear', amount: 1 }
+            ],
+            selectedHotbarSlotIndex: 9
+          })
+        })
+      )
+    );
+
+    const slimeSpawnPoint = createTestPlayerSpawnPoint({
+      x: 32,
+      y: 2,
+      width: DEFAULT_HOSTILE_SLIME_WIDTH,
+      height: DEFAULT_HOSTILE_SLIME_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_HOSTILE_SLIME_WIDTH &&
+        search?.height === DEFAULT_HOSTILE_SLIME_HEIGHT
+      ) {
+        return slimeSpawnPoint;
+      }
+
+      return testRuntime.playerSpawnPoint;
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
+
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 2,
+        worldTileY: -1,
+        worldX: 32,
+        worldY: -4,
+        pointerType: 'mouse'
+      }
+    ];
+    runFixedUpdate(STARTER_SPEAR_THRUST_WINDUP_SECONDS);
+
+    testRuntime.rendererStepHostileSlimeStateImpl = (state, fixedDt) => {
+      const slimeState = state as {
+        position?: { x?: number; y?: number };
+        velocity?: { x?: number; y?: number };
+        grounded?: boolean;
+        facing?: 'left' | 'right';
+        hopCooldownTicksRemaining?: number;
+        launchKind?: 'standard-hop' | 'step-hop' | null;
+      };
+      const velocityX =
+        typeof slimeState.velocity?.x === 'number' ? slimeState.velocity.x : 0;
+      const velocityY =
+        typeof slimeState.velocity?.y === 'number' ? slimeState.velocity.y : 0;
+      return {
+        position: {
+          x: (slimeState.position?.x ?? 0) + velocityX * fixedDt,
+          y: (slimeState.position?.y ?? 0) + velocityY * fixedDt
+        },
+        velocity: {
+          x: velocityX,
+          y: velocityY
+        },
+        grounded: slimeState.grounded ?? false,
+        facing: slimeState.facing ?? 'right',
+        hopCooldownTicksRemaining:
+          slimeState.hopCooldownTicksRemaining ?? DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
+        launchKind: slimeState.launchKind ?? null
+      };
+    };
+    testRuntime.rendererStepHostileSlimeStateRequests = [];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame();
+
+    expect(testRuntime.rendererStepHostileSlimeStateRequests).toContainEqual({
+      state: {
+        position: { x: 32, y: 2 },
+        velocity: {
+          x: DEFAULT_STARTER_SPEAR_KNOCKBACK_SPEED * 0.8,
+          y: -DEFAULT_STARTER_SPEAR_KNOCKBACK_SPEED * 0.6
+        },
+        health: DEFAULT_HOSTILE_SLIME_HEALTH - DEFAULT_STARTER_SPEAR_DAMAGE,
+        grounded: false,
+        facing: 'right',
+        hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
+      },
+      fixedDt: 1 / 60,
+      playerPosition: { x: 8, y: 28 }
+    });
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toHaveLength(1);
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions[0]?.position.x).toBeCloseTo(
+      32 + DEFAULT_STARTER_SPEAR_KNOCKBACK_SPEED * 0.8 * (1 / 60),
+      6
+    );
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions[0]?.position.y).toBeCloseTo(
+      2 - DEFAULT_STARTER_SPEAR_KNOCKBACK_SPEED * 0.6 * (1 / 60),
+      6
+    );
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[9]).toEqual({
+      itemId: 'spear',
       amount: 1
     });
   });

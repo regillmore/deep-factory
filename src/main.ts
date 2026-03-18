@@ -306,6 +306,12 @@ import {
   tryStartStarterMeleeWeaponSwing
 } from './world/starterMeleeWeapon';
 import {
+  createStarterSpearState,
+  STARTER_SPEAR_ITEM_ID,
+  stepStarterSpearState,
+  tryStartStarterSpearThrust
+} from './world/starterSpear';
+import {
   resolvePlayerWallContactTransitionEvent,
   type PlayerWallContactTransitionEvent
 } from './world/playerWallContactTransition';
@@ -1615,6 +1621,7 @@ const bootstrap = async (): Promise<void> => {
   let standalonePlayerDeathCount = 0;
   let standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
   let starterMeleeWeaponState = createStarterMeleeWeaponState();
+  let starterSpearState = createStarterSpearState();
   let starterPickaxeMiningState = createStarterPickaxeMiningState();
   let playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
 
@@ -2413,6 +2420,7 @@ const bootstrap = async (): Promise<void> => {
     latestStandalonePlayerDeathHoldStatus = 'none';
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
     starterMeleeWeaponState = createStarterMeleeWeaponState();
+    starterSpearState = createStarterSpearState();
     starterPickaxeMiningState = createStarterPickaxeMiningState();
     playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
     syncHotbarOverlayState();
@@ -3344,10 +3352,7 @@ const bootstrap = async (): Promise<void> => {
     playerState: PlayerState,
     request: PlayerItemUseRequest
   ): 'left' | 'right' => {
-    const targetWorldX =
-      typeof request.worldX === 'number' && Number.isFinite(request.worldX)
-        ? request.worldX
-        : (request.worldTileX + 0.5) * TILE_SIZE;
+    const targetWorldX = resolvePlayerItemUseTargetWorldPoint(request).x;
     if (targetWorldX < playerState.position.x) {
       return 'left';
     }
@@ -3355,6 +3360,39 @@ const bootstrap = async (): Promise<void> => {
       return 'right';
     }
     return playerState.facing;
+  };
+  const resolvePlayerItemUseTargetWorldPoint = (
+    request: PlayerItemUseRequest
+  ): { x: number; y: number } => ({
+    x:
+      typeof request.worldX === 'number' && Number.isFinite(request.worldX)
+        ? request.worldX
+        : (request.worldTileX + 0.5) * TILE_SIZE,
+    y:
+      typeof request.worldY === 'number' && Number.isFinite(request.worldY)
+        ? request.worldY
+        : (request.worldTileY + 0.5) * TILE_SIZE
+  });
+  const resolveStarterSpearThrustDirection = (
+    playerState: PlayerState,
+    request: PlayerItemUseRequest
+  ): { x: number; y: number } => {
+    const targetWorldPoint = resolvePlayerItemUseTargetWorldPoint(request);
+    const playerFocusPoint = getPlayerCameraFocusPoint(playerState);
+    const deltaX = targetWorldPoint.x - playerFocusPoint.x;
+    const deltaY = targetWorldPoint.y - playerFocusPoint.y;
+    const magnitude = Math.hypot(deltaX, deltaY);
+    if (magnitude <= 1e-6) {
+      return {
+        x: playerState.facing === 'left' ? -1 : 1,
+        y: 0
+      };
+    }
+
+    return {
+      x: deltaX / magnitude,
+      y: deltaY / magnitude
+    };
   };
   const tryStartSelectedStarterMeleeWeaponSwing = (
     request: PlayerItemUseRequest
@@ -3373,6 +3411,25 @@ const bootstrap = async (): Promise<void> => {
       resolveStarterMeleeWeaponSwingFacing(standalonePlayerState, request)
     );
     starterMeleeWeaponState = startResult.state;
+    return startResult.started;
+  };
+  const tryStartSelectedStarterSpearThrust = (
+    request: PlayerItemUseRequest
+  ): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return false;
+    }
+
+    const startResult = tryStartStarterSpearThrust(
+      starterSpearState,
+      resolveStarterSpearThrustDirection(standalonePlayerState, request)
+    );
+    starterSpearState = startResult.state;
     return startResult.started;
   };
   const tryStartSelectedStarterPickaxeSwingAtTile = (
@@ -3420,6 +3477,51 @@ const bootstrap = async (): Promise<void> => {
       fixedDtSeconds: fixedDt
     });
     starterMeleeWeaponState = stepResult.state;
+
+    const defeatedHostileSlimeEntityIds: EntityId[] = [];
+    const defeatedHostileSlimeDropStates: DroppedItemState[] = [];
+    for (const hitEvent of stepResult.hitEvents) {
+      const activeHostileSlimeState = entityRegistry.getEntityState<HostileSlimeState>(hitEvent.entityId);
+      if (activeHostileSlimeState === null) {
+        continue;
+      }
+      if (isHostileSlimeDefeated(hitEvent.nextHostileSlimeState)) {
+        defeatedHostileSlimeEntityIds.push(hitEvent.entityId);
+        defeatedHostileSlimeDropStates.push(
+          createHostileSlimeDefeatDropState(hitEvent.nextHostileSlimeState)
+        );
+        continue;
+      }
+      entityRegistry.setEntityState(hitEvent.entityId, hitEvent.nextHostileSlimeState);
+    }
+    if (defeatedHostileSlimeEntityIds.length > 0) {
+      despawnHostileSlimeEntities(defeatedHostileSlimeEntityIds);
+      for (const droppedItemState of defeatedHostileSlimeDropStates) {
+        const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(droppedItemState);
+        if (remainingDroppedItemState !== null) {
+          spawnDroppedItemEntity(remainingDroppedItemState);
+        }
+      }
+    }
+  };
+  const stepStarterSpearFixedUpdate = (fixedDt: number): void => {
+    const standalonePlayerState = getStandalonePlayerState();
+    const aliveStandalonePlayerState =
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+        ? null
+        : standalonePlayerState;
+    const activeHostileSlimes = getHostileSlimeEntityStates();
+    const stepResult = stepStarterSpearState(starterSpearState, {
+      playerState: aliveStandalonePlayerState,
+      hostileSlimes: activeHostileSlimes.map((hostileSlime) => ({
+        entityId: hostileSlime.id,
+        state: hostileSlime.state
+      })),
+      fixedDtSeconds: fixedDt
+    });
+    starterSpearState = stepResult.state;
 
     const defeatedHostileSlimeEntityIds: EntityId[] = [];
     const defeatedHostileSlimeDropStates: DroppedItemState[] = [];
@@ -3505,6 +3607,9 @@ const bootstrap = async (): Promise<void> => {
     }
     if (selectedStack.itemId === STARTER_MELEE_WEAPON_ITEM_ID) {
       return tryStartSelectedStarterMeleeWeaponSwing(request);
+    }
+    if (selectedStack.itemId === STARTER_SPEAR_ITEM_ID) {
+      return tryStartSelectedStarterSpearThrust(request);
     }
     if (selectedStack.itemId === STARTER_PICKAXE_ITEM_ID) {
       return tryStartSelectedStarterPickaxeSwingAtTile(
@@ -5874,6 +5979,7 @@ const bootstrap = async (): Promise<void> => {
       entityRegistry.fixedUpdateAll(fixedDt);
       flushStandalonePlayerFixedStepResult();
       stepStarterMeleeWeaponFixedUpdate(fixedDt);
+      stepStarterSpearFixedUpdate(fixedDt);
       stepStarterPickaxeMiningFixedUpdate(fixedDt);
       stepHostileSlimeSpawnAndDespawn();
       stepPassiveBunnySpawnAndDespawn();

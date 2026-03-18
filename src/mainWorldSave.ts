@@ -15,6 +15,7 @@ import {
   ensurePlayerInventoryHasStarterHeartCrystal,
   ensurePlayerInventoryHasStarterHealingPotions,
   ensurePlayerInventoryHasStarterPickaxe,
+  ensurePlayerInventoryHasStarterSpear,
   ensurePlayerInventoryHasStarterSword,
   getPlayerInventoryItemDefinition,
   isPlayerInventoryItemId,
@@ -273,18 +274,26 @@ const normalizeStandalonePlayerInventoryState = (
   value: unknown,
   label: string,
   standalonePlayerState: PlayerState | null
-): PlayerInventoryState =>
-  ensurePlayerInventoryHasStarterSword(
-    (standalonePlayerState === null || standalonePlayerState.maxHealth <= DEFAULT_PLAYER_MAX_HEALTH
+): PlayerInventoryState => {
+  const normalizedInventoryState =
+    value === undefined
+      ? createDefaultPlayerInventoryState()
+      : normalizePlayerInventoryState(value, label);
+  const heartCrystalBackfill =
+    standalonePlayerState === null || standalonePlayerState.maxHealth <= DEFAULT_PLAYER_MAX_HEALTH
       ? ensurePlayerInventoryHasStarterHeartCrystal
-      : (state: PlayerInventoryState) => state)(
-    ensurePlayerInventoryHasStarterHealingPotions(
-      ensurePlayerInventoryHasStarterPickaxe(
-        value === undefined ? createDefaultPlayerInventoryState() : normalizePlayerInventoryState(value, label)
+      : (state: PlayerInventoryState): PlayerInventoryState => state;
+
+  return ensurePlayerInventoryHasStarterSpear(
+    ensurePlayerInventoryHasStarterSword(
+      heartCrystalBackfill(
+        ensurePlayerInventoryHasStarterHealingPotions(
+          ensurePlayerInventoryHasStarterPickaxe(normalizedInventoryState)
+        )
       )
     )
-    )
   );
+};
 
 const normalizeDroppedItemStates = (value: unknown, label: string): DroppedItemState[] => {
   if (value === undefined) {

@@ -72,6 +72,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
   sword: {
     baseColor: [0.62, 0.64, 0.7],
     accentColor: [0.97, 0.93, 0.62]
+  },
+  spear: {
+    baseColor: [0.58, 0.49, 0.33],
+    accentColor: [0.88, 0.82, 0.66]
   }
 };
 

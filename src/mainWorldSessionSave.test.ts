@@ -36,7 +36,9 @@ describe('createWorldSessionSaveEnvelope', () => {
         { itemId: 'healing-potion', amount: 3 },
         { itemId: 'heart-crystal', amount: 1 },
         { itemId: 'sword', amount: 1 },
-        ...Array.from({ length: 3 }, () => null)
+        null,
+        null,
+        { itemId: 'spear', amount: 1 }
       ],
       selectedHotbarSlotIndex: 3
     });
@@ -99,7 +101,7 @@ describe('createWorldSessionSaveEnvelope', () => {
           { itemId: 'sword', amount: 1 },
           null,
           null,
-          null
+          { itemId: 'spear', amount: 1 }
         ],
         selectedHotbarSlotIndex: 3
       })
@@ -140,7 +142,8 @@ describe('createWorldSessionSaveEnvelope', () => {
           { itemId: 'healing-potion', amount: 3 },
           { itemId: 'heart-crystal', amount: 1 },
           { itemId: 'sword', amount: 1 },
-          ...Array.from({ length: 6 }, () => null)
+          ...Array.from({ length: 5 }, () => null),
+          { itemId: 'spear', amount: 1 }
         ]
       })
     );

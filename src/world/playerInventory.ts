@@ -10,7 +10,8 @@ export type PlayerInventoryItemId =
   | 'rope'
   | 'healing-potion'
   | 'heart-crystal'
-  | 'sword';
+  | 'sword'
+  | 'spear';
 
 export interface PlayerInventoryItemDefinition {
   id: PlayerInventoryItemId;
@@ -115,17 +116,26 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     label: 'Starter Sword',
     hotbarLabel: 'SWORD',
     maxStackSize: 1
+  },
+  spear: {
+    id: 'spear',
+    label: 'Starter Spear',
+    hotbarLabel: 'SPEAR',
+    maxStackSize: 1
   }
 };
 
-const DEFAULT_STARTER_HOTBAR_STACKS: readonly PlayerInventoryItemStack[] = [
+const DEFAULT_STARTER_HOTBAR: ReadonlyArray<PlayerInventoryItemStack | null> = [
   { itemId: 'pickaxe', amount: 1 },
   { itemId: 'dirt-block', amount: 64 },
   { itemId: 'torch', amount: 20 },
   { itemId: 'rope', amount: 24 },
   { itemId: 'healing-potion', amount: 3 },
   { itemId: 'heart-crystal', amount: 1 },
-  { itemId: 'sword', amount: 1 }
+  { itemId: 'sword', amount: 1 },
+  null,
+  null,
+  { itemId: 'spear', amount: 1 }
 ];
 
 const createEmptyHotbar = (): Array<PlayerInventoryItemStack | null> =>
@@ -222,12 +232,9 @@ export const createEmptyPlayerInventoryState = (): PlayerInventoryState =>
   createPlayerInventoryState();
 
 export const createDefaultPlayerInventoryState = (): PlayerInventoryState => {
-  let inventoryState = createEmptyPlayerInventoryState();
-  for (const stack of DEFAULT_STARTER_HOTBAR_STACKS) {
-    const addResult = addPlayerInventoryItemStack(inventoryState, stack.itemId, stack.amount);
-    inventoryState = addResult.state;
-  }
-  return inventoryState;
+  return createPlayerInventoryState({
+    hotbar: DEFAULT_STARTER_HOTBAR
+  });
 };
 
 export const ensurePlayerInventoryHasStarterPickaxe = (
@@ -256,22 +263,46 @@ export const ensurePlayerInventoryHasStarterSword = (
 ): PlayerInventoryState =>
   ensurePlayerInventoryHasStarterHotbarStack(state, createPlayerInventoryItemStack('sword', 1));
 
+export const ensurePlayerInventoryHasStarterSpear = (
+  state: PlayerInventoryState
+): PlayerInventoryState =>
+  ensurePlayerInventoryHasStarterHotbarStack(
+    state,
+    createPlayerInventoryItemStack('spear', 1),
+    { preferLastEmptySlot: true }
+  );
+
+interface EnsurePlayerInventoryHasStarterHotbarStackOptions {
+  preferLastEmptySlot?: boolean;
+}
+
 const ensurePlayerInventoryHasStarterHotbarStack = (
   state: PlayerInventoryState,
-  stack: PlayerInventoryItemStack
+  stack: PlayerInventoryItemStack,
+  options: EnsurePlayerInventoryHasStarterHotbarStackOptions = {}
 ): PlayerInventoryState => {
   if (state.hotbar.some((entry) => entry?.itemId === stack.itemId)) {
     return clonePlayerInventoryState(state);
   }
 
-  const firstEmptySlotIndex = state.hotbar.findIndex((entry) => entry === null);
-  if (firstEmptySlotIndex < 0) {
+  let emptySlotIndex = -1;
+  if (options.preferLastEmptySlot === true) {
+    for (let slotIndex = state.hotbar.length - 1; slotIndex >= 0; slotIndex -= 1) {
+      if (state.hotbar[slotIndex] === null) {
+        emptySlotIndex = slotIndex;
+        break;
+      }
+    }
+  } else {
+    emptySlotIndex = state.hotbar.findIndex((entry) => entry === null);
+  }
+  if (emptySlotIndex < 0) {
     return clonePlayerInventoryState(state);
   }
 
   return setPlayerInventoryHotbarSlot(
     state,
-    firstEmptySlotIndex,
+    emptySlotIndex,
     stack
   );
 };

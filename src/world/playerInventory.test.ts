@@ -11,6 +11,7 @@ import {
   ensurePlayerInventoryHasStarterHeartCrystal,
   ensurePlayerInventoryHasStarterHealingPotions,
   ensurePlayerInventoryHasStarterPickaxe,
+  ensurePlayerInventoryHasStarterSpear,
   ensurePlayerInventoryHasStarterSword,
   getPlayerInventoryItemDefinition,
   getPlayerInventoryItemAmount,
@@ -42,7 +43,7 @@ describe('playerInventory', () => {
         { itemId: 'sword', amount: 1 },
         null,
         null,
-        null
+        { itemId: 'spear', amount: 1 }
       ],
       selectedHotbarSlotIndex: 0
     });
@@ -413,6 +414,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'SWORD',
       maxStackSize: 1
     });
+    expect(getPlayerInventoryItemDefinition('spear')).toEqual({
+      id: 'spear',
+      label: 'Starter Spear',
+      hotbarLabel: 'SPEAR',
+      maxStackSize: 1
+    });
   });
 
   it('fills the first empty slot with a starter pickaxe when one is missing', () => {
@@ -546,6 +553,40 @@ describe('playerInventory', () => {
         null
       ],
       selectedHotbarSlotIndex: 5
+    });
+  });
+
+  it('fills the last empty slot with a starter spear when it is missing', () => {
+    const state = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'healing-potion', amount: 3 },
+        { itemId: 'heart-crystal', amount: 1 },
+        { itemId: 'sword', amount: 1 },
+        null,
+        { itemId: 'gel', amount: 2 },
+        null
+      ],
+      selectedHotbarSlotIndex: 8
+    });
+
+    expect(ensurePlayerInventoryHasStarterSpear(state)).toEqual({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'healing-potion', amount: 3 },
+        { itemId: 'heart-crystal', amount: 1 },
+        { itemId: 'sword', amount: 1 },
+        null,
+        { itemId: 'gel', amount: 2 },
+        { itemId: 'spear', amount: 1 }
+      ],
+      selectedHotbarSlotIndex: 8
     });
   });
 
