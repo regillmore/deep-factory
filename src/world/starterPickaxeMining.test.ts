@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_PLAYER_HEIGHT, DEFAULT_PLAYER_WIDTH } from './playerState';
 import { STARTER_ROPE_TILE_ID } from './starterRopePlacement';
 import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
+import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 import {
   createStarterPickaxeMiningState,
   evaluateStarterPickaxeMiningTarget,
@@ -28,13 +29,14 @@ const createPlayer = (x = 8, y = 28) => ({
 });
 
 describe('evaluateStarterPickaxeMiningTarget', () => {
-  it('allows nearby solid terrain, rope, and torch tiles and rejects empty or non-target tiles', () => {
+  it('allows nearby solid terrain, rope, torch, and workbench tiles and rejects empty or non-target tiles', () => {
     const player = createPlayer();
     const world = createWorld({
       '0,0': 9,
       '1,0': STARTER_ROPE_TILE_ID,
       '2,0': STARTER_TORCH_TILE_ID,
-      '3,0': 12
+      '3,0': STARTER_WORKBENCH_TILE_ID,
+      '4,0': 99
     });
 
     expect(evaluateStarterPickaxeMiningTarget(world, player, 0, 0)).toEqual({
@@ -59,12 +61,18 @@ describe('evaluateStarterPickaxeMiningTarget', () => {
       canMine: true
     });
     expect(evaluateStarterPickaxeMiningTarget(world, player, 3, 0)).toMatchObject({
-      tileId: 12,
+      tileId: STARTER_WORKBENCH_TILE_ID,
+      occupied: true,
+      breakableTarget: true,
+      canMine: true
+    });
+    expect(evaluateStarterPickaxeMiningTarget(world, player, 4, 0)).toMatchObject({
+      tileId: 99,
       occupied: true,
       breakableTarget: false,
       canMine: false
     });
-    expect(evaluateStarterPickaxeMiningTarget(world, player, 4, -3)).toMatchObject({
+    expect(evaluateStarterPickaxeMiningTarget(world, player, 5, -3)).toMatchObject({
       tileId: 0,
       occupied: false,
       breakableTarget: false,
@@ -102,10 +110,38 @@ describe('resolveStarterPickaxeBrokenTileDrop', () => {
     });
     expect(resolveStarterPickaxeBrokenTileDrop(STARTER_ROPE_TILE_ID)).toBeNull();
     expect(resolveStarterPickaxeBrokenTileDrop(STARTER_TORCH_TILE_ID)).toBeNull();
+    expect(resolveStarterPickaxeBrokenTileDrop(STARTER_WORKBENCH_TILE_ID)).toBeNull();
   });
 });
 
 describe('starterPickaxeMining state', () => {
+  it('breaks a nearby placed workbench tile in one hit', () => {
+    const world = createWorld({
+      '0,0': STARTER_WORKBENCH_TILE_ID
+    });
+    const player = createPlayer();
+    const evaluation = evaluateStarterPickaxeMiningTarget(world, player, 0, 0);
+    const started = tryStartStarterPickaxeSwing(createStarterPickaxeMiningState(), evaluation);
+
+    expect(started.started).toBe(true);
+
+    const afterWindup = stepStarterPickaxeMiningState(started.state, {
+      world,
+      playerState: player,
+      fixedDtSeconds: STARTER_PICKAXE_SWING_WINDUP_SECONDS
+    });
+
+    expect(afterWindup.hitEvent).toEqual({
+      tileX: 0,
+      tileY: 0,
+      tileId: STARTER_WORKBENCH_TILE_ID,
+      appliedHitCount: 1,
+      requiredHitCount: 1,
+      brokeTile: true
+    });
+    expect(afterWindup.state.breakProgress).toBeNull();
+  });
+
   it('breaks a nearby placed torch tile in one hit', () => {
     const world = createWorld({
       '0,0': STARTER_TORCH_TILE_ID

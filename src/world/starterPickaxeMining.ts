@@ -7,6 +7,7 @@ import {
 } from './starterBlockPlacement';
 import { STARTER_ROPE_TILE_ID } from './starterRopePlacement';
 import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
+import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 import {
   hasTerrainAutotileMetadata,
   isTileSolid,
@@ -147,6 +148,7 @@ const isBreakableStarterPickaxeTargetTile = (
 ): boolean =>
   tileId === STARTER_ROPE_TILE_ID ||
   tileId === STARTER_TORCH_TILE_ID ||
+  tileId === STARTER_WORKBENCH_TILE_ID ||
   isBreakableTerrainTile(tileId, registry);
 
 const resolveStarterPickaxeRequiredHitCount = (tileId: number): number =>

@@ -8027,6 +8027,44 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
+  it('spawns one workbench pickup entity when the starter pickaxe cuts a nearby placed workbench tile', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), STARTER_WORKBENCH_TILE_ID);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        worldX: 24,
+        worldY: 8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        tileId: 0
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 24, y: 8 },
+        itemId: 'workbench',
+        amount: 1
+      }
+    ]);
+  });
+
   it('cascades a mined dirt-block refund across overlapping matching world pickups before spawning a new entity', async () => {
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
@@ -8395,6 +8433,71 @@ describe('main.ts shell state orchestration', () => {
         position: { x: 332, y: -312 },
         itemId: 'rope',
         amount: 999
+      }
+    ]);
+  });
+
+  it('cascades a removed workbench refund across overlapping matching world pickups before spawning a new entity', async () => {
+    const workbenchWorldTileX = 20;
+    const workbenchWorldTileY = -20;
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState(),
+          droppedItemStates: [
+            createDroppedItemState({
+              position: { x: 328, y: -312 },
+              itemId: 'workbench',
+              amount: 99
+            }),
+            createDroppedItemState({
+              position: { x: 332, y: -312 },
+              itemId: 'workbench',
+              amount: 98
+            })
+          ]
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: workbenchWorldTileX,
+        worldTileY: workbenchWorldTileY,
+        kind: 'break'
+      }
+    ];
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(workbenchWorldTileX, workbenchWorldTileY),
+      STARTER_WORKBENCH_TILE_ID
+    );
+    testRuntime.rendererSetTileResult = true;
+
+    runFixedUpdate();
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 328, y: -312 },
+        itemId: 'workbench',
+        amount: 99
+      },
+      {
+        position: { x: 332, y: -312 },
+        itemId: 'workbench',
+        amount: 99
       }
     ]);
   });

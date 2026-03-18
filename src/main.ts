@@ -2645,6 +2645,14 @@ const bootstrap = async (): Promise<void> => {
 
     if (event.previousTileId === STARTER_ROPE_TILE_ID && event.tileId !== STARTER_ROPE_TILE_ID) {
       refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_ROPE_ITEM_ID);
+      return;
+    }
+
+    if (
+      event.previousTileId === STARTER_WORKBENCH_TILE_ID &&
+      event.tileId !== STARTER_WORKBENCH_TILE_ID
+    ) {
+      refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_WORKBENCH_ITEM_ID);
     }
   });
   const restoreDroppedItemEntityStates = (droppedItemStates: readonly DroppedItemState[]): void => {
@@ -3469,8 +3477,8 @@ const bootstrap = async (): Promise<void> => {
 
     const brokenTileDrop = resolveStarterPickaxeBrokenTileDrop(editResult.previousTileId);
     if (brokenTileDrop === null) {
-      // Placeable utility tiles such as rope refund through renderer tile-edit notifications so
-      // every removal path shares the same merge-aware pickup cascade.
+      // Placeable utility tiles such as rope, torch, or workbench refund through renderer
+      // tile-edit notifications so every removal path shares the same merge-aware pickup cascade.
       return;
     }
 

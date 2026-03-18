@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-17
+
+- Task: Add a starter-workbench pickup-refund follow-up after placeable-workbench crafting.
+- Changes: Updated [src/world/starterPickaxeMining.ts](../src/world/starterPickaxeMining.ts), [src/main.ts](../src/main.ts), [src/world/starterPickaxeMining.test.ts](../src/world/starterPickaxeMining.test.ts), and [src/main.test.ts](../src/main.test.ts) so the starter pickaxe now treats nearby placed workbench tiles as valid one-hit utility targets and the existing renderer tile-edit refund listener returns one `workbench` pickup through the shared merge-aware removed-tile cascade; removed completed task `613` from [docs/NEXT.md](docs/NEXT.md), added replacement task `615`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/starterPickaxeMining.test.ts src/main.test.ts` (outside the sandbox after the expected Vitest `spawn EPERM` startup restriction in-sandbox).
+
 ## 2026-03-16
 
 - Task: Add a placeable-workbench crafting slice after inventory basics.
