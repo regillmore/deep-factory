@@ -299,6 +299,9 @@ import {
   evaluateStarterPickaxeMiningTarget,
   resolveStarterPickaxeBrokenTileDrop,
   resolveStarterPickaxeBreakProgressNormalized,
+  STARTER_PICKAXE_SWING_ACTIVE_SECONDS,
+  STARTER_PICKAXE_SWING_RECOVERY_SECONDS,
+  STARTER_PICKAXE_SWING_WINDUP_SECONDS,
   STARTER_PICKAXE_ITEM_ID,
   stepStarterPickaxeMiningState,
   tryStartStarterPickaxeSwing
@@ -1721,6 +1724,37 @@ const bootstrap = async (): Promise<void> => {
       )
     };
   };
+  const resolveHotbarOverlayStarterPickaxeSwingFeedback = ():
+    | {
+        phase: 'windup' | 'active' | 'recovery';
+        timingFillNormalized: number;
+      }
+    | null => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== STARTER_PICKAXE_ITEM_ID) {
+      return null;
+    }
+
+    const activeSwing = starterPickaxeMiningState.activeSwing;
+    if (activeSwing === null) {
+      return null;
+    }
+
+    const phaseDurationSeconds =
+      activeSwing.phase === 'windup'
+        ? STARTER_PICKAXE_SWING_WINDUP_SECONDS
+        : activeSwing.phase === 'active'
+          ? STARTER_PICKAXE_SWING_ACTIVE_SECONDS
+          : STARTER_PICKAXE_SWING_RECOVERY_SECONDS;
+
+    return {
+      phase: activeSwing.phase,
+      timingFillNormalized: Math.max(
+        0,
+        Math.min(1, activeSwing.phaseSecondsRemaining / phaseDurationSeconds)
+      )
+    };
+  };
   const resolveHotbarOverlayStarterSpearThrustFeedback = ():
     | {
         phase: 'windup' | 'active' | 'recovery';
@@ -1758,6 +1792,7 @@ const bootstrap = async (): Promise<void> => {
         resolveHotbarOverlayHealingPotionCooldownFillNormalized(),
       heartCrystalBlockedReason: resolveHotbarOverlayHeartCrystalBlockedReason(),
       starterMeleeWeaponSwingFeedback: resolveHotbarOverlayStarterMeleeWeaponSwingFeedback(),
+      starterPickaxeSwingFeedback: resolveHotbarOverlayStarterPickaxeSwingFeedback(),
       starterSpearThrustFeedback: resolveHotbarOverlayStarterSpearThrustFeedback()
     });
   };
@@ -3536,6 +3571,9 @@ const bootstrap = async (): Promise<void> => {
       )
     );
     starterPickaxeMiningState = startResult.state;
+    if (startResult.started) {
+      syncHotbarOverlayState();
+    }
     return startResult.started;
   };
   const stepStarterMeleeWeaponFixedUpdate = (fixedDt: number): void => {
@@ -3637,6 +3675,7 @@ const bootstrap = async (): Promise<void> => {
     }
   };
   const stepStarterPickaxeMiningFixedUpdate = (fixedDt: number): void => {
+    const hadActiveSwing = starterPickaxeMiningState.activeSwing !== null;
     const standalonePlayerState = getStandalonePlayerState();
     const stepResult = stepStarterPickaxeMiningState(starterPickaxeMiningState, {
       world: {
@@ -3651,6 +3690,9 @@ const bootstrap = async (): Promise<void> => {
       fixedDtSeconds: fixedDt
     });
     starterPickaxeMiningState = stepResult.state;
+    if (hadActiveSwing || starterPickaxeMiningState.activeSwing !== null) {
+      syncHotbarOverlayState();
+    }
     if (stepResult.hitEvent?.brokeTile !== true) {
       return;
     }

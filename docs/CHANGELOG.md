@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-17
 
+- Task: Add a starter-pickaxe hotbar-feedback follow-up after starter pickaxe mining.
+- Changes: Updated [src/ui/hotbarOverlay.ts](../src/ui/hotbarOverlay.ts), [src/main.ts](../src/main.ts), [src/ui/hotbarOverlay.test.ts](../src/ui/hotbarOverlay.test.ts), and [src/main.test.ts](../src/main.test.ts) so the selected pickaxe slot now shows phase-tagged `WIND`/`ACT`/`REC` timing fills through windup, active, and recovery while the shared hotbar overlay refreshes from the live pickaxe swing state; removed completed task `620` from [docs/NEXT.md](docs/NEXT.md), added replacement task `621`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/ui/hotbarOverlay.test.ts src/main.test.ts -t "pickaxe hotbar|selected starter-pickaxe hotbar timing|selected starter-pickaxe phase timing"` (outside the sandbox for the Vitest run).
+
 - Task: Add a starter-sword hotbar-feedback follow-up after starter melee-weapon.
 - Changes: Updated [src/ui/hotbarOverlay.ts](../src/ui/hotbarOverlay.ts), [src/main.ts](../src/main.ts), [src/ui/hotbarOverlay.test.ts](../src/ui/hotbarOverlay.test.ts), and [src/main.test.ts](../src/main.test.ts) so the selected sword slot now shows phase-tagged `WIND`/`ACT`/`REC` timing fills through windup, active, and recovery while the shared hotbar overlay refreshes from the live sword swing state; removed completed task `619` from [docs/NEXT.md](docs/NEXT.md), added replacement task `620`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/ui/hotbarOverlay.test.ts src/main.test.ts -t "sword hotbar|selected starter-sword hotbar timing|selected starter-sword phase timing"` (outside the sandbox for the Vitest run).

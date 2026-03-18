@@ -8391,6 +8391,75 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
+  it('shows selected starter-pickaxe hotbar timing feedback through windup, active, recovery, and clear', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 1);
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        worldX: 24,
+        worldY: 8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+
+    expect(getHotbarOverlaySlotButton(0).title).toContain('windup active');
+    expect(getHotbarOverlaySlotAmountLabel(0).textContent).toBe('WIND');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(0).style.height)).toBeCloseTo(
+      ((STARTER_PICKAXE_SWING_WINDUP_SECONDS - 1 / 60) /
+        STARTER_PICKAXE_SWING_WINDUP_SECONDS) *
+        100,
+      1
+    );
+    expect(getHotbarOverlaySlotCooldownFill(0).style.opacity).toBe('1');
+
+    testRuntime.playerItemUseRequests = [];
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS - 1 / 60);
+
+    expect(getHotbarOverlaySlotButton(0).title).toContain('swing active');
+    expect(getHotbarOverlaySlotAmountLabel(0).textContent).toBe('ACT');
+    expect(getHotbarOverlaySlotCooldownFill(0).style.height).toBe('100.0%');
+    expect(testRuntime.rendererSetTileCalls).toEqual([]);
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_ACTIVE_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(0).title).toContain('swing active');
+    expect(getHotbarOverlaySlotAmountLabel(0).textContent).toBe('ACT');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(0).style.height)).toBeCloseTo(
+      50,
+      1
+    );
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_ACTIVE_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(0).title).toContain('recovery active');
+    expect(getHotbarOverlaySlotAmountLabel(0).textContent).toBe('REC');
+    expect(getHotbarOverlaySlotCooldownFill(0).style.height).toBe('100.0%');
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_RECOVERY_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(0).title).toContain('recovery active');
+    expect(getHotbarOverlaySlotAmountLabel(0).textContent).toBe('REC');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(0).style.height)).toBeCloseTo(
+      50,
+      1
+    );
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_RECOVERY_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(0).title).not.toContain('active');
+    expect(getHotbarOverlaySlotAmountLabel(0).textContent).toBe('');
+    expect(getHotbarOverlaySlotCooldownFill(0).style.height).toBe('0.0%');
+    expect(getHotbarOverlaySlotCooldownFill(0).style.opacity).toBe('0');
+    expect(testRuntime.rendererSetTileCalls).toEqual([]);
+  });
+
   it('spawns a stone-block pickup entity when the starter pickaxe finishes breaking nearby stone terrain on the second swing', async () => {
     await import('./main');
     await flushBootstrap();

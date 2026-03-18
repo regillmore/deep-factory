@@ -258,6 +258,49 @@ describe('HotbarOverlay', () => {
     expect(getSlotRow(overlay).children[5]!.title).not.toContain('blocked:');
   });
 
+  it('shows and clears selected starter-pickaxe phase timing feedback without affecting other slots', () => {
+    const host = createHost();
+    const overlay = new HotbarOverlay({ host });
+    const pickaxeSelectedState = createPlayerInventoryState({
+      hotbar: createDefaultPlayerInventoryState().hotbar,
+      selectedHotbarSlotIndex: 0
+    });
+
+    overlay.update(pickaxeSelectedState, {
+      starterPickaxeSwingFeedback: {
+        phase: 'windup',
+        timingFillNormalized: 0.75
+      }
+    });
+
+    expect(getSlotAmountLabel(overlay, 0).textContent).toBe('WIND');
+    expect(getSlotAmountLabel(overlay, 0).style.color).toBe('#ffe5ad');
+    expect(getSlotCooldownFill(overlay, 0).style.height).toBe('75.0%');
+    expect(getSlotCooldownFill(overlay, 0).style.opacity).toBe('1');
+    expect(getSlotRow(overlay).children[0]!.title).toContain('windup active');
+    expect(getSlotCooldownFill(overlay, 4).style.opacity).toBe('0');
+
+    overlay.update(pickaxeSelectedState, {
+      starterPickaxeSwingFeedback: {
+        phase: 'active',
+        timingFillNormalized: 0.5
+      }
+    });
+
+    expect(getSlotAmountLabel(overlay, 0).textContent).toBe('ACT');
+    expect(getSlotAmountLabel(overlay, 0).style.color).toBe('#ffd4c7');
+    expect(getSlotCooldownFill(overlay, 0).style.height).toBe('50.0%');
+    expect(getSlotRow(overlay).children[0]!.title).toContain('swing active');
+
+    overlay.update(pickaxeSelectedState);
+
+    expect(getSlotAmountLabel(overlay, 0).textContent).toBe('');
+    expect(getSlotAmountLabel(overlay, 0).style.color).toBe('#ffe7a3');
+    expect(getSlotCooldownFill(overlay, 0).style.height).toBe('0.0%');
+    expect(getSlotCooldownFill(overlay, 0).style.opacity).toBe('0');
+    expect(getSlotRow(overlay).children[0]!.title).not.toContain('active');
+  });
+
   it('shows and clears selected starter-sword phase timing feedback without affecting other slots', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });

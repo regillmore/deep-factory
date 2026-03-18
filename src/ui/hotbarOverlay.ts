@@ -12,6 +12,7 @@ import {
   type PlayerInventoryState
 } from '../world/playerInventory';
 import type { StarterMeleeWeaponSwingPhase } from '../world/starterMeleeWeapon';
+import type { StarterPickaxeSwingPhase } from '../world/starterPickaxeMining';
 import type { StarterSpearThrustPhase } from '../world/starterSpear';
 import { installPointerClickFocusRelease } from './buttonFocus';
 
@@ -30,6 +31,12 @@ interface HotbarOverlayUpdateOptions {
   starterMeleeWeaponSwingFeedback?:
     | {
         phase: StarterMeleeWeaponSwingPhase;
+        timingFillNormalized: number;
+      }
+    | null;
+  starterPickaxeSwingFeedback?:
+    | {
+        phase: StarterPickaxeSwingPhase;
         timingFillNormalized: number;
       }
     | null;
@@ -86,7 +93,10 @@ const HEART_CRYSTAL_BLOCKED_FILL_BACKGROUND: Record<'dead' | 'max-health-cap', s
   dead: HEART_CRYSTAL_DEAD_FILL_BACKGROUND,
   'max-health-cap': HEART_CRYSTAL_MAX_HEALTH_CAP_FILL_BACKGROUND
 };
-type HotbarTimedItemPhase = StarterMeleeWeaponSwingPhase | StarterSpearThrustPhase;
+type HotbarTimedItemPhase =
+  | StarterMeleeWeaponSwingPhase
+  | StarterPickaxeSwingPhase
+  | StarterSpearThrustPhase;
 const HOTBAR_TIMED_ITEM_AMOUNT_TEXT: Record<HotbarTimedItemPhase, string> = {
   windup: 'WIND',
   active: 'ACT',
@@ -106,6 +116,11 @@ const HOTBAR_TIMED_ITEM_FILL_BACKGROUND: Record<HotbarTimedItemPhase, string> = 
     'linear-gradient(180deg, rgba(214, 236, 255, 0.04) 0%, rgba(148, 198, 255, 0.2) 35%, rgba(86, 148, 224, 0.58) 100%)'
 };
 const STARTER_MELEE_WEAPON_SWING_TITLE_TEXT: Record<StarterMeleeWeaponSwingPhase, string> = {
+  windup: 'windup active',
+  active: 'swing active',
+  recovery: 'recovery active'
+};
+const STARTER_PICKAXE_SWING_TITLE_TEXT: Record<StarterPickaxeSwingPhase, string> = {
   windup: 'windup active',
   active: 'swing active',
   recovery: 'recovery active'
@@ -328,6 +343,7 @@ export class HotbarOverlay {
         : null;
     const heartCrystalBlockedReason = options.heartCrystalBlockedReason ?? null;
     const starterMeleeWeaponSwingFeedback = options.starterMeleeWeaponSwingFeedback ?? null;
+    const starterPickaxeSwingFeedback = options.starterPickaxeSwingFeedback ?? null;
     const starterSpearThrustFeedback = options.starterSpearThrustFeedback ?? null;
     for (let slotIndex = 0; slotIndex < this.slots.length; slotIndex += 1) {
       const slotElements = this.slots[slotIndex]!;
@@ -360,6 +376,14 @@ export class HotbarOverlay {
               ),
               titleText:
                 STARTER_MELEE_WEAPON_SWING_TITLE_TEXT[starterMeleeWeaponSwingFeedback.phase]
+            }
+          : selected && stack.itemId === 'pickaxe' && starterPickaxeSwingFeedback !== null
+          ? {
+              phase: starterPickaxeSwingFeedback.phase,
+              timingFillNormalized: clampUnitInterval(
+                starterPickaxeSwingFeedback.timingFillNormalized
+              ),
+              titleText: STARTER_PICKAXE_SWING_TITLE_TEXT[starterPickaxeSwingFeedback.phase]
             }
           : selected && stack.itemId === 'spear' && starterSpearThrustFeedback !== null
           ? {
