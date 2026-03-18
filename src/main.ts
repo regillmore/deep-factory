@@ -305,6 +305,9 @@ import {
 } from './world/starterPickaxeMining';
 import {
   createStarterMeleeWeaponState,
+  STARTER_MELEE_WEAPON_SWING_ACTIVE_SECONDS,
+  STARTER_MELEE_WEAPON_SWING_RECOVERY_SECONDS,
+  STARTER_MELEE_WEAPON_SWING_WINDUP_SECONDS,
   STARTER_MELEE_WEAPON_ITEM_ID,
   stepStarterMeleeWeaponState,
   tryStartStarterMeleeWeaponSwing
@@ -1687,6 +1690,37 @@ const bootstrap = async (): Promise<void> => {
     }
     return null;
   };
+  const resolveHotbarOverlayStarterMeleeWeaponSwingFeedback = ():
+    | {
+        phase: 'windup' | 'active' | 'recovery';
+        timingFillNormalized: number;
+      }
+    | null => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== STARTER_MELEE_WEAPON_ITEM_ID) {
+      return null;
+    }
+
+    const activeSwing = starterMeleeWeaponState.activeSwing;
+    if (activeSwing === null) {
+      return null;
+    }
+
+    const phaseDurationSeconds =
+      activeSwing.phase === 'windup'
+        ? STARTER_MELEE_WEAPON_SWING_WINDUP_SECONDS
+        : activeSwing.phase === 'active'
+          ? STARTER_MELEE_WEAPON_SWING_ACTIVE_SECONDS
+          : STARTER_MELEE_WEAPON_SWING_RECOVERY_SECONDS;
+
+    return {
+      phase: activeSwing.phase,
+      timingFillNormalized: Math.max(
+        0,
+        Math.min(1, activeSwing.secondsRemaining / phaseDurationSeconds)
+      )
+    };
+  };
   const resolveHotbarOverlayStarterSpearThrustFeedback = ():
     | {
         phase: 'windup' | 'active' | 'recovery';
@@ -1723,6 +1757,7 @@ const bootstrap = async (): Promise<void> => {
       healingPotionCooldownFillNormalized:
         resolveHotbarOverlayHealingPotionCooldownFillNormalized(),
       heartCrystalBlockedReason: resolveHotbarOverlayHeartCrystalBlockedReason(),
+      starterMeleeWeaponSwingFeedback: resolveHotbarOverlayStarterMeleeWeaponSwingFeedback(),
       starterSpearThrustFeedback: resolveHotbarOverlayStarterSpearThrustFeedback()
     });
   };
@@ -3445,6 +3480,9 @@ const bootstrap = async (): Promise<void> => {
       resolveStarterMeleeWeaponSwingFacing(standalonePlayerState, request)
     );
     starterMeleeWeaponState = startResult.state;
+    if (startResult.started) {
+      syncHotbarOverlayState();
+    }
     return startResult.started;
   };
   const tryStartSelectedStarterSpearThrust = (
@@ -3501,6 +3539,7 @@ const bootstrap = async (): Promise<void> => {
     return startResult.started;
   };
   const stepStarterMeleeWeaponFixedUpdate = (fixedDt: number): void => {
+    const hadActiveSwing = starterMeleeWeaponState.activeSwing !== null;
     const standalonePlayerState = getStandalonePlayerState();
     const aliveStandalonePlayerState =
       standalonePlayerState === null ||
@@ -3518,6 +3557,9 @@ const bootstrap = async (): Promise<void> => {
       fixedDtSeconds: fixedDt
     });
     starterMeleeWeaponState = stepResult.state;
+    if (hadActiveSwing || starterMeleeWeaponState.activeSwing !== null) {
+      syncHotbarOverlayState();
+    }
 
     const defeatedHostileSlimeEntityIds: EntityId[] = [];
     const defeatedHostileSlimeDropStates: DroppedItemState[] = [];

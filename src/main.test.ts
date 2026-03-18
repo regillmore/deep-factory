@@ -7572,6 +7572,100 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('shows selected starter-sword hotbar timing feedback through windup, active, recovery, and clear', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'sword', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        worldX: 24,
+        worldY: 0,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+
+    expect(getHotbarOverlaySlotButton(6).title).toContain('windup active');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('WIND');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(6).style.height)).toBeCloseTo(
+      ((STARTER_MELEE_WEAPON_SWING_WINDUP_SECONDS - 1 / 60) /
+        STARTER_MELEE_WEAPON_SWING_WINDUP_SECONDS) *
+        100,
+      1
+    );
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('1');
+
+    testRuntime.playerItemUseRequests = [];
+    runFixedUpdate(STARTER_MELEE_WEAPON_SWING_WINDUP_SECONDS - 1 / 60);
+
+    expect(getHotbarOverlaySlotButton(6).title).toContain('swing active');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('ACT');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.height).toBe('100.0%');
+
+    runFixedUpdate(STARTER_MELEE_WEAPON_SWING_ACTIVE_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(6).title).toContain('swing active');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('ACT');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(6).style.height)).toBeCloseTo(
+      50,
+      1
+    );
+
+    runFixedUpdate(STARTER_MELEE_WEAPON_SWING_ACTIVE_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(6).title).toContain('recovery active');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('REC');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.height).toBe('100.0%');
+
+    runFixedUpdate(STARTER_MELEE_WEAPON_SWING_RECOVERY_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(6).title).toContain('recovery active');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('REC');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(6).style.height)).toBeCloseTo(
+      50,
+      1
+    );
+
+    runFixedUpdate(STARTER_MELEE_WEAPON_SWING_RECOVERY_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(6).title).not.toContain('active');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.height).toBe('0.0%');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
+  });
+
   it('uses the starter sword through the shared hidden-panel item-use path and carries knockback into the next slime fixed step', async () => {
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,

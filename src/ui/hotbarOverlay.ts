@@ -11,6 +11,7 @@ import {
   getPlayerInventoryItemDefinition,
   type PlayerInventoryState
 } from '../world/playerInventory';
+import type { StarterMeleeWeaponSwingPhase } from '../world/starterMeleeWeapon';
 import type { StarterSpearThrustPhase } from '../world/starterSpear';
 import { installPointerClickFocusRelease } from './buttonFocus';
 
@@ -26,6 +27,12 @@ interface HotbarOverlayOptions {
 interface HotbarOverlayUpdateOptions {
   healingPotionCooldownFillNormalized?: number | null;
   heartCrystalBlockedReason?: 'dead' | 'max-health-cap' | null;
+  starterMeleeWeaponSwingFeedback?:
+    | {
+        phase: StarterMeleeWeaponSwingPhase;
+        timingFillNormalized: number;
+      }
+    | null;
   starterSpearThrustFeedback?:
     | {
         phase: StarterSpearThrustPhase;
@@ -79,28 +86,34 @@ const HEART_CRYSTAL_BLOCKED_FILL_BACKGROUND: Record<'dead' | 'max-health-cap', s
   dead: HEART_CRYSTAL_DEAD_FILL_BACKGROUND,
   'max-health-cap': HEART_CRYSTAL_MAX_HEALTH_CAP_FILL_BACKGROUND
 };
-const STARTER_SPEAR_THRUST_TITLE_TEXT: Record<StarterSpearThrustPhase, string> = {
-  windup: 'windup active',
-  active: 'thrust active',
-  recovery: 'recovery active'
-};
-const STARTER_SPEAR_THRUST_AMOUNT_TEXT: Record<StarterSpearThrustPhase, string> = {
+type HotbarTimedItemPhase = StarterMeleeWeaponSwingPhase | StarterSpearThrustPhase;
+const HOTBAR_TIMED_ITEM_AMOUNT_TEXT: Record<HotbarTimedItemPhase, string> = {
   windup: 'WIND',
   active: 'ACT',
   recovery: 'REC'
 };
-const STARTER_SPEAR_THRUST_AMOUNT_COLOR: Record<StarterSpearThrustPhase, string> = {
+const HOTBAR_TIMED_ITEM_AMOUNT_COLOR: Record<HotbarTimedItemPhase, string> = {
   windup: '#ffe5ad',
   active: '#ffd4c7',
   recovery: '#cdeaff'
 };
-const STARTER_SPEAR_THRUST_FILL_BACKGROUND: Record<StarterSpearThrustPhase, string> = {
+const HOTBAR_TIMED_ITEM_FILL_BACKGROUND: Record<HotbarTimedItemPhase, string> = {
   windup:
     'linear-gradient(180deg, rgba(255, 236, 176, 0.04) 0%, rgba(255, 204, 118, 0.24) 35%, rgba(255, 164, 82, 0.62) 100%)',
   active:
     'linear-gradient(180deg, rgba(255, 204, 190, 0.04) 0%, rgba(255, 144, 124, 0.24) 35%, rgba(224, 82, 62, 0.64) 100%)',
   recovery:
     'linear-gradient(180deg, rgba(214, 236, 255, 0.04) 0%, rgba(148, 198, 255, 0.2) 35%, rgba(86, 148, 224, 0.58) 100%)'
+};
+const STARTER_MELEE_WEAPON_SWING_TITLE_TEXT: Record<StarterMeleeWeaponSwingPhase, string> = {
+  windup: 'windup active',
+  active: 'swing active',
+  recovery: 'recovery active'
+};
+const STARTER_SPEAR_THRUST_TITLE_TEXT: Record<StarterSpearThrustPhase, string> = {
+  windup: 'windup active',
+  active: 'thrust active',
+  recovery: 'recovery active'
 };
 
 const applySlotFillStyles = (
@@ -314,6 +327,7 @@ export class HotbarOverlay {
         ? clampUnitInterval(options.healingPotionCooldownFillNormalized)
         : null;
     const heartCrystalBlockedReason = options.heartCrystalBlockedReason ?? null;
+    const starterMeleeWeaponSwingFeedback = options.starterMeleeWeaponSwingFeedback ?? null;
     const starterSpearThrustFeedback = options.starterSpearThrustFeedback ?? null;
     for (let slotIndex = 0; slotIndex < this.slots.length; slotIndex += 1) {
       const slotElements = this.slots[slotIndex]!;
@@ -337,21 +351,31 @@ export class HotbarOverlay {
       const definition = getPlayerInventoryItemDefinition(stack.itemId);
       const blockedHeartCrystal =
         stack.itemId === 'heart-crystal' && heartCrystalBlockedReason !== null;
-      const selectedStarterSpearFeedback =
-        selected && stack.itemId === 'spear' && starterSpearThrustFeedback !== null
+      const selectedTimedItemFeedback =
+        selected && stack.itemId === 'sword' && starterMeleeWeaponSwingFeedback !== null
+          ? {
+              phase: starterMeleeWeaponSwingFeedback.phase,
+              timingFillNormalized: clampUnitInterval(
+                starterMeleeWeaponSwingFeedback.timingFillNormalized
+              ),
+              titleText:
+                STARTER_MELEE_WEAPON_SWING_TITLE_TEXT[starterMeleeWeaponSwingFeedback.phase]
+            }
+          : selected && stack.itemId === 'spear' && starterSpearThrustFeedback !== null
           ? {
               phase: starterSpearThrustFeedback.phase,
               timingFillNormalized: clampUnitInterval(
                 starterSpearThrustFeedback.timingFillNormalized
-              )
+              ),
+              titleText: STARTER_SPEAR_THRUST_TITLE_TEXT[starterSpearThrustFeedback.phase]
             }
           : null;
       const coolingDown =
         stack.itemId === 'healing-potion' && healingPotionCooldownFillNormalized !== null;
       slotElements.button.title = blockedHeartCrystal
         ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${HEART_CRYSTAL_BLOCKED_TITLE_TEXT[heartCrystalBlockedReason]})`
-        : selectedStarterSpearFeedback !== null
-          ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${STARTER_SPEAR_THRUST_TITLE_TEXT[selectedStarterSpearFeedback.phase]})`
+        : selectedTimedItemFeedback !== null
+          ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${selectedTimedItemFeedback.titleText})`
           : coolingDown
             ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (cooldown active)`
           : `Select ${definition.label} in hotbar slot ${slotIndex + 1}`;
@@ -359,29 +383,29 @@ export class HotbarOverlay {
       slotElements.itemLabel.style.color = '#f5f7fa';
       slotElements.amountLabel.textContent = blockedHeartCrystal
         ? HEART_CRYSTAL_BLOCKED_AMOUNT_TEXT[heartCrystalBlockedReason]
-        : selectedStarterSpearFeedback !== null
-          ? STARTER_SPEAR_THRUST_AMOUNT_TEXT[selectedStarterSpearFeedback.phase]
+        : selectedTimedItemFeedback !== null
+          ? HOTBAR_TIMED_ITEM_AMOUNT_TEXT[selectedTimedItemFeedback.phase]
           : stack.amount > 1
             ? String(stack.amount)
           : '';
       slotElements.amountLabel.style.color = blockedHeartCrystal
         ? HEART_CRYSTAL_BLOCKED_AMOUNT_COLOR[heartCrystalBlockedReason]
-        : selectedStarterSpearFeedback !== null
-          ? STARTER_SPEAR_THRUST_AMOUNT_COLOR[selectedStarterSpearFeedback.phase]
+        : selectedTimedItemFeedback !== null
+          ? HOTBAR_TIMED_ITEM_AMOUNT_COLOR[selectedTimedItemFeedback.phase]
         : '#ffe7a3';
       applySlotFillStyles(
         slotElements.cooldownFill,
         blockedHeartCrystal
           ? 1
-          : selectedStarterSpearFeedback !== null
-            ? selectedStarterSpearFeedback.timingFillNormalized
+          : selectedTimedItemFeedback !== null
+            ? selectedTimedItemFeedback.timingFillNormalized
             : stack.itemId === 'healing-potion'
               ? healingPotionCooldownFillNormalized
             : null,
         blockedHeartCrystal
           ? HEART_CRYSTAL_BLOCKED_FILL_BACKGROUND[heartCrystalBlockedReason]
-          : selectedStarterSpearFeedback !== null
-            ? STARTER_SPEAR_THRUST_FILL_BACKGROUND[selectedStarterSpearFeedback.phase]
+          : selectedTimedItemFeedback !== null
+            ? HOTBAR_TIMED_ITEM_FILL_BACKGROUND[selectedTimedItemFeedback.phase]
           : stack.itemId === 'healing-potion'
             ? HEALING_POTION_COOLDOWN_FILL_BACKGROUND
             : null
