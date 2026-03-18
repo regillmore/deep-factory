@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-17
 
+- Task: Add a starter-workbench support-collapse follow-up after starter-workbench pickup-refund.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts) so solid-support edits now also clear unsupported placed workbench tiles through the authoritative world tile-edit path, expanded [src/world/world.test.ts](../src/world/world.test.ts) with a deterministic support-loss regression, added a shared refund-path integration regression in [src/main.test.ts](../src/main.test.ts), removed completed task `615` from [docs/NEXT.md](docs/NEXT.md), added replacement task `616`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/world.test.ts src/main.test.ts -t "workbench|support"` (outside the sandbox after the expected Vitest `spawn EPERM` startup restriction in-sandbox).
+
 - Task: Add a starter-workbench pickup-refund follow-up after placeable-workbench crafting.
 - Changes: Updated [src/world/starterPickaxeMining.ts](../src/world/starterPickaxeMining.ts), [src/main.ts](../src/main.ts), [src/world/starterPickaxeMining.test.ts](../src/world/starterPickaxeMining.test.ts), and [src/main.test.ts](../src/main.test.ts) so the starter pickaxe now treats nearby placed workbench tiles as valid one-hit utility targets and the existing renderer tile-edit refund listener returns one `workbench` pickup through the shared merge-aware removed-tile cascade; removed completed task `613` from [docs/NEXT.md](docs/NEXT.md), added replacement task `615`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/starterPickaxeMining.test.ts src/main.test.ts` (outside the sandbox after the expected Vitest `spawn EPERM` startup restriction in-sandbox).

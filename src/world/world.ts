@@ -20,6 +20,10 @@ import type {
 } from './chunkSnapshot';
 import { hasStarterTorchFaceSupport, STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import {
+  hasStarterWorkbenchGroundSupport,
+  STARTER_WORKBENCH_TILE_ID
+} from './starterWorkbenchPlacement';
+import {
   doesTileBlockLight,
   getTileEmissiveLightLevel,
   getTileLiquidKind,
@@ -732,6 +736,38 @@ export class TileWorld {
     }
   }
 
+  private clearUnsupportedAdjacentStarterWorkbenches(
+    worldTileX: number,
+    worldTileY: number,
+    emitTileEditEvent: boolean
+  ): void {
+    const supportedWorkbenchWorldTileX = worldTileX;
+    const supportedWorkbenchWorldTileY = worldTileY - 1;
+    if (
+      this.getResidentOrEditedTileId(supportedWorkbenchWorldTileX, supportedWorkbenchWorldTileY) !==
+      STARTER_WORKBENCH_TILE_ID
+    ) {
+      return;
+    }
+    if (
+      hasStarterWorkbenchGroundSupport(
+        this,
+        supportedWorkbenchWorldTileX,
+        supportedWorkbenchWorldTileY
+      )
+    ) {
+      return;
+    }
+
+    this.commitTileState(
+      supportedWorkbenchWorldTileX,
+      supportedWorkbenchWorldTileY,
+      0,
+      0,
+      emitTileEditEvent
+    );
+  }
+
   private activateLiquidChunk(key: string): void {
     this.activeLiquidChunkKeys.add(key);
     this.liquidChunkQuietStepCounts.set(key, 0);
@@ -937,6 +973,7 @@ export class TileWorld {
         isTileSolid(result.previousTileId) !== isTileSolid(tileId)
       ) {
         this.clearUnsupportedAdjacentStarterTorches(worldTileX, worldTileY, true);
+        this.clearUnsupportedAdjacentStarterWorkbenches(worldTileX, worldTileY, true);
       }
       this.wakeNearbyResidentLiquidChunks(worldTileX, worldTileY);
     }

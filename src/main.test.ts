@@ -8310,6 +8310,55 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
+  it('spawns one workbench pickup entity when support removal clears a placed workbench tile', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const supportWorldTileX = 20;
+    const supportWorldTileY = -20;
+    const workbenchWorldTileX = 20;
+    const workbenchWorldTileY = -21;
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: supportWorldTileX,
+        worldTileY: supportWorldTileY,
+        kind: 'break'
+      }
+    ];
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(supportWorldTileX, supportWorldTileY),
+      1
+    );
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(workbenchWorldTileX, workbenchWorldTileY),
+      STARTER_WORKBENCH_TILE_ID
+    );
+    testRuntime.rendererNextSetTileEditEvents = [
+      createTileEditEvent(supportWorldTileX, supportWorldTileY, 1, 0),
+      createTileEditEvent(
+        workbenchWorldTileX,
+        workbenchWorldTileY,
+        STARTER_WORKBENCH_TILE_ID,
+        0
+      )
+    ];
+    testRuntime.rendererSetTileResult = true;
+
+    runFixedUpdate();
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 328, y: -328 },
+        itemId: 'workbench',
+        amount: 1
+      }
+    ]);
+  });
+
   it('cascades a removed starter torch refund across overlapping matching world pickups before spawning a new entity', async () => {
     const torchWorldTileX = 20;
     const torchWorldTileY = -20;
