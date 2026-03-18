@@ -42,6 +42,7 @@ import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
 import type { PlayerItemMiningPreviewState } from './ui/playerItemMiningPreviewOverlay';
 import type { PlayerItemPlacementPreviewState } from './ui/playerItemPlacementPreviewOverlay';
+import type { PlayerItemSpearPreviewState } from './ui/playerItemSpearPreviewOverlay';
 import { createDroppedItemState } from './world/droppedItem';
 import { createPlayerInventoryState } from './world/playerInventory';
 import { AUTHORED_ATLAS_HEIGHT, AUTHORED_ATLAS_WIDTH } from './world/authoredAtlasLayout';
@@ -69,6 +70,7 @@ import {
 import {
   DEFAULT_STARTER_SPEAR_DAMAGE,
   DEFAULT_STARTER_SPEAR_KNOCKBACK_SPEED,
+  DEFAULT_STARTER_SPEAR_REACH,
   STARTER_SPEAR_THRUST_WINDUP_SECONDS
 } from './world/starterSpear';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
@@ -251,6 +253,7 @@ const testRuntime = vi.hoisted(() => {
     pointerInspect: null as null | {
       pointerType: 'mouse' | 'touch';
       tile: { x: number; y: number };
+      world?: { x: number; y: number };
     },
     debugTileInspectPinRequests: [] as Array<{
       worldTileX: number;
@@ -329,6 +332,7 @@ const testRuntime = vi.hoisted(() => {
     hoveredTileCursorInstance: null as null | { visible: boolean },
     playerItemMiningPreviewInstance: null as null | { visible: boolean },
     playerItemPlacementPreviewInstance: null as null | { visible: boolean },
+    playerItemSpearPreviewInstance: null as null | { visible: boolean },
     armedDebugToolPreviewInstance: null as null | { visible: boolean },
     debugEditStatusStripInstance: null as null | { visible: boolean },
     playerSpawnMarkerInstance: null as null | { visible: boolean },
@@ -510,6 +514,7 @@ const testRuntime = vi.hoisted(() => {
     latestDebugEditStatusStripState: null as DebugEditStatusStripState | null,
     latestPlayerItemMiningPreviewState: null as PlayerItemMiningPreviewState | null,
     latestPlayerItemPlacementPreviewState: null as PlayerItemPlacementPreviewState | null,
+    latestPlayerItemSpearPreviewState: null as PlayerItemSpearPreviewState | null,
     rendererWorldSnapshot: null as ReturnType<TileWorld['createSnapshot']> | null,
     rendererPlayerSpawnLiquidSafetyStatus: 'safe' as 'safe' | 'overlap',
     playerSpawnPoint: null as null | {
@@ -1537,6 +1542,24 @@ vi.mock('./ui/playerItemMiningPreviewOverlay', () => ({
   }
 }));
 
+vi.mock('./ui/playerItemSpearPreviewOverlay', () => ({
+  PlayerItemSpearPreviewOverlay: class {
+    visible = false;
+
+    constructor() {
+      testRuntime.playerItemSpearPreviewInstance = this;
+    }
+
+    setVisible(visible: boolean): void {
+      this.visible = visible;
+    }
+
+    update(_camera: unknown, state: PlayerItemSpearPreviewState | null): void {
+      testRuntime.latestPlayerItemSpearPreviewState = state;
+    }
+  }
+}));
+
 vi.mock('./ui/armedDebugToolPreviewOverlay', () => ({
   ArmedDebugToolPreviewOverlay: class {
     visible = false;
@@ -2165,6 +2188,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.hoveredTileCursorInstance = null;
     testRuntime.playerItemMiningPreviewInstance = null;
     testRuntime.playerItemPlacementPreviewInstance = null;
+    testRuntime.playerItemSpearPreviewInstance = null;
     testRuntime.armedDebugToolPreviewInstance = null;
     testRuntime.debugEditStatusStripInstance = null;
     testRuntime.playerSpawnMarkerInstance = null;
@@ -2250,6 +2274,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.latestDebugEditStatusStripState = null;
     testRuntime.latestPlayerItemMiningPreviewState = null;
     testRuntime.latestPlayerItemPlacementPreviewState = null;
+    testRuntime.latestPlayerItemSpearPreviewState = null;
     testRuntime.rendererWorldSnapshot = new TileWorld(0).createSnapshot();
     testRuntime.rendererPlayerSpawnLiquidSafetyStatus = 'safe';
     testRuntime.debugTileInspectPinRequests = [];
@@ -2406,6 +2431,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
     expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(false);
+    expect(testRuntime.playerItemSpearPreviewInstance?.visible).toBe(false);
     expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
     expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(false);
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
@@ -2418,6 +2444,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(true);
     expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(true);
+    expect(testRuntime.playerItemSpearPreviewInstance?.visible).toBe(true);
     expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(true);
     expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(true);
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
@@ -2448,6 +2475,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
     expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(true);
+    expect(testRuntime.playerItemSpearPreviewInstance?.visible).toBe(true);
     expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
     expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(false);
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
@@ -2477,6 +2505,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
     expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(true);
+    expect(testRuntime.playerItemSpearPreviewInstance?.visible).toBe(true);
     expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
     expect(testRuntime.debugEditStatusStripInstance?.visible).toBe(false);
     expect(testRuntime.playerSpawnMarkerInstance?.visible).toBe(false);
@@ -4579,7 +4608,7 @@ describe('main.ts shell state orchestration', () => {
         facing: 'right'
       });
 
-    runFixedUpdate();
+    runFixedUpdate(1 / 60);
     runRenderFrame(1000 / 60, 0.5);
 
     expect(testRuntime.latestRendererRenderFrameState?.bunnyCurrentPositions).toEqual([]);
@@ -7671,6 +7700,145 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
       itemId: 'sword',
       amount: 1
+    });
+  });
+
+  it('shows a starter-spear preview line at fixed reach and flags clamped aim when the hovered world point is farther away', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'sword', amount: 1 },
+              null,
+              null,
+              { itemId: 'spear', amount: 1 }
+            ],
+            selectedHotbarSlotIndex: 9
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 4, y: -3 },
+      world: { x: 80, y: -40 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemSpearPreviewState).toEqual({
+      startWorldX: playerFocusPoint.x,
+      startWorldY: playerFocusPoint.y,
+      endWorldX: playerFocusPoint.x + DEFAULT_STARTER_SPEAR_REACH * 0.8,
+      endWorldY: playerFocusPoint.y - DEFAULT_STARTER_SPEAR_REACH * 0.6,
+      activeThrust: false,
+      clampedByReach: true
+    });
+  });
+
+  it('keeps the starter-spear preview aligned to the active thrust after the use request starts', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'sword', amount: 1 },
+              null,
+              null,
+              { itemId: 'spear', amount: 1 }
+            ],
+            selectedHotbarSlotIndex: 9
+          })
+        })
+      )
+    );
+
+    const slimeSpawnPoint = createTestPlayerSpawnPoint({
+      x: 32,
+      y: 2,
+      width: DEFAULT_HOSTILE_SLIME_WIDTH,
+      height: DEFAULT_HOSTILE_SLIME_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_HOSTILE_SLIME_WIDTH &&
+        search?.height === DEFAULT_HOSTILE_SLIME_HEIGHT
+      ) {
+        return slimeSpawnPoint;
+      }
+
+      return testRuntime.playerSpawnPoint;
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 4,
+        worldTileY: -3,
+        worldX: 80,
+        worldY: -40,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(STARTER_SPEAR_THRUST_WINDUP_SECONDS);
+
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: -2, y: 1 },
+      world: { x: -40, y: 14 }
+    };
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemSpearPreviewState).toEqual({
+      startWorldX: playerFocusPoint.x,
+      startWorldY: playerFocusPoint.y,
+      endWorldX: playerFocusPoint.x + DEFAULT_STARTER_SPEAR_REACH * 0.8,
+      endWorldY: playerFocusPoint.y - DEFAULT_STARTER_SPEAR_REACH * 0.6,
+      activeThrust: true,
+      clampedByReach: false
     });
   });
 

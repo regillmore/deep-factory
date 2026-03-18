@@ -6,9 +6,11 @@ import {
   createStarterSpearState,
   DEFAULT_STARTER_SPEAR_DAMAGE,
   DEFAULT_STARTER_SPEAR_KNOCKBACK_SPEED,
+  DEFAULT_STARTER_SPEAR_REACH,
   STARTER_SPEAR_THRUST_ACTIVE_SECONDS,
   STARTER_SPEAR_THRUST_RECOVERY_SECONDS,
   STARTER_SPEAR_THRUST_WINDUP_SECONDS,
+  resolveStarterSpearThrustPreview,
   stepStarterSpearState,
   tryStartStarterSpearThrust
 } from './starterSpear';
@@ -115,6 +117,102 @@ describe('starterSpear', () => {
       hitEntityIds: []
     });
     expect(afterRecovery.state.activeThrust).toBeNull();
+  });
+
+  it('resolves a preview line from the player focus to the full spear reach even when the requested point is closer', () => {
+    const playerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+
+    expect(
+      resolveStarterSpearThrustPreview(playerState, {
+        x: 32,
+        y: -4
+      })
+    ).toEqual({
+      originWorldPoint: {
+        x: 8,
+        y: 14
+      },
+      targetWorldPoint: {
+        x: 32,
+        y: -4
+      },
+      direction: {
+        x: 0.8,
+        y: -0.6
+      },
+      endWorldPoint: {
+        x: 8 + DEFAULT_STARTER_SPEAR_REACH * 0.8,
+        y: 14 - DEFAULT_STARTER_SPEAR_REACH * 0.6
+      },
+      clampedByReach: false
+    });
+  });
+
+  it('marks previews as clamped when the requested aim point extends beyond the spear reach', () => {
+    const playerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+
+    expect(
+      resolveStarterSpearThrustPreview(playerState, {
+        x: 80,
+        y: -40
+      })
+    ).toEqual({
+      originWorldPoint: {
+        x: 8,
+        y: 14
+      },
+      targetWorldPoint: {
+        x: 80,
+        y: -40
+      },
+      direction: {
+        x: 0.8,
+        y: -0.6
+      },
+      endWorldPoint: {
+        x: 8 + DEFAULT_STARTER_SPEAR_REACH * 0.8,
+        y: 14 - DEFAULT_STARTER_SPEAR_REACH * 0.6
+      },
+      clampedByReach: true
+    });
+  });
+
+  it('falls back to the current facing when the preview aim target matches the player focus point', () => {
+    const playerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'left'
+    });
+
+    expect(
+      resolveStarterSpearThrustPreview(playerState, {
+        x: 8,
+        y: 14
+      })
+    ).toEqual({
+      originWorldPoint: {
+        x: 8,
+        y: 14
+      },
+      targetWorldPoint: {
+        x: 8,
+        y: 14
+      },
+      direction: {
+        x: -1,
+        y: 0
+      },
+      endWorldPoint: {
+        x: 8 - DEFAULT_STARTER_SPEAR_REACH,
+        y: 14
+      },
+      clampedByReach: false
+    });
   });
 
   it('hits only slimes intersecting the aimed thrust path and applies directional knockback', () => {

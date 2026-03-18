@@ -24,6 +24,11 @@ export interface StarterSpearDirection {
   y: number;
 }
 
+export interface StarterSpearWorldPoint {
+  x: number;
+  y: number;
+}
+
 export interface StarterSpearThrustState {
   phase: StarterSpearThrustPhase;
   secondsRemaining: number;
@@ -65,9 +70,12 @@ export interface StepStarterSpearStateResult {
   hitEvents: StarterSpearHitEvent[];
 }
 
-interface WorldPoint {
-  x: number;
-  y: number;
+export interface StarterSpearThrustPreview {
+  originWorldPoint: StarterSpearWorldPoint;
+  targetWorldPoint: StarterSpearWorldPoint;
+  direction: StarterSpearDirection;
+  endWorldPoint: StarterSpearWorldPoint;
+  clampedByReach: boolean;
 }
 
 const DIRECTION_EPSILON = 1e-6;
@@ -101,6 +109,11 @@ const expectPositiveFiniteNumber = (value: number, label: string): number => {
 const cloneStarterSpearDirection = (direction: StarterSpearDirection): StarterSpearDirection => ({
   x: direction.x,
   y: direction.y
+});
+
+const cloneStarterSpearWorldPoint = (point: StarterSpearWorldPoint): StarterSpearWorldPoint => ({
+  x: point.x,
+  y: point.y
 });
 
 const normalizeStarterSpearDirection = (
@@ -141,6 +154,71 @@ const createStarterSpearThrustState = (
   hitEntityIds: []
 });
 
+const createStarterSpearFacingFallbackDirection = (
+  playerState: PlayerState
+): StarterSpearDirection => ({
+  x: playerState.facing === 'left' ? -1 : 1,
+  y: 0
+});
+
+const resolveStarterSpearPreviewInputs = (
+  playerState: PlayerState,
+  targetWorldPoint: StarterSpearWorldPoint
+): {
+  originWorldPoint: StarterSpearWorldPoint;
+  targetWorldPoint: StarterSpearWorldPoint;
+  direction: StarterSpearDirection;
+  requestedDistance: number;
+} => {
+  const normalizedTargetWorldPoint = {
+    x: expectFiniteNumber(targetWorldPoint.x, 'targetWorldPoint.x'),
+    y: expectFiniteNumber(targetWorldPoint.y, 'targetWorldPoint.y')
+  };
+  const originWorldPoint = getPlayerCameraFocusPoint(playerState);
+  const deltaX = normalizedTargetWorldPoint.x - originWorldPoint.x;
+  const deltaY = normalizedTargetWorldPoint.y - originWorldPoint.y;
+  const requestedDistance = Math.hypot(deltaX, deltaY);
+
+  if (requestedDistance <= DIRECTION_EPSILON) {
+    return {
+      originWorldPoint: cloneStarterSpearWorldPoint(originWorldPoint),
+      targetWorldPoint: normalizedTargetWorldPoint,
+      direction: createStarterSpearFacingFallbackDirection(playerState),
+      requestedDistance: 0
+    };
+  }
+
+  return {
+    originWorldPoint: cloneStarterSpearWorldPoint(originWorldPoint),
+    targetWorldPoint: normalizedTargetWorldPoint,
+    direction: {
+      x: deltaX / requestedDistance,
+      y: deltaY / requestedDistance
+    },
+    requestedDistance
+  };
+};
+
+export const resolveStarterSpearThrustPreview = (
+  playerState: PlayerState,
+  targetWorldPoint: StarterSpearWorldPoint,
+  reach: number = DEFAULT_STARTER_SPEAR_REACH
+): StarterSpearThrustPreview => {
+  const normalizedReach = expectPositiveFiniteNumber(reach, 'reach');
+  const previewInputs = resolveStarterSpearPreviewInputs(playerState, targetWorldPoint);
+
+  return {
+    originWorldPoint: previewInputs.originWorldPoint,
+    targetWorldPoint: previewInputs.targetWorldPoint,
+    direction: previewInputs.direction,
+    endWorldPoint: {
+      x: previewInputs.originWorldPoint.x + previewInputs.direction.x * normalizedReach,
+      y: previewInputs.originWorldPoint.y + previewInputs.direction.y * normalizedReach
+    },
+    clampedByReach: previewInputs.requestedDistance > normalizedReach + DIRECTION_EPSILON
+  };
+};
+
 const expandWorldAabb = (aabb: WorldAabb, padding: number): WorldAabb => ({
   minX: aabb.minX - padding,
   minY: aabb.minY - padding,
@@ -149,8 +227,8 @@ const expandWorldAabb = (aabb: WorldAabb, padding: number): WorldAabb => ({
 });
 
 const doesLineSegmentIntersectAabb = (
-  start: WorldPoint,
-  end: WorldPoint,
+  start: StarterSpearWorldPoint,
+  end: StarterSpearWorldPoint,
   aabb: WorldAabb
 ): boolean => {
   const deltaX = end.x - start.x;

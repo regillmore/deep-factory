@@ -137,6 +137,10 @@ import {
   PlayerItemPlacementPreviewOverlay,
   type PlayerItemPlacementPreviewState
 } from './ui/playerItemPlacementPreviewOverlay';
+import {
+  PlayerItemSpearPreviewOverlay,
+  type PlayerItemSpearPreviewState
+} from './ui/playerItemSpearPreviewOverlay';
 import { PlayerSpawnMarkerOverlay } from './ui/playerSpawnMarkerOverlay';
 import type { DebugEditHoveredTileState, DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
 import {
@@ -307,6 +311,8 @@ import {
 } from './world/starterMeleeWeapon';
 import {
   createStarterSpearState,
+  DEFAULT_STARTER_SPEAR_REACH,
+  resolveStarterSpearThrustPreview,
   STARTER_SPEAR_ITEM_ID,
   stepStarterSpearState,
   tryStartStarterSpearThrust
@@ -1125,6 +1131,7 @@ const bootstrap = async (): Promise<void> => {
   const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
   const playerItemMiningPreview = new PlayerItemMiningPreviewOverlay(canvas);
   const playerItemPlacementPreview = new PlayerItemPlacementPreviewOverlay(canvas);
+  const playerItemSpearPreview = new PlayerItemSpearPreviewOverlay(canvas);
   const playerSpawnMarker = new PlayerSpawnMarkerOverlay(canvas);
   const armedDebugToolPreview = new ArmedDebugToolPreviewOverlay(canvas);
   const debugEditStatusStrip = new DebugEditStatusStrip(canvas);
@@ -1267,10 +1274,11 @@ const bootstrap = async (): Promise<void> => {
     armedDebugToolPreview.setVisible(visible);
     debugEditStatusStrip.setVisible(visible);
   };
-  const syncPlayerItemPlacementPreviewVisibility = (): void => {
+  const syncPlayModeItemPreviewVisibility = (): void => {
     const visible = currentScreen === 'in-world' && !debugEditControlsVisible;
     playerItemMiningPreview.setVisible(visible);
     playerItemPlacementPreview.setVisible(visible);
+    playerItemSpearPreview.setVisible(visible);
   };
   const syncCanvasInteractionMode = (): void => {
     input.setCanvasInteractionMode(
@@ -1281,7 +1289,7 @@ const bootstrap = async (): Promise<void> => {
     debugEditControls?.setVisible(currentScreen === 'in-world' && debugEditControlsVisible);
     syncCraftingPanelVisibility();
     syncCanvasInteractionMode();
-    syncPlayerItemPlacementPreviewVisibility();
+    syncPlayModeItemPreviewVisibility();
   };
   const syncPlayerSpawnMarkerVisibility = (): void => {
     playerSpawnMarker.setVisible(currentScreen === 'in-world' && playerSpawnMarkerVisible);
@@ -3373,27 +3381,18 @@ const bootstrap = async (): Promise<void> => {
         ? request.worldY
         : (request.worldTileY + 0.5) * TILE_SIZE
   });
-  const resolveStarterSpearThrustDirection = (
-    playerState: PlayerState,
-    request: PlayerItemUseRequest
-  ): { x: number; y: number } => {
-    const targetWorldPoint = resolvePlayerItemUseTargetWorldPoint(request);
-    const playerFocusPoint = getPlayerCameraFocusPoint(playerState);
-    const deltaX = targetWorldPoint.x - playerFocusPoint.x;
-    const deltaY = targetWorldPoint.y - playerFocusPoint.y;
-    const magnitude = Math.hypot(deltaX, deltaY);
-    if (magnitude <= 1e-6) {
-      return {
-        x: playerState.facing === 'left' ? -1 : 1,
-        y: 0
-      };
-    }
-
-    return {
-      x: deltaX / magnitude,
-      y: deltaY / magnitude
-    };
-  };
+  const resolvePointerInspectWorldPoint = (
+    pointerInspect: PointerInspectSnapshot
+  ): { x: number; y: number } => ({
+    x:
+      typeof pointerInspect.world?.x === 'number' && Number.isFinite(pointerInspect.world.x)
+        ? pointerInspect.world.x
+        : (pointerInspect.tile.x + 0.5) * TILE_SIZE,
+    y:
+      typeof pointerInspect.world?.y === 'number' && Number.isFinite(pointerInspect.world.y)
+        ? pointerInspect.world.y
+        : (pointerInspect.tile.y + 0.5) * TILE_SIZE
+  });
   const tryStartSelectedStarterMeleeWeaponSwing = (
     request: PlayerItemUseRequest
   ): boolean => {
@@ -3425,9 +3424,13 @@ const bootstrap = async (): Promise<void> => {
       return false;
     }
 
+    const preview = resolveStarterSpearThrustPreview(
+      standalonePlayerState,
+      resolvePlayerItemUseTargetWorldPoint(request)
+    );
     const startResult = tryStartStarterSpearThrust(
       starterSpearState,
-      resolveStarterSpearThrustDirection(standalonePlayerState, request)
+      preview.direction
     );
     starterSpearState = startResult.state;
     return startResult.started;
@@ -3758,6 +3761,53 @@ const bootstrap = async (): Promise<void> => {
       placementTileY,
       ...placement,
       canPlace: placement.canPlace && placementRange.withinRange
+    };
+  };
+  const getSelectedStandalonePlayerItemSpearPreview = (
+    pointerInspect: PointerInspectSnapshot | null
+  ): PlayerItemSpearPreviewState | null => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return null;
+    }
+
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== STARTER_SPEAR_ITEM_ID) {
+      return null;
+    }
+
+    const activeThrust = starterSpearState.activeThrust;
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    if (activeThrust !== null) {
+      return {
+        startWorldX: playerFocusPoint.x,
+        startWorldY: playerFocusPoint.y,
+        endWorldX: playerFocusPoint.x + activeThrust.direction.x * DEFAULT_STARTER_SPEAR_REACH,
+        endWorldY: playerFocusPoint.y + activeThrust.direction.y * DEFAULT_STARTER_SPEAR_REACH,
+        activeThrust: true,
+        clampedByReach: false
+      };
+    }
+
+    if (pointerInspect === null) {
+      return null;
+    }
+
+    const preview = resolveStarterSpearThrustPreview(
+      standalonePlayerState,
+      resolvePointerInspectWorldPoint(pointerInspect)
+    );
+    return {
+      startWorldX: preview.originWorldPoint.x,
+      startWorldY: preview.originWorldPoint.y,
+      endWorldX: preview.endWorldPoint.x,
+      endWorldY: preview.endWorldPoint.y,
+      activeThrust: false,
+      clampedByReach: preview.clampedByReach
     };
   };
   const getSelectedStandalonePlayerItemMiningPreviewAtTile = (
@@ -5392,6 +5442,9 @@ const bootstrap = async (): Promise<void> => {
       !debugEditControlsVisible && pointerInspect
         ? getSelectedStandalonePlayerItemPlacementPreviewAtTile(pointerInspect.tile.x, pointerInspect.tile.y)
         : null;
+    const selectedPlayerItemSpearPreview = !debugEditControlsVisible
+      ? getSelectedStandalonePlayerItemSpearPreview(pointerInspect)
+      : null;
     const selectedPlayerItemMiningPreview = !debugEditControlsVisible
       ? getSelectedStandalonePlayerItemMiningPreview(pointerInspect)
       : null;
@@ -5618,6 +5671,7 @@ const bootstrap = async (): Promise<void> => {
     });
     playerItemMiningPreview.update(camera, selectedPlayerItemMiningPreview);
     playerItemPlacementPreview.update(camera, selectedPlayerItemPlacementPreview);
+    playerItemSpearPreview.update(camera, selectedPlayerItemSpearPreview);
     const worldSessionTelemetryStateSnapshot = readWorldSessionTelemetryState();
     playerSpawnMarker.update(camera, resolvedPlayerSpawn);
     armedDebugToolPreview.update(camera, pointerInspect, armedDebugToolPreviewState);
