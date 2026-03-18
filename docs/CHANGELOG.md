@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-17
 
+- Task: Add a starter-spear hotbar-feedback follow-up after starter spear combat-preview.
+- Changes: Updated [src/ui/hotbarOverlay.ts](../src/ui/hotbarOverlay.ts), [src/main.ts](../src/main.ts), [src/ui/hotbarOverlay.test.ts](../src/ui/hotbarOverlay.test.ts), and [src/main.test.ts](../src/main.test.ts) so the selected spear slot now shows phase-tagged `WIND`/`ACT`/`REC` timing fills through windup, active, and recovery while the shared hotbar overlay refreshes from the live spear state; removed completed task `618` from [docs/NEXT.md](docs/NEXT.md), added replacement task `619`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/ui/hotbarOverlay.test.ts src/main.test.ts -t "spear hotbar|selected starter-spear hotbar timing|selected starter-spear phase timing"` (outside the sandbox for the Vitest run).
+
 - Task: Add a starter spear combat-preview follow-up after starter spear combat.
 - Changes: Added [src/ui/playerItemSpearPreviewOverlay.ts](../src/ui/playerItemSpearPreviewOverlay.ts) plus [src/ui/playerItemSpearPreviewOverlay.test.ts](../src/ui/playerItemSpearPreviewOverlay.test.ts), expanded [src/world/starterSpear.ts](../src/world/starterSpear.ts) plus [src/world/starterSpear.test.ts](../src/world/starterSpear.test.ts) with shared reach-preview helpers, and updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so hidden-panel spear selection now shows the fixed-reach thrust line and endpoint marker from the current aim or active thrust instead of only starting combat on use; removed completed task `617` from [docs/NEXT.md](docs/NEXT.md), added replacement task `618`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/starterSpear.test.ts src/ui/playerItemSpearPreviewOverlay.test.ts src/main.test.ts -t "spear"` (outside the sandbox for the Vitest run).

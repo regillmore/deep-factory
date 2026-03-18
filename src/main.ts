@@ -313,6 +313,9 @@ import {
   createStarterSpearState,
   DEFAULT_STARTER_SPEAR_REACH,
   resolveStarterSpearThrustPreview,
+  STARTER_SPEAR_THRUST_ACTIVE_SECONDS,
+  STARTER_SPEAR_THRUST_RECOVERY_SECONDS,
+  STARTER_SPEAR_THRUST_WINDUP_SECONDS,
   STARTER_SPEAR_ITEM_ID,
   stepStarterSpearState,
   tryStartStarterSpearThrust
@@ -1684,11 +1687,43 @@ const bootstrap = async (): Promise<void> => {
     }
     return null;
   };
+  const resolveHotbarOverlayStarterSpearThrustFeedback = ():
+    | {
+        phase: 'windup' | 'active' | 'recovery';
+        timingFillNormalized: number;
+      }
+    | null => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== STARTER_SPEAR_ITEM_ID) {
+      return null;
+    }
+
+    const activeThrust = starterSpearState.activeThrust;
+    if (activeThrust === null) {
+      return null;
+    }
+
+    const phaseDurationSeconds =
+      activeThrust.phase === 'windup'
+        ? STARTER_SPEAR_THRUST_WINDUP_SECONDS
+        : activeThrust.phase === 'active'
+          ? STARTER_SPEAR_THRUST_ACTIVE_SECONDS
+          : STARTER_SPEAR_THRUST_RECOVERY_SECONDS;
+
+    return {
+      phase: activeThrust.phase,
+      timingFillNormalized: Math.max(
+        0,
+        Math.min(1, activeThrust.secondsRemaining / phaseDurationSeconds)
+      )
+    };
+  };
   const syncHotbarOverlayState = (): void => {
     hotbarOverlay.update(standalonePlayerInventoryState, {
       healingPotionCooldownFillNormalized:
         resolveHotbarOverlayHealingPotionCooldownFillNormalized(),
-      heartCrystalBlockedReason: resolveHotbarOverlayHeartCrystalBlockedReason()
+      heartCrystalBlockedReason: resolveHotbarOverlayHeartCrystalBlockedReason(),
+      starterSpearThrustFeedback: resolveHotbarOverlayStarterSpearThrustFeedback()
     });
   };
   const resolveCraftingPanelRecipeDisabledReason = (
@@ -3433,6 +3468,9 @@ const bootstrap = async (): Promise<void> => {
       preview.direction
     );
     starterSpearState = startResult.state;
+    if (startResult.started) {
+      syncHotbarOverlayState();
+    }
     return startResult.started;
   };
   const tryStartSelectedStarterPickaxeSwingAtTile = (
@@ -3508,6 +3546,7 @@ const bootstrap = async (): Promise<void> => {
     }
   };
   const stepStarterSpearFixedUpdate = (fixedDt: number): void => {
+    const hadActiveThrust = starterSpearState.activeThrust !== null;
     const standalonePlayerState = getStandalonePlayerState();
     const aliveStandalonePlayerState =
       standalonePlayerState === null ||
@@ -3525,6 +3564,9 @@ const bootstrap = async (): Promise<void> => {
       fixedDtSeconds: fixedDt
     });
     starterSpearState = stepResult.state;
+    if (hadActiveThrust || starterSpearState.activeThrust !== null) {
+      syncHotbarOverlayState();
+    }
 
     const defeatedHostileSlimeEntityIds: EntityId[] = [];
     const defeatedHostileSlimeDropStates: DroppedItemState[] = [];

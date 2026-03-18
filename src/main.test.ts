@@ -71,6 +71,8 @@ import {
   DEFAULT_STARTER_SPEAR_DAMAGE,
   DEFAULT_STARTER_SPEAR_KNOCKBACK_SPEED,
   DEFAULT_STARTER_SPEAR_REACH,
+  STARTER_SPEAR_THRUST_ACTIVE_SECONDS,
+  STARTER_SPEAR_THRUST_RECOVERY_SECONDS,
   STARTER_SPEAR_THRUST_WINDUP_SECONDS
 } from './world/starterSpear';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
@@ -7840,6 +7842,92 @@ describe('main.ts shell state orchestration', () => {
       activeThrust: true,
       clampedByReach: false
     });
+  });
+
+  it('shows selected starter-spear hotbar timing feedback through windup, active, recovery, and clear', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'sword', amount: 1 },
+              null,
+              null,
+              { itemId: 'spear', amount: 1 }
+            ],
+            selectedHotbarSlotIndex: 9
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 2,
+        worldTileY: -1,
+        worldX: 32,
+        worldY: -4,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+
+    expect(getHotbarOverlaySlotButton(9).title).toContain('windup active');
+    expect(getHotbarOverlaySlotAmountLabel(9).textContent).toBe('WIND');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(9).style.height)).toBeCloseTo(
+      ((STARTER_SPEAR_THRUST_WINDUP_SECONDS - 1 / 60) / STARTER_SPEAR_THRUST_WINDUP_SECONDS) * 100,
+      1
+    );
+    expect(getHotbarOverlaySlotCooldownFill(9).style.opacity).toBe('1');
+
+    testRuntime.playerItemUseRequests = [];
+    runFixedUpdate(STARTER_SPEAR_THRUST_WINDUP_SECONDS - 1 / 60);
+
+    expect(getHotbarOverlaySlotButton(9).title).toContain('thrust active');
+    expect(getHotbarOverlaySlotAmountLabel(9).textContent).toBe('ACT');
+    expect(getHotbarOverlaySlotCooldownFill(9).style.height).toBe('100.0%');
+
+    runFixedUpdate(STARTER_SPEAR_THRUST_ACTIVE_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(9).title).toContain('thrust active');
+    expect(getHotbarOverlaySlotAmountLabel(9).textContent).toBe('ACT');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(9).style.height)).toBeCloseTo(50, 1);
+
+    runFixedUpdate(STARTER_SPEAR_THRUST_ACTIVE_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(9).title).toContain('recovery active');
+    expect(getHotbarOverlaySlotAmountLabel(9).textContent).toBe('REC');
+    expect(getHotbarOverlaySlotCooldownFill(9).style.height).toBe('100.0%');
+
+    runFixedUpdate(STARTER_SPEAR_THRUST_RECOVERY_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(9).title).toContain('recovery active');
+    expect(getHotbarOverlaySlotAmountLabel(9).textContent).toBe('REC');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(9).style.height)).toBeCloseTo(50, 1);
+
+    runFixedUpdate(STARTER_SPEAR_THRUST_RECOVERY_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(9).title).not.toContain('active');
+    expect(getHotbarOverlaySlotAmountLabel(9).textContent).toBe('');
+    expect(getHotbarOverlaySlotCooldownFill(9).style.height).toBe('0.0%');
+    expect(getHotbarOverlaySlotCooldownFill(9).style.opacity).toBe('0');
   });
 
   it('uses the starter spear through the shared hidden-panel item-use path and carries aimed knockback into the next slime fixed step', async () => {
