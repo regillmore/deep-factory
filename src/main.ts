@@ -130,6 +130,10 @@ import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay'
 import { CraftingPanel, type CraftingPanelRecipeViewModel } from './ui/craftingPanel';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import {
+  PlayerItemBunnyReleasePreviewOverlay,
+  type PlayerItemBunnyReleasePreviewState
+} from './ui/playerItemBunnyReleasePreviewOverlay';
+import {
   PlayerItemMiningPreviewOverlay,
   type PlayerItemMiningPreviewState
 } from './ui/playerItemMiningPreviewOverlay';
@@ -1151,6 +1155,7 @@ const bootstrap = async (): Promise<void> => {
   const debug = new DebugOverlay();
   debug.setVisible(false);
   const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
+  const playerItemBunnyReleasePreview = new PlayerItemBunnyReleasePreviewOverlay(canvas);
   const playerItemMiningPreview = new PlayerItemMiningPreviewOverlay(canvas);
   const playerItemPlacementPreview = new PlayerItemPlacementPreviewOverlay(canvas);
   const playerItemSpearPreview = new PlayerItemSpearPreviewOverlay(canvas);
@@ -1298,6 +1303,7 @@ const bootstrap = async (): Promise<void> => {
   };
   const syncPlayModeItemPreviewVisibility = (): void => {
     const visible = currentScreen === 'in-world' && !debugEditControlsVisible;
+    playerItemBunnyReleasePreview.setVisible(visible);
     playerItemMiningPreview.setVisible(visible);
     playerItemPlacementPreview.setVisible(visible);
     playerItemSpearPreview.setVisible(visible);
@@ -4061,6 +4067,41 @@ const bootstrap = async (): Promise<void> => {
       canPlace: placement.canPlace && placementRange.withinRange
     };
   };
+  const getSelectedStandalonePlayerItemBunnyReleasePreviewAtTile = (
+    worldTileX: number,
+    worldTileY: number
+  ): PlayerItemBunnyReleasePreviewState | null => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return null;
+    }
+
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== BUNNY_ITEM_ID) {
+      return null;
+    }
+
+    const releaseEvaluation = evaluatePassiveBunnyRelease(
+      {
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY),
+        getLiquidLevel: (tileX, tileY) => renderer.getLiquidLevel(tileX, tileY)
+      },
+      standalonePlayerState,
+      worldTileX,
+      worldTileY
+    );
+
+    return {
+      tileX: worldTileX,
+      tileY: worldTileY,
+      canRelease: releaseEvaluation.canRelease,
+      placementRangeWithinReach: releaseEvaluation.placementRangeWithinReach
+    };
+  };
   const getSelectedStandalonePlayerItemSpearPreview = (
     pointerInspect: PointerInspectSnapshot | null
   ): PlayerItemSpearPreviewState | null => {
@@ -5736,6 +5777,13 @@ const bootstrap = async (): Promise<void> => {
     applyStandalonePlayerRenderFrameCameraFollow(alpha);
     const pointerInspect = input.getPointerInspect();
     const armedDebugToolPreviewState = input.getArmedDebugToolPreviewState();
+    const selectedPlayerItemBunnyReleasePreview =
+      !debugEditControlsVisible && pointerInspect
+        ? getSelectedStandalonePlayerItemBunnyReleasePreviewAtTile(
+            pointerInspect.tile.x,
+            pointerInspect.tile.y
+          )
+        : null;
     const selectedPlayerItemPlacementPreview =
       !debugEditControlsVisible && pointerInspect
         ? getSelectedStandalonePlayerItemPlacementPreviewAtTile(pointerInspect.tile.x, pointerInspect.tile.y)
@@ -5967,6 +6015,7 @@ const bootstrap = async (): Promise<void> => {
         }
       : null
     });
+    playerItemBunnyReleasePreview.update(camera, selectedPlayerItemBunnyReleasePreview);
     playerItemMiningPreview.update(camera, selectedPlayerItemMiningPreview);
     playerItemPlacementPreview.update(camera, selectedPlayerItemPlacementPreview);
     playerItemSpearPreview.update(camera, selectedPlayerItemSpearPreview);

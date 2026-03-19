@@ -40,6 +40,7 @@ import {
 } from './ui/appShell';
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
+import type { PlayerItemBunnyReleasePreviewState } from './ui/playerItemBunnyReleasePreviewOverlay';
 import type { PlayerItemMiningPreviewState } from './ui/playerItemMiningPreviewOverlay';
 import type { PlayerItemPlacementPreviewState } from './ui/playerItemPlacementPreviewOverlay';
 import type { PlayerItemSpearPreviewState } from './ui/playerItemSpearPreviewOverlay';
@@ -333,6 +334,7 @@ const testRuntime = vi.hoisted(() => {
       setShellActionKeybindings(keybindings: ShellActionKeybindingState): void;
     },
     hoveredTileCursorInstance: null as null | { visible: boolean },
+    playerItemBunnyReleasePreviewInstance: null as null | { visible: boolean },
     playerItemMiningPreviewInstance: null as null | { visible: boolean },
     playerItemPlacementPreviewInstance: null as null | { visible: boolean },
     playerItemSpearPreviewInstance: null as null | { visible: boolean },
@@ -516,6 +518,7 @@ const testRuntime = vi.hoisted(() => {
     },
     latestDebugOverlayInspectState: null as DebugOverlayInspectState | null,
     latestDebugEditStatusStripState: null as DebugEditStatusStripState | null,
+    latestPlayerItemBunnyReleasePreviewState: null as PlayerItemBunnyReleasePreviewState | null,
     latestPlayerItemMiningPreviewState: null as PlayerItemMiningPreviewState | null,
     latestPlayerItemPlacementPreviewState: null as PlayerItemPlacementPreviewState | null,
     latestPlayerItemSpearPreviewState: null as PlayerItemSpearPreviewState | null,
@@ -1511,6 +1514,24 @@ vi.mock('./ui/hoveredTileCursor', () => ({
   }
 }));
 
+vi.mock('./ui/playerItemBunnyReleasePreviewOverlay', () => ({
+  PlayerItemBunnyReleasePreviewOverlay: class {
+    visible = false;
+
+    constructor() {
+      testRuntime.playerItemBunnyReleasePreviewInstance = this;
+    }
+
+    setVisible(visible: boolean): void {
+      this.visible = visible;
+    }
+
+    update(_camera: unknown, state: PlayerItemBunnyReleasePreviewState | null): void {
+      testRuntime.latestPlayerItemBunnyReleasePreviewState = state;
+    }
+  }
+}));
+
 vi.mock('./ui/playerItemPlacementPreviewOverlay', () => ({
   PlayerItemPlacementPreviewOverlay: class {
     visible = false;
@@ -2191,6 +2212,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugEditControlsArmedToolKinds = null;
     testRuntime.debugEditControlsInstance = null;
     testRuntime.hoveredTileCursorInstance = null;
+    testRuntime.playerItemBunnyReleasePreviewInstance = null;
     testRuntime.playerItemMiningPreviewInstance = null;
     testRuntime.playerItemPlacementPreviewInstance = null;
     testRuntime.playerItemSpearPreviewInstance = null;
@@ -2277,6 +2299,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.latestRendererRenderFrameState = null;
     testRuntime.latestDebugOverlayInspectState = null;
     testRuntime.latestDebugEditStatusStripState = null;
+    testRuntime.latestPlayerItemBunnyReleasePreviewState = null;
     testRuntime.latestPlayerItemMiningPreviewState = null;
     testRuntime.latestPlayerItemPlacementPreviewState = null;
     testRuntime.latestPlayerItemSpearPreviewState = null;
@@ -2435,6 +2458,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.playerItemBunnyReleasePreviewInstance?.visible).toBe(false);
     expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(false);
     expect(testRuntime.playerItemSpearPreviewInstance?.visible).toBe(false);
     expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
@@ -2448,6 +2472,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugOverlayInstance?.visible).toBe(true);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(true);
+    expect(testRuntime.playerItemBunnyReleasePreviewInstance?.visible).toBe(true);
     expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(true);
     expect(testRuntime.playerItemSpearPreviewInstance?.visible).toBe(true);
     expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(true);
@@ -2479,6 +2504,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.playerItemBunnyReleasePreviewInstance?.visible).toBe(true);
     expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(true);
     expect(testRuntime.playerItemSpearPreviewInstance?.visible).toBe(true);
     expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
@@ -2509,6 +2535,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.playerItemBunnyReleasePreviewInstance?.visible).toBe(true);
     expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(true);
     expect(testRuntime.playerItemSpearPreviewInstance?.visible).toBe(true);
     expect(testRuntime.armedDebugToolPreviewInstance?.visible).toBe(false);
@@ -7118,6 +7145,105 @@ describe('main.ts shell state orchestration', () => {
       occupied: false,
       hasSolidFaceSupport: true,
       blockedByPlayer: false
+    });
+  });
+
+  it('shows a can-release bunny preview when nearby fallback ground makes the hovered target valid', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 40, y: 0 }
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'sword', amount: 1 },
+              { itemId: 'umbrella', amount: 1 },
+              { itemId: 'bunny', amount: 2 },
+              { itemId: 'spear', amount: 1 }
+            ],
+            selectedHotbarSlotIndex: 8
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(2, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(3, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(2, -1), 1);
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 2, y: 0 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemBunnyReleasePreviewState).toEqual({
+      tileX: 2,
+      tileY: 0,
+      canRelease: true,
+      placementRangeWithinReach: true
+    });
+  });
+
+  it('shows an out-of-range bunny preview when the hovered tile is beyond the shared release reach', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 }
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'sword', amount: 1 },
+              { itemId: 'umbrella', amount: 1 },
+              { itemId: 'bunny', amount: 1 },
+              { itemId: 'spear', amount: 1 }
+            ],
+            selectedHotbarSlotIndex: 8
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(8, 0), 1);
+    testRuntime.pointerInspect = {
+      pointerType: 'touch',
+      tile: { x: 8, y: -1 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemBunnyReleasePreviewState).toEqual({
+      tileX: 8,
+      tileY: -1,
+      canRelease: false,
+      placementRangeWithinReach: false
     });
   });
 
