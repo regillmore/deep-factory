@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-19
 
+- Task: Fix seeded fresh-world spawn height so the default world start stays above ground.
+- Changes: Updated [src/world/playerSpawn.ts](../src/world/playerSpawn.ts) plus [src/world/playerSpawn.test.ts](../src/world/playerSpawn.test.ts) so default spawn searches now anchor their vertical origin to the seeded procedural surface at the requested column, prefer surface-aligned nearby fallbacks when no explicit `originTileY` is supplied, and cover seeded worlds whose origin surface falls outside the legacy `y=0` search band; removed completed task `634` from [docs/NEXT.md](docs/NEXT.md), added replacement task `635`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json`, `cmd /c npx vitest run src/world/playerSpawn.test.ts`, and `cmd /c npx vitest run src/world/playerState.test.ts` (outside the sandbox for the Vitest runs).
+
 - Task: Add a deterministic cave-carve follow-up after the rolling layered surface generator.
 - Changes: Updated [src/world/proceduralTerrain.ts](../src/world/proceduralTerrain.ts) plus [src/world/proceduralTerrain.test.ts](../src/world/proceduralTerrain.test.ts) so untouched terrain now keeps the existing grass, dirt, and stone bands while carving deterministic seed-driven underground cave pockets below a small stone overburden; expanded [src/world/world.test.ts](../src/world/world.test.ts) with chunk-streaming cave-air regressions and [src/world/playerSpawn.test.ts](../src/world/playerSpawn.test.ts) with origin-area spawn viability coverage; removed completed task `628` from [docs/NEXT.md](docs/NEXT.md), added replacement task `633`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/proceduralTerrain.test.ts src/world/world.test.ts src/world/playerSpawn.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

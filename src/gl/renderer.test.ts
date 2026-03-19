@@ -239,7 +239,7 @@ const createPassiveBunnyEntityFrameState = (
 const renderUntilMeshBuildQueueDrains = (
   renderer: Renderer,
   camera: Camera2D,
-  maxFrames = 120,
+  maxFrames = 512,
   timeMs = 0
 ): void => {
   for (let frame = 0; frame < maxFrames; frame += 1) {

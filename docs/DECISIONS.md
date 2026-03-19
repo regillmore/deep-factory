@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-19: Default world-spawn height anchors to the seeded origin surface
+
+- Decision: When no explicit `originTileY` is supplied, default player-spawn search now anchors its vertical search around the procedural surface height at the requested origin column instead of assuming raw tile `y=0`, while still using the usual nearby grounded fallback search from there.
+- Reason: Seed-varying surface heights and underground cave roofs made the old `y=0` anchor pick underground supports or miss the surface entirely on some fresh worlds.
+- Consequence: Future world-spawn or checkpoint-default follow-ups should derive their baseline search height from world-owned spawn context such as the seeded surface or a saved checkpoint, rather than reintroducing a fixed `y=0` assumption.
+
 ### 2026-03-19: World generation randomness lives in snapshot-owned world seeds
 
 - Decision: `TileWorld` now owns an unsigned 32-bit `worldSeed`, untouched procedural terrain resolves through seeded shared terrain helpers, fresh-world entry points generate a new seed, and world snapshots preserve that seed while older snapshots without one default back to legacy seed `0`.

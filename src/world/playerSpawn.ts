@@ -5,6 +5,7 @@ import {
   type SolidTileCollision,
   type WorldAabb
 } from './collision';
+import { resolveProceduralTerrainColumn } from './proceduralTerrain';
 import { getTileLiquidKind, TILE_METADATA } from './tileMetadata';
 import type { TileMetadataRegistry } from './tileMetadata';
 export interface PlayerSpawnWorldView {
@@ -31,6 +32,10 @@ export interface PlayerSpawnPoint {
 }
 
 export type PlayerSpawnLiquidSafetyStatus = 'safe' | 'overlap';
+
+interface PlayerSpawnSeededWorldView extends PlayerSpawnWorldView {
+  getWorldSeed(): number;
+}
 
 const DEFAULT_ORIGIN_TILE_X = 0;
 const DEFAULT_ORIGIN_TILE_Y = 0;
@@ -69,6 +74,56 @@ const compareSignedOffsets = (a: number, b: number): number => {
   }
 
   return a - b;
+};
+
+const compareVerticalSurfaceOffsets = (a: number, b: number): number => {
+  const absDelta = Math.abs(a) - Math.abs(b);
+  if (absDelta !== 0) {
+    return absDelta;
+  }
+
+  return b - a;
+};
+
+const isPlayerSpawnSeededWorldView = (
+  world: PlayerSpawnWorldView
+): world is PlayerSpawnSeededWorldView =>
+  typeof (world as Partial<PlayerSpawnSeededWorldView>).getWorldSeed === 'function';
+
+const resolveDefaultOriginTileY = (world: PlayerSpawnWorldView, originTileX: number): number =>
+  isPlayerSpawnSeededWorldView(world)
+    ? resolveProceduralTerrainColumn(originTileX, world.getWorldSeed()).surfaceTileY
+    : DEFAULT_ORIGIN_TILE_Y;
+
+const compareSpawnCandidates = (
+  left: { xOffset: number; yOffset: number },
+  right: { xOffset: number; yOffset: number },
+  preferVerticalSurfaceAlignment: boolean
+): number => {
+  if (preferVerticalSurfaceAlignment) {
+    const verticalComparison = compareVerticalSurfaceOffsets(left.yOffset, right.yOffset);
+    if (verticalComparison !== 0) {
+      return verticalComparison;
+    }
+
+    const horizontalComparison = compareSignedOffsets(left.xOffset, right.xOffset);
+    if (horizontalComparison !== 0) {
+      return horizontalComparison;
+    }
+  }
+
+  const leftDistance = Math.abs(left.xOffset) + Math.abs(left.yOffset);
+  const rightDistance = Math.abs(right.xOffset) + Math.abs(right.yOffset);
+  if (leftDistance !== rightDistance) {
+    return leftDistance - rightDistance;
+  }
+
+  const xComparison = compareSignedOffsets(left.xOffset, right.xOffset);
+  if (xComparison !== 0) {
+    return xComparison;
+  }
+
+  return compareSignedOffsets(left.yOffset, right.yOffset);
 };
 
 const buildSpawnCandidateAabb = (
@@ -151,7 +206,11 @@ export const findPlayerSpawnPoint = (
   const width = expectPositiveFiniteNumber(options.width, 'width');
   const height = expectPositiveFiniteNumber(options.height, 'height');
   const originTileX = expectInteger(options.originTileX ?? DEFAULT_ORIGIN_TILE_X, 'originTileX');
-  const originTileY = expectInteger(options.originTileY ?? DEFAULT_ORIGIN_TILE_Y, 'originTileY');
+  const preferVerticalSurfaceAlignment = options.originTileY === undefined;
+  const originTileY = expectInteger(
+    options.originTileY ?? resolveDefaultOriginTileY(world, originTileX),
+    'originTileY'
+  );
   const maxHorizontalOffsetTiles = expectNonNegativeInteger(
     options.maxHorizontalOffsetTiles ?? DEFAULT_MAX_HORIZONTAL_OFFSET_TILES,
     'maxHorizontalOffsetTiles'
@@ -168,20 +227,9 @@ export const findPlayerSpawnPoint = (
     }
   }
 
-  candidates.sort((left, right) => {
-    const leftDistance = Math.abs(left.xOffset) + Math.abs(left.yOffset);
-    const rightDistance = Math.abs(right.xOffset) + Math.abs(right.yOffset);
-    if (leftDistance !== rightDistance) {
-      return leftDistance - rightDistance;
-    }
-
-    const xComparison = compareSignedOffsets(left.xOffset, right.xOffset);
-    if (xComparison !== 0) {
-      return xComparison;
-    }
-
-    return compareSignedOffsets(left.yOffset, right.yOffset);
-  });
+  candidates.sort((left, right) =>
+    compareSpawnCandidates(left, right, preferVerticalSurfaceAlignment)
+  );
 
   for (const candidate of candidates) {
     const anchorTileX = originTileX + candidate.xOffset;

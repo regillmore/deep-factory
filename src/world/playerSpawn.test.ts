@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { TILE_SIZE } from './constants';
+import { resolveProceduralTerrainColumn } from './proceduralTerrain';
 import { findPlayerSpawnPoint, resolvePlayerSpawnLiquidSafetyStatus } from './playerSpawn';
 import { TileWorld } from './world';
 
@@ -8,6 +9,20 @@ const PLAYER_WIDTH = 12;
 const PLAYER_HEIGHT = 28;
 const WATER_TILE_ID = 7;
 const LAVA_TILE_ID = 8;
+const SEEDED_SURFACE_OUTSIDE_LEGACY_DEFAULT_ORIGIN_WINDOW_TILE_Y = 8;
+
+const findFirstSeededSurfaceOutsideLegacyDefaultOriginWindow = (): number => {
+  for (let worldSeed = 1; worldSeed <= 0xffff; worldSeed += 1) {
+    if (
+      Math.abs(resolveProceduralTerrainColumn(0, worldSeed).surfaceTileY) >
+      SEEDED_SURFACE_OUTSIDE_LEGACY_DEFAULT_ORIGIN_WINDOW_TILE_Y
+    ) {
+      return worldSeed;
+    }
+  }
+
+  throw new Error('expected at least one sampled world seed to move the origin surface outside y=0');
+};
 
 const setTiles = (
   world: TileWorld,
@@ -210,6 +225,22 @@ describe('findPlayerSpawnPoint', () => {
 
     expect(spawn).not.toBeNull();
     expect(Math.abs(spawn!.anchorTileX)).toBeLessThanOrEqual(1);
+    expect(resolvePlayerSpawnLiquidSafetyStatus(world, spawn!)).toBe('safe');
+  });
+
+  it('anchors default fresh-world spawn height to the seeded origin surface instead of y=0', () => {
+    const worldSeed = findFirstSeededSurfaceOutsideLegacyDefaultOriginWindow();
+    const world = new TileWorld(0, worldSeed);
+    const expectedSurfaceTileY = resolveProceduralTerrainColumn(0, worldSeed).surfaceTileY;
+
+    const spawn = findPlayerSpawnPoint(world, {
+      width: PLAYER_WIDTH,
+      height: PLAYER_HEIGHT
+    });
+
+    expect(spawn).not.toBeNull();
+    expect(spawn?.anchorTileX).toBe(0);
+    expect(spawn?.standingTileY).toBe(expectedSurfaceTileY);
     expect(resolvePlayerSpawnLiquidSafetyStatus(world, spawn!)).toBe('safe');
   });
 });
