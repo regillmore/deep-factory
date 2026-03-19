@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-19
 
+- Task: Add the first paused-menu navigation tile and World Save submenu page.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/style.css](../src/style.css), and [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the paused `Overview` page now includes the first `World Save` navigation tile, `World Save` opens as a dedicated submenu page with `Back to Overview`, and focused regressions cover the new navigation metadata plus keyboard focus handoff; removed completed task `614` from [docs/NEXT.md](docs/NEXT.md), added replacement task `638`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/ui/appShell.test.ts` (outside the sandbox for the Vitest run).
+
 - Task: Add a cave-mouth worldgen follow-up after deterministic cave carving.
 - Changes: Updated [src/world/proceduralTerrain.ts](../src/world/proceduralTerrain.ts) plus [src/world/proceduralTerrain.test.ts](../src/world/proceduralTerrain.test.ts) so untouched worlds now open deterministic surface-connected cave mouths outside a protected origin corridor while preserving supported spawn-ground columns near the origin; expanded [src/world/world.test.ts](../src/world/world.test.ts) with exposed-cave-mouth chunk-streaming coverage and [src/world/playerSpawn.test.ts](../src/world/playerSpawn.test.ts) with protected-corridor spawn regressions; removed completed task `633` from [docs/NEXT.md](docs/NEXT.md), added replacement task `637`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/proceduralTerrain.test.ts src/world/world.test.ts src/world/playerSpawn.test.ts` (outside the sandbox for the Vitest run).

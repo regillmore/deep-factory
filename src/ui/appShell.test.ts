@@ -279,6 +279,10 @@ const CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
 const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT = 'Jump to Overview';
 const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE =
   'Move focus back to the Overview section at the top of the paused dashboard.';
+const PAUSED_MAIN_MENU_WORLD_SAVE_TILE_OPEN_TITLE =
+  'Open the paused World Save page for downloads, imports, and browser-resume controls.';
+const PAUSED_MAIN_MENU_WORLD_SAVE_BACK_LABEL = 'Back to Overview';
+const PAUSED_MAIN_MENU_WORLD_SAVE_BACK_TITLE = 'Return to the paused Overview page.';
 const PAUSED_MAIN_MENU_BUSY_IMPORT_WORLD_SAVE_TITLE =
   'Wait for the current world-save file picker to finish before starting another paused-session import.';
 const PAUSED_MAIN_MENU_BUSY_IMPORT_SHELL_PROFILE_TITLE =
@@ -784,6 +788,116 @@ describe('paused main-menu dashboard layout', () => {
     expect(menuSections?.style.display).toBe('none');
     expect(footerActions?.hidden).toBe(true);
     expect(footerActions?.style.display).toBe('none');
+  });
+
+  it('shows the first paused-menu navigation tile on Overview and opens the World Save page from it', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(
+      createPausedMainMenuShellState(
+        undefined,
+        true,
+        createDefaultShellActionKeybindingState(),
+        false,
+        null,
+        'cleared',
+        null,
+        null,
+        null,
+        null,
+        false,
+        null,
+        createDefaultWorldSessionTelemetryState(),
+        true,
+        null,
+        undefined,
+        true,
+        0x12345678
+      )
+    );
+
+    const root = container.children[0] ?? null;
+    expect(root).not.toBeNull();
+    if (root === null) {
+      return;
+    }
+
+    const overviewSection = findElementByClass(root, 'app-shell__overview');
+    const overviewNavigation = findElementByClass(root, 'app-shell__paused-navigation');
+    const worldSaveTile = findElementByClass(root, 'app-shell__paused-navigation-tile');
+    const worldSaveTileMetadata =
+      worldSaveTile === null
+        ? null
+        : findElementByClass(worldSaveTile, 'app-shell__paused-navigation-tile-metadata');
+    const worldSaveSection = findElementByClass(root, 'app-shell__world-save');
+    const worldSaveBackButton = findButtonByTextContent(
+      root,
+      'app-shell__submenu-back',
+      PAUSED_MAIN_MENU_WORLD_SAVE_BACK_LABEL
+    );
+    const secondarySections = findElementByClass(root, 'app-shell__paused-secondary');
+
+    expect(overviewSection?.hidden).toBe(false);
+    expect(overviewNavigation?.hidden).toBe(false);
+    expect(worldSaveTile?.title).toBe(PAUSED_MAIN_MENU_WORLD_SAVE_TILE_OPEN_TITLE);
+    expect(worldSaveTile?.dataset.tone).toBe('warning');
+    expect(readMetadataRows(worldSaveTileMetadata)).toEqual([
+      {
+        label: 'Browser Resume',
+        value: 'Missing'
+      },
+      {
+        label: 'World Seed',
+        value: '305419896'
+      }
+    ]);
+    expect(worldSaveSection?.hidden).toBe(true);
+    expect(worldSaveBackButton?.hidden).toBe(true);
+    expect(secondarySections?.hidden).toBe(false);
+
+    worldSaveTile?.click();
+
+    expect(overviewSection?.hidden).toBe(true);
+    expect(worldSaveSection?.hidden).toBe(false);
+    expect(worldSaveBackButton?.hidden).toBe(false);
+    expect(worldSaveBackButton?.title).toBe(PAUSED_MAIN_MENU_WORLD_SAVE_BACK_TITLE);
+    expect(secondarySections?.hidden).toBe(true);
+  });
+
+  it('returns keyboard-triggered World Save navigation back to the Overview focus anchor', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const root = container.children[0] ?? null;
+    expect(root).not.toBeNull();
+    if (root === null) {
+      return;
+    }
+
+    const overviewSection = findElementByClass(root, 'app-shell__overview');
+    const worldSaveSection = findElementByClass(root, 'app-shell__world-save');
+    const worldSaveTile = findElementByClass(root, 'app-shell__paused-navigation-tile');
+    const worldSaveBackButton = findButtonByTextContent(
+      root,
+      'app-shell__submenu-back',
+      PAUSED_MAIN_MENU_WORLD_SAVE_BACK_LABEL
+    );
+
+    worldSaveTile?.click(0);
+
+    expect(document.activeElement).toBe(worldSaveSection);
+    expect(worldSaveSection?.focusCallCount).toBe(1);
+    expect(worldSaveSection?.scrollIntoViewCallCount).toBe(1);
+
+    worldSaveBackButton?.click(0);
+
+    expect(document.activeElement).toBe(overviewSection);
+    expect(overviewSection?.focusCallCount).toBe(1);
+    expect(overviewSection?.scrollIntoViewCallCount).toBe(1);
+    expect(worldSaveSection?.hidden).toBe(true);
   });
 
   it('renders paused section-owned action buttons and routes them through the shared main-menu handlers', () => {
@@ -2376,6 +2490,10 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-dashboard');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-primary');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-secondary');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-navigation');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-navigation-tile');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-navigation-tile-metadata');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__submenu-back');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-button');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-heading');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-badges');
@@ -2446,6 +2564,7 @@ describe('paused main-menu dashboard layout styling', () => {
   });
 
   it('keeps paused-section focus-anchor rules in style.css', () => {
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-navigation-tile:focus-visible');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__overview:focus-visible');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__world-save:focus-visible');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__recent-activity:focus-visible');

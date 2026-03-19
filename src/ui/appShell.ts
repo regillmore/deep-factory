@@ -3023,6 +3023,7 @@ interface PausedMainMenuSectionLandmarkTarget {
 }
 
 type PausedMainMenuSectionAnchorKey = keyof typeof PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS;
+type PausedMainMenuPageId = 'overview' | 'world-save';
 
 const PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS = {
   overview: {
@@ -3055,6 +3056,12 @@ const PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER = [
   'dangerZone'
 ] as const satisfies readonly PausedMainMenuSectionAnchorKey[];
 
+const DEFAULT_PAUSED_MAIN_MENU_PAGE_ID: PausedMainMenuPageId = 'overview';
+const PAUSED_MAIN_MENU_WORLD_SAVE_TILE_TITLE = 'World Save';
+const PAUSED_MAIN_MENU_WORLD_SAVE_TILE_OPEN_TITLE =
+  'Open the paused World Save page for downloads, imports, and browser-resume controls.';
+const PAUSED_MAIN_MENU_WORLD_SAVE_BACK_LABEL = 'Back to Overview';
+const PAUSED_MAIN_MENU_WORLD_SAVE_BACK_TITLE = 'Return to the paused Overview page.';
 const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT = 'Jump to Overview';
 const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE =
   'Move focus back to the Overview section at the top of the paused dashboard.';
@@ -3716,7 +3723,12 @@ export class AppShell {
   private pausedMainMenuSecondarySections: HTMLDivElement;
   private overviewSection: HTMLElement;
   private overviewBody: HTMLDivElement;
+  private overviewNavigation: HTMLDivElement;
+  private worldSaveNavigationTile: HTMLButtonElement;
+  private worldSaveNavigationSummary: HTMLParagraphElement;
+  private worldSaveNavigationMetadata: HTMLDListElement;
   private worldSaveSection: HTMLElement;
+  private worldSaveBackButton: HTMLButtonElement;
   private worldSaveSummary: HTMLParagraphElement;
   private worldSaveMetadata: HTMLDListElement;
   private worldSaveActions: HTMLDivElement;
@@ -3805,6 +3817,7 @@ export class AppShell {
   private onTogglePeacefulMode: (screen: AppShellScreen) => void;
   private currentShellActionKeybindingEditorStatus: AppShellShellActionKeybindingEditorStatus | null =
     null;
+  private pausedMainMenuActivePage: PausedMainMenuPageId = DEFAULT_PAUSED_MAIN_MENU_PAGE_ID;
   private pausedMainMenuShellExpanded = false;
   private pausedMainMenuImportWorldSaveBusy = false;
   private pausedMainMenuImportShellProfileBusy = false;
@@ -4011,6 +4024,41 @@ export class AppShell {
     this.overviewBody.className = 'app-shell__overview-body';
     this.overviewSection.append(this.overviewBody);
 
+    this.overviewNavigation = document.createElement('div');
+    this.overviewNavigation.className = 'app-shell__paused-navigation';
+    this.overviewSection.append(this.overviewNavigation);
+
+    this.worldSaveNavigationTile = document.createElement('button');
+    this.worldSaveNavigationTile.type = 'button';
+    this.worldSaveNavigationTile.className = 'app-shell__paused-navigation-tile';
+    this.worldSaveNavigationTile.title = PAUSED_MAIN_MENU_WORLD_SAVE_TILE_OPEN_TITLE;
+    this.worldSaveNavigationTile.addEventListener('click', (event) =>
+      this.setPausedMainMenuPage(
+        'world-save',
+        !shouldReleaseButtonFocusAfterClick(event.detail)
+      )
+    );
+    installPointerClickFocusRelease(this.worldSaveNavigationTile);
+    this.overviewNavigation.append(this.worldSaveNavigationTile);
+
+    const worldSaveNavigationHeading = document.createElement('div');
+    worldSaveNavigationHeading.className = 'app-shell__paused-navigation-tile-heading';
+    this.worldSaveNavigationTile.append(worldSaveNavigationHeading);
+
+    const worldSaveNavigationTitle = document.createElement('h3');
+    worldSaveNavigationTitle.className = 'app-shell__paused-navigation-tile-title';
+    worldSaveNavigationTitle.textContent = PAUSED_MAIN_MENU_WORLD_SAVE_TILE_TITLE;
+    worldSaveNavigationHeading.append(worldSaveNavigationTitle);
+
+    this.worldSaveNavigationSummary = document.createElement('p');
+    this.worldSaveNavigationSummary.className = 'app-shell__paused-navigation-tile-summary';
+    this.worldSaveNavigationTile.append(this.worldSaveNavigationSummary);
+
+    this.worldSaveNavigationMetadata = document.createElement('dl');
+    this.worldSaveNavigationMetadata.className =
+      'app-shell__menu-section-metadata app-shell__paused-navigation-tile-metadata';
+    this.worldSaveNavigationTile.append(this.worldSaveNavigationMetadata);
+
     this.worldSaveSection = document.createElement('section');
     this.worldSaveSection.className = 'app-shell__world-save';
     this.pausedMainMenuPrimarySections.append(this.worldSaveSection);
@@ -4032,6 +4080,20 @@ export class AppShell {
       worldSaveTitle,
       PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS.worldSave
     );
+
+    this.worldSaveBackButton = document.createElement('button');
+    this.worldSaveBackButton.type = 'button';
+    this.worldSaveBackButton.className = 'app-shell__submenu-back';
+    this.worldSaveBackButton.textContent = PAUSED_MAIN_MENU_WORLD_SAVE_BACK_LABEL;
+    this.worldSaveBackButton.title = PAUSED_MAIN_MENU_WORLD_SAVE_BACK_TITLE;
+    this.worldSaveBackButton.addEventListener('click', (event) =>
+      this.setPausedMainMenuPage(
+        'overview',
+        !shouldReleaseButtonFocusAfterClick(event.detail)
+      )
+    );
+    installPointerClickFocusRelease(this.worldSaveBackButton);
+    worldSaveHeader.append(this.worldSaveBackButton);
 
     this.worldSaveSummary = document.createElement('p');
     this.worldSaveSummary.className = 'app-shell__world-save-summary';
@@ -4573,6 +4635,34 @@ export class AppShell {
     this.setState(this.currentState);
   }
 
+  private resolvePausedMainMenuPageSection(pageId: PausedMainMenuPageId): HTMLElement {
+    switch (pageId) {
+      case 'overview':
+        return this.overviewSection;
+      case 'world-save':
+        return this.worldSaveSection;
+    }
+  }
+
+  private setPausedMainMenuPage(
+    pageId: PausedMainMenuPageId,
+    preserveSectionFocus = false
+  ): void {
+    if (!isPausedMainMenuState(this.currentState)) {
+      return;
+    }
+
+    const pageChanged = this.pausedMainMenuActivePage !== pageId;
+    this.pausedMainMenuActivePage = pageId;
+    if (pageChanged) {
+      this.setState(this.currentState);
+    }
+
+    if (preserveSectionFocus) {
+      focusPausedMainMenuSectionAnchor(this.resolvePausedMainMenuPageSection(pageId));
+    }
+  }
+
   private togglePausedMainMenuShell(preserveSectionFocus = false): void {
     if (!isPausedMainMenuState(this.currentState)) {
       return;
@@ -4912,8 +5002,13 @@ export class AppShell {
         : defaultShellActionKeybindings;
     const pausedMainMenuVisible = isPausedMainMenuState(state);
     if (!pausedMainMenuVisible || !wasPausedMainMenuVisible) {
+      this.pausedMainMenuActivePage = DEFAULT_PAUSED_MAIN_MENU_PAGE_ID;
       this.pausedMainMenuShellExpanded = false;
     }
+    const pausedMainMenuOverviewPageVisible =
+      pausedMainMenuVisible && this.pausedMainMenuActivePage === 'overview';
+    const pausedMainMenuWorldSavePageVisible =
+      pausedMainMenuVisible && this.pausedMainMenuActivePage === 'world-save';
     const pausedMainMenuShellActionKeybindings = pausedMainMenuVisible
       ? state.shellActionKeybindings ?? defaultShellActionKeybindings
       : defaultShellActionKeybindings;
@@ -4979,6 +5074,9 @@ export class AppShell {
               () => this.onQuaternaryAction(this.currentState.screen)
             )
           ];
+    const pausedMainMenuWorldSaveNavigationRows = pausedMainMenuWorldSaveSection.metadataRows.filter(
+      (row) => row.label === 'Browser Resume' || row.label === 'World Seed'
+    );
     const pausedMainMenuDangerZoneActionButtons =
       pausedMainMenuSectionViewModel === null
         ? []
@@ -5014,14 +5112,17 @@ export class AppShell {
       pausedMainMenuVisible,
       'grid'
     );
-    this.pausedMainMenuSecondarySections.hidden = !pausedMainMenuVisible;
+    this.pausedMainMenuSecondarySections.hidden = !pausedMainMenuOverviewPageVisible;
     this.pausedMainMenuSecondarySections.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuVisible,
+      pausedMainMenuOverviewPageVisible,
       'grid'
     );
-    this.overviewSection.hidden = pausedMainMenuMenuSectionGroups.overviewSections.length === 0;
+    this.overviewSection.hidden =
+      !pausedMainMenuOverviewPageVisible ||
+      pausedMainMenuMenuSectionGroups.overviewSections.length === 0;
     this.overviewSection.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuMenuSectionGroups.overviewSections.length > 0,
+      pausedMainMenuOverviewPageVisible &&
+        pausedMainMenuMenuSectionGroups.overviewSections.length > 0,
       'grid'
     );
     this.overviewBody.replaceChildren(...pausedMainMenuOverviewActionButtons);
@@ -5030,12 +5131,27 @@ export class AppShell {
       pausedMainMenuOverviewActionButtons.length > 0,
       'grid'
     );
-    this.worldSaveSection.hidden = !pausedMainMenuWorldSaveSection.visible;
+    this.overviewNavigation.hidden = !pausedMainMenuOverviewPageVisible;
+    this.overviewNavigation.style.display = resolveAppShellRegionDisplay(
+      pausedMainMenuOverviewPageVisible,
+      'grid'
+    );
+    this.worldSaveNavigationTile.dataset.tone = pausedMainMenuWorldSaveSection.tone;
+    this.worldSaveNavigationSummary.textContent = pausedMainMenuWorldSaveSection.summaryLine ?? '';
+    this.worldSaveNavigationMetadata.replaceChildren(
+      ...createMenuSectionMetadataElement(pausedMainMenuWorldSaveNavigationRows).childNodes
+    );
+    this.worldSaveSection.hidden =
+      !pausedMainMenuWorldSavePageVisible || !pausedMainMenuWorldSaveSection.visible;
     this.worldSaveSection.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuWorldSaveSection.visible,
+      pausedMainMenuWorldSavePageVisible && pausedMainMenuWorldSaveSection.visible,
       'grid'
     );
     this.worldSaveSection.dataset.tone = pausedMainMenuWorldSaveSection.tone;
+    this.worldSaveBackButton.hidden = !pausedMainMenuWorldSavePageVisible;
+    this.worldSaveBackButton.style.display = pausedMainMenuWorldSavePageVisible
+      ? 'inline-flex'
+      : 'none';
     this.worldSaveSummary.textContent = pausedMainMenuWorldSaveSection.summaryLine ?? '';
     this.worldSaveMetadata.replaceChildren(
       ...createMenuSectionMetadataElement(pausedMainMenuWorldSaveSection.metadataRows).childNodes
