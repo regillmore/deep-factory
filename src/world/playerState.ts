@@ -74,6 +74,7 @@ export interface PlayerMovementIntent {
   jumpPressed?: boolean;
   climbY?: number;
   ropeDropHeld?: boolean;
+  glideHeld?: boolean;
 }
 
 export interface StepPlayerStateWithGravityOptions {
@@ -87,6 +88,7 @@ export interface StepPlayerStateOptions extends StepPlayerStateWithGravityOption
   airAcceleration?: number;
   groundDeceleration?: number;
   jumpSpeed?: number;
+  glideMaxFallSpeed?: number;
   ropeClimbSpeed?: number;
   ropeCenteringSpeed?: number;
   maxBreathSeconds?: number;
@@ -109,8 +111,10 @@ interface ResolvedStepPlayerStateInputs {
   jumpPressed: boolean;
   climbY: number;
   ropeDropHeld: boolean;
+  glideHeld: boolean;
   gravityAcceleration: number;
   maxFallSpeed: number;
+  glideMaxFallSpeed: number;
   maxWalkSpeed: number;
   groundAcceleration: number;
   airAcceleration: number;
@@ -151,6 +155,7 @@ export const DEFAULT_PLAYER_GROUND_ACCELERATION = 1800;
 export const DEFAULT_PLAYER_AIR_ACCELERATION = 900;
 export const DEFAULT_PLAYER_GROUND_DECELERATION = 2400;
 export const DEFAULT_PLAYER_JUMP_SPEED = 520;
+export const DEFAULT_PLAYER_GLIDE_MAX_FALL_SPEED = 180;
 export const DEFAULT_PLAYER_ROPE_CLIMB_SPEED = 120;
 export const DEFAULT_PLAYER_ROPE_CENTERING_SPEED = 24;
 export const DEFAULT_PLAYER_MAX_HEALTH = 100;
@@ -870,6 +875,7 @@ const resolveStepPlayerStateInputs = (
   jumpPressed: intent.jumpPressed === true,
   climbY: normalizeClimbYIntent(intent.climbY),
   ropeDropHeld: intent.ropeDropHeld === true,
+  glideHeld: intent.glideHeld === true,
   gravityAcceleration: expectNonNegativeFiniteNumber(
     options.gravityAcceleration ?? DEFAULT_PLAYER_GRAVITY_ACCELERATION,
     'options.gravityAcceleration'
@@ -877,6 +883,10 @@ const resolveStepPlayerStateInputs = (
   maxFallSpeed: expectNonNegativeFiniteNumber(
     options.maxFallSpeed ?? DEFAULT_PLAYER_MAX_FALL_SPEED,
     'options.maxFallSpeed'
+  ),
+  glideMaxFallSpeed: expectNonNegativeFiniteNumber(
+    options.glideMaxFallSpeed ?? DEFAULT_PLAYER_GLIDE_MAX_FALL_SPEED,
+    'options.glideMaxFallSpeed'
   ),
   maxWalkSpeed: expectNonNegativeFiniteNumber(
     options.maxWalkSpeed ?? DEFAULT_PLAYER_MAX_WALK_SPEED,
@@ -1088,6 +1098,10 @@ const resolvePlayerStepMotionState = (
         stepInputs.ropeClimbSpeed,
         stepInputs.fallDamageSafeLandingSpeed
       );
+    }
+
+    if (stepInputs.glideHeld && !grounded && velocityY > 0) {
+      velocityY = Math.min(velocityY, stepInputs.glideMaxFallSpeed);
     }
   }
 

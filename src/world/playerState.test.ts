@@ -13,6 +13,7 @@ import {
   DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
   DEFAULT_PLAYER_FALL_DAMAGE_SAFE_LANDING_SPEED,
   DEFAULT_PLAYER_FALL_DAMAGE_SPEED_PER_HEALTH,
+  DEFAULT_PLAYER_GLIDE_MAX_FALL_SPEED,
   DEFAULT_PLAYER_GROUND_ACCELERATION,
   DEFAULT_PLAYER_GROUND_DECELERATION,
   DEFAULT_PLAYER_GRAVITY_ACCELERATION,
@@ -1370,6 +1371,64 @@ describe('playerState', () => {
     );
   });
 
+  it('clamps falling speed while glideHeld stays active', () => {
+    const world = new TileWorld(0);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -80 },
+        velocity: { x: 0, y: DEFAULT_PLAYER_GLIDE_MAX_FALL_SPEED + 90 },
+        size: { width: 12, height: 12 },
+        grounded: false
+      }),
+      0.1,
+      { glideHeld: true },
+      {
+        gravityAcceleration: 80,
+        maxFallSpeed: DEFAULT_PLAYER_MAX_FALL_SPEED
+      }
+    );
+
+    expect(stepped.velocity.y).toBe(DEFAULT_PLAYER_GLIDE_MAX_FALL_SPEED);
+    expect(stepped.position.y).toBeCloseTo(-80 + DEFAULT_PLAYER_GLIDE_MAX_FALL_SPEED * 0.1, 6);
+  });
+
+  it('releases the glide clamp as soon as glideHeld is cleared', () => {
+    const world = new TileWorld(0);
+    const dt = 0.1;
+
+    const gliding = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -80 },
+        velocity: { x: 0, y: DEFAULT_PLAYER_GLIDE_MAX_FALL_SPEED + 60 },
+        size: { width: 12, height: 12 },
+        grounded: false
+      }),
+      dt,
+      { glideHeld: true },
+      {
+        gravityAcceleration: 80,
+        maxFallSpeed: DEFAULT_PLAYER_MAX_FALL_SPEED
+      }
+    );
+
+    const released = stepPlayerState(
+      world,
+      gliding,
+      dt,
+      {},
+      {
+        gravityAcceleration: 80,
+        maxFallSpeed: DEFAULT_PLAYER_MAX_FALL_SPEED
+      }
+    );
+
+    expect(gliding.velocity.y).toBe(DEFAULT_PLAYER_GLIDE_MAX_FALL_SPEED);
+    expect(released.velocity.y).toBe(DEFAULT_PLAYER_GLIDE_MAX_FALL_SPEED + 8);
+  });
+
   it('skips repeated hard-landing damage while fall recovery is still active, then damages again after it expires', () => {
     const world = new TileWorld(0);
 
@@ -2082,6 +2141,11 @@ describe('playerState', () => {
         ropeCenteringSpeed: -DEFAULT_PLAYER_ROPE_CENTERING_SPEED
       })
     ).toThrowError(/options\.ropeCenteringSpeed must be a non-negative finite number/);
+    expect(() =>
+      stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
+        glideMaxFallSpeed: -DEFAULT_PLAYER_GLIDE_MAX_FALL_SPEED
+      })
+    ).toThrowError(/options\.glideMaxFallSpeed must be a non-negative finite number/);
     expect(() =>
       stepPlayerState(new TileWorld(0), createPlayerState(), 1 / 60, {}, {
         maxBreathSeconds: 0

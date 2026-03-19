@@ -13,6 +13,7 @@ import {
   ensurePlayerInventoryHasStarterPickaxe,
   ensurePlayerInventoryHasStarterSpear,
   ensurePlayerInventoryHasStarterSword,
+  ensurePlayerInventoryHasStarterUmbrella,
   getPlayerInventoryItemDefinition,
   getPlayerInventoryItemAmount,
   movePlayerInventorySelectedHotbarSlot,
@@ -41,7 +42,7 @@ describe('playerInventory', () => {
         { itemId: 'healing-potion', amount: 3 },
         { itemId: 'heart-crystal', amount: 1 },
         { itemId: 'sword', amount: 1 },
-        null,
+        { itemId: 'umbrella', amount: 1 },
         null,
         { itemId: 'spear', amount: 1 }
       ],
@@ -414,6 +415,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'SWORD',
       maxStackSize: 1
     });
+    expect(getPlayerInventoryItemDefinition('umbrella')).toEqual({
+      id: 'umbrella',
+      label: 'Umbrella',
+      hotbarLabel: 'UMBR',
+      maxStackSize: 1
+    });
     expect(getPlayerInventoryItemDefinition('spear')).toEqual({
       id: 'spear',
       label: 'Starter Spear',
@@ -556,7 +563,7 @@ describe('playerInventory', () => {
     });
   });
 
-  it('fills the last empty slot with a starter spear when it is missing', () => {
+  it('fills the first empty slot with a starter umbrella when it is missing', () => {
     const state = createPlayerInventoryState({
       hotbar: [
         { itemId: 'pickaxe', amount: 1 },
@@ -573,6 +580,40 @@ describe('playerInventory', () => {
       selectedHotbarSlotIndex: 8
     });
 
+    expect(ensurePlayerInventoryHasStarterUmbrella(state)).toEqual({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'healing-potion', amount: 3 },
+        { itemId: 'heart-crystal', amount: 1 },
+        { itemId: 'sword', amount: 1 },
+        { itemId: 'umbrella', amount: 1 },
+        { itemId: 'gel', amount: 2 },
+        null
+      ],
+      selectedHotbarSlotIndex: 8
+    });
+  });
+
+  it('fills the last empty slot with a starter spear when it is missing', () => {
+    const state = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'healing-potion', amount: 3 },
+        { itemId: 'heart-crystal', amount: 1 },
+        { itemId: 'sword', amount: 1 },
+        { itemId: 'umbrella', amount: 1 },
+        { itemId: 'gel', amount: 2 },
+        null
+      ],
+      selectedHotbarSlotIndex: 8
+    });
+
     expect(ensurePlayerInventoryHasStarterSpear(state)).toEqual({
       hotbar: [
         { itemId: 'pickaxe', amount: 1 },
@@ -582,7 +623,7 @@ describe('playerInventory', () => {
         { itemId: 'healing-potion', amount: 3 },
         { itemId: 'heart-crystal', amount: 1 },
         { itemId: 'sword', amount: 1 },
-        null,
+        { itemId: 'umbrella', amount: 1 },
         { itemId: 'gel', amount: 2 },
         { itemId: 'spear', amount: 1 }
       ],

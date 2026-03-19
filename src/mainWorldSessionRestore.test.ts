@@ -37,7 +37,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
         { itemId: 'healing-potion', amount: 3 },
         { itemId: 'heart-crystal', amount: 1 },
         { itemId: 'sword', amount: 1 },
-        null,
+        { itemId: 'umbrella', amount: 1 },
         null,
         { itemId: 'spear', amount: 1 }
       ],

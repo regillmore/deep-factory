@@ -17,6 +17,7 @@ import {
   ensurePlayerInventoryHasStarterPickaxe,
   ensurePlayerInventoryHasStarterSpear,
   ensurePlayerInventoryHasStarterSword,
+  ensurePlayerInventoryHasStarterUmbrella,
   getPlayerInventoryItemDefinition,
   isPlayerInventoryItemId,
   PLAYER_INVENTORY_HOTBAR_SLOT_COUNT,
@@ -285,10 +286,12 @@ const normalizeStandalonePlayerInventoryState = (
       : (state: PlayerInventoryState): PlayerInventoryState => state;
 
   return ensurePlayerInventoryHasStarterSpear(
-    ensurePlayerInventoryHasStarterSword(
-      heartCrystalBackfill(
-        ensurePlayerInventoryHasStarterHealingPotions(
-          ensurePlayerInventoryHasStarterPickaxe(normalizedInventoryState)
+    ensurePlayerInventoryHasStarterUmbrella(
+      ensurePlayerInventoryHasStarterSword(
+        heartCrystalBackfill(
+          ensurePlayerInventoryHasStarterHealingPotions(
+            ensurePlayerInventoryHasStarterPickaxe(normalizedInventoryState)
+          )
         )
       )
     )

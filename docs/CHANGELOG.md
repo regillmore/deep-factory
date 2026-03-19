@@ -2,6 +2,16 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-18
+
+- Task: Refresh session save or restore umbrella regressions after the starter umbrella loadout change.
+- Changes: Updated [src/mainWorldSessionSave.test.ts](../src/mainWorldSessionSave.test.ts) and [src/mainWorldSessionRestore.test.ts](../src/mainWorldSessionRestore.test.ts) so the session envelope regressions now expect the normalized starter `Umbrella` slot ordering used by current inventory save or restore backfills.
+- Verification: Ran `cmd /c npx vitest run src/mainWorldSessionRestore.test.ts src/mainWorldSessionSave.test.ts` (outside the sandbox).
+
+- Task: Add an umbrella fall-control utility slice after inventory basics and fall-damage survival.
+- Changes: Updated [src/world/playerInventory.ts](../src/world/playerInventory.ts), [src/mainWorldSave.ts](../src/mainWorldSave.ts), [src/world/playerState.ts](../src/world/playerState.ts), and [src/main.ts](../src/main.ts) so the starter loadout now includes a non-stackable `Umbrella`, older saves backfill it into the first empty hotbar slot, and selected-umbrella jump holds now enrich the shared fixed-step player intent with a glide clamp during airborne descent; expanded [src/world/playerInventory.test.ts](../src/world/playerInventory.test.ts), [src/gl/droppedItemPlaceholder.test.ts](../src/gl/droppedItemPlaceholder.test.ts), [src/world/playerState.test.ts](../src/world/playerState.test.ts), [src/mainWorldSave.test.ts](../src/mainWorldSave.test.ts), and [src/main.test.ts](../src/main.test.ts), removed completed task `411` from [docs/NEXT.md](docs/NEXT.md), added replacement task `622`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/playerInventory.test.ts src/gl/droppedItemPlaceholder.test.ts src/world/playerState.test.ts src/mainWorldSave.test.ts src/main.test.ts` (outside the sandbox after the expected Vitest `spawn EPERM` startup restriction in-sandbox).
+
 ## 2026-03-17
 
 - Task: Add a starter-pickaxe hotbar-feedback follow-up after starter pickaxe mining.

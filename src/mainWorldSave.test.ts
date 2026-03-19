@@ -237,7 +237,7 @@ describe('createWorldSaveEnvelope', () => {
         { itemId: 'healing-potion', amount: 3 },
         { itemId: 'heart-crystal', amount: 1 },
         { itemId: 'sword', amount: 1 },
-        null,
+        { itemId: 'umbrella', amount: 1 },
         null,
         { itemId: 'spear', amount: 1 }
       ],
@@ -310,7 +310,7 @@ describe('createWorldSaveEnvelope', () => {
         { itemId: 'healing-potion', amount: 3 },
         { itemId: 'heart-crystal', amount: 1 },
         { itemId: 'sword', amount: 1 },
-        null,
+        { itemId: 'umbrella', amount: 1 },
         null,
         null,
         { itemId: 'spear', amount: 1 }
@@ -356,7 +356,7 @@ describe('createWorldSaveEnvelope', () => {
         { itemId: 'heart-crystal', amount: 1 },
         { itemId: 'sword', amount: 1 },
         { itemId: 'workbench', amount: 2 },
-        null,
+        { itemId: 'umbrella', amount: 1 },
         { itemId: 'spear', amount: 1 }
       ],
       selectedHotbarSlotIndex: 7
@@ -594,7 +594,7 @@ describe('decodeWorldSaveEnvelope', () => {
         { itemId: 'healing-potion', amount: 3 },
         { itemId: 'heart-crystal', amount: 1 },
         { itemId: 'sword', amount: 1 },
-        null,
+        { itemId: 'umbrella', amount: 1 },
         null,
         { itemId: 'spear', amount: 1 }
       ],
@@ -641,6 +641,10 @@ describe('decodeWorldSaveEnvelope', () => {
       itemId: 'sword',
       amount: 1
     });
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
+      itemId: 'umbrella',
+      amount: 1
+    });
     expect(decoded.session.standalonePlayerInventoryState.hotbar[9]).toEqual({
       itemId: 'spear',
       amount: 1
@@ -683,6 +687,10 @@ describe('decodeWorldSaveEnvelope', () => {
       itemId: 'sword',
       amount: 1
     });
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
+      itemId: 'umbrella',
+      amount: 1
+    });
     expect(decoded.session.standalonePlayerInventoryState.hotbar[9]).toEqual({
       itemId: 'spear',
       amount: 1
@@ -722,6 +730,51 @@ describe('decodeWorldSaveEnvelope', () => {
       itemId: 'sword',
       amount: 1
     });
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
+      itemId: 'umbrella',
+      amount: 1
+    });
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[9]).toEqual({
+      itemId: 'spear',
+      amount: 1
+    });
+  });
+
+  it('adds a starter umbrella into the first empty slot when older save payloads lack one', () => {
+    const world = new TileWorld(0);
+
+    const decoded = decodeWorldSaveEnvelope({
+      kind: WORLD_SAVE_ENVELOPE_KIND,
+      version: WORLD_SAVE_ENVELOPE_VERSION,
+      migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
+      session: {
+        standalonePlayerState: createPlayerState(),
+        standalonePlayerDeathState: null,
+        standalonePlayerInventoryState: {
+          hotbar: [
+            { itemId: 'pickaxe', amount: 1 },
+            { itemId: 'dirt-block', amount: 64 },
+            { itemId: 'torch', amount: 20 },
+            { itemId: 'rope', amount: 24 },
+            { itemId: 'healing-potion', amount: 3 },
+            { itemId: 'heart-crystal', amount: 1 },
+            { itemId: 'sword', amount: 1 },
+            null,
+            { itemId: 'gel', amount: 2 },
+            null
+          ],
+          selectedHotbarSlotIndex: 8
+        },
+        droppedItemStates: [],
+        cameraFollowOffset: { x: 0, y: 0 }
+      },
+      worldSnapshot: world.createSnapshot()
+    });
+
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
+      itemId: 'umbrella',
+      amount: 1
+    });
     expect(decoded.session.standalonePlayerInventoryState.hotbar[9]).toEqual({
       itemId: 'spear',
       amount: 1
@@ -747,7 +800,7 @@ describe('decodeWorldSaveEnvelope', () => {
             { itemId: 'healing-potion', amount: 3 },
             { itemId: 'heart-crystal', amount: 1 },
             { itemId: 'sword', amount: 1 },
-            null,
+            { itemId: 'umbrella', amount: 1 },
             { itemId: 'gel', amount: 2 },
             null
           ],

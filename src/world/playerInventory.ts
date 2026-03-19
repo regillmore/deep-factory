@@ -8,6 +8,7 @@ export type PlayerInventoryItemId =
   | 'workbench'
   | 'torch'
   | 'rope'
+  | 'umbrella'
   | 'healing-potion'
   | 'heart-crystal'
   | 'sword'
@@ -99,6 +100,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     hotbarLabel: 'ROPE',
     maxStackSize: 999
   },
+  umbrella: {
+    id: 'umbrella',
+    label: 'Umbrella',
+    hotbarLabel: 'UMBR',
+    maxStackSize: 1
+  },
   'healing-potion': {
     id: 'healing-potion',
     label: 'Healing Potion',
@@ -133,7 +140,7 @@ const DEFAULT_STARTER_HOTBAR: ReadonlyArray<PlayerInventoryItemStack | null> = [
   { itemId: 'healing-potion', amount: 3 },
   { itemId: 'heart-crystal', amount: 1 },
   { itemId: 'sword', amount: 1 },
-  null,
+  { itemId: 'umbrella', amount: 1 },
   null,
   { itemId: 'spear', amount: 1 }
 ];
@@ -262,6 +269,14 @@ export const ensurePlayerInventoryHasStarterSword = (
   state: PlayerInventoryState
 ): PlayerInventoryState =>
   ensurePlayerInventoryHasStarterHotbarStack(state, createPlayerInventoryItemStack('sword', 1));
+
+export const ensurePlayerInventoryHasStarterUmbrella = (
+  state: PlayerInventoryState
+): PlayerInventoryState =>
+  ensurePlayerInventoryHasStarterHotbarStack(
+    state,
+    createPlayerInventoryItemStack('umbrella', 1)
+  );
 
 export const ensurePlayerInventoryHasStarterSpear = (
   state: PlayerInventoryState

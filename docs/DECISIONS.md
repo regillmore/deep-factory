@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-18: Starter umbrella glide reuses held jump input while selected
+
+- Decision: The starter umbrella now activates glide from the existing held-jump movement input whenever the umbrella hotbar slot is selected, instead of adding a separate pointer-use or shell button contract.
+- Reason: Slow-fall is traversal state, not an aimed item-use action, and reusing the same held-jump path keeps desktop keyboard and touch jump-pad behavior aligned without fragmenting play-mode input ownership.
+- Consequence: Future glide, wings, or other fall-control follow-ups should prefer enriching shared movement intent from equipment or hotbar selection before fixed-step player movement, rather than inventing a second item-use gesture for airborne traversal.
+
 ### 2026-03-16: Starter crafting begins with a single-tile placed workbench
 
 - Decision: The first crafting station is a stackable `workbench` inventory item that places a single-tile non-solid floor-supported tile, and station-gated recipes resolve against nearby placed workbench tiles using the same reach distance as hotbar placement.

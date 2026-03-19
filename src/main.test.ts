@@ -419,6 +419,7 @@ const testRuntime = vi.hoisted(() => {
       intent: {
         moveX: number | null;
         jumpPressed: boolean | null;
+        glideHeld?: boolean;
       };
     }>,
     rendererStepHostileSlimeStateImpl: null as null | ((
@@ -959,7 +960,7 @@ vi.mock('./gl/renderer', () => ({
         grounded?: boolean;
         facing?: 'left' | 'right';
       };
-      const playerIntent = intent as { moveX?: number; jumpPressed?: boolean };
+      const playerIntent = intent as { moveX?: number; jumpPressed?: boolean; glideHeld?: boolean };
       testRuntime.rendererStepPlayerStateRequests.push({
         state: {
           position:
@@ -981,7 +982,8 @@ vi.mock('./gl/renderer', () => ({
         intent: {
           moveX: typeof playerIntent.moveX === 'number' ? playerIntent.moveX : null,
           jumpPressed:
-            typeof playerIntent.jumpPressed === 'boolean' ? playerIntent.jumpPressed : null
+            typeof playerIntent.jumpPressed === 'boolean' ? playerIntent.jumpPressed : null,
+          ...(playerIntent.glideHeld === true ? { glideHeld: true } : {})
         }
       });
       if (testRuntime.rendererStepPlayerStateImpl) {
@@ -6811,7 +6813,7 @@ describe('main.ts shell state orchestration', () => {
           { itemId: 'healing-potion', amount: 3 },
           { itemId: 'heart-crystal', amount: 1 },
           { itemId: 'sword', amount: 1 },
-          null,
+          { itemId: 'umbrella', amount: 1 },
           null,
           { itemId: 'spear', amount: 1 }
         ],
@@ -6836,7 +6838,7 @@ describe('main.ts shell state orchestration', () => {
           { itemId: 'healing-potion', amount: 3 },
           { itemId: 'heart-crystal', amount: 1 },
           { itemId: 'sword', amount: 1 },
-          null,
+          { itemId: 'umbrella', amount: 1 },
           null,
           { itemId: 'spear', amount: 1 }
         ],
@@ -6848,6 +6850,70 @@ describe('main.ts shell state orchestration', () => {
     expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
     expect(dispatchKeydown('}', 'BracketRight', { shiftKey: true }).prevented).toBe(false);
     expect(readPersistedDebugEditControlState().brushTileId).toBe(3);
+  });
+
+  it('arms fixed-step glide only while the starter umbrella is selected and jump is held', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('8', 'Digit8').prevented).toBe(true);
+
+    testRuntime.playerMovementIntent = {
+      moveX: 0,
+      jumpHeld: true,
+      jumpPressed: false,
+      ropeDropHeld: false,
+      ropeDropWindowArmed: false
+    };
+    testRuntime.rendererStepPlayerStateRequests = [];
+
+    runFixedUpdate(20);
+
+    expect(testRuntime.rendererStepPlayerStateRequests).toEqual([
+      {
+        state: {
+          position: { x: 8, y: 0 },
+          velocity: { x: 0, y: 0 },
+          grounded: true,
+          facing: 'right'
+        },
+        fixedDt: 20,
+        intent: {
+          moveX: 0,
+          jumpPressed: false,
+          glideHeld: true
+        }
+      }
+    ]);
+
+    testRuntime.playerMovementIntent = {
+      moveX: 0,
+      jumpHeld: false,
+      jumpPressed: false,
+      ropeDropHeld: false,
+      ropeDropWindowArmed: false
+    };
+    testRuntime.rendererStepPlayerStateRequests = [];
+
+    runFixedUpdate(20);
+
+    expect(testRuntime.rendererStepPlayerStateRequests).toEqual([
+      {
+        state: {
+          position: { x: 8, y: 0 },
+          velocity: { x: 0, y: 0 },
+          grounded: true,
+          facing: 'right'
+        },
+        fixedDt: 20,
+        intent: {
+          moveX: 0,
+          jumpPressed: false
+        }
+      }
+    ]);
   });
 
   it('shows a valid starter dirt placement preview on the hovered tile while the full debug-edit panel is hidden', async () => {
@@ -7123,14 +7189,14 @@ describe('main.ts shell state orchestration', () => {
             hotbar: [
               { itemId: 'pickaxe', amount: 1 },
               { itemId: 'dirt-block', amount: 64 },
-              { itemId: 'torch', amount: 20 },
+              { itemId: 'gel', amount: 2 },
               { itemId: 'rope', amount: 24 },
               { itemId: 'healing-potion', amount: 3 },
               { itemId: 'heart-crystal', amount: 1 },
               { itemId: 'sword', amount: 1 },
-              { itemId: 'gel', amount: 2 },
-              null,
-              null
+              { itemId: 'workbench', amount: 1 },
+              { itemId: 'umbrella', amount: 1 },
+              { itemId: 'spear', amount: 1 }
             ],
             selectedHotbarSlotIndex: 0
           })
@@ -7209,8 +7275,8 @@ describe('main.ts shell state orchestration', () => {
           { itemId: 'healing-potion', amount: 3 },
           { itemId: 'heart-crystal', amount: 1 },
           { itemId: 'sword', amount: 1 },
+          { itemId: 'umbrella', amount: 1 },
           { itemId: 'workbench', amount: 1 },
-          null,
           { itemId: 'spear', amount: 1 }
         ],
         selectedHotbarSlotIndex: 0
@@ -7219,7 +7285,7 @@ describe('main.ts shell state orchestration', () => {
 
     expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 1);
-    expect(dispatchKeydown('8', 'Digit8').prevented).toBe(true);
+    expect(dispatchKeydown('9', 'Digit9').prevented).toBe(true);
     testRuntime.pointerInspect = {
       pointerType: 'mouse',
       tile: { x: 1, y: -1 }
@@ -7261,7 +7327,7 @@ describe('main.ts shell state orchestration', () => {
 
     dispatchWindowEvent('pagehide');
     const persistedEnvelope = readPersistedWorldSaveEnvelope();
-    expect(persistedEnvelope?.session.standalonePlayerInventoryState.hotbar[7]).toBeNull();
+    expect(persistedEnvelope?.session.standalonePlayerInventoryState.hotbar[8]).toBeNull();
     const restoredWorld = new TileWorld(0);
     restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
     expect(restoredWorld.getTile(1, -1)).toBe(STARTER_WORKBENCH_TILE_ID);

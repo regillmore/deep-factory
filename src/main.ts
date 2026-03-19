@@ -382,6 +382,7 @@ const HOSTILE_SLIME_ENTITY_KIND = 'slime';
 const PASSIVE_BUNNY_ENTITY_KIND = 'bunny';
 const DROPPED_ITEM_ENTITY_KIND = 'dropped-item';
 const HOSTILE_SLIME_GEL_DROP_ITEM_ID: DroppedItemState['itemId'] = 'gel';
+const STARTER_UMBRELLA_ITEM_ID = 'umbrella';
 const HOSTILE_SLIME_GEL_DROP_AMOUNT = 1;
 type MainMenuShellActionType =
   | 'enter-or-resume-world-session'
@@ -1658,6 +1659,19 @@ const bootstrap = async (): Promise<void> => {
     clonePlayerInventoryState(standalonePlayerInventoryState);
   const getSelectedStandalonePlayerInventoryStack = () =>
     standalonePlayerInventoryState.hotbar[standalonePlayerInventoryState.selectedHotbarSlotIndex] ?? null;
+  const buildStandalonePlayerMovementIntent = (): PlayerMovementIntent => {
+    const movementIntent = input.getPlayerMovementIntent();
+    if (getSelectedStandalonePlayerInventoryStack()?.itemId !== STARTER_UMBRELLA_ITEM_ID) {
+      return movementIntent;
+    }
+
+    return input.getPlayerInputTelemetry().jumpHeld === true
+      ? {
+          ...movementIntent,
+          glideHeld: true
+        }
+      : movementIntent;
+  };
   const resolveHotbarOverlayHealingPotionCooldownFillNormalized = (): number | null => {
     if (playerHealingPotionCooldownState.secondsRemaining <= 0) {
       return null;
@@ -2663,7 +2677,7 @@ const bootstrap = async (): Promise<void> => {
       captureRenderState: (playerState) =>
         cloneStandalonePlayerRenderState(playerState, standalonePlayerRenderPresentationState),
       fixedUpdate: (playerState, fixedDt) => {
-        const playerMovementIntent = input.getPlayerMovementIntent();
+        const playerMovementIntent = buildStandalonePlayerMovementIntent();
         const playerFixedStepResult = createStandalonePlayerFixedStepResult({
           previousPlayerState: playerState,
           currentPlayerDeathState: standalonePlayerDeathState,
