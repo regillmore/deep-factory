@@ -86,6 +86,7 @@ import {
   type StandalonePlayerRenderState
 } from '../world/standalonePlayerRenderState';
 import { recomputeSunlightFromExposedChunkTops } from '../world/sunlight';
+import { DEFAULT_WORLD_SEED } from '../world/worldSeed';
 import {
   resolveLiquidStepPhaseSummary,
   TileWorld,
@@ -963,8 +964,8 @@ export class Renderer {
     this.replaceWorld(world);
   }
 
-  resetWorld(): void {
-    this.replaceWorld(new TileWorld());
+  resetWorld(worldSeed = DEFAULT_WORLD_SEED): void {
+    this.replaceWorld(new TileWorld(3, worldSeed));
   }
 
   findPlayerSpawnPoint(options: PlayerSpawnSearchOptions): PlayerSpawnPoint | null {

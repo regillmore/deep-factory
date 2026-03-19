@@ -24,6 +24,7 @@ import {
   STARTER_WORKBENCH_TILE_ID
 } from './starterWorkbenchPlacement';
 import { resolveProceduralTerrainTileId } from './proceduralTerrain';
+import { DEFAULT_WORLD_SEED, normalizeWorldSeed } from './worldSeed';
 import {
   doesTileBlockLight,
   getTileEmissiveLightLevel,
@@ -69,6 +70,7 @@ export interface LiquidSimulationStats {
 export type LiquidStepPhaseSummary = 'none' | 'downward' | 'sideways' | 'both';
 
 export interface TileWorldSnapshot {
+  worldSeed: number;
   liquidSimulationTick: number;
   residentChunks: ResidentChunkSnapshot[];
   editedChunks: EditedChunkSnapshot[];
@@ -422,6 +424,7 @@ export const didTileLightingStateChange = (
   getTileEmissiveLightLevel(previousTileId, registry) !== getTileEmissiveLightLevel(tileId, registry);
 
 export class TileWorld {
+  private worldSeed: number;
   private chunks = new Map<string, Chunk>();
   private editedChunkTiles = new Map<string, Map<number, number>>();
   private editedChunkLiquidLevels = new Map<string, Map<number, number>>();
@@ -515,7 +518,7 @@ export class TileWorld {
     tileId: number,
     liquidLevel: number
   ): void {
-    const generatedTileId = resolveProceduralTerrainTileId(worldTileX, worldTileY);
+    const generatedTileId = resolveProceduralTerrainTileId(worldTileX, worldTileY, this.worldSeed);
     if (tileId === generatedTileId) {
       const editedTiles = this.editedChunkTiles.get(key);
       editedTiles?.delete(tileIndex);
@@ -877,7 +880,8 @@ export class TileWorld {
     return sourceChanged || targetChanged;
   }
 
-  constructor(radius = 3) {
+  constructor(radius = 3, worldSeed = DEFAULT_WORLD_SEED) {
+    this.worldSeed = normalizeWorldSeed(worldSeed);
     for (let y = -radius; y <= radius; y += 1) {
       for (let x = -radius; x <= radius; x += 1) {
         this.ensureChunk(x, y);
@@ -898,7 +902,11 @@ export class TileWorld {
       for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
         const worldX = normalizedChunkX * CHUNK_SIZE + localX;
         const worldY = normalizedChunkY * CHUNK_SIZE + localY;
-        tiles[toTileIndex(localX, localY)] = resolveProceduralTerrainTileId(worldX, worldY);
+        tiles[toTileIndex(localX, localY)] = resolveProceduralTerrainTileId(
+          worldX,
+          worldY,
+          this.worldSeed
+        );
       }
     }
 
@@ -1320,6 +1328,10 @@ export class TileWorld {
     };
   }
 
+  getWorldSeed(): number {
+    return this.worldSeed;
+  }
+
   createSnapshot(): TileWorldSnapshot {
     const residentChunks = Array.from(this.chunks.values())
       .sort((left, right) => compareChunkCoords(left.coord, right.coord))
@@ -1329,6 +1341,7 @@ export class TileWorld {
     );
 
     return {
+      worldSeed: this.worldSeed,
       liquidSimulationTick: this.liquidSimulationTick,
       residentChunks,
       editedChunks
@@ -1386,6 +1399,12 @@ export class TileWorld {
       }
     }
 
+    const nextWorldSeed = normalizeWorldSeed(
+      (snapshot as { worldSeed?: unknown }).worldSeed === undefined
+        ? DEFAULT_WORLD_SEED
+        : (snapshot as { worldSeed: number }).worldSeed
+    );
+
     this.chunks = nextChunks;
     this.editedChunkTiles = nextEditedChunkTiles;
     this.editedChunkLiquidLevels = nextEditedChunkLiquidLevels;
@@ -1395,6 +1414,7 @@ export class TileWorld {
     this.liquidChunkQuietStepCounts = new Map(
       Array.from(this.activeLiquidChunkKeys, (key): [string, number] => [key, 0])
     );
+    this.worldSeed = nextWorldSeed;
     this.liquidSimulationTick = expectLiquidSimulationTick(snapshot.liquidSimulationTick);
     this.lastLiquidSimulationStats = createLiquidSimulationStats();
     this.lastSidewaysLiquidCandidateChunkBounds = null;

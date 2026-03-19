@@ -17,6 +17,7 @@ import {
   DEFAULT_PLAYER_MAX_HEALTH
 } from './world/playerState';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
+import { resolveProceduralTerrainTileId } from './world/proceduralTerrain';
 import { TileWorld } from './world/world';
 import {
   createDefaultWorldSaveEnvelopeMigrationMetadata,
@@ -107,6 +108,36 @@ describe('createWorldSaveEnvelope', () => {
       amount: 6
     });
     expect(envelope.session.cameraFollowOffset.x).toBe(24);
+  });
+
+  it('preserves the active world seed through save normalization and decode', () => {
+    const worldSeed = 0x12345678;
+    const world = new TileWorld(0, worldSeed);
+    const worldTileX = 25;
+    const worldTileY = -30;
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(decoded.worldSnapshot);
+
+    expect(decoded.worldSnapshot.worldSeed).toBe(worldSeed);
+    expect(restoredWorld.getWorldSeed()).toBe(worldSeed);
+    expect(restoredWorld.getTile(worldTileX, worldTileY)).toBe(
+      resolveProceduralTerrainTileId(worldTileX, worldTileY, worldSeed)
+    );
   });
 
   it('preserves a placed starter dirt block together with the consumed hotbar stack count', () => {
@@ -980,6 +1011,7 @@ describe('decodeWorldSaveEnvelope', () => {
           cameraFollowOffset: { x: 0, y: 0 }
         },
         worldSnapshot: {
+          worldSeed: 0,
           liquidSimulationTick: 0,
           residentChunks: [residentChunkSnapshot, residentChunkSnapshot],
           editedChunks: []

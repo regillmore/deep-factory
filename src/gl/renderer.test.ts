@@ -760,6 +760,36 @@ describe('Renderer atlas telemetry', () => {
     expect(restoredSnapshotWorld.getTile(worldTileX, worldTileY)).toBe(6);
   });
 
+  it('resets into seeded procedural terrain when a world seed is provided', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: 96,
+      height: 64
+    });
+    await renderer.initialize();
+
+    const worldSeed = 0x12345678;
+    const worldTileX = 41;
+    const worldTileY = -18;
+
+    renderer.resetWorld(worldSeed);
+
+    const snapshot = renderer.createWorldSnapshot();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(snapshot);
+
+    expect(snapshot.worldSeed).toBe(worldSeed);
+    expect(restoredWorld.getWorldSeed()).toBe(worldSeed);
+    expect(renderer.getTile(worldTileX, worldTileY)).toBe(
+      resolveProceduralTerrainTileId(worldTileX, worldTileY, worldSeed)
+    );
+  });
+
   it('invalidates chunk meshes when explicit tile-state replay changes only liquid level', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));

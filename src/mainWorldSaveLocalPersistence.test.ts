@@ -106,6 +106,7 @@ describe('loadPersistedWorldSaveEnvelopeWithPersistenceAvailability', () => {
           cameraFollowOffset: { x: 0, y: 0 }
         },
         worldSnapshot: {
+          worldSeed: 0,
           liquidSimulationTick: 0,
           residentChunks: [{ chunkX: 0, chunkY: 0 }],
           editedChunks: []
@@ -187,6 +188,7 @@ describe('savePersistedWorldSaveEnvelope', () => {
         cameraFollowOffset: { x: 0, y: 0 }
       },
       worldSnapshot: {
+        worldSeed: 0,
         liquidSimulationTick: 0,
         residentChunks: [{ chunkX: 0, chunkY: 0 }],
         editedChunks: []

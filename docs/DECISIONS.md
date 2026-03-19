@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-19: World generation randomness lives in snapshot-owned world seeds
+
+- Decision: `TileWorld` now owns an unsigned 32-bit `worldSeed`, untouched procedural terrain resolves through seeded shared terrain helpers, fresh-world entry points generate a new seed, and world snapshots preserve that seed while older snapshots without one default back to legacy seed `0`.
+- Reason: Procedural worlds need visible variety without giving up deterministic chunk rebuilds, stable save/load behavior, or backward-compatible restore of older browser saves.
+- Consequence: Future cave, biome, ore, or world-info follow-ups should derive their procedural variation from the shared persisted world seed instead of introducing runtime-only randomness or parallel seed storage.
+
 ### 2026-03-19: Procedural terrain now layers grass, dirt, and stone from shared column samplers
 
 - Decision: `TileWorld` now resolves untouched terrain through shared deterministic surface-height and dirt-depth samplers that emit grass on the exposed top tile, dirt through a shallow sub-surface band, and stone below that band.

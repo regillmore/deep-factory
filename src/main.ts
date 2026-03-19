@@ -260,6 +260,7 @@ import {
   clonePassiveBunnyState,
   type PassiveBunnyState
 } from './world/passiveBunnyState';
+import { createRandomWorldSeed } from './world/worldSeed';
 import { evaluatePassiveBunnyRelease } from './world/passiveBunnyRelease';
 import {
   addPlayerInventoryItemStack,
@@ -5091,7 +5092,7 @@ const bootstrap = async (): Promise<void> => {
     refreshResolvedPlayerSpawn();
   };
   const resetFreshWorldSessionRuntimeState = (): void => {
-    renderer.resetWorld();
+    renderer.resetWorld(createRandomWorldSeed());
     resetFreshWorldSessionDebugEditState();
     clearPinnedDebugTileInspect();
     resetFreshWorldSessionCameraAndPlayerState();
@@ -6486,6 +6487,7 @@ const bootstrap = async (): Promise<void> => {
 
   renderer.resize();
   if (persistedWorldSaveEnvelope === null) {
+    renderer.resetWorld(createRandomWorldSeed());
     refreshResolvedPlayerSpawn();
   } else {
     try {

@@ -26,6 +26,7 @@ const createTestEnvelope = (): WorldSaveEnvelope => ({
     }
   },
   worldSnapshot: {
+    worldSeed: 0,
     liquidSimulationTick: 4,
     residentChunks: [],
     editedChunks: []

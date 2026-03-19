@@ -8,7 +8,8 @@ import {
   PROCEDURAL_DIRT_TILE_ID,
   PROCEDURAL_GRASS_SURFACE_TILE_ID,
   PROCEDURAL_STONE_TILE_ID,
-  resolveProceduralTerrainColumn
+  resolveProceduralTerrainColumn,
+  resolveProceduralTerrainTileId
 } from './proceduralTerrain';
 import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
@@ -272,6 +273,7 @@ describe('TileWorld', () => {
 
     const snapshot = world.createSnapshot();
 
+    expect(snapshot.worldSeed).toBe(0);
     expect(snapshot.residentChunks.map((chunk) => chunk.coord)).toEqual([
       { x: -1, y: -1 },
       { x: 0, y: 0 },
@@ -680,6 +682,7 @@ describe('TileWorld', () => {
     loaded.loadSnapshot(snapshot);
 
     expect(snapshot.liquidSimulationTick).toBe(1);
+    expect(loaded.getWorldSeed()).toBe(0);
     expect(loaded.getChunkCount()).toBe(2);
     expect(loaded.getActiveLiquidChunkCount()).toBe(1);
     expect(loaded.isChunkLightDirty(0, -1)).toBe(true);
@@ -700,11 +703,28 @@ describe('TileWorld', () => {
 
     expect(() =>
       target.loadSnapshot({
+        worldSeed: 0,
         liquidSimulationTick: 0,
         residentChunks: [residentChunkSnapshot, residentChunkSnapshot],
         editedChunks: []
       })
     ).toThrowError(/residentChunks must not contain duplicate chunk coord 0,0/);
+  });
+
+  it('defaults missing snapshot world seeds to the legacy seed-0 terrain baseline', () => {
+    const source = new TileWorld(0);
+    const legacySnapshot = source.createSnapshot() as unknown as {
+      liquidSimulationTick: number;
+      residentChunks: ReturnType<TileWorld['createSnapshot']>['residentChunks'];
+      editedChunks: ReturnType<TileWorld['createSnapshot']>['editedChunks'];
+    };
+    delete (legacySnapshot as { worldSeed?: number }).worldSeed;
+
+    const loaded = new TileWorld(0, 0x12345678);
+    loaded.loadSnapshot(legacySnapshot as ReturnType<TileWorld['createSnapshot']>);
+
+    expect(loaded.getWorldSeed()).toBe(0);
+    expect(loaded.getTile(0, 0)).toBe(resolveProceduralTerrainTileId(0, 0, 0));
   });
 
   it('keeps water and lava separated when sideways spreading resolves across neighboring cells', () => {
@@ -734,6 +754,25 @@ describe('TileWorld', () => {
       expect(world.getTile(worldX, surfaceTileY + dirtDepthTiles)).toBe(PROCEDURAL_DIRT_TILE_ID);
       expect(world.getTile(worldX, surfaceTileY + dirtDepthTiles + 1)).toBe(PROCEDURAL_STONE_TILE_ID);
     }
+  });
+
+  it('uses snapshot-preserved world seeds when untouched chunks stream back in', () => {
+    const worldSeed = 0x12345678;
+    const world = new TileWorld(0, worldSeed);
+    const worldTileX = CHUNK_SIZE + 9;
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX, worldSeed);
+
+    world.ensureChunk(1, 0);
+    expect(world.createSnapshot().worldSeed).toBe(worldSeed);
+    expect(world.pruneChunksOutside({ minChunkX: 0, minChunkY: 0, maxChunkX: 0, maxChunkY: 0 })).toBe(1);
+
+    const loaded = new TileWorld(0);
+    loaded.loadSnapshot(world.createSnapshot());
+
+    expect(loaded.getWorldSeed()).toBe(worldSeed);
+    expect(loaded.pruneChunksOutside({ minChunkX: 0, minChunkY: 0, maxChunkX: 0, maxChunkY: 0 })).toBe(0);
+    expect(loaded.getTile(worldTileX, surfaceTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    expect(loaded.getTile(worldTileX, surfaceTileY + 1)).toBe(PROCEDURAL_DIRT_TILE_ID);
   });
 
   it('does not emit or change when setting the same tile value', () => {

@@ -360,6 +360,7 @@ const testRuntime = vi.hoisted(() => {
     rendererConstructCount: 0,
     rendererInstance: null as object | null,
     rendererLoadWorldSnapshotCallCount: 0,
+    rendererResetWorldSeeds: [] as number[],
     rendererFindPlayerSpawnPointImpl: null as null | ((options: unknown) => unknown),
     gameLoopFixedUpdate: null as null | ((fixedDt: number) => void),
     gameLoopRender: null as null | ((alpha: number, frameDtMs: number) => void),
@@ -968,7 +969,12 @@ vi.mock('./gl/renderer', () => ({
       syncRendererMapsFromWorldSnapshot(snapshot);
     }
 
-    resetWorld(): void {}
+    resetWorld(worldSeed = 0): void {
+      testRuntime.rendererResetWorldSeeds.push(worldSeed);
+      testRuntime.rendererWorldSnapshot = new TileWorld(0, worldSeed).createSnapshot();
+      testRuntime.rendererTileIdsByWorldKey.clear();
+      testRuntime.rendererLiquidLevelsByWorldKey.clear();
+    }
 
     stepPlayerState<T>(state: T, fixedDt: number, intent: unknown): T {
       testRuntime.fixedStepWorldUpdateOrder.push('player');
@@ -2276,6 +2282,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererConstructCount = 0;
     testRuntime.rendererInstance = null;
     testRuntime.rendererLoadWorldSnapshotCallCount = 0;
+    testRuntime.rendererResetWorldSeeds = [];
     testRuntime.rendererFindPlayerSpawnPointImpl = null;
     testRuntime.gameLoopFixedUpdate = null;
     testRuntime.gameLoopRender = null;
@@ -2411,9 +2418,11 @@ describe('main.ts shell state orchestration', () => {
     vi.stubGlobal('performance', {
       now: () => testRuntime.performanceNow
     });
+    vi.spyOn(Math, 'random').mockReturnValue(0);
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -2436,6 +2445,16 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.stateHistory[0]).toEqual(createDefaultBootShellState());
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
     expect(testRuntime.gameLoopStartCount).toBe(0);
+  });
+
+  it('seeds the first-launch world from a fresh random world seed before the first Enter World transition', async () => {
+    vi.mocked(Math.random).mockReturnValueOnce(0.125);
+
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.rendererResetWorldSeeds).toEqual([536870912]);
+    expect(testRuntime.rendererWorldSnapshot?.worldSeed).toBe(536870912);
   });
 
   it('routes renderer initialization failures through the explicit boot shell helper', async () => {
@@ -3079,6 +3098,24 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onRecenterCamera('in-world');
     expect(testRuntime.cameraInstance.x).toBe(88);
     expect(testRuntime.cameraInstance.y).toBe(50);
+  });
+
+  it('reseeds and persists the replacement world when paused-menu New World starts a fresh session', async () => {
+    vi.mocked(Math.random).mockReturnValueOnce(0.125);
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+
+    vi.mocked(Math.random).mockReturnValueOnce(0.75);
+    testRuntime.shellInstance?.options.onSenaryAction('main-menu');
+
+    expect(testRuntime.rendererResetWorldSeeds).toEqual([536870912, 3221225472]);
+    expect(testRuntime.rendererWorldSnapshot?.worldSeed).toBe(3221225472);
+    expect(readPersistedWorldSaveEnvelope()?.worldSnapshot.worldSeed).toBe(3221225472);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
   });
 
   it('keeps standalone-player render snapshots snapped to the fresh spawn on the first render after paused-menu New World reset', async () => {

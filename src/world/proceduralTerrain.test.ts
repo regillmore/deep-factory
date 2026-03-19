@@ -36,6 +36,35 @@ describe('resolveProceduralTerrainColumn', () => {
       previousSurfaceTileY = currentSurfaceTileY;
     }
   });
+
+  it('derives deterministic but seed-varying columns from nonzero world seeds', () => {
+    const seededSamples = [-64, -48, -32, -16, 0, 16, 32, 48, 64].map((worldX) => ({
+      worldX,
+      column: resolveProceduralTerrainColumn(worldX, 0x12345678)
+    }));
+
+    expect(seededSamples).toEqual(
+      [-64, -48, -32, -16, 0, 16, 32, 48, 64].map((worldX) => ({
+        worldX,
+        column: resolveProceduralTerrainColumn(worldX, 0x12345678)
+      }))
+    );
+    expect(seededSamples).not.toEqual(
+      [-64, -48, -32, -16, 0, 16, 32, 48, 64].map((worldX) => ({
+        worldX,
+        column: resolveProceduralTerrainColumn(worldX, 0)
+      }))
+    );
+  });
+
+  it('keeps seeded adjacent surface steps bounded for traversal-friendly terrain', () => {
+    let previousSurfaceTileY = resolveProceduralTerrainColumn(-256, 0x12345678).surfaceTileY;
+    for (let worldX = -255; worldX <= 256; worldX += 1) {
+      const currentSurfaceTileY = resolveProceduralTerrainColumn(worldX, 0x12345678).surfaceTileY;
+      expect(Math.abs(currentSurfaceTileY - previousSurfaceTileY)).toBeLessThanOrEqual(1);
+      previousSurfaceTileY = currentSurfaceTileY;
+    }
+  });
 });
 
 describe('resolveProceduralTerrainTileId', () => {
