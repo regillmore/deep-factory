@@ -7,7 +7,10 @@ import {
 } from './collision';
 import { getTileLiquidKind, TILE_METADATA } from './tileMetadata';
 import type { TileMetadataRegistry } from './tileMetadata';
-import type { TileWorld } from './world';
+export interface PlayerSpawnWorldView {
+  getTile(worldTileX: number, worldTileY: number): number;
+  getLiquidLevel(worldTileX: number, worldTileY: number): number;
+}
 
 export interface PlayerSpawnSearchOptions {
   width: number;
@@ -88,7 +91,7 @@ const buildSpawnCandidateAabb = (
 };
 
 const resolveAabbLiquidSafetyStatus = (
-  world: TileWorld,
+  world: PlayerSpawnWorldView,
   aabb: WorldAabb,
   registry: TileMetadataRegistry
 ): PlayerSpawnLiquidSafetyStatus => {
@@ -128,7 +131,7 @@ const resolveAabbLiquidSafetyStatus = (
 };
 
 const getGroundSupport = (
-  world: TileWorld,
+  world: PlayerSpawnWorldView,
   aabb: WorldAabb,
   registry: TileMetadataRegistry
 ): SolidTileCollision | null => {
@@ -141,7 +144,7 @@ const getGroundSupport = (
 };
 
 export const findPlayerSpawnPoint = (
-  world: TileWorld,
+  world: PlayerSpawnWorldView,
   options: PlayerSpawnSearchOptions,
   registry: TileMetadataRegistry = TILE_METADATA
 ): PlayerSpawnPoint | null => {
@@ -212,7 +215,7 @@ export const findPlayerSpawnPoint = (
 };
 
 export const resolvePlayerSpawnLiquidSafetyStatus = (
-  world: TileWorld,
+  world: PlayerSpawnWorldView,
   spawn: PlayerSpawnPoint,
   registry: TileMetadataRegistry = TILE_METADATA
 ): PlayerSpawnLiquidSafetyStatus => resolveAabbLiquidSafetyStatus(world, spawn.aabb, registry);

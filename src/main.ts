@@ -243,6 +243,7 @@ import {
   clonePassiveBunnyState,
   type PassiveBunnyState
 } from './world/passiveBunnyState';
+import { evaluatePassiveBunnyRelease } from './world/passiveBunnyRelease';
 import {
   addPlayerInventoryItemStack,
   clonePlayerInventoryState,
@@ -3601,6 +3602,38 @@ const bootstrap = async (): Promise<void> => {
     }
     return startResult.started;
   };
+  const tryReleaseSelectedPassiveBunnyAtTile = (
+    worldTileX: number,
+    worldTileY: number
+  ): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return false;
+    }
+
+    const releaseEvaluation = evaluatePassiveBunnyRelease(
+      {
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY),
+        getLiquidLevel: (tileX, tileY) => renderer.getLiquidLevel(tileX, tileY)
+      },
+      standalonePlayerState,
+      worldTileX,
+      worldTileY
+    );
+    if (!releaseEvaluation.canRelease || releaseEvaluation.spawnState === null) {
+      return false;
+    }
+    if (!applySelectedStandalonePlayerHotbarSlotConsumption()) {
+      return false;
+    }
+
+    spawnPassiveBunnyEntity(releaseEvaluation.spawnState);
+    return true;
+  };
   const tryStartSelectedStarterSpearThrust = (
     request: PlayerItemUseRequest
   ): boolean => {
@@ -3878,6 +3911,12 @@ const bootstrap = async (): Promise<void> => {
     }
     if (selectedStack.itemId === STARTER_BUG_NET_ITEM_ID) {
       return tryStartSelectedStarterBugNetSwing(request);
+    }
+    if (selectedStack.itemId === BUNNY_ITEM_ID) {
+      return tryReleaseSelectedPassiveBunnyAtTile(
+        request.worldTileX,
+        request.worldTileY
+      );
     }
     if (selectedStack.itemId === HEALING_POTION_ITEM_ID) {
       return tryUseSelectedHealingPotion();

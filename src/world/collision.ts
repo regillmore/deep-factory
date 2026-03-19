@@ -1,7 +1,10 @@
 import { TILE_SIZE } from './constants';
 import { isTileSolid, TILE_METADATA } from './tileMetadata';
 import type { TileMetadataRegistry } from './tileMetadata';
-import type { TileWorld } from './world';
+
+export interface CollisionWorldView {
+  getTile(worldTileX: number, worldTileY: number): number;
+}
 
 export interface WorldAabb {
   minX: number;
@@ -50,7 +53,7 @@ const getOverlappingTileRange = (min: number, max: number): TileRange | null => 
 };
 
 const getSolidTileCollision = (
-  world: TileWorld,
+  world: CollisionWorldView,
   tileX: number,
   tileY: number,
   registry: TileMetadataRegistry
@@ -68,14 +71,14 @@ const getSolidTileCollision = (
 };
 
 export const isSolidAt = (
-  world: TileWorld,
+  world: CollisionWorldView,
   worldTileX: number,
   worldTileY: number,
   registry: TileMetadataRegistry = TILE_METADATA
 ): boolean => isTileSolid(world.getTile(worldTileX, worldTileY), registry);
 
 export const doesAabbOverlapSolid = (
-  world: TileWorld,
+  world: CollisionWorldView,
   aabb: WorldAabb,
   registry: TileMetadataRegistry = TILE_METADATA
 ): boolean => {
@@ -102,7 +105,7 @@ export const doesAabbOverlapSolid = (
 
 // Axis sweeps assume the starting AABB is not already embedded inside solid tiles.
 export const sweepAabbAlongAxis = (
-  world: TileWorld,
+  world: CollisionWorldView,
   aabb: WorldAabb,
   axis: CollisionAxis,
   delta: number,

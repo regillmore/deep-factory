@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-18: Critter release reuses target-tile reach with nearby-ground search
+
+- Decision: Selected `Bunny` hotbar stacks now release through the same hidden-panel primary-use path and shared target-tile hotbar reach as other play-mode items, while the actual passive-bunny spawn resolves to the nearest valid bunny-sized ground spot near that targeted tile.
+- Reason: Reusing the shared click-or-tap item-use path keeps desktop and touch critter release aligned with existing play-mode input, and a small nearby-ground search makes release forgiving without adding a second cursor-only interaction contract.
+- Consequence: Future critter or pet release follow-ups should prefer target-tile reach-gated nearby-ground resolution before introducing a separate release UI or a different range rule.
+
 ### 2026-03-18: Bug-net captures stay swing-limited and inventory-backed
 
 - Decision: The starter bug net now captures at most one passive bunny per swing, and the runtime only despawns that bunny when one `bunny` item can be merged into the hotbar inventory.
