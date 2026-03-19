@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './constants';
+import {
+  PROCEDURAL_DIRT_TILE_ID,
+  PROCEDURAL_GRASS_SURFACE_TILE_ID,
+  PROCEDURAL_STONE_TILE_ID
+} from './proceduralTerrain';
 import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import { recomputeSunlightFromExposedChunkTops } from './sunlight';
 import { getTileEmissiveLightLevel, parseTileMetadataRegistry } from './tileMetadata';
 import { TileWorld } from './world';
 
 const localLightColumnBit = (localX: number): number => (1 << localX) >>> 0;
+const EMISSIVE_TEST_TILE_ID = 6;
 const emissiveTestRegistry = parseTileMetadataRegistry({
   tiles: [
     {
@@ -15,13 +21,25 @@ const emissiveTestRegistry = parseTileMetadataRegistry({
       gameplay: { solid: false, blocksLight: false }
     },
     {
-      id: 1,
+      id: PROCEDURAL_STONE_TILE_ID,
       name: 'solid',
       gameplay: { solid: true, blocksLight: true },
       render: { atlasIndex: 0 }
     },
     {
-      id: 2,
+      id: PROCEDURAL_GRASS_SURFACE_TILE_ID,
+      name: 'grass_surface',
+      gameplay: { solid: true, blocksLight: true },
+      render: { atlasIndex: 0 }
+    },
+    {
+      id: PROCEDURAL_DIRT_TILE_ID,
+      name: 'dirt',
+      gameplay: { solid: true, blocksLight: true },
+      render: { atlasIndex: 0 }
+    },
+    {
+      id: EMISSIVE_TEST_TILE_ID,
       name: 'debug_light',
       gameplay: { solid: false, blocksLight: false, emissiveLight: 12 },
       render: { atlasIndex: 1 }
@@ -107,7 +125,7 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     const recomputedChunkCount = recomputeSunlightFromExposedChunkTops(world);
 
     expect(recomputedChunkCount).toBe(4);
-    expect(world.getLightLevel(0, 1)).toBe(0);
+    expect(world.getLightLevel(0, 1)).toBe(MAX_LIGHT_LEVEL);
     expect(world.getLightLevel(0, 2)).toBe(MAX_LIGHT_LEVEL);
     expect(world.getDirtyLightChunkCount()).toBe(0);
   });
@@ -1112,7 +1130,7 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     for (const worldTileX of [0, 1, 2, 3]) {
       world.setTile(worldTileX, 0, 1);
     }
-    world.setTile(1, 1, 2);
+    world.setTile(1, 1, EMISSIVE_TEST_TILE_ID);
     world.setTile(0, 1, 0);
     world.setTile(2, 1, 0);
     world.setTile(3, 1, 0);
@@ -1195,7 +1213,7 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
       world.setTile(worldTileX, tunnelWorldTileY, 0);
       world.setTile(worldTileX, tunnelWorldTileY + 1, 1);
     }
-    world.setTile(emissiveWorldTileX, tunnelWorldTileY, 2);
+    world.setTile(emissiveWorldTileX, tunnelWorldTileY, EMISSIVE_TEST_TILE_ID);
     world.setTile(blockerWorldTileX, tunnelWorldTileY, 1);
 
     const recomputedChunkCount = recomputeSunlightFromExposedChunkTops(world, emissiveTestRegistry);
@@ -1222,7 +1240,7 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
 
     const blockerAtLocalX0World = new TileWorld(0);
     initializeBoundaryTunnel(blockerAtLocalX0World);
-    blockerAtLocalX0World.setTile(CHUNK_SIZE - 1, tunnelWorldTileY, 2);
+    blockerAtLocalX0World.setTile(CHUNK_SIZE - 1, tunnelWorldTileY, EMISSIVE_TEST_TILE_ID);
     blockerAtLocalX0World.setTile(CHUNK_SIZE, tunnelWorldTileY, 1);
 
     recomputeSunlightFromExposedChunkTops(blockerAtLocalX0World, emissiveTestRegistry);
@@ -1231,7 +1249,7 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
 
     const blockerAtLocalXMaxWorld = new TileWorld(0);
     initializeBoundaryTunnel(blockerAtLocalXMaxWorld);
-    blockerAtLocalXMaxWorld.setTile(CHUNK_SIZE, tunnelWorldTileY, 2);
+    blockerAtLocalXMaxWorld.setTile(CHUNK_SIZE, tunnelWorldTileY, EMISSIVE_TEST_TILE_ID);
     blockerAtLocalXMaxWorld.setTile(CHUNK_SIZE - 1, tunnelWorldTileY, 1);
 
     recomputeSunlightFromExposedChunkTops(blockerAtLocalXMaxWorld, emissiveTestRegistry);
@@ -1245,7 +1263,7 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     world.setTile(0, 0, 1);
     world.setTile(1, 0, 1);
     world.setTile(0, 1, 0);
-    world.setTile(1, 1, 2);
+    world.setTile(1, 1, EMISSIVE_TEST_TILE_ID);
 
     recomputeSunlightFromExposedChunkTops(world, emissiveTestRegistry);
     expect(world.getLightLevel(0, 1)).toBe(11);
@@ -1391,7 +1409,7 @@ describe('recomputeSunlightFromExposedChunkTops', () => {
     const tunnelWorldTileY = -20;
     const tunnelStartWorldTileX = CHUNK_SIZE - 2;
     const tunnelEndWorldTileX = CHUNK_SIZE + 2;
-    const emissiveTileId = 2;
+    const emissiveTileId = EMISSIVE_TEST_TILE_ID;
     const emissiveLightLevel = getTileEmissiveLightLevel(emissiveTileId, emissiveTestRegistry);
     const expectedBoundaryAirLightLevel = emissiveLightLevel - 1;
     const expectedInteriorAirLightLevel = emissiveLightLevel - 2;

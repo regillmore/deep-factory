@@ -31,6 +31,8 @@ describe('evaluateStarterBlockPlacement', () => {
       position: { x: 40, y: 0 },
       grounded: true
     });
+    world.setTile(1, -3, 0);
+    world.setTile(1, -2, 1);
 
     expect(evaluateStarterBlockPlacement(world, playerState, 1, -3)).toEqual({
       occupied: false,
@@ -46,6 +48,7 @@ describe('evaluateStarterBlockPlacement', () => {
       position: { x: 40, y: 0 },
       grounded: true
     });
+    world.setTile(1, -2, 1);
 
     expect(evaluateStarterBlockPlacement(world, playerState, 1, -2)).toEqual({
       occupied: true,
@@ -76,6 +79,8 @@ describe('evaluateStarterBlockPlacement', () => {
       position: { x: 8, y: -32 },
       grounded: true
     });
+    world.setTile(0, -3, 0);
+    world.setTile(0, -2, 1);
 
     expect(evaluateStarterBlockPlacement(world, playerState, 0, -3)).toEqual({
       occupied: false,

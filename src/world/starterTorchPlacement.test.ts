@@ -6,6 +6,8 @@ import { TileWorld } from './world';
 describe('evaluateStarterTorchPlacement', () => {
   it('allows placement into an empty tile that touches a solid face', () => {
     const world = new TileWorld(0);
+    world.setTile(1, -3, 0);
+    world.setTile(1, -2, 1);
 
     expect(evaluateStarterTorchPlacement(world, 1, -3)).toEqual({
       occupied: false,
@@ -17,6 +19,7 @@ describe('evaluateStarterTorchPlacement', () => {
 
   it('rejects placement into an already occupied tile', () => {
     const world = new TileWorld(0);
+    world.setTile(1, -2, 1);
 
     expect(evaluateStarterTorchPlacement(world, 1, -2)).toEqual({
       occupied: true,

@@ -4,6 +4,12 @@ import { encodeResidentChunkSnapshot } from './chunkSnapshot';
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL } from './constants';
 import type { ChunkBounds } from './chunkMath';
 import { toTileIndex } from './chunkMath';
+import {
+  PROCEDURAL_DIRT_TILE_ID,
+  PROCEDURAL_GRASS_SURFACE_TILE_ID,
+  PROCEDURAL_STONE_TILE_ID,
+  resolveProceduralTerrainColumn
+} from './proceduralTerrain';
 import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 import { getTileEmissiveLightLevel, parseTileMetadataRegistry } from './tileMetadata';
@@ -718,14 +724,16 @@ describe('TileWorld', () => {
     expect(world.getLiquidLevel(worldTileX + 1, worldTileY)).toBe(MAX_LIQUID_LEVEL);
   });
 
-  it('generates procedural terrain with sky above and ground below in +Y-down world space', () => {
+  it('generates procedural terrain from the shared layered surface sampler', () => {
     const world = new TileWorld(0);
-    const worldX = 0;
-    const heightAtX = -2; // floor(sin(0 * 0.2) * 3) - 2
-
-    expect(world.getTile(worldX, heightAtX - 1)).toBe(0);
-    expect(world.getTile(worldX, heightAtX)).toBe(2);
-    expect(world.getTile(worldX, heightAtX + 1)).toBe(1);
+    for (const worldX of [-48, -16, 0, 17, CHUNK_SIZE + 9]) {
+      const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldX);
+      expect(world.getTile(worldX, surfaceTileY - 1)).toBe(0);
+      expect(world.getTile(worldX, surfaceTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+      expect(world.getTile(worldX, surfaceTileY + 1)).toBe(PROCEDURAL_DIRT_TILE_ID);
+      expect(world.getTile(worldX, surfaceTileY + dirtDepthTiles)).toBe(PROCEDURAL_DIRT_TILE_ID);
+      expect(world.getTile(worldX, surfaceTileY + dirtDepthTiles + 1)).toBe(PROCEDURAL_STONE_TILE_ID);
+    }
   });
 
   it('does not emit or change when setting the same tile value', () => {

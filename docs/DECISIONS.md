@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-19: Procedural terrain now layers grass, dirt, and stone from shared column samplers
+
+- Decision: `TileWorld` now resolves untouched terrain through shared deterministic surface-height and dirt-depth samplers that emit grass on the exposed top tile, dirt through a shallow sub-surface band, and stone below that band.
+- Reason: This upgrades the world beyond the old one-function placeholder surface while keeping chunk streaming, edited-tile reset comparisons, and future cave work anchored to one reusable procedural baseline.
+- Consequence: Future cave, biome, or ore follow-ups should layer onto the shared procedural terrain resolver instead of hardcoding new generation branches directly inside chunk construction or edited-tile reset logic.
+
 ### 2026-03-19: Starter armor uses dedicated equipment slots with flat contact defense
 
 - Decision: Starter armor now lives in save-owned `head`, `body`, and `legs` equipment slots outside the hotbar, and hostile-slime contact damage subtracts total equipped defense down to a minimum of `1`.

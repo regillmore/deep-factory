@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Camera2D } from '../core/camera2d';
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL, TILE_SIZE } from '../world/constants';
 import { createDroppedItemState, type DroppedItemState } from '../world/droppedItem';
+import { resolveProceduralTerrainTileId } from '../world/proceduralTerrain';
 import {
   createPlayerState,
   type PlayerCollisionContacts,
@@ -721,7 +722,7 @@ describe('Renderer atlas telemetry', () => {
     renderer.resetWorld();
     renderUntilMeshBuildQueueDrains(renderer, camera);
 
-    expect(renderer.getTile(0, 0)).toBe(1);
+    expect(renderer.getTile(0, 0)).toBe(resolveProceduralTerrainTileId(0, 0));
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(0);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(0);
     expect(renderer.telemetry.residentAnimatedLiquidChunkQuadCount).toBe(0);

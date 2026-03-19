@@ -23,6 +23,7 @@ import {
   hasStarterWorkbenchGroundSupport,
   STARTER_WORKBENCH_TILE_ID
 } from './starterWorkbenchPlacement';
+import { resolveProceduralTerrainTileId } from './proceduralTerrain';
 import {
   doesTileBlockLight,
   getTileEmissiveLightLevel,
@@ -31,16 +32,6 @@ import {
 } from './tileMetadata';
 import type { TileMetadataRegistry } from './tileMetadata';
 import type { Chunk, ChunkCoord } from './types';
-
-const solidTileId = 1;
-
-const proceduralTile = (worldX: number, worldY: number): number => {
-  const height = Math.floor(Math.sin(worldX * 0.2) * 3) - 2;
-  // World +Y points downward, so tiles with smaller Y are above the surface (sky).
-  if (worldY < height) return 0;
-  if (worldY === height) return 2;
-  return solidTileId;
-};
 
 export interface TileEditEvent {
   worldTileX: number;
@@ -524,7 +515,7 @@ export class TileWorld {
     tileId: number,
     liquidLevel: number
   ): void {
-    const generatedTileId = proceduralTile(worldTileX, worldTileY);
+    const generatedTileId = resolveProceduralTerrainTileId(worldTileX, worldTileY);
     if (tileId === generatedTileId) {
       const editedTiles = this.editedChunkTiles.get(key);
       editedTiles?.delete(tileIndex);
@@ -907,7 +898,7 @@ export class TileWorld {
       for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
         const worldX = normalizedChunkX * CHUNK_SIZE + localX;
         const worldY = normalizedChunkY * CHUNK_SIZE + localY;
-        tiles[toTileIndex(localX, localY)] = proceduralTile(worldX, worldY);
+        tiles[toTileIndex(localX, localY)] = resolveProceduralTerrainTileId(worldX, worldY);
       }
     }
 
