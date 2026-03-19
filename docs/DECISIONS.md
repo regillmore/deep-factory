@@ -14,6 +14,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: This upgrades the world beyond the old one-function placeholder surface while keeping chunk streaming, edited-tile reset comparisons, and future cave work anchored to one reusable procedural baseline.
 - Consequence: Future cave, biome, or ore follow-ups should layer onto the shared procedural terrain resolver instead of hardcoding new generation branches directly inside chunk construction or edited-tile reset logic.
 
+### 2026-03-19: Procedural cave carving stays below the starter surface bands
+
+- Decision: Untouched procedural cave air now carves through seed-driven underground cave bands only after the shared dirt layer and a small stone overburden, leaving the near-surface starter spawn corridor supported and dry.
+- Reason: Early-world traversal and spawn recovery still need reliable surface footing, but the underground needs deterministic cave space for later exploration and resource follow-ups.
+- Consequence: Future cave-mouth, ore, or underground-biome passes should extend the shared cave carve rules instead of punching ad hoc near-surface voids or bypassing the existing spawn-clearance constraint.
+
 ### 2026-03-19: Starter armor uses dedicated equipment slots with flat contact defense
 
 - Decision: Starter armor now lives in save-owned `head`, `body`, and `legs` equipment slots outside the hotbar, and hostile-slime contact damage subtracts total equipped defense down to a minimum of `1`.

@@ -8,6 +8,73 @@ import {
   resolveProceduralTerrainTileId
 } from './proceduralTerrain';
 
+const collectUndergroundCaveTileCoords = (
+  worldSeed = 0,
+  minWorldX = -96,
+  maxWorldX = 96
+): Array<{ worldX: number; worldY: number }> => {
+  const coords: Array<{ worldX: number; worldY: number }> = [];
+  for (let worldX = minWorldX; worldX <= maxWorldX; worldX += 1) {
+    const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldX, worldSeed);
+    const minWorldY = surfaceTileY + dirtDepthTiles + 3;
+    const maxWorldY = surfaceTileY + 36;
+    for (let worldY = minWorldY; worldY <= maxWorldY; worldY += 1) {
+      if (resolveProceduralTerrainTileId(worldX, worldY, worldSeed) === 0) {
+        coords.push({ worldX, worldY });
+      }
+    }
+  }
+
+  return coords;
+};
+
+const resolveLargestConnectedCaveComponentSize = (
+  coords: ReadonlyArray<{ worldX: number; worldY: number }>
+): number => {
+  const remaining = new Set(coords.map(({ worldX, worldY }) => `${worldX},${worldY}`));
+  let largestComponentSize = 0;
+
+  while (remaining.size > 0) {
+    const startKey = remaining.values().next().value as string | undefined;
+    if (startKey === undefined) {
+      break;
+    }
+
+    const queue = [startKey];
+    remaining.delete(startKey);
+    let componentSize = 0;
+
+    while (queue.length > 0) {
+      const currentKey = queue.shift();
+      if (currentKey === undefined) {
+        continue;
+      }
+
+      componentSize += 1;
+      const [rawWorldX, rawWorldY] = currentKey.split(',');
+      const worldX = Number(rawWorldX);
+      const worldY = Number(rawWorldY);
+      for (const neighbor of [
+        `${worldX - 1},${worldY}`,
+        `${worldX + 1},${worldY}`,
+        `${worldX},${worldY - 1}`,
+        `${worldX},${worldY + 1}`
+      ]) {
+        if (!remaining.has(neighbor)) {
+          continue;
+        }
+
+        remaining.delete(neighbor);
+        queue.push(neighbor);
+      }
+    }
+
+    largestComponentSize = Math.max(largestComponentSize, componentSize);
+  }
+
+  return largestComponentSize;
+};
+
 describe('resolveProceduralTerrainColumn', () => {
   it('locks the rolling surface profile to deterministic sample heights', () => {
     expect(
@@ -78,5 +145,32 @@ describe('resolveProceduralTerrainTileId', () => {
     expect(resolveProceduralTerrainTileId(-48, surfaceTileY + dirtDepthTiles + 1)).toBe(
       PROCEDURAL_STONE_TILE_ID
     );
+  });
+
+  it('keeps a small underground stone overburden before cave air begins', () => {
+    for (let worldX = -32; worldX <= 32; worldX += 1) {
+      const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldX);
+      for (let worldY = surfaceTileY + 1; worldY <= surfaceTileY + dirtDepthTiles + 2; worldY += 1) {
+        expect(resolveProceduralTerrainTileId(worldX, worldY)).not.toBe(0);
+      }
+    }
+  });
+
+  it('carves large connected cave air pockets below the surface bands', () => {
+    const caveTiles = collectUndergroundCaveTileCoords();
+
+    expect(caveTiles.length).toBeGreaterThan(0);
+    expect(resolveLargestConnectedCaveComponentSize(caveTiles)).toBeGreaterThanOrEqual(64);
+    for (const caveTile of caveTiles) {
+      const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(caveTile.worldX);
+      expect(caveTile.worldY).toBeGreaterThanOrEqual(surfaceTileY + dirtDepthTiles + 3);
+    }
+  });
+
+  it('keeps cave carving deterministic while varying the underground layout by world seed', () => {
+    const seededCaves = collectUndergroundCaveTileCoords(0x12345678);
+
+    expect(seededCaves).toEqual(collectUndergroundCaveTileCoords(0x12345678));
+    expect(seededCaves).not.toEqual(collectUndergroundCaveTileCoords(0));
   });
 });

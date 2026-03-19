@@ -199,4 +199,17 @@ describe('findPlayerSpawnPoint', () => {
     expect(spawn?.x).toBe(5 * TILE_SIZE + TILE_SIZE * 0.5);
     expect(spawn?.y).toBe(-TILE_SIZE);
   });
+
+  it('keeps the origin-area procedural spawn viable after underground cave carving', () => {
+    const world = new TileWorld(0);
+
+    const spawn = findPlayerSpawnPoint(world, {
+      width: PLAYER_WIDTH,
+      height: PLAYER_HEIGHT
+    });
+
+    expect(spawn).not.toBeNull();
+    expect(Math.abs(spawn!.anchorTileX)).toBeLessThanOrEqual(1);
+    expect(resolvePlayerSpawnLiquidSafetyStatus(world, spawn!)).toBe('safe');
+  });
 });

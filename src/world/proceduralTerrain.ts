@@ -27,6 +27,33 @@ const PROCEDURAL_DIRT_DEPTH_SECONDARY_AMPLITUDE = 0.6;
 const PROCEDURAL_SURFACE_BASE_TILE_Y_SEED_VARIATION = 4;
 const PROCEDURAL_SURFACE_PHASE_OFFSET_RANGE = 192;
 const PROCEDURAL_DIRT_PHASE_OFFSET_RANGE = 128;
+const PROCEDURAL_CAVE_MIN_STONE_OVERBURDEN_TILES = 2;
+const PROCEDURAL_PRIMARY_CAVE_CENTER_BASE_OFFSET_TILES = 12;
+const PROCEDURAL_PRIMARY_CAVE_CENTER_PRIMARY_FREQUENCY = 0.037;
+const PROCEDURAL_PRIMARY_CAVE_CENTER_PRIMARY_AMPLITUDE = 4.5;
+const PROCEDURAL_PRIMARY_CAVE_CENTER_SECONDARY_FREQUENCY = 0.09;
+const PROCEDURAL_PRIMARY_CAVE_CENTER_SECONDARY_AMPLITUDE = 2.5;
+const PROCEDURAL_PRIMARY_CAVE_RADIUS_BASE_TILES = 3;
+const PROCEDURAL_PRIMARY_CAVE_RADIUS_PRIMARY_FREQUENCY = 0.051;
+const PROCEDURAL_PRIMARY_CAVE_RADIUS_PRIMARY_AMPLITUDE = 1.4;
+const PROCEDURAL_PRIMARY_CAVE_RADIUS_SECONDARY_FREQUENCY = 0.13;
+const PROCEDURAL_PRIMARY_CAVE_RADIUS_SECONDARY_AMPLITUDE = 0.8;
+const PROCEDURAL_PRIMARY_CAVE_RADIUS_MIN_TILES = 2;
+const PROCEDURAL_PRIMARY_CAVE_RADIUS_MAX_TILES = 5;
+const PROCEDURAL_SECONDARY_CAVE_CENTER_BASE_OFFSET_TILES = 24;
+const PROCEDURAL_SECONDARY_CAVE_CENTER_PRIMARY_FREQUENCY = 0.024;
+const PROCEDURAL_SECONDARY_CAVE_CENTER_PRIMARY_AMPLITUDE = 5.5;
+const PROCEDURAL_SECONDARY_CAVE_CENTER_SECONDARY_FREQUENCY = 0.072;
+const PROCEDURAL_SECONDARY_CAVE_CENTER_SECONDARY_AMPLITUDE = 2.25;
+const PROCEDURAL_SECONDARY_CAVE_RADIUS_BASE_TILES = 2;
+const PROCEDURAL_SECONDARY_CAVE_RADIUS_PRIMARY_FREQUENCY = 0.041;
+const PROCEDURAL_SECONDARY_CAVE_RADIUS_PRIMARY_AMPLITUDE = 1.2;
+const PROCEDURAL_SECONDARY_CAVE_RADIUS_SECONDARY_FREQUENCY = 0.097;
+const PROCEDURAL_SECONDARY_CAVE_RADIUS_SECONDARY_AMPLITUDE = 0.6;
+const PROCEDURAL_SECONDARY_CAVE_RADIUS_MIN_TILES = 2;
+const PROCEDURAL_SECONDARY_CAVE_RADIUS_MAX_TILES = 4;
+const PROCEDURAL_CAVE_CENTER_PHASE_OFFSET_RANGE = 256;
+const PROCEDURAL_CAVE_RADIUS_PHASE_OFFSET_RANGE = 160;
 
 export interface ProceduralTerrainColumn {
   surfaceTileY: number;
@@ -40,6 +67,14 @@ interface ProceduralTerrainSeedProfile {
   detailWavePhaseOffset: number;
   dirtPrimaryPhaseOffset: number;
   dirtSecondaryPhaseOffset: number;
+  primaryCaveCenterPrimaryPhaseOffset: number;
+  primaryCaveCenterSecondaryPhaseOffset: number;
+  primaryCaveRadiusPrimaryPhaseOffset: number;
+  primaryCaveRadiusSecondaryPhaseOffset: number;
+  secondaryCaveCenterPrimaryPhaseOffset: number;
+  secondaryCaveCenterSecondaryPhaseOffset: number;
+  secondaryCaveRadiusPrimaryPhaseOffset: number;
+  secondaryCaveRadiusSecondaryPhaseOffset: number;
 }
 
 const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
@@ -70,7 +105,15 @@ const resolveProceduralTerrainSeedProfile = (worldSeed: number): ProceduralTerra
           rollingWavePhaseOffset: 11,
           detailWavePhaseOffset: -7,
           dirtPrimaryPhaseOffset: 23,
-          dirtSecondaryPhaseOffset: -13
+          dirtSecondaryPhaseOffset: -13,
+          primaryCaveCenterPrimaryPhaseOffset: 37,
+          primaryCaveCenterSecondaryPhaseOffset: -91,
+          primaryCaveRadiusPrimaryPhaseOffset: 58,
+          primaryCaveRadiusSecondaryPhaseOffset: -22,
+          secondaryCaveCenterPrimaryPhaseOffset: 141,
+          secondaryCaveCenterSecondaryPhaseOffset: -73,
+          secondaryCaveRadiusPrimaryPhaseOffset: 84,
+          secondaryCaveRadiusSecondaryPhaseOffset: -46
         }
       : {
           surfaceBaseTileY:
@@ -106,6 +149,46 @@ const resolveProceduralTerrainSeedProfile = (worldSeed: number): ProceduralTerra
             normalizedWorldSeed,
             0xc6ef3721,
             PROCEDURAL_DIRT_PHASE_OFFSET_RANGE
+          ),
+          primaryCaveCenterPrimaryPhaseOffset: sampleSeededSignedRange(
+            normalizedWorldSeed,
+            0x4b8f0c21,
+            PROCEDURAL_CAVE_CENTER_PHASE_OFFSET_RANGE
+          ),
+          primaryCaveCenterSecondaryPhaseOffset: sampleSeededSignedRange(
+            normalizedWorldSeed,
+            0x9ec38154,
+            PROCEDURAL_CAVE_CENTER_PHASE_OFFSET_RANGE
+          ),
+          primaryCaveRadiusPrimaryPhaseOffset: sampleSeededSignedRange(
+            normalizedWorldSeed,
+            0x57a1dfe8,
+            PROCEDURAL_CAVE_RADIUS_PHASE_OFFSET_RANGE
+          ),
+          primaryCaveRadiusSecondaryPhaseOffset: sampleSeededSignedRange(
+            normalizedWorldSeed,
+            0x13d49b72,
+            PROCEDURAL_CAVE_RADIUS_PHASE_OFFSET_RANGE
+          ),
+          secondaryCaveCenterPrimaryPhaseOffset: sampleSeededSignedRange(
+            normalizedWorldSeed,
+            0xa40f7b65,
+            PROCEDURAL_CAVE_CENTER_PHASE_OFFSET_RANGE
+          ),
+          secondaryCaveCenterSecondaryPhaseOffset: sampleSeededSignedRange(
+            normalizedWorldSeed,
+            0x2e7dca19,
+            PROCEDURAL_CAVE_CENTER_PHASE_OFFSET_RANGE
+          ),
+          secondaryCaveRadiusPrimaryPhaseOffset: sampleSeededSignedRange(
+            normalizedWorldSeed,
+            0x7b2c54ae,
+            PROCEDURAL_CAVE_RADIUS_PHASE_OFFSET_RANGE
+          ),
+          secondaryCaveRadiusSecondaryPhaseOffset: sampleSeededSignedRange(
+            normalizedWorldSeed,
+            0xd18eb304,
+            PROCEDURAL_CAVE_RADIUS_PHASE_OFFSET_RANGE
           )
         };
 
@@ -167,6 +250,127 @@ export const resolveProceduralTerrainColumn = (
   };
 };
 
+const resolveProceduralPrimaryCaveCenterTileY = (
+  worldX: number,
+  surfaceTileY: number,
+  seedProfile: ProceduralTerrainSeedProfile
+): number =>
+  surfaceTileY +
+  PROCEDURAL_PRIMARY_CAVE_CENTER_BASE_OFFSET_TILES +
+  sampleSineWave(
+    worldX,
+    PROCEDURAL_PRIMARY_CAVE_CENTER_PRIMARY_FREQUENCY,
+    PROCEDURAL_PRIMARY_CAVE_CENTER_PRIMARY_AMPLITUDE,
+    seedProfile.primaryCaveCenterPrimaryPhaseOffset
+  ) +
+  sampleSineWave(
+    worldX,
+    PROCEDURAL_PRIMARY_CAVE_CENTER_SECONDARY_FREQUENCY,
+    PROCEDURAL_PRIMARY_CAVE_CENTER_SECONDARY_AMPLITUDE,
+    seedProfile.primaryCaveCenterSecondaryPhaseOffset
+  );
+
+const resolveProceduralPrimaryCaveRadiusTiles = (
+  worldX: number,
+  seedProfile: ProceduralTerrainSeedProfile
+): number =>
+  clamp(
+    PROCEDURAL_PRIMARY_CAVE_RADIUS_BASE_TILES +
+      Math.round(
+        sampleSineWave(
+          worldX,
+          PROCEDURAL_PRIMARY_CAVE_RADIUS_PRIMARY_FREQUENCY,
+          PROCEDURAL_PRIMARY_CAVE_RADIUS_PRIMARY_AMPLITUDE,
+          seedProfile.primaryCaveRadiusPrimaryPhaseOffset
+        ) +
+          sampleSineWave(
+            worldX,
+            PROCEDURAL_PRIMARY_CAVE_RADIUS_SECONDARY_FREQUENCY,
+            PROCEDURAL_PRIMARY_CAVE_RADIUS_SECONDARY_AMPLITUDE,
+            seedProfile.primaryCaveRadiusSecondaryPhaseOffset
+          )
+      ),
+    PROCEDURAL_PRIMARY_CAVE_RADIUS_MIN_TILES,
+    PROCEDURAL_PRIMARY_CAVE_RADIUS_MAX_TILES
+  );
+
+const resolveProceduralSecondaryCaveCenterTileY = (
+  worldX: number,
+  surfaceTileY: number,
+  seedProfile: ProceduralTerrainSeedProfile
+): number =>
+  surfaceTileY +
+  PROCEDURAL_SECONDARY_CAVE_CENTER_BASE_OFFSET_TILES +
+  sampleSineWave(
+    worldX,
+    PROCEDURAL_SECONDARY_CAVE_CENTER_PRIMARY_FREQUENCY,
+    PROCEDURAL_SECONDARY_CAVE_CENTER_PRIMARY_AMPLITUDE,
+    seedProfile.secondaryCaveCenterPrimaryPhaseOffset
+  ) +
+  sampleSineWave(
+    worldX,
+    PROCEDURAL_SECONDARY_CAVE_CENTER_SECONDARY_FREQUENCY,
+    PROCEDURAL_SECONDARY_CAVE_CENTER_SECONDARY_AMPLITUDE,
+    seedProfile.secondaryCaveCenterSecondaryPhaseOffset
+  );
+
+const resolveProceduralSecondaryCaveRadiusTiles = (
+  worldX: number,
+  seedProfile: ProceduralTerrainSeedProfile
+): number =>
+  clamp(
+    PROCEDURAL_SECONDARY_CAVE_RADIUS_BASE_TILES +
+      Math.round(
+        sampleSineWave(
+          worldX,
+          PROCEDURAL_SECONDARY_CAVE_RADIUS_PRIMARY_FREQUENCY,
+          PROCEDURAL_SECONDARY_CAVE_RADIUS_PRIMARY_AMPLITUDE,
+          seedProfile.secondaryCaveRadiusPrimaryPhaseOffset
+        ) +
+          sampleSineWave(
+            worldX,
+            PROCEDURAL_SECONDARY_CAVE_RADIUS_SECONDARY_FREQUENCY,
+            PROCEDURAL_SECONDARY_CAVE_RADIUS_SECONDARY_AMPLITUDE,
+            seedProfile.secondaryCaveRadiusSecondaryPhaseOffset
+          )
+      ),
+    PROCEDURAL_SECONDARY_CAVE_RADIUS_MIN_TILES,
+    PROCEDURAL_SECONDARY_CAVE_RADIUS_MAX_TILES
+  );
+
+const isProceduralCaveAir = (
+  worldX: number,
+  worldY: number,
+  surfaceTileY: number,
+  dirtDepthTiles: number,
+  worldSeed: number
+): boolean => {
+  const minimumCaveTileY =
+    surfaceTileY + dirtDepthTiles + 1 + PROCEDURAL_CAVE_MIN_STONE_OVERBURDEN_TILES;
+  if (worldY < minimumCaveTileY) {
+    return false;
+  }
+
+  const seedProfile = resolveProceduralTerrainSeedProfile(worldSeed);
+  const primaryCaveCenterTileY = resolveProceduralPrimaryCaveCenterTileY(
+    worldX,
+    surfaceTileY,
+    seedProfile
+  );
+  const primaryCaveRadiusTiles = resolveProceduralPrimaryCaveRadiusTiles(worldX, seedProfile);
+  if (Math.abs(worldY - primaryCaveCenterTileY) <= primaryCaveRadiusTiles) {
+    return true;
+  }
+
+  const secondaryCaveCenterTileY = resolveProceduralSecondaryCaveCenterTileY(
+    worldX,
+    surfaceTileY,
+    seedProfile
+  );
+  const secondaryCaveRadiusTiles = resolveProceduralSecondaryCaveRadiusTiles(worldX, seedProfile);
+  return Math.abs(worldY - secondaryCaveCenterTileY) <= secondaryCaveRadiusTiles;
+};
+
 export const resolveProceduralTerrainTileId = (
   worldX: number,
   worldY: number,
@@ -181,6 +385,9 @@ export const resolveProceduralTerrainTileId = (
   }
   if (worldY <= surfaceTileY + dirtDepthTiles) {
     return PROCEDURAL_DIRT_TILE_ID;
+  }
+  if (isProceduralCaveAir(worldX, worldY, surfaceTileY, dirtDepthTiles, worldSeed)) {
+    return SKY_TILE_ID;
   }
   return PROCEDURAL_STONE_TILE_ID;
 };
