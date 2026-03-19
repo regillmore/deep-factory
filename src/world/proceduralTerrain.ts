@@ -27,6 +27,13 @@ const PROCEDURAL_DIRT_DEPTH_SECONDARY_AMPLITUDE = 0.6;
 const PROCEDURAL_SURFACE_BASE_TILE_Y_SEED_VARIATION = 4;
 const PROCEDURAL_SURFACE_PHASE_OFFSET_RANGE = 192;
 const PROCEDURAL_DIRT_PHASE_OFFSET_RANGE = 128;
+export const PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES = 24;
+const PROCEDURAL_CAVE_MOUTH_CELL_WIDTH_TILES = 64;
+const PROCEDURAL_CAVE_MOUTH_CELL_INTERVAL = 3;
+const PROCEDURAL_CAVE_MOUTH_CELL_EDGE_MARGIN_TILES = 10;
+const PROCEDURAL_CAVE_MOUTH_MIN_RADIUS_TILES = 2;
+const PROCEDURAL_CAVE_MOUTH_MAX_RADIUS_TILES = 4;
+const PROCEDURAL_CAVE_MOUTH_SURFACE_EDGE_DROP_TILES = 2;
 const PROCEDURAL_CAVE_MIN_STONE_OVERBURDEN_TILES = 2;
 const PROCEDURAL_PRIMARY_CAVE_CENTER_BASE_OFFSET_TILES = 12;
 const PROCEDURAL_PRIMARY_CAVE_CENTER_PRIMARY_FREQUENCY = 0.037;
@@ -89,6 +96,23 @@ const sampleSineWave = (
 
 const sampleSeededSignedRange = (worldSeed: number, salt: number, magnitude: number): number =>
   (sampleWorldSeedUnitInterval(worldSeed, salt) * 2 - 1) * magnitude;
+
+const mixProceduralFeatureSalt = (featureIndex: number, salt: number): number =>
+  (Math.imul(featureIndex | 0, 0x9e3779b1) ^ salt) >>> 0;
+
+const sampleSeededFeatureUnitInterval = (worldSeed: number, featureIndex: number, salt: number): number =>
+  sampleWorldSeedUnitInterval(worldSeed, mixProceduralFeatureSalt(featureIndex, salt));
+
+const isProceduralCaveMouthCellActive = (worldSeed: number, mouthCellIndex: number): boolean => {
+  const activeCellPhase = Math.floor(
+    sampleWorldSeedUnitInterval(worldSeed, 0x5b48e729) * PROCEDURAL_CAVE_MOUTH_CELL_INTERVAL
+  );
+  const normalizedIntervalOffset =
+    ((mouthCellIndex - activeCellPhase) % PROCEDURAL_CAVE_MOUTH_CELL_INTERVAL) +
+    PROCEDURAL_CAVE_MOUTH_CELL_INTERVAL;
+
+  return normalizedIntervalOffset % PROCEDURAL_CAVE_MOUTH_CELL_INTERVAL === 0;
+};
 
 const resolveProceduralTerrainSeedProfile = (worldSeed: number): ProceduralTerrainSeedProfile => {
   const normalizedWorldSeed = normalizeWorldSeed(worldSeed);
@@ -338,12 +362,70 @@ const resolveProceduralSecondaryCaveRadiusTiles = (
     PROCEDURAL_SECONDARY_CAVE_RADIUS_MAX_TILES
   );
 
-const isProceduralCaveAir = (
+const isProceduralCaveMouthAir = (
   worldX: number,
   worldY: number,
   surfaceTileY: number,
   dirtDepthTiles: number,
+  seedProfile: ProceduralTerrainSeedProfile,
   worldSeed: number
+): boolean => {
+  const mouthCellIndex = Math.floor(worldX / PROCEDURAL_CAVE_MOUTH_CELL_WIDTH_TILES);
+  if (!isProceduralCaveMouthCellActive(worldSeed, mouthCellIndex)) {
+    return false;
+  }
+
+  const cellStartTileX = mouthCellIndex * PROCEDURAL_CAVE_MOUTH_CELL_WIDTH_TILES;
+  const mouthCenterRangeTiles =
+    PROCEDURAL_CAVE_MOUTH_CELL_WIDTH_TILES - PROCEDURAL_CAVE_MOUTH_CELL_EDGE_MARGIN_TILES * 2;
+  const mouthCenterTileX =
+    cellStartTileX +
+    PROCEDURAL_CAVE_MOUTH_CELL_EDGE_MARGIN_TILES +
+    Math.floor(
+      sampleSeededFeatureUnitInterval(worldSeed, mouthCellIndex, 0x8f0c13d4) * mouthCenterRangeTiles
+    );
+  const mouthRadiusTiles =
+    PROCEDURAL_CAVE_MOUTH_MIN_RADIUS_TILES +
+    Math.floor(
+      sampleSeededFeatureUnitInterval(worldSeed, mouthCellIndex, 0xd9a74c21) *
+        (PROCEDURAL_CAVE_MOUTH_MAX_RADIUS_TILES - PROCEDURAL_CAVE_MOUTH_MIN_RADIUS_TILES + 1)
+    );
+  if (
+    Math.abs(mouthCenterTileX) - mouthRadiusTiles <=
+    PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES
+  ) {
+    return false;
+  }
+
+  const horizontalDistanceFromMouthCenter = Math.abs(worldX - mouthCenterTileX);
+  if (horizontalDistanceFromMouthCenter > mouthRadiusTiles) {
+    return false;
+  }
+
+  const mouthSurfaceInsetTiles = Math.ceil(
+    (horizontalDistanceFromMouthCenter / Math.max(mouthRadiusTiles, 1)) *
+      PROCEDURAL_CAVE_MOUTH_SURFACE_EDGE_DROP_TILES
+  );
+  if (worldY < surfaceTileY + mouthSurfaceInsetTiles) {
+    return false;
+  }
+
+  const minimumConnectedMouthBottomTileY =
+    surfaceTileY + dirtDepthTiles + 1 + PROCEDURAL_CAVE_MIN_STONE_OVERBURDEN_TILES;
+  const primaryCaveTopTileY = Math.ceil(
+    resolveProceduralPrimaryCaveCenterTileY(worldX, surfaceTileY, seedProfile) -
+      resolveProceduralPrimaryCaveRadiusTiles(worldX, seedProfile)
+  );
+
+  return worldY <= Math.max(primaryCaveTopTileY, minimumConnectedMouthBottomTileY);
+};
+
+const isProceduralUndergroundCaveAir = (
+  worldX: number,
+  worldY: number,
+  surfaceTileY: number,
+  dirtDepthTiles: number,
+  seedProfile: ProceduralTerrainSeedProfile
 ): boolean => {
   const minimumCaveTileY =
     surfaceTileY + dirtDepthTiles + 1 + PROCEDURAL_CAVE_MIN_STONE_OVERBURDEN_TILES;
@@ -351,7 +433,6 @@ const isProceduralCaveAir = (
     return false;
   }
 
-  const seedProfile = resolveProceduralTerrainSeedProfile(worldSeed);
   const primaryCaveCenterTileY = resolveProceduralPrimaryCaveCenterTileY(
     worldX,
     surfaceTileY,
@@ -380,13 +461,17 @@ export const resolveProceduralTerrainTileId = (
   if (worldY < surfaceTileY) {
     return SKY_TILE_ID;
   }
+  const seedProfile = resolveProceduralTerrainSeedProfile(worldSeed);
+  if (isProceduralCaveMouthAir(worldX, worldY, surfaceTileY, dirtDepthTiles, seedProfile, worldSeed)) {
+    return SKY_TILE_ID;
+  }
   if (worldY === surfaceTileY) {
     return PROCEDURAL_GRASS_SURFACE_TILE_ID;
   }
   if (worldY <= surfaceTileY + dirtDepthTiles) {
     return PROCEDURAL_DIRT_TILE_ID;
   }
-  if (isProceduralCaveAir(worldX, worldY, surfaceTileY, dirtDepthTiles, worldSeed)) {
+  if (isProceduralUndergroundCaveAir(worldX, worldY, surfaceTileY, dirtDepthTiles, seedProfile)) {
     return SKY_TILE_ID;
   }
   return PROCEDURAL_STONE_TILE_ID;

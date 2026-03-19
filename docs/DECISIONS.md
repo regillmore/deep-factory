@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-19: Procedural cave mouths stay outside a protected origin spawn corridor
+
+- Decision: Untouched terrain now opens occasional surface-connected cave mouths only in seeded column bands whose full opening stays outside a fixed protected corridor around `x=0`, while the origin corridor itself keeps the prior surfaced overburden.
+- Reason: The world needs visible surface entrances into the underground cave layer, but fresh-world spawn search and early traversal still need dry, supported ground near the origin.
+- Consequence: Future surface-cave, biome, or spawn-adjacent worldgen follow-ups should preserve or explicitly redesign that protected origin corridor instead of letting new entrances or hazards drift into the default spawn search area accidentally.
+
 ### 2026-03-19: Default world-spawn height anchors to the seeded origin surface
 
 - Decision: When no explicit `originTileY` is supplied, default player-spawn search now anchors its vertical search around the procedural surface height at the requested origin column instead of assuming raw tile `y=0`, while still using the usual nearby grounded fallback search from there.

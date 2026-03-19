@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { TILE_SIZE } from './constants';
-import { resolveProceduralTerrainColumn } from './proceduralTerrain';
+import {
+  PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES,
+  resolveProceduralTerrainColumn
+} from './proceduralTerrain';
 import { findPlayerSpawnPoint, resolvePlayerSpawnLiquidSafetyStatus } from './playerSpawn';
 import { TileWorld } from './world';
 
@@ -215,7 +218,7 @@ describe('findPlayerSpawnPoint', () => {
     expect(spawn?.y).toBe(-TILE_SIZE);
   });
 
-  it('keeps the origin-area procedural spawn viable after underground cave carving', () => {
+  it('keeps the origin-area procedural spawn viable after underground cave carving and cave-mouth openings', () => {
     const world = new TileWorld(0);
 
     const spawn = findPlayerSpawnPoint(world, {
@@ -226,6 +229,15 @@ describe('findPlayerSpawnPoint', () => {
     expect(spawn).not.toBeNull();
     expect(Math.abs(spawn!.anchorTileX)).toBeLessThanOrEqual(1);
     expect(resolvePlayerSpawnLiquidSafetyStatus(world, spawn!)).toBe('safe');
+
+    for (
+      let worldX = -PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES;
+      worldX <= PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES;
+      worldX += 1
+    ) {
+      const { surfaceTileY } = resolveProceduralTerrainColumn(worldX, world.getWorldSeed());
+      expect(world.getTile(worldX, surfaceTileY)).not.toBe(0);
+    }
   });
 
   it('anchors default fresh-world spawn height to the seeded origin surface instead of y=0', () => {

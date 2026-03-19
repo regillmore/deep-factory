@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES,
   PROCEDURAL_DIRT_TILE_ID,
   PROCEDURAL_GRASS_SURFACE_TILE_ID,
   PROCEDURAL_STONE_TILE_ID,
@@ -26,6 +27,48 @@ const collectUndergroundCaveTileCoords = (
   }
 
   return coords;
+};
+
+const collectExposedCaveMouthColumns = (
+  worldSeed = 0,
+  minWorldX = -256,
+  maxWorldX = 256
+): Array<{ worldX: number; surfaceTileY: number; dirtDepthTiles: number; deepestAirTileY: number }> => {
+  const columns: Array<{
+    worldX: number;
+    surfaceTileY: number;
+    dirtDepthTiles: number;
+    deepestAirTileY: number;
+  }> = [];
+
+  for (let worldX = minWorldX; worldX <= maxWorldX; worldX += 1) {
+    const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldX, worldSeed);
+    if (resolveProceduralTerrainTileId(worldX, surfaceTileY, worldSeed) !== 0) {
+      continue;
+    }
+
+    let deepestAirTileY = surfaceTileY;
+    const maxTrackedDepthTileY = surfaceTileY + dirtDepthTiles + 24;
+    while (
+      deepestAirTileY < maxTrackedDepthTileY &&
+      resolveProceduralTerrainTileId(worldX, deepestAirTileY + 1, worldSeed) === 0
+    ) {
+      deepestAirTileY += 1;
+    }
+
+    if (deepestAirTileY < surfaceTileY + dirtDepthTiles + 3) {
+      continue;
+    }
+
+    columns.push({
+      worldX,
+      surfaceTileY,
+      dirtDepthTiles,
+      deepestAirTileY
+    });
+  }
+
+  return columns;
 };
 
 const resolveLargestConnectedCaveComponentSize = (
@@ -147,12 +190,31 @@ describe('resolveProceduralTerrainTileId', () => {
     );
   });
 
-  it('keeps a small underground stone overburden before cave air begins', () => {
-    for (let worldX = -32; worldX <= 32; worldX += 1) {
+  it('keeps the protected origin corridor surface-supported above the cave bands', () => {
+    for (
+      let worldX = -PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES;
+      worldX <= PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES;
+      worldX += 1
+    ) {
       const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldX);
+      expect(resolveProceduralTerrainTileId(worldX, surfaceTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
       for (let worldY = surfaceTileY + 1; worldY <= surfaceTileY + dirtDepthTiles + 2; worldY += 1) {
         expect(resolveProceduralTerrainTileId(worldX, worldY)).not.toBe(0);
       }
+    }
+  });
+
+  it('opens occasional surface-connected cave mouths outside the protected origin corridor', () => {
+    const mouthColumns = collectExposedCaveMouthColumns();
+
+    expect(mouthColumns.length).toBeGreaterThan(0);
+    for (const mouth of mouthColumns) {
+      expect(Math.abs(mouth.worldX)).toBeGreaterThan(
+        PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES
+      );
+      expect(mouth.deepestAirTileY).toBeGreaterThanOrEqual(
+        mouth.surfaceTileY + mouth.dirtDepthTiles + 3
+      );
     }
   });
 
@@ -172,5 +234,13 @@ describe('resolveProceduralTerrainTileId', () => {
 
     expect(seededCaves).toEqual(collectUndergroundCaveTileCoords(0x12345678));
     expect(seededCaves).not.toEqual(collectUndergroundCaveTileCoords(0));
+  });
+
+  it('keeps cave-mouth entrances deterministic while varying their layout by world seed', () => {
+    const seededMouthColumns = collectExposedCaveMouthColumns(0x12345678);
+
+    expect(seededMouthColumns.length).toBeGreaterThan(0);
+    expect(seededMouthColumns).toEqual(collectExposedCaveMouthColumns(0x12345678));
+    expect(seededMouthColumns).not.toEqual(collectExposedCaveMouthColumns(0));
   });
 });

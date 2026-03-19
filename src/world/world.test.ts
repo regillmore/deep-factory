@@ -5,6 +5,7 @@ import { CHUNK_SIZE, MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL } from './constants';
 import type { ChunkBounds } from './chunkMath';
 import { toTileIndex } from './chunkMath';
 import {
+  PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES,
   PROCEDURAL_DIRT_TILE_ID,
   PROCEDURAL_GRASS_SURFACE_TILE_ID,
   PROCEDURAL_STONE_TILE_ID,
@@ -42,6 +43,42 @@ const findFirstProceduralCaveTile = (
           worldTileY
         };
       }
+    }
+  }
+
+  return null;
+};
+
+const findFirstProceduralExposedCaveMouthColumn = (
+  worldSeed = 0,
+  minWorldX = -CHUNK_SIZE * 8,
+  maxWorldX = CHUNK_SIZE * 8
+): { worldTileX: number; surfaceTileY: number; deepestAirTileY: number } | null => {
+  for (let worldTileX = minWorldX; worldTileX <= maxWorldX; worldTileX += 1) {
+    if (Math.abs(worldTileX) <= PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES) {
+      continue;
+    }
+
+    const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldTileX, worldSeed);
+    if (resolveProceduralTerrainTileId(worldTileX, surfaceTileY, worldSeed) !== 0) {
+      continue;
+    }
+
+    let deepestAirTileY = surfaceTileY;
+    const maxTrackedDepthTileY = surfaceTileY + dirtDepthTiles + 24;
+    while (
+      deepestAirTileY < maxTrackedDepthTileY &&
+      resolveProceduralTerrainTileId(worldTileX, deepestAirTileY + 1, worldSeed) === 0
+    ) {
+      deepestAirTileY += 1;
+    }
+
+    if (deepestAirTileY >= surfaceTileY + dirtDepthTiles + 3) {
+      return {
+        worldTileX,
+        surfaceTileY,
+        deepestAirTileY
+      };
     }
   }
 
@@ -789,6 +826,27 @@ describe('TileWorld', () => {
     const chunkCountAfterPrune = world.getChunkCount();
 
     expect(world.getTile(caveTile.worldTileX, caveTile.worldTileY)).toBe(0);
+    expect(world.getChunkCount()).toBe(chunkCountAfterPrune + 1);
+  });
+
+  it('streams untouched exposed cave-mouth air back in after pruning its chunk', () => {
+    const caveMouthColumn = findFirstProceduralExposedCaveMouthColumn();
+    expect(caveMouthColumn).not.toBeNull();
+    if (caveMouthColumn === null) {
+      throw new Error('expected a procedural exposed cave-mouth column');
+    }
+
+    const world = new TileWorld(0);
+    expect(world.getTile(caveMouthColumn.worldTileX, caveMouthColumn.surfaceTileY)).toBe(0);
+    expect(world.getTile(caveMouthColumn.worldTileX, caveMouthColumn.deepestAirTileY)).toBe(0);
+
+    expect(
+      world.pruneChunksOutside({ minChunkX: 0, minChunkY: 0, maxChunkX: 0, maxChunkY: 0 })
+    ).toBeGreaterThan(0);
+    const chunkCountAfterPrune = world.getChunkCount();
+
+    expect(world.getTile(caveMouthColumn.worldTileX, caveMouthColumn.surfaceTileY)).toBe(0);
+    expect(world.getTile(caveMouthColumn.worldTileX, caveMouthColumn.deepestAirTileY)).toBe(0);
     expect(world.getChunkCount()).toBe(chunkCountAfterPrune + 1);
   });
 
