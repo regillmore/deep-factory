@@ -1,6 +1,7 @@
 import { evaluatePlayerHotbarTilePlacementRange } from './playerHotbarPlacementRange';
 import {
   findPlayerSpawnPoint,
+  type PlayerSpawnPoint,
   type PlayerSpawnWorldView
 } from './playerSpawn';
 import {
@@ -14,7 +15,13 @@ import type { PlayerState } from './playerState';
 export interface PassiveBunnyReleaseEvaluation {
   placementRangeWithinReach: boolean;
   spawnState: PassiveBunnyState | null;
+  landingTile: PassiveBunnyReleaseLandingTile | null;
   canRelease: boolean;
+}
+
+export interface PassiveBunnyReleaseLandingTile {
+  tileX: number;
+  tileY: number;
 }
 
 export interface EvaluatePassiveBunnyReleaseOptions {
@@ -31,6 +38,13 @@ const resolvePassiveBunnyReleaseFacing = (
   playerState: Pick<PlayerState, 'position'>
 ): PassiveBunnyState['facing'] =>
   spawnState.position.x <= playerState.position.x ? 'left' : 'right';
+
+const resolvePassiveBunnyReleaseLandingTile = (
+  spawnPoint: Pick<PlayerSpawnPoint, 'anchorTileX' | 'standingTileY'>
+): PassiveBunnyReleaseLandingTile => ({
+  tileX: spawnPoint.anchorTileX,
+  tileY: spawnPoint.standingTileY - 1
+});
 
 export const evaluatePassiveBunnyRelease = (
   world: PlayerSpawnWorldView,
@@ -49,6 +63,7 @@ export const evaluatePassiveBunnyRelease = (
     return {
       placementRangeWithinReach: false,
       spawnState: null,
+      landingTile: null,
       canRelease: false
     };
   }
@@ -67,6 +82,7 @@ export const evaluatePassiveBunnyRelease = (
     return {
       placementRangeWithinReach: true,
       spawnState: null,
+      landingTile: null,
       canRelease: false
     };
   }
@@ -86,6 +102,7 @@ export const evaluatePassiveBunnyRelease = (
   return {
     placementRangeWithinReach: true,
     spawnState,
+    landingTile: resolvePassiveBunnyReleaseLandingTile(spawnPoint),
     canRelease: true
   };
 };

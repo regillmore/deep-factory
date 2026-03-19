@@ -50,6 +50,10 @@ describe('passiveBunnyRelease', () => {
         facing: 'right',
         hopCooldownTicksRemaining: 48
       },
+      landingTile: {
+        tileX: 2,
+        tileY: -1
+      },
       canRelease: true
     });
   });
@@ -80,6 +84,10 @@ describe('passiveBunnyRelease', () => {
         facing: 'left',
         hopCooldownTicksRemaining: 48
       },
+      landingTile: {
+        tileX: 1,
+        tileY: -1
+      },
       canRelease: true
     });
   });
@@ -95,6 +103,7 @@ describe('passiveBunnyRelease', () => {
     expect(evaluatePassiveBunnyRelease(world, playerState, 8, -1)).toEqual({
       placementRangeWithinReach: false,
       spawnState: null,
+      landingTile: null,
       canRelease: false
     });
   });

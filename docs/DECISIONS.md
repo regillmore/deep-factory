@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-19: Critter release previews keep hover intent and fallback landing separate
+
+- Decision: Selected `Bunny` previews now keep the main highlight on the requested hovered tile and add a separate landing marker only when nearby-ground search resolves to a different release tile.
+- Reason: The hovered tile still owns range checks and click-or-tap intent, while a secondary marker explains the redirected spawn without making it look like the actual input target moved.
+- Consequence: Future critter or pet previews that redirect from the requested tile should preserve the requested-tile highlight and show any resolved fallback as secondary preview state instead of replacing the primary target box.
+
 ### 2026-03-18: Critter release reuses target-tile reach with nearby-ground search
 
 - Decision: Selected `Bunny` hotbar stacks now release through the same hidden-panel primary-use path and shared target-tile hotbar reach as other play-mode items, while the actual passive-bunny spawn resolves to the nearest valid bunny-sized ground spot near that targeted tile.

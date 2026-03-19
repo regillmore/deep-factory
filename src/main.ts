@@ -4099,7 +4099,8 @@ const bootstrap = async (): Promise<void> => {
       tileX: worldTileX,
       tileY: worldTileY,
       canRelease: releaseEvaluation.canRelease,
-      placementRangeWithinReach: releaseEvaluation.placementRangeWithinReach
+      placementRangeWithinReach: releaseEvaluation.placementRangeWithinReach,
+      landingTile: releaseEvaluation.landingTile
     };
   };
   const getSelectedStandalonePlayerItemSpearPreview = (

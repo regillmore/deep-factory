@@ -7195,7 +7195,65 @@ describe('main.ts shell state orchestration', () => {
       tileX: 2,
       tileY: 0,
       canRelease: true,
-      placementRangeWithinReach: true
+      placementRangeWithinReach: true,
+      landingTile: {
+        tileX: 2,
+        tileY: -2
+      }
+    });
+  });
+
+  it('keeps the resolved bunny landing tile on the hovered cell when the requested ground already works directly', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 40, y: 0 }
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'sword', amount: 1 },
+              { itemId: 'umbrella', amount: 1 },
+              { itemId: 'bunny', amount: 2 },
+              { itemId: 'spear', amount: 1 }
+            ],
+            selectedHotbarSlotIndex: 8
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(2, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(3, 0), 1);
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 2, y: -1 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemBunnyReleasePreviewState).toEqual({
+      tileX: 2,
+      tileY: -1,
+      canRelease: true,
+      placementRangeWithinReach: true,
+      landingTile: {
+        tileX: 2,
+        tileY: -1
+      }
     });
   });
 
@@ -7243,7 +7301,8 @@ describe('main.ts shell state orchestration', () => {
       tileX: 8,
       tileY: -1,
       canRelease: false,
-      placementRangeWithinReach: false
+      placementRangeWithinReach: false,
+      landingTile: null
     });
   });
 

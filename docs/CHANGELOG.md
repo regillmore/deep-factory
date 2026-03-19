@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-19
+
+- Task: Add a critter-release landing-marker follow-up after critter-release preview.
+- Changes: Updated [src/world/passiveBunnyRelease.ts](../src/world/passiveBunnyRelease.ts) plus [src/world/passiveBunnyRelease.test.ts](../src/world/passiveBunnyRelease.test.ts) so bunny release evaluation now reports the resolved landing tile together with the spawn state, updated [src/ui/playerItemBunnyReleasePreviewOverlay.ts](../src/ui/playerItemBunnyReleasePreviewOverlay.ts) plus [src/ui/playerItemBunnyReleasePreviewOverlay.test.ts](../src/ui/playerItemBunnyReleasePreviewOverlay.test.ts) so selected `Bunny` previews keep the hovered-tile highlight but add a separate landing marker only when nearby-ground fallback resolves to a different tile, updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) to thread that landing-tile state through the shared hidden-panel preview path, removed completed task `625` from [docs/NEXT.md](docs/NEXT.md), added replacement task `626`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/passiveBunnyRelease.test.ts src/ui/playerItemBunnyReleasePreviewOverlay.test.ts src/main.test.ts` (outside the sandbox for the Vitest run).
+
 ## 2026-03-18
 
 - Task: Add a critter-release preview follow-up after critter-release.
