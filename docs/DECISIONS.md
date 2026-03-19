@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-18: Bug-net captures stay swing-limited and inventory-backed
+
+- Decision: The starter bug net now captures at most one passive bunny per swing, and the runtime only despawns that bunny when one `bunny` item can be merged into the hotbar inventory.
+- Reason: Critter capture should feel like one deliberate swing rather than an area vacuum, and direct inventory credit avoids spawning an immediate overflow pickup on successful captures while still keeping full-inventory misses understandable.
+- Consequence: Future critter-capture follow-ups should treat capture as a swing-limited inventory action and should leave critters in-world when no matching or empty inventory slot can accept the result unless a later pass explicitly introduces a different overflow contract.
+
 ### 2026-03-18: Starter umbrella glide reuses held jump input while selected
 
 - Decision: The starter umbrella now activates glide from the existing held-jump movement input whenever the umbrella hotbar slot is selected, instead of adding a separate pointer-use or shell button contract.

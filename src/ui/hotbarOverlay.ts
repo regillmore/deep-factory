@@ -11,6 +11,7 @@ import {
   getPlayerInventoryItemDefinition,
   type PlayerInventoryState
 } from '../world/playerInventory';
+import type { StarterBugNetSwingPhase } from '../world/starterBugNet';
 import type { StarterMeleeWeaponSwingPhase } from '../world/starterMeleeWeapon';
 import type { StarterPickaxeSwingPhase } from '../world/starterPickaxeMining';
 import type { StarterSpearThrustPhase } from '../world/starterSpear';
@@ -43,6 +44,12 @@ interface HotbarOverlayUpdateOptions {
   starterSpearThrustFeedback?:
     | {
         phase: StarterSpearThrustPhase;
+        timingFillNormalized: number;
+      }
+    | null;
+  starterBugNetSwingFeedback?:
+    | {
+        phase: StarterBugNetSwingPhase;
         timingFillNormalized: number;
       }
     | null;
@@ -94,6 +101,7 @@ const HEART_CRYSTAL_BLOCKED_FILL_BACKGROUND: Record<'dead' | 'max-health-cap', s
   'max-health-cap': HEART_CRYSTAL_MAX_HEALTH_CAP_FILL_BACKGROUND
 };
 type HotbarTimedItemPhase =
+  | StarterBugNetSwingPhase
   | StarterMeleeWeaponSwingPhase
   | StarterPickaxeSwingPhase
   | StarterSpearThrustPhase;
@@ -128,6 +136,11 @@ const STARTER_PICKAXE_SWING_TITLE_TEXT: Record<StarterPickaxeSwingPhase, string>
 const STARTER_SPEAR_THRUST_TITLE_TEXT: Record<StarterSpearThrustPhase, string> = {
   windup: 'windup active',
   active: 'thrust active',
+  recovery: 'recovery active'
+};
+const STARTER_BUG_NET_SWING_TITLE_TEXT: Record<StarterBugNetSwingPhase, string> = {
+  windup: 'windup active',
+  active: 'swing active',
   recovery: 'recovery active'
 };
 
@@ -345,6 +358,7 @@ export class HotbarOverlay {
     const starterMeleeWeaponSwingFeedback = options.starterMeleeWeaponSwingFeedback ?? null;
     const starterPickaxeSwingFeedback = options.starterPickaxeSwingFeedback ?? null;
     const starterSpearThrustFeedback = options.starterSpearThrustFeedback ?? null;
+    const starterBugNetSwingFeedback = options.starterBugNetSwingFeedback ?? null;
     for (let slotIndex = 0; slotIndex < this.slots.length; slotIndex += 1) {
       const slotElements = this.slots[slotIndex]!;
       const stack = state.hotbar[slotIndex] ?? null;
@@ -392,6 +406,14 @@ export class HotbarOverlay {
                 starterSpearThrustFeedback.timingFillNormalized
               ),
               titleText: STARTER_SPEAR_THRUST_TITLE_TEXT[starterSpearThrustFeedback.phase]
+            }
+          : selected && stack.itemId === 'bug-net' && starterBugNetSwingFeedback !== null
+          ? {
+              phase: starterBugNetSwingFeedback.phase,
+              timingFillNormalized: clampUnitInterval(
+                starterBugNetSwingFeedback.timingFillNormalized
+              ),
+              titleText: STARTER_BUG_NET_SWING_TITLE_TEXT[starterBugNetSwingFeedback.phase]
             }
           : null;
       const coolingDown =

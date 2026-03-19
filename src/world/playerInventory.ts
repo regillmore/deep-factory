@@ -9,6 +9,8 @@ export type PlayerInventoryItemId =
   | 'torch'
   | 'rope'
   | 'umbrella'
+  | 'bug-net'
+  | 'bunny'
   | 'healing-potion'
   | 'heart-crystal'
   | 'sword'
@@ -106,6 +108,18 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     hotbarLabel: 'UMBR',
     maxStackSize: 1
   },
+  'bug-net': {
+    id: 'bug-net',
+    label: 'Bug Net',
+    hotbarLabel: 'NET',
+    maxStackSize: 1
+  },
+  bunny: {
+    id: 'bunny',
+    label: 'Bunny',
+    hotbarLabel: 'BUNNY',
+    maxStackSize: 999
+  },
   'healing-potion': {
     id: 'healing-potion',
     label: 'Healing Potion',
@@ -141,7 +155,7 @@ const DEFAULT_STARTER_HOTBAR: ReadonlyArray<PlayerInventoryItemStack | null> = [
   { itemId: 'heart-crystal', amount: 1 },
   { itemId: 'sword', amount: 1 },
   { itemId: 'umbrella', amount: 1 },
-  null,
+  { itemId: 'bug-net', amount: 1 },
   { itemId: 'spear', amount: 1 }
 ];
 
@@ -276,6 +290,14 @@ export const ensurePlayerInventoryHasStarterUmbrella = (
   ensurePlayerInventoryHasStarterHotbarStack(
     state,
     createPlayerInventoryItemStack('umbrella', 1)
+  );
+
+export const ensurePlayerInventoryHasStarterBugNet = (
+  state: PlayerInventoryState
+): PlayerInventoryState =>
+  ensurePlayerInventoryHasStarterHotbarStack(
+    state,
+    createPlayerInventoryItemStack('bug-net', 1)
   );
 
 export const ensurePlayerInventoryHasStarterSpear = (

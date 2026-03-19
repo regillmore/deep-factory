@@ -244,6 +244,7 @@ import {
   type PassiveBunnyState
 } from './world/passiveBunnyState';
 import {
+  addPlayerInventoryItemStack,
   clonePlayerInventoryState,
   consumePlayerInventoryHotbarSlotItem,
   createDefaultPlayerInventoryState,
@@ -315,6 +316,16 @@ import {
   stepStarterMeleeWeaponState,
   tryStartStarterMeleeWeaponSwing
 } from './world/starterMeleeWeapon';
+import {
+  BUNNY_ITEM_ID,
+  createStarterBugNetState,
+  STARTER_BUG_NET_SWING_ACTIVE_SECONDS,
+  STARTER_BUG_NET_SWING_RECOVERY_SECONDS,
+  STARTER_BUG_NET_SWING_WINDUP_SECONDS,
+  STARTER_BUG_NET_ITEM_ID,
+  stepStarterBugNetState,
+  tryStartStarterBugNetSwing
+} from './world/starterBugNet';
 import {
   createStarterSpearState,
   DEFAULT_STARTER_SPEAR_REACH,
@@ -1641,6 +1652,7 @@ const bootstrap = async (): Promise<void> => {
   let starterMeleeWeaponState = createStarterMeleeWeaponState();
   let starterSpearState = createStarterSpearState();
   let starterPickaxeMiningState = createStarterPickaxeMiningState();
+  let starterBugNetState = createStarterBugNetState();
   let playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
 
   const getStandalonePlayerState = (): PlayerState | null => {
@@ -1800,6 +1812,37 @@ const bootstrap = async (): Promise<void> => {
       )
     };
   };
+  const resolveHotbarOverlayStarterBugNetSwingFeedback = ():
+    | {
+        phase: 'windup' | 'active' | 'recovery';
+        timingFillNormalized: number;
+      }
+    | null => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== STARTER_BUG_NET_ITEM_ID) {
+      return null;
+    }
+
+    const activeSwing = starterBugNetState.activeSwing;
+    if (activeSwing === null) {
+      return null;
+    }
+
+    const phaseDurationSeconds =
+      activeSwing.phase === 'windup'
+        ? STARTER_BUG_NET_SWING_WINDUP_SECONDS
+        : activeSwing.phase === 'active'
+          ? STARTER_BUG_NET_SWING_ACTIVE_SECONDS
+          : STARTER_BUG_NET_SWING_RECOVERY_SECONDS;
+
+    return {
+      phase: activeSwing.phase,
+      timingFillNormalized: Math.max(
+        0,
+        Math.min(1, activeSwing.secondsRemaining / phaseDurationSeconds)
+      )
+    };
+  };
   const syncHotbarOverlayState = (): void => {
     hotbarOverlay.update(standalonePlayerInventoryState, {
       healingPotionCooldownFillNormalized:
@@ -1807,7 +1850,8 @@ const bootstrap = async (): Promise<void> => {
       heartCrystalBlockedReason: resolveHotbarOverlayHeartCrystalBlockedReason(),
       starterMeleeWeaponSwingFeedback: resolveHotbarOverlayStarterMeleeWeaponSwingFeedback(),
       starterPickaxeSwingFeedback: resolveHotbarOverlayStarterPickaxeSwingFeedback(),
-      starterSpearThrustFeedback: resolveHotbarOverlayStarterSpearThrustFeedback()
+      starterSpearThrustFeedback: resolveHotbarOverlayStarterSpearThrustFeedback(),
+      starterBugNetSwingFeedback: resolveHotbarOverlayStarterBugNetSwingFeedback()
     });
   };
   const resolveCraftingPanelRecipeDisabledReason = (
@@ -2549,6 +2593,7 @@ const bootstrap = async (): Promise<void> => {
     starterMeleeWeaponState = createStarterMeleeWeaponState();
     starterSpearState = createStarterSpearState();
     starterPickaxeMiningState = createStarterPickaxeMiningState();
+    starterBugNetState = createStarterBugNetState();
     playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
     syncHotbarOverlayState();
   };
@@ -3475,7 +3520,7 @@ const bootstrap = async (): Promise<void> => {
       changed
     };
   };
-  const resolveStarterMeleeWeaponSwingFacing = (
+  const resolvePlayerItemUseFacing = (
     playerState: PlayerState,
     request: PlayerItemUseRequest
   ): 'left' | 'right' => {
@@ -3526,9 +3571,31 @@ const bootstrap = async (): Promise<void> => {
 
     const startResult = tryStartStarterMeleeWeaponSwing(
       starterMeleeWeaponState,
-      resolveStarterMeleeWeaponSwingFacing(standalonePlayerState, request)
+      resolvePlayerItemUseFacing(standalonePlayerState, request)
     );
     starterMeleeWeaponState = startResult.state;
+    if (startResult.started) {
+      syncHotbarOverlayState();
+    }
+    return startResult.started;
+  };
+  const tryStartSelectedStarterBugNetSwing = (
+    request: PlayerItemUseRequest
+  ): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return false;
+    }
+
+    const startResult = tryStartStarterBugNetSwing(
+      starterBugNetState,
+      resolvePlayerItemUseFacing(standalonePlayerState, request)
+    );
+    starterBugNetState = startResult.state;
     if (startResult.started) {
       syncHotbarOverlayState();
     }
@@ -3688,6 +3755,55 @@ const bootstrap = async (): Promise<void> => {
       }
     }
   };
+  const stepStarterBugNetFixedUpdate = (fixedDt: number): void => {
+    const hadActiveSwing = starterBugNetState.activeSwing !== null;
+    const standalonePlayerState = getStandalonePlayerState();
+    const aliveStandalonePlayerState =
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+        ? null
+        : standalonePlayerState;
+    const activePassiveBunnies = getPassiveBunnyEntityStates();
+    const stepResult = stepStarterBugNetState(starterBugNetState, {
+      playerState: aliveStandalonePlayerState,
+      passiveBunnies: activePassiveBunnies.map((passiveBunny) => ({
+        entityId: passiveBunny.id,
+        state: passiveBunny.state
+      })),
+      fixedDtSeconds: fixedDt
+    });
+    starterBugNetState = stepResult.state;
+    if (hadActiveSwing || starterBugNetState.activeSwing !== null) {
+      syncHotbarOverlayState();
+    }
+    if (stepResult.captureEvents.length === 0) {
+      return;
+    }
+
+    let nextInventoryState = standalonePlayerInventoryState;
+    const capturedPassiveBunnyEntityIds: EntityId[] = [];
+    for (const captureEvent of stepResult.captureEvents) {
+      if (entityRegistry.getEntityState<PassiveBunnyState>(captureEvent.entityId) === null) {
+        continue;
+      }
+
+      const addResult = addPlayerInventoryItemStack(nextInventoryState, BUNNY_ITEM_ID, 1);
+      if (addResult.addedAmount <= 0) {
+        continue;
+      }
+
+      nextInventoryState = addResult.state;
+      capturedPassiveBunnyEntityIds.push(captureEvent.entityId);
+    }
+
+    if (capturedPassiveBunnyEntityIds.length === 0) {
+      return;
+    }
+
+    applyStandalonePlayerInventoryState(nextInventoryState);
+    despawnPassiveBunnyEntities(capturedPassiveBunnyEntityIds);
+  };
   const stepStarterPickaxeMiningFixedUpdate = (fixedDt: number): void => {
     const hadActiveSwing = starterPickaxeMiningState.activeSwing !== null;
     const standalonePlayerState = getStandalonePlayerState();
@@ -3759,6 +3875,9 @@ const bootstrap = async (): Promise<void> => {
         request.worldTileX,
         request.worldTileY
       );
+    }
+    if (selectedStack.itemId === STARTER_BUG_NET_ITEM_ID) {
+      return tryStartSelectedStarterBugNetSwing(request);
     }
     if (selectedStack.itemId === HEALING_POTION_ITEM_ID) {
       return tryUseSelectedHealingPotion();
@@ -6175,6 +6294,7 @@ const bootstrap = async (): Promise<void> => {
       stepStarterMeleeWeaponFixedUpdate(fixedDt);
       stepStarterSpearFixedUpdate(fixedDt);
       stepStarterPickaxeMiningFixedUpdate(fixedDt);
+      stepStarterBugNetFixedUpdate(fixedDt);
       stepHostileSlimeSpawnAndDespawn();
       stepPassiveBunnySpawnAndDespawn();
       const nextHealingPotionCooldownState = stepPlayerHealingPotionCooldownState(

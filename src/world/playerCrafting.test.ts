@@ -28,6 +28,22 @@ const createPlayer = (x = 8, y = 28) =>
     grounded: true
   });
 
+const createWorkbenchCraftInventoryState = () =>
+  createPlayerInventoryState({
+    hotbar: [
+      { itemId: 'pickaxe', amount: 1 },
+      { itemId: 'dirt-block', amount: 64 },
+      { itemId: 'torch', amount: 20 },
+      { itemId: 'rope', amount: 24 },
+      { itemId: 'healing-potion', amount: 3 },
+      { itemId: 'heart-crystal', amount: 1 },
+      { itemId: 'sword', amount: 1 },
+      { itemId: 'umbrella', amount: 1 },
+      null,
+      { itemId: 'spear', amount: 1 }
+    ]
+  });
+
 describe('playerCrafting definitions', () => {
   it('exposes a minimal starter recipe registry with a station-free workbench and a workbench-gated potion', () => {
     expect(getPlayerCraftingRecipeDefinitions()).toEqual([
@@ -75,9 +91,24 @@ describe('findNearestPlayerCraftingStationInRange', () => {
 });
 
 describe('evaluatePlayerCraftingRecipe', () => {
-  it('keeps the workbench recipe craftable from starter dirt without requiring a nearby station', () => {
+  it('blocks the workbench recipe when the full default hotbar has no room for the output', () => {
     const evaluation = evaluatePlayerCraftingRecipe({
       inventoryState: createDefaultPlayerInventoryState(),
+      recipeId: 'workbench'
+    });
+
+    expect(evaluation).toMatchObject({
+      hasIngredients: true,
+      stationInRange: true,
+      outputFitsInInventory: false,
+      blocker: 'inventory-full',
+      craftable: false
+    });
+  });
+
+  it('keeps the workbench recipe craftable without a nearby station when an output slot is available', () => {
+    const evaluation = evaluatePlayerCraftingRecipe({
+      inventoryState: createWorkbenchCraftInventoryState(),
       recipeId: 'workbench'
     });
 
@@ -158,7 +189,7 @@ describe('evaluatePlayerCraftingRecipe', () => {
 describe('tryCraftPlayerRecipe', () => {
   it('crafts a workbench by consuming dirt and adding one workbench stack', () => {
     const result = tryCraftPlayerRecipe({
-      inventoryState: createDefaultPlayerInventoryState(),
+      inventoryState: createWorkbenchCraftInventoryState(),
       recipeId: 'workbench'
     });
 

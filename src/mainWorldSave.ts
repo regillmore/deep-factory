@@ -12,6 +12,7 @@ import { createDroppedItemState, type DroppedItemState } from './world/droppedIt
 import {
   createDefaultPlayerInventoryState,
   createPlayerInventoryState,
+  ensurePlayerInventoryHasStarterBugNet,
   ensurePlayerInventoryHasStarterHeartCrystal,
   ensurePlayerInventoryHasStarterHealingPotions,
   ensurePlayerInventoryHasStarterPickaxe,
@@ -285,12 +286,14 @@ const normalizeStandalonePlayerInventoryState = (
       ? ensurePlayerInventoryHasStarterHeartCrystal
       : (state: PlayerInventoryState): PlayerInventoryState => state;
 
-  return ensurePlayerInventoryHasStarterSpear(
-    ensurePlayerInventoryHasStarterUmbrella(
-      ensurePlayerInventoryHasStarterSword(
-        heartCrystalBackfill(
-          ensurePlayerInventoryHasStarterHealingPotions(
-            ensurePlayerInventoryHasStarterPickaxe(normalizedInventoryState)
+  return ensurePlayerInventoryHasStarterBugNet(
+    ensurePlayerInventoryHasStarterSpear(
+      ensurePlayerInventoryHasStarterUmbrella(
+        ensurePlayerInventoryHasStarterSword(
+          heartCrystalBackfill(
+            ensurePlayerInventoryHasStarterHealingPotions(
+              ensurePlayerInventoryHasStarterPickaxe(normalizedInventoryState)
+            )
           )
         )
       )

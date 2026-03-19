@@ -65,6 +65,14 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
     baseColor: [0.53, 0.35, 0.16],
     accentColor: [0.96, 0.82, 0.48]
   },
+  'bug-net': {
+    baseColor: [0.39, 0.55, 0.31],
+    accentColor: [0.86, 0.9, 0.57]
+  },
+  bunny: {
+    baseColor: [0.68, 0.61, 0.54],
+    accentColor: [0.96, 0.9, 0.82]
+  },
   'healing-potion': {
     baseColor: [0.67, 0.18, 0.22],
     accentColor: [0.98, 0.82, 0.34]

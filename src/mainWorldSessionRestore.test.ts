@@ -38,7 +38,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
         { itemId: 'heart-crystal', amount: 1 },
         { itemId: 'sword', amount: 1 },
         { itemId: 'umbrella', amount: 1 },
-        null,
+        { itemId: 'bug-net', amount: 1 },
         { itemId: 'spear', amount: 1 }
       ],
       selectedHotbarSlotIndex: 3

@@ -31,6 +31,17 @@ describe('droppedItemPlaceholder', () => {
     });
   });
 
+  it('provides a dedicated placeholder palette for bug-net and bunny pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('bug-net')).toEqual({
+      baseColor: [0.39, 0.55, 0.31],
+      accentColor: [0.86, 0.9, 0.57]
+    });
+    expect(getDroppedItemPlaceholderPalette('bunny')).toEqual({
+      baseColor: [0.68, 0.61, 0.54],
+      accentColor: [0.96, 0.9, 0.82]
+    });
+  });
+
   it('provides a dedicated placeholder palette for workbench pickups', () => {
     expect(getDroppedItemPlaceholderPalette('workbench')).toEqual({
       baseColor: [0.49, 0.34, 0.19],

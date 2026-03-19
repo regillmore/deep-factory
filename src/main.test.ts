@@ -75,6 +75,7 @@ import {
   STARTER_SPEAR_THRUST_RECOVERY_SECONDS,
   STARTER_SPEAR_THRUST_WINDUP_SECONDS
 } from './world/starterSpear';
+import { STARTER_BUG_NET_SWING_WINDUP_SECONDS } from './world/starterBugNet';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
 import { STARTER_TORCH_TILE_ID } from './world/starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './world/starterWorkbenchPlacement';
@@ -6814,7 +6815,7 @@ describe('main.ts shell state orchestration', () => {
           { itemId: 'heart-crystal', amount: 1 },
           { itemId: 'sword', amount: 1 },
           { itemId: 'umbrella', amount: 1 },
-          null,
+          { itemId: 'bug-net', amount: 1 },
           { itemId: 'spear', amount: 1 }
         ],
         selectedHotbarSlotIndex: 2
@@ -6839,7 +6840,7 @@ describe('main.ts shell state orchestration', () => {
           { itemId: 'heart-crystal', amount: 1 },
           { itemId: 'sword', amount: 1 },
           { itemId: 'umbrella', amount: 1 },
-          null,
+          { itemId: 'bug-net', amount: 1 },
           { itemId: 'spear', amount: 1 }
         ],
         selectedHotbarSlotIndex: 2
@@ -7249,6 +7250,34 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('crafts a workbench from the panel, then places it through the shared hidden-panel item-use path', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'sword', amount: 1 },
+              { itemId: 'umbrella', amount: 1 },
+              { itemId: 'bug-net', amount: 1 },
+              { itemId: 'workbench', amount: 1 },
+              { itemId: 'spear', amount: 1 }
+            ],
+            selectedHotbarSlotIndex: 0
+          })
+        })
+      )
+    );
+
     await import('./main');
     await flushBootstrap();
 
@@ -7273,10 +7302,10 @@ describe('main.ts shell state orchestration', () => {
           { itemId: 'torch', amount: 20 },
           { itemId: 'rope', amount: 24 },
           { itemId: 'healing-potion', amount: 3 },
-          { itemId: 'heart-crystal', amount: 1 },
           { itemId: 'sword', amount: 1 },
           { itemId: 'umbrella', amount: 1 },
-          { itemId: 'workbench', amount: 1 },
+          { itemId: 'bug-net', amount: 1 },
+          { itemId: 'workbench', amount: 2 },
           { itemId: 'spear', amount: 1 }
         ],
         selectedHotbarSlotIndex: 0
@@ -7327,7 +7356,10 @@ describe('main.ts shell state orchestration', () => {
 
     dispatchWindowEvent('pagehide');
     const persistedEnvelope = readPersistedWorldSaveEnvelope();
-    expect(persistedEnvelope?.session.standalonePlayerInventoryState.hotbar[8]).toBeNull();
+    expect(persistedEnvelope?.session.standalonePlayerInventoryState.hotbar[8]).toEqual({
+      itemId: 'workbench',
+      amount: 1
+    });
     const restoredWorld = new TileWorld(0);
     restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
     expect(restoredWorld.getTile(1, -1)).toBe(STARTER_WORKBENCH_TILE_ID);
@@ -8219,6 +8251,95 @@ describe('main.ts shell state orchestration', () => {
     dispatchWindowEvent('pagehide');
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[9]).toEqual({
       itemId: 'spear',
+      amount: 1
+    });
+  });
+
+  it('uses the bug net through the shared hidden-panel item-use path, despawns the hit bunny, and persists the captured bunny stack', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'bunny', amount: 2 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'sword', amount: 1 },
+              { itemId: 'umbrella', amount: 1 },
+              { itemId: 'bug-net', amount: 1 },
+              { itemId: 'spear', amount: 1 }
+            ],
+            selectedHotbarSlotIndex: 8
+          })
+        })
+      )
+    );
+
+    const bunnySpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 1,
+      x: 24,
+      y: 0,
+      width: DEFAULT_PASSIVE_BUNNY_WIDTH,
+      height: DEFAULT_PASSIVE_BUNNY_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_PASSIVE_BUNNY_WIDTH &&
+        search?.height === DEFAULT_PASSIVE_BUNNY_HEIGHT
+      ) {
+        return bunnySpawnPoint;
+      }
+
+      return testRuntime.playerSpawnPoint;
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    for (let step = 0; step < DEFAULT_PASSIVE_BUNNY_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
+
+    runRenderFrame(1000 / 60, 0.5);
+    expect(testRuntime.latestRendererRenderFrameState?.bunnyCurrentPositions).toHaveLength(1);
+    expect(testRuntime.latestRendererRenderFrameState?.bunnyCurrentPositions?.[0]).toMatchObject({
+      position: { x: 24, y: 0 }
+    });
+
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 2,
+        worldTileY: -1,
+        worldX: 32,
+        worldY: -4,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(STARTER_BUG_NET_SWING_WINDUP_SECONDS);
+    runRenderFrame();
+
+    expect(testRuntime.latestRendererRenderFrameState?.bunnyCurrentPositions).toEqual([]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[3]).toEqual({
+      itemId: 'bunny',
+      amount: 3
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[8]).toEqual({
+      itemId: 'bug-net',
       amount: 1
     });
   });

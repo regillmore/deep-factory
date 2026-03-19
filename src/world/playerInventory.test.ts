@@ -9,6 +9,7 @@ import {
   createPlayerInventoryItemStack,
   createPlayerInventoryState,
   ensurePlayerInventoryHasStarterHeartCrystal,
+  ensurePlayerInventoryHasStarterBugNet,
   ensurePlayerInventoryHasStarterHealingPotions,
   ensurePlayerInventoryHasStarterPickaxe,
   ensurePlayerInventoryHasStarterSpear,
@@ -43,7 +44,7 @@ describe('playerInventory', () => {
         { itemId: 'heart-crystal', amount: 1 },
         { itemId: 'sword', amount: 1 },
         { itemId: 'umbrella', amount: 1 },
-        null,
+        { itemId: 'bug-net', amount: 1 },
         { itemId: 'spear', amount: 1 }
       ],
       selectedHotbarSlotIndex: 0
@@ -421,6 +422,18 @@ describe('playerInventory', () => {
       hotbarLabel: 'UMBR',
       maxStackSize: 1
     });
+    expect(getPlayerInventoryItemDefinition('bug-net')).toEqual({
+      id: 'bug-net',
+      label: 'Bug Net',
+      hotbarLabel: 'NET',
+      maxStackSize: 1
+    });
+    expect(getPlayerInventoryItemDefinition('bunny')).toEqual({
+      id: 'bunny',
+      label: 'Bunny',
+      hotbarLabel: 'BUNNY',
+      maxStackSize: 999
+    });
     expect(getPlayerInventoryItemDefinition('spear')).toEqual({
       id: 'spear',
       label: 'Starter Spear',
@@ -628,6 +641,40 @@ describe('playerInventory', () => {
         { itemId: 'spear', amount: 1 }
       ],
       selectedHotbarSlotIndex: 8
+    });
+  });
+
+  it('fills the first empty slot with a starter bug net when it is missing', () => {
+    const state = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'healing-potion', amount: 3 },
+        { itemId: 'heart-crystal', amount: 1 },
+        { itemId: 'sword', amount: 1 },
+        { itemId: 'umbrella', amount: 1 },
+        null,
+        { itemId: 'spear', amount: 1 }
+      ],
+      selectedHotbarSlotIndex: 7
+    });
+
+    expect(ensurePlayerInventoryHasStarterBugNet(state)).toEqual({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'dirt-block', amount: 64 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'healing-potion', amount: 3 },
+        { itemId: 'heart-crystal', amount: 1 },
+        { itemId: 'sword', amount: 1 },
+        { itemId: 'umbrella', amount: 1 },
+        { itemId: 'bug-net', amount: 1 },
+        { itemId: 'spear', amount: 1 }
+      ],
+      selectedHotbarSlotIndex: 7
     });
   });
 

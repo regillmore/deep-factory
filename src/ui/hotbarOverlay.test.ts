@@ -77,7 +77,6 @@ describe('HotbarOverlay', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });
     const starterState = createDefaultPlayerInventoryState();
-    const firstEmptySlotIndex = starterState.hotbar.findIndex((stack) => stack === null);
 
     overlay.setVisible(true);
     overlay.update(starterState);
@@ -87,7 +86,7 @@ describe('HotbarOverlay', () => {
     const firstSlot = slotRow.children[0]!;
     const secondSlot = slotRow.children[1]!;
     const heartCrystalSlot = slotRow.children[5]!;
-    const emptySlot = slotRow.children[firstEmptySlotIndex]!;
+    const bugNetSlot = slotRow.children[8]!;
     const moveLeftButton = getMoveLeftButton(overlay);
     const dropOneButton = getDropOneButton(overlay);
     const dropStackButton = getDropStackButton(overlay);
@@ -99,7 +98,8 @@ describe('HotbarOverlay', () => {
     expect(secondSlot.title).toContain('Dirt Block');
     expect(heartCrystalSlot.title).toContain('Heart Crystal');
     expect(heartCrystalSlot.children[1]!.textContent).toBe('HEART');
-    expect(emptySlot.children[1]!.textContent).toBe('EMPTY');
+    expect(bugNetSlot.title).toContain('Bug Net');
+    expect(bugNetSlot.children[1]!.textContent).toBe('NET');
     expect(getSlotCooldownFill(overlay, 4).style.opacity).toBe('0');
     expect(moveLeftButton.title).toContain('leftmost slot');
     expect(moveLeftButton.getAttribute('aria-disabled')).toBe('true');
@@ -385,6 +385,49 @@ describe('HotbarOverlay', () => {
     expect(getSlotCooldownFill(overlay, 9).style.height).toBe('0.0%');
     expect(getSlotCooldownFill(overlay, 9).style.opacity).toBe('0');
     expect(getSlotRow(overlay).children[9]!.title).not.toContain('active');
+  });
+
+  it('shows and clears selected bug-net phase timing feedback without affecting other slots', () => {
+    const host = createHost();
+    const overlay = new HotbarOverlay({ host });
+    const bugNetSelectedState = createPlayerInventoryState({
+      hotbar: createDefaultPlayerInventoryState().hotbar,
+      selectedHotbarSlotIndex: 8
+    });
+
+    overlay.update(bugNetSelectedState, {
+      starterBugNetSwingFeedback: {
+        phase: 'windup',
+        timingFillNormalized: 0.75
+      }
+    });
+
+    expect(getSlotAmountLabel(overlay, 8).textContent).toBe('WIND');
+    expect(getSlotAmountLabel(overlay, 8).style.color).toBe('#ffe5ad');
+    expect(getSlotCooldownFill(overlay, 8).style.height).toBe('75.0%');
+    expect(getSlotCooldownFill(overlay, 8).style.opacity).toBe('1');
+    expect(getSlotRow(overlay).children[8]!.title).toContain('windup active');
+    expect(getSlotCooldownFill(overlay, 4).style.opacity).toBe('0');
+
+    overlay.update(bugNetSelectedState, {
+      starterBugNetSwingFeedback: {
+        phase: 'recovery',
+        timingFillNormalized: 0.25
+      }
+    });
+
+    expect(getSlotAmountLabel(overlay, 8).textContent).toBe('REC');
+    expect(getSlotAmountLabel(overlay, 8).style.color).toBe('#cdeaff');
+    expect(getSlotCooldownFill(overlay, 8).style.height).toBe('25.0%');
+    expect(getSlotRow(overlay).children[8]!.title).toContain('recovery active');
+
+    overlay.update(bugNetSelectedState);
+
+    expect(getSlotAmountLabel(overlay, 8).textContent).toBe('');
+    expect(getSlotAmountLabel(overlay, 8).style.color).toBe('#ffe7a3');
+    expect(getSlotCooldownFill(overlay, 8).style.height).toBe('0.0%');
+    expect(getSlotCooldownFill(overlay, 8).style.opacity).toBe('0');
+    expect(getSlotRow(overlay).children[8]!.title).not.toContain('active');
   });
 
   it('can hide and show itself without removing the DOM root', () => {
