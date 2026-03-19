@@ -940,6 +940,11 @@ describe('paused main-menu dashboard layout', () => {
         tone: 'accent'
       },
       {
+        label: 'World Seed',
+        badge: null,
+        tone: null
+      },
+      {
         label: 'Saved Again By',
         badge: null,
         tone: null
@@ -981,6 +986,11 @@ describe('paused main-menu dashboard layout', () => {
         label: 'Browser Resume',
         badge: 'Missing',
         tone: 'warning'
+      },
+      {
+        label: 'World Seed',
+        badge: null,
+        tone: null
       },
       {
         label: 'Saved Again By',
@@ -1037,6 +1047,11 @@ describe('paused main-menu dashboard layout', () => {
         label: 'Browser Resume',
         badge: 'Missing',
         tone: 'warning'
+      },
+      {
+        label: 'World Seed',
+        badge: null,
+        tone: null
       },
       {
         label: 'Saved Again By',
@@ -4622,6 +4637,10 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
           }
         },
         {
+          label: 'World Seed',
+          value: '0'
+        },
+        {
           label: 'Saved Again By',
           value: 'None needed'
         },
@@ -4690,6 +4709,45 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
     });
   });
 
+  it('shows the active paused-world seed in the shared summary rows', () => {
+    const pausedState = createPausedMainMenuShellState();
+    pausedState.pausedMainMenuWorldSeed = 0x12345678;
+
+    expect(resolvePausedMainMenuWorldSaveSectionState(pausedState)).toMatchObject({
+      visible: true,
+      metadataRows: [
+        {
+          label: 'Browser Resume',
+          value: 'Available',
+          badge: {
+            text: 'Saved',
+            tone: 'accent'
+          }
+        },
+        {
+          label: 'World Seed',
+          value: '305419896'
+        },
+        {
+          label: 'Saved Again By',
+          value: 'None needed'
+        },
+        {
+          label: 'Last Export',
+          value: 'No recent export'
+        },
+        {
+          label: 'Last Import',
+          value: 'No recent import'
+        },
+        {
+          label: 'Last Clear',
+          value: 'No recent clear'
+        }
+      ]
+    });
+  });
+
   it('surfaces missing browser resume plus latest world-save outcomes in the shared summary rows', () => {
     expect(
       resolvePausedMainMenuWorldSaveSectionState(
@@ -4713,6 +4771,10 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
             text: 'Missing',
             tone: 'warning'
           }
+        },
+        {
+          label: 'World Seed',
+          value: '0'
         },
         {
           label: 'Saved Again By',
@@ -4770,6 +4832,10 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
             text: 'Missing',
             tone: 'warning'
           }
+        },
+        {
+          label: 'World Seed',
+          value: '0'
         },
         {
           label: 'Saved Again By',
@@ -4834,6 +4900,10 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
             text: 'Saved',
             tone: 'accent'
           }
+        },
+        {
+          label: 'World Seed',
+          value: '0'
         },
         {
           label: 'Saved Again By',

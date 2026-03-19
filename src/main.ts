@@ -1220,6 +1220,7 @@ const bootstrap = async (): Promise<void> => {
       shellActionKeybindings
     }));
   };
+  const readCurrentWorldSeed = (): number => renderer.createWorldSnapshot().worldSeed;
   const showMainMenuShellState = (): void => {
     currentScreen = 'main-menu';
     shell.setState(
@@ -1242,7 +1243,8 @@ const bootstrap = async (): Promise<void> => {
         worldSessionTelemetryPersistenceAvailable,
         pausedMainMenuResetShellTelemetryResult,
         readWorldSessionGameplayState(),
-        worldSessionGameplayPersistenceAvailable
+        worldSessionGameplayPersistenceAvailable,
+        readCurrentWorldSeed()
       )
     );
     syncWorldScreenShellVisibility();

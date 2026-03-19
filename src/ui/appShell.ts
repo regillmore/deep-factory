@@ -443,6 +443,7 @@ export interface AppShellState {
   pausedMainMenuExportResult?: PausedMainMenuExportResult;
   pausedMainMenuImportResult?: PausedMainMenuImportResult;
   pausedMainMenuSavedWorldStatus?: PausedMainMenuSavedWorldStatus;
+  pausedMainMenuWorldSeed?: number;
   pausedMainMenuClearSavedWorldResult?: PausedMainMenuClearSavedWorldResult;
   pausedMainMenuResetShellTogglesResult?: PausedMainMenuResetShellTogglesResult;
   pausedMainMenuResetShellTelemetryResult?: PausedMainMenuResetShellTelemetryResult;
@@ -593,7 +594,8 @@ export const resolvePausedMainMenuWorldSaveSectionState = (
       state.pausedMainMenuImportResult ?? null,
       state.pausedMainMenuSavedWorldStatus ?? null,
       state.pausedMainMenuExportResult ?? null,
-      state.pausedMainMenuClearSavedWorldResult ?? null
+      state.pausedMainMenuClearSavedWorldResult ?? null,
+      state.pausedMainMenuWorldSeed ?? null
     ),
     actionSections: resolvePausedMainMenuWorldSaveMenuSections(sectionViewModel),
     tone: resolvePausedMainMenuWorldSaveSectionTone(
@@ -1456,6 +1458,8 @@ const resolvePausedMainMenuWorldSaveSummaryLine = (
 const resolvePausedMainMenuWorldSaveBrowserResumeValue = (
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null
 ): string => (savedWorldStatus === null ? 'Available' : 'Missing');
+const resolvePausedMainMenuWorldSaveSeedValue = (worldSeed: number | null): string =>
+  String(worldSeed ?? 0);
 const createPausedMainMenuWorldSaveBrowserResumeBadge = (
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null
 ): AppShellMenuSectionMetadataBadge =>
@@ -1636,12 +1640,17 @@ const createPausedMainMenuWorldSaveSummaryRows = (
   importResult: PausedMainMenuImportResult | null,
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null,
   exportResult: PausedMainMenuExportResult | null,
-  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null
+  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null,
+  worldSeed: number | null
 ): readonly AppShellMenuSectionMetadataRow[] => [
   {
     label: 'Browser Resume',
     value: resolvePausedMainMenuWorldSaveBrowserResumeValue(savedWorldStatus),
     badge: createPausedMainMenuWorldSaveBrowserResumeBadge(savedWorldStatus)
+  },
+  {
+    label: 'World Seed',
+    value: resolvePausedMainMenuWorldSaveSeedValue(worldSeed)
   },
   {
     label: 'Saved Again By',
@@ -2251,7 +2260,8 @@ export const createPausedMainMenuMenuSections = (
   worldSessionTelemetryPersistenceAvailable = true,
   resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null,
   worldSessionGameplayState: WorldSessionGameplayState = createDefaultWorldSessionGameplayState(),
-  worldSessionGameplayPersistenceAvailable = true
+  worldSessionGameplayPersistenceAvailable = true,
+  pausedMainMenuWorldSeed: number | null = null
 ): readonly AppShellMenuSection[] =>
   createPausedMainMenuShellState(
     worldSessionShellState,
@@ -2270,7 +2280,8 @@ export const createPausedMainMenuMenuSections = (
     worldSessionTelemetryPersistenceAvailable,
     resetShellTelemetryResult,
     worldSessionGameplayState,
-    worldSessionGameplayPersistenceAvailable
+    worldSessionGameplayPersistenceAvailable,
+    pausedMainMenuWorldSeed
   ).menuSections ?? [];
 
 const createPausedMainMenuBaseShellState = (
@@ -2290,7 +2301,8 @@ const createPausedMainMenuBaseShellState = (
   worldSessionTelemetryPersistenceAvailable = true,
   resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null,
   worldSessionGameplayState: WorldSessionGameplayState = createDefaultWorldSessionGameplayState(),
-  worldSessionGameplayPersistenceAvailable = true
+  worldSessionGameplayPersistenceAvailable = true,
+  pausedMainMenuWorldSeed: number | null = null
 ): AppShellState => {
   const pausedMainMenuSections = createPausedMainMenuSectionViewModel(
     worldSessionShellState,
@@ -2329,6 +2341,7 @@ const createPausedMainMenuBaseShellState = (
     ...(exportResult === null ? {} : { pausedMainMenuExportResult: exportResult }),
     ...(importResult === null ? {} : { pausedMainMenuImportResult: importResult }),
     ...(savedWorldStatus === null ? {} : { pausedMainMenuSavedWorldStatus: savedWorldStatus }),
+    ...(pausedMainMenuWorldSeed === null ? {} : { pausedMainMenuWorldSeed }),
     ...(clearSavedWorldResult === null
       ? {}
       : { pausedMainMenuClearSavedWorldResult: clearSavedWorldResult }),
@@ -2364,7 +2377,8 @@ export const createPausedMainMenuShellState = (
   worldSessionTelemetryPersistenceAvailable = true,
   resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null,
   worldSessionGameplayState: WorldSessionGameplayState = createDefaultWorldSessionGameplayState(),
-  worldSessionGameplayPersistenceAvailable = true
+  worldSessionGameplayPersistenceAvailable = true,
+  pausedMainMenuWorldSeed: number | null = null
 ): AppShellState => {
   const baseState = createPausedMainMenuBaseShellState(
     worldSessionShellState,
@@ -2383,7 +2397,8 @@ export const createPausedMainMenuShellState = (
     worldSessionTelemetryPersistenceAvailable,
     resetShellTelemetryResult,
     worldSessionGameplayState,
-    worldSessionGameplayPersistenceAvailable
+    worldSessionGameplayPersistenceAvailable,
+    pausedMainMenuWorldSeed
   );
   const menuSectionGroups = resolvePausedMainMenuMenuSectionGroups(baseState);
 
@@ -2611,7 +2626,8 @@ export const createMainMenuShellState = (
   worldSessionTelemetryPersistenceAvailable = true,
   resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null,
   worldSessionGameplayState: WorldSessionGameplayState = createDefaultWorldSessionGameplayState(),
-  worldSessionGameplayPersistenceAvailable = true
+  worldSessionGameplayPersistenceAvailable = true,
+  pausedMainMenuWorldSeed: number | null = null
 ): AppShellState =>
   hasResumableWorldSession
     ? createPausedMainMenuShellState(
@@ -2631,7 +2647,8 @@ export const createMainMenuShellState = (
         worldSessionTelemetryPersistenceAvailable,
         resetShellTelemetryResult,
         worldSessionGameplayState,
-        worldSessionGameplayPersistenceAvailable
+        worldSessionGameplayPersistenceAvailable,
+        pausedMainMenuWorldSeed
       )
     : createFirstLaunchMainMenuShellState(firstLaunchWorldSavePersistenceAvailable);
 

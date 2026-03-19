@@ -30,6 +30,8 @@ import {
   createMainMenuShellState,
   createRendererInitializationFailedBootShellState,
   createWebGlUnavailableBootShellState,
+  resolvePausedMainMenuWorldSaveSectionState,
+  type AppShellState,
   type PausedMainMenuClearSavedWorldResult,
   type PausedMainMenuExportResult,
   type PausedMainMenuImportResult,
@@ -2125,6 +2127,7 @@ const createExpectedPausedMainMenuState = (
     resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult;
     worldSaveCleared: boolean;
     savedWorldStatus: PausedMainMenuSavedWorldStatus;
+    worldSeed: number;
     recentActivityAction: PausedMainMenuRecentActivityAction;
     shellProfilePreview: {
       fileName: string | null;
@@ -2188,12 +2191,23 @@ const createExpectedPausedMainMenuState = (
       (testRuntime.storageValues.has(WORLD_SESSION_GAMEPLAY_STATE_STORAGE_KEY)
         ? readPersistedGameplayState()
         : createDefaultWorldSessionGameplayState()),
-    options.worldSessionGameplayPersistenceAvailable ?? true
+    options.worldSessionGameplayPersistenceAvailable ?? true,
+    options.worldSeed ?? (testRuntime.rendererWorldSnapshot?.worldSeed ?? 0)
   );
 };
 
 const createExpectedFirstLaunchMainMenuState = (persistenceAvailable = true) =>
   createFirstLaunchMainMenuShellState(persistenceAvailable);
+const readPausedWorldSaveMetadataValue = (
+  rowLabel: string,
+  state: AppShellState | null = (testRuntime.shellInstance?.currentState ?? null) as
+    | AppShellState
+    | null
+): string | undefined =>
+  state === null
+    ? undefined
+    : resolvePausedMainMenuWorldSaveSectionState(state).metadataRows.find((row) => row.label === rowLabel)
+        ?.value;
 const createTestPlayerSpawnPoint = ({
   anchorTileX = 0,
   standingTileY = 0,
@@ -2658,7 +2672,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
     expect(dispatchKeydown('q').prevented).toBe(true);
-    expect(testRuntime.shellInstance?.currentState).toEqual(createMainMenuShellState(true));
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
   });
 
   it('switches the shared shortcut context between first-launch main menu, in-world, and paused main menu states', async () => {
@@ -10764,6 +10778,27 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
   });
 
+  it('shows the active fresh-world seed in paused World Save and preserves it through export', async () => {
+    vi.mocked(Math.random).mockReturnValueOnce(0.125);
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.shellInstance?.options.onReturnToMainMenu('in-world');
+
+    expect(readPausedWorldSaveMetadataValue('World Seed')).toBe('536870912');
+
+    testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
+
+    expect(testRuntime.downloadedWorldSaveEnvelopes).toHaveLength(1);
+    expect(
+      (testRuntime.downloadedWorldSaveEnvelopes[0] as { worldSnapshot: { worldSeed: number } })
+        .worldSnapshot.worldSeed
+    ).toBe(536870912);
+    expect(readPausedWorldSaveMetadataValue('World Seed')).toBe('536870912');
+  });
+
   it('shows paused-menu export failure copy when the json download throws without mutating the paused session', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const savedWorld = new TileWorld(0);
@@ -11532,7 +11567,8 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('routes a paused-menu imported world save through the shared picker and restore action', async () => {
-    const restoredWorld = new TileWorld(0);
+    const restoredWorldSeed = 0x12345678;
+    const restoredWorld = new TileWorld(0, restoredWorldSeed);
     expect(restoredWorld.setTile(5, -20, 6)).toBe(true);
     const restoreEnvelope = createWorldSaveEnvelope({
       worldSnapshot: restoredWorld.createSnapshot(),
@@ -11554,7 +11590,6 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
     expect(dispatchKeydown('q').prevented).toBe(true);
-    const pausedState = createExpectedPausedMainMenuState();
     testRuntime.queuedWorldSaveImportResults = [
       {
         status: 'selected',
@@ -11573,15 +11608,22 @@ describe('main.ts shell state orchestration', () => {
         importResult: {
           status: 'accepted',
           fileName: 'restore.json'
-        }
+        },
+        worldSeed: restoredWorldSeed
       })
     );
     expect(testRuntime.rendererLoadWorldSnapshotCallCount).toBe(1);
+    expect(readPausedWorldSaveMetadataValue('World Seed')).toBe('305419896');
+    expect(readPersistedWorldSaveEnvelope()?.worldSnapshot.worldSeed).toBe(restoredWorldSeed);
 
     expect(dispatchKeydown('Enter').prevented).toBe(true);
     expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
     expect(dispatchKeydown('q').prevented).toBe(true);
-    expect(testRuntime.shellInstance?.currentState).toEqual(pausedState);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        worldSeed: restoredWorldSeed
+      })
+    );
   });
 
   it('keeps the paused session unchanged when the world-save import picker is canceled', async () => {

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-19
 
+- Task: Add a paused-menu world-seed follow-up after deterministic world seeds.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/main.ts](../src/main.ts), [src/ui/appShell.test.ts](../src/ui/appShell.test.ts), and [src/main.test.ts](../src/main.test.ts) so the paused `World Save` section now shows the active `World Seed`, the paused shell state carries that live seed from the renderer-backed world session, and fresh-session export plus restored-session import regressions confirm the surfaced seed stays aligned with the active save envelope; removed completed task `632` from [docs/NEXT.md](docs/NEXT.md), added replacement task `636`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/ui/appShell.test.ts src/main.test.ts` (outside the sandbox for the Vitest run).
+
 - Task: Fix seeded fresh-world spawn height so the default world start stays above ground.
 - Changes: Updated [src/world/playerSpawn.ts](../src/world/playerSpawn.ts) plus [src/world/playerSpawn.test.ts](../src/world/playerSpawn.test.ts) so default spawn searches now anchor their vertical origin to the seeded procedural surface at the requested column, prefer surface-aligned nearby fallbacks when no explicit `originTileY` is supplied, and cover seeded worlds whose origin surface falls outside the legacy `y=0` search band; removed completed task `634` from [docs/NEXT.md](docs/NEXT.md), added replacement task `635`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json`, `cmd /c npx vitest run src/world/playerSpawn.test.ts`, and `cmd /c npx vitest run src/world/playerState.test.ts` (outside the sandbox for the Vitest runs).
