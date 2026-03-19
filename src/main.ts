@@ -128,6 +128,7 @@ import {
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
 import { CraftingPanel, type CraftingPanelRecipeViewModel } from './ui/craftingPanel';
+import { EquipmentPanel, type EquipmentPanelSlotViewModel } from './ui/equipmentPanel';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import {
   PlayerItemBunnyReleasePreviewOverlay,
@@ -225,9 +226,21 @@ import {
   resolveLiquidSurfaceTopHeights
 } from './world/liquidSurface';
 import {
+  DEFAULT_HOSTILE_SLIME_CONTACT_DAMAGE,
   resolveHostileSlimePlayerContactWithEvent,
   type HostileSlimePlayerContactEvent
 } from './world/hostileSlimeCombat';
+import {
+  clonePlayerEquipmentState,
+  createDefaultPlayerEquipmentState,
+  getPlayerArmorItemDefinition,
+  getPlayerEquipmentSlotLabel,
+  getPlayerEquipmentTotalDefense,
+  getStarterArmorItemIdForSlot,
+  resolvePlayerArmorReducedDamage,
+  toggleStarterArmorForSlot,
+  type PlayerEquipmentState
+} from './world/playerEquipment';
 import {
   createHostileSlimeSpawnerState,
   resolveHostileSlimeSpawnWindowTarget,
@@ -1188,6 +1201,12 @@ const bootstrap = async (): Promise<void> => {
       }
     }
   });
+  const equipmentPanel = new EquipmentPanel({
+    host: worldHost,
+    onToggleSlot: (slotId) => {
+      toggleStandalonePlayerStarterArmorSlot(slotId);
+    }
+  });
   let debugEditControls: TouchDebugEditControls | null = null;
   const syncInWorldShellState = (): void => {
     currentScreen = 'in-world';
@@ -1316,6 +1335,7 @@ const bootstrap = async (): Promise<void> => {
   const syncDebugEditControlsVisibility = (): void => {
     debugEditControls?.setVisible(currentScreen === 'in-world' && debugEditControlsVisible);
     syncCraftingPanelVisibility();
+    syncEquipmentPanelVisibility();
     syncCanvasInteractionMode();
     syncPlayModeItemPreviewVisibility();
   };
@@ -1331,6 +1351,10 @@ const bootstrap = async (): Promise<void> => {
     !(debugEditControls?.isCollapsed() ?? false);
   const syncCraftingPanelVisibility = (): void => {
     craftingPanel.setVisible(isCraftingPanelVisible());
+  };
+  const isEquipmentPanelVisible = (): boolean => isCraftingPanelVisible();
+  const syncEquipmentPanelVisibility = (): void => {
+    equipmentPanel.setVisible(isEquipmentPanelVisible());
   };
   const syncWorldScreenShellVisibility = (): void => {
     syncDebugOverlayVisibility();
@@ -1634,6 +1658,7 @@ const bootstrap = async (): Promise<void> => {
   let standalonePlayerEntityId: EntityId | null = null;
   let standalonePlayerDeathState: PlayerDeathState | null = null;
   let standalonePlayerInventoryState = createDefaultPlayerInventoryState();
+  let standalonePlayerEquipmentState = createDefaultPlayerEquipmentState();
   let hostileSlimeEntityIds: EntityId[] = [];
   let passiveBunnyEntityIds: EntityId[] = [];
   let droppedItemEntityIds: EntityId[] = [];
@@ -1676,6 +1701,8 @@ const bootstrap = async (): Promise<void> => {
         };
   const getStandalonePlayerInventoryState = (): PlayerInventoryState =>
     clonePlayerInventoryState(standalonePlayerInventoryState);
+  const getStandalonePlayerEquipmentState = (): PlayerEquipmentState =>
+    clonePlayerEquipmentState(standalonePlayerEquipmentState);
   const getSelectedStandalonePlayerInventoryStack = () =>
     standalonePlayerInventoryState.hotbar[standalonePlayerInventoryState.selectedHotbarSlotIndex] ?? null;
   const buildStandalonePlayerMovementIntent = (): PlayerMovementIntent => {
@@ -1898,6 +1925,18 @@ const bootstrap = async (): Promise<void> => {
         disabledReason: resolveCraftingPanelRecipeDisabledReason(recipeEvaluation)
       };
     });
+  const createEquipmentPanelSlotViewModels = (): EquipmentPanelSlotViewModel[] =>
+    (['head', 'body', 'legs'] as const).map((slotId) => {
+      const starterItemId = getStarterArmorItemIdForSlot(slotId);
+      const starterArmorDefinition = getPlayerArmorItemDefinition(starterItemId);
+      return {
+        slotId,
+        slotLabel: getPlayerEquipmentSlotLabel(slotId),
+        itemLabel: starterArmorDefinition.label,
+        defenseLabel: `+${starterArmorDefinition.defense} DEF`,
+        equipped: standalonePlayerEquipmentState[slotId] === starterItemId
+      };
+    });
   const syncCraftingPanelState = (): void => {
     const standalonePlayerState = getStandalonePlayerState();
     const nearestWorkbench =
@@ -1916,10 +1955,25 @@ const bootstrap = async (): Promise<void> => {
       recipes: createCraftingPanelRecipeViewModels(standalonePlayerState)
     });
   };
+  const syncEquipmentPanelState = (): void => {
+    equipmentPanel.update({
+      totalDefense: getPlayerEquipmentTotalDefense(standalonePlayerEquipmentState),
+      slots: createEquipmentPanelSlotViewModels()
+    });
+  };
   const applyStandalonePlayerInventoryState = (inventoryState: PlayerInventoryState): void => {
     standalonePlayerInventoryState = clonePlayerInventoryState(inventoryState);
     syncHotbarOverlayState();
     syncCraftingPanelState();
+  };
+  const applyStandalonePlayerEquipmentState = (equipmentState: PlayerEquipmentState): void => {
+    standalonePlayerEquipmentState = clonePlayerEquipmentState(equipmentState);
+    syncEquipmentPanelState();
+  };
+  const toggleStandalonePlayerStarterArmorSlot = (
+    slotId: 'head' | 'body' | 'legs'
+  ): void => {
+    applyStandalonePlayerEquipmentState(toggleStarterArmorForSlot(standalonePlayerEquipmentState, slotId));
   };
   const tryCraftSelectedPlayerRecipe = (recipeId: PlayerCraftingRecipeId): boolean => {
     const craftResult = tryCraftPlayerRecipe({
@@ -2016,6 +2070,8 @@ const bootstrap = async (): Promise<void> => {
   hotbarOverlay.setVisible(false);
   syncCraftingPanelState();
   craftingPanel.setVisible(false);
+  syncEquipmentPanelState();
+  equipmentPanel.setVisible(false);
   const getHostileSlimeEntityStates = (): Array<{ id: EntityId; state: HostileSlimeState }> => {
     const activeHostileSlimes: Array<{ id: EntityId; state: HostileSlimeState }> = [];
     const nextHostileSlimeEntityIds: EntityId[] = [];
@@ -2138,6 +2194,7 @@ const bootstrap = async (): Promise<void> => {
         getStandalonePlayerState,
         getStandalonePlayerDeathState,
         getStandalonePlayerInventoryState,
+        getStandalonePlayerEquipmentState,
         getDroppedItemStates,
         getCameraFollowOffset: () => cameraFollowOffset
       }
@@ -2689,7 +2746,13 @@ const bootstrap = async (): Promise<void> => {
 
     const { nextPlayerState, event } = resolveHostileSlimePlayerContactWithEvent(
       standalonePlayerState,
-      [slimeState]
+      [slimeState],
+      {
+        contactDamage: resolvePlayerArmorReducedDamage(
+          DEFAULT_HOSTILE_SLIME_CONTACT_DAMAGE,
+          standalonePlayerEquipmentState
+        )
+      }
     );
     if (event !== null) {
       lastHostileSlimePlayerContactEvent = event;
@@ -5033,6 +5096,7 @@ const bootstrap = async (): Promise<void> => {
     clearPinnedDebugTileInspect();
     resetFreshWorldSessionCameraAndPlayerState();
     applyStandalonePlayerInventoryState(createDefaultPlayerInventoryState());
+    applyStandalonePlayerEquipmentState(createDefaultPlayerEquipmentState());
   };
   const ensureWorldSessionLoopStarted = (): void => {
     if (loop === null || worldSessionLoopStarted) {
@@ -6219,6 +6283,9 @@ const bootstrap = async (): Promise<void> => {
           restoreStandalonePlayerInventoryState: (inventoryState) => {
             applyStandalonePlayerInventoryState(inventoryState);
           },
+          restoreStandalonePlayerEquipmentState: (equipmentState) => {
+            applyStandalonePlayerEquipmentState(equipmentState);
+          },
           restoreDroppedItemStates: (droppedItemStates) => {
             restoreDroppedItemEntityStates(droppedItemStates);
           },
@@ -6436,6 +6503,9 @@ const bootstrap = async (): Promise<void> => {
           },
           restoreStandalonePlayerInventoryState: (inventoryState) => {
             applyStandalonePlayerInventoryState(inventoryState);
+          },
+          restoreStandalonePlayerEquipmentState: (equipmentState) => {
+            applyStandalonePlayerEquipmentState(equipmentState);
           },
           restoreDroppedItemStates: (droppedItemStates) => {
             restoreDroppedItemEntityStates(droppedItemStates);

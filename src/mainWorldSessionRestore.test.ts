@@ -9,6 +9,11 @@ import {
   createPlayerInventoryState,
   type PlayerInventoryState
 } from './world/playerInventory';
+import {
+  createDefaultPlayerEquipmentState,
+  createPlayerEquipmentState,
+  type PlayerEquipmentState
+} from './world/playerEquipment';
 import { createPlayerState, type PlayerState } from './world/playerState';
 import { TileWorld } from './world/world';
 
@@ -43,6 +48,9 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       ],
       selectedHotbarSlotIndex: 3
     });
+    const standalonePlayerEquipmentState = createPlayerEquipmentState({
+      body: 'starter-breastplate'
+    });
     const droppedItemStates = [
       createDroppedItemState({
         position: { x: 24, y: -14 },
@@ -56,6 +64,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       standalonePlayerState,
       standalonePlayerDeathState,
       standalonePlayerInventoryState,
+      standalonePlayerEquipmentState,
       droppedItemStates,
       cameraFollowOffset
     });
@@ -64,6 +73,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     let restoredPlayerState: PlayerState | null = null;
     let restoredPlayerDeathState: PlayerDeathState | null = null;
     let restoredPlayerInventoryState: PlayerInventoryState | null = null;
+    let restoredPlayerEquipmentState: PlayerEquipmentState | null = null;
     let restoredDroppedItemStates: DroppedItemState[] | null = null;
     let restoredCameraFollowOffset: typeof cameraFollowOffset | null = null;
     const target = {
@@ -83,6 +93,10 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
         callOrder.push('inventory');
         restoredPlayerInventoryState = inventoryState;
       }),
+      restoreStandalonePlayerEquipmentState: vi.fn((equipmentState) => {
+        callOrder.push('equipment');
+        restoredPlayerEquipmentState = equipmentState;
+      }),
       restoreDroppedItemStates: vi.fn((nextDroppedItemStates) => {
         callOrder.push('drops');
         restoredDroppedItemStates = nextDroppedItemStates;
@@ -98,11 +112,20 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       envelope
     });
 
-    expect(callOrder).toEqual(['world', 'death', 'player', 'inventory', 'drops', 'camera']);
+    expect(callOrder).toEqual([
+      'world',
+      'death',
+      'player',
+      'inventory',
+      'equipment',
+      'drops',
+      'camera'
+    ]);
     expect(target.loadWorldSnapshot).toHaveBeenCalledTimes(1);
     expect(target.restoreStandalonePlayerState).toHaveBeenCalledTimes(1);
     expect(target.restoreStandalonePlayerDeathState).toHaveBeenCalledTimes(1);
     expect(target.restoreStandalonePlayerInventoryState).toHaveBeenCalledTimes(1);
+    expect(target.restoreStandalonePlayerEquipmentState).toHaveBeenCalledTimes(1);
     expect(target.restoreDroppedItemStates).toHaveBeenCalledTimes(1);
     expect(target.restoreCameraFollowOffset).toHaveBeenCalledTimes(1);
     expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
@@ -113,6 +136,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     envelope.session.standalonePlayerState!.position.x = 999;
     envelope.session.standalonePlayerDeathState!.respawnSecondsRemaining = 999;
     envelope.session.standalonePlayerInventoryState.hotbar[0]!.amount = 1;
+    envelope.session.standalonePlayerEquipmentState.body = null;
     envelope.session.droppedItemStates[0]!.amount = 1;
     envelope.session.cameraFollowOffset.x = 999;
 
@@ -126,6 +150,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     expect((restoredPlayerState as PlayerState).position.x).toBe(72);
     expect(restoredPlayerDeathState).toEqual(standalonePlayerDeathState);
     expect(restoredPlayerInventoryState).toEqual(standalonePlayerInventoryState);
+    expect(restoredPlayerEquipmentState).toEqual(standalonePlayerEquipmentState);
     expect(restoredDroppedItemStates).toEqual(droppedItemStates);
     expect(restoredCameraFollowOffset).toEqual({ x: 18, y: -12 });
   });
@@ -144,6 +169,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       restoreStandalonePlayerState: vi.fn(),
       restoreStandalonePlayerDeathState: vi.fn(),
       restoreStandalonePlayerInventoryState: vi.fn(),
+      restoreStandalonePlayerEquipmentState: vi.fn(),
       restoreDroppedItemStates: vi.fn(),
       restoreCameraFollowOffset: vi.fn()
     };
@@ -159,6 +185,9 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     expect(target.restoreStandalonePlayerInventoryState).toHaveBeenCalledWith(
       createDefaultPlayerInventoryState()
     );
+    expect(target.restoreStandalonePlayerEquipmentState).toHaveBeenCalledWith(
+      createDefaultPlayerEquipmentState()
+    );
     expect(target.restoreDroppedItemStates).toHaveBeenCalledWith([]);
     expect(target.restoreCameraFollowOffset).toHaveBeenCalledWith({ x: -24, y: 10 });
     expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
@@ -172,6 +201,9 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       standalonePlayerState: createPlayerState(),
       standalonePlayerDeathState: null,
       standalonePlayerInventoryState: createPlayerInventoryState(),
+      standalonePlayerEquipmentState: createPlayerEquipmentState({
+        head: 'starter-helmet'
+      }),
       droppedItemStates: [
         createDroppedItemState({
           position: { x: 24, y: -14 },
@@ -197,6 +229,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       restoreStandalonePlayerState: vi.fn(),
       restoreStandalonePlayerDeathState: vi.fn(),
       restoreStandalonePlayerInventoryState: vi.fn(),
+      restoreStandalonePlayerEquipmentState: vi.fn(),
       restoreDroppedItemStates: vi.fn((nextDroppedItemStates) => {
         restoredDroppedItemStates = nextDroppedItemStates;
       }),

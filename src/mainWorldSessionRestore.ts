@@ -3,6 +3,7 @@ import { createWorldSaveEnvelope, type WorldSaveEnvelope } from './mainWorldSave
 import type { PlayerDeathState } from './world/playerDeathState';
 import { consolidateDroppedItemStates, type DroppedItemState } from './world/droppedItem';
 import type { PlayerInventoryState } from './world/playerInventory';
+import type { PlayerEquipmentState } from './world/playerEquipment';
 import type { PlayerState } from './world/playerState';
 import type { TileWorldSnapshot } from './world/world';
 
@@ -11,6 +12,7 @@ export interface WorldSessionRestoreTarget {
   restoreStandalonePlayerState(playerState: PlayerState | null): void;
   restoreStandalonePlayerDeathState(deathState: PlayerDeathState | null): void;
   restoreStandalonePlayerInventoryState(inventoryState: PlayerInventoryState): void;
+  restoreStandalonePlayerEquipmentState(equipmentState: PlayerEquipmentState): void;
   restoreDroppedItemStates(droppedItemStates: DroppedItemState[]): void;
   restoreCameraFollowOffset(cameraFollowOffset: CameraFollowOffset): void;
 }
@@ -60,6 +62,7 @@ export const restoreWorldSessionFromSaveEnvelope = ({
     standalonePlayerState: envelope.session.standalonePlayerState,
     standalonePlayerDeathState: envelope.session.standalonePlayerDeathState,
     standalonePlayerInventoryState: envelope.session.standalonePlayerInventoryState,
+    standalonePlayerEquipmentState: envelope.session.standalonePlayerEquipmentState,
     droppedItemStates: envelope.session.droppedItemStates,
     cameraFollowOffset: envelope.session.cameraFollowOffset,
     migration: envelope.migration
@@ -77,6 +80,7 @@ export const restoreWorldSessionFromSaveEnvelope = ({
         standalonePlayerState: normalizedEnvelope.session.standalonePlayerState,
         standalonePlayerDeathState: normalizedEnvelope.session.standalonePlayerDeathState,
         standalonePlayerInventoryState: normalizedEnvelope.session.standalonePlayerInventoryState,
+        standalonePlayerEquipmentState: normalizedEnvelope.session.standalonePlayerEquipmentState,
         droppedItemStates: consolidatedDroppedItemStates,
         cameraFollowOffset: normalizedEnvelope.session.cameraFollowOffset,
         migration: normalizedEnvelope.migration
@@ -88,6 +92,9 @@ export const restoreWorldSessionFromSaveEnvelope = ({
   target.restoreStandalonePlayerState(restoredEnvelope.session.standalonePlayerState);
   target.restoreStandalonePlayerInventoryState(
     restoredEnvelope.session.standalonePlayerInventoryState
+  );
+  target.restoreStandalonePlayerEquipmentState(
+    restoredEnvelope.session.standalonePlayerEquipmentState
   );
   target.restoreDroppedItemStates(restoredEnvelope.session.droppedItemStates);
   target.restoreCameraFollowOffset(restoredEnvelope.session.cameraFollowOffset);

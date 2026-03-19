@@ -6,6 +6,10 @@ import { createPlayerDeathState } from './world/playerDeathState';
 import { createDroppedItemState } from './world/droppedItem';
 import { createDefaultPlayerInventoryState, createPlayerInventoryState } from './world/playerInventory';
 import {
+  createDefaultPlayerEquipmentState,
+  createPlayerEquipmentState
+} from './world/playerEquipment';
+import {
   createPlayerState,
   DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
   DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS,
@@ -40,6 +44,10 @@ describe('createWorldSaveEnvelope', () => {
     });
     const standalonePlayerDeathState = createPlayerDeathState(0.5);
     const standalonePlayerInventoryState = createDefaultPlayerInventoryState();
+    const standalonePlayerEquipmentState = createPlayerEquipmentState({
+      head: 'starter-helmet',
+      legs: 'starter-greaves'
+    });
     const droppedItemStates = [
       createDroppedItemState({
         position: { x: 24, y: -14 },
@@ -54,6 +62,7 @@ describe('createWorldSaveEnvelope', () => {
       standalonePlayerState,
       standalonePlayerDeathState,
       standalonePlayerInventoryState,
+      standalonePlayerEquipmentState,
       droppedItemStates,
       cameraFollowOffset
     });
@@ -65,6 +74,7 @@ describe('createWorldSaveEnvelope', () => {
       standalonePlayerState,
       standalonePlayerDeathState,
       standalonePlayerInventoryState,
+      standalonePlayerEquipmentState,
       droppedItemStates,
       cameraFollowOffset
     });
@@ -74,6 +84,7 @@ describe('createWorldSaveEnvelope', () => {
     standalonePlayerState.position.x = 512;
     standalonePlayerDeathState.respawnSecondsRemaining = 999;
     standalonePlayerInventoryState.hotbar[0]!.amount = 1;
+    standalonePlayerEquipmentState.head = null;
     droppedItemStates[0]!.amount = 1;
     cameraFollowOffset.x = 128;
 
@@ -84,6 +95,12 @@ describe('createWorldSaveEnvelope', () => {
       itemId: 'pickaxe',
       amount: 1
     });
+    expect(envelope.session.standalonePlayerEquipmentState).toEqual(
+      createPlayerEquipmentState({
+        head: 'starter-helmet',
+        legs: 'starter-greaves'
+      })
+    );
     expect(envelope.session.droppedItemStates[0]).toEqual({
       position: { x: 24, y: -14 },
       itemId: 'torch',
@@ -396,6 +413,7 @@ describe('decodeWorldSaveEnvelope', () => {
         standalonePlayerState: null,
         standalonePlayerDeathState: null,
         standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+        standalonePlayerEquipmentState: createDefaultPlayerEquipmentState(),
         droppedItemStates: [],
         cameraFollowOffset: {
           x: -18,
@@ -410,6 +428,34 @@ describe('decodeWorldSaveEnvelope', () => {
     expect(decoded).toEqual(envelope);
     expect(decoded).not.toBe(envelope);
     expect(decoded.worldSnapshot).not.toBe(envelope.worldSnapshot);
+  });
+
+  it('round-trips equipped starter armor through save decode', () => {
+    const world = new TileWorld(0);
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+            standalonePlayerEquipmentState: createPlayerEquipmentState({
+              body: 'starter-breastplate'
+            }),
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    expect(decoded.session.standalonePlayerEquipmentState).toEqual(
+      createPlayerEquipmentState({
+        body: 'starter-breastplate'
+      })
+    );
   });
 
   it('round-trips standalone-player breath, health, and recovery state through save decode', () => {
@@ -557,6 +603,9 @@ describe('decodeWorldSaveEnvelope', () => {
     });
     expect(decoded.session.standalonePlayerDeathState).toBeNull();
     expect(decoded.session.standalonePlayerInventoryState).toEqual(createDefaultPlayerInventoryState());
+    expect(decoded.session.standalonePlayerEquipmentState).toEqual(
+      createDefaultPlayerEquipmentState()
+    );
     expect(decoded.session.droppedItemStates).toEqual([]);
   });
 

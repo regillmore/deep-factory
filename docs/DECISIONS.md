@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-19: Starter armor uses dedicated equipment slots with flat contact defense
+
+- Decision: Starter armor now lives in save-owned `head`, `body`, and `legs` equipment slots outside the hotbar, and hostile-slime contact damage subtracts total equipped defense down to a minimum of `1`.
+- Reason: This ships a narrow first armor slice without spending scarce hotbar capacity or introducing inventory-transfer rules first, while flat defense keeps hostile-contact combat deterministic and easy to surface in the in-world equipment panel.
+- Consequence: Future armor progression should extend the shared equipment-slot registry, save/load paths, and slot-oriented UI before adding inventory-carried armor items or more complex mitigation rules.
+
 ### 2026-03-19: Critter release previews keep hover intent and fallback landing separate
 
 - Decision: Selected `Bunny` previews now keep the main highlight on the requested hovered tile and add a separate landing marker only when nearby-ground search resolves to a different release tile.

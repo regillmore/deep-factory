@@ -24,6 +24,12 @@ import {
   PLAYER_INVENTORY_HOTBAR_SLOT_COUNT,
   type PlayerInventoryState
 } from './world/playerInventory';
+import {
+  createDefaultPlayerEquipmentState,
+  createPlayerEquipmentState,
+  isPlayerArmorItemId,
+  type PlayerEquipmentState
+} from './world/playerEquipment';
 import { TileWorld, type TileWorldSnapshot } from './world/world';
 
 export const WORLD_SAVE_ENVELOPE_KIND = 'deep-factory.world-save';
@@ -38,6 +44,7 @@ export interface WorldSaveSessionState {
   standalonePlayerState: PlayerState | null;
   standalonePlayerDeathState: PlayerDeathState | null;
   standalonePlayerInventoryState: PlayerInventoryState;
+  standalonePlayerEquipmentState: PlayerEquipmentState;
   droppedItemStates: DroppedItemState[];
   cameraFollowOffset: CameraFollowOffset;
 }
@@ -55,6 +62,7 @@ export interface CreateWorldSaveEnvelopeOptions {
   standalonePlayerState?: PlayerState | null;
   standalonePlayerDeathState?: PlayerDeathState | null;
   standalonePlayerInventoryState?: PlayerInventoryState;
+  standalonePlayerEquipmentState?: PlayerEquipmentState;
   droppedItemStates?: readonly DroppedItemState[];
   cameraFollowOffset?: CameraFollowOffset;
   migration?: WorldSaveEnvelopeMigrationMetadata;
@@ -301,6 +309,41 @@ const normalizeStandalonePlayerInventoryState = (
   );
 };
 
+const normalizePlayerEquipmentState = (
+  value: unknown,
+  label: string
+): PlayerEquipmentState => {
+  if (!isRecord(value)) {
+    throw new Error(`${label} must be an object`);
+  }
+
+  const normalizeSlot = (
+    slotId: keyof PlayerEquipmentState
+  ): PlayerEquipmentState[keyof PlayerEquipmentState] => {
+    const slotValue = value[slotId];
+    if (slotValue === undefined || slotValue === null) {
+      return null;
+    }
+    if (!isPlayerArmorItemId(slotValue)) {
+      throw new Error(`${label}.${slotId} must be a known player armor item id or null`);
+    }
+
+    return slotValue;
+  };
+
+  return createPlayerEquipmentState({
+    head: normalizeSlot('head'),
+    body: normalizeSlot('body'),
+    legs: normalizeSlot('legs')
+  });
+};
+
+const normalizeStandalonePlayerEquipmentState = (
+  value: unknown,
+  label: string
+): PlayerEquipmentState =>
+  value === undefined ? createDefaultPlayerEquipmentState() : normalizePlayerEquipmentState(value, label);
+
 const normalizeDroppedItemStates = (value: unknown, label: string): DroppedItemState[] => {
   if (value === undefined) {
     return [];
@@ -377,6 +420,7 @@ export const createWorldSaveEnvelope = ({
   standalonePlayerState = null,
   standalonePlayerDeathState = null,
   standalonePlayerInventoryState = createDefaultPlayerInventoryState(),
+  standalonePlayerEquipmentState = createDefaultPlayerEquipmentState(),
   droppedItemStates = [],
   cameraFollowOffset = { x: 0, y: 0 },
   migration = createDefaultWorldSaveEnvelopeMigrationMetadata()
@@ -400,6 +444,10 @@ export const createWorldSaveEnvelope = ({
         standalonePlayerInventoryState,
         'standalonePlayerInventoryState',
         normalizedStandalonePlayerState
+      ),
+      standalonePlayerEquipmentState: normalizeStandalonePlayerEquipmentState(
+        standalonePlayerEquipmentState,
+        'standalonePlayerEquipmentState'
       ),
       droppedItemStates: normalizeDroppedItemStates(droppedItemStates, 'droppedItemStates'),
       cameraFollowOffset: normalizeCameraFollowOffset(cameraFollowOffset, 'cameraFollowOffset')
@@ -441,6 +489,10 @@ export const decodeWorldSaveEnvelope = (value: unknown): WorldSaveEnvelope => {
         value.session.standalonePlayerInventoryState,
         'session.standalonePlayerInventoryState',
         normalizedStandalonePlayerState
+      ),
+      standalonePlayerEquipmentState: normalizeStandalonePlayerEquipmentState(
+        value.session.standalonePlayerEquipmentState,
+        'session.standalonePlayerEquipmentState'
       ),
       droppedItemStates: normalizeDroppedItemStates(
         value.session.droppedItemStates,

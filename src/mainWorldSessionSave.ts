@@ -7,6 +7,7 @@ import {
 import type { PlayerDeathState } from './world/playerDeathState';
 import type { DroppedItemState } from './world/droppedItem';
 import type { PlayerInventoryState } from './world/playerInventory';
+import type { PlayerEquipmentState } from './world/playerEquipment';
 import type { PlayerState } from './world/playerState';
 import type { TileWorldSnapshot } from './world/world';
 
@@ -15,6 +16,7 @@ export interface WorldSessionSaveSource {
   getStandalonePlayerState(): PlayerState | null;
   getStandalonePlayerDeathState(): PlayerDeathState | null;
   getStandalonePlayerInventoryState(): PlayerInventoryState;
+  getStandalonePlayerEquipmentState(): PlayerEquipmentState;
   getDroppedItemStates(): DroppedItemState[];
   getCameraFollowOffset(): CameraFollowOffset;
 }
@@ -33,6 +35,7 @@ export const createWorldSessionSaveEnvelope = ({
     standalonePlayerState: source.getStandalonePlayerState(),
     standalonePlayerDeathState: source.getStandalonePlayerDeathState(),
     standalonePlayerInventoryState: source.getStandalonePlayerInventoryState(),
+    standalonePlayerEquipmentState: source.getStandalonePlayerEquipmentState(),
     droppedItemStates: source.getDroppedItemStates(),
     cameraFollowOffset: source.getCameraFollowOffset(),
     ...(migration === undefined ? {} : { migration })

@@ -103,6 +103,7 @@ export const savePersistedWorldSaveEnvelope = (
       standalonePlayerState: envelope.session.standalonePlayerState,
       standalonePlayerDeathState: envelope.session.standalonePlayerDeathState,
       standalonePlayerInventoryState: envelope.session.standalonePlayerInventoryState,
+      standalonePlayerEquipmentState: envelope.session.standalonePlayerEquipmentState,
       droppedItemStates: envelope.session.droppedItemStates,
       cameraFollowOffset: envelope.session.cameraFollowOffset,
       migration: envelope.migration

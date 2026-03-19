@@ -8,6 +8,7 @@ import {
 } from './mainWorldSaveDownload';
 import { createDefaultWorldSaveEnvelopeMigrationMetadata, type WorldSaveEnvelope } from './mainWorldSave';
 import { createDefaultPlayerInventoryState } from './world/playerInventory';
+import { createDefaultPlayerEquipmentState } from './world/playerEquipment';
 
 const createTestEnvelope = (): WorldSaveEnvelope => ({
   kind: 'deep-factory.world-save',
@@ -17,6 +18,7 @@ const createTestEnvelope = (): WorldSaveEnvelope => ({
     standalonePlayerState: null,
     standalonePlayerDeathState: null,
     standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+    standalonePlayerEquipmentState: createDefaultPlayerEquipmentState(),
     droppedItemStates: [],
     cameraFollowOffset: {
       x: 12,

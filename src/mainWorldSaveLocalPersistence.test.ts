@@ -8,6 +8,7 @@ import {
   PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
   savePersistedWorldSaveEnvelope
 } from './mainWorldSaveLocalPersistence';
+import { createPlayerEquipmentState } from './world/playerEquipment';
 import { createPlayerState } from './world/playerState';
 import { TileWorld } from './world/world';
 
@@ -139,6 +140,26 @@ describe('savePersistedWorldSaveEnvelope', () => {
     expect(savePersistedWorldSaveEnvelope(storage, envelope)).toBe(true);
     expect(storage.values.get(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY)).toBe(
       JSON.stringify(envelope)
+    );
+  });
+
+  it('preserves equipped armor when normalizing the persisted envelope before writing', () => {
+    const storage = createMemoryStorage();
+    const envelope = createWorldSaveEnvelope({
+      worldSnapshot: new TileWorld(0).createSnapshot(),
+      standalonePlayerState: createPlayerState(),
+      standalonePlayerEquipmentState: createPlayerEquipmentState({
+        head: 'starter-helmet',
+        body: 'starter-breastplate'
+      })
+    });
+
+    expect(savePersistedWorldSaveEnvelope(storage, envelope)).toBe(true);
+    expect(loadPersistedWorldSaveEnvelope(storage)?.session.standalonePlayerEquipmentState).toEqual(
+      createPlayerEquipmentState({
+        head: 'starter-helmet',
+        body: 'starter-breastplate'
+      })
     );
   });
 

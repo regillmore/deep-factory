@@ -4,6 +4,7 @@ import { CHUNK_SIZE } from './world/constants';
 import { createPlayerDeathState } from './world/playerDeathState';
 import { createDroppedItemState } from './world/droppedItem';
 import { createPlayerInventoryState } from './world/playerInventory';
+import { createPlayerEquipmentState } from './world/playerEquipment';
 import { createPlayerState } from './world/playerState';
 import { TileWorld } from './world/world';
 import { createWorldSessionSaveEnvelope } from './mainWorldSessionSave';
@@ -42,6 +43,10 @@ describe('createWorldSessionSaveEnvelope', () => {
       ],
       selectedHotbarSlotIndex: 3
     });
+    const standalonePlayerEquipmentState = createPlayerEquipmentState({
+      head: 'starter-helmet',
+      legs: 'starter-greaves'
+    });
     const droppedItemStates = [
       createDroppedItemState({
         position: { x: 24, y: -14 },
@@ -55,6 +60,7 @@ describe('createWorldSessionSaveEnvelope', () => {
       getStandalonePlayerState: vi.fn(() => standalonePlayerState),
       getStandalonePlayerDeathState: vi.fn(() => standalonePlayerDeathState),
       getStandalonePlayerInventoryState: vi.fn(() => standalonePlayerInventoryState),
+      getStandalonePlayerEquipmentState: vi.fn(() => standalonePlayerEquipmentState),
       getDroppedItemStates: vi.fn(() => droppedItemStates),
       getCameraFollowOffset: vi.fn(() => cameraFollowOffset)
     };
@@ -65,12 +71,14 @@ describe('createWorldSessionSaveEnvelope', () => {
     expect(source.getStandalonePlayerState).toHaveBeenCalledTimes(1);
     expect(source.getStandalonePlayerDeathState).toHaveBeenCalledTimes(1);
     expect(source.getStandalonePlayerInventoryState).toHaveBeenCalledTimes(1);
+    expect(source.getStandalonePlayerEquipmentState).toHaveBeenCalledTimes(1);
     expect(source.getDroppedItemStates).toHaveBeenCalledTimes(1);
     expect(source.getCameraFollowOffset).toHaveBeenCalledTimes(1);
     expect(envelope.session).toEqual({
       standalonePlayerState,
       standalonePlayerDeathState,
       standalonePlayerInventoryState,
+      standalonePlayerEquipmentState,
       droppedItemStates,
       cameraFollowOffset
     });
@@ -82,6 +90,7 @@ describe('createWorldSessionSaveEnvelope', () => {
     expect(world.setTile(worldTileX, worldTileY, 5)).toBe(true);
     standalonePlayerState.position.x = 999;
     standalonePlayerInventoryState.hotbar[0]!.amount = 1;
+    standalonePlayerEquipmentState.head = null;
     cameraFollowOffset.x = 999;
 
     const restoredEnvelopeWorld = new TileWorld(0);
@@ -106,6 +115,12 @@ describe('createWorldSessionSaveEnvelope', () => {
         selectedHotbarSlotIndex: 3
       })
     );
+    expect(envelope.session.standalonePlayerEquipmentState).toEqual(
+      createPlayerEquipmentState({
+        head: 'starter-helmet',
+        legs: 'starter-greaves'
+      })
+    );
     expect(envelope.session.droppedItemStates).toEqual(droppedItemStates);
     expect(envelope.session.cameraFollowOffset.x).toBe(18);
   });
@@ -118,6 +133,11 @@ describe('createWorldSessionSaveEnvelope', () => {
       getStandalonePlayerInventoryState: vi.fn(() =>
         createPlayerInventoryState({
           hotbar: [{ itemId: 'pickaxe', amount: 1 }, ...Array.from({ length: 9 }, () => null)]
+        })
+      ),
+      getStandalonePlayerEquipmentState: vi.fn(() =>
+        createPlayerEquipmentState({
+          body: 'starter-breastplate'
         })
       ),
       getDroppedItemStates: vi.fn(() => []),
@@ -147,6 +167,11 @@ describe('createWorldSessionSaveEnvelope', () => {
           ...Array.from({ length: 3 }, () => null),
           { itemId: 'spear', amount: 1 }
         ]
+      })
+    );
+    expect(envelope.session.standalonePlayerEquipmentState).toEqual(
+      createPlayerEquipmentState({
+        body: 'starter-breastplate'
       })
     );
     expect(envelope.session.droppedItemStates).toEqual([]);

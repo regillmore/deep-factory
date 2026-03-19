@@ -286,6 +286,10 @@ const testRuntime = vi.hoisted(() => {
       visible: boolean;
       triggerCraftRecipe(recipeId: string): void;
     },
+    equipmentPanelInstance: null as null | {
+      visible: boolean;
+      triggerToggleSlot(slotId: 'head' | 'body' | 'legs'): void;
+    },
     latestCraftingPanelState: null as null | {
       stationLabel: string;
       stationInRange: boolean;
@@ -296,6 +300,16 @@ const testRuntime = vi.hoisted(() => {
         outputLabel: string;
         enabled: boolean;
         disabledReason?: string | null;
+      }>;
+    },
+    latestEquipmentPanelState: null as null | {
+      totalDefense: number;
+      slots: Array<{
+        slotId: 'head' | 'body' | 'legs';
+        slotLabel: string;
+        itemLabel: string;
+        defenseLabel: string;
+        equipped: boolean;
       }>;
     },
     debugEditControlsInitialArmedToolSnapshot: null as null | {
@@ -1641,6 +1655,42 @@ vi.mock('./ui/craftingPanel', () => ({
   }
 }));
 
+vi.mock('./ui/equipmentPanel', () => ({
+  EquipmentPanel: class {
+    visible = false;
+    private onToggleSlot: (slotId: 'head' | 'body' | 'legs') => void;
+
+    constructor(options: { onToggleSlot?: (slotId: 'head' | 'body' | 'legs') => void }) {
+      this.onToggleSlot = options.onToggleSlot ?? (() => {});
+      testRuntime.equipmentPanelInstance = this;
+    }
+
+    setVisible(visible: boolean): void {
+      this.visible = visible;
+    }
+
+    update(state: {
+      totalDefense: number;
+      slots: Array<{
+        slotId: 'head' | 'body' | 'legs';
+        slotLabel: string;
+        itemLabel: string;
+        defenseLabel: string;
+        equipped: boolean;
+      }>;
+    }): void {
+      testRuntime.latestEquipmentPanelState = {
+        totalDefense: state.totalDefense,
+        slots: state.slots.map((slot) => ({ ...slot }))
+      };
+    }
+
+    triggerToggleSlot(slotId: 'head' | 'body' | 'legs'): void {
+      this.onToggleSlot(slotId);
+    }
+  }
+}));
+
 vi.mock('./ui/playerSpawnMarkerOverlay', () => ({
   PlayerSpawnMarkerOverlay: class {
     visible = false;
@@ -2207,7 +2257,9 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugEditControlsArmedToolSetterCallCount = 0;
     testRuntime.debugEditControlsShellActionKeybindings = null;
     testRuntime.craftingPanelInstance = null;
+    testRuntime.equipmentPanelInstance = null;
     testRuntime.latestCraftingPanelState = null;
+    testRuntime.latestEquipmentPanelState = null;
     testRuntime.debugEditControlsInitialArmedToolSnapshot = null;
     testRuntime.debugEditControlsArmedToolKinds = null;
     testRuntime.debugEditControlsInstance = null;
@@ -4916,6 +4968,80 @@ describe('main.ts shell state orchestration', () => {
     expect(
       persistedEnvelope?.session.standalonePlayerState?.hostileContactInvulnerabilitySecondsRemaining
     ).toBe(DEFAULT_HOSTILE_SLIME_CONTACT_INVULNERABILITY_SECONDS);
+  });
+
+  it('equips starter armor through the debug equipment panel, reduces hostile-contact damage, and persists the equipped slots', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    const slimeSpawnPoint = createTestPlayerSpawnPoint({
+      x: 8,
+      y: 0,
+      width: DEFAULT_HOSTILE_SLIME_WIDTH,
+      height: DEFAULT_HOSTILE_SLIME_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_HOSTILE_SLIME_WIDTH &&
+        search?.height === DEFAULT_HOSTILE_SLIME_HEIGHT
+      ) {
+        return slimeSpawnPoint;
+      }
+
+      return testRuntime.playerSpawnPoint;
+    };
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(testRuntime.equipmentPanelInstance?.visible).toBe(false);
+
+    testRuntime.shellInstance?.options.onToggleDebugEditControls('in-world');
+
+    expect(testRuntime.equipmentPanelInstance?.visible).toBe(true);
+    expect(testRuntime.latestEquipmentPanelState).toMatchObject({
+      totalDefense: 0,
+      slots: [
+        { slotId: 'head', equipped: false },
+        { slotId: 'body', equipped: false },
+        { slotId: 'legs', equipped: false }
+      ]
+    });
+
+    testRuntime.equipmentPanelInstance?.triggerToggleSlot('head');
+    testRuntime.equipmentPanelInstance?.triggerToggleSlot('body');
+    testRuntime.equipmentPanelInstance?.triggerToggleSlot('legs');
+
+    expect(testRuntime.latestEquipmentPanelState).toMatchObject({
+      totalDefense: 4,
+      slots: [
+        { slotId: 'head', equipped: true },
+        { slotId: 'body', equipped: true },
+        { slotId: 'legs', equipped: true }
+      ]
+    });
+
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.playerHostileContactEvent).toEqual({
+      damageApplied: 11,
+      blockedByInvulnerability: false,
+      sourceWorldTile: { x: 0, y: 0 },
+      sourceFacing: 'right'
+    });
+    expect(testRuntime.latestDebugOverlayInspectState?.player?.health).toBe(89);
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerEquipmentState).toEqual({
+      head: 'starter-helmet',
+      body: 'starter-breastplate',
+      legs: 'starter-greaves'
+    });
   });
 
   it('tracks hard-landing damage events while keeping fall-recovery cooldown live', async () => {
