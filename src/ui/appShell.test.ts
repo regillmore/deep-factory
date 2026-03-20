@@ -55,7 +55,6 @@ import {
   resolvePausedMainMenuRecentActivitySectionState,
   createPausedMainMenuShellSummaryRows,
   resolvePausedMainMenuShellSectionState,
-  resolvePausedMainMenuShellToggleLabel,
   resolvePausedMainMenuWorldSaveSectionState,
   resolvePausedMainMenuShellActionKeybindingRemapEditorStatus,
   resolvePausedMainMenuResetShellActionKeybindingsEditorStatus,
@@ -108,6 +107,8 @@ const IMPORT_PERSISTENCE_FAILED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
   'The imported paused session stays live in this tab, but reload will miss it until a later browser-save rewrite succeeds.';
 const DEFAULT_PAUSED_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE =
   'Use these only when you want to clear shell layout state or discard the current paused session.';
+const DEFAULT_PAUSED_MAIN_MENU_SHELL_SECTION_SUMMARY_LINE =
+  'Adjust gameplay controls, telemetry, hotkeys, and shell-profile tools for the current paused session.';
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
   {
     label: 'Active Layout',
@@ -281,8 +282,12 @@ const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE =
   'Move focus back to the Overview section at the top of the paused dashboard.';
 const PAUSED_MAIN_MENU_WORLD_SAVE_TILE_OPEN_TITLE =
   'Open the paused World Save page for downloads, imports, and browser-resume controls.';
+const PAUSED_MAIN_MENU_SHELL_TILE_OPEN_TITLE =
+  'Open the paused Shell page for gameplay, telemetry, hotkey, and shell-profile tools.';
 const PAUSED_MAIN_MENU_WORLD_SAVE_BACK_LABEL = 'Back to Overview';
 const PAUSED_MAIN_MENU_WORLD_SAVE_BACK_TITLE = 'Return to the paused Overview page.';
+const PAUSED_MAIN_MENU_SHELL_BACK_LABEL = 'Back to Overview';
+const PAUSED_MAIN_MENU_SHELL_BACK_TITLE = 'Return to the paused Overview page.';
 const PAUSED_MAIN_MENU_BUSY_IMPORT_WORLD_SAVE_TITLE =
   'Wait for the current world-save file picker to finish before starting another paused-session import.';
 const PAUSED_MAIN_MENU_BUSY_IMPORT_SHELL_PROFILE_TITLE =
@@ -612,6 +617,15 @@ const findButtonByTextContent = (
 ): FakeElement | null =>
   findElementsByClass(root, className).find((element) => element.textContent === textContent) ?? null;
 
+const findPausedNavigationTileByTitle = (
+  root: FakeElement,
+  title: string
+): FakeElement | null =>
+  findElementsByClass(root, 'app-shell__paused-navigation-tile').find(
+    (element) =>
+      findElementByClass(element, 'app-shell__paused-navigation-tile-title')?.textContent === title
+  ) ?? null;
+
 const listChildClassNames = (element: FakeElement | null): string[] =>
   element?.children.map((child) => child.className) ?? [];
 
@@ -778,9 +792,12 @@ describe('paused main-menu dashboard layout', () => {
     expect(panel?.dataset.layout).toBe('paused-dashboard');
     expect(dashboard?.hidden).toBe(false);
     expect(dashboard?.style.display).toBe('grid');
-    expect(listChildClassNames(primary)).toEqual(['app-shell__overview', 'app-shell__world-save']);
+    expect(listChildClassNames(primary)).toEqual([
+      'app-shell__overview',
+      'app-shell__world-save',
+      'app-shell__shell'
+    ]);
     expect(listChildClassNames(secondary)).toEqual([
-      'app-shell__shell',
       'app-shell__recent-activity',
       'app-shell__danger-zone'
     ]);
@@ -790,7 +807,7 @@ describe('paused main-menu dashboard layout', () => {
     expect(footerActions?.style.display).toBe('none');
   });
 
-  it('shows the first paused-menu navigation tile on Overview and opens the World Save page from it', () => {
+  it('shows paused-menu navigation tiles on Overview and opens the World Save page from its tile', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
 
@@ -825,7 +842,8 @@ describe('paused main-menu dashboard layout', () => {
 
     const overviewSection = findElementByClass(root, 'app-shell__overview');
     const overviewNavigation = findElementByClass(root, 'app-shell__paused-navigation');
-    const worldSaveTile = findElementByClass(root, 'app-shell__paused-navigation-tile');
+    const worldSaveTile = findPausedNavigationTileByTitle(root, 'World Save');
+    const shellTile = findPausedNavigationTileByTitle(root, 'Shell');
     const worldSaveTileMetadata =
       worldSaveTile === null
         ? null
@@ -842,6 +860,8 @@ describe('paused main-menu dashboard layout', () => {
     expect(overviewNavigation?.hidden).toBe(false);
     expect(worldSaveTile?.title).toBe(PAUSED_MAIN_MENU_WORLD_SAVE_TILE_OPEN_TITLE);
     expect(worldSaveTile?.dataset.tone).toBe('warning');
+    expect(shellTile?.title).toBe(PAUSED_MAIN_MENU_SHELL_TILE_OPEN_TITLE);
+    expect(shellTile?.dataset.tone).toBe('default');
     expect(readMetadataRows(worldSaveTileMetadata)).toEqual([
       {
         label: 'Browser Resume',
@@ -865,6 +885,50 @@ describe('paused main-menu dashboard layout', () => {
     expect(secondarySections?.hidden).toBe(true);
   });
 
+  it('opens the Shell page from Overview and returns through the shared back-navigation frame', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+    const state = createPausedMainMenuShellState(undefined, false);
+
+    shell.setState(state);
+
+    const root = container.children[0] ?? null;
+    expect(root).not.toBeNull();
+    if (root === null) {
+      return;
+    }
+
+    const overviewSection = findElementByClass(root, 'app-shell__overview');
+    const shellSection = findElementByClass(root, 'app-shell__shell');
+    const shellTile = findPausedNavigationTileByTitle(root, 'Shell');
+    const shellTileMetadata =
+      shellTile === null
+        ? null
+        : findElementByClass(shellTile, 'app-shell__paused-navigation-tile-metadata');
+    const shellBackButton = findButtonByTextContent(
+      shellSection ?? new FakeElement('div'),
+      'app-shell__submenu-back',
+      PAUSED_MAIN_MENU_SHELL_BACK_LABEL
+    );
+    const secondarySections = findElementByClass(root, 'app-shell__paused-secondary');
+
+    expect(shellSection?.hidden).toBe(true);
+    expect(shellTile?.title).toBe(PAUSED_MAIN_MENU_SHELL_TILE_OPEN_TITLE);
+    expect(readMetadataRows(shellTileMetadata)).toEqual(
+      resolvePausedMainMenuShellSectionState(state).metadataRows
+    );
+    expect(shellBackButton?.hidden).toBe(true);
+    expect(secondarySections?.hidden).toBe(false);
+
+    shellTile?.click();
+
+    expect(overviewSection?.hidden).toBe(true);
+    expect(shellSection?.hidden).toBe(false);
+    expect(shellBackButton?.hidden).toBe(false);
+    expect(shellBackButton?.title).toBe(PAUSED_MAIN_MENU_SHELL_BACK_TITLE);
+    expect(secondarySections?.hidden).toBe(true);
+  });
+
   it('returns keyboard-triggered World Save navigation back to the Overview focus anchor', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
@@ -879,7 +943,7 @@ describe('paused main-menu dashboard layout', () => {
 
     const overviewSection = findElementByClass(root, 'app-shell__overview');
     const worldSaveSection = findElementByClass(root, 'app-shell__world-save');
-    const worldSaveTile = findElementByClass(root, 'app-shell__paused-navigation-tile');
+    const worldSaveTile = findPausedNavigationTileByTitle(root, 'World Save');
     const worldSaveBackButton = findButtonByTextContent(
       root,
       'app-shell__submenu-back',
@@ -898,6 +962,41 @@ describe('paused main-menu dashboard layout', () => {
     expect(overviewSection?.focusCallCount).toBe(1);
     expect(overviewSection?.scrollIntoViewCallCount).toBe(1);
     expect(worldSaveSection?.hidden).toBe(true);
+  });
+
+  it('returns keyboard-triggered Shell navigation back to the Overview focus anchor', () => {
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement);
+
+    shell.setState(createPausedMainMenuShellState());
+
+    const root = container.children[0] ?? null;
+    expect(root).not.toBeNull();
+    if (root === null) {
+      return;
+    }
+
+    const overviewSection = findElementByClass(root, 'app-shell__overview');
+    const shellSection = findElementByClass(root, 'app-shell__shell');
+    const shellTile = findPausedNavigationTileByTitle(root, 'Shell');
+    const shellBackButton = findButtonByTextContent(
+      shellSection ?? new FakeElement('div'),
+      'app-shell__submenu-back',
+      PAUSED_MAIN_MENU_SHELL_BACK_LABEL
+    );
+
+    shellTile?.click(0);
+
+    expect(document.activeElement).toBe(shellSection);
+    expect(shellSection?.focusCallCount).toBe(1);
+    expect(shellSection?.scrollIntoViewCallCount).toBe(1);
+
+    shellBackButton?.click(0);
+
+    expect(document.activeElement).toBe(overviewSection);
+    expect(overviewSection?.focusCallCount).toBe(1);
+    expect(overviewSection?.scrollIntoViewCallCount).toBe(1);
+    expect(shellSection?.hidden).toBe(true);
   });
 
   it('renders paused section-owned action buttons and routes them through the shared main-menu handlers', () => {
@@ -1341,8 +1440,8 @@ describe('paused main-menu dashboard layout', () => {
       return;
     }
 
-    const shellToggleButton = findElementByClass(root, 'app-shell__shell-toggle');
-    shellToggleButton?.click();
+    const shellTile = findPausedNavigationTileByTitle(root, 'Shell');
+    shellTile?.click();
 
     const initialImportButton = findButtonByTextContent(
       root,
@@ -1435,8 +1534,8 @@ describe('paused main-menu dashboard layout', () => {
       return;
     }
 
-    const shellToggleButton = findElementByClass(root, 'app-shell__shell-toggle');
-    shellToggleButton?.click();
+    const shellTile = findPausedNavigationTileByTitle(root, 'Shell');
+    shellTile?.click();
 
     const initialApplyButton = findButtonByTextContent(
       root,
@@ -1496,9 +1595,8 @@ describe('paused main-menu dashboard layout', () => {
     shell.setState(createPausedMainMenuShellState());
 
     const root = container.children[0] ?? null;
-    const shellToggleButton =
-      root === null ? null : findElementByClass(root, 'app-shell__shell-toggle');
-    shellToggleButton?.click();
+    const shellTile = root === null ? null : findPausedNavigationTileByTitle(root, 'Shell');
+    shellTile?.click();
 
     const debugHudInput =
       root === null
@@ -1596,16 +1694,15 @@ describe('paused main-menu dashboard layout', () => {
     }
   });
 
-  it('renders compact shell-hotkey metadata rows instead of a prose intro when the shell editor expands', () => {
+  it('renders compact shell-hotkey metadata rows instead of a prose intro on the Shell page', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
 
     shell.setState(createPausedMainMenuShellState());
 
     const root = container.children[0] ?? null;
-    const shellToggleButton =
-      root === null ? null : findElementByClass(root, 'app-shell__shell-toggle');
-    shellToggleButton?.click();
+    const shellTile = root === null ? null : findPausedNavigationTileByTitle(root, 'Shell');
+    shellTile?.click();
 
     const shellEditorMetadata =
       root === null ? null : findElementByClass(root, 'app-shell__shell-keybindings-metadata');
@@ -1714,7 +1811,7 @@ describe('paused main-menu dashboard layout', () => {
     });
   });
 
-  it('reveals telemetry controls in the expanded shell editor and routes reset, collection, and type actions through callbacks', () => {
+  it('reveals telemetry controls on the Shell page and routes reset, collection, and type actions through callbacks', () => {
     const telemetryResets: string[] = [];
     const collectionToggles: Array<{ screen: string; id: string }> = [];
     const typeToggles: Array<{ screen: string; id: string }> = [];
@@ -1762,13 +1859,13 @@ describe('paused main-menu dashboard layout', () => {
       return;
     }
 
-    const shellToggleButton = findElementByClass(root, 'app-shell__shell-toggle');
+    const shellTile = findPausedNavigationTileByTitle(root, 'Shell');
     const telemetryControlsBeforeExpand =
       root === null ? null : findElementByClass(root, 'app-shell__shell-telemetry');
 
     expect(telemetryControlsBeforeExpand?.hidden).toBe(true);
 
-    shellToggleButton?.click();
+    shellTile?.click();
 
     const telemetryControls =
       root === null ? null : findElementByClass(root, 'app-shell__shell-telemetry');
@@ -1846,7 +1943,7 @@ describe('paused main-menu dashboard layout', () => {
     ]);
   });
 
-  it('reveals peaceful-mode controls in the expanded shell editor and routes toggle actions through callbacks', () => {
+  it('reveals peaceful-mode controls on the Shell page and routes toggle actions through callbacks', () => {
     const peacefulModeToggles: string[] = [];
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement, {
@@ -1883,13 +1980,13 @@ describe('paused main-menu dashboard layout', () => {
       return;
     }
 
-    const shellToggleButton = findElementByClass(root, 'app-shell__shell-toggle');
+    const shellTile = findPausedNavigationTileByTitle(root, 'Shell');
     const gameplayControlsBeforeExpand =
       root === null ? null : findElementByClass(root, 'app-shell__shell-gameplay');
 
     expect(gameplayControlsBeforeExpand?.hidden).toBe(true);
 
-    shellToggleButton?.click();
+    shellTile?.click();
 
     const gameplayControls =
       root === null ? null : findElementByClass(root, 'app-shell__shell-gameplay');
@@ -1950,8 +2047,8 @@ describe('paused main-menu dashboard layout', () => {
       return;
     }
 
-    const shellToggleButton = findElementByClass(root, 'app-shell__shell-toggle');
-    shellToggleButton?.click();
+    const shellTile = findPausedNavigationTileByTitle(root, 'Shell');
+    shellTile?.click();
 
     const findResetTelemetryButton = (): FakeElement | null =>
       findButtonByTextContent(
@@ -2023,34 +2120,7 @@ describe('paused main-menu dashboard layout', () => {
     expect(findResetTelemetryButton()?.disabled).toBe(true);
   });
 
-  it('returns keyboard-triggered shell expand and collapse focus to the Shell section anchor', () => {
-    const container = new FakeElement('div');
-    const shell = new AppShell(container as unknown as HTMLElement);
-
-    shell.setState(createPausedMainMenuShellState());
-
-    const fakeDocument = document as unknown as FakeDocument;
-    const root = container.children[0] ?? null;
-    const shellSection = root === null ? null : findElementByClass(root, 'app-shell__shell');
-    const shellToggleButton =
-      shellSection === null ? null : findElementByClass(shellSection, 'app-shell__shell-toggle');
-
-    shellToggleButton?.focus();
-    shellToggleButton?.click();
-
-    expect(shellSection?.focusCallCount).toBe(1);
-    expect(shellSection?.scrollIntoViewCallCount).toBe(1);
-    expect(fakeDocument.activeElement).toBe(shellSection);
-
-    shellToggleButton?.focus();
-    shellToggleButton?.click();
-
-    expect(shellSection?.focusCallCount).toBe(2);
-    expect(shellSection?.scrollIntoViewCallCount).toBe(2);
-    expect(fakeDocument.activeElement).toBe(shellSection);
-  });
-
-  it('keeps pointer-triggered shell expand from forcing focus onto the Shell section anchor', () => {
+  it('keeps pointer-triggered Shell navigation from forcing focus onto the Shell section anchor', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
 
@@ -2058,11 +2128,10 @@ describe('paused main-menu dashboard layout', () => {
 
     const root = container.children[0] ?? null;
     const shellSection = root === null ? null : findElementByClass(root, 'app-shell__shell');
-    const shellToggleButton =
-      shellSection === null ? null : findElementByClass(shellSection, 'app-shell__shell-toggle');
+    const shellTile = root === null ? null : findPausedNavigationTileByTitle(root, 'Shell');
 
-    shellToggleButton?.focus();
-    shellToggleButton?.click(1);
+    shellTile?.focus();
+    shellTile?.click(1);
 
     expect(shellSection?.focusCallCount).toBe(0);
     expect(shellSection?.scrollIntoViewCallCount).toBe(0);
@@ -2145,7 +2214,7 @@ describe('paused main-menu dashboard layout', () => {
     expect(fakeDocument.activeElement).toBe(dangerZoneSection);
   });
 
-  it('renders metadata-first shell-profile preview groups inside the expanded shell editor', () => {
+  it('renders metadata-first shell-profile preview groups on the Shell page', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
 
@@ -2175,9 +2244,8 @@ describe('paused main-menu dashboard layout', () => {
     );
 
     const root = container.children[0] ?? null;
-    const shellToggleButton =
-      root === null ? null : findElementByClass(root, 'app-shell__shell-toggle');
-    shellToggleButton?.click();
+    const shellTile = root === null ? null : findPausedNavigationTileByTitle(root, 'Shell');
+    shellTile?.click();
 
     const previewRoot = root === null ? null : findElementByClass(root, 'app-shell__shell-preview');
     const previewCard =
@@ -2269,9 +2337,8 @@ describe('paused main-menu dashboard layout', () => {
     );
 
     const root = container.children[0] ?? null;
-    const shellToggleButton =
-      root === null ? null : findElementByClass(root, 'app-shell__shell-toggle');
-    shellToggleButton?.click();
+    const shellTile = root === null ? null : findPausedNavigationTileByTitle(root, 'Shell');
+    shellTile?.click();
 
     const previewRoot = root === null ? null : findElementByClass(root, 'app-shell__shell-preview');
     const previewCard =
@@ -2303,7 +2370,7 @@ describe('paused main-menu dashboard layout', () => {
     expect(readEmptyBadgeTexts(previewGroups)).toEqual(['No hotkey changes']);
   });
 
-  it('adds an expanded-shell top-jump link that returns focus to Overview', () => {
+  it('omits the old Shell top-jump link now that Shell uses its own submenu page', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
 
@@ -2311,32 +2378,15 @@ describe('paused main-menu dashboard layout', () => {
 
     const root = container.children[0] ?? null;
     const shellSection = root === null ? null : findElementByClass(root, 'app-shell__shell');
-    const shellToggleButton =
-      shellSection === null ? null : findElementByClass(shellSection, 'app-shell__shell-toggle');
-    const overviewSection = root === null ? null : findElementByClass(root, 'app-shell__overview');
-    const jumpLinkCollapsed =
-      shellSection === null
-        ? null
-        : findElementByClass(shellSection, 'app-shell__section-top-jump-link');
-
-    expect(jumpLinkCollapsed?.hidden).toBe(true);
-
-    shellToggleButton?.click();
+    const shellTile = root === null ? null : findPausedNavigationTileByTitle(root, 'Shell');
+    shellTile?.click();
 
     const jumpLink =
       shellSection === null
         ? null
         : findElementByClass(shellSection, 'app-shell__section-top-jump-link');
 
-    expect(jumpLink?.textContent).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT);
-    expect(jumpLink?.title).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE);
-    expect(jumpLink?.getAttribute('href')).toBe('#app-shell-paused-overview-section');
-    expect(jumpLink?.hidden).toBe(false);
-
-    jumpLink?.click();
-
-    expect(overviewSection?.focusCallCount).toBe(1);
-    expect(overviewSection?.scrollIntoViewCallCount).toBe(1);
+    expect(jumpLink).toBeNull();
   });
 
   it('adds recent-activity and danger-zone top-jump links that return focus to Overview', () => {
@@ -2460,16 +2510,15 @@ describe('paused main-menu dashboard layout', () => {
     ]);
   });
 
-  it('switches the expanded shell-hotkey metadata rows into warning-toned session-only copy when browser persistence is unavailable', () => {
+  it('switches the Shell-page hotkey metadata rows into warning-toned session-only copy when browser persistence is unavailable', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
 
     shell.setState(createPausedMainMenuShellState(undefined, false));
 
     const root = container.children[0] ?? null;
-    const shellToggleButton =
-      root === null ? null : findElementByClass(root, 'app-shell__shell-toggle');
-    shellToggleButton?.click();
+    const shellTile = root === null ? null : findPausedNavigationTileByTitle(root, 'Shell');
+    shellTile?.click();
 
     const shellEditorMetadata =
       root === null ? null : findElementByClass(root, 'app-shell__shell-keybindings-metadata');
@@ -5729,41 +5778,19 @@ describe('resolvePausedMainMenuRecentActivitySectionState', () => {
   });
 });
 
-describe('resolvePausedMainMenuShellToggleLabel', () => {
-  it('switches the paused-menu shell button label between collapsed and expanded copy', () => {
-    expect(resolvePausedMainMenuShellToggleLabel()).toBe('Show Shell');
-    expect(resolvePausedMainMenuShellToggleLabel(true)).toBe('Hide Shell');
-  });
-});
-
 describe('resolvePausedMainMenuShellSectionState', () => {
-  it('defaults paused-menu shell to a collapsed summary-row section', () => {
+  it('defaults paused-menu shell to a dedicated Shell-page summary plus live controls', () => {
     expect(resolvePausedMainMenuShellSectionState(createPausedMainMenuShellState())).toEqual({
       visible: true,
-      expanded: false,
+      summaryLine: DEFAULT_PAUSED_MAIN_MENU_SHELL_SECTION_SUMMARY_LINE,
       metadataRows: DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
-      toggleLabel: 'Show Shell',
-      editorVisible: false,
       gameplayControls: createPausedMainMenuShellGameplayControlsViewModel(),
       telemetryControls: createPausedMainMenuShellTelemetryControlsViewModel(),
       previewSection: null
     });
   });
 
-  it('reveals the shell editor only after the paused-menu shell section expands', () => {
-    expect(resolvePausedMainMenuShellSectionState(createPausedMainMenuShellState(), true)).toEqual({
-      visible: true,
-      expanded: true,
-      metadataRows: DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
-      toggleLabel: 'Hide Shell',
-      editorVisible: true,
-      gameplayControls: createPausedMainMenuShellGameplayControlsViewModel(),
-      telemetryControls: createPausedMainMenuShellTelemetryControlsViewModel(),
-      previewSection: null
-    });
-  });
-
-  it('keeps staged shell-profile details ready for the expanded shell editor while summary rows stay compact', () => {
+  it('keeps staged shell-profile details ready for the Shell page while summary rows stay compact', () => {
     expect(
       resolvePausedMainMenuShellSectionState(
         createPausedMainMenuShellState(
@@ -5787,15 +5814,12 @@ describe('resolvePausedMainMenuShellSectionState', () => {
             },
             shellActionKeybindings: CUSTOM_SHELL_ACTION_KEYBINDINGS
           }
-        ),
-        true
+        )
       )
     ).toMatchObject({
       visible: true,
-      expanded: true,
+      summaryLine: DEFAULT_PAUSED_MAIN_MENU_SHELL_SECTION_SUMMARY_LINE,
       metadataRows: PREVIEWED_MIXED_DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
-      toggleLabel: 'Hide Shell',
-      editorVisible: true,
       gameplayControls: createPausedMainMenuShellGameplayControlsViewModel(),
       telemetryControls: createPausedMainMenuShellTelemetryControlsViewModel(),
       previewSection: {
@@ -5814,7 +5838,7 @@ describe('resolvePausedMainMenuShellSectionState', () => {
     });
   });
 
-  it('keeps current-session-only hotkey persistence warning in the collapsed shell section state', () => {
+  it('keeps current-session-only hotkey persistence warning in the Shell-page summary state', () => {
     expect(
       resolvePausedMainMenuShellSectionState(
         createPausedMainMenuShellState(
@@ -5833,10 +5857,8 @@ describe('resolvePausedMainMenuShellSectionState', () => {
       )
     ).toEqual({
       visible: true,
-      expanded: false,
+      summaryLine: DEFAULT_PAUSED_MAIN_MENU_SHELL_SECTION_SUMMARY_LINE,
       metadataRows: CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS,
-      toggleLabel: 'Show Shell',
-      editorVisible: false,
       gameplayControls: createPausedMainMenuShellGameplayControlsViewModel(),
       telemetryControls: createPausedMainMenuShellTelemetryControlsViewModel(),
       previewSection: null
@@ -5844,12 +5866,10 @@ describe('resolvePausedMainMenuShellSectionState', () => {
   });
 
   it('keeps shell hidden outside the paused main menu', () => {
-    expect(resolvePausedMainMenuShellSectionState(createFirstLaunchMainMenuShellState(), true)).toEqual({
+    expect(resolvePausedMainMenuShellSectionState(createFirstLaunchMainMenuShellState())).toEqual({
       visible: false,
-      expanded: false,
+      summaryLine: null,
       metadataRows: [],
-      toggleLabel: null,
-      editorVisible: false,
       gameplayControls: null,
       telemetryControls: null,
       previewSection: null

@@ -167,10 +167,8 @@ export interface PausedMainMenuSectionViewModel {
 
 export interface PausedMainMenuShellSectionState {
   visible: boolean;
-  expanded: boolean;
+  summaryLine: string | null;
   metadataRows: readonly AppShellMenuSectionMetadataRow[];
-  toggleLabel: string | null;
-  editorVisible: boolean;
   gameplayControls: PausedMainMenuShellGameplayControlsViewModel | null;
   telemetryControls: PausedMainMenuShellTelemetryControlsViewModel | null;
   previewSection: AppShellMenuSection | null;
@@ -1221,19 +1219,18 @@ export const createPausedMainMenuShellSummaryRows = (
     value: resolvePausedMainMenuShellPreviewSummaryValue(sectionViewModel)
   }
 ] as const;
-export const resolvePausedMainMenuShellToggleLabel = (expanded = false): string =>
-  expanded ? 'Hide Shell' : 'Show Shell';
+const DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_LINE =
+  'Adjust gameplay controls, telemetry, hotkeys, and shell-profile tools for the current paused session.';
 export const resolvePausedMainMenuShellSectionState = (
-  state: AppShellState,
-  expanded = false
+  state: AppShellState
 ): PausedMainMenuShellSectionState => {
   const visible = isPausedMainMenuState(state);
   const sectionViewModel = resolvePausedMainMenuSectionViewModel(state);
-  const editorVisible = visible && expanded && sectionViewModel !== null;
 
   return {
     visible: visible && sectionViewModel !== null,
-    expanded: editorVisible,
+    summaryLine:
+      visible && sectionViewModel !== null ? DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_LINE : null,
     metadataRows:
       visible && sectionViewModel !== null
         ? createPausedMainMenuShellSummaryRows(
@@ -1241,9 +1238,6 @@ export const resolvePausedMainMenuShellSectionState = (
             state.shellActionKeybindingsCurrentSessionOnly === true
           )
         : [],
-    toggleLabel:
-      visible && sectionViewModel !== null ? resolvePausedMainMenuShellToggleLabel(expanded) : null,
-    editorVisible,
     gameplayControls:
       visible && sectionViewModel !== null ? sectionViewModel.shell.gameplayControls : null,
     telemetryControls:
@@ -3023,7 +3017,7 @@ interface PausedMainMenuSectionLandmarkTarget {
 }
 
 type PausedMainMenuSectionAnchorKey = keyof typeof PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS;
-type PausedMainMenuPageId = 'overview' | 'world-save';
+type PausedMainMenuPageId = 'overview' | 'world-save' | 'shell';
 
 const PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS = {
   overview: {
@@ -3060,8 +3054,13 @@ const DEFAULT_PAUSED_MAIN_MENU_PAGE_ID: PausedMainMenuPageId = 'overview';
 const PAUSED_MAIN_MENU_WORLD_SAVE_TILE_TITLE = 'World Save';
 const PAUSED_MAIN_MENU_WORLD_SAVE_TILE_OPEN_TITLE =
   'Open the paused World Save page for downloads, imports, and browser-resume controls.';
+const PAUSED_MAIN_MENU_SHELL_TILE_TITLE = 'Shell';
+const PAUSED_MAIN_MENU_SHELL_TILE_OPEN_TITLE =
+  'Open the paused Shell page for gameplay, telemetry, hotkey, and shell-profile tools.';
 const PAUSED_MAIN_MENU_WORLD_SAVE_BACK_LABEL = 'Back to Overview';
 const PAUSED_MAIN_MENU_WORLD_SAVE_BACK_TITLE = 'Return to the paused Overview page.';
+const PAUSED_MAIN_MENU_SHELL_BACK_LABEL = 'Back to Overview';
+const PAUSED_MAIN_MENU_SHELL_BACK_TITLE = 'Return to the paused Overview page.';
 const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT = 'Jump to Overview';
 const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE =
   'Move focus back to the Overview section at the top of the paused dashboard.';
@@ -3727,6 +3726,9 @@ export class AppShell {
   private worldSaveNavigationTile: HTMLButtonElement;
   private worldSaveNavigationSummary: HTMLParagraphElement;
   private worldSaveNavigationMetadata: HTMLDListElement;
+  private shellNavigationTile: HTMLButtonElement;
+  private shellNavigationSummary: HTMLParagraphElement;
+  private shellNavigationMetadata: HTMLDListElement;
   private worldSaveSection: HTMLElement;
   private worldSaveBackButton: HTMLButtonElement;
   private worldSaveSummary: HTMLParagraphElement;
@@ -3742,8 +3744,9 @@ export class AppShell {
   private dangerZoneBody: HTMLDivElement;
   private dangerZoneTopJumpLink: HTMLAnchorElement;
   private shellSection: HTMLElement;
+  private shellBackButton: HTMLButtonElement;
+  private shellSummary: HTMLParagraphElement;
   private shellMetadata: HTMLDListElement;
-  private shellToggleButton: HTMLButtonElement;
   private shellBody: HTMLDivElement;
   private shellActionKeybindingEditor: HTMLDivElement;
   private shellActionKeybindingEditorMetadata: HTMLDListElement;
@@ -3756,7 +3759,6 @@ export class AppShell {
   private shellTelemetryMetadata: HTMLDListElement;
   private shellTelemetryResetButton: HTMLButtonElement;
   private shellTelemetryCollections: HTMLDivElement;
-  private shellTopJumpLink: HTMLAnchorElement;
   private shellActionKeybindingInputs = new Map<
     InWorldShellActionKeybindingActionType,
     HTMLInputElement
@@ -3818,7 +3820,6 @@ export class AppShell {
   private currentShellActionKeybindingEditorStatus: AppShellShellActionKeybindingEditorStatus | null =
     null;
   private pausedMainMenuActivePage: PausedMainMenuPageId = DEFAULT_PAUSED_MAIN_MENU_PAGE_ID;
-  private pausedMainMenuShellExpanded = false;
   private pausedMainMenuImportWorldSaveBusy = false;
   private pausedMainMenuImportShellProfileBusy = false;
   private pausedMainMenuApplyShellProfileBusy = false;
@@ -4059,6 +4060,37 @@ export class AppShell {
       'app-shell__menu-section-metadata app-shell__paused-navigation-tile-metadata';
     this.worldSaveNavigationTile.append(this.worldSaveNavigationMetadata);
 
+    this.shellNavigationTile = document.createElement('button');
+    this.shellNavigationTile.type = 'button';
+    this.shellNavigationTile.className = 'app-shell__paused-navigation-tile';
+    this.shellNavigationTile.title = PAUSED_MAIN_MENU_SHELL_TILE_OPEN_TITLE;
+    this.shellNavigationTile.addEventListener('click', (event) =>
+      this.setPausedMainMenuPage(
+        'shell',
+        !shouldReleaseButtonFocusAfterClick(event.detail)
+      )
+    );
+    installPointerClickFocusRelease(this.shellNavigationTile);
+    this.overviewNavigation.append(this.shellNavigationTile);
+
+    const shellNavigationHeading = document.createElement('div');
+    shellNavigationHeading.className = 'app-shell__paused-navigation-tile-heading';
+    this.shellNavigationTile.append(shellNavigationHeading);
+
+    const shellNavigationTitle = document.createElement('h3');
+    shellNavigationTitle.className = 'app-shell__paused-navigation-tile-title';
+    shellNavigationTitle.textContent = PAUSED_MAIN_MENU_SHELL_TILE_TITLE;
+    shellNavigationHeading.append(shellNavigationTitle);
+
+    this.shellNavigationSummary = document.createElement('p');
+    this.shellNavigationSummary.className = 'app-shell__paused-navigation-tile-summary';
+    this.shellNavigationTile.append(this.shellNavigationSummary);
+
+    this.shellNavigationMetadata = document.createElement('dl');
+    this.shellNavigationMetadata.className =
+      'app-shell__menu-section-metadata app-shell__paused-navigation-tile-metadata';
+    this.shellNavigationTile.append(this.shellNavigationMetadata);
+
     this.worldSaveSection = document.createElement('section');
     this.worldSaveSection.className = 'app-shell__world-save';
     this.pausedMainMenuPrimarySections.append(this.worldSaveSection);
@@ -4111,13 +4143,9 @@ export class AppShell {
     this.worldSaveActions.className = 'app-shell__world-save-actions';
     worldSaveBody.append(this.worldSaveActions);
 
-    this.pausedMainMenuSecondarySections = document.createElement('div');
-    this.pausedMainMenuSecondarySections.className = 'app-shell__paused-secondary';
-    this.pausedMainMenuDashboard.append(this.pausedMainMenuSecondarySections);
-
     this.shellSection = document.createElement('section');
     this.shellSection.className = 'app-shell__shell';
-    this.pausedMainMenuSecondarySections.append(this.shellSection);
+    this.pausedMainMenuPrimarySections.append(this.shellSection);
 
     const shellHeader = document.createElement('div');
     shellHeader.className = 'app-shell__shell-header';
@@ -4137,24 +4165,35 @@ export class AppShell {
       PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS.shell
     );
 
-    this.shellToggleButton = document.createElement('button');
-    this.shellToggleButton.type = 'button';
-    this.shellToggleButton.className = 'app-shell__shell-toggle';
-    this.shellToggleButton.addEventListener('click', (event) =>
-      this.togglePausedMainMenuShell(!shouldReleaseButtonFocusAfterClick(event.detail))
+    this.shellBackButton = document.createElement('button');
+    this.shellBackButton.type = 'button';
+    this.shellBackButton.className = 'app-shell__submenu-back';
+    this.shellBackButton.textContent = PAUSED_MAIN_MENU_SHELL_BACK_LABEL;
+    this.shellBackButton.title = PAUSED_MAIN_MENU_SHELL_BACK_TITLE;
+    this.shellBackButton.addEventListener('click', (event) =>
+      this.setPausedMainMenuPage(
+        'overview',
+        !shouldReleaseButtonFocusAfterClick(event.detail)
+      )
     );
-    installPointerClickFocusRelease(this.shellToggleButton);
-    shellHeader.append(this.shellToggleButton);
+    installPointerClickFocusRelease(this.shellBackButton);
+    shellHeader.append(this.shellBackButton);
+
+    this.shellSummary = document.createElement('p');
+    this.shellSummary.className = 'app-shell__shell-summary';
+    shellCopy.append(this.shellSummary);
 
     this.shellBody = document.createElement('div');
     this.shellBody.className = 'app-shell__shell-body';
-    this.shellBody.id = 'app-shell-shell-body';
     this.shellSection.append(this.shellBody);
-    this.shellToggleButton.setAttribute('aria-controls', this.shellBody.id);
 
     this.shellMetadata = document.createElement('dl');
     this.shellMetadata.className = 'app-shell__menu-section-metadata app-shell__shell-metadata';
     this.shellBody.append(this.shellMetadata);
+
+    this.pausedMainMenuSecondarySections = document.createElement('div');
+    this.pausedMainMenuSecondarySections.className = 'app-shell__paused-secondary';
+    this.pausedMainMenuDashboard.append(this.pausedMainMenuSecondarySections);
 
     this.shellActionKeybindingEditor = document.createElement('div');
     this.shellActionKeybindingEditor.className = 'app-shell__shell-keybindings';
@@ -4351,9 +4390,6 @@ export class AppShell {
     this.shellTelemetryCollections = document.createElement('div');
     this.shellTelemetryCollections.className = 'app-shell__shell-telemetry-collections';
     this.shellTelemetryControls.append(this.shellTelemetryCollections);
-
-    this.shellTopJumpLink = createPausedMainMenuTopJumpLink(this.overviewSection);
-    this.shellActionKeybindingEditor.append(this.shellTopJumpLink);
 
     this.recentActivitySection = document.createElement('section');
     this.recentActivitySection.className = 'app-shell__recent-activity';
@@ -4641,6 +4677,8 @@ export class AppShell {
         return this.overviewSection;
       case 'world-save':
         return this.worldSaveSection;
+      case 'shell':
+        return this.shellSection;
     }
   }
 
@@ -4660,18 +4698,6 @@ export class AppShell {
 
     if (preserveSectionFocus) {
       focusPausedMainMenuSectionAnchor(this.resolvePausedMainMenuPageSection(pageId));
-    }
-  }
-
-  private togglePausedMainMenuShell(preserveSectionFocus = false): void {
-    if (!isPausedMainMenuState(this.currentState)) {
-      return;
-    }
-
-    this.pausedMainMenuShellExpanded = !this.pausedMainMenuShellExpanded;
-    this.setState(this.currentState);
-    if (preserveSectionFocus) {
-      focusPausedMainMenuSectionAnchor(this.shellSection);
     }
   }
 
@@ -5003,12 +5029,13 @@ export class AppShell {
     const pausedMainMenuVisible = isPausedMainMenuState(state);
     if (!pausedMainMenuVisible || !wasPausedMainMenuVisible) {
       this.pausedMainMenuActivePage = DEFAULT_PAUSED_MAIN_MENU_PAGE_ID;
-      this.pausedMainMenuShellExpanded = false;
     }
     const pausedMainMenuOverviewPageVisible =
       pausedMainMenuVisible && this.pausedMainMenuActivePage === 'overview';
     const pausedMainMenuWorldSavePageVisible =
       pausedMainMenuVisible && this.pausedMainMenuActivePage === 'world-save';
+    const pausedMainMenuShellPageVisible =
+      pausedMainMenuVisible && this.pausedMainMenuActivePage === 'shell';
     const pausedMainMenuShellActionKeybindings = pausedMainMenuVisible
       ? state.shellActionKeybindings ?? defaultShellActionKeybindings
       : defaultShellActionKeybindings;
@@ -5019,10 +5046,7 @@ export class AppShell {
     const pausedMainMenuRecentActivitySection = resolvePausedMainMenuRecentActivitySectionState(
       state
     );
-    const pausedMainMenuShellSection = resolvePausedMainMenuShellSectionState(
-      state,
-      this.pausedMainMenuShellExpanded
-    );
+    const pausedMainMenuShellSection = resolvePausedMainMenuShellSectionState(state);
     const pausedMainMenuWorldSaveSection = resolvePausedMainMenuWorldSaveSectionState(state);
     const pausedMainMenuDangerZoneSection = resolvePausedMainMenuDangerZoneSectionState(state);
     const pausedMainMenuMenuSectionGroups = resolvePausedMainMenuMenuSectionGroups(state);
@@ -5077,6 +5101,7 @@ export class AppShell {
     const pausedMainMenuWorldSaveNavigationRows = pausedMainMenuWorldSaveSection.metadataRows.filter(
       (row) => row.label === 'Browser Resume' || row.label === 'World Seed'
     );
+    const pausedMainMenuShellNavigationRows = pausedMainMenuShellSection.metadataRows;
     const pausedMainMenuDangerZoneActionButtons =
       pausedMainMenuSectionViewModel === null
         ? []
@@ -5141,6 +5166,11 @@ export class AppShell {
     this.worldSaveNavigationMetadata.replaceChildren(
       ...createMenuSectionMetadataElement(pausedMainMenuWorldSaveNavigationRows).childNodes
     );
+    this.shellNavigationTile.dataset.tone = 'default';
+    this.shellNavigationSummary.textContent = pausedMainMenuShellSection.summaryLine ?? '';
+    this.shellNavigationMetadata.replaceChildren(
+      ...createMenuSectionMetadataElement(pausedMainMenuShellNavigationRows).childNodes
+    );
     this.worldSaveSection.hidden =
       !pausedMainMenuWorldSavePageVisible || !pausedMainMenuWorldSaveSection.visible;
     this.worldSaveSection.style.display = resolveAppShellRegionDisplay(
@@ -5157,46 +5187,37 @@ export class AppShell {
       ...createMenuSectionMetadataElement(pausedMainMenuWorldSaveSection.metadataRows).childNodes
     );
     this.worldSaveActions.replaceChildren(...pausedMainMenuWorldSaveActionButtons);
-    this.shellSection.hidden = !pausedMainMenuShellSection.visible;
+    this.shellSection.hidden =
+      !pausedMainMenuShellPageVisible || !pausedMainMenuShellSection.visible;
     this.shellSection.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuShellSection.visible,
+      pausedMainMenuShellPageVisible && pausedMainMenuShellSection.visible,
       'grid'
     );
-    this.shellSection.dataset.expanded = pausedMainMenuShellSection.expanded ? 'true' : 'false';
+    this.shellBackButton.hidden = !pausedMainMenuShellPageVisible;
+    this.shellBackButton.style.display = pausedMainMenuShellPageVisible ? 'inline-flex' : 'none';
+    this.shellSummary.textContent = pausedMainMenuShellSection.summaryLine ?? '';
     this.shellMetadata.replaceChildren(
       ...createMenuSectionMetadataElement(pausedMainMenuShellSection.metadataRows).childNodes
     );
-    this.shellToggleButton.textContent = pausedMainMenuShellSection.toggleLabel ?? '';
-    this.shellToggleButton.hidden = !pausedMainMenuShellSection.visible;
-    this.shellToggleButton.title = pausedMainMenuShellSection.expanded
-      ? 'Hide shell gameplay, telemetry, hotkey, and shell-profile tools.'
-      : 'Show shell gameplay, telemetry, hotkey, and shell-profile tools.';
-    this.shellToggleButton.setAttribute(
-      'aria-expanded',
-      pausedMainMenuShellSection.expanded ? 'true' : 'false'
-    );
-    this.shellBody.hidden = !pausedMainMenuShellSection.visible;
+    this.shellBody.hidden = !pausedMainMenuShellPageVisible || !pausedMainMenuShellSection.visible;
     this.shellBody.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuShellSection.visible,
+      pausedMainMenuShellPageVisible && pausedMainMenuShellSection.visible,
       'grid'
     );
-    this.shellActionKeybindingEditor.hidden = !pausedMainMenuShellSection.editorVisible;
+    this.shellActionKeybindingEditor.hidden =
+      !pausedMainMenuShellPageVisible || !pausedMainMenuShellSection.visible;
     this.shellActionKeybindingEditor.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuShellSection.editorVisible,
+      pausedMainMenuShellPageVisible && pausedMainMenuShellSection.visible,
       'grid'
     );
     this.syncShellGameplayControls(
       pausedMainMenuShellSection.gameplayControls,
-      pausedMainMenuShellSection.editorVisible
+      pausedMainMenuShellPageVisible && pausedMainMenuShellSection.visible
     );
     this.syncShellTelemetryControls(
       pausedMainMenuShellSection.telemetryControls,
-      pausedMainMenuShellSection.editorVisible
+      pausedMainMenuShellPageVisible && pausedMainMenuShellSection.visible
     );
-    this.shellTopJumpLink.hidden = !pausedMainMenuShellSection.editorVisible;
-    this.shellTopJumpLink.style.display = pausedMainMenuShellSection.editorVisible
-      ? 'inline-flex'
-      : 'none';
     this.syncShellActionKeybindingEditorMetadata(pausedMainMenuShellPersistenceAvailable);
     this.shellProfilePreviewDetails.replaceChildren(
       ...(pausedMainMenuShellSection.previewSection === null
@@ -5204,10 +5225,12 @@ export class AppShell {
         : [createMenuSectionElement(pausedMainMenuShellSection.previewSection)])
     );
     this.shellProfilePreviewDetails.hidden =
-      !pausedMainMenuShellSection.editorVisible ||
+      !pausedMainMenuShellPageVisible ||
+      !pausedMainMenuShellSection.visible ||
       pausedMainMenuShellSection.previewSection === null;
     this.shellProfilePreviewDetails.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuShellSection.editorVisible &&
+      pausedMainMenuShellPageVisible &&
+        pausedMainMenuShellSection.visible &&
         pausedMainMenuShellSection.previewSection !== null,
       'grid'
     );

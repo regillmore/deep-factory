@@ -419,6 +419,7 @@ canvas {
 
 .app-shell__world-save-summary,
 .app-shell__recent-activity-summary,
+.app-shell__shell-summary,
 .app-shell__danger-zone-summary {
   margin: 0;
   color: #d6e3e7;

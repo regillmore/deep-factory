@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-19
 
+- Task: Add a paused-menu Shell submenu follow-up after the first World Save navigation tile.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/style.css](../src/style.css), and [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so `Overview` now opens `Shell` through its own paused-menu navigation tile, the dedicated `Shell` page uses the shared `Back to Overview` frame, and gameplay, telemetry, hotkey, plus shell-profile tools stay available there with focused navigation and focus-handoff regressions; removed completed task `638` from [docs/NEXT.md](docs/NEXT.md), added replacement task `643`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Off-roadmap follow-up bugfix for debug crafting clicks.
 - Changes: Updated [src/ui/craftingPanel.ts](../src/ui/craftingPanel.ts) plus [src/ui/itemCatalogPanel.ts](../src/ui/itemCatalogPanel.ts) so repeated identical panel refreshes no longer recreate unchanged recipe or catalog buttons every frame, which had been preventing normal browser click completion on the crafting and recipe-catalog cards; expanded [src/ui/craftingPanel.test.ts](../src/ui/craftingPanel.test.ts) and [src/ui/itemCatalogPanel.test.ts](../src/ui/itemCatalogPanel.test.ts) with regressions that keep rendered buttons stable across unchanged updates.
 - Verification: Ran `cmd /c npx vitest run src/ui/craftingPanel.test.ts src/ui/itemCatalogPanel.test.ts src/world/playerCrafting.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
