@@ -49,6 +49,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
     baseColor: [0.65, 0.35, 0.17],
     accentColor: [0.94, 0.71, 0.38]
   },
+  'copper-bar': {
+    baseColor: [0.71, 0.45, 0.24],
+    accentColor: [0.98, 0.79, 0.52]
+  },
   gel: {
     baseColor: [0.22, 0.58, 0.23],
     accentColor: [0.72, 0.93, 0.46]
@@ -56,6 +60,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
   workbench: {
     baseColor: [0.49, 0.34, 0.19],
     accentColor: [0.77, 0.64, 0.42]
+  },
+  furnace: {
+    baseColor: [0.38, 0.36, 0.34],
+    accentColor: [0.83, 0.58, 0.26]
   },
   torch: {
     baseColor: [0.79, 0.55, 0.16],

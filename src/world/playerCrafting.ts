@@ -15,9 +15,19 @@ import type { PlayerState } from './playerState';
 import {
   STARTER_WORKBENCH_TILE_ID
 } from './starterWorkbenchPlacement';
+import { STARTER_FURNACE_TILE_ID } from './starterFurnacePlacement';
 
-export type PlayerCraftingStationId = 'workbench';
-export type PlayerCraftingRecipeId = 'workbench' | 'healing-potion';
+export type PlayerCraftingStationId = 'workbench' | 'furnace';
+export type PlayerCraftingRecipeId =
+  | 'workbench'
+  | 'furnace'
+  | 'healing-potion'
+  | 'copper-bar';
+
+export interface PlayerCraftingStationDefinition {
+  id: PlayerCraftingStationId;
+  label: string;
+}
 
 export interface PlayerCraftingRecipeStack {
   itemId: PlayerInventoryItemId;
@@ -74,12 +84,16 @@ export interface TryCraftPlayerRecipeResult {
 }
 
 const PLAYER_CRAFTING_STATION_TILE_IDS: Readonly<Record<PlayerCraftingStationId, number>> = {
-  workbench: STARTER_WORKBENCH_TILE_ID
+  workbench: STARTER_WORKBENCH_TILE_ID,
+  furnace: STARTER_FURNACE_TILE_ID
 };
 
 const PLAYER_CRAFTING_STATION_LABELS: Readonly<Record<PlayerCraftingStationId, string>> = {
-  workbench: 'Workbench'
+  workbench: 'Workbench',
+  furnace: 'Furnace'
 };
+
+const PLAYER_CRAFTING_STATION_IDS = ['workbench', 'furnace'] as const;
 
 const PLAYER_CRAFTING_RECIPE_DEFINITIONS: readonly PlayerCraftingRecipeDefinition[] = [
   {
@@ -90,11 +104,28 @@ const PLAYER_CRAFTING_RECIPE_DEFINITIONS: readonly PlayerCraftingRecipeDefinitio
     requiredStationId: null
   },
   {
+    id: 'furnace',
+    label: 'Furnace',
+    ingredients: [
+      { itemId: 'stone-block', amount: 20 },
+      { itemId: 'torch', amount: 4 }
+    ],
+    output: { itemId: 'furnace', amount: 1 },
+    requiredStationId: 'workbench'
+  },
+  {
     id: 'healing-potion',
     label: 'Healing Potion',
     ingredients: [{ itemId: 'gel', amount: 2 }],
     output: { itemId: 'healing-potion', amount: 1 },
     requiredStationId: 'workbench'
+  },
+  {
+    id: 'copper-bar',
+    label: 'Copper Bar',
+    ingredients: [{ itemId: 'copper-ore', amount: 3 }],
+    output: { itemId: 'copper-bar', amount: 1 },
+    requiredStationId: 'furnace'
   }
 ] as const;
 const PLAYER_CRAFTING_RECIPE_IDS = new Set<PlayerCraftingRecipeId>(
@@ -133,6 +164,12 @@ const getPlayerCraftingRecipeDefinitionIndex = (recipeId: PlayerCraftingRecipeId
 
 export const getPlayerCraftingRecipeDefinitions = (): readonly PlayerCraftingRecipeDefinition[] =>
   PLAYER_CRAFTING_RECIPE_DEFINITIONS;
+
+export const getPlayerCraftingStationDefinitions = (): readonly PlayerCraftingStationDefinition[] =>
+  PLAYER_CRAFTING_STATION_IDS.map((stationId) => ({
+    id: stationId,
+    label: PLAYER_CRAFTING_STATION_LABELS[stationId]
+  }));
 
 export const isPlayerCraftingRecipeId = (value: string): value is PlayerCraftingRecipeId =>
   PLAYER_CRAFTING_RECIPE_IDS.has(value as PlayerCraftingRecipeId);

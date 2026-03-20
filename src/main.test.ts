@@ -83,6 +83,7 @@ import { STARTER_BUG_NET_SWING_WINDUP_SECONDS } from './world/starterBugNet';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
 import { STARTER_TORCH_TILE_ID } from './world/starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './world/starterWorkbenchPlacement';
+import { STARTER_FURNACE_TILE_ID } from './world/starterFurnacePlacement';
 import {
   describeLiquidRenderVariantPixelBoundsAtElapsedMs,
   describeLiquidRenderVariantUvRectAtElapsedMs,
@@ -300,8 +301,11 @@ const testRuntime = vi.hoisted(() => {
       triggerCraftRecipe(recipeId: string): void;
     },
     latestCraftingPanelState: null as null | {
-      stationLabel: string;
-      stationInRange: boolean;
+      stations: Array<{
+        stationId: string;
+        label: string;
+        inRange: boolean;
+      }>;
       recipes: Array<{
         recipeId: string;
         label: string;
@@ -1670,8 +1674,11 @@ vi.mock('./ui/craftingPanel', () => ({
     }
 
     update(state: {
-      stationLabel: string;
-      stationInRange: boolean;
+      stations: Array<{
+        stationId: string;
+        label: string;
+        inRange: boolean;
+      }>;
       recipes: Array<{
         recipeId: string;
         label: string;
@@ -1682,8 +1689,7 @@ vi.mock('./ui/craftingPanel', () => ({
       }>;
     }): void {
       testRuntime.latestCraftingPanelState = {
-        stationLabel: state.stationLabel,
-        stationInRange: state.stationInRange,
+        stations: state.stations.map((station) => ({ ...station })),
         recipes: state.recipes.map((recipe) => ({ ...recipe }))
       };
     }
@@ -7729,8 +7735,18 @@ describe('main.ts shell state orchestration', () => {
 
     expect(testRuntime.craftingPanelInstance?.visible).toBe(true);
     expect(testRuntime.latestCraftingPanelState).toMatchObject({
-      stationLabel: 'Workbench',
-      stationInRange: false
+      stations: [
+        {
+          stationId: 'workbench',
+          label: 'Workbench',
+          inRange: false
+        },
+        {
+          stationId: 'furnace',
+          label: 'Furnace',
+          inRange: false
+        }
+      ]
     });
     expect(
       testRuntime.latestCraftingPanelState?.recipes.find((recipe) => recipe.recipeId === 'workbench')
@@ -7743,15 +7759,25 @@ describe('main.ts shell state orchestration', () => {
       )
     ).toMatchObject({
       enabled: false,
-      disabledReason: 'Requires nearby workbench'
+      disabledReason: 'Requires nearby Workbench'
     });
 
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, -1), STARTER_WORKBENCH_TILE_ID);
     runRenderFrame();
 
     expect(testRuntime.latestCraftingPanelState).toMatchObject({
-      stationLabel: 'Workbench',
-      stationInRange: true
+      stations: [
+        {
+          stationId: 'workbench',
+          label: 'Workbench',
+          inRange: true
+        },
+        {
+          stationId: 'furnace',
+          label: 'Furnace',
+          inRange: false
+        }
+      ]
     });
     expect(
       testRuntime.latestCraftingPanelState?.recipes.find(
@@ -7879,6 +7905,181 @@ describe('main.ts shell state orchestration', () => {
     expect(restoredWorld.getTile(1, -1)).toBe(STARTER_WORKBENCH_TILE_ID);
   });
 
+  it('crafts a furnace from the panel, then places it through the shared hidden-panel item-use path', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'stone-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'sword', amount: 1 },
+              { itemId: 'umbrella', amount: 1 },
+              { itemId: 'bug-net', amount: 1 },
+              null,
+              { itemId: 'spear', amount: 1 }
+            ],
+            selectedHotbarSlotIndex: 0
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, -1), STARTER_WORKBENCH_TILE_ID);
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    runRenderFrame();
+
+    expect(
+      testRuntime.latestCraftingPanelState?.recipes.find((recipe) => recipe.recipeId === 'furnace')
+    ).toMatchObject({
+      enabled: true
+    });
+
+    testRuntime.craftingPanelInstance?.triggerCraftRecipe('furnace');
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState).toEqual(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'stone-block', amount: 44 },
+          { itemId: 'torch', amount: 16 },
+          { itemId: 'rope', amount: 24 },
+          { itemId: 'healing-potion', amount: 3 },
+          { itemId: 'sword', amount: 1 },
+          { itemId: 'umbrella', amount: 1 },
+          { itemId: 'bug-net', amount: 1 },
+          { itemId: 'furnace', amount: 1 },
+          { itemId: 'spear', amount: 1 }
+        ],
+        selectedHotbarSlotIndex: 0
+      })
+    );
+
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 1);
+    expect(dispatchKeydown('9', 'Digit9').prevented).toBe(true);
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 1, y: -1 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 1,
+      tileY: -1,
+      placementTileX: 1,
+      placementTileY: -1,
+      canPlace: true,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false
+    });
+
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        worldX: 24,
+        worldY: -8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        tileId: STARTER_FURNACE_TILE_ID
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    expect(persistedEnvelope?.session.standalonePlayerInventoryState.hotbar[8]).toBeNull();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+    expect(restoredWorld.getTile(1, -1)).toBe(STARTER_FURNACE_TILE_ID);
+  });
+
+  it('smelts copper bars from the panel only when a nearby furnace is placed', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'copper-ore', amount: 6 },
+              null,
+              ...Array.from({ length: 8 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 0
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    runRenderFrame();
+
+    expect(
+      testRuntime.latestCraftingPanelState?.recipes.find((recipe) => recipe.recipeId === 'copper-bar')
+    ).toMatchObject({
+      enabled: false,
+      disabledReason: 'Requires nearby Furnace'
+    });
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, -1), STARTER_FURNACE_TILE_ID);
+    runRenderFrame();
+
+    expect(
+      testRuntime.latestCraftingPanelState?.recipes.find((recipe) => recipe.recipeId === 'copper-bar')
+    ).toMatchObject({
+      enabled: true,
+      disabledReason: null
+    });
+
+    testRuntime.craftingPanelInstance?.triggerCraftRecipe('copper-bar');
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState).toEqual(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'copper-ore', amount: 3 },
+          { itemId: 'copper-bar', amount: 1 },
+          ...Array.from({ length: 8 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 0
+      })
+    );
+  });
+
   it('shows the searchable item and recipe catalog only while the full debug-edit panel is visible and updates filtered results', async () => {
     await import('./main');
     await flushBootstrap();
@@ -7913,15 +8114,29 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.itemCatalogPanelInstance?.triggerSearchQueryChange('nearby workbench');
 
-    expect(testRuntime.latestItemCatalogPanelState).toMatchObject({
+    const nearbyWorkbenchState = testRuntime.latestItemCatalogPanelState;
+    expect(nearbyWorkbenchState).toBeDefined();
+    if (!nearbyWorkbenchState) {
+      throw new Error('Expected item catalog state after nearby workbench search');
+    }
+    expect(nearbyWorkbenchState).toMatchObject({
       searchQuery: 'nearby workbench',
-      resultSummaryLabel: '0 matching items | 1 matching recipe',
       itemEmptyLabel: 'No items match "nearby workbench"'
     });
-    expect(testRuntime.latestItemCatalogPanelState?.items).toEqual([]);
+    expect(nearbyWorkbenchState.items).toEqual([]);
     expect(
-      testRuntime.latestItemCatalogPanelState?.recipes.map((recipe) => recipe.recipeId)
-    ).toEqual(['healing-potion']);
+      nearbyWorkbenchState.recipes.some((recipe) => recipe.recipeId === 'healing-potion')
+    ).toBe(true);
+    expect(
+      nearbyWorkbenchState.recipes.every(
+        (recipe) => recipe.stationRequirementLabel === 'Requirement: Nearby Workbench'
+      )
+    ).toBe(true);
+    expect(nearbyWorkbenchState.resultSummaryLabel).toBe(
+      `0 matching items | ${nearbyWorkbenchState.recipes.length} matching ${
+        nearbyWorkbenchState.recipes.length === 1 ? 'recipe' : 'recipes'
+      }`
+    );
 
     testRuntime.itemCatalogPanelInstance?.triggerSearchQueryChange('zzz');
 
@@ -8043,9 +8258,9 @@ describe('main.ts shell state orchestration', () => {
         outputLabel: 'Output: +1 POTION',
         ingredientsLabel: 'Ingredients: 2 Gel',
         stationRequirementLabel: 'Requirement: Nearby Workbench',
-        availabilityLabel: 'Blocked: Requires nearby workbench',
+        availabilityLabel: 'Blocked: Requires nearby Workbench',
         enabled: false,
-        disabledReason: 'Requires nearby workbench'
+        disabledReason: 'Requires nearby Workbench'
       }
     ]);
 

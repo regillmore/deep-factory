@@ -9,9 +9,14 @@ export interface CraftingPanelRecipeViewModel {
   disabledReason?: string | null;
 }
 
+export interface CraftingPanelStationViewModel {
+  stationId: string;
+  label: string;
+  inRange: boolean;
+}
+
 export interface CraftingPanelState {
-  stationLabel: string;
-  stationInRange: boolean;
+  stations: readonly CraftingPanelStationViewModel[];
   recipes: readonly CraftingPanelRecipeViewModel[];
 }
 
@@ -51,13 +56,24 @@ const areCraftingPanelStatesEqual = (
   right: CraftingPanelState
 ): boolean =>
   left !== null &&
-  left.stationLabel === right.stationLabel &&
-  left.stationInRange === right.stationInRange &&
+  left.stations.length === right.stations.length &&
+  left.stations.every((station, index) => {
+    const other = right.stations[index];
+    return (
+      other !== undefined &&
+      station.stationId === other.stationId &&
+      station.label === other.label &&
+      station.inRange === other.inRange
+    );
+  }) &&
   areCraftingPanelRecipeViewModelsEqual(left.recipes, right.recipes);
 
 const cloneCraftingPanelState = (state: CraftingPanelState): CraftingPanelState => ({
-  stationLabel: state.stationLabel,
-  stationInRange: state.stationInRange,
+  stations: state.stations.map((station) => ({
+    stationId: station.stationId,
+    label: station.label,
+    inRange: station.inRange
+  })),
   recipes: state.recipes.map((recipe) => ({
     recipeId: recipe.recipeId,
     label: recipe.label,
@@ -70,7 +86,7 @@ const cloneCraftingPanelState = (state: CraftingPanelState): CraftingPanelState 
 
 export class CraftingPanel {
   private root: HTMLDivElement;
-  private statusLine: HTMLDivElement;
+  private stationList: HTMLDivElement;
   private recipeList: HTMLDivElement;
   private onCraftRecipe: (recipeId: string) => void;
   private lastRenderedState: CraftingPanelState | null = null;
@@ -110,13 +126,13 @@ export class CraftingPanel {
     stationSection.style.gap = '4px';
     this.root.append(stationSection);
 
-    stationSection.append(createSectionLabel('Station'));
+    stationSection.append(createSectionLabel('Stations'));
 
-    this.statusLine = document.createElement('div');
-    this.statusLine.style.color = '#d6dde8';
-    this.statusLine.style.fontSize = '11px';
-    this.statusLine.style.lineHeight = '1.35';
-    stationSection.append(this.statusLine);
+    this.stationList = document.createElement('div');
+    this.stationList.style.display = 'flex';
+    this.stationList.style.flexDirection = 'column';
+    this.stationList.style.gap = '2px';
+    stationSection.append(this.stationList);
 
     const recipeSection = document.createElement('div');
     recipeSection.style.display = 'flex';
@@ -144,10 +160,27 @@ export class CraftingPanel {
       return;
     }
 
-    this.statusLine.textContent = state.stationInRange
-      ? `${state.stationLabel} nearby`
-      : `${state.stationLabel} not in range`;
-    this.statusLine.style.color = state.stationInRange ? '#bfe7c8' : '#e6c88d';
+    const stationLines =
+      state.stations.length > 0
+        ? state.stations.map((station) => {
+            const line = document.createElement('div');
+            line.textContent = station.inRange
+              ? `${station.label} nearby`
+              : `${station.label} not in range`;
+            line.style.color = station.inRange ? '#bfe7c8' : '#e6c88d';
+            line.style.fontSize = '11px';
+            line.style.lineHeight = '1.35';
+            return line;
+          })
+        : [(() => {
+            const line = document.createElement('div');
+            line.textContent = 'No station requirements';
+            line.style.color = '#aab7c7';
+            line.style.fontSize = '11px';
+            line.style.lineHeight = '1.35';
+            return line;
+          })()];
+    this.stationList.replaceChildren(...stationLines);
 
     const recipeCards = state.recipes.map((recipe) => {
       const button = document.createElement('button');

@@ -9,12 +9,14 @@ import {
   findNearestPlayerCraftingStationInRange,
   getPlayerCraftingRecipeDefinition,
   getPlayerCraftingRecipeDefinitions,
+  getPlayerCraftingStationDefinitions,
   getPlayerCraftingStationLabel,
   isPlayerCraftingRecipeId,
   tryCraftPlayerRecipe,
   type PlayerCraftingWorldView
 } from './playerCrafting';
 import { createPlayerState } from './playerState';
+import { STARTER_FURNACE_TILE_ID } from './starterFurnacePlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 
 const createWorld = (
@@ -46,7 +48,7 @@ const createWorkbenchCraftInventoryState = () =>
   });
 
 describe('playerCrafting definitions', () => {
-  it('exposes a minimal starter recipe registry with a station-free workbench and a workbench-gated potion', () => {
+  it('exposes the starter recipe registry with workbench and furnace station requirements', () => {
     expect(getPlayerCraftingRecipeDefinitions()).toEqual([
       {
         id: 'workbench',
@@ -56,28 +58,56 @@ describe('playerCrafting definitions', () => {
         requiredStationId: null
       },
       {
+        id: 'furnace',
+        label: 'Furnace',
+        ingredients: [
+          { itemId: 'stone-block', amount: 20 },
+          { itemId: 'torch', amount: 4 }
+        ],
+        output: { itemId: 'furnace', amount: 1 },
+        requiredStationId: 'workbench'
+      },
+      {
         id: 'healing-potion',
         label: 'Healing Potion',
         ingredients: [{ itemId: 'gel', amount: 2 }],
         output: { itemId: 'healing-potion', amount: 1 },
         requiredStationId: 'workbench'
+      },
+      {
+        id: 'copper-bar',
+        label: 'Copper Bar',
+        ingredients: [{ itemId: 'copper-ore', amount: 3 }],
+        output: { itemId: 'copper-bar', amount: 1 },
+        requiredStationId: 'furnace'
       }
     ]);
     expect(getPlayerCraftingRecipeDefinition('workbench').requiredStationId).toBeNull();
+    expect(getPlayerCraftingRecipeDefinition('furnace').requiredStationId).toBe('workbench');
     expect(getPlayerCraftingRecipeDefinition('healing-potion').requiredStationId).toBe('workbench');
+    expect(getPlayerCraftingRecipeDefinition('copper-bar').requiredStationId).toBe('furnace');
+    expect(getPlayerCraftingStationDefinitions()).toEqual([
+      { id: 'workbench', label: 'Workbench' },
+      { id: 'furnace', label: 'Furnace' }
+    ]);
     expect(getPlayerCraftingStationLabel('workbench')).toBe('Workbench');
+    expect(getPlayerCraftingStationLabel('furnace')).toBe('Furnace');
     expect(isPlayerCraftingRecipeId('workbench')).toBe(true);
+    expect(isPlayerCraftingRecipeId('furnace')).toBe(true);
     expect(isPlayerCraftingRecipeId('healing-potion')).toBe(true);
+    expect(isPlayerCraftingRecipeId('copper-bar')).toBe(true);
     expect(isPlayerCraftingRecipeId('torch')).toBe(false);
   });
 });
 
 describe('findNearestPlayerCraftingStationInRange', () => {
-  it('finds the nearest in-range workbench tile and ignores farther matches', () => {
+  it('finds the nearest in-range workbench or furnace tile and ignores farther matches', () => {
     const playerState = createPlayer();
     const world = createWorld({
       '0,-1': STARTER_WORKBENCH_TILE_ID,
-      '4,-1': STARTER_WORKBENCH_TILE_ID
+      '2,-1': STARTER_FURNACE_TILE_ID,
+      '4,-1': STARTER_WORKBENCH_TILE_ID,
+      '5,-1': STARTER_FURNACE_TILE_ID
     });
 
     expect(
@@ -91,6 +121,17 @@ describe('findNearestPlayerCraftingStationInRange', () => {
       tileX: 0,
       tileY: -1,
       distanceSquared: 0
+    });
+    expect(
+      findNearestPlayerCraftingStationInRange({
+        stationId: 'furnace',
+        world,
+        playerState
+      })
+    ).toMatchObject({
+      stationId: 'furnace',
+      tileX: 2,
+      tileY: -1
     });
   });
 });
@@ -134,11 +175,12 @@ describe('evaluatePlayerCraftingRecipe', () => {
     });
   });
 
-  it('blocks station recipes until a nearby workbench is placed', () => {
+  it('blocks station recipes until the matching nearby station is placed', () => {
     const inventoryState = createPlayerInventoryState({
       hotbar: [
         { itemId: 'gel', amount: 2 },
-        ...Array.from({ length: 9 }, () => null)
+        { itemId: 'copper-ore', amount: 3 },
+        ...Array.from({ length: 8 }, () => null)
       ]
     });
 
@@ -156,6 +198,22 @@ describe('evaluatePlayerCraftingRecipe', () => {
         '0,-1': STARTER_WORKBENCH_TILE_ID
       })
     });
+    const copperBarWithoutFurnace = evaluatePlayerCraftingRecipe({
+      inventoryState,
+      recipeId: 'copper-bar',
+      playerState: createPlayer(),
+      world: createWorld({
+        '0,-1': STARTER_WORKBENCH_TILE_ID
+      })
+    });
+    const copperBarWithFurnace = evaluatePlayerCraftingRecipe({
+      inventoryState,
+      recipeId: 'copper-bar',
+      playerState: createPlayer(),
+      world: createWorld({
+        '0,-1': STARTER_FURNACE_TILE_ID
+      })
+    });
 
     expect(withoutWorkbench).toMatchObject({
       hasIngredients: true,
@@ -164,6 +222,18 @@ describe('evaluatePlayerCraftingRecipe', () => {
       craftable: false
     });
     expect(withWorkbench).toMatchObject({
+      hasIngredients: true,
+      stationInRange: true,
+      blocker: null,
+      craftable: true
+    });
+    expect(copperBarWithoutFurnace).toMatchObject({
+      hasIngredients: true,
+      stationInRange: false,
+      blocker: 'missing-station',
+      craftable: false
+    });
+    expect(copperBarWithFurnace).toMatchObject({
       hasIngredients: true,
       stationInRange: true,
       blocker: null,
@@ -211,6 +281,38 @@ describe('tryCraftPlayerRecipe', () => {
     expect(getPlayerInventoryItemAmount(result.nextInventoryState, 'workbench')).toBe(1);
   });
 
+  it('crafts a furnace only when a nearby workbench is available', () => {
+    const inventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'stone-block', amount: 20 },
+        { itemId: 'torch', amount: 4 },
+        ...Array.from({ length: 8 }, () => null)
+      ]
+    });
+
+    const blocked = tryCraftPlayerRecipe({
+      inventoryState,
+      recipeId: 'furnace',
+      playerState: createPlayer(),
+      world: createWorld()
+    });
+    const crafted = tryCraftPlayerRecipe({
+      inventoryState,
+      recipeId: 'furnace',
+      playerState: createPlayer(),
+      world: createWorld({
+        '0,-1': STARTER_WORKBENCH_TILE_ID
+      })
+    });
+
+    expect(blocked.crafted).toBe(false);
+    expect(blocked.nextInventoryState).toEqual(inventoryState);
+    expect(crafted.crafted).toBe(true);
+    expect(getPlayerInventoryItemAmount(crafted.nextInventoryState, 'stone-block')).toBe(0);
+    expect(getPlayerInventoryItemAmount(crafted.nextInventoryState, 'torch')).toBe(0);
+    expect(getPlayerInventoryItemAmount(crafted.nextInventoryState, 'furnace')).toBe(1);
+  });
+
   it('crafts a healing potion only when a nearby workbench is available', () => {
     const inventoryState = createPlayerInventoryState({
       hotbar: [
@@ -242,6 +344,39 @@ describe('tryCraftPlayerRecipe', () => {
     expect(crafted.nextInventoryState.hotbar[1]).toEqual({
       itemId: 'healing-potion',
       amount: 2
+    });
+  });
+
+  it('smelts one copper bar from three copper ore only when a nearby furnace is available', () => {
+    const inventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'copper-ore', amount: 3 },
+        null,
+        ...Array.from({ length: 8 }, () => null)
+      ]
+    });
+
+    const blocked = tryCraftPlayerRecipe({
+      inventoryState,
+      recipeId: 'copper-bar',
+      playerState: createPlayer(),
+      world: createWorld()
+    });
+    const crafted = tryCraftPlayerRecipe({
+      inventoryState,
+      recipeId: 'copper-bar',
+      playerState: createPlayer(),
+      world: createWorld({
+        '0,-1': STARTER_FURNACE_TILE_ID
+      })
+    });
+
+    expect(blocked.crafted).toBe(false);
+    expect(blocked.nextInventoryState).toEqual(inventoryState);
+    expect(crafted.crafted).toBe(true);
+    expect(crafted.nextInventoryState.hotbar[0]).toEqual({
+      itemId: 'copper-bar',
+      amount: 1
     });
   });
 });

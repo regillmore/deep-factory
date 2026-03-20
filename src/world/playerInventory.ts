@@ -5,8 +5,10 @@ export type PlayerInventoryItemId =
   | 'dirt-block'
   | 'stone-block'
   | 'copper-ore'
+  | 'copper-bar'
   | 'gel'
   | 'workbench'
+  | 'furnace'
   | 'torch'
   | 'rope'
   | 'umbrella'
@@ -63,8 +65,10 @@ export const PLAYER_INVENTORY_ITEM_IDS: readonly PlayerInventoryItemId[] = [
   'dirt-block',
   'stone-block',
   'copper-ore',
+  'copper-bar',
   'gel',
   'workbench',
+  'furnace',
   'torch',
   'rope',
   'umbrella',
@@ -103,6 +107,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     hotbarLabel: 'COPPER',
     maxStackSize: 999
   },
+  'copper-bar': {
+    id: 'copper-bar',
+    label: 'Copper Bar',
+    hotbarLabel: 'CBAR',
+    maxStackSize: 999
+  },
   gel: {
     id: 'gel',
     label: 'Gel',
@@ -113,6 +123,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     id: 'workbench',
     label: 'Workbench',
     hotbarLabel: 'BENCH',
+    maxStackSize: 99
+  },
+  furnace: {
+    id: 'furnace',
+    label: 'Furnace',
+    hotbarLabel: 'FURN',
     maxStackSize: 99
   },
   torch: {

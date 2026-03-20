@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-19: Starter furnace reuses the single-tile station contract
+
+- Decision: The first furnace is a stackable `furnace` item that places a single-tile non-solid floor-supported station, clears on support loss, and gates copper-bar smelting through the same nearby-station reach checks and shared crafting panel used by the workbench.
+- Reason: Early smelting needs to extend the existing station-and-crafting seams without introducing multi-tile furniture footprints, a second interaction radius, or a separate station UI.
+- Consequence: Future early crafting stations should prefer that same single-tile nearby-station path until a later pass explicitly redesigns furniture size or station interaction rules.
+
 ### 2026-03-19: Default hotbar starts empty and save decode preserves sparse inventories
 
 - Decision: Fresh sessions and save payloads that omit standalone-player inventory now resolve to an empty ten-slot hotbar, and save decode no longer backfill missing starter items into sparse inventories.

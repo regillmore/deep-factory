@@ -6,6 +6,29 @@ describe('playerRecipeCatalog', () => {
   it('lists every recipe once in alphabetical label order with shared display labels', () => {
     expect(getPlayerRecipeCatalogEntries()).toEqual([
       {
+        recipeId: 'copper-bar',
+        label: 'Copper Bar',
+        outputItemId: 'copper-bar',
+        outputLabel: 'Output: +1 CBAR',
+        ingredientsLabel: 'Ingredients: 3 Copper Ore',
+        stationRequirementLabel: 'Requirement: Nearby Furnace',
+        requiredStationId: 'furnace',
+        ingredients: [{ itemId: 'copper-ore', label: 'Copper Ore', amount: 3 }]
+      },
+      {
+        recipeId: 'furnace',
+        label: 'Furnace',
+        outputItemId: 'furnace',
+        outputLabel: 'Output: +1 FURN',
+        ingredientsLabel: 'Ingredients: 20 Stone Block + 4 Torch',
+        stationRequirementLabel: 'Requirement: Nearby Workbench',
+        requiredStationId: 'workbench',
+        ingredients: [
+          { itemId: 'stone-block', label: 'Stone Block', amount: 20 },
+          { itemId: 'torch', label: 'Torch', amount: 4 }
+        ]
+      },
+      {
         recipeId: 'healing-potion',
         label: 'Healing Potion',
         outputItemId: 'healing-potion',
@@ -35,11 +58,22 @@ describe('playerRecipeCatalog', () => {
     expect(searchPlayerRecipeCatalog('potion').map((entry) => entry.recipeId)).toEqual([
       'healing-potion'
     ]);
+    expect(searchPlayerRecipeCatalog('copper bar').map((entry) => entry.recipeId)).toEqual([
+      'copper-bar'
+    ]);
     expect(searchPlayerRecipeCatalog('gel').map((entry) => entry.recipeId)).toEqual([
       'healing-potion'
     ]);
+    expect(searchPlayerRecipeCatalog('stone torch').map((entry) => entry.recipeId)).toEqual([
+      'furnace'
+    ]);
     expect(searchPlayerRecipeCatalog('nearby workbench').map((entry) => entry.recipeId)).toEqual([
+      'furnace',
       'healing-potion'
+    ]);
+    expect(searchPlayerRecipeCatalog('nearby furnace').map((entry) => entry.recipeId)).toEqual([
+      'copper-bar',
+      'furnace'
     ]);
   });
 
@@ -47,6 +81,7 @@ describe('playerRecipeCatalog', () => {
     expect(searchPlayerRecipeCatalog('dirt bench').map((entry) => entry.recipeId)).toEqual([
       'workbench'
     ]);
+    expect(searchPlayerRecipeCatalog('gel furnace')).toEqual([]);
     expect(searchPlayerRecipeCatalog('gel dirt')).toEqual([]);
   });
 

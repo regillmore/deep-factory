@@ -371,6 +371,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'COPPER',
       maxStackSize: 999
     });
+    expect(getPlayerInventoryItemDefinition('copper-bar')).toEqual({
+      id: 'copper-bar',
+      label: 'Copper Bar',
+      hotbarLabel: 'CBAR',
+      maxStackSize: 999
+    });
     expect(getPlayerInventoryItemDefinition('gel')).toEqual({
       id: 'gel',
       label: 'Gel',
@@ -381,6 +387,12 @@ describe('playerInventory', () => {
       id: 'workbench',
       label: 'Workbench',
       hotbarLabel: 'BENCH',
+      maxStackSize: 99
+    });
+    expect(getPlayerInventoryItemDefinition('furnace')).toEqual({
+      id: 'furnace',
+      label: 'Furnace',
+      hotbarLabel: 'FURN',
       maxStackSize: 99
     });
     expect(getPlayerInventoryItemDefinition('pickaxe')).toEqual({
@@ -439,8 +451,10 @@ describe('playerInventory', () => {
       'dirt-block',
       'stone-block',
       'copper-ore',
+      'copper-bar',
       'gel',
       'workbench',
+      'furnace',
       'torch',
       'rope',
       'umbrella',

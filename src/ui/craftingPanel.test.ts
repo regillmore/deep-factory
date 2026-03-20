@@ -61,15 +61,28 @@ describe('CraftingPanel', () => {
   const getRecipeList = (panel: CraftingPanel): FakeElement =>
     (((panel.getRootElement() as unknown as FakeElement).children[2] as FakeElement).children[1] ??
       null) as FakeElement;
+  const getStationList = (panel: CraftingPanel): FakeElement =>
+    (((panel.getRootElement() as unknown as FakeElement).children[1] as FakeElement).children[1] ??
+      null) as FakeElement;
 
-  it('renders station status and recipe cards', () => {
+  it('renders station status lines and recipe cards', () => {
     const host = createHost();
     const panel = new CraftingPanel({ host });
 
     panel.setVisible(true);
     panel.update({
-      stationLabel: 'Workbench',
-      stationInRange: false,
+      stations: [
+        {
+          stationId: 'workbench',
+          label: 'Workbench',
+          inRange: false
+        },
+        {
+          stationId: 'furnace',
+          label: 'Furnace',
+          inRange: true
+        }
+      ],
       recipes: [
         {
           recipeId: 'workbench',
@@ -90,14 +103,16 @@ describe('CraftingPanel', () => {
     });
 
     const root = panel.getRootElement() as unknown as FakeElement;
+    const stationList = getStationList(panel);
     const recipeList = getRecipeList(panel);
     const firstRecipe = recipeList.children[0]!;
     const secondRecipe = recipeList.children[1]!;
 
     expect(root.style.display).toBe('flex');
-    expect(((root.children[1] as FakeElement).children[1] as FakeElement).textContent).toBe(
-      'Workbench not in range'
-    );
+    expect(stationList.children.map((child) => child.textContent)).toEqual([
+      'Workbench not in range',
+      'Furnace nearby'
+    ]);
     expect(firstRecipe.title).toBe('Craft Workbench');
     expect(firstRecipe.getAttribute('aria-disabled')).toBe('false');
     expect(secondRecipe.title).toContain('Requires nearby workbench');
@@ -110,8 +125,13 @@ describe('CraftingPanel', () => {
     const panel = new CraftingPanel({ host, onCraftRecipe });
 
     panel.update({
-      stationLabel: 'Workbench',
-      stationInRange: true,
+      stations: [
+        {
+          stationId: 'workbench',
+          label: 'Workbench',
+          inRange: true
+        }
+      ],
       recipes: [
         {
           recipeId: 'workbench',
@@ -143,8 +163,13 @@ describe('CraftingPanel', () => {
     const host = createHost();
     const panel = new CraftingPanel({ host });
     const state = {
-      stationLabel: 'Workbench',
-      stationInRange: true,
+      stations: [
+        {
+          stationId: 'workbench',
+          label: 'Workbench',
+          inRange: true
+        }
+      ],
       recipes: [
         {
           recipeId: 'workbench',
@@ -161,8 +186,7 @@ describe('CraftingPanel', () => {
     const firstRecipeButton = getRecipeList(panel).children[0];
 
     panel.update({
-      stationLabel: state.stationLabel,
-      stationInRange: state.stationInRange,
+      stations: state.stations.map((station) => ({ ...station })),
       recipes: state.recipes.map((recipe) => ({ ...recipe }))
     });
 

@@ -17,6 +17,13 @@ describe('droppedItemPlaceholder', () => {
     });
   });
 
+  it('provides a dedicated placeholder palette for copper-bar pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('copper-bar')).toEqual({
+      baseColor: [0.71, 0.45, 0.24],
+      accentColor: [0.98, 0.79, 0.52]
+    });
+  });
+
   it('provides a dedicated placeholder palette for heart-crystal pickups', () => {
     expect(getDroppedItemPlaceholderPalette('heart-crystal')).toEqual({
       baseColor: [0.76, 0.23, 0.31],
@@ -53,6 +60,13 @@ describe('droppedItemPlaceholder', () => {
     expect(getDroppedItemPlaceholderPalette('workbench')).toEqual({
       baseColor: [0.49, 0.34, 0.19],
       accentColor: [0.77, 0.64, 0.42]
+    });
+  });
+
+  it('provides a dedicated placeholder palette for furnace pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('furnace')).toEqual({
+      baseColor: [0.38, 0.36, 0.34],
+      accentColor: [0.83, 0.58, 0.26]
     });
   });
 

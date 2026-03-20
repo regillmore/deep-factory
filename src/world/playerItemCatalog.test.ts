@@ -7,8 +7,10 @@ describe('playerItemCatalog', () => {
     expect(getPlayerItemCatalogEntries().map((entry) => entry.label)).toEqual([
       'Bug Net',
       'Bunny',
+      'Copper Bar',
       'Copper Ore',
       'Dirt Block',
+      'Furnace',
       'Gel',
       'Healing Potion',
       'Heart Crystal',
@@ -30,6 +32,9 @@ describe('playerItemCatalog', () => {
     expect(searchPlayerItemCatalog('bug net').map((entry) => entry.itemId)).toEqual(['bug-net']);
     expect(searchPlayerItemCatalog('copper ore').map((entry) => entry.itemId)).toEqual([
       'copper-ore'
+    ]);
+    expect(searchPlayerItemCatalog('copper bar').map((entry) => entry.itemId)).toEqual([
+      'copper-bar'
     ]);
     expect(searchPlayerItemCatalog('potion').map((entry) => entry.itemId)).toEqual([
       'healing-potion'

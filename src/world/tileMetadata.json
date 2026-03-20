@@ -1168,6 +1168,17 @@
           15
         ]
       }
+    },
+    {
+      "id": 14,
+      "name": "furnace",
+      "gameplay": {
+        "solid": false,
+        "blocksLight": false
+      },
+      "render": {
+        "atlasIndex": 14
+      }
     }
   ]
 }

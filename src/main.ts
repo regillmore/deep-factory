@@ -127,7 +127,11 @@ import {
 } from './ui/appShell';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
-import { CraftingPanel, type CraftingPanelRecipeViewModel } from './ui/craftingPanel';
+import {
+  CraftingPanel,
+  type CraftingPanelRecipeViewModel,
+  type CraftingPanelStationViewModel
+} from './ui/craftingPanel';
 import { EquipmentPanel, type EquipmentPanelSlotViewModel } from './ui/equipmentPanel';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
 import {
@@ -287,6 +291,8 @@ import {
   evaluatePlayerCraftingRecipe,
   findNearestPlayerCraftingStationInRange,
   getPlayerCraftingRecipeDefinitions,
+  getPlayerCraftingStationDefinitions,
+  getPlayerCraftingStationLabel,
   isPlayerCraftingRecipeId,
   tryCraftPlayerRecipe,
   type PlayerCraftingRecipeId
@@ -319,6 +325,11 @@ import {
   STARTER_WORKBENCH_ITEM_ID,
   STARTER_WORKBENCH_TILE_ID
 } from './world/starterWorkbenchPlacement';
+import {
+  evaluateStarterFurnacePlacement,
+  STARTER_FURNACE_ITEM_ID,
+  STARTER_FURNACE_TILE_ID
+} from './world/starterFurnacePlacement';
 import {
   evaluateStarterRopePlacement,
   resolveStarterRopePlacementTarget,
@@ -1945,8 +1956,12 @@ const bootstrap = async (): Promise<void> => {
     recipeEvaluation: ReturnType<typeof evaluatePlayerCraftingRecipe>
   ): string | null => {
     switch (recipeEvaluation.blocker) {
-      case 'missing-station':
-        return 'Requires nearby workbench';
+      case 'missing-station': {
+        const requiredStationId = recipeEvaluation.recipe.requiredStationId;
+        return requiredStationId === null
+          ? 'Requires nearby station'
+          : `Requires nearby ${getPlayerCraftingStationLabel(requiredStationId)}`;
+      }
       case 'inventory-full':
         return 'Inventory full';
       case 'missing-ingredients':
@@ -2051,6 +2066,22 @@ const bootstrap = async (): Promise<void> => {
         disabledReason: resolveCraftingRecipeDisabledReason(recipeEvaluation)
       };
     });
+  const createCraftingPanelStationViewModels = (
+    playerState: Pick<PlayerState, 'position' | 'size'> | null
+  ): CraftingPanelStationViewModel[] =>
+    getPlayerCraftingStationDefinitions().map((station): CraftingPanelStationViewModel => ({
+      stationId: station.id,
+      label: station.label,
+      inRange:
+        playerState !== null &&
+        findNearestPlayerCraftingStationInRange({
+          stationId: station.id,
+          world: {
+            getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+          },
+          playerState
+        }) !== null
+    }));
   const createEquipmentPanelSlotViewModels = (): EquipmentPanelSlotViewModel[] =>
     (['head', 'body', 'legs'] as const).map((slotId) => {
       const starterItemId = getStarterArmorItemIdForSlot(slotId);
@@ -2065,19 +2096,8 @@ const bootstrap = async (): Promise<void> => {
     });
   const syncCraftingPanelState = (): void => {
     const standalonePlayerState = getStandalonePlayerState();
-    const nearestWorkbench =
-      standalonePlayerState === null
-        ? null
-        : findNearestPlayerCraftingStationInRange({
-            stationId: 'workbench',
-            world: {
-              getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
-            },
-            playerState: standalonePlayerState
-          });
     craftingPanel.update({
-      stationLabel: 'Workbench',
-      stationInRange: nearestWorkbench !== null,
+      stations: createCraftingPanelStationViewModels(standalonePlayerState),
       recipes: createCraftingPanelRecipeViewModels(standalonePlayerState)
     });
   };
@@ -3054,6 +3074,14 @@ const bootstrap = async (): Promise<void> => {
       event.tileId !== STARTER_WORKBENCH_TILE_ID
     ) {
       refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_WORKBENCH_ITEM_ID);
+      return;
+    }
+
+    if (
+      event.previousTileId === STARTER_FURNACE_TILE_ID &&
+      event.tileId !== STARTER_FURNACE_TILE_ID
+    ) {
+      refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_FURNACE_ITEM_ID);
     }
   });
   const restoreDroppedItemEntityStates = (droppedItemStates: readonly DroppedItemState[]): void => {
@@ -4158,6 +4186,9 @@ const bootstrap = async (): Promise<void> => {
       placementTileId = resolvePlaceableSolidBlockTileId(selectedStack.itemId);
     } else {
       switch (selectedStack.itemId) {
+        case STARTER_FURNACE_ITEM_ID:
+          placementTileId = STARTER_FURNACE_TILE_ID;
+          break;
         case STARTER_WORKBENCH_ITEM_ID:
           placementTileId = STARTER_WORKBENCH_TILE_ID;
           break;
@@ -4222,6 +4253,15 @@ const bootstrap = async (): Promise<void> => {
       );
     } else {
       switch (selectedStack.itemId) {
+        case STARTER_FURNACE_ITEM_ID:
+          placement = evaluateStarterFurnacePlacement(
+            {
+              getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+            },
+            worldTileX,
+            worldTileY
+          );
+          break;
         case STARTER_WORKBENCH_ITEM_ID:
           placement = evaluateStarterWorkbenchPlacement(
             {
