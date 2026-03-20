@@ -304,6 +304,59 @@ describe('buildChunkMesh autotile UV selection', () => {
     expectSingleQuadUvRect(mesh.vertices, 3);
   });
 
+  it('uses a static render override for terrain-connected tiles that define their own placeholder art', () => {
+    const registry = parseTileMetadataRegistry({
+      tiles: [
+        {
+          id: 0,
+          name: 'empty',
+          gameplay: { solid: false, blocksLight: false }
+        },
+        {
+          id: 1,
+          name: 'stone',
+          materialTags: ['terrain', 'solid'],
+          gameplay: { solid: true, blocksLight: true },
+          terrainAutotile: {
+            connectivityGroup: 'ground',
+            placeholderVariantAtlasByCardinalMask: Array.from({ length: 16 }, (_, index) => index)
+          }
+        },
+        {
+          id: 30,
+          name: 'copper_ore',
+          materialTags: ['terrain', 'solid', 'ore'],
+          gameplay: { solid: true, blocksLight: true },
+          render: { atlasIndex: 20 },
+          terrainAutotile: {
+            connectivityGroup: 'ground',
+            placeholderVariantAtlasByCardinalMask: Array.from({ length: 16 }, (_, index) => index)
+          }
+        }
+      ]
+    });
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 30);
+
+    const mesh = buildChunkMesh(chunk, {
+      tileMetadataRegistry: registry,
+      sampleNeighborhood: () => ({
+        center: 30,
+        north: 1,
+        northEast: 1,
+        east: 1,
+        southEast: 0,
+        south: 0,
+        southWest: 0,
+        west: 0,
+        northWest: 0
+      })
+    });
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 20);
+  });
+
   it('uses chunk-edge neighborhood sampling to resolve UVs across adjacent chunks', () => {
     const chunkX = 0;
     const chunkY = -10;

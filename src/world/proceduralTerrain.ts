@@ -8,6 +8,7 @@ const SKY_TILE_ID = 0;
 export const PROCEDURAL_STONE_TILE_ID = 1;
 export const PROCEDURAL_GRASS_SURFACE_TILE_ID = 2;
 export const PROCEDURAL_DIRT_TILE_ID = 9;
+export const PROCEDURAL_COPPER_ORE_TILE_ID = 13;
 
 const PROCEDURAL_SURFACE_BASE_TILE_Y = -2;
 const PROCEDURAL_SURFACE_BROAD_WAVE_FREQUENCY = 0.045;
@@ -61,6 +62,16 @@ const PROCEDURAL_SECONDARY_CAVE_RADIUS_MIN_TILES = 2;
 const PROCEDURAL_SECONDARY_CAVE_RADIUS_MAX_TILES = 4;
 const PROCEDURAL_CAVE_CENTER_PHASE_OFFSET_RANGE = 256;
 const PROCEDURAL_CAVE_RADIUS_PHASE_OFFSET_RANGE = 160;
+const PROCEDURAL_COPPER_ORE_MIN_STONE_DEPTH_TILES = 4;
+const PROCEDURAL_COPPER_ORE_MAX_DEPTH_BELOW_DIRT_TILES = 40;
+const PROCEDURAL_COPPER_ORE_CELL_WIDTH_TILES = 24;
+const PROCEDURAL_COPPER_ORE_CELL_HEIGHT_TILES = 18;
+const PROCEDURAL_COPPER_ORE_CELL_EDGE_MARGIN_TILES = 3;
+const PROCEDURAL_COPPER_ORE_ACTIVE_CHANCE = 0.28;
+const PROCEDURAL_COPPER_ORE_MIN_RADIUS_X_TILES = 2;
+const PROCEDURAL_COPPER_ORE_MAX_RADIUS_X_TILES = 4;
+const PROCEDURAL_COPPER_ORE_MIN_RADIUS_Y_TILES = 1;
+const PROCEDURAL_COPPER_ORE_MAX_RADIUS_Y_TILES = 3;
 
 export interface ProceduralTerrainColumn {
   surfaceTileY: number;
@@ -102,6 +113,17 @@ const mixProceduralFeatureSalt = (featureIndex: number, salt: number): number =>
 
 const sampleSeededFeatureUnitInterval = (worldSeed: number, featureIndex: number, salt: number): number =>
   sampleWorldSeedUnitInterval(worldSeed, mixProceduralFeatureSalt(featureIndex, salt));
+
+const mixProceduralGridFeatureIndex = (cellX: number, cellY: number): number =>
+  (Math.imul(cellX | 0, 0x1f123bb5) ^ Math.imul(cellY | 0, 0x6c8e9cf5)) >>> 0;
+
+const sampleSeededGridFeatureUnitInterval = (
+  worldSeed: number,
+  cellX: number,
+  cellY: number,
+  salt: number
+): number =>
+  sampleSeededFeatureUnitInterval(worldSeed, mixProceduralGridFeatureIndex(cellX, cellY), salt);
 
 const isProceduralCaveMouthCellActive = (worldSeed: number, mouthCellIndex: number): boolean => {
   const activeCellPhase = Math.floor(
@@ -452,6 +474,92 @@ const isProceduralUndergroundCaveAir = (
   return Math.abs(worldY - secondaryCaveCenterTileY) <= secondaryCaveRadiusTiles;
 };
 
+const hasProceduralCopperOreInCell = (
+  worldX: number,
+  worldY: number,
+  cellX: number,
+  cellY: number,
+  worldSeed: number
+): boolean => {
+  if (
+    sampleSeededGridFeatureUnitInterval(worldSeed, cellX, cellY, 0x6b851d47) >=
+    PROCEDURAL_COPPER_ORE_ACTIVE_CHANCE
+  ) {
+    return false;
+  }
+
+  const cellStartTileX = cellX * PROCEDURAL_COPPER_ORE_CELL_WIDTH_TILES;
+  const cellStartTileY = cellY * PROCEDURAL_COPPER_ORE_CELL_HEIGHT_TILES;
+  const centerTileX =
+    cellStartTileX +
+    PROCEDURAL_COPPER_ORE_CELL_EDGE_MARGIN_TILES +
+    Math.floor(
+      sampleSeededGridFeatureUnitInterval(worldSeed, cellX, cellY, 0x87d31a59) *
+        (PROCEDURAL_COPPER_ORE_CELL_WIDTH_TILES - PROCEDURAL_COPPER_ORE_CELL_EDGE_MARGIN_TILES * 2)
+    );
+  const centerTileY =
+    cellStartTileY +
+    PROCEDURAL_COPPER_ORE_CELL_EDGE_MARGIN_TILES +
+    Math.floor(
+      sampleSeededGridFeatureUnitInterval(worldSeed, cellX, cellY, 0x3141592b) *
+        (PROCEDURAL_COPPER_ORE_CELL_HEIGHT_TILES - PROCEDURAL_COPPER_ORE_CELL_EDGE_MARGIN_TILES * 2)
+    );
+  const radiusXTiles =
+    PROCEDURAL_COPPER_ORE_MIN_RADIUS_X_TILES +
+    Math.floor(
+      sampleSeededGridFeatureUnitInterval(worldSeed, cellX, cellY, 0x2c1b3f85) *
+        (PROCEDURAL_COPPER_ORE_MAX_RADIUS_X_TILES - PROCEDURAL_COPPER_ORE_MIN_RADIUS_X_TILES + 1)
+    );
+  const radiusYTiles =
+    PROCEDURAL_COPPER_ORE_MIN_RADIUS_Y_TILES +
+    Math.floor(
+      sampleSeededGridFeatureUnitInterval(worldSeed, cellX, cellY, 0x4d6e7f91) *
+        (PROCEDURAL_COPPER_ORE_MAX_RADIUS_Y_TILES - PROCEDURAL_COPPER_ORE_MIN_RADIUS_Y_TILES + 1)
+    );
+
+  if (
+    Math.abs(centerTileX) - radiusXTiles <=
+    PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES
+  ) {
+    return false;
+  }
+
+  const normalizedX = (worldX - centerTileX) / Math.max(radiusXTiles, 1);
+  const normalizedY = (worldY - centerTileY) / Math.max(radiusYTiles, 1);
+  return normalizedX * normalizedX + normalizedY * normalizedY <= 1;
+};
+
+const isProceduralCopperOre = (
+  worldX: number,
+  worldY: number,
+  surfaceTileY: number,
+  dirtDepthTiles: number,
+  worldSeed: number
+): boolean => {
+  if (Math.abs(worldX) <= PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES) {
+    return false;
+  }
+
+  const minimumOreTileY = surfaceTileY + dirtDepthTiles + PROCEDURAL_COPPER_ORE_MIN_STONE_DEPTH_TILES;
+  const maximumOreTileY =
+    surfaceTileY + dirtDepthTiles + PROCEDURAL_COPPER_ORE_MAX_DEPTH_BELOW_DIRT_TILES;
+  if (worldY < minimumOreTileY || worldY > maximumOreTileY) {
+    return false;
+  }
+
+  const cellX = Math.floor(worldX / PROCEDURAL_COPPER_ORE_CELL_WIDTH_TILES);
+  const cellY = Math.floor(worldY / PROCEDURAL_COPPER_ORE_CELL_HEIGHT_TILES);
+  for (let candidateCellY = cellY - 1; candidateCellY <= cellY + 1; candidateCellY += 1) {
+    for (let candidateCellX = cellX - 1; candidateCellX <= cellX + 1; candidateCellX += 1) {
+      if (hasProceduralCopperOreInCell(worldX, worldY, candidateCellX, candidateCellY, worldSeed)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
 export const resolveProceduralTerrainTileId = (
   worldX: number,
   worldY: number,
@@ -473,6 +581,9 @@ export const resolveProceduralTerrainTileId = (
   }
   if (isProceduralUndergroundCaveAir(worldX, worldY, surfaceTileY, dirtDepthTiles, seedProfile)) {
     return SKY_TILE_ID;
+  }
+  if (isProceduralCopperOre(worldX, worldY, surfaceTileY, dirtDepthTiles, worldSeed)) {
+    return PROCEDURAL_COPPER_ORE_TILE_ID;
   }
   return PROCEDURAL_STONE_TILE_ID;
 };

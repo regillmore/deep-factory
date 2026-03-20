@@ -7,6 +7,7 @@ describe('playerItemCatalog', () => {
     expect(getPlayerItemCatalogEntries().map((entry) => entry.label)).toEqual([
       'Bug Net',
       'Bunny',
+      'Copper Ore',
       'Dirt Block',
       'Gel',
       'Healing Potion',
@@ -27,6 +28,9 @@ describe('playerItemCatalog', () => {
       'healing-potion'
     ]);
     expect(searchPlayerItemCatalog('bug net').map((entry) => entry.itemId)).toEqual(['bug-net']);
+    expect(searchPlayerItemCatalog('copper ore').map((entry) => entry.itemId)).toEqual([
+      'copper-ore'
+    ]);
     expect(searchPlayerItemCatalog('potion').map((entry) => entry.itemId)).toEqual([
       'healing-potion'
     ]);

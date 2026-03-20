@@ -4,6 +4,7 @@ export type PlayerInventoryItemId =
   | 'pickaxe'
   | 'dirt-block'
   | 'stone-block'
+  | 'copper-ore'
   | 'gel'
   | 'workbench'
   | 'torch'
@@ -61,6 +62,7 @@ export const PLAYER_INVENTORY_ITEM_IDS: readonly PlayerInventoryItemId[] = [
   'pickaxe',
   'dirt-block',
   'stone-block',
+  'copper-ore',
   'gel',
   'workbench',
   'torch',
@@ -93,6 +95,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     id: 'stone-block',
     label: 'Stone Block',
     hotbarLabel: 'STONE',
+    maxStackSize: 999
+  },
+  'copper-ore': {
+    id: 'copper-ore',
+    label: 'Copper Ore',
+    hotbarLabel: 'COPPER',
     maxStackSize: 999
   },
   gel: {

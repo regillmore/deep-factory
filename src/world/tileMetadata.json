@@ -1131,6 +1131,43 @@
       "render": {
         "atlasIndex": 14
       }
+    },
+    {
+      "id": 13,
+      "name": "copper_ore",
+      "materialTags": [
+        "terrain",
+        "solid",
+        "ore"
+      ],
+      "gameplay": {
+        "solid": true,
+        "blocksLight": true
+      },
+      "render": {
+        "atlasIndex": 14
+      },
+      "terrainAutotile": {
+        "connectivityGroup": "ground",
+        "placeholderVariantAtlasByCardinalMask": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ]
+      }
     }
   ]
 }

@@ -50,6 +50,7 @@ import { createDroppedItemState } from './world/droppedItem';
 import { createPlayerInventoryState } from './world/playerInventory';
 import { AUTHORED_ATLAS_HEIGHT, AUTHORED_ATLAS_WIDTH } from './world/authoredAtlasLayout';
 import { CHUNK_SIZE } from './world/constants';
+import { PROCEDURAL_COPPER_ORE_TILE_ID } from './world/proceduralTerrain';
 import {
   createPlayerState,
   DEFAULT_PLAYER_HEIGHT,
@@ -9430,6 +9431,50 @@ describe('main.ts shell state orchestration', () => {
       {
         position: { x: 24, y: 8 },
         itemId: 'stone-block',
+        amount: 1
+      }
+    ]);
+  });
+
+  it('spawns a copper-ore pickup entity when the starter pickaxe finishes breaking nearby copper ore on the second swing', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const miningRequest = {
+      worldTileX: 1,
+      worldTileY: 0,
+      worldX: 24,
+      worldY: 8,
+      pointerType: 'mouse' as const
+    };
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), PROCEDURAL_COPPER_ORE_TILE_ID);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [miningRequest];
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([]);
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_ACTIVE_SECONDS + STARTER_PICKAXE_SWING_RECOVERY_SECONDS);
+
+    testRuntime.playerItemUseRequests = [miningRequest];
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        tileId: 0
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 24, y: 8 },
+        itemId: 'copper-ore',
         amount: 1
       }
     ]);

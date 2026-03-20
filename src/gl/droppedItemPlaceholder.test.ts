@@ -10,6 +10,13 @@ describe('droppedItemPlaceholder', () => {
     });
   });
 
+  it('provides a dedicated placeholder palette for copper-ore pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('copper-ore')).toEqual({
+      baseColor: [0.65, 0.35, 0.17],
+      accentColor: [0.94, 0.71, 0.38]
+    });
+  });
+
   it('provides a dedicated placeholder palette for heart-crystal pickups', () => {
     expect(getDroppedItemPlaceholderPalette('heart-crystal')).toEqual({
       baseColor: [0.76, 0.23, 0.31],

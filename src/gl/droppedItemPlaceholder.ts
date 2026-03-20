@@ -45,6 +45,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
     baseColor: [0.41, 0.43, 0.47],
     accentColor: [0.67, 0.69, 0.74]
   },
+  'copper-ore': {
+    baseColor: [0.65, 0.35, 0.17],
+    accentColor: [0.94, 0.71, 0.38]
+  },
   gel: {
     baseColor: [0.22, 0.58, 0.23],
     accentColor: [0.72, 0.93, 0.46]

@@ -6,6 +6,7 @@ import type { ChunkBounds } from './chunkMath';
 import { toTileIndex } from './chunkMath';
 import {
   PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES,
+  PROCEDURAL_COPPER_ORE_TILE_ID,
   PROCEDURAL_DIRT_TILE_ID,
   PROCEDURAL_GRASS_SURFACE_TILE_ID,
   PROCEDURAL_STONE_TILE_ID,
@@ -79,6 +80,26 @@ const findFirstProceduralExposedCaveMouthColumn = (
         surfaceTileY,
         deepestAirTileY
       };
+    }
+  }
+
+  return null;
+};
+
+const findFirstProceduralCopperOreTile = (
+  worldSeed = 0,
+  minWorldX = PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES + 1,
+  maxWorldX = CHUNK_SIZE * 8
+): { worldTileX: number; worldTileY: number } | null => {
+  for (let worldTileX = minWorldX; worldTileX <= maxWorldX; worldTileX += 1) {
+    const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldTileX, worldSeed);
+    for (let worldTileY = surfaceTileY + dirtDepthTiles + 4; worldTileY <= surfaceTileY + dirtDepthTiles + 40; worldTileY += 1) {
+      if (resolveProceduralTerrainTileId(worldTileX, worldTileY, worldSeed) === PROCEDURAL_COPPER_ORE_TILE_ID) {
+        return {
+          worldTileX,
+          worldTileY
+        };
+      }
     }
   }
 
@@ -850,16 +871,44 @@ describe('TileWorld', () => {
     expect(world.getChunkCount()).toBe(chunkCountAfterPrune + 1);
   });
 
+  it('streams untouched copper-ore tiles back in after pruning their chunk', () => {
+    const copperOreTile = findFirstProceduralCopperOreTile();
+    expect(copperOreTile).not.toBeNull();
+    if (copperOreTile === null) {
+      throw new Error('expected a procedural copper ore tile');
+    }
+
+    const world = new TileWorld(0);
+    expect(world.getTile(copperOreTile.worldTileX, copperOreTile.worldTileY)).toBe(
+      PROCEDURAL_COPPER_ORE_TILE_ID
+    );
+
+    expect(
+      world.pruneChunksOutside({ minChunkX: 0, minChunkY: 0, maxChunkX: 0, maxChunkY: 0 })
+    ).toBeGreaterThan(0);
+    const chunkCountAfterPrune = world.getChunkCount();
+
+    expect(world.getTile(copperOreTile.worldTileX, copperOreTile.worldTileY)).toBe(
+      PROCEDURAL_COPPER_ORE_TILE_ID
+    );
+    expect(world.getChunkCount()).toBe(chunkCountAfterPrune + 1);
+  });
+
   it('uses snapshot-preserved world seeds when untouched chunks stream back in', () => {
     const worldSeed = 0x12345678;
     const world = new TileWorld(0, worldSeed);
     const worldTileX = CHUNK_SIZE + 9;
     const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX, worldSeed);
     const caveTile = findFirstProceduralCaveTile(worldSeed);
+    const copperOreTile = findFirstProceduralCopperOreTile(worldSeed);
 
     expect(caveTile).not.toBeNull();
     if (caveTile === null) {
       throw new Error('expected a seeded procedural cave tile');
+    }
+    expect(copperOreTile).not.toBeNull();
+    if (copperOreTile === null) {
+      throw new Error('expected a seeded procedural copper ore tile');
     }
 
     world.ensureChunk(1, 0);
@@ -874,6 +923,9 @@ describe('TileWorld', () => {
     expect(loaded.getTile(worldTileX, surfaceTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
     expect(loaded.getTile(worldTileX, surfaceTileY + 1)).toBe(PROCEDURAL_DIRT_TILE_ID);
     expect(loaded.getTile(caveTile.worldTileX, caveTile.worldTileY)).toBe(0);
+    expect(loaded.getTile(copperOreTile.worldTileX, copperOreTile.worldTileY)).toBe(
+      PROCEDURAL_COPPER_ORE_TILE_ID
+    );
   });
 
   it('does not emit or change when setting the same tile value', () => {

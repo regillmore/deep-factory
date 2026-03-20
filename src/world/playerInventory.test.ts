@@ -381,6 +381,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'STONE',
       maxStackSize: 999
     });
+    expect(getPlayerInventoryItemDefinition('copper-ore')).toEqual({
+      id: 'copper-ore',
+      label: 'Copper Ore',
+      hotbarLabel: 'COPPER',
+      maxStackSize: 999
+    });
     expect(getPlayerInventoryItemDefinition('gel')).toEqual({
       id: 'gel',
       label: 'Gel',
@@ -448,6 +454,7 @@ describe('playerInventory', () => {
       'pickaxe',
       'dirt-block',
       'stone-block',
+      'copper-ore',
       'gel',
       'workbench',
       'torch',

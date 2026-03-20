@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_PLAYER_HEIGHT, DEFAULT_PLAYER_WIDTH } from './playerState';
+import { PROCEDURAL_COPPER_ORE_TILE_ID } from './proceduralTerrain';
 import { STARTER_ROPE_TILE_ID } from './starterRopePlacement';
 import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 import {
+  COPPER_ORE_ITEM_ID,
   createStarterPickaxeMiningState,
   evaluateStarterPickaxeMiningTarget,
   resolveStarterPickaxeBrokenTileDrop,
@@ -36,7 +38,8 @@ describe('evaluateStarterPickaxeMiningTarget', () => {
       '1,0': STARTER_ROPE_TILE_ID,
       '2,0': STARTER_TORCH_TILE_ID,
       '3,0': STARTER_WORKBENCH_TILE_ID,
-      '4,0': 99
+      '4,0': PROCEDURAL_COPPER_ORE_TILE_ID,
+      '5,0': 99
     });
 
     expect(evaluateStarterPickaxeMiningTarget(world, player, 0, 0)).toEqual({
@@ -67,12 +70,18 @@ describe('evaluateStarterPickaxeMiningTarget', () => {
       canMine: true
     });
     expect(evaluateStarterPickaxeMiningTarget(world, player, 4, 0)).toMatchObject({
+      tileId: PROCEDURAL_COPPER_ORE_TILE_ID,
+      occupied: true,
+      breakableTarget: true,
+      canMine: true
+    });
+    expect(evaluateStarterPickaxeMiningTarget(world, player, 5, 0)).toMatchObject({
       tileId: 99,
       occupied: true,
       breakableTarget: false,
       canMine: false
     });
-    expect(evaluateStarterPickaxeMiningTarget(world, player, 5, -3)).toMatchObject({
+    expect(evaluateStarterPickaxeMiningTarget(world, player, 6, -3)).toMatchObject({
       tileId: 0,
       occupied: false,
       breakableTarget: false,
@@ -98,6 +107,10 @@ describe('resolveStarterPickaxeBrokenTileDrop', () => {
   it('returns one stackable block refund for broken stone, grass-surface, and placed dirt tiles', () => {
     expect(resolveStarterPickaxeBrokenTileDrop(1)).toEqual({
       itemId: 'stone-block',
+      amount: 1
+    });
+    expect(resolveStarterPickaxeBrokenTileDrop(PROCEDURAL_COPPER_ORE_TILE_ID)).toEqual({
+      itemId: COPPER_ORE_ITEM_ID,
       amount: 1
     });
     expect(resolveStarterPickaxeBrokenTileDrop(2)).toEqual({
@@ -300,6 +313,54 @@ describe('starterPickaxeMining state', () => {
       tileX: 0,
       tileY: 0,
       tileId: 1,
+      appliedHitCount: 2,
+      requiredHitCount: 2,
+      brokeTile: true
+    });
+    expect(secondSwingHit.state.breakProgress).toBeNull();
+  });
+
+  it('requires two separate swings to finish a copper ore tile and reports halfway progress after the first hit', () => {
+    const world = createWorld({
+      '0,0': PROCEDURAL_COPPER_ORE_TILE_ID
+    });
+    const player = createPlayer();
+    const evaluation = evaluateStarterPickaxeMiningTarget(world, player, 0, 0);
+
+    const firstSwingStart = tryStartStarterPickaxeSwing(createStarterPickaxeMiningState(), evaluation);
+    const firstSwingHit = stepStarterPickaxeMiningState(firstSwingStart.state, {
+      world,
+      playerState: player,
+      fixedDtSeconds: STARTER_PICKAXE_SWING_WINDUP_SECONDS
+    });
+
+    expect(firstSwingHit.hitEvent).toEqual({
+      tileX: 0,
+      tileY: 0,
+      tileId: PROCEDURAL_COPPER_ORE_TILE_ID,
+      appliedHitCount: 1,
+      requiredHitCount: 2,
+      brokeTile: false
+    });
+    expect(resolveStarterPickaxeBreakProgressNormalized(firstSwingHit.state, world, 0, 0)).toBe(0.5);
+
+    const readyForSecondSwing = stepStarterPickaxeMiningState(firstSwingHit.state, {
+      world,
+      playerState: player,
+      fixedDtSeconds:
+        STARTER_PICKAXE_SWING_ACTIVE_SECONDS + STARTER_PICKAXE_SWING_RECOVERY_SECONDS
+    });
+    const secondSwingStart = tryStartStarterPickaxeSwing(readyForSecondSwing.state, evaluation);
+    const secondSwingHit = stepStarterPickaxeMiningState(secondSwingStart.state, {
+      world,
+      playerState: player,
+      fixedDtSeconds: STARTER_PICKAXE_SWING_WINDUP_SECONDS
+    });
+
+    expect(secondSwingHit.hitEvent).toEqual({
+      tileX: 0,
+      tileY: 0,
+      tileId: PROCEDURAL_COPPER_ORE_TILE_ID,
       appliedHitCount: 2,
       requiredHitCount: 2,
       brokeTile: true

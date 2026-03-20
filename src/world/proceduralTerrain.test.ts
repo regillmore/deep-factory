@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES,
+  PROCEDURAL_COPPER_ORE_TILE_ID,
   PROCEDURAL_DIRT_TILE_ID,
   PROCEDURAL_GRASS_SURFACE_TILE_ID,
   PROCEDURAL_STONE_TILE_ID,
@@ -71,7 +72,28 @@ const collectExposedCaveMouthColumns = (
   return columns;
 };
 
-const resolveLargestConnectedCaveComponentSize = (
+const collectCopperOreTileCoords = (
+  worldSeed = 0,
+  minWorldX = -256,
+  maxWorldX = 256
+): Array<{ worldX: number; worldY: number }> => {
+  const coords: Array<{ worldX: number; worldY: number }> = [];
+
+  for (let worldX = minWorldX; worldX <= maxWorldX; worldX += 1) {
+    const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldX, worldSeed);
+    const minWorldY = surfaceTileY + dirtDepthTiles + 4;
+    const maxWorldY = surfaceTileY + dirtDepthTiles + 40;
+    for (let worldY = minWorldY; worldY <= maxWorldY; worldY += 1) {
+      if (resolveProceduralTerrainTileId(worldX, worldY, worldSeed) === PROCEDURAL_COPPER_ORE_TILE_ID) {
+        coords.push({ worldX, worldY });
+      }
+    }
+  }
+
+  return coords;
+};
+
+const resolveLargestConnectedComponentSize = (
   coords: ReadonlyArray<{ worldX: number; worldY: number }>
 ): number => {
   const remaining = new Set(coords.map(({ worldX, worldY }) => `${worldX},${worldY}`));
@@ -222,7 +244,7 @@ describe('resolveProceduralTerrainTileId', () => {
     const caveTiles = collectUndergroundCaveTileCoords();
 
     expect(caveTiles.length).toBeGreaterThan(0);
-    expect(resolveLargestConnectedCaveComponentSize(caveTiles)).toBeGreaterThanOrEqual(64);
+    expect(resolveLargestConnectedComponentSize(caveTiles)).toBeGreaterThanOrEqual(64);
     for (const caveTile of caveTiles) {
       const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(caveTile.worldX);
       expect(caveTile.worldY).toBeGreaterThanOrEqual(surfaceTileY + dirtDepthTiles + 3);
@@ -242,5 +264,28 @@ describe('resolveProceduralTerrainTileId', () => {
     expect(seededMouthColumns.length).toBeGreaterThan(0);
     expect(seededMouthColumns).toEqual(collectExposedCaveMouthColumns(0x12345678));
     expect(seededMouthColumns).not.toEqual(collectExposedCaveMouthColumns(0));
+  });
+
+  it('places connected copper-ore pockets only inside upper underground stone outside the protected origin corridor', () => {
+    const copperOreTiles = collectCopperOreTileCoords();
+
+    expect(copperOreTiles.length).toBeGreaterThan(0);
+    expect(resolveLargestConnectedComponentSize(copperOreTiles)).toBeGreaterThanOrEqual(8);
+    for (const oreTile of copperOreTiles) {
+      const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(oreTile.worldX);
+      expect(Math.abs(oreTile.worldX)).toBeGreaterThan(
+        PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES
+      );
+      expect(oreTile.worldY).toBeGreaterThanOrEqual(surfaceTileY + dirtDepthTiles + 4);
+      expect(oreTile.worldY).toBeLessThanOrEqual(surfaceTileY + dirtDepthTiles + 40);
+    }
+  });
+
+  it('keeps copper-ore pocket layouts deterministic while varying them by world seed', () => {
+    const seededCopperOreTiles = collectCopperOreTileCoords(0x12345678);
+
+    expect(seededCopperOreTiles.length).toBeGreaterThan(0);
+    expect(seededCopperOreTiles).toEqual(collectCopperOreTileCoords(0x12345678));
+    expect(seededCopperOreTiles).not.toEqual(collectCopperOreTileCoords(0));
   });
 });

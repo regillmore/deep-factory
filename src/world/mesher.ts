@@ -178,6 +178,11 @@ const resolveChunkTileRender = (
   neighborhood: TileNeighborhood | null
 ): ResolvedChunkTileRender => {
   if (usesTerrainAutotile(tileId, tileMetadataRegistry)) {
+    const terrainRenderOverride = resolveTileRenderUvRect(tileId, tileMetadataRegistry);
+    if (terrainRenderOverride) {
+      return { uvRect: terrainRenderOverride, liquidCardinalMask: null };
+    }
+
     if (!neighborhood) {
       const isolatedTerrainUvRect = resolveTerrainAutotileUvRectByRawAdjacencyMask(
         tileId,

@@ -1,5 +1,6 @@
 import type { PlayerInventoryItemId } from './playerInventory';
 import { evaluatePlayerHotbarTilePlacementRange } from './playerHotbarPlacementRange';
+import { PROCEDURAL_COPPER_ORE_TILE_ID } from './proceduralTerrain';
 import type { PlayerState } from './playerState';
 import {
   STARTER_BUILDING_BLOCK_ITEM_ID,
@@ -17,6 +18,7 @@ import {
 
 export const STARTER_PICKAXE_ITEM_ID: PlayerInventoryItemId = 'pickaxe';
 export const STONE_BLOCK_ITEM_ID: PlayerInventoryItemId = 'stone-block';
+export const COPPER_ORE_ITEM_ID: PlayerInventoryItemId = 'copper-ore';
 
 export const STARTER_PICKAXE_SWING_WINDUP_SECONDS = 0.1;
 export const STARTER_PICKAXE_SWING_ACTIVE_SECONDS = 0.05;
@@ -152,7 +154,7 @@ const isBreakableStarterPickaxeTargetTile = (
   isBreakableTerrainTile(tileId, registry);
 
 const resolveStarterPickaxeRequiredHitCount = (tileId: number): number =>
-  tileId === STONE_TILE_ID ? 2 : 1;
+  tileId === STONE_TILE_ID || tileId === PROCEDURAL_COPPER_ORE_TILE_ID ? 2 : 1;
 
 export const resolveStarterPickaxeBrokenTileDrop = (
   tileId: number
@@ -161,6 +163,11 @@ export const resolveStarterPickaxeBrokenTileDrop = (
     case STONE_TILE_ID:
       return {
         itemId: STONE_BLOCK_ITEM_ID,
+        amount: 1
+      };
+    case PROCEDURAL_COPPER_ORE_TILE_ID:
+      return {
+        itemId: COPPER_ORE_ITEM_ID,
         amount: 1
       };
     case GRASS_SURFACE_TILE_ID:

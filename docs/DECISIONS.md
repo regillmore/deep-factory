@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-19: Procedural ore pockets only replace untouched upper underground stone
+
+- Decision: Seeded copper-ore pockets now resolve inside a shallow underground stone band only after cave-air carving, and they stay outside the protected origin spawn corridor so fresh-world spawn terrain remains safe.
+- Reason: Early resource generation needs deterministic progression without destabilizing surface footing, overwriting edited terrain assumptions, or punching ore into the protected world-start area.
+- Consequence: Future ore or underground resource follow-ups should layer onto that same "replace untouched stone after cave carving" seam and preserve the protected origin corridor unless a later pass intentionally redesigns early-world spawn safety.
+
 ### 2026-03-19: Debug recipe catalog quick-craft reuses the shared crafting path
 
 - Decision: Quick-craft actions in the debug recipe catalog now evaluate and execute through the same shared crafting helpers that back the dedicated crafting panel, while their ready-versus-blocked copy also resolves from that shared evaluation instead of a catalog-only craft path.
