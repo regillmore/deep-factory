@@ -287,6 +287,7 @@ import {
   evaluatePlayerCraftingRecipe,
   findNearestPlayerCraftingStationInRange,
   getPlayerCraftingRecipeDefinitions,
+  isPlayerCraftingRecipeId,
   tryCraftPlayerRecipe,
   type PlayerCraftingRecipeId
 } from './world/playerCrafting';
@@ -1205,13 +1206,15 @@ const bootstrap = async (): Promise<void> => {
     }
   });
   let itemCatalogSearchQuery = '';
+  const tryCraftSharedPlayerRecipe = (recipeId: string): void => {
+    if (!isPlayerCraftingRecipeId(recipeId)) {
+      return;
+    }
+    tryCraftSelectedPlayerRecipe(recipeId);
+  };
   const craftingPanel = new CraftingPanel({
     host: worldHost,
-    onCraftRecipe: (recipeId) => {
-      if (recipeId === 'workbench' || recipeId === 'healing-potion') {
-        tryCraftSelectedPlayerRecipe(recipeId);
-      }
-    }
+    onCraftRecipe: tryCraftSharedPlayerRecipe
   });
   const equipmentPanel = new EquipmentPanel({
     host: worldHost,
@@ -1230,7 +1233,8 @@ const bootstrap = async (): Promise<void> => {
         return;
       }
       trySpawnStandalonePlayerCatalogItem(itemId);
-    }
+    },
+    onCraftRecipe: tryCraftSharedPlayerRecipe
   });
   let debugEditControls: TouchDebugEditControls | null = null;
   const syncInWorldShellState = (): void => {
@@ -1920,19 +1924,42 @@ const bootstrap = async (): Promise<void> => {
       starterBugNetSwingFeedback: resolveHotbarOverlayStarterBugNetSwingFeedback()
     });
   };
-  const resolveCraftingPanelRecipeDisabledReason = (
-    recipeViewModel: ReturnType<typeof evaluatePlayerCraftingRecipe>
+  const resolveCraftingMissingIngredientsLabel = (
+    recipeEvaluation: ReturnType<typeof evaluatePlayerCraftingRecipe>
+  ): string => {
+    const missingIngredients = recipeEvaluation.ingredients.filter(
+      (ingredient) => ingredient.missingAmount > 0
+    );
+    if (missingIngredients.length === 0) {
+      return 'Missing ingredients';
+    }
+
+    return `Missing ${missingIngredients
+      .map(
+        (ingredient) =>
+          `${ingredient.missingAmount} ${getPlayerInventoryItemDefinition(ingredient.itemId).label}`
+      )
+      .join(' + ')}`;
+  };
+  const resolveCraftingRecipeDisabledReason = (
+    recipeEvaluation: ReturnType<typeof evaluatePlayerCraftingRecipe>
   ): string | null => {
-    switch (recipeViewModel.blocker) {
+    switch (recipeEvaluation.blocker) {
       case 'missing-station':
         return 'Requires nearby workbench';
       case 'inventory-full':
         return 'Inventory full';
       case 'missing-ingredients':
-        return 'Missing ingredients';
+        return resolveCraftingMissingIngredientsLabel(recipeEvaluation);
       default:
         return null;
     }
+  };
+  const resolveItemCatalogPanelRecipeAvailabilityLabel = (
+    recipeEvaluation: ReturnType<typeof evaluatePlayerCraftingRecipe>
+  ): string => {
+    const disabledReason = resolveCraftingRecipeDisabledReason(recipeEvaluation);
+    return disabledReason === null ? 'Ready to craft' : `Blocked: ${disabledReason}`;
   };
   const resolveItemCatalogPanelResultSummaryLabel = (): string => {
     const itemCatalogEntryCount = searchPlayerItemCatalog(itemCatalogSearchQuery).length;
@@ -1978,14 +2005,29 @@ const bootstrap = async (): Promise<void> => {
         disabledReason: enabled ? null : 'Inventory full'
       };
     });
-  const createItemCatalogPanelRecipeViewModels = (): ItemCatalogPanelRecipeViewModel[] =>
-    searchPlayerRecipeCatalog(itemCatalogSearchQuery).map((entry): ItemCatalogPanelRecipeViewModel => ({
-      recipeId: entry.recipeId,
-      label: entry.label,
-      outputLabel: entry.outputLabel,
-      ingredientsLabel: entry.ingredientsLabel,
-      stationRequirementLabel: entry.stationRequirementLabel
-    }));
+  const createItemCatalogPanelRecipeViewModels = (
+    playerState: Pick<PlayerState, 'position' | 'size'> | null
+  ): ItemCatalogPanelRecipeViewModel[] =>
+    searchPlayerRecipeCatalog(itemCatalogSearchQuery).map((entry): ItemCatalogPanelRecipeViewModel => {
+      const recipeEvaluation = evaluatePlayerCraftingRecipe({
+        inventoryState: standalonePlayerInventoryState,
+        recipeId: entry.recipeId,
+        playerState,
+        world: {
+          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+        }
+      });
+      return {
+        recipeId: entry.recipeId,
+        label: entry.label,
+        outputLabel: entry.outputLabel,
+        ingredientsLabel: entry.ingredientsLabel,
+        stationRequirementLabel: entry.stationRequirementLabel,
+        availabilityLabel: resolveItemCatalogPanelRecipeAvailabilityLabel(recipeEvaluation),
+        enabled: recipeEvaluation.craftable,
+        disabledReason: resolveCraftingRecipeDisabledReason(recipeEvaluation)
+      };
+    });
   const createCraftingPanelRecipeViewModels = (
     playerState: Pick<PlayerState, 'position' | 'size'> | null
   ): CraftingPanelRecipeViewModel[] =>
@@ -2006,7 +2048,7 @@ const bootstrap = async (): Promise<void> => {
           .join(' + '),
         outputLabel: `+${recipe.output.amount} ${getPlayerInventoryItemDefinition(recipe.output.itemId).hotbarLabel}`,
         enabled: recipeEvaluation.craftable,
-        disabledReason: resolveCraftingPanelRecipeDisabledReason(recipeEvaluation)
+        disabledReason: resolveCraftingRecipeDisabledReason(recipeEvaluation)
       };
     });
   const createEquipmentPanelSlotViewModels = (): EquipmentPanelSlotViewModel[] =>
@@ -2046,13 +2088,14 @@ const bootstrap = async (): Promise<void> => {
     });
   };
   const syncItemCatalogPanelState = (): void => {
+    const standalonePlayerState = getStandalonePlayerState();
     itemCatalogPanel.update({
       searchQuery: itemCatalogSearchQuery,
       resultSummaryLabel: resolveItemCatalogPanelResultSummaryLabel(),
       itemEmptyLabel: resolveItemCatalogPanelItemEmptyLabel(),
       items: createItemCatalogPanelItemViewModels(),
       recipeEmptyLabel: resolveItemCatalogPanelRecipeEmptyLabel(),
-      recipes: createItemCatalogPanelRecipeViewModels()
+      recipes: createItemCatalogPanelRecipeViewModels(standalonePlayerState)
     });
   };
   const applyStandalonePlayerInventoryState = (inventoryState: PlayerInventoryState): void => {
@@ -2081,6 +2124,7 @@ const bootstrap = async (): Promise<void> => {
     });
     if (!craftResult.crafted) {
       syncCraftingPanelState();
+      syncItemCatalogPanelState();
       return false;
     }
 
@@ -5967,6 +6011,7 @@ const bootstrap = async (): Promise<void> => {
       ? getSelectedStandalonePlayerItemMiningPreview(pointerInspect)
       : null;
     syncCraftingPanelState();
+    syncItemCatalogPanelState();
     const hoveredDebugTileStatus = getHoveredDebugTileStatus(pointerInspect, renderTimeMs);
     const pinnedDebugTileStatus = pinnedDebugTileInspect
       ? getDebugTileStatusAtTile(

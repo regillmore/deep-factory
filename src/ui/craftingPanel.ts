@@ -28,11 +28,52 @@ const createSectionLabel = (text: string): HTMLDivElement => {
   return label;
 };
 
+const areCraftingPanelRecipeViewModelsEqual = (
+  left: readonly CraftingPanelRecipeViewModel[],
+  right: readonly CraftingPanelRecipeViewModel[]
+): boolean =>
+  left.length === right.length &&
+  left.every((recipe, index) => {
+    const other = right[index];
+    return (
+      other !== undefined &&
+      recipe.recipeId === other.recipeId &&
+      recipe.label === other.label &&
+      recipe.ingredientsLabel === other.ingredientsLabel &&
+      recipe.outputLabel === other.outputLabel &&
+      recipe.enabled === other.enabled &&
+      (recipe.disabledReason ?? null) === (other.disabledReason ?? null)
+    );
+  });
+
+const areCraftingPanelStatesEqual = (
+  left: CraftingPanelState | null,
+  right: CraftingPanelState
+): boolean =>
+  left !== null &&
+  left.stationLabel === right.stationLabel &&
+  left.stationInRange === right.stationInRange &&
+  areCraftingPanelRecipeViewModelsEqual(left.recipes, right.recipes);
+
+const cloneCraftingPanelState = (state: CraftingPanelState): CraftingPanelState => ({
+  stationLabel: state.stationLabel,
+  stationInRange: state.stationInRange,
+  recipes: state.recipes.map((recipe) => ({
+    recipeId: recipe.recipeId,
+    label: recipe.label,
+    ingredientsLabel: recipe.ingredientsLabel,
+    outputLabel: recipe.outputLabel,
+    enabled: recipe.enabled,
+    disabledReason: recipe.disabledReason ?? null
+  }))
+});
+
 export class CraftingPanel {
   private root: HTMLDivElement;
   private statusLine: HTMLDivElement;
   private recipeList: HTMLDivElement;
   private onCraftRecipe: (recipeId: string) => void;
+  private lastRenderedState: CraftingPanelState | null = null;
 
   constructor(options: CraftingPanelOptions) {
     this.onCraftRecipe = options.onCraftRecipe ?? (() => {});
@@ -99,6 +140,10 @@ export class CraftingPanel {
   }
 
   update(state: CraftingPanelState): void {
+    if (areCraftingPanelStatesEqual(this.lastRenderedState, state)) {
+      return;
+    }
+
     this.statusLine.textContent = state.stationInRange
       ? `${state.stationLabel} nearby`
       : `${state.stationLabel} not in range`;
@@ -158,6 +203,7 @@ export class CraftingPanel {
     });
 
     this.recipeList.replaceChildren(...recipeCards);
+    this.lastRenderedState = cloneCraftingPanelState(state);
   }
 
   getRootElement(): HTMLDivElement {

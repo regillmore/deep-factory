@@ -114,7 +114,19 @@ describe('ItemCatalogPanel', () => {
           label: 'Workbench',
           outputLabel: 'Output: +1 BENCH',
           ingredientsLabel: 'Ingredients: 20 Dirt Block',
-          stationRequirementLabel: 'Requirement: None'
+          stationRequirementLabel: 'Requirement: None',
+          availabilityLabel: 'Ready to craft',
+          enabled: true
+        },
+        {
+          recipeId: 'healing-potion',
+          label: 'Healing Potion',
+          outputLabel: 'Output: +1 POTION',
+          ingredientsLabel: 'Ingredients: 2 Gel',
+          stationRequirementLabel: 'Requirement: Nearby Workbench',
+          availabilityLabel: 'Blocked: Requires nearby workbench',
+          enabled: false,
+          disabledReason: 'Requires nearby workbench'
         }
       ]
     });
@@ -131,16 +143,22 @@ describe('ItemCatalogPanel', () => {
     expect(itemList.children[0]!.getAttribute('aria-disabled')).toBe('false');
     expect(itemList.children[1]!.title).toContain('Inventory full');
     expect(itemList.children[1]!.getAttribute('aria-disabled')).toBe('true');
+    expect(recipeList.children[0]!.title).toBe('Craft Workbench');
+    expect(recipeList.children[0]!.getAttribute('aria-disabled')).toBe('false');
     expect(recipeList.children[0]!.children[0]!.textContent).toBe('Workbench');
     expect(recipeList.children[0]!.children[1]!.textContent).toBe('Output: +1 BENCH');
     expect(recipeList.children[0]!.children[3]!.textContent).toBe('Requirement: None');
+    expect(recipeList.children[0]!.children[4]!.textContent).toBe('Ready to craft');
+    expect(recipeList.children[1]!.title).toContain('Requires nearby workbench');
+    expect(recipeList.children[1]!.getAttribute('aria-disabled')).toBe('true');
   });
 
-  it('forwards search updates and enabled spawn clicks while ignoring disabled cards', () => {
+  it('forwards search updates, enabled spawn clicks, and enabled recipe crafts while ignoring disabled cards', () => {
     const host = createHost();
     const onSearchQueryChange = vi.fn();
     const onSpawnItem = vi.fn();
-    const panel = new ItemCatalogPanel({ host, onSearchQueryChange, onSpawnItem });
+    const onCraftRecipe = vi.fn();
+    const panel = new ItemCatalogPanel({ host, onSearchQueryChange, onSpawnItem, onCraftRecipe });
 
     panel.update({
       searchQuery: '',
@@ -166,24 +184,41 @@ describe('ItemCatalogPanel', () => {
       recipeEmptyLabel: 'No catalog recipes available',
       recipes: [
         {
+          recipeId: 'workbench',
+          label: 'Workbench',
+          outputLabel: 'Output: +1 BENCH',
+          ingredientsLabel: 'Ingredients: 20 Dirt Block',
+          stationRequirementLabel: 'Requirement: None',
+          availabilityLabel: 'Ready to craft',
+          enabled: true
+        },
+        {
           recipeId: 'healing-potion',
           label: 'Healing Potion',
           outputLabel: 'Output: +1 POTION',
           ingredientsLabel: 'Ingredients: 2 Gel',
-          stationRequirementLabel: 'Requirement: Nearby Workbench'
+          stationRequirementLabel: 'Requirement: Nearby Workbench',
+          availabilityLabel: 'Blocked: Missing 2 Gel',
+          enabled: false,
+          disabledReason: 'Missing 2 Gel'
         }
       ]
     });
 
     getSearchInput(panel).input('bug');
     const itemList = getItemList(panel);
+    const recipeList = getRecipeList(panel);
     itemList.children[0]!.click();
     itemList.children[1]!.click();
+    recipeList.children[0]!.click();
+    recipeList.children[1]!.click();
 
     expect(onSearchQueryChange).toHaveBeenCalledTimes(1);
     expect(onSearchQueryChange).toHaveBeenCalledWith('bug');
     expect(onSpawnItem).toHaveBeenCalledTimes(1);
     expect(onSpawnItem).toHaveBeenCalledWith('bug-net');
+    expect(onCraftRecipe).toHaveBeenCalledTimes(1);
+    expect(onCraftRecipe).toHaveBeenCalledWith('workbench');
   });
 
   it('shows an empty-state card when no search results remain', () => {
@@ -201,6 +236,55 @@ describe('ItemCatalogPanel', () => {
 
     expect(getItemList(panel).children[0]!.textContent).toBe('No items match "zzz"');
     expect(getRecipeList(panel).children[0]!.textContent).toBe('No recipes match "zzz"');
+  });
+
+  it('reuses rendered catalog buttons when the state is unchanged across updates', () => {
+    const host = createHost();
+    const panel = new ItemCatalogPanel({ host });
+    const state = {
+      searchQuery: 'bench',
+      resultSummaryLabel: '1 matching item | 1 matching recipe',
+      itemEmptyLabel: 'No items match "bench"',
+      items: [
+        {
+          itemId: 'workbench',
+          label: 'Workbench',
+          detailsLabel: 'Id: workbench | Hotbar: BENCH | Max stack: 99',
+          inventoryLabel: 'Have: 0 | Spawn +1',
+          enabled: true,
+          disabledReason: null
+        }
+      ],
+      recipeEmptyLabel: 'No recipes match "bench"',
+      recipes: [
+        {
+          recipeId: 'workbench',
+          label: 'Workbench',
+          outputLabel: 'Output: +1 BENCH',
+          ingredientsLabel: 'Ingredients: 20 Dirt Block',
+          stationRequirementLabel: 'Requirement: None',
+          availabilityLabel: 'Ready to craft',
+          enabled: true,
+          disabledReason: null
+        }
+      ]
+    } satisfies Parameters<ItemCatalogPanel['update']>[0];
+
+    panel.update(state);
+    const firstItemButton = getItemList(panel).children[0];
+    const firstRecipeButton = getRecipeList(panel).children[0];
+
+    panel.update({
+      searchQuery: state.searchQuery,
+      resultSummaryLabel: state.resultSummaryLabel,
+      itemEmptyLabel: state.itemEmptyLabel,
+      items: state.items.map((item) => ({ ...item })),
+      recipeEmptyLabel: state.recipeEmptyLabel,
+      recipes: state.recipes.map((recipe) => ({ ...recipe }))
+    });
+
+    expect(getItemList(panel).children[0]).toBe(firstItemButton);
+    expect(getRecipeList(panel).children[0]).toBe(firstRecipeButton);
   });
 
   it('can hide and show itself without removing the DOM root', () => {

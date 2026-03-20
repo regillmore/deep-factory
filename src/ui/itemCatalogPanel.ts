@@ -15,6 +15,9 @@ export interface ItemCatalogPanelRecipeViewModel {
   outputLabel: string;
   ingredientsLabel: string;
   stationRequirementLabel: string;
+  availabilityLabel: string;
+  enabled: boolean;
+  disabledReason?: string | null;
 }
 
 export interface ItemCatalogPanelState {
@@ -30,6 +33,7 @@ interface ItemCatalogPanelOptions {
   host: HTMLElement;
   onSearchQueryChange?: (query: string) => void;
   onSpawnItem?: (itemId: string) => void;
+  onCraftRecipe?: (recipeId: string) => void;
 }
 
 const createSectionLabel = (text: string): HTMLDivElement => {
@@ -40,6 +44,81 @@ const createSectionLabel = (text: string): HTMLDivElement => {
   return label;
 };
 
+const areItemCatalogPanelItemViewModelsEqual = (
+  left: readonly ItemCatalogPanelItemViewModel[],
+  right: readonly ItemCatalogPanelItemViewModel[]
+): boolean =>
+  left.length === right.length &&
+  left.every((item, index) => {
+    const other = right[index];
+    return (
+      other !== undefined &&
+      item.itemId === other.itemId &&
+      item.label === other.label &&
+      item.detailsLabel === other.detailsLabel &&
+      item.inventoryLabel === other.inventoryLabel &&
+      item.enabled === other.enabled &&
+      (item.disabledReason ?? null) === (other.disabledReason ?? null)
+    );
+  });
+
+const areItemCatalogPanelRecipeViewModelsEqual = (
+  left: readonly ItemCatalogPanelRecipeViewModel[],
+  right: readonly ItemCatalogPanelRecipeViewModel[]
+): boolean =>
+  left.length === right.length &&
+  left.every((recipe, index) => {
+    const other = right[index];
+    return (
+      other !== undefined &&
+      recipe.recipeId === other.recipeId &&
+      recipe.label === other.label &&
+      recipe.outputLabel === other.outputLabel &&
+      recipe.ingredientsLabel === other.ingredientsLabel &&
+      recipe.stationRequirementLabel === other.stationRequirementLabel &&
+      recipe.availabilityLabel === other.availabilityLabel &&
+      recipe.enabled === other.enabled &&
+      (recipe.disabledReason ?? null) === (other.disabledReason ?? null)
+    );
+  });
+
+const areItemCatalogPanelStatesEqual = (
+  left: ItemCatalogPanelState | null,
+  right: ItemCatalogPanelState
+): boolean =>
+  left !== null &&
+  left.searchQuery === right.searchQuery &&
+  left.resultSummaryLabel === right.resultSummaryLabel &&
+  left.itemEmptyLabel === right.itemEmptyLabel &&
+  left.recipeEmptyLabel === right.recipeEmptyLabel &&
+  areItemCatalogPanelItemViewModelsEqual(left.items, right.items) &&
+  areItemCatalogPanelRecipeViewModelsEqual(left.recipes, right.recipes);
+
+const cloneItemCatalogPanelState = (state: ItemCatalogPanelState): ItemCatalogPanelState => ({
+  searchQuery: state.searchQuery,
+  resultSummaryLabel: state.resultSummaryLabel,
+  itemEmptyLabel: state.itemEmptyLabel,
+  items: state.items.map((item) => ({
+    itemId: item.itemId,
+    label: item.label,
+    detailsLabel: item.detailsLabel,
+    inventoryLabel: item.inventoryLabel,
+    enabled: item.enabled,
+    disabledReason: item.disabledReason ?? null
+  })),
+  recipeEmptyLabel: state.recipeEmptyLabel,
+  recipes: state.recipes.map((recipe) => ({
+    recipeId: recipe.recipeId,
+    label: recipe.label,
+    outputLabel: recipe.outputLabel,
+    ingredientsLabel: recipe.ingredientsLabel,
+    stationRequirementLabel: recipe.stationRequirementLabel,
+    availabilityLabel: recipe.availabilityLabel,
+    enabled: recipe.enabled,
+    disabledReason: recipe.disabledReason ?? null
+  }))
+});
+
 export class ItemCatalogPanel {
   private root: HTMLDivElement;
   private searchInput: HTMLInputElement;
@@ -48,10 +127,13 @@ export class ItemCatalogPanel {
   private recipeList: HTMLDivElement;
   private onSearchQueryChange: (query: string) => void;
   private onSpawnItem: (itemId: string) => void;
+  private onCraftRecipe: (recipeId: string) => void;
+  private lastRenderedState: ItemCatalogPanelState | null = null;
 
   constructor(options: ItemCatalogPanelOptions) {
     this.onSearchQueryChange = options.onSearchQueryChange ?? (() => {});
     this.onSpawnItem = options.onSpawnItem ?? (() => {});
+    this.onCraftRecipe = options.onCraftRecipe ?? (() => {});
 
     this.root = document.createElement('div');
     this.root.style.position = 'fixed';
@@ -151,7 +233,13 @@ export class ItemCatalogPanel {
   }
 
   update(state: ItemCatalogPanelState): void {
-    this.searchInput.value = state.searchQuery;
+    if (areItemCatalogPanelStatesEqual(this.lastRenderedState, state)) {
+      return;
+    }
+
+    if (this.searchInput.value !== state.searchQuery) {
+      this.searchInput.value = state.searchQuery;
+    }
     this.resultSummaryLine.textContent = state.resultSummaryLabel;
 
     const itemCards = state.items.map((item) => {
@@ -212,47 +300,75 @@ export class ItemCatalogPanel {
     );
 
     const recipeCards = state.recipes.map((recipe) => {
-      const card = document.createElement('div');
-      card.style.display = 'flex';
-      card.style.flexDirection = 'column';
-      card.style.alignItems = 'flex-start';
-      card.style.gap = '2px';
-      card.style.padding = '8px';
-      card.style.borderRadius = '8px';
-      card.style.border = '1px solid rgba(255, 255, 255, 0.08)';
-      card.style.background = 'rgba(255, 255, 255, 0.04)';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.style.display = 'flex';
+      button.style.flexDirection = 'column';
+      button.style.alignItems = 'flex-start';
+      button.style.gap = '2px';
+      button.style.padding = '8px';
+      button.style.borderRadius = '8px';
+      button.style.border = '1px solid rgba(255, 255, 255, 0.16)';
+      button.style.background = recipe.enabled
+        ? 'rgba(255, 255, 255, 0.08)'
+        : 'rgba(255, 255, 255, 0.04)';
+      button.style.color = recipe.enabled ? '#f3f7fb' : '#aab7c7';
+      button.style.fontFamily = 'inherit';
+      button.style.fontSize = '12px';
+      button.style.cursor = recipe.enabled ? 'pointer' : 'default';
+      button.style.touchAction = 'manipulation';
+      button.disabled = !recipe.enabled;
+      button.setAttribute('aria-disabled', recipe.enabled ? 'false' : 'true');
+      button.title =
+        recipe.disabledReason === null || recipe.disabledReason === undefined
+          ? `Craft ${recipe.label}`
+          : `Craft ${recipe.label} (${recipe.disabledReason})`;
+      button.addEventListener('click', () => {
+        if (!recipe.enabled) {
+          return;
+        }
+        this.onCraftRecipe(recipe.recipeId);
+      });
+      installPointerClickFocusRelease(button);
 
       const label = document.createElement('div');
       label.textContent = recipe.label;
       label.style.fontSize = '12px';
       label.style.fontWeight = '700';
       label.style.color = '#f3f7fb';
-      card.append(label);
+      button.append(label);
 
       const output = document.createElement('div');
       output.textContent = recipe.outputLabel;
       output.style.fontSize = '11px';
-      output.style.color = '#bfe7c8';
-      card.append(output);
+      output.style.color = recipe.enabled ? '#bfe7c8' : '#aab7c7';
+      button.append(output);
 
       const ingredients = document.createElement('div');
       ingredients.textContent = recipe.ingredientsLabel;
       ingredients.style.fontSize = '11px';
       ingredients.style.color = '#d6dde8';
-      card.append(ingredients);
+      button.append(ingredients);
 
       const stationRequirement = document.createElement('div');
       stationRequirement.textContent = recipe.stationRequirementLabel;
       stationRequirement.style.fontSize = '11px';
       stationRequirement.style.color = '#aab7c7';
-      card.append(stationRequirement);
+      button.append(stationRequirement);
 
-      return card;
+      const availability = document.createElement('div');
+      availability.textContent = recipe.availabilityLabel;
+      availability.style.fontSize = '11px';
+      availability.style.color = recipe.enabled ? '#bfe7c8' : '#e6c88d';
+      button.append(availability);
+
+      return button;
     });
 
     this.recipeList.replaceChildren(
       ...(recipeCards.length > 0 ? recipeCards : [this.createEmptyStateCard(state.recipeEmptyLabel)])
     );
+    this.lastRenderedState = cloneItemCatalogPanelState(state);
   }
 
   getRootElement(): HTMLDivElement {

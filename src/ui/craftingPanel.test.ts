@@ -139,6 +139,36 @@ describe('CraftingPanel', () => {
     expect(onCraftRecipe).toHaveBeenCalledWith('workbench');
   });
 
+  it('reuses rendered recipe buttons when the state is unchanged across updates', () => {
+    const host = createHost();
+    const panel = new CraftingPanel({ host });
+    const state = {
+      stationLabel: 'Workbench',
+      stationInRange: true,
+      recipes: [
+        {
+          recipeId: 'workbench',
+          label: 'Workbench',
+          ingredientsLabel: '20 Dirt Block',
+          outputLabel: '+1 BENCH',
+          enabled: true,
+          disabledReason: null
+        }
+      ]
+    } satisfies Parameters<CraftingPanel['update']>[0];
+
+    panel.update(state);
+    const firstRecipeButton = getRecipeList(panel).children[0];
+
+    panel.update({
+      stationLabel: state.stationLabel,
+      stationInRange: state.stationInRange,
+      recipes: state.recipes.map((recipe) => ({ ...recipe }))
+    });
+
+    expect(getRecipeList(panel).children[0]).toBe(firstRecipeButton);
+  });
+
   it('can hide and show itself without removing the DOM root', () => {
     const host = createHost();
     const panel = new CraftingPanel({ host });

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-19: Debug recipe catalog quick-craft reuses the shared crafting path
+
+- Decision: Quick-craft actions in the debug recipe catalog now evaluate and execute through the same shared crafting helpers that back the dedicated crafting panel, while their ready-versus-blocked copy also resolves from that shared evaluation instead of a catalog-only craft path.
+- Reason: Dev-only recipe cards still need to stay aligned with shipped inventory, station-range, and recipe-consumption rules without asking future passes to duplicate or manually sync crafting logic across two debug surfaces.
+- Consequence: Future recipe-catalog crafting or blocker-copy follow-ups should extend the shared crafting evaluation or action helpers first and let both debug panels reuse that result instead of introducing catalog-only recipe checks.
+
 ### 2026-03-19: Debug recipe catalog derives from the shared crafting registry
 
 - Decision: The searchable debug recipe catalog now enumerates and filters directly from the shared crafting recipe registry while resolving output, ingredient, and station labels through the existing crafting and inventory helpers instead of maintaining a second recipe list or hand-written catalog text.

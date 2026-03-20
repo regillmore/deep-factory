@@ -296,6 +296,7 @@ const testRuntime = vi.hoisted(() => {
       visible: boolean;
       triggerSearchQueryChange(query: string): void;
       triggerSpawnItem(itemId: string): void;
+      triggerCraftRecipe(recipeId: string): void;
     },
     latestCraftingPanelState: null as null | {
       stationLabel: string;
@@ -338,6 +339,9 @@ const testRuntime = vi.hoisted(() => {
         outputLabel: string;
         ingredientsLabel: string;
         stationRequirementLabel: string;
+        availabilityLabel: string;
+        enabled: boolean;
+        disabledReason?: string | null;
       }>;
     },
     debugEditControlsInitialArmedToolSnapshot: null as null | {
@@ -1730,13 +1734,16 @@ vi.mock('./ui/itemCatalogPanel', () => ({
     visible = false;
     private onSearchQueryChange: (query: string) => void;
     private onSpawnItem: (itemId: string) => void;
+    private onCraftRecipe: (recipeId: string) => void;
 
     constructor(options: {
       onSearchQueryChange?: (query: string) => void;
       onSpawnItem?: (itemId: string) => void;
+      onCraftRecipe?: (recipeId: string) => void;
     }) {
       this.onSearchQueryChange = options.onSearchQueryChange ?? (() => {});
       this.onSpawnItem = options.onSpawnItem ?? (() => {});
+      this.onCraftRecipe = options.onCraftRecipe ?? (() => {});
       testRuntime.itemCatalogPanelInstance = this;
     }
 
@@ -1763,6 +1770,9 @@ vi.mock('./ui/itemCatalogPanel', () => ({
         outputLabel: string;
         ingredientsLabel: string;
         stationRequirementLabel: string;
+        availabilityLabel: string;
+        enabled: boolean;
+        disabledReason?: string | null;
       }>;
     }): void {
       testRuntime.latestItemCatalogPanelState = {
@@ -1781,6 +1791,10 @@ vi.mock('./ui/itemCatalogPanel', () => ({
 
     triggerSpawnItem(itemId: string): void {
       this.onSpawnItem(itemId);
+    }
+
+    triggerCraftRecipe(recipeId: string): void {
+      this.onCraftRecipe(recipeId);
     }
   }
 }));
@@ -7940,6 +7954,89 @@ describe('main.ts shell state orchestration', () => {
       itemId: 'gel',
       amount: 2
     });
+  });
+
+  it('quick-crafts catalog recipes through the shared crafting path and refreshes live blocker states', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'gel', amount: 2 },
+              { itemId: 'healing-potion', amount: 1 },
+              ...Array.from({ length: 8 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 0
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    runRenderFrame();
+
+    testRuntime.itemCatalogPanelInstance?.triggerSearchQueryChange('potion');
+    expect(testRuntime.latestItemCatalogPanelState?.recipes).toEqual([
+      {
+        recipeId: 'healing-potion',
+        label: 'Healing Potion',
+        outputLabel: 'Output: +1 POTION',
+        ingredientsLabel: 'Ingredients: 2 Gel',
+        stationRequirementLabel: 'Requirement: Nearby Workbench',
+        availabilityLabel: 'Blocked: Requires nearby workbench',
+        enabled: false,
+        disabledReason: 'Requires nearby workbench'
+      }
+    ]);
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, -1), STARTER_WORKBENCH_TILE_ID);
+    runRenderFrame();
+
+    expect(testRuntime.latestItemCatalogPanelState?.recipes).toEqual([
+      {
+        recipeId: 'healing-potion',
+        label: 'Healing Potion',
+        outputLabel: 'Output: +1 POTION',
+        ingredientsLabel: 'Ingredients: 2 Gel',
+        stationRequirementLabel: 'Requirement: Nearby Workbench',
+        availabilityLabel: 'Ready to craft',
+        enabled: true,
+        disabledReason: null
+      }
+    ]);
+
+    testRuntime.itemCatalogPanelInstance?.triggerCraftRecipe('healing-potion');
+
+    expect(testRuntime.latestItemCatalogPanelState?.recipes).toEqual([
+      {
+        recipeId: 'healing-potion',
+        label: 'Healing Potion',
+        outputLabel: 'Output: +1 POTION',
+        ingredientsLabel: 'Ingredients: 2 Gel',
+        stationRequirementLabel: 'Requirement: Nearby Workbench',
+        availabilityLabel: 'Blocked: Missing 2 Gel',
+        enabled: false,
+        disabledReason: 'Missing 2 Gel'
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    const savedInventory = readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState;
+    expect(savedInventory?.hotbar[1]).toEqual({
+      itemId: 'healing-potion',
+      amount: 2
+    });
+    expect(savedInventory?.hotbar.some((stack) => stack?.itemId === 'gel')).toBe(false);
   });
 
   it('hides the hotbar placement preview for unsupported item slots and while the full debug-edit panel is open', async () => {

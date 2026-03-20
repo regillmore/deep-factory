@@ -97,6 +97,9 @@ const PLAYER_CRAFTING_RECIPE_DEFINITIONS: readonly PlayerCraftingRecipeDefinitio
     requiredStationId: 'workbench'
   }
 ] as const;
+const PLAYER_CRAFTING_RECIPE_IDS = new Set<PlayerCraftingRecipeId>(
+  PLAYER_CRAFTING_RECIPE_DEFINITIONS.map((recipe) => recipe.id)
+);
 
 const getPlayerCraftingStationTileId = (stationId: PlayerCraftingStationId): number =>
   PLAYER_CRAFTING_STATION_TILE_IDS[stationId];
@@ -130,6 +133,9 @@ const getPlayerCraftingRecipeDefinitionIndex = (recipeId: PlayerCraftingRecipeId
 
 export const getPlayerCraftingRecipeDefinitions = (): readonly PlayerCraftingRecipeDefinition[] =>
   PLAYER_CRAFTING_RECIPE_DEFINITIONS;
+
+export const isPlayerCraftingRecipeId = (value: string): value is PlayerCraftingRecipeId =>
+  PLAYER_CRAFTING_RECIPE_IDS.has(value as PlayerCraftingRecipeId);
 
 export const getPlayerCraftingStationLabel = (
   stationId: PlayerCraftingStationId
