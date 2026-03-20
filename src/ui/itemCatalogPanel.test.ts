@@ -73,21 +73,23 @@ describe('ItemCatalogPanel', () => {
     (((panel.getRootElement() as unknown as FakeElement).children[1] as FakeElement).children[1] ??
       null) as FakeElement;
   const getSummaryLine = (panel: ItemCatalogPanel): FakeElement =>
-    (((panel.getRootElement() as unknown as FakeElement).children[2] as FakeElement).children[1] ??
-      null) as FakeElement;
+    (((panel.getRootElement() as unknown as FakeElement).children[2] ?? null) as FakeElement);
   const getItemList = (panel: ItemCatalogPanel): FakeElement =>
-    (((panel.getRootElement() as unknown as FakeElement).children[2] as FakeElement).children[2] ??
+    (((panel.getRootElement() as unknown as FakeElement).children[3] as FakeElement).children[1] ??
+      null) as FakeElement;
+  const getRecipeList = (panel: ItemCatalogPanel): FakeElement =>
+    (((panel.getRootElement() as unknown as FakeElement).children[4] as FakeElement).children[1] ??
       null) as FakeElement;
 
-  it('renders the search query, result summary, and spawn cards', () => {
+  it('renders the search query, result summary, item cards, and recipe cards', () => {
     const host = createHost();
     const panel = new ItemCatalogPanel({ host });
 
     panel.setVisible(true);
     panel.update({
       searchQuery: 'bench',
-      resultSummaryLabel: '1 matching item',
-      emptyLabel: 'No items match "bench"',
+      resultSummaryLabel: '1 matching item | 2 matching recipes',
+      itemEmptyLabel: 'No items match "bench"',
       items: [
         {
           itemId: 'workbench',
@@ -104,20 +106,34 @@ describe('ItemCatalogPanel', () => {
           enabled: false,
           disabledReason: 'Inventory full'
         }
+      ],
+      recipeEmptyLabel: 'No recipes match "bench"',
+      recipes: [
+        {
+          recipeId: 'workbench',
+          label: 'Workbench',
+          outputLabel: 'Output: +1 BENCH',
+          ingredientsLabel: 'Ingredients: 20 Dirt Block',
+          stationRequirementLabel: 'Requirement: None'
+        }
       ]
     });
 
     const root = panel.getRootElement() as unknown as FakeElement;
     const searchInput = getSearchInput(panel);
     const itemList = getItemList(panel);
+    const recipeList = getRecipeList(panel);
 
     expect(root.style.display).toBe('flex');
     expect(searchInput.value).toBe('bench');
-    expect(getSummaryLine(panel).textContent).toBe('1 matching item');
+    expect(getSummaryLine(panel).textContent).toBe('1 matching item | 2 matching recipes');
     expect(itemList.children[0]!.title).toBe('Spawn Workbench');
     expect(itemList.children[0]!.getAttribute('aria-disabled')).toBe('false');
     expect(itemList.children[1]!.title).toContain('Inventory full');
     expect(itemList.children[1]!.getAttribute('aria-disabled')).toBe('true');
+    expect(recipeList.children[0]!.children[0]!.textContent).toBe('Workbench');
+    expect(recipeList.children[0]!.children[1]!.textContent).toBe('Output: +1 BENCH');
+    expect(recipeList.children[0]!.children[3]!.textContent).toBe('Requirement: None');
   });
 
   it('forwards search updates and enabled spawn clicks while ignoring disabled cards', () => {
@@ -128,8 +144,8 @@ describe('ItemCatalogPanel', () => {
 
     panel.update({
       searchQuery: '',
-      resultSummaryLabel: '2 items',
-      emptyLabel: 'No catalog items available',
+      resultSummaryLabel: '2 items | 1 recipe',
+      itemEmptyLabel: 'No catalog items available',
       items: [
         {
           itemId: 'bug-net',
@@ -145,6 +161,16 @@ describe('ItemCatalogPanel', () => {
           inventoryLabel: 'Have: 1 | Inventory full',
           enabled: false,
           disabledReason: 'Inventory full'
+        }
+      ],
+      recipeEmptyLabel: 'No catalog recipes available',
+      recipes: [
+        {
+          recipeId: 'healing-potion',
+          label: 'Healing Potion',
+          outputLabel: 'Output: +1 POTION',
+          ingredientsLabel: 'Ingredients: 2 Gel',
+          stationRequirementLabel: 'Requirement: Nearby Workbench'
         }
       ]
     });
@@ -166,12 +192,15 @@ describe('ItemCatalogPanel', () => {
 
     panel.update({
       searchQuery: 'zzz',
-      resultSummaryLabel: '0 matching items',
-      emptyLabel: 'No items match "zzz"',
-      items: []
+      resultSummaryLabel: '0 matching items | 0 matching recipes',
+      itemEmptyLabel: 'No items match "zzz"',
+      items: [],
+      recipeEmptyLabel: 'No recipes match "zzz"',
+      recipes: []
     });
 
     expect(getItemList(panel).children[0]!.textContent).toBe('No items match "zzz"');
+    expect(getRecipeList(panel).children[0]!.textContent).toBe('No recipes match "zzz"');
   });
 
   it('can hide and show itself without removing the DOM root', () => {

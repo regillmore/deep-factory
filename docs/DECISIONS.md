@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-19: Debug recipe catalog derives from the shared crafting registry
+
+- Decision: The searchable debug recipe catalog now enumerates and filters directly from the shared crafting recipe registry while resolving output, ingredient, and station labels through the existing crafting and inventory helpers instead of maintaining a second recipe list or hand-written catalog text.
+- Reason: Development-time recipe browsing needs to stay aligned with shipped recipe ids, outputs, ingredients, and station requirements without asking future passes to update duplicate catalog metadata.
+- Consequence: Future recipe additions or crafting-station label changes should extend the shared crafting and inventory registries first, and later dev-catalog follow-ups should continue deriving recipe presentation from those same helpers instead of duplicating recipe text.
+
 ### 2026-03-19: Debug item catalog derives from the shared inventory registry
 
 - Decision: The searchable debug item catalog now enumerates and filters directly from the shared `PlayerInventory` item-definition registry and spawns through the same hotbar add helper used by normal item gains instead of keeping a separate debug-only item list or spawn path.

@@ -77,6 +77,10 @@ const PLAYER_CRAFTING_STATION_TILE_IDS: Readonly<Record<PlayerCraftingStationId,
   workbench: STARTER_WORKBENCH_TILE_ID
 };
 
+const PLAYER_CRAFTING_STATION_LABELS: Readonly<Record<PlayerCraftingStationId, string>> = {
+  workbench: 'Workbench'
+};
+
 const PLAYER_CRAFTING_RECIPE_DEFINITIONS: readonly PlayerCraftingRecipeDefinition[] = [
   {
     id: 'workbench',
@@ -126,6 +130,10 @@ const getPlayerCraftingRecipeDefinitionIndex = (recipeId: PlayerCraftingRecipeId
 
 export const getPlayerCraftingRecipeDefinitions = (): readonly PlayerCraftingRecipeDefinition[] =>
   PLAYER_CRAFTING_RECIPE_DEFINITIONS;
+
+export const getPlayerCraftingStationLabel = (
+  stationId: PlayerCraftingStationId
+): string => PLAYER_CRAFTING_STATION_LABELS[stationId];
 
 export const getPlayerCraftingRecipeDefinition = (
   recipeId: PlayerCraftingRecipeId

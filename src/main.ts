@@ -130,7 +130,11 @@ import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay'
 import { CraftingPanel, type CraftingPanelRecipeViewModel } from './ui/craftingPanel';
 import { EquipmentPanel, type EquipmentPanelSlotViewModel } from './ui/equipmentPanel';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
-import { ItemCatalogPanel, type ItemCatalogPanelItemViewModel } from './ui/itemCatalogPanel';
+import {
+  ItemCatalogPanel,
+  type ItemCatalogPanelItemViewModel,
+  type ItemCatalogPanelRecipeViewModel
+} from './ui/itemCatalogPanel';
 import {
   PlayerItemBunnyReleasePreviewOverlay,
   type PlayerItemBunnyReleasePreviewState
@@ -278,6 +282,7 @@ import {
   type PlayerInventoryState
 } from './world/playerInventory';
 import { searchPlayerItemCatalog } from './world/playerItemCatalog';
+import { searchPlayerRecipeCatalog } from './world/playerRecipeCatalog';
 import {
   evaluatePlayerCraftingRecipe,
   findNearestPlayerCraftingStationInRange,
@@ -1930,18 +1935,31 @@ const bootstrap = async (): Promise<void> => {
     }
   };
   const resolveItemCatalogPanelResultSummaryLabel = (): string => {
-    const catalogEntryCount = searchPlayerItemCatalog(itemCatalogSearchQuery).length;
+    const itemCatalogEntryCount = searchPlayerItemCatalog(itemCatalogSearchQuery).length;
+    const recipeCatalogEntryCount = searchPlayerRecipeCatalog(itemCatalogSearchQuery).length;
     const trimmedQuery = itemCatalogSearchQuery.trim();
     if (trimmedQuery.length === 0) {
-      return `${catalogEntryCount} ${catalogEntryCount === 1 ? 'item' : 'items'}`;
+      return `${itemCatalogEntryCount} ${itemCatalogEntryCount === 1 ? 'item' : 'items'} | ${
+        recipeCatalogEntryCount
+      } ${recipeCatalogEntryCount === 1 ? 'recipe' : 'recipes'}`;
     }
-    return `${catalogEntryCount} matching ${catalogEntryCount === 1 ? 'item' : 'items'}`;
+    return `${itemCatalogEntryCount} matching ${
+      itemCatalogEntryCount === 1 ? 'item' : 'items'
+    } | ${recipeCatalogEntryCount} matching ${
+      recipeCatalogEntryCount === 1 ? 'recipe' : 'recipes'
+    }`;
   };
-  const resolveItemCatalogPanelEmptyLabel = (): string => {
+  const resolveItemCatalogPanelItemEmptyLabel = (): string => {
     const trimmedQuery = itemCatalogSearchQuery.trim();
     return trimmedQuery.length > 0
       ? `No items match "${trimmedQuery}"`
       : 'No catalog items available';
+  };
+  const resolveItemCatalogPanelRecipeEmptyLabel = (): string => {
+    const trimmedQuery = itemCatalogSearchQuery.trim();
+    return trimmedQuery.length > 0
+      ? `No recipes match "${trimmedQuery}"`
+      : 'No catalog recipes available';
   };
   const canSpawnStandalonePlayerCatalogItem = (itemId: PlayerInventoryItemId): boolean =>
     addPlayerInventoryItemStack(standalonePlayerInventoryState, itemId, 1).remainingAmount === 0;
@@ -1960,6 +1978,14 @@ const bootstrap = async (): Promise<void> => {
         disabledReason: enabled ? null : 'Inventory full'
       };
     });
+  const createItemCatalogPanelRecipeViewModels = (): ItemCatalogPanelRecipeViewModel[] =>
+    searchPlayerRecipeCatalog(itemCatalogSearchQuery).map((entry): ItemCatalogPanelRecipeViewModel => ({
+      recipeId: entry.recipeId,
+      label: entry.label,
+      outputLabel: entry.outputLabel,
+      ingredientsLabel: entry.ingredientsLabel,
+      stationRequirementLabel: entry.stationRequirementLabel
+    }));
   const createCraftingPanelRecipeViewModels = (
     playerState: Pick<PlayerState, 'position' | 'size'> | null
   ): CraftingPanelRecipeViewModel[] =>
@@ -2023,8 +2049,10 @@ const bootstrap = async (): Promise<void> => {
     itemCatalogPanel.update({
       searchQuery: itemCatalogSearchQuery,
       resultSummaryLabel: resolveItemCatalogPanelResultSummaryLabel(),
-      emptyLabel: resolveItemCatalogPanelEmptyLabel(),
-      items: createItemCatalogPanelItemViewModels()
+      itemEmptyLabel: resolveItemCatalogPanelItemEmptyLabel(),
+      items: createItemCatalogPanelItemViewModels(),
+      recipeEmptyLabel: resolveItemCatalogPanelRecipeEmptyLabel(),
+      recipes: createItemCatalogPanelRecipeViewModels()
     });
   };
   const applyStandalonePlayerInventoryState = (inventoryState: PlayerInventoryState): void => {

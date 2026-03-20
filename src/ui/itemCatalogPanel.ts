@@ -9,11 +9,21 @@ export interface ItemCatalogPanelItemViewModel {
   disabledReason?: string | null;
 }
 
+export interface ItemCatalogPanelRecipeViewModel {
+  recipeId: string;
+  label: string;
+  outputLabel: string;
+  ingredientsLabel: string;
+  stationRequirementLabel: string;
+}
+
 export interface ItemCatalogPanelState {
   searchQuery: string;
   resultSummaryLabel: string;
-  emptyLabel: string;
+  itemEmptyLabel: string;
   items: readonly ItemCatalogPanelItemViewModel[];
+  recipeEmptyLabel: string;
+  recipes: readonly ItemCatalogPanelRecipeViewModel[];
 }
 
 interface ItemCatalogPanelOptions {
@@ -35,6 +45,7 @@ export class ItemCatalogPanel {
   private searchInput: HTMLInputElement;
   private resultSummaryLine: HTMLDivElement;
   private itemList: HTMLDivElement;
+  private recipeList: HTMLDivElement;
   private onSearchQueryChange: (query: string) => void;
   private onSpawnItem: (itemId: string) => void;
 
@@ -60,7 +71,8 @@ export class ItemCatalogPanel {
     this.root.style.userSelect = 'none';
     this.root.style.maxWidth = 'min(320px, calc(100vw - 24px))';
     this.root.style.maxHeight = 'min(260px, calc(100vh - 24px))';
-    this.root.style.overflow = 'hidden';
+    this.root.style.overflowY = 'auto';
+    this.root.style.overflowX = 'hidden';
 
     const title = document.createElement('div');
     title.textContent = 'Item Catalog';
@@ -80,7 +92,7 @@ export class ItemCatalogPanel {
 
     this.searchInput = document.createElement('input');
     this.searchInput.type = 'text';
-    this.searchInput.placeholder = 'Filter by id, label, or hotbar tag';
+    this.searchInput.placeholder = 'Filter items, recipes, ingredients, or requirements';
     this.searchInput.autocomplete = 'off';
     this.searchInput.spellcheck = false;
     this.searchInput.style.width = '100%';
@@ -97,28 +109,39 @@ export class ItemCatalogPanel {
     });
     searchSection.append(this.searchInput);
 
-    const resultSection = document.createElement('div');
-    resultSection.style.display = 'flex';
-    resultSection.style.flexDirection = 'column';
-    resultSection.style.gap = '6px';
-    resultSection.style.minHeight = '0';
-    this.root.append(resultSection);
-
-    resultSection.append(createSectionLabel('Items'));
-
     this.resultSummaryLine = document.createElement('div');
     this.resultSummaryLine.style.color = '#d6dde8';
     this.resultSummaryLine.style.fontSize = '11px';
     this.resultSummaryLine.style.lineHeight = '1.35';
-    resultSection.append(this.resultSummaryLine);
+    this.root.append(this.resultSummaryLine);
+
+    const itemSection = document.createElement('div');
+    itemSection.style.display = 'flex';
+    itemSection.style.flexDirection = 'column';
+    itemSection.style.gap = '6px';
+    this.root.append(itemSection);
+
+    itemSection.append(createSectionLabel('Items'));
 
     this.itemList = document.createElement('div');
     this.itemList.style.display = 'flex';
     this.itemList.style.flexDirection = 'column';
     this.itemList.style.gap = '6px';
-    this.itemList.style.overflowY = 'auto';
-    this.itemList.style.minHeight = '0';
-    resultSection.append(this.itemList);
+    itemSection.append(this.itemList);
+
+    const recipeSection = document.createElement('div');
+    recipeSection.style.display = 'flex';
+    recipeSection.style.flexDirection = 'column';
+    recipeSection.style.gap = '6px';
+    this.root.append(recipeSection);
+
+    recipeSection.append(createSectionLabel('Recipes'));
+
+    this.recipeList = document.createElement('div');
+    this.recipeList.style.display = 'flex';
+    this.recipeList.style.flexDirection = 'column';
+    this.recipeList.style.gap = '6px';
+    recipeSection.append(this.recipeList);
 
     options.host.append(this.root);
   }
@@ -130,20 +153,6 @@ export class ItemCatalogPanel {
   update(state: ItemCatalogPanelState): void {
     this.searchInput.value = state.searchQuery;
     this.resultSummaryLine.textContent = state.resultSummaryLabel;
-
-    if (state.items.length === 0) {
-      const emptyState = document.createElement('div');
-      emptyState.textContent = state.emptyLabel;
-      emptyState.style.padding = '8px';
-      emptyState.style.borderRadius = '8px';
-      emptyState.style.border = '1px solid rgba(255, 255, 255, 0.08)';
-      emptyState.style.background = 'rgba(255, 255, 255, 0.04)';
-      emptyState.style.color = '#aab7c7';
-      emptyState.style.fontSize = '11px';
-      emptyState.style.lineHeight = '1.35';
-      this.itemList.replaceChildren(emptyState);
-      return;
-    }
 
     const itemCards = state.items.map((item) => {
       const button = document.createElement('button');
@@ -198,10 +207,68 @@ export class ItemCatalogPanel {
       return button;
     });
 
-    this.itemList.replaceChildren(...itemCards);
+    this.itemList.replaceChildren(
+      ...(itemCards.length > 0 ? itemCards : [this.createEmptyStateCard(state.itemEmptyLabel)])
+    );
+
+    const recipeCards = state.recipes.map((recipe) => {
+      const card = document.createElement('div');
+      card.style.display = 'flex';
+      card.style.flexDirection = 'column';
+      card.style.alignItems = 'flex-start';
+      card.style.gap = '2px';
+      card.style.padding = '8px';
+      card.style.borderRadius = '8px';
+      card.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+      card.style.background = 'rgba(255, 255, 255, 0.04)';
+
+      const label = document.createElement('div');
+      label.textContent = recipe.label;
+      label.style.fontSize = '12px';
+      label.style.fontWeight = '700';
+      label.style.color = '#f3f7fb';
+      card.append(label);
+
+      const output = document.createElement('div');
+      output.textContent = recipe.outputLabel;
+      output.style.fontSize = '11px';
+      output.style.color = '#bfe7c8';
+      card.append(output);
+
+      const ingredients = document.createElement('div');
+      ingredients.textContent = recipe.ingredientsLabel;
+      ingredients.style.fontSize = '11px';
+      ingredients.style.color = '#d6dde8';
+      card.append(ingredients);
+
+      const stationRequirement = document.createElement('div');
+      stationRequirement.textContent = recipe.stationRequirementLabel;
+      stationRequirement.style.fontSize = '11px';
+      stationRequirement.style.color = '#aab7c7';
+      card.append(stationRequirement);
+
+      return card;
+    });
+
+    this.recipeList.replaceChildren(
+      ...(recipeCards.length > 0 ? recipeCards : [this.createEmptyStateCard(state.recipeEmptyLabel)])
+    );
   }
 
   getRootElement(): HTMLDivElement {
     return this.root;
+  }
+
+  private createEmptyStateCard(label: string): HTMLDivElement {
+    const emptyState = document.createElement('div');
+    emptyState.textContent = label;
+    emptyState.style.padding = '8px';
+    emptyState.style.borderRadius = '8px';
+    emptyState.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+    emptyState.style.background = 'rgba(255, 255, 255, 0.04)';
+    emptyState.style.color = '#aab7c7';
+    emptyState.style.fontSize = '11px';
+    emptyState.style.lineHeight = '1.35';
+    return emptyState;
   }
 }

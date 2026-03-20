@@ -10,6 +10,7 @@ import {
   findNearestPlayerCraftingStationInRange,
   getPlayerCraftingRecipeDefinition,
   getPlayerCraftingRecipeDefinitions,
+  getPlayerCraftingStationLabel,
   tryCraftPlayerRecipe,
   type PlayerCraftingWorldView
 } from './playerCrafting';
@@ -64,6 +65,7 @@ describe('playerCrafting definitions', () => {
     ]);
     expect(getPlayerCraftingRecipeDefinition('workbench').requiredStationId).toBeNull();
     expect(getPlayerCraftingRecipeDefinition('healing-potion').requiredStationId).toBe('workbench');
+    expect(getPlayerCraftingStationLabel('workbench')).toBe('Workbench');
   });
 });
 

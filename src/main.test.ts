@@ -322,7 +322,7 @@ const testRuntime = vi.hoisted(() => {
     latestItemCatalogPanelState: null as null | {
       searchQuery: string;
       resultSummaryLabel: string;
-      emptyLabel: string;
+      itemEmptyLabel: string;
       items: Array<{
         itemId: string;
         label: string;
@@ -330,6 +330,14 @@ const testRuntime = vi.hoisted(() => {
         inventoryLabel: string;
         enabled: boolean;
         disabledReason?: string | null;
+      }>;
+      recipeEmptyLabel: string;
+      recipes: Array<{
+        recipeId: string;
+        label: string;
+        outputLabel: string;
+        ingredientsLabel: string;
+        stationRequirementLabel: string;
       }>;
     },
     debugEditControlsInitialArmedToolSnapshot: null as null | {
@@ -1739,7 +1747,7 @@ vi.mock('./ui/itemCatalogPanel', () => ({
     update(state: {
       searchQuery: string;
       resultSummaryLabel: string;
-      emptyLabel: string;
+      itemEmptyLabel: string;
       items: Array<{
         itemId: string;
         label: string;
@@ -1748,12 +1756,22 @@ vi.mock('./ui/itemCatalogPanel', () => ({
         enabled: boolean;
         disabledReason?: string | null;
       }>;
+      recipeEmptyLabel: string;
+      recipes: Array<{
+        recipeId: string;
+        label: string;
+        outputLabel: string;
+        ingredientsLabel: string;
+        stationRequirementLabel: string;
+      }>;
     }): void {
       testRuntime.latestItemCatalogPanelState = {
         searchQuery: state.searchQuery,
         resultSummaryLabel: state.resultSummaryLabel,
-        emptyLabel: state.emptyLabel,
-        items: state.items.map((item) => ({ ...item }))
+        itemEmptyLabel: state.itemEmptyLabel,
+        items: state.items.map((item) => ({ ...item })),
+        recipeEmptyLabel: state.recipeEmptyLabel,
+        recipes: state.recipes.map((recipe) => ({ ...recipe }))
       };
     }
 
@@ -7797,7 +7815,7 @@ describe('main.ts shell state orchestration', () => {
     expect(restoredWorld.getTile(1, -1)).toBe(STARTER_WORKBENCH_TILE_ID);
   });
 
-  it('shows the searchable item catalog only while the full debug-edit panel is visible and updates filtered results', async () => {
+  it('shows the searchable item and recipe catalog only while the full debug-edit panel is visible and updates filtered results', async () => {
     await import('./main');
     await flushBootstrap();
 
@@ -7812,24 +7830,44 @@ describe('main.ts shell state orchestration', () => {
     expect(
       testRuntime.latestItemCatalogPanelState?.items.some((item) => item.itemId === 'workbench')
     ).toBe(true);
+    expect(
+      testRuntime.latestItemCatalogPanelState?.recipes.some((recipe) => recipe.recipeId === 'workbench')
+    ).toBe(true);
 
-    testRuntime.itemCatalogPanelInstance?.triggerSearchQueryChange('bug net');
+    testRuntime.itemCatalogPanelInstance?.triggerSearchQueryChange('gel');
 
     expect(testRuntime.latestItemCatalogPanelState).toMatchObject({
-      searchQuery: 'bug net',
-      resultSummaryLabel: '1 matching item'
+      searchQuery: 'gel',
+      resultSummaryLabel: '1 matching item | 1 matching recipe'
     });
     expect(testRuntime.latestItemCatalogPanelState?.items.map((item) => item.itemId)).toEqual([
-      'bug-net'
+      'gel'
     ]);
+    expect(
+      testRuntime.latestItemCatalogPanelState?.recipes.map((recipe) => recipe.recipeId)
+    ).toEqual(['healing-potion']);
+
+    testRuntime.itemCatalogPanelInstance?.triggerSearchQueryChange('nearby workbench');
+
+    expect(testRuntime.latestItemCatalogPanelState).toMatchObject({
+      searchQuery: 'nearby workbench',
+      resultSummaryLabel: '0 matching items | 1 matching recipe',
+      itemEmptyLabel: 'No items match "nearby workbench"'
+    });
+    expect(testRuntime.latestItemCatalogPanelState?.items).toEqual([]);
+    expect(
+      testRuntime.latestItemCatalogPanelState?.recipes.map((recipe) => recipe.recipeId)
+    ).toEqual(['healing-potion']);
 
     testRuntime.itemCatalogPanelInstance?.triggerSearchQueryChange('zzz');
 
     expect(testRuntime.latestItemCatalogPanelState).toMatchObject({
       searchQuery: 'zzz',
-      resultSummaryLabel: '0 matching items',
-      emptyLabel: 'No items match "zzz"',
-      items: []
+      resultSummaryLabel: '0 matching items | 0 matching recipes',
+      itemEmptyLabel: 'No items match "zzz"',
+      recipeEmptyLabel: 'No recipes match "zzz"',
+      items: [],
+      recipes: []
     });
 
     expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
