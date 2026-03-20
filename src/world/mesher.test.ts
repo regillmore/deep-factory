@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { AUTOTILE_DIRECTION_BITS, normalizeAutotileAdjacencyMask } from './autotile';
 import { toTileIndex, worldToChunkCoord, worldToLocalTile } from './chunkMath';
 import { CHUNK_SIZE, TILE_SIZE } from './constants';
-import { CHUNK_MESH_FLOATS_PER_VERTEX, buildChunkMesh } from './mesher';
+import {
+  CHUNK_MESH_FLOATS_PER_VERTEX,
+  buildChunkMesh,
+  insetTileUvRectForAtlasSampling
+} from './mesher';
 import {
   LIQUID_RENDER_CARDINAL_MASK_COUNT,
   atlasIndexToUvRect,
@@ -44,6 +48,8 @@ const setChunkLiquidTile = (
 };
 
 const atlasUvRect = (atlasTileIndex: number) => atlasIndexToUvRect(atlasTileIndex);
+const sampleUvRect = (uvRect: { u0: number; v0: number; u1: number; v1: number }) =>
+  insetTileUvRectForAtlasSampling(uvRect);
 const toFloat32 = (value: number): number => Math.fround(value);
 const FLOATS_PER_TILE_QUAD = 6 * CHUNK_MESH_FLOATS_PER_VERTEX;
 
@@ -134,7 +140,7 @@ const expectSingleQuadUv = (
   vertices: Float32Array,
   uvRect: { u0: number; v0: number; u1: number; v1: number }
 ): void => {
-  const { u0, v0, u1, v1 } = uvRect;
+  const { u0, v0, u1, v1 } = sampleUvRect(uvRect);
   const expectedU0 = toFloat32(u0);
   const expectedV0 = toFloat32(v0);
   const expectedU1 = toFloat32(u1);
@@ -196,7 +202,7 @@ const expectSingleQuadLiquidUv = (
   uvRect: { u0: number; v0: number; u1: number; v1: number },
   topHeights: { topLeft: number; topRight: number }
 ): void => {
-  const { u0, v0, u1, v1 } = uvRect;
+  const { u0, v0, u1, v1 } = sampleUvRect(uvRect);
   const bottomLeftV = v0 + (v1 - v0) * topHeights.topLeft;
   const bottomRightV = v0 + (v1 - v0) * topHeights.topRight;
   const expectedUvs: Array<{ u: number; v: number }> = [
@@ -361,6 +367,30 @@ describe('buildChunkMesh autotile UV selection', () => {
 
     expect(mesh.vertexCount).toBe(6);
     expectSingleQuadUvRect(mesh.vertices, 14);
+  });
+
+  it('insets atlas UV sampling by half a texel so neighboring atlas regions cannot bleed in', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 3);
+
+    const mesh = buildChunkMesh(chunk);
+    const rawUvRect = atlasUvRect(14);
+    const sampledUvRect = sampleUvRect(rawUvRect);
+
+    expect(sampledUvRect).toEqual({
+      u0: rawUvRect.u0 + 0.5 / 128,
+      v0: rawUvRect.v0 + 0.5 / 64,
+      u1: rawUvRect.u1 - 0.5 / 128,
+      v1: rawUvRect.v1 - 0.5 / 64
+    });
+    expect(Array.from(mesh.vertices.slice(2, 4))).toEqual([
+      toFloat32(sampledUvRect.u0),
+      toFloat32(sampledUvRect.v0)
+    ]);
+    expect(Array.from(mesh.vertices.slice(27, 29))).toEqual([
+      toFloat32(sampledUvRect.u0),
+      toFloat32(sampledUvRect.v1)
+    ]);
   });
 
   it('uses metadata uvRect for non-autotile tiles', () => {

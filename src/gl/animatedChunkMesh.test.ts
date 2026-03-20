@@ -1,44 +1,48 @@
 import { describe, expect, it } from 'vitest';
 
 import { createAnimatedChunkMeshState, applyAnimatedChunkMeshFrameAtElapsedMs } from './animatedChunkMesh';
+import { insetTileUvRectForAtlasSampling, setChunkMeshTileQuadUvRect } from '../world/mesher';
 import { atlasIndexToUvRect, parseTileMetadataRegistry } from '../world/tileMetadata';
 
 const toFloat32 = (value: number): number => Math.fround(value);
+const sampledAtlasUvRect = (atlasIndex: number) =>
+  insetTileUvRectForAtlasSampling(atlasIndexToUvRect(atlasIndex));
 
 const createSingleQuadVertices = (atlasIndex: number, lightLevel = 7): Float32Array => {
-  const { u0, v0, u1, v1 } = atlasIndexToUvRect(atlasIndex);
-  return new Float32Array([
+  const vertices = new Float32Array([
     0,
     0,
-    u0,
-    v0,
+    0,
+    0,
     lightLevel,
     16,
     0,
-    u1,
-    v0,
+    0,
+    0,
     lightLevel,
     16,
     16,
-    u1,
-    v1,
+    0,
+    0,
     lightLevel,
     0,
     0,
-    u0,
-    v0,
+    0,
+    0,
     lightLevel,
     16,
     16,
-    u1,
-    v1,
+    0,
+    0,
     lightLevel,
     0,
     16,
-    u0,
-    v1,
+    0,
+    0,
     lightLevel
   ]);
+  setChunkMeshTileQuadUvRect(vertices, 0, atlasIndexToUvRect(atlasIndex));
+  return vertices;
 };
 
 const expectSingleQuadLiquidUv = (
@@ -46,7 +50,7 @@ const expectSingleQuadLiquidUv = (
   atlasIndex: number,
   topHeights: { topLeft: number; topRight: number }
 ): void => {
-  const { u0, v0, u1, v1 } = atlasIndexToUvRect(atlasIndex);
+  const { u0, v0, u1, v1 } = sampledAtlasUvRect(atlasIndex);
   const bottomLeftV = v0 + (v1 - v0) * topHeights.topLeft;
   const bottomRightV = v0 + (v1 - v0) * topHeights.topRight;
 
@@ -105,13 +109,14 @@ describe('animated chunk mesh helpers', () => {
       changedLiquidQuadCount: 0
     });
     expect(animatedMesh.animatedTiles[0]?.frameIndex).toBe(1);
+    const frameOneUvRect = sampledAtlasUvRect(15);
     expect(Array.from(vertices.slice(2, 4))).toEqual([
-      toFloat32(atlasIndexToUvRect(15).u0),
-      toFloat32(atlasIndexToUvRect(15).v0)
+      toFloat32(frameOneUvRect.u0),
+      toFloat32(frameOneUvRect.v0)
     ]);
     expect(Array.from(vertices.slice(27, 29))).toEqual([
-      toFloat32(atlasIndexToUvRect(15).u0),
-      toFloat32(atlasIndexToUvRect(15).v1)
+      toFloat32(frameOneUvRect.u0),
+      toFloat32(frameOneUvRect.v1)
     ]);
 
     expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 359, registry)).toEqual({
@@ -123,9 +128,10 @@ describe('animated chunk mesh helpers', () => {
       changedLiquidQuadCount: 0
     });
     expect(animatedMesh.animatedTiles[0]?.frameIndex).toBe(0);
+    const frameZeroUvRect = sampledAtlasUvRect(14);
     expect(Array.from(vertices.slice(2, 4))).toEqual([
-      toFloat32(atlasIndexToUvRect(14).u0),
-      toFloat32(atlasIndexToUvRect(14).v0)
+      toFloat32(frameZeroUvRect.u0),
+      toFloat32(frameZeroUvRect.v0)
     ]);
   });
 
@@ -171,9 +177,10 @@ describe('animated chunk mesh helpers', () => {
       changedLiquidQuadCount: 1
     });
     expect(animatedMesh.animatedTiles[0]?.frameIndex).toBe(1);
+    const frameOneUvRect = sampledAtlasUvRect(15);
     expect(Array.from(vertices.slice(2, 4))).toEqual([
-      toFloat32(atlasIndexToUvRect(15).u0),
-      toFloat32(atlasIndexToUvRect(15).v0)
+      toFloat32(frameOneUvRect.u0),
+      toFloat32(frameOneUvRect.v0)
     ]);
 
     expect(applyAnimatedChunkMeshFrameAtElapsedMs(animatedMesh, 360, registry)).toEqual({
@@ -181,9 +188,10 @@ describe('animated chunk mesh helpers', () => {
       changedLiquidQuadCount: 1
     });
     expect(animatedMesh.animatedTiles[0]?.frameIndex).toBe(0);
+    const frameZeroUvRect = sampledAtlasUvRect(14);
     expect(Array.from(vertices.slice(27, 29))).toEqual([
-      toFloat32(atlasIndexToUvRect(14).u0),
-      toFloat32(atlasIndexToUvRect(14).v1)
+      toFloat32(frameZeroUvRect.u0),
+      toFloat32(frameZeroUvRect.v1)
     ]);
   });
 

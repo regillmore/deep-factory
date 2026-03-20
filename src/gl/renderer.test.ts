@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Camera2D } from '../core/camera2d';
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL, TILE_SIZE } from '../world/constants';
 import { createDroppedItemState, type DroppedItemState } from '../world/droppedItem';
+import { insetTileUvRectForAtlasSampling } from '../world/mesher';
 import { resolveProceduralTerrainTileId } from '../world/proceduralTerrain';
 import {
   createPlayerState,
@@ -111,6 +112,8 @@ const createMockCanvas = (gl: WebGL2RenderingContext): HTMLCanvasElement =>
   }) as unknown as HTMLCanvasElement;
 
 const toFloat32 = (value: number): number => Math.fround(value);
+const sampleUvRect = (uvRect: { u0: number; v0: number; u1: number; v1: number }) =>
+  insetTileUvRectForAtlasSampling(uvRect);
 
 const expectStandalonePlayerUniformValues = (
   uniformCalls: Array<[WebGLUniformLocation | null, number]>,
@@ -3588,7 +3591,7 @@ describe('Renderer atlas telemetry', () => {
     renderer.render(camera, { timeMs: 180 });
     expect(bufferData).toHaveBeenCalledTimes(1);
     const frameOneVertices = bufferData.mock.calls[0]?.[1] as Float32Array | undefined;
-    const frameOneUv = atlasIndexToUvRect(15);
+    const frameOneUv = sampleUvRect(atlasIndexToUvRect(15));
     expect(frameOneVertices).toBeInstanceOf(Float32Array);
     expect(Array.from(frameOneVertices?.slice(2, 4) ?? [])).toEqual([
       toFloat32(frameOneUv.u0),
@@ -3615,7 +3618,7 @@ describe('Renderer atlas telemetry', () => {
     renderer.render(camera, { timeMs: 360 });
     expect(bufferData).toHaveBeenCalledTimes(2);
     const frameZeroVertices = bufferData.mock.calls[1]?.[1] as Float32Array | undefined;
-    const frameZeroUv = atlasIndexToUvRect(14);
+    const frameZeroUv = sampleUvRect(atlasIndexToUvRect(14));
     expect(Array.from(frameZeroVertices?.slice(2, 4) ?? [])).toEqual([
       toFloat32(frameZeroUv.u0),
       toFloat32(frameZeroUv.v0)
@@ -3668,7 +3671,7 @@ describe('Renderer atlas telemetry', () => {
     renderer.render(camera, { timeMs: 180 });
     expect(bufferData).toHaveBeenCalledTimes(1);
     const frameOneVertices = bufferData.mock.calls[0]?.[1] as Float32Array | undefined;
-    const frameOneUv = resolveAnimatedTileRenderFrameUvRect(6, 1);
+    const frameOneUv = sampleUvRect(resolveAnimatedTileRenderFrameUvRect(6, 1)!);
     expect(frameOneUv).not.toBeNull();
     expect(frameOneVertices).toBeInstanceOf(Float32Array);
     expect(Array.from(frameOneVertices?.slice(2, 4) ?? [])).toEqual([
@@ -3694,7 +3697,7 @@ describe('Renderer atlas telemetry', () => {
     renderer.render(camera, { timeMs: 360 });
     expect(bufferData).toHaveBeenCalledTimes(2);
     const frameZeroVertices = bufferData.mock.calls[1]?.[1] as Float32Array | undefined;
-    const frameZeroUv = resolveAnimatedTileRenderFrameUvRect(6, 0);
+    const frameZeroUv = sampleUvRect(resolveAnimatedTileRenderFrameUvRect(6, 0)!);
     expect(frameZeroUv).not.toBeNull();
     expect(Array.from(frameZeroVertices?.slice(2, 4) ?? [])).toEqual([
       toFloat32(frameZeroUv!.u0),
@@ -3748,7 +3751,9 @@ describe('Renderer atlas telemetry', () => {
     expect(bufferData).toHaveBeenCalledTimes(1);
     const frameOneVertices = bufferData.mock.calls[0]?.[1] as Float32Array | undefined;
     const liquidCardinalMask = 0;
-    const frameOneUv = resolveLiquidRenderVariantUvRectAtElapsedMs(7, liquidCardinalMask, 180);
+    const frameOneUv = sampleUvRect(
+      resolveLiquidRenderVariantUvRectAtElapsedMs(7, liquidCardinalMask, 180)!
+    );
     expect(frameOneUv).not.toBeNull();
     expect(frameOneVertices).toBeInstanceOf(Float32Array);
     expect(Array.from(frameOneVertices?.slice(2, 4) ?? [])).toEqual([
@@ -3772,7 +3777,9 @@ describe('Renderer atlas telemetry', () => {
     renderer.render(camera, { timeMs: 360 });
     expect(bufferData).toHaveBeenCalledTimes(2);
     const frameZeroVertices = bufferData.mock.calls[1]?.[1] as Float32Array | undefined;
-    const frameZeroUv = resolveLiquidRenderVariantUvRectAtElapsedMs(7, liquidCardinalMask, 360);
+    const frameZeroUv = sampleUvRect(
+      resolveLiquidRenderVariantUvRectAtElapsedMs(7, liquidCardinalMask, 360)!
+    );
     expect(frameZeroUv).not.toBeNull();
     expect(Array.from(frameZeroVertices?.slice(2, 4) ?? [])).toEqual([
       toFloat32(frameZeroUv!.u0),
@@ -3907,7 +3914,7 @@ describe('Renderer atlas telemetry', () => {
     expect(dynamicUploads).toHaveLength(1);
 
     const rebuiltAnimatedVertices = dynamicUploads[0]?.[1] as Float32Array | undefined;
-    const frameZeroUv = atlasIndexToUvRect(14);
+    const frameZeroUv = sampleUvRect(atlasIndexToUvRect(14));
     expect(rebuiltAnimatedVertices).toBeInstanceOf(Float32Array);
     expect(Array.from(rebuiltAnimatedVertices?.slice(2, 4) ?? [])).toEqual([
       toFloat32(frameZeroUv.u0),
@@ -3963,9 +3970,12 @@ describe('Renderer atlas telemetry', () => {
     expect(dynamicUploads).toHaveLength(2);
 
     const rebuiltAnimatedVertices = dynamicUploads.at(-1)?.[1] as Float32Array | undefined;
-    const frameOneUv = atlasIndexToUvRect(15);
+    const frameOneUv = sampleUvRect(atlasIndexToUvRect(15));
     expect(rebuiltAnimatedVertices).toBeInstanceOf(Float32Array);
-    expect(Array.from(rebuiltAnimatedVertices?.slice(2, 4) ?? [])).toEqual([frameOneUv.u0, frameOneUv.v0]);
+    expect(Array.from(rebuiltAnimatedVertices?.slice(2, 4) ?? [])).toEqual([
+      toFloat32(frameOneUv.u0),
+      toFloat32(frameOneUv.v0)
+    ]);
     expect(renderer.telemetry.meshBuildQueueLength).toBe(0);
     expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
     expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);

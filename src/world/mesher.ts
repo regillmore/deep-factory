@@ -1,4 +1,5 @@
 import { buildAutotileAdjacencyMask } from './autotile';
+import { AUTHORED_ATLAS_HEIGHT, AUTHORED_ATLAS_WIDTH } from './authoredAtlasLayout';
 import { CHUNK_SIZE, TILE_SIZE } from './constants';
 import { toTileIndex } from './chunkMath';
 import {
@@ -59,6 +60,25 @@ export const CHUNK_MESH_UV_FLOAT_OFFSET = 2;
 export const CHUNK_MESH_LIGHT_FLOAT_OFFSET = 4;
 const VERTICES_PER_TILE_QUAD = 6;
 const FLOATS_PER_TILE_QUAD = CHUNK_MESH_FLOATS_PER_VERTEX * VERTICES_PER_TILE_QUAD;
+const ATLAS_HALF_TEXEL_U = 0.5 / AUTHORED_ATLAS_WIDTH;
+const ATLAS_HALF_TEXEL_V = 0.5 / AUTHORED_ATLAS_HEIGHT;
+
+const insetUvAxisForAtlasSampling = (
+  start: number,
+  end: number,
+  halfTexelSize: number
+): [start: number, end: number] => {
+  const span = Math.max(0, end - start);
+  const inset = Math.min(halfTexelSize, span * 0.5);
+  return [start + inset, end - inset];
+};
+
+export const insetTileUvRectForAtlasSampling = (uvRect: TileUvRect): TileUvRect => {
+  const [u0, u1] = insetUvAxisForAtlasSampling(uvRect.u0, uvRect.u1, ATLAS_HALF_TEXEL_U);
+  const [v0, v1] = insetUvAxisForAtlasSampling(uvRect.v0, uvRect.v1, ATLAS_HALF_TEXEL_V);
+
+  return { u0, v0, u1, v1 };
+};
 
 const usesTerrainAutotile = (tileId: number, tileMetadataRegistry: TileMetadataRegistry): boolean =>
   hasTerrainAutotileMetadata(tileId, tileMetadataRegistry);
@@ -272,7 +292,10 @@ export const setChunkMeshTileQuadUvRect = (
   uvRect: TileUvRect,
   liquidTopHeights: LiquidSurfaceTopHeights | null = null
 ): void => {
-  const { u0, v0, u1, v1 } = uvRect;
+  // Sample from texel centers instead of exact atlas edges so fractional screen scaling
+  // cannot pull color from tightly packed neighboring atlas regions.
+  const sampledUvRect = insetTileUvRectForAtlasSampling(uvRect);
+  const { u0, v0, u1, v1 } = sampledUvRect;
   const vertex0UvOffset = vertexFloatOffset + CHUNK_MESH_UV_FLOAT_OFFSET;
   const vertex1UvOffset = vertex0UvOffset + CHUNK_MESH_FLOATS_PER_VERTEX;
   const vertex2UvOffset = vertex1UvOffset + CHUNK_MESH_FLOATS_PER_VERTEX;
@@ -282,7 +305,9 @@ export const setChunkMeshTileQuadUvRect = (
   const topLeftV = v0;
   const topRightV = v0;
   const bottomVCrops =
-    liquidTopHeights === null ? null : resolveLiquidSurfaceBottomVCrops(uvRect, liquidTopHeights);
+    liquidTopHeights === null
+      ? null
+      : resolveLiquidSurfaceBottomVCrops(sampledUvRect, liquidTopHeights);
   const bottomLeftV =
     bottomVCrops === null ? v1 : bottomVCrops.bottomLeftV;
   const bottomRightV =
