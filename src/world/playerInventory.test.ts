@@ -8,13 +8,6 @@ import {
   createEmptyPlayerInventoryState,
   createPlayerInventoryItemStack,
   createPlayerInventoryState,
-  ensurePlayerInventoryHasStarterHeartCrystal,
-  ensurePlayerInventoryHasStarterBugNet,
-  ensurePlayerInventoryHasStarterHealingPotions,
-  ensurePlayerInventoryHasStarterPickaxe,
-  ensurePlayerInventoryHasStarterSpear,
-  ensurePlayerInventoryHasStarterSword,
-  ensurePlayerInventoryHasStarterUmbrella,
   getPlayerInventoryItemDefinition,
   getPlayerInventoryItemDefinitions,
   getPlayerInventoryItemAmount,
@@ -34,26 +27,17 @@ describe('playerInventory', () => {
     });
   });
 
-  it('creates the default starter hotbar loadout', () => {
+  it('creates the default hotbar loadout as empty starter inventory', () => {
     expect(createDefaultPlayerInventoryState()).toEqual({
-      hotbar: [
-        { itemId: 'pickaxe', amount: 1 },
-        { itemId: 'dirt-block', amount: 64 },
-        { itemId: 'torch', amount: 20 },
-        { itemId: 'rope', amount: 24 },
-        { itemId: 'healing-potion', amount: 3 },
-        { itemId: 'heart-crystal', amount: 1 },
-        { itemId: 'sword', amount: 1 },
-        { itemId: 'umbrella', amount: 1 },
-        { itemId: 'bug-net', amount: 1 },
-        { itemId: 'spear', amount: 1 }
-      ],
+      hotbar: Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT }, () => null),
       selectedHotbarSlotIndex: 0
     });
   });
 
   it('clones nested hotbar stacks when the inventory is copied', () => {
-    const state = createDefaultPlayerInventoryState();
+    const state = createPlayerInventoryState({
+      hotbar: [{ itemId: 'pickaxe', amount: 1 }, ...Array.from({ length: 9 }, () => null)]
+    });
     const clone = clonePlayerInventoryState(state);
 
     state.hotbar[0]!.amount = 999;
@@ -185,7 +169,7 @@ describe('playerInventory', () => {
   });
 
   it('updates the selected hotbar slot without mutating the source state', () => {
-    const state = createDefaultPlayerInventoryState();
+    const state = createEmptyPlayerInventoryState();
 
     const nextState = setPlayerInventorySelectedHotbarSlot(state, 4);
 
@@ -467,242 +451,6 @@ describe('playerInventory', () => {
       'sword',
       'spear'
     ]);
-  });
-
-  it('fills the first empty slot with a starter pickaxe when one is missing', () => {
-    const state = createPlayerInventoryState({
-      hotbar: [
-        { itemId: 'dirt-block', amount: 64 },
-        { itemId: 'torch', amount: 20 },
-        null,
-        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 3 }, () => null)
-      ],
-      selectedHotbarSlotIndex: 1
-    });
-
-    expect(ensurePlayerInventoryHasStarterPickaxe(state)).toEqual({
-      hotbar: [
-        { itemId: 'dirt-block', amount: 64 },
-        { itemId: 'torch', amount: 20 },
-        { itemId: 'pickaxe', amount: 1 },
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null
-      ],
-      selectedHotbarSlotIndex: 1
-    });
-  });
-
-  it('leaves inventories unchanged when they already contain a pickaxe or have no empty slot', () => {
-    const alreadyHasPickaxe = createDefaultPlayerInventoryState();
-    const fullWithoutPickaxe = createPlayerInventoryState({
-      hotbar: Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT }, (_, index) => ({
-        itemId: index % 2 === 0 ? ('dirt-block' as const) : ('torch' as const),
-        amount: 1
-      }))
-    });
-
-    expect(ensurePlayerInventoryHasStarterPickaxe(alreadyHasPickaxe)).toEqual(alreadyHasPickaxe);
-    expect(ensurePlayerInventoryHasStarterPickaxe(fullWithoutPickaxe)).toEqual(fullWithoutPickaxe);
-  });
-
-  it('fills the first empty slot with starter healing potions when they are missing', () => {
-    const state = createPlayerInventoryState({
-      hotbar: [
-        { itemId: 'pickaxe', amount: 1 },
-        { itemId: 'dirt-block', amount: 64 },
-        { itemId: 'torch', amount: 20 },
-        { itemId: 'rope', amount: 24 },
-        null,
-        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 5 }, () => null)
-      ],
-      selectedHotbarSlotIndex: 3
-    });
-
-    expect(ensurePlayerInventoryHasStarterHealingPotions(state)).toEqual({
-      hotbar: [
-        { itemId: 'pickaxe', amount: 1 },
-        { itemId: 'dirt-block', amount: 64 },
-        { itemId: 'torch', amount: 20 },
-        { itemId: 'rope', amount: 24 },
-        { itemId: 'healing-potion', amount: 3 },
-        null,
-        null,
-        null,
-        null,
-        null
-      ],
-      selectedHotbarSlotIndex: 3
-    });
-  });
-
-  it('fills the first empty slot with a starter heart crystal when it is missing', () => {
-    const state = createPlayerInventoryState({
-      hotbar: [
-        { itemId: 'pickaxe', amount: 1 },
-        { itemId: 'dirt-block', amount: 64 },
-        { itemId: 'torch', amount: 20 },
-        { itemId: 'rope', amount: 24 },
-        { itemId: 'healing-potion', amount: 3 },
-        null,
-        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 6 }, () => null)
-      ],
-      selectedHotbarSlotIndex: 4
-    });
-
-    expect(ensurePlayerInventoryHasStarterHeartCrystal(state)).toEqual({
-      hotbar: [
-        { itemId: 'pickaxe', amount: 1 },
-        { itemId: 'dirt-block', amount: 64 },
-        { itemId: 'torch', amount: 20 },
-        { itemId: 'rope', amount: 24 },
-        { itemId: 'healing-potion', amount: 3 },
-        { itemId: 'heart-crystal', amount: 1 },
-        null,
-        null,
-        null,
-        null
-      ],
-      selectedHotbarSlotIndex: 4
-    });
-  });
-
-  it('fills the first empty slot with a starter sword when it is missing', () => {
-    const state = createPlayerInventoryState({
-      hotbar: [
-        { itemId: 'pickaxe', amount: 1 },
-        { itemId: 'dirt-block', amount: 64 },
-        { itemId: 'torch', amount: 20 },
-        { itemId: 'rope', amount: 24 },
-        { itemId: 'healing-potion', amount: 3 },
-        { itemId: 'heart-crystal', amount: 1 },
-        null,
-        ...Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT - 7 }, () => null)
-      ],
-      selectedHotbarSlotIndex: 5
-    });
-
-    expect(ensurePlayerInventoryHasStarterSword(state)).toEqual({
-      hotbar: [
-        { itemId: 'pickaxe', amount: 1 },
-        { itemId: 'dirt-block', amount: 64 },
-        { itemId: 'torch', amount: 20 },
-        { itemId: 'rope', amount: 24 },
-        { itemId: 'healing-potion', amount: 3 },
-        { itemId: 'heart-crystal', amount: 1 },
-        { itemId: 'sword', amount: 1 },
-        null,
-        null,
-        null
-      ],
-      selectedHotbarSlotIndex: 5
-    });
-  });
-
-  it('fills the first empty slot with a starter umbrella when it is missing', () => {
-    const state = createPlayerInventoryState({
-      hotbar: [
-        { itemId: 'pickaxe', amount: 1 },
-        { itemId: 'dirt-block', amount: 64 },
-        { itemId: 'torch', amount: 20 },
-        { itemId: 'rope', amount: 24 },
-        { itemId: 'healing-potion', amount: 3 },
-        { itemId: 'heart-crystal', amount: 1 },
-        { itemId: 'sword', amount: 1 },
-        null,
-        { itemId: 'gel', amount: 2 },
-        null
-      ],
-      selectedHotbarSlotIndex: 8
-    });
-
-    expect(ensurePlayerInventoryHasStarterUmbrella(state)).toEqual({
-      hotbar: [
-        { itemId: 'pickaxe', amount: 1 },
-        { itemId: 'dirt-block', amount: 64 },
-        { itemId: 'torch', amount: 20 },
-        { itemId: 'rope', amount: 24 },
-        { itemId: 'healing-potion', amount: 3 },
-        { itemId: 'heart-crystal', amount: 1 },
-        { itemId: 'sword', amount: 1 },
-        { itemId: 'umbrella', amount: 1 },
-        { itemId: 'gel', amount: 2 },
-        null
-      ],
-      selectedHotbarSlotIndex: 8
-    });
-  });
-
-  it('fills the last empty slot with a starter spear when it is missing', () => {
-    const state = createPlayerInventoryState({
-      hotbar: [
-        { itemId: 'pickaxe', amount: 1 },
-        { itemId: 'dirt-block', amount: 64 },
-        { itemId: 'torch', amount: 20 },
-        { itemId: 'rope', amount: 24 },
-        { itemId: 'healing-potion', amount: 3 },
-        { itemId: 'heart-crystal', amount: 1 },
-        { itemId: 'sword', amount: 1 },
-        { itemId: 'umbrella', amount: 1 },
-        { itemId: 'gel', amount: 2 },
-        null
-      ],
-      selectedHotbarSlotIndex: 8
-    });
-
-    expect(ensurePlayerInventoryHasStarterSpear(state)).toEqual({
-      hotbar: [
-        { itemId: 'pickaxe', amount: 1 },
-        { itemId: 'dirt-block', amount: 64 },
-        { itemId: 'torch', amount: 20 },
-        { itemId: 'rope', amount: 24 },
-        { itemId: 'healing-potion', amount: 3 },
-        { itemId: 'heart-crystal', amount: 1 },
-        { itemId: 'sword', amount: 1 },
-        { itemId: 'umbrella', amount: 1 },
-        { itemId: 'gel', amount: 2 },
-        { itemId: 'spear', amount: 1 }
-      ],
-      selectedHotbarSlotIndex: 8
-    });
-  });
-
-  it('fills the first empty slot with a starter bug net when it is missing', () => {
-    const state = createPlayerInventoryState({
-      hotbar: [
-        { itemId: 'pickaxe', amount: 1 },
-        { itemId: 'dirt-block', amount: 64 },
-        { itemId: 'torch', amount: 20 },
-        { itemId: 'rope', amount: 24 },
-        { itemId: 'healing-potion', amount: 3 },
-        { itemId: 'heart-crystal', amount: 1 },
-        { itemId: 'sword', amount: 1 },
-        { itemId: 'umbrella', amount: 1 },
-        null,
-        { itemId: 'spear', amount: 1 }
-      ],
-      selectedHotbarSlotIndex: 7
-    });
-
-    expect(ensurePlayerInventoryHasStarterBugNet(state)).toEqual({
-      hotbar: [
-        { itemId: 'pickaxe', amount: 1 },
-        { itemId: 'dirt-block', amount: 64 },
-        { itemId: 'torch', amount: 20 },
-        { itemId: 'rope', amount: 24 },
-        { itemId: 'healing-potion', amount: 3 },
-        { itemId: 'heart-crystal', amount: 1 },
-        { itemId: 'sword', amount: 1 },
-        { itemId: 'umbrella', amount: 1 },
-        { itemId: 'bug-net', amount: 1 },
-        { itemId: 'spear', amount: 1 }
-      ],
-      selectedHotbarSlotIndex: 7
-    });
   });
 
   it('rejects invalid hotbar lengths, slot indices, and stack amounts', () => {

@@ -44,7 +44,9 @@ describe('createWorldSaveEnvelope', () => {
       fallDamageRecoverySecondsRemaining: 0.2
     });
     const standalonePlayerDeathState = createPlayerDeathState(0.5);
-    const standalonePlayerInventoryState = createDefaultPlayerInventoryState();
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [{ itemId: 'torch', amount: 6 }, ...Array.from({ length: 9 }, () => null)]
+    });
     const standalonePlayerEquipmentState = createPlayerEquipmentState({
       head: 'starter-helmet',
       legs: 'starter-greaves'
@@ -93,8 +95,8 @@ describe('createWorldSaveEnvelope', () => {
     expect(envelope.session.standalonePlayerState?.position.x).toBe(64);
     expect(envelope.session.standalonePlayerDeathState?.respawnSecondsRemaining).toBe(0.5);
     expect(envelope.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
-      itemId: 'pickaxe',
-      amount: 1
+      itemId: 'torch',
+      amount: 6
     });
     expect(envelope.session.standalonePlayerEquipmentState).toEqual(
       createPlayerEquipmentState({
@@ -143,8 +145,10 @@ describe('createWorldSaveEnvelope', () => {
   it('preserves a placed starter dirt block together with the consumed hotbar stack count', () => {
     const world = new TileWorld(0);
     expect(world.setTile(1, -1, 9)).toBe(true);
-    const standalonePlayerInventoryState = createDefaultPlayerInventoryState();
-    standalonePlayerInventoryState.hotbar[1]!.amount = 63;
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [null, { itemId: 'dirt-block', amount: 63 }, ...Array.from({ length: 8 }, () => null)],
+      selectedHotbarSlotIndex: 1
+    });
 
     const decoded = decodeWorldSaveEnvelope(
       JSON.parse(
@@ -214,8 +218,16 @@ describe('createWorldSaveEnvelope', () => {
   it('preserves a placed rope tile together with the consumed rope stack count', () => {
     const world = new TileWorld(0);
     expect(world.setTile(1, -1, STARTER_ROPE_TILE_ID)).toBe(true);
-    const standalonePlayerInventoryState = createDefaultPlayerInventoryState();
-    standalonePlayerInventoryState.hotbar[3]!.amount = 23;
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [
+        null,
+        null,
+        null,
+        { itemId: 'rope', amount: 23 },
+        ...Array.from({ length: 6 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 3
+    });
 
     const decoded = decodeWorldSaveEnvelope(
       JSON.parse(
@@ -640,7 +652,7 @@ describe('decodeWorldSaveEnvelope', () => {
     expect(decoded.session.droppedItemStates).toEqual([]);
   });
 
-  it('adds a starter pickaxe into the first empty slot when older save payloads lack one', () => {
+  it('leaves older partial inventory payloads unchanged instead of backfilling starter items', () => {
     const world = new TileWorld(0);
 
     const decoded = decodeWorldSaveEnvelope({
@@ -670,280 +682,15 @@ describe('decodeWorldSaveEnvelope', () => {
         { itemId: 'dirt-block', amount: 64 },
         { itemId: 'torch', amount: 20 },
         { itemId: 'rope', amount: 24 },
-        { itemId: 'pickaxe', amount: 1 },
-        { itemId: 'healing-potion', amount: 3 },
-        { itemId: 'heart-crystal', amount: 1 },
-        { itemId: 'sword', amount: 1 },
-        { itemId: 'umbrella', amount: 1 },
-        { itemId: 'bug-net', amount: 1 },
-        { itemId: 'spear', amount: 1 }
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
       ],
       selectedHotbarSlotIndex: 2
-    });
-  });
-
-  it('adds starter healing potions into the first empty slot when older save payloads lack them', () => {
-    const world = new TileWorld(0);
-
-    const decoded = decodeWorldSaveEnvelope({
-      kind: WORLD_SAVE_ENVELOPE_KIND,
-      version: WORLD_SAVE_ENVELOPE_VERSION,
-      migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
-      session: {
-        standalonePlayerState: createPlayerState(),
-        standalonePlayerDeathState: null,
-        standalonePlayerInventoryState: {
-          hotbar: [
-            { itemId: 'pickaxe', amount: 1 },
-            { itemId: 'dirt-block', amount: 64 },
-            { itemId: 'torch', amount: 20 },
-            { itemId: 'rope', amount: 24 },
-            null,
-            ...Array.from({ length: 5 }, () => null)
-          ],
-          selectedHotbarSlotIndex: 0
-        },
-        droppedItemStates: [],
-        cameraFollowOffset: { x: 0, y: 0 }
-      },
-      worldSnapshot: world.createSnapshot()
-    });
-
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[4]).toEqual({
-      itemId: 'healing-potion',
-      amount: 3
-    });
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[5]).toEqual({
-      itemId: 'heart-crystal',
-      amount: 1
-    });
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
-      itemId: 'sword',
-      amount: 1
-    });
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
-      itemId: 'umbrella',
-      amount: 1
-    });
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[8]).toEqual({
-      itemId: 'bug-net',
-      amount: 1
-    });
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[9]).toEqual({
-      itemId: 'spear',
-      amount: 1
-    });
-  });
-
-  it('adds a starter heart crystal into the first empty slot when older save payloads lack one', () => {
-    const world = new TileWorld(0);
-
-    const decoded = decodeWorldSaveEnvelope({
-      kind: WORLD_SAVE_ENVELOPE_KIND,
-      version: WORLD_SAVE_ENVELOPE_VERSION,
-      migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
-      session: {
-        standalonePlayerState: createPlayerState(),
-        standalonePlayerDeathState: null,
-        standalonePlayerInventoryState: {
-          hotbar: [
-            { itemId: 'pickaxe', amount: 1 },
-            { itemId: 'dirt-block', amount: 64 },
-            { itemId: 'torch', amount: 20 },
-            { itemId: 'rope', amount: 24 },
-            { itemId: 'healing-potion', amount: 3 },
-            null,
-            ...Array.from({ length: 4 }, () => null)
-          ],
-          selectedHotbarSlotIndex: 0
-        },
-        droppedItemStates: [],
-        cameraFollowOffset: { x: 0, y: 0 }
-      },
-      worldSnapshot: world.createSnapshot()
-    });
-
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[5]).toEqual({
-      itemId: 'heart-crystal',
-      amount: 1
-    });
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
-      itemId: 'sword',
-      amount: 1
-    });
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
-      itemId: 'umbrella',
-      amount: 1
-    });
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[8]).toEqual({
-      itemId: 'bug-net',
-      amount: 1
-    });
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[9]).toEqual({
-      itemId: 'spear',
-      amount: 1
-    });
-  });
-
-  it('adds a starter sword into the first empty slot when older save payloads lack one', () => {
-    const world = new TileWorld(0);
-
-    const decoded = decodeWorldSaveEnvelope({
-      kind: WORLD_SAVE_ENVELOPE_KIND,
-      version: WORLD_SAVE_ENVELOPE_VERSION,
-      migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
-      session: {
-        standalonePlayerState: createPlayerState(),
-        standalonePlayerDeathState: null,
-        standalonePlayerInventoryState: {
-          hotbar: [
-            { itemId: 'pickaxe', amount: 1 },
-            { itemId: 'dirt-block', amount: 64 },
-            { itemId: 'torch', amount: 20 },
-            { itemId: 'rope', amount: 24 },
-            { itemId: 'healing-potion', amount: 3 },
-            { itemId: 'heart-crystal', amount: 1 },
-            null,
-            ...Array.from({ length: 3 }, () => null)
-          ],
-          selectedHotbarSlotIndex: 0
-        },
-        droppedItemStates: [],
-        cameraFollowOffset: { x: 0, y: 0 }
-      },
-      worldSnapshot: world.createSnapshot()
-    });
-
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
-      itemId: 'sword',
-      amount: 1
-    });
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
-      itemId: 'umbrella',
-      amount: 1
-    });
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[8]).toEqual({
-      itemId: 'bug-net',
-      amount: 1
-    });
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[9]).toEqual({
-      itemId: 'spear',
-      amount: 1
-    });
-  });
-
-  it('adds a starter umbrella into the first empty slot when older save payloads lack one', () => {
-    const world = new TileWorld(0);
-
-    const decoded = decodeWorldSaveEnvelope({
-      kind: WORLD_SAVE_ENVELOPE_KIND,
-      version: WORLD_SAVE_ENVELOPE_VERSION,
-      migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
-      session: {
-        standalonePlayerState: createPlayerState(),
-        standalonePlayerDeathState: null,
-        standalonePlayerInventoryState: {
-          hotbar: [
-            { itemId: 'pickaxe', amount: 1 },
-            { itemId: 'dirt-block', amount: 64 },
-            { itemId: 'torch', amount: 20 },
-            { itemId: 'rope', amount: 24 },
-            { itemId: 'healing-potion', amount: 3 },
-            { itemId: 'heart-crystal', amount: 1 },
-            { itemId: 'sword', amount: 1 },
-            null,
-            { itemId: 'gel', amount: 2 },
-            null
-          ],
-          selectedHotbarSlotIndex: 8
-        },
-        droppedItemStates: [],
-        cameraFollowOffset: { x: 0, y: 0 }
-      },
-      worldSnapshot: world.createSnapshot()
-    });
-
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
-      itemId: 'umbrella',
-      amount: 1
-    });
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[9]).toEqual({
-      itemId: 'spear',
-      amount: 1
-    });
-  });
-
-  it('adds a starter spear into the last empty slot when older save payloads lack one', () => {
-    const world = new TileWorld(0);
-
-    const decoded = decodeWorldSaveEnvelope({
-      kind: WORLD_SAVE_ENVELOPE_KIND,
-      version: WORLD_SAVE_ENVELOPE_VERSION,
-      migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
-      session: {
-        standalonePlayerState: createPlayerState(),
-        standalonePlayerDeathState: null,
-        standalonePlayerInventoryState: {
-          hotbar: [
-            { itemId: 'pickaxe', amount: 1 },
-            { itemId: 'dirt-block', amount: 64 },
-            { itemId: 'torch', amount: 20 },
-            { itemId: 'rope', amount: 24 },
-            { itemId: 'healing-potion', amount: 3 },
-            { itemId: 'heart-crystal', amount: 1 },
-            { itemId: 'sword', amount: 1 },
-            { itemId: 'umbrella', amount: 1 },
-            { itemId: 'gel', amount: 2 },
-            null
-          ],
-          selectedHotbarSlotIndex: 8
-        },
-        droppedItemStates: [],
-        cameraFollowOffset: { x: 0, y: 0 }
-      },
-      worldSnapshot: world.createSnapshot()
-    });
-
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[9]).toEqual({
-      itemId: 'spear',
-      amount: 1
-    });
-  });
-
-  it('adds a starter bug net into the first empty slot when older save payloads lack one', () => {
-    const world = new TileWorld(0);
-
-    const decoded = decodeWorldSaveEnvelope({
-      kind: WORLD_SAVE_ENVELOPE_KIND,
-      version: WORLD_SAVE_ENVELOPE_VERSION,
-      migration: createDefaultWorldSaveEnvelopeMigrationMetadata(),
-      session: {
-        standalonePlayerState: createPlayerState(),
-        standalonePlayerDeathState: null,
-        standalonePlayerInventoryState: {
-          hotbar: [
-            { itemId: 'pickaxe', amount: 1 },
-            { itemId: 'dirt-block', amount: 64 },
-            { itemId: 'torch', amount: 20 },
-            { itemId: 'rope', amount: 24 },
-            { itemId: 'healing-potion', amount: 3 },
-            { itemId: 'heart-crystal', amount: 1 },
-            { itemId: 'sword', amount: 1 },
-            { itemId: 'umbrella', amount: 1 },
-            null,
-            { itemId: 'spear', amount: 1 }
-          ],
-          selectedHotbarSlotIndex: 7
-        },
-        droppedItemStates: [],
-        cameraFollowOffset: { x: 0, y: 0 }
-      },
-      worldSnapshot: world.createSnapshot()
-    });
-
-    expect(decoded.session.standalonePlayerInventoryState.hotbar[8]).toEqual({
-      itemId: 'bug-net',
-      amount: 1
     });
   });
 

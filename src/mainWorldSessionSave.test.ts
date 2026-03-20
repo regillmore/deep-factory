@@ -157,16 +157,7 @@ describe('createWorldSessionSaveEnvelope', () => {
     expect(envelope.session.standalonePlayerDeathState).toBeNull();
     expect(envelope.session.standalonePlayerInventoryState).toEqual(
       createPlayerInventoryState({
-        hotbar: [
-          { itemId: 'pickaxe', amount: 1 },
-          { itemId: 'healing-potion', amount: 3 },
-          { itemId: 'heart-crystal', amount: 1 },
-          { itemId: 'sword', amount: 1 },
-          { itemId: 'umbrella', amount: 1 },
-          { itemId: 'bug-net', amount: 1 },
-          ...Array.from({ length: 3 }, () => null),
-          { itemId: 'spear', amount: 1 }
-        ]
+        hotbar: [{ itemId: 'pickaxe', amount: 1 }, ...Array.from({ length: 9 }, () => null)]
       })
     );
     expect(envelope.session.standalonePlayerEquipmentState).toEqual(

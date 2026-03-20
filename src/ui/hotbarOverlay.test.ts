@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createDefaultPlayerInventoryState, createPlayerInventoryState } from '../world/playerInventory';
+import {
+  createPlayerInventoryItemStack,
+  createPlayerInventoryState
+} from '../world/playerInventory';
 import { HotbarOverlay } from './hotbarOverlay';
 
 class FakeElement {
@@ -56,6 +59,21 @@ describe('HotbarOverlay', () => {
   });
 
   const createHost = (): HTMLElement => document.createElement('div') as unknown as HTMLElement;
+  const createHotbarState = (
+    stacks: ReadonlyArray<readonly [number, ReturnType<typeof createPlayerInventoryItemStack>]>,
+    selectedHotbarSlotIndex = 0
+  ) => {
+    const hotbar = Array.from({ length: 10 }, () => null) as Array<
+      ReturnType<typeof createPlayerInventoryItemStack> | null
+    >;
+    for (const [slotIndex, stack] of stacks) {
+      hotbar[slotIndex] = stack;
+    }
+    return createPlayerInventoryState({
+      hotbar,
+      selectedHotbarSlotIndex
+    });
+  };
   const getSlotRow = (overlay: HotbarOverlay): FakeElement =>
     (overlay.getRootElement() as unknown as FakeElement).children[1]! as FakeElement;
   const getSlotAmountLabel = (overlay: HotbarOverlay, slotIndex: number): FakeElement =>
@@ -73,13 +91,19 @@ describe('HotbarOverlay', () => {
   const getMoveRightButton = (overlay: HotbarOverlay): FakeElement =>
     getActionRow(overlay).children[3]! as FakeElement;
 
-  it('renders the starter hotbar state and highlights the selected slot', () => {
+  it('renders a populated hotbar state and highlights the selected slot', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });
-    const starterState = createDefaultPlayerInventoryState();
+    const populatedState = createHotbarState([
+      [0, createPlayerInventoryItemStack('pickaxe', 1)],
+      [1, createPlayerInventoryItemStack('dirt-block', 64)],
+      [4, createPlayerInventoryItemStack('healing-potion', 3)],
+      [5, createPlayerInventoryItemStack('heart-crystal', 1)],
+      [8, createPlayerInventoryItemStack('bug-net', 1)]
+    ]);
 
     overlay.setVisible(true);
-    overlay.update(starterState);
+    overlay.update(populatedState);
 
     const root = overlay.getRootElement() as unknown as FakeElement;
     const slotRow = getSlotRow(overlay);
@@ -116,7 +140,9 @@ describe('HotbarOverlay', () => {
     const onSelectSlot = vi.fn();
     const overlay = new HotbarOverlay({ host, onSelectSlot });
 
-    overlay.update(createDefaultPlayerInventoryState());
+    overlay.update(
+      createHotbarState([[2, createPlayerInventoryItemStack('torch', 20)]], 2)
+    );
     getSlotRow(overlay).children[2]!.click();
 
     expect(onSelectSlot).toHaveBeenCalledWith(2);
@@ -132,7 +158,12 @@ describe('HotbarOverlay', () => {
       onMoveSelectedRight
     });
 
-    overlay.update(createDefaultPlayerInventoryState());
+    overlay.update(
+      createHotbarState([
+        [0, createPlayerInventoryItemStack('pickaxe', 1)],
+        [1, createPlayerInventoryItemStack('dirt-block', 64)]
+      ])
+    );
     getMoveLeftButton(overlay).click();
     getMoveRightButton(overlay).click();
 
@@ -141,7 +172,10 @@ describe('HotbarOverlay', () => {
 
     overlay.update(
       createPlayerInventoryState({
-        hotbar: createDefaultPlayerInventoryState().hotbar,
+        hotbar: createHotbarState([
+          [0, createPlayerInventoryItemStack('pickaxe', 1)],
+          [1, createPlayerInventoryItemStack('dirt-block', 64)]
+        ]).hotbar,
         selectedHotbarSlotIndex: 9
       })
     );
@@ -155,7 +189,7 @@ describe('HotbarOverlay', () => {
     const onDropSelectedStack = vi.fn();
     const overlay = new HotbarOverlay({ host, onDropSelectedStack });
 
-    overlay.update(createDefaultPlayerInventoryState());
+    overlay.update(createHotbarState([[0, createPlayerInventoryItemStack('pickaxe', 1)]]));
     getDropStackButton(overlay).click();
     expect(onDropSelectedStack).toHaveBeenCalledTimes(1);
 
@@ -170,7 +204,7 @@ describe('HotbarOverlay', () => {
     const onDropSelectedOne = vi.fn();
     const overlay = new HotbarOverlay({ host, onDropSelectedOne });
 
-    overlay.update(createDefaultPlayerInventoryState());
+    overlay.update(createHotbarState([[0, createPlayerInventoryItemStack('pickaxe', 1)]]));
     getDropOneButton(overlay).click();
     expect(onDropSelectedOne).toHaveBeenCalledTimes(1);
 
@@ -184,7 +218,7 @@ describe('HotbarOverlay', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });
 
-    overlay.update(createDefaultPlayerInventoryState());
+    overlay.update(createHotbarState([[0, createPlayerInventoryItemStack('pickaxe', 1)]]));
 
     const moveLeftButton = getMoveLeftButton(overlay);
     const dropOneButton = getDropOneButton(overlay);
@@ -209,9 +243,12 @@ describe('HotbarOverlay', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });
 
-    overlay.update(createDefaultPlayerInventoryState(), {
+    overlay.update(
+      createHotbarState([[4, createPlayerInventoryItemStack('healing-potion', 3)]], 4),
+      {
       healingPotionCooldownFillNormalized: 0.5
-    });
+      }
+    );
 
     expect(getSlotCooldownFill(overlay, 4).style.height).toBe('50.0%');
     expect(getSlotCooldownFill(overlay, 4).style.opacity).toBe('1');
@@ -219,7 +256,7 @@ describe('HotbarOverlay', () => {
     expect(getSlotCooldownFill(overlay, 0).style.height).toBe('0.0%');
     expect(getSlotCooldownFill(overlay, 0).style.opacity).toBe('0');
 
-    overlay.update(createDefaultPlayerInventoryState());
+    overlay.update(createHotbarState([[4, createPlayerInventoryItemStack('healing-potion', 3)]], 4));
 
     expect(getSlotCooldownFill(overlay, 4).style.height).toBe('0.0%');
     expect(getSlotCooldownFill(overlay, 4).style.opacity).toBe('0');
@@ -230,9 +267,12 @@ describe('HotbarOverlay', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });
 
-    overlay.update(createDefaultPlayerInventoryState(), {
+    overlay.update(
+      createHotbarState([[5, createPlayerInventoryItemStack('heart-crystal', 1)]], 5),
+      {
       heartCrystalBlockedReason: 'max-health-cap'
-    });
+      }
+    );
 
     expect(getSlotAmountLabel(overlay, 5).textContent).toBe('MAX');
     expect(getSlotAmountLabel(overlay, 5).style.color).toBe('#cdeaff');
@@ -241,15 +281,18 @@ describe('HotbarOverlay', () => {
     expect(getSlotRow(overlay).children[5]!.title).toContain('already at 400 max health');
     expect(getSlotCooldownFill(overlay, 0).style.opacity).toBe('0');
 
-    overlay.update(createDefaultPlayerInventoryState(), {
+    overlay.update(
+      createHotbarState([[5, createPlayerInventoryItemStack('heart-crystal', 1)]], 5),
+      {
       heartCrystalBlockedReason: 'dead'
-    });
+      }
+    );
 
     expect(getSlotAmountLabel(overlay, 5).textContent).toBe('DEAD');
     expect(getSlotAmountLabel(overlay, 5).style.color).toBe('#ffd2d2');
     expect(getSlotRow(overlay).children[5]!.title).toContain('player is dead');
 
-    overlay.update(createDefaultPlayerInventoryState());
+    overlay.update(createHotbarState([[5, createPlayerInventoryItemStack('heart-crystal', 1)]], 5));
 
     expect(getSlotAmountLabel(overlay, 5).textContent).toBe('');
     expect(getSlotAmountLabel(overlay, 5).style.color).toBe('#ffe7a3');
@@ -261,10 +304,10 @@ describe('HotbarOverlay', () => {
   it('shows and clears selected starter-pickaxe phase timing feedback without affecting other slots', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });
-    const pickaxeSelectedState = createPlayerInventoryState({
-      hotbar: createDefaultPlayerInventoryState().hotbar,
-      selectedHotbarSlotIndex: 0
-    });
+    const pickaxeSelectedState = createHotbarState(
+      [[0, createPlayerInventoryItemStack('pickaxe', 1)]],
+      0
+    );
 
     overlay.update(pickaxeSelectedState, {
       starterPickaxeSwingFeedback: {
@@ -304,10 +347,10 @@ describe('HotbarOverlay', () => {
   it('shows and clears selected starter-sword phase timing feedback without affecting other slots', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });
-    const swordSelectedState = createPlayerInventoryState({
-      hotbar: createDefaultPlayerInventoryState().hotbar,
-      selectedHotbarSlotIndex: 6
-    });
+    const swordSelectedState = createHotbarState(
+      [[6, createPlayerInventoryItemStack('sword', 1)]],
+      6
+    );
 
     overlay.update(swordSelectedState, {
       starterMeleeWeaponSwingFeedback: {
@@ -347,10 +390,10 @@ describe('HotbarOverlay', () => {
   it('shows and clears selected starter-spear phase timing feedback without affecting other slots', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });
-    const spearSelectedState = createPlayerInventoryState({
-      hotbar: createDefaultPlayerInventoryState().hotbar,
-      selectedHotbarSlotIndex: 9
-    });
+    const spearSelectedState = createHotbarState(
+      [[9, createPlayerInventoryItemStack('spear', 1)]],
+      9
+    );
 
     overlay.update(spearSelectedState, {
       starterSpearThrustFeedback: {
@@ -390,10 +433,10 @@ describe('HotbarOverlay', () => {
   it('shows and clears selected bug-net phase timing feedback without affecting other slots', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });
-    const bugNetSelectedState = createPlayerInventoryState({
-      hotbar: createDefaultPlayerInventoryState().hotbar,
-      selectedHotbarSlotIndex: 8
-    });
+    const bugNetSelectedState = createHotbarState(
+      [[8, createPlayerInventoryItemStack('bug-net', 1)]],
+      8
+    );
 
     overlay.update(bugNetSelectedState, {
       starterBugNetSwingFeedback: {

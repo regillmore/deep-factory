@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  createDefaultPlayerInventoryState,
   createPlayerInventoryState,
   getPlayerInventoryItemAmount
 } from './playerInventory';
@@ -97,9 +96,17 @@ describe('findNearestPlayerCraftingStationInRange', () => {
 });
 
 describe('evaluatePlayerCraftingRecipe', () => {
-  it('blocks the workbench recipe when the full default hotbar has no room for the output', () => {
+  it('blocks the workbench recipe when the hotbar has no room for the output', () => {
     const evaluation = evaluatePlayerCraftingRecipe({
-      inventoryState: createDefaultPlayerInventoryState(),
+      inventoryState: createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'dirt-block', amount: 21 },
+          ...Array.from({ length: 9 }, () => ({
+            itemId: 'torch' as const,
+            amount: 1
+          }))
+        ]
+      }),
       recipeId: 'workbench'
     });
 

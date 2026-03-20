@@ -2142,6 +2142,41 @@ const readPersistedWorldSaveEnvelope = (): ReturnType<typeof createWorldSaveEnve
   const rawEnvelope = testRuntime.storageValues.get(PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY) ?? null;
   return rawEnvelope === null ? null : JSON.parse(rawEnvelope);
 };
+const createLegacyStarterInventoryState = (selectedHotbarSlotIndex = 0) =>
+  createPlayerInventoryState({
+    hotbar: [
+      { itemId: 'pickaxe', amount: 1 },
+      { itemId: 'dirt-block', amount: 64 },
+      { itemId: 'torch', amount: 20 },
+      { itemId: 'rope', amount: 24 },
+      { itemId: 'healing-potion', amount: 3 },
+      { itemId: 'heart-crystal', amount: 1 },
+      { itemId: 'sword', amount: 1 },
+      { itemId: 'umbrella', amount: 1 },
+      { itemId: 'bug-net', amount: 1 },
+      { itemId: 'spear', amount: 1 }
+    ],
+    selectedHotbarSlotIndex
+  });
+const setPersistedWorldSaveWithInventory = (
+  inventoryState = createLegacyStarterInventoryState(),
+  standalonePlayerState = createPlayerState({
+    position: { x: 8, y: 0 },
+    facing: 'right',
+    grounded: true
+  })
+): void => {
+  testRuntime.storageValues.set(
+    PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+    JSON.stringify(
+      createWorldSaveEnvelope({
+        worldSnapshot: new TileWorld(0).createSnapshot(),
+        standalonePlayerState,
+        standalonePlayerInventoryState: inventoryState
+      })
+    )
+  );
+};
 const setPersistedStandalonePlayerState = (playerState: ReturnType<typeof createPlayerState>): void => {
   testRuntime.storageValues.set(
     PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
@@ -7100,6 +7135,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('reorders the selected hotbar slot with Shift+[ and Shift+] while the full debug-edit panel is hidden, then persists that order through pause and export', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -7161,6 +7197,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('arms fixed-step glide only while the starter umbrella is selected and jump is held', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -7225,6 +7262,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('shows a valid starter dirt placement preview on the hovered tile while the full debug-edit panel is hidden', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -7302,6 +7340,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('shows a blocked starter dirt placement preview when the hovered tile would overlap the player', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -7328,6 +7367,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('shows a valid starter torch placement preview even when the hovered tile overlaps the player', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -7353,6 +7393,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('shows a blocked hotbar placement preview when the hovered tile is beyond the default placement range', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -7379,11 +7420,13 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('shows a valid rope placement preview when the selected stack hangs below a solid anchor', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.delete(worldTileKey(0, 1));
     testRuntime.pointerInspect = {
       pointerType: 'touch',
       tile: { x: 0, y: 1 }
@@ -7404,11 +7447,13 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('shows a valid rope placement preview when the selected stack attaches to the side of a solid tile', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.delete(worldTileKey(1, 0));
     testRuntime.pointerInspect = {
       pointerType: 'mouse',
       tile: { x: 1, y: 0 }
@@ -7587,6 +7632,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('keeps the hovered rope tile highlighted while resolving the bottom extension target', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -7594,6 +7640,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 1), 11);
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 2), 11);
+    testRuntime.rendererTileIdsByWorldKey.delete(worldTileKey(0, 3));
     testRuntime.pointerInspect = {
       pointerType: 'touch',
       tile: { x: 0, y: 1 }
@@ -7614,6 +7661,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('keeps rope-column extension placeable when the touched rope segment is in range even if the bottom target is farther away', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -7622,6 +7670,7 @@ describe('main.ts shell state orchestration', () => {
     for (let ropeTileY = 1; ropeTileY <= 7; ropeTileY += 1) {
       testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, ropeTileY), 11);
     }
+    testRuntime.rendererTileIdsByWorldKey.delete(worldTileKey(0, 8));
     testRuntime.pointerInspect = {
       pointerType: 'touch',
       tile: { x: 0, y: 1 }
@@ -8062,6 +8111,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('places a starter dirt block from the selected hotbar slot while the full debug-edit panel is hidden', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -8163,6 +8213,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('places a starter torch from the selected hotbar slot while the full debug-edit panel is hidden', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -8200,6 +8251,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('places a rope segment from the selected hotbar slot while the full debug-edit panel is hidden', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -8208,6 +8260,7 @@ describe('main.ts shell state orchestration', () => {
     expect(dispatchKeydown('4', 'Digit4').prevented).toBe(true);
     expect(testRuntime.canvasInteractionMode).toBe('play');
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.delete(worldTileKey(0, 1));
     testRuntime.rendererSetTileResult = true;
     testRuntime.playerItemUseRequests = [
       {
@@ -8237,6 +8290,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('extends the bottom of an existing rope column when the selected hotbar rope is used on a rope tile', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -8247,6 +8301,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 1), 11);
     testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 2), 11);
+    testRuntime.rendererTileIdsByWorldKey.delete(worldTileKey(0, 3));
     testRuntime.rendererSetTileResult = true;
     testRuntime.playerItemUseRequests = [
       {
@@ -8276,6 +8331,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('extends the bottom of an existing rope column from an in-range touched segment even when the resolved target is farther away', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -8287,6 +8343,7 @@ describe('main.ts shell state orchestration', () => {
     for (let ropeTileY = 1; ropeTileY <= 7; ropeTileY += 1) {
       testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, ropeTileY), 11);
     }
+    testRuntime.rendererTileIdsByWorldKey.delete(worldTileKey(0, 8));
     testRuntime.rendererSetTileResult = true;
     testRuntime.playerItemUseRequests = [
       {
@@ -8316,6 +8373,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('rejects starter hotbar placement requests that target tiles beyond the default placement range', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -9278,6 +9336,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('spawns a dirt-block pickup entity when the starter pickaxe breaks nearby grass terrain', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -9320,6 +9379,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('shows selected starter-pickaxe hotbar timing feedback through windup, active, recovery, and clear', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -9389,6 +9449,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('spawns a stone-block pickup entity when the starter pickaxe finishes breaking nearby stone terrain on the second swing', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -9437,6 +9498,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('spawns a copper-ore pickup entity when the starter pickaxe finishes breaking nearby copper ore on the second swing', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -9481,6 +9543,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('spawns one rope pickup entity when the starter pickaxe cuts a nearby placed rope tile', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -9519,6 +9582,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('spawns one torch pickup entity when the starter pickaxe cuts a nearby placed torch tile', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -9557,6 +9621,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('spawns one workbench pickup entity when the starter pickaxe cuts a nearby placed workbench tile', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -9604,7 +9669,7 @@ describe('main.ts shell state orchestration', () => {
             position: { x: 8, y: 0 },
             facing: 'right'
           }),
-          standalonePlayerInventoryState: createPlayerInventoryState(),
+          standalonePlayerInventoryState: createLegacyStarterInventoryState(),
           droppedItemStates: [
             createDroppedItemState({
               position: { x: 40, y: 8 },
@@ -9665,7 +9730,7 @@ describe('main.ts shell state orchestration', () => {
             position: { x: 8, y: 0 },
             facing: 'right'
           }),
-          standalonePlayerInventoryState: createPlayerInventoryState(),
+          standalonePlayerInventoryState: createLegacyStarterInventoryState(),
           droppedItemStates: [
             createDroppedItemState({
               position: { x: 40, y: 8 },
@@ -9720,6 +9785,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('spawns a torch pickup entity when a placed starter torch tile is removed', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -9758,6 +9824,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('spawns a rope pickup entity when a placed rope tile is removed', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -10138,6 +10205,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('drops the selected hotbar stack into a world pickup and persists the collected stack after proximity pickup', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -10171,6 +10239,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('drops one item from the selected hotbar stack while keeping the remaining stack in inventory', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
@@ -10427,6 +10496,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('rejects starter dirt block placement when the new block would overlap the player', async () => {
+    setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 

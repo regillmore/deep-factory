@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-19: Default hotbar starts empty and save decode preserves sparse inventories
+
+- Decision: Fresh sessions and save payloads that omit standalone-player inventory now resolve to an empty ten-slot hotbar, and save decode no longer backfill missing starter items into sparse inventories.
+- Reason: The debug item catalog can now seed tools explicitly, so implicit starter-loadout injection only hid inventory dependencies and made runtime regressions brittle.
+- Consequence: Future traversal, combat, building, and save tests should seed the items they need through explicit save fixtures, catalog actions, pickups, or crafting instead of assuming a shared default starter toolbelt.
+
 ### 2026-03-19: Procedural ore pockets only replace untouched upper underground stone
 
 - Decision: Seeded copper-ore pockets now resolve inside a shallow underground stone band only after cave-air carving, and they stay outside the protected origin spawn corridor so fresh-world spawn terrain remains safe.
@@ -134,12 +140,6 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Default tile quads still render full width, so the torch needs a full square like the rope, and growing the atlas preserves spill-detection space while also creating room for later authored slots.
 - Consequence: Future atlas growth should preserve some blank exterior padding and must update direct `render.uvRect` normalization together with the PNG and authored-region layout instead of assuming the old `96x64` atlas width.
 
-### 2026-03-15: Starter heart-crystal backfill stops once max health is upgraded
-
-- Decision: Save normalization now backfills a missing starter `heart-crystal` only while the saved standalone player still uses the baseline `100` max health.
-- Reason: Existing baseline-health sessions need a backward-compatible on-ramp into the heart-crystal slice, but consumed upgrades must not regenerate the crystal on later saves.
-- Consequence: Future one-time progression-item migrations should gate any starter-item backfill on saved progression state instead of unconditionally re-adding consumed items.
-
 ### 2026-03-15: Current/max health telemetry stays on the existing player-combat readout
 
 - Decision: The full debug HUD and hidden-HUD compact status strip now render live health as `current/max` when max health is available, falling back to the prior single-value health readout only when older or partial telemetry lacks `maxHealth`.
@@ -193,12 +193,6 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Decision: When the starter pickaxe breaks `grass_surface` or placed starter dirt, the refunded `dirt-block` first merges into overlapping matching dropped-item stacks before any new pickup entity spawns.
 - Reason: Mining refunds should follow the same deterministic overlap and overflow behavior already used by torch refunds and player drops instead of creating redundant stacked pickups for the same item.
 - Consequence: Future mined-tile refunds should reuse the shared nearby-pickup cascade unless the same pass intentionally changes broader world-drop rules.
-
-### 2026-03-15: Starter tool rollouts backfill missing pickaxes into the first empty hotbar slot
-
-- Decision: World-save inventory normalization now inserts a starter pickaxe into the first empty hotbar slot whenever an older save payload lacks one.
-- Reason: Existing sessions should gain the starter mining slice without requiring a fresh world or a manual inventory reset.
-- Consequence: Future starter-tool additions should prefer backward-compatible inventory normalization or migration over forcing players to abandon older saves.
 
 ### 2026-03-15: Hotbar reordering keeps selection attached to the moved slot
 
@@ -373,12 +367,6 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Decision: Starter dirt blocks now place only onto empty tiles that share a cardinal face with a solid tile and whose tile AABB does not overlap the standalone player's body.
 - Reason: The first building slice needs simple deterministic placement that preserves terrain attachment and avoids trapping the player inside a newly placed solid tile.
 - Consequence: Future placeable solid tiles should reuse or intentionally extend this validation contract rather than defaulting to unsupported placement or allowing solid placement through the player.
-
-### 2026-03-13: Missing hotbar inventory in older saves defaults to the starter loadout
-
-- Decision: Standalone-player hotbar inventory now persists as session-owned save data beside player, death-countdown, and camera state, and older world-save payloads that lack inventory decode to the current starter dirt/torch/rope loadout.
-- Reason: The inventory foundation needs to stay backward-compatible with pre-inventory saves while giving restored sessions the same immediately usable starter hotbar that fresh worlds now receive by default.
-- Consequence: Future inventory expansions should keep save decoding backward-compatible through explicit defaults and continue treating player inventory as detached session-owned state restored alongside the standalone player rather than recomputing it from world state.
 
 ### 2026-03-13: Telemetry catalog storage defaults missing entries to enabled
 

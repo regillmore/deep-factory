@@ -12,13 +12,6 @@ import { createDroppedItemState, type DroppedItemState } from './world/droppedIt
 import {
   createDefaultPlayerInventoryState,
   createPlayerInventoryState,
-  ensurePlayerInventoryHasStarterBugNet,
-  ensurePlayerInventoryHasStarterHeartCrystal,
-  ensurePlayerInventoryHasStarterHealingPotions,
-  ensurePlayerInventoryHasStarterPickaxe,
-  ensurePlayerInventoryHasStarterSpear,
-  ensurePlayerInventoryHasStarterSword,
-  ensurePlayerInventoryHasStarterUmbrella,
   getPlayerInventoryItemDefinition,
   isPlayerInventoryItemId,
   PLAYER_INVENTORY_HOTBAR_SLOT_COUNT,
@@ -282,31 +275,11 @@ const normalizePlayerInventoryState = (value: unknown, label: string): PlayerInv
 
 const normalizeStandalonePlayerInventoryState = (
   value: unknown,
-  label: string,
-  standalonePlayerState: PlayerState | null
+  label: string
 ): PlayerInventoryState => {
-  const normalizedInventoryState =
-    value === undefined
-      ? createDefaultPlayerInventoryState()
-      : normalizePlayerInventoryState(value, label);
-  const heartCrystalBackfill =
-    standalonePlayerState === null || standalonePlayerState.maxHealth <= DEFAULT_PLAYER_MAX_HEALTH
-      ? ensurePlayerInventoryHasStarterHeartCrystal
-      : (state: PlayerInventoryState): PlayerInventoryState => state;
-
-  return ensurePlayerInventoryHasStarterBugNet(
-    ensurePlayerInventoryHasStarterSpear(
-      ensurePlayerInventoryHasStarterUmbrella(
-        ensurePlayerInventoryHasStarterSword(
-          heartCrystalBackfill(
-            ensurePlayerInventoryHasStarterHealingPotions(
-              ensurePlayerInventoryHasStarterPickaxe(normalizedInventoryState)
-            )
-          )
-        )
-      )
-    )
-  );
+  return value === undefined
+    ? createDefaultPlayerInventoryState()
+    : normalizePlayerInventoryState(value, label);
 };
 
 const normalizePlayerEquipmentState = (
@@ -442,8 +415,7 @@ export const createWorldSaveEnvelope = ({
       ),
       standalonePlayerInventoryState: normalizeStandalonePlayerInventoryState(
         standalonePlayerInventoryState,
-        'standalonePlayerInventoryState',
-        normalizedStandalonePlayerState
+        'standalonePlayerInventoryState'
       ),
       standalonePlayerEquipmentState: normalizeStandalonePlayerEquipmentState(
         standalonePlayerEquipmentState,
@@ -487,8 +459,7 @@ export const decodeWorldSaveEnvelope = (value: unknown): WorldSaveEnvelope => {
       ),
       standalonePlayerInventoryState: normalizeStandalonePlayerInventoryState(
         value.session.standalonePlayerInventoryState,
-        'session.standalonePlayerInventoryState',
-        normalizedStandalonePlayerState
+        'session.standalonePlayerInventoryState'
       ),
       standalonePlayerEquipmentState: normalizeStandalonePlayerEquipmentState(
         value.session.standalonePlayerEquipmentState,
