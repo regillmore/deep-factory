@@ -292,6 +292,11 @@ const testRuntime = vi.hoisted(() => {
       visible: boolean;
       triggerToggleSlot(slotId: 'head' | 'body' | 'legs'): void;
     },
+    itemCatalogPanelInstance: null as null | {
+      visible: boolean;
+      triggerSearchQueryChange(query: string): void;
+      triggerSpawnItem(itemId: string): void;
+    },
     latestCraftingPanelState: null as null | {
       stationLabel: string;
       stationInRange: boolean;
@@ -312,6 +317,19 @@ const testRuntime = vi.hoisted(() => {
         itemLabel: string;
         defenseLabel: string;
         equipped: boolean;
+      }>;
+    },
+    latestItemCatalogPanelState: null as null | {
+      searchQuery: string;
+      resultSummaryLabel: string;
+      emptyLabel: string;
+      items: Array<{
+        itemId: string;
+        label: string;
+        detailsLabel: string;
+        inventoryLabel: string;
+        enabled: boolean;
+        disabledReason?: string | null;
       }>;
     },
     debugEditControlsInitialArmedToolSnapshot: null as null | {
@@ -1699,6 +1717,56 @@ vi.mock('./ui/equipmentPanel', () => ({
   }
 }));
 
+vi.mock('./ui/itemCatalogPanel', () => ({
+  ItemCatalogPanel: class {
+    visible = false;
+    private onSearchQueryChange: (query: string) => void;
+    private onSpawnItem: (itemId: string) => void;
+
+    constructor(options: {
+      onSearchQueryChange?: (query: string) => void;
+      onSpawnItem?: (itemId: string) => void;
+    }) {
+      this.onSearchQueryChange = options.onSearchQueryChange ?? (() => {});
+      this.onSpawnItem = options.onSpawnItem ?? (() => {});
+      testRuntime.itemCatalogPanelInstance = this;
+    }
+
+    setVisible(visible: boolean): void {
+      this.visible = visible;
+    }
+
+    update(state: {
+      searchQuery: string;
+      resultSummaryLabel: string;
+      emptyLabel: string;
+      items: Array<{
+        itemId: string;
+        label: string;
+        detailsLabel: string;
+        inventoryLabel: string;
+        enabled: boolean;
+        disabledReason?: string | null;
+      }>;
+    }): void {
+      testRuntime.latestItemCatalogPanelState = {
+        searchQuery: state.searchQuery,
+        resultSummaryLabel: state.resultSummaryLabel,
+        emptyLabel: state.emptyLabel,
+        items: state.items.map((item) => ({ ...item }))
+      };
+    }
+
+    triggerSearchQueryChange(query: string): void {
+      this.onSearchQueryChange(query);
+    }
+
+    triggerSpawnItem(itemId: string): void {
+      this.onSpawnItem(itemId);
+    }
+  }
+}));
+
 vi.mock('./ui/playerSpawnMarkerOverlay', () => ({
   PlayerSpawnMarkerOverlay: class {
     visible = false;
@@ -2278,8 +2346,10 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugEditControlsShellActionKeybindings = null;
     testRuntime.craftingPanelInstance = null;
     testRuntime.equipmentPanelInstance = null;
+    testRuntime.itemCatalogPanelInstance = null;
     testRuntime.latestCraftingPanelState = null;
     testRuntime.latestEquipmentPanelState = null;
+    testRuntime.latestItemCatalogPanelState = null;
     testRuntime.debugEditControlsInitialArmedToolSnapshot = null;
     testRuntime.debugEditControlsArmedToolKinds = null;
     testRuntime.debugEditControlsInstance = null;
@@ -7725,6 +7795,113 @@ describe('main.ts shell state orchestration', () => {
     const restoredWorld = new TileWorld(0);
     restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
     expect(restoredWorld.getTile(1, -1)).toBe(STARTER_WORKBENCH_TILE_ID);
+  });
+
+  it('shows the searchable item catalog only while the full debug-edit panel is visible and updates filtered results', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.itemCatalogPanelInstance?.visible).toBe(false);
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    runRenderFrame();
+
+    expect(testRuntime.itemCatalogPanelInstance?.visible).toBe(true);
+    expect(testRuntime.latestItemCatalogPanelState?.searchQuery).toBe('');
+    expect(
+      testRuntime.latestItemCatalogPanelState?.items.some((item) => item.itemId === 'workbench')
+    ).toBe(true);
+
+    testRuntime.itemCatalogPanelInstance?.triggerSearchQueryChange('bug net');
+
+    expect(testRuntime.latestItemCatalogPanelState).toMatchObject({
+      searchQuery: 'bug net',
+      resultSummaryLabel: '1 matching item'
+    });
+    expect(testRuntime.latestItemCatalogPanelState?.items.map((item) => item.itemId)).toEqual([
+      'bug-net'
+    ]);
+
+    testRuntime.itemCatalogPanelInstance?.triggerSearchQueryChange('zzz');
+
+    expect(testRuntime.latestItemCatalogPanelState).toMatchObject({
+      searchQuery: 'zzz',
+      resultSummaryLabel: '0 matching items',
+      emptyLabel: 'No items match "zzz"',
+      items: []
+    });
+
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    expect(testRuntime.itemCatalogPanelInstance?.visible).toBe(false);
+  });
+
+  it('spawns one catalog item into the hotbar through the shared inventory add path', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'gel', amount: 1 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'sword', amount: 1 },
+              { itemId: 'umbrella', amount: 1 },
+              { itemId: 'bug-net', amount: 1 },
+              { itemId: 'spear', amount: 1 }
+            ],
+            selectedHotbarSlotIndex: 0
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    runRenderFrame();
+
+    testRuntime.itemCatalogPanelInstance?.triggerSearchQueryChange('gel');
+    expect(testRuntime.latestItemCatalogPanelState?.items).toEqual([
+      {
+        itemId: 'gel',
+        label: 'Gel',
+        detailsLabel: 'Id: gel | Hotbar: GEL | Max stack: 999',
+        inventoryLabel: 'Have: 1 | Spawn +1',
+        enabled: true,
+        disabledReason: null
+      }
+    ]);
+
+    testRuntime.itemCatalogPanelInstance?.triggerSpawnItem('gel');
+
+    expect(testRuntime.latestItemCatalogPanelState?.items).toEqual([
+      {
+        itemId: 'gel',
+        label: 'Gel',
+        detailsLabel: 'Id: gel | Hotbar: GEL | Max stack: 999',
+        inventoryLabel: 'Have: 2 | Spawn +1',
+        enabled: true,
+        disabledReason: null
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[2]).toEqual({
+      itemId: 'gel',
+      amount: 2
+    });
   });
 
   it('hides the hotbar placement preview for unsupported item slots and while the full debug-edit panel is open', async () => {

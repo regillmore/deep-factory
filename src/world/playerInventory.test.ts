@@ -16,6 +16,7 @@ import {
   ensurePlayerInventoryHasStarterSword,
   ensurePlayerInventoryHasStarterUmbrella,
   getPlayerInventoryItemDefinition,
+  getPlayerInventoryItemDefinitions,
   getPlayerInventoryItemAmount,
   movePlayerInventorySelectedHotbarSlot,
   removePlayerInventoryItemAmount,
@@ -440,6 +441,25 @@ describe('playerInventory', () => {
       hotbarLabel: 'SPEAR',
       maxStackSize: 1
     });
+  });
+
+  it('exposes the inventory item registry in stable item-id order', () => {
+    expect(getPlayerInventoryItemDefinitions().map((definition) => definition.id)).toEqual([
+      'pickaxe',
+      'dirt-block',
+      'stone-block',
+      'gel',
+      'workbench',
+      'torch',
+      'rope',
+      'umbrella',
+      'bug-net',
+      'bunny',
+      'healing-potion',
+      'heart-crystal',
+      'sword',
+      'spear'
+    ]);
   });
 
   it('fills the first empty slot with a starter pickaxe when one is missing', () => {

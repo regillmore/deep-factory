@@ -57,6 +57,23 @@ export interface RemovePlayerInventoryItemAmountResult {
 
 export type MovePlayerInventorySelectedHotbarSlotDirection = -1 | 1;
 
+export const PLAYER_INVENTORY_ITEM_IDS: readonly PlayerInventoryItemId[] = [
+  'pickaxe',
+  'dirt-block',
+  'stone-block',
+  'gel',
+  'workbench',
+  'torch',
+  'rope',
+  'umbrella',
+  'bug-net',
+  'bunny',
+  'healing-potion',
+  'heart-crystal',
+  'sword',
+  'spear'
+] as const;
+
 const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
   Record<PlayerInventoryItemId, PlayerInventoryItemDefinition>
 > = {
@@ -201,6 +218,9 @@ export const isPlayerInventoryItemId = (value: unknown): value is PlayerInventor
 export const getPlayerInventoryItemDefinition = (
   itemId: PlayerInventoryItemId
 ): PlayerInventoryItemDefinition => PLAYER_INVENTORY_ITEM_DEFINITIONS[itemId];
+
+export const getPlayerInventoryItemDefinitions = (): readonly PlayerInventoryItemDefinition[] =>
+  PLAYER_INVENTORY_ITEM_IDS.map((itemId) => PLAYER_INVENTORY_ITEM_DEFINITIONS[itemId]);
 
 export const createPlayerInventoryItemStack = (
   itemId: PlayerInventoryItemId,

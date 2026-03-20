@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-19: Debug item catalog derives from the shared inventory registry
+
+- Decision: The searchable debug item catalog now enumerates and filters directly from the shared `PlayerInventory` item-definition registry and spawns through the same hotbar add helper used by normal item gains instead of keeping a separate debug-only item list or spawn path.
+- Reason: Development-time item spawning needs to stay aligned with shipped item ids, labels, and stack rules without asking future passes to update a second source of truth.
+- Consequence: Future hotbar item additions should extend the shared inventory registry first, and later debug catalog or recipe catalog follow-ups should derive their entries from that same registry instead of duplicating item metadata elsewhere.
+
 ### 2026-03-19: Procedural cave mouths stay outside a protected origin spawn corridor
 
 - Decision: Untouched terrain now opens occasional surface-connected cave mouths only in seeded column bands whose full opening stays outside a fixed protected corridor around `x=0`, while the origin corridor itself keeps the prior surfaced overburden.

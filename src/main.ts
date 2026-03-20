@@ -130,6 +130,7 @@ import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay'
 import { CraftingPanel, type CraftingPanelRecipeViewModel } from './ui/craftingPanel';
 import { EquipmentPanel, type EquipmentPanelSlotViewModel } from './ui/equipmentPanel';
 import { HoveredTileCursorOverlay } from './ui/hoveredTileCursor';
+import { ItemCatalogPanel, type ItemCatalogPanelItemViewModel } from './ui/itemCatalogPanel';
 import {
   PlayerItemBunnyReleasePreviewOverlay,
   type PlayerItemBunnyReleasePreviewState
@@ -268,11 +269,15 @@ import {
   consumePlayerInventoryHotbarSlotItem,
   createDefaultPlayerInventoryState,
   getPlayerInventoryItemDefinition,
+  getPlayerInventoryItemAmount,
+  isPlayerInventoryItemId,
   movePlayerInventorySelectedHotbarSlot,
   setPlayerInventoryHotbarSlot,
   setPlayerInventorySelectedHotbarSlot,
+  type PlayerInventoryItemId,
   type PlayerInventoryState
 } from './world/playerInventory';
+import { searchPlayerItemCatalog } from './world/playerItemCatalog';
 import {
   evaluatePlayerCraftingRecipe,
   findNearestPlayerCraftingStationInRange,
@@ -1194,6 +1199,7 @@ const bootstrap = async (): Promise<void> => {
       dropSelectedStandalonePlayerHotbarStack();
     }
   });
+  let itemCatalogSearchQuery = '';
   const craftingPanel = new CraftingPanel({
     host: worldHost,
     onCraftRecipe: (recipeId) => {
@@ -1206,6 +1212,19 @@ const bootstrap = async (): Promise<void> => {
     host: worldHost,
     onToggleSlot: (slotId) => {
       toggleStandalonePlayerStarterArmorSlot(slotId);
+    }
+  });
+  const itemCatalogPanel = new ItemCatalogPanel({
+    host: worldHost,
+    onSearchQueryChange: (query) => {
+      itemCatalogSearchQuery = query;
+      syncItemCatalogPanelState();
+    },
+    onSpawnItem: (itemId) => {
+      if (!isPlayerInventoryItemId(itemId)) {
+        return;
+      }
+      trySpawnStandalonePlayerCatalogItem(itemId);
     }
   });
   let debugEditControls: TouchDebugEditControls | null = null;
@@ -1339,6 +1358,7 @@ const bootstrap = async (): Promise<void> => {
     debugEditControls?.setVisible(currentScreen === 'in-world' && debugEditControlsVisible);
     syncCraftingPanelVisibility();
     syncEquipmentPanelVisibility();
+    syncItemCatalogPanelVisibility();
     syncCanvasInteractionMode();
     syncPlayModeItemPreviewVisibility();
   };
@@ -1358,6 +1378,10 @@ const bootstrap = async (): Promise<void> => {
   const isEquipmentPanelVisible = (): boolean => isCraftingPanelVisible();
   const syncEquipmentPanelVisibility = (): void => {
     equipmentPanel.setVisible(isEquipmentPanelVisible());
+  };
+  const isItemCatalogPanelVisible = (): boolean => isCraftingPanelVisible();
+  const syncItemCatalogPanelVisibility = (): void => {
+    itemCatalogPanel.setVisible(isItemCatalogPanelVisible());
   };
   const syncWorldScreenShellVisibility = (): void => {
     syncDebugOverlayVisibility();
@@ -1905,6 +1929,37 @@ const bootstrap = async (): Promise<void> => {
         return null;
     }
   };
+  const resolveItemCatalogPanelResultSummaryLabel = (): string => {
+    const catalogEntryCount = searchPlayerItemCatalog(itemCatalogSearchQuery).length;
+    const trimmedQuery = itemCatalogSearchQuery.trim();
+    if (trimmedQuery.length === 0) {
+      return `${catalogEntryCount} ${catalogEntryCount === 1 ? 'item' : 'items'}`;
+    }
+    return `${catalogEntryCount} matching ${catalogEntryCount === 1 ? 'item' : 'items'}`;
+  };
+  const resolveItemCatalogPanelEmptyLabel = (): string => {
+    const trimmedQuery = itemCatalogSearchQuery.trim();
+    return trimmedQuery.length > 0
+      ? `No items match "${trimmedQuery}"`
+      : 'No catalog items available';
+  };
+  const canSpawnStandalonePlayerCatalogItem = (itemId: PlayerInventoryItemId): boolean =>
+    addPlayerInventoryItemStack(standalonePlayerInventoryState, itemId, 1).remainingAmount === 0;
+  const createItemCatalogPanelItemViewModels = (): ItemCatalogPanelItemViewModel[] =>
+    searchPlayerItemCatalog(itemCatalogSearchQuery).map((entry): ItemCatalogPanelItemViewModel => {
+      const inventoryAmount = getPlayerInventoryItemAmount(standalonePlayerInventoryState, entry.itemId);
+      const enabled = canSpawnStandalonePlayerCatalogItem(entry.itemId);
+      return {
+        itemId: entry.itemId,
+        label: entry.label,
+        detailsLabel: `Id: ${entry.itemId} | Hotbar: ${entry.hotbarLabel} | Max stack: ${entry.maxStackSize}`,
+        inventoryLabel: enabled
+          ? `Have: ${inventoryAmount} | Spawn +1`
+          : `Have: ${inventoryAmount} | Inventory full`,
+        enabled,
+        disabledReason: enabled ? null : 'Inventory full'
+      };
+    });
   const createCraftingPanelRecipeViewModels = (
     playerState: Pick<PlayerState, 'position' | 'size'> | null
   ): CraftingPanelRecipeViewModel[] =>
@@ -1964,10 +2019,19 @@ const bootstrap = async (): Promise<void> => {
       slots: createEquipmentPanelSlotViewModels()
     });
   };
+  const syncItemCatalogPanelState = (): void => {
+    itemCatalogPanel.update({
+      searchQuery: itemCatalogSearchQuery,
+      resultSummaryLabel: resolveItemCatalogPanelResultSummaryLabel(),
+      emptyLabel: resolveItemCatalogPanelEmptyLabel(),
+      items: createItemCatalogPanelItemViewModels()
+    });
+  };
   const applyStandalonePlayerInventoryState = (inventoryState: PlayerInventoryState): void => {
     standalonePlayerInventoryState = clonePlayerInventoryState(inventoryState);
     syncHotbarOverlayState();
     syncCraftingPanelState();
+    syncItemCatalogPanelState();
   };
   const applyStandalonePlayerEquipmentState = (equipmentState: PlayerEquipmentState): void => {
     standalonePlayerEquipmentState = clonePlayerEquipmentState(equipmentState);
@@ -1993,6 +2057,16 @@ const bootstrap = async (): Promise<void> => {
     }
 
     applyStandalonePlayerInventoryState(craftResult.nextInventoryState);
+    return true;
+  };
+  const trySpawnStandalonePlayerCatalogItem = (itemId: PlayerInventoryItemId): boolean => {
+    const addResult = addPlayerInventoryItemStack(standalonePlayerInventoryState, itemId, 1);
+    if (addResult.addedAmount <= 0) {
+      syncItemCatalogPanelState();
+      return false;
+    }
+
+    applyStandalonePlayerInventoryState(addResult.state);
     return true;
   };
   const applySelectedStandalonePlayerHotbarSlotConsumption = (): boolean => {
@@ -2075,6 +2149,8 @@ const bootstrap = async (): Promise<void> => {
   craftingPanel.setVisible(false);
   syncEquipmentPanelState();
   equipmentPanel.setVisible(false);
+  syncItemCatalogPanelState();
+  itemCatalogPanel.setVisible(false);
   const getHostileSlimeEntityStates = (): Array<{ id: EntityId; state: HostileSlimeState }> => {
     const activeHostileSlimes: Array<{ id: EntityId; state: HostileSlimeState }> = [];
     const nextHostileSlimeEntityIds: EntityId[] = [];
