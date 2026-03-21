@@ -21,6 +21,7 @@ import { STARTER_ANVIL_TILE_ID } from './starterAnvilPlacement';
 export type PlayerCraftingStationId = 'workbench' | 'furnace' | 'anvil';
 export type PlayerCraftingRecipeId =
   | 'workbench'
+  | 'torch'
   | 'furnace'
   | 'healing-potion'
   | 'copper-bar'
@@ -109,6 +110,16 @@ const PLAYER_CRAFTING_RECIPE_DEFINITIONS: readonly PlayerCraftingRecipeDefinitio
     label: 'Workbench',
     ingredients: [{ itemId: 'dirt-block', amount: 20 }],
     output: { itemId: 'workbench', amount: 1 },
+    requiredStationId: null
+  },
+  {
+    id: 'torch',
+    label: 'Torch',
+    ingredients: [
+      { itemId: 'gel', amount: 1 },
+      { itemId: 'wood', amount: 1 }
+    ],
+    output: { itemId: 'torch', amount: 3 },
     requiredStationId: null
   },
   {

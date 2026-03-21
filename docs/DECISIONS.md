@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-21: Starter torch crafting stays stationless and converts one gel plus one wood into three torches
+
+- Decision: The first shared torch recipe now crafts `3` `torch` items from `1 gel + 1 wood` without requiring a nearby placed station.
+- Reason: Early light replenishment should unlock directly from hostile-slime gel drops plus starter-axe woodcutting, while the existing workbench requirement remains reserved for later utility and recovery recipes that benefit from an explicit station gate.
+- Consequence: Future early-utility crafting follow-ups can assume torches are available before a placed workbench exists, and later recipe-balance passes should treat the `3 torch` output plus stationless access as the baseline unless they intentionally redesign early progression.
+
 ### 2026-03-21: Starter axe chops resolve through the shared tree anchor and clear the full current stage
 
 - Decision: Starter-axe targeting now resolves sampled `small_tree_sapling`, `small_tree_trunk`, and `small_tree_leaf` hits through the shared small-tree anchor helper, and successful chops clear the full planted or grown footprint at that resolved anchor while dropping `Wood` from the current stage (`1` from planted saplings and `5` from grown trees).

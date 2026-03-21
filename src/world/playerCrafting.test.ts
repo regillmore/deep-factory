@@ -59,6 +59,16 @@ describe('playerCrafting definitions', () => {
         requiredStationId: null
       },
       {
+        id: 'torch',
+        label: 'Torch',
+        ingredients: [
+          { itemId: 'gel', amount: 1 },
+          { itemId: 'wood', amount: 1 }
+        ],
+        output: { itemId: 'torch', amount: 3 },
+        requiredStationId: null
+      },
+      {
         id: 'furnace',
         label: 'Furnace',
         ingredients: [
@@ -119,6 +129,7 @@ describe('playerCrafting definitions', () => {
       }
     ]);
     expect(getPlayerCraftingRecipeDefinition('workbench').requiredStationId).toBeNull();
+    expect(getPlayerCraftingRecipeDefinition('torch').requiredStationId).toBeNull();
     expect(getPlayerCraftingRecipeDefinition('furnace').requiredStationId).toBe('workbench');
     expect(getPlayerCraftingRecipeDefinition('healing-potion').requiredStationId).toBe('workbench');
     expect(getPlayerCraftingRecipeDefinition('copper-bar').requiredStationId).toBe('furnace');
@@ -136,6 +147,7 @@ describe('playerCrafting definitions', () => {
     expect(getPlayerCraftingStationLabel('furnace')).toBe('Furnace');
     expect(getPlayerCraftingStationLabel('anvil')).toBe('Anvil');
     expect(isPlayerCraftingRecipeId('workbench')).toBe(true);
+    expect(isPlayerCraftingRecipeId('torch')).toBe(true);
     expect(isPlayerCraftingRecipeId('furnace')).toBe(true);
     expect(isPlayerCraftingRecipeId('healing-potion')).toBe(true);
     expect(isPlayerCraftingRecipeId('copper-bar')).toBe(true);
@@ -144,7 +156,7 @@ describe('playerCrafting definitions', () => {
     expect(isPlayerCraftingRecipeId('pickaxe')).toBe(true);
     expect(isPlayerCraftingRecipeId('spear')).toBe(true);
     expect(isPlayerCraftingRecipeId('sword')).toBe(true);
-    expect(isPlayerCraftingRecipeId('torch')).toBe(false);
+    expect(isPlayerCraftingRecipeId('campfire')).toBe(false);
   });
 });
 
@@ -224,6 +236,28 @@ describe('evaluatePlayerCraftingRecipe', () => {
     const evaluation = evaluatePlayerCraftingRecipe({
       inventoryState: createWorkbenchCraftInventoryState(),
       recipeId: 'workbench'
+    });
+
+    expect(evaluation).toMatchObject({
+      hasIngredients: true,
+      stationInRange: true,
+      outputFitsInInventory: true,
+      blocker: null,
+      craftable: true
+    });
+  });
+
+  it('keeps the torch recipe craftable without a nearby station when gel and wood are available', () => {
+    const evaluation = evaluatePlayerCraftingRecipe({
+      inventoryState: createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'gel', amount: 1 },
+          { itemId: 'wood', amount: 1 },
+          null,
+          ...Array.from({ length: 7 }, () => null)
+        ]
+      }),
+      recipeId: 'torch'
     });
 
     expect(evaluation).toMatchObject({
@@ -452,6 +486,34 @@ describe('tryCraftPlayerRecipe', () => {
     expect(result.crafted).toBe(true);
     expect(getPlayerInventoryItemAmount(result.nextInventoryState, 'dirt-block')).toBe(44);
     expect(getPlayerInventoryItemAmount(result.nextInventoryState, 'workbench')).toBe(1);
+  });
+
+  it('crafts three torches by consuming one gel and one wood without a nearby station', () => {
+    const result = tryCraftPlayerRecipe({
+      inventoryState: createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'gel', amount: 2 },
+          { itemId: 'wood', amount: 2 },
+          { itemId: 'torch', amount: 1 },
+          ...Array.from({ length: 7 }, () => null)
+        ]
+      }),
+      recipeId: 'torch'
+    });
+
+    expect(result.crafted).toBe(true);
+    expect(result.nextInventoryState.hotbar[0]).toEqual({
+      itemId: 'gel',
+      amount: 1
+    });
+    expect(result.nextInventoryState.hotbar[1]).toEqual({
+      itemId: 'wood',
+      amount: 1
+    });
+    expect(result.nextInventoryState.hotbar[2]).toEqual({
+      itemId: 'torch',
+      amount: 4
+    });
   });
 
   it('crafts a furnace only when a nearby workbench is available', () => {

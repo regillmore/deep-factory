@@ -2168,6 +2168,7 @@ const bootstrap = async (): Promise<void> => {
           .map((ingredient) => `${ingredient.amount} ${getPlayerInventoryItemDefinition(ingredient.itemId).label}`)
           .join(' + '),
         outputLabel: `+${recipe.output.amount} ${getPlayerInventoryItemDefinition(recipe.output.itemId).hotbarLabel}`,
+        availabilityLabel: resolveItemCatalogPanelRecipeAvailabilityLabel(recipeEvaluation),
         enabled: recipeEvaluation.craftable,
         disabledReason: resolveCraftingRecipeDisabledReason(recipeEvaluation)
       };

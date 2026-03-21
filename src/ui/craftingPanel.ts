@@ -5,6 +5,7 @@ export interface CraftingPanelRecipeViewModel {
   label: string;
   ingredientsLabel: string;
   outputLabel: string;
+  availabilityLabel: string;
   enabled: boolean;
   disabledReason?: string | null;
 }
@@ -46,6 +47,7 @@ const areCraftingPanelRecipeViewModelsEqual = (
       recipe.label === other.label &&
       recipe.ingredientsLabel === other.ingredientsLabel &&
       recipe.outputLabel === other.outputLabel &&
+      recipe.availabilityLabel === other.availabilityLabel &&
       recipe.enabled === other.enabled &&
       (recipe.disabledReason ?? null) === (other.disabledReason ?? null)
     );
@@ -79,6 +81,7 @@ const cloneCraftingPanelState = (state: CraftingPanelState): CraftingPanelState 
     label: recipe.label,
     ingredientsLabel: recipe.ingredientsLabel,
     outputLabel: recipe.outputLabel,
+    availabilityLabel: recipe.availabilityLabel,
     enabled: recipe.enabled,
     disabledReason: recipe.disabledReason ?? null
   }))
@@ -231,6 +234,12 @@ export class CraftingPanel {
       output.style.fontSize = '11px';
       output.style.color = recipe.enabled ? '#bfe7c8' : '#aab7c7';
       button.append(output);
+
+      const availability = document.createElement('div');
+      availability.textContent = recipe.availabilityLabel;
+      availability.style.fontSize = '11px';
+      availability.style.color = recipe.enabled ? '#bfe7c8' : '#e6c88d';
+      button.append(availability);
 
       return button;
     });

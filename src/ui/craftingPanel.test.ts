@@ -89,6 +89,7 @@ describe('CraftingPanel', () => {
           label: 'Workbench',
           ingredientsLabel: '20 Dirt Block',
           outputLabel: '+1 BENCH',
+          availabilityLabel: 'Ready to craft',
           enabled: true
         },
         {
@@ -96,6 +97,7 @@ describe('CraftingPanel', () => {
           label: 'Healing Potion',
           ingredientsLabel: '2 Gel',
           outputLabel: '+1 POTION',
+          availabilityLabel: 'Blocked: Requires nearby workbench',
           enabled: false,
           disabledReason: 'Requires nearby workbench'
         }
@@ -115,8 +117,10 @@ describe('CraftingPanel', () => {
     ]);
     expect(firstRecipe.title).toBe('Craft Workbench');
     expect(firstRecipe.getAttribute('aria-disabled')).toBe('false');
+    expect(firstRecipe.children[3]?.textContent).toBe('Ready to craft');
     expect(secondRecipe.title).toContain('Requires nearby workbench');
     expect(secondRecipe.getAttribute('aria-disabled')).toBe('true');
+    expect(secondRecipe.children[3]?.textContent).toBe('Blocked: Requires nearby workbench');
   });
 
   it('forwards enabled recipe clicks and ignores disabled ones', () => {
@@ -138,6 +142,7 @@ describe('CraftingPanel', () => {
           label: 'Workbench',
           ingredientsLabel: '20 Dirt Block',
           outputLabel: '+1 BENCH',
+          availabilityLabel: 'Ready to craft',
           enabled: true
         },
         {
@@ -145,6 +150,7 @@ describe('CraftingPanel', () => {
           label: 'Healing Potion',
           ingredientsLabel: '2 Gel',
           outputLabel: '+1 POTION',
+          availabilityLabel: 'Blocked: Need 2 gel',
           enabled: false,
           disabledReason: 'Need 2 gel'
         }
@@ -176,6 +182,7 @@ describe('CraftingPanel', () => {
           label: 'Workbench',
           ingredientsLabel: '20 Dirt Block',
           outputLabel: '+1 BENCH',
+          availabilityLabel: 'Ready to craft',
           enabled: true,
           disabledReason: null
         }

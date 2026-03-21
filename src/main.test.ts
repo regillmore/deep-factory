@@ -325,6 +325,7 @@ const testRuntime = vi.hoisted(() => {
         label: string;
         ingredientsLabel: string;
         outputLabel: string;
+        availabilityLabel: string;
         enabled: boolean;
         disabledReason?: string | null;
       }>;
@@ -1721,6 +1722,7 @@ vi.mock('./ui/craftingPanel', () => ({
         label: string;
         ingredientsLabel: string;
         outputLabel: string;
+        availabilityLabel: string;
         enabled: boolean;
         disabledReason?: string | null;
       }>;
@@ -7840,6 +7842,7 @@ describe('main.ts shell state orchestration', () => {
     expect(
       testRuntime.latestCraftingPanelState?.recipes.find((recipe) => recipe.recipeId === 'workbench')
     ).toMatchObject({
+      availabilityLabel: 'Ready to craft',
       enabled: true
     });
     expect(
@@ -7847,6 +7850,7 @@ describe('main.ts shell state orchestration', () => {
         (recipe) => recipe.recipeId === 'healing-potion'
       )
     ).toMatchObject({
+      availabilityLabel: 'Blocked: Requires nearby Workbench',
       enabled: false,
       disabledReason: 'Requires nearby Workbench'
     });
@@ -7878,6 +7882,7 @@ describe('main.ts shell state orchestration', () => {
         (recipe) => recipe.recipeId === 'healing-potion'
       )
     ).toMatchObject({
+      availabilityLabel: 'Ready to craft',
       enabled: true,
       disabledReason: null
     });
@@ -8578,14 +8583,14 @@ describe('main.ts shell state orchestration', () => {
 
     expect(testRuntime.latestItemCatalogPanelState).toMatchObject({
       searchQuery: 'gel',
-      resultSummaryLabel: '1 matching item | 1 matching recipe'
+      resultSummaryLabel: '1 matching item | 2 matching recipes'
     });
     expect(testRuntime.latestItemCatalogPanelState?.items.map((item) => item.itemId)).toEqual([
       'gel'
     ]);
     expect(
       testRuntime.latestItemCatalogPanelState?.recipes.map((recipe) => recipe.recipeId)
-    ).toEqual(['healing-potion']);
+    ).toEqual(['healing-potion', 'torch']);
 
     testRuntime.itemCatalogPanelInstance?.triggerSearchQueryChange('nearby workbench');
 
@@ -8777,6 +8782,75 @@ describe('main.ts shell state orchestration', () => {
       amount: 2
     });
     expect(savedInventory?.hotbar.some((stack) => stack?.itemId === 'gel')).toBe(false);
+  });
+
+  it('quick-crafts torch stacks without a nearby station and refreshes missing-ingredient blocker text', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'gel', amount: 1 },
+              { itemId: 'wood', amount: 1 },
+              { itemId: 'torch', amount: 2 },
+              ...Array.from({ length: 7 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 0
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    runRenderFrame();
+
+    testRuntime.itemCatalogPanelInstance?.triggerSearchQueryChange('wood torch');
+    expect(testRuntime.latestItemCatalogPanelState?.recipes).toEqual([
+      {
+        recipeId: 'torch',
+        label: 'Torch',
+        outputLabel: 'Output: +3 TORCH',
+        ingredientsLabel: 'Ingredients: 1 Gel + 1 Wood',
+        stationRequirementLabel: 'Requirement: None',
+        availabilityLabel: 'Ready to craft',
+        enabled: true,
+        disabledReason: null
+      }
+    ]);
+
+    testRuntime.itemCatalogPanelInstance?.triggerCraftRecipe('torch');
+
+    expect(testRuntime.latestItemCatalogPanelState?.recipes).toEqual([
+      {
+        recipeId: 'torch',
+        label: 'Torch',
+        outputLabel: 'Output: +3 TORCH',
+        ingredientsLabel: 'Ingredients: 1 Gel + 1 Wood',
+        stationRequirementLabel: 'Requirement: None',
+        availabilityLabel: 'Blocked: Missing 1 Gel + 1 Wood',
+        enabled: false,
+        disabledReason: 'Missing 1 Gel + 1 Wood'
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    const savedInventory = readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState;
+    expect(savedInventory?.hotbar[0]).toBeNull();
+    expect(savedInventory?.hotbar[1]).toBeNull();
+    expect(savedInventory?.hotbar[2]).toEqual({
+      itemId: 'torch',
+      amount: 5
+    });
   });
 
   it('hides the hotbar placement preview for unsupported item slots and while the full debug-edit panel is open', async () => {
