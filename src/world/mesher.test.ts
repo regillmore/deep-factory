@@ -470,6 +470,16 @@ describe('buildChunkMesh autotile UV selection', () => {
     expectSingleQuadUv(mesh.vertices, resolveTileRenderUvRect(4)!);
   });
 
+  it('emits starter-anvil quads from the dedicated authored atlas region', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 15);
+
+    const mesh = buildChunkMesh(chunk);
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 26);
+  });
+
   it('bakes per-tile light levels into each vertex of the emitted quad', () => {
     const chunk = createEmptyChunk();
     setChunkTile(chunk, 0, 0, 3);

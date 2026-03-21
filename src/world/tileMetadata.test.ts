@@ -157,7 +157,7 @@ describe('tile metadata loader', () => {
     expect(resolveTileRenderUvRect(11)).toEqual(atlasIndexToUvRect(19));
     expect(resolveTileRenderUvRect(13)).toEqual(atlasIndexToUvRect(14));
     expect(resolveTileRenderUvRect(14)).toEqual(atlasIndexToUvRect(14));
-    expect(resolveTileRenderUvRect(15)).toEqual(atlasIndexToUvRect(14));
+    expect(resolveTileRenderUvRect(15)).toEqual(atlasIndexToUvRect(26));
     expect(resolveTileRenderUvRect(16)).toEqual(atlasIndexToUvRect(23));
     expect(resolveTileRenderUvRect(17)).toEqual(atlasIndexToUvRect(24));
     expect(resolveTileRenderUvRect(18)).toEqual(atlasIndexToUvRect(25));

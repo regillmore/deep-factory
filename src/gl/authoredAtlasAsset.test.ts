@@ -1231,6 +1231,23 @@ describe('authored atlas asset', () => {
     });
   });
 
+  it('keeps the starter anvil sprite in its dedicated authored region', () => {
+    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
+    const anvilTile = TILE_METADATA.tiles.find((tile) => tile.name === 'anvil');
+
+    expect(anvilTile?.render?.atlasIndex).toBe(26);
+
+    const anvilRegion = AUTHORED_ATLAS_REGIONS[anvilTile!.render!.atlasIndex!];
+    expect(anvilRegion).toEqual({ x: 96, y: 16, width: 16, height: 16 });
+
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, anvilRegion!)).toEqual({
+      x: anvilRegion!.x + 2,
+      y: anvilRegion!.y + 4,
+      width: 12,
+      height: 10
+    });
+  });
+
   it('keeps both torch animation frames centered inside full-width authored squares while preserving the spare slot and exterior padding', () => {
     const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
     const torchTile = TILE_METADATA.tiles.find((tile) => tile.name === 'torch');
