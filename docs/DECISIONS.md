@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-20: Small-tree stage writes replace the full anchored footprint
+
+- Decision: Shared small-tree world-write helpers now apply planted or grown states by writing the full next anchored footprint and clearing any prior-stage-only anchored cells through one mutable `getTile`/`setTile` seam.
+- Reason: Upcoming acorn growth and starter-axe cleanup both need deterministic whole-tree state transitions without asking each caller to hand-maintain partial tile edits.
+- Consequence: Future small-tree planting, growth, and removal should prefer the shared stage-write helpers over ad hoc per-cell tree mutations.
+
 ### 2026-03-20: Small-tree world hits resolve only through full planted-base footprints
 
 - Decision: Sampled `small_tree_sapling` tiles resolve directly to their own planted-base anchor, while sampled `small_tree_trunk` and `small_tree_leaf` tiles only resolve when the complete planted-base-anchored grown-tree footprint is present around the candidate anchor.
