@@ -26,7 +26,8 @@ export type PlayerCraftingRecipeId =
   | 'copper-bar'
   | 'anvil'
   | 'pickaxe'
-  | 'spear';
+  | 'spear'
+  | 'sword';
 
 export interface PlayerCraftingStationDefinition {
   id: PlayerCraftingStationId;
@@ -152,6 +153,13 @@ const PLAYER_CRAFTING_RECIPE_DEFINITIONS: readonly PlayerCraftingRecipeDefinitio
     label: 'Starter Spear',
     ingredients: [{ itemId: 'copper-bar', amount: 8 }],
     output: { itemId: 'spear', amount: 1 },
+    requiredStationId: 'anvil'
+  },
+  {
+    id: 'sword',
+    label: 'Starter Sword',
+    ingredients: [{ itemId: 'copper-bar', amount: 10 }],
+    output: { itemId: 'sword', amount: 1 },
     requiredStationId: 'anvil'
   }
 ] as const;

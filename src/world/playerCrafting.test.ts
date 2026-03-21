@@ -102,6 +102,13 @@ describe('playerCrafting definitions', () => {
         ingredients: [{ itemId: 'copper-bar', amount: 8 }],
         output: { itemId: 'spear', amount: 1 },
         requiredStationId: 'anvil'
+      },
+      {
+        id: 'sword',
+        label: 'Starter Sword',
+        ingredients: [{ itemId: 'copper-bar', amount: 10 }],
+        output: { itemId: 'sword', amount: 1 },
+        requiredStationId: 'anvil'
       }
     ]);
     expect(getPlayerCraftingRecipeDefinition('workbench').requiredStationId).toBeNull();
@@ -111,6 +118,7 @@ describe('playerCrafting definitions', () => {
     expect(getPlayerCraftingRecipeDefinition('anvil').requiredStationId).toBe('workbench');
     expect(getPlayerCraftingRecipeDefinition('pickaxe').requiredStationId).toBe('anvil');
     expect(getPlayerCraftingRecipeDefinition('spear').requiredStationId).toBe('anvil');
+    expect(getPlayerCraftingRecipeDefinition('sword').requiredStationId).toBe('anvil');
     expect(getPlayerCraftingStationDefinitions()).toEqual([
       { id: 'workbench', label: 'Workbench' },
       { id: 'furnace', label: 'Furnace' },
@@ -126,6 +134,7 @@ describe('playerCrafting definitions', () => {
     expect(isPlayerCraftingRecipeId('anvil')).toBe(true);
     expect(isPlayerCraftingRecipeId('pickaxe')).toBe(true);
     expect(isPlayerCraftingRecipeId('spear')).toBe(true);
+    expect(isPlayerCraftingRecipeId('sword')).toBe(true);
     expect(isPlayerCraftingRecipeId('torch')).toBe(false);
   });
 });
@@ -289,6 +298,22 @@ describe('evaluatePlayerCraftingRecipe', () => {
         '0,-1': STARTER_ANVIL_TILE_ID
       })
     });
+    const swordWithoutAnvil = evaluatePlayerCraftingRecipe({
+      inventoryState,
+      recipeId: 'sword',
+      playerState: createPlayer(),
+      world: createWorld({
+        '0,-1': STARTER_WORKBENCH_TILE_ID
+      })
+    });
+    const swordWithAnvil = evaluatePlayerCraftingRecipe({
+      inventoryState,
+      recipeId: 'sword',
+      playerState: createPlayer(),
+      world: createWorld({
+        '0,-1': STARTER_ANVIL_TILE_ID
+      })
+    });
 
     expect(withoutWorkbench).toMatchObject({
       hasIngredients: true,
@@ -333,6 +358,18 @@ describe('evaluatePlayerCraftingRecipe', () => {
       craftable: false
     });
     expect(spearWithAnvil).toMatchObject({
+      hasIngredients: true,
+      stationInRange: true,
+      blocker: null,
+      craftable: true
+    });
+    expect(swordWithoutAnvil).toMatchObject({
+      hasIngredients: true,
+      stationInRange: false,
+      blocker: 'missing-station',
+      craftable: false
+    });
+    expect(swordWithAnvil).toMatchObject({
       hasIngredients: true,
       stationInRange: true,
       blocker: null,
@@ -575,6 +612,40 @@ describe('tryCraftPlayerRecipe', () => {
     expect(crafted.crafted).toBe(true);
     expect(crafted.nextInventoryState.hotbar[0]).toEqual({
       itemId: 'spear',
+      amount: 1
+    });
+    expect(getPlayerInventoryItemAmount(crafted.nextInventoryState, 'copper-bar')).toBe(0);
+  });
+
+  it('crafts a starter sword from copper bars only when a nearby anvil is available', () => {
+    const inventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'copper-bar', amount: 10 },
+        null,
+        ...Array.from({ length: 8 }, () => null)
+      ]
+    });
+
+    const blocked = tryCraftPlayerRecipe({
+      inventoryState,
+      recipeId: 'sword',
+      playerState: createPlayer(),
+      world: createWorld()
+    });
+    const crafted = tryCraftPlayerRecipe({
+      inventoryState,
+      recipeId: 'sword',
+      playerState: createPlayer(),
+      world: createWorld({
+        '0,-1': STARTER_ANVIL_TILE_ID
+      })
+    });
+
+    expect(blocked.crafted).toBe(false);
+    expect(blocked.nextInventoryState).toEqual(inventoryState);
+    expect(crafted.crafted).toBe(true);
+    expect(crafted.nextInventoryState.hotbar[0]).toEqual({
+      itemId: 'sword',
       amount: 1
     });
     expect(getPlayerInventoryItemAmount(crafted.nextInventoryState, 'copper-bar')).toBe(0);
