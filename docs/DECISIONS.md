@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-21: Small-tree growth tracks planted anchors and only checks resident footprints
+
+- Decision: The small-tree growth scheduler now rebuilds planted sapling anchors from save snapshots, updates that tracked-anchor set from live tile edits, and rechecks one anchor-hash window per interval only across tracked anchors whose full planted-plus-grown footprint chunks are currently resident; planted saplings still only stay growable while their support tile remains `grass_surface`.
+- Reason: Deterministic tree growth still needs predictable cadence without per-sapling save metadata, but the earlier resident-area scan caused periodic fixed-step hitches even in worlds with no saplings.
+- Consequence: Future tree-growth or cleanup follow-ups should keep the tracked-anchor restore and tile-edit seams synchronized with any new sapling lifecycle rules, and should preserve the resident-footprint filter unless they replace it with another non-scanning scheduler.
+
 ### 2026-03-21: Acorn planting targets the clicked grass anchor and preserves that support tile
 
 - Decision: The first `acorn` hotbar slice now targets the requested grass anchor tile through the shared play-mode item-use path but writes the sapling into the air tile directly above that support, while above-anchor blockage stays a later growth-time concern instead of blocking initial planting.

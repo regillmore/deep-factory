@@ -314,7 +314,16 @@ import {
   evaluateAcornPlantingAtAnchor,
   tryPlantAcornAtAnchor
 } from './world/acornPlanting';
+import {
+  collectTrackedPlantedSmallTreeAnchorsFromWorldSnapshot,
+  createSmallTreeGrowthState,
+  isSmallTreeGrowthTrackedAnchorResident,
+  type SmallTreeGrowthTrackedAnchor,
+  stepSmallTreeGrowth
+} from './world/smallTreeGrowth';
+import { getSmallTreeSaplingTileId } from './world/smallTreeTiles';
 import { evaluatePlayerHotbarTilePlacementRange } from './world/playerHotbarPlacementRange';
+import { PROCEDURAL_GRASS_SURFACE_TILE_ID } from './world/proceduralTerrain';
 import {
   evaluateStarterBlockPlacement,
   isPlaceableSolidBlockItemId,
@@ -1743,6 +1752,48 @@ const bootstrap = async (): Promise<void> => {
   let starterPickaxeMiningState = createStarterPickaxeMiningState();
   let starterBugNetState = createStarterBugNetState();
   let playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
+  let smallTreeGrowthState = createSmallTreeGrowthState();
+  const smallTreeSaplingTileId = getSmallTreeSaplingTileId();
+  const trackedSmallTreeGrowthAnchors = new Map<string, SmallTreeGrowthTrackedAnchor>();
+
+  const createSmallTreeGrowthAnchorKey = (anchorTileX: number, anchorTileY: number): string =>
+    `${anchorTileX},${anchorTileY}`;
+  const clearTrackedSmallTreeGrowthAnchors = (): void => {
+    trackedSmallTreeGrowthAnchors.clear();
+  };
+  const rebuildTrackedSmallTreeGrowthAnchorsFromSnapshot = (
+    snapshot: WorldSaveEnvelope['worldSnapshot']
+  ): void => {
+    clearTrackedSmallTreeGrowthAnchors();
+    for (const trackedAnchor of collectTrackedPlantedSmallTreeAnchorsFromWorldSnapshot(snapshot)) {
+      trackedSmallTreeGrowthAnchors.set(
+        createSmallTreeGrowthAnchorKey(trackedAnchor.anchorTileX, trackedAnchor.anchorTileY),
+        trackedAnchor
+      );
+    }
+  };
+  const refreshTrackedSmallTreeGrowthAnchor = (anchorTileX: number, anchorTileY: number): void => {
+    const trackedAnchorKey = createSmallTreeGrowthAnchorKey(anchorTileX, anchorTileY);
+    if (
+      renderer.getTile(anchorTileX, anchorTileY) === PROCEDURAL_GRASS_SURFACE_TILE_ID &&
+      renderer.getTile(anchorTileX, anchorTileY - 1) === smallTreeSaplingTileId
+    ) {
+      trackedSmallTreeGrowthAnchors.set(trackedAnchorKey, {
+        anchorTileX,
+        anchorTileY
+      });
+      return;
+    }
+
+    trackedSmallTreeGrowthAnchors.delete(trackedAnchorKey);
+  };
+  const refreshTrackedSmallTreeGrowthAnchorsAroundTileEdit = (
+    worldTileX: number,
+    worldTileY: number
+  ): void => {
+    refreshTrackedSmallTreeGrowthAnchor(worldTileX, worldTileY);
+    refreshTrackedSmallTreeGrowthAnchor(worldTileX, worldTileY + 1);
+  };
 
   const getStandalonePlayerState = (): PlayerState | null => {
     if (standalonePlayerEntityId === null) {
@@ -2840,6 +2891,7 @@ const bootstrap = async (): Promise<void> => {
     starterPickaxeMiningState = createStarterPickaxeMiningState();
     starterBugNetState = createStarterBugNetState();
     playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
+    smallTreeGrowthState = createSmallTreeGrowthState();
     syncHotbarOverlayState();
   };
   const restoreStandalonePlayerSessionState = (
@@ -3069,6 +3121,8 @@ const bootstrap = async (): Promise<void> => {
     }
   };
   renderer.onTileEdited((event) => {
+    refreshTrackedSmallTreeGrowthAnchorsAroundTileEdit(event.worldTileX, event.worldTileY);
+
     if (event.previousTileId === STARTER_TORCH_TILE_ID && event.tileId !== STARTER_TORCH_TILE_ID) {
       refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_TORCH_ITEM_ID);
       return;
@@ -4178,6 +4232,39 @@ const bootstrap = async (): Promise<void> => {
     if (remainingDroppedItemState !== null) {
       spawnDroppedItemEntity(remainingDroppedItemState);
     }
+  };
+  const stepSmallTreeGrowthFixedUpdate = (): void => {
+    if (smallTreeGrowthState.ticksUntilNextGrowth > 1) {
+      smallTreeGrowthState = {
+        ticksUntilNextGrowth: smallTreeGrowthState.ticksUntilNextGrowth - 1,
+        nextWindowIndex: smallTreeGrowthState.nextWindowIndex
+      };
+      return;
+    }
+
+    const trackedResidentAnchors: SmallTreeGrowthTrackedAnchor[] = [];
+    for (const trackedAnchor of trackedSmallTreeGrowthAnchors.values()) {
+      if (
+        !isSmallTreeGrowthTrackedAnchorResident(
+          trackedAnchor,
+          (chunkX, chunkY) => renderer.hasResidentChunk(chunkX, chunkY)
+        )
+      ) {
+        continue;
+      }
+
+      trackedResidentAnchors.push(trackedAnchor);
+    }
+
+    const growthStep = stepSmallTreeGrowth({
+      world: {
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY),
+        setTile: (tileX, tileY, tileId) => renderer.setTile(tileX, tileY, tileId)
+      },
+      growthState: smallTreeGrowthState,
+      trackedAnchors: trackedResidentAnchors
+    });
+    smallTreeGrowthState = growthStep.nextGrowthState;
   };
   const applySelectedStandalonePlayerItemUse = (request: PlayerItemUseRequest): boolean => {
     if (debugEditControlsVisible) {
@@ -5364,6 +5451,7 @@ const bootstrap = async (): Promise<void> => {
   };
   const resetFreshWorldSessionRuntimeState = (): void => {
     renderer.resetWorld(createRandomWorldSeed());
+    clearTrackedSmallTreeGrowthAnchors();
     resetFreshWorldSessionDebugEditState();
     clearPinnedDebugTileInspect();
     resetFreshWorldSessionCameraAndPlayerState();
@@ -6546,6 +6634,7 @@ const bootstrap = async (): Promise<void> => {
         target: {
           loadWorldSnapshot: (snapshot) => {
             renderer.loadWorldSnapshot(snapshot);
+            rebuildTrackedSmallTreeGrowthAnchorsFromSnapshot(snapshot);
           },
           restoreStandalonePlayerDeathState: (deathState) => {
             standalonePlayerDeathState = deathState;
@@ -6595,6 +6684,7 @@ const bootstrap = async (): Promise<void> => {
         status: 'restored'
       };
     } catch (error) {
+      rebuildTrackedSmallTreeGrowthAnchorsFromSnapshot(renderer.createWorldSnapshot());
       console.warn('Failed to restore world save.', error);
       return {
         status: 'restore-failed',
@@ -6716,6 +6806,7 @@ const bootstrap = async (): Promise<void> => {
       }
 
       renderer.stepLiquidSimulation();
+      stepSmallTreeGrowthFixedUpdate();
 
       enforcePeacefulModeHostileSlimeState();
       entityRegistry.fixedUpdateAll(fixedDt);
@@ -6760,6 +6851,7 @@ const bootstrap = async (): Promise<void> => {
   renderer.resize();
   if (persistedWorldSaveEnvelope === null) {
     renderer.resetWorld(createRandomWorldSeed());
+    clearTrackedSmallTreeGrowthAnchors();
     refreshResolvedPlayerSpawn();
   } else {
     try {
@@ -6768,6 +6860,7 @@ const bootstrap = async (): Promise<void> => {
         target: {
           loadWorldSnapshot: (snapshot) => {
             renderer.loadWorldSnapshot(snapshot);
+            rebuildTrackedSmallTreeGrowthAnchorsFromSnapshot(snapshot);
           },
           restoreStandalonePlayerDeathState: (deathState) => {
             standalonePlayerDeathState = deathState;
@@ -6801,6 +6894,7 @@ const bootstrap = async (): Promise<void> => {
       }
       resolveCurrentWorldPlayerSpawn();
     } catch (error) {
+      rebuildTrackedSmallTreeGrowthAnchorsFromSnapshot(renderer.createWorldSnapshot());
       console.warn('Failed to restore persisted world session.', error);
       clearPersistedCurrentWorldSession();
       refreshResolvedPlayerSpawn();

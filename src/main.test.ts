@@ -84,7 +84,11 @@ import {
 } from './world/starterSpear';
 import { STARTER_BUG_NET_SWING_WINDUP_SECONDS } from './world/starterBugNet';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
-import { getSmallTreeSaplingTileId } from './world/smallTreeTiles';
+import {
+  DEFAULT_SMALL_TREE_GROWTH_INTERVAL_TICKS,
+  resolveSmallTreeGrowthWindowIndex
+} from './world/smallTreeGrowth';
+import { getSmallTreeSaplingTileId, getSmallTreeTileIds } from './world/smallTreeTiles';
 import { STARTER_TORCH_TILE_ID } from './world/starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './world/starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './world/starterFurnacePlacement';
@@ -402,6 +406,8 @@ const testRuntime = vi.hoisted(() => {
     rendererConstructCount: 0,
     rendererInstance: null as object | null,
     rendererLoadWorldSnapshotCallCount: 0,
+    rendererGetResidentChunkBoundsCallCount: 0,
+    rendererHasResidentChunkCallCount: 0,
     rendererResetWorldSeeds: [] as number[],
     rendererFindPlayerSpawnPointImpl: null as null | ((options: unknown) => unknown),
     gameLoopFixedUpdate: null as null | ((fixedDt: number) => void),
@@ -455,6 +461,7 @@ const testRuntime = vi.hoisted(() => {
     rendererLiquidLevelsByWorldKey: new Map<string, number>(),
     rendererLiquidRenderCardinalMask: null as number | null,
     rendererSetTileResult: false,
+    rendererPersistentSetTileResult: false,
     rendererSetTileCalls: [] as Array<{
       worldTileX: number;
       worldTileY: number;
@@ -580,6 +587,19 @@ const testRuntime = vi.hoisted(() => {
     latestPlayerItemPlacementPreviewState: null as PlayerItemPlacementPreviewState | null,
     latestPlayerItemSpearPreviewState: null as PlayerItemSpearPreviewState | null,
     rendererWorldSnapshot: null as ReturnType<TileWorld['createSnapshot']> | null,
+    rendererResidentChunkBounds: {
+      minChunkX: 0,
+      maxChunkX: 0,
+      minChunkY: 0,
+      maxChunkY: 0
+    } as
+      | {
+          minChunkX: number;
+          maxChunkX: number;
+          minChunkY: number;
+          maxChunkY: number;
+        }
+      | null,
     rendererPlayerSpawnLiquidSafetyStatus: 'safe' as 'safe' | 'overlap',
     playerSpawnPoint: null as null | {
       anchorTileX: number;
@@ -939,7 +959,9 @@ vi.mock('./gl/renderer', () => ({
         tileId
       });
       const result = testRuntime.rendererSetTileResult;
-      testRuntime.rendererSetTileResult = false;
+      if (!testRuntime.rendererPersistentSetTileResult) {
+        testRuntime.rendererSetTileResult = false;
+      }
       if (result) {
         const editEvents =
           testRuntime.rendererNextSetTileEditEvents ?? [
@@ -985,13 +1007,18 @@ vi.mock('./gl/renderer', () => ({
       return false;
     }
 
+    hasResidentChunk(chunkX: number, chunkY: number): boolean {
+      testRuntime.rendererHasResidentChunkCallCount += 1;
+      return (
+        testRuntime.rendererWorldSnapshot?.residentChunks.some(
+          (chunk) => chunk.coord.x === chunkX && chunk.coord.y === chunkY
+        ) ?? false
+      );
+    }
+
     getResidentChunkBounds() {
-      return {
-        minChunkX: 0,
-        maxChunkX: 0,
-        minChunkY: 0,
-        maxChunkY: 0
-      };
+      testRuntime.rendererGetResidentChunkBoundsCallCount += 1;
+      return testRuntime.rendererResidentChunkBounds;
     }
 
     getLiquidRenderCardinalMask(): number | null {
@@ -2445,6 +2472,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererConstructCount = 0;
     testRuntime.rendererInstance = null;
     testRuntime.rendererLoadWorldSnapshotCallCount = 0;
+    testRuntime.rendererGetResidentChunkBoundsCallCount = 0;
+    testRuntime.rendererHasResidentChunkCallCount = 0;
     testRuntime.rendererResetWorldSeeds = [];
     testRuntime.rendererFindPlayerSpawnPointImpl = null;
     testRuntime.gameLoopFixedUpdate = null;
@@ -2478,6 +2507,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererLiquidLevelsByWorldKey.clear();
     testRuntime.rendererLiquidRenderCardinalMask = null;
     testRuntime.rendererSetTileResult = false;
+    testRuntime.rendererPersistentSetTileResult = false;
     testRuntime.rendererSetTileCalls = [];
     testRuntime.rendererTileEditListeners = [];
     testRuntime.rendererNextSetTileEditEvents = null;
@@ -2526,6 +2556,12 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.latestPlayerItemPlacementPreviewState = null;
     testRuntime.latestPlayerItemSpearPreviewState = null;
     testRuntime.rendererWorldSnapshot = new TileWorld(0).createSnapshot();
+    testRuntime.rendererResidentChunkBounds = {
+      minChunkX: 0,
+      maxChunkX: 0,
+      minChunkY: 0,
+      maxChunkY: 0
+    };
     testRuntime.rendererPlayerSpawnLiquidSafetyStatus = 'safe';
     testRuntime.debugTileInspectPinRequests = [];
     testRuntime.playerSpawnPoint = createTestPlayerSpawnPoint();
@@ -8850,6 +8886,116 @@ describe('main.ts shell state orchestration', () => {
     restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
     expect(restoredWorld.getTile(1, 0)).toBe(supportTileIdBeforePlanting);
     expect(restoredWorld.getTile(1, -1)).toBe(getSmallTreeSaplingTileId());
+  });
+
+  it('skips resident sapling-growth polling entirely while no planted saplings are tracked', async () => {
+    setPersistedWorldSaveWithInventory();
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererGetResidentChunkBoundsCallCount = 0;
+    testRuntime.rendererHasResidentChunkCallCount = 0;
+    testRuntime.rendererSetTileCalls = [];
+
+    for (
+      let updateIndex = 0;
+      updateIndex < DEFAULT_SMALL_TREE_GROWTH_INTERVAL_TICKS;
+      updateIndex += 1
+    ) {
+      runFixedUpdate(1 / 60);
+    }
+
+    expect(testRuntime.rendererGetResidentChunkBoundsCallCount).toBe(0);
+    expect(testRuntime.rendererHasResidentChunkCallCount).toBe(0);
+    expect(testRuntime.rendererSetTileCalls).toEqual([]);
+  });
+
+  it('grows planted acorn saplings into small trees on deterministic fixed-step windows and persists the grown tree', async () => {
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setTile(1, 0, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
+    expect(savedWorld.setTile(1, -1, getSmallTreeSaplingTileId())).toBe(true);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'acorn', amount: 1 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              ...Array.from({ length: 6 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 1
+          })
+        })
+      )
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererSetTileCalls = [];
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.rendererPersistentSetTileResult = true;
+
+    const growthWindowIndex = resolveSmallTreeGrowthWindowIndex(1, 0);
+    const fixedUpdatesUntilGrowth =
+      DEFAULT_SMALL_TREE_GROWTH_INTERVAL_TICKS * (growthWindowIndex + 1);
+    for (let updateIndex = 0; updateIndex < fixedUpdatesUntilGrowth; updateIndex += 1) {
+      runFixedUpdate(1 / 60);
+    }
+
+    const treeTileIds = getSmallTreeTileIds();
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        tileId: treeTileIds.trunk
+      },
+      {
+        worldTileX: 1,
+        worldTileY: -2,
+        tileId: treeTileIds.trunk
+      },
+      {
+        worldTileX: 0,
+        worldTileY: -3,
+        tileId: treeTileIds.leaf
+      },
+      {
+        worldTileX: 1,
+        worldTileY: -3,
+        tileId: treeTileIds.leaf
+      },
+      {
+        worldTileX: 2,
+        worldTileY: -3,
+        tileId: treeTileIds.leaf
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    expect(persistedEnvelope?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+      itemId: 'acorn',
+      amount: 1
+    });
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+    expect(restoredWorld.getTile(1, 0)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    expect(restoredWorld.getTile(1, -1)).toBe(treeTileIds.trunk);
+    expect(restoredWorld.getTile(1, -2)).toBe(treeTileIds.trunk);
+    expect(restoredWorld.getTile(0, -3)).toBe(treeTileIds.leaf);
+    expect(restoredWorld.getTile(1, -3)).toBe(treeTileIds.leaf);
+    expect(restoredWorld.getTile(2, -3)).toBe(treeTileIds.leaf);
   });
 
   it('places a stone block from the selected hotbar slot while the full debug-edit panel is hidden and persists the consumed stack', async () => {

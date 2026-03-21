@@ -1019,6 +1019,10 @@ export class TileWorld {
     return chunk;
   }
 
+  hasChunk(chunkX: number, chunkY: number): boolean {
+    return this.chunks.has(chunkKey(chunkX, chunkY));
+  }
+
   getTile(worldTileX: number, worldTileY: number): number {
     const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
     const chunk = this.ensureChunk(chunkX, chunkY);

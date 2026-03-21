@@ -1019,6 +1019,10 @@ export class Renderer {
     return respawnWorldPlayerStateAtSpawnIfEmbeddedInSolid(this.world, state, spawn);
   }
 
+  hasResidentChunk(chunkX: number, chunkY: number): boolean {
+    return this.world.hasChunk(chunkX, chunkY);
+  }
+
   getResidentChunkBounds(): ChunkBounds | null {
     let bounds: ChunkBounds | null = null;
     for (const chunk of this.world.getChunks()) {

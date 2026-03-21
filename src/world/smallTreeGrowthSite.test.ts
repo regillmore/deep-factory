@@ -91,6 +91,25 @@ describe('smallTreeGrowthSite', () => {
     });
   });
 
+  it('blocks planted saplings from growing once their grass support anchor is lost', () => {
+    const anchorTileX = 5;
+    const anchorTileY = -4;
+    const world = createSmallTreeWorldView([
+      { tileX: anchorTileX, tileY: anchorTileY, tileId: PROCEDURAL_DIRT_TILE_ID },
+      ...createFootprintTiles(anchorTileX, anchorTileY, PLANTED_SMALL_TREE_FOOTPRINT_CELLS)
+    ]);
+
+    expect(evaluateSmallTreeGrowthSiteAtAnchor(world, anchorTileX, anchorTileY)).toEqual({
+      anchorTileId: PROCEDURAL_DIRT_TILE_ID,
+      hasGrassAnchor: false,
+      currentGrowthStage: 'planted',
+      blockedGrowthTiles: [],
+      hasUnobstructedGrowthSpace: true,
+      canPlant: false,
+      canGrow: false
+    });
+  });
+
   it('reports deterministic above-anchor obstructions before planted-to-grown replacement', () => {
     const anchorTileX = 8;
     const anchorTileY = -12;

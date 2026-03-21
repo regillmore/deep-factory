@@ -105,6 +105,6 @@ export const evaluateSmallTreeGrowthSiteAtAnchor = (
     blockedGrowthTiles,
     hasUnobstructedGrowthSpace,
     canPlant: hasGrassAnchor && currentGrowthStage === null,
-    canGrow: currentGrowthStage === 'planted' && hasUnobstructedGrowthSpace
+    canGrow: hasGrassAnchor && currentGrowthStage === 'planted' && hasUnobstructedGrowthSpace
   };
 };
