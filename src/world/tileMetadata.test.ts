@@ -92,7 +92,7 @@ const describeAuthoredSourceFromPixels = (
 
 describe('tile metadata loader', () => {
   it('loads placeholder terrain autotile mappings from JSON', () => {
-    expect(TILE_METADATA.tilesById.size).toBeGreaterThanOrEqual(3);
+    expect(TILE_METADATA.tilesById.size).toBeGreaterThanOrEqual(19);
     expect(hasTerrainAutotileMetadata(1)).toBe(true);
     expect(hasTerrainAutotileMetadata(2)).toBe(true);
     expect(hasTerrainAutotileMetadata(13)).toBe(true);
@@ -125,6 +125,18 @@ describe('tile metadata loader', () => {
       solid: false,
       blocksLight: false
     });
+    expect(resolveTileGameplayMetadata(16)).toEqual({
+      solid: false,
+      blocksLight: false
+    });
+    expect(resolveTileGameplayMetadata(17)).toEqual({
+      solid: false,
+      blocksLight: false
+    });
+    expect(resolveTileGameplayMetadata(18)).toEqual({
+      solid: false,
+      blocksLight: false
+    });
     expect(isTileSolid(1)).toBe(true);
     expect(isTileSolid(4)).toBe(false);
     expect(isTileClimbable(11)).toBe(true);
@@ -146,6 +158,9 @@ describe('tile metadata loader', () => {
     expect(resolveTileRenderUvRect(13)).toEqual(atlasIndexToUvRect(14));
     expect(resolveTileRenderUvRect(14)).toEqual(atlasIndexToUvRect(14));
     expect(resolveTileRenderUvRect(15)).toEqual(atlasIndexToUvRect(14));
+    expect(resolveTileRenderUvRect(16)).toEqual(atlasIndexToUvRect(23));
+    expect(resolveTileRenderUvRect(17)).toEqual(atlasIndexToUvRect(24));
+    expect(resolveTileRenderUvRect(18)).toEqual(atlasIndexToUvRect(25));
     expect(hasAnimatedTileRenderMetadata(10)).toBe(true);
     expect(getAnimatedTileRenderFrameCount(10)).toBe(2);
     expect(getAnimatedTileRenderFrameDurationMs(10)).toBe(180);

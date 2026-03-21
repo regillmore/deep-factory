@@ -422,6 +422,20 @@ describe('buildChunkMesh autotile UV selection', () => {
     expectSingleQuadUvRect(mesh.vertices, 14);
   });
 
+  it('uses dedicated atlas-backed renders for small-tree sapling, trunk, and leaf tiles', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 16);
+    setChunkTile(chunk, 1, 0, 17);
+    setChunkTile(chunk, 2, 0, 18);
+
+    const mesh = buildChunkMesh(chunk);
+
+    expect(mesh.vertexCount).toBe(18);
+    expectSingleQuadUvRect(getQuadVertices(mesh.vertices, 0), 23);
+    expectSingleQuadUvRect(getQuadVertices(mesh.vertices, 1), 24);
+    expectSingleQuadUvRect(getQuadVertices(mesh.vertices, 2), 25);
+  });
+
   it('insets atlas UV sampling by half a texel so neighboring atlas regions cannot bleed in', () => {
     const chunk = createEmptyChunk();
     setChunkTile(chunk, 0, 0, 3);

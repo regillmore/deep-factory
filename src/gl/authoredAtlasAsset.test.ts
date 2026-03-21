@@ -1194,6 +1194,43 @@ describe('authored atlas asset', () => {
     });
   });
 
+  it('keeps small-tree sapling, trunk, and leaf placeholders in dedicated authored regions', () => {
+    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
+    const saplingTile = TILE_METADATA.tiles.find((tile) => tile.name === 'small_tree_sapling');
+    const trunkTile = TILE_METADATA.tiles.find((tile) => tile.name === 'small_tree_trunk');
+    const leafTile = TILE_METADATA.tiles.find((tile) => tile.name === 'small_tree_leaf');
+
+    expect(saplingTile?.render?.atlasIndex).toBe(23);
+    expect(trunkTile?.render?.atlasIndex).toBe(24);
+    expect(leafTile?.render?.atlasIndex).toBe(25);
+
+    const saplingRegion = AUTHORED_ATLAS_REGIONS[saplingTile!.render!.atlasIndex!];
+    const trunkRegion = AUTHORED_ATLAS_REGIONS[trunkTile!.render!.atlasIndex!];
+    const leafRegion = AUTHORED_ATLAS_REGIONS[leafTile!.render!.atlasIndex!];
+    expect(saplingRegion).toEqual({ x: 80, y: 0, width: 16, height: 16 });
+    expect(trunkRegion).toEqual({ x: 96, y: 0, width: 16, height: 16 });
+    expect(leafRegion).toEqual({ x: 80, y: 16, width: 16, height: 16 });
+
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, saplingRegion!)).toEqual({
+      x: saplingRegion!.x + 5,
+      y: saplingRegion!.y + 2,
+      width: 6,
+      height: 14
+    });
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, trunkRegion!)).toEqual({
+      x: trunkRegion!.x + 5,
+      y: trunkRegion!.y,
+      width: 6,
+      height: 16
+    });
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, leafRegion!)).toEqual({
+      x: leafRegion!.x + 2,
+      y: leafRegion!.y + 1,
+      width: 12,
+      height: 11
+    });
+  });
+
   it('keeps both torch animation frames centered inside full-width authored squares while preserving the spare slot and exterior padding', () => {
     const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
     const torchTile = TILE_METADATA.tiles.find((tile) => tile.name === 'torch');

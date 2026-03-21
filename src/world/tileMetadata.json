@@ -1190,6 +1190,39 @@
       "render": {
         "atlasIndex": 14
       }
+    },
+    {
+      "id": 16,
+      "name": "small_tree_sapling",
+      "gameplay": {
+        "solid": false,
+        "blocksLight": false
+      },
+      "render": {
+        "atlasIndex": 23
+      }
+    },
+    {
+      "id": 17,
+      "name": "small_tree_trunk",
+      "gameplay": {
+        "solid": false,
+        "blocksLight": false
+      },
+      "render": {
+        "atlasIndex": 24
+      }
+    },
+    {
+      "id": 18,
+      "name": "small_tree_leaf",
+      "gameplay": {
+        "solid": false,
+        "blocksLight": false
+      },
+      "render": {
+        "atlasIndex": 25
+      }
     }
   ]
 }

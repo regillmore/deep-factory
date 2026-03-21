@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-20: Small-tree groundwork uses dedicated non-solid tile IDs
+
+- Decision: Shared tile metadata now reserves dedicated `small_tree_sapling`, `small_tree_trunk`, and `small_tree_leaf` IDs with direct authored-atlas placeholder renders, and all three stay non-solid plus non-light-blocking in the groundwork pass.
+- Reason: Upcoming acorn-growth and starter-axe work need stable tree targets without borrowing terrain-autotile semantics or changing traversal, collision, and light behavior before tree interaction rules exist.
+- Consequence: Future tree growth, woodcutting, and wood-block follow-ups should target those explicit tile IDs first and should treat any later collision or lighting changes as a deliberate design step instead of an incidental side effect.
+
 ### 2026-03-19: Starter furnace reuses the single-tile station contract
 
 - Decision: The first furnace is a stackable `furnace` item that places a single-tile non-solid floor-supported station, clears on support loss, and gates copper-bar smelting through the same nearby-station reach checks and shared crafting panel used by the workbench.
