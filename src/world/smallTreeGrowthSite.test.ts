@@ -75,14 +75,14 @@ describe('smallTreeGrowthSite', () => {
   it('allows a planted sapling to grow when the above-anchor grown footprint stays empty', () => {
     const anchorTileX = -3;
     const anchorTileY = 6;
-    const tileIds = getSmallTreeTileIds();
-    const world = createSmallTreeWorldView(
-      createFootprintTiles(anchorTileX, anchorTileY, PLANTED_SMALL_TREE_FOOTPRINT_CELLS)
-    );
+    const world = createSmallTreeWorldView([
+      { tileX: anchorTileX, tileY: anchorTileY, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID },
+      ...createFootprintTiles(anchorTileX, anchorTileY, PLANTED_SMALL_TREE_FOOTPRINT_CELLS)
+    ]);
 
     expect(evaluateSmallTreeGrowthSiteAtAnchor(world, anchorTileX, anchorTileY)).toEqual({
-      anchorTileId: tileIds.sapling,
-      hasGrassAnchor: false,
+      anchorTileId: PROCEDURAL_GRASS_SURFACE_TILE_ID,
+      hasGrassAnchor: true,
       currentGrowthStage: 'planted',
       blockedGrowthTiles: [],
       hasUnobstructedGrowthSpace: true,
@@ -94,27 +94,27 @@ describe('smallTreeGrowthSite', () => {
   it('reports deterministic above-anchor obstructions before planted-to-grown replacement', () => {
     const anchorTileX = 8;
     const anchorTileY = -12;
-    const tileIds = getSmallTreeTileIds();
     const world = createSmallTreeWorldView([
+      { tileX: anchorTileX, tileY: anchorTileY, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID },
       ...createFootprintTiles(anchorTileX, anchorTileY, PLANTED_SMALL_TREE_FOOTPRINT_CELLS),
-      { tileX: anchorTileX - 1, tileY: anchorTileY - 2, tileId: 91 },
-      { tileX: anchorTileX, tileY: anchorTileY - 1, tileId: 1 },
+      { tileX: anchorTileX - 1, tileY: anchorTileY - 3, tileId: 91 },
+      { tileX: anchorTileX, tileY: anchorTileY - 2, tileId: 1 },
       { tileX: anchorTileX + 5, tileY: anchorTileY + 5, tileId: 77 }
     ]);
 
     expect(evaluateSmallTreeGrowthSiteAtAnchor(world, anchorTileX, anchorTileY)).toEqual({
-      anchorTileId: tileIds.sapling,
-      hasGrassAnchor: false,
+      anchorTileId: PROCEDURAL_GRASS_SURFACE_TILE_ID,
+      hasGrassAnchor: true,
       currentGrowthStage: 'planted',
       blockedGrowthTiles: [
         {
           worldTileX: anchorTileX,
-          worldTileY: anchorTileY - 1,
+          worldTileY: anchorTileY - 2,
           tileId: 1
         },
         {
           worldTileX: anchorTileX - 1,
-          worldTileY: anchorTileY - 2,
+          worldTileY: anchorTileY - 3,
           tileId: 91
         }
       ],
@@ -150,12 +150,14 @@ describe('smallTreeGrowthSite', () => {
       ]
     });
     const plantableWorld = createSmallTreeWorldView([{ tileX: 2, tileY: 9, tileId: 5 }]);
-    const plantedWorld = createSmallTreeWorldView(
-      createFootprintTiles(2, 9, PLANTED_SMALL_TREE_FOOTPRINT_CELLS, registry)
-    );
-    const grownWorld = createSmallTreeWorldView(
-      createFootprintTiles(-6, 4, GROWN_SMALL_TREE_FOOTPRINT_CELLS, registry)
-    );
+    const plantedWorld = createSmallTreeWorldView([
+      { tileX: 2, tileY: 9, tileId: 5 },
+      ...createFootprintTiles(2, 9, PLANTED_SMALL_TREE_FOOTPRINT_CELLS, registry)
+    ]);
+    const grownWorld = createSmallTreeWorldView([
+      { tileX: -6, tileY: 4, tileId: 5 },
+      ...createFootprintTiles(-6, 4, GROWN_SMALL_TREE_FOOTPRINT_CELLS, registry)
+    ]);
 
     expect(evaluateSmallTreeGrowthSiteAtAnchor(plantableWorld, 2, 9, registry)).toEqual({
       anchorTileId: 5,
@@ -167,13 +169,15 @@ describe('smallTreeGrowthSite', () => {
       canGrow: false
     });
     expect(evaluateSmallTreeGrowthSiteAtAnchor(plantedWorld, 2, 9, registry)).toMatchObject({
-      anchorTileId: 11,
+      anchorTileId: 5,
+      hasGrassAnchor: true,
       currentGrowthStage: 'planted',
+      canPlant: false,
       canGrow: true
     });
     expect(evaluateSmallTreeGrowthSiteAtAnchor(grownWorld, -6, 4, registry)).toEqual({
-      anchorTileId: 23,
-      hasGrassAnchor: false,
+      anchorTileId: 5,
+      hasGrassAnchor: true,
       currentGrowthStage: 'grown',
       blockedGrowthTiles: [
         {
@@ -182,18 +186,23 @@ describe('smallTreeGrowthSite', () => {
           tileId: 23
         },
         {
-          worldTileX: -7,
+          worldTileX: -6,
           worldTileY: 2,
+          tileId: 23
+        },
+        {
+          worldTileX: -7,
+          worldTileY: 1,
           tileId: 4
         },
         {
           worldTileX: -6,
-          worldTileY: 2,
+          worldTileY: 1,
           tileId: 4
         },
         {
           worldTileX: -5,
-          worldTileY: 2,
+          worldTileY: 1,
           tileId: 4
         }
       ],

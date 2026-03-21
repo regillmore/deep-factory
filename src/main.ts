@@ -309,6 +309,11 @@ import {
   HEART_CRYSTAL_ITEM_ID,
   tryUsePlayerHeartCrystal
 } from './world/playerHeartCrystal';
+import {
+  ACORN_ITEM_ID,
+  evaluateAcornPlantingAtAnchor,
+  tryPlantAcornAtAnchor
+} from './world/acornPlanting';
 import { evaluatePlayerHotbarTilePlacementRange } from './world/playerHotbarPlacementRange';
 import {
   evaluateStarterBlockPlacement,
@@ -3895,6 +3900,31 @@ const bootstrap = async (): Promise<void> => {
     spawnPassiveBunnyEntity(releaseEvaluation.spawnState);
     return true;
   };
+  const tryPlantSelectedAcornAtTile = (worldTileX: number, worldTileY: number): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return false;
+    }
+
+    const plantingResult = tryPlantAcornAtAnchor(
+      {
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY),
+        setTile: (tileX, tileY, tileId) => applyWorldTileEdit(tileX, tileY, tileId).changed
+      },
+      standalonePlayerState,
+      worldTileX,
+      worldTileY
+    );
+    if (!plantingResult.planted) {
+      return false;
+    }
+
+    return applySelectedStandalonePlayerHotbarSlotConsumption();
+  };
   const tryStartSelectedStarterSpearThrust = (
     request: PlayerItemUseRequest
   ): boolean => {
@@ -4179,6 +4209,9 @@ const bootstrap = async (): Promise<void> => {
         request.worldTileY
       );
     }
+    if (selectedStack.itemId === ACORN_ITEM_ID) {
+      return tryPlantSelectedAcornAtTile(request.worldTileX, request.worldTileY);
+    }
     if (selectedStack.itemId === HEALING_POTION_ITEM_ID) {
       return tryUseSelectedHealingPotion();
     }
@@ -4269,6 +4302,29 @@ const bootstrap = async (): Promise<void> => {
       );
     } else {
       switch (selectedStack.itemId) {
+        case ACORN_ITEM_ID: {
+          const plantingEvaluation = evaluateAcornPlantingAtAnchor(
+            {
+              getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+            },
+            standalonePlayerState,
+            worldTileX,
+            worldTileY
+          );
+
+          return {
+            tileX: worldTileX,
+            tileY: worldTileY,
+            placementTileX: worldTileX,
+            placementTileY: worldTileY,
+            canPlace: plantingEvaluation.canPlant,
+            occupied:
+              plantingEvaluation.site.anchorTileId !== 0 &&
+              !plantingEvaluation.site.hasGrassAnchor,
+            hasSolidFaceSupport: plantingEvaluation.site.hasGrassAnchor,
+            blockedByPlayer: false
+          };
+        }
         case STARTER_ANVIL_ITEM_ID:
           placement = evaluateStarterAnvilPlacement(
             {

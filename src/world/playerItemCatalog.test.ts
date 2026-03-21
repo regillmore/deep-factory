@@ -5,6 +5,7 @@ import { getPlayerItemCatalogEntries, searchPlayerItemCatalog } from './playerIt
 describe('playerItemCatalog', () => {
   it('lists every inventory item once in alphabetical label order', () => {
     expect(getPlayerItemCatalogEntries().map((entry) => entry.label)).toEqual([
+      'Acorn',
       'Anvil',
       'Bug Net',
       'Bunny',
@@ -31,6 +32,7 @@ describe('playerItemCatalog', () => {
     expect(searchPlayerItemCatalog('healing potion').map((entry) => entry.itemId)).toEqual([
       'healing-potion'
     ]);
+    expect(searchPlayerItemCatalog('acorn').map((entry) => entry.itemId)).toEqual(['acorn']);
     expect(searchPlayerItemCatalog('bug net').map((entry) => entry.itemId)).toEqual(['bug-net']);
     expect(searchPlayerItemCatalog('starter axe').map((entry) => entry.itemId)).toEqual([
       'axe',

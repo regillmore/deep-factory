@@ -46,7 +46,7 @@ const createFootprintTiles = (
 };
 
 describe('smallTreeAnchors', () => {
-  it('detects planted and grown small-tree stages at their planted-base anchors', () => {
+  it('detects planted and grown small-tree stages at their planted support anchors', () => {
     const plantedWorld = createSmallTreeWorldView(createFootprintTiles(4, -7, PLANTED_SMALL_TREE_FOOTPRINT_CELLS));
     const grownWorld = createSmallTreeWorldView(createFootprintTiles(-3, 9, GROWN_SMALL_TREE_FOOTPRINT_CELLS));
 
@@ -54,27 +54,27 @@ describe('smallTreeAnchors', () => {
     expect(resolveSmallTreeGrowthStageAtAnchor(grownWorld, -3, 9)).toBe('grown');
   });
 
-  it('rejects incomplete grown-tree footprints at the planted-base anchor', () => {
+  it('rejects incomplete grown-tree footprints at the planted support anchor', () => {
     const incompleteGrownWorld = createSmallTreeWorldView(
       createFootprintTiles(11, -4, GROWN_SMALL_TREE_FOOTPRINT_CELLS).filter(
-        (tile) => !(tile.tileX === 12 && tile.tileY === -6)
+        (tile) => !(tile.tileX === 12 && tile.tileY === -7)
       )
     );
 
     expect(resolveSmallTreeGrowthStageAtAnchor(incompleteGrownWorld, 11, -4)).toBeNull();
   });
 
-  it('resolves a planted sapling tile back to its own planted-base anchor', () => {
+  it('resolves a planted sapling tile back to its planted support anchor', () => {
     const world = createSmallTreeWorldView(createFootprintTiles(-6, 3, PLANTED_SMALL_TREE_FOOTPRINT_CELLS));
 
-    expect(resolveSmallTreeAnchorFromSampledTile(world, -6, 3)).toEqual({
+    expect(resolveSmallTreeAnchorFromSampledTile(world, -6, 2)).toEqual({
       anchorTileX: -6,
       anchorTileY: 3,
       growthStage: 'planted'
     });
   });
 
-  it('resolves any grown canopy or trunk hit back to the canonical planted-base anchor', () => {
+  it('resolves any grown canopy or trunk hit back to the canonical planted support anchor', () => {
     const anchorTileX = 8;
     const anchorTileY = -12;
     const world = createSmallTreeWorldView(

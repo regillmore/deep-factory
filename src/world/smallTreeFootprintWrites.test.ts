@@ -11,6 +11,7 @@ import {
   replaceSmallTreeGrowthStageAtAnchor,
   type SmallTreeMutableWorldView
 } from './smallTreeFootprintWrites';
+import { PROCEDURAL_GRASS_SURFACE_TILE_ID } from './proceduralTerrain';
 import { getSmallTreeTileIds } from './smallTreeTiles';
 
 interface SmallTreeWorldTile {
@@ -79,9 +80,12 @@ const createFootprintTiles = (
 };
 
 describe('smallTreeFootprintWrites', () => {
-  it('applies a planted sapling footprint at the planted-base anchor', () => {
+  it('applies a planted sapling footprint above the planted support anchor', () => {
     const tileIds = getSmallTreeTileIds();
-    const world = createTestSmallTreeMutableWorldView([{ tileX: 9, tileY: 2, tileId: 41 }]);
+    const world = createTestSmallTreeMutableWorldView([
+      { tileX: 4, tileY: -7, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID },
+      { tileX: 9, tileY: 2, tileId: 41 }
+    ]);
 
     const result = applySmallTreeGrowthStageAtAnchor(world, 4, -7, 'planted');
 
@@ -90,24 +94,26 @@ describe('smallTreeFootprintWrites', () => {
       writes: [
         {
           worldTileX: 4,
-          worldTileY: -7,
+          worldTileY: -8,
           previousTileId: 0,
           tileId: tileIds.sapling
         }
       ]
     });
     expect(world.getWrittenTiles()).toEqual([
-      { tileX: 4, tileY: -7, tileId: tileIds.sapling },
+      { tileX: 4, tileY: -8, tileId: tileIds.sapling },
+      { tileX: 4, tileY: -7, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID },
       { tileX: 9, tileY: 2, tileId: 41 }
     ]);
   });
 
-  it('applies the grown-tree footprint in canonical order and overwrites occupied target cells', () => {
+  it('applies the grown-tree footprint in canonical order without consuming the support anchor', () => {
     const overwriteTileId = 91;
     const tileIds = getSmallTreeTileIds();
     const anchorTileX = -3;
     const anchorTileY = 6;
     const world = createTestSmallTreeMutableWorldView([
+      { tileX: anchorTileX, tileY: anchorTileY, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID },
       ...createFootprintTiles(anchorTileX, anchorTileY, GROWN_SMALL_TREE_FOOTPRINT_CELLS, overwriteTileId),
       { tileX: 8, tileY: 8, tileId: 77 }
     ]);
@@ -119,53 +125,55 @@ describe('smallTreeFootprintWrites', () => {
       writes: [
         {
           worldTileX: -3,
-          worldTileY: 6,
-          previousTileId: overwriteTileId,
-          tileId: tileIds.trunk
-        },
-        {
-          worldTileX: -3,
           worldTileY: 5,
           previousTileId: overwriteTileId,
           tileId: tileIds.trunk
         },
         {
-          worldTileX: -4,
+          worldTileX: -3,
           worldTileY: 4,
+          previousTileId: overwriteTileId,
+          tileId: tileIds.trunk
+        },
+        {
+          worldTileX: -4,
+          worldTileY: 3,
           previousTileId: overwriteTileId,
           tileId: tileIds.leaf
         },
         {
           worldTileX: -3,
-          worldTileY: 4,
+          worldTileY: 3,
           previousTileId: overwriteTileId,
           tileId: tileIds.leaf
         },
         {
           worldTileX: -2,
-          worldTileY: 4,
+          worldTileY: 3,
           previousTileId: overwriteTileId,
           tileId: tileIds.leaf
         }
       ]
     });
     expect(world.getWrittenTiles()).toEqual([
-      { tileX: -4, tileY: 4, tileId: tileIds.leaf },
-      { tileX: -3, tileY: 4, tileId: tileIds.leaf },
-      { tileX: -2, tileY: 4, tileId: tileIds.leaf },
+      { tileX: -4, tileY: 3, tileId: tileIds.leaf },
+      { tileX: -3, tileY: 3, tileId: tileIds.leaf },
+      { tileX: -2, tileY: 3, tileId: tileIds.leaf },
+      { tileX: -3, tileY: 4, tileId: tileIds.trunk },
       { tileX: -3, tileY: 5, tileId: tileIds.trunk },
-      { tileX: -3, tileY: 6, tileId: tileIds.trunk },
+      { tileX: -3, tileY: 6, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID },
       { tileX: 8, tileY: 8, tileId: 77 }
     ]);
   });
 
-  it('replaces a planted sapling footprint with the grown tree footprint', () => {
+  it('replaces a planted sapling footprint with the grown tree footprint above the same support anchor', () => {
     const tileIds = getSmallTreeTileIds();
     const anchorTileX = 12;
     const anchorTileY = -9;
-    const world = createTestSmallTreeMutableWorldView(
-      createFootprintTiles(anchorTileX, anchorTileY, PLANTED_SMALL_TREE_FOOTPRINT_CELLS)
-    );
+    const world = createTestSmallTreeMutableWorldView([
+      { tileX: anchorTileX, tileY: anchorTileY, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID },
+      ...createFootprintTiles(anchorTileX, anchorTileY, PLANTED_SMALL_TREE_FOOTPRINT_CELLS)
+    ]);
 
     const result = replaceSmallTreeGrowthStageAtAnchor(
       world,
@@ -180,50 +188,52 @@ describe('smallTreeFootprintWrites', () => {
       writes: [
         {
           worldTileX: 12,
-          worldTileY: -9,
+          worldTileY: -10,
           previousTileId: tileIds.sapling,
           tileId: tileIds.trunk
         },
         {
           worldTileX: 12,
-          worldTileY: -10,
+          worldTileY: -11,
           previousTileId: 0,
           tileId: tileIds.trunk
         },
         {
           worldTileX: 11,
-          worldTileY: -11,
+          worldTileY: -12,
           previousTileId: 0,
           tileId: tileIds.leaf
         },
         {
           worldTileX: 12,
-          worldTileY: -11,
+          worldTileY: -12,
           previousTileId: 0,
           tileId: tileIds.leaf
         },
         {
           worldTileX: 13,
-          worldTileY: -11,
+          worldTileY: -12,
           previousTileId: 0,
           tileId: tileIds.leaf
         }
       ]
     });
     expect(world.getWrittenTiles()).toEqual([
-      { tileX: 11, tileY: -11, tileId: tileIds.leaf },
-      { tileX: 12, tileY: -11, tileId: tileIds.leaf },
-      { tileX: 13, tileY: -11, tileId: tileIds.leaf },
+      { tileX: 11, tileY: -12, tileId: tileIds.leaf },
+      { tileX: 12, tileY: -12, tileId: tileIds.leaf },
+      { tileX: 13, tileY: -12, tileId: tileIds.leaf },
+      { tileX: 12, tileY: -11, tileId: tileIds.trunk },
       { tileX: 12, tileY: -10, tileId: tileIds.trunk },
-      { tileX: 12, tileY: -9, tileId: tileIds.trunk }
+      { tileX: 12, tileY: -9, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID }
     ]);
   });
 
-  it('replaces a grown tree with a planted sapling and clears prior-only canopy cells', () => {
+  it('replaces a grown tree with a planted sapling while preserving the support anchor', () => {
     const tileIds = getSmallTreeTileIds();
     const anchorTileX = 1;
     const anchorTileY = 3;
     const world = createTestSmallTreeMutableWorldView([
+      { tileX: anchorTileX, tileY: anchorTileY, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID },
       ...createFootprintTiles(anchorTileX, anchorTileY, GROWN_SMALL_TREE_FOOTPRINT_CELLS),
       { tileX: 9, tileY: 9, tileId: 55 }
     ]);
@@ -241,49 +251,51 @@ describe('smallTreeFootprintWrites', () => {
       writes: [
         {
           worldTileX: 1,
-          worldTileY: 3,
+          worldTileY: 2,
           previousTileId: tileIds.trunk,
           tileId: tileIds.sapling
         },
         {
           worldTileX: 1,
-          worldTileY: 2,
+          worldTileY: 1,
           previousTileId: tileIds.trunk,
           tileId: 0
         },
         {
           worldTileX: 0,
-          worldTileY: 1,
+          worldTileY: 0,
           previousTileId: tileIds.leaf,
           tileId: 0
         },
         {
           worldTileX: 1,
-          worldTileY: 1,
+          worldTileY: 0,
           previousTileId: tileIds.leaf,
           tileId: 0
         },
         {
           worldTileX: 2,
-          worldTileY: 1,
+          worldTileY: 0,
           previousTileId: tileIds.leaf,
           tileId: 0
         }
       ]
     });
     expect(world.getWrittenTiles()).toEqual([
-      { tileX: 1, tileY: 3, tileId: tileIds.sapling },
+      { tileX: 1, tileY: 2, tileId: tileIds.sapling },
+      { tileX: 1, tileY: 3, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID },
       { tileX: 9, tileY: 9, tileId: 55 }
     ]);
   });
 
-  it('clears the full prior grown footprint for future tree-break cleanup', () => {
+  it('clears the full prior grown footprint while preserving the support anchor', () => {
     const tileIds = getSmallTreeTileIds();
     const anchorTileX = -8;
     const anchorTileY = 4;
-    const world = createTestSmallTreeMutableWorldView(
-      createFootprintTiles(anchorTileX, anchorTileY, GROWN_SMALL_TREE_FOOTPRINT_CELLS)
-    );
+    const world = createTestSmallTreeMutableWorldView([
+      { tileX: anchorTileX, tileY: anchorTileY, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID },
+      ...createFootprintTiles(anchorTileX, anchorTileY, GROWN_SMALL_TREE_FOOTPRINT_CELLS)
+    ]);
 
     const result = clearSmallTreeGrowthStageAtAnchor(world, anchorTileX, anchorTileY, 'grown');
 
@@ -292,36 +304,38 @@ describe('smallTreeFootprintWrites', () => {
       writes: [
         {
           worldTileX: -8,
-          worldTileY: 4,
-          previousTileId: tileIds.trunk,
-          tileId: 0
-        },
-        {
-          worldTileX: -8,
           worldTileY: 3,
           previousTileId: tileIds.trunk,
           tileId: 0
         },
         {
-          worldTileX: -9,
+          worldTileX: -8,
           worldTileY: 2,
+          previousTileId: tileIds.trunk,
+          tileId: 0
+        },
+        {
+          worldTileX: -9,
+          worldTileY: 1,
           previousTileId: tileIds.leaf,
           tileId: 0
         },
         {
           worldTileX: -8,
-          worldTileY: 2,
+          worldTileY: 1,
           previousTileId: tileIds.leaf,
           tileId: 0
         },
         {
           worldTileX: -7,
-          worldTileY: 2,
+          worldTileY: 1,
           previousTileId: tileIds.leaf,
           tileId: 0
         }
       ]
     });
-    expect(world.getWrittenTiles()).toEqual([]);
+    expect(world.getWrittenTiles()).toEqual([
+      { tileX: -8, tileY: 4, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID }
+    ]);
   });
 });

@@ -52,6 +52,36 @@ const resolveSampledGrownSmallTreeTileKind = (
   return null;
 };
 
+const resolveSmallTreeAnchorFromSampledFootprintTile = (
+  world: SmallTreeAnchorWorldView,
+  worldTileX: number,
+  worldTileY: number,
+  growthStage: SmallTreeGrowthStage,
+  sampledTileKind: SmallTreeFootprintTileKind,
+  footprintCells: readonly Readonly<SmallTreeFootprintCell>[],
+  registry: TileMetadataRegistry
+): ResolvedSmallTreeAnchor | null => {
+  for (const cell of footprintCells) {
+    if (cell.tileKind !== sampledTileKind) {
+      continue;
+    }
+
+    const anchorTileX = worldTileX - cell.localX;
+    const anchorTileY = worldTileY - cell.localY;
+    if (resolveSmallTreeGrowthStageAtAnchor(world, anchorTileX, anchorTileY, registry) !== growthStage) {
+      continue;
+    }
+
+    return {
+      anchorTileX,
+      anchorTileY,
+      growthStage
+    };
+  }
+
+  return null;
+};
+
 export const resolveSmallTreeGrowthStageAtAnchor = (
   world: SmallTreeAnchorWorldView,
   anchorTileX: number,
@@ -94,13 +124,15 @@ export const resolveSmallTreeAnchorFromSampledTile = (
 ): ResolvedSmallTreeAnchor | null => {
   const sampledTileId = world.getTile(worldTileX, worldTileY);
   if (isSmallTreeSaplingTileId(sampledTileId, registry)) {
-    return resolveSmallTreeGrowthStageAtAnchor(world, worldTileX, worldTileY, registry) === 'planted'
-      ? {
-          anchorTileX: worldTileX,
-          anchorTileY: worldTileY,
-          growthStage: 'planted'
-        }
-      : null;
+    return resolveSmallTreeAnchorFromSampledFootprintTile(
+      world,
+      worldTileX,
+      worldTileY,
+      'planted',
+      'sapling',
+      PLANTED_SMALL_TREE_FOOTPRINT_CELLS,
+      registry
+    );
   }
 
   const sampledGrownTileKind = resolveSampledGrownSmallTreeTileKind(sampledTileId, registry);
@@ -108,23 +140,13 @@ export const resolveSmallTreeAnchorFromSampledTile = (
     return null;
   }
 
-  for (const cell of GROWN_SMALL_TREE_FOOTPRINT_CELLS) {
-    if (cell.tileKind !== sampledGrownTileKind) {
-      continue;
-    }
-
-    const anchorTileX = worldTileX - cell.localX;
-    const anchorTileY = worldTileY - cell.localY;
-    if (resolveSmallTreeGrowthStageAtAnchor(world, anchorTileX, anchorTileY, registry) !== 'grown') {
-      continue;
-    }
-
-    return {
-      anchorTileX,
-      anchorTileY,
-      growthStage: 'grown'
-    };
-  }
-
-  return null;
+  return resolveSmallTreeAnchorFromSampledFootprintTile(
+    world,
+    worldTileX,
+    worldTileY,
+    'grown',
+    sampledGrownTileKind,
+    GROWN_SMALL_TREE_FOOTPRINT_CELLS,
+    registry
+  );
 };

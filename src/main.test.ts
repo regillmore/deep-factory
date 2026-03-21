@@ -50,7 +50,10 @@ import { createDroppedItemState } from './world/droppedItem';
 import { createPlayerInventoryState } from './world/playerInventory';
 import { AUTHORED_ATLAS_HEIGHT, AUTHORED_ATLAS_WIDTH } from './world/authoredAtlasLayout';
 import { CHUNK_SIZE } from './world/constants';
-import { PROCEDURAL_COPPER_ORE_TILE_ID } from './world/proceduralTerrain';
+import {
+  PROCEDURAL_COPPER_ORE_TILE_ID,
+  PROCEDURAL_GRASS_SURFACE_TILE_ID
+} from './world/proceduralTerrain';
 import {
   createPlayerState,
   DEFAULT_PLAYER_HEIGHT,
@@ -81,6 +84,7 @@ import {
 } from './world/starterSpear';
 import { STARTER_BUG_NET_SWING_WINDUP_SECONDS } from './world/starterBugNet';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
+import { getSmallTreeSaplingTileId } from './world/smallTreeTiles';
 import { STARTER_TORCH_TILE_ID } from './world/starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './world/starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './world/starterFurnacePlacement';
@@ -7297,6 +7301,44 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('shows a valid acorn planting preview on a hovered grass anchor while the full debug-edit panel is hidden', async () => {
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'acorn', amount: 3 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          ...Array.from({ length: 6 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 1
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 1, y: 0 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 1,
+      tileY: 0,
+      placementTileX: 1,
+      placementTileY: 0,
+      canPlace: true,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false
+    });
+  });
+
   it('shows a valid stone-block placement preview when a restored hotbar slot holds stone blocks', async () => {
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
@@ -8753,6 +8795,61 @@ describe('main.ts shell state orchestration', () => {
       itemId: 'dirt-block',
       amount: 63
     });
+  });
+
+  it('plants an acorn from the selected hotbar slot through the shared hidden-panel item-use path', async () => {
+    const supportTileIdBeforePlanting = new TileWorld(0).getTile(1, 0);
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'acorn', amount: 2 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          ...Array.from({ length: 6 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 1
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    expect(testRuntime.canvasInteractionMode).toBe('play');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        worldX: 24,
+        worldY: 8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        tileId: getSmallTreeSaplingTileId()
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    expect(persistedEnvelope?.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+      itemId: 'acorn',
+      amount: 1
+    });
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+    expect(restoredWorld.getTile(1, 0)).toBe(supportTileIdBeforePlanting);
+    expect(restoredWorld.getTile(1, -1)).toBe(getSmallTreeSaplingTileId());
   });
 
   it('places a stone block from the selected hotbar slot while the full debug-edit panel is hidden and persists the consumed stack', async () => {

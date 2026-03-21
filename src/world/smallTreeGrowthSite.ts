@@ -1,5 +1,8 @@
 import { resolveSmallTreeGrowthStageAtAnchor, type SmallTreeAnchorWorldView } from './smallTreeAnchors';
-import { GROWN_SMALL_TREE_FOOTPRINT_CELLS } from './smallTreeFootprints';
+import {
+  GROWN_SMALL_TREE_FOOTPRINT_CELLS,
+  isPlantedSmallTreeOccupiedLocalOffset
+} from './smallTreeFootprints';
 import { TILE_METADATA, type TileMetadataRegistry } from './tileMetadata';
 
 export type SmallTreeGrowthSiteWorldView = SmallTreeAnchorWorldView;
@@ -46,14 +49,18 @@ const getGrassSurfaceTileId = (registry: TileMetadataRegistry = TILE_METADATA): 
 const collectBlockedGrowthTiles = (
   world: SmallTreeGrowthSiteWorldView,
   anchorTileX: number,
-  anchorTileY: number
+  anchorTileY: number,
+  currentGrowthStage: 'planted' | 'grown' | null
 ): SmallTreeGrowthSiteBlockedTile[] => {
   const blockedGrowthTiles: SmallTreeGrowthSiteBlockedTile[] = [];
 
   for (const cell of GROWN_SMALL_TREE_FOOTPRINT_CELLS) {
-    // Sapling-to-grown replacement reuses the planted anchor cell, so only the other grown cells
+    // Sapling-to-grown replacement reuses the planted sapling cell, so only the other grown cells
     // must stay empty before a planted tree can expand.
-    if (cell.localX === 0 && cell.localY === 0) {
+    if (
+      currentGrowthStage === 'planted' &&
+      isPlantedSmallTreeOccupiedLocalOffset(cell.localX, cell.localY)
+    ) {
       continue;
     }
 
@@ -82,7 +89,12 @@ export const evaluateSmallTreeGrowthSiteAtAnchor = (
 ): SmallTreeGrowthSiteEvaluation => {
   const anchorTileId = world.getTile(anchorTileX, anchorTileY);
   const currentGrowthStage = resolveSmallTreeGrowthStageAtAnchor(world, anchorTileX, anchorTileY, registry);
-  const blockedGrowthTiles = collectBlockedGrowthTiles(world, anchorTileX, anchorTileY);
+  const blockedGrowthTiles = collectBlockedGrowthTiles(
+    world,
+    anchorTileX,
+    anchorTileY,
+    currentGrowthStage
+  );
   const hasGrassAnchor = anchorTileId === getGrassSurfaceTileId(registry);
   const hasUnobstructedGrowthSpace = blockedGrowthTiles.length === 0;
 
@@ -92,7 +104,7 @@ export const evaluateSmallTreeGrowthSiteAtAnchor = (
     currentGrowthStage,
     blockedGrowthTiles,
     hasUnobstructedGrowthSpace,
-    canPlant: hasGrassAnchor,
+    canPlant: hasGrassAnchor && currentGrowthStage === null,
     canGrow: currentGrowthStage === 'planted' && hasUnobstructedGrowthSpace
   };
 };

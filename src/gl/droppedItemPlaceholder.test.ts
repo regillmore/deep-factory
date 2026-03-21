@@ -3,6 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { getDroppedItemPlaceholderPalette } from './droppedItemPlaceholder';
 
 describe('droppedItemPlaceholder', () => {
+  it('provides a dedicated placeholder palette for acorn pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('acorn')).toEqual({
+      baseColor: [0.44, 0.29, 0.12],
+      accentColor: [0.75, 0.62, 0.28]
+    });
+  });
+
   it('provides a dedicated placeholder palette for starter-axe pickups', () => {
     expect(getDroppedItemPlaceholderPalette('axe')).toEqual({
       baseColor: [0.56, 0.42, 0.24],

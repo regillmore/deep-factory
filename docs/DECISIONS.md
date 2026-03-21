@@ -2,9 +2,15 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-21: Acorn planting targets the clicked grass anchor and preserves that support tile
+
+- Decision: The first `acorn` hotbar slice now targets the requested grass anchor tile through the shared play-mode item-use path but writes the sapling into the air tile directly above that support, while above-anchor blockage stays a later growth-time concern instead of blocking initial planting.
+- Reason: The shared small-tree growth-site contract already separates clicked support targeting from above-ground tree occupancy, so acorn placement can stay mixed-device aligned with existing targeted item use without consuming terrain or duplicating obstruction rules.
+- Consequence: Future acorn previews and item-use flows should keep highlighting the requested grass anchor tile, while planted and grown small-tree writes should preserve that support tile and only occupy the air cells above it.
+
 ### 2026-03-21: Small-tree planting anchors stay grass-only and growth keeps above-anchor cells clear
 
-- Decision: Shared small-tree site evaluation now treats only `grass_surface` anchor tiles as plantable and only allows planted-to-grown replacement when every non-anchor cell in the grown footprint is empty.
+- Decision: Shared small-tree site evaluation now treats only `grass_surface` anchor tiles with no current anchored tree state as plantable and only allows planted-to-grown replacement when every grown-footprint cell not already occupied by the planted sapling is empty.
 - Reason: Upcoming acorn planting and deterministic sapling growth need one reusable precondition contract instead of letting each caller guess which terrain anchors or partial overlaps count as valid.
 - Consequence: Future acorn planting and small-tree growth paths should consult the shared site evaluator before writing saplings or grown trees, and should treat occupied above-anchor cells as blocked growth rather than overwriting them.
 
@@ -14,17 +20,17 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Upcoming acorn growth and starter-axe cleanup both need deterministic whole-tree state transitions without asking each caller to hand-maintain partial tile edits.
 - Consequence: Future small-tree planting, growth, and removal should prefer the shared stage-write helpers over ad hoc per-cell tree mutations.
 
-### 2026-03-20: Small-tree world hits resolve only through full planted-base footprints
+### 2026-03-20: Small-tree world hits resolve only through full planted-support footprints
 
-- Decision: Sampled `small_tree_sapling` tiles resolve directly to their own planted-base anchor, while sampled `small_tree_trunk` and `small_tree_leaf` tiles only resolve when the complete planted-base-anchored grown-tree footprint is present around the candidate anchor.
+- Decision: Sampled `small_tree_sapling` tiles resolve back to their planted support anchor below the sapling, while sampled `small_tree_trunk` and `small_tree_leaf` tiles only resolve when the complete planted-base-anchored grown-tree footprint is present around the candidate anchor.
 - Reason: Upcoming acorn-growth and starter-axe targeting need canopy and trunk hits to converge on one canonical tree anchor without treating stray debug-painted leaf or trunk tiles as valid complete trees.
 - Consequence: Future tree-targeting, growth, and cleanup helpers should resolve sampled tree hits through the shared anchor helper first and should treat incomplete small-tree footprints as invalid or cleanup-only states rather than as alternate tree variants.
 
-### 2026-03-20: Small-tree footprints stay anchored at the planted base cell
+### 2026-03-20: Small-tree footprints stay anchored at the planted support cell
 
-- Decision: Shared small-tree footprint helpers now treat the planted tile as the canonical anchor for both states: a planted sapling occupies only `(0,0)`, while the grown placeholder tree occupies trunk cells at `(0,0)` and `(0,-1)` plus leaf cells at `(-1,-2)`, `(0,-2)`, and `(1,-2)`.
-- Reason: Upcoming acorn-growth and starter-axe work need one deterministic footprint contract that lets canopy or trunk hits map back to the same planted origin without each feature re-encoding its own placeholder tree shape.
-- Consequence: Future small-tree planting, growth, save/load, and woodcutting follow-ups should reuse that planted-base anchor plus shared footprint helpers before introducing larger tree variants or alternate canopy layouts.
+- Decision: Shared small-tree footprint helpers now treat the planted support tile as the canonical anchor for both states: a planted sapling occupies only `(0,-1)`, while the grown placeholder tree occupies trunk cells at `(0,-1)` and `(0,-2)` plus leaf cells at `(-1,-3)`, `(0,-3)`, and `(1,-3)`.
+- Reason: Upcoming acorn-growth and starter-axe work need one deterministic footprint contract that lets canopy or trunk hits map back to the same planted support origin without each feature re-encoding its own placeholder tree shape.
+- Consequence: Future small-tree planting, growth, save/load, and woodcutting follow-ups should reuse that planted support anchor plus shared footprint helpers before introducing larger tree variants or alternate canopy layouts.
 
 ### 2026-03-20: Small-tree groundwork uses dedicated non-solid tile IDs
 

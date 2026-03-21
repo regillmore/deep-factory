@@ -31,19 +31,19 @@ const createOccupiedLocalOffsetSet = (
   new Set(offsets.map((offset) => createLocalOffsetKey(offset.localX, offset.localY)));
 
 export const PLANTED_SMALL_TREE_FOOTPRINT_CELLS = freezeFootprintCells([
-  { localX: 0, localY: 0, tileKind: 'sapling' }
+  { localX: 0, localY: -1, tileKind: 'sapling' }
 ]);
 
 export const PLANTED_SMALL_TREE_LOCAL_OFFSETS = freezeLocalOffsets(PLANTED_SMALL_TREE_FOOTPRINT_CELLS);
 
-// The placeholder grown tree stays anchored at the planted base cell and expands upward into
+// The placeholder grown tree stays anchored at the planted support cell and expands upward into
 // a simple trunk-plus-canopy silhouette that future growth and chopping passes can share.
 export const GROWN_SMALL_TREE_FOOTPRINT_CELLS = freezeFootprintCells([
-  { localX: 0, localY: 0, tileKind: 'trunk' },
   { localX: 0, localY: -1, tileKind: 'trunk' },
-  { localX: -1, localY: -2, tileKind: 'leaf' },
-  { localX: 0, localY: -2, tileKind: 'leaf' },
-  { localX: 1, localY: -2, tileKind: 'leaf' }
+  { localX: 0, localY: -2, tileKind: 'trunk' },
+  { localX: -1, localY: -3, tileKind: 'leaf' },
+  { localX: 0, localY: -3, tileKind: 'leaf' },
+  { localX: 1, localY: -3, tileKind: 'leaf' }
 ]);
 
 export const GROWN_SMALL_TREE_LOCAL_OFFSETS = freezeLocalOffsets(GROWN_SMALL_TREE_FOOTPRINT_CELLS);

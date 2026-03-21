@@ -37,6 +37,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
     baseColor: [0.56, 0.42, 0.24],
     accentColor: [0.86, 0.63, 0.31]
   },
+  acorn: {
+    baseColor: [0.44, 0.29, 0.12],
+    accentColor: [0.75, 0.62, 0.28]
+  },
   pickaxe: {
     baseColor: [0.51, 0.56, 0.62],
     accentColor: [0.86, 0.68, 0.31]

@@ -2,6 +2,7 @@ export const PLAYER_INVENTORY_HOTBAR_SLOT_COUNT = 10;
 
 export type PlayerInventoryItemId =
   | 'axe'
+  | 'acorn'
   | 'pickaxe'
   | 'dirt-block'
   | 'stone-block'
@@ -64,6 +65,7 @@ export type MovePlayerInventorySelectedHotbarSlotDirection = -1 | 1;
 
 export const PLAYER_INVENTORY_ITEM_IDS: readonly PlayerInventoryItemId[] = [
   'axe',
+  'acorn',
   'pickaxe',
   'dirt-block',
   'stone-block',
@@ -92,6 +94,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     label: 'Starter Axe',
     hotbarLabel: 'AXE',
     maxStackSize: 1
+  },
+  acorn: {
+    id: 'acorn',
+    label: 'Acorn',
+    hotbarLabel: 'ACORN',
+    maxStackSize: 999
   },
   pickaxe: {
     id: 'pickaxe',
