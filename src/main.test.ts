@@ -8289,6 +8289,67 @@ describe('main.ts shell state orchestration', () => {
     );
   });
 
+  it('crafts a starter pickaxe from the panel only when a nearby anvil is placed', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'copper-bar', amount: 12 },
+              null,
+              ...Array.from({ length: 8 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 0
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    runRenderFrame();
+
+    expect(
+      testRuntime.latestCraftingPanelState?.recipes.find((recipe) => recipe.recipeId === 'pickaxe')
+    ).toMatchObject({
+      enabled: false,
+      disabledReason: 'Requires nearby Anvil'
+    });
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, -1), STARTER_ANVIL_TILE_ID);
+    runRenderFrame();
+
+    expect(
+      testRuntime.latestCraftingPanelState?.recipes.find((recipe) => recipe.recipeId === 'pickaxe')
+    ).toMatchObject({
+      enabled: true,
+      disabledReason: null
+    });
+
+    testRuntime.craftingPanelInstance?.triggerCraftRecipe('pickaxe');
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState).toEqual(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          null,
+          ...Array.from({ length: 8 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 0
+      })
+    );
+  });
+
   it('shows the searchable item and recipe catalog only while the full debug-edit panel is visible and updates filtered results', async () => {
     await import('./main');
     await flushBootstrap();
