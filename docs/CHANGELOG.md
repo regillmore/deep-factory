@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-20
 
+- Task: Add shared small-tree anchor-resolution helpers after shared small-tree footprint helpers.
+- Changes: Added [src/world/smallTreeAnchors.ts](../src/world/smallTreeAnchors.ts) plus [src/world/smallTreeAnchors.test.ts](../src/world/smallTreeAnchors.test.ts) so the world layer now detects planted-versus-grown small-tree membership from sampled sapling, trunk, and leaf tiles, resolves canopy or trunk hits back to the canonical planted-base anchor only when the full anchored footprint is present, removed completed task `654` from [docs/NEXT.md](docs/NEXT.md), added replacement task `655`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/smallTreeAnchors.test.ts src/world/smallTreeFootprints.test.ts src/world/smallTreeTiles.test.ts` (outside the sandbox for the Vitest run).
+
 - Task: Add shared small-tree footprint helpers after shared small-tree tile helpers.
 - Changes: Added [src/world/smallTreeFootprints.ts](../src/world/smallTreeFootprints.ts) plus [src/world/smallTreeFootprints.test.ts](../src/world/smallTreeFootprints.test.ts) so the world layer now exposes canonical planted-sapling and grown-tree local footprints, including a planted-base-anchored trunk-plus-canopy layout and occupied-cell predicates for future acorn-growth plus starter-axe targeting; removed completed task `653` from [docs/NEXT.md](docs/NEXT.md), added replacement task `654`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/smallTreeFootprints.test.ts src/world/smallTreeTiles.test.ts` (outside the sandbox for the Vitest run).

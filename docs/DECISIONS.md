@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-20: Small-tree world hits resolve only through full planted-base footprints
+
+- Decision: Sampled `small_tree_sapling` tiles resolve directly to their own planted-base anchor, while sampled `small_tree_trunk` and `small_tree_leaf` tiles only resolve when the complete planted-base-anchored grown-tree footprint is present around the candidate anchor.
+- Reason: Upcoming acorn-growth and starter-axe targeting need canopy and trunk hits to converge on one canonical tree anchor without treating stray debug-painted leaf or trunk tiles as valid complete trees.
+- Consequence: Future tree-targeting, growth, and cleanup helpers should resolve sampled tree hits through the shared anchor helper first and should treat incomplete small-tree footprints as invalid or cleanup-only states rather than as alternate tree variants.
+
 ### 2026-03-20: Small-tree footprints stay anchored at the planted base cell
 
 - Decision: Shared small-tree footprint helpers now treat the planted tile as the canonical anchor for both states: a planted sapling occupies only `(0,0)`, while the grown placeholder tree occupies trunk cells at `(0,0)` and `(0,-1)` plus leaf cells at `(-1,-2)`, `(0,-2)`, and `(1,-2)`.
