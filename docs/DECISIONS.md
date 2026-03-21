@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-21: Small-tree support-loss cleanup runs from world anchor edits
+
+- Decision: When a `grass_surface` support tile changes away from grass, `TileWorld` now clears any planted or grown small-tree footprint above that anchor through the shared footprint writer and emits ordinary tile-edit notifications for those cleanup writes.
+- Reason: Anchor-loss cleanup needs to stay authoritative at the world-commit seam so runtime tracked-sapling state, renderer listeners, and saved snapshots all observe one removal path instead of rediscovering orphaned trees separately.
+- Consequence: Future small-tree break, cleanup, or loot work should route anchored tree removal through the shared world-owned footprint clear path or equivalent emitted tile-edit writes so listener-driven systems stay synchronized automatically.
+
 ### 2026-03-21: Small-tree growth tracks planted anchors and only checks resident footprints
 
 - Decision: The small-tree growth scheduler now rebuilds planted sapling anchors from save snapshots, updates that tracked-anchor set from live tile edits, and rechecks one anchor-hash window per interval only across tracked anchors whose full planted-plus-grown footprint chunks are currently resident; planted saplings still only stay growable while their support tile remains `grass_surface`.

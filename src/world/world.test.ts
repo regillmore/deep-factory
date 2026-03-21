@@ -17,6 +17,7 @@ import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './starterFurnacePlacement';
 import { STARTER_ANVIL_TILE_ID } from './starterAnvilPlacement';
+import { getSmallTreeTileIds } from './smallTreeTiles';
 import { getTileEmissiveLightLevel, parseTileMetadataRegistry } from './tileMetadata';
 import { didTileLightingStateChange, resolveLiquidStepPhaseSummary, TileWorld } from './world';
 import type { TileEditEvent } from './world';
@@ -368,6 +369,80 @@ describe('TileWorld', () => {
         liquidLevel: 0
       }
     ]);
+  });
+
+  it('clears a planted small tree and emits a second edit when its grass support anchor is replaced', () => {
+    const world = new TileWorld(0);
+    const events: TileEditEvent[] = [];
+    const treeTileIds = getSmallTreeTileIds();
+
+    expect(world.setTile(4, 2, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
+    expect(world.setTile(4, 1, treeTileIds.sapling)).toBe(true);
+
+    world.onTileEdited((event) => {
+      events.push(event);
+    });
+
+    expect(world.setTile(4, 2, PROCEDURAL_DIRT_TILE_ID)).toBe(true);
+
+    expect(world.getTile(4, 2)).toBe(PROCEDURAL_DIRT_TILE_ID);
+    expect(world.getTile(4, 1)).toBe(0);
+    expect(events).toEqual([
+      {
+        worldTileX: 4,
+        worldTileY: 2,
+        chunkX: 0,
+        chunkY: 0,
+        localX: 4,
+        localY: 2,
+        previousTileId: PROCEDURAL_GRASS_SURFACE_TILE_ID,
+        previousLiquidLevel: 0,
+        tileId: PROCEDURAL_DIRT_TILE_ID,
+        liquidLevel: 0
+      },
+      {
+        worldTileX: 4,
+        worldTileY: 1,
+        chunkX: 0,
+        chunkY: 0,
+        localX: 4,
+        localY: 1,
+        previousTileId: treeTileIds.sapling,
+        previousLiquidLevel: 0,
+        tileId: 0,
+        liquidLevel: 0
+      }
+    ]);
+  });
+
+  it('clears a grown small tree from snapshots once its grass support anchor is removed', () => {
+    const source = new TileWorld(0);
+    const loaded = new TileWorld(0);
+    const treeTileIds = getSmallTreeTileIds();
+
+    expect(source.setTile(7, 3, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
+    expect(source.setTile(7, 2, treeTileIds.trunk)).toBe(true);
+    expect(source.setTile(7, 1, treeTileIds.trunk)).toBe(true);
+    expect(source.setTile(6, 0, treeTileIds.leaf)).toBe(true);
+    expect(source.setTile(7, 0, treeTileIds.leaf)).toBe(true);
+    expect(source.setTile(8, 0, treeTileIds.leaf)).toBe(true);
+
+    expect(source.setTile(7, 3, 0)).toBe(true);
+
+    expect(source.getTile(7, 2)).toBe(0);
+    expect(source.getTile(7, 1)).toBe(0);
+    expect(source.getTile(6, 0)).toBe(0);
+    expect(source.getTile(7, 0)).toBe(0);
+    expect(source.getTile(8, 0)).toBe(0);
+
+    loaded.loadSnapshot(source.createSnapshot());
+
+    expect(loaded.getTile(7, 3)).toBe(0);
+    expect(loaded.getTile(7, 2)).toBe(0);
+    expect(loaded.getTile(7, 1)).toBe(0);
+    expect(loaded.getTile(6, 0)).toBe(0);
+    expect(loaded.getTile(7, 0)).toBe(0);
+    expect(loaded.getTile(8, 0)).toBe(0);
   });
 
   it('applies explicit tile state and still emits edit metadata when only liquid changes', () => {

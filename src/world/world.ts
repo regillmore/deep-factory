@@ -31,7 +31,12 @@ import {
   hasStarterAnvilGroundSupport,
   STARTER_ANVIL_TILE_ID
 } from './starterAnvilPlacement';
-import { resolveProceduralTerrainTileId } from './proceduralTerrain';
+import { resolveSmallTreeGrowthStageAtAnchor } from './smallTreeAnchors';
+import { clearSmallTreeGrowthStageAtAnchor } from './smallTreeFootprintWrites';
+import {
+  PROCEDURAL_GRASS_SURFACE_TILE_ID,
+  resolveProceduralTerrainTileId
+} from './proceduralTerrain';
 import { DEFAULT_WORLD_SEED, normalizeWorldSeed } from './worldSeed';
 import {
   doesTileBlockLight,
@@ -834,6 +839,38 @@ export class TileWorld {
     );
   }
 
+  private clearUnsupportedSmallTreeAtAnchor(
+    anchorTileX: number,
+    anchorTileY: number,
+    emitTileEditEvent: boolean
+  ): void {
+    if (this.getTile(anchorTileX, anchorTileY) === PROCEDURAL_GRASS_SURFACE_TILE_ID) {
+      return;
+    }
+
+    const growthStage = resolveSmallTreeGrowthStageAtAnchor(
+      {
+        getTile: (worldTileX, worldTileY) => this.getResidentOrEditedTileId(worldTileX, worldTileY) ?? 0
+      },
+      anchorTileX,
+      anchorTileY
+    );
+    if (growthStage === null) {
+      return;
+    }
+
+    clearSmallTreeGrowthStageAtAnchor(
+      {
+        getTile: (worldTileX, worldTileY) => this.getTile(worldTileX, worldTileY),
+        setTile: (worldTileX, worldTileY, tileId) =>
+          this.commitTileState(worldTileX, worldTileY, tileId, 0, emitTileEditEvent).changed
+      },
+      anchorTileX,
+      anchorTileY,
+      growthStage
+    );
+  }
+
   private activateLiquidChunk(key: string): void {
     this.activeLiquidChunkKeys.add(key);
     this.liquidChunkQuietStepCounts.set(key, 0);
@@ -1043,6 +1080,12 @@ export class TileWorld {
     const result = this.commitTileState(worldTileX, worldTileY, tileId, liquidLevel, true);
     const changed = result.changed;
     if (changed) {
+      if (
+        result.previousTileId === PROCEDURAL_GRASS_SURFACE_TILE_ID &&
+        tileId !== PROCEDURAL_GRASS_SURFACE_TILE_ID
+      ) {
+        this.clearUnsupportedSmallTreeAtAnchor(worldTileX, worldTileY, true);
+      }
       if (
         result.tileIdChanged &&
         isTileSolid(result.previousTileId) !== isTileSolid(tileId)

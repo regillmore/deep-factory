@@ -8998,6 +8998,65 @@ describe('main.ts shell state orchestration', () => {
     expect(restoredWorld.getTile(2, -3)).toBe(treeTileIds.leaf);
   });
 
+  it('drops cleaned planted saplings from runtime growth tracking after their grass support anchor is removed', async () => {
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setTile(1, 0, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
+    expect(savedWorld.setTile(1, -1, getSmallTreeSaplingTileId())).toBe(true);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          })
+        })
+      )
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: 1,
+        worldTileY: 0,
+        kind: 'break'
+      }
+    ];
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, -1), getSmallTreeSaplingTileId());
+    testRuntime.rendererNextSetTileEditEvents = [
+      createTileEditEvent(1, 0, PROCEDURAL_GRASS_SURFACE_TILE_ID, 0),
+      createTileEditEvent(1, -1, getSmallTreeSaplingTileId(), 0)
+    ];
+    testRuntime.rendererSetTileResult = true;
+
+    runFixedUpdate();
+
+    testRuntime.rendererHasResidentChunkCallCount = 0;
+    testRuntime.rendererSetTileCalls = [];
+    for (
+      let updateIndex = 0;
+      updateIndex < DEFAULT_SMALL_TREE_GROWTH_INTERVAL_TICKS;
+      updateIndex += 1
+    ) {
+      runFixedUpdate(1 / 60);
+    }
+
+    expect(testRuntime.rendererHasResidentChunkCallCount).toBe(0);
+    expect(testRuntime.rendererSetTileCalls).toEqual([]);
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+    expect(restoredWorld.getTile(1, 0)).toBe(0);
+    expect(restoredWorld.getTile(1, -1)).toBe(0);
+  });
+
   it('places a stone block from the selected hotbar slot while the full debug-edit panel is hidden and persists the consumed stack', async () => {
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
