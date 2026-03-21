@@ -353,6 +353,12 @@ describe('playerInventory', () => {
   });
 
   it('exposes per-item labels for hotbar presentation', () => {
+    expect(getPlayerInventoryItemDefinition('axe')).toEqual({
+      id: 'axe',
+      label: 'Starter Axe',
+      hotbarLabel: 'AXE',
+      maxStackSize: 1
+    });
     expect(getPlayerInventoryItemDefinition('dirt-block')).toEqual({
       id: 'dirt-block',
       label: 'Dirt Block',
@@ -453,6 +459,7 @@ describe('playerInventory', () => {
 
   it('exposes the inventory item registry in stable item-id order', () => {
     expect(getPlayerInventoryItemDefinitions().map((definition) => definition.id)).toEqual([
+      'axe',
       'pickaxe',
       'dirt-block',
       'stone-block',

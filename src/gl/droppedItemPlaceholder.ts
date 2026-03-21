@@ -33,6 +33,10 @@ export interface DroppedItemPlaceholderNearbyLightSample {
 const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
   Record<PlayerInventoryItemId, DroppedItemPlaceholderPalette>
 > = {
+  axe: {
+    baseColor: [0.56, 0.42, 0.24],
+    accentColor: [0.86, 0.63, 0.31]
+  },
   pickaxe: {
     baseColor: [0.51, 0.56, 0.62],
     accentColor: [0.86, 0.68, 0.31]

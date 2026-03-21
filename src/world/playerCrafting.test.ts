@@ -90,6 +90,13 @@ describe('playerCrafting definitions', () => {
         requiredStationId: 'workbench'
       },
       {
+        id: 'axe',
+        label: 'Starter Axe',
+        ingredients: [{ itemId: 'copper-bar', amount: 9 }],
+        output: { itemId: 'axe', amount: 1 },
+        requiredStationId: 'anvil'
+      },
+      {
         id: 'pickaxe',
         label: 'Starter Pickaxe',
         ingredients: [{ itemId: 'copper-bar', amount: 12 }],
@@ -116,6 +123,7 @@ describe('playerCrafting definitions', () => {
     expect(getPlayerCraftingRecipeDefinition('healing-potion').requiredStationId).toBe('workbench');
     expect(getPlayerCraftingRecipeDefinition('copper-bar').requiredStationId).toBe('furnace');
     expect(getPlayerCraftingRecipeDefinition('anvil').requiredStationId).toBe('workbench');
+    expect(getPlayerCraftingRecipeDefinition('axe').requiredStationId).toBe('anvil');
     expect(getPlayerCraftingRecipeDefinition('pickaxe').requiredStationId).toBe('anvil');
     expect(getPlayerCraftingRecipeDefinition('spear').requiredStationId).toBe('anvil');
     expect(getPlayerCraftingRecipeDefinition('sword').requiredStationId).toBe('anvil');
@@ -132,6 +140,7 @@ describe('playerCrafting definitions', () => {
     expect(isPlayerCraftingRecipeId('healing-potion')).toBe(true);
     expect(isPlayerCraftingRecipeId('copper-bar')).toBe(true);
     expect(isPlayerCraftingRecipeId('anvil')).toBe(true);
+    expect(isPlayerCraftingRecipeId('axe')).toBe(true);
     expect(isPlayerCraftingRecipeId('pickaxe')).toBe(true);
     expect(isPlayerCraftingRecipeId('spear')).toBe(true);
     expect(isPlayerCraftingRecipeId('sword')).toBe(true);
@@ -282,6 +291,22 @@ describe('evaluatePlayerCraftingRecipe', () => {
         '0,-1': STARTER_ANVIL_TILE_ID
       })
     });
+    const axeWithoutAnvil = evaluatePlayerCraftingRecipe({
+      inventoryState,
+      recipeId: 'axe',
+      playerState: createPlayer(),
+      world: createWorld({
+        '0,-1': STARTER_WORKBENCH_TILE_ID
+      })
+    });
+    const axeWithAnvil = evaluatePlayerCraftingRecipe({
+      inventoryState,
+      recipeId: 'axe',
+      playerState: createPlayer(),
+      world: createWorld({
+        '0,-1': STARTER_ANVIL_TILE_ID
+      })
+    });
     const spearWithoutAnvil = evaluatePlayerCraftingRecipe({
       inventoryState,
       recipeId: 'spear',
@@ -346,6 +371,18 @@ describe('evaluatePlayerCraftingRecipe', () => {
       craftable: false
     });
     expect(pickaxeWithAnvil).toMatchObject({
+      hasIngredients: true,
+      stationInRange: true,
+      blocker: null,
+      craftable: true
+    });
+    expect(axeWithoutAnvil).toMatchObject({
+      hasIngredients: true,
+      stationInRange: false,
+      blocker: 'missing-station',
+      craftable: false
+    });
+    expect(axeWithAnvil).toMatchObject({
       hasIngredients: true,
       stationInRange: true,
       blocker: null,
@@ -578,6 +615,40 @@ describe('tryCraftPlayerRecipe', () => {
     expect(crafted.crafted).toBe(true);
     expect(crafted.nextInventoryState.hotbar[0]).toEqual({
       itemId: 'pickaxe',
+      amount: 1
+    });
+    expect(getPlayerInventoryItemAmount(crafted.nextInventoryState, 'copper-bar')).toBe(0);
+  });
+
+  it('crafts a starter axe from copper bars only when a nearby anvil is available', () => {
+    const inventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'copper-bar', amount: 9 },
+        null,
+        ...Array.from({ length: 8 }, () => null)
+      ]
+    });
+
+    const blocked = tryCraftPlayerRecipe({
+      inventoryState,
+      recipeId: 'axe',
+      playerState: createPlayer(),
+      world: createWorld()
+    });
+    const crafted = tryCraftPlayerRecipe({
+      inventoryState,
+      recipeId: 'axe',
+      playerState: createPlayer(),
+      world: createWorld({
+        '0,-1': STARTER_ANVIL_TILE_ID
+      })
+    });
+
+    expect(blocked.crafted).toBe(false);
+    expect(blocked.nextInventoryState).toEqual(inventoryState);
+    expect(crafted.crafted).toBe(true);
+    expect(crafted.nextInventoryState.hotbar[0]).toEqual({
+      itemId: 'axe',
       amount: 1
     });
     expect(getPlayerInventoryItemAmount(crafted.nextInventoryState, 'copper-bar')).toBe(0);

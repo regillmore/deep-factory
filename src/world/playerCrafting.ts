@@ -25,6 +25,7 @@ export type PlayerCraftingRecipeId =
   | 'healing-potion'
   | 'copper-bar'
   | 'anvil'
+  | 'axe'
   | 'pickaxe'
   | 'spear'
   | 'sword';
@@ -140,6 +141,13 @@ const PLAYER_CRAFTING_RECIPE_DEFINITIONS: readonly PlayerCraftingRecipeDefinitio
     ingredients: [{ itemId: 'copper-bar', amount: 5 }],
     output: { itemId: 'anvil', amount: 1 },
     requiredStationId: 'workbench'
+  },
+  {
+    id: 'axe',
+    label: 'Starter Axe',
+    ingredients: [{ itemId: 'copper-bar', amount: 9 }],
+    output: { itemId: 'axe', amount: 1 },
+    requiredStationId: 'anvil'
   },
   {
     id: 'pickaxe',

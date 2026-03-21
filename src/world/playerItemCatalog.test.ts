@@ -16,6 +16,7 @@ describe('playerItemCatalog', () => {
       'Healing Potion',
       'Heart Crystal',
       'Rope',
+      'Starter Axe',
       'Starter Pickaxe',
       'Starter Spear',
       'Starter Sword',
@@ -31,6 +32,10 @@ describe('playerItemCatalog', () => {
       'healing-potion'
     ]);
     expect(searchPlayerItemCatalog('bug net').map((entry) => entry.itemId)).toEqual(['bug-net']);
+    expect(searchPlayerItemCatalog('starter axe').map((entry) => entry.itemId)).toEqual([
+      'axe',
+      'pickaxe'
+    ]);
     expect(searchPlayerItemCatalog('copper ore').map((entry) => entry.itemId)).toEqual([
       'copper-ore'
     ]);
