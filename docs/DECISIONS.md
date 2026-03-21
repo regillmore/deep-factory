@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-20: Small-tree footprints stay anchored at the planted base cell
+
+- Decision: Shared small-tree footprint helpers now treat the planted tile as the canonical anchor for both states: a planted sapling occupies only `(0,0)`, while the grown placeholder tree occupies trunk cells at `(0,0)` and `(0,-1)` plus leaf cells at `(-1,-2)`, `(0,-2)`, and `(1,-2)`.
+- Reason: Upcoming acorn-growth and starter-axe work need one deterministic footprint contract that lets canopy or trunk hits map back to the same planted origin without each feature re-encoding its own placeholder tree shape.
+- Consequence: Future small-tree planting, growth, save/load, and woodcutting follow-ups should reuse that planted-base anchor plus shared footprint helpers before introducing larger tree variants or alternate canopy layouts.
+
 ### 2026-03-20: Small-tree groundwork uses dedicated non-solid tile IDs
 
 - Decision: Shared tile metadata now reserves dedicated `small_tree_sapling`, `small_tree_trunk`, and `small_tree_leaf` IDs with direct authored-atlas placeholder renders, and all three stay non-solid plus non-light-blocking in the groundwork pass.

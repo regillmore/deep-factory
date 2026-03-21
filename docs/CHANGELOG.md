@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-20
 
+- Task: Add shared small-tree footprint helpers after shared small-tree tile helpers.
+- Changes: Added [src/world/smallTreeFootprints.ts](../src/world/smallTreeFootprints.ts) plus [src/world/smallTreeFootprints.test.ts](../src/world/smallTreeFootprints.test.ts) so the world layer now exposes canonical planted-sapling and grown-tree local footprints, including a planted-base-anchored trunk-plus-canopy layout and occupied-cell predicates for future acorn-growth plus starter-axe targeting; removed completed task `653` from [docs/NEXT.md](docs/NEXT.md), added replacement task `654`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/smallTreeFootprints.test.ts src/world/smallTreeTiles.test.ts` (outside the sandbox for the Vitest run).
+
 - Task: Add shared small-tree tile helpers after tile-metadata groundwork.
 - Changes: Added [src/world/smallTreeTiles.ts](../src/world/smallTreeTiles.ts) plus [src/world/smallTreeTiles.test.ts](../src/world/smallTreeTiles.test.ts) so the world layer now resolves stable `small_tree_sapling`, `small_tree_trunk`, and `small_tree_leaf` tile IDs from shared metadata and classifies those tiles through shared predicates for future acorn-growth and starter-axe work; removed completed task `652` from [docs/NEXT.md](docs/NEXT.md), added replacement task `653`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/smallTreeTiles.test.ts` (outside the sandbox for the Vitest run).
