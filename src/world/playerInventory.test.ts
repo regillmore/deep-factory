@@ -395,6 +395,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'FURN',
       maxStackSize: 99
     });
+    expect(getPlayerInventoryItemDefinition('anvil')).toEqual({
+      id: 'anvil',
+      label: 'Anvil',
+      hotbarLabel: 'ANVIL',
+      maxStackSize: 99
+    });
     expect(getPlayerInventoryItemDefinition('pickaxe')).toEqual({
       id: 'pickaxe',
       label: 'Starter Pickaxe',
@@ -455,6 +461,7 @@ describe('playerInventory', () => {
       'gel',
       'workbench',
       'furnace',
+      'anvil',
       'torch',
       'rope',
       'umbrella',

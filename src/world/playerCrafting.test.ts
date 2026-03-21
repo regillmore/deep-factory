@@ -16,6 +16,7 @@ import {
   type PlayerCraftingWorldView
 } from './playerCrafting';
 import { createPlayerState } from './playerState';
+import { STARTER_ANVIL_TILE_ID } from './starterAnvilPlacement';
 import { STARTER_FURNACE_TILE_ID } from './starterFurnacePlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 
@@ -48,7 +49,7 @@ const createWorkbenchCraftInventoryState = () =>
   });
 
 describe('playerCrafting definitions', () => {
-  it('exposes the starter recipe registry with workbench and furnace station requirements', () => {
+  it('exposes the starter recipe registry with workbench, furnace, and anvil station requirements', () => {
     expect(getPlayerCraftingRecipeDefinitions()).toEqual([
       {
         id: 'workbench',
@@ -80,34 +81,46 @@ describe('playerCrafting definitions', () => {
         ingredients: [{ itemId: 'copper-ore', amount: 3 }],
         output: { itemId: 'copper-bar', amount: 1 },
         requiredStationId: 'furnace'
+      },
+      {
+        id: 'anvil',
+        label: 'Anvil',
+        ingredients: [{ itemId: 'copper-bar', amount: 5 }],
+        output: { itemId: 'anvil', amount: 1 },
+        requiredStationId: 'workbench'
       }
     ]);
     expect(getPlayerCraftingRecipeDefinition('workbench').requiredStationId).toBeNull();
     expect(getPlayerCraftingRecipeDefinition('furnace').requiredStationId).toBe('workbench');
     expect(getPlayerCraftingRecipeDefinition('healing-potion').requiredStationId).toBe('workbench');
     expect(getPlayerCraftingRecipeDefinition('copper-bar').requiredStationId).toBe('furnace');
+    expect(getPlayerCraftingRecipeDefinition('anvil').requiredStationId).toBe('workbench');
     expect(getPlayerCraftingStationDefinitions()).toEqual([
       { id: 'workbench', label: 'Workbench' },
-      { id: 'furnace', label: 'Furnace' }
+      { id: 'furnace', label: 'Furnace' },
+      { id: 'anvil', label: 'Anvil' }
     ]);
     expect(getPlayerCraftingStationLabel('workbench')).toBe('Workbench');
     expect(getPlayerCraftingStationLabel('furnace')).toBe('Furnace');
+    expect(getPlayerCraftingStationLabel('anvil')).toBe('Anvil');
     expect(isPlayerCraftingRecipeId('workbench')).toBe(true);
     expect(isPlayerCraftingRecipeId('furnace')).toBe(true);
     expect(isPlayerCraftingRecipeId('healing-potion')).toBe(true);
     expect(isPlayerCraftingRecipeId('copper-bar')).toBe(true);
+    expect(isPlayerCraftingRecipeId('anvil')).toBe(true);
     expect(isPlayerCraftingRecipeId('torch')).toBe(false);
   });
 });
 
 describe('findNearestPlayerCraftingStationInRange', () => {
-  it('finds the nearest in-range workbench or furnace tile and ignores farther matches', () => {
+  it('finds the nearest in-range workbench, furnace, or anvil tile and ignores farther matches', () => {
     const playerState = createPlayer();
     const world = createWorld({
       '0,-1': STARTER_WORKBENCH_TILE_ID,
       '2,-1': STARTER_FURNACE_TILE_ID,
-      '4,-1': STARTER_WORKBENCH_TILE_ID,
-      '5,-1': STARTER_FURNACE_TILE_ID
+      '4,-1': STARTER_ANVIL_TILE_ID,
+      '5,-1': STARTER_WORKBENCH_TILE_ID,
+      '6,-1': STARTER_FURNACE_TILE_ID
     });
 
     expect(
@@ -131,6 +144,17 @@ describe('findNearestPlayerCraftingStationInRange', () => {
     ).toMatchObject({
       stationId: 'furnace',
       tileX: 2,
+      tileY: -1
+    });
+    expect(
+      findNearestPlayerCraftingStationInRange({
+        stationId: 'anvil',
+        world,
+        playerState
+      })
+    ).toMatchObject({
+      stationId: 'anvil',
+      tileX: 4,
       tileY: -1
     });
   });
@@ -376,6 +400,39 @@ describe('tryCraftPlayerRecipe', () => {
     expect(crafted.crafted).toBe(true);
     expect(crafted.nextInventoryState.hotbar[0]).toEqual({
       itemId: 'copper-bar',
+      amount: 1
+    });
+  });
+
+  it('crafts an anvil from copper bars only when a nearby workbench is available', () => {
+    const inventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'copper-bar', amount: 5 },
+        null,
+        ...Array.from({ length: 8 }, () => null)
+      ]
+    });
+
+    const blocked = tryCraftPlayerRecipe({
+      inventoryState,
+      recipeId: 'anvil',
+      playerState: createPlayer(),
+      world: createWorld()
+    });
+    const crafted = tryCraftPlayerRecipe({
+      inventoryState,
+      recipeId: 'anvil',
+      playerState: createPlayer(),
+      world: createWorld({
+        '0,-1': STARTER_WORKBENCH_TILE_ID
+      })
+    });
+
+    expect(blocked.crafted).toBe(false);
+    expect(blocked.nextInventoryState).toEqual(inventoryState);
+    expect(crafted.crafted).toBe(true);
+    expect(crafted.nextInventoryState.hotbar[0]).toEqual({
+      itemId: 'anvil',
       amount: 1
     });
   });

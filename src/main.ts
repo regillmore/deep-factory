@@ -331,6 +331,11 @@ import {
   STARTER_FURNACE_TILE_ID
 } from './world/starterFurnacePlacement';
 import {
+  evaluateStarterAnvilPlacement,
+  STARTER_ANVIL_ITEM_ID,
+  STARTER_ANVIL_TILE_ID
+} from './world/starterAnvilPlacement';
+import {
   evaluateStarterRopePlacement,
   resolveStarterRopePlacementTarget,
   STARTER_ROPE_ITEM_ID,
@@ -3082,6 +3087,14 @@ const bootstrap = async (): Promise<void> => {
       event.tileId !== STARTER_FURNACE_TILE_ID
     ) {
       refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_FURNACE_ITEM_ID);
+      return;
+    }
+
+    if (
+      event.previousTileId === STARTER_ANVIL_TILE_ID &&
+      event.tileId !== STARTER_ANVIL_TILE_ID
+    ) {
+      refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_ANVIL_ITEM_ID);
     }
   });
   const restoreDroppedItemEntityStates = (droppedItemStates: readonly DroppedItemState[]): void => {
@@ -4186,6 +4199,9 @@ const bootstrap = async (): Promise<void> => {
       placementTileId = resolvePlaceableSolidBlockTileId(selectedStack.itemId);
     } else {
       switch (selectedStack.itemId) {
+        case STARTER_ANVIL_ITEM_ID:
+          placementTileId = STARTER_ANVIL_TILE_ID;
+          break;
         case STARTER_FURNACE_ITEM_ID:
           placementTileId = STARTER_FURNACE_TILE_ID;
           break;
@@ -4253,6 +4269,15 @@ const bootstrap = async (): Promise<void> => {
       );
     } else {
       switch (selectedStack.itemId) {
+        case STARTER_ANVIL_ITEM_ID:
+          placement = evaluateStarterAnvilPlacement(
+            {
+              getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+            },
+            worldTileX,
+            worldTileY
+          );
+          break;
         case STARTER_FURNACE_ITEM_ID:
           placement = evaluateStarterFurnacePlacement(
             {

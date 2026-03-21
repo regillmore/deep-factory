@@ -16,6 +16,7 @@ import {
 import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './starterFurnacePlacement';
+import { STARTER_ANVIL_TILE_ID } from './starterAnvilPlacement';
 import { getTileEmissiveLightLevel, parseTileMetadataRegistry } from './tileMetadata';
 import { didTileLightingStateChange, resolveLiquidStepPhaseSummary, TileWorld } from './world';
 import type { TileEditEvent } from './world';
@@ -319,6 +320,49 @@ describe('TileWorld', () => {
         localX: 1,
         localY: 1,
         previousTileId: STARTER_FURNACE_TILE_ID,
+        previousLiquidLevel: 0,
+        tileId: 0,
+        liquidLevel: 0
+      }
+    ]);
+  });
+
+  it('clears an unsupported placed anvil and emits a second edit when its ground support breaks', () => {
+    const world = new TileWorld(0);
+    const events: TileEditEvent[] = [];
+
+    world.setTile(1, 1, 0);
+    world.setTile(1, 2, 1);
+    expect(world.setTile(1, 1, STARTER_ANVIL_TILE_ID)).toBe(true);
+
+    world.onTileEdited((event) => {
+      events.push(event);
+    });
+
+    expect(world.setTile(1, 2, 0)).toBe(true);
+
+    expect(world.getTile(1, 1)).toBe(0);
+    expect(events).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: 2,
+        chunkX: 0,
+        chunkY: 0,
+        localX: 1,
+        localY: 2,
+        previousTileId: 1,
+        previousLiquidLevel: 0,
+        tileId: 0,
+        liquidLevel: 0
+      },
+      {
+        worldTileX: 1,
+        worldTileY: 1,
+        chunkX: 0,
+        chunkY: 0,
+        localX: 1,
+        localY: 1,
+        previousTileId: STARTER_ANVIL_TILE_ID,
         previousLiquidLevel: 0,
         tileId: 0,
         liquidLevel: 0

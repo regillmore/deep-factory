@@ -16,13 +16,15 @@ import {
   STARTER_WORKBENCH_TILE_ID
 } from './starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './starterFurnacePlacement';
+import { STARTER_ANVIL_TILE_ID } from './starterAnvilPlacement';
 
-export type PlayerCraftingStationId = 'workbench' | 'furnace';
+export type PlayerCraftingStationId = 'workbench' | 'furnace' | 'anvil';
 export type PlayerCraftingRecipeId =
   | 'workbench'
   | 'furnace'
   | 'healing-potion'
-  | 'copper-bar';
+  | 'copper-bar'
+  | 'anvil';
 
 export interface PlayerCraftingStationDefinition {
   id: PlayerCraftingStationId;
@@ -85,15 +87,17 @@ export interface TryCraftPlayerRecipeResult {
 
 const PLAYER_CRAFTING_STATION_TILE_IDS: Readonly<Record<PlayerCraftingStationId, number>> = {
   workbench: STARTER_WORKBENCH_TILE_ID,
-  furnace: STARTER_FURNACE_TILE_ID
+  furnace: STARTER_FURNACE_TILE_ID,
+  anvil: STARTER_ANVIL_TILE_ID
 };
 
 const PLAYER_CRAFTING_STATION_LABELS: Readonly<Record<PlayerCraftingStationId, string>> = {
   workbench: 'Workbench',
-  furnace: 'Furnace'
+  furnace: 'Furnace',
+  anvil: 'Anvil'
 };
 
-const PLAYER_CRAFTING_STATION_IDS = ['workbench', 'furnace'] as const;
+const PLAYER_CRAFTING_STATION_IDS = ['workbench', 'furnace', 'anvil'] as const;
 
 const PLAYER_CRAFTING_RECIPE_DEFINITIONS: readonly PlayerCraftingRecipeDefinition[] = [
   {
@@ -126,6 +130,13 @@ const PLAYER_CRAFTING_RECIPE_DEFINITIONS: readonly PlayerCraftingRecipeDefinitio
     ingredients: [{ itemId: 'copper-ore', amount: 3 }],
     output: { itemId: 'copper-bar', amount: 1 },
     requiredStationId: 'furnace'
+  },
+  {
+    id: 'anvil',
+    label: 'Anvil',
+    ingredients: [{ itemId: 'copper-bar', amount: 5 }],
+    output: { itemId: 'anvil', amount: 1 },
+    requiredStationId: 'workbench'
   }
 ] as const;
 const PLAYER_CRAFTING_RECIPE_IDS = new Set<PlayerCraftingRecipeId>(

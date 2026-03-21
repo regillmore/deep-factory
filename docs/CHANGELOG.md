@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-20
+
+- Task: Add a starter-anvil crafting slice after starter-furnace smelting and placeable-workstation basics.
+- Changes: Added [src/world/starterAnvilPlacement.ts](../src/world/starterAnvilPlacement.ts) plus [src/world/starterAnvilPlacement.test.ts](../src/world/starterAnvilPlacement.test.ts) for single-tile ground-supported anvil placement, updated [src/world/playerInventory.ts](../src/world/playerInventory.ts), [src/world/playerCrafting.ts](../src/world/playerCrafting.ts), [src/world/tileMetadata.json](../src/world/tileMetadata.json), and their focused regressions so anvils exist as shared inventory items, crafting outputs, nearby-station checks, and tile metadata, updated [src/main.ts](../src/main.ts), [src/world/world.ts](../src/world/world.ts), [src/world/starterPickaxeMining.ts](../src/world/starterPickaxeMining.ts), [src/gl/droppedItemPlaceholder.ts](../src/gl/droppedItemPlaceholder.ts), and targeted runtime coverage so crafted anvils place through the shared hidden-panel item-use path, support-loss clears refund through the existing removed-tile pickup cascade, and pickaxe removal plus dropped-item placeholder rendering both recognize anvils, removed completed task `645` from [docs/NEXT.md](docs/NEXT.md), added replacement task `646`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json`, `cmd /c npx vitest run src/world/playerInventory.test.ts src/world/playerItemCatalog.test.ts src/world/playerCrafting.test.ts src/world/playerRecipeCatalog.test.ts src/world/starterAnvilPlacement.test.ts src/world/starterPickaxeMining.test.ts src/world/world.test.ts src/world/tileMetadata.test.ts src/gl/droppedItemPlaceholder.test.ts`, `cmd /c npx vitest run src/main.test.ts -t anvil`, and `cmd /c npx vitest run src/main.test.ts -t "workbench-only recipes"` (outside the sandbox for the Vitest runs after the expected `spawn EPERM` startup restriction).
+
 ## 2026-03-19
 
 - Task: Add a starter-furnace smelting slice after seeded ore-pocket worldgen and placeable-workbench crafting.

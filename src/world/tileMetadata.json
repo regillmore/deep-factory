@@ -1179,6 +1179,17 @@
       "render": {
         "atlasIndex": 14
       }
+    },
+    {
+      "id": 15,
+      "name": "anvil",
+      "gameplay": {
+        "solid": false,
+        "blocksLight": false
+      },
+      "render": {
+        "atlasIndex": 14
+      }
     }
   ]
 }

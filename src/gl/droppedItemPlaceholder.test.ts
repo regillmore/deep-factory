@@ -70,6 +70,13 @@ describe('droppedItemPlaceholder', () => {
     });
   });
 
+  it('provides a dedicated placeholder palette for anvil pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('anvil')).toEqual({
+      baseColor: [0.32, 0.35, 0.41],
+      accentColor: [0.77, 0.81, 0.88]
+    });
+  });
+
   it('provides a dedicated placeholder palette for starter-sword pickups', () => {
     expect(getDroppedItemPlaceholderPalette('sword')).toEqual({
       baseColor: [0.62, 0.64, 0.7],

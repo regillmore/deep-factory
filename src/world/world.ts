@@ -27,6 +27,10 @@ import {
   hasStarterFurnaceGroundSupport,
   STARTER_FURNACE_TILE_ID
 } from './starterFurnacePlacement';
+import {
+  hasStarterAnvilGroundSupport,
+  STARTER_ANVIL_TILE_ID
+} from './starterAnvilPlacement';
 import { resolveProceduralTerrainTileId } from './proceduralTerrain';
 import { DEFAULT_WORLD_SEED, normalizeWorldSeed } from './worldSeed';
 import {
@@ -798,6 +802,38 @@ export class TileWorld {
     );
   }
 
+  private clearUnsupportedAdjacentStarterAnvils(
+    worldTileX: number,
+    worldTileY: number,
+    emitTileEditEvent: boolean
+  ): void {
+    const supportedAnvilWorldTileX = worldTileX;
+    const supportedAnvilWorldTileY = worldTileY - 1;
+    if (
+      this.getResidentOrEditedTileId(supportedAnvilWorldTileX, supportedAnvilWorldTileY) !==
+      STARTER_ANVIL_TILE_ID
+    ) {
+      return;
+    }
+    if (
+      hasStarterAnvilGroundSupport(
+        this,
+        supportedAnvilWorldTileX,
+        supportedAnvilWorldTileY
+      )
+    ) {
+      return;
+    }
+
+    this.commitTileState(
+      supportedAnvilWorldTileX,
+      supportedAnvilWorldTileY,
+      0,
+      0,
+      emitTileEditEvent
+    );
+  }
+
   private activateLiquidChunk(key: string): void {
     this.activeLiquidChunkKeys.add(key);
     this.liquidChunkQuietStepCounts.set(key, 0);
@@ -1010,6 +1046,7 @@ export class TileWorld {
         this.clearUnsupportedAdjacentStarterTorches(worldTileX, worldTileY, true);
         this.clearUnsupportedAdjacentStarterWorkbenches(worldTileX, worldTileY, true);
         this.clearUnsupportedAdjacentStarterFurnaces(worldTileX, worldTileY, true);
+        this.clearUnsupportedAdjacentStarterAnvils(worldTileX, worldTileY, true);
       }
       this.wakeNearbyResidentLiquidChunks(worldTileX, worldTileY);
     }

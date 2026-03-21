@@ -65,6 +65,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
     baseColor: [0.38, 0.36, 0.34],
     accentColor: [0.83, 0.58, 0.26]
   },
+  anvil: {
+    baseColor: [0.32, 0.35, 0.41],
+    accentColor: [0.77, 0.81, 0.88]
+  },
   torch: {
     baseColor: [0.79, 0.55, 0.16],
     accentColor: [0.99, 0.88, 0.46]

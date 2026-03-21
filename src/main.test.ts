@@ -84,6 +84,7 @@ import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
 import { STARTER_TORCH_TILE_ID } from './world/starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './world/starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './world/starterFurnacePlacement';
+import { STARTER_ANVIL_TILE_ID } from './world/starterAnvilPlacement';
 import {
   describeLiquidRenderVariantPixelBoundsAtElapsedMs,
   describeLiquidRenderVariantUvRectAtElapsedMs,
@@ -7745,6 +7746,11 @@ describe('main.ts shell state orchestration', () => {
           stationId: 'furnace',
           label: 'Furnace',
           inRange: false
+        },
+        {
+          stationId: 'anvil',
+          label: 'Anvil',
+          inRange: false
         }
       ]
     });
@@ -7776,6 +7782,11 @@ describe('main.ts shell state orchestration', () => {
           stationId: 'furnace',
           label: 'Furnace',
           inRange: false
+        },
+        {
+          stationId: 'anvil',
+          label: 'Anvil',
+          inRange: false
         }
       ]
     });
@@ -7786,6 +7797,29 @@ describe('main.ts shell state orchestration', () => {
     ).toMatchObject({
       enabled: true,
       disabledReason: null
+    });
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(2, -1), STARTER_ANVIL_TILE_ID);
+    runRenderFrame();
+
+    expect(testRuntime.latestCraftingPanelState).toMatchObject({
+      stations: [
+        {
+          stationId: 'workbench',
+          label: 'Workbench',
+          inRange: true
+        },
+        {
+          stationId: 'furnace',
+          label: 'Furnace',
+          inRange: false
+        },
+        {
+          stationId: 'anvil',
+          label: 'Anvil',
+          inRange: true
+        }
+      ]
     });
   });
 
@@ -8017,6 +8051,120 @@ describe('main.ts shell state orchestration', () => {
     const restoredWorld = new TileWorld(0);
     restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
     expect(restoredWorld.getTile(1, -1)).toBe(STARTER_FURNACE_TILE_ID);
+  });
+
+  it('crafts an anvil from the panel, then places it through the shared hidden-panel item-use path', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'copper-bar', amount: 5 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'sword', amount: 1 },
+              { itemId: 'umbrella', amount: 1 },
+              { itemId: 'bug-net', amount: 1 },
+              null,
+              { itemId: 'spear', amount: 1 }
+            ],
+            selectedHotbarSlotIndex: 0
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, -1), STARTER_WORKBENCH_TILE_ID);
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    runRenderFrame();
+
+    expect(
+      testRuntime.latestCraftingPanelState?.recipes.find((recipe) => recipe.recipeId === 'anvil')
+    ).toMatchObject({
+      enabled: true
+    });
+
+    testRuntime.craftingPanelInstance?.triggerCraftRecipe('anvil');
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState).toEqual(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'anvil', amount: 1 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          { itemId: 'healing-potion', amount: 3 },
+          { itemId: 'sword', amount: 1 },
+          { itemId: 'umbrella', amount: 1 },
+          { itemId: 'bug-net', amount: 1 },
+          null,
+          { itemId: 'spear', amount: 1 }
+        ],
+        selectedHotbarSlotIndex: 0
+      })
+    );
+
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), 1);
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 1, y: -1 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 1,
+      tileY: -1,
+      placementTileX: 1,
+      placementTileY: -1,
+      canPlace: true,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false
+    });
+
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        worldX: 24,
+        worldY: -8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        tileId: STARTER_ANVIL_TILE_ID
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    expect(persistedEnvelope?.session.standalonePlayerInventoryState.hotbar[1]).toBeNull();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+    expect(restoredWorld.getTile(1, -1)).toBe(STARTER_ANVIL_TILE_ID);
   });
 
   it('smelts copper bars from the panel only when a nearby furnace is placed', async () => {
@@ -10165,6 +10313,50 @@ describe('main.ts shell state orchestration', () => {
       {
         position: { x: 328, y: -328 },
         itemId: 'workbench',
+        amount: 1
+      }
+    ]);
+  });
+
+  it('spawns one anvil pickup entity when support removal clears a placed anvil tile', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const supportWorldTileX = 20;
+    const supportWorldTileY = -20;
+    const anvilWorldTileX = 20;
+    const anvilWorldTileY = -21;
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: supportWorldTileX,
+        worldTileY: supportWorldTileY,
+        kind: 'break'
+      }
+    ];
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(supportWorldTileX, supportWorldTileY),
+      1
+    );
+    testRuntime.rendererTileIdsByWorldKey.set(
+      worldTileKey(anvilWorldTileX, anvilWorldTileY),
+      STARTER_ANVIL_TILE_ID
+    );
+    testRuntime.rendererNextSetTileEditEvents = [
+      createTileEditEvent(supportWorldTileX, supportWorldTileY, 1, 0),
+      createTileEditEvent(anvilWorldTileX, anvilWorldTileY, STARTER_ANVIL_TILE_ID, 0)
+    ];
+    testRuntime.rendererSetTileResult = true;
+
+    runFixedUpdate();
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 328, y: -328 },
+        itemId: 'anvil',
         amount: 1
       }
     ]);

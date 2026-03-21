@@ -5,6 +5,7 @@ import { getPlayerItemCatalogEntries, searchPlayerItemCatalog } from './playerIt
 describe('playerItemCatalog', () => {
   it('lists every inventory item once in alphabetical label order', () => {
     expect(getPlayerItemCatalogEntries().map((entry) => entry.label)).toEqual([
+      'Anvil',
       'Bug Net',
       'Bunny',
       'Copper Bar',

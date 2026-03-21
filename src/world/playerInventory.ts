@@ -9,6 +9,7 @@ export type PlayerInventoryItemId =
   | 'gel'
   | 'workbench'
   | 'furnace'
+  | 'anvil'
   | 'torch'
   | 'rope'
   | 'umbrella'
@@ -69,6 +70,7 @@ export const PLAYER_INVENTORY_ITEM_IDS: readonly PlayerInventoryItemId[] = [
   'gel',
   'workbench',
   'furnace',
+  'anvil',
   'torch',
   'rope',
   'umbrella',
@@ -129,6 +131,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     id: 'furnace',
     label: 'Furnace',
     hotbarLabel: 'FURN',
+    maxStackSize: 99
+  },
+  anvil: {
+    id: 'anvil',
+    label: 'Anvil',
+    hotbarLabel: 'ANVIL',
     maxStackSize: 99
   },
   torch: {

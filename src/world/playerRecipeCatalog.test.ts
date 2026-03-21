@@ -6,6 +6,16 @@ describe('playerRecipeCatalog', () => {
   it('lists every recipe once in alphabetical label order with shared display labels', () => {
     expect(getPlayerRecipeCatalogEntries()).toEqual([
       {
+        recipeId: 'anvil',
+        label: 'Anvil',
+        outputItemId: 'anvil',
+        outputLabel: 'Output: +1 ANVIL',
+        ingredientsLabel: 'Ingredients: 5 Copper Bar',
+        stationRequirementLabel: 'Requirement: Nearby Workbench',
+        requiredStationId: 'workbench',
+        ingredients: [{ itemId: 'copper-bar', label: 'Copper Bar', amount: 5 }]
+      },
+      {
         recipeId: 'copper-bar',
         label: 'Copper Bar',
         outputItemId: 'copper-bar',
@@ -59,6 +69,7 @@ describe('playerRecipeCatalog', () => {
       'healing-potion'
     ]);
     expect(searchPlayerRecipeCatalog('copper bar').map((entry) => entry.recipeId)).toEqual([
+      'anvil',
       'copper-bar'
     ]);
     expect(searchPlayerRecipeCatalog('gel').map((entry) => entry.recipeId)).toEqual([
@@ -68,6 +79,7 @@ describe('playerRecipeCatalog', () => {
       'furnace'
     ]);
     expect(searchPlayerRecipeCatalog('nearby workbench').map((entry) => entry.recipeId)).toEqual([
+      'anvil',
       'furnace',
       'healing-potion'
     ]);

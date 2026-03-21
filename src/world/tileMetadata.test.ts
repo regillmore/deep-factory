@@ -121,6 +121,10 @@ describe('tile metadata loader', () => {
       solid: false,
       blocksLight: false
     });
+    expect(resolveTileGameplayMetadata(15)).toEqual({
+      solid: false,
+      blocksLight: false
+    });
     expect(isTileSolid(1)).toBe(true);
     expect(isTileSolid(4)).toBe(false);
     expect(isTileClimbable(11)).toBe(true);
@@ -141,6 +145,7 @@ describe('tile metadata loader', () => {
     expect(resolveTileRenderUvRect(11)).toEqual(atlasIndexToUvRect(19));
     expect(resolveTileRenderUvRect(13)).toEqual(atlasIndexToUvRect(14));
     expect(resolveTileRenderUvRect(14)).toEqual(atlasIndexToUvRect(14));
+    expect(resolveTileRenderUvRect(15)).toEqual(atlasIndexToUvRect(14));
     expect(hasAnimatedTileRenderMetadata(10)).toBe(true);
     expect(getAnimatedTileRenderFrameCount(10)).toBe(2);
     expect(getAnimatedTileRenderFrameDurationMs(10)).toBe(180);
