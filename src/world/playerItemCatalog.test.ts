@@ -24,6 +24,7 @@ describe('playerItemCatalog', () => {
       'Stone Block',
       'Torch',
       'Umbrella',
+      'Wood',
       'Workbench'
     ]);
   });

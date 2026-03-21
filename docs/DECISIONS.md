@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-21: Starter axe chops resolve through the shared tree anchor and clear the full current stage
+
+- Decision: Starter-axe targeting now resolves sampled `small_tree_sapling`, `small_tree_trunk`, and `small_tree_leaf` hits through the shared small-tree anchor helper, and successful chops clear the full planted or grown footprint at that resolved anchor while dropping `Wood` from the current stage (`1` from planted saplings and `5` from grown trees).
+- Reason: Canopy hits, cleanup writes, and early wood loot all need one canonical tree-break contract instead of letting each caller guess which sampled tile or partial footprint should count as the chopped tree.
+- Consequence: Future tree previews, loot, or larger-tree follow-ups should route through the shared anchor-and-stage chop path rather than introducing per-tile chop logic or stage-specific clear rules in other systems.
+
 ### 2026-03-21: Small-tree support-loss cleanup runs from world anchor edits
 
 - Decision: When a `grass_surface` support tile changes away from grass, `TileWorld` now clears any planted or grown small-tree footprint above that anchor through the shared footprint writer and emits ordinary tile-edit notifications for those cleanup writes.

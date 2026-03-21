@@ -11,6 +11,7 @@ import {
   getPlayerInventoryItemDefinition,
   type PlayerInventoryState
 } from '../world/playerInventory';
+import type { StarterAxeSwingPhase } from '../world/starterAxeChopping';
 import type { StarterBugNetSwingPhase } from '../world/starterBugNet';
 import type { StarterMeleeWeaponSwingPhase } from '../world/starterMeleeWeapon';
 import type { StarterPickaxeSwingPhase } from '../world/starterPickaxeMining';
@@ -27,6 +28,12 @@ interface HotbarOverlayOptions {
 }
 
 interface HotbarOverlayUpdateOptions {
+  starterAxeSwingFeedback?:
+    | {
+        phase: StarterAxeSwingPhase;
+        timingFillNormalized: number;
+      }
+    | null;
   healingPotionCooldownFillNormalized?: number | null;
   heartCrystalBlockedReason?: 'dead' | 'max-health-cap' | null;
   starterMeleeWeaponSwingFeedback?:
@@ -101,6 +108,7 @@ const HEART_CRYSTAL_BLOCKED_FILL_BACKGROUND: Record<'dead' | 'max-health-cap', s
   'max-health-cap': HEART_CRYSTAL_MAX_HEALTH_CAP_FILL_BACKGROUND
 };
 type HotbarTimedItemPhase =
+  | StarterAxeSwingPhase
   | StarterBugNetSwingPhase
   | StarterMeleeWeaponSwingPhase
   | StarterPickaxeSwingPhase
@@ -124,6 +132,11 @@ const HOTBAR_TIMED_ITEM_FILL_BACKGROUND: Record<HotbarTimedItemPhase, string> = 
     'linear-gradient(180deg, rgba(214, 236, 255, 0.04) 0%, rgba(148, 198, 255, 0.2) 35%, rgba(86, 148, 224, 0.58) 100%)'
 };
 const STARTER_MELEE_WEAPON_SWING_TITLE_TEXT: Record<StarterMeleeWeaponSwingPhase, string> = {
+  windup: 'windup active',
+  active: 'swing active',
+  recovery: 'recovery active'
+};
+const STARTER_AXE_SWING_TITLE_TEXT: Record<StarterAxeSwingPhase, string> = {
   windup: 'windup active',
   active: 'swing active',
   recovery: 'recovery active'
@@ -350,6 +363,7 @@ export class HotbarOverlay {
   }
 
   update(state: PlayerInventoryState, options: HotbarOverlayUpdateOptions = {}): void {
+    const starterAxeSwingFeedback = options.starterAxeSwingFeedback ?? null;
     const healingPotionCooldownFillNormalized =
       typeof options.healingPotionCooldownFillNormalized === 'number'
         ? clampUnitInterval(options.healingPotionCooldownFillNormalized)
@@ -382,7 +396,15 @@ export class HotbarOverlay {
       const blockedHeartCrystal =
         stack.itemId === 'heart-crystal' && heartCrystalBlockedReason !== null;
       const selectedTimedItemFeedback =
-        selected && stack.itemId === 'sword' && starterMeleeWeaponSwingFeedback !== null
+        selected && stack.itemId === 'axe' && starterAxeSwingFeedback !== null
+          ? {
+              phase: starterAxeSwingFeedback.phase,
+              timingFillNormalized: clampUnitInterval(
+                starterAxeSwingFeedback.timingFillNormalized
+              ),
+              titleText: STARTER_AXE_SWING_TITLE_TEXT[starterAxeSwingFeedback.phase]
+            }
+          : selected && stack.itemId === 'sword' && starterMeleeWeaponSwingFeedback !== null
           ? {
               phase: starterMeleeWeaponSwingFeedback.phase,
               timingFillNormalized: clampUnitInterval(

@@ -356,6 +356,18 @@ import {
   STARTER_ROPE_TILE_ID
 } from './world/starterRopePlacement';
 import {
+  chopSmallTreeAtAnchor,
+  createStarterAxeChoppingState,
+  evaluateStarterAxeChoppingTarget,
+  STARTER_AXE_SWING_ACTIVE_SECONDS,
+  STARTER_AXE_SWING_RECOVERY_SECONDS,
+  STARTER_AXE_SWING_WINDUP_SECONDS,
+  STARTER_AXE_ITEM_ID,
+  stepStarterAxeChoppingState,
+  tryStartStarterAxeSwing,
+  WOOD_ITEM_ID
+} from './world/starterAxeChopping';
+import {
   createStarterPickaxeMiningState,
   evaluateStarterPickaxeMiningTarget,
   resolveStarterPickaxeBrokenTileDrop,
@@ -1747,6 +1759,7 @@ const bootstrap = async (): Promise<void> => {
   let latestStandalonePlayerDeathHoldStatus: StandalonePlayerDeathHoldTelemetryStatus = 'none';
   let standalonePlayerDeathCount = 0;
   let standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
+  let starterAxeChoppingState = createStarterAxeChoppingState();
   let starterMeleeWeaponState = createStarterMeleeWeaponState();
   let starterSpearState = createStarterSpearState();
   let starterPickaxeMiningState = createStarterPickaxeMiningState();
@@ -1892,6 +1905,37 @@ const bootstrap = async (): Promise<void> => {
       )
     };
   };
+  const resolveHotbarOverlayStarterAxeSwingFeedback = ():
+    | {
+        phase: 'windup' | 'active' | 'recovery';
+        timingFillNormalized: number;
+      }
+    | null => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== STARTER_AXE_ITEM_ID) {
+      return null;
+    }
+
+    const activeSwing = starterAxeChoppingState.activeSwing;
+    if (activeSwing === null) {
+      return null;
+    }
+
+    const phaseDurationSeconds =
+      activeSwing.phase === 'windup'
+        ? STARTER_AXE_SWING_WINDUP_SECONDS
+        : activeSwing.phase === 'active'
+          ? STARTER_AXE_SWING_ACTIVE_SECONDS
+          : STARTER_AXE_SWING_RECOVERY_SECONDS;
+
+    return {
+      phase: activeSwing.phase,
+      timingFillNormalized: Math.max(
+        0,
+        Math.min(1, activeSwing.phaseSecondsRemaining / phaseDurationSeconds)
+      )
+    };
+  };
   const resolveHotbarOverlayStarterPickaxeSwingFeedback = ():
     | {
         phase: 'windup' | 'active' | 'recovery';
@@ -1987,6 +2031,7 @@ const bootstrap = async (): Promise<void> => {
   };
   const syncHotbarOverlayState = (): void => {
     hotbarOverlay.update(standalonePlayerInventoryState, {
+      starterAxeSwingFeedback: resolveHotbarOverlayStarterAxeSwingFeedback(),
       healingPotionCooldownFillNormalized:
         resolveHotbarOverlayHealingPotionCooldownFillNormalized(),
       heartCrystalBlockedReason: resolveHotbarOverlayHeartCrystalBlockedReason(),
@@ -2886,6 +2931,7 @@ const bootstrap = async (): Promise<void> => {
     pendingStandalonePlayerFixedStepResult = null;
     latestStandalonePlayerDeathHoldStatus = 'none';
     standalonePlayerRenderPresentationState = createStandalonePlayerRenderPresentationState();
+    starterAxeChoppingState = createStarterAxeChoppingState();
     starterMeleeWeaponState = createStarterMeleeWeaponState();
     starterSpearState = createStarterSpearState();
     starterPickaxeMiningState = createStarterPickaxeMiningState();
@@ -3900,6 +3946,36 @@ const bootstrap = async (): Promise<void> => {
     }
     return startResult.started;
   };
+  const tryStartSelectedStarterAxeSwingAtTile = (
+    worldTileX: number,
+    worldTileY: number
+  ): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return false;
+    }
+
+    const startResult = tryStartStarterAxeSwing(
+      starterAxeChoppingState,
+      evaluateStarterAxeChoppingTarget(
+        {
+          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+        },
+        standalonePlayerState,
+        worldTileX,
+        worldTileY
+      )
+    );
+    starterAxeChoppingState = startResult.state;
+    if (startResult.started) {
+      syncHotbarOverlayState();
+    }
+    return startResult.started;
+  };
   const tryStartSelectedStarterBugNetSwing = (
     request: PlayerItemUseRequest
   ): boolean => {
@@ -4082,6 +4158,54 @@ const bootstrap = async (): Promise<void> => {
           spawnDroppedItemEntity(remainingDroppedItemState);
         }
       }
+    }
+  };
+  const stepStarterAxeChoppingFixedUpdate = (fixedDt: number): void => {
+    const hadActiveSwing = starterAxeChoppingState.activeSwing !== null;
+    const standalonePlayerState = getStandalonePlayerState();
+    const stepResult = stepStarterAxeChoppingState(starterAxeChoppingState, {
+      world: {
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+      },
+      playerState:
+        standalonePlayerState === null ||
+        standalonePlayerDeathState !== null ||
+        isStandalonePlayerDead(standalonePlayerState)
+          ? null
+          : standalonePlayerState,
+      fixedDtSeconds: fixedDt
+    });
+    starterAxeChoppingState = stepResult.state;
+    if (hadActiveSwing || starterAxeChoppingState.activeSwing !== null) {
+      syncHotbarOverlayState();
+    }
+    if (stepResult.chopEvent === null) {
+      return;
+    }
+
+    const chopResult = chopSmallTreeAtAnchor(
+      {
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY),
+        setTile: (tileX, tileY, tileId) => applyWorldTileEdit(tileX, tileY, tileId).changed
+      },
+      stepResult.chopEvent.anchorTileX,
+      stepResult.chopEvent.anchorTileY,
+      stepResult.chopEvent.growthStage
+    );
+    if (!chopResult.changed || chopResult.woodDropAmount <= 0) {
+      return;
+    }
+
+    const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(
+      createDroppedItemStateFromWorldTile(
+        stepResult.chopEvent.anchorTileX,
+        stepResult.chopEvent.anchorTileY - 1,
+        WOOD_ITEM_ID,
+        chopResult.woodDropAmount
+      )
+    );
+    if (remainingDroppedItemState !== null) {
+      spawnDroppedItemEntity(remainingDroppedItemState);
     }
   };
   const stepStarterSpearFixedUpdate = (fixedDt: number): void => {
@@ -4274,6 +4398,12 @@ const bootstrap = async (): Promise<void> => {
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
     if (selectedStack === null) {
       return false;
+    }
+    if (selectedStack.itemId === STARTER_AXE_ITEM_ID) {
+      return tryStartSelectedStarterAxeSwingAtTile(
+        request.worldTileX,
+        request.worldTileY
+      );
     }
     if (selectedStack.itemId === STARTER_MELEE_WEAPON_ITEM_ID) {
       return tryStartSelectedStarterMeleeWeaponSwing(request);
@@ -4586,7 +4716,31 @@ const bootstrap = async (): Promise<void> => {
     }
 
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
-    if (selectedStack?.itemId !== STARTER_PICKAXE_ITEM_ID) {
+    if (selectedStack === null) {
+      return null;
+    }
+
+    if (selectedStack.itemId === STARTER_AXE_ITEM_ID) {
+      const choppingEvaluation = evaluateStarterAxeChoppingTarget(
+        {
+          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+        },
+        standalonePlayerState,
+        worldTileX,
+        worldTileY
+      );
+
+      return {
+        tileX: worldTileX,
+        tileY: worldTileY,
+        canMine: choppingEvaluation.canChop,
+        occupied: choppingEvaluation.occupied,
+        breakableTarget: choppingEvaluation.chopTarget,
+        withinRange: choppingEvaluation.withinRange,
+        progressNormalized: 0
+      };
+    }
+    if (selectedStack.itemId !== STARTER_PICKAXE_ITEM_ID) {
       return null;
     }
 
@@ -4619,6 +4773,29 @@ const bootstrap = async (): Promise<void> => {
   const getSelectedStandalonePlayerItemMiningPreview = (
     pointerInspect: PointerInspectSnapshot | null
   ): PlayerItemMiningPreviewState | null => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId === STARTER_AXE_ITEM_ID) {
+      const activeSwing = starterAxeChoppingState.activeSwing;
+      if (activeSwing !== null) {
+        return getSelectedStandalonePlayerItemMiningPreviewAtTile(
+          activeSwing.sampledTileX,
+          activeSwing.sampledTileY
+        );
+      }
+
+      if (pointerInspect !== null) {
+        return getSelectedStandalonePlayerItemMiningPreviewAtTile(
+          pointerInspect.tile.x,
+          pointerInspect.tile.y
+        );
+      }
+
+      return null;
+    }
+    if (selectedStack?.itemId !== STARTER_PICKAXE_ITEM_ID) {
+      return null;
+    }
+
     const activeSwing = starterPickaxeMiningState.activeSwing;
     if (activeSwing !== null) {
       return getSelectedStandalonePlayerItemMiningPreviewAtTile(
@@ -6813,6 +6990,7 @@ const bootstrap = async (): Promise<void> => {
       flushStandalonePlayerFixedStepResult();
       stepStarterMeleeWeaponFixedUpdate(fixedDt);
       stepStarterSpearFixedUpdate(fixedDt);
+      stepStarterAxeChoppingFixedUpdate(fixedDt);
       stepStarterPickaxeMiningFixedUpdate(fixedDt);
       stepStarterBugNetFixedUpdate(fixedDt);
       stepHostileSlimeSpawnAndDespawn();

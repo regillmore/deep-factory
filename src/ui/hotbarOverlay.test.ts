@@ -344,6 +344,49 @@ describe('HotbarOverlay', () => {
     expect(getSlotRow(overlay).children[0]!.title).not.toContain('active');
   });
 
+  it('shows and clears selected starter-axe phase timing feedback without affecting other slots', () => {
+    const host = createHost();
+    const overlay = new HotbarOverlay({ host });
+    const axeSelectedState = createHotbarState(
+      [[2, createPlayerInventoryItemStack('axe', 1)]],
+      2
+    );
+
+    overlay.update(axeSelectedState, {
+      starterAxeSwingFeedback: {
+        phase: 'windup',
+        timingFillNormalized: 0.75
+      }
+    });
+
+    expect(getSlotAmountLabel(overlay, 2).textContent).toBe('WIND');
+    expect(getSlotAmountLabel(overlay, 2).style.color).toBe('#ffe5ad');
+    expect(getSlotCooldownFill(overlay, 2).style.height).toBe('75.0%');
+    expect(getSlotCooldownFill(overlay, 2).style.opacity).toBe('1');
+    expect(getSlotRow(overlay).children[2]!.title).toContain('windup active');
+    expect(getSlotCooldownFill(overlay, 4).style.opacity).toBe('0');
+
+    overlay.update(axeSelectedState, {
+      starterAxeSwingFeedback: {
+        phase: 'recovery',
+        timingFillNormalized: 0.25
+      }
+    });
+
+    expect(getSlotAmountLabel(overlay, 2).textContent).toBe('REC');
+    expect(getSlotAmountLabel(overlay, 2).style.color).toBe('#cdeaff');
+    expect(getSlotCooldownFill(overlay, 2).style.height).toBe('25.0%');
+    expect(getSlotRow(overlay).children[2]!.title).toContain('recovery active');
+
+    overlay.update(axeSelectedState);
+
+    expect(getSlotAmountLabel(overlay, 2).textContent).toBe('');
+    expect(getSlotAmountLabel(overlay, 2).style.color).toBe('#ffe7a3');
+    expect(getSlotCooldownFill(overlay, 2).style.height).toBe('0.0%');
+    expect(getSlotCooldownFill(overlay, 2).style.opacity).toBe('0');
+    expect(getSlotRow(overlay).children[2]!.title).not.toContain('active');
+  });
+
   it('shows and clears selected starter-sword phase timing feedback without affecting other slots', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });

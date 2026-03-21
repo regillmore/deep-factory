@@ -62,6 +62,11 @@ import {
   getPlayerCameraFocusPoint
 } from './world/playerState';
 import {
+  STARTER_AXE_SWING_ACTIVE_SECONDS,
+  STARTER_AXE_SWING_RECOVERY_SECONDS,
+  STARTER_AXE_SWING_WINDUP_SECONDS
+} from './world/starterAxeChopping';
+import {
   STARTER_PICKAXE_SWING_ACTIVE_SECONDS,
   STARTER_PICKAXE_SWING_RECOVERY_SECONDS,
   STARTER_PICKAXE_SWING_WINDUP_SECONDS
@@ -9119,6 +9124,180 @@ describe('main.ts shell state orchestration', () => {
     const restoredWorld = new TileWorld(0);
     restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
     expect(restoredWorld.getTile(1, -1)).toBe(1);
+  });
+
+  it('chops a grown small tree from the selected axe slot through the shared hidden-panel item-use path and drops wood', async () => {
+    const treeTileIds = getSmallTreeTileIds();
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setTile(1, 0, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
+    expect(savedWorld.setTile(1, -1, treeTileIds.trunk)).toBe(true);
+    expect(savedWorld.setTile(1, -2, treeTileIds.trunk)).toBe(true);
+    expect(savedWorld.setTile(0, -3, treeTileIds.leaf)).toBe(true);
+    expect(savedWorld.setTile(1, -3, treeTileIds.leaf)).toBe(true);
+    expect(savedWorld.setTile(2, -3, treeTileIds.leaf)).toBe(true);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 24, y: 0 },
+            facing: 'right',
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [{ itemId: 'axe', amount: 1 }, ...Array.from({ length: 9 }, () => null)],
+            selectedHotbarSlotIndex: 0
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererPersistentSetTileResult = true;
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 2,
+        worldTileY: -3,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate(STARTER_AXE_SWING_WINDUP_SECONDS);
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        tileId: 0
+      },
+      {
+        worldTileX: 1,
+        worldTileY: -2,
+        tileId: 0
+      },
+      {
+        worldTileX: 0,
+        worldTileY: -3,
+        tileId: 0
+      },
+      {
+        worldTileX: 1,
+        worldTileY: -3,
+        tileId: 0
+      },
+      {
+        worldTileX: 2,
+        worldTileY: -3,
+        tileId: 0
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    expect(persistedEnvelope?.session.standalonePlayerInventoryState.hotbar[0]).toEqual({
+      itemId: 'axe',
+      amount: 1
+    });
+    expect(persistedEnvelope?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 24, y: -8 },
+        itemId: 'wood',
+        amount: 5
+      }
+    ]);
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+    expect(restoredWorld.getTile(1, 0)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    expect(restoredWorld.getTile(1, -1)).toBe(0);
+    expect(restoredWorld.getTile(1, -2)).toBe(0);
+    expect(restoredWorld.getTile(0, -3)).toBe(0);
+    expect(restoredWorld.getTile(1, -3)).toBe(0);
+    expect(restoredWorld.getTile(2, -3)).toBe(0);
+  });
+
+  it('shows selected starter-axe hotbar timing feedback through windup, active, recovery, and clear', async () => {
+    const treeTileIds = getSmallTreeTileIds();
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [{ itemId: 'axe', amount: 1 }, ...Array.from({ length: 9 }, () => null)],
+        selectedHotbarSlotIndex: 0
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, -1), treeTileIds.trunk);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, -2), treeTileIds.trunk);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, -3), treeTileIds.leaf);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, -3), treeTileIds.leaf);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(2, -3), treeTileIds.leaf);
+    testRuntime.rendererPersistentSetTileResult = true;
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 2,
+        worldTileY: -3,
+        worldX: 40,
+        worldY: -40,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+
+    expect(getHotbarOverlaySlotButton(0).title).toContain('windup active');
+    expect(getHotbarOverlaySlotAmountLabel(0).textContent).toBe('WIND');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(0).style.height)).toBeCloseTo(
+      ((STARTER_AXE_SWING_WINDUP_SECONDS - 1 / 60) / STARTER_AXE_SWING_WINDUP_SECONDS) * 100,
+      1
+    );
+    expect(getHotbarOverlaySlotCooldownFill(0).style.opacity).toBe('1');
+
+    testRuntime.playerItemUseRequests = [];
+    runFixedUpdate(STARTER_AXE_SWING_WINDUP_SECONDS - 1 / 60);
+
+    expect(getHotbarOverlaySlotButton(0).title).toContain('swing active');
+    expect(getHotbarOverlaySlotAmountLabel(0).textContent).toBe('ACT');
+    expect(getHotbarOverlaySlotCooldownFill(0).style.height).toBe('100.0%');
+
+    runFixedUpdate(STARTER_AXE_SWING_ACTIVE_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(0).title).toContain('swing active');
+    expect(getHotbarOverlaySlotAmountLabel(0).textContent).toBe('ACT');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(0).style.height)).toBeCloseTo(
+      50,
+      1
+    );
+
+    runFixedUpdate(STARTER_AXE_SWING_ACTIVE_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(0).title).toContain('recovery active');
+    expect(getHotbarOverlaySlotAmountLabel(0).textContent).toBe('REC');
+    expect(getHotbarOverlaySlotCooldownFill(0).style.height).toBe('100.0%');
+
+    runFixedUpdate(STARTER_AXE_SWING_RECOVERY_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(0).title).toContain('recovery active');
+    expect(getHotbarOverlaySlotAmountLabel(0).textContent).toBe('REC');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(0).style.height)).toBeCloseTo(
+      50,
+      1
+    );
+
+    runFixedUpdate(STARTER_AXE_SWING_RECOVERY_SECONDS * 0.5);
+
+    expect(getHotbarOverlaySlotButton(0).title).not.toContain('active');
+    expect(getHotbarOverlaySlotAmountLabel(0).textContent).toBe('');
+    expect(getHotbarOverlaySlotCooldownFill(0).style.height).toBe('0.0%');
+    expect(getHotbarOverlaySlotCooldownFill(0).style.opacity).toBe('0');
   });
 
   it('places a starter torch from the selected hotbar slot while the full debug-edit panel is hidden', async () => {

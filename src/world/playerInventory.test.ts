@@ -395,6 +395,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'GEL',
       maxStackSize: 999
     });
+    expect(getPlayerInventoryItemDefinition('wood')).toEqual({
+      id: 'wood',
+      label: 'Wood',
+      hotbarLabel: 'WOOD',
+      maxStackSize: 999
+    });
     expect(getPlayerInventoryItemDefinition('workbench')).toEqual({
       id: 'workbench',
       label: 'Workbench',
@@ -473,6 +479,7 @@ describe('playerInventory', () => {
       'copper-ore',
       'copper-bar',
       'gel',
+      'wood',
       'workbench',
       'furnace',
       'anvil',

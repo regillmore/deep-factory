@@ -52,6 +52,13 @@ describe('droppedItemPlaceholder', () => {
     });
   });
 
+  it('provides a dedicated placeholder palette for wood pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('wood')).toEqual({
+      baseColor: [0.52, 0.36, 0.19],
+      accentColor: [0.84, 0.67, 0.4]
+    });
+  });
+
   it('provides a dedicated placeholder palette for umbrella pickups', () => {
     expect(getDroppedItemPlaceholderPalette('umbrella')).toEqual({
       baseColor: [0.53, 0.35, 0.16],

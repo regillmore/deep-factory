@@ -9,6 +9,7 @@ export type PlayerInventoryItemId =
   | 'copper-ore'
   | 'copper-bar'
   | 'gel'
+  | 'wood'
   | 'workbench'
   | 'furnace'
   | 'anvil'
@@ -72,6 +73,7 @@ export const PLAYER_INVENTORY_ITEM_IDS: readonly PlayerInventoryItemId[] = [
   'copper-ore',
   'copper-bar',
   'gel',
+  'wood',
   'workbench',
   'furnace',
   'anvil',
@@ -135,6 +137,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     id: 'gel',
     label: 'Gel',
     hotbarLabel: 'GEL',
+    maxStackSize: 999
+  },
+  wood: {
+    id: 'wood',
+    label: 'Wood',
+    hotbarLabel: 'WOOD',
     maxStackSize: 999
   },
   workbench: {
