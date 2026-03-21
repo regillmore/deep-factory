@@ -24,7 +24,8 @@ export type PlayerCraftingRecipeId =
   | 'furnace'
   | 'healing-potion'
   | 'copper-bar'
-  | 'anvil';
+  | 'anvil'
+  | 'spear';
 
 export interface PlayerCraftingStationDefinition {
   id: PlayerCraftingStationId;
@@ -137,6 +138,13 @@ const PLAYER_CRAFTING_RECIPE_DEFINITIONS: readonly PlayerCraftingRecipeDefinitio
     ingredients: [{ itemId: 'copper-bar', amount: 5 }],
     output: { itemId: 'anvil', amount: 1 },
     requiredStationId: 'workbench'
+  },
+  {
+    id: 'spear',
+    label: 'Starter Spear',
+    ingredients: [{ itemId: 'copper-bar', amount: 8 }],
+    output: { itemId: 'spear', amount: 1 },
+    requiredStationId: 'anvil'
   }
 ] as const;
 const PLAYER_CRAFTING_RECIPE_IDS = new Set<PlayerCraftingRecipeId>(

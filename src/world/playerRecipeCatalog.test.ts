@@ -49,6 +49,16 @@ describe('playerRecipeCatalog', () => {
         ingredients: [{ itemId: 'gel', label: 'Gel', amount: 2 }]
       },
       {
+        recipeId: 'spear',
+        label: 'Starter Spear',
+        outputItemId: 'spear',
+        outputLabel: 'Output: +1 SPEAR',
+        ingredientsLabel: 'Ingredients: 8 Copper Bar',
+        stationRequirementLabel: 'Requirement: Nearby Anvil',
+        requiredStationId: 'anvil',
+        ingredients: [{ itemId: 'copper-bar', label: 'Copper Bar', amount: 8 }]
+      },
+      {
         recipeId: 'workbench',
         label: 'Workbench',
         outputItemId: 'workbench',
@@ -70,7 +80,8 @@ describe('playerRecipeCatalog', () => {
     ]);
     expect(searchPlayerRecipeCatalog('copper bar').map((entry) => entry.recipeId)).toEqual([
       'anvil',
-      'copper-bar'
+      'copper-bar',
+      'spear'
     ]);
     expect(searchPlayerRecipeCatalog('gel').map((entry) => entry.recipeId)).toEqual([
       'healing-potion'
@@ -86,6 +97,10 @@ describe('playerRecipeCatalog', () => {
     expect(searchPlayerRecipeCatalog('nearby furnace').map((entry) => entry.recipeId)).toEqual([
       'copper-bar',
       'furnace'
+    ]);
+    expect(searchPlayerRecipeCatalog('nearby anvil').map((entry) => entry.recipeId)).toEqual([
+      'anvil',
+      'spear'
     ]);
   });
 
