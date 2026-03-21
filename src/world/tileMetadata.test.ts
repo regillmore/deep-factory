@@ -92,16 +92,19 @@ const describeAuthoredSourceFromPixels = (
 
 describe('tile metadata loader', () => {
   it('loads placeholder terrain autotile mappings from JSON', () => {
-    expect(TILE_METADATA.tilesById.size).toBeGreaterThanOrEqual(19);
+    expect(TILE_METADATA.tilesById.size).toBeGreaterThanOrEqual(20);
     expect(hasTerrainAutotileMetadata(1)).toBe(true);
     expect(hasTerrainAutotileMetadata(2)).toBe(true);
     expect(hasTerrainAutotileMetadata(13)).toBe(true);
+    expect(hasTerrainAutotileMetadata(19)).toBe(true);
     expect(hasTerrainAutotileMetadata(3)).toBe(false);
     expect(hasLiquidRenderMetadata(7)).toBe(true);
     expect(hasLiquidRenderMetadata(8)).toBe(true);
     expect(hasLiquidRenderMetadata(3)).toBe(false);
     expect(areTerrainAutotileNeighborsConnected(1, 2)).toBe(true);
     expect(areTerrainAutotileNeighborsConnected(1, 13)).toBe(true);
+    expect(areTerrainAutotileNeighborsConnected(19, 19)).toBe(true);
+    expect(areTerrainAutotileNeighborsConnected(19, 1)).toBe(false);
     expect(areTerrainAutotileNeighborsConnected(1, 3)).toBe(false);
     expect(areLiquidRenderNeighborsConnected(7, 7)).toBe(true);
     expect(areLiquidRenderNeighborsConnected(7, 8)).toBe(false);
@@ -137,12 +140,18 @@ describe('tile metadata loader', () => {
       solid: false,
       blocksLight: false
     });
+    expect(resolveTileGameplayMetadata(19)).toEqual({
+      solid: true,
+      blocksLight: true
+    });
     expect(isTileSolid(1)).toBe(true);
     expect(isTileSolid(4)).toBe(false);
+    expect(isTileSolid(19)).toBe(true);
     expect(isTileClimbable(11)).toBe(true);
     expect(isTileClimbable(10)).toBe(false);
     expect(doesTileBlockLight(1)).toBe(true);
     expect(doesTileBlockLight(4)).toBe(false);
+    expect(doesTileBlockLight(19)).toBe(true);
     expect(getTileEmissiveLightLevel(10)).toBe(12);
     expect(getTileLiquidKind(1)).toBe(null);
     expect(getTileLiquidKind(7)).toBe('water');
@@ -151,6 +160,7 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileVariantAtlasIndex(1, 0)).toBe(0);
     expect(resolveTerrainAutotileVariantAtlasIndex(1, 15)).toBe(15);
     expect(resolveTerrainAutotileVariantAtlasIndex(2, 6)).toBe(6);
+    expect(resolveTerrainAutotileVariantAtlasIndex(19, 6)).toBe(6);
     expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(1, 0)).toBe(0);
     expect(resolveTileRenderUvRect(3)).toEqual(atlasIndexToUvRect(14));
     expect(resolveTileRenderUvRect(10)).toEqual(atlasIndexToUvRect(20));

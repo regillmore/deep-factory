@@ -25,6 +25,7 @@ describe('playerItemCatalog', () => {
       'Torch',
       'Umbrella',
       'Wood',
+      'Wood Block',
       'Workbench'
     ]);
   });
@@ -44,6 +45,9 @@ describe('playerItemCatalog', () => {
     ]);
     expect(searchPlayerItemCatalog('copper bar').map((entry) => entry.itemId)).toEqual([
       'copper-bar'
+    ]);
+    expect(searchPlayerItemCatalog('wood block').map((entry) => entry.itemId)).toEqual([
+      'wood-block'
     ]);
     expect(searchPlayerItemCatalog('potion').map((entry) => entry.itemId)).toEqual([
       'healing-potion'

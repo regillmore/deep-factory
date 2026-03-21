@@ -215,6 +215,47 @@ describe('createWorldSaveEnvelope', () => {
     });
   });
 
+  it('preserves a placed wood block together with the consumed wood-block hotbar stack count', () => {
+    const world = new TileWorld(0);
+    expect(world.setTile(1, -10, 19)).toBe(true);
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'wood-block', amount: 11 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        { itemId: 'healing-potion', amount: 3 },
+        { itemId: 'heart-crystal', amount: 1 },
+        { itemId: 'sword', amount: 1 },
+        ...Array.from({ length: 3 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 1
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(decoded.worldSnapshot);
+    expect(restoredWorld.getTile(1, -10)).toBe(19);
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+      itemId: 'wood-block',
+      amount: 11
+    });
+  });
+
   it('preserves a placed rope tile together with the consumed rope stack count', () => {
     const world = new TileWorld(0);
     expect(world.setTile(1, -1, STARTER_ROPE_TILE_ID)).toBe(true);

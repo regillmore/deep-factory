@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-21: Wood-block terrain keeps its own autotile connectivity group
+
+- Decision: The first placeable `wood-block` item now writes a dedicated solid `wood_block` terrain tile that reuses the terrain-autotile placeholder variant table but resolves through its own `wood` connectivity group instead of sharing the existing `ground` group used by dirt, grass, stone, and copper ore.
+- Reason: Early building blocks should be able to use the shared solid-block placement seam without making placed wood visually merge into ground-material seams, and a dedicated group preserves that distinction without introducing a separate block-placement implementation.
+- Consequence: Future wood-derived terrain or building tiles should opt into that `wood` connectivity group when they are meant to seam with placed wood blocks, and later solid-block follow-ups should not assume every autotiled solid tile belongs in the shared `ground` group.
+
 ### 2026-03-21: Starter torch crafting stays stationless and converts one gel plus one wood into three torches
 
 - Decision: The first shared torch recipe now crafts `3` `torch` items from `1 gel + 1 wood` without requiring a nearby placed station.

@@ -4,16 +4,22 @@ import type { PlayerInventoryItemId } from './playerInventory';
 import type { PlayerState } from './playerState';
 import { isTileSolid, TILE_METADATA, type TileMetadataRegistry } from './tileMetadata';
 
-export type PlaceableSolidBlockItemId = Extract<PlayerInventoryItemId, 'dirt-block' | 'stone-block'>;
+export type PlaceableSolidBlockItemId = Extract<
+  PlayerInventoryItemId,
+  'dirt-block' | 'stone-block' | 'wood-block'
+>;
 
 export const STARTER_BUILDING_BLOCK_ITEM_ID: PlaceableSolidBlockItemId = 'dirt-block';
 export const STARTER_BUILDING_BLOCK_TILE_ID = 9;
 export const PLACEABLE_STONE_BLOCK_ITEM_ID: PlaceableSolidBlockItemId = 'stone-block';
 export const PLACEABLE_STONE_BLOCK_TILE_ID = 1;
+export const PLACEABLE_WOOD_BLOCK_ITEM_ID: PlaceableSolidBlockItemId = 'wood-block';
+export const PLACEABLE_WOOD_BLOCK_TILE_ID = 19;
 
 const PLACEABLE_SOLID_BLOCK_TILE_IDS: Readonly<Record<PlaceableSolidBlockItemId, number>> = {
   'dirt-block': STARTER_BUILDING_BLOCK_TILE_ID,
-  'stone-block': PLACEABLE_STONE_BLOCK_TILE_ID
+  'stone-block': PLACEABLE_STONE_BLOCK_TILE_ID,
+  'wood-block': PLACEABLE_WOOD_BLOCK_TILE_ID
 };
 
 export interface StarterBlockPlacementWorldView {

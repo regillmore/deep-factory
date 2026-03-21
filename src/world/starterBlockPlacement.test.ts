@@ -6,6 +6,8 @@ import {
   isPlaceableSolidBlockItemId,
   PLACEABLE_STONE_BLOCK_ITEM_ID,
   PLACEABLE_STONE_BLOCK_TILE_ID,
+  PLACEABLE_WOOD_BLOCK_ITEM_ID,
+  PLACEABLE_WOOD_BLOCK_TILE_ID,
   resolvePlaceableSolidBlockTileId,
   STARTER_BUILDING_BLOCK_ITEM_ID,
   STARTER_BUILDING_BLOCK_TILE_ID
@@ -16,12 +18,16 @@ describe('evaluateStarterBlockPlacement', () => {
   it('maps placeable solid hotbar items to the correct terrain tile ids', () => {
     expect(isPlaceableSolidBlockItemId(STARTER_BUILDING_BLOCK_ITEM_ID)).toBe(true);
     expect(isPlaceableSolidBlockItemId(PLACEABLE_STONE_BLOCK_ITEM_ID)).toBe(true);
+    expect(isPlaceableSolidBlockItemId(PLACEABLE_WOOD_BLOCK_ITEM_ID)).toBe(true);
     expect(isPlaceableSolidBlockItemId('torch')).toBe(false);
     expect(resolvePlaceableSolidBlockTileId(STARTER_BUILDING_BLOCK_ITEM_ID)).toBe(
       STARTER_BUILDING_BLOCK_TILE_ID
     );
     expect(resolvePlaceableSolidBlockTileId(PLACEABLE_STONE_BLOCK_ITEM_ID)).toBe(
       PLACEABLE_STONE_BLOCK_TILE_ID
+    );
+    expect(resolvePlaceableSolidBlockTileId(PLACEABLE_WOOD_BLOCK_ITEM_ID)).toBe(
+      PLACEABLE_WOOD_BLOCK_TILE_ID
     );
   });
 
