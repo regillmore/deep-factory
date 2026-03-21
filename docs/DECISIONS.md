@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-21: Small-tree planting anchors stay grass-only and growth keeps above-anchor cells clear
+
+- Decision: Shared small-tree site evaluation now treats only `grass_surface` anchor tiles as plantable and only allows planted-to-grown replacement when every non-anchor cell in the grown footprint is empty.
+- Reason: Upcoming acorn planting and deterministic sapling growth need one reusable precondition contract instead of letting each caller guess which terrain anchors or partial overlaps count as valid.
+- Consequence: Future acorn planting and small-tree growth paths should consult the shared site evaluator before writing saplings or grown trees, and should treat occupied above-anchor cells as blocked growth rather than overwriting them.
+
 ### 2026-03-20: Small-tree stage writes replace the full anchored footprint
 
 - Decision: Shared small-tree world-write helpers now apply planted or grown states by writing the full next anchored footprint and clearing any prior-stage-only anchored cells through one mutable `getTile`/`setTile` seam.

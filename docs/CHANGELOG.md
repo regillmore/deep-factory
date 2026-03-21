@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-21
+
+- Task: Add shared small-tree growth-site evaluation helpers after shared small-tree footprint world-write helpers.
+- Changes: Added [src/world/smallTreeGrowthSite.ts](../src/world/smallTreeGrowthSite.ts) plus [src/world/smallTreeGrowthSite.test.ts](../src/world/smallTreeGrowthSite.test.ts) so the world layer now evaluates grass-only planted anchors, reports deterministic above-anchor growth obstructions before planted-to-grown replacement, and exposes one shared site contract for future acorn planting plus sapling growth; removed completed task `657` from [docs/NEXT.md](docs/NEXT.md), added replacement task `658`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/smallTreeGrowthSite.test.ts src/world/smallTreeFootprintWrites.test.ts src/world/smallTreeAnchors.test.ts src/world/smallTreeFootprints.test.ts src/world/smallTreeTiles.test.ts` (outside the sandbox for the Vitest run).
+
 ## 2026-03-20
 
 - Task: Add shared small-tree footprint world-write helpers after shared small-tree anchor-resolution helpers.
