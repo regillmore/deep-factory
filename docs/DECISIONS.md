@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-21: Starter wood-block crafting stays stationless and converts one wood into one wood block
+
+- Decision: The first `wood-block` recipe now crafts `1` stackable `Wood Block` from `1 Wood` without requiring a nearby placed station.
+- Reason: Early woodcutting should flow directly into shelter building through the existing shared crafting path instead of forcing a workbench gate before the player can turn chopped wood into placeable blocks.
+- Consequence: Future early-building follow-ups can assume raw `Wood` converts directly into `wood-block` stacks anywhere unless a later progression pass intentionally rebalances that baseline.
+
 ### 2026-03-21: Wood-block terrain keeps its own autotile connectivity group
 
 - Decision: The first placeable `wood-block` item now writes a dedicated solid `wood_block` terrain tile that reuses the terrain-autotile placeholder variant table but resolves through its own `wood` connectivity group instead of sharing the existing `ground` group used by dirt, grass, stone, and copper ore.

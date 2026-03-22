@@ -22,6 +22,7 @@ export type PlayerCraftingStationId = 'workbench' | 'furnace' | 'anvil';
 export type PlayerCraftingRecipeId =
   | 'workbench'
   | 'torch'
+  | 'wood-block'
   | 'furnace'
   | 'healing-potion'
   | 'copper-bar'
@@ -120,6 +121,13 @@ const PLAYER_CRAFTING_RECIPE_DEFINITIONS: readonly PlayerCraftingRecipeDefinitio
       { itemId: 'wood', amount: 1 }
     ],
     output: { itemId: 'torch', amount: 3 },
+    requiredStationId: null
+  },
+  {
+    id: 'wood-block',
+    label: 'Wood Block',
+    ingredients: [{ itemId: 'wood', amount: 1 }],
+    output: { itemId: 'wood-block', amount: 1 },
     requiredStationId: null
   },
   {
