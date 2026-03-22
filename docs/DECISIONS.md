@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-22: Debug break only targets background walls after the foreground tile is empty
+
+- Decision: In-world `Debug Edit` break actions now clear the foreground tile first and only fall back to clearing a background wall when that same cell's foreground tile is already empty, while routing wall-only clears through `Renderer.setWall(...)`.
+- Reason: Wall-only debug break needed to work on placed dirt and wood walls without letting background walls shadow ordinary foreground tile breaks or duplicating refund logic outside the shared wall-edit listener seam.
+- Consequence: Future debug-break preview, history, or tooling follow-ups should preserve that foreground-first targeting rule and keep wall refunds flowing through wall-edit listeners unless a later pass intentionally introduces dual-layer break behavior.
+
 ### 2026-03-22: Wall-only inspect render telemetry resolves through shared wall-metadata helpers
 
 - Decision: Wall-only inspect readouts now describe background-wall render source, UV rect, and atlas pixel bounds through shared helpers in `src/world/wallMetadata.ts` instead of formatting wall render metadata directly inside `src/main.ts` or the UI layers.

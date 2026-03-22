@@ -12128,6 +12128,119 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
+  it('routes debug break wall-only dirt walls through wall edits and refunds one dirt-wall pickup', async () => {
+    const wallWorldTileX = 20;
+    const wallWorldTileY = -20;
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setWall(wallWorldTileX, wallWorldTileY, STARTER_DIRT_WALL_ID)).toBe(true);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right',
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createLegacyStarterInventoryState()
+        })
+      )
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: wallWorldTileX,
+        worldTileY: wallWorldTileY,
+        kind: 'break'
+      }
+    ];
+    testRuntime.rendererSetWallResult = true;
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([]);
+    expect(testRuntime.rendererSetWallCalls).toEqual([
+      {
+        worldTileX: wallWorldTileX,
+        worldTileY: wallWorldTileY,
+        wallId: 0
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+    expect(restoredWorld.getWall(wallWorldTileX, wallWorldTileY)).toBe(0);
+    expect(persistedEnvelope?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 328, y: -312 },
+        itemId: 'dirt-wall',
+        amount: 1
+      }
+    ]);
+  });
+
+  it('keeps foreground-tile precedence before the debug break wall-only fallback', async () => {
+    const wallWorldTileX = 20;
+    const wallWorldTileY = -20;
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setTile(wallWorldTileX, wallWorldTileY, 1)).toBe(true);
+    expect(savedWorld.setWall(wallWorldTileX, wallWorldTileY, STARTER_DIRT_WALL_ID)).toBe(true);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right',
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createLegacyStarterInventoryState()
+        })
+      )
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: wallWorldTileX,
+        worldTileY: wallWorldTileY,
+        kind: 'break'
+      }
+    ];
+    testRuntime.rendererSetTileResult = true;
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: wallWorldTileX,
+        worldTileY: wallWorldTileY,
+        tileId: 0
+      }
+    ]);
+    expect(testRuntime.rendererSetWallCalls).toEqual([]);
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+    expect(restoredWorld.getTile(wallWorldTileX, wallWorldTileY)).toBe(0);
+    expect(restoredWorld.getWall(wallWorldTileX, wallWorldTileY)).toBe(STARTER_DIRT_WALL_ID);
+  });
+
   it('spawns one torch pickup entity when support removal clears a neighboring starter torch', async () => {
     await import('./main');
     await flushBootstrap();

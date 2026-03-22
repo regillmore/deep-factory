@@ -478,6 +478,8 @@ import {
 } from './world/wallMetadata';
 
 const DEBUG_TILE_BREAK_ID = 0;
+const DEBUG_BREAK_FLOOD_FILL_TILE_ID_OFFSET = 0x100;
+const DEBUG_BREAK_FLOOD_FILL_WALL_ID_OFFSET = 0x200;
 const PREFERRED_INITIAL_DEBUG_BRUSH_TILE_NAME = 'debug_brick';
 const STANDALONE_PLAYER_ENTITY_KIND = 'standalone-player';
 const HOSTILE_SLIME_ENTITY_KIND = 'slime';
@@ -3936,6 +3938,71 @@ const bootstrap = async (): Promise<void> => {
       changed
     };
   };
+  const applyDebugWorldEdit = (
+    worldTileX: number,
+    worldTileY: number,
+    kind: DebugTileEditKind
+  ): {
+    changed: boolean;
+    historyTileChange: { previousTileId: number; tileId: number } | null;
+  } => {
+    if (kind === 'place') {
+      const { previousTileId, changed } = applyWorldTileEdit(
+        worldTileX,
+        worldTileY,
+        activeDebugBrushTileId
+      );
+      return {
+        changed,
+        historyTileChange: changed
+          ? {
+              previousTileId,
+              tileId: activeDebugBrushTileId
+            }
+          : null
+      };
+    }
+
+    const previousTileId = renderer.getTile(worldTileX, worldTileY);
+    if (previousTileId !== DEBUG_TILE_BREAK_ID) {
+      const { changed } = applyWorldTileEdit(worldTileX, worldTileY, DEBUG_TILE_BREAK_ID);
+      return {
+        changed,
+        historyTileChange: changed
+          ? {
+              previousTileId,
+              tileId: DEBUG_TILE_BREAK_ID
+            }
+          : null
+      };
+    }
+
+    const previousWallId = renderer.getWall(worldTileX, worldTileY);
+    if (previousWallId === 0) {
+      return {
+        changed: false,
+        historyTileChange: null
+      };
+    }
+
+    return {
+      changed: applyWorldWallEdit(worldTileX, worldTileY, 0).changed,
+      historyTileChange: null
+    };
+  };
+  const readDebugBreakFloodFillTargetId = (worldTileX: number, worldTileY: number): number => {
+    const tileId = renderer.getTile(worldTileX, worldTileY);
+    if (tileId !== DEBUG_TILE_BREAK_ID) {
+      return DEBUG_BREAK_FLOOD_FILL_TILE_ID_OFFSET + tileId;
+    }
+
+    const wallId = renderer.getWall(worldTileX, worldTileY);
+    if (wallId === 0) {
+      return DEBUG_TILE_BREAK_ID;
+    }
+
+    return DEBUG_BREAK_FLOOD_FILL_WALL_ID_OFFSET + wallId;
+  };
   const resolvePlayerItemUseFacing = (
     playerState: PlayerState,
     request: PlayerItemUseRequest
@@ -5197,16 +5264,19 @@ const bootstrap = async (): Promise<void> => {
         maxTileX: (residentChunkBounds.maxChunkX + 1) * CHUNK_SIZE - 1,
         maxTileY: (residentChunkBounds.maxChunkY + 1) * CHUNK_SIZE - 1
       },
-      readTile: (fillTileX, fillTileY) => renderer.getTile(fillTileX, fillTileY),
-      visitFilledTile: (fillTileX, fillTileY, previousTileId) => {
-        const { changed } = applyWorldTileEdit(fillTileX, fillTileY, replacementTileId);
-        if (!changed) return;
+      readTile:
+        kind === 'place'
+          ? (fillTileX, fillTileY) => renderer.getTile(fillTileX, fillTileY)
+          : readDebugBreakFloodFillTargetId,
+      visitFilledTile: (fillTileX, fillTileY) => {
+        const result = applyDebugWorldEdit(fillTileX, fillTileY, kind);
+        if (!result.changed || result.historyTileChange === null) return;
         debugTileEditHistory.recordAppliedEdit(
           strokeId,
           fillTileX,
           fillTileY,
-          previousTileId,
-          replacementTileId
+          result.historyTileChange.previousTileId,
+          result.historyTileChange.tileId
         );
       }
     });
@@ -5222,12 +5292,19 @@ const bootstrap = async (): Promise<void> => {
     kind: DebugTileEditKind,
     strokeId: number
   ): number => {
-    const tileId = kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
     let changedTileCount = 0;
     walkLineSteppedTilePath(startTileX, startTileY, endTileX, endTileY, (worldTileX, worldTileY) => {
-      const { previousTileId, changed } = applyWorldTileEdit(worldTileX, worldTileY, tileId);
-      if (!changed) return;
-      debugTileEditHistory.recordAppliedEdit(strokeId, worldTileX, worldTileY, previousTileId, tileId);
+      const result = applyDebugWorldEdit(worldTileX, worldTileY, kind);
+      if (!result.changed) return;
+      if (result.historyTileChange !== null) {
+        debugTileEditHistory.recordAppliedEdit(
+          strokeId,
+          worldTileX,
+          worldTileY,
+          result.historyTileChange.previousTileId,
+          result.historyTileChange.tileId
+        );
+      }
       changedTileCount += 1;
     });
     return changedTileCount;
@@ -5241,12 +5318,19 @@ const bootstrap = async (): Promise<void> => {
     kind: DebugTileEditKind,
     strokeId: number
   ): number => {
-    const tileId = kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
     let changedTileCount = 0;
     walkFilledRectangleTileArea(startTileX, startTileY, endTileX, endTileY, (worldTileX, worldTileY) => {
-      const { previousTileId, changed } = applyWorldTileEdit(worldTileX, worldTileY, tileId);
-      if (!changed) return;
-      debugTileEditHistory.recordAppliedEdit(strokeId, worldTileX, worldTileY, previousTileId, tileId);
+      const result = applyDebugWorldEdit(worldTileX, worldTileY, kind);
+      if (!result.changed) return;
+      if (result.historyTileChange !== null) {
+        debugTileEditHistory.recordAppliedEdit(
+          strokeId,
+          worldTileX,
+          worldTileY,
+          result.historyTileChange.previousTileId,
+          result.historyTileChange.tileId
+        );
+      }
       changedTileCount += 1;
     });
     return changedTileCount;
@@ -5260,12 +5344,19 @@ const bootstrap = async (): Promise<void> => {
     kind: DebugTileEditKind,
     strokeId: number
   ): number => {
-    const tileId = kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
     let changedTileCount = 0;
     walkRectangleOutlineTileArea(startTileX, startTileY, endTileX, endTileY, (worldTileX, worldTileY) => {
-      const { previousTileId, changed } = applyWorldTileEdit(worldTileX, worldTileY, tileId);
-      if (!changed) return;
-      debugTileEditHistory.recordAppliedEdit(strokeId, worldTileX, worldTileY, previousTileId, tileId);
+      const result = applyDebugWorldEdit(worldTileX, worldTileY, kind);
+      if (!result.changed) return;
+      if (result.historyTileChange !== null) {
+        debugTileEditHistory.recordAppliedEdit(
+          strokeId,
+          worldTileX,
+          worldTileY,
+          result.historyTileChange.previousTileId,
+          result.historyTileChange.tileId
+        );
+      }
       changedTileCount += 1;
     });
     return changedTileCount;
@@ -5279,12 +5370,19 @@ const bootstrap = async (): Promise<void> => {
     kind: DebugTileEditKind,
     strokeId: number
   ): number => {
-    const tileId = kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
     let changedTileCount = 0;
     walkFilledEllipseTileArea(startTileX, startTileY, endTileX, endTileY, (worldTileX, worldTileY) => {
-      const { previousTileId, changed } = applyWorldTileEdit(worldTileX, worldTileY, tileId);
-      if (!changed) return;
-      debugTileEditHistory.recordAppliedEdit(strokeId, worldTileX, worldTileY, previousTileId, tileId);
+      const result = applyDebugWorldEdit(worldTileX, worldTileY, kind);
+      if (!result.changed) return;
+      if (result.historyTileChange !== null) {
+        debugTileEditHistory.recordAppliedEdit(
+          strokeId,
+          worldTileX,
+          worldTileY,
+          result.historyTileChange.previousTileId,
+          result.historyTileChange.tileId
+        );
+      }
       changedTileCount += 1;
     });
     return changedTileCount;
@@ -5298,12 +5396,19 @@ const bootstrap = async (): Promise<void> => {
     kind: DebugTileEditKind,
     strokeId: number
   ): number => {
-    const tileId = kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
     let changedTileCount = 0;
     walkEllipseOutlineTileArea(startTileX, startTileY, endTileX, endTileY, (worldTileX, worldTileY) => {
-      const { previousTileId, changed } = applyWorldTileEdit(worldTileX, worldTileY, tileId);
-      if (!changed) return;
-      debugTileEditHistory.recordAppliedEdit(strokeId, worldTileX, worldTileY, previousTileId, tileId);
+      const result = applyDebugWorldEdit(worldTileX, worldTileY, kind);
+      if (!result.changed) return;
+      if (result.historyTileChange !== null) {
+        debugTileEditHistory.recordAppliedEdit(
+          strokeId,
+          worldTileX,
+          worldTileY,
+          result.historyTileChange.previousTileId,
+          result.historyTileChange.tileId
+        );
+      }
       changedTileCount += 1;
     });
     return changedTileCount;
@@ -7045,16 +7150,15 @@ const bootstrap = async (): Promise<void> => {
         applySelectedStandalonePlayerItemUse(playerItemUseRequest);
       }
       for (const edit of input.consumeDebugTileEdits()) {
-        const tileId = edit.kind === 'place' ? activeDebugBrushTileId : DEBUG_TILE_BREAK_ID;
-        const { previousTileId, changed } = applyWorldTileEdit(edit.worldTileX, edit.worldTileY, tileId);
-        if (!changed) continue;
+        const result = applyDebugWorldEdit(edit.worldTileX, edit.worldTileY, edit.kind);
+        if (!result.changed || result.historyTileChange === null) continue;
 
         debugTileEditHistory.recordAppliedEdit(
           edit.strokeId,
           edit.worldTileX,
           edit.worldTileY,
-          previousTileId,
-          tileId
+          result.historyTileChange.previousTileId,
+          result.historyTileChange.tileId
         );
       }
 
