@@ -140,6 +140,10 @@ import {
   type ItemCatalogPanelRecipeViewModel
 } from './ui/itemCatalogPanel';
 import {
+  PlayerItemAxeChopPreviewOverlay,
+  type PlayerItemAxeChopPreviewState
+} from './ui/playerItemAxeChopPreviewOverlay';
+import {
   PlayerItemBunnyReleasePreviewOverlay,
   type PlayerItemBunnyReleasePreviewState
 } from './ui/playerItemBunnyReleasePreviewOverlay';
@@ -1222,6 +1226,7 @@ const bootstrap = async (): Promise<void> => {
   const debug = new DebugOverlay();
   debug.setVisible(false);
   const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
+  const playerItemAxeChopPreview = new PlayerItemAxeChopPreviewOverlay(canvas);
   const playerItemBunnyReleasePreview = new PlayerItemBunnyReleasePreviewOverlay(canvas);
   const playerItemMiningPreview = new PlayerItemMiningPreviewOverlay(canvas);
   const playerItemPlacementPreview = new PlayerItemPlacementPreviewOverlay(canvas);
@@ -1395,6 +1400,7 @@ const bootstrap = async (): Promise<void> => {
   };
   const syncPlayModeItemPreviewVisibility = (): void => {
     const visible = currentScreen === 'in-world' && !debugEditControlsVisible;
+    playerItemAxeChopPreview.setVisible(visible);
     playerItemBunnyReleasePreview.setVisible(visible);
     playerItemMiningPreview.setVisible(visible);
     playerItemPlacementPreview.setVisible(visible);
@@ -4725,6 +4731,74 @@ const bootstrap = async (): Promise<void> => {
       clampedByReach: preview.clampedByReach
     };
   };
+  const getSelectedStandalonePlayerItemAxeChopPreviewAtTile = (
+    worldTileX: number,
+    worldTileY: number,
+    activeSwing = starterAxeChoppingState.activeSwing
+  ): PlayerItemAxeChopPreviewState | null => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return null;
+    }
+
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== STARTER_AXE_ITEM_ID) {
+      return null;
+    }
+
+    const choppingEvaluation = evaluateStarterAxeChoppingTarget(
+      {
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+      },
+      standalonePlayerState,
+      worldTileX,
+      worldTileY
+    );
+    const activeSwingTargetGrowthStage =
+      activeSwing !== null && activeSwing.phase !== 'windup' ? activeSwing.targetGrowthStage : null;
+
+    return {
+      tileX: worldTileX,
+      tileY: worldTileY,
+      canChop: choppingEvaluation.canChop,
+      occupied: choppingEvaluation.occupied,
+      chopTarget: choppingEvaluation.chopTarget,
+      withinRange: choppingEvaluation.withinRange,
+      growthStage: choppingEvaluation.resolvedAnchor?.growthStage ?? activeSwingTargetGrowthStage,
+      activeSwing: activeSwing !== null && activeSwing.phase !== 'windup'
+    };
+  };
+  const getSelectedStandalonePlayerItemAxeChopPreview = (
+    pointerInspect: PointerInspectSnapshot | null
+  ): PlayerItemAxeChopPreviewState | null => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== STARTER_AXE_ITEM_ID) {
+      return null;
+    }
+
+    const activeSwing = starterAxeChoppingState.activeSwing;
+    if (activeSwing !== null) {
+      return getSelectedStandalonePlayerItemAxeChopPreviewAtTile(
+        activeSwing.sampledTileX,
+        activeSwing.sampledTileY,
+        activeSwing
+      );
+    }
+
+    if (pointerInspect !== null) {
+      return getSelectedStandalonePlayerItemAxeChopPreviewAtTile(
+        pointerInspect.tile.x,
+        pointerInspect.tile.y,
+        null
+      );
+    }
+
+    return null;
+  };
   const getSelectedStandalonePlayerItemMiningPreviewAtTile = (
     worldTileX: number,
     worldTileY: number
@@ -4739,31 +4813,7 @@ const bootstrap = async (): Promise<void> => {
     }
 
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
-    if (selectedStack === null) {
-      return null;
-    }
-
-    if (selectedStack.itemId === STARTER_AXE_ITEM_ID) {
-      const choppingEvaluation = evaluateStarterAxeChoppingTarget(
-        {
-          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
-        },
-        standalonePlayerState,
-        worldTileX,
-        worldTileY
-      );
-
-      return {
-        tileX: worldTileX,
-        tileY: worldTileY,
-        canMine: choppingEvaluation.canChop,
-        occupied: choppingEvaluation.occupied,
-        breakableTarget: choppingEvaluation.chopTarget,
-        withinRange: choppingEvaluation.withinRange,
-        progressNormalized: 0
-      };
-    }
-    if (selectedStack.itemId !== STARTER_PICKAXE_ITEM_ID) {
+    if (selectedStack?.itemId !== STARTER_PICKAXE_ITEM_ID) {
       return null;
     }
 
@@ -4797,24 +4847,6 @@ const bootstrap = async (): Promise<void> => {
     pointerInspect: PointerInspectSnapshot | null
   ): PlayerItemMiningPreviewState | null => {
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
-    if (selectedStack?.itemId === STARTER_AXE_ITEM_ID) {
-      const activeSwing = starterAxeChoppingState.activeSwing;
-      if (activeSwing !== null) {
-        return getSelectedStandalonePlayerItemMiningPreviewAtTile(
-          activeSwing.sampledTileX,
-          activeSwing.sampledTileY
-        );
-      }
-
-      if (pointerInspect !== null) {
-        return getSelectedStandalonePlayerItemMiningPreviewAtTile(
-          pointerInspect.tile.x,
-          pointerInspect.tile.y
-        );
-      }
-
-      return null;
-    }
     if (selectedStack?.itemId !== STARTER_PICKAXE_ITEM_ID) {
       return null;
     }
@@ -6409,6 +6441,9 @@ const bootstrap = async (): Promise<void> => {
             pointerInspect.tile.y
           )
         : null;
+    const selectedPlayerItemAxeChopPreview = !debugEditControlsVisible
+      ? getSelectedStandalonePlayerItemAxeChopPreview(pointerInspect)
+      : null;
     const selectedPlayerItemPlacementPreview =
       !debugEditControlsVisible && pointerInspect
         ? getSelectedStandalonePlayerItemPlacementPreviewAtTile(pointerInspect.tile.x, pointerInspect.tile.y)
@@ -6641,6 +6676,7 @@ const bootstrap = async (): Promise<void> => {
         }
       : null
     });
+    playerItemAxeChopPreview.update(camera, selectedPlayerItemAxeChopPreview);
     playerItemBunnyReleasePreview.update(camera, selectedPlayerItemBunnyReleasePreview);
     playerItemMiningPreview.update(camera, selectedPlayerItemMiningPreview);
     playerItemPlacementPreview.update(camera, selectedPlayerItemPlacementPreview);

@@ -59,6 +59,7 @@ export interface StarterAxeSwingState {
   anchorTileY: number;
   phase: StarterAxeSwingPhase;
   phaseSecondsRemaining: number;
+  targetGrowthStage: SmallTreeGrowthStage | null;
 }
 
 export interface StarterAxeChoppingState {
@@ -112,7 +113,8 @@ const cloneStarterAxeSwingState = (
         anchorTileX: swing.anchorTileX,
         anchorTileY: swing.anchorTileY,
         phase: swing.phase,
-        phaseSecondsRemaining: swing.phaseSecondsRemaining
+        phaseSecondsRemaining: swing.phaseSecondsRemaining,
+        targetGrowthStage: swing.targetGrowthStage
       };
 
 export const cloneStarterAxeChoppingState = (
@@ -200,7 +202,8 @@ export const tryStartStarterAxeSwing = (
         anchorTileX: evaluation.resolvedAnchor.anchorTileX,
         anchorTileY: evaluation.resolvedAnchor.anchorTileY,
         phase: 'windup',
-        phaseSecondsRemaining: STARTER_AXE_SWING_WINDUP_SECONDS
+        phaseSecondsRemaining: STARTER_AXE_SWING_WINDUP_SECONDS,
+        targetGrowthStage: evaluation.resolvedAnchor.growthStage
       }
     },
     started: true
@@ -209,7 +212,8 @@ export const tryStartStarterAxeSwing = (
 
 const advanceStarterAxeSwingPhase = (
   state: StarterAxeChoppingState,
-  phase: StarterAxeSwingPhase
+  phase: StarterAxeSwingPhase,
+  targetGrowthStage: SmallTreeGrowthStage | null = state.activeSwing?.targetGrowthStage ?? null
 ): StarterAxeChoppingState => ({
   activeSwing:
     phase === 'active'
@@ -219,7 +223,8 @@ const advanceStarterAxeSwingPhase = (
           anchorTileX: state.activeSwing!.anchorTileX,
           anchorTileY: state.activeSwing!.anchorTileY,
           phase,
-          phaseSecondsRemaining: STARTER_AXE_SWING_ACTIVE_SECONDS
+          phaseSecondsRemaining: STARTER_AXE_SWING_ACTIVE_SECONDS,
+          targetGrowthStage
         }
       : phase === 'recovery'
         ? {
@@ -228,7 +233,8 @@ const advanceStarterAxeSwingPhase = (
             anchorTileX: state.activeSwing!.anchorTileX,
             anchorTileY: state.activeSwing!.anchorTileY,
             phase,
-            phaseSecondsRemaining: STARTER_AXE_SWING_RECOVERY_SECONDS
+            phaseSecondsRemaining: STARTER_AXE_SWING_RECOVERY_SECONDS,
+            targetGrowthStage
           }
         : null
 });
@@ -298,7 +304,7 @@ export const stepStarterAxeChoppingState = (
         nextState.activeSwing,
         registry
       );
-      nextState = advanceStarterAxeSwingPhase(nextState, 'active');
+      nextState = advanceStarterAxeSwingPhase(nextState, 'active', chopEvent?.growthStage ?? null);
       continue;
     }
 

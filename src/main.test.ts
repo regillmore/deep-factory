@@ -42,6 +42,7 @@ import {
 } from './ui/appShell';
 import type { DebugOverlayInspectState } from './ui/debugOverlay';
 import type { DebugEditStatusStripState } from './ui/debugEditStatusHelpers';
+import type { PlayerItemAxeChopPreviewState } from './ui/playerItemAxeChopPreviewOverlay';
 import type { PlayerItemBunnyReleasePreviewState } from './ui/playerItemBunnyReleasePreviewOverlay';
 import type { PlayerItemMiningPreviewState } from './ui/playerItemMiningPreviewOverlay';
 import type { PlayerItemPlacementPreviewState } from './ui/playerItemPlacementPreviewOverlay';
@@ -400,6 +401,7 @@ const testRuntime = vi.hoisted(() => {
       setShellActionKeybindings(keybindings: ShellActionKeybindingState): void;
     },
     hoveredTileCursorInstance: null as null | { visible: boolean },
+    playerItemAxeChopPreviewInstance: null as null | { visible: boolean },
     playerItemBunnyReleasePreviewInstance: null as null | { visible: boolean },
     playerItemMiningPreviewInstance: null as null | { visible: boolean },
     playerItemPlacementPreviewInstance: null as null | { visible: boolean },
@@ -588,6 +590,7 @@ const testRuntime = vi.hoisted(() => {
     },
     latestDebugOverlayInspectState: null as DebugOverlayInspectState | null,
     latestDebugEditStatusStripState: null as DebugEditStatusStripState | null,
+    latestPlayerItemAxeChopPreviewState: null as PlayerItemAxeChopPreviewState | null,
     latestPlayerItemBunnyReleasePreviewState: null as PlayerItemBunnyReleasePreviewState | null,
     latestPlayerItemMiningPreviewState: null as PlayerItemMiningPreviewState | null,
     latestPlayerItemPlacementPreviewState: null as PlayerItemPlacementPreviewState | null,
@@ -1627,6 +1630,24 @@ vi.mock('./ui/playerItemBunnyReleasePreviewOverlay', () => ({
   }
 }));
 
+vi.mock('./ui/playerItemAxeChopPreviewOverlay', () => ({
+  PlayerItemAxeChopPreviewOverlay: class {
+    visible = false;
+
+    constructor() {
+      testRuntime.playerItemAxeChopPreviewInstance = this;
+    }
+
+    setVisible(visible: boolean): void {
+      this.visible = visible;
+    }
+
+    update(_camera: unknown, state: PlayerItemAxeChopPreviewState | null): void {
+      testRuntime.latestPlayerItemAxeChopPreviewState = state;
+    }
+  }
+}));
+
 vi.mock('./ui/playerItemPlacementPreviewOverlay', () => ({
   PlayerItemPlacementPreviewOverlay: class {
     visible = false;
@@ -2467,6 +2488,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugEditControlsArmedToolKinds = null;
     testRuntime.debugEditControlsInstance = null;
     testRuntime.hoveredTileCursorInstance = null;
+    testRuntime.playerItemAxeChopPreviewInstance = null;
     testRuntime.playerItemBunnyReleasePreviewInstance = null;
     testRuntime.playerItemMiningPreviewInstance = null;
     testRuntime.playerItemPlacementPreviewInstance = null;
@@ -2558,6 +2580,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.latestRendererRenderFrameState = null;
     testRuntime.latestDebugOverlayInspectState = null;
     testRuntime.latestDebugEditStatusStripState = null;
+    testRuntime.latestPlayerItemAxeChopPreviewState = null;
     testRuntime.latestPlayerItemBunnyReleasePreviewState = null;
     testRuntime.latestPlayerItemMiningPreviewState = null;
     testRuntime.latestPlayerItemPlacementPreviewState = null;
@@ -2735,6 +2758,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.playerItemAxeChopPreviewInstance?.visible).toBe(false);
     expect(testRuntime.playerItemBunnyReleasePreviewInstance?.visible).toBe(false);
     expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(false);
     expect(testRuntime.playerItemSpearPreviewInstance?.visible).toBe(false);
@@ -2749,6 +2773,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugOverlayInstance?.visible).toBe(true);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(true);
+    expect(testRuntime.playerItemAxeChopPreviewInstance?.visible).toBe(true);
     expect(testRuntime.playerItemBunnyReleasePreviewInstance?.visible).toBe(true);
     expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(true);
     expect(testRuntime.playerItemSpearPreviewInstance?.visible).toBe(true);
@@ -2781,6 +2806,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.playerItemAxeChopPreviewInstance?.visible).toBe(true);
     expect(testRuntime.playerItemBunnyReleasePreviewInstance?.visible).toBe(true);
     expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(true);
     expect(testRuntime.playerItemSpearPreviewInstance?.visible).toBe(true);
@@ -2812,6 +2838,7 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.debugOverlayInstance?.visible).toBe(false);
     expect(testRuntime.debugEditControlsInstance?.visible).toBe(false);
     expect(testRuntime.hoveredTileCursorInstance?.visible).toBe(false);
+    expect(testRuntime.playerItemAxeChopPreviewInstance?.visible).toBe(true);
     expect(testRuntime.playerItemBunnyReleasePreviewInstance?.visible).toBe(true);
     expect(testRuntime.playerItemPlacementPreviewInstance?.visible).toBe(true);
     expect(testRuntime.playerItemSpearPreviewInstance?.visible).toBe(true);
@@ -7612,6 +7639,135 @@ describe('main.ts shell state orchestration', () => {
       hasSolidFaceSupport: true,
       blockedByPlayer: false
     });
+  });
+
+  it('shows distinct sapling-versus-grown chop preview states for the selected axe slot', async () => {
+    const treeTileIds = getSmallTreeTileIds();
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setTile(1, 0, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
+    expect(savedWorld.setTile(1, -1, treeTileIds.sapling)).toBe(true);
+    expect(savedWorld.setTile(4, 0, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
+    expect(savedWorld.setTile(4, -1, treeTileIds.trunk)).toBe(true);
+    expect(savedWorld.setTile(4, -2, treeTileIds.trunk)).toBe(true);
+    expect(savedWorld.setTile(3, -3, treeTileIds.leaf)).toBe(true);
+    expect(savedWorld.setTile(4, -3, treeTileIds.leaf)).toBe(true);
+    expect(savedWorld.setTile(5, -3, treeTileIds.leaf)).toBe(true);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 56, y: 0 },
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [{ itemId: 'axe', amount: 1 }, ...Array.from({ length: 9 }, () => null)],
+            selectedHotbarSlotIndex: 0
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 1, y: -1 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemAxeChopPreviewState).toEqual({
+      tileX: 1,
+      tileY: -1,
+      canChop: true,
+      occupied: true,
+      chopTarget: true,
+      withinRange: true,
+      growthStage: 'planted',
+      activeSwing: false
+    });
+    expect(testRuntime.latestPlayerItemMiningPreviewState).toBeNull();
+
+    testRuntime.pointerInspect = {
+      pointerType: 'touch',
+      tile: { x: 5, y: -3 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemAxeChopPreviewState).toEqual({
+      tileX: 5,
+      tileY: -3,
+      canChop: true,
+      occupied: true,
+      chopTarget: true,
+      withinRange: true,
+      growthStage: 'grown',
+      activeSwing: false
+    });
+    expect(testRuntime.latestPlayerItemMiningPreviewState).toBeNull();
+  });
+
+  it('keeps the resolved axe chop preview stage through an active swing after the tree clears', async () => {
+    const treeTileIds = getSmallTreeTileIds();
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setTile(1, 0, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
+    expect(savedWorld.setTile(1, -1, treeTileIds.trunk)).toBe(true);
+    expect(savedWorld.setTile(1, -2, treeTileIds.trunk)).toBe(true);
+    expect(savedWorld.setTile(0, -3, treeTileIds.leaf)).toBe(true);
+    expect(savedWorld.setTile(1, -3, treeTileIds.leaf)).toBe(true);
+    expect(savedWorld.setTile(2, -3, treeTileIds.leaf)).toBe(true);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 24, y: 0 },
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [{ itemId: 'axe', amount: 1 }, ...Array.from({ length: 9 }, () => null)],
+            selectedHotbarSlotIndex: 0
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererPersistentSetTileResult = true;
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 2,
+        worldTileY: -3,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(STARTER_AXE_SWING_WINDUP_SECONDS);
+
+    testRuntime.pointerInspect = null;
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemAxeChopPreviewState).toEqual({
+      tileX: 2,
+      tileY: -3,
+      canChop: false,
+      occupied: false,
+      chopTarget: false,
+      withinRange: true,
+      growthStage: 'grown',
+      activeSwing: true
+    });
+    expect(testRuntime.latestPlayerItemMiningPreviewState).toBeNull();
   });
 
   it('shows a can-release bunny preview when nearby fallback ground makes the hovered target valid', async () => {

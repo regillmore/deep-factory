@@ -277,7 +277,8 @@ describe('starterAxeChopping state', () => {
       anchorTileX: 1,
       anchorTileY: 0,
       phase: 'active',
-      phaseSecondsRemaining: STARTER_AXE_SWING_ACTIVE_SECONDS
+      phaseSecondsRemaining: STARTER_AXE_SWING_ACTIVE_SECONDS,
+      targetGrowthStage: 'grown'
     });
   });
 
@@ -303,7 +304,8 @@ describe('starterAxeChopping state', () => {
     expect(afterActive.chopEvent).toBeNull();
     expect(afterActive.state.activeSwing).toMatchObject({
       phase: 'recovery',
-      phaseSecondsRemaining: STARTER_AXE_SWING_RECOVERY_SECONDS
+      phaseSecondsRemaining: STARTER_AXE_SWING_RECOVERY_SECONDS,
+      targetGrowthStage: 'planted'
     });
 
     const afterRecovery = stepStarterAxeChoppingState(afterActive.state, {
@@ -331,7 +333,8 @@ describe('starterAxeChopping state', () => {
 
     expect(afterWindup.chopEvent).toBeNull();
     expect(afterWindup.state.activeSwing).toMatchObject({
-      phase: 'active'
+      phase: 'active',
+      targetGrowthStage: null
     });
   });
 
@@ -365,6 +368,10 @@ describe('starterAxeChopping state', () => {
       anchorTileX: 0,
       anchorTileY: 0,
       growthStage: 'grown'
+    });
+    expect(afterWindup.state.activeSwing).toMatchObject({
+      phase: 'active',
+      targetGrowthStage: 'grown'
     });
   });
 });
