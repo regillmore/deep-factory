@@ -58,6 +58,7 @@ export interface TileEditEvent {
   previousLiquidLevel: number;
   tileId: number;
   liquidLevel: number;
+  editOrigin: WorldEditOrigin;
 }
 
 export interface WallEditEvent {
@@ -69,6 +70,7 @@ export interface WallEditEvent {
   localY: number;
   previousWallId: number;
   wallId: number;
+  editOrigin: WorldEditOrigin;
 }
 
 export interface TileNeighborhood {
@@ -92,6 +94,7 @@ export interface LiquidSimulationStats {
 }
 
 export type LiquidStepPhaseSummary = 'none' | 'downward' | 'sideways' | 'both';
+export type WorldEditOrigin = 'gameplay' | 'debug-break' | 'debug-history';
 
 export interface TileWorldSnapshot {
   worldSeed: number;
@@ -671,7 +674,8 @@ export class TileWorld {
     worldTileY: number,
     tileId: number,
     liquidLevel: number,
-    emitTileEditEvent: boolean
+    emitTileEditEvent: boolean,
+    editOrigin: WorldEditOrigin = 'gameplay'
   ): {
     previousTileId: number;
     previousLiquidLevel: number;
@@ -729,7 +733,8 @@ export class TileWorld {
         previousTileId,
         previousLiquidLevel,
         tileId,
-        liquidLevel: normalizedLiquidLevel
+        liquidLevel: normalizedLiquidLevel,
+        editOrigin
       };
 
       for (const listener of this.tileEditListeners) {
@@ -766,7 +771,8 @@ export class TileWorld {
   private clearUnsupportedAdjacentStarterTorches(
     worldTileX: number,
     worldTileY: number,
-    emitTileEditEvent: boolean
+    emitTileEditEvent: boolean,
+    editOrigin: WorldEditOrigin = 'gameplay'
   ): void {
     for (const offset of CARDINAL_NEIGHBOR_OFFSETS) {
       const adjacentWorldTileX = worldTileX + offset.x;
@@ -780,14 +786,15 @@ export class TileWorld {
         continue;
       }
 
-      this.commitTileState(adjacentWorldTileX, adjacentWorldTileY, 0, 0, emitTileEditEvent);
+      this.commitTileState(adjacentWorldTileX, adjacentWorldTileY, 0, 0, emitTileEditEvent, editOrigin);
     }
   }
 
   private clearUnsupportedAdjacentStarterWorkbenches(
     worldTileX: number,
     worldTileY: number,
-    emitTileEditEvent: boolean
+    emitTileEditEvent: boolean,
+    editOrigin: WorldEditOrigin = 'gameplay'
   ): void {
     const supportedWorkbenchWorldTileX = worldTileX;
     const supportedWorkbenchWorldTileY = worldTileY - 1;
@@ -812,14 +819,16 @@ export class TileWorld {
       supportedWorkbenchWorldTileY,
       0,
       0,
-      emitTileEditEvent
+      emitTileEditEvent,
+      editOrigin
     );
   }
 
   private clearUnsupportedAdjacentStarterFurnaces(
     worldTileX: number,
     worldTileY: number,
-    emitTileEditEvent: boolean
+    emitTileEditEvent: boolean,
+    editOrigin: WorldEditOrigin = 'gameplay'
   ): void {
     const supportedFurnaceWorldTileX = worldTileX;
     const supportedFurnaceWorldTileY = worldTileY - 1;
@@ -844,14 +853,16 @@ export class TileWorld {
       supportedFurnaceWorldTileY,
       0,
       0,
-      emitTileEditEvent
+      emitTileEditEvent,
+      editOrigin
     );
   }
 
   private clearUnsupportedAdjacentStarterAnvils(
     worldTileX: number,
     worldTileY: number,
-    emitTileEditEvent: boolean
+    emitTileEditEvent: boolean,
+    editOrigin: WorldEditOrigin = 'gameplay'
   ): void {
     const supportedAnvilWorldTileX = worldTileX;
     const supportedAnvilWorldTileY = worldTileY - 1;
@@ -876,14 +887,16 @@ export class TileWorld {
       supportedAnvilWorldTileY,
       0,
       0,
-      emitTileEditEvent
+      emitTileEditEvent,
+      editOrigin
     );
   }
 
   private clearUnsupportedSmallTreeAtAnchor(
     anchorTileX: number,
     anchorTileY: number,
-    emitTileEditEvent: boolean
+    emitTileEditEvent: boolean,
+    editOrigin: WorldEditOrigin = 'gameplay'
   ): void {
     if (this.getTile(anchorTileX, anchorTileY) === PROCEDURAL_GRASS_SURFACE_TILE_ID) {
       return;
@@ -904,7 +917,8 @@ export class TileWorld {
       {
         getTile: (worldTileX, worldTileY) => this.getTile(worldTileX, worldTileY),
         setTile: (worldTileX, worldTileY, tileId) =>
-          this.commitTileState(worldTileX, worldTileY, tileId, 0, emitTileEditEvent).changed
+          this.commitTileState(worldTileX, worldTileY, tileId, 0, emitTileEditEvent, editOrigin)
+            .changed
       },
       anchorTileX,
       anchorTileY,
@@ -1124,33 +1138,50 @@ export class TileWorld {
     return chunk.wallIds[toTileIndex(localX, localY)] ?? 0;
   }
 
-  setTile(worldTileX: number, worldTileY: number, tileId: number): boolean {
+  setTile(
+    worldTileX: number,
+    worldTileY: number,
+    tileId: number,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): boolean {
     if (this.getTile(worldTileX, worldTileY) === tileId) {
       return false;
     }
 
     const liquidKind = getTileLiquidKind(tileId);
-    return this.setTileState(worldTileX, worldTileY, tileId, liquidKind === null ? 0 : MAX_LIQUID_LEVEL);
+    return this.setTileState(
+      worldTileX,
+      worldTileY,
+      tileId,
+      liquidKind === null ? 0 : MAX_LIQUID_LEVEL,
+      editOrigin
+    );
   }
 
-  setTileState(worldTileX: number, worldTileY: number, tileId: number, liquidLevel: number): boolean {
-    const result = this.commitTileState(worldTileX, worldTileY, tileId, liquidLevel, true);
+  setTileState(
+    worldTileX: number,
+    worldTileY: number,
+    tileId: number,
+    liquidLevel: number,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): boolean {
+    const result = this.commitTileState(worldTileX, worldTileY, tileId, liquidLevel, true, editOrigin);
     const changed = result.changed;
     if (changed) {
       if (
         result.previousTileId === PROCEDURAL_GRASS_SURFACE_TILE_ID &&
         tileId !== PROCEDURAL_GRASS_SURFACE_TILE_ID
       ) {
-        this.clearUnsupportedSmallTreeAtAnchor(worldTileX, worldTileY, true);
+        this.clearUnsupportedSmallTreeAtAnchor(worldTileX, worldTileY, true, editOrigin);
       }
       if (
         result.tileIdChanged &&
         isTileSolid(result.previousTileId) !== isTileSolid(tileId)
       ) {
-        this.clearUnsupportedAdjacentStarterTorches(worldTileX, worldTileY, true);
-        this.clearUnsupportedAdjacentStarterWorkbenches(worldTileX, worldTileY, true);
-        this.clearUnsupportedAdjacentStarterFurnaces(worldTileX, worldTileY, true);
-        this.clearUnsupportedAdjacentStarterAnvils(worldTileX, worldTileY, true);
+        this.clearUnsupportedAdjacentStarterTorches(worldTileX, worldTileY, true, editOrigin);
+        this.clearUnsupportedAdjacentStarterWorkbenches(worldTileX, worldTileY, true, editOrigin);
+        this.clearUnsupportedAdjacentStarterFurnaces(worldTileX, worldTileY, true, editOrigin);
+        this.clearUnsupportedAdjacentStarterAnvils(worldTileX, worldTileY, true, editOrigin);
       }
       this.wakeNearbyResidentLiquidChunks(worldTileX, worldTileY);
     }
@@ -1158,7 +1189,12 @@ export class TileWorld {
     return changed;
   }
 
-  setWall(worldTileX: number, worldTileY: number, wallId: number): boolean {
+  setWall(
+    worldTileX: number,
+    worldTileY: number,
+    wallId: number,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): boolean {
     const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
     const key = chunkKey(chunkX, chunkY);
     const chunk = this.ensureChunk(chunkX, chunkY);
@@ -1179,7 +1215,8 @@ export class TileWorld {
       localX,
       localY,
       previousWallId,
-      wallId
+      wallId,
+      editOrigin
     };
     for (const listener of this.wallEditListeners) {
       listener(event);

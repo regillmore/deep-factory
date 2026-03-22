@@ -191,7 +191,8 @@ describe('TileWorld', () => {
         previousTileId,
         previousLiquidLevel: 0,
         tileId: 3,
-        liquidLevel: 0
+        liquidLevel: 0,
+        editOrigin: 'gameplay'
       }
     ]);
   });
@@ -211,8 +212,8 @@ describe('TileWorld', () => {
       wallEvents.push(event);
     });
 
-    expect(world.setWall(worldTileX, worldTileY, 7)).toBe(true);
-    expect(world.setWall(worldTileX, worldTileY, 7)).toBe(false);
+    expect(world.setWall(worldTileX, worldTileY, 7, 'debug-history')).toBe(true);
+    expect(world.setWall(worldTileX, worldTileY, 7, 'debug-history')).toBe(false);
 
     expect(world.getTile(worldTileX, worldTileY)).toBe(previousTileId);
     expect(world.getWall(worldTileX, worldTileY)).toBe(7);
@@ -226,12 +227,13 @@ describe('TileWorld', () => {
         localX: CHUNK_SIZE - 1,
         localY: 0,
         previousWallId: 0,
-        wallId: 7
+        wallId: 7,
+        editOrigin: 'debug-history'
       }
     ]);
   });
 
-  it('clears a neighboring torch and emits a second edit when its last solid face support is removed', () => {
+  it('preserves debug-break origin on a neighboring torch support-collapse follow-up edit', () => {
     const world = new TileWorld(0);
     const events: TileEditEvent[] = [];
 
@@ -246,7 +248,7 @@ describe('TileWorld', () => {
       events.push(event);
     });
 
-    expect(world.setTile(1, 2, 0)).toBe(true);
+    expect(world.setTile(1, 2, 0, 'debug-break')).toBe(true);
 
     expect(world.getTile(1, 1)).toBe(0);
     expect(events).toEqual([
@@ -260,7 +262,8 @@ describe('TileWorld', () => {
         previousTileId: 1,
         previousLiquidLevel: 0,
         tileId: 0,
-        liquidLevel: 0
+        liquidLevel: 0,
+        editOrigin: 'debug-break'
       },
       {
         worldTileX: 1,
@@ -272,7 +275,8 @@ describe('TileWorld', () => {
         previousTileId: STARTER_TORCH_TILE_ID,
         previousLiquidLevel: 0,
         tileId: 0,
-        liquidLevel: 0
+        liquidLevel: 0,
+        editOrigin: 'debug-break'
       }
     ]);
   });
@@ -303,7 +307,8 @@ describe('TileWorld', () => {
         previousTileId: 1,
         previousLiquidLevel: 0,
         tileId: 0,
-        liquidLevel: 0
+        liquidLevel: 0,
+        editOrigin: 'gameplay'
       },
       {
         worldTileX: 1,
@@ -315,7 +320,8 @@ describe('TileWorld', () => {
         previousTileId: STARTER_WORKBENCH_TILE_ID,
         previousLiquidLevel: 0,
         tileId: 0,
-        liquidLevel: 0
+        liquidLevel: 0,
+        editOrigin: 'gameplay'
       }
     ]);
   });
@@ -346,7 +352,8 @@ describe('TileWorld', () => {
         previousTileId: 1,
         previousLiquidLevel: 0,
         tileId: 0,
-        liquidLevel: 0
+        liquidLevel: 0,
+        editOrigin: 'gameplay'
       },
       {
         worldTileX: 1,
@@ -358,7 +365,8 @@ describe('TileWorld', () => {
         previousTileId: STARTER_FURNACE_TILE_ID,
         previousLiquidLevel: 0,
         tileId: 0,
-        liquidLevel: 0
+        liquidLevel: 0,
+        editOrigin: 'gameplay'
       }
     ]);
   });
@@ -389,7 +397,8 @@ describe('TileWorld', () => {
         previousTileId: 1,
         previousLiquidLevel: 0,
         tileId: 0,
-        liquidLevel: 0
+        liquidLevel: 0,
+        editOrigin: 'gameplay'
       },
       {
         worldTileX: 1,
@@ -401,7 +410,8 @@ describe('TileWorld', () => {
         previousTileId: STARTER_ANVIL_TILE_ID,
         previousLiquidLevel: 0,
         tileId: 0,
-        liquidLevel: 0
+        liquidLevel: 0,
+        editOrigin: 'gameplay'
       }
     ]);
   });
@@ -433,7 +443,8 @@ describe('TileWorld', () => {
         previousTileId: PROCEDURAL_GRASS_SURFACE_TILE_ID,
         previousLiquidLevel: 0,
         tileId: PROCEDURAL_DIRT_TILE_ID,
-        liquidLevel: 0
+        liquidLevel: 0,
+        editOrigin: 'gameplay'
       },
       {
         worldTileX: 4,
@@ -445,7 +456,8 @@ describe('TileWorld', () => {
         previousTileId: treeTileIds.sapling,
         previousLiquidLevel: 0,
         tileId: 0,
-        liquidLevel: 0
+        liquidLevel: 0,
+        editOrigin: 'gameplay'
       }
     ]);
   });
@@ -505,7 +517,8 @@ describe('TileWorld', () => {
         previousTileId: WATER_TILE_ID,
         previousLiquidLevel: MAX_LIQUID_LEVEL,
         tileId: WATER_TILE_ID,
-        liquidLevel: MAX_LIQUID_LEVEL / 2
+        liquidLevel: MAX_LIQUID_LEVEL / 2,
+        editOrigin: 'gameplay'
       }
     ]);
 

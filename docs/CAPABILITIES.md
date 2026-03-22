@@ -206,6 +206,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - `Reset Prefs` restores default touch mode, brush, and panel visibility while clearing persisted debug-edit control state.
 - Break-mode debug paint, flood fill, line, rectangle, and ellipse actions now clear foreground tiles first, then fall back to clearing wall-only background-wall cells through the shared wall-edit listener path while suppressing pickup refunds from those debug-origin removals, including support-collapse follow-up clears triggered by the same stroke.
 - Undo and redo operate on recorded per-stroke tile and wall-layer deltas, so wall-only debug-break strokes now restore and replay background-wall clears through the same shared history controls as foreground edits without spawning gameplay pickup refunds during that history replay.
+- Tile and wall edit notifications now carry explicit `gameplay`, `debug-break`, or `debug-history` origins through both `TileWorld` and `Renderer` listeners, so listener-driven systems such as pickup refunds can distinguish debug tooling from survival-facing edits without extra ambient state.
 - Flood fill, line, rectangle fill, rectangle outline, ellipse fill, and ellipse outline tools apply as single undoable strokes.
 - Armed one-shot tools expose on-canvas status or preview overlays and support `Esc` cancellation.
 

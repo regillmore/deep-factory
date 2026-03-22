@@ -128,7 +128,7 @@ import {
   DEFAULT_PASSIVE_BUNNY_HOP_INTERVAL_TICKS,
   DEFAULT_PASSIVE_BUNNY_WIDTH
 } from './world/passiveBunnyState';
-import { TileWorld, type TileEditEvent, type WallEditEvent } from './world/world';
+import { TileWorld, type TileEditEvent, type WallEditEvent, type WorldEditOrigin } from './world/world';
 
 const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
   'return-to-main-menu': 'X',
@@ -218,7 +218,8 @@ const createTileEditEvent = (
   previousTileId: number,
   tileId: number,
   previousLiquidLevel = 0,
-  liquidLevel = 0
+  liquidLevel = 0,
+  editOrigin: WorldEditOrigin = 'gameplay'
 ): TileEditEvent => {
   const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
   const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
@@ -232,7 +233,8 @@ const createTileEditEvent = (
     previousTileId,
     previousLiquidLevel,
     tileId,
-    liquidLevel
+    liquidLevel,
+    editOrigin
   };
 };
 
@@ -240,7 +242,8 @@ const createWallEditEvent = (
   worldTileX: number,
   worldTileY: number,
   previousWallId: number,
-  wallId: number
+  wallId: number,
+  editOrigin: WorldEditOrigin = 'gameplay'
 ): WallEditEvent => {
   const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
   const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
@@ -252,7 +255,8 @@ const createWallEditEvent = (
     localX,
     localY,
     previousWallId,
-    wallId
+    wallId,
+    editOrigin
   };
 };
 
@@ -526,6 +530,7 @@ const testRuntime = vi.hoisted(() => {
       worldTileX: number;
       worldTileY: number;
       tileId: number;
+      editOrigin?: WorldEditOrigin;
     }>,
     rendererSetWallResult: false,
     rendererPersistentSetWallResult: false,
@@ -533,6 +538,7 @@ const testRuntime = vi.hoisted(() => {
       worldTileX: number;
       worldTileY: number;
       wallId: number;
+      editOrigin?: WorldEditOrigin;
     }>,
     rendererTileEditListeners: [] as Array<(event: TileEditEvent) => void>,
     rendererWallEditListeners: [] as Array<(event: WallEditEvent) => void>,
@@ -1039,14 +1045,28 @@ vi.mock('./gl/renderer', () => ({
       };
     }
 
-    setTile(worldTileX: number, worldTileY: number, tileId: number): boolean {
+    setTile(
+      worldTileX: number,
+      worldTileY: number,
+      tileId: number,
+      editOrigin: WorldEditOrigin = 'gameplay'
+    ): boolean {
       const previousTileId = this.getTile(worldTileX, worldTileY);
       const previousLiquidLevel = this.getLiquidLevel(worldTileX, worldTileY);
-      testRuntime.rendererSetTileCalls.push({
-        worldTileX,
-        worldTileY,
-        tileId
-      });
+      testRuntime.rendererSetTileCalls.push(
+        editOrigin === 'gameplay'
+          ? {
+              worldTileX,
+              worldTileY,
+              tileId
+            }
+          : {
+              worldTileX,
+              worldTileY,
+              tileId,
+              editOrigin
+            }
+      );
       const result = testRuntime.rendererSetTileResult;
       if (!testRuntime.rendererPersistentSetTileResult) {
         testRuntime.rendererSetTileResult = false;
@@ -1060,7 +1080,8 @@ vi.mock('./gl/renderer', () => ({
               previousTileId,
               tileId,
               previousLiquidLevel,
-              0
+              0,
+              editOrigin
             )
           ];
         testRuntime.rendererNextSetTileEditEvents = null;
@@ -1090,13 +1111,27 @@ vi.mock('./gl/renderer', () => ({
       return result;
     }
 
-    setWall(worldTileX: number, worldTileY: number, wallId: number): boolean {
+    setWall(
+      worldTileX: number,
+      worldTileY: number,
+      wallId: number,
+      editOrigin: WorldEditOrigin = 'gameplay'
+    ): boolean {
       const previousWallId = this.getWall(worldTileX, worldTileY);
-      testRuntime.rendererSetWallCalls.push({
-        worldTileX,
-        worldTileY,
-        wallId
-      });
+      testRuntime.rendererSetWallCalls.push(
+        editOrigin === 'gameplay'
+          ? {
+              worldTileX,
+              worldTileY,
+              wallId
+            }
+          : {
+              worldTileX,
+              worldTileY,
+              wallId,
+              editOrigin
+            }
+      );
       const result = testRuntime.rendererSetWallResult;
       if (!testRuntime.rendererPersistentSetWallResult) {
         testRuntime.rendererSetWallResult = false;
@@ -1104,7 +1139,7 @@ vi.mock('./gl/renderer', () => ({
       if (result) {
         const editEvents =
           testRuntime.rendererNextSetWallEditEvents ?? [
-            createWallEditEvent(worldTileX, worldTileY, previousWallId, wallId)
+            createWallEditEvent(worldTileX, worldTileY, previousWallId, wallId, editOrigin)
           ];
         testRuntime.rendererNextSetWallEditEvents = null;
         for (const event of editEvents) {
@@ -12288,7 +12323,8 @@ describe('main.ts shell state orchestration', () => {
       {
         worldTileX: wallWorldTileX,
         worldTileY: wallWorldTileY,
-        wallId: 0
+        wallId: 0,
+        editOrigin: 'debug-break'
       }
     ]);
 
@@ -12343,7 +12379,8 @@ describe('main.ts shell state orchestration', () => {
       {
         worldTileX: wallWorldTileX,
         worldTileY: wallWorldTileY,
-        wallId: 0
+        wallId: 0,
+        editOrigin: 'debug-break'
       }
     ]);
     expect(testRuntime.debugEditControlsLatestHistoryState).toEqual({
@@ -12358,12 +12395,14 @@ describe('main.ts shell state orchestration', () => {
       {
         worldTileX: wallWorldTileX,
         worldTileY: wallWorldTileY,
-        wallId: 0
+        wallId: 0,
+        editOrigin: 'debug-break'
       },
       {
         worldTileX: wallWorldTileX,
         worldTileY: wallWorldTileY,
-        wallId: STARTER_DIRT_WALL_ID
+        wallId: STARTER_DIRT_WALL_ID,
+        editOrigin: 'debug-history'
       }
     ]);
     expect(testRuntime.rendererWallIdsByWorldKey.get(worldTileKey(wallWorldTileX, wallWorldTileY))).toBe(
@@ -12380,17 +12419,20 @@ describe('main.ts shell state orchestration', () => {
       {
         worldTileX: wallWorldTileX,
         worldTileY: wallWorldTileY,
-        wallId: 0
+        wallId: 0,
+        editOrigin: 'debug-break'
       },
       {
         worldTileX: wallWorldTileX,
         worldTileY: wallWorldTileY,
-        wallId: STARTER_DIRT_WALL_ID
+        wallId: STARTER_DIRT_WALL_ID,
+        editOrigin: 'debug-history'
       },
       {
         worldTileX: wallWorldTileX,
         worldTileY: wallWorldTileY,
-        wallId: 0
+        wallId: 0,
+        editOrigin: 'debug-history'
       }
     ]);
     expect(testRuntime.rendererWallIdsByWorldKey.get(worldTileKey(wallWorldTileX, wallWorldTileY))).toBeUndefined();
@@ -12444,7 +12486,8 @@ describe('main.ts shell state orchestration', () => {
       {
         worldTileX: wallWorldTileX,
         worldTileY: wallWorldTileY,
-        tileId: 0
+        tileId: 0,
+        editOrigin: 'debug-break'
       }
     ]);
     expect(testRuntime.rendererSetWallCalls).toEqual([]);
@@ -12484,8 +12527,8 @@ describe('main.ts shell state orchestration', () => {
       10
     );
     testRuntime.rendererNextSetTileEditEvents = [
-      createTileEditEvent(supportWorldTileX, supportWorldTileY, 1, 0),
-      createTileEditEvent(torchWorldTileX, torchWorldTileY, 10, 0)
+      createTileEditEvent(supportWorldTileX, supportWorldTileY, 1, 0, 0, 0, 'debug-break'),
+      createTileEditEvent(torchWorldTileX, torchWorldTileY, 10, 0, 0, 0, 'debug-break')
     ];
     testRuntime.rendererSetTileResult = true;
 
@@ -12522,12 +12565,15 @@ describe('main.ts shell state orchestration', () => {
       STARTER_WORKBENCH_TILE_ID
     );
     testRuntime.rendererNextSetTileEditEvents = [
-      createTileEditEvent(supportWorldTileX, supportWorldTileY, 1, 0),
+      createTileEditEvent(supportWorldTileX, supportWorldTileY, 1, 0, 0, 0, 'debug-break'),
       createTileEditEvent(
         workbenchWorldTileX,
         workbenchWorldTileY,
         STARTER_WORKBENCH_TILE_ID,
-        0
+        0,
+        0,
+        0,
+        'debug-break'
       )
     ];
     testRuntime.rendererSetTileResult = true;
@@ -12565,8 +12611,8 @@ describe('main.ts shell state orchestration', () => {
       STARTER_ANVIL_TILE_ID
     );
     testRuntime.rendererNextSetTileEditEvents = [
-      createTileEditEvent(supportWorldTileX, supportWorldTileY, 1, 0),
-      createTileEditEvent(anvilWorldTileX, anvilWorldTileY, STARTER_ANVIL_TILE_ID, 0)
+      createTileEditEvent(supportWorldTileX, supportWorldTileY, 1, 0, 0, 0, 'debug-break'),
+      createTileEditEvent(anvilWorldTileX, anvilWorldTileY, STARTER_ANVIL_TILE_ID, 0, 0, 0, 'debug-break')
     ];
     testRuntime.rendererSetTileResult = true;
 

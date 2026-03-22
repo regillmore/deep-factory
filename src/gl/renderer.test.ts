@@ -953,23 +953,25 @@ describe('Renderer atlas telemetry', () => {
       worldTileY: number;
       previousTileId: number;
       tileId: number;
+      editOrigin: 'gameplay' | 'debug-break' | 'debug-history';
     }> = [];
     const detach = renderer.onTileEdited((event) => {
       events.push({
         worldTileX: event.worldTileX,
         worldTileY: event.worldTileY,
         previousTileId: event.previousTileId,
-        tileId: event.tileId
+        tileId: event.tileId,
+        editOrigin: event.editOrigin
       });
     });
 
     expect(renderer.setTile(0, -10, 5)).toBe(true);
 
     renderer.resetWorld();
-    expect(renderer.setTile(1, -10, 6)).toBe(true);
+    expect(renderer.setTile(1, -10, 6, 'debug-break')).toBe(true);
 
     renderer.loadWorldSnapshot(new TileWorld(0).createSnapshot());
-    expect(renderer.setTile(2, -10, 7)).toBe(true);
+    expect(renderer.setTile(2, -10, 7, 'debug-history')).toBe(true);
 
     detach();
     expect(renderer.setTile(3, -10, 8)).toBe(true);
@@ -979,19 +981,22 @@ describe('Renderer atlas telemetry', () => {
         worldTileX: 0,
         worldTileY: -10,
         previousTileId: 0,
-        tileId: 5
+        tileId: 5,
+        editOrigin: 'gameplay'
       },
       {
         worldTileX: 1,
         worldTileY: -10,
         previousTileId: 0,
-        tileId: 6
+        tileId: 6,
+        editOrigin: 'debug-break'
       },
       {
         worldTileX: 2,
         worldTileY: -10,
         previousTileId: 0,
-        tileId: 7
+        tileId: 7,
+        editOrigin: 'debug-history'
       }
     ]);
   });
@@ -1014,23 +1019,25 @@ describe('Renderer atlas telemetry', () => {
       worldTileY: number;
       previousWallId: number;
       wallId: number;
+      editOrigin: 'gameplay' | 'debug-break' | 'debug-history';
     }> = [];
     const detach = renderer.onWallEdited((event) => {
       events.push({
         worldTileX: event.worldTileX,
         worldTileY: event.worldTileY,
         previousWallId: event.previousWallId,
-        wallId: event.wallId
+        wallId: event.wallId,
+        editOrigin: event.editOrigin
       });
     });
 
     expect(renderer.setWall(0, -10, 1)).toBe(true);
 
     renderer.resetWorld();
-    expect(renderer.setWall(1, -10, 2)).toBe(true);
+    expect(renderer.setWall(1, -10, 2, 'debug-break')).toBe(true);
 
     renderer.loadWorldSnapshot(new TileWorld(0).createSnapshot());
-    expect(renderer.setWall(2, -10, 3)).toBe(true);
+    expect(renderer.setWall(2, -10, 3, 'debug-history')).toBe(true);
 
     detach();
     expect(renderer.setWall(3, -10, 4)).toBe(true);
@@ -1040,19 +1047,22 @@ describe('Renderer atlas telemetry', () => {
         worldTileX: 0,
         worldTileY: -10,
         previousWallId: 0,
-        wallId: 1
+        wallId: 1,
+        editOrigin: 'gameplay'
       },
       {
         worldTileX: 1,
         worldTileY: -10,
         previousWallId: 0,
-        wallId: 2
+        wallId: 2,
+        editOrigin: 'debug-break'
       },
       {
         worldTileX: 2,
         worldTileY: -10,
         previousWallId: 0,
-        wallId: 3
+        wallId: 3,
+        editOrigin: 'debug-history'
       }
     ]);
   });

@@ -94,7 +94,8 @@ import {
   type LiquidStepPhaseSummary,
   type TileEditEvent,
   type WallEditEvent,
-  type TileWorldSnapshot
+  type TileWorldSnapshot,
+  type WorldEditOrigin
 } from '../world/world';
 
 interface ChunkGpuMesh {
@@ -921,16 +922,32 @@ export class Renderer {
     this.telemetry.meshBuildQueueLength = this.meshBuildQueue.length;
   }
 
-  setTile(worldTileX: number, worldTileY: number, tileId: number): boolean {
-    return this.world.setTile(worldTileX, worldTileY, tileId);
+  setTile(
+    worldTileX: number,
+    worldTileY: number,
+    tileId: number,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): boolean {
+    return this.world.setTile(worldTileX, worldTileY, tileId, editOrigin);
   }
 
-  setTileState(worldTileX: number, worldTileY: number, tileId: number, liquidLevel: number): boolean {
-    return this.world.setTileState(worldTileX, worldTileY, tileId, liquidLevel);
+  setTileState(
+    worldTileX: number,
+    worldTileY: number,
+    tileId: number,
+    liquidLevel: number,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): boolean {
+    return this.world.setTileState(worldTileX, worldTileY, tileId, liquidLevel, editOrigin);
   }
 
-  setWall(worldTileX: number, worldTileY: number, wallId: number): boolean {
-    return this.world.setWall(worldTileX, worldTileY, wallId);
+  setWall(
+    worldTileX: number,
+    worldTileY: number,
+    wallId: number,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): boolean {
+    return this.world.setWall(worldTileX, worldTileY, wallId, editOrigin);
   }
 
   getTile(worldTileX: number, worldTileY: number): number {

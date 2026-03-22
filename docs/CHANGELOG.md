@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-22
 
+- Task: Add edit-origin metadata for tile and wall notifications after debug refund suppression.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts), [src/gl/renderer.ts](../src/gl/renderer.ts), [src/main.ts](../src/main.ts), [src/world/world.test.ts](../src/world/world.test.ts), [src/gl/renderer.test.ts](../src/gl/renderer.test.ts), and [src/main.test.ts](../src/main.test.ts) so tile and wall edit notifications now carry `gameplay`, `debug-break`, or `debug-history` origins, support-collapse follow-up edits preserve the initiating origin, and pickup refunds now gate on event origin instead of ambient suppression state; removed completed task `691` from [docs/NEXT.md](docs/NEXT.md), added replacement task `692`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json`, `cmd /c npx vitest run src/main.test.ts`, `cmd /c npx vitest run src/world/world.test.ts`, and `cmd /c npx vitest run src/gl/renderer.test.ts`.
+
 - Task: Suppress pickup refunds for debug-break strokes and undo-redo actions.
 - Changes: Updated [src/main.ts](../src/main.ts) so debug-break writes and debug-history replay now suppress tile and wall removal refunds, including support-collapse follow-up clears, while leaving the underlying world edits and listener-driven invalidation in place; refreshed [src/main.test.ts](../src/main.test.ts) with focused regressions for debug-break torch, rope, wall, overlap, and undo-or-redo refund suppression; removed completed task `690` from [docs/NEXT.md](docs/NEXT.md), added replacement task `691`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/main.test.ts`.

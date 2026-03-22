@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-22: Tile and wall edit notifications carry explicit write origins
+
+- Decision: `TileWorld` and `Renderer` edit notifications now include an `editOrigin` of `gameplay`, `debug-break`, or `debug-history`, and support-collapse or anchor-loss follow-up clears keep the initiating origin instead of reclassifying themselves.
+- Reason: Listener-driven systems like pickup refunds and future replication need to distinguish survival-facing writes from debug tooling without relying on ambient suppression flags around the caller.
+- Consequence: Future listener consumers should branch on `event.editOrigin` instead of inferring source from call context, and cascaded world edits should propagate the initiating origin unless a later pass intentionally changes that classification.
+
 ### 2026-03-22: Debug edit removals do not spawn gameplay pickup refunds
 
 - Decision: In-world debug-break strokes plus shared debug undo or redo replay now suppress tile and wall removal refunds, including support-collapse follow-up clears, even though those writes still flow through the ordinary renderer edit-listener seams.
