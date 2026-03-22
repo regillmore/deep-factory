@@ -489,6 +489,21 @@ describe('TileWorld', () => {
     expect(world.getChunkCount()).toBe(1);
   });
 
+  it('stores background walls separately from foreground tiles and reapplies them when a pruned chunk streams back in', () => {
+    const world = new TileWorld(0);
+    const editedTileId = 5;
+    const editedWallId = 9;
+
+    world.setTile(0, 0, editedTileId);
+    world.setWall(0, 0, editedWallId);
+
+    expect(world.pruneChunksOutside({ minChunkX: 1, minChunkY: 1, maxChunkX: 1, maxChunkY: 1 })).toBe(1);
+    expect(world.getChunkCount()).toBe(0);
+    expect(world.getTile(0, 0)).toBe(editedTileId);
+    expect(world.getWall(0, 0)).toBe(editedWallId);
+    expect(world.getChunkCount()).toBe(1);
+  });
+
   it('drops stored chunk overrides when an edited tile is reset to its procedural value', () => {
     const world = new TileWorld(0);
     const proceduralTileId = world.getTile(0, 0);
@@ -498,6 +513,16 @@ describe('TileWorld', () => {
 
     expect(world.pruneChunksOutside({ minChunkX: 1, minChunkY: 1, maxChunkX: 1, maxChunkY: 1 })).toBe(1);
     expect(world.getTile(0, 0)).toBe(proceduralTileId);
+  });
+
+  it('drops stored wall overrides when an edited background wall is reset to empty', () => {
+    const world = new TileWorld(0);
+
+    world.setWall(0, 0, 5);
+    world.setWall(0, 0, 0);
+
+    expect(world.pruneChunksOutside({ minChunkX: 1, minChunkY: 1, maxChunkX: 1, maxChunkY: 1 })).toBe(1);
+    expect(world.getWall(0, 0)).toBe(0);
   });
 
   it('creates sorted world snapshots for resident chunks and pruned edited chunks', () => {
@@ -527,6 +552,46 @@ describe('TileWorld', () => {
     expect(snapshot.editedChunks[0]?.payload.liquidLevelOverrides).toEqual([]);
     expect(snapshot.editedChunks[1]?.payload.tileOverrides).toEqual([0, WATER_TILE_ID]);
     expect(snapshot.editedChunks[1]?.payload.liquidLevelOverrides).toEqual([0, MAX_LIQUID_LEVEL]);
+  });
+
+  it('round-trips resident and pruned edited background walls through world snapshots', () => {
+    const source = new TileWorld(0);
+    const loaded = new TileWorld(0);
+    const residentWallWorldTileX = 1;
+    const residentWallWorldTileY = 0;
+    const prunedWallWorldTileX = CHUNK_SIZE * 2;
+    const prunedWallWorldTileY = 0;
+
+    source.ensureChunk(1, 0);
+    expect(source.setWall(residentWallWorldTileX, residentWallWorldTileY, 7)).toBe(true);
+    expect(source.setWall(prunedWallWorldTileX, prunedWallWorldTileY, 4)).toBe(true);
+    expect(source.pruneChunksOutside({ minChunkX: 0, minChunkY: 0, maxChunkX: 1, maxChunkY: 0 })).toBe(1);
+
+    const snapshot = source.createSnapshot();
+
+    expect(snapshot.residentChunks.map((chunk) => chunk.coord)).toEqual([
+      { x: 0, y: 0 },
+      { x: 1, y: 0 }
+    ]);
+    expect(snapshot.residentChunks[0]?.payload.wallIds).toEqual([1, 0, 1, 7, 1022, 0]);
+    expect(snapshot.editedChunks).toHaveLength(2);
+    expect(snapshot.editedChunks.map((chunk) => chunk.coord)).toEqual([
+      { x: 0, y: 0 },
+      { x: 2, y: 0 }
+    ]);
+    expect(snapshot.editedChunks[0]?.payload.wallOverrides).toEqual([1, 7]);
+    expect(snapshot.editedChunks[1]?.payload.wallOverrides).toEqual([0, 4]);
+
+    loaded.loadSnapshot(snapshot);
+
+    expect(loaded.getWall(residentWallWorldTileX, residentWallWorldTileY)).toBe(7);
+    expect(loaded.getWall(prunedWallWorldTileX, prunedWallWorldTileY)).toBe(4);
+    expect(loaded.getTile(residentWallWorldTileX, residentWallWorldTileY)).toBe(
+      source.getTile(residentWallWorldTileX, residentWallWorldTileY)
+    );
+    expect(loaded.getTile(prunedWallWorldTileX, prunedWallWorldTileY)).toBe(
+      source.getTile(prunedWallWorldTileX, prunedWallWorldTileY)
+    );
   });
 
   it('stores liquid fill levels for liquid tiles and clears them when the tile becomes non-liquid', () => {

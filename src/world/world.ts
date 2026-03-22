@@ -257,6 +257,7 @@ const resolveSleepingLiquidChunkBoundsFromKeys = (
   return bounds;
 };
 
+const createChunkWallIds = (): Uint8Array => new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
 const createChunkLiquidLevels = (): Uint8Array => new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
 const createChunkLightLevels = (): Uint8Array => new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
 const ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK = CHUNK_SIZE >= 32 ? 0xffffffff >>> 0 : ((1 << CHUNK_SIZE) - 1) >>> 0;
@@ -412,6 +413,12 @@ const expectEditedChunkStateMatchesResidentChunk = (
     }
   }
 
+  for (const [tileIndex, wallId] of state.wallOverrides) {
+    if ((chunk.wallIds[tileIndex] ?? 0) !== wallId) {
+      throw new Error(`${label}.wallOverrides must match resident chunk wall ${tileIndex}`);
+    }
+  }
+
   for (const [tileIndex, liquidLevel] of state.liquidLevelOverrides) {
     if ((chunk.liquidLevels[tileIndex] ?? 0) !== liquidLevel) {
       throw new Error(`${label}.liquidLevelOverrides must match resident chunk liquid ${tileIndex}`);
@@ -440,6 +447,7 @@ export class TileWorld {
   private worldSeed: number;
   private chunks = new Map<string, Chunk>();
   private editedChunkTiles = new Map<string, Map<number, number>>();
+  private editedChunkWalls = new Map<string, Map<number, number>>();
   private editedChunkLiquidLevels = new Map<string, Map<number, number>>();
   private tileEditListeners = new Set<TileEditListener>();
   private dirtyLightChunkKeys = new Set<string>();
@@ -564,9 +572,28 @@ export class TileWorld {
     editedLiquidLevels.set(tileIndex, liquidLevel);
   }
 
+  private updateEditedChunkWallState(key: string, tileIndex: number, wallId: number): void {
+    if (wallId === 0) {
+      const editedWalls = this.editedChunkWalls.get(key);
+      editedWalls?.delete(tileIndex);
+      if (editedWalls && editedWalls.size === 0) {
+        this.editedChunkWalls.delete(key);
+      }
+      return;
+    }
+
+    let editedWalls = this.editedChunkWalls.get(key);
+    if (!editedWalls) {
+      editedWalls = new Map<number, number>();
+      this.editedChunkWalls.set(key, editedWalls);
+    }
+    editedWalls.set(tileIndex, wallId);
+  }
+
   private collectEditedChunkSnapshotStates(): EditedChunkSnapshotState[] {
     const editedChunkKeys = new Set<string>([
       ...this.editedChunkTiles.keys(),
+      ...this.editedChunkWalls.keys(),
       ...this.editedChunkLiquidLevels.keys()
     ]);
     const states: EditedChunkSnapshotState[] = [];
@@ -575,6 +602,7 @@ export class TileWorld {
       states.push({
         coord: parseChunkCoordFromKey(key),
         tileOverrides: new Map(this.editedChunkTiles.get(key)),
+        wallOverrides: new Map(this.editedChunkWalls.get(key)),
         liquidLevelOverrides: new Map(this.editedChunkLiquidLevels.get(key))
       });
     }
@@ -1006,6 +1034,7 @@ export class TileWorld {
     const normalizedChunkY = chunkY === 0 ? 0 : chunkY;
 
     const tiles = new Uint8Array(CHUNK_SIZE * CHUNK_SIZE);
+    const wallIds = createChunkWallIds();
     const liquidLevels = createChunkLiquidLevels();
     for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
       for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
@@ -1020,6 +1049,7 @@ export class TileWorld {
     }
 
     const editedTiles = this.editedChunkTiles.get(key);
+    const editedWalls = this.editedChunkWalls.get(key);
     const editedLiquidLevels = this.editedChunkLiquidLevels.get(key);
     if (editedTiles) {
       for (const [tileIndex, tileId] of editedTiles) {
@@ -1027,6 +1057,12 @@ export class TileWorld {
         if (getTileLiquidKind(tileId) !== null) {
           liquidLevels[tileIndex] = editedLiquidLevels?.get(tileIndex) ?? MAX_LIQUID_LEVEL;
         }
+      }
+    }
+
+    if (editedWalls) {
+      for (const [tileIndex, wallId] of editedWalls) {
+        wallIds[tileIndex] = wallId;
       }
     }
 
@@ -1042,6 +1078,7 @@ export class TileWorld {
     const chunk: Chunk = {
       coord: { x: normalizedChunkX, y: normalizedChunkY },
       tiles,
+      wallIds,
       liquidLevels,
       lightLevels: createChunkLightLevels(),
       lightDirty: true,
@@ -1065,6 +1102,13 @@ export class TileWorld {
     const chunk = this.ensureChunk(chunkX, chunkY);
     const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
     return chunk.tiles[toTileIndex(localX, localY)];
+  }
+
+  getWall(worldTileX: number, worldTileY: number): number {
+    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+    const chunk = this.ensureChunk(chunkX, chunkY);
+    const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
+    return chunk.wallIds[toTileIndex(localX, localY)] ?? 0;
   }
 
   setTile(worldTileX: number, worldTileY: number, tileId: number): boolean {
@@ -1099,6 +1143,22 @@ export class TileWorld {
     }
 
     return changed;
+  }
+
+  setWall(worldTileX: number, worldTileY: number, wallId: number): boolean {
+    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+    const key = chunkKey(chunkX, chunkY);
+    const chunk = this.ensureChunk(chunkX, chunkY);
+    const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
+    const tileIndex = toTileIndex(localX, localY);
+    const previousWallId = chunk.wallIds[tileIndex] ?? 0;
+    if (previousWallId === wallId) {
+      return false;
+    }
+
+    chunk.wallIds[tileIndex] = wallId;
+    this.updateEditedChunkWallState(key, tileIndex, wallId);
+    return true;
   }
 
   getLiquidLevel(worldTileX: number, worldTileY: number): number {
@@ -1496,6 +1556,7 @@ export class TileWorld {
     }
 
     const nextEditedChunkTiles = new Map<string, Map<number, number>>();
+    const nextEditedChunkWalls = new Map<string, Map<number, number>>();
     const nextEditedChunkLiquidLevels = new Map<string, Map<number, number>>();
     const seenEditedChunkKeys = new Set<string>();
     for (const [index, editedChunkSnapshot] of snapshot.editedChunks.entries()) {
@@ -1515,6 +1576,9 @@ export class TileWorld {
       if (state.tileOverrides.size > 0) {
         nextEditedChunkTiles.set(key, new Map(state.tileOverrides));
       }
+      if (state.wallOverrides.size > 0) {
+        nextEditedChunkWalls.set(key, new Map(state.wallOverrides));
+      }
       if (state.liquidLevelOverrides.size > 0) {
         nextEditedChunkLiquidLevels.set(key, new Map(state.liquidLevelOverrides));
       }
@@ -1528,6 +1592,7 @@ export class TileWorld {
 
     this.chunks = nextChunks;
     this.editedChunkTiles = nextEditedChunkTiles;
+    this.editedChunkWalls = nextEditedChunkWalls;
     this.editedChunkLiquidLevels = nextEditedChunkLiquidLevels;
     this.dirtyLightChunkKeys = nextDirtyLightChunkKeys;
     this.residentLiquidChunkKeys = collectResidentLiquidChunkKeys(nextChunks);

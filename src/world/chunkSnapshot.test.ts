@@ -34,6 +34,7 @@ describe('chunkSnapshot', () => {
         { start: 128, length: 16, value: 7 },
         { start: 144, length: CHUNK_SNAPSHOT_TILE_COUNT - 144, value: 1 }
       ]),
+      wallIds: createFilledLayer([{ start: 256, length: 16, value: 4 }]),
       liquidLevels: createFilledLayer([
         { start: 128, length: 8, value: 8 },
         { start: 136, length: 8, value: 4 }
@@ -58,11 +59,13 @@ describe('chunkSnapshot', () => {
         tileCount: CHUNK_SNAPSHOT_TILE_COUNT,
         tileOrder: CHUNK_SNAPSHOT_TILE_ORDER,
         tilePayloadEncoding: CHUNK_SNAPSHOT_DENSE_PAYLOAD_ENCODING,
+        wallPayloadEncoding: CHUNK_SNAPSHOT_DENSE_PAYLOAD_ENCODING,
         liquidPayloadEncoding: CHUNK_SNAPSHOT_DENSE_PAYLOAD_ENCODING,
         lightPayloadEncoding: CHUNK_SNAPSHOT_DENSE_PAYLOAD_ENCODING
       },
       payload: {
         tiles: [128, 2, 16, 7, 880, 1],
+        wallIds: [256, 0, 16, 4, 752, 0],
         liquidLevels: [128, 0, 8, 8, 8, 4, 880, 0],
         lightLevels: [32, 15, 32, 12, 960, 3]
       },
@@ -77,6 +80,7 @@ describe('chunkSnapshot', () => {
     expect(decoded).toEqual(chunk);
     expect(decoded).not.toBe(chunk);
     expect(decoded.tiles).not.toBe(chunk.tiles);
+    expect(decoded.wallIds).not.toBe(chunk.wallIds);
     expect(decoded.liquidLevels).not.toBe(chunk.liquidLevels);
     expect(decoded.lightLevels).not.toBe(chunk.lightLevels);
   });
@@ -88,6 +92,10 @@ describe('chunkSnapshot', () => {
         [1023, 7],
         [1, 2],
         [32, 9]
+      ]),
+      wallOverrides: new Map([
+        [0, 5],
+        [33, 4]
       ]),
       liquidLevelOverrides: new Map([
         [32, 8],
@@ -106,10 +114,12 @@ describe('chunkSnapshot', () => {
         tileCount: CHUNK_SNAPSHOT_TILE_COUNT,
         tileOrder: CHUNK_SNAPSHOT_TILE_ORDER,
         tilePayloadEncoding: CHUNK_SNAPSHOT_SPARSE_PAYLOAD_ENCODING,
+        wallPayloadEncoding: CHUNK_SNAPSHOT_SPARSE_PAYLOAD_ENCODING,
         liquidPayloadEncoding: CHUNK_SNAPSHOT_SPARSE_PAYLOAD_ENCODING
       },
       payload: {
         tileOverrides: [1, 2, 32, 9, 1023, 7],
+        wallOverrides: [0, 5, 33, 4],
         liquidLevelOverrides: [32, 8, 33, 4]
       }
     });
@@ -122,18 +132,83 @@ describe('chunkSnapshot', () => {
       [32, 9],
       [1023, 7]
     ]);
+    expect(Array.from(decoded.wallOverrides.entries())).toEqual([
+      [0, 5],
+      [33, 4]
+    ]);
     expect(Array.from(decoded.liquidLevelOverrides.entries())).toEqual([
       [32, 8],
       [33, 4]
     ]);
     expect(decoded.tileOverrides).not.toBe(state.tileOverrides);
+    expect(decoded.wallOverrides).not.toBe(state.wallOverrides);
     expect(decoded.liquidLevelOverrides).not.toBe(state.liquidLevelOverrides);
+  });
+
+  it('decodes legacy resident snapshots without wall payloads as empty wall layers', () => {
+    const currentSnapshot = encodeResidentChunkSnapshot({
+      coord: { x: 0, y: 0 },
+      tiles: createFilledLayer([{ start: 0, length: 4, value: 7 }]),
+      wallIds: createFilledLayer([{ start: 0, length: 4, value: 9 }]),
+      liquidLevels: new Uint8Array(CHUNK_SNAPSHOT_TILE_COUNT),
+      lightLevels: new Uint8Array(CHUNK_SNAPSHOT_TILE_COUNT),
+      lightDirty: false,
+      lightDirtyColumnMask: 0
+    });
+
+    const decoded = decodeResidentChunkSnapshot({
+      ...currentSnapshot,
+      metadata: {
+        version: 1,
+        chunkSize: currentSnapshot.metadata.chunkSize,
+        tileCount: currentSnapshot.metadata.tileCount,
+        tileOrder: currentSnapshot.metadata.tileOrder,
+        tilePayloadEncoding: currentSnapshot.metadata.tilePayloadEncoding,
+        liquidPayloadEncoding: currentSnapshot.metadata.liquidPayloadEncoding,
+        lightPayloadEncoding: currentSnapshot.metadata.lightPayloadEncoding
+      },
+      payload: {
+        tiles: currentSnapshot.payload.tiles,
+        liquidLevels: currentSnapshot.payload.liquidLevels,
+        lightLevels: currentSnapshot.payload.lightLevels
+      }
+    });
+
+    expect(Array.from(decoded.wallIds)).toEqual(Array.from(new Uint8Array(CHUNK_SNAPSHOT_TILE_COUNT)));
+  });
+
+  it('decodes legacy edited snapshots without wall payloads as empty wall override maps', () => {
+    const currentSnapshot = encodeEditedChunkSnapshot({
+      coord: { x: 4, y: -1 },
+      tileOverrides: new Map([[1, 2]]),
+      wallOverrides: new Map([[0, 5]]),
+      liquidLevelOverrides: new Map([[32, 8]])
+    });
+
+    const decoded = decodeEditedChunkSnapshot({
+      ...currentSnapshot,
+      metadata: {
+        version: 1,
+        chunkSize: currentSnapshot.metadata.chunkSize,
+        tileCount: currentSnapshot.metadata.tileCount,
+        tileOrder: currentSnapshot.metadata.tileOrder,
+        tilePayloadEncoding: currentSnapshot.metadata.tilePayloadEncoding,
+        liquidPayloadEncoding: currentSnapshot.metadata.liquidPayloadEncoding
+      },
+      payload: {
+        tileOverrides: currentSnapshot.payload.tileOverrides,
+        liquidLevelOverrides: currentSnapshot.payload.liquidLevelOverrides
+      }
+    });
+
+    expect(Array.from(decoded.wallOverrides.entries())).toEqual([]);
   });
 
   it('rejects resident snapshots whose metadata version does not match the current format', () => {
     const snapshot = encodeResidentChunkSnapshot({
       coord: { x: 0, y: 0 },
       tiles: new Uint8Array(CHUNK_SNAPSHOT_TILE_COUNT),
+      wallIds: new Uint8Array(CHUNK_SNAPSHOT_TILE_COUNT),
       liquidLevels: new Uint8Array(CHUNK_SNAPSHOT_TILE_COUNT),
       lightLevels: new Uint8Array(CHUNK_SNAPSHOT_TILE_COUNT),
       lightDirty: false,
@@ -148,7 +223,7 @@ describe('chunkSnapshot', () => {
           version: 99
         }
       } as unknown as ReturnType<typeof encodeResidentChunkSnapshot>)
-    ).toThrowError(/metadata\.version must be 1, received 99/);
+    ).toThrowError(/metadata\.version must be 1 or 2, received 99/);
   });
 
   it('rejects dense payloads that do not expand to the full chunk tile count', () => {

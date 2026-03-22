@@ -1,7 +1,8 @@
 import { CHUNK_SIZE } from './constants';
 import type { Chunk, ChunkCoord } from './types';
 
-export const CHUNK_SNAPSHOT_FORMAT_VERSION = 1 as const;
+const LEGACY_CHUNK_SNAPSHOT_FORMAT_VERSION = 1 as const;
+export const CHUNK_SNAPSHOT_FORMAT_VERSION = 2 as const;
 export const CHUNK_SNAPSHOT_TILE_ORDER = 'row-major' as const;
 export const CHUNK_SNAPSHOT_DENSE_PAYLOAD_ENCODING = 'rle-u8-pairs' as const;
 export const CHUNK_SNAPSHOT_SPARSE_PAYLOAD_ENCODING = 'index-value-pairs-u16-u8' as const;
@@ -10,9 +11,12 @@ export const CHUNK_SNAPSHOT_TILE_COUNT = CHUNK_SIZE * CHUNK_SIZE;
 type DensePayloadEncoding = typeof CHUNK_SNAPSHOT_DENSE_PAYLOAD_ENCODING;
 type SparsePayloadEncoding = typeof CHUNK_SNAPSHOT_SPARSE_PAYLOAD_ENCODING;
 type TileOrder = typeof CHUNK_SNAPSHOT_TILE_ORDER;
+type ChunkSnapshotFormatVersion =
+  | typeof LEGACY_CHUNK_SNAPSHOT_FORMAT_VERSION
+  | typeof CHUNK_SNAPSHOT_FORMAT_VERSION;
 
 export interface ChunkSnapshotMetadata {
-  version: typeof CHUNK_SNAPSHOT_FORMAT_VERSION;
+  version: ChunkSnapshotFormatVersion;
   chunkSize: typeof CHUNK_SIZE;
   tileCount: typeof CHUNK_SNAPSHOT_TILE_COUNT;
   tileOrder: TileOrder;
@@ -23,11 +27,13 @@ export interface ResidentChunkSnapshot {
   coord: ChunkCoord;
   metadata: ChunkSnapshotMetadata & {
     tilePayloadEncoding: DensePayloadEncoding;
+    wallPayloadEncoding?: DensePayloadEncoding;
     liquidPayloadEncoding: DensePayloadEncoding;
     lightPayloadEncoding: DensePayloadEncoding;
   };
   payload: {
     tiles: number[];
+    wallIds?: number[];
     liquidLevels: number[];
     lightLevels: number[];
   };
@@ -40,6 +46,7 @@ export interface ResidentChunkSnapshot {
 export interface EditedChunkSnapshotState {
   coord: ChunkCoord;
   tileOverrides: ReadonlyMap<number, number>;
+  wallOverrides: ReadonlyMap<number, number>;
   liquidLevelOverrides: ReadonlyMap<number, number>;
 }
 
@@ -48,10 +55,12 @@ export interface EditedChunkSnapshot {
   coord: ChunkCoord;
   metadata: ChunkSnapshotMetadata & {
     tilePayloadEncoding: SparsePayloadEncoding;
+    wallPayloadEncoding?: SparsePayloadEncoding;
     liquidPayloadEncoding: SparsePayloadEncoding;
   };
   payload: {
     tileOverrides: number[];
+    wallOverrides?: number[];
     liquidLevelOverrides: number[];
   };
 }
@@ -64,6 +73,8 @@ const createChunkSnapshotMetadata = (): ChunkSnapshotMetadata => ({
   tileCount: CHUNK_SNAPSHOT_TILE_COUNT,
   tileOrder: CHUNK_SNAPSHOT_TILE_ORDER
 });
+
+const createEmptyChunkLayer = (): Uint8Array => new Uint8Array(CHUNK_SNAPSHOT_TILE_COUNT);
 
 const expectFiniteInteger = (value: number, label: string): number => {
   if (!Number.isInteger(value)) {
@@ -113,10 +124,14 @@ const expectChunkLayer = (payload: Uint8Array, label: string): Uint8Array => {
 const validateChunkSnapshotMetadata = (
   metadata: ChunkSnapshotMetadata,
   label: string
-): ChunkSnapshotMetadata => {
-  if (metadata.version !== CHUNK_SNAPSHOT_FORMAT_VERSION) {
+): ChunkSnapshotFormatVersion => {
+  if (
+    metadata.version !== LEGACY_CHUNK_SNAPSHOT_FORMAT_VERSION &&
+    metadata.version !== CHUNK_SNAPSHOT_FORMAT_VERSION
+  ) {
     throw new Error(
-      `${label}.version must be ${CHUNK_SNAPSHOT_FORMAT_VERSION}, received ${String(metadata.version)}`
+      `${label}.version must be ${LEGACY_CHUNK_SNAPSHOT_FORMAT_VERSION} or ` +
+        `${CHUNK_SNAPSHOT_FORMAT_VERSION}, received ${String(metadata.version)}`
     );
   }
   if (metadata.chunkSize !== CHUNK_SIZE) {
@@ -131,7 +146,7 @@ const validateChunkSnapshotMetadata = (
     throw new Error(`${label}.tileOrder must be "${CHUNK_SNAPSHOT_TILE_ORDER}"`);
   }
 
-  return metadata;
+  return metadata.version;
 };
 
 export const encodeChunkDenseTilePayload = (payload: Uint8Array): number[] => {
@@ -247,11 +262,13 @@ export const encodeResidentChunkSnapshot = (chunk: Chunk): ResidentChunkSnapshot
   metadata: {
     ...createChunkSnapshotMetadata(),
     tilePayloadEncoding: CHUNK_SNAPSHOT_DENSE_PAYLOAD_ENCODING,
+    wallPayloadEncoding: CHUNK_SNAPSHOT_DENSE_PAYLOAD_ENCODING,
     liquidPayloadEncoding: CHUNK_SNAPSHOT_DENSE_PAYLOAD_ENCODING,
     lightPayloadEncoding: CHUNK_SNAPSHOT_DENSE_PAYLOAD_ENCODING
   },
   payload: {
     tiles: encodeChunkDenseTilePayload(chunk.tiles),
+    wallIds: encodeChunkDenseTilePayload(chunk.wallIds),
     liquidLevels: encodeChunkDenseTilePayload(chunk.liquidLevels),
     lightLevels: encodeChunkDenseTilePayload(chunk.lightLevels)
   },
@@ -263,10 +280,18 @@ export const encodeResidentChunkSnapshot = (chunk: Chunk): ResidentChunkSnapshot
 
 export const decodeResidentChunkSnapshot = (snapshot: ResidentChunkSnapshot): Chunk => {
   expectChunkCoord(snapshot.coord, 'coord');
-  validateChunkSnapshotMetadata(snapshot.metadata, 'metadata');
+  const version = validateChunkSnapshotMetadata(snapshot.metadata, 'metadata');
   if (snapshot.metadata.tilePayloadEncoding !== CHUNK_SNAPSHOT_DENSE_PAYLOAD_ENCODING) {
     throw new Error(
       `metadata.tilePayloadEncoding must be "${CHUNK_SNAPSHOT_DENSE_PAYLOAD_ENCODING}"`
+    );
+  }
+  if (
+    version === CHUNK_SNAPSHOT_FORMAT_VERSION &&
+    snapshot.metadata.wallPayloadEncoding !== CHUNK_SNAPSHOT_DENSE_PAYLOAD_ENCODING
+  ) {
+    throw new Error(
+      `metadata.wallPayloadEncoding must be "${CHUNK_SNAPSHOT_DENSE_PAYLOAD_ENCODING}"`
     );
   }
   if (snapshot.metadata.liquidPayloadEncoding !== CHUNK_SNAPSHOT_DENSE_PAYLOAD_ENCODING) {
@@ -286,6 +311,10 @@ export const decodeResidentChunkSnapshot = (snapshot: ResidentChunkSnapshot): Ch
       y: snapshot.coord.y
     },
     tiles: decodeChunkDenseTilePayload(snapshot.payload.tiles, 'payload.tiles'),
+    wallIds:
+      version === CHUNK_SNAPSHOT_FORMAT_VERSION
+        ? decodeChunkDenseTilePayload(snapshot.payload.wallIds ?? [], 'payload.wallIds')
+        : createEmptyChunkLayer(),
     liquidLevels: decodeChunkDenseTilePayload(snapshot.payload.liquidLevels, 'payload.liquidLevels'),
     lightLevels: decodeChunkDenseTilePayload(snapshot.payload.lightLevels, 'payload.lightLevels'),
     lightDirty: expectBoolean(snapshot.light.dirty, 'light.dirty'),
@@ -299,10 +328,12 @@ export const encodeEditedChunkSnapshot = (state: EditedChunkSnapshotState): Edit
   metadata: {
     ...createChunkSnapshotMetadata(),
     tilePayloadEncoding: CHUNK_SNAPSHOT_SPARSE_PAYLOAD_ENCODING,
+    wallPayloadEncoding: CHUNK_SNAPSHOT_SPARSE_PAYLOAD_ENCODING,
     liquidPayloadEncoding: CHUNK_SNAPSHOT_SPARSE_PAYLOAD_ENCODING
   },
   payload: {
     tileOverrides: encodeChunkSparseTilePayload(state.tileOverrides),
+    wallOverrides: encodeChunkSparseTilePayload(state.wallOverrides),
     liquidLevelOverrides: encodeChunkSparseTilePayload(state.liquidLevelOverrides)
   }
 });
@@ -311,10 +342,18 @@ export const decodeEditedChunkSnapshot = (
   snapshot: EditedChunkSnapshot
 ): EditedChunkSnapshotState => {
   expectChunkCoord(snapshot.coord, 'coord');
-  validateChunkSnapshotMetadata(snapshot.metadata, 'metadata');
+  const version = validateChunkSnapshotMetadata(snapshot.metadata, 'metadata');
   if (snapshot.metadata.tilePayloadEncoding !== CHUNK_SNAPSHOT_SPARSE_PAYLOAD_ENCODING) {
     throw new Error(
       `metadata.tilePayloadEncoding must be "${CHUNK_SNAPSHOT_SPARSE_PAYLOAD_ENCODING}"`
+    );
+  }
+  if (
+    version === CHUNK_SNAPSHOT_FORMAT_VERSION &&
+    snapshot.metadata.wallPayloadEncoding !== CHUNK_SNAPSHOT_SPARSE_PAYLOAD_ENCODING
+  ) {
+    throw new Error(
+      `metadata.wallPayloadEncoding must be "${CHUNK_SNAPSHOT_SPARSE_PAYLOAD_ENCODING}"`
     );
   }
   if (snapshot.metadata.liquidPayloadEncoding !== CHUNK_SNAPSHOT_SPARSE_PAYLOAD_ENCODING) {
@@ -329,6 +368,10 @@ export const decodeEditedChunkSnapshot = (
       y: snapshot.coord.y
     },
     tileOverrides: decodeChunkSparseTilePayload(snapshot.payload.tileOverrides, 'payload.tileOverrides'),
+    wallOverrides:
+      version === CHUNK_SNAPSHOT_FORMAT_VERSION
+        ? decodeChunkSparseTilePayload(snapshot.payload.wallOverrides ?? [], 'payload.wallOverrides')
+        : new Map<number, number>(),
     liquidLevelOverrides: decodeChunkSparseTilePayload(
       snapshot.payload.liquidLevelOverrides,
       'payload.liquidLevelOverrides'

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-21: Background walls persist as a separate chunk layer
+
+- Decision: `TileWorld` and chunk snapshots now store background-wall ids in a dedicated `wallIds` layer plus sparse wall overrides instead of overloading foreground tile ids, and legacy chunk snapshots that predate that layer decode missing wall payloads as empty walls.
+- Reason: Upcoming wall rendering and placement need walls behind solid terrain without disturbing collision, liquid, or foreground-tile semantics, while existing save files still need to load cleanly.
+- Consequence: Future wall features should read and write wall state through the shared wall-layer helpers and snapshot fields, and should treat missing wall payloads from older saves as an intentional empty-wall baseline rather than a malformed save.
+
 ### 2026-03-21: Wood-block terrain art uses the first free right-column authored region
 
 - Decision: `wood_block` now keeps its existing `wood` terrain connectivity metadata but renders through dedicated static authored region `33`, leaving the committed atlas at `192x64`, preserving spare region `21`, and moving the transparent exterior padding strip start to `x=176`.

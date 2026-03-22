@@ -8,6 +8,7 @@ export interface ChunkCoord {
 export interface Chunk {
   coord: ChunkCoord;
   tiles: Uint8Array;
+  wallIds: Uint8Array;
   liquidLevels: Uint8Array;
   lightLevels: Uint8Array;
   lightDirty: boolean;
