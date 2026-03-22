@@ -789,6 +789,32 @@ describe('Renderer atlas telemetry', () => {
     expect(restoredWorld.getWall(worldTileX, worldTileY)).toBe(1);
   });
 
+  it('invalidates only the owning chunk mesh for wall-only edits on chunk boundaries', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
+    });
+    await renderer.initialize();
+
+    const invalidateChunkMeshSpy = vi.spyOn(
+      renderer as unknown as {
+        invalidateChunkMesh: (chunkX: number, chunkY: number) => void;
+      },
+      'invalidateChunkMesh'
+    );
+    invalidateChunkMeshSpy.mockClear();
+
+    expect(renderer.setWall(CHUNK_SIZE - 1, 0, 1)).toBe(true);
+
+    expect(invalidateChunkMeshSpy.mock.calls).toEqual([[0, 0]]);
+  });
+
   it('resets into seeded procedural terrain when a world seed is provided', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));
@@ -949,6 +975,67 @@ describe('Renderer atlas telemetry', () => {
         worldTileY: -10,
         previousTileId: 0,
         tileId: 7
+      }
+    ]);
+  });
+
+  it('keeps external wall-edit listeners attached across renderer world replacement', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
+    });
+    await renderer.initialize();
+
+    const events: Array<{
+      worldTileX: number;
+      worldTileY: number;
+      previousWallId: number;
+      wallId: number;
+    }> = [];
+    const detach = renderer.onWallEdited((event) => {
+      events.push({
+        worldTileX: event.worldTileX,
+        worldTileY: event.worldTileY,
+        previousWallId: event.previousWallId,
+        wallId: event.wallId
+      });
+    });
+
+    expect(renderer.setWall(0, -10, 1)).toBe(true);
+
+    renderer.resetWorld();
+    expect(renderer.setWall(1, -10, 2)).toBe(true);
+
+    renderer.loadWorldSnapshot(new TileWorld(0).createSnapshot());
+    expect(renderer.setWall(2, -10, 3)).toBe(true);
+
+    detach();
+    expect(renderer.setWall(3, -10, 4)).toBe(true);
+
+    expect(events).toEqual([
+      {
+        worldTileX: 0,
+        worldTileY: -10,
+        previousWallId: 0,
+        wallId: 1
+      },
+      {
+        worldTileX: 1,
+        worldTileY: -10,
+        previousWallId: 0,
+        wallId: 2
+      },
+      {
+        worldTileX: 2,
+        worldTileY: -10,
+        previousWallId: 0,
+        wallId: 3
       }
     ]);
   });

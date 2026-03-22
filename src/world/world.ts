@@ -60,6 +60,17 @@ export interface TileEditEvent {
   liquidLevel: number;
 }
 
+export interface WallEditEvent {
+  worldTileX: number;
+  worldTileY: number;
+  chunkX: number;
+  chunkY: number;
+  localX: number;
+  localY: number;
+  previousWallId: number;
+  wallId: number;
+}
+
 export interface TileNeighborhood {
   center: number;
   north: number;
@@ -90,6 +101,7 @@ export interface TileWorldSnapshot {
 }
 
 type TileEditListener = (event: TileEditEvent) => void;
+type WallEditListener = (event: WallEditEvent) => void;
 
 const createTileNeighborhood = (): TileNeighborhood => ({
   center: 0,
@@ -450,6 +462,7 @@ export class TileWorld {
   private editedChunkWalls = new Map<string, Map<number, number>>();
   private editedChunkLiquidLevels = new Map<string, Map<number, number>>();
   private tileEditListeners = new Set<TileEditListener>();
+  private wallEditListeners = new Set<WallEditListener>();
   private dirtyLightChunkKeys = new Set<string>();
   private residentLiquidChunkKeys = new Set<string>();
   private activeLiquidChunkKeys = new Set<string>();
@@ -1158,6 +1171,19 @@ export class TileWorld {
 
     chunk.wallIds[tileIndex] = wallId;
     this.updateEditedChunkWallState(key, tileIndex, wallId);
+    const event: WallEditEvent = {
+      worldTileX,
+      worldTileY,
+      chunkX,
+      chunkY,
+      localX,
+      localY,
+      previousWallId,
+      wallId
+    };
+    for (const listener of this.wallEditListeners) {
+      listener(event);
+    }
     return true;
   }
 
@@ -1506,6 +1532,13 @@ export class TileWorld {
     this.tileEditListeners.add(listener);
     return () => {
       this.tileEditListeners.delete(listener);
+    };
+  }
+
+  onWallEdited(listener: WallEditListener): () => void {
+    this.wallEditListeners.add(listener);
+    return () => {
+      this.wallEditListeners.delete(listener);
     };
   }
 

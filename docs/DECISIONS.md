@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-21: Background-wall edits notify separately from tile edits
+
+- Decision: `TileWorld` and `Renderer` now expose dedicated wall-edit listener seams with detached previous and next wall ids, while foreground tile and liquid writes stay on the existing tile-edit notification path.
+- Reason: Background-wall follow-ups need authoritative wall-only invalidation and refund hooks without polluting tile-diff capture or forcing tile listeners to treat unchanged foreground state as a tile edit.
+- Consequence: Future wall removal, refunds, or replication work should subscribe to the shared wall-edit listener seam instead of overloading tile-edit notifications, while tile-focused systems can keep assuming `onTileEdited` means foreground or liquid state changed.
+
 ### 2026-03-21: Starter background-wall placement only targets enclosed empty cells
 
 - Decision: The starter `dirt-wall` and `wood-wall` hotbar placement path only writes to the separate wall layer on empty foreground cells whose four cardinal directions each find solid terrain within a short local scan, and it never treats player overlap as a blocker because walls stay non-solid.

@@ -20,7 +20,7 @@ import { STARTER_ANVIL_TILE_ID } from './starterAnvilPlacement';
 import { getSmallTreeTileIds } from './smallTreeTiles';
 import { getTileEmissiveLightLevel, parseTileMetadataRegistry } from './tileMetadata';
 import { didTileLightingStateChange, resolveLiquidStepPhaseSummary, TileWorld } from './world';
-import type { TileEditEvent } from './world';
+import type { TileEditEvent, WallEditEvent } from './world';
 
 const ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK = 0xffffffff >>> 0;
 const WATER_TILE_ID = 7;
@@ -192,6 +192,41 @@ describe('TileWorld', () => {
         previousLiquidLevel: 0,
         tileId: 3,
         liquidLevel: 0
+      }
+    ]);
+  });
+
+  it('emits separate wall-only edit metadata without reusing tile-edit notifications', () => {
+    const world = new TileWorld(0);
+    const tileEvents: TileEditEvent[] = [];
+    const wallEvents: WallEditEvent[] = [];
+    const worldTileX = -1;
+    const worldTileY = 0;
+    const previousTileId = world.getTile(worldTileX, worldTileY);
+
+    world.onTileEdited((event) => {
+      tileEvents.push(event);
+    });
+    world.onWallEdited((event) => {
+      wallEvents.push(event);
+    });
+
+    expect(world.setWall(worldTileX, worldTileY, 7)).toBe(true);
+    expect(world.setWall(worldTileX, worldTileY, 7)).toBe(false);
+
+    expect(world.getTile(worldTileX, worldTileY)).toBe(previousTileId);
+    expect(world.getWall(worldTileX, worldTileY)).toBe(7);
+    expect(tileEvents).toEqual([]);
+    expect(wallEvents).toEqual([
+      {
+        worldTileX,
+        worldTileY,
+        chunkX: -1,
+        chunkY: 0,
+        localX: CHUNK_SIZE - 1,
+        localY: 0,
+        previousWallId: 0,
+        wallId: 7
       }
     ]);
   });

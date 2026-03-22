@@ -92,6 +92,7 @@ import {
   TileWorld,
   type LiquidStepPhaseSummary,
   type TileEditEvent,
+  type WallEditEvent,
   type TileWorldSnapshot
 } from '../world/world';
 
@@ -232,7 +233,9 @@ export class Renderer {
   private droppedItemProgram: WebGLProgram;
   private world!: TileWorld;
   private detachWorldTileEditListener: (() => void) | null = null;
+  private detachWorldWallEditListener: (() => void) | null = null;
   private tileEditListeners = new Set<(event: TileEditEvent) => void>();
+  private wallEditListeners = new Set<(event: WallEditEvent) => void>();
   private meshes = new Map<string, CachedChunkMesh>();
   private meshBuildQueue: MeshBuildRequest[] = [];
   private uMatrix: WebGLUniformLocation;
@@ -921,12 +924,7 @@ export class Renderer {
   }
 
   setWall(worldTileX: number, worldTileY: number, wallId: number): boolean {
-    const changed = this.world.setWall(worldTileX, worldTileY, wallId);
-    if (changed) {
-      const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
-      this.invalidateChunkMesh(chunkX, chunkY);
-    }
-    return changed;
+    return this.world.setWall(worldTileX, worldTileY, wallId);
   }
 
   getTile(worldTileX: number, worldTileY: number): number {
@@ -951,6 +949,13 @@ export class Renderer {
     this.tileEditListeners.add(listener);
     return () => {
       this.tileEditListeners.delete(listener);
+    };
+  }
+
+  onWallEdited(listener: (event: WallEditEvent) => void): () => void {
+    this.wallEditListeners.add(listener);
+    return () => {
+      this.wallEditListeners.delete(listener);
     };
   }
 
@@ -1059,6 +1064,7 @@ export class Renderer {
 
   private attachWorld(world: TileWorld): void {
     this.detachWorldTileEditListener?.();
+    this.detachWorldWallEditListener?.();
     this.world = world;
     this.updateLiquidStepTelemetry();
     this.detachWorldTileEditListener = this.world.onTileEdited((event) => {
@@ -1067,6 +1073,12 @@ export class Renderer {
         this.invalidateChunkMesh(coord.x, coord.y);
       }
       for (const listener of this.tileEditListeners) {
+        listener(event);
+      }
+    });
+    this.detachWorldWallEditListener = this.world.onWallEdited((event) => {
+      this.invalidateChunkMesh(event.chunkX, event.chunkY);
+      for (const listener of this.wallEditListeners) {
         listener(event);
       }
     });
