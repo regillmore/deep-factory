@@ -7,7 +7,8 @@ import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './starterFurnacePlacement';
 import { STARTER_ANVIL_TILE_ID } from './starterAnvilPlacement';
-import { STARTER_DIRT_WALL_ID } from './starterWallPlacement';
+import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './starterWallPlacement';
+import { PLACEABLE_WOOD_BLOCK_TILE_ID } from './starterBlockPlacement';
 import {
   COPPER_ORE_ITEM_ID,
   createStarterPickaxeMiningState,
@@ -135,15 +136,16 @@ describe('evaluateStarterPickaxeMiningTarget', () => {
     });
   });
 
-  it('treats nearby dirt walls on empty foreground cells as mineable and keeps foreground tiles as the removal target when present', () => {
+  it('treats nearby dirt and wood walls on empty foreground cells as mineable and keeps foreground tiles as the removal target when present', () => {
     const player = createPlayer(48, 28);
     const world = createWorld(
       {
-        '1,0': 9
+        '2,0': 9
       },
       {
         '0,0': STARTER_DIRT_WALL_ID,
-        '1,0': STARTER_DIRT_WALL_ID
+        '1,0': STARTER_WOOD_WALL_ID,
+        '2,0': STARTER_WOOD_WALL_ID
       }
     );
 
@@ -158,8 +160,18 @@ describe('evaluateStarterPickaxeMiningTarget', () => {
       canMine: true
     });
     expect(evaluateStarterPickaxeMiningTarget(world, player, 1, 0)).toMatchObject({
+      tileId: 0,
+      wallId: STARTER_WOOD_WALL_ID,
+      targetLayer: 'wall',
+      targetId: STARTER_WOOD_WALL_ID,
+      occupied: true,
+      breakableTarget: true,
+      withinRange: true,
+      canMine: true
+    });
+    expect(evaluateStarterPickaxeMiningTarget(world, player, 2, 0)).toMatchObject({
       tileId: 9,
-      wallId: STARTER_DIRT_WALL_ID,
+      wallId: STARTER_WOOD_WALL_ID,
       targetLayer: 'tile',
       targetId: 9,
       occupied: true,
@@ -187,7 +199,7 @@ describe('evaluateStarterPickaxeMiningTarget', () => {
 });
 
 describe('resolveStarterPickaxeBrokenTileDrop', () => {
-  it('returns one stackable block refund for broken stone, grass-surface, and placed dirt tiles', () => {
+  it('returns one stackable block refund for broken stone, grass-surface, placed dirt, and placed wood tiles', () => {
     expect(resolveStarterPickaxeBrokenTileDrop(1)).toEqual({
       itemId: 'stone-block',
       amount: 1
@@ -202,6 +214,10 @@ describe('resolveStarterPickaxeBrokenTileDrop', () => {
     });
     expect(resolveStarterPickaxeBrokenTileDrop(9)).toEqual({
       itemId: 'dirt-block',
+      amount: 1
+    });
+    expect(resolveStarterPickaxeBrokenTileDrop(PLACEABLE_WOOD_BLOCK_TILE_ID)).toEqual({
+      itemId: 'wood-block',
       amount: 1
     });
     expect(resolveStarterPickaxeBrokenTileDrop(STARTER_ROPE_TILE_ID)).toBeNull();
@@ -372,6 +388,32 @@ describe('starterPickaxeMining state', () => {
       tileY: 0,
       targetLayer: 'wall',
       targetId: STARTER_DIRT_WALL_ID,
+      appliedHitCount: 1,
+      requiredHitCount: 1,
+      brokeTarget: true
+    });
+    expect(afterWindup.state.breakProgress).toBeNull();
+  });
+
+  it('breaks a nearby wood wall in one hit when the foreground cell is empty', () => {
+    const world = createWorld({}, { '0,0': STARTER_WOOD_WALL_ID });
+    const player = createPlayer();
+    const evaluation = evaluateStarterPickaxeMiningTarget(world, player, 0, 0);
+    const started = tryStartStarterPickaxeSwing(createStarterPickaxeMiningState(), evaluation);
+
+    expect(started.started).toBe(true);
+
+    const afterWindup = stepStarterPickaxeMiningState(started.state, {
+      world,
+      playerState: player,
+      fixedDtSeconds: STARTER_PICKAXE_SWING_WINDUP_SECONDS
+    });
+
+    expect(afterWindup.hitEvent).toEqual({
+      tileX: 0,
+      tileY: 0,
+      targetLayer: 'wall',
+      targetId: STARTER_WOOD_WALL_ID,
       appliedHitCount: 1,
       requiredHitCount: 1,
       brokeTarget: true

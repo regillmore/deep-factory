@@ -10,7 +10,7 @@ Record only durable design decisions here. Keep each entry short: date, decision
 
 ### 2026-03-21: Starter pickaxe wall removal only targets empty foreground cells
 
-- Decision: Starter pickaxe mining still prioritizes eligible foreground tiles, but when a foreground cell is empty it may target placed `dirt_wall` background walls and routes those refunds through the shared wall-edit listener seam.
+- Decision: Starter pickaxe mining still prioritizes eligible foreground tiles, but when a foreground cell is empty it may target placed starter background walls and routes those refunds through the shared wall-edit listener seam.
 - Reason: Early wall cleanup needed to reuse the existing pickaxe timing and refund flow without letting background walls shadow ordinary terrain mining or introducing a separate direct-spawn refund path.
 - Consequence: Future wall-removal follow-ups should preserve foreground-tile precedence unless they intentionally allow multi-layer edits, and later wall refunds should keep subscribing to wall-edit notifications instead of spawning pickups ad hoc from each caller.
 

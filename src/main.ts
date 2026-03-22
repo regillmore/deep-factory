@@ -338,7 +338,9 @@ import {
   isPlaceableBackgroundWallItemId,
   resolvePlaceableBackgroundWallId,
   STARTER_DIRT_WALL_ID,
-  STARTER_DIRT_WALL_ITEM_ID
+  STARTER_DIRT_WALL_ITEM_ID,
+  STARTER_WOOD_WALL_ID,
+  STARTER_WOOD_WALL_ITEM_ID
 } from './world/starterWallPlacement';
 import {
   evaluateStarterTorchPlacement,
@@ -3217,8 +3219,17 @@ const bootstrap = async (): Promise<void> => {
     }
   });
   renderer.onWallEdited((event) => {
-    if (event.previousWallId === STARTER_DIRT_WALL_ID && event.wallId !== STARTER_DIRT_WALL_ID) {
+    if (event.previousWallId === event.wallId) {
+      return;
+    }
+
+    if (event.previousWallId === STARTER_DIRT_WALL_ID) {
       refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_DIRT_WALL_ITEM_ID);
+      return;
+    }
+
+    if (event.previousWallId === STARTER_WOOD_WALL_ID) {
+      refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_WOOD_WALL_ITEM_ID);
     }
   });
   const restoreDroppedItemEntityStates = (droppedItemStates: readonly DroppedItemState[]): void => {

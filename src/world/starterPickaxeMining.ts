@@ -3,9 +3,12 @@ import { evaluatePlayerHotbarTilePlacementRange } from './playerHotbarPlacementR
 import { PROCEDURAL_COPPER_ORE_TILE_ID } from './proceduralTerrain';
 import type { PlayerState } from './playerState';
 import {
-  STARTER_DIRT_WALL_ID
+  STARTER_DIRT_WALL_ID,
+  STARTER_WOOD_WALL_ID
 } from './starterWallPlacement';
 import {
+  PLACEABLE_WOOD_BLOCK_ITEM_ID,
+  PLACEABLE_WOOD_BLOCK_TILE_ID,
   STARTER_BUILDING_BLOCK_ITEM_ID,
   STARTER_BUILDING_BLOCK_TILE_ID
 } from './starterBlockPlacement';
@@ -168,6 +171,9 @@ const isBreakableStarterPickaxeTargetTile = (
   tileId === STARTER_ANVIL_TILE_ID ||
   isBreakableTerrainTile(tileId, registry);
 
+const isBreakableStarterPickaxeTargetWall = (tileId: number, wallId: number): boolean =>
+  tileId === 0 && (wallId === STARTER_DIRT_WALL_ID || wallId === STARTER_WOOD_WALL_ID);
+
 const resolveStarterPickaxeTarget = (
   tileId: number,
   wallId: number,
@@ -181,7 +187,7 @@ const resolveStarterPickaxeTarget = (
     };
   }
 
-  if (tileId === 0 && wallId === STARTER_DIRT_WALL_ID) {
+  if (isBreakableStarterPickaxeTargetWall(tileId, wallId)) {
     return {
       targetLayer: 'wall',
       targetId: wallId,
@@ -223,6 +229,11 @@ export const resolveStarterPickaxeBrokenTileDrop = (
     case STARTER_BUILDING_BLOCK_TILE_ID:
       return {
         itemId: STARTER_BUILDING_BLOCK_ITEM_ID,
+        amount: 1
+      };
+    case PLACEABLE_WOOD_BLOCK_TILE_ID:
+      return {
+        itemId: PLACEABLE_WOOD_BLOCK_ITEM_ID,
         amount: 1
       };
     default:

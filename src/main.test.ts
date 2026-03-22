@@ -72,6 +72,7 @@ import {
   STARTER_PICKAXE_SWING_RECOVERY_SECONDS,
   STARTER_PICKAXE_SWING_WINDUP_SECONDS
 } from './world/starterPickaxeMining';
+import { PLACEABLE_WOOD_BLOCK_TILE_ID } from './world/starterBlockPlacement';
 import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
 import {
   DEFAULT_STARTER_MELEE_WEAPON_DAMAGE,
@@ -11250,6 +11251,45 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
+  it('spawns a wood-block pickup entity when the starter pickaxe breaks nearby placed wood terrain', async () => {
+    setPersistedWorldSaveWithInventory();
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), PLACEABLE_WOOD_BLOCK_TILE_ID);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        worldX: 24,
+        worldY: 8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        tileId: 0
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 24, y: 8 },
+        itemId: 'wood-block',
+        amount: 1
+      }
+    ]);
+  });
+
   it('shows selected starter-pickaxe hotbar timing feedback through windup, active, recovery, and clear', async () => {
     setPersistedWorldSaveWithInventory();
     await import('./main');
@@ -11456,6 +11496,48 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
+  it('clears a nearby wood wall on an empty foreground cell and refunds one wood-wall pickup', async () => {
+    setPersistedWorldSaveWithInventory();
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.rendererWallIdsByWorldKey.set(worldTileKey(1, -1), STARTER_WOOD_WALL_ID);
+    testRuntime.rendererSetWallResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        worldX: 24,
+        worldY: -8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([]);
+    expect(testRuntime.rendererSetWallCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        wallId: 0
+      }
+    ]);
+    expect(testRuntime.rendererWallIdsByWorldKey.get(worldTileKey(1, -1))).toBeUndefined();
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    expect(persistedEnvelope?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 24, y: -8 },
+        itemId: 'wood-wall',
+        amount: 1
+      }
+    ]);
+  });
+
   it('spawns one rope pickup entity when the starter pickaxe cuts a nearby placed rope tile', async () => {
     setPersistedWorldSaveWithInventory();
     await import('./main');
@@ -11634,6 +11716,67 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
+  it('cascades a mined wood-block refund across overlapping matching world pickups before spawning a new entity', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createLegacyStarterInventoryState(),
+          droppedItemStates: [
+            createDroppedItemState({
+              position: { x: 40, y: 8 },
+              itemId: 'wood-block',
+              amount: 999
+            }),
+            createDroppedItemState({
+              position: { x: 44, y: 8 },
+              itemId: 'wood-block',
+              amount: 998
+            })
+          ]
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(2, 0), PLACEABLE_WOOD_BLOCK_TILE_ID);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 2,
+        worldTileY: 0,
+        worldX: 40,
+        worldY: 8,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 40, y: 8 },
+        itemId: 'wood-block',
+        amount: 999
+      },
+      {
+        position: { x: 44, y: 8 },
+        itemId: 'wood-block',
+        amount: 999
+      }
+    ]);
+  });
+
   it('cascades a removed dirt-wall refund across overlapping matching world pickups before spawning a new entity', async () => {
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
@@ -11690,6 +11833,67 @@ describe('main.ts shell state orchestration', () => {
       {
         position: { x: 44, y: -24 },
         itemId: 'dirt-wall',
+        amount: 999
+      }
+    ]);
+  });
+
+  it('cascades a removed wood-wall refund across overlapping matching world pickups before spawning a new entity', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createLegacyStarterInventoryState(),
+          droppedItemStates: [
+            createDroppedItemState({
+              position: { x: 40, y: -24 },
+              itemId: 'wood-wall',
+              amount: 999
+            }),
+            createDroppedItemState({
+              position: { x: 44, y: -24 },
+              itemId: 'wood-wall',
+              amount: 998
+            })
+          ]
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.rendererWallIdsByWorldKey.set(worldTileKey(2, -2), STARTER_WOOD_WALL_ID);
+    testRuntime.rendererSetWallResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 2,
+        worldTileY: -2,
+        worldX: 40,
+        worldY: -24,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 40, y: -24 },
+        itemId: 'wood-wall',
+        amount: 999
+      },
+      {
+        position: { x: 44, y: -24 },
+        itemId: 'wood-wall',
         amount: 999
       }
     ]);
