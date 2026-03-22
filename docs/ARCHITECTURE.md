@@ -109,16 +109,19 @@ This is intentionally simple and easy to evolve (greedy meshing, layered tiles, 
 
 ### Placeholder terrain autotile layout
 
-Terrain autotile placeholder variants currently occupy the first `4x4` block of the authored atlas and are addressed
-by a row-major variant index derived from the normalized cardinal adjacency mask (`N/E/S/W` bits mapped to `1/2/4/8`).
-Diagonal neighbors are sampled and normalized for corner-gating, but placeholder UV selection collapses to the
-16 cardinal combinations for now. The current mapping is defined in `src/world/tileMetadata.json` and validated at
-startup by `src/world/tileMetadata.ts`, while the atlas indices themselves resolve through the explicit authored
-region list in `src/world/authoredAtlasLayout.ts`. The current authored layout also reserves one spare documented
-unused region beneath the torch, widens the committed atlas to `160x64`, keeps the second full `16x16` torch
-animation region to the right, adds dedicated full-width `workbench` and `furnace` regions at indices `27` and `28`,
-and keeps transparent exterior padding to the right of the authored-region bounds so ordinary tile quads do not
-stretch the torch or rope while the unused-slot regression target remains available.
+Shared terrain placeholder variants still occupy the first `4x4` block of the authored atlas and are addressed by a
+row-major variant index derived from the normalized cardinal adjacency mask (`N/E/S/W` bits mapped to `1/2/4/8`).
+Diagonal neighbors are sampled and normalized for corner-gating, but shared placeholder UV selection collapses to the
+16 cardinal combinations for now. That shared block still backs terrain materials that have not received their own
+override art yet, while `grass_surface` and `dirt_block` now keep the same `ground` terrain connectivity rules but
+resolve visible placeholder art through dedicated static authored regions `29` and `30`. The mapping is defined in
+`src/world/tileMetadata.json` and validated at startup by `src/world/tileMetadata.ts`, while the atlas indices
+themselves resolve through the explicit authored region list in `src/world/authoredAtlasLayout.ts`. The current
+authored layout keeps the committed atlas at `160x64`, reserves one spare documented unused region beneath the torch,
+keeps the second full `16x16` torch animation region to the right, adds dedicated full-width `workbench`, `furnace`,
+`grass_surface`, and `dirt_block` regions at indices `27` through `30`, and keeps transparent exterior padding from
+`x=144` onward so ordinary tile quads do not stretch the torch or rope while the unused-slot regression target remains
+available.
 
 Non-autotile tiles also resolve UVs through the same metadata registry via explicit render metadata:
 - `render.atlasIndex`: authored atlas region index.

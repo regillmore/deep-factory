@@ -285,14 +285,14 @@ describe('buildChunkMesh autotile UV selection', () => {
 
   it('treats related terrain tile ids as connected when metadata groups match', () => {
     const chunk = createEmptyChunk();
-    setChunkTile(chunk, 0, 0, 2);
+    setChunkTile(chunk, 0, 0, 1);
 
     const mesh = buildChunkMesh(chunk, {
       sampleNeighborhood: () => ({
-        center: 2,
-        north: 1,
-        northEast: 1,
-        east: 1,
+        center: 1,
+        north: 2,
+        northEast: 2,
+        east: 2,
         southEast: 0,
         south: 0,
         southWest: 0,
@@ -363,7 +363,7 @@ describe('buildChunkMesh autotile UV selection', () => {
     const chunkY = -10;
     const localX = CHUNK_SIZE - 1;
     const localY = CHUNK_SIZE - 1;
-    const tileId = 2;
+    const tileId = 1;
     const world = new TileWorld(0);
 
     const worldTileX = chunkX * CHUNK_SIZE + localX;
@@ -469,6 +469,50 @@ describe('buildChunkMesh autotile UV selection', () => {
 
     expect(mesh.vertexCount).toBe(6);
     expectSingleQuadUv(mesh.vertices, resolveTileRenderUvRect(4)!);
+  });
+
+  it('emits grass-surface quads from the dedicated authored atlas region', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 2);
+
+    const mesh = buildChunkMesh(chunk, {
+      sampleNeighborhood: () => ({
+        center: 2,
+        north: 1,
+        northEast: 1,
+        east: 1,
+        southEast: 0,
+        south: 0,
+        southWest: 0,
+        west: 0,
+        northWest: 0
+      })
+    });
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 29);
+  });
+
+  it('emits dirt-block quads from the dedicated authored atlas region', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 9);
+
+    const mesh = buildChunkMesh(chunk, {
+      sampleNeighborhood: () => ({
+        center: 9,
+        north: 1,
+        northEast: 1,
+        east: 1,
+        southEast: 0,
+        south: 0,
+        southWest: 0,
+        west: 0,
+        northWest: 0
+      })
+    });
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 30);
   });
 
   it('emits workbench quads from the dedicated authored atlas region', () => {

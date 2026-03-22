@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-21: Grass and dirt terrain art uses the first free right-column authored regions
+
+- Decision: `grass_surface` and `dirt_block` now keep their `ground` terrain connectivity metadata but render through dedicated static authored regions `29` and `30`, keeping the atlas at `160x64`, preserving spare region `21`, and moving the exterior padding strip start to `x=144`.
+- Reason: Surface grass and placed dirt needed an immediate visual split from the shared placeholder terrain block, and the remaining `16x32` right-side authored space could absorb that pair without widening the atlas again or remapping the committed direct-`uvRect` liquid and debug content.
+- Consequence: Future terrain-art passes can still spend the last free right-column pair on another dedicated full-tile placeholder before any wider atlas migration has to update the direct-`render.uvRect` content and its regression coverage.
+
 ### 2026-03-21: Workbench and furnace atlas art grows the canvas before consuming spare-slot regressions
 
 - Decision: The authored atlas now widens again to `160x64`, keeps region `21` blank as the documented spare slot, moves the exterior padding strip start to `x=128`, and gives `workbench` plus `furnace` dedicated full-width authored regions `27` and `28`.

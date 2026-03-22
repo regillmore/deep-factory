@@ -1194,6 +1194,34 @@ describe('authored atlas asset', () => {
     });
   });
 
+  it('keeps grass-surface and dirt-block placeholders in dedicated authored regions', () => {
+    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
+    const grassTile = TILE_METADATA.tiles.find((tile) => tile.name === 'grass_surface');
+    const dirtTile = TILE_METADATA.tiles.find((tile) => tile.name === 'dirt_block');
+
+    expect(grassTile?.render?.atlasIndex).toBe(29);
+    expect(dirtTile?.render?.atlasIndex).toBe(30);
+
+    const grassRegion = AUTHORED_ATLAS_REGIONS[grassTile!.render!.atlasIndex!];
+    const dirtRegion = AUTHORED_ATLAS_REGIONS[dirtTile!.render!.atlasIndex!];
+    expect(grassRegion).toEqual({ x: 128, y: 0, width: 16, height: 16 });
+    expect(dirtRegion).toEqual({ x: 128, y: 16, width: 16, height: 16 });
+
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, grassRegion!)).toEqual({
+      x: grassRegion!.x,
+      y: grassRegion!.y,
+      width: 16,
+      height: 16
+    });
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, dirtRegion!)).toEqual({
+      x: dirtRegion!.x,
+      y: dirtRegion!.y,
+      width: 16,
+      height: 16
+    });
+    expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, grassRegion!, dirtRegion!)).toBe(false);
+  });
+
   it('keeps small-tree sapling, trunk, and leaf placeholders in dedicated authored regions', () => {
     const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
     const saplingTile = TILE_METADATA.tiles.find((tile) => tile.name === 'small_tree_sapling');
@@ -1322,9 +1350,9 @@ describe('authored atlas asset', () => {
 
     const exteriorPaddingStrip = getExteriorPaddingStripRegion(pngWidth, pngHeight);
     expect(exteriorPaddingStrip).toEqual({
-      x: 128,
+      x: 144,
       y: 0,
-      width: pngWidth - 128,
+      width: pngWidth - 144,
       height: pngHeight
     });
   });
