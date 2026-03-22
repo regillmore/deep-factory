@@ -3195,8 +3195,21 @@ const bootstrap = async (): Promise<void> => {
       spawnDroppedItemEntity(remainingDroppedItemState);
     }
   };
+  let suppressedRemovalRefundDepth = 0;
+  const withSuppressedRemovalRefunds = <T>(callback: () => T): T => {
+    suppressedRemovalRefundDepth += 1;
+    try {
+      return callback();
+    } finally {
+      suppressedRemovalRefundDepth -= 1;
+    }
+  };
+  const shouldSuppressRemovalRefunds = (): boolean => suppressedRemovalRefundDepth > 0;
   renderer.onTileEdited((event) => {
     refreshTrackedSmallTreeGrowthAnchorsAroundTileEdit(event.worldTileX, event.worldTileY);
+    if (shouldSuppressRemovalRefunds()) {
+      return;
+    }
 
     if (event.previousTileId === STARTER_TORCH_TILE_ID && event.tileId !== STARTER_TORCH_TILE_ID) {
       refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_TORCH_ITEM_ID);
@@ -3233,6 +3246,9 @@ const bootstrap = async (): Promise<void> => {
   });
   renderer.onWallEdited((event) => {
     if (event.previousWallId === event.wallId) {
+      return;
+    }
+    if (shouldSuppressRemovalRefunds()) {
       return;
     }
 
@@ -3969,40 +3985,42 @@ const bootstrap = async (): Promise<void> => {
       };
     }
 
-    const previousTileId = renderer.getTile(worldTileX, worldTileY);
-    if (previousTileId !== DEBUG_TILE_BREAK_ID) {
-      const { changed } = applyWorldTileEdit(worldTileX, worldTileY, DEBUG_TILE_BREAK_ID);
+    return withSuppressedRemovalRefunds(() => {
+      const previousTileId = renderer.getTile(worldTileX, worldTileY);
+      if (previousTileId !== DEBUG_TILE_BREAK_ID) {
+        const { changed } = applyWorldTileEdit(worldTileX, worldTileY, DEBUG_TILE_BREAK_ID);
+        return {
+          changed,
+          historyChange: changed
+            ? {
+                layer: 'tile',
+                previousId: previousTileId,
+                id: DEBUG_TILE_BREAK_ID
+              }
+            : null
+        };
+      }
+
+      const previousWallId = renderer.getWall(worldTileX, worldTileY);
+      if (previousWallId === 0) {
+        return {
+          changed: false,
+          historyChange: null
+        };
+      }
+
+      const { changed } = applyWorldWallEdit(worldTileX, worldTileY, 0);
       return {
         changed,
         historyChange: changed
           ? {
-              layer: 'tile',
-              previousId: previousTileId,
-              id: DEBUG_TILE_BREAK_ID
+              layer: 'wall',
+              previousId: previousWallId,
+              id: 0
             }
           : null
       };
-    }
-
-    const previousWallId = renderer.getWall(worldTileX, worldTileY);
-    if (previousWallId === 0) {
-      return {
-        changed: false,
-        historyChange: null
-      };
-    }
-
-    const { changed } = applyWorldWallEdit(worldTileX, worldTileY, 0);
-    return {
-      changed,
-      historyChange: changed
-        ? {
-            layer: 'wall',
-            previousId: previousWallId,
-            id: 0
-          }
-        : null
-    };
+    });
   };
   const readDebugBreakFloodFillTargetId = (worldTileX: number, worldTileY: number): number => {
     const tileId = renderer.getTile(worldTileX, worldTileY);
@@ -5411,13 +5429,13 @@ const bootstrap = async (): Promise<void> => {
   };
 
   const undoDebugTileStroke = (): boolean => {
-    if (!debugTileEditHistory.undo(applyDebugHistoryEdit)) return false;
+    if (!withSuppressedRemovalRefunds(() => debugTileEditHistory.undo(applyDebugHistoryEdit))) return false;
     syncDebugEditHistoryControls();
     return true;
   };
 
   const redoDebugTileStroke = (): boolean => {
-    if (!debugTileEditHistory.redo(applyDebugHistoryEdit)) return false;
+    if (!withSuppressedRemovalRefunds(() => debugTileEditHistory.redo(applyDebugHistoryEdit))) return false;
     syncDebugEditHistoryControls();
     return true;
   };

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-22: Debug edit removals do not spawn gameplay pickup refunds
+
+- Decision: In-world debug-break strokes plus shared debug undo or redo replay now suppress tile and wall removal refunds, including support-collapse follow-up clears, even though those writes still flow through the ordinary renderer edit-listener seams.
+- Reason: Debug editing is an authoring tool, so spawning gameplay pickups from destructive debug actions duplicates placed items and mutates survival-facing inventory state in surprising ways.
+- Consequence: Future debug-edit removal tools should preserve that refund-suppression rule or surface an explicit edit origin before any pickup-refund listener treats them like mining or normal gameplay cleanup.
+
 ### 2026-03-22: Debug history keys same-cell wall edits separately from foreground tile edits
 
 - Decision: Shared `DebugTileEditHistory` strokes now record a `layer` (`tile` or `wall`) with each edit and key same-cell changes by both coordinates and layer instead of collapsing everything onto one tile-coordinate entry.

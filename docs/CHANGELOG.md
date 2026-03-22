@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-22
 
+- Task: Suppress pickup refunds for debug-break strokes and undo-redo actions.
+- Changes: Updated [src/main.ts](../src/main.ts) so debug-break writes and debug-history replay now suppress tile and wall removal refunds, including support-collapse follow-up clears, while leaving the underlying world edits and listener-driven invalidation in place; refreshed [src/main.test.ts](../src/main.test.ts) with focused regressions for debug-break torch, rope, wall, overlap, and undo-or-redo refund suppression; removed completed task `690` from [docs/NEXT.md](docs/NEXT.md), added replacement task `691`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/main.test.ts`.
+
 - Task: Add a background-wall debug-history follow-up after starter background-wall debug-break.
 - Changes: Updated [src/input/debugTileEditHistory.ts](../src/input/debugTileEditHistory.ts) plus [src/input/debugTileEditHistory.test.ts](../src/input/debugTileEditHistory.test.ts) so shared debug-history strokes now track `tile` versus `wall` layer edits separately, then updated [src/main.ts](../src/main.ts) and [src/main.test.ts](../src/main.test.ts) so wall-only debug-break edits record into the shared undo or redo flow and restore background walls through the same history controls; removed completed task `687` from [docs/NEXT.md](docs/NEXT.md), added replacement task `690`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json`, `cmd /c npx vitest run src/input/debugTileEditHistory.test.ts`, and `cmd /c npx vitest run src/main.test.ts`.

@@ -12181,7 +12181,7 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
-  it('spawns a torch pickup entity when a placed starter torch tile is removed', async () => {
+  it('does not spawn a torch pickup entity when a debug-break stroke removes a placed starter torch tile', async () => {
     setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
@@ -12211,16 +12211,10 @@ describe('main.ts shell state orchestration', () => {
       itemId: 'torch',
       amount: 20
     });
-    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
-      {
-        position: { x: 328, y: -312 },
-        itemId: 'torch',
-        amount: 1
-      }
-    ]);
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([]);
   });
 
-  it('spawns a rope pickup entity when a placed rope tile is removed', async () => {
+  it('does not spawn a rope pickup entity when a debug-break stroke removes a placed rope tile', async () => {
     setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
@@ -12250,16 +12244,10 @@ describe('main.ts shell state orchestration', () => {
       itemId: 'rope',
       amount: 24
     });
-    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
-      {
-        position: { x: 328, y: -312 },
-        itemId: 'rope',
-        amount: 1
-      }
-    ]);
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([]);
   });
 
-  it('routes debug break wall-only dirt walls through wall edits and refunds one dirt-wall pickup', async () => {
+  it('routes debug break wall-only dirt walls through wall edits without spawning a dirt-wall pickup', async () => {
     const wallWorldTileX = 20;
     const wallWorldTileY = -20;
     const savedWorld = new TileWorld(0);
@@ -12309,13 +12297,7 @@ describe('main.ts shell state orchestration', () => {
     const restoredWorld = new TileWorld(0);
     restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
     expect(restoredWorld.getWall(wallWorldTileX, wallWorldTileY)).toBe(0);
-    expect(persistedEnvelope?.session.droppedItemStates).toEqual([
-      {
-        position: { x: 328, y: -312 },
-        itemId: 'dirt-wall',
-        amount: 1
-      }
-    ]);
+    expect(persistedEnvelope?.session.droppedItemStates).toEqual([]);
   });
 
   it('records wall-only debug break edits in shared history so undo and redo restore the wall layer', async () => {
@@ -12416,6 +12398,9 @@ describe('main.ts shell state orchestration', () => {
       undoStrokeCount: 1,
       redoStrokeCount: 0
     });
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([]);
   });
 
   it('keeps foreground-tile precedence before the debug break wall-only fallback', async () => {
@@ -12472,7 +12457,7 @@ describe('main.ts shell state orchestration', () => {
     expect(restoredWorld.getWall(wallWorldTileX, wallWorldTileY)).toBe(STARTER_DIRT_WALL_ID);
   });
 
-  it('spawns one torch pickup entity when support removal clears a neighboring starter torch', async () => {
+  it('does not spawn a torch pickup entity when a debug-break support removal clears a neighboring starter torch', async () => {
     await import('./main');
     await flushBootstrap();
 
@@ -12507,16 +12492,10 @@ describe('main.ts shell state orchestration', () => {
     runFixedUpdate();
 
     dispatchWindowEvent('pagehide');
-    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
-      {
-        position: { x: 344, y: -312 },
-        itemId: 'torch',
-        amount: 1
-      }
-    ]);
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([]);
   });
 
-  it('spawns one workbench pickup entity when support removal clears a placed workbench tile', async () => {
+  it('does not spawn a workbench pickup entity when a debug-break support removal clears a placed workbench tile', async () => {
     await import('./main');
     await flushBootstrap();
 
@@ -12556,16 +12535,10 @@ describe('main.ts shell state orchestration', () => {
     runFixedUpdate();
 
     dispatchWindowEvent('pagehide');
-    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
-      {
-        position: { x: 328, y: -328 },
-        itemId: 'workbench',
-        amount: 1
-      }
-    ]);
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([]);
   });
 
-  it('spawns one anvil pickup entity when support removal clears a placed anvil tile', async () => {
+  it('does not spawn an anvil pickup entity when a debug-break support removal clears a placed anvil tile', async () => {
     await import('./main');
     await flushBootstrap();
 
@@ -12600,16 +12573,10 @@ describe('main.ts shell state orchestration', () => {
     runFixedUpdate();
 
     dispatchWindowEvent('pagehide');
-    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
-      {
-        position: { x: 328, y: -328 },
-        itemId: 'anvil',
-        amount: 1
-      }
-    ]);
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([]);
   });
 
-  it('cascades a removed starter torch refund across overlapping matching world pickups before spawning a new entity', async () => {
+  it('leaves overlapping torch world pickups unchanged when a debug-break stroke removes a placed torch', async () => {
     const torchWorldTileX = 20;
     const torchWorldTileY = -20;
     testRuntime.storageValues.set(
@@ -12666,12 +12633,12 @@ describe('main.ts shell state orchestration', () => {
       {
         position: { x: 332, y: -312 },
         itemId: 'torch',
-        amount: 999
+        amount: 998
       }
     ]);
   });
 
-  it('cascades a removed rope refund across overlapping matching world pickups before spawning a new entity', async () => {
+  it('leaves overlapping rope world pickups unchanged when a debug-break stroke removes a placed rope', async () => {
     const ropeWorldTileX = 20;
     const ropeWorldTileY = -20;
     testRuntime.storageValues.set(
@@ -12731,12 +12698,12 @@ describe('main.ts shell state orchestration', () => {
       {
         position: { x: 332, y: -312 },
         itemId: 'rope',
-        amount: 999
+        amount: 998
       }
     ]);
   });
 
-  it('cascades a removed workbench refund across overlapping matching world pickups before spawning a new entity', async () => {
+  it('leaves overlapping workbench world pickups unchanged when a debug-break stroke removes a placed workbench', async () => {
     const workbenchWorldTileX = 20;
     const workbenchWorldTileY = -20;
     testRuntime.storageValues.set(
@@ -12796,12 +12763,12 @@ describe('main.ts shell state orchestration', () => {
       {
         position: { x: 332, y: -312 },
         itemId: 'workbench',
-        amount: 99
+        amount: 98
       }
     ]);
   });
 
-  it('spawns a new torch pickup entity when overlapping matching world pickups are already full', async () => {
+  it('does not spawn a new torch pickup entity when a debug-break stroke removes a placed torch and overlapping pickups are already full', async () => {
     const torchWorldTileX = 20;
     const torchWorldTileY = -20;
     testRuntime.storageValues.set(
@@ -12849,11 +12816,6 @@ describe('main.ts shell state orchestration', () => {
         position: { x: 328, y: -312 },
         itemId: 'torch',
         amount: 999
-      },
-      {
-        position: { x: 328, y: -312 },
-        itemId: 'torch',
-        amount: 1
       }
     ]);
   });
