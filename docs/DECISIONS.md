@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-21: Stone and copper terrain art widens the atlas and renormalizes direct UV metadata
+
+- Decision: The authored atlas now widens to `192x64`, gives `stone` and `copper_ore` dedicated authored regions `31` and `32`, keeps region `21` blank as the documented spare slot, and renormalizes every shipped direct `render.uvRect` source so the wider atlas preserves the same pixel rectangles for debug and liquid content.
+- Reason: Stone and copper ore needed distinct committed terrain art, but consuming the spare slot or letting the wider atlas shift existing direct-UV content would weaken the committed-asset regressions that currently protect those authored sub-rects.
+- Consequence: Future atlas-width changes should update direct-`render.uvRect` metadata and its whole-pixel regression coverage in the same pass as the layout change, and terrain tiles with dedicated art should continue to preserve their existing connectivity-group semantics instead of forking terrain adjacency rules.
+
 ### 2026-03-21: Grass and dirt terrain art uses the first free right-column authored regions
 
 - Decision: `grass_surface` and `dirt_block` now keep their `ground` terrain connectivity metadata but render through dedicated static authored regions `29` and `30`, keeping the atlas at `160x64`, preserving spare region `21`, and moving the exterior padding strip start to `x=144`.

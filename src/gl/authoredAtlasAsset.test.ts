@@ -1222,6 +1222,34 @@ describe('authored atlas asset', () => {
     expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, grassRegion!, dirtRegion!)).toBe(false);
   });
 
+  it('keeps stone and copper-ore placeholders in dedicated authored regions', () => {
+    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
+    const stoneTile = TILE_METADATA.tiles.find((tile) => tile.name === 'stone');
+    const copperTile = TILE_METADATA.tiles.find((tile) => tile.name === 'copper_ore');
+
+    expect(stoneTile?.render?.atlasIndex).toBe(31);
+    expect(copperTile?.render?.atlasIndex).toBe(32);
+
+    const stoneRegion = AUTHORED_ATLAS_REGIONS[stoneTile!.render!.atlasIndex!];
+    const copperRegion = AUTHORED_ATLAS_REGIONS[copperTile!.render!.atlasIndex!];
+    expect(stoneRegion).toEqual({ x: 144, y: 0, width: 16, height: 16 });
+    expect(copperRegion).toEqual({ x: 144, y: 16, width: 16, height: 16 });
+
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, stoneRegion!)).toEqual({
+      x: stoneRegion!.x,
+      y: stoneRegion!.y,
+      width: 16,
+      height: 16
+    });
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, copperRegion!)).toEqual({
+      x: copperRegion!.x,
+      y: copperRegion!.y,
+      width: 16,
+      height: 16
+    });
+    expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, stoneRegion!, copperRegion!)).toBe(false);
+  });
+
   it('keeps small-tree sapling, trunk, and leaf placeholders in dedicated authored regions', () => {
     const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
     const saplingTile = TILE_METADATA.tiles.find((tile) => tile.name === 'small_tree_sapling');
@@ -1350,9 +1378,9 @@ describe('authored atlas asset', () => {
 
     const exteriorPaddingStrip = getExteriorPaddingStripRegion(pngWidth, pngHeight);
     expect(exteriorPaddingStrip).toEqual({
-      x: 144,
+      x: 160,
       y: 0,
-      width: pngWidth - 144,
+      width: pngWidth - 160,
       height: pngHeight
     });
   });

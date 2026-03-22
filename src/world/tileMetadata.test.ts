@@ -162,13 +162,14 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileVariantAtlasIndex(2, 6)).toBe(6);
     expect(resolveTerrainAutotileVariantAtlasIndex(19, 6)).toBe(6);
     expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(1, 0)).toBe(0);
+    expect(resolveTileRenderUvRect(1)).toEqual(atlasIndexToUvRect(31));
     expect(resolveTileRenderUvRect(2)).toEqual(atlasIndexToUvRect(29));
     expect(resolveTileRenderUvRect(12)).toEqual(atlasIndexToUvRect(27));
     expect(resolveTileRenderUvRect(3)).toEqual(atlasIndexToUvRect(14));
     expect(resolveTileRenderUvRect(9)).toEqual(atlasIndexToUvRect(30));
     expect(resolveTileRenderUvRect(10)).toEqual(atlasIndexToUvRect(20));
     expect(resolveTileRenderUvRect(11)).toEqual(atlasIndexToUvRect(19));
-    expect(resolveTileRenderUvRect(13)).toEqual(atlasIndexToUvRect(14));
+    expect(resolveTileRenderUvRect(13)).toEqual(atlasIndexToUvRect(32));
     expect(resolveTileRenderUvRect(14)).toEqual(atlasIndexToUvRect(28));
     expect(resolveTileRenderUvRect(15)).toEqual(atlasIndexToUvRect(26));
     expect(resolveTileRenderUvRect(16)).toEqual(atlasIndexToUvRect(23));

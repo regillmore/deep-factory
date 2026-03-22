@@ -66,6 +66,37 @@ const createAnimatedLiquidVariantMap = (staticAtlasIndex: number, animatedAtlasI
     frameDurationMs: 120
   }));
 
+const createTerrainAutotileTestRegistry = () =>
+  parseTileMetadataRegistry({
+    tiles: [
+      {
+        id: 0,
+        name: 'empty',
+        gameplay: { solid: false, blocksLight: false }
+      },
+      {
+        id: 1,
+        name: 'ground_a',
+        materialTags: ['terrain', 'solid'],
+        gameplay: { solid: true, blocksLight: true },
+        terrainAutotile: {
+          connectivityGroup: 'ground',
+          placeholderVariantAtlasByCardinalMask: Array.from({ length: 16 }, (_, index) => index)
+        }
+      },
+      {
+        id: 2,
+        name: 'ground_b',
+        materialTags: ['terrain', 'solid'],
+        gameplay: { solid: true, blocksLight: true },
+        terrainAutotile: {
+          connectivityGroup: 'ground',
+          placeholderVariantAtlasByCardinalMask: Array.from({ length: 16 }, (_, index) => index)
+        }
+      }
+    ]
+  });
+
 const createLiquidTestRegistry = () =>
   parseTileMetadataRegistry({
     tiles: [
@@ -255,6 +286,7 @@ const buildWorldLiquidChunkMesh = (
 
 describe('buildChunkMesh autotile UV selection', () => {
   it('resolves terrain tile UVs from sampled neighborhood masks', () => {
+    const registry = createTerrainAutotileTestRegistry();
     const chunk = createEmptyChunk(2, 3);
     const localX = 4;
     const localY = 5;
@@ -262,6 +294,7 @@ describe('buildChunkMesh autotile UV selection', () => {
 
     const sampledCalls: Array<[number, number, number, number]> = [];
     const mesh = buildChunkMesh(chunk, {
+      tileMetadataRegistry: registry,
       sampleNeighborhood: (chunkX, chunkY, sampledLocalX, sampledLocalY) => {
         sampledCalls.push([chunkX, chunkY, sampledLocalX, sampledLocalY]);
         return {
@@ -284,10 +317,12 @@ describe('buildChunkMesh autotile UV selection', () => {
   });
 
   it('treats related terrain tile ids as connected when metadata groups match', () => {
+    const registry = createTerrainAutotileTestRegistry();
     const chunk = createEmptyChunk();
     setChunkTile(chunk, 0, 0, 1);
 
     const mesh = buildChunkMesh(chunk, {
+      tileMetadataRegistry: registry,
       sampleNeighborhood: () => ({
         center: 1,
         north: 2,
@@ -363,7 +398,7 @@ describe('buildChunkMesh autotile UV selection', () => {
     const chunkY = -10;
     const localX = CHUNK_SIZE - 1;
     const localY = CHUNK_SIZE - 1;
-    const tileId = 1;
+    const tileId = 19;
     const world = new TileWorld(0);
 
     const worldTileX = chunkX * CHUNK_SIZE + localX;
@@ -395,17 +430,23 @@ describe('buildChunkMesh autotile UV selection', () => {
   });
 
   it('matches legacy bitwise placeholder variant UV selection across all raw adjacency masks', () => {
+    const registry = createTerrainAutotileTestRegistry();
     const chunk = createEmptyChunk();
     setChunkTile(chunk, 0, 0, 1);
 
     for (let rawMask = 0; rawMask < 256; rawMask += 1) {
       const mesh = buildChunkMesh(chunk, {
+        tileMetadataRegistry: registry,
         sampleNeighborhood: () => createTerrainNeighborhoodFromMask(rawMask, 1)
       });
 
       const normalizedMask = normalizeAutotileAdjacencyMask(rawMask);
       const expectedVariant = resolveTerrainAutotileVariantIndexBitwiseBaseline(normalizedMask);
-      const expectedUvRect = resolveTerrainAutotileUvRectByNormalizedAdjacencyMask(1, normalizedMask);
+      const expectedUvRect = resolveTerrainAutotileUvRectByNormalizedAdjacencyMask(
+        1,
+        normalizedMask,
+        registry
+      );
 
       expect(mesh.vertexCount, `raw mask ${rawMask}`).toBe(6);
       expect(expectedUvRect, `raw mask ${rawMask} expected uv`).toEqual(atlasUvRect(expectedVariant));
@@ -493,6 +534,28 @@ describe('buildChunkMesh autotile UV selection', () => {
     expectSingleQuadUvRect(mesh.vertices, 29);
   });
 
+  it('emits stone quads from the dedicated authored atlas region', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 1);
+
+    const mesh = buildChunkMesh(chunk, {
+      sampleNeighborhood: () => ({
+        center: 1,
+        north: 2,
+        northEast: 13,
+        east: 9,
+        southEast: 0,
+        south: 0,
+        southWest: 0,
+        west: 0,
+        northWest: 0
+      })
+    });
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 31);
+  });
+
   it('emits dirt-block quads from the dedicated authored atlas region', () => {
     const chunk = createEmptyChunk();
     setChunkTile(chunk, 0, 0, 9);
@@ -513,6 +576,28 @@ describe('buildChunkMesh autotile UV selection', () => {
 
     expect(mesh.vertexCount).toBe(6);
     expectSingleQuadUvRect(mesh.vertices, 30);
+  });
+
+  it('emits copper-ore quads from the dedicated authored atlas region', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 13);
+
+    const mesh = buildChunkMesh(chunk, {
+      sampleNeighborhood: () => ({
+        center: 13,
+        north: 1,
+        northEast: 2,
+        east: 9,
+        southEast: 0,
+        south: 0,
+        southWest: 0,
+        west: 0,
+        northWest: 0
+      })
+    });
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 32);
   });
 
   it('emits workbench quads from the dedicated authored atlas region', () => {
