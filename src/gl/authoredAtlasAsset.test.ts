@@ -1231,6 +1231,40 @@ describe('authored atlas asset', () => {
     });
   });
 
+  it('keeps the starter workbench sprite in its dedicated authored region', () => {
+    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
+    const workbenchTile = TILE_METADATA.tiles.find((tile) => tile.name === 'workbench');
+
+    expect(workbenchTile?.render?.atlasIndex).toBe(27);
+
+    const workbenchRegion = AUTHORED_ATLAS_REGIONS[workbenchTile!.render!.atlasIndex!];
+    expect(workbenchRegion).toEqual({ x: 112, y: 0, width: 16, height: 16 });
+
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, workbenchRegion!)).toEqual({
+      x: workbenchRegion!.x + 1,
+      y: workbenchRegion!.y + 5,
+      width: 14,
+      height: 11
+    });
+  });
+
+  it('keeps the starter furnace sprite in its dedicated authored region', () => {
+    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
+    const furnaceTile = TILE_METADATA.tiles.find((tile) => tile.name === 'furnace');
+
+    expect(furnaceTile?.render?.atlasIndex).toBe(28);
+
+    const furnaceRegion = AUTHORED_ATLAS_REGIONS[furnaceTile!.render!.atlasIndex!];
+    expect(furnaceRegion).toEqual({ x: 112, y: 16, width: 16, height: 16 });
+
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, furnaceRegion!)).toEqual({
+      x: furnaceRegion!.x + 2,
+      y: furnaceRegion!.y + 3,
+      width: 12,
+      height: 12
+    });
+  });
+
   it('keeps the starter anvil sprite in its dedicated authored region', () => {
     const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
     const anvilTile = TILE_METADATA.tiles.find((tile) => tile.name === 'anvil');
@@ -1288,9 +1322,9 @@ describe('authored atlas asset', () => {
 
     const exteriorPaddingStrip = getExteriorPaddingStripRegion(pngWidth, pngHeight);
     expect(exteriorPaddingStrip).toEqual({
-      x: 112,
+      x: 128,
       y: 0,
-      width: pngWidth - 112,
+      width: pngWidth - 128,
       height: pngHeight
     });
   });

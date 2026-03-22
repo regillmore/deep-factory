@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-21: Workbench and furnace atlas art grows the canvas before consuming spare-slot regressions
+
+- Decision: The authored atlas now widens again to `160x64`, keeps region `21` blank as the documented spare slot, moves the exterior padding strip start to `x=128`, and gives `workbench` plus `furnace` dedicated full-width authored regions `27` and `28`.
+- Reason: The starter stations need distinct full-tile placeholder sprites, but consuming the spare slot or overlapping the direct-`uvRect` liquid and debug regions would weaken the existing committed-asset regression coverage.
+- Consequence: Future dedicated utility-tile art should prefer adding new authored regions beyond the current `x=112` column while preserving at least one documented blank slot plus some exterior padding, unless the same pass intentionally relocates those regression targets.
+
 ### 2026-03-21: Starter wood-block crafting stays stationless and converts one wood into one wood block
 
 - Decision: The first `wood-block` recipe now crafts `1` stackable `Wood Block` from `1 Wood` without requiring a nearby placed station.

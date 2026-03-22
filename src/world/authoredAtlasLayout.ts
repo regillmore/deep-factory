@@ -12,7 +12,7 @@ export interface AuthoredAtlasUvRect {
   v1: number;
 }
 
-export const AUTHORED_ATLAS_WIDTH = 128;
+export const AUTHORED_ATLAS_WIDTH = 160;
 export const AUTHORED_ATLAS_HEIGHT = 64;
 
 // Keep authored regions explicit so atlas-index resolution does not depend on a synthetic grid.
@@ -44,7 +44,9 @@ export const AUTHORED_ATLAS_REGIONS: readonly AuthoredAtlasRegion[] = [
   { x: 80, y: 0, width: 16, height: 16 },
   { x: 96, y: 0, width: 16, height: 16 },
   { x: 80, y: 16, width: 16, height: 16 },
-  { x: 96, y: 16, width: 16, height: 16 }
+  { x: 96, y: 16, width: 16, height: 16 },
+  { x: 112, y: 0, width: 16, height: 16 },
+  { x: 112, y: 16, width: 16, height: 16 }
 ] as const;
 
 export const AUTHORED_ATLAS_REGION_COUNT = AUTHORED_ATLAS_REGIONS.length;

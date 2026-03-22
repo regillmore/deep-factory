@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { AUTOTILE_DIRECTION_BITS, normalizeAutotileAdjacencyMask } from './autotile';
+import { AUTHORED_ATLAS_HEIGHT, AUTHORED_ATLAS_WIDTH } from './authoredAtlasLayout';
 import { toTileIndex, worldToChunkCoord, worldToLocalTile } from './chunkMath';
 import { CHUNK_SIZE, TILE_SIZE } from './constants';
 import {
@@ -445,10 +446,10 @@ describe('buildChunkMesh autotile UV selection', () => {
     const sampledUvRect = sampleUvRect(rawUvRect);
 
     expect(sampledUvRect).toEqual({
-      u0: rawUvRect.u0 + 0.5 / 128,
-      v0: rawUvRect.v0 + 0.5 / 64,
-      u1: rawUvRect.u1 - 0.5 / 128,
-      v1: rawUvRect.v1 - 0.5 / 64
+      u0: rawUvRect.u0 + 0.5 / AUTHORED_ATLAS_WIDTH,
+      v0: rawUvRect.v0 + 0.5 / AUTHORED_ATLAS_HEIGHT,
+      u1: rawUvRect.u1 - 0.5 / AUTHORED_ATLAS_WIDTH,
+      v1: rawUvRect.v1 - 0.5 / AUTHORED_ATLAS_HEIGHT
     });
     expect(Array.from(mesh.vertices.slice(2, 4))).toEqual([
       toFloat32(sampledUvRect.u0),
@@ -468,6 +469,26 @@ describe('buildChunkMesh autotile UV selection', () => {
 
     expect(mesh.vertexCount).toBe(6);
     expectSingleQuadUv(mesh.vertices, resolveTileRenderUvRect(4)!);
+  });
+
+  it('emits workbench quads from the dedicated authored atlas region', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 12);
+
+    const mesh = buildChunkMesh(chunk);
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 27);
+  });
+
+  it('emits starter-furnace quads from the dedicated authored atlas region', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 14);
+
+    const mesh = buildChunkMesh(chunk);
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 28);
   });
 
   it('emits starter-anvil quads from the dedicated authored atlas region', () => {

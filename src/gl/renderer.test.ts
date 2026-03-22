@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Camera2D } from '../core/camera2d';
+import { AUTHORED_ATLAS_HEIGHT, AUTHORED_ATLAS_WIDTH } from '../world/authoredAtlasLayout';
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL, TILE_SIZE } from '../world/constants';
 import { createDroppedItemState, type DroppedItemState } from '../world/droppedItem';
 import { insetTileUvRectForAtlasSampling } from '../world/mesher';
@@ -316,8 +317,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -354,8 +355,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -396,8 +397,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -449,8 +450,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -482,8 +483,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -585,8 +586,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -623,8 +624,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
 
     await renderer.initialize();
@@ -632,8 +633,8 @@ describe('Renderer atlas telemetry', () => {
     expect(loadAtlasImageSource).toHaveBeenCalledWith('/atlas/tile-atlas.png');
     expect(createTextureFromImageSource).toHaveBeenCalledWith(gl, authoredBitmap);
     expect(renderer.telemetry.atlasSourceKind).toBe('authored');
-    expect(renderer.telemetry.atlasWidth).toBe(96);
-    expect(renderer.telemetry.atlasHeight).toBe(64);
+    expect(renderer.telemetry.atlasWidth).toBe(AUTHORED_ATLAS_WIDTH);
+    expect(renderer.telemetry.atlasHeight).toBe(AUTHORED_ATLAS_HEIGHT);
     expect(renderer.telemetry.atlasValidationWarningCount).toBe(0);
     expect(renderer.telemetry.atlasValidationFirstWarning).toBeNull();
   });
@@ -646,16 +647,16 @@ describe('Renderer atlas telemetry', () => {
       imageSource: placeholderImage,
       sourceKind: 'placeholder',
       sourceUrl: 'data:image/png;base64,placeholder',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
 
     await renderer.initialize();
 
     expect(createTextureFromImageSource).toHaveBeenCalledWith(gl, placeholderImage);
     expect(renderer.telemetry.atlasSourceKind).toBe('placeholder');
-    expect(renderer.telemetry.atlasWidth).toBe(96);
-    expect(renderer.telemetry.atlasHeight).toBe(64);
+    expect(renderer.telemetry.atlasWidth).toBe(AUTHORED_ATLAS_WIDTH);
+    expect(renderer.telemetry.atlasHeight).toBe(AUTHORED_ATLAS_HEIGHT);
     expect(renderer.telemetry.atlasValidationWarningCount).toBe(0);
     expect(renderer.telemetry.atlasValidationFirstWarning).toBeNull();
   });
@@ -669,8 +670,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     collectAtlasValidationWarnings.mockReturnValue([
       {
@@ -701,8 +702,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -742,8 +743,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -771,8 +772,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -801,8 +802,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -831,8 +832,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -874,8 +875,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -935,8 +936,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -981,8 +982,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -1038,8 +1039,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -1107,8 +1108,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -1176,8 +1177,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -1233,8 +1234,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -1302,8 +1303,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -1371,8 +1372,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -1498,8 +1499,8 @@ describe('Renderer atlas telemetry', () => {
         imageSource: authoredBitmap,
         sourceKind: 'authored',
         sourceUrl: '/atlas/tile-atlas.png',
-        width: 96,
-        height: 64
+        width: AUTHORED_ATLAS_WIDTH,
+        height: AUTHORED_ATLAS_HEIGHT
       });
       await renderer.initialize();
       return renderer;
@@ -1616,8 +1617,8 @@ describe('Renderer atlas telemetry', () => {
         imageSource: authoredBitmap,
         sourceKind: 'authored',
         sourceUrl: '/atlas/tile-atlas.png',
-        width: 96,
-        height: 64
+        width: AUTHORED_ATLAS_WIDTH,
+        height: AUTHORED_ATLAS_HEIGHT
       });
       await renderer.initialize();
       return renderer;
@@ -1738,8 +1739,8 @@ describe('Renderer atlas telemetry', () => {
         imageSource: authoredBitmap,
         sourceKind: 'authored',
         sourceUrl: '/atlas/tile-atlas.png',
-        width: 96,
-        height: 64
+        width: AUTHORED_ATLAS_WIDTH,
+        height: AUTHORED_ATLAS_HEIGHT
       });
       await renderer.initialize();
       return renderer;
@@ -1885,8 +1886,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -1952,8 +1953,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -2016,8 +2017,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -2083,8 +2084,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -2149,8 +2150,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -2215,8 +2216,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -2278,8 +2279,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -2325,8 +2326,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -2434,8 +2435,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -2511,8 +2512,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -2588,8 +2589,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -2661,8 +2662,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -2758,8 +2759,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -2832,8 +2833,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -2951,8 +2952,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3020,8 +3021,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3093,8 +3094,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3177,8 +3178,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3223,8 +3224,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3271,8 +3272,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3323,8 +3324,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3363,8 +3364,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3407,8 +3408,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3444,8 +3445,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3482,8 +3483,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3520,8 +3521,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3559,8 +3560,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3642,8 +3643,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3723,8 +3724,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3803,8 +3804,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3839,8 +3840,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3881,8 +3882,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 
@@ -3937,8 +3938,8 @@ describe('Renderer atlas telemetry', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     await renderer.initialize();
 

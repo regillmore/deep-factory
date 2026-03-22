@@ -162,11 +162,12 @@ describe('tile metadata loader', () => {
     expect(resolveTerrainAutotileVariantAtlasIndex(2, 6)).toBe(6);
     expect(resolveTerrainAutotileVariantAtlasIndex(19, 6)).toBe(6);
     expect(resolveTerrainAutotileAtlasIndexByNormalizedAdjacencyMask(1, 0)).toBe(0);
+    expect(resolveTileRenderUvRect(12)).toEqual(atlasIndexToUvRect(27));
     expect(resolveTileRenderUvRect(3)).toEqual(atlasIndexToUvRect(14));
     expect(resolveTileRenderUvRect(10)).toEqual(atlasIndexToUvRect(20));
     expect(resolveTileRenderUvRect(11)).toEqual(atlasIndexToUvRect(19));
     expect(resolveTileRenderUvRect(13)).toEqual(atlasIndexToUvRect(14));
-    expect(resolveTileRenderUvRect(14)).toEqual(atlasIndexToUvRect(14));
+    expect(resolveTileRenderUvRect(14)).toEqual(atlasIndexToUvRect(28));
     expect(resolveTileRenderUvRect(15)).toEqual(atlasIndexToUvRect(26));
     expect(resolveTileRenderUvRect(16)).toEqual(atlasIndexToUvRect(23));
     expect(resolveTileRenderUvRect(17)).toEqual(atlasIndexToUvRect(24));
@@ -188,8 +189,8 @@ describe('tile metadata loader', () => {
     ).toBe(
       describeTileUvRectPixelBounds(atlasIndexToUvRect(22), AUTHORED_ATLAS_WIDTH, AUTHORED_ATLAS_HEIGHT)
     );
-    expect(describeTileRenderSourceAtElapsedMs(6, 0)).toBe('uvRect 0.125,0.25..0.25,0.5');
-    expect(describeTileRenderSourceAtElapsedMs(6, 180)).toBe('uvRect 0.375,0.25..0.5,0.5');
+    expect(describeTileRenderSourceAtElapsedMs(6, 0)).toBe('uvRect 0.1,0.25..0.2,0.5');
+    expect(describeTileRenderSourceAtElapsedMs(6, 180)).toBe('uvRect 0.3,0.25..0.4,0.5');
     expect(describeTileRenderUvRectAtElapsedMs(6, 180)).toBe(
       describeTileUvRect(authoredUvRectFromPixels(48, 16, 64, 32))
     );

@@ -94,7 +94,11 @@ describe('resolveAuthoredTileAtlasUrl', () => {
 describe('loadAtlasImageSource', () => {
   it('returns a decoded authored atlas image when fetch and bitmap decode succeed', async () => {
     const atlasBlob = new Blob(['atlas']);
-    const authoredBitmap = { kind: 'bitmap', width: 96, height: 64 } as unknown as ImageBitmap;
+    const authoredBitmap = {
+      kind: 'bitmap',
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
+    } as unknown as ImageBitmap;
     const fetchImpl = vi.fn(async () => ({
       ok: true,
       status: 200,
@@ -118,8 +122,8 @@ describe('loadAtlasImageSource', () => {
       imageSource: authoredBitmap,
       sourceKind: 'authored',
       sourceUrl: '/atlas/tile-atlas.png',
-      width: 96,
-      height: 64
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
     });
     expect(fetchImpl).toHaveBeenCalledWith('/atlas/tile-atlas.png');
     expect(loadImage).not.toHaveBeenCalled();
