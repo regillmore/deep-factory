@@ -4193,20 +4193,42 @@ const bootstrap = async (): Promise<void> => {
       stepResult.chopEvent.anchorTileY,
       stepResult.chopEvent.growthStage
     );
-    if (!chopResult.changed || chopResult.woodDropAmount <= 0) {
+    if (
+      !chopResult.changed ||
+      (chopResult.woodDropAmount <= 0 && chopResult.acornDropAmount <= 0)
+    ) {
       return;
     }
 
-    const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(
-      createDroppedItemStateFromWorldTile(
-        stepResult.chopEvent.anchorTileX,
-        stepResult.chopEvent.anchorTileY - 1,
-        WOOD_ITEM_ID,
-        chopResult.woodDropAmount
-      )
-    );
-    if (remainingDroppedItemState !== null) {
-      spawnDroppedItemEntity(remainingDroppedItemState);
+    const dropTileX = stepResult.chopEvent.anchorTileX;
+    const dropTileY = stepResult.chopEvent.anchorTileY - 1;
+
+    if (chopResult.woodDropAmount > 0) {
+      const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(
+        createDroppedItemStateFromWorldTile(
+          dropTileX,
+          dropTileY,
+          WOOD_ITEM_ID,
+          chopResult.woodDropAmount
+        )
+      );
+      if (remainingDroppedItemState !== null) {
+        spawnDroppedItemEntity(remainingDroppedItemState);
+      }
+    }
+
+    if (chopResult.acornDropAmount > 0) {
+      const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(
+        createDroppedItemStateFromWorldTile(
+          dropTileX,
+          dropTileY,
+          ACORN_ITEM_ID,
+          chopResult.acornDropAmount
+        )
+      );
+      if (remainingDroppedItemState !== null) {
+        spawnDroppedItemEntity(remainingDroppedItemState);
+      }
     }
   };
   const stepStarterSpearFixedUpdate = (fixedDt: number): void => {

@@ -5,6 +5,7 @@ import { getSmallTreeTileIds } from './smallTreeTiles';
 import {
   chopSmallTreeAtAnchor,
   createStarterAxeChoppingState,
+  resolveStarterAxeAcornDropAmount,
   evaluateStarterAxeChoppingTarget,
   resolveStarterAxeWoodDropAmount,
   STARTER_AXE_SWING_ACTIVE_SECONDS,
@@ -132,17 +133,20 @@ describe('evaluateStarterAxeChoppingTarget', () => {
 });
 
 describe('starterAxeChopping helpers', () => {
-  it('returns one wood for planted saplings and five wood for grown placeholder trees', () => {
+  it('returns stage-scaled wood and acorn loot for planted saplings versus grown placeholder trees', () => {
     expect(resolveStarterAxeWoodDropAmount('planted')).toBe(1);
     expect(resolveStarterAxeWoodDropAmount('grown')).toBe(5);
+    expect(resolveStarterAxeAcornDropAmount('planted')).toBe(0);
+    expect(resolveStarterAxeAcornDropAmount('grown')).toBe(1);
   });
 
-  it('clears the full grown-tree footprint and reports five wood from the shared anchor', () => {
+  it('clears the full grown-tree footprint and reports five wood plus one acorn from the shared anchor', () => {
     const { world, readTile } = createMutableWorld(createGrownTreeTiles(2, 3));
 
     const chopResult = chopSmallTreeAtAnchor(world, 2, 3, 'grown');
 
     expect(chopResult.woodDropAmount).toBe(5);
+    expect(chopResult.acornDropAmount).toBe(1);
     expect(chopResult.writes).toEqual([
       {
         worldTileX: 2,
@@ -181,6 +185,69 @@ describe('starterAxeChopping helpers', () => {
     expect(readTile(1, 0)).toBe(0);
     expect(readTile(2, 0)).toBe(0);
     expect(readTile(3, 0)).toBe(0);
+  });
+
+  it('keeps grown-tree wood and acorn loot deterministic across repeated harvests at the same anchor', () => {
+    const { world } = createMutableWorld();
+    const expectedWrites = [
+      {
+        worldTileX: 2,
+        worldTileY: 2,
+        previousTileId: SMALL_TREE_TILE_IDS.trunk,
+        tileId: 0
+      },
+      {
+        worldTileX: 2,
+        worldTileY: 1,
+        previousTileId: SMALL_TREE_TILE_IDS.trunk,
+        tileId: 0
+      },
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        previousTileId: SMALL_TREE_TILE_IDS.leaf,
+        tileId: 0
+      },
+      {
+        worldTileX: 2,
+        worldTileY: 0,
+        previousTileId: SMALL_TREE_TILE_IDS.leaf,
+        tileId: 0
+      },
+      {
+        worldTileX: 3,
+        worldTileY: 0,
+        previousTileId: SMALL_TREE_TILE_IDS.leaf,
+        tileId: 0
+      }
+    ];
+
+    const harvestResults = Array.from({ length: 2 }, () => {
+      for (const [worldKey, tileId] of Object.entries(createGrownTreeTiles(2, 3))) {
+        const [tileX, tileY] = worldKey.split(',').map(Number);
+        world.setTile(tileX, tileY, tileId);
+      }
+
+      const chopResult = chopSmallTreeAtAnchor(world, 2, 3, 'grown');
+      return {
+        woodDropAmount: chopResult.woodDropAmount,
+        acornDropAmount: chopResult.acornDropAmount,
+        writes: chopResult.writes
+      };
+    });
+
+    expect(harvestResults).toEqual([
+      {
+        woodDropAmount: 5,
+        acornDropAmount: 1,
+        writes: expectedWrites
+      },
+      {
+        woodDropAmount: 5,
+        acornDropAmount: 1,
+        writes: expectedWrites
+      }
+    ]);
   });
 });
 

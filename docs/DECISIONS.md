@@ -26,6 +26,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Canopy hits, cleanup writes, and early wood loot all need one canonical tree-break contract instead of letting each caller guess which sampled tile or partial footprint should count as the chopped tree.
 - Consequence: Future tree previews, loot, or larger-tree follow-ups should route through the shared anchor-and-stage chop path rather than introducing per-tile chop logic or stage-specific clear rules in other systems.
 
+### 2026-03-21: Grown small-tree chops always return one acorn
+
+- Decision: Successful starter-axe chops on grown small trees now drop `1 Acorn` alongside their existing `5 Wood`, while planted saplings still return only `1 Wood`.
+- Reason: Early tree harvesting should feed the existing acorn planting loop deterministically instead of relying on previously carried seeds or another future replenishment path.
+- Consequence: Future tree-loot, planting, or crafting follow-ups can assume every grown small-tree harvest returns one replantable acorn unless a later progression rebalance intentionally changes that baseline.
+
 ### 2026-03-21: Small-tree support-loss cleanup runs from world anchor edits
 
 - Decision: When a `grass_surface` support tile changes away from grass, `TileWorld` now clears any planted or grown small-tree footprint above that anchor through the shared footprint writer and emits ordinary tile-edit notifications for those cleanup writes.

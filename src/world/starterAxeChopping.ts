@@ -18,6 +18,7 @@ import {
 import { TILE_METADATA, type TileMetadataRegistry } from './tileMetadata';
 
 export const STARTER_AXE_ITEM_ID: PlayerInventoryItemId = 'axe';
+export const ACORN_ITEM_ID: PlayerInventoryItemId = 'acorn';
 export const WOOD_ITEM_ID: PlayerInventoryItemId = 'wood';
 
 export const STARTER_AXE_SWING_WINDUP_SECONDS = 0.1;
@@ -27,6 +28,11 @@ export const STARTER_AXE_SWING_RECOVERY_SECONDS = 0.15;
 const WOOD_DROP_AMOUNTS_BY_GROWTH_STAGE: Readonly<Record<SmallTreeGrowthStage, number>> = {
   planted: PLANTED_SMALL_TREE_FOOTPRINT_CELLS.length,
   grown: GROWN_SMALL_TREE_FOOTPRINT_CELLS.length
+};
+
+const ACORN_DROP_AMOUNTS_BY_GROWTH_STAGE: Readonly<Record<SmallTreeGrowthStage, number>> = {
+  planted: 0,
+  grown: 1
 };
 
 export type StarterAxeSwingPhase = 'windup' | 'active' | 'recovery';
@@ -61,6 +67,7 @@ export interface StarterAxeChoppingState {
 
 export interface StarterAxeChopResult extends SmallTreeFootprintWriteResult {
   woodDropAmount: number;
+  acornDropAmount: number;
 }
 
 export interface TryStartStarterAxeSwingResult {
@@ -122,6 +129,10 @@ export const resolveStarterAxeWoodDropAmount = (
   growthStage: SmallTreeGrowthStage
 ): number => WOOD_DROP_AMOUNTS_BY_GROWTH_STAGE[growthStage];
 
+export const resolveStarterAxeAcornDropAmount = (
+  growthStage: SmallTreeGrowthStage
+): number => ACORN_DROP_AMOUNTS_BY_GROWTH_STAGE[growthStage];
+
 export const evaluateStarterAxeChoppingTarget = (
   world: StarterAxeChoppingWorldView,
   playerState: Pick<PlayerState, 'position' | 'size'> | null,
@@ -165,7 +176,8 @@ export const chopSmallTreeAtAnchor = (
 
   return {
     ...writeResult,
-    woodDropAmount: writeResult.changed ? resolveStarterAxeWoodDropAmount(growthStage) : 0
+    woodDropAmount: writeResult.changed ? resolveStarterAxeWoodDropAmount(growthStage) : 0,
+    acornDropAmount: writeResult.changed ? resolveStarterAxeAcornDropAmount(growthStage) : 0
   };
 };
 

@@ -9368,7 +9368,7 @@ describe('main.ts shell state orchestration', () => {
     expect(restoredWorld.getTile(1, -1)).toBe(19);
   });
 
-  it('chops a grown small tree from the selected axe slot through the shared hidden-panel item-use path and drops wood', async () => {
+  it('chops a grown small tree from the selected axe slot through the shared hidden-panel item-use path and drops wood plus an acorn', async () => {
     const treeTileIds = getSmallTreeTileIds();
     const savedWorld = new TileWorld(0);
     expect(savedWorld.setTile(1, 0, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
@@ -9450,6 +9450,11 @@ describe('main.ts shell state orchestration', () => {
         position: { x: 24, y: -8 },
         itemId: 'wood',
         amount: 5
+      },
+      {
+        position: { x: 24, y: -8 },
+        itemId: 'acorn',
+        amount: 1
       }
     ]);
 
