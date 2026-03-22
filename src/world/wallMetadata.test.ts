@@ -25,11 +25,11 @@ describe('wallMetadata', () => {
       id: 2,
       name: 'wood_wall',
       render: {
-        atlasIndex: 33
+        atlasIndex: 35
       }
     });
     expect(resolveWallRenderUvRect(1)).toEqual(atlasIndexToUvRect(34));
-    expect(resolveWallRenderUvRect(2)).toEqual(atlasIndexToUvRect(33));
+    expect(resolveWallRenderUvRect(2)).toEqual(atlasIndexToUvRect(35));
     expect(resolveWallRenderUvRect(999)).toBeNull();
     expect(WALL_METADATA.walls).toHaveLength(3);
   });
@@ -40,7 +40,7 @@ describe('wallMetadata', () => {
         walls: [
           { id: 0, name: 'empty' },
           { id: 1, name: 'dirt_wall', render: { atlasIndex: 34 } },
-          { id: 1, name: 'wood_wall', render: { atlasIndex: 33 } }
+          { id: 1, name: 'wood_wall', render: { atlasIndex: 35 } }
         ]
       })
     ).toThrowError(/duplicate wall id 1/);

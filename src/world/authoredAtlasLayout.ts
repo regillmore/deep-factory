@@ -52,7 +52,8 @@ export const AUTHORED_ATLAS_REGIONS: readonly AuthoredAtlasRegion[] = [
   { x: 144, y: 0, width: 16, height: 16 },
   { x: 144, y: 16, width: 16, height: 16 },
   { x: 160, y: 0, width: 16, height: 16 },
-  { x: 160, y: 16, width: 16, height: 16 }
+  { x: 160, y: 16, width: 16, height: 16 },
+  { x: 160, y: 32, width: 16, height: 16 }
 ] as const;
 
 export const AUTHORED_ATLAS_REGION_COUNT = AUTHORED_ATLAS_REGIONS.length;

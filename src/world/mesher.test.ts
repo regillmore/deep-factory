@@ -90,7 +90,7 @@ const createWallTestRegistry = () =>
         id: 2,
         name: 'wood_wall',
         render: {
-          atlasIndex: 33
+          atlasIndex: 35
         }
       }
     ]
@@ -553,6 +553,18 @@ describe('buildChunkMesh autotile UV selection', () => {
 
     expect(mesh.vertexCount).toBe(6);
     expectSingleQuadUvRect(mesh.vertices, 34);
+  });
+
+  it('emits wood-wall-only quads from the dedicated authored atlas region', () => {
+    const chunk = createEmptyChunk();
+    setChunkWall(chunk, 0, 0, 2);
+
+    const mesh = buildChunkMesh(chunk, {
+      wallMetadataRegistry: createWallTestRegistry()
+    });
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 35);
   });
 
   it('writes wall quads before foreground quads in the same cell so background walls stay behind tiles', () => {

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-22: Wood-wall background art uses its own authored region
+
+- Decision: `wood_wall` now renders through dedicated authored atlas region `35` at `160x32` instead of reusing the solid `wood_block` region `33`.
+- Reason: Background wood walls need to read distinctly from placed wood blocks while keeping the committed atlas at `192x64`, preserving the spare slot at region `21`, and leaving the exterior padding strip untouched.
+- Consequence: Future background-wall art should continue claiming dedicated authored regions instead of borrowing solid foreground block art, and later atlas edits should preserve the current spare-slot and exterior-padding regressions unless they intentionally update them in the same pass.
+
 ### 2026-03-21: Starter pickaxe wall removal only targets empty foreground cells
 
 - Decision: Starter pickaxe mining still prioritizes eligible foreground tiles, but when a foreground cell is empty it may target placed `dirt_wall` background walls and routes those refunds through the shared wall-edit listener seam.

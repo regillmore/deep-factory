@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-22
+
+- Task: Add a starter wood-wall authored-art follow-up after wood-wall placement and starter dirt-wall authored-art.
+- Changes: Updated [src/world/authoredAtlasLayout.ts](../src/world/authoredAtlasLayout.ts), [src/world/wallMetadata.json](../src/world/wallMetadata.json), and [public/atlas/tile-atlas.png](../public/atlas/tile-atlas.png) so `wood_wall` now renders from dedicated authored region `35` at `160x32` with committed art distinct from the solid `wood_block` tile while preserving the spare slot and exterior padding; refreshed [src/world/authoredAtlasLayout.test.ts](../src/world/authoredAtlasLayout.test.ts), [src/world/wallMetadata.test.ts](../src/world/wallMetadata.test.ts), [src/world/mesher.test.ts](../src/world/mesher.test.ts), and [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) with layout, wall-UV, mesher, and committed-atlas regressions that now pin the dedicated wood-wall source; removed completed task `679` from [docs/NEXT.md](docs/NEXT.md), added replacement task `684`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/authoredAtlasLayout.test.ts src/world/wallMetadata.test.ts src/world/mesher.test.ts src/gl/authoredAtlasAsset.test.ts`.
+
 ## 2026-03-21
 
 - Task: Add a starter background-wall removal follow-up after starter dirt-wall placement and background-wall edit notifications.
