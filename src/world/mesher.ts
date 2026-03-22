@@ -16,6 +16,8 @@ import {
   resolveTileRenderUvRect
 } from './tileMetadata';
 import type { TileMetadataRegistry, TileUvRect } from './tileMetadata';
+import { WALL_METADATA, resolveWallRenderUvRect } from './wallMetadata';
+import type { WallMetadataRegistry } from './wallMetadata';
 import type { Chunk } from './types';
 import {
   resolveLiquidSurfaceBottomVCrops,
@@ -53,6 +55,7 @@ export interface ChunkMeshBuildOptions {
   ) => void;
   sampleLiquidLevel?: (worldTileX: number, worldTileY: number) => number;
   tileMetadataRegistry?: TileMetadataRegistry;
+  wallMetadataRegistry?: WallMetadataRegistry;
 }
 
 export const CHUNK_MESH_FLOATS_PER_VERTEX = 5;
@@ -99,9 +102,12 @@ interface ResolvedChunkTileRender {
   liquidCardinalMask: number | null;
 }
 
-const countNonEmptyTiles = (chunk: Chunk): number => {
+const countRenderableChunkQuads = (chunk: Chunk): number => {
   let count = 0;
   for (let index = 0; index < chunk.tiles.length; index += 1) {
+    if (chunk.wallIds[index] !== 0) {
+      count += 1;
+    }
     if (chunk.tiles[index] !== 0) {
       count += 1;
     }
@@ -332,6 +338,41 @@ export const setChunkMeshTileQuadUvRect = (
   vertices[vertex5UvOffset + 1] = bottomLeftV;
 };
 
+const writeChunkMeshQuad = (
+  vertices: Float32Array,
+  writeIndex: number,
+  uvRect: TileUvRect,
+  geometry: {
+    leftX: number;
+    rightX: number;
+    topLeftY: number;
+    topRightY: number;
+    bottomY: number;
+  },
+  lightLevel: number,
+  liquidTopHeights: LiquidSurfaceTopHeights | null = null
+): void => {
+  vertices[writeIndex] = geometry.leftX;
+  vertices[writeIndex + 1] = geometry.topLeftY;
+  vertices[writeIndex + 4] = lightLevel;
+  vertices[writeIndex + 5] = geometry.rightX;
+  vertices[writeIndex + 6] = geometry.topRightY;
+  vertices[writeIndex + 9] = lightLevel;
+  vertices[writeIndex + 10] = geometry.rightX;
+  vertices[writeIndex + 11] = geometry.bottomY;
+  vertices[writeIndex + 14] = lightLevel;
+  vertices[writeIndex + 15] = geometry.leftX;
+  vertices[writeIndex + 16] = geometry.topLeftY;
+  vertices[writeIndex + 19] = lightLevel;
+  vertices[writeIndex + 20] = geometry.rightX;
+  vertices[writeIndex + 21] = geometry.bottomY;
+  vertices[writeIndex + 24] = lightLevel;
+  vertices[writeIndex + 25] = geometry.leftX;
+  vertices[writeIndex + 26] = geometry.bottomY;
+  vertices[writeIndex + 29] = lightLevel;
+  setChunkMeshTileQuadUvRect(vertices, writeIndex, uvRect, liquidTopHeights);
+};
+
 export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}): ChunkMeshData => {
   const chunkOriginX = chunk.coord.x * CHUNK_SIZE * TILE_SIZE;
   const chunkOriginY = chunk.coord.y * CHUNK_SIZE * TILE_SIZE;
@@ -339,22 +380,57 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
     sampleNeighborhood,
     sampleNeighborhoodInto,
     sampleLiquidLevel,
-    tileMetadataRegistry = TILE_METADATA
+    tileMetadataRegistry = TILE_METADATA,
+    wallMetadataRegistry = WALL_METADATA
   } = options;
-  const nonEmptyTileCount = countNonEmptyTiles(chunk);
-  if (nonEmptyTileCount === 0) {
+  const renderableQuadCount = countRenderableChunkQuads(chunk);
+  if (renderableQuadCount === 0) {
     return { vertices: new Float32Array(0), vertexCount: 0, animatedTileQuads: [] };
   }
 
-  const vertices = new Float32Array(nonEmptyTileCount * FLOATS_PER_TILE_QUAD);
+  const vertices = new Float32Array(renderableQuadCount * FLOATS_PER_TILE_QUAD);
   const animatedTileQuads: AnimatedTileQuad[] = [];
   let writeIndex = 0;
   const neighborhoodScratch = sampleNeighborhoodInto ? createTileNeighborhoodScratch() : undefined;
 
   for (let y = 0; y < CHUNK_SIZE; y += 1) {
     for (let x = 0; x < CHUNK_SIZE; x += 1) {
-      const tileId = chunk.tiles[toTileIndex(x, y)];
-      if (tileId === 0) continue;
+      const tileIndex = toTileIndex(x, y);
+      const tileId = chunk.tiles[tileIndex];
+      const wallId = chunk.wallIds[tileIndex];
+      if (tileId === 0 && wallId === 0) continue;
+
+      const px = chunkOriginX + x * TILE_SIZE;
+      const py = chunkOriginY + y * TILE_SIZE;
+      const px1 = px + TILE_SIZE;
+      const py1 = py + TILE_SIZE;
+      const lightLevel = chunk.lightLevels[tileIndex] ?? 0;
+
+      if (wallId !== 0) {
+        const wallUvRect = resolveWallRenderUvRect(wallId, wallMetadataRegistry);
+        if (!wallUvRect) {
+          throw new Error(`Missing wall render metadata for wall ${wallId}`);
+        }
+
+        writeChunkMeshQuad(
+          vertices,
+          writeIndex,
+          wallUvRect,
+          {
+            leftX: px,
+            rightX: px1,
+            topLeftY: py,
+            topRightY: py,
+            bottomY: py1
+          },
+          lightLevel
+        );
+        writeIndex += FLOATS_PER_TILE_QUAD;
+      }
+
+      if (tileId === 0) {
+        continue;
+      }
 
       const neighborhood =
         usesTerrainAutotile(tileId, tileMetadataRegistry) || usesLiquidRender(tileId, tileMetadataRegistry)
@@ -367,13 +443,8 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
               neighborhoodScratch
             )
           : null;
-      const px = chunkOriginX + x * TILE_SIZE;
-      const py = chunkOriginY + y * TILE_SIZE;
-      const px1 = px + TILE_SIZE;
-      const py1 = py + TILE_SIZE;
       const tileVertexFloatOffset = writeIndex;
       const resolvedRender = resolveChunkTileRender(tileId, tileMetadataRegistry, neighborhood);
-      const lightLevel = chunk.lightLevels[toTileIndex(x, y)] ?? 0;
       const liquidTopHeights =
         resolvedRender.liquidCardinalMask === null
           ? null
@@ -410,25 +481,20 @@ export const buildChunkMesh = (chunk: Chunk, options: ChunkMeshBuildOptions = {}
         });
       }
 
-      vertices[writeIndex] = px;
-      vertices[writeIndex + 1] = topLeftY;
-      vertices[writeIndex + 4] = lightLevel;
-      vertices[writeIndex + 5] = px1;
-      vertices[writeIndex + 6] = topRightY;
-      vertices[writeIndex + 9] = lightLevel;
-      vertices[writeIndex + 10] = px1;
-      vertices[writeIndex + 11] = py1;
-      vertices[writeIndex + 14] = lightLevel;
-      vertices[writeIndex + 15] = px;
-      vertices[writeIndex + 16] = topLeftY;
-      vertices[writeIndex + 19] = lightLevel;
-      vertices[writeIndex + 20] = px1;
-      vertices[writeIndex + 21] = py1;
-      vertices[writeIndex + 24] = lightLevel;
-      vertices[writeIndex + 25] = px;
-      vertices[writeIndex + 26] = py1;
-      vertices[writeIndex + 29] = lightLevel;
-      setChunkMeshTileQuadUvRect(vertices, writeIndex, resolvedRender.uvRect, liquidTopHeights);
+      writeChunkMeshQuad(
+        vertices,
+        writeIndex,
+        resolvedRender.uvRect,
+        {
+          leftX: px,
+          rightX: px1,
+          topLeftY,
+          topRightY,
+          bottomY: py1
+        },
+        lightLevel,
+        liquidTopHeights
+      );
       writeIndex += FLOATS_PER_TILE_QUAD;
     }
   }

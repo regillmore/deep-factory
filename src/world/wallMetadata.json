@@ -1,0 +1,15 @@
+{
+  "walls": [
+    {
+      "id": 0,
+      "name": "empty"
+    },
+    {
+      "id": 1,
+      "name": "dirt_wall",
+      "render": {
+        "atlasIndex": 30
+      }
+    }
+  ]
+}

@@ -8,6 +8,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Upcoming wall rendering and placement need walls behind solid terrain without disturbing collision, liquid, or foreground-tile semantics, while existing save files still need to load cleanly.
 - Consequence: Future wall features should read and write wall state through the shared wall-layer helpers and snapshot fields, and should treat missing wall payloads from older saves as an intentional empty-wall baseline rather than a malformed save.
 
+### 2026-03-21: Background-wall rendering uses a separate wall-metadata registry and shared chunk ordering
+
+- Decision: Background walls now resolve render UVs through `src/world/wallMetadata.ts`, and chunk meshing emits wall quads before any foreground quad in the same cell inside the existing shared chunk mesh.
+- Reason: Wall ids already live in a separate layer, so they need independent authoring metadata without pretending they are foreground tile ids, while same-cell wall-before-tile ordering keeps walls visually behind foreground content without adding a second wall draw pass.
+- Consequence: Future wall types should extend the wall metadata registry and rely on the shared wall-before-tile mesher order, while renderer invalidation or placement follow-ups should treat wall quads as part of the ordinary chunk mesh cache instead of inventing a separate wall buffer path.
+
 ### 2026-03-21: Wood-block terrain art uses the first free right-column authored region
 
 - Decision: `wood_block` now keeps its existing `wood` terrain connectivity metadata but renders through dedicated static authored region `33`, leaving the committed atlas at `192x64`, preserving spare region `21`, and moving the transparent exterior padding strip start to `x=176`.

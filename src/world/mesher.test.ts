@@ -16,6 +16,7 @@ import {
   resolveTileRenderUvRect,
   resolveTerrainAutotileUvRectByNormalizedAdjacencyMask
 } from './tileMetadata';
+import { parseWallMetadataRegistry } from './wallMetadata';
 import type { Chunk } from './types';
 import { TileWorld } from './world';
 import type { TileNeighborhood } from './world';
@@ -32,6 +33,10 @@ const createEmptyChunk = (chunkX = 0, chunkY = 0): Chunk => ({
 
 const setChunkTile = (chunk: Chunk, localX: number, localY: number, tileId: number): void => {
   chunk.tiles[toTileIndex(localX, localY)] = tileId;
+};
+
+const setChunkWall = (chunk: Chunk, localX: number, localY: number, wallId: number): void => {
+  chunk.wallIds[toTileIndex(localX, localY)] = wallId;
 };
 
 const setChunkLiquidLevel = (chunk: Chunk, localX: number, localY: number, liquidLevel: number): void => {
@@ -66,6 +71,30 @@ const createAnimatedLiquidVariantMap = (staticAtlasIndex: number, animatedAtlasI
     frames: [{ atlasIndex: staticAtlasIndex }, { atlasIndex: animatedAtlasIndex }],
     frameDurationMs: 120
   }));
+
+const createWallTestRegistry = () =>
+  parseWallMetadataRegistry({
+    walls: [
+      {
+        id: 0,
+        name: 'empty'
+      },
+      {
+        id: 1,
+        name: 'dirt_wall',
+        render: {
+          atlasIndex: 30
+        }
+      },
+      {
+        id: 2,
+        name: 'wood_wall',
+        render: {
+          atlasIndex: 33
+        }
+      }
+    ]
+  });
 
 const createTerrainAutotileTestRegistry = () =>
   parseTileMetadataRegistry({
@@ -512,6 +541,43 @@ describe('buildChunkMesh autotile UV selection', () => {
 
     expect(mesh.vertexCount).toBe(6);
     expectSingleQuadUv(mesh.vertices, resolveTileRenderUvRect(4)!);
+  });
+
+  it('emits wall-only quads from background-wall metadata even when the foreground tile is empty', () => {
+    const chunk = createEmptyChunk();
+    setChunkWall(chunk, 0, 0, 1);
+
+    const mesh = buildChunkMesh(chunk, {
+      wallMetadataRegistry: createWallTestRegistry()
+    });
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 30);
+  });
+
+  it('writes wall quads before foreground quads in the same cell so background walls stay behind tiles', () => {
+    const chunk = createEmptyChunk();
+    setChunkWall(chunk, 0, 0, 1);
+    setChunkTile(chunk, 0, 0, 19);
+
+    const mesh = buildChunkMesh(chunk, {
+      wallMetadataRegistry: createWallTestRegistry(),
+      sampleNeighborhood: () => ({
+        center: 19,
+        north: 19,
+        northEast: 19,
+        east: 19,
+        southEast: 0,
+        south: 0,
+        southWest: 0,
+        west: 0,
+        northWest: 0
+      })
+    });
+
+    expect(mesh.vertexCount).toBe(12);
+    expectSingleQuadUvRect(getQuadVertices(mesh.vertices, 0), 30);
+    expectSingleQuadUvRect(getQuadVertices(mesh.vertices, 1), 33);
   });
 
   it('emits grass-surface quads from the dedicated authored atlas region', () => {
@@ -980,6 +1046,13 @@ describe('buildChunkMesh autotile UV selection', () => {
     expect(mesh.vertexCount).toBe(12);
     expect(scratchRefs).toHaveLength(2);
     expect(scratchRefs[0]).toBe(scratchRefs[1]);
+  });
+
+  it('throws for non-empty walls without render metadata instead of silently dropping them', () => {
+    const chunk = createEmptyChunk();
+    setChunkWall(chunk, 0, 0, 99);
+
+    expect(() => buildChunkMesh(chunk)).toThrowError(/Missing wall render metadata for wall 99/);
   });
 
   it('throws for non-empty tiles without render metadata instead of using raw tile id fallback', () => {
