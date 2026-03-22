@@ -16,5 +16,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 502. Add a fishing utility slice after inventory basics and save/load: a non-stackable fishing rod hotbar slot, mixed-device water casting plus bite timing, fish-item catches into inventory, and deterministic bite/catch regressions.
 511. Add a mana-resource magic slice after starter wand combat and save/load: fixed-step current and max mana state, wand cast-time mana spend-or-fail rules, passive regen delay plus refill cadence, and snapshot regressions for mana state.
 681. Add a background-wall replication foundation follow-up after background-wall edit notifications: batch deterministic wall-layer edit notifications into chunk-scoped wall diffs for future networking, and add capture-plus-batching regressions.
-687. Add a background-wall debug-history follow-up after starter background-wall debug-break: record wall-only debug-break edits in the shared undo/redo history, and add focused regressions.
 689. Add a background-wall debug-break preview follow-up after starter background-wall debug-break: surface wall-only breakable targets through visible debug-break hover and shape previews while preserving foreground precedence, and add focused regressions.
+690. Suppress pickup refunds for debug-break strokes and undo-redo actions, and add focused regressions.

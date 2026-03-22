@@ -205,7 +205,7 @@ This document describes the current project state. Unlike the changelog, it shou
 - Shared debug edit control state persists across reloads through local storage with a metadata-safe brush fallback.
 - `Reset Prefs` restores default touch mode, brush, and panel visibility while clearing persisted debug-edit control state.
 - Break-mode debug paint, flood fill, line, rectangle, and ellipse actions now clear foreground tiles first, then fall back to clearing wall-only background-wall cells through the shared wall-edit listener path so dirt-wall and wood-wall refunds reuse the same pickup cascade as other wall removals.
-- Undo and redo operate on recorded per-stroke tile deltas.
+- Undo and redo operate on recorded per-stroke tile and wall-layer deltas, so wall-only debug-break strokes now restore and replay background-wall clears through the same shared history controls as foreground edits.
 - Flood fill, line, rectangle fill, rectangle outline, ellipse fill, and ellipse outline tools apply as single undoable strokes.
 - Armed one-shot tools expose on-canvas status or preview overlays and support `Esc` cancellation.
 

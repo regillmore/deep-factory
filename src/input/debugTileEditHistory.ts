@@ -1,8 +1,11 @@
-export interface DebugTileStrokeTileChange {
+export type DebugTileEditLayer = 'tile' | 'wall';
+
+export interface DebugTileStrokeEditChange {
   worldTileX: number;
   worldTileY: number;
-  previousTileId: number;
-  tileId: number;
+  layer: DebugTileEditLayer;
+  previousId: number;
+  id: number;
 }
 
 export interface DebugTileEditHistoryStatus {
@@ -13,16 +16,17 @@ export interface DebugTileEditHistoryStatus {
 }
 
 interface PendingDebugTileStroke {
-  changes: DebugTileStrokeTileChange[];
+  changes: DebugTileStrokeEditChange[];
   changeIndexesByTileKey: Map<string, number>;
 }
 
-const tileKey = (worldTileX: number, worldTileY: number): string => `${worldTileX},${worldTileY}`;
+const changeKey = (worldTileX: number, worldTileY: number, layer: DebugTileEditLayer): string =>
+  `${layer}:${worldTileX},${worldTileY}`;
 
 export class DebugTileEditHistory {
   private pendingStrokes = new Map<number, PendingDebugTileStroke>();
-  private undoStack: DebugTileStrokeTileChange[][] = [];
-  private redoStack: DebugTileStrokeTileChange[][] = [];
+  private undoStack: DebugTileStrokeEditChange[][] = [];
+  private redoStack: DebugTileStrokeEditChange[][] = [];
 
   constructor(private readonly maxUndoStrokes = 64) {}
 
@@ -30,10 +34,11 @@ export class DebugTileEditHistory {
     strokeId: number,
     worldTileX: number,
     worldTileY: number,
-    previousTileId: number,
-    tileId: number
+    previousId: number,
+    id: number,
+    layer: DebugTileEditLayer = 'tile'
   ): void {
-    if (previousTileId === tileId) return;
+    if (previousId === id) return;
 
     let pending = this.pendingStrokes.get(strokeId);
     if (!pending) {
@@ -44,10 +49,10 @@ export class DebugTileEditHistory {
       this.pendingStrokes.set(strokeId, pending);
     }
 
-    const key = tileKey(worldTileX, worldTileY);
+    const key = changeKey(worldTileX, worldTileY, layer);
     const existingChangeIndex = pending.changeIndexesByTileKey.get(key);
     if (existingChangeIndex !== undefined) {
-      pending.changes[existingChangeIndex]!.tileId = tileId;
+      pending.changes[existingChangeIndex]!.id = id;
       return;
     }
 
@@ -55,8 +60,9 @@ export class DebugTileEditHistory {
     pending.changes.push({
       worldTileX,
       worldTileY,
-      previousTileId,
-      tileId
+      layer,
+      previousId,
+      id
     });
   }
 
@@ -77,25 +83,29 @@ export class DebugTileEditHistory {
     return true;
   }
 
-  undo(applyTile: (worldTileX: number, worldTileY: number, tileId: number) => void): boolean {
+  undo(
+    applyEdit: (worldTileX: number, worldTileY: number, layer: DebugTileEditLayer, id: number) => void
+  ): boolean {
     const stroke = this.undoStack.pop();
     if (!stroke) return false;
 
     for (let index = stroke.length - 1; index >= 0; index -= 1) {
       const change = stroke[index]!;
-      applyTile(change.worldTileX, change.worldTileY, change.previousTileId);
+      applyEdit(change.worldTileX, change.worldTileY, change.layer, change.previousId);
     }
 
     this.redoStack.push(stroke);
     return true;
   }
 
-  redo(applyTile: (worldTileX: number, worldTileY: number, tileId: number) => void): boolean {
+  redo(
+    applyEdit: (worldTileX: number, worldTileY: number, layer: DebugTileEditLayer, id: number) => void
+  ): boolean {
     const stroke = this.redoStack.pop();
     if (!stroke) return false;
 
     for (const change of stroke) {
-      applyTile(change.worldTileX, change.worldTileY, change.tileId);
+      applyEdit(change.worldTileX, change.worldTileY, change.layer, change.id);
     }
 
     this.undoStack.push(stroke);

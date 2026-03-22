@@ -511,6 +511,9 @@ const testRuntime = vi.hoisted(() => {
       worldTileY: number;
       kind: 'place' | 'break';
     }>,
+    completedDebugTileStrokes: [] as Array<{
+      strokeId: number;
+    }>,
     rendererTileId: 0,
     rendererTileIdsByWorldKey: new Map<string, number>(),
     rendererWallIdsByWorldKey: new Map<string, number>(),
@@ -1550,7 +1553,9 @@ vi.mock('./input/controller', () => ({
     }
 
     consumeCompletedDebugTileStrokes() {
-      return [];
+      const strokes = [...testRuntime.completedDebugTileStrokes];
+      testRuntime.completedDebugTileStrokes = [];
+      return strokes;
     }
 
     consumeDebugEditHistoryShortcutActions() {
@@ -1576,35 +1581,160 @@ vi.mock('./input/controller', () => ({
 
 vi.mock('./input/debugTileEditHistory', () => ({
   DebugTileEditHistory: class {
+    private pendingStrokes = new Map<
+      number,
+      {
+        changes: Array<{
+          worldTileX: number;
+          worldTileY: number;
+          layer: 'tile' | 'wall';
+          previousId: number;
+          id: number;
+        }>;
+        changeIndexesByKey: Map<string, number>;
+      }
+    >();
+    private undoStack: Array<
+      Array<{
+        worldTileX: number;
+        worldTileY: number;
+        layer: 'tile' | 'wall';
+        previousId: number;
+        id: number;
+      }>
+    > = [];
+    private redoStack: Array<
+      Array<{
+        worldTileX: number;
+        worldTileY: number;
+        layer: 'tile' | 'wall';
+        previousId: number;
+        id: number;
+      }>
+    > = [];
+
     constructor() {
       testRuntime.debugTileEditHistoryConstructCount += 1;
       const nextStatus = testRuntime.debugTileEditHistoryConstructorStatuses.shift();
-      testRuntime.debugTileEditHistoryStatus = nextStatus
-        ? { ...nextStatus }
-        : {
-            undoStrokeCount: 0,
-            redoStrokeCount: 0
-          };
+      this.undoStack = Array.from(
+        { length: Math.max(0, nextStatus?.undoStrokeCount ?? 0) },
+        () => []
+      );
+      this.redoStack = Array.from(
+        { length: Math.max(0, nextStatus?.redoStrokeCount ?? 0) },
+        () => []
+      );
+      this.syncStatus();
+    }
+
+    private syncStatus(): void {
+      testRuntime.debugTileEditHistoryStatus = {
+        undoStrokeCount: this.undoStack.length,
+        redoStrokeCount: this.redoStack.length
+      };
     }
 
     getStatus() {
+      this.syncStatus();
       return { ...testRuntime.debugTileEditHistoryStatus };
     }
 
-    recordAppliedEdit(): void {}
+    recordAppliedEdit(
+      strokeId: number,
+      worldTileX: number,
+      worldTileY: number,
+      previousId: number,
+      id: number,
+      layer: 'tile' | 'wall' = 'tile'
+    ): void {
+      if (previousId === id) return;
 
-    completeStroke(): boolean {
-      return false;
+      let pending = this.pendingStrokes.get(strokeId);
+      if (!pending) {
+        pending = {
+          changes: [],
+          changeIndexesByKey: new Map<string, number>()
+        };
+        this.pendingStrokes.set(strokeId, pending);
+      }
+
+      const key = `${layer}:${worldTileX},${worldTileY}`;
+      const existingChangeIndex = pending.changeIndexesByKey.get(key);
+      if (existingChangeIndex !== undefined) {
+        pending.changes[existingChangeIndex]!.id = id;
+        return;
+      }
+
+      pending.changeIndexesByKey.set(key, pending.changes.length);
+      pending.changes.push({
+        worldTileX,
+        worldTileY,
+        layer,
+        previousId,
+        id
+      });
     }
 
-    undo(): boolean {
+    completeStroke(strokeId: number): boolean {
+      const pending = this.pendingStrokes.get(strokeId);
+      if (!pending) return false;
+
+      this.pendingStrokes.delete(strokeId);
+      if (pending.changes.length === 0) return false;
+
+      this.undoStack.push(pending.changes);
+      this.redoStack = [];
+      this.syncStatus();
+      return true;
+    }
+
+    undo(
+      applyEdit: (
+        worldTileX: number,
+        worldTileY: number,
+        layer: 'tile' | 'wall',
+        id: number
+      ) => void
+    ): boolean {
       testRuntime.debugHistoryUndoCallCount += 1;
-      return false;
+      const stroke = this.undoStack.pop();
+      if (!stroke) {
+        this.syncStatus();
+        return false;
+      }
+
+      for (let index = stroke.length - 1; index >= 0; index -= 1) {
+        const change = stroke[index]!;
+        applyEdit(change.worldTileX, change.worldTileY, change.layer, change.previousId);
+      }
+
+      this.redoStack.push(stroke);
+      this.syncStatus();
+      return true;
     }
 
-    redo(): boolean {
+    redo(
+      applyEdit: (
+        worldTileX: number,
+        worldTileY: number,
+        layer: 'tile' | 'wall',
+        id: number
+      ) => void
+    ): boolean {
       testRuntime.debugHistoryRedoCallCount += 1;
-      return false;
+      const stroke = this.redoStack.pop();
+      if (!stroke) {
+        this.syncStatus();
+        return false;
+      }
+
+      for (const change of stroke) {
+        applyEdit(change.worldTileX, change.worldTileY, change.layer, change.id);
+      }
+
+      this.undoStack.push(stroke);
+      this.syncStatus();
+      return true;
     }
   }
 }));
@@ -2651,6 +2781,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.fixedStepWorldUpdateOrder = [];
     testRuntime.playerItemUseRequests = [];
     testRuntime.debugTileEdits = [];
+    testRuntime.completedDebugTileStrokes = [];
     testRuntime.rendererTileId = 0;
     testRuntime.rendererTileIdsByWorldKey.clear();
     testRuntime.rendererWallIdsByWorldKey.clear();
@@ -12185,6 +12316,106 @@ describe('main.ts shell state orchestration', () => {
         amount: 1
       }
     ]);
+  });
+
+  it('records wall-only debug break edits in shared history so undo and redo restore the wall layer', async () => {
+    const wallWorldTileX = 20;
+    const wallWorldTileY = -20;
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setWall(wallWorldTileX, wallWorldTileY, STARTER_DIRT_WALL_ID)).toBe(true);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right',
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createLegacyStarterInventoryState()
+        })
+      )
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.debugTileEdits = [
+      {
+        strokeId: 1,
+        worldTileX: wallWorldTileX,
+        worldTileY: wallWorldTileY,
+        kind: 'break'
+      }
+    ];
+    testRuntime.completedDebugTileStrokes = [{ strokeId: 1 }];
+    testRuntime.rendererSetWallResult = true;
+    testRuntime.rendererPersistentSetWallResult = true;
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([]);
+    expect(testRuntime.rendererSetWallCalls).toEqual([
+      {
+        worldTileX: wallWorldTileX,
+        worldTileY: wallWorldTileY,
+        wallId: 0
+      }
+    ]);
+    expect(testRuntime.debugEditControlsLatestHistoryState).toEqual({
+      undoStrokeCount: 1,
+      redoStrokeCount: 0
+    });
+    expect(testRuntime.rendererWallIdsByWorldKey.get(worldTileKey(wallWorldTileX, wallWorldTileY))).toBeUndefined();
+
+    testRuntime.debugEditControlsInstance?.triggerUndo();
+
+    expect(testRuntime.rendererSetWallCalls).toEqual([
+      {
+        worldTileX: wallWorldTileX,
+        worldTileY: wallWorldTileY,
+        wallId: 0
+      },
+      {
+        worldTileX: wallWorldTileX,
+        worldTileY: wallWorldTileY,
+        wallId: STARTER_DIRT_WALL_ID
+      }
+    ]);
+    expect(testRuntime.rendererWallIdsByWorldKey.get(worldTileKey(wallWorldTileX, wallWorldTileY))).toBe(
+      STARTER_DIRT_WALL_ID
+    );
+    expect(testRuntime.debugEditControlsLatestHistoryState).toEqual({
+      undoStrokeCount: 0,
+      redoStrokeCount: 1
+    });
+
+    testRuntime.debugEditControlsInstance?.triggerRedo();
+
+    expect(testRuntime.rendererSetWallCalls).toEqual([
+      {
+        worldTileX: wallWorldTileX,
+        worldTileY: wallWorldTileY,
+        wallId: 0
+      },
+      {
+        worldTileX: wallWorldTileX,
+        worldTileY: wallWorldTileY,
+        wallId: STARTER_DIRT_WALL_ID
+      },
+      {
+        worldTileX: wallWorldTileX,
+        worldTileY: wallWorldTileY,
+        wallId: 0
+      }
+    ]);
+    expect(testRuntime.rendererWallIdsByWorldKey.get(worldTileKey(wallWorldTileX, wallWorldTileY))).toBeUndefined();
+    expect(testRuntime.debugEditControlsLatestHistoryState).toEqual({
+      undoStrokeCount: 1,
+      redoStrokeCount: 0
+    });
   });
 
   it('keeps foreground-tile precedence before the debug break wall-only fallback', async () => {

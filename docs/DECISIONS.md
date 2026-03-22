@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-22: Debug history keys same-cell wall edits separately from foreground tile edits
+
+- Decision: Shared `DebugTileEditHistory` strokes now record a `layer` (`tile` or `wall`) with each edit and key same-cell changes by both coordinates and layer instead of collapsing everything onto one tile-coordinate entry.
+- Reason: Wall-only debug-break undo or redo needs to restore background walls through the shared history path, and same-stroke foreground-then-wall clears at one cell would lose one layer unless the history model distinguished them explicitly.
+- Consequence: Future debug-history follow-ups should preserve layer-aware stroke entries whenever a tool can touch both foreground tiles and background walls, rather than deduplicating by coordinates alone.
+
 ### 2026-03-22: Debug break only targets background walls after the foreground tile is empty
 
 - Decision: In-world `Debug Edit` break actions now clear the foreground tile first and only fall back to clearing a background wall when that same cell's foreground tile is already empty, while routing wall-only clears through `Renderer.setWall(...)`.

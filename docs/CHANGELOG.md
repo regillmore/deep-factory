@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-22
 
+- Task: Add a background-wall debug-history follow-up after starter background-wall debug-break.
+- Changes: Updated [src/input/debugTileEditHistory.ts](../src/input/debugTileEditHistory.ts) plus [src/input/debugTileEditHistory.test.ts](../src/input/debugTileEditHistory.test.ts) so shared debug-history strokes now track `tile` versus `wall` layer edits separately, then updated [src/main.ts](../src/main.ts) and [src/main.test.ts](../src/main.test.ts) so wall-only debug-break edits record into the shared undo or redo flow and restore background walls through the same history controls; removed completed task `687` from [docs/NEXT.md](docs/NEXT.md), added replacement task `690`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json`, `cmd /c npx vitest run src/input/debugTileEditHistory.test.ts`, and `cmd /c npx vitest run src/main.test.ts`.
+
 - Task: Add a starter background-wall debug-break follow-up after starter background-wall removal and background-wall edit notifications.
 - Changes: Updated [src/main.ts](../src/main.ts) so debug break paint, flood fill, and shape actions now clear foreground tiles first, then fall back to wall-only background-wall clears through the existing renderer wall-edit path without pulling wall undo/redo into the same pass; refreshed [src/main.test.ts](../src/main.test.ts) with focused regressions for wall-only dirt-wall debug breaks plus foreground-first precedence, removed completed task `683` from [docs/NEXT.md](docs/NEXT.md), added replacement task `689`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/main.test.ts -t "debug break wall"`.
