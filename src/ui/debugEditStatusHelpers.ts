@@ -215,6 +215,11 @@ export interface DebugEditHoveredTileState {
   tileRenderSource?: string | null;
   tileRenderUvRect?: string | null;
   tileRenderPixelBounds?: string | null;
+  wallId?: number | null;
+  wallLabel?: string | null;
+  wallRenderSource?: string | null;
+  wallRenderUvRect?: string | null;
+  wallRenderPixelBounds?: string | null;
 }
 
 export interface DebugEditStatusStripPlayerRespawnTelemetry {
@@ -714,6 +719,19 @@ const hasSameInspectTarget = (
   hoveredTile.tileX === pinnedTile.tileX &&
   hoveredTile.tileY === pinnedTile.tileY;
 
+const formatInspectWallIdentity = (tile: DebugEditHoveredTileState): string | null => {
+  if (tile.wallLabel && typeof tile.wallId === 'number') {
+    return `wall:${tile.wallLabel} (#${tile.wallId})`;
+  }
+  if (tile.wallLabel) {
+    return `wall:${tile.wallLabel}`;
+  }
+  if (typeof tile.wallId === 'number') {
+    return `wall:#${tile.wallId}`;
+  }
+  return null;
+};
+
 const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): string => {
   const liquidLevel = formatLiquidLevel(tile.liquidLevel);
   const liquidSurfaceInputs = formatLiquidSurfaceInputs(
@@ -792,11 +810,13 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
     tile.liquidAnimationLoopProgressNormalized
   );
   const liquidAnimationLoopRemaining = formatDurationMs(tile.liquidAnimationLoopRemainingMs);
+  const wallIdentity = formatInspectWallIdentity(tile);
 
   return (
     `${label}: ${tile.tileLabel} (#${tile.tileId}) @ ${tile.tileX},${tile.tileY}` +
     ` chunk:${tile.chunkX},${tile.chunkY}` +
     ` local:${tile.localX},${tile.localY}` +
+    (wallIdentity ? ` | ${wallIdentity}` : '') +
     ` | solid:${formatHoveredTileFlag(tile.solid)}` +
     ` | light:${formatHoveredTileFlag(tile.blocksLight)}` +
     ` | liquid:${tile.liquidKind ?? 'none'}` +
@@ -888,6 +908,15 @@ const formatInspectTileLine = (label: string, tile: DebugEditHoveredTileState): 
       : '') +
     (typeof tile.tileRenderPixelBounds === 'string' && tile.tileRenderPixelBounds.length > 0
       ? ` | tilePx:${tile.tileRenderPixelBounds}`
+      : '') +
+    (typeof tile.wallRenderSource === 'string' && tile.wallRenderSource.length > 0
+      ? ` | wallSrc:${tile.wallRenderSource}`
+      : '') +
+    (typeof tile.wallRenderUvRect === 'string' && tile.wallRenderUvRect.length > 0
+      ? ` | wallUv:${tile.wallRenderUvRect}`
+      : '') +
+    (typeof tile.wallRenderPixelBounds === 'string' && tile.wallRenderPixelBounds.length > 0
+      ? ` | wallPx:${tile.wallRenderPixelBounds}`
       : '')
   );
 };

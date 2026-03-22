@@ -920,6 +920,57 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('tilePx:48,16..64,32');
   });
 
+  it('shows wall-layer identity and authored source details for wall-only inspect tiles', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: {
+        client: { x: 48, y: 80 },
+        canvas: { x: 96, y: 160 },
+        world: { x: 32, y: -16 },
+        tile: { x: 2, y: -1 },
+        pointerType: 'mouse',
+        tileId: 0,
+        tileLabel: 'empty',
+        solid: false,
+        blocksLight: false,
+        liquidKind: null,
+        wallId: 1,
+        wallLabel: 'dirt wall',
+        wallRenderSource: 'atlasIndex 34',
+        wallRenderUvRect: '0.833,0.25..0.917,0.5',
+        wallRenderPixelBounds: '160,16..176,32'
+      },
+      spawn: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: null,
+      player: null,
+      pinned: {
+        tile: { x: 2, y: -1 },
+        tileId: 0,
+        tileLabel: 'empty',
+        solid: false,
+        blocksLight: false,
+        liquidKind: null,
+        wallId: 1,
+        wallLabel: 'dirt wall',
+        wallRenderSource: 'atlasIndex 34',
+        wallRenderUvRect: '0.833,0.25..0.917,0.5',
+        wallRenderPixelBounds: '160,16..176,32'
+      }
+    });
+
+    expect(text).toContain('Tile:empty (#0) | Wall:dirt wall (#1)');
+    expect(text).toContain('wallSrc:atlasIndex 34');
+    expect(text).toContain('wallUv:0.833,0.25..0.917,0.5');
+    expect(text).toContain('wallPx:160,16..176,32');
+  });
+
   it('shows live standalone player position, velocity, grounded state, and facing', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: null,

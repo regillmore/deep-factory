@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-22: Wall-only inspect render telemetry resolves through shared wall-metadata helpers
+
+- Decision: Wall-only inspect readouts now describe background-wall render source, UV rect, and atlas pixel bounds through shared helpers in `src/world/wallMetadata.ts` instead of formatting wall render metadata directly inside `src/main.ts` or the UI layers.
+- Reason: Background-wall inspect needs wall ids, names, and authored atlas details to stay aligned with the renderer's metadata path without duplicating atlas-index-versus-`uvRect` branching in multiple callers.
+- Consequence: Future wall inspect or wall-atlas debugging follow-ups should reuse the shared wall-metadata description helpers rather than rebuilding wall source formatting in runtime assembly or overlay formatters.
+
 ### 2026-03-22: Background-wall render metadata shares the runtime atlas-validation path
 
 - Decision: Renderer startup now validates `src/world/wallMetadata.ts` render sources through the same atlas bounds and whole-pixel warning seam used for tile, terrain, and liquid metadata.

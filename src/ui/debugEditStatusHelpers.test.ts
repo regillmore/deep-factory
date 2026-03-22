@@ -2618,6 +2618,39 @@ describe('buildDebugEditStatusStripModel', () => {
     );
   });
 
+  it('shows wall-layer identity and authored source details in compact inspect text for wall-only cells', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      preview: createEmptyPreviewState(),
+      desktopInspectPinArmed: false,
+      hoveredTile: {
+        tileX: 12,
+        tileY: -4,
+        chunkX: 0,
+        chunkY: -1,
+        localX: 12,
+        localY: 28,
+        tileId: 0,
+        tileLabel: 'empty',
+        solid: false,
+        blocksLight: false,
+        liquidKind: null,
+        wallId: 1,
+        wallLabel: 'dirt wall',
+        wallRenderSource: 'atlasIndex 34',
+        wallRenderUvRect: '0.833,0.25..0.917,0.5',
+        wallRenderPixelBounds: '160,16..176,32'
+      },
+      pinnedTile: null
+    });
+
+    expect(model.hoverText).toBe(
+      'Hover: empty (#0) @ 12,-4 chunk:0,-1 local:12,28 | wall:dirt wall (#1) | solid:off | light:off | liquid:none | wallSrc:atlasIndex 34 | wallUv:0.833,0.25..0.917,0.5 | wallPx:160,16..176,32'
+    );
+  });
+
   it('shows pinned inspect metadata with a repin hint when no separate hover target is present', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',

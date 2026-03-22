@@ -470,6 +470,12 @@ import {
   resolveTileGameplayMetadata,
   TILE_METADATA
 } from './world/tileMetadata';
+import {
+  describeWallRenderPixelBounds,
+  describeWallRenderSource,
+  describeWallRenderUvRect,
+  getWallMetadata
+} from './world/wallMetadata';
 
 const DEBUG_TILE_BREAK_ID = 0;
 const PREFERRED_INITIAL_DEBUG_BRUSH_TILE_NAME = 'debug_brick';
@@ -5435,11 +5441,14 @@ const bootstrap = async (): Promise<void> => {
     elapsedMs: number
   ): DebugEditHoveredTileState => {
     const tileId = renderer.getTile(tileX, tileY);
+    const wallId = renderer.getWall(tileX, tileY);
     const liquidLevel = renderer.getLiquidLevel(tileX, tileY);
     const tileMetadata = getTileMetadata(tileId);
     const gameplay = resolveTileGameplayMetadata(tileId);
     const { chunkX, chunkY } = worldToChunkCoord(tileX, tileY);
     const { localX, localY } = worldToLocalTile(tileX, tileY);
+    const showWallInspect = tileId === 0 && wallId !== 0;
+    const wallMetadata = showWallInspect ? getWallMetadata(wallId) : null;
     const liquidSurfaceLevelNeighborhood = resolveDebugTileLiquidSurfaceLevelNeighborhood(
       tileX,
       tileY,
@@ -5525,6 +5534,18 @@ const bootstrap = async (): Promise<void> => {
       Number.isFinite(atlasHeight) &&
       atlasHeight > 0
         ? describeTileRenderPixelBoundsAtElapsedMs(tileId, elapsedMs, atlasWidth, atlasHeight)
+        : null;
+    const wallRenderSource = showWallInspect ? describeWallRenderSource(wallId) : null;
+    const wallRenderUvRect = showWallInspect ? describeWallRenderUvRect(wallId) : null;
+    const wallRenderPixelBounds =
+      showWallInspect &&
+      typeof atlasWidth === 'number' &&
+      Number.isFinite(atlasWidth) &&
+      atlasWidth > 0 &&
+      typeof atlasHeight === 'number' &&
+      Number.isFinite(atlasHeight) &&
+      atlasHeight > 0
+        ? describeWallRenderPixelBounds(wallId, atlasWidth, atlasHeight)
         : null;
     const liquidFrameTopV = liquidVariantUvRect ? resolveLiquidSurfaceFrameTopV(liquidVariantUvRect) : null;
     const liquidFrameTopPixelY =
@@ -5697,6 +5718,11 @@ const bootstrap = async (): Promise<void> => {
       tileRenderSource,
       tileRenderUvRect,
       tileRenderPixelBounds,
+      wallId: showWallInspect ? wallId : null,
+      wallLabel: showWallInspect ? (wallMetadata ? formatDebugBrushLabel(wallMetadata.name) : `wall ${wallId}`) : null,
+      wallRenderSource,
+      wallRenderUvRect,
+      wallRenderPixelBounds,
       tileX,
       tileY,
       chunkX,
@@ -6609,7 +6635,12 @@ const bootstrap = async (): Promise<void> => {
           tileAnimationFrameCount: hoveredDebugTileStatus?.tileAnimationFrameCount ?? null,
           tileRenderSource: hoveredDebugTileStatus?.tileRenderSource ?? null,
           tileRenderUvRect: hoveredDebugTileStatus?.tileRenderUvRect ?? null,
-          tileRenderPixelBounds: hoveredDebugTileStatus?.tileRenderPixelBounds ?? null
+          tileRenderPixelBounds: hoveredDebugTileStatus?.tileRenderPixelBounds ?? null,
+          wallId: hoveredDebugTileStatus?.wallId ?? null,
+          wallLabel: hoveredDebugTileStatus?.wallLabel ?? null,
+          wallRenderSource: hoveredDebugTileStatus?.wallRenderSource ?? null,
+          wallRenderUvRect: hoveredDebugTileStatus?.wallRenderUvRect ?? null,
+          wallRenderPixelBounds: hoveredDebugTileStatus?.wallRenderPixelBounds ?? null
         }
       : null;
     const debugOverlayPinnedInspect = pinnedDebugTileStatus
@@ -6688,7 +6719,12 @@ const bootstrap = async (): Promise<void> => {
           tileAnimationFrameCount: pinnedDebugTileStatus.tileAnimationFrameCount ?? null,
           tileRenderSource: pinnedDebugTileStatus.tileRenderSource ?? null,
           tileRenderUvRect: pinnedDebugTileStatus.tileRenderUvRect ?? null,
-          tileRenderPixelBounds: pinnedDebugTileStatus.tileRenderPixelBounds ?? null
+          tileRenderPixelBounds: pinnedDebugTileStatus.tileRenderPixelBounds ?? null,
+          wallId: pinnedDebugTileStatus.wallId ?? null,
+          wallLabel: pinnedDebugTileStatus.wallLabel ?? null,
+          wallRenderSource: pinnedDebugTileStatus.wallRenderSource ?? null,
+          wallRenderUvRect: pinnedDebugTileStatus.wallRenderUvRect ?? null,
+          wallRenderPixelBounds: pinnedDebugTileStatus.wallRenderPixelBounds ?? null
         }
       : null;
     const resolvedPlayerSpawnTelemetry = createResolvedPlayerSpawnTelemetrySnapshot();

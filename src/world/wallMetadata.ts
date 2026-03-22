@@ -2,7 +2,12 @@ import {
   AUTHORED_ATLAS_REGION_COUNT,
   AUTHORED_ATLAS_UV_RECTS
 } from './authoredAtlasLayout';
-import type { TileUvRect } from './tileMetadata';
+import {
+  describeTileRenderFrameSource,
+  describeTileUvRect,
+  describeTileUvRectPixelBounds,
+  type TileUvRect
+} from './tileMetadata';
 import rawWallMetadata from './wallMetadata.json';
 
 export interface WallRenderMetadata {
@@ -206,7 +211,34 @@ export const getWallMetadata = (
   registry: WallMetadataRegistry = WALL_METADATA
 ): WallMetadataEntry | null => registry.wallsById.get(wallId) ?? null;
 
+export const resolveWallRenderMetadata = (
+  wallId: number,
+  registry: WallMetadataRegistry = WALL_METADATA
+): WallRenderMetadata | null => getWallMetadata(wallId, registry)?.render ?? null;
+
 export const resolveWallRenderUvRect = (
   wallId: number,
   registry: WallMetadataRegistry = WALL_METADATA
 ): TileUvRect | null => getStaticWallRenderUvRect(wallId, registry);
+
+export const describeWallRenderSource = (
+  wallId: number,
+  registry: WallMetadataRegistry = WALL_METADATA
+): string | null => describeTileRenderFrameSource(resolveWallRenderMetadata(wallId, registry));
+
+export const describeWallRenderUvRect = (
+  wallId: number,
+  registry: WallMetadataRegistry = WALL_METADATA
+): string | null => describeTileUvRect(resolveWallRenderUvRect(wallId, registry));
+
+export const describeWallRenderPixelBounds = (
+  wallId: number,
+  atlasWidth: number,
+  atlasHeight: number,
+  registry: WallMetadataRegistry = WALL_METADATA
+): string | null =>
+  describeTileUvRectPixelBounds(
+    resolveWallRenderUvRect(wallId, registry),
+    atlasWidth,
+    atlasHeight
+  );

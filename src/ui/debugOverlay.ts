@@ -124,6 +124,11 @@ export interface DebugOverlayPointerInspect {
   tileRenderSource?: string | null;
   tileRenderUvRect?: string | null;
   tileRenderPixelBounds?: string | null;
+  wallId?: number | null;
+  wallLabel?: string | null;
+  wallRenderSource?: string | null;
+  wallRenderUvRect?: string | null;
+  wallRenderPixelBounds?: string | null;
   client: { x: number; y: number };
   canvas: { x: number; y: number };
   world: { x: number; y: number };
@@ -191,6 +196,11 @@ export interface DebugOverlayTileInspect {
   tileRenderSource?: string | null;
   tileRenderUvRect?: string | null;
   tileRenderPixelBounds?: string | null;
+  wallId?: number | null;
+  wallLabel?: string | null;
+  wallRenderSource?: string | null;
+  wallRenderUvRect?: string | null;
+  wallRenderPixelBounds?: string | null;
 }
 
 export interface DebugOverlayPlayerSpawn {
@@ -536,6 +546,19 @@ const formatTileIdentity = (tileInspect: DebugOverlayTileInspect): string | null
   return null;
 };
 
+const formatWallIdentity = (tileInspect: DebugOverlayTileInspect): string | null => {
+  if (tileInspect.wallLabel && typeof tileInspect.wallId === 'number') {
+    return `Wall:${tileInspect.wallLabel} (#${tileInspect.wallId})`;
+  }
+  if (tileInspect.wallLabel) {
+    return `Wall:${tileInspect.wallLabel}`;
+  }
+  if (typeof tileInspect.wallId === 'number') {
+    return `Wall:#${tileInspect.wallId}`;
+  }
+  return null;
+};
+
 const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
   if (typeof tileInspect.solid !== 'boolean' || typeof tileInspect.blocksLight !== 'boolean') {
     return '';
@@ -723,6 +746,16 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
     (typeof tileInspect.tileRenderPixelBounds === 'string' &&
     tileInspect.tileRenderPixelBounds.length > 0
       ? ` | tilePx:${tileInspect.tileRenderPixelBounds}`
+      : '') +
+    (typeof tileInspect.wallRenderSource === 'string' && tileInspect.wallRenderSource.length > 0
+      ? ` | wallSrc:${tileInspect.wallRenderSource}`
+      : '') +
+    (typeof tileInspect.wallRenderUvRect === 'string' && tileInspect.wallRenderUvRect.length > 0
+      ? ` | wallUv:${tileInspect.wallRenderUvRect}`
+      : '') +
+    (typeof tileInspect.wallRenderPixelBounds === 'string' &&
+    tileInspect.wallRenderPixelBounds.length > 0
+      ? ` | wallPx:${tileInspect.wallRenderPixelBounds}`
       : '')
   );
 };
@@ -730,7 +763,10 @@ const formatTileGameplay = (tileInspect: DebugOverlayTileInspect): string => {
 const formatTileLocation = (tileInspect: DebugOverlayTileInspect): string => {
   const { chunkX, chunkY } = worldToChunkCoord(tileInspect.tile.x, tileInspect.tile.y);
   const { localX, localY } = worldToLocalTile(tileInspect.tile.x, tileInspect.tile.y);
-  const tileIdentity = formatTileIdentity(tileInspect);
+  const identitySegments = [formatTileIdentity(tileInspect), formatWallIdentity(tileInspect)].filter(
+    (segment): segment is string => segment !== null
+  );
+  const tileIdentity = identitySegments.length > 0 ? identitySegments.join(' | ') : null;
 
   return (
     (tileIdentity ? `${tileIdentity} | ` : '') +
