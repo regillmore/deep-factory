@@ -45,13 +45,14 @@ describe('authored atlas layout', () => {
     expect(AUTHORED_ATLAS_REGIONS[30]).toEqual({ x: 128, y: 16, width: 16, height: 16 });
     expect(AUTHORED_ATLAS_REGIONS[31]).toEqual({ x: 144, y: 0, width: 16, height: 16 });
     expect(AUTHORED_ATLAS_REGIONS[32]).toEqual({ x: 144, y: 16, width: 16, height: 16 });
+    expect(AUTHORED_ATLAS_REGIONS[33]).toEqual({ x: 160, y: 0, width: 16, height: 16 });
 
     const maxRegionRight = AUTHORED_ATLAS_REGIONS.reduce(
       (maxRight, region) => Math.max(maxRight, region.x + region.width),
       0
     );
 
-    expect(maxRegionRight).toBe(160);
+    expect(maxRegionRight).toBe(176);
     expect(maxRegionRight).toBeLessThan(AUTHORED_ATLAS_WIDTH);
   });
 });

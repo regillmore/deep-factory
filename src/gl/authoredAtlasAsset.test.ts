@@ -1250,6 +1250,29 @@ describe('authored atlas asset', () => {
     expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, stoneRegion!, copperRegion!)).toBe(false);
   });
 
+  it('keeps wood-block placeholders in a dedicated authored region', () => {
+    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
+    const woodBlockTile = TILE_METADATA.tiles.find((tile) => tile.name === 'wood_block');
+    const dirtTile = TILE_METADATA.tiles.find((tile) => tile.name === 'dirt_block');
+    const stoneTile = TILE_METADATA.tiles.find((tile) => tile.name === 'stone');
+
+    expect(woodBlockTile?.render?.atlasIndex).toBe(33);
+
+    const woodBlockRegion = AUTHORED_ATLAS_REGIONS[woodBlockTile!.render!.atlasIndex!];
+    const dirtRegion = AUTHORED_ATLAS_REGIONS[dirtTile!.render!.atlasIndex!];
+    const stoneRegion = AUTHORED_ATLAS_REGIONS[stoneTile!.render!.atlasIndex!];
+    expect(woodBlockRegion).toEqual({ x: 160, y: 0, width: 16, height: 16 });
+
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, woodBlockRegion!)).toEqual({
+      x: woodBlockRegion!.x,
+      y: woodBlockRegion!.y,
+      width: 16,
+      height: 16
+    });
+    expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, woodBlockRegion!, dirtRegion!)).toBe(false);
+    expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, woodBlockRegion!, stoneRegion!)).toBe(false);
+  });
+
   it('keeps small-tree sapling, trunk, and leaf placeholders in dedicated authored regions', () => {
     const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
     const saplingTile = TILE_METADATA.tiles.find((tile) => tile.name === 'small_tree_sapling');
@@ -1378,9 +1401,9 @@ describe('authored atlas asset', () => {
 
     const exteriorPaddingStrip = getExteriorPaddingStripRegion(pngWidth, pngHeight);
     expect(exteriorPaddingStrip).toEqual({
-      x: 160,
+      x: 176,
       y: 0,
-      width: pngWidth - 160,
+      width: pngWidth - 176,
       height: pngHeight
     });
   });

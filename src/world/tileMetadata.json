@@ -1245,6 +1245,9 @@
         "solid": true,
         "blocksLight": true
       },
+      "render": {
+        "atlasIndex": 33
+      },
       "terrainAutotile": {
         "connectivityGroup": "wood",
         "placeholderVariantAtlasByCardinalMask": [

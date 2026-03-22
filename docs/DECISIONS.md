@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-21: Wood-block terrain art uses the first free right-column authored region
+
+- Decision: `wood_block` now keeps its existing `wood` terrain connectivity metadata but renders through dedicated static authored region `33`, leaving the committed atlas at `192x64`, preserving spare region `21`, and moving the transparent exterior padding strip start to `x=176`.
+- Reason: Placed wood blocks needed their own committed placeholder art without giving up the reserved blank slot or regressing the existing wood-only seam rules that already keep them visually separate from ground terrain.
+- Consequence: Future wood-derived terrain can keep reusing the `wood` connectivity group while opting into dedicated authored art region overrides, and later atlas edits should preserve equivalent spare-slot and exterior-padding regression space unless they intentionally update those checks in the same pass.
+
 ### 2026-03-21: Stone and copper terrain art widens the atlas and renormalizes direct UV metadata
 
 - Decision: The authored atlas now widens to `192x64`, gives `stone` and `copper_ore` dedicated authored regions `31` and `32`, keeps region `21` blank as the documented spare slot, and renormalizes every shipped direct `render.uvRect` source so the wider atlas preserves the same pixel rectangles for debug and liquid content.

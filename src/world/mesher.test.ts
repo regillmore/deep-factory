@@ -398,7 +398,7 @@ describe('buildChunkMesh autotile UV selection', () => {
     const chunkY = -10;
     const localX = CHUNK_SIZE - 1;
     const localY = CHUNK_SIZE - 1;
-    const tileId = 19;
+    const tileId = 1;
     const world = new TileWorld(0);
 
     const worldTileX = chunkX * CHUNK_SIZE + localX;
@@ -412,6 +412,7 @@ describe('buildChunkMesh autotile UV selection', () => {
     const chunk = world.ensureChunk(chunkX, chunkY);
     const scratchRefs: object[] = [];
     const mesh = buildChunkMesh(chunk, {
+      tileMetadataRegistry: createTerrainAutotileTestRegistry(),
       sampleNeighborhoodInto: (sampleChunkX, sampleChunkY, sampleLocalX, sampleLocalY, target) => {
         scratchRefs.push(target);
         world.sampleLocalTileNeighborhoodInto(
@@ -598,6 +599,28 @@ describe('buildChunkMesh autotile UV selection', () => {
 
     expect(mesh.vertexCount).toBe(6);
     expectSingleQuadUvRect(mesh.vertices, 32);
+  });
+
+  it('emits wood-block quads from the dedicated authored atlas region', () => {
+    const chunk = createEmptyChunk();
+    setChunkTile(chunk, 0, 0, 19);
+
+    const mesh = buildChunkMesh(chunk, {
+      sampleNeighborhood: () => ({
+        center: 19,
+        north: 19,
+        northEast: 19,
+        east: 19,
+        southEast: 0,
+        south: 0,
+        southWest: 0,
+        west: 0,
+        northWest: 0
+      })
+    });
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 33);
   });
 
   it('emits workbench quads from the dedicated authored atlas region', () => {

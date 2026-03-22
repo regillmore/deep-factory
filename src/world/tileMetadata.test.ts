@@ -175,6 +175,7 @@ describe('tile metadata loader', () => {
     expect(resolveTileRenderUvRect(16)).toEqual(atlasIndexToUvRect(23));
     expect(resolveTileRenderUvRect(17)).toEqual(atlasIndexToUvRect(24));
     expect(resolveTileRenderUvRect(18)).toEqual(atlasIndexToUvRect(25));
+    expect(resolveTileRenderUvRect(19)).toEqual(atlasIndexToUvRect(33));
     expect(hasAnimatedTileRenderMetadata(10)).toBe(true);
     expect(getAnimatedTileRenderFrameCount(10)).toBe(2);
     expect(getAnimatedTileRenderFrameDurationMs(10)).toBe(180);
