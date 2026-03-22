@@ -49,6 +49,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
     baseColor: [0.47, 0.33, 0.18],
     accentColor: [0.68, 0.54, 0.33]
   },
+  'dirt-wall': {
+    baseColor: [0.39, 0.28, 0.17],
+    accentColor: [0.61, 0.48, 0.31]
+  },
   'stone-block': {
     baseColor: [0.41, 0.43, 0.47],
     accentColor: [0.67, 0.69, 0.74]

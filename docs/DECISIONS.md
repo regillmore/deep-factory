@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-21: Starter dirt-wall placement only targets enclosed empty cells
+
+- Decision: The first `dirt-wall` hotbar placement path only writes to the separate wall layer on empty foreground cells whose four cardinal directions each find solid terrain within a short local scan, and it never treats player overlap as a blocker because walls stay non-solid.
+- Reason: Starter wall placement needs a deterministic mixed-device preview rule that keeps early wall painting inside room-like pockets without introducing full housing validation or exposed-sky wall spam.
+- Consequence: Future background-wall items and removal tools should reuse or deliberately replace that enclosed-empty-cell evaluator instead of falling back to ordinary solid-face placement rules.
+
 ### 2026-03-21: Background walls persist as a separate chunk layer
 
 - Decision: `TileWorld` and chunk snapshots now store background-wall ids in a dedicated `wallIds` layer plus sparse wall overrides instead of overloading foreground tile ids, and legacy chunk snapshots that predate that layer decode missing wall payloads as empty walls.

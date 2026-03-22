@@ -5,6 +5,7 @@ export type PlayerInventoryItemId =
   | 'acorn'
   | 'pickaxe'
   | 'dirt-block'
+  | 'dirt-wall'
   | 'stone-block'
   | 'wood-block'
   | 'copper-ore'
@@ -70,6 +71,7 @@ export const PLAYER_INVENTORY_ITEM_IDS: readonly PlayerInventoryItemId[] = [
   'acorn',
   'pickaxe',
   'dirt-block',
+  'dirt-wall',
   'stone-block',
   'wood-block',
   'copper-ore',
@@ -115,6 +117,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     id: 'dirt-block',
     label: 'Dirt Block',
     hotbarLabel: 'DIRT',
+    maxStackSize: 999
+  },
+  'dirt-wall': {
+    id: 'dirt-wall',
+    label: 'Dirt Wall',
+    hotbarLabel: 'DWALL',
     maxStackSize: 999
   },
   'stone-block': {

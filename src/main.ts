@@ -334,6 +334,11 @@ import {
   resolvePlaceableSolidBlockTileId
 } from './world/starterBlockPlacement';
 import {
+  evaluateStarterWallPlacement,
+  isPlaceableBackgroundWallItemId,
+  resolvePlaceableBackgroundWallId
+} from './world/starterWallPlacement';
+import {
   evaluateStarterTorchPlacement,
   STARTER_TORCH_ITEM_ID,
   STARTER_TORCH_TILE_ID
@@ -3894,6 +3899,19 @@ const bootstrap = async (): Promise<void> => {
       changed
     };
   };
+  const applyWorldWallEdit = (
+    worldTileX: number,
+    worldTileY: number,
+    wallId: number
+  ): { previousWallId: number; changed: boolean } => {
+    const previousWallId = renderer.getWall(worldTileX, worldTileY);
+    const changed = renderer.setWall(worldTileX, worldTileY, wallId);
+
+    return {
+      previousWallId,
+      changed
+    };
+  };
   const resolvePlayerItemUseFacing = (
     playerState: PlayerState,
     request: PlayerItemUseRequest
@@ -4474,8 +4492,11 @@ const bootstrap = async (): Promise<void> => {
     }
 
     let placementTileId: number | null = null;
+    let placementWallId: number | null = null;
     if (isPlaceableSolidBlockItemId(selectedStack.itemId)) {
       placementTileId = resolvePlaceableSolidBlockTileId(selectedStack.itemId);
+    } else if (isPlaceableBackgroundWallItemId(selectedStack.itemId)) {
+      placementWallId = resolvePlaceableBackgroundWallId(selectedStack.itemId);
     } else {
       switch (selectedStack.itemId) {
         case STARTER_ANVIL_ITEM_ID:
@@ -4497,15 +4518,22 @@ const bootstrap = async (): Promise<void> => {
           return false;
       }
     }
-    if (placementTileId === null) {
+    if (placementTileId === null && placementWallId === null) {
       return false;
     }
 
-    const editResult = applyWorldTileEdit(
-      placementPreview.placementTileX,
-      placementPreview.placementTileY,
-      placementTileId
-    );
+    const editResult =
+      placementWallId === null
+        ? applyWorldTileEdit(
+            placementPreview.placementTileX,
+            placementPreview.placementTileY,
+            placementTileId as number
+          )
+        : applyWorldWallEdit(
+            placementPreview.placementTileX,
+            placementPreview.placementTileY,
+            placementWallId
+          );
     if (!editResult.changed) {
       return false;
     }
@@ -4546,6 +4574,21 @@ const bootstrap = async (): Promise<void> => {
         worldTileX,
         worldTileY
       );
+    } else if (isPlaceableBackgroundWallItemId(selectedStack.itemId)) {
+      const wallPlacement = evaluateStarterWallPlacement(
+        {
+          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY),
+          getWall: (tileX, tileY) => renderer.getWall(tileX, tileY)
+        },
+        worldTileX,
+        worldTileY
+      );
+      placement = {
+        occupied: wallPlacement.occupied,
+        hasSolidFaceSupport: wallPlacement.enclosed,
+        blockedByPlayer: false,
+        canPlace: wallPlacement.canPlace
+      };
     } else {
       switch (selectedStack.itemId) {
         case ACORN_ITEM_ID: {

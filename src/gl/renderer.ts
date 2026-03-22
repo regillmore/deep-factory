@@ -920,8 +920,21 @@ export class Renderer {
     return this.world.setTileState(worldTileX, worldTileY, tileId, liquidLevel);
   }
 
+  setWall(worldTileX: number, worldTileY: number, wallId: number): boolean {
+    const changed = this.world.setWall(worldTileX, worldTileY, wallId);
+    if (changed) {
+      const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+      this.invalidateChunkMesh(chunkX, chunkY);
+    }
+    return changed;
+  }
+
   getTile(worldTileX: number, worldTileY: number): number {
     return this.world.getTile(worldTileX, worldTileY);
+  }
+
+  getWall(worldTileX: number, worldTileY: number): number {
+    return this.world.getWall(worldTileX, worldTileY);
   }
 
   getLiquidLevel(worldTileX: number, worldTileY: number): number {

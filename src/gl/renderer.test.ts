@@ -764,6 +764,31 @@ describe('Renderer atlas telemetry', () => {
     expect(restoredSnapshotWorld.getTile(worldTileX, worldTileY)).toBe(6);
   });
 
+  it('reads and writes background walls through the active world state', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
+    });
+    await renderer.initialize();
+
+    const worldTileX = CHUNK_SIZE + 5;
+    const worldTileY = -18;
+
+    expect(renderer.setWall(worldTileX, worldTileY, 1)).toBe(true);
+    expect(renderer.getWall(worldTileX, worldTileY)).toBe(1);
+
+    const snapshot = renderer.createWorldSnapshot();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(snapshot);
+    expect(restoredWorld.getWall(worldTileX, worldTileY)).toBe(1);
+  });
+
   it('resets into seeded procedural terrain when a world seed is provided', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));

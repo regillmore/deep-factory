@@ -137,6 +137,7 @@ const chunkCoordKey = (chunkX: number, chunkY: number): string => `${chunkX},${c
 
 const syncRendererMapsFromWorldSnapshot = (snapshot: ReturnType<TileWorld['createSnapshot']>): void => {
   testRuntime.rendererTileIdsByWorldKey.clear();
+  testRuntime.rendererWallIdsByWorldKey.clear();
   testRuntime.rendererLiquidLevelsByWorldKey.clear();
 
   const world = new TileWorld(0);
@@ -163,6 +164,11 @@ const syncRendererMapsFromWorldSnapshot = (snapshot: ReturnType<TileWorld['creat
           testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(worldTileX, worldTileY), tileId);
         }
 
+        const wallId = world.getWall(worldTileX, worldTileY);
+        if (wallId !== 0) {
+          testRuntime.rendererWallIdsByWorldKey.set(worldTileKey(worldTileX, worldTileY), wallId);
+        }
+
         const liquidLevel = world.getLiquidLevel(worldTileX, worldTileY);
         if (liquidLevel > 0) {
           testRuntime.rendererLiquidLevelsByWorldKey.set(
@@ -180,6 +186,21 @@ const applyRendererTileEditsToWorldSnapshot = (editEvents: readonly TileEditEven
   world.loadSnapshot(testRuntime.rendererWorldSnapshot ?? new TileWorld(0).createSnapshot());
   for (const event of editEvents) {
     world.setTileState(event.worldTileX, event.worldTileY, event.tileId, event.liquidLevel);
+  }
+  testRuntime.rendererWorldSnapshot = world.createSnapshot();
+};
+
+const applyRendererWallEditsToWorldSnapshot = (
+  wallEdits: ReadonlyArray<{
+    worldTileX: number;
+    worldTileY: number;
+    wallId: number;
+  }>
+): void => {
+  const world = new TileWorld(0);
+  world.loadSnapshot(testRuntime.rendererWorldSnapshot ?? new TileWorld(0).createSnapshot());
+  for (const edit of wallEdits) {
+    world.setWall(edit.worldTileX, edit.worldTileY, edit.wallId);
   }
   testRuntime.rendererWorldSnapshot = world.createSnapshot();
 };
@@ -465,6 +486,7 @@ const testRuntime = vi.hoisted(() => {
     }>,
     rendererTileId: 0,
     rendererTileIdsByWorldKey: new Map<string, number>(),
+    rendererWallIdsByWorldKey: new Map<string, number>(),
     rendererLiquidLevel: 0,
     rendererLiquidLevelsByWorldKey: new Map<string, number>(),
     rendererLiquidRenderCardinalMask: null as number | null,
@@ -474,6 +496,13 @@ const testRuntime = vi.hoisted(() => {
       worldTileX: number;
       worldTileY: number;
       tileId: number;
+    }>,
+    rendererSetWallResult: false,
+    rendererPersistentSetWallResult: false,
+    rendererSetWallCalls: [] as Array<{
+      worldTileX: number;
+      worldTileY: number;
+      wallId: number;
     }>,
     rendererTileEditListeners: [] as Array<(event: TileEditEvent) => void>,
     rendererNextSetTileEditEvents: null as TileEditEvent[] | null,
@@ -938,6 +967,16 @@ vi.mock('./gl/renderer', () => ({
       return testRuntime.rendererTileId;
     }
 
+    getWall(worldTileX?: number, worldTileY?: number): number {
+      if (typeof worldTileX === 'number' && typeof worldTileY === 'number') {
+        const mappedWallId = testRuntime.rendererWallIdsByWorldKey.get(worldTileKey(worldTileX, worldTileY));
+        if (mappedWallId !== undefined) {
+          return mappedWallId;
+        }
+      }
+      return 0;
+    }
+
     getLiquidLevel(worldTileX?: number, worldTileY?: number): number {
       if (typeof worldTileX === 'number' && typeof worldTileY === 'number') {
         const mappedLiquidLevel = testRuntime.rendererLiquidLevelsByWorldKey.get(
@@ -1010,6 +1049,33 @@ vi.mock('./gl/renderer', () => ({
       return result;
     }
 
+    setWall(worldTileX: number, worldTileY: number, wallId: number): boolean {
+      testRuntime.rendererSetWallCalls.push({
+        worldTileX,
+        worldTileY,
+        wallId
+      });
+      const result = testRuntime.rendererSetWallResult;
+      if (!testRuntime.rendererPersistentSetWallResult) {
+        testRuntime.rendererSetWallResult = false;
+      }
+      if (result) {
+        if (wallId === 0) {
+          testRuntime.rendererWallIdsByWorldKey.delete(worldTileKey(worldTileX, worldTileY));
+        } else {
+          testRuntime.rendererWallIdsByWorldKey.set(worldTileKey(worldTileX, worldTileY), wallId);
+        }
+        applyRendererWallEditsToWorldSnapshot([
+          {
+            worldTileX,
+            worldTileY,
+            wallId
+          }
+        ]);
+      }
+      return result;
+    }
+
     stepLiquidSimulation(): boolean {
       testRuntime.rendererStepLiquidSimulationCallCount += 1;
       testRuntime.fixedStepWorldUpdateOrder.push('liquids');
@@ -1051,6 +1117,7 @@ vi.mock('./gl/renderer', () => ({
       testRuntime.rendererResetWorldSeeds.push(worldSeed);
       testRuntime.rendererWorldSnapshot = new TileWorld(0, worldSeed).createSnapshot();
       testRuntime.rendererTileIdsByWorldKey.clear();
+      testRuntime.rendererWallIdsByWorldKey.clear();
       testRuntime.rendererLiquidLevelsByWorldKey.clear();
     }
 
@@ -2532,12 +2599,16 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.debugTileEdits = [];
     testRuntime.rendererTileId = 0;
     testRuntime.rendererTileIdsByWorldKey.clear();
+    testRuntime.rendererWallIdsByWorldKey.clear();
     testRuntime.rendererLiquidLevel = 0;
     testRuntime.rendererLiquidLevelsByWorldKey.clear();
     testRuntime.rendererLiquidRenderCardinalMask = null;
     testRuntime.rendererSetTileResult = false;
     testRuntime.rendererPersistentSetTileResult = false;
     testRuntime.rendererSetTileCalls = [];
+    testRuntime.rendererSetWallResult = false;
+    testRuntime.rendererPersistentSetWallResult = false;
+    testRuntime.rendererSetWallCalls = [];
     testRuntime.rendererTileEditListeners = [];
     testRuntime.rendererNextSetTileEditEvents = null;
     testRuntime.rendererStepLiquidSimulationCallCount = 0;
@@ -7641,6 +7712,111 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('shows a valid dirt-wall placement preview inside an enclosed empty room', async () => {
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'dirt-wall', amount: 12 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          ...Array.from({ length: 6 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 1
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    for (let tileX = 0; tileX <= 4; tileX += 1) {
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(tileX, 0), 1);
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(tileX, -4), 1);
+    }
+    for (let tileY = -4; tileY <= 0; tileY += 1) {
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, tileY), 1);
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, tileY), 1);
+    }
+
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 2, y: -2 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 2,
+      tileY: -2,
+      placementTileX: 2,
+      placementTileY: -2,
+      canPlace: true,
+      occupied: false,
+      hasSolidFaceSupport: true,
+      blockedByPlayer: false
+    });
+  });
+
+  it('shows a blocked dirt-wall placement preview on an exposed tile and ignores use without consuming the stack', async () => {
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'dirt-wall', amount: 12 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          ...Array.from({ length: 6 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 1
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    for (let tileX = 0; tileX <= 4; tileX += 1) {
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(tileX, 0), 1);
+    }
+    for (let tileY = -3; tileY <= 0; tileY += 1) {
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, tileY), 1);
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, tileY), 1);
+    }
+
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    testRuntime.pointerInspect = {
+      pointerType: 'touch',
+      tile: { x: 2, y: -2 }
+    };
+
+    runRenderFrame();
+
+    expect(testRuntime.latestPlayerItemPlacementPreviewState).toEqual({
+      tileX: 2,
+      tileY: -2,
+      placementTileX: 2,
+      placementTileY: -2,
+      canPlace: false,
+      occupied: false,
+      hasSolidFaceSupport: false,
+      blockedByPlayer: false
+    });
+
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 2,
+        worldTileY: -2,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetWallCalls).toEqual([]);
+    expect(testRuntime.rendererWallIdsByWorldKey.get(worldTileKey(2, -2))).toBeUndefined();
+    expect(getHotbarOverlaySlotAmountLabel(1).textContent).toBe('12');
+  });
+
   it('shows distinct sapling-versus-grown chop preview states for the selected axe slot', async () => {
     const treeTileIds = getSmallTreeTileIds();
     const savedWorld = new TileWorld(0);
@@ -9522,6 +9698,56 @@ describe('main.ts shell state orchestration', () => {
     const restoredWorld = new TileWorld(0);
     restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
     expect(restoredWorld.getTile(1, -1)).toBe(19);
+  });
+
+  it('places a dirt wall from the selected hotbar slot through the shared hidden-panel item-use path', async () => {
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'dirt-wall', amount: 12 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          ...Array.from({ length: 6 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 1
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    expect(testRuntime.canvasInteractionMode).toBe('play');
+    for (let tileX = 0; tileX <= 4; tileX += 1) {
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(tileX, 0), 1);
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(tileX, -4), 1);
+    }
+    for (let tileY = -4; tileY <= 0; tileY += 1) {
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, tileY), 1);
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, tileY), 1);
+    }
+    testRuntime.rendererSetWallResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 2,
+        worldTileY: -2,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetWallCalls).toEqual([
+      {
+        worldTileX: 2,
+        worldTileY: -2,
+        wallId: 1
+      }
+    ]);
+    expect(testRuntime.rendererWallIdsByWorldKey.get(worldTileKey(2, -2))).toBe(1);
+    expect(getHotbarOverlaySlotAmountLabel(1).textContent).toBe('11');
   });
 
   it('chops a grown small tree from the selected axe slot through the shared hidden-panel item-use path and drops wood plus an acorn', async () => {

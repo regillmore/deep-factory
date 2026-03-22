@@ -24,6 +24,13 @@ describe('droppedItemPlaceholder', () => {
     });
   });
 
+  it('provides a dedicated placeholder palette for dirt-wall pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('dirt-wall')).toEqual({
+      baseColor: [0.39, 0.28, 0.17],
+      accentColor: [0.61, 0.48, 0.31]
+    });
+  });
+
   it('provides a dedicated placeholder palette for wood-block pickups', () => {
     expect(getDroppedItemPlaceholderPalette('wood-block')).toEqual({
       baseColor: [0.46, 0.29, 0.13],

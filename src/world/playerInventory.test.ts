@@ -371,6 +371,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'DIRT',
       maxStackSize: 999
     });
+    expect(getPlayerInventoryItemDefinition('dirt-wall')).toEqual({
+      id: 'dirt-wall',
+      label: 'Dirt Wall',
+      hotbarLabel: 'DWALL',
+      maxStackSize: 999
+    });
     expect(getPlayerInventoryItemDefinition('stone-block')).toEqual({
       id: 'stone-block',
       label: 'Stone Block',
@@ -481,6 +487,7 @@ describe('playerInventory', () => {
       'acorn',
       'pickaxe',
       'dirt-block',
+      'dirt-wall',
       'stone-block',
       'wood-block',
       'copper-ore',

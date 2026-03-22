@@ -12,6 +12,7 @@ describe('playerItemCatalog', () => {
       'Copper Bar',
       'Copper Ore',
       'Dirt Block',
+      'Dirt Wall',
       'Furnace',
       'Gel',
       'Healing Potion',
@@ -48,6 +49,9 @@ describe('playerItemCatalog', () => {
     ]);
     expect(searchPlayerItemCatalog('wood block').map((entry) => entry.itemId)).toEqual([
       'wood-block'
+    ]);
+    expect(searchPlayerItemCatalog('dirt wall').map((entry) => entry.itemId)).toEqual([
+      'dirt-wall'
     ]);
     expect(searchPlayerItemCatalog('potion').map((entry) => entry.itemId)).toEqual([
       'healing-potion'
