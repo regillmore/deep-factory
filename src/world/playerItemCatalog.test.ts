@@ -27,6 +27,7 @@ describe('playerItemCatalog', () => {
       'Umbrella',
       'Wood',
       'Wood Block',
+      'Wood Wall',
       'Workbench'
     ]);
   });
@@ -49,6 +50,9 @@ describe('playerItemCatalog', () => {
     ]);
     expect(searchPlayerItemCatalog('wood block').map((entry) => entry.itemId)).toEqual([
       'wood-block'
+    ]);
+    expect(searchPlayerItemCatalog('wood wall').map((entry) => entry.itemId)).toEqual([
+      'wood-wall'
     ]);
     expect(searchPlayerItemCatalog('dirt wall').map((entry) => entry.itemId)).toEqual([
       'dirt-wall'

@@ -8,6 +8,7 @@ export type PlayerInventoryItemId =
   | 'dirt-wall'
   | 'stone-block'
   | 'wood-block'
+  | 'wood-wall'
   | 'copper-ore'
   | 'copper-bar'
   | 'gel'
@@ -74,6 +75,7 @@ export const PLAYER_INVENTORY_ITEM_IDS: readonly PlayerInventoryItemId[] = [
   'dirt-wall',
   'stone-block',
   'wood-block',
+  'wood-wall',
   'copper-ore',
   'copper-bar',
   'gel',
@@ -135,6 +137,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     id: 'wood-block',
     label: 'Wood Block',
     hotbarLabel: 'WBLK',
+    maxStackSize: 999
+  },
+  'wood-wall': {
+    id: 'wood-wall',
+    label: 'Wood Wall',
+    hotbarLabel: 'WWALL',
     maxStackSize: 999
   },
   'copper-ore': {

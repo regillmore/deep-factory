@@ -61,6 +61,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
     baseColor: [0.46, 0.29, 0.13],
     accentColor: [0.75, 0.57, 0.3]
   },
+  'wood-wall': {
+    baseColor: [0.4, 0.25, 0.12],
+    accentColor: [0.65, 0.49, 0.27]
+  },
   'copper-ore': {
     baseColor: [0.65, 0.35, 0.17],
     accentColor: [0.94, 0.71, 0.38]

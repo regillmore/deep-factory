@@ -56,6 +56,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Early building blocks should be able to use the shared solid-block placement seam without making placed wood visually merge into ground-material seams, and a dedicated group preserves that distinction without introducing a separate block-placement implementation.
 - Consequence: Future wood-derived terrain or building tiles should opt into that `wood` connectivity group when they are meant to seam with placed wood blocks, and later solid-block follow-ups should not assume every autotiled solid tile belongs in the shared `ground` group.
 
+### 2026-03-21: Starter wood-wall crafting stays stationless and converts one wood into four wood walls
+
+- Decision: The first `wood-wall` recipe now crafts `4` stackable `Wood Wall` from `1 Wood` without requiring a nearby placed station.
+- Reason: Early shelter interiors should branch directly from the same chopped-wood loop as `wood-block` crafting, and a cheaper wall output keeps background-wall building distinct from solid-block costs without adding another early station gate.
+- Consequence: Future background-wall progression can assume raw `Wood` converts into `wood-wall` stacks anywhere at a cheaper-than-block rate unless a later balance pass intentionally changes that baseline.
+
 ### 2026-03-21: Starter torch crafting stays stationless and converts one gel plus one wood into three torches
 
 - Decision: The first shared torch recipe now crafts `3` `torch` items from `1 gel + 1 wood` without requiring a nearby placed station.

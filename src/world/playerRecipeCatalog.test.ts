@@ -112,6 +112,16 @@ describe('playerRecipeCatalog', () => {
         ingredients: [{ itemId: 'wood', label: 'Wood', amount: 1 }]
       },
       {
+        recipeId: 'wood-wall',
+        label: 'Wood Wall',
+        outputItemId: 'wood-wall',
+        outputLabel: 'Output: +4 WWALL',
+        ingredientsLabel: 'Ingredients: 1 Wood',
+        stationRequirementLabel: 'Requirement: None',
+        requiredStationId: null,
+        ingredients: [{ itemId: 'wood', label: 'Wood', amount: 1 }]
+      },
+      {
         recipeId: 'workbench',
         label: 'Workbench',
         outputItemId: 'workbench',
@@ -151,6 +161,9 @@ describe('playerRecipeCatalog', () => {
     ]);
     expect(searchPlayerRecipeCatalog('wood block').map((entry) => entry.recipeId)).toEqual([
       'wood-block'
+    ]);
+    expect(searchPlayerRecipeCatalog('wood wall').map((entry) => entry.recipeId)).toEqual([
+      'wood-wall'
     ]);
     expect(searchPlayerRecipeCatalog('nearby workbench').map((entry) => entry.recipeId)).toEqual([
       'anvil',

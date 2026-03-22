@@ -336,4 +336,46 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       amount: 9
     });
   });
+
+  it('restores crafted wood-wall inventory stacks through the session restore path', () => {
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'wood-wall', amount: 4 },
+        { itemId: 'wood', amount: 1 },
+        ...Array.from({ length: 8 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 0
+    });
+    const envelope = createWorldSaveEnvelope({
+      worldSnapshot: new TileWorld(0).createSnapshot(),
+      standalonePlayerState: createPlayerState(),
+      standalonePlayerDeathState: null,
+      standalonePlayerInventoryState,
+      droppedItemStates: [],
+      cameraFollowOffset: { x: 0, y: 0 }
+    });
+    let restoredPlayerInventoryState: PlayerInventoryState | null = null;
+    const target = {
+      loadWorldSnapshot: vi.fn(),
+      restoreStandalonePlayerState: vi.fn(),
+      restoreStandalonePlayerDeathState: vi.fn(),
+      restoreStandalonePlayerInventoryState: vi.fn((inventoryState) => {
+        restoredPlayerInventoryState = inventoryState;
+      }),
+      restoreStandalonePlayerEquipmentState: vi.fn(),
+      restoreDroppedItemStates: vi.fn(),
+      restoreCameraFollowOffset: vi.fn()
+    };
+
+    const restoreResult = restoreWorldSessionFromSaveEnvelope({
+      target,
+      envelope
+    });
+
+    expect(restoredPlayerInventoryState).toEqual(standalonePlayerInventoryState);
+    expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.restoredEnvelope.session.standalonePlayerInventoryState).toEqual(
+      standalonePlayerInventoryState
+    );
+  });
 });

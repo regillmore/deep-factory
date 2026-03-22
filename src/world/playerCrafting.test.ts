@@ -76,6 +76,13 @@ describe('playerCrafting definitions', () => {
         requiredStationId: null
       },
       {
+        id: 'wood-wall',
+        label: 'Wood Wall',
+        ingredients: [{ itemId: 'wood', amount: 1 }],
+        output: { itemId: 'wood-wall', amount: 4 },
+        requiredStationId: null
+      },
+      {
         id: 'furnace',
         label: 'Furnace',
         ingredients: [
@@ -138,6 +145,7 @@ describe('playerCrafting definitions', () => {
     expect(getPlayerCraftingRecipeDefinition('workbench').requiredStationId).toBeNull();
     expect(getPlayerCraftingRecipeDefinition('torch').requiredStationId).toBeNull();
     expect(getPlayerCraftingRecipeDefinition('wood-block').requiredStationId).toBeNull();
+    expect(getPlayerCraftingRecipeDefinition('wood-wall').requiredStationId).toBeNull();
     expect(getPlayerCraftingRecipeDefinition('furnace').requiredStationId).toBe('workbench');
     expect(getPlayerCraftingRecipeDefinition('healing-potion').requiredStationId).toBe('workbench');
     expect(getPlayerCraftingRecipeDefinition('copper-bar').requiredStationId).toBe('furnace');
@@ -157,6 +165,7 @@ describe('playerCrafting definitions', () => {
     expect(isPlayerCraftingRecipeId('workbench')).toBe(true);
     expect(isPlayerCraftingRecipeId('torch')).toBe(true);
     expect(isPlayerCraftingRecipeId('wood-block')).toBe(true);
+    expect(isPlayerCraftingRecipeId('wood-wall')).toBe(true);
     expect(isPlayerCraftingRecipeId('furnace')).toBe(true);
     expect(isPlayerCraftingRecipeId('healing-potion')).toBe(true);
     expect(isPlayerCraftingRecipeId('copper-bar')).toBe(true);
@@ -284,6 +293,23 @@ describe('evaluatePlayerCraftingRecipe', () => {
         hotbar: [{ itemId: 'wood', amount: 1 }, ...Array.from({ length: 9 }, () => null)]
       }),
       recipeId: 'wood-block'
+    });
+
+    expect(evaluation).toMatchObject({
+      hasIngredients: true,
+      stationInRange: true,
+      outputFitsInInventory: true,
+      blocker: null,
+      craftable: true
+    });
+  });
+
+  it('keeps the wood-wall recipe craftable without a nearby station when wood is available', () => {
+    const evaluation = evaluatePlayerCraftingRecipe({
+      inventoryState: createPlayerInventoryState({
+        hotbar: [{ itemId: 'wood', amount: 1 }, ...Array.from({ length: 9 }, () => null)]
+      }),
+      recipeId: 'wood-wall'
     });
 
     expect(evaluation).toMatchObject({
@@ -558,6 +584,25 @@ describe('tryCraftPlayerRecipe', () => {
     expect(result.nextInventoryState.hotbar[1]).toEqual({
       itemId: 'wood-block',
       amount: 1
+    });
+  });
+
+  it('crafts four wood walls by consuming one wood without a nearby station', () => {
+    const result = tryCraftPlayerRecipe({
+      inventoryState: createPlayerInventoryState({
+        hotbar: [{ itemId: 'wood', amount: 2 }, ...Array.from({ length: 9 }, () => null)]
+      }),
+      recipeId: 'wood-wall'
+    });
+
+    expect(result.crafted).toBe(true);
+    expect(result.nextInventoryState.hotbar[0]).toEqual({
+      itemId: 'wood',
+      amount: 1
+    });
+    expect(result.nextInventoryState.hotbar[1]).toEqual({
+      itemId: 'wood-wall',
+      amount: 4
     });
   });
 

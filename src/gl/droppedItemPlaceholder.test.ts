@@ -38,6 +38,13 @@ describe('droppedItemPlaceholder', () => {
     });
   });
 
+  it('provides a dedicated placeholder palette for wood-wall pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('wood-wall')).toEqual({
+      baseColor: [0.4, 0.25, 0.12],
+      accentColor: [0.65, 0.49, 0.27]
+    });
+  });
+
   it('provides a dedicated placeholder palette for copper-ore pickups', () => {
     expect(getDroppedItemPlaceholderPalette('copper-ore')).toEqual({
       baseColor: [0.65, 0.35, 0.17],

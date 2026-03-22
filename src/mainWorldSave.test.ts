@@ -552,6 +552,35 @@ describe('createWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerInventoryState).toEqual(standalonePlayerInventoryState);
   });
 
+  it('round-trips crafted wood-wall inventory stacks through save decode', () => {
+    const world = new TileWorld(0);
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'wood-wall', amount: 4 },
+        { itemId: 'wood', amount: 1 },
+        ...Array.from({ length: 8 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 0
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    expect(decoded.session.standalonePlayerInventoryState).toEqual(standalonePlayerInventoryState);
+  });
+
   it('round-trips furnace and copper-bar inventory stacks through save decode', () => {
     const world = new TileWorld(0);
     const standalonePlayerInventoryState = createPlayerInventoryState({

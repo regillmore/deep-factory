@@ -389,6 +389,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'WBLK',
       maxStackSize: 999
     });
+    expect(getPlayerInventoryItemDefinition('wood-wall')).toEqual({
+      id: 'wood-wall',
+      label: 'Wood Wall',
+      hotbarLabel: 'WWALL',
+      maxStackSize: 999
+    });
     expect(getPlayerInventoryItemDefinition('copper-ore')).toEqual({
       id: 'copper-ore',
       label: 'Copper Ore',
@@ -490,6 +496,7 @@ describe('playerInventory', () => {
       'dirt-wall',
       'stone-block',
       'wood-block',
+      'wood-wall',
       'copper-ore',
       'copper-bar',
       'gel',

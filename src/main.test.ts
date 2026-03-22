@@ -9289,6 +9289,61 @@ describe('main.ts shell state orchestration', () => {
     );
   });
 
+  it('crafts wood walls from wood without a nearby station and persists the produced stack', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            grounded: true
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [{ itemId: 'wood', amount: 1 }, ...Array.from({ length: 9 }, () => null)],
+            selectedHotbarSlotIndex: 0
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    expect(dispatchKeydown('g', 'KeyG').prevented).toBe(true);
+    runRenderFrame();
+
+    expect(
+      testRuntime.latestCraftingPanelState?.recipes.find((recipe) => recipe.recipeId === 'wood-wall')
+    ).toMatchObject({
+      label: 'Wood Wall',
+      ingredientsLabel: '1 Wood',
+      outputLabel: '+4 WWALL',
+      availabilityLabel: 'Ready to craft',
+      enabled: true,
+      disabledReason: null
+    });
+
+    testRuntime.craftingPanelInstance?.triggerCraftRecipe('wood-wall');
+
+    expect(
+      testRuntime.latestCraftingPanelState?.recipes.find((recipe) => recipe.recipeId === 'wood-wall')
+    ).toMatchObject({
+      availabilityLabel: 'Blocked: Missing 1 Wood',
+      enabled: false,
+      disabledReason: 'Missing 1 Wood'
+    });
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState).toEqual(
+      createPlayerInventoryState({
+        hotbar: [{ itemId: 'wood-wall', amount: 4 }, ...Array.from({ length: 9 }, () => null)],
+        selectedHotbarSlotIndex: 0
+      })
+    );
+  });
+
   it('hides the hotbar placement preview for unsupported item slots and while the full debug-edit panel is open', async () => {
     await import('./main');
     await flushBootstrap();
