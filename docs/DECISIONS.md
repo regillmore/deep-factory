@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-22: Chunk-wall-diff messages reuse chunk tile cell indexing
+
+- Decision: The new `chunk-wall-diff` protocol payload reuses the same row-major per-cell `tileIndex` ordering and `tileOrder` metadata already used by `chunk-tile-diff`, while swapping only the payload data from `{ tileId, liquidLevel }` to `{ wallId }`.
+- Reason: Wall replication needs to target the same chunk cell grid as foreground tile diffs, and reusing that indexing contract keeps batching, validation, and future transport ordering aligned across both world layers.
+- Consequence: Future wall staging, filtering, or replay work should preserve the shared chunk cell indexing contract instead of inventing a separate wall-coordinate ordering or a second intra-chunk ordering flag.
+
 ### 2026-03-22: Tile and wall edit notifications carry explicit write origins
 
 - Decision: `TileWorld` and `Renderer` edit notifications now include an `editOrigin` of `gameplay`, `debug-break`, or `debug-history`, and support-collapse or anchor-loss follow-up clears keep the initiating origin instead of reclassifying themselves.

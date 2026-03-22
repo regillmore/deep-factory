@@ -2,6 +2,7 @@ import { CHUNK_SIZE } from '../world/constants';
 import { chunkKey } from '../world/chunkMath';
 import {
   CHUNK_TILE_DIFF_MESSAGE_KIND,
+  CHUNK_WALL_DIFF_MESSAGE_KIND,
   ENTITY_SNAPSHOT_MESSAGE_KIND,
   PLAYER_INPUT_MESSAGE_KIND
 } from './protocol';
@@ -22,6 +23,9 @@ export const AUTHORITATIVE_REPLAY_SKIP_REASON_STALE_TICK = 'stale-tick' as const
 export type AuthoritativeReplaySkipReason =
   | typeof AUTHORITATIVE_REPLAY_SKIP_REASON_DUPLICATE_TICK
   | typeof AUTHORITATIVE_REPLAY_SKIP_REASON_STALE_TICK;
+
+const CHUNK_WALL_DIFF_REPLAY_UNSUPPORTED_ERROR =
+  'chunk-wall-diff messages are not part of the current replicated replay path';
 
 export interface EntitySnapshotReplayResult {
   kind: typeof ENTITY_SNAPSHOT_MESSAGE_KIND;
@@ -204,7 +208,8 @@ export class ReplicatedEntitySnapshotStore implements EntitySnapshotReplayTarget
 
 export const isReplicatedNetworkStateMessage = (
   message: NetworkMessage
-): message is ReplicatedNetworkStateMessage => message.kind !== PLAYER_INPUT_MESSAGE_KIND;
+): message is ReplicatedNetworkStateMessage =>
+  message.kind === CHUNK_TILE_DIFF_MESSAGE_KIND || message.kind === ENTITY_SNAPSHOT_MESSAGE_KIND;
 
 export const applyChunkTileDiffMessage = (
   target: ChunkTileStateReplayTarget,
@@ -242,6 +247,8 @@ export const applyReplicatedNetworkStateMessage = (
       return applyChunkTileDiffMessage(target.world, message);
     case ENTITY_SNAPSHOT_MESSAGE_KIND:
       return target.entities.applyEntitySnapshotMessage(message);
+    case CHUNK_WALL_DIFF_MESSAGE_KIND:
+      throw new Error(CHUNK_WALL_DIFF_REPLAY_UNSUPPORTED_ERROR);
     case PLAYER_INPUT_MESSAGE_KIND:
       throw new Error('player-input messages do not replay authoritative world or entity state');
   }
@@ -281,6 +288,8 @@ export class AuthoritativeReplicatedNetworkStateReplayer {
         return this.applyChunkTileDiffMessage(message);
       case ENTITY_SNAPSHOT_MESSAGE_KIND:
         return this.target.entities.replayEntitySnapshotMessage(message);
+      case CHUNK_WALL_DIFF_MESSAGE_KIND:
+        throw new Error(CHUNK_WALL_DIFF_REPLAY_UNSUPPORTED_ERROR);
       case PLAYER_INPUT_MESSAGE_KIND:
         throw new Error('player-input messages do not replay authoritative world or entity state');
     }

@@ -6,6 +6,7 @@ import {
   CHUNK_TILE_DIFF_MESSAGE_KIND,
   ENTITY_SNAPSHOT_MESSAGE_KIND,
   createChunkTileDiffMessage,
+  createChunkWallDiffMessage,
   createEntitySnapshotMessage,
   createPlayerInputMessage
 } from './protocol';
@@ -398,10 +399,24 @@ describe('applyReplicatedNetworkStateMessage', () => {
         jumpPressed: true
       }
     });
+    const wallMessage = createChunkWallDiffMessage({
+      tick: 6,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      walls: [
+        {
+          tileIndex: 0,
+          wallId: 2
+        }
+      ]
+    });
 
     expect(isReplicatedNetworkStateMessage(chunkMessage)).toBe(true);
     expect(isReplicatedNetworkStateMessage(entityMessage)).toBe(true);
     expect(isReplicatedNetworkStateMessage(playerInputMessage)).toBe(false);
+    expect(isReplicatedNetworkStateMessage(wallMessage)).toBe(false);
 
     expect(
       applyReplicatedNetworkStateMessage(
@@ -440,6 +455,16 @@ describe('applyReplicatedNetworkStateMessage', () => {
       updatedEntityIds: [],
       removedEntityIds: []
     });
+
+    expect(() =>
+      applyReplicatedNetworkStateMessage(
+        {
+          world,
+          entities: store
+        },
+        wallMessage
+      )
+    ).toThrow('chunk-wall-diff messages are not part of the current replicated replay path');
 
     expect(() =>
       applyReplicatedNetworkStateMessage(

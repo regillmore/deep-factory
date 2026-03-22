@@ -7,6 +7,7 @@ export const NETWORK_CHUNK_TILE_ORDER = 'row-major' as const;
 export const NETWORK_CHUNK_TILE_COUNT = CHUNK_SIZE * CHUNK_SIZE;
 export const PLAYER_INPUT_MESSAGE_KIND = 'player-input' as const;
 export const CHUNK_TILE_DIFF_MESSAGE_KIND = 'chunk-tile-diff' as const;
+export const CHUNK_WALL_DIFF_MESSAGE_KIND = 'chunk-wall-diff' as const;
 export const ENTITY_SNAPSHOT_MESSAGE_KIND = 'entity-snapshot' as const;
 
 type NetworkMessageVersion = typeof NETWORK_PROTOCOL_VERSION;
@@ -19,6 +20,7 @@ type RecordLike = Record<string, unknown>;
 export type NetworkMessageKind =
   | typeof PLAYER_INPUT_MESSAGE_KIND
   | typeof CHUNK_TILE_DIFF_MESSAGE_KIND
+  | typeof CHUNK_WALL_DIFF_MESSAGE_KIND
   | typeof ENTITY_SNAPSHOT_MESSAGE_KIND;
 
 export type NetworkScalar = string | number | boolean | null;
@@ -56,6 +58,18 @@ export interface ChunkTileDiffMessage extends NetworkMessageBase {
   tiles: ChunkTileDiffEntry[];
 }
 
+export interface ChunkWallDiffEntry {
+  tileIndex: number;
+  wallId: number;
+}
+
+export interface ChunkWallDiffMessage extends NetworkMessageBase {
+  kind: typeof CHUNK_WALL_DIFF_MESSAGE_KIND;
+  chunk: ChunkCoord;
+  tileOrder: NetworkChunkTileOrder;
+  walls: ChunkWallDiffEntry[];
+}
+
 export interface EntitySnapshotState {
   [key: string]: NetworkScalar;
 }
@@ -73,7 +87,11 @@ export interface EntitySnapshotMessage extends NetworkMessageBase {
   entities: EntitySnapshotEntry[];
 }
 
-export type NetworkMessage = PlayerInputMessage | ChunkTileDiffMessage | EntitySnapshotMessage;
+export type NetworkMessage =
+  | PlayerInputMessage
+  | ChunkTileDiffMessage
+  | ChunkWallDiffMessage
+  | EntitySnapshotMessage;
 
 export interface CreatePlayerInputMessageOptions {
   tick: number;
@@ -84,6 +102,12 @@ export interface CreateChunkTileDiffMessageOptions {
   tick: number;
   chunk: ChunkCoord;
   tiles?: Iterable<ChunkTileDiffEntry>;
+}
+
+export interface CreateChunkWallDiffMessageOptions {
+  tick: number;
+  chunk: ChunkCoord;
+  walls?: Iterable<ChunkWallDiffEntry>;
 }
 
 export interface CreateEntitySnapshotMessageOptions {
@@ -189,14 +213,18 @@ const normalizeVector2 = (value: unknown, label: string): NetworkVector2 => {
   };
 };
 
+const normalizeChunkCellDiffTileIndex = (value: unknown, label: string): number => {
+  const tileIndex = expectNonNegativeInteger(value, label);
+  if (tileIndex >= NETWORK_CHUNK_TILE_COUNT) {
+    throw new Error(`${label} must be below ${NETWORK_CHUNK_TILE_COUNT}`);
+  }
+
+  return tileIndex;
+};
+
 const normalizeChunkTileDiffEntry = (value: unknown, label: string): ChunkTileDiffEntry => {
   if (!isRecord(value)) {
     throw new Error(`${label} must be an object`);
-  }
-
-  const tileIndex = expectNonNegativeInteger(value.tileIndex, `${label}.tileIndex`);
-  if (tileIndex >= NETWORK_CHUNK_TILE_COUNT) {
-    throw new Error(`${label}.tileIndex must be below ${NETWORK_CHUNK_TILE_COUNT}`);
   }
 
   const liquidLevel = expectByte(value.liquidLevel, `${label}.liquidLevel`);
@@ -205,9 +233,20 @@ const normalizeChunkTileDiffEntry = (value: unknown, label: string): ChunkTileDi
   }
 
   return {
-    tileIndex,
+    tileIndex: normalizeChunkCellDiffTileIndex(value.tileIndex, `${label}.tileIndex`),
     tileId: expectByte(value.tileId, `${label}.tileId`),
     liquidLevel
+  };
+};
+
+const normalizeChunkWallDiffEntry = (value: unknown, label: string): ChunkWallDiffEntry => {
+  if (!isRecord(value)) {
+    throw new Error(`${label} must be an object`);
+  }
+
+  return {
+    tileIndex: normalizeChunkCellDiffTileIndex(value.tileIndex, `${label}.tileIndex`),
+    wallId: expectByte(value.wallId, `${label}.wallId`)
   };
 };
 
@@ -290,6 +329,46 @@ const normalizeSortedChunkTileDiffEntries = (
   return normalizedEntries;
 };
 
+const normalizeStrictlyIncreasingChunkWallDiffEntries = (
+  value: unknown,
+  label: string
+): ChunkWallDiffEntry[] => {
+  if (!Array.isArray(value)) {
+    throw new Error(`${label} must be an array`);
+  }
+
+  const normalizedEntries: ChunkWallDiffEntry[] = [];
+  let previousTileIndex = -1;
+  for (const [index, entryValue] of value.entries()) {
+    const entry = normalizeChunkWallDiffEntry(entryValue, `${label}[${index}]`);
+    if (entry.tileIndex <= previousTileIndex) {
+      throw new Error(`${label} tile indices must be strictly increasing`);
+    }
+    previousTileIndex = entry.tileIndex;
+    normalizedEntries.push(entry);
+  }
+
+  return normalizedEntries;
+};
+
+const normalizeSortedChunkWallDiffEntries = (
+  walls: Iterable<ChunkWallDiffEntry> | undefined
+): ChunkWallDiffEntry[] => {
+  const normalizedEntries = Array.from(walls ?? [], (wall, index) =>
+    normalizeChunkWallDiffEntry(wall, `walls[${index}]`)
+  ).sort((left, right) => left.tileIndex - right.tileIndex);
+
+  let previousTileIndex = -1;
+  for (const entry of normalizedEntries) {
+    if (entry.tileIndex === previousTileIndex) {
+      throw new Error(`walls must not contain duplicate tileIndex ${entry.tileIndex}`);
+    }
+    previousTileIndex = entry.tileIndex;
+  }
+
+  return normalizedEntries;
+};
+
 const normalizeStrictlyIncreasingEntitySnapshotEntries = (
   value: unknown,
   label: string
@@ -356,6 +435,19 @@ export const createChunkTileDiffMessage = ({
   tiles: normalizeSortedChunkTileDiffEntries(tiles)
 });
 
+export const createChunkWallDiffMessage = ({
+  tick,
+  chunk,
+  walls
+}: CreateChunkWallDiffMessageOptions): ChunkWallDiffMessage => ({
+  kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+  version: NETWORK_PROTOCOL_VERSION,
+  tick: expectNonNegativeInteger(tick, 'tick'),
+  chunk: normalizeChunkCoord(chunk, 'chunk'),
+  tileOrder: NETWORK_CHUNK_TILE_ORDER,
+  walls: normalizeSortedChunkWallDiffEntries(walls)
+});
+
 export const createEntitySnapshotMessage = ({
   tick,
   entities
@@ -415,6 +507,30 @@ export const decodeChunkTileDiffMessage = (value: unknown): ChunkTileDiffMessage
   };
 };
 
+export const decodeChunkWallDiffMessage = (value: unknown): ChunkWallDiffMessage => {
+  if (!isRecord(value)) {
+    throw new Error('chunk wall diff message must be an object');
+  }
+  if (value.kind !== CHUNK_WALL_DIFF_MESSAGE_KIND) {
+    throw new Error(`chunk wall diff message kind must be "${CHUNK_WALL_DIFF_MESSAGE_KIND}"`);
+  }
+  if (value.version !== NETWORK_PROTOCOL_VERSION) {
+    throw new Error(`chunk wall diff message version must be ${NETWORK_PROTOCOL_VERSION}`);
+  }
+  if (value.tileOrder !== NETWORK_CHUNK_TILE_ORDER) {
+    throw new Error(`chunk wall diff message tileOrder must be "${NETWORK_CHUNK_TILE_ORDER}"`);
+  }
+
+  return {
+    kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+    version: NETWORK_PROTOCOL_VERSION,
+    tick: expectNonNegativeInteger(value.tick, 'tick'),
+    chunk: normalizeChunkCoord(value.chunk, 'chunk'),
+    tileOrder: NETWORK_CHUNK_TILE_ORDER,
+    walls: normalizeStrictlyIncreasingChunkWallDiffEntries(value.walls, 'walls')
+  };
+};
+
 export const decodeEntitySnapshotMessage = (value: unknown): EntitySnapshotMessage => {
   if (!isRecord(value)) {
     throw new Error('entity snapshot message must be an object');
@@ -444,6 +560,8 @@ export const decodeNetworkMessage = (value: unknown): NetworkMessage => {
       return decodePlayerInputMessage(value);
     case CHUNK_TILE_DIFF_MESSAGE_KIND:
       return decodeChunkTileDiffMessage(value);
+    case CHUNK_WALL_DIFF_MESSAGE_KIND:
+      return decodeChunkWallDiffMessage(value);
     case ENTITY_SNAPSHOT_MESSAGE_KIND:
       return decodeEntitySnapshotMessage(value);
     default:

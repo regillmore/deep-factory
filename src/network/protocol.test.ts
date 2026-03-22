@@ -3,14 +3,17 @@ import { describe, expect, it } from 'vitest';
 import { MAX_LIQUID_LEVEL } from '../world/constants';
 import {
   CHUNK_TILE_DIFF_MESSAGE_KIND,
+  CHUNK_WALL_DIFF_MESSAGE_KIND,
   ENTITY_SNAPSHOT_MESSAGE_KIND,
   NETWORK_CHUNK_TILE_ORDER,
   NETWORK_PROTOCOL_VERSION,
   PLAYER_INPUT_MESSAGE_KIND,
   createChunkTileDiffMessage,
+  createChunkWallDiffMessage,
   createEntitySnapshotMessage,
   createPlayerInputMessage,
   decodeChunkTileDiffMessage,
+  decodeChunkWallDiffMessage,
   decodeEntitySnapshotMessage,
   decodeNetworkMessage,
   decodePlayerInputMessage
@@ -133,6 +136,81 @@ describe('decodeChunkTileDiffMessage', () => {
         ]
       })
     ).toThrow('tiles tile indices must be strictly increasing');
+  });
+});
+
+describe('createChunkWallDiffMessage', () => {
+  it('sorts and clones wall diffs into row-major tile-index order', () => {
+    const walls = [
+      {
+        tileIndex: 31,
+        wallId: 5
+      },
+      {
+        tileIndex: 2,
+        wallId: 9
+      }
+    ];
+
+    const message = createChunkWallDiffMessage({
+      tick: 8,
+      chunk: {
+        x: -2,
+        y: 3
+      },
+      walls
+    });
+
+    expect(message).toEqual({
+      kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+      version: NETWORK_PROTOCOL_VERSION,
+      tick: 8,
+      chunk: {
+        x: -2,
+        y: 3
+      },
+      tileOrder: NETWORK_CHUNK_TILE_ORDER,
+      walls: [
+        {
+          tileIndex: 2,
+          wallId: 9
+        },
+        {
+          tileIndex: 31,
+          wallId: 5
+        }
+      ]
+    });
+
+    walls[0]!.wallId = 99;
+    expect(message.walls[1]!.wallId).toBe(5);
+  });
+});
+
+describe('decodeChunkWallDiffMessage', () => {
+  it('rejects out-of-order wall indices so wire payloads stay deterministic', () => {
+    expect(() =>
+      decodeChunkWallDiffMessage({
+        kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+        version: NETWORK_PROTOCOL_VERSION,
+        tick: 8,
+        chunk: {
+          x: 0,
+          y: 0
+        },
+        tileOrder: NETWORK_CHUNK_TILE_ORDER,
+        walls: [
+          {
+            tileIndex: 12,
+            wallId: 1
+          },
+          {
+            tileIndex: 5,
+            wallId: 0
+          }
+        ]
+      })
+    ).toThrow('walls tile indices must be strictly increasing');
   });
 });
 
@@ -314,6 +392,41 @@ describe('decodeNetworkMessage', () => {
           tileIndex: 0,
           tileId: 2,
           liquidLevel: 0
+        }
+      ]
+    });
+  });
+
+  it('also decodes chunk wall diff messages through the shared protocol union', () => {
+    const decoded = decodeNetworkMessage(
+      createChunkWallDiffMessage({
+        tick: 6,
+        chunk: {
+          x: -2,
+          y: 4
+        },
+        walls: [
+          {
+            tileIndex: 3,
+            wallId: 2
+          }
+        ]
+      })
+    );
+
+    expect(decoded).toEqual({
+      kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+      version: NETWORK_PROTOCOL_VERSION,
+      tick: 6,
+      chunk: {
+        x: -2,
+        y: 4
+      },
+      tileOrder: NETWORK_CHUNK_TILE_ORDER,
+      walls: [
+        {
+          tileIndex: 3,
+          wallId: 2
         }
       ]
     });
