@@ -15,6 +15,8 @@ import {
   type PlayerEquipmentState
 } from './world/playerEquipment';
 import { createPlayerState, type PlayerState } from './world/playerState';
+import { CHUNK_SIZE } from './world/constants';
+import { STARTER_DIRT_WALL_ID } from './world/starterWallPlacement';
 import { TileWorld } from './world/world';
 
 describe('restoreWorldSessionFromSaveEnvelope', () => {
@@ -277,5 +279,61 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
         amount: 3
       }
     ]);
+  });
+
+  it('restores placed dirt-wall runs together with the remaining dirt-wall hotbar stack count', () => {
+    const world = new TileWorld(0);
+    const dirtWallRun = [
+      [CHUNK_SIZE - 1, -20],
+      [CHUNK_SIZE, -20],
+      [CHUNK_SIZE + 1, -20]
+    ] as const;
+    for (const [worldTileX, worldTileY] of dirtWallRun) {
+      expect(world.setWall(worldTileX, worldTileY, STARTER_DIRT_WALL_ID)).toBe(true);
+    }
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [null, { itemId: 'dirt-wall', amount: 9 }, ...Array.from({ length: 8 }, () => null)],
+      selectedHotbarSlotIndex: 1
+    });
+    const envelope = createWorldSaveEnvelope({
+      worldSnapshot: world.createSnapshot(),
+      standalonePlayerState: createPlayerState(),
+      standalonePlayerDeathState: null,
+      standalonePlayerInventoryState,
+      droppedItemStates: [],
+      cameraFollowOffset: { x: 0, y: 0 }
+    });
+    let restoredWorldSnapshot: ReturnType<TileWorld['createSnapshot']> | null = null;
+    let restoredPlayerInventoryState: PlayerInventoryState | null = null;
+    const target = {
+      loadWorldSnapshot: vi.fn((snapshot) => {
+        restoredWorldSnapshot = snapshot;
+      }),
+      restoreStandalonePlayerState: vi.fn(),
+      restoreStandalonePlayerDeathState: vi.fn(),
+      restoreStandalonePlayerInventoryState: vi.fn((inventoryState) => {
+        restoredPlayerInventoryState = inventoryState;
+      }),
+      restoreStandalonePlayerEquipmentState: vi.fn(),
+      restoreDroppedItemStates: vi.fn(),
+      restoreCameraFollowOffset: vi.fn()
+    };
+
+    const restoreResult = restoreWorldSessionFromSaveEnvelope({
+      target,
+      envelope
+    });
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(restoredWorldSnapshot!);
+    for (const [worldTileX, worldTileY] of dirtWallRun) {
+      expect(restoredWorld.getWall(worldTileX, worldTileY)).toBe(STARTER_DIRT_WALL_ID);
+    }
+    expect(restoredPlayerInventoryState).toEqual(standalonePlayerInventoryState);
+    expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.restoredEnvelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+      itemId: 'dirt-wall',
+      amount: 9
+    });
   });
 });

@@ -17,6 +17,7 @@ import {
   DEFAULT_PLAYER_MAX_HEALTH
 } from './world/playerState';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
+import { STARTER_DIRT_WALL_ID } from './world/starterWallPlacement';
 import { resolveProceduralTerrainTileId } from './world/proceduralTerrain';
 import { TileWorld } from './world/world';
 import {
@@ -171,6 +172,47 @@ describe('createWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'dirt-block',
       amount: 63
+    });
+  });
+
+  it('preserves placed dirt-wall runs together with the consumed dirt-wall hotbar stack count', () => {
+    const world = new TileWorld(0);
+    const dirtWallRun = [
+      [CHUNK_SIZE - 1, -20],
+      [CHUNK_SIZE, -20],
+      [CHUNK_SIZE + 1, -20]
+    ] as const;
+    for (const [worldTileX, worldTileY] of dirtWallRun) {
+      expect(world.setWall(worldTileX, worldTileY, STARTER_DIRT_WALL_ID)).toBe(true);
+    }
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [null, { itemId: 'dirt-wall', amount: 9 }, ...Array.from({ length: 8 }, () => null)],
+      selectedHotbarSlotIndex: 1
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(decoded.worldSnapshot);
+    for (const [worldTileX, worldTileY] of dirtWallRun) {
+      expect(restoredWorld.getWall(worldTileX, worldTileY)).toBe(STARTER_DIRT_WALL_ID);
+    }
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+      itemId: 'dirt-wall',
+      amount: 9
     });
   });
 
