@@ -3,6 +3,9 @@ import { evaluatePlayerHotbarTilePlacementRange } from './playerHotbarPlacementR
 import { PROCEDURAL_COPPER_ORE_TILE_ID } from './proceduralTerrain';
 import type { PlayerState } from './playerState';
 import {
+  STARTER_DIRT_WALL_ID
+} from './starterWallPlacement';
+import {
   STARTER_BUILDING_BLOCK_ITEM_ID,
   STARTER_BUILDING_BLOCK_TILE_ID
 } from './starterBlockPlacement';
@@ -30,15 +33,20 @@ const STONE_TILE_ID = 1;
 const GRASS_SURFACE_TILE_ID = 2;
 
 export type StarterPickaxeSwingPhase = 'windup' | 'active' | 'recovery';
+export type StarterPickaxeMiningTargetLayer = 'tile' | 'wall';
 
 export interface StarterPickaxeMiningWorldView {
   getTile(worldTileX: number, worldTileY: number): number;
+  getWall(worldTileX: number, worldTileY: number): number;
 }
 
 export interface StarterPickaxeMiningTargetEvaluation {
   tileX: number;
   tileY: number;
   tileId: number;
+  wallId: number;
+  targetLayer: StarterPickaxeMiningTargetLayer | null;
+  targetId: number;
   occupied: boolean;
   breakableTarget: boolean;
   withinRange: boolean;
@@ -55,7 +63,8 @@ export interface StarterPickaxeSwingState {
 export interface StarterPickaxeBreakProgressState {
   tileX: number;
   tileY: number;
-  tileId: number;
+  targetLayer: StarterPickaxeMiningTargetLayer;
+  targetId: number;
   appliedHitCount: number;
   requiredHitCount: number;
 }
@@ -78,10 +87,11 @@ export interface TryStartStarterPickaxeSwingResult {
 export interface StarterPickaxeHitEvent {
   tileX: number;
   tileY: number;
-  tileId: number;
+  targetLayer: StarterPickaxeMiningTargetLayer;
+  targetId: number;
   appliedHitCount: number;
   requiredHitCount: number;
-  brokeTile: boolean;
+  brokeTarget: boolean;
 }
 
 export interface StepStarterPickaxeMiningStateOptions {
@@ -124,7 +134,8 @@ const cloneStarterPickaxeBreakProgressState = (
     : {
         tileX: progress.tileX,
         tileY: progress.tileY,
-        tileId: progress.tileId,
+        targetLayer: progress.targetLayer,
+        targetId: progress.targetId,
         appliedHitCount: progress.appliedHitCount,
         requiredHitCount: progress.requiredHitCount
       };
@@ -157,8 +168,42 @@ const isBreakableStarterPickaxeTargetTile = (
   tileId === STARTER_ANVIL_TILE_ID ||
   isBreakableTerrainTile(tileId, registry);
 
-const resolveStarterPickaxeRequiredHitCount = (tileId: number): number =>
-  tileId === STONE_TILE_ID || tileId === PROCEDURAL_COPPER_ORE_TILE_ID ? 2 : 1;
+const resolveStarterPickaxeTarget = (
+  tileId: number,
+  wallId: number,
+  registry: TileMetadataRegistry
+): Pick<StarterPickaxeMiningTargetEvaluation, 'targetLayer' | 'targetId' | 'breakableTarget'> => {
+  if (isBreakableStarterPickaxeTargetTile(tileId, registry)) {
+    return {
+      targetLayer: 'tile',
+      targetId: tileId,
+      breakableTarget: true
+    };
+  }
+
+  if (tileId === 0 && wallId === STARTER_DIRT_WALL_ID) {
+    return {
+      targetLayer: 'wall',
+      targetId: wallId,
+      breakableTarget: true
+    };
+  }
+
+  return {
+    targetLayer: null,
+    targetId: 0,
+    breakableTarget: false
+  };
+};
+
+const resolveStarterPickaxeRequiredHitCount = (
+  targetLayer: StarterPickaxeMiningTargetLayer,
+  targetId: number
+): number =>
+  targetLayer === 'tile' &&
+  (targetId === STONE_TILE_ID || targetId === PROCEDURAL_COPPER_ORE_TILE_ID)
+    ? 2
+    : 1;
 
 export const resolveStarterPickaxeBrokenTileDrop = (
   tileId: number
@@ -193,8 +238,13 @@ export const evaluateStarterPickaxeMiningTarget = (
   registry: TileMetadataRegistry = TILE_METADATA
 ): StarterPickaxeMiningTargetEvaluation => {
   const tileId = world.getTile(worldTileX, worldTileY);
-  const occupied = tileId !== 0;
-  const breakableTarget = isBreakableStarterPickaxeTargetTile(tileId, registry);
+  const wallId = world.getWall(worldTileX, worldTileY);
+  const occupied = tileId !== 0 || wallId !== 0;
+  const { targetLayer, targetId, breakableTarget } = resolveStarterPickaxeTarget(
+    tileId,
+    wallId,
+    registry
+  );
   const withinRange =
     playerState === null
       ? false
@@ -204,6 +254,9 @@ export const evaluateStarterPickaxeMiningTarget = (
     tileX: worldTileX,
     tileY: worldTileY,
     tileId,
+    wallId,
+    targetLayer,
+    targetId,
     occupied,
     breakableTarget,
     withinRange,
@@ -245,15 +298,26 @@ const normalizeStarterPickaxeBreakProgressState = (
     return null;
   }
 
-  const tileId = world.getTile(progress.tileX, progress.tileY);
-  if (!isBreakableTerrainTile(tileId, registry) || tileId !== progress.tileId) {
+  const evaluation = evaluateStarterPickaxeMiningTarget(
+    world,
+    null,
+    progress.tileX,
+    progress.tileY,
+    registry
+  );
+  if (
+    !evaluation.breakableTarget ||
+    evaluation.targetLayer !== progress.targetLayer ||
+    evaluation.targetId !== progress.targetId
+  ) {
     return null;
   }
 
   return {
     tileX: progress.tileX,
     tileY: progress.tileY,
-    tileId: progress.tileId,
+    targetLayer: progress.targetLayer,
+    targetId: progress.targetId,
     appliedHitCount: progress.appliedHitCount,
     requiredHitCount: progress.requiredHitCount
   };
@@ -262,17 +326,19 @@ const normalizeStarterPickaxeBreakProgressState = (
 const createStarterPickaxeHitEvent = (
   tileX: number,
   tileY: number,
-  tileId: number,
+  targetLayer: StarterPickaxeMiningTargetLayer,
+  targetId: number,
   appliedHitCount: number,
   requiredHitCount: number,
-  brokeTile: boolean
+  brokeTarget: boolean
 ): StarterPickaxeHitEvent => ({
   tileX,
   tileY,
-  tileId,
+  targetLayer,
+  targetId,
   appliedHitCount,
   requiredHitCount,
-  brokeTile
+  brokeTarget
 });
 
 const applyStarterPickaxeHit = (
@@ -286,19 +352,23 @@ const applyStarterPickaxeHit = (
   breakProgress: StarterPickaxeBreakProgressState | null;
 } => {
   const evaluation = evaluateStarterPickaxeMiningTarget(world, playerState, tileX, tileY, registry);
-  if (!evaluation.breakableTarget) {
+  if (!evaluation.breakableTarget || evaluation.targetLayer === null) {
     return {
       breakProgress: null,
       hitEvent: null
     };
   }
 
-  const requiredHitCount = resolveStarterPickaxeRequiredHitCount(evaluation.tileId);
+  const requiredHitCount = resolveStarterPickaxeRequiredHitCount(
+    evaluation.targetLayer,
+    evaluation.targetId
+  );
   const continuedProgress =
     progress !== null &&
     progress.tileX === tileX &&
     progress.tileY === tileY &&
-    progress.tileId === evaluation.tileId
+    progress.targetLayer === evaluation.targetLayer &&
+    progress.targetId === evaluation.targetId
       ? progress
       : null;
 
@@ -316,7 +386,8 @@ const applyStarterPickaxeHit = (
       hitEvent: createStarterPickaxeHitEvent(
         tileX,
         tileY,
-        evaluation.tileId,
+        evaluation.targetLayer,
+        evaluation.targetId,
         appliedHitCount,
         requiredHitCount,
         true
@@ -328,14 +399,16 @@ const applyStarterPickaxeHit = (
     breakProgress: {
       tileX,
       tileY,
-      tileId: evaluation.tileId,
+      targetLayer: evaluation.targetLayer,
+      targetId: evaluation.targetId,
       appliedHitCount,
       requiredHitCount
     },
     hitEvent: createStarterPickaxeHitEvent(
       tileX,
       tileY,
-      evaluation.tileId,
+      evaluation.targetLayer,
+      evaluation.targetId,
       appliedHitCount,
       requiredHitCount,
       false

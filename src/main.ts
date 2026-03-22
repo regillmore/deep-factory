@@ -336,7 +336,9 @@ import {
 import {
   evaluateStarterWallPlacement,
   isPlaceableBackgroundWallItemId,
-  resolvePlaceableBackgroundWallId
+  resolvePlaceableBackgroundWallId,
+  STARTER_DIRT_WALL_ID,
+  STARTER_DIRT_WALL_ITEM_ID
 } from './world/starterWallPlacement';
 import {
   evaluateStarterTorchPlacement,
@@ -3214,6 +3216,11 @@ const bootstrap = async (): Promise<void> => {
       refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_ANVIL_ITEM_ID);
     }
   });
+  renderer.onWallEdited((event) => {
+    if (event.previousWallId === STARTER_DIRT_WALL_ID && event.wallId !== STARTER_DIRT_WALL_ID) {
+      refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_DIRT_WALL_ITEM_ID);
+    }
+  });
   const restoreDroppedItemEntityStates = (droppedItemStates: readonly DroppedItemState[]): void => {
     droppedItemEntityIds = [];
     for (const droppedItemState of droppedItemStates) {
@@ -4123,7 +4130,8 @@ const bootstrap = async (): Promise<void> => {
       starterPickaxeMiningState,
       evaluateStarterPickaxeMiningTarget(
         {
-          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY),
+          getWall: (tileX, tileY) => renderer.getWall(tileX, tileY)
         },
         standalonePlayerState,
         worldTileX,
@@ -4358,7 +4366,8 @@ const bootstrap = async (): Promise<void> => {
     const standalonePlayerState = getStandalonePlayerState();
     const stepResult = stepStarterPickaxeMiningState(starterPickaxeMiningState, {
       world: {
-        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY),
+        getWall: (tileX, tileY) => renderer.getWall(tileX, tileY)
       },
       playerState:
         standalonePlayerState === null ||
@@ -4372,7 +4381,12 @@ const bootstrap = async (): Promise<void> => {
     if (hadActiveSwing || starterPickaxeMiningState.activeSwing !== null) {
       syncHotbarOverlayState();
     }
-    if (stepResult.hitEvent?.brokeTile !== true) {
+    if (stepResult.hitEvent?.brokeTarget !== true) {
+      return;
+    }
+
+    if (stepResult.hitEvent.targetLayer === 'wall') {
+      applyWorldWallEdit(stepResult.hitEvent.tileX, stepResult.hitEvent.tileY, 0);
       return;
     }
 
@@ -4862,7 +4876,8 @@ const bootstrap = async (): Promise<void> => {
 
     const miningEvaluation = evaluateStarterPickaxeMiningTarget(
       {
-        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY),
+        getWall: (tileX, tileY) => renderer.getWall(tileX, tileY)
       },
       standalonePlayerState,
       worldTileX,
@@ -4879,7 +4894,8 @@ const bootstrap = async (): Promise<void> => {
       progressNormalized: resolveStarterPickaxeBreakProgressNormalized(
         starterPickaxeMiningState,
         {
-          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY),
+          getWall: (tileX, tileY) => renderer.getWall(tileX, tileY)
         },
         worldTileX,
         worldTileY
@@ -4915,7 +4931,8 @@ const bootstrap = async (): Promise<void> => {
       resolveStarterPickaxeBreakProgressNormalized(
         starterPickaxeMiningState,
         {
-          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+          getTile: (tileX, tileY) => renderer.getTile(tileX, tileY),
+          getWall: (tileX, tileY) => renderer.getWall(tileX, tileY)
         },
         breakProgress.tileX,
         breakProgress.tileY

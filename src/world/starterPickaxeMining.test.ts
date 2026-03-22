@@ -7,6 +7,7 @@ import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './starterFurnacePlacement';
 import { STARTER_ANVIL_TILE_ID } from './starterAnvilPlacement';
+import { STARTER_DIRT_WALL_ID } from './starterWallPlacement';
 import {
   COPPER_ORE_ITEM_ID,
   createStarterPickaxeMiningState,
@@ -22,9 +23,11 @@ import {
 } from './starterPickaxeMining';
 
 const createWorld = (
-  tiles: Record<string, number> = {}
+  tiles: Record<string, number> = {},
+  walls: Record<string, number> = {}
 ): StarterPickaxeMiningWorldView => ({
-  getTile: (worldTileX, worldTileY) => tiles[`${worldTileX},${worldTileY}`] ?? 0
+  getTile: (worldTileX, worldTileY) => tiles[`${worldTileX},${worldTileY}`] ?? 0,
+  getWall: (worldTileX, worldTileY) => walls[`${worldTileX},${worldTileY}`] ?? 0
 });
 
 const createPlayer = (x = 8, y = 28) => ({
@@ -50,6 +53,9 @@ describe('evaluateStarterPickaxeMiningTarget', () => {
       tileX: 0,
       tileY: 0,
       tileId: 9,
+      wallId: 0,
+      targetLayer: 'tile',
+      targetId: 9,
       occupied: true,
       breakableTarget: true,
       withinRange: true,
@@ -57,51 +63,109 @@ describe('evaluateStarterPickaxeMiningTarget', () => {
     });
     expect(evaluateStarterPickaxeMiningTarget(world, player, 1, 0)).toMatchObject({
       tileId: STARTER_ROPE_TILE_ID,
+      wallId: 0,
+      targetLayer: 'tile',
+      targetId: STARTER_ROPE_TILE_ID,
       occupied: true,
       breakableTarget: true,
       canMine: true
     });
     expect(evaluateStarterPickaxeMiningTarget(world, player, 2, 0)).toMatchObject({
       tileId: STARTER_TORCH_TILE_ID,
+      wallId: 0,
+      targetLayer: 'tile',
+      targetId: STARTER_TORCH_TILE_ID,
       occupied: true,
       breakableTarget: true,
       canMine: true
     });
     expect(evaluateStarterPickaxeMiningTarget(world, player, 3, 0)).toMatchObject({
       tileId: STARTER_WORKBENCH_TILE_ID,
+      wallId: 0,
+      targetLayer: 'tile',
+      targetId: STARTER_WORKBENCH_TILE_ID,
       occupied: true,
       breakableTarget: true,
       canMine: true
     });
     expect(evaluateStarterPickaxeMiningTarget(world, player, 4, 0)).toMatchObject({
       tileId: STARTER_FURNACE_TILE_ID,
+      wallId: 0,
+      targetLayer: 'tile',
+      targetId: STARTER_FURNACE_TILE_ID,
       occupied: true,
       breakableTarget: true,
       canMine: true
     });
     expect(evaluateStarterPickaxeMiningTarget(world, player, 5, 0)).toMatchObject({
       tileId: STARTER_ANVIL_TILE_ID,
+      wallId: 0,
+      targetLayer: 'tile',
+      targetId: STARTER_ANVIL_TILE_ID,
       occupied: true,
       breakableTarget: true,
       canMine: true
     });
     expect(evaluateStarterPickaxeMiningTarget(world, player, 6, 0)).toMatchObject({
       tileId: PROCEDURAL_COPPER_ORE_TILE_ID,
+      wallId: 0,
+      targetLayer: 'tile',
+      targetId: PROCEDURAL_COPPER_ORE_TILE_ID,
       occupied: true,
       breakableTarget: true,
       canMine: true
     });
     expect(evaluateStarterPickaxeMiningTarget(world, player, 7, 0)).toMatchObject({
       tileId: 99,
+      wallId: 0,
+      targetLayer: null,
+      targetId: 0,
       occupied: true,
       breakableTarget: false,
       canMine: false
     });
     expect(evaluateStarterPickaxeMiningTarget(world, player, 7, -3)).toMatchObject({
       tileId: 0,
+      wallId: 0,
+      targetLayer: null,
+      targetId: 0,
       occupied: false,
       breakableTarget: false,
       canMine: false
+    });
+  });
+
+  it('treats nearby dirt walls on empty foreground cells as mineable and keeps foreground tiles as the removal target when present', () => {
+    const player = createPlayer(48, 28);
+    const world = createWorld(
+      {
+        '1,0': 9
+      },
+      {
+        '0,0': STARTER_DIRT_WALL_ID,
+        '1,0': STARTER_DIRT_WALL_ID
+      }
+    );
+
+    expect(evaluateStarterPickaxeMiningTarget(world, player, 0, 0)).toMatchObject({
+      tileId: 0,
+      wallId: STARTER_DIRT_WALL_ID,
+      targetLayer: 'wall',
+      targetId: STARTER_DIRT_WALL_ID,
+      occupied: true,
+      breakableTarget: true,
+      withinRange: true,
+      canMine: true
+    });
+    expect(evaluateStarterPickaxeMiningTarget(world, player, 1, 0)).toMatchObject({
+      tileId: 9,
+      wallId: STARTER_DIRT_WALL_ID,
+      targetLayer: 'tile',
+      targetId: 9,
+      occupied: true,
+      breakableTarget: true,
+      withinRange: true,
+      canMine: true
     });
   });
 
@@ -112,6 +176,9 @@ describe('evaluateStarterPickaxeMiningTarget', () => {
 
     expect(evaluateStarterPickaxeMiningTarget(world, createPlayer(), 20, 0)).toMatchObject({
       tileId: 9,
+      wallId: 0,
+      targetLayer: 'tile',
+      targetId: 9,
       breakableTarget: true,
       withinRange: false,
       canMine: false
@@ -165,10 +232,11 @@ describe('starterPickaxeMining state', () => {
     expect(afterWindup.hitEvent).toEqual({
       tileX: 0,
       tileY: 0,
-      tileId: STARTER_WORKBENCH_TILE_ID,
+      targetLayer: 'tile',
+      targetId: STARTER_WORKBENCH_TILE_ID,
       appliedHitCount: 1,
       requiredHitCount: 1,
-      brokeTile: true
+      brokeTarget: true
     });
     expect(afterWindup.state.breakProgress).toBeNull();
   });
@@ -192,10 +260,11 @@ describe('starterPickaxeMining state', () => {
     expect(afterWindup.hitEvent).toEqual({
       tileX: 0,
       tileY: 0,
-      tileId: STARTER_FURNACE_TILE_ID,
+      targetLayer: 'tile',
+      targetId: STARTER_FURNACE_TILE_ID,
       appliedHitCount: 1,
       requiredHitCount: 1,
-      brokeTile: true
+      brokeTarget: true
     });
     expect(afterWindup.state.breakProgress).toBeNull();
   });
@@ -219,10 +288,11 @@ describe('starterPickaxeMining state', () => {
     expect(afterWindup.hitEvent).toEqual({
       tileX: 0,
       tileY: 0,
-      tileId: STARTER_ANVIL_TILE_ID,
+      targetLayer: 'tile',
+      targetId: STARTER_ANVIL_TILE_ID,
       appliedHitCount: 1,
       requiredHitCount: 1,
-      brokeTile: true
+      brokeTarget: true
     });
     expect(afterWindup.state.breakProgress).toBeNull();
   });
@@ -246,10 +316,11 @@ describe('starterPickaxeMining state', () => {
     expect(afterWindup.hitEvent).toEqual({
       tileX: 0,
       tileY: 0,
-      tileId: STARTER_TORCH_TILE_ID,
+      targetLayer: 'tile',
+      targetId: STARTER_TORCH_TILE_ID,
       appliedHitCount: 1,
       requiredHitCount: 1,
-      brokeTile: true
+      brokeTarget: true
     });
     expect(afterWindup.state.breakProgress).toBeNull();
   });
@@ -273,10 +344,37 @@ describe('starterPickaxeMining state', () => {
     expect(afterWindup.hitEvent).toEqual({
       tileX: 0,
       tileY: 0,
-      tileId: STARTER_ROPE_TILE_ID,
+      targetLayer: 'tile',
+      targetId: STARTER_ROPE_TILE_ID,
       appliedHitCount: 1,
       requiredHitCount: 1,
-      brokeTile: true
+      brokeTarget: true
+    });
+    expect(afterWindup.state.breakProgress).toBeNull();
+  });
+
+  it('breaks a nearby dirt wall in one hit when the foreground cell is empty', () => {
+    const world = createWorld({}, { '0,0': STARTER_DIRT_WALL_ID });
+    const player = createPlayer();
+    const evaluation = evaluateStarterPickaxeMiningTarget(world, player, 0, 0);
+    const started = tryStartStarterPickaxeSwing(createStarterPickaxeMiningState(), evaluation);
+
+    expect(started.started).toBe(true);
+
+    const afterWindup = stepStarterPickaxeMiningState(started.state, {
+      world,
+      playerState: player,
+      fixedDtSeconds: STARTER_PICKAXE_SWING_WINDUP_SECONDS
+    });
+
+    expect(afterWindup.hitEvent).toEqual({
+      tileX: 0,
+      tileY: 0,
+      targetLayer: 'wall',
+      targetId: STARTER_DIRT_WALL_ID,
+      appliedHitCount: 1,
+      requiredHitCount: 1,
+      brokeTarget: true
     });
     expect(afterWindup.state.breakProgress).toBeNull();
   });
@@ -305,10 +403,11 @@ describe('starterPickaxeMining state', () => {
     expect(afterWindup.hitEvent).toEqual({
       tileX: 0,
       tileY: 0,
-      tileId: 9,
+      targetLayer: 'tile',
+      targetId: 9,
       appliedHitCount: 1,
       requiredHitCount: 1,
-      brokeTile: true
+      brokeTarget: true
     });
     expect(afterWindup.state.activeSwing).toEqual({
       tileX: 0,
@@ -359,10 +458,11 @@ describe('starterPickaxeMining state', () => {
     expect(firstSwingHit.hitEvent).toEqual({
       tileX: 0,
       tileY: 0,
-      tileId: 1,
+      targetLayer: 'tile',
+      targetId: 1,
       appliedHitCount: 1,
       requiredHitCount: 2,
-      brokeTile: false
+      brokeTarget: false
     });
     expect(
       resolveStarterPickaxeBreakProgressNormalized(firstSwingHit.state, world, 0, 0)
@@ -384,10 +484,11 @@ describe('starterPickaxeMining state', () => {
     expect(secondSwingHit.hitEvent).toEqual({
       tileX: 0,
       tileY: 0,
-      tileId: 1,
+      targetLayer: 'tile',
+      targetId: 1,
       appliedHitCount: 2,
       requiredHitCount: 2,
-      brokeTile: true
+      brokeTarget: true
     });
     expect(secondSwingHit.state.breakProgress).toBeNull();
   });
@@ -409,10 +510,11 @@ describe('starterPickaxeMining state', () => {
     expect(firstSwingHit.hitEvent).toEqual({
       tileX: 0,
       tileY: 0,
-      tileId: PROCEDURAL_COPPER_ORE_TILE_ID,
+      targetLayer: 'tile',
+      targetId: PROCEDURAL_COPPER_ORE_TILE_ID,
       appliedHitCount: 1,
       requiredHitCount: 2,
-      brokeTile: false
+      brokeTarget: false
     });
     expect(resolveStarterPickaxeBreakProgressNormalized(firstSwingHit.state, world, 0, 0)).toBe(0.5);
 
@@ -432,10 +534,11 @@ describe('starterPickaxeMining state', () => {
     expect(secondSwingHit.hitEvent).toEqual({
       tileX: 0,
       tileY: 0,
-      tileId: PROCEDURAL_COPPER_ORE_TILE_ID,
+      targetLayer: 'tile',
+      targetId: PROCEDURAL_COPPER_ORE_TILE_ID,
       appliedHitCount: 2,
       requiredHitCount: 2,
-      brokeTile: true
+      brokeTarget: true
     });
     expect(secondSwingHit.state.breakProgress).toBeNull();
   });
@@ -476,10 +579,11 @@ describe('starterPickaxeMining state', () => {
     expect(secondSwingHit.hitEvent).toMatchObject({
       tileX: 1,
       tileY: 0,
-      tileId: 9,
+      targetLayer: 'tile',
+      targetId: 9,
       appliedHitCount: 1,
       requiredHitCount: 1,
-      brokeTile: true
+      brokeTarget: true
     });
     expect(resolveStarterPickaxeBreakProgressNormalized(secondSwingHit.state, world, 0, 0)).toBe(0);
   });

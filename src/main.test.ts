@@ -72,7 +72,7 @@ import {
   STARTER_PICKAXE_SWING_RECOVERY_SECONDS,
   STARTER_PICKAXE_SWING_WINDUP_SECONDS
 } from './world/starterPickaxeMining';
-import { STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
+import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
 import {
   DEFAULT_STARTER_MELEE_WEAPON_DAMAGE,
   DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_X,
@@ -122,7 +122,7 @@ import {
   DEFAULT_PASSIVE_BUNNY_HOP_INTERVAL_TICKS,
   DEFAULT_PASSIVE_BUNNY_WIDTH
 } from './world/passiveBunnyState';
-import { TileWorld, type TileEditEvent } from './world/world';
+import { TileWorld, type TileEditEvent, type WallEditEvent } from './world/world';
 
 const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
   'return-to-main-menu': 'X',
@@ -227,6 +227,26 @@ const createTileEditEvent = (
     previousLiquidLevel,
     tileId,
     liquidLevel
+  };
+};
+
+const createWallEditEvent = (
+  worldTileX: number,
+  worldTileY: number,
+  previousWallId: number,
+  wallId: number
+): WallEditEvent => {
+  const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+  const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
+  return {
+    worldTileX,
+    worldTileY,
+    chunkX,
+    chunkY,
+    localX,
+    localY,
+    previousWallId,
+    wallId
   };
 };
 
@@ -506,7 +526,9 @@ const testRuntime = vi.hoisted(() => {
       wallId: number;
     }>,
     rendererTileEditListeners: [] as Array<(event: TileEditEvent) => void>,
+    rendererWallEditListeners: [] as Array<(event: WallEditEvent) => void>,
     rendererNextSetTileEditEvents: null as TileEditEvent[] | null,
+    rendererNextSetWallEditEvents: null as WallEditEvent[] | null,
     rendererStepLiquidSimulationCallCount: 0,
     rendererStepPlayerStateImpl: null as null | ((
       state: unknown,
@@ -999,6 +1021,15 @@ vi.mock('./gl/renderer', () => ({
       };
     }
 
+    onWallEdited(listener: (event: WallEditEvent) => void): () => void {
+      testRuntime.rendererWallEditListeners.push(listener);
+      return () => {
+        testRuntime.rendererWallEditListeners = testRuntime.rendererWallEditListeners.filter(
+          (registeredListener) => registeredListener !== listener
+        );
+      };
+    }
+
     setTile(worldTileX: number, worldTileY: number, tileId: number): boolean {
       const previousTileId = this.getTile(worldTileX, worldTileY);
       const previousLiquidLevel = this.getLiquidLevel(worldTileX, worldTileY);
@@ -1051,6 +1082,7 @@ vi.mock('./gl/renderer', () => ({
     }
 
     setWall(worldTileX: number, worldTileY: number, wallId: number): boolean {
+      const previousWallId = this.getWall(worldTileX, worldTileY);
       testRuntime.rendererSetWallCalls.push({
         worldTileX,
         worldTileY,
@@ -1061,18 +1093,33 @@ vi.mock('./gl/renderer', () => ({
         testRuntime.rendererSetWallResult = false;
       }
       if (result) {
-        if (wallId === 0) {
-          testRuntime.rendererWallIdsByWorldKey.delete(worldTileKey(worldTileX, worldTileY));
-        } else {
-          testRuntime.rendererWallIdsByWorldKey.set(worldTileKey(worldTileX, worldTileY), wallId);
-        }
-        applyRendererWallEditsToWorldSnapshot([
-          {
-            worldTileX,
-            worldTileY,
-            wallId
+        const editEvents =
+          testRuntime.rendererNextSetWallEditEvents ?? [
+            createWallEditEvent(worldTileX, worldTileY, previousWallId, wallId)
+          ];
+        testRuntime.rendererNextSetWallEditEvents = null;
+        for (const event of editEvents) {
+          if (event.wallId === 0) {
+            testRuntime.rendererWallIdsByWorldKey.delete(worldTileKey(event.worldTileX, event.worldTileY));
+          } else {
+            testRuntime.rendererWallIdsByWorldKey.set(
+              worldTileKey(event.worldTileX, event.worldTileY),
+              event.wallId
+            );
           }
-        ]);
+          for (const listener of testRuntime.rendererWallEditListeners) {
+            listener({ ...event });
+          }
+        }
+        applyRendererWallEditsToWorldSnapshot(
+          editEvents.map((event) => ({
+            worldTileX: event.worldTileX,
+            worldTileY: event.worldTileY,
+            wallId: event.wallId
+          }))
+        );
+      } else {
+        testRuntime.rendererNextSetWallEditEvents = null;
       }
       return result;
     }
@@ -2611,7 +2658,9 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererPersistentSetWallResult = false;
     testRuntime.rendererSetWallCalls = [];
     testRuntime.rendererTileEditListeners = [];
+    testRuntime.rendererWallEditListeners = [];
     testRuntime.rendererNextSetTileEditEvents = null;
+    testRuntime.rendererNextSetWallEditEvents = null;
     testRuntime.rendererStepLiquidSimulationCallCount = 0;
     testRuntime.rendererStepPlayerStateImpl = null;
     testRuntime.rendererStepPlayerStateRequests = [];
@@ -11365,6 +11414,48 @@ describe('main.ts shell state orchestration', () => {
     ]);
   });
 
+  it('clears a nearby dirt wall on an empty foreground cell and refunds one dirt-wall pickup', async () => {
+    setPersistedWorldSaveWithInventory();
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.rendererWallIdsByWorldKey.set(worldTileKey(1, -1), STARTER_DIRT_WALL_ID);
+    testRuntime.rendererSetWallResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        worldX: 24,
+        worldY: -8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([]);
+    expect(testRuntime.rendererSetWallCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        wallId: 0
+      }
+    ]);
+    expect(testRuntime.rendererWallIdsByWorldKey.get(worldTileKey(1, -1))).toBeUndefined();
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    expect(persistedEnvelope?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 24, y: -8 },
+        itemId: 'dirt-wall',
+        amount: 1
+      }
+    ]);
+  });
+
   it('spawns one rope pickup entity when the starter pickaxe cuts a nearby placed rope tile', async () => {
     setPersistedWorldSaveWithInventory();
     await import('./main');
@@ -11538,6 +11629,67 @@ describe('main.ts shell state orchestration', () => {
       {
         position: { x: 44, y: 8 },
         itemId: 'dirt-block',
+        amount: 999
+      }
+    ]);
+  });
+
+  it('cascades a removed dirt-wall refund across overlapping matching world pickups before spawning a new entity', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createLegacyStarterInventoryState(),
+          droppedItemStates: [
+            createDroppedItemState({
+              position: { x: 40, y: -24 },
+              itemId: 'dirt-wall',
+              amount: 999
+            }),
+            createDroppedItemState({
+              position: { x: 44, y: -24 },
+              itemId: 'dirt-wall',
+              amount: 998
+            })
+          ]
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.rendererWallIdsByWorldKey.set(worldTileKey(2, -2), STARTER_DIRT_WALL_ID);
+    testRuntime.rendererSetWallResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 2,
+        worldTileY: -2,
+        worldX: 40,
+        worldY: -24,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 40, y: -24 },
+        itemId: 'dirt-wall',
+        amount: 999
+      },
+      {
+        position: { x: 44, y: -24 },
+        itemId: 'dirt-wall',
         amount: 999
       }
     ]);
