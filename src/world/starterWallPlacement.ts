@@ -1,14 +1,17 @@
 import type { PlayerInventoryItemId } from './playerInventory';
 import { isTileSolid, TILE_METADATA, type TileMetadataRegistry } from './tileMetadata';
 
-export type PlaceableBackgroundWallItemId = Extract<PlayerInventoryItemId, 'dirt-wall'>;
+export type PlaceableBackgroundWallItemId = Extract<PlayerInventoryItemId, 'dirt-wall' | 'wood-wall'>;
 
 export const STARTER_DIRT_WALL_ITEM_ID: PlaceableBackgroundWallItemId = 'dirt-wall';
 export const STARTER_DIRT_WALL_ID = 1;
+export const STARTER_WOOD_WALL_ITEM_ID: PlaceableBackgroundWallItemId = 'wood-wall';
+export const STARTER_WOOD_WALL_ID = 2;
 export const STARTER_BACKGROUND_WALL_ENCLOSURE_SCAN_LIMIT_TILES = 32;
 
 const PLACEABLE_BACKGROUND_WALL_IDS: Readonly<Record<PlaceableBackgroundWallItemId, number>> = {
-  'dirt-wall': STARTER_DIRT_WALL_ID
+  'dirt-wall': STARTER_DIRT_WALL_ID,
+  'wood-wall': STARTER_WOOD_WALL_ID
 };
 
 export interface StarterWallPlacementWorldView {

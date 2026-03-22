@@ -17,7 +17,7 @@ import {
   DEFAULT_PLAYER_MAX_HEALTH
 } from './world/playerState';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
-import { STARTER_DIRT_WALL_ID } from './world/starterWallPlacement';
+import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
 import { resolveProceduralTerrainTileId } from './world/proceduralTerrain';
 import { TileWorld } from './world/world';
 import {
@@ -213,6 +213,47 @@ describe('createWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'dirt-wall',
       amount: 9
+    });
+  });
+
+  it('preserves placed wood-wall runs together with the consumed wood-wall hotbar stack count', () => {
+    const world = new TileWorld(0);
+    const woodWallRun = [
+      [CHUNK_SIZE - 1, -24],
+      [CHUNK_SIZE, -24],
+      [CHUNK_SIZE + 1, -24]
+    ] as const;
+    for (const [worldTileX, worldTileY] of woodWallRun) {
+      expect(world.setWall(worldTileX, worldTileY, STARTER_WOOD_WALL_ID)).toBe(true);
+    }
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [null, { itemId: 'wood-wall', amount: 5 }, ...Array.from({ length: 8 }, () => null)],
+      selectedHotbarSlotIndex: 1
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(decoded.worldSnapshot);
+    for (const [worldTileX, worldTileY] of woodWallRun) {
+      expect(restoredWorld.getWall(worldTileX, worldTileY)).toBe(STARTER_WOOD_WALL_ID);
+    }
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+      itemId: 'wood-wall',
+      amount: 5
     });
   });
 

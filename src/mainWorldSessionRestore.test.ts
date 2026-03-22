@@ -16,7 +16,7 @@ import {
 } from './world/playerEquipment';
 import { createPlayerState, type PlayerState } from './world/playerState';
 import { CHUNK_SIZE } from './world/constants';
-import { STARTER_DIRT_WALL_ID } from './world/starterWallPlacement';
+import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
 import { TileWorld } from './world/world';
 
 describe('restoreWorldSessionFromSaveEnvelope', () => {
@@ -334,6 +334,62 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     expect(restoreResult.restoredEnvelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'dirt-wall',
       amount: 9
+    });
+  });
+
+  it('restores placed wood-wall runs together with the remaining wood-wall hotbar stack count', () => {
+    const world = new TileWorld(0);
+    const woodWallRun = [
+      [CHUNK_SIZE - 1, -24],
+      [CHUNK_SIZE, -24],
+      [CHUNK_SIZE + 1, -24]
+    ] as const;
+    for (const [worldTileX, worldTileY] of woodWallRun) {
+      expect(world.setWall(worldTileX, worldTileY, STARTER_WOOD_WALL_ID)).toBe(true);
+    }
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [null, { itemId: 'wood-wall', amount: 5 }, ...Array.from({ length: 8 }, () => null)],
+      selectedHotbarSlotIndex: 1
+    });
+    const envelope = createWorldSaveEnvelope({
+      worldSnapshot: world.createSnapshot(),
+      standalonePlayerState: createPlayerState(),
+      standalonePlayerDeathState: null,
+      standalonePlayerInventoryState,
+      droppedItemStates: [],
+      cameraFollowOffset: { x: 0, y: 0 }
+    });
+    let restoredWorldSnapshot: ReturnType<TileWorld['createSnapshot']> | null = null;
+    let restoredPlayerInventoryState: PlayerInventoryState | null = null;
+    const target = {
+      loadWorldSnapshot: vi.fn((snapshot) => {
+        restoredWorldSnapshot = snapshot;
+      }),
+      restoreStandalonePlayerState: vi.fn(),
+      restoreStandalonePlayerDeathState: vi.fn(),
+      restoreStandalonePlayerInventoryState: vi.fn((inventoryState) => {
+        restoredPlayerInventoryState = inventoryState;
+      }),
+      restoreStandalonePlayerEquipmentState: vi.fn(),
+      restoreDroppedItemStates: vi.fn(),
+      restoreCameraFollowOffset: vi.fn()
+    };
+
+    const restoreResult = restoreWorldSessionFromSaveEnvelope({
+      target,
+      envelope
+    });
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(restoredWorldSnapshot!);
+    for (const [worldTileX, worldTileY] of woodWallRun) {
+      expect(restoredWorld.getWall(worldTileX, worldTileY)).toBe(STARTER_WOOD_WALL_ID);
+    }
+    expect(restoredPlayerInventoryState).toEqual(standalonePlayerInventoryState);
+    expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
+    expect(restoreResult.restoredEnvelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+      itemId: 'wood-wall',
+      amount: 5
     });
   });
 

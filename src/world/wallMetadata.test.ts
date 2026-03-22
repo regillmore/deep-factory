@@ -9,7 +9,7 @@ import {
 } from './wallMetadata';
 
 describe('wallMetadata', () => {
-  it('exposes dirt-wall metadata through the shared wall registry', () => {
+  it('exposes starter wall metadata through the shared wall registry', () => {
     expect(getWallMetadata(0)).toEqual({
       id: 0,
       name: 'empty'
@@ -21,9 +21,17 @@ describe('wallMetadata', () => {
         atlasIndex: 30
       }
     });
+    expect(getWallMetadata(2)).toEqual({
+      id: 2,
+      name: 'wood_wall',
+      render: {
+        atlasIndex: 33
+      }
+    });
     expect(resolveWallRenderUvRect(1)).toEqual(atlasIndexToUvRect(30));
+    expect(resolveWallRenderUvRect(2)).toEqual(atlasIndexToUvRect(33));
     expect(resolveWallRenderUvRect(999)).toBeNull();
-    expect(WALL_METADATA.walls).toHaveLength(2);
+    expect(WALL_METADATA.walls).toHaveLength(3);
   });
 
   it('rejects duplicate wall ids', () => {

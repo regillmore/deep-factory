@@ -10,6 +10,13 @@
       "render": {
         "atlasIndex": 30
       }
+    },
+    {
+      "id": 2,
+      "name": "wood_wall",
+      "render": {
+        "atlasIndex": 33
+      }
     }
   ]
 }

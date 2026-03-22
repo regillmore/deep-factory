@@ -5,14 +5,17 @@ import {
   evaluateStarterWallPlacement,
   isPlaceableBackgroundWallItemId,
   resolvePlaceableBackgroundWallId,
-  STARTER_DIRT_WALL_ID
+  STARTER_DIRT_WALL_ID,
+  STARTER_WOOD_WALL_ID
 } from './starterWallPlacement';
 
 describe('starterWallPlacement', () => {
   it('maps placeable background-wall hotbar items to the correct wall ids', () => {
     expect(isPlaceableBackgroundWallItemId('dirt-wall')).toBe(true);
+    expect(isPlaceableBackgroundWallItemId('wood-wall')).toBe(true);
     expect(isPlaceableBackgroundWallItemId('dirt-block')).toBe(false);
     expect(resolvePlaceableBackgroundWallId('dirt-wall')).toBe(STARTER_DIRT_WALL_ID);
+    expect(resolvePlaceableBackgroundWallId('wood-wall')).toBe(STARTER_WOOD_WALL_ID);
   });
 
   it('allows placement into an enclosed empty tile even when the enclosure is farther than one tile away', () => {
@@ -58,7 +61,7 @@ describe('starterWallPlacement', () => {
     world.setTile(2, -1, 1);
     world.setTile(1, 0, 1);
     world.setTile(0, -1, 1);
-    world.setWall(1, -1, STARTER_DIRT_WALL_ID);
+    world.setWall(1, -1, STARTER_WOOD_WALL_ID);
 
     expect(evaluateStarterWallPlacement(world, 1, -1)).toEqual({
       occupied: true,

@@ -72,6 +72,7 @@ import {
   STARTER_PICKAXE_SWING_RECOVERY_SECONDS,
   STARTER_PICKAXE_SWING_WINDUP_SECONDS
 } from './world/starterPickaxeMining';
+import { STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
 import {
   DEFAULT_STARTER_MELEE_WEAPON_DAMAGE,
   DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_X,
@@ -9803,6 +9804,56 @@ describe('main.ts shell state orchestration', () => {
     ]);
     expect(testRuntime.rendererWallIdsByWorldKey.get(worldTileKey(2, -2))).toBe(1);
     expect(getHotbarOverlaySlotAmountLabel(1).textContent).toBe('11');
+  });
+
+  it('places a wood wall from the selected hotbar slot through the shared hidden-panel item-use path', async () => {
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'wood-wall', amount: 6 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          ...Array.from({ length: 6 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 1
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
+    expect(testRuntime.canvasInteractionMode).toBe('play');
+    for (let tileX = 0; tileX <= 4; tileX += 1) {
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(tileX, 0), 1);
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(tileX, -4), 1);
+    }
+    for (let tileY = -4; tileY <= 0; tileY += 1) {
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, tileY), 1);
+      testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, tileY), 1);
+    }
+    testRuntime.rendererSetWallResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 2,
+        worldTileY: -2,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetWallCalls).toEqual([
+      {
+        worldTileX: 2,
+        worldTileY: -2,
+        wallId: STARTER_WOOD_WALL_ID
+      }
+    ]);
+    expect(testRuntime.rendererWallIdsByWorldKey.get(worldTileKey(2, -2))).toBe(STARTER_WOOD_WALL_ID);
+    expect(getHotbarOverlaySlotAmountLabel(1).textContent).toBe('5');
   });
 
   it('chops a grown small tree from the selected axe slot through the shared hidden-panel item-use path and drops wood plus an acorn', async () => {

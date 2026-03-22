@@ -6,7 +6,7 @@ import { createDroppedItemState } from './world/droppedItem';
 import { createPlayerInventoryState } from './world/playerInventory';
 import { createPlayerEquipmentState } from './world/playerEquipment';
 import { createPlayerState } from './world/playerState';
-import { STARTER_DIRT_WALL_ID } from './world/starterWallPlacement';
+import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
 import { TileWorld } from './world/world';
 import { createWorldSessionSaveEnvelope } from './mainWorldSessionSave';
 
@@ -206,6 +206,44 @@ describe('createWorldSessionSaveEnvelope', () => {
     expect(envelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
       itemId: 'dirt-wall',
       amount: 9
+    });
+  });
+
+  it('captures placed wood-wall runs together with the remaining wood-wall hotbar stack count', () => {
+    const world = new TileWorld(0);
+    const woodWallRun = [
+      [CHUNK_SIZE - 1, -24],
+      [CHUNK_SIZE, -24],
+      [CHUNK_SIZE + 1, -24]
+    ] as const;
+    for (const [worldTileX, worldTileY] of woodWallRun) {
+      expect(world.setWall(worldTileX, worldTileY, STARTER_WOOD_WALL_ID)).toBe(true);
+    }
+
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [null, { itemId: 'wood-wall', amount: 5 }, ...Array.from({ length: 8 }, () => null)],
+      selectedHotbarSlotIndex: 1
+    });
+    const source = {
+      createWorldSnapshot: vi.fn(() => world.createSnapshot()),
+      getStandalonePlayerState: vi.fn(() => createPlayerState()),
+      getStandalonePlayerDeathState: vi.fn(() => null),
+      getStandalonePlayerInventoryState: vi.fn(() => standalonePlayerInventoryState),
+      getStandalonePlayerEquipmentState: vi.fn(() => createPlayerEquipmentState()),
+      getDroppedItemStates: vi.fn(() => []),
+      getCameraFollowOffset: vi.fn(() => ({ x: 0, y: 0 }))
+    };
+
+    const envelope = createWorldSessionSaveEnvelope({ source });
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(envelope.worldSnapshot);
+    for (const [worldTileX, worldTileY] of woodWallRun) {
+      expect(restoredWorld.getWall(worldTileX, worldTileY)).toBe(STARTER_WOOD_WALL_ID);
+    }
+    expect(envelope.session.standalonePlayerInventoryState.hotbar[1]).toEqual({
+      itemId: 'wood-wall',
+      amount: 5
     });
   });
 
