@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { collectAtlasValidationWarnings } from './atlasValidation';
 import type { TileMetadataEntry } from '../world/tileMetadata';
+import type { WallMetadataEntry } from '../world/wallMetadata';
 
 describe('collectAtlasValidationWarnings', () => {
-  it('returns no warnings when tiles only use atlas indices or in-bounds uv rects', () => {
+  it('returns no warnings when tiles and walls only use atlas indices or in-bounds uv rects', () => {
     const tiles: TileMetadataEntry[] = [
       {
         id: 1,
@@ -27,8 +28,26 @@ describe('collectAtlasValidationWarnings', () => {
         }
       }
     ];
+    const walls: WallMetadataEntry[] = [
+      {
+        id: 0,
+        name: 'empty'
+      },
+      {
+        id: 1,
+        name: 'dirt_wall',
+        render: { atlasIndex: 0 }
+      },
+      {
+        id: 2,
+        name: 'panel_wall',
+        render: {
+          uvRect: { u0: 0.25, v0: 0.25, u1: 0.5, v1: 0.5 }
+        }
+      }
+    ];
 
-    expect(collectAtlasValidationWarnings(tiles, 96, 64)).toEqual([]);
+    expect(collectAtlasValidationWarnings(tiles, 96, 64, walls)).toEqual([]);
   });
 
   it('reports authored atlas-index sources when the loaded atlas is smaller than the authored layout', () => {
@@ -83,8 +102,9 @@ describe('collectAtlasValidationWarnings', () => {
 
     expect(warnings).toHaveLength(3);
     expect(warnings[0]).toMatchObject({
-      tileId: 7,
-      tileName: 'broken_panel',
+      entryKind: 'tile',
+      entryId: 7,
+      entryName: 'broken_panel',
       kind: 'bounds',
       sourcePath: 'render.uvRect',
       summary: 'tile 7 "broken_panel" render.uvRect'
@@ -115,22 +135,25 @@ describe('collectAtlasValidationWarnings', () => {
 
     expect(warnings).toHaveLength(3);
     expect(warnings[0]).toMatchObject({
-      tileId: 8,
-      tileName: 'misaligned_panel',
+      entryKind: 'tile',
+      entryId: 8,
+      entryName: 'misaligned_panel',
       kind: 'pixelAlignment',
       sourcePath: 'render.uvRect'
     });
     expect(warnings[0]?.message).toContain('[9.6, 16]..[48, 48] on non-integer atlas pixels');
     expect(warnings[1]).toMatchObject({
-      tileId: 8,
-      tileName: 'misaligned_panel',
+      entryKind: 'tile',
+      entryId: 8,
+      entryName: 'misaligned_panel',
       kind: 'pixelAlignment',
       sourcePath: 'render.frames[0].uvRect'
     });
     expect(warnings[1]?.message).toContain('[9.6, 16]..[48, 48] on non-integer atlas pixels');
     expect(warnings[2]).toMatchObject({
-      tileId: 8,
-      tileName: 'misaligned_panel',
+      entryKind: 'tile',
+      entryId: 8,
+      entryName: 'misaligned_panel',
       kind: 'pixelAlignment',
       sourcePath: 'render.frames[1].uvRect'
     });
@@ -175,5 +198,46 @@ describe('collectAtlasValidationWarnings', () => {
       'liquidRender.variantRenderByCardinalMask[1].frames[1].uvRect'
     );
     expect(warnings[3]?.kind).toBe('bounds');
+  });
+
+  it('reports wall render sources with wall-specific summaries and source paths', () => {
+    const walls: WallMetadataEntry[] = [
+      {
+        id: 1,
+        name: 'misaligned_wall',
+        render: {
+          uvRect: { u0: 0.1, v0: 0.25, u1: 0.5, v1: 0.75 }
+        }
+      },
+      {
+        id: 2,
+        name: 'overflow_wall',
+        render: {
+          atlasIndex: 15
+        }
+      }
+    ];
+
+    const warnings = collectAtlasValidationWarnings([], 48, 48, walls);
+
+    expect(warnings).toHaveLength(2);
+    expect(warnings[0]).toMatchObject({
+      entryKind: 'wall',
+      entryId: 1,
+      entryName: 'misaligned_wall',
+      kind: 'pixelAlignment',
+      sourcePath: 'render.uvRect',
+      summary: 'wall 1 "misaligned_wall" render.uvRect'
+    });
+    expect(warnings[0]?.message).toContain('[4.8, 12]..[24, 36] on non-integer atlas pixels');
+    expect(warnings[1]).toMatchObject({
+      entryKind: 'wall',
+      entryId: 2,
+      entryName: 'overflow_wall',
+      kind: 'bounds',
+      sourcePath: 'render.atlasIndex',
+      summary: 'wall 2 "overflow_wall" render.atlasIndex'
+    });
+    expect(warnings[1]?.message).toContain('[48, 48]..[64, 64] outside atlas 48x48');
   });
 });

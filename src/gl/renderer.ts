@@ -55,6 +55,7 @@ import {
   resolveLiquidRenderCardinalMaskFromNeighborhood,
   TILE_METADATA
 } from '../world/tileMetadata';
+import { WALL_METADATA } from '../world/wallMetadata';
 import {
   findPlayerSpawnPoint as findWorldPlayerSpawnPoint,
   resolvePlayerSpawnLiquidSafetyStatus as resolveWorldPlayerSpawnLiquidSafetyStatus,
@@ -815,7 +816,12 @@ export class Renderer {
     this.telemetry.atlasSourceKind = atlas.sourceKind;
     this.telemetry.atlasWidth = atlas.width;
     this.telemetry.atlasHeight = atlas.height;
-    const atlasWarnings = collectAtlasValidationWarnings(TILE_METADATA.tiles, atlas.width, atlas.height);
+    const atlasWarnings = collectAtlasValidationWarnings(
+      TILE_METADATA.tiles,
+      atlas.width,
+      atlas.height,
+      WALL_METADATA.walls
+    );
     this.telemetry.atlasValidationWarningCount = atlasWarnings.length;
     this.telemetry.atlasValidationFirstWarning = atlasWarnings[0]?.summary ?? null;
     if (atlasWarnings.length > 0) {

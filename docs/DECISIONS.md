@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-22: Background-wall render metadata shares the runtime atlas-validation path
+
+- Decision: Renderer startup now validates `src/world/wallMetadata.ts` render sources through the same atlas bounds and whole-pixel warning seam used for tile, terrain, and liquid metadata.
+- Reason: Background walls now own dedicated authored regions, so wall-art drift should surface through the existing runtime atlas warning path instead of relying on tile-only validation or separate ad hoc checks.
+- Consequence: Future wall render metadata should keep flowing through the shared atlas-validation helper, and later wall-art passes can treat renderer startup warnings as covering both tile and wall sources.
+
 ### 2026-03-22: Wood-wall background art uses its own authored region
 
 - Decision: `wood_wall` now renders through dedicated authored atlas region `35` at `160x32` instead of reusing the solid `wood_block` region `33`.

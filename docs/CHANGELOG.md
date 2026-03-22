@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-22
 
+- Task: Add a background-wall atlas-validation follow-up after starter wood-wall authored-art.
+- Changes: Updated [src/gl/atlasValidation.ts](../src/gl/atlasValidation.ts), [src/gl/renderer.ts](../src/gl/renderer.ts), [src/gl/atlasValidation.test.ts](../src/gl/atlasValidation.test.ts), and [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so renderer startup now validates background-wall render metadata alongside tile metadata, surfaces wall-source warnings through the shared atlas-warning telemetry and console path, and pins that behavior with focused wall warning regressions; removed completed task `682` from [docs/NEXT.md](docs/NEXT.md), added replacement task `687`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/gl/atlasValidation.test.ts src/gl/renderer.test.ts`.
+
 - Task: Add a starter wood-block mining refund follow-up after wood-block placement and starter pickaxe mining.
 - Changes: Updated [src/world/starterPickaxeMining.ts](../src/world/starterPickaxeMining.ts), [src/world/starterPickaxeMining.test.ts](../src/world/starterPickaxeMining.test.ts), and [src/main.test.ts](../src/main.test.ts) so placed `wood_block` terrain now refunds one merge-aware `wood-block` pickup through the existing pickaxe drop path when the tile clears successfully; removed completed task `685` from [docs/NEXT.md](docs/NEXT.md), added replacement task `686`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/starterPickaxeMining.test.ts src/main.test.ts`.

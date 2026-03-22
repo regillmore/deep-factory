@@ -43,7 +43,14 @@ const { loadAtlasImageSource, createTextureFromImageSource, createProgram, colle
   createTextureFromImageSource: vi.fn(() => ({ kind: 'texture' } as unknown as WebGLTexture)),
   createProgram: vi.fn(() => ({ kind: 'program' } as unknown as WebGLProgram)),
   collectAtlasValidationWarnings:
-    vi.fn<(tiles: unknown, atlasWidth: number, atlasHeight: number) => AtlasValidationWarning[]>(
+    vi.fn<
+      (
+        tiles: unknown,
+        atlasWidth: number,
+        atlasHeight: number,
+        walls?: unknown
+      ) => AtlasValidationWarning[]
+    >(
       () => []
     )
   }));
@@ -661,7 +668,7 @@ describe('Renderer atlas telemetry', () => {
     expect(renderer.telemetry.atlasValidationFirstWarning).toBeNull();
   });
 
-  it('records atlas uvRect warnings and logs them during initialization', async () => {
+  it('records atlas wall warnings and logs them during initialization', async () => {
     const gl = createMockGl();
     const renderer = new Renderer(createMockCanvas(gl));
     const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
@@ -675,23 +682,33 @@ describe('Renderer atlas telemetry', () => {
     });
     collectAtlasValidationWarnings.mockReturnValue([
       {
-        tileId: 4,
-        tileName: 'debug_panel',
+        entryKind: 'wall',
+        entryId: 2,
+        entryName: 'wood_wall',
         kind: 'pixelAlignment',
-        sourcePath: 'render.uvRect',
-        summary: 'tile 4 "debug_panel" render.uvRect',
+        sourcePath: 'render.atlasIndex',
+        summary: 'wall 2 "wood_wall" render.atlasIndex',
         message:
-          'tile 4 "debug_panel" render.uvRect resolves to [9.6, 16]..[48, 48] on non-integer atlas pixels for 96x64'
+          'wall 2 "wood_wall" render.atlasIndex resolves to [160, 32]..[176, 48] on non-integer atlas pixels for 96x64'
       }
     ]);
 
     await renderer.initialize();
 
+    expect(collectAtlasValidationWarnings).toHaveBeenCalledWith(
+      expect.any(Array),
+      AUTHORED_ATLAS_WIDTH,
+      AUTHORED_ATLAS_HEIGHT,
+      expect.arrayContaining([
+        expect.objectContaining({ id: 1, name: 'dirt_wall' }),
+        expect.objectContaining({ id: 2, name: 'wood_wall' })
+      ])
+    );
     expect(renderer.telemetry.atlasValidationWarningCount).toBe(1);
-    expect(renderer.telemetry.atlasValidationFirstWarning).toBe('tile 4 "debug_panel" render.uvRect');
+    expect(renderer.telemetry.atlasValidationFirstWarning).toBe('wall 2 "wood_wall" render.atlasIndex');
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy.mock.calls[0]?.[0]).toContain('Atlas validation found 1 warning(s)');
-    expect(warnSpy.mock.calls[0]?.[0]).toContain('tile 4 "debug_panel" render.uvRect');
+    expect(warnSpy.mock.calls[0]?.[0]).toContain('wall 2 "wood_wall" render.atlasIndex');
   });
 
   it('resets the active world and clears cached animated meshes for a fresh session', async () => {
