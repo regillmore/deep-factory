@@ -83,7 +83,7 @@ const createWallTestRegistry = () =>
         id: 1,
         name: 'dirt_wall',
         render: {
-          atlasIndex: 30
+          atlasIndex: 34
         }
       },
       {
@@ -552,7 +552,7 @@ describe('buildChunkMesh autotile UV selection', () => {
     });
 
     expect(mesh.vertexCount).toBe(6);
-    expectSingleQuadUvRect(mesh.vertices, 30);
+    expectSingleQuadUvRect(mesh.vertices, 34);
   });
 
   it('writes wall quads before foreground quads in the same cell so background walls stay behind tiles', () => {
@@ -576,7 +576,7 @@ describe('buildChunkMesh autotile UV selection', () => {
     });
 
     expect(mesh.vertexCount).toBe(12);
-    expectSingleQuadUvRect(getQuadVertices(mesh.vertices, 0), 30);
+    expectSingleQuadUvRect(getQuadVertices(mesh.vertices, 0), 34);
     expectSingleQuadUvRect(getQuadVertices(mesh.vertices, 1), 33);
   });
 

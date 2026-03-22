@@ -29,7 +29,7 @@ describe('authored atlas layout', () => {
     }
   });
 
-  it('documents utility, terrain, spare-slot, and torch authored regions while leaving canvas space outside authored bounds', () => {
+  it('documents utility, terrain, wall, spare-slot, and torch authored regions while leaving canvas space outside authored bounds', () => {
     expect(AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS[21]?.trim().length).toBeGreaterThan(0);
 
     expect(AUTHORED_ATLAS_REGIONS[20]).toEqual({ x: 80, y: 32, width: 16, height: 16 });
@@ -46,6 +46,7 @@ describe('authored atlas layout', () => {
     expect(AUTHORED_ATLAS_REGIONS[31]).toEqual({ x: 144, y: 0, width: 16, height: 16 });
     expect(AUTHORED_ATLAS_REGIONS[32]).toEqual({ x: 144, y: 16, width: 16, height: 16 });
     expect(AUTHORED_ATLAS_REGIONS[33]).toEqual({ x: 160, y: 0, width: 16, height: 16 });
+    expect(AUTHORED_ATLAS_REGIONS[34]).toEqual({ x: 160, y: 16, width: 16, height: 16 });
 
     const maxRegionRight = AUTHORED_ATLAS_REGIONS.reduce(
       (maxRight, region) => Math.max(maxRight, region.x + region.width),

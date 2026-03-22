@@ -26,6 +26,12 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Wall ids already live in a separate layer, so they need independent authoring metadata without pretending they are foreground tile ids, while same-cell wall-before-tile ordering keeps walls visually behind foreground content without adding a second wall draw pass.
 - Consequence: Future wall types should extend the wall metadata registry and rely on the shared wall-before-tile mesher order, while renderer invalidation or placement follow-ups should treat wall quads as part of the ordinary chunk mesh cache instead of inventing a separate wall buffer path.
 
+### 2026-03-21: Dirt-wall background art uses its own authored region
+
+- Decision: `dirt_wall` now renders through dedicated authored atlas region `34` at `160x16` instead of reusing the `dirt_block` region `30`.
+- Reason: Background walls need to read distinctly from solid terrain while staying inside the current `192x64` committed atlas footprint and preserving the exterior padding regressions.
+- Consequence: Future background-wall art should claim its own authored atlas regions and matching regressions instead of borrowing the foreground material sprite unless a later pass intentionally accepts identical visuals.
+
 ### 2026-03-21: Wood-block terrain art uses the first free right-column authored region
 
 - Decision: `wood_block` now keeps its existing `wood` terrain connectivity metadata but renders through dedicated static authored region `33`, leaving the committed atlas at `192x64`, preserving spare region `21`, and moving the transparent exterior padding strip start to `x=176`.

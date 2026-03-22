@@ -12,6 +12,7 @@ import {
 } from '../world/authoredAtlasLayout';
 import type { TileUvRect } from '../world/tileMetadata';
 import { TILE_METADATA } from '../world/tileMetadata';
+import { WALL_METADATA } from '../world/wallMetadata';
 import { collectAtlasValidationWarnings } from './atlasValidation';
 
 const PNG_SIGNATURE = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -261,6 +262,12 @@ const collectReferencedAtlasIndices = (): number[] => {
 
     for (const atlasIndex of terrainVariantMap) {
       referencedAtlasIndices.add(atlasIndex);
+    }
+  }
+
+  for (const wall of WALL_METADATA.walls) {
+    if (wall.render?.atlasIndex !== undefined) {
+      referencedAtlasIndices.add(wall.render.atlasIndex);
     }
   }
 
@@ -1271,6 +1278,28 @@ describe('authored atlas asset', () => {
     });
     expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, woodBlockRegion!, dirtRegion!)).toBe(false);
     expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, woodBlockRegion!, stoneRegion!)).toBe(false);
+  });
+
+  it('keeps dirt-wall placeholders in a dedicated authored region distinct from dirt blocks', () => {
+    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
+    const dirtWall = WALL_METADATA.walls.find((wall) => wall.name === 'dirt_wall');
+    const dirtTile = TILE_METADATA.tiles.find((tile) => tile.name === 'dirt_block');
+
+    expect(dirtWall?.render?.atlasIndex).toBe(34);
+
+    const dirtWallRegion = AUTHORED_ATLAS_REGIONS[dirtWall!.render!.atlasIndex!];
+    const dirtRegion = AUTHORED_ATLAS_REGIONS[dirtTile!.render!.atlasIndex!];
+    expect(dirtWallRegion).toEqual({ x: 160, y: 16, width: 16, height: 16 });
+
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, dirtWallRegion!)).toEqual({
+      x: dirtWallRegion!.x,
+      y: dirtWallRegion!.y,
+      width: 16,
+      height: 16
+    });
+    expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, dirtWallRegion!, dirtRegion!)).toBe(
+      false
+    );
   });
 
   it('keeps small-tree sapling, trunk, and leaf placeholders in dedicated authored regions', () => {

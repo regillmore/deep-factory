@@ -18,7 +18,7 @@ describe('wallMetadata', () => {
       id: 1,
       name: 'dirt_wall',
       render: {
-        atlasIndex: 30
+        atlasIndex: 34
       }
     });
     expect(getWallMetadata(2)).toEqual({
@@ -28,7 +28,7 @@ describe('wallMetadata', () => {
         atlasIndex: 33
       }
     });
-    expect(resolveWallRenderUvRect(1)).toEqual(atlasIndexToUvRect(30));
+    expect(resolveWallRenderUvRect(1)).toEqual(atlasIndexToUvRect(34));
     expect(resolveWallRenderUvRect(2)).toEqual(atlasIndexToUvRect(33));
     expect(resolveWallRenderUvRect(999)).toBeNull();
     expect(WALL_METADATA.walls).toHaveLength(3);
@@ -39,7 +39,7 @@ describe('wallMetadata', () => {
       parseWallMetadataRegistry({
         walls: [
           { id: 0, name: 'empty' },
-          { id: 1, name: 'dirt_wall', render: { atlasIndex: 30 } },
+          { id: 1, name: 'dirt_wall', render: { atlasIndex: 34 } },
           { id: 1, name: 'wood_wall', render: { atlasIndex: 33 } }
         ]
       })

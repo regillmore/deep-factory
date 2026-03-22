@@ -101,7 +101,7 @@ variant source falls outside the source image or any direct `uvRect` source land
   - writes per-vertex world position, UV, and resolved light level from the chunk light cache, with liquid quads lowering only their exposed top-left and top-right vertices from shared `0..8` fill-height resolution, cropping bottom-edge `v` coordinates from those same top heights so the authored liquid surface stays aligned, while same-kind-covered liquid tiles stay full-height,
   - records animated non-terrain quad offsets plus animated liquid quad offsets keyed by the resolved liquid cardinal mask and meshed liquid top heights so the renderer can patch only those UVs later without losing the partial-liquid crop.
 - UVs are resolved through tile metadata (terrain autotile variant maps, optionally paired with a tile's own static render source override, or non-autotile static render metadata), with atlas indices translated through the authored atlas region layout instead of a synthetic grid cache.
-- Background-wall UVs are resolved through `src/world/wallMetadata.ts`, which currently maps `dirt_wall` to a static authored source without reusing foreground tile ids as wall ids.
+- Background-wall UVs are resolved through `src/world/wallMetadata.ts`, which now maps `dirt_wall` to its own dedicated authored region instead of reusing the solid dirt tile while still keeping wall ids separate from foreground tile ids.
 - Optional animated render frames compile beside the static render lookup; chunk meshes still bake the static frame-zero UVs, and the renderer mutates only the recorded animated quad UVs when the elapsed frame changes.
 - Liquid variant render metadata now compiles beside the base static render lookup, and chunk meshing resolves liquid UVs from sampled NESW liquid-connectivity masks with an isolated-mask fallback when neighborhood sampling is unavailable.
 - Animated liquid variant frames compile into per-tile-per-mask lookups; chunk meshes still bake the static liquid frame-zero UVs, and the renderer mutates only the recorded liquid quad UVs when the elapsed frame changes.
@@ -115,19 +115,18 @@ Shared terrain placeholder variants still occupy the first `4x4` block of the au
 row-major variant index derived from the normalized cardinal adjacency mask (`N/E/S/W` bits mapped to `1/2/4/8`).
 Diagonal neighbors are sampled and normalized for corner-gating, but shared placeholder UV selection collapses to the
 16 cardinal combinations for now. That shared block still backs terrain materials that have not received their own
-override art yet, while `grass_surface`, `dirt_block`, `stone`, `copper_ore`, and `wood_block` now keep their
-existing terrain connectivity rules but resolve visible placeholder art through dedicated static authored regions `29`
-through `33`.
+override art yet, while `grass_surface`, `dirt_block`, `stone`, `copper_ore`, `wood_block`, and `dirt_wall` now keep
+their existing terrain or wall metadata rules but resolve visible placeholder art through dedicated static authored
+regions `29` through `34`.
 The mapping is defined in
 `src/world/tileMetadata.json` and validated at startup by `src/world/tileMetadata.ts`, while the atlas indices
 themselves resolve through the explicit authored region list in `src/world/authoredAtlasLayout.ts`. The current
 authored layout keeps the committed atlas at `192x64`, reserves one spare documented unused region beneath the torch,
 keeps the second full `16x16` torch animation region to the right, adds dedicated full-width `workbench`, `furnace`,
-`grass_surface`, `dirt_block`, `stone`, `copper_ore`, and `wood_block` regions at indices `27` through `33`,
-renormalizes the direct-`render.uvRect` content against that wider width while preserving the same pixel bounds, and
-keeps transparent exterior padding from `x=176` onward so ordinary tile quads do not stretch the torch or rope while
-the unused-slot
-regression target remains available.
+`grass_surface`, `dirt_block`, `stone`, `copper_ore`, `wood_block`, and `dirt_wall` regions at indices `27` through
+`34`, renormalizes the direct-`render.uvRect` content against that wider width while preserving the same pixel
+bounds, and keeps transparent exterior padding from `x=176` onward so ordinary tile quads do not stretch the torch or
+rope while the unused-slot regression target remains available.
 
 Non-autotile tiles also resolve UVs through the same metadata registry via explicit render metadata:
 - `render.atlasIndex`: authored atlas region index.
