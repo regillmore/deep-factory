@@ -4,8 +4,10 @@ import { MAX_LIQUID_LEVEL } from '../world/constants';
 import { TileWorld } from '../world/world';
 import {
   CHUNK_TILE_DIFF_MESSAGE_KIND,
+  CHUNK_WALL_DIFF_MESSAGE_KIND,
   ENTITY_SNAPSHOT_MESSAGE_KIND,
   createChunkTileDiffMessage,
+  createChunkWallDiffMessage,
   createEntitySnapshotMessage
 } from './protocol';
 import { applyAuthoritativeReplicatedStateBaseline } from './replicationBaseline';
@@ -17,7 +19,7 @@ import {
 const WATER_TILE_ID = 7;
 
 describe('applyAuthoritativeReplicatedStateBaseline', () => {
-  it('replaces world state plus one entity baseline through the replay seam and returns the entity replacement summary', () => {
+  it('replaces tile and wall world state plus one entity baseline through the replay seam and returns the entity replacement summary', () => {
     const world = new TileWorld(0);
     const store = new ReplicatedEntitySnapshotStore();
     const replayer = new AuthoritativeReplicatedNetworkStateReplayer({
@@ -54,6 +56,32 @@ describe('applyAuthoritativeReplicatedStateBaseline', () => {
     });
     expect(
       replayer.applyMessage(
+        createChunkWallDiffMessage({
+          tick: 5,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          walls: [
+            {
+              tileIndex: 0,
+              wallId: 2
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+      tick: 5,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      appliedWallCount: 1,
+      changedWallCount: 1
+    });
+    expect(
+      replayer.applyMessage(
         createEntitySnapshotMessage({
           tick: 6,
           entities: [
@@ -84,10 +112,12 @@ describe('applyAuthoritativeReplicatedStateBaseline', () => {
           expect(replayer.getLastAppliedChunkTick({ x: 0, y: 0 })).toBe(5);
           expect(replayer.getLastAppliedEntityTick()).toBe(6);
           expect(worldTarget.setTileState(0, 0, 4, 0)).toBe(true);
+          expect(worldTarget.setWall(0, 0, 4)).toBe(true);
 
           return {
             baselineTileId: world.getTile(0, 0),
-            baselineLiquidLevel: world.getLiquidLevel(0, 0)
+            baselineLiquidLevel: world.getLiquidLevel(0, 0),
+            baselineWallId: world.getWall(0, 0)
           };
         },
         entitySnapshotBaseline: createEntitySnapshotMessage({
@@ -106,7 +136,8 @@ describe('applyAuthoritativeReplicatedStateBaseline', () => {
     ).toEqual({
       worldReplacementResult: {
         baselineTileId: 4,
-        baselineLiquidLevel: 0
+        baselineLiquidLevel: 0,
+        baselineWallId: 4
       },
       entityReplacementSummary: {
         kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
@@ -122,6 +153,7 @@ describe('applyAuthoritativeReplicatedStateBaseline', () => {
     expect(replayer.getLastAppliedEntityTick()).toBeNull();
     expect(world.getTile(0, 0)).toBe(4);
     expect(world.getLiquidLevel(0, 0)).toBe(0);
+    expect(world.getWall(0, 0)).toBe(4);
     expect(store.getEntities()).toEqual([
       {
         id: 9,
@@ -153,6 +185,21 @@ describe('applyAuthoritativeReplicatedStateBaseline', () => {
             tileIndex: 0,
             tileId: WATER_TILE_ID,
             liquidLevel: MAX_LIQUID_LEVEL
+          }
+        ]
+      })
+    );
+    replayer.applyMessage(
+      createChunkWallDiffMessage({
+        tick: 5,
+        chunk: {
+          x: 0,
+          y: 0
+        },
+        walls: [
+          {
+            tileIndex: 0,
+            wallId: 2
           }
         ]
       })
@@ -197,6 +244,7 @@ describe('applyAuthoritativeReplicatedStateBaseline', () => {
     expect(replayer.getLastAppliedEntityTick()).toBe(6);
     expect(world.getTile(0, 0)).toBe(WATER_TILE_ID);
     expect(world.getLiquidLevel(0, 0)).toBe(MAX_LIQUID_LEVEL);
+    expect(world.getWall(0, 0)).toBe(2);
     expect(store.getEntities()).toEqual([
       {
         id: 5,

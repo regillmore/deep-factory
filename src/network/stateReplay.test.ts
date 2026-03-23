@@ -990,7 +990,7 @@ describe('AuthoritativeReplicatedNetworkStateReplayer', () => {
     ).toThrow('player-input messages do not replay authoritative world or entity state');
   });
 
-  it('can reset chunk and entity replay guards without clearing the current replicated baseline', () => {
+  it('can reset chunk and entity replay guards without clearing the current replicated tile, wall, and entity baseline', () => {
     const world = new TileWorld(0);
     const store = new ReplicatedEntitySnapshotStore();
     const replayer = new AuthoritativeReplicatedNetworkStateReplayer({
@@ -1027,6 +1027,32 @@ describe('AuthoritativeReplicatedNetworkStateReplayer', () => {
     });
     expect(
       replayer.applyMessage(
+        createChunkWallDiffMessage({
+          tick: 5,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          walls: [
+            {
+              tileIndex: 0,
+              wallId: 2
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+      tick: 5,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      appliedWallCount: 1,
+      changedWallCount: 1
+    });
+    expect(
+      replayer.applyMessage(
         createEntitySnapshotMessage({
           tick: 6,
           entities: [
@@ -1055,6 +1081,7 @@ describe('AuthoritativeReplicatedNetworkStateReplayer', () => {
     expect(replayer.getLastAppliedEntityTick()).toBeNull();
     expect(world.getTile(0, 0)).toBe(WATER_TILE_ID);
     expect(world.getLiquidLevel(0, 0)).toBe(MAX_LIQUID_LEVEL);
+    expect(world.getWall(0, 0)).toBe(2);
     expect(store.getEntities()).toEqual([
       {
         id: 5,
@@ -1095,6 +1122,34 @@ describe('AuthoritativeReplicatedNetworkStateReplayer', () => {
     expect(replayer.getLastAppliedChunkTick({ x: 0, y: 0 })).toBe(2);
     expect(world.getTile(0, 0)).toBe(4);
     expect(world.getLiquidLevel(0, 0)).toBe(0);
+    expect(
+      replayer.applyMessage(
+        createChunkWallDiffMessage({
+          tick: 2,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          walls: [
+            {
+              tileIndex: 0,
+              wallId: 4
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+      tick: 2,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      appliedWallCount: 1,
+      changedWallCount: 1
+    });
+    expect(replayer.getLastAppliedChunkTick({ x: 0, y: 0 })).toBe(2);
+    expect(world.getWall(0, 0)).toBe(4);
 
     expect(
       replayer.applyMessage(
