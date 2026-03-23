@@ -12,6 +12,7 @@ import {
 } from '../world/playerState';
 import { createHostileSlimeState, type HostileSlimeState } from '../world/hostileSlimeState';
 import { createPassiveBunnyState, type PassiveBunnyState } from '../world/passiveBunnyState';
+import { createStarterWandFireboltState, type StarterWandFireboltState } from '../world/starterWand';
 import {
   cloneStandalonePlayerRenderState,
   createStandalonePlayerRenderPresentationState
@@ -241,6 +242,21 @@ const createPassiveBunnyEntityFrameState = (
 ): RendererEntityFrameState => ({
   id: options.id ?? 1,
   kind: 'bunny',
+  snapshot: {
+    previous: options.previousState ?? currentState,
+    current: currentState
+  }
+});
+
+const createFireboltEntityFrameState = (
+  currentState: StarterWandFireboltState,
+  options: {
+    id?: number;
+    previousState?: StarterWandFireboltState;
+  } = {}
+): RendererEntityFrameState => ({
+  id: options.id ?? 1,
+  kind: 'wand-firebolt',
   snapshot: {
     previous: options.previousState ?? currentState,
     current: currentState
@@ -2791,6 +2807,86 @@ describe('Renderer atlas telemetry', () => {
       0,
       1
     ]);
+  });
+
+  it('draws firebolt placeholders from interpolated entity snapshots', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
+    });
+    await renderer.initialize();
+
+    const drawArrays = vi.mocked(gl.drawArrays);
+    const bufferData = vi.mocked(gl.bufferData);
+    const uniform1f = vi.mocked(gl.uniform1f);
+    drawArrays.mockClear();
+    bufferData.mockClear();
+    uniform1f.mockClear();
+
+    const currentState = createStarterWandFireboltState({
+      position: { x: 80, y: 48 },
+      velocity: { x: 160, y: -40 },
+      radius: 4,
+      secondsRemaining: 0.4
+    });
+    const previousState = createStarterWandFireboltState({
+      position: { x: 64, y: 32 },
+      velocity: { x: 160, y: -40 },
+      radius: 4,
+      secondsRemaining: 0.5
+    });
+
+    renderer.render(new Camera2D(), {
+      entities: [
+        createFireboltEntityFrameState(currentState, {
+          id: 51,
+          previousState
+        })
+      ],
+      renderAlpha: 0.25,
+      timeMs: 0
+    });
+
+    expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
+    expect(renderer.telemetry.drawCalls).toBe(renderer.telemetry.renderedChunks + 1);
+
+    const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
+    expect(dynamicUploads).toHaveLength(1);
+    expect(Array.from((dynamicUploads[0]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      64,
+      32,
+      0,
+      0,
+      72,
+      32,
+      1,
+      0,
+      72,
+      40,
+      1,
+      1,
+      64,
+      32,
+      0,
+      0,
+      72,
+      40,
+      1,
+      1,
+      64,
+      40,
+      0,
+      1
+    ]);
+    expect(uniform1f.mock.calls).toHaveLength(1);
+    expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(0.65);
+    expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
   });
 
   it('preserves supported-entry submission order when slime and standalone-player entries are interleaved', async () => {

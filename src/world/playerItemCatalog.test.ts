@@ -22,6 +22,7 @@ describe('playerItemCatalog', () => {
       'Starter Pickaxe',
       'Starter Spear',
       'Starter Sword',
+      'Starter Wand',
       'Stone Block',
       'Torch',
       'Umbrella',
@@ -59,6 +60,9 @@ describe('playerItemCatalog', () => {
     ]);
     expect(searchPlayerItemCatalog('potion').map((entry) => entry.itemId)).toEqual([
       'healing-potion'
+    ]);
+    expect(searchPlayerItemCatalog('starter wand').map((entry) => entry.itemId)).toEqual([
+      'wand'
     ]);
   });
 

@@ -429,6 +429,17 @@ import {
   tryStartStarterSpearThrust
 } from './world/starterSpear';
 import {
+  applyStarterWandFireboltHitToHostileSlime,
+  createStarterWandCooldownState,
+  DEFAULT_STARTER_WAND_CAST_COOLDOWN_SECONDS,
+  STARTER_WAND_ITEM_ID,
+  stepStarterWandCooldownState,
+  stepStarterWandFireboltState,
+  tryUseStarterWand,
+  type StarterWandFireboltHitEvent,
+  type StarterWandFireboltState
+} from './world/starterWand';
+import {
   resolvePlayerWallContactTransitionEvent,
   type PlayerWallContactTransitionEvent
 } from './world/playerWallContactTransition';
@@ -491,6 +502,7 @@ const STANDALONE_PLAYER_ENTITY_KIND = 'standalone-player';
 const HOSTILE_SLIME_ENTITY_KIND = 'slime';
 const PASSIVE_BUNNY_ENTITY_KIND = 'bunny';
 const DROPPED_ITEM_ENTITY_KIND = 'dropped-item';
+const STARTER_WAND_FIREBOLT_ENTITY_KIND = 'wand-firebolt';
 const HOSTILE_SLIME_GEL_DROP_ITEM_ID: DroppedItemState['itemId'] = 'gel';
 const STARTER_UMBRELLA_ITEM_ID = 'umbrella';
 const HOSTILE_SLIME_GEL_DROP_AMOUNT = 1;
@@ -1774,6 +1786,8 @@ const bootstrap = async (): Promise<void> => {
   let hostileSlimeEntityIds: EntityId[] = [];
   let passiveBunnyEntityIds: EntityId[] = [];
   let droppedItemEntityIds: EntityId[] = [];
+  let fireboltEntityIds: EntityId[] = [];
+  let pendingStarterWandFireboltHitEvents: StarterWandFireboltHitEvent[] = [];
   let hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
   let passiveBunnySpawnerState = createPassiveBunnySpawnerState();
   let pendingStandalonePlayerFixedStepResult: StandalonePlayerFixedStepResult | null = null;
@@ -1798,6 +1812,7 @@ const bootstrap = async (): Promise<void> => {
   let starterSpearState = createStarterSpearState();
   let starterPickaxeMiningState = createStarterPickaxeMiningState();
   let starterBugNetState = createStarterBugNetState();
+  let starterWandCooldownState = createStarterWandCooldownState();
   let playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
   let smallTreeGrowthState = createSmallTreeGrowthState();
   const smallTreeSaplingTileId = getSmallTreeSaplingTileId();
@@ -1884,6 +1899,24 @@ const bootstrap = async (): Promise<void> => {
         1,
         playerHealingPotionCooldownState.secondsRemaining /
           DEFAULT_HEALING_POTION_USE_COOLDOWN_SECONDS
+      )
+    );
+  };
+  const resolveHotbarOverlayStarterWandCooldownFillNormalized = (): number | null => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (
+      selectedStack?.itemId !== STARTER_WAND_ITEM_ID ||
+      starterWandCooldownState.secondsRemaining <= 0
+    ) {
+      return null;
+    }
+
+    return Math.max(
+      0,
+      Math.min(
+        1,
+        starterWandCooldownState.secondsRemaining /
+          DEFAULT_STARTER_WAND_CAST_COOLDOWN_SECONDS
       )
     );
   };
@@ -2068,6 +2101,8 @@ const bootstrap = async (): Promise<void> => {
       starterAxeSwingFeedback: resolveHotbarOverlayStarterAxeSwingFeedback(),
       healingPotionCooldownFillNormalized:
         resolveHotbarOverlayHealingPotionCooldownFillNormalized(),
+      starterWandCooldownFillNormalized:
+        resolveHotbarOverlayStarterWandCooldownFillNormalized(),
       heartCrystalBlockedReason: resolveHotbarOverlayHeartCrystalBlockedReason(),
       starterMeleeWeaponSwingFeedback: resolveHotbarOverlayStarterMeleeWeaponSwingFeedback(),
       starterPickaxeSwingFeedback: resolveHotbarOverlayStarterPickaxeSwingFeedback(),
@@ -2434,6 +2469,26 @@ const bootstrap = async (): Promise<void> => {
     }
     droppedItemEntityIds = nextDroppedItemEntityIds;
     return activeDroppedItems;
+  };
+  const getStarterWandFireboltEntityStates = (): Array<{
+    id: EntityId;
+    state: StarterWandFireboltState;
+  }> => {
+    const activeFirebolts: Array<{ id: EntityId; state: StarterWandFireboltState }> = [];
+    const nextFireboltEntityIds: EntityId[] = [];
+    for (const entityId of fireboltEntityIds) {
+      const state = entityRegistry.getEntityState<StarterWandFireboltState>(entityId);
+      if (state === null) {
+        continue;
+      }
+      nextFireboltEntityIds.push(entityId);
+      activeFirebolts.push({
+        id: entityId,
+        state
+      });
+    }
+    fireboltEntityIds = nextFireboltEntityIds;
+    return activeFirebolts;
   };
   const getDroppedItemStates = (): DroppedItemState[] =>
     getDroppedItemEntityStates().map(({ state }) => cloneDroppedItemState(state));
@@ -2949,6 +3004,16 @@ const bootstrap = async (): Promise<void> => {
             }
           });
           break;
+        case STARTER_WAND_FIREBOLT_ENTITY_KIND:
+          entityFrameStates.push({
+            id: snapshotEntry.id,
+            kind: STARTER_WAND_FIREBOLT_ENTITY_KIND,
+            snapshot: {
+              previous: snapshotEntry.previous as StarterWandFireboltState,
+              current: snapshotEntry.current as StarterWandFireboltState
+            }
+          });
+          break;
       }
     }
     return entityFrameStates;
@@ -2961,6 +3026,8 @@ const bootstrap = async (): Promise<void> => {
     hostileSlimeEntityIds = [];
     passiveBunnyEntityIds = [];
     droppedItemEntityIds = [];
+    fireboltEntityIds = [];
+    pendingStarterWandFireboltHitEvents = [];
     hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
     passiveBunnySpawnerState = createPassiveBunnySpawnerState();
     pendingStandalonePlayerFixedStepResult = null;
@@ -2971,6 +3038,7 @@ const bootstrap = async (): Promise<void> => {
     starterSpearState = createStarterSpearState();
     starterPickaxeMiningState = createStarterPickaxeMiningState();
     starterBugNetState = createStarterBugNetState();
+    starterWandCooldownState = createStarterWandCooldownState();
     playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
     smallTreeGrowthState = createSmallTreeGrowthState();
     syncHotbarOverlayState();
@@ -3188,6 +3256,101 @@ const bootstrap = async (): Promise<void> => {
     });
     droppedItemEntityIds.push(droppedItemEntityId);
     return droppedItemEntityId;
+  };
+  const spawnStarterWandFireboltEntity = (
+    initialFireboltState: StarterWandFireboltState
+  ): EntityId => {
+    let fireboltEntityId: EntityId | null = null;
+    fireboltEntityId = entityRegistry.spawn({
+      kind: STARTER_WAND_FIREBOLT_ENTITY_KIND,
+      initialState: initialFireboltState,
+      captureRenderState: (fireboltState) => ({
+        position: {
+          x: fireboltState.position.x,
+          y: fireboltState.position.y
+        },
+        velocity: {
+          x: fireboltState.velocity.x,
+          y: fireboltState.velocity.y
+        },
+        radius: fireboltState.radius,
+        secondsRemaining: fireboltState.secondsRemaining
+      }),
+      fixedUpdate: (fireboltState, fixedDt) => {
+        const stepResult = stepStarterWandFireboltState(fireboltState, {
+          world: {
+            getTile: (worldTileX, worldTileY) => renderer.getTile(worldTileX, worldTileY)
+          },
+          hostileSlimes: getHostileSlimeEntityStates().map((hostileSlime) => ({
+            entityId: hostileSlime.id,
+            state: hostileSlime.state
+          })),
+          fixedDtSeconds: fixedDt
+        });
+        if (stepResult.hitEvent !== null) {
+          pendingStarterWandFireboltHitEvents.push(stepResult.hitEvent);
+        }
+        if (stepResult.nextState === null) {
+          if (fireboltEntityId !== null) {
+            entityRegistry.despawn(fireboltEntityId);
+          }
+          return fireboltState;
+        }
+
+        return stepResult.nextState;
+      }
+    });
+    fireboltEntityIds.push(fireboltEntityId);
+    return fireboltEntityId;
+  };
+  const flushStarterWandFireboltHitEvents = (): void => {
+    if (pendingStarterWandFireboltHitEvents.length === 0) {
+      return;
+    }
+
+    const hitEvents = pendingStarterWandFireboltHitEvents;
+    pendingStarterWandFireboltHitEvents = [];
+    const defeatedHostileSlimeEntityIds = new Set<EntityId>();
+    const defeatedHostileSlimeDropStates: DroppedItemState[] = [];
+    for (const hitEvent of hitEvents) {
+      if (hitEvent.kind !== 'hostile-slime') {
+        continue;
+      }
+      if (defeatedHostileSlimeEntityIds.has(hitEvent.entityId)) {
+        continue;
+      }
+
+      const activeHostileSlimeState = entityRegistry.getEntityState<HostileSlimeState>(hitEvent.entityId);
+      if (activeHostileSlimeState === null) {
+        continue;
+      }
+
+      const nextHostileSlimeState = applyStarterWandFireboltHitToHostileSlime(
+        activeHostileSlimeState,
+        hitEvent
+      );
+      entityRegistry.setEntityState(hitEvent.entityId, nextHostileSlimeState);
+      if (!isHostileSlimeDefeated(nextHostileSlimeState)) {
+        continue;
+      }
+
+      defeatedHostileSlimeEntityIds.add(hitEvent.entityId);
+      defeatedHostileSlimeDropStates.push(
+        createHostileSlimeDefeatDropState(nextHostileSlimeState)
+      );
+    }
+
+    if (defeatedHostileSlimeEntityIds.size <= 0) {
+      return;
+    }
+
+    despawnHostileSlimeEntities([...defeatedHostileSlimeEntityIds]);
+    for (const droppedItemState of defeatedHostileSlimeDropStates) {
+      const remainingDroppedItemState = mergeDroppedItemIntoNearbyPickup(droppedItemState);
+      if (remainingDroppedItemState !== null) {
+        spawnDroppedItemEntity(remainingDroppedItemState);
+      }
+    }
   };
   const refundRemovedPlacedTile = (
     worldTileX: number,
@@ -4376,6 +4539,32 @@ const bootstrap = async (): Promise<void> => {
     }
     return startResult.started;
   };
+  const tryUseSelectedStarterWand = (
+    request: PlayerItemUseRequest
+  ): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return false;
+    }
+
+    const useResult = tryUseStarterWand(
+      standalonePlayerState,
+      starterWandCooldownState,
+      resolvePlayerItemUseTargetWorldPoint(request)
+    );
+    starterWandCooldownState = useResult.nextCooldownState;
+    syncHotbarOverlayState();
+    if (!useResult.castStarted || useResult.fireboltState === null) {
+      return false;
+    }
+
+    spawnStarterWandFireboltEntity(useResult.fireboltState);
+    return true;
+  };
   const tryStartSelectedStarterPickaxeSwingAtTile = (
     worldTileX: number,
     worldTileY: number
@@ -4734,6 +4923,9 @@ const bootstrap = async (): Promise<void> => {
     }
     if (selectedStack.itemId === STARTER_SPEAR_ITEM_ID) {
       return tryStartSelectedStarterSpearThrust(request);
+    }
+    if (selectedStack.itemId === STARTER_WAND_ITEM_ID) {
+      return tryUseSelectedStarterWand(request);
     }
     if (selectedStack.itemId === STARTER_PICKAXE_ITEM_ID) {
       return tryStartSelectedStarterPickaxeSwingAtTile(
@@ -7420,6 +7612,8 @@ const bootstrap = async (): Promise<void> => {
 
       enforcePeacefulModeHostileSlimeState();
       entityRegistry.fixedUpdateAll(fixedDt);
+      getStarterWandFireboltEntityStates();
+      flushStarterWandFireboltHitEvents();
       flushStandalonePlayerFixedStepResult();
       stepStarterMeleeWeaponFixedUpdate(fixedDt);
       stepStarterSpearFixedUpdate(fixedDt);
@@ -7428,6 +7622,19 @@ const bootstrap = async (): Promise<void> => {
       stepStarterBugNetFixedUpdate(fixedDt);
       stepHostileSlimeSpawnAndDespawn();
       stepPassiveBunnySpawnAndDespawn();
+      const nextStarterWandCooldownState = stepStarterWandCooldownState(
+        starterWandCooldownState,
+        fixedDt
+      );
+      if (
+        nextStarterWandCooldownState.secondsRemaining !==
+        starterWandCooldownState.secondsRemaining
+      ) {
+        starterWandCooldownState = nextStarterWandCooldownState;
+        syncHotbarOverlayState();
+      } else {
+        starterWandCooldownState = nextStarterWandCooldownState;
+      }
       const nextHealingPotionCooldownState = stepPlayerHealingPotionCooldownState(
         playerHealingPotionCooldownState,
         fixedDt

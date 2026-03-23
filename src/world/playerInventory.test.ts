@@ -485,6 +485,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'SPEAR',
       maxStackSize: 1
     });
+    expect(getPlayerInventoryItemDefinition('wand')).toEqual({
+      id: 'wand',
+      label: 'Starter Wand',
+      hotbarLabel: 'WAND',
+      maxStackSize: 1
+    });
   });
 
   it('exposes the inventory item registry in stable item-id order', () => {
@@ -512,7 +518,8 @@ describe('playerInventory', () => {
       'healing-potion',
       'heart-crystal',
       'sword',
-      'spear'
+      'spear',
+      'wand'
     ]);
   });
 

@@ -3,6 +3,12 @@ import { createStaticVertexBuffer, createVertexArray } from './buffer';
 import { createProgram } from './shader';
 import { applyAnimatedChunkMeshFrameAtElapsedMs, createAnimatedChunkMeshState } from './animatedChunkMesh';
 import {
+  buildFireboltPlaceholderVertices,
+  getFireboltPlaceholderNearbyLightSample,
+  FIREBOLT_PLACEHOLDER_VERTEX_COUNT,
+  FIREBOLT_PLACEHOLDER_VERTEX_FLOAT_COUNT
+} from './fireboltPlaceholder';
+import {
   buildDroppedItemPlaceholderVertices,
   getDroppedItemPlaceholderNearbyLightSample,
   getDroppedItemPlaceholderPalette,
@@ -82,6 +88,7 @@ import { type HostileSlimeState } from '../world/hostileSlimeState';
 import { stepPassiveBunnyState as stepWorldPassiveBunnyState } from '../world/passiveBunnyLocomotion';
 import { type PassiveBunnyState } from '../world/passiveBunnyState';
 import { type DroppedItemState } from '../world/droppedItem';
+import { type StarterWandFireboltState } from '../world/starterWand';
 import {
   isStandalonePlayerRenderStateCeilingBonkActive,
   type StandalonePlayerRenderState
@@ -148,11 +155,18 @@ export interface DroppedItemEntityFrameState {
   snapshot: EntityRenderStateSnapshot<DroppedItemState>;
 }
 
+export interface FireboltEntityFrameState {
+  id: EntityId;
+  kind: 'wand-firebolt';
+  snapshot: EntityRenderStateSnapshot<StarterWandFireboltState>;
+}
+
 export type RendererEntityFrameState =
   | StandalonePlayerEntityFrameState
   | HostileSlimeEntityFrameState
   | PassiveBunnyEntityFrameState
-  | DroppedItemEntityFrameState;
+  | DroppedItemEntityFrameState
+  | FireboltEntityFrameState;
 
 export interface RenderTelemetry {
   atlasSourceKind: AtlasImageLoadResult['sourceKind'] | 'pending';
@@ -264,6 +278,8 @@ export class Renderer {
   private passiveBunnyVao: WebGLVertexArrayObject;
   private droppedItemBuffer: WebGLBuffer;
   private droppedItemVao: WebGLVertexArrayObject;
+  private fireboltBuffer: WebGLBuffer;
+  private fireboltVao: WebGLVertexArrayObject;
 
   readonly telemetry: RenderTelemetry = {
     atlasSourceKind: 'pending',
@@ -804,6 +820,11 @@ export class Renderer {
       new Float32Array(DROPPED_ITEM_PLACEHOLDER_VERTEX_FLOAT_COUNT)
     );
     this.droppedItemVao = createVertexArray(gl, this.droppedItemBuffer, 4);
+    this.fireboltBuffer = createDynamicVertexBuffer(
+      gl,
+      new Float32Array(FIREBOLT_PLACEHOLDER_VERTEX_FLOAT_COUNT)
+    );
+    this.fireboltVao = createVertexArray(gl, this.fireboltBuffer, 4);
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -1351,6 +1372,9 @@ export class Renderer {
         case 'dropped-item':
           this.drawDroppedItem(entity, renderAlpha, worldToClipMatrix);
           break;
+        case 'wand-firebolt':
+          this.drawFirebolt(entity, renderAlpha, worldToClipMatrix);
+          break;
       }
     }
   }
@@ -1505,6 +1529,38 @@ export class Renderer {
     );
     gl.bindVertexArray(this.droppedItemVao);
     gl.drawArrays(gl.TRIANGLES, 0, DROPPED_ITEM_PLACEHOLDER_VERTEX_COUNT);
+    this.telemetry.drawCalls += 1;
+  }
+
+  private drawFirebolt(
+    entity: FireboltEntityFrameState,
+    renderAlpha: number,
+    worldToClipMatrix: Float32Array
+  ): void {
+    const state = entity.snapshot.current;
+    const renderPosition = resolveInterpolatedEntityWorldPosition(entity.snapshot, renderAlpha);
+    const gl = this.gl;
+    const nearbyLightSample = getFireboltPlaceholderNearbyLightSample(
+      this.world,
+      state,
+      renderPosition
+    );
+    gl.useProgram(this.droppedItemProgram);
+    gl.uniformMatrix4fv(this.uDroppedItemMatrix, false, worldToClipMatrix);
+    gl.uniform1f(
+      this.uDroppedItemLight,
+      Math.max(0.65, nearbyLightSample.level / MAX_LIGHT_LEVEL)
+    );
+    gl.uniform3f(this.uDroppedItemBaseColor, 0.34, 0.48, 0.95);
+    gl.uniform3f(this.uDroppedItemAccentColor, 1, 0.84, 0.42);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.fireboltBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      buildFireboltPlaceholderVertices(state, renderPosition),
+      gl.DYNAMIC_DRAW
+    );
+    gl.bindVertexArray(this.fireboltVao);
+    gl.drawArrays(gl.TRIANGLES, 0, FIREBOLT_PLACEHOLDER_VERTEX_COUNT);
     this.telemetry.drawCalls += 1;
   }
 

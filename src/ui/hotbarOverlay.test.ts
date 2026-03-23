@@ -263,6 +263,33 @@ describe('HotbarOverlay', () => {
     expect(getSlotRow(overlay).children[4]!.title).not.toContain('cooldown active');
   });
 
+  it('shows and clears selected starter-wand cooldown feedback without affecting other slots', () => {
+    const host = createHost();
+    const overlay = new HotbarOverlay({ host });
+
+    overlay.update(
+      createHotbarState([[6, createPlayerInventoryItemStack('wand', 1)]], 6),
+      {
+        starterWandCooldownFillNormalized: 0.4
+      }
+    );
+
+    expect(getSlotAmountLabel(overlay, 6).textContent).toBe('COOL');
+    expect(getSlotAmountLabel(overlay, 6).style.color).toBe('#d8e4ff');
+    expect(getSlotCooldownFill(overlay, 6).style.height).toBe('40.0%');
+    expect(getSlotCooldownFill(overlay, 6).style.opacity).toBe('1');
+    expect(getSlotRow(overlay).children[6]!.title).toContain('cast cooldown active');
+    expect(getSlotCooldownFill(overlay, 0).style.opacity).toBe('0');
+
+    overlay.update(createHotbarState([[6, createPlayerInventoryItemStack('wand', 1)]], 6));
+
+    expect(getSlotAmountLabel(overlay, 6).textContent).toBe('');
+    expect(getSlotAmountLabel(overlay, 6).style.color).toBe('#ffe7a3');
+    expect(getSlotCooldownFill(overlay, 6).style.height).toBe('0.0%');
+    expect(getSlotCooldownFill(overlay, 6).style.opacity).toBe('0');
+    expect(getSlotRow(overlay).children[6]!.title).not.toContain('cast cooldown active');
+  });
+
   it('shows and clears visible heart-crystal blocked feedback for dead and max-cap states', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });

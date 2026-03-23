@@ -128,6 +128,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
   spear: {
     baseColor: [0.58, 0.49, 0.33],
     accentColor: [0.88, 0.82, 0.66]
+  },
+  wand: {
+    baseColor: [0.29, 0.33, 0.68],
+    accentColor: [0.94, 0.79, 0.38]
   }
 };
 

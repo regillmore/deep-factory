@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-22: Projectile hits apply after the entity fixed-update pass
+
+- Decision: Starter-wand firebolt entities now queue terrain/slime hit events during their own `EntityRegistry` fixed updates, and `src/main.ts` flushes hostile-slime damage, knockback, defeat, and drop consequences only after `entityRegistry.fixedUpdateAll(...)` finishes for the tick.
+- Reason: Firebolts can collide after hostile slimes have already taken their fixed-step update for that frame, so deferring those side effects avoids mid-pass sibling-entity mutation and order-coupled double stepping.
+- Consequence: Future projectile slices should prefer queued post-registry hit application when they need to mutate or despawn other entities after an entity pass, instead of editing sibling entity state directly inside one projectile's `fixedUpdate`.
+
 ### 2026-03-22: Resync last-applied baseline metadata preserves world replacement counts
 
 - Decision: `src/network/replicationResyncDiagnostics.ts` now stores `replacedTiles` and `replacedWalls` inside `lastAppliedBaseline` beside `tick` and `entityCount`, and detached diagnostics snapshots plus per-client log lines preserve that richer latest-baseline world metadata.

@@ -35,6 +35,7 @@ interface HotbarOverlayUpdateOptions {
       }
     | null;
   healingPotionCooldownFillNormalized?: number | null;
+  starterWandCooldownFillNormalized?: number | null;
   heartCrystalBlockedReason?: 'dead' | 'max-health-cap' | null;
   starterMeleeWeaponSwingFeedback?:
     | {
@@ -87,6 +88,11 @@ const clampUnitInterval = (value: number): number => Math.max(0, Math.min(1, val
 
 const HEALING_POTION_COOLDOWN_FILL_BACKGROUND =
   'linear-gradient(180deg, rgba(255, 217, 143, 0.04) 0%, rgba(255, 184, 96, 0.22) 35%, rgba(255, 150, 74, 0.62) 100%)';
+const STARTER_WAND_COOLDOWN_FILL_BACKGROUND =
+  'linear-gradient(180deg, rgba(219, 230, 255, 0.05) 0%, rgba(143, 181, 255, 0.24) 35%, rgba(77, 123, 255, 0.62) 100%)';
+const STARTER_WAND_COOLDOWN_TITLE_TEXT = 'cast cooldown active';
+const STARTER_WAND_COOLDOWN_AMOUNT_TEXT = 'COOL';
+const STARTER_WAND_COOLDOWN_AMOUNT_COLOR = '#d8e4ff';
 const HEART_CRYSTAL_DEAD_FILL_BACKGROUND =
   'linear-gradient(180deg, rgba(255, 170, 170, 0.08) 0%, rgba(255, 112, 112, 0.3) 35%, rgba(204, 52, 52, 0.68) 100%)';
 const HEART_CRYSTAL_MAX_HEALTH_CAP_FILL_BACKGROUND =
@@ -368,6 +374,10 @@ export class HotbarOverlay {
       typeof options.healingPotionCooldownFillNormalized === 'number'
         ? clampUnitInterval(options.healingPotionCooldownFillNormalized)
         : null;
+    const starterWandCooldownFillNormalized =
+      typeof options.starterWandCooldownFillNormalized === 'number'
+        ? clampUnitInterval(options.starterWandCooldownFillNormalized)
+        : null;
     const heartCrystalBlockedReason = options.heartCrystalBlockedReason ?? null;
     const starterMeleeWeaponSwingFeedback = options.starterMeleeWeaponSwingFeedback ?? null;
     const starterPickaxeSwingFeedback = options.starterPickaxeSwingFeedback ?? null;
@@ -438,12 +448,16 @@ export class HotbarOverlay {
               titleText: STARTER_BUG_NET_SWING_TITLE_TEXT[starterBugNetSwingFeedback.phase]
             }
           : null;
+      const selectedWandCoolingDown =
+        selected && stack.itemId === 'wand' && starterWandCooldownFillNormalized !== null;
       const coolingDown =
         stack.itemId === 'healing-potion' && healingPotionCooldownFillNormalized !== null;
       slotElements.button.title = blockedHeartCrystal
         ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${HEART_CRYSTAL_BLOCKED_TITLE_TEXT[heartCrystalBlockedReason]})`
         : selectedTimedItemFeedback !== null
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${selectedTimedItemFeedback.titleText})`
+          : selectedWandCoolingDown
+            ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${STARTER_WAND_COOLDOWN_TITLE_TEXT})`
           : coolingDown
             ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (cooldown active)`
           : `Select ${definition.label} in hotbar slot ${slotIndex + 1}`;
@@ -453,6 +467,8 @@ export class HotbarOverlay {
         ? HEART_CRYSTAL_BLOCKED_AMOUNT_TEXT[heartCrystalBlockedReason]
         : selectedTimedItemFeedback !== null
           ? HOTBAR_TIMED_ITEM_AMOUNT_TEXT[selectedTimedItemFeedback.phase]
+          : selectedWandCoolingDown
+            ? STARTER_WAND_COOLDOWN_AMOUNT_TEXT
           : stack.amount > 1
             ? String(stack.amount)
           : '';
@@ -460,6 +476,8 @@ export class HotbarOverlay {
         ? HEART_CRYSTAL_BLOCKED_AMOUNT_COLOR[heartCrystalBlockedReason]
         : selectedTimedItemFeedback !== null
           ? HOTBAR_TIMED_ITEM_AMOUNT_COLOR[selectedTimedItemFeedback.phase]
+          : selectedWandCoolingDown
+            ? STARTER_WAND_COOLDOWN_AMOUNT_COLOR
         : '#ffe7a3';
       applySlotFillStyles(
         slotElements.cooldownFill,
@@ -467,6 +485,8 @@ export class HotbarOverlay {
           ? 1
           : selectedTimedItemFeedback !== null
             ? selectedTimedItemFeedback.timingFillNormalized
+            : selectedWandCoolingDown
+              ? starterWandCooldownFillNormalized
             : stack.itemId === 'healing-potion'
               ? healingPotionCooldownFillNormalized
             : null,
@@ -474,6 +494,8 @@ export class HotbarOverlay {
           ? HEART_CRYSTAL_BLOCKED_FILL_BACKGROUND[heartCrystalBlockedReason]
           : selectedTimedItemFeedback !== null
             ? HOTBAR_TIMED_ITEM_FILL_BACKGROUND[selectedTimedItemFeedback.phase]
+            : selectedWandCoolingDown
+              ? STARTER_WAND_COOLDOWN_FILL_BACKGROUND
           : stack.itemId === 'healing-potion'
             ? HEALING_POTION_COOLDOWN_FILL_BACKGROUND
             : null

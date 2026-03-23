@@ -91,6 +91,12 @@ import {
   STARTER_SPEAR_THRUST_RECOVERY_SECONDS,
   STARTER_SPEAR_THRUST_WINDUP_SECONDS
 } from './world/starterSpear';
+import {
+  DEFAULT_STARTER_WAND_CAST_COOLDOWN_SECONDS,
+  DEFAULT_STARTER_WAND_FIREBOLT_DAMAGE,
+  DEFAULT_STARTER_WAND_FIREBOLT_KNOCKBACK_SPEED,
+  DEFAULT_STARTER_WAND_FIREBOLT_SPEED
+} from './world/starterWand';
 import { STARTER_BUG_NET_SWING_WINDUP_SECONDS } from './world/starterBugNet';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
 import {
@@ -675,6 +681,7 @@ const testRuntime = vi.hoisted(() => {
       standalonePlayerCeilingBonkHoldUntilTimeMs: number | null;
       slimeCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       bunnyCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
+      fireboltCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       renderAlpha: number | null;
       timeMs: number | null;
     },
@@ -891,6 +898,31 @@ vi.mock('./gl/renderer', () => ({
               ];
             })
         : [];
+      const fireboltCurrentPositions = Array.isArray(renderState.entities)
+        ? renderState.entities
+            .filter((entity) => entity?.kind === 'wand-firebolt')
+            .flatMap((entity) => {
+              const snapshot = entity?.snapshot?.current;
+              if (
+                !snapshot?.position ||
+                typeof entity?.id !== 'number' ||
+                typeof snapshot.position.x !== 'number' ||
+                typeof snapshot.position.y !== 'number'
+              ) {
+                return [];
+              }
+
+              return [
+                {
+                  id: entity.id,
+                  position: {
+                    x: snapshot.position.x,
+                    y: snapshot.position.y
+                  }
+                }
+              ];
+            })
+        : [];
       const standalonePlayerPreviousPosition =
         standalonePlayerEntity?.snapshot?.previous?.position &&
         typeof standalonePlayerEntity.snapshot.previous.position.x === 'number' &&
@@ -941,6 +973,7 @@ vi.mock('./gl/renderer', () => ({
           standalonePlayerEntity?.snapshot?.current?.ceilingBonkHoldUntilTimeMs ?? null,
         slimeCurrentPositions,
         bunnyCurrentPositions,
+        fireboltCurrentPositions,
         renderAlpha: typeof renderState.renderAlpha === 'number' ? renderState.renderAlpha : null,
         timeMs: renderState.timeMs ?? null
       };
@@ -2799,6 +2832,26 @@ const createTestPlayerSpawnPoint = ({
     tileId: supportTileId
   }
 });
+
+const clearTileRect = (
+  world: TileWorld,
+  minTileX: number,
+  maxTileX: number,
+  minTileY: number,
+  maxTileY: number
+): void => {
+  for (let worldTileY = minTileY; worldTileY <= maxTileY; worldTileY += 1) {
+    for (let worldTileX = minTileX; worldTileX <= maxTileX; worldTileX += 1) {
+      world.setTile(worldTileX, worldTileY, 0);
+    }
+  }
+};
+
+const createStarterWandTestWorldSnapshot = (): ReturnType<TileWorld['createSnapshot']> => {
+  const world = new TileWorld(0);
+  clearTileRect(world, -8, 8, -4, 4);
+  return world.createSnapshot();
+};
 
 describe('main.ts shell state orchestration', () => {
   beforeEach(() => {
@@ -10900,6 +10953,282 @@ describe('main.ts shell state orchestration', () => {
       itemId: 'sword',
       amount: 1
     });
+  });
+
+  it('shows selected starter-wand cooldown feedback while the cast cooldown drains, then clears it', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: createStarterWandTestWorldSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'wand', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 4,
+        worldTileY: 0,
+        worldX: playerFocusPoint.x + 48,
+        worldY: playerFocusPoint.y,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+
+    expect(getHotbarOverlaySlotButton(6).title).toContain('cast cooldown active');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('COOL');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(6).style.height)).toBeCloseTo(
+      ((DEFAULT_STARTER_WAND_CAST_COOLDOWN_SECONDS - 1 / 60) /
+        DEFAULT_STARTER_WAND_CAST_COOLDOWN_SECONDS) *
+        100,
+      1
+    );
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('1');
+
+    testRuntime.playerItemUseRequests = [];
+    runFixedUpdate(DEFAULT_STARTER_WAND_CAST_COOLDOWN_SECONDS - 1 / 60);
+
+    expect(getHotbarOverlaySlotButton(6).title).not.toContain('cast cooldown active');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.height).toBe('0.0%');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
+  });
+
+  it('casts the starter wand from mouse aim, despawns the firebolt on slime hit, and carries knockback into the next slime fixed step', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: createStarterWandTestWorldSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'wand', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    const slimeSpawnPoint = createTestPlayerSpawnPoint({
+      x: 56,
+      y: 18,
+      width: DEFAULT_HOSTILE_SLIME_WIDTH,
+      height: DEFAULT_HOSTILE_SLIME_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_HOSTILE_SLIME_WIDTH &&
+        search?.height === DEFAULT_HOSTILE_SLIME_HEIGHT
+      ) {
+        return slimeSpawnPoint;
+      }
+
+      return testRuntime.playerSpawnPoint;
+    };
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    for (let step = 0; step < DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 4,
+        worldTileY: 0,
+        worldX: slimeSpawnPoint.x,
+        worldY: playerFocusPoint.y,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    const initialFireboltPositions =
+      testRuntime.latestRendererRenderFrameState?.fireboltCurrentPositions ?? [];
+    expect(initialFireboltPositions).toHaveLength(1);
+    expect(initialFireboltPositions[0]?.position.x).toBeCloseTo(
+      playerFocusPoint.x + DEFAULT_STARTER_WAND_FIREBOLT_SPEED * (1 / 60),
+      6
+    );
+    expect(initialFireboltPositions[0]?.position.y).toBeCloseTo(playerFocusPoint.y, 6);
+
+    testRuntime.rendererStepHostileSlimeStateImpl = (state, fixedDt) => {
+      const slimeState = state as {
+        position?: { x?: number; y?: number };
+        velocity?: { x?: number; y?: number };
+        grounded?: boolean;
+        facing?: 'left' | 'right';
+        hopCooldownTicksRemaining?: number;
+        launchKind?: 'standard-hop' | 'step-hop' | null;
+      };
+      const velocityX =
+        typeof slimeState.velocity?.x === 'number' ? slimeState.velocity.x : 0;
+      const velocityY =
+        typeof slimeState.velocity?.y === 'number' ? slimeState.velocity.y : 0;
+      return {
+        position: {
+          x: (slimeState.position?.x ?? 0) + velocityX * fixedDt,
+          y: (slimeState.position?.y ?? 0) + velocityY * fixedDt
+        },
+        velocity: {
+          x: velocityX,
+          y: velocityY
+        },
+        grounded: slimeState.grounded ?? false,
+        facing: slimeState.facing ?? 'right',
+        hopCooldownTicksRemaining:
+          slimeState.hopCooldownTicksRemaining ?? DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
+        launchKind: slimeState.launchKind ?? null
+      };
+    };
+    testRuntime.rendererStepHostileSlimeStateRequests = [];
+    testRuntime.playerItemUseRequests = [];
+
+    for (let step = 0; step < 10; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.rendererStepHostileSlimeStateRequests).toContainEqual({
+      state: {
+        position: { x: 56, y: 18 },
+        velocity: {
+          x: DEFAULT_STARTER_WAND_FIREBOLT_KNOCKBACK_SPEED,
+          y: 0
+        },
+        health: DEFAULT_HOSTILE_SLIME_HEALTH - DEFAULT_STARTER_WAND_FIREBOLT_DAMAGE,
+        grounded: false,
+        facing: 'right',
+        hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
+      },
+      fixedDt: 1 / 60,
+      playerPosition: { x: 8, y: 28 }
+    });
+    expect(testRuntime.latestRendererRenderFrameState?.fireboltCurrentPositions).toEqual([]);
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions).toHaveLength(1);
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions?.[0]?.position.x).toBeGreaterThan(
+      56
+    );
+    expect(testRuntime.latestRendererRenderFrameState?.slimeCurrentPositions?.[0]?.position.y).toBeCloseTo(
+      18,
+      6
+    );
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
+      itemId: 'wand',
+      amount: 1
+    });
+  });
+
+  it('casts the starter wand from touch aim through the shared hidden-panel item-use path', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: createStarterWandTestWorldSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'wand', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: -2,
+        worldTileY: -2,
+        worldX: playerFocusPoint.x - 30,
+        worldY: playerFocusPoint.y - 40,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    const touchFireboltPositions =
+      testRuntime.latestRendererRenderFrameState?.fireboltCurrentPositions ?? [];
+    expect(touchFireboltPositions).toHaveLength(1);
+    expect(touchFireboltPositions[0]?.position.x).toBeCloseTo(
+      playerFocusPoint.x - DEFAULT_STARTER_WAND_FIREBOLT_SPEED * 0.6 * (1 / 60),
+      6
+    );
+    expect(touchFireboltPositions[0]?.position.y).toBeCloseTo(
+      playerFocusPoint.y - DEFAULT_STARTER_WAND_FIREBOLT_SPEED * 0.8 * (1 / 60),
+      6
+    );
   });
 
   it('shows a starter-spear preview line at fixed reach and flags clamped aim when the hovered world point is farther away', async () => {

@@ -132,4 +132,11 @@ describe('droppedItemPlaceholder', () => {
       accentColor: [0.88, 0.82, 0.66]
     });
   });
+
+  it('provides a dedicated placeholder palette for starter-wand pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('wand')).toEqual({
+      baseColor: [0.29, 0.33, 0.68],
+      accentColor: [0.94, 0.79, 0.38]
+    });
+  });
 });
