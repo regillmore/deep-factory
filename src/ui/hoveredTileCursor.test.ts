@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { Camera2D } from '../core/camera2d';
-import { computeHoveredTileCursorClientRect, resolveHoveredTileCursorTargets } from './hoveredTileCursor';
+import {
+  computeHoveredTileCursorClientRect,
+  resolveHoveredTileCursorPresentation,
+  resolveHoveredTileCursorTargets
+} from './hoveredTileCursor';
 
 describe('computeHoveredTileCursorClientRect', () => {
   it('maps a hovered tile to a CSS/client-space rectangle with DPR scaling', () => {
@@ -72,6 +76,54 @@ describe('computeHoveredTileCursorClientRect', () => {
     ).toEqual({
       hovered: null,
       pinned: { tileX: 5, tileY: 8 }
+    });
+  });
+});
+
+describe('resolveHoveredTileCursorPresentation', () => {
+  it('uses a warm solid presentation for foreground debug-break targets', () => {
+    expect(
+      resolveHoveredTileCursorPresentation('hovered', {
+        tileX: 4,
+        tileY: -2,
+        previewTone: 'debug-break-tile'
+      })
+    ).toEqual({
+      borderColor: 'rgba(255, 140, 120, 0.96)',
+      borderStyle: 'solid',
+      background: 'rgba(255, 140, 120, 0.14)',
+      boxShadow: '0 0 0 1px rgba(33, 12, 12, 0.38), 0 0 18px rgba(255, 140, 120, 0.16)'
+    });
+  });
+
+  it('uses a dashed striped presentation for wall-only debug-break targets', () => {
+    expect(
+      resolveHoveredTileCursorPresentation('hovered', {
+        tileX: 4,
+        tileY: -2,
+        previewTone: 'debug-break-wall'
+      })
+    ).toEqual({
+      borderColor: 'rgba(255, 195, 120, 0.96)',
+      borderStyle: 'dashed',
+      background:
+        'repeating-linear-gradient(135deg, rgba(255, 195, 120, 0.12) 0 4px, rgba(255, 195, 120, 0.04) 4px 8px)',
+      boxShadow: '0 0 0 1px rgba(33, 24, 8, 0.36), 0 0 18px rgba(255, 195, 120, 0.14)'
+    });
+  });
+
+  it('keeps pinned inspect targets on the pinned palette even when a hovered tone is present', () => {
+    expect(
+      resolveHoveredTileCursorPresentation('pinned', {
+        tileX: 1,
+        tileY: 2,
+        previewTone: 'debug-break-wall'
+      })
+    ).toEqual({
+      borderColor: 'rgba(120, 210, 255, 0.95)',
+      borderStyle: 'solid',
+      background: 'rgba(120, 210, 255, 0.12)',
+      boxShadow: '0 0 0 1px rgba(8, 14, 24, 0.32), 0 0 14px rgba(120, 210, 255, 0.12)'
     });
   });
 });

@@ -15,6 +15,7 @@ import {
   STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS
 } from './gl/standalonePlayerPlaceholder';
 import {
+  type ArmedDebugToolPreviewState,
   type PlayerItemUseRequest,
   InputController,
   walkEllipseOutlineTileArea,
@@ -392,6 +393,11 @@ import {
   stepStarterPickaxeMiningState,
   tryStartStarterPickaxeSwing
 } from './world/starterPickaxeMining';
+import {
+  collectDebugBreakPreviewTargets,
+  evaluateDebugBreakTarget,
+  type DebugBreakPreviewTarget
+} from './world/debugBreakTargeting';
 import {
   createStarterMeleeWeaponState,
   STARTER_MELEE_WEAPON_SWING_ACTIVE_SECONDS,
@@ -3957,6 +3963,155 @@ const bootstrap = async (): Promise<void> => {
       changed
     };
   };
+  const debugBreakWorldView = {
+    getTile: (worldTileX: number, worldTileY: number) => renderer.getTile(worldTileX, worldTileY),
+    getWall: (worldTileX: number, worldTileY: number) => renderer.getWall(worldTileX, worldTileY)
+  };
+  const createEmptyArmedDebugToolPreviewState = (): ArmedDebugToolPreviewState => ({
+    armedFloodFillKind: null,
+    armedLineKind: null,
+    armedRectKind: null,
+    armedRectOutlineKind: null,
+    armedEllipseKind: null,
+    armedEllipseOutlineKind: null,
+    activeMouseLineDrag: null,
+    pendingTouchLineStart: null,
+    activeMouseRectDrag: null,
+    activeMouseRectOutlineDrag: null,
+    activeMouseEllipseDrag: null,
+    activeMouseEllipseOutlineDrag: null,
+    pendingTouchRectStart: null,
+    pendingTouchRectOutlineStart: null,
+    pendingTouchEllipseStart: null,
+    pendingTouchEllipseOutlineStart: null,
+    resolvedBreakPreviewAffectedTileCount: null,
+    resolvedBreakPreviewTargets: null
+  });
+  const isDebugBreakPreviewActive = (
+    preview: ArmedDebugToolPreviewState,
+    touchMode: TouchDebugEditMode
+  ): boolean =>
+    touchMode === 'break' ||
+    preview.armedFloodFillKind === 'break' ||
+    preview.armedLineKind === 'break' ||
+    preview.armedRectKind === 'break' ||
+    preview.armedRectOutlineKind === 'break' ||
+    preview.armedEllipseKind === 'break' ||
+    preview.armedEllipseOutlineKind === 'break' ||
+    preview.activeMouseLineDrag?.kind === 'break' ||
+    preview.activeMouseRectDrag?.kind === 'break' ||
+    preview.activeMouseRectOutlineDrag?.kind === 'break' ||
+    preview.activeMouseEllipseDrag?.kind === 'break' ||
+    preview.activeMouseEllipseOutlineDrag?.kind === 'break' ||
+    preview.pendingTouchLineStart?.kind === 'break' ||
+    preview.pendingTouchRectStart?.kind === 'break' ||
+    preview.pendingTouchRectOutlineStart?.kind === 'break' ||
+    preview.pendingTouchEllipseStart?.kind === 'break' ||
+    preview.pendingTouchEllipseOutlineStart?.kind === 'break';
+  const resolveHoveredDebugBreakPreviewTone = (
+    pointerInspect: PointerInspectSnapshot | null,
+    preview: ArmedDebugToolPreviewState,
+    touchMode: TouchDebugEditMode
+  ): 'debug-break-tile' | 'debug-break-wall' | undefined => {
+    if (pointerInspect === null || !isDebugBreakPreviewActive(preview, touchMode)) {
+      return undefined;
+    }
+
+    const evaluation = evaluateDebugBreakTarget(
+      debugBreakWorldView,
+      pointerInspect.tile.x,
+      pointerInspect.tile.y
+    );
+    if (!evaluation.breakableTarget || evaluation.targetLayer === null) {
+      return undefined;
+    }
+
+    return evaluation.targetLayer === 'tile' ? 'debug-break-tile' : 'debug-break-wall';
+  };
+  const resolveArmedDebugBreakShapePreviewTargets = (
+    preview: ArmedDebugToolPreviewState,
+    pointerInspect: PointerInspectSnapshot | null
+  ): DebugBreakPreviewTarget[] | null => {
+    if (pointerInspect?.pointerType !== 'mouse') {
+      return null;
+    }
+
+    const endTileX = pointerInspect.tile.x;
+    const endTileY = pointerInspect.tile.y;
+    if (preview.activeMouseLineDrag?.kind === 'break') {
+      return collectDebugBreakPreviewTargets(debugBreakWorldView, (visit: (tileX: number, tileY: number) => void) => {
+        walkLineSteppedTilePath(
+          preview.activeMouseLineDrag!.startTileX,
+          preview.activeMouseLineDrag!.startTileY,
+          endTileX,
+          endTileY,
+          visit
+        );
+      });
+    }
+
+    if (preview.activeMouseRectDrag?.kind === 'break') {
+      return collectDebugBreakPreviewTargets(debugBreakWorldView, (visit: (tileX: number, tileY: number) => void) => {
+        walkFilledRectangleTileArea(
+          preview.activeMouseRectDrag!.startTileX,
+          preview.activeMouseRectDrag!.startTileY,
+          endTileX,
+          endTileY,
+          visit
+        );
+      });
+    }
+
+    if (preview.activeMouseRectOutlineDrag?.kind === 'break') {
+      return collectDebugBreakPreviewTargets(debugBreakWorldView, (visit: (tileX: number, tileY: number) => void) => {
+        walkRectangleOutlineTileArea(
+          preview.activeMouseRectOutlineDrag!.startTileX,
+          preview.activeMouseRectOutlineDrag!.startTileY,
+          endTileX,
+          endTileY,
+          visit
+        );
+      });
+    }
+
+    if (preview.activeMouseEllipseDrag?.kind === 'break') {
+      return collectDebugBreakPreviewTargets(debugBreakWorldView, (visit: (tileX: number, tileY: number) => void) => {
+        walkFilledEllipseTileArea(
+          preview.activeMouseEllipseDrag!.startTileX,
+          preview.activeMouseEllipseDrag!.startTileY,
+          endTileX,
+          endTileY,
+          visit
+        );
+      });
+    }
+
+    if (preview.activeMouseEllipseOutlineDrag?.kind === 'break') {
+      return collectDebugBreakPreviewTargets(debugBreakWorldView, (visit: (tileX: number, tileY: number) => void) => {
+        walkEllipseOutlineTileArea(
+          preview.activeMouseEllipseOutlineDrag!.startTileX,
+          preview.activeMouseEllipseOutlineDrag!.startTileY,
+          endTileX,
+          endTileY,
+          visit
+        );
+      });
+    }
+
+    return null;
+  };
+  const resolveArmedDebugToolPreviewState = (
+    preview: ArmedDebugToolPreviewState | null | undefined,
+    pointerInspect: PointerInspectSnapshot | null
+  ): ArmedDebugToolPreviewState => {
+    const basePreview = preview ?? createEmptyArmedDebugToolPreviewState();
+    const resolvedBreakPreviewTargets = resolveArmedDebugBreakShapePreviewTargets(basePreview, pointerInspect);
+    return {
+      ...basePreview,
+      resolvedBreakPreviewTargets,
+      resolvedBreakPreviewAffectedTileCount: resolvedBreakPreviewTargets?.length ?? null
+    };
+  };
   const applyDebugWorldEdit = (
     worldTileX: number,
     worldTileY: number,
@@ -3983,26 +4138,25 @@ const bootstrap = async (): Promise<void> => {
       };
     }
 
-    const previousTileId = renderer.getTile(worldTileX, worldTileY);
-    if (previousTileId !== DEBUG_TILE_BREAK_ID) {
+    const evaluation = evaluateDebugBreakTarget(debugBreakWorldView, worldTileX, worldTileY);
+    if (!evaluation.breakableTarget || evaluation.targetLayer === null) {
+      return {
+        changed: false,
+        historyChange: null
+      };
+    }
+
+    if (evaluation.targetLayer === 'tile') {
       const { changed } = applyWorldTileEdit(worldTileX, worldTileY, DEBUG_TILE_BREAK_ID, 'debug-break');
       return {
         changed,
         historyChange: changed
           ? {
               layer: 'tile',
-              previousId: previousTileId,
+              previousId: evaluation.tileId,
               id: DEBUG_TILE_BREAK_ID
             }
           : null
-      };
-    }
-
-    const previousWallId = renderer.getWall(worldTileX, worldTileY);
-    if (previousWallId === 0) {
-      return {
-        changed: false,
-        historyChange: null
       };
     }
 
@@ -4012,24 +4166,21 @@ const bootstrap = async (): Promise<void> => {
       historyChange: changed
         ? {
             layer: 'wall',
-            previousId: previousWallId,
+            previousId: evaluation.wallId,
             id: 0
           }
         : null
     };
   };
   const readDebugBreakFloodFillTargetId = (worldTileX: number, worldTileY: number): number => {
-    const tileId = renderer.getTile(worldTileX, worldTileY);
-    if (tileId !== DEBUG_TILE_BREAK_ID) {
-      return DEBUG_BREAK_FLOOD_FILL_TILE_ID_OFFSET + tileId;
-    }
-
-    const wallId = renderer.getWall(worldTileX, worldTileY);
-    if (wallId === 0) {
+    const evaluation = evaluateDebugBreakTarget(debugBreakWorldView, worldTileX, worldTileY);
+    if (!evaluation.breakableTarget || evaluation.targetLayer === null) {
       return DEBUG_TILE_BREAK_ID;
     }
 
-    return DEBUG_BREAK_FLOOD_FILL_WALL_ID_OFFSET + wallId;
+    return evaluation.targetLayer === 'tile'
+      ? DEBUG_BREAK_FLOOD_FILL_TILE_ID_OFFSET + evaluation.targetId
+      : DEBUG_BREAK_FLOOD_FILL_WALL_ID_OFFSET + evaluation.targetId;
   };
   const resolvePlayerItemUseFacing = (
     playerState: PlayerState,
@@ -6645,7 +6796,10 @@ const bootstrap = async (): Promise<void> => {
     const renderTimeMs = performance.now();
     applyStandalonePlayerRenderFrameCameraFollow(alpha);
     const pointerInspect = input.getPointerInspect();
-    const armedDebugToolPreviewState = input.getArmedDebugToolPreviewState();
+    const armedDebugToolPreviewState = resolveArmedDebugToolPreviewState(
+      input.getArmedDebugToolPreviewState(),
+      pointerInspect
+    );
     const selectedPlayerItemBunnyReleasePreview =
       !debugEditControlsVisible && pointerInspect
         ? getSelectedStandalonePlayerItemBunnyReleasePreviewAtTile(
@@ -6888,12 +7042,17 @@ const bootstrap = async (): Promise<void> => {
       hovered: pointerInspect
         ? {
             tileX: pointerInspect.tile.x,
-            tileY: pointerInspect.tile.y
+            tileY: pointerInspect.tile.y,
+            previewTone: resolveHoveredDebugBreakPreviewTone(
+              pointerInspect,
+              armedDebugToolPreviewState,
+              input.getTouchDebugEditMode()
+            )
           }
         : null,
       pinned: pinnedDebugTileInspect
-      ? {
-          tileX: pinnedDebugTileInspect.tileX,
+        ? {
+            tileX: pinnedDebugTileInspect.tileX,
           tileY: pinnedDebugTileInspect.tileY
         }
       : null

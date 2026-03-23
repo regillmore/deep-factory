@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { STANDALONE_PLAYER_PLACEHOLDER_CEILING_BONK_HOLD_DURATION_MS } from './gl/standalonePlayerPlaceholder';
+import type { ArmedDebugToolPreviewState } from './input/controller';
 import { DEBUG_EDIT_CONTROL_STATE_STORAGE_KEY } from './input/debugEditControlStatePersistence';
 import {
   createDefaultShellActionKeybindingState,
@@ -260,6 +261,27 @@ const createWallEditEvent = (
   };
 };
 
+const createEmptyArmedDebugToolPreviewState = (): ArmedDebugToolPreviewState => ({
+  armedFloodFillKind: null,
+  armedLineKind: null,
+  armedRectKind: null,
+  armedRectOutlineKind: null,
+  armedEllipseKind: null,
+  armedEllipseOutlineKind: null,
+  activeMouseLineDrag: null,
+  pendingTouchLineStart: null,
+  activeMouseRectDrag: null,
+  activeMouseRectOutlineDrag: null,
+  activeMouseEllipseDrag: null,
+  activeMouseEllipseOutlineDrag: null,
+  pendingTouchRectStart: null,
+  pendingTouchRectOutlineStart: null,
+  pendingTouchEllipseStart: null,
+  pendingTouchEllipseOutlineStart: null,
+  resolvedBreakPreviewAffectedTileCount: null,
+  resolvedBreakPreviewTargets: null
+});
+
 const testRuntime = vi.hoisted(() => {
   class FakeHTMLElement {
     tagName: string;
@@ -330,6 +352,7 @@ const testRuntime = vi.hoisted(() => {
       tile: { x: number; y: number };
       world?: { x: number; y: number };
     },
+    armedDebugToolPreviewState: null as ArmedDebugToolPreviewState | null,
     debugTileInspectPinRequests: [] as Array<{
       worldTileX: number;
       worldTileY: number;
@@ -657,6 +680,24 @@ const testRuntime = vi.hoisted(() => {
     },
     latestDebugOverlayInspectState: null as DebugOverlayInspectState | null,
     latestDebugEditStatusStripState: null as DebugEditStatusStripState | null,
+    latestHoveredTileCursorTargets: null as
+      | {
+          hovered:
+            | {
+                tileX: number;
+                tileY: number;
+                previewTone?: 'default' | 'debug-break-tile' | 'debug-break-wall';
+              }
+            | null;
+          pinned:
+            | {
+                tileX: number;
+                tileY: number;
+              }
+            | null;
+        }
+      | null,
+    latestArmedDebugToolPreviewState: null as ArmedDebugToolPreviewState | null,
     latestPlayerItemAxeChopPreviewState: null as PlayerItemAxeChopPreviewState | null,
     latestPlayerItemBunnyReleasePreviewState: null as PlayerItemBunnyReleasePreviewState | null,
     latestPlayerItemMiningPreviewState: null as PlayerItemMiningPreviewState | null,
@@ -1403,8 +1444,11 @@ vi.mock('./gl/renderer', () => ({
   }
 }));
 
-vi.mock('./input/controller', () => ({
-  InputController: class {
+vi.mock('./input/controller', async () => {
+  const actual = await vi.importActual<typeof import('./input/controller')>('./input/controller');
+
+  return {
+    InputController: class {
     private touchMode: 'pan' | 'place' | 'break' = 'pan';
     private armedDesktopInspectPin = false;
     private armedFloodFillKind: 'place' | 'break' | null =
@@ -1534,7 +1578,7 @@ vi.mock('./input/controller', () => ({
     }
 
     getArmedDebugToolPreviewState() {
-      return null;
+      return testRuntime.armedDebugToolPreviewState ?? createEmptyArmedDebugToolPreviewState();
     }
 
     getPlayerInputTelemetry() {
@@ -1606,13 +1650,14 @@ vi.mock('./input/controller', () => ({
         jumpPressed: testRuntime.playerMovementIntent.jumpPressed
       };
     }
-  },
-  walkEllipseOutlineTileArea: () => {},
-  walkFilledEllipseTileArea: () => {},
-  walkFilledRectangleTileArea: () => {},
-  walkRectangleOutlineTileArea: () => {},
-  walkLineSteppedTilePath: () => {}
-}));
+    },
+    walkEllipseOutlineTileArea: actual.walkEllipseOutlineTileArea,
+    walkFilledEllipseTileArea: actual.walkFilledEllipseTileArea,
+    walkFilledRectangleTileArea: actual.walkFilledRectangleTileArea,
+    walkRectangleOutlineTileArea: actual.walkRectangleOutlineTileArea,
+    walkLineSteppedTilePath: actual.walkLineSteppedTilePath
+  };
+});
 
 vi.mock('./input/debugTileEditHistory', () => ({
   DebugTileEditHistory: class {
@@ -1894,7 +1939,26 @@ vi.mock('./ui/hoveredTileCursor', () => ({
       this.visible = visible;
     }
 
-    update(): void {}
+    update(
+      _camera: unknown,
+      targets: {
+        hovered:
+          | {
+              tileX: number;
+              tileY: number;
+              previewTone?: 'default' | 'debug-break-tile' | 'debug-break-wall';
+            }
+          | null;
+        pinned:
+          | {
+              tileX: number;
+              tileY: number;
+            }
+          | null;
+      }
+    ): void {
+      testRuntime.latestHoveredTileCursorTargets = structuredClone(targets);
+    }
   }
 }));
 
@@ -2000,7 +2064,9 @@ vi.mock('./ui/armedDebugToolPreviewOverlay', () => ({
       this.visible = visible;
     }
 
-    update(): void {}
+    update(_camera: unknown, _pointerInspect: unknown, state: ArmedDebugToolPreviewState): void {
+      testRuntime.latestArmedDebugToolPreviewState = structuredClone(state);
+    }
   }
 }));
 
@@ -2755,6 +2821,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.inputControllerInstance = null;
     testRuntime.inputControllerConstructCount = 0;
     testRuntime.pointerInspect = null;
+    testRuntime.armedDebugToolPreviewState = createEmptyArmedDebugToolPreviewState();
     testRuntime.debugOverlayInstance = null;
     testRuntime.debugEditControlsInitialPreferenceSnapshot = null;
     testRuntime.debugEditControlsInitialHistoryState = null;
@@ -2873,6 +2940,8 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.latestRendererRenderFrameState = null;
     testRuntime.latestDebugOverlayInspectState = null;
     testRuntime.latestDebugEditStatusStripState = null;
+    testRuntime.latestHoveredTileCursorTargets = null;
+    testRuntime.latestArmedDebugToolPreviewState = null;
     testRuntime.latestPlayerItemAxeChopPreviewState = null;
     testRuntime.latestPlayerItemBunnyReleasePreviewState = null;
     testRuntime.latestPlayerItemMiningPreviewState = null;
@@ -7068,6 +7137,83 @@ describe('main.ts shell state orchestration', () => {
       wallRenderUvRect: expectedWallRenderUvRect,
       wallRenderPixelBounds: expectedWallRenderPixelBounds
     });
+  });
+
+  it('surfaces wall-only hovered debug-break targets through the hovered cursor while preserving foreground precedence', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.debugEditControlsInstance?.setMode('break');
+    testRuntime.pointerInspect = {
+      pointerType: 'touch',
+      tile: { x: 4, y: 6 }
+    };
+    testRuntime.rendererWallIdsByWorldKey.set(worldTileKey(4, 6), STARTER_DIRT_WALL_ID);
+
+    runRenderFrame();
+
+    expect(testRuntime.latestHoveredTileCursorTargets).toEqual({
+      hovered: {
+        tileX: 4,
+        tileY: 6,
+        previewTone: 'debug-break-wall'
+      },
+      pinned: null
+    });
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(4, 6), 1);
+
+    runRenderFrame();
+
+    expect(testRuntime.latestHoveredTileCursorTargets).toEqual({
+      hovered: {
+        tileX: 4,
+        tileY: 6,
+        previewTone: 'debug-break-tile'
+      },
+      pinned: null
+    });
+  });
+
+  it('surfaces wall-only debug-break shape targets through preview state while preserving foreground precedence', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.pointerInspect = {
+      pointerType: 'mouse',
+      tile: { x: 3, y: 1 }
+    };
+    testRuntime.armedDebugToolPreviewState = {
+      ...createEmptyArmedDebugToolPreviewState(),
+      activeMouseRectOutlineDrag: {
+        kind: 'break',
+        startTileX: 0,
+        startTileY: 0
+      }
+    };
+    testRuntime.rendererWallIdsByWorldKey.set(worldTileKey(0, 0), STARTER_DIRT_WALL_ID);
+    testRuntime.rendererWallIdsByWorldKey.set(worldTileKey(1, 0), STARTER_DIRT_WALL_ID);
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(2, 0), 1);
+    testRuntime.rendererWallIdsByWorldKey.set(worldTileKey(2, 0), STARTER_DIRT_WALL_ID);
+
+    runRenderFrame();
+
+    expect(
+      testRuntime.latestArmedDebugToolPreviewState?.resolvedBreakPreviewAffectedTileCount
+    ).toBe(3);
+    expect(testRuntime.latestArmedDebugToolPreviewState?.resolvedBreakPreviewTargets).toEqual(
+      expect.arrayContaining([
+        { tileX: 0, tileY: 0, targetLayer: 'wall' },
+        { tileX: 1, tileY: 0, targetLayer: 'wall' },
+        { tileX: 2, tileY: 0, targetLayer: 'tile' }
+      ])
+    );
+    expect(testRuntime.latestArmedDebugToolPreviewState?.resolvedBreakPreviewTargets).toHaveLength(3);
+    expect(
+      testRuntime.latestDebugEditStatusStripState?.preview.resolvedBreakPreviewAffectedTileCount
+    ).toBe(3);
   });
 
   it('routes compact status-strip player and nearby-light telemetry through one shared overlay-visibility selector', async () => {

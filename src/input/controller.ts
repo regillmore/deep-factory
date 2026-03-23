@@ -216,6 +216,14 @@ export interface ArmedDebugToolPreviewState {
     tileX: number;
     tileY: number;
   } | null;
+  resolvedBreakPreviewAffectedTileCount?: number | null;
+  resolvedBreakPreviewTargets?:
+    | Array<{
+        tileX: number;
+        tileY: number;
+        targetLayer: 'tile' | 'wall';
+      }>
+    | null;
 }
 
 interface ActiveTouchHistoryTapGestureCandidate {

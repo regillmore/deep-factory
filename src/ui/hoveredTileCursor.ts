@@ -12,11 +12,19 @@ export interface HoveredTileCursorClientRect {
 export interface HoveredTileCursorTarget {
   tileX: number;
   tileY: number;
+  previewTone?: 'default' | 'debug-break-tile' | 'debug-break-wall';
 }
 
 export interface HoveredTileCursorTargets {
   hovered: HoveredTileCursorTarget | null;
   pinned: HoveredTileCursorTarget | null;
+}
+
+export interface HoveredTileCursorPresentation {
+  borderColor: string;
+  borderStyle: 'solid' | 'dashed';
+  background: string;
+  boxShadow: string;
 }
 
 export const computeHoveredTileCursorClientRect = (
@@ -78,11 +86,52 @@ const createCursorRoot = (borderColor: string, background: string): HTMLDivEleme
   root.style.border = `2px solid ${borderColor}`;
   root.style.background = background;
   root.style.borderRadius = '2px';
+  root.style.boxShadow = '0 0 0 1px rgba(0, 0, 0, 0.28)';
   root.style.pointerEvents = 'none';
   root.style.zIndex = '10';
   root.style.display = 'none';
   document.body.append(root);
   return root;
+};
+
+export const resolveHoveredTileCursorPresentation = (
+  variant: 'hovered' | 'pinned',
+  target: HoveredTileCursorTarget | null
+): HoveredTileCursorPresentation => {
+  if (variant === 'pinned') {
+    return {
+      borderColor: 'rgba(120, 210, 255, 0.95)',
+      borderStyle: 'solid',
+      background: 'rgba(120, 210, 255, 0.12)',
+      boxShadow: '0 0 0 1px rgba(8, 14, 24, 0.32), 0 0 14px rgba(120, 210, 255, 0.12)'
+    };
+  }
+
+  if (target?.previewTone === 'debug-break-tile') {
+    return {
+      borderColor: 'rgba(255, 140, 120, 0.96)',
+      borderStyle: 'solid',
+      background: 'rgba(255, 140, 120, 0.14)',
+      boxShadow: '0 0 0 1px rgba(33, 12, 12, 0.38), 0 0 18px rgba(255, 140, 120, 0.16)'
+    };
+  }
+
+  if (target?.previewTone === 'debug-break-wall') {
+    return {
+      borderColor: 'rgba(255, 195, 120, 0.96)',
+      borderStyle: 'dashed',
+      background:
+        'repeating-linear-gradient(135deg, rgba(255, 195, 120, 0.12) 0 4px, rgba(255, 195, 120, 0.04) 4px 8px)',
+      boxShadow: '0 0 0 1px rgba(33, 24, 8, 0.36), 0 0 18px rgba(255, 195, 120, 0.14)'
+    };
+  }
+
+  return {
+    borderColor: 'rgba(255, 232, 122, 0.95)',
+    borderStyle: 'solid',
+    background: 'rgba(255, 232, 122, 0.14)',
+    boxShadow: '0 0 0 1px rgba(33, 28, 8, 0.3), 0 0 14px rgba(255, 232, 122, 0.1)'
+  };
 };
 
 export class HoveredTileCursorOverlay {
@@ -110,8 +159,8 @@ export class HoveredTileCursorOverlay {
     const resolvedTargets = resolveHoveredTileCursorTargets(targets.hovered, targets.pinned);
     const canvasRect = this.canvas.getBoundingClientRect();
 
-    this.updateCursorRoot(this.hoveredRoot, resolvedTargets.hovered, camera, canvasRect);
-    this.updateCursorRoot(this.pinnedRoot, resolvedTargets.pinned, camera, canvasRect);
+    this.updateCursorRoot(this.hoveredRoot, resolvedTargets.hovered, camera, canvasRect, 'hovered');
+    this.updateCursorRoot(this.pinnedRoot, resolvedTargets.pinned, camera, canvasRect, 'pinned');
   }
 
   private hideAll(): void {
@@ -123,7 +172,8 @@ export class HoveredTileCursorOverlay {
     root: HTMLDivElement,
     target: HoveredTileCursorTarget | null,
     camera: Camera2D,
-    canvasRect: DOMRect
+    canvasRect: DOMRect,
+    variant: 'hovered' | 'pinned'
   ): void {
     if (!target) {
       root.style.display = 'none';
@@ -136,10 +186,15 @@ export class HoveredTileCursorOverlay {
       return;
     }
 
+    const presentation = resolveHoveredTileCursorPresentation(variant, target);
     root.style.display = 'block';
     root.style.left = `${clientRect.left}px`;
     root.style.top = `${clientRect.top}px`;
     root.style.width = `${clientRect.width}px`;
     root.style.height = `${clientRect.height}px`;
+    root.style.borderColor = presentation.borderColor;
+    root.style.borderStyle = presentation.borderStyle;
+    root.style.background = presentation.background;
+    root.style.boxShadow = presentation.boxShadow;
   }
 }

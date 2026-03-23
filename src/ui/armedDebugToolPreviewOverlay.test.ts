@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  resolveDebugBreakPreviewMarkerPresentation,
   resolveStatusBadgePlacement,
   resolveTouchAnchorLabelPlacement
 } from './armedDebugToolPreviewOverlay';
@@ -118,6 +119,27 @@ describe('resolveTouchAnchorLabelPlacement', () => {
       left: 104,
       top: 304,
       maxWidth: 312
+    });
+  });
+});
+
+describe('resolveDebugBreakPreviewMarkerPresentation', () => {
+  it('uses a solid warm highlight for foreground break targets', () => {
+    expect(resolveDebugBreakPreviewMarkerPresentation('tile')).toEqual({
+      borderColor: 'rgba(255, 140, 120, 0.96)',
+      borderStyle: 'solid',
+      background: 'rgba(255, 140, 120, 0.14)',
+      boxShadow: '0 0 0 1px rgba(33, 12, 12, 0.34), 0 0 14px rgba(255, 140, 120, 0.14)'
+    });
+  });
+
+  it('uses a dashed striped highlight for wall-only break targets', () => {
+    expect(resolveDebugBreakPreviewMarkerPresentation('wall')).toEqual({
+      borderColor: 'rgba(255, 195, 120, 0.96)',
+      borderStyle: 'dashed',
+      background:
+        'repeating-linear-gradient(135deg, rgba(255, 195, 120, 0.12) 0 4px, rgba(255, 195, 120, 0.04) 4px 8px)',
+      boxShadow: '0 0 0 1px rgba(33, 24, 8, 0.32), 0 0 14px rgba(255, 195, 120, 0.12)'
     });
   });
 });

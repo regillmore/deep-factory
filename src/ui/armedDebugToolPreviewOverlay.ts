@@ -78,6 +78,13 @@ export interface StatusBadgePlacement {
   maxHeight: number;
 }
 
+export interface DebugBreakPreviewMarkerPresentation {
+  borderColor: string;
+  borderStyle: 'solid' | 'dashed';
+  background: string;
+  boxShadow: string;
+}
+
 const clamp = (value: number, min: number, max: number): number => Math.min(Math.max(value, min), max);
 
 export const resolveTouchAnchorLabelPlacement = (
@@ -108,6 +115,24 @@ export const resolveStatusBadgePlacement = (canvasRect: ClientRectLike): StatusB
   maxHeight: Math.max(0, canvasRect.height - STATUS_BADGE_PADDING_PX * 2)
 });
 
+export const resolveDebugBreakPreviewMarkerPresentation = (
+  targetLayer: 'tile' | 'wall'
+): DebugBreakPreviewMarkerPresentation =>
+  targetLayer === 'tile'
+    ? {
+        borderColor: 'rgba(255, 140, 120, 0.96)',
+        borderStyle: 'solid',
+        background: 'rgba(255, 140, 120, 0.14)',
+        boxShadow: '0 0 0 1px rgba(33, 12, 12, 0.34), 0 0 14px rgba(255, 140, 120, 0.14)'
+      }
+    : {
+        borderColor: 'rgba(255, 195, 120, 0.96)',
+        borderStyle: 'dashed',
+        background:
+          'repeating-linear-gradient(135deg, rgba(255, 195, 120, 0.12) 0 4px, rgba(255, 195, 120, 0.04) 4px 8px)',
+        boxShadow: '0 0 0 1px rgba(33, 24, 8, 0.32), 0 0 14px rgba(255, 195, 120, 0.12)'
+      };
+
 export class ArmedDebugToolPreviewOverlay {
   private root: HTMLDivElement;
   private statusBadge: HTMLDivElement;
@@ -118,6 +143,7 @@ export class ArmedDebugToolPreviewOverlay {
   private ellipsePreviewBox: HTMLDivElement;
   private touchAnchorMarker: HTMLDivElement;
   private touchAnchorLabel: HTMLDivElement;
+  private breakTargetMarkers: HTMLDivElement[] = [];
   private visible = true;
 
   constructor(private canvas: HTMLCanvasElement) {
@@ -249,6 +275,7 @@ export class ArmedDebugToolPreviewOverlay {
     this.updateMouseRectPreview(camera, canvasRect, pointerInspect, preview);
     this.updateMouseEllipsePreview(camera, canvasRect, pointerInspect, preview);
     this.updateTouchAnchorPreview(camera, canvasRect, preview);
+    this.updateBreakTargetMarkers(camera, canvasRect, preview);
   }
 
   private updateStatusBadge(
@@ -538,5 +565,58 @@ export class ArmedDebugToolPreviewOverlay {
     this.touchAnchorLabel.style.maxWidth = `${touchAnchorLabelPlacement.maxWidth}px`;
     this.touchAnchorLabel.style.borderColor = accent.replace('0.95', '0.34');
     this.touchAnchorLabel.style.boxShadow = `inset 0 0 0 1px ${accent.replace('0.95', '0.22')}`;
+  }
+
+  private updateBreakTargetMarkers(
+    camera: Camera2D,
+    canvasRect: DOMRect,
+    preview: ArmedDebugToolPreviewState
+  ): void {
+    const targets = preview.resolvedBreakPreviewTargets ?? [];
+    for (let index = 0; index < targets.length; index += 1) {
+      const target = targets[index];
+      const marker = this.ensureBreakTargetMarker(index);
+      const clientRect = computeTileClientRectOrNull(
+        target.tileX,
+        target.tileY,
+        camera,
+        this.canvas,
+        canvasRect
+      );
+      if (!clientRect) {
+        hideElement(marker);
+        continue;
+      }
+
+      const presentation = resolveDebugBreakPreviewMarkerPresentation(target.targetLayer);
+      showTileMarker(marker, clientRect.left, clientRect.top, clientRect.width, clientRect.height);
+      marker.style.borderColor = presentation.borderColor;
+      marker.style.borderStyle = presentation.borderStyle;
+      marker.style.background = presentation.background;
+      marker.style.boxShadow = presentation.boxShadow;
+    }
+
+    for (let index = targets.length; index < this.breakTargetMarkers.length; index += 1) {
+      hideElement(this.breakTargetMarkers[index]);
+    }
+  }
+
+  private ensureBreakTargetMarker(index: number): HTMLDivElement {
+    const existingMarker = this.breakTargetMarkers[index];
+    if (existingMarker) {
+      return existingMarker;
+    }
+
+    const marker = document.createElement('div');
+    marker.style.position = 'fixed';
+    marker.style.display = 'none';
+    marker.style.boxSizing = 'border-box';
+    marker.style.borderRadius = '4px';
+    marker.style.borderWidth = '2px';
+    marker.style.pointerEvents = 'none';
+    marker.style.zIndex = '10';
+    this.breakTargetMarkers.push(marker);
+    this.root.append(marker);
+    return marker;
   }
 }

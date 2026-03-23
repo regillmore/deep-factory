@@ -2426,6 +2426,40 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.previewText).toBe('Preview: anchor -5,8 | endpoint -2,2 | span 4x7 tiles | affects 14 tiles');
   });
 
+  it('prefers resolved foreground-and-wall break target counts when a break preview augments the shape', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      desktopInspectPinArmed: false,
+      pinnedTile: null,
+      preview: {
+        ...createEmptyPreviewState(),
+        activeMouseRectOutlineDrag: {
+          kind: 'break',
+          startTileX: 1,
+          startTileY: 2
+        },
+        resolvedBreakPreviewAffectedTileCount: 3
+      },
+      hoveredTile: {
+        tileX: 3,
+        tileY: 4,
+        chunkX: 0,
+        chunkY: 0,
+        localX: 3,
+        localY: 4,
+        tileId: 0,
+        tileLabel: 'empty',
+        solid: false,
+        blocksLight: false,
+        liquidKind: null
+      }
+    });
+
+    expect(model.previewText).toBe('Preview: anchor 1,2 | endpoint 3,4 | span 3x3 tiles | affects 3 tiles');
+  });
+
   it('formats hovered tile metadata with compact gameplay flag readouts', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',

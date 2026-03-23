@@ -2238,17 +2238,22 @@ const buildActivePreviewSummary = (
   affectedTileCount
 });
 
+const resolvePreviewAffectedTileCount = (
+  preview: ArmedDebugToolPreviewState,
+  kind: DebugTileEditKind,
+  fallbackAffectedTileCount: number | null
+): number | null =>
+  kind === 'break' && typeof preview.resolvedBreakPreviewAffectedTileCount === 'number'
+    ? preview.resolvedBreakPreviewAffectedTileCount
+    : fallbackAffectedTileCount;
+
 const resolveActiveDebugToolPreviewSummary = (
   preview: ArmedDebugToolPreviewState,
   endpointTileX: number | null,
   endpointTileY: number | null
 ): ActiveDebugToolPreviewSummary | null => {
   if (preview.activeMouseLineDrag) {
-    return buildActivePreviewSummary(
-      preview.activeMouseLineDrag.startTileX,
-      preview.activeMouseLineDrag.startTileY,
-      endpointTileX,
-      endpointTileY,
+    const fallbackAffectedTileCount =
       endpointTileX === null || endpointTileY === null
         ? null
         : countLinePreviewTiles(
@@ -2256,16 +2261,18 @@ const resolveActiveDebugToolPreviewSummary = (
             preview.activeMouseLineDrag.startTileY,
             endpointTileX,
             endpointTileY
-          )
+          );
+    return buildActivePreviewSummary(
+      preview.activeMouseLineDrag.startTileX,
+      preview.activeMouseLineDrag.startTileY,
+      endpointTileX,
+      endpointTileY,
+      resolvePreviewAffectedTileCount(preview, preview.activeMouseLineDrag.kind, fallbackAffectedTileCount)
     );
   }
 
   if (preview.activeMouseRectDrag) {
-    return buildActivePreviewSummary(
-      preview.activeMouseRectDrag.startTileX,
-      preview.activeMouseRectDrag.startTileY,
-      endpointTileX,
-      endpointTileY,
+    const fallbackAffectedTileCount =
       endpointTileX === null || endpointTileY === null
         ? null
         : countFilledRectPreviewTiles(
@@ -2273,16 +2280,18 @@ const resolveActiveDebugToolPreviewSummary = (
             preview.activeMouseRectDrag.startTileY,
             endpointTileX,
             endpointTileY
-          )
+          );
+    return buildActivePreviewSummary(
+      preview.activeMouseRectDrag.startTileX,
+      preview.activeMouseRectDrag.startTileY,
+      endpointTileX,
+      endpointTileY,
+      resolvePreviewAffectedTileCount(preview, preview.activeMouseRectDrag.kind, fallbackAffectedTileCount)
     );
   }
 
   if (preview.activeMouseRectOutlineDrag) {
-    return buildActivePreviewSummary(
-      preview.activeMouseRectOutlineDrag.startTileX,
-      preview.activeMouseRectOutlineDrag.startTileY,
-      endpointTileX,
-      endpointTileY,
+    const fallbackAffectedTileCount =
       endpointTileX === null || endpointTileY === null
         ? null
         : countRectOutlinePreviewTiles(
@@ -2290,16 +2299,22 @@ const resolveActiveDebugToolPreviewSummary = (
             preview.activeMouseRectOutlineDrag.startTileY,
             endpointTileX,
             endpointTileY
-          )
+          );
+    return buildActivePreviewSummary(
+      preview.activeMouseRectOutlineDrag.startTileX,
+      preview.activeMouseRectOutlineDrag.startTileY,
+      endpointTileX,
+      endpointTileY,
+      resolvePreviewAffectedTileCount(
+        preview,
+        preview.activeMouseRectOutlineDrag.kind,
+        fallbackAffectedTileCount
+      )
     );
   }
 
   if (preview.activeMouseEllipseDrag) {
-    return buildActivePreviewSummary(
-      preview.activeMouseEllipseDrag.startTileX,
-      preview.activeMouseEllipseDrag.startTileY,
-      endpointTileX,
-      endpointTileY,
+    const fallbackAffectedTileCount =
       endpointTileX === null || endpointTileY === null
         ? null
         : countFilledEllipsePreviewTiles(
@@ -2307,16 +2322,22 @@ const resolveActiveDebugToolPreviewSummary = (
             preview.activeMouseEllipseDrag.startTileY,
             endpointTileX,
             endpointTileY
-          )
+          );
+    return buildActivePreviewSummary(
+      preview.activeMouseEllipseDrag.startTileX,
+      preview.activeMouseEllipseDrag.startTileY,
+      endpointTileX,
+      endpointTileY,
+      resolvePreviewAffectedTileCount(
+        preview,
+        preview.activeMouseEllipseDrag.kind,
+        fallbackAffectedTileCount
+      )
     );
   }
 
   if (preview.activeMouseEllipseOutlineDrag) {
-    return buildActivePreviewSummary(
-      preview.activeMouseEllipseOutlineDrag.startTileX,
-      preview.activeMouseEllipseOutlineDrag.startTileY,
-      endpointTileX,
-      endpointTileY,
+    const fallbackAffectedTileCount =
       endpointTileX === null || endpointTileY === null
         ? null
         : countEllipseOutlinePreviewTiles(
@@ -2324,7 +2345,17 @@ const resolveActiveDebugToolPreviewSummary = (
             preview.activeMouseEllipseOutlineDrag.startTileY,
             endpointTileX,
             endpointTileY
-          )
+          );
+    return buildActivePreviewSummary(
+      preview.activeMouseEllipseOutlineDrag.startTileX,
+      preview.activeMouseEllipseOutlineDrag.startTileY,
+      endpointTileX,
+      endpointTileY,
+      resolvePreviewAffectedTileCount(
+        preview,
+        preview.activeMouseEllipseOutlineDrag.kind,
+        fallbackAffectedTileCount
+      )
     );
   }
 
