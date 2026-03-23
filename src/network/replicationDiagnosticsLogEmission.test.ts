@@ -134,7 +134,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLogEmission', () => {
       '  SendLastStaged: 20',
       '  SendChunks: dropped=18 | trimmed=19 | forwarded=20',
       '  SendEntities: dropped=21 | trimmed=22 | forwarded=23',
-      '  ResyncLastAppliedBaseline: tick=30 | entityCount=31',
+      '  ResyncLastAppliedBaseline: tick=30 | entityCount=31 | replacedTiles=27 | replacedWalls=28',
       '  ResyncTotals: replacedTiles=27 | replacedWalls=28 | spawned=24 | updated=25 | removed=26',
       'Client: client-bravo',
       '  ReplayLastProcessed: n/a',
@@ -152,7 +152,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLogEmission', () => {
       '  SendLastStaged: 40',
       '  SendChunks: dropped=38 | trimmed=39 | forwarded=40',
       '  SendEntities: dropped=41 | trimmed=42 | forwarded=43',
-      '  ResyncLastAppliedBaseline: tick=50 | entityCount=51',
+      '  ResyncLastAppliedBaseline: tick=50 | entityCount=51 | replacedTiles=47 | replacedWalls=48',
       '  ResyncTotals: replacedTiles=47 | replacedWalls=48 | spawned=44 | updated=45 | removed=46'
     ];
 
@@ -189,7 +189,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLogEmission', () => {
       '  SendLastStaged: 15',
       '  SendChunks: dropped=13 | trimmed=14 | forwarded=15',
       '  SendEntities: dropped=16 | trimmed=17 | forwarded=18',
-      '  ResyncLastAppliedBaseline: tick=25 | entityCount=26',
+      '  ResyncLastAppliedBaseline: tick=25 | entityCount=26 | replacedTiles=22 | replacedWalls=23',
       '  ResyncTotals: replacedTiles=22 | replacedWalls=23 | spawned=19 | updated=20 | removed=21'
     ];
     const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
@@ -234,7 +234,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLogEmission', () => {
       '  SendLastStaged: 13',
       '  SendChunks: dropped=11 | trimmed=12 | forwarded=13',
       '  SendEntities: dropped=14 | trimmed=15 | forwarded=16',
-      '  ResyncLastAppliedBaseline: tick=23 | entityCount=24',
+      '  ResyncLastAppliedBaseline: tick=23 | entityCount=24 | replacedTiles=20 | replacedWalls=21',
       '  ResyncTotals: replacedTiles=20 | replacedWalls=21 | spawned=17 | updated=18 | removed=19'
     ];
     const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([

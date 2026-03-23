@@ -90,7 +90,7 @@ const createExpectedText = (seed: number): string =>
     `  SendLastStaged: ${seed + 10}`,
     `  SendChunks: dropped=${seed + 8} | trimmed=${seed + 9} | forwarded=${seed + 10}`,
     `  SendEntities: dropped=${seed + 11} | trimmed=${seed + 12} | forwarded=${seed + 13}`,
-    `  ResyncLastAppliedBaseline: tick=${seed + 20} | entityCount=${seed + 21}`,
+    `  ResyncLastAppliedBaseline: tick=${seed + 20} | entityCount=${seed + 21} | replacedTiles=${seed + 17} | replacedWalls=${seed + 18}`,
     `  ResyncTotals: replacedTiles=${seed + 17} | replacedWalls=${seed + 18} | spawned=${seed + 14} | updated=${seed + 15} | removed=${seed + 16}`
   ].join('\n');
 

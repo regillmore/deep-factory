@@ -2,7 +2,10 @@ import {
   createAuthoritativeClientReplicationDiagnosticsAggregate,
   type AuthoritativeClientReplicationDiagnosticsAggregate
 } from './replicationDiagnosticsAggregate';
-import type { AuthoritativeReplicationBaselineApplyTotals } from './replicationBaselineSummary';
+import type {
+  AuthoritativeReplicationBaselineApplyLastAppliedMetadata,
+  AuthoritativeReplicationBaselineApplyTotals
+} from './replicationBaselineSummary';
 import type { AuthoritativeReplicationBatchFilterStatusCounters } from './replicationBatchFilterSummary';
 import {
   createAuthoritativeClientReplicationDiagnosticsLogPayload,
@@ -46,12 +49,22 @@ export const formatAuthoritativeClientReplicationDiagnosticsLogAggregateLines = 
   `AggregateResync: ${formatAuthoritativeClientReplicationDiagnosticsResyncCounters(aggregate.resync)}`
 ];
 
+const formatAuthoritativeClientReplicationDiagnosticsLastAppliedBaselineMetadata = ({
+  tick,
+  entityCount,
+  replacedTiles,
+  replacedWalls
+}: AuthoritativeReplicationBaselineApplyLastAppliedMetadata): string =>
+  `tick=${tick} | entityCount=${entityCount} | replacedTiles=${replacedTiles} | replacedWalls=${replacedWalls}`;
+
 const formatAuthoritativeClientReplicationDiagnosticsLastAppliedBaseline = (
   entry: AuthoritativeClientReplicationDiagnosticsRegistrySnapshotEntry
 ): string =>
   entry.snapshot.resync.lastAppliedBaseline === null
     ? 'n/a'
-    : `tick=${entry.snapshot.resync.lastAppliedBaseline.tick} | entityCount=${entry.snapshot.resync.lastAppliedBaseline.entityCount}`;
+    : formatAuthoritativeClientReplicationDiagnosticsLastAppliedBaselineMetadata(
+        entry.snapshot.resync.lastAppliedBaseline
+      );
 
 export const formatAuthoritativeClientReplicationDiagnosticsLogClientLines = (
   entry: AuthoritativeClientReplicationDiagnosticsRegistrySnapshotEntry

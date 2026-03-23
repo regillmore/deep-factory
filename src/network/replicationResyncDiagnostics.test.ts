@@ -44,7 +44,9 @@ describe('accumulateAuthoritativeClientResyncDiagnostics', () => {
     expect(diagnostics).toEqual({
       lastAppliedBaseline: {
         tick: 12,
-        entityCount: 4
+        entityCount: 4,
+        replacedTiles: 6,
+        replacedWalls: 5
       },
       totals: {
         replacedTiles: 6,
@@ -97,7 +99,9 @@ describe('accumulateAuthoritativeClientResyncDiagnostics', () => {
     expect(firstDiagnostics).toEqual({
       lastAppliedBaseline: {
         tick: 5,
-        entityCount: 3
+        entityCount: 3,
+        replacedTiles: 8,
+        replacedWalls: 4
       },
       totals: {
         replacedTiles: 8,
@@ -110,7 +114,9 @@ describe('accumulateAuthoritativeClientResyncDiagnostics', () => {
     expect(secondDiagnostics).toEqual({
       lastAppliedBaseline: {
         tick: 8,
-        entityCount: 1
+        entityCount: 1,
+        replacedTiles: 3,
+        replacedWalls: 7
       },
       totals: {
         replacedTiles: 11,

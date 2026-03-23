@@ -11,6 +11,10 @@ export interface AuthoritativeReplicationBaselineApplyMetadata {
 export type AuthoritativeReplicationBaselineApplyWorldCounts =
   AuthoritativeReplicationBaselineWorldReplacementCounts;
 
+export interface AuthoritativeReplicationBaselineApplyLastAppliedMetadata
+  extends AuthoritativeReplicationBaselineApplyMetadata,
+    AuthoritativeReplicationBaselineApplyWorldCounts {}
+
 export interface AuthoritativeReplicationBaselineApplyEntityCounts {
   spawned: number;
   updated: number;

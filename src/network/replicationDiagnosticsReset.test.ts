@@ -157,7 +157,9 @@ describe('resetAuthoritativeClientReplicationDiagnosticsSnapshot', () => {
       resync: {
         lastAppliedBaseline: {
           tick: 18,
-          entityCount: 9
+          entityCount: 9,
+          replacedTiles: 6,
+          replacedWalls: 5
         },
         totals: {
           replacedTiles: 6,

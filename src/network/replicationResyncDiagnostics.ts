@@ -1,12 +1,12 @@
 import type {
   AuthoritativeReplicationBaselineApplyEntityCounts,
-  AuthoritativeReplicationBaselineApplyMetadata,
+  AuthoritativeReplicationBaselineApplyLastAppliedMetadata,
   AuthoritativeReplicationBaselineApplySummary,
   AuthoritativeReplicationBaselineApplyTotals
 } from './replicationBaselineSummary';
 
 export interface AuthoritativeClientResyncDiagnostics {
-  lastAppliedBaseline: AuthoritativeReplicationBaselineApplyMetadata | null;
+  lastAppliedBaseline: AuthoritativeReplicationBaselineApplyLastAppliedMetadata | null;
   totals: AuthoritativeReplicationBaselineApplyTotals;
 }
 
@@ -51,11 +51,17 @@ export const accumulateAuthoritativeClientResyncDiagnostics = ({
   baselineSummary
 }: AccumulateAuthoritativeClientResyncDiagnosticsOptions): AuthoritativeClientResyncDiagnostics => {
   const previousDiagnostics = diagnostics ?? createAuthoritativeClientResyncDiagnostics();
+  const {
+    baseline: { tick, entityCount },
+    world: { replacedTiles, replacedWalls }
+  } = baselineSummary;
 
   return {
     lastAppliedBaseline: {
-      tick: baselineSummary.baseline.tick,
-      entityCount: baselineSummary.baseline.entityCount
+      tick,
+      entityCount,
+      replacedTiles,
+      replacedWalls
     },
     totals: accumulateAuthoritativeReplicationBaselineApplyTotals(
       previousDiagnostics.totals,

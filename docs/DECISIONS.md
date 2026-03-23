@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-22: Resync last-applied baseline metadata preserves world replacement counts
+
+- Decision: `src/network/replicationResyncDiagnostics.ts` now stores `replacedTiles` and `replacedWalls` inside `lastAppliedBaseline` beside `tick` and `entityCount`, and detached diagnostics snapshots plus per-client log lines preserve that richer latest-baseline world metadata.
+- Reason: Running resync totals show cumulative world replacement work, but transport diagnostics still need the specific tile and wall counts from the latest accepted baseline boundary.
+- Consequence: Future resync diagnostics, snapshot, or log formatting work should treat `lastAppliedBaseline` as the source of latest baseline world counts instead of inferring them from cumulative totals or dropping them during cloning.
+
 ### 2026-03-22: Replication baseline world replacements report standardized tile and wall counts
 
 - Decision: `applyAuthoritativeReplicatedStateBaseline()` world replacement callbacks now return `{ replacedTiles, replacedWalls }`, and downstream baseline summaries plus resync diagnostics preserve those world counts separately from entity replacement counts.
@@ -1186,7 +1192,7 @@ Record only durable design decisions here. Keep each entry short: date, decision
 
 ### 2026-03-10: Per-client resync diagnostics should accumulate totals separately from the latest applied baseline metadata
 
-- Decision: `src/network/replicationResyncDiagnostics.ts` now keeps running spawned, updated, and removed totals under `totals` while storing only the latest applied baseline tick and entity-count metadata under separate `lastAppliedBaseline`.
+- Decision: `src/network/replicationResyncDiagnostics.ts` now keeps running spawned, updated, and removed totals under `totals` while storing the latest applied baseline metadata under separate `lastAppliedBaseline`.
 - Reason: Transport resync logs need long-lived replacement counters across many baselines, but operators still need the most recent accepted baseline boundary without overloading or resetting those totals.
 - Consequence: Future transport resync or combined replication diagnostics should add new baseline summaries through this accumulator and keep later metadata additions beside `lastAppliedBaseline` rather than embedding per-baseline state into the running totals.
 

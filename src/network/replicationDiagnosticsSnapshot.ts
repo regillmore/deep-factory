@@ -79,7 +79,9 @@ const cloneAuthoritativeClientResyncDiagnostics = (
       ? null
       : {
           tick: diagnostics.lastAppliedBaseline.tick,
-          entityCount: diagnostics.lastAppliedBaseline.entityCount
+          entityCount: diagnostics.lastAppliedBaseline.entityCount,
+          replacedTiles: diagnostics.lastAppliedBaseline.replacedTiles,
+          replacedWalls: diagnostics.lastAppliedBaseline.replacedWalls
         },
   totals: {
     replacedTiles: diagnostics.totals.replacedTiles,

@@ -131,7 +131,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsTextLogger', () => {
       '  SendLastStaged: 15',
       '  SendChunks: dropped=13 | trimmed=14 | forwarded=15',
       '  SendEntities: dropped=16 | trimmed=17 | forwarded=18',
-      '  ResyncLastAppliedBaseline: tick=25 | entityCount=26',
+      '  ResyncLastAppliedBaseline: tick=25 | entityCount=26 | replacedTiles=22 | replacedWalls=23',
       '  ResyncTotals: replacedTiles=22 | replacedWalls=23 | spawned=19 | updated=20 | removed=21'
     ];
     const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
@@ -184,7 +184,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsTextLogger', () => {
       '  SendLastStaged: 17',
       '  SendChunks: dropped=15 | trimmed=16 | forwarded=17',
       '  SendEntities: dropped=18 | trimmed=19 | forwarded=20',
-      '  ResyncLastAppliedBaseline: tick=27 | entityCount=28',
+      '  ResyncLastAppliedBaseline: tick=27 | entityCount=28 | replacedTiles=24 | replacedWalls=25',
       '  ResyncTotals: replacedTiles=24 | replacedWalls=25 | spawned=21 | updated=22 | removed=23'
     ];
     const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([

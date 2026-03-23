@@ -139,7 +139,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLoggerRunnerOrNull', ()
       '  SendLastStaged: 15',
       '  SendChunks: dropped=13 | trimmed=14 | forwarded=15',
       '  SendEntities: dropped=16 | trimmed=17 | forwarded=18',
-      '  ResyncLastAppliedBaseline: tick=25 | entityCount=26',
+      '  ResyncLastAppliedBaseline: tick=25 | entityCount=26 | replacedTiles=22 | replacedWalls=23',
       '  ResyncTotals: replacedTiles=22 | replacedWalls=23 | spawned=19 | updated=20 | removed=21'
     ];
     const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
