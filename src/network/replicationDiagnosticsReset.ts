@@ -49,6 +49,8 @@ export const resetAuthoritativeClientReplicationDiagnosticsSnapshot = (
     lastAppliedBaseline: null,
     totals: {
       ...diagnostics.resync.totals,
+      replacedTiles: 0,
+      replacedWalls: 0,
       spawned: 0,
       updated: 0,
       removed: 0

@@ -1,4 +1,4 @@
-import type { AuthoritativeReplicationBaselineApplyEntityCounts } from './replicationBaselineSummary';
+import type { AuthoritativeReplicationBaselineApplyTotals } from './replicationBaselineSummary';
 import type { AuthoritativeReplicationBatchFilterStatusCounters } from './replicationBatchFilterSummary';
 import type { AuthoritativeClientReplicationDiagnosticsRegistrySnapshot } from './replicationDiagnosticsRegistrySnapshot';
 import type {
@@ -11,7 +11,7 @@ export interface AuthoritativeClientReplicationDiagnosticsAggregate {
   clientCount: number;
   replay: AuthoritativeReplicationDispatchSummary;
   send: AuthoritativeClientSendDiagnosticsTotals;
-  resync: AuthoritativeReplicationBaselineApplyEntityCounts;
+  resync: AuthoritativeReplicationBaselineApplyTotals;
 }
 
 const createAuthoritativeReplicationDispatchStatusCounters =
@@ -29,8 +29,10 @@ const createAuthoritativeReplicationBatchFilterStatusCounters =
     forwarded: 0
   });
 
-const createAuthoritativeReplicationBaselineApplyEntityCounts =
-  (): AuthoritativeReplicationBaselineApplyEntityCounts => ({
+const createAuthoritativeReplicationBaselineApplyTotals =
+  (): AuthoritativeReplicationBaselineApplyTotals => ({
+    replacedTiles: 0,
+    replacedWalls: 0,
     spawned: 0,
     updated: 0,
     removed: 0
@@ -49,7 +51,7 @@ export const createAuthoritativeClientReplicationDiagnosticsAggregate = (
       chunks: createAuthoritativeReplicationBatchFilterStatusCounters(),
       entities: createAuthoritativeReplicationBatchFilterStatusCounters()
     },
-    resync: createAuthoritativeReplicationBaselineApplyEntityCounts()
+    resync: createAuthoritativeReplicationBaselineApplyTotals()
   };
 
   for (const { snapshot } of snapshotEntries) {
@@ -71,6 +73,8 @@ export const createAuthoritativeClientReplicationDiagnosticsAggregate = (
     aggregate.send.entities.trimmed += snapshot.send.totals.entities.trimmed;
     aggregate.send.entities.forwarded += snapshot.send.totals.entities.forwarded;
 
+    aggregate.resync.replacedTiles += snapshot.resync.totals.replacedTiles;
+    aggregate.resync.replacedWalls += snapshot.resync.totals.replacedWalls;
     aggregate.resync.spawned += snapshot.resync.totals.spawned;
     aggregate.resync.updated += snapshot.resync.totals.updated;
     aggregate.resync.removed += snapshot.resync.totals.removed;

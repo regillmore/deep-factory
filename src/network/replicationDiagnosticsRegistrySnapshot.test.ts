@@ -55,6 +55,10 @@ const createPopulatedSnapshot = (seed: number) =>
           tick: seed + 20,
           entityCount: seed + 21
         },
+        world: {
+          replacedTiles: seed + 17,
+          replacedWalls: seed + 18
+        },
         entities: {
           spawned: seed + 14,
           updated: seed + 15,

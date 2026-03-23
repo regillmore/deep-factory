@@ -54,6 +54,10 @@ const createPopulatedSnapshot = () =>
           tick: 18,
           entityCount: 9
         },
+        world: {
+          replacedTiles: 6,
+          replacedWalls: 5
+        },
         entities: {
           spawned: 4,
           updated: 3,

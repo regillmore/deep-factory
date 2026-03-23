@@ -60,6 +60,10 @@ const createPopulatedSnapshot = (seed: number) =>
           tick: seed + 20,
           entityCount: seed + 21
         },
+        world: {
+          replacedTiles: seed + 17,
+          replacedWalls: seed + 18
+        },
         entities: {
           spawned: seed + 14,
           updated: seed + 15,
@@ -77,7 +81,7 @@ const createExpectedText = (seed: number): string =>
     `AggregateReplayEntities: dropped=${seed + 4} | trimmed=${seed + 5} | applied=${seed + 6} | skipped=${seed + 7}`,
     `AggregateSendChunks: dropped=${seed + 8} | trimmed=${seed + 9} | forwarded=${seed + 10}`,
     `AggregateSendEntities: dropped=${seed + 11} | trimmed=${seed + 12} | forwarded=${seed + 13}`,
-    `AggregateResync: spawned=${seed + 14} | updated=${seed + 15} | removed=${seed + 16}`,
+    `AggregateResync: replacedTiles=${seed + 17} | replacedWalls=${seed + 18} | spawned=${seed + 14} | updated=${seed + 15} | removed=${seed + 16}`,
     'Clients:',
     'Client: client-alpha',
     `  ReplayLastProcessed: ${seed}`,
@@ -87,7 +91,7 @@ const createExpectedText = (seed: number): string =>
     `  SendChunks: dropped=${seed + 8} | trimmed=${seed + 9} | forwarded=${seed + 10}`,
     `  SendEntities: dropped=${seed + 11} | trimmed=${seed + 12} | forwarded=${seed + 13}`,
     `  ResyncLastAppliedBaseline: tick=${seed + 20} | entityCount=${seed + 21}`,
-    `  ResyncTotals: spawned=${seed + 14} | updated=${seed + 15} | removed=${seed + 16}`
+    `  ResyncTotals: replacedTiles=${seed + 17} | replacedWalls=${seed + 18} | spawned=${seed + 14} | updated=${seed + 15} | removed=${seed + 16}`
   ].join('\n');
 
 describe('AuthoritativeClientReplicationDiagnosticsLoggerStateHolder', () => {

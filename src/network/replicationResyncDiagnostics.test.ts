@@ -11,6 +11,8 @@ describe('createAuthoritativeClientResyncDiagnostics', () => {
     expect(createAuthoritativeClientResyncDiagnostics()).toEqual({
       lastAppliedBaseline: null,
       totals: {
+        replacedTiles: 0,
+        replacedWalls: 0,
         spawned: 0,
         updated: 0,
         removed: 0
@@ -27,6 +29,10 @@ describe('accumulateAuthoritativeClientResyncDiagnostics', () => {
           tick: 12,
           entityCount: 4
         },
+        world: {
+          replacedTiles: 6,
+          replacedWalls: 5
+        },
         entities: {
           spawned: 2,
           updated: 1,
@@ -41,6 +47,8 @@ describe('accumulateAuthoritativeClientResyncDiagnostics', () => {
         entityCount: 4
       },
       totals: {
+        replacedTiles: 6,
+        replacedWalls: 5,
         spawned: 2,
         updated: 1,
         removed: 3
@@ -54,6 +62,10 @@ describe('accumulateAuthoritativeClientResyncDiagnostics', () => {
         baseline: {
           tick: 5,
           entityCount: 3
+        },
+        world: {
+          replacedTiles: 8,
+          replacedWalls: 4
         },
         entities: {
           spawned: 1,
@@ -70,6 +82,10 @@ describe('accumulateAuthoritativeClientResyncDiagnostics', () => {
           tick: 8,
           entityCount: 1
         },
+        world: {
+          replacedTiles: 3,
+          replacedWalls: 7
+        },
         entities: {
           spawned: 0,
           updated: 1,
@@ -84,6 +100,8 @@ describe('accumulateAuthoritativeClientResyncDiagnostics', () => {
         entityCount: 3
       },
       totals: {
+        replacedTiles: 8,
+        replacedWalls: 4,
         spawned: 1,
         updated: 2,
         removed: 0
@@ -95,6 +113,8 @@ describe('accumulateAuthoritativeClientResyncDiagnostics', () => {
         entityCount: 1
       },
       totals: {
+        replacedTiles: 11,
+        replacedWalls: 11,
         spawned: 1,
         updated: 3,
         removed: 4

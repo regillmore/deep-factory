@@ -5,10 +5,11 @@ import type { AppliedAuthoritativeReplicatedStateBaselineResult } from './replic
 import { summarizeAppliedAuthoritativeReplicatedStateBaseline } from './replicationBaselineSummary';
 
 describe('summarizeAppliedAuthoritativeReplicatedStateBaseline', () => {
-  it('reduces baseline entity replacement ids into counts while preserving baseline tick metadata', () => {
-    const result: AppliedAuthoritativeReplicatedStateBaselineResult<{ replacedChunkCount: number }> = {
-      worldReplacementResult: {
-        replacedChunkCount: 2
+  it('reduces baseline world and entity replacement results into counts while preserving baseline tick metadata', () => {
+    const result: AppliedAuthoritativeReplicatedStateBaselineResult = {
+      worldReplacementCounts: {
+        replacedTiles: 7,
+        replacedWalls: 3
       },
       entityReplacementSummary: {
         kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
@@ -25,6 +26,10 @@ describe('summarizeAppliedAuthoritativeReplicatedStateBaseline', () => {
         tick: 14,
         entityCount: 3
       },
+      world: {
+        replacedTiles: 7,
+        replacedWalls: 3
+      },
       entities: {
         spawned: 2,
         updated: 1,
@@ -34,8 +39,11 @@ describe('summarizeAppliedAuthoritativeReplicatedStateBaseline', () => {
   });
 
   it('returns zero entity counts for an empty applied baseline snapshot', () => {
-    const result: AppliedAuthoritativeReplicatedStateBaselineResult<null> = {
-      worldReplacementResult: null,
+    const result: AppliedAuthoritativeReplicatedStateBaselineResult = {
+      worldReplacementCounts: {
+        replacedTiles: 0,
+        replacedWalls: 0
+      },
       entityReplacementSummary: {
         kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
         tick: 4,
@@ -50,6 +58,10 @@ describe('summarizeAppliedAuthoritativeReplicatedStateBaseline', () => {
       baseline: {
         tick: 4,
         entityCount: 0
+      },
+      world: {
+        replacedTiles: 0,
+        replacedWalls: 0
       },
       entities: {
         spawned: 0,

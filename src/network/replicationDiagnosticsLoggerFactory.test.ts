@@ -62,6 +62,10 @@ const createPopulatedSnapshot = (seed: number) =>
           tick: seed + 20,
           entityCount: seed + 21
         },
+        world: {
+          replacedTiles: seed + 17,
+          replacedWalls: seed + 18
+        },
         entities: {
           spawned: seed + 14,
           updated: seed + 15,
@@ -126,7 +130,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLoggerRunnerOrNull', ()
       'AggregateReplayEntities: dropped=9 | trimmed=10 | applied=11 | skipped=12',
       'AggregateSendChunks: dropped=13 | trimmed=14 | forwarded=15',
       'AggregateSendEntities: dropped=16 | trimmed=17 | forwarded=18',
-      'AggregateResync: spawned=19 | updated=20 | removed=21',
+      'AggregateResync: replacedTiles=22 | replacedWalls=23 | spawned=19 | updated=20 | removed=21',
       'Clients:',
       'Client: client-alpha',
       '  ReplayLastProcessed: 5',
@@ -136,7 +140,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLoggerRunnerOrNull', ()
       '  SendChunks: dropped=13 | trimmed=14 | forwarded=15',
       '  SendEntities: dropped=16 | trimmed=17 | forwarded=18',
       '  ResyncLastAppliedBaseline: tick=25 | entityCount=26',
-      '  ResyncTotals: spawned=19 | updated=20 | removed=21'
+      '  ResyncTotals: replacedTiles=22 | replacedWalls=23 | spawned=19 | updated=20 | removed=21'
     ];
     const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
       {

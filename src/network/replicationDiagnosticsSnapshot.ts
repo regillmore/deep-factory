@@ -82,6 +82,8 @@ const cloneAuthoritativeClientResyncDiagnostics = (
           entityCount: diagnostics.lastAppliedBaseline.entityCount
         },
   totals: {
+    replacedTiles: diagnostics.totals.replacedTiles,
+    replacedWalls: diagnostics.totals.replacedWalls,
     spawned: diagnostics.totals.spawned,
     updated: diagnostics.totals.updated,
     removed: diagnostics.totals.removed

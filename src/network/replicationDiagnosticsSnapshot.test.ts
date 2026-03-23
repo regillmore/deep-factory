@@ -49,6 +49,8 @@ describe('createAuthoritativeClientReplicationDiagnosticsSnapshot', () => {
       resync: {
         lastAppliedBaseline: null,
         totals: {
+          replacedTiles: 0,
+          replacedWalls: 0,
           spawned: 0,
           updated: 0,
           removed: 0
@@ -99,6 +101,10 @@ describe('createAuthoritativeClientReplicationDiagnosticsSnapshot', () => {
         baseline: {
           tick: 9,
           entityCount: 11
+        },
+        world: {
+          replacedTiles: 6,
+          replacedWalls: 7
         },
         entities: {
           spawned: 3,
@@ -174,6 +180,8 @@ describe('createAuthoritativeClientReplicationDiagnosticsSnapshot', () => {
       resync: {
         lastAppliedBaseline: null,
         totals: {
+          replacedTiles: 0,
+          replacedWalls: 0,
           spawned: 0,
           updated: 0,
           removed: 0

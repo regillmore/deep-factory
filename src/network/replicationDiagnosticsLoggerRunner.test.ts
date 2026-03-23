@@ -65,6 +65,10 @@ const createPopulatedSnapshot = (seed: number) =>
           tick: seed + 20,
           entityCount: seed + 21
         },
+        world: {
+          replacedTiles: seed + 17,
+          replacedWalls: seed + 18
+        },
         entities: {
           spawned: seed + 14,
           updated: seed + 15,
@@ -140,7 +144,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLoggerRunner', () => {
       'AggregateReplayEntities: dropped=9 | trimmed=10 | applied=11 | skipped=12',
       'AggregateSendChunks: dropped=13 | trimmed=14 | forwarded=15',
       'AggregateSendEntities: dropped=16 | trimmed=17 | forwarded=18',
-      'AggregateResync: spawned=19 | updated=20 | removed=21',
+      'AggregateResync: replacedTiles=22 | replacedWalls=23 | spawned=19 | updated=20 | removed=21',
       'Clients:',
       'Client: client-alpha',
       '  ReplayLastProcessed: 5',
@@ -150,7 +154,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLoggerRunner', () => {
       '  SendChunks: dropped=13 | trimmed=14 | forwarded=15',
       '  SendEntities: dropped=16 | trimmed=17 | forwarded=18',
       '  ResyncLastAppliedBaseline: tick=25 | entityCount=26',
-      '  ResyncTotals: spawned=19 | updated=20 | removed=21'
+      '  ResyncTotals: replacedTiles=22 | replacedWalls=23 | spawned=19 | updated=20 | removed=21'
     ];
     const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
       {
@@ -205,7 +209,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLoggerRunner', () => {
       'AggregateReplayEntities: dropped=8 | trimmed=9 | applied=10 | skipped=11',
       'AggregateSendChunks: dropped=12 | trimmed=13 | forwarded=14',
       'AggregateSendEntities: dropped=15 | trimmed=16 | forwarded=17',
-      'AggregateResync: spawned=18 | updated=19 | removed=20',
+      'AggregateResync: replacedTiles=21 | replacedWalls=22 | spawned=18 | updated=19 | removed=20',
       'Clients:',
       'Client: client-alpha',
       '  ReplayLastProcessed: 4',
@@ -215,7 +219,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLoggerRunner', () => {
       '  SendChunks: dropped=12 | trimmed=13 | forwarded=14',
       '  SendEntities: dropped=15 | trimmed=16 | forwarded=17',
       '  ResyncLastAppliedBaseline: tick=24 | entityCount=25',
-      '  ResyncTotals: spawned=18 | updated=19 | removed=20'
+      '  ResyncTotals: replacedTiles=21 | replacedWalls=22 | spawned=18 | updated=19 | removed=20'
     ];
     const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
       {
@@ -264,7 +268,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLoggerRunner', () => {
       'AggregateReplayEntities: dropped=11 | trimmed=12 | applied=13 | skipped=14',
       'AggregateSendChunks: dropped=15 | trimmed=16 | forwarded=17',
       'AggregateSendEntities: dropped=18 | trimmed=19 | forwarded=20',
-      'AggregateResync: spawned=21 | updated=22 | removed=23',
+      'AggregateResync: replacedTiles=24 | replacedWalls=25 | spawned=21 | updated=22 | removed=23',
       'Clients:',
       'Client: client-alpha',
       '  ReplayLastProcessed: 7',
@@ -274,7 +278,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsLoggerRunner', () => {
       '  SendChunks: dropped=15 | trimmed=16 | forwarded=17',
       '  SendEntities: dropped=18 | trimmed=19 | forwarded=20',
       '  ResyncLastAppliedBaseline: tick=27 | entityCount=28',
-      '  ResyncTotals: spawned=21 | updated=22 | removed=23'
+      '  ResyncTotals: replacedTiles=24 | replacedWalls=25 | spawned=21 | updated=22 | removed=23'
     ];
     const expectedPayload = createAuthoritativeClientReplicationDiagnosticsLogPayload([
       {

@@ -2,7 +2,7 @@ import {
   createAuthoritativeClientReplicationDiagnosticsAggregate,
   type AuthoritativeClientReplicationDiagnosticsAggregate
 } from './replicationDiagnosticsAggregate';
-import type { AuthoritativeReplicationBaselineApplyEntityCounts } from './replicationBaselineSummary';
+import type { AuthoritativeReplicationBaselineApplyTotals } from './replicationBaselineSummary';
 import type { AuthoritativeReplicationBatchFilterStatusCounters } from './replicationBatchFilterSummary';
 import {
   createAuthoritativeClientReplicationDiagnosticsLogPayload,
@@ -27,11 +27,13 @@ export const formatAuthoritativeClientReplicationDiagnosticsSendCounters = ({
   `dropped=${dropped} | trimmed=${trimmed} | forwarded=${forwarded}`;
 
 export const formatAuthoritativeClientReplicationDiagnosticsResyncCounters = ({
+  replacedTiles,
+  replacedWalls,
   spawned,
   updated,
   removed
-}: AuthoritativeReplicationBaselineApplyEntityCounts): string =>
-  `spawned=${spawned} | updated=${updated} | removed=${removed}`;
+}: AuthoritativeReplicationBaselineApplyTotals): string =>
+  `replacedTiles=${replacedTiles} | replacedWalls=${replacedWalls} | spawned=${spawned} | updated=${updated} | removed=${removed}`;
 
 export const formatAuthoritativeClientReplicationDiagnosticsLogAggregateLines = (
   aggregate: AuthoritativeClientReplicationDiagnosticsAggregate = createAuthoritativeClientReplicationDiagnosticsAggregate()

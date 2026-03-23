@@ -50,6 +50,8 @@ describe('resetAuthoritativeClientReplicationDiagnosticsSnapshot', () => {
       resync: {
         lastAppliedBaseline: null,
         totals: {
+          replacedTiles: 0,
+          replacedWalls: 0,
           spawned: 0,
           updated: 0,
           removed: 0
@@ -99,6 +101,10 @@ describe('resetAuthoritativeClientReplicationDiagnosticsSnapshot', () => {
           baseline: {
             tick: 18,
             entityCount: 9
+          },
+          world: {
+            replacedTiles: 6,
+            replacedWalls: 5
           },
           entities: {
             spawned: 4,
@@ -154,6 +160,8 @@ describe('resetAuthoritativeClientReplicationDiagnosticsSnapshot', () => {
           entityCount: 9
         },
         totals: {
+          replacedTiles: 6,
+          replacedWalls: 5,
           spawned: 4,
           updated: 3,
           removed: 2
@@ -196,6 +204,8 @@ describe('resetAuthoritativeClientReplicationDiagnosticsSnapshot', () => {
       resync: {
         lastAppliedBaseline: null,
         totals: {
+          replacedTiles: 0,
+          replacedWalls: 0,
           spawned: 0,
           updated: 0,
           removed: 0

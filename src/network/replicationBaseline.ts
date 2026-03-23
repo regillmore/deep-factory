@@ -5,32 +5,39 @@ import type {
   EntitySnapshotReplayResult
 } from './stateReplay';
 
-export type AuthoritativeWorldBaselineReplacement<T> = (world: ChunkWorldStateReplayTarget) => T;
+export interface AuthoritativeReplicationBaselineWorldReplacementCounts {
+  replacedTiles: number;
+  replacedWalls: number;
+}
 
-export interface ApplyAuthoritativeReplicatedStateBaselineOptions<T> {
+export type AuthoritativeWorldBaselineReplacement = (
+  world: ChunkWorldStateReplayTarget
+) => AuthoritativeReplicationBaselineWorldReplacementCounts;
+
+export interface ApplyAuthoritativeReplicatedStateBaselineOptions {
   replayer: AuthoritativeReplicatedNetworkStateReplayer;
-  replaceWorld: AuthoritativeWorldBaselineReplacement<T>;
+  replaceWorld: AuthoritativeWorldBaselineReplacement;
   entitySnapshotBaseline: EntitySnapshotMessage;
 }
 
-export interface AppliedAuthoritativeReplicatedStateBaselineResult<T> {
-  worldReplacementResult: T;
+export interface AppliedAuthoritativeReplicatedStateBaselineResult {
+  worldReplacementCounts: AuthoritativeReplicationBaselineWorldReplacementCounts;
   entityReplacementSummary: EntitySnapshotReplayResult;
 }
 
-export const applyAuthoritativeReplicatedStateBaseline = <T>({
+export const applyAuthoritativeReplicatedStateBaseline = ({
   replayer,
   replaceWorld,
   entitySnapshotBaseline
-}: ApplyAuthoritativeReplicatedStateBaselineOptions<T>): AppliedAuthoritativeReplicatedStateBaselineResult<T> =>
+}: ApplyAuthoritativeReplicatedStateBaselineOptions): AppliedAuthoritativeReplicatedStateBaselineResult =>
   replayer.replaceAuthoritativeBaseline((target) => {
-    const worldReplacementResult = replaceWorld(target.world);
+    const worldReplacementCounts = replaceWorld(target.world);
     const entityReplacementSummary = target.entities.applyEntitySnapshotMessage(
       entitySnapshotBaseline
     );
 
     return {
-      worldReplacementResult,
+      worldReplacementCounts,
       entityReplacementSummary
     };
   });

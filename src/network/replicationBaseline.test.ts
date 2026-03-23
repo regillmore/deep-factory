@@ -115,9 +115,8 @@ describe('applyAuthoritativeReplicatedStateBaseline', () => {
           expect(worldTarget.setWall(0, 0, 4)).toBe(true);
 
           return {
-            baselineTileId: world.getTile(0, 0),
-            baselineLiquidLevel: world.getLiquidLevel(0, 0),
-            baselineWallId: world.getWall(0, 0)
+            replacedTiles: 1,
+            replacedWalls: 1
           };
         },
         entitySnapshotBaseline: createEntitySnapshotMessage({
@@ -134,10 +133,9 @@ describe('applyAuthoritativeReplicatedStateBaseline', () => {
         })
       })
     ).toEqual({
-      worldReplacementResult: {
-        baselineTileId: 4,
-        baselineLiquidLevel: 0,
-        baselineWallId: 4
+      worldReplacementCounts: {
+        replacedTiles: 1,
+        replacedWalls: 1
       },
       entityReplacementSummary: {
         kind: ENTITY_SNAPSHOT_MESSAGE_KIND,

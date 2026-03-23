@@ -1,12 +1,13 @@
 import type {
   AuthoritativeReplicationBaselineApplyEntityCounts,
   AuthoritativeReplicationBaselineApplyMetadata,
-  AuthoritativeReplicationBaselineApplySummary
+  AuthoritativeReplicationBaselineApplySummary,
+  AuthoritativeReplicationBaselineApplyTotals
 } from './replicationBaselineSummary';
 
 export interface AuthoritativeClientResyncDiagnostics {
   lastAppliedBaseline: AuthoritativeReplicationBaselineApplyMetadata | null;
-  totals: AuthoritativeReplicationBaselineApplyEntityCounts;
+  totals: AuthoritativeReplicationBaselineApplyTotals;
 }
 
 export interface AccumulateAuthoritativeClientResyncDiagnosticsOptions {
@@ -21,19 +22,28 @@ const createAuthoritativeReplicationBaselineApplyEntityCounts =
     removed: 0
   });
 
-const accumulateAuthoritativeReplicationBaselineApplyEntityCounts = (
-  totals: AuthoritativeReplicationBaselineApplyEntityCounts,
-  summary: AuthoritativeReplicationBaselineApplyEntityCounts
-): AuthoritativeReplicationBaselineApplyEntityCounts => ({
-  spawned: totals.spawned + summary.spawned,
-  updated: totals.updated + summary.updated,
-  removed: totals.removed + summary.removed
+const createAuthoritativeReplicationBaselineApplyTotals =
+  (): AuthoritativeReplicationBaselineApplyTotals => ({
+    replacedTiles: 0,
+    replacedWalls: 0,
+    ...createAuthoritativeReplicationBaselineApplyEntityCounts()
+  });
+
+const accumulateAuthoritativeReplicationBaselineApplyTotals = (
+  totals: AuthoritativeReplicationBaselineApplyTotals,
+  summary: AuthoritativeReplicationBaselineApplySummary
+): AuthoritativeReplicationBaselineApplyTotals => ({
+  replacedTiles: totals.replacedTiles + summary.world.replacedTiles,
+  replacedWalls: totals.replacedWalls + summary.world.replacedWalls,
+  spawned: totals.spawned + summary.entities.spawned,
+  updated: totals.updated + summary.entities.updated,
+  removed: totals.removed + summary.entities.removed
 });
 
 export const createAuthoritativeClientResyncDiagnostics =
   (): AuthoritativeClientResyncDiagnostics => ({
     lastAppliedBaseline: null,
-    totals: createAuthoritativeReplicationBaselineApplyEntityCounts()
+    totals: createAuthoritativeReplicationBaselineApplyTotals()
   });
 
 export const accumulateAuthoritativeClientResyncDiagnostics = ({
@@ -47,9 +57,9 @@ export const accumulateAuthoritativeClientResyncDiagnostics = ({
       tick: baselineSummary.baseline.tick,
       entityCount: baselineSummary.baseline.entityCount
     },
-    totals: accumulateAuthoritativeReplicationBaselineApplyEntityCounts(
+    totals: accumulateAuthoritativeReplicationBaselineApplyTotals(
       previousDiagnostics.totals,
-      baselineSummary.entities
+      baselineSummary
     )
   };
 };

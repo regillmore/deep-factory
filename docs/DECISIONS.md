@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-22: Replication baseline world replacements report standardized tile and wall counts
+
+- Decision: `applyAuthoritativeReplicatedStateBaseline()` world replacement callbacks now return `{ replacedTiles, replacedWalls }`, and downstream baseline summaries plus resync diagnostics preserve those world counts separately from entity replacement counts.
+- Reason: Transport-facing resync summaries and diagnostics need a stable world-replacement contract instead of ad hoc callback results or entity-only telemetry.
+- Consequence: Future baseline replacement callers should return standardized tile and wall counts, and later resync logging or transport work can assume those world totals exist without inspecting caller-specific result shapes.
+
 ### 2026-03-22: Authoritative chunk replay allows one tile diff and one wall diff per chunk tick
 
 - Decision: `AuthoritativeReplicatedNetworkStateReplayer` now keeps one last-applied tick per chunk plus a same-tick layer bitmask, so one `chunk-tile-diff` and one `chunk-wall-diff` may each apply once for the same chunk and tick before later duplicate layer messages at that tick are rejected.

@@ -54,6 +54,10 @@ const createPopulatedSnapshot = (seed: number) =>
           tick: seed + 20,
           entityCount: seed + 21
         },
+        world: {
+          replacedTiles: seed + 17,
+          replacedWalls: seed + 18
+        },
         entities: {
           spawned: seed + 14,
           updated: seed + 15,
@@ -94,6 +98,8 @@ describe('createAuthoritativeClientReplicationDiagnosticsAggregate', () => {
         }
       },
       resync: {
+        replacedTiles: 0,
+        replacedWalls: 0,
         spawned: 0,
         updated: 0,
         removed: 0
@@ -146,6 +152,8 @@ describe('createAuthoritativeClientReplicationDiagnosticsAggregate', () => {
         }
       },
       resync: {
+        replacedTiles: 74,
+        replacedWalls: 76,
         spawned: 68,
         updated: 70,
         removed: 72
@@ -167,7 +175,7 @@ describe('createAuthoritativeClientReplicationDiagnosticsAggregate', () => {
 
     orderedSnapshotEntries[0]!.snapshot.replay.totals.chunks.applied = 0;
     orderedSnapshotEntries[0]!.snapshot.send.totals.entities.forwarded = 0;
-    orderedSnapshotEntries[0]!.snapshot.resync.totals.spawned = 0;
+    orderedSnapshotEntries[0]!.snapshot.resync.totals.replacedTiles = 0;
 
     expect(aggregate).toEqual({
       clientCount: 1,
@@ -198,6 +206,8 @@ describe('createAuthoritativeClientReplicationDiagnosticsAggregate', () => {
         }
       },
       resync: {
+        replacedTiles: 22,
+        replacedWalls: 23,
         spawned: 19,
         updated: 20,
         removed: 21
