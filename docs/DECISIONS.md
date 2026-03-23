@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-22: Standalone-player mana lives in save-owned player state
+
+- Decision: `PlayerState` now carries `maxMana`, `mana`, `manaRegenDelaySecondsRemaining`, and `manaRegenTickSecondsRemaining`, while `src/world/playerMana.ts` owns spend plus regen helpers and starter-wand casts reset that regen delay instead of tracking a separate session-only magic resource.
+- Reason: Mana upgrades and wand recovery need to round-trip through save/load with the rest of the standalone player, and the wand's delay-then-refill cadence is easier to keep deterministic when it extends the existing player fixed-step state.
+- Consequence: Future mana-spending items or max-mana upgrades should mutate the shared save-owned player state through the common mana helpers, and later UI or networking work can treat mana as part of the authoritative player snapshot rather than a parallel runtime-only subsystem.
+
 ### 2026-03-22: Projectile hits apply after the entity fixed-update pass
 
 - Decision: Starter-wand firebolt entities now queue terrain/slime hit events during their own `EntityRegistry` fixed updates, and `src/main.ts` flushes hostile-slime damage, knockback, defeat, and drop consequences only after `entityRegistry.fixedUpdateAll(...)` finishes for the tick.

@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import { createHostileSlimeState, DEFAULT_HOSTILE_SLIME_HEALTH } from './hostileSlimeState';
-import { createPlayerState, getPlayerCameraFocusPoint } from './playerState';
+import {
+  createPlayerState,
+  DEFAULT_PLAYER_MANA_REGEN_DELAY_SECONDS,
+  DEFAULT_PLAYER_MANA_REGEN_TICK_INTERVAL_SECONDS,
+  getPlayerCameraFocusPoint
+} from './playerState';
 import {
   applyStarterWandFireboltHitToHostileSlime,
   createStarterWandCooldownState,
   DEFAULT_STARTER_WAND_CAST_COOLDOWN_SECONDS,
+  DEFAULT_STARTER_WAND_MANA_COST,
   DEFAULT_STARTER_WAND_FIREBOLT_DAMAGE,
   DEFAULT_STARTER_WAND_FIREBOLT_KNOCKBACK_SPEED,
   DEFAULT_STARTER_WAND_FIREBOLT_RADIUS,
@@ -45,6 +51,13 @@ describe('starterWand', () => {
     );
 
     expect(useResult).toEqual({
+      nextPlayerState: createPlayerState({
+        position: { x: 8, y: 28 },
+        facing: 'right',
+        mana: 15,
+        manaRegenDelaySecondsRemaining: DEFAULT_PLAYER_MANA_REGEN_DELAY_SECONDS,
+        manaRegenTickSecondsRemaining: DEFAULT_PLAYER_MANA_REGEN_TICK_INTERVAL_SECONDS
+      }),
       nextCooldownState: createStarterWandCooldownState(
         DEFAULT_STARTER_WAND_CAST_COOLDOWN_SECONDS
       ),
@@ -75,7 +88,7 @@ describe('starterWand', () => {
       playerFocusPoint
     );
     const blockedUseResult = tryUseStarterWand(
-      playerState,
+      initialUseResult.nextPlayerState,
       initialUseResult.nextCooldownState,
       { x: playerFocusPoint.x - 20, y: playerFocusPoint.y }
     );
@@ -84,7 +97,7 @@ describe('starterWand', () => {
       0.2
     );
     const useAfterCooldown = tryUseStarterWand(
-      playerState,
+      initialUseResult.nextPlayerState,
       cooledDownState,
       playerFocusPoint
     );
@@ -95,6 +108,7 @@ describe('starterWand', () => {
     );
     expect(initialUseResult.fireboltState?.velocity.y).toBeCloseTo(0, 6);
     expect(blockedUseResult).toEqual({
+      nextPlayerState: initialUseResult.nextPlayerState,
       nextCooldownState: initialUseResult.nextCooldownState,
       fireboltState: null,
       castStarted: false,
@@ -102,6 +116,28 @@ describe('starterWand', () => {
     });
     expect(cooledDownState).toEqual(createStarterWandCooldownState());
     expect(useAfterCooldown.castStarted).toBe(true);
+  });
+
+  it('blocks casts that do not have enough mana without starting cooldown or mutating the player', () => {
+    const playerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right',
+      mana: DEFAULT_STARTER_WAND_MANA_COST - 1
+    });
+
+    expect(
+      tryUseStarterWand(
+        playerState,
+        createStarterWandCooldownState(),
+        { x: 40, y: 20 }
+      )
+    ).toEqual({
+      nextPlayerState: playerState,
+      nextCooldownState: createStarterWandCooldownState(),
+      fireboltState: null,
+      castStarted: false,
+      blockedReason: 'insufficient-mana'
+    });
   });
 
   it('despawns firebolts on the first solid terrain tile they reach', () => {

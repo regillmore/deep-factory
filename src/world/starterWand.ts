@@ -7,11 +7,17 @@ import {
   type HostileSlimeFacing,
   type HostileSlimeState
 } from './hostileSlimeState';
-import { getPlayerCameraFocusPoint, type PlayerState } from './playerState';
+import { spendPlayerMana } from './playerMana';
+import {
+  clonePlayerState,
+  getPlayerCameraFocusPoint,
+  type PlayerState
+} from './playerState';
 import { isTileSolid, TILE_METADATA, type TileMetadataRegistry } from './tileMetadata';
 
 export const STARTER_WAND_ITEM_ID = 'wand';
 export const DEFAULT_STARTER_WAND_CAST_COOLDOWN_SECONDS = 0.35;
+export const DEFAULT_STARTER_WAND_MANA_COST = 5;
 export const DEFAULT_STARTER_WAND_FIREBOLT_SPEED = 240;
 export const DEFAULT_STARTER_WAND_FIREBOLT_RADIUS = 4;
 export const DEFAULT_STARTER_WAND_FIREBOLT_LIFETIME_SECONDS = 1.2;
@@ -46,16 +52,18 @@ export interface StarterWandHostileSlimeTarget {
 
 export interface TryUseStarterWandOptions {
   cooldownSeconds?: number;
+  manaCost?: number;
   fireboltSpeed?: number;
   fireboltRadius?: number;
   fireboltLifetimeSeconds?: number;
 }
 
 export interface TryUseStarterWandResult {
+  nextPlayerState: PlayerState;
   nextCooldownState: StarterWandCooldownState;
   fireboltState: StarterWandFireboltState | null;
   castStarted: boolean;
-  blockedReason: 'cooldown' | 'dead' | null;
+  blockedReason: 'cooldown' | 'dead' | 'insufficient-mana' | null;
 }
 
 export interface StarterWandFireboltTerrainHitEvent {
@@ -445,6 +453,10 @@ export const tryUseStarterWand = (
     options.cooldownSeconds ?? DEFAULT_STARTER_WAND_CAST_COOLDOWN_SECONDS,
     'options.cooldownSeconds'
   );
+  const manaCost = expectPositiveFiniteNumber(
+    options.manaCost ?? DEFAULT_STARTER_WAND_MANA_COST,
+    'options.manaCost'
+  );
   const fireboltSpeed = expectPositiveFiniteNumber(
     options.fireboltSpeed ?? DEFAULT_STARTER_WAND_FIREBOLT_SPEED,
     'options.fireboltSpeed'
@@ -458,9 +470,11 @@ export const tryUseStarterWand = (
     'options.fireboltLifetimeSeconds'
   );
   const nextCooldownState = cloneStarterWandCooldownState(cooldownState);
+  const nextPlayerState = clonePlayerState(playerState);
 
   if (playerState.health <= 0) {
     return {
+      nextPlayerState,
       nextCooldownState,
       fireboltState: null,
       castStarted: false,
@@ -470,6 +484,7 @@ export const tryUseStarterWand = (
 
   if (cooldownState.secondsRemaining > 0) {
     return {
+      nextPlayerState,
       nextCooldownState,
       fireboltState: null,
       castStarted: false,
@@ -477,11 +492,25 @@ export const tryUseStarterWand = (
     };
   }
 
+  const manaSpendResult = spendPlayerMana(playerState, {
+    manaCost
+  });
+  if (!manaSpendResult.spent) {
+    return {
+      nextPlayerState: manaSpendResult.nextPlayerState,
+      nextCooldownState,
+      fireboltState: null,
+      castStarted: false,
+      blockedReason: manaSpendResult.blockedReason
+    };
+  }
+
   nextCooldownState.secondsRemaining = cooldownSeconds;
   return {
+    nextPlayerState: manaSpendResult.nextPlayerState,
     nextCooldownState,
     fireboltState: createStarterWandFireboltStateFromCast(
-      playerState,
+      manaSpendResult.nextPlayerState,
       targetWorldPoint,
       fireboltSpeed,
       fireboltRadius,

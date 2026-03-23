@@ -2,8 +2,10 @@ import type { CameraFollowOffset } from './core/cameraFollow';
 import {
   clonePlayerState,
   DEFAULT_PLAYER_MAX_HEALTH,
+  DEFAULT_PLAYER_MAX_MANA,
   DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
   DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS,
+  DEFAULT_PLAYER_MANA_REGEN_TICK_INTERVAL_SECONDS,
   DEFAULT_PLAYER_MAX_BREATH_SECONDS,
   type PlayerState
 } from './world/playerState';
@@ -166,6 +168,14 @@ const normalizePlayerState = (value: unknown, label: string): PlayerState => {
   if (health > maxHealth) {
     throw new Error(`${label}.health must be less than or equal to ${label}.maxHealth`);
   }
+  const maxMana = expectPositiveFiniteNumber(
+    value.maxMana ?? DEFAULT_PLAYER_MAX_MANA,
+    `${label}.maxMana`
+  );
+  const mana = expectNonNegativeFiniteNumber(value.mana ?? maxMana, `${label}.mana`);
+  if (mana > maxMana) {
+    throw new Error(`${label}.mana must be less than or equal to ${label}.maxMana`);
+  }
 
   return clonePlayerState({
     position: {
@@ -184,6 +194,16 @@ const normalizePlayerState = (value: unknown, label: string): PlayerState => {
     facing,
     maxHealth,
     health,
+    maxMana,
+    mana,
+    manaRegenDelaySecondsRemaining: expectNonNegativeFiniteNumber(
+      value.manaRegenDelaySecondsRemaining ?? 0,
+      `${label}.manaRegenDelaySecondsRemaining`
+    ),
+    manaRegenTickSecondsRemaining: expectNonNegativeFiniteNumber(
+      value.manaRegenTickSecondsRemaining ?? DEFAULT_PLAYER_MANA_REGEN_TICK_INTERVAL_SECONDS,
+      `${label}.manaRegenTickSecondsRemaining`
+    ),
     breathSecondsRemaining: expectNonNegativeFiniteNumber(
       value.breathSecondsRemaining ?? DEFAULT_PLAYER_MAX_BREATH_SECONDS,
       `${label}.breathSecondsRemaining`

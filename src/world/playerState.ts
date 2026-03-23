@@ -25,6 +25,10 @@ export interface PlayerState {
   facing: PlayerFacing;
   maxHealth: number;
   health: number;
+  maxMana: number;
+  mana: number;
+  manaRegenDelaySecondsRemaining: number;
+  manaRegenTickSecondsRemaining: number;
   breathSecondsRemaining: number;
   lavaDamageTickSecondsRemaining: number;
   drowningDamageTickSecondsRemaining: number;
@@ -62,6 +66,10 @@ export interface CreatePlayerStateOptions {
   facing?: PlayerFacing;
   maxHealth?: number;
   health?: number;
+  maxMana?: number;
+  mana?: number;
+  manaRegenDelaySecondsRemaining?: number;
+  manaRegenTickSecondsRemaining?: number;
   breathSecondsRemaining?: number;
   lavaDamageTickSecondsRemaining?: number;
   drowningDamageTickSecondsRemaining?: number;
@@ -159,6 +167,9 @@ export const DEFAULT_PLAYER_GLIDE_MAX_FALL_SPEED = 180;
 export const DEFAULT_PLAYER_ROPE_CLIMB_SPEED = 120;
 export const DEFAULT_PLAYER_ROPE_CENTERING_SPEED = 24;
 export const DEFAULT_PLAYER_MAX_HEALTH = 100;
+export const DEFAULT_PLAYER_MAX_MANA = 20;
+export const DEFAULT_PLAYER_MANA_REGEN_DELAY_SECONDS = 1.2;
+export const DEFAULT_PLAYER_MANA_REGEN_TICK_INTERVAL_SECONDS = 0.25;
 export const DEFAULT_PLAYER_MAX_BREATH_SECONDS = 8;
 export const DEFAULT_PLAYER_BREATH_RECOVERY_PER_SECOND = 4;
 export const DEFAULT_PLAYER_WATER_BUOYANCY_ACCELERATION = 2400;
@@ -250,8 +261,32 @@ const buildHealth = (health: number | undefined, maxHealth: number): number => {
   return resolvedHealth;
 };
 
+const buildMaxMana = (maxMana: number | undefined): number =>
+  expectPositiveFiniteNumber(maxMana ?? DEFAULT_PLAYER_MAX_MANA, 'maxMana');
+
+const buildMana = (mana: number | undefined, maxMana: number): number => {
+  const resolvedMana = expectNonNegativeFiniteNumber(mana ?? maxMana, 'mana');
+  if (resolvedMana > maxMana) {
+    throw new Error('mana must be less than or equal to maxMana');
+  }
+
+  return resolvedMana;
+};
+
 const buildBreathSecondsRemaining = (value: number | undefined): number =>
   expectNonNegativeFiniteNumber(value ?? DEFAULT_PLAYER_MAX_BREATH_SECONDS, 'breathSecondsRemaining');
+
+const buildManaRegenDelaySecondsRemaining = (value: number | undefined): number =>
+  expectNonNegativeFiniteNumber(
+    value ?? 0,
+    'manaRegenDelaySecondsRemaining'
+  );
+
+const buildManaRegenTickSecondsRemaining = (value: number | undefined): number =>
+  expectNonNegativeFiniteNumber(
+    value ?? DEFAULT_PLAYER_MANA_REGEN_TICK_INTERVAL_SECONDS,
+    'manaRegenTickSecondsRemaining'
+  );
 
 const buildLavaDamageTickSecondsRemaining = (value: number | undefined): number =>
   expectNonNegativeFiniteNumber(
@@ -1120,6 +1155,7 @@ export const createPlayerState = (options: CreatePlayerStateOptions = {}): Playe
   const velocity = buildVector(options.velocity, 'velocity');
   const facing = options.facing ?? resolveFacingFromHorizontalVelocity(DEFAULT_PLAYER_FACING, velocity.x);
   const maxHealth = buildMaxHealth(options.maxHealth);
+  const maxMana = buildMaxMana(options.maxMana);
 
   return {
     position: buildVector(options.position, 'position'),
@@ -1129,6 +1165,14 @@ export const createPlayerState = (options: CreatePlayerStateOptions = {}): Playe
     facing,
     maxHealth,
     health: buildHealth(options.health, maxHealth),
+    maxMana,
+    mana: buildMana(options.mana, maxMana),
+    manaRegenDelaySecondsRemaining: buildManaRegenDelaySecondsRemaining(
+      options.manaRegenDelaySecondsRemaining
+    ),
+    manaRegenTickSecondsRemaining: buildManaRegenTickSecondsRemaining(
+      options.manaRegenTickSecondsRemaining
+    ),
     breathSecondsRemaining: buildBreathSecondsRemaining(options.breathSecondsRemaining),
     lavaDamageTickSecondsRemaining: buildLavaDamageTickSecondsRemaining(
       options.lavaDamageTickSecondsRemaining
@@ -1160,29 +1204,35 @@ export const createPlayerStateFromSpawn = (
     grounded: true
   });
 
-export const clonePlayerState = (state: PlayerState): PlayerState => ({
-  position: {
-    x: state.position.x,
-    y: state.position.y
-  },
-  velocity: {
-    x: state.velocity.x,
-    y: state.velocity.y
-  },
-  size: {
-    width: state.size.width,
-    height: state.size.height
-  },
-  grounded: state.grounded,
-  facing: state.facing,
-  maxHealth: state.maxHealth,
-  health: state.health,
-  breathSecondsRemaining: state.breathSecondsRemaining,
-  lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
-  drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
-  fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining,
-  hostileContactInvulnerabilitySecondsRemaining: state.hostileContactInvulnerabilitySecondsRemaining
-});
+export const clonePlayerState = (state: PlayerState): PlayerState =>
+  ({
+    ...((state as unknown) as Record<string, unknown>),
+    position: {
+      x: state.position.x,
+      y: state.position.y
+    },
+    velocity: {
+      x: state.velocity.x,
+      y: state.velocity.y
+    },
+    size: {
+      width: state.size.width,
+      height: state.size.height
+    },
+    grounded: state.grounded,
+    facing: state.facing,
+    maxHealth: state.maxHealth,
+    health: state.health,
+    maxMana: state.maxMana,
+    mana: state.mana,
+    manaRegenDelaySecondsRemaining: state.manaRegenDelaySecondsRemaining,
+    manaRegenTickSecondsRemaining: state.manaRegenTickSecondsRemaining,
+    breathSecondsRemaining: state.breathSecondsRemaining,
+    lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
+    drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
+    fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining,
+    hostileContactInvulnerabilitySecondsRemaining: state.hostileContactInvulnerabilitySecondsRemaining
+  }) as PlayerState;
 
 export const respawnPlayerStateAtSpawnIfEmbeddedInSolid = (
   world: TileWorld,
@@ -1198,6 +1248,10 @@ export const respawnPlayerStateAtSpawnIfEmbeddedInSolid = (
     facing: state.facing,
     maxHealth: state.maxHealth,
     health: state.health,
+    maxMana: state.maxMana,
+    mana: state.mana,
+    manaRegenDelaySecondsRemaining: state.manaRegenDelaySecondsRemaining,
+    manaRegenTickSecondsRemaining: state.manaRegenTickSecondsRemaining,
     breathSecondsRemaining: state.breathSecondsRemaining,
     lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
     drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
@@ -1255,15 +1309,19 @@ export const integratePlayerState = (state: PlayerState, fixedDtSeconds: number)
       width: state.size.width,
       height: state.size.height
     },
-    grounded: state.grounded && state.velocity.y === 0,
-    facing,
-    maxHealth: state.maxHealth,
-    health: state.health,
-    breathSecondsRemaining: state.breathSecondsRemaining,
-    lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
-    drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
-    fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining,
-    hostileContactInvulnerabilitySecondsRemaining: state.hostileContactInvulnerabilitySecondsRemaining
+  grounded: state.grounded && state.velocity.y === 0,
+  facing,
+  maxHealth: state.maxHealth,
+  health: state.health,
+  maxMana: state.maxMana,
+  mana: state.mana,
+  manaRegenDelaySecondsRemaining: state.manaRegenDelaySecondsRemaining,
+  manaRegenTickSecondsRemaining: state.manaRegenTickSecondsRemaining,
+  breathSecondsRemaining: state.breathSecondsRemaining,
+  lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
+  drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
+  fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining,
+  hostileContactInvulnerabilitySecondsRemaining: state.hostileContactInvulnerabilitySecondsRemaining
   };
 };
 
@@ -1295,15 +1353,19 @@ export const movePlayerStateWithCollisions = (
       width: state.size.width,
       height: state.size.height
     },
-    grounded: groundSupport !== null,
-    facing,
-    maxHealth: state.maxHealth,
-    health: state.health,
-    breathSecondsRemaining: state.breathSecondsRemaining,
-    lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
-    drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
-    fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining,
-    hostileContactInvulnerabilitySecondsRemaining: state.hostileContactInvulnerabilitySecondsRemaining
+  grounded: groundSupport !== null,
+  facing,
+  maxHealth: state.maxHealth,
+  health: state.health,
+  maxMana: state.maxMana,
+  mana: state.mana,
+  manaRegenDelaySecondsRemaining: state.manaRegenDelaySecondsRemaining,
+  manaRegenTickSecondsRemaining: state.manaRegenTickSecondsRemaining,
+  breathSecondsRemaining: state.breathSecondsRemaining,
+  lavaDamageTickSecondsRemaining: state.lavaDamageTickSecondsRemaining,
+  drowningDamageTickSecondsRemaining: state.drowningDamageTickSecondsRemaining,
+  fallDamageRecoverySecondsRemaining: state.fallDamageRecoverySecondsRemaining,
+  hostileContactInvulnerabilitySecondsRemaining: state.hostileContactInvulnerabilitySecondsRemaining
   };
 };
 
@@ -1357,6 +1419,10 @@ export const stepPlayerState = (
       facing: state.facing,
       maxHealth: state.maxHealth,
       health: breathStepState.health,
+      maxMana: state.maxMana,
+      mana: state.mana,
+      manaRegenDelaySecondsRemaining: state.manaRegenDelaySecondsRemaining,
+      manaRegenTickSecondsRemaining: state.manaRegenTickSecondsRemaining,
       breathSecondsRemaining: breathStepState.breathSecondsRemaining,
       lavaDamageTickSecondsRemaining: lavaDamageStepState.lavaDamageTickSecondsRemaining,
       drowningDamageTickSecondsRemaining: breathStepState.drowningDamageTickSecondsRemaining,

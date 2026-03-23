@@ -14,7 +14,9 @@ import {
   DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
   DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS,
   DEFAULT_PLAYER_MAX_BREATH_SECONDS,
-  DEFAULT_PLAYER_MAX_HEALTH
+  DEFAULT_PLAYER_MAX_HEALTH,
+  DEFAULT_PLAYER_MAX_MANA,
+  DEFAULT_PLAYER_MANA_REGEN_TICK_INTERVAL_SECONDS
 } from './world/playerState';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
 import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
@@ -39,6 +41,10 @@ describe('createWorldSaveEnvelope', () => {
       grounded: false,
       facing: 'left',
       health: 75,
+      maxMana: 40,
+      mana: 17,
+      manaRegenDelaySecondsRemaining: 0.6,
+      manaRegenTickSecondsRemaining: 0.1,
       breathSecondsRemaining: 5.5,
       lavaDamageTickSecondsRemaining: 0.25,
       drowningDamageTickSecondsRemaining: 0.3,
@@ -812,7 +818,34 @@ describe('decodeWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerState).toEqual(standalonePlayerState);
   });
 
-  it('defaults missing max health, breath, hostile-contact invulnerability, fall-recovery, and death state on older standalone-player save payloads', () => {
+  it('round-trips standalone-player mana and mana-regen timers through save decode', () => {
+    const world = new TileWorld(0);
+    const standalonePlayerState = createPlayerState({
+      maxMana: 60,
+      mana: 23,
+      manaRegenDelaySecondsRemaining: 0.75,
+      manaRegenTickSecondsRemaining: 0.1
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState,
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    expect(decoded.session.standalonePlayerState).toEqual(standalonePlayerState);
+  });
+
+  it('defaults missing health, mana, breath, recovery, and death fields on older standalone-player save payloads', () => {
     const world = new TileWorld(0);
     const standalonePlayerState = createPlayerState({
       position: { x: 72, y: 96 },
@@ -820,11 +853,16 @@ describe('decodeWorldSaveEnvelope', () => {
       grounded: false,
       facing: 'left',
       health: 62,
+      mana: 11,
       breathSecondsRemaining: 3,
       lavaDamageTickSecondsRemaining: 0.5
     });
     const {
       maxHealth: _omittedMaxHealth,
+      maxMana: _omittedMaxMana,
+      mana: _omittedMana,
+      manaRegenDelaySecondsRemaining: _omittedManaRegenDelay,
+      manaRegenTickSecondsRemaining: _omittedManaRegenTick,
       breathSecondsRemaining: _omittedBreath,
       drowningDamageTickSecondsRemaining: _omittedDrowningTick,
       fallDamageRecoverySecondsRemaining: _omittedFallRecovery,
@@ -849,6 +887,10 @@ describe('decodeWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerState).toEqual({
       ...standalonePlayerState,
       maxHealth: DEFAULT_PLAYER_MAX_HEALTH,
+      maxMana: DEFAULT_PLAYER_MAX_MANA,
+      mana: DEFAULT_PLAYER_MAX_MANA,
+      manaRegenDelaySecondsRemaining: 0,
+      manaRegenTickSecondsRemaining: DEFAULT_PLAYER_MANA_REGEN_TICK_INTERVAL_SECONDS,
       breathSecondsRemaining: DEFAULT_PLAYER_MAX_BREATH_SECONDS,
       drowningDamageTickSecondsRemaining: DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
       fallDamageRecoverySecondsRemaining: 0,

@@ -432,6 +432,7 @@ import {
   applyStarterWandFireboltHitToHostileSlime,
   createStarterWandCooldownState,
   DEFAULT_STARTER_WAND_CAST_COOLDOWN_SECONDS,
+  DEFAULT_STARTER_WAND_MANA_COST,
   STARTER_WAND_ITEM_ID,
   stepStarterWandCooldownState,
   stepStarterWandFireboltState,
@@ -439,6 +440,7 @@ import {
   type StarterWandFireboltHitEvent,
   type StarterWandFireboltState
 } from './world/starterWand';
+import { stepPlayerManaRegeneration } from './world/playerMana';
 import {
   resolvePlayerWallContactTransitionEvent,
   type PlayerWallContactTransitionEvent
@@ -1920,6 +1922,22 @@ const bootstrap = async (): Promise<void> => {
       )
     );
   };
+  const resolveHotbarOverlayStarterWandManaReadout = () => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    const standalonePlayerState = getStandalonePlayerState();
+    if (selectedStack?.itemId !== STARTER_WAND_ITEM_ID || standalonePlayerState === null) {
+      return null;
+    }
+    if (standalonePlayerState.maxMana <= 0) {
+      return null;
+    }
+
+    return {
+      currentMana: standalonePlayerState.mana,
+      maxMana: standalonePlayerState.maxMana,
+      manaCost: DEFAULT_STARTER_WAND_MANA_COST
+    };
+  };
   const resolveHotbarOverlayHeartCrystalBlockedReason = (): 'dead' | 'max-health-cap' | null => {
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
     if (selectedStack?.itemId !== HEART_CRYSTAL_ITEM_ID) {
@@ -2101,6 +2119,7 @@ const bootstrap = async (): Promise<void> => {
       starterAxeSwingFeedback: resolveHotbarOverlayStarterAxeSwingFeedback(),
       healingPotionCooldownFillNormalized:
         resolveHotbarOverlayHealingPotionCooldownFillNormalized(),
+      starterWandManaReadout: resolveHotbarOverlayStarterWandManaReadout(),
       starterWandCooldownFillNormalized:
         resolveHotbarOverlayStarterWandCooldownFillNormalized(),
       heartCrystalBlockedReason: resolveHotbarOverlayHeartCrystalBlockedReason(),
@@ -3767,6 +3786,7 @@ const bootstrap = async (): Promise<void> => {
         const respawnedPlayerState = createPlayerStateFromSpawn(resolvedPlayerSpawn, {
           facing: nextPlayerState.facing,
           maxHealth: nextPlayerState.maxHealth,
+          maxMana: nextPlayerState.maxMana,
           hostileContactInvulnerabilitySecondsRemaining:
             DEFAULT_PLAYER_RESPAWN_INVULNERABILITY_SECONDS
         });
@@ -3861,10 +3881,14 @@ const bootstrap = async (): Promise<void> => {
     fixedDt,
     playerMovementIntent
   }: StandalonePlayerFixedStepResultOptions): StandalonePlayerFixedStepResult => {
-    const steppedPlayerState =
+    const movementSteppedPlayerState =
       currentPlayerDeathState === null
         ? renderer.stepPlayerState(previousPlayerState, fixedDt, playerMovementIntent)
         : createStandalonePlayerDeathHoldState(previousPlayerState);
+    const steppedPlayerState =
+      currentPlayerDeathState === null
+        ? stepPlayerManaRegeneration(movementSteppedPlayerState, fixedDt)
+        : movementSteppedPlayerState;
     const { nextPlayerState, nextDeathState, respawnEvent } =
       resolveStandalonePlayerFixedStepDeathRespawn(
       previousPlayerState,
@@ -3973,6 +3997,7 @@ const bootstrap = async (): Promise<void> => {
     const playerFixedStepResult = pendingStandalonePlayerFixedStepResult;
     pendingStandalonePlayerFixedStepResult = null;
     applyStandalonePlayerFixedStepResult(playerFixedStepResult);
+    syncHotbarOverlayState();
   };
   const commitStandalonePlayerFixedStepTransitions = ({
     groundedTransitionEvent,
@@ -4557,6 +4582,9 @@ const bootstrap = async (): Promise<void> => {
       resolvePlayerItemUseTargetWorldPoint(request)
     );
     starterWandCooldownState = useResult.nextCooldownState;
+    if (useResult.castStarted) {
+      setStandalonePlayerState(useResult.nextPlayerState);
+    }
     syncHotbarOverlayState();
     if (!useResult.castStarted || useResult.fireboltState === null) {
       return false;

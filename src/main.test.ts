@@ -59,6 +59,9 @@ import {
 import {
   createPlayerState,
   DEFAULT_PLAYER_HEIGHT,
+  DEFAULT_PLAYER_MANA_REGEN_DELAY_SECONDS,
+  DEFAULT_PLAYER_MANA_REGEN_TICK_INTERVAL_SECONDS,
+  DEFAULT_PLAYER_MAX_MANA,
   DEFAULT_PLAYER_FALL_DAMAGE_RECOVERY_SECONDS,
   DEFAULT_PLAYER_WIDTH,
   getPlayerCameraFocusPoint
@@ -94,6 +97,7 @@ import {
 import {
   DEFAULT_STARTER_WAND_CAST_COOLDOWN_SECONDS,
   DEFAULT_STARTER_WAND_FIREBOLT_DAMAGE,
+  DEFAULT_STARTER_WAND_MANA_COST,
   DEFAULT_STARTER_WAND_FIREBOLT_KNOCKBACK_SPEED,
   DEFAULT_STARTER_WAND_FIREBOLT_SPEED
 } from './world/starterWand';
@@ -10955,7 +10959,7 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
-  it('shows selected starter-wand cooldown feedback while the cast cooldown drains, then clears it', async () => {
+  it('shows selected starter-wand cooldown feedback, then selected mana refill feedback until mana is full again', async () => {
     const standalonePlayerState = createPlayerState({
       position: { x: 8, y: 28 },
       facing: 'right'
@@ -11016,6 +11020,19 @@ describe('main.ts shell state orchestration', () => {
     runFixedUpdate(DEFAULT_STARTER_WAND_CAST_COOLDOWN_SECONDS - 1 / 60);
 
     expect(getHotbarOverlaySlotButton(6).title).not.toContain('cast cooldown active');
+    expect(getHotbarOverlaySlotButton(6).title).toContain(
+      `mana: ${DEFAULT_PLAYER_MAX_MANA - DEFAULT_STARTER_WAND_MANA_COST}/${DEFAULT_PLAYER_MAX_MANA}`
+    );
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('MANA');
+    expect(Number.parseFloat(getHotbarOverlaySlotCooldownFill(6).style.height)).toBeCloseTo(75, 1);
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('1');
+
+    runFixedUpdate(
+      DEFAULT_PLAYER_MANA_REGEN_DELAY_SECONDS - DEFAULT_STARTER_WAND_CAST_COOLDOWN_SECONDS
+    );
+    runFixedUpdate(DEFAULT_PLAYER_MANA_REGEN_TICK_INTERVAL_SECONDS * 5);
+
+    expect(getHotbarOverlaySlotButton(6).title).not.toContain('mana:');
     expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('');
     expect(getHotbarOverlaySlotCooldownFill(6).style.height).toBe('0.0%');
     expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');

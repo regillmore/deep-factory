@@ -24,7 +24,9 @@ import {
   DEFAULT_PLAYER_LAVA_DAMAGE_PER_TICK,
   DEFAULT_PLAYER_MAX_BREATH_SECONDS,
   DEFAULT_PLAYER_MAX_HEALTH,
+  DEFAULT_PLAYER_MAX_MANA,
   DEFAULT_PLAYER_MAX_FALL_SPEED,
+  DEFAULT_PLAYER_MANA_REGEN_TICK_INTERVAL_SECONDS,
   DEFAULT_PLAYER_ROPE_CLIMB_SPEED,
   DEFAULT_PLAYER_ROPE_CENTERING_SPEED,
   DEFAULT_PLAYER_MAX_WALK_SPEED,
@@ -42,6 +44,7 @@ import {
   integratePlayerState,
   isPlayerRopeDropActive,
   movePlayerStateWithCollisions,
+  type PlayerState,
   respawnPlayerStateAtSpawnIfEmbeddedInSolid,
   stepPlayerState,
   stepPlayerStateWithGravity
@@ -67,6 +70,10 @@ const withDefaultPlayerVitals = <
   T extends Partial<{
     maxHealth: number;
     health: number;
+    maxMana: number;
+    mana: number;
+    manaRegenDelaySecondsRemaining: number;
+    manaRegenTickSecondsRemaining: number;
     breathSecondsRemaining: number;
     lavaDamageTickSecondsRemaining: number;
     drowningDamageTickSecondsRemaining: number;
@@ -80,6 +87,10 @@ const withDefaultPlayerVitals = <
   T,
   | 'maxHealth'
   | 'health'
+  | 'maxMana'
+  | 'mana'
+  | 'manaRegenDelaySecondsRemaining'
+  | 'manaRegenTickSecondsRemaining'
   | 'breathSecondsRemaining'
   | 'lavaDamageTickSecondsRemaining'
   | 'drowningDamageTickSecondsRemaining'
@@ -88,6 +99,10 @@ const withDefaultPlayerVitals = <
 > & {
   maxHealth: number;
   health: number;
+  maxMana: number;
+  mana: number;
+  manaRegenDelaySecondsRemaining: number;
+  manaRegenTickSecondsRemaining: number;
   breathSecondsRemaining: number;
   lavaDamageTickSecondsRemaining: number;
   drowningDamageTickSecondsRemaining: number;
@@ -97,6 +112,11 @@ const withDefaultPlayerVitals = <
   ...state,
   maxHealth: state.maxHealth ?? DEFAULT_PLAYER_MAX_HEALTH,
   health: state.health ?? state.maxHealth ?? DEFAULT_PLAYER_MAX_HEALTH,
+  maxMana: state.maxMana ?? DEFAULT_PLAYER_MAX_MANA,
+  mana: state.mana ?? state.maxMana ?? DEFAULT_PLAYER_MAX_MANA,
+  manaRegenDelaySecondsRemaining: state.manaRegenDelaySecondsRemaining ?? 0,
+  manaRegenTickSecondsRemaining:
+    state.manaRegenTickSecondsRemaining ?? DEFAULT_PLAYER_MANA_REGEN_TICK_INTERVAL_SECONDS,
   breathSecondsRemaining: state.breathSecondsRemaining ?? DEFAULT_PLAYER_MAX_BREATH_SECONDS,
   lavaDamageTickSecondsRemaining:
     state.lavaDamageTickSecondsRemaining ?? DEFAULT_PLAYER_LAVA_DAMAGE_TICK_INTERVAL_SECONDS,
@@ -247,10 +267,34 @@ describe('playerState', () => {
     expect(cloned.size).not.toBe(state.size);
   });
 
-  it('defaults health to maxHealth and rejects health above maxHealth', () => {
+  it('preserves extra enumerable runtime fields when cloning player state', () => {
+    const state = createPlayerState({
+      position: { x: 24, y: -8 },
+      velocity: { x: -12, y: 36 }
+    }) as PlayerState & {
+      headSubmergedInWater?: boolean;
+      waterSubmergedFraction?: number;
+      lavaDamageApplied?: number;
+    };
+    state.headSubmergedInWater = true;
+    state.waterSubmergedFraction = 2 / 3;
+    state.lavaDamageApplied = 25;
+
+    const cloned = clonePlayerState(state);
+
+    expect((cloned as typeof state).headSubmergedInWater).toBe(true);
+    expect((cloned as typeof state).waterSubmergedFraction).toBeCloseTo(2 / 3, 5);
+    expect((cloned as typeof state).lavaDamageApplied).toBe(25);
+    expect(cloned.position).not.toBe(state.position);
+    expect(cloned.velocity).not.toBe(state.velocity);
+    expect(cloned.size).not.toBe(state.size);
+  });
+
+  it('defaults health and mana to their max values and rejects values above either cap', () => {
     expect(
       createPlayerState({
-        maxHealth: 140
+        maxHealth: 140,
+        maxMana: 60
       })
     ).toEqual(
       withDefaultPlayerVitals({
@@ -260,7 +304,9 @@ describe('playerState', () => {
         grounded: false,
         facing: 'right',
         maxHealth: 140,
-        health: 140
+        health: 140,
+        maxMana: 60,
+        mana: 60
       })
     );
 
@@ -270,6 +316,12 @@ describe('playerState', () => {
         health: 121
       })
     ).toThrowError(/health must be less than or equal to maxHealth/);
+    expect(() =>
+      createPlayerState({
+        maxMana: 40,
+        mana: 41
+      })
+    ).toThrowError(/mana must be less than or equal to maxMana/);
   });
 
   it('reports support, wall, and ceiling contacts adjacent to the current player AABB', () => {
@@ -1955,21 +2007,20 @@ describe('playerState', () => {
       }
     );
 
-    expect(stepped).toEqual({
-      position: { x: 8, y: 0 },
-      velocity: { x: 0, y: 0 },
-      size: { width: 12, height: 12 },
-      grounded: false,
-      facing: 'right',
-      maxHealth: DEFAULT_PLAYER_MAX_HEALTH,
-      health: 40,
-      breathSecondsRemaining: DEFAULT_PLAYER_MAX_BREATH_SECONDS,
-      lavaDamageTickSecondsRemaining: 0.25,
-      drowningDamageTickSecondsRemaining: DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
-      fallDamageRecoverySecondsRemaining: 0,
-      hostileContactInvulnerabilitySecondsRemaining:
-        DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS
-    });
+    expect(stepped).toEqual(
+      withDefaultPlayerVitals({
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        grounded: false,
+        facing: 'right',
+        health: 40,
+        lavaDamageTickSecondsRemaining: 0.25,
+        drowningDamageTickSecondsRemaining: DEFAULT_PLAYER_DROWNING_DAMAGE_TICK_INTERVAL_SECONDS,
+        hostileContactInvulnerabilitySecondsRemaining:
+          DEFAULT_PLAYER_HOSTILE_CONTACT_INVULNERABILITY_SECONDS
+      })
+    );
   });
 
   it('reports the applied lava tick damage through the shared lava helper when the timer elapses in lava', () => {
@@ -2054,6 +2105,21 @@ describe('playerState', () => {
         health: -1
       })
     ).toThrowError(/health must be a non-negative finite number/);
+    expect(() =>
+      createPlayerState({
+        mana: -1
+      })
+    ).toThrowError(/mana must be a non-negative finite number/);
+    expect(() =>
+      createPlayerState({
+        manaRegenDelaySecondsRemaining: -0.1
+      })
+    ).toThrowError(/manaRegenDelaySecondsRemaining must be a non-negative finite number/);
+    expect(() =>
+      createPlayerState({
+        manaRegenTickSecondsRemaining: -0.1
+      })
+    ).toThrowError(/manaRegenTickSecondsRemaining must be a non-negative finite number/);
     expect(() =>
       createPlayerState({
         breathSecondsRemaining: -0.1
