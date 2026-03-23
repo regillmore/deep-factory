@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { CHUNK_SIZE, MAX_LIQUID_LEVEL } from '../world/constants';
 import {
   CHUNK_TILE_DIFF_MESSAGE_KIND,
+  CHUNK_WALL_DIFF_MESSAGE_KIND,
   ENTITY_SNAPSHOT_MESSAGE_KIND,
   NETWORK_CHUNK_TILE_ORDER,
   NETWORK_PROTOCOL_VERSION,
@@ -10,12 +11,14 @@ import {
 } from './protocol';
 import { stageAuthoritativeReplicatedStateBatch } from './replicationStaging';
 import { AuthoritativeTileEditCapture } from './tileEditCapture';
+import { AuthoritativeWallEditCapture } from './wallEditCapture';
 
 const WATER_TILE_ID = 7;
 
 describe('stageAuthoritativeReplicatedStateBatch', () => {
-  it('drains captured tile edits into deterministic chunk diffs and appends a detached entity snapshot', () => {
-    const capture = new AuthoritativeTileEditCapture();
+  it('drains captured tile and wall edits into deterministic chunk diffs before a detached entity snapshot', () => {
+    const tileCapture = new AuthoritativeTileEditCapture();
+    const wallCapture = new AuthoritativeWallEditCapture();
     const entitySnapshotMessage = createEntitySnapshotMessage({
       tick: 12,
       entities: [
@@ -40,7 +43,7 @@ describe('stageAuthoritativeReplicatedStateBatch', () => {
       ]
     });
 
-    capture.recordTileEditNotification({
+    tileCapture.recordTileEditNotification({
       worldTileX: 0,
       worldTileY: 0,
       previousTileId: 1,
@@ -48,7 +51,7 @@ describe('stageAuthoritativeReplicatedStateBatch', () => {
       tileId: WATER_TILE_ID,
       liquidLevel: MAX_LIQUID_LEVEL / 2
     });
-    capture.recordTileEditNotification({
+    tileCapture.recordTileEditNotification({
       worldTileX: -1,
       worldTileY: 0,
       previousTileId: 3,
@@ -56,10 +59,23 @@ describe('stageAuthoritativeReplicatedStateBatch', () => {
       tileId: 4,
       liquidLevel: 0
     });
+    wallCapture.recordWallEditNotification({
+      worldTileX: 0,
+      worldTileY: 0,
+      previousWallId: 0,
+      wallId: 5
+    });
+    wallCapture.recordWallEditNotification({
+      worldTileX: CHUNK_SIZE,
+      worldTileY: 0,
+      previousWallId: 0,
+      wallId: 8
+    });
 
     const stagedMessages = stageAuthoritativeReplicatedStateBatch({
       tick: 12,
-      tileEditCapture: capture,
+      tileEditCapture: tileCapture,
+      wallEditCapture: wallCapture,
       entitySnapshotMessage
     });
 
@@ -99,6 +115,38 @@ describe('stageAuthoritativeReplicatedStateBatch', () => {
         ]
       },
       {
+        kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+        version: NETWORK_PROTOCOL_VERSION,
+        tick: 12,
+        chunk: {
+          x: 0,
+          y: 0
+        },
+        tileOrder: NETWORK_CHUNK_TILE_ORDER,
+        walls: [
+          {
+            tileIndex: 0,
+            wallId: 5
+          }
+        ]
+      },
+      {
+        kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+        version: NETWORK_PROTOCOL_VERSION,
+        tick: 12,
+        chunk: {
+          x: 1,
+          y: 0
+        },
+        tileOrder: NETWORK_CHUNK_TILE_ORDER,
+        walls: [
+          {
+            tileIndex: 0,
+            wallId: 8
+          }
+        ]
+      },
+      {
         kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
         version: NETWORK_PROTOCOL_VERSION,
         tick: 12,
@@ -127,7 +175,7 @@ describe('stageAuthoritativeReplicatedStateBatch', () => {
 
     entitySnapshotMessage.entities[0]!.position.x = 99;
     entitySnapshotMessage.entities[0]!.state.grounded = false;
-    expect(stagedMessages[2]).toEqual({
+    expect(stagedMessages[4]).toEqual({
       kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
       version: NETWORK_PROTOCOL_VERSION,
       tick: 12,
@@ -154,7 +202,8 @@ describe('stageAuthoritativeReplicatedStateBatch', () => {
     });
     expect(stageAuthoritativeReplicatedStateBatch({
       tick: 13,
-      tileEditCapture: capture,
+      tileEditCapture: tileCapture,
+      wallEditCapture: wallCapture,
       entitySnapshotMessage: createEntitySnapshotMessage({
         tick: 13,
         entities: []
@@ -169,13 +218,15 @@ describe('stageAuthoritativeReplicatedStateBatch', () => {
     ]);
   });
 
-  it('still stages the entity snapshot when no chunk diffs were captured for that tick', () => {
-    const capture = new AuthoritativeTileEditCapture();
+  it('still stages the entity snapshot when no tile or wall diffs were captured for that tick', () => {
+    const tileCapture = new AuthoritativeTileEditCapture();
+    const wallCapture = new AuthoritativeWallEditCapture();
 
     expect(
       stageAuthoritativeReplicatedStateBatch({
         tick: 4,
-        tileEditCapture: capture,
+        tileEditCapture: tileCapture,
+        wallEditCapture: wallCapture,
         entitySnapshotMessage: createEntitySnapshotMessage({
           tick: 4,
           entities: [
@@ -207,10 +258,11 @@ describe('stageAuthoritativeReplicatedStateBatch', () => {
     ]);
   });
 
-  it('rejects mismatched entity snapshot ticks before draining captured tile edits', () => {
-    const capture = new AuthoritativeTileEditCapture();
+  it('rejects mismatched entity snapshot ticks before draining captured tile or wall edits', () => {
+    const tileCapture = new AuthoritativeTileEditCapture();
+    const wallCapture = new AuthoritativeWallEditCapture();
 
-    capture.recordTileEditNotification({
+    tileCapture.recordTileEditNotification({
       worldTileX: 0,
       worldTileY: 0,
       previousTileId: 0,
@@ -218,11 +270,18 @@ describe('stageAuthoritativeReplicatedStateBatch', () => {
       tileId: WATER_TILE_ID,
       liquidLevel: MAX_LIQUID_LEVEL
     });
+    wallCapture.recordWallEditNotification({
+      worldTileX: 0,
+      worldTileY: 0,
+      previousWallId: 0,
+      wallId: 6
+    });
 
     expect(() =>
       stageAuthoritativeReplicatedStateBatch({
         tick: 7,
-        tileEditCapture: capture,
+        tileEditCapture: tileCapture,
+        wallEditCapture: wallCapture,
         entitySnapshotMessage: createEntitySnapshotMessage({
           tick: 6,
           entities: []
@@ -230,7 +289,7 @@ describe('stageAuthoritativeReplicatedStateBatch', () => {
       })
     ).toThrow('entitySnapshotMessage.tick 6 must match staged tick 7');
 
-    expect(capture.drainChunkDiffMessages(7)).toEqual([
+    expect(tileCapture.drainChunkDiffMessages(7)).toEqual([
       {
         kind: CHUNK_TILE_DIFF_MESSAGE_KIND,
         version: NETWORK_PROTOCOL_VERSION,
@@ -245,6 +304,24 @@ describe('stageAuthoritativeReplicatedStateBatch', () => {
             tileIndex: 0,
             tileId: WATER_TILE_ID,
             liquidLevel: MAX_LIQUID_LEVEL
+          }
+        ]
+      }
+    ]);
+    expect(wallCapture.drainChunkWallDiffMessages(7)).toEqual([
+      {
+        kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+        version: NETWORK_PROTOCOL_VERSION,
+        tick: 7,
+        chunk: {
+          x: 0,
+          y: 0
+        },
+        tileOrder: NETWORK_CHUNK_TILE_ORDER,
+        walls: [
+          {
+            tileIndex: 0,
+            wallId: 6
           }
         ]
       }

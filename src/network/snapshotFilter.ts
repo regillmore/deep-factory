@@ -4,9 +4,10 @@ import {
   CHUNK_TILE_DIFF_MESSAGE_KIND,
   ENTITY_SNAPSHOT_MESSAGE_KIND,
   createChunkTileDiffMessage,
+  createChunkWallDiffMessage,
   createEntitySnapshotMessage
 } from './protocol';
-import type { ChunkTileDiffMessage, EntitySnapshotMessage } from './protocol';
+import type { ChunkTileDiffMessage, ChunkWallDiffMessage, EntitySnapshotMessage } from './protocol';
 
 export type ClientInterestMessageFilterInterestSet = Pick<ClientInterestSet, 'chunks' | 'entityIds'>;
 
@@ -43,6 +44,21 @@ const filterChunkTileDiffMessageWithMembership = (
   });
 };
 
+const filterChunkWallDiffMessageWithMembership = (
+  message: ChunkWallDiffMessage,
+  membership: ClientInterestMembershipSets
+): ChunkWallDiffMessage | null => {
+  if (!membership.relevantChunkKeys.has(chunkKey(message.chunk.x, message.chunk.y))) {
+    return null;
+  }
+
+  return createChunkWallDiffMessage({
+    tick: message.tick,
+    chunk: message.chunk,
+    walls: message.walls
+  });
+};
+
 const filterEntitySnapshotMessageWithMembership = (
   message: EntitySnapshotMessage,
   membership: ClientInterestMembershipSets
@@ -57,6 +73,12 @@ export const filterChunkTileDiffMessageByInterestSet = (
   interestSet: ClientInterestMessageFilterInterestSet
 ): ChunkTileDiffMessage | null =>
   filterChunkTileDiffMessageWithMembership(message, createClientInterestMembershipSets(interestSet));
+
+export const filterChunkWallDiffMessageByInterestSet = (
+  message: ChunkWallDiffMessage,
+  interestSet: ClientInterestMessageFilterInterestSet
+): ChunkWallDiffMessage | null =>
+  filterChunkWallDiffMessageWithMembership(message, createClientInterestMembershipSets(interestSet));
 
 export const filterEntitySnapshotMessageByInterestSet = (
   message: EntitySnapshotMessage,

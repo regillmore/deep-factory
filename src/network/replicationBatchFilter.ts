@@ -1,11 +1,13 @@
 import {
   CHUNK_TILE_DIFF_MESSAGE_KIND,
+  CHUNK_WALL_DIFF_MESSAGE_KIND,
   ENTITY_SNAPSHOT_MESSAGE_KIND
 } from './protocol';
-import type { ChunkTileDiffMessage, EntitySnapshotMessage } from './protocol';
+import type { ChunkTileDiffMessage, ChunkWallDiffMessage, EntitySnapshotMessage } from './protocol';
 import type { AuthoritativeReplicatedStateBatchMessage } from './replicationStaging';
 import {
   filterChunkTileDiffMessageByInterestSet,
+  filterChunkWallDiffMessageByInterestSet,
   filterEntitySnapshotMessageByInterestSet,
   type ClientInterestMessageFilterInterestSet
 } from './snapshotFilter';
@@ -42,6 +44,24 @@ export interface ForwardedChunkTileDiffBatchFilterDiagnostic {
   forwardedTileCount: number;
 }
 
+export interface DroppedChunkWallDiffBatchFilterDiagnostic {
+  kind: typeof CHUNK_WALL_DIFF_MESSAGE_KIND;
+  tick: number;
+  chunk: ChunkWallDiffMessage['chunk'];
+  filterStatus: typeof AUTHORITATIVE_REPLICATION_FILTER_STATUS_DROPPED;
+  receivedWallCount: number;
+  forwardedWallCount: 0;
+}
+
+export interface ForwardedChunkWallDiffBatchFilterDiagnostic {
+  kind: typeof CHUNK_WALL_DIFF_MESSAGE_KIND;
+  tick: number;
+  chunk: ChunkWallDiffMessage['chunk'];
+  filterStatus: typeof AUTHORITATIVE_REPLICATION_FILTER_STATUS_KEPT;
+  receivedWallCount: number;
+  forwardedWallCount: number;
+}
+
 export interface ForwardedEntitySnapshotBatchFilterDiagnostic {
   kind: typeof ENTITY_SNAPSHOT_MESSAGE_KIND;
   tick: number;
@@ -55,6 +75,8 @@ export interface ForwardedEntitySnapshotBatchFilterDiagnostic {
 export type AuthoritativeReplicationBatchFilterDiagnostic =
   | DroppedChunkTileDiffBatchFilterDiagnostic
   | ForwardedChunkTileDiffBatchFilterDiagnostic
+  | DroppedChunkWallDiffBatchFilterDiagnostic
+  | ForwardedChunkWallDiffBatchFilterDiagnostic
   | ForwardedEntitySnapshotBatchFilterDiagnostic;
 
 export interface FilterAuthoritativeReplicatedStateBatchResult {
@@ -106,6 +128,50 @@ const filterChunkTileDiffBatchMessage = (
   };
 };
 
+const filterChunkWallDiffBatchMessage = (
+  message: ChunkWallDiffMessage,
+  interestSet: ClientInterestMessageFilterInterestSet
+): {
+  forwardedMessage: ChunkWallDiffMessage | null;
+  diagnostic:
+    | DroppedChunkWallDiffBatchFilterDiagnostic
+    | ForwardedChunkWallDiffBatchFilterDiagnostic;
+} => {
+  const forwardedMessage = filterChunkWallDiffMessageByInterestSet(message, interestSet);
+
+  if (forwardedMessage === null) {
+    return {
+      forwardedMessage: null,
+      diagnostic: {
+        kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+        tick: message.tick,
+        chunk: {
+          x: message.chunk.x,
+          y: message.chunk.y
+        },
+        filterStatus: AUTHORITATIVE_REPLICATION_FILTER_STATUS_DROPPED,
+        receivedWallCount: message.walls.length,
+        forwardedWallCount: 0
+      }
+    };
+  }
+
+  return {
+    forwardedMessage,
+    diagnostic: {
+      kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+      tick: message.tick,
+      chunk: {
+        x: message.chunk.x,
+        y: message.chunk.y
+      },
+      filterStatus: AUTHORITATIVE_REPLICATION_FILTER_STATUS_KEPT,
+      receivedWallCount: message.walls.length,
+      forwardedWallCount: forwardedMessage.walls.length
+    }
+  };
+};
+
 const filterEntitySnapshotBatchMessage = (
   message: EntitySnapshotMessage,
   interestSet: ClientInterestMessageFilterInterestSet
@@ -140,6 +206,8 @@ const filterAuthoritativeReplicatedStateBatchMessage = (
   switch (message.kind) {
     case CHUNK_TILE_DIFF_MESSAGE_KIND:
       return filterChunkTileDiffBatchMessage(message, interestSet);
+    case CHUNK_WALL_DIFF_MESSAGE_KIND:
+      return filterChunkWallDiffBatchMessage(message, interestSet);
     case ENTITY_SNAPSHOT_MESSAGE_KIND:
       return filterEntitySnapshotBatchMessage(message, interestSet);
   }

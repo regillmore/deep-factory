@@ -46,6 +46,17 @@ describe('summarizeAuthoritativeReplicationBatchFilterDiagnostics', () => {
         forwardedTileCount: 3
       },
       {
+        kind: 'chunk-wall-diff',
+        tick: 12,
+        chunk: {
+          x: 4,
+          y: 0
+        },
+        filterStatus: AUTHORITATIVE_REPLICATION_FILTER_STATUS_KEPT,
+        receivedWallCount: 2,
+        forwardedWallCount: 2
+      },
+      {
         kind: 'chunk-tile-diff',
         tick: 12,
         chunk: {
@@ -72,7 +83,7 @@ describe('summarizeAuthoritativeReplicationBatchFilterDiagnostics', () => {
       chunks: {
         dropped: 1,
         trimmed: 0,
-        forwarded: 1
+        forwarded: 2
       },
       entities: {
         dropped: 0,
@@ -89,7 +100,7 @@ describe('summarizeAuthoritativeReplicationBatchFilterDiagnostics', () => {
       chunks: {
         dropped: 1,
         trimmed: 0,
-        forwarded: 1
+        forwarded: 2
       },
       entities: {
         dropped: 0,

@@ -1,17 +1,21 @@
 import {
   createEntitySnapshotMessage,
+  type ChunkWallDiffMessage,
   type ChunkTileDiffMessage,
   type EntitySnapshotMessage
 } from './protocol';
 import { AuthoritativeTileEditCapture } from './tileEditCapture';
+import { AuthoritativeWallEditCapture } from './wallEditCapture';
 
 export type AuthoritativeReplicatedStateBatchMessage =
   | ChunkTileDiffMessage
+  | ChunkWallDiffMessage
   | EntitySnapshotMessage;
 
 export interface StageAuthoritativeReplicatedStateBatchOptions {
   tick: number;
   tileEditCapture: AuthoritativeTileEditCapture;
+  wallEditCapture?: AuthoritativeWallEditCapture;
   entitySnapshotMessage: EntitySnapshotMessage;
 }
 
@@ -34,10 +38,12 @@ const cloneEntitySnapshotMessageForTick = (
 export const stageAuthoritativeReplicatedStateBatch = ({
   tick,
   tileEditCapture,
+  wallEditCapture,
   entitySnapshotMessage
 }: StageAuthoritativeReplicatedStateBatchOptions): AuthoritativeReplicatedStateBatchMessage[] => {
   const stagedEntitySnapshotMessage = cloneEntitySnapshotMessageForTick(tick, entitySnapshotMessage);
-  const chunkDiffMessages = tileEditCapture.drainChunkDiffMessages(tick);
+  const chunkTileDiffMessages = tileEditCapture.drainChunkDiffMessages(tick);
+  const chunkWallDiffMessages = wallEditCapture?.drainChunkWallDiffMessages(tick) ?? [];
 
-  return [...chunkDiffMessages, stagedEntitySnapshotMessage];
+  return [...chunkTileDiffMessages, ...chunkWallDiffMessages, stagedEntitySnapshotMessage];
 };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { MAX_LIQUID_LEVEL } from '../world/constants';
+import { CHUNK_SIZE, MAX_LIQUID_LEVEL } from '../world/constants';
 import {
   AUTHORITATIVE_REPLICATION_FILTER_STATUS_DROPPED,
   AUTHORITATIVE_REPLICATION_FILTER_STATUS_KEPT,
@@ -9,6 +9,7 @@ import {
 } from './replicationBatchFilter';
 import {
   CHUNK_TILE_DIFF_MESSAGE_KIND,
+  CHUNK_WALL_DIFF_MESSAGE_KIND,
   ENTITY_SNAPSHOT_MESSAGE_KIND,
   NETWORK_CHUNK_TILE_ORDER,
   NETWORK_PROTOCOL_VERSION,
@@ -16,13 +17,16 @@ import {
 } from './protocol';
 import { stageAuthoritativeReplicatedStateBatch } from './replicationStaging';
 import { AuthoritativeTileEditCapture } from './tileEditCapture';
+import { AuthoritativeWallEditCapture } from './wallEditCapture';
 
 const WATER_TILE_ID = 7;
 
 describe('filterAuthoritativeReplicatedStateBatchByInterestSet', () => {
   it('returns only forwarded staged messages plus deterministic per-message drop or trim diagnostics', () => {
-    const capture = new AuthoritativeTileEditCapture();
-    capture.recordTileEditNotification({
+    const tileCapture = new AuthoritativeTileEditCapture();
+    const wallCapture = new AuthoritativeWallEditCapture();
+
+    tileCapture.recordTileEditNotification({
       worldTileX: -1,
       worldTileY: 0,
       previousTileId: 3,
@@ -30,7 +34,7 @@ describe('filterAuthoritativeReplicatedStateBatchByInterestSet', () => {
       tileId: 4,
       liquidLevel: 0
     });
-    capture.recordTileEditNotification({
+    tileCapture.recordTileEditNotification({
       worldTileX: 0,
       worldTileY: 0,
       previousTileId: 1,
@@ -38,10 +42,23 @@ describe('filterAuthoritativeReplicatedStateBatchByInterestSet', () => {
       tileId: WATER_TILE_ID,
       liquidLevel: MAX_LIQUID_LEVEL / 2
     });
+    wallCapture.recordWallEditNotification({
+      worldTileX: 0,
+      worldTileY: 0,
+      previousWallId: 0,
+      wallId: 5
+    });
+    wallCapture.recordWallEditNotification({
+      worldTileX: CHUNK_SIZE,
+      worldTileY: 0,
+      previousWallId: 0,
+      wallId: 7
+    });
 
     const stagedMessages = stageAuthoritativeReplicatedStateBatch({
       tick: 12,
-      tileEditCapture: capture,
+      tileEditCapture: tileCapture,
+      wallEditCapture: wallCapture,
       entitySnapshotMessage: createEntitySnapshotMessage({
         tick: 12,
         entities: [
@@ -103,6 +120,22 @@ describe('filterAuthoritativeReplicatedStateBatchByInterestSet', () => {
         ]
       },
       {
+        kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+        version: NETWORK_PROTOCOL_VERSION,
+        tick: 12,
+        chunk: {
+          x: 0,
+          y: 0
+        },
+        tileOrder: NETWORK_CHUNK_TILE_ORDER,
+        walls: [
+          {
+            tileIndex: 0,
+            wallId: 5
+          }
+        ]
+      },
+      {
         kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
         version: NETWORK_PROTOCOL_VERSION,
         tick: 12,
@@ -152,6 +185,28 @@ describe('filterAuthoritativeReplicatedStateBatchByInterestSet', () => {
         forwardedTileCount: 1
       },
       {
+        kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+        tick: 12,
+        chunk: {
+          x: 0,
+          y: 0
+        },
+        filterStatus: AUTHORITATIVE_REPLICATION_FILTER_STATUS_KEPT,
+        receivedWallCount: 1,
+        forwardedWallCount: 1
+      },
+      {
+        kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+        tick: 12,
+        chunk: {
+          x: 1,
+          y: 0
+        },
+        filterStatus: AUTHORITATIVE_REPLICATION_FILTER_STATUS_DROPPED,
+        receivedWallCount: 1,
+        forwardedWallCount: 0
+      },
+      {
         kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
         tick: 12,
         filterStatus: AUTHORITATIVE_REPLICATION_FILTER_STATUS_TRIMMED,
@@ -161,16 +216,20 @@ describe('filterAuthoritativeReplicatedStateBatchByInterestSet', () => {
     ]);
 
     const forwardedChunkMessage = result.forwardedMessages[0];
-    const forwardedEntityMessage = result.forwardedMessages[1];
+    const forwardedWallMessage = result.forwardedMessages[1];
+    const forwardedEntityMessage = result.forwardedMessages[2];
 
     expect(forwardedChunkMessage!.kind).toBe(CHUNK_TILE_DIFF_MESSAGE_KIND);
+    expect(forwardedWallMessage!.kind).toBe(CHUNK_WALL_DIFF_MESSAGE_KIND);
     expect(forwardedEntityMessage!.kind).toBe(ENTITY_SNAPSHOT_MESSAGE_KIND);
 
     if (
       forwardedChunkMessage?.kind === CHUNK_TILE_DIFF_MESSAGE_KIND &&
+      forwardedWallMessage?.kind === CHUNK_WALL_DIFF_MESSAGE_KIND &&
       forwardedEntityMessage?.kind === ENTITY_SNAPSHOT_MESSAGE_KIND
     ) {
       forwardedChunkMessage.tiles[0]!.tileId = 2;
+      forwardedWallMessage.walls[0]!.wallId = 9;
       forwardedEntityMessage.entities[0]!.state.grounded = false;
     }
 
@@ -192,6 +251,22 @@ describe('filterAuthoritativeReplicatedStateBatchByInterestSet', () => {
       ]
     });
     expect(stagedMessages[2]).toEqual({
+      kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+      version: NETWORK_PROTOCOL_VERSION,
+      tick: 12,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      tileOrder: NETWORK_CHUNK_TILE_ORDER,
+      walls: [
+        {
+          tileIndex: 0,
+          wallId: 5
+        }
+      ]
+    });
+    expect(stagedMessages[4]).toEqual({
       kind: ENTITY_SNAPSHOT_MESSAGE_KIND,
       version: NETWORK_PROTOCOL_VERSION,
       tick: 12,

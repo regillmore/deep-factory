@@ -3,7 +3,7 @@ import {
   AUTHORITATIVE_REPLICATION_FILTER_STATUS_TRIMMED,
   type AuthoritativeReplicationBatchFilterDiagnostic
 } from './replicationBatchFilter';
-import { CHUNK_TILE_DIFF_MESSAGE_KIND } from './protocol';
+import { ENTITY_SNAPSHOT_MESSAGE_KIND } from './protocol';
 
 export interface AuthoritativeReplicationBatchFilterStagedMetadata {
   tick: number;
@@ -64,7 +64,7 @@ export const summarizeAuthoritativeReplicationBatchFilterDiagnostics = (
     };
 
     const counters =
-      diagnostic.kind === CHUNK_TILE_DIFF_MESSAGE_KIND ? summary.chunks : summary.entities;
+      diagnostic.kind === ENTITY_SNAPSHOT_MESSAGE_KIND ? summary.entities : summary.chunks;
 
     if (diagnostic.filterStatus === AUTHORITATIVE_REPLICATION_FILTER_STATUS_DROPPED) {
       counters.dropped += 1;

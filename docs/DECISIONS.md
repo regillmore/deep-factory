@@ -1214,11 +1214,11 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Reason: Transport resync needs a narrower helper than the generic replay replacement seam so callers do not have to remember how to pair world replacement, entity baseline application, and post-success replay-guard clearing by hand.
 - Consequence: Future transport resync code should replace world state through this helper when it also needs one entity baseline, and should consume the returned entity replacement summary instead of re-deriving spawned, updated, or removed ids after the guard reset.
 
-### 2026-03-10: Per-tick authoritative replication staging should validate once and emit chunk diffs before the entity snapshot
+### 2026-03-10: Per-tick authoritative replication staging should validate once and emit tile diffs, then wall diffs, before the entity snapshot
 
-- Decision: `src/network/replicationStaging.ts` now validates that the caller-supplied entity snapshot already uses the staged tick before draining captured tile edits, then stages one deterministic batch whose chunk-diff messages precede one cloned entity-snapshot message for that same tick.
-- Reason: Authoritative transport code needs a stable chunk-first/entity-last send order, and a tick mismatch should not accidentally consume pending tile edits for the wrong frame before the caller notices.
-- Consequence: Future authoritative batching should build one entity snapshot per tick, stage it through this helper with the matching tile-edit capture, and treat staging failures as non-draining validation errors.
+- Decision: `src/network/replicationStaging.ts` now validates that the caller-supplied entity snapshot already uses the staged tick before draining captured tile edits or wall edits, then stages one deterministic batch whose tile chunk diffs precede wall chunk diffs and whose cloned entity snapshot remains last for that same tick.
+- Reason: Authoritative transport code needs a stable tile-before-wall-before-entity send order, and a tick mismatch should not accidentally consume pending world-layer edits for the wrong frame before the caller notices.
+- Consequence: Future authoritative batching should build one entity snapshot per tick, stage it through this helper with the matching tile-edit and wall-edit captures, and treat staging failures as non-draining validation errors.
 
 ### 2026-03-10: Authoritative replication dispatch should keep filter and replay diagnostics separate
 
