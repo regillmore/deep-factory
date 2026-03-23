@@ -5,7 +5,7 @@ import {
   AUTHORITATIVE_REPLICATION_REPLAY_STATUS_SKIPPED,
   type AuthoritativeReplicationDispatchResult
 } from './replicationDispatch';
-import { CHUNK_TILE_DIFF_MESSAGE_KIND } from './protocol';
+import { ENTITY_SNAPSHOT_MESSAGE_KIND } from './protocol';
 
 export interface AuthoritativeReplicationDispatchStatusCounters {
   dropped: number;
@@ -37,7 +37,7 @@ export const summarizeAuthoritativeReplicationDispatchResults = (
 
   for (const result of results ?? []) {
     const counters =
-      result.kind === CHUNK_TILE_DIFF_MESSAGE_KIND ? summary.chunks : summary.entities;
+      result.kind === ENTITY_SNAPSHOT_MESSAGE_KIND ? summary.entities : summary.chunks;
 
     if (result.filterStatus === AUTHORITATIVE_REPLICATION_FILTER_STATUS_DROPPED) {
       counters.dropped += 1;

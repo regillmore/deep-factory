@@ -1,8 +1,13 @@
 import {
   CHUNK_TILE_DIFF_MESSAGE_KIND,
+  CHUNK_WALL_DIFF_MESSAGE_KIND,
   ENTITY_SNAPSHOT_MESSAGE_KIND
 } from './protocol';
-import type { ChunkTileDiffMessage, EntitySnapshotMessage } from './protocol';
+import type {
+  ChunkTileDiffMessage,
+  ChunkWallDiffMessage,
+  EntitySnapshotMessage
+} from './protocol';
 import {
   AUTHORITATIVE_REPLICATION_FILTER_STATUS_DROPPED,
   AUTHORITATIVE_REPLICATION_FILTER_STATUS_KEPT,
@@ -11,6 +16,7 @@ import {
 } from './replicationBatchFilter';
 import {
   filterChunkTileDiffMessageByInterestSet,
+  filterChunkWallDiffMessageByInterestSet,
   filterEntitySnapshotMessageByInterestSet,
   type ClientInterestMessageFilterInterestSet,
   type InterestScopedReplicatedNetworkStateMessage
@@ -18,6 +24,7 @@ import {
 import { AuthoritativeReplicatedNetworkStateReplayer } from './stateReplay';
 import type {
   AuthoritativeChunkTileDiffReplayResult,
+  AuthoritativeChunkWallDiffReplayResult,
   AuthoritativeEntitySnapshotReplayResult
 } from './stateReplay';
 
@@ -62,6 +69,27 @@ export interface ReplayedChunkTileDiffDispatchResult {
   replayResult: AuthoritativeChunkTileDiffReplayResult;
 }
 
+export interface DroppedChunkWallDiffDispatchResult {
+  kind: typeof CHUNK_WALL_DIFF_MESSAGE_KIND;
+  tick: number;
+  chunk: ChunkWallDiffMessage['chunk'];
+  filterStatus: typeof AUTHORITATIVE_REPLICATION_FILTER_STATUS_DROPPED;
+  replayStatus: null;
+  receivedWallCount: number;
+  forwardedWallCount: 0;
+}
+
+export interface ReplayedChunkWallDiffDispatchResult {
+  kind: typeof CHUNK_WALL_DIFF_MESSAGE_KIND;
+  tick: number;
+  chunk: ChunkWallDiffMessage['chunk'];
+  filterStatus: typeof AUTHORITATIVE_REPLICATION_FILTER_STATUS_KEPT;
+  replayStatus: AuthoritativeReplicationDispatchReplayStatus;
+  receivedWallCount: number;
+  forwardedWallCount: number;
+  replayResult: AuthoritativeChunkWallDiffReplayResult;
+}
+
 export interface DroppedEntitySnapshotDispatchResult {
   kind: typeof ENTITY_SNAPSHOT_MESSAGE_KIND;
   tick: number;
@@ -86,11 +114,16 @@ export interface ReplayedEntitySnapshotDispatchResult {
 export type AuthoritativeReplicationDispatchResult =
   | DroppedChunkTileDiffDispatchResult
   | ReplayedChunkTileDiffDispatchResult
+  | DroppedChunkWallDiffDispatchResult
+  | ReplayedChunkWallDiffDispatchResult
   | DroppedEntitySnapshotDispatchResult
   | ReplayedEntitySnapshotDispatchResult;
 
 const resolveReplayStatus = (
-  result: AuthoritativeChunkTileDiffReplayResult | AuthoritativeEntitySnapshotReplayResult
+  result:
+    | AuthoritativeChunkTileDiffReplayResult
+    | AuthoritativeChunkWallDiffReplayResult
+    | AuthoritativeEntitySnapshotReplayResult
 ): AuthoritativeReplicationDispatchReplayStatus =>
   'skipped' in result && result.skipped === true
     ? AUTHORITATIVE_REPLICATION_REPLAY_STATUS_SKIPPED
@@ -132,6 +165,46 @@ const dispatchChunkTileDiffMessage = (
     replayStatus: resolveReplayStatus(replayResult),
     receivedTileCount: message.tiles.length,
     forwardedTileCount: filteredMessage.tiles.length,
+    replayResult
+  };
+};
+
+const dispatchChunkWallDiffMessage = (
+  replayer: AuthoritativeReplicatedNetworkStateReplayer,
+  interestSet: ClientInterestMessageFilterInterestSet,
+  message: ChunkWallDiffMessage
+): DroppedChunkWallDiffDispatchResult | ReplayedChunkWallDiffDispatchResult => {
+  const filteredMessage = filterChunkWallDiffMessageByInterestSet(message, interestSet);
+  if (filteredMessage === null) {
+    return {
+      kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+      tick: message.tick,
+      chunk: {
+        x: message.chunk.x,
+        y: message.chunk.y
+      },
+      filterStatus: AUTHORITATIVE_REPLICATION_FILTER_STATUS_DROPPED,
+      replayStatus: null,
+      receivedWallCount: message.walls.length,
+      forwardedWallCount: 0
+    };
+  }
+
+  const replayResult = replayer.applyMessage(
+    filteredMessage
+  ) as AuthoritativeChunkWallDiffReplayResult;
+
+  return {
+    kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+    tick: message.tick,
+    chunk: {
+      x: message.chunk.x,
+      y: message.chunk.y
+    },
+    filterStatus: AUTHORITATIVE_REPLICATION_FILTER_STATUS_KEPT,
+    replayStatus: resolveReplayStatus(replayResult),
+    receivedWallCount: message.walls.length,
+    forwardedWallCount: filteredMessage.walls.length,
     replayResult
   };
 };
@@ -179,6 +252,8 @@ const dispatchAuthoritativeReplicatedNetworkStateMessage = (
   switch (message.kind) {
     case CHUNK_TILE_DIFF_MESSAGE_KIND:
       return dispatchChunkTileDiffMessage(replayer, interestSet, message);
+    case CHUNK_WALL_DIFF_MESSAGE_KIND:
+      return dispatchChunkWallDiffMessage(replayer, interestSet, message);
     case ENTITY_SNAPSHOT_MESSAGE_KIND:
       return dispatchEntitySnapshotMessage(replayer, interestSet, message);
   }

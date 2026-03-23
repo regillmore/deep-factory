@@ -12,6 +12,7 @@ import { summarizeAuthoritativeReplicationDispatchResults } from './replicationD
 import {
   AUTHORITATIVE_REPLAY_SKIP_REASON_STALE_TICK,
   type AuthoritativeChunkTileDiffReplayResult,
+  type AuthoritativeChunkWallDiffReplayResult,
   type AuthoritativeEntitySnapshotReplayResult
 } from './stateReplay';
 
@@ -72,6 +73,28 @@ describe('summarizeAuthoritativeReplicationDispatchResults', () => {
           appliedTileCount: 3,
           changedTileCount: 2
         } satisfies AuthoritativeChunkTileDiffReplayResult
+      },
+      {
+        kind: 'chunk-wall-diff',
+        tick: 6,
+        chunk: {
+          x: 2,
+          y: 0
+        },
+        filterStatus: AUTHORITATIVE_REPLICATION_FILTER_STATUS_KEPT,
+        replayStatus: AUTHORITATIVE_REPLICATION_REPLAY_STATUS_APPLIED,
+        receivedWallCount: 1,
+        forwardedWallCount: 1,
+        replayResult: {
+          kind: 'chunk-wall-diff',
+          tick: 6,
+          chunk: {
+            x: 2,
+            y: 0
+          },
+          appliedWallCount: 1,
+          changedWallCount: 1
+        } satisfies AuthoritativeChunkWallDiffReplayResult
       },
       {
         kind: 'chunk-tile-diff',
@@ -139,7 +162,7 @@ describe('summarizeAuthoritativeReplicationDispatchResults', () => {
       chunks: {
         dropped: 1,
         trimmed: 0,
-        applied: 1,
+        applied: 2,
         skipped: 1
       },
       entities: {
@@ -153,7 +176,7 @@ describe('summarizeAuthoritativeReplicationDispatchResults', () => {
       chunks: {
         dropped: 1,
         trimmed: 0,
-        applied: 1,
+        applied: 2,
         skipped: 1
       },
       entities: {

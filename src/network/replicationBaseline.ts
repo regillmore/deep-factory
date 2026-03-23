@@ -1,11 +1,11 @@
 import type { EntitySnapshotMessage } from './protocol';
 import { AuthoritativeReplicatedNetworkStateReplayer } from './stateReplay';
 import type {
-  ChunkTileStateReplayTarget,
+  ChunkWorldStateReplayTarget,
   EntitySnapshotReplayResult
 } from './stateReplay';
 
-export type AuthoritativeWorldBaselineReplacement<T> = (world: ChunkTileStateReplayTarget) => T;
+export type AuthoritativeWorldBaselineReplacement<T> = (world: ChunkWorldStateReplayTarget) => T;
 
 export interface ApplyAuthoritativeReplicatedStateBaselineOptions<T> {
   replayer: AuthoritativeReplicatedNetworkStateReplayer;

@@ -3,11 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { TileWorld } from '../world/world';
 import {
   createChunkTileDiffMessage,
+  createChunkWallDiffMessage,
   createEntitySnapshotMessage
 } from './protocol';
 import { ReplicatedEntitySnapshotStore } from './stateReplay';
 import {
   filterChunkTileDiffMessageByInterestSet,
+  filterChunkWallDiffMessageByInterestSet,
   filterEntitySnapshotMessageByInterestSet,
   filterReplicatedNetworkStateMessageByInterestSet
 } from './snapshotFilter';
@@ -44,6 +46,42 @@ describe('filterChunkTileDiffMessageByInterestSet', () => {
 
     expect(
       filterChunkTileDiffMessageByInterestSet(interestedMessage, {
+        chunks: [{ x: 1, y: -1 }],
+        entityIds: []
+      })
+    ).toBeNull();
+  });
+});
+
+describe('filterChunkWallDiffMessageByInterestSet', () => {
+  it('keeps interested wall diffs as detached copies and drops chunks outside interest', () => {
+    const interestedMessage = createChunkWallDiffMessage({
+      tick: 13,
+      chunk: {
+        x: 2,
+        y: -1
+      },
+      walls: [
+        {
+          tileIndex: 0,
+          wallId: 3
+        }
+      ]
+    });
+    const filteredInterestedMessage = filterChunkWallDiffMessageByInterestSet(interestedMessage, {
+      chunks: [{ x: 2, y: -1 }],
+      entityIds: []
+    });
+
+    expect(filteredInterestedMessage).toEqual(interestedMessage);
+    expect(filteredInterestedMessage).not.toBe(interestedMessage);
+    expect(filteredInterestedMessage!.walls).not.toBe(interestedMessage.walls);
+
+    filteredInterestedMessage!.walls[0]!.wallId = 9;
+    expect(interestedMessage.walls[0]!.wallId).toBe(3);
+
+    expect(
+      filterChunkWallDiffMessageByInterestSet(interestedMessage, {
         chunks: [{ x: 1, y: -1 }],
         entityIds: []
       })
@@ -150,7 +188,7 @@ describe('filterEntitySnapshotMessageByInterestSet', () => {
 });
 
 describe('filterReplicatedNetworkStateMessageByInterestSet', () => {
-  it('dispatches chunk diffs and entity snapshots through the same interest filter', () => {
+  it('dispatches tile diffs, wall diffs, and entity snapshots through the same interest filter', () => {
     const chunkMessage = createChunkTileDiffMessage({
       tick: 6,
       chunk: {
@@ -165,8 +203,21 @@ describe('filterReplicatedNetworkStateMessageByInterestSet', () => {
         }
       ]
     });
-    const entityMessage = createEntitySnapshotMessage({
+    const wallMessage = createChunkWallDiffMessage({
       tick: 7,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      walls: [
+        {
+          tileIndex: 0,
+          wallId: 4
+        }
+      ]
+    });
+    const entityMessage = createEntitySnapshotMessage({
+      tick: 8,
       entities: [
         {
           id: 2,
@@ -191,6 +242,10 @@ describe('filterReplicatedNetworkStateMessageByInterestSet', () => {
       chunks: [{ x: 1, y: 0 }],
       entityIds: [2]
     });
+    const filteredWallMessage = filterReplicatedNetworkStateMessageByInterestSet(wallMessage, {
+      chunks: [{ x: 0, y: 0 }],
+      entityIds: [2]
+    });
     const filteredEntityMessage = filterReplicatedNetworkStateMessageByInterestSet(entityMessage, {
       chunks: [{ x: 1, y: 0 }],
       entityIds: [2]
@@ -198,9 +253,10 @@ describe('filterReplicatedNetworkStateMessageByInterestSet', () => {
 
     expect(filteredChunkMessage).toBeNull();
     expect(world.getTile(0, 0)).toBe(initialTileId);
+    expect(filteredWallMessage).toEqual(wallMessage);
     expect(filteredEntityMessage).toEqual(
       createEntitySnapshotMessage({
-        tick: 7,
+        tick: 8,
         entities: [entityMessage.entities[0]!]
       })
     );

@@ -4,6 +4,7 @@ import { CHUNK_SIZE, MAX_LIQUID_LEVEL } from '../world/constants';
 import { TileWorld } from '../world/world';
 import {
   CHUNK_TILE_DIFF_MESSAGE_KIND,
+  CHUNK_WALL_DIFF_MESSAGE_KIND,
   ENTITY_SNAPSHOT_MESSAGE_KIND,
   createChunkTileDiffMessage,
   createChunkWallDiffMessage,
@@ -16,6 +17,7 @@ import {
   AuthoritativeReplicatedNetworkStateReplayer,
   ReplicatedEntitySnapshotStore,
   applyChunkTileDiffMessage,
+  applyChunkWallDiffMessage,
   applyReplicatedNetworkStateMessage,
   isReplicatedNetworkStateMessage
 } from './stateReplay';
@@ -60,6 +62,44 @@ describe('applyChunkTileDiffMessage', () => {
     expect(world.getLiquidLevel(CHUNK_SIZE + 2, -CHUNK_SIZE + 1)).toBe(MAX_LIQUID_LEVEL / 2);
 
     expect(applyChunkTileDiffMessage(world, message).changedTileCount).toBe(0);
+  });
+});
+
+describe('applyChunkWallDiffMessage', () => {
+  it('maps row-major chunk tile indices into local world wall state', () => {
+    const world = new TileWorld(0);
+    const message = createChunkWallDiffMessage({
+      tick: 16,
+      chunk: {
+        x: -1,
+        y: 1
+      },
+      walls: [
+        {
+          tileIndex: 1,
+          wallId: 5
+        },
+        {
+          tileIndex: CHUNK_SIZE + 2,
+          wallId: 2
+        }
+      ]
+    });
+
+    expect(applyChunkWallDiffMessage(world, message)).toEqual({
+      kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+      tick: 16,
+      chunk: {
+        x: -1,
+        y: 1
+      },
+      appliedWallCount: 2,
+      changedWallCount: 2
+    });
+    expect(world.getWall(-CHUNK_SIZE + 1, CHUNK_SIZE)).toBe(5);
+    expect(world.getWall(-CHUNK_SIZE + 2, CHUNK_SIZE + 1)).toBe(2);
+
+    expect(applyChunkWallDiffMessage(world, message).changedWallCount).toBe(0);
   });
 });
 
@@ -363,7 +403,7 @@ describe('ReplicatedEntitySnapshotStore', () => {
 });
 
 describe('applyReplicatedNetworkStateMessage', () => {
-  it('dispatches authoritative chunk/entity replay messages and rejects player input', () => {
+  it('dispatches authoritative chunk, wall, and entity replay messages and rejects player input', () => {
     const world = new TileWorld(0);
     const store = new ReplicatedEntitySnapshotStore();
     const chunkMessage = createChunkTileDiffMessage({
@@ -416,7 +456,7 @@ describe('applyReplicatedNetworkStateMessage', () => {
     expect(isReplicatedNetworkStateMessage(chunkMessage)).toBe(true);
     expect(isReplicatedNetworkStateMessage(entityMessage)).toBe(true);
     expect(isReplicatedNetworkStateMessage(playerInputMessage)).toBe(false);
-    expect(isReplicatedNetworkStateMessage(wallMessage)).toBe(false);
+    expect(isReplicatedNetworkStateMessage(wallMessage)).toBe(true);
 
     expect(
       applyReplicatedNetworkStateMessage(
@@ -445,6 +485,26 @@ describe('applyReplicatedNetworkStateMessage', () => {
           world,
           entities: store
         },
+        wallMessage
+      )
+    ).toEqual({
+      kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+      tick: 6,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      appliedWallCount: 1,
+      changedWallCount: 1
+    });
+    expect(world.getWall(0, 0)).toBe(2);
+
+    expect(
+      applyReplicatedNetworkStateMessage(
+        {
+          world,
+          entities: store
+        },
         entityMessage
       )
     ).toEqual({
@@ -455,16 +515,6 @@ describe('applyReplicatedNetworkStateMessage', () => {
       updatedEntityIds: [],
       removedEntityIds: []
     });
-
-    expect(() =>
-      applyReplicatedNetworkStateMessage(
-        {
-          world,
-          entities: store
-        },
-        wallMessage
-      )
-    ).toThrow('chunk-wall-diff messages are not part of the current replicated replay path');
 
     expect(() =>
       applyReplicatedNetworkStateMessage(
@@ -609,6 +659,230 @@ describe('AuthoritativeReplicatedNetworkStateReplayer', () => {
     });
     expect(replayer.getLastAppliedChunkTick({ x: 1, y: 0 })).toBe(2);
     expect(world.getTile(CHUNK_SIZE + 1, 0)).toBe(9);
+  });
+
+  it('replays one tile diff and one wall diff per chunk tick while still skipping duplicate or stale wall messages', () => {
+    const world = new TileWorld(0);
+    const store = new ReplicatedEntitySnapshotStore();
+    const replayer = new AuthoritativeReplicatedNetworkStateReplayer({
+      world,
+      entities: store
+    });
+
+    expect(
+      replayer.applyMessage(
+        createChunkTileDiffMessage({
+          tick: 3,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          tiles: [
+            {
+              tileIndex: 0,
+              tileId: WATER_TILE_ID,
+              liquidLevel: MAX_LIQUID_LEVEL
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_TILE_DIFF_MESSAGE_KIND,
+      tick: 3,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      appliedTileCount: 1,
+      changedTileCount: 1
+    });
+    expect(
+      replayer.applyMessage(
+        createChunkWallDiffMessage({
+          tick: 3,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          walls: [
+            {
+              tileIndex: 0,
+              wallId: 2
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+      tick: 3,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      appliedWallCount: 1,
+      changedWallCount: 1
+    });
+    expect(replayer.getLastAppliedChunkTick({ x: 0, y: 0 })).toBe(3);
+    expect(world.getTile(0, 0)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(0, 0)).toBe(MAX_LIQUID_LEVEL);
+    expect(world.getWall(0, 0)).toBe(2);
+
+    expect(
+      replayer.applyMessage(
+        createChunkWallDiffMessage({
+          tick: 3,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          walls: [
+            {
+              tileIndex: 0,
+              wallId: 4
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+      tick: 3,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      skipped: true,
+      reason: AUTHORITATIVE_REPLAY_SKIP_REASON_DUPLICATE_TICK,
+      lastAppliedTick: 3,
+      receivedWallCount: 1
+    });
+    expect(world.getWall(0, 0)).toBe(2);
+
+    expect(
+      replayer.applyMessage(
+        createChunkWallDiffMessage({
+          tick: 2,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          walls: [
+            {
+              tileIndex: 0,
+              wallId: 5
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+      tick: 2,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      skipped: true,
+      reason: AUTHORITATIVE_REPLAY_SKIP_REASON_STALE_TICK,
+      lastAppliedTick: 3,
+      receivedWallCount: 1
+    });
+
+    expect(
+      replayer.applyMessage(
+        createChunkWallDiffMessage({
+          tick: 3,
+          chunk: {
+            x: 1,
+            y: 0
+          },
+          walls: [
+            {
+              tileIndex: 1,
+              wallId: 7
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+      tick: 3,
+      chunk: {
+        x: 1,
+        y: 0
+      },
+      appliedWallCount: 1,
+      changedWallCount: 1
+    });
+    expect(replayer.getLastAppliedChunkTick({ x: 1, y: 0 })).toBe(3);
+    expect(world.getWall(CHUNK_SIZE + 1, 0)).toBe(7);
+  });
+
+  it('still applies a same-tick tile diff after the matching chunk wall diff already landed', () => {
+    const world = new TileWorld(0);
+    const store = new ReplicatedEntitySnapshotStore();
+    const replayer = new AuthoritativeReplicatedNetworkStateReplayer({
+      world,
+      entities: store
+    });
+
+    expect(
+      replayer.applyMessage(
+        createChunkWallDiffMessage({
+          tick: 4,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          walls: [
+            {
+              tileIndex: 0,
+              wallId: 6
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_WALL_DIFF_MESSAGE_KIND,
+      tick: 4,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      appliedWallCount: 1,
+      changedWallCount: 1
+    });
+
+    expect(
+      replayer.applyMessage(
+        createChunkTileDiffMessage({
+          tick: 4,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          tiles: [
+            {
+              tileIndex: 0,
+              tileId: WATER_TILE_ID,
+              liquidLevel: MAX_LIQUID_LEVEL
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      kind: CHUNK_TILE_DIFF_MESSAGE_KIND,
+      tick: 4,
+      chunk: {
+        x: 0,
+        y: 0
+      },
+      appliedTileCount: 1,
+      changedTileCount: 1
+    });
+
+    expect(replayer.getLastAppliedChunkTick({ x: 0, y: 0 })).toBe(4);
+    expect(world.getWall(0, 0)).toBe(6);
+    expect(world.getTile(0, 0)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(0, 0)).toBe(MAX_LIQUID_LEVEL);
   });
 
   it('skips duplicate and stale entity snapshots and still rejects player input messages', () => {

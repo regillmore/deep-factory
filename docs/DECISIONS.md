@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-22: Authoritative chunk replay allows one tile diff and one wall diff per chunk tick
+
+- Decision: `AuthoritativeReplicatedNetworkStateReplayer` now keeps one last-applied tick per chunk plus a same-tick layer bitmask, so one `chunk-tile-diff` and one `chunk-wall-diff` may each apply once for the same chunk and tick before later duplicate layer messages at that tick are rejected.
+- Reason: Authoritative staging already emits separate tile and wall payloads for one tick, and client replay should preserve both chunk layers without letting stale or repeated layer packets roll either layer backward.
+- Consequence: Future chunk replay or transport work should treat tile and wall diffs as separate once-per-tick layer messages under one shared per-chunk tick guard instead of collapsing them into one replay slot or maintaining unrelated chunk clocks per layer.
+
 ### 2026-03-22: Chunk-wall-diff messages reuse chunk tile cell indexing
 
 - Decision: The new `chunk-wall-diff` protocol payload reuses the same row-major per-cell `tileIndex` ordering and `tileOrder` metadata already used by `chunk-tile-diff`, while swapping only the payload data from `{ tileId, liquidLevel }` to `{ wallId }`.

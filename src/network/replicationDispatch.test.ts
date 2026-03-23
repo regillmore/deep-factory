@@ -4,6 +4,7 @@ import { CHUNK_SIZE, MAX_LIQUID_LEVEL } from '../world/constants';
 import { TileWorld } from '../world/world';
 import {
   createChunkTileDiffMessage,
+  createChunkWallDiffMessage,
   createEntitySnapshotMessage
 } from './protocol';
 import {
@@ -70,6 +71,103 @@ describe('dispatchAuthoritativeReplicatedNetworkStateMessages', () => {
     expect(replayer.getLastAppliedChunkTick({ x: 1, y: 0 })).toBeNull();
     expect(world.getTile(CHUNK_SIZE, 0)).not.toBe(WATER_TILE_ID);
     expect(world.getLiquidLevel(CHUNK_SIZE, 0)).toBe(0);
+  });
+
+  it('replays interested wall diffs and keeps the same chunk tick available for a same-tick tile diff', () => {
+    const world = new TileWorld(0);
+    const store = new ReplicatedEntitySnapshotStore();
+    const replayer = new AuthoritativeReplicatedNetworkStateReplayer({
+      world,
+      entities: store
+    });
+
+    expect(
+      dispatchAuthoritativeReplicatedNetworkStateMessages({
+        replayer,
+        interestSet: {
+          chunks: [{ x: 0, y: 0 }],
+          entityIds: []
+        },
+        messages: [
+          createChunkWallDiffMessage({
+            tick: 4,
+            chunk: {
+              x: 0,
+              y: 0
+            },
+            walls: [
+              {
+                tileIndex: 0,
+                wallId: 6
+              }
+            ]
+          }),
+          createChunkTileDiffMessage({
+            tick: 4,
+            chunk: {
+              x: 0,
+              y: 0
+            },
+            tiles: [
+              {
+                tileIndex: 0,
+                tileId: WATER_TILE_ID,
+                liquidLevel: MAX_LIQUID_LEVEL
+              }
+            ]
+          })
+        ]
+      })
+    ).toEqual([
+      {
+        kind: 'chunk-wall-diff',
+        tick: 4,
+        chunk: {
+          x: 0,
+          y: 0
+        },
+        filterStatus: 'kept',
+        replayStatus: AUTHORITATIVE_REPLICATION_REPLAY_STATUS_APPLIED,
+        receivedWallCount: 1,
+        forwardedWallCount: 1,
+        replayResult: {
+          kind: 'chunk-wall-diff',
+          tick: 4,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          appliedWallCount: 1,
+          changedWallCount: 1
+        }
+      },
+      {
+        kind: 'chunk-tile-diff',
+        tick: 4,
+        chunk: {
+          x: 0,
+          y: 0
+        },
+        filterStatus: 'kept',
+        replayStatus: AUTHORITATIVE_REPLICATION_REPLAY_STATUS_APPLIED,
+        receivedTileCount: 1,
+        forwardedTileCount: 1,
+        replayResult: {
+          kind: 'chunk-tile-diff',
+          tick: 4,
+          chunk: {
+            x: 0,
+            y: 0
+          },
+          appliedTileCount: 1,
+          changedTileCount: 1
+        }
+      }
+    ]);
+    expect(replayer.getLastAppliedChunkTick({ x: 0, y: 0 })).toBe(4);
+    expect(world.getWall(0, 0)).toBe(6);
+    expect(world.getTile(0, 0)).toBe(WATER_TILE_ID);
+    expect(world.getLiquidLevel(0, 0)).toBe(MAX_LIQUID_LEVEL);
   });
 
   it('replays trimmed entity snapshots and reports both received and forwarded counts', () => {

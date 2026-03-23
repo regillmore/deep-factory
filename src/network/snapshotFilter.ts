@@ -2,6 +2,7 @@ import { chunkKey } from '../world/chunkMath';
 import type { ClientInterestSet } from './interestSet';
 import {
   CHUNK_TILE_DIFF_MESSAGE_KIND,
+  CHUNK_WALL_DIFF_MESSAGE_KIND,
   ENTITY_SNAPSHOT_MESSAGE_KIND,
   createChunkTileDiffMessage,
   createChunkWallDiffMessage,
@@ -13,6 +14,7 @@ export type ClientInterestMessageFilterInterestSet = Pick<ClientInterestSet, 'ch
 
 export type InterestScopedReplicatedNetworkStateMessage =
   | ChunkTileDiffMessage
+  | ChunkWallDiffMessage
   | EntitySnapshotMessage;
 
 interface ClientInterestMembershipSets {
@@ -95,6 +97,8 @@ export const filterReplicatedNetworkStateMessageByInterestSet = (
   switch (message.kind) {
     case CHUNK_TILE_DIFF_MESSAGE_KIND:
       return filterChunkTileDiffMessageWithMembership(message, membership);
+    case CHUNK_WALL_DIFF_MESSAGE_KIND:
+      return filterChunkWallDiffMessageWithMembership(message, membership);
     case ENTITY_SNAPSHOT_MESSAGE_KIND:
       return filterEntitySnapshotMessageWithMembership(message, membership);
   }
