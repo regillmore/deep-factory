@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-23
 
+- Task: Add a passive-bunny platform traversal follow-up after passive-bunny spawn-on-platform support.
+- Changes: Updated [src/world/passiveBunnyLocomotion.ts](../src/world/passiveBunnyLocomotion.ts) so passive bunnies now treat one-way platforms as downward-only landing and support surfaces while still ignoring platform edges as side walls, expanded [src/world/passiveBunnyLocomotion.test.ts](../src/world/passiveBunnyLocomotion.test.ts) with deterministic regressions for platform landings plus platform-run support and ledge turns, removed completed task `526` from [docs/NEXT.md](docs/NEXT.md), added replacement task `530`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/passiveBunnyLocomotion.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a passive-bunny spawn-on-platform follow-up after hostile-slime spawn-on-platform support.
 - Changes: Updated [src/world/passiveBunnySpawn.ts](../src/world/passiveBunnySpawn.ts) so passive-bunny spawn-window searches now opt into one-way platform support through the shared spawn helper, expanded [src/world/passiveBunnySpawn.test.ts](../src/world/passiveBunnySpawn.test.ts) with deterministic regressions for current-window and later-window placed platform floors, removed completed task `525` from [docs/NEXT.md](docs/NEXT.md), added replacement task `526`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/world/passiveBunnySpawn.test.ts src/world/playerSpawn.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

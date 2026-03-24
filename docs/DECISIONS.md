@@ -2,10 +2,10 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
-### 2026-03-23: Hostile slimes reuse downward-only one-way platform support
+### 2026-03-23: Hostile slimes and passive bunnies reuse downward-only one-way platform support
 
-- Decision: Hostile slimes now treat one-way platforms as valid landing and support surfaces only during downward sweeps and support probes, while horizontal and upward collision checks continue ignoring platform tiles.
-- Reason: Slime chase needed to work across placed platform runs without turning platform edges into false side walls or rewriting the existing grounded-hop locomotion model into pathfinding.
+- Decision: Hostile slimes and passive bunnies now treat one-way platforms as valid landing and support surfaces only during downward sweeps and support probes, while horizontal and upward collision checks continue ignoring platform tiles.
+- Reason: Both chase hops and ambient bunny wandering needed to work across placed platform runs without turning platform edges into false side walls or rewriting those grounded hop models into pathfinding.
 - Consequence: Future hostile or ambient creature platform traversal should preserve that downward-only support contract unless a later pass intentionally adds separate platform-specific steering or drop-through behavior.
 
 ### 2026-03-23: One-way platforms only catch downward player sweeps and reuse rope-drop intent

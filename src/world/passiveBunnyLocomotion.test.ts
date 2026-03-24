@@ -9,6 +9,7 @@ import {
   createPassiveBunnyState,
   DEFAULT_PASSIVE_BUNNY_HOP_INTERVAL_TICKS
 } from './passiveBunnyState';
+import { STARTER_PLATFORM_TILE_ID } from './starterPlatformPlacement';
 import { TileWorld } from './world';
 
 const FIXED_DT_SECONDS = 1 / 60;
@@ -32,6 +33,13 @@ const createFlatSurfaceWorld = (): TileWorld => {
   const world = new TileWorld(0);
   setTiles(world, -32, -16, 32, 16, 0);
   setTiles(world, -32, 0, 32, 0, 3);
+  return world;
+};
+
+const createPlatformRunWorld = (minTileX: number, maxTileX: number): TileWorld => {
+  const world = new TileWorld(0);
+  setTiles(world, -32, -16, 32, 16, 0);
+  setTiles(world, minTileX, 0, maxTileX, 0, STARTER_PLATFORM_TILE_ID);
   return world;
 };
 
@@ -97,6 +105,54 @@ describe('passiveBunnyLocomotion', () => {
     expect(nextState.grounded).toBe(false);
   });
 
+  it('lands on one-way platforms from above', () => {
+    const world = createPlatformRunWorld(2, 2);
+
+    const nextState = stepPassiveBunnyState(
+      world,
+      createPassiveBunnyState({
+        position: { x: 40, y: -1 },
+        velocity: { x: DEFAULT_PASSIVE_BUNNY_HOP_HORIZONTAL_SPEED, y: 60 },
+        grounded: false,
+        facing: 'right',
+        hopCooldownTicksRemaining: 4
+      }),
+      FIXED_DT_SECONDS
+    );
+
+    expect(nextState).toEqual({
+      position: { x: 41.2, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 14, height: 18 },
+      grounded: true,
+      facing: 'right',
+      hopCooldownTicksRemaining: 4
+    });
+  });
+
+  it('keeps platform runs as valid ground support instead of turning away early', () => {
+    const world = createPlatformRunWorld(0, 2);
+
+    const nextState = stepPassiveBunnyState(
+      world,
+      createPassiveBunnyState({
+        position: { x: 8, y: 0 },
+        facing: 'right',
+        hopCooldownTicksRemaining: 2
+      }),
+      FIXED_DT_SECONDS
+    );
+
+    expect(nextState).toEqual({
+      position: { x: 8, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 14, height: 18 },
+      grounded: true,
+      facing: 'right',
+      hopCooldownTicksRemaining: 1
+    });
+  });
+
   it('turns around and launches away from a ledge instead of hopping off it', () => {
     const world = new TileWorld(0);
     setTiles(world, -32, -16, 0, 16, 0);
@@ -114,6 +170,31 @@ describe('passiveBunnyLocomotion', () => {
 
     expect(nextState.position.x).toBeCloseTo(
       8 - DEFAULT_PASSIVE_BUNNY_HOP_HORIZONTAL_SPEED * FIXED_DT_SECONDS
+    );
+    expect(nextState.position.y).toBeCloseTo(-4.5);
+    expect(nextState.velocity).toEqual({
+      x: -DEFAULT_PASSIVE_BUNNY_HOP_HORIZONTAL_SPEED,
+      y: -(DEFAULT_PASSIVE_BUNNY_HOP_VERTICAL_SPEED - 30)
+    });
+    expect(nextState.grounded).toBe(false);
+    expect(nextState.facing).toBe('left');
+  });
+
+  it('turns around at the end of a placed platform run instead of hopping off it', () => {
+    const world = createPlatformRunWorld(0, 1);
+
+    const nextState = stepPassiveBunnyState(
+      world,
+      createPassiveBunnyState({
+        position: { x: 24, y: 0 },
+        facing: 'right',
+        hopCooldownTicksRemaining: 1
+      }),
+      FIXED_DT_SECONDS
+    );
+
+    expect(nextState.position.x).toBeCloseTo(
+      24 - DEFAULT_PASSIVE_BUNNY_HOP_HORIZONTAL_SPEED * FIXED_DT_SECONDS
     );
     expect(nextState.position.y).toBeCloseTo(-4.5);
     expect(nextState.velocity).toEqual({
