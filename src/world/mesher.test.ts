@@ -55,6 +55,12 @@ const setChunkLiquidTile = (
 };
 
 const atlasUvRect = (atlasTileIndex: number) => atlasIndexToUvRect(atlasTileIndex);
+const authoredUvRectFromPixels = (x0: number, y0: number, x1: number, y1: number) => ({
+  u0: x0 / AUTHORED_ATLAS_WIDTH,
+  v0: y0 / AUTHORED_ATLAS_HEIGHT,
+  u1: x1 / AUTHORED_ATLAS_WIDTH,
+  v1: y1 / AUTHORED_ATLAS_HEIGHT
+});
 const sampleUvRect = (uvRect: { u0: number; v0: number; u1: number; v1: number }) =>
   insetTileUvRectForAtlasSampling(uvRect);
 
@@ -496,7 +502,7 @@ describe('buildChunkMesh autotile UV selection', () => {
     expectSingleQuadUvRect(mesh.vertices, 14);
   });
 
-  it('uses dedicated atlas-backed renders for small-tree sapling, trunk, and leaf tiles', () => {
+  it('uses sapling and trunk atlas renders plus animated foliage uv rects for small-tree tiles', () => {
     const chunk = createEmptyChunk();
     setChunkTile(chunk, 0, 0, 16);
     setChunkTile(chunk, 1, 0, 17);
@@ -507,7 +513,16 @@ describe('buildChunkMesh autotile UV selection', () => {
     expect(mesh.vertexCount).toBe(18);
     expectSingleQuadUvRect(getQuadVertices(mesh.vertices, 0), 23);
     expectSingleQuadUvRect(getQuadVertices(mesh.vertices, 1), 24);
-    expectSingleQuadUvRect(getQuadVertices(mesh.vertices, 2), 25);
+    expectSingleQuadUv(
+      getQuadVertices(mesh.vertices, 2),
+      authoredUvRectFromPixels(81, 17, 95, 31)
+    );
+    expect(mesh.animatedTileQuads).toEqual([
+      {
+        tileId: 18,
+        vertexFloatOffset: FLOATS_PER_TILE_QUAD * 2
+      }
+    ]);
   });
 
   it('insets atlas UV sampling by half a texel so neighboring atlas regions cannot bleed in', () => {

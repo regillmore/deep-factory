@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-23
 
+- Task: Replace the placeholder single-leaf foliage mesh with a gently animated leafy foliage block.
+- Changes: Updated [src/world/tileMetadata.json](../src/world/tileMetadata.json) and [public/atlas/tile-atlas.png](../public/atlas/tile-atlas.png) so `small_tree_leaf` now renders through a fuller foliage sprite plus two direct `uvRect` animation frames cropped inside its existing authored leaf region, refreshed [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts), [src/world/mesher.test.ts](../src/world/mesher.test.ts), [src/gl/animatedChunkMesh.test.ts](../src/gl/animatedChunkMesh.test.ts), and [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) with shipped-metadata, chunk-mesher, animated-UV, and committed-atlas regressions, removed completed task `534` from [docs/NEXT.md](docs/NEXT.md), added replacement task `535`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/tileMetadata.test.ts src/world/mesher.test.ts src/gl/animatedChunkMesh.test.ts src/gl/authoredAtlasAsset.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a passive-bunny release liquid-safety follow-up after passive-bunny release-on-platform.
 - Changes: Expanded [src/world/passiveBunnyRelease.test.ts](../src/world/passiveBunnyRelease.test.ts) with deterministic water- and lava-flooded platform-floor regressions so nearby-ground bunny release stays dry even when one-way platform support is enabled, removed completed task `531` from [docs/NEXT.md](docs/NEXT.md), added replacement task `532`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/passiveBunnyRelease.test.ts src/world/playerSpawn.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

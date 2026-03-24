@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-23: Small-tree leaf animation reuses cropped direct-uvRect frames inside one authored region
+
+- Decision: `small_tree_leaf` now keeps its existing dedicated authored atlas region `25`, but renders and animates through two direct `uvRect` crops inside that same region instead of claiming a second atlas slot for foliage motion.
+- Reason: The current atlas no longer has spare authored regions, and a subtle canopy sway fits inside the existing leaf art bounds without widening the atlas or sacrificing the transparent right-side padding strip.
+- Consequence: Future small-tree foliage follow-ups should either reuse that same cropped-frame pattern inside the leaf region or intentionally grow the atlas and its regressions if they need truly separate frame art.
+
 ### 2026-03-23: Platform-supported bunny release stays liquid-safe
 
 - Decision: Selected `Bunny` release searches continue reusing the shared liquid-overlap rejection from `findPlayerSpawnPoint(...)` even when one-way platform support is enabled.

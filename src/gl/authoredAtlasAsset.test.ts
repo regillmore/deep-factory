@@ -1347,18 +1347,42 @@ describe('authored atlas asset', () => {
   });
 
   it('keeps small-tree sapling, trunk, and leaf placeholders in dedicated authored regions', () => {
-    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
+    const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
     const saplingTile = TILE_METADATA.tiles.find((tile) => tile.name === 'small_tree_sapling');
     const trunkTile = TILE_METADATA.tiles.find((tile) => tile.name === 'small_tree_trunk');
     const leafTile = TILE_METADATA.tiles.find((tile) => tile.name === 'small_tree_leaf');
 
     expect(saplingTile?.render?.atlasIndex).toBe(23);
     expect(trunkTile?.render?.atlasIndex).toBe(24);
-    expect(leafTile?.render?.atlasIndex).toBe(25);
+    expect(leafTile?.render?.uvRect).toEqual({
+      u0: 81 / AUTHORED_ATLAS_WIDTH,
+      v0: 17 / AUTHORED_ATLAS_HEIGHT,
+      u1: 95 / AUTHORED_ATLAS_WIDTH,
+      v1: 31 / AUTHORED_ATLAS_HEIGHT
+    });
+    expect(leafTile?.render?.frames).toEqual([
+      {
+        uvRect: {
+          u0: 81 / AUTHORED_ATLAS_WIDTH,
+          v0: 17 / AUTHORED_ATLAS_HEIGHT,
+          u1: 95 / AUTHORED_ATLAS_WIDTH,
+          v1: 31 / AUTHORED_ATLAS_HEIGHT
+        }
+      },
+      {
+        uvRect: {
+          u0: 82 / AUTHORED_ATLAS_WIDTH,
+          v0: 17 / AUTHORED_ATLAS_HEIGHT,
+          u1: 96 / AUTHORED_ATLAS_WIDTH,
+          v1: 31 / AUTHORED_ATLAS_HEIGHT
+        }
+      }
+    ]);
+    expect(leafTile?.render?.frameDurationMs).toBe(300);
 
     const saplingRegion = AUTHORED_ATLAS_REGIONS[saplingTile!.render!.atlasIndex!];
     const trunkRegion = AUTHORED_ATLAS_REGIONS[trunkTile!.render!.atlasIndex!];
-    const leafRegion = AUTHORED_ATLAS_REGIONS[leafTile!.render!.atlasIndex!];
+    const leafRegion = AUTHORED_ATLAS_REGIONS[25];
     expect(saplingRegion).toEqual({ x: 80, y: 0, width: 16, height: 16 });
     expect(trunkRegion).toEqual({ x: 96, y: 0, width: 16, height: 16 });
     expect(leafRegion).toEqual({ x: 80, y: 16, width: 16, height: 16 });
@@ -1375,11 +1399,23 @@ describe('authored atlas asset', () => {
       width: 6,
       height: 16
     });
+    expect(uvRectToPixelRegion(leafTile!.render!.uvRect!, pngWidth, pngHeight)).toEqual({
+      x: 81,
+      y: 17,
+      width: 14,
+      height: 14
+    });
+    expect(uvRectToPixelRegion(leafTile!.render!.frames![1]!.uvRect!, pngWidth, pngHeight)).toEqual({
+      x: 82,
+      y: 17,
+      width: 14,
+      height: 14
+    });
     expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, leafRegion!)).toEqual({
-      x: leafRegion!.x + 2,
+      x: leafRegion!.x + 1,
       y: leafRegion!.y + 1,
-      width: 12,
-      height: 11
+      width: 14,
+      height: 13
     });
   });
 
