@@ -73,6 +73,7 @@ export const evaluatePassiveBunnyRelease = (
     height: DEFAULT_PASSIVE_BUNNY_HEIGHT,
     originTileX: worldTileX,
     originTileY: worldTileY,
+    allowOneWayPlatformSupport: true,
     maxHorizontalOffsetTiles:
       options.horizontalSearchTiles ?? DEFAULT_PASSIVE_BUNNY_RELEASE_HORIZONTAL_SEARCH_TILES,
     maxVerticalOffsetTiles:

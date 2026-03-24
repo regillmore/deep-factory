@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createPlayerState } from './playerState';
 import { evaluatePassiveBunnyRelease } from './passiveBunnyRelease';
+import { STARTER_PLATFORM_TILE_ID } from './starterPlatformPlacement';
 
 const tileKey = (worldTileX: number, worldTileY: number): string => `${worldTileX},${worldTileY}`;
 
@@ -67,6 +68,65 @@ describe('passiveBunnyRelease', () => {
       { x: 2, y: 0 },
       { x: 3, y: 0 },
       { x: 2, y: -1 }
+    ]);
+
+    expect(
+      evaluatePassiveBunnyRelease(world, playerState, 2, 0, {
+        horizontalSearchTiles: 1,
+        verticalSearchTiles: 0
+      })
+    ).toEqual({
+      placementRangeWithinReach: true,
+      spawnState: {
+        position: { x: 24, y: 0 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 14, height: 18 },
+        grounded: true,
+        facing: 'left',
+        hopCooldownTicksRemaining: 48
+      },
+      landingTile: {
+        tileX: 1,
+        tileY: -1
+      },
+      canRelease: true
+    });
+  });
+
+  it('treats a placed platform floor as valid landing support at the requested release tile', () => {
+    const playerState = createPlayerState({
+      position: { x: 8, y: 0 }
+    });
+    const world = createPassiveBunnyReleaseWorld([
+      { x: 2, y: 0, tileId: STARTER_PLATFORM_TILE_ID }
+    ]);
+
+    expect(evaluatePassiveBunnyRelease(world, playerState, 2, -1)).toEqual({
+      placementRangeWithinReach: true,
+      spawnState: {
+        position: { x: 40, y: 0 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 14, height: 18 },
+        grounded: true,
+        facing: 'right',
+        hopCooldownTicksRemaining: 48
+      },
+      landingTile: {
+        tileX: 2,
+        tileY: -1
+      },
+      canRelease: true
+    });
+  });
+
+  it('falls back to the nearest placed platform floor in deterministic left-before-right order', () => {
+    const playerState = createPlayerState({
+      position: { x: 40, y: 0 }
+    });
+    const world = createPassiveBunnyReleaseWorld([
+      { x: 1, y: 0, tileId: STARTER_PLATFORM_TILE_ID },
+      { x: 2, y: -1 },
+      { x: 3, y: 0, tileId: STARTER_PLATFORM_TILE_ID }
     ]);
 
     expect(
