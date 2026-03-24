@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-23
 
+- Task: Add a passive-bunny release liquid-safety follow-up after passive-bunny release-on-platform.
+- Changes: Expanded [src/world/passiveBunnyRelease.test.ts](../src/world/passiveBunnyRelease.test.ts) with deterministic water- and lava-flooded platform-floor regressions so nearby-ground bunny release stays dry even when one-way platform support is enabled, removed completed task `531` from [docs/NEXT.md](docs/NEXT.md), added replacement task `532`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/passiveBunnyRelease.test.ts src/world/playerSpawn.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a passive-bunny release-on-platform follow-up after passive-bunny platform traversal.
 - Changes: Updated [src/world/passiveBunnyRelease.ts](../src/world/passiveBunnyRelease.ts) so nearby-ground bunny release searches now opt into one-way platform support through the shared spawn helper, expanded [src/world/passiveBunnyRelease.test.ts](../src/world/passiveBunnyRelease.test.ts) with deterministic regressions for direct platform-floor releases and left-before-right platform fallback previews, removed completed task `530` from [docs/NEXT.md](docs/NEXT.md), added replacement task `531`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 - Verification: Ran `cmd /c npx vitest run src/world/passiveBunnyRelease.test.ts src/world/playerSpawn.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-23: Platform-supported bunny release stays liquid-safe
+
+- Decision: Selected `Bunny` release searches continue reusing the shared liquid-overlap rejection from `findPlayerSpawnPoint(...)` even when one-way platform support is enabled.
+- Reason: Platform-supported critter release should stay readable and safe, so flooded platform floors need to block or deflect release the same way ordinary solid-ground liquid overlap already does.
+- Consequence: Future critter or pet release follow-ups should preserve dry-ground resolution for platform-supported landing candidates instead of special-casing platforms around water or lava overlap.
+
 ### 2026-03-23: Hostile slimes and passive bunnies reuse downward-only one-way platform support
 
 - Decision: Hostile slimes and passive bunnies now treat one-way platforms as valid landing and support surfaces only during downward sweeps and support probes, while horizontal and upward collision checks continue ignoring platform tiles.
