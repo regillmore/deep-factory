@@ -1346,6 +1346,28 @@ describe('authored atlas asset', () => {
     );
   });
 
+  it('keeps stone-wall placeholders in a dedicated authored region distinct from stone blocks', () => {
+    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
+    const stoneWall = WALL_METADATA.walls.find((wall) => wall.name === 'stone_wall');
+    const stoneTile = TILE_METADATA.tiles.find((tile) => tile.name === 'stone');
+
+    expect(stoneWall?.render?.atlasIndex).toBe(36);
+
+    const stoneWallRegion = AUTHORED_ATLAS_REGIONS[stoneWall!.render!.atlasIndex!];
+    const stoneRegion = AUTHORED_ATLAS_REGIONS[stoneTile!.render!.atlasIndex!];
+    expect(stoneWallRegion).toEqual({ x: 112, y: 32, width: 16, height: 16 });
+
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, stoneWallRegion!)).toEqual({
+      x: stoneWallRegion!.x,
+      y: stoneWallRegion!.y,
+      width: 16,
+      height: 16
+    });
+    expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, stoneWallRegion!, stoneRegion!)).toBe(
+      false
+    );
+  });
+
   it('keeps small-tree sapling, trunk, and leaf placeholders in dedicated authored regions', () => {
     const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
     const saplingTile = TILE_METADATA.tiles.find((tile) => tile.name === 'small_tree_sapling');

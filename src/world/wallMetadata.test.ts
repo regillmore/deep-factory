@@ -33,26 +33,40 @@ describe('wallMetadata', () => {
         atlasIndex: 35
       }
     });
+    expect(getWallMetadata(3)).toEqual({
+      id: 3,
+      name: 'stone_wall',
+      render: {
+        atlasIndex: 36
+      }
+    });
     expect(resolveWallRenderUvRect(1)).toEqual(atlasIndexToUvRect(34));
     expect(resolveWallRenderUvRect(2)).toEqual(atlasIndexToUvRect(35));
+    expect(resolveWallRenderUvRect(3)).toEqual(atlasIndexToUvRect(36));
     expect(resolveWallRenderUvRect(999)).toBeNull();
-    expect(WALL_METADATA.walls).toHaveLength(3);
+    expect(WALL_METADATA.walls).toHaveLength(4);
   });
 
   it('describes starter wall render sources and authored bounds through shared helpers', () => {
     expect(resolveWallRenderMetadata(0)).toBeNull();
     expect(resolveWallRenderMetadata(1)).toEqual({ atlasIndex: 34 });
     expect(resolveWallRenderMetadata(2)).toEqual({ atlasIndex: 35 });
+    expect(resolveWallRenderMetadata(3)).toEqual({ atlasIndex: 36 });
     expect(describeWallRenderSource(0)).toBeNull();
     expect(describeWallRenderSource(1)).toBe('atlasIndex 34');
     expect(describeWallRenderSource(2)).toBe('atlasIndex 35');
+    expect(describeWallRenderSource(3)).toBe('atlasIndex 36');
     expect(describeWallRenderUvRect(1)).toBe(describeTileUvRect(atlasIndexToUvRect(34)));
     expect(describeWallRenderUvRect(2)).toBe(describeTileUvRect(atlasIndexToUvRect(35)));
+    expect(describeWallRenderUvRect(3)).toBe(describeTileUvRect(atlasIndexToUvRect(36)));
     expect(describeWallRenderPixelBounds(1, AUTHORED_ATLAS_WIDTH, AUTHORED_ATLAS_HEIGHT)).toBe(
       describeTileUvRectPixelBounds(atlasIndexToUvRect(34), AUTHORED_ATLAS_WIDTH, AUTHORED_ATLAS_HEIGHT)
     );
     expect(describeWallRenderPixelBounds(2, AUTHORED_ATLAS_WIDTH, AUTHORED_ATLAS_HEIGHT)).toBe(
       describeTileUvRectPixelBounds(atlasIndexToUvRect(35), AUTHORED_ATLAS_WIDTH, AUTHORED_ATLAS_HEIGHT)
+    );
+    expect(describeWallRenderPixelBounds(3, AUTHORED_ATLAS_WIDTH, AUTHORED_ATLAS_HEIGHT)).toBe(
+      describeTileUvRectPixelBounds(atlasIndexToUvRect(36), AUTHORED_ATLAS_WIDTH, AUTHORED_ATLAS_HEIGHT)
     );
     expect(describeWallRenderPixelBounds(999, AUTHORED_ATLAS_WIDTH, AUTHORED_ATLAS_HEIGHT)).toBeNull();
   });

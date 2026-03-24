@@ -105,7 +105,7 @@ pixels.
   - writes per-vertex world position, UV, and resolved light level from the chunk light cache, with liquid quads lowering only their exposed top-left and top-right vertices from shared `0..8` fill-height resolution, cropping bottom-edge `v` coordinates from those same top heights so the authored liquid surface stays aligned, while same-kind-covered liquid tiles stay full-height,
   - records animated non-terrain quad offsets plus animated liquid quad offsets keyed by the resolved liquid cardinal mask and meshed liquid top heights so the renderer can patch only those UVs later without losing the partial-liquid crop.
 - UVs are resolved through tile metadata (terrain autotile variant maps, optionally paired with a tile's own static render source override, or non-autotile static render metadata), with atlas indices translated through the authored atlas region layout instead of a synthetic grid cache.
-- Background-wall UVs are resolved through `src/world/wallMetadata.ts`, which now maps both `dirt_wall` and `wood_wall` to their own dedicated authored regions instead of reusing solid foreground block art while still keeping wall ids separate from foreground tile ids.
+- Background-wall UVs are resolved through `src/world/wallMetadata.ts`, which now maps `dirt_wall`, `wood_wall`, and `stone_wall` to their own dedicated authored regions instead of reusing solid foreground block art while still keeping wall ids separate from foreground tile ids.
 - Optional animated render frames compile beside the static render lookup; chunk meshes still bake the static frame-zero UVs, and the renderer mutates only the recorded animated quad UVs when the elapsed frame changes.
 - Liquid variant render metadata now compiles beside the base static render lookup, and chunk meshing resolves liquid UVs from sampled NESW liquid-connectivity masks with an isolated-mask fallback when neighborhood sampling is unavailable.
 - Animated liquid variant frames compile into per-tile-per-mask lookups; chunk meshes still bake the static liquid frame-zero UVs, and the renderer mutates only the recorded liquid quad UVs when the elapsed frame changes.
@@ -121,14 +121,15 @@ Diagonal neighbors are sampled and normalized for corner-gating, but shared plac
 16 cardinal combinations for now. That shared block still backs terrain materials that have not received their own
 override art yet, while `grass_surface`, `dirt_block`, `stone`, `copper_ore`, `wood_block`, `dirt_wall`, and `wood_wall` now keep
 their existing terrain or wall metadata rules but resolve visible placeholder art through dedicated static authored
-regions `29` through `35`.
+regions `29` through `35`, and wall metadata now also reserves dedicated region `36` for `stone_wall`.
 The mapping is defined in
 `src/world/tileMetadata.json` and validated at startup by `src/world/tileMetadata.ts`, while the atlas indices
 themselves resolve through the explicit authored region list in `src/world/authoredAtlasLayout.ts`. The current
 authored layout keeps the committed atlas at `192x64`, uses region `21` for the new full-width `platform` sprite
 between torch frames `20` and `22`, adds dedicated full-width `workbench`, `furnace`, `grass_surface`, `dirt_block`,
-`stone`, `copper_ore`, `wood_block`, `dirt_wall`, and `wood_wall` regions at indices `27` through `35`, keeps
-`wood_wall` in the lower-right authored slot at `160x32`, preserves the same direct-`render.uvRect` pixel bounds, and
+`stone`, `copper_ore`, `wood_block`, `dirt_wall`, `wood_wall`, and `stone_wall` regions at indices `27` through `36`,
+keeps `stone_wall` in interior slot `36` at `112x32`, keeps `wood_wall` in the lower-right authored slot at `160x32`,
+preserves the same direct-`render.uvRect` pixel bounds, and
 keeps transparent exterior padding from `x=176` onward so ordinary tile quads do not stretch the torch, rope, or
 platform.
 

@@ -99,6 +99,13 @@ const createWallTestRegistry = () =>
         render: {
           atlasIndex: 35
         }
+      },
+      {
+        id: 3,
+        name: 'stone_wall',
+        render: {
+          atlasIndex: 36
+        }
       }
     ]
   });
@@ -581,6 +588,18 @@ describe('buildChunkMesh autotile UV selection', () => {
 
     expect(mesh.vertexCount).toBe(6);
     expectSingleQuadUvRect(mesh.vertices, 35);
+  });
+
+  it('emits stone-wall-only quads from the dedicated authored atlas region', () => {
+    const chunk = createEmptyChunk();
+    setChunkWall(chunk, 0, 0, 3);
+
+    const mesh = buildChunkMesh(chunk, {
+      wallMetadataRegistry: createWallTestRegistry()
+    });
+
+    expect(mesh.vertexCount).toBe(6);
+    expectSingleQuadUvRect(mesh.vertices, 36);
   });
 
   it('writes wall quads before foreground quads in the same cell so background walls stay behind tiles', () => {

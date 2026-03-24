@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-23: Stone-wall authored art claims an interior atlas slot before exterior padding
+
+- Decision: `stone_wall` now uses dedicated authored region `36` at `112x32`, reusing an interior blank atlas slot instead of widening the atlas or consuming the transparent exterior padding strip.
+- Reason: The cave-wall art foundation needed a dedicated wall sprite, and claiming an interior slot keeps the current `192x64` footprint plus the right-side spill-detection padding intact.
+- Consequence: Future authored-wall additions should prefer remaining interior blank slots before widening the atlas or spending the exterior padding strip, and should update the same atlas-layout regressions when they intentionally change that balance.
+
 ### 2026-03-23: Small-tree leaf animation reuses cropped direct-uvRect frames inside one authored region
 
 - Decision: `small_tree_leaf` now keeps its existing dedicated authored atlas region `25`, but renders and animates through two direct `uvRect` crops inside that same region instead of claiming a second atlas slot for foliage motion.
