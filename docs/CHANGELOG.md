@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-23
 
+- Task: Add a hostile-slime platform traversal follow-up after platform traversal and hostile-slime jump-chase locomotion.
+- Changes: Updated [src/world/hostileSlimeLocomotion.ts](../src/world/hostileSlimeLocomotion.ts) so hostile slimes now treat one-way platforms as downward-only landing and support surfaces while still ignoring platform edges during horizontal and upward collision checks, expanded [src/world/hostileSlimeLocomotion.test.ts](../src/world/hostileSlimeLocomotion.test.ts) with deterministic regressions for platform landings, non-wall platform edges, and chase hops across placed platform runs, removed completed task `520` from [docs/NEXT.md](docs/NEXT.md), added replacement task `524`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/hostileSlimeLocomotion.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Fix platform mesh top alignment so the rendered plank matches the one-way collision top.
 - Changes: Updated [src/world/mesher.ts](../src/world/mesher.ts) so one-way platforms render as short top-aligned quads cropped to the authored plank band instead of full-height transparent tiles, updated [src/gl/animatedChunkMesh.ts](../src/gl/animatedChunkMesh.ts) to preserve that vertical UV crop when animated quads refresh, and added focused regressions in [src/world/mesher.test.ts](../src/world/mesher.test.ts) plus [src/gl/animatedChunkMesh.test.ts](../src/gl/animatedChunkMesh.test.ts); left [docs/NEXT.md](docs/NEXT.md) unchanged because this was a user-directed bugfix detour.
 - Verification: Ran `cmd /c npx vitest run src/world/mesher.test.ts src/gl/animatedChunkMesh.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

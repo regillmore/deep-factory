@@ -13,6 +13,7 @@ import {
   DEFAULT_HOSTILE_SLIME_HEALTH,
   DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS
 } from './hostileSlimeState';
+import { STARTER_PLATFORM_TILE_ID } from './starterPlatformPlacement';
 import { TileWorld } from './world';
 
 const FIXED_DT_SECONDS = 1 / 60;
@@ -36,6 +37,13 @@ const createFlatSurfaceWorld = (): TileWorld => {
   const world = new TileWorld(0);
   setTiles(world, -32, -16, 32, 16, 0);
   setTiles(world, -32, 0, 32, 0, 3);
+  return world;
+};
+
+const createPlatformRunWorld = (minTileX: number, maxTileX: number): TileWorld => {
+  const world = new TileWorld(0);
+  setTiles(world, -32, -16, 32, 16, 0);
+  setTiles(world, minTileX, 0, maxTileX, 0, STARTER_PLATFORM_TILE_ID);
   return world;
 };
 
@@ -223,6 +231,66 @@ describe('hostileSlimeLocomotion', () => {
     expect(nextState.facing).toBe('left');
   });
 
+  it('lands on one-way platforms from above and retargets toward the player on touchdown', () => {
+    const world = createPlatformRunWorld(2, 2);
+
+    const nextState = stepHostileSlimeState(
+      world,
+      createHostileSlimeState({
+        position: { x: 40, y: -1 },
+        velocity: { x: DEFAULT_HOSTILE_SLIME_HOP_HORIZONTAL_SPEED, y: 60 },
+        grounded: false,
+        facing: 'right',
+        hopCooldownTicksRemaining: 4
+      }),
+      FIXED_DT_SECONDS,
+      createPlayerState({
+        position: { x: -96, y: 0 }
+      }),
+      {
+        hopIntervalTicks: 7
+      }
+    );
+
+    expect(nextState).toEqual({
+      position: { x: 42, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 20, height: 12 },
+      health: DEFAULT_HOSTILE_SLIME_HEALTH,
+      grounded: true,
+      facing: 'left',
+      hopCooldownTicksRemaining: 7,
+      launchKind: null
+    });
+  });
+
+  it('does not treat one-way platforms as side walls during airborne chase movement', () => {
+    const world = createPlatformRunWorld(1, 1);
+
+    const nextState = stepHostileSlimeState(
+      world,
+      createHostileSlimeState({
+        position: { x: 6, y: -10 },
+        velocity: { x: DEFAULT_HOSTILE_SLIME_HOP_HORIZONTAL_SPEED, y: 60 },
+        grounded: false,
+        facing: 'right'
+      }),
+      FIXED_DT_SECONDS,
+      createPlayerState({
+        position: { x: 96, y: 0 }
+      })
+    );
+
+    expect(nextState.position.x).toBeCloseTo(DEFAULT_HOSTILE_SLIME_HOP_HORIZONTAL_SPEED * FIXED_DT_SECONDS + 6);
+    expect(nextState.position.y).toBeCloseTo(-8.5);
+    expect(nextState.velocity).toEqual({
+      x: DEFAULT_HOSTILE_SLIME_HOP_HORIZONTAL_SPEED,
+      y: 90
+    });
+    expect(nextState.grounded).toBe(false);
+    expect(nextState.facing).toBe('right');
+  });
+
   it('resets the hop timer and retargets toward the player when landing', () => {
     const world = createFlatSurfaceWorld();
 
@@ -252,6 +320,50 @@ describe('hostileSlimeLocomotion', () => {
       grounded: true,
       facing: 'left',
       hopCooldownTicksRemaining: 7,
+      launchKind: null
+    });
+  });
+
+  it('lands later on a placed platform run after a deterministic chase hop', () => {
+    const world = createPlatformRunWorld(0, 3);
+    let state = createHostileSlimeState({
+      position: { x: 8, y: 0 },
+      grounded: true,
+      facing: 'right',
+      hopCooldownTicksRemaining: 1
+    });
+    let airborne = false;
+    let landedState: ReturnType<typeof createHostileSlimeState> | null = null;
+
+    for (let step = 0; step < 30; step += 1) {
+      state = stepHostileSlimeState(
+        world,
+        state,
+        FIXED_DT_SECONDS,
+        createPlayerState({
+          position: { x: 96, y: 0 }
+        })
+      );
+
+      if (!state.grounded) {
+        airborne = true;
+        continue;
+      }
+      if (airborne) {
+        landedState = state;
+        break;
+      }
+    }
+
+    expect(airborne).toBe(true);
+    expect(landedState).toEqual({
+      position: { x: 54, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 20, height: 12 },
+      health: DEFAULT_HOSTILE_SLIME_HEALTH,
+      grounded: true,
+      facing: 'right',
+      hopCooldownTicksRemaining: DEFAULT_HOSTILE_SLIME_HOP_INTERVAL_TICKS,
       launchKind: null
     });
   });

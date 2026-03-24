@@ -1,5 +1,7 @@
 import {
   sweepAabbAlongAxis,
+  sweepAabbDownwardAlongOneWayPlatforms,
+  type AxisSweepCollisionResult,
   type SolidTileCollision,
   type WorldAabb
 } from './collision';
@@ -90,17 +92,70 @@ const offsetAabb = (aabb: WorldAabb, deltaX: number, deltaY: number): WorldAabb 
   maxY: aabb.maxY + deltaY
 });
 
-const getGroundSupport = (
+const getAabbContact = (
   world: TileWorld,
   aabb: WorldAabb,
+  axis: 'x' | 'y',
+  delta: number,
   registry: TileMetadataRegistry
 ): SolidTileCollision | null => {
-  const sweep = sweepAabbAlongAxis(world, aabb, 'y', COLLISION_CONTACT_PROBE_DISTANCE, registry);
+  const sweep = sweepAabbAlongAxis(world, aabb, axis, delta, registry);
   if (sweep.allowedDelta !== 0 || sweep.hit === null) {
     return null;
   }
 
   return sweep.hit;
+};
+
+const getOneWayPlatformAabbContact = (
+  world: TileWorld,
+  aabb: WorldAabb,
+  delta: number,
+  registry: TileMetadataRegistry
+): SolidTileCollision | null => {
+  const sweep = sweepAabbDownwardAlongOneWayPlatforms(world, aabb, delta, registry);
+  if (sweep.allowedDelta !== 0 || sweep.hit === null) {
+    return null;
+  }
+
+  return sweep.hit;
+};
+
+const getGroundSupport = (
+  world: TileWorld,
+  aabb: WorldAabb,
+  registry: TileMetadataRegistry
+): SolidTileCollision | null =>
+  getAabbContact(world, aabb, 'y', COLLISION_CONTACT_PROBE_DISTANCE, registry) ??
+  getOneWayPlatformAabbContact(world, aabb, COLLISION_CONTACT_PROBE_DISTANCE, registry);
+
+const chooseNearestDownwardCollisionSweep = (
+  solidSweep: AxisSweepCollisionResult,
+  platformSweep: AxisSweepCollisionResult
+): AxisSweepCollisionResult => {
+  if (solidSweep.hit === null) {
+    return platformSweep;
+  }
+  if (platformSweep.hit === null) {
+    return solidSweep;
+  }
+
+  return platformSweep.allowedDelta < solidSweep.allowedDelta ? platformSweep : solidSweep;
+};
+
+const sweepHostileSlimeVerticalMovement = (
+  world: TileWorld,
+  aabb: WorldAabb,
+  delta: number,
+  registry: TileMetadataRegistry
+): AxisSweepCollisionResult => {
+  const solidSweep = sweepAabbAlongAxis(world, aabb, 'y', delta, registry);
+  if (delta <= 0) {
+    return solidSweep;
+  }
+
+  const platformSweep = sweepAabbDownwardAlongOneWayPlatforms(world, aabb, delta, registry);
+  return chooseNearestDownwardCollisionSweep(solidSweep, platformSweep);
 };
 
 const resolveFacingTowardsPlayer = (
@@ -178,7 +233,12 @@ const moveHostileSlimeStateWithCollisions = (
   const initialAabb = getHostileSlimeAabb(state);
   const horizontalSweep = sweepAabbAlongAxis(world, initialAabb, 'x', state.velocity.x * dt, registry);
   const afterHorizontalAabb = offsetAabb(initialAabb, horizontalSweep.allowedDelta, 0);
-  const verticalSweep = sweepAabbAlongAxis(world, afterHorizontalAabb, 'y', state.velocity.y * dt, registry);
+  const verticalSweep = sweepHostileSlimeVerticalMovement(
+    world,
+    afterHorizontalAabb,
+    state.velocity.y * dt,
+    registry
+  );
   const finalAabb = offsetAabb(afterHorizontalAabb, 0, verticalSweep.allowedDelta);
   const groundSupport = getGroundSupport(world, finalAabb, registry);
 
