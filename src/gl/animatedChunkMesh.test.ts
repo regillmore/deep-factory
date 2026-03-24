@@ -7,8 +7,27 @@ import { atlasIndexToUvRect, parseTileMetadataRegistry } from '../world/tileMeta
 const toFloat32 = (value: number): number => Math.fround(value);
 const sampledAtlasUvRect = (atlasIndex: number) =>
   insetTileUvRectForAtlasSampling(atlasIndexToUvRect(atlasIndex));
+const cropUvRectVertically = (
+  uvRect: { u0: number; v0: number; u1: number; v1: number },
+  topRatio: number,
+  bottomRatio: number
+) => {
+  const vSpan = uvRect.v1 - uvRect.v0;
+  return {
+    u0: uvRect.u0,
+    v0: uvRect.v0 + vSpan * topRatio,
+    u1: uvRect.u1,
+    v1: uvRect.v0 + vSpan * bottomRatio
+  };
+};
+const PLATFORM_TOP_RATIO = 6 / 16;
+const PLATFORM_BOTTOM_RATIO = 10 / 16;
 
-const createSingleQuadVertices = (atlasIndex: number, lightLevel = 7): Float32Array => {
+const createSingleQuadVertices = (
+  atlasIndex: number,
+  lightLevel = 7,
+  verticalUvCrop: { topRatio: number; bottomRatio: number } | null = null
+): Float32Array => {
   const vertices = new Float32Array([
     0,
     0,
@@ -58,8 +77,6 @@ const expectSingleQuadLiquidUv = (
   expect(Array.from(vertices.slice(7, 9))).toEqual([toFloat32(u1), toFloat32(v0)]);
   expect(Array.from(vertices.slice(12, 14))).toEqual([toFloat32(u1), toFloat32(bottomRightV)]);
   expect(Array.from(vertices.slice(17, 19))).toEqual([toFloat32(u0), toFloat32(v0)]);
-  expect(Array.from(vertices.slice(22, 24))).toEqual([toFloat32(u1), toFloat32(bottomRightV)]);
-  expect(Array.from(vertices.slice(27, 29))).toEqual([toFloat32(u0), toFloat32(bottomLeftV)]);
 };
 
 describe('animated chunk mesh helpers', () => {

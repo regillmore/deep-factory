@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { findPlayerSpawnPoint } from './playerSpawn';
+import { STARTER_PLATFORM_TILE_ID } from './starterPlatformPlacement';
 import { STARTER_ROPE_TILE_ID } from './starterRopePlacement';
 import {
   clonePlayerState,
@@ -349,6 +350,29 @@ describe('playerState', () => {
     });
   });
 
+  it('reports one-way platform support when the player is standing on a platform tile from above', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -3, 2, 2, 0);
+    world.setTile(0, 0, STARTER_PLATFORM_TILE_ID);
+
+    const contacts = getPlayerCollisionContacts(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        size: { width: 12, height: 16 },
+        grounded: true,
+        facing: 'right'
+      })
+    );
+
+    expect(contacts).toEqual({
+      support: { tileX: 0, tileY: 0, tileId: STARTER_PLATFORM_TILE_ID },
+      wall: null,
+      ceiling: null
+    });
+  });
+
   it('tags fallback wall probes with the actual blocking side instead of the preferred facing side', () => {
     const world = new TileWorld(0);
 
@@ -487,6 +511,47 @@ describe('playerState', () => {
     }));
   });
 
+  it('lands on one-way platforms only while descending from above', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -3, 2, 1, 0);
+    world.setTile(0, 0, STARTER_PLATFORM_TILE_ID);
+
+    const landed = movePlayerStateWithCollisions(
+      world,
+      createPlayerState({
+        position: { x: 8, y: -2 },
+        velocity: { x: 0, y: 20 },
+        size: { width: 12, height: 12 }
+      }),
+      0.5
+    );
+    const passedUpward = movePlayerStateWithCollisions(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 18 },
+        velocity: { x: 0, y: -40 },
+        size: { width: 12, height: 12 }
+      }),
+      0.5
+    );
+
+    expect(landed).toEqual(withDefaultPlayerVitals({
+      position: { x: 8, y: 0 },
+      velocity: { x: 0, y: 0 },
+      size: { width: 12, height: 12 },
+      grounded: true,
+      facing: 'right'
+    }));
+    expect(passedUpward).toEqual(withDefaultPlayerVitals({
+      position: { x: 8, y: -2 },
+      velocity: { x: 0, y: -40 },
+      size: { width: 12, height: 12 },
+      grounded: false,
+      facing: 'right'
+    }));
+  });
+
   it('clamps upward movement against a ceiling tile without reporting grounded support', () => {
     const world = new TileWorld(0);
 
@@ -561,6 +626,32 @@ describe('playerState', () => {
       grounded: false,
       facing: 'right'
     }));
+  });
+
+  it('drops through one-way platforms when the rope-drop hold is active on the supporting platform', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -2, -3, 2, 2, 0);
+    world.setTile(0, 0, STARTER_PLATFORM_TILE_ID);
+
+    const stepped = stepPlayerState(
+      world,
+      createPlayerState({
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 12, height: 12 },
+        grounded: true
+      }),
+      1 / 60,
+      {
+        ropeDropHeld: true,
+        climbY: 1
+      }
+    );
+
+    expect(stepped.position.y).toBeGreaterThan(0);
+    expect(stepped.velocity.y).toBeGreaterThan(0);
+    expect(stepped.grounded).toBe(false);
   });
 
   it('accelerates grounded movement toward the requested walk speed before collision stepping', () => {

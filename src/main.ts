@@ -370,6 +370,11 @@ import {
   STARTER_ROPE_TILE_ID
 } from './world/starterRopePlacement';
 import {
+  evaluateStarterPlatformPlacement,
+  STARTER_PLATFORM_ITEM_ID,
+  STARTER_PLATFORM_TILE_ID
+} from './world/starterPlatformPlacement';
+import {
   chopSmallTreeAtAnchor,
   createStarterAxeChoppingState,
   evaluateStarterAxeChoppingTarget,
@@ -3400,6 +3405,14 @@ const bootstrap = async (): Promise<void> => {
     }
 
     if (
+      event.previousTileId === STARTER_PLATFORM_TILE_ID &&
+      event.tileId !== STARTER_PLATFORM_TILE_ID
+    ) {
+      refundRemovedPlacedTile(event.worldTileX, event.worldTileY, STARTER_PLATFORM_ITEM_ID);
+      return;
+    }
+
+    if (
       event.previousTileId === STARTER_WORKBENCH_TILE_ID &&
       event.tileId !== STARTER_WORKBENCH_TILE_ID
     ) {
@@ -5011,6 +5024,9 @@ const bootstrap = async (): Promise<void> => {
         case STARTER_ROPE_ITEM_ID:
           placementTileId = STARTER_ROPE_TILE_ID;
           break;
+        case STARTER_PLATFORM_ITEM_ID:
+          placementTileId = STARTER_PLATFORM_TILE_ID;
+          break;
         default:
           return false;
       }
@@ -5164,6 +5180,15 @@ const bootstrap = async (): Promise<void> => {
             },
             placementTileX,
             placementTileY
+          );
+          break;
+        case STARTER_PLATFORM_ITEM_ID:
+          placement = evaluateStarterPlatformPlacement(
+            {
+              getTile: (tileX, tileY) => renderer.getTile(tileX, tileY)
+            },
+            worldTileX,
+            worldTileY
           );
           break;
         default:

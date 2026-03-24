@@ -13,6 +13,7 @@ import {
   STARTER_BUILDING_BLOCK_TILE_ID
 } from './starterBlockPlacement';
 import { STARTER_ROPE_TILE_ID } from './starterRopePlacement';
+import { STARTER_PLATFORM_TILE_ID } from './starterPlatformPlacement';
 import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './starterFurnacePlacement';
@@ -165,6 +166,7 @@ const isBreakableStarterPickaxeTargetTile = (
   registry: TileMetadataRegistry
 ): boolean =>
   tileId === STARTER_ROPE_TILE_ID ||
+  tileId === STARTER_PLATFORM_TILE_ID ||
   tileId === STARTER_TORCH_TILE_ID ||
   tileId === STARTER_WORKBENCH_TILE_ID ||
   tileId === STARTER_FURNACE_TILE_ID ||

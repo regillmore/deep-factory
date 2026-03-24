@@ -29,9 +29,8 @@ describe('authored atlas layout', () => {
     }
   });
 
-  it('documents utility, terrain, wall, spare-slot, and torch authored regions while leaving canvas space outside authored bounds', () => {
-    expect(AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS[21]?.trim().length).toBeGreaterThan(0);
-
+  it('documents utility, terrain, wall, and torch authored regions while leaving canvas space outside authored bounds', () => {
+    expect(AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS[21]).toBeUndefined();
     expect(AUTHORED_ATLAS_REGIONS[20]).toEqual({ x: 80, y: 32, width: 16, height: 16 });
     expect(AUTHORED_ATLAS_REGIONS[21]).toEqual({ x: 80, y: 48, width: 16, height: 16 });
     expect(AUTHORED_ATLAS_REGIONS[22]).toEqual({ x: 96, y: 32, width: 16, height: 16 });

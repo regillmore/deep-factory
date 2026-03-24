@@ -57,6 +57,7 @@ const setChunkLiquidTile = (
 const atlasUvRect = (atlasTileIndex: number) => atlasIndexToUvRect(atlasTileIndex);
 const sampleUvRect = (uvRect: { u0: number; v0: number; u1: number; v1: number }) =>
   insetTileUvRectForAtlasSampling(uvRect);
+
 const toFloat32 = (value: number): number => Math.fround(value);
 const FLOATS_PER_TILE_QUAD = 6 * CHUNK_MESH_FLOATS_PER_VERTEX;
 

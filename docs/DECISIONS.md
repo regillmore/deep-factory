@@ -2,6 +2,18 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-23: One-way platforms only catch downward player sweeps and reuse rope-drop intent
+
+- Decision: Placed `platform` tiles now act as one-way floors only when the standalone player is moving downward from above them, and the existing armed rope-drop input path is reused to ignore those platform catches for an intentional drop-through step.
+- Reason: Platform traversal needs readable Terraria-like top-only support without turning platform tiles into side walls or introducing a second mixed-device down-input rule that would diverge from rope traversal.
+- Consequence: Future platform-follow-up work should preserve downward-only catches plus the shared rope-drop gesture unless the whole traversal input model is intentionally redesigned, and enemy or NPC platform support should match that same top-only collision contract instead of treating platforms as ordinary solid blocks.
+
+### 2026-03-23: Authored atlas may consume formerly unused regions once metadata claims them
+
+- Decision: The committed atlas no longer guarantees a blank spare authored region once shipped metadata needs that space; region `21` now belongs to `platform`, while transparent exterior padding to the right of the documented regions remains the persistent spill-detection target.
+- Reason: Platform placement needed dedicated committed art without widening the atlas again, and explicit region accounting plus exterior padding already cover the asset-regression guarantees that mattered more than keeping one specific spare slot blank forever.
+- Consequence: Future atlas edits may spend any intentionally unused region if they remove it from the unused-region table and claim it in metadata during the same pass, but they should preserve equivalent exterior padding or update the related regression expectations together.
+
 ### 2026-03-22: Standalone-player mana lives in save-owned player state
 
 - Decision: `PlayerState` now carries `maxMana`, `mana`, `manaRegenDelaySecondsRemaining`, and `manaRegenTickSecondsRemaining`, while `src/world/playerMana.ts` owns spend plus regen helpers and starter-wand casts reset that regen delay instead of tracking a separate session-only magic resource.
@@ -2131,12 +2143,6 @@ Record only durable design decisions here. Keep each entry short: date, decision
 - Decision: Every shipped direct `render.uvRect` source, including animated frames, must stay entirely outside the fully transparent committed atlas strip beyond the authored-region bounds.
 - Reason: Direct UV metadata bypasses authored atlas-index ownership, so the exterior blank band only remains a trustworthy spill-detection target if metadata cannot sample it either.
 - Consequence: Future direct-UV authoring should stay within the authored-region span or update the authored layout, committed asset, and related regressions together.
-
-### 2026-03-02: Authored atlas keeps at least one unused region plus exterior padding
-
-- Decision: The committed authored atlas now expands to `96x64`, preserves the original `4x4` used region block, keeps at least one authored region intentionally unused as a regression target, and leaves exterior transparent padding beyond the authored-region bounds.
-- Reason: Upcoming committed-asset regressions for unused-region transparency and content spill need real empty atlas space instead of a fully packed image.
-- Consequence: Future atlas edits should preserve equivalent documented spare space or deliberately update the related asset-regression coverage and docs at the same time, even if the specific spare-region index changes during later repacks.
 
 ### 2026-03-02: Default animated direct `render.uvRect` frames must differ in committed atlas content
 

@@ -18,6 +18,7 @@ export type PlayerInventoryItemId =
   | 'anvil'
   | 'torch'
   | 'rope'
+  | 'platform'
   | 'umbrella'
   | 'bug-net'
   | 'bunny'
@@ -86,6 +87,7 @@ export const PLAYER_INVENTORY_ITEM_IDS: readonly PlayerInventoryItemId[] = [
   'anvil',
   'torch',
   'rope',
+  'platform',
   'umbrella',
   'bug-net',
   'bunny',
@@ -199,6 +201,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     id: 'rope',
     label: 'Rope',
     hotbarLabel: 'ROPE',
+    maxStackSize: 999
+  },
+  platform: {
+    id: 'platform',
+    label: 'Platform',
+    hotbarLabel: 'PLAT',
     maxStackSize: 999
   },
   umbrella: {

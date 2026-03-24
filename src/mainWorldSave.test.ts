@@ -19,6 +19,7 @@ import {
   DEFAULT_PLAYER_MANA_REGEN_TICK_INTERVAL_SECONDS
 } from './world/playerState';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
+import { STARTER_PLATFORM_TILE_ID } from './world/starterPlatformPlacement';
 import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
 import { resolveProceduralTerrainTileId } from './world/proceduralTerrain';
 import { TileWorld } from './world/world';
@@ -380,6 +381,53 @@ describe('createWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerInventoryState.hotbar[3]).toEqual({
       itemId: 'rope',
       amount: 23
+    });
+  });
+
+  it('preserves placed platform runs together with the consumed platform hotbar stack count', () => {
+    const world = new TileWorld(0);
+    const platformRun = [
+      [CHUNK_SIZE - 1, -12],
+      [CHUNK_SIZE, -12],
+      [CHUNK_SIZE + 1, -12]
+    ] as const;
+    for (const [worldTileX, worldTileY] of platformRun) {
+      expect(world.setTile(worldTileX, worldTileY, STARTER_PLATFORM_TILE_ID)).toBe(true);
+    }
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [
+        null,
+        null,
+        null,
+        { itemId: 'platform', amount: 9 },
+        ...Array.from({ length: 6 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 3
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(decoded.worldSnapshot);
+    for (const [worldTileX, worldTileY] of platformRun) {
+      expect(restoredWorld.getTile(worldTileX, worldTileY)).toBe(STARTER_PLATFORM_TILE_ID);
+    }
+    expect(decoded.session.standalonePlayerInventoryState.hotbar[3]).toEqual({
+      itemId: 'platform',
+      amount: 9
     });
   });
 

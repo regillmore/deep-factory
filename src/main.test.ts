@@ -78,6 +78,7 @@ import {
 } from './world/starterPickaxeMining';
 import { PLACEABLE_WOOD_BLOCK_TILE_ID } from './world/starterBlockPlacement';
 import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
+import { STARTER_PLATFORM_TILE_ID } from './world/starterPlatformPlacement';
 import {
   DEFAULT_STARTER_MELEE_WEAPON_DAMAGE,
   DEFAULT_STARTER_MELEE_WEAPON_KNOCKBACK_SPEED_X,
@@ -10618,6 +10619,57 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('places a platform tile from the selected hotbar slot while the full debug-edit panel is hidden', async () => {
+    setPersistedWorldSaveWithInventory(
+      createPlayerInventoryState({
+        hotbar: [
+          { itemId: 'pickaxe', amount: 1 },
+          { itemId: 'dirt-block', amount: 64 },
+          { itemId: 'torch', amount: 20 },
+          { itemId: 'rope', amount: 24 },
+          { itemId: 'platform', amount: 12 },
+          ...Array.from({ length: 5 }, () => null)
+        ],
+        selectedHotbarSlotIndex: 4
+      })
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(dispatchKeydown('5', 'Digit5').prevented).toBe(true);
+    expect(testRuntime.canvasInteractionMode).toBe('play');
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(0, 0), 1);
+    testRuntime.rendererTileIdsByWorldKey.delete(worldTileKey(0, 1));
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: 1,
+        worldX: 8,
+        worldY: 24,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate();
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 0,
+        worldTileY: 1,
+        tileId: STARTER_PLATFORM_TILE_ID
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[4]).toEqual({
+      itemId: 'platform',
+      amount: 11
+    });
+  });
+
   it('extends the bottom of an existing rope column when the selected hotbar rope is used on a rope tile', async () => {
     setPersistedWorldSaveWithInventory();
     await import('./main');
@@ -12317,6 +12369,45 @@ describe('main.ts shell state orchestration', () => {
       {
         position: { x: 24, y: 8 },
         itemId: 'rope',
+        amount: 1
+      }
+    ]);
+  });
+
+  it('spawns one platform pickup entity when the starter pickaxe cuts a nearby placed platform tile', async () => {
+    setPersistedWorldSaveWithInventory();
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), STARTER_PLATFORM_TILE_ID);
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        worldX: 24,
+        worldY: 8,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(STARTER_PICKAXE_SWING_WINDUP_SECONDS);
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: 0,
+        tileId: 0
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.droppedItemStates).toEqual([
+      {
+        position: { x: 24, y: 8 },
+        itemId: 'platform',
         amount: 1
       }
     ]);

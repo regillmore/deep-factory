@@ -40,6 +40,7 @@ import {
   hasLiquidRenderMetadata,
   hasTerrainAutotileMetadata,
   isTileClimbable,
+  isTileOneWayPlatform,
   isTileSolid,
   parseTileMetadataRegistry,
   resolveAnimatedLiquidRenderVariantFrameElapsedMsAtElapsedMs,
@@ -144,11 +145,18 @@ describe('tile metadata loader', () => {
       solid: true,
       blocksLight: true
     });
+    expect(resolveTileGameplayMetadata(20)).toEqual({
+      solid: false,
+      blocksLight: false,
+      oneWayPlatform: true
+    });
     expect(isTileSolid(1)).toBe(true);
     expect(isTileSolid(4)).toBe(false);
     expect(isTileSolid(19)).toBe(true);
     expect(isTileClimbable(11)).toBe(true);
     expect(isTileClimbable(10)).toBe(false);
+    expect(isTileOneWayPlatform(20)).toBe(true);
+    expect(isTileOneWayPlatform(10)).toBe(false);
     expect(doesTileBlockLight(1)).toBe(true);
     expect(doesTileBlockLight(4)).toBe(false);
     expect(doesTileBlockLight(19)).toBe(true);
@@ -176,6 +184,7 @@ describe('tile metadata loader', () => {
     expect(resolveTileRenderUvRect(17)).toEqual(atlasIndexToUvRect(24));
     expect(resolveTileRenderUvRect(18)).toEqual(atlasIndexToUvRect(25));
     expect(resolveTileRenderUvRect(19)).toEqual(atlasIndexToUvRect(33));
+    expect(resolveTileRenderUvRect(20)).toEqual(atlasIndexToUvRect(21));
     expect(hasAnimatedTileRenderMetadata(10)).toBe(true);
     expect(getAnimatedTileRenderFrameCount(10)).toBe(2);
     expect(getAnimatedTileRenderFrameDurationMs(10)).toBe(180);
@@ -1421,6 +1430,21 @@ describe('tile metadata loader', () => {
         ]
       })
     ).toThrowError(/liquidKind cannot be set when solid is true/);
+  });
+
+  it('rejects solid one-way platform gameplay metadata', () => {
+    expect(() =>
+      parseTileMetadataRegistry({
+        tiles: [
+          {
+            id: 7,
+            name: 'solid_platform',
+            gameplay: { solid: true, blocksLight: true, oneWayPlatform: true },
+            render: { atlasIndex: 1 }
+          }
+        ]
+      })
+    ).toThrowError(/oneWayPlatform cannot be set when solid is true/);
   });
 
   it('rejects non-empty tiles without render or terrain metadata', () => {

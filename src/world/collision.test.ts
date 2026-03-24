@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { CHUNK_SIZE, TILE_SIZE } from './constants';
-import { doesAabbOverlapSolid, isSolidAt, sweepAabbAlongAxis } from './collision';
+import {
+  doesAabbOverlapSolid,
+  isSolidAt,
+  sweepAabbAlongAxis,
+  sweepAabbDownwardAlongOneWayPlatforms
+} from './collision';
 import { TileWorld } from './world';
+import { STARTER_PLATFORM_TILE_ID } from './starterPlatformPlacement';
 
 const SKY_TILE_Y = -20;
 
@@ -123,6 +129,67 @@ describe('world collision queries', () => {
     expect(result).toEqual({
       attemptedDelta: 12,
       allowedDelta: 12,
+      hit: null
+    });
+  });
+
+  it('clamps downward sweeps to one-way platforms only when descending from above', () => {
+    const world = new TileWorld(0);
+    const tileX = 0;
+    const tileY = SKY_TILE_Y;
+
+    world.setTile(tileX, tileY, STARTER_PLATFORM_TILE_ID);
+
+    expect(
+      sweepAabbDownwardAlongOneWayPlatforms(
+        world,
+        {
+          minX: tileX * TILE_SIZE + 2,
+          minY: tileY * TILE_SIZE - 12,
+          maxX: tileX * TILE_SIZE + 14,
+          maxY: tileY * TILE_SIZE - 2
+        },
+        10
+      )
+    ).toEqual({
+      attemptedDelta: 10,
+      allowedDelta: 2,
+      hit: {
+        tileX,
+        tileY,
+        tileId: STARTER_PLATFORM_TILE_ID
+      }
+    });
+    expect(
+      sweepAabbDownwardAlongOneWayPlatforms(
+        world,
+        {
+          minX: tileX * TILE_SIZE + 2,
+          minY: tileY * TILE_SIZE + 2,
+          maxX: tileX * TILE_SIZE + 14,
+          maxY: tileY * TILE_SIZE + 14
+        },
+        10
+      )
+    ).toEqual({
+      attemptedDelta: 10,
+      allowedDelta: 10,
+      hit: null
+    });
+    expect(
+      sweepAabbDownwardAlongOneWayPlatforms(
+        world,
+        {
+          minX: tileX * TILE_SIZE + 2,
+          minY: tileY * TILE_SIZE + 2,
+          maxX: tileX * TILE_SIZE + 14,
+          maxY: tileY * TILE_SIZE + 14
+        },
+        -10
+      )
+    ).toEqual({
+      attemptedDelta: -10,
+      allowedDelta: -10,
       hit: null
     });
   });

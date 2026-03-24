@@ -1,5 +1,5 @@
 import { TILE_SIZE } from './constants';
-import { isTileSolid, TILE_METADATA } from './tileMetadata';
+import { isTileOneWayPlatform, isTileSolid, TILE_METADATA } from './tileMetadata';
 import type { TileMetadataRegistry } from './tileMetadata';
 
 export interface CollisionWorldView {
@@ -60,6 +60,24 @@ const getSolidTileCollision = (
 ): SolidTileCollision | null => {
   const tileId = world.getTile(tileX, tileY);
   if (!isTileSolid(tileId, registry)) {
+    return null;
+  }
+
+  return {
+    tileX,
+    tileY,
+    tileId
+  };
+};
+
+const getOneWayPlatformTileCollision = (
+  world: CollisionWorldView,
+  tileX: number,
+  tileY: number,
+  registry: TileMetadataRegistry
+): SolidTileCollision | null => {
+  const tileId = world.getTile(tileX, tileY);
+  if (!isTileOneWayPlatform(tileId, registry)) {
     return null;
   }
 
@@ -211,6 +229,52 @@ export const sweepAabbAlongAxis = (
         return {
           attemptedDelta: delta,
           allowedDelta: (tileY + 1) * TILE_SIZE - aabb.minY,
+          hit
+        };
+      }
+    }
+  }
+
+  return { attemptedDelta: delta, allowedDelta: delta, hit: null };
+};
+
+export const sweepAabbDownwardAlongOneWayPlatforms = (
+  world: CollisionWorldView,
+  aabb: WorldAabb,
+  delta: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): AxisSweepCollisionResult => {
+  if (delta <= 0 || isAabbEmpty(aabb)) {
+    return {
+      ...EMPTY_AXIS_SWEEP_RESULT,
+      attemptedDelta: delta,
+      allowedDelta: delta
+    };
+  }
+
+  const xRange = getOverlappingTileRange(aabb.minX, aabb.maxX);
+  if (!xRange) {
+    return { attemptedDelta: delta, allowedDelta: delta, hit: null };
+  }
+
+  const startTileY = Math.ceil(aabb.maxY / TILE_SIZE);
+  const endTileY = Math.ceil((aabb.maxY + delta) / TILE_SIZE) - 1;
+  if (startTileY > endTileY) {
+    return { attemptedDelta: delta, allowedDelta: delta, hit: null };
+  }
+
+  for (let tileY = startTileY; tileY <= endTileY; tileY += 1) {
+    const platformTopY = tileY * TILE_SIZE;
+    if (aabb.maxY > platformTopY) {
+      continue;
+    }
+
+    for (let tileX = xRange.min; tileX <= xRange.max; tileX += 1) {
+      const hit = getOneWayPlatformTileCollision(world, tileX, tileY, registry);
+      if (hit) {
+        return {
+          attemptedDelta: delta,
+          allowedDelta: platformTopY - aabb.maxY,
           hit
         };
       }

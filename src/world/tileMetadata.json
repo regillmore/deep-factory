@@ -1269,6 +1269,18 @@
           15
         ]
       }
+    },
+    {
+      "id": 20,
+      "name": "platform",
+      "gameplay": {
+        "solid": false,
+        "blocksLight": false,
+        "oneWayPlatform": true
+      },
+      "render": {
+        "atlasIndex": 21
+      }
     }
   ]
 }

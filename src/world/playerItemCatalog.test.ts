@@ -17,6 +17,7 @@ describe('playerItemCatalog', () => {
       'Gel',
       'Healing Potion',
       'Heart Crystal',
+      'Platform',
       'Rope',
       'Starter Axe',
       'Starter Pickaxe',
@@ -57,6 +58,9 @@ describe('playerItemCatalog', () => {
     ]);
     expect(searchPlayerItemCatalog('dirt wall').map((entry) => entry.itemId)).toEqual([
       'dirt-wall'
+    ]);
+    expect(searchPlayerItemCatalog('plat').map((entry) => entry.itemId)).toEqual([
+      'platform'
     ]);
     expect(searchPlayerItemCatalog('potion').map((entry) => entry.itemId)).toEqual([
       'healing-potion'

@@ -858,7 +858,10 @@ describe('authored atlas asset', () => {
     const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
     const intentionallyUnusedEntries = Object.entries(AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS);
 
-    expect(intentionallyUnusedEntries.length).toBeGreaterThan(0);
+    if (intentionallyUnusedEntries.length === 0) {
+      expect(intentionallyUnusedEntries).toEqual([]);
+      return;
+    }
 
     for (const [rawAtlasIndex, reason] of intentionallyUnusedEntries) {
       const atlasIndex = Number(rawAtlasIndex);
@@ -878,7 +881,10 @@ describe('authored atlas asset', () => {
     );
     const intentionallyUnusedEntries = Object.entries(AUTHORED_ATLAS_INTENTIONALLY_UNUSED_REGION_REASONS);
 
-    expect(intentionallyUnusedEntries.length).toBeGreaterThan(0);
+    if (intentionallyUnusedEntries.length === 0) {
+      expect(intentionallyUnusedEntries).toEqual([]);
+      return;
+    }
 
     for (const [rawAtlasIndex, reason] of intentionallyUnusedEntries) {
       const atlasIndex = Number(rawAtlasIndex);
@@ -1194,10 +1200,26 @@ describe('authored atlas asset', () => {
 
     const visibleBounds = findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, ropeRegion!);
     expect(visibleBounds).toEqual({
-      x: ropeRegion!.x + 6,
+      x: ropeRegion!.x + 7,
       y: ropeRegion!.y,
-      width: 4,
+      width: 2,
       height: ropeRegion!.height
+    });
+  });
+
+  it('keeps the platform sprite as a low horizontal plank in its dedicated authored region', () => {
+    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
+    const platformTile = TILE_METADATA.tiles.find((tile) => tile.name === 'platform');
+
+    expect(platformTile?.render?.atlasIndex).toBe(21);
+
+    const platformRegion = AUTHORED_ATLAS_REGIONS[platformTile!.render!.atlasIndex!];
+    expect(platformRegion).toEqual({ x: 80, y: 48, width: 16, height: 16 });
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, platformRegion!)).toEqual({
+      x: platformRegion!.x + 1,
+      y: platformRegion!.y,
+      width: 14,
+      height: 4
     });
   });
 
@@ -1389,7 +1411,7 @@ describe('authored atlas asset', () => {
 
     expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, furnaceRegion!)).toEqual({
       x: furnaceRegion!.x + 2,
-      y: furnaceRegion!.y + 3,
+      y: furnaceRegion!.y + 4,
       width: 12,
       height: 12
     });
@@ -1406,13 +1428,13 @@ describe('authored atlas asset', () => {
 
     expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, anvilRegion!)).toEqual({
       x: anvilRegion!.x + 2,
-      y: anvilRegion!.y + 4,
+      y: anvilRegion!.y + 6,
       width: 12,
       height: 10
     });
   });
 
-  it('keeps both torch animation frames centered inside full-width authored squares while preserving the spare slot and exterior padding', () => {
+  it('keeps both torch animation frames centered inside full-width authored squares while preserving the platform slot and exterior padding', () => {
     const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
     const torchTile = TILE_METADATA.tiles.find((tile) => tile.name === 'torch');
 

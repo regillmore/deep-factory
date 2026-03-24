@@ -2,6 +2,16 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-23
+
+- Task: Fix platform mesh top alignment so the rendered plank matches the one-way collision top.
+- Changes: Updated [src/world/mesher.ts](../src/world/mesher.ts) so one-way platforms render as short top-aligned quads cropped to the authored plank band instead of full-height transparent tiles, updated [src/gl/animatedChunkMesh.ts](../src/gl/animatedChunkMesh.ts) to preserve that vertical UV crop when animated quads refresh, and added focused regressions in [src/world/mesher.test.ts](../src/world/mesher.test.ts) plus [src/gl/animatedChunkMesh.test.ts](../src/gl/animatedChunkMesh.test.ts); left [docs/NEXT.md](docs/NEXT.md) unchanged because this was a user-directed bugfix detour.
+- Verification: Ran `cmd /c npx vitest run src/world/mesher.test.ts src/gl/animatedChunkMesh.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
+- Task: Add a platform traversal slice after inventory basics.
+- Changes: Added stackable `Platform` inventory support plus one-way `platform` tile metadata and committed atlas art, wired hidden-panel platform placement and placed-platform refunds through [src/world/starterPlatformPlacement.ts](../src/world/starterPlatformPlacement.ts), [src/world/playerState.ts](../src/world/playerState.ts), [src/world/collision.ts](../src/world/collision.ts), [src/world/starterPickaxeMining.ts](../src/world/starterPickaxeMining.ts), and [src/main.ts](../src/main.ts), expanded platform coverage in the focused world, atlas, runtime, and save-load regressions, removed completed task `349` from [docs/NEXT.md](docs/NEXT.md), added replacement task `520`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/playerInventory.test.ts src/world/playerItemCatalog.test.ts src/world/starterPlatformPlacement.test.ts src/world/collision.test.ts src/world/tileMetadata.test.ts src/world/starterPickaxeMining.test.ts src/world/playerState.test.ts src/mainWorldSave.test.ts src/main.test.ts src/gl/authoredAtlasAsset.test.ts` (`431` tests passed).
+
 ## 2026-03-22
 
 - Task: Fix the player fixed-step telemetry regressions that surfaced after the mana pass.

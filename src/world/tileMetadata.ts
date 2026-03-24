@@ -48,6 +48,7 @@ export interface TileGameplayMetadata {
   solid: boolean;
   blocksLight: boolean;
   climbable?: boolean;
+  oneWayPlatform?: boolean;
   liquidKind?: TileLiquidKind;
   emissiveLight?: number;
 }
@@ -309,6 +310,10 @@ const parseTileGameplayMetadata = (value: unknown, tileId: number): TileGameplay
     value.climbable === undefined
       ? undefined
       : expectBoolean(value.climbable, `tiles[${tileId}].gameplay.climbable`);
+  const oneWayPlatform =
+    value.oneWayPlatform === undefined
+      ? undefined
+      : expectBoolean(value.oneWayPlatform, `tiles[${tileId}].gameplay.oneWayPlatform`);
   const emissiveLight =
     value.emissiveLight === undefined
       ? undefined
@@ -324,11 +329,15 @@ const parseTileGameplayMetadata = (value: unknown, tileId: number): TileGameplay
     }
     liquidKind = value.liquidKind;
   }
+  if (oneWayPlatform && solid) {
+    throw new Error(`tiles[${tileId}].gameplay.oneWayPlatform cannot be set when solid is true`);
+  }
 
   return {
     solid,
     blocksLight,
     ...(climbable === undefined ? {} : { climbable }),
+    ...(oneWayPlatform === undefined ? {} : { oneWayPlatform }),
     ...(liquidKind === undefined ? {} : { liquidKind }),
     ...(emissiveLight === undefined ? {} : { emissiveLight })
   };
@@ -455,6 +464,7 @@ const parseLiquidRenderMetadata = (
 const TILE_GAMEPLAY_PROPERTY_FLAG_SOLID = 1 << 0;
 const TILE_GAMEPLAY_PROPERTY_FLAG_BLOCKS_LIGHT = 1 << 1;
 const TILE_GAMEPLAY_PROPERTY_FLAG_CLIMBABLE = 1 << 2;
+const TILE_GAMEPLAY_PROPERTY_FLAG_ONE_WAY_PLATFORM = 1 << 3;
 
 const TILE_LIQUID_KIND_CODE_NONE = -1;
 const TILE_LIQUID_KIND_CODE_WATER = 0;
@@ -514,6 +524,9 @@ const buildTileGameplayPropertyLookup = (
     }
     if (gameplay.climbable) {
       flags |= TILE_GAMEPLAY_PROPERTY_FLAG_CLIMBABLE;
+    }
+    if (gameplay.oneWayPlatform) {
+      flags |= TILE_GAMEPLAY_PROPERTY_FLAG_ONE_WAY_PLATFORM;
     }
 
     propertyFlagsByTileId[tile.id] = flags;
@@ -1310,8 +1323,16 @@ export const resolveTileGameplayMetadata = (
   const solid = (flags & TILE_GAMEPLAY_PROPERTY_FLAG_SOLID) !== 0;
   const blocksLight = (flags & TILE_GAMEPLAY_PROPERTY_FLAG_BLOCKS_LIGHT) !== 0;
   const climbable = (flags & TILE_GAMEPLAY_PROPERTY_FLAG_CLIMBABLE) !== 0;
+  const oneWayPlatform = (flags & TILE_GAMEPLAY_PROPERTY_FLAG_ONE_WAY_PLATFORM) !== 0;
 
-  if (!solid && !blocksLight && !climbable && liquidKind === null && emissiveLight === 0) {
+  if (
+    !solid &&
+    !blocksLight &&
+    !climbable &&
+    !oneWayPlatform &&
+    liquidKind === null &&
+    emissiveLight === 0
+  ) {
     return DEFAULT_TILE_GAMEPLAY_METADATA;
   }
 
@@ -1319,6 +1340,7 @@ export const resolveTileGameplayMetadata = (
     solid,
     blocksLight,
     ...(climbable ? { climbable } : {}),
+    ...(oneWayPlatform ? { oneWayPlatform } : {}),
     ...(liquidKind === null ? {} : { liquidKind }),
     ...(emissiveLight === 0 ? {} : { emissiveLight })
   };
@@ -1341,6 +1363,14 @@ export const isTileClimbable = (
   registry: TileMetadataRegistry = TILE_METADATA
 ): boolean =>
   (getTileGameplayPropertyFlags(tileId, registry) & TILE_GAMEPLAY_PROPERTY_FLAG_CLIMBABLE) !== 0;
+
+export const isTileOneWayPlatform = (
+  tileId: number,
+  registry: TileMetadataRegistry = TILE_METADATA
+): boolean =>
+  (getTileGameplayPropertyFlags(tileId, registry) &
+    TILE_GAMEPLAY_PROPERTY_FLAG_ONE_WAY_PLATFORM) !==
+  0;
 
 export const getTileLiquidKind = (
   tileId: number,
