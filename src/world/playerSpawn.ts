@@ -2,6 +2,7 @@ import { MAX_LIQUID_LEVEL, TILE_SIZE } from './constants';
 import {
   doesAabbOverlapSolid,
   sweepAabbAlongAxis,
+  sweepAabbDownwardAlongOneWayPlatforms,
   type SolidTileCollision,
   type WorldAabb
 } from './collision';
@@ -20,6 +21,7 @@ export interface PlayerSpawnSearchOptions {
   originTileY?: number;
   maxHorizontalOffsetTiles?: number;
   maxVerticalOffsetTiles?: number;
+  allowOneWayPlatformSupport?: boolean;
 }
 
 export interface PlayerSpawnPoint {
@@ -62,6 +64,14 @@ const expectInteger = (value: number, label: string): number => {
 const expectNonNegativeInteger = (value: number, label: string): number => {
   if (!Number.isInteger(value) || value < 0) {
     throw new Error(`${label} must be a non-negative integer`);
+  }
+
+  return value;
+};
+
+const expectBoolean = (value: boolean, label: string): boolean => {
+  if (typeof value !== 'boolean') {
+    throw new Error(`${label} must be a boolean`);
   }
 
   return value;
@@ -188,14 +198,24 @@ const resolveAabbLiquidSafetyStatus = (
 const getGroundSupport = (
   world: PlayerSpawnWorldView,
   aabb: WorldAabb,
+  allowOneWayPlatformSupport: boolean,
   registry: TileMetadataRegistry
 ): SolidTileCollision | null => {
-  const sweep = sweepAabbAlongAxis(world, aabb, 'y', 1, registry);
-  if (sweep.allowedDelta !== 0 || sweep.hit === null) {
+  const solidSweep = sweepAabbAlongAxis(world, aabb, 'y', 1, registry);
+  if (solidSweep.allowedDelta === 0 && solidSweep.hit !== null) {
+    return solidSweep.hit;
+  }
+
+  if (!allowOneWayPlatformSupport) {
     return null;
   }
 
-  return sweep.hit;
+  const platformSweep = sweepAabbDownwardAlongOneWayPlatforms(world, aabb, 1, registry);
+  if (platformSweep.allowedDelta !== 0 || platformSweep.hit === null) {
+    return null;
+  }
+
+  return platformSweep.hit;
 };
 
 export const findPlayerSpawnPoint = (
@@ -219,6 +239,10 @@ export const findPlayerSpawnPoint = (
     options.maxVerticalOffsetTiles ?? DEFAULT_MAX_VERTICAL_OFFSET_TILES,
     'maxVerticalOffsetTiles'
   );
+  const allowOneWayPlatformSupport =
+    options.allowOneWayPlatformSupport === undefined
+      ? false
+      : expectBoolean(options.allowOneWayPlatformSupport, 'allowOneWayPlatformSupport');
 
   const candidates: Array<{ xOffset: number; yOffset: number }> = [];
   for (let yOffset = -maxVerticalOffsetTiles; yOffset <= maxVerticalOffsetTiles; yOffset += 1) {
@@ -244,7 +268,7 @@ export const findPlayerSpawnPoint = (
       continue;
     }
 
-    const support = getGroundSupport(world, aabb, registry);
+    const support = getGroundSupport(world, aabb, allowOneWayPlatformSupport, registry);
     if (!support) {
       continue;
     }

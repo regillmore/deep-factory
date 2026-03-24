@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { findPlayerSpawnPoint } from './playerSpawn';
 import { createPlayerState } from './playerState';
+import { STARTER_PLATFORM_TILE_ID } from './starterPlatformPlacement';
 import { TileWorld } from './world';
 import {
   createHostileSlimeSpawnerState,
@@ -115,6 +116,48 @@ describe('hostileSlimeSpawn', () => {
 
     const result = stepHostileSlimeSpawner({
       playerState,
+      spawnerState: {
+        ticksUntilNextSpawn: 1,
+        nextWindowIndex: 0
+      },
+      findSpawnPoint: (options) => findPlayerSpawnPoint(world, options)
+    });
+
+    expect(result.spawnState?.position).toEqual({ x: -184, y: 0 });
+    expect(result.spawnState?.facing).toBe('right');
+    expect(result.nextSpawnerState.nextWindowIndex).toBe(2);
+  });
+
+  it('treats a placed platform floor as valid support in the current deterministic spawn window', () => {
+    const world = new TileWorld(0);
+    setTiles(world, -48, -16, 48, 16, 0);
+    world.setTile(12, 0, STARTER_PLATFORM_TILE_ID);
+
+    const result = stepHostileSlimeSpawner({
+      playerState: createPlayerState({
+        position: { x: 8, y: 0 }
+      }),
+      spawnerState: {
+        ticksUntilNextSpawn: 1,
+        nextWindowIndex: 0
+      },
+      findSpawnPoint: (options) => findPlayerSpawnPoint(world, options)
+    });
+
+    expect(result.spawnState?.position).toEqual({ x: 200, y: 0 });
+    expect(result.spawnState?.facing).toBe('left');
+    expect(result.nextSpawnerState.nextWindowIndex).toBe(1);
+  });
+
+  it('falls forward into a later deterministic window when only that window has a placed platform floor', () => {
+    const world = new TileWorld(0);
+    setTiles(world, -48, -16, 48, 16, 0);
+    world.setTile(-12, 0, STARTER_PLATFORM_TILE_ID);
+
+    const result = stepHostileSlimeSpawner({
+      playerState: createPlayerState({
+        position: { x: 8, y: 0 }
+      }),
       spawnerState: {
         ticksUntilNextSpawn: 1,
         nextWindowIndex: 0

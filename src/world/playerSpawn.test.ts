@@ -6,6 +6,7 @@ import {
   resolveProceduralTerrainColumn
 } from './proceduralTerrain';
 import { findPlayerSpawnPoint, resolvePlayerSpawnLiquidSafetyStatus } from './playerSpawn';
+import { STARTER_PLATFORM_TILE_ID } from './starterPlatformPlacement';
 import { TileWorld } from './world';
 
 const PLAYER_WIDTH = 12;
@@ -216,6 +217,52 @@ describe('findPlayerSpawnPoint', () => {
     expect(spawn?.standingTileY).toBe(-1);
     expect(spawn?.x).toBe(5 * TILE_SIZE + TILE_SIZE * 0.5);
     expect(spawn?.y).toBe(-TILE_SIZE);
+  });
+
+  it('treats one-way platforms as spawn support only when the caller opts in', () => {
+    const world = new TileWorld(0);
+
+    setTiles(world, -3, -6, 3, 3, 0);
+    world.setTile(0, 0, STARTER_PLATFORM_TILE_ID);
+
+    expect(
+      findPlayerSpawnPoint(world, {
+        width: PLAYER_WIDTH,
+        height: PLAYER_HEIGHT,
+        originTileX: 0,
+        originTileY: 0,
+        maxHorizontalOffsetTiles: 0,
+        maxVerticalOffsetTiles: 0
+      })
+    ).toBeNull();
+
+    expect(
+      findPlayerSpawnPoint(world, {
+        width: PLAYER_WIDTH,
+        height: PLAYER_HEIGHT,
+        originTileX: 0,
+        originTileY: 0,
+        maxHorizontalOffsetTiles: 0,
+        maxVerticalOffsetTiles: 0,
+        allowOneWayPlatformSupport: true
+      })
+    ).toEqual({
+      anchorTileX: 0,
+      standingTileY: 0,
+      x: 8,
+      y: 0,
+      aabb: {
+        minX: 2,
+        minY: -28,
+        maxX: 14,
+        maxY: 0
+      },
+      support: {
+        tileX: 0,
+        tileY: 0,
+        tileId: STARTER_PLATFORM_TILE_ID
+      }
+    });
   });
 
   it('keeps the origin-area procedural spawn viable after underground cave carving and cave-mouth openings', () => {

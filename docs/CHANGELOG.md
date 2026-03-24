@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-23
 
+- Task: Add a hostile-slime spawn-on-platform follow-up after hostile-slime platform traversal.
+- Changes: Updated [src/world/playerSpawn.ts](../src/world/playerSpawn.ts) so spawn searches can optionally treat one-way platforms as valid support without changing the default solid-only behavior, wired [src/world/hostileSlimeSpawn.ts](../src/world/hostileSlimeSpawn.ts) to opt hostile-slime window searches into that support rule, expanded [src/world/playerSpawn.test.ts](../src/world/playerSpawn.test.ts) and [src/world/hostileSlimeSpawn.test.ts](../src/world/hostileSlimeSpawn.test.ts) with deterministic platform-support and platform-window regressions, removed completed task `524` from [docs/NEXT.md](docs/NEXT.md), added replacement task `525`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx vitest run src/world/playerSpawn.test.ts src/world/hostileSlimeSpawn.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a hostile-slime platform traversal follow-up after platform traversal and hostile-slime jump-chase locomotion.
 - Changes: Updated [src/world/hostileSlimeLocomotion.ts](../src/world/hostileSlimeLocomotion.ts) so hostile slimes now treat one-way platforms as downward-only landing and support surfaces while still ignoring platform edges during horizontal and upward collision checks, expanded [src/world/hostileSlimeLocomotion.test.ts](../src/world/hostileSlimeLocomotion.test.ts) with deterministic regressions for platform landings, non-wall platform edges, and chase hops across placed platform runs, removed completed task `520` from [docs/NEXT.md](docs/NEXT.md), added replacement task `524`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/hostileSlimeLocomotion.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

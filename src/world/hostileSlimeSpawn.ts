@@ -160,7 +160,8 @@ const resolveSpawnSearchOptions = (
   originTileX: resolvePlayerTileX(playerState) + windowOffsetTiles,
   originTileY: resolvePlayerTileY(playerState),
   maxHorizontalOffsetTiles: windowHorizontalSearchTiles,
-  maxVerticalOffsetTiles: windowVerticalSearchTiles
+  maxVerticalOffsetTiles: windowVerticalSearchTiles,
+  allowOneWayPlatformSupport: true
 });
 
 const findNextHostileSlimeSpawnState = (
