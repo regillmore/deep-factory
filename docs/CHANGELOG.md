@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-24
+
+- Task: Add a passive-bunny release crowding follow-up after passive-bunny release liquid-safety.
+- Changes: Updated [src/world/playerSpawn.ts](../src/world/playerSpawn.ts) so release searches can skip caller-rejected spawn candidates without changing the shared fallback order, updated [src/world/passiveBunnyRelease.ts](../src/world/passiveBunnyRelease.ts) plus [src/main.ts](../src/main.ts) so selected `Bunny` use and preview now reject crowded landing AABBs before consuming a stack, expanded [src/world/passiveBunnyRelease.test.ts](../src/world/passiveBunnyRelease.test.ts) and [src/main.test.ts](../src/main.test.ts) with deterministic crowded-floor helper and hidden-panel runtime regressions, removed completed task `532` from [docs/NEXT.md](docs/NEXT.md), added replacement task `538`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/passiveBunnyRelease.test.ts`, `cmd /c npx vitest run src/main.test.ts -t "crowded bunny landing tile"`, `cmd /c npx vitest run src/world/passiveBunnyRelease.test.ts src/main.test.ts -t bunny`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-23
 
 - Task: Add a stone-wall authored-art foundation.

@@ -4514,7 +4514,10 @@ const bootstrap = async (): Promise<void> => {
       },
       standalonePlayerState,
       worldTileX,
-      worldTileY
+      worldTileY,
+      {
+        activeBunnies: getPassiveBunnyEntityStates().map((passiveBunny) => passiveBunny.state)
+      }
     );
     if (!releaseEvaluation.canRelease || releaseEvaluation.spawnState === null) {
       return false;
@@ -5238,7 +5241,10 @@ const bootstrap = async (): Promise<void> => {
       },
       standalonePlayerState,
       worldTileX,
-      worldTileY
+      worldTileY,
+      {
+        activeBunnies: getPassiveBunnyEntityStates().map((passiveBunny) => passiveBunny.state)
+      }
     );
 
     return {

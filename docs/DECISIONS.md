@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-24: Bunny release skips crowded landing AABBs before consuming the stack
+
+- Decision: Selected `Bunny` release now filters nearby-ground candidates through live passive-bunny AABB overlap checks and preserves the same deterministic nearby-ground fallback order when the requested landing tile is crowded.
+- Reason: Releasing into already occupied critter space stacked passive bunnies on top of each other even when the shared nearby-ground search had another valid tile in range.
+- Consequence: Future critter or pet release follow-ups should treat live entity overlap as another nearby-ground candidate-rejection rule before spawn or inventory consumption, instead of spawning first and trying to resolve crowding afterward.
+
 ### 2026-03-23: Stone-wall authored art claims an interior atlas slot before exterior padding
 
 - Decision: `stone_wall` now uses dedicated authored region `36` at `112x32`, reusing an interior blank atlas slot instead of widening the atlas or consuming the transparent exterior padding strip.

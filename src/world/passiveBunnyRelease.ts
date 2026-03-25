@@ -1,3 +1,4 @@
+import type { WorldAabb } from './collision';
 import { evaluatePlayerHotbarTilePlacementRange } from './playerHotbarPlacementRange';
 import {
   findPlayerSpawnPoint,
@@ -8,6 +9,7 @@ import {
   createPassiveBunnyStateFromSpawn,
   DEFAULT_PASSIVE_BUNNY_HEIGHT,
   DEFAULT_PASSIVE_BUNNY_WIDTH,
+  getPassiveBunnyAabb,
   type PassiveBunnyState
 } from './passiveBunnyState';
 import type { PlayerState } from './playerState';
@@ -24,10 +26,13 @@ export interface PassiveBunnyReleaseLandingTile {
   tileY: number;
 }
 
+export type PassiveBunnyReleaseActiveBunny = Pick<PassiveBunnyState, 'position' | 'size'>;
+
 export interface EvaluatePassiveBunnyReleaseOptions {
   horizontalSearchTiles?: number;
   verticalSearchTiles?: number;
   maxPlacementDistance?: number;
+  activeBunnies?: ReadonlyArray<PassiveBunnyReleaseActiveBunny>;
 }
 
 export const DEFAULT_PASSIVE_BUNNY_RELEASE_HORIZONTAL_SEARCH_TILES = 2;
@@ -46,6 +51,12 @@ const resolvePassiveBunnyReleaseLandingTile = (
   tileY: spawnPoint.standingTileY - 1
 });
 
+const doAabbsOverlap = (left: WorldAabb, right: WorldAabb): boolean =>
+  left.minX < right.maxX &&
+  left.maxX > right.minX &&
+  left.minY < right.maxY &&
+  left.maxY > right.minY;
+
 export const evaluatePassiveBunnyRelease = (
   world: PlayerSpawnWorldView,
   playerState: Pick<PlayerState, 'position' | 'size'>,
@@ -53,6 +64,9 @@ export const evaluatePassiveBunnyRelease = (
   worldTileY: number,
   options: EvaluatePassiveBunnyReleaseOptions = {}
 ): PassiveBunnyReleaseEvaluation => {
+  const activeBunnyAabbs = (options.activeBunnies ?? []).map((activeBunny) =>
+    getPassiveBunnyAabb(activeBunny)
+  );
   const placementRange = evaluatePlayerHotbarTilePlacementRange(
     playerState,
     worldTileX,
@@ -77,7 +91,14 @@ export const evaluatePassiveBunnyRelease = (
     maxHorizontalOffsetTiles:
       options.horizontalSearchTiles ?? DEFAULT_PASSIVE_BUNNY_RELEASE_HORIZONTAL_SEARCH_TILES,
     maxVerticalOffsetTiles:
-      options.verticalSearchTiles ?? DEFAULT_PASSIVE_BUNNY_RELEASE_VERTICAL_SEARCH_TILES
+      options.verticalSearchTiles ?? DEFAULT_PASSIVE_BUNNY_RELEASE_VERTICAL_SEARCH_TILES,
+    isCandidateSpawnAllowed:
+      activeBunnyAabbs.length === 0
+        ? undefined
+        : (spawnPoint) =>
+            !activeBunnyAabbs.some((activeBunnyAabb) =>
+              doAabbsOverlap(spawnPoint.aabb, activeBunnyAabb)
+            )
   });
   if (spawnPoint === null) {
     return {

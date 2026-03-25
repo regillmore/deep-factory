@@ -122,7 +122,9 @@ export const clonePassiveBunnyState = (state: PassiveBunnyState): PassiveBunnySt
   hopCooldownTicksRemaining: state.hopCooldownTicksRemaining
 });
 
-export const getPassiveBunnyAabb = (state: PassiveBunnyState): WorldAabb => {
+export const getPassiveBunnyAabb = (
+  state: Pick<PassiveBunnyState, 'position' | 'size'>
+): WorldAabb => {
   const halfWidth = state.size.width * 0.5;
   return {
     minX: state.position.x - halfWidth,

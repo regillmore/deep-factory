@@ -11813,6 +11813,83 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('falls back away from a crowded bunny landing tile through the shared hidden-panel item-use path', async () => {
+    const world = new TileWorld(0);
+    for (let tileX = 1; tileX <= 3; tileX += 1) {
+      world.setTile(tileX, 0, 1);
+      world.setTile(tileX, -1, 0);
+      world.setTile(tileX, -2, 0);
+    }
+
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: world.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'bunny', amount: 2 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'sword', amount: 1 },
+              { itemId: 'umbrella', amount: 1 },
+              { itemId: 'bug-net', amount: 1 },
+              { itemId: 'spear', amount: 1 }
+            ],
+            selectedHotbarSlotIndex: 3
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 2,
+        worldTileY: -1,
+        worldX: 40,
+        worldY: -4,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 2,
+        worldTileY: -1,
+        worldX: 40,
+        worldY: -4,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate();
+    runRenderFrame();
+
+    expect(testRuntime.latestRendererRenderFrameState?.bunnyCurrentPositions).toHaveLength(2);
+    expect(testRuntime.latestRendererRenderFrameState?.bunnyCurrentPositions?.map((bunny) => bunny.position))
+      .toEqual([
+        { x: 40, y: 0 },
+        { x: 24, y: 0 }
+      ]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[3]).toBeNull();
+  });
+
   it('despawns a hostile slime immediately after the starter sword lands the defeating hit and leaves one gel pickup', async () => {
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,

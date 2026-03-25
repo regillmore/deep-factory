@@ -22,6 +22,7 @@ export interface PlayerSpawnSearchOptions {
   maxHorizontalOffsetTiles?: number;
   maxVerticalOffsetTiles?: number;
   allowOneWayPlatformSupport?: boolean;
+  isCandidateSpawnAllowed?: ((spawnPoint: PlayerSpawnPoint) => boolean) | undefined;
 }
 
 export interface PlayerSpawnPoint {
@@ -72,6 +73,17 @@ const expectNonNegativeInteger = (value: number, label: string): number => {
 const expectBoolean = (value: boolean, label: string): boolean => {
   if (typeof value !== 'boolean') {
     throw new Error(`${label} must be a boolean`);
+  }
+
+  return value;
+};
+
+const expectFunction = <TFunction extends (...args: never[]) => unknown>(
+  value: TFunction,
+  label: string
+): TFunction => {
+  if (typeof value !== 'function') {
+    throw new Error(`${label} must be a function`);
   }
 
   return value;
@@ -243,6 +255,10 @@ export const findPlayerSpawnPoint = (
     options.allowOneWayPlatformSupport === undefined
       ? false
       : expectBoolean(options.allowOneWayPlatformSupport, 'allowOneWayPlatformSupport');
+  const isCandidateSpawnAllowed =
+    options.isCandidateSpawnAllowed === undefined
+      ? null
+      : expectFunction(options.isCandidateSpawnAllowed, 'isCandidateSpawnAllowed');
 
   const candidates: Array<{ xOffset: number; yOffset: number }> = [];
   for (let yOffset = -maxVerticalOffsetTiles; yOffset <= maxVerticalOffsetTiles; yOffset += 1) {
@@ -273,7 +289,7 @@ export const findPlayerSpawnPoint = (
       continue;
     }
 
-    return {
+    const spawnPoint: PlayerSpawnPoint = {
       anchorTileX,
       standingTileY,
       x: (aabb.minX + aabb.maxX) * 0.5,
@@ -281,6 +297,11 @@ export const findPlayerSpawnPoint = (
       aabb,
       support
     };
+    if (isCandidateSpawnAllowed !== null && !isCandidateSpawnAllowed(spawnPoint)) {
+      continue;
+    }
+
+    return spawnPoint;
   }
 
   return null;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { MAX_LIQUID_LEVEL } from './constants';
+import { createPassiveBunnyState } from './passiveBunnyState';
 import { createPlayerState } from './playerState';
 import { evaluatePassiveBunnyRelease } from './passiveBunnyRelease';
 import { STARTER_PLATFORM_TILE_ID } from './starterPlatformPlacement';
@@ -214,6 +215,70 @@ describe('passiveBunnyRelease', () => {
       evaluatePassiveBunnyRelease(world, playerState, 2, 0, {
         horizontalSearchTiles: 0,
         verticalSearchTiles: 0
+      })
+    ).toEqual({
+      placementRangeWithinReach: true,
+      spawnState: null,
+      landingTile: null,
+      canRelease: false
+    });
+  });
+
+  it('falls back away from a crowded landing tile in deterministic left-before-right order', () => {
+    const playerState = createPlayerState({
+      position: { x: 40, y: 0 }
+    });
+    const world = createPassiveBunnyReleaseWorld([
+      { x: 1, y: 0 },
+      { x: 2, y: 0 },
+      { x: 3, y: 0 }
+    ]);
+
+    expect(
+      evaluatePassiveBunnyRelease(world, playerState, 2, 0, {
+        horizontalSearchTiles: 1,
+        verticalSearchTiles: 0,
+        activeBunnies: [
+          createPassiveBunnyState({
+            position: { x: 40, y: 0 }
+          })
+        ]
+      })
+    ).toEqual({
+      placementRangeWithinReach: true,
+      spawnState: {
+        position: { x: 24, y: 0 },
+        velocity: { x: 0, y: 0 },
+        size: { width: 14, height: 18 },
+        grounded: true,
+        facing: 'left',
+        hopCooldownTicksRemaining: 48
+      },
+      landingTile: {
+        tileX: 1,
+        tileY: -1
+      },
+      canRelease: true
+    });
+  });
+
+  it('rejects release when the only nearby landing tile is already occupied by a passive bunny', () => {
+    const playerState = createPlayerState({
+      position: { x: 8, y: 0 }
+    });
+    const world = createPassiveBunnyReleaseWorld([
+      { x: 2, y: 0 }
+    ]);
+
+    expect(
+      evaluatePassiveBunnyRelease(world, playerState, 2, -1, {
+        horizontalSearchTiles: 0,
+        verticalSearchTiles: 0,
+        activeBunnies: [
+          createPassiveBunnyState({
+            position: { x: 40, y: 0 }
+          })
+        ]
       })
     ).toEqual({
       placementRangeWithinReach: true,
