@@ -1,10 +1,12 @@
 import { TILE_SIZE } from './constants';
+import type { WorldAabb } from './collision';
 import type { PlayerSpawnPoint, PlayerSpawnSearchOptions } from './playerSpawn';
 import type { PlayerState } from './playerState';
 import {
   createPassiveBunnyStateFromSpawn,
   DEFAULT_PASSIVE_BUNNY_HEIGHT,
   DEFAULT_PASSIVE_BUNNY_WIDTH,
+  getPassiveBunnyAabb,
   type PassiveBunnyState
 } from './passiveBunnyState';
 
@@ -20,7 +22,7 @@ export interface PassiveBunnySpawnWindowTarget {
 
 export interface ActivePassiveBunnyEntry<TId = number> {
   id: TId;
-  state: Pick<PassiveBunnyState, 'position'>;
+  state: Pick<PassiveBunnyState, 'position' | 'size'>;
 }
 
 export interface PassiveBunnySpawnSearch {
@@ -118,6 +120,12 @@ const resolveFacingAwayFromPlayer = (
   playerState: Pick<PlayerState, 'position'>
 ): PassiveBunnyState['facing'] => (spawnPoint.x <= playerState.position.x ? 'left' : 'right');
 
+const doAabbsOverlap = (left: WorldAabb, right: WorldAabb): boolean =>
+  left.minX < right.maxX &&
+  left.maxX > right.minX &&
+  left.minY < right.maxY &&
+  left.maxY > right.minY;
+
 const isOutsideKeepBand = (
   playerState: Pick<PlayerState, 'position'>,
   bunnyState: Pick<PassiveBunnyState, 'position'>,
@@ -153,7 +161,8 @@ const resolveSpawnSearchOptions = (
   playerState: Pick<PlayerState, 'position'>,
   windowOffsetTiles: number,
   windowHorizontalSearchTiles: number,
-  windowVerticalSearchTiles: number
+  windowVerticalSearchTiles: number,
+  activeBunnyAabbs: ReadonlyArray<WorldAabb>
 ): PlayerSpawnSearchOptions => ({
   width: DEFAULT_PASSIVE_BUNNY_WIDTH,
   height: DEFAULT_PASSIVE_BUNNY_HEIGHT,
@@ -161,12 +170,20 @@ const resolveSpawnSearchOptions = (
   originTileY: resolvePlayerTileY(playerState),
   maxHorizontalOffsetTiles: windowHorizontalSearchTiles,
   maxVerticalOffsetTiles: windowVerticalSearchTiles,
-  allowOneWayPlatformSupport: true
+  allowOneWayPlatformSupport: true,
+  isCandidateSpawnAllowed:
+    activeBunnyAabbs.length === 0
+      ? undefined
+      : (spawnPoint) =>
+          !activeBunnyAabbs.some((activeBunnyAabb) =>
+            doAabbsOverlap(spawnPoint.aabb, activeBunnyAabb)
+          )
 });
 
-const findNextPassiveBunnySpawnState = (
+const findNextPassiveBunnySpawnState = <TId>(
   playerState: Pick<PlayerState, 'position'>,
   nextWindowIndex: number,
+  activeBunnies: ReadonlyArray<ActivePassiveBunnyEntry<TId>>,
   findSpawnPoint: PassiveBunnySpawnSearch,
   windowOffsetsTiles: ReadonlyArray<number>,
   windowHorizontalSearchTiles: number,
@@ -175,6 +192,7 @@ const findNextPassiveBunnySpawnState = (
   Pick<PassiveBunnySpawnerState, 'nextWindowIndex'> => {
   const normalizedOffsets = normalizeWindowOffsetsTiles(windowOffsetsTiles);
   const startWindowIndex = nextWindowIndex % normalizedOffsets.length;
+  const activeBunnyAabbs = activeBunnies.map((activeBunny) => getPassiveBunnyAabb(activeBunny.state));
 
   for (let offsetIndex = 0; offsetIndex < normalizedOffsets.length; offsetIndex += 1) {
     const windowIndex = (startWindowIndex + offsetIndex) % normalizedOffsets.length;
@@ -183,7 +201,8 @@ const findNextPassiveBunnySpawnState = (
         playerState,
         normalizedOffsets[windowIndex] ?? 0,
         windowHorizontalSearchTiles,
-        windowVerticalSearchTiles
+        windowVerticalSearchTiles,
+        activeBunnyAabbs
       )
     );
     if (spawnPoint === null) {
@@ -290,6 +309,7 @@ export const stepPassiveBunnySpawner = <TId = number>({
   const spawnResult = findNextPassiveBunnySpawnState(
     playerState,
     normalizedNextWindowIndex,
+    activeBunnies,
     findSpawnPoint,
     normalizedWindowOffsetsTiles,
     normalizedWindowHorizontalSearchTiles,

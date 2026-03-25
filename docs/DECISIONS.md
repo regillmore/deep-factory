@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-24: Passive-bunny ambient spawn skips crowded candidate AABBs before advancing windows
+
+- Decision: Passive-bunny ambient spawn now filters each deterministic spawn candidate through live passive-bunny AABB overlap checks before accepting that candidate, so crowded spots fall back through the existing within-window and later-window search order instead of stacking bunnies.
+- Reason: Ambient respawns could still place a new bunny directly on top of an existing one even after manual bunny release learned to reject crowded landing AABBs.
+- Consequence: Future critter ambient-spawn follow-ups should treat live entity overlap as another spawn-candidate rejection rule and preserve the shared search-order fallback rather than spawning first and trying to separate entities afterward.
+
 ### 2026-03-24: Bunny release skips crowded landing AABBs before consuming the stack
 
 - Decision: Selected `Bunny` release now filters nearby-ground candidates through live passive-bunny AABB overlap checks and preserves the same deterministic nearby-ground fallback order when the requested landing tile is crowded.

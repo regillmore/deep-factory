@@ -35,6 +35,19 @@ const createFlatSurfaceWorld = (): TileWorld => {
   return world;
 };
 
+const createCrowdedPassiveBunnyEntries = (
+  anchorTileXs: ReadonlyArray<number>
+): Array<{ id: number; state: ReturnType<typeof createPassiveBunnyState> }> =>
+  anchorTileXs.map((anchorTileX, index) => ({
+    id: index + 1,
+    state: createPassiveBunnyState({
+      position: {
+        x: anchorTileX * 16 + 8,
+        y: 0
+      }
+    })
+  }));
+
 describe('passiveBunnySpawn', () => {
   it('normalizes the next deterministic spawn-window index into its tile-offset target', () => {
     expect(
@@ -138,6 +151,26 @@ describe('passiveBunnySpawn', () => {
     expect(result.nextSpawnerState.nextWindowIndex).toBe(1);
   });
 
+  it('falls back within the current deterministic window when the nearest candidate is crowded', () => {
+    const world = createFlatSurfaceWorld();
+
+    const result = stepPassiveBunnySpawner({
+      playerState: createPlayerState({
+        position: { x: 8, y: 0 }
+      }),
+      activeBunnies: createCrowdedPassiveBunnyEntries([8]),
+      spawnerState: {
+        ticksUntilNextSpawn: 1,
+        nextWindowIndex: 0
+      },
+      findSpawnPoint: (options) => findPlayerSpawnPoint(world, options)
+    });
+
+    expect(result.spawnState?.position).toEqual({ x: 120, y: 0 });
+    expect(result.spawnState?.facing).toBe('right');
+    expect(result.nextSpawnerState.nextWindowIndex).toBe(1);
+  });
+
   it('falls forward into a later deterministic window when only that window has a placed platform floor', () => {
     const world = new TileWorld(0);
     setTiles(world, -48, -16, 48, 16, 0);
@@ -157,6 +190,71 @@ describe('passiveBunnySpawn', () => {
     expect(result.spawnState?.position).toEqual({ x: -120, y: 0 });
     expect(result.spawnState?.facing).toBe('left');
     expect(result.nextSpawnerState.nextWindowIndex).toBe(2);
+  });
+
+  it('falls forward into a later deterministic window when the current window is fully crowded', () => {
+    const world = createFlatSurfaceWorld();
+
+    const result = stepPassiveBunnySpawner({
+      playerState: createPlayerState({
+        position: { x: 8, y: 0 }
+      }),
+      activeBunnies: createCrowdedPassiveBunnyEntries([6, 7, 8, 9, 10]),
+      maxActiveBunnies: 6,
+      spawnerState: {
+        ticksUntilNextSpawn: 1,
+        nextWindowIndex: 0
+      },
+      findSpawnPoint: (options) => findPlayerSpawnPoint(world, options)
+    });
+
+    expect(result.spawnState?.position).toEqual({ x: -120, y: 0 });
+    expect(result.spawnState?.facing).toBe('left');
+    expect(result.nextSpawnerState.nextWindowIndex).toBe(2);
+  });
+
+  it('skips spawning when every deterministic window candidate is crowded', () => {
+    const world = createFlatSurfaceWorld();
+
+    const result = stepPassiveBunnySpawner({
+      playerState: createPlayerState({
+        position: { x: 8, y: 0 }
+      }),
+      activeBunnies: createCrowdedPassiveBunnyEntries([
+        -16,
+        -15,
+        -14,
+        -13,
+        -12,
+        -10,
+        -9,
+        -8,
+        -7,
+        -6,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        15,
+        16
+      ]),
+      maxActiveBunnies: 21,
+      spawnerState: {
+        ticksUntilNextSpawn: 1,
+        nextWindowIndex: 0
+      },
+      findSpawnPoint: (options) => findPlayerSpawnPoint(world, options)
+    });
+
+    expect(result.spawnState).toBeNull();
+    expect(result.nextSpawnerState).toEqual({
+      ticksUntilNextSpawn: DEFAULT_PASSIVE_BUNNY_SPAWN_INTERVAL_TICKS,
+      nextWindowIndex: 1
+    });
   });
 
   it('despawns bunnies outside the keep band while keeping nearby bunnies active', () => {
