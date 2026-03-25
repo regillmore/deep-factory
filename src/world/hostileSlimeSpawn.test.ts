@@ -41,6 +41,19 @@ const createFlatSurfaceWorld = (): TileWorld => {
   return world;
 };
 
+const createCrowdedHostileSlimeEntries = (
+  anchorTileXs: ReadonlyArray<number>
+): Array<{ id: number; state: ReturnType<typeof createHostileSlimeState> }> =>
+  anchorTileXs.map((anchorTileX, index) => ({
+    id: index + 1,
+    state: createHostileSlimeState({
+      position: {
+        x: anchorTileX * 16 + 8,
+        y: 0
+      }
+    })
+  }));
+
 describe('hostileSlimeSpawn', () => {
   it('normalizes the next deterministic spawn-window index into its tile-offset target', () => {
     expect(
@@ -168,6 +181,99 @@ describe('hostileSlimeSpawn', () => {
     expect(result.spawnState?.position).toEqual({ x: -184, y: 0 });
     expect(result.spawnState?.facing).toBe('right');
     expect(result.nextSpawnerState.nextWindowIndex).toBe(2);
+  });
+
+  it('falls back within the current deterministic window when the nearest candidate is crowded', () => {
+    const world = createFlatSurfaceWorld();
+
+    const result = stepHostileSlimeSpawner({
+      playerState: createPlayerState({
+        position: { x: 8, y: 0 }
+      }),
+      activeSlimes: createCrowdedHostileSlimeEntries([12]),
+      spawnerState: {
+        ticksUntilNextSpawn: 1,
+        nextWindowIndex: 0
+      },
+      findSpawnPoint: (options) => findPlayerSpawnPoint(world, options)
+    });
+
+    expect(result.spawnState?.position).toEqual({ x: 168, y: 0 });
+    expect(result.spawnState?.facing).toBe('left');
+    expect(result.nextSpawnerState.nextWindowIndex).toBe(1);
+  });
+
+  it('falls forward into a later deterministic window when the current window is fully crowded', () => {
+    const world = createFlatSurfaceWorld();
+
+    const result = stepHostileSlimeSpawner({
+      playerState: createPlayerState({
+        position: { x: 8, y: 0 }
+      }),
+      activeSlimes: createCrowdedHostileSlimeEntries([9, 10, 11, 12, 13, 14, 15]),
+      maxActiveSlimes: 8,
+      spawnerState: {
+        ticksUntilNextSpawn: 1,
+        nextWindowIndex: 0
+      },
+      findSpawnPoint: (options) => findPlayerSpawnPoint(world, options)
+    });
+
+    expect(result.spawnState?.position).toEqual({ x: -184, y: 0 });
+    expect(result.spawnState?.facing).toBe('right');
+    expect(result.nextSpawnerState.nextWindowIndex).toBe(2);
+  });
+
+  it('skips spawning when every deterministic window candidate is crowded', () => {
+    const world = createFlatSurfaceWorld();
+
+    const result = stepHostileSlimeSpawner({
+      playerState: createPlayerState({
+        position: { x: 8, y: 0 }
+      }),
+      activeSlimes: createCrowdedHostileSlimeEntries([
+        -21,
+        -20,
+        -19,
+        -18,
+        -17,
+        -16,
+        -15,
+        -15,
+        -14,
+        -13,
+        -12,
+        -11,
+        -10,
+        -9,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ]),
+      maxActiveSlimes: 29,
+      spawnerState: {
+        ticksUntilNextSpawn: 1,
+        nextWindowIndex: 0
+      },
+      findSpawnPoint: (options) => findPlayerSpawnPoint(world, options)
+    });
+
+    expect(result.spawnState).toBeNull();
+    expect(result.nextSpawnerState).toEqual({
+      ticksUntilNextSpawn: DEFAULT_HOSTILE_SLIME_SPAWN_INTERVAL_TICKS,
+      nextWindowIndex: 1
+    });
   });
 
   it('despawns slimes outside the keep band while keeping nearby slimes active', () => {

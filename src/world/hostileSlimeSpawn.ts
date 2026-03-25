@@ -1,10 +1,12 @@
 import { TILE_SIZE } from './constants';
+import type { WorldAabb } from './collision';
 import type { PlayerSpawnPoint, PlayerSpawnSearchOptions } from './playerSpawn';
 import type { PlayerState } from './playerState';
 import {
   createHostileSlimeStateFromSpawn,
   DEFAULT_HOSTILE_SLIME_HEIGHT,
   DEFAULT_HOSTILE_SLIME_WIDTH,
+  getHostileSlimeAabb,
   type HostileSlimeState
 } from './hostileSlimeState';
 
@@ -20,7 +22,7 @@ export interface HostileSlimeSpawnWindowTarget {
 
 export interface ActiveHostileSlimeEntry<TId = number> {
   id: TId;
-  state: Pick<HostileSlimeState, 'position'>;
+  state: Pick<HostileSlimeState, 'position' | 'size'>;
 }
 
 export interface HostileSlimeSpawnSearch {
@@ -118,6 +120,12 @@ const resolveFacingTowardsPlayer = (
   playerState: Pick<PlayerState, 'position'>
 ): HostileSlimeState['facing'] => (spawnPoint.x <= playerState.position.x ? 'right' : 'left');
 
+const doAabbsOverlap = (left: WorldAabb, right: WorldAabb): boolean =>
+  left.minX < right.maxX &&
+  left.maxX > right.minX &&
+  left.minY < right.maxY &&
+  left.maxY > right.minY;
+
 const isOutsideKeepBand = (
   playerState: Pick<PlayerState, 'position'>,
   slimeState: Pick<HostileSlimeState, 'position'>,
@@ -153,7 +161,8 @@ const resolveSpawnSearchOptions = (
   playerState: Pick<PlayerState, 'position'>,
   windowOffsetTiles: number,
   windowHorizontalSearchTiles: number,
-  windowVerticalSearchTiles: number
+  windowVerticalSearchTiles: number,
+  activeSlimeAabbs: ReadonlyArray<WorldAabb>
 ): PlayerSpawnSearchOptions => ({
   width: DEFAULT_HOSTILE_SLIME_WIDTH,
   height: DEFAULT_HOSTILE_SLIME_HEIGHT,
@@ -161,12 +170,20 @@ const resolveSpawnSearchOptions = (
   originTileY: resolvePlayerTileY(playerState),
   maxHorizontalOffsetTiles: windowHorizontalSearchTiles,
   maxVerticalOffsetTiles: windowVerticalSearchTiles,
-  allowOneWayPlatformSupport: true
+  allowOneWayPlatformSupport: true,
+  isCandidateSpawnAllowed:
+    activeSlimeAabbs.length === 0
+      ? undefined
+      : (spawnPoint) =>
+          !activeSlimeAabbs.some((activeSlimeAabb) =>
+            doAabbsOverlap(spawnPoint.aabb, activeSlimeAabb)
+          )
 });
 
-const findNextHostileSlimeSpawnState = (
+const findNextHostileSlimeSpawnState = <TId>(
   playerState: Pick<PlayerState, 'position'>,
   nextWindowIndex: number,
+  activeSlimes: ReadonlyArray<ActiveHostileSlimeEntry<TId>>,
   findSpawnPoint: HostileSlimeSpawnSearch,
   windowOffsetsTiles: ReadonlyArray<number>,
   windowHorizontalSearchTiles: number,
@@ -174,6 +191,7 @@ const findNextHostileSlimeSpawnState = (
 ): Pick<HostileSlimeSpawnStepResult<never>, 'spawnState'> & Pick<HostileSlimeSpawnerState, 'nextWindowIndex'> => {
   const normalizedOffsets = normalizeWindowOffsetsTiles(windowOffsetsTiles);
   const startWindowIndex = nextWindowIndex % normalizedOffsets.length;
+  const activeSlimeAabbs = activeSlimes.map((activeSlime) => getHostileSlimeAabb(activeSlime.state));
 
   for (let offsetIndex = 0; offsetIndex < normalizedOffsets.length; offsetIndex += 1) {
     const windowIndex = (startWindowIndex + offsetIndex) % normalizedOffsets.length;
@@ -182,7 +200,8 @@ const findNextHostileSlimeSpawnState = (
         playerState,
         normalizedOffsets[windowIndex] ?? 0,
         windowHorizontalSearchTiles,
-        windowVerticalSearchTiles
+        windowVerticalSearchTiles,
+        activeSlimeAabbs
       )
     );
     if (spawnPoint === null) {
@@ -286,6 +305,7 @@ export const stepHostileSlimeSpawner = <TId = number>({
   const spawnResult = findNextHostileSlimeSpawnState(
     playerState,
     normalizedNextWindowIndex,
+    activeSlimes,
     findSpawnPoint,
     normalizedWindowOffsetsTiles,
     normalizedWindowHorizontalSearchTiles,

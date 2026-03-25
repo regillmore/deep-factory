@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-24: Hostile-slime ambient spawn skips crowded candidate AABBs before advancing windows
+
+- Decision: Hostile-slime ambient spawn now filters each deterministic spawn candidate through live hostile-slime AABB overlap checks before accepting that candidate, so crowded spots fall back through the existing within-window and later-window search order instead of stacking slimes.
+- Reason: Ambient hostile spawns still allowed overlapping slimes even after passive-bunny ambient spawn learned to reject crowded candidates through the shared spawn search.
+- Consequence: Future hostile or combat-entity ambient-spawn follow-ups should treat live entity overlap as another spawn-candidate rejection rule and preserve the shared search-order fallback rather than spawning first and trying to separate entities afterward.
+
 ### 2026-03-24: Passive-bunny ambient spawn skips crowded candidate AABBs before advancing windows
 
 - Decision: Passive-bunny ambient spawn now filters each deterministic spawn candidate through live passive-bunny AABB overlap checks before accepting that candidate, so crowded spots fall back through the existing within-window and later-window search order instead of stacking bunnies.

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-24
 
+- Task: Add a hostile-slime ambient-spawn crowding follow-up after passive-bunny ambient-spawn crowding.
+- Changes: Updated [src/world/hostileSlimeSpawn.ts](../src/world/hostileSlimeSpawn.ts) so hostile-slime ambient spawn searches now reject slime-sized candidate AABBs that already overlap active hostile slimes while preserving deterministic within-window and cross-window fallback order, widened [src/world/hostileSlimeState.ts](../src/world/hostileSlimeState.ts) so shared hostile-slime AABB helpers accept narrowed spawn-state views, expanded [src/world/hostileSlimeSpawn.test.ts](../src/world/hostileSlimeSpawn.test.ts) with same-window, later-window, and fully crowded deterministic spawn regressions, removed completed task `539` from [docs/NEXT.md](docs/NEXT.md), added replacement task `540`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/hostileSlimeSpawn.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add a passive-bunny ambient-spawn crowding follow-up after passive-bunny release crowding.
 - Changes: Updated [src/world/passiveBunnySpawn.ts](../src/world/passiveBunnySpawn.ts) so ambient passive-bunny spawn searches now reject candidate landing AABBs that already overlap active passive bunnies while preserving deterministic within-window and cross-window fallback order, expanded [src/world/passiveBunnySpawn.test.ts](../src/world/passiveBunnySpawn.test.ts) with same-window, later-window, and fully crowded deterministic spawn regressions, removed completed task `538` from [docs/NEXT.md](docs/NEXT.md), added replacement task `539`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/passiveBunnySpawn.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

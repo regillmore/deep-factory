@@ -171,7 +171,11 @@ export const applyHostileSlimeDamage = (
 export const isHostileSlimeDefeated = (state: Pick<HostileSlimeState, 'health'>): boolean =>
   expectNonNegativeFiniteNumber(state.health, 'state.health') <= 0;
 
-export const getHostileSlimeAabb = (state: HostileSlimeState): WorldAabb => {
+export const getHostileSlimeAabb = <
+  TState extends Pick<HostileSlimeState, 'position' | 'size'>
+>(
+  state: TState
+): WorldAabb => {
   const halfWidth = state.size.width * 0.5;
   return {
     minX: state.position.x - halfWidth,
