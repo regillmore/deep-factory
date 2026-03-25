@@ -4,6 +4,7 @@ import {
   PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES,
   PROCEDURAL_COPPER_ORE_TILE_ID,
   PROCEDURAL_DIRT_TILE_ID,
+  PROCEDURAL_DIRT_WALL_ID,
   PROCEDURAL_GRASS_SURFACE_TILE_ID,
   PROCEDURAL_STONE_TILE_ID,
   PROCEDURAL_STONE_WALL_ID,
@@ -86,6 +87,24 @@ const collectStoneWallTileCoords = (
     const maxWorldY = surfaceTileY + 36;
     for (let worldY = minWorldY; worldY <= maxWorldY; worldY += 1) {
       if (resolveProceduralTerrainWallId(worldX, worldY, worldSeed) === PROCEDURAL_STONE_WALL_ID) {
+        coords.push({ worldX, worldY });
+      }
+    }
+  }
+
+  return coords;
+};
+
+const collectDirtWallTileCoords = (
+  worldSeed = 0,
+  minWorldX = -96,
+  maxWorldX = 96
+): Array<{ worldX: number; worldY: number }> => {
+  const coords: Array<{ worldX: number; worldY: number }> = [];
+  for (let worldX = minWorldX; worldX <= maxWorldX; worldX += 1) {
+    const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldX, worldSeed);
+    for (let worldY = surfaceTileY; worldY <= surfaceTileY + dirtDepthTiles; worldY += 1) {
+      if (resolveProceduralTerrainWallId(worldX, worldY, worldSeed) === PROCEDURAL_DIRT_WALL_ID) {
         coords.push({ worldX, worldY });
       }
     }
@@ -288,8 +307,9 @@ describe('resolveProceduralTerrainTileId', () => {
     expect(seededMouthColumns).not.toEqual(collectExposedCaveMouthColumns(0));
   });
 
-  it('fills underground stone, cave air, and cave-mouth openings with stone walls', () => {
+  it('fills dirt bands with dirt walls and deeper underground with stone walls', () => {
     const caveTiles = collectUndergroundCaveTileCoords();
+    const dirtWallTiles = collectDirtWallTileCoords();
     const mouthColumns = collectExposedCaveMouthColumns();
 
     expect(caveTiles.length).toBeGreaterThan(0);
@@ -302,23 +322,32 @@ describe('resolveProceduralTerrainTileId', () => {
 
     for (const worldX of [-16, 0, 16]) {
       const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldX);
+      const dirtTileY = surfaceTileY + 1;
       const undergroundStoneTileY = surfaceTileY + dirtDepthTiles + 1;
+      expect(resolveProceduralTerrainTileId(worldX, dirtTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+      expect(resolveProceduralTerrainWallId(worldX, dirtTileY)).toBe(PROCEDURAL_DIRT_WALL_ID);
       expect(resolveProceduralTerrainTileId(worldX, undergroundStoneTileY)).toBe(PROCEDURAL_STONE_TILE_ID);
       expect(resolveProceduralTerrainWallId(worldX, undergroundStoneTileY)).toBe(PROCEDURAL_STONE_WALL_ID);
     }
 
+    expect(dirtWallTiles.length).toBeGreaterThan(0);
     expect(mouthColumns.length).toBeGreaterThan(0);
     for (const mouth of mouthColumns) {
-      expect(resolveProceduralTerrainWallId(mouth.worldX, mouth.surfaceTileY)).toBe(PROCEDURAL_STONE_WALL_ID);
+      expect(resolveProceduralTerrainWallId(mouth.worldX, mouth.surfaceTileY)).toBe(PROCEDURAL_DIRT_WALL_ID);
+      expect(resolveProceduralTerrainWallId(mouth.worldX, mouth.surfaceTileY + 1)).toBe(PROCEDURAL_DIRT_WALL_ID);
       expect(resolveProceduralTerrainWallId(mouth.worldX, mouth.deepestAirTileY)).toBe(
         PROCEDURAL_STONE_WALL_ID
       );
     }
   });
 
-  it('keeps enclosed cave stone-wall fills deterministic while varying them by world seed', () => {
+  it('keeps dirt and stone wall fills deterministic while varying them by world seed', () => {
+    const seededDirtWallTiles = collectDirtWallTileCoords(0x12345678);
     const seededStoneWallTiles = collectStoneWallTileCoords(0x12345678);
 
+    expect(seededDirtWallTiles.length).toBeGreaterThan(0);
+    expect(seededDirtWallTiles).toEqual(collectDirtWallTileCoords(0x12345678));
+    expect(seededDirtWallTiles).not.toEqual(collectDirtWallTileCoords(0));
     expect(seededStoneWallTiles.length).toBeGreaterThan(0);
     expect(seededStoneWallTiles).toEqual(collectStoneWallTileCoords(0x12345678));
     expect(seededStoneWallTiles).not.toEqual(collectStoneWallTileCoords(0));

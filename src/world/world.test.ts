@@ -8,6 +8,7 @@ import {
   PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES,
   PROCEDURAL_COPPER_ORE_TILE_ID,
   PROCEDURAL_DIRT_TILE_ID,
+  PROCEDURAL_DIRT_WALL_ID,
   PROCEDURAL_GRASS_SURFACE_TILE_ID,
   PROCEDURAL_STONE_TILE_ID,
   PROCEDURAL_STONE_WALL_ID,
@@ -226,6 +227,7 @@ describe('TileWorld', () => {
     const worldTileX = -1;
     const worldTileY = 0;
     const previousTileId = world.getTile(worldTileX, worldTileY);
+    const previousWallId = world.getWall(worldTileX, worldTileY);
 
     world.onTileEdited((event) => {
       tileEvents.push(event);
@@ -248,7 +250,7 @@ describe('TileWorld', () => {
         chunkY: 0,
         localX: CHUNK_SIZE - 1,
         localY: 0,
-        previousWallId: 0,
+        previousWallId,
         wallId: 7,
         editOrigin: 'debug-history'
       }
@@ -1152,7 +1154,7 @@ describe('TileWorld', () => {
     expect(world.getChunkCount()).toBe(chunkCountAfterPrune + 1);
   });
 
-  it('generates stone walls behind underground stone, cave air, and cave-mouth openings', () => {
+  it('generates dirt walls behind dirt bands and stone walls deeper underground, including cave-mouth openings', () => {
     const caveTile = findFirstProceduralCaveTile();
     const caveMouthColumn = findFirstProceduralExposedCaveMouthColumn();
 
@@ -1167,18 +1169,37 @@ describe('TileWorld', () => {
 
     const world = new TileWorld(0);
     const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(0);
+    const dirtTileY = surfaceTileY + 1;
     const undergroundStoneTileY = surfaceTileY + dirtDepthTiles + 1;
 
+    expect(world.getTile(0, dirtTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+    expect(world.getWall(0, dirtTileY)).toBe(PROCEDURAL_DIRT_WALL_ID);
     expect(world.getTile(0, undergroundStoneTileY)).toBe(PROCEDURAL_STONE_TILE_ID);
     expect(world.getWall(0, undergroundStoneTileY)).toBe(PROCEDURAL_STONE_WALL_ID);
     expect(world.getTile(caveTile.worldTileX, caveTile.worldTileY)).toBe(0);
     expect(world.getWall(caveTile.worldTileX, caveTile.worldTileY)).toBe(PROCEDURAL_STONE_WALL_ID);
-    expect(world.getWall(caveMouthColumn.worldTileX, caveMouthColumn.surfaceTileY)).toBe(
-      PROCEDURAL_STONE_WALL_ID
+    expect(world.getWall(caveMouthColumn.worldTileX, caveMouthColumn.surfaceTileY)).toBe(PROCEDURAL_DIRT_WALL_ID);
+    expect(world.getWall(caveMouthColumn.worldTileX, caveMouthColumn.surfaceTileY + 1)).toBe(
+      PROCEDURAL_DIRT_WALL_ID
     );
     expect(world.getWall(caveMouthColumn.worldTileX, caveMouthColumn.deepestAirTileY)).toBe(
       PROCEDURAL_STONE_WALL_ID
     );
+  });
+
+  it('reveals the procedural dirt wall when dirt is mined away', () => {
+    const worldTileX = 0;
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX);
+    const dirtTileY = surfaceTileY + 1;
+    const world = new TileWorld(0);
+
+    expect(world.getTile(worldTileX, dirtTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+    expect(world.getWall(worldTileX, dirtTileY)).toBe(PROCEDURAL_DIRT_WALL_ID);
+
+    expect(world.setTile(worldTileX, dirtTileY, 0)).toBe(true);
+
+    expect(world.getTile(worldTileX, dirtTileY)).toBe(0);
+    expect(world.getWall(worldTileX, dirtTileY)).toBe(PROCEDURAL_DIRT_WALL_ID);
   });
 
   it('reveals the procedural stone wall when underground stone is mined away', () => {

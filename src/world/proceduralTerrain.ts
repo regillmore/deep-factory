@@ -9,6 +9,7 @@ export const PROCEDURAL_STONE_TILE_ID = 1;
 export const PROCEDURAL_GRASS_SURFACE_TILE_ID = 2;
 export const PROCEDURAL_DIRT_TILE_ID = 9;
 export const PROCEDURAL_COPPER_ORE_TILE_ID = 13;
+export const PROCEDURAL_DIRT_WALL_ID = 1;
 export const PROCEDURAL_STONE_WALL_ID = 3;
 
 const PROCEDURAL_SURFACE_BASE_TILE_Y = -2;
@@ -584,6 +585,8 @@ export const resolveProceduralTerrainLayers = (
   worldSeed = DEFAULT_WORLD_SEED
 ): ProceduralTerrainLayers => {
   const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldX, worldSeed);
+  const resolveSubsurfaceWallId = (): number =>
+    worldY <= surfaceTileY + dirtDepthTiles ? PROCEDURAL_DIRT_WALL_ID : PROCEDURAL_STONE_WALL_ID;
   if (worldY < surfaceTileY) {
     return {
       tileId: SKY_TILE_ID,
@@ -602,7 +605,7 @@ export const resolveProceduralTerrainLayers = (
   if (isCaveMouthAir) {
     return {
       tileId: SKY_TILE_ID,
-      wallId: PROCEDURAL_STONE_WALL_ID
+      wallId: resolveSubsurfaceWallId()
     };
   }
   if (worldY === surfaceTileY) {
@@ -614,7 +617,7 @@ export const resolveProceduralTerrainLayers = (
   if (worldY <= surfaceTileY + dirtDepthTiles) {
     return {
       tileId: PROCEDURAL_DIRT_TILE_ID,
-      wallId: 0
+      wallId: PROCEDURAL_DIRT_WALL_ID
     };
   }
   if (isProceduralUndergroundCaveAir(worldX, worldY, surfaceTileY, dirtDepthTiles, seedProfile)) {

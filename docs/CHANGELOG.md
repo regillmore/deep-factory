@@ -4,6 +4,14 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-24
 
+- Task: Repair renderer regressions after layered background-wall worldgen changed default chunk mesh contents.
+- Changes: Updated [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so the wall-boundary invalidation coverage now applies a real wall change against the procedural wall baseline, and animated chunk UV upload assertions now locate the animated quad inside mixed wall-plus-foreground chunk buffers instead of assuming it is the first uploaded quad; [docs/NEXT.md](docs/NEXT.md) stayed unchanged because this pass repaired test coverage rather than completing a new roadmap slice.
+- Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
+- Task: Expand procedural wall worldgen so the dirt layer and cave-mouth dirt depth use background dirt walls.
+- Changes: Updated [src/world/proceduralTerrain.ts](../src/world/proceduralTerrain.ts) so procedural background walls now follow depth layers, with `dirt_wall` behind dirt-band terrain plus the dirt-depth portion of cave-mouth openings and `stone_wall` deeper underground; expanded [src/world/proceduralTerrain.test.ts](../src/world/proceduralTerrain.test.ts) and [src/world/world.test.ts](../src/world/world.test.ts) with layered dirt-versus-stone wall regressions, cave-mouth transition checks, and mined-dirt wall exposure coverage; split [docs/NEXT.md](docs/NEXT.md) task `542` into completed prerequisite task `543` and remaining legacy migration follow-up `544`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/proceduralTerrain.test.ts src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Expand underground stone-wall worldgen so mined underground stone reveals background walls.
 - Changes: Updated [src/world/proceduralTerrain.ts](../src/world/proceduralTerrain.ts) so procedural `stone_wall` now seeds behind underground stone plus copper-ore bands, carved cave air, and the full cave-mouth opening instead of only enclosed cave air, which makes mined underground stone reveal the preexisting wall baseline; expanded [src/world/proceduralTerrain.test.ts](../src/world/proceduralTerrain.test.ts) and [src/world/world.test.ts](../src/world/world.test.ts) with regressions for underground-stone wall backing, full cave-mouth wall coverage, and mined-stone wall exposure; replaced [docs/NEXT.md](docs/NEXT.md) task `541` with remaining follow-up task `542`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/proceduralTerrain.test.ts src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
