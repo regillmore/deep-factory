@@ -35,6 +35,7 @@ import { resolveSmallTreeGrowthStageAtAnchor } from './smallTreeAnchors';
 import { clearSmallTreeGrowthStageAtAnchor } from './smallTreeFootprintWrites';
 import {
   PROCEDURAL_GRASS_SURFACE_TILE_ID,
+  resolveProceduralTerrainLayers,
   resolveProceduralTerrainTileId
 } from './proceduralTerrain';
 import { DEFAULT_WORLD_SEED, normalizeWorldSeed } from './worldSeed';
@@ -588,8 +589,15 @@ export class TileWorld {
     editedLiquidLevels.set(tileIndex, liquidLevel);
   }
 
-  private updateEditedChunkWallState(key: string, tileIndex: number, wallId: number): void {
-    if (wallId === 0) {
+  private updateEditedChunkWallState(
+    key: string,
+    tileIndex: number,
+    worldTileX: number,
+    worldTileY: number,
+    wallId: number
+  ): void {
+    const generatedWallId = resolveProceduralTerrainLayers(worldTileX, worldTileY, this.worldSeed).wallId;
+    if (wallId === generatedWallId) {
       const editedWalls = this.editedChunkWalls.get(key);
       editedWalls?.delete(tileIndex);
       if (editedWalls && editedWalls.size === 0) {
@@ -1067,11 +1075,10 @@ export class TileWorld {
       for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
         const worldX = normalizedChunkX * CHUNK_SIZE + localX;
         const worldY = normalizedChunkY * CHUNK_SIZE + localY;
-        tiles[toTileIndex(localX, localY)] = resolveProceduralTerrainTileId(
-          worldX,
-          worldY,
-          this.worldSeed
-        );
+        const tileIndex = toTileIndex(localX, localY);
+        const { tileId, wallId } = resolveProceduralTerrainLayers(worldX, worldY, this.worldSeed);
+        tiles[tileIndex] = tileId;
+        wallIds[tileIndex] = wallId;
       }
     }
 
@@ -1206,7 +1213,7 @@ export class TileWorld {
     }
 
     chunk.wallIds[tileIndex] = wallId;
-    this.updateEditedChunkWallState(key, tileIndex, wallId);
+    this.updateEditedChunkWallState(key, tileIndex, worldTileX, worldTileY, wallId);
     const event: WallEditEvent = {
       worldTileX,
       worldTileY,

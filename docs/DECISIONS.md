@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-24: Procedural underground stone, caves, and cave-mouths share the stone-wall baseline
+
+- Decision: Procedural world generation now seeds `stone_wall` behind underground stone plus copper-ore bands, carved cave air, and the full surface-connected cave-mouth opening, while surface sky and dirt remain wall-empty and explicit wall edits may override that generated background with `0`.
+- Reason: Mining underground stone should reveal the same stable background wall baseline as naturally carved caves, and cave-mouth entrances read better with continuous background art than with a sky-backed opening that changes once the player digs nearby stone.
+- Consequence: Future cave-wall, mining, or snapshot-migration follow-ups should treat underground `stone_wall` as a procedural baseline across both solid underground terrain and carved openings, rather than spawning walls only when terrain breaks or assuming cave-mouth air stays wall-empty.
+
 ### 2026-03-24: Hostile-slime ambient spawn skips crowded candidate AABBs before advancing windows
 
 - Decision: Hostile-slime ambient spawn now filters each deterministic spawn candidate through live hostile-slime AABB overlap checks before accepting that candidate, so crowded spots fall back through the existing within-window and later-window search order instead of stacking slimes.

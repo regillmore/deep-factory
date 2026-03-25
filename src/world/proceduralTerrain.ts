@@ -9,6 +9,7 @@ export const PROCEDURAL_STONE_TILE_ID = 1;
 export const PROCEDURAL_GRASS_SURFACE_TILE_ID = 2;
 export const PROCEDURAL_DIRT_TILE_ID = 9;
 export const PROCEDURAL_COPPER_ORE_TILE_ID = 13;
+export const PROCEDURAL_STONE_WALL_ID = 3;
 
 const PROCEDURAL_SURFACE_BASE_TILE_Y = -2;
 const PROCEDURAL_SURFACE_BROAD_WAVE_FREQUENCY = 0.045;
@@ -76,6 +77,11 @@ const PROCEDURAL_COPPER_ORE_MAX_RADIUS_Y_TILES = 3;
 export interface ProceduralTerrainColumn {
   surfaceTileY: number;
   dirtDepthTiles: number;
+}
+
+export interface ProceduralTerrainLayers {
+  tileId: number;
+  wallId: number;
 }
 
 interface ProceduralTerrainSeedProfile {
@@ -564,26 +570,67 @@ export const resolveProceduralTerrainTileId = (
   worldX: number,
   worldY: number,
   worldSeed = DEFAULT_WORLD_SEED
-): number => {
+): number => resolveProceduralTerrainLayers(worldX, worldY, worldSeed).tileId;
+
+export const resolveProceduralTerrainWallId = (
+  worldX: number,
+  worldY: number,
+  worldSeed = DEFAULT_WORLD_SEED
+): number => resolveProceduralTerrainLayers(worldX, worldY, worldSeed).wallId;
+
+export const resolveProceduralTerrainLayers = (
+  worldX: number,
+  worldY: number,
+  worldSeed = DEFAULT_WORLD_SEED
+): ProceduralTerrainLayers => {
   const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldX, worldSeed);
   if (worldY < surfaceTileY) {
-    return SKY_TILE_ID;
+    return {
+      tileId: SKY_TILE_ID,
+      wallId: 0
+    };
   }
   const seedProfile = resolveProceduralTerrainSeedProfile(worldSeed);
-  if (isProceduralCaveMouthAir(worldX, worldY, surfaceTileY, dirtDepthTiles, seedProfile, worldSeed)) {
-    return SKY_TILE_ID;
+  const isCaveMouthAir = isProceduralCaveMouthAir(
+    worldX,
+    worldY,
+    surfaceTileY,
+    dirtDepthTiles,
+    seedProfile,
+    worldSeed
+  );
+  if (isCaveMouthAir) {
+    return {
+      tileId: SKY_TILE_ID,
+      wallId: PROCEDURAL_STONE_WALL_ID
+    };
   }
   if (worldY === surfaceTileY) {
-    return PROCEDURAL_GRASS_SURFACE_TILE_ID;
+    return {
+      tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID,
+      wallId: 0
+    };
   }
   if (worldY <= surfaceTileY + dirtDepthTiles) {
-    return PROCEDURAL_DIRT_TILE_ID;
+    return {
+      tileId: PROCEDURAL_DIRT_TILE_ID,
+      wallId: 0
+    };
   }
   if (isProceduralUndergroundCaveAir(worldX, worldY, surfaceTileY, dirtDepthTiles, seedProfile)) {
-    return SKY_TILE_ID;
+    return {
+      tileId: SKY_TILE_ID,
+      wallId: PROCEDURAL_STONE_WALL_ID
+    };
   }
   if (isProceduralCopperOre(worldX, worldY, surfaceTileY, dirtDepthTiles, worldSeed)) {
-    return PROCEDURAL_COPPER_ORE_TILE_ID;
+    return {
+      tileId: PROCEDURAL_COPPER_ORE_TILE_ID,
+      wallId: PROCEDURAL_STONE_WALL_ID
+    };
   }
-  return PROCEDURAL_STONE_TILE_ID;
+  return {
+    tileId: PROCEDURAL_STONE_TILE_ID,
+    wallId: PROCEDURAL_STONE_WALL_ID
+  };
 };

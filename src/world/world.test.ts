@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { encodeResidentChunkSnapshot } from './chunkSnapshot';
+import { decodeResidentChunkSnapshot, encodeResidentChunkSnapshot } from './chunkSnapshot';
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL, MAX_LIQUID_LEVEL } from './constants';
 import type { ChunkBounds } from './chunkMath';
 import { toTileIndex } from './chunkMath';
@@ -10,8 +10,10 @@ import {
   PROCEDURAL_DIRT_TILE_ID,
   PROCEDURAL_GRASS_SURFACE_TILE_ID,
   PROCEDURAL_STONE_TILE_ID,
+  PROCEDURAL_STONE_WALL_ID,
   resolveProceduralTerrainColumn,
-  resolveProceduralTerrainTileId
+  resolveProceduralTerrainTileId,
+  resolveProceduralTerrainWallId
 } from './proceduralTerrain';
 import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
@@ -42,6 +44,26 @@ const findFirstProceduralCaveTile = (
     const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldTileX, worldSeed);
     for (let worldTileY = surfaceTileY + dirtDepthTiles + 3; worldTileY <= surfaceTileY + 36; worldTileY += 1) {
       if (resolveProceduralTerrainTileId(worldTileX, worldTileY, worldSeed) === 0) {
+        return {
+          worldTileX,
+          worldTileY
+        };
+      }
+    }
+  }
+
+  return null;
+};
+
+const findFirstProceduralStoneWallTile = (
+  worldSeed = 0,
+  minWorldX = CHUNK_SIZE + 1,
+  maxWorldX = CHUNK_SIZE * 8
+): { worldTileX: number; worldTileY: number } | null => {
+  for (let worldTileX = minWorldX; worldTileX <= maxWorldX; worldTileX += 1) {
+    const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldTileX, worldSeed);
+    for (let worldTileY = surfaceTileY + dirtDepthTiles + 3; worldTileY <= surfaceTileY + 36; worldTileY += 1) {
+      if (resolveProceduralTerrainWallId(worldTileX, worldTileY, worldSeed) === PROCEDURAL_STONE_WALL_ID) {
         return {
           worldTileX,
           worldTileY
@@ -621,7 +643,11 @@ describe('TileWorld', () => {
       { x: 0, y: 0 },
       { x: 1, y: 0 }
     ]);
-    expect(snapshot.residentChunks[0]?.payload.wallIds).toEqual([1, 0, 1, 7, 1022, 0]);
+    const decodedResidentWalls = decodeResidentChunkSnapshot(snapshot.residentChunks[0]!).wallIds;
+    expect(decodedResidentWalls[toTileIndex(1, 0)]).toBe(7);
+    expect(Array.from(decodedResidentWalls).some((wallId) => wallId === PROCEDURAL_STONE_WALL_ID)).toBe(
+      true
+    );
     expect(snapshot.editedChunks).toHaveLength(2);
     expect(snapshot.editedChunks.map((chunk) => chunk.coord)).toEqual([
       { x: 0, y: 0 },
@@ -1126,6 +1152,69 @@ describe('TileWorld', () => {
     expect(world.getChunkCount()).toBe(chunkCountAfterPrune + 1);
   });
 
+  it('generates stone walls behind underground stone, cave air, and cave-mouth openings', () => {
+    const caveTile = findFirstProceduralCaveTile();
+    const caveMouthColumn = findFirstProceduralExposedCaveMouthColumn();
+
+    expect(caveTile).not.toBeNull();
+    if (caveTile === null) {
+      throw new Error('expected a procedural cave tile');
+    }
+    expect(caveMouthColumn).not.toBeNull();
+    if (caveMouthColumn === null) {
+      throw new Error('expected a procedural exposed cave-mouth column');
+    }
+
+    const world = new TileWorld(0);
+    const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(0);
+    const undergroundStoneTileY = surfaceTileY + dirtDepthTiles + 1;
+
+    expect(world.getTile(0, undergroundStoneTileY)).toBe(PROCEDURAL_STONE_TILE_ID);
+    expect(world.getWall(0, undergroundStoneTileY)).toBe(PROCEDURAL_STONE_WALL_ID);
+    expect(world.getTile(caveTile.worldTileX, caveTile.worldTileY)).toBe(0);
+    expect(world.getWall(caveTile.worldTileX, caveTile.worldTileY)).toBe(PROCEDURAL_STONE_WALL_ID);
+    expect(world.getWall(caveMouthColumn.worldTileX, caveMouthColumn.surfaceTileY)).toBe(
+      PROCEDURAL_STONE_WALL_ID
+    );
+    expect(world.getWall(caveMouthColumn.worldTileX, caveMouthColumn.deepestAirTileY)).toBe(
+      PROCEDURAL_STONE_WALL_ID
+    );
+  });
+
+  it('reveals the procedural stone wall when underground stone is mined away', () => {
+    const worldTileX = 0;
+    const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldTileX);
+    const undergroundStoneTileY = surfaceTileY + dirtDepthTiles + 1;
+    const world = new TileWorld(0);
+
+    expect(world.getTile(worldTileX, undergroundStoneTileY)).toBe(PROCEDURAL_STONE_TILE_ID);
+    expect(world.getWall(worldTileX, undergroundStoneTileY)).toBe(PROCEDURAL_STONE_WALL_ID);
+
+    expect(world.setTile(worldTileX, undergroundStoneTileY, 0)).toBe(true);
+
+    expect(world.getTile(worldTileX, undergroundStoneTileY)).toBe(0);
+    expect(world.getWall(worldTileX, undergroundStoneTileY)).toBe(PROCEDURAL_STONE_WALL_ID);
+  });
+
+  it('streams untouched procedural cave stone walls back in after pruning their chunk', () => {
+    const caveWallTile = findFirstProceduralStoneWallTile();
+    expect(caveWallTile).not.toBeNull();
+    if (caveWallTile === null) {
+      throw new Error('expected a procedural cave wall tile');
+    }
+
+    const world = new TileWorld(0);
+    expect(world.getWall(caveWallTile.worldTileX, caveWallTile.worldTileY)).toBe(PROCEDURAL_STONE_WALL_ID);
+
+    expect(
+      world.pruneChunksOutside({ minChunkX: 0, minChunkY: 0, maxChunkX: 0, maxChunkY: 0 })
+    ).toBeGreaterThan(0);
+    const chunkCountAfterPrune = world.getChunkCount();
+
+    expect(world.getWall(caveWallTile.worldTileX, caveWallTile.worldTileY)).toBe(PROCEDURAL_STONE_WALL_ID);
+    expect(world.getChunkCount()).toBe(chunkCountAfterPrune + 1);
+  });
+
   it('streams untouched exposed cave-mouth air back in after pruning its chunk', () => {
     const caveMouthColumn = findFirstProceduralExposedCaveMouthColumn();
     expect(caveMouthColumn).not.toBeNull();
@@ -1145,6 +1234,35 @@ describe('TileWorld', () => {
     expect(world.getTile(caveMouthColumn.worldTileX, caveMouthColumn.surfaceTileY)).toBe(0);
     expect(world.getTile(caveMouthColumn.worldTileX, caveMouthColumn.deepestAirTileY)).toBe(0);
     expect(world.getChunkCount()).toBe(chunkCountAfterPrune + 1);
+  });
+
+  it('persists explicit empty-wall overrides when a generated cave stone wall is cleared', () => {
+    const caveWallTile = findFirstProceduralStoneWallTile();
+    expect(caveWallTile).not.toBeNull();
+    if (caveWallTile === null) {
+      throw new Error('expected a procedural cave wall tile');
+    }
+
+    const world = new TileWorld(0);
+    const clearedChunkX = Math.floor(caveWallTile.worldTileX / CHUNK_SIZE);
+    const localTileX = ((caveWallTile.worldTileX % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+    const localTileY = ((caveWallTile.worldTileY % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+
+    expect(world.getWall(caveWallTile.worldTileX, caveWallTile.worldTileY)).toBe(PROCEDURAL_STONE_WALL_ID);
+    expect(world.setWall(caveWallTile.worldTileX, caveWallTile.worldTileY, 0)).toBe(true);
+    expect(world.getWall(caveWallTile.worldTileX, caveWallTile.worldTileY)).toBe(0);
+
+    expect(world.pruneChunksOutside({ minChunkX: 0, minChunkY: 0, maxChunkX: 0, maxChunkY: 0 })).toBeGreaterThan(0);
+
+    const snapshot = world.createSnapshot();
+    const clearedChunkSnapshot = snapshot.editedChunks.find((chunk) => chunk.coord.x === clearedChunkX);
+    expect(clearedChunkSnapshot?.payload.wallOverrides).toEqual([toTileIndex(localTileX, localTileY), 0]);
+
+    expect(world.getWall(caveWallTile.worldTileX, caveWallTile.worldTileY)).toBe(0);
+
+    const loaded = new TileWorld(0);
+    loaded.loadSnapshot(snapshot);
+    expect(loaded.getWall(caveWallTile.worldTileX, caveWallTile.worldTileY)).toBe(0);
   });
 
   it('streams untouched copper-ore tiles back in after pruning their chunk', () => {
@@ -1176,11 +1294,16 @@ describe('TileWorld', () => {
     const worldTileX = CHUNK_SIZE + 9;
     const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX, worldSeed);
     const caveTile = findFirstProceduralCaveTile(worldSeed);
+    const caveWallTile = findFirstProceduralStoneWallTile(worldSeed);
     const copperOreTile = findFirstProceduralCopperOreTile(worldSeed);
 
     expect(caveTile).not.toBeNull();
     if (caveTile === null) {
       throw new Error('expected a seeded procedural cave tile');
+    }
+    expect(caveWallTile).not.toBeNull();
+    if (caveWallTile === null) {
+      throw new Error('expected a seeded procedural cave wall tile');
     }
     expect(copperOreTile).not.toBeNull();
     if (copperOreTile === null) {
@@ -1199,6 +1322,7 @@ describe('TileWorld', () => {
     expect(loaded.getTile(worldTileX, surfaceTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
     expect(loaded.getTile(worldTileX, surfaceTileY + 1)).toBe(PROCEDURAL_DIRT_TILE_ID);
     expect(loaded.getTile(caveTile.worldTileX, caveTile.worldTileY)).toBe(0);
+    expect(loaded.getWall(caveWallTile.worldTileX, caveWallTile.worldTileY)).toBe(PROCEDURAL_STONE_WALL_ID);
     expect(loaded.getTile(copperOreTile.worldTileX, copperOreTile.worldTileY)).toBe(
       PROCEDURAL_COPPER_ORE_TILE_ID
     );
