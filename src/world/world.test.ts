@@ -754,6 +754,48 @@ describe('TileWorld', () => {
     expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
   });
 
+  for (const [liquidTileId, liquidLabel] of [
+    [WATER_TILE_ID, 'water'],
+    [LAVA_TILE_ID, 'lava']
+  ] as const) {
+    it(`stores liquid-clear exposed-dirt grass-regrowth overrides without forcing the target chunk resident when ${liquidLabel} cover clears`, () => {
+      const world = new TileWorld(0);
+      const coveredDirt = findFirstProceduralChunkTopDirtBelowSolidCoverAdjacentToGrass(
+        0,
+        CHUNK_SIZE,
+        CHUNK_SIZE * 8
+      );
+      expect(coveredDirt).not.toBeNull();
+      const { worldTileX, worldTileY } = coveredDirt!;
+      const coverTileY = worldTileY - 1;
+      const dirtChunkX = Math.floor(worldTileX / CHUNK_SIZE);
+      const dirtChunkY = Math.floor(worldTileY / CHUNK_SIZE);
+      const coverChunkY = Math.floor(coverTileY / CHUNK_SIZE);
+
+      expect(world.setTile(worldTileX, coverTileY, liquidTileId)).toBe(true);
+      expect(
+        world.pruneChunksOutside({
+          minChunkX: dirtChunkX,
+          minChunkY: coverChunkY,
+          maxChunkX: dirtChunkX,
+          maxChunkY: coverChunkY
+        })
+      ).toBeGreaterThan(0);
+      expect(world.hasChunk(dirtChunkX, coverChunkY)).toBe(true);
+      expect(world.hasChunk(dirtChunkX, dirtChunkY)).toBe(false);
+
+      expect(
+        world.setTileState(worldTileX, coverTileY, liquidTileId, MAX_LIQUID_LEVEL / 2)
+      ).toBe(true);
+      expect(world.hasChunk(dirtChunkX, dirtChunkY)).toBe(false);
+      expect(world.setTile(worldTileX, coverTileY, 0)).toBe(true);
+      expect(world.hasChunk(dirtChunkX, dirtChunkY)).toBe(false);
+
+      world.ensureChunk(dirtChunkX, dirtChunkY);
+      expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    });
+  }
+
   it('does not regrow a placed dirt tile in sky when it is written beside grass', () => {
     const world = new TileWorld(0);
     const grassTileX = 6;

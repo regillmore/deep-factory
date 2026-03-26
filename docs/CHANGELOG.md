@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-25
 
+- Task: Keep liquid-clear grass-regrowth overrides across pruned chunk boundaries.
+- Changes: Expanded [src/world/world.test.ts](../src/world/world.test.ts) with water and lava streamed-boundary regressions that prune the dirt chunk, clear the still-resident liquid cover above it, and verify the grass-regrowth override is stored without forcing that dirt chunk resident back in; the existing [src/world/world.ts](../src/world/world.ts) behavior already satisfied this path, so no runtime logic changes were needed. Removed completed task `552` from [docs/NEXT.md](docs/NEXT.md), added replacement task `553`, and left [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md) unchanged because this pass validated existing behavior rather than changing it.
+- Verification: Ran `cmd /c npx vitest run src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Resume adjacent-grass regrowth once direct-cover water or lava clears.
 - Changes: Updated [src/world/world.ts](../src/world/world.ts) so the shared `setTileState(...)` path now rechecks exposed-dirt regrowth when a direct-cover liquid cell stops being liquid, while still ignoring partial liquid-level changes that leave water or lava in place; expanded [src/world/world.test.ts](../src/world/world.test.ts) with water and lava regressions that hold regrowth blocked through partial liquid-level updates and then restore grass after the cover clears, and ran [src/network/stateReplay.test.ts](../src/network/stateReplay.test.ts) because authoritative replay uses that same tile-state seam. Removed completed task `551` from [docs/NEXT.md](docs/NEXT.md), added replacement task `552`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/world.test.ts src/network/stateReplay.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
