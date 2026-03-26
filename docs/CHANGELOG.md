@@ -2,6 +2,16 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-25
+
+- Task: Repair the streamed-boundary sunlight regression introduced by buried-grass cleanup.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts) so buried-grass checks now read procedural-or-edited tile state without forcing the chunk below a bottom-row solid edit resident, while still persisting dirt overrides for later stream-in; expanded [src/world/world.test.ts](../src/world/world.test.ts) with a regression for storing that dirt override across a nonresident chunk boundary. Left [docs/NEXT.md](docs/NEXT.md) unchanged because this was a user-directed bugfix detour rather than a completed roadmap task.
+- Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts`, `cmd /c npx vitest run src/world/world.test.ts`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
+- Task: Make buried grass revert to dirt when solid cover lands above it.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts) so direct solid cover now converts the `grass_surface` tile immediately below into dirt while leaving non-solid cover alone, and clears any anchored small-tree footprint before that cover would otherwise orphan foliage; expanded [src/world/world.test.ts](../src/world/world.test.ts) with regressions for solid cover, non-solid cover, and grown-tree cleanup; removed completed task `544` from [docs/NEXT.md](docs/NEXT.md), added replacement task `546`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 ## 2026-03-24
 
 - Task: Repair renderer regressions after layered background-wall worldgen changed default chunk mesh contents.

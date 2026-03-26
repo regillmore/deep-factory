@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-25: Buried grass only reverts under direct solid cover
+
+- Decision: A `grass_surface` tile now reverts immediately to dirt only when the direct foreground tile above it becomes solid, while non-solid cover stays grass-safe and any anchored small-tree footprint is cleared before that solid cover would orphan it.
+- Reason: Buried grass should not survive under solid terrain, but saplings, foliage, and other non-solid content should not accidentally strip grass or leave floating tree remnants behind.
+- Consequence: Future grass-spread, regrowth, or surface-decoration follow-ups should preserve direct solid cover as the burial trigger and keep tree-footprint cleanup aligned with that same support-column rule.
+
 ### 2026-03-24: Procedural dirt and stone bands use layered wall baselines
 
 - Decision: Procedural world generation now seeds `dirt_wall` behind the dirt band plus the dirt-depth portion of cave-mouth openings, seeds `stone_wall` behind deeper underground stone plus copper-ore bands, carved cave air, and the deeper portion of cave-mouth openings, while surface sky and the untouched grass surface remain wall-empty and explicit wall edits may still override that generated background with `0`.

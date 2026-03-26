@@ -34,6 +34,7 @@ import {
 import { resolveSmallTreeGrowthStageAtAnchor } from './smallTreeAnchors';
 import { clearSmallTreeGrowthStageAtAnchor } from './smallTreeFootprintWrites';
 import {
+  PROCEDURAL_DIRT_TILE_ID,
   PROCEDURAL_GRASS_SURFACE_TILE_ID,
   resolveProceduralTerrainLayers,
   resolveProceduralTerrainTileId
@@ -503,6 +504,41 @@ export class TileWorld {
     return this.editedChunkTiles.get(key)?.get(tileIndex) ?? null;
   }
 
+  private getResolvedTileIdWithoutEnsuringChunk(worldTileX: number, worldTileY: number): number {
+    const residentOrEditedTileId = this.getResidentOrEditedTileId(worldTileX, worldTileY);
+    if (residentOrEditedTileId !== null) {
+      return residentOrEditedTileId;
+    }
+
+    return resolveProceduralTerrainTileId(worldTileX, worldTileY, this.worldSeed);
+  }
+
+  private setEditedTileStateWithoutEnsuringChunk(
+    worldTileX: number,
+    worldTileY: number,
+    tileId: number,
+    liquidLevel: number
+  ): boolean {
+    const normalizedLiquidLevel = expectLiquidLevel(tileId, liquidLevel);
+    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+    const residentChunk = this.getResidentChunk(chunkX, chunkY);
+    if (residentChunk) {
+      return this.commitTileState(worldTileX, worldTileY, tileId, normalizedLiquidLevel, false).changed;
+    }
+
+    const key = chunkKey(chunkX, chunkY);
+    const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
+    const tileIndex = toTileIndex(localX, localY);
+    const previousTileId = this.getResolvedTileIdWithoutEnsuringChunk(worldTileX, worldTileY);
+    const previousLiquidLevel = this.editedChunkLiquidLevels.get(key)?.get(tileIndex) ?? 0;
+    if (previousTileId === tileId && previousLiquidLevel === normalizedLiquidLevel) {
+      return false;
+    }
+
+    this.updateEditedChunkTileState(key, tileIndex, worldTileX, worldTileY, tileId, normalizedLiquidLevel);
+    return true;
+  }
+
   private getResidentLiquidLevel(worldTileX: number, worldTileY: number): number | null {
     const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
     const chunk = this.getResidentChunk(chunkX, chunkY);
@@ -934,6 +970,83 @@ export class TileWorld {
     );
   }
 
+  private clearSmallTreeAboveBuriedGrassIfNeeded(
+    worldTileX: number,
+    worldTileY: number,
+    tileId: number,
+    emitTileEditEvent: boolean,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): void {
+    if (!isTileSolid(tileId)) {
+      return;
+    }
+
+    const buriedGrassAnchorTileY = worldTileY + 1;
+    if (
+      this.getResolvedTileIdWithoutEnsuringChunk(worldTileX, buriedGrassAnchorTileY) !==
+      PROCEDURAL_GRASS_SURFACE_TILE_ID
+    ) {
+      return;
+    }
+
+    const growthStage = resolveSmallTreeGrowthStageAtAnchor(
+      {
+        getTile: (sampleWorldTileX, sampleWorldTileY) =>
+          this.getResolvedTileIdWithoutEnsuringChunk(sampleWorldTileX, sampleWorldTileY)
+      },
+      worldTileX,
+      buriedGrassAnchorTileY
+    );
+    if (growthStage === null) {
+      return;
+    }
+
+    clearSmallTreeGrowthStageAtAnchor(
+      {
+        getTile: (sampleWorldTileX, sampleWorldTileY) => this.getTile(sampleWorldTileX, sampleWorldTileY),
+        setTile: (sampleWorldTileX, sampleWorldTileY, nextTileId) =>
+          this.commitTileState(
+            sampleWorldTileX,
+            sampleWorldTileY,
+            nextTileId,
+            0,
+            emitTileEditEvent,
+            editOrigin
+          ).changed
+      },
+      worldTileX,
+      buriedGrassAnchorTileY,
+      growthStage
+    );
+  }
+
+  private revertBuriedGrassBelow(
+    worldTileX: number,
+    worldTileY: number,
+    tileId: number,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): void {
+    if (!isTileSolid(tileId)) {
+      return;
+    }
+
+    const buriedGrassTileY = worldTileY + 1;
+    if (
+      this.getResolvedTileIdWithoutEnsuringChunk(worldTileX, buriedGrassTileY) !==
+      PROCEDURAL_GRASS_SURFACE_TILE_ID
+    ) {
+      return;
+    }
+
+    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, buriedGrassTileY);
+    if (this.getResidentChunk(chunkX, chunkY)) {
+      this.setTile(worldTileX, buriedGrassTileY, PROCEDURAL_DIRT_TILE_ID, editOrigin);
+      return;
+    }
+
+    this.setEditedTileStateWithoutEnsuringChunk(worldTileX, buriedGrassTileY, PROCEDURAL_DIRT_TILE_ID, 0);
+  }
+
   private activateLiquidChunk(key: string): void {
     this.activeLiquidChunkKeys.add(key);
     this.liquidChunkQuietStepCounts.set(key, 0);
@@ -1172,7 +1285,29 @@ export class TileWorld {
     liquidLevel: number,
     editOrigin: WorldEditOrigin = 'gameplay'
   ): boolean {
-    const result = this.commitTileState(worldTileX, worldTileY, tileId, liquidLevel, true, editOrigin);
+    const normalizedLiquidLevel = expectLiquidLevel(tileId, liquidLevel);
+    const previousTileId = this.getTile(worldTileX, worldTileY);
+    const previousLiquidLevel = this.getLiquidLevel(worldTileX, worldTileY);
+    if (previousTileId === tileId && previousLiquidLevel === normalizedLiquidLevel) {
+      return false;
+    }
+
+    this.clearSmallTreeAboveBuriedGrassIfNeeded(
+      worldTileX,
+      worldTileY,
+      tileId,
+      true,
+      editOrigin
+    );
+
+    const result = this.commitTileState(
+      worldTileX,
+      worldTileY,
+      tileId,
+      normalizedLiquidLevel,
+      true,
+      editOrigin
+    );
     const changed = result.changed;
     if (changed) {
       if (
@@ -1190,6 +1325,7 @@ export class TileWorld {
         this.clearUnsupportedAdjacentStarterFurnaces(worldTileX, worldTileY, true, editOrigin);
         this.clearUnsupportedAdjacentStarterAnvils(worldTileX, worldTileY, true, editOrigin);
       }
+      this.revertBuriedGrassBelow(worldTileX, worldTileY, tileId, editOrigin);
       this.wakeNearbyResidentLiquidChunks(worldTileX, worldTileY);
     }
 

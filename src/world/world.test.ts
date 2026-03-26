@@ -26,6 +26,8 @@ import { didTileLightingStateChange, resolveLiquidStepPhaseSummary, TileWorld } 
 import type { TileEditEvent, WallEditEvent } from './world';
 
 const ALL_LOCAL_LIGHT_COLUMNS_DIRTY_MASK = 0xffffffff >>> 0;
+const SOLID_TEST_TILE_ID = 3;
+const NON_SOLID_TEST_TILE_ID = 4;
 const WATER_TILE_ID = 7;
 const LAVA_TILE_ID = 8;
 const localLightColumnBit = (localX: number): number => (1 << localX) >>> 0;
@@ -514,6 +516,152 @@ describe('TileWorld', () => {
     expect(loaded.getTile(6, 0)).toBe(0);
     expect(loaded.getTile(7, 0)).toBe(0);
     expect(loaded.getTile(8, 0)).toBe(0);
+  });
+
+  it('reverts grass to dirt when a solid tile is placed directly above it', () => {
+    const world = new TileWorld(0);
+    const events: TileEditEvent[] = [];
+    const worldTileX = 0;
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX);
+    const coverTileY = surfaceTileY - 1;
+
+    expect(world.getTile(worldTileX, surfaceTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    expect(world.getTile(worldTileX, coverTileY)).toBe(0);
+
+    world.onTileEdited((event) => {
+      events.push(event);
+    });
+
+    expect(world.setTile(worldTileX, coverTileY, SOLID_TEST_TILE_ID)).toBe(true);
+
+    expect(world.getTile(worldTileX, coverTileY)).toBe(SOLID_TEST_TILE_ID);
+    expect(world.getTile(worldTileX, surfaceTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+    expect(events).toHaveLength(2);
+    expect(events[0]).toMatchObject({
+      worldTileX,
+      worldTileY: coverTileY,
+      previousTileId: 0,
+      tileId: SOLID_TEST_TILE_ID,
+      editOrigin: 'gameplay'
+    });
+    expect(events[1]).toMatchObject({
+      worldTileX,
+      worldTileY: surfaceTileY,
+      previousTileId: PROCEDURAL_GRASS_SURFACE_TILE_ID,
+      tileId: PROCEDURAL_DIRT_TILE_ID,
+      editOrigin: 'gameplay'
+    });
+  });
+
+  it('keeps grass intact when a non-solid tile is placed directly above it', () => {
+    const world = new TileWorld(0);
+    const worldTileX = 0;
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX);
+    const coverTileY = surfaceTileY - 1;
+
+    expect(world.getTile(worldTileX, surfaceTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    expect(world.setTile(worldTileX, coverTileY, NON_SOLID_TEST_TILE_ID)).toBe(true);
+
+    expect(world.getTile(worldTileX, coverTileY)).toBe(NON_SOLID_TEST_TILE_ID);
+    expect(world.getTile(worldTileX, surfaceTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+  });
+
+  it('stores buried-grass dirt overrides without forcing the chunk below a bottom-row solid edit resident', () => {
+    const world = new TileWorld(0);
+    const worldTileX = CHUNK_SIZE + 1;
+    const coverTileY = -1;
+    const buriedGrassTileY = 0;
+
+    expect(resolveProceduralTerrainTileId(worldTileX, buriedGrassTileY)).toBe(
+      PROCEDURAL_GRASS_SURFACE_TILE_ID
+    );
+    world.ensureChunk(1, -1);
+    expect(world.hasChunk(1, 0)).toBe(false);
+
+    expect(world.setTile(worldTileX, coverTileY, SOLID_TEST_TILE_ID)).toBe(true);
+    expect(world.hasChunk(1, 0)).toBe(false);
+
+    world.ensureChunk(1, 0);
+    expect(world.getTile(worldTileX, buriedGrassTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+  });
+
+  it('clears the rest of a grown small tree before solid cover buries its grass anchor', () => {
+    const world = new TileWorld(0);
+    const events: TileEditEvent[] = [];
+    const treeTileIds = getSmallTreeTileIds();
+    const anchorTileX = 7;
+    const anchorTileY = 3;
+
+    expect(world.setTile(anchorTileX, anchorTileY, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
+    expect(world.setTile(anchorTileX, anchorTileY - 1, treeTileIds.trunk)).toBe(true);
+    expect(world.setTile(anchorTileX, anchorTileY - 2, treeTileIds.trunk)).toBe(true);
+    expect(world.setTile(anchorTileX - 1, anchorTileY - 3, treeTileIds.leaf)).toBe(true);
+    expect(world.setTile(anchorTileX, anchorTileY - 3, treeTileIds.leaf)).toBe(true);
+    expect(world.setTile(anchorTileX + 1, anchorTileY - 3, treeTileIds.leaf)).toBe(true);
+
+    world.onTileEdited((event) => {
+      events.push(event);
+    });
+
+    expect(world.setTile(anchorTileX, anchorTileY - 1, SOLID_TEST_TILE_ID)).toBe(true);
+
+    expect(world.getTile(anchorTileX, anchorTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+    expect(world.getTile(anchorTileX, anchorTileY - 1)).toBe(SOLID_TEST_TILE_ID);
+    expect(world.getTile(anchorTileX, anchorTileY - 2)).toBe(0);
+    expect(world.getTile(anchorTileX - 1, anchorTileY - 3)).toBe(0);
+    expect(world.getTile(anchorTileX, anchorTileY - 3)).toBe(0);
+    expect(world.getTile(anchorTileX + 1, anchorTileY - 3)).toBe(0);
+    expect(
+      events.map((event) => ({
+        worldTileX: event.worldTileX,
+        worldTileY: event.worldTileY,
+        previousTileId: event.previousTileId,
+        tileId: event.tileId
+      }))
+    ).toEqual([
+      {
+        worldTileX: anchorTileX,
+        worldTileY: anchorTileY - 1,
+        previousTileId: treeTileIds.trunk,
+        tileId: 0
+      },
+      {
+        worldTileX: anchorTileX,
+        worldTileY: anchorTileY - 2,
+        previousTileId: treeTileIds.trunk,
+        tileId: 0
+      },
+      {
+        worldTileX: anchorTileX - 1,
+        worldTileY: anchorTileY - 3,
+        previousTileId: treeTileIds.leaf,
+        tileId: 0
+      },
+      {
+        worldTileX: anchorTileX,
+        worldTileY: anchorTileY - 3,
+        previousTileId: treeTileIds.leaf,
+        tileId: 0
+      },
+      {
+        worldTileX: anchorTileX + 1,
+        worldTileY: anchorTileY - 3,
+        previousTileId: treeTileIds.leaf,
+        tileId: 0
+      },
+      {
+        worldTileX: anchorTileX,
+        worldTileY: anchorTileY - 1,
+        previousTileId: 0,
+        tileId: SOLID_TEST_TILE_ID
+      },
+      {
+        worldTileX: anchorTileX,
+        worldTileY: anchorTileY,
+        previousTileId: PROCEDURAL_GRASS_SURFACE_TILE_ID,
+        tileId: PROCEDURAL_DIRT_TILE_ID
+      }
+    ]);
   });
 
   it('applies explicit tile state and still emits edit metadata when only liquid changes', () => {
