@@ -1,6 +1,7 @@
 import { chunkCoordBounds, type ChunkBounds } from './chunkMath';
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './constants';
 import { PROCEDURAL_DIRT_TILE_ID, PROCEDURAL_GRASS_SURFACE_TILE_ID } from './proceduralTerrain';
+import { getTallGrassTileId } from './tallGrassTiles';
 import { getTileLiquidKind, isTileSolid } from './tileMetadata';
 
 export interface GrassGrowthState {
@@ -24,6 +25,7 @@ export interface GrassGrowthWorldView {
 export interface GrassGrowthStepResult {
   nextGrowthState: GrassGrowthState;
   spreadTiles: GrassGrowthSpreadTile[];
+  grownTallGrassTiles: GrassGrowthSpreadTile[];
 }
 
 export interface StepGrassGrowthOptions {
@@ -101,6 +103,21 @@ const canGrassSpreadToTile = (
   return hasAdjacentGrassWithinHeightOne(world, worldTileX, worldTileY);
 };
 
+const canTallGrassGrowAtTile = (
+  world: Pick<GrassGrowthWorldView, 'getLightLevel' | 'getTile'>,
+  worldTileX: number,
+  worldTileY: number
+): boolean => {
+  if (world.getTile(worldTileX, worldTileY) !== PROCEDURAL_GRASS_SURFACE_TILE_ID) {
+    return false;
+  }
+  if (world.getLightLevel(worldTileX, worldTileY) !== MAX_LIGHT_LEVEL) {
+    return false;
+  }
+
+  return world.getTile(worldTileX, worldTileY - 1) === 0;
+};
+
 export const createGrassGrowthState = (
   growthIntervalTicks = DEFAULT_GRASS_GROWTH_INTERVAL_TICKS
 ): GrassGrowthState => ({
@@ -127,12 +144,10 @@ export const resolveGrassGrowthRequiredChunkBounds = (
   worldTileY: number
 ): ChunkBounds => chunkCoordBounds(worldTileX - 1, worldTileY - 1, worldTileX + 1, worldTileY + 1);
 
-export const isGrassGrowthTileNeighborhoodResident = (
-  worldTileX: number,
-  worldTileY: number,
+const areChunkBoundsResident = (
+  bounds: ChunkBounds,
   hasResidentChunk: (chunkX: number, chunkY: number) => boolean
 ): boolean => {
-  const bounds = resolveGrassGrowthRequiredChunkBounds(worldTileX, worldTileY);
   for (let chunkY = bounds.minChunkY; chunkY <= bounds.maxChunkY; chunkY += 1) {
     for (let chunkX = bounds.minChunkX; chunkX <= bounds.maxChunkX; chunkX += 1) {
       if (!hasResidentChunk(chunkX, chunkY)) {
@@ -143,6 +158,24 @@ export const isGrassGrowthTileNeighborhoodResident = (
 
   return true;
 };
+
+export const isGrassGrowthTileNeighborhoodResident = (
+  worldTileX: number,
+  worldTileY: number,
+  hasResidentChunk: (chunkX: number, chunkY: number) => boolean
+): boolean => areChunkBoundsResident(resolveGrassGrowthRequiredChunkBounds(worldTileX, worldTileY), hasResidentChunk);
+
+const resolveTallGrassGrowthRequiredChunkBounds = (
+  worldTileX: number,
+  worldTileY: number
+): ChunkBounds => chunkCoordBounds(worldTileX, worldTileY - 1, worldTileX, worldTileY);
+
+const isTallGrassGrowthTileNeighborhoodResident = (
+  worldTileX: number,
+  worldTileY: number,
+  hasResidentChunk: (chunkX: number, chunkY: number) => boolean
+): boolean =>
+  areChunkBoundsResident(resolveTallGrassGrowthRequiredChunkBounds(worldTileX, worldTileY), hasResidentChunk);
 
 const collectSpreadTargets = (
   world: GrassGrowthWorldView,
@@ -193,6 +226,58 @@ const collectSpreadTargets = (
   return spreadTiles;
 };
 
+const collectTallGrassGrowthTargets = (
+  world: GrassGrowthWorldView,
+  windowIndex: number,
+  windowCount: number
+): GrassGrowthSpreadTile[] => {
+  const residentChunkBounds = world.getResidentChunkBounds();
+  if (residentChunkBounds === null) {
+    return [];
+  }
+
+  const grownTallGrassTiles: GrassGrowthSpreadTile[] = [];
+
+  for (let chunkY = residentChunkBounds.minChunkY; chunkY <= residentChunkBounds.maxChunkY; chunkY += 1) {
+    for (let chunkX = residentChunkBounds.minChunkX; chunkX <= residentChunkBounds.maxChunkX; chunkX += 1) {
+      if (!world.hasResidentChunk(chunkX, chunkY)) {
+        continue;
+      }
+
+      const chunkBaseWorldTileX = chunkX * CHUNK_SIZE;
+      const chunkBaseWorldTileY = chunkY * CHUNK_SIZE;
+      for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
+        for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
+          const worldTileX = chunkBaseWorldTileX + localX;
+          const worldTileY = chunkBaseWorldTileY + localY;
+          if (resolveGrassGrowthWindowIndex(worldTileX, worldTileY, windowCount) !== windowIndex) {
+            continue;
+          }
+          if (
+            !isTallGrassGrowthTileNeighborhoodResident(
+              worldTileX,
+              worldTileY,
+              (residentChunkX, residentChunkY) => world.hasResidentChunk(residentChunkX, residentChunkY)
+            )
+          ) {
+            continue;
+          }
+          if (!canTallGrassGrowAtTile(world, worldTileX, worldTileY)) {
+            continue;
+          }
+
+          grownTallGrassTiles.push({
+            worldTileX,
+            worldTileY: worldTileY - 1
+          });
+        }
+      }
+    }
+  }
+
+  return grownTallGrassTiles;
+};
+
 export const stepGrassGrowth = ({
   world,
   growthState = createGrassGrowthState(),
@@ -221,12 +306,18 @@ export const stepGrassGrowth = ({
         ticksUntilNextGrowth: decrementedTicksUntilNextGrowth,
         nextWindowIndex: activeWindowIndex
       },
-      spreadTiles: []
+      spreadTiles: [],
+      grownTallGrassTiles: []
     };
   }
 
   // Collect targets before writing so one spread step cannot cascade through fresh grass.
   const spreadTargets = collectSpreadTargets(world, activeWindowIndex, normalizedWindowCount);
+  const tallGrassGrowthTargets = collectTallGrassGrowthTargets(
+    world,
+    activeWindowIndex,
+    normalizedWindowCount
+  );
   const spreadTiles: GrassGrowthSpreadTile[] = [];
   for (const spreadTarget of spreadTargets) {
     if (!world.setTile(spreadTarget.worldTileX, spreadTarget.worldTileY, PROCEDURAL_GRASS_SURFACE_TILE_ID)) {
@@ -235,12 +326,22 @@ export const stepGrassGrowth = ({
 
     spreadTiles.push(spreadTarget);
   }
+  const tallGrassTileId = getTallGrassTileId();
+  const grownTallGrassTiles: GrassGrowthSpreadTile[] = [];
+  for (const growthTarget of tallGrassGrowthTargets) {
+    if (!world.setTile(growthTarget.worldTileX, growthTarget.worldTileY, tallGrassTileId)) {
+      continue;
+    }
+
+    grownTallGrassTiles.push(growthTarget);
+  }
 
   return {
     nextGrowthState: {
       ticksUntilNextGrowth: normalizedGrowthIntervalTicks,
       nextWindowIndex: (activeWindowIndex + 1) % normalizedWindowCount
     },
-    spreadTiles
+    spreadTiles,
+    grownTallGrassTiles
   };
 };

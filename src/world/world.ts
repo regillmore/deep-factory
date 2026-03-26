@@ -48,6 +48,7 @@ import {
   isTileSolid
 } from './tileMetadata';
 import { isSmallTreeTileId } from './smallTreeTiles';
+import { isTallGrassTileId } from './tallGrassTiles';
 import type { TileMetadataRegistry } from './tileMetadata';
 import type { Chunk, ChunkCoord } from './types';
 
@@ -398,8 +399,8 @@ const doesTileBlockOpenSky = (tileId: number): boolean => {
     return false;
   }
 
-  // Decorative small-tree foliage should not count as a roof over surface critter habitat.
-  return isTileSolid(tileId) || !isSmallTreeTileId(tileId);
+  // Decorative vegetation should not count as a roof over surface critter habitat.
+  return isTileSolid(tileId) || (!isSmallTreeTileId(tileId) && !isTallGrassTileId(tileId));
 };
 
 const expectLiquidSimulationTick = (liquidSimulationTick: number): number => {
@@ -989,6 +990,29 @@ export class TileWorld {
     );
   }
 
+  private clearUnsupportedTallGrassAtAnchor(
+    anchorTileX: number,
+    anchorTileY: number,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): void {
+    if (this.getResolvedTileIdWithoutEnsuringChunk(anchorTileX, anchorTileY) === PROCEDURAL_GRASS_SURFACE_TILE_ID) {
+      return;
+    }
+
+    const coverTileY = anchorTileY - 1;
+    if (!isTallGrassTileId(this.getResolvedTileIdWithoutEnsuringChunk(anchorTileX, coverTileY))) {
+      return;
+    }
+
+    const { chunkX, chunkY } = worldToChunkCoord(anchorTileX, coverTileY);
+    if (this.getResidentChunk(chunkX, chunkY)) {
+      this.setTile(anchorTileX, coverTileY, 0, editOrigin);
+      return;
+    }
+
+    this.setEditedTileStateWithoutEnsuringChunk(anchorTileX, coverTileY, 0, 0);
+  }
+
   private clearSmallTreeAboveBuriedGrassIfNeeded(
     worldTileX: number,
     worldTileY: number,
@@ -1408,6 +1432,7 @@ export class TileWorld {
         result.previousTileId === PROCEDURAL_GRASS_SURFACE_TILE_ID &&
         tileId !== PROCEDURAL_GRASS_SURFACE_TILE_ID
       ) {
+        this.clearUnsupportedTallGrassAtAnchor(worldTileX, worldTileY, editOrigin);
         this.clearUnsupportedSmallTreeAtAnchor(worldTileX, worldTileY, true, editOrigin);
       }
       if (tileSolidnessChanged) {

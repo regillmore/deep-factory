@@ -1305,6 +1305,17 @@
       "render": {
         "atlasIndex": 21
       }
+    },
+    {
+      "id": 21,
+      "name": "tall_grass",
+      "gameplay": {
+        "solid": false,
+        "blocksLight": false
+      },
+      "render": {
+        "atlasIndex": 23
+      }
     }
   ]
 }

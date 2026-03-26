@@ -114,6 +114,7 @@ import {
   resolveSmallTreeGrowthWindowIndex
 } from './world/smallTreeGrowth';
 import { getSmallTreeSaplingTileId, getSmallTreeTileIds } from './world/smallTreeTiles';
+import { getTallGrassTileId } from './world/tallGrassTiles';
 import { STARTER_TORCH_TILE_ID } from './world/starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './world/starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './world/starterFurnacePlacement';
@@ -10121,7 +10122,9 @@ describe('main.ts shell state orchestration', () => {
       runFixedUpdate(1 / 60);
     }
 
-    expect(testRuntime.rendererSetTileCalls).toEqual([
+    expect(
+      testRuntime.rendererSetTileCalls.filter((call) => call.tileId === PROCEDURAL_GRASS_SURFACE_TILE_ID)
+    ).toEqual([
       {
         worldTileX: 2,
         worldTileY: grassTileY,
@@ -10135,6 +10138,61 @@ describe('main.ts shell state orchestration', () => {
     restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
     expect(restoredWorld.getTile(1, grassTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
     expect(restoredWorld.getTile(2, grassTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+  });
+
+  it('grows tall grass on deterministic fixed-step windows and persists the updated tile', async () => {
+    const savedWorld = new TileWorld(0);
+    const grassTileY = -4;
+
+    expect(savedWorld.setTile(1, grassTileY, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
+    savedWorld.fillChunkLight(0, -1, MAX_LIGHT_LEVEL);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 16 },
+            facing: 'right'
+          })
+        })
+      )
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererResidentChunkBounds = {
+      minChunkX: 0,
+      maxChunkX: 0,
+      minChunkY: -1,
+      maxChunkY: -1
+    };
+    testRuntime.rendererSetTileCalls = [];
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.rendererPersistentSetTileResult = true;
+
+    const growthWindowIndex = resolveGrassGrowthWindowIndex(1, grassTileY);
+    const fixedUpdatesUntilGrowth =
+      DEFAULT_GRASS_GROWTH_INTERVAL_TICKS * (growthWindowIndex + 1);
+    for (let updateIndex = 0; updateIndex < fixedUpdatesUntilGrowth; updateIndex += 1) {
+      runFixedUpdate(1 / 60);
+    }
+
+    expect(
+      testRuntime.rendererSetTileCalls.filter((call) => call.tileId === getTallGrassTileId())
+    ).toContainEqual({
+      worldTileX: 1,
+      worldTileY: grassTileY - 1,
+      tileId: getTallGrassTileId()
+    });
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+    expect(restoredWorld.getTile(1, grassTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    expect(restoredWorld.getTile(1, grassTileY - 1)).toBe(getTallGrassTileId());
   });
 
   it('does not emit sapling-growth writes while no planted saplings are tracked', async () => {

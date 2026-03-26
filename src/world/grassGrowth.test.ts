@@ -9,6 +9,7 @@ import {
   stepGrassGrowth
 } from './grassGrowth';
 import { PROCEDURAL_DIRT_TILE_ID, PROCEDURAL_GRASS_SURFACE_TILE_ID } from './proceduralTerrain';
+import { getTallGrassTileId } from './tallGrassTiles';
 
 const WATER_TILE_ID = 7;
 
@@ -103,8 +104,59 @@ describe('grassGrowth', () => {
       { worldTileX: 1, worldTileY: 1 },
       { worldTileX: 4, worldTileY: 1 }
     ]);
+    expect(growthStep.grownTallGrassTiles).toEqual([]);
     expect(world.getTile(1, 1)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
     expect(world.getTile(4, 1)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+  });
+
+  it('grows tall grass above sunlit surface grass with empty direct cover', () => {
+    const world = createGrassGrowthWorldView({
+      tiles: [
+        { tileX: 0, tileY: 1, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID },
+        { tileX: 3, tileY: 2, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID }
+      ],
+      lightLevels: [
+        { tileX: 0, tileY: 1, lightLevel: MAX_LIGHT_LEVEL },
+        { tileX: 3, tileY: 2, lightLevel: MAX_LIGHT_LEVEL }
+      ]
+    });
+
+    const growthStep = stepGrassGrowth({
+      world,
+      growthState: createGrassGrowthState(1),
+      growthIntervalTicks: 1,
+      windowCount: 1
+    });
+
+    expect(growthStep.spreadTiles).toEqual([]);
+    expect(growthStep.grownTallGrassTiles).toEqual([
+      { worldTileX: 0, worldTileY: 0 },
+      { worldTileX: 3, worldTileY: 1 }
+    ]);
+    expect(world.getTile(0, 0)).toBe(getTallGrassTileId());
+    expect(world.getTile(3, 1)).toBe(getTallGrassTileId());
+  });
+
+  it('keeps grass unchanged while tall-grass cover is blocked or lacks full sunlight', () => {
+    const world = createGrassGrowthWorldView({
+      tiles: [
+        { tileX: 0, tileY: 1, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID },
+        { tileX: 0, tileY: 0, tileId: WATER_TILE_ID },
+        { tileX: 3, tileY: 2, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID }
+      ],
+      lightLevels: [{ tileX: 0, tileY: 1, lightLevel: MAX_LIGHT_LEVEL }]
+    });
+
+    const growthStep = stepGrassGrowth({
+      world,
+      growthState: createGrassGrowthState(1),
+      growthIntervalTicks: 1,
+      windowCount: 1
+    });
+
+    expect(growthStep.grownTallGrassTiles).toEqual([]);
+    expect(world.getTile(0, 0)).toBe(WATER_TILE_ID);
+    expect(world.getTile(3, 1)).toBe(0);
   });
 
   it('keeps lit dirt unchanged while direct-cover water occupies the tile above', () => {
@@ -125,6 +177,7 @@ describe('grassGrowth', () => {
     });
 
     expect(growthStep.spreadTiles).toEqual([]);
+    expect(growthStep.grownTallGrassTiles).toEqual([]);
     expect(world.getTile(1, 1)).toBe(PROCEDURAL_DIRT_TILE_ID);
   });
 
@@ -164,6 +217,7 @@ describe('grassGrowth', () => {
     expect(getLightLevelCallCount).toBe(0);
     expect(getResidentChunkBoundsCallCount).toBe(0);
     expect(growthStep.spreadTiles).toEqual([]);
+    expect(growthStep.grownTallGrassTiles).toEqual([]);
     expect(growthStep.nextGrowthState).toEqual({
       ticksUntilNextGrowth: 1,
       nextWindowIndex: 0

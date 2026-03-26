@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-26: Tall grass is support-bound decorative cover grown by the grass scheduler
+
+- Decision: The resident grass-growth scheduler may sprout non-solid `tall_grass` into the direct-cover cell above eligible sunlit `grass_surface`, world support-loss edits clear that decoration when the anchor stops being grass, and open-sky habitat checks ignore it as decorative vegetation.
+- Reason: Tall grass belongs to the same deterministic resident surface-growth path as grass spread, but it should not leave floating cover behind or accidentally block surface-spawn sky checks just because it is a non-solid tile.
+- Consequence: Future surface-decoration slices should extend the resident grass-growth path and declare whether their cover is support-bound and sky-permeable instead of inheriting generic non-solid tile behavior by accident.
+
 ### 2026-03-25: Grass spread now runs through resident fixed-step windows instead of edit hooks
 
 - Decision: `grass_surface` no longer regrows directly inside `TileWorld` edit hooks; instead runtime now advances one deterministic resident tile-hash window per interval and writes qualifying grass spreads back through the renderer/world seam.

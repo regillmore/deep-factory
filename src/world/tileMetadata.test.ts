@@ -93,7 +93,7 @@ const describeAuthoredSourceFromPixels = (
 
 describe('tile metadata loader', () => {
   it('loads placeholder terrain autotile mappings from JSON', () => {
-    expect(TILE_METADATA.tilesById.size).toBeGreaterThanOrEqual(20);
+    expect(TILE_METADATA.tilesById.size).toBeGreaterThanOrEqual(21);
     expect(hasTerrainAutotileMetadata(1)).toBe(true);
     expect(hasTerrainAutotileMetadata(2)).toBe(true);
     expect(hasTerrainAutotileMetadata(13)).toBe(true);
@@ -150,6 +150,10 @@ describe('tile metadata loader', () => {
       blocksLight: false,
       oneWayPlatform: true
     });
+    expect(resolveTileGameplayMetadata(21)).toEqual({
+      solid: false,
+      blocksLight: false
+    });
     expect(isTileSolid(1)).toBe(true);
     expect(isTileSolid(4)).toBe(false);
     expect(isTileSolid(19)).toBe(true);
@@ -185,6 +189,7 @@ describe('tile metadata loader', () => {
     expect(resolveTileRenderUvRect(18)).toEqual(authoredUvRectFromPixels(81, 17, 95, 31));
     expect(resolveTileRenderUvRect(19)).toEqual(atlasIndexToUvRect(33));
     expect(resolveTileRenderUvRect(20)).toEqual(atlasIndexToUvRect(21));
+    expect(resolveTileRenderUvRect(21)).toEqual(atlasIndexToUvRect(23));
     expect(hasAnimatedTileRenderMetadata(10)).toBe(true);
     expect(hasAnimatedTileRenderMetadata(18)).toBe(true);
     expect(getAnimatedTileRenderFrameCount(10)).toBe(2);
