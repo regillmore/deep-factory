@@ -112,9 +112,6 @@ export const resolvePassiveBunnySpawnWindowTarget = (
 const resolvePlayerTileX = (playerState: Pick<PlayerState, 'position'>): number =>
   Math.floor(expectFiniteNumber(playerState.position.x, 'playerState.position.x') / TILE_SIZE);
 
-const resolvePlayerTileY = (playerState: Pick<PlayerState, 'position'>): number =>
-  Math.floor(expectFiniteNumber(playerState.position.y, 'playerState.position.y') / TILE_SIZE);
-
 const resolveFacingAwayFromPlayer = (
   spawnPoint: PlayerSpawnPoint,
   playerState: Pick<PlayerState, 'position'>
@@ -167,7 +164,6 @@ const resolveSpawnSearchOptions = (
   width: DEFAULT_PASSIVE_BUNNY_WIDTH,
   height: DEFAULT_PASSIVE_BUNNY_HEIGHT,
   originTileX: resolvePlayerTileX(playerState) + windowOffsetTiles,
-  originTileY: resolvePlayerTileY(playerState),
   maxHorizontalOffsetTiles: windowHorizontalSearchTiles,
   maxVerticalOffsetTiles: windowVerticalSearchTiles,
   allowOneWayPlatformSupport: true,

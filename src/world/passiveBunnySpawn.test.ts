@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { findPlayerSpawnPoint } from './playerSpawn';
 import { createPlayerState } from './playerState';
+import { resolveProceduralTerrainColumn } from './proceduralTerrain';
 import { STARTER_PLATFORM_TILE_ID } from './starterPlatformPlacement';
 import { createPassiveBunnyState, DEFAULT_PASSIVE_BUNNY_HOP_INTERVAL_TICKS } from './passiveBunnyState';
 import { TileWorld } from './world';
@@ -128,6 +129,34 @@ describe('passiveBunnySpawn', () => {
     expect(result.spawnState?.position).toEqual({ x: -120, y: 0 });
     expect(result.spawnState?.facing).toBe('left');
     expect(result.nextSpawnerState.nextWindowIndex).toBe(2);
+  });
+
+  it('keeps natural bunny spawns on the surface even when the player is underground', () => {
+    const world = new TileWorld(0);
+    const windowAnchorTileX = 8;
+    const { surfaceTileY } = resolveProceduralTerrainColumn(windowAnchorTileX, world.getWorldSeed());
+    const undergroundStandingTileY = surfaceTileY + 8;
+
+    setTiles(world, windowAnchorTileX - 2, surfaceTileY + 1, windowAnchorTileX + 2, undergroundStandingTileY - 1, 0);
+    setTiles(world, windowAnchorTileX - 2, undergroundStandingTileY, windowAnchorTileX + 2, undergroundStandingTileY, 3);
+
+    const result = stepPassiveBunnySpawner({
+      playerState: createPlayerState({
+        position: { x: 8, y: undergroundStandingTileY * 16 }
+      }),
+      spawnerState: {
+        ticksUntilNextSpawn: 1,
+        nextWindowIndex: 0
+      },
+      findSpawnPoint: (options) => findPlayerSpawnPoint(world, options)
+    });
+
+    expect(result.spawnState?.position).toEqual({
+      x: 136,
+      y: surfaceTileY * 16
+    });
+    expect(result.spawnState?.facing).toBe('right');
+    expect(result.nextSpawnerState.nextWindowIndex).toBe(1);
   });
 
   it('treats a placed platform floor as valid support in the current deterministic spawn window', () => {

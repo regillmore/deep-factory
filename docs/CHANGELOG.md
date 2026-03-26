@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-25
 
+- Task: Keep passive-bunny natural spawning on the surface.
+- Changes: Updated [src/world/passiveBunnySpawn.ts](../src/world/passiveBunnySpawn.ts) so ambient passive-bunny spawn windows now let the shared spawn search realign to each window's local surface height instead of the player's current underground depth, expanded [src/world/passiveBunnySpawn.test.ts](../src/world/passiveBunnySpawn.test.ts) with an underground-player surface-spawn regression, removed completed task `545` from [docs/NEXT.md](docs/NEXT.md), added replacement task `547`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/passiveBunnySpawn.test.ts` (outside the sandbox because Vitest needs child-process access here) and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Repair the streamed-boundary sunlight regression introduced by buried-grass cleanup.
 - Changes: Updated [src/world/world.ts](../src/world/world.ts) so buried-grass checks now read procedural-or-edited tile state without forcing the chunk below a bottom-row solid edit resident, while still persisting dirt overrides for later stream-in; expanded [src/world/world.test.ts](../src/world/world.test.ts) with a regression for storing that dirt override across a nonresident chunk boundary. Left [docs/NEXT.md](docs/NEXT.md) unchanged because this was a user-directed bugfix detour rather than a completed roadmap task.
 - Verification: Ran `cmd /c npx vitest run src/world/sunlight.test.ts`, `cmd /c npx vitest run src/world/world.test.ts`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

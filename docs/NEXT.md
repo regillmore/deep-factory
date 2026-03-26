@@ -11,5 +11,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 372. Add a bucket liquid-transfer utility slice after inventory basics and save/load: stackable empty, water, and lava bucket hotbar slots, mixed-device source pickup plus nearby-tile pour placement, deterministic liquid-volume regressions, and snapshot regressions for bucket contents plus resident liquid state.
 502. Add a fishing utility slice after inventory basics and save/load: a non-stackable fishing rod hotbar slot, mixed-device water casting plus bite timing, fish-item catches into inventory, and deterministic bite/catch regressions.
 519. Add a mana-crystal upgrade slice after mana-resource magic and inventory basics: a stackable mana-crystal hotbar item, mixed-device hidden-panel consume rules, saved max-mana increase plus cap handling, and snapshot regressions for upgraded mana state.
-545. Passive-bunny natural spawning should only occur on the surface.
 546. Exposed dirt tiles adjacent to surface grass should regrow into grass when the tile above stays non-solid.
+547. Passive-bunny natural spawning should require open sky above the landing tile.

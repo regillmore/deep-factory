@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-25: Passive-bunny ambient spawns stay surface-aligned
+
+- Decision: Passive-bunny ambient spawn windows now omit the player's current Y anchor so the shared spawn search re-centers each window on its local surface height instead of the player's underground depth.
+- Reason: Passive bunnies are a surface critter, and underground players were unintentionally causing natural bunny spawns to resolve onto cave or tunnel floors nearer to the player than the surface.
+- Consequence: Future passive-critter spawn follow-ups should preserve habitat-specific vertical anchoring instead of reusing the player's present depth for ambient spawn searches.
+
 ### 2026-03-25: Buried grass only reverts under direct solid cover
 
 - Decision: A `grass_surface` tile now reverts immediately to dirt only when the direct foreground tile above it becomes solid, while non-solid cover stays grass-safe and any anchored small-tree footprint is cleared before that solid cover would orphan it.
