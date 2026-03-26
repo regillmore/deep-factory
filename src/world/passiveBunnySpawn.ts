@@ -29,11 +29,16 @@ export interface PassiveBunnySpawnSearch {
   (options: PlayerSpawnSearchOptions): PlayerSpawnPoint | null;
 }
 
+export interface PassiveBunnyOpenSkyCheck {
+  (worldTileX: number, standingTileY: number): boolean;
+}
+
 export interface StepPassiveBunnySpawnerOptions<TId = number> {
   playerState: Pick<PlayerState, 'position'>;
   activeBunnies?: ReadonlyArray<ActivePassiveBunnyEntry<TId>>;
   spawnerState?: PassiveBunnySpawnerState;
   findSpawnPoint: PassiveBunnySpawnSearch;
+  hasOpenSkyAbove?: PassiveBunnyOpenSkyCheck;
   maxActiveBunnies?: number;
   spawnIntervalTicks?: number;
   keepBandHorizontalTiles?: number;
@@ -159,7 +164,8 @@ const resolveSpawnSearchOptions = (
   windowOffsetTiles: number,
   windowHorizontalSearchTiles: number,
   windowVerticalSearchTiles: number,
-  activeBunnyAabbs: ReadonlyArray<WorldAabb>
+  activeBunnyAabbs: ReadonlyArray<WorldAabb>,
+  hasOpenSkyAbove: PassiveBunnyOpenSkyCheck | undefined
 ): PlayerSpawnSearchOptions => ({
   width: DEFAULT_PASSIVE_BUNNY_WIDTH,
   height: DEFAULT_PASSIVE_BUNNY_HEIGHT,
@@ -168,12 +174,21 @@ const resolveSpawnSearchOptions = (
   maxVerticalOffsetTiles: windowVerticalSearchTiles,
   allowOneWayPlatformSupport: true,
   isCandidateSpawnAllowed:
-    activeBunnyAabbs.length === 0
+    activeBunnyAabbs.length === 0 && hasOpenSkyAbove === undefined
       ? undefined
-      : (spawnPoint) =>
-          !activeBunnyAabbs.some((activeBunnyAabb) =>
-            doAabbsOverlap(spawnPoint.aabb, activeBunnyAabb)
-          )
+      : (spawnPoint) => {
+          if (
+            activeBunnyAabbs.some((activeBunnyAabb) =>
+              doAabbsOverlap(spawnPoint.aabb, activeBunnyAabb)
+            )
+          ) {
+            return false;
+          }
+
+          return hasOpenSkyAbove === undefined
+            ? true
+            : hasOpenSkyAbove(spawnPoint.anchorTileX, spawnPoint.standingTileY);
+        }
 });
 
 const findNextPassiveBunnySpawnState = <TId>(
@@ -181,6 +196,7 @@ const findNextPassiveBunnySpawnState = <TId>(
   nextWindowIndex: number,
   activeBunnies: ReadonlyArray<ActivePassiveBunnyEntry<TId>>,
   findSpawnPoint: PassiveBunnySpawnSearch,
+  hasOpenSkyAbove: PassiveBunnyOpenSkyCheck | undefined,
   windowOffsetsTiles: ReadonlyArray<number>,
   windowHorizontalSearchTiles: number,
   windowVerticalSearchTiles: number
@@ -198,7 +214,8 @@ const findNextPassiveBunnySpawnState = <TId>(
         normalizedOffsets[windowIndex] ?? 0,
         windowHorizontalSearchTiles,
         windowVerticalSearchTiles,
-        activeBunnyAabbs
+        activeBunnyAabbs,
+        hasOpenSkyAbove
       )
     );
     if (spawnPoint === null) {
@@ -231,6 +248,7 @@ export const stepPassiveBunnySpawner = <TId = number>({
   activeBunnies = [],
   spawnerState = createPassiveBunnySpawnerState(),
   findSpawnPoint,
+  hasOpenSkyAbove,
   maxActiveBunnies = DEFAULT_PASSIVE_BUNNY_MAX_ACTIVE,
   spawnIntervalTicks = DEFAULT_PASSIVE_BUNNY_SPAWN_INTERVAL_TICKS,
   keepBandHorizontalTiles = DEFAULT_PASSIVE_BUNNY_KEEP_BAND_HORIZONTAL_TILES,
@@ -307,6 +325,7 @@ export const stepPassiveBunnySpawner = <TId = number>({
     normalizedNextWindowIndex,
     activeBunnies,
     findSpawnPoint,
+    hasOpenSkyAbove,
     normalizedWindowOffsetsTiles,
     normalizedWindowHorizontalSearchTiles,
     normalizedWindowVerticalSearchTiles

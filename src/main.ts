@@ -3576,7 +3576,9 @@ const bootstrap = async (): Promise<void> => {
       playerState: standalonePlayerState,
       activeBunnies: getPassiveBunnyEntityStates(),
       spawnerState: passiveBunnySpawnerState,
-      findSpawnPoint: (options) => renderer.findPlayerSpawnPoint(options)
+      findSpawnPoint: (options) => renderer.findPlayerSpawnPoint(options),
+      hasOpenSkyAbove: (worldTileX, standingTileY) =>
+        renderer.hasOpenSkyAbove(worldTileX, standingTileY)
     });
     passiveBunnySpawnerState = spawnResult.nextSpawnerState;
     despawnPassiveBunnyEntities(spawnResult.despawnIds);

@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-25: Passive-bunny ambient spawns require an open-sky landing column
+
+- Decision: Passive-bunny ambient spawn candidates now reject landing columns whose space from the support tile back up to the local surface is blocked, instead of treating covered ledges or cave-mouth floors as valid natural-spawn habitat.
+- Reason: Keeping ambient bunny spawns surface-aligned still left roofed-over surface-adjacent floors eligible, which made natural critter spawns appear under cover rather than in genuinely open surface space.
+- Consequence: Future passive-critter habitat checks should treat overhead sky exposure as a spawn-candidate filter in the shared search path rather than a post-spawn cleanup rule or a player-depth heuristic.
+
 ### 2026-03-25: Passive-bunny ambient spawns stay surface-aligned
 
 - Decision: Passive-bunny ambient spawn windows now omit the player's current Y anchor so the shared spawn search re-centers each window on its local surface height instead of the player's underground depth.

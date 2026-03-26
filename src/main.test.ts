@@ -504,6 +504,10 @@ const testRuntime = vi.hoisted(() => {
     rendererHasResidentChunkCallCount: 0,
     rendererResetWorldSeeds: [] as number[],
     rendererFindPlayerSpawnPointImpl: null as null | ((options: unknown) => unknown),
+    rendererHasOpenSkyAboveImpl: null as null | ((
+      worldTileX: number,
+      standingTileY: number
+    ) => boolean),
     gameLoopFixedUpdate: null as null | ((fixedDt: number) => void),
     gameLoopRender: null as null | ((alpha: number, frameDtMs: number) => void),
     performanceNow: 1000,
@@ -985,16 +989,37 @@ vi.mock('./gl/renderer', () => ({
     }
 
     findPlayerSpawnPoint(options?: unknown) {
+      const search = options as
+        | {
+            width?: number;
+            height?: number;
+            isCandidateSpawnAllowed?: ((spawnPoint: unknown) => boolean) | undefined;
+          }
+        | undefined;
+      const applyCandidateFilter = <T>(spawnPoint: T): T | null => {
+        if (
+          spawnPoint !== null &&
+          spawnPoint !== undefined &&
+          typeof search?.isCandidateSpawnAllowed === 'function' &&
+          !search.isCandidateSpawnAllowed(spawnPoint)
+        ) {
+          return null;
+        }
+
+        return spawnPoint;
+      };
+
       if (testRuntime.rendererFindPlayerSpawnPointImpl !== null) {
-        return testRuntime.rendererFindPlayerSpawnPointImpl(options);
+        return applyCandidateFilter(testRuntime.rendererFindPlayerSpawnPointImpl(options));
       }
-      const search = options as { width?: number; height?: number } | undefined;
+
       if (
         search?.width === DEFAULT_PLAYER_WIDTH &&
         search?.height === DEFAULT_PLAYER_HEIGHT
       ) {
-        return testRuntime.playerSpawnPoint;
+        return applyCandidateFilter(testRuntime.playerSpawnPoint);
       }
+
       return null;
     }
 
@@ -1104,6 +1129,14 @@ vi.mock('./gl/renderer', () => ({
         }
       }
       return testRuntime.rendererLiquidLevel;
+    }
+
+    hasOpenSkyAbove(worldTileX: number, standingTileY: number): boolean {
+      if (testRuntime.rendererHasOpenSkyAboveImpl !== null) {
+        return testRuntime.rendererHasOpenSkyAboveImpl(worldTileX, standingTileY);
+      }
+
+      return true;
     }
 
     onTileEdited(listener: (event: TileEditEvent) => void): () => void {
@@ -2916,6 +2949,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererHasResidentChunkCallCount = 0;
     testRuntime.rendererResetWorldSeeds = [];
     testRuntime.rendererFindPlayerSpawnPointImpl = null;
+    testRuntime.rendererHasOpenSkyAboveImpl = null;
     testRuntime.gameLoopFixedUpdate = null;
     testRuntime.gameLoopRender = null;
     testRuntime.performanceNow = 1000;
@@ -5383,6 +5417,48 @@ describe('main.ts shell state orchestration', () => {
       });
 
     runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 0.5);
+
+    expect(testRuntime.latestRendererRenderFrameState?.bunnyCurrentPositions).toEqual([]);
+  });
+
+  it('requires open sky above passive-bunny natural spawns in runtime wiring', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    const bunnySpawnPoint = createTestPlayerSpawnPoint({
+      anchorTileX: 8,
+      x: 136,
+      y: 0,
+      width: DEFAULT_PASSIVE_BUNNY_WIDTH,
+      height: DEFAULT_PASSIVE_BUNNY_HEIGHT,
+      supportTileId: 3
+    });
+    testRuntime.rendererFindPlayerSpawnPointImpl = (options) => {
+      const search = options as { width?: number; height?: number } | undefined;
+      if (
+        search?.width === DEFAULT_PASSIVE_BUNNY_WIDTH &&
+        search?.height === DEFAULT_PASSIVE_BUNNY_HEIGHT
+      ) {
+        return bunnySpawnPoint;
+      }
+
+      if (
+        search?.width === DEFAULT_PLAYER_WIDTH &&
+        search?.height === DEFAULT_PLAYER_HEIGHT
+      ) {
+        return testRuntime.playerSpawnPoint;
+      }
+
+      return null;
+    };
+    testRuntime.rendererHasOpenSkyAboveImpl = () => false;
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    for (let step = 0; step < DEFAULT_PASSIVE_BUNNY_SPAWN_INTERVAL_TICKS; step += 1) {
+      runFixedUpdate();
+    }
     runRenderFrame(1000 / 60, 0.5);
 
     expect(testRuntime.latestRendererRenderFrameState?.bunnyCurrentPositions).toEqual([]);

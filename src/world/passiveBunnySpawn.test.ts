@@ -159,6 +159,27 @@ describe('passiveBunnySpawn', () => {
     expect(result.nextSpawnerState.nextWindowIndex).toBe(1);
   });
 
+  it('falls back within the current deterministic window when the nearest landing lacks open sky above it', () => {
+    const world = createFlatSurfaceWorld();
+    world.setTile(8, -8, 3);
+
+    const result = stepPassiveBunnySpawner({
+      playerState: createPlayerState({
+        position: { x: 8, y: 0 }
+      }),
+      spawnerState: {
+        ticksUntilNextSpawn: 1,
+        nextWindowIndex: 0
+      },
+      findSpawnPoint: (options) => findPlayerSpawnPoint(world, options),
+      hasOpenSkyAbove: (worldTileX, standingTileY) => world.hasOpenSkyAbove(worldTileX, standingTileY)
+    });
+
+    expect(result.spawnState?.position).toEqual({ x: 120, y: 0 });
+    expect(result.spawnState?.facing).toBe('right');
+    expect(result.nextSpawnerState.nextWindowIndex).toBe(1);
+  });
+
   it('treats a placed platform floor as valid support in the current deterministic spawn window', () => {
     const world = new TileWorld(0);
     setTiles(world, -48, -16, 48, 16, 0);

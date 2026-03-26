@@ -1405,6 +1405,30 @@ describe('TileWorld', () => {
     expect(world.getChunkCount()).toBe(chunkCountAfterPrune + 1);
   });
 
+  it('reports open sky above a cave-mouth floor that stays exposed to the surface', () => {
+    const caveMouthColumn = findFirstProceduralExposedCaveMouthColumn();
+    expect(caveMouthColumn).not.toBeNull();
+    if (caveMouthColumn === null) {
+      throw new Error('expected a procedural exposed cave-mouth column');
+    }
+
+    const world = new TileWorld(0);
+    const standingTileY = caveMouthColumn.deepestAirTileY + 1;
+
+    expect(world.getTile(caveMouthColumn.worldTileX, standingTileY)).not.toBe(0);
+    expect(world.hasOpenSkyAbove(caveMouthColumn.worldTileX, standingTileY)).toBe(true);
+  });
+
+  it('reports blocked sky above a surface landing when a roof is placed higher in that column', () => {
+    const worldTileX = 0;
+    const world = new TileWorld(0);
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX);
+
+    expect(world.hasOpenSkyAbove(worldTileX, surfaceTileY)).toBe(true);
+    expect(world.setTile(worldTileX, surfaceTileY - 8, SOLID_TEST_TILE_ID)).toBe(true);
+    expect(world.hasOpenSkyAbove(worldTileX, surfaceTileY)).toBe(false);
+  });
+
   it('persists explicit empty-wall overrides when a generated cave stone wall is cleared', () => {
     const caveWallTile = findFirstProceduralStoneWallTile();
     expect(caveWallTile).not.toBeNull();

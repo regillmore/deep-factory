@@ -983,6 +983,10 @@ export class Renderer {
     return this.world.getLiquidLevel(worldTileX, worldTileY);
   }
 
+  hasOpenSkyAbove(worldTileX: number, standingTileY: number): boolean {
+    return this.world.hasOpenSkyAbove(worldTileX, standingTileY);
+  }
+
   stepLiquidSimulation(): boolean {
     const changed = this.world.stepLiquidSimulation();
     this.updateLiquidStepTelemetry();

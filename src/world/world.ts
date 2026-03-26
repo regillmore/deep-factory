@@ -36,6 +36,7 @@ import { clearSmallTreeGrowthStageAtAnchor } from './smallTreeFootprintWrites';
 import {
   PROCEDURAL_DIRT_TILE_ID,
   PROCEDURAL_GRASS_SURFACE_TILE_ID,
+  resolveProceduralTerrainColumn,
   resolveProceduralTerrainLayers,
   resolveProceduralTerrainTileId
 } from './proceduralTerrain';
@@ -381,6 +382,14 @@ const expectLightLevel = (lightLevel: number): number => {
   }
 
   return lightLevel;
+};
+
+const expectInteger = (value: number, label: string): number => {
+  if (!Number.isInteger(value)) {
+    throw new Error(`${label} must be an integer`);
+  }
+
+  return value;
 };
 
 const expectLiquidSimulationTick = (liquidSimulationTick: number): number => {
@@ -1256,6 +1265,74 @@ export class TileWorld {
     const chunk = this.ensureChunk(chunkX, chunkY);
     const { localX, localY } = worldToLocalTile(worldTileX, worldTileY);
     return chunk.wallIds[toTileIndex(localX, localY)] ?? 0;
+  }
+
+  hasOpenSkyAbove(worldTileX: number, standingTileY: number): boolean {
+    const normalizedWorldTileX = expectInteger(worldTileX, 'worldTileX');
+    const normalizedStandingTileY = expectInteger(standingTileY, 'standingTileY');
+    const { chunkX } = worldToChunkCoord(normalizedWorldTileX, normalizedStandingTileY);
+    const { localX } = worldToLocalTile(normalizedWorldTileX, normalizedStandingTileY);
+    const { surfaceTileY } = resolveProceduralTerrainColumn(normalizedWorldTileX, this.worldSeed);
+
+    for (
+      let sampleWorldTileY = normalizedStandingTileY - 1;
+      sampleWorldTileY >= surfaceTileY;
+      sampleWorldTileY -= 1
+    ) {
+      if (this.getResolvedTileIdWithoutEnsuringChunk(normalizedWorldTileX, sampleWorldTileY) !== 0) {
+        return false;
+      }
+    }
+
+    const maxSkyTileYExclusive = Math.min(normalizedStandingTileY, surfaceTileY);
+    for (const chunk of this.chunks.values()) {
+      if (chunk.coord.x !== chunkX) {
+        continue;
+      }
+
+      const chunkStartWorldTileY = chunk.coord.y * CHUNK_SIZE;
+      const maxLocalY = Math.min(CHUNK_SIZE - 1, maxSkyTileYExclusive - chunkStartWorldTileY - 1);
+      if (maxLocalY < 0) {
+        continue;
+      }
+
+      for (let localY = 0; localY <= maxLocalY; localY += 1) {
+        if ((chunk.tiles[toTileIndex(localX, localY)] ?? 0) !== 0) {
+          return false;
+        }
+      }
+    }
+
+    for (const [key, editedTiles] of this.editedChunkTiles) {
+      if (this.chunks.has(key)) {
+        continue;
+      }
+
+      const coord = parseChunkCoordFromKey(key);
+      if (coord.x !== chunkX) {
+        continue;
+      }
+
+      const chunkStartWorldTileY = coord.y * CHUNK_SIZE;
+      const maxLocalY = Math.min(CHUNK_SIZE - 1, maxSkyTileYExclusive - chunkStartWorldTileY - 1);
+      if (maxLocalY < 0) {
+        continue;
+      }
+
+      for (const [tileIndex, tileId] of editedTiles) {
+        if (tileId === 0) {
+          continue;
+        }
+
+        const localTileY = Math.floor(tileIndex / CHUNK_SIZE);
+        const localTileX = tileIndex % CHUNK_SIZE;
+        if (localTileX === localX && localTileY <= maxLocalY) {
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 
   setTile(
