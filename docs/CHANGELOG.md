@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-25
 
+- Task: Keep adjacent-grass regrowth dry when water or lava covers the tile above.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts) so exposed procedural dirt now treats direct-cover `water` and `lava` tiles as regrowth blockers even though those liquids stay non-solid, and expanded [src/world/world.test.ts](../src/world/world.test.ts) with water and lava regressions for the shared cover-transition path. Removed completed task `550` from [docs/NEXT.md](docs/NEXT.md), added replacement task `551`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Repair grass-regrowth regressions across runtime, save/load, and authoritative replay.
 - Changes: Refined [src/world/world.ts](../src/world/world.ts) so exposed dirt regrowth now piggybacks only on direct solid-cover transitions and procedural grass adjacency instead of rewriting arbitrary dirt or non-solid tile writes, which preserves placed dirt blocks, replicated dirt diffs, and planted-sapling support snapshots; expanded [src/world/world.test.ts](../src/world/world.test.ts) with placed-dirt, non-solid-over-non-solid, and streamed override regressions, and updated [src/main.test.ts](../src/main.test.ts) so the acorn-planting fixture uses a save snapshot whose grass anchor matches the runtime query path. Left [docs/NEXT.md](docs/NEXT.md) unchanged because this was a regression-fix detour after task `546`.
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts src/mainWorldSave.test.ts src/network/stateReplay.test.ts`, `cmd /c npx vitest run src/world/world.test.ts`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -1079,7 +1079,8 @@ export class TileWorld {
       return false;
     }
 
-    if (isTileSolid(this.getResolvedTileIdWithoutEnsuringChunk(worldTileX, worldTileY - 1))) {
+    const coverTileId = this.getResolvedTileIdWithoutEnsuringChunk(worldTileX, worldTileY - 1);
+    if (isTileSolid(coverTileId) || getTileLiquidKind(coverTileId) !== null) {
       return false;
     }
 

@@ -674,6 +674,27 @@ describe('TileWorld', () => {
     });
   });
 
+  for (const [liquidTileId, liquidLabel] of [
+    [WATER_TILE_ID, 'water'],
+    [LAVA_TILE_ID, 'lava']
+  ] as const) {
+    it(`does not regrow exposed dirt into grass when ${liquidLabel} replaces solid cover above it`, () => {
+      const world = new TileWorld(0);
+      const coveredDirt = findFirstProceduralDirtBelowSolidCoverAdjacentToGrass();
+      expect(coveredDirt).not.toBeNull();
+      const { worldTileX, worldTileY } = coveredDirt!;
+      const coverTileY = worldTileY - 1;
+
+      expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+
+      expect(world.setTile(worldTileX, coverTileY, liquidTileId)).toBe(true);
+
+      expect(world.getTile(worldTileX, coverTileY)).toBe(liquidTileId);
+      expect(world.getLiquidLevel(worldTileX, coverTileY)).toBe(MAX_LIQUID_LEVEL);
+      expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+    });
+  }
+
   it('stores exposed-dirt grass-regrowth overrides without forcing the target chunk resident', () => {
     const world = new TileWorld(0);
     const coveredDirt = findFirstProceduralChunkTopDirtBelowSolidCoverAdjacentToGrass(

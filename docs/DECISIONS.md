@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-25: Grass regrowth treats direct-cover liquids as blocking cover
+
+- Decision: Exposed dirt beside surviving surface grass now refuses to regrow while the direct tile above currently contains `water` or `lava`, even though those liquid tiles remain non-solid for collision and burial checks.
+- Reason: Surface grass should not spread through flooded or lava-filled cover cells, so the local regrowth rule needs to distinguish dry non-solid cover from liquid occupancy instead of relying on solidness alone.
+- Consequence: Future grass-regrowth follow-ups should inspect direct-cover liquid presence separately from solidness, and any later "regrow after draining" work should hook into liquid occupancy changes rather than widening arbitrary non-solid tile writes again.
+
 ### 2026-03-25: Grass regrowth reuses direct-cover and same-row adjacency checks
 
 - Decision: Exposed procedural-or-buried `dirt` now regrows into `grass_surface` only when a direct-cover edit opens that tile back to non-solid space or when a procedural grass tile itself appears beside it, while arbitrary dirt placements, replayed dirt writes, and unrelated non-solid writes do not trigger regrowth on their own.
