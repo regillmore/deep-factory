@@ -6,9 +6,11 @@ import {
   createGrassGrowthState,
   isGrassGrowthTileNeighborhoodResident,
   resolveGrassGrowthWindowIndex,
+  SURFACE_FLOWER_SELECTION_WINDOW_COUNT,
   stepGrassGrowth
 } from './grassGrowth';
 import { PROCEDURAL_DIRT_TILE_ID, PROCEDURAL_GRASS_SURFACE_TILE_ID } from './proceduralTerrain';
+import { getSurfaceFlowerTileId } from './surfaceFlowerTiles';
 import { getTallGrassTileId } from './tallGrassTiles';
 
 const WATER_TILE_ID = 7;
@@ -105,21 +107,25 @@ describe('grassGrowth', () => {
       { worldTileX: 4, worldTileY: 1 }
     ]);
     expect(growthStep.grownTallGrassTiles).toEqual([]);
+    expect(growthStep.grownSurfaceFlowerTiles).toEqual([]);
     expect(world.getTile(1, 1)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
     expect(world.getTile(4, 1)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
   });
 
-  it('grows tall grass above sunlit surface grass with empty direct cover', () => {
+  it('grows tall grass above sunlit surface grass when the decoration hash stays on grass', () => {
     const world = createGrassGrowthWorldView({
       tiles: [
         { tileX: 0, tileY: 1, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID },
-        { tileX: 3, tileY: 2, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID }
+        { tileX: 4, tileY: 2, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID }
       ],
       lightLevels: [
         { tileX: 0, tileY: 1, lightLevel: MAX_LIGHT_LEVEL },
-        { tileX: 3, tileY: 2, lightLevel: MAX_LIGHT_LEVEL }
+        { tileX: 4, tileY: 2, lightLevel: MAX_LIGHT_LEVEL }
       ]
     });
+
+    expect(resolveGrassGrowthWindowIndex(0, 1, SURFACE_FLOWER_SELECTION_WINDOW_COUNT)).not.toBe(0);
+    expect(resolveGrassGrowthWindowIndex(4, 2, SURFACE_FLOWER_SELECTION_WINDOW_COUNT)).not.toBe(0);
 
     const growthStep = stepGrassGrowth({
       world,
@@ -131,10 +137,32 @@ describe('grassGrowth', () => {
     expect(growthStep.spreadTiles).toEqual([]);
     expect(growthStep.grownTallGrassTiles).toEqual([
       { worldTileX: 0, worldTileY: 0 },
-      { worldTileX: 3, worldTileY: 1 }
+      { worldTileX: 4, worldTileY: 1 }
     ]);
+    expect(growthStep.grownSurfaceFlowerTiles).toEqual([]);
     expect(world.getTile(0, 0)).toBe(getTallGrassTileId());
-    expect(world.getTile(3, 1)).toBe(getTallGrassTileId());
+    expect(world.getTile(4, 1)).toBe(getTallGrassTileId());
+  });
+
+  it('grows surface flowers above sunlit surface grass when the decoration hash chooses blooms', () => {
+    const world = createGrassGrowthWorldView({
+      tiles: [{ tileX: 3, tileY: 2, tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID }],
+      lightLevels: [{ tileX: 3, tileY: 2, lightLevel: MAX_LIGHT_LEVEL }]
+    });
+
+    expect(resolveGrassGrowthWindowIndex(3, 2, SURFACE_FLOWER_SELECTION_WINDOW_COUNT)).toBe(0);
+
+    const growthStep = stepGrassGrowth({
+      world,
+      growthState: createGrassGrowthState(1),
+      growthIntervalTicks: 1,
+      windowCount: 1
+    });
+
+    expect(growthStep.spreadTiles).toEqual([]);
+    expect(growthStep.grownTallGrassTiles).toEqual([]);
+    expect(growthStep.grownSurfaceFlowerTiles).toEqual([{ worldTileX: 3, worldTileY: 1 }]);
+    expect(world.getTile(3, 1)).toBe(getSurfaceFlowerTileId());
   });
 
   it('keeps grass unchanged while tall-grass cover is blocked or lacks full sunlight', () => {
@@ -155,6 +183,7 @@ describe('grassGrowth', () => {
     });
 
     expect(growthStep.grownTallGrassTiles).toEqual([]);
+    expect(growthStep.grownSurfaceFlowerTiles).toEqual([]);
     expect(world.getTile(0, 0)).toBe(WATER_TILE_ID);
     expect(world.getTile(3, 1)).toBe(0);
   });
@@ -178,6 +207,7 @@ describe('grassGrowth', () => {
 
     expect(growthStep.spreadTiles).toEqual([]);
     expect(growthStep.grownTallGrassTiles).toEqual([]);
+    expect(growthStep.grownSurfaceFlowerTiles).toEqual([]);
     expect(world.getTile(1, 1)).toBe(PROCEDURAL_DIRT_TILE_ID);
   });
 
@@ -218,6 +248,7 @@ describe('grassGrowth', () => {
     expect(getResidentChunkBoundsCallCount).toBe(0);
     expect(growthStep.spreadTiles).toEqual([]);
     expect(growthStep.grownTallGrassTiles).toEqual([]);
+    expect(growthStep.grownSurfaceFlowerTiles).toEqual([]);
     expect(growthStep.nextGrowthState).toEqual({
       ticksUntilNextGrowth: 1,
       nextWindowIndex: 0

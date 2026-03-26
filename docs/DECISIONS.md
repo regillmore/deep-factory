@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-26: Surface flowers share the resident support-bound decoration contract
+
+- Decision: The resident grass-growth scheduler now deterministically chooses either `tall_grass` or `surface_flower` for eligible empty direct-cover cells above sunlit `grass_surface`, and world support-loss plus open-sky checks treat both as support-bound sky-permeable surface decoration.
+- Reason: Surface flowers need to coexist with tall grass without duplicate same-cell writes, floating bloom remnants, or passive surface-habitat regressions.
+- Consequence: Future surface-decoration variants should join the same scheduler-owned decoration selection plus support-loss and sky-permeability rules instead of introducing ad hoc cover writes or one-off habitat exceptions.
+
 ### 2026-03-26: Tall grass is support-bound decorative cover grown by the grass scheduler
 
 - Decision: The resident grass-growth scheduler may sprout non-solid `tall_grass` into the direct-cover cell above eligible sunlit `grass_surface`, world support-loss edits clear that decoration when the anchor stops being grass, and open-sky habitat checks ignore it as decorative vegetation.

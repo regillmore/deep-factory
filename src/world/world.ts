@@ -48,6 +48,7 @@ import {
   isTileSolid
 } from './tileMetadata';
 import { isSmallTreeTileId } from './smallTreeTiles';
+import { isSurfaceFlowerTileId } from './surfaceFlowerTiles';
 import { isTallGrassTileId } from './tallGrassTiles';
 import type { TileMetadataRegistry } from './tileMetadata';
 import type { Chunk, ChunkCoord } from './types';
@@ -400,7 +401,10 @@ const doesTileBlockOpenSky = (tileId: number): boolean => {
   }
 
   // Decorative vegetation should not count as a roof over surface critter habitat.
-  return isTileSolid(tileId) || (!isSmallTreeTileId(tileId) && !isTallGrassTileId(tileId));
+  return (
+    isTileSolid(tileId) ||
+    (!isSmallTreeTileId(tileId) && !isTallGrassTileId(tileId) && !isSurfaceFlowerTileId(tileId))
+  );
 };
 
 const expectLiquidSimulationTick = (liquidSimulationTick: number): number => {
@@ -990,7 +994,7 @@ export class TileWorld {
     );
   }
 
-  private clearUnsupportedTallGrassAtAnchor(
+  private clearUnsupportedSurfaceDecorationAtAnchor(
     anchorTileX: number,
     anchorTileY: number,
     editOrigin: WorldEditOrigin = 'gameplay'
@@ -1000,7 +1004,8 @@ export class TileWorld {
     }
 
     const coverTileY = anchorTileY - 1;
-    if (!isTallGrassTileId(this.getResolvedTileIdWithoutEnsuringChunk(anchorTileX, coverTileY))) {
+    const coverTileId = this.getResolvedTileIdWithoutEnsuringChunk(anchorTileX, coverTileY);
+    if (!isTallGrassTileId(coverTileId) && !isSurfaceFlowerTileId(coverTileId)) {
       return;
     }
 
@@ -1432,7 +1437,7 @@ export class TileWorld {
         result.previousTileId === PROCEDURAL_GRASS_SURFACE_TILE_ID &&
         tileId !== PROCEDURAL_GRASS_SURFACE_TILE_ID
       ) {
-        this.clearUnsupportedTallGrassAtAnchor(worldTileX, worldTileY, editOrigin);
+        this.clearUnsupportedSurfaceDecorationAtAnchor(worldTileX, worldTileY, editOrigin);
         this.clearUnsupportedSmallTreeAtAnchor(worldTileX, worldTileY, true, editOrigin);
       }
       if (tileSolidnessChanged) {

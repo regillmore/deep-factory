@@ -1316,6 +1316,17 @@
       "render": {
         "atlasIndex": 23
       }
+    },
+    {
+      "id": 22,
+      "name": "surface_flower",
+      "gameplay": {
+        "solid": false,
+        "blocksLight": false
+      },
+      "render": {
+        "atlasIndex": 23
+      }
     }
   ]
 }

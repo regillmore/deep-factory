@@ -21,6 +21,7 @@ import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './starterFurnacePlacement';
 import { STARTER_ANVIL_TILE_ID } from './starterAnvilPlacement';
 import { getSmallTreeTileIds } from './smallTreeTiles';
+import { getSurfaceFlowerTileId } from './surfaceFlowerTiles';
 import { getTallGrassTileId } from './tallGrassTiles';
 import { getTileEmissiveLightLevel, isTileSolid, parseTileMetadataRegistry } from './tileMetadata';
 import { didTileLightingStateChange, resolveLiquidStepPhaseSummary, TileWorld } from './world';
@@ -660,6 +661,50 @@ describe('TileWorld', () => {
 
     expect(world.getTile(worldTileX, anchorTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
     expect(world.setTile(worldTileX, coverTileY, getTallGrassTileId())).toBe(true);
+    expect(world.hasChunk(1, 0)).toBe(true);
+    expect(world.hasChunk(1, -1)).toBe(true);
+
+    expect(
+      world.pruneChunksOutside({
+        minChunkX: 1,
+        minChunkY: 0,
+        maxChunkX: 1,
+        maxChunkY: 0
+      })
+    ).toBeGreaterThan(0);
+    expect(world.hasChunk(1, 0)).toBe(true);
+    expect(world.hasChunk(1, -1)).toBe(false);
+
+    expect(world.setTile(worldTileX, anchorTileY, PROCEDURAL_DIRT_TILE_ID)).toBe(true);
+    expect(world.hasChunk(1, -1)).toBe(false);
+
+    world.ensureChunk(1, -1);
+    expect(world.getTile(worldTileX, coverTileY)).toBe(0);
+  });
+
+  it('clears surface flowers once their grass support anchor is removed', () => {
+    const world = new TileWorld(0);
+    const worldTileX = 5;
+    const anchorTileY = -10;
+    const coverTileY = anchorTileY - 1;
+
+    expect(world.setTile(worldTileX, anchorTileY, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
+    expect(world.setTile(worldTileX, coverTileY, getSurfaceFlowerTileId())).toBe(true);
+
+    expect(world.setTile(worldTileX, anchorTileY, PROCEDURAL_DIRT_TILE_ID)).toBe(true);
+
+    expect(world.getTile(worldTileX, anchorTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+    expect(world.getTile(worldTileX, coverTileY)).toBe(0);
+  });
+
+  it('stores surface-flower cleanup overrides without forcing the cover chunk resident', () => {
+    const world = new TileWorld(0);
+    const worldTileX = CHUNK_SIZE + 2;
+    const anchorTileY = 0;
+    const coverTileY = -1;
+
+    expect(world.getTile(worldTileX, anchorTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    expect(world.setTile(worldTileX, coverTileY, getSurfaceFlowerTileId())).toBe(true);
     expect(world.hasChunk(1, 0)).toBe(true);
     expect(world.hasChunk(1, -1)).toBe(true);
 
@@ -1735,6 +1780,16 @@ describe('TileWorld', () => {
 
     expect(world.hasOpenSkyAbove(worldTileX, surfaceTileY)).toBe(true);
     expect(world.setTile(worldTileX, surfaceTileY - 1, getTallGrassTileId())).toBe(true);
+    expect(world.hasOpenSkyAbove(worldTileX, surfaceTileY)).toBe(true);
+  });
+
+  it('ignores surface flowers above a surface landing when checking open sky', () => {
+    const worldTileX = 0;
+    const world = new TileWorld(0);
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX);
+
+    expect(world.hasOpenSkyAbove(worldTileX, surfaceTileY)).toBe(true);
+    expect(world.setTile(worldTileX, surfaceTileY - 1, getSurfaceFlowerTileId())).toBe(true);
     expect(world.hasOpenSkyAbove(worldTileX, surfaceTileY)).toBe(true);
   });
 
