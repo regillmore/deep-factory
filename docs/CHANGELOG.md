@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-25
 
+- Task: Resume adjacent-grass regrowth once direct-cover water or lava clears.
+- Changes: Updated [src/world/world.ts](../src/world/world.ts) so the shared `setTileState(...)` path now rechecks exposed-dirt regrowth when a direct-cover liquid cell stops being liquid, while still ignoring partial liquid-level changes that leave water or lava in place; expanded [src/world/world.test.ts](../src/world/world.test.ts) with water and lava regressions that hold regrowth blocked through partial liquid-level updates and then restore grass after the cover clears, and ran [src/network/stateReplay.test.ts](../src/network/stateReplay.test.ts) because authoritative replay uses that same tile-state seam. Removed completed task `551` from [docs/NEXT.md](docs/NEXT.md), added replacement task `552`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/world.test.ts src/network/stateReplay.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Keep adjacent-grass regrowth dry when water or lava covers the tile above.
 - Changes: Updated [src/world/world.ts](../src/world/world.ts) so exposed procedural dirt now treats direct-cover `water` and `lava` tiles as regrowth blockers even though those liquids stay non-solid, and expanded [src/world/world.test.ts](../src/world/world.test.ts) with water and lava regressions for the shared cover-transition path. Removed completed task `550` from [docs/NEXT.md](docs/NEXT.md), added replacement task `551`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

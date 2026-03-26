@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-25: Grass regrowth resumes when direct-cover liquid occupancy disappears
+
+- Decision: Exposed dirt beside surviving surface grass now rechecks regrowth as soon as the direct tile above stops being a liquid tile, even when that cover change does not involve a solid-to-non-solid transition.
+- Reason: Once water or lava no longer occupies the direct-cover cell, the dry-cover regrowth rule should resume immediately instead of waiting for an unrelated later solid-cover edit.
+- Consequence: Future liquid-aware grass follow-ups should preserve liquid-occupancy removal as the resume trigger, while partial liquid-level changes that leave the same water or lava cover in place should continue to suppress regrowth.
+
 ### 2026-03-25: Grass regrowth treats direct-cover liquids as blocking cover
 
 - Decision: Exposed dirt beside surviving surface grass now refuses to regrow while the direct tile above currently contains `water` or `lava`, even though those liquid tiles remain non-solid for collision and burial checks.

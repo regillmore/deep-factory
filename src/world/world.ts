@@ -1484,6 +1484,8 @@ export class TileWorld {
       const tileSolidnessChanged =
         result.tileIdChanged &&
         isTileSolid(result.previousTileId) !== isTileSolid(tileId);
+      const directCoverLiquidCleared =
+        getTileLiquidKind(result.previousTileId) !== null && getTileLiquidKind(tileId) === null;
 
       if (
         result.previousTileId === PROCEDURAL_GRASS_SURFACE_TILE_ID &&
@@ -1498,7 +1500,7 @@ export class TileWorld {
         this.clearUnsupportedAdjacentStarterAnvils(worldTileX, worldTileY, true, editOrigin);
       }
       this.revertBuriedGrassBelow(worldTileX, worldTileY, tileId, editOrigin);
-      if (tileSolidnessChanged) {
+      if (tileSolidnessChanged || directCoverLiquidCleared) {
         this.regrowExposedDirtBelowCoverIfNeeded(worldTileX, worldTileY, true, editOrigin);
       }
       if (tileId === PROCEDURAL_GRASS_SURFACE_TILE_ID && result.previousTileId !== tileId) {

@@ -693,6 +693,29 @@ describe('TileWorld', () => {
       expect(world.getLiquidLevel(worldTileX, coverTileY)).toBe(MAX_LIQUID_LEVEL);
       expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
     });
+
+    it(`regrows exposed dirt into grass once direct-cover ${liquidLabel} fully clears`, () => {
+      const world = new TileWorld(0);
+      const coveredDirt = findFirstProceduralDirtBelowSolidCoverAdjacentToGrass();
+      expect(coveredDirt).not.toBeNull();
+      const { worldTileX, worldTileY } = coveredDirt!;
+      const coverTileY = worldTileY - 1;
+
+      expect(world.setTile(worldTileX, coverTileY, liquidTileId)).toBe(true);
+      expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+
+      expect(
+        world.setTileState(worldTileX, coverTileY, liquidTileId, MAX_LIQUID_LEVEL / 2)
+      ).toBe(true);
+      expect(world.getLiquidLevel(worldTileX, coverTileY)).toBe(MAX_LIQUID_LEVEL / 2);
+      expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+
+      expect(world.setTile(worldTileX, coverTileY, 0)).toBe(true);
+
+      expect(world.getTile(worldTileX, coverTileY)).toBe(0);
+      expect(world.getLiquidLevel(worldTileX, coverTileY)).toBe(0);
+      expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    });
   }
 
   it('stores exposed-dirt grass-regrowth overrides without forcing the target chunk resident', () => {
