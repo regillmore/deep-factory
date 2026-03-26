@@ -4,6 +4,14 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-25
 
+- Task: Repair grass-growth test assertions after the periodic spread scheduler landed.
+- Changes: Updated [src/world/world.test.ts](../src/world/world.test.ts) so the non-solid-cover regression now treats rewriting the same procedural dirt tile as the intended no-op, and narrowed [src/main.test.ts](../src/main.test.ts) so the no-sapling runtime regression asserts on absent small-tree writes instead of shared resident-chunk polling counters that the new grass scheduler also touches. Left [docs/NEXT.md](docs/NEXT.md) unchanged because this was a focused regression-fix detour rather than a new roadmap slice.
+- Verification: Ran `cmd /c npx vitest run src/world/world.test.ts src/main.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
+- Task: Replace placeholder grass growth/regrowth behavior with periodic resident grass spread.
+- Changes: Added [src/world/grassGrowth.ts](../src/world/grassGrowth.ts) plus [src/world/grassGrowth.test.ts](../src/world/grassGrowth.test.ts) so grass now advances through deterministic fixed-step resident hash windows that spread onto sunlit dry dirt within height `1` of nearby grass, removed the old immediate regrowth hooks from [src/world/world.ts](../src/world/world.ts), wired the runtime scheduler through [src/main.ts](../src/main.ts) plus [src/gl/renderer.ts](../src/gl/renderer.ts), refreshed [src/world/world.test.ts](../src/world/world.test.ts) and [src/main.test.ts](../src/main.test.ts) around the new fixed-step behavior, removed completed task `553` from [docs/NEXT.md](docs/NEXT.md), added replacement task `554`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/grassGrowth.test.ts src/world/world.test.ts src/main.test.ts -t "grass"` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Keep liquid-clear grass-regrowth overrides across pruned chunk boundaries.
 - Changes: Expanded [src/world/world.test.ts](../src/world/world.test.ts) with water and lava streamed-boundary regressions that prune the dirt chunk, clear the still-resident liquid cover above it, and verify the grass-regrowth override is stored without forcing that dirt chunk resident back in; the existing [src/world/world.ts](../src/world/world.ts) behavior already satisfied this path, so no runtime logic changes were needed. Removed completed task `552` from [docs/NEXT.md](docs/NEXT.md), added replacement task `553`, and left [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md) unchanged because this pass validated existing behavior rather than changing it.
 - Verification: Ran `cmd /c npx vitest run src/world/world.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

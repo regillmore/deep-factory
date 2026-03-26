@@ -326,6 +326,7 @@ import {
   type SmallTreeGrowthTrackedAnchor,
   stepSmallTreeGrowth
 } from './world/smallTreeGrowth';
+import { createGrassGrowthState, stepGrassGrowth } from './world/grassGrowth';
 import { getSmallTreeSaplingTileId } from './world/smallTreeTiles';
 import { evaluatePlayerHotbarTilePlacementRange } from './world/playerHotbarPlacementRange';
 import { PROCEDURAL_GRASS_SURFACE_TILE_ID } from './world/proceduralTerrain';
@@ -1821,6 +1822,7 @@ const bootstrap = async (): Promise<void> => {
   let starterBugNetState = createStarterBugNetState();
   let starterWandCooldownState = createStarterWandCooldownState();
   let playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
+  let grassGrowthState = createGrassGrowthState();
   let smallTreeGrowthState = createSmallTreeGrowthState();
   const smallTreeSaplingTileId = getSmallTreeSaplingTileId();
   const trackedSmallTreeGrowthAnchors = new Map<string, SmallTreeGrowthTrackedAnchor>();
@@ -3064,6 +3066,7 @@ const bootstrap = async (): Promise<void> => {
     starterBugNetState = createStarterBugNetState();
     starterWandCooldownState = createStarterWandCooldownState();
     playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
+    grassGrowthState = createGrassGrowthState();
     smallTreeGrowthState = createSmallTreeGrowthState();
     syncHotbarOverlayState();
   };
@@ -4948,6 +4951,19 @@ const bootstrap = async (): Promise<void> => {
       trackedAnchors: trackedResidentAnchors
     });
     smallTreeGrowthState = growthStep.nextGrowthState;
+  };
+  const stepGrassGrowthFixedUpdate = (): void => {
+    const growthStep = stepGrassGrowth({
+      world: {
+        getTile: (tileX, tileY) => renderer.getTile(tileX, tileY),
+        setTile: (tileX, tileY, tileId) => renderer.setTile(tileX, tileY, tileId),
+        getLightLevel: (tileX, tileY) => renderer.getLightLevel(tileX, tileY),
+        hasResidentChunk: (chunkX, chunkY) => renderer.hasResidentChunk(chunkX, chunkY),
+        getResidentChunkBounds: () => renderer.getResidentChunkBounds()
+      },
+      growthState: grassGrowthState
+    });
+    grassGrowthState = growthStep.nextGrowthState;
   };
   const applySelectedStandalonePlayerItemUse = (request: PlayerItemUseRequest): boolean => {
     if (debugEditControlsVisible) {
@@ -7669,6 +7685,7 @@ const bootstrap = async (): Promise<void> => {
       }
 
       renderer.stepLiquidSimulation();
+      stepGrassGrowthFixedUpdate();
       stepSmallTreeGrowthFixedUpdate();
 
       enforcePeacefulModeHostileSlimeState();

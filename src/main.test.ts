@@ -51,8 +51,9 @@ import type { PlayerItemSpearPreviewState } from './ui/playerItemSpearPreviewOve
 import { createDroppedItemState } from './world/droppedItem';
 import { createPlayerInventoryState } from './world/playerInventory';
 import { AUTHORED_ATLAS_HEIGHT, AUTHORED_ATLAS_WIDTH } from './world/authoredAtlasLayout';
-import { CHUNK_SIZE } from './world/constants';
+import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './world/constants';
 import {
+  PROCEDURAL_DIRT_TILE_ID,
   PROCEDURAL_COPPER_ORE_TILE_ID,
   PROCEDURAL_GRASS_SURFACE_TILE_ID
 } from './world/proceduralTerrain';
@@ -104,6 +105,10 @@ import {
 } from './world/starterWand';
 import { STARTER_BUG_NET_SWING_WINDUP_SECONDS } from './world/starterBugNet';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
+import {
+  DEFAULT_GRASS_GROWTH_INTERVAL_TICKS,
+  resolveGrassGrowthWindowIndex
+} from './world/grassGrowth';
 import {
   DEFAULT_SMALL_TREE_GROWTH_INTERVAL_TICKS,
   resolveSmallTreeGrowthWindowIndex
@@ -158,6 +163,7 @@ const syncRendererMapsFromWorldSnapshot = (snapshot: ReturnType<TileWorld['creat
   testRuntime.rendererTileIdsByWorldKey.clear();
   testRuntime.rendererWallIdsByWorldKey.clear();
   testRuntime.rendererLiquidLevelsByWorldKey.clear();
+  testRuntime.rendererLightLevelsByWorldKey.clear();
 
   const world = new TileWorld(0);
   world.loadSnapshot(snapshot);
@@ -194,6 +200,11 @@ const syncRendererMapsFromWorldSnapshot = (snapshot: ReturnType<TileWorld['creat
             worldTileKey(worldTileX, worldTileY),
             liquidLevel
           );
+        }
+
+        const lightLevel = world.getLightLevel(worldTileX, worldTileY);
+        if (lightLevel > 0) {
+          testRuntime.rendererLightLevelsByWorldKey.set(worldTileKey(worldTileX, worldTileY), lightLevel);
         }
       }
     }
@@ -561,6 +572,7 @@ const testRuntime = vi.hoisted(() => {
     rendererWallIdsByWorldKey: new Map<string, number>(),
     rendererLiquidLevel: 0,
     rendererLiquidLevelsByWorldKey: new Map<string, number>(),
+    rendererLightLevelsByWorldKey: new Map<string, number>(),
     rendererLiquidRenderCardinalMask: null as number | null,
     rendererSetTileResult: false,
     rendererPersistentSetTileResult: false,
@@ -1129,6 +1141,19 @@ vi.mock('./gl/renderer', () => ({
         }
       }
       return testRuntime.rendererLiquidLevel;
+    }
+
+    getLightLevel(worldTileX?: number, worldTileY?: number): number {
+      if (typeof worldTileX === 'number' && typeof worldTileY === 'number') {
+        const mappedLightLevel = testRuntime.rendererLightLevelsByWorldKey.get(
+          worldTileKey(worldTileX, worldTileY)
+        );
+        if (mappedLightLevel !== undefined) {
+          return mappedLightLevel;
+        }
+      }
+
+      return 0;
     }
 
     hasOpenSkyAbove(worldTileX: number, standingTileY: number): boolean {
@@ -2981,6 +3006,7 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.rendererWallIdsByWorldKey.clear();
     testRuntime.rendererLiquidLevel = 0;
     testRuntime.rendererLiquidLevelsByWorldKey.clear();
+    testRuntime.rendererLightLevelsByWorldKey.clear();
     testRuntime.rendererLiquidRenderCardinalMask = null;
     testRuntime.rendererSetTileResult = false;
     testRuntime.rendererPersistentSetTileResult = false;
@@ -10056,14 +10082,67 @@ describe('main.ts shell state orchestration', () => {
     expect(restoredWorld.getTile(1, -1)).toBe(getSmallTreeSaplingTileId());
   });
 
-  it('skips resident sapling-growth polling entirely while no planted saplings are tracked', async () => {
+  it('spreads grass onto sunlit dirt on deterministic fixed-step windows and persists the updated tile', async () => {
+    const savedWorld = new TileWorld(0);
+    const grassTileY = -20;
+    expect(savedWorld.setTile(1, grassTileY, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
+    expect(savedWorld.setTile(2, grassTileY, PROCEDURAL_DIRT_TILE_ID)).toBe(true);
+    savedWorld.fillChunkLight(0, -1, MAX_LIGHT_LEVEL);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 16 },
+            facing: 'right'
+          })
+        })
+      )
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererResidentChunkBounds = {
+      minChunkX: 0,
+      maxChunkX: 0,
+      minChunkY: -1,
+      maxChunkY: -1
+    };
+    testRuntime.rendererSetTileCalls = [];
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.rendererPersistentSetTileResult = true;
+
+    const growthWindowIndex = resolveGrassGrowthWindowIndex(2, grassTileY);
+    const fixedUpdatesUntilGrowth =
+      DEFAULT_GRASS_GROWTH_INTERVAL_TICKS * (growthWindowIndex + 1);
+    for (let updateIndex = 0; updateIndex < fixedUpdatesUntilGrowth; updateIndex += 1) {
+      runFixedUpdate(1 / 60);
+    }
+
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 2,
+        worldTileY: grassTileY,
+        tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+    expect(restoredWorld.getTile(1, grassTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    expect(restoredWorld.getTile(2, grassTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+  });
+
+  it('does not emit sapling-growth writes while no planted saplings are tracked', async () => {
     setPersistedWorldSaveWithInventory();
     await import('./main');
     await flushBootstrap();
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
-    testRuntime.rendererGetResidentChunkBoundsCallCount = 0;
-    testRuntime.rendererHasResidentChunkCallCount = 0;
     testRuntime.rendererSetTileCalls = [];
 
     for (
@@ -10074,8 +10153,6 @@ describe('main.ts shell state orchestration', () => {
       runFixedUpdate(1 / 60);
     }
 
-    expect(testRuntime.rendererGetResidentChunkBoundsCallCount).toBe(0);
-    expect(testRuntime.rendererHasResidentChunkCallCount).toBe(0);
     expect(testRuntime.rendererSetTileCalls).toEqual([]);
   });
 
@@ -10214,7 +10291,6 @@ describe('main.ts shell state orchestration', () => {
       runFixedUpdate(1 / 60);
     }
 
-    expect(testRuntime.rendererHasResidentChunkCallCount).toBe(0);
     expect(testRuntime.rendererSetTileCalls).toEqual([]);
 
     dispatchWindowEvent('pagehide');

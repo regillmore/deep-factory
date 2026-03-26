@@ -636,7 +636,7 @@ describe('TileWorld', () => {
     expect(world.getTile(worldTileX, surfaceTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
   });
 
-  it('regrows exposed dirt into grass when non-solid cover replaces solid cover above it', () => {
+  it('does not immediately regrow exposed dirt when non-solid cover replaces solid cover above it', () => {
     const world = new TileWorld(0);
     const events: TileEditEvent[] = [];
     const coveredDirt = findFirstProceduralDirtBelowSolidCoverAdjacentToGrass();
@@ -656,29 +656,23 @@ describe('TileWorld', () => {
     expect(world.setTile(worldTileX, coverTileY, NON_SOLID_TEST_TILE_ID)).toBe(true);
 
     expect(world.getTile(worldTileX, coverTileY)).toBe(NON_SOLID_TEST_TILE_ID);
-    expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
-    expect(events).toHaveLength(2);
-    expect(events[0]).toMatchObject({
-      worldTileX,
-      worldTileY: coverTileY,
-      previousTileId: SOLID_TEST_TILE_ID,
-      tileId: NON_SOLID_TEST_TILE_ID,
-      editOrigin: 'gameplay'
-    });
-    expect(events[1]).toMatchObject({
-      worldTileX,
-      worldTileY,
-      previousTileId: PROCEDURAL_DIRT_TILE_ID,
-      tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID,
-      editOrigin: 'gameplay'
-    });
+    expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+    expect(events).toEqual([
+      expect.objectContaining({
+        worldTileX,
+        worldTileY: coverTileY,
+        previousTileId: SOLID_TEST_TILE_ID,
+        tileId: NON_SOLID_TEST_TILE_ID,
+        editOrigin: 'gameplay'
+      })
+    ]);
   });
 
   for (const [liquidTileId, liquidLabel] of [
     [WATER_TILE_ID, 'water'],
     [LAVA_TILE_ID, 'lava']
   ] as const) {
-    it(`does not regrow exposed dirt into grass when ${liquidLabel} replaces solid cover above it`, () => {
+    it(`does not immediately regrow exposed dirt while ${liquidLabel} replaces solid cover above it`, () => {
       const world = new TileWorld(0);
       const coveredDirt = findFirstProceduralDirtBelowSolidCoverAdjacentToGrass();
       expect(coveredDirt).not.toBeNull();
@@ -694,7 +688,7 @@ describe('TileWorld', () => {
       expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
     });
 
-    it(`regrows exposed dirt into grass once direct-cover ${liquidLabel} fully clears`, () => {
+    it(`does not immediately regrow exposed dirt once direct-cover ${liquidLabel} fully clears`, () => {
       const world = new TileWorld(0);
       const coveredDirt = findFirstProceduralDirtBelowSolidCoverAdjacentToGrass();
       expect(coveredDirt).not.toBeNull();
@@ -714,11 +708,11 @@ describe('TileWorld', () => {
 
       expect(world.getTile(worldTileX, coverTileY)).toBe(0);
       expect(world.getLiquidLevel(worldTileX, coverTileY)).toBe(0);
-      expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+      expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
     });
   }
 
-  it('stores exposed-dirt grass-regrowth overrides without forcing the target chunk resident', () => {
+  it('does not store immediate grass-spread overrides without forcing the target chunk resident', () => {
     const world = new TileWorld(0);
     const coveredDirt = findFirstProceduralChunkTopDirtBelowSolidCoverAdjacentToGrass(
       0,
@@ -751,14 +745,14 @@ describe('TileWorld', () => {
     expect(world.hasChunk(dirtChunkX, dirtChunkY)).toBe(false);
 
     world.ensureChunk(dirtChunkX, dirtChunkY);
-    expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
   });
 
   for (const [liquidTileId, liquidLabel] of [
     [WATER_TILE_ID, 'water'],
     [LAVA_TILE_ID, 'lava']
   ] as const) {
-    it(`stores liquid-clear exposed-dirt grass-regrowth overrides without forcing the target chunk resident when ${liquidLabel} cover clears`, () => {
+    it(`does not store immediate grass-spread overrides without forcing the target chunk resident when ${liquidLabel} cover clears`, () => {
       const world = new TileWorld(0);
       const coveredDirt = findFirstProceduralChunkTopDirtBelowSolidCoverAdjacentToGrass(
         0,
@@ -792,23 +786,23 @@ describe('TileWorld', () => {
       expect(world.hasChunk(dirtChunkX, dirtChunkY)).toBe(false);
 
       world.ensureChunk(dirtChunkX, dirtChunkY);
-      expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+      expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
     });
   }
 
-  it('does not regrow a placed dirt tile in sky when it is written beside grass', () => {
+  it('does not immediately regrow a placed dirt tile in sky when grass is written beside it', () => {
     const world = new TileWorld(0);
     const grassTileX = 6;
     const dirtTileX = grassTileX + 1;
     const worldTileY = -20;
 
-    expect(world.setTile(grassTileX, worldTileY, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
     expect(world.setTile(dirtTileX, worldTileY, PROCEDURAL_DIRT_TILE_ID)).toBe(true);
+    expect(world.setTile(grassTileX, worldTileY, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
 
     expect(world.getTile(dirtTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
   });
 
-  it('does not regrow exposed dirt when non-solid cover above changes without a solidness transition', () => {
+  it('does not immediately regrow exposed dirt when non-solid cover above changes without a solidness transition', () => {
     const world = new TileWorld(0);
     const coveredDirt = findFirstProceduralDirtBelowSolidCoverAdjacentToGrass();
     expect(coveredDirt).not.toBeNull();
@@ -817,7 +811,7 @@ describe('TileWorld', () => {
 
     expect(isTileSolid(world.getTile(worldTileX, coverTileY))).toBe(true);
     expect(world.setTile(worldTileX, coverTileY, NON_SOLID_TEST_TILE_ID)).toBe(true);
-    expect(world.setTile(worldTileX, worldTileY, PROCEDURAL_DIRT_TILE_ID)).toBe(true);
+    expect(world.setTile(worldTileX, worldTileY, PROCEDURAL_DIRT_TILE_ID)).toBe(false);
     expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
 
     expect(world.setTile(worldTileX, coverTileY, 0)).toBe(true);

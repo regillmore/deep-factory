@@ -2,23 +2,17 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
-### 2026-03-25: Grass regrowth resumes when direct-cover liquid occupancy disappears
+### 2026-03-25: Grass spread now runs through resident fixed-step windows instead of edit hooks
 
-- Decision: Exposed dirt beside surviving surface grass now rechecks regrowth as soon as the direct tile above stops being a liquid tile, even when that cover change does not involve a solid-to-non-solid transition.
-- Reason: Once water or lava no longer occupies the direct-cover cell, the dry-cover regrowth rule should resume immediately instead of waiting for an unrelated later solid-cover edit.
-- Consequence: Future liquid-aware grass follow-ups should preserve liquid-occupancy removal as the resume trigger, while partial liquid-level changes that leave the same water or lava cover in place should continue to suppress regrowth.
+- Decision: `grass_surface` no longer regrows directly inside `TileWorld` edit hooks; instead runtime now advances one deterministic resident tile-hash window per interval and writes qualifying grass spreads back through the renderer/world seam.
+- Reason: Immediate regrowth was placeholder behavior that rewrote dirt during unrelated cover edits instead of letting surface grass advance as a fixed-step simulation slice.
+- Consequence: Future grass follow-ups should extend the detached fixed-step scheduler rather than reintroducing edit-triggered regrowth hooks or nonresident override writes.
 
-### 2026-03-25: Grass regrowth treats direct-cover liquids as blocking cover
+### 2026-03-25: Grass spread requires full sunlight, dry cover, and height-1 adjacency
 
-- Decision: Exposed dirt beside surviving surface grass now refuses to regrow while the direct tile above currently contains `water` or `lava`, even though those liquid tiles remain non-solid for collision and burial checks.
-- Reason: Surface grass should not spread through flooded or lava-filled cover cells, so the local regrowth rule needs to distinguish dry non-solid cover from liquid occupancy instead of relying on solidness alone.
-- Consequence: Future grass-regrowth follow-ups should inspect direct-cover liquid presence separately from solidness, and any later "regrow after draining" work should hook into liquid occupancy changes rather than widening arbitrary non-solid tile writes again.
-
-### 2026-03-25: Grass regrowth reuses direct-cover and same-row adjacency checks
-
-- Decision: Exposed procedural-or-buried `dirt` now regrows into `grass_surface` only when a direct-cover edit opens that tile back to non-solid space or when a procedural grass tile itself appears beside it, while arbitrary dirt placements, replayed dirt writes, and unrelated non-solid writes do not trigger regrowth on their own.
-- Reason: Buried grass already reverts through a direct-cover rule, so regrowth should reuse that same local deterministic maintenance seam without silently rewriting intentional dirt placements or transport-applied dirt snapshots.
-- Consequence: Future grass-spread follow-ups should preserve direct-above cover plus same-row grass adjacency as the regrowth inputs, and should treat broader time-based spread or liquid-aware suppression as explicit follow-up work rather than widening ordinary tile writes again.
+- Decision: A dirt tile now spreads to `grass_surface` only when its resident light level is full sunlight, the direct tile above is non-solid and not `water` or `lava`, and a neighboring `grass_surface` tile exists one column away within one tile of vertical difference.
+- Reason: Surface grass should creep over exposed lit slopes instead of instantly repainting arbitrary same-row dirt or flooded cover cells.
+- Consequence: Future grass, flower, or biome-surface growth work should treat full resident sunlight plus dry direct cover and height-1 adjacency as the shared baseline contract for surface spread.
 
 ### 2026-03-25: Passive-bunny sky checks ignore non-solid small-tree foliage
 

@@ -983,6 +983,10 @@ export class Renderer {
     return this.world.getLiquidLevel(worldTileX, worldTileY);
   }
 
+  getLightLevel(worldTileX: number, worldTileY: number): number {
+    return this.world.getLightLevel(worldTileX, worldTileY);
+  }
+
   hasOpenSkyAbove(worldTileX: number, standingTileY: number): boolean {
     return this.world.hasOpenSkyAbove(worldTileX, standingTileY);
   }
