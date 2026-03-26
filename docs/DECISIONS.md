@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-25: Passive-bunny sky checks ignore non-solid small-tree foliage
+
+- Decision: Passive-bunny ambient spawn sky exposure now ignores non-solid `small_tree_sapling`, `small_tree_trunk`, and `small_tree_leaf` tiles while still treating other overhead cover as blocking.
+- Reason: Decorative small-tree canopy art should not disqualify otherwise open surface habitat, but the open-sky rule still needs to reject actual roofs and unrelated overhead clutter.
+- Consequence: Future foliage or surface-decoration tiles should decide explicitly whether they count as sky-permeable decorative cover instead of inheriting the generic non-empty tile check by accident.
+
 ### 2026-03-25: Passive-bunny ambient spawns require an open-sky landing column
 
 - Decision: Passive-bunny ambient spawn candidates now reject landing columns whose space from the support tile back up to the local surface is blocked, instead of treating covered ledges or cave-mouth floors as valid natural-spawn habitat.

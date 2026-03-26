@@ -12,4 +12,3 @@ These items are intentionally scoped to fit a focused implementation pass with t
 502. Add a fishing utility slice after inventory basics and save/load: a non-stackable fishing rod hotbar slot, mixed-device water casting plus bite timing, fish-item catches into inventory, and deterministic bite/catch regressions.
 519. Add a mana-crystal upgrade slice after mana-resource magic and inventory basics: a stackable mana-crystal hotbar item, mixed-device hidden-panel consume rules, saved max-mana increase plus cap handling, and snapshot regressions for upgraded mana state.
 546. Exposed dirt tiles adjacent to surface grass should regrow into grass when the tile above stays non-solid.
-548. Passive-bunny natural spawning should ignore non-solid foliage when checking whether the landing column stays open to the sky.

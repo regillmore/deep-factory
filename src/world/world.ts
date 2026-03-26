@@ -47,6 +47,7 @@ import {
   getTileLiquidKind,
   isTileSolid
 } from './tileMetadata';
+import { isSmallTreeTileId } from './smallTreeTiles';
 import type { TileMetadataRegistry } from './tileMetadata';
 import type { Chunk, ChunkCoord } from './types';
 
@@ -390,6 +391,15 @@ const expectInteger = (value: number, label: string): number => {
   }
 
   return value;
+};
+
+const doesTileBlockOpenSky = (tileId: number): boolean => {
+  if (tileId === 0) {
+    return false;
+  }
+
+  // Decorative small-tree foliage should not count as a roof over surface critter habitat.
+  return isTileSolid(tileId) || !isSmallTreeTileId(tileId);
 };
 
 const expectLiquidSimulationTick = (liquidSimulationTick: number): number => {
@@ -1279,7 +1289,11 @@ export class TileWorld {
       sampleWorldTileY >= surfaceTileY;
       sampleWorldTileY -= 1
     ) {
-      if (this.getResolvedTileIdWithoutEnsuringChunk(normalizedWorldTileX, sampleWorldTileY) !== 0) {
+      if (
+        doesTileBlockOpenSky(
+          this.getResolvedTileIdWithoutEnsuringChunk(normalizedWorldTileX, sampleWorldTileY)
+        )
+      ) {
         return false;
       }
     }
@@ -1297,7 +1311,7 @@ export class TileWorld {
       }
 
       for (let localY = 0; localY <= maxLocalY; localY += 1) {
-        if ((chunk.tiles[toTileIndex(localX, localY)] ?? 0) !== 0) {
+        if (doesTileBlockOpenSky(chunk.tiles[toTileIndex(localX, localY)] ?? 0)) {
           return false;
         }
       }
@@ -1320,7 +1334,7 @@ export class TileWorld {
       }
 
       for (const [tileIndex, tileId] of editedTiles) {
-        if (tileId === 0) {
+        if (!doesTileBlockOpenSky(tileId)) {
           continue;
         }
 

@@ -5,6 +5,7 @@ import { createPlayerState } from './playerState';
 import { resolveProceduralTerrainColumn } from './proceduralTerrain';
 import { STARTER_PLATFORM_TILE_ID } from './starterPlatformPlacement';
 import { createPassiveBunnyState, DEFAULT_PASSIVE_BUNNY_HOP_INTERVAL_TICKS } from './passiveBunnyState';
+import { getSmallTreeTileIds } from './smallTreeTiles';
 import { TileWorld } from './world';
 import {
   createPassiveBunnySpawnerState,
@@ -176,6 +177,28 @@ describe('passiveBunnySpawn', () => {
     });
 
     expect(result.spawnState?.position).toEqual({ x: 120, y: 0 });
+    expect(result.spawnState?.facing).toBe('right');
+    expect(result.nextSpawnerState.nextWindowIndex).toBe(1);
+  });
+
+  it('keeps the current deterministic landing when only non-solid foliage sits above it', () => {
+    const world = createFlatSurfaceWorld();
+    const treeTileIds = getSmallTreeTileIds();
+    world.setTile(8, -8, treeTileIds.leaf);
+
+    const result = stepPassiveBunnySpawner({
+      playerState: createPlayerState({
+        position: { x: 8, y: 0 }
+      }),
+      spawnerState: {
+        ticksUntilNextSpawn: 1,
+        nextWindowIndex: 0
+      },
+      findSpawnPoint: (options) => findPlayerSpawnPoint(world, options),
+      hasOpenSkyAbove: (worldTileX, standingTileY) => world.hasOpenSkyAbove(worldTileX, standingTileY)
+    });
+
+    expect(result.spawnState?.position).toEqual({ x: 136, y: 0 });
     expect(result.spawnState?.facing).toBe('right');
     expect(result.nextSpawnerState.nextWindowIndex).toBe(1);
   });

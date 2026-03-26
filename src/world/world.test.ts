@@ -1419,6 +1419,27 @@ describe('TileWorld', () => {
     expect(world.hasOpenSkyAbove(caveMouthColumn.worldTileX, standingTileY)).toBe(true);
   });
 
+  it('ignores non-solid small-tree foliage above a surface landing when checking open sky', () => {
+    const worldTileX = 0;
+    const world = new TileWorld(0);
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX);
+    const treeTileIds = getSmallTreeTileIds();
+
+    expect(world.hasOpenSkyAbove(worldTileX, surfaceTileY)).toBe(true);
+    expect(world.setTile(worldTileX, surfaceTileY - 8, treeTileIds.leaf)).toBe(true);
+    expect(world.hasOpenSkyAbove(worldTileX, surfaceTileY)).toBe(true);
+  });
+
+  it('still treats non-foliage non-solid cover as blocking sky above a surface landing', () => {
+    const worldTileX = 0;
+    const world = new TileWorld(0);
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX);
+
+    expect(world.hasOpenSkyAbove(worldTileX, surfaceTileY)).toBe(true);
+    expect(world.setTile(worldTileX, surfaceTileY - 8, NON_SOLID_TEST_TILE_ID)).toBe(true);
+    expect(world.hasOpenSkyAbove(worldTileX, surfaceTileY)).toBe(false);
+  });
+
   it('reports blocked sky above a surface landing when a roof is placed higher in that column', () => {
     const worldTileX = 0;
     const world = new TileWorld(0);
