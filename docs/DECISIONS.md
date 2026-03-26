@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-25: Grass regrowth reuses direct-cover and same-row adjacency checks
+
+- Decision: Exposed procedural-or-buried `dirt` now regrows into `grass_surface` only when a direct-cover edit opens that tile back to non-solid space or when a procedural grass tile itself appears beside it, while arbitrary dirt placements, replayed dirt writes, and unrelated non-solid writes do not trigger regrowth on their own.
+- Reason: Buried grass already reverts through a direct-cover rule, so regrowth should reuse that same local deterministic maintenance seam without silently rewriting intentional dirt placements or transport-applied dirt snapshots.
+- Consequence: Future grass-spread follow-ups should preserve direct-above cover plus same-row grass adjacency as the regrowth inputs, and should treat broader time-based spread or liquid-aware suppression as explicit follow-up work rather than widening ordinary tile writes again.
+
 ### 2026-03-25: Passive-bunny sky checks ignore non-solid small-tree foliage
 
 - Decision: Passive-bunny ambient spawn sky exposure now ignores non-solid `small_tree_sapling`, `small_tree_trunk`, and `small_tree_leaf` tiles while still treating other overhead cover as blocking.

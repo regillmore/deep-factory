@@ -1066,6 +1066,85 @@ export class TileWorld {
     this.setEditedTileStateWithoutEnsuringChunk(worldTileX, buriedGrassTileY, PROCEDURAL_DIRT_TILE_ID, 0);
   }
 
+  private canExposedDirtRegrowToGrass(worldTileX: number, worldTileY: number): boolean {
+    if (this.getResolvedTileIdWithoutEnsuringChunk(worldTileX, worldTileY) !== PROCEDURAL_DIRT_TILE_ID) {
+      return false;
+    }
+
+    const proceduralTileId = resolveProceduralTerrainTileId(worldTileX, worldTileY, this.worldSeed);
+    if (
+      proceduralTileId !== PROCEDURAL_DIRT_TILE_ID &&
+      proceduralTileId !== PROCEDURAL_GRASS_SURFACE_TILE_ID
+    ) {
+      return false;
+    }
+
+    if (isTileSolid(this.getResolvedTileIdWithoutEnsuringChunk(worldTileX, worldTileY - 1))) {
+      return false;
+    }
+
+    return (
+      this.getResolvedTileIdWithoutEnsuringChunk(worldTileX - 1, worldTileY) ===
+        PROCEDURAL_GRASS_SURFACE_TILE_ID ||
+      this.getResolvedTileIdWithoutEnsuringChunk(worldTileX + 1, worldTileY) ===
+        PROCEDURAL_GRASS_SURFACE_TILE_ID
+    );
+  }
+
+  private regrowExposedDirtAtIfNeeded(
+    worldTileX: number,
+    worldTileY: number,
+    emitTileEditEvent: boolean,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): void {
+    if (!this.canExposedDirtRegrowToGrass(worldTileX, worldTileY)) {
+      return;
+    }
+
+    const { chunkX, chunkY } = worldToChunkCoord(worldTileX, worldTileY);
+    if (this.getResidentChunk(chunkX, chunkY)) {
+      this.commitTileState(
+        worldTileX,
+        worldTileY,
+        PROCEDURAL_GRASS_SURFACE_TILE_ID,
+        0,
+        emitTileEditEvent,
+        editOrigin
+      );
+      return;
+    }
+
+    this.setEditedTileStateWithoutEnsuringChunk(
+      worldTileX,
+      worldTileY,
+      PROCEDURAL_GRASS_SURFACE_TILE_ID,
+      0
+    );
+  }
+
+  private regrowExposedDirtBelowCoverIfNeeded(
+    worldTileX: number,
+    worldTileY: number,
+    emitTileEditEvent: boolean,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): void {
+    this.regrowExposedDirtAtIfNeeded(worldTileX, worldTileY + 1, emitTileEditEvent, editOrigin);
+  }
+
+  private regrowExposedDirtBesideGrassIfNeeded(
+    worldTileX: number,
+    worldTileY: number,
+    emitTileEditEvent: boolean,
+    editOrigin: WorldEditOrigin = 'gameplay'
+  ): void {
+    if (this.getResolvedTileIdWithoutEnsuringChunk(worldTileX, worldTileY) !== PROCEDURAL_GRASS_SURFACE_TILE_ID) {
+      return;
+    }
+
+    this.regrowExposedDirtAtIfNeeded(worldTileX - 1, worldTileY, emitTileEditEvent, editOrigin);
+    this.regrowExposedDirtAtIfNeeded(worldTileX + 1, worldTileY, emitTileEditEvent, editOrigin);
+  }
+
   private activateLiquidChunk(key: string): void {
     this.activeLiquidChunkKeys.add(key);
     this.liquidChunkQuietStepCounts.set(key, 0);
@@ -1401,22 +1480,29 @@ export class TileWorld {
     );
     const changed = result.changed;
     if (changed) {
+      const tileSolidnessChanged =
+        result.tileIdChanged &&
+        isTileSolid(result.previousTileId) !== isTileSolid(tileId);
+
       if (
         result.previousTileId === PROCEDURAL_GRASS_SURFACE_TILE_ID &&
         tileId !== PROCEDURAL_GRASS_SURFACE_TILE_ID
       ) {
         this.clearUnsupportedSmallTreeAtAnchor(worldTileX, worldTileY, true, editOrigin);
       }
-      if (
-        result.tileIdChanged &&
-        isTileSolid(result.previousTileId) !== isTileSolid(tileId)
-      ) {
+      if (tileSolidnessChanged) {
         this.clearUnsupportedAdjacentStarterTorches(worldTileX, worldTileY, true, editOrigin);
         this.clearUnsupportedAdjacentStarterWorkbenches(worldTileX, worldTileY, true, editOrigin);
         this.clearUnsupportedAdjacentStarterFurnaces(worldTileX, worldTileY, true, editOrigin);
         this.clearUnsupportedAdjacentStarterAnvils(worldTileX, worldTileY, true, editOrigin);
       }
       this.revertBuriedGrassBelow(worldTileX, worldTileY, tileId, editOrigin);
+      if (tileSolidnessChanged) {
+        this.regrowExposedDirtBelowCoverIfNeeded(worldTileX, worldTileY, true, editOrigin);
+      }
+      if (tileId === PROCEDURAL_GRASS_SURFACE_TILE_ID && result.previousTileId !== tileId) {
+        this.regrowExposedDirtBesideGrassIfNeeded(worldTileX, worldTileY, true, editOrigin);
+      }
       this.wakeNearbyResidentLiquidChunks(worldTileX, worldTileY);
     }
 

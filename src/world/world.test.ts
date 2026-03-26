@@ -21,7 +21,7 @@ import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './starterFurnacePlacement';
 import { STARTER_ANVIL_TILE_ID } from './starterAnvilPlacement';
 import { getSmallTreeTileIds } from './smallTreeTiles';
-import { getTileEmissiveLightLevel, parseTileMetadataRegistry } from './tileMetadata';
+import { getTileEmissiveLightLevel, isTileSolid, parseTileMetadataRegistry } from './tileMetadata';
 import { didTileLightingStateChange, resolveLiquidStepPhaseSummary, TileWorld } from './world';
 import type { TileEditEvent, WallEditEvent } from './world';
 
@@ -128,6 +128,76 @@ const findFirstProceduralCopperOreTile = (
           worldTileY
         };
       }
+    }
+  }
+
+  return null;
+};
+
+const findFirstProceduralDirtBelowSolidCoverAdjacentToGrass = (
+  worldSeed = 0,
+  minWorldX = -CHUNK_SIZE * 4,
+  maxWorldX = CHUNK_SIZE * 4
+): { worldTileX: number; worldTileY: number } | null => {
+  for (let worldTileX = minWorldX; worldTileX <= maxWorldX; worldTileX += 1) {
+    const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldTileX, worldSeed);
+    for (let worldTileY = surfaceTileY; worldTileY <= surfaceTileY + dirtDepthTiles + 1; worldTileY += 1) {
+      if (resolveProceduralTerrainTileId(worldTileX, worldTileY, worldSeed) !== PROCEDURAL_DIRT_TILE_ID) {
+        continue;
+      }
+      if (!isTileSolid(resolveProceduralTerrainTileId(worldTileX, worldTileY - 1, worldSeed))) {
+        continue;
+      }
+      if (
+        resolveProceduralTerrainTileId(worldTileX - 1, worldTileY, worldSeed) !==
+          PROCEDURAL_GRASS_SURFACE_TILE_ID &&
+        resolveProceduralTerrainTileId(worldTileX + 1, worldTileY, worldSeed) !==
+          PROCEDURAL_GRASS_SURFACE_TILE_ID
+      ) {
+        continue;
+      }
+
+      return {
+        worldTileX,
+        worldTileY
+      };
+    }
+  }
+
+  return null;
+};
+
+const findFirstProceduralChunkTopDirtBelowSolidCoverAdjacentToGrass = (
+  worldSeed = 0,
+  minWorldX = -CHUNK_SIZE * 4,
+  maxWorldX = CHUNK_SIZE * 4
+): { worldTileX: number; worldTileY: number } | null => {
+  for (let worldTileX = minWorldX; worldTileX <= maxWorldX; worldTileX += 1) {
+    const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldTileX, worldSeed);
+    for (let worldTileY = surfaceTileY; worldTileY <= surfaceTileY + dirtDepthTiles + 1; worldTileY += 1) {
+      const normalizedLocalY = ((worldTileY % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+      if (normalizedLocalY !== 0) {
+        continue;
+      }
+      if (resolveProceduralTerrainTileId(worldTileX, worldTileY, worldSeed) !== PROCEDURAL_DIRT_TILE_ID) {
+        continue;
+      }
+      if (!isTileSolid(resolveProceduralTerrainTileId(worldTileX, worldTileY - 1, worldSeed))) {
+        continue;
+      }
+      if (
+        resolveProceduralTerrainTileId(worldTileX - 1, worldTileY, worldSeed) !==
+          PROCEDURAL_GRASS_SURFACE_TILE_ID &&
+        resolveProceduralTerrainTileId(worldTileX + 1, worldTileY, worldSeed) !==
+          PROCEDURAL_GRASS_SURFACE_TILE_ID
+      ) {
+        continue;
+      }
+
+      return {
+        worldTileX,
+        worldTileY
+      };
     }
   }
 
@@ -564,6 +634,109 @@ describe('TileWorld', () => {
 
     expect(world.getTile(worldTileX, coverTileY)).toBe(NON_SOLID_TEST_TILE_ID);
     expect(world.getTile(worldTileX, surfaceTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+  });
+
+  it('regrows exposed dirt into grass when non-solid cover replaces solid cover above it', () => {
+    const world = new TileWorld(0);
+    const events: TileEditEvent[] = [];
+    const coveredDirt = findFirstProceduralDirtBelowSolidCoverAdjacentToGrass();
+    expect(coveredDirt).not.toBeNull();
+    const { worldTileX, worldTileY } = coveredDirt!;
+    const coverTileY = worldTileY - 1;
+
+    world.onTileEdited((event) => {
+      events.push(event);
+    });
+
+    expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+    expect(world.setTile(worldTileX, coverTileY, SOLID_TEST_TILE_ID)).toBe(true);
+    expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+    events.length = 0;
+
+    expect(world.setTile(worldTileX, coverTileY, NON_SOLID_TEST_TILE_ID)).toBe(true);
+
+    expect(world.getTile(worldTileX, coverTileY)).toBe(NON_SOLID_TEST_TILE_ID);
+    expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    expect(events).toHaveLength(2);
+    expect(events[0]).toMatchObject({
+      worldTileX,
+      worldTileY: coverTileY,
+      previousTileId: SOLID_TEST_TILE_ID,
+      tileId: NON_SOLID_TEST_TILE_ID,
+      editOrigin: 'gameplay'
+    });
+    expect(events[1]).toMatchObject({
+      worldTileX,
+      worldTileY,
+      previousTileId: PROCEDURAL_DIRT_TILE_ID,
+      tileId: PROCEDURAL_GRASS_SURFACE_TILE_ID,
+      editOrigin: 'gameplay'
+    });
+  });
+
+  it('stores exposed-dirt grass-regrowth overrides without forcing the target chunk resident', () => {
+    const world = new TileWorld(0);
+    const coveredDirt = findFirstProceduralChunkTopDirtBelowSolidCoverAdjacentToGrass(
+      0,
+      CHUNK_SIZE,
+      CHUNK_SIZE * 8
+    );
+    expect(coveredDirt).not.toBeNull();
+    const { worldTileX, worldTileY } = coveredDirt!;
+    const coverTileY = worldTileY - 1;
+    const dirtChunkX = Math.floor(worldTileX / CHUNK_SIZE);
+    const dirtChunkY = Math.floor(worldTileY / CHUNK_SIZE);
+    const coverChunkY = Math.floor(coverTileY / CHUNK_SIZE);
+
+    expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+    expect(isTileSolid(world.getTile(worldTileX, coverTileY))).toBe(true);
+    expect(world.setTile(worldTileX, coverTileY, SOLID_TEST_TILE_ID)).toBe(true);
+
+    expect(
+      world.pruneChunksOutside({
+        minChunkX: dirtChunkX,
+        minChunkY: coverChunkY,
+        maxChunkX: dirtChunkX,
+        maxChunkY: coverChunkY
+      })
+    ).toBeGreaterThan(0);
+    expect(world.hasChunk(dirtChunkX, coverChunkY)).toBe(true);
+    expect(world.hasChunk(dirtChunkX, dirtChunkY)).toBe(false);
+
+    expect(world.setTile(worldTileX, coverTileY, NON_SOLID_TEST_TILE_ID)).toBe(true);
+    expect(world.hasChunk(dirtChunkX, dirtChunkY)).toBe(false);
+
+    world.ensureChunk(dirtChunkX, dirtChunkY);
+    expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
+  });
+
+  it('does not regrow a placed dirt tile in sky when it is written beside grass', () => {
+    const world = new TileWorld(0);
+    const grassTileX = 6;
+    const dirtTileX = grassTileX + 1;
+    const worldTileY = -20;
+
+    expect(world.setTile(grassTileX, worldTileY, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
+    expect(world.setTile(dirtTileX, worldTileY, PROCEDURAL_DIRT_TILE_ID)).toBe(true);
+
+    expect(world.getTile(dirtTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+  });
+
+  it('does not regrow exposed dirt when non-solid cover above changes without a solidness transition', () => {
+    const world = new TileWorld(0);
+    const coveredDirt = findFirstProceduralDirtBelowSolidCoverAdjacentToGrass();
+    expect(coveredDirt).not.toBeNull();
+    const { worldTileX, worldTileY } = coveredDirt!;
+    const coverTileY = worldTileY - 1;
+
+    expect(isTileSolid(world.getTile(worldTileX, coverTileY))).toBe(true);
+    expect(world.setTile(worldTileX, coverTileY, NON_SOLID_TEST_TILE_ID)).toBe(true);
+    expect(world.setTile(worldTileX, worldTileY, PROCEDURAL_DIRT_TILE_ID)).toBe(true);
+    expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
+
+    expect(world.setTile(worldTileX, coverTileY, 0)).toBe(true);
+
+    expect(world.getTile(worldTileX, worldTileY)).toBe(PROCEDURAL_DIRT_TILE_ID);
   });
 
   it('stores buried-grass dirt overrides without forcing the chunk below a bottom-row solid edit resident', () => {

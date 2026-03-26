@@ -9988,18 +9988,33 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('plants an acorn from the selected hotbar slot through the shared hidden-panel item-use path', async () => {
-    const supportTileIdBeforePlanting = new TileWorld(0).getTile(1, 0);
-    setPersistedWorldSaveWithInventory(
-      createPlayerInventoryState({
-        hotbar: [
-          { itemId: 'pickaxe', amount: 1 },
-          { itemId: 'acorn', amount: 2 },
-          { itemId: 'torch', amount: 20 },
-          { itemId: 'rope', amount: 24 },
-          ...Array.from({ length: 6 }, () => null)
-        ],
-        selectedHotbarSlotIndex: 1
-      })
+    const supportTileIdBeforePlanting = PROCEDURAL_GRASS_SURFACE_TILE_ID;
+    const plantingInventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'pickaxe', amount: 1 },
+        { itemId: 'acorn', amount: 2 },
+        { itemId: 'torch', amount: 20 },
+        { itemId: 'rope', amount: 24 },
+        ...Array.from({ length: 6 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 1
+    });
+    const savedWorld = new TileWorld(0);
+    savedWorld.setTile(1, 0, PROCEDURAL_GRASS_SURFACE_TILE_ID);
+    savedWorld.setTile(1, -1, 0);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right',
+            grounded: true
+          }),
+          standalonePlayerInventoryState: plantingInventoryState
+        })
+      )
     );
     await import('./main');
     await flushBootstrap();
@@ -10008,7 +10023,6 @@ describe('main.ts shell state orchestration', () => {
 
     expect(dispatchKeydown('2', 'Digit2').prevented).toBe(true);
     expect(testRuntime.canvasInteractionMode).toBe('play');
-    testRuntime.rendererTileIdsByWorldKey.set(worldTileKey(1, 0), PROCEDURAL_GRASS_SURFACE_TILE_ID);
     testRuntime.rendererSetTileResult = true;
     testRuntime.playerItemUseRequests = [
       {
