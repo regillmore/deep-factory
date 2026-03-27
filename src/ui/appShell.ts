@@ -153,16 +153,11 @@ export interface PausedMainMenuRecentActivitySectionViewModel {
   resetShellTelemetryResult: AppShellMenuSection | null;
 }
 
-export interface PausedMainMenuDangerZoneSectionViewModel {
-  resetShellToggles: AppShellMenuSection;
-}
-
 export interface PausedMainMenuSectionViewModel {
   overview: PausedMainMenuOverviewSectionViewModel;
   worldSave: PausedMainMenuWorldSaveSectionViewModel;
   shell: PausedMainMenuShellSectionViewModel;
   recentActivity: PausedMainMenuRecentActivitySectionViewModel;
-  dangerZone: PausedMainMenuDangerZoneSectionViewModel;
 }
 
 export interface PausedMainMenuShellSectionState {
@@ -181,19 +176,11 @@ export interface PausedMainMenuRecentActivitySectionState {
   menuSections: readonly AppShellMenuSection[];
 }
 
-export interface PausedMainMenuDangerZoneSectionState {
-  visible: boolean;
-  summaryLine: string | null;
-  actionSections: readonly AppShellMenuSection[];
-  tone: AppShellMenuSectionTone;
-}
-
 export interface PausedMainMenuMenuSectionGroups {
   overviewSections: readonly AppShellMenuSection[];
   worldSaveSections: readonly AppShellMenuSection[];
   shellSections: readonly AppShellMenuSection[];
   recentActivitySections: readonly AppShellMenuSection[];
-  dangerZoneSections: readonly AppShellMenuSection[];
   primarySections: readonly AppShellMenuSection[];
 }
 
@@ -541,9 +528,6 @@ const resolvePausedMainMenuShellMenuSections = (
 const resolvePausedMainMenuRecentActivityMenuSections = (
   state: AppShellState
 ): readonly AppShellMenuSection[] => resolvePausedMainMenuRecentActivitySectionState(state).menuSections;
-const resolvePausedMainMenuDangerZoneMenuSections = (
-  sectionViewModel: PausedMainMenuSectionViewModel
-): readonly AppShellMenuSection[] => [sectionViewModel.dangerZone.resetShellToggles];
 const resolvePausedMainMenuMenuSectionGroupsFromState = (
   state: AppShellState,
   sectionViewModel: PausedMainMenuSectionViewModel
@@ -552,19 +536,13 @@ const resolvePausedMainMenuMenuSectionGroupsFromState = (
   const worldSaveSections = resolvePausedMainMenuWorldSaveMenuSections(state, sectionViewModel);
   const shellSections = resolvePausedMainMenuShellMenuSections(sectionViewModel);
   const recentActivitySections = resolvePausedMainMenuRecentActivityMenuSections(state);
-  const dangerZoneSections = resolvePausedMainMenuDangerZoneMenuSections(sectionViewModel);
 
   return {
     overviewSections,
     worldSaveSections,
     shellSections,
     recentActivitySections,
-    dangerZoneSections,
-    primarySections: [
-      ...overviewSections,
-      ...shellSections,
-      ...dangerZoneSections
-    ]
+    primarySections: [...overviewSections, ...shellSections]
   };
 };
 export const resolvePausedMainMenuMenuSectionGroups = (
@@ -577,7 +555,6 @@ export const resolvePausedMainMenuMenuSectionGroups = (
       worldSaveSections: [],
       shellSections: [],
       recentActivitySections: [],
-      dangerZoneSections: [],
       primarySections: []
     };
   }
@@ -895,35 +872,6 @@ export const resolvePausedMainMenuRecentActivitySectionState = (
     ),
     tone: resolvePausedMainMenuRecentActivitySectionTone(menuSections),
     menuSections
-  };
-};
-
-const DEFAULT_PAUSED_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE =
-  'Use this only when you want to clear shell layout state before the next resume.';
-const DEFAULT_FIRST_START_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE =
-  'Use this only when you want to clear shell layout state before entering the seeded start world.';
-
-export const resolvePausedMainMenuDangerZoneSectionState = (
-  state: AppShellState
-): PausedMainMenuDangerZoneSectionState => {
-  const visible = isPausedMainMenuState(state);
-  const sectionViewModel = resolvePausedMainMenuSectionViewModel(state);
-  if (!visible || sectionViewModel === null) {
-    return {
-      visible: false,
-      summaryLine: null,
-      actionSections: [],
-      tone: 'default'
-    };
-  }
-
-  return {
-    visible: true,
-    summaryLine: isFirstStartMainMenuState(state)
-      ? DEFAULT_FIRST_START_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE
-      : DEFAULT_PAUSED_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE,
-    actionSections: resolvePausedMainMenuDangerZoneMenuSections(sectionViewModel),
-    tone: 'warning'
   };
 };
 
@@ -1262,7 +1210,7 @@ export const createPausedMainMenuShellSummaryRows = (
   }
 ] as const;
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_LINE =
-  'Adjust gameplay controls, telemetry, hotkeys, and shell-profile tools for the current paused session.';
+  'Adjust shell layout, gameplay controls, telemetry, hotkeys, and shell-profile tools for the current paused session.';
 export const resolvePausedMainMenuShellSectionState = (
   state: AppShellState
 ): PausedMainMenuShellSectionState => {
@@ -2337,27 +2285,6 @@ export const createPausedMainMenuSectionViewModel = (
         resetShellTelemetryResult === null
           ? null
           : createPausedMainMenuResetShellTelemetryResultMenuSection(resetShellTelemetryResult)
-    },
-    dangerZone: {
-      resetShellToggles: {
-        title: 'Reset Shell Toggles',
-        lines: [],
-        metadataRows: [
-          {
-            label: 'Shortcut',
-            value: 'Button only'
-          },
-          {
-            label: firstStart ? 'World' : 'Session',
-            value: firstStart ? 'Seeded start world kept' : 'Kept unchanged'
-          },
-          {
-            label: 'Next Resume',
-            value: 'Default-off shell layout'
-          }
-        ],
-        tone: 'warning'
-      }
     }
   };
 };
@@ -3157,10 +3084,6 @@ const PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS = {
   recentActivity: {
     sectionId: 'app-shell-paused-recent-activity-section',
     headingId: 'app-shell-paused-recent-activity-title'
-  },
-  dangerZone: {
-    sectionId: 'app-shell-paused-danger-zone-section',
-    headingId: 'app-shell-paused-danger-zone-title'
   }
 } as const satisfies Record<string, PausedMainMenuSectionLandmarkTarget>;
 
@@ -3168,8 +3091,7 @@ const PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER = [
   'overview',
   'worldSave',
   'shell',
-  'recentActivity',
-  'dangerZone'
+  'recentActivity'
 ] as const satisfies readonly PausedMainMenuSectionAnchorKey[];
 
 const DEFAULT_PAUSED_MAIN_MENU_PAGE_ID: PausedMainMenuPageId = 'overview';
@@ -3178,7 +3100,7 @@ const PAUSED_MAIN_MENU_WORLD_SAVE_TILE_OPEN_TITLE =
   'Open the paused World Save page for downloads, imports, fresh-world replacement, and browser-resume controls.';
 const PAUSED_MAIN_MENU_SHELL_TILE_TITLE = 'Shell';
 const PAUSED_MAIN_MENU_SHELL_TILE_OPEN_TITLE =
-  'Open the paused Shell page for gameplay, telemetry, hotkey, and shell-profile tools.';
+  'Open the paused Shell page for shell layout, gameplay, telemetry, hotkey, and shell-profile tools.';
 const PAUSED_MAIN_MENU_WORLD_SAVE_BACK_LABEL = 'Back to Overview';
 const PAUSED_MAIN_MENU_WORLD_SAVE_BACK_TITLE = 'Return to the paused Overview page.';
 const PAUSED_MAIN_MENU_SHELL_BACK_LABEL = 'Back to Overview';
@@ -3630,13 +3552,6 @@ const createWorldSaveActionButton = (
 ): HTMLButtonElement =>
   createMenuSectionActionButton(section, 'app-shell__world-save-action', title, onClick, options);
 
-const createDangerZoneActionButton = (
-  section: AppShellMenuSection,
-  title: string,
-  onClick: () => void
-): HTMLButtonElement =>
-  createMenuSectionActionButton(section, 'app-shell__danger-zone-action', title, onClick);
-
 const createBusyPausedMainMenuImportWorldSaveActionSection = (
   section: AppShellMenuSection
 ): AppShellMenuSection => ({
@@ -3861,10 +3776,6 @@ export class AppShell {
   private recentActivitySummary: HTMLParagraphElement;
   private recentActivityBody: HTMLDivElement;
   private recentActivityTopJumpLink: HTMLAnchorElement;
-  private dangerZoneSection: HTMLElement;
-  private dangerZoneSummary: HTMLParagraphElement;
-  private dangerZoneBody: HTMLDivElement;
-  private dangerZoneTopJumpLink: HTMLAnchorElement;
   private shellSection: HTMLElement;
   private shellBackButton: HTMLButtonElement;
   private shellSummary: HTMLParagraphElement;
@@ -3887,6 +3798,7 @@ export class AppShell {
   >();
   private shellActionKeybindingEditorActions: HTMLDivElement;
   private shellProfilePreviewDetails: HTMLDivElement;
+  private resetShellTogglesButton: HTMLButtonElement;
   private resetShellActionKeybindingsButton: HTMLButtonElement;
   private importShellProfileButton: HTMLButtonElement;
   private applyShellProfilePreviewButton: HTMLButtonElement;
@@ -4352,6 +4264,17 @@ export class AppShell {
     installPointerClickFocusRelease(this.resetShellActionKeybindingsButton);
     this.shellActionKeybindingEditorActions.append(this.resetShellActionKeybindingsButton);
 
+    this.resetShellTogglesButton = document.createElement('button');
+    this.resetShellTogglesButton.type = 'button';
+    this.resetShellTogglesButton.className = 'app-shell__shell-keybindings-button';
+    this.resetShellTogglesButton.textContent = 'Reset Shell Toggles';
+    this.resetShellTogglesButton.title = resolvePausedMainMenuResetShellTogglesTitle();
+    this.resetShellTogglesButton.addEventListener('click', () =>
+      this.onQuinaryAction(this.currentState.screen)
+    );
+    installPointerClickFocusRelease(this.resetShellTogglesButton);
+    this.shellActionKeybindingEditorActions.append(this.resetShellTogglesButton);
+
     this.importShellProfileButton = document.createElement('button');
     this.importShellProfileButton.type = 'button';
     this.importShellProfileButton.className = 'app-shell__shell-keybindings-button';
@@ -4545,39 +4468,6 @@ export class AppShell {
 
     this.recentActivityTopJumpLink = createPausedMainMenuTopJumpLink(this.overviewSection);
     this.recentActivitySection.append(this.recentActivityTopJumpLink);
-
-    this.dangerZoneSection = document.createElement('section');
-    this.dangerZoneSection.className = 'app-shell__danger-zone';
-    this.pausedMainMenuSecondarySections.append(this.dangerZoneSection);
-
-    const dangerZoneHeader = document.createElement('div');
-    dangerZoneHeader.className = 'app-shell__danger-zone-header';
-    this.dangerZoneSection.append(dangerZoneHeader);
-
-    const dangerZoneCopy = document.createElement('div');
-    dangerZoneCopy.className = 'app-shell__danger-zone-copy';
-    dangerZoneHeader.append(dangerZoneCopy);
-
-    const dangerZoneTitle = document.createElement('h2');
-    dangerZoneTitle.className = 'app-shell__danger-zone-title';
-    dangerZoneTitle.textContent = 'Danger Zone';
-    dangerZoneCopy.append(dangerZoneTitle);
-    applyPausedMainMenuSectionLandmarkTarget(
-      this.dangerZoneSection,
-      dangerZoneTitle,
-      PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS.dangerZone
-    );
-
-    this.dangerZoneSummary = document.createElement('p');
-    this.dangerZoneSummary.className = 'app-shell__danger-zone-summary';
-    dangerZoneCopy.append(this.dangerZoneSummary);
-
-    this.dangerZoneBody = document.createElement('div');
-    this.dangerZoneBody.className = 'app-shell__danger-zone-body';
-    this.dangerZoneSection.append(this.dangerZoneBody);
-
-    this.dangerZoneTopJumpLink = createPausedMainMenuTopJumpLink(this.overviewSection);
-    this.dangerZoneSection.append(this.dangerZoneTopJumpLink);
 
     this.menuSections = document.createElement('div');
     this.menuSections.className = 'app-shell__menu-sections';
@@ -4835,8 +4725,6 @@ export class AppShell {
         return this.shellSection;
       case 'recentActivity':
         return this.recentActivitySection;
-      case 'dangerZone':
-        return this.dangerZoneSection;
     }
   }
 
@@ -5170,7 +5058,6 @@ export class AppShell {
     );
     const pausedMainMenuShellSection = resolvePausedMainMenuShellSectionState(state);
     const pausedMainMenuWorldSaveSection = resolvePausedMainMenuWorldSaveSectionState(state);
-    const pausedMainMenuDangerZoneSection = resolvePausedMainMenuDangerZoneSectionState(state);
     const pausedMainMenuMenuSectionGroups = resolvePausedMainMenuMenuSectionGroups(state);
     const pausedMainMenuSecondarySections = pausedMainMenuVisible ? [] : viewModel.menuSections;
     const pausedMainMenuSectionViewModel =
@@ -5233,17 +5120,6 @@ export class AppShell {
       (row) => row.label === 'Browser Resume' || row.label === 'World Seed'
     );
     const pausedMainMenuShellNavigationRows = pausedMainMenuShellSection.metadataRows;
-    const pausedMainMenuDangerZoneActionButtons =
-      pausedMainMenuSectionViewModel === null
-        ? []
-        : [
-            createDangerZoneActionButton(
-              pausedMainMenuSectionViewModel.dangerZone.resetShellToggles,
-              resolveMainMenuQuinaryActionTitle(state),
-              () => this.onQuinaryAction(this.currentState.screen)
-            )
-          ];
-
     this.root.dataset.screen = viewModel.screen;
     this.overlayPanel.dataset.layout = pausedMainMenuVisible ? 'paused-dashboard' : 'default';
     this.overlay.hidden = !viewModel.overlayVisible;
@@ -5344,6 +5220,7 @@ export class AppShell {
       pausedMainMenuShellSection.telemetryControls,
       pausedMainMenuShellPageVisible && pausedMainMenuShellSection.visible
     );
+    this.resetShellTogglesButton.title = resolveMainMenuQuinaryActionTitle(state);
     this.syncShellActionKeybindingEditorMetadata(pausedMainMenuShellPersistenceAvailable);
     this.shellProfilePreviewDetails.replaceChildren(
       ...(pausedMainMenuShellSection.previewSection === null
@@ -5414,23 +5291,6 @@ export class AppShell {
     );
     this.recentActivityTopJumpLink.hidden = !pausedMainMenuRecentActivitySection.visible;
     this.recentActivityTopJumpLink.style.display = pausedMainMenuRecentActivitySection.visible
-      ? 'inline-flex'
-      : 'none';
-    this.dangerZoneSection.hidden = !pausedMainMenuDangerZoneSection.visible;
-    this.dangerZoneSection.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuDangerZoneSection.visible,
-      'grid'
-    );
-    this.dangerZoneSection.dataset.tone = pausedMainMenuDangerZoneSection.tone;
-    this.dangerZoneSummary.textContent = pausedMainMenuDangerZoneSection.summaryLine ?? '';
-    this.dangerZoneBody.replaceChildren(...pausedMainMenuDangerZoneActionButtons);
-    this.dangerZoneBody.hidden = !pausedMainMenuDangerZoneSection.visible;
-    this.dangerZoneBody.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuDangerZoneSection.visible,
-      'grid'
-    );
-    this.dangerZoneTopJumpLink.hidden = !pausedMainMenuDangerZoneSection.visible;
-    this.dangerZoneTopJumpLink.style.display = pausedMainMenuDangerZoneSection.visible
       ? 'inline-flex'
       : 'none';
     this.menuSections.replaceChildren(

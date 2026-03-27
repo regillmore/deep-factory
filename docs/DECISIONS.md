@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-27: Shell-layout reset now belongs to the Shell page, not a separate Danger Zone group
+
+- Decision: `Reset Shell Toggles` now lives on the dedicated `Shell` page, and the paused-dashboard `Danger Zone` group is removed.
+- Reason: Resetting shell visibility is a shell-management action, and keeping it on the `Shell` page avoids spending Overview space on a single-action secondary group.
+- Consequence: Future shell-layout reset or maintenance controls should extend the `Shell` page, while paused Overview should stay focused on `Overview`, `World Save`, `Shell`, and optional `Recent Activity` surfaces.
+
 ### 2026-03-27: World-session replacement now belongs to World Save before Danger Zone is retired
 
 - Decision: `New World` now lives on the shared `World Save` page beside `Clear Saved World`, while `Danger Zone` temporarily keeps only `Reset Shell Toggles`.

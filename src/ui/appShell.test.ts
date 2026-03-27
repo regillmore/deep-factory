@@ -52,7 +52,6 @@ import {
   resolvePausedMainMenuExportShellProfileTitle,
   resolvePausedMainMenuFreshWorldTitle,
   resolvePausedMainMenuApplyShellProfileEditorStatus,
-  resolvePausedMainMenuDangerZoneSectionState,
   resolvePausedMainMenuRecentActivitySectionState,
   createPausedMainMenuShellSummaryRows,
   resolvePausedMainMenuShellSectionState,
@@ -106,10 +105,8 @@ const CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
   'Browser resume was cleared for this paused session. Resume World or another save path must rewrite it before reload can restore the session.';
 const IMPORT_PERSISTENCE_FAILED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
   'The imported paused session stays live in this tab, but reload will miss it until a later browser-save rewrite succeeds.';
-const DEFAULT_PAUSED_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE =
-  'Use this only when you want to clear shell layout state before the next resume.';
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_SECTION_SUMMARY_LINE =
-  'Adjust gameplay controls, telemetry, hotkeys, and shell-profile tools for the current paused session.';
+  'Adjust shell layout, gameplay controls, telemetry, hotkeys, and shell-profile tools for the current paused session.';
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
   {
     label: 'Active Layout',
@@ -284,7 +281,7 @@ const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE =
 const PAUSED_MAIN_MENU_WORLD_SAVE_TILE_OPEN_TITLE =
   'Open the paused World Save page for downloads, imports, fresh-world replacement, and browser-resume controls.';
 const PAUSED_MAIN_MENU_SHELL_TILE_OPEN_TITLE =
-  'Open the paused Shell page for gameplay, telemetry, hotkey, and shell-profile tools.';
+  'Open the paused Shell page for shell layout, gameplay, telemetry, hotkey, and shell-profile tools.';
 const PAUSED_MAIN_MENU_WORLD_SAVE_BACK_LABEL = 'Back to Overview';
 const PAUSED_MAIN_MENU_WORLD_SAVE_BACK_TITLE = 'Return to the paused Overview page.';
 const PAUSED_MAIN_MENU_SHELL_BACK_LABEL = 'Back to Overview';
@@ -830,10 +827,7 @@ describe('paused main-menu dashboard layout', () => {
       'app-shell__world-save',
       'app-shell__shell'
     ]);
-    expect(listChildClassNames(secondary)).toEqual([
-      'app-shell__recent-activity',
-      'app-shell__danger-zone'
-    ]);
+    expect(listChildClassNames(secondary)).toEqual(['app-shell__recent-activity']);
     expect(menuSections?.hidden).toBe(true);
     expect(menuSections?.style.display).toBe('none');
     expect(footerActions?.hidden).toBe(true);
@@ -1054,11 +1048,10 @@ describe('paused main-menu dashboard layout', () => {
 
     const overviewButtons = findElementsByClass(root, 'app-shell__overview-action');
     const worldSaveButtons = findElementsByClass(root, 'app-shell__world-save-action');
-    const dangerZoneButtons = findElementsByClass(root, 'app-shell__danger-zone-action');
+    const shellTile = findPausedNavigationTileByTitle(root, 'Shell');
 
     expect(overviewButtons).toHaveLength(1);
     expect(worldSaveButtons).toHaveLength(4);
-    expect(dangerZoneButtons).toHaveLength(1);
     expect(overviewButtons[0]?.title).toBe(resolvePausedMainMenuResumeWorldTitle());
     expect(worldSaveButtons.map((button) => button.title)).toEqual([
       resolvePausedMainMenuExportWorldSaveTitle(),
@@ -1066,17 +1059,13 @@ describe('paused main-menu dashboard layout', () => {
       resolvePausedMainMenuClearSavedWorldTitle(),
       resolvePausedMainMenuFreshWorldTitle()
     ]);
-    expect(dangerZoneButtons.map((button) => button.title)).toEqual([
-      resolvePausedMainMenuResetShellTogglesTitle()
-    ]);
 
     overviewButtons[0]?.click();
     for (const button of worldSaveButtons) {
       button.click();
     }
-    for (const button of dangerZoneButtons) {
-      button.click();
-    }
+    shellTile?.click();
+    findButtonByTextContent(root, 'app-shell__shell-keybindings-button', 'Reset Shell Toggles')?.click();
 
     expect(handledActions).toEqual([
       'resume-world',
@@ -1102,15 +1091,10 @@ describe('paused main-menu dashboard layout', () => {
 
     const overviewButtons = findElementsByClass(root, 'app-shell__overview-action');
     const worldSaveButtons = findElementsByClass(root, 'app-shell__world-save-action');
-    const dangerZoneButtons = findElementsByClass(root, 'app-shell__danger-zone-action');
 
     const resumeTitle = findElementByClass(overviewButtons[0]!, 'app-shell__overview-action-title');
     const resumeBadge = findElementByClass(
       overviewButtons[0]!,
-      'app-shell__section-action-shortcut-badge'
-    );
-    const resetShellTogglesBadge = findElementByClass(
-      dangerZoneButtons[0]!,
       'app-shell__section-action-shortcut-badge'
     );
     const newWorldTitle = findElementByClass(
@@ -1126,7 +1110,6 @@ describe('paused main-menu dashboard layout', () => {
     expect(resumeBadge?.textContent).toBe(getDesktopResumeWorldHotkeyLabel());
     expect(newWorldTitle?.textContent).toBe('New World');
     expect(newWorldBadge?.textContent).toBe(getDesktopFreshWorldHotkeyLabel());
-    expect(resetShellTogglesBadge).toBeNull();
     expect(
       worldSaveButtons
         .slice(0, 3)
@@ -1148,7 +1131,6 @@ describe('paused main-menu dashboard layout', () => {
 
     const overviewButtons = findElementsByClass(root, 'app-shell__overview-action');
     const worldSaveButtons = findElementsByClass(root, 'app-shell__world-save-action');
-    const dangerZoneButtons = findElementsByClass(root, 'app-shell__danger-zone-action');
 
     expect(
       worldSaveButtons.map(
@@ -1159,11 +1141,6 @@ describe('paused main-menu dashboard layout', () => {
     ).toEqual(['Button only', 'Button only', 'Button only', null]);
     expect(
       overviewButtons.every(
-        (button) => findElementByClass(button, 'app-shell__section-action-affordance-badge') === null
-      )
-    ).toBe(true);
-    expect(
-      dangerZoneButtons.every(
         (button) => findElementByClass(button, 'app-shell__section-action-affordance-badge') === null
       )
     ).toBe(true);
@@ -1322,7 +1299,7 @@ describe('paused main-menu dashboard layout', () => {
     ]);
   });
 
-  it('shows compact warning badges on paused Danger Zone action cards', () => {
+  it('keeps Reset Shell Toggles on the Shell page and removes the paused Danger Zone group', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
 
@@ -1334,26 +1311,24 @@ describe('paused main-menu dashboard layout', () => {
       return;
     }
 
-    const overviewButtons = findElementsByClass(root, 'app-shell__overview-action');
-    const worldSaveButtons = findElementsByClass(root, 'app-shell__world-save-action');
-    const dangerZoneButtons = findElementsByClass(root, 'app-shell__danger-zone-action');
+    const shellTile = findPausedNavigationTileByTitle(root, 'Shell');
+    const shellSection = findElementByClass(root, 'app-shell__shell');
 
-    expect(
-      dangerZoneButtons.map(
-        (button) =>
-          findElementByClass(button, 'app-shell__section-action-status-badge')?.textContent ?? null
-      )
-    ).toEqual(['Warning']);
-    expect(
-      overviewButtons.every(
-        (button) => findElementByClass(button, 'app-shell__section-action-status-badge') === null
-      )
-    ).toBe(true);
-    expect(
-      worldSaveButtons.every(
-        (button) => findElementByClass(button, 'app-shell__section-action-status-badge') === null
-      )
-    ).toBe(true);
+    expect(findElementByClass(root, 'app-shell__danger-zone')).toBeNull();
+
+    shellTile?.click();
+
+    const resetShellTogglesButton =
+      shellSection === null
+        ? null
+        : findButtonByTextContent(
+            shellSection,
+            'app-shell__shell-keybindings-button',
+            'Reset Shell Toggles'
+          );
+
+    expect(shellSection?.hidden).toBe(false);
+    expect(resetShellTogglesButton?.title).toBe(resolvePausedMainMenuResetShellTogglesTitle());
   });
 
   it('shows a busy badge and debounces paused-menu Import World Save while its browser picker promise is active', async () => {
@@ -1704,12 +1679,6 @@ describe('paused main-menu dashboard layout', () => {
         sectionId: 'app-shell-paused-recent-activity-section',
         headingId: 'app-shell-paused-recent-activity-title',
         title: 'Recent Activity'
-      },
-      {
-        className: 'app-shell__danger-zone',
-        sectionId: 'app-shell-paused-danger-zone-section',
-        headingId: 'app-shell-paused-danger-zone-title',
-        title: 'Danger Zone'
       }
     ] as const;
 
@@ -2178,10 +2147,9 @@ describe('paused main-menu dashboard layout', () => {
 
     const fakeDocument = document as unknown as FakeDocument;
     const root = container.children[0] ?? null;
-    const dangerZoneSection =
-      root === null ? null : findElementByClass(root, 'app-shell__danger-zone');
+    const overviewSection = root === null ? null : findElementByClass(root, 'app-shell__overview');
 
-    dangerZoneSection?.focus();
+    overviewSection?.focus();
     shell.setState(
       createPausedMainMenuShellState(
         undefined,
@@ -2202,9 +2170,9 @@ describe('paused main-menu dashboard layout', () => {
       )
     );
 
-    expect(dangerZoneSection?.focusCallCount).toBe(2);
-    expect(dangerZoneSection?.scrollIntoViewCallCount).toBe(1);
-    expect(fakeDocument.activeElement).toBe(dangerZoneSection);
+    expect(overviewSection?.focusCallCount).toBe(2);
+    expect(overviewSection?.scrollIntoViewCallCount).toBe(1);
+    expect(fakeDocument.activeElement).toBe(overviewSection);
   });
 
   it('falls forward to the nearest visible paused-dashboard section anchor when Recent Activity disappears', () => {
@@ -2233,18 +2201,17 @@ describe('paused main-menu dashboard layout', () => {
 
     const fakeDocument = document as unknown as FakeDocument;
     const root = container.children[0] ?? null;
+    const overviewSection = root === null ? null : findElementByClass(root, 'app-shell__overview');
     const recentActivitySection =
       root === null ? null : findElementByClass(root, 'app-shell__recent-activity');
-    const dangerZoneSection =
-      root === null ? null : findElementByClass(root, 'app-shell__danger-zone');
 
     recentActivitySection?.focus();
     shell.setState(createPausedMainMenuShellState());
 
     expect(recentActivitySection?.focusCallCount).toBe(1);
-    expect(dangerZoneSection?.focusCallCount).toBe(1);
-    expect(dangerZoneSection?.scrollIntoViewCallCount).toBe(1);
-    expect(fakeDocument.activeElement).toBe(dangerZoneSection);
+    expect(overviewSection?.focusCallCount).toBe(1);
+    expect(overviewSection?.scrollIntoViewCallCount).toBe(1);
+    expect(fakeDocument.activeElement).toBe(overviewSection);
   });
 
   it('renders metadata-first shell-profile preview groups on the Shell page', () => {
@@ -2422,7 +2389,7 @@ describe('paused main-menu dashboard layout', () => {
     expect(jumpLink).toBeNull();
   });
 
-  it('adds recent-activity and danger-zone top-jump links that return focus to Overview', () => {
+  it('adds a recent-activity top-jump link that returns focus to Overview', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
 
@@ -2450,29 +2417,19 @@ describe('paused main-menu dashboard layout', () => {
     const overviewSection = root === null ? null : findElementByClass(root, 'app-shell__overview');
     const recentActivitySection =
       root === null ? null : findElementByClass(root, 'app-shell__recent-activity');
-    const dangerZoneSection =
-      root === null ? null : findElementByClass(root, 'app-shell__danger-zone');
     const recentActivityJumpLink =
       recentActivitySection === null
         ? null
         : findElementByClass(recentActivitySection, 'app-shell__section-top-jump-link');
-    const dangerZoneJumpLink =
-      dangerZoneSection === null
-        ? null
-        : findElementByClass(dangerZoneSection, 'app-shell__section-top-jump-link');
 
     expect(recentActivityJumpLink?.textContent).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT);
     expect(recentActivityJumpLink?.title).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE);
     expect(recentActivityJumpLink?.hidden).toBe(false);
-    expect(dangerZoneJumpLink?.textContent).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT);
-    expect(dangerZoneJumpLink?.title).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE);
-    expect(dangerZoneJumpLink?.hidden).toBe(false);
 
     recentActivityJumpLink?.click();
-    dangerZoneJumpLink?.click();
 
-    expect(overviewSection?.focusCallCount).toBe(2);
-    expect(overviewSection?.scrollIntoViewCallCount).toBe(2);
+    expect(overviewSection?.focusCallCount).toBe(1);
+    expect(overviewSection?.scrollIntoViewCallCount).toBe(1);
   });
 
   it('renders compact success and attention badges on paused-menu Recent Activity cards', () => {
@@ -5094,69 +5051,8 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
   });
 });
 
-describe('resolvePausedMainMenuDangerZoneSectionState', () => {
-  it('keeps Reset Shell Toggles as the remaining warning-toned danger zone action', () => {
-    expect(resolvePausedMainMenuDangerZoneSectionState(createPausedMainMenuShellState())).toEqual({
-      visible: true,
-      summaryLine: DEFAULT_PAUSED_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE,
-      actionSections: [
-        {
-          title: 'Reset Shell Toggles',
-          lines: [],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: 'Button only'
-            },
-            {
-              label: 'Session',
-              value: 'Kept unchanged'
-            },
-            {
-              label: 'Next Resume',
-              value: 'Default-off shell layout'
-            }
-          ],
-          tone: 'warning'
-        }
-      ],
-      tone: 'warning'
-    });
-  });
-
-  it('shows the danger zone for the first-launch dashboard with only the prestart shell reset action', () => {
-    expect(resolvePausedMainMenuDangerZoneSectionState(createFirstLaunchMainMenuShellState())).toEqual({
-      visible: true,
-      summaryLine:
-        'Use this only when you want to clear shell layout state before entering the seeded start world.',
-      actionSections: [
-        {
-          title: 'Reset Shell Toggles',
-          lines: [],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: 'Button only'
-            },
-            {
-              label: 'World',
-              value: 'Seeded start world kept'
-            },
-            {
-              label: 'Next Resume',
-              value: 'Default-off shell layout'
-            }
-          ],
-          tone: 'warning'
-        }
-      ],
-      tone: 'warning'
-    });
-  });
-});
-
 describe('resolvePausedMainMenuMenuSectionGroups', () => {
-  it('routes paused-menu cards into explicit overview, world-save, shell, recent-activity, and danger-zone groups', () => {
+  it('routes paused-menu cards into explicit overview, world-save, shell, and recent-activity groups', () => {
     const pausedState = createPausedMainMenuShellState(
       undefined,
       true,
@@ -5307,27 +5203,6 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
           tone: 'warning'
         }
       ],
-      dangerZoneSections: [
-        {
-          title: 'Reset Shell Toggles',
-          lines: [],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: 'Button only'
-            },
-            {
-              label: 'Session',
-              value: 'Kept unchanged'
-            },
-            {
-              label: 'Next Resume',
-              value: 'Default-off shell layout'
-            }
-          ],
-          tone: 'warning'
-        }
-      ],
       primarySections: [
         {
           title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
@@ -5348,25 +5223,6 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
             {
               label: 'Shortcut',
               value: getDesktopResumeWorldHotkeyLabel()
-            }
-          ],
-          tone: 'warning'
-        },
-        {
-          title: 'Reset Shell Toggles',
-          lines: [],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: 'Button only'
-            },
-            {
-              label: 'Session',
-              value: 'Kept unchanged'
-            },
-            {
-              label: 'Next Resume',
-              value: 'Default-off shell layout'
             }
           ],
           tone: 'warning'
@@ -5830,7 +5686,7 @@ describe('resolvePausedMainMenuShellSectionState', () => {
 
     expect(sectionState.visible).toBe(true);
     expect(sectionState.summaryLine).toBe(
-      'Adjust gameplay controls, telemetry, hotkeys, and shell-profile tools for the current paused session.'
+      'Adjust shell layout, gameplay controls, telemetry, hotkeys, and shell-profile tools for the current paused session.'
     );
     expect(sectionState.metadataRows).toEqual([
       {
