@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-26: Small-tree growth cadence lives in save-owned session state
+
+- Decision: The detached small-tree growth scheduler now persists its remaining tick countdown plus next window index inside the top-level paused-session world-save envelope and restores that cadence before runtime growth resumes.
+- Reason: Planted saplings should keep their deterministic growth schedule across pause, browser-resume, export/import, and reload boundaries instead of silently restarting from the default interval every time the session is restored.
+- Consequence: Future small-tree growth follow-ups should treat cadence as save-owned session data and preserve it through any new save normalization, migration, or restore helpers rather than rebuilding the scheduler from defaults after load.
+
 ### 2026-03-26: Procedural saplings derive from midpoint searches between adjacent grown trees
 
 - Decision: Untouched terrain now seeds planted `small_tree_sapling` anchors only between adjacent procedural grown-tree anchors, choosing the nearest valid exposed-grass column to that pair's midpoint whose future grown footprint stays clear and outside the protected origin corridor.

@@ -18,6 +18,7 @@ import {
   DEFAULT_PLAYER_MAX_MANA,
   DEFAULT_PLAYER_MANA_REGEN_TICK_INTERVAL_SECONDS
 } from './world/playerState';
+import { createSmallTreeGrowthState } from './world/smallTreeGrowth';
 import { STARTER_ROPE_TILE_ID } from './world/starterRopePlacement';
 import { STARTER_PLATFORM_TILE_ID } from './world/starterPlatformPlacement';
 import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
@@ -67,6 +68,10 @@ describe('createWorldSaveEnvelope', () => {
       })
     ];
     const cameraFollowOffset = { x: 24, y: -12 };
+    const smallTreeGrowthState = {
+      ticksUntilNextGrowth: 17,
+      nextWindowIndex: 3
+    };
 
     const envelope = createWorldSaveEnvelope({
       worldSnapshot,
@@ -75,7 +80,8 @@ describe('createWorldSaveEnvelope', () => {
       standalonePlayerInventoryState,
       standalonePlayerEquipmentState,
       droppedItemStates,
-      cameraFollowOffset
+      cameraFollowOffset,
+      smallTreeGrowthState
     });
 
     expect(envelope.kind).toBe(WORLD_SAVE_ENVELOPE_KIND);
@@ -87,7 +93,8 @@ describe('createWorldSaveEnvelope', () => {
       standalonePlayerInventoryState,
       standalonePlayerEquipmentState,
       droppedItemStates,
-      cameraFollowOffset
+      cameraFollowOffset,
+      smallTreeGrowthState
     });
     expect(envelope.worldSnapshot).toEqual(worldSnapshot);
 
@@ -98,6 +105,7 @@ describe('createWorldSaveEnvelope', () => {
     standalonePlayerEquipmentState.head = null;
     droppedItemStates[0]!.amount = 1;
     cameraFollowOffset.x = 128;
+    smallTreeGrowthState.ticksUntilNextGrowth = 1;
 
     expect(envelope.worldSnapshot.residentChunks[0]!.payload.tiles[0]).not.toBe(99);
     expect(envelope.session.standalonePlayerState?.position.x).toBe(64);
@@ -118,6 +126,10 @@ describe('createWorldSaveEnvelope', () => {
       amount: 6
     });
     expect(envelope.session.cameraFollowOffset.x).toBe(24);
+    expect(envelope.session.smallTreeGrowthState).toEqual({
+      ticksUntilNextGrowth: 17,
+      nextWindowIndex: 3
+    });
   });
 
   it('preserves the active world seed through save normalization and decode', () => {
@@ -726,7 +738,8 @@ describe('decodeWorldSaveEnvelope', () => {
         cameraFollowOffset: {
           x: -18,
           y: 9
-        }
+        },
+        smallTreeGrowthState: createSmallTreeGrowthState()
       },
       worldSnapshot: world.createSnapshot()
     };
@@ -893,6 +906,32 @@ describe('decodeWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerState).toEqual(standalonePlayerState);
   });
 
+  it('round-trips saved small-tree growth cadence through save decode', () => {
+    const world = new TileWorld(0);
+    const smallTreeGrowthState = {
+      ticksUntilNextGrowth: 8,
+      nextWindowIndex: 2
+    };
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState: createDefaultPlayerInventoryState(),
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 },
+            smallTreeGrowthState
+          })
+        )
+      )
+    );
+
+    expect(decoded.session.smallTreeGrowthState).toEqual(smallTreeGrowthState);
+  });
+
   it('defaults missing health, mana, breath, recovery, and death fields on older standalone-player save payloads', () => {
     const world = new TileWorld(0);
     const standalonePlayerState = createPlayerState({
@@ -951,6 +990,7 @@ describe('decodeWorldSaveEnvelope', () => {
       createDefaultPlayerEquipmentState()
     );
     expect(decoded.session.droppedItemStates).toEqual([]);
+    expect(decoded.session.smallTreeGrowthState).toEqual(createSmallTreeGrowthState());
   });
 
   it('leaves older partial inventory payloads unchanged instead of backfilling starter items', () => {

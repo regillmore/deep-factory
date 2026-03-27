@@ -2654,7 +2654,11 @@ const bootstrap = async (): Promise<void> => {
         getStandalonePlayerInventoryState,
         getStandalonePlayerEquipmentState,
         getDroppedItemStates,
-        getCameraFollowOffset: () => cameraFollowOffset
+        getCameraFollowOffset: () => cameraFollowOffset,
+        getSmallTreeGrowthState: () => ({
+          ticksUntilNextGrowth: smallTreeGrowthState.ticksUntilNextGrowth,
+          nextWindowIndex: smallTreeGrowthState.nextWindowIndex
+        })
       }
     });
   };
@@ -7609,6 +7613,12 @@ const bootstrap = async (): Promise<void> => {
               x: nextCameraFollowOffset.x,
               y: nextCameraFollowOffset.y
             };
+          },
+          restoreSmallTreeGrowthState: (nextSmallTreeGrowthState) => {
+            smallTreeGrowthState = {
+              ticksUntilNextGrowth: nextSmallTreeGrowthState.ticksUntilNextGrowth,
+              nextWindowIndex: nextSmallTreeGrowthState.nextWindowIndex
+            };
           }
         }
       });
@@ -7844,6 +7854,12 @@ const bootstrap = async (): Promise<void> => {
             cameraFollowOffset = {
               x: nextCameraFollowOffset.x,
               y: nextCameraFollowOffset.y
+            };
+          },
+          restoreSmallTreeGrowthState: (nextSmallTreeGrowthState) => {
+            smallTreeGrowthState = {
+              ticksUntilNextGrowth: nextSmallTreeGrowthState.ticksUntilNextGrowth,
+              nextWindowIndex: nextSmallTreeGrowthState.nextWindowIndex
             };
           }
         }

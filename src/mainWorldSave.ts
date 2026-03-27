@@ -25,6 +25,10 @@ import {
   isPlayerArmorItemId,
   type PlayerEquipmentState
 } from './world/playerEquipment';
+import {
+  createSmallTreeGrowthState,
+  type SmallTreeGrowthState
+} from './world/smallTreeGrowth';
 import { TileWorld, type TileWorldSnapshot } from './world/world';
 
 export const WORLD_SAVE_ENVELOPE_KIND = 'deep-factory.world-save';
@@ -42,6 +46,7 @@ export interface WorldSaveSessionState {
   standalonePlayerEquipmentState: PlayerEquipmentState;
   droppedItemStates: DroppedItemState[];
   cameraFollowOffset: CameraFollowOffset;
+  smallTreeGrowthState: SmallTreeGrowthState;
 }
 
 export interface WorldSaveEnvelope {
@@ -60,6 +65,7 @@ export interface CreateWorldSaveEnvelopeOptions {
   standalonePlayerEquipmentState?: PlayerEquipmentState;
   droppedItemStates?: readonly DroppedItemState[];
   cameraFollowOffset?: CameraFollowOffset;
+  smallTreeGrowthState?: SmallTreeGrowthState;
   migration?: WorldSaveEnvelopeMigrationMetadata;
 }
 
@@ -364,6 +370,29 @@ const normalizeDroppedItemStates = (value: unknown, label: string): DroppedItemS
   });
 };
 
+const normalizeSmallTreeGrowthState = (
+  value: unknown,
+  label: string
+): SmallTreeGrowthState => {
+  if (!isRecord(value)) {
+    throw new Error(`${label} must be an object`);
+  }
+
+  return {
+    ticksUntilNextGrowth: expectPositiveInteger(
+      value.ticksUntilNextGrowth,
+      `${label}.ticksUntilNextGrowth`
+    ),
+    nextWindowIndex: expectNonNegativeInteger(value.nextWindowIndex, `${label}.nextWindowIndex`)
+  };
+};
+
+const normalizeStandaloneSmallTreeGrowthState = (
+  value: unknown,
+  label: string
+): SmallTreeGrowthState =>
+  value === undefined ? createSmallTreeGrowthState() : normalizeSmallTreeGrowthState(value, label);
+
 export const createDefaultWorldSaveEnvelopeMigrationMetadata =
   (): WorldSaveEnvelopeMigrationMetadata => ({
     migratedFromVersion: null,
@@ -416,6 +445,7 @@ export const createWorldSaveEnvelope = ({
   standalonePlayerEquipmentState = createDefaultPlayerEquipmentState(),
   droppedItemStates = [],
   cameraFollowOffset = { x: 0, y: 0 },
+  smallTreeGrowthState = createSmallTreeGrowthState(),
   migration = createDefaultWorldSaveEnvelopeMigrationMetadata()
 }: CreateWorldSaveEnvelopeOptions): WorldSaveEnvelope => {
   const normalizedStandalonePlayerState = normalizeStandalonePlayerState(
@@ -442,7 +472,11 @@ export const createWorldSaveEnvelope = ({
         'standalonePlayerEquipmentState'
       ),
       droppedItemStates: normalizeDroppedItemStates(droppedItemStates, 'droppedItemStates'),
-      cameraFollowOffset: normalizeCameraFollowOffset(cameraFollowOffset, 'cameraFollowOffset')
+      cameraFollowOffset: normalizeCameraFollowOffset(cameraFollowOffset, 'cameraFollowOffset'),
+      smallTreeGrowthState: normalizeStandaloneSmallTreeGrowthState(
+        smallTreeGrowthState,
+        'smallTreeGrowthState'
+      )
     },
     worldSnapshot: normalizeWorldSnapshot(worldSnapshot, 'worldSnapshot')
   };
@@ -492,6 +526,10 @@ export const decodeWorldSaveEnvelope = (value: unknown): WorldSaveEnvelope => {
       cameraFollowOffset: normalizeCameraFollowOffset(
         value.session.cameraFollowOffset,
         'session.cameraFollowOffset'
+      ),
+      smallTreeGrowthState: normalizeStandaloneSmallTreeGrowthState(
+        value.session.smallTreeGrowthState,
+        'session.smallTreeGrowthState'
       )
     },
     worldSnapshot: normalizeWorldSnapshot(value.worldSnapshot, 'worldSnapshot')

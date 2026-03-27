@@ -164,6 +164,24 @@ describe('savePersistedWorldSaveEnvelope', () => {
     );
   });
 
+  it('preserves small-tree growth cadence when normalizing the persisted envelope before writing', () => {
+    const storage = createMemoryStorage();
+    const envelope = createWorldSaveEnvelope({
+      worldSnapshot: new TileWorld(0).createSnapshot(),
+      standalonePlayerState: createPlayerState(),
+      smallTreeGrowthState: {
+        ticksUntilNextGrowth: 9,
+        nextWindowIndex: 2
+      }
+    });
+
+    expect(savePersistedWorldSaveEnvelope(storage, envelope)).toBe(true);
+    expect(loadPersistedWorldSaveEnvelope(storage)?.session.smallTreeGrowthState).toEqual({
+      ticksUntilNextGrowth: 9,
+      nextWindowIndex: 2
+    });
+  });
+
   it('returns false when storage is unavailable, throws, or the envelope is invalid', () => {
     expect(savePersistedWorldSaveEnvelope(null, createTestEnvelope())).toBe(false);
 

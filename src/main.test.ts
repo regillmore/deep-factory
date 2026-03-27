@@ -10492,6 +10492,105 @@ describe('main.ts shell state orchestration', () => {
     expect(restoredWorld.getTile(2, -3)).toBe(treeTileIds.leaf);
   });
 
+  it('persists partially advanced small-tree growth cadence on pagehide', async () => {
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setTile(1, 0, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
+    expect(savedWorld.setTile(1, -1, getSmallTreeSaplingTileId())).toBe(true);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          })
+        })
+      )
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    const partialTicks = 7;
+    for (let updateIndex = 0; updateIndex < partialTicks; updateIndex += 1) {
+      runFixedUpdate(1 / 60);
+    }
+
+    dispatchWindowEvent('pagehide');
+
+    expect(readPersistedWorldSaveEnvelope()?.session.smallTreeGrowthState).toEqual({
+      ticksUntilNextGrowth: DEFAULT_SMALL_TREE_GROWTH_INTERVAL_TICKS - partialTicks,
+      nextWindowIndex: 0
+    });
+  });
+
+  it('restores persisted small-tree growth cadence so planted saplings resume without restarting the interval', async () => {
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setTile(1, 0, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);
+    expect(savedWorld.setTile(1, -1, getSmallTreeSaplingTileId())).toBe(true);
+    const growthWindowIndex = resolveSmallTreeGrowthWindowIndex(1, 0);
+
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          }),
+          smallTreeGrowthState: {
+            ticksUntilNextGrowth: 2,
+            nextWindowIndex: growthWindowIndex
+          }
+        })
+      )
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererSetTileCalls = [];
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.rendererPersistentSetTileResult = true;
+
+    runFixedUpdate(1 / 60);
+    expect(testRuntime.rendererSetTileCalls).toEqual([]);
+
+    runFixedUpdate(1 / 60);
+
+    const treeTileIds = getSmallTreeTileIds();
+    expect(testRuntime.rendererSetTileCalls).toEqual([
+      {
+        worldTileX: 1,
+        worldTileY: -1,
+        tileId: treeTileIds.trunk
+      },
+      {
+        worldTileX: 1,
+        worldTileY: -2,
+        tileId: treeTileIds.trunk
+      },
+      {
+        worldTileX: 0,
+        worldTileY: -3,
+        tileId: treeTileIds.leaf
+      },
+      {
+        worldTileX: 1,
+        worldTileY: -3,
+        tileId: treeTileIds.leaf
+      },
+      {
+        worldTileX: 2,
+        worldTileY: -3,
+        tileId: treeTileIds.leaf
+      }
+    ]);
+  });
+
   it('drops cleaned planted saplings from runtime growth tracking after their grass support anchor is removed', async () => {
     const savedWorld = new TileWorld(0);
     expect(savedWorld.setTile(1, 0, PROCEDURAL_GRASS_SURFACE_TILE_ID)).toBe(true);

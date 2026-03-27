@@ -4,6 +4,7 @@ import type { PlayerDeathState } from './world/playerDeathState';
 import { consolidateDroppedItemStates, type DroppedItemState } from './world/droppedItem';
 import type { PlayerInventoryState } from './world/playerInventory';
 import type { PlayerEquipmentState } from './world/playerEquipment';
+import type { SmallTreeGrowthState } from './world/smallTreeGrowth';
 import type { PlayerState } from './world/playerState';
 import type { TileWorldSnapshot } from './world/world';
 
@@ -15,6 +16,7 @@ export interface WorldSessionRestoreTarget {
   restoreStandalonePlayerEquipmentState(equipmentState: PlayerEquipmentState): void;
   restoreDroppedItemStates(droppedItemStates: DroppedItemState[]): void;
   restoreCameraFollowOffset(cameraFollowOffset: CameraFollowOffset): void;
+  restoreSmallTreeGrowthState(smallTreeGrowthState: SmallTreeGrowthState): void;
 }
 
 export interface RestoreWorldSessionFromSaveEnvelopeOptions {
@@ -65,6 +67,7 @@ export const restoreWorldSessionFromSaveEnvelope = ({
     standalonePlayerEquipmentState: envelope.session.standalonePlayerEquipmentState,
     droppedItemStates: envelope.session.droppedItemStates,
     cameraFollowOffset: envelope.session.cameraFollowOffset,
+    smallTreeGrowthState: envelope.session.smallTreeGrowthState,
     migration: envelope.migration
   });
   const consolidatedDroppedItemStates = consolidateDroppedItemStates(
@@ -83,6 +86,7 @@ export const restoreWorldSessionFromSaveEnvelope = ({
         standalonePlayerEquipmentState: normalizedEnvelope.session.standalonePlayerEquipmentState,
         droppedItemStates: consolidatedDroppedItemStates,
         cameraFollowOffset: normalizedEnvelope.session.cameraFollowOffset,
+        smallTreeGrowthState: normalizedEnvelope.session.smallTreeGrowthState,
         migration: normalizedEnvelope.migration
       })
     : normalizedEnvelope;
@@ -98,6 +102,7 @@ export const restoreWorldSessionFromSaveEnvelope = ({
   );
   target.restoreDroppedItemStates(restoredEnvelope.session.droppedItemStates);
   target.restoreCameraFollowOffset(restoredEnvelope.session.cameraFollowOffset);
+  target.restoreSmallTreeGrowthState(restoredEnvelope.session.smallTreeGrowthState);
 
   return {
     restoredEnvelope,

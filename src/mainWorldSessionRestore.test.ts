@@ -14,6 +14,7 @@ import {
   createPlayerEquipmentState,
   type PlayerEquipmentState
 } from './world/playerEquipment';
+import { createSmallTreeGrowthState, type SmallTreeGrowthState } from './world/smallTreeGrowth';
 import { createPlayerState, type PlayerState } from './world/playerState';
 import { CHUNK_SIZE } from './world/constants';
 import { STARTER_DIRT_WALL_ID, STARTER_WOOD_WALL_ID } from './world/starterWallPlacement';
@@ -65,6 +66,10 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       })
     ];
     const cameraFollowOffset = { x: 18, y: -12 };
+    const smallTreeGrowthState = {
+      ticksUntilNextGrowth: 14,
+      nextWindowIndex: 2
+    };
     const envelope = createWorldSaveEnvelope({
       worldSnapshot: world.createSnapshot(),
       standalonePlayerState,
@@ -72,7 +77,8 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       standalonePlayerInventoryState,
       standalonePlayerEquipmentState,
       droppedItemStates,
-      cameraFollowOffset
+      cameraFollowOffset,
+      smallTreeGrowthState
     });
     const callOrder: string[] = [];
     let restoredWorldSnapshot: ReturnType<TileWorld['createSnapshot']> | null = null;
@@ -82,6 +88,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     let restoredPlayerEquipmentState: PlayerEquipmentState | null = null;
     let restoredDroppedItemStates: DroppedItemState[] | null = null;
     let restoredCameraFollowOffset: typeof cameraFollowOffset | null = null;
+    let restoredSmallTreeGrowthState: SmallTreeGrowthState | null = null;
     const target = {
       loadWorldSnapshot: vi.fn((snapshot) => {
         callOrder.push('world');
@@ -110,6 +117,10 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       restoreCameraFollowOffset: vi.fn((offset) => {
         callOrder.push('camera');
         restoredCameraFollowOffset = offset;
+      }),
+      restoreSmallTreeGrowthState: vi.fn((nextSmallTreeGrowthState) => {
+        callOrder.push('small-tree-growth');
+        restoredSmallTreeGrowthState = nextSmallTreeGrowthState;
       })
     };
 
@@ -125,7 +136,8 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       'inventory',
       'equipment',
       'drops',
-      'camera'
+      'camera',
+      'small-tree-growth'
     ]);
     expect(target.loadWorldSnapshot).toHaveBeenCalledTimes(1);
     expect(target.restoreStandalonePlayerState).toHaveBeenCalledTimes(1);
@@ -134,6 +146,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     expect(target.restoreStandalonePlayerEquipmentState).toHaveBeenCalledTimes(1);
     expect(target.restoreDroppedItemStates).toHaveBeenCalledTimes(1);
     expect(target.restoreCameraFollowOffset).toHaveBeenCalledTimes(1);
+    expect(target.restoreSmallTreeGrowthState).toHaveBeenCalledTimes(1);
     expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
     expect(restoreResult.restoredEnvelope).toEqual(envelope);
     expect(restoreResult.restoredEnvelope).not.toBe(envelope);
@@ -145,6 +158,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     envelope.session.standalonePlayerEquipmentState.body = null;
     envelope.session.droppedItemStates[0]!.amount = 1;
     envelope.session.cameraFollowOffset.x = 999;
+    envelope.session.smallTreeGrowthState.ticksUntilNextGrowth = 1;
 
     const restoredWorld = new TileWorld(0);
     restoredWorld.loadSnapshot(restoredWorldSnapshot!);
@@ -159,6 +173,10 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     expect(restoredPlayerEquipmentState).toEqual(standalonePlayerEquipmentState);
     expect(restoredDroppedItemStates).toEqual(droppedItemStates);
     expect(restoredCameraFollowOffset).toEqual({ x: 18, y: -12 });
+    expect(restoredSmallTreeGrowthState).toEqual({
+      ticksUntilNextGrowth: 14,
+      nextWindowIndex: 2
+    });
   });
 
   it('preserves null standalone-player session state while still restoring world and camera data', () => {
@@ -177,7 +195,8 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       restoreStandalonePlayerInventoryState: vi.fn(),
       restoreStandalonePlayerEquipmentState: vi.fn(),
       restoreDroppedItemStates: vi.fn(),
-      restoreCameraFollowOffset: vi.fn()
+      restoreCameraFollowOffset: vi.fn(),
+      restoreSmallTreeGrowthState: vi.fn()
     };
 
     const restoreResult = restoreWorldSessionFromSaveEnvelope({
@@ -196,6 +215,7 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
     );
     expect(target.restoreDroppedItemStates).toHaveBeenCalledWith([]);
     expect(target.restoreCameraFollowOffset).toHaveBeenCalledWith({ x: -24, y: 10 });
+    expect(target.restoreSmallTreeGrowthState).toHaveBeenCalledWith(createSmallTreeGrowthState());
     expect(restoreResult.didNormalizeDroppedItemStates).toBe(false);
     expect(restoreResult.restoredEnvelope).toEqual(envelope);
   });
@@ -239,7 +259,8 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       restoreDroppedItemStates: vi.fn((nextDroppedItemStates) => {
         restoredDroppedItemStates = nextDroppedItemStates;
       }),
-      restoreCameraFollowOffset: vi.fn()
+      restoreCameraFollowOffset: vi.fn(),
+      restoreSmallTreeGrowthState: vi.fn()
     };
 
     const restoreResult = restoreWorldSessionFromSaveEnvelope({
@@ -320,7 +341,8 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       }),
       restoreStandalonePlayerEquipmentState: vi.fn(),
       restoreDroppedItemStates: vi.fn(),
-      restoreCameraFollowOffset: vi.fn()
+      restoreCameraFollowOffset: vi.fn(),
+      restoreSmallTreeGrowthState: vi.fn()
     };
 
     const restoreResult = restoreWorldSessionFromSaveEnvelope({
@@ -376,7 +398,8 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       }),
       restoreStandalonePlayerEquipmentState: vi.fn(),
       restoreDroppedItemStates: vi.fn(),
-      restoreCameraFollowOffset: vi.fn()
+      restoreCameraFollowOffset: vi.fn(),
+      restoreSmallTreeGrowthState: vi.fn()
     };
 
     const restoreResult = restoreWorldSessionFromSaveEnvelope({
@@ -424,7 +447,8 @@ describe('restoreWorldSessionFromSaveEnvelope', () => {
       }),
       restoreStandalonePlayerEquipmentState: vi.fn(),
       restoreDroppedItemStates: vi.fn(),
-      restoreCameraFollowOffset: vi.fn()
+      restoreCameraFollowOffset: vi.fn(),
+      restoreSmallTreeGrowthState: vi.fn()
     };
 
     const restoreResult = restoreWorldSessionFromSaveEnvelope({

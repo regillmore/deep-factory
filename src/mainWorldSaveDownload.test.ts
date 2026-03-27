@@ -9,6 +9,7 @@ import {
 import { createDefaultWorldSaveEnvelopeMigrationMetadata, type WorldSaveEnvelope } from './mainWorldSave';
 import { createDefaultPlayerInventoryState } from './world/playerInventory';
 import { createDefaultPlayerEquipmentState } from './world/playerEquipment';
+import { createSmallTreeGrowthState } from './world/smallTreeGrowth';
 
 const createTestEnvelope = (): WorldSaveEnvelope => ({
   kind: 'deep-factory.world-save',
@@ -23,7 +24,8 @@ const createTestEnvelope = (): WorldSaveEnvelope => ({
     cameraFollowOffset: {
       x: 12,
       y: -6
-    }
+    },
+    smallTreeGrowthState: createSmallTreeGrowthState()
   },
   worldSnapshot: {
     worldSeed: 0,

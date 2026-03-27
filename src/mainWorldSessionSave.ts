@@ -8,6 +8,7 @@ import type { PlayerDeathState } from './world/playerDeathState';
 import type { DroppedItemState } from './world/droppedItem';
 import type { PlayerInventoryState } from './world/playerInventory';
 import type { PlayerEquipmentState } from './world/playerEquipment';
+import type { SmallTreeGrowthState } from './world/smallTreeGrowth';
 import type { PlayerState } from './world/playerState';
 import type { TileWorldSnapshot } from './world/world';
 
@@ -19,6 +20,7 @@ export interface WorldSessionSaveSource {
   getStandalonePlayerEquipmentState(): PlayerEquipmentState;
   getDroppedItemStates(): DroppedItemState[];
   getCameraFollowOffset(): CameraFollowOffset;
+  getSmallTreeGrowthState(): SmallTreeGrowthState;
 }
 
 export interface CreateWorldSessionSaveEnvelopeOptions {
@@ -38,5 +40,6 @@ export const createWorldSessionSaveEnvelope = ({
     standalonePlayerEquipmentState: source.getStandalonePlayerEquipmentState(),
     droppedItemStates: source.getDroppedItemStates(),
     cameraFollowOffset: source.getCameraFollowOffset(),
+    smallTreeGrowthState: source.getSmallTreeGrowthState(),
     ...(migration === undefined ? {} : { migration })
   });

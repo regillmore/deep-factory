@@ -106,6 +106,7 @@ export const savePersistedWorldSaveEnvelope = (
       standalonePlayerEquipmentState: envelope.session.standalonePlayerEquipmentState,
       droppedItemStates: envelope.session.droppedItemStates,
       cameraFollowOffset: envelope.session.cameraFollowOffset,
+      smallTreeGrowthState: envelope.session.smallTreeGrowthState,
       migration: envelope.migration
     });
   } catch {
