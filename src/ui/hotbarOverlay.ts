@@ -43,6 +43,7 @@ interface HotbarOverlayUpdateOptions {
       }
     | null;
   starterWandCooldownFillNormalized?: number | null;
+  manaCrystalBlockedReason?: 'dead' | 'max-mana-cap' | null;
   heartCrystalBlockedReason?: 'dead' | 'max-health-cap' | null;
   starterMeleeWeaponSwingFeedback?:
     | {
@@ -104,6 +105,26 @@ const STARTER_WAND_COOLDOWN_AMOUNT_TEXT = 'COOL';
 const STARTER_WAND_COOLDOWN_AMOUNT_COLOR = '#d8e4ff';
 const STARTER_WAND_MANA_AMOUNT_TEXT = 'MANA';
 const STARTER_WAND_MANA_AMOUNT_COLOR = '#c9f6ff';
+const MANA_CRYSTAL_DEAD_FILL_BACKGROUND =
+  'linear-gradient(180deg, rgba(255, 170, 170, 0.08) 0%, rgba(255, 112, 112, 0.3) 35%, rgba(204, 52, 52, 0.68) 100%)';
+const MANA_CRYSTAL_MAX_MANA_CAP_FILL_BACKGROUND =
+  'linear-gradient(180deg, rgba(192, 241, 255, 0.08) 0%, rgba(92, 201, 255, 0.26) 35%, rgba(30, 132, 214, 0.66) 100%)';
+const MANA_CRYSTAL_BLOCKED_TITLE_TEXT: Record<'dead' | 'max-mana-cap', string> = {
+  dead: 'blocked: player is dead',
+  'max-mana-cap': 'blocked: already at 200 max mana'
+};
+const MANA_CRYSTAL_BLOCKED_AMOUNT_TEXT: Record<'dead' | 'max-mana-cap', string> = {
+  dead: 'DEAD',
+  'max-mana-cap': 'MAX'
+};
+const MANA_CRYSTAL_BLOCKED_AMOUNT_COLOR: Record<'dead' | 'max-mana-cap', string> = {
+  dead: '#ffd2d2',
+  'max-mana-cap': '#c9f6ff'
+};
+const MANA_CRYSTAL_BLOCKED_FILL_BACKGROUND: Record<'dead' | 'max-mana-cap', string> = {
+  dead: MANA_CRYSTAL_DEAD_FILL_BACKGROUND,
+  'max-mana-cap': MANA_CRYSTAL_MAX_MANA_CAP_FILL_BACKGROUND
+};
 const HEART_CRYSTAL_DEAD_FILL_BACKGROUND =
   'linear-gradient(180deg, rgba(255, 170, 170, 0.08) 0%, rgba(255, 112, 112, 0.3) 35%, rgba(204, 52, 52, 0.68) 100%)';
 const HEART_CRYSTAL_MAX_HEALTH_CAP_FILL_BACKGROUND =
@@ -402,6 +423,7 @@ export class HotbarOverlay {
         ? clampUnitInterval(options.starterWandCooldownFillNormalized)
         : null;
     const heartCrystalBlockedReason = options.heartCrystalBlockedReason ?? null;
+    const manaCrystalBlockedReason = options.manaCrystalBlockedReason ?? null;
     const starterMeleeWeaponSwingFeedback = options.starterMeleeWeaponSwingFeedback ?? null;
     const starterPickaxeSwingFeedback = options.starterPickaxeSwingFeedback ?? null;
     const starterSpearThrustFeedback = options.starterSpearThrustFeedback ?? null;
@@ -426,8 +448,23 @@ export class HotbarOverlay {
       }
 
       const definition = getPlayerInventoryItemDefinition(stack.itemId);
-      const blockedHeartCrystal =
-        stack.itemId === 'heart-crystal' && heartCrystalBlockedReason !== null;
+      const blockedConsumable =
+        stack.itemId === 'mana-crystal' && manaCrystalBlockedReason !== null
+          ? {
+              titleText: MANA_CRYSTAL_BLOCKED_TITLE_TEXT[manaCrystalBlockedReason],
+              amountText: MANA_CRYSTAL_BLOCKED_AMOUNT_TEXT[manaCrystalBlockedReason],
+              amountColor: MANA_CRYSTAL_BLOCKED_AMOUNT_COLOR[manaCrystalBlockedReason],
+              fillBackground: MANA_CRYSTAL_BLOCKED_FILL_BACKGROUND[manaCrystalBlockedReason]
+            }
+          : stack.itemId === 'heart-crystal' && heartCrystalBlockedReason !== null
+            ? {
+                titleText: HEART_CRYSTAL_BLOCKED_TITLE_TEXT[heartCrystalBlockedReason],
+                amountText: HEART_CRYSTAL_BLOCKED_AMOUNT_TEXT[heartCrystalBlockedReason],
+                amountColor: HEART_CRYSTAL_BLOCKED_AMOUNT_COLOR[heartCrystalBlockedReason],
+                fillBackground:
+                  HEART_CRYSTAL_BLOCKED_FILL_BACKGROUND[heartCrystalBlockedReason]
+              }
+            : null;
       const selectedTimedItemFeedback =
         selected && stack.itemId === 'axe' && starterAxeSwingFeedback !== null
           ? {
@@ -482,8 +519,8 @@ export class HotbarOverlay {
         starterWandManaReadout.currentMana < starterWandManaReadout.maxMana;
       const coolingDown =
         stack.itemId === 'healing-potion' && healingPotionCooldownFillNormalized !== null;
-      slotElements.button.title = blockedHeartCrystal
-        ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${HEART_CRYSTAL_BLOCKED_TITLE_TEXT[heartCrystalBlockedReason]})`
+      slotElements.button.title = blockedConsumable !== null
+        ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${blockedConsumable.titleText})`
         : selectedTimedItemFeedback !== null
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${selectedTimedItemFeedback.titleText})`
           : selectedWandCoolingDown
@@ -499,8 +536,8 @@ export class HotbarOverlay {
           : `Select ${definition.label} in hotbar slot ${slotIndex + 1}`;
       slotElements.itemLabel.textContent = definition.hotbarLabel;
       slotElements.itemLabel.style.color = '#f5f7fa';
-      slotElements.amountLabel.textContent = blockedHeartCrystal
-        ? HEART_CRYSTAL_BLOCKED_AMOUNT_TEXT[heartCrystalBlockedReason]
+      slotElements.amountLabel.textContent = blockedConsumable !== null
+        ? blockedConsumable.amountText
         : selectedTimedItemFeedback !== null
           ? HOTBAR_TIMED_ITEM_AMOUNT_TEXT[selectedTimedItemFeedback.phase]
           : selectedWandCoolingDown
@@ -510,8 +547,8 @@ export class HotbarOverlay {
           : stack.amount > 1
             ? String(stack.amount)
           : '';
-      slotElements.amountLabel.style.color = blockedHeartCrystal
-        ? HEART_CRYSTAL_BLOCKED_AMOUNT_COLOR[heartCrystalBlockedReason]
+      slotElements.amountLabel.style.color = blockedConsumable !== null
+        ? blockedConsumable.amountColor
         : selectedTimedItemFeedback !== null
           ? HOTBAR_TIMED_ITEM_AMOUNT_COLOR[selectedTimedItemFeedback.phase]
           : selectedWandCoolingDown
@@ -521,7 +558,7 @@ export class HotbarOverlay {
         : '#ffe7a3';
       applySlotFillStyles(
         slotElements.cooldownFill,
-        blockedHeartCrystal
+        blockedConsumable !== null
           ? 1
           : selectedTimedItemFeedback !== null
             ? selectedTimedItemFeedback.timingFillNormalized
@@ -532,8 +569,8 @@ export class HotbarOverlay {
             : stack.itemId === 'healing-potion'
               ? healingPotionCooldownFillNormalized
             : null,
-        blockedHeartCrystal
-          ? HEART_CRYSTAL_BLOCKED_FILL_BACKGROUND[heartCrystalBlockedReason]
+        blockedConsumable !== null
+          ? blockedConsumable.fillBackground
           : selectedTimedItemFeedback !== null
             ? HOTBAR_TIMED_ITEM_FILL_BACKGROUND[selectedTimedItemFeedback.phase]
             : selectedWandCoolingDown

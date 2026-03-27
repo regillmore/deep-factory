@@ -906,6 +906,40 @@ describe('decodeWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerState).toEqual(standalonePlayerState);
   });
 
+  it('round-trips upgraded max-mana saves together with stacked mana crystals', () => {
+    const world = new TileWorld(0);
+    const standalonePlayerState = createPlayerState({
+      maxMana: 80,
+      mana: 57,
+      manaRegenDelaySecondsRemaining: 0.25,
+      manaRegenTickSecondsRemaining: 0.1
+    });
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'mana-crystal', amount: 3 },
+        ...Array.from({ length: 9 }, () => null)
+      ]
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState,
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    expect(decoded.session.standalonePlayerState).toEqual(standalonePlayerState);
+    expect(decoded.session.standalonePlayerInventoryState).toEqual(standalonePlayerInventoryState);
+  });
+
   it('round-trips saved small-tree growth cadence through save decode', () => {
     const world = new TileWorld(0);
     const smallTreeGrowthState = {

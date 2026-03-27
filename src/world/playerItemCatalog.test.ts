@@ -17,6 +17,7 @@ describe('playerItemCatalog', () => {
       'Gel',
       'Healing Potion',
       'Heart Crystal',
+      'Mana Crystal',
       'Platform',
       'Rope',
       'Starter Axe',
@@ -64,6 +65,9 @@ describe('playerItemCatalog', () => {
     ]);
     expect(searchPlayerItemCatalog('potion').map((entry) => entry.itemId)).toEqual([
       'healing-potion'
+    ]);
+    expect(searchPlayerItemCatalog('mana crystal').map((entry) => entry.itemId)).toEqual([
+      'mana-crystal'
     ]);
     expect(searchPlayerItemCatalog('starter wand').map((entry) => entry.itemId)).toEqual([
       'wand'

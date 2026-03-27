@@ -369,6 +369,44 @@ describe('HotbarOverlay', () => {
     expect(getSlotRow(overlay).children[5]!.title).not.toContain('blocked:');
   });
 
+  it('shows and clears visible mana-crystal blocked feedback for dead and max-cap states', () => {
+    const host = createHost();
+    const overlay = new HotbarOverlay({ host });
+
+    overlay.update(
+      createHotbarState([[5, createPlayerInventoryItemStack('mana-crystal', 3)]], 5),
+      {
+        manaCrystalBlockedReason: 'max-mana-cap'
+      }
+    );
+
+    expect(getSlotAmountLabel(overlay, 5).textContent).toBe('MAX');
+    expect(getSlotAmountLabel(overlay, 5).style.color).toBe('#c9f6ff');
+    expect(getSlotCooldownFill(overlay, 5).style.height).toBe('100.0%');
+    expect(getSlotCooldownFill(overlay, 5).style.opacity).toBe('1');
+    expect(getSlotRow(overlay).children[5]!.title).toContain('already at 200 max mana');
+    expect(getSlotCooldownFill(overlay, 0).style.opacity).toBe('0');
+
+    overlay.update(
+      createHotbarState([[5, createPlayerInventoryItemStack('mana-crystal', 3)]], 5),
+      {
+        manaCrystalBlockedReason: 'dead'
+      }
+    );
+
+    expect(getSlotAmountLabel(overlay, 5).textContent).toBe('DEAD');
+    expect(getSlotAmountLabel(overlay, 5).style.color).toBe('#ffd2d2');
+    expect(getSlotRow(overlay).children[5]!.title).toContain('player is dead');
+
+    overlay.update(createHotbarState([[5, createPlayerInventoryItemStack('mana-crystal', 3)]], 5));
+
+    expect(getSlotAmountLabel(overlay, 5).textContent).toBe('3');
+    expect(getSlotAmountLabel(overlay, 5).style.color).toBe('#ffe7a3');
+    expect(getSlotCooldownFill(overlay, 5).style.height).toBe('0.0%');
+    expect(getSlotCooldownFill(overlay, 5).style.opacity).toBe('0');
+    expect(getSlotRow(overlay).children[5]!.title).not.toContain('blocked:');
+  });
+
   it('shows and clears selected starter-pickaxe phase timing feedback without affecting other slots', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });

@@ -443,6 +443,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'PICK',
       maxStackSize: 1
     });
+    expect(getPlayerInventoryItemDefinition('mana-crystal')).toEqual({
+      id: 'mana-crystal',
+      label: 'Mana Crystal',
+      hotbarLabel: 'MANA',
+      maxStackSize: 999
+    });
     expect(getPlayerInventoryItemDefinition('platform')).toEqual({
       id: 'platform',
       label: 'Platform',
@@ -504,6 +510,7 @@ describe('playerInventory', () => {
       'axe',
       'acorn',
       'pickaxe',
+      'mana-crystal',
       'dirt-block',
       'dirt-wall',
       'stone-block',

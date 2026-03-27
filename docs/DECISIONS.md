@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-26: Mana crystals are permanent max-mana upgrades, not temporary restoratives
+
+- Decision: `mana-crystal` now consumes through the shared hidden-panel item-use path to raise max mana by `20` up to `200` while also filling current mana by only that granted upgrade amount, and use is blocked once the player is dead or already at the cap.
+- Reason: This slice needs deterministic permanent mana progression that mirrors the existing heart-crystal upgrade model without overloading the same item into an ad hoc temporary mana-refill rule after the permanent cap is reached.
+- Consequence: Future mana-item work should preserve `mana-crystal` as the save-owned permanent-upgrade path and add any separate temporary mana-restoration behavior through different items or explicitly new rules rather than silently changing cap-reached crystal use.
+
 ### 2026-03-26: Small-tree growth cadence lives in save-owned session state
 
 - Decision: The detached small-tree growth scheduler now persists its remaining tick countdown plus next window index inside the top-level paused-session world-save envelope and restores that cadence before runtime growth resumes.

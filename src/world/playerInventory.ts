@@ -4,6 +4,7 @@ export type PlayerInventoryItemId =
   | 'axe'
   | 'acorn'
   | 'pickaxe'
+  | 'mana-crystal'
   | 'dirt-block'
   | 'dirt-wall'
   | 'stone-block'
@@ -73,6 +74,7 @@ export const PLAYER_INVENTORY_ITEM_IDS: readonly PlayerInventoryItemId[] = [
   'axe',
   'acorn',
   'pickaxe',
+  'mana-crystal',
   'dirt-block',
   'dirt-wall',
   'stone-block',
@@ -118,6 +120,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     label: 'Starter Pickaxe',
     hotbarLabel: 'PICK',
     maxStackSize: 1
+  },
+  'mana-crystal': {
+    id: 'mana-crystal',
+    label: 'Mana Crystal',
+    hotbarLabel: 'MANA',
+    maxStackSize: 999
   },
   'dirt-block': {
     id: 'dirt-block',

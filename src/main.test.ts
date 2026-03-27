@@ -52,6 +52,7 @@ import { createDroppedItemState } from './world/droppedItem';
 import { createPlayerInventoryState } from './world/playerInventory';
 import { AUTHORED_ATLAS_HEIGHT, AUTHORED_ATLAS_WIDTH } from './world/authoredAtlasLayout';
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './world/constants';
+import { DEFAULT_MANA_CRYSTAL_MAX_MANA_CAP } from './world/playerManaCrystal';
 import {
   PROCEDURAL_DIRT_TILE_ID,
   PROCEDURAL_COPPER_ORE_TILE_ID,
@@ -14676,6 +14677,230 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[5]).toEqual({
       itemId: 'heart-crystal',
       amount: 1
+    });
+  });
+
+  it('uses a mana crystal through the shared hidden-panel mouse item-use path and persists the max-mana upgrade', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            maxMana: 20,
+            mana: 6
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'mana-crystal', amount: 2 },
+              ...Array.from({ length: 4 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 5
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: 0,
+        worldX: 8,
+        worldY: 0,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerState).toMatchObject({
+      maxMana: 40,
+      mana: 26
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[5]).toEqual({
+      itemId: 'mana-crystal',
+      amount: 1
+    });
+  });
+
+  it('uses a mana crystal through the shared hidden-panel touch item-use path and clamps the final upgrade at the mana cap', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            maxMana: DEFAULT_MANA_CRYSTAL_MAX_MANA_CAP - 10,
+            mana: 173
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'mana-crystal', amount: 1 },
+              ...Array.from({ length: 4 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 5
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: 0,
+        worldX: 8,
+        worldY: 0,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerState).toMatchObject({
+      maxMana: DEFAULT_MANA_CRYSTAL_MAX_MANA_CAP,
+      mana: 183
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[5]).toBeNull();
+  });
+
+  it('shows dead mana-crystal blocked feedback through the shared hidden-panel mouse item-use path', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            health: 0,
+            mana: 10
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'mana-crystal', amount: 2 },
+              ...Array.from({ length: 4 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 5
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: 0,
+        worldX: 8,
+        worldY: 0,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+
+    expect(getHotbarOverlaySlotButton(5).title).toContain('player is dead');
+    expect(getHotbarOverlaySlotAmountLabel(5).textContent).toBe('DEAD');
+    expect(getHotbarOverlaySlotCooldownFill(5).style.opacity).toBe('1');
+    expect(getHotbarOverlaySlotCooldownFill(5).style.height).toBe('100.0%');
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerState).toMatchObject({
+      health: 0,
+      maxMana: 20,
+      mana: 10
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[5]).toEqual({
+      itemId: 'mana-crystal',
+      amount: 2
+    });
+  });
+
+  it('shows max-cap mana-crystal blocked feedback through the shared hidden-panel touch item-use path', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            maxMana: DEFAULT_MANA_CRYSTAL_MAX_MANA_CAP,
+            mana: 160
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'mana-crystal', amount: 2 },
+              ...Array.from({ length: 4 }, () => null)
+            ],
+            selectedHotbarSlotIndex: 5
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 0,
+        worldTileY: 0,
+        worldX: 8,
+        worldY: 0,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+
+    expect(getHotbarOverlaySlotButton(5).title).toContain('already at 200 max mana');
+    expect(getHotbarOverlaySlotAmountLabel(5).textContent).toBe('MAX');
+    expect(getHotbarOverlaySlotCooldownFill(5).style.opacity).toBe('1');
+    expect(getHotbarOverlaySlotCooldownFill(5).style.height).toBe('100.0%');
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerState).toMatchObject({
+      maxMana: DEFAULT_MANA_CRYSTAL_MAX_MANA_CAP,
+      mana: 160
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[5]).toEqual({
+      itemId: 'mana-crystal',
+      amount: 2
     });
   });
 

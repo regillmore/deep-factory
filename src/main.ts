@@ -315,6 +315,11 @@ import {
   tryUsePlayerHeartCrystal
 } from './world/playerHeartCrystal';
 import {
+  DEFAULT_MANA_CRYSTAL_MAX_MANA_CAP,
+  MANA_CRYSTAL_ITEM_ID,
+  tryUsePlayerManaCrystal
+} from './world/playerManaCrystal';
+import {
   ACORN_ITEM_ID,
   evaluateAcornPlantingAtAnchor,
   tryPlantAcornAtAnchor
@@ -2031,6 +2036,27 @@ const bootstrap = async (): Promise<void> => {
     }
     return null;
   };
+  const resolveHotbarOverlayManaCrystalBlockedReason = (): 'dead' | 'max-mana-cap' | null => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== MANA_CRYSTAL_ITEM_ID) {
+      return null;
+    }
+
+    const standalonePlayerState = getStandalonePlayerState();
+    if (standalonePlayerState === null) {
+      return null;
+    }
+    if (
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return 'dead';
+    }
+    if (standalonePlayerState.maxMana >= DEFAULT_MANA_CRYSTAL_MAX_MANA_CAP) {
+      return 'max-mana-cap';
+    }
+    return null;
+  };
   const resolveHotbarOverlayStarterMeleeWeaponSwingFeedback = ():
     | {
         phase: 'windup' | 'active' | 'recovery';
@@ -2194,6 +2220,7 @@ const bootstrap = async (): Promise<void> => {
       starterWandManaReadout: resolveHotbarOverlayStarterWandManaReadout(),
       starterWandCooldownFillNormalized:
         resolveHotbarOverlayStarterWandCooldownFillNormalized(),
+      manaCrystalBlockedReason: resolveHotbarOverlayManaCrystalBlockedReason(),
       heartCrystalBlockedReason: resolveHotbarOverlayHeartCrystalBlockedReason(),
       starterMeleeWeaponSwingFeedback: resolveHotbarOverlayStarterMeleeWeaponSwingFeedback(),
       starterPickaxeSwingFeedback: resolveHotbarOverlayStarterPickaxeSwingFeedback(),
@@ -2481,6 +2508,31 @@ const bootstrap = async (): Promise<void> => {
     }
 
     const useResult = tryUsePlayerHeartCrystal(standalonePlayerState);
+    if (!useResult.consumed) {
+      syncHotbarOverlayState();
+      return false;
+    }
+    if (!applySelectedStandalonePlayerHotbarSlotConsumption()) {
+      return false;
+    }
+
+    setStandalonePlayerState(useResult.nextPlayerState);
+    return true;
+  };
+  const tryUseSelectedManaCrystal = (): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (standalonePlayerState === null) {
+      return false;
+    }
+    if (
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      syncHotbarOverlayState();
+      return false;
+    }
+
+    const useResult = tryUsePlayerManaCrystal(standalonePlayerState);
     if (!useResult.consumed) {
       syncHotbarOverlayState();
       return false;
@@ -5080,6 +5132,9 @@ const bootstrap = async (): Promise<void> => {
     }
     if (selectedStack.itemId === HEALING_POTION_ITEM_ID) {
       return tryUseSelectedHealingPotion();
+    }
+    if (selectedStack.itemId === MANA_CRYSTAL_ITEM_ID) {
+      return tryUseSelectedManaCrystal();
     }
     if (selectedStack.itemId === HEART_CRYSTAL_ITEM_ID) {
       return tryUseSelectedHeartCrystal();

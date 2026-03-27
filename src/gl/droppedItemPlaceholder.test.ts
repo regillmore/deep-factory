@@ -66,6 +66,13 @@ describe('droppedItemPlaceholder', () => {
     });
   });
 
+  it('provides a dedicated placeholder palette for mana-crystal pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('mana-crystal')).toEqual({
+      baseColor: [0.21, 0.41, 0.76],
+      accentColor: [0.71, 0.95, 1]
+    });
+  });
+
   it('provides a dedicated placeholder palette for gel pickups', () => {
     expect(getDroppedItemPlaceholderPalette('gel')).toEqual({
       baseColor: [0.22, 0.58, 0.23],
