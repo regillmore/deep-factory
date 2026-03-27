@@ -1,4 +1,7 @@
+import { appendOverlayMount } from './overlayMountHost';
+
 interface TouchPlayerControlsOptions {
+  host?: HTMLElement;
   onMoveLeftHeldChange?: (held: boolean) => void;
   onMoveRightHeldChange?: (held: boolean) => void;
   onJumpHeldChange?: (held: boolean) => void;
@@ -129,7 +132,7 @@ export class TouchPlayerControls {
       bindHoldButton(jumpButton, options.onJumpHeldChange ?? (() => {}), 'rgba(255, 190, 80, 0.42)')
     ];
 
-    document.body.append(this.root);
+    appendOverlayMount(this.root, options);
   }
 
   getRootElement(): HTMLDivElement {

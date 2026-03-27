@@ -10,6 +10,7 @@ import {
   resolveActiveDebugToolStatus
 } from './debugEditStatusHelpers';
 import { computeHoveredTileCursorClientRect, type HoveredTileCursorClientRect } from './hoveredTileCursor';
+import { appendOverlayMount, type OverlayMountOptions } from './overlayMountHost';
 
 const STATUS_BADGE_PADDING_PX = 10;
 const TOUCH_ANCHOR_LABEL_PADDING_PX = 4;
@@ -146,7 +147,7 @@ export class ArmedDebugToolPreviewOverlay {
   private breakTargetMarkers: HTMLDivElement[] = [];
   private visible = true;
 
-  constructor(private canvas: HTMLCanvasElement) {
+  constructor(private canvas: HTMLCanvasElement, options: OverlayMountOptions = {}) {
     this.root = document.createElement('div');
     this.root.style.position = 'fixed';
     this.root.style.left = '0';
@@ -250,7 +251,7 @@ export class ArmedDebugToolPreviewOverlay {
       this.touchAnchorLabel,
       this.statusBadge
     );
-    document.body.append(this.root);
+    appendOverlayMount(this.root, options);
   }
 
   setVisible(visible: boolean): void {

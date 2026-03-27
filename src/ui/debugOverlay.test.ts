@@ -1,10 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   createDefaultWorldSessionTelemetryState,
   type WorldSessionTelemetryState
 } from '../mainWorldSessionTelemetryState';
-import { formatDebugOverlayText, type DebugOverlayStats } from './debugOverlay';
+import { DebugOverlay, formatDebugOverlayText, type DebugOverlayStats } from './debugOverlay';
+
+class FakeElement {
+  style = {} as Record<string, string>;
+  children: FakeElement[] = [];
+  textContent = '';
+
+  append(...children: FakeElement[]): void {
+    this.children.push(...children);
+  }
+}
 
 const baseStats: DebugOverlayStats = {
   atlasSourceKind: 'authored',
@@ -1849,5 +1859,33 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nBonkHold: on');
     expect(text).toContain('\nCombat: health:85 | contactInvuln:0.50s');
     expect(text).toContain('\nContact: support:none | wall:none | ceiling:none');
+  });
+});
+
+describe('DebugOverlay', () => {
+  beforeEach(() => {
+    vi.stubGlobal('document', {
+      createElement: () => new FakeElement(),
+      body: new FakeElement()
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('mounts into document.body by default', () => {
+    new DebugOverlay();
+
+    expect((document.body as unknown as FakeElement).children).toHaveLength(1);
+  });
+
+  it('mounts into a supplied host instead of document.body', () => {
+    const host = new FakeElement();
+
+    new DebugOverlay({ host: host as unknown as HTMLElement });
+
+    expect(host.children).toHaveLength(1);
+    expect((document.body as unknown as FakeElement).children).toHaveLength(0);
   });
 });

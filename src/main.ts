@@ -1301,17 +1301,29 @@ const bootstrap = async (): Promise<void> => {
   const camera = new Camera2D();
   const defaultCameraZoom = camera.zoom;
   const input = new InputController(canvas, camera);
-  const debug = new DebugOverlay();
+  const debug = new DebugOverlay({ host: worldHost });
   debug.setVisible(false);
-  const hoveredTileCursor = new HoveredTileCursorOverlay(canvas);
-  const playerItemAxeChopPreview = new PlayerItemAxeChopPreviewOverlay(canvas);
-  const playerItemBunnyReleasePreview = new PlayerItemBunnyReleasePreviewOverlay(canvas);
-  const playerItemMiningPreview = new PlayerItemMiningPreviewOverlay(canvas);
-  const playerItemPlacementPreview = new PlayerItemPlacementPreviewOverlay(canvas);
-  const playerItemSpearPreview = new PlayerItemSpearPreviewOverlay(canvas);
-  const playerSpawnMarker = new PlayerSpawnMarkerOverlay(canvas);
-  const armedDebugToolPreview = new ArmedDebugToolPreviewOverlay(canvas);
-  const debugEditStatusStrip = new DebugEditStatusStrip(canvas);
+  const hoveredTileCursor = new HoveredTileCursorOverlay(canvas, { host: worldHost });
+  const playerItemAxeChopPreview = new PlayerItemAxeChopPreviewOverlay(canvas, {
+    host: worldHost
+  });
+  const playerItemBunnyReleasePreview = new PlayerItemBunnyReleasePreviewOverlay(canvas, {
+    host: worldHost
+  });
+  const playerItemMiningPreview = new PlayerItemMiningPreviewOverlay(canvas, {
+    host: worldHost
+  });
+  const playerItemPlacementPreview = new PlayerItemPlacementPreviewOverlay(canvas, {
+    host: worldHost
+  });
+  const playerItemSpearPreview = new PlayerItemSpearPreviewOverlay(canvas, {
+    host: worldHost
+  });
+  const playerSpawnMarker = new PlayerSpawnMarkerOverlay(canvas, { host: worldHost });
+  const armedDebugToolPreview = new ArmedDebugToolPreviewOverlay(canvas, {
+    host: worldHost
+  });
+  const debugEditStatusStrip = new DebugEditStatusStrip(canvas, {}, { host: worldHost });
   const hotbarOverlay = new HotbarOverlay({
     host: worldHost,
     onSelectSlot: (slotIndex) => {
@@ -6126,6 +6138,7 @@ const bootstrap = async (): Promise<void> => {
     const initialDebugEditControlPreferenceSnapshot = readDebugEditControlPreferenceSnapshot();
     const initialTouchDebugArmedToolSnapshot = readTouchDebugArmedToolSnapshot();
     const controls = new TouchDebugEditControls({
+      host: worldHost,
       initialVisible: false,
       ...createTouchDebugEditControlConstructorOptions(
         initialDebugEditControlPreferenceSnapshot,
@@ -6143,6 +6156,7 @@ const bootstrap = async (): Promise<void> => {
   debugEditControls = bootstrapTouchDebugEditControls();
   if (touchControlsAvailable) {
     new TouchPlayerControls({
+      host: worldHost,
       onMoveLeftHeldChange: (held) => {
         input.setTouchPlayerMoveLeftHeld(held);
       },

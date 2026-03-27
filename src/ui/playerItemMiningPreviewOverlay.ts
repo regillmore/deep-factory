@@ -1,5 +1,6 @@
 import { Camera2D } from '../core/camera2d';
 import { computeHoveredTileCursorClientRect, type HoveredTileCursorClientRect } from './hoveredTileCursor';
+import { appendOverlayMount, type OverlayMountOptions } from './overlayMountHost';
 
 export interface PlayerItemMiningPreviewState {
   tileX: number;
@@ -107,7 +108,9 @@ const hidePreviewRoot = (root: HTMLDivElement): void => {
   root.style.display = 'none';
 };
 
-const createPreviewRoot = (): { root: HTMLDivElement; progressFill: HTMLDivElement } => {
+const createPreviewRoot = (
+  options: OverlayMountOptions = {}
+): { root: HTMLDivElement; progressFill: HTMLDivElement } => {
   const root = document.createElement('div');
   root.style.position = 'fixed';
   root.style.left = '0';
@@ -131,7 +134,7 @@ const createPreviewRoot = (): { root: HTMLDivElement; progressFill: HTMLDivEleme
   progressFill.style.transition = 'height 90ms linear';
 
   root.append(progressFill);
-  document.body.append(root);
+  appendOverlayMount(root, options);
 
   return { root, progressFill };
 };
@@ -141,8 +144,8 @@ export class PlayerItemMiningPreviewOverlay {
   private progressFill: HTMLDivElement;
   private visible = true;
 
-  constructor(private canvas: HTMLCanvasElement) {
-    const elements = createPreviewRoot();
+  constructor(private canvas: HTMLCanvasElement, options: OverlayMountOptions = {}) {
+    const elements = createPreviewRoot(options);
     this.root = elements.root;
     this.progressFill = elements.progressFill;
   }

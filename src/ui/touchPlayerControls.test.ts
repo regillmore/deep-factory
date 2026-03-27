@@ -101,4 +101,15 @@ describe('TouchPlayerControls', () => {
     expect(onClimbDownHeldChange).toHaveBeenLastCalledWith(false);
     expect(downButton.getAttribute('aria-pressed')).toBe('false');
   });
+
+  it('mounts into a supplied host instead of document.body', () => {
+    const host = new FakeElement();
+
+    const controls = new TouchPlayerControls({
+      host: host as unknown as HTMLElement
+    });
+
+    expect(host.children).toEqual([controls.getRootElement()]);
+    expect((document.body as unknown as FakeElement).children).toHaveLength(0);
+  });
 });

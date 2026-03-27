@@ -1,6 +1,7 @@
 import { Camera2D } from '../core/camera2d';
 import type { SmallTreeGrowthStage } from '../world/smallTreeAnchors';
 import { computeHoveredTileCursorClientRect, type HoveredTileCursorClientRect } from './hoveredTileCursor';
+import { appendOverlayMount, type OverlayMountOptions } from './overlayMountHost';
 
 export interface PlayerItemAxeChopPreviewState {
   tileX: number;
@@ -117,7 +118,7 @@ const hidePreviewRoot = (root: HTMLDivElement): void => {
   root.style.display = 'none';
 };
 
-const createPreviewRoot = (): HTMLDivElement => {
+const createPreviewRoot = (options: OverlayMountOptions = {}): HTMLDivElement => {
   const root = document.createElement('div');
   root.style.position = 'fixed';
   root.style.left = '0';
@@ -129,16 +130,15 @@ const createPreviewRoot = (): HTMLDivElement => {
   root.style.pointerEvents = 'none';
   root.style.zIndex = '9';
   root.style.display = 'none';
-  document.body.append(root);
-  return root;
+  return appendOverlayMount(root, options);
 };
 
 export class PlayerItemAxeChopPreviewOverlay {
   private root: HTMLDivElement;
   private visible = true;
 
-  constructor(private canvas: HTMLCanvasElement) {
-    this.root = createPreviewRoot();
+  constructor(private canvas: HTMLCanvasElement, options: OverlayMountOptions = {}) {
+    this.root = createPreviewRoot(options);
   }
 
   setVisible(visible: boolean): void {

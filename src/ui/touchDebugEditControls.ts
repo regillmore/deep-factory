@@ -27,6 +27,7 @@ import {
   getDropSelectedHotbarStackShortcutLabel
 } from '../input/playerInventoryShortcuts';
 import { installPointerClickFocusRelease } from './buttonFocus';
+import { appendOverlayMount } from './overlayMountHost';
 
 export interface DebugBrushOption {
   tileId: number;
@@ -48,6 +49,7 @@ export interface TouchDebugEditControlsDisplayState {
 }
 
 interface TouchDebugEditControlsOptions {
+  host?: HTMLElement;
   initialVisible?: boolean;
   initialMode?: TouchDebugEditMode;
   onModeChange?: (mode: TouchDebugEditMode) => void;
@@ -831,7 +833,7 @@ export class TouchDebugEditControls {
     this.syncCollapsedState();
     this.syncVisibility();
     this.installPointerButtonFocusRelease();
-    document.body.append(this.root);
+    appendOverlayMount(this.root, options);
   }
 
   private refreshKeyboardShortcutLines(

@@ -1,5 +1,6 @@
 import { Camera2D } from '../core/camera2d';
 import { computeWorldClientPoint } from './playerSpawnMarkerOverlay';
+import { appendOverlayMount, type OverlayMountOptions } from './overlayMountHost';
 
 const PREVIEW_LINE_HEIGHT_PX = 3;
 const PREVIEW_ENDPOINT_SIZE_PX = 12;
@@ -88,7 +89,7 @@ export class PlayerItemSpearPreviewOverlay {
   private endpoint: HTMLDivElement;
   private visible = true;
 
-  constructor(private canvas: HTMLCanvasElement) {
+  constructor(private canvas: HTMLCanvasElement, options: OverlayMountOptions = {}) {
     this.root = document.createElement('div');
     this.root.style.position = 'fixed';
     this.root.style.left = '0';
@@ -119,7 +120,7 @@ export class PlayerItemSpearPreviewOverlay {
     this.endpoint.style.borderStyle = 'solid';
 
     this.root.append(this.line, this.endpoint);
-    document.body.append(this.root);
+    appendOverlayMount(this.root, options);
   }
 
   setVisible(visible: boolean): void {

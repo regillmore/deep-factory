@@ -2,11 +2,17 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-27: In-world touch and debug overlays mount under the shell world subtree
+
+- Decision: In-world touch-player controls, debug HUD or compact status UI, and preview or marker overlays now accept a mount host and are routed from `src/main.ts` under the app shell's world subtree instead of appending directly to `document.body`.
+- Reason: Keeping the live world canvas plus its touch and debug overlays inside the same shell-owned subtree is a prerequisite for later fullscreen work that targets the shell rather than the entire document.
+- Consequence: Future in-world overlay UI should expose a host-mount path and join that shell-owned subtree by default instead of hardcoding top-level document mounts.
+
 ### 2026-03-27: Paused-menu fullscreen targets the top-level document
 
 - Decision: The paused-menu `Overview` fullscreen toggle now enters or exits browser fullscreen against the top-level document rather than targeting only the canvas or world host.
-- Reason: Touch-player and touch-debug overlays are still mounted outside the canvas subtree, so targeting a narrower element would leave parts of the live play UI outside the fullscreen subtree on supporting browsers.
-- Consequence: Future fullscreen work should keep using the top-level document target unless those overlays are migrated into one shared shell-owned container first.
+- Reason: The fullscreen follow-up that narrows the target to the app-shell subtree has not landed yet, so the top-level document remains the current behavior while that retargeting stays queued.
+- Consequence: Future fullscreen work should switch from the document to the shared shell-owned subtree now that the in-world touch and debug overlays are mounted inside it, rather than introducing another document-level toggle path.
 
 ### 2026-03-27: Clear Saved World is no longer a player-facing World Save control
 

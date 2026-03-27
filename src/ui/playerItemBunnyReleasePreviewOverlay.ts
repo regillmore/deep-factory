@@ -4,6 +4,7 @@ import {
   type HoveredTileCursorClientRect,
   type HoveredTileCursorTarget
 } from './hoveredTileCursor';
+import { appendOverlayMount, type OverlayMountOptions } from './overlayMountHost';
 
 export interface PlayerItemBunnyReleasePreviewState {
   tileX: number;
@@ -102,7 +103,7 @@ const hidePreviewRoot = (root: HTMLDivElement): void => {
   root.style.display = 'none';
 };
 
-const createPreviewRoot = (): HTMLDivElement => {
+const createPreviewRoot = (options: OverlayMountOptions = {}): HTMLDivElement => {
   const root = document.createElement('div');
   root.style.position = 'fixed';
   root.style.left = '0';
@@ -114,11 +115,10 @@ const createPreviewRoot = (): HTMLDivElement => {
   root.style.pointerEvents = 'none';
   root.style.zIndex = '9';
   root.style.display = 'none';
-  document.body.append(root);
-  return root;
+  return appendOverlayMount(root, options);
 };
 
-const createLandingMarkerRoot = (): HTMLDivElement => {
+const createLandingMarkerRoot = (options: OverlayMountOptions = {}): HTMLDivElement => {
   const root = document.createElement('div');
   root.style.position = 'fixed';
   root.style.left = '0';
@@ -134,8 +134,7 @@ const createLandingMarkerRoot = (): HTMLDivElement => {
   root.style.pointerEvents = 'none';
   root.style.zIndex = '10';
   root.style.display = 'none';
-  document.body.append(root);
-  return root;
+  return appendOverlayMount(root, options);
 };
 
 const updateLandingMarkerRoot = (root: HTMLDivElement, rect: HoveredTileCursorClientRect): void => {
@@ -162,9 +161,9 @@ export class PlayerItemBunnyReleasePreviewOverlay {
   private landingMarkerRoot: HTMLDivElement;
   private visible = true;
 
-  constructor(private canvas: HTMLCanvasElement) {
-    this.root = createPreviewRoot();
-    this.landingMarkerRoot = createLandingMarkerRoot();
+  constructor(private canvas: HTMLCanvasElement, options: OverlayMountOptions = {}) {
+    this.root = createPreviewRoot(options);
+    this.landingMarkerRoot = createLandingMarkerRoot(options);
   }
 
   setVisible(visible: boolean): void {

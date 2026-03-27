@@ -4,6 +4,7 @@ import { TILE_SIZE } from '../world/constants';
 import type { WorldAabb } from '../world/collision';
 import type { PlayerSpawnPoint } from '../world/playerSpawn';
 import { computeHoveredTileCursorClientRect, type HoveredTileCursorClientRect } from './hoveredTileCursor';
+import { appendOverlayMount, type OverlayMountOptions } from './overlayMountHost';
 
 export interface ClientPoint {
   x: number;
@@ -93,7 +94,11 @@ export const computePlayerSpawnMarkerClientGeometry = (
   anchorPoint: computeWorldClientPoint(spawn.x, spawn.y, camera, canvas, rect)
 });
 
-const createRectRoot = (border: string, background: string): HTMLDivElement => {
+const createRectRoot = (
+  border: string,
+  background: string,
+  options: OverlayMountOptions = {}
+): HTMLDivElement => {
   const root = document.createElement('div');
   root.style.position = 'fixed';
   root.style.left = '0';
@@ -106,11 +111,10 @@ const createRectRoot = (border: string, background: string): HTMLDivElement => {
   root.style.borderRadius = '3px';
   root.style.pointerEvents = 'none';
   root.style.display = 'none';
-  document.body.append(root);
-  return root;
+  return appendOverlayMount(root, options);
 };
 
-const createAnchorRoot = (): HTMLDivElement => {
+const createAnchorRoot = (options: OverlayMountOptions = {}): HTMLDivElement => {
   const root = document.createElement('div');
   root.style.position = 'fixed';
   root.style.left = '0';
@@ -127,8 +131,7 @@ const createAnchorRoot = (): HTMLDivElement => {
   root.style.pointerEvents = 'none';
   root.style.zIndex = '11';
   root.style.display = 'none';
-  document.body.append(root);
-  return root;
+  return appendOverlayMount(root, options);
 };
 
 export class PlayerSpawnMarkerOverlay {
@@ -137,15 +140,20 @@ export class PlayerSpawnMarkerOverlay {
   private anchorRoot: HTMLDivElement;
   private visible = true;
 
-  constructor(private canvas: HTMLCanvasElement) {
-    this.aabbRoot = createRectRoot('2px solid rgba(108, 255, 171, 0.96)', 'rgba(108, 255, 171, 0.08)');
+  constructor(private canvas: HTMLCanvasElement, options: OverlayMountOptions = {}) {
+    this.aabbRoot = createRectRoot(
+      '2px solid rgba(108, 255, 171, 0.96)',
+      'rgba(108, 255, 171, 0.08)',
+      options
+    );
     this.aabbRoot.style.zIndex = '9';
     this.supportRoot = createRectRoot(
       '2px dashed rgba(108, 255, 171, 0.92)',
-      'rgba(108, 255, 171, 0.14)'
+      'rgba(108, 255, 171, 0.14)',
+      options
     );
     this.supportRoot.style.zIndex = '10';
-    this.anchorRoot = createAnchorRoot();
+    this.anchorRoot = createAnchorRoot(options);
   }
 
   setVisible(visible: boolean): void {

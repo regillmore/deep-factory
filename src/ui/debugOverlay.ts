@@ -15,6 +15,7 @@ import type { PlayerSpawnLiquidSafetyStatus } from '../world/playerSpawn';
 import type { PlayerWallContactTransitionKind } from '../world/playerWallContactTransition';
 import type { TileLiquidKind } from '../world/tileMetadata';
 import type { LiquidStepPhaseSummary } from '../world/world';
+import { appendOverlayMount, type OverlayMountOptions } from './overlayMountHost';
 
 export interface DebugOverlayStats {
   atlasSourceKind: 'pending' | 'authored' | 'placeholder';
@@ -1515,7 +1516,7 @@ export class DebugOverlay {
   private smoothDelta = 16;
   private visible = false;
 
-  constructor() {
+  constructor(options: OverlayMountOptions = {}) {
     this.root = document.createElement('div');
     this.root.style.position = 'fixed';
     this.root.style.top = '12px';
@@ -1530,7 +1531,7 @@ export class DebugOverlay {
     this.root.style.lineHeight = '1.35';
     this.root.style.pointerEvents = 'none';
     this.root.style.borderRadius = '8px';
-    document.body.append(this.root);
+    appendOverlayMount(this.root, options);
   }
 
   setVisible(visible: boolean): void {

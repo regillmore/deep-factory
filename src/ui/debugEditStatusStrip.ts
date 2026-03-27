@@ -1,6 +1,7 @@
 import type { DebugEditStatusStripState } from './debugEditStatusHelpers';
 import { installPointerClickFocusRelease } from './buttonFocus';
 import { buildDebugEditStatusStripModel } from './debugEditStatusHelpers';
+import { appendOverlayMount, type OverlayMountOptions } from './overlayMountHost';
 
 const withAlpha = (color: string, alpha: string): string => color.replace(/[\d.]+\)\s*$/, `${alpha})`);
 
@@ -193,7 +194,11 @@ export class DebugEditStatusStrip {
   private onClearPinnedTile: () => void = () => {};
   private visible = true;
 
-  constructor(private canvas: HTMLCanvasElement, handlers: DebugEditStatusStripActionHandlers = {}) {
+  constructor(
+    private canvas: HTMLCanvasElement,
+    handlers: DebugEditStatusStripActionHandlers = {},
+    mountOptions: OverlayMountOptions = {}
+  ) {
     this.root = document.createElement('div');
     this.root.style.position = 'fixed';
     this.root.style.display = 'none';
@@ -288,7 +293,7 @@ export class DebugEditStatusStrip {
     this.hintLine.style.borderTop = '1px solid rgba(255, 255, 255, 0.1)';
     this.root.append(this.hintLine);
 
-    document.body.append(this.root);
+    appendOverlayMount(this.root, mountOptions);
     this.setActionHandlers(handlers);
   }
 

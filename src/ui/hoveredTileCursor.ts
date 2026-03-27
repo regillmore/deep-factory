@@ -1,6 +1,7 @@
 import { Camera2D } from '../core/camera2d';
 import type { CanvasSizeLike, ClientRectLike } from '../input/picking';
 import { TILE_SIZE } from '../world/constants';
+import { appendOverlayMount, type OverlayMountOptions } from './overlayMountHost';
 
 export interface HoveredTileCursorClientRect {
   left: number;
@@ -75,7 +76,11 @@ export const resolveHoveredTileCursorTargets = (
   };
 };
 
-const createCursorRoot = (borderColor: string, background: string): HTMLDivElement => {
+const createCursorRoot = (
+  borderColor: string,
+  background: string,
+  options: OverlayMountOptions = {}
+): HTMLDivElement => {
   const root = document.createElement('div');
   root.style.position = 'fixed';
   root.style.left = '0';
@@ -90,8 +95,7 @@ const createCursorRoot = (borderColor: string, background: string): HTMLDivEleme
   root.style.pointerEvents = 'none';
   root.style.zIndex = '10';
   root.style.display = 'none';
-  document.body.append(root);
-  return root;
+  return appendOverlayMount(root, options);
 };
 
 export const resolveHoveredTileCursorPresentation = (
@@ -139,9 +143,17 @@ export class HoveredTileCursorOverlay {
   private pinnedRoot: HTMLDivElement;
   private visible = true;
 
-  constructor(private canvas: HTMLCanvasElement) {
-    this.hoveredRoot = createCursorRoot('rgba(255, 232, 122, 0.95)', 'rgba(255, 232, 122, 0.14)');
-    this.pinnedRoot = createCursorRoot('rgba(120, 210, 255, 0.95)', 'rgba(120, 210, 255, 0.12)');
+  constructor(private canvas: HTMLCanvasElement, options: OverlayMountOptions = {}) {
+    this.hoveredRoot = createCursorRoot(
+      'rgba(255, 232, 122, 0.95)',
+      'rgba(255, 232, 122, 0.14)',
+      options
+    );
+    this.pinnedRoot = createCursorRoot(
+      'rgba(120, 210, 255, 0.95)',
+      'rgba(120, 210, 255, 0.12)',
+      options
+    );
   }
 
   setVisible(visible: boolean): void {
