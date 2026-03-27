@@ -612,6 +612,35 @@ const findNonTransparentPixelBoundsInRegion = (
   };
 };
 
+const collectNonTransparentColorHexesInRegion = (
+  rgbaPixels: Uint8Array,
+  pngWidth: number,
+  region: AtlasPixelRegion
+): string[] => {
+  const colors = new Set<string>();
+
+  for (let y = region.y; y < region.y + region.height; y += 1) {
+    for (let x = region.x; x < region.x + region.width; x += 1) {
+      const pixelStart = (y * pngWidth + x) * PNG_BYTES_PER_PIXEL_RGBA;
+      const alpha = rgbaPixels[pixelStart + 3];
+      if (alpha === 0) {
+        continue;
+      }
+
+      const red = rgbaPixels[pixelStart];
+      const green = rgbaPixels[pixelStart + 1];
+      const blue = rgbaPixels[pixelStart + 2];
+      colors.add(
+        [alpha, red, green, blue]
+          .map((channel) => channel!.toString(16).padStart(2, '0').toUpperCase())
+          .join('')
+      );
+    }
+  }
+
+  return [...colors].sort();
+};
+
 const regionsOverlap = (left: AtlasPixelRegion, right: AtlasPixelRegion): boolean =>
   left.x < right.x + right.width &&
   left.x + left.width > right.x &&
@@ -1452,6 +1481,9 @@ describe('authored atlas asset', () => {
     const { pngWidth, pngHeight, rgbaPixels } = readCommittedAtlasPng();
     const trunkTile = TILE_METADATA.tiles.find((tile) => tile.name === 'small_tree_trunk');
     const leafTile = TILE_METADATA.tiles.find((tile) => tile.name === 'small_tree_leaf');
+    const saplingTile = TILE_METADATA.tiles.find((tile) => tile.name === 'small_tree_sapling');
+    const tallGrassTile = TILE_METADATA.tiles.find((tile) => tile.name === 'tall_grass');
+    const surfaceFlowerTile = TILE_METADATA.tiles.find((tile) => tile.name === 'surface_flower');
 
     expect(trunkTile?.render?.atlasIndex).toBe(24);
     expect(leafTile?.render?.uvRect).toEqual({
@@ -1482,6 +1514,9 @@ describe('authored atlas asset', () => {
 
     const trunkRegion = AUTHORED_ATLAS_REGIONS[trunkTile!.render!.atlasIndex!];
     const leafRegion = AUTHORED_ATLAS_REGIONS[25];
+    const saplingRegion = AUTHORED_ATLAS_REGIONS[saplingTile!.render!.atlasIndex!];
+    const tallGrassRegion = AUTHORED_ATLAS_REGIONS[tallGrassTile!.render!.atlasIndex!];
+    const surfaceFlowerRegion = AUTHORED_ATLAS_REGIONS[surfaceFlowerTile!.render!.atlasIndex!];
     expect(trunkRegion).toEqual({ x: 96, y: 0, width: 16, height: 16 });
     expect(leafRegion).toEqual({ x: 80, y: 16, width: 16, height: 16 });
 
@@ -1507,8 +1542,23 @@ describe('authored atlas asset', () => {
       x: leafRegion!.x + 1,
       y: leafRegion!.y + 1,
       width: 14,
-      height: 13
+      height: 14
     });
+    expect(collectNonTransparentColorHexesInRegion(rgbaPixels, pngWidth, leafRegion!)).toEqual([
+      'FF245C10',
+      'FF3D7F1C',
+      'FF5A9C2F',
+      'FF75B842'
+    ]);
+    expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, leafRegion!, saplingRegion!)).toBe(
+      false
+    );
+    expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, leafRegion!, tallGrassRegion!)).toBe(
+      false
+    );
+    expect(
+      regionsMatchForVisibleContent(rgbaPixels, pngWidth, leafRegion!, surfaceFlowerRegion!)
+    ).toBe(false);
   });
 
   it('keeps the starter workbench sprite in its dedicated authored region', () => {
