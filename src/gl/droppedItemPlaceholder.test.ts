@@ -157,4 +157,11 @@ describe('droppedItemPlaceholder', () => {
       accentColor: [0.94, 0.9, 0.78]
     });
   });
+
+  it('provides a dedicated placeholder palette for bomb pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('bomb')).toEqual({
+      baseColor: [0.19, 0.2, 0.24],
+      accentColor: [0.88, 0.36, 0.18]
+    });
+  });
 });

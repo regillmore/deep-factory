@@ -8,6 +8,7 @@ describe('playerItemCatalog', () => {
       'Acorn',
       'Anvil',
       'Arrow',
+      'Bomb',
       'Bow',
       'Bug Net',
       'Bunny',
@@ -44,6 +45,7 @@ describe('playerItemCatalog', () => {
     expect(searchPlayerItemCatalog('acorn').map((entry) => entry.itemId)).toEqual(['acorn']);
     expect(searchPlayerItemCatalog('bow').map((entry) => entry.itemId)).toEqual(['bow']);
     expect(searchPlayerItemCatalog('arrow').map((entry) => entry.itemId)).toEqual(['arrow']);
+    expect(searchPlayerItemCatalog('bomb').map((entry) => entry.itemId)).toEqual(['bomb']);
     expect(searchPlayerItemCatalog('bug net').map((entry) => entry.itemId)).toEqual(['bug-net']);
     expect(searchPlayerItemCatalog('starter axe').map((entry) => entry.itemId)).toEqual([
       'axe',

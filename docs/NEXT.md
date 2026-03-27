@@ -55,4 +55,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Bomb utility
 
-599. Add bomb inventory foundations after inventory basics and save/load: define a stackable bomb hotbar item, expose it through the item catalog, and cover carried-bomb save or restore regressions.
+600. Add bomb throw-use foundations after task 599 and entity scaffolding: route mixed-device aimed use through the shared hidden-panel play-mode item-use path, consume one bomb on successful throws, spawn a fixed-step thrown-bomb entity, and cover blocked dead-or-empty throw regressions.

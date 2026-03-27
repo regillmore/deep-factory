@@ -108,6 +108,19 @@ describe('playerInventory', () => {
     });
   });
 
+  it('stores stackable bombs in one hotbar slot when multiple are added', () => {
+    const result = addPlayerInventoryItemStack(createEmptyPlayerInventoryState(), 'bomb', 12);
+
+    expect(result).toEqual({
+      state: {
+        hotbar: [{ itemId: 'bomb', amount: 12 }, ...Array.from({ length: 9 }, () => null)],
+        selectedHotbarSlotIndex: 0
+      },
+      addedAmount: 12,
+      remainingAmount: 0
+    });
+  });
+
   it('reports overflow when the hotbar cannot hold an entire stack', () => {
     const full = createPlayerInventoryState({
       hotbar: Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT }, () => ({
@@ -539,6 +552,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'ARROW',
       maxStackSize: 999
     });
+    expect(getPlayerInventoryItemDefinition('bomb')).toEqual({
+      id: 'bomb',
+      label: 'Bomb',
+      hotbarLabel: 'BOMB',
+      maxStackSize: 99
+    });
   });
 
   it('exposes the inventory item registry in stable item-id order', () => {
@@ -571,7 +590,8 @@ describe('playerInventory', () => {
       'spear',
       'wand',
       'bow',
-      'arrow'
+      'arrow',
+      'bomb'
     ]);
   });
 

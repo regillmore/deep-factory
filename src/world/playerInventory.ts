@@ -29,7 +29,8 @@ export type PlayerInventoryItemId =
   | 'spear'
   | 'wand'
   | 'bow'
-  | 'arrow';
+  | 'arrow'
+  | 'bomb';
 
 export interface PlayerInventoryItemDefinition {
   id: PlayerInventoryItemId;
@@ -101,7 +102,8 @@ export const PLAYER_INVENTORY_ITEM_IDS: readonly PlayerInventoryItemId[] = [
   'spear',
   'wand',
   'bow',
-  'arrow'
+  'arrow',
+  'bomb'
 ] as const;
 
 const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
@@ -280,6 +282,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     label: 'Arrow',
     hotbarLabel: 'ARROW',
     maxStackSize: 999
+  },
+  bomb: {
+    id: 'bomb',
+    label: 'Bomb',
+    hotbarLabel: 'BOMB',
+    maxStackSize: 99
   }
 };
 

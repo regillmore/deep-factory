@@ -148,6 +148,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
   arrow: {
     baseColor: [0.53, 0.48, 0.4],
     accentColor: [0.94, 0.9, 0.78]
+  },
+  bomb: {
+    baseColor: [0.19, 0.2, 0.24],
+    accentColor: [0.88, 0.36, 0.18]
   }
 };
 
