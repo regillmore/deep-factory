@@ -55,7 +55,8 @@ import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './world/constants';
 import {
   PROCEDURAL_DIRT_TILE_ID,
   PROCEDURAL_COPPER_ORE_TILE_ID,
-  PROCEDURAL_GRASS_SURFACE_TILE_ID
+  PROCEDURAL_GRASS_SURFACE_TILE_ID,
+  resolveProceduralTerrainColumn
 } from './world/proceduralTerrain';
 import {
   createPlayerState,
@@ -111,8 +112,10 @@ import {
 } from './world/grassGrowth';
 import {
   DEFAULT_SMALL_TREE_GROWTH_INTERVAL_TICKS,
+  resolveSmallTreeGrowthRequiredChunkBounds,
   resolveSmallTreeGrowthWindowIndex
 } from './world/smallTreeGrowth';
+import { resolveSmallTreeGrowthStageAtAnchor } from './world/smallTreeAnchors';
 import { getSmallTreeSaplingTileId, getSmallTreeTileIds } from './world/smallTreeTiles';
 import { getSurfaceFlowerTileId } from './world/surfaceFlowerTiles';
 import { getTallGrassTileId } from './world/tallGrassTiles';
@@ -160,6 +163,27 @@ const CUSTOM_SHELL_ACTION_KEYBINDINGS: ShellActionKeybindingState = {
 
 const worldTileKey = (worldTileX: number, worldTileY: number): string => `${worldTileX},${worldTileY}`;
 const chunkCoordKey = (chunkX: number, chunkY: number): string => `${chunkX},${chunkY}`;
+const findFirstProceduralPlantedSmallTreeAnchor = (
+  worldSeed = 0,
+  minWorldX = CHUNK_SIZE,
+  maxWorldX = CHUNK_SIZE * 8
+): { anchorTileX: number; anchorTileY: number } | null => {
+  const world = new TileWorld(0, worldSeed);
+
+  for (let worldTileX = minWorldX; worldTileX <= maxWorldX; worldTileX += 1) {
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX, worldSeed);
+    if (resolveSmallTreeGrowthStageAtAnchor(world, worldTileX, surfaceTileY) !== 'planted') {
+      continue;
+    }
+
+    return {
+      anchorTileX: worldTileX,
+      anchorTileY: surfaceTileY
+    };
+  }
+
+  return null;
+};
 
 const syncRendererMapsFromWorldSnapshot = (snapshot: ReturnType<TileWorld['createSnapshot']>): void => {
   testRuntime.rendererTileIdsByWorldKey.clear();
@@ -10269,6 +10293,116 @@ describe('main.ts shell state orchestration', () => {
     }
 
     expect(testRuntime.rendererSetTileCalls).toEqual([]);
+  });
+
+  it('registers procedurally streamed planted saplings for runtime growth and persists the grown tree', async () => {
+    const worldSeed = 0;
+    const savedWorld = new TileWorld(0, worldSeed);
+    const plantedAnchor = findFirstProceduralPlantedSmallTreeAnchor(worldSeed);
+
+    expect(plantedAnchor).not.toBeNull();
+    if (plantedAnchor === null) {
+      throw new Error('expected a procedural planted small-tree anchor');
+    }
+
+    const requiredChunkBounds = resolveSmallTreeGrowthRequiredChunkBounds(
+      plantedAnchor.anchorTileX,
+      plantedAnchor.anchorTileY
+    );
+    const streamedWorld = new TileWorld(0, worldSeed);
+    streamedWorld.loadSnapshot(savedWorld.createSnapshot());
+    for (let chunkY = requiredChunkBounds.minChunkY; chunkY <= requiredChunkBounds.maxChunkY; chunkY += 1) {
+      for (let chunkX = requiredChunkBounds.minChunkX; chunkX <= requiredChunkBounds.maxChunkX; chunkX += 1) {
+        streamedWorld.ensureChunk(chunkX, chunkY);
+      }
+    }
+    const streamedSnapshot = streamedWorld.createSnapshot();
+
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 0 },
+            facing: 'right'
+          })
+        })
+      )
+    );
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererWorldSnapshot = streamedSnapshot;
+    syncRendererMapsFromWorldSnapshot(streamedSnapshot);
+    testRuntime.rendererResidentChunkBounds = {
+      minChunkX: Math.min(0, requiredChunkBounds.minChunkX),
+      maxChunkX: Math.max(0, requiredChunkBounds.maxChunkX),
+      minChunkY: Math.min(0, requiredChunkBounds.minChunkY),
+      maxChunkY: Math.max(0, requiredChunkBounds.maxChunkY)
+    };
+    testRuntime.rendererSetTileCalls = [];
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.rendererPersistentSetTileResult = true;
+
+    const growthWindowIndex = resolveSmallTreeGrowthWindowIndex(
+      plantedAnchor.anchorTileX,
+      plantedAnchor.anchorTileY
+    );
+    const fixedUpdatesUntilGrowth =
+      DEFAULT_SMALL_TREE_GROWTH_INTERVAL_TICKS * (growthWindowIndex + 1);
+    for (let updateIndex = 0; updateIndex < fixedUpdatesUntilGrowth; updateIndex += 1) {
+      runFixedUpdate(1 / 60);
+    }
+
+    const treeTileIds = getSmallTreeTileIds();
+    const targetAnchorWrites = testRuntime.rendererSetTileCalls.filter(
+      (call) =>
+        call.worldTileX >= plantedAnchor.anchorTileX - 1 &&
+        call.worldTileX <= plantedAnchor.anchorTileX + 1 &&
+        call.worldTileY >= plantedAnchor.anchorTileY - 3 &&
+        call.worldTileY <= plantedAnchor.anchorTileY - 1
+    );
+    expect(targetAnchorWrites).toEqual([
+      {
+        worldTileX: plantedAnchor.anchorTileX,
+        worldTileY: plantedAnchor.anchorTileY - 1,
+        tileId: treeTileIds.trunk
+      },
+      {
+        worldTileX: plantedAnchor.anchorTileX,
+        worldTileY: plantedAnchor.anchorTileY - 2,
+        tileId: treeTileIds.trunk
+      },
+      {
+        worldTileX: plantedAnchor.anchorTileX - 1,
+        worldTileY: plantedAnchor.anchorTileY - 3,
+        tileId: treeTileIds.leaf
+      },
+      {
+        worldTileX: plantedAnchor.anchorTileX,
+        worldTileY: plantedAnchor.anchorTileY - 3,
+        tileId: treeTileIds.leaf
+      },
+      {
+        worldTileX: plantedAnchor.anchorTileX + 1,
+        worldTileY: plantedAnchor.anchorTileY - 3,
+        tileId: treeTileIds.leaf
+      }
+    ]);
+
+    dispatchWindowEvent('pagehide');
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    const restoredWorld = new TileWorld(0);
+    restoredWorld.loadSnapshot(persistedEnvelope!.worldSnapshot);
+    expect(
+      resolveSmallTreeGrowthStageAtAnchor(
+        restoredWorld,
+        plantedAnchor.anchorTileX,
+        plantedAnchor.anchorTileY
+      )
+    ).toBe('grown');
   });
 
   it('grows planted acorn saplings into small trees on deterministic fixed-step windows and persists the grown tree', async () => {

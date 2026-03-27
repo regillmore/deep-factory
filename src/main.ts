@@ -1826,11 +1826,15 @@ const bootstrap = async (): Promise<void> => {
   let smallTreeGrowthState = createSmallTreeGrowthState();
   const smallTreeSaplingTileId = getSmallTreeSaplingTileId();
   const trackedSmallTreeGrowthAnchors = new Map<string, SmallTreeGrowthTrackedAnchor>();
+  const trackedSmallTreeGrowthResidentChunkKeys = new Set<string>();
 
   const createSmallTreeGrowthAnchorKey = (anchorTileX: number, anchorTileY: number): string =>
     `${anchorTileX},${anchorTileY}`;
+  const createSmallTreeGrowthResidentChunkKey = (chunkX: number, chunkY: number): string =>
+    `${chunkX},${chunkY}`;
   const clearTrackedSmallTreeGrowthAnchors = (): void => {
     trackedSmallTreeGrowthAnchors.clear();
+    trackedSmallTreeGrowthResidentChunkKeys.clear();
   };
   const rebuildTrackedSmallTreeGrowthAnchorsFromSnapshot = (
     snapshot: WorldSaveEnvelope['worldSnapshot']
@@ -1840,6 +1844,11 @@ const bootstrap = async (): Promise<void> => {
       trackedSmallTreeGrowthAnchors.set(
         createSmallTreeGrowthAnchorKey(trackedAnchor.anchorTileX, trackedAnchor.anchorTileY),
         trackedAnchor
+      );
+    }
+    for (const residentChunk of snapshot.residentChunks) {
+      trackedSmallTreeGrowthResidentChunkKeys.add(
+        createSmallTreeGrowthResidentChunkKey(residentChunk.coord.x, residentChunk.coord.y)
       );
     }
   };
@@ -1864,6 +1873,62 @@ const bootstrap = async (): Promise<void> => {
   ): void => {
     refreshTrackedSmallTreeGrowthAnchor(worldTileX, worldTileY);
     refreshTrackedSmallTreeGrowthAnchor(worldTileX, worldTileY + 1);
+  };
+  const registerTrackedSmallTreeGrowthAnchorsFromResidentChunk = (
+    chunkX: number,
+    chunkY: number
+  ): void => {
+    const baseWorldTileX = chunkX * CHUNK_SIZE;
+    const baseWorldTileY = chunkY * CHUNK_SIZE;
+
+    for (let localY = 0; localY < CHUNK_SIZE; localY += 1) {
+      for (let localX = 0; localX < CHUNK_SIZE; localX += 1) {
+        const worldTileX = baseWorldTileX + localX;
+        const worldTileY = baseWorldTileY + localY;
+        if (renderer.getTile(worldTileX, worldTileY) !== smallTreeSaplingTileId) {
+          continue;
+        }
+
+        refreshTrackedSmallTreeGrowthAnchor(worldTileX, worldTileY + 1);
+      }
+    }
+  };
+  const syncTrackedSmallTreeGrowthAnchorsWithResidentChunks = (): void => {
+    const residentChunkBounds = renderer.getResidentChunkBounds();
+    if (residentChunkBounds === null) {
+      trackedSmallTreeGrowthResidentChunkKeys.clear();
+      return;
+    }
+
+    const residentChunkKeys = new Set<string>();
+    for (let chunkY = residentChunkBounds.minChunkY; chunkY <= residentChunkBounds.maxChunkY; chunkY += 1) {
+      for (
+        let chunkX = residentChunkBounds.minChunkX;
+        chunkX <= residentChunkBounds.maxChunkX;
+        chunkX += 1
+      ) {
+        if (!renderer.hasResidentChunk(chunkX, chunkY)) {
+          continue;
+        }
+
+        const residentChunkKey = createSmallTreeGrowthResidentChunkKey(chunkX, chunkY);
+        residentChunkKeys.add(residentChunkKey);
+        if (trackedSmallTreeGrowthResidentChunkKeys.has(residentChunkKey)) {
+          continue;
+        }
+
+        registerTrackedSmallTreeGrowthAnchorsFromResidentChunk(chunkX, chunkY);
+        trackedSmallTreeGrowthResidentChunkKeys.add(residentChunkKey);
+      }
+    }
+
+    for (const trackedResidentChunkKey of trackedSmallTreeGrowthResidentChunkKeys) {
+      if (residentChunkKeys.has(trackedResidentChunkKey)) {
+        continue;
+      }
+
+      trackedSmallTreeGrowthResidentChunkKeys.delete(trackedResidentChunkKey);
+    }
   };
 
   const getStandalonePlayerState = (): PlayerState | null => {
@@ -4920,6 +4985,8 @@ const bootstrap = async (): Promise<void> => {
     }
   };
   const stepSmallTreeGrowthFixedUpdate = (): void => {
+    syncTrackedSmallTreeGrowthAnchorsWithResidentChunks();
+
     if (smallTreeGrowthState.ticksUntilNextGrowth > 1) {
       smallTreeGrowthState = {
         ticksUntilNextGrowth: smallTreeGrowthState.ticksUntilNextGrowth - 1,

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-26
 
+- Task: Add streamed procedural small-tree sapling growth tracking after seeded small-tree sapling worldgen.
+- Changes: Updated [src/main.ts](../src/main.ts) so the runtime now scans newly resident chunks for procedurally streamed `small_tree_sapling` tiles and registers their planted anchors before the fixed-step growth scheduler evaluates due windows, added a streamed-chunk regression to [src/main.test.ts](../src/main.test.ts), removed completed task `564` from [docs/NEXT.md](docs/NEXT.md), added replacement task `565`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json`, `cmd /c npx vitest run src/main.test.ts -t "sapling"`, and `cmd /c npx vitest run src/world/smallTreeGrowth.test.ts`.
+
 - Task: Add seeded small-tree sapling worldgen after seeded small-tree worldgen.
 - Changes: Updated [src/world/proceduralTerrain.ts](../src/world/proceduralTerrain.ts) so untouched terrain now seeds deterministic planted `small_tree_sapling` anchors between adjacent mature-tree worldgen anchors on exposed grass whose future grown footprint stays clear and outside the protected origin corridor, expanded [src/world/proceduralTerrain.test.ts](../src/world/proceduralTerrain.test.ts) and [src/world/world.test.ts](../src/world/world.test.ts) with planted-sapling determinism plus chunk-streaming regressions, removed completed task `561` from [docs/NEXT.md](docs/NEXT.md), added replacement task `564`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/proceduralTerrain.test.ts src/world/world.test.ts`.
