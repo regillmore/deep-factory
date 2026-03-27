@@ -59,6 +59,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Menu UI
 
-602. Eliminate the separate first start menu, and instead load the standard pause menu for first time players.
 603. Combine the New World and Clear Saved World tiles under the World Save menu.
 604. Move the Reset Shell Toggles tile under the Shell menu, reducing it a top-level button, and eliminating the Danger Zone pause menu group.

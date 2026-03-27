@@ -418,8 +418,12 @@ export interface PausedMainMenuShellProfilePreview {
   shellActionKeybindings: ShellActionKeybindingState;
 }
 
+type MainMenuVariant = 'first-start' | 'paused-session';
+
 export interface AppShellState {
   screen: AppShellScreen;
+  mainMenuVariant?: MainMenuVariant;
+  worldSavePersistenceAvailable?: boolean;
   statusText?: string;
   detailLines?: readonly string[];
   menuSections?: readonly AppShellMenuSection[];
@@ -462,6 +466,10 @@ export const DEFAULT_PAUSED_MAIN_MENU_STATUS = 'World session paused.';
 export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [] as const;
 const DEFAULT_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
   'Manage downloads, imports, and browser-resume storage for the current paused session.';
+const DEFAULT_FIRST_START_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
+  'Preview imports and exports before the first run. Browser resume appears after the first saved session.';
+const STORAGE_UNAVAILABLE_FIRST_START_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
+  'Browser resume is unavailable in this browser context, but imports and exports still work in this tab.';
 const CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
   'Browser resume was cleared for this paused session. Resume World or another save path must rewrite it before reload can restore the session.';
 const IMPORT_PERSISTENCE_FAILED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
@@ -512,12 +520,16 @@ const resolvePausedMainMenuOverviewMenuSections = (
   sectionViewModel: PausedMainMenuSectionViewModel
 ): readonly AppShellMenuSection[] => [sectionViewModel.overview.resumeWorld];
 const resolvePausedMainMenuWorldSaveMenuSections = (
+  state: AppShellState,
   sectionViewModel: PausedMainMenuSectionViewModel
-): readonly AppShellMenuSection[] => [
-  sectionViewModel.worldSave.exportWorldSave,
-  sectionViewModel.worldSave.importWorldSave,
-  sectionViewModel.worldSave.clearSavedWorld
-];
+): readonly AppShellMenuSection[] =>
+  isFirstStartMainMenuState(state)
+    ? [sectionViewModel.worldSave.exportWorldSave, sectionViewModel.worldSave.importWorldSave]
+    : [
+        sectionViewModel.worldSave.exportWorldSave,
+        sectionViewModel.worldSave.importWorldSave,
+        sectionViewModel.worldSave.clearSavedWorld
+      ];
 const resolvePausedMainMenuShellMenuSections = (
   _sectionViewModel: PausedMainMenuSectionViewModel
 ): readonly AppShellMenuSection[] => [];
@@ -535,7 +547,7 @@ const resolvePausedMainMenuMenuSectionGroupsFromState = (
   sectionViewModel: PausedMainMenuSectionViewModel
 ): PausedMainMenuMenuSectionGroups => {
   const overviewSections = resolvePausedMainMenuOverviewMenuSections(sectionViewModel);
-  const worldSaveSections = resolvePausedMainMenuWorldSaveMenuSections(sectionViewModel);
+  const worldSaveSections = resolvePausedMainMenuWorldSaveMenuSections(state, sectionViewModel);
   const shellSections = resolvePausedMainMenuShellMenuSections(sectionViewModel);
   const recentActivitySections = resolvePausedMainMenuRecentActivityMenuSections(state);
   const dangerZoneSections = resolvePausedMainMenuDangerZoneMenuSections(sectionViewModel);
@@ -585,6 +597,30 @@ export const resolvePausedMainMenuWorldSaveSectionState = (
     };
   }
 
+  if (isFirstStartMainMenuState(state)) {
+    const worldSavePersistenceAvailable = state.worldSavePersistenceAvailable !== false;
+    return {
+      visible: true,
+      summaryLine: resolveFirstStartMainMenuWorldSaveSummaryLine(worldSavePersistenceAvailable),
+      metadataRows: createFirstStartMainMenuWorldSaveSummaryRows(
+        state.pausedMainMenuImportResult ?? null,
+        state.pausedMainMenuExportResult ?? null,
+        worldSavePersistenceAvailable,
+        state.pausedMainMenuWorldSeed ?? null
+      ),
+      actionSections: resolvePausedMainMenuWorldSaveMenuSections(state, sectionViewModel),
+      tone:
+        !worldSavePersistenceAvailable
+          ? 'warning'
+          : resolvePausedMainMenuWorldSaveSectionTone(
+              state.pausedMainMenuImportResult ?? null,
+              null,
+              state.pausedMainMenuExportResult ?? null,
+              null
+            )
+    };
+  }
+
   return {
     visible: true,
     summaryLine: resolvePausedMainMenuWorldSaveSummaryLine(state.pausedMainMenuSavedWorldStatus ?? null),
@@ -595,7 +631,7 @@ export const resolvePausedMainMenuWorldSaveSectionState = (
       state.pausedMainMenuClearSavedWorldResult ?? null,
       state.pausedMainMenuWorldSeed ?? null
     ),
-    actionSections: resolvePausedMainMenuWorldSaveMenuSections(sectionViewModel),
+    actionSections: resolvePausedMainMenuWorldSaveMenuSections(state, sectionViewModel),
     tone: resolvePausedMainMenuWorldSaveSectionTone(
       state.pausedMainMenuImportResult ?? null,
       state.pausedMainMenuSavedWorldStatus ?? null,
@@ -862,6 +898,8 @@ export const resolvePausedMainMenuRecentActivitySectionState = (
 
 const DEFAULT_PAUSED_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE =
   'Use these only when you want to clear shell layout state or discard the current paused session.';
+const DEFAULT_FIRST_START_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE =
+  'Use these only when you want to clear shell layout state or replace the seeded start world before entering it.';
 
 export const resolvePausedMainMenuDangerZoneSectionState = (
   state: AppShellState
@@ -879,7 +917,9 @@ export const resolvePausedMainMenuDangerZoneSectionState = (
 
   return {
     visible: true,
-    summaryLine: DEFAULT_PAUSED_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE,
+    summaryLine: isFirstStartMainMenuState(state)
+      ? DEFAULT_FIRST_START_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE
+      : DEFAULT_PAUSED_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE,
     actionSections: resolvePausedMainMenuDangerZoneMenuSections(sectionViewModel),
     tone: 'warning'
   };
@@ -1449,9 +1489,18 @@ const resolvePausedMainMenuWorldSaveSummaryLine = (
       return IMPORT_PERSISTENCE_FAILED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE;
   }
 };
+const resolveFirstStartMainMenuWorldSaveSummaryLine = (
+  worldSessionShellPersistenceAvailable: boolean
+): string =>
+  worldSessionShellPersistenceAvailable
+    ? DEFAULT_FIRST_START_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE
+    : STORAGE_UNAVAILABLE_FIRST_START_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE;
 const resolvePausedMainMenuWorldSaveBrowserResumeValue = (
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null
 ): string => (savedWorldStatus === null ? 'Available' : 'Missing');
+const resolveFirstStartMainMenuWorldSaveBrowserResumeValue = (
+  worldSessionShellPersistenceAvailable: boolean
+): string => (worldSessionShellPersistenceAvailable ? 'Missing' : 'Unavailable');
 const resolvePausedMainMenuWorldSaveSeedValue = (worldSeed: number | null): string =>
   String(worldSeed ?? 0);
 const createPausedMainMenuWorldSaveBrowserResumeBadge = (
@@ -1466,6 +1515,18 @@ const createPausedMainMenuWorldSaveBrowserResumeBadge = (
         text: 'Missing',
         tone: 'warning'
       };
+const createFirstStartMainMenuWorldSaveBrowserResumeBadge = (
+  worldSessionShellPersistenceAvailable: boolean
+): AppShellMenuSectionMetadataBadge =>
+  worldSessionShellPersistenceAvailable
+    ? {
+        text: 'Missing',
+        tone: 'warning'
+      }
+    : {
+        text: 'Unavailable',
+        tone: 'warning'
+      };
 const resolvePausedMainMenuWorldSaveSavedAgainByValue = (
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null
 ): string => {
@@ -1478,6 +1539,18 @@ const resolvePausedMainMenuWorldSaveSavedAgainByValue = (
       return 'Later pause or page hide, Import World Save, New World';
   }
 };
+const createFirstStartMainMenuWorldSaveCreationRow = (
+  worldSessionShellPersistenceAvailable: boolean
+): AppShellMenuSectionMetadataRow =>
+  worldSessionShellPersistenceAvailable
+    ? {
+        label: 'Created By',
+        value: 'Enter World, Import World Save, or New World'
+      }
+    : {
+        label: 'Requires',
+        value: 'Working browser storage access'
+      };
 const resolvePausedMainMenuWorldSaveExportStatusValue = (
   exportResult: PausedMainMenuExportResult | null
 ): string => {
@@ -1664,6 +1737,37 @@ const createPausedMainMenuWorldSaveSummaryRows = (
     label: 'Last Clear',
     value: resolvePausedMainMenuWorldSaveClearStatusValue(clearSavedWorldResult, savedWorldStatus),
     badge: createPausedMainMenuWorldSaveClearStatusBadge(clearSavedWorldResult, savedWorldStatus)
+  }
+] as const;
+const createFirstStartMainMenuWorldSaveSummaryRows = (
+  importResult: PausedMainMenuImportResult | null,
+  exportResult: PausedMainMenuExportResult | null,
+  worldSessionShellPersistenceAvailable: boolean,
+  worldSeed: number | null
+): readonly AppShellMenuSectionMetadataRow[] => [
+  {
+    label: 'Browser Resume',
+    value: resolveFirstStartMainMenuWorldSaveBrowserResumeValue(
+      worldSessionShellPersistenceAvailable
+    ),
+    badge: createFirstStartMainMenuWorldSaveBrowserResumeBadge(
+      worldSessionShellPersistenceAvailable
+    )
+  },
+  {
+    label: 'World Seed',
+    value: resolvePausedMainMenuWorldSaveSeedValue(worldSeed)
+  },
+  createFirstStartMainMenuWorldSaveCreationRow(worldSessionShellPersistenceAvailable),
+  {
+    label: 'Last Export',
+    value: resolvePausedMainMenuWorldSaveExportStatusValue(exportResult),
+    badge: createPausedMainMenuWorldSaveExportStatusBadge(exportResult)
+  },
+  {
+    label: 'Last Import',
+    value: resolvePausedMainMenuWorldSaveImportStatusValue(importResult, null),
+    badge: createPausedMainMenuWorldSaveImportStatusBadge(importResult, null)
   }
 ] as const;
 const resolvePausedMainMenuOverviewSessionSaveValue = (
@@ -2042,8 +2146,10 @@ export const createPausedMainMenuSectionViewModel = (
   worldSessionTelemetryPersistenceAvailable = true,
   resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null,
   worldSessionGameplayState: WorldSessionGameplayState = createDefaultWorldSessionGameplayState(),
-  worldSessionGameplayPersistenceAvailable = true
+  worldSessionGameplayPersistenceAvailable = true,
+  mainMenuVariant: MainMenuVariant = 'paused-session'
 ): PausedMainMenuSectionViewModel => {
+  const firstStart = mainMenuVariant === 'first-start';
   const persistenceSummary = createWorldSessionShellStatePersistenceSummary(
     worldSessionShellState,
     worldSessionShellPersistenceAvailable
@@ -2051,27 +2157,44 @@ export const createPausedMainMenuSectionViewModel = (
   return {
     overview: {
       resumeWorld: {
-        title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
+        title: firstStart ? 'Enter World' : `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,
         lines: [],
-        metadataRows: [
-          {
-            label: 'Keeps',
-            value: 'World, player, camera, and debug edits intact'
-          },
-          {
-            label: 'Session Save',
-            value: resolvePausedMainMenuOverviewSessionSaveValue(savedWorldStatus)
-          },
-          {
-            label: 'Needs Attention',
-            value: resolvePausedMainMenuOverviewAttentionValue(savedWorldStatus)
-          },
-          {
-            label: 'Shortcut',
-            value: getDesktopResumeWorldHotkeyLabel()
-          }
-        ],
-        tone: resolvePausedMainMenuOverviewResumeWorldTone(savedWorldStatus)
+        metadataRows: firstStart
+          ? [
+              {
+                label: 'Shortcut',
+                value: 'Button only'
+              },
+              {
+                label: 'Readiness',
+                value: 'Renderer ready; starts on click.'
+              },
+              {
+                label: 'Session Save',
+                value: worldSessionShellPersistenceAvailable
+                  ? 'Not browser saved yet'
+                  : 'Browser storage unavailable'
+              }
+            ]
+          : [
+              {
+                label: 'Keeps',
+                value: 'World, player, camera, and debug edits intact'
+              },
+              {
+                label: 'Session Save',
+                value: resolvePausedMainMenuOverviewSessionSaveValue(savedWorldStatus)
+              },
+              {
+                label: 'Needs Attention',
+                value: resolvePausedMainMenuOverviewAttentionValue(savedWorldStatus)
+              },
+              {
+                label: 'Shortcut',
+                value: getDesktopResumeWorldHotkeyLabel()
+              }
+            ],
+        tone: firstStart ? 'accent' : resolvePausedMainMenuOverviewResumeWorldTone(savedWorldStatus)
       }
     },
     worldSave: {
@@ -2204,8 +2327,8 @@ export const createPausedMainMenuSectionViewModel = (
             value: 'Button only'
           },
           {
-            label: 'Session',
-            value: 'Kept unchanged'
+            label: firstStart ? 'World' : 'Session',
+            value: firstStart ? 'Seeded start world kept' : 'Kept unchanged'
           },
           {
             label: 'Next Resume',
@@ -2215,16 +2338,16 @@ export const createPausedMainMenuSectionViewModel = (
         tone: 'warning'
       },
       newWorld: {
-        title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
+        title: firstStart ? 'New World' : `New World (${getDesktopFreshWorldHotkeyLabel()})`,
         lines: [],
         metadataRows: [
           {
             label: 'Shortcut',
-            value: getDesktopFreshWorldHotkeyLabel()
+            value: firstStart ? 'Button only' : getDesktopFreshWorldHotkeyLabel()
           },
           {
             label: 'Replaces',
-            value: 'Paused session with a fresh world'
+            value: firstStart ? 'Seeded start world with a fresh world' : 'Paused session with a fresh world'
           },
           {
             label: 'Resets',
@@ -2278,7 +2401,8 @@ export const createPausedMainMenuMenuSections = (
     pausedMainMenuWorldSeed
   ).menuSections ?? [];
 
-const createPausedMainMenuBaseShellState = (
+const createStandardMainMenuBaseShellState = (
+  mainMenuVariant: MainMenuVariant,
   worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
   worldSessionShellPersistenceAvailable = true,
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
@@ -2298,6 +2422,7 @@ const createPausedMainMenuBaseShellState = (
   worldSessionGameplayPersistenceAvailable = true,
   pausedMainMenuWorldSeed: number | null = null
 ): AppShellState => {
+  const firstStart = mainMenuVariant === 'first-start';
   const pausedMainMenuSections = createPausedMainMenuSectionViewModel(
     worldSessionShellState,
     worldSessionShellPersistenceAvailable,
@@ -2313,18 +2438,23 @@ const createPausedMainMenuBaseShellState = (
     worldSessionTelemetryPersistenceAvailable,
     resetShellTelemetryResult,
     worldSessionGameplayState,
-    worldSessionGameplayPersistenceAvailable
+    worldSessionGameplayPersistenceAvailable,
+    mainMenuVariant
   );
 
   return {
     screen: 'main-menu',
-    statusText: DEFAULT_PAUSED_MAIN_MENU_STATUS,
-    detailLines: DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES,
+    mainMenuVariant,
+    ...(firstStart ? { worldSavePersistenceAvailable: worldSessionShellPersistenceAvailable } : {}),
+    statusText: firstStart ? DEFAULT_FIRST_LAUNCH_MAIN_MENU_STATUS : DEFAULT_PAUSED_MAIN_MENU_STATUS,
+    detailLines: firstStart
+      ? DEFAULT_FIRST_LAUNCH_MAIN_MENU_DETAIL_LINES
+      : DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES,
     pausedMainMenuSections,
-    primaryActionLabel: 'Resume World',
+    primaryActionLabel: firstStart ? 'Enter World' : 'Resume World',
     secondaryActionLabel: 'Export World Save',
     tertiaryActionLabel: 'Import World Save',
-    quaternaryActionLabel: 'Clear Saved World',
+    quaternaryActionLabel: firstStart ? null : 'Clear Saved World',
     quinaryActionLabel: 'Reset Shell Toggles',
     senaryActionLabel: 'New World',
     shellActionKeybindings,
@@ -2354,6 +2484,55 @@ const createPausedMainMenuBaseShellState = (
   };
 };
 
+export const createFirstLaunchMainMenuShellState = (
+  worldSessionShellPersistenceAvailable = true,
+  worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
+  shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState(),
+  shellActionKeybindingsDefaultedFromPersistedState = false,
+  importResult: PausedMainMenuImportResult | null = null,
+  exportResult: PausedMainMenuExportResult | null = null,
+  resetShellTogglesResult: PausedMainMenuResetShellTogglesResult | null = null,
+  shellProfilePreview: PausedMainMenuShellProfilePreview | null = null,
+  shellActionKeybindingsCurrentSessionOnly = false,
+  recentActivityAction: PausedMainMenuRecentActivityAction | null = null,
+  worldSessionTelemetryState: WorldSessionTelemetryState = createDefaultWorldSessionTelemetryState(),
+  worldSessionTelemetryPersistenceAvailable = worldSessionShellPersistenceAvailable,
+  resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult | null = null,
+  worldSessionGameplayState: WorldSessionGameplayState = createDefaultWorldSessionGameplayState(),
+  worldSessionGameplayPersistenceAvailable = worldSessionShellPersistenceAvailable,
+  pausedMainMenuWorldSeed: number | null = null,
+  worldSavePersistenceAvailable = worldSessionShellPersistenceAvailable
+): AppShellState => {
+  const baseState = createStandardMainMenuBaseShellState(
+    'first-start',
+    worldSessionShellState,
+    worldSessionShellPersistenceAvailable,
+    shellActionKeybindings,
+    shellActionKeybindingsDefaultedFromPersistedState,
+    importResult,
+    null,
+    exportResult,
+    null,
+    resetShellTogglesResult,
+    shellProfilePreview,
+    shellActionKeybindingsCurrentSessionOnly,
+    recentActivityAction,
+    worldSessionTelemetryState,
+    worldSessionTelemetryPersistenceAvailable,
+    resetShellTelemetryResult,
+    worldSessionGameplayState,
+    worldSessionGameplayPersistenceAvailable,
+    pausedMainMenuWorldSeed
+  );
+  const menuSectionGroups = resolvePausedMainMenuMenuSectionGroups(baseState);
+
+  return {
+    ...baseState,
+    worldSavePersistenceAvailable,
+    menuSections: [...menuSectionGroups.primarySections, ...menuSectionGroups.recentActivitySections]
+  };
+};
+
 export const createPausedMainMenuShellState = (
   worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
   worldSessionShellPersistenceAvailable = true,
@@ -2374,7 +2553,8 @@ export const createPausedMainMenuShellState = (
   worldSessionGameplayPersistenceAvailable = true,
   pausedMainMenuWorldSeed: number | null = null
 ): AppShellState => {
-  const baseState = createPausedMainMenuBaseShellState(
+  const baseState = createStandardMainMenuBaseShellState(
+    'paused-session',
     worldSessionShellState,
     worldSessionShellPersistenceAvailable,
     shellActionKeybindings,
@@ -2497,110 +2677,6 @@ const DEFAULT_RENDERER_INITIALIZATION_FAILED_BOOT_DETAIL_LINE =
 const DEFAULT_FIRST_LAUNCH_MAIN_MENU_STATUS = 'Renderer ready.';
 const DEFAULT_FIRST_LAUNCH_MAIN_MENU_DETAIL_LINES = [] as const;
 
-const createFirstLaunchMainMenuPersistencePreviewSection = (
-  worldSavePersistenceAvailable = true
-): AppShellMenuSection =>
-  worldSavePersistenceAvailable
-    ? {
-        title: 'Persistence Preview',
-        lines: [
-          'Browser resume is not available yet because no paused world session has been saved yet.',
-          'After Enter World starts the first session, returning to the main menu creates the paused browser save that later boot can resume.'
-        ],
-        metadataRows: [
-          {
-            label: 'Current Resume',
-            value: 'Not available until the first pause.'
-          },
-          {
-            label: 'Created by',
-            value: 'Enter World, then return to main menu.'
-          }
-        ]
-      }
-    : {
-        title: 'Persistence Preview',
-        lines: [
-          'Browser resume is unavailable here because browser storage could not be opened during boot.',
-          'Enter World still starts a live session in this tab, but returning to the main menu cannot create a browser resume save until storage access works again.'
-        ],
-        metadataRows: [
-          {
-            label: 'Current Resume',
-            value: 'Unavailable in this browser context.'
-          },
-          {
-            label: 'Requires',
-            value: 'Working browser storage access.'
-          }
-        ],
-        tone: 'warning'
-      };
-
-const createFirstLaunchMainMenuMenuSections = (
-  worldSavePersistenceAvailable = true
-): readonly AppShellMenuSection[] =>
-  [
-    {
-      title: 'Enter World',
-      lines: ['Start the fixed-step simulation, standalone player, and live in-world controls.'],
-      metadataRows: [
-        {
-          label: 'Shortcut',
-          value: 'Button only'
-        },
-        {
-          label: 'Readiness',
-          value: 'Renderer ready; starts on click.'
-        }
-      ],
-      tone: 'accent'
-    },
-    {
-      title: 'Controls Preview',
-      lines: [
-        'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow; double tap and hold S or Down Arrow on a rope to drop to the bottom; press Jump plus Left or Right on a rope to jump off.',
-        'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons; double tap and hold Down on a rope to drop to the bottom.'
-      ],
-      metadataRows: [
-        {
-          label: 'Desktop',
-          value: 'Movement + rope climb use the keyboard.'
-        },
-        {
-          label: 'Touch',
-          value: 'Player pad appears after Enter World.'
-        }
-      ]
-    },
-    {
-      title: 'Mixed-Device Runtime',
-      lines: [
-        'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
-        'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
-      ],
-      metadataRows: [
-        {
-          label: 'Readiness',
-          value: 'Desktop and touch share one live session.'
-        }
-      ]
-    },
-    createFirstLaunchMainMenuPersistencePreviewSection(worldSavePersistenceAvailable)
-  ] as const;
-
-export const createFirstLaunchMainMenuShellState = (
-  worldSavePersistenceAvailable = true
-): AppShellState => ({
-  screen: 'main-menu',
-  statusText: DEFAULT_FIRST_LAUNCH_MAIN_MENU_STATUS,
-  detailLines: DEFAULT_FIRST_LAUNCH_MAIN_MENU_DETAIL_LINES,
-  menuSections: createFirstLaunchMainMenuMenuSections(worldSavePersistenceAvailable),
-  primaryActionLabel: 'Enter World',
-  secondaryActionLabel: null,
-  tertiaryActionLabel: null
-});
-
 export const createMainMenuShellState = (
   hasResumableWorldSession: boolean,
   worldSessionShellState: WorldSessionShellState = createDefaultWorldSessionShellState(),
@@ -2644,7 +2720,25 @@ export const createMainMenuShellState = (
         worldSessionGameplayPersistenceAvailable,
         pausedMainMenuWorldSeed
       )
-    : createFirstLaunchMainMenuShellState(firstLaunchWorldSavePersistenceAvailable);
+    : createFirstLaunchMainMenuShellState(
+        worldSessionShellPersistenceAvailable,
+        worldSessionShellState,
+        shellActionKeybindings,
+        shellActionKeybindingsDefaultedFromPersistedState,
+        importResult,
+        exportResult,
+        resetShellTogglesResult,
+        shellProfilePreview,
+        shellActionKeybindingsCurrentSessionOnly,
+        recentActivityAction,
+        worldSessionTelemetryState,
+        worldSessionTelemetryPersistenceAvailable,
+        resetShellTelemetryResult,
+        worldSessionGameplayState,
+        worldSessionGameplayPersistenceAvailable,
+        pausedMainMenuWorldSeed,
+        firstLaunchWorldSavePersistenceAvailable
+      );
 
 export const createDefaultBootShellState = (): AppShellState => ({
   screen: 'boot',
@@ -2879,23 +2973,45 @@ export const resolvePausedMainMenuResetShellActionKeybindingsEditorStatus = (
 };
 
 const isPausedMainMenuState = (state: AppShellState): boolean =>
-  state.screen === 'main-menu' && state.primaryActionLabel === 'Resume World';
+  state.screen === 'main-menu' &&
+  (state.mainMenuVariant === 'paused-session' || state.mainMenuVariant === 'first-start');
+const isFirstStartMainMenuState = (state: AppShellState): boolean =>
+  state.screen === 'main-menu' && state.mainMenuVariant === 'first-start';
 
 export const DEFAULT_PAUSED_MAIN_MENU_MENU_SECTIONS = createPausedMainMenuMenuSections();
 
+const resolveFirstStartMainMenuEnterWorldTitle = (): string =>
+  'Start the fixed-step simulation, standalone player, and live in-world controls.';
+const resolveFirstStartMainMenuExportWorldSaveTitle = (): string =>
+  'Download a JSON world-save copy of the seeded start world before entering it.';
+const resolveFirstStartMainMenuImportWorldSaveTitle = (): string =>
+  'Choose a JSON world-save file and load it into the main-menu preview before entering the world.';
+const resolveFirstStartMainMenuResetShellTogglesTitle = (): string =>
+  'Clear saved in-world shell visibility preferences and restore the default-off shell layout before the first session starts.';
+const resolveFirstStartMainMenuFreshWorldTitle = (): string =>
+  'Discard the seeded start world, camera state, and undo history, then boot a fresh world.';
+
 export const resolveMainMenuPrimaryActionTitle = (state: AppShellState): string =>
-  state.screen === 'main-menu' && state.primaryActionLabel === 'Resume World'
-    ? resolvePausedMainMenuResumeWorldTitle()
+  state.screen === 'main-menu'
+    ? state.primaryActionLabel === 'Resume World'
+      ? resolvePausedMainMenuResumeWorldTitle()
+      : state.primaryActionLabel === 'Enter World'
+        ? resolveFirstStartMainMenuEnterWorldTitle()
+        : ''
     : '';
 
 export const resolveMainMenuSecondaryActionTitle = (state: AppShellState): string =>
   state.screen === 'main-menu' && state.secondaryActionLabel === 'Export World Save'
-    ? resolvePausedMainMenuExportWorldSaveTitle()
+    ? isFirstStartMainMenuState(state)
+      ? resolveFirstStartMainMenuExportWorldSaveTitle()
+      : resolvePausedMainMenuExportWorldSaveTitle()
     : '';
 
 export const resolveMainMenuTertiaryActionTitle = (state: AppShellState): string =>
   state.screen === 'main-menu' && state.tertiaryActionLabel === 'Import World Save'
-    ? resolvePausedMainMenuImportWorldSaveTitle()
+    ? isFirstStartMainMenuState(state)
+      ? resolveFirstStartMainMenuImportWorldSaveTitle()
+      : resolvePausedMainMenuImportWorldSaveTitle()
     : '';
 
 export const resolveMainMenuQuaternaryActionTitle = (state: AppShellState): string =>
@@ -2905,12 +3021,16 @@ export const resolveMainMenuQuaternaryActionTitle = (state: AppShellState): stri
 
 export const resolveMainMenuQuinaryActionTitle = (state: AppShellState): string =>
   state.screen === 'main-menu' && state.quinaryActionLabel === 'Reset Shell Toggles'
-    ? resolvePausedMainMenuResetShellTogglesTitle()
+    ? isFirstStartMainMenuState(state)
+      ? resolveFirstStartMainMenuResetShellTogglesTitle()
+      : resolvePausedMainMenuResetShellTogglesTitle()
     : '';
 
 export const resolveMainMenuSenaryActionTitle = (state: AppShellState): string =>
   state.screen === 'main-menu' && state.senaryActionLabel === 'New World'
-    ? resolvePausedMainMenuFreshWorldTitle()
+    ? isFirstStartMainMenuState(state)
+      ? resolveFirstStartMainMenuFreshWorldTitle()
+      : resolvePausedMainMenuFreshWorldTitle()
     : '';
 
 const resolveInWorldReturnToMainMenuActionLabel = (
@@ -5092,11 +5212,15 @@ export class AppShell {
                   : null
               }
             ),
-            createWorldSaveActionButton(
-              pausedMainMenuSectionViewModel.worldSave.clearSavedWorld,
-              resolveMainMenuQuaternaryActionTitle(state),
-              () => this.onQuaternaryAction(this.currentState.screen)
-            )
+            ...(!isFirstStartMainMenuState(state)
+              ? [
+                  createWorldSaveActionButton(
+                    pausedMainMenuSectionViewModel.worldSave.clearSavedWorld,
+                    resolveMainMenuQuaternaryActionTitle(state),
+                    () => this.onQuaternaryAction(this.currentState.screen)
+                  )
+                ]
+              : [])
           ];
     const pausedMainMenuWorldSaveNavigationRows = pausedMainMenuWorldSaveSection.metadataRows.filter(
       (row) => row.label === 'Browser Resume' || row.label === 'World Seed'

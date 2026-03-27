@@ -8,6 +8,7 @@ import {
   type ShellActionKeybindingState
 } from '../input/shellActionKeybindings';
 import {
+  createDefaultWorldSessionGameplayState,
   type WorldSessionGameplayState
 } from '../mainWorldSessionGameplayState';
 import {
@@ -365,10 +366,6 @@ const SESSION_ONLY_PAUSED_MAIN_MENU_SHELL_ACTION_KEYBINDING_EDITOR_METADATA_VIEW
       tone: 'warning'
     }
   }
-] as const;
-const STORAGE_UNAVAILABLE_FIRST_LAUNCH_PERSISTENCE_PREVIEW_LINES = [
-  'Browser resume is unavailable here because browser storage could not be opened during boot.',
-  'Enter World still starts a live session in this tab, but returning to the main menu cannot create a browser resume save until storage access works again.'
 ] as const;
 const APP_SHELL_STYLE_SOURCE = readFileSync(new URL('../style.css', import.meta.url), 'utf8');
 
@@ -739,7 +736,43 @@ const createPausedMainMenuMenuSectionsFromViewModel = (
 ) => {
   const { primarySections, recentActivitySections } = resolvePausedMainMenuMenuSectionGroups({
     screen: 'main-menu',
+    mainMenuVariant: 'paused-session',
     primaryActionLabel: 'Resume World',
+    pausedMainMenuSections,
+    ...stateOverrides
+  });
+
+  return [...primarySections, ...recentActivitySections];
+};
+const createFirstLaunchMainMenuSectionViewModel = (
+  worldSessionShellPersistenceAvailable = true
+) =>
+  createPausedMainMenuSectionViewModel(
+    undefined,
+    worldSessionShellPersistenceAvailable,
+    createDefaultShellActionKeybindingState(),
+    false,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    createDefaultWorldSessionTelemetryState(),
+    worldSessionShellPersistenceAvailable,
+    null,
+    undefined,
+    worldSessionShellPersistenceAvailable,
+    'first-start'
+  );
+const createFirstLaunchMainMenuMenuSectionsFromViewModel = (
+  pausedMainMenuSections: ReturnType<typeof createFirstLaunchMainMenuSectionViewModel>,
+  stateOverrides: Partial<AppShellState> = {}
+) => {
+  const { primarySections, recentActivitySections } = resolvePausedMainMenuMenuSectionGroups({
+    screen: 'main-menu',
+    mainMenuVariant: 'first-start',
+    primaryActionLabel: 'Enter World',
     pausedMainMenuSections,
     ...stateOverrides
   });
@@ -1622,7 +1655,7 @@ describe('paused main-menu dashboard layout', () => {
     });
   });
 
-  it('hides the paused dashboard wrappers for the first-launch main menu layout', () => {
+  it('reuses the paused dashboard wrappers for the first-launch main menu layout', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
 
@@ -1633,11 +1666,11 @@ describe('paused main-menu dashboard layout', () => {
     const dashboard = panel === null ? null : findElementByClass(panel, 'app-shell__paused-dashboard');
     const menuSections = panel === null ? null : findElementByClass(panel, 'app-shell__menu-sections');
 
-    expect(panel?.dataset.layout).toBe('default');
-    expect(dashboard?.hidden).toBe(true);
-    expect(dashboard?.style.display).toBe('none');
-    expect(menuSections?.hidden).toBe(false);
-    expect(menuSections?.style.display).toBe('grid');
+    expect(panel?.dataset.layout).toBe('paused-dashboard');
+    expect(dashboard?.hidden).toBe(false);
+    expect(dashboard?.style.display).toBe('grid');
+    expect(menuSections?.hidden).toBe(true);
+    expect(menuSections?.style.display).toBe('none');
   });
 
   it('adds stable labelled region landmarks and focus anchors to paused-dashboard sections', () => {
@@ -2664,13 +2697,14 @@ describe('resolveAppShellViewModel', () => {
     ]);
   });
 
-  it('shows the first-launch main menu with structured enter-world, controls-preview, mixed-device, and persistence-preview guidance cards', () => {
+  it('shows the first-launch main menu through the shared paused-dashboard shell frame', () => {
     const viewModel = resolveAppShellViewModel(createFirstLaunchMainMenuShellState());
+    const firstLaunchSections = createFirstLaunchMainMenuSectionViewModel();
 
     expect(viewModel.overlayVisible).toBe(true);
     expect(viewModel.chromeVisible).toBe(false);
     expect(viewModel.stageLabel).toBe('Main Menu');
-    expect(viewModel.primaryActionLabel).toBe('Enter World');
+    expect(viewModel.primaryActionLabel).toBeNull();
     expect(viewModel.statusText).toBe('Renderer ready.');
     expect(viewModel.secondaryActionLabel).toBeNull();
     expect(viewModel.tertiaryActionLabel).toBeNull();
@@ -2686,72 +2720,11 @@ describe('resolveAppShellViewModel', () => {
     expect(viewModel.shortcutsToggleLabel).toBeNull();
     expect(viewModel.shortcutsTogglePressed).toBe(false);
     expect(viewModel.shortcutsOverlayVisible).toBe(false);
-    expect(viewModel.pausedMainMenuSections).toBeNull();
+    expect(viewModel.pausedMainMenuSections).toEqual(firstLaunchSections);
     expect(viewModel.detailLines).toEqual([]);
-    expect(viewModel.menuSections).toEqual([
-      {
-        title: 'Enter World',
-        lines: ['Start the fixed-step simulation, standalone player, and live in-world controls.'],
-        metadataRows: [
-          {
-            label: 'Shortcut',
-            value: 'Button only'
-          },
-          {
-            label: 'Readiness',
-            value: 'Renderer ready; starts on click.'
-          }
-        ],
-        tone: 'accent'
-      },
-      {
-        title: 'Controls Preview',
-        lines: [
-          'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow; double tap and hold S or Down Arrow on a rope to drop to the bottom; press Jump plus Left or Right on a rope to jump off.',
-          'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons; double tap and hold Down on a rope to drop to the bottom.'
-        ],
-        metadataRows: [
-          {
-            label: 'Desktop',
-            value: 'Movement + rope climb use the keyboard.'
-          },
-          {
-            label: 'Touch',
-            value: 'Player pad appears after Enter World.'
-          }
-        ]
-      },
-      {
-        title: 'Mixed-Device Runtime',
-        lines: [
-          'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
-          'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
-        ],
-        metadataRows: [
-          {
-            label: 'Readiness',
-            value: 'Desktop and touch share one live session.'
-          }
-        ]
-      },
-      {
-        title: 'Persistence Preview',
-        lines: [
-          'Browser resume is not available yet because no paused world session has been saved yet.',
-          'After Enter World starts the first session, returning to the main menu creates the paused browser save that later boot can resume.'
-        ],
-        metadataRows: [
-          {
-            label: 'Current Resume',
-            value: 'Not available until the first pause.'
-          },
-          {
-            label: 'Created by',
-            value: 'Enter World, then return to main menu.'
-          }
-        ]
-      }
-    ]);
+    expect(viewModel.menuSections).toEqual(
+      createFirstLaunchMainMenuMenuSectionsFromViewModel(firstLaunchSections)
+    );
   });
 
   it('surfaces destructive fresh-world guidance in the paused main-menu copy', () => {
@@ -3847,151 +3820,50 @@ describe('createInWorldShellState', () => {
 });
 
 describe('createFirstLaunchMainMenuShellState', () => {
-  it('returns an explicit first-launch main-menu state with structured guidance cards', () => {
+  it('returns the first-launch main menu through the shared paused-dashboard state shape', () => {
+    const firstLaunchSections = createFirstLaunchMainMenuSectionViewModel();
+
     expect(createFirstLaunchMainMenuShellState()).toEqual({
       screen: 'main-menu',
+      mainMenuVariant: 'first-start',
+      worldSavePersistenceAvailable: true,
       statusText: 'Renderer ready.',
       detailLines: [],
-      menuSections: [
-        {
-          title: 'Enter World',
-          lines: ['Start the fixed-step simulation, standalone player, and live in-world controls.'],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: 'Button only'
-            },
-            {
-              label: 'Readiness',
-              value: 'Renderer ready; starts on click.'
-            }
-          ],
-          tone: 'accent'
-        },
-        {
-        title: 'Controls Preview',
-        lines: [
-            'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow; double tap and hold S or Down Arrow on a rope to drop to the bottom; press Jump plus Left or Right on a rope to jump off.',
-            'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons; double tap and hold Down on a rope to drop to the bottom.'
-        ],
-        metadataRows: [
-            {
-              label: 'Desktop',
-              value: 'Movement + rope climb use the keyboard.'
-            },
-            {
-              label: 'Touch',
-              value: 'Player pad appears after Enter World.'
-            }
-          ]
-        },
-        {
-          title: 'Mixed-Device Runtime',
-          lines: [
-            'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
-            'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
-          ],
-          metadataRows: [
-            {
-              label: 'Readiness',
-              value: 'Desktop and touch share one live session.'
-            }
-          ]
-        },
-        {
-          title: 'Persistence Preview',
-          lines: [
-            'Browser resume is not available yet because no paused world session has been saved yet.',
-            'After Enter World starts the first session, returning to the main menu creates the paused browser save that later boot can resume.'
-          ],
-          metadataRows: [
-            {
-              label: 'Current Resume',
-              value: 'Not available until the first pause.'
-            },
-            {
-              label: 'Created by',
-              value: 'Enter World, then return to main menu.'
-            }
-          ]
-        }
-      ],
+      menuSections: createFirstLaunchMainMenuMenuSectionsFromViewModel(firstLaunchSections),
+      pausedMainMenuSections: firstLaunchSections,
       primaryActionLabel: 'Enter World',
-      secondaryActionLabel: null,
-      tertiaryActionLabel: null
+      secondaryActionLabel: 'Export World Save',
+      tertiaryActionLabel: 'Import World Save',
+      quaternaryActionLabel: null,
+      quinaryActionLabel: 'Reset Shell Toggles',
+      senaryActionLabel: 'New World',
+      shellActionKeybindings: createDefaultShellActionKeybindingState(),
+      worldSessionShellPersistenceAvailable: true
     });
   });
 
-  it('returns warning persistence-preview guidance when browser resume storage is unavailable during boot', () => {
+  it('returns warning first-launch dashboard guidance when browser resume storage is unavailable during boot', () => {
+    const firstLaunchSections = createFirstLaunchMainMenuSectionViewModel(false);
+
     expect(createFirstLaunchMainMenuShellState(false)).toEqual({
       screen: 'main-menu',
+      mainMenuVariant: 'first-start',
+      worldSavePersistenceAvailable: false,
       statusText: 'Renderer ready.',
       detailLines: [],
-      menuSections: [
-        {
-          title: 'Enter World',
-          lines: ['Start the fixed-step simulation, standalone player, and live in-world controls.'],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: 'Button only'
-            },
-            {
-              label: 'Readiness',
-              value: 'Renderer ready; starts on click.'
-            }
-          ],
-          tone: 'accent'
-        },
-        {
-        title: 'Controls Preview',
-        lines: [
-            'Desktop: move with A or D, or Left or Right Arrow; jump or climb up with W, Up Arrow, or Space; descend ropes with S or Down Arrow; double tap and hold S or Down Arrow on a rope to drop to the bottom; press Jump plus Left or Right on a rope to jump off.',
-            'Touch: the in-world player pad appears after Enter World with Left, Down, Right, and Jump buttons; double tap and hold Down on a rope to drop to the bottom.'
-        ],
-        metadataRows: [
-            {
-              label: 'Desktop',
-              value: 'Movement + rope climb use the keyboard.'
-            },
-            {
-              label: 'Touch',
-              value: 'Player pad appears after Enter World.'
-            }
-          ]
-        },
-        {
-          title: 'Mixed-Device Runtime',
-          lines: [
-            'Desktop keeps movement, zoom, pan, and debug editing on the same world session.',
-            'Touch keeps the on-screen edit controls and player pad aligned with that same runtime state.'
-          ],
-          metadataRows: [
-            {
-              label: 'Readiness',
-              value: 'Desktop and touch share one live session.'
-            }
-          ]
-        },
-        {
-          title: 'Persistence Preview',
-          lines: [...STORAGE_UNAVAILABLE_FIRST_LAUNCH_PERSISTENCE_PREVIEW_LINES],
-          metadataRows: [
-            {
-              label: 'Current Resume',
-              value: 'Unavailable in this browser context.'
-            },
-            {
-              label: 'Requires',
-              value: 'Working browser storage access.'
-            }
-          ],
-          tone: 'warning'
-        }
-      ],
+      menuSections: createFirstLaunchMainMenuMenuSectionsFromViewModel(firstLaunchSections, {
+        worldSavePersistenceAvailable: false,
+        worldSessionShellPersistenceAvailable: false
+      }),
+      pausedMainMenuSections: firstLaunchSections,
       primaryActionLabel: 'Enter World',
-      secondaryActionLabel: null,
-      tertiaryActionLabel: null
+      secondaryActionLabel: 'Export World Save',
+      tertiaryActionLabel: 'Import World Save',
+      quaternaryActionLabel: null,
+      quinaryActionLabel: 'Reset Shell Toggles',
+      senaryActionLabel: 'New World',
+      shellActionKeybindings: createDefaultShellActionKeybindingState(),
+      worldSessionShellPersistenceAvailable: false
     });
   });
 });
@@ -4006,7 +3878,7 @@ describe('createMainMenuShellState', () => {
       createMainMenuShellState(
         false,
         undefined,
-        true,
+        false,
         createDefaultShellActionKeybindingState(),
         false,
         null,
@@ -4014,6 +3886,14 @@ describe('createMainMenuShellState', () => {
         null,
         null,
         null,
+        false,
+        null,
+        false,
+        null,
+        createDefaultWorldSessionTelemetryState(),
+        false,
+        null,
+        createDefaultWorldSessionGameplayState(),
         false
       )
     ).toEqual(createFirstLaunchMainMenuShellState(false));
@@ -4058,6 +3938,7 @@ describe('createPausedMainMenuShellState', () => {
 
     expect(createPausedMainMenuShellState()).toEqual({
       screen: 'main-menu',
+      mainMenuVariant: 'paused-session',
       statusText: 'World session paused.',
       detailLines: [],
       menuSections: createPausedMainMenuMenuSectionsFromViewModel(pausedMainMenuSections),
@@ -4094,6 +3975,7 @@ describe('createPausedMainMenuShellState', () => {
       )
     ).toEqual({
       screen: 'main-menu',
+      mainMenuVariant: 'paused-session',
       statusText: 'World session paused.',
       detailLines: [],
       menuSections: createPausedMainMenuMenuSectionsFromViewModel(pausedMainMenuSections, {
@@ -4143,6 +4025,7 @@ describe('createPausedMainMenuShellState', () => {
       )
     ).toEqual({
       screen: 'main-menu',
+      mainMenuVariant: 'paused-session',
       statusText: 'World session paused.',
       detailLines: [],
       menuSections: createPausedMainMenuMenuSectionsFromViewModel(pausedMainMenuSections, {
@@ -4198,6 +4081,7 @@ describe('createPausedMainMenuShellState', () => {
       )
     ).toEqual({
       screen: 'main-menu',
+      mainMenuVariant: 'paused-session',
       statusText: 'World session paused.',
       detailLines: [],
       menuSections: createPausedMainMenuMenuSectionsFromViewModel(pausedMainMenuSections, {
@@ -5106,12 +4990,67 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
     });
   });
 
-  it('keeps the world-save section hidden outside the paused main menu', () => {
+  it('shows the world-save section for the first-launch dashboard with prestart import/export guidance', () => {
     expect(resolvePausedMainMenuWorldSaveSectionState(createFirstLaunchMainMenuShellState())).toEqual({
-      visible: false,
-      summaryLine: null,
-      metadataRows: [],
-      actionSections: [],
+      visible: true,
+      summaryLine:
+        'Preview imports and exports before the first run. Browser resume appears after the first saved session.',
+      metadataRows: [
+        {
+          label: 'Browser Resume',
+          value: 'Missing',
+          badge: {
+            text: 'Missing',
+            tone: 'warning'
+          }
+        },
+        {
+          label: 'World Seed',
+          value: '0'
+        },
+        {
+          label: 'Created By',
+          value: 'Enter World, Import World Save, or New World'
+        },
+        {
+          label: 'Last Export',
+          value: 'No recent export'
+        },
+        {
+          label: 'Last Import',
+          value: 'No recent import'
+        }
+      ],
+      actionSections: [
+        {
+          title: 'Export World Save',
+          lines: [],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Session',
+              value: 'Kept unchanged'
+            }
+          ]
+        },
+        {
+          title: 'Import World Save',
+          lines: [],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Replaces',
+              value: 'Current session only after validation and restore'
+            }
+          ]
+        }
+      ],
       tone: 'default'
     });
   });
@@ -5166,12 +5105,52 @@ describe('resolvePausedMainMenuDangerZoneSectionState', () => {
     });
   });
 
-  it('keeps the danger zone hidden outside the paused main menu', () => {
+  it('shows the danger zone for the first-launch dashboard with prestart reset and reroll actions', () => {
     expect(resolvePausedMainMenuDangerZoneSectionState(createFirstLaunchMainMenuShellState())).toEqual({
-      visible: false,
-      summaryLine: null,
-      actionSections: [],
-      tone: 'default'
+      visible: true,
+      summaryLine:
+        'Use these only when you want to clear shell layout state or replace the seeded start world before entering it.',
+      actionSections: [
+        {
+          title: 'Reset Shell Toggles',
+          lines: [],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'World',
+              value: 'Seeded start world kept'
+            },
+            {
+              label: 'Next Resume',
+              value: 'Default-off shell layout'
+            }
+          ],
+          tone: 'warning'
+        },
+        {
+          title: 'New World',
+          lines: [],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Replaces',
+              value: 'Seeded start world with a fresh world'
+            },
+            {
+              label: 'Resets',
+              value: 'Player, camera, undo, and shell layout'
+            }
+          ],
+          tone: 'warning'
+        }
+      ],
+      tone: 'warning'
     });
   });
 });
@@ -5865,15 +5844,30 @@ describe('resolvePausedMainMenuShellSectionState', () => {
     });
   });
 
-  it('keeps shell hidden outside the paused main menu', () => {
-    expect(resolvePausedMainMenuShellSectionState(createFirstLaunchMainMenuShellState())).toEqual({
-      visible: false,
-      summaryLine: null,
-      metadataRows: [],
-      gameplayControls: null,
-      telemetryControls: null,
-      previewSection: null
-    });
+  it('keeps shell visible on the first-launch dashboard so prestart settings can be adjusted', () => {
+    const sectionState = resolvePausedMainMenuShellSectionState(createFirstLaunchMainMenuShellState());
+
+    expect(sectionState.visible).toBe(true);
+    expect(sectionState.summaryLine).toBe(
+      'Adjust gameplay controls, telemetry, hotkeys, and shell-profile tools for the current paused session.'
+    );
+    expect(sectionState.metadataRows).toEqual([
+      {
+        label: 'Active Layout',
+        value: 'All hidden (browser saved)'
+      },
+      {
+        label: 'Binding Set',
+        value: 'Default set'
+      },
+      {
+        label: 'Staged Preview',
+        value: 'No staged preview'
+      }
+    ]);
+    expect(sectionState.gameplayControls).not.toBeNull();
+    expect(sectionState.telemetryControls).not.toBeNull();
+    expect(sectionState.previewSection).toBeNull();
   });
 });
 
@@ -5901,7 +5895,7 @@ describe('paused main-menu tooltip-title resolution', () => {
     );
   });
 
-  it('clears paused-session tooltip titles when first-launch main-menu copy is restored', () => {
+  it('switches tooltip titles to the first-launch dashboard action copy when that menu is restored', () => {
     const pausedState = createPausedMainMenuShellState();
 
     expect(resolveMainMenuPrimaryActionTitle(pausedState)).toBe(
@@ -5924,12 +5918,22 @@ describe('paused main-menu tooltip-title resolution', () => {
     );
 
     const firstLaunchState = createFirstLaunchMainMenuShellState();
-    expect(resolveMainMenuPrimaryActionTitle(firstLaunchState)).toBe('');
-    expect(resolveMainMenuSecondaryActionTitle(firstLaunchState)).toBe('');
-    expect(resolveMainMenuTertiaryActionTitle(firstLaunchState)).toBe('');
+    expect(resolveMainMenuPrimaryActionTitle(firstLaunchState)).toBe(
+      'Start the fixed-step simulation, standalone player, and live in-world controls.'
+    );
+    expect(resolveMainMenuSecondaryActionTitle(firstLaunchState)).toBe(
+      'Download a JSON world-save copy of the seeded start world before entering it.'
+    );
+    expect(resolveMainMenuTertiaryActionTitle(firstLaunchState)).toBe(
+      'Choose a JSON world-save file and load it into the main-menu preview before entering the world.'
+    );
     expect(resolveMainMenuQuaternaryActionTitle(firstLaunchState)).toBe('');
-    expect(resolveMainMenuQuinaryActionTitle(firstLaunchState)).toBe('');
-    expect(resolveMainMenuSenaryActionTitle(firstLaunchState)).toBe('');
+    expect(resolveMainMenuQuinaryActionTitle(firstLaunchState)).toBe(
+      'Clear saved in-world shell visibility preferences and restore the default-off shell layout before the first session starts.'
+    );
+    expect(resolveMainMenuSenaryActionTitle(firstLaunchState)).toBe(
+      'Discard the seeded start world, camera state, and undo history, then boot a fresh world.'
+    );
   });
 
   it('restores paused-session tooltip titles after first-launch main-menu copy transitions back to a resumable session', () => {
@@ -5955,12 +5959,22 @@ describe('paused main-menu tooltip-title resolution', () => {
     );
 
     const firstLaunchState = createFirstLaunchMainMenuShellState();
-    expect(resolveMainMenuPrimaryActionTitle(firstLaunchState)).toBe('');
-    expect(resolveMainMenuSecondaryActionTitle(firstLaunchState)).toBe('');
-    expect(resolveMainMenuTertiaryActionTitle(firstLaunchState)).toBe('');
+    expect(resolveMainMenuPrimaryActionTitle(firstLaunchState)).toBe(
+      'Start the fixed-step simulation, standalone player, and live in-world controls.'
+    );
+    expect(resolveMainMenuSecondaryActionTitle(firstLaunchState)).toBe(
+      'Download a JSON world-save copy of the seeded start world before entering it.'
+    );
+    expect(resolveMainMenuTertiaryActionTitle(firstLaunchState)).toBe(
+      'Choose a JSON world-save file and load it into the main-menu preview before entering the world.'
+    );
     expect(resolveMainMenuQuaternaryActionTitle(firstLaunchState)).toBe('');
-    expect(resolveMainMenuQuinaryActionTitle(firstLaunchState)).toBe('');
-    expect(resolveMainMenuSenaryActionTitle(firstLaunchState)).toBe('');
+    expect(resolveMainMenuQuinaryActionTitle(firstLaunchState)).toBe(
+      'Clear saved in-world shell visibility preferences and restore the default-off shell layout before the first session starts.'
+    );
+    expect(resolveMainMenuSenaryActionTitle(firstLaunchState)).toBe(
+      'Discard the seeded start world, camera state, and undo history, then boot a fresh world.'
+    );
 
     expect(resolveMainMenuPrimaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuResumeWorldTitle()

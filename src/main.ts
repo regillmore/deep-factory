@@ -1104,7 +1104,7 @@ const bootstrap = async (): Promise<void> => {
       handleMainMenuShellAction(screen, 'import-world-save');
     },
     onImportWorldSave: (screen) => {
-      if (screen !== 'main-menu' || !worldSessionStarted) {
+      if (screen !== 'main-menu') {
         return false;
       }
 
@@ -1179,7 +1179,7 @@ const bootstrap = async (): Promise<void> => {
       };
     },
     onImportShellProfile: (screen) => {
-      if (screen !== 'main-menu' || !worldSessionStarted) {
+      if (screen !== 'main-menu') {
         return {
           status: 'failed',
           reason: 'Shell-profile import is unavailable.'
@@ -1189,7 +1189,7 @@ const bootstrap = async (): Promise<void> => {
       return importPausedMainMenuShellProfile();
     },
     onApplyShellProfilePreview: (screen) => {
-      if (screen !== 'main-menu' || !worldSessionStarted) {
+      if (screen !== 'main-menu') {
         return {
           status: 'failed',
           reason: 'Shell-profile apply is unavailable.'
@@ -1199,7 +1199,7 @@ const bootstrap = async (): Promise<void> => {
       return applyPausedMainMenuShellProfilePreview();
     },
     onClearShellProfilePreview: (screen) => {
-      if (screen !== 'main-menu' || !worldSessionStarted) {
+      if (screen !== 'main-menu') {
         return {
           status: 'failed',
           reason: 'Shell-profile preview clear is unavailable.'
@@ -1209,7 +1209,7 @@ const bootstrap = async (): Promise<void> => {
       return clearPausedMainMenuShellProfilePreview();
     },
     onExportShellProfile: (screen) => {
-      if (screen !== 'main-menu' || !worldSessionStarted) {
+      if (screen !== 'main-menu') {
         return {
           status: 'failed',
           reason: 'Shell-profile export is unavailable.'
@@ -1219,7 +1219,7 @@ const bootstrap = async (): Promise<void> => {
       return exportPausedMainMenuShellProfile();
     },
     onToggleShellTelemetryCollection: (screen, collectionId) => {
-      if (screen !== 'main-menu' || !worldSessionStarted) {
+      if (screen !== 'main-menu') {
         return;
       }
 
@@ -1228,7 +1228,7 @@ const bootstrap = async (): Promise<void> => {
       );
     },
     onToggleShellTelemetryType: (screen, typeId) => {
-      if (screen !== 'main-menu' || !worldSessionStarted) {
+      if (screen !== 'main-menu') {
         return;
       }
 
@@ -1237,7 +1237,7 @@ const bootstrap = async (): Promise<void> => {
       );
     },
     onResetShellTelemetry: (screen) => {
-      if (screen !== 'main-menu' || !worldSessionStarted) {
+      if (screen !== 'main-menu') {
         return;
       }
 
@@ -1256,7 +1256,7 @@ const bootstrap = async (): Promise<void> => {
       refreshShellStateAfterShellPreferenceChange();
     },
     onTogglePeacefulMode: (screen) => {
-      if (screen !== 'main-menu' || !worldSessionStarted) {
+      if (screen !== 'main-menu') {
         return;
       }
 
@@ -1586,14 +1586,7 @@ const bootstrap = async (): Promise<void> => {
   const applyMainMenuShellAction = (actionType: MainMenuShellActionType): boolean => {
     if (currentScreen !== 'main-menu' || loop === null) return false;
 
-    if (
-      (actionType === 'export-world-save' ||
-        actionType === 'import-world-save' ||
-        actionType === 'clear-persisted-world-session' ||
-        actionType === 'start-fresh-world-session' ||
-        actionType === 'reset-shell-toggle-preferences') &&
-      !worldSessionStarted
-    ) {
+    if (actionType === 'clear-persisted-world-session' && !worldSessionStarted) {
       return false;
     }
 
@@ -6550,7 +6543,7 @@ const bootstrap = async (): Promise<void> => {
     ensureWorldSessionLoopStarted();
   };
   const startFreshWorldSessionFromMainMenu = (): void => {
-    if (loop === null || !worldSessionStarted) return;
+    if (loop === null) return;
     pausedMainMenuWorldSaveCleared = false;
     pausedMainMenuSavedWorldStatus = null;
     pausedMainMenuExportResult = null;
@@ -6562,6 +6555,7 @@ const bootstrap = async (): Promise<void> => {
     clearPersistedCurrentWorldSession();
     applyPausedMainMenuWorldSessionShellTransition('start-fresh-world-session');
     resetFreshWorldSessionRuntimeState();
+    worldSessionStarted = true;
     persistCurrentWorldSession();
     enterInWorldShellState();
     ensureWorldSessionLoopStarted();
@@ -6589,7 +6583,7 @@ const bootstrap = async (): Promise<void> => {
     return true;
   };
   const resetPausedMainMenuShellTogglePreferences = (): void => {
-    if (loop === null || !worldSessionStarted) return;
+    if (loop === null) return;
     const clearResult = applyPausedMainMenuWorldSessionShellTransition(
       'reset-shell-toggle-preferences',
       'clear'
@@ -7723,7 +7717,7 @@ const bootstrap = async (): Promise<void> => {
   restorePausedWorldSessionFromSaveEnvelopeAction = (
     envelope: WorldSaveEnvelope
   ): RestorePausedWorldSessionFromSaveEnvelopeResult => {
-    if (currentScreen !== 'main-menu' || loop === null || !worldSessionStarted) {
+    if (currentScreen !== 'main-menu' || loop === null) {
       return {
         status: 'restore-failed',
         reason: 'Paused world-session restore is unavailable.'
@@ -7777,6 +7771,7 @@ const bootstrap = async (): Promise<void> => {
       resetFreshWorldSessionDebugEditState();
       clearPinnedDebugTileInspect();
       resolveCurrentWorldPlayerSpawn();
+      worldSessionStarted = true;
       clearPersistedCurrentWorldSession();
       const persistenceResult = persistCurrentWorldSessionWithResult();
       renderWorldPreview();

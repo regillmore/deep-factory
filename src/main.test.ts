@@ -11,14 +11,17 @@ import {
 } from './input/shellActionKeybindings';
 import {
   createDefaultWorldSessionShellState,
+  loadWorldSessionShellStateWithPersistenceAvailability,
   WORLD_SESSION_SHELL_STATE_STORAGE_KEY
 } from './mainWorldSessionShellState';
 import {
   createDefaultWorldSessionGameplayState,
+  loadWorldSessionGameplayStateWithPersistenceAvailability,
   WORLD_SESSION_GAMEPLAY_STATE_STORAGE_KEY
 } from './mainWorldSessionGameplayState';
 import {
   createDefaultWorldSessionTelemetryState,
+  loadWorldSessionTelemetryStateWithPersistenceAvailability,
   WORLD_SESSION_TELEMETRY_STATE_STORAGE_KEY
 } from './mainWorldSessionTelemetryState';
 import { createWorldSessionShellProfileEnvelope } from './mainWorldSessionShellProfile';
@@ -2808,6 +2811,11 @@ const dispatchWindowEvent = (type: string, event: unknown = {}): void => {
   }
 };
 
+const createTestStorageSnapshot = () => ({
+  getItem: (key: string) => testRuntime.storageValues.get(key) ?? null,
+  setItem: () => {}
+});
+
 const readArmedToolKinds = () => ({
   floodFillKind: testRuntime.inputControllerInstance?.getArmedDebugFloodFillKind() ?? null,
   lineKind: testRuntime.inputControllerInstance?.getArmedDebugLineKind() ?? null,
@@ -2844,9 +2852,9 @@ const createExpectedPausedMainMenuState = (
     };
   }> = {}
 ) => {
+  const storageSnapshot = createTestStorageSnapshot();
   const shellActionKeybindingLoad = loadShellActionKeybindingStateWithDefaultFallbackStatus({
-    getItem: (key) => testRuntime.storageValues.get(key) ?? null,
-    setItem: () => {}
+    ...storageSnapshot
   });
   const resolvedSavedWorldStatus =
     options.savedWorldStatus ?? (options.worldSaveCleared ? 'cleared' : null);
@@ -2867,9 +2875,10 @@ const createExpectedPausedMainMenuState = (
   return createMainMenuShellState(
     true,
     options.worldSessionShellState ??
-      (testRuntime.storageValues.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)
-        ? readPersistedShellState()
-        : createDefaultWorldSessionShellState()),
+      loadWorldSessionShellStateWithPersistenceAvailability(
+        storageSnapshot,
+        createDefaultWorldSessionShellState()
+      ).state,
     options.persistenceAvailable ?? true,
     options.shellActionKeybindings ?? shellActionKeybindingLoad.state,
     options.shellActionKeybindingsDefaultedFromPersistedState ??
@@ -2890,22 +2899,105 @@ const createExpectedPausedMainMenuState = (
     options.shellActionKeybindingsCurrentSessionOnly ?? false,
     resolvedRecentActivityAction,
     options.worldSessionTelemetryState ??
-      (testRuntime.storageValues.has(WORLD_SESSION_TELEMETRY_STATE_STORAGE_KEY)
-        ? readPersistedTelemetryState()
-        : createDefaultWorldSessionTelemetryState()),
+      loadWorldSessionTelemetryStateWithPersistenceAvailability(
+        storageSnapshot,
+        createDefaultWorldSessionTelemetryState()
+      ).state,
     options.worldSessionTelemetryPersistenceAvailable ?? true,
     options.resetShellTelemetryResult ?? null,
     options.worldSessionGameplayState ??
-      (testRuntime.storageValues.has(WORLD_SESSION_GAMEPLAY_STATE_STORAGE_KEY)
-        ? readPersistedGameplayState()
-        : createDefaultWorldSessionGameplayState()),
+      loadWorldSessionGameplayStateWithPersistenceAvailability(
+        storageSnapshot,
+        createDefaultWorldSessionGameplayState()
+      ).state,
     options.worldSessionGameplayPersistenceAvailable ?? true,
     options.worldSeed ?? (testRuntime.rendererWorldSnapshot?.worldSeed ?? 0)
   );
 };
 
-const createExpectedFirstLaunchMainMenuState = (persistenceAvailable = true) =>
-  createFirstLaunchMainMenuShellState(persistenceAvailable);
+const createExpectedFirstLaunchMainMenuState = (
+  options: boolean | Partial<{
+    persistenceAvailable: boolean;
+    worldSavePersistenceAvailable: boolean;
+    worldSessionShellState: ReturnType<typeof createDefaultWorldSessionShellState>;
+    shellActionKeybindings: ShellActionKeybindingState;
+    shellActionKeybindingsDefaultedFromPersistedState: boolean;
+    shellActionKeybindingsCurrentSessionOnly: boolean;
+    worldSessionGameplayState: ReturnType<typeof createDefaultWorldSessionGameplayState>;
+    worldSessionGameplayPersistenceAvailable: boolean;
+    worldSessionTelemetryState: ReturnType<typeof createDefaultWorldSessionTelemetryState>;
+    worldSessionTelemetryPersistenceAvailable: boolean;
+    exportResult: PausedMainMenuExportResult;
+    importResult: PausedMainMenuImportResult;
+    resetShellTogglesResult: PausedMainMenuResetShellTogglesResult;
+    resetShellTelemetryResult: PausedMainMenuResetShellTelemetryResult;
+    worldSeed: number;
+    recentActivityAction: PausedMainMenuRecentActivityAction;
+    shellProfilePreview: {
+      fileName: string | null;
+      worldSessionShellState: ReturnType<typeof createDefaultWorldSessionShellState>;
+      shellActionKeybindings: ShellActionKeybindingState;
+    };
+  }> = {}
+) => {
+  const storageSnapshot = createTestStorageSnapshot();
+  const resolvedOptions =
+    typeof options === 'boolean' ? { persistenceAvailable: options } : options;
+  const shellActionKeybindingLoad = loadShellActionKeybindingStateWithDefaultFallbackStatus({
+    ...storageSnapshot
+  });
+  const resolvedPersistenceAvailable = resolvedOptions.persistenceAvailable ?? true;
+  const resolvedRecentActivityAction =
+    resolvedOptions.recentActivityAction ??
+    (resolvedOptions.resetShellTelemetryResult
+      ? 'reset-shell-telemetry'
+      : resolvedOptions.resetShellTogglesResult
+        ? 'reset-shell-toggles'
+        : resolvedOptions.importResult
+          ? 'import-world-save'
+          : resolvedOptions.exportResult
+            ? 'export-world-save'
+            : null);
+
+  return createFirstLaunchMainMenuShellState(
+    resolvedPersistenceAvailable,
+    resolvedOptions.worldSessionShellState ??
+      loadWorldSessionShellStateWithPersistenceAvailability(
+        storageSnapshot,
+        createDefaultWorldSessionShellState()
+      ).state,
+    resolvedOptions.shellActionKeybindings ?? shellActionKeybindingLoad.state,
+    resolvedOptions.shellActionKeybindingsDefaultedFromPersistedState ??
+      shellActionKeybindingLoad.defaultedFromPersistedState,
+    resolvedOptions.importResult ?? null,
+    resolvedOptions.exportResult ?? null,
+    resolvedOptions.resetShellTogglesResult ?? null,
+    resolvedOptions.shellProfilePreview
+      ? {
+          fileName: resolvedOptions.shellProfilePreview.fileName,
+          shellState: resolvedOptions.shellProfilePreview.worldSessionShellState,
+          shellActionKeybindings: resolvedOptions.shellProfilePreview.shellActionKeybindings
+        }
+      : null,
+    resolvedOptions.shellActionKeybindingsCurrentSessionOnly ?? false,
+    resolvedRecentActivityAction,
+    resolvedOptions.worldSessionTelemetryState ??
+      loadWorldSessionTelemetryStateWithPersistenceAvailability(
+        storageSnapshot,
+        createDefaultWorldSessionTelemetryState()
+      ).state,
+    resolvedOptions.worldSessionTelemetryPersistenceAvailable ?? resolvedPersistenceAvailable,
+    resolvedOptions.resetShellTelemetryResult ?? null,
+    resolvedOptions.worldSessionGameplayState ??
+      loadWorldSessionGameplayStateWithPersistenceAvailability(
+        storageSnapshot,
+        createDefaultWorldSessionGameplayState()
+      ).state,
+    resolvedOptions.worldSessionGameplayPersistenceAvailable ?? resolvedPersistenceAvailable,
+    resolvedOptions.worldSeed ?? (testRuntime.rendererWorldSnapshot?.worldSeed ?? 0),
+    resolvedOptions.worldSavePersistenceAvailable ?? resolvedPersistenceAvailable
+  );
+};
 const readPausedWorldSaveMetadataValue = (
   rowLabel: string,
   state: AppShellState | null = (testRuntime.shellInstance?.currentState ?? null) as
@@ -3424,7 +3516,7 @@ describe('main.ts shell state orchestration', () => {
     await import('./main');
     await flushBootstrap();
 
-    expect(testRuntime.shellInstance?.currentState).toEqual(createMainMenuShellState(false));
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 
@@ -15371,20 +15463,175 @@ describe('main.ts shell state orchestration', () => {
     expect(testRuntime.gameLoopStartCount).toBe(1);
   });
 
-  it('applies main-menu shell actions through one shared keyboard shell-action handler across shell clicks and paused-menu shortcuts', async () => {
+  it('downloads the seeded first-launch world save without starting the first session', async () => {
+    const previewWorld = new TileWorld(0);
+    expect(previewWorld.setTile(5, -20, 6)).toBe(true);
+    testRuntime.rendererWorldSnapshot = previewWorld.createSnapshot();
+    testRuntime.downloadWorldSaveFilename = 'deep-factory-world-save-2026-03-09T05-46-40Z.json';
+
     await import('./main');
     await flushBootstrap();
 
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
+    expect(readPersistedWorldSaveEnvelope()).toBeNull();
 
     testRuntime.shellInstance?.options.onSecondaryAction('main-menu');
-    testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
-    testRuntime.shellInstance?.options.onQuaternaryAction('main-menu');
-    testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
-    testRuntime.shellInstance?.options.onSenaryAction('main-menu');
+
+    expect(testRuntime.downloadedWorldSaveEnvelopes).toHaveLength(1);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedFirstLaunchMainMenuState({
+        exportResult: {
+          status: 'downloaded',
+          fileName: 'deep-factory-world-save-2026-03-09T05-46-40Z.json'
+        }
+      })
+    );
+    expect(readPersistedWorldSaveEnvelope()).toBeNull();
+    expect(testRuntime.gameLoopStartCount).toBe(0);
+
+    const downloadedEnvelope = testRuntime.downloadedWorldSaveEnvelopes[0] as {
+      kind: string;
+      version: number;
+      worldSnapshot: unknown;
+    };
+
+    expect(downloadedEnvelope.kind).toBe('deep-factory.world-save');
+    expect(downloadedEnvelope.version).toBe(1);
+    expect(downloadedEnvelope.worldSnapshot).toEqual(testRuntime.rendererWorldSnapshot);
+  });
+
+  it('routes a first-launch imported world save through the shared picker and restore action before Enter World', async () => {
+    const restoredWorldSeed = 0x12345678;
+    const restoredWorld = new TileWorld(0, restoredWorldSeed);
+    expect(restoredWorld.setTile(5, -20, 6)).toBe(true);
+    const restoreEnvelope = createWorldSaveEnvelope({
+      worldSnapshot: restoredWorld.createSnapshot(),
+      standalonePlayerState: createPlayerState({
+        position: { x: 72, y: 96 },
+        velocity: { x: -14, y: 28 },
+        grounded: false,
+        facing: 'left',
+        health: 62,
+        lavaDamageTickSecondsRemaining: 0.5
+      }),
+      cameraFollowOffset: { x: 18, y: -12 }
+    });
+
+    const restoreModule = await import('./mainWorldSessionRestore');
+    await import('./main');
+    await flushBootstrap();
 
     expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
+    testRuntime.queuedWorldSaveImportResults = [
+      {
+        status: 'selected',
+        fileName: 'restore.json',
+        envelope: restoreEnvelope
+      }
+    ];
+
+    testRuntime.shellInstance?.options.onTertiaryAction('main-menu');
+    await flushBootstrap();
+
+    expect(testRuntime.worldSaveImportCallCount).toBe(1);
+    expect(restoreModule.restoreWorldSessionFromSaveEnvelope).toHaveBeenCalledTimes(1);
+    expect(testRuntime.rendererLoadWorldSnapshotCallCount).toBe(1);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        importResult: {
+          status: 'accepted',
+          fileName: 'restore.json'
+        },
+        worldSeed: restoredWorldSeed
+      })
+    );
+    expect(readPausedWorldSaveMetadataValue('World Seed')).toBe('305419896');
+    expect(readPersistedWorldSaveEnvelope()?.worldSnapshot.worldSeed).toBe(restoredWorldSeed);
     expect(testRuntime.gameLoopStartCount).toBe(0);
+
+    expect(dispatchKeydown('Enter').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+    expect(testRuntime.gameLoopStartCount).toBe(1);
+  });
+
+  it('clears persisted shell toggle preferences from the first-launch dashboard before the first session starts', async () => {
+    testRuntime.storageValues.set(
+      WORLD_SESSION_SHELL_STATE_STORAGE_KEY,
+      JSON.stringify({
+        debugOverlayVisible: true,
+        debugEditControlsVisible: true,
+        debugEditOverlaysVisible: true,
+        playerSpawnMarkerVisible: true,
+        shortcutsOverlayVisible: true
+      })
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
+    expect(readPersistedShellState()).toEqual({
+      debugOverlayVisible: true,
+      debugEditControlsVisible: true,
+      debugEditOverlaysVisible: true,
+      playerSpawnMarkerVisible: true,
+      shortcutsOverlayVisible: true
+    });
+
+    testRuntime.shellInstance?.options.onQuinaryAction('main-menu');
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedFirstLaunchMainMenuState({
+        worldSessionShellState: createDefaultWorldSessionShellState(),
+        resetShellTogglesResult: {
+          status: 'cleared'
+        }
+      })
+    );
+    expect(testRuntime.storageValues.has(WORLD_SESSION_SHELL_STATE_STORAGE_KEY)).toBe(false);
+    expect(testRuntime.gameLoopStartCount).toBe(0);
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+    expect(readPersistedShellState()).toEqual({
+      debugOverlayVisible: false,
+      debugEditControlsVisible: false,
+      debugEditOverlaysVisible: false,
+      playerSpawnMarkerVisible: false,
+      shortcutsOverlayVisible: false
+    });
+    expect(testRuntime.gameLoopStartCount).toBe(1);
+  });
+
+  it('starts a fresh session from first-launch New World before any resumable session exists', async () => {
+    vi.mocked(Math.random).mockReturnValueOnce(0.125).mockReturnValueOnce(0.75);
+
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
+    testRuntime.shellInstance?.options.onSenaryAction('main-menu');
+
+    expect(testRuntime.rendererResetWorldSeeds).toEqual([536870912, 3221225472]);
+    expect(testRuntime.rendererWorldSnapshot?.worldSeed).toBe(3221225472);
+    expect(readPersistedWorldSaveEnvelope()?.worldSnapshot.worldSeed).toBe(3221225472);
+    expect(testRuntime.shellInstance?.currentState).toEqual(createInWorldShellState());
+    expect(testRuntime.gameLoopStartCount).toBe(1);
+
+    expect(dispatchKeydown('q').prevented).toBe(true);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        worldSeed: 3221225472
+      })
+    );
+  });
+
+  it('applies paused-menu shell actions through one shared keyboard shell-action handler across shell clicks and paused-menu shortcuts', async () => {
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedFirstLaunchMainMenuState());
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
 

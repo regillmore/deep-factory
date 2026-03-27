@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-27: First-start reuses the shared main-menu dashboard instead of a separate menu layout
+
+- Decision: First-time players now enter the same dashboard-style main-menu shell used by paused sessions, with first-start versus paused-session variants controlling copy plus which section-owned actions are visible.
+- Reason: Upcoming menu follow-ups move actions between `Overview`, `World Save`, and `Shell`, and keeping a separate first-start layout would force every menu change to be reimplemented and retested twice.
+- Consequence: Future main-menu UI work should extend shared dashboard sections through variant-specific copy or visibility flags rather than reviving a standalone first-start menu or separate callback path.
+
 ### 2026-03-27: Bomb throws now pass through a fuse-owned projectile entity before explosion work
 
 - Decision: Successful `Bomb` use now consumes one carried bomb immediately and spawns a fixed-step thrown-bomb entity that owns the pre-explosion gravity arc plus fuse countdown instead of treating bomb use as an instant effect.
