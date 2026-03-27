@@ -1251,6 +1251,29 @@ describe('authored atlas asset', () => {
     expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, grassRegion!, dirtRegion!)).toBe(false);
   });
 
+  it('keeps tall-grass in a dedicated authored region distinct from grass and sapling placeholders', () => {
+    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
+    const tallGrassTile = TILE_METADATA.tiles.find((tile) => tile.name === 'tall_grass');
+    const grassTile = TILE_METADATA.tiles.find((tile) => tile.name === 'grass_surface');
+    const saplingTile = TILE_METADATA.tiles.find((tile) => tile.name === 'small_tree_sapling');
+
+    expect(tallGrassTile?.render?.atlasIndex).toBe(37);
+
+    const tallGrassRegion = AUTHORED_ATLAS_REGIONS[tallGrassTile!.render!.atlasIndex!];
+    const grassRegion = AUTHORED_ATLAS_REGIONS[grassTile!.render!.atlasIndex!];
+    const saplingRegion = AUTHORED_ATLAS_REGIONS[saplingTile!.render!.atlasIndex!];
+    expect(tallGrassRegion).toEqual({ x: 128, y: 32, width: 16, height: 16 });
+
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, tallGrassRegion!)).toEqual({
+      x: tallGrassRegion!.x + 1,
+      y: tallGrassRegion!.y + 1,
+      width: 14,
+      height: 15
+    });
+    expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, tallGrassRegion!, grassRegion!)).toBe(false);
+    expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, tallGrassRegion!, saplingRegion!)).toBe(false);
+  });
+
   it('keeps stone and copper-ore placeholders in dedicated authored regions', () => {
     const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
     const stoneTile = TILE_METADATA.tiles.find((tile) => tile.name === 'stone');

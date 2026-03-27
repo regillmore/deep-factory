@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-26: Tall-grass authored art claims an interior atlas slot
+
+- Decision: `tall_grass` now renders through dedicated authored atlas region `37` at `128x32` instead of reusing the small-tree sapling placeholder art.
+- Reason: Surface decoration needed its own committed placeholder sprite, and the current atlas still had uncovered interior slots that avoided widening the image or spending the exterior padding strip.
+- Consequence: Future surface-decoration art should claim the remaining uncovered interior atlas slots before widening the atlas or reusing unrelated vegetation sprites.
+
 ### 2026-03-26: Procedural small-tree worldgen reuses grown-tree anchor footprints
 
 - Decision: Untouched terrain now seeds full grown small-tree footprints only from selected exposed `grass_surface` anchors whose entire canopy stays outside the protected origin corridor, reusing the existing anchored trunk-plus-canopy footprint contract instead of stamping a separate tree layout.

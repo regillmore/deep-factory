@@ -121,14 +121,16 @@ Diagonal neighbors are sampled and normalized for corner-gating, but shared plac
 16 cardinal combinations for now. That shared block still backs terrain materials that have not received their own
 override art yet, while `grass_surface`, `dirt_block`, `stone`, `copper_ore`, `wood_block`, `dirt_wall`, and `wood_wall` now keep
 their existing terrain or wall metadata rules but resolve visible placeholder art through dedicated static authored
-regions `29` through `35`, and wall metadata now also reserves dedicated region `36` for `stone_wall`.
+regions `29` through `35`, wall metadata now also reserves dedicated region `36` for `stone_wall`, and non-solid
+`tall_grass` now resolves through dedicated region `37`.
 The mapping is defined in
 `src/world/tileMetadata.json` and validated at startup by `src/world/tileMetadata.ts`, while the atlas indices
 themselves resolve through the explicit authored region list in `src/world/authoredAtlasLayout.ts`. The current
 authored layout keeps the committed atlas at `192x64`, uses region `21` for the new full-width `platform` sprite
 between torch frames `20` and `22`, adds dedicated full-width `workbench`, `furnace`, `grass_surface`, `dirt_block`,
 `stone`, `copper_ore`, `wood_block`, `dirt_wall`, `wood_wall`, and `stone_wall` regions at indices `27` through `36`,
-keeps `stone_wall` in interior slot `36` at `112x32`, keeps `wood_wall` in the lower-right authored slot at `160x32`,
+adds dedicated `tall_grass` region `37` at `128x32`, keeps `stone_wall` in interior slot `36` at `112x32`, keeps
+`wood_wall` in the lower-right authored slot at `160x32`,
 preserves the same direct-`render.uvRect` pixel bounds, and
 keeps transparent exterior padding from `x=176` onward so ordinary tile quads do not stretch the torch, rope, or
 platform.

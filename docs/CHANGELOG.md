@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-26
 
+- Task: Add a distinct atlas sprite for tall-grass after the tall-grass decoration slice.
+- Changes: Updated [public/atlas/tile-atlas.png](../public/atlas/tile-atlas.png), [src/world/authoredAtlasLayout.ts](../src/world/authoredAtlasLayout.ts), and [src/world/tileMetadata.json](../src/world/tileMetadata.json) so `tall_grass` now renders through dedicated authored region `37` at `128x32` instead of reusing the sapling placeholder art; refreshed [src/world/authoredAtlasLayout.test.ts](../src/world/authoredAtlasLayout.test.ts), [src/world/tileMetadata.test.ts](../src/world/tileMetadata.test.ts), and [src/gl/authoredAtlasAsset.test.ts](../src/gl/authoredAtlasAsset.test.ts) with layout, metadata, and committed-atlas regressions for that new sprite; removed completed task `556` from [docs/NEXT.md](docs/NEXT.md), added replacement task `562`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/gl/authoredAtlasAsset.test.ts src/world/tileMetadata.test.ts src/world/authoredAtlasLayout.test.ts`.
+
 - Task: Repair renderer animated-mesh regressions after seeded small-tree worldgen changed default procedural chunk animation counts.
 - Changes: Updated [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so the animated-mesh reset, snapshot-load, UV-upload, and streaming-prune regressions now isolate their setup from ambient procedural tree animation through a shared blank-world snapshot fixture while the fresh-session reset coverage still compares against the live procedural baseline. Left [docs/NEXT.md](docs/NEXT.md) unchanged because this was a focused regression-fix detour rather than a new roadmap slice.
 - Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
