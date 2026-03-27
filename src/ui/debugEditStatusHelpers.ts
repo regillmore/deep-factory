@@ -86,6 +86,8 @@ export interface DebugEditStatusStripState {
   playerCeilingBonkHoldActive?: boolean | null;
   playerHealth?: number | null;
   playerMaxHealth?: number | null;
+  playerMana?: number | null;
+  playerMaxMana?: number | null;
   playerDeathCount?: number | null;
   playerRespawnSecondsRemaining?: number | null;
   playerDeathHoldStatus?: 'none' | 'holding' | 'respawned' | null;
@@ -1497,6 +1499,16 @@ const formatLiveHealthText = (
   return `HealthNow: ${maxHealthText === null ? healthText : `${healthText}/${maxHealthText}`}`;
 };
 
+const formatLiveManaText = (playerMana: number | null, playerMaxMana: number | null): string | null => {
+  if (playerMana === null && playerMaxMana === null) {
+    return null;
+  }
+
+  const manaText = playerMana === null ? 'n/a' : `${Math.round(playerMana)}`;
+  const maxManaText = playerMaxMana === null ? null : `${Math.round(playerMaxMana)}`;
+  return `ManaNow: ${maxManaText === null ? manaText : `${manaText}/${maxManaText}`}`;
+};
+
 const formatLiveDeathCountText = (playerDeathCount: number | null): string | null => {
   if (playerDeathCount === null) {
     return null;
@@ -1776,6 +1788,8 @@ const buildPlayerText = (
   playerCeilingBonkHoldActive: boolean | null,
   playerHealth: number | null,
   playerMaxHealth: number | null,
+  playerMana: number | null,
+  playerMaxMana: number | null,
   playerDeathCount: number | null,
   playerRespawnSecondsRemaining: number | null,
   playerDeathHoldStatus: DebugEditStatusStripState['playerDeathHoldStatus'],
@@ -1897,6 +1911,7 @@ const buildPlayerText = (
     telemetryVisible('player-combat')
       ? formatLiveHealthText(playerHealth, playerMaxHealth)
       : null,
+    telemetryVisible('player-combat') ? formatLiveManaText(playerMana, playerMaxMana) : null,
     telemetryVisible('player-combat') ? formatLiveDeathCountText(playerDeathCount) : null,
     telemetryVisible('player-combat')
       ? formatLiveRespawnCountdownText(playerRespawnSecondsRemaining)
@@ -2701,6 +2716,8 @@ export const buildDebugEditStatusStripModel = (
   const playerCeilingBonkHoldActive = state.playerCeilingBonkHoldActive ?? null;
   const playerHealth = state.playerHealth ?? null;
   const playerMaxHealth = state.playerMaxHealth ?? null;
+  const playerMana = state.playerMana ?? null;
+  const playerMaxMana = state.playerMaxMana ?? null;
   const playerDeathCount = state.playerDeathCount ?? null;
   const playerRespawnSecondsRemaining = state.playerRespawnSecondsRemaining ?? null;
   const playerDeathHoldStatus = state.playerDeathHoldStatus ?? null;
@@ -2807,6 +2824,8 @@ export const buildDebugEditStatusStripModel = (
       playerCeilingBonkHoldActive,
       playerHealth,
       playerMaxHealth,
+      playerMana,
+      playerMaxMana,
       playerDeathCount,
       playerRespawnSecondsRemaining,
       playerDeathHoldStatus,

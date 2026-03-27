@@ -14722,6 +14722,16 @@ describe('main.ts shell state orchestration', () => {
     ];
 
     runFixedUpdate(1 / 60);
+    runRenderFrame();
+
+    expect(testRuntime.latestDebugOverlayInspectState?.player).toMatchObject({
+      maxMana: 40,
+      mana: 26
+    });
+    expect(testRuntime.latestDebugEditStatusStripState).toMatchObject({
+      playerMaxMana: 40,
+      playerMana: 26
+    });
 
     dispatchWindowEvent('pagehide');
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerState).toMatchObject({

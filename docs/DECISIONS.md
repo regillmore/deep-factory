@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-26: Current-versus-max mana telemetry stays on the existing player-combat readout
+
+- Decision: The full debug HUD and hidden-HUD compact status strip now render live mana as `current/max` on the existing `player-combat` readout, falling back to the prior single-value style only when telemetry lacks `maxMana`.
+- Reason: Mana-crystal upgrades change the player's spellcasting ceiling, and showing both numbers on the established combat resource surface keeps that progression visible without adding a separate mana-only telemetry family or toggle.
+- Consequence: Future mana telemetry should extend the existing `player-combat` readout and preserve fallback behavior for partial snapshots instead of splitting mana into a new telemetry family by default.
+
 ### 2026-03-26: Mana crystals are permanent max-mana upgrades, not temporary restoratives
 
 - Decision: `mana-crystal` now consumes through the shared hidden-panel item-use path to raise max mana by `20` up to `200` while also filling current mana by only that granted upgrade amount, and use is blocked once the player is dead or already at the cap.

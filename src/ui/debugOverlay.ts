@@ -231,6 +231,8 @@ export interface DebugOverlayPlayerTelemetry {
   velocity: { x: number; y: number };
   health?: number | null;
   maxHealth?: number | null;
+  mana?: number | null;
+  maxMana?: number | null;
   deathCount?: number | null;
   respawnSecondsRemaining?: number | null;
   deathHoldStatus?: 'none' | 'holding' | 'respawned' | null;
@@ -881,6 +883,16 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
     typeof player.maxHealth === 'number' && Number.isFinite(player.maxHealth)
       ? `${Math.round(player.maxHealth)}`
       : null;
+  const manaText =
+    typeof player.mana === 'number' && Number.isFinite(player.mana)
+      ? `${Math.round(player.mana)}`
+      : typeof player.maxMana === 'number' && Number.isFinite(player.maxMana)
+        ? 'n/a'
+        : null;
+  const maxManaText =
+    typeof player.maxMana === 'number' && Number.isFinite(player.maxMana)
+      ? `${Math.round(player.maxMana)}`
+      : null;
   const deathCountText =
     typeof player.deathCount === 'number' && Number.isFinite(player.deathCount)
       ? `${Math.max(0, Math.round(player.deathCount))}`
@@ -898,6 +910,8 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
   if (
     healthText === 'n/a' &&
     maxHealthText === null &&
+    manaText === null &&
+    maxManaText === null &&
     deathCountText === null &&
     respawnText === null &&
     deathHoldText === null &&
@@ -914,6 +928,9 @@ const formatPlayerCombatLine = (player: DebugOverlayPlayerTelemetry | null): str
     return 'Combat: n/a';
   }
   const segments = [`health:${maxHealthText === null ? healthText : `${healthText}/${maxHealthText}`}`];
+  if (manaText !== null) {
+    segments.push(`mana:${maxManaText === null ? manaText : `${manaText}/${maxManaText}`}`);
+  }
   if (deathCountText !== null) {
     segments.push(`deaths:${deathCountText}`);
   }

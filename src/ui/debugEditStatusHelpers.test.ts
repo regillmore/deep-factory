@@ -1593,7 +1593,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.eventText).toBeNull();
   });
 
-  it('keeps pose, live death-hold, breath, submersion, lava and survival cooldowns, and hostile-contact invulnerability telemetry on separate player lines', () => {
+  it('keeps pose, live combat resources, death-hold, breath, submersion, lava and survival cooldowns, and hostile-contact invulnerability telemetry on separate player lines', () => {
     const model = buildDebugEditStatusStripModel({
       mode: 'pan',
       brushLabel: 'debug brick',
@@ -1604,6 +1604,8 @@ describe('buildDebugEditStatusStripModel', () => {
       playerPlaceholderPoseLabel: 'grounded-idle',
       playerHealth: 85,
       playerMaxHealth: 120,
+      playerMana: 18,
+      playerMaxMana: 40,
       playerDeathCount: 3,
       playerRespawnSecondsRemaining: 0.75,
       playerDeathHoldStatus: 'holding',
@@ -1621,6 +1623,7 @@ describe('buildDebugEditStatusStripModel', () => {
     expect(model.playerText).toBe(
       'Pose: grounded-idle\n' +
         'HealthNow: 85/120\n' +
+        'ManaNow: 18/40\n' +
         'DeathsNow: 3\n' +
         'RespawnIn: 0.75s\n' +
         'DeathHold: holding\n' +
@@ -1634,6 +1637,22 @@ describe('buildDebugEditStatusStripModel', () => {
         'FallRecoveryNow: 0.35s\n' +
         'ContactInvulnNow: 0.75s'
     );
+    expect(model.eventText).toBeNull();
+  });
+
+  it('keeps the compact mana line readable when only max mana is available', () => {
+    const model = buildDebugEditStatusStripModel({
+      mode: 'pan',
+      brushLabel: 'debug brick',
+      brushTileId: 3,
+      hoveredTile: null,
+      pinnedTile: null,
+      desktopInspectPinArmed: false,
+      playerMaxMana: 40,
+      preview: createEmptyPreviewState()
+    });
+
+    expect(model.playerText).toBe('ManaNow: n/a/40');
     expect(model.eventText).toBeNull();
   });
 

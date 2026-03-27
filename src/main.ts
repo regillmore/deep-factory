@@ -687,6 +687,8 @@ type StandalonePlayerRenderFrameStatusStripTelemetry = Pick<
   | 'playerCeilingBonkHoldActive'
   | 'playerHealth'
   | 'playerMaxHealth'
+  | 'playerMana'
+  | 'playerMaxMana'
   | 'playerDeathCount'
   | 'playerRespawnSecondsRemaining'
   | 'playerDeathHoldStatus'
@@ -6654,6 +6656,12 @@ const bootstrap = async (): Promise<void> => {
       playerState === null
         ? null
         : readOptionalFiniteNumber((playerState as { maxHealth?: unknown }).maxHealth);
+    const playerMana =
+      playerState === null ? null : readOptionalFiniteNumber((playerState as { mana?: unknown }).mana);
+    const playerMaxMana =
+      playerState === null
+        ? null
+        : readOptionalFiniteNumber((playerState as { maxMana?: unknown }).maxMana);
     const playerDeathCount = playerState === null ? null : standalonePlayerDeathCount;
     const playerRespawnSecondsRemaining =
       standalonePlayerDeathState === null
@@ -6836,6 +6844,8 @@ const bootstrap = async (): Promise<void> => {
                 facing: playerState.facing,
                 health: playerHealth,
                 maxHealth: playerMaxHealth,
+                mana: playerMana,
+                maxMana: playerMaxMana,
                 deathCount: playerDeathCount,
                 respawnSecondsRemaining: playerRespawnSecondsRemaining,
                 deathHoldStatus: playerDeathHoldStatus,
@@ -6926,6 +6936,8 @@ const bootstrap = async (): Promise<void> => {
           playerState === null ? null : standalonePlayerCeilingBonkActive,
         playerHealth,
         playerMaxHealth,
+        playerMana,
+        playerMaxMana,
         playerDeathCount,
         playerRespawnSecondsRemaining,
         playerDeathHoldStatus,
@@ -7109,6 +7121,8 @@ const bootstrap = async (): Promise<void> => {
       playerCeilingBonkHoldActive: null,
       playerHealth: null,
       playerMaxHealth: null,
+      playerMana: null,
+      playerMaxMana: null,
       playerDeathCount: null,
       playerRespawnSecondsRemaining: null,
       playerDeathHoldStatus: null,
@@ -7531,6 +7545,8 @@ const bootstrap = async (): Promise<void> => {
       playerCeilingBonkHoldActive: debugStatusStripPlayerTelemetry.playerCeilingBonkHoldActive,
       playerHealth: debugStatusStripPlayerTelemetry.playerHealth,
       playerMaxHealth: debugStatusStripPlayerTelemetry.playerMaxHealth,
+      playerMana: debugStatusStripPlayerTelemetry.playerMana,
+      playerMaxMana: debugStatusStripPlayerTelemetry.playerMaxMana,
       playerDeathCount: debugStatusStripPlayerTelemetry.playerDeathCount,
       playerRespawnSecondsRemaining: debugStatusStripPlayerTelemetry.playerRespawnSecondsRemaining,
       playerDeathHoldStatus: debugStatusStripPlayerTelemetry.playerDeathHoldStatus,

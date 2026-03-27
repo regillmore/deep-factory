@@ -1150,6 +1150,85 @@ describe('formatDebugOverlayText', () => {
     expect(text).toContain('\nCombat: health:n/a/120 | contactInvuln:0.00s');
   });
 
+  it('shows live current and max mana on the combat line when provided', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      spawn: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: null,
+      player: {
+        position: { x: 12, y: 0 },
+        velocity: { x: 0, y: 0 },
+        health: 62,
+        maxHealth: 120,
+        mana: 18,
+        maxMana: 40,
+        hostileContactInvulnerabilitySecondsRemaining: 0.75,
+        aabb: {
+          min: { x: 6, y: -28 },
+          max: { x: 18, y: 0 },
+          size: { x: 12, y: 28 }
+        },
+        grounded: true,
+        facing: 'right',
+        contacts: {
+          support: null,
+          wall: null,
+          ceiling: null
+        }
+      },
+      pinned: null
+    });
+
+    expect(text).toContain('\nCombat: health:62/120 | mana:18/40 | contactInvuln:0.75s');
+  });
+
+  it('keeps the combat mana readout readable when only max mana is available', () => {
+    const text = formatDebugOverlayText(60, baseStats, {
+      pointer: null,
+      spawn: null,
+      playerPlaceholderPoseLabel: null,
+      playerCeilingBonkHoldActive: null,
+      playerIntent: null,
+      playerGroundedTransition: null,
+      playerFacingTransition: null,
+      playerRespawn: null,
+      playerWallContactTransition: null,
+      playerCeilingContactTransition: null,
+      playerCameraFollow: null,
+      player: {
+        position: { x: 8, y: 0 },
+        velocity: { x: 0, y: 0 },
+        health: 100,
+        maxHealth: 120,
+        maxMana: 40,
+        hostileContactInvulnerabilitySecondsRemaining: 0,
+        aabb: {
+          min: { x: 2, y: -28 },
+          max: { x: 14, y: 0 },
+          size: { x: 12, y: 28 }
+        },
+        grounded: true,
+        facing: 'right',
+        contacts: {
+          support: null,
+          wall: null,
+          ceiling: null
+        }
+      },
+      pinned: null
+    });
+
+    expect(text).toContain('\nCombat: health:100/120 | mana:n/a/40 | contactInvuln:0.00s');
+  });
+
   it('shows the latest hostile-contact hit event when damage is applied', () => {
     const text = formatDebugOverlayText(60, baseStats, {
       pointer: null,
