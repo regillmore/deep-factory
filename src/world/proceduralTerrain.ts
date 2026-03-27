@@ -3,6 +3,8 @@ import {
   normalizeWorldSeed,
   sampleWorldSeedUnitInterval
 } from './worldSeed';
+import { getSurfaceFlowerTileId } from './surfaceFlowerTiles';
+import { shouldSelectSurfaceFlowerAtAnchor } from './tileHashWindow';
 
 const SKY_TILE_ID = 0;
 export const PROCEDURAL_STONE_TILE_ID = 1;
@@ -11,6 +13,7 @@ export const PROCEDURAL_DIRT_TILE_ID = 9;
 export const PROCEDURAL_COPPER_ORE_TILE_ID = 13;
 export const PROCEDURAL_DIRT_WALL_ID = 1;
 export const PROCEDURAL_STONE_WALL_ID = 3;
+const PROCEDURAL_SURFACE_FLOWER_TILE_ID = getSurfaceFlowerTileId();
 
 const PROCEDURAL_SURFACE_BASE_TILE_Y = -2;
 const PROCEDURAL_SURFACE_BROAD_WAVE_FREQUENCY = 0.045;
@@ -587,13 +590,31 @@ export const resolveProceduralTerrainLayers = (
   const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldX, worldSeed);
   const resolveSubsurfaceWallId = (): number =>
     worldY <= surfaceTileY + dirtDepthTiles ? PROCEDURAL_DIRT_WALL_ID : PROCEDURAL_STONE_WALL_ID;
+  const seedProfile = resolveProceduralTerrainSeedProfile(worldSeed);
+  const hasProceduralGrassSurface = !isProceduralCaveMouthAir(
+    worldX,
+    surfaceTileY,
+    surfaceTileY,
+    dirtDepthTiles,
+    seedProfile,
+    worldSeed
+  );
+  if (
+    worldY === surfaceTileY - 1 &&
+    hasProceduralGrassSurface &&
+    shouldSelectSurfaceFlowerAtAnchor(worldX, surfaceTileY)
+  ) {
+    return {
+      tileId: PROCEDURAL_SURFACE_FLOWER_TILE_ID,
+      wallId: 0
+    };
+  }
   if (worldY < surfaceTileY) {
     return {
       tileId: SKY_TILE_ID,
       wallId: 0
     };
   }
-  const seedProfile = resolveProceduralTerrainSeedProfile(worldSeed);
   const isCaveMouthAir = isProceduralCaveMouthAir(
     worldX,
     worldY,

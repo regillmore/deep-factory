@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-26: Procedural surface-flower worldgen reuses the decoration anchor hash
+
+- Decision: Untouched terrain now seeds `surface_flower` only into the direct-cover tile above exposed procedural `grass_surface` anchors selected by the same hashed anchor rule that later resident decoration growth already uses.
+- Reason: Initial worldgen and later regrowth should agree on which anchors belong to blooms, so clearing and regrowing surface decoration does not silently reshuffle flower locations.
+- Consequence: Future seeded surface-decoration worldgen should reuse that shared anchor-selection helper or explicitly document why its initial layout diverges from later resident regrowth.
+
 ### 2026-03-26: Surface flowers share the resident support-bound decoration contract
 
 - Decision: The resident grass-growth scheduler now deterministically chooses either `tall_grass` or `surface_flower` for eligible empty direct-cover cells above sunlit `grass_surface`, and world support-loss plus open-sky checks treat both as support-bound sky-permeable surface decoration.

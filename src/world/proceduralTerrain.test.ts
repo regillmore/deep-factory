@@ -12,6 +12,7 @@ import {
   resolveProceduralTerrainTileId,
   resolveProceduralTerrainWallId
 } from './proceduralTerrain';
+import { getSurfaceFlowerTileId } from './surfaceFlowerTiles';
 
 const collectUndergroundCaveTileCoords = (
   worldSeed = 0,
@@ -129,6 +130,30 @@ const collectCopperOreTileCoords = (
         coords.push({ worldX, worldY });
       }
     }
+  }
+
+  return coords;
+};
+
+const collectSurfaceFlowerTileCoords = (
+  worldSeed = 0,
+  minWorldX = -256,
+  maxWorldX = 256
+): Array<{ worldX: number; worldY: number }> => {
+  const coords: Array<{ worldX: number; worldY: number }> = [];
+  const surfaceFlowerTileId = getSurfaceFlowerTileId();
+
+  for (let worldX = minWorldX; worldX <= maxWorldX; worldX += 1) {
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldX, worldSeed);
+    const flowerTileY = surfaceTileY - 1;
+    if (resolveProceduralTerrainTileId(worldX, flowerTileY, worldSeed) !== surfaceFlowerTileId) {
+      continue;
+    }
+
+    coords.push({
+      worldX,
+      worldY: flowerTileY
+    });
   }
 
   return coords;
@@ -374,5 +399,31 @@ describe('resolveProceduralTerrainTileId', () => {
     expect(seededCopperOreTiles.length).toBeGreaterThan(0);
     expect(seededCopperOreTiles).toEqual(collectCopperOreTileCoords(0x12345678));
     expect(seededCopperOreTiles).not.toEqual(collectCopperOreTileCoords(0));
+  });
+
+  it('seeds occasional surface flowers above exposed procedural grass', () => {
+    const surfaceFlowerTileId = getSurfaceFlowerTileId();
+    const surfaceFlowerTiles = collectSurfaceFlowerTileCoords();
+
+    expect(surfaceFlowerTiles.length).toBeGreaterThan(0);
+    for (const flowerTile of surfaceFlowerTiles) {
+      const { surfaceTileY } = resolveProceduralTerrainColumn(flowerTile.worldX);
+      expect(flowerTile.worldY).toBe(surfaceTileY - 1);
+      expect(resolveProceduralTerrainTileId(flowerTile.worldX, flowerTile.worldY)).toBe(
+        surfaceFlowerTileId
+      );
+      expect(resolveProceduralTerrainWallId(flowerTile.worldX, flowerTile.worldY)).toBe(0);
+      expect(resolveProceduralTerrainTileId(flowerTile.worldX, flowerTile.worldY + 1)).toBe(
+        PROCEDURAL_GRASS_SURFACE_TILE_ID
+      );
+    }
+  });
+
+  it('keeps procedural surface-flower placements deterministic while varying them by world seed', () => {
+    const seededSurfaceFlowers = collectSurfaceFlowerTileCoords(0x12345678);
+
+    expect(seededSurfaceFlowers.length).toBeGreaterThan(0);
+    expect(seededSurfaceFlowers).toEqual(collectSurfaceFlowerTileCoords(0x12345678));
+    expect(seededSurfaceFlowers).not.toEqual(collectSurfaceFlowerTileCoords(0));
   });
 });

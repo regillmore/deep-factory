@@ -136,6 +136,29 @@ const findFirstProceduralCopperOreTile = (
   return null;
 };
 
+const findFirstProceduralSurfaceFlowerTile = (
+  worldSeed = 0,
+  minWorldX = -CHUNK_SIZE * 8,
+  maxWorldX = CHUNK_SIZE * 8
+): { worldTileX: number; worldTileY: number } | null => {
+  const surfaceFlowerTileId = getSurfaceFlowerTileId();
+
+  for (let worldTileX = minWorldX; worldTileX <= maxWorldX; worldTileX += 1) {
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX, worldSeed);
+    const worldTileY = surfaceTileY - 1;
+    if (resolveProceduralTerrainTileId(worldTileX, worldTileY, worldSeed) !== surfaceFlowerTileId) {
+      continue;
+    }
+
+    return {
+      worldTileX,
+      worldTileY
+    };
+  }
+
+  return null;
+};
+
 const findFirstProceduralDirtBelowSolidCoverAdjacentToGrass = (
   worldSeed = 0,
   minWorldX = -CHUNK_SIZE * 4,
@@ -1865,6 +1888,32 @@ describe('TileWorld', () => {
     expect(world.getChunkCount()).toBe(chunkCountAfterPrune + 1);
   });
 
+  it('streams untouched procedural surface flowers back in after pruning their chunk', () => {
+    const surfaceFlowerTile = findFirstProceduralSurfaceFlowerTile();
+    expect(surfaceFlowerTile).not.toBeNull();
+    if (surfaceFlowerTile === null) {
+      throw new Error('expected a procedural surface flower tile');
+    }
+
+    const world = new TileWorld(0);
+    expect(world.getTile(surfaceFlowerTile.worldTileX, surfaceFlowerTile.worldTileY)).toBe(
+      getSurfaceFlowerTileId()
+    );
+    expect(world.getTile(surfaceFlowerTile.worldTileX, surfaceFlowerTile.worldTileY + 1)).toBe(
+      PROCEDURAL_GRASS_SURFACE_TILE_ID
+    );
+
+    expect(
+      world.pruneChunksOutside({ minChunkX: 0, minChunkY: 0, maxChunkX: 0, maxChunkY: 0 })
+    ).toBeGreaterThan(0);
+    const chunkCountAfterPrune = world.getChunkCount();
+
+    expect(world.getTile(surfaceFlowerTile.worldTileX, surfaceFlowerTile.worldTileY)).toBe(
+      getSurfaceFlowerTileId()
+    );
+    expect(world.getChunkCount()).toBe(chunkCountAfterPrune + 1);
+  });
+
   it('uses snapshot-preserved world seeds when untouched chunks stream back in', () => {
     const worldSeed = 0x12345678;
     const world = new TileWorld(0, worldSeed);
@@ -1873,6 +1922,7 @@ describe('TileWorld', () => {
     const caveTile = findFirstProceduralCaveTile(worldSeed);
     const caveWallTile = findFirstProceduralStoneWallTile(worldSeed);
     const copperOreTile = findFirstProceduralCopperOreTile(worldSeed);
+    const surfaceFlowerTile = findFirstProceduralSurfaceFlowerTile(worldSeed);
 
     expect(caveTile).not.toBeNull();
     if (caveTile === null) {
@@ -1885,6 +1935,10 @@ describe('TileWorld', () => {
     expect(copperOreTile).not.toBeNull();
     if (copperOreTile === null) {
       throw new Error('expected a seeded procedural copper ore tile');
+    }
+    expect(surfaceFlowerTile).not.toBeNull();
+    if (surfaceFlowerTile === null) {
+      throw new Error('expected a seeded procedural surface flower tile');
     }
 
     world.ensureChunk(1, 0);
@@ -1902,6 +1956,9 @@ describe('TileWorld', () => {
     expect(loaded.getWall(caveWallTile.worldTileX, caveWallTile.worldTileY)).toBe(PROCEDURAL_STONE_WALL_ID);
     expect(loaded.getTile(copperOreTile.worldTileX, copperOreTile.worldTileY)).toBe(
       PROCEDURAL_COPPER_ORE_TILE_ID
+    );
+    expect(loaded.getTile(surfaceFlowerTile.worldTileX, surfaceFlowerTile.worldTileY)).toBe(
+      getSurfaceFlowerTileId()
     );
   });
 

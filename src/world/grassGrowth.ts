@@ -3,6 +3,11 @@ import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './constants';
 import { PROCEDURAL_DIRT_TILE_ID, PROCEDURAL_GRASS_SURFACE_TILE_ID } from './proceduralTerrain';
 import { getSurfaceFlowerTileId } from './surfaceFlowerTiles';
 import { getTallGrassTileId } from './tallGrassTiles';
+import {
+  resolveWorldTileHashWindowIndex,
+  shouldSelectSurfaceFlowerAtAnchor,
+  SURFACE_FLOWER_SELECTION_WINDOW_COUNT
+} from './tileHashWindow';
 import { getTileLiquidKind, isTileSolid } from './tileMetadata';
 
 export interface GrassGrowthState {
@@ -39,7 +44,7 @@ export interface StepGrassGrowthOptions {
 
 export const DEFAULT_GRASS_GROWTH_INTERVAL_TICKS = 60;
 export const DEFAULT_GRASS_GROWTH_WINDOW_COUNT = 4;
-export const SURFACE_FLOWER_SELECTION_WINDOW_COUNT = 5;
+export { SURFACE_FLOWER_SELECTION_WINDOW_COUNT };
 
 const expectInteger = (value: number, label: string): number => {
   if (!Number.isInteger(value)) {
@@ -122,7 +127,7 @@ const canSurfaceDecorationGrowAtTile = (
 };
 
 const shouldGrowSurfaceFlowerAtTile = (worldTileX: number, worldTileY: number): boolean =>
-  resolveGrassGrowthWindowIndex(worldTileX, worldTileY, SURFACE_FLOWER_SELECTION_WINDOW_COUNT) === 0;
+  shouldSelectSurfaceFlowerAtAnchor(worldTileX, worldTileY);
 
 export const createGrassGrowthState = (
   growthIntervalTicks = DEFAULT_GRASS_GROWTH_INTERVAL_TICKS
@@ -135,15 +140,7 @@ export const resolveGrassGrowthWindowIndex = (
   worldTileX: number,
   worldTileY: number,
   windowCount = DEFAULT_GRASS_GROWTH_WINDOW_COUNT
-): number => {
-  const normalizedWorldTileX = expectInteger(worldTileX, 'worldTileX');
-  const normalizedWorldTileY = expectInteger(worldTileY, 'worldTileY');
-  const normalizedWindowCount = expectPositiveInteger(windowCount, 'windowCount');
-  const hashedTile =
-    Math.imul(normalizedWorldTileX, 73856093) ^ Math.imul(normalizedWorldTileY, 19349663);
-  const normalizedIndex = hashedTile % normalizedWindowCount;
-  return normalizedIndex >= 0 ? normalizedIndex : normalizedIndex + normalizedWindowCount;
-};
+): number => resolveWorldTileHashWindowIndex(worldTileX, worldTileY, windowCount);
 
 export const resolveGrassGrowthRequiredChunkBounds = (
   worldTileX: number,
