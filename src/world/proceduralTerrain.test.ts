@@ -12,6 +12,9 @@ import {
   resolveProceduralTerrainTileId,
   resolveProceduralTerrainWallId
 } from './proceduralTerrain';
+import { GROWN_SMALL_TREE_FOOTPRINT_CELLS } from './smallTreeFootprints';
+import { resolveSmallTreeGrowthStageAtAnchor } from './smallTreeAnchors';
+import { getSmallTreeTileIds } from './smallTreeTiles';
 import { getSurfaceFlowerTileId } from './surfaceFlowerTiles';
 import { getTallGrassTileId } from './tallGrassTiles';
 
@@ -184,6 +187,32 @@ const collectTallGrassTileCoords = (
   return coords;
 };
 
+const collectProceduralGrownSmallTreeAnchors = (
+  worldSeed = 0,
+  minWorldX = -256,
+  maxWorldX = 256
+): Array<{ anchorTileX: number; anchorTileY: number }> => {
+  const proceduralWorldView = {
+    getTile: (worldTileX: number, worldTileY: number) =>
+      resolveProceduralTerrainTileId(worldTileX, worldTileY, worldSeed)
+  };
+  const anchors: Array<{ anchorTileX: number; anchorTileY: number }> = [];
+
+  for (let worldX = minWorldX; worldX <= maxWorldX; worldX += 1) {
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldX, worldSeed);
+    if (resolveSmallTreeGrowthStageAtAnchor(proceduralWorldView, worldX, surfaceTileY) !== 'grown') {
+      continue;
+    }
+
+    anchors.push({
+      anchorTileX: worldX,
+      anchorTileY: surfaceTileY
+    });
+  }
+
+  return anchors;
+};
+
 const resolveLargestConnectedComponentSize = (
   coords: ReadonlyArray<{ worldX: number; worldY: number }>
 ): number => {
@@ -291,11 +320,14 @@ describe('resolveProceduralTerrainColumn', () => {
 });
 
 describe('resolveProceduralTerrainTileId', () => {
-  it('layers surface decoration, grass, dirt, and stone around the sampled surface', () => {
+  it('layers surface cover, grass, dirt, and stone around the sampled surface', () => {
     const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(-48);
     const coverTileId = resolveProceduralTerrainTileId(-48, surfaceTileY - 1);
+    const smallTreeTileIds = getSmallTreeTileIds();
 
-    expect([getTallGrassTileId(), getSurfaceFlowerTileId()]).toContain(coverTileId);
+    expect([getTallGrassTileId(), getSurfaceFlowerTileId(), smallTreeTileIds.trunk]).toContain(
+      coverTileId
+    );
     expect(resolveProceduralTerrainTileId(-48, surfaceTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
     expect(resolveProceduralTerrainTileId(-48, surfaceTileY + 1)).toBe(PROCEDURAL_DIRT_TILE_ID);
     expect(resolveProceduralTerrainTileId(-48, surfaceTileY + dirtDepthTiles)).toBe(PROCEDURAL_DIRT_TILE_ID);
@@ -427,9 +459,40 @@ describe('resolveProceduralTerrainTileId', () => {
     expect(seededCopperOreTiles).not.toEqual(collectCopperOreTileCoords(0));
   });
 
-  it('fills exposed procedural grass anchors not claimed by flowers with tall grass', () => {
+  it('seeds occasional grown small-tree footprints above exposed procedural grass outside the protected origin corridor', () => {
+    const tileIds = getSmallTreeTileIds();
+    const grownSmallTreeAnchors = collectProceduralGrownSmallTreeAnchors();
+
+    expect(grownSmallTreeAnchors.length).toBeGreaterThan(0);
+    for (const anchor of grownSmallTreeAnchors) {
+      expect(Math.abs(anchor.anchorTileX)).toBeGreaterThan(
+        PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES + 1
+      );
+      expect(resolveProceduralTerrainTileId(anchor.anchorTileX, anchor.anchorTileY)).toBe(
+        PROCEDURAL_GRASS_SURFACE_TILE_ID
+      );
+
+      for (const cell of GROWN_SMALL_TREE_FOOTPRINT_CELLS) {
+        const worldX = anchor.anchorTileX + cell.localX;
+        const worldY = anchor.anchorTileY + cell.localY;
+        expect(resolveProceduralTerrainTileId(worldX, worldY)).toBe(tileIds[cell.tileKind]);
+        expect(resolveProceduralTerrainWallId(worldX, worldY)).toBe(0);
+      }
+    }
+  });
+
+  it('keeps procedural grown small-tree placements deterministic while varying them by world seed', () => {
+    const seededGrownSmallTrees = collectProceduralGrownSmallTreeAnchors(0x12345678);
+
+    expect(seededGrownSmallTrees.length).toBeGreaterThan(0);
+    expect(seededGrownSmallTrees).toEqual(collectProceduralGrownSmallTreeAnchors(0x12345678));
+    expect(seededGrownSmallTrees).not.toEqual(collectProceduralGrownSmallTreeAnchors(0));
+  });
+
+  it('fills exposed procedural grass anchors not claimed by flowers or mature trees with tall grass', () => {
     const tallGrassTileId = getTallGrassTileId();
     const surfaceFlowerTileId = getSurfaceFlowerTileId();
+    const smallTreeTileIds = getSmallTreeTileIds();
     const tallGrassTiles = collectTallGrassTileCoords();
 
     expect(tallGrassTiles.length).toBeGreaterThan(0);
@@ -440,7 +503,7 @@ describe('resolveProceduralTerrainTileId', () => {
       }
 
       const coverTileId = resolveProceduralTerrainTileId(worldX, surfaceTileY - 1);
-      expect([tallGrassTileId, surfaceFlowerTileId]).toContain(coverTileId);
+      expect([tallGrassTileId, surfaceFlowerTileId, smallTreeTileIds.trunk]).toContain(coverTileId);
     }
     for (const tallGrassTile of tallGrassTiles) {
       const { surfaceTileY } = resolveProceduralTerrainColumn(tallGrassTile.worldX);

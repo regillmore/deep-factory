@@ -3,6 +3,8 @@ import {
   normalizeWorldSeed,
   sampleWorldSeedUnitInterval
 } from './worldSeed';
+import { GROWN_SMALL_TREE_FOOTPRINT_CELLS } from './smallTreeFootprints';
+import { getSmallTreeTileIds } from './smallTreeTiles';
 import { getSurfaceFlowerTileId } from './surfaceFlowerTiles';
 import { getTallGrassTileId } from './tallGrassTiles';
 import { shouldSelectSurfaceFlowerAtAnchor } from './tileHashWindow';
@@ -16,6 +18,7 @@ export const PROCEDURAL_DIRT_WALL_ID = 1;
 export const PROCEDURAL_STONE_WALL_ID = 3;
 const PROCEDURAL_SURFACE_FLOWER_TILE_ID = getSurfaceFlowerTileId();
 const PROCEDURAL_TALL_GRASS_TILE_ID = getTallGrassTileId();
+const PROCEDURAL_SMALL_TREE_TILE_IDS = getSmallTreeTileIds();
 
 const PROCEDURAL_SURFACE_BASE_TILE_Y = -2;
 const PROCEDURAL_SURFACE_BROAD_WAVE_FREQUENCY = 0.045;
@@ -79,6 +82,13 @@ const PROCEDURAL_COPPER_ORE_MIN_RADIUS_X_TILES = 2;
 const PROCEDURAL_COPPER_ORE_MAX_RADIUS_X_TILES = 4;
 const PROCEDURAL_COPPER_ORE_MIN_RADIUS_Y_TILES = 1;
 const PROCEDURAL_COPPER_ORE_MAX_RADIUS_Y_TILES = 3;
+const PROCEDURAL_SMALL_TREE_CELL_WIDTH_TILES = 16;
+const PROCEDURAL_SMALL_TREE_CELL_EDGE_MARGIN_TILES = 4;
+const PROCEDURAL_SMALL_TREE_ACTIVE_CHANCE = 0.4;
+const PROCEDURAL_SMALL_TREE_FOOTPRINT_HALF_WIDTH_TILES = GROWN_SMALL_TREE_FOOTPRINT_CELLS.reduce(
+  (maxWidth, cell) => Math.max(maxWidth, Math.abs(cell.localX)),
+  0
+);
 
 export interface ProceduralTerrainColumn {
   surfaceTileY: number;
@@ -147,6 +157,22 @@ const isProceduralCaveMouthCellActive = (worldSeed: number, mouthCellIndex: numb
 
   return normalizedIntervalOffset % PROCEDURAL_CAVE_MOUTH_CELL_INTERVAL === 0;
 };
+
+const isProceduralGrassSurfaceAtColumn = (
+  worldX: number,
+  surfaceTileY: number,
+  dirtDepthTiles: number,
+  seedProfile: ProceduralTerrainSeedProfile,
+  worldSeed: number
+): boolean =>
+  !isProceduralCaveMouthAir(
+    worldX,
+    surfaceTileY,
+    surfaceTileY,
+    dirtDepthTiles,
+    seedProfile,
+    worldSeed
+  );
 
 const resolveProceduralTerrainSeedProfile = (worldSeed: number): ProceduralTerrainSeedProfile => {
   const normalizedWorldSeed = normalizeWorldSeed(worldSeed);
@@ -572,6 +598,81 @@ const isProceduralCopperOre = (
   return false;
 };
 
+const isProceduralSmallTreeCellActive = (worldSeed: number, smallTreeCellIndex: number): boolean =>
+  sampleSeededFeatureUnitInterval(worldSeed, smallTreeCellIndex, 0x60d44d31) <
+  PROCEDURAL_SMALL_TREE_ACTIVE_CHANCE;
+
+const resolveProceduralSmallTreeAnchorTileX = (
+  worldSeed: number,
+  smallTreeCellIndex: number
+): number => {
+  const cellStartTileX = smallTreeCellIndex * PROCEDURAL_SMALL_TREE_CELL_WIDTH_TILES;
+  const anchorRangeTiles =
+    PROCEDURAL_SMALL_TREE_CELL_WIDTH_TILES - PROCEDURAL_SMALL_TREE_CELL_EDGE_MARGIN_TILES * 2;
+
+  return (
+    cellStartTileX +
+    PROCEDURAL_SMALL_TREE_CELL_EDGE_MARGIN_TILES +
+    Math.floor(
+      sampleSeededFeatureUnitInterval(worldSeed, smallTreeCellIndex, 0x7b1c4f29) * anchorRangeTiles
+    )
+  );
+};
+
+const isProceduralGrownSmallTreeAnchor = (
+  anchorTileX: number,
+  anchorTileY: number,
+  worldSeed: number
+): boolean => {
+  if (
+    Math.abs(anchorTileX) - PROCEDURAL_SMALL_TREE_FOOTPRINT_HALF_WIDTH_TILES <=
+    PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES
+  ) {
+    return false;
+  }
+
+  const smallTreeCellIndex = Math.floor(anchorTileX / PROCEDURAL_SMALL_TREE_CELL_WIDTH_TILES);
+  if (!isProceduralSmallTreeCellActive(worldSeed, smallTreeCellIndex)) {
+    return false;
+  }
+
+  if (resolveProceduralSmallTreeAnchorTileX(worldSeed, smallTreeCellIndex) !== anchorTileX) {
+    return false;
+  }
+
+  const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(anchorTileX, worldSeed);
+  if (anchorTileY !== surfaceTileY) {
+    return false;
+  }
+
+  const seedProfile = resolveProceduralTerrainSeedProfile(worldSeed);
+  return isProceduralGrassSurfaceAtColumn(
+    anchorTileX,
+    surfaceTileY,
+    dirtDepthTiles,
+    seedProfile,
+    worldSeed
+  );
+};
+
+const resolveProceduralGrownSmallTreeTileId = (
+  worldX: number,
+  worldY: number,
+  worldSeed: number
+): number | null => {
+  for (const cell of GROWN_SMALL_TREE_FOOTPRINT_CELLS) {
+    const anchorTileX = worldX - cell.localX;
+    const anchorTileY = worldY - cell.localY;
+    if (!isProceduralGrownSmallTreeAnchor(anchorTileX, anchorTileY, worldSeed)) {
+      continue;
+    }
+
+    return PROCEDURAL_SMALL_TREE_TILE_IDS[cell.tileKind];
+  }
+
+  return null;
+};
+
 export const resolveProceduralTerrainTileId = (
   worldX: number,
   worldY: number,
@@ -593,9 +694,16 @@ export const resolveProceduralTerrainLayers = (
   const resolveSubsurfaceWallId = (): number =>
     worldY <= surfaceTileY + dirtDepthTiles ? PROCEDURAL_DIRT_WALL_ID : PROCEDURAL_STONE_WALL_ID;
   const seedProfile = resolveProceduralTerrainSeedProfile(worldSeed);
-  const hasProceduralGrassSurface = !isProceduralCaveMouthAir(
+  const proceduralSmallTreeTileId = resolveProceduralGrownSmallTreeTileId(worldX, worldY, worldSeed);
+  if (proceduralSmallTreeTileId !== null) {
+    return {
+      tileId: proceduralSmallTreeTileId,
+      wallId: 0
+    };
+  }
+
+  const hasProceduralGrassSurface = isProceduralGrassSurfaceAtColumn(
     worldX,
-    surfaceTileY,
     surfaceTileY,
     dirtDepthTiles,
     seedProfile,

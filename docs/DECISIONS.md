@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-26: Procedural small-tree worldgen reuses grown-tree anchor footprints
+
+- Decision: Untouched terrain now seeds full grown small-tree footprints only from selected exposed `grass_surface` anchors whose entire canopy stays outside the protected origin corridor, reusing the existing anchored trunk-plus-canopy footprint contract instead of stamping a separate tree layout.
+- Reason: Fresh surface chunks should already contain harvestable trees, and worldgen should agree with the same footprint, targeting, sky-check, and streaming rules that already understand grown small trees elsewhere in the runtime.
+- Consequence: Future procedural tree variants should extend the shared small-tree anchor and footprint helpers while preserving spawn-corridor clearance, rather than writing ad hoc tree tiles directly into surface columns.
+
 ### 2026-03-26: Procedural tall-grass worldgen fills non-bloom surface anchors
 
 - Decision: Untouched terrain now seeds `tall_grass` into the direct-cover tile above exposed procedural `grass_surface` anchors whenever the shared decoration hash does not reserve that anchor for `surface_flower`.

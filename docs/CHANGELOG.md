@@ -4,6 +4,14 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-26
 
+- Task: Repair renderer animated-mesh regressions after seeded small-tree worldgen changed default procedural chunk animation counts.
+- Changes: Updated [src/gl/renderer.test.ts](../src/gl/renderer.test.ts) so the animated-mesh reset, snapshot-load, UV-upload, and streaming-prune regressions now isolate their setup from ambient procedural tree animation through a shared blank-world snapshot fixture while the fresh-session reset coverage still compares against the live procedural baseline. Left [docs/NEXT.md](docs/NEXT.md) unchanged because this was a focused regression-fix detour rather than a new roadmap slice.
+- Verification: Ran `cmd /c npx vitest run src/gl/renderer.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
+- Task: Add seeded small-tree worldgen after seeded tall-grass worldgen.
+- Changes: Updated [src/world/proceduralTerrain.ts](../src/world/proceduralTerrain.ts) so untouched terrain now seeds deterministic grown small-tree footprints from selected exposed `grass_surface` anchors whose full canopy stays outside the protected origin corridor, expanded [src/world/proceduralTerrain.test.ts](../src/world/proceduralTerrain.test.ts) and [src/world/world.test.ts](../src/world/world.test.ts) with deterministic baseline and chunk-streaming regressions for those untouched mature trees, removed completed task `560` from [docs/NEXT.md](docs/NEXT.md), added replacement task `561`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/proceduralTerrain.test.ts src/world/world.test.ts`.
+
 - Task: Add seeded tall-grass worldgen after seeded surface-flower worldgen.
 - Changes: Updated [src/world/proceduralTerrain.ts](../src/world/proceduralTerrain.ts) so untouched terrain now seeds deterministic `tall_grass` cover above exposed procedural `grass_surface` anchors not reserved for `surface_flower`, expanded [src/world/proceduralTerrain.test.ts](../src/world/proceduralTerrain.test.ts) and [src/world/world.test.ts](../src/world/world.test.ts) with deterministic baseline and chunk-streaming regressions for that untouched tall-grass cover, removed completed task `559` from [docs/NEXT.md](docs/NEXT.md), added replacement task `560`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/proceduralTerrain.test.ts src/world/world.test.ts src/world/grassGrowth.test.ts`.

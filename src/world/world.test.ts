@@ -20,6 +20,7 @@ import { STARTER_TORCH_TILE_ID } from './starterTorchPlacement';
 import { STARTER_WORKBENCH_TILE_ID } from './starterWorkbenchPlacement';
 import { STARTER_FURNACE_TILE_ID } from './starterFurnacePlacement';
 import { STARTER_ANVIL_TILE_ID } from './starterAnvilPlacement';
+import { resolveSmallTreeGrowthStageAtAnchor } from './smallTreeAnchors';
 import { getSmallTreeTileIds } from './smallTreeTiles';
 import { getSurfaceFlowerTileId } from './surfaceFlowerTiles';
 import { getTallGrassTileId } from './tallGrassTiles';
@@ -176,6 +177,31 @@ const findFirstProceduralTallGrassTile = (
     return {
       worldTileX,
       worldTileY
+    };
+  }
+
+  return null;
+};
+
+const findFirstProceduralGrownSmallTreeAnchor = (
+  worldSeed = 0,
+  minWorldX = -CHUNK_SIZE * 8,
+  maxWorldX = CHUNK_SIZE * 8
+): { anchorTileX: number; anchorTileY: number } | null => {
+  const proceduralWorldView = {
+    getTile: (worldTileX: number, worldTileY: number) =>
+      resolveProceduralTerrainTileId(worldTileX, worldTileY, worldSeed)
+  };
+
+  for (let worldTileX = minWorldX; worldTileX <= maxWorldX; worldTileX += 1) {
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX, worldSeed);
+    if (resolveSmallTreeGrowthStageAtAnchor(proceduralWorldView, worldTileX, surfaceTileY) !== 'grown') {
+      continue;
+    }
+
+    return {
+      anchorTileX: worldTileX,
+      anchorTileY: surfaceTileY
     };
   }
 
@@ -1671,7 +1697,12 @@ describe('TileWorld', () => {
 
   it('generates procedural terrain from the shared layered surface sampler', () => {
     const world = new TileWorld(0);
-    const surfaceDecorationTileIds = [getTallGrassTileId(), getSurfaceFlowerTileId()];
+    const smallTreeTileIds = getSmallTreeTileIds();
+    const surfaceDecorationTileIds = [
+      getTallGrassTileId(),
+      getSurfaceFlowerTileId(),
+      smallTreeTileIds.trunk
+    ];
     for (const worldX of [-48, -16, 0, 17, CHUNK_SIZE + 9]) {
       const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldX);
       expect(surfaceDecorationTileIds).toContain(world.getTile(worldX, surfaceTileY - 1));
@@ -1969,6 +2000,40 @@ describe('TileWorld', () => {
     expect(world.getChunkCount()).toBe(chunkCountAfterPrune + 1);
   });
 
+  it('streams untouched procedural grown small trees back in after pruning their chunk', () => {
+    const grownSmallTreeAnchor = findFirstProceduralGrownSmallTreeAnchor();
+    expect(grownSmallTreeAnchor).not.toBeNull();
+    if (grownSmallTreeAnchor === null) {
+      throw new Error('expected a procedural grown small tree anchor');
+    }
+
+    const world = new TileWorld(0);
+    expect(world.getTile(grownSmallTreeAnchor.anchorTileX, grownSmallTreeAnchor.anchorTileY)).toBe(
+      PROCEDURAL_GRASS_SURFACE_TILE_ID
+    );
+    expect(
+      resolveSmallTreeGrowthStageAtAnchor(
+        world,
+        grownSmallTreeAnchor.anchorTileX,
+        grownSmallTreeAnchor.anchorTileY
+      )
+    ).toBe('grown');
+
+    expect(
+      world.pruneChunksOutside({ minChunkX: 0, minChunkY: 0, maxChunkX: 0, maxChunkY: 0 })
+    ).toBeGreaterThan(0);
+    const chunkCountAfterPrune = world.getChunkCount();
+
+    expect(
+      resolveSmallTreeGrowthStageAtAnchor(
+        world,
+        grownSmallTreeAnchor.anchorTileX,
+        grownSmallTreeAnchor.anchorTileY
+      )
+    ).toBe('grown');
+    expect(world.getChunkCount()).toBeGreaterThan(chunkCountAfterPrune);
+  });
+
   it('uses snapshot-preserved world seeds when untouched chunks stream back in', () => {
     const worldSeed = 0x12345678;
     const world = new TileWorld(0, worldSeed);
@@ -1979,6 +2044,7 @@ describe('TileWorld', () => {
     const copperOreTile = findFirstProceduralCopperOreTile(worldSeed);
     const tallGrassTile = findFirstProceduralTallGrassTile(worldSeed);
     const surfaceFlowerTile = findFirstProceduralSurfaceFlowerTile(worldSeed);
+    const grownSmallTreeAnchor = findFirstProceduralGrownSmallTreeAnchor(worldSeed);
 
     expect(caveTile).not.toBeNull();
     if (caveTile === null) {
@@ -1999,6 +2065,10 @@ describe('TileWorld', () => {
     expect(surfaceFlowerTile).not.toBeNull();
     if (surfaceFlowerTile === null) {
       throw new Error('expected a seeded procedural surface flower tile');
+    }
+    expect(grownSmallTreeAnchor).not.toBeNull();
+    if (grownSmallTreeAnchor === null) {
+      throw new Error('expected a seeded procedural grown small tree anchor');
     }
 
     world.ensureChunk(1, 0);
@@ -2021,6 +2091,16 @@ describe('TileWorld', () => {
     expect(loaded.getTile(surfaceFlowerTile.worldTileX, surfaceFlowerTile.worldTileY)).toBe(
       getSurfaceFlowerTileId()
     );
+    expect(loaded.getTile(grownSmallTreeAnchor.anchorTileX, grownSmallTreeAnchor.anchorTileY)).toBe(
+      PROCEDURAL_GRASS_SURFACE_TILE_ID
+    );
+    expect(
+      resolveSmallTreeGrowthStageAtAnchor(
+        loaded,
+        grownSmallTreeAnchor.anchorTileX,
+        grownSmallTreeAnchor.anchorTileY
+      )
+    ).toBe('grown');
   });
 
   it('does not emit or change when setting the same tile value', () => {

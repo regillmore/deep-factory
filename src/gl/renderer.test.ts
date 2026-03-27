@@ -349,6 +349,24 @@ const renderUntilMeshBuildQueueDrains = (
   );
 };
 
+const BLANK_ANIMATED_ISOLATION_WORLD_SNAPSHOT = (() => {
+  const world = new TileWorld(0);
+
+  for (let worldTileY = -CHUNK_SIZE * 6; worldTileY < CHUNK_SIZE * 6; worldTileY += 1) {
+    for (let worldTileX = -CHUNK_SIZE * 6; worldTileX < CHUNK_SIZE * 15; worldTileX += 1) {
+      world.setTile(worldTileX, worldTileY, 0);
+    }
+  }
+
+  return world.createSnapshot();
+})();
+
+const captureAnimatedChunkResidencyTelemetry = (renderer: Renderer) => ({
+  residentAnimatedChunkMeshes: renderer.telemetry.residentAnimatedChunkMeshes,
+  residentAnimatedChunkQuadCount: renderer.telemetry.residentAnimatedChunkQuadCount,
+  residentAnimatedLiquidChunkQuadCount: renderer.telemetry.residentAnimatedLiquidChunkQuadCount
+});
+
 describe('Renderer atlas telemetry', () => {
   beforeEach(() => {
     loadAtlasImageSource.mockReset();
@@ -804,15 +822,28 @@ describe('Renderer atlas telemetry', () => {
     });
     await renderer.initialize();
 
-    renderer.setTile(0, 0, 5);
     const camera = new Camera2D();
     camera.zoom = 16;
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+    const freshSessionAnimatedTelemetry = captureAnimatedChunkResidencyTelemetry(renderer);
+
+    renderer.loadWorldSnapshot(BLANK_ANIMATED_ISOLATION_WORLD_SNAPSHOT);
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+    expect(captureAnimatedChunkResidencyTelemetry(renderer)).toEqual({
+      residentAnimatedChunkMeshes: 0,
+      residentAnimatedChunkQuadCount: 0,
+      residentAnimatedLiquidChunkQuadCount: 0
+    });
+
+    renderer.setTile(0, 0, 5);
 
     renderUntilMeshBuildQueueDrains(renderer, camera);
     expect(renderer.getTile(0, 0)).toBe(5);
-    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
-    expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(1);
-    expect(renderer.telemetry.residentAnimatedLiquidChunkQuadCount).toBe(0);
+    expect(captureAnimatedChunkResidencyTelemetry(renderer)).toEqual({
+      residentAnimatedChunkMeshes: 1,
+      residentAnimatedChunkQuadCount: 1,
+      residentAnimatedLiquidChunkQuadCount: 0
+    });
     expect(renderer.telemetry.residentDirtyLightChunks).toBe(0);
 
     const deleteBuffer = vi.mocked(gl.deleteBuffer);
@@ -824,9 +855,7 @@ describe('Renderer atlas telemetry', () => {
     renderUntilMeshBuildQueueDrains(renderer, camera);
 
     expect(renderer.getTile(0, 0)).toBe(resolveProceduralTerrainTileId(0, 0));
-    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(0);
-    expect(renderer.telemetry.residentAnimatedChunkQuadCount).toBe(0);
-    expect(renderer.telemetry.residentAnimatedLiquidChunkQuadCount).toBe(0);
+    expect(captureAnimatedChunkResidencyTelemetry(renderer)).toEqual(freshSessionAnimatedTelemetry);
     expect(renderer.telemetry.residentDirtyLightChunks).toBe(0);
     expect(deleteBuffer).toHaveBeenCalled();
     expect(deleteVertexArray).toHaveBeenCalled();
@@ -990,33 +1019,47 @@ describe('Renderer atlas telemetry', () => {
     });
     await renderer.initialize();
 
-    renderer.setTile(0, 0, 5);
     const camera = new Camera2D();
     camera.zoom = 16;
+    const blankWorldSnapshot = BLANK_ANIMATED_ISOLATION_WORLD_SNAPSHOT;
+
+    renderer.loadWorldSnapshot(blankWorldSnapshot);
     renderUntilMeshBuildQueueDrains(renderer, camera);
-    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(1);
+    expect(captureAnimatedChunkResidencyTelemetry(renderer)).toEqual({
+      residentAnimatedChunkMeshes: 0,
+      residentAnimatedChunkQuadCount: 0,
+      residentAnimatedLiquidChunkQuadCount: 0
+    });
+
+    renderer.setTile(0, 0, 5);
+    renderUntilMeshBuildQueueDrains(renderer, camera);
+    expect(captureAnimatedChunkResidencyTelemetry(renderer)).toEqual({
+      residentAnimatedChunkMeshes: 1,
+      residentAnimatedChunkQuadCount: 1,
+      residentAnimatedLiquidChunkQuadCount: 0
+    });
 
     const deleteBuffer = vi.mocked(gl.deleteBuffer);
     const deleteVertexArray = vi.mocked(gl.deleteVertexArray);
     deleteBuffer.mockClear();
     deleteVertexArray.mockClear();
 
-    const savedWorld = new TileWorld(0);
-    expect(savedWorld.setTile(0, 0, 0)).toBe(true);
-    const snapshot = savedWorld.createSnapshot();
-
-    renderer.loadWorldSnapshot(snapshot);
+    renderer.loadWorldSnapshot(blankWorldSnapshot);
     renderUntilMeshBuildQueueDrains(renderer, camera);
 
     expect(renderer.getTile(0, 0)).toBe(0);
-    expect(renderer.telemetry.residentAnimatedChunkMeshes).toBe(0);
+    expect(captureAnimatedChunkResidencyTelemetry(renderer)).toEqual({
+      residentAnimatedChunkMeshes: 0,
+      residentAnimatedChunkQuadCount: 0,
+      residentAnimatedLiquidChunkQuadCount: 0
+    });
     expect(deleteBuffer).toHaveBeenCalled();
     expect(deleteVertexArray).toHaveBeenCalled();
 
     renderer.setTile(0, 0, 6);
 
     const restoredSnapshotWorld = new TileWorld(0);
-    restoredSnapshotWorld.loadSnapshot(snapshot);
+    restoredSnapshotWorld.loadSnapshot(blankWorldSnapshot);
     expect(restoredSnapshotWorld.getTile(0, 0)).toBe(0);
   });
 
@@ -3869,6 +3912,7 @@ describe('Renderer atlas telemetry', () => {
     });
     await renderer.initialize();
 
+    renderer.loadWorldSnapshot(BLANK_ANIMATED_ISOLATION_WORLD_SNAPSHOT);
     renderer.setTile(0, 0, 5);
     const camera = new Camera2D();
     camera.zoom = 16;
@@ -3945,6 +3989,7 @@ describe('Renderer atlas telemetry', () => {
     });
     await renderer.initialize();
 
+    renderer.loadWorldSnapshot(BLANK_ANIMATED_ISOLATION_WORLD_SNAPSHOT);
     renderer.setTile(0, 0, 6);
     const camera = new Camera2D();
     camera.zoom = 16;
@@ -4011,6 +4056,7 @@ describe('Renderer atlas telemetry', () => {
     });
     await renderer.initialize();
 
+    renderer.loadWorldSnapshot(BLANK_ANIMATED_ISOLATION_WORLD_SNAPSHOT);
     renderer.setTile(0, 0, 7);
     const camera = new Camera2D();
     camera.zoom = 16;
@@ -4076,6 +4122,7 @@ describe('Renderer atlas telemetry', () => {
     });
     await renderer.initialize();
 
+    renderer.loadWorldSnapshot(BLANK_ANIMATED_ISOLATION_WORLD_SNAPSHOT);
     renderer.setTile(0, 0, 5);
     const nearCamera = new Camera2D();
     nearCamera.zoom = 16;
@@ -4112,6 +4159,7 @@ describe('Renderer atlas telemetry', () => {
     });
     await renderer.initialize();
 
+    renderer.loadWorldSnapshot(BLANK_ANIMATED_ISOLATION_WORLD_SNAPSHOT);
     renderer.setTile(0, 0, 5);
     const nearCamera = new Camera2D();
     nearCamera.zoom = 16;
@@ -4154,6 +4202,7 @@ describe('Renderer atlas telemetry', () => {
     });
     await renderer.initialize();
 
+    renderer.loadWorldSnapshot(BLANK_ANIMATED_ISOLATION_WORLD_SNAPSHOT);
     renderer.setTile(0, 0, 5);
     const nearCamera = new Camera2D();
     nearCamera.zoom = 16;
@@ -4206,6 +4255,7 @@ describe('Renderer atlas telemetry', () => {
     });
     await renderer.initialize();
 
+    renderer.loadWorldSnapshot(BLANK_ANIMATED_ISOLATION_WORLD_SNAPSHOT);
     renderer.setTile(0, 0, 5);
     const nearCamera = new Camera2D();
     nearCamera.zoom = 16;
