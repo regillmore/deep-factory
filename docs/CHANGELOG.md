@@ -2,6 +2,12 @@
 
 This file records completed agent passes. Keep entries brief and append new work in reverse chronological order. Current behavior belongs in [docs/CAPABILITIES.md](docs/CAPABILITIES.md), not here.
 
+## 2026-03-27
+
+- Task: Split the remaining oversized roadmap items into chapter-sized follow-ups.
+- Changes: Replaced the eight remaining feature-pillar tasks in [docs/NEXT.md](docs/NEXT.md) with dependency-aware grappling-hook, bow-and-arrow, bed-checkpoint, chest-storage, door, recall-mirror, bucket, and fishing chapters that fit one focused implementation pass with tests. Runtime docs such as [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md) were left unchanged because this pass only refined roadmap scope.
+- Verification: Reviewed the rewritten backlog for scope, dependency order, and single-pass sizing; tests were not run because this was a docs-only planning pass.
+
 ## 2026-03-26
 
 - Task: Refresh the single-leaf small-tree-leaf atlas sprite after the sapling art refresh.
