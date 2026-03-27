@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-26: Procedural tall-grass worldgen fills non-bloom surface anchors
+
+- Decision: Untouched terrain now seeds `tall_grass` into the direct-cover tile above exposed procedural `grass_surface` anchors whenever the shared decoration hash does not reserve that anchor for `surface_flower`.
+- Reason: Fresh chunks should match the resident surface-decoration contract instead of starting mostly bare and only filling in after later grass-growth passes revisit those anchors.
+- Consequence: Future procedural surface-decoration work should treat exposed untouched grass anchors as fully owned by the shared flower-or-tall-grass selector unless a later feature explicitly reserves or clears specific anchors.
+
 ### 2026-03-26: Procedural surface-flower worldgen reuses the decoration anchor hash
 
 - Decision: Untouched terrain now seeds `surface_flower` only into the direct-cover tile above exposed procedural `grass_surface` anchors selected by the same hashed anchor rule that later resident decoration growth already uses.

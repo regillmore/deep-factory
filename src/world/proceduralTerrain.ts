@@ -4,6 +4,7 @@ import {
   sampleWorldSeedUnitInterval
 } from './worldSeed';
 import { getSurfaceFlowerTileId } from './surfaceFlowerTiles';
+import { getTallGrassTileId } from './tallGrassTiles';
 import { shouldSelectSurfaceFlowerAtAnchor } from './tileHashWindow';
 
 const SKY_TILE_ID = 0;
@@ -14,6 +15,7 @@ export const PROCEDURAL_COPPER_ORE_TILE_ID = 13;
 export const PROCEDURAL_DIRT_WALL_ID = 1;
 export const PROCEDURAL_STONE_WALL_ID = 3;
 const PROCEDURAL_SURFACE_FLOWER_TILE_ID = getSurfaceFlowerTileId();
+const PROCEDURAL_TALL_GRASS_TILE_ID = getTallGrassTileId();
 
 const PROCEDURAL_SURFACE_BASE_TILE_Y = -2;
 const PROCEDURAL_SURFACE_BROAD_WAVE_FREQUENCY = 0.045;
@@ -601,11 +603,12 @@ export const resolveProceduralTerrainLayers = (
   );
   if (
     worldY === surfaceTileY - 1 &&
-    hasProceduralGrassSurface &&
-    shouldSelectSurfaceFlowerAtAnchor(worldX, surfaceTileY)
+    hasProceduralGrassSurface
   ) {
     return {
-      tileId: PROCEDURAL_SURFACE_FLOWER_TILE_ID,
+      tileId: shouldSelectSurfaceFlowerAtAnchor(worldX, surfaceTileY)
+        ? PROCEDURAL_SURFACE_FLOWER_TILE_ID
+        : PROCEDURAL_TALL_GRASS_TILE_ID,
       wallId: 0
     };
   }

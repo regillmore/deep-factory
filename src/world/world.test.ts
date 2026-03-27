@@ -159,6 +159,29 @@ const findFirstProceduralSurfaceFlowerTile = (
   return null;
 };
 
+const findFirstProceduralTallGrassTile = (
+  worldSeed = 0,
+  minWorldX = -CHUNK_SIZE * 8,
+  maxWorldX = CHUNK_SIZE * 8
+): { worldTileX: number; worldTileY: number } | null => {
+  const tallGrassTileId = getTallGrassTileId();
+
+  for (let worldTileX = minWorldX; worldTileX <= maxWorldX; worldTileX += 1) {
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX, worldSeed);
+    const worldTileY = surfaceTileY - 1;
+    if (resolveProceduralTerrainTileId(worldTileX, worldTileY, worldSeed) !== tallGrassTileId) {
+      continue;
+    }
+
+    return {
+      worldTileX,
+      worldTileY
+    };
+  }
+
+  return null;
+};
+
 const findFirstProceduralDirtBelowSolidCoverAdjacentToGrass = (
   worldSeed = 0,
   minWorldX = -CHUNK_SIZE * 4,
@@ -620,6 +643,8 @@ describe('TileWorld', () => {
     const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX);
     const coverTileY = surfaceTileY - 1;
 
+    world.setTile(worldTileX, coverTileY, 0);
+
     expect(world.getTile(worldTileX, surfaceTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
     expect(world.getTile(worldTileX, coverTileY)).toBe(0);
 
@@ -654,6 +679,8 @@ describe('TileWorld', () => {
     const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX);
     const coverTileY = surfaceTileY - 1;
 
+    world.setTile(worldTileX, coverTileY, 0);
+
     expect(world.getTile(worldTileX, surfaceTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
     expect(world.setTile(worldTileX, coverTileY, NON_SOLID_TEST_TILE_ID)).toBe(true);
 
@@ -683,7 +710,10 @@ describe('TileWorld', () => {
     const coverTileY = -1;
 
     expect(world.getTile(worldTileX, anchorTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
-    expect(world.setTile(worldTileX, coverTileY, getTallGrassTileId())).toBe(true);
+    if (world.getTile(worldTileX, coverTileY) !== getTallGrassTileId()) {
+      expect(world.setTile(worldTileX, coverTileY, getTallGrassTileId())).toBe(true);
+    }
+    expect(world.getTile(worldTileX, coverTileY)).toBe(getTallGrassTileId());
     expect(world.hasChunk(1, 0)).toBe(true);
     expect(world.hasChunk(1, -1)).toBe(true);
 
@@ -1641,9 +1671,10 @@ describe('TileWorld', () => {
 
   it('generates procedural terrain from the shared layered surface sampler', () => {
     const world = new TileWorld(0);
+    const surfaceDecorationTileIds = [getTallGrassTileId(), getSurfaceFlowerTileId()];
     for (const worldX of [-48, -16, 0, 17, CHUNK_SIZE + 9]) {
       const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldX);
-      expect(world.getTile(worldX, surfaceTileY - 1)).toBe(0);
+      expect(surfaceDecorationTileIds).toContain(world.getTile(worldX, surfaceTileY - 1));
       expect(world.getTile(worldX, surfaceTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
       expect(world.getTile(worldX, surfaceTileY + 1)).toBe(PROCEDURAL_DIRT_TILE_ID);
       expect(world.getTile(worldX, surfaceTileY + dirtDepthTiles)).toBe(PROCEDURAL_DIRT_TILE_ID);
@@ -1802,7 +1833,9 @@ describe('TileWorld', () => {
     const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX);
 
     expect(world.hasOpenSkyAbove(worldTileX, surfaceTileY)).toBe(true);
-    expect(world.setTile(worldTileX, surfaceTileY - 1, getTallGrassTileId())).toBe(true);
+    if (world.getTile(worldTileX, surfaceTileY - 1) !== getTallGrassTileId()) {
+      expect(world.setTile(worldTileX, surfaceTileY - 1, getTallGrassTileId())).toBe(true);
+    }
     expect(world.hasOpenSkyAbove(worldTileX, surfaceTileY)).toBe(true);
   });
 
@@ -1914,6 +1947,28 @@ describe('TileWorld', () => {
     expect(world.getChunkCount()).toBe(chunkCountAfterPrune + 1);
   });
 
+  it('streams untouched procedural tall grass back in after pruning their chunk', () => {
+    const tallGrassTile = findFirstProceduralTallGrassTile();
+    expect(tallGrassTile).not.toBeNull();
+    if (tallGrassTile === null) {
+      throw new Error('expected a procedural tall-grass tile');
+    }
+
+    const world = new TileWorld(0);
+    expect(world.getTile(tallGrassTile.worldTileX, tallGrassTile.worldTileY)).toBe(getTallGrassTileId());
+    expect(world.getTile(tallGrassTile.worldTileX, tallGrassTile.worldTileY + 1)).toBe(
+      PROCEDURAL_GRASS_SURFACE_TILE_ID
+    );
+
+    expect(
+      world.pruneChunksOutside({ minChunkX: 0, minChunkY: 0, maxChunkX: 0, maxChunkY: 0 })
+    ).toBeGreaterThan(0);
+    const chunkCountAfterPrune = world.getChunkCount();
+
+    expect(world.getTile(tallGrassTile.worldTileX, tallGrassTile.worldTileY)).toBe(getTallGrassTileId());
+    expect(world.getChunkCount()).toBe(chunkCountAfterPrune + 1);
+  });
+
   it('uses snapshot-preserved world seeds when untouched chunks stream back in', () => {
     const worldSeed = 0x12345678;
     const world = new TileWorld(0, worldSeed);
@@ -1922,6 +1977,7 @@ describe('TileWorld', () => {
     const caveTile = findFirstProceduralCaveTile(worldSeed);
     const caveWallTile = findFirstProceduralStoneWallTile(worldSeed);
     const copperOreTile = findFirstProceduralCopperOreTile(worldSeed);
+    const tallGrassTile = findFirstProceduralTallGrassTile(worldSeed);
     const surfaceFlowerTile = findFirstProceduralSurfaceFlowerTile(worldSeed);
 
     expect(caveTile).not.toBeNull();
@@ -1935,6 +1991,10 @@ describe('TileWorld', () => {
     expect(copperOreTile).not.toBeNull();
     if (copperOreTile === null) {
       throw new Error('expected a seeded procedural copper ore tile');
+    }
+    expect(tallGrassTile).not.toBeNull();
+    if (tallGrassTile === null) {
+      throw new Error('expected a seeded procedural tall-grass tile');
     }
     expect(surfaceFlowerTile).not.toBeNull();
     if (surfaceFlowerTile === null) {
@@ -1957,6 +2017,7 @@ describe('TileWorld', () => {
     expect(loaded.getTile(copperOreTile.worldTileX, copperOreTile.worldTileY)).toBe(
       PROCEDURAL_COPPER_ORE_TILE_ID
     );
+    expect(loaded.getTile(tallGrassTile.worldTileX, tallGrassTile.worldTileY)).toBe(getTallGrassTileId());
     expect(loaded.getTile(surfaceFlowerTile.worldTileX, surfaceFlowerTile.worldTileY)).toBe(
       getSurfaceFlowerTileId()
     );

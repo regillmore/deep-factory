@@ -13,6 +13,7 @@ import {
   resolveProceduralTerrainWallId
 } from './proceduralTerrain';
 import { getSurfaceFlowerTileId } from './surfaceFlowerTiles';
+import { getTallGrassTileId } from './tallGrassTiles';
 
 const collectUndergroundCaveTileCoords = (
   worldSeed = 0,
@@ -159,6 +160,30 @@ const collectSurfaceFlowerTileCoords = (
   return coords;
 };
 
+const collectTallGrassTileCoords = (
+  worldSeed = 0,
+  minWorldX = -256,
+  maxWorldX = 256
+): Array<{ worldX: number; worldY: number }> => {
+  const coords: Array<{ worldX: number; worldY: number }> = [];
+  const tallGrassTileId = getTallGrassTileId();
+
+  for (let worldX = minWorldX; worldX <= maxWorldX; worldX += 1) {
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldX, worldSeed);
+    const tallGrassTileY = surfaceTileY - 1;
+    if (resolveProceduralTerrainTileId(worldX, tallGrassTileY, worldSeed) !== tallGrassTileId) {
+      continue;
+    }
+
+    coords.push({
+      worldX,
+      worldY: tallGrassTileY
+    });
+  }
+
+  return coords;
+};
+
 const resolveLargestConnectedComponentSize = (
   coords: ReadonlyArray<{ worldX: number; worldY: number }>
 ): number => {
@@ -266,10 +291,11 @@ describe('resolveProceduralTerrainColumn', () => {
 });
 
 describe('resolveProceduralTerrainTileId', () => {
-  it('layers sky, grass, dirt, and stone around the sampled surface', () => {
+  it('layers surface decoration, grass, dirt, and stone around the sampled surface', () => {
     const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(-48);
+    const coverTileId = resolveProceduralTerrainTileId(-48, surfaceTileY - 1);
 
-    expect(resolveProceduralTerrainTileId(-48, surfaceTileY - 1)).toBe(0);
+    expect([getTallGrassTileId(), getSurfaceFlowerTileId()]).toContain(coverTileId);
     expect(resolveProceduralTerrainTileId(-48, surfaceTileY)).toBe(PROCEDURAL_GRASS_SURFACE_TILE_ID);
     expect(resolveProceduralTerrainTileId(-48, surfaceTileY + 1)).toBe(PROCEDURAL_DIRT_TILE_ID);
     expect(resolveProceduralTerrainTileId(-48, surfaceTileY + dirtDepthTiles)).toBe(PROCEDURAL_DIRT_TILE_ID);
@@ -399,6 +425,42 @@ describe('resolveProceduralTerrainTileId', () => {
     expect(seededCopperOreTiles.length).toBeGreaterThan(0);
     expect(seededCopperOreTiles).toEqual(collectCopperOreTileCoords(0x12345678));
     expect(seededCopperOreTiles).not.toEqual(collectCopperOreTileCoords(0));
+  });
+
+  it('fills exposed procedural grass anchors not claimed by flowers with tall grass', () => {
+    const tallGrassTileId = getTallGrassTileId();
+    const surfaceFlowerTileId = getSurfaceFlowerTileId();
+    const tallGrassTiles = collectTallGrassTileCoords();
+
+    expect(tallGrassTiles.length).toBeGreaterThan(0);
+    for (let worldX = -256; worldX <= 256; worldX += 1) {
+      const { surfaceTileY } = resolveProceduralTerrainColumn(worldX);
+      if (resolveProceduralTerrainTileId(worldX, surfaceTileY) !== PROCEDURAL_GRASS_SURFACE_TILE_ID) {
+        continue;
+      }
+
+      const coverTileId = resolveProceduralTerrainTileId(worldX, surfaceTileY - 1);
+      expect([tallGrassTileId, surfaceFlowerTileId]).toContain(coverTileId);
+    }
+    for (const tallGrassTile of tallGrassTiles) {
+      const { surfaceTileY } = resolveProceduralTerrainColumn(tallGrassTile.worldX);
+      expect(tallGrassTile.worldY).toBe(surfaceTileY - 1);
+      expect(resolveProceduralTerrainTileId(tallGrassTile.worldX, tallGrassTile.worldY)).toBe(
+        tallGrassTileId
+      );
+      expect(resolveProceduralTerrainWallId(tallGrassTile.worldX, tallGrassTile.worldY)).toBe(0);
+      expect(resolveProceduralTerrainTileId(tallGrassTile.worldX, tallGrassTile.worldY + 1)).toBe(
+        PROCEDURAL_GRASS_SURFACE_TILE_ID
+      );
+    }
+  });
+
+  it('keeps procedural tall-grass placements deterministic while varying them by world seed', () => {
+    const seededTallGrassTiles = collectTallGrassTileCoords(0x12345678);
+
+    expect(seededTallGrassTiles.length).toBeGreaterThan(0);
+    expect(seededTallGrassTiles).toEqual(collectTallGrassTileCoords(0x12345678));
+    expect(seededTallGrassTiles).not.toEqual(collectTallGrassTileCoords(0));
   });
 
   it('seeds occasional surface flowers above exposed procedural grass', () => {
