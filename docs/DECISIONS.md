@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-27: World-session replacement now belongs to World Save before Danger Zone is retired
+
+- Decision: `New World` now lives on the shared `World Save` page beside `Clear Saved World`, while `Danger Zone` temporarily keeps only `Reset Shell Toggles`.
+- Reason: The menu cleanup sequence is moving shell-reset controls toward `Shell`, so world-session replacement needed to converge first with the page that already owns import, export, and browser-resume management.
+- Consequence: Future paused-menu actions that replace, clear, import, or export the current world session should prefer `World Save`, while `Danger Zone` should be treated as a temporary shell-reset-only section until it is removed.
+
 ### 2026-03-27: First-start reuses the shared main-menu dashboard instead of a separate menu layout
 
 - Decision: First-time players now enter the same dashboard-style main-menu shell used by paused sessions, with first-start versus paused-session variants controlling copy plus which section-owned actions are visible.

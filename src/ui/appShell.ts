@@ -91,6 +91,7 @@ export interface PausedMainMenuWorldSaveSectionViewModel {
   exportWorldSave: AppShellMenuSection;
   importWorldSave: AppShellMenuSection;
   clearSavedWorld: AppShellMenuSection;
+  newWorld: AppShellMenuSection;
   savedWorldStatus: AppShellMenuSection | null;
 }
 
@@ -154,7 +155,6 @@ export interface PausedMainMenuRecentActivitySectionViewModel {
 
 export interface PausedMainMenuDangerZoneSectionViewModel {
   resetShellToggles: AppShellMenuSection;
-  newWorld: AppShellMenuSection;
 }
 
 export interface PausedMainMenuSectionViewModel {
@@ -465,11 +465,11 @@ export interface InWorldShellStateOptions {
 export const DEFAULT_PAUSED_MAIN_MENU_STATUS = 'World session paused.';
 export const DEFAULT_PAUSED_MAIN_MENU_DETAIL_LINES = [] as const;
 const DEFAULT_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
-  'Manage downloads, imports, and browser-resume storage for the current paused session.';
+  'Manage downloads, imports, fresh-world replacement, and browser-resume storage for the current paused session.';
 const DEFAULT_FIRST_START_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
-  'Preview imports and exports before the first run. Browser resume appears after the first saved session.';
+  'Preview imports and exports or reroll a fresh world before the first run. Browser resume appears after the first saved session.';
 const STORAGE_UNAVAILABLE_FIRST_START_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
-  'Browser resume is unavailable in this browser context, but imports and exports still work in this tab.';
+  'Browser resume is unavailable in this browser context, but imports, exports, and fresh-world rerolls still work in this tab.';
 const CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
   'Browser resume was cleared for this paused session. Resume World or another save path must rewrite it before reload can restore the session.';
 const IMPORT_PERSISTENCE_FAILED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
@@ -524,11 +524,16 @@ const resolvePausedMainMenuWorldSaveMenuSections = (
   sectionViewModel: PausedMainMenuSectionViewModel
 ): readonly AppShellMenuSection[] =>
   isFirstStartMainMenuState(state)
-    ? [sectionViewModel.worldSave.exportWorldSave, sectionViewModel.worldSave.importWorldSave]
+    ? [
+        sectionViewModel.worldSave.exportWorldSave,
+        sectionViewModel.worldSave.importWorldSave,
+        sectionViewModel.worldSave.newWorld
+      ]
     : [
         sectionViewModel.worldSave.exportWorldSave,
         sectionViewModel.worldSave.importWorldSave,
-        sectionViewModel.worldSave.clearSavedWorld
+        sectionViewModel.worldSave.clearSavedWorld,
+        sectionViewModel.worldSave.newWorld
       ];
 const resolvePausedMainMenuShellMenuSections = (
   _sectionViewModel: PausedMainMenuSectionViewModel
@@ -538,10 +543,7 @@ const resolvePausedMainMenuRecentActivityMenuSections = (
 ): readonly AppShellMenuSection[] => resolvePausedMainMenuRecentActivitySectionState(state).menuSections;
 const resolvePausedMainMenuDangerZoneMenuSections = (
   sectionViewModel: PausedMainMenuSectionViewModel
-): readonly AppShellMenuSection[] => [
-  sectionViewModel.dangerZone.resetShellToggles,
-  sectionViewModel.dangerZone.newWorld
-];
+): readonly AppShellMenuSection[] => [sectionViewModel.dangerZone.resetShellToggles];
 const resolvePausedMainMenuMenuSectionGroupsFromState = (
   state: AppShellState,
   sectionViewModel: PausedMainMenuSectionViewModel
@@ -897,9 +899,9 @@ export const resolvePausedMainMenuRecentActivitySectionState = (
 };
 
 const DEFAULT_PAUSED_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE =
-  'Use these only when you want to clear shell layout state or discard the current paused session.';
+  'Use this only when you want to clear shell layout state before the next resume.';
 const DEFAULT_FIRST_START_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE =
-  'Use these only when you want to clear shell layout state or replace the seeded start world before entering it.';
+  'Use this only when you want to clear shell layout state before entering the seeded start world.';
 
 export const resolvePausedMainMenuDangerZoneSectionState = (
   state: AppShellState
@@ -2244,6 +2246,25 @@ export const createPausedMainMenuSectionViewModel = (
           }
         ]
       },
+      newWorld: {
+        title: firstStart ? 'New World' : `New World (${getDesktopFreshWorldHotkeyLabel()})`,
+        lines: [],
+        metadataRows: [
+          {
+            label: 'Shortcut',
+            value: firstStart ? 'Button only' : getDesktopFreshWorldHotkeyLabel()
+          },
+          {
+            label: 'Replaces',
+            value: firstStart ? 'Seeded start world with a fresh world' : 'Paused session with a fresh world'
+          },
+          {
+            label: 'Resets',
+            value: 'Player, camera, undo, and shell layout'
+          }
+        ],
+        tone: 'warning'
+      },
       savedWorldStatus:
         savedWorldStatus === null
           ? null
@@ -2333,25 +2354,6 @@ export const createPausedMainMenuSectionViewModel = (
           {
             label: 'Next Resume',
             value: 'Default-off shell layout'
-          }
-        ],
-        tone: 'warning'
-      },
-      newWorld: {
-        title: firstStart ? 'New World' : `New World (${getDesktopFreshWorldHotkeyLabel()})`,
-        lines: [],
-        metadataRows: [
-          {
-            label: 'Shortcut',
-            value: firstStart ? 'Button only' : getDesktopFreshWorldHotkeyLabel()
-          },
-          {
-            label: 'Replaces',
-            value: firstStart ? 'Seeded start world with a fresh world' : 'Paused session with a fresh world'
-          },
-          {
-            label: 'Resets',
-            value: 'Player, camera, undo, and shell layout'
           }
         ],
         tone: 'warning'
@@ -3173,7 +3175,7 @@ const PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER = [
 const DEFAULT_PAUSED_MAIN_MENU_PAGE_ID: PausedMainMenuPageId = 'overview';
 const PAUSED_MAIN_MENU_WORLD_SAVE_TILE_TITLE = 'World Save';
 const PAUSED_MAIN_MENU_WORLD_SAVE_TILE_OPEN_TITLE =
-  'Open the paused World Save page for downloads, imports, and browser-resume controls.';
+  'Open the paused World Save page for downloads, imports, fresh-world replacement, and browser-resume controls.';
 const PAUSED_MAIN_MENU_SHELL_TILE_TITLE = 'Shell';
 const PAUSED_MAIN_MENU_SHELL_TILE_OPEN_TITLE =
   'Open the paused Shell page for gameplay, telemetry, hotkey, and shell-profile tools.';
@@ -5220,7 +5222,12 @@ export class AppShell {
                     () => this.onQuaternaryAction(this.currentState.screen)
                   )
                 ]
-              : [])
+              : []),
+            createWorldSaveActionButton(
+              pausedMainMenuSectionViewModel.worldSave.newWorld,
+              resolveMainMenuSenaryActionTitle(state),
+              () => this.onSenaryAction(this.currentState.screen)
+            )
           ];
     const pausedMainMenuWorldSaveNavigationRows = pausedMainMenuWorldSaveSection.metadataRows.filter(
       (row) => row.label === 'Browser Resume' || row.label === 'World Seed'
@@ -5234,11 +5241,6 @@ export class AppShell {
               pausedMainMenuSectionViewModel.dangerZone.resetShellToggles,
               resolveMainMenuQuinaryActionTitle(state),
               () => this.onQuinaryAction(this.currentState.screen)
-            ),
-            createDangerZoneActionButton(
-              pausedMainMenuSectionViewModel.dangerZone.newWorld,
-              resolveMainMenuSenaryActionTitle(state),
-              () => this.onSenaryAction(this.currentState.screen)
             )
           ];
 

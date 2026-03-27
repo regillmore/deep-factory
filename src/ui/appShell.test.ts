@@ -101,13 +101,13 @@ const CLEARED_PAUSED_MAIN_MENU_OVERVIEW_ATTENTION_VALUE =
 const IMPORT_PERSISTENCE_FAILED_PAUSED_MAIN_MENU_OVERVIEW_ATTENTION_VALUE =
   'Reload will miss the imported session until a later browser save succeeds.';
 const DEFAULT_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
-  'Manage downloads, imports, and browser-resume storage for the current paused session.';
+  'Manage downloads, imports, fresh-world replacement, and browser-resume storage for the current paused session.';
 const CLEARED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
   'Browser resume was cleared for this paused session. Resume World or another save path must rewrite it before reload can restore the session.';
 const IMPORT_PERSISTENCE_FAILED_PAUSED_MAIN_MENU_WORLD_SAVE_SUMMARY_LINE =
   'The imported paused session stays live in this tab, but reload will miss it until a later browser-save rewrite succeeds.';
 const DEFAULT_PAUSED_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE =
-  'Use these only when you want to clear shell layout state or discard the current paused session.';
+  'Use this only when you want to clear shell layout state before the next resume.';
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_SECTION_SUMMARY_LINE =
   'Adjust gameplay controls, telemetry, hotkeys, and shell-profile tools for the current paused session.';
 const DEFAULT_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
@@ -282,7 +282,7 @@ const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT = 'Jump to Overview';
 const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE =
   'Move focus back to the Overview section at the top of the paused dashboard.';
 const PAUSED_MAIN_MENU_WORLD_SAVE_TILE_OPEN_TITLE =
-  'Open the paused World Save page for downloads, imports, and browser-resume controls.';
+  'Open the paused World Save page for downloads, imports, fresh-world replacement, and browser-resume controls.';
 const PAUSED_MAIN_MENU_SHELL_TILE_OPEN_TITLE =
   'Open the paused Shell page for gameplay, telemetry, hotkey, and shell-profile tools.';
 const PAUSED_MAIN_MENU_WORLD_SAVE_BACK_LABEL = 'Back to Overview';
@@ -1057,17 +1057,17 @@ describe('paused main-menu dashboard layout', () => {
     const dangerZoneButtons = findElementsByClass(root, 'app-shell__danger-zone-action');
 
     expect(overviewButtons).toHaveLength(1);
-    expect(worldSaveButtons).toHaveLength(3);
-    expect(dangerZoneButtons).toHaveLength(2);
+    expect(worldSaveButtons).toHaveLength(4);
+    expect(dangerZoneButtons).toHaveLength(1);
     expect(overviewButtons[0]?.title).toBe(resolvePausedMainMenuResumeWorldTitle());
     expect(worldSaveButtons.map((button) => button.title)).toEqual([
       resolvePausedMainMenuExportWorldSaveTitle(),
       resolvePausedMainMenuImportWorldSaveTitle(),
-      resolvePausedMainMenuClearSavedWorldTitle()
+      resolvePausedMainMenuClearSavedWorldTitle(),
+      resolvePausedMainMenuFreshWorldTitle()
     ]);
     expect(dangerZoneButtons.map((button) => button.title)).toEqual([
-      resolvePausedMainMenuResetShellTogglesTitle(),
-      resolvePausedMainMenuFreshWorldTitle()
+      resolvePausedMainMenuResetShellTogglesTitle()
     ]);
 
     overviewButtons[0]?.click();
@@ -1083,8 +1083,8 @@ describe('paused main-menu dashboard layout', () => {
       'export-world-save',
       'import-world-save',
       'clear-saved-world',
-      'reset-shell-toggles',
-      'new-world'
+      'new-world',
+      'reset-shell-toggles'
     ]);
   });
 
@@ -1114,11 +1114,11 @@ describe('paused main-menu dashboard layout', () => {
       'app-shell__section-action-shortcut-badge'
     );
     const newWorldTitle = findElementByClass(
-      dangerZoneButtons[1]!,
-      'app-shell__danger-zone-action-title'
+      worldSaveButtons[3]!,
+      'app-shell__world-save-action-title'
     );
     const newWorldBadge = findElementByClass(
-      dangerZoneButtons[1]!,
+      worldSaveButtons[3]!,
       'app-shell__section-action-shortcut-badge'
     );
 
@@ -1128,9 +1128,9 @@ describe('paused main-menu dashboard layout', () => {
     expect(newWorldBadge?.textContent).toBe(getDesktopFreshWorldHotkeyLabel());
     expect(resetShellTogglesBadge).toBeNull();
     expect(
-      worldSaveButtons.every(
-        (button) => findElementByClass(button, 'app-shell__section-action-shortcut-badge') === null
-      )
+      worldSaveButtons
+        .slice(0, 3)
+        .every((button) => findElementByClass(button, 'app-shell__section-action-shortcut-badge') === null)
     ).toBe(true);
   });
 
@@ -1156,7 +1156,7 @@ describe('paused main-menu dashboard layout', () => {
           findElementByClass(button, 'app-shell__section-action-affordance-badge')?.textContent ??
           null
       )
-    ).toEqual(['Button only', 'Button only', 'Button only']);
+    ).toEqual(['Button only', 'Button only', 'Button only', null]);
     expect(
       overviewButtons.every(
         (button) => findElementByClass(button, 'app-shell__section-action-affordance-badge') === null
@@ -1343,7 +1343,7 @@ describe('paused main-menu dashboard layout', () => {
         (button) =>
           findElementByClass(button, 'app-shell__section-action-status-badge')?.textContent ?? null
       )
-    ).toEqual(['Warning', 'Warning']);
+    ).toEqual(['Warning']);
     expect(
       overviewButtons.every(
         (button) => findElementByClass(button, 'app-shell__section-action-status-badge') === null
@@ -4755,6 +4755,25 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
               value: 'Clears browser resume'
             }
           ]
+        },
+        {
+          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
+          lines: [],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: getDesktopFreshWorldHotkeyLabel()
+            },
+            {
+              label: 'Replaces',
+              value: 'Paused session with a fresh world'
+            },
+            {
+              label: 'Resets',
+              value: 'Player, camera, undo, and shell layout'
+            }
+          ],
+          tone: 'warning'
         }
       ],
       tone: 'default'
@@ -4994,7 +5013,7 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
     expect(resolvePausedMainMenuWorldSaveSectionState(createFirstLaunchMainMenuShellState())).toEqual({
       visible: true,
       summaryLine:
-        'Preview imports and exports before the first run. Browser resume appears after the first saved session.',
+        'Preview imports and exports or reroll a fresh world before the first run. Browser resume appears after the first saved session.',
       metadataRows: [
         {
           label: 'Browser Resume',
@@ -5049,6 +5068,25 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
               value: 'Current session only after validation and restore'
             }
           ]
+        },
+        {
+          title: 'New World',
+          lines: [],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Replaces',
+              value: 'Seeded start world with a fresh world'
+            },
+            {
+              label: 'Resets',
+              value: 'Player, camera, undo, and shell layout'
+            }
+          ],
+          tone: 'warning'
         }
       ],
       tone: 'default'
@@ -5057,7 +5095,7 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
 });
 
 describe('resolvePausedMainMenuDangerZoneSectionState', () => {
-  it('collects Reset Shell Toggles and New World into one warning-toned danger zone', () => {
+  it('keeps Reset Shell Toggles as the remaining warning-toned danger zone action', () => {
     expect(resolvePausedMainMenuDangerZoneSectionState(createPausedMainMenuShellState())).toEqual({
       visible: true,
       summaryLine: DEFAULT_PAUSED_MAIN_MENU_DANGER_ZONE_SUMMARY_LINE,
@@ -5080,36 +5118,17 @@ describe('resolvePausedMainMenuDangerZoneSectionState', () => {
             }
           ],
           tone: 'warning'
-        },
-        {
-          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
-          lines: [],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: getDesktopFreshWorldHotkeyLabel()
-            },
-            {
-              label: 'Replaces',
-              value: 'Paused session with a fresh world'
-            },
-            {
-              label: 'Resets',
-              value: 'Player, camera, undo, and shell layout'
-            }
-          ],
-          tone: 'warning'
         }
       ],
       tone: 'warning'
     });
   });
 
-  it('shows the danger zone for the first-launch dashboard with prestart reset and reroll actions', () => {
+  it('shows the danger zone for the first-launch dashboard with only the prestart shell reset action', () => {
     expect(resolvePausedMainMenuDangerZoneSectionState(createFirstLaunchMainMenuShellState())).toEqual({
       visible: true,
       summaryLine:
-        'Use these only when you want to clear shell layout state or replace the seeded start world before entering it.',
+        'Use this only when you want to clear shell layout state before entering the seeded start world.',
       actionSections: [
         {
           title: 'Reset Shell Toggles',
@@ -5126,25 +5145,6 @@ describe('resolvePausedMainMenuDangerZoneSectionState', () => {
             {
               label: 'Next Resume',
               value: 'Default-off shell layout'
-            }
-          ],
-          tone: 'warning'
-        },
-        {
-          title: 'New World',
-          lines: [],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: 'Button only'
-            },
-            {
-              label: 'Replaces',
-              value: 'Seeded start world with a fresh world'
-            },
-            {
-              label: 'Resets',
-              value: 'Player, camera, undo, and shell layout'
             }
           ],
           tone: 'warning'
@@ -5249,6 +5249,25 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
               value: 'Clears browser resume'
             }
           ]
+        },
+        {
+          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
+          lines: [],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: getDesktopFreshWorldHotkeyLabel()
+            },
+            {
+              label: 'Replaces',
+              value: 'Paused session with a fresh world'
+            },
+            {
+              label: 'Resets',
+              value: 'Player, camera, undo, and shell layout'
+            }
+          ],
+          tone: 'warning'
         }
       ],
       shellSections: [],
@@ -5307,25 +5326,6 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
             }
           ],
           tone: 'warning'
-        },
-        {
-          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
-          lines: [],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: getDesktopFreshWorldHotkeyLabel()
-            },
-            {
-              label: 'Replaces',
-              value: 'Paused session with a fresh world'
-            },
-            {
-              label: 'Resets',
-              value: 'Player, camera, undo, and shell layout'
-            }
-          ],
-          tone: 'warning'
         }
       ],
       primarySections: [
@@ -5367,25 +5367,6 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
             {
               label: 'Next Resume',
               value: 'Default-off shell layout'
-            }
-          ],
-          tone: 'warning'
-        },
-        {
-          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
-          lines: [],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: getDesktopFreshWorldHotkeyLabel()
-            },
-            {
-              label: 'Replaces',
-              value: 'Paused session with a fresh world'
-            },
-            {
-              label: 'Resets',
-              value: 'Player, camera, undo, and shell layout'
             }
           ],
           tone: 'warning'

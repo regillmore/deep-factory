@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-27
 
+- Task: Combine the New World and Clear Saved World tiles under the World Save menu.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so both shared `World Save` page variants now own `New World`, resumable sessions keep `Clear Saved World` adjacent to it, the remaining `Danger Zone` section temporarily narrows to `Reset Shell Toggles`, and the world-save plus danger-zone copy now reflects that ownership shift; removed completed task `603` from [docs/NEXT.md](docs/NEXT.md), added replacement task `605`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Repair the hanging `src/main.test.ts` regression after the shared first-start menu pass.
 - Changes: Updated [src/main.test.ts](../src/main.test.ts) so the first-launch import regression now builds its seeded restore world with `new TileWorld(0, restoredWorldSeed)` instead of treating the seed as the preload radius, which had the test constructing an effectively unbounded world and hanging the suite; the test now also exercises the same `onTertiaryAction('main-menu')` import path as the paused-session regression. Left [docs/NEXT.md](docs/NEXT.md) unchanged because this was a focused regression-fix detour rather than a new roadmap slice.
 - Verification: Ran `cmd /c npx vitest run src/main.test.ts -t "routes a first-launch imported world save through the shared picker and restore action before Enter World"`, `cmd /c npx vitest run src/main.test.ts`, and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
