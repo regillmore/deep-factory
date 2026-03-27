@@ -140,6 +140,14 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
   wand: {
     baseColor: [0.29, 0.33, 0.68],
     accentColor: [0.94, 0.79, 0.38]
+  },
+  bow: {
+    baseColor: [0.43, 0.28, 0.15],
+    accentColor: [0.86, 0.68, 0.39]
+  },
+  arrow: {
+    baseColor: [0.53, 0.48, 0.4],
+    accentColor: [0.94, 0.9, 0.78]
   }
 };
 

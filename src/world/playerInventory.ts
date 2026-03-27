@@ -27,7 +27,9 @@ export type PlayerInventoryItemId =
   | 'heart-crystal'
   | 'sword'
   | 'spear'
-  | 'wand';
+  | 'wand'
+  | 'bow'
+  | 'arrow';
 
 export interface PlayerInventoryItemDefinition {
   id: PlayerInventoryItemId;
@@ -97,7 +99,9 @@ export const PLAYER_INVENTORY_ITEM_IDS: readonly PlayerInventoryItemId[] = [
   'heart-crystal',
   'sword',
   'spear',
-  'wand'
+  'wand',
+  'bow',
+  'arrow'
 ] as const;
 
 const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
@@ -264,6 +268,18 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     label: 'Starter Wand',
     hotbarLabel: 'WAND',
     maxStackSize: 1
+  },
+  bow: {
+    id: 'bow',
+    label: 'Bow',
+    hotbarLabel: 'BOW',
+    maxStackSize: 1
+  },
+  arrow: {
+    id: 'arrow',
+    label: 'Arrow',
+    hotbarLabel: 'ARROW',
+    maxStackSize: 999
   }
 };
 

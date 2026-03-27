@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-27
 
+- Task: Add bow-and-arrow inventory foundations after inventory basics.
+- Changes: Updated [src/world/playerInventory.ts](../src/world/playerInventory.ts), [src/world/playerInventory.test.ts](../src/world/playerInventory.test.ts), [src/world/playerItemCatalog.test.ts](../src/world/playerItemCatalog.test.ts), [src/gl/droppedItemPlaceholder.ts](../src/gl/droppedItemPlaceholder.ts), [src/gl/droppedItemPlaceholder.test.ts](../src/gl/droppedItemPlaceholder.test.ts), and [src/mainWorldSave.test.ts](../src/mainWorldSave.test.ts) so the shared inventory registry now recognizes a non-stackable `Bow` plus stackable `Arrow` ammo, the searchable debug item catalog surfaces both, hotbar drops render through dedicated placeholder palettes, and carried bow or arrow stacks round-trip through world-save decode; removed completed task `574` from [docs/NEXT.md](docs/NEXT.md), added replacement task `599`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/playerInventory.test.ts src/world/playerItemCatalog.test.ts src/gl/droppedItemPlaceholder.test.ts src/mainWorldSave.test.ts` (the Vitest run used the approved outside-sandbox path after the expected in-sandbox `spawn EPERM` startup restriction).
+
 - Task: Split the remaining oversized roadmap items into chapter-sized follow-ups.
 - Changes: Replaced the eight remaining feature-pillar tasks in [docs/NEXT.md](docs/NEXT.md) with dependency-aware grappling-hook, bow-and-arrow, bed-checkpoint, chest-storage, door, recall-mirror, bucket, and fishing chapters that fit one focused implementation pass with tests. Runtime docs such as [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md) were left unchanged because this pass only refined roadmap scope.
 - Verification: Reviewed the rewritten backlog for scope, dependency order, and single-pass sizing; tests were not run because this was a docs-only planning pass.

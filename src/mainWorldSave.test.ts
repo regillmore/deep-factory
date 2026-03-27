@@ -940,6 +940,35 @@ describe('decodeWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerInventoryState).toEqual(standalonePlayerInventoryState);
   });
 
+  it('round-trips carried bow and arrow ammo stacks through save decode', () => {
+    const world = new TileWorld(0);
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [
+        { itemId: 'bow', amount: 1 },
+        { itemId: 'arrow', amount: 187 },
+        ...Array.from({ length: 8 }, () => null)
+      ],
+      selectedHotbarSlotIndex: 0
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    expect(decoded.session.standalonePlayerInventoryState).toEqual(standalonePlayerInventoryState);
+  });
+
   it('round-trips saved small-tree growth cadence through save decode', () => {
     const world = new TileWorld(0);
     const smallTreeGrowthState = {

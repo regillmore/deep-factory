@@ -84,6 +84,30 @@ describe('playerInventory', () => {
     });
   });
 
+  it('stores non-stackable bows in separate hotbar slots when multiple are added', () => {
+    const result = addPlayerInventoryItemStack(createEmptyPlayerInventoryState(), 'bow', 2);
+
+    expect(result).toEqual({
+      state: {
+        hotbar: [
+          { itemId: 'bow', amount: 1 },
+          { itemId: 'bow', amount: 1 },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        selectedHotbarSlotIndex: 0
+      },
+      addedAmount: 2,
+      remainingAmount: 0
+    });
+  });
+
   it('reports overflow when the hotbar cannot hold an entire stack', () => {
     const full = createPlayerInventoryState({
       hotbar: Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT }, () => ({
@@ -503,6 +527,18 @@ describe('playerInventory', () => {
       hotbarLabel: 'WAND',
       maxStackSize: 1
     });
+    expect(getPlayerInventoryItemDefinition('bow')).toEqual({
+      id: 'bow',
+      label: 'Bow',
+      hotbarLabel: 'BOW',
+      maxStackSize: 1
+    });
+    expect(getPlayerInventoryItemDefinition('arrow')).toEqual({
+      id: 'arrow',
+      label: 'Arrow',
+      hotbarLabel: 'ARROW',
+      maxStackSize: 999
+    });
   });
 
   it('exposes the inventory item registry in stable item-id order', () => {
@@ -533,7 +569,9 @@ describe('playerInventory', () => {
       'heart-crystal',
       'sword',
       'spear',
-      'wand'
+      'wand',
+      'bow',
+      'arrow'
     ]);
   });
 

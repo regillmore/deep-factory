@@ -7,6 +7,8 @@ describe('playerItemCatalog', () => {
     expect(getPlayerItemCatalogEntries().map((entry) => entry.label)).toEqual([
       'Acorn',
       'Anvil',
+      'Arrow',
+      'Bow',
       'Bug Net',
       'Bunny',
       'Copper Bar',
@@ -40,6 +42,8 @@ describe('playerItemCatalog', () => {
       'healing-potion'
     ]);
     expect(searchPlayerItemCatalog('acorn').map((entry) => entry.itemId)).toEqual(['acorn']);
+    expect(searchPlayerItemCatalog('bow').map((entry) => entry.itemId)).toEqual(['bow']);
+    expect(searchPlayerItemCatalog('arrow').map((entry) => entry.itemId)).toEqual(['arrow']);
     expect(searchPlayerItemCatalog('bug net').map((entry) => entry.itemId)).toEqual(['bug-net']);
     expect(searchPlayerItemCatalog('starter axe').map((entry) => entry.itemId)).toEqual([
       'axe',

@@ -10,8 +10,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Bow and arrow ranged combat
 
-574. Add bow-and-arrow inventory foundations after inventory basics: define a non-stackable bow hotbar item plus stackable arrow ammo, expose both through the item catalog, and cover carried-ammo save or restore regressions.
-575. Add aimed bow firing after task 574 and hostile-slime jump-chase locomotion: require carried arrows, route mixed-device aimed firing through the shared hidden-panel play-mode item-use path, and cover blocked-shot rules without consuming ammo.
+575. Add aimed bow firing after bow-and-arrow inventory foundations and hostile-slime jump-chase locomotion: require carried arrows, route mixed-device aimed firing through the shared hidden-panel play-mode item-use path, and cover blocked-shot rules without consuming ammo.
 576. Add arrow projectile terrain resolution after task 575: advance fixed-step arrow flight deterministically, despawn arrows on first solid-terrain contact, and cover ammo consumption on successful fired shots.
 577. Add hostile-slime arrow hits after task 576: apply deterministic arrow damage, knockback, defeat, and gel-drop consequences when projectiles hit hostile slimes.
 
@@ -53,3 +52,7 @@ These items are intentionally scoped to fit a focused implementation pass with t
 596. Add a fishing-rod cast foundation after inventory basics and save/load: define a non-stackable fishing-rod hotbar item, validate mixed-device water-only cast targets, and cover blocked-versus-cast regressions.
 597. Add fishing bobber bite timing after task 596: spawn a bobber entity for valid casts, advance deterministic wait-and-bite windows over water, and cover cancel or recast cleanup regressions.
 598. Add fish-item catches after task 597: convert successful bite resolution into fish items added to inventory, reject full-inventory catches cleanly, and cover deterministic catch plus carried-fish save or restore regressions.
+
+## Bomb utility
+
+599. Add bomb inventory foundations after inventory basics and save/load: define a stackable bomb hotbar item, expose it through the item catalog, and cover carried-bomb save or restore regressions.
