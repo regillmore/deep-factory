@@ -59,5 +59,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Menu UI
 
-605. Supress `Clear Saved World`, move `New World` above import/export actions, and cover first-start versus paused ordering regressions.
 606. Remove Recent Activities from the pause menu.

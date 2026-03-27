@@ -611,6 +611,9 @@ const findButtonByTextContent = (
 ): FakeElement | null =>
   findElementsByClass(root, className).find((element) => element.textContent === textContent) ?? null;
 
+const readTextContentsByClass = (root: FakeElement, className: string): string[] =>
+  findElementsByClass(root, className).map((element) => element.textContent);
+
 const findPausedNavigationTileByTitle = (
   root: FakeElement,
   title: string
@@ -910,6 +913,49 @@ describe('paused main-menu dashboard layout', () => {
     expect(worldSaveBackButton?.hidden).toBe(false);
     expect(worldSaveBackButton?.title).toBe(PAUSED_MAIN_MENU_WORLD_SAVE_BACK_TITLE);
     expect(secondarySections?.hidden).toBe(true);
+    expect(readTextContentsByClass(root, 'app-shell__world-save-action-title')).toEqual([
+      'New World',
+      'Export World Save',
+      'Import World Save'
+    ]);
+  });
+
+  it('keeps New World first on both World Save variants without rendering Clear Saved World', () => {
+    const pausedContainer = new FakeElement('div');
+    const pausedShell = new AppShell(pausedContainer as unknown as HTMLElement);
+    pausedShell.setState(createPausedMainMenuShellState());
+
+    const pausedRoot = pausedContainer.children[0] ?? null;
+    expect(pausedRoot).not.toBeNull();
+    if (pausedRoot === null) {
+      return;
+    }
+
+    findPausedNavigationTileByTitle(pausedRoot, 'World Save')?.click();
+
+    expect(readTextContentsByClass(pausedRoot, 'app-shell__world-save-action-title')).toEqual([
+      'New World',
+      'Export World Save',
+      'Import World Save'
+    ]);
+
+    const firstStartContainer = new FakeElement('div');
+    const firstStartShell = new AppShell(firstStartContainer as unknown as HTMLElement);
+    firstStartShell.setState(createFirstLaunchMainMenuShellState());
+
+    const firstStartRoot = firstStartContainer.children[0] ?? null;
+    expect(firstStartRoot).not.toBeNull();
+    if (firstStartRoot === null) {
+      return;
+    }
+
+    findPausedNavigationTileByTitle(firstStartRoot, 'World Save')?.click();
+
+    expect(readTextContentsByClass(firstStartRoot, 'app-shell__world-save-action-title')).toEqual([
+      'New World',
+      'Export World Save',
+      'Import World Save'
+    ]);
   });
 
   it('opens the Shell page from Overview and returns through the shared back-navigation frame', () => {
@@ -1051,13 +1097,12 @@ describe('paused main-menu dashboard layout', () => {
     const shellTile = findPausedNavigationTileByTitle(root, 'Shell');
 
     expect(overviewButtons).toHaveLength(1);
-    expect(worldSaveButtons).toHaveLength(4);
+    expect(worldSaveButtons).toHaveLength(3);
     expect(overviewButtons[0]?.title).toBe(resolvePausedMainMenuResumeWorldTitle());
     expect(worldSaveButtons.map((button) => button.title)).toEqual([
+      resolvePausedMainMenuFreshWorldTitle(),
       resolvePausedMainMenuExportWorldSaveTitle(),
-      resolvePausedMainMenuImportWorldSaveTitle(),
-      resolvePausedMainMenuClearSavedWorldTitle(),
-      resolvePausedMainMenuFreshWorldTitle()
+      resolvePausedMainMenuImportWorldSaveTitle()
     ]);
 
     overviewButtons[0]?.click();
@@ -1069,10 +1114,9 @@ describe('paused main-menu dashboard layout', () => {
 
     expect(handledActions).toEqual([
       'resume-world',
+      'new-world',
       'export-world-save',
       'import-world-save',
-      'clear-saved-world',
-      'new-world',
       'reset-shell-toggles'
     ]);
   });
@@ -1098,11 +1142,11 @@ describe('paused main-menu dashboard layout', () => {
       'app-shell__section-action-shortcut-badge'
     );
     const newWorldTitle = findElementByClass(
-      worldSaveButtons[3]!,
+      worldSaveButtons[0]!,
       'app-shell__world-save-action-title'
     );
     const newWorldBadge = findElementByClass(
-      worldSaveButtons[3]!,
+      worldSaveButtons[0]!,
       'app-shell__section-action-shortcut-badge'
     );
 
@@ -1112,7 +1156,7 @@ describe('paused main-menu dashboard layout', () => {
     expect(newWorldBadge?.textContent).toBe(getDesktopFreshWorldHotkeyLabel());
     expect(
       worldSaveButtons
-        .slice(0, 3)
+        .slice(1)
         .every((button) => findElementByClass(button, 'app-shell__section-action-shortcut-badge') === null)
     ).toBe(true);
   });
@@ -1138,7 +1182,7 @@ describe('paused main-menu dashboard layout', () => {
           findElementByClass(button, 'app-shell__section-action-affordance-badge')?.textContent ??
           null
       )
-    ).toEqual(['Button only', 'Button only', 'Button only', null]);
+    ).toEqual([null, 'Button only', 'Button only']);
     expect(
       overviewButtons.every(
         (button) => findElementByClass(button, 'app-shell__section-action-affordance-badge') === null
@@ -1179,11 +1223,6 @@ describe('paused main-menu dashboard layout', () => {
       },
       {
         label: 'Last Import',
-        badge: null,
-        tone: null
-      },
-      {
-        label: 'Last Clear',
         badge: null,
         tone: null
       }
@@ -1229,11 +1268,6 @@ describe('paused main-menu dashboard layout', () => {
         label: 'Last Import',
         badge: null,
         tone: null
-      },
-      {
-        label: 'Last Clear',
-        badge: 'Cleared',
-        tone: 'warning'
       }
     ]);
   });
@@ -1290,11 +1324,6 @@ describe('paused main-menu dashboard layout', () => {
         label: 'Last Import',
         badge: 'Session only',
         tone: 'warning'
-      },
-      {
-        label: 'Last Clear',
-        badge: null,
-        tone: null
       }
     ]);
   });
@@ -1353,10 +1382,10 @@ describe('paused main-menu dashboard layout', () => {
       return;
     }
 
-    const initialImportButton = findElementsByClass(root, 'app-shell__world-save-action')[1] ?? null;
+    const initialImportButton = findElementsByClass(root, 'app-shell__world-save-action')[2] ?? null;
     initialImportButton?.click();
 
-    const busyImportButton = findElementsByClass(root, 'app-shell__world-save-action')[1] ?? null;
+    const busyImportButton = findElementsByClass(root, 'app-shell__world-save-action')[2] ?? null;
     const busyImportBadge =
       busyImportButton === null
         ? null
@@ -1396,7 +1425,7 @@ describe('paused main-menu dashboard layout', () => {
     await Promise.resolve();
 
     const restoredImportButton =
-      findElementsByClass(root, 'app-shell__world-save-action')[1] ?? null;
+      findElementsByClass(root, 'app-shell__world-save-action')[2] ?? null;
     const restoredImportBadge =
       restoredImportButton === null
         ? null
@@ -3903,7 +3932,7 @@ describe('createPausedMainMenuShellState', () => {
       primaryActionLabel: 'Resume World',
       secondaryActionLabel: 'Export World Save',
       tertiaryActionLabel: 'Import World Save',
-      quaternaryActionLabel: 'Clear Saved World',
+      quaternaryActionLabel: null,
       quinaryActionLabel: 'Reset Shell Toggles',
       senaryActionLabel: 'New World',
       shellActionKeybindings: createDefaultShellActionKeybindingState(),
@@ -3943,7 +3972,7 @@ describe('createPausedMainMenuShellState', () => {
       primaryActionLabel: 'Resume World',
       secondaryActionLabel: 'Export World Save',
       tertiaryActionLabel: 'Import World Save',
-      quaternaryActionLabel: 'Clear Saved World',
+      quaternaryActionLabel: null,
       quinaryActionLabel: 'Reset Shell Toggles',
       senaryActionLabel: 'New World',
       shellActionKeybindings: createDefaultShellActionKeybindingState(),
@@ -3994,7 +4023,7 @@ describe('createPausedMainMenuShellState', () => {
       primaryActionLabel: 'Resume World',
       secondaryActionLabel: 'Export World Save',
       tertiaryActionLabel: 'Import World Save',
-      quaternaryActionLabel: 'Clear Saved World',
+      quaternaryActionLabel: null,
       quinaryActionLabel: 'Reset Shell Toggles',
       senaryActionLabel: 'New World',
       shellActionKeybindings: createDefaultShellActionKeybindingState(),
@@ -4051,7 +4080,7 @@ describe('createPausedMainMenuShellState', () => {
       primaryActionLabel: 'Resume World',
       secondaryActionLabel: 'Export World Save',
       tertiaryActionLabel: 'Import World Save',
-      quaternaryActionLabel: 'Clear Saved World',
+      quaternaryActionLabel: null,
       quinaryActionLabel: 'Reset Shell Toggles',
       senaryActionLabel: 'New World',
       shellActionKeybindings: createDefaultShellActionKeybindingState(),
@@ -4660,13 +4689,28 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
         {
           label: 'Last Import',
           value: 'No recent import'
-        },
-        {
-          label: 'Last Clear',
-          value: 'No recent clear'
         }
       ],
       actionSections: [
+        {
+          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
+          lines: [],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: getDesktopFreshWorldHotkeyLabel()
+            },
+            {
+              label: 'Replaces',
+              value: 'Paused session with a fresh world'
+            },
+            {
+              label: 'Resets',
+              value: 'Player, camera, undo, and shell layout'
+            }
+          ],
+          tone: 'warning'
+        },
         {
           title: 'Export World Save',
           lines: [],
@@ -4694,43 +4738,6 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
               value: 'Current session only after validation and restore'
             }
           ]
-        },
-        {
-          title: 'Clear Saved World',
-          lines: [],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: 'Button only'
-            },
-            {
-              label: 'Session',
-              value: 'Kept in this tab'
-            },
-            {
-              label: 'Reload',
-              value: 'Clears browser resume'
-            }
-          ]
-        },
-        {
-          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
-          lines: [],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: getDesktopFreshWorldHotkeyLabel()
-            },
-            {
-              label: 'Replaces',
-              value: 'Paused session with a fresh world'
-            },
-            {
-              label: 'Resets',
-              value: 'Player, camera, undo, and shell layout'
-            }
-          ],
-          tone: 'warning'
         }
       ],
       tone: 'default'
@@ -4767,10 +4774,6 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
         {
           label: 'Last Import',
           value: 'No recent import'
-        },
-        {
-          label: 'Last Clear',
-          value: 'No recent clear'
         }
       ]
     });
@@ -4815,14 +4818,17 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
         {
           label: 'Last Import',
           value: 'No recent import'
+        }
+      ],
+      actionSections: [
+        {
+          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`
         },
         {
-          label: 'Last Clear',
-          value: 'Cleared from browser storage',
-          badge: {
-            text: 'Cleared',
-            tone: 'warning'
-          }
+          title: 'Export World Save'
+        },
+        {
+          title: 'Import World Save'
         }
       ],
       tone: 'warning'
@@ -4884,10 +4890,17 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
             text: 'Session only',
             tone: 'warning'
           }
+        }
+      ],
+      actionSections: [
+        {
+          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`
         },
         {
-          label: 'Last Clear',
-          value: 'No recent clear'
+          title: 'Export World Save'
+        },
+        {
+          title: 'Import World Save'
         }
       ],
       tone: 'warning'
@@ -4952,14 +4965,6 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
             text: 'Rejected',
             tone: 'warning'
           }
-        },
-        {
-          label: 'Last Clear',
-          value: 'Failed: browser storage remained locked',
-          badge: {
-            text: 'Failed',
-            tone: 'warning'
-          }
         }
       ],
       tone: 'warning'
@@ -4990,14 +4995,35 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
         },
         {
           label: 'Last Export',
-          value: 'No recent export'
+          value: 'No recent export',
+          badge: undefined
         },
         {
           label: 'Last Import',
-          value: 'No recent import'
+          value: 'No recent import',
+          badge: undefined
         }
       ],
       actionSections: [
+        {
+          title: 'New World',
+          lines: [],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: 'Button only'
+            },
+            {
+              label: 'Replaces',
+              value: 'Seeded start world with a fresh world'
+            },
+            {
+              label: 'Resets',
+              value: 'Player, camera, undo, and shell layout'
+            }
+          ],
+          tone: 'warning'
+        },
         {
           title: 'Export World Save',
           lines: [],
@@ -5025,25 +5051,6 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
               value: 'Current session only after validation and restore'
             }
           ]
-        },
-        {
-          title: 'New World',
-          lines: [],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: 'Button only'
-            },
-            {
-              label: 'Replaces',
-              value: 'Seeded start world with a fresh world'
-            },
-            {
-              label: 'Resets',
-              value: 'Player, camera, undo, and shell layout'
-            }
-          ],
-          tone: 'warning'
         }
       ],
       tone: 'default'
@@ -5101,6 +5108,25 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
       ],
       worldSaveSections: [
         {
+          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
+          lines: [],
+          metadataRows: [
+            {
+              label: 'Shortcut',
+              value: getDesktopFreshWorldHotkeyLabel()
+            },
+            {
+              label: 'Replaces',
+              value: 'Paused session with a fresh world'
+            },
+            {
+              label: 'Resets',
+              value: 'Player, camera, undo, and shell layout'
+            }
+          ],
+          tone: 'warning'
+        },
+        {
           title: 'Export World Save',
           lines: [],
           metadataRows: [
@@ -5127,43 +5153,6 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
               value: 'Current session only after validation and restore'
             }
           ]
-        },
-        {
-          title: 'Clear Saved World',
-          lines: [],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: 'Button only'
-            },
-            {
-              label: 'Session',
-              value: 'Kept in this tab'
-            },
-            {
-              label: 'Reload',
-              value: 'Clears browser resume'
-            }
-          ]
-        },
-        {
-          title: `New World (${getDesktopFreshWorldHotkeyLabel()})`,
-          lines: [],
-          metadataRows: [
-            {
-              label: 'Shortcut',
-              value: getDesktopFreshWorldHotkeyLabel()
-            },
-            {
-              label: 'Replaces',
-              value: 'Paused session with a fresh world'
-            },
-            {
-              label: 'Resets',
-              value: 'Player, camera, undo, and shell layout'
-            }
-          ],
-          tone: 'warning'
         }
       ],
       shellSections: [],
@@ -5709,7 +5698,7 @@ describe('resolvePausedMainMenuShellSectionState', () => {
 });
 
 describe('paused main-menu tooltip-title resolution', () => {
-  it('uses paused-session tooltip titles when resume, export, import, clear-saved-world, reset-shell, and fresh-world actions are active', () => {
+  it('uses paused-session tooltip titles for the remaining overview, world-save, and shell actions', () => {
     const pausedState = createPausedMainMenuShellState();
 
     expect(resolveMainMenuPrimaryActionTitle(pausedState)).toBe(
@@ -5721,9 +5710,7 @@ describe('paused main-menu tooltip-title resolution', () => {
     expect(resolveMainMenuTertiaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuImportWorldSaveTitle()
     );
-    expect(resolveMainMenuQuaternaryActionTitle(pausedState)).toBe(
-      resolvePausedMainMenuClearSavedWorldTitle()
-    );
+    expect(resolveMainMenuQuaternaryActionTitle(pausedState)).toBe('');
     expect(resolveMainMenuQuinaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuResetShellTogglesTitle()
     );
@@ -5744,9 +5731,7 @@ describe('paused main-menu tooltip-title resolution', () => {
     expect(resolveMainMenuTertiaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuImportWorldSaveTitle()
     );
-    expect(resolveMainMenuQuaternaryActionTitle(pausedState)).toBe(
-      resolvePausedMainMenuClearSavedWorldTitle()
-    );
+    expect(resolveMainMenuQuaternaryActionTitle(pausedState)).toBe('');
     expect(resolveMainMenuQuinaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuResetShellTogglesTitle()
     );
@@ -5785,9 +5770,7 @@ describe('paused main-menu tooltip-title resolution', () => {
     expect(resolveMainMenuTertiaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuImportWorldSaveTitle()
     );
-    expect(resolveMainMenuQuaternaryActionTitle(pausedState)).toBe(
-      resolvePausedMainMenuClearSavedWorldTitle()
-    );
+    expect(resolveMainMenuQuaternaryActionTitle(pausedState)).toBe('');
     expect(resolveMainMenuQuinaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuResetShellTogglesTitle()
     );
@@ -5822,9 +5805,7 @@ describe('paused main-menu tooltip-title resolution', () => {
     expect(resolveMainMenuTertiaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuImportWorldSaveTitle()
     );
-    expect(resolveMainMenuQuaternaryActionTitle(pausedState)).toBe(
-      resolvePausedMainMenuClearSavedWorldTitle()
-    );
+    expect(resolveMainMenuQuaternaryActionTitle(pausedState)).toBe('');
     expect(resolveMainMenuQuinaryActionTitle(pausedState)).toBe(
       resolvePausedMainMenuResetShellTogglesTitle()
     );

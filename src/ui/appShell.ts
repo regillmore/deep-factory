@@ -506,22 +506,34 @@ const resolvePausedMainMenuSectionViewModel = (
 const resolvePausedMainMenuOverviewMenuSections = (
   sectionViewModel: PausedMainMenuSectionViewModel
 ): readonly AppShellMenuSection[] => [sectionViewModel.overview.resumeWorld];
+type PausedMainMenuWorldSaveActionId =
+  | 'new-world'
+  | 'export-world-save'
+  | 'import-world-save';
+
+const resolvePausedMainMenuWorldSaveActionIds = (
+  _state: AppShellState
+): readonly PausedMainMenuWorldSaveActionId[] => [
+  'new-world',
+  'export-world-save',
+  'import-world-save'
+];
+
 const resolvePausedMainMenuWorldSaveMenuSections = (
   state: AppShellState,
   sectionViewModel: PausedMainMenuSectionViewModel
 ): readonly AppShellMenuSection[] =>
-  isFirstStartMainMenuState(state)
-    ? [
-        sectionViewModel.worldSave.exportWorldSave,
-        sectionViewModel.worldSave.importWorldSave,
-        sectionViewModel.worldSave.newWorld
-      ]
-    : [
-        sectionViewModel.worldSave.exportWorldSave,
-        sectionViewModel.worldSave.importWorldSave,
-        sectionViewModel.worldSave.clearSavedWorld,
-        sectionViewModel.worldSave.newWorld
-      ];
+  resolvePausedMainMenuWorldSaveActionIds(state).map((actionId) => {
+    switch (actionId) {
+      case 'new-world':
+        return sectionViewModel.worldSave.newWorld;
+      case 'export-world-save':
+        return sectionViewModel.worldSave.exportWorldSave;
+      case 'import-world-save':
+        return sectionViewModel.worldSave.importWorldSave;
+    }
+  });
+
 const resolvePausedMainMenuShellMenuSections = (
   _sectionViewModel: PausedMainMenuSectionViewModel
 ): readonly AppShellMenuSection[] => [];
@@ -1601,34 +1613,6 @@ const createPausedMainMenuWorldSaveImportStatusBadge = (
       };
   }
 };
-const resolvePausedMainMenuWorldSaveClearStatusValue = (
-  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null,
-  savedWorldStatus: PausedMainMenuSavedWorldStatus | null
-): string => {
-  if (clearSavedWorldResult !== null) {
-    return `Failed: ${resolvePausedMainMenuResultReasonValue(clearSavedWorldResult.reason)}`;
-  }
-
-  return savedWorldStatus === 'cleared' ? 'Cleared from browser storage' : 'No recent clear';
-};
-const createPausedMainMenuWorldSaveClearStatusBadge = (
-  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null,
-  savedWorldStatus: PausedMainMenuSavedWorldStatus | null
-): AppShellMenuSectionMetadataBadge | undefined => {
-  if (clearSavedWorldResult !== null) {
-    return {
-      text: 'Failed',
-      tone: 'warning'
-    };
-  }
-
-  return savedWorldStatus === 'cleared'
-    ? {
-        text: 'Cleared',
-        tone: 'warning'
-      }
-    : undefined;
-};
 const resolvePausedMainMenuWorldSaveSectionTone = (
   importResult: PausedMainMenuImportResult | null,
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null,
@@ -1657,7 +1641,7 @@ const createPausedMainMenuWorldSaveSummaryRows = (
   importResult: PausedMainMenuImportResult | null,
   savedWorldStatus: PausedMainMenuSavedWorldStatus | null,
   exportResult: PausedMainMenuExportResult | null,
-  clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null,
+  _clearSavedWorldResult: PausedMainMenuClearSavedWorldResult | null,
   worldSeed: number | null
 ): readonly AppShellMenuSectionMetadataRow[] => [
   {
@@ -1682,11 +1666,6 @@ const createPausedMainMenuWorldSaveSummaryRows = (
     label: 'Last Import',
     value: resolvePausedMainMenuWorldSaveImportStatusValue(importResult, savedWorldStatus),
     badge: createPausedMainMenuWorldSaveImportStatusBadge(importResult, savedWorldStatus)
-  },
-  {
-    label: 'Last Clear',
-    value: resolvePausedMainMenuWorldSaveClearStatusValue(clearSavedWorldResult, savedWorldStatus),
-    badge: createPausedMainMenuWorldSaveClearStatusBadge(clearSavedWorldResult, savedWorldStatus)
   }
 ] as const;
 const createFirstStartMainMenuWorldSaveSummaryRows = (
@@ -2383,7 +2362,7 @@ const createStandardMainMenuBaseShellState = (
     primaryActionLabel: firstStart ? 'Enter World' : 'Resume World',
     secondaryActionLabel: 'Export World Save',
     tertiaryActionLabel: 'Import World Save',
-    quaternaryActionLabel: firstStart ? null : 'Clear Saved World',
+    quaternaryActionLabel: null,
     quinaryActionLabel: 'Reset Shell Toggles',
     senaryActionLabel: 'New World',
     shellActionKeybindings,
@@ -5075,47 +5054,43 @@ export class AppShell {
     const pausedMainMenuWorldSaveActionButtons =
       pausedMainMenuSectionViewModel === null
         ? []
-        : [
-            createWorldSaveActionButton(
-              pausedMainMenuSectionViewModel.worldSave.exportWorldSave,
-              resolveMainMenuSecondaryActionTitle(state),
-              () => this.onSecondaryAction(this.currentState.screen)
-            ),
-            createWorldSaveActionButton(
-              this.pausedMainMenuImportWorldSaveBusy
-                ? createBusyPausedMainMenuImportWorldSaveActionSection(
-                    pausedMainMenuSectionViewModel.worldSave.importWorldSave
-                  )
-                : pausedMainMenuSectionViewModel.worldSave.importWorldSave,
-              this.pausedMainMenuImportWorldSaveBusy
-                ? PAUSED_MAIN_MENU_BUSY_IMPORT_WORLD_SAVE_TITLE
-                : resolveMainMenuTertiaryActionTitle(state),
-              () => {
-                void this.tryImportWorldSave();
-              },
-              {
-                busy: this.pausedMainMenuImportWorldSaveBusy,
-                disabled: this.pausedMainMenuImportWorldSaveBusy,
-                headingStatusBadge: this.pausedMainMenuImportWorldSaveBusy
-                  ? PAUSED_MAIN_MENU_BUSY_IMPORT_WORLD_SAVE_HEADING_BADGE
-                  : null
-              }
-            ),
-            ...(!isFirstStartMainMenuState(state)
-              ? [
-                  createWorldSaveActionButton(
-                    pausedMainMenuSectionViewModel.worldSave.clearSavedWorld,
-                    resolveMainMenuQuaternaryActionTitle(state),
-                    () => this.onQuaternaryAction(this.currentState.screen)
-                  )
-                ]
-              : []),
-            createWorldSaveActionButton(
-              pausedMainMenuSectionViewModel.worldSave.newWorld,
-              resolveMainMenuSenaryActionTitle(state),
-              () => this.onSenaryAction(this.currentState.screen)
-            )
-          ];
+        : resolvePausedMainMenuWorldSaveActionIds(state).map((actionId) => {
+            switch (actionId) {
+              case 'new-world':
+                return createWorldSaveActionButton(
+                  pausedMainMenuSectionViewModel.worldSave.newWorld,
+                  resolveMainMenuSenaryActionTitle(state),
+                  () => this.onSenaryAction(this.currentState.screen)
+                );
+              case 'export-world-save':
+                return createWorldSaveActionButton(
+                  pausedMainMenuSectionViewModel.worldSave.exportWorldSave,
+                  resolveMainMenuSecondaryActionTitle(state),
+                  () => this.onSecondaryAction(this.currentState.screen)
+                );
+              case 'import-world-save':
+                return createWorldSaveActionButton(
+                  this.pausedMainMenuImportWorldSaveBusy
+                    ? createBusyPausedMainMenuImportWorldSaveActionSection(
+                        pausedMainMenuSectionViewModel.worldSave.importWorldSave
+                      )
+                    : pausedMainMenuSectionViewModel.worldSave.importWorldSave,
+                  this.pausedMainMenuImportWorldSaveBusy
+                    ? PAUSED_MAIN_MENU_BUSY_IMPORT_WORLD_SAVE_TITLE
+                    : resolveMainMenuTertiaryActionTitle(state),
+                  () => {
+                    void this.tryImportWorldSave();
+                  },
+                  {
+                    busy: this.pausedMainMenuImportWorldSaveBusy,
+                    disabled: this.pausedMainMenuImportWorldSaveBusy,
+                    headingStatusBadge: this.pausedMainMenuImportWorldSaveBusy
+                      ? PAUSED_MAIN_MENU_BUSY_IMPORT_WORLD_SAVE_HEADING_BADGE
+                      : null
+                  }
+                );
+            }
+          });
     const pausedMainMenuWorldSaveNavigationRows = pausedMainMenuWorldSaveSection.metadataRows.filter(
       (row) => row.label === 'Browser Resume' || row.label === 'World Seed'
     );

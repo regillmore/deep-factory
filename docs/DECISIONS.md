@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-27: Clear Saved World is no longer a player-facing World Save control
+
+- Decision: The shared `World Save` page now leads with `New World`, followed by `Export World Save` and `Import World Save`, and it no longer shows a `Clear Saved World` control or `Last Clear` summary row.
+- Reason: Browser-resume deletion was mainly an early debug aid, while player-facing session management already has a clearer restart path through `New World` plus explicit export/import actions.
+- Consequence: Future player-facing world-session controls should assume `New World`, export, and import are the supported `World Save` actions; any browser-resume clear behavior should stay internal-only unless a later task deliberately reintroduces it.
+
 ### 2026-03-27: Shell-layout reset now belongs to the Shell page, not a separate Danger Zone group
 
 - Decision: `Reset Shell Toggles` now lives on the dedicated `Shell` page, and the paused-dashboard `Danger Zone` group is removed.

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-27
 
+- Task: Remove the player-facing `Clear Saved World` tile and lead `World Save` with `New World`.
+- Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so both `World Save` page variants now render `New World` before `Export World Save` and `Import World Save`, omit the `Clear Saved World` tile entirely, and stop surfacing the old `Last Clear` summary row; removed completed task `605` from [docs/NEXT.md](docs/NEXT.md), added replacement task `608`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Move `Reset Shell Toggles` under the `Shell` menu and retire the paused-menu `Danger Zone` group.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so the paused dashboard now keeps only `Overview`, `World Save`, `Shell`, and optional `Recent Activity`, while `Reset Shell Toggles` lives on the dedicated `Shell` page beside the existing shell-management controls; removed completed task `604` from [docs/NEXT.md](docs/NEXT.md), added replacement task `607`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
