@@ -16,6 +16,7 @@ import {
 } from '../world/playerState';
 import { createHostileSlimeState, type HostileSlimeState } from '../world/hostileSlimeState';
 import { createPassiveBunnyState, type PassiveBunnyState } from '../world/passiveBunnyState';
+import { createThrownBombState, type ThrownBombState } from '../world/bombThrowing';
 import { createStarterWandFireboltState, type StarterWandFireboltState } from '../world/starterWand';
 import {
   cloneStandalonePlayerRenderState,
@@ -321,6 +322,21 @@ const createFireboltEntityFrameState = (
 ): RendererEntityFrameState => ({
   id: options.id ?? 1,
   kind: 'wand-firebolt',
+  snapshot: {
+    previous: options.previousState ?? currentState,
+    current: currentState
+  }
+});
+
+const createThrownBombEntityFrameState = (
+  currentState: ThrownBombState,
+  options: {
+    id?: number;
+    previousState?: ThrownBombState;
+  } = {}
+): RendererEntityFrameState => ({
+  id: options.id ?? 1,
+  kind: 'thrown-bomb',
   snapshot: {
     previous: options.previousState ?? currentState,
     current: currentState
@@ -2998,6 +3014,86 @@ describe('Renderer atlas telemetry', () => {
     ]);
     expect(uniform1f.mock.calls).toHaveLength(1);
     expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(0.65);
+    expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
+  });
+
+  it('draws thrown-bomb placeholders from interpolated entity snapshots', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
+    });
+    await renderer.initialize();
+
+    const drawArrays = vi.mocked(gl.drawArrays);
+    const bufferData = vi.mocked(gl.bufferData);
+    const uniform1f = vi.mocked(gl.uniform1f);
+    drawArrays.mockClear();
+    bufferData.mockClear();
+    uniform1f.mockClear();
+
+    const currentState = createThrownBombState({
+      position: { x: 80, y: 60 },
+      velocity: { x: 120, y: -30 },
+      radius: 6,
+      secondsRemaining: 0.4
+    });
+    const previousState = createThrownBombState({
+      position: { x: 68, y: 44 },
+      velocity: { x: 120, y: -30 },
+      radius: 6,
+      secondsRemaining: 0.5
+    });
+
+    renderer.render(new Camera2D(), {
+      entities: [
+        createThrownBombEntityFrameState(currentState, {
+          id: 57,
+          previousState
+        })
+      ],
+      renderAlpha: 0.25,
+      timeMs: 0
+    });
+
+    expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
+    expect(renderer.telemetry.drawCalls).toBe(renderer.telemetry.renderedChunks + 1);
+
+    const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
+    expect(dynamicUploads).toHaveLength(1);
+    expect(Array.from((dynamicUploads[0]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      65,
+      42,
+      0,
+      0,
+      77,
+      42,
+      1,
+      0,
+      77,
+      54,
+      1,
+      1,
+      65,
+      42,
+      0,
+      0,
+      77,
+      54,
+      1,
+      1,
+      65,
+      54,
+      0,
+      1
+    ]);
+    expect(uniform1f.mock.calls).toHaveLength(1);
+    expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(0.45);
     expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
   });
 

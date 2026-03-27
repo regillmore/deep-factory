@@ -451,6 +451,12 @@ import {
   type StarterWandFireboltHitEvent,
   type StarterWandFireboltState
 } from './world/starterWand';
+import {
+  BOMB_ITEM_ID,
+  createThrownBombStateFromThrow,
+  stepThrownBombState,
+  type ThrownBombState
+} from './world/bombThrowing';
 import { stepPlayerManaRegeneration } from './world/playerMana';
 import {
   resolvePlayerWallContactTransitionEvent,
@@ -516,6 +522,7 @@ const HOSTILE_SLIME_ENTITY_KIND = 'slime';
 const PASSIVE_BUNNY_ENTITY_KIND = 'bunny';
 const DROPPED_ITEM_ENTITY_KIND = 'dropped-item';
 const STARTER_WAND_FIREBOLT_ENTITY_KIND = 'wand-firebolt';
+const THROWN_BOMB_ENTITY_KIND = 'thrown-bomb';
 const HOSTILE_SLIME_GEL_DROP_ITEM_ID: DroppedItemState['itemId'] = 'gel';
 const STARTER_UMBRELLA_ITEM_ID = 'umbrella';
 const HOSTILE_SLIME_GEL_DROP_AMOUNT = 1;
@@ -3163,6 +3170,16 @@ const bootstrap = async (): Promise<void> => {
             }
           });
           break;
+        case THROWN_BOMB_ENTITY_KIND:
+          entityFrameStates.push({
+            id: snapshotEntry.id,
+            kind: THROWN_BOMB_ENTITY_KIND,
+            snapshot: {
+              previous: snapshotEntry.previous as ThrownBombState,
+              current: snapshotEntry.current as ThrownBombState
+            }
+          });
+          break;
       }
     }
     return entityFrameStates;
@@ -3452,6 +3469,39 @@ const bootstrap = async (): Promise<void> => {
     });
     fireboltEntityIds.push(fireboltEntityId);
     return fireboltEntityId;
+  };
+  const spawnThrownBombEntity = (initialThrownBombState: ThrownBombState): EntityId => {
+    let thrownBombEntityId: EntityId | null = null;
+    thrownBombEntityId = entityRegistry.spawn({
+      kind: THROWN_BOMB_ENTITY_KIND,
+      initialState: initialThrownBombState,
+      captureRenderState: (thrownBombState) => ({
+        position: {
+          x: thrownBombState.position.x,
+          y: thrownBombState.position.y
+        },
+        velocity: {
+          x: thrownBombState.velocity.x,
+          y: thrownBombState.velocity.y
+        },
+        radius: thrownBombState.radius,
+        secondsRemaining: thrownBombState.secondsRemaining
+      }),
+      fixedUpdate: (thrownBombState, fixedDt) => {
+        const nextState = stepThrownBombState(thrownBombState, {
+          fixedDtSeconds: fixedDt
+        });
+        if (nextState === null) {
+          if (thrownBombEntityId !== null) {
+            entityRegistry.despawn(thrownBombEntityId);
+          }
+          return thrownBombState;
+        }
+
+        return nextState;
+      }
+    });
+    return thrownBombEntityId;
   };
   const flushStarterWandFireboltHitEvents = (): void => {
     if (pendingStarterWandFireboltHitEvents.length === 0) {
@@ -4737,6 +4787,27 @@ const bootstrap = async (): Promise<void> => {
     spawnStarterWandFireboltEntity(useResult.fireboltState);
     return true;
   };
+  const tryThrowSelectedBomb = (request: PlayerItemUseRequest): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return false;
+    }
+
+    const thrownBombState = createThrownBombStateFromThrow(
+      standalonePlayerState,
+      resolvePlayerItemUseTargetWorldPoint(request)
+    );
+    if (!applySelectedStandalonePlayerHotbarSlotConsumption()) {
+      return false;
+    }
+
+    spawnThrownBombEntity(thrownBombState);
+    return true;
+  };
   const tryStartSelectedStarterPickaxeSwingAtTile = (
     worldTileX: number,
     worldTileY: number
@@ -5113,6 +5184,9 @@ const bootstrap = async (): Promise<void> => {
     }
     if (selectedStack.itemId === STARTER_WAND_ITEM_ID) {
       return tryUseSelectedStarterWand(request);
+    }
+    if (selectedStack.itemId === BOMB_ITEM_ID) {
+      return tryThrowSelectedBomb(request);
     }
     if (selectedStack.itemId === STARTER_PICKAXE_ITEM_ID) {
       return tryStartSelectedStarterPickaxeSwingAtTile(

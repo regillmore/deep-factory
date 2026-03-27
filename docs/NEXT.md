@@ -55,4 +55,10 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Bomb utility
 
-600. Add bomb throw-use foundations after task 599 and entity scaffolding: route mixed-device aimed use through the shared hidden-panel play-mode item-use path, consume one bomb on successful throws, spawn a fixed-step thrown-bomb entity, and cover blocked dead-or-empty throw regressions.
+601. Add bomb explosion resolution after task 600: convert fuse-complete thrown bombs into deterministic blast events, apply hostile-slime damage plus knockback within a blast radius, and cover in-flight-versus-detonated bomb regressions.
+
+## Menu UI
+
+602. Eliminate the separate first start menu, and instead load the standard pause menu for first time players.
+603. Combine the New World and Clear Saved World tiles under the World Save menu.
+604. Move the Reset Shell Toggles tile under the Shell menu, reducing it a top-level button, and eliminating the Danger Zone pause menu group.

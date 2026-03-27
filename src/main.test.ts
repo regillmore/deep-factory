@@ -52,6 +52,10 @@ import { createDroppedItemState } from './world/droppedItem';
 import { createPlayerInventoryState } from './world/playerInventory';
 import { AUTHORED_ATLAS_HEIGHT, AUTHORED_ATLAS_WIDTH } from './world/authoredAtlasLayout';
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './world/constants';
+import {
+  DEFAULT_THROWN_BOMB_GRAVITY,
+  DEFAULT_THROWN_BOMB_SPEED
+} from './world/bombThrowing';
 import { DEFAULT_MANA_CRYSTAL_MAX_MANA_CAP } from './world/playerManaCrystal';
 import {
   PROCEDURAL_DIRT_TILE_ID,
@@ -730,6 +734,7 @@ const testRuntime = vi.hoisted(() => {
       slimeCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       bunnyCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       fireboltCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
+      bombCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       renderAlpha: number | null;
       timeMs: number | null;
     },
@@ -971,6 +976,31 @@ vi.mock('./gl/renderer', () => ({
               ];
             })
         : [];
+      const bombCurrentPositions = Array.isArray(renderState.entities)
+        ? renderState.entities
+            .filter((entity) => entity?.kind === 'thrown-bomb')
+            .flatMap((entity) => {
+              const snapshot = entity?.snapshot?.current;
+              if (
+                !snapshot?.position ||
+                typeof entity?.id !== 'number' ||
+                typeof snapshot.position.x !== 'number' ||
+                typeof snapshot.position.y !== 'number'
+              ) {
+                return [];
+              }
+
+              return [
+                {
+                  id: entity.id,
+                  position: {
+                    x: snapshot.position.x,
+                    y: snapshot.position.y
+                  }
+                }
+              ];
+            })
+        : [];
       const standalonePlayerPreviousPosition =
         standalonePlayerEntity?.snapshot?.previous?.position &&
         typeof standalonePlayerEntity.snapshot.previous.position.x === 'number' &&
@@ -1022,6 +1052,7 @@ vi.mock('./gl/renderer', () => ({
         slimeCurrentPositions,
         bunnyCurrentPositions,
         fireboltCurrentPositions,
+        bombCurrentPositions,
         renderAlpha: typeof renderState.renderAlpha === 'number' ? renderState.renderAlpha : null,
         timeMs: renderState.timeMs ?? null
       };
@@ -11813,6 +11844,199 @@ describe('main.ts shell state orchestration', () => {
       playerFocusPoint.y - DEFAULT_STARTER_WAND_FIREBOLT_SPEED * 0.8 * (1 / 60),
       6
     );
+  });
+
+  it('throws a bomb through the shared hidden-panel mouse item-use path, consumes one bomb, and blocks same-tick empty follow-up throws', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bomb', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 6,
+        worldTileY: 1,
+        worldX: playerFocusPoint.x + 60,
+        worldY: playerFocusPoint.y,
+        pointerType: 'mouse'
+      },
+      {
+        worldTileX: 6,
+        worldTileY: 1,
+        worldX: playerFocusPoint.x + 60,
+        worldY: playerFocusPoint.y,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    const bombPositions = testRuntime.latestRendererRenderFrameState?.bombCurrentPositions ?? [];
+    expect(bombPositions).toHaveLength(1);
+    expect(bombPositions[0]?.position.x).toBeCloseTo(
+      playerFocusPoint.x + DEFAULT_THROWN_BOMB_SPEED * (1 / 60),
+      6
+    );
+    expect(bombPositions[0]?.position.y).toBeCloseTo(
+      playerFocusPoint.y + DEFAULT_THROWN_BOMB_GRAVITY * (1 / 60) * (1 / 60),
+      6
+    );
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toBeNull();
+  });
+
+  it('throws a bomb from touch aim through the shared hidden-panel item-use path', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bomb', amount: 2 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: -2,
+        worldTileY: -2,
+        worldX: playerFocusPoint.x - 30,
+        worldY: playerFocusPoint.y - 40,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    const touchBombPositions = testRuntime.latestRendererRenderFrameState?.bombCurrentPositions ?? [];
+    expect(touchBombPositions).toHaveLength(1);
+    expect(touchBombPositions[0]?.position.x).toBeCloseTo(
+      playerFocusPoint.x - DEFAULT_THROWN_BOMB_SPEED * 0.6 * (1 / 60),
+      6
+    );
+    expect(touchBombPositions[0]?.position.y).toBeCloseTo(
+      playerFocusPoint.y +
+        (-DEFAULT_THROWN_BOMB_SPEED * 0.8 + DEFAULT_THROWN_BOMB_GRAVITY * (1 / 60)) *
+          (1 / 60),
+      6
+    );
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
+      itemId: 'bomb',
+      amount: 1
+    });
+  });
+
+  it('blocks dead bomb throws through the shared hidden-panel item-use path', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            health: 0
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bomb', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 6,
+        worldTileY: 1,
+        worldX: 68,
+        worldY: 12,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.bombCurrentPositions).toEqual([]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
+      itemId: 'bomb',
+      amount: 1
+    });
   });
 
   it('shows a starter-spear preview line at fixed reach and flags clamped aim when the hovered world point is farther away', async () => {

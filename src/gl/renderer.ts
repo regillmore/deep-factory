@@ -9,6 +9,12 @@ import {
   FIREBOLT_PLACEHOLDER_VERTEX_FLOAT_COUNT
 } from './fireboltPlaceholder';
 import {
+  buildThrownBombPlaceholderVertices,
+  getThrownBombPlaceholderNearbyLightSample,
+  THROWN_BOMB_PLACEHOLDER_VERTEX_COUNT,
+  THROWN_BOMB_PLACEHOLDER_VERTEX_FLOAT_COUNT
+} from './thrownBombPlaceholder';
+import {
   buildDroppedItemPlaceholderVertices,
   getDroppedItemPlaceholderNearbyLightSample,
   getDroppedItemPlaceholderPalette,
@@ -88,6 +94,7 @@ import { type HostileSlimeState } from '../world/hostileSlimeState';
 import { stepPassiveBunnyState as stepWorldPassiveBunnyState } from '../world/passiveBunnyLocomotion';
 import { type PassiveBunnyState } from '../world/passiveBunnyState';
 import { type DroppedItemState } from '../world/droppedItem';
+import { BOMB_ITEM_ID, type ThrownBombState } from '../world/bombThrowing';
 import { type StarterWandFireboltState } from '../world/starterWand';
 import {
   isStandalonePlayerRenderStateCeilingBonkActive,
@@ -161,12 +168,19 @@ export interface FireboltEntityFrameState {
   snapshot: EntityRenderStateSnapshot<StarterWandFireboltState>;
 }
 
+export interface ThrownBombEntityFrameState {
+  id: EntityId;
+  kind: 'thrown-bomb';
+  snapshot: EntityRenderStateSnapshot<ThrownBombState>;
+}
+
 export type RendererEntityFrameState =
   | StandalonePlayerEntityFrameState
   | HostileSlimeEntityFrameState
   | PassiveBunnyEntityFrameState
   | DroppedItemEntityFrameState
-  | FireboltEntityFrameState;
+  | FireboltEntityFrameState
+  | ThrownBombEntityFrameState;
 
 export interface RenderTelemetry {
   atlasSourceKind: AtlasImageLoadResult['sourceKind'] | 'pending';
@@ -280,6 +294,8 @@ export class Renderer {
   private droppedItemVao: WebGLVertexArrayObject;
   private fireboltBuffer: WebGLBuffer;
   private fireboltVao: WebGLVertexArrayObject;
+  private thrownBombBuffer: WebGLBuffer;
+  private thrownBombVao: WebGLVertexArrayObject;
 
   readonly telemetry: RenderTelemetry = {
     atlasSourceKind: 'pending',
@@ -825,6 +841,11 @@ export class Renderer {
       new Float32Array(FIREBOLT_PLACEHOLDER_VERTEX_FLOAT_COUNT)
     );
     this.fireboltVao = createVertexArray(gl, this.fireboltBuffer, 4);
+    this.thrownBombBuffer = createDynamicVertexBuffer(
+      gl,
+      new Float32Array(THROWN_BOMB_PLACEHOLDER_VERTEX_FLOAT_COUNT)
+    );
+    this.thrownBombVao = createVertexArray(gl, this.thrownBombBuffer, 4);
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -1383,6 +1404,9 @@ export class Renderer {
         case 'wand-firebolt':
           this.drawFirebolt(entity, renderAlpha, worldToClipMatrix);
           break;
+        case 'thrown-bomb':
+          this.drawThrownBomb(entity, renderAlpha, worldToClipMatrix);
+          break;
       }
     }
   }
@@ -1569,6 +1593,49 @@ export class Renderer {
     );
     gl.bindVertexArray(this.fireboltVao);
     gl.drawArrays(gl.TRIANGLES, 0, FIREBOLT_PLACEHOLDER_VERTEX_COUNT);
+    this.telemetry.drawCalls += 1;
+  }
+
+  private drawThrownBomb(
+    entity: ThrownBombEntityFrameState,
+    renderAlpha: number,
+    worldToClipMatrix: Float32Array
+  ): void {
+    const state = entity.snapshot.current;
+    const renderPosition = resolveInterpolatedEntityWorldPosition(entity.snapshot, renderAlpha);
+    const gl = this.gl;
+    const nearbyLightSample = getThrownBombPlaceholderNearbyLightSample(
+      this.world,
+      state,
+      renderPosition
+    );
+    const palette = getDroppedItemPlaceholderPalette(BOMB_ITEM_ID);
+    gl.useProgram(this.droppedItemProgram);
+    gl.uniformMatrix4fv(this.uDroppedItemMatrix, false, worldToClipMatrix);
+    gl.uniform1f(
+      this.uDroppedItemLight,
+      Math.max(0.45, nearbyLightSample.level / MAX_LIGHT_LEVEL)
+    );
+    gl.uniform3f(
+      this.uDroppedItemBaseColor,
+      palette.baseColor[0],
+      palette.baseColor[1],
+      palette.baseColor[2]
+    );
+    gl.uniform3f(
+      this.uDroppedItemAccentColor,
+      palette.accentColor[0],
+      palette.accentColor[1],
+      palette.accentColor[2]
+    );
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.thrownBombBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      buildThrownBombPlaceholderVertices(state, renderPosition),
+      gl.DYNAMIC_DRAW
+    );
+    gl.bindVertexArray(this.thrownBombVao);
+    gl.drawArrays(gl.TRIANGLES, 0, THROWN_BOMB_PLACEHOLDER_VERTEX_COUNT);
     this.telemetry.drawCalls += 1;
   }
 

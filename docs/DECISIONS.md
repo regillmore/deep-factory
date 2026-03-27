@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-27: Bomb throws now pass through a fuse-owned projectile entity before explosion work
+
+- Decision: Successful `Bomb` use now consumes one carried bomb immediately and spawns a fixed-step thrown-bomb entity that owns the pre-explosion gravity arc plus fuse countdown instead of treating bomb use as an instant effect.
+- Reason: This separates mixed-device aimed throw start from later blast-resolution work while reusing the existing entity interpolation path for visible in-flight travel.
+- Consequence: Future bomb follow-ups should extend that thrown-bomb entity path with fuse-complete explosion consequences rather than bypassing it with direct use-time damage or terrain edits.
+
 ### 2026-03-26: Current-versus-max mana telemetry stays on the existing player-combat readout
 
 - Decision: The full debug HUD and hidden-HUD compact status strip now render live mana as `current/max` on the existing `player-combat` readout, falling back to the prior single-value style only when telemetry lacks `maxMana`.
