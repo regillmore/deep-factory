@@ -4,6 +4,7 @@ import {
   sampleWorldSeedUnitInterval
 } from './worldSeed';
 import { GROWN_SMALL_TREE_FOOTPRINT_CELLS } from './smallTreeFootprints';
+import { evaluateSmallTreeGrowthSiteAtAnchor } from './smallTreeGrowthSite';
 import { getSmallTreeTileIds } from './smallTreeTiles';
 import { getSurfaceFlowerTileId } from './surfaceFlowerTiles';
 import { getTallGrassTileId } from './tallGrassTiles';
@@ -19,6 +20,7 @@ export const PROCEDURAL_STONE_WALL_ID = 3;
 const PROCEDURAL_SURFACE_FLOWER_TILE_ID = getSurfaceFlowerTileId();
 const PROCEDURAL_TALL_GRASS_TILE_ID = getTallGrassTileId();
 const PROCEDURAL_SMALL_TREE_TILE_IDS = getSmallTreeTileIds();
+const PROCEDURAL_SMALL_TREE_SAPLING_TILE_ID = PROCEDURAL_SMALL_TREE_TILE_IDS.sapling;
 
 const PROCEDURAL_SURFACE_BASE_TILE_Y = -2;
 const PROCEDURAL_SURFACE_BROAD_WAVE_FREQUENCY = 0.045;
@@ -119,6 +121,10 @@ interface ProceduralTerrainSeedProfile {
 
 const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
 const proceduralTerrainSeedProfiles = new Map<number, ProceduralTerrainSeedProfile>();
+const proceduralPlantedSmallTreeAnchorByCellPairCaches = new Map<
+  number,
+  Map<number, { anchorTileX: number; anchorTileY: number } | null>
+>();
 
 const sampleSineWave = (
   worldX: number,
@@ -673,19 +679,11 @@ const resolveProceduralGrownSmallTreeTileId = (
   return null;
 };
 
-export const resolveProceduralTerrainTileId = (
-  worldX: number,
-  worldY: number,
-  worldSeed = DEFAULT_WORLD_SEED
-): number => resolveProceduralTerrainLayers(worldX, worldY, worldSeed).tileId;
+const isProceduralSmallTreeFootprintOutsideProtectedOriginCorridor = (anchorTileX: number): boolean =>
+  Math.abs(anchorTileX) - PROCEDURAL_SMALL_TREE_FOOTPRINT_HALF_WIDTH_TILES >
+  PROCEDURAL_CAVE_MOUTH_PROTECTED_ORIGIN_HALF_WIDTH_TILES;
 
-export const resolveProceduralTerrainWallId = (
-  worldX: number,
-  worldY: number,
-  worldSeed = DEFAULT_WORLD_SEED
-): number => resolveProceduralTerrainLayers(worldX, worldY, worldSeed).wallId;
-
-export const resolveProceduralTerrainLayers = (
+const resolveProceduralBaseTerrainLayers = (
   worldX: number,
   worldY: number,
   worldSeed = DEFAULT_WORLD_SEED
@@ -694,38 +692,13 @@ export const resolveProceduralTerrainLayers = (
   const resolveSubsurfaceWallId = (): number =>
     worldY <= surfaceTileY + dirtDepthTiles ? PROCEDURAL_DIRT_WALL_ID : PROCEDURAL_STONE_WALL_ID;
   const seedProfile = resolveProceduralTerrainSeedProfile(worldSeed);
-  const proceduralSmallTreeTileId = resolveProceduralGrownSmallTreeTileId(worldX, worldY, worldSeed);
-  if (proceduralSmallTreeTileId !== null) {
-    return {
-      tileId: proceduralSmallTreeTileId,
-      wallId: 0
-    };
-  }
-
-  const hasProceduralGrassSurface = isProceduralGrassSurfaceAtColumn(
-    worldX,
-    surfaceTileY,
-    dirtDepthTiles,
-    seedProfile,
-    worldSeed
-  );
-  if (
-    worldY === surfaceTileY - 1 &&
-    hasProceduralGrassSurface
-  ) {
-    return {
-      tileId: shouldSelectSurfaceFlowerAtAnchor(worldX, surfaceTileY)
-        ? PROCEDURAL_SURFACE_FLOWER_TILE_ID
-        : PROCEDURAL_TALL_GRASS_TILE_ID,
-      wallId: 0
-    };
-  }
   if (worldY < surfaceTileY) {
     return {
       tileId: SKY_TILE_ID,
       wallId: 0
     };
   }
+
   const isCaveMouthAir = isProceduralCaveMouthAir(
     worldX,
     worldY,
@@ -764,8 +737,232 @@ export const resolveProceduralTerrainLayers = (
       wallId: PROCEDURAL_STONE_WALL_ID
     };
   }
+
   return {
     tileId: PROCEDURAL_STONE_TILE_ID,
     wallId: PROCEDURAL_STONE_WALL_ID
   };
+};
+
+const createProceduralBaseAndGrownSmallTreeWorldView = (worldSeed: number) => ({
+  getTile: (worldTileX: number, worldTileY: number): number => {
+    const grownSmallTreeTileId = resolveProceduralGrownSmallTreeTileId(worldTileX, worldTileY, worldSeed);
+    if (grownSmallTreeTileId !== null) {
+      return grownSmallTreeTileId;
+    }
+
+    return resolveProceduralBaseTerrainLayers(worldTileX, worldTileY, worldSeed).tileId;
+  }
+});
+
+const resolveProceduralPlantedSmallTreeAnchorAtTileX = (
+  candidateAnchorTileX: number,
+  worldSeed: number,
+  worldView = createProceduralBaseAndGrownSmallTreeWorldView(worldSeed)
+): { anchorTileX: number; anchorTileY: number } | null => {
+  if (!isProceduralSmallTreeFootprintOutsideProtectedOriginCorridor(candidateAnchorTileX)) {
+    return null;
+  }
+
+  const { surfaceTileY } = resolveProceduralTerrainColumn(candidateAnchorTileX, worldSeed);
+  const growthSite = evaluateSmallTreeGrowthSiteAtAnchor(worldView, candidateAnchorTileX, surfaceTileY);
+  if (
+    !growthSite.hasGrassAnchor ||
+    growthSite.currentGrowthStage !== null ||
+    !growthSite.hasUnobstructedGrowthSpace
+  ) {
+    return null;
+  }
+
+  return {
+    anchorTileX: candidateAnchorTileX,
+    anchorTileY: surfaceTileY
+  };
+};
+
+const resolveProceduralPlantedSmallTreeAnchorBetweenGrownTrees = (
+  leftGrownAnchorTileX: number,
+  rightGrownAnchorTileX: number,
+  worldSeed: number
+): { anchorTileX: number; anchorTileY: number } | null => {
+  const minCandidateTileX = leftGrownAnchorTileX + 1;
+  const maxCandidateTileX = rightGrownAnchorTileX - 1;
+  if (minCandidateTileX > maxCandidateTileX) {
+    return null;
+  }
+
+  const midpointTileX = Math.floor((leftGrownAnchorTileX + rightGrownAnchorTileX) / 2);
+  const worldView = createProceduralBaseAndGrownSmallTreeWorldView(worldSeed);
+  const maxOffset = Math.max(midpointTileX - minCandidateTileX, maxCandidateTileX - midpointTileX);
+
+  for (let offset = 0; offset <= maxOffset; offset += 1) {
+    const leftCandidateTileX = midpointTileX - offset;
+    if (leftCandidateTileX >= minCandidateTileX) {
+      const plantedAnchor = resolveProceduralPlantedSmallTreeAnchorAtTileX(
+        leftCandidateTileX,
+        worldSeed,
+        worldView
+      );
+      if (plantedAnchor !== null) {
+        return plantedAnchor;
+      }
+    }
+
+    if (offset === 0) {
+      continue;
+    }
+
+    const rightCandidateTileX = midpointTileX + offset;
+    if (rightCandidateTileX > maxCandidateTileX) {
+      continue;
+    }
+
+    const plantedAnchor = resolveProceduralPlantedSmallTreeAnchorAtTileX(
+      rightCandidateTileX,
+      worldSeed,
+      worldView
+    );
+    if (plantedAnchor !== null) {
+      return plantedAnchor;
+    }
+  }
+
+  return null;
+};
+
+const resolveProceduralPlantedSmallTreeAnchorForCellPairUncached = (
+  leftSmallTreeCellIndex: number,
+  worldSeed: number
+): { anchorTileX: number; anchorTileY: number } | null => {
+  const rightSmallTreeCellIndex = leftSmallTreeCellIndex + 1;
+  const leftGrownAnchorTileX = resolveProceduralSmallTreeAnchorTileX(worldSeed, leftSmallTreeCellIndex);
+  const rightGrownAnchorTileX = resolveProceduralSmallTreeAnchorTileX(worldSeed, rightSmallTreeCellIndex);
+  const leftGrownAnchorTileY = resolveProceduralTerrainColumn(leftGrownAnchorTileX, worldSeed).surfaceTileY;
+  const rightGrownAnchorTileY = resolveProceduralTerrainColumn(rightGrownAnchorTileX, worldSeed).surfaceTileY;
+
+  if (!isProceduralGrownSmallTreeAnchor(leftGrownAnchorTileX, leftGrownAnchorTileY, worldSeed)) {
+    return null;
+  }
+  if (!isProceduralGrownSmallTreeAnchor(rightGrownAnchorTileX, rightGrownAnchorTileY, worldSeed)) {
+    return null;
+  }
+
+  return resolveProceduralPlantedSmallTreeAnchorBetweenGrownTrees(
+    leftGrownAnchorTileX,
+    rightGrownAnchorTileX,
+    worldSeed
+  );
+};
+
+const resolveProceduralPlantedSmallTreeAnchorForCellPair = (
+  leftSmallTreeCellIndex: number,
+  worldSeed: number
+): { anchorTileX: number; anchorTileY: number } | null => {
+  const normalizedWorldSeed = normalizeWorldSeed(worldSeed);
+  let seedCache = proceduralPlantedSmallTreeAnchorByCellPairCaches.get(normalizedWorldSeed);
+  if (!seedCache) {
+    seedCache = new Map();
+    proceduralPlantedSmallTreeAnchorByCellPairCaches.set(normalizedWorldSeed, seedCache);
+  }
+
+  if (seedCache.has(leftSmallTreeCellIndex)) {
+    return seedCache.get(leftSmallTreeCellIndex) ?? null;
+  }
+
+  const resolvedAnchor = resolveProceduralPlantedSmallTreeAnchorForCellPairUncached(
+    leftSmallTreeCellIndex,
+    normalizedWorldSeed
+  );
+  seedCache.set(leftSmallTreeCellIndex, resolvedAnchor);
+  return resolvedAnchor;
+};
+
+const resolveProceduralPlantedSmallTreeTileId = (
+  worldX: number,
+  worldY: number,
+  worldSeed: number
+): number | null => {
+  const cellIndex = Math.floor(worldX / PROCEDURAL_SMALL_TREE_CELL_WIDTH_TILES);
+  for (
+    let leftSmallTreeCellIndex = cellIndex - 2;
+    leftSmallTreeCellIndex <= cellIndex + 1;
+    leftSmallTreeCellIndex += 1
+  ) {
+    const plantedAnchor = resolveProceduralPlantedSmallTreeAnchorForCellPair(
+      leftSmallTreeCellIndex,
+      worldSeed
+    );
+    if (plantedAnchor === null) {
+      continue;
+    }
+    if (plantedAnchor.anchorTileX !== worldX || plantedAnchor.anchorTileY - 1 !== worldY) {
+      continue;
+    }
+
+    return PROCEDURAL_SMALL_TREE_SAPLING_TILE_ID;
+  }
+
+  return null;
+};
+
+export const resolveProceduralTerrainTileId = (
+  worldX: number,
+  worldY: number,
+  worldSeed = DEFAULT_WORLD_SEED
+): number => resolveProceduralTerrainLayers(worldX, worldY, worldSeed).tileId;
+
+export const resolveProceduralTerrainWallId = (
+  worldX: number,
+  worldY: number,
+  worldSeed = DEFAULT_WORLD_SEED
+): number => resolveProceduralTerrainLayers(worldX, worldY, worldSeed).wallId;
+
+export const resolveProceduralTerrainLayers = (
+  worldX: number,
+  worldY: number,
+  worldSeed = DEFAULT_WORLD_SEED
+): ProceduralTerrainLayers => {
+  const { surfaceTileY, dirtDepthTiles } = resolveProceduralTerrainColumn(worldX, worldSeed);
+  const baseLayers = resolveProceduralBaseTerrainLayers(worldX, worldY, worldSeed);
+  const proceduralSmallTreeTileId = resolveProceduralGrownSmallTreeTileId(worldX, worldY, worldSeed);
+  if (proceduralSmallTreeTileId !== null) {
+    return {
+      tileId: proceduralSmallTreeTileId,
+      wallId: 0
+    };
+  }
+
+  const proceduralPlantedSmallTreeTileId = resolveProceduralPlantedSmallTreeTileId(
+    worldX,
+    worldY,
+    worldSeed
+  );
+  if (proceduralPlantedSmallTreeTileId !== null) {
+    return {
+      tileId: proceduralPlantedSmallTreeTileId,
+      wallId: 0
+    };
+  }
+
+  const seedProfile = resolveProceduralTerrainSeedProfile(worldSeed);
+  const hasProceduralGrassSurface = isProceduralGrassSurfaceAtColumn(
+    worldX,
+    surfaceTileY,
+    dirtDepthTiles,
+    seedProfile,
+    worldSeed
+  );
+  if (
+    worldY === surfaceTileY - 1 &&
+    hasProceduralGrassSurface
+  ) {
+    return {
+      tileId: shouldSelectSurfaceFlowerAtAnchor(worldX, surfaceTileY)
+        ? PROCEDURAL_SURFACE_FLOWER_TILE_ID
+        : PROCEDURAL_TALL_GRASS_TILE_ID,
+      wallId: 0
+    };
+  }
+
+  return baseLayers;
 };

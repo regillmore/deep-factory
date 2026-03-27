@@ -208,6 +208,31 @@ const findFirstProceduralGrownSmallTreeAnchor = (
   return null;
 };
 
+const findFirstProceduralPlantedSmallTreeAnchor = (
+  worldSeed = 0,
+  minWorldX = -CHUNK_SIZE * 8,
+  maxWorldX = CHUNK_SIZE * 8
+): { anchorTileX: number; anchorTileY: number } | null => {
+  const proceduralWorldView = {
+    getTile: (worldTileX: number, worldTileY: number) =>
+      resolveProceduralTerrainTileId(worldTileX, worldTileY, worldSeed)
+  };
+
+  for (let worldTileX = minWorldX; worldTileX <= maxWorldX; worldTileX += 1) {
+    const { surfaceTileY } = resolveProceduralTerrainColumn(worldTileX, worldSeed);
+    if (resolveSmallTreeGrowthStageAtAnchor(proceduralWorldView, worldTileX, surfaceTileY) !== 'planted') {
+      continue;
+    }
+
+    return {
+      anchorTileX: worldTileX,
+      anchorTileY: surfaceTileY
+    };
+  }
+
+  return null;
+};
+
 const findFirstProceduralDirtBelowSolidCoverAdjacentToGrass = (
   worldSeed = 0,
   minWorldX = -CHUNK_SIZE * 4,
@@ -2034,6 +2059,40 @@ describe('TileWorld', () => {
     expect(world.getChunkCount()).toBeGreaterThan(chunkCountAfterPrune);
   });
 
+  it('streams untouched procedural planted small trees back in after pruning their chunk', () => {
+    const plantedSmallTreeAnchor = findFirstProceduralPlantedSmallTreeAnchor();
+    expect(plantedSmallTreeAnchor).not.toBeNull();
+    if (plantedSmallTreeAnchor === null) {
+      throw new Error('expected a procedural planted small tree anchor');
+    }
+
+    const world = new TileWorld(0);
+    expect(world.getTile(plantedSmallTreeAnchor.anchorTileX, plantedSmallTreeAnchor.anchorTileY)).toBe(
+      PROCEDURAL_GRASS_SURFACE_TILE_ID
+    );
+    expect(
+      resolveSmallTreeGrowthStageAtAnchor(
+        world,
+        plantedSmallTreeAnchor.anchorTileX,
+        plantedSmallTreeAnchor.anchorTileY
+      )
+    ).toBe('planted');
+
+    expect(
+      world.pruneChunksOutside({ minChunkX: 0, minChunkY: 0, maxChunkX: 0, maxChunkY: 0 })
+    ).toBeGreaterThan(0);
+    const chunkCountAfterPrune = world.getChunkCount();
+
+    expect(
+      resolveSmallTreeGrowthStageAtAnchor(
+        world,
+        plantedSmallTreeAnchor.anchorTileX,
+        plantedSmallTreeAnchor.anchorTileY
+      )
+    ).toBe('planted');
+    expect(world.getChunkCount()).toBeGreaterThan(chunkCountAfterPrune);
+  });
+
   it('uses snapshot-preserved world seeds when untouched chunks stream back in', () => {
     const worldSeed = 0x12345678;
     const world = new TileWorld(0, worldSeed);
@@ -2044,6 +2103,7 @@ describe('TileWorld', () => {
     const copperOreTile = findFirstProceduralCopperOreTile(worldSeed);
     const tallGrassTile = findFirstProceduralTallGrassTile(worldSeed);
     const surfaceFlowerTile = findFirstProceduralSurfaceFlowerTile(worldSeed);
+    const plantedSmallTreeAnchor = findFirstProceduralPlantedSmallTreeAnchor(worldSeed);
     const grownSmallTreeAnchor = findFirstProceduralGrownSmallTreeAnchor(worldSeed);
 
     expect(caveTile).not.toBeNull();
@@ -2065,6 +2125,10 @@ describe('TileWorld', () => {
     expect(surfaceFlowerTile).not.toBeNull();
     if (surfaceFlowerTile === null) {
       throw new Error('expected a seeded procedural surface flower tile');
+    }
+    expect(plantedSmallTreeAnchor).not.toBeNull();
+    if (plantedSmallTreeAnchor === null) {
+      throw new Error('expected a seeded procedural planted small tree anchor');
     }
     expect(grownSmallTreeAnchor).not.toBeNull();
     if (grownSmallTreeAnchor === null) {
@@ -2091,6 +2155,16 @@ describe('TileWorld', () => {
     expect(loaded.getTile(surfaceFlowerTile.worldTileX, surfaceFlowerTile.worldTileY)).toBe(
       getSurfaceFlowerTileId()
     );
+    expect(loaded.getTile(plantedSmallTreeAnchor.anchorTileX, plantedSmallTreeAnchor.anchorTileY)).toBe(
+      PROCEDURAL_GRASS_SURFACE_TILE_ID
+    );
+    expect(
+      resolveSmallTreeGrowthStageAtAnchor(
+        loaded,
+        plantedSmallTreeAnchor.anchorTileX,
+        plantedSmallTreeAnchor.anchorTileY
+      )
+    ).toBe('planted');
     expect(loaded.getTile(grownSmallTreeAnchor.anchorTileX, grownSmallTreeAnchor.anchorTileY)).toBe(
       PROCEDURAL_GRASS_SURFACE_TILE_ID
     );

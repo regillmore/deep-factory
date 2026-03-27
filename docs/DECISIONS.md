@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-26: Procedural saplings derive from midpoint searches between adjacent grown trees
+
+- Decision: Untouched terrain now seeds planted `small_tree_sapling` anchors only between adjacent procedural grown-tree anchors, choosing the nearest valid exposed-grass column to that pair's midpoint whose future grown footprint stays clear and outside the protected origin corridor.
+- Reason: Procedural saplings should read as natural regrowth between mature trees while still reusing the shared planted-anchor and growth-site contract instead of inventing a separate worldgen-only small-tree layout.
+- Consequence: Future procedural small-tree density or spacing follow-ups should reuse or deliberately replace that adjacent-pair midpoint search, rather than scattering planted saplings independently from the mature-tree worldgen grid.
+
 ### 2026-03-26: Surface-flower authored art claims an interior atlas slot
 
 - Decision: `surface_flower` now renders through dedicated authored atlas region `38` at `144x32` instead of reusing the small-tree sapling placeholder art.
