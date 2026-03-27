@@ -1274,6 +1274,38 @@ describe('authored atlas asset', () => {
     expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, tallGrassRegion!, saplingRegion!)).toBe(false);
   });
 
+  it('keeps surface-flower in a dedicated authored region distinct from tall-grass, grass, and sapling placeholders', () => {
+    const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
+    const surfaceFlowerTile = TILE_METADATA.tiles.find((tile) => tile.name === 'surface_flower');
+    const tallGrassTile = TILE_METADATA.tiles.find((tile) => tile.name === 'tall_grass');
+    const grassTile = TILE_METADATA.tiles.find((tile) => tile.name === 'grass_surface');
+    const saplingTile = TILE_METADATA.tiles.find((tile) => tile.name === 'small_tree_sapling');
+
+    expect(surfaceFlowerTile?.render?.atlasIndex).toBe(38);
+
+    const surfaceFlowerRegion = AUTHORED_ATLAS_REGIONS[surfaceFlowerTile!.render!.atlasIndex!];
+    const tallGrassRegion = AUTHORED_ATLAS_REGIONS[tallGrassTile!.render!.atlasIndex!];
+    const grassRegion = AUTHORED_ATLAS_REGIONS[grassTile!.render!.atlasIndex!];
+    const saplingRegion = AUTHORED_ATLAS_REGIONS[saplingTile!.render!.atlasIndex!];
+    expect(surfaceFlowerRegion).toEqual({ x: 144, y: 32, width: 16, height: 16 });
+
+    expect(findNonTransparentPixelBoundsInRegion(rgbaPixels, pngWidth, surfaceFlowerRegion!)).toEqual({
+      x: surfaceFlowerRegion!.x + 2,
+      y: surfaceFlowerRegion!.y + 1,
+      width: 12,
+      height: 15
+    });
+    expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, surfaceFlowerRegion!, tallGrassRegion!)).toBe(
+      false
+    );
+    expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, surfaceFlowerRegion!, grassRegion!)).toBe(
+      false
+    );
+    expect(regionsMatchForVisibleContent(rgbaPixels, pngWidth, surfaceFlowerRegion!, saplingRegion!)).toBe(
+      false
+    );
+  });
+
   it('keeps stone and copper-ore placeholders in dedicated authored regions', () => {
     const { pngWidth, rgbaPixels } = readCommittedAtlasPng();
     const stoneTile = TILE_METADATA.tiles.find((tile) => tile.name === 'stone');

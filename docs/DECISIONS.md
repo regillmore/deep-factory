@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-26: Surface-flower authored art claims an interior atlas slot
+
+- Decision: `surface_flower` now renders through dedicated authored atlas region `38` at `144x32` instead of reusing the small-tree sapling placeholder art.
+- Reason: Surface decoration needed its own committed bloom sprite, and the current atlas still had uncovered interior slots that avoided widening the image or spending the exterior padding strip.
+- Consequence: Future surface-decoration and sapling art refreshes should prefer the remaining uncovered interior atlas slots or existing owned regions before widening the atlas or borrowing unrelated vegetation sprites.
+
 ### 2026-03-26: Tall-grass authored art claims an interior atlas slot
 
 - Decision: `tall_grass` now renders through dedicated authored atlas region `37` at `128x32` instead of reusing the small-tree sapling placeholder art.
