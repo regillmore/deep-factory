@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-27: Paused-menu fullscreen targets the top-level document
+
+- Decision: The paused-menu `Overview` fullscreen toggle now enters or exits browser fullscreen against the top-level document rather than targeting only the canvas or world host.
+- Reason: Touch-player and touch-debug overlays are still mounted outside the canvas subtree, so targeting a narrower element would leave parts of the live play UI outside the fullscreen subtree on supporting browsers.
+- Consequence: Future fullscreen work should keep using the top-level document target unless those overlays are migrated into one shared shell-owned container first.
+
 ### 2026-03-27: Clear Saved World is no longer a player-facing World Save control
 
 - Decision: The shared `World Save` page now leads with `New World`, followed by `Export World Save` and `Import World Save`, and it no longer shows a `Clear Saved World` control or `Last Clear` summary row.

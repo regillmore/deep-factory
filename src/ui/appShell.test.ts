@@ -61,6 +61,7 @@ import {
   resolvePausedMainMenuApplyShellProfileTitle,
   resolvePausedMainMenuImportShellProfileTitle,
   resolvePausedMainMenuImportWorldSaveTitle,
+  resolvePausedMainMenuToggleFullscreenTitle,
   createPausedMainMenuShellActionKeybindingEditorMetadataRows,
   resolvePausedMainMenuResetShellTelemetryTitle,
   resolvePausedMainMenuResetShellTogglesTitle,
@@ -1000,6 +1001,88 @@ describe('paused main-menu dashboard layout', () => {
     expect(shellBackButton?.hidden).toBe(false);
     expect(shellBackButton?.title).toBe(PAUSED_MAIN_MENU_SHELL_BACK_TITLE);
     expect(secondarySections?.hidden).toBe(true);
+  });
+
+  it('renders a paused-session fullscreen toggle at the top of Overview and routes clicks through the shared handler', () => {
+    const handledActions: string[] = [];
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement, {
+      onToggleFullscreen: () => {
+        handledActions.push('toggle-fullscreen');
+      }
+    });
+
+    shell.setState({
+      ...createPausedMainMenuShellState(),
+      pausedMainMenuFullscreenSupported: true
+    });
+
+    const root = container.children[0] ?? null;
+    expect(root).not.toBeNull();
+    if (root === null) {
+      return;
+    }
+
+    const fullscreenButton = findElementByClass(root, 'app-shell__overview-toggle');
+
+    expect(fullscreenButton?.hidden).toBe(false);
+    expect(fullscreenButton?.disabled).toBe(false);
+    expect(fullscreenButton?.textContent).toBe('Enter Fullscreen');
+    expect(fullscreenButton?.title).toBe(resolvePausedMainMenuToggleFullscreenTitle(false, true));
+    expect(fullscreenButton?.getAttribute('aria-pressed')).toBe('false');
+
+    fullscreenButton?.click();
+
+    expect(handledActions).toEqual(['toggle-fullscreen']);
+
+    shell.setState({
+      ...createPausedMainMenuShellState(),
+      pausedMainMenuFullscreenSupported: true,
+      pausedMainMenuFullscreenActive: true
+    });
+
+    expect(fullscreenButton?.textContent).toBe('Exit Fullscreen');
+    expect(fullscreenButton?.title).toBe(resolvePausedMainMenuToggleFullscreenTitle(true, true));
+    expect(fullscreenButton?.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('keeps the paused-session fullscreen toggle disabled when the browser does not support fullscreen', () => {
+    const handledActions: string[] = [];
+    const container = new FakeElement('div');
+    const shell = new AppShell(container as unknown as HTMLElement, {
+      onToggleFullscreen: () => {
+        handledActions.push('toggle-fullscreen');
+      }
+    });
+
+    shell.setState({
+      ...createPausedMainMenuShellState(),
+      pausedMainMenuFullscreenSupported: false
+    });
+
+    const root = container.children[0] ?? null;
+    expect(root).not.toBeNull();
+    if (root === null) {
+      return;
+    }
+
+    const fullscreenButton = findElementByClass(root, 'app-shell__overview-toggle');
+
+    expect(fullscreenButton?.hidden).toBe(false);
+    expect(fullscreenButton?.disabled).toBe(true);
+    expect(fullscreenButton?.textContent).toBe('Fullscreen Unavailable');
+    expect(fullscreenButton?.title).toBe(resolvePausedMainMenuToggleFullscreenTitle(false, false));
+
+    fullscreenButton?.click();
+
+    expect(handledActions).toEqual([]);
+
+    shell.setState({
+      ...createFirstLaunchMainMenuShellState(),
+      pausedMainMenuFullscreenSupported: true
+    });
+
+    expect(fullscreenButton?.hidden).toBe(true);
   });
 
   it('returns keyboard-triggered World Save navigation back to the Overview focus anchor', () => {
@@ -2561,6 +2644,8 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-navigation');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-navigation-tile');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-navigation-tile-metadata');
+    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__overview-toggle');
+    expect(APP_SHELL_STYLE_SOURCE).toContain(".app-shell__overview-toggle[disabled]");
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__submenu-back');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-button');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-heading');

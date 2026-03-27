@@ -60,3 +60,4 @@ These items are intentionally scoped to fit a focused implementation pass with t
 ## Menu UI
 
 606. Remove Recent Activities from the pause menu.
+607. Move touch player and debug overlay mounts under a shared shell-owned host so paused-menu fullscreen can eventually target that container instead of the whole document.

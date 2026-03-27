@@ -126,6 +126,10 @@ import {
   type PausedMainMenuShellProfilePreview,
   type PausedMainMenuSavedWorldStatus
 } from './ui/appShell';
+import {
+  readBrowserFullscreenState,
+  toggleBrowserFullscreen
+} from './ui/fullscreen';
 import { DebugEditStatusStrip } from './ui/debugEditStatusStrip';
 import { ArmedDebugToolPreviewOverlay } from './ui/armedDebugToolPreviewOverlay';
 import {
@@ -1140,6 +1144,13 @@ const bootstrap = async (): Promise<void> => {
     onToggleShortcutsOverlay: (screen) => {
       handleInWorldShellAction(screen, 'toggle-shortcuts-overlay');
     },
+    onToggleFullscreen: (screen) => {
+      if (screen !== 'main-menu') {
+        return;
+      }
+
+      return togglePausedMainMenuFullscreen();
+    },
     onRemapShellActionKeybinding: (actionType, nextKey) => {
       const remapResult = remapShellActionKeybinding(shellActionKeybindings, actionType, nextKey);
       if (!remapResult.ok) {
@@ -1270,6 +1281,11 @@ const bootstrap = async (): Promise<void> => {
     }
   });
   shell.setState(createDefaultBootShellState());
+  document.addEventListener('fullscreenchange', () => {
+    if (currentScreen === 'main-menu' && worldSessionStarted) {
+      showMainMenuShellState();
+    }
+  });
   const canvas = document.createElement('canvas');
   const worldHost = shell.getWorldHost();
   worldHost.append(canvas);
@@ -1357,34 +1373,59 @@ const bootstrap = async (): Promise<void> => {
       shellActionKeybindings
     }));
   };
+  const readCurrentBrowserFullscreenState = () => readBrowserFullscreenState(document);
   const readCurrentWorldSeed = (): number => renderer.createWorldSnapshot().worldSeed;
   const showMainMenuShellState = (): void => {
     currentScreen = 'main-menu';
+    const mainMenuShellState = createMainMenuShellState(
+      worldSessionStarted,
+      readWorldSessionShellState(),
+      worldSessionShellPersistenceAvailable,
+      shellActionKeybindings,
+      shellActionKeybindingsDefaultedFromPersistedState,
+      pausedMainMenuImportResult,
+      pausedMainMenuSavedWorldStatus,
+      pausedMainMenuExportResult,
+      pausedMainMenuClearSavedWorldResult,
+      pausedMainMenuResetShellTogglesResult,
+      worldSavePersistenceAvailable,
+      readPausedMainMenuShellProfilePreview(),
+      shellActionKeybindingsCurrentSessionOnly,
+      pausedMainMenuRecentActivityAction,
+      readWorldSessionTelemetryState(),
+      worldSessionTelemetryPersistenceAvailable,
+      pausedMainMenuResetShellTelemetryResult,
+      readWorldSessionGameplayState(),
+      worldSessionGameplayPersistenceAvailable,
+      readCurrentWorldSeed()
+    );
+    const browserFullscreenState = readCurrentBrowserFullscreenState();
     shell.setState(
-      createMainMenuShellState(
-        worldSessionStarted,
-        readWorldSessionShellState(),
-        worldSessionShellPersistenceAvailable,
-        shellActionKeybindings,
-        shellActionKeybindingsDefaultedFromPersistedState,
-        pausedMainMenuImportResult,
-        pausedMainMenuSavedWorldStatus,
-        pausedMainMenuExportResult,
-        pausedMainMenuClearSavedWorldResult,
-        pausedMainMenuResetShellTogglesResult,
-        worldSavePersistenceAvailable,
-        readPausedMainMenuShellProfilePreview(),
-        shellActionKeybindingsCurrentSessionOnly,
-        pausedMainMenuRecentActivityAction,
-        readWorldSessionTelemetryState(),
-        worldSessionTelemetryPersistenceAvailable,
-        pausedMainMenuResetShellTelemetryResult,
-        readWorldSessionGameplayState(),
-        worldSessionGameplayPersistenceAvailable,
-        readCurrentWorldSeed()
-      )
+      worldSessionStarted
+        ? {
+            ...mainMenuShellState,
+            pausedMainMenuFullscreenSupported: browserFullscreenState.supported,
+            pausedMainMenuFullscreenActive: browserFullscreenState.active
+          }
+        : mainMenuShellState
     );
     syncWorldScreenShellVisibility();
+  };
+  const togglePausedMainMenuFullscreen = async (): Promise<void> => {
+    try {
+      const currentFullscreenState = readCurrentBrowserFullscreenState();
+      if (!currentFullscreenState.supported) {
+        return;
+      }
+
+      await toggleBrowserFullscreen(document);
+    } catch (error) {
+      console.warn('Failed to toggle paused-menu fullscreen.', error);
+    } finally {
+      if (currentScreen === 'main-menu') {
+        showMainMenuShellState();
+      }
+    }
   };
   const applyShellActionKeybindingState = (nextKeybindings: ShellActionKeybindingState): void => {
     shellActionKeybindings = nextKeybindings;

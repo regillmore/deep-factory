@@ -438,6 +438,8 @@ export interface AppShellState {
   pausedMainMenuResetShellTelemetryResult?: PausedMainMenuResetShellTelemetryResult;
   pausedMainMenuRecentActivityAction?: PausedMainMenuRecentActivityAction;
   pausedMainMenuShellProfilePreview?: PausedMainMenuShellProfilePreview;
+  pausedMainMenuFullscreenSupported?: boolean;
+  pausedMainMenuFullscreenActive?: boolean;
 }
 
 export interface InWorldShellStateOptions {
@@ -2544,6 +2546,7 @@ interface AppShellOptions {
   onToggleDebugEditOverlays?: (screen: AppShellScreen) => void;
   onTogglePlayerSpawnMarker?: (screen: AppShellScreen) => void;
   onToggleShortcutsOverlay?: (screen: AppShellScreen) => void;
+  onToggleFullscreen?: (screen: AppShellScreen) => Promise<unknown> | unknown;
   onRemapShellActionKeybinding?: (
     actionType: InWorldShellActionKeybindingActionType,
     nextKey: string
@@ -2726,6 +2729,19 @@ export const resolvePausedMainMenuFreshWorldTitle = (): string =>
 export const resolvePausedMainMenuResumeWorldTitle = (): string =>
   `Resume the paused world session with current player, camera state, and debug edits intact (${getDesktopResumeWorldHotkeyLabel()})`;
 
+export const resolvePausedMainMenuToggleFullscreenTitle = (
+  active: boolean,
+  supported: boolean
+): string => {
+  if (!supported) {
+    return 'Fullscreen is unavailable in this browser, so the paused menu cannot toggle it here.';
+  }
+
+  return active
+    ? 'Exit browser fullscreen mode and keep the current paused world session open.'
+    : 'Enter browser fullscreen mode while keeping the current paused world session open.';
+};
+
 export const resolvePausedMainMenuResetShellTogglesTitle = (): string =>
   'Clear saved in-world shell visibility preferences and restore the paused session to the default-off shell layout before the next resume';
 
@@ -2883,6 +2899,8 @@ export const resolvePausedMainMenuResetShellActionKeybindingsEditorStatus = (
 const isPausedMainMenuState = (state: AppShellState): boolean =>
   state.screen === 'main-menu' &&
   (state.mainMenuVariant === 'paused-session' || state.mainMenuVariant === 'first-start');
+const isPausedSessionMainMenuState = (state: AppShellState): boolean =>
+  state.screen === 'main-menu' && state.mainMenuVariant === 'paused-session';
 const isFirstStartMainMenuState = (state: AppShellState): boolean =>
   state.screen === 'main-menu' && state.mainMenuVariant === 'first-start';
 
@@ -3737,6 +3755,7 @@ export class AppShell {
   private pausedMainMenuPrimarySections: HTMLDivElement;
   private pausedMainMenuSecondarySections: HTMLDivElement;
   private overviewSection: HTMLElement;
+  private overviewFullscreenButton: HTMLButtonElement;
   private overviewBody: HTMLDivElement;
   private overviewNavigation: HTMLDivElement;
   private worldSaveNavigationTile: HTMLButtonElement;
@@ -3805,6 +3824,7 @@ export class AppShell {
   private onToggleDebugEditOverlays: (screen: AppShellScreen) => void;
   private onTogglePlayerSpawnMarker: (screen: AppShellScreen) => void;
   private onToggleShortcutsOverlay: (screen: AppShellScreen) => void;
+  private onToggleFullscreen: (screen: AppShellScreen) => Promise<unknown> | unknown;
   private onRemapShellActionKeybinding: (
     actionType: InWorldShellActionKeybindingActionType,
     nextKey: string
@@ -3853,6 +3873,7 @@ export class AppShell {
     this.onToggleDebugEditOverlays = options.onToggleDebugEditOverlays ?? (() => {});
     this.onTogglePlayerSpawnMarker = options.onTogglePlayerSpawnMarker ?? (() => {});
     this.onToggleShortcutsOverlay = options.onToggleShortcutsOverlay ?? (() => {});
+    this.onToggleFullscreen = options.onToggleFullscreen ?? (() => {});
     this.onRemapShellActionKeybinding =
       options.onRemapShellActionKeybinding ?? (() => ({ status: 'rejected' }));
     this.onResetShellActionKeybindings =
@@ -4033,6 +4054,15 @@ export class AppShell {
       overviewTitle,
       PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS.overview
     );
+
+    this.overviewFullscreenButton = document.createElement('button');
+    this.overviewFullscreenButton.type = 'button';
+    this.overviewFullscreenButton.className = 'app-shell__overview-toggle';
+    this.overviewFullscreenButton.addEventListener('click', () => {
+      void this.onToggleFullscreen(this.currentState.screen);
+    });
+    installPointerClickFocusRelease(this.overviewFullscreenButton);
+    overviewHeader.append(this.overviewFullscreenButton);
 
     this.overviewBody = document.createElement('div');
     this.overviewBody.className = 'app-shell__overview-body';
@@ -5016,6 +5046,7 @@ export class AppShell {
           }).shellActionKeybindings
         : defaultShellActionKeybindings;
     const pausedMainMenuVisible = isPausedMainMenuState(state);
+    const pausedSessionMainMenuVisible = isPausedSessionMainMenuState(state);
     if (!pausedMainMenuVisible || !wasPausedMainMenuVisible) {
       this.pausedMainMenuActivePage = DEFAULT_PAUSED_MAIN_MENU_PAGE_ID;
     }
@@ -5028,6 +5059,10 @@ export class AppShell {
     const pausedMainMenuShellActionKeybindings = pausedMainMenuVisible
       ? state.shellActionKeybindings ?? defaultShellActionKeybindings
       : defaultShellActionKeybindings;
+    const pausedMainMenuFullscreenSupported =
+      pausedSessionMainMenuVisible && state.pausedMainMenuFullscreenSupported === true;
+    const pausedMainMenuFullscreenActive =
+      pausedMainMenuFullscreenSupported && state.pausedMainMenuFullscreenActive === true;
     const pausedMainMenuShellPersistenceAvailable =
       pausedMainMenuVisible ? state.worldSessionShellPersistenceAvailable !== false : true;
     const pausedMainMenuHasShellProfilePreview =
@@ -5132,6 +5167,22 @@ export class AppShell {
     this.overviewBody.style.display = resolveAppShellRegionDisplay(
       pausedMainMenuOverviewActionButtons.length > 0,
       'grid'
+    );
+    this.overviewFullscreenButton.hidden = !pausedSessionMainMenuVisible;
+    this.overviewFullscreenButton.style.display = pausedSessionMainMenuVisible ? 'inline-flex' : 'none';
+    this.overviewFullscreenButton.disabled = !pausedMainMenuFullscreenSupported;
+    this.overviewFullscreenButton.textContent = !pausedMainMenuFullscreenSupported
+      ? 'Fullscreen Unavailable'
+      : pausedMainMenuFullscreenActive
+        ? 'Exit Fullscreen'
+        : 'Enter Fullscreen';
+    this.overviewFullscreenButton.title = resolvePausedMainMenuToggleFullscreenTitle(
+      pausedMainMenuFullscreenActive,
+      pausedMainMenuFullscreenSupported
+    );
+    this.overviewFullscreenButton.setAttribute(
+      'aria-pressed',
+      pausedMainMenuFullscreenActive ? 'true' : 'false'
     );
     this.overviewNavigation.hidden = !pausedMainMenuOverviewPageVisible;
     this.overviewNavigation.style.display = resolveAppShellRegionDisplay(

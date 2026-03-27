@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-27
 
+- Task: Add a feature-detected fullscreen toggle to the paused-menu Overview page.
+- Changes: Added [src/ui/fullscreen.ts](../src/ui/fullscreen.ts) plus [src/ui/fullscreen.test.ts](../src/ui/fullscreen.test.ts) for narrow browser Fullscreen API detection and toggle helpers; updated [src/ui/appShell.ts](../src/ui/appShell.ts), [src/ui/appShell.test.ts](../src/ui/appShell.test.ts), [src/main.ts](../src/main.ts), [src/main.test.ts](../src/main.test.ts), and [src/style.css](../src/style.css) so paused resumable sessions now show an `Enter Fullscreen` or `Exit Fullscreen` control at the top of `Overview`, keep it disabled as `Fullscreen Unavailable` when the standard API is unavailable, and stay synced when browser fullscreen changes outside the button. Left existing task `606` in [docs/NEXT.md](docs/NEXT.md) because this was a requested detour, and added follow-up task `607`; updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json`, `cmd /c npx vitest run src/ui/appShell.test.ts`, `cmd /c npx vitest run src/ui/fullscreen.test.ts`, and `cmd /c npx vitest run src/main.test.ts -t fullscreen`.
+
 - Task: Remove the player-facing `Clear Saved World` tile and lead `World Save` with `New World`.
 - Changes: Updated [src/ui/appShell.ts](../src/ui/appShell.ts) and [src/ui/appShell.test.ts](../src/ui/appShell.test.ts) so both `World Save` page variants now render `New World` before `Export World Save` and `Import World Save`, omit the `Clear Saved World` tile entirely, and stop surfacing the old `Last Clear` summary row; removed completed task `605` from [docs/NEXT.md](docs/NEXT.md), added replacement task `608`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/ui/appShell.test.ts` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

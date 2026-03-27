@@ -382,6 +382,12 @@ const testRuntime = vi.hoisted(() => {
     appRoot: null as FakeHTMLElement | null,
     cameraInstance: null as null | { x: number; y: number; zoom: number },
     windowListeners: new Map<string, Array<(event: unknown) => void>>(),
+    documentListeners: new Map<string, Array<(event: unknown) => void>>(),
+    documentElement: null as FakeHTMLElement | null,
+    documentFullscreenEnabled: true,
+    documentFullscreenElement: null as FakeHTMLElement | null,
+    documentRequestFullscreenCallCount: 0,
+    documentExitFullscreenCallCount: 0,
     shellInstance: null as null | {
       currentState: unknown;
       stateHistory: unknown[];
@@ -2811,6 +2817,13 @@ const dispatchWindowEvent = (type: string, event: unknown = {}): void => {
   }
 };
 
+const dispatchDocumentEvent = (type: string, event: unknown = {}): void => {
+  const listeners = testRuntime.documentListeners.get(type) ?? [];
+  for (const listener of listeners) {
+    listener(event);
+  }
+};
+
 const createTestStorageSnapshot = () => ({
   getItem: (key: string) => testRuntime.storageValues.get(key) ?? null,
   setItem: () => {}
@@ -2845,6 +2858,8 @@ const createExpectedPausedMainMenuState = (
     savedWorldStatus: PausedMainMenuSavedWorldStatus;
     worldSeed: number;
     recentActivityAction: PausedMainMenuRecentActivityAction;
+    fullscreenSupported: boolean;
+    fullscreenActive: boolean;
     shellProfilePreview: {
       fileName: string | null;
       worldSessionShellState: ReturnType<typeof createDefaultWorldSessionShellState>;
@@ -2872,47 +2887,53 @@ const createExpectedPausedMainMenuState = (
               ? 'export-world-save'
               : null);
 
-  return createMainMenuShellState(
-    true,
-    options.worldSessionShellState ??
-      loadWorldSessionShellStateWithPersistenceAvailability(
-        storageSnapshot,
-        createDefaultWorldSessionShellState()
-      ).state,
-    options.persistenceAvailable ?? true,
-    options.shellActionKeybindings ?? shellActionKeybindingLoad.state,
-    options.shellActionKeybindingsDefaultedFromPersistedState ??
-      shellActionKeybindingLoad.defaultedFromPersistedState,
-    options.importResult ?? null,
-    resolvedSavedWorldStatus,
-    options.exportResult ?? null,
-    options.clearSavedWorldResult ?? null,
-    options.resetShellTogglesResult ?? null,
-    true,
-    options.shellProfilePreview
-      ? {
-          fileName: options.shellProfilePreview.fileName,
-          shellState: options.shellProfilePreview.worldSessionShellState,
-          shellActionKeybindings: options.shellProfilePreview.shellActionKeybindings
-        }
-      : null,
-    options.shellActionKeybindingsCurrentSessionOnly ?? false,
-    resolvedRecentActivityAction,
-    options.worldSessionTelemetryState ??
-      loadWorldSessionTelemetryStateWithPersistenceAvailability(
-        storageSnapshot,
-        createDefaultWorldSessionTelemetryState()
-      ).state,
-    options.worldSessionTelemetryPersistenceAvailable ?? true,
-    options.resetShellTelemetryResult ?? null,
-    options.worldSessionGameplayState ??
-      loadWorldSessionGameplayStateWithPersistenceAvailability(
-        storageSnapshot,
-        createDefaultWorldSessionGameplayState()
-      ).state,
-    options.worldSessionGameplayPersistenceAvailable ?? true,
-    options.worldSeed ?? (testRuntime.rendererWorldSnapshot?.worldSeed ?? 0)
-  );
+  return {
+    ...createMainMenuShellState(
+      true,
+      options.worldSessionShellState ??
+        loadWorldSessionShellStateWithPersistenceAvailability(
+          storageSnapshot,
+          createDefaultWorldSessionShellState()
+        ).state,
+      options.persistenceAvailable ?? true,
+      options.shellActionKeybindings ?? shellActionKeybindingLoad.state,
+      options.shellActionKeybindingsDefaultedFromPersistedState ??
+        shellActionKeybindingLoad.defaultedFromPersistedState,
+      options.importResult ?? null,
+      resolvedSavedWorldStatus,
+      options.exportResult ?? null,
+      options.clearSavedWorldResult ?? null,
+      options.resetShellTogglesResult ?? null,
+      true,
+      options.shellProfilePreview
+        ? {
+            fileName: options.shellProfilePreview.fileName,
+            shellState: options.shellProfilePreview.worldSessionShellState,
+            shellActionKeybindings: options.shellProfilePreview.shellActionKeybindings
+          }
+        : null,
+      options.shellActionKeybindingsCurrentSessionOnly ?? false,
+      resolvedRecentActivityAction,
+      options.worldSessionTelemetryState ??
+        loadWorldSessionTelemetryStateWithPersistenceAvailability(
+          storageSnapshot,
+          createDefaultWorldSessionTelemetryState()
+        ).state,
+      options.worldSessionTelemetryPersistenceAvailable ?? true,
+      options.resetShellTelemetryResult ?? null,
+      options.worldSessionGameplayState ??
+        loadWorldSessionGameplayStateWithPersistenceAvailability(
+          storageSnapshot,
+          createDefaultWorldSessionGameplayState()
+        ).state,
+      options.worldSessionGameplayPersistenceAvailable ?? true,
+      options.worldSeed ?? (testRuntime.rendererWorldSnapshot?.worldSeed ?? 0)
+    ),
+    pausedMainMenuFullscreenSupported:
+      options.fullscreenSupported ?? testRuntime.documentFullscreenEnabled,
+    pausedMainMenuFullscreenActive:
+      options.fullscreenActive ?? (testRuntime.documentFullscreenElement !== null)
+  };
 };
 
 const createExpectedFirstLaunchMainMenuState = (
@@ -3075,6 +3096,12 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.appRoot = new testRuntime.FakeHTMLElement('div');
     testRuntime.cameraInstance = null;
     testRuntime.windowListeners.clear();
+    testRuntime.documentListeners.clear();
+    testRuntime.documentElement = new testRuntime.FakeHTMLElement('html');
+    testRuntime.documentFullscreenEnabled = true;
+    testRuntime.documentFullscreenElement = null;
+    testRuntime.documentRequestFullscreenCallCount = 0;
+    testRuntime.documentExitFullscreenCallCount = 0;
     testRuntime.shellInstance = null;
     testRuntime.initialArmedToolKinds = {
       floodFillKind: null,
@@ -3240,11 +3267,39 @@ describe('main.ts shell state orchestration', () => {
     testRuntime.queuedWorldSaveImportResults = [];
     testRuntime.worldSaveImportCallCount = 0;
 
+    const requestFullscreen = async (): Promise<void> => {
+      testRuntime.documentRequestFullscreenCallCount += 1;
+      testRuntime.documentFullscreenElement = testRuntime.documentElement;
+      dispatchDocumentEvent('fullscreenchange');
+    };
+    const exitFullscreen = async (): Promise<void> => {
+      testRuntime.documentExitFullscreenCallCount += 1;
+      testRuntime.documentFullscreenElement = null;
+      dispatchDocumentEvent('fullscreenchange');
+    };
+    Object.assign(testRuntime.documentElement, {
+      requestFullscreen
+    });
+
     vi.stubGlobal('HTMLElement', testRuntime.FakeHTMLElement);
     vi.stubGlobal('navigator', { maxTouchPoints: 0 });
     vi.stubGlobal('document', {
       querySelector: (selector: string) => (selector === '#app' ? testRuntime.appRoot : null),
-      createElement: (tagName: string) => new testRuntime.FakeHTMLElement(tagName)
+      createElement: (tagName: string) => new testRuntime.FakeHTMLElement(tagName),
+      addEventListener: (type: string, listener: (event: unknown) => void) => {
+        const listeners = testRuntime.documentListeners.get(type) ?? [];
+        listeners.push(listener);
+        testRuntime.documentListeners.set(type, listeners);
+      },
+      removeEventListener: () => {},
+      get fullscreenEnabled() {
+        return testRuntime.documentFullscreenEnabled;
+      },
+      get fullscreenElement() {
+        return testRuntime.documentFullscreenElement;
+      },
+      documentElement: testRuntime.documentElement,
+      exitFullscreen
     });
     vi.stubGlobal('window', {
       localStorage: {
@@ -3366,6 +3421,68 @@ describe('main.ts shell state orchestration', () => {
 
     testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
     expect(testRuntime.gameLoopStartCount).toBe(1);
+  });
+
+  it('surfaces paused-menu fullscreen support and toggles it through the browser fullscreen API', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot()
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+
+    await testRuntime.shellInstance?.options.onToggleFullscreen?.('main-menu');
+
+    expect(testRuntime.documentRequestFullscreenCallCount).toBe(1);
+    expect(testRuntime.documentFullscreenElement).toBe(testRuntime.documentElement);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        fullscreenActive: true
+      })
+    );
+
+    testRuntime.documentFullscreenElement = null;
+    dispatchDocumentEvent('fullscreenchange');
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(createExpectedPausedMainMenuState());
+  });
+
+  it('keeps the paused-menu fullscreen control unsupported when the browser fullscreen API is unavailable', async () => {
+    testRuntime.documentFullscreenEnabled = false;
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot()
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        fullscreenSupported: false
+      })
+    );
+
+    await testRuntime.shellInstance?.options.onToggleFullscreen?.('main-menu');
+
+    expect(testRuntime.documentRequestFullscreenCallCount).toBe(0);
+    expect(testRuntime.documentExitFullscreenCallCount).toBe(0);
+    expect(testRuntime.shellInstance?.currentState).toEqual(
+      createExpectedPausedMainMenuState({
+        fullscreenSupported: false
+      })
+    );
   });
 
   it('hydrates persisted shell toggles on the first Enter World transition before in-world input changes them', async () => {
