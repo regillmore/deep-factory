@@ -34,6 +34,11 @@ interface HotbarOverlayUpdateOptions {
         timingFillNormalized: number;
       }
     | null;
+  selectedBowAmmoReadout?:
+    | {
+        carriedArrowCount: number;
+      }
+    | null;
   healingPotionCooldownFillNormalized?: number | null;
   starterWandManaReadout?:
     | {
@@ -105,6 +110,8 @@ const STARTER_WAND_COOLDOWN_AMOUNT_TEXT = 'COOL';
 const STARTER_WAND_COOLDOWN_AMOUNT_COLOR = '#d8e4ff';
 const STARTER_WAND_MANA_AMOUNT_TEXT = 'MANA';
 const STARTER_WAND_MANA_AMOUNT_COLOR = '#c9f6ff';
+const SELECTED_BOW_EMPTY_AMOUNT_TEXT = 'EMPTY';
+const SELECTED_BOW_EMPTY_AMOUNT_COLOR = '#ffd2d2';
 const MANA_CRYSTAL_DEAD_FILL_BACKGROUND =
   'linear-gradient(180deg, rgba(255, 170, 170, 0.08) 0%, rgba(255, 112, 112, 0.3) 35%, rgba(204, 52, 52, 0.68) 100%)';
 const MANA_CRYSTAL_MAX_MANA_CAP_FILL_BACKGROUND =
@@ -221,6 +228,11 @@ const formatStarterWandManaTitleText = (
     ? `${baseTitle} (need ${Math.round(manaCost)} to cast)`
     : baseTitle;
 };
+
+const formatSelectedBowAmmoTitleText = (carriedArrowCount: number): string =>
+  carriedArrowCount > 0
+    ? `ammo: ${carriedArrowCount} ${carriedArrowCount === 1 ? 'arrow' : 'arrows'} carried`
+    : 'ammo: empty';
 
 export class HotbarOverlay {
   private root: HTMLDivElement;
@@ -413,6 +425,7 @@ export class HotbarOverlay {
 
   update(state: PlayerInventoryState, options: HotbarOverlayUpdateOptions = {}): void {
     const starterAxeSwingFeedback = options.starterAxeSwingFeedback ?? null;
+    const selectedBowAmmoReadout = options.selectedBowAmmoReadout ?? null;
     const healingPotionCooldownFillNormalized =
       typeof options.healingPotionCooldownFillNormalized === 'number'
         ? clampUnitInterval(options.healingPotionCooldownFillNormalized)
@@ -465,6 +478,12 @@ export class HotbarOverlay {
                   HEART_CRYSTAL_BLOCKED_FILL_BACKGROUND[heartCrystalBlockedReason]
               }
             : null;
+      const selectedBowAmmo =
+        selected && stack.itemId === 'bow' && selectedBowAmmoReadout !== null
+          ? {
+              carriedArrowCount: Math.max(0, Math.floor(selectedBowAmmoReadout.carriedArrowCount))
+            }
+          : null;
       const selectedTimedItemFeedback =
         selected && stack.itemId === 'axe' && starterAxeSwingFeedback !== null
           ? {
@@ -520,10 +539,14 @@ export class HotbarOverlay {
       const coolingDown =
         stack.itemId === 'healing-potion' && healingPotionCooldownFillNormalized !== null;
       slotElements.button.title = blockedConsumable !== null
-        ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${blockedConsumable.titleText})`
+          ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${blockedConsumable.titleText})`
         : selectedTimedItemFeedback !== null
           ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${selectedTimedItemFeedback.titleText})`
-          : selectedWandCoolingDown
+        : selectedBowAmmo !== null
+          ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${formatSelectedBowAmmoTitleText(
+              selectedBowAmmo.carriedArrowCount
+            )})`
+        : selectedWandCoolingDown
             ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${STARTER_WAND_COOLDOWN_TITLE_TEXT})`
           : selectedWandShowingMana
             ? `Select ${definition.label} in hotbar slot ${slotIndex + 1} (${formatStarterWandManaTitleText(
@@ -540,6 +563,10 @@ export class HotbarOverlay {
         ? blockedConsumable.amountText
         : selectedTimedItemFeedback !== null
           ? HOTBAR_TIMED_ITEM_AMOUNT_TEXT[selectedTimedItemFeedback.phase]
+          : selectedBowAmmo !== null
+            ? selectedBowAmmo.carriedArrowCount > 0
+              ? String(selectedBowAmmo.carriedArrowCount)
+              : SELECTED_BOW_EMPTY_AMOUNT_TEXT
           : selectedWandCoolingDown
             ? STARTER_WAND_COOLDOWN_AMOUNT_TEXT
           : selectedWandShowingMana
@@ -551,6 +578,8 @@ export class HotbarOverlay {
         ? blockedConsumable.amountColor
         : selectedTimedItemFeedback !== null
           ? HOTBAR_TIMED_ITEM_AMOUNT_COLOR[selectedTimedItemFeedback.phase]
+          : selectedBowAmmo !== null && selectedBowAmmo.carriedArrowCount <= 0
+            ? SELECTED_BOW_EMPTY_AMOUNT_COLOR
           : selectedWandCoolingDown
             ? STARTER_WAND_COOLDOWN_AMOUNT_COLOR
           : selectedWandShowingMana

@@ -331,6 +331,48 @@ describe('HotbarOverlay', () => {
     expect(getSlotRow(overlay).children[6]!.title).not.toContain('mana:');
   });
 
+  it('shows selected bow ammo feedback for available and empty carried-arrow states', () => {
+    const host = createHost();
+    const overlay = new HotbarOverlay({ host });
+
+    overlay.update(
+      createHotbarState([
+        [6, createPlayerInventoryItemStack('bow', 1)],
+        [7, createPlayerInventoryItemStack('arrow', 12)]
+      ], 6),
+      {
+        selectedBowAmmoReadout: {
+          carriedArrowCount: 12
+        }
+      }
+    );
+
+    expect(getSlotAmountLabel(overlay, 6).textContent).toBe('12');
+    expect(getSlotAmountLabel(overlay, 6).style.color).toBe('#ffe7a3');
+    expect(getSlotCooldownFill(overlay, 6).style.opacity).toBe('0');
+    expect(getSlotRow(overlay).children[6]!.title).toContain('ammo: 12 arrows carried');
+
+    overlay.update(
+      createHotbarState([[6, createPlayerInventoryItemStack('bow', 1)]], 6),
+      {
+        selectedBowAmmoReadout: {
+          carriedArrowCount: 0
+        }
+      }
+    );
+
+    expect(getSlotAmountLabel(overlay, 6).textContent).toBe('EMPTY');
+    expect(getSlotAmountLabel(overlay, 6).style.color).toBe('#ffd2d2');
+    expect(getSlotCooldownFill(overlay, 6).style.opacity).toBe('0');
+    expect(getSlotRow(overlay).children[6]!.title).toContain('ammo: empty');
+
+    overlay.update(createHotbarState([[6, createPlayerInventoryItemStack('bow', 1)]], 6));
+
+    expect(getSlotAmountLabel(overlay, 6).textContent).toBe('');
+    expect(getSlotAmountLabel(overlay, 6).style.color).toBe('#ffe7a3');
+    expect(getSlotRow(overlay).children[6]!.title).not.toContain('ammo:');
+  });
+
   it('shows and clears visible heart-crystal blocked feedback for dead and max-cap states', () => {
     const host = createHost();
     const overlay = new HotbarOverlay({ host });

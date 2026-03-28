@@ -2093,6 +2093,16 @@ const bootstrap = async (): Promise<void> => {
       manaCost: DEFAULT_STARTER_WAND_MANA_COST
     };
   };
+  const resolveHotbarOverlaySelectedBowAmmoReadout = () => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== BOW_ITEM_ID) {
+      return null;
+    }
+
+    return {
+      carriedArrowCount: getPlayerInventoryItemAmount(standalonePlayerInventoryState, ARROW_ITEM_ID)
+    };
+  };
   const resolveHotbarOverlayHeartCrystalBlockedReason = (): 'dead' | 'max-health-cap' | null => {
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
     if (selectedStack?.itemId !== HEART_CRYSTAL_ITEM_ID) {
@@ -2293,6 +2303,7 @@ const bootstrap = async (): Promise<void> => {
   const syncHotbarOverlayState = (): void => {
     hotbarOverlay.update(standalonePlayerInventoryState, {
       starterAxeSwingFeedback: resolveHotbarOverlayStarterAxeSwingFeedback(),
+      selectedBowAmmoReadout: resolveHotbarOverlaySelectedBowAmmoReadout(),
       healingPotionCooldownFillNormalized:
         resolveHotbarOverlayHealingPotionCooldownFillNormalized(),
       starterWandManaReadout: resolveHotbarOverlayStarterWandManaReadout(),

@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-27
 
+- Task: Add selected-bow ammo feedback.
+- Changes: Updated [src/ui/hotbarOverlay.ts](../src/ui/hotbarOverlay.ts) plus [src/ui/hotbarOverlay.test.ts](../src/ui/hotbarOverlay.test.ts) so the selected bow slot now surfaces carried-arrow count when ammo is available and an explicit `EMPTY` readout when none is carried; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so the shared hotbar overlay sync derives that ammo state from the live inventory and covers available-versus-empty bow readouts in runtime regressions; removed completed task `612` from [docs/NEXT.md](docs/NEXT.md), added replacement task `614`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md) plus [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- Verification: Ran `cmd /c npx vitest run src/ui/hotbarOverlay.test.ts src/main.test.ts -t bow` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add arrow projectile terrain resolution after aimed bow firing.
 - Changes: Updated [src/world/bowFiring.ts](../src/world/bowFiring.ts) plus [src/world/bowFiring.test.ts](../src/world/bowFiring.test.ts) so fixed-step arrows now despawn on their first solid-terrain contact while still expiring deterministically by lifetime; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so fired arrows now spend one carried `Arrow` when their projectile resolves instead of at fire start, and added a terrain-hit runtime regression beside the in-flight bow shots; removed completed task `576` from [docs/NEXT.md](docs/NEXT.md), added replacement task `613`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx tsc --noEmit -p tsconfig.app.json` and `cmd /c npx vitest run src/world/bowFiring.test.ts src/main.test.ts -t bow`.

@@ -12170,6 +12170,46 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('shows selected bow carried-arrow availability on the hotbar overlay when ammo is available', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bow', amount: 1 },
+              { itemId: 'arrow', amount: 12 },
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    runRenderFrame();
+
+    expect(getHotbarOverlaySlotButton(6).title).toContain('ammo: 12 arrows carried');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('12');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
+  });
+
   it('despawns bow arrows on first solid-terrain contact and consumes one carried arrow on resolution', async () => {
     const standalonePlayerState = createPlayerState({
       position: { x: 8, y: 28 },
@@ -12358,6 +12398,9 @@ describe('main.ts shell state orchestration', () => {
     runRenderFrame(1000 / 60, 1);
 
     expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toEqual([]);
+    expect(getHotbarOverlaySlotButton(6).title).toContain('ammo: empty');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('EMPTY');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('0');
 
     dispatchWindowEvent('pagehide');
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
