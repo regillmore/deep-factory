@@ -2,11 +2,11 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
-### 2026-03-27: Bow firing now checks carried arrows before later projectile resolution spends ammo
+### 2026-03-27: Bow arrows spend ammo on projectile resolution instead of fire start
 
-- Decision: Hidden-panel bow use now only starts when the player carries at least one `Arrow`, but this aimed-firing foundation spawns a short-lived arrow projectile without consuming ammo yet.
-- Reason: That keeps mixed-device bow input and visible projectile state shippable before the next slice decides which fired shots count as successful ammo spends.
-- Consequence: Future arrow terrain and hostile-hit follow-ups should keep ammo consumption on the projectile-resolution path rather than subtracting arrows directly inside the use dispatcher.
+- Decision: Hidden-panel bow use now only starts when the player carries at least one `Arrow`, while the spawned arrow projectile ends on first solid-terrain contact or lifetime expiry and removes ammo only when that projectile resolves.
+- Reason: That keeps mixed-device bow input separate from later projectile outcomes while giving terrain and future hostile-hit slices one authoritative ammo-spend seam.
+- Consequence: Future arrow terrain, hostile-hit, or recovery follow-ups should extend the shared projectile-resolution path instead of subtracting ammo directly inside the use dispatcher.
 
 ### 2026-03-27: Thrown bombs bounce through shared solid-tile sweeps before detonation
 

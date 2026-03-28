@@ -10,9 +10,9 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Bow and arrow ranged combat
 
-576. Add arrow projectile terrain resolution after task 575: advance fixed-step arrow flight deterministically, despawn arrows on first solid-terrain contact, and cover ammo consumption on successful fired shots.
 577. Add hostile-slime arrow hits after task 576: apply deterministic arrow damage, knockback, defeat, and gel-drop consequences when projectiles hit hostile slimes.
 612. Add selected-bow ammo feedback after task 575: surface carried-arrow availability on the selected bow hotbar slot and cover empty-versus-available ammo readout regressions.
+613. Add recoverable arrow pickup drops after task 576: spawn a dropped `Arrow` pickup when a fired shot resolves against terrain and cover deterministic recovery-stack regressions.
 
 ## Bed checkpoint respawn
 

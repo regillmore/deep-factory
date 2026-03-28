@@ -10,6 +10,21 @@ import {
   DEFAULT_BOW_ARROW_SPEED,
   stepArrowProjectileState
 } from './bowFiring';
+import { TileWorld } from './world';
+
+const clearTileRect = (
+  world: TileWorld,
+  minTileX: number,
+  maxTileX: number,
+  minTileY: number,
+  maxTileY: number
+): void => {
+  for (let worldTileY = minTileY; worldTileY <= maxTileY; worldTileY += 1) {
+    for (let worldTileX = minTileX; worldTileX <= maxTileX; worldTileX += 1) {
+      world.setTile(worldTileX, worldTileY, 0);
+    }
+  }
+};
 
 describe('bowFiring', () => {
   it('creates an arrow projectile aimed from the player focus point toward the requested world point', () => {
@@ -82,6 +97,31 @@ describe('bowFiring', () => {
       stepArrowProjectileState(initialState, {
         fixedDtSeconds: 0.2
       })
+    ).toBeNull();
+  });
+
+  it('despawns arrows on the first solid-terrain hit along their travel segment', () => {
+    const world = new TileWorld(0);
+    clearTileRect(world, -1, 6, -2, 1);
+    world.setTile(2, 0, 1);
+    const playerState = createPlayerState({
+      position: { x: 8, y: 16 },
+      facing: 'right'
+    });
+
+    expect(
+      stepArrowProjectileState(
+        createArrowProjectileStateFromBowFire(playerState, {
+          x: 48,
+          y: 8
+        }),
+        {
+          world: {
+            getTile: (worldTileX, worldTileY) => world.getTile(worldTileX, worldTileY)
+          },
+          fixedDtSeconds: 0.2
+        }
+      )
     ).toBeNull();
   });
 });

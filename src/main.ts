@@ -289,6 +289,7 @@ import {
   getPlayerInventoryItemAmount,
   isPlayerInventoryItemId,
   movePlayerInventorySelectedHotbarSlot,
+  removePlayerInventoryItemAmount,
   setPlayerInventoryHotbarSlot,
   setPlayerInventorySelectedHotbarSlot,
   type PlayerInventoryItemId,
@@ -3591,9 +3592,20 @@ const bootstrap = async (): Promise<void> => {
       }),
       fixedUpdate: (arrowProjectileState, fixedDt) => {
         const nextState = stepArrowProjectileState(arrowProjectileState, {
+          world: {
+            getTile: (worldTileX, worldTileY) => renderer.getTile(worldTileX, worldTileY)
+          },
           fixedDtSeconds: fixedDt
         });
         if (nextState === null) {
+          const removeAmmoResult = removePlayerInventoryItemAmount(
+            standalonePlayerInventoryState,
+            ARROW_ITEM_ID,
+            1
+          );
+          if (removeAmmoResult.removedAmount > 0) {
+            applyStandalonePlayerInventoryState(removeAmmoResult.state);
+          }
           if (arrowProjectileEntityId !== null) {
             entityRegistry.despawn(arrowProjectileEntityId);
           }

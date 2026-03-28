@@ -70,6 +70,7 @@ import {
   PROCEDURAL_DIRT_TILE_ID,
   PROCEDURAL_COPPER_ORE_TILE_ID,
   PROCEDURAL_GRASS_SURFACE_TILE_ID,
+  PROCEDURAL_STONE_TILE_ID,
   resolveProceduralTerrainColumn
 } from './world/proceduralTerrain';
 import {
@@ -12094,6 +12095,8 @@ describe('main.ts shell state orchestration', () => {
       facing: 'right'
     });
     const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 8, -4, 4);
     const bowUseTarget = {
       worldTileX: 6,
       worldTileY: 1,
@@ -12116,7 +12119,7 @@ describe('main.ts shell state orchestration', () => {
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
       JSON.stringify(
         createWorldSaveEnvelope({
-          worldSnapshot: new TileWorld(0).createSnapshot(),
+          worldSnapshot: savedWorld.createSnapshot(),
           standalonePlayerState,
           standalonePlayerInventoryState: createPlayerInventoryState({
             hotbar: [
@@ -12167,12 +12170,78 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
-  it('fires the bow from touch aim through the shared hidden-panel item-use path without consuming arrows yet', async () => {
+  it('despawns bow arrows on first solid-terrain contact and consumes one carried arrow on resolution', async () => {
     const standalonePlayerState = createPlayerState({
       position: { x: 8, y: 28 },
       facing: 'right'
     });
     const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    for (let worldTileY = -2; worldTileY <= 3; worldTileY += 1) {
+      for (let worldTileX = -2; worldTileX <= 6; worldTileX += 1) {
+        savedWorld.setTile(worldTileX, worldTileY, 0);
+      }
+    }
+    savedWorld.setTile(1, 1, PROCEDURAL_STONE_TILE_ID);
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bow', amount: 1 },
+              { itemId: 'arrow', amount: 12 },
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 6,
+        worldTileY: 1,
+        worldX: playerFocusPoint.x + 60,
+        worldY: playerFocusPoint.y,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toEqual([]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
+      itemId: 'arrow',
+      amount: 11
+    });
+  });
+
+  it('fires the bow from touch aim through the shared hidden-panel item-use path while the projectile remains in flight', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const savedWorld = new TileWorld(0);
+    clearTileRect(savedWorld, -8, 8, -4, 4);
     const bowUseTarget = {
       worldTileX: -2,
       worldTileY: -2,
@@ -12195,7 +12264,7 @@ describe('main.ts shell state orchestration', () => {
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
       JSON.stringify(
         createWorldSaveEnvelope({
-          worldSnapshot: new TileWorld(0).createSnapshot(),
+          worldSnapshot: savedWorld.createSnapshot(),
           standalonePlayerState,
           standalonePlayerInventoryState: createPlayerInventoryState({
             hotbar: [
