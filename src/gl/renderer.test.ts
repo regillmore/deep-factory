@@ -16,6 +16,10 @@ import {
 } from '../world/playerState';
 import { createHostileSlimeState, type HostileSlimeState } from '../world/hostileSlimeState';
 import { createPassiveBunnyState, type PassiveBunnyState } from '../world/passiveBunnyState';
+import {
+  createBombDetonationFlashState,
+  type BombDetonationFlashState
+} from '../world/bombDetonationFlash';
 import { createThrownBombState, type ThrownBombState } from '../world/bombThrowing';
 import { createArrowProjectileState, type ArrowProjectileState } from '../world/bowFiring';
 import { createStarterWandFireboltState, type StarterWandFireboltState } from '../world/starterWand';
@@ -77,6 +81,11 @@ vi.mock('./atlasValidation', () => ({
 }));
 
 import { getDroppedItemPlaceholderPalette } from './droppedItemPlaceholder';
+import {
+  BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR,
+  BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR,
+  BOMB_DETONATION_FLASH_PLACEHOLDER_MIN_LIGHT_FACTOR
+} from './bombDetonationFlashPlaceholder';
 import { Renderer, type RendererEntityFrameState } from './renderer';
 import { resolveThrownBombFuseWarningVisuals } from './thrownBombPlaceholder';
 
@@ -355,6 +364,21 @@ const createThrownBombEntityFrameState = (
 ): RendererEntityFrameState => ({
   id: options.id ?? 1,
   kind: 'thrown-bomb',
+  snapshot: {
+    previous: options.previousState ?? currentState,
+    current: currentState
+  }
+});
+
+const createBombDetonationFlashEntityFrameState = (
+  currentState: BombDetonationFlashState,
+  options: {
+    id?: number;
+    previousState?: BombDetonationFlashState;
+  } = {}
+): RendererEntityFrameState => ({
+  id: options.id ?? 1,
+  kind: 'bomb-detonation-flash',
   snapshot: {
     previous: options.previousState ?? currentState,
     current: currentState
@@ -3172,6 +3196,100 @@ describe('Renderer atlas telemetry', () => {
         warningVisuals.accentColor[0],
         warningVisuals.accentColor[1],
         warningVisuals.accentColor[2]
+      ]
+    ]);
+  });
+
+  it('draws bomb detonation flash placeholders from interpolated entity snapshots', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
+    });
+    await renderer.initialize();
+
+    const drawArrays = vi.mocked(gl.drawArrays);
+    const bufferData = vi.mocked(gl.bufferData);
+    const uniform1f = vi.mocked(gl.uniform1f);
+    const uniform3f = vi.mocked(gl.uniform3f);
+    drawArrays.mockClear();
+    bufferData.mockClear();
+    uniform1f.mockClear();
+    uniform3f.mockClear();
+
+    const currentState = createBombDetonationFlashState({
+      position: { x: 80, y: 60 },
+      radius: 32
+    });
+    const previousState = createBombDetonationFlashState({
+      position: { x: 64, y: 44 },
+      radius: 32
+    });
+
+    renderer.render(new Camera2D(), {
+      entities: [
+        createBombDetonationFlashEntityFrameState(currentState, {
+          id: 58,
+          previousState
+        })
+      ],
+      renderAlpha: 0.25,
+      timeMs: 0
+    });
+
+    expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
+    expect(renderer.telemetry.drawCalls).toBe(renderer.telemetry.renderedChunks + 1);
+
+    const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
+    expect(dynamicUploads).toHaveLength(1);
+    expect(Array.from((dynamicUploads[0]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      36,
+      16,
+      0,
+      0,
+      100,
+      16,
+      1,
+      0,
+      100,
+      80,
+      1,
+      1,
+      36,
+      16,
+      0,
+      0,
+      100,
+      80,
+      1,
+      1,
+      36,
+      80,
+      0,
+      1
+    ]);
+    expect(uniform1f.mock.calls).toHaveLength(1);
+    expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(
+      BOMB_DETONATION_FLASH_PLACEHOLDER_MIN_LIGHT_FACTOR
+    );
+    expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
+    expect(uniform3f.mock.calls).toEqual([
+      [
+        expect.anything(),
+        BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR[0],
+        BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR[1],
+        BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR[2]
+      ],
+      [
+        expect.anything(),
+        BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR[0],
+        BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR[1],
+        BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR[2]
       ]
     ]);
   });

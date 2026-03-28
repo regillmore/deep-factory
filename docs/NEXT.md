@@ -55,5 +55,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Bomb utility
 
-618. Add thrown-bomb detonation flash after task 605: render a short-lived explosion placeholder at the blast point and cover deterministic blast-visual lifetime regressions.
 620. Surface in-flight bomb fuse feedback as an integer countdown overlay on the bomb mesh.
+621. Fade bomb detonation flashes over their fixed-step lifetime after task 618: ramp the placeholder light or palette from ignition to ember before despawn, and cover progress-to-visual regressions.

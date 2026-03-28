@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-28: Bomb detonation flashes stay on the fixed-step entity path
+
+- Decision: Fuse-complete bomb blasts now spawn short-lived `bomb-detonation-flash` entities through the shared entity registry and renderer entity pass instead of timing the effect only in render code.
+- Reason: The flash should start on the same fixed step as the resolved blast, expire deterministically, and reuse the existing snapshot interpolation path without tying visibility to frame-rate-dependent timers.
+- Consequence: Future blast-coupled visual effects should extend the queued bomb-blast event seam plus fixed-step entity snapshots rather than introducing render-only timers that can drift from gameplay resolution.
+
 ### 2026-03-28: Bomb self-kills reuse the ordered death-cause candidate path
 
 - Decision: Lethal thrown-bomb self-hits now append a `bomb-blast` candidate through `replacePendingStandalonePlayerFixedStepNextState` so the shared death-cause telemetry resolves them in the same ordered sequence as lava, drowning, fall, and hostile-contact damage.

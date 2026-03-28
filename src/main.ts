@@ -469,6 +469,11 @@ import {
   type ThrownBombState
 } from './world/bombThrowing';
 import {
+  createBombDetonationFlashStateFromBlast,
+  stepBombDetonationFlashState,
+  type BombDetonationFlashState
+} from './world/bombDetonationFlash';
+import {
   applyArrowProjectileHitToHostileSlime,
   ARROW_ITEM_ID,
   BOW_ITEM_ID,
@@ -547,6 +552,7 @@ const DROPPED_ITEM_ENTITY_KIND = 'dropped-item';
 const STARTER_WAND_FIREBOLT_ENTITY_KIND = 'wand-firebolt';
 const ARROW_PROJECTILE_ENTITY_KIND = 'arrow-projectile';
 const THROWN_BOMB_ENTITY_KIND = 'thrown-bomb';
+const BOMB_DETONATION_FLASH_ENTITY_KIND = 'bomb-detonation-flash';
 const HOSTILE_SLIME_GEL_DROP_ITEM_ID: DroppedItemState['itemId'] = 'gel';
 const STARTER_UMBRELLA_ITEM_ID = 'umbrella';
 const HOSTILE_SLIME_GEL_DROP_AMOUNT = 1;
@@ -3337,6 +3343,16 @@ const bootstrap = async (): Promise<void> => {
             }
           });
           break;
+        case BOMB_DETONATION_FLASH_ENTITY_KIND:
+          entityFrameStates.push({
+            id: snapshotEntry.id,
+            kind: BOMB_DETONATION_FLASH_ENTITY_KIND,
+            snapshot: {
+              previous: snapshotEntry.previous as BombDetonationFlashState,
+              current: snapshotEntry.current as BombDetonationFlashState
+            }
+          });
+          break;
       }
     }
     return entityFrameStates;
@@ -3733,6 +3749,34 @@ const bootstrap = async (): Promise<void> => {
     });
     return thrownBombEntityId;
   };
+  const spawnBombDetonationFlashEntity = (blastEvent: ThrownBombBlastEvent): EntityId => {
+    let bombDetonationFlashEntityId: EntityId | null = null;
+    bombDetonationFlashEntityId = entityRegistry.spawn({
+      kind: BOMB_DETONATION_FLASH_ENTITY_KIND,
+      initialState: createBombDetonationFlashStateFromBlast(blastEvent),
+      captureRenderState: (bombDetonationFlashState) => ({
+        position: {
+          x: bombDetonationFlashState.position.x,
+          y: bombDetonationFlashState.position.y
+        },
+        radius: bombDetonationFlashState.radius,
+        secondsRemaining: bombDetonationFlashState.secondsRemaining,
+        durationSeconds: bombDetonationFlashState.durationSeconds
+      }),
+      fixedUpdate: (bombDetonationFlashState, fixedDt) => {
+        const nextState = stepBombDetonationFlashState(bombDetonationFlashState, fixedDt);
+        if (nextState === null) {
+          if (bombDetonationFlashEntityId !== null) {
+            entityRegistry.despawn(bombDetonationFlashEntityId);
+          }
+          return bombDetonationFlashState;
+        }
+
+        return nextState;
+      }
+    });
+    return bombDetonationFlashEntityId;
+  };
   const applyThrownBombBlastToStandalonePlayer = (blastEvent: ThrownBombBlastEvent): void => {
     const standalonePlayerState = getStandalonePlayerState();
     if (
@@ -3833,6 +3877,7 @@ const bootstrap = async (): Promise<void> => {
         continue;
       }
 
+      spawnBombDetonationFlashEntity(combatEvent.event);
       const bombBlastBreakTargets = resolveThrownBombBlastBreakTargets(combatEvent.event, {
         world: {
           getTile: (worldTileX, worldTileY) => renderer.getTile(worldTileX, worldTileY),

@@ -3,6 +3,15 @@ import { createStaticVertexBuffer, createVertexArray } from './buffer';
 import { createProgram } from './shader';
 import { applyAnimatedChunkMeshFrameAtElapsedMs, createAnimatedChunkMeshState } from './animatedChunkMesh';
 import {
+  BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR,
+  BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR,
+  BOMB_DETONATION_FLASH_PLACEHOLDER_MIN_LIGHT_FACTOR,
+  BOMB_DETONATION_FLASH_PLACEHOLDER_VERTEX_COUNT,
+  BOMB_DETONATION_FLASH_PLACEHOLDER_VERTEX_FLOAT_COUNT,
+  buildBombDetonationFlashPlaceholderVertices,
+  getBombDetonationFlashPlaceholderNearbyLightSample
+} from './bombDetonationFlashPlaceholder';
+import {
   buildFireboltPlaceholderVertices,
   getFireboltPlaceholderNearbyLightSample,
   FIREBOLT_PLACEHOLDER_VERTEX_COUNT,
@@ -95,6 +104,7 @@ import { type HostileSlimeState } from '../world/hostileSlimeState';
 import { stepPassiveBunnyState as stepWorldPassiveBunnyState } from '../world/passiveBunnyLocomotion';
 import { type PassiveBunnyState } from '../world/passiveBunnyState';
 import { type DroppedItemState } from '../world/droppedItem';
+import { type BombDetonationFlashState } from '../world/bombDetonationFlash';
 import { BOMB_ITEM_ID, type ThrownBombState } from '../world/bombThrowing';
 import { ARROW_ITEM_ID, type ArrowProjectileState } from '../world/bowFiring';
 import { type StarterWandFireboltState } from '../world/starterWand';
@@ -182,6 +192,12 @@ export interface ThrownBombEntityFrameState {
   snapshot: EntityRenderStateSnapshot<ThrownBombState>;
 }
 
+export interface BombDetonationFlashEntityFrameState {
+  id: EntityId;
+  kind: 'bomb-detonation-flash';
+  snapshot: EntityRenderStateSnapshot<BombDetonationFlashState>;
+}
+
 export type RendererEntityFrameState =
   | StandalonePlayerEntityFrameState
   | HostileSlimeEntityFrameState
@@ -189,7 +205,8 @@ export type RendererEntityFrameState =
   | DroppedItemEntityFrameState
   | FireboltEntityFrameState
   | ArrowProjectileEntityFrameState
-  | ThrownBombEntityFrameState;
+  | ThrownBombEntityFrameState
+  | BombDetonationFlashEntityFrameState;
 
 export interface RenderTelemetry {
   atlasSourceKind: AtlasImageLoadResult['sourceKind'] | 'pending';
@@ -305,6 +322,8 @@ export class Renderer {
   private fireboltVao: WebGLVertexArrayObject;
   private thrownBombBuffer: WebGLBuffer;
   private thrownBombVao: WebGLVertexArrayObject;
+  private bombDetonationFlashBuffer: WebGLBuffer;
+  private bombDetonationFlashVao: WebGLVertexArrayObject;
 
   readonly telemetry: RenderTelemetry = {
     atlasSourceKind: 'pending',
@@ -855,6 +874,11 @@ export class Renderer {
       new Float32Array(THROWN_BOMB_PLACEHOLDER_VERTEX_FLOAT_COUNT)
     );
     this.thrownBombVao = createVertexArray(gl, this.thrownBombBuffer, 4);
+    this.bombDetonationFlashBuffer = createDynamicVertexBuffer(
+      gl,
+      new Float32Array(BOMB_DETONATION_FLASH_PLACEHOLDER_VERTEX_FLOAT_COUNT)
+    );
+    this.bombDetonationFlashVao = createVertexArray(gl, this.bombDetonationFlashBuffer, 4);
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -1419,6 +1443,9 @@ export class Renderer {
         case 'thrown-bomb':
           this.drawThrownBomb(entity, renderAlpha, worldToClipMatrix);
           break;
+        case 'bomb-detonation-flash':
+          this.drawBombDetonationFlash(entity, renderAlpha, worldToClipMatrix);
+          break;
       }
     }
   }
@@ -1649,6 +1676,51 @@ export class Renderer {
     );
     gl.bindVertexArray(this.thrownBombVao);
     gl.drawArrays(gl.TRIANGLES, 0, THROWN_BOMB_PLACEHOLDER_VERTEX_COUNT);
+    this.telemetry.drawCalls += 1;
+  }
+
+  private drawBombDetonationFlash(
+    entity: BombDetonationFlashEntityFrameState,
+    renderAlpha: number,
+    worldToClipMatrix: Float32Array
+  ): void {
+    const state = entity.snapshot.current;
+    const renderPosition = resolveInterpolatedEntityWorldPosition(entity.snapshot, renderAlpha);
+    const gl = this.gl;
+    const nearbyLightSample = getBombDetonationFlashPlaceholderNearbyLightSample(
+      this.world,
+      state,
+      renderPosition
+    );
+    gl.useProgram(this.droppedItemProgram);
+    gl.uniformMatrix4fv(this.uDroppedItemMatrix, false, worldToClipMatrix);
+    gl.uniform1f(
+      this.uDroppedItemLight,
+      Math.max(
+        BOMB_DETONATION_FLASH_PLACEHOLDER_MIN_LIGHT_FACTOR,
+        nearbyLightSample.level / MAX_LIGHT_LEVEL
+      )
+    );
+    gl.uniform3f(
+      this.uDroppedItemBaseColor,
+      BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR[0],
+      BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR[1],
+      BOMB_DETONATION_FLASH_PLACEHOLDER_BASE_COLOR[2]
+    );
+    gl.uniform3f(
+      this.uDroppedItemAccentColor,
+      BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR[0],
+      BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR[1],
+      BOMB_DETONATION_FLASH_PLACEHOLDER_ACCENT_COLOR[2]
+    );
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.bombDetonationFlashBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      buildBombDetonationFlashPlaceholderVertices(state, renderPosition),
+      gl.DYNAMIC_DRAW
+    );
+    gl.bindVertexArray(this.bombDetonationFlashVao);
+    gl.drawArrays(gl.TRIANGLES, 0, BOMB_DETONATION_FLASH_PLACEHOLDER_VERTEX_COUNT);
     this.telemetry.drawCalls += 1;
   }
 

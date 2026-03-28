@@ -56,6 +56,10 @@ import { createPlayerInventoryState } from './world/playerInventory';
 import { AUTHORED_ATLAS_HEIGHT, AUTHORED_ATLAS_WIDTH } from './world/authoredAtlasLayout';
 import { CHUNK_SIZE, MAX_LIGHT_LEVEL } from './world/constants';
 import {
+  createBombDetonationFlashStateFromBlast,
+  stepBombDetonationFlashState
+} from './world/bombDetonationFlash';
+import {
   createThrownBombStateFromThrow,
   DEFAULT_THROWN_BOMB_GRAVITY,
   DEFAULT_THROWN_BOMB_SPEED,
@@ -758,6 +762,10 @@ const testRuntime = vi.hoisted(() => {
       fireboltCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       arrowCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       bombCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
+      bombDetonationFlashCurrentPositions: Array<{
+        id: number;
+        position: { x: number; y: number };
+      }>;
       renderAlpha: number | null;
       timeMs: number | null;
     },
@@ -1049,6 +1057,31 @@ vi.mock('./gl/renderer', () => ({
               ];
             })
         : [];
+      const bombDetonationFlashCurrentPositions = Array.isArray(renderState.entities)
+        ? renderState.entities
+            .filter((entity) => entity?.kind === 'bomb-detonation-flash')
+            .flatMap((entity) => {
+              const snapshot = entity?.snapshot?.current;
+              if (
+                !snapshot?.position ||
+                typeof entity?.id !== 'number' ||
+                typeof snapshot.position.x !== 'number' ||
+                typeof snapshot.position.y !== 'number'
+              ) {
+                return [];
+              }
+
+              return [
+                {
+                  id: entity.id,
+                  position: {
+                    x: snapshot.position.x,
+                    y: snapshot.position.y
+                  }
+                }
+              ];
+            })
+        : [];
       const standalonePlayerPreviousPosition =
         standalonePlayerEntity?.snapshot?.previous?.position &&
         typeof standalonePlayerEntity.snapshot.previous.position.x === 'number' &&
@@ -1102,6 +1135,7 @@ vi.mock('./gl/renderer', () => ({
         fireboltCurrentPositions,
         arrowCurrentPositions,
         bombCurrentPositions,
+        bombDetonationFlashCurrentPositions,
         renderAlpha: typeof renderState.renderAlpha === 'number' ? renderState.renderAlpha : null,
         timeMs: renderState.timeMs ?? null
       };
@@ -13352,6 +13386,7 @@ describe('main.ts shell state orchestration', () => {
   });
 
   it('detonates a fuse-complete bomb and despawns the in-flight entity after the blast step', async () => {
+    const savedWorld = new TileWorld(0);
     const standalonePlayerState = createPlayerState({
       position: { x: 8, y: 28 },
       facing: 'right'
@@ -13368,14 +13403,17 @@ describe('main.ts shell state orchestration', () => {
       x: bombUseTarget.worldX,
       y: bombUseTarget.worldY
     });
-    let predictedBlastPosition: { x: number; y: number } | null = null;
+    let predictedBlastEvent: ReturnType<typeof stepThrownBombState>['blastEvent'] = null;
     let stepsUntilBlast = 0;
     for (let step = 0; step < 120; step += 1) {
       const stepResult = stepThrownBombState(predictedBombState, {
-        fixedDtSeconds: 1 / 60
+        fixedDtSeconds: 1 / 60,
+        world: {
+          getTile: (worldTileX, worldTileY) => savedWorld.getTile(worldTileX, worldTileY)
+        }
       });
       if (stepResult.blastEvent !== null) {
-        predictedBlastPosition = stepResult.blastEvent.position;
+        predictedBlastEvent = stepResult.blastEvent;
         stepsUntilBlast = step + 1;
         break;
       }
@@ -13384,14 +13422,30 @@ describe('main.ts shell state orchestration', () => {
       }
       predictedBombState = stepResult.nextState;
     }
-    if (predictedBlastPosition === null || stepsUntilBlast <= 0) {
-      throw new Error('expected a predicted bomb blast position');
+    if (predictedBlastEvent === null || stepsUntilBlast <= 0) {
+      throw new Error('expected a predicted bomb blast event');
+    }
+
+    const predictedBlastPosition = predictedBlastEvent.position;
+    let predictedDetonationFlashState:
+      | ReturnType<typeof createBombDetonationFlashStateFromBlast>
+      | null = createBombDetonationFlashStateFromBlast(predictedBlastEvent);
+    let stepsUntilDetonationFlashExpires = 0;
+    while (predictedDetonationFlashState !== null && stepsUntilDetonationFlashExpires < 60) {
+      predictedDetonationFlashState = stepBombDetonationFlashState(
+        predictedDetonationFlashState,
+        1 / 60
+      );
+      stepsUntilDetonationFlashExpires += 1;
+    }
+    if (predictedDetonationFlashState !== null || stepsUntilDetonationFlashExpires <= 0) {
+      throw new Error('expected a finite bomb detonation flash lifetime');
     }
     testRuntime.storageValues.set(
       PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
       JSON.stringify(
         createWorldSaveEnvelope({
-          worldSnapshot: new TileWorld(0).createSnapshot(),
+          worldSnapshot: savedWorld.createSnapshot(),
           standalonePlayerState,
           standalonePlayerInventoryState: createPlayerInventoryState({
             hotbar: [
@@ -13433,6 +13487,24 @@ describe('main.ts shell state orchestration', () => {
     runRenderFrame(1000 / 60, 1);
 
     expect(testRuntime.latestRendererRenderFrameState?.bombCurrentPositions).toEqual([]);
+    expect(testRuntime.latestRendererRenderFrameState?.bombDetonationFlashCurrentPositions).toHaveLength(
+      1
+    );
+    expect(
+      testRuntime.latestRendererRenderFrameState?.bombDetonationFlashCurrentPositions[0]?.position.x
+    ).toBeCloseTo(predictedBlastPosition.x, 6);
+    expect(
+      testRuntime.latestRendererRenderFrameState?.bombDetonationFlashCurrentPositions[0]?.position.y
+    ).toBeCloseTo(predictedBlastPosition.y, 6);
+
+    for (let step = 0; step < stepsUntilDetonationFlashExpires; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.bombDetonationFlashCurrentPositions).toEqual(
+      []
+    );
 
     dispatchWindowEvent('pagehide');
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toBeNull();
