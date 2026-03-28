@@ -4,6 +4,10 @@ This file records completed agent passes. Keep entries brief and append new work
 
 ## 2026-03-27
 
+- Task: Stop bomb blasts from breaking wall tiles.
+- Changes: Updated [src/world/bombThrowing.ts](../src/world/bombThrowing.ts) plus [src/world/bombThrowing.test.ts](../src/world/bombThrowing.test.ts) so bomb blast target resolution now skips wall-layer results and only returns breakable foreground or utility-tile targets; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so live bomb detonations leave overlapping background walls intact while still clearing mineable terrain and placed utility tiles; removed completed task `606` from [docs/NEXT.md](docs/NEXT.md), added replacement task `611`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
+- Verification: Ran `cmd /c npx vitest run src/world/bombThrowing.test.ts src/main.test.ts -t bomb` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.
+
 - Task: Add bomb terrain collision and bouncing.
 - Changes: Updated [src/world/bombThrowing.ts](../src/world/bombThrowing.ts) plus [src/world/bombThrowing.test.ts](../src/world/bombThrowing.test.ts) so thrown-bomb fixed-step travel now resolves solid-terrain collision through shared AABB sweeps and reflects blocked velocity into deterministic bounce behavior instead of falling through the world; updated [src/main.ts](../src/main.ts) plus [src/main.test.ts](../src/main.test.ts) so live thrown-bomb entities use the collision-aware step path and stay in flight after terrain bounces; removed completed task `604` from [docs/NEXT.md](docs/NEXT.md), added replacement task `605`, and updated [docs/CAPABILITIES.md](docs/CAPABILITIES.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DECISIONS.md](docs/DECISIONS.md).
 - Verification: Ran `cmd /c npx vitest run src/world/bombThrowing.test.ts src/main.test.ts -t bomb` and `cmd /c npx tsc --noEmit -p tsconfig.app.json`.

@@ -206,7 +206,7 @@ describe('bombThrowing', () => {
     );
   });
 
-  it('collects deterministic blast break targets for mineable tiles and wall-only cells', () => {
+  it('collects deterministic blast break targets only for mineable and utility tiles', () => {
     const tileIds = new Map<string, number>([
       ['1,0', STARTER_ROPE_TILE_ID],
       ['2,0', 1],
@@ -237,12 +237,6 @@ describe('bombThrowing', () => {
         }
       )
     ).toEqual([
-      {
-        worldTileX: 0,
-        worldTileY: 0,
-        targetLayer: 'wall',
-        targetId: STARTER_DIRT_WALL_ID
-      },
       {
         worldTileX: 1,
         worldTileY: 0,

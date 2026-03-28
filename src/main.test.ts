@@ -12437,7 +12437,7 @@ describe('main.ts shell state orchestration', () => {
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toBeNull();
   });
 
-  it('breaks nearby mineable terrain, wall-only cells, and placed utility tiles through the bomb blast refund paths', async () => {
+  it('breaks nearby mineable terrain and placed utility tiles through the bomb blast refund paths while leaving walls intact', async () => {
     const standalonePlayerState = createPlayerState({
       position: { x: 328, y: -582 },
       facing: 'right'
@@ -12529,13 +12529,7 @@ describe('main.ts shell state orchestration', () => {
       runFixedUpdate(1 / 60);
     }
 
-    expect(testRuntime.rendererSetWallCalls).toEqual([
-      {
-        worldTileX: wallWorldTileX,
-        worldTileY: wallWorldTileY,
-        wallId: 0
-      }
-    ]);
+    expect(testRuntime.rendererSetWallCalls).toEqual([]);
     expect(testRuntime.rendererSetTileCalls).toEqual([
       {
         worldTileX: dirtWorldTileX,
@@ -12556,13 +12550,8 @@ describe('main.ts shell state orchestration', () => {
 
     expect(restoredWorld.getTile(dirtWorldTileX, dirtWorldTileY)).toBe(0);
     expect(restoredWorld.getTile(ropeWorldTileX, ropeWorldTileY)).toBe(0);
-    expect(restoredWorld.getWall(wallWorldTileX, wallWorldTileY)).toBe(0);
+    expect(restoredWorld.getWall(wallWorldTileX, wallWorldTileY)).toBe(STARTER_DIRT_WALL_ID);
     expect(persistedEnvelope?.session.droppedItemStates).toEqual([
-      {
-        position: { x: (wallWorldTileX + 0.5) * 16, y: (wallWorldTileY + 0.5) * 16 },
-        itemId: 'dirt-wall',
-        amount: 1
-      },
       {
         position: { x: (dirtWorldTileX + 0.5) * 16, y: (dirtWorldTileY + 0.5) * 16 },
         itemId: 'dirt-block',

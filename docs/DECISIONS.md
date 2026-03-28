@@ -16,9 +16,9 @@ Record only durable design decisions here. Keep each entry short: date, decision
 
 ### 2026-03-27: Bomb terrain destruction reuses pickaxe target rules and gameplay refund paths
 
-- Decision: Bomb blasts now resolve overlapping breakable tile or wall targets through the shared starter-pickaxe target evaluation helper, and `src/main.ts` routes the resulting tile or wall clears through the same gameplay edit plus pickup-refund paths already used by starter-pickaxe mining.
-- Reason: Reusing those target and refund seams keeps bomb breakability aligned with existing mineable terrain, wall-only, and placed-utility rules while preserving one authoritative source for item refunds and support-collapse cleanup.
-- Consequence: Future explosive terrain effects should extend the same blast-target scan and shared gameplay refund paths instead of hardcoding separate break lists or duplicate pickup-spawn logic.
+- Decision: Bomb blasts now resolve overlapping breakable foreground and placed-utility targets through the shared starter-pickaxe target evaluation helper, explicitly ignore wall-only results, and let `src/main.ts` route the resulting tile clears through the same gameplay edit plus pickup-refund paths already used by starter-pickaxe mining.
+- Reason: Reusing those target and refund seams keeps bomb breakability aligned with existing mineable terrain and placed-utility rules while preserving one authoritative source for item refunds and support-collapse cleanup without letting explosions erase background walls.
+- Consequence: Future explosive terrain effects should extend the same blast-target scan and shared gameplay refund paths, and must opt into wall damage explicitly instead of inheriting it from pickaxe wall targeting.
 
 ### 2026-03-27: Paused-dashboard results no longer live in a dedicated Recent Activity section
 

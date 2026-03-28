@@ -17,7 +17,6 @@ import {
 } from './playerState';
 import {
   evaluateStarterPickaxeMiningTarget,
-  type StarterPickaxeMiningTargetLayer,
   type StarterPickaxeMiningWorldView
 } from './starterPickaxeMining';
 import { TILE_METADATA, type TileMetadataRegistry } from './tileMetadata';
@@ -78,7 +77,7 @@ export interface ThrownBombBlastHostileSlimeHitEvent {
 export interface ThrownBombBlastBreakTarget {
   worldTileX: number;
   worldTileY: number;
-  targetLayer: StarterPickaxeMiningTargetLayer;
+  targetLayer: 'tile';
   targetId: number;
 }
 
@@ -415,7 +414,11 @@ export const resolveThrownBombBlastBreakTargets = (
         worldTileY,
         registry
       );
-      if (!evaluation.breakableTarget || evaluation.targetLayer === null) {
+      if (
+        !evaluation.breakableTarget ||
+        evaluation.targetLayer === null ||
+        evaluation.targetLayer !== 'tile'
+      ) {
         continue;
       }
 

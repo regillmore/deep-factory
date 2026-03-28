@@ -3629,14 +3629,6 @@ const bootstrap = async (): Promise<void> => {
         }
       });
       for (const breakTarget of bombBlastBreakTargets) {
-        if (breakTarget.targetLayer === 'wall') {
-          destroyWorldWallThroughGameplayRefundPaths(
-            breakTarget.worldTileX,
-            breakTarget.worldTileY
-          );
-          continue;
-        }
-
         destroyWorldTileThroughGameplayRefundPaths(
           breakTarget.worldTileX,
           breakTarget.worldTileY
