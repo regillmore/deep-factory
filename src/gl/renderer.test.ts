@@ -17,6 +17,7 @@ import {
 import { createHostileSlimeState, type HostileSlimeState } from '../world/hostileSlimeState';
 import { createPassiveBunnyState, type PassiveBunnyState } from '../world/passiveBunnyState';
 import { createThrownBombState, type ThrownBombState } from '../world/bombThrowing';
+import { createArrowProjectileState, type ArrowProjectileState } from '../world/bowFiring';
 import { createStarterWandFireboltState, type StarterWandFireboltState } from '../world/starterWand';
 import {
   cloneStandalonePlayerRenderState,
@@ -322,6 +323,21 @@ const createFireboltEntityFrameState = (
 ): RendererEntityFrameState => ({
   id: options.id ?? 1,
   kind: 'wand-firebolt',
+  snapshot: {
+    previous: options.previousState ?? currentState,
+    current: currentState
+  }
+});
+
+const createArrowProjectileEntityFrameState = (
+  currentState: ArrowProjectileState,
+  options: {
+    id?: number;
+    previousState?: ArrowProjectileState;
+  } = {}
+): RendererEntityFrameState => ({
+  id: options.id ?? 1,
+  kind: 'arrow-projectile',
   snapshot: {
     previous: options.previousState ?? currentState,
     current: currentState
@@ -3094,6 +3110,86 @@ describe('Renderer atlas telemetry', () => {
     ]);
     expect(uniform1f.mock.calls).toHaveLength(1);
     expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(0.45);
+    expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
+  });
+
+  it('draws bow-arrow projectile placeholders from interpolated entity snapshots', async () => {
+    const gl = createMockGl();
+    const renderer = new Renderer(createMockCanvas(gl));
+    const authoredBitmap = { kind: 'bitmap' } as unknown as TexImageSource;
+    loadAtlasImageSource.mockResolvedValue({
+      imageSource: authoredBitmap,
+      sourceKind: 'authored',
+      sourceUrl: '/atlas/tile-atlas.png',
+      width: AUTHORED_ATLAS_WIDTH,
+      height: AUTHORED_ATLAS_HEIGHT
+    });
+    await renderer.initialize();
+
+    const drawArrays = vi.mocked(gl.drawArrays);
+    const bufferData = vi.mocked(gl.bufferData);
+    const uniform1f = vi.mocked(gl.uniform1f);
+    drawArrays.mockClear();
+    bufferData.mockClear();
+    uniform1f.mockClear();
+
+    const currentState = createArrowProjectileState({
+      position: { x: 80, y: 60 },
+      velocity: { x: 180, y: -90 },
+      radius: 3,
+      secondsRemaining: 0.4
+    });
+    const previousState = createArrowProjectileState({
+      position: { x: 68, y: 44 },
+      velocity: { x: 180, y: -90 },
+      radius: 3,
+      secondsRemaining: 0.5
+    });
+
+    renderer.render(new Camera2D(), {
+      entities: [
+        createArrowProjectileEntityFrameState(currentState, {
+          id: 61,
+          previousState
+        })
+      ],
+      renderAlpha: 0.25,
+      timeMs: 0
+    });
+
+    expect(drawArrays).toHaveBeenCalledTimes(renderer.telemetry.drawCalls);
+    expect(renderer.telemetry.drawCalls).toBe(renderer.telemetry.renderedChunks + 1);
+
+    const dynamicUploads = bufferData.mock.calls.filter((call) => call[2] === gl.DYNAMIC_DRAW);
+    expect(dynamicUploads).toHaveLength(1);
+    expect(Array.from((dynamicUploads[0]?.[1] as Float32Array | undefined) ?? [])).toEqual([
+      68,
+      45,
+      0,
+      0,
+      74,
+      45,
+      1,
+      0,
+      74,
+      51,
+      1,
+      1,
+      68,
+      45,
+      0,
+      0,
+      74,
+      51,
+      1,
+      1,
+      68,
+      51,
+      0,
+      1
+    ]);
+    expect(uniform1f.mock.calls).toHaveLength(1);
+    expect(uniform1f.mock.calls[0]?.[1]).toBeGreaterThanOrEqual(0.55);
     expect(uniform1f.mock.calls[0]?.[1]).toBeLessThanOrEqual(1);
   });
 

@@ -61,6 +61,10 @@ import {
   DEFAULT_THROWN_BOMB_SPEED,
   stepThrownBombState
 } from './world/bombThrowing';
+import {
+  createArrowProjectileStateFromBowFire,
+  stepArrowProjectileState
+} from './world/bowFiring';
 import { DEFAULT_MANA_CRYSTAL_MAX_MANA_CAP } from './world/playerManaCrystal';
 import {
   PROCEDURAL_DIRT_TILE_ID,
@@ -745,6 +749,7 @@ const testRuntime = vi.hoisted(() => {
       slimeCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       bunnyCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       fireboltCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
+      arrowCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       bombCurrentPositions: Array<{ id: number; position: { x: number; y: number } }>;
       renderAlpha: number | null;
       timeMs: number | null;
@@ -987,6 +992,31 @@ vi.mock('./gl/renderer', () => ({
               ];
             })
         : [];
+      const arrowCurrentPositions = Array.isArray(renderState.entities)
+        ? renderState.entities
+            .filter((entity) => entity?.kind === 'arrow-projectile')
+            .flatMap((entity) => {
+              const snapshot = entity?.snapshot?.current;
+              if (
+                !snapshot?.position ||
+                typeof entity?.id !== 'number' ||
+                typeof snapshot.position.x !== 'number' ||
+                typeof snapshot.position.y !== 'number'
+              ) {
+                return [];
+              }
+
+              return [
+                {
+                  id: entity.id,
+                  position: {
+                    x: snapshot.position.x,
+                    y: snapshot.position.y
+                  }
+                }
+              ];
+            })
+        : [];
       const bombCurrentPositions = Array.isArray(renderState.entities)
         ? renderState.entities
             .filter((entity) => entity?.kind === 'thrown-bomb')
@@ -1063,6 +1093,7 @@ vi.mock('./gl/renderer', () => ({
         slimeCurrentPositions,
         bunnyCurrentPositions,
         fireboltCurrentPositions,
+        arrowCurrentPositions,
         bombCurrentPositions,
         renderAlpha: typeof renderState.renderAlpha === 'number' ? renderState.renderAlpha : null,
         timeMs: renderState.timeMs ?? null
@@ -12055,6 +12086,274 @@ describe('main.ts shell state orchestration', () => {
       playerFocusPoint.y - DEFAULT_STARTER_WAND_FIREBOLT_SPEED * 0.8 * (1 / 60),
       6
     );
+  });
+
+  it('fires the bow through the shared hidden-panel mouse item-use path when arrows are carried', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const bowUseTarget = {
+      worldTileX: 6,
+      worldTileY: 1,
+      worldX: playerFocusPoint.x + 60,
+      worldY: playerFocusPoint.y
+    };
+    const predictedArrowState = stepArrowProjectileState(
+      createArrowProjectileStateFromBowFire(standalonePlayerState, {
+        x: bowUseTarget.worldX,
+        y: bowUseTarget.worldY
+      }),
+      {
+        fixedDtSeconds: 1 / 60
+      }
+    );
+    if (predictedArrowState === null) {
+      throw new Error('expected an in-flight arrow state');
+    }
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bow', amount: 1 },
+              { itemId: 'arrow', amount: 12 },
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        ...bowUseTarget,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    const arrowPositions = testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions ?? [];
+    expect(arrowPositions).toHaveLength(1);
+    expect(arrowPositions[0]?.position.x).toBeCloseTo(predictedArrowState.position.x, 6);
+    expect(arrowPositions[0]?.position.y).toBeCloseTo(predictedArrowState.position.y, 6);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
+      itemId: 'bow',
+      amount: 1
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
+      itemId: 'arrow',
+      amount: 12
+    });
+  });
+
+  it('fires the bow from touch aim through the shared hidden-panel item-use path without consuming arrows yet', async () => {
+    const standalonePlayerState = createPlayerState({
+      position: { x: 8, y: 28 },
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const bowUseTarget = {
+      worldTileX: -2,
+      worldTileY: -2,
+      worldX: playerFocusPoint.x - 30,
+      worldY: playerFocusPoint.y - 40
+    };
+    const predictedArrowState = stepArrowProjectileState(
+      createArrowProjectileStateFromBowFire(standalonePlayerState, {
+        x: bowUseTarget.worldX,
+        y: bowUseTarget.worldY
+      }),
+      {
+        fixedDtSeconds: 1 / 60
+      }
+    );
+    if (predictedArrowState === null) {
+      throw new Error('expected an in-flight arrow state');
+    }
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bow', amount: 1 },
+              { itemId: 'arrow', amount: 24 },
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        ...bowUseTarget,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    const arrowPositions = testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions ?? [];
+    expect(arrowPositions).toHaveLength(1);
+    expect(arrowPositions[0]?.position.x).toBeCloseTo(predictedArrowState.position.x, 6);
+    expect(arrowPositions[0]?.position.y).toBeCloseTo(predictedArrowState.position.y, 6);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
+      itemId: 'arrow',
+      amount: 24
+    });
+  });
+
+  it('blocks bow shots through the shared hidden-panel item-use path when no arrows are carried', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bow', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 6,
+        worldTileY: 1,
+        worldX: 68,
+        worldY: 12,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toEqual([]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
+      itemId: 'bow',
+      amount: 1
+    });
+  });
+
+  it('blocks dead bow shots through the shared hidden-panel item-use path without consuming arrows', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            health: 0
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bow', amount: 1 },
+              { itemId: 'arrow', amount: 8 },
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 6,
+        worldTileY: 1,
+        worldX: 68,
+        worldY: 12,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.arrowCurrentPositions).toEqual([]);
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
+      itemId: 'bow',
+      amount: 1
+    });
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[7]).toEqual({
+      itemId: 'arrow',
+      amount: 8
+    });
   });
 
   it('throws a bomb through the shared hidden-panel mouse item-use path, consumes one bomb, and blocks same-tick empty follow-up throws', async () => {

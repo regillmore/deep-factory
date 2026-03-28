@@ -465,6 +465,13 @@ import {
   type ThrownBombBlastEvent,
   type ThrownBombState
 } from './world/bombThrowing';
+import {
+  ARROW_ITEM_ID,
+  BOW_ITEM_ID,
+  createArrowProjectileStateFromBowFire,
+  stepArrowProjectileState,
+  type ArrowProjectileState
+} from './world/bowFiring';
 import { stepPlayerManaRegeneration } from './world/playerMana';
 import {
   resolvePlayerWallContactTransitionEvent,
@@ -530,6 +537,7 @@ const HOSTILE_SLIME_ENTITY_KIND = 'slime';
 const PASSIVE_BUNNY_ENTITY_KIND = 'bunny';
 const DROPPED_ITEM_ENTITY_KIND = 'dropped-item';
 const STARTER_WAND_FIREBOLT_ENTITY_KIND = 'wand-firebolt';
+const ARROW_PROJECTILE_ENTITY_KIND = 'arrow-projectile';
 const THROWN_BOMB_ENTITY_KIND = 'thrown-bomb';
 const HOSTILE_SLIME_GEL_DROP_ITEM_ID: DroppedItemState['itemId'] = 'gel';
 const STARTER_UMBRELLA_ITEM_ID = 'umbrella';
@@ -1868,6 +1876,7 @@ const bootstrap = async (): Promise<void> => {
   let passiveBunnyEntityIds: EntityId[] = [];
   let droppedItemEntityIds: EntityId[] = [];
   let fireboltEntityIds: EntityId[] = [];
+  let arrowProjectileEntityIds: EntityId[] = [];
   let pendingHostileSlimeCombatEvents: PendingHostileSlimeCombatEvent[] = [];
   let hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
   let passiveBunnySpawnerState = createPassiveBunnySpawnerState();
@@ -2701,6 +2710,26 @@ const bootstrap = async (): Promise<void> => {
     fireboltEntityIds = nextFireboltEntityIds;
     return activeFirebolts;
   };
+  const getArrowProjectileEntityStates = (): Array<{
+    id: EntityId;
+    state: ArrowProjectileState;
+  }> => {
+    const activeArrowProjectiles: Array<{ id: EntityId; state: ArrowProjectileState }> = [];
+    const nextArrowProjectileEntityIds: EntityId[] = [];
+    for (const entityId of arrowProjectileEntityIds) {
+      const state = entityRegistry.getEntityState<ArrowProjectileState>(entityId);
+      if (state === null) {
+        continue;
+      }
+      nextArrowProjectileEntityIds.push(entityId);
+      activeArrowProjectiles.push({
+        id: entityId,
+        state
+      });
+    }
+    arrowProjectileEntityIds = nextArrowProjectileEntityIds;
+    return activeArrowProjectiles;
+  };
   const getDroppedItemStates = (): DroppedItemState[] =>
     getDroppedItemEntityStates().map(({ state }) => cloneDroppedItemState(state));
   const createHostileSlimeDefeatDropState = (
@@ -3229,6 +3258,16 @@ const bootstrap = async (): Promise<void> => {
             }
           });
           break;
+        case ARROW_PROJECTILE_ENTITY_KIND:
+          entityFrameStates.push({
+            id: snapshotEntry.id,
+            kind: ARROW_PROJECTILE_ENTITY_KIND,
+            snapshot: {
+              previous: snapshotEntry.previous as ArrowProjectileState,
+              current: snapshotEntry.current as ArrowProjectileState
+            }
+          });
+          break;
         case THROWN_BOMB_ENTITY_KIND:
           entityFrameStates.push({
             id: snapshotEntry.id,
@@ -3252,6 +3291,7 @@ const bootstrap = async (): Promise<void> => {
     passiveBunnyEntityIds = [];
     droppedItemEntityIds = [];
     fireboltEntityIds = [];
+    arrowProjectileEntityIds = [];
     pendingHostileSlimeCombatEvents = [];
     hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
     passiveBunnySpawnerState = createPassiveBunnySpawnerState();
@@ -3531,6 +3571,40 @@ const bootstrap = async (): Promise<void> => {
     });
     fireboltEntityIds.push(fireboltEntityId);
     return fireboltEntityId;
+  };
+  const spawnArrowProjectileEntity = (initialArrowProjectileState: ArrowProjectileState): EntityId => {
+    let arrowProjectileEntityId: EntityId | null = null;
+    arrowProjectileEntityId = entityRegistry.spawn({
+      kind: ARROW_PROJECTILE_ENTITY_KIND,
+      initialState: initialArrowProjectileState,
+      captureRenderState: (arrowProjectileState) => ({
+        position: {
+          x: arrowProjectileState.position.x,
+          y: arrowProjectileState.position.y
+        },
+        velocity: {
+          x: arrowProjectileState.velocity.x,
+          y: arrowProjectileState.velocity.y
+        },
+        radius: arrowProjectileState.radius,
+        secondsRemaining: arrowProjectileState.secondsRemaining
+      }),
+      fixedUpdate: (arrowProjectileState, fixedDt) => {
+        const nextState = stepArrowProjectileState(arrowProjectileState, {
+          fixedDtSeconds: fixedDt
+        });
+        if (nextState === null) {
+          if (arrowProjectileEntityId !== null) {
+            entityRegistry.despawn(arrowProjectileEntityId);
+          }
+          return arrowProjectileState;
+        }
+
+        return nextState;
+      }
+    });
+    arrowProjectileEntityIds.push(arrowProjectileEntityId);
+    return arrowProjectileEntityId;
   };
   const spawnThrownBombEntity = (initialThrownBombState: ThrownBombState): EntityId => {
     let thrownBombEntityId: EntityId | null = null;
@@ -4941,6 +5015,27 @@ const bootstrap = async (): Promise<void> => {
     spawnStarterWandFireboltEntity(useResult.fireboltState);
     return true;
   };
+  const tryFireSelectedBow = (request: PlayerItemUseRequest): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return false;
+    }
+    if (getPlayerInventoryItemAmount(standalonePlayerInventoryState, ARROW_ITEM_ID) <= 0) {
+      return false;
+    }
+
+    spawnArrowProjectileEntity(
+      createArrowProjectileStateFromBowFire(
+        standalonePlayerState,
+        resolvePlayerItemUseTargetWorldPoint(request)
+      )
+    );
+    return true;
+  };
   const tryThrowSelectedBomb = (request: PlayerItemUseRequest): boolean => {
     const standalonePlayerState = getStandalonePlayerState();
     if (
@@ -5318,6 +5413,9 @@ const bootstrap = async (): Promise<void> => {
     }
     if (selectedStack.itemId === STARTER_WAND_ITEM_ID) {
       return tryUseSelectedStarterWand(request);
+    }
+    if (selectedStack.itemId === BOW_ITEM_ID) {
+      return tryFireSelectedBow(request);
     }
     if (selectedStack.itemId === BOMB_ITEM_ID) {
       return tryThrowSelectedBomb(request);
@@ -8051,6 +8149,7 @@ const bootstrap = async (): Promise<void> => {
       enforcePeacefulModeHostileSlimeState();
       entityRegistry.fixedUpdateAll(fixedDt);
       getStarterWandFireboltEntityStates();
+      getArrowProjectileEntityStates();
       flushPendingHostileSlimeCombatEvents();
       flushStandalonePlayerFixedStepResult();
       stepStarterMeleeWeaponFixedUpdate(fixedDt);

@@ -95,6 +95,7 @@ import { stepPassiveBunnyState as stepWorldPassiveBunnyState } from '../world/pa
 import { type PassiveBunnyState } from '../world/passiveBunnyState';
 import { type DroppedItemState } from '../world/droppedItem';
 import { BOMB_ITEM_ID, type ThrownBombState } from '../world/bombThrowing';
+import { ARROW_ITEM_ID, type ArrowProjectileState } from '../world/bowFiring';
 import { type StarterWandFireboltState } from '../world/starterWand';
 import {
   isStandalonePlayerRenderStateCeilingBonkActive,
@@ -168,6 +169,12 @@ export interface FireboltEntityFrameState {
   snapshot: EntityRenderStateSnapshot<StarterWandFireboltState>;
 }
 
+export interface ArrowProjectileEntityFrameState {
+  id: EntityId;
+  kind: 'arrow-projectile';
+  snapshot: EntityRenderStateSnapshot<ArrowProjectileState>;
+}
+
 export interface ThrownBombEntityFrameState {
   id: EntityId;
   kind: 'thrown-bomb';
@@ -180,6 +187,7 @@ export type RendererEntityFrameState =
   | PassiveBunnyEntityFrameState
   | DroppedItemEntityFrameState
   | FireboltEntityFrameState
+  | ArrowProjectileEntityFrameState
   | ThrownBombEntityFrameState;
 
 export interface RenderTelemetry {
@@ -1404,6 +1412,9 @@ export class Renderer {
         case 'wand-firebolt':
           this.drawFirebolt(entity, renderAlpha, worldToClipMatrix);
           break;
+        case 'arrow-projectile':
+          this.drawArrowProjectile(entity, renderAlpha, worldToClipMatrix);
+          break;
         case 'thrown-bomb':
           this.drawThrownBomb(entity, renderAlpha, worldToClipMatrix);
           break;
@@ -1636,6 +1647,49 @@ export class Renderer {
     );
     gl.bindVertexArray(this.thrownBombVao);
     gl.drawArrays(gl.TRIANGLES, 0, THROWN_BOMB_PLACEHOLDER_VERTEX_COUNT);
+    this.telemetry.drawCalls += 1;
+  }
+
+  private drawArrowProjectile(
+    entity: ArrowProjectileEntityFrameState,
+    renderAlpha: number,
+    worldToClipMatrix: Float32Array
+  ): void {
+    const state = entity.snapshot.current;
+    const renderPosition = resolveInterpolatedEntityWorldPosition(entity.snapshot, renderAlpha);
+    const gl = this.gl;
+    const nearbyLightSample = getFireboltPlaceholderNearbyLightSample(
+      this.world,
+      state,
+      renderPosition
+    );
+    const palette = getDroppedItemPlaceholderPalette(ARROW_ITEM_ID);
+    gl.useProgram(this.droppedItemProgram);
+    gl.uniformMatrix4fv(this.uDroppedItemMatrix, false, worldToClipMatrix);
+    gl.uniform1f(
+      this.uDroppedItemLight,
+      Math.max(0.55, nearbyLightSample.level / MAX_LIGHT_LEVEL)
+    );
+    gl.uniform3f(
+      this.uDroppedItemBaseColor,
+      palette.baseColor[0],
+      palette.baseColor[1],
+      palette.baseColor[2]
+    );
+    gl.uniform3f(
+      this.uDroppedItemAccentColor,
+      palette.accentColor[0],
+      palette.accentColor[1],
+      palette.accentColor[2]
+    );
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.fireboltBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      buildFireboltPlaceholderVertices(state, renderPosition),
+      gl.DYNAMIC_DRAW
+    );
+    gl.bindVertexArray(this.fireboltVao);
+    gl.drawArrays(gl.TRIANGLES, 0, FIREBOLT_PLACEHOLDER_VERTEX_COUNT);
     this.telemetry.drawCalls += 1;
   }
 
