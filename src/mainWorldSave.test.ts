@@ -994,6 +994,31 @@ describe('decodeWorldSaveEnvelope', () => {
     expect(decoded.session.standalonePlayerInventoryState).toEqual(standalonePlayerInventoryState);
   });
 
+  it('round-trips carried grappling-hook stacks through save decode', () => {
+    const world = new TileWorld(0);
+    const standalonePlayerInventoryState = createPlayerInventoryState({
+      hotbar: [{ itemId: 'grappling-hook', amount: 1 }, ...Array.from({ length: 9 }, () => null)],
+      selectedHotbarSlotIndex: 0
+    });
+
+    const decoded = decodeWorldSaveEnvelope(
+      JSON.parse(
+        JSON.stringify(
+          createWorldSaveEnvelope({
+            worldSnapshot: world.createSnapshot(),
+            standalonePlayerState: createPlayerState(),
+            standalonePlayerDeathState: null,
+            standalonePlayerInventoryState,
+            droppedItemStates: [],
+            cameraFollowOffset: { x: 0, y: 0 }
+          })
+        )
+      )
+    );
+
+    expect(decoded.session.standalonePlayerInventoryState).toEqual(standalonePlayerInventoryState);
+  });
+
   it('round-trips saved small-tree growth cadence through save decode', () => {
     const world = new TileWorld(0);
     const smallTreeGrowthState = {

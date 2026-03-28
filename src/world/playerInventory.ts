@@ -30,7 +30,8 @@ export type PlayerInventoryItemId =
   | 'wand'
   | 'bow'
   | 'arrow'
-  | 'bomb';
+  | 'bomb'
+  | 'grappling-hook';
 
 export interface PlayerInventoryItemDefinition {
   id: PlayerInventoryItemId;
@@ -103,7 +104,8 @@ export const PLAYER_INVENTORY_ITEM_IDS: readonly PlayerInventoryItemId[] = [
   'wand',
   'bow',
   'arrow',
-  'bomb'
+  'bomb',
+  'grappling-hook'
 ] as const;
 
 const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
@@ -288,6 +290,12 @@ const PLAYER_INVENTORY_ITEM_DEFINITIONS: Readonly<
     label: 'Bomb',
     hotbarLabel: 'BOMB',
     maxStackSize: 99
+  },
+  'grappling-hook': {
+    id: 'grappling-hook',
+    label: 'Grappling Hook',
+    hotbarLabel: 'HOOK',
+    maxStackSize: 1
   }
 };
 

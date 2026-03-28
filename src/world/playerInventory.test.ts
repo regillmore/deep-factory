@@ -121,6 +121,34 @@ describe('playerInventory', () => {
     });
   });
 
+  it('stores non-stackable grappling hooks in separate hotbar slots when multiple are added', () => {
+    const result = addPlayerInventoryItemStack(
+      createEmptyPlayerInventoryState(),
+      'grappling-hook',
+      2
+    );
+
+    expect(result).toEqual({
+      state: {
+        hotbar: [
+          { itemId: 'grappling-hook', amount: 1 },
+          { itemId: 'grappling-hook', amount: 1 },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        selectedHotbarSlotIndex: 0
+      },
+      addedAmount: 2,
+      remainingAmount: 0
+    });
+  });
+
   it('reports overflow when the hotbar cannot hold an entire stack', () => {
     const full = createPlayerInventoryState({
       hotbar: Array.from({ length: PLAYER_INVENTORY_HOTBAR_SLOT_COUNT }, () => ({
@@ -558,6 +586,12 @@ describe('playerInventory', () => {
       hotbarLabel: 'BOMB',
       maxStackSize: 99
     });
+    expect(getPlayerInventoryItemDefinition('grappling-hook')).toEqual({
+      id: 'grappling-hook',
+      label: 'Grappling Hook',
+      hotbarLabel: 'HOOK',
+      maxStackSize: 1
+    });
   });
 
   it('exposes the inventory item registry in stable item-id order', () => {
@@ -591,7 +625,8 @@ describe('playerInventory', () => {
       'wand',
       'bow',
       'arrow',
-      'bomb'
+      'bomb',
+      'grappling-hook'
     ]);
   });
 

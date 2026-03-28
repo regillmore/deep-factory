@@ -18,6 +18,7 @@ describe('playerItemCatalog', () => {
       'Dirt Wall',
       'Furnace',
       'Gel',
+      'Grappling Hook',
       'Healing Potion',
       'Heart Crystal',
       'Mana Crystal',
@@ -46,6 +47,9 @@ describe('playerItemCatalog', () => {
     expect(searchPlayerItemCatalog('bow').map((entry) => entry.itemId)).toEqual(['bow']);
     expect(searchPlayerItemCatalog('arrow').map((entry) => entry.itemId)).toEqual(['arrow']);
     expect(searchPlayerItemCatalog('bomb').map((entry) => entry.itemId)).toEqual(['bomb']);
+    expect(searchPlayerItemCatalog('grappling hook').map((entry) => entry.itemId)).toEqual([
+      'grappling-hook'
+    ]);
     expect(searchPlayerItemCatalog('bug net').map((entry) => entry.itemId)).toEqual(['bug-net']);
     expect(searchPlayerItemCatalog('starter axe').map((entry) => entry.itemId)).toEqual([
       'axe',

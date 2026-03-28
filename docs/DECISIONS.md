@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-28: Grappling hook starts from detached fired state before traversal
+
+- Decision: `Grappling Hook` use now flips a session-owned runtime state from `idle` to `fired` through the shared hidden-panel item-use path, blocks refires while that fired state is still active, and leaves the equipped hook item unconsumed.
+- Reason: This separates mixed-device use gating and selected-slot feedback from later projectile, latch, and pull work while giving future grappling-hook slices one stable state seam to extend.
+- Consequence: Future grappling-hook projectile, latch, pull, and cancel work should extend the shared detached grappling-hook state instead of introducing a second use-start flag or consuming the hook at click time.
+
 ### 2026-03-28: Bow ammo reservations follow active arrow projectiles
 
 - Decision: Bow shot availability now derives from carried `Arrow` ammo minus the current in-flight arrow projectile count, while inventory ammo still stays unchanged until each projectile resolves and spends its reserved arrow.

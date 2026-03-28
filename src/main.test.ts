@@ -13336,6 +13336,179 @@ describe('main.ts shell state orchestration', () => {
     });
   });
 
+  it('fires the grappling hook through the shared hidden-panel mouse item-use path without consuming it', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            facing: 'right'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'grappling-hook', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 6,
+        worldTileY: 1,
+        worldX: 68,
+        worldY: 12,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(getHotbarOverlaySlotButton(6).title).toContain('hook active');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('HOOK');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.height).toBe('100.0%');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('1');
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
+      itemId: 'grappling-hook',
+      amount: 1
+    });
+  });
+
+  it('fires the grappling hook from touch aim through the shared hidden-panel item-use path', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            facing: 'left'
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'grappling-hook', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: -2,
+        worldTileY: -2,
+        worldX: -18,
+        worldY: -24,
+        pointerType: 'touch'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(getHotbarOverlaySlotButton(6).title).toContain('hook active');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('HOOK');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('1');
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
+      itemId: 'grappling-hook',
+      amount: 1
+    });
+  });
+
+  it('shows dead grappling-hook feedback through the shared hidden-panel item-use path', async () => {
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: new TileWorld(0).createSnapshot(),
+          standalonePlayerState: createPlayerState({
+            position: { x: 8, y: 28 },
+            health: 0
+          }),
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'grappling-hook', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.playerItemUseRequests = [
+      {
+        worldTileX: 6,
+        worldTileY: 1,
+        worldX: 68,
+        worldY: 12,
+        pointerType: 'mouse'
+      }
+    ];
+
+    runFixedUpdate(1 / 60);
+    runRenderFrame(1000 / 60, 1);
+
+    expect(getHotbarOverlaySlotButton(6).title).toContain('player is dead');
+    expect(getHotbarOverlaySlotAmountLabel(6).textContent).toBe('DEAD');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.height).toBe('100.0%');
+    expect(getHotbarOverlaySlotCooldownFill(6).style.opacity).toBe('1');
+
+    dispatchWindowEvent('pagehide');
+    expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toEqual({
+      itemId: 'grappling-hook',
+      amount: 1
+    });
+  });
+
   it('throws a bomb through the shared hidden-panel mouse item-use path, consumes one bomb, and blocks same-tick empty follow-up throws', async () => {
     const standalonePlayerState = createPlayerState({
       position: { x: 8, y: 28 },

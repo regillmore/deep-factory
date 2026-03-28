@@ -152,6 +152,10 @@ const DROPPED_ITEM_PLACEHOLDER_PALETTES: Readonly<
   bomb: {
     baseColor: [0.19, 0.2, 0.24],
     accentColor: [0.88, 0.36, 0.18]
+  },
+  'grappling-hook': {
+    baseColor: [0.36, 0.39, 0.48],
+    accentColor: [0.82, 0.9, 0.97]
   }
 };
 

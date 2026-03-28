@@ -164,4 +164,11 @@ describe('droppedItemPlaceholder', () => {
       accentColor: [0.88, 0.36, 0.18]
     });
   });
+
+  it('provides a dedicated placeholder palette for grappling-hook pickups', () => {
+    expect(getDroppedItemPlaceholderPalette('grappling-hook')).toEqual({
+      baseColor: [0.36, 0.39, 0.48],
+      accentColor: [0.82, 0.9, 0.97]
+    });
+  });
 });

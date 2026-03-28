@@ -485,6 +485,13 @@ import {
   type ArrowProjectileHostileSlimeHitEvent,
   type ArrowProjectileState
 } from './world/bowFiring';
+import {
+  clearGrapplingHookState,
+  createIdleGrapplingHookState,
+  GRAPPLING_HOOK_ITEM_ID,
+  isGrapplingHookActive,
+  tryFireGrapplingHook
+} from './world/grapplingHook';
 import { stepPlayerManaRegeneration } from './world/playerMana';
 import {
   resolvePlayerWallContactTransitionEvent,
@@ -1922,6 +1929,7 @@ const bootstrap = async (): Promise<void> => {
   let starterBugNetState = createStarterBugNetState();
   let starterWandCooldownState = createStarterWandCooldownState();
   let bowDrawCooldownState = createBowDrawCooldownState();
+  let grapplingHookState = createIdleGrapplingHookState();
   let playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
   let grassGrowthState = createGrassGrowthState();
   let smallTreeGrowthState = createSmallTreeGrowthState();
@@ -2142,6 +2150,36 @@ const bootstrap = async (): Promise<void> => {
       )
     );
   };
+  const resolveHotbarOverlaySelectedGrapplingHookReadout = (): {
+    status: 'active' | 'dead';
+  } | null => {
+    const selectedStack = getSelectedStandalonePlayerInventoryStack();
+    if (selectedStack?.itemId !== GRAPPLING_HOOK_ITEM_ID) {
+      return null;
+    }
+
+    const standalonePlayerState = getStandalonePlayerState();
+    if (standalonePlayerState === null) {
+      return null;
+    }
+
+    if (
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
+      return {
+        status: 'dead'
+      };
+    }
+
+    if (!isGrapplingHookActive(grapplingHookState)) {
+      return null;
+    }
+
+    return {
+      status: 'active'
+    };
+  };
   const resolveHotbarOverlayHeartCrystalBlockedReason = (): 'dead' | 'max-health-cap' | null => {
     const selectedStack = getSelectedStandalonePlayerInventoryStack();
     if (selectedStack?.itemId !== HEART_CRYSTAL_ITEM_ID) {
@@ -2345,6 +2383,7 @@ const bootstrap = async (): Promise<void> => {
       selectedBowDrawCooldownFillNormalized:
         resolveHotbarOverlaySelectedBowDrawCooldownFillNormalized(),
       selectedBowAmmoReadout: resolveHotbarOverlaySelectedBowAmmoReadout(),
+      selectedGrapplingHookReadout: resolveHotbarOverlaySelectedGrapplingHookReadout(),
       healingPotionCooldownFillNormalized:
         resolveHotbarOverlayHealingPotionCooldownFillNormalized(),
       starterWandManaReadout: resolveHotbarOverlayStarterWandManaReadout(),
@@ -3387,6 +3426,7 @@ const bootstrap = async (): Promise<void> => {
     starterBugNetState = createStarterBugNetState();
     starterWandCooldownState = createStarterWandCooldownState();
     bowDrawCooldownState = createBowDrawCooldownState();
+    grapplingHookState = createIdleGrapplingHookState();
     playerHealingPotionCooldownState = createPlayerHealingPotionCooldownState();
     grassGrowthState = createGrassGrowthState();
     smallTreeGrowthState = createSmallTreeGrowthState();
@@ -3400,6 +3440,7 @@ const bootstrap = async (): Promise<void> => {
     resetStandalonePlayerTransitionState();
     lastAppliedPlayerFollowCameraPosition = null;
     standalonePlayerDeathState = deathState;
+    grapplingHookState = createIdleGrapplingHookState();
     latestStandalonePlayerDeathHoldStatus = deathState === null ? 'none' : 'holding';
     if (playerState === null) {
       return;
@@ -3410,6 +3451,7 @@ const bootstrap = async (): Promise<void> => {
   const setStandalonePlayerDeathState = (nextDeathState: PlayerDeathState | null): void => {
     standalonePlayerDeathState = nextDeathState;
     if (nextDeathState !== null) {
+      grapplingHookState = clearGrapplingHookState();
       latestStandalonePlayerDeathHoldStatus = 'holding';
     }
   };
@@ -5226,6 +5268,21 @@ const bootstrap = async (): Promise<void> => {
     spawnArrowProjectileEntity(fireResult.arrowProjectileState);
     return true;
   };
+  const tryUseSelectedGrapplingHook = (request: PlayerItemUseRequest): boolean => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (standalonePlayerState === null) {
+      return false;
+    }
+
+    const fireResult = tryFireGrapplingHook(
+      standalonePlayerState,
+      grapplingHookState,
+      resolvePlayerItemUseTargetWorldPoint(request)
+    );
+    grapplingHookState = fireResult.nextState;
+    syncHotbarOverlayState();
+    return fireResult.hookFired;
+  };
   const tryThrowSelectedBomb = (request: PlayerItemUseRequest): boolean => {
     const standalonePlayerState = getStandalonePlayerState();
     if (
@@ -5606,6 +5663,9 @@ const bootstrap = async (): Promise<void> => {
     }
     if (selectedStack.itemId === BOW_ITEM_ID) {
       return tryFireSelectedBow(request);
+    }
+    if (selectedStack.itemId === GRAPPLING_HOOK_ITEM_ID) {
+      return tryUseSelectedGrapplingHook(request);
     }
     if (selectedStack.itemId === BOMB_ITEM_ID) {
       return tryThrowSelectedBomb(request);
