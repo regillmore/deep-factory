@@ -539,9 +539,6 @@ const resolvePausedMainMenuWorldSaveMenuSections = (
 const resolvePausedMainMenuShellMenuSections = (
   _sectionViewModel: PausedMainMenuSectionViewModel
 ): readonly AppShellMenuSection[] => [];
-const resolvePausedMainMenuRecentActivityMenuSections = (
-  state: AppShellState
-): readonly AppShellMenuSection[] => resolvePausedMainMenuRecentActivitySectionState(state).menuSections;
 const resolvePausedMainMenuMenuSectionGroupsFromState = (
   state: AppShellState,
   sectionViewModel: PausedMainMenuSectionViewModel
@@ -549,7 +546,7 @@ const resolvePausedMainMenuMenuSectionGroupsFromState = (
   const overviewSections = resolvePausedMainMenuOverviewMenuSections(sectionViewModel);
   const worldSaveSections = resolvePausedMainMenuWorldSaveMenuSections(state, sectionViewModel);
   const shellSections = resolvePausedMainMenuShellMenuSections(sectionViewModel);
-  const recentActivitySections = resolvePausedMainMenuRecentActivityMenuSections(state);
+  const recentActivitySections: readonly AppShellMenuSection[] = [];
 
   return {
     overviewSections,
@@ -2439,7 +2436,7 @@ export const createFirstLaunchMainMenuShellState = (
   return {
     ...baseState,
     worldSavePersistenceAvailable,
-    menuSections: [...menuSectionGroups.primarySections, ...menuSectionGroups.recentActivitySections]
+    menuSections: [...menuSectionGroups.primarySections]
   };
 };
 
@@ -2488,7 +2485,7 @@ export const createPausedMainMenuShellState = (
 
   return {
     ...baseState,
-    menuSections: [...menuSectionGroups.primarySections, ...menuSectionGroups.recentActivitySections]
+    menuSections: [...menuSectionGroups.primarySections]
   };
 };
 
@@ -3062,7 +3059,6 @@ interface PausedMainMenuSectionLandmarkTarget {
   headingId: string;
 }
 
-type PausedMainMenuSectionAnchorKey = keyof typeof PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS;
 type PausedMainMenuPageId = 'overview' | 'world-save' | 'shell';
 
 const PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS = {
@@ -3077,19 +3073,8 @@ const PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS = {
   shell: {
     sectionId: 'app-shell-paused-shell-section',
     headingId: 'app-shell-paused-shell-title'
-  },
-  recentActivity: {
-    sectionId: 'app-shell-paused-recent-activity-section',
-    headingId: 'app-shell-paused-recent-activity-title'
   }
 } as const satisfies Record<string, PausedMainMenuSectionLandmarkTarget>;
-
-const PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER = [
-  'overview',
-  'worldSave',
-  'shell',
-  'recentActivity'
-] as const satisfies readonly PausedMainMenuSectionAnchorKey[];
 
 const DEFAULT_PAUSED_MAIN_MENU_PAGE_ID: PausedMainMenuPageId = 'overview';
 const PAUSED_MAIN_MENU_WORLD_SAVE_TILE_TITLE = 'World Save';
@@ -3102,9 +3087,6 @@ const PAUSED_MAIN_MENU_WORLD_SAVE_BACK_LABEL = 'Back to Overview';
 const PAUSED_MAIN_MENU_WORLD_SAVE_BACK_TITLE = 'Return to the paused Overview page.';
 const PAUSED_MAIN_MENU_SHELL_BACK_LABEL = 'Back to Overview';
 const PAUSED_MAIN_MENU_SHELL_BACK_TITLE = 'Return to the paused Overview page.';
-const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT = 'Jump to Overview';
-const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE =
-  'Move focus back to the Overview section at the top of the paused dashboard.';
 
 const applyPausedMainMenuSectionLandmarkTarget = (
   sectionElement: HTMLElement,
@@ -3123,19 +3105,6 @@ const focusPausedMainMenuSectionAnchor = (sectionElement: HTMLElement): void => 
   sectionElement.scrollIntoView?.({
     block: 'start'
   });
-};
-
-const createPausedMainMenuTopJumpLink = (overviewSection: HTMLElement): HTMLAnchorElement => {
-  const jumpLink = document.createElement('a');
-  jumpLink.className = 'app-shell__section-top-jump-link';
-  jumpLink.textContent = PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT;
-  jumpLink.title = PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE;
-  jumpLink.setAttribute('href', `#${PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS.overview.sectionId}`);
-  jumpLink.addEventListener('click', (event) => {
-    event.preventDefault();
-    focusPausedMainMenuSectionAnchor(overviewSection);
-  });
-  return jumpLink;
 };
 
 interface MenuSectionElementOptions {
@@ -3753,7 +3722,6 @@ export class AppShell {
   private status: HTMLParagraphElement;
   private pausedMainMenuDashboard: HTMLDivElement;
   private pausedMainMenuPrimarySections: HTMLDivElement;
-  private pausedMainMenuSecondarySections: HTMLDivElement;
   private overviewSection: HTMLElement;
   private overviewFullscreenButton: HTMLButtonElement;
   private overviewBody: HTMLDivElement;
@@ -3770,10 +3738,6 @@ export class AppShell {
   private worldSaveMetadata: HTMLDListElement;
   private worldSaveActions: HTMLDivElement;
   private menuSections: HTMLDivElement;
-  private recentActivitySection: HTMLElement;
-  private recentActivitySummary: HTMLParagraphElement;
-  private recentActivityBody: HTMLDivElement;
-  private recentActivityTopJumpLink: HTMLAnchorElement;
   private shellSection: HTMLElement;
   private shellBackButton: HTMLButtonElement;
   private shellSummary: HTMLParagraphElement;
@@ -4234,10 +4198,6 @@ export class AppShell {
     this.shellMetadata.className = 'app-shell__menu-section-metadata app-shell__shell-metadata';
     this.shellBody.append(this.shellMetadata);
 
-    this.pausedMainMenuSecondarySections = document.createElement('div');
-    this.pausedMainMenuSecondarySections.className = 'app-shell__paused-secondary';
-    this.pausedMainMenuDashboard.append(this.pausedMainMenuSecondarySections);
-
     this.shellActionKeybindingEditor = document.createElement('div');
     this.shellActionKeybindingEditor.className = 'app-shell__shell-keybindings';
     this.shellBody.append(this.shellActionKeybindingEditor);
@@ -4444,39 +4404,6 @@ export class AppShell {
     this.shellTelemetryCollections = document.createElement('div');
     this.shellTelemetryCollections.className = 'app-shell__shell-telemetry-collections';
     this.shellTelemetryControls.append(this.shellTelemetryCollections);
-
-    this.recentActivitySection = document.createElement('section');
-    this.recentActivitySection.className = 'app-shell__recent-activity';
-    this.pausedMainMenuSecondarySections.append(this.recentActivitySection);
-
-    const recentActivityHeader = document.createElement('div');
-    recentActivityHeader.className = 'app-shell__recent-activity-header';
-    this.recentActivitySection.append(recentActivityHeader);
-
-    const recentActivityCopy = document.createElement('div');
-    recentActivityCopy.className = 'app-shell__recent-activity-copy';
-    recentActivityHeader.append(recentActivityCopy);
-
-    const recentActivityTitle = document.createElement('h2');
-    recentActivityTitle.className = 'app-shell__recent-activity-title';
-    recentActivityTitle.textContent = 'Recent Activity';
-    recentActivityCopy.append(recentActivityTitle);
-    applyPausedMainMenuSectionLandmarkTarget(
-      this.recentActivitySection,
-      recentActivityTitle,
-      PAUSED_MAIN_MENU_SECTION_LANDMARK_TARGETS.recentActivity
-    );
-
-    this.recentActivitySummary = document.createElement('p');
-    this.recentActivitySummary.className = 'app-shell__recent-activity-summary';
-    recentActivityCopy.append(this.recentActivitySummary);
-
-    this.recentActivityBody = document.createElement('div');
-    this.recentActivityBody.className = 'app-shell__recent-activity-body';
-    this.recentActivitySection.append(this.recentActivityBody);
-
-    this.recentActivityTopJumpLink = createPausedMainMenuTopJumpLink(this.overviewSection);
-    this.recentActivitySection.append(this.recentActivityTopJumpLink);
 
     this.menuSections = document.createElement('div');
     this.menuSections.className = 'app-shell__menu-sections';
@@ -4722,85 +4649,6 @@ export class AppShell {
     }
   }
 
-  private resolvePausedMainMenuSectionAnchorElement(
-    sectionKey: PausedMainMenuSectionAnchorKey
-  ): HTMLElement {
-    switch (sectionKey) {
-      case 'overview':
-        return this.overviewSection;
-      case 'worldSave':
-        return this.worldSaveSection;
-      case 'shell':
-        return this.shellSection;
-      case 'recentActivity':
-        return this.recentActivitySection;
-    }
-  }
-
-  private resolveFocusedPausedMainMenuSectionAnchorKey(): PausedMainMenuSectionAnchorKey | null {
-    const activeElement = document.activeElement;
-    for (const sectionKey of PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER) {
-      if (activeElement === this.resolvePausedMainMenuSectionAnchorElement(sectionKey)) {
-        return sectionKey;
-      }
-    }
-
-    return null;
-  }
-
-  private resolveNearestVisiblePausedMainMenuSectionAnchor(
-    sectionKey: PausedMainMenuSectionAnchorKey
-  ): HTMLElement | null {
-    const sectionIndex = PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER.indexOf(sectionKey);
-    if (sectionIndex < 0) {
-      return null;
-    }
-
-    for (let offset = 0; offset < PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER.length; offset += 1) {
-      const forwardIndex = sectionIndex + offset;
-      if (forwardIndex < PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER.length) {
-        const forwardSection = this.resolvePausedMainMenuSectionAnchorElement(
-          PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER[forwardIndex]
-        );
-        if (!forwardSection.hidden) {
-          return forwardSection;
-        }
-      }
-
-      if (offset === 0) {
-        continue;
-      }
-
-      const backwardIndex = sectionIndex - offset;
-      if (backwardIndex >= 0) {
-        const backwardSection = this.resolvePausedMainMenuSectionAnchorElement(
-          PAUSED_MAIN_MENU_SECTION_ANCHOR_ORDER[backwardIndex]
-        );
-        if (!backwardSection.hidden) {
-          return backwardSection;
-        }
-      }
-    }
-
-    return null;
-  }
-
-  private restorePausedMainMenuSectionAnchorAfterRecentActivityVisibilityChange(
-    focusedSectionKey: PausedMainMenuSectionAnchorKey | null,
-    recentActivityVisibilityChanged: boolean
-  ): void {
-    if (!recentActivityVisibilityChanged || focusedSectionKey === null) {
-      return;
-    }
-
-    const targetSection = this.resolveNearestVisiblePausedMainMenuSectionAnchor(focusedSectionKey);
-    if (targetSection === null) {
-      return;
-    }
-
-    focusPausedMainMenuSectionAnchor(targetSection);
-  }
-
   private tryRemapShellActionKeybinding(
     actionType: InWorldShellActionKeybindingActionType,
     nextValue: string
@@ -5032,10 +4880,6 @@ export class AppShell {
 
   setState(state: AppShellState): void {
     const wasPausedMainMenuVisible = isPausedMainMenuState(this.currentState);
-    const focusedPausedMainMenuSectionKey = wasPausedMainMenuVisible
-      ? this.resolveFocusedPausedMainMenuSectionAnchorKey()
-      : null;
-    const wasRecentActivityVisible = !this.recentActivitySection.hidden;
     this.currentState = state;
     const viewModel = resolveAppShellViewModel(state);
     const defaultShellActionKeybindings = createDefaultShellActionKeybindingState();
@@ -5067,9 +4911,6 @@ export class AppShell {
       pausedMainMenuVisible ? state.worldSessionShellPersistenceAvailable !== false : true;
     const pausedMainMenuHasShellProfilePreview =
       pausedMainMenuVisible && state.pausedMainMenuShellProfilePreview != null;
-    const pausedMainMenuRecentActivitySection = resolvePausedMainMenuRecentActivitySectionState(
-      state
-    );
     const pausedMainMenuShellSection = resolvePausedMainMenuShellSectionState(state);
     const pausedMainMenuWorldSaveSection = resolvePausedMainMenuWorldSaveSectionState(state);
     const pausedMainMenuMenuSectionGroups = resolvePausedMainMenuMenuSectionGroups(state);
@@ -5147,11 +4988,6 @@ export class AppShell {
     this.pausedMainMenuPrimarySections.hidden = !pausedMainMenuVisible;
     this.pausedMainMenuPrimarySections.style.display = resolveAppShellRegionDisplay(
       pausedMainMenuVisible,
-      'grid'
-    );
-    this.pausedMainMenuSecondarySections.hidden = !pausedMainMenuOverviewPageVisible;
-    this.pausedMainMenuSecondarySections.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuOverviewPageVisible,
       'grid'
     );
     this.overviewSection.hidden =
@@ -5296,29 +5132,6 @@ export class AppShell {
     );
     this.applyShellProfilePreviewButton.hidden = !pausedMainMenuHasShellProfilePreview;
     this.clearShellProfilePreviewButton.hidden = !pausedMainMenuHasShellProfilePreview;
-    this.recentActivitySection.hidden = !pausedMainMenuRecentActivitySection.visible;
-    this.recentActivitySection.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuRecentActivitySection.visible,
-      'grid'
-    );
-    this.recentActivitySection.dataset.tone = pausedMainMenuRecentActivitySection.tone;
-    this.recentActivitySummary.textContent = pausedMainMenuRecentActivitySection.summaryLine ?? '';
-    this.recentActivityBody.replaceChildren(
-      ...pausedMainMenuRecentActivitySection.menuSections.map((section) =>
-        createMenuSectionElement(section, {
-          showStatusBadge: true
-        })
-      )
-    );
-    this.recentActivityBody.hidden = !pausedMainMenuRecentActivitySection.visible;
-    this.recentActivityBody.style.display = resolveAppShellRegionDisplay(
-      pausedMainMenuRecentActivitySection.visible,
-      'grid'
-    );
-    this.recentActivityTopJumpLink.hidden = !pausedMainMenuRecentActivitySection.visible;
-    this.recentActivityTopJumpLink.style.display = pausedMainMenuRecentActivitySection.visible
-      ? 'inline-flex'
-      : 'none';
     this.menuSections.replaceChildren(
       ...pausedMainMenuSecondarySections.map((section) => createMenuSectionElement(section))
     );
@@ -5433,9 +5246,5 @@ export class AppShell {
       'grid'
     );
     this.shortcutsOverlay.setAttribute('aria-hidden', viewModel.shortcutsOverlayVisible ? 'false' : 'true');
-    this.restorePausedMainMenuSectionAnchorAfterRecentActivityVisibilityChange(
-      pausedMainMenuVisible ? focusedPausedMainMenuSectionKey : null,
-      wasRecentActivityVisible !== pausedMainMenuRecentActivitySection.visible
-    );
   }
 }

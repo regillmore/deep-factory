@@ -251,8 +251,7 @@ canvas {
   gap: 18px;
 }
 
-.app-shell__paused-primary,
-.app-shell__paused-secondary {
+.app-shell__paused-primary {
   display: grid;
   gap: 16px;
   align-items: start;
@@ -377,7 +376,6 @@ canvas {
 }
 
 .app-shell__world-save,
-.app-shell__recent-activity,
 .app-shell__shell,
 .app-shell__danger-zone {
   padding: 15px 16px 16px;
@@ -409,7 +407,6 @@ canvas {
 
 .app-shell__overview:focus-visible,
 .app-shell__world-save:focus-visible,
-.app-shell__recent-activity:focus-visible,
 .app-shell__shell:focus-visible,
 .app-shell__danger-zone:focus-visible {
   outline: 2px solid #9fddff;
@@ -417,7 +414,6 @@ canvas {
 }
 
 .app-shell__world-save-header,
-.app-shell__recent-activity-header,
 .app-shell__shell-header,
 .app-shell__danger-zone-header {
   display: flex;
@@ -428,7 +424,6 @@ canvas {
 }
 
 .app-shell__world-save-copy,
-.app-shell__recent-activity-copy,
 .app-shell__shell-copy,
 .app-shell__danger-zone-copy {
   min-width: 0;
@@ -437,7 +432,6 @@ canvas {
 }
 
 .app-shell__world-save-title,
-.app-shell__recent-activity-title,
 .app-shell__shell-title,
 .app-shell__danger-zone-title {
   margin: 0;
@@ -449,7 +443,6 @@ canvas {
 }
 
 .app-shell__world-save-summary,
-.app-shell__recent-activity-summary,
 .app-shell__shell-summary,
 .app-shell__danger-zone-summary {
   margin: 0;
@@ -487,7 +480,6 @@ canvas {
 }
 
 .app-shell__world-save-body,
-.app-shell__recent-activity-body,
 .app-shell__shell-body,
 .app-shell__danger-zone-body {
   padding-top: 14px;
@@ -724,17 +716,6 @@ canvas {
 
 .app-shell__danger-zone-action-metadata {
   margin: 0;
-}
-
-.app-shell__recent-activity[data-tone='warning'] {
-  border-color: rgba(230, 165, 92, 0.32);
-  background:
-    linear-gradient(180deg, rgba(34, 22, 18, 0.96), rgba(24, 15, 12, 0.88)),
-    linear-gradient(135deg, rgba(230, 165, 92, 0.18), rgba(111, 45, 21, 0.08));
-}
-
-.app-shell__recent-activity-body {
-  gap: 12px;
 }
 
 .app-shell__danger-zone-body {
@@ -994,27 +975,6 @@ canvas {
 
 .app-shell__shell-keybindings-status[data-tone='warning'] {
   color: #f3cd87;
-}
-
-.app-shell__section-top-jump-link {
-  justify-self: start;
-  align-items: center;
-  color: #9fddff;
-  font:
-    700 10px/1.1 ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
-  letter-spacing: 0.12em;
-  text-decoration: none;
-  text-transform: uppercase;
-}
-
-.app-shell__section-top-jump-link:hover {
-  color: #d8f3ff;
-}
-
-.app-shell__section-top-jump-link:focus-visible {
-  outline: 2px solid #9fddff;
-  outline-offset: 3px;
-  border-radius: 999px;
 }
 
 .app-shell__menu-section {
@@ -1344,10 +1304,6 @@ canvas {
     grid-template-columns: 1fr;
   }
 
-  .app-shell__panel[data-layout='paused-dashboard'] .app-shell__paused-secondary {
-    grid-template-columns: 1fr;
-  }
-
   .app-shell__panel[data-layout='paused-dashboard'] .app-shell__shell[data-expanded='true'] {
     grid-column: 1 / -1;
   }
@@ -1362,8 +1318,7 @@ canvas {
     gap: 16px;
   }
 
-  .app-shell__paused-primary,
-  .app-shell__paused-secondary {
+  .app-shell__paused-primary {
     gap: 14px;
   }
 
@@ -1372,7 +1327,6 @@ canvas {
   }
 
   .app-shell__world-save-header,
-  .app-shell__recent-activity-header,
   .app-shell__shell-header,
   .app-shell__danger-zone-header {
     flex-direction: column;

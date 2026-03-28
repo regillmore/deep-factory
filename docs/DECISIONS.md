@@ -2,6 +2,12 @@
 
 Record only durable design decisions here. Keep each entry short: date, decision, reason, and consequence.
 
+### 2026-03-27: Paused-dashboard results no longer live in a dedicated Recent Activity section
+
+- Decision: The paused main-menu dashboard now surfaces only `Overview`, `World Save`, and `Shell`, and it no longer renders a separate `Recent Activity` section or jump-back link.
+- Reason: The owning `World Save` and `Shell` pages already expose the current state players need, so keeping a second results-only surface made the paused dashboard noisier without adding unique controls.
+- Consequence: Future paused-menu status or feedback work should extend the owning page summaries or controls instead of reintroducing a standalone recent-activity surface.
+
 ### 2026-03-27: In-world touch and debug overlays mount under the shell world subtree
 
 - Decision: In-world touch-player controls, debug HUD or compact status UI, and preview or marker overlays now accept a mount host and are routed from `src/main.ts` under the app shell's world subtree instead of appending directly to `document.body`.

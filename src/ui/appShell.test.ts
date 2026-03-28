@@ -276,9 +276,6 @@ const CURRENT_SESSION_ONLY_CUSTOM_SET_PAUSED_MAIN_MENU_SHELL_SUMMARY_ROWS = [
     value: 'No staged preview'
   }
 ] as const;
-const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT = 'Jump to Overview';
-const PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE =
-  'Move focus back to the Overview section at the top of the paused dashboard.';
 const PAUSED_MAIN_MENU_WORLD_SAVE_TILE_OPEN_TITLE =
   'Open the paused World Save page for downloads, imports, fresh-world replacement, and browser-resume controls.';
 const PAUSED_MAIN_MENU_SHELL_TILE_OPEN_TITLE =
@@ -689,14 +686,6 @@ const readEmptyBadgeTexts = (element: FakeElement | null): string[] =>
     (badge) => badge.textContent
   );
 
-const readMenuSectionStatusBadges = (
-  element: FakeElement | null
-): Array<{ title: string; badge: string | null }> =>
-  findElementsByClass(element ?? new FakeElement('div'), 'app-shell__menu-section').map((section) => ({
-    title: findElementByClass(section, 'app-shell__menu-section-title')?.textContent ?? '',
-    badge: findElementByClass(section, 'app-shell__menu-section-status-badge')?.textContent ?? null
-  }));
-
 const createPausedMainMenuShellActionKeybindingSummaryRows = (
   shellActionKeybindings: ShellActionKeybindingState = createDefaultShellActionKeybindingState()
 ) => [
@@ -735,7 +724,7 @@ const createPausedMainMenuMenuSectionsFromViewModel = (
   pausedMainMenuSections: ReturnType<typeof createPausedMainMenuSectionViewModel>,
   stateOverrides: Partial<AppShellState> = {}
 ) => {
-  const { primarySections, recentActivitySections } = resolvePausedMainMenuMenuSectionGroups({
+  const { primarySections } = resolvePausedMainMenuMenuSectionGroups({
     screen: 'main-menu',
     mainMenuVariant: 'paused-session',
     primaryActionLabel: 'Resume World',
@@ -743,7 +732,7 @@ const createPausedMainMenuMenuSectionsFromViewModel = (
     ...stateOverrides
   });
 
-  return [...primarySections, ...recentActivitySections];
+  return [...primarySections];
 };
 const createFirstLaunchMainMenuSectionViewModel = (
   worldSessionShellPersistenceAvailable = true
@@ -770,7 +759,7 @@ const createFirstLaunchMainMenuMenuSectionsFromViewModel = (
   pausedMainMenuSections: ReturnType<typeof createFirstLaunchMainMenuSectionViewModel>,
   stateOverrides: Partial<AppShellState> = {}
 ) => {
-  const { primarySections, recentActivitySections } = resolvePausedMainMenuMenuSectionGroups({
+  const { primarySections } = resolvePausedMainMenuMenuSectionGroups({
     screen: 'main-menu',
     mainMenuVariant: 'first-start',
     primaryActionLabel: 'Enter World',
@@ -778,7 +767,7 @@ const createFirstLaunchMainMenuMenuSectionsFromViewModel = (
     ...stateOverrides
   });
 
-  return [...primarySections, ...recentActivitySections];
+  return [...primarySections];
 };
 
 describe('paused main-menu dashboard layout', () => {
@@ -818,10 +807,9 @@ describe('paused main-menu dashboard layout', () => {
     const panel = root === null ? null : findElementByClass(root, 'app-shell__panel');
     const dashboard = panel === null ? null : findElementByClass(panel, 'app-shell__paused-dashboard');
     const primary = dashboard === null ? null : findElementByClass(dashboard, 'app-shell__paused-primary');
-    const secondary =
-      dashboard === null ? null : findElementByClass(dashboard, 'app-shell__paused-secondary');
     const menuSections = panel === null ? null : findElementByClass(panel, 'app-shell__menu-sections');
     const footerActions = panel === null ? null : findElementByClass(panel, 'app-shell__actions');
+    const recentActivity = root === null ? null : findElementByClass(root, 'app-shell__recent-activity');
 
     expect(panel?.dataset.layout).toBe('paused-dashboard');
     expect(dashboard?.hidden).toBe(false);
@@ -831,7 +819,7 @@ describe('paused main-menu dashboard layout', () => {
       'app-shell__world-save',
       'app-shell__shell'
     ]);
-    expect(listChildClassNames(secondary)).toEqual(['app-shell__recent-activity']);
+    expect(recentActivity).toBeNull();
     expect(menuSections?.hidden).toBe(true);
     expect(menuSections?.style.display).toBe('none');
     expect(footerActions?.hidden).toBe(true);
@@ -885,7 +873,6 @@ describe('paused main-menu dashboard layout', () => {
       'app-shell__submenu-back',
       PAUSED_MAIN_MENU_WORLD_SAVE_BACK_LABEL
     );
-    const secondarySections = findElementByClass(root, 'app-shell__paused-secondary');
 
     expect(overviewSection?.hidden).toBe(false);
     expect(overviewNavigation?.hidden).toBe(false);
@@ -905,7 +892,6 @@ describe('paused main-menu dashboard layout', () => {
     ]);
     expect(worldSaveSection?.hidden).toBe(true);
     expect(worldSaveBackButton?.hidden).toBe(true);
-    expect(secondarySections?.hidden).toBe(false);
 
     worldSaveTile?.click();
 
@@ -913,7 +899,6 @@ describe('paused main-menu dashboard layout', () => {
     expect(worldSaveSection?.hidden).toBe(false);
     expect(worldSaveBackButton?.hidden).toBe(false);
     expect(worldSaveBackButton?.title).toBe(PAUSED_MAIN_MENU_WORLD_SAVE_BACK_TITLE);
-    expect(secondarySections?.hidden).toBe(true);
     expect(readTextContentsByClass(root, 'app-shell__world-save-action-title')).toEqual([
       'New World',
       'Export World Save',
@@ -984,7 +969,6 @@ describe('paused main-menu dashboard layout', () => {
       'app-shell__submenu-back',
       PAUSED_MAIN_MENU_SHELL_BACK_LABEL
     );
-    const secondarySections = findElementByClass(root, 'app-shell__paused-secondary');
 
     expect(shellSection?.hidden).toBe(true);
     expect(shellTile?.title).toBe(PAUSED_MAIN_MENU_SHELL_TILE_OPEN_TITLE);
@@ -992,7 +976,6 @@ describe('paused main-menu dashboard layout', () => {
       resolvePausedMainMenuShellSectionState(state).metadataRows
     );
     expect(shellBackButton?.hidden).toBe(true);
-    expect(secondarySections?.hidden).toBe(false);
 
     shellTile?.click();
 
@@ -1000,7 +983,6 @@ describe('paused main-menu dashboard layout', () => {
     expect(shellSection?.hidden).toBe(false);
     expect(shellBackButton?.hidden).toBe(false);
     expect(shellBackButton?.title).toBe(PAUSED_MAIN_MENU_SHELL_BACK_TITLE);
-    expect(secondarySections?.hidden).toBe(true);
   });
 
   it('renders a paused-session fullscreen toggle at the top of Overview and routes clicks through the shared handler', () => {
@@ -1785,12 +1767,6 @@ describe('paused main-menu dashboard layout', () => {
         sectionId: 'app-shell-paused-shell-section',
         headingId: 'app-shell-paused-shell-title',
         title: 'Shell'
-      },
-      {
-        className: 'app-shell__recent-activity',
-        sectionId: 'app-shell-paused-recent-activity-section',
-        headingId: 'app-shell-paused-recent-activity-title',
-        title: 'Recent Activity'
       }
     ] as const;
 
@@ -1806,6 +1782,8 @@ describe('paused main-menu dashboard layout', () => {
       expect(heading?.tagName).toBe('H2');
       expect(heading?.textContent).toBe(sectionExpectation.title);
     }
+
+    expect(findElementByClass(root, 'app-shell__recent-activity')).toBeNull();
   });
 
   it('renders compact shell-hotkey metadata rows instead of a prose intro on the Shell page', () => {
@@ -2251,43 +2229,7 @@ describe('paused main-menu dashboard layout', () => {
     expect(shellSection?.scrollIntoViewCallCount).toBe(0);
   });
 
-  it('returns focus to the current paused-dashboard section anchor when Recent Activity appears', () => {
-    const container = new FakeElement('div');
-    const shell = new AppShell(container as unknown as HTMLElement);
-
-    shell.setState(createPausedMainMenuShellState());
-
-    const fakeDocument = document as unknown as FakeDocument;
-    const root = container.children[0] ?? null;
-    const overviewSection = root === null ? null : findElementByClass(root, 'app-shell__overview');
-
-    overviewSection?.focus();
-    shell.setState(
-      createPausedMainMenuShellState(
-        undefined,
-        true,
-        createDefaultShellActionKeybindingState(),
-        false,
-        null,
-        'cleared',
-        {
-          status: 'downloaded',
-          fileName: 'paused-session.json'
-        },
-        null,
-        null,
-        null,
-        false,
-        'export-world-save'
-      )
-    );
-
-    expect(overviewSection?.focusCallCount).toBe(2);
-    expect(overviewSection?.scrollIntoViewCallCount).toBe(1);
-    expect(fakeDocument.activeElement).toBe(overviewSection);
-  });
-
-  it('falls forward to the nearest visible paused-dashboard section anchor when Recent Activity disappears', () => {
+  it('does not render paused-menu Recent Activity even when latest action feedback exists', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
 
@@ -2311,19 +2253,8 @@ describe('paused main-menu dashboard layout', () => {
       )
     );
 
-    const fakeDocument = document as unknown as FakeDocument;
     const root = container.children[0] ?? null;
-    const overviewSection = root === null ? null : findElementByClass(root, 'app-shell__overview');
-    const recentActivitySection =
-      root === null ? null : findElementByClass(root, 'app-shell__recent-activity');
-
-    recentActivitySection?.focus();
-    shell.setState(createPausedMainMenuShellState());
-
-    expect(recentActivitySection?.focusCallCount).toBe(1);
-    expect(overviewSection?.focusCallCount).toBe(1);
-    expect(overviewSection?.scrollIntoViewCallCount).toBe(1);
-    expect(fakeDocument.activeElement).toBe(overviewSection);
+    expect(findElementByClass(root, 'app-shell__recent-activity')).toBeNull();
   });
 
   it('renders metadata-first shell-profile preview groups on the Shell page', () => {
@@ -2482,136 +2413,6 @@ describe('paused main-menu dashboard layout', () => {
     expect(readEmptyBadgeTexts(previewGroups)).toEqual(['No hotkey changes']);
   });
 
-  it('omits the old Shell top-jump link now that Shell uses its own submenu page', () => {
-    const container = new FakeElement('div');
-    const shell = new AppShell(container as unknown as HTMLElement);
-
-    shell.setState(createPausedMainMenuShellState());
-
-    const root = container.children[0] ?? null;
-    const shellSection = root === null ? null : findElementByClass(root, 'app-shell__shell');
-    const shellTile = root === null ? null : findPausedNavigationTileByTitle(root, 'Shell');
-    shellTile?.click();
-
-    const jumpLink =
-      shellSection === null
-        ? null
-        : findElementByClass(shellSection, 'app-shell__section-top-jump-link');
-
-    expect(jumpLink).toBeNull();
-  });
-
-  it('adds a recent-activity top-jump link that returns focus to Overview', () => {
-    const container = new FakeElement('div');
-    const shell = new AppShell(container as unknown as HTMLElement);
-
-    shell.setState(
-      createPausedMainMenuShellState(
-        undefined,
-        true,
-        createDefaultShellActionKeybindingState(),
-        false,
-        null,
-        null,
-        {
-          status: 'downloaded',
-          fileName: 'paused-session.json'
-        },
-        null,
-        null,
-        null,
-        false,
-        'export-world-save'
-      )
-    );
-
-    const root = container.children[0] ?? null;
-    const overviewSection = root === null ? null : findElementByClass(root, 'app-shell__overview');
-    const recentActivitySection =
-      root === null ? null : findElementByClass(root, 'app-shell__recent-activity');
-    const recentActivityJumpLink =
-      recentActivitySection === null
-        ? null
-        : findElementByClass(recentActivitySection, 'app-shell__section-top-jump-link');
-
-    expect(recentActivityJumpLink?.textContent).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TEXT);
-    expect(recentActivityJumpLink?.title).toBe(PAUSED_MAIN_MENU_TOP_JUMP_LINK_TITLE);
-    expect(recentActivityJumpLink?.hidden).toBe(false);
-
-    recentActivityJumpLink?.click();
-
-    expect(overviewSection?.focusCallCount).toBe(1);
-    expect(overviewSection?.scrollIntoViewCallCount).toBe(1);
-  });
-
-  it('renders compact success and attention badges on paused-menu Recent Activity cards', () => {
-    const container = new FakeElement('div');
-    const shell = new AppShell(container as unknown as HTMLElement);
-
-    shell.setState(
-      createPausedMainMenuShellState(
-        undefined,
-        true,
-        createDefaultShellActionKeybindingState(),
-        false,
-        null,
-        'cleared',
-        {
-          status: 'downloaded',
-          fileName: 'paused-session.json'
-        },
-        null,
-        null,
-        null,
-        false,
-        'export-world-save'
-      )
-    );
-
-    const root = container.children[0] ?? null;
-    const recentActivityBody =
-      root === null ? null : findElementByClass(root, 'app-shell__recent-activity-body');
-
-    expect(readMenuSectionStatusBadges(recentActivityBody)).toEqual([
-      {
-        title: 'Export Result',
-        badge: 'Success'
-      },
-      {
-        title: 'Saved World Status',
-        badge: 'Attention'
-      }
-    ]);
-  });
-
-  it('renders compact neutral info badges on paused-menu Recent Activity cards', () => {
-    const container = new FakeElement('div');
-    const shell = new AppShell(container as unknown as HTMLElement);
-
-    shell.setState(
-      createPausedMainMenuShellState(
-        undefined,
-        true,
-        createDefaultShellActionKeybindingState(),
-        false,
-        {
-          status: 'cancelled'
-        }
-      )
-    );
-
-    const root = container.children[0] ?? null;
-    const recentActivityBody =
-      root === null ? null : findElementByClass(root, 'app-shell__recent-activity-body');
-
-    expect(readMenuSectionStatusBadges(recentActivityBody)).toEqual([
-      {
-        title: 'Import Result',
-        badge: 'Info'
-      }
-    ]);
-  });
-
   it('switches the Shell-page hotkey metadata rows into warning-toned session-only copy when browser persistence is unavailable', () => {
     const container = new FakeElement('div');
     const shell = new AppShell(container as unknown as HTMLElement);
@@ -2640,7 +2441,6 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain(".app-shell__panel[data-layout='paused-dashboard']");
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-dashboard');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-primary');
-    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-secondary');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-navigation');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-navigation-tile');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-navigation-tile-metadata');
@@ -2674,7 +2474,6 @@ describe('paused main-menu dashboard layout styling', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain(".app-shell__section-action-button[data-busy='true']");
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-button[disabled]');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-action-button[disabled]:hover');
-    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__section-top-jump-link');
     expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__shell-keybindings-metadata[data-tone='warning'] .app-shell__menu-section-metadata-value"
     );
@@ -2709,20 +2508,19 @@ describe('paused main-menu dashboard layout styling', () => {
     );
     expect(APP_SHELL_STYLE_SOURCE).toContain('grid-template-columns: 1fr;');
     expect(APP_SHELL_STYLE_SOURCE).toContain(
-      ".app-shell__panel[data-layout='paused-dashboard'] .app-shell__paused-secondary"
-    );
-    expect(APP_SHELL_STYLE_SOURCE).toContain(
       ".app-shell__panel[data-layout='paused-dashboard'] .app-shell__shell[data-expanded='true']"
     );
+    expect(APP_SHELL_STYLE_SOURCE).not.toContain('.app-shell__paused-secondary');
+    expect(APP_SHELL_STYLE_SOURCE).not.toContain('.app-shell__section-top-jump-link');
   });
 
   it('keeps paused-section focus-anchor rules in style.css', () => {
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__paused-navigation-tile:focus-visible');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__overview:focus-visible');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__world-save:focus-visible');
-    expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__recent-activity:focus-visible');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__shell:focus-visible');
     expect(APP_SHELL_STYLE_SOURCE).toContain('.app-shell__danger-zone:focus-visible');
+    expect(APP_SHELL_STYLE_SOURCE).not.toContain('.app-shell__recent-activity:focus-visible');
   });
 });
 
@@ -5144,7 +4942,7 @@ describe('resolvePausedMainMenuWorldSaveSectionState', () => {
 });
 
 describe('resolvePausedMainMenuMenuSectionGroups', () => {
-  it('routes paused-menu cards into explicit overview, world-save, shell, and recent-activity groups', () => {
+  it('routes paused-menu cards into explicit overview, world-save, and shell groups without Recent Activity', () => {
     const pausedState = createPausedMainMenuShellState(
       undefined,
       true,
@@ -5241,42 +5039,7 @@ describe('resolvePausedMainMenuMenuSectionGroups', () => {
         }
       ],
       shellSections: [],
-      recentActivitySections: [
-        {
-          title: 'Clear Saved World',
-          lines: [...CLEARED_PAUSED_MAIN_MENU_CLEAR_SAVED_WORLD_ACTIVITY_LINES],
-          metadataRows: [
-            {
-              label: 'Status',
-              value: 'Cleared from browser storage'
-            },
-            {
-              label: 'Session',
-              value: 'Still open in this tab'
-            }
-          ],
-          tone: 'accent'
-        },
-        {
-          title: 'Saved World Status',
-          lines: [],
-          metadataRows: [
-            {
-              label: 'Status',
-              value: 'Not browser saved'
-            },
-            {
-              label: 'Reload',
-              value: 'Rewrite browser resume before reload'
-            },
-            {
-              label: 'Saved again by',
-              value: 'Resume World, Import World Save, New World'
-            }
-          ],
-          tone: 'warning'
-        }
-      ],
+      recentActivitySections: [],
       primarySections: [
         {
           title: `Resume World (${getDesktopResumeWorldHotkeyLabel()})`,

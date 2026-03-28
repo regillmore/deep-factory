@@ -59,5 +59,5 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Menu UI
 
-606. Remove Recent Activities from the pause menu.
 609. Retarget paused-menu fullscreen from the top-level document to the shared shell-owned app host after task 607: keep fullscreen support detection plus enter/exit sync, and cover host-scoped fullscreen regressions for paused-menu and in-world overlay visibility.
+610. Add inline shell-reset result feedback after task 606: surface `Reset Shell Toggles` and `Reset Telemetry` outcomes on the `Shell` page without restoring a separate pause-menu results section.
