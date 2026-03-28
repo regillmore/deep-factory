@@ -59,6 +59,7 @@ import {
   createThrownBombStateFromThrow,
   DEFAULT_THROWN_BOMB_GRAVITY,
   DEFAULT_THROWN_BOMB_SPEED,
+  resolveThrownBombBlastPlayerHitEvent,
   stepThrownBombState
 } from './world/bombThrowing';
 import {
@@ -13360,6 +13361,233 @@ describe('main.ts shell state orchestration', () => {
 
     dispatchWindowEvent('pagehide');
     expect(readPersistedWorldSaveEnvelope()?.session.standalonePlayerInventoryState.hotbar[6]).toBeNull();
+  });
+
+  it('damages and launches the player outward when a bomb blast overlaps them', async () => {
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setTileState(0, 2, 1, 0)).toBe(true);
+    expect(savedWorld.setTileState(1, 2, 1, 0)).toBe(true);
+    expect(savedWorld.setTileState(2, 2, 1, 0)).toBe(true);
+    expect(savedWorld.setTileState(3, 2, 1, 0)).toBe(true);
+
+    const standalonePlayerState = createPlayerState({
+      position: { x: 24, y: 32 },
+      grounded: true,
+      facing: 'right'
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const bombUseTarget = {
+      worldTileX: Math.floor(playerFocusPoint.x / 16),
+      worldTileY: Math.floor((playerFocusPoint.y + 64) / 16),
+      worldX: playerFocusPoint.x,
+      worldY: playerFocusPoint.y + 64,
+      pointerType: 'mouse' as const
+    };
+    let predictedBombState = createThrownBombStateFromThrow(standalonePlayerState, {
+      x: bombUseTarget.worldX,
+      y: bombUseTarget.worldY
+    });
+    let predictedBlastEvent: ReturnType<typeof stepThrownBombState>['blastEvent'] = null;
+    let stepsUntilBlast = 0;
+    for (let step = 0; step < 120; step += 1) {
+      const stepResult = stepThrownBombState(predictedBombState, {
+        fixedDtSeconds: 1 / 60,
+        world: {
+          getTile: (worldTileX, worldTileY) => savedWorld.getTile(worldTileX, worldTileY)
+        }
+      });
+      if (stepResult.blastEvent !== null) {
+        predictedBlastEvent = stepResult.blastEvent;
+        stepsUntilBlast = step + 1;
+        break;
+      }
+      if (stepResult.nextState === null) {
+        throw new Error('expected an in-flight bomb state before the predicted blast');
+      }
+      predictedBombState = stepResult.nextState;
+    }
+    if (predictedBlastEvent === null || stepsUntilBlast <= 0) {
+      throw new Error('expected a predicted bomb blast event');
+    }
+
+    const predictedPlayerHitEvent = resolveThrownBombBlastPlayerHitEvent(
+      predictedBlastEvent,
+      standalonePlayerState
+    );
+    if (predictedPlayerHitEvent === null) {
+      throw new Error('expected the predicted bomb blast to overlap the player');
+    }
+
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bomb', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.rendererPersistentSetTileResult = true;
+    testRuntime.playerItemUseRequests = [bombUseTarget];
+    runFixedUpdate(1 / 60);
+    testRuntime.playerItemUseRequests = [];
+    for (let step = 0; step < stepsUntilBlast - 1; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+    runRenderFrame(1000 / 60, 1);
+
+    expect(testRuntime.latestRendererRenderFrameState?.bombCurrentPositions).toEqual([]);
+
+    dispatchWindowEvent('pagehide');
+
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    const persistedPlayerState = persistedEnvelope?.session.standalonePlayerState ?? null;
+    expect(persistedPlayerState).not.toBeNull();
+    if (persistedPlayerState === null) {
+      throw new Error('expected a persisted standalone player state');
+    }
+    expect(persistedEnvelope?.session.standalonePlayerDeathState).toBeNull();
+    expect(persistedPlayerState.health).toBe(80);
+    expect(persistedPlayerState.velocity.x).toBeCloseTo(
+      predictedPlayerHitEvent.direction.x * predictedPlayerHitEvent.knockbackSpeed,
+      6
+    );
+    expect(persistedPlayerState.velocity.y).toBeCloseTo(
+      predictedPlayerHitEvent.direction.y * predictedPlayerHitEvent.knockbackSpeed,
+      6
+    );
+    expect(persistedPlayerState.grounded).toBe(false);
+  });
+
+  it('enters death hold immediately when bomb self-damage is lethal', async () => {
+    const savedWorld = new TileWorld(0);
+    expect(savedWorld.setTileState(0, 2, 1, 0)).toBe(true);
+    expect(savedWorld.setTileState(1, 2, 1, 0)).toBe(true);
+    expect(savedWorld.setTileState(2, 2, 1, 0)).toBe(true);
+    expect(savedWorld.setTileState(3, 2, 1, 0)).toBe(true);
+
+    const standalonePlayerState = createPlayerState({
+      position: { x: 24, y: 32 },
+      grounded: true,
+      facing: 'right',
+      health: 10
+    });
+    const playerFocusPoint = getPlayerCameraFocusPoint(standalonePlayerState);
+    const bombUseTarget = {
+      worldTileX: Math.floor(playerFocusPoint.x / 16),
+      worldTileY: Math.floor((playerFocusPoint.y + 64) / 16),
+      worldX: playerFocusPoint.x,
+      worldY: playerFocusPoint.y + 64,
+      pointerType: 'mouse' as const
+    };
+    let predictedBombState = createThrownBombStateFromThrow(standalonePlayerState, {
+      x: bombUseTarget.worldX,
+      y: bombUseTarget.worldY
+    });
+    let predictedBlastEvent: ReturnType<typeof stepThrownBombState>['blastEvent'] = null;
+    let stepsUntilBlast = 0;
+    for (let step = 0; step < 120; step += 1) {
+      const stepResult = stepThrownBombState(predictedBombState, {
+        fixedDtSeconds: 1 / 60,
+        world: {
+          getTile: (worldTileX, worldTileY) => savedWorld.getTile(worldTileX, worldTileY)
+        }
+      });
+      if (stepResult.blastEvent !== null) {
+        predictedBlastEvent = stepResult.blastEvent;
+        stepsUntilBlast = step + 1;
+        break;
+      }
+      if (stepResult.nextState === null) {
+        throw new Error('expected an in-flight bomb state before the predicted blast');
+      }
+      predictedBombState = stepResult.nextState;
+    }
+    if (predictedBlastEvent === null || stepsUntilBlast <= 0) {
+      throw new Error('expected a predicted bomb blast event');
+    }
+    if (resolveThrownBombBlastPlayerHitEvent(predictedBlastEvent, standalonePlayerState) === null) {
+      throw new Error('expected the predicted bomb blast to overlap the player');
+    }
+
+    testRuntime.storageValues.set(
+      PERSISTED_WORLD_SAVE_ENVELOPE_STORAGE_KEY,
+      JSON.stringify(
+        createWorldSaveEnvelope({
+          worldSnapshot: savedWorld.createSnapshot(),
+          standalonePlayerState,
+          standalonePlayerInventoryState: createPlayerInventoryState({
+            hotbar: [
+              { itemId: 'pickaxe', amount: 1 },
+              { itemId: 'dirt-block', amount: 64 },
+              { itemId: 'torch', amount: 20 },
+              { itemId: 'rope', amount: 24 },
+              { itemId: 'healing-potion', amount: 3 },
+              { itemId: 'heart-crystal', amount: 1 },
+              { itemId: 'bomb', amount: 1 },
+              null,
+              null,
+              null
+            ],
+            selectedHotbarSlotIndex: 6
+          })
+        })
+      )
+    );
+
+    await import('./main');
+    await flushBootstrap();
+
+    testRuntime.shellInstance?.options.onPrimaryAction('main-menu');
+    testRuntime.rendererSetTileResult = true;
+    testRuntime.rendererPersistentSetTileResult = true;
+    testRuntime.playerItemUseRequests = [bombUseTarget];
+    runFixedUpdate(1 / 60);
+    testRuntime.playerItemUseRequests = [];
+    for (let step = 0; step < stepsUntilBlast - 1; step += 1) {
+      runFixedUpdate(1 / 60);
+    }
+    runRenderFrame(1000 / 60, 1);
+
+    dispatchWindowEvent('pagehide');
+
+    const persistedEnvelope = readPersistedWorldSaveEnvelope();
+    const persistedPlayerState = persistedEnvelope?.session.standalonePlayerState ?? null;
+    expect(persistedPlayerState).not.toBeNull();
+    if (persistedPlayerState === null) {
+      throw new Error('expected a persisted standalone player state');
+    }
+    expect(persistedEnvelope?.session.standalonePlayerDeathState?.respawnSecondsRemaining).toBe(1);
+    expect(persistedPlayerState.health).toBe(0);
+    expect(persistedPlayerState.velocity).toEqual({
+      x: 0,
+      y: 0
+    });
+    expect(persistedPlayerState.position).toEqual({
+      x: standalonePlayerState.position.x,
+      y: standalonePlayerState.position.y
+    });
   });
 
   it('breaks nearby mineable terrain and placed utility tiles through the bomb blast refund paths while leaving walls intact', async () => {

@@ -55,6 +55,6 @@ These items are intentionally scoped to fit a focused implementation pass with t
 
 ## Bomb utility
 
-603. Add bomb self-damage and knockback after task 602: apply deterministic blast damage plus outward launch to the standalone player when inside the blast radius, respect death-hold sequencing, and cover player-blast regressions.
 605. Add thrown-bomb fuse warning feedback after task 604: surface a visible pre-detonation blink cadence on in-flight bomb entities and cover placeholder render regressions.
 611. Attribute lethal bomb self-damage after task 603: report player-blast deaths through the shared death-cause event path and cover bomb-versus-environment priority regressions.
+618. Add thrown-bomb detonation flash after task 605: render a short-lived explosion placeholder at the blast point and cover deterministic blast-visual lifetime regressions.

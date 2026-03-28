@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  applyThrownBombBlastHitToPlayer,
   applyThrownBombBlastHitToHostileSlime,
   cloneThrownBombState,
   createThrownBombState,
   createThrownBombStateFromThrow,
   resolveThrownBombBlastBreakTargets,
   resolveThrownBombBlastHostileSlimeHitEvents,
+  resolveThrownBombBlastPlayerHitEvent,
   stepThrownBombState
 } from './bombThrowing';
 import {
@@ -202,6 +204,52 @@ describe('bombThrowing', () => {
         grounded: false,
         facing: 'right',
         launchKind: null
+      })
+    );
+  });
+
+  it('resolves player blast hits inside the bomb radius and applies outward knockback plus damage', () => {
+    const playerState = createPlayerState({
+      position: { x: 48, y: 32 },
+      grounded: true,
+      facing: 'left',
+      health: 35
+    });
+    const blastEvent = {
+      position: { x: 32, y: 6 },
+      blastRadius: 12,
+      damage: 7,
+      knockbackSpeed: 90
+    };
+    const hitEvent = resolveThrownBombBlastPlayerHitEvent(blastEvent, playerState);
+
+    expect(hitEvent).toEqual({
+      direction: {
+        x: 0.8,
+        y: 0.6
+      },
+      damage: 7,
+      knockbackSpeed: 90
+    });
+    expect(
+      resolveThrownBombBlastPlayerHitEvent(
+        {
+          ...blastEvent,
+          blastRadius: 9
+        },
+        playerState
+      )
+    ).toBeNull();
+    expect(applyThrownBombBlastHitToPlayer(playerState, hitEvent!)).toEqual(
+      createPlayerState({
+        position: { x: 48, y: 32 },
+        velocity: {
+          x: 72,
+          y: 54
+        },
+        grounded: false,
+        facing: 'right',
+        health: 28
       })
     );
   });

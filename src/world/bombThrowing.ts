@@ -12,7 +12,10 @@ import {
   type HostileSlimeState
 } from './hostileSlimeState';
 import {
+  clonePlayerState,
+  getPlayerAabb,
   getPlayerCameraFocusPoint,
+  type PlayerFacing,
   type PlayerState
 } from './playerState';
 import {
@@ -69,6 +72,12 @@ export interface ThrownBombBlastHostileSlimeTarget {
 
 export interface ThrownBombBlastHostileSlimeHitEvent {
   entityId: number;
+  direction: ThrownBombVelocity;
+  damage: number;
+  knockbackSpeed: number;
+}
+
+export interface ThrownBombBlastPlayerHitEvent {
   direction: ThrownBombVelocity;
   damage: number;
   knockbackSpeed: number;
@@ -310,15 +319,26 @@ const resolveThrownBombBlastKnockbackFacing = (
   return currentFacing;
 };
 
-const resolveThrownBombBlastDirection = (
+const resolveThrownBombBlastPlayerKnockbackFacing = (
+  currentFacing: PlayerFacing,
+  direction: ThrownBombVelocity
+): PlayerFacing => {
+  if (direction.x < -DIRECTION_EPSILON) {
+    return 'left';
+  }
+  if (direction.x > DIRECTION_EPSILON) {
+    return 'right';
+  }
+
+  return currentFacing;
+};
+
+const resolveThrownBombBlastDirectionToWorldPoint = (
   blastPosition: ThrownBombWorldPoint,
-  slimeState: HostileSlimeState
+  targetWorldPoint: ThrownBombWorldPoint
 ): ThrownBombVelocity => {
-  const slimeAabb = getHostileSlimeAabb(slimeState);
-  const slimeCenterX = (slimeAabb.minX + slimeAabb.maxX) * 0.5;
-  const slimeCenterY = (slimeAabb.minY + slimeAabb.maxY) * 0.5;
-  const deltaX = slimeCenterX - blastPosition.x;
-  const deltaY = slimeCenterY - blastPosition.y;
+  const deltaX = targetWorldPoint.x - blastPosition.x;
+  const deltaY = targetWorldPoint.y - blastPosition.y;
   const magnitude = Math.hypot(deltaX, deltaY);
 
   if (magnitude <= DIRECTION_EPSILON) {
@@ -334,11 +354,30 @@ const resolveThrownBombBlastDirection = (
   };
 };
 
+const resolveThrownBombBlastDirection = (
+  blastPosition: ThrownBombWorldPoint,
+  slimeState: HostileSlimeState
+): ThrownBombVelocity => {
+  const slimeAabb = getHostileSlimeAabb(slimeState);
+  const slimeCenterX = (slimeAabb.minX + slimeAabb.maxX) * 0.5;
+  const slimeCenterY = (slimeAabb.minY + slimeAabb.maxY) * 0.5;
+  return resolveThrownBombBlastDirectionToWorldPoint(blastPosition, {
+    x: slimeCenterX,
+    y: slimeCenterY
+  });
+};
+
 const doesThrownBombBlastOverlapHostileSlime = (
   blastPosition: ThrownBombWorldPoint,
   blastRadius: number,
   slimeState: HostileSlimeState
 ): boolean => doesThrownBombBlastOverlapAabb(blastPosition, blastRadius, getHostileSlimeAabb(slimeState));
+
+const doesThrownBombBlastOverlapPlayer = (
+  blastPosition: ThrownBombWorldPoint,
+  blastRadius: number,
+  playerState: PlayerState
+): boolean => doesThrownBombBlastOverlapAabb(blastPosition, blastRadius, getPlayerAabb(playerState));
 
 const resolveThrownBombBlastTileBounds = (
   blastEvent: ThrownBombBlastEvent
@@ -379,6 +418,31 @@ export const resolveThrownBombBlastHostileSlimeHitEvents = (
   }
 
   return hitEvents;
+};
+
+export const resolveThrownBombBlastPlayerHitEvent = (
+  blastEvent: ThrownBombBlastEvent,
+  playerState: PlayerState
+): ThrownBombBlastPlayerHitEvent | null => {
+  const normalizedBlastEvent = cloneThrownBombBlastEvent(blastEvent);
+  if (
+    !doesThrownBombBlastOverlapPlayer(
+      normalizedBlastEvent.position,
+      normalizedBlastEvent.blastRadius,
+      playerState
+    )
+  ) {
+    return null;
+  }
+
+  return {
+    direction: resolveThrownBombBlastDirectionToWorldPoint(
+      normalizedBlastEvent.position,
+      getPlayerCameraFocusPoint(playerState)
+    ),
+    damage: normalizedBlastEvent.damage,
+    knockbackSpeed: normalizedBlastEvent.knockbackSpeed
+  };
 };
 
 export const resolveThrownBombBlastBreakTargets = (
@@ -450,6 +514,39 @@ export const applyThrownBombBlastHitToHostileSlime = (
   );
   nextState.launchKind = null;
   return applyHostileSlimeDamage(nextState, hitEvent.damage);
+};
+
+export const applyThrownBombBlastHitToPlayer = (
+  playerState: PlayerState,
+  hitEvent: ThrownBombBlastPlayerHitEvent
+): PlayerState => {
+  const nextState = clonePlayerState(playerState);
+  const damage = expectNonNegativeFiniteNumber(hitEvent.damage, 'hitEvent.damage');
+  const knockbackSpeed = expectNonNegativeFiniteNumber(
+    hitEvent.knockbackSpeed,
+    'hitEvent.knockbackSpeed'
+  );
+  const direction = resolveThrownBombBlastDirectionToWorldPoint(
+    {
+      x: 0,
+      y: 0
+    },
+    cloneThrownBombVelocity(hitEvent.direction)
+  );
+  nextState.velocity = {
+    x: direction.x * knockbackSpeed,
+    y: direction.y * knockbackSpeed
+  };
+  nextState.grounded = false;
+  nextState.facing = resolveThrownBombBlastPlayerKnockbackFacing(
+    playerState.facing,
+    direction
+  );
+  nextState.health = Math.max(
+    0,
+    expectNonNegativeFiniteNumber(playerState.health, 'playerState.health') - damage
+  );
+  return nextState;
 };
 
 export const createThrownBombStateFromThrow = (

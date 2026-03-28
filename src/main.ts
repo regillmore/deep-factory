@@ -457,11 +457,13 @@ import {
   type StarterWandFireboltState
 } from './world/starterWand';
 import {
+  applyThrownBombBlastHitToPlayer,
   applyThrownBombBlastHitToHostileSlime,
   BOMB_ITEM_ID,
   createThrownBombStateFromThrow,
   resolveThrownBombBlastBreakTargets,
   resolveThrownBombBlastHostileSlimeHitEvents,
+  resolveThrownBombBlastPlayerHitEvent,
   stepThrownBombState,
   type ThrownBombBlastEvent,
   type ThrownBombState
@@ -561,7 +563,7 @@ type DebugWorldHistoryChange = {
   previousId: number;
   id: number;
 };
-type PendingHostileSlimeCombatEvent =
+type PendingCombatEvent =
   | {
       kind: 'wand-firebolt-hit';
       event: StarterWandFireboltHitEvent;
@@ -1887,7 +1889,7 @@ const bootstrap = async (): Promise<void> => {
   let droppedItemEntityIds: EntityId[] = [];
   let fireboltEntityIds: EntityId[] = [];
   let arrowProjectileEntityIds: EntityId[] = [];
-  let pendingHostileSlimeCombatEvents: PendingHostileSlimeCombatEvent[] = [];
+  let pendingCombatEvents: PendingCombatEvent[] = [];
   let hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
   let passiveBunnySpawnerState = createPassiveBunnySpawnerState();
   let pendingStandalonePlayerFixedStepResult: StandalonePlayerFixedStepResult | null = null;
@@ -3349,7 +3351,7 @@ const bootstrap = async (): Promise<void> => {
     droppedItemEntityIds = [];
     fireboltEntityIds = [];
     arrowProjectileEntityIds = [];
-    pendingHostileSlimeCombatEvents = [];
+    pendingCombatEvents = [];
     hostileSlimeSpawnerState = createHostileSlimeSpawnerState();
     passiveBunnySpawnerState = createPassiveBunnySpawnerState();
     pendingStandalonePlayerFixedStepResult = null;
@@ -3612,7 +3614,7 @@ const bootstrap = async (): Promise<void> => {
           fixedDtSeconds: fixedDt
         });
         if (stepResult.hitEvent !== null) {
-          pendingHostileSlimeCombatEvents.push({
+          pendingCombatEvents.push({
             kind: 'wand-firebolt-hit',
             event: stepResult.hitEvent
           });
@@ -3659,7 +3661,7 @@ const bootstrap = async (): Promise<void> => {
           fixedDtSeconds: fixedDt
         });
         if (stepResult.hitEvent?.kind === 'hostile-slime') {
-          pendingHostileSlimeCombatEvents.push({
+          pendingCombatEvents.push({
             kind: 'bow-arrow-hit',
             event: stepResult.hitEvent
           });
@@ -3718,7 +3720,7 @@ const bootstrap = async (): Promise<void> => {
           }
         });
         if (stepResult.blastEvent !== null) {
-          pendingHostileSlimeCombatEvents.push({
+          pendingCombatEvents.push({
             kind: 'bomb-blast',
             event: stepResult.blastEvent
           });
@@ -3735,13 +3737,40 @@ const bootstrap = async (): Promise<void> => {
     });
     return thrownBombEntityId;
   };
-  const flushPendingHostileSlimeCombatEvents = (): void => {
-    if (pendingHostileSlimeCombatEvents.length === 0) {
+  const applyThrownBombBlastToStandalonePlayer = (blastEvent: ThrownBombBlastEvent): void => {
+    const standalonePlayerState = getStandalonePlayerState();
+    if (
+      standalonePlayerState === null ||
+      standalonePlayerDeathState !== null ||
+      isStandalonePlayerDead(standalonePlayerState)
+    ) {
       return;
     }
 
-    const combatEvents = pendingHostileSlimeCombatEvents;
-    pendingHostileSlimeCombatEvents = [];
+    const playerHitEvent = resolveThrownBombBlastPlayerHitEvent(
+      blastEvent,
+      standalonePlayerState
+    );
+    if (playerHitEvent === null) {
+      return;
+    }
+
+    const nextPlayerState = applyThrownBombBlastHitToPlayer(
+      standalonePlayerState,
+      playerHitEvent
+    );
+    setStandalonePlayerState(nextPlayerState, {
+      resetRenderStateSnapshots: false
+    });
+    replacePendingStandalonePlayerFixedStepNextState(nextPlayerState);
+  };
+  const flushPendingCombatEvents = (): void => {
+    if (pendingCombatEvents.length === 0) {
+      return;
+    }
+
+    const combatEvents = pendingCombatEvents;
+    pendingCombatEvents = [];
     const defeatedHostileSlimeEntityIds = new Set<EntityId>();
     const defeatedHostileSlimeDropStates: DroppedItemState[] = [];
     const applyResolvedHostileSlimeCombatState = (
@@ -3815,6 +3844,7 @@ const bootstrap = async (): Promise<void> => {
           breakTarget.worldTileY
         );
       }
+      applyThrownBombBlastToStandalonePlayer(combatEvent.event);
 
       const bombBlastHitEvents = resolveThrownBombBlastHostileSlimeHitEvents(
         combatEvent.event,
@@ -8257,7 +8287,7 @@ const bootstrap = async (): Promise<void> => {
       entityRegistry.fixedUpdateAll(fixedDt);
       getStarterWandFireboltEntityStates();
       getArrowProjectileEntityStates();
-      flushPendingHostileSlimeCombatEvents();
+      flushPendingCombatEvents();
       flushStandalonePlayerFixedStepResult();
       stepStarterMeleeWeaponFixedUpdate(fixedDt);
       stepStarterSpearFixedUpdate(fixedDt);
